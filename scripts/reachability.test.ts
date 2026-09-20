@@ -346,6 +346,24 @@ describe('source-derived capability reachability', () => {
     expect(auditEffectBackend({ backend: 'gl', ...fixture })).toEqual([]);
   });
 
+  it('uses the WgpuEffect registration door after the backend naming cleanup', () => {
+    const fixture = entries(
+      `
+      export const defaultWgpuBlurEffectRunner = () => {};
+      export function registerWgpuEffect(state: object, kind: string, runner: Function): void {}
+      export function registerWgpuBlurEffect(state: object): void {
+        registerWgpuEffect(state, 'BlurEffect', defaultWgpuBlurEffectRunner);
+      }
+    `,
+      ['registerWgpuEffect', 'registerWgpuBlurEffect', 'defaultWgpuBlurEffectRunner'],
+    );
+
+    expect(auditEffectBackend({ backend: 'wgpu', ...fixture })).toEqual([]);
+    expect(effectReachabilitySymbols('wgpu', fixture.sourceFiles)).toEqual(
+      new Set(['registerWgpuEffect', 'defaultWgpuBlurEffectRunner', 'registerWgpuBlurEffect']),
+    );
+  });
+
   it('rejects an unregistered passthrough runner as a false capability', () => {
     const fixture = entries('export const defaultGlTaaEffectRunner = () => {};', ['defaultGlTaaEffectRunner']);
     expect(auditEffectBackend({ backend: 'gl', ...fixture })).toMatchObject([

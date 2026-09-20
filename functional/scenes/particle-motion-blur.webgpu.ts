@@ -47,8 +47,8 @@ import {
   renderWgpuScene2D,
   renderWgpuVelocity,
   reserveParticleEmitter2D,
+  setWgpuEffectVelocityTexture,
   defaultScene3DWgpuRenderRegistries,
-  setWgpuRenderEffectVelocityTexture,
   createWgpuSurface,
   setSurfaceDisplaySize,
   createAppWindow,
@@ -108,7 +108,7 @@ export function render(root: Node2D): void {
   beginVelocityFrame(velocityField);
   const pass = beginWgpuRenderPass(state, screen, screenClear);
   renderWgpuVelocity(state, root, velocityField, velocityTarget);
-  setWgpuRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
+  setWgpuEffectVelocityTexture(pipeline, velocityTarget.texture);
 
   const scenePass = beginWgpuEffectPass(pass, pipeline, screenClear);
   renderWgpuScene2D(scenePass, root);

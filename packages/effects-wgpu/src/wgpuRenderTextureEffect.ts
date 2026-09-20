@@ -2,19 +2,19 @@ import { getWgpuRenderTextureTarget, writeWgpuRenderTextureTarget } from '@fligh
 import type {
   RenderEffect,
   RenderTexture,
-  WgpuRenderEffectApplicationExplanation,
-  WgpuRenderEffectApplicationGuard,
-  WgpuRenderEffectApplicationStatus,
+  WgpuEffectApplicationExplanation,
+  WgpuEffectApplicationGuard,
+  WgpuEffectApplicationStatus,
   WgpuRenderState,
   WgpuRenderTexturePool,
 } from '@flighthq/types/contract';
 
-import { getWgpuRenderEffectRunner, isWgpuRenderEffectResolvable } from './wgpuRenderEffectRegistry';
+import { getWgpuEffectRunner, isWgpuEffectResolvable } from './wgpuEffectRegistry';
 
 // Encodes the registered members of a chain from one completed RenderTexture into another. The
 // caller owns an active command encoder and supplies one distinct scratch lease. Parity chooses the
 // first destination so the final registered operation always publishes `dest`.
-export function applyWgpuRenderEffectsToRenderTexture(
+export function applyWgpuEffectsToRenderTexture(
   state: WgpuRenderState,
   pool: WgpuRenderTexturePool,
   source: Readonly<RenderTexture>,
@@ -23,27 +23,27 @@ export function applyWgpuRenderEffectsToRenderTexture(
   effects: ReadonlyArray<Readonly<RenderEffect>>,
 ): boolean {
   if (source === dest || source === scratch || dest === scratch) {
-    throw new Error('applyWgpuRenderEffectsToRenderTexture: source, destination, and scratch must be distinct');
+    throw new Error('applyWgpuEffectsToRenderTexture: source, destination, and scratch must be distinct');
   }
   const sourceTarget = getWgpuRenderTextureTarget(state, source);
   const unregisteredKinds: string[] = [];
   const unresolvedIndexes: number[] = [];
   const operations = effects.flatMap((effect, index) => {
-    const runner = getWgpuRenderEffectRunner(state, effect.kind);
+    const runner = getWgpuEffectRunner(state, effect.kind);
     if (runner === null) {
       unregisteredKinds.push(effect.kind);
       return [];
     }
-    if (!isWgpuRenderEffectResolvable(state, effect)) unresolvedIndexes.push(index);
+    if (!isWgpuEffectResolvable(state, effect)) unresolvedIndexes.push(index);
     return [{ effect, runner }];
   });
   // Reported BEFORE either early return, because both of them are the silent cases: a false return that
   // never wrote `dest` leaves whatever a consumer last sampled in place, which reads as a stale frame
   // rather than as a failed call.
-  reportWgpuRenderEffectApplication(state, {
+  reportWgpuEffectApplication(state, {
     registeredCount: operations.length,
     requestedCount: effects.length,
-    status: getWgpuRenderEffectApplicationStatus(
+    status: getWgpuEffectApplicationStatus(
       effects.length,
       operations.length,
       unresolvedIndexes.length,
@@ -80,24 +80,24 @@ export function applyWgpuRenderEffectsToRenderTexture(
 }
 
 /** Explains why an application did not do what the caller asked, as plain data. */
-export function explainWgpuRenderEffectApplication(
+export function explainWgpuEffectApplication(
   state: WgpuRenderState,
   source: Readonly<RenderTexture>,
   dest: Readonly<RenderTexture>,
   effects: ReadonlyArray<Readonly<RenderEffect>>,
-): WgpuRenderEffectApplicationExplanation {
+): WgpuEffectApplicationExplanation {
   const unregisteredKinds: string[] = [];
   const unresolvedIndexes: number[] = [];
   for (let index = 0; index < effects.length; index++) {
     const effect = effects[index];
-    if (getWgpuRenderEffectRunner(state, effect.kind) === null) unregisteredKinds.push(effect.kind);
-    else if (!isWgpuRenderEffectResolvable(state, effect)) unresolvedIndexes.push(index);
+    if (getWgpuEffectRunner(state, effect.kind) === null) unregisteredKinds.push(effect.kind);
+    else if (!isWgpuEffectResolvable(state, effect)) unresolvedIndexes.push(index);
   }
   const registeredCount = effects.length - unregisteredKinds.length;
   return {
     registeredCount,
     requestedCount: effects.length,
-    status: getWgpuRenderEffectApplicationStatus(
+    status: getWgpuEffectApplicationStatus(
       effects.length,
       registeredCount,
       unresolvedIndexes.length,
@@ -109,23 +109,20 @@ export function explainWgpuRenderEffectApplication(
   };
 }
 
-// The diagnostics seam. Core stays message-free; enableWgpuRenderEffectGuards installs the reporter that
+// The diagnostics seam. Core stays message-free; enableWgpuEffectGuards installs the reporter that
 // turns these observations into caller-facing warnings.
-export function setWgpuRenderEffectApplicationGuard(
-  state: WgpuRenderState,
-  guard: WgpuRenderEffectApplicationGuard | null,
-): void {
+export function setWgpuEffectApplicationGuard(state: WgpuRenderState, guard: WgpuEffectApplicationGuard | null): void {
   if (guard === null) _guards.delete(state);
   else _guards.set(state, guard);
 }
 
-function getWgpuRenderEffectApplicationStatus(
+function getWgpuEffectApplicationStatus(
   requestedCount: number,
   registeredCount: number,
   unresolvedCount: number,
   sourceAvailable: boolean,
   destinationAvailable: boolean,
-): WgpuRenderEffectApplicationStatus {
+): WgpuEffectApplicationStatus {
   // An empty chain is a no-op the caller asked for, NOT a miss — reporting it would train readers to
   // ignore the crumb. A ready destination is the highest-cost failed-call outcome, because consumers
   // keep sampling plausible pixels from an older application instead of an empty texture.
@@ -138,12 +135,12 @@ function getWgpuRenderEffectApplicationStatus(
   return unresolvedCount === registeredCount ? 'unresolved-effects' : 'partial-resolution';
 }
 
-function reportWgpuRenderEffectApplication(
+function reportWgpuEffectApplication(
   state: WgpuRenderState,
-  explanation: Readonly<WgpuRenderEffectApplicationExplanation>,
+  explanation: Readonly<WgpuEffectApplicationExplanation>,
 ): void {
   if (explanation.status === 'complete' || explanation.status === 'no-effects') return;
   _guards.get(state)?.(state, explanation);
 }
 
-const _guards = new WeakMap<WgpuRenderState, WgpuRenderEffectApplicationGuard>();
+const _guards = new WeakMap<WgpuRenderState, WgpuEffectApplicationGuard>();

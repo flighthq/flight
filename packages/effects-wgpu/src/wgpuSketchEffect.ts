@@ -1,13 +1,13 @@
 import type {
   SketchEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 
 // Sketch: detect luminance edges and invert them into dark pencil strokes over a light page; `strength`
 // scales how dark the strokes get.
@@ -27,12 +27,12 @@ export function applySketchEffectToWgpu(
   });
 }
 
-export const defaultWgpuSketchEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuSketchEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applySketchEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as SketchEffect);
 };
 
 export function registerWgpuSketchEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'SketchEffect', defaultWgpuSketchEffectRunner);
+  registerWgpuEffect(state, 'SketchEffect', defaultWgpuSketchEffectRunner);
 }
 
 // Slot layout: [0]=strength, [1]=pad, [2..3]=resolution.

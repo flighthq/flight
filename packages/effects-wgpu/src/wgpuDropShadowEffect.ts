@@ -1,7 +1,7 @@
 import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   DropShadowEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
   WgpuRenderTargetPool,
@@ -14,8 +14,8 @@ import {
 } from './wgpuEffectBlitShader';
 import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
 import { clearWgpuEffectTarget } from './wgpuEffectPass';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 import { applyWgpuEffectTintPass } from './wgpuEffectTintShader';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Drop-shadow composite effect: tint the scene silhouette, blur it, offset it by angle/distance, then apply sourceMode compositing.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
@@ -72,10 +72,10 @@ export function applyDropShadowEffectToWgpu(
   releaseWgpuTextureRenderTarget(pool, blurTemp);
 }
 
-export const defaultWgpuDropShadowEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuDropShadowEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyDropShadowEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as DropShadowEffect);
 };
 
 export function registerWgpuDropShadowEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'DropShadowEffect', defaultWgpuDropShadowEffectRunner);
+  registerWgpuEffect(state, 'DropShadowEffect', defaultWgpuDropShadowEffectRunner);
 }

@@ -40,7 +40,7 @@ import { applyColorLutPassToWgpu } from './wgpuColorLutPass';
 import { applyColorMatrixPassToWgpu } from './wgpuColorMatrixPass';
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
+import { getWgpuEffectRunner } from './wgpuEffectRegistry';
 
 // Opt-in post-process pipeline, the Wgpu mirror of effects-gl's effectState. The caller opens a
 // pass on the screen, then:
@@ -147,7 +147,7 @@ export function endWgpuEffectPass(
       pending.push(operation as Adjustment);
       continue;
     }
-    const runner = getWgpuRenderEffectRunner(state, operation.kind);
+    const runner = getWgpuEffectRunner(state, operation.kind);
     if (runner === null) {
       reportWgpuEffectStateSkip(state, operation.kind);
       continue;
@@ -173,7 +173,7 @@ export function endWgpuEffectPass(
   }
   flushAdjustments();
 
-  presentWgpuRenderEffectResult(state, source);
+  presentWgpuEffectResult(state, source);
   // The effect chain recorded its fullscreen passes beside the enclosing pass; hand that pass its
   // encoder back so the caller's own end closes a live bracket.
   const enclosing = getWgpuActiveRenderPass(state);
@@ -213,15 +213,15 @@ export function setWgpuEffectStateSampleCountGuard(
 
 // Sets the velocity G-buffer the pipeline feeds to velocity-driven effects this frame, or null to
 // clear it. The Wgpu mirror of setGlRenderEffectVelocityTexture.
-// The diagnostics seam. Core stays message-free; enableWgpuRenderEffectGuards installs the reporter that
-// turns a dropped effect into a caller-facing warning. Mirrors setWgpuRenderEffectApplicationGuard, which
+// The diagnostics seam. Core stays message-free; enableWgpuEffectGuards installs the reporter that
+// turns a dropped effect into a caller-facing warning. Mirrors setWgpuEffectApplicationGuard, which
 // covers the render-texture path — this one covers the pipeline path, where the drop is a bare `continue`.
 export function setWgpuEffectStateSkipGuard(state: WgpuRenderState, guard: WgpuEffectStateSkipGuard | null): void {
   if (guard === null) _skipGuards.delete(state);
   else _skipGuards.set(state, guard);
 }
 
-export function setWgpuRenderEffectVelocityTexture(pipeline: WgpuEffectState, texture: GPUTexture | null): void {
+export function setWgpuEffectVelocityTexture(pipeline: WgpuEffectState, texture: GPUTexture | null): void {
   pipeline.velocityTexture = texture;
 }
 
@@ -235,7 +235,7 @@ export function setWgpuRenderEffectVelocityTexture(pipeline: WgpuEffectState, te
 // computed back into the enclosing clear — tracking the clear colour exactly, 0x10 reading 16 and 0x40
 // reading 64, while WebGL wrote black. Canvas clears then draws 1:1 and Gl presents unblended; this is
 // the same contract.
-function presentWgpuRenderEffectResult(state: WgpuRenderState, source: Readonly<WgpuTextureRenderTarget>): void {
+function presentWgpuEffectResult(state: WgpuRenderState, source: Readonly<WgpuTextureRenderTarget>): void {
   const runtime = getWgpuRenderStateRuntime(state);
   if (runtime.commandEncoder === null) return;
   const linear = source.colorSpace === 'linear';

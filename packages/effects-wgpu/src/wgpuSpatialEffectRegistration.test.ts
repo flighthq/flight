@@ -2,7 +2,7 @@ import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-
 
 import * as contractEffects from './contract';
 import * as publicEffects from './index';
-import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
+import { getWgpuEffectRunner } from './wgpuEffectRegistry';
 
 beforeAll(() => {
   installWgpuMock();
@@ -65,7 +65,7 @@ describe('WGPU effect registration', () => {
 
     publicEffects[registerName](state);
 
-    expect(getWgpuRenderEffectRunner(state, kind)).toBe(contractEffects[runnerName]);
-    expect(getWgpuRenderEffectRunner(other, kind)).toBeNull();
+    expect(getWgpuEffectRunner(state, kind)).toBe(contractEffects[runnerName]);
+    expect(getWgpuEffectRunner(other, kind)).toBeNull();
   });
 });

@@ -1,14 +1,9 @@
-import type {
-  CrtEffect,
-  WgpuRenderEffectRunner,
-  WgpuRenderState,
-  WgpuTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { CrtEffect, WgpuEffectRunner, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // CRT: barrel-distort the uv (curvature), darken alternating scanlines, vignette the edges, and split
 // the channels outward (chromatic aberration) for a tube-monitor look.
@@ -34,12 +29,12 @@ export function applyCrtEffectToWgpu(
   });
 }
 
-export const defaultWgpuCrtEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuCrtEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyCrtEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as CrtEffect);
 };
 
 export function registerWgpuCrtEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'CrtEffect', defaultWgpuCrtEffectRunner);
+  registerWgpuEffect(state, 'CrtEffect', defaultWgpuCrtEffectRunner);
 }
 
 // Slot layout: [0]=curvature, [1]=scanlineIntensity, [2]=vignette, [3]=aberration, [4..5]=resolution.

@@ -529,7 +529,7 @@ describe('createWgpuRenderStateRuntime', () => {
     expect(runtime.registries.modifierSnippetRevision).toBe(0);
     expect(runtime.registries.renderEffects).toMatchObject({
       onMiss: 'Unregistered',
-      registry: 'WgpuRenderEffect',
+      registry: 'WgpuEffect',
       shape: 'keyed',
     });
     expect(runtime.registries.compressedTextureDecoder).toBeNull();

@@ -19,7 +19,7 @@ import {
 } from './wgpuBitmapDisplacementEffect';
 import * as wgpuEffectPass from './wgpuEffectPass';
 import * as wgpuEffectProgramCache from './wgpuEffectProgramCache';
-import { getWgpuRenderEffectRunner, isWgpuRenderEffectResolvable } from './wgpuRenderEffectRegistry';
+import { getWgpuEffectRunner, isWgpuEffectResolvable } from './wgpuEffectRegistry';
 
 const sourceView = {} as GPUTextureView;
 const mapView = {} as GPUTextureView;
@@ -177,9 +177,9 @@ describe('registerWgpuBitmapDisplacementEffect', () => {
     const registeredState = await createWgpuRenderStateForTest();
 
     registerWgpuBitmapDisplacementEffect(registeredState);
-    expect(getWgpuRenderEffectRunner(registeredState, 'BitmapDisplacementEffect')).toBe(
+    expect(getWgpuEffectRunner(registeredState, 'BitmapDisplacementEffect')).toBe(
       defaultWgpuBitmapDisplacementEffectRunner,
     );
-    expect(isWgpuRenderEffectResolvable(registeredState, effect({ map: null }))).toBe(false);
+    expect(isWgpuEffectResolvable(registeredState, effect({ map: null }))).toBe(false);
   });
 });

@@ -7,7 +7,7 @@ import type {
   Sampler,
   TextureFilter,
   WgpuEffectPipeline,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
@@ -15,7 +15,7 @@ import { ImageChannel } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass, EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 
 export function applyBitmapDisplacementEffectToWgpu(
   state: WgpuRenderState,
@@ -78,7 +78,7 @@ export function applyBitmapDisplacementEffectToWgpu(
   pass.end();
 }
 
-export const defaultWgpuBitmapDisplacementEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuBitmapDisplacementEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyBitmapDisplacementEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as BitmapDisplacementEffect);
 };
 
@@ -102,7 +102,7 @@ export function isWgpuBitmapDisplacementEffectResolvable(
 }
 
 export function registerWgpuBitmapDisplacementEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(
+  registerWgpuEffect(
     state,
     'BitmapDisplacementEffect',
     defaultWgpuBitmapDisplacementEffectRunner,

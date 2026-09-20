@@ -5,7 +5,7 @@ import {
   getBitmapCoverage,
   getBitmapPixel,
 } from '@flighthq/bitmap/contract';
-import { enableWgpuRenderEffectGuards } from '@flighthq/effects-wgpu/contract';
+import { enableWgpuEffectGuards } from '@flighthq/effects-wgpu/contract';
 import { createWebBitmapFromCanvas } from '@flighthq/host-web/contract';
 import {
   createBitmapFromWgpuScreenRenderTarget,
@@ -187,7 +187,7 @@ export function registerWgpuFunctionalTarget(state: WgpuRenderState, screen: Wgp
   // state instead of going through the harness — which is where the sampleCount requests live. Without
   // this, `createWgpuEffectState` downgrades a requested sampleCount of 4 to 1 in silence, and
   // a capture of a scene that asked for MSAA is indistinguishable from one that got it.
-  enableWgpuRenderEffectGuards(state);
+  enableWgpuEffectGuards(state);
   registerFunctionalTarget({
     kind: 'webgpu',
     screen,

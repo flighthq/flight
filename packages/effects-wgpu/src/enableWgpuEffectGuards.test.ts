@@ -16,38 +16,34 @@ import {
   installWgpuMock,
   writeWgpuRenderTextureTarget,
 } from '@flighthq/render-wgpu/contract';
-import type { LogEntry, RenderEffect, WgpuRenderEffectRunner, WgpuRenderState } from '@flighthq/types/contract';
+import type { LogEntry, RenderEffect, WgpuEffectRunner, WgpuRenderState } from '@flighthq/types/contract';
 
-import {
-  areWgpuRenderEffectGuardsEnabled,
-  disableWgpuRenderEffectGuards,
-  enableWgpuRenderEffectGuards,
-} from './enableWgpuRenderEffectGuards';
+import { areWgpuEffectGuardsEnabled, disableWgpuEffectGuards, enableWgpuEffectGuards } from './enableWgpuEffectGuards';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 import { beginWgpuEffectPass, createWgpuEffectState, endWgpuEffectPass } from './wgpuEffectState';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
-import { applyWgpuRenderEffectsToRenderTexture } from './wgpuRenderTextureEffect';
+import { applyWgpuEffectsToRenderTexture } from './wgpuRenderTextureEffect';
 
 beforeAll(() => installWgpuMock());
 beforeEach(() => clearLogOnceKeys());
 
-describe('areWgpuRenderEffectGuardsEnabled', () => {
+describe('areWgpuEffectGuardsEnabled', () => {
   it('reports whether diagnostics were installed for the state', async () => {
     const state = await createWgpuRenderStateForTest();
-    expect(areWgpuRenderEffectGuardsEnabled(state)).toBe(false);
+    expect(areWgpuEffectGuardsEnabled(state)).toBe(false);
 
-    enableWgpuRenderEffectGuards(state);
-    expect(areWgpuRenderEffectGuardsEnabled(state)).toBe(true);
+    enableWgpuEffectGuards(state);
+    expect(areWgpuEffectGuardsEnabled(state)).toBe(true);
 
-    disableWgpuRenderEffectGuards(state);
-    expect(areWgpuRenderEffectGuardsEnabled(state)).toBe(false);
+    disableWgpuEffectGuards(state);
+    expect(areWgpuEffectGuardsEnabled(state)).toBe(false);
   });
 });
 
-describe('disableWgpuRenderEffectGuards', () => {
+describe('disableWgpuEffectGuards', () => {
   it('stops reporting, leaving the silent sentinel silent again', async () => {
     const state = await createWgpuRenderStateForTest();
-    enableWgpuRenderEffectGuards(state);
-    disableWgpuRenderEffectGuards(state);
+    enableWgpuEffectGuards(state);
+    disableWgpuEffectGuards(state);
 
     const entries = captureLog(() => {
       expect(applyChain(state, ['test.wgpu-disabled-kind'])).toBe(false);
@@ -57,12 +53,12 @@ describe('disableWgpuRenderEffectGuards', () => {
   });
 });
 
-describe('enableWgpuRenderEffectGuards', () => {
+describe('enableWgpuEffectGuards', () => {
   // logOnce suppresses a key until the next test reset. Both the fire and silence assertions still live
   // in one test, in order, so the once-per-key behavior itself remains observable.
   it('WARNS that an unregistered chain returned false without writing dest, then stays quiet', async () => {
     const state = await createWgpuRenderStateForTest();
-    enableWgpuRenderEffectGuards(state);
+    enableWgpuEffectGuards(state);
 
     const entries = captureLog(() => {
       expect(applyChain(state, ['test.wgpu-unregistered-a'])).toBe(false);
@@ -70,7 +66,7 @@ describe('enableWgpuRenderEffectGuards', () => {
 
     expect(entries).toHaveLength(1);
     expect(messageOf(entries[0])).toContain('NEVER WRITTEN');
-    expect(messageOf(entries[0])).toContain('registerWgpuRenderEffect');
+    expect(messageOf(entries[0])).toContain('registerWgpuEffect');
 
     const again = captureLog(() => {
       expect(applyChain(state, ['test.wgpu-unregistered-a'])).toBe(false);
@@ -81,8 +77,8 @@ describe('enableWgpuRenderEffectGuards', () => {
 
   it('WARNS that a partially registered chain silently DROPPED the effects it could not run', async () => {
     const state = await createWgpuRenderStateForTest();
-    enableWgpuRenderEffectGuards(state);
-    registerWgpuRenderEffect(state, 'test.wgpu-registered-b', noopRunner);
+    enableWgpuEffectGuards(state);
+    registerWgpuEffect(state, 'test.wgpu-registered-b', noopRunner);
 
     const entries = captureLog(() => {
       expect(applyChain(state, ['test.wgpu-registered-b', 'test.wgpu-unregistered-b'])).toBe(true);
@@ -95,7 +91,7 @@ describe('enableWgpuRenderEffectGuards', () => {
 
   it('WARNS that a pipeline pass DROPPED an effect kind with no runner, once per kind', async () => {
     const state = await createWgpuRenderStateForTest();
-    enableWgpuRenderEffectGuards(state);
+    enableWgpuEffectGuards(state);
     const pipeline = createWgpuEffectState(state);
     const chain = [
       (() => {
@@ -128,7 +124,7 @@ describe('enableWgpuRenderEffectGuards', () => {
 
   it('WARNS once when an unsupported sample count is substituted', async () => {
     const state = await createWgpuRenderStateForTest();
-    enableWgpuRenderEffectGuards(state);
+    enableWgpuEffectGuards(state);
 
     let pipeline = createWgpuEffectState(state);
     const entries = captureLog(() => {
@@ -147,7 +143,7 @@ describe('enableWgpuRenderEffectGuards', () => {
 
   it('stays SILENT when the requested sample counts are supported', async () => {
     const state = await createWgpuRenderStateForTest();
-    enableWgpuRenderEffectGuards(state);
+    enableWgpuEffectGuards(state);
 
     const entries = captureLog(() => {
       expect(createWgpuEffectState(state, { sampleCount: 1 }).options.sampleCount).toBe(1);
@@ -159,7 +155,7 @@ describe('enableWgpuRenderEffectGuards', () => {
 
   it('stays SILENT for an empty chain, which is a no-op the caller asked for rather than a miss', async () => {
     const state = await createWgpuRenderStateForTest();
-    enableWgpuRenderEffectGuards(state);
+    enableWgpuEffectGuards(state);
 
     const entries = captureLog(() => {
       expect(applyChain(state, [])).toBe(false);
@@ -170,8 +166,8 @@ describe('enableWgpuRenderEffectGuards', () => {
 
   it('stays SILENT when every requested effect has a runner', async () => {
     const state = await createWgpuRenderStateForTest();
-    enableWgpuRenderEffectGuards(state);
-    registerWgpuRenderEffect(state, 'test.wgpu-registered-c', noopRunner);
+    enableWgpuEffectGuards(state);
+    registerWgpuEffect(state, 'test.wgpu-registered-c', noopRunner);
 
     const entries = captureLog(() => {
       expect(applyChain(state, ['test.wgpu-registered-c'])).toBe(true);
@@ -196,7 +192,7 @@ function applyChain(state: WgpuRenderState, kinds: readonly string[]): boolean {
         return finishEntity(out) as unknown;
       })() as Readonly<RenderEffect>,
   );
-  return applyWgpuRenderEffectsToRenderTexture(state, pool, source, dest, scratch, effects);
+  return applyWgpuEffectsToRenderTexture(state, pool, source, dest, scratch, effects);
 }
 
 function captureLog(run: () => void): readonly LogEntry[] {
@@ -215,4 +211,4 @@ function messageOf(entry: Readonly<LogEntry>): string {
   return typeof data === 'string' ? data : String(data.message);
 }
 
-const noopRunner: WgpuRenderEffectRunner = () => {};
+const noopRunner: WgpuEffectRunner = () => {};

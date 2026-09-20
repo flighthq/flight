@@ -20,7 +20,7 @@ import {
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
-  enableWgpuRenderEffectGuards,
+  enableWgpuEffectGuards,
   endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelRgb,
@@ -73,7 +73,7 @@ export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgp
 const screenClear = { color: [0x20 / 0xff, 0x28 / 0xff, 0x30 / 0xff, 1], depth: 1.0 } as const;
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
 registerWgpuPosterizeEffect(state);
-enableWgpuRenderEffectGuards(state);
+enableWgpuEffectGuards(state);
 
 const pipeline = createWgpuEffectState(state, { sampleCount: 1 });
 

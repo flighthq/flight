@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   GradientBevelEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
   WgpuRenderTargetPool,
@@ -14,8 +14,8 @@ import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectB
 import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
 import { getWgpuEffectGradientRampTexture } from './wgpuEffectGradientRamp';
 import { clearWgpuEffectTarget, EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 import { applyWgpuEffectTintPass } from './wgpuEffectTintShader';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Gradient-bevel composite effect: a bevel whose highlight→shadow band color is looked up from a colors/alphas/ratios gradient ramp indexed by the encoded bevel depth, then sourceMode decides source compositing.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
@@ -124,12 +124,12 @@ export function applyGradientBevelEffectToWgpu(
   releaseWgpuTextureRenderTarget(pool, s2);
 }
 
-export const defaultWgpuGradientBevelEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuGradientBevelEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyGradientBevelEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as GradientBevelEffect);
 };
 
 export function registerWgpuGradientBevelEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'GradientBevelEffect', defaultWgpuGradientBevelEffectRunner);
+  registerWgpuEffect(state, 'GradientBevelEffect', defaultWgpuGradientBevelEffectRunner);
 }
 
 // Samples the blurred alpha at +offset and -offset to compute a bevel value

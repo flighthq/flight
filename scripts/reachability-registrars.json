@@ -587,7 +587,7 @@
     },
     {
       "packageName": "effects-wgpu",
-      "registrar": "registerWgpuRenderEffect"
+      "registrar": "registerWgpuEffect"
     },
     {
       "packageName": "effects-wgpu",

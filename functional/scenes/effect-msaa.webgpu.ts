@@ -19,7 +19,7 @@ import {
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
-  enableWgpuRenderEffectGuards,
+  enableWgpuEffectGuards,
   endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelRgb,
@@ -66,7 +66,7 @@ export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgp
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 1.0 } as const;
 registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
-enableWgpuRenderEffectGuards(state);
+enableWgpuEffectGuards(state);
 
 const pipeline = createWgpuEffectState(state, { sampleCount: 4 });
 

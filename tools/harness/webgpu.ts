@@ -34,7 +34,7 @@ import {
   enableWgpuBlendModeSupport,
   enableWgpuClipSupport,
   enableWgpuRenderCache,
-  enableWgpuRenderEffectGuards,
+  enableWgpuEffectGuards,
   enableWgpuScreenRenderTargetCapture,
   enableWgpuStrokePathTessellation,
   endWgpuRenderPass,
@@ -107,7 +107,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   // enableFlightDiagnostics lives in @flighthq/debug and cannot reach a backend package, so the WGPU
   // effect guards are wired here so a requested sample count outside WGPU's supported 1/4 values is
   // reported together with the applied substitution.
-  enableWgpuRenderEffectGuards(state);
+  enableWgpuEffectGuards(state);
   // Frame capture lets the verifier read the rendered frame back from the GPU; canvas presentation is
   // unavailable on the headless/software adapter, so this is the only path to the pixels.
   enableWgpuScreenRenderTargetCapture(screen);

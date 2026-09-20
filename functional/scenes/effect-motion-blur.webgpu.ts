@@ -38,8 +38,8 @@ import {
   registerWgpuVelocityWriter,
   renderWgpuScene2D,
   renderWgpuVelocity,
+  setWgpuEffectVelocityTexture,
   defaultScene3DWgpuRenderRegistries,
-  setWgpuRenderEffectVelocityTexture,
   ShapeKind,
   createWgpuSurface,
   setSurfaceDisplaySize,
@@ -109,7 +109,7 @@ export function render(root: Node2D): void {
 
   const pass = beginWgpuRenderPass(state, screen, screenClear);
   renderWgpuVelocity(state, root, velocityField, velocityTarget);
-  setWgpuRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
+  setWgpuEffectVelocityTexture(pipeline, velocityTarget.texture);
 
   const scenePass = beginWgpuEffectPass(pass, pipeline, screenClear);
   renderWgpuScene2D(scenePass, root);

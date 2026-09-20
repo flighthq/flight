@@ -41,12 +41,12 @@ beforeEach(() => {
 
 afterEach(() => vi.restoreAllMocks());
 
+import { getWgpuEffectRunner } from './wgpuEffectRegistry';
 import {
   applyRadialBlurEffectToWgpu,
   defaultWgpuRadialBlurEffectRunner,
   registerWgpuRadialBlurEffect,
 } from './wgpuRadialBlurEffect';
-import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
 
 beforeAll(() => installWgpuMock());
 
@@ -134,8 +134,8 @@ describe('registerWgpuRadialBlurEffect', () => {
   it('makes the runner resolvable for the RadialBlurEffect kind', async () => {
     const state = await createWgpuRenderStateForTest();
 
-    expect(getWgpuRenderEffectRunner(state, 'RadialBlurEffect')).toBeNull();
+    expect(getWgpuEffectRunner(state, 'RadialBlurEffect')).toBeNull();
     registerWgpuRadialBlurEffect(state);
-    expect(getWgpuRenderEffectRunner(state, 'RadialBlurEffect')).toBe(defaultWgpuRadialBlurEffectRunner);
+    expect(getWgpuEffectRunner(state, 'RadialBlurEffect')).toBe(defaultWgpuRadialBlurEffectRunner);
   });
 });

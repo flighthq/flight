@@ -2,7 +2,7 @@ import { unpackColorRgba } from '@flighthq/color/contract';
 import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   InnerGlowEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
   WgpuRenderTargetPool,
@@ -11,8 +11,8 @@ import type {
 import { applyWgpuEffectBlitPass } from './wgpuEffectBlitShader';
 import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
 import { clearWgpuEffectTarget } from './wgpuEffectPass';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 import { applyWgpuEffectInnerClipPass, applyWgpuEffectInvertTintPass } from './wgpuEffectTintShader';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Inner-glow composite effect: tint the inverted silhouette, blur inward, clip to the source alpha, then apply draw/hide source compositing.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
@@ -57,12 +57,12 @@ export function applyInnerGlowEffectToWgpu(
   releaseWgpuTextureRenderTarget(pool, s2);
 }
 
-export const defaultWgpuInnerGlowEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuInnerGlowEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyInnerGlowEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as InnerGlowEffect);
 };
 
 export function registerWgpuInnerGlowEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'InnerGlowEffect', defaultWgpuInnerGlowEffectRunner);
+  registerWgpuEffect(state, 'InnerGlowEffect', defaultWgpuInnerGlowEffectRunner);
 }
 
 function getInvertTintEdgeColor(

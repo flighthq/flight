@@ -1,4 +1,4 @@
-import { hasWgpuRenderEffectRunner } from '@flighthq/effects-wgpu/contract';
+import { hasWgpuEffectRunner } from '@flighthq/effects-wgpu/contract';
 import {
   webHostWgpuContext,
   appendWebSurface,
@@ -145,7 +145,7 @@ function measureHighFrequency(frame: Readonly<Bitmap>): number {
 // range means most of the frame is blurred, significantly reducing HF energy from the original
 // ~3-4 to below 2. Without the effect, sharp edges keep HF above 2 and the check fails.
 export function assertRender(frame: Readonly<Bitmap>): void {
-  if (hasWgpuRenderEffectRunner(state, 'BokehDepthOfFieldEffect')) {
+  if (hasWgpuEffectRunner(state, 'BokehDepthOfFieldEffect')) {
     throw new Error(
       '[effect-bokeh-dof] Wgpu now has a registered bokeh runner — update this control cell and its ' +
         'description, which both say that capability is absent',

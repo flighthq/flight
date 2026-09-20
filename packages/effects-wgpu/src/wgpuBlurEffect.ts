@@ -1,15 +1,10 @@
 import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
-import type {
-  BlurEffect,
-  WgpuRenderEffectRunner,
-  WgpuRenderState,
-  WgpuTextureRenderTarget,
-} from '@flighthq/types/contract';
+import type { BlurEffect, WgpuEffectRunner, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 import { getWgpuEffectLogicalWidth, getWgpuRenderTargetTexelScale } from './wgpuEffectTexelScale';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 export { getWgpuRenderTargetTexelScale } from './wgpuEffectTexelScale';
 
@@ -63,7 +58,7 @@ export function applyGaussianBlurToWgpu(
   applyWgpuGaussianBlurPass(state, temp, dest, sigmaY, radiusY, 0, 1);
 }
 
-export const defaultWgpuBlurEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuBlurEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   const descriptor = { width: ctx.source.width, height: ctx.source.height, format: ctx.source.format };
   const temp = acquireWgpuTextureRenderTarget(ctx.state, ctx.pool, descriptor);
   applyBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, temp, effect as BlurEffect);
@@ -71,7 +66,7 @@ export const defaultWgpuBlurEffectRunner: WgpuRenderEffectRunner = (ctx, effect)
 };
 
 export function registerWgpuBlurEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'BlurEffect', defaultWgpuBlurEffectRunner);
+  registerWgpuEffect(state, 'BlurEffect', defaultWgpuBlurEffectRunner);
 }
 
 function applyWgpuGaussianBlurPass(

@@ -1,13 +1,13 @@
 import type {
   GodRaysEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 
 // God rays: radial light scattering from a screen-space light position (centerX, centerY). Marches
 // SAMPLES steps along the ray from each fragment toward the light, accumulating color with per-step
@@ -47,12 +47,12 @@ export function applyGodRaysEffectToWgpu(
   });
 }
 
-export const defaultWgpuGodRaysEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuGodRaysEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyGodRaysEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as GodRaysEffect);
 };
 
 export function registerWgpuGodRaysEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'GodRaysEffect', defaultWgpuGodRaysEffectRunner);
+  registerWgpuEffect(state, 'GodRaysEffect', defaultWgpuGodRaysEffectRunner);
 }
 
 function buildGodRaysFragment(samples: number): string {

@@ -1,13 +1,13 @@
 import type {
   OutlineEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 
 // Outline: Sobel edge detection on luminance; where the gradient magnitude exceeds `threshold`, mix
 // the pixel toward the outline color by `thickness`. Color arrives packed RGBA, unpacked to 0..1 here.
@@ -39,12 +39,12 @@ export function applyOutlineEffectToWgpu(
   });
 }
 
-export const defaultWgpuOutlineEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuOutlineEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyOutlineEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as OutlineEffect);
 };
 
 export function registerWgpuOutlineEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'OutlineEffect', defaultWgpuOutlineEffectRunner);
+  registerWgpuEffect(state, 'OutlineEffect', defaultWgpuOutlineEffectRunner);
 }
 
 // Slot layout: [0]=threshold, [1]=thickness, [2..3]=resolution, [4..7]=color rgba.

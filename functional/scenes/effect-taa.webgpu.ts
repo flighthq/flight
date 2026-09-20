@@ -1,4 +1,4 @@
-import { hasWgpuRenderEffectRunner } from '@flighthq/effects-wgpu/contract';
+import { hasWgpuEffectRunner } from '@flighthq/effects-wgpu/contract';
 import {
   webHostWgpuContext,
   appendWebSurface,
@@ -117,7 +117,7 @@ render(root);
 // should retain high luminance (> 200) after the TAA pass, verifying the pipeline processes content
 // correctly. Without the pipeline, the frame is blank.
 export function assertRender(frame: Readonly<Bitmap>): void {
-  if (hasWgpuRenderEffectRunner(state, 'TaaEffect')) {
+  if (hasWgpuEffectRunner(state, 'TaaEffect')) {
     throw new Error(
       '[effect-taa] Wgpu now has a registered TAA runner — update this control cell and its description, ' +
         'which both say that capability is absent',

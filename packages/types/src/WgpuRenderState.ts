@@ -17,7 +17,7 @@ import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploa
 import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource';
 import type { WgpuDeviceRuntime } from './WgpuDeviceRuntime';
 import type { WgpuDeviceState } from './WgpuDeviceState';
-import type { WgpuRenderEffectRegistration } from './WgpuEffectState';
+import type { WgpuEffectRegistration } from './WgpuEffectState';
 import type { WgpuMaterialRenderer } from './WgpuMaterialRenderer';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
 import type { WgpuModifierSnippet } from './WgpuModifierSnippet';
@@ -72,7 +72,7 @@ export interface WgpuRenderRegistries extends RenderRegistries {
   // Shader cache identity advances with every snippet-table replacement, including same-kind
   // replacements whose define signature is unchanged but whose emitted source differs.
   modifierSnippetRevision: number;
-  renderEffects: KeyedTable<WgpuRenderEffectRegistration>;
+  renderEffects: KeyedTable<WgpuEffectRegistration>;
   shapeRasterizer: SlotTable<ShapeRasterizer> | null;
   textureResolvers: KeyedTable<WgpuTextureResolver>;
   velocityWriters: KeyedTable<WgpuVelocityWriter>;
