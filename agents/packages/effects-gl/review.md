@@ -34,7 +34,7 @@ Grounded in `packages/effects-gl/src/` (59 source files, ~10,900 lines; 57 test 
 
 ### Per-kind runners (47 registered kinds)
 
-Each effect matches the pattern: `apply<Name>EffectToGl` (the direct-call function), `defaultGl<Name>EffectRunner` (the registry-shaped adapter), and `registerGl<Name>Effect` (the one-call registrar). Kinds grouped by band:
+Each effect matches the pattern: `apply<Name>EffectToGl` (the direct-call function), `gl<Name>EffectRunner` (the registry-shaped adapter), and `registerGl<Name>Effect` (the one-call registrar). Kinds grouped by band:
 
 **Antialiasing** (2): FXAA (single-pass luma-edge), SMAA (single-pass edge-aware blur -- stand-in, see Gaps).
 

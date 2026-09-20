@@ -73,12 +73,12 @@ The untouched tree produced this exact output:
 OK Built-in runners and per-kind registrars are exact inverses
 
 ! 12 reachability lane changes (non-blocking)
-  + effects-canvas defaultCanvasBevelEffectRunner absent → . + ./contract
-  + effects-canvas defaultCanvasCompositeEffectRunner absent → . + ./contract
-  + effects-canvas defaultCanvasGradientBevelEffectRunner absent → . + ./contract
-  + effects-canvas defaultCanvasGradientGlowEffectRunner absent → . + ./contract
-  + effects-canvas defaultCanvasInnerGlowEffectRunner absent → . + ./contract
-  + effects-canvas defaultCanvasInnerShadowEffectRunner absent → . + ./contract
+  + effects-canvas canvasBevelEffectRunner absent → . + ./contract
+  + effects-canvas canvasCompositeEffectRunner absent → . + ./contract
+  + effects-canvas canvasGradientBevelEffectRunner absent → . + ./contract
+  + effects-canvas canvasGradientGlowEffectRunner absent → . + ./contract
+  + effects-canvas canvasInnerGlowEffectRunner absent → . + ./contract
+  + effects-canvas canvasInnerShadowEffectRunner absent → . + ./contract
   + effects-canvas registerCanvasBevelEffect absent → . + ./contract
   + effects-canvas registerCanvasCompositeEffect absent → . + ./contract
   + effects-canvas registerCanvasGradientBevelEffect absent → . + ./contract
@@ -97,12 +97,12 @@ After adding the two public exports, the command produced the same exact output:
 OK Built-in runners and per-kind registrars are exact inverses
 
 ! 12 reachability lane changes (non-blocking)
-  + effects-canvas defaultCanvasBevelEffectRunner absent → . + ./contract
-  + effects-canvas defaultCanvasCompositeEffectRunner absent → . + ./contract
-  + effects-canvas defaultCanvasGradientBevelEffectRunner absent → . + ./contract
-  + effects-canvas defaultCanvasGradientGlowEffectRunner absent → . + ./contract
-  + effects-canvas defaultCanvasInnerGlowEffectRunner absent → . + ./contract
-  + effects-canvas defaultCanvasInnerShadowEffectRunner absent → . + ./contract
+  + effects-canvas canvasBevelEffectRunner absent → . + ./contract
+  + effects-canvas canvasCompositeEffectRunner absent → . + ./contract
+  + effects-canvas canvasGradientBevelEffectRunner absent → . + ./contract
+  + effects-canvas canvasGradientGlowEffectRunner absent → . + ./contract
+  + effects-canvas canvasInnerGlowEffectRunner absent → . + ./contract
+  + effects-canvas canvasInnerShadowEffectRunner absent → . + ./contract
   + effects-canvas registerCanvasBevelEffect absent → . + ./contract
   + effects-canvas registerCanvasCompositeEffect absent → . + ./contract
   + effects-canvas registerCanvasGradientBevelEffect absent → . + ./contract
@@ -113,7 +113,7 @@ OK Built-in runners and per-kind registrars are exact inverses
 ```
 
 `scripts/reachability-baseline.json` tracks scene2d-dom renderer and registrar reachability, including
-the contract-only `defaultDomRenderCacheRenderer` and `defaultDomScene2DRenderer`, but contains none of
+the contract-only `domRenderCacheRenderer` and `domScene2DRenderer`, but contains none of
 the CSS-filter symbols. The check's silence before and after the repair is therefore a coverage hole,
 not evidence that the old placement had been deliberately accepted. The unrelated `effects-canvas`
 changes were not baselined.

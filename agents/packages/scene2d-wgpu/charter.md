@@ -16,13 +16,13 @@ status: ./status.md
 
 The WebGPU per-subject leaf-renderer set for 2D display objects: the GPU backend that draws every 2D display-object kind — bitmap, shape (incl. scale9), sprite / quad-batch, tilemap, particle emitter, text label, rich text, video, render-cache — into a `WgpuRenderState` over `render-wgpu` / `render`. It is one cell in the `<subject>-<backend>` render layering: subject-agnostic GPU plumbing lives below in `render-wgpu`; this package is the wgpu half of the display-object subject, the twin of `scene2d-gl` (GL) and the host-web-only `scene2d-canvas` / `scene2d-dom`.
 
-It owns the wgpu side of: instanced sprite batching, tessellated-mesh shape rendering, scissor + stencil clipping, off-screen render-cache targets, color-transform materials, a per-state velocity-writer registry, a text-input overlay seam, and a per-frame stats surface. It does **not** own the GPU device/surface/shader plumbing (that is `render-wgpu`), the backend-agnostic update pipeline and registration core (`render`), or the shape-command IR (shared from `scene2d-canvas` and re-exported under `defaultWgpu*` aliases).
+It owns the wgpu side of: instanced sprite batching, tessellated-mesh shape rendering, scissor + stencil clipping, off-screen render-cache targets, color-transform materials, a per-state velocity-writer registry, a text-input overlay seam, and a per-frame stats surface. It does **not** own the GPU device/surface/shader plumbing (that is `render-wgpu`), the backend-agnostic update pipeline and registration core (`render`), or the shape-command IR (shared from `scene2d-canvas` and re-exported under `wgpu*` aliases).
 
 ## North star
 
 _Proposed from the design + the structural forks. Edit or reject in review._
 
-- **Full 2D display-object kind coverage on wgpu.** Every kind the unified 2D graph can hold draws through a `defaultWgpu*Renderer`; a kind that renders on Canvas/GL but silently no-ops on wgpu is a gap to close, not an acceptable asymmetry.
+- **Full 2D display-object kind coverage on wgpu.** Every kind the unified 2D graph can hold draws through a `wgpu*Renderer`; a kind that renders on Canvas/GL but silently no-ops on wgpu is a gap to close, not an acceptable asymmetry.
 - **A leaf over the GPU core, not a GPU engine.** Device, surface, shaders, targets, and present belong to `render-wgpu`; this package consumes that plumbing and adds only per-subject draw logic. When a feature needs new GPU plumbing (MSAA, texture-upload accounting), the plumbing lands below and this package wires to it.
 - **Registry over closed union (fork B).** Renderer registration and the velocity-writer subsystem are open `Map`-keyed registries, opt-in behind `register*` / `enable*` functions, never a closed `switch(kind)`. The lone closed branch (blend dispatch) is a hot-loop concession that becomes a registry only if the taxonomy grows enough to warrant it.
 - **Side-effect-free, single-root, opt-in.** `"sideEffects": false`, one `.` export, no top-level `registerRenderer`; all registration and subsystem enablement is a function the caller invokes by name. A 2D wgpu app pulls in only the kinds it registers.

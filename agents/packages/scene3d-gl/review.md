@@ -45,7 +45,7 @@ together they represent the largest concentration of correctness debt in the pac
   slots), matcap, toon, unlit, emissive, depth, normal, vertex-color, wireframe, and custom-shader.
   Each family has its own renderer, prelude, and colocated test.
 - **PBR extension registry.** `registerGlPbrExtension` adds an extension by `Kind` into a
-  state-hosted registry table. `extendedPbrGlMeshMaterialRenderer` resolves contributions at bind
+  state-hosted registry table. `glExtendedPbrMeshMaterialRenderer` resolves contributions at bind
   time, compiles an uber-shader variant keyed by extension contribution keys plus the standard
   map/alpha flags, and binds each extension through a typed `GlPbrExtensionBindContext`. Seven
   registered extensions: anisotropy, clearcoat, iridescence, sheen, specular, transmission-volume,
@@ -120,7 +120,7 @@ together they represent the largest concentration of correctness debt in the pac
   glPbrPrelude.ts -- the isotropic Smith term. The distribution stretches by anisotropy but the
   shadowing/masking term does not, producing incorrect energy balance under strong anisotropy.
 - **Specular-glossiness drops its packed map.** The renderer converts scalar factors but passes
-  `metallicRoughnessMap: null` (specularGlossinessPbrGlMeshMaterialRenderer.ts:111). An asset
+  `metallicRoughnessMap: null` (glSpecularGlossinessPbrMeshMaterialRenderer.ts:111). An asset
   whose glossiness varies per texel renders with uniform roughness. The code comments this
   explicitly (lines 39-41); the texture workflow remains unimplemented.
 - **Transparent meshes and transparent particles do not share one depth order.**

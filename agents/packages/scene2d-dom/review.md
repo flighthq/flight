@@ -26,7 +26,7 @@ tree and never did. Specifically: `enableDomAccessibility` / `getDomAccessibilit
 `setDomAccessibilityDescriptor` (the accessibility seam), `hasDomCssFilterEquivalent` (CSS
 filter equivalence query), `getDomSvgColorMatrixFilter` / `releaseDomSvgColorMatrixFilter` /
 `domSvgFilter.ts` (the SVG color-matrix exact-filter path), and
-`defaultDomDisplayObjectRenderer` (actually named `defaultDomScene2DRenderer`). The
+`domDisplayObjectRenderer` (actually named `domScene2DRenderer`). The
 `public-lane-audit.md` (ingested this pass) independently confirms all of these are absent. The
 prior review's claimed 27 test files covering accessibility/SVG-filter modules likewise cannot
 be verified.
@@ -41,13 +41,13 @@ quality.
 Verified against `packages/scene2d-dom/src/` on 2026-09-02. File contents read in full.
 
 - **Full 2D leaf renderer coverage.** Nine `Scene2DRenderer` objects spanning the intended leaf
-  set: `defaultDomShapeRenderer` + `defaultDomMorphShapeRenderer` (alias, `domShape.ts`),
-  `defaultDomSpriteRenderer` (`domSprite.ts` -- handles Image, Video, and canvas-backed
-  cropped-source paths), `defaultDomScale9ShapeRenderer` (`domScale9Shape.ts`),
-  `defaultDomRichTextRenderer` (`domRichText.ts`), `defaultDomTextLabelRenderer`
-  (`domTextLabel.ts`), `defaultDomNativeTextRenderer` (`domNativeText.ts`),
-  `defaultDomHtmlViewRenderer` (`domHtmlView.ts`), `defaultDomScene2DRenderer` (no-op
-  container, `domNode2D.ts`), and `defaultDomRenderCacheRenderer` (`domCache.ts`). No
+  set: `domShapeRenderer` + `domMorphShapeRenderer` (alias, `domShape.ts`),
+  `domSpriteRenderer` (`domSprite.ts` -- handles Image, Video, and canvas-backed
+  cropped-source paths), `domScale9ShapeRenderer` (`domScale9Shape.ts`),
+  `domRichTextRenderer` (`domRichText.ts`), `domTextLabelRenderer`
+  (`domTextLabel.ts`), `domNativeTextRenderer` (`domNativeText.ts`),
+  `domHtmlViewRenderer` (`domHtmlView.ts`), `domScene2DRenderer` (no-op
+  container, `domNode2D.ts`), and `domRenderCacheRenderer` (`domCache.ts`). No
   separate Video renderer -- video textures route through the sprite renderer as
   `HTMLVideoElement` sources via `renderSpriteAsVideo`.
 

@@ -18,7 +18,7 @@ ingested:
 
 Since the prior review (2026-08-25, score 94), the blend-mode surface has expanded from Normal + Add to the full fixed-function set (Normal, Add, Multiply, Screen, Darken, Lighten) -- realized in `render-wgpu`'s `getWgpuBlendState` and consumed here through pipeline-keyed dispatch. The prior review's "Normal + Add only" gap is now closed for the fixed-function tier. Several status-documented gaps remain (color-matrix on shape meshes, stats surface unwired, no coverage query, raster-only text, borrowed shape commands), all externally gated and accurately reported. Score lowered from 94 to 92 to correct for the prior review's false video-renderer claim and the continued absence of stats wiring.
 
-The prior review listed "video" as a present capability with a `defaultWgpuVideoRenderer`. No `wgpuVideo.ts` exists in `src/`, `VideoKind` is not defined in `@flighthq/types`, and `scene2dWgpuPipeline.ts` registers no video kind. Video rendering is not a capability of this package.
+The prior review listed "video" as a present capability with a `wgpuVideoRenderer`. No `wgpuVideo.ts` exists in `src/`, `VideoKind` is not defined in `@flighthq/types`, and `scene2dWgpuPipeline.ts` registers no video kind. Video rendering is not a capability of this package.
 
 ## Present capabilities
 
@@ -31,10 +31,10 @@ Verified against `packages/scene2d-wgpu/src/` on 2026-09-02.
 - **Full fixed-function blend-mode coverage.** `render-wgpu`'s `BLEND_MODES` table maps all six `BlendMode` members (Normal, Add, Multiply, Screen, Darken, Lighten) to `GPUBlendState` values. The quad-batch pipeline (`getWgpuQuadBatchPipeline`) and shape-mesh pipeline (`ensureShapeMeshPipeline`) both call `getWgpuBlendState(blendMode)`, so every fixed-function mode now produces a correct pipeline. Advanced (destination-reading) modes are explicitly a `BlendEffect`, not a `BlendMode`.
 
 - **Shape rendering** -- three strategies:
-  - `defaultWgpuShapeRenderer` (hybrid): tries tessellated mesh first, falls through to canvas rasterization. Pulls both paths into the bundle.
-  - `defaultWgpuMeshShapeRenderer` (GPU-only): tessellates only; shapes with gradient/texture fills or closed strokes do not draw. Leaves `@flighthq/scene2d-canvas` out of the bundle.
-  - `defaultWgpuRasterShapeRenderer` (canvas-only): replays the full command stream into an offscreen canvas. Leaves `@flighthq/path` out of the bundle.
-  Shape commands are re-exported from `@flighthq/scene2d-canvas` under `defaultWgpu*` aliases (`contract.ts:32-48`); the command IR is shared, not authored here.
+  - `wgpuShapeRenderer` (hybrid): tries tessellated mesh first, falls through to canvas rasterization. Pulls both paths into the bundle.
+  - `wgpuMeshShapeRenderer` (GPU-only): tessellates only; shapes with gradient/texture fills or closed strokes do not draw. Leaves `@flighthq/scene2d-canvas` out of the bundle.
+  - `wgpuRasterShapeRenderer` (canvas-only): replays the full command stream into an offscreen canvas. Leaves `@flighthq/path` out of the bundle.
+  Shape commands are re-exported from `@flighthq/scene2d-canvas` under `wgpu*` aliases (`contract.ts:32-48`); the command IR is shared, not authored here.
 
 - **Tessellated-mesh shape rendering** (`wgpuShapeMesh.ts`): flat-color WGSL pipeline, per-mesh vertex/index buffer upload via `queue.writeBuffer`, stencil-gated by contour clip depth. Color-adjustment fold for `ColorScaleBias` through the opt-in `drawWgpuShapeMeshesColorScaleBias` path in `wgpuColorAdjustmentMaterialFeature.ts`.
 
@@ -44,7 +44,7 @@ Verified against `packages/scene2d-wgpu/src/` on 2026-09-02.
 
 - **Color-transform materials** (`wgpuColorAdjustmentMaterialFeature.ts`, 760 lines): the opt-in per-instance color-adjustment fold. Five modes (NONE, UNIFORM, PACKED_TINT, PER_INSTANCE, MATRIX) adaptively promote as instances accumulate. Packed tint uses `unpack4x8unorm` for a single `u32` per instance; full scale/bias uses 8 floats; full matrix uses 20 floats. Three WGSL module variants are lazily compiled per device. The shape-mesh path has its own color-scale-bias pipeline (`SHAPE_MESH_COLOR_SCALE_BIAS_WGSL`).
 
-- **Velocity-field writers** (`wgpuVelocity.ts`): per-state open registry (`registerWgpuVelocityWriter` / `getWgpuVelocityWriter` over `WgpuRenderStateRuntime.registries.velocityWriters`). Three default writers: `defaultWgpuNode2DVelocityWriter` (world-bounds coverage), `defaultWgpuParticleEmitter2DVelocityWriter` (per-particle), `defaultWgpuQuadBatchVelocityWriter` (per-instance). `renderWgpuVelocity` walks the scene tree and dispatches per kind. Registry shape satisfies fork B.
+- **Velocity-field writers** (`wgpuVelocity.ts`): per-state open registry (`registerWgpuVelocityWriter` / `getWgpuVelocityWriter` over `WgpuRenderStateRuntime.registries.velocityWriters`). Three default writers: `wgpuNode2DVelocityWriter` (world-bounds coverage), `wgpuParticleEmitter2DVelocityWriter` (per-particle), `wgpuQuadBatchVelocityWriter` (per-instance). `renderWgpuVelocity` walks the scene tree and dispatches per kind. Registry shape satisfies fork B.
 
 - **Text rendering** (`wgpuTextLabel.ts`, `wgpuRichText.ts`): canvas-rasterized, uploaded as a texture per label/field. Content-version-driven re-rasterization. RichText supports scrolling, background, border, underline, strikethrough, and a registerable text-input overlay seam (`registerWgpuTextInputOverlay`).
 
@@ -58,7 +58,7 @@ Verified against `packages/scene2d-wgpu/src/` on 2026-09-02.
 
 - **Pipeline preset** (`scene2dWgpuPipeline.ts`): pre-built `WgpuPipeline` with all 12 kind renderers and the standard material, ready for `createWgpuRenderState`. Not behind a `register*` function -- it is a data constant, not a mutation.
 
-- **Packaging shape**: `"sideEffects": false`. Two export lanes (`.` and `./contract`). No top-level `registerRenderer` -- all registration behind explicit `register*` / `enable*` functions. `index.ts` curates 36 public exports; `contract.ts` re-exports everything plus 16 `defaultWgpu*` command aliases from `@flighthq/scene2d-canvas/contract`.
+- **Packaging shape**: `"sideEffects": false`. Two export lanes (`.` and `./contract`). No top-level `registerRenderer` -- all registration behind explicit `register*` / `enable*` functions. `index.ts` curates 36 public exports; `contract.ts` re-exports everything plus 16 `wgpu*` command aliases from `@flighthq/scene2d-canvas/contract`.
 
 - **Test coverage**: 29 test files colocated with 29 source modules. Only `scene2dWgpuPipeline.ts` (a data-construction module building a pipeline preset) lacks a test file. All other source files have 1:1 test coverage.
 
@@ -72,7 +72,7 @@ Each gap below is verified against source. Status-documented gaps are cited; new
 
 - **No 2D coverage query.** `scene2d-gl` exports `explainGlScene2DCoverage` / `hasGlScene2DCoverage`. No wgpu twin exists. *(status-documented)*
 
-- **Shape command vocabulary borrowed from Canvas.** `contract.ts:32-48` re-exports 16 `defaultCanvas*` commands under `defaultWgpu*` names. `@flighthq/scene2d-canvas` is a runtime dependency. Gradient and texture fills have no WGSL-native form. *(status-documented)*
+- **Shape command vocabulary borrowed from Canvas.** `contract.ts:32-48` re-exports 16 `canvas*` commands under `wgpu*` names. `@flighthq/scene2d-canvas` is a runtime dependency. Gradient and texture fills have no WGSL-native form. *(status-documented)*
 
 - **Mesh shapes: one draw call per mesh per frame.** `wgpuShapeMesh.ts:76-92` re-writes per-mesh vertex and index buffers through `queue.writeBuffer` and issues one `drawIndexed` per mesh -- no persistent buffer, no merged batch. *(status-documented)*
 
@@ -118,7 +118,7 @@ No contradictions found.
 
 **(b) Where the contract / admin docs need revision:**
 
-- **Prior review's "video renderer" claim is stale.** The prior review (2026-08-25) lists `defaultWgpuVideoRenderer` as a present capability and describes "defaultWgpuVideo" draw coverage. No video renderer exists. This review corrects the record.
+- **Prior review's "video renderer" claim is stale.** The prior review (2026-08-25) lists `wgpuVideoRenderer` as a present capability and describes "wgpuVideo" draw coverage. No video renderer exists. This review corrects the record.
 - **Prior review's "recordWgpuBatchFlush wiring is live" claim is stale.** The prior review states "recordWgpuBatchFlush wiring is live: wgpuSpriteBatch.ts line 200 calls it." No file named `wgpuSpriteBatch.ts` exists. The status.md correctly identifies that `recordWgpuBatchFlush` has zero callers.
 - **Prior review's blend-mode gap is now closed.** The prior review states "only NORMAL_BLEND and ADD_BLEND" and recommends updating `render-backend-support.md`. The `BlendMode` enum has exactly 6 members (Normal, Add, Multiply, Screen, Darken, Lighten) and `render-wgpu`'s `BLEND_MODES` table covers all 6. The fixed-function blend-mode gap is closed.
 
