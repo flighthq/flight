@@ -27,13 +27,13 @@ export function applySketchEffectToWgpu(
   });
 }
 
-export const defaultWgpuSketchEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuSketchEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'SketchEffect', wgpuSketchEffectRunner);
+}
+
+export const wgpuSketchEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applySketchEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as SketchEffect);
 };
-
-export function registerWgpuSketchEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'SketchEffect', defaultWgpuSketchEffectRunner);
-}
 
 // Slot layout: [0]=strength, [1]=pad, [2..3]=resolution.
 const SKETCH_FRAGMENT_WGSL = /* wgsl */ `

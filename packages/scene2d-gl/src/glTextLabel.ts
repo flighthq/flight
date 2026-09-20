@@ -180,7 +180,7 @@ export function initializeGlTextLabelData(out: EntityConstruction<GlTextLabelDat
   out.surface = null;
 }
 
-export const defaultGlTextLabelRenderer: Scene2DRenderer = {
+export const glTextLabelRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
   createData: createGlTextLabelData,
   destroyData: destroyGlTextLabelData,

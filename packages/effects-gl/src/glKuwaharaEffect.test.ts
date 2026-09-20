@@ -1,4 +1,4 @@
-import { applyKuwaharaEffectToGl, defaultGlKuwaharaEffectRunner, registerGlKuwaharaEffect } from './glKuwaharaEffect';
+import { applyKuwaharaEffectToGl, glKuwaharaEffectRunner, registerGlKuwaharaEffect } from './glKuwaharaEffect';
 
 describe('applyKuwaharaEffectToGl', () => {
   it('is a function', () => {
@@ -6,9 +6,9 @@ describe('applyKuwaharaEffectToGl', () => {
   });
 });
 
-describe('defaultGlKuwaharaEffectRunner', () => {
+describe('glKuwaharaEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlKuwaharaEffectRunner).toBe('function');
+    expect(typeof glKuwaharaEffectRunner).toBe('function');
   });
 });
 

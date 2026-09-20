@@ -25,13 +25,13 @@ export function applyWhiteBalanceEffectToWgpu(
   });
 }
 
-export const defaultWgpuWhiteBalanceEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuWhiteBalanceEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'WhiteBalanceEffect', wgpuWhiteBalanceEffectRunner);
+}
+
+export const wgpuWhiteBalanceEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyWhiteBalanceEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as WhiteBalanceEffect);
 };
-
-export function registerWgpuWhiteBalanceEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'WhiteBalanceEffect', defaultWgpuWhiteBalanceEffectRunner);
-}
 
 // Slot layout: [0]=temperature, [1]=tint.
 const WHITE_BALANCE_FRAGMENT_WGSL = /* wgsl */ `

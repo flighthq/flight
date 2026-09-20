@@ -29,13 +29,13 @@ export function applyCameraMotionBlurEffectToWgpu(
   });
 }
 
-export const defaultWgpuCameraMotionBlurEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuCameraMotionBlurEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'CameraMotionBlurEffect', wgpuCameraMotionBlurEffectRunner);
+}
+
+export const wgpuCameraMotionBlurEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyCameraMotionBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as CameraMotionBlurEffect);
 };
-
-export function registerWgpuCameraMotionBlurEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'CameraMotionBlurEffect', defaultWgpuCameraMotionBlurEffectRunner);
-}
 
 // Slot layout: [0]=intensity, [1]=samples. SAMPLES caps the loop; min(u_samples, 16.0) gates the taps.
 const CAMERA_MOTION_BLUR_FRAGMENT_WGSL = /* wgsl */ `

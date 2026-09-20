@@ -24,8 +24,8 @@ import {
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   createWgpuVelocityTarget,
-  defaultWgpuNode2DVelocityWriter,
-  defaultWgpuShapeRenderer,
+  wgpuNode2DVelocityWriter,
+  wgpuShapeRenderer,
   endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelRgb,
@@ -39,7 +39,7 @@ import {
   renderWgpuScene2D,
   renderWgpuVelocity,
   setWgpuEffectVelocityTexture,
-  defaultScene3DWgpuRenderRegistries,
+  wgpuScene3DRenderRegistries,
   ShapeKind,
   createWgpuSurface,
   setSurfaceDisplaySize,
@@ -73,17 +73,17 @@ const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistries, {
+export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRenderRegistries, {
   format: acquisition.format,
   pixelRatio,
 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 1.0 } as const;
-registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+registerRenderer(state, ShapeKind, wgpuShapeRenderer);
 registerWgpuMotionBlurEffect(state);
 registerDefaultShapeBoundsCommands();
 // The velocity writer rasterizes each shape's contributed velocity into the velocity target.
-registerWgpuVelocityWriter(state, ShapeKind, defaultWgpuNode2DVelocityWriter);
+registerWgpuVelocityWriter(state, ShapeKind, wgpuNode2DVelocityWriter);
 
 const pipeline = createWgpuEffectState(state, { sampleCount: 1 });
 

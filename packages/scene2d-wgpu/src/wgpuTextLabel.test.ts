@@ -12,7 +12,7 @@ import type { ImageSurface, RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
-import { defaultWgpuTextLabelRenderer, drawWgpuTextLabel } from './wgpuTextLabel';
+import { wgpuTextLabelRenderer, drawWgpuTextLabel } from './wgpuTextLabel';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.
@@ -110,50 +110,14 @@ function createTestImageSurfaceCreator(destroyImageSurface: (surface: ImageSurfa
   };
 }
 
-describe('defaultWgpuTextLabelRenderer', () => {
-  it('declares BatchFormat.Quad', () => {
-    expect(defaultWgpuTextLabelRenderer.format).toBe(BatchFormat.Quad);
-  });
-
-  it('has createData and submit functions', () => {
-    expect(typeof defaultWgpuTextLabelRenderer.createData).toBe('function');
-    expect(typeof defaultWgpuTextLabelRenderer.submit).toBe('function');
-  });
-
-  it('removes the GPU cache entry before returning the node surface to its creator', async () => {
-    const order: string[] = [];
-    const state = await createWgpuRenderStateForTest();
-    beginWgpuScreenRenderPassForTest(state);
-    const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
-    state.imageSurfaceProvider = createTestImageSurfaceCreator((surface) => {
-      order.push('surface');
-      expect(cache.has(surface.image)).toBe(false);
-    });
-    registerWgpuStandardMaterial(state);
-    const data = defaultWgpuTextLabelRenderer.createData!(state, createTextLabel())!;
-    drawWgpuTextLabel(state, makeTextProxy('owned', data));
-    const surface = (data as unknown as { surface: ImageSurface }).surface;
-    const entry = cache.get(surface.image)!;
-    submitWgpuFrame(state);
-    vi.spyOn(entry.texture, 'destroy').mockImplementation(() => {
-      order.push('texture');
-    });
-
-    defaultWgpuTextLabelRenderer.destroyData!(state, data);
-
-    expect(cache.has(surface.image)).toBe(false);
-    expect(order).toEqual(['texture', 'surface']);
-  });
-});
-
 describe('drawWgpuTextLabel', () => {
   it('keeps different text nodes on distinct surfaces and GPU textures in one frame', async () => {
     const state = await createWgpuRenderStateForTest();
     state.imageSurfaceProvider = createTestImageSurfaceCreator();
     beginWgpuScreenRenderPassForTest(state);
     registerWgpuStandardMaterial(state);
-    const firstData = defaultWgpuTextLabelRenderer.createData!(state, createTextLabel())!;
-    const secondData = defaultWgpuTextLabelRenderer.createData!(state, createTextLabel())!;
+    const firstData = wgpuTextLabelRenderer.createData!(state, createTextLabel())!;
+    const secondData = wgpuTextLabelRenderer.createData!(state, createTextLabel())!;
 
     drawWgpuTextLabel(state, makeTextProxy('first', firstData));
     drawWgpuTextLabel(state, makeTextProxy('second', secondData));
@@ -222,5 +186,41 @@ describe('drawWgpuTextLabel', () => {
     expect((proxy.rendererData as any).lastContentId).toBe(0);
     submitWgpuFrame(state);
     updateSpy.mockRestore();
+  });
+});
+
+describe('wgpuTextLabelRenderer', () => {
+  it('declares BatchFormat.Quad', () => {
+    expect(wgpuTextLabelRenderer.format).toBe(BatchFormat.Quad);
+  });
+
+  it('has createData and submit functions', () => {
+    expect(typeof wgpuTextLabelRenderer.createData).toBe('function');
+    expect(typeof wgpuTextLabelRenderer.submit).toBe('function');
+  });
+
+  it('removes the GPU cache entry before returning the node surface to its creator', async () => {
+    const order: string[] = [];
+    const state = await createWgpuRenderStateForTest();
+    beginWgpuScreenRenderPassForTest(state);
+    const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
+    state.imageSurfaceProvider = createTestImageSurfaceCreator((surface) => {
+      order.push('surface');
+      expect(cache.has(surface.image)).toBe(false);
+    });
+    registerWgpuStandardMaterial(state);
+    const data = wgpuTextLabelRenderer.createData!(state, createTextLabel())!;
+    drawWgpuTextLabel(state, makeTextProxy('owned', data));
+    const surface = (data as unknown as { surface: ImageSurface }).surface;
+    const entry = cache.get(surface.image)!;
+    submitWgpuFrame(state);
+    vi.spyOn(entry.texture, 'destroy').mockImplementation(() => {
+      order.push('texture');
+    });
+
+    wgpuTextLabelRenderer.destroyData!(state, data);
+
+    expect(cache.has(surface.image)).toBe(false);
+    expect(order).toEqual(['texture', 'surface']);
   });
 });

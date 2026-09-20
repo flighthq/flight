@@ -1,11 +1,11 @@
 ﻿import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
-import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
+import { canvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
 import {
   createDomScale9ShapeData,
-  defaultDomScale9ShapeRenderer,
+  domScale9ShapeRenderer,
   drawDomScale9Shape,
   initializeDomScale9ShapeData,
 } from './domScale9Shape';
@@ -32,16 +32,16 @@ describe('createDomScale9ShapeData', () => {
   });
 });
 
-describe('defaultDomScale9ShapeRenderer', () => {
+describe('domScale9ShapeRenderer', () => {
   it('has submit, and createData functions', () => {
-    expect(defaultDomScale9ShapeRenderer.createData).toBe(createDomScale9ShapeData);
-    expect(defaultDomScale9ShapeRenderer.submit).toBe(drawDomScale9Shape);
+    expect(domScale9ShapeRenderer.createData).toBe(createDomScale9ShapeData);
+    expect(domScale9ShapeRenderer.submit).toBe(drawDomScale9Shape);
   });
 });
 
 describe('drawDomScale9Shape', () => {
   beforeAll(() => {
-    registerCanvasShapeCommands(createDomRenderState(document.createElement('div')), defaultCanvasShapeCommands);
+    registerCanvasShapeCommands(createDomRenderState(document.createElement('div')), canvasShapeCommands);
   });
 
   it('returns early when commands are empty', () => {

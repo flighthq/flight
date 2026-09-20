@@ -85,7 +85,7 @@ export function drawGlSprite(state: GlRenderState, renderProxy: RenderProxy2D): 
   runtime.quadBatchWriterCount++;
 }
 
-export const defaultGlSpriteRenderer: Scene2DRenderer = {
+export const glSpriteRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
   createData: createSpriteRendererData,
   isDirty: isSpriteRendererDirty,

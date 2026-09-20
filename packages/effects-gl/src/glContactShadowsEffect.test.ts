@@ -4,7 +4,7 @@ import { allocateEmptyGlRenderRegistries, createGlRenderState } from '@flighthq/
 
 import {
   applyContactShadowsEffectToGl,
-  defaultGlContactShadowsEffectRunner,
+  glContactShadowsEffectRunner,
   registerGlContactShadowsEffect,
 } from './glContactShadowsEffect';
 import { getGlEffectRunner } from './glEffectRegistry';
@@ -45,9 +45,9 @@ describe('applyContactShadowsEffectToGl', () => {
   });
 });
 
-describe('defaultGlContactShadowsEffectRunner', () => {
+describe('glContactShadowsEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlContactShadowsEffectRunner).toBe('function');
+    expect(typeof glContactShadowsEffectRunner).toBe('function');
   });
 });
 
@@ -58,6 +58,6 @@ describe('registerGlContactShadowsEffect', () => {
       allocateEmptyGlRenderRegistries(),
     );
     registerGlContactShadowsEffect(state);
-    expect(getGlEffectRunner(state, 'ContactShadowsEffect')).toBe(defaultGlContactShadowsEffectRunner);
+    expect(getGlEffectRunner(state, 'ContactShadowsEffect')).toBe(glContactShadowsEffectRunner);
   });
 });

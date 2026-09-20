@@ -29,12 +29,12 @@ export function applyRadialBlurEffectToGl(
   });
 }
 
-export const defaultGlRadialBlurEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glRadialBlurEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyRadialBlurEffectToGl(ctx.state, ctx.source, ctx.dest, effect as RadialBlurEffect);
 };
 
 export function registerGlRadialBlurEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'RadialBlurEffect', defaultGlRadialBlurEffectRunner);
+  registerGlEffect(state, 'RadialBlurEffect', glRadialBlurEffectRunner);
 }
 
 const RADIAL_BLUR_FRAGMENT_SRC = `#version 300 es

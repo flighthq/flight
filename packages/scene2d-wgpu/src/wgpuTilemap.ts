@@ -126,7 +126,7 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
   runtime.quadBatchWriterCount += drawCount;
 }
 
-export const defaultWgpuTilemapRenderer: SpriteRenderer = {
+export const wgpuTilemapRenderer: SpriteRenderer = {
   format: BatchFormat.Quad,
   createData: noopRendererData,
   submit: submitWgpuTilemap,

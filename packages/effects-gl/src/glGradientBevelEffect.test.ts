@@ -1,6 +1,6 @@
 import {
   applyGradientBevelEffectToGl,
-  defaultGlGradientBevelEffectRunner,
+  glGradientBevelEffectRunner,
   registerGlGradientBevelEffect,
 } from './glGradientBevelEffect';
 
@@ -10,9 +10,9 @@ describe('applyGradientBevelEffectToGl', () => {
   });
 });
 
-describe('defaultGlGradientBevelEffectRunner', () => {
+describe('glGradientBevelEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlGradientBevelEffectRunner).toBe('function');
+    expect(typeof glGradientBevelEffectRunner).toBe('function');
   });
 });
 

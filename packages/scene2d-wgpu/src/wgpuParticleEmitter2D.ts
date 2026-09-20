@@ -354,7 +354,7 @@ export function drawWgpuParticleEmitter2D(state: WgpuRenderState, renderProxy: R
   pass.draw(6, drawCount, 0, 0);
 }
 
-export const defaultWgpuParticleEmitter2DRenderer: SpriteRenderer = {
+export const wgpuParticleEmitter2DRenderer: SpriteRenderer = {
   createData: noopRendererData,
   submit(state: WgpuRenderState, node: RenderProxy2D): void {
     flushWgpuQuadBatchWriter(state);

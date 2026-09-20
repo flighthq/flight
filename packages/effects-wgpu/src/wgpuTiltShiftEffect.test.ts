@@ -1,6 +1,6 @@
 import {
   applyTiltShiftEffectToWgpu,
-  defaultWgpuTiltShiftEffectRunner,
+  wgpuTiltShiftEffectRunner,
   registerWgpuTiltShiftEffect,
 } from './wgpuTiltShiftEffect';
 
@@ -10,14 +10,14 @@ describe('applyTiltShiftEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuTiltShiftEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuTiltShiftEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuTiltShiftEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuTiltShiftEffect).toBeTypeOf('function');
+  });
+});
+
+describe('wgpuTiltShiftEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuTiltShiftEffectRunner).toBe('function');
   });
 });

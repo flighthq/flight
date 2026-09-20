@@ -165,7 +165,7 @@ export function getGlScale9ShapeData(data: RendererData): GlScale9ShapeData {
   return data as GlScale9ShapeData;
 }
 
-export const defaultGlScale9ShapeRenderer: Scene2DRenderer = {
+export const glScale9ShapeRenderer: Scene2DRenderer = {
   createData: createGlScale9ShapeData,
   destroyData: destroyGlScale9ShapeData,
   submit: drawGlScale9Shape,

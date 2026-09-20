@@ -6,12 +6,12 @@ import { createDisplayObject } from '@flighthq/scene2d';
 import {
   createCanvasShapeRasterizer,
   createCanvasTextureResolvers,
-  defaultCanvasShapeCommands,
+  canvasShapeCommands,
   registerCanvasShapeCommands,
 } from '@flighthq/scene2d-canvas';
 import {
   createDomRenderState,
-  defaultDomMorphShapeRenderer,
+  domMorphShapeRenderer,
   registerDomShapeRasterizer,
   renderDomScene2D,
 } from '@flighthq/scene2d-dom';
@@ -29,9 +29,9 @@ const state = createDomRenderState(container, { pixelRatio: 1 });
 // already holds, set once rather than reapplied by a render function every frame.
 container.style.backgroundColor = '#1a1a2e';
 
-registerRenderer(state, MorphShapeKind, defaultDomMorphShapeRenderer);
+registerRenderer(state, MorphShapeKind, domMorphShapeRenderer);
 const resolvers = createCanvasTextureResolvers(webCanvasRenderSurfaceCreator);
-registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
+registerCanvasShapeCommands(state, canvasShapeCommands);
 registerDomShapeRasterizer(state, createCanvasShapeRasterizer(resolvers));
 
 const startPath = createPath();

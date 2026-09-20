@@ -169,7 +169,7 @@ const SELECTION_COLOR = '#0078d7';
 const _richTextSelectionRectangles: TextSelectionRectangle[] = [];
 let _canvasTextInputOverlay: CanvasTextInputOverlay | null = null;
 
-export const defaultCanvasRichTextRenderer: Scene2DRenderer = {
+export const canvasRichTextRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawCanvasRichText,
 };

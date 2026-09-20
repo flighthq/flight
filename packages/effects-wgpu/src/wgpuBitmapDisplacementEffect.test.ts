@@ -12,7 +12,7 @@ import { ImageChannel } from '@flighthq/types/contract';
 import {
   BITMAP_DISPLACEMENT_FRAGMENT_WGSL,
   applyBitmapDisplacementEffectToWgpu,
-  defaultWgpuBitmapDisplacementEffectRunner,
+  wgpuBitmapDisplacementEffectRunner,
   initializeWgpuEffectPipeline,
   isWgpuBitmapDisplacementEffectResolvable,
   registerWgpuBitmapDisplacementEffect,
@@ -148,16 +148,6 @@ describe('applyBitmapDisplacementEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuBitmapDisplacementEffectRunner', () => {
-  it('routes the runner context through to the pass', () => {
-    defaultWgpuBitmapDisplacementEffectRunner(
-      { dest, pool: { free: [] }, source, state } as never,
-      effect({ scaleX: 3, scaleY: 4 }),
-    );
-    expect([...writtenUniforms.slice(0, 2)]).toEqual([3, 4]);
-  });
-});
-
 describe('initializeWgpuEffectPipeline', () => {
   it('is the construction initializer of createWgpuEffectPipeline', () => {
     expect(typeof initializeWgpuEffectPipeline).toBe('function');
@@ -172,14 +162,22 @@ describe('isWgpuBitmapDisplacementEffectResolvable', () => {
     expect(isWgpuBitmapDisplacementEffectResolvable(state, effect())).toBe(false);
   });
 });
+
 describe('registerWgpuBitmapDisplacementEffect', () => {
   it('registers both the runner and per-instance map resolver', async () => {
     const registeredState = await createWgpuRenderStateForTest();
 
     registerWgpuBitmapDisplacementEffect(registeredState);
-    expect(getWgpuEffectRunner(registeredState, 'BitmapDisplacementEffect')).toBe(
-      defaultWgpuBitmapDisplacementEffectRunner,
-    );
+    expect(getWgpuEffectRunner(registeredState, 'BitmapDisplacementEffect')).toBe(wgpuBitmapDisplacementEffectRunner);
     expect(isWgpuEffectResolvable(registeredState, effect({ map: null }))).toBe(false);
+  });
+});
+describe('wgpuBitmapDisplacementEffectRunner', () => {
+  it('routes the runner context through to the pass', () => {
+    wgpuBitmapDisplacementEffectRunner(
+      { dest, pool: { free: [] }, source, state } as never,
+      effect({ scaleX: 3, scaleY: 4 }),
+    );
+    expect([...writtenUniforms.slice(0, 2)]).toEqual([3, 4]);
   });
 });

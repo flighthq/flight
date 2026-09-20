@@ -1,4 +1,4 @@
-import { applySharpenEffectToGl, defaultGlSharpenEffectRunner, registerGlSharpenEffect } from './glSharpenEffect';
+import { applySharpenEffectToGl, glSharpenEffectRunner, registerGlSharpenEffect } from './glSharpenEffect';
 
 describe('applySharpenEffectToGl', () => {
   it('is a function', () => {
@@ -6,9 +6,9 @@ describe('applySharpenEffectToGl', () => {
   });
 });
 
-describe('defaultGlSharpenEffectRunner', () => {
+describe('glSharpenEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlSharpenEffectRunner).toBe('function');
+    expect(typeof glSharpenEffectRunner).toBe('function');
   });
 });
 

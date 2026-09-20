@@ -5,7 +5,7 @@ import * as canvasEffectState from './canvasEffectState';
 import { canvasTestSurfaceCreator } from './canvasEffectTestSupport';
 import {
   applyOuterGlowEffectToCanvas,
-  defaultCanvasOuterGlowEffectRunner,
+  canvasOuterGlowEffectRunner,
   registerCanvasOuterGlowEffect,
 } from './canvasOuterGlowEffect';
 import * as canvasSourceModeCompositing from './canvasSourceModeCompositing';
@@ -82,9 +82,9 @@ describe('applyOuterGlowEffectToCanvas', () => {
   });
 });
 
-describe('defaultCanvasOuterGlowEffectRunner', () => {
+describe('canvasOuterGlowEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultCanvasOuterGlowEffectRunner).toBe('function');
+    expect(typeof canvasOuterGlowEffectRunner).toBe('function');
   });
 });
 

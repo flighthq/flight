@@ -19,7 +19,7 @@ import {
 } from '@flighthq/render-wgpu';
 import { allocateEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
-import { defaultWgpuParticleEmitter2DRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
+import { wgpuParticleEmitter2DRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { createWgpuSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas';
@@ -35,7 +35,7 @@ appendWebSurface(wgpuSurface, document.body);
 const registries = allocateEmptyWgpuRenderRegistries();
 const registry = {
   ...registries,
-  renderers: withRegistryTableEntry(registries.renderers, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DRenderer),
+  renderers: withRegistryTableEntry(registries.renderers, ParticleEmitter2DKind, wgpuParticleEmitter2DRenderer),
 };
 
 const acquisition = wgpuSurface.acquisition;

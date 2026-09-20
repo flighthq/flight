@@ -144,7 +144,7 @@ export function registerGlTextInputOverlay(overlay: GlRichTextOverlay): void {
   _webglTextInputOverlay = overlay;
 }
 
-export const defaultGlRichTextRenderer: Scene2DRenderer = {
+export const glRichTextRenderer: Scene2DRenderer = {
   createData: createGlRichTextData,
   destroyData: destroyGlRichTextData,
   submit: drawGlRichText,

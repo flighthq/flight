@@ -39,7 +39,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-import { defaultGlMorphShapeRenderer, defaultGlShapeRenderer, drawGlShape } from './glShape';
+import { glMorphShapeRenderer, glShapeRenderer, drawGlShape } from './glShape';
 import { registerGlShapeRasterizer } from './glShapeRasterizer';
 import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
@@ -117,24 +117,6 @@ function makeShapeNode(data: Record<string, unknown> = {}, rendererData: unknown
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
   } as unknown as RenderProxy2D;
 }
-
-describe('defaultGlShapeRenderer', () => {
-  it('provides the MorphShape renderer alias', () => {
-    expect(defaultGlMorphShapeRenderer).toBe(defaultGlShapeRenderer);
-  });
-
-  it('declares BatchFormat.Quad', () => {
-    expect(defaultGlShapeRenderer.format).toBe(BatchFormat.Quad);
-  });
-
-  it('has a createData function', () => {
-    expect(typeof defaultGlShapeRenderer.createData).toBe('function');
-  });
-
-  it('has a submit function pointing to drawGlShape', () => {
-    expect(defaultGlShapeRenderer.submit).toBe(drawGlShape);
-  });
-});
 
 describe('drawGlShape', () => {
   it('draws a solid fill and open solid stroke as GPU meshes in one shape', () => {
@@ -313,5 +295,23 @@ describe('drawGlShape', () => {
     const d = getGlRenderStateRuntime(state).quadBatchWriterInstanceData;
     expect(d[0]).toBe(64); // width folded into horizontal world axis
     expect(d[3]).toBe(48); // height folded into vertical world axis
+  });
+});
+
+describe('glShapeRenderer', () => {
+  it('provides the MorphShape renderer alias', () => {
+    expect(glMorphShapeRenderer).toBe(glShapeRenderer);
+  });
+
+  it('declares BatchFormat.Quad', () => {
+    expect(glShapeRenderer.format).toBe(BatchFormat.Quad);
+  });
+
+  it('has a createData function', () => {
+    expect(typeof glShapeRenderer.createData).toBe('function');
+  });
+
+  it('has a submit function pointing to drawGlShape', () => {
+    expect(glShapeRenderer.submit).toBe(drawGlShape);
   });
 });

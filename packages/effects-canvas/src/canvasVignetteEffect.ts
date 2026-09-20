@@ -72,10 +72,10 @@ export function applyVignetteEffectToCanvas(
   ctx.restore();
 }
 
-export const defaultCanvasVignetteEffectRunner: CanvasEffectRunner = (ctx, effect) => {
+export const canvasVignetteEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyVignetteEffectToCanvas(ctx.source, ctx.dest, effect as VignetteEffect);
 };
 
 export function registerCanvasVignetteEffect(state: CanvasRenderState): void {
-  registerCanvasEffect(state, 'VignetteEffect', defaultCanvasVignetteEffectRunner);
+  registerCanvasEffect(state, 'VignetteEffect', canvasVignetteEffectRunner);
 }

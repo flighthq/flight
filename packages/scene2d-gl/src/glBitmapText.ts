@@ -126,7 +126,7 @@ function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
   }
 }
 
-export const defaultGlBitmapTextRenderer: SpriteRenderer = {
+export const glBitmapTextRenderer: SpriteRenderer = {
   format: BatchFormat.Quad,
   createData: noopRendererData,
   submit: submitGlBitmapText,

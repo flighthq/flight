@@ -53,12 +53,12 @@ export function applyGradientBevelEffectToCanvas(
   applyGradientBevelEffectToCanvasWithPool(source, dest, pool, effect);
 }
 
-export const defaultCanvasGradientBevelEffectRunner: CanvasEffectRunner = (ctx, effect) => {
+export const canvasGradientBevelEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyGradientBevelEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as GradientBevelEffect);
 };
 
 export function registerCanvasGradientBevelEffect(state: CanvasRenderState): void {
-  registerCanvasEffect(state, 'GradientBevelEffect', defaultCanvasGradientBevelEffectRunner);
+  registerCanvasEffect(state, 'GradientBevelEffect', canvasGradientBevelEffectRunner);
 }
 
 function applyGradientBevelEffectToCanvasWithPool(

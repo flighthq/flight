@@ -5,15 +5,15 @@ import * as publicEffects from './index';
 
 describe('Canvas effect registration', () => {
   it.each([
-    ['BlendEffect', 'registerCanvasBlendEffect', 'defaultCanvasBlendEffectRunner'],
-    ['BloomEffect', 'registerCanvasBloomEffect', 'defaultCanvasBloomEffectRunner'],
-    ['BlurEffect', 'registerCanvasBlurEffect', 'defaultCanvasBlurEffectRunner'],
-    ['DropShadowEffect', 'registerCanvasDropShadowEffect', 'defaultCanvasDropShadowEffectRunner'],
-    ['FilmGrainEffect', 'registerCanvasFilmGrainEffect', 'defaultCanvasFilmGrainEffectRunner'],
-    ['OuterGlowEffect', 'registerCanvasOuterGlowEffect', 'defaultCanvasOuterGlowEffectRunner'],
-    ['PixelateEffect', 'registerCanvasPixelateEffect', 'defaultCanvasPixelateEffectRunner'],
-    ['ScanlinesEffect', 'registerCanvasScanlinesEffect', 'defaultCanvasScanlinesEffectRunner'],
-    ['VignetteEffect', 'registerCanvasVignetteEffect', 'defaultCanvasVignetteEffectRunner'],
+    ['BlendEffect', 'registerCanvasBlendEffect', 'canvasBlendEffectRunner'],
+    ['BloomEffect', 'registerCanvasBloomEffect', 'canvasBloomEffectRunner'],
+    ['BlurEffect', 'registerCanvasBlurEffect', 'canvasBlurEffectRunner'],
+    ['DropShadowEffect', 'registerCanvasDropShadowEffect', 'canvasDropShadowEffectRunner'],
+    ['FilmGrainEffect', 'registerCanvasFilmGrainEffect', 'canvasFilmGrainEffectRunner'],
+    ['OuterGlowEffect', 'registerCanvasOuterGlowEffect', 'canvasOuterGlowEffectRunner'],
+    ['PixelateEffect', 'registerCanvasPixelateEffect', 'canvasPixelateEffectRunner'],
+    ['ScanlinesEffect', 'registerCanvasScanlinesEffect', 'canvasScanlinesEffectRunner'],
+    ['VignetteEffect', 'registerCanvasVignetteEffect', 'canvasVignetteEffectRunner'],
   ] as const)('registers the public %s runner on only the supplied state', (kind, registerName, runnerName) => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     const other = createCanvasRenderState(document.createElement('canvas'));

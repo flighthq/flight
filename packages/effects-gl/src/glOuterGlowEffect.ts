@@ -71,10 +71,10 @@ export function applyOuterGlowEffectToGl(
   releaseGlTextureRenderTarget(pool, s2);
 }
 
-export const defaultGlOuterGlowEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glOuterGlowEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyOuterGlowEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as OuterGlowEffect);
 };
 
 export function registerGlOuterGlowEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'OuterGlowEffect', defaultGlOuterGlowEffectRunner);
+  registerGlEffect(state, 'OuterGlowEffect', glOuterGlowEffectRunner);
 }

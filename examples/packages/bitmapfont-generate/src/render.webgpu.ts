@@ -12,14 +12,14 @@ import {
   BitmapTextKind,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
-  defaultWgpuBitmapTextRenderer,
-  defaultWgpuSpriteRenderer,
+  wgpuBitmapTextRenderer,
+  wgpuSpriteRenderer,
   enableFlightDiagnostics,
   endWgpuRenderPass,
   prepareScene2DRender,
   registerRenderer,
   renderWgpuScene2D,
-  defaultScene3DWgpuRenderRegistries,
+  wgpuScene3DRenderRegistries,
   SpriteKind,
   createWgpuSurface,
   setSurfaceDisplaySize,
@@ -39,7 +39,7 @@ const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistries, {
+export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRenderRegistries, {
   format: acquisition.format,
   pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',
@@ -47,8 +47,8 @@ export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgp
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x11 / 0xff, 0x18 / 0xff, 0x27 / 0xff, 1], depth: 1.0 } as const;
 enableFlightDiagnostics(state);
-registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
-registerRenderer(state, BitmapTextKind, defaultWgpuBitmapTextRenderer);
+registerRenderer(state, SpriteKind, wgpuSpriteRenderer);
+registerRenderer(state, BitmapTextKind, wgpuBitmapTextRenderer);
 
 export const scale = pixelRatio;
 

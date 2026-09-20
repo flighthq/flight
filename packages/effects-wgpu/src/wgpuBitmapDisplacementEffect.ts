@@ -78,10 +78,6 @@ export function applyBitmapDisplacementEffectToWgpu(
   pass.end();
 }
 
-export const defaultWgpuBitmapDisplacementEffectRunner: WgpuEffectRunner = (ctx, effect) => {
-  applyBitmapDisplacementEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as BitmapDisplacementEffect);
-};
-
 export function initializeWgpuEffectPipeline(
   out: EntityConstruction<WgpuEffectPipeline>,
   blendMode: WgpuEffectPipeline['blendMode'],
@@ -102,10 +98,14 @@ export function registerWgpuBitmapDisplacementEffect(state: WgpuRenderState): vo
   registerWgpuEffect(
     state,
     'BitmapDisplacementEffect',
-    defaultWgpuBitmapDisplacementEffectRunner,
+    wgpuBitmapDisplacementEffectRunner,
     isWgpuBitmapDisplacementEffectResolvable,
   );
 }
+
+export const wgpuBitmapDisplacementEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+  applyBitmapDisplacementEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as BitmapDisplacementEffect);
+};
 
 function getBitmapDisplacementMapSampler(state: WgpuRenderState, sampler: Readonly<Sampler>): GPUSampler {
   const mipmapFilter = getMipmapFilter(sampler.minFilter, sampler.mipmaps);

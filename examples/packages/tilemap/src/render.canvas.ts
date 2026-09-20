@@ -7,8 +7,8 @@ import {
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
-  defaultCanvasSpriteRenderer,
-  defaultCanvasTilemapRenderer,
+  canvasSpriteRenderer,
+  canvasTilemapRenderer,
   enableFlightDiagnostics,
   endCanvasRenderPass,
   getCanvasRenderStateTextureResolvers,
@@ -17,7 +17,7 @@ import {
   registerCanvasSurfaceCreator,
   registerRenderer,
   renderCanvasScene2D,
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   SpriteKind,
   TilemapKind,
 } from '@flighthq/sdk';
@@ -34,7 +34,7 @@ export const screen = createCanvasScreenRenderTarget(
   }),
 );
 export const state = createCanvasRenderState(
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { sceneGraphSyncPolicy: 'requiresInvalidation' },
 );
@@ -44,8 +44,8 @@ const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as con
 enableFlightDiagnostics(state);
 
 registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
-registerRenderer(state, SpriteKind, defaultCanvasSpriteRenderer);
-registerRenderer(state, TilemapKind, defaultCanvasTilemapRenderer);
+registerRenderer(state, SpriteKind, canvasSpriteRenderer);
+registerRenderer(state, TilemapKind, canvasTilemapRenderer);
 
 export const scale = pixelRatio;
 

@@ -4,13 +4,13 @@ import { createCustomShaderMaterial } from '@flighthq/materials/contract';
 import type { Camera3D, Scene3DLightBlock } from '@flighthq/types/contract';
 
 import {
-  customShaderGlMeshMaterialRenderer,
-  registerGlCustomMaterialShader,
-} from './customShaderGlMeshMaterialRenderer';
-import {
   areGlScene3DCustomShaderGuardsEnabled,
   enableGlScene3DCustomShaderGuards,
 } from './enableGlScene3DCustomShaderGuards';
+import {
+  glCustomShaderMeshMaterialRenderer,
+  registerGlCustomMaterialShader,
+} from './glCustomShaderMeshMaterialRenderer';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 
 // GL uniform-type enums the mock and the guard compare against (WebGL2 spec values).
@@ -47,8 +47,8 @@ function bindWithGuard(shaderKey: string, activeUniforms: readonly { name: strin
   const sink = createMemoryLogSink(8);
   addLogSink(sink.sink);
   try {
-    customShaderGlMeshMaterialRenderer.bind(state, createCustomShaderMaterial({ shaderKey }), NO_LIGHTS, makeCamera());
-    customShaderGlMeshMaterialRenderer.bind(state, createCustomShaderMaterial({ shaderKey }), NO_LIGHTS, makeCamera());
+    glCustomShaderMeshMaterialRenderer.bind(state, createCustomShaderMaterial({ shaderKey }), NO_LIGHTS, makeCamera());
+    glCustomShaderMeshMaterialRenderer.bind(state, createCustomShaderMaterial({ shaderKey }), NO_LIGHTS, makeCamera());
     return getMemoryLogSinkEntries(sink).map((e) => String((e.data as Record<string, unknown>).message));
   } finally {
     removeLogSink(sink.sink);

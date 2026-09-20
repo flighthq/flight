@@ -53,12 +53,12 @@ export function applyInnerShadowEffectToCanvas(
   applyInnerShadowEffectToCanvasWithPool(source, dest, pool, effect);
 }
 
-export const defaultCanvasInnerShadowEffectRunner: CanvasEffectRunner = (ctx, effect) => {
+export const canvasInnerShadowEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyInnerShadowEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as InnerShadowEffect);
 };
 
 export function registerCanvasInnerShadowEffect(state: CanvasRenderState): void {
-  registerCanvasEffect(state, 'InnerShadowEffect', defaultCanvasInnerShadowEffectRunner);
+  registerCanvasEffect(state, 'InnerShadowEffect', canvasInnerShadowEffectRunner);
 }
 
 function applyInnerShadowEffectToCanvasWithPool(

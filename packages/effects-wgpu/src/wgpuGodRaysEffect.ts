@@ -47,13 +47,13 @@ export function applyGodRaysEffectToWgpu(
   });
 }
 
-export const defaultWgpuGodRaysEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuGodRaysEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'GodRaysEffect', wgpuGodRaysEffectRunner);
+}
+
+export const wgpuGodRaysEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyGodRaysEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as GodRaysEffect);
 };
-
-export function registerWgpuGodRaysEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'GodRaysEffect', defaultWgpuGodRaysEffectRunner);
-}
 
 function buildGodRaysFragment(samples: number): string {
   return GOD_RAYS_FRAGMENT_HEAD + samples.toString() + GOD_RAYS_FRAGMENT_TAIL;

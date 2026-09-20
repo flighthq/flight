@@ -26,12 +26,12 @@ export function applyMedianEffectToGl(
   });
 }
 
-export const defaultGlMedianEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glMedianEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyMedianEffectToGl(ctx.state, ctx.source, ctx.dest, effect as MedianEffect);
 };
 
 export function registerGlMedianEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'MedianEffect', defaultGlMedianEffectRunner);
+  registerGlEffect(state, 'MedianEffect', glMedianEffectRunner);
 }
 
 const MEDIAN_FRAGMENT_SRC = `#version 300 es

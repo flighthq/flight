@@ -242,7 +242,7 @@ export function registerDomTextInputOverlay(overlay: DomTextInputOverlay): void 
   _domTextInputOverlay = overlay;
 }
 
-export const defaultDomRichTextRenderer: Scene2DRenderer = {
+export const domRichTextRenderer: Scene2DRenderer = {
   createData: createDomRichTextData,
   submit: drawDomRichText,
 };

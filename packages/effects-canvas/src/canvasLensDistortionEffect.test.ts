@@ -6,7 +6,7 @@ import { getCanvasEffectRunner } from './canvasEffectRegistry';
 import { canvasTestSurfaceCreator, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport';
 import {
   applyLensDistortionEffectToCanvas,
-  defaultCanvasLensDistortionEffectRunner,
+  canvasLensDistortionEffectRunner,
   registerCanvasLensDistortionEffect,
 } from './canvasLensDistortionEffect';
 
@@ -133,7 +133,7 @@ describe('applyLensDistortionEffectToCanvas', () => {
   });
 });
 
-describe('defaultCanvasLensDistortionEffectRunner', () => {
+describe('canvasLensDistortionEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     const { dest, pool, source, written } = {
       ...createTargets(8, 8),
@@ -146,7 +146,7 @@ describe('defaultCanvasLensDistortionEffectRunner', () => {
       })() as CanvasRenderTargetPool,
     };
 
-    defaultCanvasLensDistortionEffectRunner(
+    canvasLensDistortionEffectRunner(
       { dest, pool, source, state: {} as never },
       createLensDistortionEffect({ amount: 0 }),
     );
@@ -162,6 +162,6 @@ describe('registerCanvasLensDistortionEffect', () => {
 
     expect(getCanvasEffectRunner(state, 'LensDistortionEffect')).toBeNull();
     registerCanvasLensDistortionEffect(state);
-    expect(getCanvasEffectRunner(state, 'LensDistortionEffect')).toBe(defaultCanvasLensDistortionEffectRunner);
+    expect(getCanvasEffectRunner(state, 'LensDistortionEffect')).toBe(canvasLensDistortionEffectRunner);
   });
 });

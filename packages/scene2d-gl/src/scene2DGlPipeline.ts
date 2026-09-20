@@ -24,40 +24,40 @@ import {
   TilemapKind,
 } from '@flighthq/types/contract';
 
-import { defaultGlBitmapTextRenderer } from './glBitmapText';
-import { defaultGlRenderCacheRenderer } from './glCache';
-import { defaultGlScene2DRenderer } from './glNode2D';
-import { defaultGlParticleEmitter2DRenderer } from './glParticleEmitter2D';
-import { defaultGlQuadBatchRenderer } from './glQuadBatch';
-import { defaultGlRichTextRenderer } from './glRichText';
-import { defaultGlScale9ShapeRenderer } from './glScale9Shape';
-import { defaultGlScale9SpriteRenderer } from './glScale9Sprite';
-import { defaultGlShapeRenderer, defaultGlMorphShapeRenderer } from './glShape';
-import { defaultGlSpriteRenderer } from './glSprite';
+import { glBitmapTextRenderer } from './glBitmapText';
+import { glRenderCacheRenderer } from './glCache';
+import { glScene2DRenderer } from './glNode2D';
+import { glParticleEmitter2DRenderer } from './glParticleEmitter2D';
+import { glQuadBatchRenderer } from './glQuadBatch';
+import { glRichTextRenderer } from './glRichText';
+import { glScale9ShapeRenderer } from './glScale9Shape';
+import { glScale9SpriteRenderer } from './glScale9Sprite';
+import { glShapeRenderer, glMorphShapeRenderer } from './glShape';
+import { glSpriteRenderer } from './glSprite';
 import { standardGlMaterialRenderer } from './glStandardMaterial';
-import { defaultGlTextLabelRenderer } from './glTextLabel';
-import { defaultGlTilemapRenderer } from './glTilemap';
+import { glTextLabelRenderer } from './glTextLabel';
+import { glTilemapRenderer } from './glTilemap';
 
 function buildScene2DGlRenderers(): KeyedTable<Renderer> {
   const registries = allocateEmptyGlRenderRegistries();
   let table = registries.renderers;
-  table = withRegistryTableEntry(table, BitmapTextKind, defaultGlBitmapTextRenderer);
-  table = withRegistryTableEntry(table, DisplayObjectKind, defaultGlScene2DRenderer);
-  table = withRegistryTableEntry(table, MorphShapeKind, defaultGlMorphShapeRenderer);
-  table = withRegistryTableEntry(table, ParticleEmitter2DKind, defaultGlParticleEmitter2DRenderer);
-  table = withRegistryTableEntry(table, QuadBatchKind, defaultGlQuadBatchRenderer);
-  table = withRegistryTableEntry(table, RenderCacheKind, defaultGlRenderCacheRenderer);
-  table = withRegistryTableEntry(table, RichTextKind, defaultGlRichTextRenderer);
-  table = withRegistryTableEntry(table, Scale9SpriteKind, defaultGlScale9SpriteRenderer);
-  table = withRegistryTableEntry(table, Scale9ShapeKind, defaultGlScale9ShapeRenderer);
-  table = withRegistryTableEntry(table, ShapeKind, defaultGlShapeRenderer);
-  table = withRegistryTableEntry(table, SpriteKind, defaultGlSpriteRenderer);
-  table = withRegistryTableEntry(table, TextLabelKind, defaultGlTextLabelRenderer);
-  table = withRegistryTableEntry(table, TilemapKind, defaultGlTilemapRenderer);
+  table = withRegistryTableEntry(table, BitmapTextKind, glBitmapTextRenderer);
+  table = withRegistryTableEntry(table, DisplayObjectKind, glScene2DRenderer);
+  table = withRegistryTableEntry(table, MorphShapeKind, glMorphShapeRenderer);
+  table = withRegistryTableEntry(table, ParticleEmitter2DKind, glParticleEmitter2DRenderer);
+  table = withRegistryTableEntry(table, QuadBatchKind, glQuadBatchRenderer);
+  table = withRegistryTableEntry(table, RenderCacheKind, glRenderCacheRenderer);
+  table = withRegistryTableEntry(table, RichTextKind, glRichTextRenderer);
+  table = withRegistryTableEntry(table, Scale9SpriteKind, glScale9SpriteRenderer);
+  table = withRegistryTableEntry(table, Scale9ShapeKind, glScale9ShapeRenderer);
+  table = withRegistryTableEntry(table, ShapeKind, glShapeRenderer);
+  table = withRegistryTableEntry(table, SpriteKind, glSpriteRenderer);
+  table = withRegistryTableEntry(table, TextLabelKind, glTextLabelRenderer);
+  table = withRegistryTableEntry(table, TilemapKind, glTilemapRenderer);
   return table;
 }
 
-export const defaultScene2DGlRenderRegistries: Readonly<GlRenderRegistries> = {
+export const glScene2DRenderRegistries: Readonly<GlRenderRegistries> = {
   ...allocateEmptyGlRenderRegistries(),
   blendRealizations: standardGlBlendRealizations,
   materialRenderers: withRegistryTableEntry(

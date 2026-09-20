@@ -39,10 +39,10 @@ export function applyScanlinesEffectToCanvas(
   ctx.restore();
 }
 
-export const defaultCanvasScanlinesEffectRunner: CanvasEffectRunner = (ctx, effect) => {
+export const canvasScanlinesEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyScanlinesEffectToCanvas(ctx.source, ctx.dest, effect as ScanlinesEffect);
 };
 
 export function registerCanvasScanlinesEffect(state: CanvasRenderState): void {
-  registerCanvasEffect(state, 'ScanlinesEffect', defaultCanvasScanlinesEffectRunner);
+  registerCanvasEffect(state, 'ScanlinesEffect', canvasScanlinesEffectRunner);
 }

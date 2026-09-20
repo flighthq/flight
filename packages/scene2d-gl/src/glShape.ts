@@ -20,9 +20,9 @@ export function drawGlShape(state: GlRenderState, renderProxy: RenderProxy2D): v
 // content: a scene of solid fills never rasterizes, while one gradient fill makes the full canvas
 // command vocabulary a requirement.
 //
-// Register defaultGlMeshShapeRenderer or defaultGlRasterShapeRenderer instead to pin the strategy — each
+// Register glMeshShapeRenderer or glRasterShapeRenderer instead to pin the strategy — each
 // pays for only its own path and has a wiring requirement that does not depend on the scene.
-export const defaultGlShapeRenderer: Scene2DRenderer = {
+export const glShapeRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
   createData: createGlShapeData,
   destroyData: destroyGlShapeData,
@@ -30,4 +30,4 @@ export const defaultGlShapeRenderer: Scene2DRenderer = {
 };
 
 // MorphShape owns a distinct kind while sharing Shape's mesh/raster renderer and cache lifecycle.
-export const defaultGlMorphShapeRenderer: Scene2DRenderer = defaultGlShapeRenderer;
+export const glMorphShapeRenderer: Scene2DRenderer = glShapeRenderer;

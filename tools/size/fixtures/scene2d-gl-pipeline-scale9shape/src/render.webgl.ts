@@ -22,10 +22,10 @@ import { createDisplayObject } from '@flighthq/scene2d';
 import {
   createCanvasShapeRasterizer,
   createCanvasTextureResolvers,
-  defaultCanvasShapeCommands,
+  canvasShapeCommands,
   registerCanvasShapeCommands,
 } from '@flighthq/scene2d-canvas';
-import { defaultGlScale9ShapeRenderer, registerGlShapeRasterizer, renderGlScene2D } from '@flighthq/scene2d-gl';
+import { glScale9ShapeRenderer, registerGlShapeRasterizer, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
 import { createGlSurface } from '@flighthq/surface';
 import { RegistryEntryState, Scale9ShapeKind } from '@flighthq/types';
@@ -42,7 +42,7 @@ document.body.style.margin = '0';
 const emptyRegistries = allocateEmptyGlRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, Scale9ShapeKind, defaultGlScale9ShapeRenderer),
+  renderers: withRegistryTableEntry(emptyRegistries.renderers, Scale9ShapeKind, glScale9ShapeRenderer),
 };
 const state = createGlRenderState(glSurface.context, registry, {
   pixelRatio: 1,
@@ -54,7 +54,7 @@ const registries = registry;
 for (const [kind, entry] of registries.renderers.entries) {
   if (entry.state === RegistryEntryState.Bound) registerRenderer(state, kind, entry.value);
 }
-registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
+registerCanvasShapeCommands(state, canvasShapeCommands);
 registerGlShapeRasterizer(
   state,
   createCanvasShapeRasterizer(createCanvasTextureResolvers(webCanvasRenderSurfaceCreator)),

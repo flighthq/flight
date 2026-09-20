@@ -40,13 +40,13 @@ export function applyVignetteEffectToWgpu(
   });
 }
 
-export const defaultWgpuVignetteEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuVignetteEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'VignetteEffect', wgpuVignetteEffectRunner);
+}
+
+export const wgpuVignetteEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyVignetteEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as VignetteEffect);
 };
-
-export function registerWgpuVignetteEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'VignetteEffect', defaultWgpuVignetteEffectRunner);
-}
 
 // Slot layout: [0]=intensity, [1]=radius, [2]=softness, [3]=pad, [4..7]=color rgba. The std140-style
 // struct aligns the vec4 color to a 16-byte boundary, so the JS writes skip slot [3].

@@ -18,7 +18,7 @@ import { prepareDomElement, setDomRendererElement } from './domStyle';
 import { setDomTransformWithOffset } from './domTransform';
 
 export function enableDomRenderCache(state: RenderState): void {
-  registerRenderCacheRenderer(state, defaultDomRenderCacheRenderer);
+  registerRenderCacheRenderer(state, domRenderCacheRenderer);
 }
 
 /**
@@ -83,7 +83,7 @@ function getTargets(state: DomRenderState): Map<RenderCache, CanvasTextureRender
   return targets;
 }
 
-export const defaultDomRenderCacheRenderer: Scene2DRenderer = {
+export const domRenderCacheRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawDomRenderCache,
 };

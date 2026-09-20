@@ -9,7 +9,7 @@ const shapeRenderer: RegistryCatalogEntry = {
   backend: 'webgl',
   facet: RequirementFacet.SceneNodeKind,
   implementationImport: '@flighthq/scene2d-gl',
-  implementationSymbol: 'defaultGlShapeRenderer',
+  implementationSymbol: 'glShapeRenderer',
   kind: 'Shape',
   registrarImport: '@flighthq/render',
   registrarSymbol: 'registerRenderer',

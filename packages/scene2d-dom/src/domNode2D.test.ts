@@ -6,7 +6,7 @@ import type { ClipRegion, Rectangle } from '@flighthq/types/contract';
 import { DisplayObjectKind, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { enableDomClipSupport } from './domClip';
-import { defaultDomScene2DRenderer, drawDomScene2D, renderDomScene2D } from './domNode2D';
+import { domScene2DRenderer, drawDomScene2D, renderDomScene2D } from './domNode2D';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
 
 function makeRectangleClip(rect: Rectangle): ClipRegion {
@@ -40,10 +40,10 @@ function setupRenderedNode(
   return data;
 }
 
-describe('defaultDomScene2DRenderer', () => {
+describe('domScene2DRenderer', () => {
   it('exposes a createData and submit function', () => {
-    expect(typeof defaultDomScene2DRenderer.createData).toBe('function');
-    expect(typeof defaultDomScene2DRenderer.submit).toBe('function');
+    expect(typeof domScene2DRenderer.createData).toBe('function');
+    expect(typeof domScene2DRenderer.submit).toBe('function');
   });
 });
 

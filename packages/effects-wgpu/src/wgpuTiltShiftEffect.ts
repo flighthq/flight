@@ -33,13 +33,13 @@ export function applyTiltShiftEffectToWgpu(
   });
 }
 
-export const defaultWgpuTiltShiftEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuTiltShiftEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'TiltShiftEffect', wgpuTiltShiftEffectRunner);
+}
+
+export const wgpuTiltShiftEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyTiltShiftEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as TiltShiftEffect);
 };
-
-export function registerWgpuTiltShiftEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'TiltShiftEffect', defaultWgpuTiltShiftEffectRunner);
-}
 
 // Slot layout: [0]=center, [1]=width, [2]=blur, [3]=pad, [4..5]=resolution (vec2 aligned to 16 bytes).
 const TILT_SHIFT_FRAGMENT_WGSL = /* wgsl */ `

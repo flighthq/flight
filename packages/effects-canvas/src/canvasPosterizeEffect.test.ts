@@ -6,7 +6,7 @@ import { getCanvasEffectRunner } from './canvasEffectRegistry';
 import { canvasTestSurfaceCreator, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport';
 import {
   applyPosterizeEffectToCanvas,
-  defaultCanvasPosterizeEffectRunner,
+  canvasPosterizeEffectRunner,
   registerCanvasPosterizeEffect,
 } from './canvasPosterizeEffect';
 
@@ -116,11 +116,11 @@ describe('applyPosterizeEffectToCanvas', () => {
   });
 });
 
-describe('defaultCanvasPosterizeEffectRunner', () => {
+describe('canvasPosterizeEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     const { dest, source, written } = createStubTargets([255, 0, 0, 255]);
 
-    defaultCanvasPosterizeEffectRunner(
+    canvasPosterizeEffectRunner(
       {
         dest,
         pool: (() => {
@@ -150,6 +150,6 @@ describe('registerCanvasPosterizeEffect', () => {
 
     expect(getCanvasEffectRunner(state, 'PosterizeEffect')).toBeNull();
     registerCanvasPosterizeEffect(state);
-    expect(getCanvasEffectRunner(state, 'PosterizeEffect')).toBe(defaultCanvasPosterizeEffectRunner);
+    expect(getCanvasEffectRunner(state, 'PosterizeEffect')).toBe(canvasPosterizeEffectRunner);
   });
 });

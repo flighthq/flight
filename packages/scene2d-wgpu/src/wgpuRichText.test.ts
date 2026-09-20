@@ -18,7 +18,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { getWgpuRendererData } from './wgpuRendererData';
 import {
   createWgpuRichTextData,
-  defaultWgpuRichTextRenderer,
+  wgpuRichTextRenderer,
   destroyWgpuRichTextData,
   drawWgpuRichText,
   drawWgpuRichTextWithOverlay,
@@ -77,13 +77,6 @@ describe('createWgpuRichTextData', () => {
   it('starts without a raster surface until the node first draws', () => {
     const data = createWgpuRichTextData({} as never, {} as never);
     expect(getWgpuRendererData<{ surface: ImageSurface | null }>(data)?.surface).toBeNull();
-  });
-});
-
-describe('defaultWgpuRichTextRenderer', () => {
-  it('has createData and draw functions', () => {
-    expect(typeof defaultWgpuRichTextRenderer.createData).toBe('function');
-    expect(typeof defaultWgpuRichTextRenderer.submit).toBe('function');
   });
 });
 
@@ -211,5 +204,12 @@ describe('registerWgpuTextInputOverlay', () => {
     drawWgpuRichText(state, editableProxy);
     expect(overlay).toHaveBeenCalled();
     submitWgpuFrame(state);
+  });
+});
+
+describe('wgpuRichTextRenderer', () => {
+  it('has createData and draw functions', () => {
+    expect(typeof wgpuRichTextRenderer.createData).toBe('function');
+    expect(typeof wgpuRichTextRenderer.submit).toBe('function');
   });
 });

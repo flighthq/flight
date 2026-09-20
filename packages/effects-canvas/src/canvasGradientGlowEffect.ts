@@ -48,12 +48,12 @@ export function applyGradientGlowEffectToCanvas(
   applyGradientGlowEffectToCanvasWithPool(source, dest, pool, effect);
 }
 
-export const defaultCanvasGradientGlowEffectRunner: CanvasEffectRunner = (ctx, effect) => {
+export const canvasGradientGlowEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyGradientGlowEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as GradientGlowEffect);
 };
 
 export function registerCanvasGradientGlowEffect(state: CanvasRenderState): void {
-  registerCanvasEffect(state, 'GradientGlowEffect', defaultCanvasGradientGlowEffectRunner);
+  registerCanvasEffect(state, 'GradientGlowEffect', canvasGradientGlowEffectRunner);
 }
 
 function applyGradientGlowEffectToCanvasWithPool(

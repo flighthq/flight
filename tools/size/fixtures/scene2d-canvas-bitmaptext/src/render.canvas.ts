@@ -12,7 +12,7 @@ import {
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   allocateEmptyCanvasRenderRegistries,
-  defaultCanvasBitmapTextRenderer,
+  canvasBitmapTextRenderer,
   endCanvasRenderPass,
   getCanvasRenderStateTextureResolvers,
   registerCanvasImageTextureResolver,
@@ -26,7 +26,7 @@ import { BitmapTextKind, RegistryEntryState } from '@flighthq/types';
 // REQUIRED WIRING for one static bitmap-font text run, and nothing else:
 //   surface   webCanvasRenderSurfaceCreator — the single Canvas surface provider, NOT the aggregate
 //             webHost.
-//   renderer  BitmapTextKind -> defaultCanvasBitmapTextRenderer
+//   renderer  BitmapTextKind -> canvasBitmapTextRenderer
 //   commands  NONE. BitmapText replays no shape command stream.
 //   resolvers ONE image texture resolver. Every glyph is a blit from the font's atlas page.
 //   glyphs    a BitmapFont behind the shared GlyphSource seam.
@@ -49,7 +49,7 @@ document.body.appendChild(canvas);
 const emptyRegistries = allocateEmptyCanvasRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, BitmapTextKind, defaultCanvasBitmapTextRenderer),
+  renderers: withRegistryTableEntry(emptyRegistries.renderers, BitmapTextKind, canvasBitmapTextRenderer),
 };
 
 const screen = createCanvasScreenRenderTarget(

@@ -117,13 +117,13 @@ export function drawWgpuRasterShape(state: WgpuRenderState, renderProxy: RenderP
 
 // The canvas-only shape strategy: every shape rasterizes through the registered rasterizer, and this
 // module never references the tessellator — so registering this renderer instead of
-// defaultWgpuShapeRenderer leaves @flighthq/path's tessellatePath and shape's region resolvers out of
+// wgpuShapeRenderer leaves @flighthq/path's tessellatePath and shape's region resolvers out of
 // the bundle.
 //
 // Choosing it means the full canvas command vocabulary must be registered on this state, unconditionally:
 // every shape replays its whole command stream. Pick it for exact 2D-canvas fidelity, or to avoid
-// shipping a tessellator at all; pick defaultWgpuMeshShapeRenderer for the opposite trade.
-export const defaultWgpuRasterShapeRenderer: Scene2DRenderer = {
+// shipping a tessellator at all; pick wgpuMeshShapeRenderer for the opposite trade.
+export const wgpuRasterShapeRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
   createData: createWgpuShapeData,
   destroyData: destroyWgpuShapeData,

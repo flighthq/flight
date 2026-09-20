@@ -20,12 +20,12 @@ export function applyScanlinesEffectToGl(
   });
 }
 
-export const defaultGlScanlinesEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glScanlinesEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyScanlinesEffectToGl(ctx.state, ctx.source, ctx.dest, effect as ScanlinesEffect);
 };
 
 export function registerGlScanlinesEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'ScanlinesEffect', defaultGlScanlinesEffectRunner);
+  registerGlEffect(state, 'ScanlinesEffect', glScanlinesEffectRunner);
 }
 
 const SCANLINES_FRAGMENT_SRC = `#version 300 es

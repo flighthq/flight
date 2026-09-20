@@ -26,12 +26,12 @@ export function applyGlitchEffectToGl(
   });
 }
 
-export const defaultGlGlitchEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glGlitchEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyGlitchEffectToGl(ctx.state, ctx.source, ctx.dest, effect as GlitchEffect);
 };
 
 export function registerGlGlitchEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'GlitchEffect', defaultGlGlitchEffectRunner);
+  registerGlEffect(state, 'GlitchEffect', glGlitchEffectRunner);
 }
 
 const GLITCH_FRAGMENT_SRC = `#version 300 es

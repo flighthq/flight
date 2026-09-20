@@ -1,6 +1,6 @@
 import {
   applyWhiteBalanceEffectToWgpu,
-  defaultWgpuWhiteBalanceEffectRunner,
+  wgpuWhiteBalanceEffectRunner,
   registerWgpuWhiteBalanceEffect,
 } from './wgpuWhiteBalanceEffect';
 
@@ -10,14 +10,14 @@ describe('applyWhiteBalanceEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuWhiteBalanceEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuWhiteBalanceEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuWhiteBalanceEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuWhiteBalanceEffect).toBeTypeOf('function');
+  });
+});
+
+describe('wgpuWhiteBalanceEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuWhiteBalanceEffectRunner).toBe('function');
   });
 });

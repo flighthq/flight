@@ -15,7 +15,7 @@ export function drawCanvasScene2D(_state: CanvasRenderState, _renderProxy: Rende
   // Plain display objects have no visual geometry of their own.
 }
 
-export const defaultCanvasScene2DRenderer: Scene2DRenderer = {
+export const canvasScene2DRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawCanvasScene2D,
 };

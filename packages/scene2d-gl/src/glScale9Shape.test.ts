@@ -13,7 +13,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import {
   acquireGlScale9ShapeRasterSurface,
   createGlScale9ShapeData,
-  defaultGlScale9ShapeRenderer,
+  glScale9ShapeRenderer,
   destroyGlScale9ShapeData,
   drawGlScale9Shape,
   drawGlScale9ShapeMask,
@@ -125,14 +125,6 @@ describe('createGlScale9ShapeData', () => {
   });
 });
 
-describe('defaultGlScale9ShapeRenderer', () => {
-  it('wires createData, destroyData, and submit', () => {
-    expect(defaultGlScale9ShapeRenderer.createData).toBe(createGlScale9ShapeData);
-    expect(defaultGlScale9ShapeRenderer.destroyData).toBe(destroyGlScale9ShapeData);
-    expect(defaultGlScale9ShapeRenderer.submit).toBe(drawGlScale9Shape);
-  });
-});
-
 describe('destroyGlScale9ShapeData', () => {
   it('is a no-op when its lazy surface was never allocated', () => {
     const { state, gl } = createGlState();
@@ -230,6 +222,14 @@ describe('getGlScale9ShapeData', () => {
 
     expect(getGlScale9ShapeData(rendererData).surface).toBeNull();
     expect(EntityRuntimeKey in rendererData).toBe(true);
+  });
+});
+
+describe('glScale9ShapeRenderer', () => {
+  it('wires createData, destroyData, and submit', () => {
+    expect(glScale9ShapeRenderer.createData).toBe(createGlScale9ShapeData);
+    expect(glScale9ShapeRenderer.destroyData).toBe(destroyGlScale9ShapeData);
+    expect(glScale9ShapeRenderer.submit).toBe(drawGlScale9Shape);
   });
 });
 describe('initializeGlScale9ShapeData', () => {

@@ -46,7 +46,6 @@ import {
 } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
-import { getWgpuShadedBaseFlags } from './shadedWgpuMeshMaterialRenderer';
 import { getWgpuClassicSharedSamplerModuleSourceForKey } from './wgpuClassicPrelude';
 import {
   createWgpuMeshPipeline,
@@ -59,6 +58,7 @@ import {
 } from './wgpuMeshPipeline';
 import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
 import { getWgpuScene3DTime } from './wgpuScene3DTime';
+import { getWgpuShadedBaseFlags } from './wgpuShadedMeshMaterialRenderer';
 import { registerWgpuModifierSnippet } from './wgpuShadedModifierSnippet';
 
 interface ShadedModifierPlan {

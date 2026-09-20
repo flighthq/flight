@@ -17,7 +17,7 @@ import {
 } from '@flighthq/render-wgpu';
 import { allocateEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
-import { defaultWgpuRichTextRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
+import { wgpuRichTextRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { createWgpuSurface } from '@flighthq/surface';
 import { createRichText } from '@flighthq/text';
 import { RichTextKind } from '@flighthq/types';
@@ -32,7 +32,7 @@ appendWebSurface(wgpuSurface, document.body);
 const registries = allocateEmptyWgpuRenderRegistries();
 const registry = {
   ...registries,
-  renderers: withRegistryTableEntry(registries.renderers, RichTextKind, defaultWgpuRichTextRenderer),
+  renderers: withRegistryTableEntry(registries.renderers, RichTextKind, wgpuRichTextRenderer),
 };
 
 const acquisition = wgpuSurface.acquisition;

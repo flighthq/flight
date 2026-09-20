@@ -19,7 +19,7 @@ import {
 import type { Bitmap, Node2D, GlEffectState, GlTextureRenderTarget } from '@flighthq/sdk';
 import {
   createGlSurface,
-  defaultScene3DGlRenderRegistries,
+  glScene3DRenderRegistries,
   ParticleEmitter2DKind,
   addNodeChild,
   addTextureAtlasRegion,
@@ -35,8 +35,8 @@ import {
   createTextureAtlas,
   createVelocityField,
   registerGlMotionBlurEffect,
-  defaultGlParticleEmitter2DRenderer,
-  defaultGlParticleEmitter2DVelocityWriter,
+  glParticleEmitter2DRenderer,
+  glParticleEmitter2DVelocityWriter,
   endGlEffectPass,
   invalidateNodeLocalTransform,
   prepareScene2DRender,
@@ -76,12 +76,12 @@ setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, 800, 600);
 appendWebSurface(glSurface, document.body);
 const canvas = getWebSurfaceCanvas(glSurface)!;
 
-export const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistries, {
+export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
   pixelRatio,
 });
-registerRenderer(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DRenderer);
+registerRenderer(state, ParticleEmitter2DKind, glParticleEmitter2DRenderer);
 registerGlMotionBlurEffect(state);
-registerGlVelocityWriter(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DVelocityWriter);
+registerGlVelocityWriter(state, ParticleEmitter2DKind, glParticleEmitter2DVelocityWriter);
 
 const pipeline: GlEffectState = createGlEffectState(state, { sampleCount: 1 });
 const velocityTarget: GlTextureRenderTarget = createGlVelocityTarget(state, canvas.width, canvas.height);

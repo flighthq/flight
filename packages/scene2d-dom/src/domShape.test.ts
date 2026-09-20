@@ -1,6 +1,6 @@
 ﻿import { registerRenderer } from '@flighthq/render/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
-import { defaultCanvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
+import { canvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
 import {
   appendShapeBeginFill,
   appendShapeEndFill,
@@ -13,12 +13,7 @@ import {
 import { ShapeKind } from '@flighthq/types/contract';
 
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
-import {
-  defaultDomMorphShapeRenderer,
-  defaultDomShapeRenderer,
-  drawDomShape,
-  initializeDomShapeData,
-} from './domShape';
+import { domMorphShapeRenderer, domShapeRenderer, drawDomShape, initializeDomShapeData } from './domShape';
 import { registerDomShapeRasterizer } from './domShapeRasterizer';
 
 const noopRasterizer = (): void => {};
@@ -26,9 +21,9 @@ const noopRasterizer = (): void => {};
 function makeState() {
   const container = document.createElement('div');
   const state = createDomRenderState(container);
-  registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
+  registerCanvasShapeCommands(state, canvasShapeCommands);
   registerDomShapeRasterizer(state, noopRasterizer);
-  registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
+  registerRenderer(state, ShapeKind, domShapeRenderer);
   return state;
 }
 
@@ -38,14 +33,14 @@ function drawGetEl(state: ReturnType<typeof makeState>, drawFn: () => void): HTM
   return getDomRenderStateRuntime(state).domCurrentElement;
 }
 
-describe('defaultDomShapeRenderer', () => {
+describe('domShapeRenderer', () => {
   it('has submit, and createData', () => {
-    expect(typeof defaultDomShapeRenderer.submit).toBe('function');
-    expect(typeof defaultDomShapeRenderer.createData).toBe('function');
+    expect(typeof domShapeRenderer.submit).toBe('function');
+    expect(typeof domShapeRenderer.createData).toBe('function');
   });
 
   it('provides the MorphShape renderer alias', () => {
-    expect(defaultDomMorphShapeRenderer).toBe(defaultDomShapeRenderer);
+    expect(domMorphShapeRenderer).toBe(domShapeRenderer);
   });
 });
 

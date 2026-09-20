@@ -10,7 +10,7 @@ import {
 import type { Bitmap, GlEffectState, GlTextureRenderTarget, Node2D } from '@flighthq/sdk';
 import {
   createGlSurface,
-  defaultScene3DGlRenderRegistries,
+  glScene3DRenderRegistries,
   ShapeKind,
   addNodeChild,
   appendShapeBeginFill,
@@ -26,10 +26,10 @@ import {
   createMotionBlurEffect,
   createShape,
   createVelocityField,
-  defaultGlNode2DVelocityWriter,
+  glNode2DVelocityWriter,
   registerDefaultShapeBoundsCommands,
   registerGlMotionBlurEffect,
-  defaultGlShapeRenderer,
+  glShapeRenderer,
   endGlEffectPass,
   getBitmapPixelRgb,
   getNodeChildAt,
@@ -66,14 +66,14 @@ setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, 800, 600);
 appendWebSurface(glSurface, document.body);
 const canvas = getWebSurfaceCanvas(glSurface)!;
 
-export const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistries, {
+export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
   pixelRatio,
 });
-registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+registerRenderer(state, ShapeKind, glShapeRenderer);
 registerGlMotionBlurEffect(state);
 registerDefaultShapeBoundsCommands();
 // The velocity writer rasterizes each shape's contributed velocity into the velocity target.
-registerGlVelocityWriter(state, ShapeKind, defaultGlNode2DVelocityWriter);
+registerGlVelocityWriter(state, ShapeKind, glNode2DVelocityWriter);
 
 const pipeline: GlEffectState = createGlEffectState(state, { sampleCount: 1 });
 

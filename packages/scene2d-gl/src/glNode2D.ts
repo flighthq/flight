@@ -58,7 +58,7 @@ export function renderGlScene2D(pass: GlRenderPass, source: Node2D): void {
   clipHooks?.finalize(state);
 }
 
-export const defaultGlScene2DRenderer: Scene2DRenderer = {
+export const glScene2DRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawGlScene2D,
 };

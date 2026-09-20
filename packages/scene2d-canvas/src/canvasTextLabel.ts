@@ -90,7 +90,7 @@ export function initializeCanvasTextLabelData(out: EntityConstruction<CanvasText
   out.lastContentId = -1;
 }
 
-export const defaultCanvasTextLabelRenderer: Scene2DRenderer = {
+export const canvasTextLabelRenderer: Scene2DRenderer = {
   createData: createCanvasTextLabelData,
   submit: drawCanvasTextLabel,
 };

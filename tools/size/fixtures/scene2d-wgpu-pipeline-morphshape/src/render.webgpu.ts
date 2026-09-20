@@ -17,7 +17,7 @@ import {
 } from '@flighthq/render-wgpu';
 import { allocateEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
-import { defaultWgpuMorphShapeRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
+import { wgpuMorphShapeRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import {
   appendMorphShapePath,
   appendShapeBeginFill,
@@ -38,7 +38,7 @@ appendWebSurface(wgpuSurface, document.body);
 const registries = allocateEmptyWgpuRenderRegistries();
 const registry = {
   ...registries,
-  renderers: withRegistryTableEntry(registries.renderers, MorphShapeKind, defaultWgpuMorphShapeRenderer),
+  renderers: withRegistryTableEntry(registries.renderers, MorphShapeKind, wgpuMorphShapeRenderer),
 };
 
 const acquisition = wgpuSurface.acquisition;

@@ -102,7 +102,7 @@ export function initializeDomTextData(out: EntityConstruction<DomTextData>): voi
   out.div = null;
 }
 
-export const defaultDomTextLabelRenderer: Scene2DRenderer = {
+export const domTextLabelRenderer: Scene2DRenderer = {
   createData: createDomTextData,
   submit: drawDomTextLabel,
 };

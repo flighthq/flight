@@ -1,7 +1,7 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
   createDomRenderState,
-  defaultDomSpriteRenderer,
+  domSpriteRenderer,
   enableFlightDiagnostics,
   prepareScene2DRender,
   registerDomImageTextureResolver,
@@ -22,7 +22,7 @@ export const state = createDomRenderState(container, { sceneGraphSyncPolicy: 're
 container.style.backgroundColor = '#1a1a2e';
 enableFlightDiagnostics(state);
 
-registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
+registerRenderer(state, SpriteKind, domSpriteRenderer);
 registerDomImageTextureResolver(state);
 
 export const canvas: HTMLElement = container;

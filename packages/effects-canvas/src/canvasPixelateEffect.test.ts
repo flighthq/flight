@@ -1,6 +1,6 @@
 import {
   applyPixelateEffectToCanvas,
-  defaultCanvasPixelateEffectRunner,
+  canvasPixelateEffectRunner,
   registerCanvasPixelateEffect,
 } from './canvasPixelateEffect';
 
@@ -10,9 +10,9 @@ describe('applyPixelateEffectToCanvas', () => {
   });
 });
 
-describe('defaultCanvasPixelateEffectRunner', () => {
+describe('canvasPixelateEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultCanvasPixelateEffectRunner).toBe('function');
+    expect(typeof canvasPixelateEffectRunner).toBe('function');
   });
 });
 

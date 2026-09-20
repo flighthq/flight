@@ -10,7 +10,7 @@ import { SpriteKind } from '@flighthq/types/contract';
 
 import { registerDomImageTextureResolver } from './domImageTextureResolver';
 import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
-import { defaultDomSpriteRenderer, drawDomSprite } from './domSprite';
+import { domSpriteRenderer, drawDomSprite } from './domSprite';
 
 beforeEach(() => {
   registerTestImageDimensionResolver();
@@ -23,7 +23,7 @@ afterEach(() => {
 function drawElement(source: CanvasImageSource): HTMLElement | null {
   const state = createDomRenderState(document.createElement('div'));
   registerDomImageTextureResolver(state);
-  registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
+  registerRenderer(state, SpriteKind, domSpriteRenderer);
   const image = createImageResource(source);
   image.width = 64;
   image.height = 64;
@@ -34,11 +34,11 @@ function drawElement(source: CanvasImageSource): HTMLElement | null {
   return getDomRenderStateRuntime(state).domCurrentElement;
 }
 
-describe('defaultDomSpriteRenderer', () => {
+describe('domSpriteRenderer', () => {
   it('has submit and createData functions', () => {
-    expect(typeof defaultDomSpriteRenderer.createData).toBe('function');
-    expect(typeof defaultDomSpriteRenderer.isDirty).toBe('function');
-    expect(defaultDomSpriteRenderer.submit).toBe(drawDomSprite);
+    expect(typeof domSpriteRenderer.createData).toBe('function');
+    expect(typeof domSpriteRenderer.isDirty).toBe('function');
+    expect(domSpriteRenderer.submit).toBe(drawDomSprite);
   });
 });
 
@@ -56,7 +56,7 @@ describe('drawDomSprite', () => {
     const image = createImageResource(canvas);
     const state = createDomRenderState(document.createElement('div'));
     registerDomImageTextureResolver(state);
-    registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
+    registerRenderer(state, SpriteKind, domSpriteRenderer);
     const sprite = createSprite({
       data: { texture: createTexture({ dimension: '2d', source: image }) },
     });
@@ -71,7 +71,7 @@ describe('drawDomSprite', () => {
     const image = createImageResource(canvas);
     const state = createDomRenderState(document.createElement('div'));
     registerDomImageTextureResolver(state);
-    registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
+    registerRenderer(state, SpriteKind, domSpriteRenderer);
     const sprite = createSprite({
       data: {
         texture: createTexture({ dimension: '2d', sampler: createPixelArtSampler(), source: image }),
@@ -93,7 +93,7 @@ describe('drawDomSprite', () => {
     canvas.height = 50;
     const state = createDomRenderState(document.createElement('div'));
     registerDomImageTextureResolver(state);
-    registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
+    registerRenderer(state, SpriteKind, domSpriteRenderer);
     const texture = createTexture({ dimension: '2d', source: createImageResource(canvas) });
     texture.uvOffset.x = 0.1;
     texture.uvOffset.y = 0.4;

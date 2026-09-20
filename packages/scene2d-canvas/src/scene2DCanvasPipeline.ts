@@ -16,42 +16,42 @@ import {
   TilemapKind,
 } from '@flighthq/types/contract';
 
-import { defaultCanvasBitmapTextRenderer } from './canvasBitmapText';
-import { defaultCanvasRenderCacheRenderer } from './canvasCache';
+import { canvasBitmapTextRenderer } from './canvasBitmapText';
+import { canvasRenderCacheRenderer } from './canvasCache';
 import { applyCanvasBlendMode } from './canvasMaterials';
-import { defaultCanvasScene2DRenderer } from './canvasNode2D';
-import { defaultCanvasParticleEmitter2DRenderer } from './canvasParticleEmitter2D';
+import { canvasScene2DRenderer } from './canvasNode2D';
+import { canvasParticleEmitter2DRenderer } from './canvasParticleEmitter2D';
 import { allocateEmptyCanvasRenderRegistries } from './canvasPipeline';
-import { defaultCanvasQuadBatchRenderer } from './canvasQuadBatch';
-import { defaultCanvasRichTextRenderer } from './canvasRichText';
-import { defaultCanvasScale9ShapeRenderer } from './canvasScale9Shape';
-import { defaultCanvasScale9SpriteRenderer } from './canvasScale9Sprite';
-import { defaultCanvasShapeRenderer, defaultCanvasMorphShapeRenderer } from './canvasShape';
+import { canvasQuadBatchRenderer } from './canvasQuadBatch';
+import { canvasRichTextRenderer } from './canvasRichText';
+import { canvasScale9ShapeRenderer } from './canvasScale9Shape';
+import { canvasScale9SpriteRenderer } from './canvasScale9Sprite';
+import { canvasShapeRenderer, canvasMorphShapeRenderer } from './canvasShape';
 import { canvasShapeCommandTable } from './canvasShapeCommandTable';
-import { defaultCanvasSpriteRenderer } from './canvasSprite';
-import { defaultCanvasTextLabelRenderer } from './canvasTextLabel';
-import { defaultCanvasTilemapRenderer } from './canvasTilemap';
+import { canvasSpriteRenderer } from './canvasSprite';
+import { canvasTextLabelRenderer } from './canvasTextLabel';
+import { canvasTilemapRenderer } from './canvasTilemap';
 
 function buildScene2dCanvasRenderers(): KeyedTable<Renderer> {
   const registries = allocateEmptyCanvasRenderRegistries();
   let table = registries.renderers;
-  table = withRegistryTableEntry(table, BitmapTextKind, defaultCanvasBitmapTextRenderer);
-  table = withRegistryTableEntry(table, DisplayObjectKind, defaultCanvasScene2DRenderer);
-  table = withRegistryTableEntry(table, MorphShapeKind, defaultCanvasMorphShapeRenderer);
-  table = withRegistryTableEntry(table, ParticleEmitter2DKind, defaultCanvasParticleEmitter2DRenderer);
-  table = withRegistryTableEntry(table, QuadBatchKind, defaultCanvasQuadBatchRenderer);
-  table = withRegistryTableEntry(table, RenderCacheKind, defaultCanvasRenderCacheRenderer);
-  table = withRegistryTableEntry(table, RichTextKind, defaultCanvasRichTextRenderer);
-  table = withRegistryTableEntry(table, Scale9ShapeKind, defaultCanvasScale9ShapeRenderer);
-  table = withRegistryTableEntry(table, Scale9SpriteKind, defaultCanvasScale9SpriteRenderer);
-  table = withRegistryTableEntry(table, ShapeKind, defaultCanvasShapeRenderer);
-  table = withRegistryTableEntry(table, SpriteKind, defaultCanvasSpriteRenderer);
-  table = withRegistryTableEntry(table, TextLabelKind, defaultCanvasTextLabelRenderer);
-  table = withRegistryTableEntry(table, TilemapKind, defaultCanvasTilemapRenderer);
+  table = withRegistryTableEntry(table, BitmapTextKind, canvasBitmapTextRenderer);
+  table = withRegistryTableEntry(table, DisplayObjectKind, canvasScene2DRenderer);
+  table = withRegistryTableEntry(table, MorphShapeKind, canvasMorphShapeRenderer);
+  table = withRegistryTableEntry(table, ParticleEmitter2DKind, canvasParticleEmitter2DRenderer);
+  table = withRegistryTableEntry(table, QuadBatchKind, canvasQuadBatchRenderer);
+  table = withRegistryTableEntry(table, RenderCacheKind, canvasRenderCacheRenderer);
+  table = withRegistryTableEntry(table, RichTextKind, canvasRichTextRenderer);
+  table = withRegistryTableEntry(table, Scale9ShapeKind, canvasScale9ShapeRenderer);
+  table = withRegistryTableEntry(table, Scale9SpriteKind, canvasScale9SpriteRenderer);
+  table = withRegistryTableEntry(table, ShapeKind, canvasShapeRenderer);
+  table = withRegistryTableEntry(table, SpriteKind, canvasSpriteRenderer);
+  table = withRegistryTableEntry(table, TextLabelKind, canvasTextLabelRenderer);
+  table = withRegistryTableEntry(table, TilemapKind, canvasTilemapRenderer);
   return table;
 }
 
-export const defaultScene2DCanvasRenderRegistries: Readonly<CanvasRenderRegistries> = {
+export const canvasScene2DRenderRegistries: Readonly<CanvasRenderRegistries> = {
   ...allocateEmptyCanvasRenderRegistries(),
   blendModeApplication: applyCanvasBlendMode,
   canvasShapeCommands: canvasShapeCommandTable(),

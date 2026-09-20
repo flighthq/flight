@@ -20,16 +20,16 @@ import {
   createMatrix,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
-  defaultWgpuParticleEmitter2DRenderer,
-  defaultWgpuQuadBatchRenderer,
-  defaultWgpuRichTextRenderer,
-  defaultWgpuScale9ShapeRenderer,
-  defaultCanvasShapeCommands,
-  defaultWgpuShapeRenderer,
-  defaultWgpuSpriteRenderer,
-  defaultWgpuTextLabelRenderer,
-  defaultCanvasTextureShapeCommands,
-  defaultWgpuTilemapRenderer,
+  wgpuParticleEmitter2DRenderer,
+  wgpuQuadBatchRenderer,
+  wgpuRichTextRenderer,
+  wgpuScale9ShapeRenderer,
+  canvasShapeCommands,
+  wgpuShapeRenderer,
+  wgpuSpriteRenderer,
+  wgpuTextLabelRenderer,
+  canvasTextureShapeCommands,
+  wgpuTilemapRenderer,
   enableFlightDiagnostics,
   enableWgpuBlendModeSupport,
   enableWgpuClipSupport,
@@ -52,8 +52,8 @@ import {
   renderWgpuScene2D,
   RichTextKind,
   Scale9ShapeKind,
-  defaultScene2DCanvasRenderRegistries,
-  defaultScene3DWgpuRenderRegistries,
+  canvasScene2DRenderRegistries,
+  wgpuScene3DRenderRegistries,
   ShapeKind,
   SpriteKind,
   TextLabelKind,
@@ -82,7 +82,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
     format: acquisition.format,
   });
-  const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistries, {
+  const state = createWgpuRenderState(acquisition.device, wgpuScene3DRenderRegistries, {
     format: acquisition.format,
     pixelRatio,
     imageSurfaceProvider: webImageSurfaceCreator,
@@ -113,25 +113,25 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   enableWgpuScreenRenderTargetCapture(screen);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
-      registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+      registerRenderer(state, ShapeKind, wgpuShapeRenderer);
       registerWgpuShapeRasterizer(state, createHarnessShapeRasterizer());
-      registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
+      registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
     } else if (kind === RichTextKind) {
-      registerRenderer(state, RichTextKind, defaultWgpuRichTextRenderer);
+      registerRenderer(state, RichTextKind, wgpuRichTextRenderer);
     } else if (kind === TextLabelKind) {
-      registerRenderer(state, TextLabelKind, defaultWgpuTextLabelRenderer);
+      registerRenderer(state, TextLabelKind, wgpuTextLabelRenderer);
     } else if (kind === SpriteKind) {
-      registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
+      registerRenderer(state, SpriteKind, wgpuSpriteRenderer);
     } else if (kind === ParticleEmitter2DKind) {
-      registerRenderer(state, ParticleEmitter2DKind, defaultWgpuParticleEmitter2DRenderer);
+      registerRenderer(state, ParticleEmitter2DKind, wgpuParticleEmitter2DRenderer);
     } else if (kind === QuadBatchKind) {
-      registerRenderer(state, QuadBatchKind, defaultWgpuQuadBatchRenderer);
+      registerRenderer(state, QuadBatchKind, wgpuQuadBatchRenderer);
     } else if (kind === TilemapKind) {
-      registerRenderer(state, TilemapKind, defaultWgpuTilemapRenderer);
+      registerRenderer(state, TilemapKind, wgpuTilemapRenderer);
     } else if (kind === Scale9ShapeKind) {
-      registerRenderer(state, Scale9ShapeKind, defaultWgpuScale9ShapeRenderer);
+      registerRenderer(state, Scale9ShapeKind, wgpuScale9ShapeRenderer);
       registerWgpuShapeRasterizer(state, createHarnessShapeRasterizer());
-      registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
+      registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
     }
   }
 
@@ -166,7 +166,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
 function createHarnessShapeRasterizer(): ShapeRasterizer {
   const canvas = document.createElement('canvas');
   const resolverState = createCanvasRenderState(
-    defaultScene2DCanvasRenderRegistries,
+    canvasScene2DRenderRegistries,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   );
   // The rasterizer draws into its own canvas, so it opens its own pass over it and keeps it open for the

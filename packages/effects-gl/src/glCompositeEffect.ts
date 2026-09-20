@@ -45,18 +45,18 @@ export function applyCompositeEffectToGl(
   });
 }
 
-export const defaultGlCompositeEffectRunner: GlEffectRunner = (ctx, effect) => {
-  applyCompositeEffectToGl(ctx.state, ctx.source, ctx.dest, effect as CompositeEffect);
-};
-
 // Maps a CompositeOperator string to the integer the fragment shader switches on. Kept in lockstep with
 // the COMPOSITE_FRAGMENT_SRC branch order; an unknown (vendor) operator maps to 0 (SourceOver).
 export function getCompositeEffectOperatorIndex(operator: CompositeOperator): number {
   return COMPOSITE_OPERATOR_INDEX[operator] ?? 0;
 }
 
+export const glCompositeEffectRunner: GlEffectRunner = (ctx, effect) => {
+  applyCompositeEffectToGl(ctx.state, ctx.source, ctx.dest, effect as CompositeEffect);
+};
+
 export function registerGlCompositeEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'CompositeEffect', defaultGlCompositeEffectRunner);
+  registerGlEffect(state, 'CompositeEffect', glCompositeEffectRunner);
 }
 
 // CompositeOperator → shader branch index. Kept in lockstep with the if-chain in COMPOSITE_FRAGMENT_SRC

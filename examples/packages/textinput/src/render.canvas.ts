@@ -7,15 +7,15 @@ import {
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
-  defaultCanvasBeginFill,
-  defaultCanvasDrawRectangle,
-  defaultCanvasEndFill,
-  defaultCanvasLineStyle,
-  defaultCanvasLineTo,
-  defaultCanvasMoveTo,
-  defaultCanvasRichTextRenderer,
-  defaultCanvasShapeRenderer,
-  defaultCanvasTextLabelRenderer,
+  canvasBeginFill,
+  canvasDrawRectangle,
+  canvasEndFill,
+  canvasLineStyle,
+  canvasLineTo,
+  canvasMoveTo,
+  canvasRichTextRenderer,
+  canvasShapeRenderer,
+  canvasTextLabelRenderer,
   enableFlightDiagnostics,
   endCanvasRenderPass,
   prepareScene2DRender,
@@ -24,7 +24,7 @@ import {
   registerRenderer,
   renderCanvasScene2D,
   RichTextKind,
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   ShapeKind,
   TextLabelKind,
 } from '@flighthq/sdk';
@@ -43,7 +43,7 @@ export const screen = createCanvasScreenRenderTarget(
   }),
 );
 export const state = createCanvasRenderState(
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { sceneGraphSyncPolicy: 'requiresInvalidation', pixelRatio },
 );
@@ -52,16 +52,16 @@ registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 const screenClear = { color: [0xd0 / 0xff, 0xd0 / 0xff, 0xd0 / 0xff, 1] } as const;
 enableFlightDiagnostics(state);
 
-registerRenderer(state, RichTextKind, defaultCanvasRichTextRenderer);
-registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
+registerRenderer(state, RichTextKind, canvasRichTextRenderer);
+registerRenderer(state, ShapeKind, canvasShapeRenderer);
+registerRenderer(state, TextLabelKind, canvasTextLabelRenderer);
 registerCanvasShapeCommands(state, [
-  defaultCanvasBeginFill,
-  defaultCanvasDrawRectangle,
-  defaultCanvasEndFill,
-  defaultCanvasLineStyle,
-  defaultCanvasLineTo,
-  defaultCanvasMoveTo,
+  canvasBeginFill,
+  canvasDrawRectangle,
+  canvasEndFill,
+  canvasLineStyle,
+  canvasLineTo,
+  canvasMoveTo,
 ]);
 enableCanvasTextInput();
 

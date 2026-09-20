@@ -77,10 +77,10 @@ export function applyDropShadowEffectToGl(
   releaseGlTextureRenderTarget(pool, s2);
 }
 
-export const defaultGlDropShadowEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glDropShadowEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyDropShadowEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as DropShadowEffect);
 };
 
 export function registerGlDropShadowEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'DropShadowEffect', defaultGlDropShadowEffectRunner);
+  registerGlEffect(state, 'DropShadowEffect', glDropShadowEffectRunner);
 }

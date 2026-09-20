@@ -30,12 +30,12 @@ export function applyOutlineEffectToGl(
   });
 }
 
-export const defaultGlOutlineEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glOutlineEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyOutlineEffectToGl(ctx.state, ctx.source, ctx.dest, effect as OutlineEffect);
 };
 
 export function registerGlOutlineEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'OutlineEffect', defaultGlOutlineEffectRunner);
+  registerGlEffect(state, 'OutlineEffect', glOutlineEffectRunner);
 }
 
 const OUTLINE_FRAGMENT_SRC = `#version 300 es

@@ -3,21 +3,21 @@ import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/ren
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 
-import { defaultWgpuBitmapTextRenderer } from './wgpuBitmapText';
+import { wgpuBitmapTextRenderer } from './wgpuBitmapText';
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 
 beforeAll(() => {
   installWgpuMock();
 });
 
-describe('defaultWgpuBitmapTextRenderer', () => {
+describe('wgpuBitmapTextRenderer', () => {
   it('has createData and submit functions', () => {
-    expect(typeof defaultWgpuBitmapTextRenderer.createData).toBe('function');
-    expect(typeof defaultWgpuBitmapTextRenderer.submit).toBe('function');
+    expect(typeof wgpuBitmapTextRenderer.createData).toBe('function');
+    expect(typeof wgpuBitmapTextRenderer.submit).toBe('function');
   });
 });
 
-describe('defaultWgpuBitmapTextRenderer.submit', () => {
+describe('wgpuBitmapTextRenderer.submit', () => {
   it('does not throw for a text node with no bound glyph pages', async () => {
     const state = await createWgpuRenderStateForTest();
     beginWgpuScreenRenderPassForTest(state);
@@ -28,7 +28,7 @@ describe('defaultWgpuBitmapTextRenderer.submit', () => {
     const renderProxy = getRenderProxy2D(state, text)!;
 
     expect(() => {
-      defaultWgpuBitmapTextRenderer.submit(state, renderProxy);
+      wgpuBitmapTextRenderer.submit(state, renderProxy);
       flushWgpuQuadBatchWriter(state as never);
     }).not.toThrow();
     submitWgpuFrame(state);

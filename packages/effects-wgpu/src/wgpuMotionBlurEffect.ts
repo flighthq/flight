@@ -68,13 +68,13 @@ export function applyMotionBlurEffectToWgpu(
   );
 }
 
-export const defaultWgpuMotionBlurEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuMotionBlurEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'MotionBlurEffect', wgpuMotionBlurEffectRunner);
+}
+
+export const wgpuMotionBlurEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyMotionBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.sceneVelocityTexture, effect as MotionBlurEffect);
 };
-
-export function registerWgpuMotionBlurEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'MotionBlurEffect', defaultWgpuMotionBlurEffectRunner);
-}
 
 // Motion blur needs two source bindings (color = group 1, velocity = group 2), so it uses the
 // dual-source filter primitive; cached per state alongside the single-source effect pipelines.

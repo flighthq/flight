@@ -19,13 +19,13 @@ const RETIRED_EXPORTED_NAMES = [
   'appendShapeEllipticalArc',
   'appendShapeRoundRectangle',
   'appendShapeRoundRectangleVarying',
-  'defaultCanvasCurveTo',
-  'defaultCanvasDrawRoundRectangle',
-  'defaultGlCurveTo',
-  'defaultGlDrawRoundRectangle',
+  'canvasCurveTo',
+  'canvasDrawRoundRectangle',
+  'glCurveTo',
+  'glDrawRoundRectangle',
   'defaultShapeBoundsCurveTo',
-  'defaultWgpuCurveTo',
-  'defaultWgpuDrawRoundRectangle',
+  'wgpuCurveTo',
+  'wgpuDrawRoundRectangle',
 ] as const;
 
 const RETIRED_KIND_AND_COMMAND_NAMES = ['CURVE_TO', 'curveTo', 'drawRoundRectangle'] as const;

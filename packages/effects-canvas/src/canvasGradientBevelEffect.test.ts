@@ -10,7 +10,7 @@ import {
 } from './canvasEffectTestSupport';
 import {
   applyGradientBevelEffectToCanvas,
-  defaultCanvasGradientBevelEffectRunner,
+  canvasGradientBevelEffectRunner,
   registerCanvasGradientBevelEffect,
 } from './canvasGradientBevelEffect';
 
@@ -171,7 +171,7 @@ describe('applyGradientBevelEffectToCanvas', () => {
   });
 });
 
-describe('defaultCanvasGradientBevelEffectRunner', () => {
+describe('canvasGradientBevelEffectRunner', () => {
   it('applies the bevel through the pipeline context', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     const { source, dest } = scene();
@@ -179,7 +179,7 @@ describe('defaultCanvasGradientBevelEffectRunner', () => {
     const log: string[] = [];
     recordAll(log, [...targets, dest]);
 
-    defaultCanvasGradientBevelEffectRunner({ state, source, dest, pool }, effectOf());
+    canvasGradientBevelEffectRunner({ state, source, dest, pool }, effectOf());
 
     expect(log).toContain('band->dest|source-over');
   });
@@ -190,6 +190,6 @@ describe('registerCanvasGradientBevelEffect', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     registerCanvasGradientBevelEffect(state);
 
-    expect(getCanvasEffectRunner(state, 'GradientBevelEffect')).toBe(defaultCanvasGradientBevelEffectRunner);
+    expect(getCanvasEffectRunner(state, 'GradientBevelEffect')).toBe(canvasGradientBevelEffectRunner);
   });
 });

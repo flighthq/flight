@@ -91,7 +91,7 @@ export function applyGaussianBlurToGlRenderTextures(
   return true;
 }
 
-export const defaultGlBlurEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glBlurEffectRunner: GlEffectRunner = (ctx, effect) => {
   const descriptor = { width: ctx.source.width, height: ctx.source.height, format: ctx.source.format };
   const temp = acquireGlTextureRenderTarget(ctx.state, ctx.pool, descriptor);
   applyBlurEffectToGl(ctx.state, ctx.source, ctx.dest, temp, effect as BlurEffect);
@@ -99,7 +99,7 @@ export const defaultGlBlurEffectRunner: GlEffectRunner = (ctx, effect) => {
 };
 
 export function registerGlBlurEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'BlurEffect', defaultGlBlurEffectRunner);
+  registerGlEffect(state, 'BlurEffect', glBlurEffectRunner);
 }
 
 function applyGlGaussianBlurPass(

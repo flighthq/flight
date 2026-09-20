@@ -12,15 +12,15 @@ import {
 import type { Node2D } from '@flighthq/sdk';
 import {
   createGlSurface,
-  defaultScene3DGlRenderRegistries,
+  glScene3DRenderRegistries,
   connectCanvasTextureResolverMisses,
   createCanvasTextureResolvers,
   createCanvasShapeRasterizer,
   createGlRenderState,
-  defaultCanvasShapeCommands,
-  defaultCanvasTextureShapeCommands,
-  defaultGlShapeRenderer,
-  defaultGlTextLabelRenderer,
+  canvasShapeCommands,
+  canvasTextureShapeCommands,
+  glShapeRenderer,
+  glTextLabelRenderer,
   enableFlightDiagnostics,
   prepareScene2DRender,
   registerCanvasBitmapTextureResolver,
@@ -53,14 +53,14 @@ if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
 setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, CANVAS_WIDTH, CANVAS_HEIGHT);
 appendWebSurface(glSurface, document.body);
 export const canvas = getWebSurfaceElement(glSurface)!;
-export const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistries, {
+export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
   pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',
   imageSurfaceProvider: webImageSurfaceCreator,
 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 enableFlightDiagnostics(state);
-registerRenderer(state, ShapeKind, defaultGlShapeRenderer);
+registerRenderer(state, ShapeKind, glShapeRenderer);
 
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
 // has no tessellated form and draws through this rasterizer instead. Registering it is what keeps a
@@ -69,10 +69,10 @@ const shapeRasterizerResolvers = createCanvasTextureResolvers(webCanvasRenderSur
 connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
 registerCanvasBitmapTextureResolver(webHostImage, shapeRasterizerResolvers);
-registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
-registerCanvasShapeCommands(state, defaultCanvasTextureShapeCommands);
+registerCanvasShapeCommands(state, canvasShapeCommands);
+registerCanvasShapeCommands(state, canvasTextureShapeCommands);
 registerGlShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
-registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
+registerRenderer(state, TextLabelKind, glTextLabelRenderer);
 
 export const scale = pixelRatio;
 

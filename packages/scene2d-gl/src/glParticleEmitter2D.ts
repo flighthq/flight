@@ -306,7 +306,7 @@ export function drawGlParticleEmitter2D(state: GlRenderState, renderProxy: Rende
   gl.vertexAttribDivisor(shader.locSize, 0);
 }
 
-export const defaultGlParticleEmitter2DRenderer: SpriteRenderer = {
+export const glParticleEmitter2DRenderer: SpriteRenderer = {
   createData: noopRendererData,
   submit(state: GlRenderState, node: RenderProxy2D): void {
     flushGlQuadBatchWriter(state);

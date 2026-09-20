@@ -42,11 +42,7 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 import { getWgpuEffectRunner } from './wgpuEffectRegistry';
-import {
-  applyHalftoneEffectToWgpu,
-  defaultWgpuHalftoneEffectRunner,
-  registerWgpuHalftoneEffect,
-} from './wgpuHalftoneEffect';
+import { applyHalftoneEffectToWgpu, wgpuHalftoneEffectRunner, registerWgpuHalftoneEffect } from './wgpuHalftoneEffect';
 
 beforeAll(() => installWgpuMock());
 
@@ -169,26 +165,26 @@ describe('applyHalftoneEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuHalftoneEffectRunner', () => {
-  it('routes the runner context through to the pass', () => {
-    recorded.uniforms.length = 0;
-    const target = { height: 8, view: {}, width: 8 } as unknown as WgpuTextureRenderTarget;
-
-    defaultWgpuHalftoneEffectRunner(
-      { dest: target, pool: {}, source: target, state: {} } as never,
-      createHalftoneEffect({ angle: 90 }),
-    );
-
-    expect(recorded.uniforms[0]![1]).toBeCloseTo(Math.PI / 2, 6);
-  });
-});
-
 describe('registerWgpuHalftoneEffect', () => {
   it('makes the runner resolvable for the HalftoneEffect kind', async () => {
     const state = await createWgpuRenderStateForTest();
 
     expect(getWgpuEffectRunner(state, 'HalftoneEffect')).toBeNull();
     registerWgpuHalftoneEffect(state);
-    expect(getWgpuEffectRunner(state, 'HalftoneEffect')).toBe(defaultWgpuHalftoneEffectRunner);
+    expect(getWgpuEffectRunner(state, 'HalftoneEffect')).toBe(wgpuHalftoneEffectRunner);
+  });
+});
+
+describe('wgpuHalftoneEffectRunner', () => {
+  it('routes the runner context through to the pass', () => {
+    recorded.uniforms.length = 0;
+    const target = { height: 8, view: {}, width: 8 } as unknown as WgpuTextureRenderTarget;
+
+    wgpuHalftoneEffectRunner(
+      { dest: target, pool: {}, source: target, state: {} } as never,
+      createHalftoneEffect({ angle: 90 }),
+    );
+
+    expect(recorded.uniforms[0]![1]).toBeCloseTo(Math.PI / 2, 6);
   });
 });

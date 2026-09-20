@@ -25,13 +25,13 @@ export function applyScanlinesEffectToWgpu(
   });
 }
 
-export const defaultWgpuScanlinesEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuScanlinesEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'ScanlinesEffect', wgpuScanlinesEffectRunner);
+}
+
+export const wgpuScanlinesEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyScanlinesEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ScanlinesEffect);
 };
-
-export function registerWgpuScanlinesEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'ScanlinesEffect', defaultWgpuScanlinesEffectRunner);
-}
 
 // Slot layout: [0]=count, [1]=intensity.
 const SCANLINES_FRAGMENT_WGSL = /* wgsl */ `

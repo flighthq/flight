@@ -47,7 +47,7 @@ export function renderWgpuScene2D(pass: WgpuRenderPass, source: Node2D): void {
   clipHooks?.finalize(state);
 }
 
-export const defaultWgpuScene2DRenderer: Scene2DRenderer = {
+export const wgpuScene2DRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawWgpuScene2D,
 };

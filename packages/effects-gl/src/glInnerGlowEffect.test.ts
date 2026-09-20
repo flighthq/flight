@@ -4,11 +4,7 @@ import * as renderGlContract from '@flighthq/render-gl/contract';
 import * as glEffectBlitShader from './glEffectBlitShader';
 import * as glEffectBoxBlur from './glEffectBoxBlur';
 import * as glEffectTintShader from './glEffectTintShader';
-import {
-  applyInnerGlowEffectToGl,
-  defaultGlInnerGlowEffectRunner,
-  registerGlInnerGlowEffect,
-} from './glInnerGlowEffect';
+import { applyInnerGlowEffectToGl, glInnerGlowEffectRunner, registerGlInnerGlowEffect } from './glInnerGlowEffect';
 
 let nextTargetId = 0;
 
@@ -114,9 +110,9 @@ describe('applyInnerGlowEffectToGl', () => {
   });
 });
 
-describe('defaultGlInnerGlowEffectRunner', () => {
+describe('glInnerGlowEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlInnerGlowEffectRunner).toBe('function');
+    expect(typeof glInnerGlowEffectRunner).toBe('function');
   });
 });
 

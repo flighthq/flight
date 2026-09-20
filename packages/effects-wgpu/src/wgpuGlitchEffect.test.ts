@@ -1,4 +1,4 @@
-import { applyGlitchEffectToWgpu, defaultWgpuGlitchEffectRunner, registerWgpuGlitchEffect } from './wgpuGlitchEffect';
+import { applyGlitchEffectToWgpu, wgpuGlitchEffectRunner, registerWgpuGlitchEffect } from './wgpuGlitchEffect';
 
 describe('applyGlitchEffectToWgpu', () => {
   it('is a function', () => {
@@ -6,14 +6,14 @@ describe('applyGlitchEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuGlitchEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuGlitchEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuGlitchEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuGlitchEffect).toBeTypeOf('function');
+  });
+});
+
+describe('wgpuGlitchEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuGlitchEffectRunner).toBe('function');
   });
 });

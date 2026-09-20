@@ -17,25 +17,13 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RegistryEntryState, Scale9SpriteKind } from '@flighthq/types/contract';
 
-import { defaultScene2DWgpuRenderRegistries } from './scene2DWgpuPipeline';
+import { wgpuScene2DRenderRegistries } from './scene2DWgpuPipeline';
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
 import { prepareWgpuQuadBatchWrite, QUAD_BATCH_INSTANCE_FLOATS } from './wgpuQuadBatchWriter';
-import { defaultWgpuScale9SpriteRenderer, drawWgpuScale9Sprite } from './wgpuScale9Sprite';
+import { wgpuScale9SpriteRenderer, drawWgpuScale9Sprite } from './wgpuScale9Sprite';
 import { registerWgpuStandardMaterial, standardWgpuMaterialRenderer } from './wgpuStandardMaterial';
 
 beforeAll(() => installWgpuMock());
-
-describe('defaultWgpuScale9SpriteRenderer', () => {
-  it('is registered separately under Scale9SpriteKind', () => {
-    expect(typeof defaultWgpuScale9SpriteRenderer.createData).toBe('function');
-    expect(typeof defaultWgpuScale9SpriteRenderer.isDirty).toBe('function');
-    expect(defaultWgpuScale9SpriteRenderer.submit).toBe(drawWgpuScale9Sprite);
-    expect(defaultScene2DWgpuRenderRegistries.renderers.entries.get(Scale9SpriteKind)).toEqual({
-      state: RegistryEntryState.Bound,
-      value: defaultWgpuScale9SpriteRenderer,
-    });
-  });
-});
 
 describe('drawWgpuScale9Sprite', () => {
   it('emits nine independently positioned quad instances', async () => {
@@ -90,6 +78,18 @@ describe('drawWgpuScale9Sprite', () => {
     expect(runtime.quadBatchWriterColorScaleBiasMode).toBe(1);
     expect(runtime.quadBatchWriterUniformColorScaleBias).toBe(tint);
     submitWgpuFrame(state);
+  });
+});
+
+describe('wgpuScale9SpriteRenderer', () => {
+  it('is registered separately under Scale9SpriteKind', () => {
+    expect(typeof wgpuScale9SpriteRenderer.createData).toBe('function');
+    expect(typeof wgpuScale9SpriteRenderer.isDirty).toBe('function');
+    expect(wgpuScale9SpriteRenderer.submit).toBe(drawWgpuScale9Sprite);
+    expect(wgpuScene2DRenderRegistries.renderers.entries.get(Scale9SpriteKind)).toEqual({
+      state: RegistryEntryState.Bound,
+      value: wgpuScale9SpriteRenderer,
+    });
   });
 });
 

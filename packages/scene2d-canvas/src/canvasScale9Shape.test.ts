@@ -4,8 +4,8 @@ import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@
 import { Scale9ShapeKind } from '@flighthq/types/contract';
 
 import { buildScale9Mapper } from './canvasScale9Mapper';
-import { defaultCanvasScale9ShapeRenderer, drawCanvasScale9Shape } from './canvasScale9Shape';
-import { defaultCanvasShapeCommands } from './canvasShapeCommands';
+import { canvasScale9ShapeRenderer, drawCanvasScale9Shape } from './canvasScale9Shape';
+import { canvasShapeCommands } from './canvasShapeCommands';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
 import { createCanvasRenderState } from './canvasTestSupport';
 
@@ -17,8 +17,8 @@ describe('drawCanvasScale9Shape', () => {
     canvas.width = 200;
     canvas.height = 200;
     const state = createCanvasRenderState(canvas);
-    registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
-    registerRenderer(state, Scale9ShapeKind, defaultCanvasScale9ShapeRenderer);
+    registerCanvasShapeCommands(state, canvasShapeCommands);
+    registerRenderer(state, Scale9ShapeKind, canvasScale9ShapeRenderer);
     const shape = createScale9Shape(grid);
     const data = getOrCreateRenderProxy2D(state, shape);
     expect(() => drawCanvasScale9Shape(state, data)).not.toThrow();

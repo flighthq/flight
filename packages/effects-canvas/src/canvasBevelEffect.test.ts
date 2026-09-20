@@ -5,7 +5,7 @@ import type { BevelEffect, CanvasTextureRenderTarget, CanvasRenderTargetPool } f
 import {
   applyBevelEffectToCanvas,
   clipCanvasBevelBand,
-  defaultCanvasBevelEffectRunner,
+  canvasBevelEffectRunner,
   registerCanvasBevelEffect,
 } from './canvasBevelEffect';
 import { getCanvasEffectRunner } from './canvasEffectRegistry';
@@ -176,6 +176,20 @@ describe('applyBevelEffectToCanvas', () => {
   });
 });
 
+describe('canvasBevelEffectRunner', () => {
+  it('applies the bevel through the pipeline context', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'));
+    const { source, dest } = scene();
+    const { pool, targets } = seededPool(SCRATCH);
+    const log: Draw[] = [];
+    recordAll(log, [...targets, dest]);
+
+    canvasBevelEffectRunner({ state, source, dest, pool }, bevel());
+
+    expect(log.map((d) => d.entry)).toContain('band->dest|source-over');
+  });
+});
+
 describe('clipCanvasBevelBand', () => {
   function clipOperation(bevelType: BevelEffect['bevelType']): string[] {
     const band = createCanvasTextureRenderTarget(4, 4);
@@ -203,25 +217,11 @@ describe('clipCanvasBevelBand', () => {
   });
 });
 
-describe('defaultCanvasBevelEffectRunner', () => {
-  it('applies the bevel through the pipeline context', () => {
-    const state = createCanvasRenderState(document.createElement('canvas'));
-    const { source, dest } = scene();
-    const { pool, targets } = seededPool(SCRATCH);
-    const log: Draw[] = [];
-    recordAll(log, [...targets, dest]);
-
-    defaultCanvasBevelEffectRunner({ state, source, dest, pool }, bevel());
-
-    expect(log.map((d) => d.entry)).toContain('band->dest|source-over');
-  });
-});
-
 describe('registerCanvasBevelEffect', () => {
   it('registers the default runner under the BevelEffect kind', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     registerCanvasBevelEffect(state);
 
-    expect(getCanvasEffectRunner(state, 'BevelEffect')).toBe(defaultCanvasBevelEffectRunner);
+    expect(getCanvasEffectRunner(state, 'BevelEffect')).toBe(canvasBevelEffectRunner);
   });
 });

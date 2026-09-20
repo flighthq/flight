@@ -10,7 +10,7 @@ import {
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   allocateEmptyCanvasRenderRegistries,
-  defaultCanvasRichTextRenderer,
+  canvasRichTextRenderer,
   endCanvasRenderPass,
   registerCanvasSurfaceCreator,
   renderCanvasScene2D,
@@ -21,7 +21,7 @@ import { RegistryEntryState, RichTextKind } from '@flighthq/types';
 // REQUIRED WIRING for one rich text field, and nothing else:
 //   surface   webCanvasRenderSurfaceCreator — the single Canvas surface provider, NOT the aggregate
 //             webHost.
-//   renderer  RichTextKind -> defaultCanvasRichTextRenderer
+//   renderer  RichTextKind -> canvasRichTextRenderer
 //   commands  NONE. RichText replays no shape command stream, so no command table is built.
 //   resolvers an EMPTY CanvasTextureResolvers container. The Canvas backend rasterizes text through
 //             the 2D context's own font machinery, so no texture resolver and no glyph atlas is
@@ -39,7 +39,7 @@ document.body.appendChild(canvas);
 const emptyRegistries = allocateEmptyCanvasRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, RichTextKind, defaultCanvasRichTextRenderer),
+  renderers: withRegistryTableEntry(emptyRegistries.renderers, RichTextKind, canvasRichTextRenderer),
 };
 
 const screen = createCanvasScreenRenderTarget(

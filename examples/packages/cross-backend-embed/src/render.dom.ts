@@ -1,9 +1,9 @@
 import type { Node2D } from '@flighthq/sdk';
 import {
   createDomRenderState,
-  defaultDomHtmlViewRenderer,
-  defaultDomSpriteRenderer,
-  defaultDomTextLabelRenderer,
+  domHtmlViewRenderer,
+  domSpriteRenderer,
+  domTextLabelRenderer,
   HtmlViewKind,
   prepareScene2DRender,
   registerDomImageTextureResolver,
@@ -25,9 +25,9 @@ export const state = createDomRenderState(container, { sceneGraphSyncPolicy: 're
 container.style.backgroundColor = '#10141d';
 
 registerDomImageTextureResolver(state);
-registerRenderer(state, HtmlViewKind, defaultDomHtmlViewRenderer);
-registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
-registerRenderer(state, TextLabelKind, defaultDomTextLabelRenderer);
+registerRenderer(state, HtmlViewKind, domHtmlViewRenderer);
+registerRenderer(state, SpriteKind, domSpriteRenderer);
+registerRenderer(state, TextLabelKind, domTextLabelRenderer);
 
 export const canvas: HTMLElement = container;
 export const scale = 1;

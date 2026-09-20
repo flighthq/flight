@@ -122,12 +122,12 @@ export function applyGradientBevelEffectToGl(
   releaseGlTextureRenderTarget(pool, s2);
 }
 
-export const defaultGlGradientBevelEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glGradientBevelEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyGradientBevelEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as GradientBevelEffect);
 };
 
 export function registerGlGradientBevelEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'GradientBevelEffect', defaultGlGradientBevelEffectRunner);
+  registerGlEffect(state, 'GradientBevelEffect', glGradientBevelEffectRunner);
 }
 
 function applyBevelApplyPass(

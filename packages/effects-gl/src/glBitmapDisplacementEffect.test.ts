@@ -12,7 +12,7 @@ import { ImageChannel } from '@flighthq/types/contract';
 
 import {
   applyBitmapDisplacementEffectToGl,
-  defaultGlBitmapDisplacementEffectRunner,
+  glBitmapDisplacementEffectRunner,
   isGlBitmapDisplacementEffectResolvable,
   registerGlBitmapDisplacementEffect,
 } from './glBitmapDisplacementEffect';
@@ -147,9 +147,9 @@ describe('applyBitmapDisplacementEffectToGl', () => {
   });
 });
 
-describe('defaultGlBitmapDisplacementEffectRunner', () => {
+describe('glBitmapDisplacementEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
-    defaultGlBitmapDisplacementEffectRunner(
+    glBitmapDisplacementEffectRunner(
       { dest, pool: { free: [] }, source, state } as never,
       effect({ scaleX: 3, scaleY: 4 }),
     );
@@ -175,9 +175,7 @@ describe('registerGlBitmapDisplacementEffect', () => {
 
     expect(getGlEffectRunner(registeredState, 'BitmapDisplacementEffect')).toBeNull();
     registerGlBitmapDisplacementEffect(registeredState);
-    expect(getGlEffectRunner(registeredState, 'BitmapDisplacementEffect')).toBe(
-      defaultGlBitmapDisplacementEffectRunner,
-    );
+    expect(getGlEffectRunner(registeredState, 'BitmapDisplacementEffect')).toBe(glBitmapDisplacementEffectRunner);
     expect(isGlEffectResolvable(registeredState, effect({ map: null }))).toBe(false);
     expect(explainGlEffectApplication(registeredState, [effect({ map: null })], true)).toMatchObject({
       status: 'unresolved-effects',

@@ -9,7 +9,7 @@ import type {
 
 import {
   applyBlendEffectToCanvas,
-  defaultCanvasBlendEffectRunner,
+  canvasBlendEffectRunner,
   getCanvasBlendEffectBackdrop,
   getCanvasBlendEffectCompositeOperation,
   registerCanvasBlendEffect,
@@ -115,13 +115,13 @@ describe('applyBlendEffectToCanvas', () => {
   });
 });
 
-describe('defaultCanvasBlendEffectRunner', () => {
+describe('canvasBlendEffectRunner', () => {
   it('applies the blend through the pipeline context', () => {
     const { state, source, dest } = scene();
     registerCanvasBlendEffectBackdrop(state, 'scene', backdropTarget());
     const drawn = recordDraws(dest);
 
-    defaultCanvasBlendEffectRunner(
+    canvasBlendEffectRunner(
       {
         state,
         source,
@@ -219,7 +219,7 @@ describe('registerCanvasBlendEffect', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     registerCanvasBlendEffect(state);
 
-    expect(getCanvasEffectRunner(state, 'BlendEffect')).toBe(defaultCanvasBlendEffectRunner);
+    expect(getCanvasEffectRunner(state, 'BlendEffect')).toBe(canvasBlendEffectRunner);
   });
 });
 

@@ -23,13 +23,13 @@ export function applyPosterizeEffectToWgpu(
   });
 }
 
-export const defaultWgpuPosterizeEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuPosterizeEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'PosterizeEffect', wgpuPosterizeEffectRunner);
+}
+
+export const wgpuPosterizeEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyPosterizeEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as PosterizeEffect);
 };
-
-export function registerWgpuPosterizeEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'PosterizeEffect', defaultWgpuPosterizeEffectRunner);
-}
 
 // Slot layout: [0]=levels.
 const POSTERIZE_FRAGMENT_WGSL = /* wgsl */ `

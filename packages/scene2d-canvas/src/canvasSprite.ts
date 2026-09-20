@@ -36,7 +36,7 @@ export function drawCanvasSprite(state: CanvasRenderState, sprite: RenderProxy2D
   if (!smoothing) setCanvasImageSmoothing(state, true);
 }
 
-export const defaultCanvasSpriteRenderer: Scene2DRenderer = {
+export const canvasSpriteRenderer: Scene2DRenderer = {
   createData: createSpriteRendererData,
   isDirty: isSpriteRendererDirty,
   submit: drawCanvasSprite,

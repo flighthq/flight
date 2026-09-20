@@ -35,13 +35,13 @@ export function applyGlitchEffectToWgpu(
   });
 }
 
-export const defaultWgpuGlitchEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuGlitchEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'GlitchEffect', wgpuGlitchEffectRunner);
+}
+
+export const wgpuGlitchEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyGlitchEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as GlitchEffect);
 };
-
-export function registerWgpuGlitchEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'GlitchEffect', defaultWgpuGlitchEffectRunner);
-}
 
 // Slot layout: [0]=intensity, [1]=blockSize, [2]=colorShift, [3]=seed, [4..5]=resolution.
 const GLITCH_FRAGMENT_WGSL = /* wgsl */ `

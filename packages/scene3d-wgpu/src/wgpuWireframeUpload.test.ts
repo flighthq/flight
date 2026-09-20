@@ -3,7 +3,7 @@ import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
-import { defaultWgpuSkinningAdapter } from './wgpuSkinPalette';
+import { wgpuSkinningAdapter } from './wgpuSkinPalette';
 import { ensureWgpuWireframeUpload } from './wgpuWireframeUpload';
 
 describe('ensureWgpuWireframeUpload', () => {
@@ -70,7 +70,7 @@ describe('ensureWgpuWireframeUpload', () => {
     const geometry = createBoxMeshGeometry();
     const rigid = ensureWgpuWireframeUpload(state, geometry);
     getWgpuScene3DRuntime(state).skinningAdapter = {
-      ...defaultWgpuSkinningAdapter,
+      ...wgpuSkinningAdapter,
       getUploadVertices: () => new Float32Array(geometry.vertices),
       hasBindPose: () => true,
     } satisfies WgpuSkinningAdapter;

@@ -16,8 +16,8 @@ import {
   createTexture,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
-  defaultWgpuScene2DRenderer,
-  defaultWgpuSpriteRenderer,
+  wgpuScene2DRenderer,
+  wgpuSpriteRenderer,
   DisplayObjectKind,
   endWgpuRenderPass,
   getBitmapPixelRgb,
@@ -29,7 +29,7 @@ import {
   registerWgpuCompressedTextureUpload,
   registerWgpuImageTextureResolver,
   renderWgpuScene2D,
-  defaultScene3DWgpuRenderRegistries,
+  wgpuScene3DRenderRegistries,
   SpriteKind,
   createWgpuSurface,
   setSurfaceDisplaySize,
@@ -79,7 +79,7 @@ const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistries, {
+export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRenderRegistries, {
   format: acquisition.format,
   pixelRatio,
 });
@@ -93,8 +93,8 @@ export const width = WIDTH;
 export const height = HEIGHT;
 registerWgpuImageTextureResolver(state);
 registerWgpuCompressedImageTextureResolver(state);
-registerRenderer(state, DisplayObjectKind, defaultWgpuScene2DRenderer);
-registerRenderer(state, SpriteKind, defaultWgpuSpriteRenderer);
+registerRenderer(state, DisplayObjectKind, wgpuScene2DRenderer);
+registerRenderer(state, SpriteKind, wgpuSpriteRenderer);
 registerWgpuCompressedTextureUpload(state);
 registerWgpuCompressedTextureDecoder(state, (_format, w, h) => {
   const rgba = new Uint8ClampedArray(w * h * 4);

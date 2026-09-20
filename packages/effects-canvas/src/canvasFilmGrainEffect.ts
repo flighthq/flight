@@ -64,10 +64,10 @@ export function applyFilmGrainEffectToCanvas(
   releaseCanvasRenderTarget(pool, noise);
 }
 
-export const defaultCanvasFilmGrainEffectRunner: CanvasEffectRunner = (ctx, effect) => {
+export const canvasFilmGrainEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyFilmGrainEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as FilmGrainEffect);
 };
 
 export function registerCanvasFilmGrainEffect(state: CanvasRenderState): void {
-  registerCanvasEffect(state, 'FilmGrainEffect', defaultCanvasFilmGrainEffectRunner);
+  registerCanvasEffect(state, 'FilmGrainEffect', canvasFilmGrainEffectRunner);
 }

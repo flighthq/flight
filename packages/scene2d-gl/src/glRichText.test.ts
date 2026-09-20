@@ -12,7 +12,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   createGlRichTextData,
-  defaultGlRichTextRenderer,
+  glRichTextRenderer,
   destroyGlRichTextData,
   drawGlRichText,
   drawGlRichTextWithOverlay,
@@ -87,16 +87,6 @@ describe('createGlRichTextData', () => {
     };
     expect(data.surface).toBeNull();
     expect(EntityRuntimeKey in data).toBe(true);
-  });
-});
-
-describe('defaultGlRichTextRenderer', () => {
-  it('has a createData function', () => {
-    expect(typeof defaultGlRichTextRenderer.createData).toBe('function');
-  });
-
-  it('has a submit function pointing to drawGlRichText', () => {
-    expect(defaultGlRichTextRenderer.submit).toBe(drawGlRichText);
   });
 });
 
@@ -231,6 +221,16 @@ describe('drawGlRichTextWithOverlay', () => {
     drawGlRichTextWithOverlay(state, renderProxy, overlay);
 
     expect(overlay).toHaveBeenCalled();
+  });
+});
+
+describe('glRichTextRenderer', () => {
+  it('has a createData function', () => {
+    expect(typeof glRichTextRenderer.createData).toBe('function');
+  });
+
+  it('has a submit function pointing to drawGlRichText', () => {
+    expect(glRichTextRenderer.submit).toBe(drawGlRichText);
   });
 });
 

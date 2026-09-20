@@ -1,39 +1,36 @@
-export { defaultCanvasBevelEffectRunner, registerCanvasBevelEffect } from './canvasBevelEffect';
+export { canvasBevelEffectRunner, registerCanvasBevelEffect } from './canvasBevelEffect';
 export {
-  defaultCanvasBlendEffectRunner,
+  canvasBlendEffectRunner,
   getCanvasBlendEffectBackdrop,
   getCanvasBlendEffectCompositeOperation,
   registerCanvasBlendEffect,
   registerCanvasBlendEffectBackdrop,
 } from './canvasBlendEffect';
-export { defaultCanvasBloomEffectRunner, registerCanvasBloomEffect } from './canvasBloomEffect';
-export { defaultCanvasBlurEffectRunner, registerCanvasBlurEffect } from './canvasBlurEffect';
+export { canvasBloomEffectRunner, registerCanvasBloomEffect } from './canvasBloomEffect';
+export { canvasBlurEffectRunner, registerCanvasBlurEffect } from './canvasBlurEffect';
 export {
-  defaultCanvasCompositeEffectRunner,
+  canvasCompositeEffectRunner,
   getCanvasCompositeEffectOperation,
   registerCanvasCompositeEffect,
 } from './canvasCompositeEffect';
-export { defaultCanvasDropShadowEffectRunner, registerCanvasDropShadowEffect } from './canvasDropShadowEffect';
+export { canvasDropShadowEffectRunner, registerCanvasDropShadowEffect } from './canvasDropShadowEffect';
 export {
   beginCanvasEffectPass,
   createCanvasEffectState,
   destroyCanvasEffectState,
   endCanvasEffectPass,
 } from './canvasEffectState';
-export { defaultCanvasFilmGrainEffectRunner, registerCanvasFilmGrainEffect } from './canvasFilmGrainEffect';
-export { defaultCanvasGradientBevelEffectRunner, registerCanvasGradientBevelEffect } from './canvasGradientBevelEffect';
-export { defaultCanvasGradientGlowEffectRunner, registerCanvasGradientGlowEffect } from './canvasGradientGlowEffect';
-export { defaultCanvasInnerGlowEffectRunner, registerCanvasInnerGlowEffect } from './canvasInnerGlowEffect';
-export { defaultCanvasInnerShadowEffectRunner, registerCanvasInnerShadowEffect } from './canvasInnerShadowEffect';
-export {
-  defaultCanvasLensDistortionEffectRunner,
-  registerCanvasLensDistortionEffect,
-} from './canvasLensDistortionEffect';
-export { defaultCanvasOuterGlowEffectRunner, registerCanvasOuterGlowEffect } from './canvasOuterGlowEffect';
-export { defaultCanvasPixelateEffectRunner, registerCanvasPixelateEffect } from './canvasPixelateEffect';
-export { defaultCanvasPosterizeEffectRunner, registerCanvasPosterizeEffect } from './canvasPosterizeEffect';
+export { canvasFilmGrainEffectRunner, registerCanvasFilmGrainEffect } from './canvasFilmGrainEffect';
+export { canvasGradientBevelEffectRunner, registerCanvasGradientBevelEffect } from './canvasGradientBevelEffect';
+export { canvasGradientGlowEffectRunner, registerCanvasGradientGlowEffect } from './canvasGradientGlowEffect';
+export { canvasInnerGlowEffectRunner, registerCanvasInnerGlowEffect } from './canvasInnerGlowEffect';
+export { canvasInnerShadowEffectRunner, registerCanvasInnerShadowEffect } from './canvasInnerShadowEffect';
+export { canvasLensDistortionEffectRunner, registerCanvasLensDistortionEffect } from './canvasLensDistortionEffect';
+export { canvasOuterGlowEffectRunner, registerCanvasOuterGlowEffect } from './canvasOuterGlowEffect';
+export { canvasPixelateEffectRunner, registerCanvasPixelateEffect } from './canvasPixelateEffect';
+export { canvasPosterizeEffectRunner, registerCanvasPosterizeEffect } from './canvasPosterizeEffect';
 export * from './canvasEffectRegistry';
 export * from './canvasRenderTextureEffect';
-export { defaultCanvasScanlinesEffectRunner, registerCanvasScanlinesEffect } from './canvasScanlinesEffect';
-export { defaultCanvasTiltShiftEffectRunner, registerCanvasTiltShiftEffect } from './canvasTiltShiftEffect';
-export { defaultCanvasVignetteEffectRunner, registerCanvasVignetteEffect } from './canvasVignetteEffect';
+export { canvasScanlinesEffectRunner, registerCanvasScanlinesEffect } from './canvasScanlinesEffect';
+export { canvasTiltShiftEffectRunner, registerCanvasTiltShiftEffect } from './canvasTiltShiftEffect';
+export { canvasVignetteEffectRunner, registerCanvasVignetteEffect } from './canvasVignetteEffect';
