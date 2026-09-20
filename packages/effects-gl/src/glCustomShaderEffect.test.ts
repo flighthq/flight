@@ -11,7 +11,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   applyCustomShaderEffectToGl,
-  defaultGlCustomShaderEffectRunner,
+  glCustomShaderEffectRunner,
   getGlCustomShaderSource,
   isGlCustomShaderEffectResolvable,
   registerGlCustomShaderSource,
@@ -45,12 +45,6 @@ describe('applyCustomShaderEffectToGl', () => {
   });
 });
 
-describe('defaultGlCustomShaderEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultGlCustomShaderEffectRunner).toBe('function');
-  });
-});
-
 describe('getGlCustomShaderSource', () => {
   it('returns null when no source is registered for the key', () => {
     expect(getGlCustomShaderSource(makeState(), 'missing')).toBeNull();
@@ -67,6 +61,12 @@ describe('getGlCustomShaderSource', () => {
     const b = makeState();
     registerGlCustomShaderSource(a, 'ripple', FRAGMENT_SRC);
     expect(getGlCustomShaderSource(b, 'ripple')).toBeNull();
+  });
+});
+
+describe('glCustomShaderEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof glCustomShaderEffectRunner).toBe('function');
   });
 });
 

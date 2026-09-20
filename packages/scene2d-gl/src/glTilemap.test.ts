@@ -3,7 +3,7 @@ import type { RenderProxy2D } from '@flighthq/types/contract';
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
-import { defaultGlTilemapRenderer } from './glTilemap';
+import { glTilemapRenderer } from './glTilemap';
 
 function makeAtlas() {
   const img = document.createElement('img');
@@ -45,21 +45,21 @@ function makeTilemapNode(data: Record<string, unknown> = {}): RenderProxy2D {
   } as unknown as RenderProxy2D;
 }
 
-describe('defaultGlTilemapRenderer', () => {
+describe('glTilemapRenderer', () => {
   it('has a createData function', () => {
-    expect(typeof defaultGlTilemapRenderer.createData).toBe('function');
+    expect(typeof glTilemapRenderer.createData).toBe('function');
   });
 
   it('has a submit function', () => {
-    expect(typeof defaultGlTilemapRenderer.submit).toBe('function');
+    expect(typeof glTilemapRenderer.submit).toBe('function');
   });
 });
 
-describe('defaultGlTilemapRenderer.submit', () => {
+describe('glTilemapRenderer.submit', () => {
   it('returns early without drawing when atlas is null', () => {
     const { state, gl } = createAtlasGlState();
     registerGlStandardMaterial(state);
-    defaultGlTilemapRenderer.submit(state, makeTilemapNode({ atlas: null }));
+    glTilemapRenderer.submit(state, makeTilemapNode({ atlas: null }));
     flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
@@ -67,7 +67,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
   it('returns early without drawing when atlas.texture is null', () => {
     const { state, gl } = createAtlasGlState();
     registerGlStandardMaterial(state);
-    defaultGlTilemapRenderer.submit(state, makeTilemapNode({ atlas: { regions: [], texture: null } }));
+    glTilemapRenderer.submit(state, makeTilemapNode({ atlas: { regions: [], texture: null } }));
     flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
@@ -75,7 +75,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
   it('returns early without drawing when atlas Texture is unbound', () => {
     const { state, gl } = createAtlasGlState();
     registerGlStandardMaterial(state);
-    defaultGlTilemapRenderer.submit(
+    glTilemapRenderer.submit(
       state,
       makeTilemapNode({
         atlas: { regions: [], texture: createTexture() },
@@ -88,7 +88,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
   it('returns early without drawing when columns is 0', () => {
     const { state, gl } = createAtlasGlState();
     registerGlStandardMaterial(state);
-    defaultGlTilemapRenderer.submit(state, makeTilemapNode({ columns: 0 }));
+    glTilemapRenderer.submit(state, makeTilemapNode({ columns: 0 }));
     flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
@@ -96,7 +96,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
   it('returns early without drawing when rows is 0', () => {
     const { state, gl } = createAtlasGlState();
     registerGlStandardMaterial(state);
-    defaultGlTilemapRenderer.submit(state, makeTilemapNode({ rows: 0 }));
+    glTilemapRenderer.submit(state, makeTilemapNode({ rows: 0 }));
     flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
@@ -104,7 +104,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
   it('draws all valid tiles in a single instanced call', () => {
     const { state, gl } = createAtlasGlState();
     registerGlStandardMaterial(state);
-    defaultGlTilemapRenderer.submit(state, makeTilemapNode());
+    glTilemapRenderer.submit(state, makeTilemapNode());
     flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 4);
@@ -113,7 +113,7 @@ describe('defaultGlTilemapRenderer.submit', () => {
   it('excludes out-of-range tile ids from the instanced draw count', () => {
     const { state, gl } = createAtlasGlState();
     registerGlStandardMaterial(state);
-    defaultGlTilemapRenderer.submit(state, makeTilemapNode({ tiles: [0, 99, 99, 0] }));
+    glTilemapRenderer.submit(state, makeTilemapNode({ tiles: [0, 99, 99, 0] }));
     flushGlQuadBatchWriter(state);
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(gl.drawElementsInstanced).toHaveBeenCalledWith(expect.anything(), 6, expect.anything(), 0, 2);

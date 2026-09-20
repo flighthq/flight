@@ -10,7 +10,7 @@ import {
 } from './canvasEffectTestSupport';
 import {
   applyInnerGlowEffectToCanvas,
-  defaultCanvasInnerGlowEffectRunner,
+  canvasInnerGlowEffectRunner,
   registerCanvasInnerGlowEffect,
 } from './canvasInnerGlowEffect';
 
@@ -143,7 +143,7 @@ describe('applyInnerGlowEffectToCanvas', () => {
   });
 });
 
-describe('defaultCanvasInnerGlowEffectRunner', () => {
+describe('canvasInnerGlowEffectRunner', () => {
   it('applies the glow through the pipeline context', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     const { source, dest } = scene();
@@ -151,7 +151,7 @@ describe('defaultCanvasInnerGlowEffectRunner', () => {
     const log: string[] = [];
     recordAll(log, [...targets, dest]);
 
-    defaultCanvasInnerGlowEffectRunner({ state, source, dest, pool }, innerGlow());
+    canvasInnerGlowEffectRunner({ state, source, dest, pool }, innerGlow());
 
     expect(log).toContain('source->glow|destination-in|0,0');
   });
@@ -162,6 +162,6 @@ describe('registerCanvasInnerGlowEffect', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     registerCanvasInnerGlowEffect(state);
 
-    expect(getCanvasEffectRunner(state, 'InnerGlowEffect')).toBe(defaultCanvasInnerGlowEffectRunner);
+    expect(getCanvasEffectRunner(state, 'InnerGlowEffect')).toBe(canvasInnerGlowEffectRunner);
   });
 });

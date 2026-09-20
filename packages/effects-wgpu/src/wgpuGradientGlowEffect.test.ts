@@ -1,6 +1,6 @@
 import {
   applyGradientGlowEffectToWgpu,
-  defaultWgpuGradientGlowEffectRunner,
+  wgpuGradientGlowEffectRunner,
   registerWgpuGradientGlowEffect,
 } from './wgpuGradientGlowEffect';
 
@@ -10,14 +10,14 @@ describe('applyGradientGlowEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuGradientGlowEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuGradientGlowEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuGradientGlowEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuGradientGlowEffect).toBeTypeOf('function');
+  });
+});
+
+describe('wgpuGradientGlowEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuGradientGlowEffectRunner).toBe('function');
   });
 });

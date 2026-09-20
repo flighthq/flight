@@ -3,7 +3,7 @@ import * as renderWgpuContract from '@flighthq/render-wgpu/contract';
 
 import {
   applyDropShadowEffectToWgpu,
-  defaultWgpuDropShadowEffectRunner,
+  wgpuDropShadowEffectRunner,
   registerWgpuDropShadowEffect,
 } from './wgpuDropShadowEffect';
 import * as wgpuEffectBlitShaderMod from './wgpuEffectBlitShader';
@@ -92,9 +92,9 @@ describe('applyDropShadowEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuDropShadowEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuDropShadowEffectRunner).toBe('function');
+describe('registerWgpuDropShadowEffect', () => {
+  it('is a separately importable registration primitive', () => {
+    expect(registerWgpuDropShadowEffect).toBeTypeOf('function');
   });
 });
 
@@ -110,8 +110,8 @@ function createTarget(id: string): never {
   return { id, width: 32, height: 16, format: 'rgba8', texture: {} } as never;
 }
 
-describe('registerWgpuDropShadowEffect', () => {
-  it('is a separately importable registration primitive', () => {
-    expect(registerWgpuDropShadowEffect).toBeTypeOf('function');
+describe('wgpuDropShadowEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuDropShadowEffectRunner).toBe('function');
   });
 });

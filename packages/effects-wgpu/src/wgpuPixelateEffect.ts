@@ -28,13 +28,13 @@ export function applyPixelateEffectToWgpu(
   });
 }
 
-export const defaultWgpuPixelateEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuPixelateEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'PixelateEffect', wgpuPixelateEffectRunner);
+}
+
+export const wgpuPixelateEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyPixelateEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as PixelateEffect);
 };
-
-export function registerWgpuPixelateEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'PixelateEffect', defaultWgpuPixelateEffectRunner);
-}
 
 // Slot layout: [0]=size, [1]=pad, [2..3]=resolution.
 const PIXELATE_FRAGMENT_WGSL = /* wgsl */ `

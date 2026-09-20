@@ -122,7 +122,7 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
   runtime.quadBatchWriterCount += drawCount;
 }
 
-export const defaultWgpuQuadBatchRenderer: SpriteRenderer = {
+export const wgpuQuadBatchRenderer: SpriteRenderer = {
   format: BatchFormat.Quad,
   createData: noopRendererData,
   submit: submitWgpuQuadBatch,

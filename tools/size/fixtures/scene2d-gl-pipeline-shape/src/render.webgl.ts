@@ -11,7 +11,7 @@ import {
   createGlScreenRenderTarget,
 } from '@flighthq/render-gl';
 import { createDisplayObject } from '@flighthq/scene2d';
-import { defaultGlMeshShapeRenderer, renderGlScene2D } from '@flighthq/scene2d-gl';
+import { glMeshShapeRenderer, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
 import { createGlSurface } from '@flighthq/surface';
 import { RegistryEntryState, ShapeKind } from '@flighthq/types';
@@ -28,7 +28,7 @@ document.body.style.margin = '0';
 const emptyRegistries = allocateEmptyGlRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, ShapeKind, defaultGlMeshShapeRenderer),
+  renderers: withRegistryTableEntry(emptyRegistries.renderers, ShapeKind, glMeshShapeRenderer),
 };
 const state = createGlRenderState(glSurface.context, registry, { pixelRatio: 1 });
 const screenTarget = createGlScreenRenderTarget(state.gl);

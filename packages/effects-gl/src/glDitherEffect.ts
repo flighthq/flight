@@ -20,12 +20,12 @@ export function applyDitherEffectToGl(
   });
 }
 
-export const defaultGlDitherEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glDitherEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyDitherEffectToGl(ctx.state, ctx.source, ctx.dest, effect as DitherEffect);
 };
 
 export function registerGlDitherEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'DitherEffect', defaultGlDitherEffectRunner);
+  registerGlEffect(state, 'DitherEffect', glDitherEffectRunner);
 }
 
 const DITHER_FRAGMENT_SRC = `#version 300 es

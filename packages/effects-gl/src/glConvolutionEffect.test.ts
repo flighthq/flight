@@ -6,7 +6,7 @@ import * as renderGlContract from '@flighthq/render-gl/contract';
 
 import {
   applyConvolutionEffectToGl,
-  defaultGlConvolutionEffectRunner,
+  glConvolutionEffectRunner,
   registerGlConvolutionEffect,
 } from './glConvolutionEffect';
 import * as glEffectProgramCache from './glEffectProgramCache';
@@ -85,9 +85,9 @@ describe('applyConvolutionEffectToGl', () => {
   });
 });
 
-describe('defaultGlConvolutionEffectRunner', () => {
+describe('glConvolutionEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlConvolutionEffectRunner).toBe('function');
+    expect(typeof glConvolutionEffectRunner).toBe('function');
   });
 });
 

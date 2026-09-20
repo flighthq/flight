@@ -1,7 +1,7 @@
 import { addNodeChild } from '@flighthq/node';
 import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene2d';
-import { createDomRenderState, defaultDomTextLabelRenderer, renderDomScene2D } from '@flighthq/scene2d-dom';
+import { createDomRenderState, domTextLabelRenderer, renderDomScene2D } from '@flighthq/scene2d-dom';
 import { createTextLabel } from '@flighthq/text';
 import { TextLabelKind } from '@flighthq/types';
 
@@ -16,7 +16,7 @@ const state = createDomRenderState(container, { pixelRatio: 1 });
 // already holds, set once rather than reapplied by a render function every frame.
 container.style.backgroundColor = '#1a1a2e';
 
-registerRenderer(state, TextLabelKind, defaultDomTextLabelRenderer);
+registerRenderer(state, TextLabelKind, domTextLabelRenderer);
 
 const root = createDisplayObject();
 const label = createTextLabel();

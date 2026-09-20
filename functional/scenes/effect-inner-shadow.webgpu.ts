@@ -20,7 +20,7 @@ import {
   createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
-  defaultWgpuShapeRenderer,
+  wgpuShapeRenderer,
   endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelRgb,
@@ -28,7 +28,7 @@ import {
   registerRenderer,
   registerWgpuInnerShadowEffect,
   renderWgpuScene2D,
-  defaultScene3DWgpuRenderRegistries,
+  wgpuScene3DRenderRegistries,
   createWgpuSurface,
   setSurfaceDisplaySize,
   createAppWindow,
@@ -61,11 +61,11 @@ const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistries, {
+export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRenderRegistries, {
   format: acquisition.format,
   pixelRatio,
 });
-registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+registerRenderer(state, ShapeKind, wgpuShapeRenderer);
 registerWgpuInnerShadowEffect(state);
 
 const pipeline = createWgpuEffectState(state, {

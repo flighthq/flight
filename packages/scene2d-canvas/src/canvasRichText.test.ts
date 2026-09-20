@@ -4,7 +4,7 @@ import { enableTextInput } from '@flighthq/textinput/contract';
 import { createTextFormatRange } from '@flighthq/textlayout/contract';
 
 import {
-  defaultCanvasRichTextRenderer,
+  canvasRichTextRenderer,
   drawCanvasRichText,
   drawCanvasRichTextMask,
   registerCanvasTextInputOverlay,
@@ -18,13 +18,13 @@ function makeState() {
   return createCanvasRenderState(canvas);
 }
 
-describe('defaultCanvasRichTextRenderer', () => {
+describe('canvasRichTextRenderer', () => {
   it('has noopRendererData as createData', () => {
-    expect(typeof defaultCanvasRichTextRenderer.createData).toBe('function');
+    expect(typeof canvasRichTextRenderer.createData).toBe('function');
   });
 
   it('has drawCanvasRichText as submit', () => {
-    expect(defaultCanvasRichTextRenderer.submit).toBe(drawCanvasRichText);
+    expect(canvasRichTextRenderer.submit).toBe(drawCanvasRichText);
   });
 });
 

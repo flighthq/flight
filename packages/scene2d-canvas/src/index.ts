@@ -1,11 +1,11 @@
-export { defaultCanvasBitmapTextRenderer } from './canvasBitmapText';
+export { canvasBitmapTextRenderer } from './canvasBitmapText';
 export * from './canvasBitmapTextureResolver';
 export {
   createCanvasCacheState,
   createCanvasOffscreenRenderState,
   enableCanvasRenderCache,
   refreshCanvasRenderCache,
-  defaultCanvasRenderCacheRenderer,
+  canvasRenderCacheRenderer,
 } from './canvasCache';
 export * from './canvasClip';
 export * from './canvasElement';
@@ -17,10 +17,10 @@ export {
   resolveCanvasMaterialRenderer,
 } from './canvasMaterialRegistry';
 export { enableCanvasBlendMode } from './canvasMaterials';
-export { defaultCanvasScene2DRenderer, renderCanvasScene2D } from './canvasNode2D';
-export { defaultCanvasParticleEmitter2DRenderer } from './canvasParticleEmitter2D';
+export { canvasScene2DRenderer, renderCanvasScene2D } from './canvasNode2D';
+export { canvasParticleEmitter2DRenderer } from './canvasParticleEmitter2D';
 export { allocateEmptyCanvasRenderRegistries } from './canvasPipeline';
-export { defaultCanvasQuadBatchRenderer } from './canvasQuadBatch';
+export { canvasQuadBatchRenderer } from './canvasQuadBatch';
 export { beginCanvasRenderPass, endCanvasRenderPass, getCanvasActiveRenderPass } from './canvasRenderPass';
 export {
   createCanvasRenderState,
@@ -46,39 +46,39 @@ export {
   withCanvasRenderTextures,
 } from './canvasRenderTexturePool';
 export * from './canvasRenderTextureResolver';
-export { defaultCanvasRichTextRenderer } from './canvasRichText';
-export { defaultCanvasScale9ShapeRenderer } from './canvasScale9Shape';
-export { defaultCanvasScale9SpriteRenderer } from './canvasScale9Sprite';
+export { canvasRichTextRenderer } from './canvasRichText';
+export { canvasScale9ShapeRenderer } from './canvasScale9Shape';
+export { canvasScale9SpriteRenderer } from './canvasScale9Sprite';
 export {
   createCanvasScreenRenderTarget,
   disposeCanvasScreenRenderTarget,
   isCanvasScreenRenderTarget,
 } from './canvasScreenRenderTarget';
-export { defaultCanvasShapeRenderer, defaultCanvasMorphShapeRenderer } from './canvasShape';
+export { canvasShapeRenderer, canvasMorphShapeRenderer } from './canvasShape';
 export * from './canvasShapeCommandTable';
 export {
-  defaultCanvasBeginFill,
-  defaultCanvasBeginGradientFill,
-  defaultCanvasCubicCurveTo,
-  defaultCanvasQuadraticCurveTo,
-  defaultCanvasDrawCircle,
-  defaultCanvasDrawEllipse,
-  defaultCanvasDrawPath,
-  defaultCanvasDrawRectangle,
-  defaultCanvasDrawRoundedRectangle,
-  defaultCanvasEndFill,
-  defaultCanvasLineGradientStyle,
-  defaultCanvasLineStyle,
-  defaultCanvasLineTo,
-  defaultCanvasMoveTo,
-  defaultCanvasShapeCommands,
-  defaultCanvasTextureShapeCommands,
+  canvasBeginFill,
+  canvasBeginGradientFill,
+  canvasCubicCurveTo,
+  canvasQuadraticCurveTo,
+  canvasDrawCircle,
+  canvasDrawEllipse,
+  canvasDrawPath,
+  canvasDrawRectangle,
+  canvasDrawRoundedRectangle,
+  canvasEndFill,
+  canvasLineGradientStyle,
+  canvasLineStyle,
+  canvasLineTo,
+  canvasMoveTo,
+  canvasShapeCommands,
+  canvasTextureShapeCommands,
 } from './canvasShapeCommands';
 export * from './canvasShapeRasterizer';
 export { registerCanvasShapeCommands } from './canvasShapeRegistry';
-export { defaultCanvasSpriteRenderer } from './canvasSprite';
+export { canvasSpriteRenderer } from './canvasSprite';
 export { enableCanvasTextInput } from './canvasTextInput';
-export { defaultCanvasTextLabelRenderer } from './canvasTextLabel';
+export { canvasTextLabelRenderer } from './canvasTextLabel';
 export {
   createCanvasTextureRenderTarget,
   destroyCanvasTextureRenderTarget,
@@ -90,7 +90,7 @@ export {
   destroyCanvasTextureResolvers,
   registerCanvasTextureResolver,
 } from './canvasTextureResolver';
-export { defaultCanvasTilemapRenderer } from './canvasTilemap';
+export { canvasTilemapRenderer } from './canvasTilemap';
 export * from './enableCanvasTextureResolverGuards';
 export * from './explainCanvasScene2DCoverage';
 export * from './explainCanvasTextureResolution';

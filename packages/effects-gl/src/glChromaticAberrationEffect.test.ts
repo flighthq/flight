@@ -4,7 +4,7 @@ import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contr
 
 import {
   applyChromaticAberrationEffectToGl,
-  defaultGlChromaticAberrationEffectRunner,
+  glChromaticAberrationEffectRunner,
   registerGlChromaticAberrationEffect,
 } from './glChromaticAberrationEffect';
 import * as glEffectProgramCache from './glEffectProgramCache';
@@ -89,9 +89,9 @@ describe('applyChromaticAberrationEffectToGl', () => {
   });
 });
 
-describe('defaultGlChromaticAberrationEffectRunner', () => {
+describe('glChromaticAberrationEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlChromaticAberrationEffectRunner).toBe('function');
+    expect(typeof glChromaticAberrationEffectRunner).toBe('function');
   });
 });
 

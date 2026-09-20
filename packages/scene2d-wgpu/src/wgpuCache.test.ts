@@ -22,7 +22,7 @@ import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 
 import {
   createWgpuCacheState,
-  defaultWgpuRenderCacheRenderer,
+  wgpuRenderCacheRenderer,
   enableWgpuRenderCache,
   ensureWgpuRenderCacheTarget,
   getWgpuRenderCacheTarget,
@@ -264,7 +264,7 @@ describe('createWgpuCacheState', () => {
     const cacheState = createCacheState(screen);
     expect(renderWgpu.getWgpuRenderStateRuntime(cacheState).registries.renderers.entries.get(RenderCacheKind)).toEqual({
       state: 'bound',
-      value: defaultWgpuRenderCacheRenderer,
+      value: wgpuRenderCacheRenderer,
     });
     expect((cacheState as any).device).toBe((screen as any).device);
     expect(renderWgpu.getWgpuRenderStateRuntime(cacheState).renderProxyMap).not.toBe(
@@ -341,52 +341,13 @@ describe('createWgpuCacheState', () => {
   });
 });
 
-describe('defaultWgpuRenderCacheRenderer', () => {
-  it('does nothing when no cache is attached to the source', () => {
-    const state = fakeScreen();
-    defaultWgpuRenderCacheRenderer.submit(state, makeCacheNode(createDisplayObject()));
-    expect(renderWgpu.drawWgpuTextureRenderTargetResult).not.toHaveBeenCalled();
-  });
-
-  it('composites the cache target attached to the source node', () => {
-    const state = fakeScreen();
-    const obj = createDisplayObject();
-    const cache = createRenderCache();
-    useRenderCache(state, obj, cache);
-    const target = ensureWgpuRenderCacheTarget(state, cache, 16, 16);
-    defaultWgpuRenderCacheRenderer.submit(state, makeCacheNode(obj));
-    expect(renderWgpu.drawWgpuTextureRenderTargetResult).toHaveBeenCalledWith(
-      state,
-      expect.anything(),
-      target,
-      expect.anything(),
-    );
-  });
-
-  it('flushes pending batched geometry before the immediate composite', () => {
-    const state = fakeScreen();
-    const obj = createDisplayObject();
-    const cache = createRenderCache();
-    useRenderCache(state, obj, cache);
-    ensureWgpuRenderCacheTarget(state, cache, 16, 16);
-    defaultWgpuRenderCacheRenderer.submit(state, makeCacheNode(obj));
-    // The composite draws an immediate quad outside the quad-batch writer; geometry submitted earlier in
-    // the walk must be drained first, or the immediate quad interleaves with the un-flushed batch's
-    // instance buffer and bind-group state and corrupts it.
-    expect(wgpuQuadBatchWriter.flushWgpuQuadBatchWriter).toHaveBeenCalledWith(state);
-    expect((wgpuQuadBatchWriter.flushWgpuQuadBatchWriter as any).mock.invocationCallOrder[0]).toBeLessThan(
-      (renderWgpu.drawWgpuTextureRenderTargetResult as any).mock.invocationCallOrder[0],
-    );
-  });
-});
-
 describe('enableWgpuRenderCache', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = fakeScreen();
     enableWgpuRenderCache(state);
     expect(renderWgpu.getWgpuRenderStateRuntime(state).registries.renderers.entries.get(RenderCacheKind)).toEqual({
       state: 'bound',
-      value: defaultWgpuRenderCacheRenderer,
+      value: wgpuRenderCacheRenderer,
     });
   });
 });
@@ -500,5 +461,44 @@ describe('releaseWgpuRenderCache', () => {
     releaseWgpuRenderCache(state, cache);
     expect(renderWgpu.destroyWgpuTextureRenderTarget).toHaveBeenCalledWith(target);
     expect(getWgpuRenderCacheTarget(state, cache)).toBeNull();
+  });
+});
+
+describe('wgpuRenderCacheRenderer', () => {
+  it('does nothing when no cache is attached to the source', () => {
+    const state = fakeScreen();
+    wgpuRenderCacheRenderer.submit(state, makeCacheNode(createDisplayObject()));
+    expect(renderWgpu.drawWgpuTextureRenderTargetResult).not.toHaveBeenCalled();
+  });
+
+  it('composites the cache target attached to the source node', () => {
+    const state = fakeScreen();
+    const obj = createDisplayObject();
+    const cache = createRenderCache();
+    useRenderCache(state, obj, cache);
+    const target = ensureWgpuRenderCacheTarget(state, cache, 16, 16);
+    wgpuRenderCacheRenderer.submit(state, makeCacheNode(obj));
+    expect(renderWgpu.drawWgpuTextureRenderTargetResult).toHaveBeenCalledWith(
+      state,
+      expect.anything(),
+      target,
+      expect.anything(),
+    );
+  });
+
+  it('flushes pending batched geometry before the immediate composite', () => {
+    const state = fakeScreen();
+    const obj = createDisplayObject();
+    const cache = createRenderCache();
+    useRenderCache(state, obj, cache);
+    ensureWgpuRenderCacheTarget(state, cache, 16, 16);
+    wgpuRenderCacheRenderer.submit(state, makeCacheNode(obj));
+    // The composite draws an immediate quad outside the quad-batch writer; geometry submitted earlier in
+    // the walk must be drained first, or the immediate quad interleaves with the un-flushed batch's
+    // instance buffer and bind-group state and corrupts it.
+    expect(wgpuQuadBatchWriter.flushWgpuQuadBatchWriter).toHaveBeenCalledWith(state);
+    expect((wgpuQuadBatchWriter.flushWgpuQuadBatchWriter as any).mock.invocationCallOrder[0]).toBeLessThan(
+      (renderWgpu.drawWgpuTextureRenderTargetResult as any).mock.invocationCallOrder[0],
+    );
   });
 });

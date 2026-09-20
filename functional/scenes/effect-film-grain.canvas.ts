@@ -25,8 +25,8 @@ import {
   createDisplayObject,
   createFilmGrainEffect,
   createShape,
-  defaultCanvasShapeCommands,
-  defaultCanvasShapeRenderer,
+  canvasShapeCommands,
+  canvasShapeRenderer,
   endCanvasEffectPass,
   endCanvasRenderPass,
   getBitmapPixelRgb,
@@ -36,7 +36,7 @@ import {
   registerCanvasSurfaceCreator,
   registerRenderer,
   renderCanvasScene2D,
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   ShapeKind,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -66,15 +66,15 @@ export const screen = createCanvasScreenRenderTarget(
   }),
 );
 export const state = createCanvasRenderState(
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { pixelRatio },
 );
 registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x80 / 0xff, 0x80 / 0xff, 0x80 / 0xff, 1] } as const;
-registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
-registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
+registerRenderer(state, ShapeKind, canvasShapeRenderer);
+registerCanvasShapeCommands(state, canvasShapeCommands);
 registerCanvasFilmGrainEffect(state);
 
 const pipeline = createCanvasEffectState(state);

@@ -71,7 +71,7 @@ function warnGlCustomShaderUniformTypes(state: GlRenderState, program: WebGLProg
       `scene-gl:custom-shader-uniform-type:${shaderKey}:${info.name}`,
       LogLevel.Warn,
       {
-        message: `customShaderGlMeshMaterialRenderer: shader "${shaderKey}" declares ${info.name} as ${glUniformTypeName(gl, info.type)} but the renderer uploads it as ${glUniformTypeName(gl, want)} — the mismatched upload raises a silent GL_INVALID_OPERATION and the draw is dropped. Declare '${glUniformTypeName(gl, want)} ${info.name}' in the shader.`,
+        message: `glCustomShaderMeshMaterialRenderer: shader "${shaderKey}" declares ${info.name} as ${glUniformTypeName(gl, info.type)} but the renderer uploads it as ${glUniformTypeName(gl, want)} — the mismatched upload raises a silent GL_INVALID_OPERATION and the draw is dropped. Declare '${glUniformTypeName(gl, want)} ${info.name}' in the shader.`,
       },
       'scene-gl',
     );

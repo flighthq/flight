@@ -45,9 +45,40 @@ export function createGlVelocityTarget(state: GlRenderState, width: number, heig
   return createGlTextureRenderTarget(state, { width, height, format: 'rgba16f' });
 }
 
+/**
+ * Draws one velocity quad: a device-pixel rect (x, y, width, height) filled with (velocityX, velocityY)
+ * in node units (scaled by pixelRatio here). The velocity program must be current — the velocity pass
+ * sets it up before dispatching writers. Writers call this once per covered region (once for a display
+ * object's bounds; once per instance for a batch).
+ */
+export function drawGlVelocityQuad(
+  ctx: Readonly<GlVelocityContext>,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  velocityX: number,
+  velocityY: number,
+): void {
+  const program = ensureGlVelocityProgram(ctx.state);
+  const gl = ctx.state.gl;
+  const clipX0 = (x / ctx.width) * 2 - 1;
+  const clipY0 = 1 - (y / ctx.height) * 2;
+  const clipWidth = (width / ctx.width) * 2;
+  const clipHeight = -((height / ctx.height) * 2);
+  gl.uniform4f(program.locClipRect, clipX0, clipY0, clipWidth, clipHeight);
+  gl.uniform2f(program.locVelocity, velocityX * ctx.pixelRatio, velocityY * ctx.pixelRatio);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+
+export function getGlVelocityWriter(state: GlRenderState, kind: Kind): GlVelocityWriter | null {
+  const entry = getGlRenderStateRuntime(state).registries.velocityWriters.entries.get(kind);
+  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+}
+
 // The default writer for plain display-object nodes: cover the node's world bounds with its velocity.
 // Batched/instanced kinds (QuadBatch, particles) register a writer that emits per-instance velocity.
-export const defaultGlNode2DVelocityWriter: GlVelocityWriter = (ctx, node) => {
+export const glNode2DVelocityWriter: GlVelocityWriter = (ctx, node) => {
   getVelocity(ctx.field, node, _scratchVelocity);
   if (_scratchVelocity.x === 0 && _scratchVelocity.y === 0) return;
   const spatial = node as unknown as Spatial2DNode;
@@ -65,7 +96,7 @@ export const defaultGlNode2DVelocityWriter: GlVelocityWriter = (ctx, node) => {
 // space already). Velocity stays in node units; drawGlVelocityQuad applies pixelRatio (matching the
 // other writers; a non-unit emitter scale or worldSpace under hiDpi is the same approximation as
 // QuadBatch). Skips particles with zero velocity and emitters without a populated velocities array.
-export const defaultGlParticleEmitter2DVelocityWriter: GlVelocityWriter = (ctx, node) => {
+export const glParticleEmitter2DVelocityWriter: GlVelocityWriter = (ctx, node) => {
   const emitter = node as unknown as ParticleEmitter2D;
   const { atlas, ids, particleCount, transforms, velocities, worldSpace } = emitter.data;
   if (atlas === null || particleCount === 0 || velocities.length < particleCount * 2) return;
@@ -142,7 +173,7 @@ export const defaultGlParticleEmitter2DVelocityWriter: GlVelocityWriter = (ctx, 
 // Fallback: when no per-instance velocity array is present, cover the batch's world bounds with one coarse
 // velocity read from the field, exactly like the Node2D writer. The per-instance path above is the
 // precise one; this coarse path exists so a batch without tracked instance velocity still contributes.
-export const defaultGlQuadBatchVelocityWriter: GlVelocityWriter = (ctx, node) => {
+export const glQuadBatchVelocityWriter: GlVelocityWriter = (ctx, node) => {
   const batch = node as unknown as QuadBatch;
   const data = batch.data;
   const runtime = (node as { [EntityRuntimeKey]: unknown })[EntityRuntimeKey] as QuadBatchRuntime;
@@ -232,37 +263,6 @@ export const defaultGlQuadBatchVelocityWriter: GlVelocityWriter = (ctx, node) =>
   const bounds = getNodeWorldBoundsRectangle(spatial);
   drawGlVelocityQuad(ctx, bounds.x, bounds.y, bounds.width, bounds.height, _scratchVelocity.x, _scratchVelocity.y);
 };
-
-/**
- * Draws one velocity quad: a device-pixel rect (x, y, width, height) filled with (velocityX, velocityY)
- * in node units (scaled by pixelRatio here). The velocity program must be current — the velocity pass
- * sets it up before dispatching writers. Writers call this once per covered region (once for a display
- * object's bounds; once per instance for a batch).
- */
-export function drawGlVelocityQuad(
-  ctx: Readonly<GlVelocityContext>,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  velocityX: number,
-  velocityY: number,
-): void {
-  const program = ensureGlVelocityProgram(ctx.state);
-  const gl = ctx.state.gl;
-  const clipX0 = (x / ctx.width) * 2 - 1;
-  const clipY0 = 1 - (y / ctx.height) * 2;
-  const clipWidth = (width / ctx.width) * 2;
-  const clipHeight = -((height / ctx.height) * 2);
-  gl.uniform4f(program.locClipRect, clipX0, clipY0, clipWidth, clipHeight);
-  gl.uniform2f(program.locVelocity, velocityX * ctx.pixelRatio, velocityY * ctx.pixelRatio);
-  gl.drawArrays(gl.TRIANGLES, 0, 6);
-}
-
-export function getGlVelocityWriter(state: GlRenderState, kind: Kind): GlVelocityWriter | null {
-  const entry = getGlRenderStateRuntime(state).registries.velocityWriters.entries.get(kind);
-  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
-}
 
 export function registerGlVelocityWriter(state: GlRenderState, kind: Kind, writer: GlVelocityWriter): void {
   const runtime = getGlRenderStateRuntime(state);

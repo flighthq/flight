@@ -26,12 +26,12 @@ export function applyCrtEffectToGl(
   });
 }
 
-export const defaultGlCrtEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glCrtEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyCrtEffectToGl(ctx.state, ctx.source, ctx.dest, effect as CrtEffect);
 };
 
 export function registerGlCrtEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'CrtEffect', defaultGlCrtEffectRunner);
+  registerGlEffect(state, 'CrtEffect', glCrtEffectRunner);
 }
 
 const CRT_FRAGMENT_SRC = `#version 300 es

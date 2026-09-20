@@ -28,13 +28,13 @@ export function applyFilmGrainEffectToWgpu(
   });
 }
 
-export const defaultWgpuFilmGrainEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuFilmGrainEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'FilmGrainEffect', wgpuFilmGrainEffectRunner);
+}
+
+export const wgpuFilmGrainEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyFilmGrainEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as FilmGrainEffect);
 };
-
-export function registerWgpuFilmGrainEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'FilmGrainEffect', defaultWgpuFilmGrainEffectRunner);
-}
 
 // Slot layout: [0]=intensity, [1]=size, [2]=seed.
 const FILM_GRAIN_FRAGMENT_WGSL = /* wgsl */ `

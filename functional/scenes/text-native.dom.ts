@@ -4,7 +4,7 @@ import {
   createDisplayObject,
   createDomRenderState,
   createNativeText,
-  defaultDomNativeTextRenderer,
+  domNativeTextRenderer,
   getBitmapPixelRgb,
   NativeTextKind,
   prepareScene2DRender,
@@ -38,7 +38,7 @@ export const state = createDomRenderState(container);
 // DOM has no pass and no clear: the background is a CSS property on the element the caller
 // already holds, set once rather than reapplied by a render function every frame.
 container.style.backgroundColor = '#ffffff';
-registerRenderer(state, NativeTextKind, defaultDomNativeTextRenderer);
+registerRenderer(state, NativeTextKind, domNativeTextRenderer);
 export const scale = 1;
 export const width = 800;
 export const height = 600;

@@ -28,12 +28,12 @@ export function applyCameraMotionBlurEffectToGl(
   });
 }
 
-export const defaultGlCameraMotionBlurEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glCameraMotionBlurEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyCameraMotionBlurEffectToGl(ctx.state, ctx.source, ctx.dest, effect as CameraMotionBlurEffect);
 };
 
 export function registerGlCameraMotionBlurEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'CameraMotionBlurEffect', defaultGlCameraMotionBlurEffectRunner);
+  registerGlEffect(state, 'CameraMotionBlurEffect', glCameraMotionBlurEffectRunner);
 }
 
 const CAMERA_MOTION_BLUR_FRAGMENT_SRC = `#version 300 es

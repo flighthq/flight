@@ -16,7 +16,7 @@ import { getWgpuEffectRunner } from './wgpuEffectRegistry';
 import * as wgpuEffectTintShaderModule from './wgpuEffectTintShader';
 import {
   applyGradientBevelEffectToWgpu,
-  defaultWgpuGradientBevelEffectRunner,
+  wgpuGradientBevelEffectRunner,
   registerWgpuGradientBevelEffect,
 } from './wgpuGradientBevelEffect';
 
@@ -247,31 +247,6 @@ describe('applyGradientBevelEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuGradientBevelEffectRunner', () => {
-  it('routes the runner context through to the pass', () => {
-    for (const key of Object.keys(recorded) as (keyof typeof recorded)[]) recorded[key].length = 0;
-    const target = {
-      format: 'rgba8unorm',
-      height: 8,
-      id: 'source',
-      view: {},
-      width: 8,
-    } as unknown as WgpuTextureRenderTarget;
-
-    defaultWgpuGradientBevelEffectRunner(
-      {
-        dest: target,
-        pool: {},
-        source: target,
-        state: { device: createDevice() },
-      } as never,
-      createGradientBevelEffect(STOPS),
-    );
-
-    expect(recorded.tints[0]![0]).toBe(0xffffffff);
-  });
-});
-
 describe('EFFECT_VERTEX_WGSL namespace stub', () => {
   it('is restored after each test, so it cannot leak to other files', () => {
     restoreEffectVertexWgsl?.();
@@ -285,6 +260,31 @@ describe('registerWgpuGradientBevelEffect', () => {
 
     expect(getWgpuEffectRunner(state, 'GradientBevelEffect')).toBeNull();
     registerWgpuGradientBevelEffect(state);
-    expect(getWgpuEffectRunner(state, 'GradientBevelEffect')).toBe(defaultWgpuGradientBevelEffectRunner);
+    expect(getWgpuEffectRunner(state, 'GradientBevelEffect')).toBe(wgpuGradientBevelEffectRunner);
+  });
+});
+
+describe('wgpuGradientBevelEffectRunner', () => {
+  it('routes the runner context through to the pass', () => {
+    for (const key of Object.keys(recorded) as (keyof typeof recorded)[]) recorded[key].length = 0;
+    const target = {
+      format: 'rgba8unorm',
+      height: 8,
+      id: 'source',
+      view: {},
+      width: 8,
+    } as unknown as WgpuTextureRenderTarget;
+
+    wgpuGradientBevelEffectRunner(
+      {
+        dest: target,
+        pool: {},
+        source: target,
+        state: { device: createDevice() },
+      } as never,
+      createGradientBevelEffect(STOPS),
+    );
+
+    expect(recorded.tints[0]![0]).toBe(0xffffffff);
   });
 });

@@ -54,12 +54,12 @@ export function applyLensDirtEffectToGl(
   releaseGlTextureRenderTarget(pool, temp);
 }
 
-export const defaultGlLensDirtEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glLensDirtEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyLensDirtEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as LensDirtEffect);
 };
 
 export function registerGlLensDirtEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'LensDirtEffect', defaultGlLensDirtEffectRunner);
+  registerGlEffect(state, 'LensDirtEffect', glLensDirtEffectRunner);
 }
 
 const LENS_DIRT_BRIGHT_FRAGMENT_SRC = `#version 300 es

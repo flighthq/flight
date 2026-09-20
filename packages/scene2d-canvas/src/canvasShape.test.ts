@@ -33,12 +33,12 @@ import { EntityRuntimeKey, MorphShapeKind, RenderRegistryTable, ShapeKind } from
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import {
-  defaultCanvasMorphShapeRenderer,
-  defaultCanvasShapeRenderer,
+  canvasMorphShapeRenderer,
+  canvasShapeRenderer,
   drawCanvasShape,
   renderCanvasShapeCommands,
 } from './canvasShape';
-import { defaultCanvasShapeCommands, defaultCanvasTextureShapeCommands } from './canvasShapeCommands';
+import { canvasShapeCommands, canvasTextureShapeCommands } from './canvasShapeCommands';
 import { registerCanvasShapeCommands } from './canvasShapeRegistry';
 import { createCanvasRenderState } from './canvasTestSupport';
 import { createCanvasTextureResolvers } from './canvasTestSupport';
@@ -57,7 +57,7 @@ afterEach(() => {
 // global to fall back on, and a state built without this helper draws nothing.
 function makeShapeState(canvas: HTMLCanvasElement): CanvasRenderState {
   const state = createCanvasRenderState(canvas);
-  registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
+  registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
   return state;
 }
 
@@ -79,7 +79,7 @@ describe('drawCanvasShape', () => {
   it('renders updated MorphShape geometry through stable retained path buffers', () => {
     const canvas = document.createElement('canvas');
     const state = makeShapeState(canvas);
-    registerRenderer(state, MorphShapeKind, defaultCanvasMorphShapeRenderer);
+    registerRenderer(state, MorphShapeKind, canvasMorphShapeRenderer);
     const start = createPath();
     appendPathMoveTo(start, 0, 0);
     appendPathLineTo(start, 10, 0);
@@ -115,7 +115,7 @@ describe('drawCanvasShape', () => {
   it('renders MorphShapeKind through the explicit default renderer alias', () => {
     const canvas = document.createElement('canvas');
     const state = makeShapeState(canvas);
-    registerRenderer(state, MorphShapeKind, defaultCanvasMorphShapeRenderer);
+    registerRenderer(state, MorphShapeKind, canvasMorphShapeRenderer);
     const shape = createMorphShape({
       [EntityRuntimeKey]: undefined,
       commands: [],
@@ -125,7 +125,7 @@ describe('drawCanvasShape', () => {
     });
     const data = getOrCreateRenderProxy2D(state, shape);
 
-    expect(defaultCanvasMorphShapeRenderer).toBe(defaultCanvasShapeRenderer);
+    expect(canvasMorphShapeRenderer).toBe(canvasShapeRenderer);
     expect(() => drawCanvasShape(state, data)).not.toThrow();
   });
 
@@ -134,7 +134,7 @@ describe('drawCanvasShape', () => {
     canvas.width = 200;
     canvas.height = 200;
     const state = makeShapeState(canvas);
-    registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
+    registerRenderer(state, ShapeKind, canvasShapeRenderer);
     const shape = createShape();
     const data = getOrCreateRenderProxy2D(state, shape);
     expect(() => drawCanvasShape(state, data)).not.toThrow();
@@ -145,7 +145,7 @@ describe('drawCanvasShape', () => {
     canvas.width = 200;
     canvas.height = 200;
     const state = makeShapeState(canvas);
-    registerRenderer(state, ShapeKind, defaultCanvasShapeRenderer);
+    registerRenderer(state, ShapeKind, canvasShapeRenderer);
     const shape = createShape();
     appendShapeBeginFill(shape, 0xff0000ff);
     appendShapeRectangle(shape, 0, 0, 50, 50);

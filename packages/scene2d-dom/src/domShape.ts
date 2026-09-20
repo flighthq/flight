@@ -83,10 +83,10 @@ export function initializeDomShapeData(out: EntityConstruction<DomShapeData>): v
   out.context = null;
 }
 
-export const defaultDomShapeRenderer: Scene2DRenderer = {
+export const domShapeRenderer: Scene2DRenderer = {
   createData: createDomShapeData,
   submit: drawDomShape,
 };
 
 // MorphShape owns a distinct kind while rendering the same retained command vocabulary.
-export const defaultDomMorphShapeRenderer: Scene2DRenderer = defaultDomShapeRenderer;
+export const domMorphShapeRenderer: Scene2DRenderer = domShapeRenderer;

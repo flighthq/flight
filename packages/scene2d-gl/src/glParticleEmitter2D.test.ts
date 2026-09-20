@@ -13,7 +13,7 @@ import { createTexture } from '@flighthq/texture/contract';
 import type { CompressedImageResource, RenderProxy2D } from '@flighthq/types/contract';
 import { CompressedImageTextureSourceKind, RegistryEntryState, TextureAtlasRotation } from '@flighthq/types/contract';
 
-import { defaultGlParticleEmitter2DRenderer, drawGlParticleEmitter2D } from './glParticleEmitter2D';
+import { glParticleEmitter2DRenderer, drawGlParticleEmitter2D } from './glParticleEmitter2D';
 import { createGlState } from './glTestHelper';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
@@ -70,16 +70,6 @@ function makeParticleEmitter2DNode(data: Record<string, unknown> = {}): RenderPr
     transform2D: { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 },
   } as unknown as RenderProxy2D;
 }
-
-describe('defaultGlParticleEmitter2DRenderer', () => {
-  it('has a createData function', () => {
-    expect(typeof defaultGlParticleEmitter2DRenderer.createData).toBe('function');
-  });
-
-  it('has a submit function', () => {
-    expect(typeof defaultGlParticleEmitter2DRenderer.submit).toBe('function');
-  });
-});
 
 describe('drawGlParticleEmitter2D', () => {
   it('returns early without drawing when atlas is null', () => {
@@ -184,5 +174,15 @@ describe('drawGlParticleEmitter2D', () => {
 
     const shader = getGlRenderStateRuntime(state).context.particleResources!.shader;
     expect(gl.uniform1i).toHaveBeenCalledWith(shader.locStraightTextureAlpha, 1);
+  });
+});
+
+describe('glParticleEmitter2DRenderer', () => {
+  it('has a createData function', () => {
+    expect(typeof glParticleEmitter2DRenderer.createData).toBe('function');
+  });
+
+  it('has a submit function', () => {
+    expect(typeof glParticleEmitter2DRenderer.submit).toBe('function');
   });
 });

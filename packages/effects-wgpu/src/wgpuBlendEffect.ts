@@ -39,10 +39,6 @@ export function applyBlendEffectToWgpu(
   );
 }
 
-export const defaultWgpuBlendEffectRunner: WgpuEffectRunner = (context, effect) => {
-  applyBlendEffectToWgpu(context.state, context.source, context.dest, effect as BlendEffect);
-};
-
 // Returns the borrowed backdrop target registered under a key on this state, or null when absent.
 export function getWgpuBlendEffectBackdrop(
   state: WgpuRenderState,
@@ -59,7 +55,7 @@ export function getWgpuBlendEffectModeIndex(mode: AdvancedBlendMode): number {
 }
 
 export function registerWgpuBlendEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'BlendEffect', defaultWgpuBlendEffectRunner);
+  registerWgpuEffect(state, 'BlendEffect', wgpuBlendEffectRunner);
 }
 
 // Registers a borrowed render target as a named backdrop. Last write wins; the registry never owns or
@@ -81,6 +77,10 @@ export function registerWgpuBlendEffectBackdrop(
 export function unregisterWgpuBlendEffectBackdrop(state: WgpuRenderState, backdropKey: string): boolean {
   return backdrops.get(state)?.delete(backdropKey) ?? false;
 }
+
+export const wgpuBlendEffectRunner: WgpuEffectRunner = (context, effect) => {
+  applyBlendEffectToWgpu(context.state, context.source, context.dest, effect as BlendEffect);
+};
 
 function getWgpuBlendEffectPipeline(state: WgpuRenderState): WgpuDualSourceEffectPipeline {
   let pipeline = pipelines.get(state);

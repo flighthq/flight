@@ -16,8 +16,8 @@ import {
   createCanvasTextureResolvers,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
-  defaultCanvasShapeCommands,
-  defaultWgpuShapeRenderer,
+  canvasShapeCommands,
+  wgpuShapeRenderer,
   enableFlightDiagnostics,
   endWgpuRenderPass,
   prepareScene2DRender,
@@ -27,7 +27,7 @@ import {
   registerRenderer,
   registerWgpuShapeRasterizer,
   renderWgpuScene2D,
-  defaultScene3DWgpuRenderRegistries,
+  wgpuScene3DRenderRegistries,
   ShapeKind,
   createWgpuSurface,
   setSurfaceDisplaySize,
@@ -47,7 +47,7 @@ const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistries, {
+export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRenderRegistries, {
   format: acquisition.format,
   pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',
@@ -55,7 +55,7 @@ export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgp
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1], depth: 1.0 } as const;
 enableFlightDiagnostics(state);
-registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+registerRenderer(state, ShapeKind, wgpuShapeRenderer);
 // Gradient and texture fills have no tessellated form on this backend, so they draw through an
 // explicit rasterizer. It paints into no canvas of its own, so it carries a resolution set
 // rather than a render state, and that set is pointed at this state's diagnostics.
@@ -64,7 +64,7 @@ connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasBitmapTextureResolver(webHostImage, shapeRasterizerResolvers);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
 registerWgpuShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
-registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
+registerCanvasShapeCommands(state, canvasShapeCommands);
 
 export const scale = pixelRatio;
 

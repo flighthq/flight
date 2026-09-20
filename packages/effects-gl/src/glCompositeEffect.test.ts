@@ -2,7 +2,7 @@ import { CompositeOperator } from '@flighthq/types/contract';
 
 import {
   applyCompositeEffectToGl,
-  defaultGlCompositeEffectRunner,
+  glCompositeEffectRunner,
   getCompositeEffectOperatorIndex,
   registerGlCompositeEffect,
 } from './glCompositeEffect';
@@ -12,12 +12,6 @@ import {
 describe('applyCompositeEffectToGl', () => {
   it('is a function', () => {
     expect(typeof applyCompositeEffectToGl).toBe('function');
-  });
-});
-
-describe('defaultGlCompositeEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultGlCompositeEffectRunner).toBe('function');
   });
 });
 
@@ -36,6 +30,12 @@ describe('getCompositeEffectOperatorIndex', () => {
 
   it('falls back to SourceOver (0) for an unknown (vendor) operator', () => {
     expect(getCompositeEffectOperatorIndex('acme.custom')).toBe(0);
+  });
+});
+
+describe('glCompositeEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof glCompositeEffectRunner).toBe('function');
   });
 });
 

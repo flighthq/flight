@@ -1,0 +1,68 @@
+import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
+import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
+import { createEmissiveMaterial } from '@flighthq/materials/contract';
+import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
+import { EmissiveMaterialKind } from '@flighthq/types/contract';
+
+import { wgpuEmissiveMeshMaterialRenderer, registerWgpuEmissiveMaterial } from './wgpuEmissiveMeshMaterialRenderer';
+import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+
+function makeCamera(): Camera3D {
+  return createCamera3D({
+    far: 100,
+    near: 0.1,
+    projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 3 }),
+  });
+}
+
+const NO_LIGHTS: Scene3DLightBlock = {
+  ambientCount: 0,
+  data: new Float32Array(12),
+  directionalCount: 0,
+  hemisphereCount: 0,
+  pointCount: 0,
+  spotCount: 0,
+  version: 1,
+};
+
+function makeProxy(): Scene3DRenderProxy {
+  const geometry = createBoxMeshGeometry();
+  return {
+    material: createEmissiveMaterial(),
+    normalMatrix: createMatrix3(),
+    subset: geometry.subsets[0],
+    worldMatrix: createMatrix4(),
+  };
+}
+
+describe('registerWgpuEmissiveMaterial', () => {
+  it('installs the renderer for EmissiveMaterialKind', () => {
+    const { state } = makeWgpuScene3DState();
+    registerWgpuEmissiveMaterial(state);
+    expect(getWgpuMeshMaterialRenderer(state, EmissiveMaterialKind)).toBe(wgpuEmissiveMeshMaterialRenderer);
+  });
+});
+
+describe('wgpuEmissiveMeshMaterialRenderer', () => {
+  it('bind uploads the emissive color and issues frame + material binds', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    wgpuEmissiveMeshMaterialRenderer.bind(
+      state,
+      createEmissiveMaterial({ emissiveStrength: 3 }),
+      NO_LIGHTS,
+      makeCamera(),
+    );
+    expect(fake.calls.some((c) => c.name === 'setPipeline')).toBe(true);
+    expect(fake.calls.some((c) => c.name === 'writeBuffer')).toBe(true);
+  });
+
+  it('draw issues an indexed draw over the subset after bind', () => {
+    const { fake, state } = makeWgpuScene3DState();
+    const proxy = makeProxy();
+    wgpuEmissiveMeshMaterialRenderer.bind(state, proxy.material, NO_LIGHTS, makeCamera());
+    wgpuEmissiveMeshMaterialRenderer.draw(state, proxy, createBoxMeshGeometry());
+    expect(fake.calls.some((c) => c.name === 'drawIndexed')).toBe(true);
+  });
+});

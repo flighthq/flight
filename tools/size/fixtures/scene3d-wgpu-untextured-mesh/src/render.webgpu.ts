@@ -21,7 +21,7 @@ import {
 } from '@flighthq/render-wgpu';
 import { allocateEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
-import { renderWgpuScene3D, unlitWgpuMeshMaterialRenderer } from '@flighthq/scene3d-wgpu';
+import { renderWgpuScene3D, wgpuUnlitMeshMaterialRenderer } from '@flighthq/scene3d-wgpu';
 import { createWgpuSurface } from '@flighthq/surface';
 import { UnlitMaterialKind } from '@flighthq/types';
 
@@ -38,7 +38,7 @@ const registry = {
   meshMaterialRenderers: withRegistryTableEntry(
     registries.meshMaterialRenderers,
     UnlitMaterialKind,
-    unlitWgpuMeshMaterialRenderer,
+    wgpuUnlitMeshMaterialRenderer,
   ),
 };
 

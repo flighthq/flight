@@ -140,7 +140,7 @@ function applyDomSpriteSampling(state: DomRenderState, element: HTMLElement, ren
     state.allowSmoothing && !texture.sampler.magFilter.startsWith('nearest') ? '' : 'pixelated';
 }
 
-export const defaultDomSpriteRenderer: Scene2DRenderer = {
+export const domSpriteRenderer: Scene2DRenderer = {
   createData: createDomSpriteData,
   isDirty: isSpriteRendererDirty,
   submit: drawDomSprite,

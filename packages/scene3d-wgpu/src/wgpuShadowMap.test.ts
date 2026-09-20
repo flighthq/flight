@@ -28,7 +28,6 @@ import { DIRECTIONAL_SHADOW_MAP_SIZE } from '@flighthq/types/contract';
 
 import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMaterial';
 import { renderWgpuScene3D } from './renderWgpuScene3D';
-import { buildWgpuPbrStandardDefineKey } from './standardPbrWgpuMeshMaterialRenderer';
 import { getWgpuClassicModuleSourceForKey } from './wgpuClassicPrelude';
 import { WGPU_DIRECTIONAL_SHADOW_WGSL } from './wgpuMeshPipeline';
 import { getWgpuPbrModuleSourceForKey } from './wgpuPbrPrelude';
@@ -36,6 +35,7 @@ import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 import { destroyWgpuScene3DShadow, renderWgpuScene3DShadowMap } from './wgpuShadowMap';
 import { registerWgpuGpuSkinning } from './wgpuSkinPalette';
+import { buildWgpuPbrStandardDefineKey } from './wgpuStandardPbrMeshMaterialRenderer';
 
 const LIGHTS: Scene3DLightsLike = {
   ambient: createAmbientLight({ color: 0xffffffff, intensity: 0.2 }),

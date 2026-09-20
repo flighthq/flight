@@ -26,12 +26,12 @@ export function applyLensDistortionEffectToGl(
   });
 }
 
-export const defaultGlLensDistortionEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glLensDistortionEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyLensDistortionEffectToGl(ctx.state, ctx.source, ctx.dest, effect as LensDistortionEffect);
 };
 
 export function registerGlLensDistortionEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'LensDistortionEffect', defaultGlLensDistortionEffectRunner);
+  registerGlEffect(state, 'LensDistortionEffect', glLensDistortionEffectRunner);
 }
 
 const LENS_DISTORTION_FRAGMENT_SRC = `#version 300 es

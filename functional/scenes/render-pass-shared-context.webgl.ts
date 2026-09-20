@@ -18,7 +18,7 @@ import {
 } from '@flighthq/render-gl/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { createGlCacheState, refreshGlRenderCache } from '@flighthq/scene2d-gl';
-import { defaultScene3DGlRenderRegistries } from '@flighthq/scene3d-gl';
+import { glScene3DRenderRegistries } from '@flighthq/scene3d-gl';
 import { createGlSurface, setSurfaceDisplaySize } from '@flighthq/surface';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -50,7 +50,7 @@ setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, width, height);
 appendWebSurface(glSurface, document.body);
 const canvas = getWebSurfaceCanvas(glSurface)!;
 
-const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistries, {
+const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
   pixelRatio: scale,
 });
 const GREEN: readonly [number, number, number, number] = [24 / 255, 179 / 255, 58 / 255, 1];

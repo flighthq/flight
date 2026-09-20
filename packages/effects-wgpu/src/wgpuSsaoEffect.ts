@@ -28,13 +28,13 @@ export function applySsaoEffectToWgpu(
   });
 }
 
-export const defaultWgpuSsaoEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuSsaoEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'SsaoEffect', wgpuSsaoEffectRunner);
+}
+
+export const wgpuSsaoEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applySsaoEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as SsaoEffect);
 };
-
-export function registerWgpuSsaoEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'SsaoEffect', defaultWgpuSsaoEffectRunner);
-}
 
 // Slot layout: [0]=radius, [1]=intensity, [2]=resolution.x, [3]=resolution.y.
 const SSAO_FRAGMENT_WGSL = /* wgsl */ `

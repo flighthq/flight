@@ -12,7 +12,7 @@ import { createRenderTexture } from '@flighthq/texture/contract';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 
-import { defaultWgpuQuadBatchRenderer, ensureWgpuQuadBatchResources, getWgpuQuadBatchPipeline } from './wgpuQuadBatch';
+import { wgpuQuadBatchRenderer, ensureWgpuQuadBatchResources, getWgpuQuadBatchPipeline } from './wgpuQuadBatch';
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
 
@@ -20,17 +20,48 @@ beforeAll(() => {
   installWgpuMock();
 });
 
-describe('defaultWgpuQuadBatchRenderer', () => {
-  it('has a createData function', () => {
-    expect(typeof defaultWgpuQuadBatchRenderer.createData).toBe('function');
+describe('ensureWgpuQuadBatchResources', () => {
+  it('returns resources with bind group layouts and a pipelines WeakMap', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const resources = ensureWgpuQuadBatchResources(state);
+    expect(resources.instanceBindGroupLayout).toBeDefined();
+    expect(resources.materialBindGroupLayout).toBeDefined();
+    expect(resources.basePipelineLayout).toBeDefined();
+    expect(resources.materialPipelineLayout).toBeDefined();
+    expect(resources.pipelines).toBeInstanceOf(WeakMap);
   });
 
-  it('has a submit function', () => {
-    expect(typeof defaultWgpuQuadBatchRenderer.submit).toBe('function');
+  it('is idempotent — returns the same resources on repeated calls', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const r1 = ensureWgpuQuadBatchResources(state);
+    const r2 = ensureWgpuQuadBatchResources(state);
+    expect(r1).toBe(r2);
   });
 });
 
-describe('defaultWgpuQuadBatchRenderer.submit', () => {
+describe('getWgpuQuadBatchPipeline', () => {
+  it('creates and caches a pipeline for a given shader module', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const resources = ensureWgpuQuadBatchResources(state);
+    const module = state.device.createShaderModule({ code: '' });
+    const pipeline = getWgpuQuadBatchPipeline(state, resources, module, false, null);
+    expect(pipeline).toBeDefined();
+    const pipeline2 = getWgpuQuadBatchPipeline(state, resources, module, false, null);
+    expect(pipeline2).toBe(pipeline);
+  });
+});
+
+describe('wgpuQuadBatchRenderer', () => {
+  it('has a createData function', () => {
+    expect(typeof wgpuQuadBatchRenderer.createData).toBe('function');
+  });
+
+  it('has a submit function', () => {
+    expect(typeof wgpuQuadBatchRenderer.submit).toBe('function');
+  });
+});
+
+describe('wgpuQuadBatchRenderer.submit', () => {
   it('does not throw when atlas is null', async () => {
     const state = await createWgpuRenderStateForTest();
     beginWgpuScreenRenderPassForTest(state);
@@ -40,7 +71,7 @@ describe('defaultWgpuQuadBatchRenderer.submit', () => {
     const renderProxy = getRenderProxy2D(state, batch)!;
 
     expect(() => {
-      defaultWgpuQuadBatchRenderer.submit(state, renderProxy);
+      wgpuQuadBatchRenderer.submit(state, renderProxy);
       flushWgpuQuadBatchWriter(state as any);
     }).not.toThrow();
     submitWgpuFrame(state);
@@ -75,7 +106,7 @@ describe('defaultWgpuQuadBatchRenderer.submit', () => {
     batch.data.ids[0] = 0;
     prepareScene2DRender(state, batch);
 
-    defaultWgpuQuadBatchRenderer.submit(state, getOrCreateRenderProxy2D(state, batch));
+    wgpuQuadBatchRenderer.submit(state, getOrCreateRenderProxy2D(state, batch));
 
     const data = getWgpuRenderStateRuntime(state).quadBatchWriterInstanceData;
     expect(data[0]).toBeCloseTo(40);
@@ -118,7 +149,7 @@ describe('defaultWgpuQuadBatchRenderer.submit', () => {
     batch.data.ids[0] = 0;
     prepareScene2DRender(state, batch);
 
-    defaultWgpuQuadBatchRenderer.submit(state, getOrCreateRenderProxy2D(state, batch));
+    wgpuQuadBatchRenderer.submit(state, getOrCreateRenderProxy2D(state, batch));
 
     const data = getWgpuRenderStateRuntime(state).quadBatchWriterInstanceData;
     expect(data[6]).toBeCloseTo(0);
@@ -126,36 +157,5 @@ describe('defaultWgpuQuadBatchRenderer.submit', () => {
     expect(data[9]).toBeCloseTo(-40 / 64);
     expect(data[10]).toBeCloseTo(20 / 64);
     submitWgpuFrame(state);
-  });
-});
-
-describe('ensureWgpuQuadBatchResources', () => {
-  it('returns resources with bind group layouts and a pipelines WeakMap', async () => {
-    const state = await createWgpuRenderStateForTest();
-    const resources = ensureWgpuQuadBatchResources(state);
-    expect(resources.instanceBindGroupLayout).toBeDefined();
-    expect(resources.materialBindGroupLayout).toBeDefined();
-    expect(resources.basePipelineLayout).toBeDefined();
-    expect(resources.materialPipelineLayout).toBeDefined();
-    expect(resources.pipelines).toBeInstanceOf(WeakMap);
-  });
-
-  it('is idempotent — returns the same resources on repeated calls', async () => {
-    const state = await createWgpuRenderStateForTest();
-    const r1 = ensureWgpuQuadBatchResources(state);
-    const r2 = ensureWgpuQuadBatchResources(state);
-    expect(r1).toBe(r2);
-  });
-});
-
-describe('getWgpuQuadBatchPipeline', () => {
-  it('creates and caches a pipeline for a given shader module', async () => {
-    const state = await createWgpuRenderStateForTest();
-    const resources = ensureWgpuQuadBatchResources(state);
-    const module = state.device.createShaderModule({ code: '' });
-    const pipeline = getWgpuQuadBatchPipeline(state, resources, module, false, null);
-    expect(pipeline).toBeDefined();
-    const pipeline2 = getWgpuQuadBatchPipeline(state, resources, module, false, null);
-    expect(pipeline2).toBe(pipeline);
   });
 });

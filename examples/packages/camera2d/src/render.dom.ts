@@ -5,10 +5,10 @@ import {
   createCanvasShapeRasterizer,
   createCanvasTextureResolvers,
   createDomRenderState,
-  defaultCanvasShapeCommands,
-  defaultCanvasTextureShapeCommands,
-  defaultDomShapeRenderer,
-  defaultDomTextLabelRenderer,
+  canvasShapeCommands,
+  canvasTextureShapeCommands,
+  domShapeRenderer,
+  domTextLabelRenderer,
   enableFlightDiagnostics,
   prepareScene2DRender,
   registerCanvasBitmapTextureResolver,
@@ -38,7 +38,7 @@ export const state = createDomRenderState(container, { sceneGraphSyncPolicy: 're
 container.style.backgroundColor = '#1a1a2e';
 enableFlightDiagnostics(state);
 
-registerRenderer(state, ShapeKind, defaultDomShapeRenderer);
+registerRenderer(state, ShapeKind, domShapeRenderer);
 
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
 // has no tessellated form and draws through this rasterizer instead. Registering it is what keeps a
@@ -47,10 +47,10 @@ const shapeRasterizerResolvers = createCanvasTextureResolvers(webCanvasRenderSur
 connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
 registerCanvasBitmapTextureResolver(webHostImage, shapeRasterizerResolvers);
-registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
-registerCanvasShapeCommands(state, defaultCanvasTextureShapeCommands);
+registerCanvasShapeCommands(state, canvasShapeCommands);
+registerCanvasShapeCommands(state, canvasTextureShapeCommands);
 registerDomShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
-registerRenderer(state, TextLabelKind, defaultDomTextLabelRenderer);
+registerRenderer(state, TextLabelKind, domTextLabelRenderer);
 
 export const scale = 1;
 

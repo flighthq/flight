@@ -52,12 +52,12 @@ export function applyBloomEffectToGl(
   releaseGlTextureRenderTarget(pool, temp);
 }
 
-export const defaultGlBloomEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glBloomEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyBloomEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as BloomEffect);
 };
 
 export function registerGlBloomEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'BloomEffect', defaultGlBloomEffectRunner);
+  registerGlEffect(state, 'BloomEffect', glBloomEffectRunner);
 }
 
 const BLOOM_BRIGHT_FRAGMENT_SRC = `#version 300 es

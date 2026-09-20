@@ -18,7 +18,7 @@ import type {
 } from '@flighthq/types/contract';
 import { BatchFormat, RegistryEntryState, Scale9SpriteKind } from '@flighthq/types/contract';
 
-import { defaultGlScale9SpriteRenderer, drawGlScale9Sprite } from './glScale9Sprite';
+import { glScale9SpriteRenderer, drawGlScale9Sprite } from './glScale9Sprite';
 import { registerGlStandardMaterial } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
@@ -30,19 +30,10 @@ function createTestScale9Sprite(width = 40, height = 30): Scale9Sprite {
 }
 
 function prepareScale9Sprite(state: GlRenderState, source: Scale9Sprite): RenderProxy2D {
-  registerRenderer(state, Scale9SpriteKind, defaultGlScale9SpriteRenderer);
+  registerRenderer(state, Scale9SpriteKind, glScale9SpriteRenderer);
   prepareScene2DRender(state, source);
   return getOrCreateRenderProxy2D(state, source);
 }
-
-describe('defaultGlScale9SpriteRenderer', () => {
-  it('declares the quad format, identity hooks, and dedicated submit function', () => {
-    expect(defaultGlScale9SpriteRenderer.format).toBe(BatchFormat.Quad);
-    expect(typeof defaultGlScale9SpriteRenderer.createData).toBe('function');
-    expect(typeof defaultGlScale9SpriteRenderer.isDirty).toBe('function');
-    expect(defaultGlScale9SpriteRenderer.submit).toBe(drawGlScale9Sprite);
-  });
-});
 
 describe('drawGlScale9Sprite', () => {
   it('emits all nine stretched quads with matching texture segments', () => {
@@ -138,5 +129,14 @@ describe('drawGlScale9Sprite', () => {
     expect(runtime.quadBatchWriterCount).toBe(9);
     expect(packInstance.mock.calls.map((call) => call[3])).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
     expect(record.mock.calls.map((call) => call[2])).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
+  });
+});
+
+describe('glScale9SpriteRenderer', () => {
+  it('declares the quad format, identity hooks, and dedicated submit function', () => {
+    expect(glScale9SpriteRenderer.format).toBe(BatchFormat.Quad);
+    expect(typeof glScale9SpriteRenderer.createData).toBe('function');
+    expect(typeof glScale9SpriteRenderer.isDirty).toBe('function');
+    expect(glScale9SpriteRenderer.submit).toBe(drawGlScale9Sprite);
   });
 });

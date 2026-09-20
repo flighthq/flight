@@ -3,7 +3,7 @@ import { AdvancedBlendMode } from '@flighthq/types/contract';
 
 import {
   applyBlendEffectToGl,
-  defaultGlBlendEffectRunner,
+  glBlendEffectRunner,
   BLEND_FRAGMENT_SRC,
   getBlendEffectModeIndex,
   getGlBlendEffectBackdrop,
@@ -26,12 +26,6 @@ function makeTexture(): WebGLTexture {
 describe('applyBlendEffectToGl', () => {
   it('is a function', () => {
     expect(typeof applyBlendEffectToGl).toBe('function');
-  });
-});
-
-describe('defaultGlBlendEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultGlBlendEffectRunner).toBe('function');
   });
 });
 
@@ -103,6 +97,12 @@ describe('getGlBlendEffectBackdrop', () => {
     const b = makeState();
     registerGlBlendEffectBackdrop(a, 'scene', makeTexture());
     expect(getGlBlendEffectBackdrop(b, 'scene')).toBeNull();
+  });
+});
+
+describe('glBlendEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof glBlendEffectRunner).toBe('function');
   });
 });
 

@@ -65,7 +65,7 @@ export function createWgpuCacheState(
 }
 
 export function enableWgpuRenderCache(state: WgpuRenderState): void {
-  registerRenderCacheRenderer(state, defaultWgpuRenderCacheRenderer);
+  registerRenderCacheRenderer(state, wgpuRenderCacheRenderer);
 }
 
 /**
@@ -182,7 +182,7 @@ function destroyOwnedWgpuRenderCacheTargets(state: WgpuRenderState): void {
   _renderCacheTargets.delete(state);
 }
 
-export const defaultWgpuRenderCacheRenderer: Scene2DRenderer = {
+export const wgpuRenderCacheRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawWgpuRenderCache,
 };

@@ -18,7 +18,7 @@ import {
 } from '@flighthq/render-wgpu';
 import { allocateEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
-import { defaultWgpuSpriteRenderer, registerWgpuStandardMaterial, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
+import { wgpuSpriteRenderer, registerWgpuStandardMaterial, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { createWgpuSurface } from '@flighthq/surface';
 import { RegistryEntryState, SpriteKind } from '@flighthq/types';
 
@@ -33,7 +33,7 @@ const canvas = getWebSurfaceElement(wgpuSurface)!;
 const emptyRegistries = allocateEmptyWgpuRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, SpriteKind, defaultWgpuSpriteRenderer),
+  renderers: withRegistryTableEntry(emptyRegistries.renderers, SpriteKind, wgpuSpriteRenderer),
 };
 
 const acquisition = wgpuSurface.acquisition;

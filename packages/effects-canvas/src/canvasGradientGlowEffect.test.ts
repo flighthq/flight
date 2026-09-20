@@ -10,7 +10,7 @@ import {
 } from './canvasEffectTestSupport';
 import {
   applyGradientGlowEffectToCanvas,
-  defaultCanvasGradientGlowEffectRunner,
+  canvasGradientGlowEffectRunner,
   registerCanvasGradientGlowEffect,
 } from './canvasGradientGlowEffect';
 
@@ -116,7 +116,7 @@ describe('applyGradientGlowEffectToCanvas', () => {
   });
 });
 
-describe('defaultCanvasGradientGlowEffectRunner', () => {
+describe('canvasGradientGlowEffectRunner', () => {
   it('applies the glow through the pipeline context', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     const { source, dest } = scene();
@@ -124,7 +124,7 @@ describe('defaultCanvasGradientGlowEffectRunner', () => {
     const log: string[] = [];
     recordAll(log, [...targets, dest]);
 
-    defaultCanvasGradientGlowEffectRunner({ state, source, dest, pool }, effectOf());
+    canvasGradientGlowEffectRunner({ state, source, dest, pool }, effectOf());
 
     expect(log).toContain('glow->dest|source-over');
   });
@@ -135,6 +135,6 @@ describe('registerCanvasGradientGlowEffect', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     registerCanvasGradientGlowEffect(state);
 
-    expect(getCanvasEffectRunner(state, 'GradientGlowEffect')).toBe(defaultCanvasGradientGlowEffectRunner);
+    expect(getCanvasEffectRunner(state, 'GradientGlowEffect')).toBe(canvasGradientGlowEffectRunner);
   });
 });

@@ -1,6 +1,6 @@
 import { getRegistryTableKeys } from '@flighthq/registry/contract';
 import {} from '@flighthq/render-wgpu/contract';
-import { defaultScene2DWgpuRenderRegistries } from '@flighthq/scene2d-wgpu/contract';
+import { wgpuScene2DRenderRegistries } from '@flighthq/scene2d-wgpu/contract';
 import type { RegistryTable } from '@flighthq/types/contract';
 import {
   AnimatedNormalModifierKind,
@@ -48,10 +48,10 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { defaultScene3DWgpuRenderRegistries } from './scene3DWgpuPipeline';
+import { wgpuScene3DRenderRegistries } from './scene3DWgpuPipeline';
 import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
-import { defaultWgpuSkinningAdapter } from './wgpuSkinPalette';
+import { wgpuSkinningAdapter } from './wgpuSkinPalette';
 
 function registryKeys(table: Readonly<RegistryTable<unknown>>): string[] {
   const keys: string[] = [];
@@ -59,9 +59,9 @@ function registryKeys(table: Readonly<RegistryTable<unknown>>): string[] {
   return keys;
 }
 
-describe('defaultScene3DWgpuRenderRegistries', () => {
-  const registries = defaultScene3DWgpuRenderRegistries;
-  const scene2dRegistries = defaultScene2DWgpuRenderRegistries;
+describe('wgpuScene3DRenderRegistries', () => {
+  const registries = wgpuScene3DRenderRegistries;
+  const scene2dRegistries = wgpuScene2DRenderRegistries;
 
   it('retains the complete standard Scene2D registry surface', () => {
     expect(registries.renderers).toBe(scene2dRegistries.renderers);
@@ -128,11 +128,11 @@ describe('defaultScene3DWgpuRenderRegistries', () => {
   it('carries GPU skinning through the pipeline and into state runtime', () => {
     expect(registries.gpuSkinning?.entry).toEqual({
       state: RegistryEntryState.Bound,
-      value: defaultWgpuSkinningAdapter,
+      value: wgpuSkinningAdapter,
     });
 
-    const { state } = makeWgpuScene3DState(defaultScene3DWgpuRenderRegistries);
-    expect(getWgpuSkinningAdapter(state)).toBe(defaultWgpuSkinningAdapter);
+    const { state } = makeWgpuScene3DState(wgpuScene3DRenderRegistries);
+    expect(getWgpuSkinningAdapter(state)).toBe(wgpuSkinningAdapter);
   });
 
   it('does not claim GL-only Extended PBR support', () => {

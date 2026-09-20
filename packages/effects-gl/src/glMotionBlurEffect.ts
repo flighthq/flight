@@ -31,12 +31,12 @@ export function applyMotionBlurEffectToGl(
   });
 }
 
-export const defaultGlMotionBlurEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glMotionBlurEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyMotionBlurEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.sceneVelocityTexture, effect as MotionBlurEffect);
 };
 
 export function registerGlMotionBlurEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'MotionBlurEffect', defaultGlMotionBlurEffectRunner);
+  registerGlEffect(state, 'MotionBlurEffect', glMotionBlurEffectRunner);
 }
 
 const MOTION_BLUR_FRAGMENT_SRC = `#version 300 es

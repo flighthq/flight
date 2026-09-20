@@ -10,7 +10,7 @@ import type {
 import { registerCanvasBlendEffectBackdrop } from './canvasBlendEffect';
 import {
   applyCompositeEffectToCanvas,
-  defaultCanvasCompositeEffectRunner,
+  canvasCompositeEffectRunner,
   getCanvasCompositeEffectOperation,
   registerCanvasCompositeEffect,
 } from './canvasCompositeEffect';
@@ -126,13 +126,13 @@ describe('applyCompositeEffectToCanvas', () => {
   });
 });
 
-describe('defaultCanvasCompositeEffectRunner', () => {
+describe('canvasCompositeEffectRunner', () => {
   it('applies the composite through the pipeline context', () => {
     const { state, source, dest } = scene();
     registerCanvasBlendEffectBackdrop(state, 'scene', backdropTarget());
     const drawn = recordDraws(dest);
 
-    defaultCanvasCompositeEffectRunner(
+    canvasCompositeEffectRunner(
       {
         state,
         source,
@@ -199,6 +199,6 @@ describe('registerCanvasCompositeEffect', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     registerCanvasCompositeEffect(state);
 
-    expect(getCanvasEffectRunner(state, 'CompositeEffect')).toBe(defaultCanvasCompositeEffectRunner);
+    expect(getCanvasEffectRunner(state, 'CompositeEffect')).toBe(canvasCompositeEffectRunner);
   });
 });

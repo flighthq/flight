@@ -1,6 +1,6 @@
 import {
   applyVignetteEffectToCanvas,
-  defaultCanvasVignetteEffectRunner,
+  canvasVignetteEffectRunner,
   registerCanvasVignetteEffect,
 } from './canvasVignetteEffect';
 
@@ -10,9 +10,9 @@ describe('applyVignetteEffectToCanvas', () => {
   });
 });
 
-describe('defaultCanvasVignetteEffectRunner', () => {
+describe('canvasVignetteEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultCanvasVignetteEffectRunner).toBe('function');
+    expect(typeof canvasVignetteEffectRunner).toBe('function');
   });
 });
 

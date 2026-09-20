@@ -1,6 +1,6 @@
 import {
   applyConvolutionEffectToWgpu,
-  defaultWgpuConvolutionEffectRunner,
+  wgpuConvolutionEffectRunner,
   registerWgpuConvolutionEffect,
 } from './wgpuConvolutionEffect';
 
@@ -10,14 +10,14 @@ describe('applyConvolutionEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuConvolutionEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuConvolutionEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuConvolutionEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuConvolutionEffect).toBeTypeOf('function');
+  });
+});
+
+describe('wgpuConvolutionEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuConvolutionEffectRunner).toBe('function');
   });
 });

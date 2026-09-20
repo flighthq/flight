@@ -4,7 +4,7 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 
 import { enableCanvasCssFilter, setCanvasCssFilter } from './canvasCSSFilterBinding';
-import { defaultCanvasScene2DRenderer, drawCanvasScene2D, renderCanvasScene2D } from './canvasNode2D';
+import { canvasScene2DRenderer, drawCanvasScene2D, renderCanvasScene2D } from './canvasNode2D';
 import { createCanvasRenderState, getCanvasActiveRenderPass } from './canvasTestSupport';
 
 function makeState() {
@@ -12,14 +12,14 @@ function makeState() {
   canvas.width = 200;
   canvas.height = 200;
   const state = createCanvasRenderState(canvas);
-  registerRenderer(state, DisplayObjectKind, defaultCanvasScene2DRenderer);
+  registerRenderer(state, DisplayObjectKind, canvasScene2DRenderer);
   return state;
 }
 
-describe('defaultCanvasScene2DRenderer', () => {
+describe('canvasScene2DRenderer', () => {
   it('has submit, and createData', () => {
-    expect(typeof defaultCanvasScene2DRenderer.submit).toBe('function');
-    expect(typeof defaultCanvasScene2DRenderer.createData).toBe('function');
+    expect(typeof canvasScene2DRenderer.submit).toBe('function');
+    expect(typeof canvasScene2DRenderer.createData).toBe('function');
   });
 });
 

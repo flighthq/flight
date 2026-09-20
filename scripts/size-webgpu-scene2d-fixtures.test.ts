@@ -10,16 +10,16 @@ const fixturesDirectory = resolve(root, 'tools', 'size', 'fixtures');
 const prefix = 'scene2d-wgpu-pipeline-';
 
 const profiles = [
-  ['bitmaptext', 'BitmapTextKind', 'defaultWgpuBitmapTextRenderer'],
+  ['bitmaptext', 'BitmapTextKind', 'wgpuBitmapTextRenderer'],
   ['displayobject', null, null],
-  ['morphshape', 'MorphShapeKind', 'defaultWgpuMorphShapeRenderer'],
-  ['particleemitter2d', 'ParticleEmitter2DKind', 'defaultWgpuParticleEmitter2DRenderer'],
-  ['quadbatch', 'QuadBatchKind', 'defaultWgpuQuadBatchRenderer'],
-  ['richtext', 'RichTextKind', 'defaultWgpuRichTextRenderer'],
-  ['scale9shape', 'Scale9ShapeKind', 'defaultWgpuScale9ShapeRenderer'],
-  ['shape', 'ShapeKind', 'defaultWgpuShapeRenderer'],
-  ['textlabel', 'TextLabelKind', 'defaultWgpuTextLabelRenderer'],
-  ['tilemap', 'TilemapKind', 'defaultWgpuTilemapRenderer'],
+  ['morphshape', 'MorphShapeKind', 'wgpuMorphShapeRenderer'],
+  ['particleemitter2d', 'ParticleEmitter2DKind', 'wgpuParticleEmitter2DRenderer'],
+  ['quadbatch', 'QuadBatchKind', 'wgpuQuadBatchRenderer'],
+  ['richtext', 'RichTextKind', 'wgpuRichTextRenderer'],
+  ['scale9shape', 'Scale9ShapeKind', 'wgpuScale9ShapeRenderer'],
+  ['shape', 'ShapeKind', 'wgpuShapeRenderer'],
+  ['textlabel', 'TextLabelKind', 'wgpuTextLabelRenderer'],
+  ['tilemap', 'TilemapKind', 'wgpuTilemapRenderer'],
 ] as const;
 
 describe('WebGPU Scene2D second-wave size fixtures', () => {
@@ -48,7 +48,7 @@ describe('WebGPU Scene2D second-wave size fixtures', () => {
         expect(source).toContain('renderWgpuScene2D(');
         expect(source).toContain('endWgpuRenderPass(');
         expect(source).not.toMatch(
-          /\b(?:enableHostWeb|defaultScene2DWgpuRenderRegistries|registerStandardWgpuTextureResolvers|webHost)\b/,
+          /\b(?:enableHostWeb|wgpuScene2DRenderRegistries|registerStandardWgpuTextureResolvers|webHost)\b/,
         );
         expect(source).not.toContain('@flighthq/sdk');
       });
@@ -60,13 +60,13 @@ describe('WebGPU Scene2D second-wave size fixtures', () => {
           const source = readFileSync(resolve(directory, 'src', 'render.webgpu.ts'), 'utf8');
           expect(metadata.flightSize).toEqual({ kind: 'size-only-control', name });
           expect(existsSync(manifest)).toBe(false);
-          expect(source).not.toMatch(/\bdefaultWgpu\w+Renderer\b/);
+          expect(source).not.toMatch(/\bwgpu\w+Renderer\b/);
           expect(source).not.toContain('withRegistryTableEntry(');
         });
       } else {
         it('binds exactly its one renderer and has a single-route capture', () => {
           const source = readFileSync(resolve(directory, 'src', 'render.webgpu.ts'), 'utf8');
-          const renderers = [...new Set([...source.matchAll(/\bdefaultWgpu\w+Renderer\b/g)].map((match) => match[0]))];
+          const renderers = [...new Set([...source.matchAll(/\bwgpu\w+Renderer\b/g)].map((match) => match[0]))];
           const kinds = [...new Set([...source.matchAll(/\b[A-Z]\w+Kind\b/g)].map((match) => match[0]))].filter(
             (value) => value !== 'StandardMaterialKind',
           );
@@ -95,7 +95,7 @@ describe('WebGPU Scene2D second-wave size fixtures', () => {
     ).toEqual([
       'createCanvasShapeRasterizer',
       'createCanvasTextureResolvers',
-      'defaultCanvasShapeCommands',
+      'canvasShapeCommands',
       'registerCanvasShapeCommands',
     ]);
   });

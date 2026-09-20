@@ -1,4 +1,4 @@
-import { applySmaaEffectToGl, defaultGlSmaaEffectRunner, registerGlSmaaEffect } from './glSmaaEffect';
+import { applySmaaEffectToGl, glSmaaEffectRunner, registerGlSmaaEffect } from './glSmaaEffect';
 
 describe('applySmaaEffectToGl', () => {
   it('is a function', () => {
@@ -6,9 +6,9 @@ describe('applySmaaEffectToGl', () => {
   });
 });
 
-describe('defaultGlSmaaEffectRunner', () => {
+describe('glSmaaEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlSmaaEffectRunner).toBe('function');
+    expect(typeof glSmaaEffectRunner).toBe('function');
   });
 });
 

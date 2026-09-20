@@ -1,4 +1,4 @@
-import { applyDitherEffectToWgpu, defaultWgpuDitherEffectRunner, registerWgpuDitherEffect } from './wgpuDitherEffect';
+import { applyDitherEffectToWgpu, wgpuDitherEffectRunner, registerWgpuDitherEffect } from './wgpuDitherEffect';
 
 describe('applyDitherEffectToWgpu', () => {
   it('is a function', () => {
@@ -6,14 +6,14 @@ describe('applyDitherEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuDitherEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuDitherEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuDitherEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuDitherEffect).toBeTypeOf('function');
+  });
+});
+
+describe('wgpuDitherEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuDitherEffectRunner).toBe('function');
   });
 });

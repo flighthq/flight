@@ -7,8 +7,8 @@ import {
   createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
-  defaultCanvasQuadBatchRenderer,
-  defaultCanvasTextLabelRenderer,
+  canvasQuadBatchRenderer,
+  canvasTextLabelRenderer,
   enableFlightDiagnostics,
   endCanvasRenderPass,
   getCanvasRenderStateTextureResolvers,
@@ -18,7 +18,7 @@ import {
   registerCanvasSurfaceCreator,
   registerRenderer,
   renderCanvasScene2D,
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   TextLabelKind,
 } from '@flighthq/sdk';
 
@@ -34,7 +34,7 @@ export const screen = createCanvasScreenRenderTarget(
   }),
 );
 export const state = createCanvasRenderState(
-  defaultScene2DCanvasRenderRegistries,
+  canvasScene2DRenderRegistries,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { sceneGraphSyncPolicy: 'requiresInvalidation' },
 );
@@ -43,8 +43,8 @@ registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 const screenClear = { color: [0x2a / 0xff, 0x2a / 0xff, 0x3a / 0xff, 1] } as const;
 enableFlightDiagnostics(state);
 registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
-registerRenderer(state, QuadBatchKind, defaultCanvasQuadBatchRenderer);
-registerRenderer(state, TextLabelKind, defaultCanvasTextLabelRenderer);
+registerRenderer(state, QuadBatchKind, canvasQuadBatchRenderer);
+registerRenderer(state, TextLabelKind, canvasTextLabelRenderer);
 export const scale = pixelRatio;
 
 export function render(root: Node2D): void {

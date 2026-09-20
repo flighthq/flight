@@ -63,13 +63,13 @@ export function applyLensDirtEffectToWgpu(
   releaseWgpuTextureRenderTarget(pool, temp);
 }
 
-export const defaultWgpuLensDirtEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuLensDirtEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'LensDirtEffect', wgpuLensDirtEffectRunner);
+}
+
+export const wgpuLensDirtEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyLensDirtEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as LensDirtEffect);
 };
-
-export function registerWgpuLensDirtEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'LensDirtEffect', defaultWgpuLensDirtEffectRunner);
-}
 
 function getLensDirtCompositePipeline(state: WgpuRenderState): WgpuDualSourceEffectPipeline {
   let pipeline = _compositePipelines.get(state);

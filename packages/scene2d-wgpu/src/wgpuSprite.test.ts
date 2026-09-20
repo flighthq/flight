@@ -12,7 +12,7 @@ import { createSprite } from '@flighthq/scene2d/contract';
 import { createRenderTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
 
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
-import { defaultWgpuSpriteRenderer, drawWgpuSprite } from './wgpuSprite';
+import { wgpuSpriteRenderer, drawWgpuSprite } from './wgpuSprite';
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
 
 const CT_MODE_UNIFORM = 1;
@@ -45,14 +45,6 @@ async function drawSpriteOverNewTexture(
 }
 
 beforeAll(() => installWgpuMock());
-
-describe('defaultWgpuSpriteRenderer', () => {
-  it('has createData and submit functions', () => {
-    expect(typeof defaultWgpuSpriteRenderer.createData).toBe('function');
-    expect(typeof defaultWgpuSpriteRenderer.isDirty).toBe('function');
-    expect(defaultWgpuSpriteRenderer.submit).toBe(drawWgpuSprite);
-  });
-});
 
 describe('drawWgpuSprite', () => {
   it('accepts an unbound sprite', async () => {
@@ -132,5 +124,13 @@ describe('drawWgpuSprite', () => {
     expect(data[10]).toBeCloseTo(0.2);
     expect(data[11]).toBeCloseTo(0);
     submitWgpuFrame(state);
+  });
+});
+
+describe('wgpuSpriteRenderer', () => {
+  it('has createData and submit functions', () => {
+    expect(typeof wgpuSpriteRenderer.createData).toBe('function');
+    expect(typeof wgpuSpriteRenderer.isDirty).toBe('function');
+    expect(wgpuSpriteRenderer.submit).toBe(drawWgpuSprite);
   });
 });

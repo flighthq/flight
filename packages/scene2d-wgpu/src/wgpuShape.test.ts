@@ -21,7 +21,7 @@ import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 
 import { enableWgpuStrokePathTessellation } from './enableWgpuStrokePathTessellation';
-import { defaultWgpuMorphShapeRenderer, defaultWgpuShapeRenderer, drawWgpuShape } from './wgpuShape';
+import { wgpuMorphShapeRenderer, wgpuShapeRenderer, drawWgpuShape } from './wgpuShape';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';
 import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
 
@@ -136,21 +136,6 @@ function makeMeshPassSpy(): GPURenderPassEncoder {
   } as unknown as GPURenderPassEncoder;
 }
 
-describe('defaultWgpuShapeRenderer', () => {
-  it('provides the MorphShape renderer alias', () => {
-    expect(defaultWgpuMorphShapeRenderer).toBe(defaultWgpuShapeRenderer);
-  });
-
-  it('declares BatchFormat.Quad', () => {
-    expect(defaultWgpuShapeRenderer.format).toBe(BatchFormat.Quad);
-  });
-
-  it('has createData and submit functions', () => {
-    expect(typeof defaultWgpuShapeRenderer.createData).toBe('function');
-    expect(typeof defaultWgpuShapeRenderer.submit).toBe('function');
-  });
-});
-
 describe('drawWgpuShape', () => {
   it('draws a solid fill and open solid stroke as GPU meshes in one shape', async () => {
     const state = await createWgpuRenderStateForTest();
@@ -165,7 +150,7 @@ describe('drawWgpuShape', () => {
     appendShapeLineStyle(shape, 4, 0xff0000ff);
     appendShapeMoveTo(shape, 8, 4);
     appendShapeLineTo(shape, 40, 4);
-    const rendererData = defaultWgpuShapeRenderer.createData!(state, shape)!;
+    const rendererData = wgpuShapeRenderer.createData!(state, shape)!;
 
     drawWgpuShape(state, makeShapeProxy({ commands: shape.data.commands, version: 1 }, rendererData));
 
@@ -187,7 +172,7 @@ describe('drawWgpuShape', () => {
     const shape = createShape();
     appendShapeLineStyle(shape, 8, 0xff0000ff);
     appendShapeRectangle(shape, 8, 8, 32, 24);
-    const rendererData = defaultWgpuShapeRenderer.createData!(state, shape)!;
+    const rendererData = wgpuShapeRenderer.createData!(state, shape)!;
 
     drawWgpuShape(state, makeShapeProxy({ commands: shape.data.commands, version: 1 }, rendererData));
 
@@ -210,7 +195,7 @@ describe('drawWgpuShape', () => {
     const shape = createShape();
     appendShapeLineStyle(shape, 8, 0xff0000ff);
     appendShapeRectangle(shape, 8, 8, 32, 24);
-    const rendererData = defaultWgpuShapeRenderer.createData!(state, shape)!;
+    const rendererData = wgpuShapeRenderer.createData!(state, shape)!;
 
     drawWgpuShape(state, makeShapeProxy({ commands: shape.data.commands, version: 1 }, rendererData));
 
@@ -236,7 +221,7 @@ describe('drawWgpuShape', () => {
       [8, 8, 40, 40, 8, 40, 40, 8],
       'nonZero',
     );
-    const rendererData = defaultWgpuShapeRenderer.createData!(state, shape)!;
+    const rendererData = wgpuShapeRenderer.createData!(state, shape)!;
     const proxy = makeShapeProxy({ commands: shape.data.commands, version: 1 }, rendererData);
 
     drawWgpuShape(state, proxy);
@@ -296,5 +281,20 @@ describe('drawWgpuShape', () => {
     drawWgpuShape(state, makeShapeProxy({ commands: [{}], version: 1 }, makeShapeData()));
     expect(getWgpuRenderStateRuntime(state).quadBatchWriterCount).toBe(1);
     submitWgpuFrame(state);
+  });
+});
+
+describe('wgpuShapeRenderer', () => {
+  it('provides the MorphShape renderer alias', () => {
+    expect(wgpuMorphShapeRenderer).toBe(wgpuShapeRenderer);
+  });
+
+  it('declares BatchFormat.Quad', () => {
+    expect(wgpuShapeRenderer.format).toBe(BatchFormat.Quad);
+  });
+
+  it('has createData and submit functions', () => {
+    expect(typeof wgpuShapeRenderer.createData).toBe('function');
+    expect(typeof wgpuShapeRenderer.submit).toBe('function');
   });
 });

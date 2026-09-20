@@ -29,10 +29,10 @@ export function applyContactShadowsEffectToWgpu(
   );
 }
 
-export const defaultWgpuContactShadowsEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuContactShadowsEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'ContactShadowsEffect', wgpuContactShadowsEffectRunner);
+}
+
+export const wgpuContactShadowsEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyContactShadowsEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ContactShadowsEffect);
 };
-
-export function registerWgpuContactShadowsEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'ContactShadowsEffect', defaultWgpuContactShadowsEffectRunner);
-}

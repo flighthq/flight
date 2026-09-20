@@ -16,7 +16,7 @@ import {
   createGlScreenRenderTarget,
 } from '@flighthq/render-gl';
 import { createBillboard, createScene3D, orientScene3DBillboardsToCamera } from '@flighthq/scene3d';
-import { renderGlScene3D, unlitGlMeshMaterialRenderer } from '@flighthq/scene3d-gl';
+import { renderGlScene3D, glUnlitMeshMaterialRenderer } from '@flighthq/scene3d-gl';
 import { createGlSurface } from '@flighthq/surface';
 import { UnlitMaterialKind } from '@flighthq/types';
 
@@ -35,7 +35,7 @@ const registry = {
   meshMaterialRenderers: withRegistryTableEntry(
     registries.meshMaterialRenderers,
     UnlitMaterialKind,
-    unlitGlMeshMaterialRenderer,
+    glUnlitMeshMaterialRenderer,
   ),
 };
 const state = createGlRenderState(glSurface.context, registry, { pixelRatio: 1 });

@@ -41,7 +41,7 @@ export function drawCanvasScale9Shape(state: CanvasRenderState, renderProxy: Ren
   }
 }
 
-export const defaultCanvasScale9ShapeRenderer: Scene2DRenderer = {
+export const canvasScale9ShapeRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawCanvasScale9Shape,
 };

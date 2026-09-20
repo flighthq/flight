@@ -1,0 +1,92 @@
+import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
+import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
+import { createStandardPbrMaterial } from '@flighthq/materials/contract';
+import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
+
+import { makeGlScene3DState } from './glScene3DTestHelper';
+import { glStandardPbrMeshMaterialRenderer } from './glStandardPbrMeshMaterialRenderer';
+
+function makeCamera(): Camera3D {
+  return createCamera3D({
+    far: 100,
+    near: 0.1,
+    projection: createPerspectiveProjection({ aspect: 1, fovY: Math.PI / 3 }),
+  });
+}
+
+function makeLights(): Scene3DLightBlock {
+  // Directional { dir.xyz @0, _pad, radiance.rgb @4, _pad } + ambient { radiance.rgb @8 }.
+  const data = new Float32Array(12);
+  data[0] = 0;
+  data[1] = -1;
+  data[2] = 0;
+  data[4] = 1;
+  data[5] = 1;
+  data[6] = 1;
+  data[8] = 0.1;
+  data[9] = 0.1;
+  data[10] = 0.1;
+  return { ambientCount: 1, data, directionalCount: 1, hemisphereCount: 0, pointCount: 0, spotCount: 0, version: 1 };
+}
+
+function makeProxy(): Scene3DRenderProxy {
+  const geometry = createBoxMeshGeometry();
+  return {
+    material: createStandardPbrMaterial(),
+    normalMatrix: createMatrix3() as Matrix3,
+    subset: geometry.subsets[0],
+    worldMatrix: createMatrix4() as Matrix4,
+  };
+}
+
+describe('glStandardPbrMeshMaterialRenderer', () => {
+  it('bind selects a program, sets depth/cull state, and uploads camera + light + material uniforms', () => {
+    const { state, gl } = makeGlScene3DState();
+    glStandardPbrMeshMaterialRenderer.bind(state, createStandardPbrMaterial(), makeLights(), makeCamera());
+
+    expect(gl.calls.some((c) => c.name === 'useProgram')).toBe(true);
+    expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === gl.DEPTH_TEST)).toBe(true);
+    expect(gl.calls.some((c) => c.name === 'depthFunc' && c.args[0] === gl.LESS)).toBe(true);
+    expect(gl.calls.some((c) => c.name === 'enable' && c.args[0] === gl.CULL_FACE)).toBe(true);
+    expect(gl.calls.some((c) => c.name === 'uniformMatrix4fv')).toBe(true);
+    expect(gl.calls.some((c) => c.name === 'uniform4f')).toBe(true);
+  });
+
+  it('bind disables back-face culling for a double-sided material', () => {
+    const { state, gl } = makeGlScene3DState();
+    const material = createStandardPbrMaterial();
+    material.doubleSided = true;
+    glStandardPbrMeshMaterialRenderer.bind(state, material, makeLights(), makeCamera());
+    expect(gl.calls.some((c) => c.name === 'disable' && c.args[0] === gl.CULL_FACE)).toBe(true);
+  });
+
+  it('draw uploads geometry and issues an indexed draw over the subset range', () => {
+    const { state, gl } = makeGlScene3DState();
+    const proxy = makeProxy();
+    const geometry = createBoxMeshGeometry();
+    glStandardPbrMeshMaterialRenderer.bind(state, proxy.material, makeLights(), makeCamera());
+    glStandardPbrMeshMaterialRenderer.draw(state, proxy, geometry);
+
+    const drawCall = gl.calls.find((c) => c.name === 'drawElements');
+    expect(drawCall).toBeDefined();
+    expect(drawCall!.args[1]).toBe(proxy.subset.indexCount);
+    expect(gl.calls.some((c) => c.name === 'uniformMatrix3fv')).toBe(true);
+  });
+
+  it('draw is a no-op when bind has not selected a program', () => {
+    const { state, gl } = makeGlScene3DState();
+    glStandardPbrMeshMaterialRenderer.draw(state, makeProxy(), createBoxMeshGeometry());
+    expect(gl.calls.some((c) => c.name === 'drawElements')).toBe(false);
+  });
+
+  it('bind uploads the full standard block including occlusion strength and emissive', () => {
+    const { state, gl } = makeGlScene3DState();
+    const material = createStandardPbrMaterial({ metallic: 0.25, occlusionStrength: 0.7, roughness: 0.4 });
+    glStandardPbrMeshMaterialRenderer.bind(state, material, makeLights(), makeCamera());
+    // The standard block uploads metallic + roughness + normalScale + emissiveStrength +
+    // occlusionStrength as uniform1f, so at least five scalar uploads land.
+    expect(gl.calls.filter((c) => c.name === 'uniform1f').length).toBeGreaterThanOrEqual(5);
+    expect(gl.calls.some((c) => c.name === 'uniform3f')).toBe(true);
+  });
+});

@@ -6,29 +6,29 @@ export {
   createWgpuCacheState,
   enableWgpuRenderCache,
   refreshWgpuRenderCache,
-  defaultWgpuRenderCacheRenderer,
+  wgpuRenderCacheRenderer,
 } from './wgpuCache';
 export * from './wgpuClip';
 export * from './wgpuColorAdjustmentMaterialFeature';
-export { defaultWgpuMeshShapeRenderer } from './wgpuMeshShapeRenderer';
-export { renderWgpuScene2D, defaultWgpuScene2DRenderer } from './wgpuNode2D';
-export { defaultWgpuParticleEmitter2DRenderer } from './wgpuParticleEmitter2D';
+export { wgpuMeshShapeRenderer } from './wgpuMeshShapeRenderer';
+export { renderWgpuScene2D, wgpuScene2DRenderer } from './wgpuNode2D';
+export { wgpuParticleEmitter2DRenderer } from './wgpuParticleEmitter2D';
 export * from './wgpuQuadBatch';
-export { defaultWgpuRasterShapeRenderer } from './wgpuRasterShapeRenderer';
-export { defaultWgpuRichTextRenderer } from './wgpuRichText';
-export { defaultWgpuScale9ShapeRenderer } from './wgpuScale9Shape';
-export { defaultWgpuScale9SpriteRenderer } from './wgpuScale9Sprite';
-export { defaultWgpuShapeRenderer, defaultWgpuMorphShapeRenderer } from './wgpuShape';
+export { wgpuRasterShapeRenderer } from './wgpuRasterShapeRenderer';
+export { wgpuRichTextRenderer } from './wgpuRichText';
+export { wgpuScale9ShapeRenderer } from './wgpuScale9Shape';
+export { wgpuScale9SpriteRenderer } from './wgpuScale9Sprite';
+export { wgpuShapeRenderer, wgpuMorphShapeRenderer } from './wgpuShape';
 export * from './wgpuShapeRasterizer';
-export { defaultWgpuSpriteRenderer } from './wgpuSprite';
+export { wgpuSpriteRenderer } from './wgpuSprite';
 export * from './wgpuStandardMaterial';
 export { enableWgpuTextInput } from './wgpuTextInput';
-export { defaultWgpuTextLabelRenderer } from './wgpuTextLabel';
+export { wgpuTextLabelRenderer } from './wgpuTextLabel';
 export * from './wgpuTilemap';
 export {
   createWgpuVelocityTarget,
-  defaultWgpuNode2DVelocityWriter,
-  defaultWgpuParticleEmitter2DVelocityWriter,
+  wgpuNode2DVelocityWriter,
+  wgpuParticleEmitter2DVelocityWriter,
   registerWgpuVelocityWriter,
   renderWgpuVelocity,
 } from './wgpuVelocity';

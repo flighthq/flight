@@ -29,13 +29,13 @@ export function applyHalftoneEffectToWgpu(
   });
 }
 
-export const defaultWgpuHalftoneEffectRunner: WgpuEffectRunner = (ctx, effect) => {
+export function registerWgpuHalftoneEffect(state: WgpuRenderState): void {
+  registerWgpuEffect(state, 'HalftoneEffect', wgpuHalftoneEffectRunner);
+}
+
+export const wgpuHalftoneEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyHalftoneEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as HalftoneEffect);
 };
-
-export function registerWgpuHalftoneEffect(state: WgpuRenderState): void {
-  registerWgpuEffect(state, 'HalftoneEffect', defaultWgpuHalftoneEffectRunner);
-}
 
 // Slot layout: [0]=scale, [1]=angle, [2..3]=resolution.
 const HALFTONE_FRAGMENT_WGSL = /* wgsl */ `

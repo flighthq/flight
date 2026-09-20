@@ -1,7 +1,7 @@
-export * from './blinnPhongWgpuMeshMaterialRenderer';
-export * from './customShaderWgpuMeshMaterialRenderer';
-export * from './depthWgpuMeshMaterialRenderer';
-export * from './emissiveWgpuMeshMaterialRenderer';
+export * from './wgpuBlinnPhongMeshMaterialRenderer';
+export * from './wgpuCustomShaderMeshMaterialRenderer';
+export * from './wgpuDepthMeshMaterialRenderer';
+export * from './wgpuEmissiveMeshMaterialRenderer';
 export {
   areWgpuScene3DCustomShaderGuardsEnabled,
   enableWgpuScene3DCustomShaderGuards,
@@ -9,20 +9,20 @@ export {
 export * from './enableWgpuScene3DForwardLightSelectionGuards';
 export * from './explainWgpuScene3DCoverage';
 export * from './explainWgpuScene3DForwardLightSelection';
-export * from './lambertWgpuMeshMaterialRenderer';
-export * from './matcapWgpuMeshMaterialRenderer';
-export * from './normalWgpuMeshMaterialRenderer';
-export * from './phongWgpuMeshMaterialRenderer';
+export * from './wgpuLambertMeshMaterialRenderer';
+export * from './wgpuMatcapMeshMaterialRenderer';
+export * from './wgpuNormalMeshMaterialRenderer';
+export * from './wgpuPhongMeshMaterialRenderer';
 export * from './prepareWgpuScene3DForwardLights';
 export * from './registerWgpuStandardPbrMaterial';
 export { renderWgpuScene3D } from './renderWgpuScene3D';
 export * from './scene3DWgpuPipeline';
-export { shadedWgpuMeshMaterialRenderer, registerWgpuShadedMaterial } from './shadedWgpuMeshMaterialRenderer';
-export * from './specularGlossinessPbrWgpuMeshMaterialRenderer';
-export { standardPbrWgpuMeshMaterialRenderer } from './standardPbrWgpuMeshMaterialRenderer';
-export * from './toonWgpuMeshMaterialRenderer';
-export * from './unlitWgpuMeshMaterialRenderer';
-export * from './vertexColorWgpuMeshMaterialRenderer';
+export { wgpuShadedMeshMaterialRenderer, registerWgpuShadedMaterial } from './wgpuShadedMeshMaterialRenderer';
+export * from './wgpuSpecularGlossinessPbrMeshMaterialRenderer';
+export { wgpuStandardPbrMeshMaterialRenderer } from './wgpuStandardPbrMeshMaterialRenderer';
+export * from './wgpuToonMeshMaterialRenderer';
+export * from './wgpuUnlitMeshMaterialRenderer';
+export * from './wgpuVertexColorMeshMaterialRenderer';
 export { bakeWgpuEnvironmentIbl } from './wgpuEnvironmentIblBake';
 export * from './wgpuEnvironmentSkybox';
 export * from './wgpuMeshMaterialRegistry';
@@ -41,4 +41,4 @@ export {
 } from './wgpuShadedPrelude';
 export { renderWgpuScene3DShadowMap } from './wgpuShadowMap';
 export { registerWgpuGpuSkinning } from './wgpuSkinPalette';
-export * from './wireframeWgpuMeshMaterialRenderer';
+export * from './wgpuWireframeMeshMaterialRenderer';

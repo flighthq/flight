@@ -4,7 +4,7 @@ import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
 import {
   createDomRenderState,
-  defaultDomSpriteRenderer,
+  domSpriteRenderer,
   registerDomImageTextureResolver,
   renderDomScene2D,
 } from '@flighthq/scene2d-dom';
@@ -22,7 +22,7 @@ const state = createDomRenderState(container, { pixelRatio: 1 });
 // already holds, set once rather than reapplied by a render function every frame.
 container.style.backgroundColor = '#1a1a2e';
 
-registerRenderer(state, SpriteKind, defaultDomSpriteRenderer);
+registerRenderer(state, SpriteKind, domSpriteRenderer);
 registerDomImageTextureResolver(state);
 
 const root = createDisplayObject();

@@ -56,13 +56,13 @@ export function renderCanvasShapeCommands(
   }
 }
 
-export const defaultCanvasShapeRenderer: Scene2DRenderer = {
+export const canvasShapeRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawCanvasShape,
 };
 
 // MorphShape has its own node kind but the same retained command stream and invalidation semantics.
-export const defaultCanvasMorphShapeRenderer: Scene2DRenderer = defaultCanvasShapeRenderer;
+export const canvasMorphShapeRenderer: Scene2DRenderer = canvasShapeRenderer;
 
 function createCanvasShapeDrawState(
   context: CanvasRenderingContext2D,

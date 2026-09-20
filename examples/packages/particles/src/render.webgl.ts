@@ -10,11 +10,11 @@ import {
 import type { Node2D } from '@flighthq/sdk';
 import {
   createGlSurface,
-  defaultScene3DGlRenderRegistries,
+  glScene3DRenderRegistries,
   createGlRenderState,
   enableFlightDiagnostics,
-  defaultGlParticleEmitter2DRenderer,
-  defaultGlTextLabelRenderer,
+  glParticleEmitter2DRenderer,
+  glTextLabelRenderer,
   enableGlBlendModeSupport,
   ParticleEmitter2DKind,
   prepareScene2DRender,
@@ -40,15 +40,15 @@ setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, 800, 500);
 appendWebSurface(glSurface, document.body);
 export const canvas = getWebSurfaceElement(glSurface)!;
 
-export const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistries, {
+export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
   pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',
   imageSurfaceProvider: webImageSurfaceCreator,
 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 enableFlightDiagnostics(state);
-registerRenderer(state, ParticleEmitter2DKind, defaultGlParticleEmitter2DRenderer);
-registerRenderer(state, TextLabelKind, defaultGlTextLabelRenderer);
+registerRenderer(state, ParticleEmitter2DKind, glParticleEmitter2DRenderer);
+registerRenderer(state, TextLabelKind, glTextLabelRenderer);
 enableGlBlendModeSupport(state);
 
 export const scale = pixelRatio;

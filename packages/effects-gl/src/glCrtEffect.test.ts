@@ -4,7 +4,7 @@ import { allocateEmptyGlRenderRegistries, createGlRenderState } from '@flighthq/
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import { applyCrtEffectToGl, defaultGlCrtEffectRunner, registerGlCrtEffect } from './glCrtEffect';
+import { applyCrtEffectToGl, glCrtEffectRunner, registerGlCrtEffect } from './glCrtEffect';
 import * as glEffectProgramCache from './glEffectProgramCache';
 import { getGlEffectRunner } from './glEffectRegistry';
 import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
@@ -91,12 +91,12 @@ describe('applyCrtEffectToGl', () => {
   });
 });
 
-describe('defaultGlCrtEffectRunner', () => {
+describe('glCrtEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     programMock.getGlEffectProgram.mockClear();
     const target = { height: 8, texture: {}, width: 8 } as unknown as GlTextureRenderTarget;
 
-    defaultGlCrtEffectRunner(
+    glCrtEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,
       createCrtEffect(),
     );
@@ -112,6 +112,6 @@ describe('registerGlCrtEffect', () => {
 
     expect(getGlEffectRunner(state, 'CrtEffect')).toBeNull();
     registerGlCrtEffect(state);
-    expect(getGlEffectRunner(state, 'CrtEffect')).toBe(defaultGlCrtEffectRunner);
+    expect(getGlEffectRunner(state, 'CrtEffect')).toBe(glCrtEffectRunner);
   });
 });

@@ -27,7 +27,7 @@ import { spliceWgpuColorAdjustmentPrelude, WGPU_DIRECTIONAL_SHADOW_WGSL } from '
 // intensity at pack time, so the shader never decodes sRgb. directionalCount / ambientCount (0 or 1)
 // gate each term's contribution; the punctual loops are bounded by their respective count.
 //
-// Bind groups (must match standardPbrWgpuMeshMaterialRenderer):
+// Bind groups (must match wgpuStandardPbrMeshMaterialRenderer):
 //   group(0) Frame    : viewProjection, cameraPosition, directional + ambient light — uniform.
 //   group(1) Draw     : world + normalMatrix — uniform (dynamic offset per draw).
 //   group(2) Material : the 48-float MaterialBlock (base + extension factors) uniform + sampler + 5
@@ -147,7 +147,7 @@ struct Draw {
 };
 
 // The 48-float MaterialBlock: the base StandardPbr block (vec4 0..3) plus one vec4 slot per extension
-// lobe (matching the CPU packers in standardPbrWgpuMeshMaterialRenderer + the extension renderers).
+// lobe (matching the CPU packers in wgpuStandardPbrMeshMaterialRenderer + the extension renderers).
 //   base0 : baseColor.rgba (linear)
 //   base1 : emissive.rgb * strength; w unused
 //   base2 : metallic, roughness, normalScale, occlusionStrength

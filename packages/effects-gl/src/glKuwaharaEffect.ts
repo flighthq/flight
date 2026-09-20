@@ -21,12 +21,12 @@ export function applyKuwaharaEffectToGl(
   });
 }
 
-export const defaultGlKuwaharaEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glKuwaharaEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyKuwaharaEffectToGl(ctx.state, ctx.source, ctx.dest, effect as KuwaharaEffect);
 };
 
 export function registerGlKuwaharaEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'KuwaharaEffect', defaultGlKuwaharaEffectRunner);
+  registerGlEffect(state, 'KuwaharaEffect', glKuwaharaEffectRunner);
 }
 
 const KUWAHARA_FRAGMENT_SRC = `#version 300 es

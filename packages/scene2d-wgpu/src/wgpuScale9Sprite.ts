@@ -112,7 +112,7 @@ export function drawWgpuScale9Sprite(state: WgpuRenderState, renderProxy: Render
   runtime.quadBatchWriterCount += SLICE_COUNT;
 }
 
-export const defaultWgpuScale9SpriteRenderer: Scene2DRenderer = {
+export const wgpuScale9SpriteRenderer: Scene2DRenderer = {
   createData: createSpriteRendererData,
   format: BatchFormat.Quad,
   isDirty: isSpriteRendererDirty,

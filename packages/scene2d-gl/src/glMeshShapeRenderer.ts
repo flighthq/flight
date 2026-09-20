@@ -67,13 +67,13 @@ export function drawGlMeshShape(state: GlRenderState, renderProxy: RenderProxy2D
 }
 
 // The GPU-only shape strategy: everything is tessellated, nothing is ever rasterized, and this module
-// never references the canvas replay — so registering this renderer instead of defaultGlShapeRenderer
+// never references the canvas replay — so registering this renderer instead of glShapeRenderer
 // leaves @flighthq/scene2d-canvas out of the bundle entirely and needs no shape commands registered.
 //
 // A fill with no tessellated form does not draw. That is the deliberate consequence of choosing this
 // strategy rather than a defect, so it reports the same ShapeRasterizer miss the hybrid reports when no
 // rasterizer is registered: the shape needs raster and this state will not do it.
-export const defaultGlMeshShapeRenderer: Scene2DRenderer = {
+export const glMeshShapeRenderer: Scene2DRenderer = {
   format: BatchFormat.Quad,
   createData: createGlShapeData,
   destroyData: destroyGlShapeData,

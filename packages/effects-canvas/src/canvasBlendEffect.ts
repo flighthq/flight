@@ -54,7 +54,7 @@ export function applyBlendEffectToCanvas(
   ctx.restore();
 }
 
-export const defaultCanvasBlendEffectRunner: CanvasEffectRunner = (ctx, effect) => {
+export const canvasBlendEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyBlendEffectToCanvas(ctx.state, ctx.source, ctx.dest, effect as BlendEffect);
 };
 
@@ -78,7 +78,7 @@ export function getCanvasBlendEffectCompositeOperation(mode: AdvancedBlendMode):
 }
 
 export function registerCanvasBlendEffect(state: CanvasRenderState): void {
-  registerCanvasEffect(state, 'BlendEffect', defaultCanvasBlendEffectRunner);
+  registerCanvasEffect(state, 'BlendEffect', canvasBlendEffectRunner);
 }
 
 // Registers a backdrop target under `backdropKey` for this state, so a BlendEffect naming that key blends

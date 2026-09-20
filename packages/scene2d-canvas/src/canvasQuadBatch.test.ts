@@ -13,7 +13,7 @@ import {
 import { QuadBatchKind, TextureAtlasRotation } from '@flighthq/types/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
-import { defaultCanvasQuadBatchRenderer, drawCanvasQuadBatch } from './canvasQuadBatch';
+import { canvasQuadBatchRenderer, drawCanvasQuadBatch } from './canvasQuadBatch';
 import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
 import { createCanvasRenderState } from './canvasTestSupport';
 
@@ -45,14 +45,14 @@ function makeState() {
   canvas.height = 400;
   const state = createCanvasRenderState(canvas);
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
-  registerRenderer(state, QuadBatchKind, defaultCanvasQuadBatchRenderer);
+  registerRenderer(state, QuadBatchKind, canvasQuadBatchRenderer);
   return state;
 }
 
-describe('defaultCanvasQuadBatchRenderer', () => {
+describe('canvasQuadBatchRenderer', () => {
   it('has submit and createData', () => {
-    expect(typeof defaultCanvasQuadBatchRenderer.submit).toBe('function');
-    expect(typeof defaultCanvasQuadBatchRenderer.createData).toBe('function');
+    expect(typeof canvasQuadBatchRenderer.submit).toBe('function');
+    expect(typeof canvasQuadBatchRenderer.createData).toBe('function');
   });
 });
 

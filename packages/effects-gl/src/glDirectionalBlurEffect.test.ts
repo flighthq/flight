@@ -4,7 +4,7 @@ import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contr
 
 import {
   applyDirectionalBlurEffectToGl,
-  defaultGlDirectionalBlurEffectRunner,
+  glDirectionalBlurEffectRunner,
   registerGlDirectionalBlurEffect,
 } from './glDirectionalBlurEffect';
 import * as glEffectProgramCache from './glEffectProgramCache';
@@ -50,9 +50,9 @@ describe('applyDirectionalBlurEffectToGl', () => {
   });
 });
 
-describe('defaultGlDirectionalBlurEffectRunner', () => {
+describe('glDirectionalBlurEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlDirectionalBlurEffectRunner).toBe('function');
+    expect(typeof glDirectionalBlurEffectRunner).toBe('function');
   });
 });
 

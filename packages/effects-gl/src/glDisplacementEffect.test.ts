@@ -6,7 +6,7 @@ import type { DisplacementEffect, GlRenderState, GlTextureRenderTarget } from '@
 
 import {
   applyDisplacementEffectToGl,
-  defaultGlDisplacementEffectRunner,
+  glDisplacementEffectRunner,
   registerGlDisplacementEffect,
 } from './glDisplacementEffect';
 import * as glEffectProgramCache from './glEffectProgramCache';
@@ -112,11 +112,11 @@ describe('applyDisplacementEffectToGl', () => {
   });
 });
 
-describe('defaultGlDisplacementEffectRunner', () => {
+describe('glDisplacementEffectRunner', () => {
   it('routes the runner context through to the pass', () => {
     const target = { height: 8, texture: {}, width: 8 } as unknown as GlTextureRenderTarget;
 
-    defaultGlDisplacementEffectRunner(
+    glDisplacementEffectRunner(
       { dest: target, pool: { free: [], inUse: [] }, source: target, state: { gl: {} } } as never,
       createDisplacementEffect({ intensity: 4 }),
     );
@@ -134,6 +134,6 @@ describe('registerGlDisplacementEffect', () => {
 
     expect(getGlEffectRunner(state, 'DisplacementEffect')).toBeNull();
     registerGlDisplacementEffect(state);
-    expect(getGlEffectRunner(state, 'DisplacementEffect')).toBe(defaultGlDisplacementEffectRunner);
+    expect(getGlEffectRunner(state, 'DisplacementEffect')).toBe(glDisplacementEffectRunner);
   });
 });

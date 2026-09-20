@@ -1,6 +1,6 @@
 import {
   applyScreenSpaceFogEffectToWgpu,
-  defaultWgpuScreenSpaceFogEffectRunner,
+  wgpuScreenSpaceFogEffectRunner,
   registerWgpuScreenSpaceFogEffect,
 } from './wgpuScreenSpaceFogEffect';
 
@@ -10,14 +10,14 @@ describe('applyScreenSpaceFogEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuScreenSpaceFogEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuScreenSpaceFogEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuScreenSpaceFogEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuScreenSpaceFogEffect).toBeTypeOf('function');
+  });
+});
+
+describe('wgpuScreenSpaceFogEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuScreenSpaceFogEffectRunner).toBe('function');
   });
 });

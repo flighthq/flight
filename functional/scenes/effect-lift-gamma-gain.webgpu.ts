@@ -28,14 +28,14 @@ import {
   createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
-  defaultWgpuShapeRenderer,
+  wgpuShapeRenderer,
   endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
   renderWgpuScene2D,
-  defaultScene3DWgpuRenderRegistries,
+  wgpuScene3DRenderRegistries,
   ShapeKind,
   createWgpuSurface,
   setSurfaceDisplaySize,
@@ -67,13 +67,13 @@ const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistries, {
+export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRenderRegistries, {
   format: acquisition.format,
   pixelRatio,
 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x20 / 0xff, 0x28 / 0xff, 0x30 / 0xff, 1], depth: 1.0 } as const;
-registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+registerRenderer(state, ShapeKind, wgpuShapeRenderer);
 const pipeline = createWgpuEffectState(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;

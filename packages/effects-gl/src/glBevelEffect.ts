@@ -103,12 +103,12 @@ export function applyBevelEffectToGl(
   releaseGlTextureRenderTarget(pool, s2);
 }
 
-export const defaultGlBevelEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glBevelEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyBevelEffectToGl(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as BevelEffect);
 };
 
 export function registerGlBevelEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'BevelEffect', defaultGlBevelEffectRunner);
+  registerGlEffect(state, 'BevelEffect', glBevelEffectRunner);
 }
 
 // Reads the blurred alpha field (unit 0) and source (unit 1); writes the tinted, clipped bevel mask,

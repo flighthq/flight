@@ -29,7 +29,7 @@ import {
 import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d';
 import { enableGlClipSupport, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
-import { renderGlScene3D, defaultScene3DGlRenderRegistries } from '@flighthq/scene3d-gl';
+import { renderGlScene3D, glScene3DRenderRegistries } from '@flighthq/scene3d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
 import { createGlSurface, setSurfaceDisplaySize } from '@flighthq/surface';
 import type { Bitmap, GlRenderPass, GlRenderState, Viewport } from '@flighthq/types';
@@ -70,7 +70,7 @@ setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, width, height);
 appendWebSurface(glSurface, document.body);
 const canvas = getWebSurfaceCanvas(glSurface)!;
 
-const state = createGlRenderState(glSurface.context, defaultScene3DGlRenderRegistries, {
+const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
   pixelRatio: scale,
 });
 const target = createGlTextureRenderTarget(state, {

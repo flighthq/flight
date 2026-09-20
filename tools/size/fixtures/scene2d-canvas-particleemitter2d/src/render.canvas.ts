@@ -11,7 +11,7 @@ import {
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   allocateEmptyCanvasRenderRegistries,
-  defaultCanvasParticleEmitter2DRenderer,
+  canvasParticleEmitter2DRenderer,
   endCanvasRenderPass,
   getCanvasRenderStateTextureResolvers,
   registerCanvasImageTextureResolver,
@@ -25,7 +25,7 @@ import { ParticleEmitter2DKind, RegistryEntryState } from '@flighthq/types';
 // REQUIRED WIRING for one particle emitter node, and nothing else:
 //   surface   webCanvasRenderSurfaceCreator — the single Canvas surface provider, NOT the aggregate
 //             webHost.
-//   renderer  ParticleEmitter2DKind -> defaultCanvasParticleEmitter2DRenderer
+//   renderer  ParticleEmitter2DKind -> canvasParticleEmitter2DRenderer
 //   commands  NONE. An emitter replays no shape command stream.
 //   resolvers ONE image texture resolver. Each particle samples a region of the emitter's atlas.
 //
@@ -47,11 +47,7 @@ document.body.appendChild(canvas);
 const emptyRegistries = allocateEmptyCanvasRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  renderers: withRegistryTableEntry(
-    emptyRegistries.renderers,
-    ParticleEmitter2DKind,
-    defaultCanvasParticleEmitter2DRenderer,
-  ),
+  renderers: withRegistryTableEntry(emptyRegistries.renderers, ParticleEmitter2DKind, canvasParticleEmitter2DRenderer),
 };
 
 const screen = createCanvasScreenRenderTarget(

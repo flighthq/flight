@@ -207,7 +207,7 @@ describe('minimal size fixture harness', () => {
       '@flighthq/host-web:webCanvasRenderSurfaceCreator',
       '@flighthq/scene2d-canvas:createCanvasShapeRasterizer',
       '@flighthq/scene2d-canvas:createCanvasTextureResolvers',
-      '@flighthq/scene2d-canvas:defaultCanvasShapeCommands',
+      '@flighthq/scene2d-canvas:canvasShapeCommands',
       '@flighthq/scene2d-canvas:registerCanvasShapeCommands',
     ];
     for (const name of domShapeCanvasBridgeFixtures) {
@@ -506,7 +506,7 @@ function isAllowedCanvasBridge(
       ? new Set([
           'createCanvasShapeRasterizer',
           'createCanvasTextureResolvers',
-          'defaultCanvasShapeCommands',
+          'canvasShapeCommands',
           'registerCanvasShapeCommands',
         ])
       : null;

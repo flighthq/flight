@@ -57,7 +57,7 @@ export function applyBitmapDisplacementEffectToGl(
   });
 }
 
-export const defaultGlBitmapDisplacementEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glBitmapDisplacementEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyBitmapDisplacementEffectToGl(ctx.state, ctx.source, ctx.dest, effect as BitmapDisplacementEffect);
 };
 
@@ -73,7 +73,7 @@ export function registerGlBitmapDisplacementEffect(state: GlRenderState): void {
   registerGlEffect(
     state,
     'BitmapDisplacementEffect',
-    defaultGlBitmapDisplacementEffectRunner,
+    glBitmapDisplacementEffectRunner,
     isGlBitmapDisplacementEffectResolvable,
   );
 }

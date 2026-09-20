@@ -1,0 +1,52 @@
+import type {
+  Camera3D,
+  GlMeshMaterialRenderer,
+  GlRenderState,
+  Material,
+  MeshGeometry,
+  Scene3DLightBlock,
+  Scene3DRenderProxy,
+  StandardPbrMaterial,
+} from '@flighthq/types/contract';
+
+import { bindGlMeshLightBlock } from './glLitProgram';
+import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshCameraPosition, setGlMeshViewProjection } from './glMeshProgram';
+import { ensureGlPbrProgram } from './glPbrProgramCache';
+import { bindGlPbrStandardBlock, buildGlPbrStandardDefineKey } from './glPbrStandardBlock';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
+
+// The built-in StandardPbr forward-lit mesh-material renderer (GlMeshMaterialRenderer for
+// StandardPbrMaterialKind). bind selects the uber-shader variant for the material's maps/alpha mode,
+// uploads the shared per-run uniforms (camera view-projection + position, the packed light block),
+// and the full standard PBR block (scalars/colors + base-color/normal/metallic-roughness/occlusion/
+// emissive maps) via the shared bindGlPbrStandardBlock helper — StandardPbr passes itself as the
+// properties block since StandardPbrMaterial IS a StandardPbrMaterialProperties. draw uploads the
+// geometry's GPU buffers lazily (cached by geometry.version), sets the per-draw model + normal
+// matrices from the proxy, and issues the indexed draw over the proxy's subset with depth-test LESS +
+// depth-write on and back-face culling unless the material is double-sided. See
+// registerGlStandardPbrMaterial to install it.
+export const glStandardPbrMeshMaterialRenderer: GlMeshMaterialRenderer = {
+  bind(
+    state: GlRenderState,
+    material: Readonly<Material> | null,
+    lights: Readonly<Scene3DLightBlock>,
+    camera: Readonly<Camera3D>,
+  ): void {
+    const gl = state.gl;
+    const pbr = material as Readonly<StandardPbrMaterial> | null;
+    const program = ensureGlPbrProgram(state, buildGlPbrStandardDefineKey(state, pbr, pbr));
+    beginGlMeshDraw(state, program, pbr !== null && pbr.doubleSided);
+
+    setGlMeshViewProjection(state, program.locViewProjection, camera);
+    setGlMeshCameraPosition(gl, program.locCameraPosition, camera);
+    bindGlMeshLightBlock(state, program, lights);
+    bindGlPbrStandardBlock(state, program, pbr);
+    gl.uniform1f(program.locAlphaCutoff, pbr !== null ? pbr.alphaCutoff : 0.5);
+  },
+
+  draw(state: GlRenderState, proxy: Readonly<Scene3DRenderProxy>, geometry: Readonly<MeshGeometry>): void {
+    const program = getGlScene3DRuntime(state).activeMeshProgram;
+    if (program === null) return;
+    drawGlMeshSubset(state, program, proxy, geometry);
+  },
+};

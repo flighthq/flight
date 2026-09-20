@@ -19,12 +19,12 @@ export function applyPixelateEffectToGl(
   });
 }
 
-export const defaultGlPixelateEffectRunner: GlEffectRunner = (ctx, effect) => {
+export const glPixelateEffectRunner: GlEffectRunner = (ctx, effect) => {
   applyPixelateEffectToGl(ctx.state, ctx.source, ctx.dest, effect as PixelateEffect);
 };
 
 export function registerGlPixelateEffect(state: GlRenderState): void {
-  registerGlEffect(state, 'PixelateEffect', defaultGlPixelateEffectRunner);
+  registerGlEffect(state, 'PixelateEffect', glPixelateEffectRunner);
 }
 
 const PIXELATE_FRAGMENT_SRC = `#version 300 es

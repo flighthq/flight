@@ -4,7 +4,7 @@ import type { GlTextureRenderTarget } from '@flighthq/types/contract';
 
 import * as glBlurEffect from './glBlurEffect';
 import * as glEffectProgramCache from './glEffectProgramCache';
-import { applyLensDirtEffectToGl, defaultGlLensDirtEffectRunner, registerGlLensDirtEffect } from './glLensDirtEffect';
+import { applyLensDirtEffectToGl, glLensDirtEffectRunner, registerGlLensDirtEffect } from './glLensDirtEffect';
 
 let nextTargetId = 0;
 
@@ -113,9 +113,9 @@ describe('applyLensDirtEffectToGl', () => {
   });
 });
 
-describe('defaultGlLensDirtEffectRunner', () => {
+describe('glLensDirtEffectRunner', () => {
   it('is a function', () => {
-    expect(typeof defaultGlLensDirtEffectRunner).toBe('function');
+    expect(typeof glLensDirtEffectRunner).toBe('function');
   });
 });
 

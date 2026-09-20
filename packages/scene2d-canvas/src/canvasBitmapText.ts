@@ -71,7 +71,7 @@ export function drawCanvasSpriteText(state: CanvasRenderState, node: RenderProxy
   if (!state.allowSmoothing) setCanvasImageSmoothing(state, true);
 }
 
-export const defaultCanvasBitmapTextRenderer: SpriteRenderer = {
+export const canvasBitmapTextRenderer: SpriteRenderer = {
   createData: noopRendererData,
   submit: drawCanvasSpriteText,
 };

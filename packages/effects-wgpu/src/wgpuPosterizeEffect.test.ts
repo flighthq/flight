@@ -1,6 +1,6 @@
 import {
   applyPosterizeEffectToWgpu,
-  defaultWgpuPosterizeEffectRunner,
+  wgpuPosterizeEffectRunner,
   registerWgpuPosterizeEffect,
 } from './wgpuPosterizeEffect';
 
@@ -10,14 +10,14 @@ describe('applyPosterizeEffectToWgpu', () => {
   });
 });
 
-describe('defaultWgpuPosterizeEffectRunner', () => {
-  it('is a function', () => {
-    expect(typeof defaultWgpuPosterizeEffectRunner).toBe('function');
-  });
-});
-
 describe('registerWgpuPosterizeEffect', () => {
   it('is a separately importable registration primitive', () => {
     expect(registerWgpuPosterizeEffect).toBeTypeOf('function');
+  });
+});
+
+describe('wgpuPosterizeEffectRunner', () => {
+  it('is a function', () => {
+    expect(typeof wgpuPosterizeEffectRunner).toBe('function');
   });
 });

@@ -18,14 +18,14 @@ import {
   createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
-  defaultWgpuShapeRenderer,
+  wgpuShapeRenderer,
   endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
   renderWgpuScene2D,
-  defaultScene3DWgpuRenderRegistries,
+  wgpuScene3DRenderRegistries,
   ShapeKind,
   createWgpuSurface,
   setSurfaceDisplaySize,
@@ -63,7 +63,7 @@ const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, defaultScene3DWgpuRenderRegistries, {
+export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRenderRegistries, {
   format: acquisition.format,
   pixelRatio,
 });
@@ -77,7 +77,7 @@ const screenClear = {
   ] as const,
   depth: 1.0,
 };
-registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
+registerRenderer(state, ShapeKind, wgpuShapeRenderer);
 const pipeline = createWgpuEffectState(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;

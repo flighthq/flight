@@ -118,7 +118,7 @@ function submitGlQuadBatch(state: GlRenderState, quadBatch: RenderProxy2D): void
   runtime.quadBatchWriterCount += drawCount;
 }
 
-export const defaultGlQuadBatchRenderer: SpriteRenderer = {
+export const glQuadBatchRenderer: SpriteRenderer = {
   format: BatchFormat.Quad,
   createData: noopRendererData,
   submit: submitGlQuadBatch,
