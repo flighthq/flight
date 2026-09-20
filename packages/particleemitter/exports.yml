@@ -1,0 +1,4 @@
+protected:
+  - PARTICLE_EMITTER_3D_DELETED_ID
+  - PARTICLE_EMITTER_DELETED_ID
+  - createParticleEmitterData

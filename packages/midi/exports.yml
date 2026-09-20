@@ -1,0 +1,9 @@
+protected:
+  - createMidiAccessResource
+  - createMidiInputPortResource
+  - createMidiOutputPortResource
+  - getMidiAccessResourceState
+  - getMidiPortResourceState
+  - retainMidiAccessResourceState
+  - retainMidiInputPortResourceState
+  - retainMidiOutputPortResourceState

@@ -1,0 +1,9 @@
+protected:
+  - getHostImageSourceDimensions
+  - hasHostImageDimensionResolver
+  - registerHostImageDimensionResolver
+  - registerImageBitmapCompositionResolver
+  - registerTestImageDimensionResolver
+  - testImageDimensionResolver
+  - unregisterHostImageDimensionResolver
+  - unregisterTestImageDimensionResolver

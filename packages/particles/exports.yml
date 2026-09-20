@@ -1,0 +1,6 @@
+protected:
+  - PARTICLE_VELOCITY_STRIDE
+  - createParticleEmitterSignals
+  - ensureParticleEmitterStateCapacity
+  - ensureParticleObjectsStateCapacity
+  - writeParticleSpawnOffset

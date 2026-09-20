@@ -1,0 +1,7 @@
+protected:
+  - createHtmlViewData
+  - createScale9SpriteData
+  - createScene2DSignals
+  - createSpriteData
+  - createSpriteRendererData
+  - isSpriteRendererDirty

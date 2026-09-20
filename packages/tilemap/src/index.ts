@@ -3,8 +3,6 @@ export {
   cloneTilemap,
   computeTilemapLocalBoundsRectangle,
   createTilemap,
-  createTilemapData,
-  createTilemapSignals,
   enableTilemapSignals,
   fillTilemapTiles,
   getTilemapColumnAtX,

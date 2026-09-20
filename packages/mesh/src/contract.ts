@@ -11,3 +11,4 @@ export * from './meshGeometryTransforms';
 export * from './meshGeometryUvs';
 export * from './morphMeshGeometry';
 export * from './updateMeshMorph';
+export * from './vertexFormat';

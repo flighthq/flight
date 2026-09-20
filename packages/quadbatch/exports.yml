@@ -1,0 +1,4 @@
+protected:
+  - QUAD_BATCH_DELETED_ID
+  - createQuadBatchData
+  - createQuadBatchSignals

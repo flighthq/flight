@@ -1,0 +1,8 @@
+protected:
+  - createAmbientLightReading
+  - createMotionReading
+  - createOrientationReading
+  - createPressureReading
+  - createProximityReading
+  - createQuaternionReading
+  - createRotationRateReading
