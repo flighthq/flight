@@ -220,6 +220,7 @@
     "test:parity": "npm run test:functional:parity && npm run test:examples:parity",
     "test:regression": "npm run test:functional:regression && npm run test:examples:regression",
     "test:regression:baseline": "npm run test:functional:regression:baseline && npm run test:examples:regression:baseline",
+    "test:scripts": "npx vitest run --config vitest.config.scripts.ts",
     "test:smoke": "npm run test:functional:smoke && npm run test:examples:smoke",
     "test:unit": "tsx ./scripts/test-packages.ts",
     "type-home": "tsx ./scripts/type-home-progress.ts",

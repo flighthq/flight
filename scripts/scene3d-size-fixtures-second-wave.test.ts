@@ -47,7 +47,7 @@ describe('Scene3D second-wave size fixture isolation', () => {
 
       expect(packageJson).toMatchObject({ flightSize: { kind: 'size-only-control', name: spec.name } });
       expect(existsSync(resolve(root, 'tool-capture.json'))).toBe(false);
-      expect(source).toContain('createNode3D(Node3DKind)');
+      expect(source).toContain('createNode3D()');
       expect(source).toContain(`allocateEmpty${spec.backend}RenderRegistries()`);
       // The first argument differs by backend — WGPU draws through a pass handle, GL through the state —
       // and which it is says nothing about this fixture being a renderer-free floor, which is the subject.

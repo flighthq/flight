@@ -36,7 +36,7 @@ describe('TestRunCoverageReporter', () => {
   it(
     'FAILS the real root runner when a name filter matches no tests in a matched file',
     () => {
-      const result = runRootVitest(['scripts/testRunCoverage.test.ts', '-t', '__test_run_coverage_no_such_name__']);
+      const result = runRootVitest(['packages/math/src/clamp.test.ts', '-t', '__test_run_coverage_no_such_name__']);
       expect(result.status).toBe(1);
       expect(result.output).toContain('ran NOTHING across 1 matched test file');
       expect(result.output).toContain('unconfigured, not clean');
