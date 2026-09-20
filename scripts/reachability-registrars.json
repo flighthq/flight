@@ -123,6 +123,10 @@
     },
     {
       "packageName": "effects",
+      "registrar": "registerEffectPaddingResolver"
+    },
+    {
+      "packageName": "effects",
       "registrar": "registerGlitchEffectPaddingResolver"
     },
     {
@@ -152,10 +156,6 @@
     {
       "packageName": "effects",
       "registrar": "registerOutlineEffectPaddingResolver"
-    },
-    {
-      "packageName": "effects",
-      "registrar": "registerEffectPaddingResolver"
     },
     {
       "packageName": "effects",
@@ -319,6 +319,10 @@
     },
     {
       "packageName": "effects-gl",
+      "registrar": "registerGlEffect"
+    },
+    {
+      "packageName": "effects-gl",
       "registrar": "registerGlFilmGrainEffect"
     },
     {
@@ -396,10 +400,6 @@
     {
       "packageName": "effects-gl",
       "registrar": "registerGlRadialBlurEffect"
-    },
-    {
-      "packageName": "effects-gl",
-      "registrar": "registerGlEffect"
     },
     {
       "packageName": "effects-gl",
@@ -507,6 +507,10 @@
     },
     {
       "packageName": "effects-wgpu",
+      "registrar": "registerWgpuEffect"
+    },
+    {
+      "packageName": "effects-wgpu",
       "registrar": "registerWgpuFilmGrainEffect"
     },
     {
@@ -584,10 +588,6 @@
     {
       "packageName": "effects-wgpu",
       "registrar": "registerWgpuRadialBlurEffect"
-    },
-    {
-      "packageName": "effects-wgpu",
-      "registrar": "registerWgpuEffect"
     },
     {
       "packageName": "effects-wgpu",
