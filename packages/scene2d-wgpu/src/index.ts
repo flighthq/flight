@@ -1,4 +1,5 @@
 export {
+  areWgpuColorAdjustmentGuardsEnabled,
   createWgpuCacheState,
   createWgpuVelocityTarget,
   defaultWgpuBitmapTextRenderer,
@@ -14,6 +15,7 @@ export {
   defaultWgpuScene2DRenderer,
   defaultWgpuShapeCommands,
   defaultWgpuRasterShapeRenderer,
+  defaultWgpuRenderCacheRenderer,
   defaultWgpuShapeRenderer,
   defaultWgpuSpriteRenderer,
   defaultWgpuTextLabelRenderer,
@@ -21,6 +23,7 @@ export {
   defaultWgpuTilemapRenderer,
   drawWgpuScale9Sprite,
   drawWgpuSprite,
+  enableWgpuColorAdjustmentGuards,
   enableWgpuStrokePathTessellation,
   enableWgpuClipSupport,
   enableWgpuRenderCache,
@@ -32,6 +35,7 @@ export {
   registerWgpuVelocityWriter,
   renderWgpuScene2D,
   renderWgpuVelocity,
+  standardWgpuMaterialRenderer,
   defaultScene2DWgpuRenderRegistries,
 } from './contract';
 export { getWgpuShapeRasterizer, registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';

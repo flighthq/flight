@@ -1,4 +1,5 @@
 export {
+  areDomTextureResolverGuardsEnabled,
   createDomRenderState,
   defaultDomHtmlViewRenderer,
   defaultDomMorphShapeRenderer,
@@ -6,6 +7,8 @@ export {
   defaultDomRichTextRenderer,
   defaultDomScale9ShapeRenderer,
   defaultDomScale9SpriteRenderer,
+  defaultDomRenderCacheRenderer,
+  defaultDomScene2DRenderer,
   defaultDomShapeRenderer,
   defaultDomSpriteRenderer,
   defaultDomTextLabelRenderer,
@@ -16,6 +19,7 @@ export {
   enableDomRenderCache,
   enableDomTextInput,
   enableDomTextureResolverGuards,
+  explainDomImageSource,
   explainDomTextureResolution,
   registerDomBitmapTextureResolver,
   registerDomImageTextureResolver,
