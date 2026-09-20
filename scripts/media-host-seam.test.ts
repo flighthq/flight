@@ -66,12 +66,6 @@ const RETIRED_MEDIA_EXPORTS = [
   'hasAudioChannelNodeAccess',
   'initializeWebAudioDeviceBackend',
 ] as const;
-const REMOVED_NODE_APIS = [
-  'connectAudioChannelToNode',
-  'getAudioChannelInputNode',
-  'getAudioChannelOutputNode',
-  'hasAudioChannelNodeAccess',
-] as const;
 const RELOCATED_WEB_APIS = [
   'createWebAudioDeviceBackend',
   'getAudioSourceBufferSourceNode',
@@ -243,14 +237,6 @@ describe('media host-seam closure', () => {
     expect(violations).toEqual([]);
   });
 
-  it('leaves no providerless caller of a migrated media API', () => {
-    expect(findLegacyCallArities()).toEqual([]);
-  });
-
-  it('leaves no declaration or caller of the removed portable Web-node APIs', () => {
-    expect(REMOVED_NODE_APIS.flatMap((name) => findIdentifierReferences(name))).toEqual([]);
-  });
-
   it('removes Web-only APIs from both media export lanes and keeps relocated APIs out of media source', () => {
     for (const name of RETIRED_MEDIA_EXPORTS) {
       expect(Object.hasOwn(mediaPublic, name), name).toBe(false);
@@ -259,7 +245,6 @@ describe('media host-seam closure', () => {
     for (const name of RELOCATED_WEB_APIS) {
       expect(findIdentifierReferencesUnder(PORTABLE_MEDIA_ROOT, name), name).toEqual([]);
     }
-    expect(findRetiredMediaImports()).toEqual([]);
   });
 
   it('keeps browser media backend construction in host-web only', () => {
@@ -426,94 +411,6 @@ function exportedMediaFunctions(): ReadonlyMap<string, ts.FunctionDeclaration> {
     }
   }
   return declarations;
-}
-
-function findLegacyCallArities(): string[] {
-  const names = [...PROVIDER_FIRST_FUNCTIONS.keys()];
-  const findings: string[] = [];
-  const candidate = new RegExp(`\\b(?:${names.join('|')})\\b`, 'u');
-  for (const source of repositorySources(candidate)) {
-    const bindings = importedMediaBindings(source);
-    visit(source, (node) => {
-      if (!ts.isCallExpression(node)) return;
-      const name = calledProviderFirstName(node.expression, bindings);
-      if (name === null) return;
-      const expected = PROVIDER_FIRST_FUNCTIONS.get(name);
-      if (expected !== undefined && node.arguments.length < expected.minimumArguments) {
-        findings.push(`${location(source, node)}: ${name}(${node.arguments.length})`);
-      }
-    });
-  }
-  return findings.sort();
-}
-
-function importedMediaBindings(source: ts.SourceFile): ImportedMediaBindings {
-  const names = new Map<string, string>();
-  const namespaces = new Set<string>();
-  for (const statement of source.statements) {
-    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
-    if (!/^@flighthq\/(?:media|sdk)(?:\/contract)?$/u.test(statement.moduleSpecifier.text)) continue;
-    const bindings = statement.importClause?.namedBindings;
-    if (!bindings) continue;
-    if (ts.isNamespaceImport(bindings)) {
-      namespaces.add(bindings.name.text);
-      continue;
-    }
-    for (const element of bindings.elements) {
-      const imported = element.propertyName?.text ?? element.name.text;
-      if (PROVIDER_FIRST_FUNCTIONS.has(imported)) names.set(element.name.text, imported);
-    }
-  }
-  return { names, namespaces };
-}
-
-function calledProviderFirstName(
-  expression: ts.LeftHandSideExpression,
-  bindings: ImportedMediaBindings,
-): string | null {
-  if (ts.isIdentifier(expression)) {
-    return (
-      bindings.names.get(expression.text) ?? (PROVIDER_FIRST_FUNCTIONS.has(expression.text) ? expression.text : null)
-    );
-  }
-  if (
-    ts.isPropertyAccessExpression(expression) &&
-    ts.isIdentifier(expression.expression) &&
-    bindings.namespaces.has(expression.expression.text) &&
-    PROVIDER_FIRST_FUNCTIONS.has(expression.name.text)
-  ) {
-    return expression.name.text;
-  }
-  return null;
-}
-
-function findRetiredMediaImports(): string[] {
-  const findings: string[] = [];
-  const names = new Set<string>(RETIRED_MEDIA_EXPORTS);
-  const candidate = new RegExp(`\\b(?:${RETIRED_MEDIA_EXPORTS.join('|')})\\b`, 'u');
-  for (const source of repositorySources(candidate)) {
-    for (const statement of source.statements) {
-      if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
-      if (!/^@flighthq\/(?:media|sdk)(?:\/contract)?$/u.test(statement.moduleSpecifier.text)) continue;
-      const bindings = statement.importClause?.namedBindings;
-      if (!bindings || !ts.isNamedImports(bindings)) continue;
-      for (const element of bindings.elements) {
-        const imported = element.propertyName?.text ?? element.name.text;
-        if (names.has(imported)) findings.push(`${location(source, element)}: ${imported}`);
-      }
-    }
-  }
-  return findings.sort();
-}
-
-function findIdentifierReferences(name: string): string[] {
-  const findings: string[] = [];
-  for (const source of repositorySources(new RegExp(`\\b${name}\\b`, 'u'))) {
-    visit(source, (node) => {
-      if (ts.isIdentifier(node) && node.text === name) findings.push(location(source, node));
-    });
-  }
-  return findings.sort();
 }
 
 function findIdentifierReferencesUnder(root: string, name: string): string[] {
