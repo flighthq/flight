@@ -1,2 +1,5 @@
+# host: exports where the shared classifier gets it wrong.
+
 protected:
   - createHost
+  - initializeHost

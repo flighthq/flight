@@ -1,8 +1,17 @@
+# scene2d-formats: exports where the shared classifier gets it wrong.
+
 protected:
   - applyRiveArtboardHandlers
+  - applyRiveClipping
   - applyRiveDocumentHandlers
+  - applyRiveDrawOrder
+  - applyRiveSolo
   - createRiveArtboardImportContext
   - createRiveDocumentImportContext
+  - createRiveFileAssets
+  - createRiveLayoutImports
+  - createRiveSkeleton2D
+  - createRiveStateMachines
   - getRiveCoreObjectHandler
   - importRiveCoreObjectAsData
   - importRiveImageComponent
@@ -13,3 +22,4 @@ protected:
   - importRiveShapeComponent
   - importRiveSoloComponent
   - importRiveTextComponent
+  - rebuildRiveShapes

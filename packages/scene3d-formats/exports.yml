@@ -1,6 +1,18 @@
+# scene3d-formats: exports where the shared classifier gets it wrong.
+
 protected:
   - GltfAnimationsCoreFeatureHandler
-  - GltfCamerasCoreFeatureHandler
-  - GltfSkinsCoreFeatureHandler
-  - GltfPunctualLightsExtensionHandler
   - GltfAnisotropyExtensionHandler
+  - GltfCamerasCoreFeatureHandler
+  - GltfClearcoatExtensionHandler
+  - GltfEmissiveStrengthExtensionHandler
+  - GltfIorExtensionHandler
+  - GltfIridescenceExtensionHandler
+  - GltfPunctualLightsExtensionHandler
+  - GltfSheenExtensionHandler
+  - GltfSkinsCoreFeatureHandler
+  - GltfSpecularExtensionHandler
+  - GltfSpecularGlossinessExtensionHandler
+  - GltfTransmissionExtensionHandler
+  - GltfUnlitExtensionHandler
+  - GltfVolumeExtensionHandler
