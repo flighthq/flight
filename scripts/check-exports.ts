@@ -302,13 +302,37 @@ function getSourceModules(srcDir: string): string[] {
     .sort();
 }
 
+// A module's value exports: what it DECLARES, plus what it RE-EXPORTS FROM ANOTHER PACKAGE.
+//
+// The second half is not a nicety. A kind identifier lives in `@flighthq/types` by the type-home rule,
+// so the package that owns the entity surfaces it with `export { Node3DKind } from
+// '@flighthq/types/contract'`. Reading declarations only, this scanner could not see that name, the
+// generator could not emit it, and the gate then reported a hand-written `Node3DKind` on scene3d's
+// public lane as "not in source exports" — an export the examples genuinely import and that nothing was
+// able to generate. Relative re-exports are deliberately NOT collected: `./sibling` is another module of
+// this same package, already scanned on its own, and counting it here would attribute one name to two
+// modules.
 function getModuleValueExports(filePath: string): string[] {
   if (!existsSync(filePath)) return [];
   const src = readFileSync(filePath, 'utf8');
   const names: string[] = [];
-  const re = /^export (?:async )?(?:function|const|let) (\w+)/gm;
+  const declared = /^export (?:async )?(?:function|const|let) (\w+)/gm;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(src)) !== null) names.push(m[1]);
+  while ((m = declared.exec(src)) !== null) names.push(m[1]);
+
+  const reExported = /^export\s*\{([^}]*)\}\s*from\s*['"]([^'"]+)['"]/gm;
+  while ((m = reExported.exec(src)) !== null) {
+    if (m[2].startsWith('.')) continue;
+    for (const item of m[1].split(',')) {
+      const trimmed = item.trim();
+      if (trimmed === '' || trimmed.startsWith('type ')) continue;
+      const name = trimmed
+        .split(/\s+as\s+/)
+        .pop()
+        ?.trim();
+      if (name !== undefined && name !== '' && name !== 'type') names.push(name);
+    }
+  }
   return [...new Set(names)];
 }
 
