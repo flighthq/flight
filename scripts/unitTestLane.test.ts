@@ -3,7 +3,46 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { REGISTRY_ISOLATED_TEST_FILES } from './registryIsolatedTests';
-import { UNIT_TEST_LANE_EXCLUDE, UNIT_TEST_LANE_INCLUDE, readUnitTestLaneFiles } from './unitTestLane';
+import {
+  INTEGRATION_TEST_FILES,
+  UNIT_TEST_LANE_EXCLUDE,
+  UNIT_TEST_LANE_INCLUDE,
+  findMissingIntegrationTestFiles,
+  readUnitTestLaneFiles,
+} from './unitTestLane';
+
+describe('findMissingIntegrationTestFiles', () => {
+  // The integration project's include is exact paths, so a renamed entry matches nothing and vitest
+  // still passes on the files that DO match. Without this the routed test would stop running silently,
+  // which is the failure that makes "routed, never dropped" a promise instead of a claim.
+  it('names an integration path that no longer exists', () => {
+    const root = mkdtempSync(join(tmpdir(), 'flight-lane-'));
+    try {
+      expect(findMissingIntegrationTestFiles(root)).toEqual([...INTEGRATION_TEST_FILES].sort());
+    } finally {
+      rmSync(root, { force: true, recursive: true });
+    }
+  });
+
+  it('names nothing when every integration path resolves', () => {
+    expect(findMissingIntegrationTestFiles(process.cwd())).toEqual([]);
+  });
+});
+
+describe('INTEGRATION_TEST_FILES', () => {
+  it('names each file once', () => {
+    expect(new Set(INTEGRATION_TEST_FILES).size).toBe(INTEGRATION_TEST_FILES.length);
+  });
+
+  // ★ THE PARTITION HAS TO BE TOTAL. Lane and integration are complements, and a file in neither would
+  // run nowhere while both lists still looked healthy — so the claim is asserted, not assumed.
+  it('is disjoint from the lane and, with it, covers every test file under the two roots', () => {
+    const lane = readUnitTestLaneFiles(process.cwd());
+
+    for (const file of INTEGRATION_TEST_FILES) expect(lane).not.toContain(file);
+    expect(UNIT_TEST_LANE_EXCLUDE).toEqual(expect.arrayContaining([...INTEGRATION_TEST_FILES]));
+  });
+});
 
 describe('readUnitTestLaneFiles', () => {
   // Built against a temporary tree rather than the repository, so the case states its own population.

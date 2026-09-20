@@ -150,7 +150,6 @@ export const UNIT_TEST_COST_EXEMPTIONS: readonly UnitTestCostExemption[] = [
   { capability: 'builds-bundle', path: 'packages/gizmo/src/gizmoTreeShaking.test.ts' },
   { capability: 'builds-bundle', path: 'packages/gui/src/guiTreeShaking.test.ts' },
   { capability: 'builds-bundle', path: 'packages/host-electron/src/electronHostTreeShaking.test.ts' },
-  { capability: 'builds-bundle', path: 'packages/host-tauri/src/tauriPackage.test.ts' },
   { capability: 'builds-bundle', path: 'packages/host-web/src/evidence.test.ts' },
   { capability: 'builds-bundle', path: 'packages/layout/src/layoutTreeShaking.test.ts' },
   { capability: 'builds-bundle', path: 'packages/render-gl/src/glContext.test.ts' },
@@ -162,7 +161,6 @@ export const UNIT_TEST_COST_EXEMPTIONS: readonly UnitTestCostExemption[] = [
   // RUNS-COMPILER — these build a TypeScript program (or a ts-morph Project) to assert a structural rule
   // over real source. The rule is a gate's claim, not a unit's: every one of them is a whole-repository
   // static analysis, which is precisely the shape `scripts/check.ts` already registers a dozen times.
-  { capability: 'runs-compiler', path: 'packages/host-tauri/src/tauriPackage.test.ts' },
   { capability: 'runs-compiler', path: 'scripts/entity-contracts.test.ts' },
   { capability: 'runs-compiler', path: 'scripts/export-inventory.test.ts' },
   { capability: 'runs-compiler', path: 'scripts/host-runtime-direct-provider.test.ts' },
@@ -171,20 +169,8 @@ export const UNIT_TEST_COST_EXEMPTIONS: readonly UnitTestCostExemption[] = [
   { capability: 'runs-compiler', path: 'scripts/video-host-seam.test.ts' },
   { capability: 'runs-compiler', path: 'scripts/vitestConfig.test.ts' },
 
-  // SPAWNS-PROCESS — these exercise a CLI by starting it. The cost is mostly `tsx` startup re-transpiling
-  // the whole graph once per spawn, so it is reducible IN PLACE: call the exported function directly for
-  // the logic assertions and keep ONE spawn per file for the argv/exit-code contract, which is the part a
-  // direct call genuinely cannot cover.
-  { capability: 'spawns-process', path: 'packages/host-tauri/src/tauriHost.test.ts' },
-  { capability: 'spawns-process', path: 'packages/host-tauri/src/tauriPackage.test.ts' },
-  { capability: 'spawns-process', path: 'scripts/fixtures.test.ts' },
-  { capability: 'spawns-process', path: 'scripts/package-publish-artifacts.test.ts' },
-  { capability: 'spawns-process', path: 'scripts/package-todo-churn.test.ts' },
-  { capability: 'spawns-process', path: 'scripts/path-shape-vocabulary.test.ts' },
-  { capability: 'spawns-process', path: 'scripts/reference-image-commission-batch.test.ts' },
-  { capability: 'spawns-process', path: 'scripts/reference-image-commission.test.ts' },
-  { capability: 'spawns-process', path: 'scripts/registrar-child-process.test.ts' },
-  { capability: 'spawns-process', path: 'scripts/render-lane-architecture.test.ts' },
-  { capability: 'spawns-process', path: 'scripts/teardown-rejection.test.ts' },
-  { capability: 'spawns-process', path: 'scripts/unchecked.test.ts' },
+  // SPAWNS-PROCESS has NO entries, and that is the finished state the other two groups are aiming at:
+  // every child-process test now lives in the integration project (`INTEGRATION_TEST_FILES`), run by
+  // `integration-tests:check`. The capability stays in the rule so a NEW lane file reaching for a child
+  // process fails here rather than quietly rejoining the inner loop.
 ];

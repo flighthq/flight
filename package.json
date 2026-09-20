@@ -216,6 +216,7 @@
     "test:host-probe:electron": "npm run test:e2e:electron --workspace=@flighthq/tool-host-probe",
     "test:host-probe:tauri": "npm run test:e2e:tauri --workspace=@flighthq/tool-host-probe",
     "test:host-probe:web": "npm run test:e2e:web --workspace=@flighthq/tool-host-probe",
+    "test:integration": "tsx ./scripts/test.ts --project integration",
     "test:parity": "npm run test:functional:parity && npm run test:examples:parity",
     "test:regression": "npm run test:functional:regression && npm run test:examples:regression",
     "test:regression:baseline": "npm run test:functional:regression:baseline && npm run test:examples:regression:baseline",
