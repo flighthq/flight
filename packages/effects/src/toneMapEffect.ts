@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, ToneMapEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createToneMapEffect(
   options: Readonly<Omit<EntityWithoutRuntime<ToneMapEffect>, 'kind'>> = {},
@@ -15,7 +15,7 @@ export function initializeToneMapEffect(
   out: EntityConstruction<ToneMapEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<ToneMapEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'ToneMapEffect');
+  initializeEffect(out, 'ToneMapEffect');
   out.operator = options.operator;
   out.exposure = options.exposure;
   out.white = options.white;

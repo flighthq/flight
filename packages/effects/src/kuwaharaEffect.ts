@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, KuwaharaEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createKuwaharaEffect(
   options: Readonly<Omit<EntityWithoutRuntime<KuwaharaEffect>, 'kind'>> = {},
@@ -15,6 +15,6 @@ export function initializeKuwaharaEffect(
   out: EntityConstruction<KuwaharaEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<KuwaharaEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'KuwaharaEffect');
+  initializeEffect(out, 'KuwaharaEffect');
   out.radius = options.radius;
 }

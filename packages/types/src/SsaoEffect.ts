@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface SsaoEffect extends RenderEffect {
+export interface SsaoEffect extends Effect {
   kind: 'SsaoEffect'; // [DEPTH]
   radius?: number;
   intensity?: number;

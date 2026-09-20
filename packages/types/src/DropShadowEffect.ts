@@ -1,10 +1,10 @@
+import type { Effect } from './Effect';
 import type { EffectSourceMode } from './EffectSourceMode';
-import type { RenderEffect } from './RenderEffect';
 
 // Drop-shadow composite effect: tint the scene silhouette, blur it, offset it by angle/distance, then apply sourceMode compositing.
 // Full-frame composite effect over the scene's alpha silhouette; the color is a packed RGBA integer
 // whose alpha multiplies the separate alpha field, and angles are degrees.
-export interface DropShadowEffect extends RenderEffect {
+export interface DropShadowEffect extends Effect {
   kind: 'DropShadowEffect';
   alpha?: number;
   /**

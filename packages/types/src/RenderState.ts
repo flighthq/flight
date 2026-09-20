@@ -1,5 +1,6 @@
 import type { BlendMode } from './BlendMode';
 import type { CanvasShapeCommand } from './CanvasShapeRegistry';
+import type { EffectPaddingResolver } from './EffectPadding';
 import type { Entity, EntityRuntime, Kind } from './Entity';
 import type { ImageSurfaceCreator } from './ImageSurface';
 import type { Matrix } from './Matrix';
@@ -7,7 +8,6 @@ import type { Path } from './Path';
 import type { PathMesh } from './PathMesh';
 import type { KeyedTable, SlotTable } from './RegistryTable';
 import type { Renderable } from './Renderable';
-import type { RenderEffectPaddingResolver } from './RenderEffectPadding';
 import type { Renderer } from './Renderer';
 import type { RenderProxy } from './RenderProxy';
 import type { RenderProxy2D } from './RenderProxy2D';
@@ -50,7 +50,7 @@ export interface RenderRegistries {
   // Optional diagnostic policy for operations the inline color-adjustment resolver cannot represent.
   // Binding this callback reports the omission but never enables accumulation or backend realization.
   colorAdjustmentUnsupportedGuard?: SlotTable<ColorAdjustmentUnsupportedGuard>;
-  effectPaddingResolvers?: KeyedTable<RenderEffectPaddingResolver>;
+  effectPaddingResolvers?: KeyedTable<EffectPaddingResolver>;
   renderers: KeyedTable<Renderer>;
   // Optional diagnostic policy reached before a root walk. Backends bind this to diagnose pipeline-
   // policy mistakes without adding their warning dependency to the substrate-independent render path.

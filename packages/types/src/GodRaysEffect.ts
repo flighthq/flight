@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface GodRaysEffect extends RenderEffect {
+export interface GodRaysEffect extends Effect {
   kind: 'GodRaysEffect'; // [HDR]
   /**
    * The light's horizontal position as a fraction of the frame, 0 at the LEFT edge and 1 at the right.

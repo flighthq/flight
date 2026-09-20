@@ -1,10 +1,10 @@
+import type { Effect } from './Effect';
 import type { EffectSourceMode } from './EffectSourceMode';
-import type { RenderEffect } from './RenderEffect';
 
 // Bevel composite effect: the directional gradient of the blurred silhouette drives a highlight/shadow edge band, clipped by bevelType, then applies sourceMode compositing.
 // Full-frame composite effect over the scene's alpha silhouette; the highlight and shadow colors are
 // packed RGBA integers whose alpha multiplies the matching *Alpha field, and angles are degrees.
-export interface BevelEffect extends RenderEffect {
+export interface BevelEffect extends Effect {
   kind: 'BevelEffect';
   /**
    * Direction of the light that casts the bevel, in DEGREES (default 45).

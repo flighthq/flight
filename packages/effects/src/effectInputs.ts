@@ -1,23 +1,23 @@
-import type { RenderEffect, RenderEffectInput } from '@flighthq/types/contract';
+import type { Effect, EffectInput } from '@flighthq/types/contract';
 
 // Returns the required render-target inputs for the given effect. Effects with no requirements
 // (they only need the color buffer) return an empty array. This is the data form of the
 // [HDR]/[DEPTH]/[MOTION]/[TEMPORAL] comment tags in the type definitions.
-export function getRenderEffectInputs(effect: Readonly<RenderEffect>): readonly RenderEffectInput[] {
-  return RENDER_EFFECT_INPUTS[effect.kind] ?? [];
+export function getEffectInputs(effect: Readonly<Effect>): readonly EffectInput[] {
+  return EFFECT_INPUTS[effect.kind] ?? [];
 }
 
 // Returns the full catalog of known effect kind strings in alphabetical order. Suitable for
 // populating editor dropdowns, validating serialized effect stacks, and tooling enumeration.
-export function getRenderEffectKinds(): readonly string[] {
-  return RENDER_EFFECT_KINDS;
+export function getEffectKinds(): readonly string[] {
+  return EFFECT_KINDS;
 }
 
 // Static per-kind table of required render-target inputs. Promotes the [HDR]/[DEPTH]/[MOTION]/
 // [TEMPORAL] comment tags from the type definitions into queryable data. The pipeline can call
-// getRenderEffectInputs(effect) to validate that a scene target provides the buffers needed before
+// getEffectInputs(effect) to validate that a scene target provides the buffers needed before
 // dispatching to a backend. Pure data — no backend knowledge, fully tree-shakable.
-const RENDER_EFFECT_INPUTS: Readonly<Record<string, readonly RenderEffectInput[]>> = {
+const EFFECT_INPUTS: Readonly<Record<string, readonly EffectInput[]>> = {
   AutoExposureEffect: ['Hdr'],
   BloomEffect: ['Hdr'],
   BokehDepthOfFieldEffect: ['Depth'],
@@ -35,7 +35,7 @@ const RENDER_EFFECT_INPUTS: Readonly<Record<string, readonly RenderEffectInput[]
 
 // The complete set of effect kind strings in alphabetical order. Used for enumeration, editor
 // population, and tooling. Add a new entry when a new effect kind is introduced.
-export const RENDER_EFFECT_KINDS: readonly string[] = [
+export const EFFECT_KINDS: readonly string[] = [
   'AutoExposureEffect',
   'BarrelDistortionEffect',
   'BevelEffect',

@@ -3,13 +3,13 @@ import type {
   ContactShadowsEffect,
   EntityConstruction,
   EntityWithoutRuntime,
-  RenderEffect,
-  RenderEffectPadding,
+  Effect,
+  EffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
-import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { initializeEffect } from './effect';
+import { registerEffectPaddingResolver } from './effectPadding';
 
 export function createContactShadowsEffect(
   options: Readonly<Omit<EntityWithoutRuntime<ContactShadowsEffect>, 'kind'>> = {},
@@ -20,7 +20,7 @@ export function createContactShadowsEffect(
 }
 
 // Contact shadows are a screen-space depth treatment and do not expand a node-local silhouette.
-export function getContactShadowsEffectPadding(_effect: Readonly<ContactShadowsEffect>): RenderEffectPadding {
+export function getContactShadowsEffectPadding(_effect: Readonly<ContactShadowsEffect>): EffectPadding {
   return { bottom: 0, left: 0, right: 0, top: 0 };
 }
 
@@ -28,7 +28,7 @@ export function initializeContactShadowsEffect(
   out: EntityConstruction<ContactShadowsEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<ContactShadowsEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'ContactShadowsEffect');
+  initializeEffect(out, 'ContactShadowsEffect');
   out.distance = options.distance;
   out.opacity = options.opacity;
   out.samples = options.samples;
@@ -36,9 +36,9 @@ export function initializeContactShadowsEffect(
 }
 
 export function registerContactShadowsEffectPaddingResolver(state: RenderState): void {
-  registerRenderEffectPaddingResolver(state, 'ContactShadowsEffect', resolveContactShadowsEffectPadding);
+  registerEffectPaddingResolver(state, 'ContactShadowsEffect', resolveContactShadowsEffectPadding);
 }
 
-function resolveContactShadowsEffectPadding(effect: Readonly<RenderEffect>): RenderEffectPadding {
+function resolveContactShadowsEffectPadding(effect: Readonly<Effect>): EffectPadding {
   return getContactShadowsEffectPadding(effect as Readonly<ContactShadowsEffect>);
 }

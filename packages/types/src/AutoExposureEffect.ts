@@ -1,5 +1,5 @@
-import type { RenderEffect } from './RenderEffect';
-export interface AutoExposureEffect extends RenderEffect {
+import type { Effect } from './Effect';
+export interface AutoExposureEffect extends Effect {
   kind: 'AutoExposureEffect';
   adaptationSpeed?: number;
   exposureCompensation?: number;

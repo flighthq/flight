@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { DitherEffect, EntityConstruction, EntityWithoutRuntime } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createDitherEffect(
   options: Readonly<Omit<EntityWithoutRuntime<DitherEffect>, 'kind'>> = {},
@@ -15,6 +15,6 @@ export function initializeDitherEffect(
   out: EntityConstruction<DitherEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<DitherEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'DitherEffect');
+  initializeEffect(out, 'DitherEffect');
   out.levels = options.levels;
 }

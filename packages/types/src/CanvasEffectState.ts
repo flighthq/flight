@@ -2,9 +2,9 @@ import type { CanvasRenderState } from './CanvasRenderState';
 import type { CanvasRenderSurfaceCreator } from './CanvasRenderSurface';
 import type { CanvasTextureRenderTarget } from './CanvasRenderTarget';
 import type { ColorLutCache } from './ColorLutCache';
+import type { Effect } from './Effect';
 import type { Entity } from './Entity';
 import type { EffectStateOptions } from './GlEffectState';
-import type { RenderEffect } from './RenderEffect';
 
 // What a Canvas 2D effect runner is handed: the state, the offscreen scene canvas it reads, the
 // offscreen canvas it writes, and a scratch pool it borrows intermediate canvases from. `source` and
@@ -24,7 +24,7 @@ export interface CanvasEffectContext {
 // canvases — not a multi-method per-node renderer. The built-ins are exported as `default*` named
 // wrappers (e.g. registerCanvasBloomEffect); register an alternative under the same key to swap
 // algorithms.
-export type CanvasEffectRunner = (ctx: Readonly<CanvasEffectContext>, effect: Readonly<RenderEffect>) => void;
+export type CanvasEffectRunner = (ctx: Readonly<CanvasEffectContext>, effect: Readonly<Effect>) => void;
 
 // A reusable pool of offscreen CanvasRenderTargets. Multi-pass effect recipes (bloom) acquire scratch
 // canvases for branch/blur stages and release them when done — the Canvas analog of the Gl render

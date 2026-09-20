@@ -3,13 +3,13 @@ import type {
   EntityConstruction,
   EntityWithoutRuntime,
   OuterGlowEffect,
-  RenderEffect,
-  RenderEffectPadding,
+  Effect,
+  EffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
-import { getGaussianRenderEffectPadding, registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { initializeEffect } from './effect';
+import { getGaussianEffectPadding, registerEffectPaddingResolver } from './effectPadding';
 
 // Outer-glow composite effect: tint the scene silhouette, blur it centered (no offset), then apply sourceMode compositing.
 export function createOuterGlowEffect(
@@ -20,15 +20,15 @@ export function createOuterGlowEffect(
   return finishEntity(out);
 }
 
-export function getOuterGlowEffectPadding(effect: Readonly<OuterGlowEffect>): RenderEffectPadding {
-  return getGaussianRenderEffectPadding(effect.blurX ?? 6, effect.blurY ?? 6);
+export function getOuterGlowEffectPadding(effect: Readonly<OuterGlowEffect>): EffectPadding {
+  return getGaussianEffectPadding(effect.blurX ?? 6, effect.blurY ?? 6);
 }
 
 export function initializeOuterGlowEffect(
   out: EntityConstruction<OuterGlowEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<OuterGlowEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'OuterGlowEffect');
+  initializeEffect(out, 'OuterGlowEffect');
   out.alpha = options.alpha;
   out.blurX = options.blurX;
   out.blurY = options.blurY;
@@ -39,9 +39,9 @@ export function initializeOuterGlowEffect(
 }
 
 export function registerOuterGlowEffectPaddingResolver(state: RenderState): void {
-  registerRenderEffectPaddingResolver(state, 'OuterGlowEffect', resolveOuterGlowEffectPadding);
+  registerEffectPaddingResolver(state, 'OuterGlowEffect', resolveOuterGlowEffectPadding);
 }
 
-function resolveOuterGlowEffectPadding(effect: Readonly<RenderEffect>): RenderEffectPadding {
+function resolveOuterGlowEffectPadding(effect: Readonly<Effect>): EffectPadding {
   return getOuterGlowEffectPadding(effect as Readonly<OuterGlowEffect>);
 }

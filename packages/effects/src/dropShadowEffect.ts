@@ -3,13 +3,13 @@ import type {
   DropShadowEffect,
   EntityConstruction,
   EntityWithoutRuntime,
-  RenderEffect,
-  RenderEffectPadding,
+  Effect,
+  EffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
-import { getDirectionalRenderEffectPadding, registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { initializeEffect } from './effect';
+import { getDirectionalEffectPadding, registerEffectPaddingResolver } from './effectPadding';
 
 // Drop-shadow composite effect: tint the scene silhouette, blur it, offset it by angle/distance, then apply sourceMode compositing.
 export function createDropShadowEffect(
@@ -20,10 +20,10 @@ export function createDropShadowEffect(
   return finishEntity(out);
 }
 
-export function getDropShadowEffectPadding(effect: Readonly<DropShadowEffect>): RenderEffectPadding {
+export function getDropShadowEffectPadding(effect: Readonly<DropShadowEffect>): EffectPadding {
   const angle = ((effect.angle ?? 45) * Math.PI) / 180;
   const distance = effect.distance ?? 4;
-  return getDirectionalRenderEffectPadding(
+  return getDirectionalEffectPadding(
     effect.blurX ?? 4,
     effect.blurY ?? 4,
     Math.cos(angle) * distance,
@@ -35,7 +35,7 @@ export function initializeDropShadowEffect(
   out: EntityConstruction<DropShadowEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<DropShadowEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'DropShadowEffect');
+  initializeEffect(out, 'DropShadowEffect');
   out.alpha = options.alpha;
   out.angle = options.angle;
   out.blurX = options.blurX;
@@ -48,9 +48,9 @@ export function initializeDropShadowEffect(
 }
 
 export function registerDropShadowEffectPaddingResolver(state: RenderState): void {
-  registerRenderEffectPaddingResolver(state, 'DropShadowEffect', resolveDropShadowEffectPadding);
+  registerEffectPaddingResolver(state, 'DropShadowEffect', resolveDropShadowEffectPadding);
 }
 
-function resolveDropShadowEffectPadding(effect: Readonly<RenderEffect>): RenderEffectPadding {
+function resolveDropShadowEffectPadding(effect: Readonly<Effect>): EffectPadding {
   return getDropShadowEffectPadding(effect as Readonly<DropShadowEffect>);
 }

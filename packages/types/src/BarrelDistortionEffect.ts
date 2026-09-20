@@ -1,5 +1,5 @@
-import type { RenderEffect } from './RenderEffect';
-export interface BarrelDistortionEffect extends RenderEffect {
+import type { Effect } from './Effect';
+export interface BarrelDistortionEffect extends Effect {
   kind: 'BarrelDistortionEffect';
   amount?: number;
   scale?: number;

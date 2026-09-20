@@ -9,14 +9,14 @@ import {
   registerBitmapDisplacementEffectPaddingResolver,
 } from './bitmapDisplacementEffect';
 import { createDisplacementEffect } from './displacementEffect';
-import { getRenderEffectDefaults } from './renderEffectDefaults';
-import { getRenderEffectKinds } from './renderEffectInputs';
+import { getEffectDefaults } from './effectDefaults';
+import { getEffectKinds } from './effectInputs';
 
 const map = {} as Texture2D;
 
 describe('BitmapDisplacementEffect defaults', () => {
   it('uses red/green channels, zero scale, and wrapping edges', () => {
-    expect(getRenderEffectDefaults('BitmapDisplacementEffect')).toEqual({
+    expect(getEffectDefaults('BitmapDisplacementEffect')).toEqual({
       componentX: ImageChannel.Red,
       componentY: ImageChannel.Green,
       edgeMode: 'wrap',
@@ -26,7 +26,7 @@ describe('BitmapDisplacementEffect defaults', () => {
   });
 
   it('participates in the known effect-kind catalog', () => {
-    expect(getRenderEffectKinds()).toContain('BitmapDisplacementEffect');
+    expect(getEffectKinds()).toContain('BitmapDisplacementEffect');
   });
 });
 

@@ -3,13 +3,13 @@ import type {
   BloomEffect,
   EntityConstruction,
   EntityWithoutRuntime,
-  RenderEffect,
-  RenderEffectPadding,
+  Effect,
+  EffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
-import { getGaussianRenderEffectPadding, registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { initializeEffect } from './effect';
+import { getGaussianEffectPadding, registerEffectPaddingResolver } from './effectPadding';
 
 // HDR bloom intent and its shared recipe math. The parameter math is substrate-agnostic so the Gl and
 // Wgpu bloom recipes derive identical bright-pass cutoff, additive strength, and blur radius from the
@@ -35,16 +35,16 @@ export function createBloomEffect(
   return finishEntity(out);
 }
 
-export function getBloomEffectPadding(effect: Readonly<BloomEffect>): RenderEffectPadding {
+export function getBloomEffectPadding(effect: Readonly<BloomEffect>): EffectPadding {
   const radius = computeBloomBlurRadius(effect);
-  return getGaussianRenderEffectPadding(radius, radius);
+  return getGaussianEffectPadding(radius, radius);
 }
 
 export function initializeBloomEffect(
   out: EntityConstruction<BloomEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<BloomEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'BloomEffect');
+  initializeEffect(out, 'BloomEffect');
   out.threshold = options.threshold;
   out.intensity = options.intensity;
   out.radius = options.radius;
@@ -52,9 +52,9 @@ export function initializeBloomEffect(
 }
 
 export function registerBloomEffectPaddingResolver(state: RenderState): void {
-  registerRenderEffectPaddingResolver(state, 'BloomEffect', resolveBloomEffectPadding);
+  registerEffectPaddingResolver(state, 'BloomEffect', resolveBloomEffectPadding);
 }
 
-function resolveBloomEffectPadding(effect: Readonly<RenderEffect>): RenderEffectPadding {
+function resolveBloomEffectPadding(effect: Readonly<Effect>): EffectPadding {
   return getBloomEffectPadding(effect as Readonly<BloomEffect>);
 }

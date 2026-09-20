@@ -1,5 +1,5 @@
+import type { Effect } from './Effect';
 import type { ImageChannel } from './ImageChannel';
-import type { RenderEffect } from './RenderEffect';
 import type { Texture2D } from './Texture';
 
 export type BitmapDisplacementEffectEdgeMode = 'clamp' | 'wrap';
@@ -9,7 +9,7 @@ export type BitmapDisplacementEffectEdgeMode = 'clamp' | 'wrap';
 // by sitting behind a Texture2D view, so backend upload/caching still goes through the normal texture
 // resolver. Displacement maps are data rather than colour; callers should declare the map Texture2D's
 // colorSpace as 'linear' so a linear render target does not sRGB-decode the channel values.
-export interface BitmapDisplacementEffect extends RenderEffect {
+export interface BitmapDisplacementEffect extends Effect {
   kind: 'BitmapDisplacementEffect';
   // Null is the explicit not-loaded sentinel. A backend copies the source through and exposes the
   // unresolved state through its effect-resolution query rather than sampling an arbitrary stand-in.

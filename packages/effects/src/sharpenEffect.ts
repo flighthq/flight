@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, SharpenEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createSharpenEffect(
   options: Readonly<Omit<EntityWithoutRuntime<SharpenEffect>, 'kind'>> = {},
@@ -15,6 +15,6 @@ export function initializeSharpenEffect(
   out: EntityConstruction<SharpenEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<SharpenEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'SharpenEffect');
+  initializeEffect(out, 'SharpenEffect');
   out.amount = options.amount;
 }

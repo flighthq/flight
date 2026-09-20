@@ -3,13 +3,13 @@ import type {
   EntityConstruction,
   EntityWithoutRuntime,
   MedianEffect,
-  RenderEffect,
-  RenderEffectPadding,
+  Effect,
+  EffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
-import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { initializeEffect } from './effect';
+import { registerEffectPaddingResolver } from './effectPadding';
 
 export function createMedianEffect(
   options: Readonly<Omit<EntityWithoutRuntime<MedianEffect>, 'kind'>> = {},
@@ -19,7 +19,7 @@ export function createMedianEffect(
   return finishEntity(out);
 }
 
-export function getMedianEffectPadding(effect: Readonly<MedianEffect>): RenderEffectPadding {
+export function getMedianEffectPadding(effect: Readonly<MedianEffect>): EffectPadding {
   const radius = Math.max(0, Math.round(effect.radius ?? 1));
   return { bottom: radius, left: radius, right: radius, top: radius };
 }
@@ -28,14 +28,14 @@ export function initializeMedianEffect(
   out: EntityConstruction<MedianEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<MedianEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'MedianEffect');
+  initializeEffect(out, 'MedianEffect');
   out.radius = options.radius;
 }
 
 export function registerMedianEffectPaddingResolver(state: RenderState): void {
-  registerRenderEffectPaddingResolver(state, 'MedianEffect', resolveMedianEffectPadding);
+  registerEffectPaddingResolver(state, 'MedianEffect', resolveMedianEffectPadding);
 }
 
-function resolveMedianEffectPadding(effect: Readonly<RenderEffect>): RenderEffectPadding {
+function resolveMedianEffectPadding(effect: Readonly<Effect>): EffectPadding {
   return getMedianEffectPadding(effect as Readonly<MedianEffect>);
 }

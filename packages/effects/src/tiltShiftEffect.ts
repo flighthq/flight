@@ -2,14 +2,14 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   EntityConstruction,
   EntityWithoutRuntime,
-  RenderEffect,
-  RenderEffectPadding,
+  Effect,
+  EffectPadding,
   RenderState,
   TiltShiftEffect,
 } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
-import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { initializeEffect } from './effect';
+import { registerEffectPaddingResolver } from './effectPadding';
 
 export function createTiltShiftEffect(
   options: Readonly<Omit<EntityWithoutRuntime<TiltShiftEffect>, 'kind'>> = {},
@@ -19,7 +19,7 @@ export function createTiltShiftEffect(
   return finishEntity(out);
 }
 
-export function getTiltShiftEffectPadding(effect: Readonly<TiltShiftEffect>): RenderEffectPadding {
+export function getTiltShiftEffectPadding(effect: Readonly<TiltShiftEffect>): EffectPadding {
   const vertical = Math.ceil(Math.max(0, effect.blur ?? 4) * 3);
   return { bottom: vertical, left: 0, right: 0, top: vertical };
 }
@@ -28,16 +28,16 @@ export function initializeTiltShiftEffect(
   out: EntityConstruction<TiltShiftEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<TiltShiftEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'TiltShiftEffect');
+  initializeEffect(out, 'TiltShiftEffect');
   out.center = options.center;
   out.width = options.width;
   out.blur = options.blur;
 }
 
 export function registerTiltShiftEffectPaddingResolver(state: RenderState): void {
-  registerRenderEffectPaddingResolver(state, 'TiltShiftEffect', resolveTiltShiftEffectPadding);
+  registerEffectPaddingResolver(state, 'TiltShiftEffect', resolveTiltShiftEffectPadding);
 }
 
-function resolveTiltShiftEffectPadding(effect: Readonly<RenderEffect>): RenderEffectPadding {
+function resolveTiltShiftEffectPadding(effect: Readonly<Effect>): EffectPadding {
   return getTiltShiftEffectPadding(effect as Readonly<TiltShiftEffect>);
 }

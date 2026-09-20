@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface BokehDepthOfFieldEffect extends RenderEffect {
+export interface BokehDepthOfFieldEffect extends Effect {
   kind: 'BokehDepthOfFieldEffect'; // [DEPTH]
   focusDistance?: number;
   focusRange?: number;

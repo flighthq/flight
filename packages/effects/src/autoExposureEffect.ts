@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { AutoExposureEffect, EntityConstruction, EntityWithoutRuntime } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createAutoExposureEffect(
   options: Readonly<Omit<EntityWithoutRuntime<AutoExposureEffect>, 'kind'>> = {},
@@ -15,7 +15,7 @@ export function initializeAutoExposureEffect(
   out: EntityConstruction<AutoExposureEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<AutoExposureEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'AutoExposureEffect');
+  initializeEffect(out, 'AutoExposureEffect');
   out.adaptationSpeed = options.adaptationSpeed;
   out.exposureCompensation = options.exposureCompensation;
   out.maxExposure = options.maxExposure;

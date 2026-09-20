@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, RadialBlurEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createRadialBlurEffect(
   options: Readonly<Omit<EntityWithoutRuntime<RadialBlurEffect>, 'kind'>> = {},
@@ -15,7 +15,7 @@ export function initializeRadialBlurEffect(
   out: EntityConstruction<RadialBlurEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<RadialBlurEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'RadialBlurEffect');
+  initializeEffect(out, 'RadialBlurEffect');
   out.centerX = options.centerX;
   out.centerY = options.centerY;
   out.strength = options.strength;

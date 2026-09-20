@@ -1,17 +1,17 @@
 import type { CompositeEffect } from './CompositeEffect';
 import { CompositeOperator } from './CompositeOperator';
+import type { Effect } from './Effect';
 import { EntityRuntimeKey } from './Entity';
-import type { RenderEffect } from './RenderEffect';
 
 describe('CompositeEffect', () => {
-  it('is assignable to the open RenderEffect base with a CompositeEffect kind', () => {
+  it('is assignable to the open Effect base with a CompositeEffect kind', () => {
     const effect: CompositeEffect = {
       [EntityRuntimeKey]: undefined,
       kind: 'CompositeEffect',
       operator: CompositeOperator.DestinationOut,
       backdropKey: 'backdrop.scene',
     };
-    const base: RenderEffect = effect;
+    const base: Effect = effect;
     expect(base.kind).toBe('CompositeEffect');
     expect(effect.operator).toBe('DestinationOut');
     expect(effect.backdropKey).toBe('backdrop.scene');

@@ -2,10 +2,10 @@ import { createKeyedTable, withRegistryTableEntry, withoutRegistryTableEntry } f
 import { getRenderStateRuntime } from '@flighthq/render/contract';
 import type {
   Kind,
-  RenderEffect,
-  RenderEffectPadding,
-  RenderEffectPaddingExplanation,
-  RenderEffectPaddingResolver,
+  Effect,
+  EffectPadding,
+  EffectPaddingExplanation,
+  EffectPaddingResolver,
   RenderState,
 } from '@flighthq/types/contract';
 import { RegistryEntryState, RenderRegistryTable } from '@flighthq/types/contract';
@@ -13,30 +13,30 @@ import { RegistryEntryState, RenderRegistryTable } from '@flighthq/types/contrac
 // Computes the footprint of one effect or a sequential effect chain. Spatial effects add their
 // directional footprints per side; pointwise effects register the zero resolver. An unregistered kind
 // contributes the silent zero sentinel and emits only through the opt-in shared registry-miss signal.
-export function computeRenderEffectPadding(
+export function computeEffectPadding(
   state: RenderState,
-  effects: Readonly<RenderEffect> | ReadonlyArray<Readonly<RenderEffect>>,
-  out?: RenderEffectPadding,
-): RenderEffectPadding {
+  effects: Readonly<Effect> | ReadonlyArray<Readonly<Effect>>,
+  out?: EffectPadding,
+): EffectPadding {
   if (out !== undefined) {
-    writeRenderEffectPadding(out, state, effects, null, getRenderStateRuntime(state).registryMiss);
+    writeEffectPadding(out, state, effects, null, getRenderStateRuntime(state).registryMiss);
     return out;
   }
   const list = Array.isArray(effects) ? effects : [effects];
-  const explanation = explainRenderEffectPadding(state, list);
+  const explanation = explainEffectPadding(state, list);
   const emitMiss = getRenderStateRuntime(state).registryMiss;
   if (emitMiss !== null)
     for (const kind of explanation.missingKinds) emitMiss(RenderRegistryTable.EffectPaddingResolver, kind);
   return explanation.padding;
 }
 
-export function explainRenderEffectPadding(
+export function explainEffectPadding(
   state: RenderState,
-  effects: Readonly<RenderEffect> | ReadonlyArray<Readonly<RenderEffect>>,
-): RenderEffectPaddingExplanation {
+  effects: Readonly<Effect> | ReadonlyArray<Readonly<Effect>>,
+): EffectPaddingExplanation {
   const missingKinds: Kind[] = [];
-  const padding: RenderEffectPadding = { bottom: 0, left: 0, right: 0, top: 0 };
-  writeRenderEffectPadding(padding, state, effects, missingKinds, null);
+  const padding: EffectPadding = { bottom: 0, left: 0, right: 0, top: 0 };
+  writeEffectPadding(padding, state, effects, missingKinds, null);
   return {
     missingKinds,
     padding,
@@ -45,13 +45,13 @@ export function explainRenderEffectPadding(
 }
 
 // Adds a screen-space Y-down offset to a Gaussian footprint without wasting the opposite inset.
-export function getDirectionalRenderEffectPadding(
+export function getDirectionalEffectPadding(
   blurX: number,
   blurY: number,
   offsetX: number,
   offsetY: number,
-): RenderEffectPadding {
-  const gaussian = getGaussianRenderEffectPadding(blurX, blurY);
+): EffectPadding {
+  const gaussian = getGaussianEffectPadding(blurX, blurY);
   const dx = Math.abs(offsetX) < 1e-10 ? 0 : offsetX;
   const dy = Math.abs(offsetY) < 1e-10 ? 0 : offsetY;
   return {
@@ -63,16 +63,16 @@ export function getDirectionalRenderEffectPadding(
 }
 
 // Converts Gaussian standard deviations into the three-sigma footprint used by the per-node lane.
-export function getGaussianRenderEffectPadding(blurX: number, blurY: number): RenderEffectPadding {
+export function getGaussianEffectPadding(blurX: number, blurY: number): EffectPadding {
   const horizontal = Math.ceil(Math.max(0, blurX) * 3);
   const vertical = Math.ceil(Math.max(0, blurY) * 3);
   return { bottom: vertical, left: horizontal, right: horizontal, top: vertical };
 }
 
-export function registerRenderEffectPaddingResolver(
+export function registerEffectPaddingResolver(
   state: RenderState,
   kind: Kind,
-  resolver: RenderEffectPaddingResolver | null,
+  resolver: EffectPaddingResolver | null,
 ): void {
   const runtime = getRenderStateRuntime(state);
   const table = runtime.registries.effectPaddingResolvers;
@@ -81,16 +81,16 @@ export function registerRenderEffectPaddingResolver(
     return;
   }
   runtime.registries.effectPaddingResolvers = withRegistryTableEntry(
-    table ?? createKeyedTable('RenderEffectPaddingResolver', 'Zero'),
+    table ?? createKeyedTable('EffectPaddingResolver', 'Zero'),
     kind,
     resolver,
   );
 }
 
-function writeRenderEffectPadding(
-  out: RenderEffectPadding,
+function writeEffectPadding(
+  out: EffectPadding,
   state: RenderState,
-  effects: Readonly<RenderEffect> | ReadonlyArray<Readonly<RenderEffect>>,
+  effects: Readonly<Effect> | ReadonlyArray<Readonly<Effect>>,
   missingKinds: Kind[] | null,
   emitMiss: ((registry: RenderRegistryTable, kind: Kind) => void) | null,
 ): void {
@@ -102,7 +102,7 @@ function writeRenderEffectPadding(
   let right = 0;
   let top = 0;
   for (let index = 0; index < length; index++) {
-    const effect = (list === null ? effects : list[index]) as Readonly<RenderEffect>;
+    const effect = (list === null ? effects : list[index]) as Readonly<Effect>;
     const entry = entries?.get(effect.kind);
     if (entry?.state !== RegistryEntryState.Bound) {
       if (!hasEarlierKind(list, index, effect.kind)) {
@@ -123,7 +123,7 @@ function writeRenderEffectPadding(
   out.top = top;
 }
 
-function hasEarlierKind(effects: ReadonlyArray<Readonly<RenderEffect>> | null, end: number, kind: Kind): boolean {
+function hasEarlierKind(effects: ReadonlyArray<Readonly<Effect>> | null, end: number, kind: Kind): boolean {
   if (effects === null) return false;
   for (let index = 0; index < end; index++) {
     if (effects[index]!.kind === kind) return true;

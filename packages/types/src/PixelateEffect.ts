@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface PixelateEffect extends RenderEffect {
+export interface PixelateEffect extends Effect {
   kind: 'PixelateEffect';
   size?: number; // block size in pixels.
 }

@@ -1,10 +1,10 @@
 import { AdvancedBlendMode } from './AdvancedBlendMode';
 import type { BlendEffect } from './BlendEffect';
+import type { Effect } from './Effect';
 import { EntityRuntimeKey } from './Entity';
-import type { RenderEffect } from './RenderEffect';
 
 describe('BlendEffect', () => {
-  it('is assignable to the open RenderEffect base with a BlendEffect kind', () => {
+  it('is assignable to the open Effect base with a BlendEffect kind', () => {
     const effect: BlendEffect = {
       [EntityRuntimeKey]: undefined,
       kind: 'BlendEffect',
@@ -12,7 +12,7 @@ describe('BlendEffect', () => {
       backdropKey: 'backdrop.scene',
       opacity: 0.5,
     };
-    const base: RenderEffect = effect;
+    const base: Effect = effect;
     expect(base.kind).toBe('BlendEffect');
     expect(effect.mode).toBe('Overlay');
     expect(effect.opacity).toBe(0.5);

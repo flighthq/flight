@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, WhiteBalanceEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createWhiteBalanceEffect(
   options: Readonly<Omit<EntityWithoutRuntime<WhiteBalanceEffect>, 'kind'>> = {},
@@ -15,7 +15,7 @@ export function initializeWhiteBalanceEffect(
   out: EntityConstruction<WhiteBalanceEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<WhiteBalanceEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'WhiteBalanceEffect');
+  initializeEffect(out, 'WhiteBalanceEffect');
   out.temperature = options.temperature;
   out.tint = options.tint;
 }

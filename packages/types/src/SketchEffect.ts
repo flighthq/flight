@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface SketchEffect extends RenderEffect {
+export interface SketchEffect extends Effect {
   kind: 'SketchEffect';
   strength?: number;
 }

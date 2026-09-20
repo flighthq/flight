@@ -3,13 +3,13 @@ import type {
   BokehDepthOfFieldEffect,
   EntityConstruction,
   EntityWithoutRuntime,
-  RenderEffect,
-  RenderEffectPadding,
+  Effect,
+  EffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
-import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { initializeEffect } from './effect';
+import { registerEffectPaddingResolver } from './effectPadding';
 
 export function createBokehDepthOfFieldEffect(
   options: Readonly<Omit<EntityWithoutRuntime<BokehDepthOfFieldEffect>, 'kind'>> = {},
@@ -19,7 +19,7 @@ export function createBokehDepthOfFieldEffect(
   return finishEntity(out);
 }
 
-export function getBokehDepthOfFieldEffectPadding(effect: Readonly<BokehDepthOfFieldEffect>): RenderEffectPadding {
+export function getBokehDepthOfFieldEffectPadding(effect: Readonly<BokehDepthOfFieldEffect>): EffectPadding {
   const radius = Math.ceil(Math.max(0, effect.maxBlur ?? 4));
   return { bottom: radius, left: radius, right: radius, top: radius };
 }
@@ -28,16 +28,16 @@ export function initializeBokehDepthOfFieldEffect(
   out: EntityConstruction<BokehDepthOfFieldEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<BokehDepthOfFieldEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'BokehDepthOfFieldEffect');
+  initializeEffect(out, 'BokehDepthOfFieldEffect');
   out.focusDistance = options.focusDistance;
   out.focusRange = options.focusRange;
   out.maxBlur = options.maxBlur;
 }
 
 export function registerBokehDepthOfFieldEffectPaddingResolver(state: RenderState): void {
-  registerRenderEffectPaddingResolver(state, 'BokehDepthOfFieldEffect', resolveBokehDepthOfFieldEffectPadding);
+  registerEffectPaddingResolver(state, 'BokehDepthOfFieldEffect', resolveBokehDepthOfFieldEffectPadding);
 }
 
-function resolveBokehDepthOfFieldEffectPadding(effect: Readonly<RenderEffect>): RenderEffectPadding {
+function resolveBokehDepthOfFieldEffectPadding(effect: Readonly<Effect>): EffectPadding {
   return getBokehDepthOfFieldEffectPadding(effect as Readonly<BokehDepthOfFieldEffect>);
 }

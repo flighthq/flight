@@ -1,8 +1,8 @@
 import type { AdvancedBlendMode } from './AdvancedBlendMode';
+import type { Effect } from './Effect';
 import type { Entity } from './Entity';
 import type { EmbeddedImageResourceReference } from './ImageResourceReference';
 import type { Node2D } from './Node2D';
-import type { RenderEffect } from './RenderEffect';
 import type { Scene2DDocument } from './Scene2DDocument';
 
 /**
@@ -51,7 +51,7 @@ export interface SwfNodeAppearance {
    */
   advancedBlendMode: AdvancedBlendMode | null;
   /** The placement's filter list as effect descriptors, in authored order. Empty when it carries none. */
-  effects: RenderEffect[];
+  effects: Effect[];
   /** The 1-based frame of the timeline that owns this instance. */
   frame: number;
   node: Node2D;

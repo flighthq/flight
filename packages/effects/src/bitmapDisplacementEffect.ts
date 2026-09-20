@@ -3,14 +3,14 @@ import type {
   BitmapDisplacementEffect,
   EntityConstruction,
   EntityWithoutRuntime,
-  RenderEffect,
-  RenderEffectPadding,
+  Effect,
+  EffectPadding,
   RenderState,
   Texture2D,
 } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
-import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { initializeEffect } from './effect';
+import { registerEffectPaddingResolver } from './effectPadding';
 
 export function createBitmapDisplacementEffect(
   map: Readonly<Texture2D> | null,
@@ -21,7 +21,7 @@ export function createBitmapDisplacementEffect(
   return finishEntity(out);
 }
 
-export function getBitmapDisplacementEffectPadding(effect: Readonly<BitmapDisplacementEffect>): RenderEffectPadding {
+export function getBitmapDisplacementEffectPadding(effect: Readonly<BitmapDisplacementEffect>): EffectPadding {
   const horizontal = Math.ceil(Math.abs(effect.scaleX ?? 0) * 0.5);
   const vertical = Math.ceil(Math.abs(effect.scaleY ?? 0) * 0.5);
   return { bottom: vertical, left: horizontal, right: horizontal, top: vertical };
@@ -32,7 +32,7 @@ export function initializeBitmapDisplacementEffect(
   map: Readonly<Texture2D> | null,
   options: Readonly<Omit<EntityWithoutRuntime<BitmapDisplacementEffect>, 'kind' | 'map'>>,
 ): void {
-  initializeRenderEffect(out, 'BitmapDisplacementEffect');
+  initializeEffect(out, 'BitmapDisplacementEffect');
   out.map = map;
   out.componentX = options.componentX;
   out.componentY = options.componentY;
@@ -42,9 +42,9 @@ export function initializeBitmapDisplacementEffect(
 }
 
 export function registerBitmapDisplacementEffectPaddingResolver(state: RenderState): void {
-  registerRenderEffectPaddingResolver(state, 'BitmapDisplacementEffect', resolveBitmapDisplacementEffectPadding);
+  registerEffectPaddingResolver(state, 'BitmapDisplacementEffect', resolveBitmapDisplacementEffectPadding);
 }
 
-function resolveBitmapDisplacementEffectPadding(effect: Readonly<RenderEffect>): RenderEffectPadding {
+function resolveBitmapDisplacementEffectPadding(effect: Readonly<Effect>): EffectPadding {
   return getBitmapDisplacementEffectPadding(effect as Readonly<BitmapDisplacementEffect>);
 }

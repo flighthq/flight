@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, SsaoEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createSsaoEffect(options: Readonly<Omit<EntityWithoutRuntime<SsaoEffect>, 'kind'>> = {}): SsaoEffect {
   const out = allocateEntity<SsaoEffect>();
@@ -13,7 +13,7 @@ export function initializeSsaoEffect(
   out: EntityConstruction<SsaoEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<SsaoEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'SsaoEffect');
+  initializeEffect(out, 'SsaoEffect');
   out.radius = options.radius;
   out.intensity = options.intensity;
   out.bias = options.bias;

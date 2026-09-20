@@ -3,13 +3,13 @@ import type {
   BevelEffect,
   EntityConstruction,
   EntityWithoutRuntime,
-  RenderEffect,
-  RenderEffectPadding,
+  Effect,
+  EffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
-import { getDirectionalRenderEffectPadding, registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { initializeEffect } from './effect';
+import { getDirectionalEffectPadding, registerEffectPaddingResolver } from './effectPadding';
 
 // Bevel composite effect: the directional gradient of the blurred silhouette drives a highlight/shadow edge band, clipped by bevelType, then applies sourceMode compositing.
 export function createBevelEffect(
@@ -20,10 +20,10 @@ export function createBevelEffect(
   return finishEntity(out);
 }
 
-export function getBevelEffectPadding(effect: Readonly<BevelEffect>): RenderEffectPadding {
+export function getBevelEffectPadding(effect: Readonly<BevelEffect>): EffectPadding {
   const angle = ((effect.angle ?? 45) * Math.PI) / 180;
   const distance = effect.distance ?? 4;
-  return getDirectionalRenderEffectPadding(
+  return getDirectionalEffectPadding(
     effect.blurX ?? 4,
     effect.blurY ?? 4,
     Math.cos(angle) * distance,
@@ -35,7 +35,7 @@ export function initializeBevelEffect(
   out: EntityConstruction<BevelEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<BevelEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'BevelEffect');
+  initializeEffect(out, 'BevelEffect');
   out.angle = options.angle;
   out.bevelType = options.bevelType;
   out.blurX = options.blurX;
@@ -51,9 +51,9 @@ export function initializeBevelEffect(
 }
 
 export function registerBevelEffectPaddingResolver(state: RenderState): void {
-  registerRenderEffectPaddingResolver(state, 'BevelEffect', resolveBevelEffectPadding);
+  registerEffectPaddingResolver(state, 'BevelEffect', resolveBevelEffectPadding);
 }
 
-function resolveBevelEffectPadding(effect: Readonly<RenderEffect>): RenderEffectPadding {
+function resolveBevelEffectPadding(effect: Readonly<Effect>): EffectPadding {
   return getBevelEffectPadding(effect as Readonly<BevelEffect>);
 }

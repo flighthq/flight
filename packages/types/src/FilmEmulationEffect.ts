@@ -1,5 +1,5 @@
-import type { RenderEffect } from './RenderEffect';
-export interface FilmEmulationEffect extends RenderEffect {
+import type { Effect } from './Effect';
+export interface FilmEmulationEffect extends Effect {
   kind: 'FilmEmulationEffect';
   gateWeave?: number;
   grainIntensity?: number;

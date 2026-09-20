@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, LensFlareEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createLensFlareEffect(
   options: Readonly<Omit<EntityWithoutRuntime<LensFlareEffect>, 'kind'>> = {},
@@ -15,7 +15,7 @@ export function initializeLensFlareEffect(
   out: EntityConstruction<LensFlareEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<LensFlareEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'LensFlareEffect');
+  initializeEffect(out, 'LensFlareEffect');
   out.threshold = options.threshold;
   out.intensity = options.intensity;
   out.ghosts = options.ghosts;

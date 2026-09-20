@@ -3,13 +3,13 @@ import type {
   EntityConstruction,
   EntityWithoutRuntime,
   InnerShadowEffect,
-  RenderEffect,
-  RenderEffectPadding,
+  Effect,
+  EffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
-import { getDirectionalRenderEffectPadding, registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { initializeEffect } from './effect';
+import { getDirectionalEffectPadding, registerEffectPaddingResolver } from './effectPadding';
 
 // Inner-shadow composite effect: tint the inverted silhouette, blur, offset by angle/distance, clip to the source alpha, then draw or hide the source.
 export function createInnerShadowEffect(
@@ -20,10 +20,10 @@ export function createInnerShadowEffect(
   return finishEntity(out);
 }
 
-export function getInnerShadowEffectPadding(effect: Readonly<InnerShadowEffect>): RenderEffectPadding {
+export function getInnerShadowEffectPadding(effect: Readonly<InnerShadowEffect>): EffectPadding {
   const angle = ((effect.angle ?? 45) * Math.PI) / 180;
   const distance = effect.distance ?? 4;
-  return getDirectionalRenderEffectPadding(
+  return getDirectionalEffectPadding(
     effect.blurX ?? 4,
     effect.blurY ?? 4,
     Math.cos(angle) * distance,
@@ -35,7 +35,7 @@ export function initializeInnerShadowEffect(
   out: EntityConstruction<InnerShadowEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<InnerShadowEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'InnerShadowEffect');
+  initializeEffect(out, 'InnerShadowEffect');
   out.alpha = options.alpha;
   out.angle = options.angle;
   out.blurX = options.blurX;
@@ -48,9 +48,9 @@ export function initializeInnerShadowEffect(
 }
 
 export function registerInnerShadowEffectPaddingResolver(state: RenderState): void {
-  registerRenderEffectPaddingResolver(state, 'InnerShadowEffect', resolveInnerShadowEffectPadding);
+  registerEffectPaddingResolver(state, 'InnerShadowEffect', resolveInnerShadowEffectPadding);
 }
 
-function resolveInnerShadowEffectPadding(effect: Readonly<RenderEffect>): RenderEffectPadding {
+function resolveInnerShadowEffectPadding(effect: Readonly<Effect>): EffectPadding {
   return getInnerShadowEffectPadding(effect as Readonly<InnerShadowEffect>);
 }

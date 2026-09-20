@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface TiltShiftEffect extends RenderEffect {
+export interface TiltShiftEffect extends Effect {
   kind: 'TiltShiftEffect';
   /**
    * Centre of the focus band on Y, 0 at the TOP edge and 1 at the bottom — the same orientation an

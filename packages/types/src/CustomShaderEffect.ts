@@ -1,5 +1,5 @@
-import type { RenderEffect } from './RenderEffect';
-export interface CustomShaderEffect extends RenderEffect {
+import type { Effect } from './Effect';
+export interface CustomShaderEffect extends Effect {
   kind: 'CustomShaderEffect';
   shaderKey: string;
   uniforms?: Readonly<Record<string, number | number[]>>;

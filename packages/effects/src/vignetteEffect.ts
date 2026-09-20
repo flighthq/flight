@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, VignetteEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createVignetteEffect(
   options: Readonly<Omit<EntityWithoutRuntime<VignetteEffect>, 'kind'>> = {},
@@ -15,7 +15,7 @@ export function initializeVignetteEffect(
   out: EntityConstruction<VignetteEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<VignetteEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'VignetteEffect');
+  initializeEffect(out, 'VignetteEffect');
   out.intensity = options.intensity;
   out.radius = options.radius;
   out.softness = options.softness;

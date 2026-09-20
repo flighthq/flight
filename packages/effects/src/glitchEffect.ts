@@ -3,13 +3,13 @@ import type {
   EntityConstruction,
   EntityWithoutRuntime,
   GlitchEffect,
-  RenderEffect,
-  RenderEffectPadding,
+  Effect,
+  EffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
-import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { initializeEffect } from './effect';
+import { registerEffectPaddingResolver } from './effectPadding';
 
 export function createGlitchEffect(
   options: Readonly<Omit<EntityWithoutRuntime<GlitchEffect>, 'kind'>> = {},
@@ -19,7 +19,7 @@ export function createGlitchEffect(
   return finishEntity(out);
 }
 
-export function getGlitchEffectPadding(effect: Readonly<GlitchEffect>): RenderEffectPadding {
+export function getGlitchEffectPadding(effect: Readonly<GlitchEffect>): EffectPadding {
   const tear = Math.abs(effect.intensity ?? 0.5) * 40;
   const channelShift = Math.abs(effect.colorShift ?? 8) * 1.4;
   const horizontal = Math.ceil(tear + channelShift);
@@ -30,7 +30,7 @@ export function initializeGlitchEffect(
   out: EntityConstruction<GlitchEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<GlitchEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'GlitchEffect');
+  initializeEffect(out, 'GlitchEffect');
   out.intensity = options.intensity;
   out.blockSize = options.blockSize;
   out.colorShift = options.colorShift;
@@ -38,9 +38,9 @@ export function initializeGlitchEffect(
 }
 
 export function registerGlitchEffectPaddingResolver(state: RenderState): void {
-  registerRenderEffectPaddingResolver(state, 'GlitchEffect', resolveGlitchEffectPadding);
+  registerEffectPaddingResolver(state, 'GlitchEffect', resolveGlitchEffectPadding);
 }
 
-function resolveGlitchEffectPadding(effect: Readonly<RenderEffect>): RenderEffectPadding {
+function resolveGlitchEffectPadding(effect: Readonly<Effect>): EffectPadding {
   return getGlitchEffectPadding(effect as Readonly<GlitchEffect>);
 }

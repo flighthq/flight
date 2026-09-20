@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CustomShaderEffect, EntityConstruction, EntityWithoutRuntime } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createCustomShaderEffect(
   options: Readonly<Omit<EntityWithoutRuntime<CustomShaderEffect>, 'kind'>>,
@@ -15,7 +15,7 @@ export function initializeCustomShaderEffect(
   out: EntityConstruction<CustomShaderEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<CustomShaderEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'CustomShaderEffect');
+  initializeEffect(out, 'CustomShaderEffect');
   out.shaderKey = options.shaderKey;
   out.uniforms = options.uniforms;
 }

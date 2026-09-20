@@ -3,13 +3,13 @@ import type {
   DisplacementEffect,
   EntityConstruction,
   EntityWithoutRuntime,
-  RenderEffect,
-  RenderEffectPadding,
+  Effect,
+  EffectPadding,
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
-import { registerRenderEffectPaddingResolver } from './renderEffectPadding';
+import { initializeEffect } from './effect';
+import { registerEffectPaddingResolver } from './effectPadding';
 
 export function createDisplacementEffect(
   options: Readonly<Omit<EntityWithoutRuntime<DisplacementEffect>, 'kind'>> = {},
@@ -19,7 +19,7 @@ export function createDisplacementEffect(
   return finishEntity(out);
 }
 
-export function getDisplacementEffectPadding(effect: Readonly<DisplacementEffect>): RenderEffectPadding {
+export function getDisplacementEffectPadding(effect: Readonly<DisplacementEffect>): EffectPadding {
   const intensity = Math.abs(effect.intensity ?? 8);
   const horizontal = Math.ceil(intensity * 1.5);
   const vertical = Math.ceil(intensity);
@@ -30,16 +30,16 @@ export function initializeDisplacementEffect(
   out: EntityConstruction<DisplacementEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<DisplacementEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'DisplacementEffect');
+  initializeEffect(out, 'DisplacementEffect');
   out.intensity = options.intensity;
   out.frequency = options.frequency;
   out.seed = options.seed;
 }
 
 export function registerDisplacementEffectPaddingResolver(state: RenderState): void {
-  registerRenderEffectPaddingResolver(state, 'DisplacementEffect', resolveDisplacementEffectPadding);
+  registerEffectPaddingResolver(state, 'DisplacementEffect', resolveDisplacementEffectPadding);
 }
 
-function resolveDisplacementEffectPadding(effect: Readonly<RenderEffect>): RenderEffectPadding {
+function resolveDisplacementEffectPadding(effect: Readonly<Effect>): EffectPadding {
   return getDisplacementEffectPadding(effect as Readonly<DisplacementEffect>);
 }

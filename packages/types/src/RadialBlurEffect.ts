@@ -1,6 +1,6 @@
-import type { RenderEffect } from './RenderEffect';
+import type { Effect } from './Effect';
 
-export interface RadialBlurEffect extends RenderEffect {
+export interface RadialBlurEffect extends Effect {
   kind: 'RadialBlurEffect';
   /**
    * Horizontal centre of the radial smear as a fraction of the frame, 0 at the LEFT edge and 1 at the

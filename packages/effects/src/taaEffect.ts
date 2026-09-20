@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, TaaEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createTaaEffect(options: Readonly<Omit<EntityWithoutRuntime<TaaEffect>, 'kind'>> = {}): TaaEffect {
   const out = allocateEntity<TaaEffect>();
@@ -13,6 +13,6 @@ export function initializeTaaEffect(
   out: EntityConstruction<TaaEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<TaaEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'TaaEffect');
+  initializeEffect(out, 'TaaEffect');
   out.feedback = options.feedback;
 }

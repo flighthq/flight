@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, PosterizeEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createPosterizeEffect(
   options: Readonly<Omit<EntityWithoutRuntime<PosterizeEffect>, 'kind'>> = {},
@@ -15,6 +15,6 @@ export function initializePosterizeEffect(
   out: EntityConstruction<PosterizeEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<PosterizeEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'PosterizeEffect');
+  initializeEffect(out, 'PosterizeEffect');
   out.levels = options.levels;
 }

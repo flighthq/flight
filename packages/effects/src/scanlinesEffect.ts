@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, ScanlinesEffect } from '@flighthq/types/contract';
 
-import { initializeRenderEffect } from './renderEffect';
+import { initializeEffect } from './effect';
 
 export function createScanlinesEffect(
   options: Readonly<Omit<EntityWithoutRuntime<ScanlinesEffect>, 'kind'>> = {},
@@ -15,7 +15,7 @@ export function initializeScanlinesEffect(
   out: EntityConstruction<ScanlinesEffect>,
   options: Readonly<Omit<EntityWithoutRuntime<ScanlinesEffect>, 'kind'>>,
 ): void {
-  initializeRenderEffect(out, 'ScanlinesEffect');
+  initializeEffect(out, 'ScanlinesEffect');
   out.count = options.count;
   out.intensity = options.intensity;
 }
