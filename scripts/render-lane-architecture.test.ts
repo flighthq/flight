@@ -10,12 +10,12 @@ import { resolve } from 'node:path';
 
 const repositoryRoot = resolve(import.meta.dirname, '..');
 
-// A detector has to name what it forbids. These two do exactly that — the p5 host-bypass gate still
+// A detector has to name what it forbids. These two do exactly that — the host-bypass gate still
 // recognizes createWgpuCanvasElement so a reintroduction in render-wgpu is caught rather than ignored —
 // and this file is the third. Nothing else may mention a retired name.
 const EXEMPT_FILES = [
-  'scripts/p5-host-bypass.test.ts',
-  'scripts/p5-host-bypass.ts',
+  'scripts/check-host-bypasses.test.ts',
+  'scripts/check-host-bypasses.ts',
   'scripts/render-lane-architecture.test.ts',
 ];
 
