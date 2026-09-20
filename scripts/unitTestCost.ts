@@ -178,7 +178,6 @@ export const UNIT_TEST_COST_EXEMPTIONS: readonly UnitTestCostExemption[] = [
   { capability: 'spawns-process', path: 'packages/host-tauri/src/tauriHost.test.ts' },
   { capability: 'spawns-process', path: 'packages/host-tauri/src/tauriPackage.test.ts' },
   { capability: 'spawns-process', path: 'scripts/fixtures.test.ts' },
-  { capability: 'spawns-process', path: 'scripts/host-web-seam.test.ts' },
   { capability: 'spawns-process', path: 'scripts/package-publish-artifacts.test.ts' },
   { capability: 'spawns-process', path: 'scripts/package-todo-churn.test.ts' },
   { capability: 'spawns-process', path: 'scripts/path-shape-vocabulary.test.ts' },

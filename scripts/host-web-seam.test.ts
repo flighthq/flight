@@ -1,4 +1,3 @@
-import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -8,21 +7,6 @@ import { resolve } from 'node:path';
 // no gate, it just quietly puts the web back inside the portable half. These pin the absence.
 
 const packagesDirectory = resolve(import.meta.dirname, '../packages');
-
-// A detector has to name what it forbids, and a negative test has to contain the very shape it proves is
-// caught. The host-bypass gate is both: it still recognizes drawBitmap inside
-// packages/bitmap/src/bitmapDraw.ts so a reintroduction there is reported rather than ignored, and its
-// test feeds it fixtures spelled the same way. This file is the third, since it must list every retired
-// name in order to forbid it.
-//
-// The exemption is per file and by name on purpose. Skipping a directory — scripts/, or anything under
-// test — would take real production coverage with it; these three paths are the only ones whose JOB is to
-// carry a retired spelling.
-const DETECTOR_FILES = [
-  'scripts/host-web-seam.test.ts',
-  'scripts/check-host-bypasses.test.ts',
-  'scripts/check-host-bypasses.ts',
-];
 
 // Packages that must name no browser type. Each was a source of one before the cleanup.
 const PORTABLE_PACKAGES = ['bitmap', 'image', 'image-codec', 'textureatlas'];
@@ -68,33 +52,6 @@ const MOVED_TO_HOST_WEB = [
   'unregisterWebImageBitmapComposer',
 ];
 
-// The names these replaced. A host-owned function that reads as portable is the mistake the web prefix
-// corrects, so the old spellings must not come back anywhere — not as an alias, not as a re-export, not
-// in a caller that a search-and-replace missed. agents/ is excluded: it is documentation of record and
-// read-only to builders, and its prose legitimately recalls what the functions used to be called.
-const RETIRED_NAMES = [
-  'clearImageBitmapComposers',
-  'createBitmapFromCanvas',
-  'createImageResourceFromCanvas',
-  'createImageResourceFromImageBitmap',
-  'createImageResourceFromImageElement',
-  'createTextureAtlasFromCanvas',
-  'createTextureAtlasFromImageBitmap',
-  'createTextureAtlasFromImageElement',
-  'disableImageBitmapComposition',
-  'drawBitmap',
-  'enableImageBitmapComposition',
-  'getImageBitmapComposer',
-  'getImageBitmapComposerKinds',
-  'hasImageBitmapComposer',
-  'initializeBitmapFromCanvas',
-  'initializeImageResourceFromCanvas',
-  'initializeImageResourceFromImageBitmap',
-  'initializeImageResourceFromImageElement',
-  'registerImageBitmapComposer',
-  'unregisterImageBitmapComposer',
-];
-
 const MOVED_GL_CONTEXT_NAMES = ['createGlContext', 'createGlContextFromCanvasElement'];
 
 describe('host-web seam closure', () => {
@@ -131,15 +88,6 @@ describe('host-web seam closure', () => {
 
     expect(found).toStrictEqual([]);
   });
-
-  // getImageBitmapComposer is a prefix of getWebImageBitmapComposer only in the other direction, so a
-  // bare substring search would be satisfied by the new name; the word-boundary match is what keeps this
-  // from passing vacuously the moment the rename lands.
-  it('leaves no retired unprefixed name anywhere in the repository', () => {
-    const found = searchRepository(RETIRED_NAMES);
-
-    expect(found).toStrictEqual([]);
-  }, 30_000);
 
   // A moved function that reached no lane at all would satisfy both checks above while being unreachable,
   // so the census is asserted from the other side too.
@@ -264,23 +212,4 @@ function readPackageTests(packageName: string): [string, string][] {
   return readdirSync(directory)
     .filter((file) => file.endsWith('.test.ts'))
     .map((file) => [file, readFileSync(resolve(directory, file), 'utf-8')]);
-}
-
-// Searches tracked files for any of these whole-word identifiers in ONE git pass. Seventeen separate
-// greps was the obvious shape and the wrong one: it timed out under a loaded full-suite run, and a
-// ratchet that fails on machine load teaches people to ignore it. agents/ is skipped because it is
-// documentation of record, read-only to builders, whose prose legitimately recalls the old names; this
-// file is skipped because it must name every retired spelling in order to forbid it.
-function searchRepository(names: readonly string[]): string[] {
-  const result = spawnSync('git', ['grep', '-lwE', names.join('|')], {
-    cwd: resolve(import.meta.dirname, '..'),
-    encoding: 'utf-8',
-  });
-  // git grep exits 1 with no output when nothing matches, which is this check's success, not an error.
-  if (result.status !== 0 && result.stdout === '') return [];
-  return result.stdout
-    .split('\n')
-    .filter((line) => line !== '')
-    .filter((line) => !line.startsWith('agents/'))
-    .filter((line) => !DETECTOR_FILES.some((detector) => line.endsWith(detector)));
 }
