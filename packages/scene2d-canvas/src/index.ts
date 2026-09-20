@@ -22,7 +22,11 @@ export { defaultCanvasParticleEmitter2DRenderer } from './canvasParticleEmitter2
 export { allocateEmptyCanvasRenderRegistries } from './canvasPipeline';
 export { defaultCanvasQuadBatchRenderer } from './canvasQuadBatch';
 export { beginCanvasRenderPass, endCanvasRenderPass, getCanvasActiveRenderPass } from './canvasRenderPass';
-export { destroyCanvasRenderState, getCanvasRenderStateTextureResolvers } from './canvasRenderState';
+export {
+  createCanvasRenderState,
+  destroyCanvasRenderState,
+  getCanvasRenderStateTextureResolvers,
+} from './canvasRenderState';
 export {
   acquireCanvasRenderSurface,
   createCanvasRenderSurface,
