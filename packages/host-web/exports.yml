@@ -3,7 +3,7 @@
 # This file lists only the disagreements.
 
 protected:
-  - createWebPowerReadings          # low-level power sensor access
-  - createWebSurfaceFromElement     # internal surface factory
-  - getAudioSourceBufferSourceNode  # low-level Web Audio node access
-  - getAudioSourceGainNode          # low-level Web Audio node access
+  - createWebPowerReadings # low-level power sensor access
+  - createWebSurfaceFromElement # internal surface factory
+  - getAudioSourceBufferSourceNode # low-level Web Audio node access
+  - getAudioSourceGainNode # low-level Web Audio node access

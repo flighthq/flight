@@ -1,4 +1,4 @@
 # host-electron: exports where the shared classifier gets it wrong.
 
 protected:
-  - toElectronTemplate  # internal: converts Flight MenuItemTemplate to Electron's format
+  - toElectronTemplate # internal: converts Flight MenuItemTemplate to Electron's format

@@ -1,2 +1,2 @@
 public:
-  - getPlatformRuntime  # returns PlatformRuntime string, not an opaque runtime object
+  - getPlatformRuntime # returns PlatformRuntime string, not an opaque runtime object
