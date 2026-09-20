@@ -282,7 +282,7 @@ function getModuleValueExports(filePath: string): string[] {
   const re = /^export (?:async )?(?:function|const|let) (\w+)/gm;
   let m: RegExpExecArray | null;
   while ((m = re.exec(src)) !== null) names.push(m[1]);
-  return names;
+  return [...new Set(names)];
 }
 
 interface ModuleExports {
@@ -392,11 +392,47 @@ function getExportNamesFromFile(filePath: string, srcDir: string): Set<string> |
   return names;
 }
 
+function getIndexDuplicateNames(filePath: string, srcDir: string): string[] {
+  if (!existsSync(filePath)) return [];
+  const src = readFileSync(filePath, 'utf8');
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+
+  for (const m of src.matchAll(/export\s*\{([^}]+)\}/g)) {
+    for (const item of m[1].split(',')) {
+      if (item.includes('type ')) continue;
+      const name = item
+        .trim()
+        .split(/\s+as\s+/)
+        .pop()!
+        .trim();
+      if (!name || name === 'type') continue;
+      if (seen.has(name)) duplicates.add(name);
+      seen.add(name);
+    }
+  }
+
+  for (const m of src.matchAll(/export \* from '\.\/([^']+)'/g)) {
+    const fp = join(srcDir, m[1] + '.ts');
+    for (const n of getModuleValueExports(fp)) {
+      if (seen.has(n)) duplicates.add(n);
+      seen.add(n);
+    }
+  }
+
+  return [...duplicates].sort();
+}
+
 // ── Generate file content ────────────────────────────────────────────
 
 function generateContract(exportsByModule: ModuleExports[], classification: Map<string, Classification>): string {
   const modules = exportsByModule
-    .filter(({ names }) => names.some((n) => classification.get(n)?.lane !== 'exclude'))
+    .filter(({ module: mod, names }) =>
+      names.some((n) => {
+        const c = classification.get(n);
+        return c?.module === mod && c.lane !== 'exclude';
+      }),
+    )
     .map(({ module: mod }) => mod);
 
   return modules.map((m) => `export * from './${m}';`).join('\n') + '\n';
@@ -406,10 +442,16 @@ function generateIndex(exportsByModule: ModuleExports[], classification: Map<str
   const lines: string[] = [];
 
   for (const { module: mod, names } of exportsByModule) {
-    const publicNames = names.filter((n) => classification.get(n)?.lane === 'public');
+    const publicNames = names.filter((n) => {
+      const c = classification.get(n);
+      return c?.lane === 'public' && c.module === mod;
+    });
     if (publicNames.length === 0) continue;
 
-    const nonExcluded = names.filter((n) => classification.get(n)?.lane !== 'exclude');
+    const nonExcluded = names.filter((n) => {
+      const c = classification.get(n);
+      return c?.lane !== 'exclude' && c?.module === mod;
+    });
     const allNonExcludedPublic = nonExcluded.every((n) => classification.get(n)?.lane === 'public');
 
     if (allNonExcludedPublic && nonExcluded.length === publicNames.length) {
@@ -476,7 +518,12 @@ for (const pkg of GOVERNED_PACKAGES) {
 
   const expectedContractModules = new Set(
     exportsByModule
-      .filter(({ names }) => names.some((n) => classification.get(n)?.lane !== 'exclude'))
+      .filter(({ module: mod, names }) =>
+        names.some((n) => {
+          const c = classification.get(n);
+          return c?.module === mod && c.lane !== 'exclude';
+        }),
+      )
       .map((m) => m.module),
   );
   const expectedPublicNames = new Set(
@@ -506,6 +553,10 @@ for (const pkg of GOVERNED_PACKAGES) {
     indexOk = indexMissing.length === 0 && indexExtra.length === 0;
   }
 
+  const indexDuplicates = getIndexDuplicateNames(indexPath, srcDir);
+  const hasDuplicates = indexDuplicates.length > 0;
+  if (hasDuplicates) indexOk = false;
+
   if (contractOk && indexOk) {
     console.log(
       pc.green(`✓  ${pkg}`) +
@@ -532,6 +583,12 @@ for (const pkg of GOVERNED_PACKAGES) {
   }
 
   if (!indexOk) {
+    if (hasDuplicates) {
+      console.log(
+        pc.red(`✗  ${pkg} index.ts`) +
+          `: ${indexDuplicates.length} duplicate export name(s): ${indexDuplicates.join(', ')}`,
+      );
+    }
     if (indexIsWildcard) {
       console.log(
         pc.red(`✗  ${pkg} index.ts`) +

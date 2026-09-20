@@ -73,7 +73,7 @@ export function createGlState(options?: { allowSmoothing?: boolean }): {
   return { state, gl, canvas, shaderLoc };
 }
 
-export function initializeGlBitmapShader(
+function initializeGlBitmapShader(
   out: EntityConstruction<GlBitmapShader>,
   bind: GlBitmapShader['bind'],
   locations: GlBitmapShader['locations'],

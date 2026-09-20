@@ -44,10 +44,6 @@ export {
 export { electronHostAppMenu, electronHostMenu, electronHostMenuPopup, electronHostMenuSelect } from './electronMenu';
 export {
   electronHostNotification,
-  electronHostNotification,
-  electronHostNotification,
-  electronHostNotification,
-  electronHostNotification,
   electronHostNotificationAction,
   electronHostNotificationClick,
   electronHostNotificationClose,

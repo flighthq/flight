@@ -22,11 +22,7 @@ export { defaultCanvasParticleEmitter2DRenderer } from './canvasParticleEmitter2
 export { allocateEmptyCanvasRenderRegistries } from './canvasPipeline';
 export { defaultCanvasQuadBatchRenderer } from './canvasQuadBatch';
 export { beginCanvasRenderPass, endCanvasRenderPass, getCanvasActiveRenderPass } from './canvasRenderPass';
-export {
-  createCanvasRenderState,
-  destroyCanvasRenderState,
-  getCanvasRenderStateTextureResolvers,
-} from './canvasRenderState';
+export { destroyCanvasRenderState, getCanvasRenderStateTextureResolvers } from './canvasRenderState';
 export {
   acquireCanvasRenderSurface,
   createCanvasRenderSurface,
@@ -77,11 +73,6 @@ export {
 export * from './canvasShapeRasterizer';
 export { registerCanvasShapeCommands } from './canvasShapeRegistry';
 export { defaultCanvasSpriteRenderer } from './canvasSprite';
-export {
-  createCanvasRenderState,
-  createCanvasTextureRenderTarget,
-  createCanvasTextureResolvers,
-} from './canvasTestSupport';
 export { enableCanvasTextInput } from './canvasTextInput';
 export { defaultCanvasTextLabelRenderer } from './canvasTextLabel';
 export {

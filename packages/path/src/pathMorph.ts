@@ -18,7 +18,7 @@ export function createPathMorph(start: Readonly<Path>, end: Readonly<Path>): Pat
   return finishEntity(out);
 }
 
-export function initializePathMorph(out: EntityConstruction<PathMorph>, morph: Readonly<PathMorph>): void {
+function initializePathMorph(out: EntityConstruction<PathMorph>, morph: Readonly<PathMorph>): void {
   out.commands = morph.commands;
   out.endData = morph.endData;
   out.startData = morph.startData;

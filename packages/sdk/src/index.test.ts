@@ -1,7 +1,4 @@
 import * as sdk from './index';
-import * as renderGl from './render-gl';
-import * as renderWgpu from './render-wgpu';
-import * as scene2dCanvas from './scene2d-canvas';
 
 describe('package exports', () => {
   describe('adjustments domain', () => {
@@ -73,13 +70,10 @@ describe('package exports', () => {
       expect(sdk.registerRenderer).toBeTypeOf('function');
     });
 
-    it('exports caller-owned 2D root transforms through the root and each owning subpath', () => {
-      expect(sdk.setCanvasRenderTransform2D).toBeTypeOf('function');
-      expect(sdk.setGlRenderTransform2D).toBeTypeOf('function');
-      expect(sdk.setWgpuRenderTransform2D).toBeTypeOf('function');
-      expect(scene2dCanvas.setCanvasRenderTransform2D).toBe(sdk.setCanvasRenderTransform2D);
-      expect(renderGl.setGlRenderTransform2D).toBe(sdk.setGlRenderTransform2D);
-      expect(renderWgpu.setWgpuRenderTransform2D).toBe(sdk.setWgpuRenderTransform2D);
+    it('does not export internal 2D root transforms (protected plumbing)', () => {
+      expect(sdk).not.toHaveProperty('setCanvasRenderTransform2D');
+      expect(sdk).not.toHaveProperty('setGlRenderTransform2D');
+      expect(sdk).not.toHaveProperty('setWgpuRenderTransform2D');
     });
   });
 

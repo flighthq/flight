@@ -16,8 +16,6 @@ export {
   createWgpuAcquisition,
   createWgpuDeviceState,
   createWgpuOffscreenRenderState,
-  createWgpuOffscreenRenderState,
-  createWgpuOffscreenRenderState,
   createWgpuRenderState,
   destroyWgpuRenderState,
   releaseWgpuAcquisition,
