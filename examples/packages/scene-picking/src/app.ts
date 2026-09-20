@@ -13,8 +13,8 @@ import {
   createVector3,
   invalidateNodeAppearance,
   invalidateNodeLocalTransform,
-  normalizeVector3,
   Node3DKind,
+  normalizeVector3,
   setQuaternionFromEuler,
 } from '@flighthq/sdk';
 import {

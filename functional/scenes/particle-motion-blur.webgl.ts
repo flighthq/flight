@@ -1,3 +1,4 @@
+import { setGlEffectVelocityTexture } from '@flighthq/effects-gl/contract';
 import {
   webHostGl,
   createWebImageResourceFromCanvas,
@@ -44,7 +45,6 @@ import {
   renderGlScene2D,
   renderGlVelocity,
   reserveParticleEmitter2D,
-  setGlEffectVelocityTexture,
   getBitmapPixelRgb,
   setSurfaceDisplaySize,
   createAppWindow,

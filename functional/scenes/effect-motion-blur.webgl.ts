@@ -1,3 +1,4 @@
+import { setGlEffectVelocityTexture } from '@flighthq/effects-gl/contract';
 import {
   webHostGl,
   appendWebSurface,
@@ -38,7 +39,6 @@ import {
   registerRenderer,
   renderGlScene2D,
   renderGlVelocity,
-  setGlEffectVelocityTexture,
   setSurfaceDisplaySize,
   createAppWindow,
   openWindow,
