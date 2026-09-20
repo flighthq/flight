@@ -32,7 +32,7 @@ export * from './sceneDocument';
 export * from './sceneDocumentLights';
 export { createScene3DKindUsage, getScene3DKindUsage } from './sceneKindUsage';
 export * from './sceneMaterial';
-export { createNode3D, enableNode3DSignals, getNode3DSignals, Node3DKind } from './sceneNode';
+export { createNode3D, enableNode3DSignals, getNode3DSignals } from './sceneNode';
 export { getNode3DWorldAlpha, setNode3DAlpha } from './sceneNodeAppearance';
 export * from './sceneNodeBounds';
 export * from './sceneNodeCulling';

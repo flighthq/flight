@@ -2,7 +2,7 @@ export * from './dragonBonesParse';
 export * from './skeletonDetect';
 export * from './spineBinaryFull';
 export * from './spineBinaryHandlers';
-export * from './spineBinaryParse';
+export { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse';
 export * from './spineBinaryReader';
 export {
   createSpineBinaryRegistry,
@@ -13,8 +13,8 @@ export {
   unregisterSpineBinarySectionHandler,
   unregisterSpineBinaryTimelineHandler,
 } from './spineBinaryRegistry';
-export * from './spineBinarySectionHandlers';
-export * from './spineBinaryTimelineHandlers';
+export { registerSpineBinarySectionHandlers } from './spineBinarySectionHandlers';
+export { registerSpineBinaryTimelineHandlers } from './spineBinaryTimelineHandlers';
 export * from './spineBinaryVersion';
 export * from './spineBinaryVersioned';
 export * from './spineDrawOrder';

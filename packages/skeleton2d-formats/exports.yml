@@ -1,0 +1,35 @@
+exclude:
+  - spineBinaryAnimationsSectionReader
+  - spineBinaryBonesSectionReader
+  - spineBinaryBoneTimelineReader
+  - spineBinaryDeformTimelineReader
+  - spineBinaryDrawOrderTimelineReader
+  - spineBinaryEventsSectionReader
+  - spineBinaryEventTimelineReader
+  - spineBinaryIkConstraintsSectionReader
+  - spineBinaryIkTimelineReader
+  - spineBinaryPathConstraintsSectionReader
+  - spineBinaryPathTimelineReader
+  - spineBinarySkinsSectionReader
+  - spineBinarySlotsSectionReader
+  - spineBinarySlotTimelineReader
+  - spineBinaryTransformConstraintsSectionReader
+  - spineBinaryTransformTimelineReader
+
+protected:
+  - spineBinaryAnimationsSectionHandler
+  - spineBinaryBonesSectionHandler
+  - spineBinaryEventsSectionHandler
+  - spineBinaryIkConstraintsSectionHandler
+  - spineBinaryPathConstraintsSectionHandler
+  - spineBinarySkinsSectionHandler
+  - spineBinarySlotsSectionHandler
+  - spineBinaryTransformConstraintsSectionHandler
+  - spineBinaryBoneTimelineHandler
+  - spineBinaryDeformTimelineHandler
+  - spineBinaryDrawOrderTimelineHandler
+  - spineBinaryEventTimelineHandler
+  - spineBinaryIkTimelineHandler
+  - spineBinaryPathTimelineHandler
+  - spineBinarySlotTimelineHandler
+  - spineBinaryTransformTimelineHandler
