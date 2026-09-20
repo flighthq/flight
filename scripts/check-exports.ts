@@ -625,9 +625,11 @@ for (const pkg of GOVERNED_PACKAGES) {
   // to repair and left the file stale; that was found by restoring a config and watching the
   // regeneration decline to restore the file with it.
   const actualContractNames = getExportNamesFromFile(contractPath, srcDir);
-  const contractNameLeaks = [...(actualContractNames ?? [])].filter((n) => !expectedContractNames.has(n)).sort();
+  const contractNameLeaks = [...(actualContractNames instanceof Set ? actualContractNames : [])]
+    .filter((n) => !expectedContractNames.has(n))
+    .sort();
   const contractNameDrops =
-    actualContractNames === undefined
+    actualContractNames === null || actualContractNames === 'all'
       ? []
       : [...expectedContractNames].filter((n) => !actualContractNames.has(n)).sort();
   const contractOk =
