@@ -11,6 +11,8 @@ protected:
   - destroyWgpuRichTextData
   - destroyWgpuScale9ShapeData
   - destroyWgpuShapeData
+  - drawWgpuScale9Sprite
+  - drawWgpuSprite
   - drawWgpuMeshShape
   - drawWgpuParticleEmitter2D
   - drawWgpuRasterShape

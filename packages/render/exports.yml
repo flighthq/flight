@@ -1,4 +1,5 @@
 protected:
+  - packScene3DLightBlock
   - applyRenderProxyAdapter
   - areColorAdjustmentGuardsEnabled
   - areRenderRegistriesGuardsEnabled

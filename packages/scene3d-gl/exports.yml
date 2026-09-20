@@ -59,6 +59,9 @@ protected:
   - destroyGlWireframeUpload
   - drawGlMeshSubset
   - drawGlScene3DParticleEmitter3Ds
+  - ensureGlMeshUpload
+  - setGlPbrTransmissionSceneColor
+  - setGlScene3DTime
   - ensureGlClassicProgram
   - ensureGlDebugProgram
   - ensureGlEnvironmentSourceCube

@@ -4,6 +4,7 @@ public:
   - setWgpuRenderEffectApplicationGuard
 
 protected:
+  - setWgpuRenderEffectVelocityTexture
   - BITMAP_DISPLACEMENT_FRAGMENT_WGSL
   - EFFECT_VERTEX_WGSL
   - MAX_CONVOLUTION_EFFECT_WGPU_KERNEL_SIZE

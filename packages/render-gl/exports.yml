@@ -1,4 +1,13 @@
 protected:
+  - applyGlBlendMode
+  - bindGlImageResourceTexture
+  - bindGlRenderTexture
+  - bindGlTexture
+  - drawGlFullscreenPass
+  - drawGlQuad
+  - fillGlRect
+  - setGlRenderTransform2D
+  - uploadGlCompressedTextureContainer
   - LINEAR_TO_SRGB_FRAGMENT_SRC
   - acquireGlRenderPassHandle
   - acquireGlTextureRenderTarget
