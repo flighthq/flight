@@ -59,7 +59,7 @@ export interface GlRenderRegistries extends RenderRegistries {
   // Incremented whenever pbrExtensions is replaced. The compiled-program cache key includes this
   // revision so replacing a registration cannot reuse a shader compiled from the prior policy.
   pbrExtensionRevision: number;
-  renderEffects: KeyedTable<GlEffectRegistration>;
+  effects: KeyedTable<GlEffectRegistration>;
   shapeRasterizer: SlotTable<ShapeRasterizer> | null;
   textureResolvers: KeyedTable<GlTextureResolver>;
   velocityWriters: KeyedTable<GlVelocityWriter>;

@@ -11,7 +11,7 @@ import { RegistryEntryState } from '@flighthq/types/contract';
 // installs no padding, shader-source, or backdrop companions.
 
 export function getGlEffectRunner(state: GlRenderState, kind: string): GlEffectRunner | null {
-  const entry = getGlRenderStateRuntime(state).registries.renderEffects.entries.get(kind);
+  const entry = getGlRenderStateRuntime(state).registries.effects.entries.get(kind);
   return entry?.state === RegistryEntryState.Bound ? entry.value.runner : null;
 }
 
@@ -19,7 +19,7 @@ export function getGlEffectRunner(state: GlRenderState, kind: string): GlEffectR
 // chain before dispatching — the pipeline silently skips unregistered kinds; check up front to apply
 // your own policy (warn, throw, filter) rather than relying on silent no-ops.
 export function hasGlEffectRunner(state: GlRenderState, kind: string): boolean {
-  return getGlRenderStateRuntime(state).registries.renderEffects.entries.get(kind)?.state === RegistryEntryState.Bound;
+  return getGlRenderStateRuntime(state).registries.effects.entries.get(kind)?.state === RegistryEntryState.Bound;
 }
 
 // Whether this specific effect INSTANCE can resolve into a real pass — a separate axis from whether its
@@ -27,7 +27,7 @@ export function hasGlEffectRunner(state: GlRenderState, kind: string): boolean {
 // not resolvable because there is nothing to resolve it with, which the pipeline reports as a
 // registration miss rather than a resolution one.
 export function isGlEffectResolvable(state: GlRenderState, effect: Readonly<Effect>): boolean {
-  const entry = getGlRenderStateRuntime(state).registries.renderEffects.entries.get(effect.kind);
+  const entry = getGlRenderStateRuntime(state).registries.effects.entries.get(effect.kind);
   if (entry?.state !== RegistryEntryState.Bound) return false;
   return entry.value.isResolvable === undefined || entry.value.isResolvable(state, effect);
 }
@@ -44,7 +44,7 @@ export function registerGlEffect(
   isResolvable?: GlEffectResolver,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
-  runtime.registries.renderEffects = withRegistryTableEntry(runtime.registries.renderEffects, kind, {
+  runtime.registries.effects = withRegistryTableEntry(runtime.registries.effects, kind, {
     isResolvable,
     runner,
   });

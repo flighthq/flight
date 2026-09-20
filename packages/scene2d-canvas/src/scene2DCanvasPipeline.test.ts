@@ -72,7 +72,7 @@ describe('defaultScene2DCanvasRenderRegistries', () => {
   });
 
   it('starts with an empty render effects table', () => {
-    expect(registries.renderEffects.entries.size).toBe(0);
+    expect(registries.effects.entries.size).toBe(0);
   });
 
   it('does not carry material renderers when none are registered', () => {

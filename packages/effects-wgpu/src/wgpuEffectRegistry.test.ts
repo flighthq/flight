@@ -83,10 +83,10 @@ describe('registerWgpuEffect', () => {
   it('registers a runner retrievable by its kind', async () => {
     const state = await createWgpuRenderStateForTest();
     const runner = vi.fn();
-    const before = getWgpuRenderStateRuntime(state).registries.renderEffects;
+    const before = getWgpuRenderStateRuntime(state).registries.effects;
     registerWgpuEffect(state, 'VignetteEffect', runner);
     expect(getWgpuEffectRunner(state, 'VignetteEffect')).toBe(runner);
-    expect(getWgpuRenderStateRuntime(state).registries.renderEffects).not.toBe(before);
+    expect(getWgpuRenderStateRuntime(state).registries.effects).not.toBe(before);
     expect(before.entries.size).toBe(0);
   });
 
@@ -95,7 +95,7 @@ describe('registerWgpuEffect', () => {
     const runnerA = vi.fn();
     const runnerB = vi.fn();
     registerWgpuEffect(state, 'TestEffect', runnerA);
-    const before = getWgpuRenderStateRuntime(state).registries.renderEffects;
+    const before = getWgpuRenderStateRuntime(state).registries.effects;
 
     registerWgpuEffect(state, 'TestEffect', runnerB);
 

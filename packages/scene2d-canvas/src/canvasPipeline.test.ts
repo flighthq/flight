@@ -4,7 +4,7 @@ describe('allocateEmptyCanvasRenderRegistries', () => {
   it('returns registries with empty tables', () => {
     const registries = allocateEmptyCanvasRenderRegistries();
     expect(registries.renderers.entries.size).toBe(0);
-    expect(registries.renderEffects.entries.size).toBe(0);
+    expect(registries.effects.entries.size).toBe(0);
     expect(registries.strokeTessellator).toBeNull();
   });
 

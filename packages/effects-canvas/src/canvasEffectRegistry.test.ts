@@ -45,12 +45,12 @@ describe('registerCanvasEffect', () => {
   it('registers through a replacement without mutating the earlier snapshot', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     const runner = (() => {}) as unknown as CanvasEffectRunner;
-    const before = getCanvasRenderStateRuntime(state).registries.renderEffects;
+    const before = getCanvasRenderStateRuntime(state).registries.effects;
 
     registerCanvasEffect(state, 'TestEffect', runner);
 
     expect(getCanvasEffectRunner(state, 'TestEffect')).toBe(runner);
-    expect(getCanvasRenderStateRuntime(state).registries.renderEffects).not.toBe(before);
+    expect(getCanvasRenderStateRuntime(state).registries.effects).not.toBe(before);
     expect(before.entries.size).toBe(0);
   });
 
@@ -59,7 +59,7 @@ describe('registerCanvasEffect', () => {
     const runnerA = (() => {}) as unknown as CanvasEffectRunner;
     const runnerB = (() => {}) as unknown as CanvasEffectRunner;
     registerCanvasEffect(state, 'TestEffect2', runnerA);
-    const before = getCanvasRenderStateRuntime(state).registries.renderEffects;
+    const before = getCanvasRenderStateRuntime(state).registries.effects;
 
     registerCanvasEffect(state, 'TestEffect2', runnerB);
 

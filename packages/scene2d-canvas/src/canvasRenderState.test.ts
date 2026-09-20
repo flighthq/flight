@@ -45,7 +45,7 @@ describe('createCanvasRenderStateRuntime', () => {
     expect(runtime).not.toBeNull();
     expect(runtime.binding).toBeNull();
     expect(runtime.registries.colorAdjustments).toBeUndefined();
-    expect(runtime.registries.renderEffects).toMatchObject({
+    expect(runtime.registries.effects).toMatchObject({
       onMiss: 'Unregistered',
       registry: 'CanvasEffect',
       shape: 'keyed',
