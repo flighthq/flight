@@ -184,6 +184,11 @@ const PROTECTED_PATTERNS: { pattern: RegExp; label: string }[] = [
   { pattern: /^get\w+Runtime$/, label: 'get*Runtime' },
 ];
 
+function matchesPrefix(name: string, prefixes: ReadonlySet<string>): boolean {
+  for (const prefix of prefixes) if (name.startsWith(prefix)) return true;
+  return false;
+}
+
 function classifierSaysProtected(name: string): boolean {
   return PROTECTED_PATTERNS.some((p) => p.pattern.test(name));
 }
@@ -199,6 +204,13 @@ interface ExportsPolicy {
   publicFiles: Set<string>;
   protectedFiles: Set<string>;
   excludeFiles: Set<string>;
+  // `- prefix: foo` — a lane rule for a whole naming family. The alternative for a family of any size
+  // is one line per name, and such a list only stays true while every future member is remembered; the
+  // one that is forgotten rejoins the lane silently, which is the failure the rule was written to stop.
+  // A prefix matching nothing is reported as a stale rule, so this cannot rot in the other direction.
+  publicPrefixes: Set<string>;
+  protectedPrefixes: Set<string>;
+  excludePrefixes: Set<string>;
 }
 
 function parseExportsYml(content: string): ExportsPolicy {
@@ -209,15 +221,22 @@ function parseExportsYml(content: string): ExportsPolicy {
     publicFiles: new Set(),
     protectedFiles: new Set(),
     excludeFiles: new Set(),
+    publicPrefixes: new Set(),
+    protectedPrefixes: new Set(),
+    excludePrefixes: new Set(),
   };
 
-  const laneMap: Record<string, { symbols: Set<string>; files: Set<string> }> = {
-    public: { symbols: policy.forcePublic, files: policy.publicFiles },
-    protected: { symbols: policy.forceProtected, files: policy.protectedFiles },
-    exclude: { symbols: policy.exclude, files: policy.excludeFiles },
+  const laneMap: Record<string, { symbols: Set<string>; files: Set<string>; prefixes: Set<string> }> = {
+    public: { symbols: policy.forcePublic, files: policy.publicFiles, prefixes: policy.publicPrefixes },
+    protected: {
+      symbols: policy.forceProtected,
+      files: policy.protectedFiles,
+      prefixes: policy.protectedPrefixes,
+    },
+    exclude: { symbols: policy.exclude, files: policy.excludeFiles, prefixes: policy.excludePrefixes },
   };
 
-  let currentLane: { symbols: Set<string>; files: Set<string> } | null = null;
+  let currentLane: { symbols: Set<string>; files: Set<string>; prefixes: Set<string> } | null = null;
 
   for (const raw of content.split('\n')) {
     const line = raw.replace(/#.*$/, '').trimEnd();
@@ -232,6 +251,11 @@ function parseExportsYml(content: string): ExportsPolicy {
     const itemMatch = line.match(/^\s+-\s+(.+)/);
     if (itemMatch && currentLane) {
       const value = itemMatch[1].trim();
+      const prefixMatch = value.match(/^prefix:\s*(.+)/);
+      if (prefixMatch) {
+        currentLane.prefixes.add(prefixMatch[1].trim());
+        continue;
+      }
       const fileMatch = value.match(/^file:\s*(.+)/);
       if (fileMatch) {
         const filePath = fileMatch[1]
@@ -258,6 +282,9 @@ function loadExportsYml(pkgDir: string): ExportsPolicy {
       publicFiles: new Set(),
       protectedFiles: new Set(),
       excludeFiles: new Set(),
+      publicPrefixes: new Set(),
+      protectedPrefixes: new Set(),
+      excludePrefixes: new Set(),
     };
   }
   return parseExportsYml(readFileSync(ymlPath, 'utf8'));
@@ -331,6 +358,15 @@ function classifyExports(exportsByModule: ModuleExports[], policy: ExportsPolicy
       } else if (policy.forcePublic.has(name)) {
         lane = 'public';
         source = 'exports.yml';
+      } else if (matchesPrefix(name, policy.excludePrefixes)) {
+        lane = 'exclude';
+        source = 'exports.yml (prefix)';
+      } else if (matchesPrefix(name, policy.protectedPrefixes)) {
+        lane = 'protected';
+        source = 'exports.yml (prefix)';
+      } else if (matchesPrefix(name, policy.publicPrefixes)) {
+        lane = 'public';
+        source = 'exports.yml (prefix)';
       } else if (moduleExcluded) {
         lane = 'exclude';
         source = 'exports.yml (file)';
@@ -429,17 +465,36 @@ function getIndexDuplicateNames(filePath: string, srcDir: string): string[] {
 
 // ── Generate file content ────────────────────────────────────────────
 
+// ★ A MODULE CARRYING AN EXCLUDED NAME GETS A NAMED LIST, NOT `export *`, AND THAT IS THE WHOLE
+// POINT OF THIS FUNCTION'S SHAPE. `export *` re-exports a module WHOLE, so it cannot express "every
+// name here except that one": an exclusion on a module that keeps any other name used to be accepted
+// by the policy, counted in the summary, and then published anyway. The gate could not see it either,
+// because it compared contract.ts by MODULE while comparing index.ts by NAME — so the surface read
+// clean while carrying the excluded name. Measured on host-electron: the gate printed "both files
+// match (240 total, 154 public, 85 protected, 1 excluded)" while the contract lane still exported all
+// 240, the excluded one included.
+//
+// The wildcard is kept where nothing is excluded, because it is the more durable spelling: a new
+// export joins the lane without an edit here. The named list is the price of an exclusion, paid only
+// by the modules that actually declare one.
 function generateContract(exportsByModule: ModuleExports[], classification: Map<string, Classification>): string {
-  const modules = exportsByModule
-    .filter(({ module: mod, names }) =>
-      names.some((n) => {
-        const c = classification.get(n);
-        return c?.module === mod && c.lane !== 'exclude';
-      }),
-    )
-    .map(({ module: mod }) => mod);
+  const lines: string[] = [];
 
-  return modules.map((m) => `export * from './${m}';`).join('\n') + '\n';
+  for (const { module: mod, names } of exportsByModule) {
+    const owned = names.filter((n) => classification.get(n)?.module === mod);
+    const laneNames = owned.filter((n) => classification.get(n)?.lane !== 'exclude');
+    if (laneNames.length === 0) continue;
+
+    if (laneNames.length === owned.length) {
+      lines.push(`export * from './${mod}';`);
+      continue;
+    }
+    lines.push('export {');
+    for (const n of laneNames) lines.push(`  ${n},`);
+    lines.push(`} from './${mod}';`);
+  }
+
+  return lines.join('\n') + '\n';
 }
 
 function generateIndex(exportsByModule: ModuleExports[], classification: Map<string, Classification>): string {
@@ -452,13 +507,16 @@ function generateIndex(exportsByModule: ModuleExports[], classification: Map<str
     });
     if (publicNames.length === 0) continue;
 
-    const nonExcluded = names.filter((n) => {
-      const c = classification.get(n);
-      return c?.lane !== 'exclude' && c?.module === mod;
-    });
+    const owned = names.filter((n) => classification.get(n)?.module === mod);
+    const nonExcluded = owned.filter((n) => classification.get(n)?.lane !== 'exclude');
     const allNonExcludedPublic = nonExcluded.every((n) => classification.get(n)?.lane === 'public');
 
-    if (allNonExcludedPublic && nonExcluded.length === publicNames.length) {
+    // `export *` is only sound when the module has NOTHING to omit. The earlier condition asked whether
+    // every NON-EXCLUDED name was public, which is true of a module that is entirely public AND of one
+    // whose remainder is public after exclusions — and in the second case the wildcard republishes the
+    // excluded names anyway. Measured: host-electron re-published all 84 `populateElectronHost*` helpers
+    // on the public lane the moment they were excluded, because each module's survivors were all public.
+    if (allNonExcludedPublic && nonExcluded.length === publicNames.length && owned.length === nonExcluded.length) {
       lines.push(`export * from './${mod}';`);
     } else {
       lines.push('export {');
@@ -482,6 +540,19 @@ function validatePolicy(policy: ExportsPolicy, allExports: Set<string>): string[
   }
   for (const name of policy.exclude) {
     if (!allExports.has(name)) warnings.push(`exclude '${name}' not found in source exports`);
+  }
+  // A prefix that matches nothing is a rule describing a family that no longer exists. Reported for the
+  // same reason a stale exact name is: the list has to keep describing the tree, not merely excuse it.
+  for (const [lane, prefixes] of [
+    ['public', policy.publicPrefixes],
+    ['protected', policy.protectedPrefixes],
+    ['exclude', policy.excludePrefixes],
+  ] as const) {
+    for (const prefix of prefixes) {
+      if (![...allExports].some((name) => name.startsWith(prefix))) {
+        warnings.push(`${lane} prefix '${prefix}' matches no source export`);
+      }
+    }
   }
   for (const name of policy.forcePublic) {
     if (policy.forceProtected.has(name)) warnings.push(`'${name}' in both public and protected`);
@@ -537,7 +608,33 @@ for (const pkg of GOVERNED_PACKAGES) {
   const actualContractModules = getModulesFromFile(contractPath);
   const contractMissing = [...expectedContractModules].filter((m) => !actualContractModules?.has(m)).sort();
   const contractExtra = [...(actualContractModules ?? [])].filter((m) => !expectedContractModules.has(m)).sort();
-  const contractOk = contractMissing.length === 0 && contractExtra.length === 0;
+
+  // ★ CONTRACT IS CHECKED BY NAME, NOT ONLY BY MODULE, because `export *` publishes a module WHOLE.
+  // Comparing modules answers "is the right set of files re-exported", which stays true while the lane
+  // carries a name the policy excluded — the exact hole that let host-electron report a clean
+  // "1 excluded" over a surface that still exported it. index.ts was already checked by name; this is
+  // the other half of that symmetry.
+  const expectedContractNames = new Set(
+    [...classification.entries()].filter(([, v]) => v.lane !== 'exclude').map(([k]) => k),
+  );
+  //
+  // Checked in BOTH directions, because the two failures have opposite causes and only one of them is
+  // the wildcard's. A LEAK is an excluded name the lane still publishes; a DROP is a lane name a named
+  // list forgot — which is what a stale generated file looks like once a module stops using `export *`.
+  // Checking only for leaks accepted a named list that had quietly lost a name, so `--fix` saw nothing
+  // to repair and left the file stale; that was found by restoring a config and watching the
+  // regeneration decline to restore the file with it.
+  const actualContractNames = getExportNamesFromFile(contractPath, srcDir);
+  const contractNameLeaks = [...(actualContractNames ?? [])].filter((n) => !expectedContractNames.has(n)).sort();
+  const contractNameDrops =
+    actualContractNames === undefined
+      ? []
+      : [...expectedContractNames].filter((n) => !actualContractNames.has(n)).sort();
+  const contractOk =
+    contractMissing.length === 0 &&
+    contractExtra.length === 0 &&
+    contractNameLeaks.length === 0 &&
+    contractNameDrops.length === 0;
 
   const actualPublicNames = getExportNamesFromFile(indexPath, srcDir);
   let indexOk: boolean;
@@ -583,6 +680,22 @@ for (const pkg of GOVERNED_PACKAGES) {
     if (contractExtra.length > 0) {
       console.log(pc.red(`✗  ${pkg} contract.ts`) + `: ${contractExtra.length} stale module(s):`);
       for (const m of contractExtra) console.log(`   - ${m}`);
+    }
+    if (contractNameLeaks.length > 0) {
+      console.log(
+        pc.red(`✗  ${pkg} contract.ts`) +
+          `: ${contractNameLeaks.length} excluded name(s) still published by the lane` +
+          ` (a wildcard re-export cannot omit a name — regenerate with --fix):`,
+      );
+      for (const n of contractNameLeaks) console.log(`   - ${n}`);
+    }
+    if (contractNameDrops.length > 0) {
+      console.log(
+        pc.red(`✗  ${pkg} contract.ts`) +
+          `: ${contractNameDrops.length} lane name(s) the file no longer publishes` +
+          ` (a stale named list — regenerate with --fix):`,
+      );
+      for (const n of contractNameDrops) console.log(`   - ${n}`);
     }
   }
 
