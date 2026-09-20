@@ -1,0 +1,6 @@
+protected:
+  - GltfAnimationsCoreFeatureHandler
+  - GltfCamerasCoreFeatureHandler
+  - GltfSkinsCoreFeatureHandler
+  - GltfPunctualLightsExtensionHandler
+  - GltfAnisotropyExtensionHandler

@@ -2,7 +2,7 @@ export * from './dragonBonesParse';
 export * from './skeletonDetect';
 export * from './spineBinaryFull';
 export * from './spineBinaryHandlers';
-export * from './spineBinaryParse';
+export { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse';
 export * from './spineBinaryReader';
 export * from './spineBinaryRegistry';
 export * from './spineBinarySectionHandlers';

@@ -1,0 +1,15 @@
+protected:
+  - applyRiveArtboardHandlers
+  - applyRiveDocumentHandlers
+  - createRiveArtboardImportContext
+  - createRiveDocumentImportContext
+  - getRiveCoreObjectHandler
+  - importRiveCoreObjectAsData
+  - importRiveImageComponent
+  - importRiveLayoutComponent
+  - importRiveNSlicedNodeComponent
+  - importRiveNestedArtboardComponent
+  - importRivePathComponent
+  - importRiveShapeComponent
+  - importRiveSoloComponent
+  - importRiveTextComponent

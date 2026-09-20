@@ -41,7 +41,6 @@ export {
   destroyGlEffectState,
   endGlEffectPass,
   setGlEffectStateSkipGuard,
-  setGlRenderEffectVelocityTexture,
 } from './glEffectState';
 export { defaultGlFilmGrainEffectRunner, registerGlFilmGrainEffect } from './glFilmGrainEffect';
 export { defaultGlFxaaEffectRunner, registerGlFxaaEffect } from './glFxaaEffect';
