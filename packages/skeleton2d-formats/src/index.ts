@@ -6,12 +6,8 @@ export { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse';
 export * from './spineBinaryReader';
 export {
   createSpineBinaryRegistry,
-  getSpineBinarySectionHandler,
-  getSpineBinaryTimelineHandler,
   registerSpineBinarySectionHandler,
   registerSpineBinaryTimelineHandler,
-  unregisterSpineBinarySectionHandler,
-  unregisterSpineBinaryTimelineHandler,
 } from './spineBinaryRegistry';
 export { registerSpineBinarySectionHandlers } from './spineBinarySectionHandlers';
 export { registerSpineBinaryTimelineHandlers } from './spineBinaryTimelineHandlers';

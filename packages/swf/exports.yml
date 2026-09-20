@@ -1,0 +1,31 @@
+# swf: exports where the shared classifier gets it wrong.
+
+protected:
+  # Individual handler atoms. A caller installs a FAMILY registrar or the whole set; reaching a
+  # single handler is an intra-SDK concern. scripts/format-parser-tree-shaking.test.ts states this
+  # as contractOnlyExports, and asserts the atoms tree-shake out of a lean public bundle.
+  - handleSwfBackgroundColorTag
+  - handleSwfBoundedDefinitionTag
+  - handleSwfButtonDefinitionTag
+  - handleSwfDefineSpriteTag
+  - handleSwfDoAbcTag
+  - handleSwfDoActionTag
+  - handleSwfDoInitActionTag
+  - handleSwfEmbeddedImageDefinitionTag
+  - handleSwfExportAssetsTag
+  - handleSwfFontDefinitionTag
+  - handleSwfFontInfoTag
+  - handleSwfFrameLabelTag
+  - handleSwfJpegTablesTag
+  - handleSwfLegacyImageDefinitionTag
+  - handleSwfLosslessBitmapDefinitionTag
+  - handleSwfPlaceObjectTag
+  - handleSwfRemoveObjectTag
+  - handleSwfScalingGridTag
+  - handleSwfSceneAndFrameLabelDataTag
+  - handleSwfSoundDefinitionTag
+  - handleSwfSoundStreamBlockTag
+  - handleSwfSoundStreamHeadTag
+  - handleSwfStartSound2Tag
+  - handleSwfStartSoundTag
+  - handleSwfVideoStreamDefinitionTag

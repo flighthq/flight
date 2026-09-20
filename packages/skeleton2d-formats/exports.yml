@@ -1,35 +1,41 @@
+# skeleton2d-formats: exports where the shared classifier gets it wrong.
+
 exclude:
   - spineBinaryAnimationsSectionReader
-  - spineBinaryBonesSectionReader
   - spineBinaryBoneTimelineReader
+  - spineBinaryBonesSectionReader
   - spineBinaryDeformTimelineReader
   - spineBinaryDrawOrderTimelineReader
-  - spineBinaryEventsSectionReader
   - spineBinaryEventTimelineReader
+  - spineBinaryEventsSectionReader
   - spineBinaryIkConstraintsSectionReader
   - spineBinaryIkTimelineReader
   - spineBinaryPathConstraintsSectionReader
   - spineBinaryPathTimelineReader
   - spineBinarySkinsSectionReader
-  - spineBinarySlotsSectionReader
   - spineBinarySlotTimelineReader
+  - spineBinarySlotsSectionReader
   - spineBinaryTransformConstraintsSectionReader
   - spineBinaryTransformTimelineReader
 
 protected:
+  - getSpineBinarySectionHandler
+  - getSpineBinaryTimelineHandler
   - spineBinaryAnimationsSectionHandler
-  - spineBinaryBonesSectionHandler
-  - spineBinaryEventsSectionHandler
-  - spineBinaryIkConstraintsSectionHandler
-  - spineBinaryPathConstraintsSectionHandler
-  - spineBinarySkinsSectionHandler
-  - spineBinarySlotsSectionHandler
-  - spineBinaryTransformConstraintsSectionHandler
   - spineBinaryBoneTimelineHandler
+  - spineBinaryBonesSectionHandler
   - spineBinaryDeformTimelineHandler
   - spineBinaryDrawOrderTimelineHandler
   - spineBinaryEventTimelineHandler
+  - spineBinaryEventsSectionHandler
+  - spineBinaryIkConstraintsSectionHandler
   - spineBinaryIkTimelineHandler
+  - spineBinaryPathConstraintsSectionHandler
   - spineBinaryPathTimelineHandler
+  - spineBinarySkinsSectionHandler
   - spineBinarySlotTimelineHandler
+  - spineBinarySlotsSectionHandler
+  - spineBinaryTransformConstraintsSectionHandler
   - spineBinaryTransformTimelineHandler
+  - unregisterSpineBinarySectionHandler
+  - unregisterSpineBinaryTimelineHandler
