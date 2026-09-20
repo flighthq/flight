@@ -11,7 +11,6 @@ import {
   drawWgpuEffectPass,
   getWgpuEffectPassState,
   initializeWgpuDualSourceEffectPipeline,
-  initializeWgpuEffectPipeline,
 } from './wgpuEffectPass';
 
 beforeAll(() => renderWgpuContract.installWgpuMock());
@@ -354,11 +353,5 @@ describe('getWgpuEffectPassState', () => {
 describe('initializeWgpuDualSourceEffectPipeline', () => {
   it('is the construction initializer of createWgpuDualSourceEffectPipeline', () => {
     expect(typeof initializeWgpuDualSourceEffectPipeline).toBe('function');
-  });
-});
-
-describe('initializeWgpuEffectPipeline', () => {
-  it('is the construction initializer of createWgpuEffectPipeline', () => {
-    expect(typeof initializeWgpuEffectPipeline).toBe('function');
   });
 });

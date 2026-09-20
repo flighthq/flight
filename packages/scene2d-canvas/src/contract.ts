@@ -33,7 +33,6 @@ export * from './canvasShapeCommands';
 export * from './canvasShapeRasterizer';
 export * from './canvasShapeRegistry';
 export * from './canvasSprite';
-export * from './canvasTestSupport';
 export * from './canvasTextInput';
 export * from './canvasTextLabel';
 export * from './canvasTextMeasure';

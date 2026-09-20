@@ -1,18 +1,16 @@
+exclude:
+  - file: canvasTestSupport
+
 protected:
   - bindCanvasRenderTexture
   - setCanvasRenderTransform2D
   - CANVAS_SCALE9_SPRITE_SLICE_STRIDE
   - acquireCanvasTextureResolverSurface
-  - acquireTestCanvasRenderSurface
   - applyCanvasBlendMode
   - applyCanvasMaterial
-  - beginCanvasScreenRenderPassForTest
   - buildScale9Mapper
-  - canvasTestSurfaceCreator
   - createBitmapPattern
   - createCanvasRenderStateRuntime
-  - createCanvasRenderStateWithoutPass
-  - createCanvasScreenRenderTargetForTest
   - createCanvasTextMeasure
   - createGradientPattern
   - defaultCanvasBeginTextureFill
@@ -42,7 +40,6 @@ protected:
   - getCanvasShapeCommand
   - getCanvasSurfaceCreator
   - initializeCanvasRenderSurface
-  - initializeCanvasRenderSurfaceCreator
   - initializeCanvasRenderTexturePool
   - initializeCanvasScreenRenderTarget
   - initializeCanvasTextLabelData

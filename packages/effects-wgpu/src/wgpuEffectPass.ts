@@ -375,8 +375,7 @@ export function initializeWgpuDualSourceEffectPipeline(
   out.variants = new Map();
 }
 
-/** Compiles a WGSL effect pipeline, creating the combined vertex+fragment shader module. */
-export function initializeWgpuEffectPipeline(
+function initializeWgpuEffectPipeline(
   out: EntityConstruction<WgpuEffectPipeline>,
   state: WgpuRenderState,
   fragmentWGSL: string,

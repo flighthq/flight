@@ -20,10 +20,6 @@ export * from './glRenderStateBracket';
 export {
   createGlScreenRenderTarget,
   createGlTextureRenderTarget,
-  createGlTextureRenderTarget,
-  createGlTextureRenderTarget,
-  createGlTextureRenderTarget,
-  createGlTextureRenderTarget,
   destroyGlTextureRenderTarget,
   explainGlTextureRenderTarget,
   isGlRenderTargetFormatSupported,

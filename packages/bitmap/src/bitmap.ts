@@ -63,12 +63,7 @@ export function createBitmap(width: number, height: number, color: number = 0): 
   return finishEntity(out);
 }
 
-export function initializeBitmap(
-  out: EntityConstruction<Bitmap>,
-  width: number,
-  height: number,
-  color: number = 0,
-): void {
+function initializeBitmap(out: EntityConstruction<Bitmap>, width: number, height: number, color: number = 0): void {
   const data = new Uint8ClampedArray(width * height * 4);
   if (color !== 0) {
     const r = (color >>> 24) & 0xff;
