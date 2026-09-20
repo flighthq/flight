@@ -22,6 +22,8 @@ export {
   getGlPbrExtensionRegistration,
   registerGlPbrExtension,
 } from './glPbrExtensionRegistry';
+export * from './glPbrTransmissionSceneColor';
+export * from './glScene3DTime';
 export * from './glShadedBuiltInModifiers';
 export * from './glShadedModifierSnippet';
 export * from './glShadowMap';

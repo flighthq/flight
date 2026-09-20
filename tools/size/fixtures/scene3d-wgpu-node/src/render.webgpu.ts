@@ -16,7 +16,7 @@ import {
   endWgpuRenderPass,
 } from '@flighthq/render-wgpu';
 import { allocateEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
-import { createNode3D, Node3DKind } from '@flighthq/scene3d';
+import { createNode3D } from '@flighthq/scene3d';
 import { renderWgpuScene3D } from '@flighthq/scene3d-wgpu';
 import { createWgpuSurface } from '@flighthq/surface';
 
@@ -37,7 +37,7 @@ export const state = createWgpuRenderState(acquisition.device, allocateEmptyWgpu
 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x10 / 0xff, 0x15 / 0xff, 0x22 / 0xff, 1], depth: 1.0 } as const;
-const scene = createNode3D(Node3DKind);
+const scene = createNode3D();
 const camera = createCamera3D({
   far: 10,
   near: 0.1,
