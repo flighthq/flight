@@ -23,7 +23,6 @@ export * from './glShapeMesh';
 export * from './glShapeRasterizer';
 export * from './glSprite';
 export * from './glStandardMaterial';
-export * from './glTestHelper';
 export * from './glTextInput';
 export * from './glTextLabel';
 export * from './glTilemap';
