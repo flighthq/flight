@@ -1,5 +1,5 @@
 public:
-  - setInteractionConnectGuard  # user-facing guard setter
+  - setInteractionConnectGuard # user-facing guard setter
 
 protected:
   - createInteractionSignals
