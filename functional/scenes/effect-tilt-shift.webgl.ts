@@ -14,7 +14,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlEffectState,
+  beginGlEffectPass,
   createDisplayObject,
   createGlEffectState,
   createGlRenderState,
@@ -22,7 +22,7 @@ import {
   createTiltShiftEffect,
   defaultGlShapeRenderer,
   registerGlTiltShiftEffect,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
@@ -78,9 +78,9 @@ const TILT_WIDTH = 0.25;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [createTiltShiftEffect({ center: TILT_CENTER, width: TILT_WIDTH, blur: 6 })]);
+  endGlEffectPass(pass, pipeline, [createTiltShiftEffect({ center: TILT_CENTER, width: TILT_WIDTH, blur: 6 })]);
 }
 
 // Off-center shapes pushed toward the frame edges, so lens curvature and out-of-focus falloff away

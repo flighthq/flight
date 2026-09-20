@@ -11,7 +11,7 @@ import type { Bitmap, Camera3D, GlEffectState, Node3D, Scene3DLights, Texture } 
 import {
   createGlSurface,
   addNodeChild,
-  beginGlEffectState,
+  beginGlEffectPass,
   createAmbientLight,
   createBitmap,
   createBlinnPhongMaterial,
@@ -26,7 +26,7 @@ import {
   createScene3DLights,
   createTexture,
   createVector3,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelLuminance,
   getBitmapPixelRgb,
   invalidateNodeLocalTransform,
@@ -141,14 +141,14 @@ const lights = createScene3DLights({
 const screenClear = { color: [0x08 / 0xff, 0x0b / 0xff, 0x12 / 0xff, 1], depth: 1.0 } as const;
 
 function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   renderGlScene3D(pass, scene, camera, lights);
-  endGlEffectState(pass, pipeline, []);
+  endGlEffectPass(pass, pipeline, []);
 }
 
 render(scene, camera, lights);

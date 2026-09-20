@@ -59,7 +59,7 @@ export function acquireCanvasRenderTarget(
 // `clear` is the scene target's clear, given explicitly: the background is what you clear to, a per-pass
 // value, not a property the render state carries around. Returns the pass the scene draws into; the
 // enclosing pass — the screen, ordinarily — is what the finished chain composites back onto.
-export function beginCanvasEffectState(
+export function beginCanvasEffectPass(
   pass: CanvasRenderPass,
   pipeline: CanvasEffectState,
   clear: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0] },
@@ -102,7 +102,7 @@ export function destroyCanvasEffectState(_state: CanvasRenderState, pipeline: Ca
   pipeline.lutCache.lut = null;
 }
 
-export function endCanvasEffectState(
+export function endCanvasEffectPass(
   scenePass: CanvasRenderPass,
   pipeline: CanvasEffectState,
   operations: ReadonlyArray<RenderEffect | Adjustment>,
@@ -206,7 +206,7 @@ export function releaseCanvasRenderTarget(pool: CanvasRenderTargetPool, target: 
 function presentCanvasRenderEffectResult(state: CanvasRenderState, source: Readonly<CanvasTextureRenderTarget>): void {
   const pass = getCanvasActiveRenderPass(state);
   if (pass === null) {
-    throw new Error('endCanvasEffectState: no enclosing pass is open to present the result into');
+    throw new Error('endCanvasEffectPass: no enclosing pass is open to present the result into');
   }
   const context = pass.context;
   context.save();

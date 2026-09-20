@@ -188,7 +188,7 @@ function beginEffectPass(
     throw new Error('No active command encoder — open a frame with beginWgpuRenderPass first');
   }
   // A fullscreen effect pass is recorded alongside the caller's pass rather than inside it, so the
-  // caller's pass steps aside; endWgpuEffectState resumes it once the chain has presented.
+  // caller's pass steps aside; endWgpuEffectPass resumes it once the chain has presented.
   const enclosing = getWgpuActiveRenderPass(state);
   if (enclosing !== null) suspendWgpuRenderPass(enclosing);
 

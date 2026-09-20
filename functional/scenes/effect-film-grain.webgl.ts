@@ -23,7 +23,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlEffectState,
+  beginGlEffectPass,
   createDisplayObject,
   createFilmGrainEffect,
   createGlEffectState,
@@ -32,7 +32,7 @@ import {
   getBitmapPixelRgb,
   registerGlFilmGrainEffect,
   defaultGlShapeRenderer,
-  endGlEffectState,
+  endGlEffectPass,
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
@@ -77,9 +77,9 @@ const screenClear = { color: [0x80 / 0xff, 0x80 / 0xff, 0x80 / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [createFilmGrainEffect({ intensity: 0.3, size: 1.5, seed: 7 })]);
+  endGlEffectPass(pass, pipeline, [createFilmGrainEffect({ intensity: 0.3, size: 1.5, seed: 7 })]);
 }
 
 // A flat mid-gray fill covering the whole frame. The even tone is the ideal backdrop for film grain:

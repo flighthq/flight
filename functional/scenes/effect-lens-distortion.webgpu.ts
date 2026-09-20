@@ -11,7 +11,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginWgpuEffectState,
+  beginWgpuEffectPass,
   beginWgpuRenderPass,
   createDisplayObject,
   createLensDistortionEffect,
@@ -20,7 +20,7 @@ import {
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
-  endWgpuEffectState,
+  endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -78,9 +78,9 @@ const LENS_AMOUNT = 0.35;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear);
+  const scenePass = beginWgpuEffectPass(pass, pipeline, screenClear);
   renderWgpuScene2D(scenePass, root);
-  endWgpuEffectState(scenePass, pipeline, [createLensDistortionEffect({ amount: LENS_AMOUNT, scale: 1 })]);
+  endWgpuEffectPass(scenePass, pipeline, [createLensDistortionEffect({ amount: LENS_AMOUNT, scale: 1 })]);
   endWgpuRenderPass(pass);
 }
 

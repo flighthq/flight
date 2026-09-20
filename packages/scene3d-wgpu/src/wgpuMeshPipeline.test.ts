@@ -736,7 +736,7 @@ describe('ensureWgpuShadowSampleBindGroup', () => {
     const { fake, state } = makeWgpuScene3DState();
     ensureWgpuShadowSampleBindGroup(state);
     const before = fake.calls.filter((c) => c.name === 'createBindGroup').length;
-    // Simulate drawWgpuScene3DShadowMap having stored a shadow this frame.
+    // Simulate renderWgpuScene3DShadowMap having stored a shadow this frame.
     getWgpuScene3DRuntime(state).shadow = {
       depthTexture: {} as GPUTexture,
       depthView: {} as GPUTextureView,

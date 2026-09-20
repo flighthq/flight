@@ -43,7 +43,7 @@ import { getGlRenderEffectRunner } from './glRenderEffectRegistry';
 // ping-ponging pooled targets, then presents to the canvas. The default render loop imports none of
 // this. The effect list is per-frame data; only the scene target and pool are retained.
 
-export function beginGlEffectState(
+export function beginGlEffectPass(
   state: GlRenderState,
   pipeline: GlEffectState,
   clear: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0], depth: 1.0 },
@@ -90,7 +90,7 @@ export function destroyGlEffectState(state: GlRenderState, pipeline: GlEffectSta
   pipeline.lutCache.lut = null;
 }
 
-export function endGlEffectState(
+export function endGlEffectPass(
   pass: GlRenderPass,
   pipeline: GlEffectState,
   operations: ReadonlyArray<RenderEffect | Adjustment>,

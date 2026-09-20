@@ -14,7 +14,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlEffectState,
+  beginGlEffectPass,
   createDisplayObject,
   createGlEffectState,
   createGlRenderState,
@@ -23,7 +23,7 @@ import {
   createShape,
   registerGlGlitchEffect,
   defaultGlShapeRenderer,
-  endGlEffectState,
+  endGlEffectPass,
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
@@ -66,9 +66,9 @@ const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [createGlitchEffect({ intensity: 0.7, blockSize: 22, colorShift: 12, seed: 3 })]);
+  endGlEffectPass(pass, pipeline, [createGlitchEffect({ intensity: 0.7, blockSize: 22, colorShift: 12, seed: 3 })]);
 }
 
 // Bright horizontal colour bars — the structure glitch tears: each block of rows is displaced and the

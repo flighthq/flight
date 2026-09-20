@@ -8,13 +8,13 @@ import {
 } from '@flighthq/host-web';
 import type { Camera3D, Scene3DLightsLike, Node3D, WgpuEffectState } from '@flighthq/sdk';
 import {
-  beginWgpuEffectState,
+  beginWgpuEffectPass,
   beginWgpuRenderPass,
   createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   enableFlightDiagnostics,
-  endWgpuEffectState,
+  endWgpuEffectPass,
   endWgpuRenderPass,
   prepareScene3DRender,
   defaultScene3DWgpuRenderRegistries,
@@ -55,9 +55,9 @@ export const scale = pixelRatio;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLightsLike>): void {
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
+  const scenePass = beginWgpuEffectPass(pass, pipeline, screenClear, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
   renderWgpuScene3D(scenePass, scene, camera, lights);
-  endWgpuEffectState(scenePass, pipeline, []);
+  endWgpuEffectPass(scenePass, pipeline, []);
   endWgpuRenderPass(pass);
 }

@@ -64,7 +64,7 @@ function ensureGlSkybox(state: GlRenderState): GlSkybox {
 // opaque scene has not yet covered and never occludes geometry. Call it once, after the color target
 // is bound and cleared and before renderGlScene3D. A no-op when the environment has no complete source
 // cube. `aspect` is the viewport width / height (matches the camera aspect renderGlScene3D uses).
-export function drawGlEnvironmentSkybox(
+export function renderGlEnvironmentSkybox(
   state: GlRenderState,
   environment: Readonly<Environment>,
   camera: Readonly<Camera3D>,

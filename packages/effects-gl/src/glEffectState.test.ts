@@ -4,18 +4,18 @@ import { allocateEmptyGlRenderRegistries, createGlRenderState, endGlRenderPass }
 import type { RenderEffect } from '@flighthq/types/contract';
 
 import {
-  beginGlEffectState,
+  beginGlEffectPass,
   createGlEffectState,
   destroyGlEffectState,
-  endGlEffectState,
+  endGlEffectPass,
   initializeGlEffectState,
   setGlEffectStateSkipGuard,
   setGlRenderEffectVelocityTexture,
 } from './glEffectState';
 
-describe('beginGlEffectState', () => {
+describe('beginGlEffectPass', () => {
   it('is a function', () => {
-    expect(typeof beginGlEffectState).toBe('function');
+    expect(typeof beginGlEffectPass).toBe('function');
   });
 
   it('redeclares the explicit color space on a reused scene target', () => {
@@ -25,10 +25,10 @@ describe('beginGlEffectState', () => {
     );
     const pipeline = createGlEffectState(state);
 
-    const pass = beginGlEffectState(state, pipeline);
+    const pass = beginGlEffectPass(state, pipeline);
     const target = pipeline.sceneTarget;
     endGlRenderPass(pass);
-    beginGlEffectState(state, pipeline, undefined, 'linear');
+    beginGlEffectPass(state, pipeline, undefined, 'linear');
 
     expect(pipeline.sceneTarget).toBe(target);
     expect(target?.colorSpace).toBe('linear');
@@ -47,9 +47,9 @@ describe('destroyGlEffectState', () => {
   });
 });
 
-describe('endGlEffectState', () => {
+describe('endGlEffectPass', () => {
   it('is a function', () => {
-    expect(typeof endGlEffectState).toBe('function');
+    expect(typeof endGlEffectPass).toBe('function');
   });
 });
 
@@ -76,16 +76,16 @@ describe('setGlEffectStateSkipGuard', () => {
     ];
 
     setGlEffectStateSkipGuard(state, (_state, kind) => dropped.push(kind));
-    let pass = beginGlEffectState(state, pipeline);
-    endGlEffectState(pass, pipeline, chain);
+    let pass = beginGlEffectPass(state, pipeline);
+    endGlEffectPass(pass, pipeline, chain);
 
     expect(dropped).toEqual(['test.pipeline-skip-seam']);
 
     // Clearing must restore the original silence exactly: the seam is the ONLY path by which a dropped
     // effect is observable, so a stale guard would be the difference between a diagnostic and a leak.
     setGlEffectStateSkipGuard(state, null);
-    pass = beginGlEffectState(state, pipeline);
-    endGlEffectState(pass, pipeline, chain);
+    pass = beginGlEffectPass(state, pipeline);
+    endGlEffectPass(pass, pipeline, chain);
 
     expect(dropped).toEqual(['test.pipeline-skip-seam']);
   });

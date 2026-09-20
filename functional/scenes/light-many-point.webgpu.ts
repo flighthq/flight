@@ -10,7 +10,7 @@ import { renderWgpuScene3D, prepareWgpuScene3DForwardLights } from '@flighthq/sc
 import type { Bitmap } from '@flighthq/sdk';
 import {
   addNodeChild,
-  beginWgpuEffectState,
+  beginWgpuEffectPass,
   beginWgpuRenderPass,
   createAmbientLight,
   createBlinnPhongMaterial,
@@ -25,7 +25,7 @@ import {
   createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
-  endWgpuEffectState,
+  endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelLuminance,
   getBitmapPixelRgb,
@@ -157,11 +157,11 @@ const lights = createScene3DLights({
 });
 
 const pass = beginWgpuRenderPass(state, screen, screenClear);
-const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
+const scenePass = beginWgpuEffectPass(pass, pipeline, screenClear, 'linear');
 const renderList = prepareScene3DRender(state, scene, camera, lights);
 const forwardLights = prepareWgpuScene3DForwardLights(state, renderList, lights);
 renderWgpuScene3D(scenePass, scene, camera, lights, forwardLights);
-endWgpuEffectState(scenePass, pipeline, []);
+endWgpuEffectPass(scenePass, pipeline, []);
 endWgpuRenderPass(pass);
 
 // Independently recorded row-major center fingerprint. Two clean captures were byte-identical at all

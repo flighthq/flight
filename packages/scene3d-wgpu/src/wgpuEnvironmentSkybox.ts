@@ -6,14 +6,14 @@ import { ensureWgpuEnvironmentSourceCube } from './wgpuEnvironmentCube';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
 // Draws the environment's radiance cubemap as the scene backdrop — the WGSL mirror of scene-gl's
-// drawGlEnvironmentSkybox. A screen-filling triangle that, per pixel, reconstructs the world-space view
+// renderGlEnvironmentSkybox. A screen-filling triangle that, per pixel, reconstructs the world-space view
 // ray from the inverse view-projection and samples the cube. The pipeline writes no depth and compares
 // 'always', so it fills every pixel with the backdrop; call it once, inside the open scene render pass and
 // BEFORE renderWgpuScene3D, so opaque geometry (depth-test LESS) draws over it. A no-op when the environment
 // has no complete source cube. `aspect` is the viewport width / height (matches
 // the camera aspect renderWgpuScene3D uses). The ray reconstruction uses GL-convention clip Z (near -1, far
 // +1) to match the camera's projection matrices — the same convention the mesh/shadow paths assume.
-export function drawWgpuEnvironmentSkybox(
+export function renderWgpuEnvironmentSkybox(
   renderPass: WgpuRenderPass,
   environment: Readonly<Environment>,
   camera: Readonly<Camera3D>,

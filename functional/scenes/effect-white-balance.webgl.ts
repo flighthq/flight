@@ -14,7 +14,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlEffectState,
+  beginGlEffectPass,
   createDisplayObject,
   getBitmapPixelRgb,
   createGlEffectState,
@@ -23,7 +23,7 @@ import {
   createWhiteBalanceEffect,
   defaultGlShapeRenderer,
   registerGlWhiteBalanceEffect,
-  endGlEffectState,
+  endGlEffectPass,
   prepareScene2DRender,
   registerRenderer,
   renderGlScene2D,
@@ -72,9 +72,9 @@ const screenClear = { color: [0x20 / 0xff, 0x28 / 0xff, 0x30 / 0xff, 1], depth: 
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [createWhiteBalanceEffect({ temperature: 0.4, tint: -0.2 })]);
+  endGlEffectPass(pass, pipeline, [createWhiteBalanceEffect({ temperature: 0.4, tint: -0.2 })]);
 }
 
 // Distinct saturated-color shapes filling the frame, suited to showing a full-frame color grade:

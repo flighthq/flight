@@ -109,7 +109,7 @@ export function makeWgpuScene3DState(registry: Readonly<WgpuRenderRegistries> = 
   } as unknown as GPURenderPassEncoder;
 
   // A recording command encoder whose beginRenderPass hands back the same recording pass — enough for
-  // drawWgpuScene3DShadowMap and the IBL bake to drive their own render passes under JSDOM. `finish` returns
+  // renderWgpuScene3DShadowMap and the IBL bake to drive their own render passes under JSDOM. `finish` returns
   // a plausible command buffer the recording queue's submit accepts.
   const commandEncoder = {
     beginRenderPass: record('beginRenderPass', renderPass),

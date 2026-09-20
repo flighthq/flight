@@ -13,14 +13,14 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlEffectState,
+  beginGlEffectPass,
   createDisplayObject,
   createGradientBevelEffect,
   createGlEffectState,
   createGlRenderState,
   createShape,
   defaultGlShapeRenderer,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerGlGradientBevelEffect,
@@ -92,9 +92,9 @@ export function render(root: Node2D): void {
   // The background is drawn OUTSIDE the effect pipeline on purpose. A drop shadow works on the source
   // SILHOUETTE, and drawing an opaque background into the pipeline first makes the silhouette the whole
   // frame — the offset shadow then lands underneath opaque pixels and nothing is visible anywhere.
-  const pass = beginGlEffectState(state, pipeline);
+  const pass = beginGlEffectPass(state, pipeline);
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [
+  endGlEffectPass(pass, pipeline, [
     createGradientBevelEffect({
       alphas: [1, 1, 1],
       angle: BEVEL_ANGLE,

@@ -1,7 +1,7 @@
 export {
   applyCanvasGradientRampLookup,
   applyCanvasRenderEffectsToRenderTexture,
-  beginCanvasEffectState,
+  beginCanvasEffectPass,
   buildCanvasGradientRamp,
   clipCanvasBevelBand,
   createCanvasEffectState,
@@ -23,7 +23,7 @@ export {
   defaultCanvasPosterizeEffectRunner,
   defaultCanvasScanlinesEffectRunner,
   defaultCanvasVignetteEffectRunner,
-  endCanvasEffectState,
+  endCanvasEffectPass,
   getCanvasBlendEffectBackdrop,
   getCanvasBlendEffectCompositeOperation,
   getCanvasCompositeEffectOperation,

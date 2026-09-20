@@ -12,7 +12,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginWgpuEffectState,
+  beginWgpuEffectPass,
   beginWgpuRenderPass,
   createDisplayObject,
   createDropShadowEffect,
@@ -21,7 +21,7 @@ import {
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   defaultWgpuShapeRenderer,
-  endWgpuEffectState,
+  endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
@@ -85,9 +85,9 @@ const SQUARE_Y = 200;
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
   const pass = beginWgpuRenderPass(state, screen, { color: [0, 0, 0, 1], depth: 1.0 });
-  const scenePass = beginWgpuEffectState(pass, pipeline);
+  const scenePass = beginWgpuEffectPass(pass, pipeline);
   renderWgpuScene2D(scenePass, root);
-  endWgpuEffectState(scenePass, pipeline, [
+  endWgpuEffectPass(scenePass, pipeline, [
     createDropShadowEffect({
       angle: SHADOW_ANGLE,
       blurX: 8,

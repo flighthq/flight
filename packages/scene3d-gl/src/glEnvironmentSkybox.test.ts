@@ -2,14 +2,14 @@ import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/co
 import type { Bitmap, Environment, Texture } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-import { destroyGlEnvironmentSkybox, drawGlEnvironmentSkybox } from './glEnvironmentSkybox';
+import { destroyGlEnvironmentSkybox, renderGlEnvironmentSkybox } from './glEnvironmentSkybox';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 
 // The skybox draw itself is validated by the functional `env-skybox` capture. This covers the guard:
 // with no complete source cube the pass is a no-op (it must not touch GL), so an app that always calls
 // it before renderGlScene3D pays nothing until an environment is bound.
 
-// A complete six-face cube is what makes drawGlEnvironmentSkybox build its GPU resources rather than
+// A complete six-face cube is what makes renderGlEnvironmentSkybox build its GPU resources rather than
 // return early, which is the state the teardown cases are about.
 function drawSkyboxOnce(state: ReturnType<typeof makeGlScene3DState>['state']): void {
   const face = {
@@ -32,7 +32,7 @@ function drawSkyboxOnce(state: ReturnType<typeof makeGlScene3DState>['state']): 
     near: 0.1,
     projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
   });
-  drawGlEnvironmentSkybox(state, environment, camera, 1);
+  renderGlEnvironmentSkybox(state, environment, camera, 1);
 }
 
 describe('destroyGlEnvironmentSkybox', () => {
@@ -75,7 +75,7 @@ describe('destroyGlEnvironmentSkybox', () => {
   });
 });
 
-describe('drawGlEnvironmentSkybox', () => {
+describe('renderGlEnvironmentSkybox', () => {
   it('is a no-op when the environment has no source cube', () => {
     const { state, gl } = makeGlScene3DState();
     const environment = { environment: null, intensity: 1 } as Environment;
@@ -85,7 +85,7 @@ describe('drawGlEnvironmentSkybox', () => {
       projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
     });
     const before = gl.calls.length;
-    expect(() => drawGlEnvironmentSkybox(state, environment, camera, 1)).not.toThrow();
+    expect(() => renderGlEnvironmentSkybox(state, environment, camera, 1)).not.toThrow();
     expect(gl.calls.length).toBe(before);
   });
 
@@ -117,7 +117,7 @@ describe('drawGlEnvironmentSkybox', () => {
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
 
-    drawGlEnvironmentSkybox(state, environment, camera, 1);
+    renderGlEnvironmentSkybox(state, environment, camera, 1);
 
     expect(gl.isEnabled(gl.DEPTH_TEST)).toBe(true);
     expect(gl.isEnabled(gl.BLEND)).toBe(true);
@@ -146,7 +146,7 @@ describe('drawGlEnvironmentSkybox', () => {
       projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
     });
     camera.inverseViewProjection.m[0] = 42;
-    drawGlEnvironmentSkybox(state, environment, camera, 1);
+    renderGlEnvironmentSkybox(state, environment, camera, 1);
     expect(camera.inverseViewProjection.m[0]).not.toBe(42);
     expect(gl.calls.some((c) => c.name === 'uniformMatrix4fv' && c.args[2] === camera.inverseViewProjection.m)).toBe(
       true,

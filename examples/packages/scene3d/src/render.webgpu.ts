@@ -9,13 +9,13 @@ import {
 import type { Camera3D, Scene3DLightsLike, Node3D, WgpuEffectState } from '@flighthq/sdk';
 import {
   beginWgpuFrame,
-  beginWgpuEffectState,
+  beginWgpuEffectPass,
   beginWgpuRenderPass,
   createWgpuEffectState,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
   enableFlightDiagnostics,
-  endWgpuEffectState,
+  endWgpuEffectPass,
   endWgpuRenderPass,
   prepareScene3DRender,
   defaultScene3DWgpuRenderRegistries,
@@ -25,7 +25,7 @@ import {
   createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
-import { renderWgpuScene3D, drawWgpuScene3DShadowMap } from '@flighthq/sdk/scene3d-wgpu';
+import { renderWgpuScene3D, renderWgpuScene3DShadowMap } from '@flighthq/sdk/scene3d-wgpu';
 
 const pixelRatio = window.devicePixelRatio || 1;
 const appWindow = createAppWindow();
@@ -62,11 +62,11 @@ export function render(
 ): void {
   prepareScene3DRender(state, scene, camera, lights);
   beginWgpuFrame(state);
-  drawWgpuScene3DShadowMap(state, scene, shadowCamera, lights.directional);
+  renderWgpuScene3DShadowMap(state, scene, shadowCamera, lights.directional);
   const pass = beginWgpuRenderPass(state, screen, screenClear);
-  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear, 'linear');
+  const scenePass = beginWgpuEffectPass(pass, pipeline, screenClear, 'linear');
   renderWgpuScene3D(scenePass, scene, camera, lights);
-  endWgpuEffectState(scenePass, pipeline, []);
+  endWgpuEffectPass(scenePass, pipeline, []);
   endWgpuRenderPass(pass);
   submitWgpuFrame(state);
 }

@@ -12,7 +12,7 @@ import {
   createGlSurface,
   defaultScene3DGlRenderRegistries,
   addNodeChild,
-  beginGlEffectState,
+  beginGlEffectPass,
   createAmbientLight,
   createBoxMeshGeometry,
   createCamera3D,
@@ -25,7 +25,7 @@ import {
   createRenderTexture,
   createUnlitMaterial,
   createVector3,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
@@ -132,10 +132,10 @@ const pipeline: GlEffectState = createGlEffectState(state, {
   sampleCount: 1,
 });
 const screenClear = { color: [0x08 / 0xff, 0x0b / 0xff, 0x12 / 0xff, 1], depth: 1.0 } as const;
-const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
 prepareScene3DRender(state, consumerScene, consumerCamera, lights);
 renderGlScene3D(pass, consumerScene, consumerCamera, lights);
-endGlEffectState(pass, pipeline, []);
+endGlEffectPass(pass, pipeline, []);
 
 export function assertRender(bitmap: Readonly<Bitmap>): void {
   const topSample = getBitmapPixelRgb(bitmap, Math.floor(bitmap.width * 0.5), Math.floor(bitmap.height * 0.42));

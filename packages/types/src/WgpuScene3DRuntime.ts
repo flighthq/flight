@@ -6,7 +6,7 @@ import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderS
 import type { WgpuMeshPipeline } from './WgpuMeshPipeline';
 import type { WgpuRenderState } from './WgpuRenderState';
 
-// The active directional shadow for this state, set by drawWgpuScene3DShadowMap and read by the lit bind
+// The active directional shadow for this state, set by renderWgpuScene3DShadowMap and read by the lit bind
 // (beginWgpuMeshDraw → ensureWgpuShadowSampleBindGroup) so every lit family samples the same shadow map.
 // The WGSL mirror of scene-gl's GlScene3DShadow. The depth texture is a sampleable depth32float target the
 // depth pass renders into and the lit fs_main PCF-samples; `matrix` is the light view-projection (world →
@@ -149,7 +149,7 @@ export interface WgpuScene3DRuntime {
   pipelineCache: Map<string, WgpuMeshPipeline>;
   placeholderView: GPUTextureView | null;
   // Directional shadow state (mirrors GlScene3DRuntime.shadow/shadowTarget). `shadow` is the retained
-  // resource and per-frame enabled/config result written by drawWgpuScene3DShadowMap; the rest are the lazily-created singletons the write side
+  // resource and per-frame enabled/config result written by renderWgpuScene3DShadowMap; the rest are the lazily-created singletons the write side
   // (shadowDepthPipeline) and the sample side (everything shadowSample*/shadowUniform*/shadowDummy*/
   // shadowComparisonSampler) reuse each frame. The shadow-sample bind group is rebuilt only when the
   // bound depth view changes (present ↔ absent); its uniform is rewritten every bind. All created lazily,

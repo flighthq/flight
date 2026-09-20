@@ -14,14 +14,14 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlEffectState,
+  beginGlEffectPass,
   createDisplayObject,
   createExposureAdjustment,
   createGlEffectState,
   createGlRenderState,
   createShape,
   defaultGlShapeRenderer,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerRenderer,
@@ -74,9 +74,9 @@ export const height = 600;
 
 export function render(root: Node2D): void {
   if (!prepareScene2DRender(state, root)) return;
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [createExposureAdjustment({ exposure: 1 })]);
+  endGlEffectPass(pass, pipeline, [createExposureAdjustment({ exposure: 1 })]);
 }
 
 // A normal scene of bright, saturated shapes on a near-black field, rendered through an HDR pipeline.

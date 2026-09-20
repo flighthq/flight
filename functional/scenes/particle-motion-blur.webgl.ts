@@ -22,7 +22,7 @@ import {
   ParticleEmitter2DKind,
   addNodeChild,
   addTextureAtlasRegion,
-  beginGlEffectState,
+  beginGlEffectPass,
   beginVelocityFrame,
   createGlEffectState,
   createGlRenderState,
@@ -36,7 +36,7 @@ import {
   registerGlMotionBlurEffect,
   defaultGlParticleEmitter2DRenderer,
   defaultGlParticleEmitter2DVelocityWriter,
-  endGlEffectState,
+  endGlEffectPass,
   invalidateNodeLocalTransform,
   prepareScene2DRender,
   registerGlVelocityWriter,
@@ -101,9 +101,9 @@ export function render(root: Node2D): void {
   renderGlVelocity(state, root, velocityField, velocityTarget);
   setGlRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
 
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
+  endGlEffectPass(pass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
 }
 
 // Per-particle motion blur: eight particles arranged in a ring, each given a velocity pointing radially

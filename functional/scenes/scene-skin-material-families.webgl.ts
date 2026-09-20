@@ -12,7 +12,7 @@ import {
   defaultScene3DGlRenderRegistries,
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
-  beginGlEffectState,
+  beginGlEffectPass,
   copyQuaternion,
   createAmbientLight,
   createCamera3D,
@@ -32,7 +32,7 @@ import {
   createSkeleton3D,
   createVector3,
   createWireframeMaterial,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
@@ -87,7 +87,7 @@ export const height = 600;
 const screenClear = { color: [0x0a / 0xff, 0x0c / 0xff, 0x10 / 0xff, 1], depth: 1.0 } as const;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
@@ -95,7 +95,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
   prepareScene3DSkinning(scene);
   prepareScene3DRender(state, scene, camera, lights);
   renderGlScene3D(pass, scene, camera, lights);
-  endGlEffectState(pass, pipeline, []);
+  endGlEffectPass(pass, pipeline, []);
 }
 
 // Three square rings form a vertical bar. The top ring is fully weighted to the bend joint; the two

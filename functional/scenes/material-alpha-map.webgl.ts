@@ -14,7 +14,7 @@ import {
   defaultScene3DGlRenderRegistries,
   createScene3DLights,
   addNodeChild,
-  beginGlEffectState,
+  beginGlEffectPass,
   createAmbientLight,
   createBlinnPhongMaterial,
   createCamera3D,
@@ -26,7 +26,7 @@ import {
   createQuadMeshGeometry,
   createTexture,
   createVector3,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelChannel,
   ImageChannel,
   normalizeVector3,
@@ -85,14 +85,14 @@ export const height = 600;
 const screenClear = { color: [0, 0x28 / 0xff, 0x50 / 0xff, 1], depth: 1.0 } as const;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   renderGlScene3D(pass, scene, camera, lights);
-  endGlEffectState(pass, pipeline, []);
+  endGlEffectPass(pass, pipeline, []);
 }
 
 // material-alpha-map — proves a BlinnPhong material's dedicated alpha (opacity) map drives per-pixel

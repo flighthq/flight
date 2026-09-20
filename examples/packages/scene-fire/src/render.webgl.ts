@@ -10,11 +10,11 @@ import type { Camera3D, GlEffectState, Node3D, RenderEffect, Scene3DLightsLike }
 import {
   createGlSurface,
   defaultScene3DGlRenderRegistries,
-  beginGlEffectState,
+  beginGlEffectPass,
   createGlEffectState,
   createGlRenderState,
   enableFlightDiagnostics,
-  endGlEffectState,
+  endGlEffectPass,
   prepareScene3DRender,
   registerGlBloomEffect,
   registerGlToneMapEffect,
@@ -62,8 +62,8 @@ export function render(
   lights: Readonly<Scene3DLightsLike>,
   effects: readonly RenderEffect[],
 ): void {
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   prepareScene3DRender(state, scene, camera, lights);
   renderGlScene3D(pass, scene, camera, lights);
-  endGlEffectState(pass, pipeline, effects);
+  endGlEffectPass(pass, pipeline, effects);
 }

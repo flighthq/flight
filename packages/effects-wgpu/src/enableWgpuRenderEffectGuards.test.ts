@@ -23,7 +23,7 @@ import {
   disableWgpuRenderEffectGuards,
   enableWgpuRenderEffectGuards,
 } from './enableWgpuRenderEffectGuards';
-import { beginWgpuEffectState, createWgpuEffectState, endWgpuEffectState } from './wgpuEffectState';
+import { beginWgpuEffectPass, createWgpuEffectState, endWgpuEffectPass } from './wgpuEffectState';
 import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 import { applyWgpuRenderEffectsToRenderTexture } from './wgpuRenderTextureEffect';
 
@@ -107,7 +107,7 @@ describe('enableWgpuRenderEffectGuards', () => {
 
     const entries = captureLog(() => {
       const screenPass = beginWgpuScreenRenderPassForTest(state);
-      endWgpuEffectState(beginWgpuEffectState(screenPass, pipeline), pipeline, chain);
+      endWgpuEffectPass(beginWgpuEffectPass(screenPass, pipeline), pipeline, chain);
       endWgpuRenderPass(screenPass);
     });
 
@@ -119,7 +119,7 @@ describe('enableWgpuRenderEffectGuards', () => {
     // and a warning that repeated per frame would be its own defect.
     const again = captureLog(() => {
       const screenPass = beginWgpuScreenRenderPassForTest(state);
-      endWgpuEffectState(beginWgpuEffectState(screenPass, pipeline), pipeline, chain);
+      endWgpuEffectPass(beginWgpuEffectPass(screenPass, pipeline), pipeline, chain);
       endWgpuRenderPass(screenPass);
     });
 

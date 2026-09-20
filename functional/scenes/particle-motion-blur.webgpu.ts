@@ -20,7 +20,7 @@ import {
   addNodeChild,
   addTextureAtlasRegion,
   beginVelocityFrame,
-  beginWgpuEffectState,
+  beginWgpuEffectPass,
   beginWgpuRenderPass,
   createMotionBlurEffect,
   createParticleEmitter2D,
@@ -34,7 +34,7 @@ import {
   createWgpuVelocityTarget,
   defaultWgpuParticleEmitter2DRenderer,
   defaultWgpuParticleEmitter2DVelocityWriter,
-  endWgpuEffectState,
+  endWgpuEffectPass,
   endWgpuRenderPass,
   getBitmapPixelRgb,
   invalidateNodeLocalTransform,
@@ -110,9 +110,9 @@ export function render(root: Node2D): void {
   renderWgpuVelocity(state, root, velocityField, velocityTarget);
   setWgpuRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
 
-  const scenePass = beginWgpuEffectState(pass, pipeline, screenClear);
+  const scenePass = beginWgpuEffectPass(pass, pipeline, screenClear);
   renderWgpuScene2D(scenePass, root);
-  endWgpuEffectState(scenePass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
+  endWgpuEffectPass(scenePass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
   endWgpuRenderPass(pass);
 }
 

@@ -15,7 +15,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  beginGlEffectState,
+  beginGlEffectPass,
   beginVelocityFrame,
   contributeVelocity,
   createDisplayObject,
@@ -29,7 +29,7 @@ import {
   registerDefaultShapeBoundsCommands,
   registerGlMotionBlurEffect,
   defaultGlShapeRenderer,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelRgb,
   getNodeChildAt,
   getNodeChildCount,
@@ -100,9 +100,9 @@ export function render(root: Node2D): void {
   renderGlVelocity(state, root, velocityField, velocityTarget);
   setGlRenderEffectVelocityTexture(pipeline, velocityTarget.texture);
 
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'srgb');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'srgb');
   renderGlScene2D(pass, root);
-  endGlEffectState(pass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
+  endGlEffectPass(pass, pipeline, [createMotionBlurEffect({ intensity: 1, samples: 16 })]);
 }
 
 // A few solid shapes spread across the frame. Velocity is contributed in render.webgl.ts (one static

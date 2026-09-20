@@ -178,7 +178,7 @@ void main() {
   // The raw N·L is quantized into cel bands — via a 1D ramp lookup or a stepped floor — then scales
   // the base color and the directional radiance. The banded contribution is shadow-mapped like the
   // classic/PBR directional term; sampleDirectionalShadow is 1.0 when no shadow map is bound, so a toon
-  // scene that never calls drawGlScene3DShadowMap is unchanged.
+  // scene that never calls renderGlScene3DShadowMap is unchanged.
   if (u_directionalCount > 0.5) {
     vec3 lightDir = normalize(-u_directional.xyz);
     float nDotL = clamp(dot(normal, lightDir), 0.0, 1.0);

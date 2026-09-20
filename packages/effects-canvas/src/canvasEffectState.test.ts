@@ -5,11 +5,11 @@ import type { CanvasRenderEffectRunner, RenderEffect } from '@flighthq/types/con
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import {
   acquireCanvasRenderTarget,
-  beginCanvasEffectState,
+  beginCanvasEffectPass,
   createCanvasEffectState,
   createCanvasTextureRenderTargetPool,
   destroyCanvasEffectState,
-  endCanvasEffectState,
+  endCanvasEffectPass,
   initializeCanvasEffectState,
   initializeCanvasRenderTargetPool,
   releaseCanvasRenderTarget,
@@ -23,9 +23,9 @@ describe('acquireCanvasRenderTarget', () => {
   });
 });
 
-describe('beginCanvasEffectState', () => {
+describe('beginCanvasEffectPass', () => {
   it('is a function', () => {
-    expect(typeof beginCanvasEffectState).toBe('function');
+    expect(typeof beginCanvasEffectPass).toBe('function');
   });
 });
 
@@ -53,9 +53,9 @@ describe('destroyCanvasEffectState', () => {
   });
 });
 
-describe('endCanvasEffectState', () => {
+describe('endCanvasEffectPass', () => {
   it('is a function', () => {
-    expect(typeof endCanvasEffectState).toBe('function');
+    expect(typeof endCanvasEffectPass).toBe('function');
   });
 
   // Ending the scene pass restores whatever was installed before it, which is nothing when the chain ran
@@ -69,11 +69,11 @@ describe('endCanvasEffectState', () => {
     const pipeline = createCanvasEffectState(state);
     const screenPass = getCanvasActiveRenderPass(state)!;
     // Closing the screen pass before the chain opens leaves the scene pass alone on the stack, so ending
-    // it inside endCanvasEffectState leaves nothing to present into.
+    // it inside endCanvasEffectPass leaves nothing to present into.
     endCanvasRenderPass(screenPass);
-    const scenePass = beginCanvasEffectState(screenPass, pipeline);
+    const scenePass = beginCanvasEffectPass(screenPass, pipeline);
 
-    expect(() => endCanvasEffectState(scenePass, pipeline, [])).toThrow(/no enclosing pass/u);
+    expect(() => endCanvasEffectPass(scenePass, pipeline, [])).toThrow(/no enclosing pass/u);
   });
 
   it('writes an unregistered effect destination before chaining and presenting it', () => {
@@ -82,7 +82,7 @@ describe('endCanvasEffectState', () => {
     canvas.height = 4;
     const state = createCanvasRenderState(canvas);
     const pipeline = createCanvasEffectState(state);
-    const scenePass = beginCanvasEffectState(getCanvasActiveRenderPass(state)!, pipeline);
+    const scenePass = beginCanvasEffectPass(getCanvasActiveRenderPass(state)!, pipeline);
     const scene = pipeline.sceneTarget!;
     scene.context.fillStyle = '#ff0000';
     scene.context.fillRect(0, 0, 4, 4);
@@ -92,7 +92,7 @@ describe('endCanvasEffectState', () => {
     });
     registerCanvasRenderEffect(state, 'RealizedEffect', realizedRunner);
 
-    endCanvasEffectState(scenePass, pipeline, [
+    endCanvasEffectPass(scenePass, pipeline, [
       (() => {
         const out = allocateEntity<any>();
         out.kind = 'UnregisteredEffect';

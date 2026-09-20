@@ -48,7 +48,7 @@ import {
   createGlSurface,
   defaultScene3DGlRenderRegistries,
   addNodeChild,
-  beginGlEffectState,
+  beginGlEffectPass,
   CANONICAL_MESH_GEOMETRY_LAYOUT,
   computeMeshGeometryTangents,
   createAmbientLight,
@@ -63,7 +63,7 @@ import {
   createScene3DLights,
   createTexture,
   createVector3,
-  endGlEffectState,
+  endGlEffectPass,
   getBitmapPixelLuminance,
   invalidateNodeLocalTransform,
   normalizeVector3,
@@ -115,14 +115,14 @@ const SAMPLE_FRACTION_CENTRE = 0.5;
 const SAMPLE_FRACTION_RIGHT = 0.832;
 
 export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, lights: Readonly<Scene3DLights>): void {
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   prepareScene3DRender(state, scene, camera, lights);
   renderGlScene3D(pass, scene, camera, lights);
-  endGlEffectState(pass, pipeline, []);
+  endGlEffectPass(pass, pipeline, []);
 }
 
 const material = createBlinnPhongMaterial({

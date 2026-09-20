@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { renderGlScene3D, drawGlScene3DShadowMap } from '@flighthq/scene3d-gl';
+import { renderGlScene3D, renderGlScene3DShadowMap } from '@flighthq/scene3d-gl';
 import type { Bitmap, Camera3D, GlEffectState, Node3D, Scene3DLights } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -32,10 +32,10 @@ import {
   scaleMatrix4,
   setCamera3DViewMatrix4FromLookAt,
   translateMatrix4,
-  beginGlEffectState,
+  beginGlEffectPass,
   createGlEffectState,
   createGlRenderState,
-  endGlEffectState,
+  endGlEffectPass,
   defaultScene3DGlRenderRegistries,
   setSurfaceDisplaySize,
   createAppWindow,
@@ -80,15 +80,15 @@ export function render(
   shadowCamera: Readonly<Camera3D>,
 ): void {
   prepareScene3DRender(state, scene, camera, lights);
-  drawGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
+  renderGlScene3DShadowMap(state, scene, shadowCamera, lights.directional);
 
-  const pass = beginGlEffectState(state, pipeline, screenClear, 'linear');
+  const pass = beginGlEffectPass(state, pipeline, screenClear, 'linear');
   const gl = state.gl;
   gl.depthMask(true);
   gl.clearDepth(1);
   gl.clear(gl.DEPTH_BUFFER_BIT);
   renderGlScene3D(pass, scene, camera, lights);
-  endGlEffectState(pass, pipeline, []);
+  endGlEffectPass(pass, pipeline, []);
 }
 
 // instanced-mesh-shadow — instanced shadow CASTERS. The batch shares one 4-unit box geometry and each instance
