@@ -13,7 +13,6 @@ import {
 } from '@flighthq/render-gl';
 import { createNode3D } from '@flighthq/scene3d';
 import { renderGlScene3D } from '@flighthq/scene3d-gl';
-import { Node3DKind } from '@flighthq/scene3d/contract';
 import { createGlSurface } from '@flighthq/surface';
 
 const appWindow = createAppWindow();
