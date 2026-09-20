@@ -1,4 +1,11 @@
-import { affectsSharedPackageTests, resolveChangedTestArguments, shouldRunPrepushTypecheck } from './prepush';
+import {
+  affectsHostBackends,
+  affectsScripts,
+  affectsSharedPackageTests,
+  affectsTools,
+  resolveChangedTestArguments,
+  shouldRunPrepushTypecheck,
+} from './prepush';
 
 describe('shouldRunPrepushTypecheck', () => {
   it('skips typecheck for an explicit Markdown-only change', () => {
@@ -52,12 +59,50 @@ describe('resolveChangedTestArguments', () => {
   });
 });
 
+describe('affectsHostBackends', () => {
+  it('matches host backend source', () => {
+    expect(affectsHostBackends(['packages/host-web/src/webHost.ts'])).toBe(true);
+  });
+
+  it('ignores SDK packages', () => {
+    expect(affectsHostBackends(['packages/mesh/src/mesh.ts'])).toBe(false);
+  });
+});
+
+describe('affectsScripts', () => {
+  it('matches scripts/ TypeScript files', () => {
+    expect(affectsScripts(['scripts/check-exports.ts'])).toBe(true);
+  });
+
+  it('ignores non-TypeScript in scripts/', () => {
+    expect(affectsScripts(['scripts/README.md'])).toBe(false);
+  });
+
+  it('ignores package source', () => {
+    expect(affectsScripts(['packages/mesh/src/mesh.ts'])).toBe(false);
+  });
+});
+
 describe('affectsSharedPackageTests', () => {
   it('includes ordinary package source', () => {
     expect(affectsSharedPackageTests(['packages/mesh/src/mesh.ts'])).toBe(true);
   });
 
-  it('excludes tool-capture from the shared project', () => {
+  it('excludes host backends from the shared project', () => {
+    expect(affectsSharedPackageTests(['packages/host-web/src/webHost.ts'])).toBe(false);
+  });
+
+  it('excludes dev tools from the shared project', () => {
     expect(affectsSharedPackageTests(['packages/tool-capture/src/capture.ts'])).toBe(false);
+  });
+});
+
+describe('affectsTools', () => {
+  it('matches dev tool source', () => {
+    expect(affectsTools(['packages/tool-capture/src/capture.ts'])).toBe(true);
+  });
+
+  it('ignores SDK packages', () => {
+    expect(affectsTools(['packages/mesh/src/mesh.ts'])).toBe(false);
   });
 });

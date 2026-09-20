@@ -4,15 +4,14 @@
 //
 //   1. changed-file classify  — first, so a closed Markdown-only change can skip typecheck
 //   2. typecheck              — unless every changed file is Markdown documentation
-//   3. vitest run --changed   — only when package source changed; vitest walks the shared project's
-//                               module graph from <base> and reruns affected fast-path tests.
-//                               Tool-capture's browser contracts run once in CI through its package config.
+//   3. lane routing           — changed paths select which test runners to invoke:
+//        packages/<sdk>/src/  → vitest run --changed (SDK unit tests)
+//        scripts/             → npm run test:scripts
+//        packages/host-*/src/ → npm run test:host
+//        packages/tool-*/src/ → npm run test:tools
 //
-// We let vitest derive the affected test set from its module graph (`--changed <base>`) rather than
-// computing it ourselves from the package dependency graph. The root config now has multiple projects;
-// this fast lane names `shared` explicitly so Vitest does not discover the serial tool-capture or other
-// independently routed projects. Vitest's graph is finer-grained (per test file, by real imports) and
-// needs no maintenance as packages are added; a module-graph edge it can't see (e.g. a computed dynamic
+// For SDK units, vitest derives the affected test set from its module graph (`--changed <base>`)
+// rather than rerunning everything. A module-graph edge it can't see (e.g. a computed dynamic
 // import) only means that test slips to CI, never to production.
 // The hook runs on the developer's machine while they keep working on it, so it defaults to half the
 // available cores and below-normal scheduling priority instead of Vitest's run-mode default of every core
@@ -88,8 +87,23 @@ export function shouldRunPrepushTypecheck(changedFiles: readonly string[] | null
 
 export function affectsSharedPackageTests(changedFiles: readonly string[]): boolean {
   return changedFiles.some(
-    (file) => /^packages\/[^/]+\/src\/.+\.(ts|tsx)$/.test(file) && !file.startsWith('packages/tool-capture/'),
+    (file) =>
+      /^packages\/[^/]+\/src\/.+\.(ts|tsx)$/.test(file) &&
+      !file.startsWith('packages/host-') &&
+      !file.startsWith('packages/tool-'),
   );
+}
+
+export function affectsScripts(changedFiles: readonly string[]): boolean {
+  return changedFiles.some((file) => file.startsWith('scripts/') && file.endsWith('.ts'));
+}
+
+export function affectsHostBackends(changedFiles: readonly string[]): boolean {
+  return changedFiles.some((file) => /^packages\/host-[^/]+\/src\/.+\.(ts|tsx)$/.test(file));
+}
+
+export function affectsTools(changedFiles: readonly string[]): boolean {
+  return changedFiles.some((file) => /^packages\/tool-[^/]+\/src\/.+\.(ts|tsx)$/.test(file));
 }
 
 export function resolveChangedTestArguments(
@@ -142,12 +156,29 @@ function main(): void {
   console.log(pc.cyan(`pre-push: ${changed.length} file(s) changed vs ${base}`));
 
   if (affectsSharedPackageTests(changed)) {
-    // Route through the repository wrapper so the structured completion gate also judges worker loss.
     run(
       `npm run test -- ${resolveChangedTestArguments(base, process.env.FLIGHT_PREPUSH_VITEST_WORKERS, availableParallelism()).join(' ')}`,
     );
   } else {
-    console.log(pc.dim('pre-push: no shared-project package source changed — skipping vitest'));
+    console.log(pc.dim('pre-push: no SDK package source changed — skipping unit tests'));
+  }
+
+  if (affectsScripts(changed)) {
+    run('npm run test:scripts');
+  } else {
+    console.log(pc.dim('pre-push: no scripts/ source changed — skipping test:scripts'));
+  }
+
+  if (affectsHostBackends(changed)) {
+    run('npm run test:host');
+  } else {
+    console.log(pc.dim('pre-push: no host backend source changed — skipping test:host'));
+  }
+
+  if (affectsTools(changed)) {
+    run('npm run test:tools');
+  } else {
+    console.log(pc.dim('pre-push: no dev tool source changed — skipping test:tools'));
   }
 }
 
