@@ -131,7 +131,12 @@ const profiles = [
     ],
     kind: 'Scale9ShapeKind',
     name: 'scene2d-gl-pipeline-scale9shape',
-    registrations: ['registerGlShapeCommands', 'registerGlShapeRasterizer', 'registerRenderer'],
+    // The CANVAS shape commands in a WebGL profile are correct, not a copy-paste slip: shape COMMANDS
+    // are the backend-independent geometry vocabulary and only `registerCanvasShapeCommand(s)` exists
+    // for them, while the GL side contributes the RASTERIZER that draws what they describe. The
+    // retired `registerGlShapeCommands` is what this list used to name, and the fixture had already
+    // moved on — the profile had not, so the assertion failed against a fixture that was right.
+    registrations: ['registerCanvasShapeCommands', 'registerGlShapeRasterizer', 'registerRenderer'],
     renderer: 'defaultGlScale9ShapeRenderer',
   },
   {

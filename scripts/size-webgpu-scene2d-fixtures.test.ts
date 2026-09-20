@@ -92,6 +92,11 @@ describe('WebGPU Scene2D second-wave size fixtures', () => {
         .map((item) => item.trim())
         .filter(Boolean)
         .sort(),
-    ).toEqual(['createCanvasShapeRasterizer', 'createCanvasTextureResolvers']);
+    ).toEqual([
+      'createCanvasShapeRasterizer',
+      'createCanvasTextureResolvers',
+      'defaultCanvasShapeCommands',
+      'registerCanvasShapeCommands',
+    ]);
   });
 });

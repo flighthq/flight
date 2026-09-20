@@ -473,10 +473,27 @@ function importFamily(specifier: string): ImportFamily | null {
   return null;
 }
 
+// The fixtures allowed to reach across into `@flighthq/scene2d-canvas`. Shape COMMANDS are the
+// backend-independent geometry vocabulary and only the Canvas package registers them —
+// `registerGlShapeCommands` was retired with no replacement on the GL side — so a non-Canvas fixture
+// that draws shapes must read them from here.
+//
+// TWO SETS, NOT ONE, because they differ in the HOST half of the bridge and only share the canvas half:
+// the DOM fixtures also take `webCanvasRenderSurfaceCreator` from `@flighthq/host-web`, while the
+// pipeline fixtures build their own surface through `createGlSurface`/`createWgpuSurface`. Merging them
+// made the DOM pinning case below start policing fixtures whose bridge is legitimately different.
 const domShapeCanvasBridgeFixtures = new Set([
   'scene2d-dom-morphshape',
   'scene2d-dom-scale9shape',
   'scene2d-dom-shape',
+]);
+
+// The GL and WGPU scale-9 fixtures joined the canvas bridge when `registerGlShapeCommands` was retired.
+// They take the SAME four canvas symbols as the DOM set — verified against the fixture sources, not
+// granted generously — and nothing from `@flighthq/host-web`.
+const pipelineShapeCanvasBridgeFixtures = new Set([
+  'scene2d-gl-pipeline-scale9shape',
+  'scene2d-wgpu-pipeline-scale9shape',
 ]);
 
 function isAllowedCanvasBridge(
@@ -484,15 +501,14 @@ function isAllowedCanvasBridge(
   item: Readonly<FixtureImport & { family: ImportFamily | null }>,
 ): boolean {
   if (item.specifier !== '@flighthq/scene2d-canvas') return false;
-  const allowed = domShapeCanvasBridgeFixtures.has(fixture.name)
-    ? new Set([
-        'createCanvasShapeRasterizer',
-        'createCanvasTextureResolvers',
-        'defaultCanvasShapeCommands',
-        'registerCanvasShapeCommands',
-      ])
-    : fixture.name === 'scene2d-gl-pipeline-scale9shape' || fixture.name === 'scene2d-wgpu-pipeline-scale9shape'
-      ? new Set(['createCanvasShapeRasterizer', 'createCanvasTextureResolvers'])
+  const allowed =
+    domShapeCanvasBridgeFixtures.has(fixture.name) || pipelineShapeCanvasBridgeFixtures.has(fixture.name)
+      ? new Set([
+          'createCanvasShapeRasterizer',
+          'createCanvasTextureResolvers',
+          'defaultCanvasShapeCommands',
+          'registerCanvasShapeCommands',
+        ])
       : null;
   if (allowed === null) return false;
   return item.importedNames.length > 0 && item.importedNames.every((name) => allowed.has(name));
