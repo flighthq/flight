@@ -1,5 +1,5 @@
 import type {
-  CanvasRenderEffectRunner,
+  CanvasEffectRunner,
   CanvasRenderState,
   CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
@@ -7,13 +7,13 @@ import type {
 } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
+import { registerCanvasEffect } from './canvasEffectRegistry';
 import {
   acquireCanvasRenderTarget,
   createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
 } from './canvasEffectState';
 import { applyCanvasGradientRampLookup, buildCanvasGradientRamp } from './canvasGradientRamp';
-import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 import { clearCanvasTarget, compositeCanvasImage } from './canvasSourceModeCompositing';
 
 // Gradient-glow composite effect: blur the silhouette, then colour every pixel by looking its blurred
@@ -48,12 +48,12 @@ export function applyGradientGlowEffectToCanvas(
   applyGradientGlowEffectToCanvasWithPool(source, dest, pool, effect);
 }
 
-export const defaultCanvasGradientGlowEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+export const defaultCanvasGradientGlowEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyGradientGlowEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as GradientGlowEffect);
 };
 
 export function registerCanvasGradientGlowEffect(state: CanvasRenderState): void {
-  registerCanvasRenderEffect(state, 'GradientGlowEffect', defaultCanvasGradientGlowEffectRunner);
+  registerCanvasEffect(state, 'GradientGlowEffect', defaultCanvasGradientGlowEffectRunner);
 }
 
 function applyGradientGlowEffectToCanvasWithPool(

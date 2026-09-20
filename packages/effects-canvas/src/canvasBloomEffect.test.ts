@@ -7,8 +7,8 @@ import {
   defaultCanvasBloomEffectRunner,
   registerCanvasBloomEffect,
 } from './canvasBloomEffect';
+import { getCanvasEffectRunner } from './canvasEffectRegistry';
 import { canvasTestSurfaceCreator, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport';
-import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 // A target whose ImageData is a real buffer, so the bright pass and the composite run their actual
 // arithmetic rather than being observed through a spy. `filter` is accepted and ignored: the only CSS
@@ -184,8 +184,8 @@ describe('registerCanvasBloomEffect', () => {
     // Registration is not a drawing concern, so this state opens no pass and needs no canvas at all.
     const state = createCanvasRenderStateWithoutPass();
 
-    expect(getCanvasRenderEffectRunner(state, 'BloomEffect')).toBeNull();
+    expect(getCanvasEffectRunner(state, 'BloomEffect')).toBeNull();
     registerCanvasBloomEffect(state);
-    expect(getCanvasRenderEffectRunner(state, 'BloomEffect')).toBe(defaultCanvasBloomEffectRunner);
+    expect(getCanvasEffectRunner(state, 'BloomEffect')).toBe(defaultCanvasBloomEffectRunner);
   });
 });

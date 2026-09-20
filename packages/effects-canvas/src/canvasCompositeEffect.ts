@@ -1,5 +1,5 @@
 import type {
-  CanvasRenderEffectRunner,
+  CanvasEffectRunner,
   CanvasRenderState,
   CanvasTextureRenderTarget,
   CompositeEffect,
@@ -8,7 +8,7 @@ import type {
 import { CompositeOperator as CompositeOperatorValues } from '@flighthq/types/contract';
 
 import { getCanvasBlendEffectBackdrop } from './canvasBlendEffect';
-import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
+import { registerCanvasEffect } from './canvasEffectRegistry';
 
 // Porter-Duff composite pass: lay down a registered backdrop, then draw the incoming layer over it under
 // the Canvas 2D operation named by the effect's `operator`. This is the Canvas realization of the
@@ -54,7 +54,7 @@ export function applyCompositeEffectToCanvas(
   ctx.restore();
 }
 
-export const defaultCanvasCompositeEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+export const defaultCanvasCompositeEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyCompositeEffectToCanvas(ctx.state, ctx.source, ctx.dest, effect as CompositeEffect);
 };
 
@@ -70,7 +70,7 @@ export function getCanvasCompositeEffectOperation(operator: CompositeOperator): 
 }
 
 export function registerCanvasCompositeEffect(state: CanvasRenderState): void {
-  registerCanvasRenderEffect(state, 'CompositeEffect', defaultCanvasCompositeEffectRunner);
+  registerCanvasEffect(state, 'CompositeEffect', defaultCanvasCompositeEffectRunner);
 }
 
 // CompositeOperator → Canvas 2D globalCompositeOperation. Ten of the eleven operators are a direct

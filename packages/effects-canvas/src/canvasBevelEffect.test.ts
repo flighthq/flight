@@ -8,12 +8,12 @@ import {
   defaultCanvasBevelEffectRunner,
   registerCanvasBevelEffect,
 } from './canvasBevelEffect';
+import { getCanvasEffectRunner } from './canvasEffectRegistry';
 import {
   canvasTestSurfaceCreator,
   createCanvasRenderState,
   createCanvasTextureRenderTarget,
 } from './canvasEffectTestSupport';
-import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 // Recipe assertions rather than pixels — see canvasBlendEffect.test.ts. Scratch targets are pre-seeded so
 // every pass is identifiable; the pool pops from the end, so the seed order reverses the acquire order.
@@ -222,6 +222,6 @@ describe('registerCanvasBevelEffect', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     registerCanvasBevelEffect(state);
 
-    expect(getCanvasRenderEffectRunner(state, 'BevelEffect')).toBe(defaultCanvasBevelEffectRunner);
+    expect(getCanvasEffectRunner(state, 'BevelEffect')).toBe(defaultCanvasBevelEffectRunner);
   });
 });

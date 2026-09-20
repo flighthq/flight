@@ -1,12 +1,12 @@
 import type {
-  CanvasRenderEffectRunner,
+  CanvasEffectRunner,
   CanvasRenderState,
   CanvasTextureRenderTarget,
   PosterizeEffect,
 } from '@flighthq/types/contract';
 
 import { drawCanvasImageDataPass } from './canvasEffectCompositing';
-import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
+import { registerCanvasEffect } from './canvasEffectRegistry';
 
 // Posterize (REAL): floor each channel to `levels` discrete steps, matching the Gl/Wgpu recipe
 // `floor(c * levels) / (levels - 1)` exactly rather than approximating it.
@@ -39,10 +39,10 @@ export function applyPosterizeEffectToCanvas(
   });
 }
 
-export const defaultCanvasPosterizeEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+export const defaultCanvasPosterizeEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyPosterizeEffectToCanvas(ctx.source, ctx.dest, effect as PosterizeEffect);
 };
 
 export function registerCanvasPosterizeEffect(state: CanvasRenderState): void {
-  registerCanvasRenderEffect(state, 'PosterizeEffect', defaultCanvasPosterizeEffectRunner);
+  registerCanvasEffect(state, 'PosterizeEffect', defaultCanvasPosterizeEffectRunner);
 }

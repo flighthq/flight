@@ -13,7 +13,7 @@ import type { RenderEffect } from './RenderEffect';
 // depth-, velocity-, and HDR-dependent effects have no realization here and ship as passthrough copies.
 // A runner reads `source.context` (or `source.canvas` as a CanvasImageSource) and draws into
 // `dest.context`; multi-pass recipes acquire and release additional canvases from `pool`.
-export interface CanvasRenderEffectContext {
+export interface CanvasEffectContext {
   readonly state: CanvasRenderState;
   readonly source: Readonly<CanvasTextureRenderTarget>;
   readonly dest: Readonly<CanvasTextureRenderTarget>;
@@ -24,10 +24,7 @@ export interface CanvasRenderEffectContext {
 // canvases — not a multi-method per-node renderer. The built-ins are exported as `default*` named
 // wrappers (e.g. registerCanvasBloomEffect); register an alternative under the same key to swap
 // algorithms.
-export type CanvasRenderEffectRunner = (
-  ctx: Readonly<CanvasRenderEffectContext>,
-  effect: Readonly<RenderEffect>,
-) => void;
+export type CanvasEffectRunner = (ctx: Readonly<CanvasEffectContext>, effect: Readonly<RenderEffect>) => void;
 
 // A reusable pool of offscreen CanvasRenderTargets. Multi-pass effect recipes (bloom) acquire scratch
 // canvases for branch/blur stages and release them when done — the Canvas analog of the Gl render

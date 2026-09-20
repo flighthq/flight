@@ -1,11 +1,11 @@
 import { defaultCanvasBloomEffectRunner, registerCanvasBloomEffect } from './canvasBloomEffect';
 import { defaultCanvasBlurEffectRunner, registerCanvasBlurEffect } from './canvasBlurEffect';
 import { defaultCanvasDropShadowEffectRunner, registerCanvasDropShadowEffect } from './canvasDropShadowEffect';
+import { getCanvasEffectRunner } from './canvasEffectRegistry';
 import { createCanvasRenderState } from './canvasEffectTestSupport';
 import { defaultCanvasFilmGrainEffectRunner, registerCanvasFilmGrainEffect } from './canvasFilmGrainEffect';
 import { defaultCanvasOuterGlowEffectRunner, registerCanvasOuterGlowEffect } from './canvasOuterGlowEffect';
 import { defaultCanvasPixelateEffectRunner, registerCanvasPixelateEffect } from './canvasPixelateEffect';
-import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 import { defaultCanvasScanlinesEffectRunner, registerCanvasScanlinesEffect } from './canvasScanlinesEffect';
 import { defaultCanvasVignetteEffectRunner, registerCanvasVignetteEffect } from './canvasVignetteEffect';
 
@@ -24,6 +24,6 @@ describe('realized Canvas effect registration', () => {
   it.each(CASES)('maps %s to its leaf runner', (kind, register, runner) => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     register(state);
-    expect(getCanvasRenderEffectRunner(state, kind)).toBe(runner);
+    expect(getCanvasEffectRunner(state, kind)).toBe(runner);
   });
 });

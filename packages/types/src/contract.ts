@@ -133,7 +133,7 @@ export * from './CanvasMaterialRenderer';
 export * from './CanvasMaterialState';
 export * from './CanvasSurface';
 export * from './CanvasEffectState';
-export * from './CanvasRenderEffectSupport';
+export * from './CanvasEffectSupport';
 export * from './CanvasRenderOptions';
 export * from './CanvasRenderSurface';
 export * from './CanvasRenderPass';

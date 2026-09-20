@@ -1,6 +1,6 @@
 import { applyBlurEffectToCanvas, defaultCanvasBlurEffectRunner, registerCanvasBlurEffect } from './canvasBlurEffect';
+import { getCanvasEffectRunner } from './canvasEffectRegistry';
 import { createCanvasRenderState } from './canvasEffectTestSupport';
-import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 describe('applyBlurEffectToCanvas', () => {
   it('is a function', () => {
@@ -18,6 +18,6 @@ describe('registerCanvasBlurEffect', () => {
   it('registers the default runner under the BlurEffect kind', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     registerCanvasBlurEffect(state);
-    expect(getCanvasRenderEffectRunner(state, 'BlurEffect')).toBe(defaultCanvasBlurEffectRunner);
+    expect(getCanvasEffectRunner(state, 'BlurEffect')).toBe(defaultCanvasBlurEffectRunner);
   });
 });

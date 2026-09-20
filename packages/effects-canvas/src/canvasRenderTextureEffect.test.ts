@@ -8,17 +8,17 @@ import {
   isCanvasRenderTextureReady,
   writeCanvasRenderTextureTarget,
 } from '@flighthq/scene2d-canvas/contract';
-import type { CanvasRenderEffectRunner } from '@flighthq/types/contract';
+import type { CanvasEffectRunner } from '@flighthq/types/contract';
 
+import { getCanvasEffectRunner, registerCanvasEffect } from './canvasEffectRegistry';
 import {
   acquireTestCanvasRenderSurface,
   canvasTestSurfaceCreator,
   createCanvasRenderState,
 } from './canvasEffectTestSupport';
-import { getCanvasRenderEffectRunner, registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
-import { applyCanvasRenderEffectsToRenderTexture } from './canvasRenderTextureEffect';
+import { applyCanvasEffectsToRenderTexture } from './canvasRenderTextureEffect';
 
-describe('applyCanvasRenderEffectsToRenderTexture', () => {
+describe('applyCanvasEffectsToRenderTexture', () => {
   it('ping-pongs an even registered chain so the last operation publishes destination', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     const pool = createCanvasRenderTexturePool(canvasTestSurfaceCreator);
@@ -26,13 +26,13 @@ describe('applyCanvasRenderEffectsToRenderTexture', () => {
     const dest = acquireCanvasRenderTexture(state, pool, { width: 8, height: 8 });
     const scratch = acquireCanvasRenderTexture(state, pool, { width: 8, height: 8 });
     writeCanvasRenderTextureTarget(state, source, () => {});
-    const first: CanvasRenderEffectRunner = vi.fn();
-    const second: CanvasRenderEffectRunner = vi.fn();
-    registerCanvasRenderEffect(state, 'acme.First', first);
-    registerCanvasRenderEffect(state, 'acme.Second', second);
+    const first: CanvasEffectRunner = vi.fn();
+    const second: CanvasEffectRunner = vi.fn();
+    registerCanvasEffect(state, 'acme.First', first);
+    registerCanvasEffect(state, 'acme.Second', second);
 
     expect(
-      applyCanvasRenderEffectsToRenderTexture(state, state, pool, source, dest, scratch, [
+      applyCanvasEffectsToRenderTexture(state, state, pool, source, dest, scratch, [
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'acme.First';
@@ -62,7 +62,7 @@ describe('applyCanvasRenderEffectsToRenderTexture', () => {
     writeCanvasRenderTextureTarget(state, source, () => {});
 
     expect(
-      applyCanvasRenderEffectsToRenderTexture(state, state, pool, source, dest, scratch, [
+      applyCanvasEffectsToRenderTexture(state, state, pool, source, dest, scratch, [
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'acme.Missing';
@@ -77,16 +77,16 @@ describe('applyCanvasRenderEffectsToRenderTexture', () => {
 describe('offscreen effect registration policy', () => {
   it('does not copy per-state mutations through a hidden parent link', () => {
     const screen = createCanvasRenderState(document.createElement('canvas'));
-    const first: CanvasRenderEffectRunner = vi.fn();
-    const later: CanvasRenderEffectRunner = vi.fn();
-    registerCanvasRenderEffect(screen, 'acme.First', first);
+    const first: CanvasEffectRunner = vi.fn();
+    const later: CanvasEffectRunner = vi.fn();
+    registerCanvasEffect(screen, 'acme.First', first);
     const offscreen = createCanvasOffscreenRenderState(
       screen.registries,
       createCanvasTextureResolvers(canvasTestSurfaceCreator),
     );
-    registerCanvasRenderEffect(screen, 'acme.Later', later);
+    registerCanvasEffect(screen, 'acme.Later', later);
 
-    expect(getCanvasRenderEffectRunner(offscreen, 'acme.First')).toBeNull();
-    expect(getCanvasRenderEffectRunner(offscreen, 'acme.Later')).toBeNull();
+    expect(getCanvasEffectRunner(offscreen, 'acme.First')).toBeNull();
+    expect(getCanvasEffectRunner(offscreen, 'acme.Later')).toBeNull();
   });
 });

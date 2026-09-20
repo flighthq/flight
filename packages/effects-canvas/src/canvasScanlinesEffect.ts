@@ -1,12 +1,12 @@
 import type {
-  CanvasRenderEffectRunner,
+  CanvasEffectRunner,
   CanvasRenderState,
   CanvasTextureRenderTarget,
   ScanlinesEffect,
 } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
+import { registerCanvasEffect } from './canvasEffectRegistry';
 
 // Scanlines (REAL): draw the scene, then overlay evenly spaced darkening bands. `count` horizontal
 // lines span the frame; each darkens its row by `intensity` via a 'multiply' fill.
@@ -39,10 +39,10 @@ export function applyScanlinesEffectToCanvas(
   ctx.restore();
 }
 
-export const defaultCanvasScanlinesEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+export const defaultCanvasScanlinesEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyScanlinesEffectToCanvas(ctx.source, ctx.dest, effect as ScanlinesEffect);
 };
 
 export function registerCanvasScanlinesEffect(state: CanvasRenderState): void {
-  registerCanvasRenderEffect(state, 'ScanlinesEffect', defaultCanvasScanlinesEffectRunner);
+  registerCanvasEffect(state, 'ScanlinesEffect', defaultCanvasScanlinesEffectRunner);
 }

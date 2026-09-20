@@ -1,12 +1,12 @@
 import type {
-  CanvasRenderEffectRunner,
+  CanvasEffectRunner,
   CanvasRenderState,
   CanvasTextureRenderTarget,
   LensDistortionEffect,
 } from '@flighthq/types/contract';
 
 import { drawCanvasImageDataPass } from './canvasEffectCompositing';
-import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
+import { registerCanvasEffect } from './canvasEffectRegistry';
 
 // Lens distortion (REAL): remap uv by the same radial polynomial the Gl/Wgpu recipe uses —
 // `centered = (uv - 0.5) / scale; distorted = centered * (1 + amount * dot(centered, centered)) + 0.5` —
@@ -79,10 +79,10 @@ export function applyLensDistortionEffectToCanvas(
   });
 }
 
-export const defaultCanvasLensDistortionEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+export const defaultCanvasLensDistortionEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyLensDistortionEffectToCanvas(ctx.source, ctx.dest, effect as LensDistortionEffect);
 };
 
 export function registerCanvasLensDistortionEffect(state: CanvasRenderState): void {
-  registerCanvasRenderEffect(state, 'LensDistortionEffect', defaultCanvasLensDistortionEffectRunner);
+  registerCanvasEffect(state, 'LensDistortionEffect', defaultCanvasLensDistortionEffectRunner);
 }

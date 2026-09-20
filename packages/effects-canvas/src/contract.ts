@@ -19,7 +19,7 @@ export * from './canvasLensDistortionEffect';
 export * from './canvasOuterGlowEffect';
 export * from './canvasPixelateEffect';
 export * from './canvasPosterizeEffect';
-export * from './canvasRenderEffectRegistry';
+export * from './canvasEffectRegistry';
 export * from './canvasRenderTextureEffect';
 export * from './canvasScanlinesEffect';
 export * from './canvasSourceModeCompositing';

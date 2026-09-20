@@ -2,6 +2,7 @@ import { createInnerShadowEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CanvasTextureRenderTarget, CanvasRenderTargetPool, InnerShadowEffect } from '@flighthq/types/contract';
 
+import { getCanvasEffectRunner } from './canvasEffectRegistry';
 import {
   canvasTestSurfaceCreator,
   createCanvasRenderState,
@@ -12,7 +13,6 @@ import {
   defaultCanvasInnerShadowEffectRunner,
   registerCanvasInnerShadowEffect,
 } from './canvasInnerShadowEffect';
-import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 // Recipe assertions rather than pixels — see canvasBlendEffect.test.ts for why jsdom forces that. Scratch
 // targets are pre-seeded into the pool so each pass is identifiable; acquisition pops from the end, so the
@@ -183,6 +183,6 @@ describe('registerCanvasInnerShadowEffect', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     registerCanvasInnerShadowEffect(state);
 
-    expect(getCanvasRenderEffectRunner(state, 'InnerShadowEffect')).toBe(defaultCanvasInnerShadowEffectRunner);
+    expect(getCanvasEffectRunner(state, 'InnerShadowEffect')).toBe(defaultCanvasInnerShadowEffectRunner);
   });
 });

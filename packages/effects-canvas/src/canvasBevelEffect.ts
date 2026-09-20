@@ -1,19 +1,19 @@
 import { getColorAlpha, getColorRgb } from '@flighthq/color/contract';
 import type {
   BevelEffect,
-  CanvasRenderEffectRunner,
+  CanvasEffectRunner,
   CanvasRenderState,
   CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
 } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
+import { registerCanvasEffect } from './canvasEffectRegistry';
 import {
   acquireCanvasRenderTarget,
   createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
 } from './canvasEffectState';
-import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 import { clearCanvasTarget, compositeCanvasImage, drawCanvasTintedAlphaMask } from './canvasSourceModeCompositing';
 
 // Bevel composite effect: light the edge from one direction by differencing two offset copies of the
@@ -72,12 +72,12 @@ export function clipCanvasBevelBand(
   if (bevelType !== 'full') compositeCanvasImage(band, source, 0, 0, 'destination-in');
 }
 
-export const defaultCanvasBevelEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+export const defaultCanvasBevelEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyBevelEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as BevelEffect);
 };
 
 export function registerCanvasBevelEffect(state: CanvasRenderState): void {
-  registerCanvasRenderEffect(state, 'BevelEffect', defaultCanvasBevelEffectRunner);
+  registerCanvasEffect(state, 'BevelEffect', defaultCanvasBevelEffectRunner);
 }
 
 function applyBevelEffectToCanvasWithPool(

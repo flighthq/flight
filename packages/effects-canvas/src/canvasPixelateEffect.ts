@@ -1,13 +1,13 @@
 import type {
-  CanvasRenderEffectRunner,
+  CanvasEffectRunner,
   CanvasRenderState,
   CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
   PixelateEffect,
 } from '@flighthq/types/contract';
 
+import { registerCanvasEffect } from './canvasEffectRegistry';
 import { acquireCanvasRenderTarget, releaseCanvasRenderTarget } from './canvasEffectState';
-import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 
 // Pixelate (REAL): downscale the scene to (width/size, height/size) on a scratch canvas, then upscale
 // back to full size with imageSmoothingEnabled=false so the blocks stay hard-edged — the canonical 2D
@@ -49,10 +49,10 @@ export function applyPixelateEffectToCanvas(
   releaseCanvasRenderTarget(pool, small);
 }
 
-export const defaultCanvasPixelateEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+export const defaultCanvasPixelateEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyPixelateEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as PixelateEffect);
 };
 
 export function registerCanvasPixelateEffect(state: CanvasRenderState): void {
-  registerCanvasRenderEffect(state, 'PixelateEffect', defaultCanvasPixelateEffectRunner);
+  registerCanvasEffect(state, 'PixelateEffect', defaultCanvasPixelateEffectRunner);
 }

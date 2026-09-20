@@ -1,5 +1,5 @@
 import type {
-  CanvasRenderEffectRunner,
+  CanvasEffectRunner,
   CanvasRenderState,
   CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
@@ -8,12 +8,12 @@ import type {
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import { computeDropShadowEffectCss } from './canvasEffectDropShadowCss';
+import { registerCanvasEffect } from './canvasEffectRegistry';
 import {
   acquireCanvasRenderTarget,
   createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
 } from './canvasEffectState';
-import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 import {
   clearCanvasTarget,
   compositeCanvasImage,
@@ -55,12 +55,12 @@ export function applyDropShadowEffectToCanvas(
   applyDropShadowEffectToCanvasWithPool(source, dest, pool, effect);
 }
 
-export const defaultCanvasDropShadowEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+export const defaultCanvasDropShadowEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyDropShadowEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as DropShadowEffect);
 };
 
 export function registerCanvasDropShadowEffect(state: CanvasRenderState): void {
-  registerCanvasRenderEffect(state, 'DropShadowEffect', defaultCanvasDropShadowEffectRunner);
+  registerCanvasEffect(state, 'DropShadowEffect', defaultCanvasDropShadowEffectRunner);
 }
 
 function applyDropShadowEffectToCanvasWithPool(

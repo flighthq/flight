@@ -1,5 +1,5 @@
 import type { BlendMode } from './BlendMode';
-import type { CanvasRenderEffectRunner } from './CanvasEffectState';
+import type { CanvasEffectRunner } from './CanvasEffectState';
 import type { CanvasMaterialRenderer } from './CanvasMaterialRenderer';
 import type { CanvasRenderPass } from './CanvasRenderPass';
 import type { CanvasRenderSurfaceCreator } from './CanvasRenderSurface';
@@ -35,7 +35,7 @@ export interface CanvasRenderRegistries extends RenderRegistries {
   // Absent until the first material registration so a Canvas-only application that uses no material
   // policy retains neither the table metadata nor the declarative renderer module.
   materialRenderers?: KeyedTable<CanvasMaterialRenderer>;
-  renderEffects: KeyedTable<CanvasRenderEffectRunner>;
+  renderEffects: KeyedTable<CanvasEffectRunner>;
 }
 
 // Package-private 2D-canvas state for a CanvasRenderState entity. Lives in the runtime tier (not on

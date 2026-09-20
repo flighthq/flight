@@ -191,6 +191,10 @@
     },
     {
       "packageName": "effects-canvas",
+      "registrar": "registerCanvasEffect"
+    },
+    {
+      "packageName": "effects-canvas",
       "registrar": "registerCanvasFilmGrainEffect"
     },
     {
@@ -224,10 +228,6 @@
     {
       "packageName": "effects-canvas",
       "registrar": "registerCanvasPosterizeEffect"
-    },
-    {
-      "packageName": "effects-canvas",
-      "registrar": "registerCanvasRenderEffect"
     },
     {
       "packageName": "effects-canvas",

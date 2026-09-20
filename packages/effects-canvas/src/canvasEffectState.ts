@@ -31,7 +31,7 @@ import type {
 import { applyColorLutPassToCanvas } from './canvasColorLutPass';
 import { applyColorMatrixPassToCanvas } from './canvasColorMatrixPass';
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
+import { getCanvasEffectRunner } from './canvasEffectRegistry';
 
 // Opt-in Canvas 2D post-process pipeline — the parallel of the Gl effect pipeline. The scene renders
 // into the pipeline's offscreen canvas between begin/end; end runs the agnostic effect list through the
@@ -150,7 +150,7 @@ export function endCanvasEffectPass(
       pending.push(operation as Adjustment);
       continue;
     }
-    const runner = getCanvasRenderEffectRunner(state, operation.kind);
+    const runner = getCanvasEffectRunner(state, operation.kind);
     flushAdjustments();
     ensureScratch();
     const dest = source === scratchA ? scratchB! : scratchA!;
@@ -164,7 +164,7 @@ export function endCanvasEffectPass(
   }
   flushAdjustments();
 
-  presentCanvasRenderEffectResult(state, source);
+  presentCanvasEffectResult(state, source);
 
   if (scratchA !== null) releaseCanvasRenderTarget(pool, scratchA);
   if (scratchB !== null) releaseCanvasRenderTarget(pool, scratchB);
@@ -203,7 +203,7 @@ export function releaseCanvasRenderTarget(pool: CanvasRenderTargetPool, target: 
 // than from the state's current handles: ending the scene pass restores whatever was installed before it,
 // which is nothing at all when a caller ran a chain outside any pass. Presenting there would draw through
 // a null context, so the pipeline says so instead.
-function presentCanvasRenderEffectResult(state: CanvasRenderState, source: Readonly<CanvasTextureRenderTarget>): void {
+function presentCanvasEffectResult(state: CanvasRenderState, source: Readonly<CanvasTextureRenderTarget>): void {
   const pass = getCanvasActiveRenderPass(state);
   if (pass === null) {
     throw new Error('endCanvasEffectPass: no enclosing pass is open to present the result into');

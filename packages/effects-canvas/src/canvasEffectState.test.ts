@@ -1,8 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { endCanvasRenderPass, getCanvasActiveRenderPass } from '@flighthq/scene2d-canvas/contract';
-import type { CanvasRenderEffectRunner, RenderEffect } from '@flighthq/types/contract';
+import type { CanvasEffectRunner, RenderEffect } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
+import { registerCanvasEffect } from './canvasEffectRegistry';
 import {
   acquireCanvasRenderTarget,
   beginCanvasEffectPass,
@@ -15,7 +16,6 @@ import {
   releaseCanvasRenderTarget,
 } from './canvasEffectState';
 import { canvasTestSurfaceCreator, createCanvasRenderState } from './canvasEffectTestSupport';
-import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 
 describe('acquireCanvasRenderTarget', () => {
   it('is a function', () => {
@@ -87,10 +87,10 @@ describe('endCanvasEffectPass', () => {
     scene.context.fillStyle = '#ff0000';
     scene.context.fillRect(0, 0, 4, 4);
 
-    const realizedRunner = vi.fn<CanvasRenderEffectRunner>((ctx) => {
+    const realizedRunner = vi.fn<CanvasEffectRunner>((ctx) => {
       drawCanvasEffectPass(ctx.dest, ctx.source, 'none');
     });
-    registerCanvasRenderEffect(state, 'RealizedEffect', realizedRunner);
+    registerCanvasEffect(state, 'RealizedEffect', realizedRunner);
 
     endCanvasEffectPass(scenePass, pipeline, [
       (() => {

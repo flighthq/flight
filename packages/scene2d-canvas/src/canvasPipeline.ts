@@ -13,6 +13,6 @@ export function initializeEmptyCanvasRenderRegistries(out: CanvasRenderRegistrie
   // fills the slot; a pipeline nobody opts in on allocates no table.
   out.strokeTessellator = null;
 
-  out.renderEffects = createKeyedTable('CanvasRenderEffect', 'Unregistered');
+  out.renderEffects = createKeyedTable('CanvasEffect', 'Unregistered');
   out.renderers = createKeyedTable('NodeRenderer', 'Unregistered');
 }

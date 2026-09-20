@@ -1,12 +1,12 @@
 import { getCanvasRenderTextureTarget, writeCanvasRenderTextureTarget } from '@flighthq/scene2d-canvas/contract';
 import type { CanvasRenderState, CanvasRenderTexturePool, RenderEffect, RenderTexture } from '@flighthq/types/contract';
 
-import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
+import { getCanvasEffectRunner } from './canvasEffectRegistry';
 
 // Applies registered Canvas effect runners from one completed RenderTexture into another. The
 // caller supplies one distinct scratch lease; parity chooses the first destination so the final
 // registered operation always publishes `dest`.
-export function applyCanvasRenderEffectsToRenderTexture(
+export function applyCanvasEffectsToRenderTexture(
   ownerState: CanvasRenderState,
   effectState: CanvasRenderState,
   pool: CanvasRenderTexturePool,
@@ -16,12 +16,12 @@ export function applyCanvasRenderEffectsToRenderTexture(
   effects: ReadonlyArray<Readonly<RenderEffect>>,
 ): boolean {
   if (source === dest || source === scratch || dest === scratch) {
-    throw new Error('applyCanvasRenderEffectsToRenderTexture: source, destination, and scratch must be distinct');
+    throw new Error('applyCanvasEffectsToRenderTexture: source, destination, and scratch must be distinct');
   }
   const sourceTarget = getCanvasRenderTextureTarget(ownerState, source);
   if (sourceTarget === null) return false;
   const operations = effects.flatMap((effect) => {
-    const runner = getCanvasRenderEffectRunner(effectState, effect.kind);
+    const runner = getCanvasEffectRunner(effectState, effect.kind);
     return runner === null ? [] : [{ effect, runner }];
   });
   if (operations.length === 0) return false;

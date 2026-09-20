@@ -1,5 +1,5 @@
 import type {
-  CanvasRenderEffectRunner,
+  CanvasEffectRunner,
   CanvasRenderState,
   CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
@@ -8,13 +8,13 @@ import type {
 
 import { clipCanvasBevelBand } from './canvasBevelEffect';
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
+import { registerCanvasEffect } from './canvasEffectRegistry';
 import {
   acquireCanvasRenderTarget,
   createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
 } from './canvasEffectState';
 import { applyCanvasGradientRampLookup, buildCanvasGradientRamp } from './canvasGradientRamp';
-import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 import { clearCanvasTarget, compositeCanvasImage } from './canvasSourceModeCompositing';
 
 // Gradient-bevel composite effect: the same lit/unlit edge band the plain bevel builds, coloured from a
@@ -53,12 +53,12 @@ export function applyGradientBevelEffectToCanvas(
   applyGradientBevelEffectToCanvasWithPool(source, dest, pool, effect);
 }
 
-export const defaultCanvasGradientBevelEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+export const defaultCanvasGradientBevelEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyGradientBevelEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as GradientBevelEffect);
 };
 
 export function registerCanvasGradientBevelEffect(state: CanvasRenderState): void {
-  registerCanvasRenderEffect(state, 'GradientBevelEffect', defaultCanvasGradientBevelEffectRunner);
+  registerCanvasEffect(state, 'GradientBevelEffect', defaultCanvasGradientBevelEffectRunner);
 }
 
 function applyGradientBevelEffectToCanvasWithPool(
