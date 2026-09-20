@@ -1,12 +1,12 @@
 import type {
-  CanvasRenderEffectRunner,
+  CanvasEffectRunner,
   CanvasRenderState,
   CanvasTextureRenderTarget,
   TiltShiftEffect,
 } from '@flighthq/types/contract';
 
 import { drawCanvasImageDataPass } from './canvasEffectCompositing';
-import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
+import { registerCanvasEffect } from './canvasEffectRegistry';
 
 // Tilt shift (REAL): keep a horizontal focus band sharp and blur above and below it, matching the
 // Gl/Wgpu recipe tap for tap — seven uniformly weighted vertical samples spaced `radius` pixels apart,
@@ -75,12 +75,12 @@ export function applyTiltShiftEffectToCanvas(
   });
 }
 
-export const defaultCanvasTiltShiftEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+export const defaultCanvasTiltShiftEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyTiltShiftEffectToCanvas(ctx.source, ctx.dest, effect as TiltShiftEffect);
 };
 
 export function registerCanvasTiltShiftEffect(state: CanvasRenderState): void {
-  registerCanvasRenderEffect(state, 'TiltShiftEffect', defaultCanvasTiltShiftEffectRunner);
+  registerCanvasEffect(state, 'TiltShiftEffect', defaultCanvasTiltShiftEffectRunner);
 }
 
 const TAP_REACH = 3;

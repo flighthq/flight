@@ -1,5 +1,5 @@
 import type {
-  CanvasRenderEffectRunner,
+  CanvasEffectRunner,
   CanvasRenderState,
   CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
@@ -7,12 +7,12 @@ import type {
 } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
+import { registerCanvasEffect } from './canvasEffectRegistry';
 import {
   acquireCanvasRenderTarget,
   createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
 } from './canvasEffectState';
-import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 import {
   clearCanvasTarget,
   compositeCanvasImage,
@@ -53,12 +53,12 @@ export function applyInnerShadowEffectToCanvas(
   applyInnerShadowEffectToCanvasWithPool(source, dest, pool, effect);
 }
 
-export const defaultCanvasInnerShadowEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+export const defaultCanvasInnerShadowEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyInnerShadowEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as InnerShadowEffect);
 };
 
 export function registerCanvasInnerShadowEffect(state: CanvasRenderState): void {
-  registerCanvasRenderEffect(state, 'InnerShadowEffect', defaultCanvasInnerShadowEffectRunner);
+  registerCanvasEffect(state, 'InnerShadowEffect', defaultCanvasInnerShadowEffectRunner);
 }
 
 function applyInnerShadowEffectToCanvasWithPool(

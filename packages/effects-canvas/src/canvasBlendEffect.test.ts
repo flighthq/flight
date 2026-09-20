@@ -16,12 +16,12 @@ import {
   registerCanvasBlendEffectBackdrop,
   unregisterCanvasBlendEffectBackdrop,
 } from './canvasBlendEffect';
+import { getCanvasEffectRunner } from './canvasEffectRegistry';
 import {
   canvasTestSurfaceCreator,
   createCanvasRenderState,
   createCanvasTextureRenderTarget,
 } from './canvasEffectTestSupport';
-import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 // These tests assert the DRAW CONTRACT, not pixels, and that is deliberate rather than a shortcut.
 // jsdom's 2D context accepts every call and every globalCompositeOperation but rasterizes nothing — a
@@ -219,7 +219,7 @@ describe('registerCanvasBlendEffect', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     registerCanvasBlendEffect(state);
 
-    expect(getCanvasRenderEffectRunner(state, 'BlendEffect')).toBe(defaultCanvasBlendEffectRunner);
+    expect(getCanvasEffectRunner(state, 'BlendEffect')).toBe(defaultCanvasBlendEffectRunner);
   });
 });
 

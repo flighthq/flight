@@ -1,15 +1,15 @@
 import { computeBloomBlurRadius } from '@flighthq/effects/contract';
 import type {
   BloomEffect,
-  CanvasRenderEffectRunner,
+  CanvasEffectRunner,
   CanvasRenderState,
   CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
 } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass, drawCanvasImageDataPass } from './canvasEffectCompositing';
+import { registerCanvasEffect } from './canvasEffectRegistry';
 import { acquireCanvasRenderTarget, releaseCanvasRenderTarget } from './canvasEffectState';
-import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 
 // Bloom (REAL): bright-pass → blur the bright branch → additively composite back, matching the Gl/Wgpu
 // recipe term for term — a LUMINANCE GATE `step(threshold, dot(rgb, (0.2126, 0.7152, 0.0722)))` on the
@@ -83,10 +83,10 @@ export function applyBloomEffectToCanvas(
   releaseCanvasRenderTarget(pool, blurred);
 }
 
-export const defaultCanvasBloomEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+export const defaultCanvasBloomEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyBloomEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as BloomEffect);
 };
 
 export function registerCanvasBloomEffect(state: CanvasRenderState): void {
-  registerCanvasRenderEffect(state, 'BloomEffect', defaultCanvasBloomEffectRunner);
+  registerCanvasEffect(state, 'BloomEffect', defaultCanvasBloomEffectRunner);
 }

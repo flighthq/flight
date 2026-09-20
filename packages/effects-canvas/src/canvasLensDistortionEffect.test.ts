@@ -2,13 +2,13 @@ import { createLensDistortionEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CanvasTextureRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
+import { getCanvasEffectRunner } from './canvasEffectRegistry';
 import { canvasTestSurfaceCreator, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport';
 import {
   applyLensDistortionEffectToCanvas,
   defaultCanvasLensDistortionEffectRunner,
   registerCanvasLensDistortionEffect,
 } from './canvasLensDistortionEffect';
-import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 // A width x height RGBA buffer whose red channel encodes the column and green the row, so a resample can
 // be read back as "which source pixel did this destination pixel come from".
@@ -160,8 +160,8 @@ describe('registerCanvasLensDistortionEffect', () => {
     // Registration is not a drawing concern, so this state opens no pass and needs no canvas at all.
     const state = createCanvasRenderStateWithoutPass();
 
-    expect(getCanvasRenderEffectRunner(state, 'LensDistortionEffect')).toBeNull();
+    expect(getCanvasEffectRunner(state, 'LensDistortionEffect')).toBeNull();
     registerCanvasLensDistortionEffect(state);
-    expect(getCanvasRenderEffectRunner(state, 'LensDistortionEffect')).toBe(defaultCanvasLensDistortionEffectRunner);
+    expect(getCanvasEffectRunner(state, 'LensDistortionEffect')).toBe(defaultCanvasLensDistortionEffectRunner);
   });
 });

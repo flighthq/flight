@@ -1,5 +1,5 @@
 import type {
-  CanvasRenderEffectRunner,
+  CanvasEffectRunner,
   CanvasRenderState,
   CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
@@ -8,12 +8,12 @@ import type {
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
 import { computeOuterGlowEffectCss } from './canvasEffectDropShadowCss';
+import { registerCanvasEffect } from './canvasEffectRegistry';
 import {
   acquireCanvasRenderTarget,
   createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
 } from './canvasEffectState';
-import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 import {
   clearCanvasTarget,
   compositeCanvasImage,
@@ -55,12 +55,12 @@ export function applyOuterGlowEffectToCanvas(
   applyOuterGlowEffectToCanvasWithPool(source, dest, pool, effect);
 }
 
-export const defaultCanvasOuterGlowEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+export const defaultCanvasOuterGlowEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyOuterGlowEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as OuterGlowEffect);
 };
 
 export function registerCanvasOuterGlowEffect(state: CanvasRenderState): void {
-  registerCanvasRenderEffect(state, 'OuterGlowEffect', defaultCanvasOuterGlowEffectRunner);
+  registerCanvasEffect(state, 'OuterGlowEffect', defaultCanvasOuterGlowEffectRunner);
 }
 
 function applyOuterGlowEffectToCanvasWithPool(

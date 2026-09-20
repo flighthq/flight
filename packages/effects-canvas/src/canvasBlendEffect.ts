@@ -2,13 +2,13 @@ import { getCanvasRenderStateRuntime } from '@flighthq/scene2d-canvas/contract';
 import type {
   AdvancedBlendMode,
   BlendEffect,
-  CanvasRenderEffectRunner,
+  CanvasEffectRunner,
   CanvasRenderState,
   CanvasTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
+import { registerCanvasEffect } from './canvasEffectRegistry';
 
 // Advanced-blend composite pass: draw a registered backdrop, then draw the incoming layer over it with
 // the Canvas 2D compositing operation named by the effect's `mode`. This is the Canvas realization of the
@@ -54,7 +54,7 @@ export function applyBlendEffectToCanvas(
   ctx.restore();
 }
 
-export const defaultCanvasBlendEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+export const defaultCanvasBlendEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyBlendEffectToCanvas(ctx.state, ctx.source, ctx.dest, effect as BlendEffect);
 };
 
@@ -78,7 +78,7 @@ export function getCanvasBlendEffectCompositeOperation(mode: AdvancedBlendMode):
 }
 
 export function registerCanvasBlendEffect(state: CanvasRenderState): void {
-  registerCanvasRenderEffect(state, 'BlendEffect', defaultCanvasBlendEffectRunner);
+  registerCanvasEffect(state, 'BlendEffect', defaultCanvasBlendEffectRunner);
 }
 
 // Registers a backdrop target under `backdropKey` for this state, so a BlendEffect naming that key blends

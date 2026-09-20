@@ -1,5 +1,5 @@
+import { getCanvasEffectRunner } from './canvasEffectRegistry';
 import { createCanvasRenderState } from './canvasEffectTestSupport';
-import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 import * as contractEffects from './contract';
 import * as publicEffects from './index';
 
@@ -20,7 +20,7 @@ describe('Canvas effect registration', () => {
 
     publicEffects[registerName](state);
 
-    expect(getCanvasRenderEffectRunner(state, kind)).toBe(contractEffects[runnerName]);
-    expect(getCanvasRenderEffectRunner(other, kind)).toBeNull();
+    expect(getCanvasEffectRunner(state, kind)).toBe(contractEffects[runnerName]);
+    expect(getCanvasEffectRunner(other, kind)).toBeNull();
   });
 });

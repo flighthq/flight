@@ -1,5 +1,5 @@
 import type {
-  CanvasRenderEffectRunner,
+  CanvasEffectRunner,
   CanvasRenderState,
   CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
@@ -7,12 +7,12 @@ import type {
 } from '@flighthq/types/contract';
 
 import { drawCanvasEffectPass } from './canvasEffectCompositing';
+import { registerCanvasEffect } from './canvasEffectRegistry';
 import {
   acquireCanvasRenderTarget,
   createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
 } from './canvasEffectState';
-import { registerCanvasRenderEffect } from './canvasRenderEffectRegistry';
 import {
   clearCanvasTarget,
   compositeCanvasImage,
@@ -57,12 +57,12 @@ export function applyInnerGlowEffectToCanvas(
   applyInnerGlowEffectToCanvasWithPool(source, dest, pool, effect);
 }
 
-export const defaultCanvasInnerGlowEffectRunner: CanvasRenderEffectRunner = (ctx, effect) => {
+export const defaultCanvasInnerGlowEffectRunner: CanvasEffectRunner = (ctx, effect) => {
   applyInnerGlowEffectToCanvas(ctx.source, ctx.dest, ctx.pool, effect as InnerGlowEffect);
 };
 
 export function registerCanvasInnerGlowEffect(state: CanvasRenderState): void {
-  registerCanvasRenderEffect(state, 'InnerGlowEffect', defaultCanvasInnerGlowEffectRunner);
+  registerCanvasEffect(state, 'InnerGlowEffect', defaultCanvasInnerGlowEffectRunner);
 }
 
 function applyInnerGlowEffectToCanvasWithPool(

@@ -32,7 +32,7 @@ export {
 export { defaultCanvasOuterGlowEffectRunner, registerCanvasOuterGlowEffect } from './canvasOuterGlowEffect';
 export { defaultCanvasPixelateEffectRunner, registerCanvasPixelateEffect } from './canvasPixelateEffect';
 export { defaultCanvasPosterizeEffectRunner, registerCanvasPosterizeEffect } from './canvasPosterizeEffect';
-export * from './canvasRenderEffectRegistry';
+export * from './canvasEffectRegistry';
 export * from './canvasRenderTextureEffect';
 export { defaultCanvasScanlinesEffectRunner, registerCanvasScanlinesEffect } from './canvasScanlinesEffect';
 export { defaultCanvasTiltShiftEffectRunner, registerCanvasTiltShiftEffect } from './canvasTiltShiftEffect';

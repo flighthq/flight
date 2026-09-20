@@ -2,13 +2,13 @@ import { createPosterizeEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CanvasTextureRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
+import { getCanvasEffectRunner } from './canvasEffectRegistry';
 import { canvasTestSurfaceCreator, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport';
 import {
   applyPosterizeEffectToCanvas,
   defaultCanvasPosterizeEffectRunner,
   registerCanvasPosterizeEffect,
 } from './canvasPosterizeEffect';
-import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 // Stand-ins for the two contexts drawCanvasImageDataPass touches, matching the shape
 // canvasColorMatrixPass.test.ts uses for the same reason: it keeps the assertion independent of module
@@ -141,15 +141,15 @@ describe('defaultCanvasPosterizeEffectRunner', () => {
 });
 
 describe('registerCanvasPosterizeEffect', () => {
-  // Goes through the real registry rather than a stub table: registerCanvasRenderEffect writes into the
+  // Goes through the real registry rather than a stub table: registerCanvasEffect writes into the
   // state's RUNTIME registries, so a hand-made { renderEffects } object would assert against a shape the
   // production path never touches — a test that passes while the registration goes somewhere else.
   it('makes the runner resolvable for the PosterizeEffect kind', () => {
     // Registration is not a drawing concern, so this state opens no pass and needs no canvas at all.
     const state = createCanvasRenderStateWithoutPass();
 
-    expect(getCanvasRenderEffectRunner(state, 'PosterizeEffect')).toBeNull();
+    expect(getCanvasEffectRunner(state, 'PosterizeEffect')).toBeNull();
     registerCanvasPosterizeEffect(state);
-    expect(getCanvasRenderEffectRunner(state, 'PosterizeEffect')).toBe(defaultCanvasPosterizeEffectRunner);
+    expect(getCanvasEffectRunner(state, 'PosterizeEffect')).toBe(defaultCanvasPosterizeEffectRunner);
   });
 });

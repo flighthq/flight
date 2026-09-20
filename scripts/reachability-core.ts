@@ -93,8 +93,11 @@ interface RegistrationMapping {
 }
 
 const PREFIX: Record<EffectBackend, string> = { canvas: 'Canvas', gl: 'Gl', wgpu: 'Wgpu' };
+// The generic door each built-in wrapper of a backend must call. Spelled per backend rather than derived
+// from PREFIX because the Canvas and Wgpu families each dropped the `Render` infix in the naming cleanup
+// (registerCanvasEffect, registerWgpuEffect) while Gl keeps it.
 const EFFECT_REGISTRATION_DOOR: Record<EffectBackend, string> = {
-  canvas: 'registerCanvasRenderEffect',
+  canvas: 'registerCanvasEffect',
   gl: 'registerGlRenderEffect',
   wgpu: 'registerWgpuEffect',
 };

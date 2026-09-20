@@ -8,7 +8,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  applyCanvasRenderEffectsToRenderTexture,
+  applyCanvasEffectsToRenderTexture,
   computeNodeRootLocalBoundsRectangle,
   computeRenderEffectPadding,
   createBlurEffect,
@@ -208,7 +208,7 @@ function captureSubtree(): {
         renderCanvasScene2D(capturePass, source);
       });
       if (
-        !applyCanvasRenderEffectsToRenderTexture(
+        !applyCanvasEffectsToRenderTexture(
           state,
           offscreenState,
           pool,

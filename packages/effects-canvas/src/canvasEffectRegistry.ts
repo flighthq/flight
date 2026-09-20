@@ -1,6 +1,6 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import { getCanvasRenderStateRuntime } from '@flighthq/scene2d-canvas/contract';
-import type { CanvasRenderEffectRunner, CanvasRenderState } from '@flighthq/types/contract';
+import type { CanvasEffectRunner, CanvasRenderState } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
 // Per-state registry mapping an effect `kind` string to its Canvas 2D runner — the material-renderer
@@ -10,7 +10,7 @@ import { RegistryEntryState } from '@flighthq/types/contract';
 // algorithms. A built-in registerCanvas<Kind>Effect wrapper is pure ergonomics: it calls this function
 // with the literal kind and public default runner, and installs no padding or shader companions.
 
-export function getCanvasRenderEffectRunner(state: CanvasRenderState, kind: string): CanvasRenderEffectRunner | null {
+export function getCanvasEffectRunner(state: CanvasRenderState, kind: string): CanvasEffectRunner | null {
   const entry = getCanvasRenderStateRuntime(state).registries.renderEffects.entries.get(kind);
   return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
@@ -18,17 +18,13 @@ export function getCanvasRenderEffectRunner(state: CanvasRenderState, kind: stri
 // Returns true if a runner is registered for the given kind in this state. Use to validate an effect
 // chain before dispatching. The pipeline preserves unregistered operations as initialized identity
 // passes; check up front to apply your own policy (warn, filter) rather than relying on that fallback.
-export function hasCanvasRenderEffectRunner(state: CanvasRenderState, kind: string): boolean {
+export function hasCanvasEffectRunner(state: CanvasRenderState, kind: string): boolean {
   return (
     getCanvasRenderStateRuntime(state).registries.renderEffects.entries.get(kind)?.state === RegistryEntryState.Bound
   );
 }
 
-export function registerCanvasRenderEffect(
-  state: CanvasRenderState,
-  kind: string,
-  runner: CanvasRenderEffectRunner,
-): void {
+export function registerCanvasEffect(state: CanvasRenderState, kind: string, runner: CanvasEffectRunner): void {
   const runtime = getCanvasRenderStateRuntime(state);
   runtime.registries.renderEffects = withRegistryTableEntry(runtime.registries.renderEffects, kind, runner);
 }

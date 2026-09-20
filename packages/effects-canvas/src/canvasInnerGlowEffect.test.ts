@@ -2,6 +2,7 @@ import { createInnerGlowEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CanvasTextureRenderTarget, CanvasRenderTargetPool, InnerGlowEffect } from '@flighthq/types/contract';
 
+import { getCanvasEffectRunner } from './canvasEffectRegistry';
 import {
   canvasTestSurfaceCreator,
   createCanvasRenderState,
@@ -12,7 +13,6 @@ import {
   defaultCanvasInnerGlowEffectRunner,
   registerCanvasInnerGlowEffect,
 } from './canvasInnerGlowEffect';
-import { getCanvasRenderEffectRunner } from './canvasRenderEffectRegistry';
 
 // Recipe assertions rather than pixels, for the reason in canvasBlendEffect.test.ts: jsdom's 2D context
 // rasterizes nothing. The scratch targets are pre-seeded into the pool so each one is identifiable by id,
@@ -162,6 +162,6 @@ describe('registerCanvasInnerGlowEffect', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     registerCanvasInnerGlowEffect(state);
 
-    expect(getCanvasRenderEffectRunner(state, 'InnerGlowEffect')).toBe(defaultCanvasInnerGlowEffectRunner);
+    expect(getCanvasEffectRunner(state, 'InnerGlowEffect')).toBe(defaultCanvasInnerGlowEffectRunner);
   });
 });
