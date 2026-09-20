@@ -1,4 +1,23 @@
 # host-electron: exports where the shared classifier gets it wrong.
+#
+# Both rules below say the same thing: this package has NO contract-lane consumer, so "protected"
+# — which means contract-only — publishes a name for nobody. Host backends sit outside the
+# `@flighthq/sdk` barrel and nothing in the repository imports `@flighthq/host-electron/contract`;
+# an app composes a host through the canonical `electronHost*` surface. The canonical-surface test in
+# `electronRegister.test.ts` is what states that shape, and it asserts BOTH lanes carry exactly it.
 
-protected:
-  - toElectronTemplate # internal: converts Flight MenuItemTemplate to Electron's format
+exclude:
+  # The shared classifier reads `populate*` as protected, which is right for a package whose contract
+  # lane other `@flighthq/*` packages consume. Here it published 84 internal wiring helpers — used only
+  # by this package's own modules, through relative imports — onto a lane with no consumer. Declared as
+  # a prefix rather than 84 names because a list of that size stays true only while every future member
+  # is remembered, and the one that is forgotten rejoins the lane silently.
+  - prefix: populateElectronHost
+
+  # Internal: converts a Flight MenuItemTemplate to Electron's format. Previously `protected`, which put
+  # it on the contract lane for that same absent consumer.
+  - toElectronTemplate
+
+  # A test helper, matched by the shared `*ForTest` pattern. Its only caller is electronWindow.test.ts,
+  # which imports it from './electronWindow' directly, so no lane has to carry it.
+  - resetElectronHostWindowForTest
