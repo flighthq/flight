@@ -11,7 +11,7 @@ describe('allocateEmptyWgpuRenderRegistries', () => {
     expect(registries.materialRenderers.shape).toBe('keyed');
     expect(registries.meshMaterialRenderers.shape).toBe('keyed');
     expect(registries.modifierSnippets.shape).toBe('keyed');
-    expect(registries.renderEffects.shape).toBe('keyed');
+    expect(registries.effects.shape).toBe('keyed');
     expect(registries.shapeRasterizer).toBeNull();
     // Opt-in: the stroke kernel's slot is allocated by enable*StrokePathTessellation, not by the
     // pipeline, so a pipeline nobody opted in on carries no table for it.

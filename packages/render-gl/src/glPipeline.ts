@@ -25,7 +25,7 @@ export function initializeEmptyGlRenderRegistries(out: GlRenderRegistries): void
   out.modifierSnippetRevision = 0;
   out.pbrExtensions = createKeyedTable('GlPbrExtension', 'Unregistered');
   out.pbrExtensionRevision = 0;
-  out.renderEffects = createKeyedTable('GlEffect', 'Unregistered');
+  out.effects = createKeyedTable('GlEffect', 'Unregistered');
   out.renderers = createKeyedTable('NodeRenderer', 'Unregistered');
   out.textureResolvers = createKeyedTable('GlTextureResolver', 'Unregistered');
   out.velocityWriters = createKeyedTable('GlVelocityWriter', 'Unregistered');

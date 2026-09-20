@@ -35,7 +35,7 @@ export interface CanvasRenderRegistries extends RenderRegistries {
   // Absent until the first material registration so a Canvas-only application that uses no material
   // policy retains neither the table metadata nor the declarative renderer module.
   materialRenderers?: KeyedTable<CanvasMaterialRenderer>;
-  renderEffects: KeyedTable<CanvasEffectRunner>;
+  effects: KeyedTable<CanvasEffectRunner>;
 }
 
 // Package-private 2D-canvas state for a CanvasRenderState entity. Lives in the runtime tier (not on

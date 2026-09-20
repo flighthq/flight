@@ -142,7 +142,7 @@ describe('defaultCanvasPosterizeEffectRunner', () => {
 
 describe('registerCanvasPosterizeEffect', () => {
   // Goes through the real registry rather than a stub table: registerCanvasEffect writes into the
-  // state's RUNTIME registries, so a hand-made { renderEffects } object would assert against a shape the
+  // state's RUNTIME registries, so a hand-made { effects } object would assert against a shape the
   // production path never touches — a test that passes while the registration goes somewhere else.
   it('makes the runner resolvable for the PosterizeEffect kind', () => {
     // Registration is not a drawing concern, so this state opens no pass and needs no canvas at all.

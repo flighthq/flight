@@ -22,7 +22,7 @@ export function initializeEmptyWgpuRenderRegistries(out: WgpuRenderRegistries): 
   out.meshMaterialRenderers = createKeyedTable('WgpuMeshMaterialRenderer', 'StandardMaterial');
   out.modifierSnippets = createKeyedTable('WgpuModifierSnippet', 'Unregistered');
   out.modifierSnippetRevision = 0;
-  out.renderEffects = createKeyedTable('WgpuEffect', 'Unregistered');
+  out.effects = createKeyedTable('WgpuEffect', 'Unregistered');
   out.renderers = createKeyedTable('NodeRenderer', 'Unregistered');
   out.textureResolvers = createKeyedTable('WgpuTextureResolver', 'Unregistered');
   out.velocityWriters = createKeyedTable('WgpuVelocityWriter', 'Unregistered');

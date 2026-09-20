@@ -243,8 +243,8 @@ describe('createGlRenderState (context sharing)', () => {
     enableColorAdjustments(screen);
     enableColorAdjustmentGuards(screen);
     enableGlRenderStateGuards(screen);
-    getGlRenderStateRuntime(screen).registries.renderEffects = withRegistryTableEntry(
-      getGlRenderStateRuntime(screen).registries.renderEffects,
+    getGlRenderStateRuntime(screen).registries.effects = withRegistryTableEntry(
+      getGlRenderStateRuntime(screen).registries.effects,
       'acme.Effect',
       { runner: effectRunner as never },
     );
@@ -325,7 +325,7 @@ describe('createGlRenderState (context sharing)', () => {
     expect(offscreenRuntime.registries.modifierSnippetRevision).toBe(screenRuntime.registries.modifierSnippetRevision);
     expect(offscreenRuntime.registries.pbrExtensions).toBe(screenRuntime.registries.pbrExtensions);
     expect(offscreenRuntime.registries.pbrExtensionRevision).toBe(screenRuntime.registries.pbrExtensionRevision);
-    expect(offscreenRuntime.registries.renderEffects).toBe(screenRuntime.registries.renderEffects);
+    expect(offscreenRuntime.registries.effects).toBe(screenRuntime.registries.effects);
     expect(offscreenRuntime.registries.shapeRasterizer).toBe(screenRuntime.registries.shapeRasterizer);
     expect(offscreenRuntime.registries.strokeTessellator).toBe(screenRuntime.registries.strokeTessellator);
     expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
@@ -336,7 +336,7 @@ describe('createGlRenderState (context sharing)', () => {
       materialRenderer,
     );
     expect(getRegistryTableEntry(offscreenRuntime.registries.textureResolvers, 'acme.Texture')).toBe(textureResolver);
-    expect(getRegistryTableEntry(offscreenRuntime.registries.renderEffects, 'acme.Effect')?.runner).toBe(effectRunner);
+    expect(getRegistryTableEntry(offscreenRuntime.registries.effects, 'acme.Effect')?.runner).toBe(effectRunner);
     expect(getPaddingResolver(offscreen, 'acme.Effect')).toBe(paddingResolver);
 
     screenRuntime.context.currentShader = { locations: null, program: {} as WebGLProgram };
@@ -443,7 +443,7 @@ describe('createGlRenderStateRuntime', () => {
     });
     expect(runtime.registries.pbrExtensions.entries.size).toBe(0);
     expect(runtime.registries.pbrExtensionRevision).toBe(0);
-    expect(runtime.registries.renderEffects).toMatchObject({
+    expect(runtime.registries.effects).toMatchObject({
       onMiss: 'Unregistered',
       registry: 'GlEffect',
       shape: 'keyed',

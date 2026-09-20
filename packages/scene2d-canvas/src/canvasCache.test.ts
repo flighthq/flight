@@ -80,7 +80,7 @@ describe('createCanvasCacheState', () => {
 
     expect(cacheState.registries).toBe(screen.registries);
     expect(cacheRuntime.registries).not.toBe(screenRuntime.registries);
-    expect(cacheRuntime.registries.renderEffects).toBe(screenRuntime.registries.renderEffects);
+    expect(cacheRuntime.registries.effects).toBe(screenRuntime.registries.effects);
   });
 
   it('releases every target it allocated when its explicit owner is destroyed', () => {

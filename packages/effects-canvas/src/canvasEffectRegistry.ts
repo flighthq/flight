@@ -11,7 +11,7 @@ import { RegistryEntryState } from '@flighthq/types/contract';
 // with the literal kind and public default runner, and installs no padding or shader companions.
 
 export function getCanvasEffectRunner(state: CanvasRenderState, kind: string): CanvasEffectRunner | null {
-  const entry = getCanvasRenderStateRuntime(state).registries.renderEffects.entries.get(kind);
+  const entry = getCanvasRenderStateRuntime(state).registries.effects.entries.get(kind);
   return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
@@ -19,12 +19,10 @@ export function getCanvasEffectRunner(state: CanvasRenderState, kind: string): C
 // chain before dispatching. The pipeline preserves unregistered operations as initialized identity
 // passes; check up front to apply your own policy (warn, filter) rather than relying on that fallback.
 export function hasCanvasEffectRunner(state: CanvasRenderState, kind: string): boolean {
-  return (
-    getCanvasRenderStateRuntime(state).registries.renderEffects.entries.get(kind)?.state === RegistryEntryState.Bound
-  );
+  return getCanvasRenderStateRuntime(state).registries.effects.entries.get(kind)?.state === RegistryEntryState.Bound;
 }
 
 export function registerCanvasEffect(state: CanvasRenderState, kind: string, runner: CanvasEffectRunner): void {
   const runtime = getCanvasRenderStateRuntime(state);
-  runtime.registries.renderEffects = withRegistryTableEntry(runtime.registries.renderEffects, kind, runner);
+  runtime.registries.effects = withRegistryTableEntry(runtime.registries.effects, kind, runner);
 }

@@ -62,10 +62,10 @@ describe('registerGlEffect', () => {
   it('registers and retrieves a runner', () => {
     const state = createState();
     const runner = vi.fn();
-    const before = getGlRenderStateRuntime(state).registries.renderEffects;
+    const before = getGlRenderStateRuntime(state).registries.effects;
     registerGlEffect(state, 'TestEffect', runner);
     expect(getGlEffectRunner(state, 'TestEffect')).toBe(runner);
-    expect(getGlRenderStateRuntime(state).registries.renderEffects).not.toBe(before);
+    expect(getGlRenderStateRuntime(state).registries.effects).not.toBe(before);
     expect(before.entries.size).toBe(0);
   });
 
@@ -74,7 +74,7 @@ describe('registerGlEffect', () => {
     const runnerA = vi.fn();
     const runnerB = vi.fn();
     registerGlEffect(state, 'TestEffect2', runnerA);
-    const before = getGlRenderStateRuntime(state).registries.renderEffects;
+    const before = getGlRenderStateRuntime(state).registries.effects;
     registerGlEffect(state, 'TestEffect2', runnerB);
     expect(getGlEffectRunner(state, 'TestEffect2')).toBe(runnerB);
     expect(before.entries.get('TestEffect2')).toEqual({

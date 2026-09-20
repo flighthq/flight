@@ -254,8 +254,8 @@ describe('createWgpuOffscreenRenderState', () => {
       registry: 'RenderRootGuard',
       shape: 'slot',
     };
-    getWgpuRenderStateRuntime(screen).registries.renderEffects = withRegistryTableEntry(
-      getWgpuRenderStateRuntime(screen).registries.renderEffects,
+    getWgpuRenderStateRuntime(screen).registries.effects = withRegistryTableEntry(
+      getWgpuRenderStateRuntime(screen).registries.effects,
       'acme.Effect',
       { runner: effectRunner },
     );
@@ -321,7 +321,7 @@ describe('createWgpuOffscreenRenderState', () => {
     expect(offscreenRuntime.registries.meshMaterialRenderers).toBe(screenRuntime.registries.meshMaterialRenderers);
     expect(offscreenRuntime.registries.modifierSnippets).toBe(screenRuntime.registries.modifierSnippets);
     expect(offscreenRuntime.registries.modifierSnippetRevision).toBe(screenRuntime.registries.modifierSnippetRevision);
-    expect(offscreenRuntime.registries.renderEffects).toBe(screenRuntime.registries.renderEffects);
+    expect(offscreenRuntime.registries.effects).toBe(screenRuntime.registries.effects);
     expect(offscreenRuntime.registries.shapeRasterizer).toBe(screenRuntime.registries.shapeRasterizer);
     expect(offscreenRuntime.registries.strokeTessellator).toBe(screenRuntime.registries.strokeTessellator);
     expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
@@ -332,7 +332,7 @@ describe('createWgpuOffscreenRenderState', () => {
       materialRenderer,
     );
     expect(getRegistryTableEntry(offscreenRuntime.registries.textureResolvers, 'acme.Texture')).toBe(textureResolver);
-    expect(getRegistryTableEntry(offscreenRuntime.registries.renderEffects, 'acme.Effect')).toEqual({
+    expect(getRegistryTableEntry(offscreenRuntime.registries.effects, 'acme.Effect')).toEqual({
       runner: effectRunner,
     });
     expect(getPaddingResolver(offscreen, 'acme.Effect')).toBe(paddingResolver);
@@ -527,7 +527,7 @@ describe('createWgpuRenderStateRuntime', () => {
     });
     expect(runtime.registries.modifierSnippets.entries.size).toBe(0);
     expect(runtime.registries.modifierSnippetRevision).toBe(0);
-    expect(runtime.registries.renderEffects).toMatchObject({
+    expect(runtime.registries.effects).toMatchObject({
       onMiss: 'Unregistered',
       registry: 'WgpuEffect',
       shape: 'keyed',

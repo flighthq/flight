@@ -12,7 +12,7 @@ import { RegistryEntryState } from '@flighthq/types/contract';
 // literal kind and public default runner, and installs no padding, shader-source, or backdrop companions.
 
 export function getWgpuEffectRunner(state: WgpuRenderState, kind: string): WgpuEffectRunner | null {
-  const entry = getWgpuRenderStateRuntime(state).registries.renderEffects.entries.get(kind);
+  const entry = getWgpuRenderStateRuntime(state).registries.effects.entries.get(kind);
   return entry?.state === RegistryEntryState.Bound ? entry.value.runner : null;
 }
 
@@ -21,13 +21,11 @@ export function getWgpuEffectRunner(state: WgpuRenderState, kind: string): WgpuE
 // silently skips unregistered kinds; check up front to apply your own policy (warn, filter)
 // rather than relying on silent no-ops.
 export function hasWgpuEffectRunner(state: WgpuRenderState, kind: string): boolean {
-  return (
-    getWgpuRenderStateRuntime(state).registries.renderEffects.entries.get(kind)?.state === RegistryEntryState.Bound
-  );
+  return getWgpuRenderStateRuntime(state).registries.effects.entries.get(kind)?.state === RegistryEntryState.Bound;
 }
 
 export function isWgpuEffectResolvable(state: WgpuRenderState, effect: Readonly<Effect>): boolean {
-  const entry = getWgpuRenderStateRuntime(state).registries.renderEffects.entries.get(effect.kind);
+  const entry = getWgpuRenderStateRuntime(state).registries.effects.entries.get(effect.kind);
   if (entry?.state !== RegistryEntryState.Bound) return false;
   return entry.value.isResolvable === undefined || entry.value.isResolvable(state, effect);
 }
@@ -39,7 +37,7 @@ export function registerWgpuEffect(
   isResolvable?: WgpuEffectResolver,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  runtime.registries.renderEffects = withRegistryTableEntry(runtime.registries.renderEffects, kind, {
+  runtime.registries.effects = withRegistryTableEntry(runtime.registries.effects, kind, {
     isResolvable,
     runner,
   });

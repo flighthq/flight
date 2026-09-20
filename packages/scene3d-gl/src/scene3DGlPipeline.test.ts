@@ -57,7 +57,7 @@ describe('defaultScene3DGlRenderRegistries', () => {
     expect(scene3D.customEffectShaders).toBe(scene2D.customEffectShaders);
     expect(scene3D.customMaterialShaders).toBe(scene2D.customMaterialShaders);
     expect(scene3D.materialRenderers).toBe(scene2D.materialRenderers);
-    expect(scene3D.renderEffects).toBe(scene2D.renderEffects);
+    expect(scene3D.effects).toBe(scene2D.effects);
     expect(scene3D.renderers).toBe(scene2D.renderers);
     expect(scene3D.shapeRasterizer).toBe(scene2D.shapeRasterizer);
     expect(scene3D.strokeTessellator).toBe(scene2D.strokeTessellator);

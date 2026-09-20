@@ -72,7 +72,7 @@ export interface WgpuRenderRegistries extends RenderRegistries {
   // Shader cache identity advances with every snippet-table replacement, including same-kind
   // replacements whose define signature is unchanged but whose emitted source differs.
   modifierSnippetRevision: number;
-  renderEffects: KeyedTable<WgpuEffectRegistration>;
+  effects: KeyedTable<WgpuEffectRegistration>;
   shapeRasterizer: SlotTable<ShapeRasterizer> | null;
   textureResolvers: KeyedTable<WgpuTextureResolver>;
   velocityWriters: KeyedTable<WgpuVelocityWriter>;
