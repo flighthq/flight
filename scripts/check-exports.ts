@@ -348,6 +348,10 @@ function classifyExports(exportsByModule: ModuleExports[], policy: ExportsPolicy
         source = 'default';
       }
 
+      const existing = classification.get(name);
+      if (existing && existing.lane !== 'exclude' && lane === 'exclude') {
+        continue;
+      }
       classification.set(name, { lane, module: mod, source });
     }
   }
