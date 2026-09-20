@@ -1,14 +1,14 @@
 import type {
   DitherEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Dither: quantize each channel to `levels` steps with a 4x4 ordered Bayer threshold for a retro
 // banded-but-textured look.
@@ -29,12 +29,12 @@ export function applyDitherEffectToWgpu(
   });
 }
 
-export const defaultWgpuDitherEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuDitherEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyDitherEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as DitherEffect);
 };
 
 export function registerWgpuDitherEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'DitherEffect', defaultWgpuDitherEffectRunner);
+  registerWgpuEffect(state, 'DitherEffect', defaultWgpuDitherEffectRunner);
 }
 
 // Slot layout: [0]=levels, [1]=pad, [2..3]=resolution.

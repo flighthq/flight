@@ -1,13 +1,13 @@
 import type {
   VignetteEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 
 // Vignette: darken toward the edges. Pixels inside `radius` stay full bright; beyond it, brightness
 // falls off over `softness` and the color is blended toward the (unpacked) vignette color by intensity.
@@ -40,12 +40,12 @@ export function applyVignetteEffectToWgpu(
   });
 }
 
-export const defaultWgpuVignetteEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuVignetteEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyVignetteEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as VignetteEffect);
 };
 
 export function registerWgpuVignetteEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'VignetteEffect', defaultWgpuVignetteEffectRunner);
+  registerWgpuEffect(state, 'VignetteEffect', defaultWgpuVignetteEffectRunner);
 }
 
 // Slot layout: [0]=intensity, [1]=radius, [2]=softness, [3]=pad, [4..7]=color rgba. The std140-style

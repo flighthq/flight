@@ -93,6 +93,11 @@ interface RegistrationMapping {
 }
 
 const PREFIX: Record<EffectBackend, string> = { canvas: 'Canvas', gl: 'Gl', wgpu: 'Wgpu' };
+const EFFECT_REGISTRATION_DOOR: Record<EffectBackend, string> = {
+  canvas: 'registerCanvasRenderEffect',
+  gl: 'registerGlRenderEffect',
+  wgpu: 'registerWgpuEffect',
+};
 const EMPTY_KIND_CONSTANTS: RegistrarKindConstants = { identifiers: new Map(), members: new Map() };
 
 // Capability is deliberately source-derived and exactly inverse: every shipped built-in runner has one
@@ -104,7 +109,7 @@ export function auditEffectBackend(options: EffectAuditOptions): ReachabilityVio
   const violations: ReachabilityViolation[] = [];
   const runnerKinds = new Set<string>();
   const registerKinds = new Set<string>();
-  const generic = `register${prefix}RenderEffect`;
+  const generic = EFFECT_REGISTRATION_DOOR[options.backend];
   const runnerPattern = new RegExp(`^default${prefix}(.+Effect)Runner$`);
   const registerPattern = new RegExp(`^register${prefix}(.+Effect)$`);
 
@@ -158,7 +163,7 @@ export function auditEffectBackend(options: EffectAuditOptions): ReachabilityVio
 
 export function effectReachabilitySymbols(backend: EffectBackend, sourceFiles: readonly string[]): Set<string> {
   const prefix = PREFIX[backend];
-  const generic = `register${prefix}RenderEffect`;
+  const generic = EFFECT_REGISTRATION_DOOR[backend];
   const runnerPattern = new RegExp(`^default${prefix}.+EffectRunner$`);
   const registerPattern = new RegExp(`^register${prefix}.+Effect$`);
   const symbols = new Set<string>([generic]);

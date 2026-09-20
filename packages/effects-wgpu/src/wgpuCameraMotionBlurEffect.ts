@@ -1,13 +1,13 @@
 import type {
   CameraMotionBlurEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 
 // Camera3D motion blur: a real single-pass radial/zoom blur scaled by intensity — smears each sample
 // toward the screen center. A legitimate 2D effect on its own, the Wgpu mirror of effects-gl's
@@ -29,12 +29,12 @@ export function applyCameraMotionBlurEffectToWgpu(
   });
 }
 
-export const defaultWgpuCameraMotionBlurEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuCameraMotionBlurEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyCameraMotionBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as CameraMotionBlurEffect);
 };
 
 export function registerWgpuCameraMotionBlurEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'CameraMotionBlurEffect', defaultWgpuCameraMotionBlurEffectRunner);
+  registerWgpuEffect(state, 'CameraMotionBlurEffect', defaultWgpuCameraMotionBlurEffectRunner);
 }
 
 // Slot layout: [0]=intensity, [1]=samples. SAMPLES caps the loop; min(u_samples, 16.0) gates the taps.

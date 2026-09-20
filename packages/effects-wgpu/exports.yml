@@ -1,8 +1,8 @@
 public:
   - setWgpuEffectStateSampleCountGuard
   - setWgpuEffectStateSkipGuard
-  - setWgpuRenderEffectApplicationGuard
-  - setWgpuRenderEffectVelocityTexture
+  - setWgpuEffectApplicationGuard
+  - setWgpuEffectVelocityTexture
 
 protected:
   - BITMAP_DISPLACEMENT_FRAGMENT_WGSL

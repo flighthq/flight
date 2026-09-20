@@ -12,8 +12,8 @@ import { applyBevelEffectToWgpu, defaultWgpuBevelEffectRunner, registerWgpuBevel
 import * as wgpuEffectBlitShaderModule from './wgpuEffectBlitShader';
 import * as wgpuEffectBoxBlurModule from './wgpuEffectBoxBlur';
 import * as wgpuEffectPassModule from './wgpuEffectPass';
+import { getWgpuEffectRunner } from './wgpuEffectRegistry';
 import * as wgpuEffectTintShaderModule from './wgpuEffectTintShader';
-import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
 
 const recorded = {
   acquired: [] as unknown[],
@@ -229,8 +229,8 @@ describe('registerWgpuBevelEffect', () => {
   it('makes the runner resolvable for the BevelEffect kind', async () => {
     const state = await createWgpuRenderStateForTest();
 
-    expect(getWgpuRenderEffectRunner(state, 'BevelEffect')).toBeNull();
+    expect(getWgpuEffectRunner(state, 'BevelEffect')).toBeNull();
     registerWgpuBevelEffect(state);
-    expect(getWgpuRenderEffectRunner(state, 'BevelEffect')).toBe(defaultWgpuBevelEffectRunner);
+    expect(getWgpuEffectRunner(state, 'BevelEffect')).toBe(defaultWgpuBevelEffectRunner);
   });
 });

@@ -18,7 +18,7 @@ import {
   initializeWgpuEffectState,
   setWgpuEffectStateSampleCountGuard,
   setWgpuEffectStateSkipGuard,
-  setWgpuRenderEffectVelocityTexture,
+  setWgpuEffectVelocityTexture,
 } from './wgpuEffectState';
 
 beforeAll(() => installWgpuMock());
@@ -338,7 +338,7 @@ describe('setWgpuEffectStateSkipGuard', () => {
     expect(dropped).toEqual(['test.wgpu-pipeline-skip-seam']);
   });
 });
-describe('setWgpuRenderEffectVelocityTexture', () => {
+describe('setWgpuEffectVelocityTexture', () => {
   it('sets the velocity texture on the pipeline', () => {
     const _pipeline = allocateEntity<any>();
     _pipeline.options = {};
@@ -349,7 +349,7 @@ describe('setWgpuRenderEffectVelocityTexture', () => {
     _pipeline.velocityTexture = null;
     const pipeline = finishEntity(_pipeline);
     const texture = {} as GPUTexture;
-    setWgpuRenderEffectVelocityTexture(pipeline, texture);
+    setWgpuEffectVelocityTexture(pipeline, texture);
     expect(pipeline.velocityTexture).toBe(texture);
   });
 });

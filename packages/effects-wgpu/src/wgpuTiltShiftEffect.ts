@@ -1,14 +1,14 @@
 import type {
   TiltShiftEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Tilt-shift: keep a horizontal focus band sharp and blur above and below it. The band is centered at
 // `center` on Y with height `width`; blur strength ramps with distance outside the band. Blur is
@@ -33,12 +33,12 @@ export function applyTiltShiftEffectToWgpu(
   });
 }
 
-export const defaultWgpuTiltShiftEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuTiltShiftEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyTiltShiftEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as TiltShiftEffect);
 };
 
 export function registerWgpuTiltShiftEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'TiltShiftEffect', defaultWgpuTiltShiftEffectRunner);
+  registerWgpuEffect(state, 'TiltShiftEffect', defaultWgpuTiltShiftEffectRunner);
 }
 
 // Slot layout: [0]=center, [1]=width, [2]=blur, [3]=pad, [4..5]=resolution (vec2 aligned to 16 bytes).

@@ -6,42 +6,42 @@ import {
 } from '@flighthq/render-wgpu/contract';
 
 import {
-  getWgpuRenderEffectRunner,
-  hasWgpuRenderEffectRunner,
-  isWgpuRenderEffectResolvable,
-  registerWgpuRenderEffect,
-} from './wgpuRenderEffectRegistry';
+  getWgpuEffectRunner,
+  hasWgpuEffectRunner,
+  isWgpuEffectResolvable,
+  registerWgpuEffect,
+} from './wgpuEffectRegistry';
 
 beforeAll(() => {
   installWgpuMock();
 });
 
-describe('getWgpuRenderEffectRunner', () => {
+describe('getWgpuEffectRunner', () => {
   it('returns null when no runner is registered for the kind', async () => {
     const state = await createWgpuRenderStateForTest();
-    expect(getWgpuRenderEffectRunner(state, 'VignetteEffect')).toBe(null);
+    expect(getWgpuEffectRunner(state, 'VignetteEffect')).toBe(null);
   });
 });
 
-describe('hasWgpuRenderEffectRunner', () => {
+describe('hasWgpuEffectRunner', () => {
   it('returns false when no runner is registered for the kind', async () => {
     const state = await createWgpuRenderStateForTest();
-    expect(hasWgpuRenderEffectRunner(state, 'VignetteEffect')).toBe(false);
+    expect(hasWgpuEffectRunner(state, 'VignetteEffect')).toBe(false);
   });
 
   it('returns true after a runner is registered for the kind', async () => {
     const state = await createWgpuRenderStateForTest();
-    registerWgpuRenderEffect(state, 'VignetteEffect', vi.fn());
-    expect(hasWgpuRenderEffectRunner(state, 'VignetteEffect')).toBe(true);
+    registerWgpuEffect(state, 'VignetteEffect', vi.fn());
+    expect(hasWgpuEffectRunner(state, 'VignetteEffect')).toBe(true);
   });
 });
 
-describe('isWgpuRenderEffectResolvable', () => {
+describe('isWgpuEffectResolvable', () => {
   it('treats a runner without a resolver as always resolvable', async () => {
     const state = await createWgpuRenderStateForTest();
-    registerWgpuRenderEffect(state, 'acme.Always', vi.fn());
+    registerWgpuEffect(state, 'acme.Always', vi.fn());
     expect(
-      isWgpuRenderEffectResolvable(
+      isWgpuEffectResolvable(
         state,
         (() => {
           const out = allocateEntity<any>();
@@ -54,9 +54,9 @@ describe('isWgpuRenderEffectResolvable', () => {
 
   it('asks the resolver for each effect instance', async () => {
     const state = await createWgpuRenderStateForTest();
-    registerWgpuRenderEffect(state, 'acme.Named', vi.fn(), (_state, effect) => 'key' in effect);
+    registerWgpuEffect(state, 'acme.Named', vi.fn(), (_state, effect) => 'key' in effect);
     expect(
-      isWgpuRenderEffectResolvable(
+      isWgpuEffectResolvable(
         state,
         (() => {
           const out = allocateEntity<any>();
@@ -66,7 +66,7 @@ describe('isWgpuRenderEffectResolvable', () => {
       ),
     ).toBe(false);
     expect(
-      isWgpuRenderEffectResolvable(
+      isWgpuEffectResolvable(
         state,
         (() => {
           const out = allocateEntity<any>();
@@ -79,13 +79,13 @@ describe('isWgpuRenderEffectResolvable', () => {
   });
 });
 
-describe('registerWgpuRenderEffect', () => {
+describe('registerWgpuEffect', () => {
   it('registers a runner retrievable by its kind', async () => {
     const state = await createWgpuRenderStateForTest();
     const runner = vi.fn();
     const before = getWgpuRenderStateRuntime(state).registries.renderEffects;
-    registerWgpuRenderEffect(state, 'VignetteEffect', runner);
-    expect(getWgpuRenderEffectRunner(state, 'VignetteEffect')).toBe(runner);
+    registerWgpuEffect(state, 'VignetteEffect', runner);
+    expect(getWgpuEffectRunner(state, 'VignetteEffect')).toBe(runner);
     expect(getWgpuRenderStateRuntime(state).registries.renderEffects).not.toBe(before);
     expect(before.entries.size).toBe(0);
   });
@@ -94,12 +94,12 @@ describe('registerWgpuRenderEffect', () => {
     const state = await createWgpuRenderStateForTest();
     const runnerA = vi.fn();
     const runnerB = vi.fn();
-    registerWgpuRenderEffect(state, 'TestEffect', runnerA);
+    registerWgpuEffect(state, 'TestEffect', runnerA);
     const before = getWgpuRenderStateRuntime(state).registries.renderEffects;
 
-    registerWgpuRenderEffect(state, 'TestEffect', runnerB);
+    registerWgpuEffect(state, 'TestEffect', runnerB);
 
-    expect(getWgpuRenderEffectRunner(state, 'TestEffect')).toBe(runnerB);
+    expect(getWgpuEffectRunner(state, 'TestEffect')).toBe(runnerB);
     expect(before.entries.get('TestEffect')).toEqual({
       state: 'bound',
       value: { isResolvable: undefined, runner: runnerA },

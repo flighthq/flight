@@ -1275,7 +1275,7 @@
     },
     {
       "packageName": "effects-wgpu",
-      "symbol": "registerWgpuRenderEffect",
+      "symbol": "registerWgpuEffect",
       "dot": true,
       "contract": true
     },

@@ -2,7 +2,7 @@ import { getColorAlpha, getColorRgb } from '@flighthq/color/contract';
 import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type {
   BevelEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
   WgpuRenderTargetPool,
@@ -16,8 +16,8 @@ import {
   createWgpuDualSourceEffectPipeline,
   drawWgpuDualSourceEffectPass,
 } from './wgpuEffectPass';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 import { applyWgpuEffectTintPass } from './wgpuEffectTintShader';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Bevel composite effect: the directional gradient of the blurred silhouette drives a highlight/shadow edge band, clipped by bevelType, then sourceMode decides source compositing.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the
@@ -85,12 +85,12 @@ export function applyBevelEffectToWgpu(
   releaseWgpuTextureRenderTarget(pool, blurTemp);
 }
 
-export const defaultWgpuBevelEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuBevelEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyBevelEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as BevelEffect);
 };
 
 export function registerWgpuBevelEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'BevelEffect', defaultWgpuBevelEffectRunner);
+  registerWgpuEffect(state, 'BevelEffect', defaultWgpuBevelEffectRunner);
 }
 
 // Reads the blurred alpha field (group 1) and source (group 2); writes the tinted, clipped bevel

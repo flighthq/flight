@@ -1,13 +1,13 @@
 import type {
   FilmGrainEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 
 // Film grain: add per-pixel hash noise scaled by intensity, with grain cell size and a seed so the
 // noise can be animated frame to frame.
@@ -28,12 +28,12 @@ export function applyFilmGrainEffectToWgpu(
   });
 }
 
-export const defaultWgpuFilmGrainEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuFilmGrainEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyFilmGrainEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as FilmGrainEffect);
 };
 
 export function registerWgpuFilmGrainEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'FilmGrainEffect', defaultWgpuFilmGrainEffectRunner);
+  registerWgpuEffect(state, 'FilmGrainEffect', defaultWgpuFilmGrainEffectRunner);
 }
 
 // Slot layout: [0]=intensity, [1]=size, [2]=seed.

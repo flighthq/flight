@@ -6,7 +6,7 @@ import {
   defaultWgpuContactShadowsEffectRunner,
   registerWgpuContactShadowsEffect,
 } from './wgpuContactShadowsEffect';
-import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
+import { getWgpuEffectRunner } from './wgpuEffectRegistry';
 import * as wgpuSsaoEffectMod from './wgpuSsaoEffect';
 
 beforeAll(() => {
@@ -56,6 +56,6 @@ describe('registerWgpuContactShadowsEffect', () => {
   it('installs the contact-shadows runner on the supplied state', async () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuContactShadowsEffect(state);
-    expect(getWgpuRenderEffectRunner(state, 'ContactShadowsEffect')).toBe(defaultWgpuContactShadowsEffectRunner);
+    expect(getWgpuEffectRunner(state, 'ContactShadowsEffect')).toBe(defaultWgpuContactShadowsEffectRunner);
   });
 });

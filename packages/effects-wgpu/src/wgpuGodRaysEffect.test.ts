@@ -4,12 +4,12 @@ import type { GodRaysEffect, WgpuRenderState, WgpuTextureRenderTarget } from '@f
 
 import * as wgpuEffectPassModule from './wgpuEffectPass';
 import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache';
+import { getWgpuEffectRunner } from './wgpuEffectRegistry';
 import {
   applyGodRaysEffectToWgpu,
   defaultWgpuGodRaysEffectRunner,
   registerWgpuGodRaysEffect,
 } from './wgpuGodRaysEffect';
-import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
 
 const recorded = {
   pipelines: [] as { blend: string; key: string; wgsl: string }[],
@@ -135,8 +135,8 @@ describe('registerWgpuGodRaysEffect', () => {
   it('makes the runner resolvable for the GodRaysEffect kind', async () => {
     const state = await createWgpuRenderStateForTest();
 
-    expect(getWgpuRenderEffectRunner(state, 'GodRaysEffect')).toBeNull();
+    expect(getWgpuEffectRunner(state, 'GodRaysEffect')).toBeNull();
     registerWgpuGodRaysEffect(state);
-    expect(getWgpuRenderEffectRunner(state, 'GodRaysEffect')).toBe(defaultWgpuGodRaysEffectRunner);
+    expect(getWgpuEffectRunner(state, 'GodRaysEffect')).toBe(defaultWgpuGodRaysEffectRunner);
   });
 });

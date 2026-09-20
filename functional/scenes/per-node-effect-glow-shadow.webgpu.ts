@@ -6,7 +6,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  applyWgpuRenderEffectsToRenderTexture,
+  applyWgpuEffectsToRenderTexture,
   computeRenderEffectPadding,
   createDisplayObject,
   createDropShadowEffect,
@@ -152,9 +152,7 @@ function capture(effect: Readonly<RenderEffect>, padding: Readonly<RenderEffectP
       },
       { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
     );
-    if (
-      !applyWgpuRenderEffectsToRenderTexture(offscreenState, pool, sourceTexture, destTexture, scratchTexture, [effect])
-    ) {
+    if (!applyWgpuEffectsToRenderTexture(offscreenState, pool, sourceTexture, destTexture, scratchTexture, [effect])) {
       throw new Error(`[per-node-effect-glow-shadow] ${effect.kind} did not run`);
     }
   });

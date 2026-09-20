@@ -1,4 +1,4 @@
-export * from './enableWgpuRenderEffectGuards';
+export * from './enableWgpuEffectGuards';
 export { defaultWgpuBevelEffectRunner, registerWgpuBevelEffect } from './wgpuBevelEffect';
 export {
   defaultWgpuBitmapDisplacementEffectRunner,
@@ -35,7 +35,7 @@ export {
   endWgpuEffectPass,
   setWgpuEffectStateSampleCountGuard,
   setWgpuEffectStateSkipGuard,
-  setWgpuRenderEffectVelocityTexture,
+  setWgpuEffectVelocityTexture,
 } from './wgpuEffectState';
 export { defaultWgpuFilmGrainEffectRunner, registerWgpuFilmGrainEffect } from './wgpuFilmGrainEffect';
 export { defaultWgpuFxaaEffectRunner, registerWgpuFxaaEffect } from './wgpuFxaaEffect';
@@ -57,7 +57,7 @@ export { defaultWgpuOutlineEffectRunner, registerWgpuOutlineEffect } from './wgp
 export { defaultWgpuPixelateEffectRunner, registerWgpuPixelateEffect } from './wgpuPixelateEffect';
 export { defaultWgpuPosterizeEffectRunner, registerWgpuPosterizeEffect } from './wgpuPosterizeEffect';
 export { defaultWgpuRadialBlurEffectRunner, registerWgpuRadialBlurEffect } from './wgpuRadialBlurEffect';
-export * from './wgpuRenderEffectRegistry';
+export * from './wgpuEffectRegistry';
 export * from './wgpuRenderTextureEffect';
 export { defaultWgpuScanlinesEffectRunner, registerWgpuScanlinesEffect } from './wgpuScanlinesEffect';
 export { defaultWgpuScreenSpaceFogEffectRunner, registerWgpuScreenSpaceFogEffect } from './wgpuScreenSpaceFogEffect';

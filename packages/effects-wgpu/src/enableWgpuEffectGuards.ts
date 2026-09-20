@@ -1,16 +1,16 @@
 import { logOnce } from '@flighthq/log/contract';
-import type { WgpuRenderEffectApplicationExplanation, WgpuRenderState } from '@flighthq/types/contract';
+import type { WgpuEffectApplicationExplanation, WgpuRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import { setWgpuEffectStateSampleCountGuard, setWgpuEffectStateSkipGuard } from './wgpuEffectState';
-import { setWgpuRenderEffectApplicationGuard } from './wgpuRenderTextureEffect';
+import { setWgpuEffectApplicationGuard } from './wgpuRenderTextureEffect';
 
-export function areWgpuRenderEffectGuardsEnabled(state: WgpuRenderState): boolean {
+export function areWgpuEffectGuardsEnabled(state: WgpuRenderState): boolean {
   return _guardedStates.has(state);
 }
 
-export function disableWgpuRenderEffectGuards(state: WgpuRenderState): void {
-  setWgpuRenderEffectApplicationGuard(state, null);
+export function disableWgpuEffectGuards(state: WgpuRenderState): void {
+  setWgpuEffectApplicationGuard(state, null);
   setWgpuEffectStateSampleCountGuard(state, null);
   setWgpuEffectStateSkipGuard(state, null);
   _guardedStates.delete(state);
@@ -24,8 +24,8 @@ export function disableWgpuRenderEffectGuards(state: WgpuRenderState): void {
 // The WGPU sibling of enableGlRenderEffectGuards. WGPU now observes per-instance resolution for effects
 // that name external resources (BitmapDisplacementEffect); GL alone additionally guards custom-shader
 // source re-registration because WGPU has no custom-shader effect.
-export function enableWgpuRenderEffectGuards(state: WgpuRenderState): void {
-  setWgpuRenderEffectApplicationGuard(state, warnWgpuRenderEffectApplication);
+export function enableWgpuEffectGuards(state: WgpuRenderState): void {
+  setWgpuEffectApplicationGuard(state, warnWgpuEffectApplication);
   setWgpuEffectStateSampleCountGuard(state, warnWgpuEffectStateSampleCount);
   setWgpuEffectStateSkipGuard(state, warnWgpuEffectStateSkip);
   _guardedStates.add(state);
@@ -51,26 +51,26 @@ function warnWgpuEffectStateSampleCount(
   );
 }
 
-function getWgpuRenderEffectApplicationMessage(explanation: Readonly<WgpuRenderEffectApplicationExplanation>): string {
+function getWgpuEffectApplicationMessage(explanation: Readonly<WgpuEffectApplicationExplanation>): string {
   switch (explanation.status) {
     case 'partial-registration':
-      return `applyWgpuRenderEffectsToRenderTexture: ${explanation.unregisteredKinds.length} of ${explanation.requestedCount} effect kinds have no registered runner and were SKIPPED — the destination was written without them; call registerWgpuRenderEffect(state, kind, runner) for ${explanation.unregisteredKinds.join(', ')}`;
+      return `applyWgpuEffectsToRenderTexture: ${explanation.unregisteredKinds.length} of ${explanation.requestedCount} effect kinds have no registered runner and were SKIPPED — the destination was written without them; call registerWgpuEffect(state, kind, runner) for ${explanation.unregisteredKinds.join(', ')}`;
     case 'source-unavailable':
-      return 'applyWgpuRenderEffectsToRenderTexture: the source render Texture has no realized WGPU target, so the call returned false and the destination was NOT written — render into the source before applying effects';
+      return 'applyWgpuEffectsToRenderTexture: the source render Texture has no realized WGPU target, so the call returned false and the destination was NOT written — render into the source before applying effects';
     case 'partial-resolution':
-      return `applyWgpuRenderEffectsToRenderTexture: ${explanation.unresolvedIndexes.length} of ${explanation.requestedCount} effects have a runner but no resolved external resource, so those stages COPIED THE INPUT THROUGH UNCHANGED; chain position(s) ${explanation.unresolvedIndexes.join(', ')}`;
+      return `applyWgpuEffectsToRenderTexture: ${explanation.unresolvedIndexes.length} of ${explanation.requestedCount} effects have a runner but no resolved external resource, so those stages COPIED THE INPUT THROUGH UNCHANGED; chain position(s) ${explanation.unresolvedIndexes.join(', ')}`;
     case 'stale-destination':
-      return 'applyWgpuRenderEffectsToRenderTexture: the call returned false before replacing the destination, so its previously published pixels are a STALE DESTINATION — handle the false return before sampling dest, and make the source and runners available before retrying';
+      return 'applyWgpuEffectsToRenderTexture: the call returned false before replacing the destination, so its previously published pixels are a STALE DESTINATION — handle the false return before sampling dest, and make the source and runners available before retrying';
     case 'unresolved-effects':
-      return `applyWgpuRenderEffectsToRenderTexture: every registered effect was unresolved and COPIED THE INPUT THROUGH UNCHANGED; chain position(s) ${explanation.unresolvedIndexes.join(', ')}`;
+      return `applyWgpuEffectsToRenderTexture: every registered effect was unresolved and COPIED THE INPUT THROUGH UNCHANGED; chain position(s) ${explanation.unresolvedIndexes.join(', ')}`;
     default:
-      return `applyWgpuRenderEffectsToRenderTexture: no registered runner for any of ${explanation.unregisteredKinds.join(', ')}, so the call returned false and the destination was NEVER WRITTEN — anything sampling it reads a stale or empty texture; call registerWgpuRenderEffect(state, kind, runner)`;
+      return `applyWgpuEffectsToRenderTexture: no registered runner for any of ${explanation.unregisteredKinds.join(', ')}, so the call returned false and the destination was NEVER WRITTEN — anything sampling it reads a stale or empty texture; call registerWgpuEffect(state, kind, runner)`;
   }
 }
 
-function warnWgpuRenderEffectApplication(
+function warnWgpuEffectApplication(
   _state: WgpuRenderState,
-  explanation: Readonly<WgpuRenderEffectApplicationExplanation>,
+  explanation: Readonly<WgpuEffectApplicationExplanation>,
 ): void {
   // Keyed by status plus the kinds involved: a chain missing a different effect is a different
   // observation worth reporting, while the same miss every frame is not.
@@ -78,7 +78,7 @@ function warnWgpuRenderEffectApplication(
     `effects-wgpu:effect-application:${explanation.status}:${explanation.unregisteredKinds.join(',')}:${explanation.unresolvedIndexes.join(',')}`,
     LogLevel.Warn,
     {
-      message: getWgpuRenderEffectApplicationMessage(explanation),
+      message: getWgpuEffectApplicationMessage(explanation),
       registeredCount: explanation.registeredCount,
       requestedCount: explanation.requestedCount,
       status: explanation.status,
@@ -101,7 +101,7 @@ function warnWgpuEffectStateSkip(_state: WgpuRenderState, kind: string): void {
     LogLevel.Warn,
     {
       kind,
-      message: `endWgpuEffectPass: effect kind "${kind}" has no registered runner, so the pass was SKIPPED — the frame was written without it and nothing else reports this; call registerWgpuRenderEffect(state, "${kind}", runner), or check whether this kind has a runner on this backend at all`,
+      message: `endWgpuEffectPass: effect kind "${kind}" has no registered runner, so the pass was SKIPPED — the frame was written without it and nothing else reports this; call registerWgpuEffect(state, "${kind}", runner), or check whether this kind has a runner on this backend at all`,
     },
     'effects-wgpu',
   );

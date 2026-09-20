@@ -1,14 +1,14 @@
 import type {
   KuwaharaEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Kuwahara: edge-preserving smoothing. Over a fixed small radius split the neighborhood into four
 // overlapping quadrants, compute each mean and variance, and emit the lowest-variance mean — flattens
@@ -30,12 +30,12 @@ export function applyKuwaharaEffectToWgpu(
   });
 }
 
-export const defaultWgpuKuwaharaEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuKuwaharaEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyKuwaharaEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as KuwaharaEffect);
 };
 
 export function registerWgpuKuwaharaEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'KuwaharaEffect', defaultWgpuKuwaharaEffectRunner);
+  registerWgpuEffect(state, 'KuwaharaEffect', defaultWgpuKuwaharaEffectRunner);
 }
 
 // Slot layout: [0]=radius, [1]=pad, [2..3]=resolution.

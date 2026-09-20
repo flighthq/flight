@@ -1,4 +1,4 @@
-export * from './enableWgpuRenderEffectGuards';
+export * from './enableWgpuEffectGuards';
 export * from './wgpuBevelEffect';
 export * from './wgpuBitmapDisplacementEffect';
 export * from './wgpuBlendEffect';
@@ -44,7 +44,7 @@ export * from './wgpuOutlineEffect';
 export * from './wgpuPixelateEffect';
 export * from './wgpuPosterizeEffect';
 export * from './wgpuRadialBlurEffect';
-export * from './wgpuRenderEffectRegistry';
+export * from './wgpuEffectRegistry';
 export * from './wgpuRenderTextureEffect';
 export * from './wgpuScanlinesEffect';
 export * from './wgpuScreenSpaceFogEffect';

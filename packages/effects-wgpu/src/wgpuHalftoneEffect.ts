@@ -1,13 +1,13 @@
 import type {
   HalftoneEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 
 // Halftone: sample luminance, then carve a rotated dot grid whose dot radius tracks darkness — the
 // classic print/comic screen. `scale` sets the cell size, `angle` rotates the grid.
@@ -29,12 +29,12 @@ export function applyHalftoneEffectToWgpu(
   });
 }
 
-export const defaultWgpuHalftoneEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuHalftoneEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyHalftoneEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as HalftoneEffect);
 };
 
 export function registerWgpuHalftoneEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'HalftoneEffect', defaultWgpuHalftoneEffectRunner);
+  registerWgpuEffect(state, 'HalftoneEffect', defaultWgpuHalftoneEffectRunner);
 }
 
 // Slot layout: [0]=scale, [1]=angle, [2..3]=resolution.

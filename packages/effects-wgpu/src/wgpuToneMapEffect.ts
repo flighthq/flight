@@ -1,13 +1,13 @@
 import type {
   ToneMapEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 
 // Tone map: compress HDR to displayable range via the selected operator. Single-pass reference recipe,
 // the Wgpu mirror of effects-gl's applyToneMapEffectToGl. The operator selects a tonemap body
@@ -28,12 +28,12 @@ export function applyToneMapEffectToWgpu(
   });
 }
 
-export const defaultWgpuToneMapEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuToneMapEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyToneMapEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ToneMapEffect);
 };
 
 export function registerWgpuToneMapEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'ToneMapEffect', defaultWgpuToneMapEffectRunner);
+  registerWgpuEffect(state, 'ToneMapEffect', defaultWgpuToneMapEffectRunner);
 }
 
 function buildToneMapFragment(operator: string): string {

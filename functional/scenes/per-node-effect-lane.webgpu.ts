@@ -11,7 +11,7 @@ import {
   appendShapeBeginFill,
   appendShapeEndFill,
   appendShapeRectangle,
-  applyWgpuRenderEffectsToRenderTexture,
+  applyWgpuEffectsToRenderTexture,
   computeNodeRootLocalBoundsRectangle,
   computeRenderEffectPadding,
   createBlurEffect,
@@ -210,9 +210,7 @@ function captureSubtree(): {
       },
       { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
     );
-    if (
-      !applyWgpuRenderEffectsToRenderTexture(offscreenState, pool, sourceTexture, destTexture, scratchTexture, effects)
-    ) {
+    if (!applyWgpuEffectsToRenderTexture(offscreenState, pool, sourceTexture, destTexture, scratchTexture, effects)) {
       throw new Error('[per-node-effect-lane] the registered blur effect did not run');
     }
   });

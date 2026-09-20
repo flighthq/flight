@@ -1,14 +1,14 @@
 import type {
   SharpenEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Sharpen: unsharp mask via a 3x3 Laplacian kernel; `amount` scales the high-frequency boost.
 export function applySharpenEffectToWgpu(
@@ -28,12 +28,12 @@ export function applySharpenEffectToWgpu(
   });
 }
 
-export const defaultWgpuSharpenEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuSharpenEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applySharpenEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as SharpenEffect);
 };
 
 export function registerWgpuSharpenEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'SharpenEffect', defaultWgpuSharpenEffectRunner);
+  registerWgpuEffect(state, 'SharpenEffect', defaultWgpuSharpenEffectRunner);
 }
 
 // Slot layout: [0]=amount, [1]=pad, [2..3]=resolution.

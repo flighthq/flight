@@ -2,14 +2,14 @@ import type {
   AdvancedBlendMode,
   BlendEffect,
   WgpuDualSourceEffectPipeline,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 import { AdvancedBlendMode as AdvancedBlendModeValues } from '@flighthq/types/contract';
 
 import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 
 // Advanced-blend composite pass: reads the incoming layer and an explicitly registered backdrop,
 // applies the same W3C straight-color blend math as glBlendEffect, then writes premultiplied
@@ -39,7 +39,7 @@ export function applyBlendEffectToWgpu(
   );
 }
 
-export const defaultWgpuBlendEffectRunner: WgpuRenderEffectRunner = (context, effect) => {
+export const defaultWgpuBlendEffectRunner: WgpuEffectRunner = (context, effect) => {
   applyBlendEffectToWgpu(context.state, context.source, context.dest, effect as BlendEffect);
 };
 
@@ -59,7 +59,7 @@ export function getWgpuBlendEffectModeIndex(mode: AdvancedBlendMode): number {
 }
 
 export function registerWgpuBlendEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'BlendEffect', defaultWgpuBlendEffectRunner);
+  registerWgpuEffect(state, 'BlendEffect', defaultWgpuBlendEffectRunner);
 }
 
 // Registers a borrowed render target as a named backdrop. Last write wins; the registry never owns or

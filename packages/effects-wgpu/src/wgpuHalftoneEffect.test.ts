@@ -41,12 +41,12 @@ beforeEach(() => {
 
 afterEach(() => vi.restoreAllMocks());
 
+import { getWgpuEffectRunner } from './wgpuEffectRegistry';
 import {
   applyHalftoneEffectToWgpu,
   defaultWgpuHalftoneEffectRunner,
   registerWgpuHalftoneEffect,
 } from './wgpuHalftoneEffect';
-import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
 
 beforeAll(() => installWgpuMock());
 
@@ -187,8 +187,8 @@ describe('registerWgpuHalftoneEffect', () => {
   it('makes the runner resolvable for the HalftoneEffect kind', async () => {
     const state = await createWgpuRenderStateForTest();
 
-    expect(getWgpuRenderEffectRunner(state, 'HalftoneEffect')).toBeNull();
+    expect(getWgpuEffectRunner(state, 'HalftoneEffect')).toBeNull();
     registerWgpuHalftoneEffect(state);
-    expect(getWgpuRenderEffectRunner(state, 'HalftoneEffect')).toBe(defaultWgpuHalftoneEffectRunner);
+    expect(getWgpuEffectRunner(state, 'HalftoneEffect')).toBe(defaultWgpuHalftoneEffectRunner);
   });
 });

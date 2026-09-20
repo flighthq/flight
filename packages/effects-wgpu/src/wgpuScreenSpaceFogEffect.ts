@@ -1,13 +1,13 @@
 import type {
   ScreenSpaceFogEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 
 // Screen-space fog: blends the scene toward an unpacked fog color by a depth proxy. The real recipe
 // reads a sampleable DEPTH texture per fragment — fog = 1 - exp(-density * remap(depth, near, far)) — but
@@ -39,12 +39,12 @@ export function applyScreenSpaceFogEffectToWgpu(
   });
 }
 
-export const defaultWgpuScreenSpaceFogEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuScreenSpaceFogEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyScreenSpaceFogEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ScreenSpaceFogEffect);
 };
 
 export function registerWgpuScreenSpaceFogEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'ScreenSpaceFogEffect', defaultWgpuScreenSpaceFogEffectRunner);
+  registerWgpuEffect(state, 'ScreenSpaceFogEffect', defaultWgpuScreenSpaceFogEffectRunner);
 }
 
 // Slot layout: [0]=density, [1..3]=pad, [4..6]=fog color rgb. The std140-style struct aligns the vec3

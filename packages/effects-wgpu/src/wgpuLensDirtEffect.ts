@@ -2,7 +2,7 @@ import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '
 import type {
   LensDirtEffect,
   WgpuDualSourceEffectPipeline,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
   WgpuRenderTargetPool,
@@ -11,7 +11,7 @@ import type {
 import { applyGaussianBlurToWgpu } from './wgpuBlurEffect';
 import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass, drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 
 // Lens dirt: isolate bright energy, spread it spatially, then admit it through a procedural smudge mask.
 // The bright branch must blur before the mask: masking only the source pixel cannot carry any energy
@@ -63,12 +63,12 @@ export function applyLensDirtEffectToWgpu(
   releaseWgpuTextureRenderTarget(pool, temp);
 }
 
-export const defaultWgpuLensDirtEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuLensDirtEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyLensDirtEffectToWgpu(ctx.state, ctx.source, ctx.dest, ctx.pool, effect as LensDirtEffect);
 };
 
 export function registerWgpuLensDirtEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'LensDirtEffect', defaultWgpuLensDirtEffectRunner);
+  registerWgpuEffect(state, 'LensDirtEffect', defaultWgpuLensDirtEffectRunner);
 }
 
 function getLensDirtCompositePipeline(state: WgpuRenderState): WgpuDualSourceEffectPipeline {

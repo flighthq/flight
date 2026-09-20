@@ -1,12 +1,12 @@
 import { createSsaoEffect } from '@flighthq/effects/contract';
 import type {
   ContactShadowsEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 import { applySsaoEffectToWgpu } from './wgpuSsaoEffect';
 
 // Mirrors the GL contact-shadow leaf through the existing local-occlusion realization. The runner
@@ -29,10 +29,10 @@ export function applyContactShadowsEffectToWgpu(
   );
 }
 
-export const defaultWgpuContactShadowsEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuContactShadowsEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyContactShadowsEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as ContactShadowsEffect);
 };
 
 export function registerWgpuContactShadowsEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'ContactShadowsEffect', defaultWgpuContactShadowsEffectRunner);
+  registerWgpuEffect(state, 'ContactShadowsEffect', defaultWgpuContactShadowsEffectRunner);
 }

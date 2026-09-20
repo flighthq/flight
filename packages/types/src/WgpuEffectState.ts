@@ -12,7 +12,7 @@ import type { WgpuRenderTargetPool, WgpuTextureRenderTarget } from './WgpuRender
 // are the scene's depth and per-pixel velocity attachments, or null when the scene did not produce
 // them — a depth/velocity-dependent recipe reads them when present and falls back to a color-only
 // path when null. The Wgpu mirror of GlRenderEffectContext.
-export interface WgpuRenderEffectContext {
+export interface WgpuEffectContext {
   readonly state: WgpuRenderState;
   readonly source: Readonly<WgpuTextureRenderTarget>;
   readonly dest: Readonly<WgpuTextureRenderTarget>;
@@ -24,13 +24,13 @@ export interface WgpuRenderEffectContext {
 // The per-backend realization registered against an effect `type`. A single function over targets —
 // not a multi-method per-node renderer. The built-ins are exported as `default*` named constants
 // (e.g. through registerWgpuBloomEffect); register an alternative under the same key to swap algorithms.
-export type WgpuRenderEffectRunner = (ctx: Readonly<WgpuRenderEffectContext>, effect: Readonly<RenderEffect>) => void;
+export type WgpuEffectRunner = (ctx: Readonly<WgpuEffectContext>, effect: Readonly<RenderEffect>) => void;
 
-export type WgpuRenderEffectResolver = (state: WgpuRenderState, effect: Readonly<RenderEffect>) => boolean;
+export type WgpuEffectResolver = (state: WgpuRenderState, effect: Readonly<RenderEffect>) => boolean;
 
-export interface WgpuRenderEffectRegistration {
-  readonly isResolvable?: WgpuRenderEffectResolver;
-  readonly runner: WgpuRenderEffectRunner;
+export interface WgpuEffectRegistration {
+  readonly isResolvable?: WgpuEffectResolver;
+  readonly runner: WgpuEffectRunner;
 }
 
 // Retains the GPU resources an effect pass needs across frames: the scene target the pipeline renders
@@ -56,7 +56,7 @@ export interface WgpuEffectState extends Entity {
 // WGPU sibling of GlRenderEffectApplicationExplanation. Registration and per-instance resolution are
 // separate axes: BitmapDisplacementEffect can have a registered runner while its map Texture2D is still
 // absent or unresolved. Such a stage copies through, and unresolvedIndexes makes that sentinel visible.
-export type WgpuRenderEffectApplicationStatus =
+export type WgpuEffectApplicationStatus =
   | 'complete'
   | 'no-effects'
   | 'partial-registration'
@@ -66,10 +66,10 @@ export type WgpuRenderEffectApplicationStatus =
   | 'unregistered-effects'
   | 'unresolved-effects';
 
-export interface WgpuRenderEffectApplicationExplanation {
+export interface WgpuEffectApplicationExplanation {
   readonly registeredCount: number;
   readonly requestedCount: number;
-  readonly status: WgpuRenderEffectApplicationStatus;
+  readonly status: WgpuEffectApplicationStatus;
   readonly unregisteredKinds: readonly string[];
   readonly unresolvedIndexes: readonly number[];
 }
@@ -87,7 +87,7 @@ export type WgpuEffectStateSampleCountGuard = (
   appliedSampleCount: number,
 ) => void;
 
-export type WgpuRenderEffectApplicationGuard = (
+export type WgpuEffectApplicationGuard = (
   state: WgpuRenderState,
-  explanation: Readonly<WgpuRenderEffectApplicationExplanation>,
+  explanation: Readonly<WgpuEffectApplicationExplanation>,
 ) => void;

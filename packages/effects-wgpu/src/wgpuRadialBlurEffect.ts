@@ -1,13 +1,13 @@
 import type {
   RadialBlurEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 
 // Radial blur: accumulate samples stepped from the current uv toward (centerX, centerY) scaled by
 // `strength`, normalized by the sample count. Single-pass reference recipe, the Wgpu mirror of
@@ -34,12 +34,12 @@ export function applyRadialBlurEffectToWgpu(
   });
 }
 
-export const defaultWgpuRadialBlurEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuRadialBlurEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyRadialBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as RadialBlurEffect);
 };
 
 export function registerWgpuRadialBlurEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'RadialBlurEffect', defaultWgpuRadialBlurEffectRunner);
+  registerWgpuEffect(state, 'RadialBlurEffect', defaultWgpuRadialBlurEffectRunner);
 }
 
 // Slot layout: [0]=center.x, [1]=center.y, [2]=strength, [3]=samples.

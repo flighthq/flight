@@ -1,13 +1,13 @@
 import type {
   LensFlareEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 
 // Lens flare: a single-pass approximation. A true flare is a multi-pass recipe (downsample a bright
 // pass, then accumulate ghosts and a halo from it). Here, on each fragment, we sample the source's
@@ -33,12 +33,12 @@ export function applyLensFlareEffectToWgpu(
   });
 }
 
-export const defaultWgpuLensFlareEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuLensFlareEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyLensFlareEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as LensFlareEffect);
 };
 
 export function registerWgpuLensFlareEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'LensFlareEffect', defaultWgpuLensFlareEffectRunner);
+  registerWgpuEffect(state, 'LensFlareEffect', defaultWgpuLensFlareEffectRunner);
 }
 
 // Slot layout: [0]=threshold, [1]=intensity, [2]=ghosts, [3]=halo.

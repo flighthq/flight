@@ -1,14 +1,14 @@
 import type {
   DirectionalBlurEffect,
-  WgpuRenderEffectRunner,
+  WgpuEffectRunner,
   WgpuRenderState,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
 import { drawWgpuEffectPass } from './wgpuEffectPass';
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { registerWgpuEffect } from './wgpuEffectRegistry';
 import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale';
-import { registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
 
 // Directional blur: accumulate samples stepped along `angle` over `length` texels, normalized by the
 // sample count. Single-pass reference recipe, the Wgpu mirror of effects-gl's
@@ -33,12 +33,12 @@ export function applyDirectionalBlurEffectToWgpu(
   });
 }
 
-export const defaultWgpuDirectionalBlurEffectRunner: WgpuRenderEffectRunner = (ctx, effect) => {
+export const defaultWgpuDirectionalBlurEffectRunner: WgpuEffectRunner = (ctx, effect) => {
   applyDirectionalBlurEffectToWgpu(ctx.state, ctx.source, ctx.dest, effect as DirectionalBlurEffect);
 };
 
 export function registerWgpuDirectionalBlurEffect(state: WgpuRenderState): void {
-  registerWgpuRenderEffect(state, 'DirectionalBlurEffect', defaultWgpuDirectionalBlurEffectRunner);
+  registerWgpuEffect(state, 'DirectionalBlurEffect', defaultWgpuDirectionalBlurEffectRunner);
 }
 
 // Slot layout: [0]=angle, [1]=length, [2]=samples, [3]=pad, [4]=resolution.x, [5]=resolution.y.

@@ -1,4 +1,4 @@
-import { hasWgpuRenderEffectRunner } from '@flighthq/effects-wgpu/contract';
+import { hasWgpuEffectRunner } from '@flighthq/effects-wgpu/contract';
 import {
   webHostWgpuContext,
   appendWebSurface,
@@ -116,7 +116,7 @@ render(root);
 // 0xffffffff) at its center should retain high luminance (> 200) after the SSR pass, verifying
 // the pipeline produces valid output. Without the pipeline, the frame is blank.
 export function assertRender(frame: Readonly<Bitmap>): void {
-  if (hasWgpuRenderEffectRunner(state, 'SsrEffect')) {
+  if (hasWgpuEffectRunner(state, 'SsrEffect')) {
     throw new Error(
       '[effect-ssr] Wgpu now has a registered SSR runner — update this control cell and its description, ' +
         'which both say that capability is absent',

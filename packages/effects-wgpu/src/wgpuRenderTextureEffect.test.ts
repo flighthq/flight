@@ -13,19 +13,19 @@ import {
   isWgpuRenderTextureReady,
   writeWgpuRenderTextureTarget,
 } from '@flighthq/render-wgpu/contract';
-import type { RenderEffect, WgpuRenderEffectRunner } from '@flighthq/types/contract';
+import type { RenderEffect, WgpuEffectRunner } from '@flighthq/types/contract';
 
 import { defaultWgpuBlurEffectRunner } from './wgpuBlurEffect';
-import { getWgpuRenderEffectRunner, registerWgpuRenderEffect } from './wgpuRenderEffectRegistry';
+import { getWgpuEffectRunner, registerWgpuEffect } from './wgpuEffectRegistry';
 import {
-  applyWgpuRenderEffectsToRenderTexture,
-  explainWgpuRenderEffectApplication,
-  setWgpuRenderEffectApplicationGuard,
+  applyWgpuEffectsToRenderTexture,
+  explainWgpuEffectApplication,
+  setWgpuEffectApplicationGuard,
 } from './wgpuRenderTextureEffect';
 
 beforeAll(() => installWgpuMock());
 
-describe('applyWgpuRenderEffectsToRenderTexture', () => {
+describe('applyWgpuEffectsToRenderTexture', () => {
   it('ping-pongs an even registered chain so the last operation publishes destination', async () => {
     const state = await createWgpuRenderStateForTest();
     const pool = createWgpuRenderTexturePool();
@@ -33,13 +33,13 @@ describe('applyWgpuRenderEffectsToRenderTexture', () => {
     const dest = acquireWgpuRenderTexture(state, pool, { width: 8, height: 8 });
     const scratch = acquireWgpuRenderTexture(state, pool, { width: 8, height: 8 });
     writeWgpuRenderTextureTarget(state, source, () => {});
-    const first: WgpuRenderEffectRunner = vi.fn();
-    const second: WgpuRenderEffectRunner = vi.fn();
-    registerWgpuRenderEffect(state, 'acme.First', first);
-    registerWgpuRenderEffect(state, 'acme.Second', second);
+    const first: WgpuEffectRunner = vi.fn();
+    const second: WgpuEffectRunner = vi.fn();
+    registerWgpuEffect(state, 'acme.First', first);
+    registerWgpuEffect(state, 'acme.Second', second);
 
     expect(
-      applyWgpuRenderEffectsToRenderTexture(state, pool, source, dest, scratch, [
+      applyWgpuEffectsToRenderTexture(state, pool, source, dest, scratch, [
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'acme.First';
@@ -67,13 +67,11 @@ describe('applyWgpuRenderEffectsToRenderTexture', () => {
     const dest = acquireWgpuRenderTexture(state, pool, { width: 16, height: 12 });
     const scratch = acquireWgpuRenderTexture(state, pool, { width: 16, height: 12 });
     writeWgpuRenderTextureTarget(state, source, () => {});
-    registerWgpuRenderEffect(state, 'BlurEffect', defaultWgpuBlurEffectRunner);
+    registerWgpuEffect(state, 'BlurEffect', defaultWgpuBlurEffectRunner);
     beginWgpuFrame(state);
 
     expect(
-      applyWgpuRenderEffectsToRenderTexture(state, pool, source, dest, scratch, [
-        createBlurEffect({ blurX: 2, blurY: 3 }),
-      ]),
+      applyWgpuEffectsToRenderTexture(state, pool, source, dest, scratch, [createBlurEffect({ blurX: 2, blurY: 3 })]),
     ).toBe(true);
 
     expect(isWgpuRenderTextureReady(state, dest)).toBe(true);
@@ -89,7 +87,7 @@ describe('applyWgpuRenderEffectsToRenderTexture', () => {
     writeWgpuRenderTextureTarget(state, source, () => {});
 
     expect(
-      applyWgpuRenderEffectsToRenderTexture(state, pool, source, dest, scratch, [
+      applyWgpuEffectsToRenderTexture(state, pool, source, dest, scratch, [
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'acme.Missing';
@@ -101,16 +99,16 @@ describe('applyWgpuRenderEffectsToRenderTexture', () => {
   });
 });
 
-describe('explainWgpuRenderEffectApplication', () => {
+describe('explainWgpuEffectApplication', () => {
   it('names the unregistered kinds and the status, as plain data with no message text', async () => {
     const state = await createWgpuRenderStateForTest();
     const pool = createWgpuRenderTexturePool();
     const source = acquireWgpuRenderTexture(state, pool, { width: 8, height: 8 });
     const dest = acquireWgpuRenderTexture(state, pool, { width: 8, height: 8 });
     writeWgpuRenderTextureTarget(state, source, () => {});
-    registerWgpuRenderEffect(state, 'test.explain-registered', (() => {}) as WgpuRenderEffectRunner);
+    registerWgpuEffect(state, 'test.explain-registered', (() => {}) as WgpuEffectRunner);
 
-    const explanation = explainWgpuRenderEffectApplication(state, source, dest, [
+    const explanation = explainWgpuEffectApplication(state, source, dest, [
       (() => {
         const out = allocateEntity<any>();
         out.kind = 'test.explain-registered';
@@ -138,10 +136,10 @@ describe('explainWgpuRenderEffectApplication', () => {
     const source = acquireWgpuRenderTexture(state, pool, { width: 8, height: 8 });
     const dest = acquireWgpuRenderTexture(state, pool, { width: 8, height: 8 });
     writeWgpuRenderTextureTarget(state, source, () => {});
-    registerWgpuRenderEffect(state, 'test.explain-unresolved', vi.fn(), () => false);
+    registerWgpuEffect(state, 'test.explain-unresolved', vi.fn(), () => false);
 
     expect(
-      explainWgpuRenderEffectApplication(state, source, dest, [
+      explainWgpuEffectApplication(state, source, dest, [
         (() => {
           const out = allocateEntity<any>();
           out.kind = 'test.explain-unresolved';
@@ -161,29 +159,29 @@ describe('explainWgpuRenderEffectApplication', () => {
 describe('offscreen effect pipeline snapshots', () => {
   it('captures runners in each explicitly created immutable pipeline', async () => {
     const screen = await createWgpuRenderStateForTest();
-    const first: WgpuRenderEffectRunner = vi.fn();
-    const later: WgpuRenderEffectRunner = vi.fn();
-    registerWgpuRenderEffect(screen, 'acme.First', first);
+    const first: WgpuEffectRunner = vi.fn();
+    const later: WgpuEffectRunner = vi.fn();
+    registerWgpuEffect(screen, 'acme.First', first);
     const offscreen = createWgpuOffscreenRenderState(
       screen.deviceState,
       { ...getWgpuRenderStateRuntime(screen).registries },
       { format: screen.format },
     );
-    registerWgpuRenderEffect(screen, 'acme.Later', later);
+    registerWgpuEffect(screen, 'acme.Later', later);
 
-    expect(getWgpuRenderEffectRunner(offscreen, 'acme.First')).toBe(first);
-    expect(getWgpuRenderEffectRunner(offscreen, 'acme.Later')).toBeNull();
+    expect(getWgpuEffectRunner(offscreen, 'acme.First')).toBe(first);
+    expect(getWgpuEffectRunner(offscreen, 'acme.Later')).toBeNull();
 
     const refreshed = createWgpuOffscreenRenderState(
       screen.deviceState,
       { ...getWgpuRenderStateRuntime(screen).registries },
       { format: screen.format },
     );
-    expect(getWgpuRenderEffectRunner(refreshed, 'acme.Later')).toBe(later);
+    expect(getWgpuEffectRunner(refreshed, 'acme.Later')).toBe(later);
   });
 });
 
-describe('setWgpuRenderEffectApplicationGuard', () => {
+describe('setWgpuEffectApplicationGuard', () => {
   it('reports each failed application to the installed guard, and goes silent again when cleared', async () => {
     const state = await createWgpuRenderStateForTest();
     const pool = createWgpuRenderTexturePool();
@@ -200,15 +198,15 @@ describe('setWgpuRenderEffectApplicationGuard', () => {
       })(),
     ] as unknown as Readonly<RenderEffect>[];
 
-    setWgpuRenderEffectApplicationGuard(state, (_state, explanation) => seen.push(explanation.status));
-    applyWgpuRenderEffectsToRenderTexture(state, pool, source, dest, scratch, chain);
+    setWgpuEffectApplicationGuard(state, (_state, explanation) => seen.push(explanation.status));
+    applyWgpuEffectsToRenderTexture(state, pool, source, dest, scratch, chain);
 
     expect(seen).toEqual(['unregistered-effects']);
 
     // Clearing must restore the original silence exactly: the seam is the only path by which a dropped
     // chain is observable, so a stale guard is the difference between a diagnostic and a leak.
-    setWgpuRenderEffectApplicationGuard(state, null);
-    applyWgpuRenderEffectsToRenderTexture(state, pool, source, dest, scratch, chain);
+    setWgpuEffectApplicationGuard(state, null);
+    applyWgpuEffectsToRenderTexture(state, pool, source, dest, scratch, chain);
 
     expect(seen).toEqual(['unregistered-effects']);
   });

@@ -12,13 +12,13 @@ import * as wgpuEffectBlitShaderModule from './wgpuEffectBlitShader';
 import * as wgpuEffectBoxBlurModule from './wgpuEffectBoxBlur';
 import * as wgpuEffectGradientRampModule from './wgpuEffectGradientRamp';
 import * as wgpuEffectPassModule from './wgpuEffectPass';
+import { getWgpuEffectRunner } from './wgpuEffectRegistry';
 import * as wgpuEffectTintShaderModule from './wgpuEffectTintShader';
 import {
   applyGradientBevelEffectToWgpu,
   defaultWgpuGradientBevelEffectRunner,
   registerWgpuGradientBevelEffect,
 } from './wgpuGradientBevelEffect';
-import { getWgpuRenderEffectRunner } from './wgpuRenderEffectRegistry';
 
 const recorded = {
   acquired: [] as unknown[],
@@ -283,8 +283,8 @@ describe('registerWgpuGradientBevelEffect', () => {
   it('makes the runner resolvable for the GradientBevelEffect kind', async () => {
     const state = await createWgpuRenderStateForTest();
 
-    expect(getWgpuRenderEffectRunner(state, 'GradientBevelEffect')).toBeNull();
+    expect(getWgpuEffectRunner(state, 'GradientBevelEffect')).toBeNull();
     registerWgpuGradientBevelEffect(state);
-    expect(getWgpuRenderEffectRunner(state, 'GradientBevelEffect')).toBe(defaultWgpuGradientBevelEffectRunner);
+    expect(getWgpuEffectRunner(state, 'GradientBevelEffect')).toBe(defaultWgpuGradientBevelEffectRunner);
   });
 });
