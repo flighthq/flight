@@ -1,17 +1,13 @@
-import {
-  defaultWgpuDrawEllipse,
-  defaultWgpuDrawRoundedRectangle,
-  defaultWgpuQuadraticCurveTo,
-  defaultWgpuShapeCommands,
-} from './contract';
+import { defaultWgpuShapeRenderer, registerWgpuShapeRasterizer } from './contract';
 
-describe('defaultWgpuShapeCommands', () => {
-  it('carries every canonical geometry descriptor through the WGPU renderer assembly', () => {
-    expect(defaultWgpuQuadraticCurveTo.key).toBe('quadraticCurveTo');
-    expect(defaultWgpuDrawEllipse.key).toBe('drawEllipse');
-    expect(defaultWgpuDrawRoundedRectangle.key).toBe('drawRoundedRectangle');
-    expect(defaultWgpuShapeCommands).toEqual(
-      expect.arrayContaining([defaultWgpuQuadraticCurveTo, defaultWgpuDrawEllipse, defaultWgpuDrawRoundedRectangle]),
-    );
+describe('defaultWgpuShapeRenderer', () => {
+  it('is a Scene2DRenderer with a submit function', () => {
+    expect(typeof defaultWgpuShapeRenderer.submit).toBe('function');
+  });
+});
+
+describe('registerWgpuShapeRasterizer', () => {
+  it('is exported as a function', () => {
+    expect(typeof registerWgpuShapeRasterizer).toBe('function');
   });
 });

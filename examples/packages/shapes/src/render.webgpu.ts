@@ -16,15 +16,15 @@ import {
   createCanvasTextureResolvers,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
-  defaultWgpuShapeCommands,
+  defaultCanvasShapeCommands,
   defaultWgpuShapeRenderer,
   enableFlightDiagnostics,
   endWgpuRenderPass,
   prepareScene2DRender,
   registerCanvasBitmapTextureResolver,
   registerCanvasImageTextureResolver,
+  registerCanvasShapeCommands,
   registerRenderer,
-  registerWgpuShapeCommands,
   registerWgpuShapeRasterizer,
   renderWgpuScene2D,
   defaultScene3DWgpuRenderRegistries,
@@ -64,7 +64,7 @@ connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasBitmapTextureResolver(webHostImage, shapeRasterizerResolvers);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
 registerWgpuShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
-registerWgpuShapeCommands(state, defaultWgpuShapeCommands);
+registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 
 export const scale = pixelRatio;
 

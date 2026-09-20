@@ -24,11 +24,11 @@ import {
   defaultWgpuQuadBatchRenderer,
   defaultWgpuRichTextRenderer,
   defaultWgpuScale9ShapeRenderer,
-  defaultWgpuShapeCommands,
+  defaultCanvasShapeCommands,
   defaultWgpuShapeRenderer,
   defaultWgpuSpriteRenderer,
   defaultWgpuTextLabelRenderer,
-  defaultWgpuTextureShapeCommands,
+  defaultCanvasTextureShapeCommands,
   defaultWgpuTilemapRenderer,
   enableFlightDiagnostics,
   enableWgpuBlendModeSupport,
@@ -47,7 +47,7 @@ import {
   registerCanvasImageTextureResolver,
   registerCanvasRenderTextureResolver,
   registerRenderer,
-  registerWgpuShapeCommands,
+  registerCanvasShapeCommands,
   registerWgpuShapeRasterizer,
   renderWgpuScene2D,
   RichTextKind,
@@ -115,7 +115,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
     if (kind === ShapeKind) {
       registerRenderer(state, ShapeKind, defaultWgpuShapeRenderer);
       registerWgpuShapeRasterizer(state, createHarnessShapeRasterizer());
-      registerWgpuShapeCommands(state, [...defaultWgpuShapeCommands, ...defaultWgpuTextureShapeCommands]);
+      registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
     } else if (kind === RichTextKind) {
       registerRenderer(state, RichTextKind, defaultWgpuRichTextRenderer);
     } else if (kind === TextLabelKind) {
@@ -131,7 +131,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
     } else if (kind === Scale9ShapeKind) {
       registerRenderer(state, Scale9ShapeKind, defaultWgpuScale9ShapeRenderer);
       registerWgpuShapeRasterizer(state, createHarnessShapeRasterizer());
-      registerWgpuShapeCommands(state, [...defaultWgpuShapeCommands, ...defaultWgpuTextureShapeCommands]);
+      registerCanvasShapeCommands(state, [...defaultCanvasShapeCommands, ...defaultCanvasTextureShapeCommands]);
     }
   }
 

@@ -26,6 +26,7 @@ export * from './vertexColorWgpuMeshMaterialRenderer';
 export { bakeWgpuEnvironmentIbl } from './wgpuEnvironmentIblBake';
 export * from './wgpuEnvironmentSkybox';
 export * from './wgpuMeshMaterialRegistry';
+export { getWgpuScene3DTime, setWgpuScene3DTime } from './wgpuScene3DTime';
 export * from './wgpuShadedModifierSnippet';
 export {
   animatedNormalWgpuModifierSnippet,

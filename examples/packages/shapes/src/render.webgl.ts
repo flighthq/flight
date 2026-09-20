@@ -16,13 +16,13 @@ import {
   createCanvasTextureResolvers,
   createCanvasShapeRasterizer,
   createGlRenderState,
-  defaultGlShapeCommands,
+  defaultCanvasShapeCommands,
   defaultGlShapeRenderer,
   enableFlightDiagnostics,
   prepareScene2DRender,
   registerCanvasBitmapTextureResolver,
   registerCanvasImageTextureResolver,
-  registerGlShapeCommands,
+  registerCanvasShapeCommands,
   registerGlShapeRasterizer,
   registerRenderer,
   renderGlScene2D,
@@ -61,7 +61,7 @@ connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasBitmapTextureResolver(webHostImage, shapeRasterizerResolvers);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
 registerGlShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
-registerGlShapeCommands(state, defaultGlShapeCommands);
+registerCanvasShapeCommands(state, defaultCanvasShapeCommands);
 
 export const scale = pixelRatio;
 
