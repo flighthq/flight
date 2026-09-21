@@ -2,13 +2,14 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type {
+  BoundsNode,
   EntityConstruction,
   MethodsOf,
   NativeText,
   NativeTextData,
   NativeTextRuntime,
   NativeTextStyle,
-  Node,
+  Node2DTraits,
   PartialNode,
   Rectangle,
   TextAutoSize,
@@ -24,7 +25,10 @@ import { NativeTextKind } from '@flighthq/types/contract';
 // DOM-free (it must never call getBoundingClientRect), the DOM renderer writes the measured size back
 // onto the runtime and this reads those numbers. Under autoSize 'none' the field is the fixed user box;
 // otherwise it tracks the last measured element size, falling back to the user box until first measured.
-export function computeNativeTextLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
+export function computeNativeTextLocalBoundsRectangle(
+  out: Rectangle,
+  source: Readonly<BoundsNode<Node2DTraits>>,
+): void {
   const native = source as NativeText;
   const data = native.data;
   out.x = 0;

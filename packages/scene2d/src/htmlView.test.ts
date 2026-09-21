@@ -16,7 +16,7 @@ describe('computeHtmlViewLocalBoundsRectangle', () => {
   it('sets out dimensions from data width and height', () => {
     const htmlView = createHtmlView({ data: { width: 320, height: 240 } });
     const out = createRectangle();
-    computeHtmlViewLocalBoundsRectangle(out, htmlView as unknown as Node);
+    computeHtmlViewLocalBoundsRectangle(out, htmlView);
     expect(out.width).toBe(320);
     expect(out.height).toBe(240);
   });

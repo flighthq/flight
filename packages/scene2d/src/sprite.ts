@@ -1,14 +1,15 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getTextureViewSize } from '@flighthq/texture/contract';
 import type {
+  BoundsNode,
   EntityConstruction,
   MethodsOf,
-  Node,
+  Node2DTraits,
   PartialNode,
   Rectangle,
-  RenderState,
   Renderable,
   RendererData,
+  RenderState,
   Sprite,
   SpriteData,
   SpriteIdentityRendererData,
@@ -22,7 +23,7 @@ export function cloneSprite(source: Readonly<Sprite>): Sprite {
   return createSprite({ data: { texture: source.data.texture } });
 }
 
-export function computeSpriteLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
+export function computeSpriteLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
   const sprite = source as Readonly<Sprite>;
   const texture = sprite.data.texture;
   if (texture === null) {
@@ -98,7 +99,7 @@ export function isSpriteRendererDirty(
   return dirty;
 }
 
-function isSpriteLocalBoundsRectangleValid(source: Readonly<Node>): boolean {
+function isSpriteLocalBoundsRectangleValid(source: Readonly<BoundsNode<Node2DTraits>>): boolean {
   const sprite = source as Readonly<Sprite>;
   const runtime = getNode2DRuntime(sprite) as SpriteRuntime;
   const texture = sprite.data.texture;

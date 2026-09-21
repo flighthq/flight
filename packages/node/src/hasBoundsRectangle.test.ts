@@ -12,7 +12,7 @@ describe('defaultComputeLocalBoundsRectangle', () => {
   it('is a no-op that does not modify out', () => {
     const out = createRectangle(1, 2, 3, 4);
     const node = createNode(NodeTestKind);
-    defaultComputeLocalBoundsRectangle(out, node as unknown as Node);
+    defaultComputeLocalBoundsRectangle(out, node);
     expect(out.x).toBe(1);
     expect(out.y).toBe(2);
     expect(out.width).toBe(3);

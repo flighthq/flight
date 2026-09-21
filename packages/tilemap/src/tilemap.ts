@@ -2,9 +2,10 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type {
+  BoundsNode,
   EntityConstruction,
   MethodsOf,
-  Node,
+  Node2DTraits,
   PartialNode,
   Rectangle,
   Tilemap,
@@ -43,7 +44,7 @@ export function cloneTilemap(source: Readonly<Tilemap>): Tilemap {
   });
 }
 
-export function computeTilemapLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
+export function computeTilemapLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
   const tilemap = source as Tilemap;
   const { atlas, columns, rows, tileHeight, tileWidth } = tilemap.data;
   out.x = 0;

@@ -1,12 +1,13 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
 import type {
+  BoundsNode,
   EntityConstruction,
   HtmlView,
   HtmlViewData,
   HtmlViewRuntime,
   MethodsOf,
-  Node,
+  Node2DTraits,
   PartialNode,
   Rectangle,
 } from '@flighthq/types/contract';
@@ -14,7 +15,7 @@ import { HtmlViewKind } from '@flighthq/types/contract';
 
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject';
 
-export function computeHtmlViewLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
+export function computeHtmlViewLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
   const data = (source as HtmlView).data;
   out.width = data.width;
   out.height = data.height;

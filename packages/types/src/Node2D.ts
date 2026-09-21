@@ -22,7 +22,8 @@ export const Node2DTraitsKey = Symbol('Node2DTraits');
 // A named interface rather than an intersection typedef ending in an anonymous overlay: the runtime is
 // a seam subsystems attach to, so it needs a name a declaration can be found by and extended from.
 // Every base is already an interface, so this introduces no second root — it names the same shape.
-export interface Node2DRuntime extends NodeRuntime<Node2DTraits>, HasTransform2DRuntime, HasBoundsRectangleRuntime {
+export interface Node2DRuntime
+  extends NodeRuntime<Node2DTraits>, HasTransform2DRuntime, HasBoundsRectangleRuntime<Node2DTraits> {
   scene2d: Scene2D | null;
 }
 export type Node2DDataFactory = NodeDataFactory<Node2DData>;

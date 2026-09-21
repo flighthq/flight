@@ -19,9 +19,10 @@ import {
   mergeTextFormat,
 } from '@flighthq/textlayout/contract';
 import type {
+  BoundsNode,
   EntityConstruction,
   MethodsOf,
-  Node,
+  Node2DTraits,
   PartialNode,
   Rectangle,
   RichText,
@@ -88,7 +89,7 @@ export function clearRichTextFormatRanges(source: RichText): void {
 // grows leftward and 'center' splits the difference. The layout is ensured on demand here, which is
 // what lets autoSize bounds be queried before the text is ever rendered. Before any measure provider
 // is registered the layout is unavailable, so it falls back to the fixed field box.
-export function computeRichTextLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
+export function computeRichTextLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
   const richText = source as RichText;
   const data = richText.data;
   if (data.autoSize === 'none') {

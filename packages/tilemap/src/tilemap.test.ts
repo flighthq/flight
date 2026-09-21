@@ -67,7 +67,7 @@ describe('computeTilemapLocalBoundsRectangle', () => {
     const atlas = {} as TextureAtlas;
     const tilemap = createTilemap({ data: { atlas, columns: 5, rows: 4, tileHeight: 16, tileWidth: 32 } });
     const out = createRectangle();
-    computeTilemapLocalBoundsRectangle(out, tilemap as unknown as Node);
+    computeTilemapLocalBoundsRectangle(out, tilemap);
     expect(out.width).toBe(160);
     expect(out.height).toBe(64);
   });
@@ -75,7 +75,7 @@ describe('computeTilemapLocalBoundsRectangle', () => {
   it('sets zero dimensions when atlas is null', () => {
     const tilemap = createTilemap({ data: { columns: 5, rows: 4 } });
     const out = createRectangle(0, 0, 99, 99);
-    computeTilemapLocalBoundsRectangle(out, tilemap as unknown as Node);
+    computeTilemapLocalBoundsRectangle(out, tilemap);
     expect(out.width).toBe(0);
     expect(out.height).toBe(0);
   });

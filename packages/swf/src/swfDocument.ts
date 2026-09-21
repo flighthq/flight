@@ -38,8 +38,9 @@ import type {
   Adjustment,
   AudioResource,
   AudioResourceReference,
-  BoundsNodeAny,
+  BoundsNode,
   ClipRegion,
+  Effect,
   EmbeddedImageResourceReference,
   EntityConstruction,
   FrameScript,
@@ -48,20 +49,23 @@ import type {
   ImportDiagnostic,
   MorphShape,
   MovieClip,
-  NonEntityCreateResult,
   MovieClipData,
   Node2D,
-  NodeData,
   Node2DData,
   Node2DRuntime,
   Node2DTraits,
+  NodeData,
+  NonEntityCreateResult,
   Rectangle,
-  Effect,
   RichText,
+  Scale9Shape,
   Scene2DDocument,
   Scene2DDocumentImportContext,
   Scene2DDocumentImporterRegistry,
   Scene2DSlotReference,
+  Shape,
+  ShapeData,
+  Sprite,
   SwfDocumentImport,
   SwfJpegAlphaPayload,
   SwfNodeAppearance,
@@ -70,17 +74,13 @@ import type {
   SwfTagParseState,
   SwfTagReader,
   SwfTagTimelineState,
-  Scale9Shape,
-  Shape,
-  ShapeData,
+  Texture2D,
   TimelineAudioCue,
   TimelineAudioEnvelopePoint,
   TimelineCue,
-  TimelineStreamAudioCue,
-  Sprite,
-  Texture2D,
   TimelineLabel,
   TimelineSource,
+  TimelineStreamAudioCue,
 } from '@flighthq/types/contract';
 import {
   AdvancedBlendMode,
@@ -1140,7 +1140,7 @@ function compareSwfPlacementDepth(a: Readonly<SwfPlacement>, b: Readonly<SwfPlac
   return a.depth - b.depth;
 }
 
-function computeSwfLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNodeAny>): void {
+function computeSwfLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
   const bounds = (source.data as SwfAuthoredBoundsData).authoredBounds;
   out.x = bounds.x;
   out.y = bounds.y;

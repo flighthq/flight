@@ -33,7 +33,7 @@ describe('computeSpriteLocalBoundsRectangle', () => {
     setTextureUvFromPixelRect(imageTexture, 10, 20, 30, 40);
     const sprite = createSprite({ data: { texture: imageTexture } });
     const out = createRectangle();
-    computeSpriteLocalBoundsRectangle(out, sprite as unknown as Node);
+    computeSpriteLocalBoundsRectangle(out, sprite);
     expect(out.width).toBe(30);
     expect(out.height).toBe(40);
   });
@@ -41,7 +41,7 @@ describe('computeSpriteLocalBoundsRectangle', () => {
   it('sets an empty size when texture is null', () => {
     const sprite = createSprite();
     const out = createRectangle(0, 0, 50, 60);
-    computeSpriteLocalBoundsRectangle(out, sprite as unknown as Node);
+    computeSpriteLocalBoundsRectangle(out, sprite);
     expect(out.width).toBe(0);
     expect(out.height).toBe(0);
   });
@@ -52,7 +52,7 @@ describe('computeSpriteLocalBoundsRectangle', () => {
     imageTexture.uvScale.y = 0.2;
     imageTexture.uvRotation = -Math.PI / 2;
     const out = createRectangle();
-    computeSpriteLocalBoundsRectangle(out, createSprite({ data: { texture: imageTexture } }) as unknown as Node);
+    computeSpriteLocalBoundsRectangle(out, createSprite({ data: { texture: imageTexture } }));
     expect(out.width).toBeCloseTo(15);
     expect(out.height).toBeCloseTo(20);
   });

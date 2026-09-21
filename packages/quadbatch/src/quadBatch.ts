@@ -5,9 +5,10 @@ import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/s
 import { createSignal } from '@flighthq/signals/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type {
+  BoundsNode,
   EntityConstruction,
   MethodsOf,
-  Node,
+  Node2DTraits,
   PartialNode,
   QuadBatch,
   QuadBatchData,
@@ -72,7 +73,7 @@ export function cloneQuadBatch(source: Readonly<QuadBatch>): QuadBatch {
   });
 }
 
-function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
+function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
   const runtime = getNode2DRuntime(source as QuadBatch) as QuadBatchRuntime;
   if (runtime.localBoundsRectangle !== null) copyRectangle(out, runtime.localBoundsRectangle);
 }
