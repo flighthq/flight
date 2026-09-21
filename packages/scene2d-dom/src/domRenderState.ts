@@ -1,4 +1,3 @@
-import { createMatrix } from '@flighthq/geometry/contract';
 import { createRenderState as _createRenderState, createRenderStateRuntime } from '@flighthq/render/contract';
 import type { DomRenderOptions, DomRenderState, DomRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -6,7 +5,6 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 export function createDomRenderState(element: HTMLElement, options: Partial<DomRenderOptions> = {}): DomRenderState {
   const state = _createRenderState({
     pixelRatio: options.pixelRatio ?? 1,
-    renderTransform2D: createMatrix(),
     roundPixels: options.roundPixels ?? false,
     sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
   }) as DomRenderState;

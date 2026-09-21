@@ -28,7 +28,7 @@ export function updateRenderProxy2DTransform(
 
 function recalculateRenderTransform2D(state: RenderState, data: RenderProxy2D, parentData?: RenderProxy2D): void {
   const transform2D = getNodeLocalMatrix(data.source as Node & HasTransform2D);
-  const parentTransform2D = parentData !== undefined ? parentData.transform2D : state.renderTransform2D;
+  const parentTransform2D = parentData !== undefined ? parentData.transform2D : null;
   if (parentTransform2D !== null) {
     multiplyMatrix(data.transform2D, parentTransform2D, transform2D);
   } else {

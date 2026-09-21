@@ -1,11 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { copyMatrix, createMatrix } from '@flighthq/geometry/contract';
 import type {
   CanvasRenderPass,
   CanvasRenderState,
   CanvasRenderTarget,
   CanvasSavedPassState,
-  Matrix,
   RenderTargetClear,
 } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
@@ -41,7 +39,6 @@ export function beginCanvasRenderPass(
     context: state.context ?? null,
     currentAlpha: runtime.currentAlpha,
     currentBlendMode: runtime.currentBlendMode,
-    renderTransform2D: state.renderTransform2D,
     target: runtime.currentRenderTarget ?? null,
   };
 
@@ -82,7 +79,6 @@ export function endCanvasRenderPass(pass: CanvasRenderPass): void {
   const saved = pass.saved;
   state.canvas = saved.canvas!;
   state.context = saved.context!;
-  state.renderTransform2D = saved.renderTransform2D;
   runtime.currentRenderTarget = saved.target;
   runtime.currentAlpha = saved.currentAlpha;
   runtime.currentBlendMode = saved.currentBlendMode;
@@ -94,16 +90,6 @@ export function endCanvasRenderPass(pass: CanvasRenderPass): void {
 // Null outside any pass.
 export function getCanvasActiveRenderPass(state: CanvasRenderState): CanvasRenderPass | null {
   return getCanvasRenderStateRuntime(state).passStack.at(-1) ?? null;
-}
-
-// Sets the 2D root device transform the display-object update pass reads to place nodes with no scene
-// parent. Call after beginCanvasRenderPass when a pass renders into a target with its own coordinate
-// system (the render cache); the matching end restores the previous value. A fresh matrix is allocated
-// rather than mutated in place, because the bracket saved the previous reference.
-export function setCanvasRenderTransform2D(pass: CanvasRenderPass, transform: Readonly<Matrix>): void {
-  const next = createMatrix();
-  copyMatrix(next, transform);
-  pass.state.renderTransform2D = next;
 }
 
 function acquireCanvasRenderPassHandle(

@@ -17,7 +17,6 @@ import {
   endGlRenderPass,
   getGlCurrentRenderPass,
   releaseGlRenderPassHandle,
-  setGlRenderTransform2D,
 } from './glRenderPass';
 import { createGlRenderState, getGlRenderStateRuntime } from './glRenderState';
 import { drawGlTextureRenderTargetResult } from './glRenderTarget';
@@ -441,21 +440,6 @@ describe('offscreen 2D projection basis', () => {
 
     expect(runtime.renderTargetViewport).toBe(null);
   });
-
-  it('starts an offscreen state with the same neutral root transform as a screen state', () => {
-    // renderTransform2D is the root DEVICE transform for parentless nodes, not a projection
-    // compensation. Identity is the correct neutral for both, and the two constructors agreeing is what
-    // makes an offscreen pass behave like a screen pass until a caller deliberately changes it.
-    const { state } = createGlState();
-    const offscreen = createGlRenderState(state.gl, state.registries);
-
-    // Field-by-field, not toEqual: a Matrix is entity-backed and carries runtime identity beyond its
-    // public fields, so two structurally identical matrices are not deeply equal.
-    const transform = offscreen.renderTransform2D!;
-    expect([transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty]).toEqual([
-      1, 0, 0, 1, 0, 0,
-    ]);
-  });
 });
 
 describe('releaseGlRenderPassHandle', () => {
@@ -479,45 +463,6 @@ describe('releaseGlRenderPassHandle', () => {
 
     const second = acquireGlRenderPassHandle(gl, state, target);
     expect(second).toBe(handle);
-  });
-});
-
-describe('setGlRenderTransform2D', () => {
-  it('installs a copy of the transform as the 2D root device transform', () => {
-    const { state } = createGlState();
-    const transform = createMatrix();
-    transform.tx = 7;
-
-    setGlRenderTransform2D(state, transform);
-
-    expect(state.renderTransform2D?.tx).toBe(7);
-    // A copy, not the caller's object — so later caller mutations don't leak into render state.
-    expect(state.renderTransform2D).not.toBe(transform);
-  });
-
-  it('is undone by the enclosing pass: endGlRenderPass restores the pre-pass transform', () => {
-    const { state } = createGlState();
-    const original = state.renderTransform2D;
-    const target = makeTarget();
-    const cacheTransform = createMatrix();
-    cacheTransform.tx = 99;
-
-    const pass = beginGlRenderPass(state, target, { depth: 1.0, stencil: 0 });
-    setGlRenderTransform2D(state, cacheTransform);
-    expect(state.renderTransform2D?.tx).toBe(99);
-    endGlRenderPass(pass);
-
-    expect(state.renderTransform2D).toBe(original);
-  });
-
-  it('dirties existing state-local proxy transforms for repeated offscreen captures', () => {
-    const { state } = createGlState();
-    const proxy = getOrCreateRenderProxy2D(state, createDisplayObject());
-    proxy.lastLocalTransformId = 7;
-
-    setGlRenderTransform2D(state, createMatrix());
-
-    expect(proxy.lastLocalTransformId).toBe(-1);
   });
 });
 

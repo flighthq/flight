@@ -69,12 +69,6 @@ describe('package exports', () => {
     it('exports registerRenderer', () => {
       expect(sdk.registerRenderer).toBeTypeOf('function');
     });
-
-    it('does not export internal 2D root transforms (protected plumbing)', () => {
-      expect(sdk).not.toHaveProperty('setCanvasRenderTransform2D');
-      expect(sdk).not.toHaveProperty('setGlRenderTransform2D');
-      expect(sdk).not.toHaveProperty('setWgpuRenderTransform2D');
-    });
   });
 
   describe('sprite domain', () => {

@@ -1,4 +1,3 @@
-import { setWgpuRenderTransform2D } from '@flighthq/render-wgpu/contract';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   acquireWgpuRenderTexture,
@@ -88,9 +87,8 @@ renderIntoWgpuRenderTexture(
   state,
   renderTexture,
   (capturePass) => {
-    setWgpuRenderTransform2D(capturePass, createMatrix());
     prepareScene2DRender(state, producer);
-    renderWgpuScene2D(capturePass, producer);
+    renderWgpuScene2D(capturePass, producer, createMatrix());
   },
   { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
 );

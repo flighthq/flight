@@ -188,11 +188,9 @@ export function attachWindowRenderContext(
 }
 
 // Binds a canvas render state to the window's size and devicePixelRatio: sizes the canvas backing
-// store and writes the device transform (renderTransform2D), then keeps both in sync on every
-// onResize, so moving the window between displays or zooming is handled. Pair with attachWindowResize
-// — it is the source of the size/DPI updates this reacts to. The render state must have an
-// initialized renderTransform2D (every create*RenderState factory does). DOM render states need no
-// device transform (the browser rasterizes DOM at device resolution), so this is for canvas/Gl.
+// store on every onResize, so moving the window between displays or zooming is handled. Pair with
+// attachWindowResize — it is the source of the size/DPI updates this reacts to. DOM render states
+// need no surface resize (the browser rasterizes DOM at device resolution), so this is for canvas/Gl.
 export function attachWindowRenderState(
   hostSurfaceResize: Readonly<HostSurfaceResizeCapability>,
   win: AppWindow,
@@ -207,7 +205,6 @@ export function attachWindowRenderState(
       Math.round(win.width * win.devicePixelRatio),
       Math.round(win.height * win.devicePixelRatio),
     );
-    if (state.renderTransform2D !== null) computeWindowDeviceTransform(win, state.renderTransform2D);
   };
   apply();
   connectSignal(win.onResize, apply);
@@ -270,8 +267,8 @@ export function closeWindow(hostWindowLifecycle: Readonly<HostWindowLifecycleCap
 }
 
 // Writes the window's device transform — a uniform scale by devicePixelRatio — into out and returns
-// it. DPI is a device concern, so it belongs in a render state's device transform (renderTransform2D),
-// leaving the scene authored in logical units. Reads win before writing out, so out may alias an input.
+// it. DPI is a device concern, passed to render*Scene2D at draw time to leave the scene authored in
+// logical units. Reads win before writing out, so out may alias an input.
 export function computeWindowDeviceTransform(win: Readonly<AppWindow>, out: Matrix): Matrix {
   const scale = win.devicePixelRatio;
   out.a = scale;

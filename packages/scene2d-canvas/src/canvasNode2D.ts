@@ -1,8 +1,10 @@
+import { createMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type {
   CanvasRenderPass,
   CanvasRenderState,
+  Matrix,
   Node2D,
   RenderProxy2D,
   Scene2DRenderer,
@@ -21,11 +23,18 @@ export const canvasScene2DRenderer: Scene2DRenderer = {
 };
 
 // Draws `source`'s subtree into the pass. The pass names the target, so the same scene renders to the
-// screen or into an offscreen canvas with no argument but this one changing.
-export function renderCanvasScene2D(pass: CanvasRenderPass, source: Node2D): void {
+// screen or into an offscreen canvas with no argument but this one changing. When `renderTransform` is
+// provided it is composed with each proxy's scene-space transform during the walk, applying the
+// observation (camera, DPI, offscreen projection) without baking it into the prepare pass.
+export function renderCanvasScene2D(
+  pass: CanvasRenderPass,
+  source: Node2D,
+  renderTransform?: Readonly<Matrix> | null,
+): void {
   const state = pass.state;
   const tempStack = getCanvasRenderStateRuntime(state).tempStack;
   const clipHooks = state.displayObjectClipHooks;
+  const hasRenderTransform = renderTransform != null;
 
   let stackLength = 1;
   tempStack[0] = source;
@@ -37,10 +46,22 @@ export function renderCanvasScene2D(pass: CanvasRenderPass, source: Node2D): voi
     const data = getRenderProxy2D(state, current);
     if (data === undefined) continue;
 
+    const savedTransform = data.transform2D;
+    if (hasRenderTransform) {
+      multiplyMatrix(_scratchTransform, renderTransform, savedTransform);
+      data.transform2D = _scratchTransform;
+    }
+
     clipHooks?.popClip(state, data, current);
 
-    if (!isRenderProxyVisible(data)) continue;
-    if (isCanvasTransformDegenerate(data)) continue;
+    if (!isRenderProxyVisible(data)) {
+      if (hasRenderTransform) data.transform2D = savedTransform;
+      continue;
+    }
+    if (isCanvasTransformDegenerate(data)) {
+      if (hasRenderTransform) data.transform2D = savedTransform;
+      continue;
+    }
 
     clipHooks?.pushClip(state, data, current);
 
@@ -56,6 +77,8 @@ export function renderCanvasScene2D(pass: CanvasRenderPass, source: Node2D): voi
         }
       }
     }
+
+    if (hasRenderTransform) data.transform2D = savedTransform;
   }
 
   clipHooks?.finalize(state);
@@ -69,3 +92,5 @@ function isCanvasTransformDegenerate(data: RenderProxy2D): boolean {
   const t = data.transform2D;
   return t.a * t.d - t.b * t.c === 0;
 }
+
+const _scratchTransform = createMatrix();

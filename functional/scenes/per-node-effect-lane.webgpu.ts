@@ -1,8 +1,4 @@
-import {
-  getWgpuRenderStateRuntime,
-  isWgpuRenderTextureReady,
-  setWgpuRenderTransform2D,
-} from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime, isWgpuRenderTextureReady } from '@flighthq/render-wgpu/contract';
 import { computeRenderTargetSize, computeScene2DRenderTargetTransform } from '@flighthq/render/contract';
 import type { Bitmap, Effect, RenderTexture } from '@flighthq/sdk';
 import {
@@ -204,9 +200,8 @@ function captureSubtree(): {
       offscreenState,
       sourceTexture,
       (capturePass) => {
-        setWgpuRenderTransform2D(capturePass, transform);
         prepareScene2DRender(offscreenState, source);
-        renderWgpuScene2D(capturePass, source);
+        renderWgpuScene2D(capturePass, source, transform);
       },
       { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
     );

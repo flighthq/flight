@@ -29,7 +29,6 @@ beforeEach(() => {
     state,
     target: null,
   })) as never);
-  vi.spyOn(renderGl, 'setGlRenderTransform2D').mockImplementation((() => {}) as never);
   vi.spyOn(renderGl, 'createGlTextureRenderTarget').mockImplementation(((
     _state: unknown,
     descriptor: { width: number; height: number },

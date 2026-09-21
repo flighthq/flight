@@ -1,4 +1,3 @@
-import { setGlRenderTransform2D } from '@flighthq/render-gl/contract';
 import type { Bitmap } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -87,9 +86,8 @@ renderIntoGlRenderTexture(
   state,
   renderTexture,
   (pass) => {
-    setGlRenderTransform2D(pass.state, createMatrix());
     prepareScene2DRender(pass.state, producer);
-    renderGlScene2D(pass, producer);
+    renderGlScene2D(pass, producer, createMatrix());
   },
   { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
 );

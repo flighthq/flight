@@ -1,7 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { copyMatrix, createMatrix } from '@flighthq/geometry/contract';
 import type {
-  Matrix,
   RenderTargetClear,
   WgpuRenderPass,
   WgpuRenderPassViewport,
@@ -30,7 +28,7 @@ import { bindWgpuScreenRenderTarget, isWgpuScreenRenderTarget } from './wgpuScre
 //
 // Passes nest across targets: an offscreen pass opened inside a screen pass suspends it, and ending the
 // inner one resumes the outer with loadOp 'load'. A pass carries no 2D transform — a 2D pass that needs a
-// specific root device transform calls setWgpuRenderTransform2D after begin, and the bracket restores it.
+// root device transform passes it to renderWgpuScene2D as an explicit parameter.
 //
 // The handle is pooled: begin claims one, end returns it. Using a handle after its end is a bug, the same
 // contract as every other acquire/release bracket.
@@ -62,7 +60,6 @@ export function beginWgpuRenderPass(
     maskWriteMode: runtime.maskWriteMode,
     renderTarget: runtime.currentRenderTarget,
     renderTargetViewport: runtime.renderTargetViewport,
-    renderTransform2D: state.renderTransform2D,
     scissorStack: runtime.scissorStack,
   };
 
@@ -116,7 +113,6 @@ export function endWgpuRenderPass(pass: WgpuRenderPass): void {
   runtime.maskWriteMode = saved.maskWriteMode;
   runtime.currentScissorRect = saved.currentScissorRect;
   runtime.scissorStack = saved.scissorStack;
-  state.renderTransform2D = saved.renderTransform2D;
 
   const enclosing = runtime.passStack.at(-1);
   if (enclosing !== undefined) resumeWgpuRenderPass(enclosing);
@@ -150,16 +146,6 @@ export function resumeWgpuRenderPass(pass: WgpuRenderPass): void {
   pass.colorView = bindWgpuRenderPassTarget(pass.state, pass.target);
   pass.encoder = recordWgpuRenderPassEncoder(pass.state, pass.target, pass.colorView, undefined);
   runtime.renderPass = pass.encoder;
-}
-
-// Sets the 2D root device transform the display-object update pass reads to place nodes with no scene
-// parent. Call after beginWgpuRenderPass when a 2D pass renders into a target with its own coordinate
-// system (the render cache); the matching endWgpuRenderPass restores the previous value. A fresh matrix
-// is allocated rather than mutated in place, because the bracket saved the previous reference.
-export function setWgpuRenderTransform2D(pass: WgpuRenderPass, transform: Readonly<Matrix>): void {
-  const next = createMatrix();
-  copyMatrix(next, transform);
-  pass.state.renderTransform2D = next;
 }
 
 // Ends the pass's GPU encoder while leaving the pass open, so a caller can record its own render passes

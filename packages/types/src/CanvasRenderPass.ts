@@ -1,7 +1,6 @@
 import type { CanvasRenderState } from './CanvasRenderState';
 import type { CanvasRenderTarget } from './CanvasRenderTarget';
 import type { Entity } from './Entity';
-import type { Matrix } from './Matrix';
 
 // The Canvas drawing bracket, the web-only emulation of the GL and WGPU pass handle.
 // beginCanvasRenderPass acquires one from a pool and endCanvasRenderPass returns it, so a render loop
@@ -33,7 +32,6 @@ export interface CanvasSavedPassState {
   context: CanvasRenderingContext2D | null;
   currentAlpha: number;
   currentBlendMode: CanvasSavedBlendMode;
-  renderTransform2D: Matrix | null;
   target: CanvasRenderTarget | null;
 }
 

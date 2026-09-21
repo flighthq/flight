@@ -70,7 +70,6 @@ export function initializeRenderState(state: EntityConstruction<RenderState>, ob
   state.imageSurfaceProvider = obj?.imageSurfaceProvider ?? null;
   state.renderAlpha = obj?.renderAlpha ?? 1;
   state.renderBlendMode = obj?.renderBlendMode ?? BlendMode.Normal;
-  state.renderTransform2D = obj?.renderTransform2D ?? null;
   state.roundPixels = obj?.roundPixels ?? false;
   state.sceneGraphSyncPolicy = obj?.sceneGraphSyncPolicy ?? 'refreshDerivedState';
   state[EntityRuntimeKey] = createRenderStateRuntime();

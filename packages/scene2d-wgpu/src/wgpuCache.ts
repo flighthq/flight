@@ -11,7 +11,6 @@ import {
   resizeWgpuTextureRenderTarget,
   getWgpuRenderStateRuntime,
   registerWgpuRenderStateTeardown,
-  setWgpuRenderTransform2D,
   withWgpuFrameBorrow,
 } from '@flighthq/render-wgpu/contract';
 import {
@@ -129,9 +128,8 @@ export function refreshWgpuRenderCache(
 
     const pass = beginWgpuRenderPass(cacheState, target, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
     try {
-      setWgpuRenderTransform2D(pass, _bakeTransform);
       const dirty = prepareScene2DRender(cacheState, source);
-      if (dirty || resized) renderWgpuScene2D(pass, source);
+      if (dirty || resized) renderWgpuScene2D(pass, source, _bakeTransform);
       return dirty || resized;
     } finally {
       endWgpuRenderPass(pass);

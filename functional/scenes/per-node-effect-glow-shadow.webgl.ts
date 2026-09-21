@@ -1,4 +1,3 @@
-import { setGlRenderTransform2D } from '@flighthq/render-gl/contract';
 import type { Bitmap, Effect, EffectPadding, RenderTexture } from '@flighthq/sdk';
 import {
   ShapeKind,
@@ -139,9 +138,8 @@ function capture(effect: Readonly<Effect>, padding: Readonly<EffectPadding>): Re
     offscreenState,
     sourceTexture,
     (pass) => {
-      setGlRenderTransform2D(pass.state, createMatrix());
       prepareScene2DRender(pass.state, source);
-      renderGlScene2D(pass, source);
+      renderGlScene2D(pass, source, createMatrix());
     },
     { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
   );

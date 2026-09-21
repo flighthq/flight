@@ -1,4 +1,4 @@
-import { isGlRenderTextureReady, setGlRenderTransform2D } from '@flighthq/render-gl/contract';
+import { isGlRenderTextureReady } from '@flighthq/render-gl/contract';
 import { computeRenderTargetSize, computeScene2DRenderTargetTransform } from '@flighthq/render/contract';
 import type { Bitmap, Effect, RenderTexture } from '@flighthq/sdk';
 import {
@@ -201,9 +201,8 @@ function captureSubtree(): {
     offscreenState,
     sourceTexture,
     (pass) => {
-      setGlRenderTransform2D(pass.state, transform);
       prepareScene2DRender(pass.state, source);
-      renderGlScene2D(pass, source);
+      renderGlScene2D(pass, source, transform);
     },
     { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
   );

@@ -9,7 +9,6 @@ import {
   createCanvasTextureRenderTarget,
   endCanvasRenderPass,
   getCanvasActiveRenderPass,
-  setCanvasRenderTransform2D,
 } from './canvasTestSupport';
 
 function makeScreenPass() {
@@ -143,38 +142,5 @@ describe('getCanvasActiveRenderPass', () => {
     expect(getCanvasActiveRenderPass(state)).toBe(screenPass);
     endCanvasRenderPass(screenPass);
     expect(getCanvasActiveRenderPass(state)).toBeNull();
-  });
-});
-
-describe('setCanvasRenderTransform2D', () => {
-  it('installs a copy of the transform, restored by the enclosing pass', () => {
-    const { pass: screenPass, state } = makeScreenPass();
-    const original = state.renderTransform2D;
-    const transform = createMatrix();
-    transform.tx = 99;
-
-    const pass = beginCanvasRenderPass(state, createCanvasTextureRenderTarget(64, 48));
-    setCanvasRenderTransform2D(pass, transform);
-    expect(state.renderTransform2D?.tx).toBe(99);
-    expect(state.renderTransform2D).not.toBe(transform);
-    endCanvasRenderPass(pass);
-
-    expect(state.renderTransform2D).toBe(original);
-    endCanvasRenderPass(screenPass);
-  });
-
-  it('does not mutate the outer transform matrix', () => {
-    const { pass: screenPass, state } = makeScreenPass();
-    const outer = state.renderTransform2D!;
-    const transform = createMatrix();
-    transform.tx = 50;
-
-    const pass = beginCanvasRenderPass(state, createCanvasTextureRenderTarget(64, 48));
-    setCanvasRenderTransform2D(pass, transform);
-    endCanvasRenderPass(pass);
-
-    expect(state.renderTransform2D).toBe(outer);
-    expect(outer.tx).not.toBe(50);
-    endCanvasRenderPass(screenPass);
   });
 });

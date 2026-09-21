@@ -44,9 +44,9 @@ export function computeRenderTargetSize(
 }
 
 /**
- * Writes into outRenderTransform the transform to set as state.renderTransform2D when
- * capturing source into a render target. Maps source content into target pixel space so
- * that the bounds origin lands at (contentX, contentY).
+ * Writes into outRenderTransform the transform to pass to render*Scene2D when capturing
+ * source into a render target. Maps source content into target pixel space so that the
+ * bounds origin lands at (contentX, contentY).
  */
 export function computeScene2DRenderTargetTransform(
   outRenderTransform: MatrixLike,
