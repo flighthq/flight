@@ -293,7 +293,7 @@ describe('WebGL Scene2D size fixtures', () => {
         ].map((match) => match[1]);
         const kinds = [...new Set([...source.matchAll(/\b[A-Z]\w+Kind\b/g)].map((match) => match[0]))];
         const registrations = [...source.matchAll(/\b(register[A-Z]\w*)\s*\(/g)].map((match) => match[1]).sort();
-        const renderers = [...new Set([...source.matchAll(/\bgl\w+NodeRenderer\b/g)].map((match) => match[0]))];
+        const renderers = [...new Set([...source.matchAll(/\bgl\w+Renderer\b/g)].map((match) => match[0]))];
 
         expect(imports).toEqual([...profile.imports].sort());
         expect(constructors).toEqual(profile.constructors);

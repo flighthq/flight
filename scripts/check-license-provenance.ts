@@ -431,7 +431,7 @@ const INDEPENDENT_STANDARD_MODEL_PATTERN =
 const IMPLEMENTATION_CONTEXT_PATTERN =
   /\b(?:codebase|external code|external implementation|implementation|repository|source code|source file|third-party code|upstream)\b/i;
 const IMPLEMENTATION_ROLE_PATTERN =
-  /\b[A-Za-z_$][A-Za-z0-9_$]*(?:Adapter|Animator|Builder|Compiler|Controller|Decoder|Encoder|Factory|Interpreter|Loader|Manager|Module|Parser|Plugin|Reader|NodeRenderer|Runtime|Writer)\b/;
+  /\b[A-Za-z_$][A-Za-z0-9_$]*(?:Adapter|Animator|Builder|Compiler|Controller|Decoder|Encoder|Factory|Interpreter|Loader|Manager|Module|Parser|Plugin|Reader|Renderer|Runtime|Writer)\b/;
 const IMPLEMENTATION_CALL_PATTERN = /\b[A-Za-z_$][A-Za-z0-9_$]*(?:\.[A-Za-z_$][A-Za-z0-9_$]*)*\s*\(/;
 const IMPLEMENTATION_FILE_PATTERN = /\b[A-Za-z0-9_$./-]+\.(?:c|cc|cpp|cxx|h|hh|hpp|js|jsx|mjs|rs|ts|tsx)\b/i;
 const IMPLEMENTATION_MEMBER_PATTERN = /\b[A-Z][A-Za-z0-9_$]*\.[A-Za-z_$][A-Za-z0-9_$]*\b/;

@@ -131,7 +131,7 @@ describe('canvas size fixture isolation', () => {
   it('registers exactly the one renderer its feature requires', () => {
     for (const fixture of DRAWING_FIXTURES) {
       const source = fixtureSource(fixture);
-      const bound = [...source.matchAll(/\bcanvas(\w+NodeRenderer)\b/gu)].map((match) => `canvas${match[1]}`);
+      const bound = [...source.matchAll(/\bcanvas(\w+Renderer)\b/gu)].map((match) => `canvas${match[1]}`);
       expect([...new Set(bound)].sort(), `${fixture} renderer set`).toEqual([...ALLOWED_RENDERER[fixture]].sort());
     }
   });
