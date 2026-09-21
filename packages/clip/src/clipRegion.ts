@@ -708,7 +708,7 @@ function setRectangleToContoursBounds(out: RectangleLike, contours: readonly (re
   let maxY = -Infinity;
   for (let c = 0; c < contours.length; c++) {
     const contour = contours[c];
-    if (contour.length < 6) continue;
+    if (contour.length < 6 || (contour.length & 1) !== 0) continue;
     for (let i = 0; i < contour.length; i += 2) {
       const x = contour[i];
       const y = contour[i + 1];
