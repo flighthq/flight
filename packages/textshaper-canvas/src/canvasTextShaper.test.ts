@@ -1,10 +1,6 @@
 import type { CanvasTextShaperBackend } from '@flighthq/types/contract';
 
-import {
-  clearCanvasTextShaperBackendCache,
-  createCanvasTextShaperBackend,
-  initializeCanvasTextShaperBackend,
-} from './canvasTextShaper';
+import { clearCanvasTextShaperBackendCache, createCanvasTextShaperBackend } from './canvasTextShaper';
 
 describe('CanvasTextShaperBackend', () => {
   it('satisfies the TextShaperBackend interface', () => {
@@ -185,8 +181,23 @@ describe('createCanvasTextShaperBackend — getFontMetrics', () => {
     expect(() => backend.getFontMetrics!({ size: 12, bold: true, italic: true })).not.toThrow();
   });
 });
-describe('initializeCanvasTextShaperBackend', () => {
-  it('is the construction initializer of createCanvasTextShaperBackend', () => {
-    expect(typeof initializeCanvasTextShaperBackend).toBe('function');
+
+describe('createCanvasTextShaperBackend — plain data', () => {
+  it('returns a backend with no Entity runtime and no symbol keys at all', () => {
+    // The backend is a host capability, not a domain object Flight allocates, so it carries no runtime
+    // tier. EntityRuntimeKey is Symbol.for('EntityRuntime'); the registered-symbol lookup catches it
+    // without importing the entity package.
+    const backend = createCanvasTextShaperBackend();
+    expect(Symbol.for('EntityRuntime') in backend).toBe(false);
+    expect(Object.getOwnPropertySymbols(backend)).toEqual([]);
+  });
+
+  it('exposes exactly the capability surface and nothing construction-related', () => {
+    const backend = createCanvasTextShaperBackend();
+    expect(Object.keys(backend).sort()).toEqual(['clearCache', 'getFontMetrics', 'measureText']);
+  });
+
+  it('gives each call its own backend, so caches stay independent', () => {
+    expect(createCanvasTextShaperBackend()).not.toBe(createCanvasTextShaperBackend());
   });
 });
