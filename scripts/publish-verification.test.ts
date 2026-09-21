@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { PublishExpectation, PublishProblem, PublishedRegistryState } from './publish-verification.js';
-import { describePublishProblem, findPublishProblems } from './publish-verification.js';
+import { describePublishProblem, findPublishProblems, shouldKeepVerifying } from './publish-verification.js';
 
 // The versions from the incident this module exists for: every package published at 1538 except
 // @flighthq/types, whose publish exited 0 and never reached the registry.
@@ -129,5 +129,63 @@ describe('findPublishProblems', () => {
       }),
     );
     expect(problems.map((p) => p.kind)).toEqual(['missing', 'tag-stale', 'unreadable']);
+  });
+});
+
+describe('shouldKeepVerifying', () => {
+  const STALL = 12;
+
+  it('stops as soon as nothing is outstanding', () => {
+    expect(shouldKeepVerifying([162, 40, 0], STALL)).toBe(false);
+  });
+
+  it('keeps going while the count is still falling', () => {
+    expect(shouldKeepVerifying([125, 100, 80], STALL)).toBe(true);
+  });
+
+  it('keeps going through the real 1543 convergence rather than failing a good release', () => {
+    // Measured against the live registry: a 162-package release still had 125 unreadable on the
+    // first read-back and was fully visible ~47s later. A fixed 3-attempt budget reported all 125
+    // as missing; this rule must not.
+    const observed = [125, 100, 80, 60, 40, 20, 5, 2, 2, 1, 1];
+    expect(shouldKeepVerifying(observed, STALL)).toBe(true);
+    expect(shouldKeepVerifying([...observed, 0], STALL)).toBe(false);
+  });
+
+  it('tolerates a flat round mid-convergence', () => {
+    // Propagation is uneven; one round with no change must not end the loop.
+    expect(shouldKeepVerifying([50, 50], STALL)).toBe(true);
+  });
+
+  it('gives up once the count refuses to drop for a full window', () => {
+    // The signature of a real drop: it never becomes visible, so the count sits still.
+    expect(shouldKeepVerifying(Array(STALL + 1).fill(2), STALL)).toBe(false);
+  });
+
+  it('holds on one round short of the window, and releases on the next', () => {
+    expect(shouldKeepVerifying(Array(STALL).fill(2), STALL)).toBe(true);
+    expect(shouldKeepVerifying(Array(STALL + 1).fill(2), STALL)).toBe(false);
+  });
+
+  it('counts a drop anywhere inside the window as progress', () => {
+    // Stalled for most of the window but moved at the end: still converging.
+    const counts = [...Array(STALL).fill(9), 8];
+    expect(shouldKeepVerifying(counts, STALL)).toBe(true);
+  });
+
+  it('treats a drop followed by a spurious rise as progress', () => {
+    // The publisher re-reads only the previous round's outstanding set, so its counts never rise.
+    // A caller without that guarantee can still see one (a transient read error re-adding a package),
+    // and a genuine decrease inside the window is progress regardless of where it landed.
+    expect(shouldKeepVerifying([...Array(11).fill(9), 7, 9], STALL)).toBe(true);
+  });
+
+  it('does not read a rising count as progress', () => {
+    // Transient read errors can push the count up. Only a decrease is progress.
+    expect(shouldKeepVerifying([...Array(STALL).fill(3), 5], STALL)).toBe(false);
+  });
+
+  it('keeps going when no round has completed yet', () => {
+    expect(shouldKeepVerifying([], STALL)).toBe(true);
   });
 });
