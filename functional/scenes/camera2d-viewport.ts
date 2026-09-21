@@ -45,7 +45,7 @@ const { render, width } = await createFunctionalTarget({
     'uniform flat fill with no gradient or stroke.',
 });
 
-const camera = createCamera2D(WIDTH, HEIGHT);
+const camera = createCamera2D();
 camera.x = 200;
 camera.y = 200;
 camera.zoom = 2;

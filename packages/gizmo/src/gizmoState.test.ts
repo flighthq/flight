@@ -78,7 +78,7 @@ describe('createGizmoState', () => {
 
     expectTypeOf(context.state).toMatchTypeOf<GizmoState<HierarchyNodeAny>>();
     expectTypeOf<keyof GizmoCreateOptions<HierarchyNodeAny>>().toEqualTypeOf<
-      'camera' | 'features' | 'overlayScene' | 'selection'
+      'camera' | 'features' | 'overlayScene' | 'selection' | 'viewportHeight' | 'viewportWidth'
     >();
     expectTypeOf<
       Extract<
@@ -777,7 +777,7 @@ function createProjectedPointerData(
   world: Readonly<Vector2Like>,
 ): PointerEventData {
   const overlay = { x: 0, y: 0 };
-  projectCamera2DPoint(camera, world.x, world.y, overlay);
+  projectCamera2DPoint(camera, 200, 100, world.x, world.y, overlay);
   return { ...createPointerData(overlay.x, overlay.y), worldX: world.x, worldY: world.y };
 }
 
@@ -846,7 +846,7 @@ function createTestContext(
   options: Readonly<TestGizmoOptions> = {},
   nodes: readonly HierarchyNodeAny[] = [createTestNode()],
 ): TestContext {
-  const camera = createCamera2D(200, 100);
+  const camera = createCamera2D();
   const overlay = createScene2D({ scene2dHeight: 100, scene2dWidth: 200 });
   const selection = createSelectionState<HierarchyNodeAny>();
   const featuresByNode = new Map<HierarchyNodeAny, TestNodeFeatures>();
@@ -871,7 +871,14 @@ function createTestContext(
     },
     getWorldRotation: (node: Readonly<HierarchyNodeAny>) => featuresByNode.get(node)!.rotation,
   };
-  const state = createGizmoState({ camera, features, overlayScene: overlay, selection });
+  const state = createGizmoState({
+    camera,
+    features,
+    overlayScene: overlay,
+    selection,
+    viewportWidth: 200,
+    viewportHeight: 100,
+  });
   applyTestGizmoOptions(state, options);
   updateGizmo(state);
   return { camera, featuresByNode, overlay, selection, state };

@@ -6,9 +6,9 @@ import { getCamera2DViewMatrix } from './viewMatrix';
 
 describe('getCamera2DViewMatrix', () => {
   it('maps the camera center world point to the viewport center', () => {
-    const camera = createCamera2D(800, 600);
+    const camera = createCamera2D();
     const view = createMatrix();
-    getCamera2DViewMatrix(camera, view);
+    getCamera2DViewMatrix(camera, 800, 600, view);
     const out = createVector2();
     matrixTransformPointXY(out, view, 0, 0);
     expect(out.x).toBeCloseTo(400, 9);
@@ -16,9 +16,9 @@ describe('getCamera2DViewMatrix', () => {
   });
 
   it('projects a right-of-center world point at zoom 1', () => {
-    const camera = createCamera2D(800, 600);
+    const camera = createCamera2D();
     const view = createMatrix();
-    getCamera2DViewMatrix(camera, view);
+    getCamera2DViewMatrix(camera, 800, 600, view);
     const out = createVector2();
     matrixTransformPointXY(out, view, 100, 0);
     expect(out.x).toBeCloseTo(500, 9);
@@ -26,9 +26,9 @@ describe('getCamera2DViewMatrix', () => {
   });
 
   it('magnifies about the center at zoom 2', () => {
-    const camera = createCamera2D(800, 600, { zoom: 2 });
+    const camera = createCamera2D({ zoom: 2 });
     const view = createMatrix();
-    getCamera2DViewMatrix(camera, view);
+    getCamera2DViewMatrix(camera, 800, 600, view);
     const out = createVector2();
     matrixTransformPointXY(out, view, 100, 0);
     expect(out.x).toBeCloseTo(600, 9);
@@ -37,9 +37,9 @@ describe('getCamera2DViewMatrix', () => {
 
   it('rotates the view opposite the camera rotation', () => {
     // Camera3D rotated +90deg (CCW): a world point to the right appears above the center.
-    const camera = createCamera2D(800, 600, { rotation: Math.PI / 2 });
+    const camera = createCamera2D({ rotation: Math.PI / 2 });
     const view = createMatrix();
-    getCamera2DViewMatrix(camera, view);
+    getCamera2DViewMatrix(camera, 800, 600, view);
     const out = createVector2();
     matrixTransformPointXY(out, view, 100, 0);
     expect(out.x).toBeCloseTo(400, 9);

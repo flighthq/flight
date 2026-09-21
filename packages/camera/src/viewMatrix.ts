@@ -13,8 +13,13 @@ import type { Camera2D, MatrixLike } from '@flighthq/types/contract';
 // `T(center) * R(-rotation) * S(zoom)` head; `translateMatrixByVectorXY` post-multiplies the inner
 // `T(-x, -y)` in world space, leaving the linear part (a, b, c, d) untouched. Alias-safe: `out` may
 // be any matrix, including one aliased with a scratch used elsewhere.
-export function getCamera2DViewMatrix(camera: Readonly<Camera2D>, out: MatrixLike): void {
+export function getCamera2DViewMatrix(
+  camera: Readonly<Camera2D>,
+  viewportWidth: number,
+  viewportHeight: number,
+  out: MatrixLike,
+): void {
   const zoom = camera.zoom;
-  setTransformMatrix(out, zoom, zoom, -camera.rotation, camera.viewportWidth * 0.5, camera.viewportHeight * 0.5);
+  setTransformMatrix(out, zoom, zoom, -camera.rotation, viewportWidth * 0.5, viewportHeight * 0.5);
   translateMatrixByVectorXY(out, out, -camera.x, -camera.y);
 }

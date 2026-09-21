@@ -17,10 +17,16 @@ import { getCamera2DViewMatrix } from './viewMatrix';
 //
 // Accounts for zoom and rotation through the view matrix, so a rotated/zoomed camera yields the
 // correctly transformed offset.
-export function getCamera2DParallaxPoint(camera: Readonly<Camera2D>, factor: number, out: Vector2Like): void {
-  getCamera2DViewMatrix(camera, scratchMatrix);
-  out.x = (scratchMatrix.tx - camera.viewportWidth * 0.5) * factor;
-  out.y = (scratchMatrix.ty - camera.viewportHeight * 0.5) * factor;
+export function getCamera2DParallaxPoint(
+  camera: Readonly<Camera2D>,
+  viewportWidth: number,
+  viewportHeight: number,
+  factor: number,
+  out: Vector2Like,
+): void {
+  getCamera2DViewMatrix(camera, viewportWidth, viewportHeight, scratchMatrix);
+  out.x = (scratchMatrix.tx - viewportWidth * 0.5) * factor;
+  out.y = (scratchMatrix.ty - viewportHeight * 0.5) * factor;
 }
 
 const scratchMatrix = createMatrix();

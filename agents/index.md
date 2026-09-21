@@ -51,6 +51,7 @@ working in that area, but do not build on it as settled. New architecture record
 - [backend lifecycle ownership](backend-lifecycle-ownership.md) — the reconciled backend ownership
   partition, exact entity/key cleanup brackets, and provider-provenance work still owed.
 - [blend / composite](blend-composite-architecture.md) — blend modes and compositing across backends.
+- [camera observer model](camera-observer-model.md) — **unratified.** before touching `renderTransform2D`, `prepareScene2DRender`, `Camera2D`, or the root-transform handling in any 2D render backend. The prepare/render separation: scene-space transforms, camera as explicit render argument, Camera2D without viewport dimensions.
 - [Canvas CSS-filter / luminance sweep](canvas-css-filter-luminance-sweep.md) — the exhaustive nine-effect
   filter population, its one luminance intersection, and the mixed-channel reproduction that distinguishes it.
 - [capture verification tiers](capture-verification-tiers.md) — what each capture leg checks, and what fails hard.

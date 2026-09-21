@@ -9,12 +9,12 @@ import type { Rectangle } from './Rectangle';
 // `(x, y)` is the world point rendered at the CENTER of the viewport (center-anchored, the game-
 // camera norm). `zoom` > 1 magnifies (a smaller world region fills the viewport); `zoom` < 1 zooms
 // out. `rotation` is in radians and rotates the camera counter-clockwise about its center, so the
-// world appears to rotate clockwise on screen. `viewportWidth`/`viewportHeight` are the drawable
-// surface size in device pixels. Distinct from `Camera3D` (the 3D perspective/orthographic camera).
+// world appears to rotate clockwise on screen. The viewport is NOT on the camera — it belongs to the
+// render target, paralleling `Camera3D` which carries aspect on its projection descriptor rather
+// than pixel dimensions. Functions that need the viewport take it as explicit parameters.
+// Distinct from `Camera3D` (the 3D perspective/orthographic camera).
 export interface Camera2D extends Entity {
   rotation: number;
-  viewportHeight: number;
-  viewportWidth: number;
   x: number;
   y: number;
   zoom: number;

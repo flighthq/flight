@@ -74,7 +74,7 @@ addNodeChild(root, worldContainer);
 const uiContainer = createDisplayObject();
 addNodeChild(root, uiContainer);
 
-const camera = createCamera2D(CANVAS_WIDTH, CANVAS_HEIGHT);
+const camera = createCamera2D();
 const viewMatrix = createMatrix();
 
 let playerX = 200;
@@ -270,11 +270,19 @@ function updateGame(dt: number): void {
     triggerGameOver();
   }
 
-  updateCamera2DFollow(camera, playerX + PLAYER_WIDTH / 2, playerY + PLAYER_HEIGHT / 2, dt, {
-    smoothTime: 0.15,
-  });
+  updateCamera2DFollow(
+    camera,
+    CANVAS_WIDTH,
+    CANVAS_HEIGHT,
+    playerX + PLAYER_WIDTH / 2,
+    playerY + PLAYER_HEIGHT / 2,
+    dt,
+    {
+      smoothTime: 0.15,
+    },
+  );
 
-  getCamera2DViewMatrix(camera, viewMatrix);
+  getCamera2DViewMatrix(camera, CANVAS_WIDTH, CANVAS_HEIGHT, viewMatrix);
 
   worldContainer.x = viewMatrix.tx;
   worldContainer.y = viewMatrix.ty;

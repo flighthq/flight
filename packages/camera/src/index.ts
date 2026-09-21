@@ -9,7 +9,7 @@ export {
   setCamera3DViewMatrix4FromMatrix4,
   updateCamera3DInverseViewProjection,
 } from './camera';
-export { createCamera2D } from './camera2d';
+export { createCamera2D, setCamera2DLookAt } from './camera2d';
 export * from './cubeCapture';
 export * from './culling';
 export * from './depth';

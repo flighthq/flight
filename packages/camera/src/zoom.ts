@@ -10,10 +10,17 @@ import { unprojectCamera2DPoint } from './projection2d';
 //
 // Reads the pre-zoom world point, applies the new zoom, then adjusts `x`/`y` by the difference so the
 // same screen point unprojects to the same world point as before.
-export function zoomCamera2DAtScreenPoint(camera: Camera2D, screenX: number, screenY: number, zoom: number): void {
-  unprojectCamera2DPoint(camera, screenX, screenY, scratchBefore);
+export function zoomCamera2DAtScreenPoint(
+  camera: Camera2D,
+  viewportWidth: number,
+  viewportHeight: number,
+  screenX: number,
+  screenY: number,
+  zoom: number,
+): void {
+  unprojectCamera2DPoint(camera, viewportWidth, viewportHeight, screenX, screenY, scratchBefore);
   camera.zoom = zoom;
-  unprojectCamera2DPoint(camera, screenX, screenY, scratchAfter);
+  unprojectCamera2DPoint(camera, viewportWidth, viewportHeight, screenX, screenY, scratchAfter);
   camera.x += scratchBefore.x - scratchAfter.x;
   camera.y += scratchBefore.y - scratchAfter.y;
 }

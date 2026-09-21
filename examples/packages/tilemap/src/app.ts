@@ -211,7 +211,7 @@ const cursor = createSprite({
 });
 addNodeChild(world, cursor);
 
-const camera = createCamera2D(CANVAS_WIDTH, CANVAS_HEIGHT, {
+const camera = createCamera2D({
   x: MAP_WIDTH * 0.5,
   y: MAP_HEIGHT * 0.48,
   zoom: 1,
@@ -239,7 +239,7 @@ function clampCamera(): void {
 }
 
 function updateCursor(): void {
-  unprojectCamera2DPoint(camera, pointerScreenX, pointerScreenY, worldPoint);
+  unprojectCamera2DPoint(camera, CANVAS_WIDTH, CANVAS_HEIGHT, pointerScreenX, pointerScreenY, worldPoint);
   const picked = getTilemapColumnRowAtPoint(pickedCell, tilemap, worldPoint.x, worldPoint.y);
   cursor.visible = picked;
   invalidateNodeAppearance(cursor);
@@ -274,7 +274,7 @@ function updateCamera(deltaTime: number): void {
   camera.y += (vertical * CAMERA_SPEED * deltaTime) / camera.zoom;
   clampCamera();
 
-  getCamera2DViewMatrix(camera, viewMatrix);
+  getCamera2DViewMatrix(camera, CANVAS_WIDTH, CANVAS_HEIGHT, viewMatrix);
   world.scaleX = viewMatrix.a;
   world.skewY = viewMatrix.b;
   world.skewX = viewMatrix.c;
@@ -332,7 +332,7 @@ canvas.addEventListener(
     updatePointerScreenPosition(event);
     const zoomFactor = Math.exp(-event.deltaY * 0.001);
     const zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, camera.zoom * zoomFactor));
-    zoomCamera2DAtScreenPoint(camera, pointerScreenX, pointerScreenY, zoom);
+    zoomCamera2DAtScreenPoint(camera, CANVAS_WIDTH, CANVAS_HEIGHT, pointerScreenX, pointerScreenY, zoom);
     clampCamera();
   },
   { passive: false },

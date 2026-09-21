@@ -18,6 +18,8 @@ import type { Camera2D, Camera2DFollowOptions } from '@flighthq/types/contract';
 // `rotation` is 0).
 export function updateCamera2DFollow(
   camera: Camera2D,
+  viewportWidth: number,
+  viewportHeight: number,
   targetX: number,
   targetY: number,
   deltaTime: number,
@@ -55,7 +57,7 @@ export function updateCamera2DFollow(
     // The visible-bounds size is independent of camera position, so it is safe to read before the
     // camera moves; the rectangle is centered on the camera, so clamping the center by its half-
     // extents keeps the visible rect inside the level.
-    getCamera2DVisibleBounds(camera, scratchBounds);
+    getCamera2DVisibleBounds(camera, viewportWidth, viewportHeight, scratchBounds);
     const halfVisW = scratchBounds.width * 0.5;
     const halfVisH = scratchBounds.height * 0.5;
     if (worldBounds.width <= scratchBounds.width) {

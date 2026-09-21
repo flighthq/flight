@@ -39,7 +39,7 @@ describe('createNode2DGizmoFeatures', () => {
 
   it('is independent of camera and overlay state', () => {
     const features = createNode2DGizmoFeatures();
-    const camera = createCamera2D(320, 200, { zoom: 2 });
+    const camera = createCamera2D({ zoom: 2 });
 
     expect(features).toEqual({
       getWorldBoundsRectangle: expect.any(Function),

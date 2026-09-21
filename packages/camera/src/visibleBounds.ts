@@ -17,8 +17,13 @@ import { getCamera2DViewMatrix } from './viewMatrix';
 // nothing. The asymmetry is the whole reason: over-drawing is slow and visible, under-drawing is
 // silent and wrong, and a cull bound that silently collapses removes content with nothing to point at
 // the cause.
-export function getCamera2DVisibleBounds(camera: Readonly<Camera2D>, out: RectangleLike): void {
-  getCamera2DViewMatrix(camera, scratchMatrix);
+export function getCamera2DVisibleBounds(
+  camera: Readonly<Camera2D>,
+  viewportWidth: number,
+  viewportHeight: number,
+  out: RectangleLike,
+): void {
+  getCamera2DViewMatrix(camera, viewportWidth, viewportHeight, scratchMatrix);
   if (!inverseMatrix(scratchInverse, scratchMatrix)) {
     out.x = UNBOUNDED_ORIGIN;
     out.y = UNBOUNDED_ORIGIN;
@@ -27,7 +32,7 @@ export function getCamera2DVisibleBounds(camera: Readonly<Camera2D>, out: Rectan
     degenerateVisibleBoundsGuard?.(camera);
     return;
   }
-  matrixTransformBounds(out, scratchInverse, 0, 0, camera.viewportWidth, camera.viewportHeight);
+  matrixTransformBounds(out, scratchInverse, 0, 0, viewportWidth, viewportHeight);
 }
 
 // The seam the guard layer installs into; `null` keeps this module free of message text and of any
