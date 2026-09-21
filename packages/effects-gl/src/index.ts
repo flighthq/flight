@@ -35,7 +35,6 @@ export { glDropShadowEffectRunner, registerGlDropShadowEffect } from './glDropSh
 export {
   beginGlEffectPass,
   createGlEffectState,
-  destroyGlEffectState,
   endGlEffectPass,
   setGlEffectStateSkipGuard,
   setGlEffectVelocityTexture,
