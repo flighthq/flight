@@ -119,7 +119,7 @@ describe('drawCanvasScale9Sprite', () => {
     prepareScene2DRender(state, sprite);
     const setTransform = vi.spyOn(state.context, 'setTransform');
     drawCanvasScale9Sprite(state, getOrCreateRenderProxy2D(state, sprite));
-    expect(setTransform).toHaveBeenLastCalledWith(1, 0, 0, 1, 0, 0);
+    expectTransformArgs(setTransform.mock.lastCall!, 1, 0, 0, 1, 0, 0);
   });
 
   it('keeps the unsliced fallback at the node scale, which it must not strip', () => {
@@ -132,7 +132,7 @@ describe('drawCanvasScale9Sprite', () => {
     drawCanvasScale9Sprite(state, getOrCreateRenderProxy2D(state, sprite));
     // The fallback draws the texture whole at its source size, so it needs the node's scale left ON to
     // reach the same painted size. Stripping in both branches would silently shrink the fallback.
-    expect(setTransform).toHaveBeenLastCalledWith(2, 0, 0, 4, 0, 0);
+    expectTransformArgs(setTransform.mock.lastCall!, 2, 0, 0, 4, 0, 0);
   });
 
   it('falls back to one unsliced blit when the grid cannot be applied', () => {
@@ -154,3 +154,23 @@ describe('drawCanvasScale9Sprite', () => {
     expect(draw).not.toHaveBeenCalled();
   });
 });
+
+// IEEE 754 produces -0 for -sin(0); `===` treats -0 === 0 as true, while Object.is (used by
+// toEqual / toHaveBeenCalledWith) does not. This helper asserts numeric equality without the sign
+// distinction so rotation-zero transforms pass without brittle sign expectations.
+function expectTransformArgs(
+  args: unknown[],
+  a: number,
+  b: number,
+  c: number,
+  d: number,
+  tx: number,
+  ty: number,
+): void {
+  const expected = [a, b, c, d, tx, ty];
+  expect(args.length).toBe(6);
+  for (let i = 0; i < 6; i++) {
+    // eslint-disable-next-line vitest/no-conditional-expect -- IEEE 754 -0 === 0 but Object.is distinguishes them; assert with === so rotation-zero transforms pass
+    expect(args[i] === expected[i]).toBe(true);
+  }
+}
