@@ -9,6 +9,7 @@ import {
 import type { GlColorAdjustmentMaterialFeature, Modifier, GlShadedDefineKey } from '@flighthq/types/contract';
 import { ModifierSlot, VertexDisplaceModifierSource } from '@flighthq/types/contract';
 
+import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 import { emissiveGlModifierSnippet, envReflectGlModifierSnippet } from './glShadedBuiltInModifiers';
@@ -126,7 +127,14 @@ describe('compileGlShadedProgram', () => {
 
   it('injects the skin define + vertex declarations only into the skinned vertex source', () => {
     const gl = makeFakeGl2();
-    compileGlShadedProgram(gl, { ...BASE_KEY, hasSkin: true }, [], createModifierRegistry());
+    compileGlShadedProgram(
+      gl,
+      { ...BASE_KEY, hasSkin: true },
+      [],
+      createModifierRegistry(),
+      null,
+      GL_SKIN_VERTEX_DECLARATIONS_GLSL,
+    );
     const vertex = vertexSourceFrom(gl.calls);
     expect(vertex).toContain('#define HAS_SKIN');
     expect(vertex).not.toContain('#define MAX_JOINTS');

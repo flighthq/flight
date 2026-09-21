@@ -11,7 +11,6 @@ import type {
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
 import {
   GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
-  GL_SKIN_VERTEX_DECLARATIONS_GLSL,
   GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
   ensureGlScene3DProgram,
@@ -51,8 +50,18 @@ export function buildGlUnlitDefineKey(key: Readonly<GlUnlitDefineKey>): string {
 
 // Compiles the unlit shader for a define key, links it, and resolves its uniform locations. Pure GL
 // work — no caching — used by ensureGlUnlitProgram.
-export function compileGlUnlitProgram(gl: GlContext, key: Readonly<GlUnlitDefineKey>): GlUnlitProgram {
-  const program = compileGlProgram(gl, getGlUnlitVertexSourceForKey(key), getGlUnlitFragmentSourceForKey(key));
+export function compileGlUnlitProgram(
+  gl: GlContext,
+  key: Readonly<GlUnlitDefineKey>,
+  // The HAS_SKIN vertex declarations, supplied by the registered skinning capability. Empty string
+  // when skinning is not registered, which is also when key.hasSkin is false.
+  skinDeclarationsGlsl = '',
+): GlUnlitProgram {
+  const program = compileGlProgram(
+    gl,
+    getGlUnlitVertexSourceForKey(key, skinDeclarationsGlsl),
+    getGlUnlitFragmentSourceForKey(key),
+  );
   return {
     locAlphaCutoff: gl.getUniformLocation(program, 'u_alphaCutoff'),
     locColor: gl.getUniformLocation(program, 'u_color'),
@@ -78,7 +87,7 @@ export function ensureGlUnlitProgram(state: GlRenderState, key: Readonly<GlUnlit
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   return ensureGlScene3DProgram(state, `unlit:${buildGlUnlitDefineKey(fullKey)}`, (gl) =>
-    compileGlUnlitProgram(gl, fullKey),
+    compileGlUnlitProgram(gl, fullKey, getGlScene3DRuntime(state).meshSkinFeature?.vertexDeclarationsGlsl ?? ''),
   );
 }
 
@@ -88,8 +97,8 @@ export function getGlUnlitFragmentSourceForKey(key: Readonly<GlUnlitDefineKey>):
 }
 
 // The full vertex source for a define key (define block + body), ready to hand to the GL compiler.
-export function getGlUnlitVertexSourceForKey(key: Readonly<GlUnlitDefineKey>): string {
-  const skin = key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '';
+export function getGlUnlitVertexSourceForKey(key: Readonly<GlUnlitDefineKey>, skinDeclarationsGlsl = ''): string {
+  const skin = key.hasSkin ? skinDeclarationsGlsl : '';
   const instances = key.hasInstances ? GL_INSTANCE_VERTEX_DECLARATIONS_GLSL : '';
   return buildDefineSource(key) + skin + instances + UNLIT_VERTEX_BODY;
 }

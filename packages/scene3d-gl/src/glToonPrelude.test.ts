@@ -1,5 +1,6 @@
 import type { GlToonDefineKey } from '@flighthq/types/contract';
 
+import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 import {
@@ -105,7 +106,7 @@ describe('getGlToonVertexSourceForKey', () => {
   });
 
   it('injects the skin declarations only for the skinned variant', () => {
-    const skinned = getGlToonVertexSourceForKey({ ...FLAT, hasSkin: true });
+    const skinned = getGlToonVertexSourceForKey({ ...FLAT, hasSkin: true }, GL_SKIN_VERTEX_DECLARATIONS_GLSL);
     expect(skinned).toContain('#define HAS_SKIN');
     expect(skinned).not.toContain('#define MAX_JOINTS');
     expect(skinned).toContain('sampler2D u_jointTexture');

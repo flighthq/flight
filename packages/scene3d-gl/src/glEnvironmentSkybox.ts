@@ -3,6 +3,7 @@ import { createGlProgram } from '@flighthq/render-gl/contract';
 import type { GlContext, Camera3D, Environment, GlRenderState } from '@flighthq/types/contract';
 
 import { ensureGlEnvironmentSourceCube } from './glEnvironmentCube';
+import { addGlScene3DResourceCleanup } from './glScene3DRuntime';
 
 // Frees the skybox program, VAO and vertex buffer cached for `state`. These are module-local (keyed by
 // state) rather than held on the scene runtime, so they cannot be reached from it; destroyGlScene3DRuntime
@@ -36,6 +37,8 @@ function ensureGlSkybox(state: GlRenderState): GlSkybox {
   let sky = _skyboxes.get(state);
   if (sky !== undefined) return sky;
 
+  // First skybox for this state: hand teardown to the scene runtime rather than being destroyed by name.
+  addGlScene3DResourceCleanup(state, destroyGlEnvironmentSkybox);
   const program = linkGlSkyboxProgram(gl);
   const vao = gl.createVertexArray()!;
   gl.bindVertexArray(vao);

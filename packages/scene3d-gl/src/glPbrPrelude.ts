@@ -31,11 +31,7 @@ import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
 import { GL_DIRECTIONAL_SHADOW_GLSL } from './glLitProgram';
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
-import {
-  GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
-  GL_SKIN_VERTEX_DECLARATIONS_GLSL,
-  GL_UV_TRANSFORM_VERTEX_GLSL,
-} from './glMeshProgram';
+import { GL_INSTANCE_VERTEX_DECLARATIONS_GLSL, GL_UV_TRANSFORM_VERTEX_GLSL } from './glMeshProgram';
 // A short, stable, order-independent string identity for a define key, used as the program-cache
 // map key. Two keys with the same flags produce the same string and so share a compiled program.
 // Standard map/alpha flags first, then one slot per extension lobe.
@@ -123,8 +119,8 @@ export function getGlPbrVertexSource(): string {
 // The full vertex source for a define key (define block + optional skin declarations + body), ready to
 // hand to the GL compiler. The skin GLSL is vertex-only (its `in` attributes are illegal in a fragment
 // shader), so it is spliced here rather than into the shared define block.
-export function getGlPbrVertexSourceForKey(key: Readonly<GlPbrDefineKey>): string {
-  const skin = key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '';
+export function getGlPbrVertexSourceForKey(key: Readonly<GlPbrDefineKey>, skinDeclarationsGlsl = ''): string {
+  const skin = key.hasSkin ? skinDeclarationsGlsl : '';
   const instances = key.hasInstances ? GL_INSTANCE_VERTEX_DECLARATIONS_GLSL : '';
   return buildGlPbrDefineSource(key) + skin + instances + PBR_VERTEX_BODY;
 }

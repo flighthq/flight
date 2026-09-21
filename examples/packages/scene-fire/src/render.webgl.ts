@@ -23,7 +23,7 @@ import {
   createAppWindow,
   openWindow,
 } from '@flighthq/sdk';
-import { renderGlScene3D } from '@flighthq/sdk/scene3d-gl';
+import { registerGlParticleEmitter3DPass, renderGlScene3D } from '@flighthq/sdk/scene3d-gl';
 
 const pixelRatio = window.devicePixelRatio || 1;
 export const width = 800;
@@ -40,6 +40,8 @@ export const canvas = getWebSurfaceElement(glSurface)!;
 export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
   pixelRatio,
 });
+// The particle pass is opt-in: without this registration renderGlScene3D draws no emitters.
+registerGlParticleEmitter3DPass(state);
 enableFlightDiagnostics(state);
 registerGlBloomEffect(state);
 registerGlToneMapEffect(state);

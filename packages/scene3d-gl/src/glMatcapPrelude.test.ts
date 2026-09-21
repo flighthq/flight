@@ -8,6 +8,7 @@ import {
   getGlMatcapFragmentSourceForKey,
   getGlMatcapVertexSourceForKey,
 } from './glMatcapPrelude';
+import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 
@@ -85,7 +86,7 @@ describe('getGlMatcapVertexSourceForKey', () => {
 
   it('deforms position and normal only in the skinned variant', () => {
     const rigid = getGlMatcapVertexSourceForKey(FLAT);
-    const skinned = getGlMatcapVertexSourceForKey({ ...FLAT, hasSkin: true });
+    const skinned = getGlMatcapVertexSourceForKey({ ...FLAT, hasSkin: true }, GL_SKIN_VERTEX_DECLARATIONS_GLSL);
 
     expect(rigid).not.toContain('#define HAS_SKIN');
     expect(rigid).not.toContain('skinMatrix() *');

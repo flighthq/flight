@@ -20,6 +20,7 @@ import {
 import type { Skin, VertexAttributeLayout } from '@flighthq/types/contract';
 import { DIRECTIONAL_SHADOW_MAP_SIZE, EntityRuntimeKey } from '@flighthq/types/contract';
 
+import { registerGlMeshSkinning } from './glMeshSkinning';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 import { renderGlScene3DShadowMap } from './glShadowMap';
@@ -313,6 +314,7 @@ describe('renderGlScene3DShadowMap', () => {
 
   it('draws a GPU-skinned caster through the HAS_SKIN depth variant', () => {
     const { state } = makeShadowState();
+    registerGlMeshSkinning(state);
     const scene = createNode3D(Node3DKind);
     const geometry = createMeshGeometry({
       layout: SKINNED_LAYOUT,

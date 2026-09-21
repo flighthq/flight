@@ -14,7 +14,7 @@ import {
   createGlScreenRenderTarget,
 } from '@flighthq/render-gl';
 import { createScene3D } from '@flighthq/scene3d';
-import { renderGlScene3D } from '@flighthq/scene3d-gl';
+import { registerGlParticleEmitter3DPass, renderGlScene3D } from '@flighthq/scene3d-gl';
 import { createGlSurface } from '@flighthq/surface';
 
 const appWindow = createAppWindow();
@@ -29,6 +29,8 @@ document.body.style.margin = '0';
 const state = createGlRenderState(glSurface.context, allocateEmptyGlRenderRegistries(), {
   pixelRatio: 1,
 });
+// The particle pass is opt-in: without this registration renderGlScene3D draws no emitters.
+registerGlParticleEmitter3DPass(state);
 const scene = createScene3D().root;
 const emitter = createParticleEmitter3D();
 appendParticleEmitter3DParticle(emitter, 0, -0.65, -0.2, 0, 0, 0.5);

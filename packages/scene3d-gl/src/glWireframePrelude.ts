@@ -1,7 +1,7 @@
 import type { GlContext, GlWireframeProgram, GlRenderState } from '@flighthq/types/contract';
 
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
-import { compileGlProgram, ensureGlScene3DProgram, GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshProgram';
+import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // The Gl wireframe prelude: a minimal GLSL 300 es shader that transforms the position attribute by
@@ -15,10 +15,11 @@ export function compileGlWireframeProgram(
   gl: GlContext,
   alphaMaskEnabled = false,
   skinned = false,
+  skinDeclarationsGlsl = '',
 ): GlWireframeProgram {
   const program = compileGlProgram(
     gl,
-    getGlWireframeVertexSource(skinned),
+    getGlWireframeVertexSource(skinned, skinDeclarationsGlsl),
     getGlWireframeFragmentSource(alphaMaskEnabled),
   );
   return {
@@ -40,7 +41,13 @@ export function ensureGlWireframeProgram(state: GlRenderState, alphaMaskEnabled 
   return ensureGlScene3DProgram(
     state,
     `wireframe:${alphaMaskEnabled ? 'mask' : 'base'}|${skinned ? 'skin' : 'rigid'}`,
-    (gl) => compileGlWireframeProgram(gl, alphaMaskEnabled, skinned),
+    (gl) =>
+      compileGlWireframeProgram(
+        gl,
+        alphaMaskEnabled,
+        skinned,
+        getGlScene3DRuntime(state).meshSkinFeature?.vertexDeclarationsGlsl ?? '',
+      ),
   );
 }
 
@@ -50,10 +57,8 @@ export function getGlWireframeFragmentSource(alphaMaskEnabled = false): string {
 }
 
 // The wireframe vertex source: position → clip space.
-export function getGlWireframeVertexSource(skinned = false): string {
-  return (
-    `#version 300 es\n${skinned ? '#define HAS_SKIN\n' + GL_SKIN_VERTEX_DECLARATIONS_GLSL : ''}` + WIREFRAME_VERTEX
-  );
+export function getGlWireframeVertexSource(skinned = false, skinDeclarationsGlsl = ''): string {
+  return `#version 300 es\n${skinned ? '#define HAS_SKIN\n' + skinDeclarationsGlsl : ''}` + WIREFRAME_VERTEX;
 }
 
 const WIREFRAME_VERTEX = `layout(location = 0) in vec3 a_position;

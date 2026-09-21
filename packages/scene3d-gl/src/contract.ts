@@ -24,6 +24,7 @@ export * from './glMatcapPrelude';
 export * from './glMeshFragmentTail';
 export * from './glMeshMaterialRegistry';
 export * from './glMeshProgram';
+export * from './glMeshSkinning';
 export * from './glMeshUpload';
 export * from './glParticleEmitter3D';
 export * from './glPbrExtensionRegistry';

@@ -34,7 +34,6 @@ import type {
 import { BlendMode, StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
 import { resolveGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { drawGlScene3DParticleEmitter3Ds } from './glParticleEmitter3D';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { getGlScene3DViewportAspect } from './glViewportAspect';
 
@@ -43,7 +42,12 @@ import { getGlScene3DViewportAspect } from './glViewportAspect';
 // is bounded by MAX_TEXTURE_SIZE (thousands of joints) rather than the vertex-uniform budget — there is
 // no per-context capacity cap and no CPU fallback for large skeletons. The CPU skinning kernel in
 // @flighthq/skeleton3d is retained only for bounds/picking, not as a draw fallback.
-function isGpuSkinnedDraw(mesh: Readonly<Mesh>): boolean {
+//
+// Also gated on the registered skinning capability, not the mesh alone: an unregistered state must never
+// select a HAS_SKIN program variant, because the vertex declarations that variant needs arrive WITH the
+// capability. A skinned mesh then draws at its bind pose rather than deforming from an absent palette.
+function isGpuSkinnedDraw(state: GlRenderState, mesh: Readonly<Mesh>): boolean {
+  if (getGlScene3DRuntime(state).meshSkinFeature == null) return false;
   return mesh.skin != null && hasMeshGeometrySkin(mesh.geometry);
 }
 
@@ -183,7 +187,7 @@ export function renderGlScene3D(
 
     // A skinned run selects the HAS_SKIN program variant; split runs on it (a rigid and a skinned mesh
     // sharing a material need different programs). Set the flag before bind so ensureGl*Program folds it in.
-    const skinned = isGpuSkinnedDraw(entry.mesh);
+    const skinned = isGpuSkinnedDraw(state, entry.mesh);
     const colorAdjusted =
       colorAdjustmentFeatureEnabled && (entry.colorMatrix !== null || entry.colorScaleBias !== null);
     const colorMatrix = colorAdjusted && entry.colorMatrix !== null;
@@ -240,7 +244,7 @@ export function renderGlScene3D(
       const worldMatrix = entry.worldMatrix as Matrix4;
       setMatrix3NormalFromMatrix4(scratchNormalMatrix, worldMatrix);
 
-      const skinned = isGpuSkinnedDraw(entry.mesh);
+      const skinned = isGpuSkinnedDraw(state, entry.mesh);
       const colorAdjusted =
         colorAdjustmentFeatureEnabled && (entry.colorMatrix !== null || entry.colorScaleBias !== null);
       const colorMatrix = colorAdjusted && entry.colorMatrix !== null;
@@ -343,13 +347,14 @@ export function renderGlScene3D(
     proxy.instanceColors = null;
   }
 
-  // ParticleEmitter3D nodes carry no geometry, so prepareScene3DRender never lists them among the
-  // visible meshes above. Draw them here as a final transparent instanced pass so the common
-  // renderGlScene3D path renders a scene's emitters without the caller also invoking the emitter pass
-  // by hand. drawGlScene3DParticleEmitter3Ds stays exported for manual ordering; it early-returns (and
-  // skips its own cache invalidation) when the scene has no emitters, so the mesh-only path is
-  // unaffected and the invalidate below still covers it.
-  drawGlScene3DParticleEmitter3Ds(state, scene, camera, lights);
+  // Post-mesh passes, in registration order, drawn after all mesh depth is established. The particle
+  // emitter pass registers here via registerGlParticleEmitter3DPass rather than being called directly:
+  // an early-returning call still bundles its module, so an unregistered pass must be absent from the
+  // dispatch entirely. drawGlScene3DParticleEmitter3Ds stays exported for manual ordering.
+  const passes = runtime.passes;
+  if (passes != null) {
+    for (const pass of passes) pass(state, scene, camera, lights);
+  }
 
   // Mesh/skybox/shadow binds above issued raw gl.useProgram/blendFunc/bindFramebuffer calls that
   // render-gl's own binding cache did not observe. Invalidate it so the next render-gl operation —

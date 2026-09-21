@@ -5,7 +5,6 @@ import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram'
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
 import {
   GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
-  GL_SKIN_VERTEX_DECLARATIONS_GLSL,
   GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
   ensureGlScene3DProgram,
@@ -24,8 +23,18 @@ export function buildGlToonDefineKey(key: Readonly<GlToonDefineKey>): string {
 // plus the shared model/normal/view-projection vertex transforms. Pure GL work — no caching — used
 // by ensureGlToonProgram. Throws on a compile/link failure, which is a programmer error (a malformed
 // prelude), not an expected runtime condition.
-export function compileGlToonProgram(gl: GlContext, key: Readonly<GlToonDefineKey>): GlToonProgram {
-  const program = compileGlProgram(gl, getGlToonVertexSourceForKey(key), getGlToonFragmentSourceForKey(key));
+export function compileGlToonProgram(
+  gl: GlContext,
+  key: Readonly<GlToonDefineKey>,
+  // The HAS_SKIN vertex declarations, supplied by the registered skinning capability. Empty string
+  // when skinning is not registered, which is also when key.hasSkin is false.
+  skinDeclarationsGlsl = '',
+): GlToonProgram {
+  const program = compileGlProgram(
+    gl,
+    getGlToonVertexSourceForKey(key, skinDeclarationsGlsl),
+    getGlToonFragmentSourceForKey(key),
+  );
   return {
     ...resolveGlLitLocations(gl, program),
     program,
@@ -54,7 +63,7 @@ export function ensureGlToonProgram(state: GlRenderState, key: Readonly<GlToonDe
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   return ensureGlScene3DProgram(state, `toon:${buildGlToonDefineKey(fullKey)}`, (gl) =>
-    compileGlToonProgram(gl, fullKey),
+    compileGlToonProgram(gl, fullKey, getGlScene3DRuntime(state).meshSkinFeature?.vertexDeclarationsGlsl ?? ''),
   );
 }
 
@@ -64,8 +73,8 @@ export function getGlToonFragmentSourceForKey(key: Readonly<GlToonDefineKey>): s
 }
 
 // The full vertex source for a define key (define block + body), ready to hand to the GL compiler.
-export function getGlToonVertexSourceForKey(key: Readonly<GlToonDefineKey>): string {
-  const skin = key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '';
+export function getGlToonVertexSourceForKey(key: Readonly<GlToonDefineKey>, skinDeclarationsGlsl = ''): string {
+  const skin = key.hasSkin ? skinDeclarationsGlsl : '';
   const instances = key.hasInstances ? GL_INSTANCE_VERTEX_DECLARATIONS_GLSL : '';
   return buildGlToonDefineSource(key) + skin + instances + TOON_VERTEX_BODY;
 }

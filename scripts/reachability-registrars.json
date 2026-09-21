@@ -1135,11 +1135,19 @@
     },
     {
       "packageName": "scene3d-gl",
+      "registrar": "registerGlMeshSkinning"
+    },
+    {
+      "packageName": "scene3d-gl",
       "registrar": "registerGlModifierSnippet"
     },
     {
       "packageName": "scene3d-gl",
       "registrar": "registerGlNormalMaterial"
+    },
+    {
+      "packageName": "scene3d-gl",
+      "registrar": "registerGlParticleEmitter3DPass"
     },
     {
       "packageName": "scene3d-gl",

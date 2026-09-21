@@ -13,8 +13,15 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { destroyGlEnvironmentIblBakePrograms } from './glEnvironmentIblBake';
-import { destroyGlEnvironmentSkybox } from './glEnvironmentSkybox';
+// Registers a teardown callback for a lazily-created optional resource, so destroyGlScene3DRuntime can
+// free it without importing the module that owns it. Idempotent by function identity: pass a stable
+// module-level function (not a closure), and creating the resource again re-registers nothing.
+export function addGlScene3DResourceCleanup(state: GlRenderState, cleanup: (state: GlRenderState) => void): void {
+  const scene = getGlScene3DRuntime(state);
+  const cleanups = (scene.resourceCleanups ??= []);
+  if (!cleanups.includes(cleanup)) cleanups.push(cleanup);
+}
+
 // Frees every state-scoped GPU resource scene-gl created for `state`: all cached mesh-material and PBR
 // programs, the IBL set (irradiance / prefiltered / BRDF textures + the bake framebuffer), the source
 // environment cubemap, the IBL bake shader programs, and the directional shadow map (its depth texture
@@ -52,8 +59,14 @@ export function destroyGlScene3DRuntime(state: GlRenderState): void {
   scene.environmentSourceCubeFaceVersions = [];
   scene.environmentSourceTexture = null;
   scene.environmentSourceTextureVersion = -1;
-  destroyGlEnvironmentIblBakePrograms(state);
-  destroyGlEnvironmentSkybox(state);
+  // Optional resources free themselves through callbacks they registered on first creation, so this
+  // teardown holds no import of the environment or skybox modules — that edge is what previously kept
+  // the whole environment chain in the bundle of a scene that never baked one.
+  const cleanups = scene.resourceCleanups;
+  if (cleanups != null) {
+    for (const cleanup of cleanups) cleanup(state);
+    cleanups.length = 0;
+  }
 
   if (scene.shadowTarget !== null) {
     destroyGlTextureRenderTarget(scene.shadowTarget);
@@ -172,6 +185,7 @@ export function getGlScene3DRuntime(state: GlRenderState): GlScene3DRuntime {
       shadowTarget: null,
       instanceColorPalette: null,
       instancePalette: null,
+      resourceCleanups: null,
       skinNormalPalette: null,
       skinPalette: null,
       time: 0,

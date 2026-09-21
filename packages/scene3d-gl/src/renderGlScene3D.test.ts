@@ -34,6 +34,7 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
+import { registerGlParticleEmitter3DPass } from './glParticleEmitter3D';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 import { registerGlStandardPbrMaterial } from './registerGlStandardPbrMaterial';
@@ -391,6 +392,7 @@ describe('renderGlScene3D', () => {
   it('draws a ParticleEmitter3D node in the scene via the single renderGlScene3D call', () => {
     const { state, gl } = makeGlScene3DState();
     registerGlStandardPbrMaterial(state);
+    registerGlParticleEmitter3DPass(state);
 
     const scene = createNode3D(Node3DKind);
     // An emitter carries no geometry, so it never appears in the visible-mesh list; renderGlScene3D must
@@ -411,6 +413,30 @@ describe('renderGlScene3D', () => {
     renderGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
 
     expect(gl.calls.some((c) => c.name === 'drawElementsInstanced')).toBe(true);
+  });
+
+  it('draws no emitter pass when the particle pass is not registered', () => {
+    // The tree-shaking contract: an unregistered pass is not dispatched at all, rather than being
+    // called and early-returning. Same scene as the test above, minus registerGlParticleEmitter3DPass.
+    const { state, gl } = makeGlScene3DState();
+    registerGlStandardPbrMaterial(state);
+
+    const scene = createNode3D(Node3DKind);
+    const emitter = createParticleEmitter3D();
+    reserveParticleEmitter3D(emitter, 2);
+    emitter.data.particleCount = 2;
+    for (let i = 0; i < 2; i++) {
+      emitter.data.transforms[i * 4 + 3] = 1;
+      emitter.data.alphas[i] = 1;
+      emitter.data.colors[i * 3] = 1;
+      emitter.data.colors[i * 3 + 1] = 1;
+      emitter.data.colors[i * 3 + 2] = 1;
+    }
+    addNodeChild(scene, emitter);
+
+    renderGlScene3D(mockPass(state), scene, makeCamera(), LIGHTS);
+
+    expect(gl.calls.some((c) => c.name === 'drawElementsInstanced')).toBe(false);
   });
 
   it('does not draw an instanced particle pass when the scene has no emitters', () => {

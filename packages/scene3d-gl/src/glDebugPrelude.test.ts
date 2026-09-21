@@ -9,6 +9,7 @@ import {
   getGlDebugFragmentSourceForKey,
   getGlDebugVertexSourceForKey,
 } from './glDebugPrelude';
+import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 
@@ -123,7 +124,7 @@ describe('getGlDebugVertexSourceForKey', () => {
 
   it('deforms position, normal, and tangent only in the skinned variant', () => {
     const rigid = getGlDebugVertexSourceForKey(NORMAL);
-    const skinned = getGlDebugVertexSourceForKey({ ...NORMAL, hasSkin: true });
+    const skinned = getGlDebugVertexSourceForKey({ ...NORMAL, hasSkin: true }, GL_SKIN_VERTEX_DECLARATIONS_GLSL);
 
     expect(rigid).not.toContain('#define HAS_SKIN');
     expect(rigid).not.toContain('skinMatrix() *');

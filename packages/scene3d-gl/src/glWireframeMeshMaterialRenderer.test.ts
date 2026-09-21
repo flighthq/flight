@@ -7,6 +7,7 @@ import { WireframeMaterialKind } from '@flighthq/types/contract';
 
 import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
 import { SKIN_PALETTE_TEXTURE_UNIT } from './glMeshProgram';
+import { registerGlMeshSkinning } from './glMeshSkinning';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
 import { registerGlWireframeMaterial, glWireframeMeshMaterialRenderer } from './glWireframeMeshMaterialRenderer';
@@ -85,6 +86,7 @@ describe('glWireframeMeshMaterialRenderer', () => {
     const proxy = makeProxy();
     proxy.jointMatrices = new Float32Array(16);
     proxy.normalMatrices = new Float32Array(12);
+    registerGlMeshSkinning(state);
     getGlScene3DRuntime(state).activeSkinnedRun = true;
     glWireframeMeshMaterialRenderer.bind(state, proxy.material, NO_LIGHTS, makeCamera());
     glWireframeMeshMaterialRenderer.draw(state, proxy, createBoxMeshGeometry());

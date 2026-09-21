@@ -1,3 +1,4 @@
+import type { Camera3D } from './Camera3D';
 import type { GlMeshProgram } from './GlMeshProgram';
 import type { GlPbrTransmissionSceneColor } from './GlPbrTransmissionSceneColor';
 import type { GlRenderState } from './GlRenderState';
@@ -6,9 +7,11 @@ import type { GlSkinPaletteTexture } from './GlSkinPaletteTexture';
 import type { Matrix4 } from './Matrix4';
 import type { Mesh } from './Mesh';
 import type { MeshGeometry } from './MeshGeometry';
+import type { Node3D } from './Node3D';
 import type { PbrExtension } from './PbrExtension';
 import type { Scene3DLightBlock } from './Scene3DLightBlock';
 import type { Scene3DLightsLike } from './Scene3DLights';
+import type { Scene3DRenderProxy } from './Scene3DRenderProxy';
 import type { Texture } from './Texture';
 import type { TextureColorSpace } from './Texture';
 
@@ -71,6 +74,40 @@ export interface GlScene3DDrawEntry {
 // per-frame/resource state.
 // `time` is the per-frame `time` uniform value animated modifiers scroll by (set by setGlScene3DTime).
 // One GlScene3DRuntime is created lazily per state by getGlScene3DRuntime.
+// The opt-in GPU mesh-skinning capability, installed by registerGlMeshSkinning. It carries BOTH the
+// palette binding and the vertex GLSL the HAS_SKIN variant needs, because splitting them would defeat
+// the point: a scene that never registers skinning must not pull in the skin binder, the palette
+// ensure* chain, or the skin declaration string. Every consumer — the mesh families' preludes, the
+// forward draw, and the shadow depth variant — reaches skinning only through this slot, so the whole
+// chain shakes out when it is absent. Mirrors GlColorAdjustmentMaterialFeature, which carries GLSL
+// chunks the same way.
+export interface GlMeshSkinFeature {
+  // Uploads and binds the pose + normal palettes for a forward HAS_SKIN draw. Returns true only when
+  // the program and proxy both carry pose data, which is also the signal that the upload must source
+  // the static bind-pose vertices rather than the per-frame CPU pose.
+  bindMeshSkinPalette: (
+    state: GlRenderState,
+    program: Readonly<GlMeshProgram>,
+    proxy: Readonly<Scene3DRenderProxy>,
+  ) => boolean;
+  // Uploads and binds the pose palette for the shadow depth variant, which needs no normal palette.
+  bindShadowSkinPalette: (state: GlRenderState, jointMatrices: Float32Array) => void;
+  // Vertex-only GLSL spliced ahead of a family's vertex body for the HAS_SKIN variant: the
+  // joints0/weights0 attributes, the bone palette data texture, and skinMatrix(). Never added to a
+  // fragment source — its `in` attributes are illegal there.
+  vertexDeclarationsGlsl: string;
+}
+
+// A draw pass run after the mesh passes, installed by a register* function (registerGlParticleEmitter3DPass
+// for the built-in particle pass). renderGlScene3D dispatches through this slot instead of importing a
+// pass module, so an unregistered pass is absent from the bundle rather than merely early-returning.
+export type GlScene3DPass = (
+  state: GlRenderState,
+  scene: Readonly<Node3D>,
+  camera: Readonly<Camera3D>,
+  lights: Readonly<Scene3DLightsLike>,
+) => void;
+
 export interface GlScene3DRuntime {
   // Whether the draw run currently being bound belongs to the blended pass. Every material-family
   // bind reads this through beginGlMeshDraw so depth writes stay disabled across run changes.
@@ -118,15 +155,26 @@ export interface GlScene3DRuntime {
   environmentSourceTextureVersion: number;
   ibl: GlScene3DIbl | null;
   iblBakeFramebuffer: WebGLFramebuffer | null;
+  // Opt-in GPU skinning, null until registerGlMeshSkinning installs it. Gates both the palette bind and
+  // the HAS_SKIN program variant: while absent, activeSkinnedRun stays false so no family compiles a
+  // skinned variant and no skin GLSL is reachable.
+  meshSkinFeature?: GlMeshSkinFeature | null;
   // Opt-in forward-light selection guard, null until enableGlScene3DForwardLightSelectionGuards installs
   // it. renderGlScene3D reaches it only when excess punctual lights would be silently input-truncated and
   // no prepared per-object selection list was supplied.
   forwardLightSelectionGuard?: ((lights: Readonly<Scene3DLightsLike>) => void) | null;
   opaqueDrawList: GlScene3DDrawEntry[];
   opaquePool: GlScene3DDrawEntry[];
+  // Opt-in post-mesh draw passes, in registration order. Empty/absent until a register* installs one.
+  passes?: GlScene3DPass[] | null;
   pbrExtensionGuard?: ((extensions: readonly PbrExtension[]) => void) | null;
   pbrTransmissionSceneColor: GlPbrTransmissionSceneColor | null;
   programCache: Map<string, GlMeshProgram>;
+  // Teardown callbacks contributed by lazily-created optional resources (the IBL bake programs, the
+  // skybox). destroyGlScene3DRuntime iterates these instead of importing each module's destroy
+  // function, which is what lets the whole environment chain shake out of a scene that never bakes.
+  // A module registers its callback once, on first resource creation.
+  resourceCleanups?: ((state: GlRenderState) => void)[] | null;
   shadow: GlScene3DShadow | null;
   shadowTarget: GlTextureRenderTarget | null;
   // The per-state GPU skin bone-palette data texture (RGBA32F), created lazily by ensureGlSkinPalette on
