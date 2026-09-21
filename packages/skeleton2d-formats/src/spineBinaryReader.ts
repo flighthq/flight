@@ -1,4 +1,4 @@
-import type { ByteReader } from '@flighthq/types/contract';
+import type { ByteReader, NonEntityCreateResult } from '@flighthq/types/contract';
 
 // The wire primitives of Spine's `.skel` binary skeleton — the byte layer beneath `parseSpineSkeleton`'s
 // JSON. Spine writes the file with a Java `DataOutputStream`, so fixed-width numbers are BIG-ENDIAN, and it
@@ -18,7 +18,7 @@ import type { ByteReader } from '@flighthq/types/contract';
 // `isSpineBinaryReaderOverrun` instead of guarding every single field. The mark is deliberately
 // `byteLength + 1`: a cursor resting exactly ON `byteLength` is the legitimate end-of-stream state after
 // reading the final byte, and must not read as an error.
-export function createSpineBinaryReader(bytes: Readonly<Uint8Array>): ByteReader {
+export function createSpineBinaryReader(bytes: Readonly<Uint8Array>): NonEntityCreateResult<ByteReader, 'descriptor'> {
   return { offset: 0, view: new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength) };
 }
 

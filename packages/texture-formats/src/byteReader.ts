@@ -1,4 +1,4 @@
-import type { ByteReader } from '@flighthq/types/contract';
+import type { ByteReader, NonEntityCreateResult } from '@flighthq/types/contract';
 
 // The container parsers here share the `ByteReader` cursor. KTX2, DDS, and the Basis container are
 // little-endian (the `read*U16`/`U32`/`U64` helpers); ATF stores its block and header lengths
@@ -9,7 +9,10 @@ import type { ByteReader } from '@flighthq/types/contract';
 // `readByteReaderU64` returns the value as a JavaScript number, exact for the sub-2^53
 // offsets/lengths real containers use.
 
-export function createByteReader(bytes: Readonly<Uint8Array>, offset = 0): ByteReader {
+export function createByteReader(
+  bytes: Readonly<Uint8Array>,
+  offset = 0,
+): NonEntityCreateResult<ByteReader, 'descriptor'> {
   return { view: new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength), offset };
 }
 
