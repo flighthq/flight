@@ -14,6 +14,21 @@ import type { Entity, EntityWithoutRuntime, Kind } from './Entity';
 // uniforms, or a different instance layout). No version field: mutating a shared material
 // in place updates every node that uses it, and the existing appearance invalidation drives
 // re-resolution.
+// The phantom key that separates Material2D from Material3D. Both branches declare it optional with
+// a different string-literal type, and that CONFLICT is what makes the two nominally distinct: without
+// it Material2D — which adds no fields — is structurally satisfied by any Material3D, so a
+// PhongMaterial would assign straight into a 2D slot.
+//
+// Ambient and optional on purpose. `declare` means it never exists at runtime and every reference is
+// `import type`, so this adds no discriminant field, no data, and nothing to serialize — a material
+// round-trips exactly as before. Optional so no constructor writes it and a bare `Material` (which
+// declares it nowhere) still widens into either branch, keeping the base the wide type.
+//
+// Separate per-branch keys would NOT work: an absent optional property is still assignable, so only a
+// shared key with incompatible types rejects. Mirrors the phantom-key idiom already used by
+// SelectionState, GizmoState and the controller types.
+export declare const MaterialDimensionKey: unique symbol;
+
 export interface Material extends Entity {
   readonly kind: Kind;
   // The authored material name — an importer preserves the source file's material identity here

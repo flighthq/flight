@@ -1,4 +1,4 @@
-import { createUnlitMaterial } from '@flighthq/materials/contract';
+import { createStandardMaterial } from '@flighthq/materials/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import type { Node2D, Node2DData, ShapeCommandToken } from '@flighthq/types/contract';
 import { BlendMode, DisplayObjectKind, HtmlViewKind } from '@flighthq/types/contract';
@@ -98,10 +98,10 @@ describe('getScene2DKindUsage', () => {
   it('reports the kind of a material a node carries', () => {
     const usage = usageOf((root) => {
       const node = createDisplayObject();
-      node.material = createUnlitMaterial();
+      node.material = createStandardMaterial();
       addNodeChild(root, node);
     });
-    expect(usage.materialKinds).toEqual(['UnlitMaterial']);
+    expect(usage.materialKinds).toEqual(['StandardMaterial']);
   });
 
   it('leaves material kinds empty when no node carries one', () => {
