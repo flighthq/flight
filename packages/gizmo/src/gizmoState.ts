@@ -107,6 +107,8 @@ interface GizmoRuntime<NodeType extends HierarchyNodeAny> extends EntityRuntime 
   overlay: Scene2D | null;
   overlayRoot: Node2D;
   mode: GizmoMode;
+  viewportHeight: number;
+  viewportWidth: number;
   pivot: GizmoPivot;
   pivotScreen: Vector2Like;
   pivotWorld: Vector2Like;
@@ -132,6 +134,8 @@ export function createGizmoState<NodeType extends HierarchyNodeAny>(
     binding: null,
     bounds: createRectangle(),
     camera: options.camera,
+    viewportHeight: options.viewportHeight,
+    viewportWidth: options.viewportWidth,
     cleanups: [],
     customPivotX: 0,
     customPivotY: 0,
@@ -274,7 +278,14 @@ export function updateGizmo<NodeType extends HierarchyNodeAny>(state: GizmoState
 
   setGizmoNodeVisible(runtime.overlayRoot, true);
   resolveGizmoPivot(runtime);
-  projectCamera2DPoint(runtime.camera!, runtime.pivotWorld.x, runtime.pivotWorld.y, runtime.pivotScreen);
+  projectCamera2DPoint(
+    runtime.camera!,
+    runtime.viewportWidth,
+    runtime.viewportHeight,
+    runtime.pivotWorld.x,
+    runtime.pivotWorld.y,
+    runtime.pivotScreen,
+  );
   setGizmoNodeTransform(
     runtime.handleRoot,
     runtime.pivotScreen.x,
@@ -563,7 +574,14 @@ function startGizmoTransform<NodeType extends HierarchyNodeAny>(
     runtime.space === 'local' && active !== null
       ? runtime.features!.getWorldRotation(active)
       : runtime.camera!.rotation * RAD_TO_DEG;
-  unprojectCamera2DPoint(runtime.camera!, data.x, data.y, runtime.scratchPoint);
+  unprojectCamera2DPoint(
+    runtime.camera!,
+    runtime.viewportWidth,
+    runtime.viewportHeight,
+    data.x,
+    data.y,
+    runtime.scratchPoint,
+  );
   runtime.drag = {
     axisRotation,
     handle,
@@ -610,16 +628,44 @@ function updateGizmoHandleVisibility<NodeType extends HierarchyNodeAny>(
 function updateGizmoOutline<NodeType extends HierarchyNodeAny>(runtime: GizmoRuntime<NodeType>): void {
   const bounds = runtime.bounds;
   const points = runtime.outlinePoints;
-  projectCamera2DPoint(runtime.camera!, bounds.x, bounds.y, runtime.scratchPoint);
+  projectCamera2DPoint(
+    runtime.camera!,
+    runtime.viewportWidth,
+    runtime.viewportHeight,
+    bounds.x,
+    bounds.y,
+    runtime.scratchPoint,
+  );
   points[0] = runtime.scratchPoint.x;
   points[1] = runtime.scratchPoint.y;
-  projectCamera2DPoint(runtime.camera!, bounds.x + bounds.width, bounds.y, runtime.scratchPoint);
+  projectCamera2DPoint(
+    runtime.camera!,
+    runtime.viewportWidth,
+    runtime.viewportHeight,
+    bounds.x + bounds.width,
+    bounds.y,
+    runtime.scratchPoint,
+  );
   points[2] = runtime.scratchPoint.x;
   points[3] = runtime.scratchPoint.y;
-  projectCamera2DPoint(runtime.camera!, bounds.x + bounds.width, bounds.y + bounds.height, runtime.scratchPoint);
+  projectCamera2DPoint(
+    runtime.camera!,
+    runtime.viewportWidth,
+    runtime.viewportHeight,
+    bounds.x + bounds.width,
+    bounds.y + bounds.height,
+    runtime.scratchPoint,
+  );
   points[4] = runtime.scratchPoint.x;
   points[5] = runtime.scratchPoint.y;
-  projectCamera2DPoint(runtime.camera!, bounds.x, bounds.y + bounds.height, runtime.scratchPoint);
+  projectCamera2DPoint(
+    runtime.camera!,
+    runtime.viewportWidth,
+    runtime.viewportHeight,
+    bounds.x,
+    bounds.y + bounds.height,
+    runtime.scratchPoint,
+  );
   points[6] = runtime.scratchPoint.x;
   points[7] = runtime.scratchPoint.y;
   clearShapeCommands(runtime.outline);
@@ -746,7 +792,14 @@ function updateGizmoTranslation<NodeType extends HierarchyNodeAny>(
   screenX: number,
   screenY: number,
 ): void {
-  unprojectCamera2DPoint(runtime.camera!, screenX, screenY, runtime.scratchPoint);
+  unprojectCamera2DPoint(
+    runtime.camera!,
+    runtime.viewportWidth,
+    runtime.viewportHeight,
+    screenX,
+    screenY,
+    runtime.scratchPoint,
+  );
   const deltaX = runtime.scratchPoint.x - drag.startWorldX;
   const deltaY = runtime.scratchPoint.y - drag.startWorldY;
   const radians = drag.axisRotation * DEG_TO_RAD;

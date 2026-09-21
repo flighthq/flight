@@ -7,11 +7,13 @@ import { getCamera2DViewMatrix } from './viewMatrix';
 // result to `out` (world -> screen). The inverse is `unprojectCamera2DPoint`.
 export function projectCamera2DPoint(
   camera: Readonly<Camera2D>,
+  viewportWidth: number,
+  viewportHeight: number,
   worldX: number,
   worldY: number,
   out: Vector2Like,
 ): void {
-  getCamera2DViewMatrix(camera, scratchMatrix);
+  getCamera2DViewMatrix(camera, viewportWidth, viewportHeight, scratchMatrix);
   matrixTransformPointXY(out, scratchMatrix, worldX, worldY);
 }
 
@@ -20,11 +22,13 @@ export function projectCamera2DPoint(
 // `projectCamera2DPoint`.
 export function unprojectCamera2DPoint(
   camera: Readonly<Camera2D>,
+  viewportWidth: number,
+  viewportHeight: number,
   screenX: number,
   screenY: number,
   out: Vector2Like,
 ): void {
-  getCamera2DViewMatrix(camera, scratchMatrix);
+  getCamera2DViewMatrix(camera, viewportWidth, viewportHeight, scratchMatrix);
   inverseMatrixTransformPointXY(out, scratchMatrix, screenX, screenY);
 }
 

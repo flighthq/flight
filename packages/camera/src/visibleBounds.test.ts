@@ -7,9 +7,9 @@ import { getCamera2DVisibleBounds, setCamera2DVisibleBoundsGuard } from './visib
 
 describe('getCamera2DVisibleBounds', () => {
   it('covers the full viewport in world units at zoom 1', () => {
-    const camera = createCamera2D(800, 600);
+    const camera = createCamera2D();
     const out = createRectangle();
-    getCamera2DVisibleBounds(camera, out);
+    getCamera2DVisibleBounds(camera, 800, 600, out);
     expect(out.x).toBeCloseTo(-400, 9);
     expect(out.y).toBeCloseTo(-300, 9);
     expect(out.width).toBeCloseTo(800, 9);
@@ -17,9 +17,9 @@ describe('getCamera2DVisibleBounds', () => {
   });
 
   it('shrinks to half size centered at zoom 2', () => {
-    const camera = createCamera2D(800, 600, { zoom: 2 });
+    const camera = createCamera2D({ zoom: 2 });
     const out = createRectangle();
-    getCamera2DVisibleBounds(camera, out);
+    getCamera2DVisibleBounds(camera, 800, 600, out);
     expect(out.x).toBeCloseTo(-200, 9);
     expect(out.y).toBeCloseTo(-150, 9);
     expect(out.width).toBeCloseTo(400, 9);
@@ -27,9 +27,9 @@ describe('getCamera2DVisibleBounds', () => {
   });
 
   it('returns the enclosing AABB of a rotated view, larger than the viewport', () => {
-    const camera = createCamera2D(800, 600, { rotation: Math.PI / 4 });
+    const camera = createCamera2D({ rotation: Math.PI / 4 });
     const out = createRectangle();
-    getCamera2DVisibleBounds(camera, out);
+    getCamera2DVisibleBounds(camera, 800, 600, out);
     // AABB of an 800x600 rect rotated 45deg: both extents = (800 + 600) * cos(45deg).
     expect(out.width).toBeCloseTo(989.9494936611666, 6);
     expect(out.height).toBeCloseTo(989.9494936611666, 6);
@@ -44,7 +44,7 @@ describe('getCamera2DVisibleBounds', () => {
       [0, 600],
     ];
     for (const [sx, sy] of corners) {
-      unprojectCamera2DPoint(camera, sx, sy, corner);
+      unprojectCamera2DPoint(camera, 800, 600, sx, sy, corner);
       expect(corner.x).toBeGreaterThanOrEqual(out.x - 1e-6);
       expect(corner.x).toBeLessThanOrEqual(out.x + out.width + 1e-6);
       expect(corner.y).toBeGreaterThanOrEqual(out.y - 1e-6);
@@ -56,7 +56,7 @@ describe('getCamera2DVisibleBounds', () => {
 describe('setCamera2DVisibleBoundsGuard', () => {
   test('fails toward drawing: an unbounded rectangle that still intersects distant content', () => {
     const out = createRectangle();
-    getCamera2DVisibleBounds(createCamera2D(64, 64, { zoom: 0 }), out);
+    getCamera2DVisibleBounds(createCamera2D({ zoom: 0 }), 64, 64, out);
     // Finite on purpose — the max edge must survive ordinary arithmetic, not rely on NaN comparisons.
     expect(Number.isFinite(out.x + out.width)).toBe(true);
     expect(Number.isFinite(out.y + out.height)).toBe(true);
@@ -69,8 +69,8 @@ describe('setCamera2DVisibleBoundsGuard', () => {
     const seen: number[] = [];
     setCamera2DVisibleBoundsGuard((camera) => seen.push(camera.zoom));
     try {
-      getCamera2DVisibleBounds(createCamera2D(64, 64, { zoom: 0 }), createRectangle());
-      getCamera2DVisibleBounds(createCamera2D(64, 64), createRectangle());
+      getCamera2DVisibleBounds(createCamera2D({ zoom: 0 }), 64, 64, createRectangle());
+      getCamera2DVisibleBounds(createCamera2D(), 64, 64, createRectangle());
       expect(seen).toEqual([0]);
     } finally {
       setCamera2DVisibleBoundsGuard(null);
@@ -79,7 +79,7 @@ describe('setCamera2DVisibleBoundsGuard', () => {
 
   test('leaves an invertible camera computing the same bounds as before', () => {
     const out = createRectangle();
-    getCamera2DVisibleBounds(createCamera2D(64, 32), out);
+    getCamera2DVisibleBounds(createCamera2D(), 64, 32, out);
     expect(out.width).toBeCloseTo(64, 6);
     expect(out.height).toBeCloseTo(32, 6);
   });

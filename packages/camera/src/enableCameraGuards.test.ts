@@ -25,7 +25,7 @@ describe('disableCameraGuards', () => {
   test('leaves the core silent again once removed', () => {
     enableCameraGuards();
     disableCameraGuards();
-    expect(captureLog(() => getCamera2DVisibleBounds(degenerateCamera(), createRectangle()))).toHaveLength(0);
+    expect(captureLog(() => getCamera2DVisibleBounds(degenerateCamera(), 64, 64, createRectangle()))).toHaveLength(0);
   });
 });
 
@@ -35,7 +35,7 @@ describe('enableCameraGuards', () => {
   // directly, and deterministically, in visibleBounds.test.ts.
   test('warns, naming the zoom and the consequence, when the visible bounds cannot be computed', () => {
     enableCameraGuards();
-    const entries = captureLog(() => getCamera2DVisibleBounds(degenerateCamera(), createRectangle()));
+    const entries = captureLog(() => getCamera2DVisibleBounds(degenerateCamera(), 64, 64, createRectangle()));
     expect(entries).toHaveLength(1);
     expect(entries[0].data).toMatchObject({ zoom: 0 });
     expect(String((entries[0].data as { message: string }).message)).toContain('nothing is culled');
@@ -72,7 +72,7 @@ describe('enableCameraGuards', () => {
 
   test('stays silent for a camera whose view matrix inverts', () => {
     enableCameraGuards();
-    expect(captureLog(() => getCamera2DVisibleBounds(createCamera2D(64, 64), createRectangle()))).toHaveLength(0);
+    expect(captureLog(() => getCamera2DVisibleBounds(createCamera2D(), 64, 64, createRectangle()))).toHaveLength(0);
   });
 });
 
@@ -92,5 +92,5 @@ function captureLog(run: () => void): LogEntry[] {
 }
 
 function degenerateCamera(): Camera2D {
-  return createCamera2D(64, 64, { zoom: 0 });
+  return createCamera2D({ zoom: 0 });
 }

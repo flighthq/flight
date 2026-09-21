@@ -41,7 +41,7 @@ const ZOOM_STEP = 0.1;
 
 const worldBounds = createRectangle(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
-const camera = createCamera2D(CANVAS_WIDTH, CANVAS_HEIGHT, {
+const camera = createCamera2D({
   x: WORLD_WIDTH * 0.5,
   y: WORLD_HEIGHT * 0.5,
   zoom: 1,
@@ -358,7 +358,7 @@ wheelTarget.addEventListener(
     const screenY = ((e.clientY - rect.top) / rect.height) * CANVAS_HEIGHT;
     const direction = e.deltaY < 0 ? 1 : -1;
     const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, camera.zoom + direction * ZOOM_STEP * camera.zoom));
-    zoomCamera2DAtScreenPoint(camera, screenX, screenY, newZoom);
+    zoomCamera2DAtScreenPoint(camera, CANVAS_WIDTH, CANVAS_HEIGHT, screenX, screenY, newZoom);
   },
   { passive: false },
 );
@@ -393,21 +393,21 @@ function enterFrame(): void {
   lastTime = now;
 
   updatePlayer(deltaTime);
-  updateCamera2DFollow(camera, player.x, player.y, deltaTime, followOptions);
-  getCamera2DViewMatrix(camera, viewMatrix);
-  getCamera2DVisibleBounds(camera, visibleBounds);
+  updateCamera2DFollow(camera, CANVAS_WIDTH, CANVAS_HEIGHT, player.x, player.y, deltaTime, followOptions);
+  getCamera2DViewMatrix(camera, CANVAS_WIDTH, CANVAS_HEIGHT, viewMatrix);
+  getCamera2DVisibleBounds(camera, CANVAS_WIDTH, CANVAS_HEIGHT, visibleBounds);
 
-  getCamera2DParallaxPoint(camera, 0.1, parallaxOffset);
+  getCamera2DParallaxPoint(camera, CANVAS_WIDTH, CANVAS_HEIGHT, 0.1, parallaxOffset);
   starsContainer.x = parallaxOffset.x;
   starsContainer.y = parallaxOffset.y;
   invalidateNodeLocalTransform(starsContainer);
 
-  getCamera2DParallaxPoint(camera, 0.4, parallaxOffset);
+  getCamera2DParallaxPoint(camera, CANVAS_WIDTH, CANVAS_HEIGHT, 0.4, parallaxOffset);
   mountainsContainer.x = parallaxOffset.x;
   mountainsContainer.y = parallaxOffset.y;
   invalidateNodeLocalTransform(mountainsContainer);
 
-  getCamera2DParallaxPoint(camera, 0.6, parallaxOffset);
+  getCamera2DParallaxPoint(camera, CANVAS_WIDTH, CANVAS_HEIGHT, 0.6, parallaxOffset);
   cloudsContainer.x = parallaxOffset.x;
   cloudsContainer.y = parallaxOffset.y;
   invalidateNodeLocalTransform(cloudsContainer);

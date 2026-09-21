@@ -41,6 +41,8 @@ export interface GizmoCreateOptions<NodeType extends HierarchyNodeAny = Hierarch
   features: Readonly<GizmoNode2DFeatures<NodeType>>;
   overlayScene: Scene2D;
   selection: SelectionState<NodeType>;
+  viewportHeight: number;
+  viewportWidth: number;
 }
 
 export interface GizmoSignals {
