@@ -1,4 +1,4 @@
-import { createMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
+import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
@@ -26,6 +26,7 @@ export function renderWgpuScene2D(
   const tempStack = getWgpuRenderStateRuntime(state).tempStack;
   const clipHooks = state.displayObjectClipHooks;
   const hasRenderTransform = renderTransform != null;
+  const scratch = hasRenderTransform ? acquireMatrix() : null;
 
   let stackLength = 1;
   tempStack[0] = source;
@@ -39,8 +40,8 @@ export function renderWgpuScene2D(
 
     const savedTransform = data.transform2D;
     if (hasRenderTransform) {
-      multiplyMatrix(_scratchTransform, renderTransform, savedTransform);
-      data.transform2D = _scratchTransform;
+      multiplyMatrix(scratch!, renderTransform, savedTransform);
+      data.transform2D = scratch!;
     }
 
     clipHooks?.popClip(state, data, current);
@@ -65,6 +66,7 @@ export function renderWgpuScene2D(
     if (hasRenderTransform) data.transform2D = savedTransform;
   }
 
+  if (scratch !== null) releaseMatrix(scratch);
   flushWgpuQuadBatchWriter(state);
   clipHooks?.finalize(state);
 }
@@ -73,5 +75,3 @@ export const wgpuScene2DRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawWgpuScene2D,
 };
-
-const _scratchTransform = createMatrix();
