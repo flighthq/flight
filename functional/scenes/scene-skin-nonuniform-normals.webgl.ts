@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { createScene3D } from '@flighthq/scene3d';
-import { renderGlScene3D } from '@flighthq/scene3d-gl';
+import { registerGlMeshSkinning, renderGlScene3D } from '@flighthq/scene3d-gl';
 import type { Bitmap, GlEffectState } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -86,6 +86,9 @@ appendWebSurface(glSurface, document.body);
 export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
   pixelRatio,
 });
+// GPU skinning is opt-in: without this the mesh families compile no HAS_SKIN variant and this scene
+// would draw its skinned mesh at the bind pose.
+registerGlMeshSkinning(state);
 const pipeline: GlEffectState = createGlEffectState(state, {
   depth: 'depth-stencil',
   format: 'rgba16f',

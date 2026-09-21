@@ -9,12 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
-import {
-  compileGlProgram,
-  ensureGlScene3DProgram,
-  GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
-  GL_SKIN_VERTEX_DECLARATIONS_GLSL,
-} from './glMeshProgram';
+import { compileGlProgram, ensureGlScene3DProgram, GL_INSTANCE_VERTEX_DECLARATIONS_GLSL } from './glMeshProgram';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 // Uploads the resolved matcap surface uniforms: the linear tint (already sRgb-decoded on the CPU),
 // the optional matcap texture on texture unit 0, and the alpha-mask cutoff. The caller has already
@@ -44,8 +39,18 @@ export function buildGlMatcapDefineKey(key: Readonly<GlMatcapDefineKey>): string
 
 // Compiles the matcap shader for a define key, links it, and resolves its uniform locations. Pure GL
 // work — no caching — used by ensureGlMatcapProgram.
-export function compileGlMatcapProgram(gl: GlContext, key: Readonly<GlMatcapDefineKey>): GlMatcapProgram {
-  const program = compileGlProgram(gl, getGlMatcapVertexSourceForKey(key), getGlMatcapFragmentSourceForKey(key));
+export function compileGlMatcapProgram(
+  gl: GlContext,
+  key: Readonly<GlMatcapDefineKey>,
+  // The HAS_SKIN vertex declarations, supplied by the registered skinning capability. Empty string
+  // when skinning is not registered, which is also when key.hasSkin is false.
+  skinDeclarationsGlsl = '',
+): GlMatcapProgram {
+  const program = compileGlProgram(
+    gl,
+    getGlMatcapVertexSourceForKey(key, skinDeclarationsGlsl),
+    getGlMatcapFragmentSourceForKey(key),
+  );
   return {
     locAlphaCutoff: gl.getUniformLocation(program, 'u_alphaCutoff'),
     locJointNormalTexture: gl.getUniformLocation(program, 'u_jointNormalTexture'),
@@ -69,7 +74,7 @@ export function ensureGlMatcapProgram(state: GlRenderState, key: Readonly<GlMatc
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   return ensureGlScene3DProgram(state, `matcap:${buildGlMatcapDefineKey(fullKey)}`, (gl) =>
-    compileGlMatcapProgram(gl, fullKey),
+    compileGlMatcapProgram(gl, fullKey, getGlScene3DRuntime(state).meshSkinFeature?.vertexDeclarationsGlsl ?? ''),
   );
 }
 
@@ -79,8 +84,8 @@ export function getGlMatcapFragmentSourceForKey(key: Readonly<GlMatcapDefineKey>
 }
 
 // The full vertex source for a define key (define block + body), ready to hand to the GL compiler.
-export function getGlMatcapVertexSourceForKey(key: Readonly<GlMatcapDefineKey>): string {
-  const skin = key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '';
+export function getGlMatcapVertexSourceForKey(key: Readonly<GlMatcapDefineKey>, skinDeclarationsGlsl = ''): string {
+  const skin = key.hasSkin ? skinDeclarationsGlsl : '';
   const instances = key.hasInstances ? GL_INSTANCE_VERTEX_DECLARATIONS_GLSL : '';
   return buildDefineSource(key) + skin + instances + MATCAP_VERTEX_BODY;
 }

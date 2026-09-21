@@ -20,8 +20,11 @@ export function compileGlPbrProgram(
   key: Readonly<GlPbrDefineKey>,
   contributions: readonly GlPbrExtensionShaderContribution[] = [],
   colorAdjustmentFeature: Readonly<GlColorAdjustmentMaterialFeature> | null = null,
+  // The HAS_SKIN vertex declarations, supplied by the registered skinning capability. Empty string
+  // when skinning is not registered, which is also when key.hasSkin is false.
+  skinDeclarationsGlsl = '',
 ): GlPbrProgram {
-  const vertexSource = getGlPbrVertexSourceForKey(key);
+  const vertexSource = getGlPbrVertexSourceForKey(key, skinDeclarationsGlsl);
   const fragmentSource = getGlPbrFragmentSourceForKey(key, contributions, colorAdjustmentFeature);
   const program = compileGlProgram(gl, vertexSource, fragmentSource);
   return {

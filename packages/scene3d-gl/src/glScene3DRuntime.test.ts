@@ -13,6 +13,7 @@ import { BitmapTextureSourceKind, EntityRuntimeKey } from '@flighthq/types/contr
 
 import { renderGlEnvironmentSkybox } from './glEnvironmentSkybox';
 import {
+  addGlScene3DResourceCleanup,
   destroyGlScene3DRuntime,
   ensureGlInstanceColorPalette,
   ensureGlInstancePalette,
@@ -21,6 +22,44 @@ import {
   getGlScene3DRuntime,
 } from './glScene3DRuntime';
 import { makeGlScene3DState } from './glScene3DTestHelper';
+
+describe('addGlScene3DResourceCleanup', () => {
+  it('runs a registered cleanup on teardown and clears the list', () => {
+    const { state } = makeGlScene3DState();
+    let calls = 0;
+    const cleanup = (): void => {
+      calls++;
+    };
+    addGlScene3DResourceCleanup(state, cleanup);
+    destroyGlScene3DRuntime(state);
+    expect(calls).toBe(1);
+    // Cleared, so a second teardown does not re-run a cleanup whose resource is already freed.
+    destroyGlScene3DRuntime(state);
+    expect(calls).toBe(1);
+  });
+
+  it('is idempotent by function identity, so re-creating a resource registers nothing new', () => {
+    const { state } = makeGlScene3DState();
+    let calls = 0;
+    const cleanup = (): void => {
+      calls++;
+    };
+    addGlScene3DResourceCleanup(state, cleanup);
+    addGlScene3DResourceCleanup(state, cleanup);
+    destroyGlScene3DRuntime(state);
+    expect(calls).toBe(1);
+  });
+
+  it('passes the state through, so a cleanup can free the GPU objects of that state', () => {
+    const { state } = makeGlScene3DState();
+    let seen: unknown = null;
+    addGlScene3DResourceCleanup(state, (s) => {
+      seen = s;
+    });
+    destroyGlScene3DRuntime(state);
+    expect(seen).toBe(state);
+  });
+});
 
 describe('destroyGlScene3DRuntime', () => {
   it('is a safe no-op when the state never allocated a scene runtime', () => {

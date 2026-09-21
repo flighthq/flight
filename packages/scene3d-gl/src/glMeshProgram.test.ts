@@ -18,7 +18,6 @@ import {
   beginGlMeshDraw,
   bindGlInstanceColorPalette,
   bindGlInstancePalette,
-  bindGlMeshSkinPalette,
   bindGlUvTransform,
   compileGlProgram,
   uploadGlMeshDrawAlpha,
@@ -29,6 +28,7 @@ import {
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
 } from './glMeshProgram';
+import { registerGlMeshSkinning } from './glMeshSkinning';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 
@@ -107,26 +107,6 @@ describe('bindGlInstancePalette', () => {
     bindGlInstancePalette(state, program, instanceMatrices, 1);
     expect(gl.calls.some((c) => c.name === 'activeTexture')).toBe(true);
     expect(program.locInstancePalette).toBeDefined();
-  });
-});
-
-describe('bindGlMeshSkinPalette', () => {
-  it('reports a GPU-skinned draw after binding its pose palette', () => {
-    const { state, gl } = makeGlScene3DState();
-    const geometry = createBoxMeshGeometry();
-    const program = makeProgram();
-    program.locJointTexture = { name: 'u_jointTexture' } as WebGLUniformLocation;
-
-    const gpuSkinned = bindGlMeshSkinPalette(state, program, {
-      jointMatrices: new Float32Array(16),
-      material: createStandardPbrMaterial(),
-      normalMatrix: createMatrix3(),
-      subset: geometry.subsets[0],
-      worldMatrix: createMatrix4(),
-    });
-
-    expect(gpuSkinned).toBe(true);
-    expect(gl.calls.some((c) => c.name === 'uniform1i' && c.args[1] === SKIN_PALETTE_TEXTURE_UNIT)).toBe(true);
   });
 });
 
@@ -357,8 +337,33 @@ describe('drawGlMeshSubset', () => {
     expect(gl.calls.some((c) => c.name === 'uniformMatrix3fv')).toBe(false);
   });
 
+  it('binds no bone palette for a skinned draw when skinning is not registered', () => {
+    // Without the capability there is no binder to call, so the draw stays on the rigid path and the
+    // skin palette unit is never bound — the shader it would feed is not compiled either.
+    const { state, gl } = makeGlScene3DState();
+    const geometry = createBoxMeshGeometry();
+    const program = makeProgram();
+    program.locJointTexture = { name: 'u_jointTexture' } as WebGLUniformLocation;
+
+    drawGlMeshSubset(
+      state,
+      program,
+      {
+        jointMatrices: new Float32Array(2 * 16),
+        material: createStandardPbrMaterial(),
+        normalMatrix: createMatrix3(),
+        subset: geometry.subsets[0]!,
+        worldMatrix: createMatrix4(),
+      },
+      geometry,
+    );
+
+    expect(gl.calls.some((c) => c.name === 'uniform1i' && c.args[1] === SKIN_PALETTE_TEXTURE_UNIT)).toBe(false);
+  });
+
   it('uploads the bone palette into the data texture and binds the skin unit for a skinned draw', () => {
     const { state, gl } = makeGlScene3DState();
+    registerGlMeshSkinning(state);
     const geometry = createBoxMeshGeometry();
     const program = makeProgram();
     program.locJointTexture = { name: 'u_jointTexture' } as WebGLUniformLocation;

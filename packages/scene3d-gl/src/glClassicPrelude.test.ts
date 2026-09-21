@@ -9,6 +9,7 @@ import {
   getGlClassicVertexSource,
   getGlClassicVertexSourceForKey,
 } from './glClassicPrelude';
+import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
 
@@ -232,7 +233,7 @@ describe('getGlClassicVertexSourceForKey', () => {
     expect(rigid).not.toContain('a_joints0');
     expect(rigid).not.toContain('mat4 skinMatrix()');
 
-    const skinned = getGlClassicVertexSourceForKey({ ...LAMBERT, hasSkin: true });
+    const skinned = getGlClassicVertexSourceForKey({ ...LAMBERT, hasSkin: true }, GL_SKIN_VERTEX_DECLARATIONS_GLSL);
     expect(skinned).toContain('#define HAS_SKIN');
     expect(skinned).not.toContain('#define MAX_JOINTS');
     expect(skinned).toContain('sampler2D u_jointTexture');

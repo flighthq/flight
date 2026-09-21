@@ -6,7 +6,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import { renderGlScene3D } from '@flighthq/scene3d-gl';
+import { registerGlParticleEmitter3DPass, renderGlScene3D } from '@flighthq/scene3d-gl';
 import type { Camera3D, Scene3DLights, Node3D, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
@@ -57,6 +57,8 @@ appendWebSurface(glSurface, document.body);
 export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
   pixelRatio,
 });
+// The particle pass is opt-in: without this registration renderGlScene3D draws no emitters.
+registerGlParticleEmitter3DPass(state);
 const pipeline = createGlEffectState(state, {
   sampleCount: 1,
   format: 'rgba16f',

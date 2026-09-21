@@ -17,6 +17,8 @@ export * from './glEnvironmentCapture';
 export { bakeGlEnvironmentCaptureIbl, bakeGlEnvironmentIbl } from './glEnvironmentIblBake';
 export { renderGlEnvironmentSkybox } from './glEnvironmentSkybox';
 export * from './glMeshMaterialRegistry';
+export { registerGlMeshSkinning } from './glMeshSkinning';
+export { registerGlParticleEmitter3DPass } from './glParticleEmitter3D';
 export {
   explainGlPbrExtensions,
   getGlPbrExtensionRegistration,

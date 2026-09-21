@@ -2,12 +2,7 @@ import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlContext, GlDebugProgram, GlDebugDefineKey, GlRenderState, Texture } from '@flighthq/types/contract';
 
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
-import {
-  compileGlProgram,
-  ensureGlScene3DProgram,
-  GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
-  GL_SKIN_VERTEX_DECLARATIONS_GLSL,
-} from './glMeshProgram';
+import { compileGlProgram, ensureGlScene3DProgram, GL_INSTANCE_VERTEX_DECLARATIONS_GLSL } from './glMeshProgram';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 // Binds the optional tangent-space normal map (on texture unit 0) and its scale for the normal-mode
 // debug material. The caller has already selected the program (beginGlMeshDraw) and set the
@@ -49,8 +44,18 @@ export function buildGlDebugDefineKey(key: Readonly<GlDebugDefineKey>): string {
 
 // Compiles the debug shader for a define key, links it, and resolves its uniform locations. Pure GL
 // work — no caching — used by ensureGlDebugProgram.
-export function compileGlDebugProgram(gl: GlContext, key: Readonly<GlDebugDefineKey>): GlDebugProgram {
-  const program = compileGlProgram(gl, getGlDebugVertexSourceForKey(key), getGlDebugFragmentSourceForKey(key));
+export function compileGlDebugProgram(
+  gl: GlContext,
+  key: Readonly<GlDebugDefineKey>,
+  // The HAS_SKIN vertex declarations, supplied by the registered skinning capability. Empty string
+  // when skinning is not registered, which is also when key.hasSkin is false.
+  skinDeclarationsGlsl = '',
+): GlDebugProgram {
+  const program = compileGlProgram(
+    gl,
+    getGlDebugVertexSourceForKey(key, skinDeclarationsGlsl),
+    getGlDebugFragmentSourceForKey(key),
+  );
   return {
     locFar: gl.getUniformLocation(program, 'u_far'),
     locJointNormalTexture: gl.getUniformLocation(program, 'u_jointNormalTexture'),
@@ -75,7 +80,7 @@ export function ensureGlDebugProgram(state: GlRenderState, key: Readonly<GlDebug
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   return ensureGlScene3DProgram(state, `debug:${buildGlDebugDefineKey(fullKey)}`, (gl) =>
-    compileGlDebugProgram(gl, fullKey),
+    compileGlDebugProgram(gl, fullKey, getGlScene3DRuntime(state).meshSkinFeature?.vertexDeclarationsGlsl ?? ''),
   );
 }
 
@@ -85,8 +90,8 @@ export function getGlDebugFragmentSourceForKey(key: Readonly<GlDebugDefineKey>):
 }
 
 // The full vertex source for a define key (define block + body), ready to hand to the GL compiler.
-export function getGlDebugVertexSourceForKey(key: Readonly<GlDebugDefineKey>): string {
-  const skin = key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '';
+export function getGlDebugVertexSourceForKey(key: Readonly<GlDebugDefineKey>, skinDeclarationsGlsl = ''): string {
+  const skin = key.hasSkin ? skinDeclarationsGlsl : '';
   const instances = key.hasInstances ? GL_INSTANCE_VERTEX_DECLARATIONS_GLSL : '';
   return buildDefineSource(key) + skin + instances + DEBUG_VERTEX_BODY;
 }

@@ -2,7 +2,7 @@ import { getCamera3DViewProjectionMatrix4, getOrthographicProjectionTexelSize } 
 import { createMatrix4 } from '@flighthq/geometry/contract';
 import { hasMeshGeometrySkin } from '@flighthq/mesh/contract';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node/contract';
-import { createGlTextureRenderTarget, uploadGlSkinPaletteTexture } from '@flighthq/render-gl/contract';
+import { createGlTextureRenderTarget } from '@flighthq/render-gl/contract';
 import type {
   GlContext,
   Camera3D,
@@ -21,11 +21,10 @@ import {
   compileGlProgram,
   ensureGlScene3DProgram,
   GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
-  GL_SKIN_VERTEX_DECLARATIONS_GLSL,
   SKIN_PALETTE_TEXTURE_UNIT,
 } from './glMeshProgram';
 import { ensureGlMeshUpload } from './glMeshUpload';
-import { ensureGlSkinPalette, getGlScene3DRuntime } from './glScene3DRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 
 // The directional shadow recipe's first pass: render scene depth from the light's point of view into a
 // sampleable depth render target (the shadow map), and record it + the light view-projection on the
@@ -64,6 +63,10 @@ export function renderGlScene3DShadowMap(
     getOrthographicProjectionTexelSize(shadowCamera.projection, target.width, target.height);
   const matrix = previousShadow?.matrix ?? createMatrix4();
   getCamera3DViewProjectionMatrix4(matrix, shadowCamera, 1);
+
+  // Skinned casters exist only when the scene opted into skinning; without it there is no depth skin
+  // variant to compile and no palette to bind, matching the forward pass.
+  const skinFeature = getGlScene3DRuntime(state).meshSkinFeature ?? null;
 
   const rigidProgram = ensureGlScene3DProgram(state, 'shadow:depth', compileShadowDepthProgram);
   // Compiled lazily on the first GPU-skinned caster so a scene without skinned meshes never pays for it.
@@ -110,7 +113,7 @@ export function renderGlScene3DShadowMap(
     const instanced = isShadowInstancedMesh(mesh);
     if (instanced && (mesh as unknown as InstancedMesh).instanceCount === 0) return;
 
-    const skinned = !instanced && mesh.skin != null && hasMeshGeometrySkin(mesh.geometry);
+    const skinned = skinFeature !== null && !instanced && mesh.skin != null && hasMeshGeometrySkin(mesh.geometry);
     const program = instanced
       ? (instancedProgram ??= ensureGlScene3DProgram(
           state,
@@ -118,7 +121,9 @@ export function renderGlScene3DShadowMap(
           compileShadowDepthInstancedProgram,
         ))
       : skinned
-        ? (skinnedProgram ??= ensureGlScene3DProgram(state, 'shadow:depth:skin', compileShadowDepthSkinnedProgram))
+        ? (skinnedProgram ??= ensureGlScene3DProgram(state, 'shadow:depth:skin', (gl) =>
+            compileShadowDepthSkinnedProgram(gl, skinFeature!.vertexDeclarationsGlsl),
+          ))
         : rigidProgram;
     if (program !== boundProgram) {
       gl.useProgram(program.program);
@@ -130,9 +135,7 @@ export function renderGlScene3DShadowMap(
     if (skinned) {
       // Upload the mesh's bone palette into the shared RGBA32F skin texture and bind it, exactly as
       // drawGlMeshSubset does for the forward pass, so the depth deformation matches the shaded one.
-      const jointMatrices = mesh.skin!.skeleton.jointMatrices;
-      gl.activeTexture(gl.TEXTURE0 + SKIN_PALETTE_TEXTURE_UNIT);
-      uploadGlSkinPaletteTexture(gl, ensureGlSkinPalette(state), jointMatrices, (jointMatrices.length / 16) | 0);
+      skinFeature!.bindShadowSkinPalette(state, mesh.skin!.skeleton.jointMatrices);
       gl.uniform1i(program.locJointTexture ?? null, SKIN_PALETTE_TEXTURE_UNIT);
     }
 
@@ -192,8 +195,8 @@ function compileShadowDepthProgram(gl: GlContext): GlMeshProgram {
 // The HAS_SKIN depth variant: the same depth pass, but the vertex is deformed by the bone palette via
 // skinMatrix() before the model/view-projection transform — the exact deformation the forward HAS_SKIN
 // vertex shader applies, so a skinned caster's recorded depth matches its shaded silhouette.
-function compileShadowDepthSkinnedProgram(gl: GlContext): GlMeshProgram {
-  const program = compileGlProgram(gl, SHADOW_DEPTH_SKINNED_VERTEX, SHADOW_DEPTH_FRAGMENT);
+function compileShadowDepthSkinnedProgram(gl: GlContext, skinDeclarationsGlsl: string): GlMeshProgram {
+  const program = compileGlProgram(gl, buildShadowDepthSkinnedVertex(skinDeclarationsGlsl), SHADOW_DEPTH_FRAGMENT);
   return {
     locJointNormalTexture: gl.getUniformLocation(program, 'u_jointNormalTexture'),
     locJointTexture: gl.getUniformLocation(program, 'u_jointTexture'),
@@ -261,8 +264,9 @@ void main() {
 // The skin declarations (joints0/weights0 attributes, the palette texture, and skinMatrix()) are spliced
 // ahead of the body exactly as the family vertex shaders splice them; model * skinMatrix() matches the
 // forward path's `worldPosition = u_model * (skin * position)`.
-const SHADOW_DEPTH_SKINNED_VERTEX = `#version 300 es
-${GL_SKIN_VERTEX_DECLARATIONS_GLSL}
+function buildShadowDepthSkinnedVertex(skinDeclarationsGlsl: string): string {
+  return `#version 300 es
+${skinDeclarationsGlsl}
 layout(location = 0) in vec3 a_position;
 uniform mat4 u_viewProjection;
 uniform mat4 u_model;
@@ -270,6 +274,7 @@ void main() {
   gl_Position = u_viewProjection * u_model * skinMatrix() * vec4(a_position, 1.0);
 }
 `;
+}
 
 const SHADOW_DEPTH_FRAGMENT = `#version 300 es
 precision highp float;

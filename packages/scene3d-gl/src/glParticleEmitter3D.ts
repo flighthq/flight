@@ -21,6 +21,7 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode, ParticleEmitter3DKind, TextureAtlasRotation } from '@flighthq/types/contract';
 
+import { getGlScene3DRuntime } from './glScene3DRuntime';
 import { getGlScene3DViewportAspect } from './glViewportAspect';
 
 // Per-instance layout (16 floats = 64 bytes):
@@ -435,6 +436,17 @@ export function drawGlScene3DParticleEmitter3Ds(
   gl.disable(gl.BLEND);
 
   invalidateGlRenderStateCache(state);
+}
+
+// Opts this state into the built-in 3D particle-emitter pass, appending it to the post-mesh pass list
+// renderGlScene3D dispatches. Opt-in rather than called directly by the renderer: an unconditional call
+// that early-returns on an emitter-less scene still bundles this whole module, which is the cost this
+// registration removes. Call it alongside material registration when the scene has emitters.
+// Idempotent — registering twice leaves one pass, so a repeated setup cannot double-draw.
+export function registerGlParticleEmitter3DPass(state: GlRenderState): void {
+  const runtime = getGlScene3DRuntime(state);
+  const passes = (runtime.passes ??= []);
+  if (!passes.includes(drawGlScene3DParticleEmitter3Ds)) passes.push(drawGlScene3DParticleEmitter3Ds);
 }
 
 const emitterScratch: ParticleEmitter3D[] = [];

@@ -2,7 +2,7 @@ import { createGlProgram } from '@flighthq/render-gl/contract';
 import type { GlContext, Environment, GlCubeRenderTarget, GlRenderState } from '@flighthq/types/contract';
 
 import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget } from './glEnvironmentCube';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { addGlScene3DResourceCleanup, getGlScene3DRuntime } from './glScene3DRuntime';
 
 // Bakes a backend-native environment capture into the same split-sum IBL resources used by
 // bakeGlEnvironmentIbl. A GlCubeRenderTarget cannot honestly be wrapped as Flight's cross-backend
@@ -239,6 +239,9 @@ function ensureGlBakeProgram(state: GlRenderState, key: string, fragment: string
   if (byState === undefined) {
     byState = new Map();
     _bakePrograms.set(state, byState);
+    // First bake program for this state: hand teardown to the scene runtime, which has no import of
+    // this module.
+    addGlScene3DResourceCleanup(state, destroyGlEnvironmentIblBakePrograms);
   }
   let baked = byState.get(key);
   if (baked !== undefined) return baked;

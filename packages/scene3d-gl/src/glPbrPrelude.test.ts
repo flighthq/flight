@@ -1,5 +1,6 @@
 import type { GlColorAdjustmentMaterialFeature, GlPbrDefineKey } from '@flighthq/types/contract';
 
+import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning';
 import {
   buildGlPbrDefineKey,
   buildGlPbrDefineSource,
@@ -183,7 +184,7 @@ describe('getGlPbrVertexSourceForKey', () => {
     expect(rigid).not.toContain('a_joints0');
     expect(rigid).not.toContain('mat4 skinMatrix()');
 
-    const skinned = getGlPbrVertexSourceForKey(makeKey({ hasSkin: true }));
+    const skinned = getGlPbrVertexSourceForKey(makeKey({ hasSkin: true }), GL_SKIN_VERTEX_DECLARATIONS_GLSL);
     expect(skinned).toContain('#define HAS_SKIN');
     expect(skinned).not.toContain('#define MAX_JOINTS');
     expect(skinned).toContain('sampler2D u_jointTexture');
@@ -201,7 +202,7 @@ describe('getGlPbrVertexSourceForKey', () => {
   // is present and in both functions; that it computes the right thing is the functional render
   // matrix's job, on real hardware.
   it('gives both skin matrices a bind-pose fallback for an uninfluenced vertex', () => {
-    const skinned = getGlPbrVertexSourceForKey(makeKey({ hasSkin: true }));
+    const skinned = getGlPbrVertexSourceForKey(makeKey({ hasSkin: true }), GL_SKIN_VERTEX_DECLARATIONS_GLSL);
 
     const skinBody = skinned.slice(skinned.indexOf('mat4 skinMatrix()'));
     expect(skinBody).toContain('return mat4(1.0);');

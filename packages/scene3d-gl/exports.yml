@@ -4,24 +4,7 @@ public:
   - setGlScene3DTime
 
 protected:
-  - GL_DIRECTIONAL_SHADOW_GLSL
-  - GL_INSTANCE_VERTEX_DECLARATIONS_GLSL
-  - GL_MESH_FRAGMENT_TAIL
-  - GL_MESH_FRAGMENT_TAIL_UNIFORMS
-  - GL_MESH_LIGHT_BLOCK_GLSL
-  - GL_PBR_ALPHA_TEXTURE_UNIT
-  - GL_PBR_BASE_COLOR_TEXTURE_UNIT
-  - GL_PBR_EMISSIVE_TEXTURE_UNIT
-  - GL_PBR_EXTENSION_TEXTURE_UNIT
-  - GL_PBR_METALLIC_ROUGHNESS_TEXTURE_UNIT
-  - GL_PBR_NORMAL_TEXTURE_UNIT
-  - GL_PBR_OCCLUSION_TEXTURE_UNIT
-  - GL_SKIN_VERTEX_DECLARATIONS_GLSL
-  - GL_UV_TRANSFORM_VERTEX_GLSL
-  - INSTANCE_COLOR_PALETTE_TEXTURE_UNIT
-  - INSTANCE_PALETTE_TEXTURE_UNIT
-  - SKIN_NORMAL_PALETTE_TEXTURE_UNIT
-  - SKIN_PALETTE_TEXTURE_UNIT
+  - addGlScene3DResourceCleanup
   - beginGlMeshDraw
   - bindGlDebugNormalMap
   - bindGlDebugRange
@@ -33,6 +16,7 @@ protected:
   - bindGlPbrExtensions
   - bindGlPbrStandardBlock
   - bindGlPbrStandardTexture
+  - bindGlShadowSkinPalette
   - bindGlUnlitSurface
   - bindGlUvTransform
   - bindGlVertexAttribute
@@ -64,13 +48,13 @@ protected:
   - destroyGlWireframeUpload
   - drawGlMeshSubset
   - drawGlScene3DParticleEmitter3Ds
-  - ensureGlMeshUpload
   - ensureGlClassicProgram
   - ensureGlDebugProgram
   - ensureGlEnvironmentSourceCube
   - ensureGlInstanceColorPalette
   - ensureGlInstancePalette
   - ensureGlMatcapProgram
+  - ensureGlMeshUpload
   - ensureGlPbrProgram
   - ensureGlScene3DProgram
   - ensureGlShadedProgram
@@ -89,6 +73,7 @@ protected:
   - getGlDebugVertexSourceForKey
   - getGlMatcapFragmentSourceForKey
   - getGlMatcapVertexSourceForKey
+  - getGlMeshSkinFeature
   - getGlPbrFragmentSource
   - getGlPbrFragmentSourceForKey
   - getGlPbrVertexSource
@@ -101,7 +86,23 @@ protected:
   - getGlUnlitVertexSourceForKey
   - getGlWireframeFragmentSource
   - getGlWireframeVertexSource
+  - GL_DIRECTIONAL_SHADOW_GLSL
+  - GL_INSTANCE_VERTEX_DECLARATIONS_GLSL
+  - GL_MESH_FRAGMENT_TAIL
+  - GL_MESH_FRAGMENT_TAIL_UNIFORMS
+  - GL_MESH_LIGHT_BLOCK_GLSL
+  - GL_PBR_ALPHA_TEXTURE_UNIT
+  - GL_PBR_BASE_COLOR_TEXTURE_UNIT
+  - GL_PBR_EMISSIVE_TEXTURE_UNIT
+  - GL_PBR_EXTENSION_TEXTURE_UNIT
+  - GL_PBR_METALLIC_ROUGHNESS_TEXTURE_UNIT
+  - GL_PBR_NORMAL_TEXTURE_UNIT
+  - GL_PBR_OCCLUSION_TEXTURE_UNIT
+  - GL_SKIN_VERTEX_DECLARATIONS_GLSL
+  - GL_UV_TRANSFORM_VERTEX_GLSL
   - hasGlUvTransform
+  - INSTANCE_COLOR_PALETTE_TEXTURE_UNIT
+  - INSTANCE_PALETTE_TEXTURE_UNIT
   - isGlTextureReady
   - makeFakeGl2
   - makeGlScene3DState
@@ -109,5 +110,7 @@ protected:
   - resolveGlPbrExtensionContributions
   - setGlMeshCameraPosition
   - setGlMeshViewProjection
+  - SKIN_NORMAL_PALETTE_TEXTURE_UNIT
+  - SKIN_PALETTE_TEXTURE_UNIT
   - updateGlEnvironmentCubeFace
   - uploadGlMeshDrawAlpha

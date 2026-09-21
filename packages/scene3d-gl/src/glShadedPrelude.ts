@@ -18,7 +18,6 @@ import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram'
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
 import {
   GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
-  GL_SKIN_VERTEX_DECLARATIONS_GLSL,
   GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
   ensureGlScene3DProgram,
@@ -51,6 +50,9 @@ export function compileGlShadedProgram(
   orderedModifiers: readonly Modifier[],
   registry: GlModifierSnippetSource,
   colorAdjustmentFeature: Readonly<GlColorAdjustmentMaterialFeature> | null = null,
+  // The HAS_SKIN vertex declarations, supplied by the registered skinning capability. Empty string
+  // when skinning is not registered, which is also when key.hasSkin is false.
+  skinDeclarationsGlsl = '',
 ): GlShadedProgram {
   const defineSource = buildGlShadedDefineSource(key);
   // The skin GLSL is vertex-only (its `in` attributes are illegal in a fragment shader), so it is
@@ -58,7 +60,7 @@ export function compileGlShadedProgram(
   // vertex-only — they deform the geometry — so they inject into the vertex body, not the fragment.
   const vertexSource =
     defineSource +
-    (key.hasSkin ? GL_SKIN_VERTEX_DECLARATIONS_GLSL : '') +
+    (key.hasSkin ? skinDeclarationsGlsl : '') +
     (key.hasInstances ? GL_INSTANCE_VERTEX_DECLARATIONS_GLSL : '') +
     assembleGlShadedVertexBody(orderedModifiers, registry);
   let fragmentBody = assembleGlShadedFragmentBody(orderedModifiers, registry);
@@ -120,7 +122,14 @@ export function ensureGlShadedProgram(
     registries.modifierSnippetRevision
   }`;
   return ensureGlScene3DProgram(state, cacheKey, (gl) =>
-    compileGlShadedProgram(gl, fullKey, ordered, registry, getGlColorAdjustmentMaterialFeature(state)),
+    compileGlShadedProgram(
+      gl,
+      fullKey,
+      ordered,
+      registry,
+      getGlColorAdjustmentMaterialFeature(state),
+      getGlScene3DRuntime(state).meshSkinFeature?.vertexDeclarationsGlsl ?? '',
+    ),
   );
 }
 
