@@ -41,6 +41,13 @@
 // against the stderr actually observed in CI. Retrying is only safe because a publish that already
 // landed is recognised as done rather than as a conflict.
 //
+// Publishing is not confirmed by npm's exit code. A publish has exited 0 with the registry never
+// receiving the write — see publish-verification.ts — so after the pool every intended version is
+// read back and the run fails if any is absent or the dist-tag still lags it. The read-back is
+// cache-busted: registry.npmjs.org sits behind a CDN that serves a HIT for a freshly written
+// packument and ignores a `cache-control: no-cache` request header, so only a unique query string
+// reaches origin.
+//
 // Usage:
 //   tsx scripts/publish-packages.ts                 publish all to the default `latest` dist-tag
 //   tsx scripts/publish-packages.ts --dry-run       pack + report, no upload
@@ -50,6 +57,7 @@
 //   tsx scripts/publish-packages.ts <name-substr>   only packages whose name contains the substring
 
 import { execFile, execFileSync } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -57,6 +65,8 @@ import { promisify } from 'node:util';
 
 import { withTemporaryPublishArtifacts } from './package-publish-artifacts.js';
 import { classifyPublishError } from './publish-error-kind.js';
+import type { PublishExpectation, PublishProblem } from './publish-verification.js';
+import { describePublishProblem, findPublishProblems } from './publish-verification.js';
 import { isSnapshotVersionSuperseded } from './snapshot-version-order.js';
 
 const execFileAsync = promisify(execFile);
@@ -66,6 +76,10 @@ const execFileAsync = promisify(execFile);
 const PUBLISH_CONCURRENCY = Number(process.env.FLIGHT_PUBLISH_CONCURRENCY ?? '8');
 const REGISTRY_CHECK_CONCURRENCY = 12;
 const RETRY_ATTEMPTS = 4;
+// Read-backs of a just-written packument. A write is acknowledged before it is universally readable,
+// so a first miss is re-read rather than reported; only a version still absent at the end is a
+// failure.
+const VERIFY_ATTEMPTS = 3;
 
 // npm prunes its log directory (~/.npm/_logs, honouring `logs-max`) on every startup, and concurrent
 // npm processes readdir and unlink the same files there. Losing that race makes npm die before it
@@ -160,7 +174,7 @@ const candidates = manifests.filter(({ pkg }) => {
 
 // One batched pass instead of a serial `npm view` per package. Skipped entirely on --dry-run, which
 // uploads nothing and so has no reason to ask the registry what already exists.
-const registryState = dryRun ? new Map<string, RegistryEntry>() : await readRegistryState(candidates);
+const registryState = dryRun ? new Map<string, RegistryEntry>() : await readRegistryState(candidates.map((c) => c.pkg));
 
 // In a locked-version monorepo, superseding any package supersedes the whole graph. A new package
 // (no dist-tag yet) would otherwise slip through and publish at a lower version than its siblings,
@@ -200,8 +214,30 @@ console.log(
     `dist-tag \`${distTag ?? 'latest'}\`, skipped ${skipped.length}, failed ${failed.length}`,
 );
 console.log(`[publish] skipped by reason: ${skipped.length === 0 ? '0 skipped' : summarizeSkipReasons(skipped)}`);
+// Every version this run intended to leave live on the tag — whether it published now or was already
+// there. A package that failed is excluded: it is reported below on its own terms, and re-reporting it
+// as unverified would bury the actual error. Nothing is expected when the graph was superseded, since
+// that path deliberately publishes nothing.
+const failedNames = new Set(failed);
+const expectations: PublishExpectation[] =
+  dryRun || graphSuperseded ? [] : candidates.map((c) => c.pkg).filter((pkg) => !failedNames.has(pkg.name));
+
+const problems = expectations.length === 0 ? [] : await verifyPublishedGraph(expectations);
+if (problems.length > 0) {
+  console.error(`\n[publish] VERIFICATION FAILED: ${problems.length} package(s) are not live on \`${targetTag}\``);
+  for (const problem of problems) console.error(`[publish]   ${describePublishProblem(problem, targetTag)}`);
+  // Why this is fatal rather than a warning: a locked-version publish pins every internal dep to an
+  // exact sibling version, so a package missing here makes every package that DID publish unresolvable.
+  console.error('[publish] the packages that did publish pin these versions exactly and cannot resolve');
+  console.error('[publish] without them. Re-run to repair: already-published packages are skipped.');
+} else if (expectations.length > 0) {
+  console.log(`[publish] verified ${expectations.length} package(s) live on \`${targetTag}\``);
+}
+
 if (failed.length > 0) {
   console.error(`[publish] failed: ${failed.join(', ')}`);
+}
+if (failed.length > 0 || problems.length > 0) {
   process.exit(1);
 }
 if (!dryRun && targetTag === 'latest' && published.length === 0) {
@@ -242,12 +278,15 @@ function pinInternalDependencies(pkg: Manifest): Manifest {
 // leaves the package absent from the map, which reads as neither published nor superseded — the
 // publish attempt itself is then the authority, and it fails loudly rather than silently skipping a
 // package that should have shipped.
-async function readRegistryState(entries: readonly PackageEntry[]): Promise<Map<string, RegistryEntry>> {
+async function readRegistryState(
+  entries: readonly Readonly<PublishExpectation>[],
+  cacheBust = false,
+): Promise<Map<string, RegistryEntry>> {
   const registry = getRegistry();
   const state = new Map<string, RegistryEntry>();
-  await runPool(entries, REGISTRY_CHECK_CONCURRENCY, async ({ pkg }) => {
+  await runPool(entries, REGISTRY_CHECK_CONCURRENCY, async (pkg) => {
     // Scoped names carry a literal "/" that must not be read as a path separator.
-    const url = `${registry}/${pkg.name.replace('/', '%2f')}`;
+    const url = `${registry}/${pkg.name.replace('/', '%2f')}${cacheBust ? `?publishCheck=${randomUUID()}` : ''}`;
     try {
       // The abbreviated packument is a fraction of the full document and still carries both the full
       // version list and the dist-tags.
@@ -268,6 +307,28 @@ async function readRegistryState(entries: readonly PackageEntry[]): Promise<Map<
     }
   });
   return state;
+}
+
+// Reads every intended version back and returns what is still not live. Retried because the registry
+// acknowledges a write before it is universally readable; a package that becomes visible on a later
+// attempt was never a problem, so only the still-outstanding set is re-read.
+async function verifyPublishedGraph(expectations: readonly Readonly<PublishExpectation>[]): Promise<PublishProblem[]> {
+  console.log(`[publish] verifying ${expectations.length} package(s) against the registry…`);
+  let outstanding: readonly Readonly<PublishExpectation>[] = expectations;
+  let problems: PublishProblem[] = [];
+  for (let attempt = 1; attempt <= VERIFY_ATTEMPTS; attempt++) {
+    const state = await readRegistryState(outstanding, true);
+    problems = findPublishProblems(outstanding, state);
+    if (problems.length === 0) return [];
+    if (attempt === VERIFY_ATTEMPTS) break;
+    const backoffMs = 2000 * attempt;
+    console.warn(
+      `[publish] verify: ${problems.length} not visible yet, re-reading in ${backoffMs}ms (${attempt}/${VERIFY_ATTEMPTS})`,
+    );
+    await new Promise((resolve) => setTimeout(resolve, backoffMs));
+    outstanding = problems.map(({ name, version }) => ({ name, version }));
+  }
+  return problems;
 }
 
 // The effective registry, trailing slash trimmed so callers can join with "/" unconditionally.
