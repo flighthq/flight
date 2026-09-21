@@ -56,7 +56,7 @@ describe('computeTextLabelLocalBoundsRectangle', () => {
   it('sets out dimensions from data width and height when autoSize is none', () => {
     const text = createTextLabel({ data: { width: 200, height: 50 } });
     const out = createRectangle();
-    computeTextLabelLocalBoundsRectangle(out, text as unknown as Node);
+    computeTextLabelLocalBoundsRectangle(out, text);
     expect(out.x).toBe(0);
     expect(out.width).toBe(200);
     expect(out.height).toBe(50);
@@ -67,7 +67,7 @@ describe('computeTextLabelLocalBoundsRectangle', () => {
     const text = createTextLabel({ data: { autoSize: 'left', width: 200, height: 50 } });
     setTextLabelString(text, 'hi');
     const out = createRectangle();
-    computeTextLabelLocalBoundsRectangle(out, text as unknown as Node);
+    computeTextLabelLocalBoundsRectangle(out, text);
     expect(out.x).toBe(0);
     expect(out.width).toBeGreaterThan(0);
     expect(out.width).toBeLessThan(200);
@@ -77,7 +77,7 @@ describe('computeTextLabelLocalBoundsRectangle', () => {
     const text = createTextLabel({ data: { autoSize: 'left', width: 200, height: 50 } });
     setTextLabelString(text, 'hi');
     const out = createRectangle();
-    computeTextLabelLocalBoundsRectangle(out, text as unknown as Node);
+    computeTextLabelLocalBoundsRectangle(out, text);
     expect(out.width).toBe(200);
     expect(out.height).toBe(50);
   });

@@ -9,10 +9,11 @@ import type {
   BitmapTextOptions,
   BitmapTextPage,
   BitmapTextRuntime,
+  BoundsNode,
   EntityConstruction,
   GlyphSource,
   MethodsOf,
-  Node,
+  Node2DTraits,
   Rectangle,
 } from '@flighthq/types/contract';
 import { BitmapTextKind } from '@flighthq/types/contract';
@@ -177,7 +178,7 @@ function applyBitmapTextOptions(data: BitmapTextData, options: Readonly<BitmapTe
   if (options.wrapWidth !== undefined) data.wrapWidth = options.wrapWidth;
 }
 
-function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
+function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
   const runtime = getNode2DRuntime(source as BitmapText) as BitmapTextRuntime;
   if (runtime.localBoundsRectangle !== null) copyRectangle(out, runtime.localBoundsRectangle);
 }

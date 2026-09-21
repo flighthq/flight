@@ -121,7 +121,7 @@ describe('computeRichTextLocalBoundsRectangle', () => {
   it('sets out.width and out.height from data dimensions when autoSize is none', () => {
     const richText = createRichText({ data: { width: 200, height: 150 } });
     const out = createRectangle();
-    computeRichTextLocalBoundsRectangle(out, richText as unknown as Node);
+    computeRichTextLocalBoundsRectangle(out, richText);
     expect(out.x).toBe(0);
     expect(out.width).toBe(200);
     expect(out.height).toBe(150);
@@ -131,7 +131,7 @@ describe('computeRichTextLocalBoundsRectangle', () => {
     const richText = createRichText({ data: { autoSize: 'left', width: 200, height: 150 } });
     setRichTextString(richText, 'hello');
     const out = createRectangle();
-    computeRichTextLocalBoundsRectangle(out, richText as unknown as Node);
+    computeRichTextLocalBoundsRectangle(out, richText);
     expect(out.width).toBe(200);
     expect(out.height).toBe(150);
   });
@@ -141,7 +141,7 @@ describe('computeRichTextLocalBoundsRectangle', () => {
     const richText = createRichText({ data: { autoSize: 'left', width: 200, height: 150 } });
     setRichTextString(richText, 'hi');
     const out = createRectangle();
-    computeRichTextLocalBoundsRectangle(out, richText as unknown as Node);
+    computeRichTextLocalBoundsRectangle(out, richText);
     expect(out.x).toBe(0);
     expect(out.width).toBeGreaterThan(0);
     expect(out.width).toBeLessThan(200);
@@ -152,7 +152,7 @@ describe('computeRichTextLocalBoundsRectangle', () => {
     const richText = createRichText({ data: { autoSize: 'right', width: 200, height: 150 } });
     setRichTextString(richText, 'hi');
     const out = createRectangle();
-    computeRichTextLocalBoundsRectangle(out, richText as unknown as Node);
+    computeRichTextLocalBoundsRectangle(out, richText);
     expect(out.x).toBe(200 - out.width);
   });
 });

@@ -37,7 +37,7 @@ function createCaptureNode(bounds: Readonly<Rectangle>): Node2D {
   const runtime = getNodeRuntime(node) as Node2DRuntime;
   runtime.traits = Node2DTraitsKey;
   initBoundsRectangleTrait(node);
-  initBoundsRectangleRuntimeTrait(runtime as HasBoundsRectangleRuntime, {
+  initBoundsRectangleRuntimeTrait(runtime, {
     computeLocalBoundsRectangle(out) {
       setRectangle(out, bounds.x, bounds.y, bounds.width, bounds.height);
     },

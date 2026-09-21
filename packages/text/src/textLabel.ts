@@ -3,9 +3,10 @@ import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { computeTextBoundsRectangle, createTextFormatRange } from '@flighthq/textlayout/contract';
 import type {
+  BoundsNode,
   EntityConstruction,
   MethodsOf,
-  Node,
+  Node2DTraits,
   PartialNode,
   Rectangle,
   TextAutoSize,
@@ -49,7 +50,7 @@ export function appendTextLabelString(source: TextLabel, value: string): void {
 // content (textWidth/textHeight + gutter) positioned by the left/right/center anchor. The layout is
 // ensured on demand here, so a TextLabel's autoSize bounds are queryable before it is ever rendered.
 // Falls back to the fixed box until a measure provider is registered.
-export function computeTextLabelLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
+export function computeTextLabelLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
   const label = source as TextLabel;
   const data = label.data;
   if (data.autoSize === 'none') {

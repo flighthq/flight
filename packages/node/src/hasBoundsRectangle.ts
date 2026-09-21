@@ -1,17 +1,24 @@
 import type {
-  BoundsNodeAny,
+  BoundsNode,
   HasBoundsRectangle,
   HasBoundsRectangleRuntime,
   MethodsOf,
+  NodeTraits,
   Rectangle,
 } from '@flighthq/types/contract';
 
-export function defaultComputeLocalBoundsRectangle(_out: Rectangle, _source: Readonly<BoundsNodeAny>) {}
+export function defaultComputeLocalBoundsRectangle<Traits extends object = NodeTraits>(
+  _out: Rectangle,
+  _source: Readonly<BoundsNode<Traits>>,
+) {}
 
-export function initBoundsRectangleRuntimeTrait(
-  target: HasBoundsRectangleRuntime,
+export function initBoundsRectangleRuntimeTrait<Traits extends object = NodeTraits>(
+  target: HasBoundsRectangleRuntime<Traits>,
   methods?: Readonly<
-    Partial<MethodsOf<HasBoundsRectangleRuntime> & Pick<HasBoundsRectangleRuntime, 'isLocalBoundsRectangleValid'>>
+    Partial<
+      MethodsOf<HasBoundsRectangleRuntime<Traits>> &
+        Pick<HasBoundsRectangleRuntime<Traits>, 'isLocalBoundsRectangleValid'>
+    >
   >,
 ): void {
   target.boundsRectangle = null;

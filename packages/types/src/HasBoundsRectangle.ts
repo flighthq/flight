@@ -5,13 +5,17 @@ import type { Rectangle } from './Rectangle';
 
 export interface HasBoundsRectangle extends Entity {}
 
-export interface HasBoundsRectangleRuntime extends EntityRuntime {
+// Generic over the same Traits parameter NodeRuntime<Traits> carries, so a bounds callback receives
+// the node family it was registered for rather than a node erased to `any`. The C++ port has no way
+// to recover the concrete type once it is erased through the callback boundary, so the erasure has to
+// stop at the type rather than be undone by a cast inside every implementation.
+export interface HasBoundsRectangleRuntime<Traits extends object = NodeTraits> extends EntityRuntime {
   boundsRectangle: Rectangle | null;
-  computeLocalBoundsRectangle: (out: Rectangle, source: Readonly<BoundsNodeAny>) => void;
+  computeLocalBoundsRectangle: (out: Rectangle, source: Readonly<BoundsNode<Traits>>) => void;
   // Optional kind-owned validity check for local-bounds inputs that live outside the node revision
   // axes. The bounds pull calls it only after the generic localBoundsId stamp matches; null keeps the
   // common path to one nullable check while kinds such as Sprite can compare their own Texture stamp.
-  isLocalBoundsRectangleValid: ((source: Readonly<BoundsNodeAny>) => boolean) | null;
+  isLocalBoundsRectangleValid: ((source: Readonly<BoundsNode<Traits>>) => boolean) | null;
   localBoundsRectangle: Rectangle | null;
   worldBoundsRectangle: Rectangle | null;
 }

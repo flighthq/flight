@@ -10,7 +10,11 @@ describe('Node2DRuntime', () => {
   // be found, read, and errored against by name, which is a source property rather than a type one.
   it('is assignable to every runtime it specialises, so naming it introduced no second root', () => {
     expectTypeOf<Node2DRuntime>().toMatchTypeOf<NodeRuntime<Node2DTraits>>();
-    expectTypeOf<Node2DRuntime>().toMatchTypeOf<HasBoundsRectangleRuntime>();
+    // Parameterised, not bare: the bounds callbacks are contravariant in the node they receive, so
+    // the runtime a Node2D specialises is HasBoundsRectangleRuntime<Node2DTraits>. The bare form
+    // (defaulting to NodeTraits) is deliberately NOT a supertype — that erasure is what the generic
+    // removed.
+    expectTypeOf<Node2DRuntime>().toMatchTypeOf<HasBoundsRectangleRuntime<Node2DTraits>>();
     expectTypeOf<Node2DRuntime>().toMatchTypeOf<HasTransform2DRuntime>();
   });
 

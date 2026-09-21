@@ -2,10 +2,11 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { invalidateContent } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type {
-  BoundsNodeAny,
+  BoundsNode,
   EntityConstruction,
   MethodsOf,
   MorphShape,
+  Node2DTraits,
   PartialNode,
   Rectangle,
   Shape,
@@ -24,8 +25,8 @@ export function clearShapeCommands(shape: Shape): void {
   invalidateContent(shape);
 }
 
-export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNodeAny>): void {
-  getShapeBounds(out, source as unknown as Shape, 'ink');
+export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
+  getShapeBounds(out, source as Readonly<Shape>, 'ink');
 }
 
 export function copyShapeCommands(out: Shape, source: Readonly<Shape>): void {
@@ -100,8 +101,8 @@ export function isShapeEmpty(source: Readonly<Shape>): boolean {
   return source.data.commands.length === 0;
 }
 
-function isShapeLocalBoundsRectangleValid(source: Readonly<BoundsNodeAny>): boolean {
-  const runtime = getNode2DRuntime(source as unknown as Shape) as ShapeRuntime;
+function isShapeLocalBoundsRectangleValid(source: Readonly<BoundsNode<Node2DTraits>>): boolean {
+  const runtime = getNode2DRuntime(source as Readonly<Shape>) as ShapeRuntime;
   return runtime.shapeBoundsCommandRegistryRevision === getShapeBoundsCommandRegistryRevision();
 }
 

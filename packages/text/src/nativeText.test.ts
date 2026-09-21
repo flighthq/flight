@@ -31,7 +31,7 @@ describe('computeNativeTextLocalBoundsRectangle', () => {
   it('sets out dimensions from data width and height when autoSize is none', () => {
     const native = createNativeText({ data: { width: 200, height: 50 } });
     const out = createRectangle();
-    computeNativeTextLocalBoundsRectangle(out, native as unknown as Node);
+    computeNativeTextLocalBoundsRectangle(out, native);
     expect(out.x).toBe(0);
     expect(out.width).toBe(200);
     expect(out.height).toBe(50);
@@ -40,7 +40,7 @@ describe('computeNativeTextLocalBoundsRectangle', () => {
   it('falls back to the fixed box under autoSize until the element has been measured', () => {
     const native = createNativeText({ data: { autoSize: 'left', width: 200, height: 50 } });
     const out = createRectangle();
-    computeNativeTextLocalBoundsRectangle(out, native as unknown as Node);
+    computeNativeTextLocalBoundsRectangle(out, native);
     expect(out.width).toBe(200);
     expect(out.height).toBe(50);
   });
@@ -51,7 +51,7 @@ describe('computeNativeTextLocalBoundsRectangle', () => {
     runtime.measuredWidth = 80;
     runtime.measuredHeight = 24;
     const out = createRectangle();
-    computeNativeTextLocalBoundsRectangle(out, native as unknown as Node);
+    computeNativeTextLocalBoundsRectangle(out, native);
     expect(out.width).toBe(80);
     expect(out.height).toBe(24);
   });

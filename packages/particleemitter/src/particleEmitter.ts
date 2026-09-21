@@ -4,10 +4,11 @@ import { invalidateNodeLocalBounds } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type {
+  BoundsNode,
   EntityConstruction,
   MethodsOf,
-  Node,
   Node2D,
+  Node2DTraits,
   PartialNode,
   ParticleEmitter2D,
   ParticleEmitter2DRuntime,
@@ -25,7 +26,7 @@ const PARTICLE_VELOCITY_STRIDE = 2; // [vx, vy] per particle
 // Uint16Array sentinel marking a logically deleted slot in a particle emitter.
 export const PARTICLE_EMITTER_DELETED_ID = 0xffff;
 
-function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<Node>): void {
+function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
   const runtime = getNode2DRuntime(source as Node2D) as ParticleEmitter2DRuntime;
   if (runtime.localBoundsRectangle !== null) copyRectangle(out, runtime.localBoundsRectangle);
 }
