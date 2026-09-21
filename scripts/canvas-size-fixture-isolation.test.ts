@@ -209,7 +209,7 @@ describe('size-only control fixture', () => {
   it('registers no renderer and draws no visible content', () => {
     for (const fixture of CONTROL_FIXTURES) {
       const source = fixtureSource(fixture);
-      expect(source, `${fixture} must bind no renderer`).not.toMatch(/\bcanvas\w+NodeRenderer\b/u);
+      expect(source, `${fixture} must bind no renderer`).not.toMatch(/\bcanvas\w+Renderer\b/u);
       expect(source, `${fixture} must not register a renderer`).not.toMatch(/\bregisterNodeRenderer\b/u);
     }
   });
