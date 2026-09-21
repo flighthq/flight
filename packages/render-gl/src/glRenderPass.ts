@@ -1,5 +1,4 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { copyMatrix, createMatrix } from '@flighthq/geometry/contract';
 import type {
   GlContext,
   GlRenderPass,
@@ -8,7 +7,6 @@ import type {
   GlScissorRect,
   GlTextureRenderTarget,
   GlViewportRect,
-  Matrix,
   RenderTargetClear,
   Viewport,
 } from '@flighthq/types/contract';
@@ -22,7 +20,6 @@ type SavedGlPassState = {
   framebuffer: WebGLFramebuffer | null;
   renderTarget: ReturnType<typeof getGlRenderStateRuntime>['currentRenderTarget'];
   renderTargetViewport: GlViewportRect | null;
-  renderTransform2D: Matrix | null;
   scissorRect: GlScissorRect | null;
   scissorStack: GlScissorRect[];
 };
@@ -71,9 +68,8 @@ export function acquireGlRenderPassHandle(gl: GlContext, state: GlRenderState, t
 // clears without allocating another target. Nested passes cannot escape an enclosing pass scissor.
 //
 // A render pass carries NO 2D transform — that is a display-object DRAW concern, not a pass concern, so
-// a 3D pass (renderGlScene3D, which uses the camera) is unaffected. A 2D pass that needs a specific root
-// device transform sets it explicitly with setGlRenderTransform2D after begin; the value is saved and
-// restored by the begin/end bracket like the rest of the pass state.
+// a 3D pass (renderGlScene3D, which uses the camera) is unaffected. A 2D pass that needs a root device
+// transform passes it to renderGlScene2D as an explicit parameter.
 //
 // Single-attachment (the common no-effects scene / 2D-offscreen path):
 //   const pass = beginGlRenderPass(state, target, { color: [0, 0, 0, 0], depth: 1.0 })
@@ -261,7 +257,6 @@ function captureGlPassState(state: GlRenderState): SavedGlPassState {
     framebuffer: runtime.currentFramebuffer,
     renderTarget: runtime.currentRenderTarget ?? null,
     renderTargetViewport: runtime.renderTargetViewport,
-    renderTransform2D: state.renderTransform2D,
     scissorRect: runtime.currentScissorRect ?? null,
     scissorStack: [...(runtime.scissorStack ?? [])],
   };
@@ -282,7 +277,6 @@ function restoreGlPassState(state: GlRenderState, saved: Readonly<SavedGlPassSta
   runtime.scissorStack = saved.scissorStack;
   runtime.clipForms = saved.clipForms;
   runtime.currentMaskDepth = saved.currentMaskDepth;
-  state.renderTransform2D = saved.renderTransform2D;
 }
 
 function applyGlScissor(gl: GlContext, rect: Readonly<GlScissorRect> | null): void {
@@ -369,25 +363,6 @@ export function releaseGlRenderPassHandle(gl: GlContext, handle: GlRenderPass): 
     _passHandlePool.set(gl, pool);
   }
   pool.push(handle);
-}
-
-// Sets the 2D root device transform the display-object update pass (prepareScene2DRender) reads to
-// place nodes with no scene parent. Call after beginGlRenderPass when a 2D pass renders into a target
-// with its own coordinate system (the render cache); the value is restored by the matching
-// endGlRenderPass. A fresh matrix is allocated rather than mutating in place, because the begin/end
-// bracket saved the previous reference and restores it — mutating the shared object would corrupt that.
-export function setGlRenderTransform2D(state: GlRenderState, transform: Readonly<Matrix>): void {
-  const next = createMatrix();
-  copyMatrix(next, transform);
-  state.renderTransform2D = next;
-  // The root device transform is an input to every prepared proxy transform, but it is state policy,
-  // not a node revision. Mark the state-local proxies stale so a repeated offscreen capture with new
-  // bounds/padding cannot reuse transforms prepared for the previous target dimensions.
-  const runtime = getGlRenderStateRuntime(state);
-  for (const source of runtime.renderProxySources) {
-    const proxy = runtime.renderProxyMap.get(source);
-    if (proxy !== undefined) proxy.lastLocalTransformId = -1;
-  }
 }
 
 // A WebGL context has exactly one framebuffer binding and one live stencil gate. Keying the pass

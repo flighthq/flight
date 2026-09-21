@@ -192,7 +192,6 @@ function endWgpuFramePasses(state: WgpuRenderState): void {
   runtime.maskWriteMode = saved.maskWriteMode;
   runtime.currentScissorRect = saved.currentScissorRect;
   runtime.scissorStack = saved.scissorStack;
-  state.renderTransform2D = saved.renderTransform2D;
   stack.length = 0;
 }
 

@@ -3,7 +3,6 @@ import type { CanvasShapeCommand } from './CanvasShapeRegistry';
 import type { EffectPaddingResolver } from './EffectPadding';
 import type { Entity, EntityRuntime, Kind } from './Entity';
 import type { ImageSurfaceCreator } from './ImageSurface';
-import type { Matrix } from './Matrix';
 import type { Path } from './Path';
 import type { PathMesh } from './PathMesh';
 import type { KeyedTable, SlotTable } from './RegistryTable';
@@ -35,7 +34,6 @@ export interface RenderState extends Entity {
   imageSurfaceProvider: Readonly<ImageSurfaceCreator> | null;
   renderAlpha: number;
   renderBlendMode: BlendMode | null;
-  renderTransform2D: Matrix | null;
   sceneGraphSyncPolicy: Scene3DGraphSyncPolicy;
   roundPixels: boolean;
 }

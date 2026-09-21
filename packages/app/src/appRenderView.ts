@@ -10,8 +10,6 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { computeWindowDeviceTransform } from './appWindow';
-
 interface AppRenderViewRuntime<
   State extends RenderState = RenderState,
   Target extends RenderTargetDimensions = RenderTargetDimensions,
@@ -90,9 +88,6 @@ export function synchronizeAppRenderView(view: AppRenderView): void {
   view.viewport.x = 0;
   view.viewport.y = 0;
   view.renderState.pixelRatio = devicePixelRatio;
-  if (view.renderState.renderTransform2D !== null) {
-    computeWindowDeviceTransform(view.window, view.renderState.renderTransform2D);
-  }
 }
 
 function getAppRenderViewRuntime(view: AppRenderView): AppRenderViewRuntime<RenderState, RenderTargetDimensions> {

@@ -84,7 +84,6 @@ beforeEach(() => {
     });
     return state;
   }) as never);
-  vi.spyOn(renderWgpu, 'setWgpuRenderTransform2D').mockImplementation((() => {}) as never);
   vi.spyOn(renderWgpu, 'createWgpuTextureRenderTarget').mockImplementation(
     ((_state: unknown, width: number, height: number): WgpuTextureRenderTarget => ({
       [EntityRuntimeKey]: undefined,

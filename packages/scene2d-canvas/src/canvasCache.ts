@@ -25,7 +25,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { renderCanvasScene2D } from './canvasNode2D';
-import { beginCanvasRenderPass, endCanvasRenderPass, setCanvasRenderTransform2D } from './canvasRenderPass';
+import { beginCanvasRenderPass, endCanvasRenderPass } from './canvasRenderPass';
 import {
   createCanvasRenderState,
   destroyCanvasRenderState,
@@ -154,11 +154,10 @@ export function refreshCanvasRenderCache(
   // compositing, and end restores whatever the caller was drawing through.
   const pass = beginCanvasRenderPass(cacheState, target);
   try {
-    setCanvasRenderTransform2D(pass, _renderTransform);
     const dirty = prepareScene2DRender(cacheState, source);
     if (dirty || resized) {
       pass.context.clearRect(0, 0, target.canvas.width, target.canvas.height);
-      renderCanvasScene2D(pass, source);
+      renderCanvasScene2D(pass, source, _renderTransform);
     }
     return dirty || resized;
   } finally {

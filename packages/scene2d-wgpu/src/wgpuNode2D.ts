@@ -1,7 +1,15 @@
+import { createMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
-import type { Node2D, Scene2DRenderer, RenderProxy2D, WgpuRenderPass, WgpuRenderState } from '@flighthq/types/contract';
+import type {
+  Matrix,
+  Node2D,
+  RenderProxy2D,
+  Scene2DRenderer,
+  WgpuRenderPass,
+  WgpuRenderState,
+} from '@flighthq/types/contract';
 
 import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 
@@ -9,12 +17,15 @@ export function drawWgpuScene2D(_state: WgpuRenderState, _renderProxy: RenderPro
   // Plain display objects have no visual geometry of their own.
 }
 
-// Draws `source`'s subtree into the pass. The pass names the target, so the same scene renders to the
-// screen or into an offscreen target with no argument but this one changing.
-export function renderWgpuScene2D(pass: WgpuRenderPass, source: Node2D): void {
+export function renderWgpuScene2D(
+  pass: WgpuRenderPass,
+  source: Node2D,
+  renderTransform?: Readonly<Matrix> | null,
+): void {
   const state = pass.state;
   const tempStack = getWgpuRenderStateRuntime(state).tempStack;
   const clipHooks = state.displayObjectClipHooks;
+  const hasRenderTransform = renderTransform != null;
 
   let stackLength = 1;
   tempStack[0] = source;
@@ -26,9 +37,18 @@ export function renderWgpuScene2D(pass: WgpuRenderPass, source: Node2D): void {
     const data = getRenderProxy2D(state, current);
     if (data === undefined) continue;
 
+    const savedTransform = data.transform2D;
+    if (hasRenderTransform) {
+      multiplyMatrix(_scratchTransform, renderTransform, savedTransform);
+      data.transform2D = _scratchTransform;
+    }
+
     clipHooks?.popClip(state, data, current);
 
-    if (!isRenderProxyVisible(data)) continue;
+    if (!isRenderProxyVisible(data)) {
+      if (hasRenderTransform) data.transform2D = savedTransform;
+      continue;
+    }
 
     clipHooks?.pushClip(state, data, current);
 
@@ -41,6 +61,8 @@ export function renderWgpuScene2D(pass: WgpuRenderPass, source: Node2D): void {
         }
       }
     }
+
+    if (hasRenderTransform) data.transform2D = savedTransform;
   }
 
   flushWgpuQuadBatchWriter(state);
@@ -51,3 +73,5 @@ export const wgpuScene2DRenderer: Scene2DRenderer = {
   createData: noopRendererData,
   submit: drawWgpuScene2D,
 };
+
+const _scratchTransform = createMatrix();

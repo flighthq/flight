@@ -136,14 +136,12 @@ it('should be instantiated with default options', () => {
   expect(renderer.context.imageSmoothingQuality).toBe('high');
   expect(renderer.pixelRatio).toBe(1);
   expect(renderer.roundPixels).toBe(false);
-  expect(renderer.renderTransform2D).not.toBeNull();
 });
 
 it('should use provided options', () => {
   const options: CanvasRenderOptions = {
     pixelRatio: 2,
     roundPixels: true,
-    renderTransform: createMatrix(),
     imageSmoothingEnabled: false,
     imageSmoothingQuality: 'low',
   };
@@ -152,7 +150,6 @@ it('should use provided options', () => {
 
   expect(renderer.pixelRatio).toBe(2);
   expect(renderer.roundPixels).toBe(true);
-  expect(renderer.renderTransform2D).not.toBeNull();
   expect(renderer.context.imageSmoothingEnabled).toBe(false);
   expect(renderer.context.imageSmoothingQuality).toBe('low');
 });
@@ -201,21 +198,6 @@ it('should correctly handle roundPixels option', () => {
 
   const renderer = createCanvasRenderState(canvas, options);
   expect(renderer.roundPixels).toBe(true);
-});
-
-it('should handle worldTransform option correctly', () => {
-  const customTransform = createMatrix();
-  const options: CanvasRenderOptions = {
-    renderTransform: customTransform,
-  };
-
-  const renderer = createCanvasRenderState(canvas, options);
-  expect(renderer.renderTransform2D).toBe(customTransform);
-});
-
-it('should fall back to default Matrix if worldTransform is not provided', () => {
-  const renderer = createCanvasRenderState(canvas);
-  expect(renderer.renderTransform2D).not.toBeNull();
 });
 
 // Ensure options with missing properties are handled gracefully

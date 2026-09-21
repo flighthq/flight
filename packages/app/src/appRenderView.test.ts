@@ -1,5 +1,5 @@
 import { emitSignal } from '@flighthq/signals/contract';
-import type { Matrix, RenderState, RenderTargetDimensions, Viewport } from '@flighthq/types/contract';
+import type { RenderState, RenderTargetDimensions, Viewport } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -66,7 +66,6 @@ function makeView() {
   window.devicePixelRatio = 2;
   const state = {
     pixelRatio: 1,
-    renderTransform2D: makeMatrix(),
   } as RenderState;
   const target: RenderTargetDimensions = { height: 1, width: 1 };
   const viewport = {
@@ -84,9 +83,6 @@ function makeView() {
   return { resize, state, target, view, viewport, window };
 }
 
-function makeMatrix(): Matrix {
-  return { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 } as Matrix;
-}
 describe('synchronizeAppRenderView', () => {
   it('writes device-pixel target, viewport, and render-state values from the window authority', () => {
     const { resize, state, target, view, viewport, window } = makeView();
@@ -102,7 +98,6 @@ describe('synchronizeAppRenderView', () => {
     expect(resize).toHaveBeenCalledWith(state, target, 150, 90);
     expect(viewport).toMatchObject({ devicePixelRatio: 1.5, height: 90, width: 150, x: 0, y: 0 });
     expect(state.pixelRatio).toBe(1.5);
-    expect(state.renderTransform2D).toMatchObject({ a: 1.5, b: 0, c: 0, d: 1.5, tx: 0, ty: 0 });
   });
 
   it('invokes the backend resize seam even when the requested extent is unchanged', () => {

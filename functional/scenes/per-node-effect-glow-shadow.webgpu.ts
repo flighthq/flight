@@ -1,4 +1,4 @@
-import { getWgpuRenderStateRuntime, setWgpuRenderTransform2D } from '@flighthq/render-wgpu/contract';
+import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { Bitmap, Effect, EffectPadding, RenderTexture } from '@flighthq/sdk';
 import {
   acquireWgpuRenderTexture,
@@ -146,9 +146,8 @@ function capture(effect: Readonly<Effect>, padding: Readonly<EffectPadding>): Re
       offscreenState,
       sourceTexture,
       (capturePass) => {
-        setWgpuRenderTransform2D(capturePass, createMatrix());
         prepareScene2DRender(offscreenState, source);
-        renderWgpuScene2D(capturePass, source);
+        renderWgpuScene2D(capturePass, source, createMatrix());
       },
       { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 },
     );

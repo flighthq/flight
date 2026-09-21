@@ -1,4 +1,3 @@
-import { createMatrix } from '@flighthq/geometry/contract';
 import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import type { ColorAdjustmentUnsupportedGuard, RenderState } from '@flighthq/types/contract';
 import { BlendMode, EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
@@ -26,7 +25,6 @@ describe('createRenderState', () => {
     expect(state.renderAlpha).toStrictEqual(1);
     expect(state.renderBlendMode).toStrictEqual(BlendMode.Normal);
     expect(state.displayObjectClipHooks).toStrictEqual(null);
-    expect(state.renderTransform2D).toStrictEqual(null);
     expect(state.roundPixels).toStrictEqual(false);
   });
 
@@ -50,7 +48,6 @@ describe('createRenderState', () => {
       pixelRatio: 5,
       renderAlpha: 0.5,
       renderBlendMode: BlendMode.Multiply,
-      renderTransform2D: createMatrix(),
       roundPixels: true,
     };
     const obj = createRenderState(base);
@@ -58,7 +55,6 @@ describe('createRenderState', () => {
     expect(obj.pixelRatio).toStrictEqual(base.pixelRatio);
     expect(obj.renderAlpha).toStrictEqual(base.renderAlpha);
     expect(obj.renderBlendMode).toStrictEqual(base.renderBlendMode);
-    expect(obj.renderTransform2D).toStrictEqual(base.renderTransform2D);
     expect(obj.roundPixels).toStrictEqual(base.roundPixels);
   });
 

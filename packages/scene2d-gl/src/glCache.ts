@@ -11,7 +11,6 @@ import {
   getGlCurrentRenderPass,
   resizeGlTextureRenderTarget,
   registerGlRenderStateTeardown,
-  setGlRenderTransform2D,
 } from '@flighthq/render-gl/contract';
 import {
   computeScene2DRenderTargetTransform,
@@ -107,17 +106,15 @@ export function refreshGlRenderCache(
   computeRenderCacheTransform(cache.transform, _bounds, padding, padding);
 
   // Preserve on begin — the bake below clears and redraws only when dirty; clearing here would wipe the
-  // retained cache content on the not-dirty path. The cache's local-space transform is set explicitly,
-  // since a pass no longer carries one.
+  // retained cache content on the not-dirty path.
   const pass = beginGlRenderPass(cacheState, target);
   let dirty = false;
   try {
-    setGlRenderTransform2D(cacheState, _renderTransform);
     dirty = prepareScene2DRender(cacheState, source);
     if (dirty || resized) {
       cacheState.gl.clearColor(0, 0, 0, 0);
       cacheState.gl.clear(cacheState.gl.COLOR_BUFFER_BIT);
-      renderGlScene2D(pass, source);
+      renderGlScene2D(pass, source, _renderTransform);
     }
   } finally {
     endGlRenderPass(pass);

@@ -1,4 +1,3 @@
-import { createMatrix } from '@flighthq/geometry/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import { createRenderProxy2D } from './renderProxy';
@@ -19,19 +18,6 @@ describe('updateRenderProxy2DTransform', () => {
     const data = createRenderProxy2D(state, obj);
     updateRenderProxy2DTransform(state, data);
     expect(updateRenderProxy2DTransform(state, data)).toBe(false);
-  });
-
-  it('refreshes an unchanged root node when the render-state transform changes', () => {
-    const state = createRenderState();
-    const obj = createDisplayObject();
-    const data = createRenderProxy2D(state, obj);
-
-    updateRenderProxy2DTransform(state, data);
-    state.renderTransform2D = createMatrix(2, 0, 0, 2, 17, 0);
-
-    expect(updateRenderProxy2DTransform(state, data)).toBe(true);
-    expect(data.transform2D.a).toBe(2);
-    expect(data.transform2D.tx).toBe(17);
   });
 
   it('returns true when parent was updated this frame', () => {

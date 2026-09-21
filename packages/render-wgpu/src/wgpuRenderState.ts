@@ -1,5 +1,4 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { createMatrix } from '@flighthq/geometry/contract';
 import {
   createRenderState as _createRenderState,
   createRenderStateRuntime,
@@ -168,7 +167,6 @@ function initializeWgpuDeviceRenderState(
     allowSmoothing: options.imageSmoothingEnabled ?? true,
     pixelRatio: options.pixelRatio ?? 1,
     imageSurfaceProvider: options.imageSurfaceProvider ?? null,
-    renderTransform2D: createMatrix(),
     roundPixels: options.roundPixels ?? false,
     sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
   }) as WgpuRenderState;

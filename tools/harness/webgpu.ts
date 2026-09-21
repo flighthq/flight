@@ -101,7 +101,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
     depth: 1.0,
   };
 
-  state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  const dpiTransform = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
   enableFlightDiagnostics(state);
   // enableFlightDiagnostics lives in @flighthq/debug and cannot reach a backend package, so the WGPU
@@ -150,7 +150,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
     render(root: Node2D): void {
       if (!prepareScene2DRender(state, root)) return;
       const pass = beginWgpuRenderPass(state, screen, screenClear);
-      renderWgpuScene2D(pass, root);
+      renderWgpuScene2D(pass, root, dpiTransform);
       endWgpuRenderPass(pass);
     },
     benchmark(root: Node2D): void {

@@ -7,7 +7,6 @@ import {
   getWgpuActiveRenderPass,
   getWgpuRenderPassViewport,
   resumeWgpuRenderPass,
-  setWgpuRenderTransform2D,
   suspendWgpuRenderPass,
 } from './wgpuRenderPass';
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
@@ -217,25 +216,6 @@ describe('resumeWgpuRenderPass', () => {
     expect(pass.target).toBe(target);
     expect(getWgpuRenderStateRuntime(state).renderPass).toBe(pass.encoder);
     endWgpuRenderPass(pass);
-  });
-});
-
-describe('setWgpuRenderTransform2D', () => {
-  it('installs a copy of the transform, restored by the enclosing pass', async () => {
-    const state = await createWgpuRenderStateForTest();
-    const outer = beginWgpuScreenRenderPassForTest(state);
-    const original = state.renderTransform2D;
-    const bake = createMatrix();
-    bake.tx = 42;
-
-    const pass = beginWgpuRenderPass(state, createWgpuTextureRenderTarget(state, 32, 32));
-    setWgpuRenderTransform2D(pass, bake);
-    expect(state.renderTransform2D?.tx).toBe(42);
-    expect(state.renderTransform2D).not.toBe(bake);
-    endWgpuRenderPass(pass);
-
-    expect(state.renderTransform2D).toBe(original);
-    endWgpuRenderPass(outer);
   });
 });
 

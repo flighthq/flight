@@ -219,7 +219,6 @@ export function makeWgpuScene3DState(registry: Readonly<WgpuRenderRegistries> = 
     maskWriteMode: false,
     renderTarget: null,
     renderTargetViewport: null,
-    renderTransform2D: null,
     scissorStack: [],
   };
   pass.state = state;

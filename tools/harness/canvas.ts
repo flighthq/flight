@@ -80,9 +80,7 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
     ] as const,
   };
 
-  // Device transform carries DPI: the scene is authored in logical units, scaled to the backing
-  // store here. See ../README.md for why this lives in renderTransform2D rather than the scene.
-  state.renderTransform2D = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  const dpiTransform = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
   enableFlightDiagnostics(state);
   registerCanvasBitmapTextureResolver(webHostImage, getCanvasRenderStateTextureResolvers(state));
@@ -125,7 +123,7 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
     render(root: Node2D): void {
       if (!prepareScene2DRender(state, root)) return;
       const pass = beginCanvasRenderPass(state, screen, screenClear);
-      renderCanvasScene2D(pass, root);
+      renderCanvasScene2D(pass, root, dpiTransform);
       endCanvasRenderPass(pass);
     },
     benchmark(root: Node2D): void {

@@ -1,14 +1,11 @@
+import { createMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
-import type { Node2D, Scene2DRenderer, DomRenderState, RenderProxy2D } from '@flighthq/types/contract';
+import type { DomRenderState, Matrix, Node2D, RenderProxy2D, Scene2DRenderer } from '@flighthq/types/contract';
 
 import { hasDomStructureChanged, processDomNode, reconcileDomContainer, swapDomOrderLists } from './domReconcile';
 import { getDomRenderStateRuntime } from './domRenderState';
 
-// Plain display objects (containers, stages) have no visual geometry of their own.
-// Registering this renderer for DisplayObjectKind ensures cross-backend symmetry with
-// canvasScene2DRenderer and allows the DOM traversal to correctly process
-// display-object containers when their kind is registered.
 export function drawDomScene2D(_state: DomRenderState, _renderProxy: RenderProxy2D): void {
   // No-op: containers are rendered implicitly by the traversal in renderDomScene2D.
 }
@@ -18,13 +15,18 @@ export const domScene2DRenderer: Scene2DRenderer = {
   submit: drawDomScene2D,
 };
 
-export function renderDomScene2D(state: DomRenderState, source: Node2D): void {
+export function renderDomScene2D(
+  state: DomRenderState,
+  source: Node2D,
+  renderTransform?: Readonly<Matrix> | null,
+): void {
   const runtime = getDomRenderStateRuntime(state);
   const container = state.element;
   const clipHooks = state.displayObjectClipHooks;
   const applyClip = runtime.domClipHooks;
   const frameId = runtime.currentFrameId;
   const tempStack = runtime.tempStack;
+  const hasRenderTransform = renderTransform != null;
 
   let stackLength = 1;
   tempStack[0] = source;
@@ -38,9 +40,18 @@ export function renderDomScene2D(state: DomRenderState, source: Node2D): void {
     const data = getRenderProxy2D(state, current);
     if (data === undefined) continue;
 
+    const savedTransform = data.transform2D;
+    if (hasRenderTransform) {
+      multiplyMatrix(_scratchTransform, renderTransform, savedTransform);
+      data.transform2D = _scratchTransform;
+    }
+
     clipHooks?.popClip(state, data, current);
 
-    if (!isRenderProxyVisible(data)) continue;
+    if (!isRenderProxyVisible(data)) {
+      if (hasRenderTransform) data.transform2D = savedTransform;
+      continue;
+    }
 
     clipHooks?.pushClip(state, data, current);
 
@@ -58,6 +69,8 @@ export function renderDomScene2D(state: DomRenderState, source: Node2D): void {
         }
       }
     }
+
+    if (hasRenderTransform) data.transform2D = savedTransform;
   }
 
   clipHooks?.finalize(state);
@@ -68,3 +81,5 @@ export function renderDomScene2D(state: DomRenderState, source: Node2D): void {
 
   swapDomOrderLists(runtime, newLength);
 }
+
+const _scratchTransform = createMatrix();

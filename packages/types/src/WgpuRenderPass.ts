@@ -1,5 +1,4 @@
 import type { Entity } from './Entity';
-import type { Matrix } from './Matrix';
 import type { WgpuRenderState, WgpuScissorRect } from './WgpuRenderState';
 import type { WgpuRenderTarget } from './WgpuRenderTarget';
 
@@ -46,6 +45,5 @@ export interface WgpuSavedPassState {
   maskWriteMode: boolean;
   renderTarget: WgpuRenderTarget | null;
   renderTargetViewport: WgpuRenderPassViewport | null;
-  renderTransform2D: Matrix | null;
   scissorStack: WgpuScissorRect[];
 }

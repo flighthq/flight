@@ -185,7 +185,7 @@ type WindowTargetHost = { readonly graphics: { readonly renderContext: HostGlCap
 } & { readonly input: { readonly pointerLock: HostInputPointerLockCapability } };
 
 function makeRenderState(): RenderState {
-  return { renderTransform2D: { a: 0, b: 0, c: 0, d: 0, tx: 0, ty: 0 } } as unknown as RenderState;
+  return {} as unknown as RenderState;
 }
 
 function recordingWindowBackend(): RecordingWindowBackend {
@@ -791,7 +791,7 @@ describe('attachWindowRenderContext', () => {
 });
 
 describe('attachWindowRenderState', () => {
-  it('sizes the opaque render surface and writes the device transform from the window', () => {
+  it('sizes the opaque render surface from the window', () => {
     const win = createAppWindow();
     win.width = 800;
     win.height = 600;
@@ -799,11 +799,9 @@ describe('attachWindowRenderState', () => {
     const state = makeRenderState();
     attachWindowRenderState(host.graphics.renderSurface, win, state, createHostTarget());
     expect(host.graphics.renderSurface.calls).toEqual(['resize:1600,1200']);
-    expect(state.renderTransform2D?.a).toBe(2);
-    expect(state.renderTransform2D?.d).toBe(2);
   });
 
-  it('keeps onResize core-owned while reapplying the backing size and transform', () => {
+  it('keeps onResize core-owned while reapplying the backing size', () => {
     const win = createAppWindow();
     win.width = 800;
     win.height = 600;
@@ -814,7 +812,6 @@ describe('attachWindowRenderState', () => {
     win.devicePixelRatio = 2;
     emitSignal(win.onResize);
     expect(host.graphics.renderSurface.calls).toEqual(['resize:800,600', 'resize:800,1200']);
-    expect(state.renderTransform2D?.a).toBe(2);
   });
 
   it('pins resize commands to the provider captured by the core signal attachment', () => {

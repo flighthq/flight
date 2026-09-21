@@ -1,6 +1,6 @@
 import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import { computeRenderTargetSize, computeScene2DRenderTargetTransform } from '@flighthq/render/contract';
-import { isCanvasRenderTextureReady, setCanvasRenderTransform2D } from '@flighthq/scene2d-canvas/contract';
+import { isCanvasRenderTextureReady } from '@flighthq/scene2d-canvas/contract';
 import type { Bitmap, Effect, RenderTexture } from '@flighthq/sdk';
 import {
   acquireCanvasRenderTexture,
@@ -203,9 +203,8 @@ function captureSubtree(): {
       const transform = createMatrix();
       computeScene2DRenderTargetTransform(transform, source, bounds, padding.left, padding.top);
       renderIntoCanvasRenderTexture(state, offscreenState, sourceTexture, (capturePass) => {
-        setCanvasRenderTransform2D(capturePass, transform);
         prepareScene2DRender(offscreenState, source);
-        renderCanvasScene2D(capturePass, source);
+        renderCanvasScene2D(capturePass, source, transform);
       });
       if (
         !applyCanvasEffectsToRenderTexture(

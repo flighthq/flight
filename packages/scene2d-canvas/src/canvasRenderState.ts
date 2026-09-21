@@ -1,4 +1,3 @@
-import { createMatrix } from '@flighthq/geometry/contract';
 import {
   createRenderState as _createRenderState,
   createRenderStateRuntime,
@@ -25,7 +24,6 @@ export function createCanvasRenderState(
 ): CanvasRenderState {
   const state = _createRenderState({
     pixelRatio: options.pixelRatio ?? 1,
-    renderTransform2D: options.renderTransform ?? createMatrix(),
     roundPixels: options.roundPixels ?? false,
     sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
   }) as CanvasRenderState;
