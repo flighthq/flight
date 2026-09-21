@@ -13,6 +13,7 @@ import {
   removeNodeChild,
   setNodeLocalMatrix4,
 } from '@flighthq/node/contract';
+import { createNode2D } from '@flighthq/scene2d/contract';
 import type { Matrix4, Node3D } from '@flighthq/types/contract';
 import type { Node3DRuntime } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -23,6 +24,7 @@ import {
   enableNode3DSignals,
   getNode3DRuntime,
   getNode3DSignals,
+  isNode3D,
   Node3DKind,
 } from './sceneNode';
 
@@ -165,6 +167,13 @@ describe('invalidateNodeParentReference', () => {
     getNode3DRuntime(node).worldTransformUsingParentTransformId = 5;
     invalidateNodeParentReference(node);
     expect(getNode3DRuntime(node).worldTransformUsingParentTransformId).toBe(-1);
+  });
+});
+
+describe('isNode3D', () => {
+  it('distinguishes a Node3D from a Node2D', () => {
+    expect(isNode3D(createNode3D())).toBe(true);
+    expect(isNode3D(createNode2D('Node2D'))).toBe(false);
   });
 });
 

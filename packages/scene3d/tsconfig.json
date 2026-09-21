@@ -40,6 +40,9 @@
       "path": "../node"
     },
     {
+      "path": "../scene2d"
+    },
+    {
       "path": "../shading"
     },
     {

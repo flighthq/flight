@@ -10,7 +10,7 @@ import {
   initTransform3DRuntimeTrait,
   initTransform3DTrait,
 } from '@flighthq/node/contract';
-import type { Kind, NodeSignals, Node3D, Node3DRuntime, Node3DTraits } from '@flighthq/types/contract';
+import type { Kind, NodeAny, NodeSignals, Node3D, Node3DRuntime, Node3DTraits } from '@flighthq/types/contract';
 import { Node3DKind, Node3DTraitsKey } from '@flighthq/types/contract';
 
 export { Node3DKind } from '@flighthq/types/contract';
@@ -44,4 +44,8 @@ export function getNode3DRuntime(source: Readonly<Node3D>): Node3DRuntime {
 
 export function getNode3DSignals(source: Node3D): NodeSignals | null {
   return getNodeSignals(source);
+}
+
+export function isNode3D(node: NodeAny): node is Node3D {
+  return getNodeRuntime(node).traits === Node3DTraitsKey;
 }
