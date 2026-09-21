@@ -48,7 +48,7 @@ const GROUPS = [
   ['statusBar', 'webHostStatusBar'],
   ['surface', 'webHostSurfaceGroup'],
   ['textSegment', 'webHostTextSegment'],
-  ['textShaper', 'webHostTextShaper'],
+  ['textShaper', 'webHostTextShaperGroup'],
   ['tray', 'webHostTray'],
   ['updater', 'webHostUpdater'],
   ['video', 'webHostVideoGroup'],
@@ -138,6 +138,7 @@ const LEAVES = [
   ['statusBar', 'color', 'webHostStatusBarColor'],
   ['input', 'target', 'webHostInputTarget'],
   ['surface', 'display', 'webHostSurfaceDisplay'],
+  ['textShaper', 'shaper', 'webHostTextShaper'],
   ['surface', 'resize', 'webHostSurfaceResize'],
   ['video', 'playback', 'webHostVideo'],
   ['window', 'appearance', 'webHostWindowAppearance'],
@@ -168,6 +169,7 @@ const GROUP_SUFFIXED = [
   'webHostSensorsGroup',
   'webHostSocketGroup',
   'webHostSurfaceGroup',
+  'webHostTextShaperGroup',
   'webHostVideoGroup',
 ];
 
@@ -220,6 +222,7 @@ describe('webHost', () => {
     expect(publicApi.webHostNetGroup.http).toBe(publicApi.webHostNet);
     expect(publicApi.webHostPreferences.local).toBe(publicApi.webHostStorage);
     expect(publicApi.webHostGlGroup.context).toBe(publicApi.webHostGl);
+    expect(publicApi.webHostTextShaperGroup.shaper).toBe(publicApi.webHostTextShaper);
   });
 
   it('does not expose the removed Backend aliases, partial Hosts, or capability aliases', () => {

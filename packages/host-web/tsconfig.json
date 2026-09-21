@@ -42,6 +42,7 @@
     { "path": "../share" },
     { "path": "../signals" },
     { "path": "../statusbar" },
+    { "path": "../text" },
     { "path": "../texture" },
     { "path": "../textureatlas" },
     { "path": "../surface" },

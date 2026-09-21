@@ -338,8 +338,6 @@
       "@flighthq/textsegment/*": ["./packages/textsegment/src/*"],
       "@flighthq/textshaper": ["./packages/textshaper/src/index.ts"],
       "@flighthq/textshaper/*": ["./packages/textshaper/src/*"],
-      "@flighthq/textshaper-canvas": ["./packages/textshaper-canvas/src/index.ts"],
-      "@flighthq/textshaper-canvas/*": ["./packages/textshaper-canvas/src/*"],
       "@flighthq/types": ["./packages/types/src/index.ts"],
       "@flighthq/types/*": ["./packages/types/src/*"]
     },

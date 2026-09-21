@@ -123,7 +123,6 @@ export * from '@flighthq/textinput';
 export * from '@flighthq/textlayout';
 export * from '@flighthq/textsegment';
 export * from '@flighthq/textshaper';
-export * from '@flighthq/textshaper-canvas';
 export * from '@flighthq/texture';
 export * from '@flighthq/texture-formats';
 export * from '@flighthq/textureatlas';

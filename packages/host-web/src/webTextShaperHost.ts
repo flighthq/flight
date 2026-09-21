@@ -1,5 +1,8 @@
 import type { HostTextShaperCapabilities } from '@flighthq/types/contract';
 
-// Web has no implementation for this group's slots: an empty group is the honest report, where a
-// stubbed capability would be indistinguishable from a real one.
-export const webHostTextShaper = {} satisfies HostTextShaperCapabilities;
+import { webHostTextShaper as shaper } from './webTextShaper';
+
+// Web shapes text through the Canvas 2D advances backend that used to live in its own package. The
+// group was an honest empty report while there was no web implementation to point at; there is one
+// now, so createWebHost ships a real shaper rather than leaving the slot unfilled.
+export const webHostTextShaperGroup = { shaper } satisfies HostTextShaperCapabilities;

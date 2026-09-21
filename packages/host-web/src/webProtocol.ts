@@ -2,13 +2,14 @@ import type {
   HostProtocolCapabilities,
   HostProtocolLaunchCapability,
   HostProtocolRegistrationCapability,
+  NonEntityCreateResult,
 } from '@flighthq/types/contract';
 
 // A capability GROUP: host dispatch infrastructure, not a domain object Flight defines and allocates,
 // so it is plain data formed as a literal — no Entity, no runtime tier, no allocate/finish bracket.
 type WebProtocolCapabilities = Required<Pick<HostProtocolCapabilities, 'launch' | 'registration'>>;
 
-export function createWebProtocolCapabilities(): WebProtocolCapabilities {
+export function createWebProtocolCapabilities(): NonEntityCreateResult<WebProtocolCapabilities, 'descriptor'> {
   // The registered-scheme list is per-group state the registration capability closes over, so each
   // group gets its own — the same isolation the previous per-call allocation gave.
   const registeredSchemes: string[] = [];

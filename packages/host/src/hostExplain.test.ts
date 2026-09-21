@@ -160,11 +160,11 @@ describe('explainHostTextSegmenter', () => {
 });
 
 describe('explainHostTextShaper', () => {
-  it('points at the package that builds a shaper rather than at a host backend', () => {
+  it('points at the package that ships a shaper and the provider to pass', () => {
     const explanation = explainHostTextShaper(createHost());
 
-    expect(explanation.backends.map((backend) => backend.packageName)).toEqual(['@flighthq/textshaper-canvas']);
-    expect(explanation.message).toContain('createCanvasTextShaperBackend');
+    expect(explanation.backends.map((backend) => backend.packageName)).toEqual(['@flighthq/host-web']);
+    expect(explanation.message).toContain('webHostTextShaper');
   });
 
   it('reports presence when the shaper is composed into the textShaper group', () => {

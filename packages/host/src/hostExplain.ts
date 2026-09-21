@@ -171,13 +171,13 @@ const _REMEDIES: Readonly<
   'textShaper.shaper': {
     backends: [
       {
-        entryPoint: 'createCanvasTextShaperBackend',
-        packageName: '@flighthq/textshaper-canvas',
+        entryPoint: 'webHostTextShaper',
+        packageName: '@flighthq/host-web',
         platform: 'Canvas 2D',
       },
     ],
     consequence: 'text cannot be measured or shaped and lays out at zero width',
-    fix: "pass createCanvasTextShaperBackend() from @flighthq/textshaper-canvas into createHost's textShaper group",
+    fix: "pass webHostTextShaper from @flighthq/host-web into createHost's textShaper group",
   },
   'video.playback': {
     backends: [_WEB_HOST],

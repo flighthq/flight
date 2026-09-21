@@ -8,7 +8,7 @@ import type { TextMeasureFunction } from './TextLayout';
 // Text-shaping seam. Free functions in @flighthq/textshaper accept an explicit
 // HostTextShaperCapability. The legacy installed backend remains a compatibility fallback when no
 // provider is passed.
-// A canvas/advances-only backend ships in @flighthq/textshaper-canvas today; a future HarfBuzz
+// A canvas/advances-only backend ships in @flighthq/host-web today; a future HarfBuzz
 // backend can provide full glyph shaping. Shaping turns a string + format into the horizontal
 // advance the layout engine needs to place text.
 //

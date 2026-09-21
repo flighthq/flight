@@ -39,7 +39,6 @@
   },
   "dependencies": {
     "@flighthq/app": "*",
-    "@flighthq/app": "*",
     "@flighthq/audio": "*",
     "@flighthq/bitmap": "*",
     "@flighthq/device": "*",
@@ -72,6 +71,7 @@
     "@flighthq/signals": "*",
     "@flighthq/statusbar": "*",
     "@flighthq/surface": "*",
+    "@flighthq/text": "*",
     "@flighthq/texture": "*",
     "@flighthq/textureatlas": "*",
     "@flighthq/types": "*",

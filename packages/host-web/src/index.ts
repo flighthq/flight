@@ -146,6 +146,7 @@ export * from './webSurfaceHost';
 export * from './webSurfacePresentation';
 export * from './webTextSegmentHost';
 export * from './webTextShaperHost';
+export * from './webTextShaper';
 export * from './webTextureAtlas';
 export * from './webTrayHost';
 export * from './webUpdaterHost';

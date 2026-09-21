@@ -142,7 +142,6 @@
     { "path": "./packages/textlayout" },
     { "path": "./packages/textsegment" },
     { "path": "./packages/textshaper" },
-    { "path": "./packages/textshaper-canvas" },
     { "path": "./packages/texture" },
     { "path": "./packages/texture-formats" },
     { "path": "./packages/textureatlas" },

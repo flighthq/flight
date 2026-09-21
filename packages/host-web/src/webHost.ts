@@ -41,7 +41,7 @@ import { webHostSoftKeyboard } from './webSoftKeyboardHost';
 import { webHostStatusBar } from './webStatusBarHost';
 import { webHostSurfaceGroup } from './webSurfaceHost';
 import { webHostTextSegment } from './webTextSegmentHost';
-import { webHostTextShaper } from './webTextShaperHost';
+import { webHostTextShaperGroup } from './webTextShaperHost';
 import { webHostTray } from './webTrayHost';
 import { webHostUpdater } from './webUpdaterHost';
 import { webHostVideoGroup } from './webVideoHost';
@@ -96,7 +96,7 @@ const groups = {
   statusBar: webHostStatusBar,
   surface: webHostSurfaceGroup,
   textSegment: webHostTextSegment,
-  textShaper: webHostTextShaper,
+  textShaper: webHostTextShaperGroup,
   tray: webHostTray,
   updater: webHostUpdater,
   video: webHostVideoGroup,
