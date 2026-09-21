@@ -73,7 +73,7 @@ describe('WebGPU Scene2D second-wave size fixtures', () => {
           const manifest = JSON.parse(readFileSync(resolve(directory, 'tool-capture.json'), 'utf8'));
           expect(renderers).toEqual([renderer]);
           expect(kinds).toEqual([kind]);
-          expect(source.match(/renderers:\s*withRegistryTableEntry\s*\(/g)).toHaveLength(1);
+          expect(source.match(/nodeRenderers:\s*withRegistryTableEntry\s*\(/g)).toHaveLength(1);
           expect(manifest).toEqual({
             subject: `${name}-size-fixture`,
             entries: [{ name, renderers: ['webgpu'], routes: { webgpu: '/' } }],
