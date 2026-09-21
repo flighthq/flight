@@ -1,5 +1,5 @@
 import type { BlendMode } from './BlendMode';
-import type { Material } from './Material';
+import type { Material, MaterialDimensionKey } from './Material';
 
 // How a material resolves coverage. Mirrors glTF: 'opaque' ignores baseColor alpha, 'mask'
 // hard-cuts at `alphaCutoff` (no blending), 'blend' alpha-blends. Distinct from BlendMode, the blend
@@ -21,6 +21,9 @@ export type MaterialAlphaMode = 'blend' | 'mask' | 'opaque';
 // contract and nothing to choose. A caller-authored CustomShaderMaterial must therefore emit
 // premultiplied color itself — Flight compiles that source verbatim and cannot append the fixup.
 export interface Material3D extends Material {
+  // Phantom only — see MaterialDimensionKey. Never present at runtime. The trailer fields below
+  // already block a Material2D from assigning here; this blocks the other direction.
+  readonly [MaterialDimensionKey]?: '3d';
   alphaCutoff: number;
   alphaMode: MaterialAlphaMode;
   blendMode: BlendMode;
