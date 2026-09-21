@@ -10,7 +10,6 @@ describe('allocateEmptyGlRenderRegistries', () => {
     expect(registries.customEffectShaders.shape).toBe('keyed');
     expect(registries.customMaterialShaders.shape).toBe('keyed');
     expect(registries.materialRenderers.shape).toBe('keyed');
-    expect(registries.meshMaterialRenderers.shape).toBe('keyed');
     expect(registries.modifierSnippets.shape).toBe('keyed');
     expect(registries.pbrExtensions.shape).toBe('keyed');
     expect(registries.effects.shape).toBe('keyed');

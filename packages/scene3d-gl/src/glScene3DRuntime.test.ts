@@ -260,13 +260,13 @@ describe('getGlScene3DRuntime', () => {
   it('surfaces its upload cache without replacing persistent material dispatch policy', () => {
     const { state } = makeGlScene3DState();
     const stateRuntime = state[EntityRuntimeKey] as GlRenderStateRuntime;
-    const materials = stateRuntime.registries.meshMaterialRenderers;
+    const materials = stateRuntime.registries.materialRenderers;
     const modifierSnippets = stateRuntime.registries.modifierSnippets;
     const modifierSnippetRevision = stateRuntime.registries.modifierSnippetRevision;
     const pbrExtensions = stateRuntime.registries.pbrExtensions;
     const pbrExtensionRevision = stateRuntime.registries.pbrExtensionRevision;
     const scene = getGlScene3DRuntime(state);
-    expect(stateRuntime.registries.meshMaterialRenderers).toBe(materials);
+    expect(stateRuntime.registries.materialRenderers).toBe(materials);
     expect(stateRuntime.registries.modifierSnippets).toBe(modifierSnippets);
     expect(stateRuntime.registries.modifierSnippetRevision).toBe(modifierSnippetRevision);
     expect(stateRuntime.registries.pbrExtensions).toBe(pbrExtensions);

@@ -318,7 +318,6 @@ describe('createWgpuOffscreenRenderState', () => {
     expect(offscreenRuntime.registries.compressedTextureUpload).toBe(screenRuntime.registries.compressedTextureUpload);
     expect(offscreenRuntime.registries.customMaterialShaders).toBe(screenRuntime.registries.customMaterialShaders);
     expect(offscreenRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
-    expect(offscreenRuntime.registries.meshMaterialRenderers).toBe(screenRuntime.registries.meshMaterialRenderers);
     expect(offscreenRuntime.registries.modifierSnippets).toBe(screenRuntime.registries.modifierSnippets);
     expect(offscreenRuntime.registries.modifierSnippetRevision).toBe(screenRuntime.registries.modifierSnippetRevision);
     expect(offscreenRuntime.registries.effects).toBe(screenRuntime.registries.effects);
@@ -512,16 +511,10 @@ describe('createWgpuRenderStateRuntime', () => {
     expect(runtime.registries.customMaterialShaders.entries.size).toBe(0);
     expect(runtime.registries.materialRenderers).toMatchObject({
       onMiss: 'StandardMaterial',
-      registry: 'WgpuQuadMaterialRenderer',
+      registry: 'WgpuMaterialRenderer',
       shape: 'keyed',
     });
     expect(runtime.registries.materialRenderers.entries.size).toBe(0);
-    expect(runtime.registries.meshMaterialRenderers).toMatchObject({
-      onMiss: 'StandardMaterial',
-      registry: 'WgpuMeshMaterialRenderer',
-      shape: 'keyed',
-    });
-    expect(runtime.registries.meshMaterialRenderers.entries.size).toBe(0);
     expect(runtime.registries.modifierSnippets).toMatchObject({
       onMiss: 'Unregistered',
       registry: 'WgpuModifierSnippet',

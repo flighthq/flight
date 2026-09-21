@@ -9,7 +9,6 @@ describe('allocateEmptyWgpuRenderRegistries', () => {
     expect(registries.customMaterialShaders.shape).toBe('keyed');
     expect(registries.gpuSkinning).toBeNull();
     expect(registries.materialRenderers.shape).toBe('keyed');
-    expect(registries.meshMaterialRenderers.shape).toBe('keyed');
     expect(registries.modifierSnippets.shape).toBe('keyed');
     expect(registries.effects.shape).toBe('keyed');
     expect(registries.shapeRasterizer).toBeNull();

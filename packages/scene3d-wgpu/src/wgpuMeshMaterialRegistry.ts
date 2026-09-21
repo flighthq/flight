@@ -4,43 +4,39 @@ import type { Kind, Material, WgpuMeshMaterialRenderer, WgpuRenderState } from '
 import { RegistryEntryState, StandardMaterialKind } from '@flighthq/types/contract';
 
 // Returns the 3D mesh-material renderer registered for a kind on this state, or null. The 3D scene
-// analog of getWgpuQuadMaterialRenderer; reads scene-wgpu's own per-state persistent registry table,
-// distinct from the 2D material-renderer table.
+// analog of getWgpuQuadMaterialRenderer; reads the shared materialRenderers table (a material kind is
+// either 2D or 3D, never both, so the shared table holds both without collision).
 export function getWgpuMeshMaterialRenderer(state: WgpuRenderState, kind: Kind): WgpuMeshMaterialRenderer | null {
-  const entry = getWgpuRenderStateRuntime(state).registries.meshMaterialRenderers.entries.get(kind);
-  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+  const entry = getWgpuRenderStateRuntime(state).registries.materialRenderers.entries.get(kind);
+  return entry?.state === RegistryEntryState.Bound ? (entry.value as WgpuMeshMaterialRenderer) : null;
 }
 
 // Registers a 3D mesh-material renderer against a material kind on this state. Opt-in: drawScene3D only
 // draws subsets whose material kind (or StandardMaterialKind) has a renderer here. Call
-// registerWgpuStandardPbrMaterial for the built-in StandardPbr path. Mirrors registerWgpuQuadMaterialRenderer
-// but writes scene-wgpu's separate 3D registry.
+// registerWgpuStandardPbrMaterial for the built-in StandardPbr path. Writes into the shared
+// materialRenderers table alongside 2D quad-material entries.
 export function registerWgpuMeshMaterialRenderer(
   state: WgpuRenderState,
   kind: Kind,
   renderer: WgpuMeshMaterialRenderer,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  runtime.registries.meshMaterialRenderers = withRegistryTableEntry(
-    runtime.registries.meshMaterialRenderers,
-    kind,
-    renderer,
-  );
+  runtime.registries.materialRenderers = withRegistryTableEntry(runtime.registries.materialRenderers, kind, renderer);
 }
 
 // Resolves a mesh subset's material to its registered 3D renderer: by the material's kind, else the
 // renderer registered for StandardMaterialKind, else null. drawScene3D skips a subset whose material
 // resolves to null (no built-in fallback — every material, including the default, enters only through
-// registration). Mirrors resolveWgpuQuadMaterialRenderer over the 3D registry.
+// registration). Reads the shared materialRenderers table with a typed narrowing cast.
 export function resolveWgpuMeshMaterialRenderer(
   state: WgpuRenderState,
   material: Readonly<Material> | null,
 ): WgpuMeshMaterialRenderer | null {
-  const entries = getWgpuRenderStateRuntime(state).registries.meshMaterialRenderers.entries;
+  const entries = getWgpuRenderStateRuntime(state).registries.materialRenderers.entries;
   if (material !== null) {
     const entry = entries.get(material.kind);
-    if (entry?.state === RegistryEntryState.Bound) return entry.value;
+    if (entry?.state === RegistryEntryState.Bound) return entry.value as WgpuMeshMaterialRenderer;
   }
   const fallback = entries.get(StandardMaterialKind);
-  return fallback?.state === RegistryEntryState.Bound ? fallback.value : null;
+  return fallback?.state === RegistryEntryState.Bound ? (fallback.value as WgpuMeshMaterialRenderer) : null;
 }

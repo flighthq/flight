@@ -1,7 +1,12 @@
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-import { allocateEmptyWgpuRenderRegistries, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import type { WgpuMeshMaterialRenderer } from '@flighthq/types/contract';
+import {
+  allocateEmptyWgpuRenderRegistries,
+  getWgpuRenderStateRuntime,
+  registerWgpuQuadMaterialRenderer,
+  resolveWgpuQuadMaterialRenderer,
+} from '@flighthq/render-wgpu/contract';
+import type { Material, WgpuMeshMaterialRenderer, WgpuQuadMaterialRenderer } from '@flighthq/types/contract';
 import { StandardMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import {
@@ -39,14 +44,14 @@ describe('registerWgpuMeshMaterialRenderer', () => {
     const renderer = makeRenderer();
     const replacement = makeRenderer();
     registerWgpuMeshMaterialRenderer(screen, StandardPbrMaterialKind, renderer);
-    const snapshot = getWgpuRenderStateRuntime(screen).registries.meshMaterialRenderers;
+    const snapshot = getWgpuRenderStateRuntime(screen).registries.materialRenderers;
     const { state: derived } = makeWgpuScene3DState({ ...getWgpuRenderStateRuntime(screen).registries });
 
     getWgpuScene3DRuntime(derived);
     registerWgpuMeshMaterialRenderer(screen, StandardPbrMaterialKind, replacement);
 
-    expect(getWgpuRenderStateRuntime(derived).registries.meshMaterialRenderers).toBe(snapshot);
-    expect(getWgpuRenderStateRuntime(screen).registries.meshMaterialRenderers).not.toBe(snapshot);
+    expect(getWgpuRenderStateRuntime(derived).registries.materialRenderers).toBe(snapshot);
+    expect(getWgpuRenderStateRuntime(screen).registries.materialRenderers).not.toBe(snapshot);
     expect(getRegistryTableEntry(snapshot, StandardPbrMaterialKind)).toBe(renderer);
     expect(getWgpuMeshMaterialRenderer(derived, StandardPbrMaterialKind)).toBe(renderer);
     expect(getWgpuMeshMaterialRenderer(screen, StandardPbrMaterialKind)).toBe(replacement);
@@ -72,5 +77,49 @@ describe('resolveWgpuMeshMaterialRenderer', () => {
   it('returns null when neither the kind nor the default is registered', () => {
     const { state } = makeWgpuScene3DState();
     expect(resolveWgpuMeshMaterialRenderer(state, createStandardPbrMaterial())).toBeNull();
+  });
+});
+
+describe('shared materialRenderers storage', () => {
+  const quadRenderer: WgpuQuadMaterialRenderer = {
+    instanceFloatCount: 0,
+    getShaderModule: () => null as unknown as GPUShaderModule,
+  };
+  const meshRenderer: WgpuMeshMaterialRenderer = { bind() {}, draw() {} };
+  const QuadKind = 'TestQuadMaterial';
+  const MeshKind = 'TestMeshMaterial';
+
+  function makeMaterial(kind: string): Material {
+    return { kind } as Material;
+  }
+
+  it('holds quad and mesh entries in the same table', () => {
+    const { state } = makeWgpuScene3DState();
+    registerWgpuQuadMaterialRenderer(state, QuadKind, quadRenderer);
+    registerWgpuMeshMaterialRenderer(state, MeshKind, meshRenderer);
+
+    const table = getWgpuRenderStateRuntime(state).registries.materialRenderers;
+    expect(table.entries.has(QuadKind)).toBe(true);
+    expect(table.entries.has(MeshKind)).toBe(true);
+  });
+
+  it('typed resolvers return the correct protocol from shared storage', () => {
+    const { state } = makeWgpuScene3DState();
+    registerWgpuQuadMaterialRenderer(state, QuadKind, quadRenderer);
+    registerWgpuMeshMaterialRenderer(state, MeshKind, meshRenderer);
+
+    expect(resolveWgpuQuadMaterialRenderer(state, makeMaterial(QuadKind))).toBe(quadRenderer);
+    expect(resolveWgpuMeshMaterialRenderer(state, makeMaterial(MeshKind))).toBe(meshRenderer);
+  });
+
+  it('neither registrar shadows the other — both entries survive in the shared table', () => {
+    const { state } = makeWgpuScene3DState();
+    registerWgpuQuadMaterialRenderer(state, QuadKind, quadRenderer);
+    registerWgpuMeshMaterialRenderer(state, MeshKind, meshRenderer);
+
+    const table = getWgpuRenderStateRuntime(state).registries.materialRenderers;
+    expect(table.entries.size).toBe(2);
+    expect(getRegistryTableEntry(table, QuadKind)).toBe(quadRenderer);
+    expect(getRegistryTableEntry(table, MeshKind)).toBe(meshRenderer);
   });
 });

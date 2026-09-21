@@ -35,8 +35,8 @@ document.body.style.margin = '0';
 const registries = allocateEmptyGlRenderRegistries();
 const registry = {
   ...registries,
-  meshMaterialRenderers: withRegistryTableEntry(
-    registries.meshMaterialRenderers,
+  materialRenderers: withRegistryTableEntry(
+    registries.materialRenderers,
     UnlitMaterialKind,
     glUnlitMeshMaterialRenderer,
   ),

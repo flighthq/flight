@@ -35,8 +35,8 @@ appendWebSurface(wgpuSurface, document.body);
 const registries = allocateEmptyWgpuRenderRegistries();
 const registry = {
   ...registries,
-  meshMaterialRenderers: withRegistryTableEntry(
-    registries.meshMaterialRenderers,
+  materialRenderers: withRegistryTableEntry(
+    registries.materialRenderers,
     UnlitMaterialKind,
     wgpuUnlitMeshMaterialRenderer,
   ),
