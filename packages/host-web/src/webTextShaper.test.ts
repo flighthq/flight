@@ -3,7 +3,7 @@ import type { CanvasTextShaperBackend } from '@flighthq/types/contract';
 import { clearCanvasTextShaperBackendCache, createCanvasTextShaperBackend } from './webTextShaper';
 
 describe('CanvasTextShaperBackend', () => {
-  it('satisfies the TextShaperBackend interface', () => {
+  it('satisfies the HostTextShaperCapability seam contract', () => {
     const backend = createCanvasTextShaperBackend();
     expect(typeof backend.measureText).toBe('function');
     expect(typeof backend.getFontMetrics).toBe('function');
