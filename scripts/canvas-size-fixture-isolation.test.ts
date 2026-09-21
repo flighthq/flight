@@ -136,7 +136,7 @@ describe('canvas size fixture isolation', () => {
     }
   });
 
-  // NodeRenderer isolation across backends: a Canvas fixture that reaches a GL or WGPU symbol would be
+  // Renderer isolation across backends: a Canvas fixture that reaches a GL or WGPU symbol would be
   // measuring two backends at once, and its number would be quietly meaningless rather than wrong.
   it('reaches no other renderer backend', () => {
     for (const fixture of FEATURE_FIXTURES) {
