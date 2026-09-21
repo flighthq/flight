@@ -1,5 +1,5 @@
+import type { Material3D } from './Material3D';
 import type { Modifier } from './Modifier';
-import type { SurfaceMaterial } from './SurfaceMaterial';
 import type { Texture } from './Texture';
 
 // The composable lit base material owned by @flighthq/shading: a diffuse + half-vector-specular
@@ -20,7 +20,7 @@ import type { Texture } from './Texture';
 // same stack always produces the same compiled variant and a scene round-trips. Sharing one
 // ShadedMaterial instance across nodes batches them by feature-set; a different feature-set breaks
 // the batch (a different compiled program).
-export interface ShadedMaterial extends SurfaceMaterial {
+export interface ShadedMaterial extends Material3D {
   readonly kind: typeof ShadedMaterialKind;
   diffuse: number;
   diffuseMap: Texture | null;

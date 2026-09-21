@@ -1,4 +1,4 @@
-import type { SurfaceMaterial } from './SurfaceMaterial';
+import type { Material3D } from './Material3D';
 import type { Texture } from './Texture';
 
 // Classic Blinn-Phong shading: diffuse plus a half-vector specular lobe (cheaper, smoother
@@ -7,7 +7,7 @@ import type { Texture } from './Texture';
 // the surface normal. `alphaMap` is a linear coverage texture whose green channel multiplies the
 // final alpha (the dedicated opacity map, separate from `diffuseMap`'s own alpha); it takes effect
 // only when `alphaMode` is 'blend' or 'mask'.
-export interface BlinnPhongMaterial extends SurfaceMaterial {
+export interface BlinnPhongMaterial extends Material3D {
   readonly kind: typeof BlinnPhongMaterialKind;
   alphaMap: Texture | null;
   diffuse: number;

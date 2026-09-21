@@ -5,7 +5,7 @@ import { createMesh, createScene3D, createScene3DKindUsage, getScene3DKindUsage 
 import { createShadedMaterial } from '@flighthq/shading/contract';
 import type {
   HostImageCapability,
-  Material,
+  Material3D,
   Scene3DKindUsage,
   SceneCoverageCatalog,
   SceneCoverageEntry,
@@ -33,7 +33,7 @@ const coverageCatalog: SceneCoverageCatalog = [
   },
 ];
 
-function usageOf(...materials: Material[]): Scene3DKindUsage {
+function usageOf(...materials: Material3D[]): Scene3DKindUsage {
   const scene = createScene3D();
   for (const material of materials) {
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [material]));

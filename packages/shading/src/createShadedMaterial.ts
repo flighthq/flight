@@ -11,8 +11,8 @@ import { BlendMode, ShadedMaterialKind } from '@flighthq/types/contract';
 // over the shared light block into one program keyed by the stack's define-key. This is the ONLY
 // base modifiers attach to in v1. `diffuse`/`specular` are packed sRgb-albedo RGBA (0xrrggbbaa) and
 // default to opaque white; `shininess` (the specular exponent) defaults to 32; `normalScale` to 1;
-// all maps to null; `modifiers` to an empty stack. The shared SurfaceMaterial trailer is forwarded from
-// `options` (ShadedMaterialOptions extends SurfaceMaterialOptions), falling back to opaque, single-sided,
+// all maps to null; `modifiers` to an empty stack. The shared Material3D trailer is forwarded from
+// `options` (ShadedMaterialOptions extends Material3DOptions), falling back to opaque, single-sided,
 // straight alpha, Normal blend, 0.5 mask cutoff — so a masked/blended ShadedMaterial is expressible at
 // construction, exactly as for BlinnPhong/PBR. The result is an entity (it carries runtime/binding
 // identity), not a plain literal.

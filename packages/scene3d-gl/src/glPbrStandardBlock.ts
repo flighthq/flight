@@ -5,7 +5,7 @@ import type {
   LinearColor,
   GlRenderState,
   StandardPbrMaterialProperties,
-  SurfaceMaterial,
+  Material3D,
   Texture,
   GlPbrDefineKey,
   GlPbrProgram,
@@ -34,7 +34,7 @@ export const GL_PBR_EXTENSION_TEXTURE_UNIT = 6;
 // base color, dielectric, fully rough) so a missing material renders plausibly. Packed colors are
 // decoded to linear on the CPU here; Texture.colorSpace selects the GPU sample-time decode for maps,
 // so nothing is double-decoded. The alpha-cutoff uniform is NOT part of the block — it lives on the
-// SurfaceMaterial trailer, so each renderer uploads it from the material after this call. Call
+// Material3D trailer, so each renderer uploads it from the material after this call. Call
 // after beginGlMeshDraw has selected the program.
 export function bindGlPbrStandardBlock(
   state: GlRenderState,
@@ -105,13 +105,13 @@ export function bindGlPbrStandardTexture(
 export function buildGlPbrStandardDefineKey(
   state: GlRenderState,
   standard: Readonly<StandardPbrMaterialProperties> | null,
-  surface: Readonly<SurfaceMaterial> | null,
+  surface: Readonly<Material3D> | null,
 ): GlPbrDefineKey {
   const baseColorMap = standard?.baseColorMap ?? null;
   const alphaMode = surface?.alphaMode ?? 'opaque';
   return {
     alphaMaskEnabled: alphaMode === 'mask',
-    // An opaque material ignores coverage (SurfaceMaterial contract), so it must not sample the alpha
+    // An opaque material ignores coverage (Material3D contract), so it must not sample the alpha
     // map; only 'mask'/'blend' do. Same isGlTextureReady predicate as the bind path.
     hasAlphaMap: alphaMode !== 'opaque' && isGlTextureReady(state, standard?.alphaMap ?? null),
     hasBaseColorMap: isGlTextureReady(state, baseColorMap),

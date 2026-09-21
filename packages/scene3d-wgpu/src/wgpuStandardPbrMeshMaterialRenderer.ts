@@ -9,7 +9,7 @@ import type {
   Scene3DRenderProxy,
   StandardPbrMaterial,
   StandardPbrMaterialProperties,
-  SurfaceMaterial,
+  Material3D,
   WgpuMeshMaterialRenderer,
   WgpuRenderState,
   WgpuPbrPipeline,
@@ -42,14 +42,14 @@ export const WGPU_PBR_MATERIAL_UNIFORM_FLOATS = 48;
 // bound resources never disagree. Mirrors scene-gl's buildGlPbrStandardDefineKey.
 export function buildWgpuPbrStandardDefineKey(
   standard: Readonly<StandardPbrMaterialProperties> | null,
-  surface: Readonly<SurfaceMaterial> | null,
+  surface: Readonly<Material3D> | null,
 ): WgpuPbrDefineKey {
   return {
     alphaMaskEnabled: surface !== null && surface.alphaMode === 'mask',
     anisotropyEnabled: false,
     clearcoatEnabled: false,
     doubleSided: surface !== null && surface.doubleSided,
-    // Opaque materials ignore coverage (SurfaceMaterial contract) — only 'mask'/'blend' sample the map.
+    // Opaque materials ignore coverage (Material3D contract) — only 'mask'/'blend' sample the map.
     hasAlphaMap:
       surface !== null && surface.alphaMode !== 'opaque' && standard !== null && isWgpuTextureReady(standard.alphaMap),
     hasBaseColorMap: standard !== null && isWgpuTextureReady(standard.baseColorMap),

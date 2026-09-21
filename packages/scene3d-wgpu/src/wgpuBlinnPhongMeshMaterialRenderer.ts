@@ -92,7 +92,7 @@ function defineKeyForMaterial(material: Readonly<BlinnPhongMaterial> | null): Wg
   return {
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     doubleSided: material !== null && material.doubleSided,
-    // Opaque materials ignore coverage (SurfaceMaterial contract) — only 'mask'/'blend' sample the map.
+    // Opaque materials ignore coverage (Material3D contract) — only 'mask'/'blend' sample the map.
     hasAlphaMap: material !== null && material.alphaMode !== 'opaque' && isWgpuTextureReady(material.alphaMap),
     hasDiffuseMap: material !== null && isWgpuTextureReady(material.diffuseMap),
     hasNormalMap: material !== null && isWgpuTextureReady(material.normalMap),

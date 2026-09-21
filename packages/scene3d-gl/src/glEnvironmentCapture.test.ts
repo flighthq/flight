@@ -1,4 +1,4 @@
-import { createMaterial } from '@flighthq/materials/contract';
+import { createMaterial3D } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createGlCubeRenderTarget, destroyGlCubeRenderTarget } from '@flighthq/render-gl/contract';
@@ -92,7 +92,7 @@ function addCaptureMesh(
   registerGlMeshMaterialRenderer(state, CaptureMaterialKind, renderer);
   const scene = createNode3D(Node3DKind);
   // Enclose the capture position so the real frustum cull keeps this observer mesh for every face.
-  const mesh = createMesh(createBoxMeshGeometry(100, 100, 100), [createMaterial(CaptureMaterialKind)]);
+  const mesh = createMesh(createBoxMeshGeometry(100, 100, 100), [createMaterial3D(CaptureMaterialKind)]);
   addNodeChild(scene, mesh);
   return { mesh, scene };
 }

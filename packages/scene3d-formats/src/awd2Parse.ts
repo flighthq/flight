@@ -44,7 +44,7 @@ import type {
   Scene3DDocumentNode,
   Scene3DDocumentSkin,
   Node3D,
-  SurfaceMaterial,
+  Material3D,
   Texture,
   Transform3D,
   SkinInfluence,
@@ -2405,7 +2405,7 @@ function resolveAwdMaterial(
     specularMap: specularTexture,
   }) as unknown as Material;
   // An alpha below 1 must actually blend; ShadedMaterial defaults to opaque coverage.
-  if (parsed.alpha !== null && parsed.alpha < 1) (material as unknown as SurfaceMaterial).alphaMode = 'blend';
+  if (parsed.alpha !== null && parsed.alpha < 1) (material as unknown as Material3D).alphaMode = 'blend';
   // Preserve the AWD material block name as the material's authored name (empty → anonymous).
   material.name = parsed.name.length > 0 ? parsed.name : null;
   const index = document.materials.length;

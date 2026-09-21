@@ -10,7 +10,7 @@ import type {
   Material,
   MeshGeometry,
   Scene3DRenderProxy,
-  SurfaceMaterial,
+  Material3D,
   TextureLike,
 } from '@flighthq/types/contract';
 
@@ -295,7 +295,7 @@ export function setGlMeshViewProjection(
 // cutoff. A material with no surface trailer (or none at all) is treated as opaque, which is what the
 // registry falls back to anyway.
 function isGlMeshAlphaCoverage(material: Readonly<Material> | null): boolean {
-  return material !== null && (material as Readonly<SurfaceMaterial>).alphaMode === 'blend';
+  return material !== null && (material as Readonly<Material3D>).alphaMode === 'blend';
 }
 
 // Vertex-scene2d GLSL every map-sampling family interpolates into its vertex body ahead of `main`: the

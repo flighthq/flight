@@ -15,7 +15,7 @@ export * from './pbrMaterials';
 export * from './phongToPbr';
 export * from './sheenPbrExtension';
 export * from './specularPbrExtension';
-export * from './surfaceMaterial';
+export * from './material3d';
 export * from './standardMaterial';
 export * from './transmissionVolumePbrExtension';
 export * from './unlitMaterials';

@@ -6,16 +6,21 @@ import type { Material } from './Material';
 // equation applied to the result.
 export type MaterialAlphaMode = 'blend' | 'mask' | 'opaque';
 
-// Shared trailer for every 3D surface material (the fields the §2 taxonomy lists in common).
-// Concrete materials extend this and add their own maps/scalars. `alphaCutoff` applies only
-// when `alphaMode` is 'mask'. `doubleSided` disables back-face culling. `blendMode` reuses the
-// 2D blend enum so additive/multiply are expressible.
+// The 3D branch of the material hierarchy, parallel to Node3D on the node side, and the shared trailer
+// for every 3D material (the fields the §2 taxonomy lists in common). Concrete materials extend this
+// and add their own maps/scalars. `alphaCutoff` applies only when `alphaMode` is 'mask'.
+// `doubleSided` disables back-face culling. `blendMode` reuses the 2D blend enum so additive/multiply
+// are expressible.
+//
+// Named for its dimension rather than for the surface it shades: "surface" is render-target vocabulary
+// elsewhere in graphics (SkSurface, VkSurface, an EGL surface) and Flight itself uses ImageSurface for
+// render targets, so the old SurfaceMaterial name collided with a concept it has nothing to do with.
 //
 // A material does NOT declare how its output encodes alpha. Every blend equation in the renderers'
 // tables is premultiplied and every built-in fragment tail emits premultiplied color, so there is one
 // contract and nothing to choose. A caller-authored CustomShaderMaterial must therefore emit
 // premultiplied color itself — Flight compiles that source verbatim and cannot append the fixup.
-export interface SurfaceMaterial extends Material {
+export interface Material3D extends Material {
   alphaCutoff: number;
   alphaMode: MaterialAlphaMode;
   blendMode: BlendMode;

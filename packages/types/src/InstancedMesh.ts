@@ -1,6 +1,6 @@
 import type { Aabb } from './Aabb';
 import type { InstancedMeshSignals } from './InstancedMeshSignals';
-import type { Material } from './Material';
+import type { Material3D } from './Material3D';
 import type { Matrix4 } from './Matrix4';
 import type { MeshGeometry } from './MeshGeometry';
 import type { Node3D, Node3DRuntime } from './Node3D';
@@ -9,7 +9,7 @@ export interface InstancedMesh extends Node3D {
   instanceColors: Uint32Array<ArrayBuffer> | null;
   instanceCount: number;
   instanceMatrices: Matrix4[];
-  materials: (Material | null)[];
+  materials: (Material3D | null)[];
   version: number;
 }
 // The cull subsystem's slot on the InstancedMesh node runtime. `instanceLocalBounds` is the union, in

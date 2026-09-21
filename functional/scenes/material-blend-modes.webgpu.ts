@@ -117,7 +117,7 @@ export function render(scene: Readonly<Node3D>, camera: Readonly<Camera3D>, ligh
 
 registerWgpuFunctionalTarget(state, screen, scale);
 
-// material-blend-modes — the SurfaceMaterial `blendMode` path on the 3D forward renderers, which had no
+// material-blend-modes — the Material3D `blendMode` path on the 3D forward renderers, which had no
 // functional coverage at all (the existing node-blend-modes scenes are the 2D node property, a different
 // path). Six blend modes across the columns, each drawn TWICE over one opaque backdrop: the top row at
 // full alpha and the bottom row at quarter alpha, same RGB. Alpha is the only variable, so each column
@@ -150,7 +150,7 @@ registerWgpuFunctionalTarget(state, screen, scale);
 //
 // Deliberately does NOT set `alphaType` on any material. These are built-in materials whose tails always
 // emit straight coverage, so the scene reads the default and stays valid however that declaration is
-// spelled — or whether it exists on SurfaceMaterial at all.
+// spelled — or whether it exists on Material3D at all.
 
 // Orthographic so world coordinates map linearly to the frame and the sample points below are exact
 // fractions of the image rather than a perspective divide the assertion would have to re-derive.

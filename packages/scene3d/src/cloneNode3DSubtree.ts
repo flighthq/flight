@@ -6,14 +6,14 @@ import {
   setNodeLocalMatrix4,
   setNodeTransform3D,
 } from '@flighthq/node/contract';
-import type { Material, Node3D } from '@flighthq/types/contract';
+import type { Material3D, Node3D } from '@flighthq/types/contract';
 
 import { cloneMesh, isMesh } from './mesh';
 import { createNode3D } from './sceneNode';
 
 export function cloneNode3DSubtree(
   source: Readonly<Node3D>,
-  materialOverride: ((material: Material | null) => Material | null) | null = null,
+  materialOverride: ((material: Material3D | null) => Material3D | null) | null = null,
 ): Node3D {
   const clone = cloneNode3DShallow(source, materialOverride);
   for (const child of getNodeChildren(source)) {
@@ -24,7 +24,7 @@ export function cloneNode3DSubtree(
 
 function cloneNode3DShallow(
   source: Readonly<Node3D>,
-  materialOverride: ((material: Material | null) => Material | null) | null,
+  materialOverride: ((material: Material3D | null) => Material3D | null) | null,
 ): Node3D {
   if (isMesh(source)) {
     const clone = cloneMesh(source);

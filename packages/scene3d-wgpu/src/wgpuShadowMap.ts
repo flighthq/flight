@@ -6,7 +6,7 @@ import type {
   Camera3D,
   DirectionalLight,
   InstancedMesh,
-  Material,
+  Material3D,
   Matrix3,
   Matrix4,
   Mesh,
@@ -15,7 +15,12 @@ import type {
   Scene3DRenderProxy,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import { DIRECTIONAL_SHADOW_MAP_SIZE, MAX_DIRECTIONAL_SHADOW_PCF_RADIUS } from '@flighthq/types/contract';
+import {
+  BlendMode,
+  DIRECTIONAL_SHADOW_MAP_SIZE,
+  MAX_DIRECTIONAL_SHADOW_PCF_RADIUS,
+  StandardMaterialKind,
+} from '@flighthq/types/contract';
 
 import {
   ensureWgpuInstanceBuffer,
@@ -361,7 +366,14 @@ const SHADOW_VERTEX_BUFFER_LAYOUTS: GPUVertexBufferLayout[] = [
 // (normalMatrix is written but unused by the shadow VS). subset/material are placeholders.
 const _shadowProxy: Scene3DRenderProxy = {
   jointMatrices: null,
-  material: {} as Readonly<Material>,
+  // Never read by the depth pass, but typed honestly rather than as an empty cast.
+  material: {
+    alphaCutoff: 0.5,
+    alphaMode: 'opaque',
+    blendMode: BlendMode.Normal,
+    doubleSided: false,
+    kind: StandardMaterialKind,
+  } as Readonly<Material3D>,
   normalMatrix: createMatrix3() as Matrix3,
   subset: { indexCount: 0, indexOffset: 0 },
   worldMatrix: createMatrix4() as Matrix4,

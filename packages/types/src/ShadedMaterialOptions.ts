@@ -1,11 +1,11 @@
+import type { Material3DOptions } from './Material3DOptions';
 import type { Modifier } from './Modifier';
 import type { ShadedMaterial } from './ShadedMaterial';
-import type { SurfaceMaterialOptions } from './SurfaceMaterialOptions';
 
-// Extends the shared SurfaceMaterialOptions so the trailer (alphaMode/alphaCutoff/blendMode/
+// Extends the shared Material3DOptions so the trailer (alphaMode/alphaCutoff/blendMode/
 // doubleSided) is settable at construction, exactly as it is for BlinnPhong/PBR — no post-construction
 // mutation needed to make a ShadedMaterial masked or blended.
-export interface ShadedMaterialOptions extends SurfaceMaterialOptions {
+export interface ShadedMaterialOptions extends Material3DOptions {
   diffuse?: number;
   diffuseMap?: ShadedMaterial['diffuseMap'];
   modifiers?: readonly Modifier[];
