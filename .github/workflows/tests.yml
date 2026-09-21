@@ -133,6 +133,7 @@ jobs:
           node-version: 22
           cache: 'npm'
       - run: npm ci
+      - uses: ./.github/actions/setup-playwright
       - run: npm run test:tools
 
   # Runs on any docs change, including the docs-only commits that skip every code leg entirely.
