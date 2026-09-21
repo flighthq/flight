@@ -28,7 +28,7 @@ import type {
   Scene3DLightBlock,
   Node3D,
   Scene3DRenderProxy,
-  SurfaceMaterial,
+  Material3D,
   GlScene3DDrawEntry,
 } from '@flighthq/types/contract';
 import { BlendMode, StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
@@ -172,7 +172,7 @@ export function renderGlScene3D(
   if (opaqueDrawList.length > 1) opaqueDrawList.sort(compareOpaqueEntriesBySortKey);
 
   // Pass 1: opaque + mask subsets sorted by material. No blending; depth-write on (set by bind).
-  let boundMaterial: Readonly<Material> | null | undefined = undefined;
+  let boundMaterial: Readonly<Material3D> | null | undefined = undefined;
   let boundLightBlock: Readonly<Scene3DLightBlock> | null = null;
   let boundRenderer: GlMeshMaterialRenderer | null = null;
   let boundSkinned: boolean | undefined = undefined;
@@ -364,11 +364,11 @@ export function renderGlScene3D(
 }
 
 // Returns true when a material's alphaMode is 'blend'. All other modes (opaque, mask, and unknown
-// kinds that do not carry a SurfaceMaterial trailer) go through the opaque pass. Reads alphaMode
-// via structural duck-typing so any SurfaceMaterial subtype triggers the blended pass without
-// requiring an import of SurfaceMaterial here.
-function isBlendedMaterial(material: Readonly<Material>): boolean {
-  return (material as Readonly<SurfaceMaterial>).alphaMode === 'blend';
+// kinds that do not carry a Material3D trailer) go through the opaque pass. Reads alphaMode
+// via structural duck-typing so any Material3D subtype triggers the blended pass without
+// requiring an import of Material3D here.
+function isBlendedMaterial(material: Readonly<Material3D>): boolean {
+  return material.alphaMode === 'blend';
 }
 
 // Applies a material's fixed-function blend equation at the same run boundary as its renderer bind.
@@ -379,7 +379,7 @@ function isBlendedMaterial(material: Readonly<Material>): boolean {
 // opaque/masked material uses Normal because blendMode is only meaningful when the material itself
 // declares alphaMode 'blend'.
 function applyGlSurfaceBlendMode(state: GlRenderState, material: Readonly<Material>): void {
-  const surface = material as Readonly<SurfaceMaterial>;
+  const surface = material as Readonly<Material3D>;
   const blendMode =
     surface.alphaMode === 'blend' && typeof surface.blendMode === 'string' ? surface.blendMode : BlendMode.Normal;
   if (state.applyBlendMode === null) enableGlBlendModeSupport(state);
@@ -392,7 +392,7 @@ function hasExcessForwardLights(lights: Readonly<Scene3DLightsLike>): boolean {
 
 // Resolves the Material for a subset index: the positional materials[i] entry, or null when the
 // slot is absent/null (the registry then falls back to StandardMaterialKind, or skips the subset).
-function resolveSubsetMaterial(mesh: Readonly<Mesh>, subsetIndex: number): Readonly<Material> | null {
+function resolveSubsetMaterial(mesh: Readonly<Mesh>, subsetIndex: number): Readonly<Material3D> | null {
   const materials = mesh.materials;
   return subsetIndex < materials.length ? materials[subsetIndex] : null;
 }
@@ -410,7 +410,7 @@ interface DrawEntry {
   colorScaleBias: Readonly<ColorScaleBias> | null;
   depth: number;
   lightBlock: Readonly<Scene3DLightBlock>;
-  material: Readonly<Material>;
+  material: Readonly<Material3D>;
   mesh: Mesh;
   renderer: GlMeshMaterialRenderer;
   sortKey: number;
@@ -447,6 +447,19 @@ function createDrawEntry(): GlScene3DDrawEntry {
   };
 }
 
+// Placeholder material for proxy.material when a subset resolved to the default-kind fallback with
+// no concrete material; the renderer treats a default/null material as its untextured defaults. It
+// carries the full Material3D trailer with createMaterial3D's own defaults rather than a bare kind:
+// consumers read alphaMode/blendMode straight off proxy.material, and a partial literal would hand
+// them undefined. The cast covers only the Entity runtime slot a read-only fallback never needs.
+const DEFAULT_MATERIAL = {
+  alphaCutoff: 0.5,
+  alphaMode: 'opaque',
+  blendMode: BlendMode.Normal,
+  doubleSided: false,
+  kind: StandardMaterialKind,
+} as Readonly<Material3D>;
+
 // The reused per-draw proxy handed to a renderer's draw. Owned by renderGlScene3D, valid only for the
 // duration of the draw call it is passed to; renderers must not retain it.
 const proxy: Scene3DRenderProxy = {
@@ -454,15 +467,11 @@ const proxy: Scene3DRenderProxy = {
   colorScaleBias: null,
   jointMatrices: null,
   normalMatrices: null,
-  material: { kind: StandardMaterialKind } as Material,
+  material: DEFAULT_MATERIAL,
   normalMatrix: createMatrix3() as Matrix3,
   subset: { indexCount: 0, indexOffset: 0 },
   worldMatrix: createMatrix4() as Matrix4,
 };
-
-// Placeholder material for proxy.material when a subset resolved to the default-kind fallback with
-// no concrete material; the renderer treats a default/null material as its untextured defaults.
-const DEFAULT_MATERIAL = { kind: StandardMaterialKind } as Material;
 
 // Assigns a stable integer to each unique (renderer, material) pair within one frame. Entries with
 // the same key sort together, so the opaque pass minimizes bind() calls regardless of scene-graph
@@ -520,7 +529,7 @@ function flattenInstancedMeshMatrices(mesh: Readonly<InstancedMesh>): Float32Arr
 function resolveInstancedMeshSubsetMaterial(
   mesh: Readonly<InstancedMesh>,
   subsetIndex: number,
-): Readonly<Material> | null {
+): Readonly<Material3D> | null {
   return subsetIndex < mesh.materials.length ? mesh.materials[subsetIndex] : null;
 }
 

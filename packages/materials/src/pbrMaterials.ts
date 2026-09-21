@@ -10,7 +10,7 @@ import type {
 import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import { explainSpecularGlossinessConversion } from './explainMaterialConversion';
-import { createSurfaceMaterial } from './surfaceMaterial';
+import { createMaterial3D } from './material3d';
 
 // Converts a legacy specular-glossiness material to a metallic-roughness property block.
 // Writes `out` with the computed base-color, metallic, and roughness values. The conversion
@@ -95,7 +95,7 @@ export function convertSpecularGlossinessToStandardPbr(
 export function createSpecularGlossinessPbrMaterial(
   opts?: Readonly<Partial<SpecularGlossinessPbrMaterial>>,
 ): SpecularGlossinessPbrMaterial {
-  const material = createSurfaceMaterial(SpecularGlossinessPbrMaterialKind, opts) as SpecularGlossinessPbrMaterial;
+  const material = createMaterial3D(SpecularGlossinessPbrMaterialKind, opts) as SpecularGlossinessPbrMaterial;
   material.diffuse = opts?.diffuse ?? 0xffffffff;
   material.diffuseMap = opts?.diffuseMap ?? null;
   material.emissive = opts?.emissive ?? 0x000000ff;
@@ -115,7 +115,7 @@ export function createSpecularGlossinessPbrMaterial(
 // (`metallic` 0) and fully rough (`roughness` 1), opaque-black `emissive` at unit strength,
 // unit `normalScale`/`occlusionStrength`, all maps null.
 export function createStandardPbrMaterial(opts?: Readonly<Partial<StandardPbrMaterial>>): StandardPbrMaterial {
-  const material = createSurfaceMaterial(StandardPbrMaterialKind, opts) as StandardPbrMaterial;
+  const material = createMaterial3D(StandardPbrMaterialKind, opts) as StandardPbrMaterial;
   assignStandardPbrMaterialProperties(material, opts);
   return material;
 }

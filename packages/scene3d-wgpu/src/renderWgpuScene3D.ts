@@ -26,7 +26,7 @@ import type {
   Scene3DLightsLike,
   Node3D,
   Scene3DRenderProxy,
-  SurfaceMaterial,
+  Material3D,
   WgpuMeshMaterialRenderer,
   WgpuRenderPass,
   WgpuRenderState,
@@ -252,8 +252,8 @@ function drawEntries(
   }
 }
 
-function isBlendedMaterial(material: Readonly<Material>): boolean {
-  return (material as Readonly<SurfaceMaterial>).alphaMode === 'blend';
+function isBlendedMaterial(material: Readonly<Material3D>): boolean {
+  return material.alphaMode === 'blend';
 }
 
 // A material-authored blend equation applies only when alphaMode itself requests blending. A node fade
@@ -261,7 +261,7 @@ function isBlendedMaterial(material: Readonly<Material>): boolean {
 // Unknown material kinds routed through a registered renderer also degrade to Normal rather than
 // leaking an undefined string into WebGPU's immutable pipeline cache.
 function getMaterialBlendMode(material: Readonly<Material>): BlendMode {
-  const surface = material as Readonly<SurfaceMaterial>;
+  const surface = material as Readonly<Material3D>;
   return surface.alphaMode === 'blend' && typeof surface.blendMode === 'string' ? surface.blendMode : BlendMode.Normal;
 }
 
@@ -274,7 +274,7 @@ function hasExcessForwardLights(lights: Readonly<Scene3DLightsLike>): boolean {
 function resolveSubsetMaterial(
   mesh: Readonly<Pick<Mesh, 'materials'>>,
   subsetIndex: number,
-): Readonly<Material> | null {
+): Readonly<Material3D> | null {
   const materials = mesh.materials;
   return subsetIndex < materials.length ? materials[subsetIndex] : null;
 }
@@ -289,7 +289,7 @@ interface DrawEntry {
   colorScaleBias: Readonly<ColorScaleBias> | null;
   depth: number;
   lightBlock: Readonly<Scene3DLightBlock>;
-  material: Readonly<Material>;
+  material: Readonly<Material3D>;
   mesh: Mesh;
   renderer: WgpuMeshMaterialRenderer;
   sortKey: number;
@@ -345,6 +345,19 @@ function flattenInstancedMeshMatrices(mesh: Readonly<InstancedMesh>): Float32Arr
   return scratchInstanceData;
 }
 
+// Placeholder material for proxy.material when a subset resolved to the default-kind fallback with
+// no concrete material; the renderer treats a default/null material as its untextured defaults. It
+// carries the full Material3D trailer with createMaterial3D's own defaults rather than a bare kind:
+// consumers read alphaMode/blendMode straight off proxy.material, and a partial literal would hand
+// them undefined. The cast covers only the Entity runtime slot a read-only fallback never needs.
+const DEFAULT_MATERIAL = {
+  alphaCutoff: 0.5,
+  alphaMode: 'opaque',
+  blendMode: BlendMode.Normal,
+  doubleSided: false,
+  kind: StandardMaterialKind,
+} as Readonly<Material3D>;
+
 // The reused per-draw proxy handed to a renderer's draw. Owned by renderWgpuScene3D, valid only for the
 // duration of the draw call it is passed to; renderers must not retain it.
 const proxy: Scene3DRenderProxy = {
@@ -353,15 +366,11 @@ const proxy: Scene3DRenderProxy = {
   colorScaleBias: null,
   jointMatrices: null,
   normalMatrices: null,
-  material: { kind: StandardMaterialKind } as Material,
+  material: DEFAULT_MATERIAL,
   normalMatrix: createMatrix3() as Matrix3,
   subset: { indexCount: 0, indexOffset: 0 },
   worldMatrix: createMatrix4() as Matrix4,
 };
-
-// Placeholder material for proxy.material when a subset resolved to the default-kind fallback with
-// no concrete material; the renderer treats a default/null material as its untextured defaults.
-const DEFAULT_MATERIAL = { kind: StandardMaterialKind } as Material;
 
 let sortKeyCounter = 0;
 const sortKeyMap = new Map<object, number>();

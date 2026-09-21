@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { registerGlMeshSkinning, renderGlScene3D } from '@flighthq/scene3d-gl';
-import type { Bitmap, Camera3D, GlEffectState, Material, Node3D, Scene3DLights } from '@flighthq/sdk';
+import type { Bitmap, Camera3D, GlEffectState, Material3D, Node3D, Scene3DLights } from '@flighthq/sdk';
 import {
   createGlSurface,
   glScene3DRenderRegistries,
@@ -149,7 +149,7 @@ invalidateNodeLocalTransform(bend);
 
 const scene = createScene3D().root;
 addNodeChild(scene, root);
-const materials: readonly Material[] = [
+const materials: readonly Material3D[] = [
   // The camera sits five view units away; bracket the bar around that real view-axis depth so the
   // orthographic Depth output remains mid-gray and this scene can keep measuring its posed silhouette.
   createDepthMaterial({ far: 6, near: 4 }),

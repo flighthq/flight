@@ -1,4 +1,4 @@
-import { createMaterial } from '@flighthq/materials/contract';
+import { createMaterial3D } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
@@ -42,7 +42,7 @@ describe('explainScene3DPipelineCoverage', () => {
     const state = createRenderState();
     registerRenderer(state, 'Mesh', renderer);
     const matTable = materialTable(StandardMaterialKind);
-    const customMat = createMaterial('PhongMaterial');
+    const customMat = createMaterial3D('PhongMaterial');
     const root = createMesh(box(), [customMat]);
     const result = explainScene3DPipelineCoverage(state, root, matTable);
     expect(result.usedMaterialKinds).toEqual(['PhongMaterial']);
@@ -81,7 +81,7 @@ describe('explainScene3DPipelineCoverage', () => {
     const matTable = materialTable(StandardMaterialKind, 'PhongMaterial');
     const root = createNode3D(Node3DKind);
     const child1 = createMesh(box(), [null]);
-    const child2 = createMesh(box(), [createMaterial('PhongMaterial')]);
+    const child2 = createMesh(box(), [createMaterial3D('PhongMaterial')]);
     addNodeChild(root, child1);
     addNodeChild(root, child2);
     const result = explainScene3DPipelineCoverage(state, root, matTable);
@@ -100,7 +100,7 @@ describe('explainScene3DPipelineCoverage', () => {
     registerRenderer(state, Node3DKind, renderer);
     const matTable = materialTable('ZebraMaterial', 'AlphaMaterial', StandardMaterialKind);
     const root = createNode3D(Node3DKind);
-    const child = createMesh(box(), [createMaterial('ZebraMaterial'), null]);
+    const child = createMesh(box(), [createMaterial3D('ZebraMaterial'), null]);
     addNodeChild(root, child);
     const result = explainScene3DPipelineCoverage(state, root, matTable);
     expect(result.registeredKinds).toEqual(['InstancedMesh', 'Mesh', Node3DKind]);

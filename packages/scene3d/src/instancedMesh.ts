@@ -10,7 +10,7 @@ import type {
   InstancedMeshRuntime,
   InstancedMeshSignals,
   Kind,
-  Material,
+  Material3D,
   Matrix4,
   MeshGeometry,
 } from '@flighthq/types/contract';
@@ -106,7 +106,7 @@ export function computeInstancedMeshLocalBoundsAabb(out: Aabb, source: Readonly<
  */
 export function createInstancedMesh(
   geometry: MeshGeometry,
-  materials: (Material | null)[],
+  materials: (Material3D | null)[],
   capacity?: number,
   kind: Kind = InstancedMeshKind,
 ): InstancedMesh {

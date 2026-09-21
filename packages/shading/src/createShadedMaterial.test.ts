@@ -22,14 +22,14 @@ describe('createShadedMaterial', () => {
     expect(material.normalMap).toBeNull();
   });
 
-  it('defaults the SurfaceMaterial trailer to opaque single-sided straight-alpha', () => {
+  it('defaults the Material3D trailer to opaque single-sided straight-alpha', () => {
     const material = createShadedMaterial();
     expect(material.alphaMode).toBe('opaque');
     expect(material.alphaCutoff).toBe(0.5);
     expect(material.doubleSided).toBe(false);
   });
 
-  it('forwards the SurfaceMaterial trailer from options (mask/blend expressible at construction)', () => {
+  it('forwards the Material3D trailer from options (mask/blend expressible at construction)', () => {
     const material = createShadedMaterial({ alphaCutoff: 0.25, alphaMode: 'mask', doubleSided: true });
     expect(material.alphaMode).toBe('mask');
     expect(material.alphaCutoff).toBe(0.25);

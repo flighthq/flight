@@ -16,7 +16,7 @@ import type {
   MeshGeometry,
   Scene3DLightBlock,
   Scene3DRenderProxy,
-  SurfaceMaterial,
+  Material3D,
   Texture,
   TextureLike,
   WgpuColorAdjustmentMaterialFeature,
@@ -188,7 +188,7 @@ export function drawWgpuMeshSubset(
 // Whether a draw's fragment alpha is COVERAGE the compositor should honor. A material with no surface
 // trailer (or none at all) is treated as opaque, matching the registry's own fallback.
 function isWgpuMeshAlphaCoverage(material: Readonly<Material> | null | undefined): boolean {
-  return material != null && (material as Readonly<SurfaceMaterial>).alphaMode === 'blend';
+  return material != null && (material as Readonly<Material3D>).alphaMode === 'blend';
 }
 
 // Resolves the shared Frame bind group, creating it from the shared Frame layout + Frame buffer on

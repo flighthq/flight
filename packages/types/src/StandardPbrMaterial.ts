@@ -1,4 +1,4 @@
-import type { SurfaceMaterial } from './SurfaceMaterial';
+import type { Material3D } from './Material3D';
 import type { Texture } from './Texture';
 
 // The metallic-roughness PBR field-block shared by StandardPbrMaterial and composed (not
@@ -27,7 +27,7 @@ export interface StandardPbrMaterialProperties {
 
 // Core glTF metallic-roughness PBR material: the StandardPbrMaterialProperties block plus the
 // shared surface trailer and its kind.
-export interface StandardPbrMaterial extends SurfaceMaterial, StandardPbrMaterialProperties {
+export interface StandardPbrMaterial extends Material3D, StandardPbrMaterialProperties {
   readonly kind: typeof StandardPbrMaterialKind;
 }
 

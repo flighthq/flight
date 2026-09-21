@@ -1,4 +1,4 @@
-import type { Mesh, Scene3DLightsLike, SurfaceMaterial } from '@flighthq/sdk';
+import type { Mesh, Scene3DLightsLike, Material3D } from '@flighthq/sdk';
 import {
   addNodeChild,
   convertMeshGeometryLayout,
@@ -63,7 +63,7 @@ interface MaterialControl {
 interface MaterialEntry {
   color: string | null;
   controls: readonly MaterialControl[];
-  material: SurfaceMaterial;
+  material: Material3D;
   name: string;
   setColor: ((color: number) => void) | null;
 }
@@ -593,7 +593,7 @@ const allEntries: readonly MaterialEntry[] = [
   },
 ];
 
-const extendedMaterials = new Set<SurfaceMaterial>([
+const extendedMaterials = new Set<Material3D>([
   anisotropy,
   clearcoat,
   iridescence,

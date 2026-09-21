@@ -1,5 +1,5 @@
 import type { ColorScaleBias } from './ColorScaleBias';
-import type { Material } from './Material';
+import type { Material3D } from './Material3D';
 import type { Matrix3 } from './Matrix3';
 import type { Matrix4 } from './Matrix4';
 import type { MeshSubset } from './MeshGeometry';
@@ -55,7 +55,7 @@ export interface Scene3DRenderProxy {
   // a normal is a covector and does not follow the pose matrix under non-uniform joint scale; a renderer
   // reads it as `proxy.normalMatrices ?? null` and falls back to its rigid path when absent.
   normalMatrices?: Readonly<Float32Array> | null;
-  material: Readonly<Material>;
+  material: Readonly<Material3D>;
   normalMatrix: Readonly<Matrix3>;
   subset: Readonly<MeshSubset>;
   worldMatrix: Readonly<Matrix4>;

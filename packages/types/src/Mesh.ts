@@ -1,5 +1,5 @@
 import type { Aabb } from './Aabb';
-import type { Material } from './Material';
+import type { Material3D } from './Material3D';
 import type { MeshGeometry } from './MeshGeometry';
 import type { MeshMorph } from './MorphTarget';
 import type { Node3D, Node3DRuntime } from './Node3D';
@@ -25,7 +25,7 @@ import type { Skin } from './Skin';
 // kind, and the two compose (corrective morph over skinning) — see MeshDeformer.
 export interface Mesh extends Node3D {
   geometry: MeshGeometry;
-  materials: (Material | null)[];
+  materials: (Material3D | null)[];
   morph?: MeshMorph | null;
   skin?: Skin | null;
 }

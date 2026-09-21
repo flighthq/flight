@@ -1,10 +1,10 @@
-import type { SurfaceMaterial } from './SurfaceMaterial';
+import type { Material3D } from './Material3D';
 import type { Texture } from './Texture';
 
 // Cel shading: diffuse N·L is quantized through a 1D `ramp` texture into stepped bands.
 // `baseColor` is packed sRgb-albedo RGBA, `baseColorMap` tints it, and `steps` is the band
 // count used when no ramp is bound.
-export interface ToonMaterial extends SurfaceMaterial {
+export interface ToonMaterial extends Material3D {
   readonly kind: typeof ToonMaterialKind;
   // Packed sRGB RGBA (`0xRRGGBBAA`), decoded to linear by the backend material renderer.
   baseColor: number;

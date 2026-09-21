@@ -38,7 +38,7 @@ import type {
   Matrix4,
   Skin,
   Camera3D,
-  Material,
+  Material3D,
   MeshGeometry,
   Scene3DLightBlock,
   Scene3DLightsLike,
@@ -412,7 +412,7 @@ describe('prepareScene3DRender', () => {
   it('honors a positional material on a mesh', () => {
     const state = createRenderState();
     const scene = createNode3D(Node3DKind);
-    const material = { kind: 'TestMaterial' } as unknown as Material;
+    const material = { kind: 'TestMaterial' } as unknown as Material3D;
     const mesh = createMesh(boundedBox(), [material]);
     addNodeChild(scene, mesh);
     const list = prepareScene3DRender(state, scene, frontCamera(), emptyLights());

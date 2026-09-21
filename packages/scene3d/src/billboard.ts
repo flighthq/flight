@@ -4,7 +4,7 @@ import type {
   BillboardMode,
   BillboardRuntime,
   Kind,
-  Material,
+  Material3D,
   MeshGeometry,
   NodeSignals,
   Node3D,
@@ -30,7 +30,7 @@ export { BillboardKind } from '@flighthq/types/contract';
 // translation and scale the facing pass preserves.
 export function createBillboard(
   geometry: MeshGeometry,
-  materials: (Material | null)[],
+  materials: (Material3D | null)[],
   mode: BillboardMode = 'full',
   kind: Kind = BillboardKind,
   obj?: Readonly<Partial<Pick<Billboard, 'enabled' | 'name'>>>,

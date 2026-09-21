@@ -1,9 +1,9 @@
 import type { EmissiveModifier } from './EmissiveModifier';
 import { EntityRuntimeKey } from './Entity';
+import type { Material3D } from './Material3D';
 import type { RimModifier } from './RimModifier';
 import type { ShadedMaterial } from './ShadedMaterial';
 import { ShadedMaterialKind } from './ShadedMaterial';
-import type { SurfaceMaterial } from './SurfaceMaterial';
 
 describe('ShadedMaterial', () => {
   describe('ShadedMaterialKind', () => {
@@ -50,7 +50,7 @@ describe('ShadedMaterial', () => {
       expect(material.modifiers[1]?.slot).toBe('Effect');
     });
 
-    it('is a SurfaceMaterial (a lit surface over the shared trailer)', () => {
+    it('is a Material3D (a lit surface over the shared trailer)', () => {
       const material: ShadedMaterial = {
         [EntityRuntimeKey]: undefined,
         kind: ShadedMaterialKind,
@@ -67,7 +67,7 @@ describe('ShadedMaterial', () => {
         specularMap: null,
         modifiers: [],
       };
-      const surface: SurfaceMaterial = material;
+      const surface: Material3D = material;
       expect(surface.kind).toBe('ShadedMaterial');
     });
   });

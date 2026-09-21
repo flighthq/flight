@@ -1,16 +1,16 @@
-import type { Kind, MaterialAlphaMode, SurfaceMaterial, SurfaceMaterialOptions } from '@flighthq/types/contract';
+import type { Kind, MaterialAlphaMode, Material3D, Material3DOptions } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
 import { createMaterial } from './material';
 
-// Builds a SurfaceMaterial carrying `kind` and the shared trailer, taking each trailer field from
+// Builds a Material3D carrying `kind` and the shared trailer, taking each trailer field from
 // `opts` or falling back to its default: opaque, single-sided, straight alpha, Normal blend, a 0.5
 // mask cutoff. Every 3D material constructor starts from this and adds its own maps and scalars;
 // forwarding `opts` here is what lets any constructor set `alphaMode`/`alphaCutoff`/`doubleSided`/
 // `blendMode` (e.g. `alphaMode: 'mask'` for an alpha-mapped cutout). The result is a
 // plain entity; callers mutate the returned object to set their own fields before returning it.
-export function createSurfaceMaterial(kind: Kind, opts?: Readonly<SurfaceMaterialOptions>): SurfaceMaterial {
-  const material = createMaterial(kind) as SurfaceMaterial;
+export function createMaterial3D(kind: Kind, opts?: Readonly<Material3DOptions>): Material3D {
+  const material = createMaterial(kind) as Material3D;
   material.alphaCutoff = opts?.alphaCutoff ?? DEFAULT_ALPHA_CUTOFF;
   material.alphaMode = opts?.alphaMode ?? DEFAULT_ALPHA_MODE;
   material.blendMode = opts?.blendMode ?? BlendMode.Normal;
@@ -21,25 +21,25 @@ export function createSurfaceMaterial(kind: Kind, opts?: Readonly<SurfaceMateria
 // Returns the alpha mode of the material. The alpha mode controls how a material resolves
 // coverage: 'opaque' ignores base-color alpha, 'mask' hard-cuts at `alphaCutoff`, 'blend'
 // alpha-blends. Callers typically branch on this to configure blend state.
-export function getSurfaceMaterialAlphaMode(source: Readonly<SurfaceMaterial>): MaterialAlphaMode {
+export function getMaterial3DAlphaMode(source: Readonly<Material3D>): MaterialAlphaMode {
   return source.alphaMode;
 }
 
 // Returns true when the material's alpha mode is 'blend'. Blended materials require a
 // sorted draw order and a GPU blend equation.
-export function isSurfaceMaterialBlended(source: Readonly<SurfaceMaterial>): boolean {
+export function isMaterial3DBlended(source: Readonly<Material3D>): boolean {
   return source.alphaMode === 'blend';
 }
 
 // Returns true when the material's alpha mode is 'mask'. Masked materials discard fragments
 // whose alpha is below `alphaCutoff`; no blend state is required.
-export function isSurfaceMaterialMasked(source: Readonly<SurfaceMaterial>): boolean {
+export function isMaterial3DMasked(source: Readonly<Material3D>): boolean {
   return source.alphaMode === 'mask';
 }
 
 // Returns true when the material's alpha mode is 'opaque'. Opaque materials ignore the
 // base-color alpha channel; no blend state or discard is required.
-export function isSurfaceMaterialOpaque(source: Readonly<SurfaceMaterial>): boolean {
+export function isMaterial3DOpaque(source: Readonly<Material3D>): boolean {
   return source.alphaMode === 'opaque';
 }
 

@@ -1,12 +1,12 @@
 import { createAnimationChannel, createAnimationClip } from '@flighthq/animation/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { setQuaternion, setVector3 } from '@flighthq/geometry/contract';
-import { createMaterial } from '@flighthq/materials/contract';
+import { createMaterial3D } from '@flighthq/materials/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import type {
   AnimationChannel,
   EntityConstruction,
-  Material,
+  Material3D,
   MaterialLike,
   Mesh,
   Scene3D,
@@ -190,12 +190,15 @@ function buildDocumentNodes(document: Readonly<Scene3DDocument>): Node3D[] {
 // Preserve an entity supplied by an importer so material sharing and batching identity survive assembly;
 // otherwise copy the structural fields onto the canonical material entity rather than installing the
 // caller's plain document object into the live scene.
-function materializeDocumentMaterial(source: MaterialLike): Material {
+function materializeDocumentMaterial(source: MaterialLike): Material3D {
   if (isMaterialEntity(source)) return source;
-  return Object.assign(createMaterial(source.kind), source);
+  // createMaterial3D rather than createMaterial: a document material lands in a mesh slot, and the
+  // renderers read alphaMode/blendMode/doubleSided straight off it. The base factory left those
+  // undefined, so an imported material silently missed the trailer defaults.
+  return Object.assign(createMaterial3D(source.kind), source);
 }
 
-function isMaterialEntity(source: MaterialLike): source is Material {
+function isMaterialEntity(source: MaterialLike): source is Material3D {
   return EntityRuntimeKey in source;
 }
 
@@ -204,11 +207,11 @@ function isMaterialEntity(source: MaterialLike): source is Material {
 function buildDocumentNode(
   node: Readonly<Scene3DDocumentNode>,
   meshes: Readonly<Scene3DDocument['meshes']>,
-  materials: readonly Material[],
+  materials: readonly Material3D[],
 ): Node3D {
   if (node.mesh === undefined) return createNode3D(node.kind, { name: node.name });
   const documentMesh = meshes[node.mesh];
-  const meshMaterials: (Material | null)[] = documentMesh.materials.map((index) => materials[index] ?? null);
+  const meshMaterials: (Material3D | null)[] = documentMesh.materials.map((index) => materials[index] ?? null);
   const mesh = createMesh(documentMesh.geometry, meshMaterials, node.kind, { name: node.name });
   if (documentMesh.morph != null) mesh.morph = documentMesh.morph;
   return mesh as unknown as Node3D;

@@ -125,7 +125,7 @@ function defineKeyForMaterial(state: GlRenderState, material: Readonly<BlinnPhon
     alphaMaskEnabled: material !== null && material.alphaMode === 'mask',
     // Match the bind's resolver readiness so the compiled HAS_ALPHA_MAP variant and bound texture
     // never disagree. Gated off 'opaque' — an opaque
-    // material ignores coverage (SurfaceMaterial contract), so it must not sample the alpha map.
+    // material ignores coverage (Material3D contract), so it must not sample the alpha map.
     hasAlphaMap: material !== null && material.alphaMode !== 'opaque' && isGlTextureReady(state, material.alphaMap),
     hasDiffuseMap: material !== null && isGlTextureReady(state, material.diffuseMap),
     hasNormalMap: material !== null && isGlTextureReady(state, material.normalMap),

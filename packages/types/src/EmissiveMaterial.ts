@@ -1,10 +1,10 @@
-import type { SurfaceMaterial } from './SurfaceMaterial';
+import type { Material3D } from './Material3D';
 import type { Texture } from './Texture';
 
 // Self-illuminating, lighting-independent. `emissive` is packed sRgb-albedo RGBA, `emissiveMap`
 // modulates it, and `emissiveStrength` scales linear radiance — values > 1 drive bloom on GPU
 // backends. Full fidelity on every backend.
-export interface EmissiveMaterial extends SurfaceMaterial {
+export interface EmissiveMaterial extends Material3D {
   readonly kind: typeof EmissiveMaterialKind;
   emissive: number;
   emissiveMap: Texture | null;

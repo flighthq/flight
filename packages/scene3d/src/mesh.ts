@@ -9,7 +9,7 @@ import {
 } from '@flighthq/node/contract';
 import type {
   Kind,
-  Material,
+  Material3D,
   Mesh,
   MeshDeformer,
   MeshGeometry,
@@ -57,7 +57,7 @@ export function cloneMesh(source: Readonly<Mesh>): Mesh {
 // `geometry` and `materials` are stored by reference, not copied.
 export function createMesh(
   geometry: MeshGeometry,
-  materials: (Material | null)[],
+  materials: (Material3D | null)[],
   kind: Kind = MeshKind,
   obj?: Readonly<Partial<Pick<Mesh, 'enabled' | 'name'>>>,
 ): Mesh {
