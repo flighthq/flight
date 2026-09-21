@@ -4,7 +4,7 @@ import { BlendMode } from '@flighthq/types/contract';
 import { createMaterial } from './material';
 
 // Builds a Material3D carrying `kind` and the shared trailer, taking each trailer field from
-// `opts` or falling back to its default: opaque, single-sided, straight alpha, Normal blend, a 0.5
+// `opts` or falling back to its default: opaque, single-sided, Normal blend, and a 0.5
 // mask cutoff. Every 3D material constructor starts from this and adds its own maps and scalars;
 // forwarding `opts` here is what lets any constructor set `alphaMode`/`alphaCutoff`/`doubleSided`/
 // `blendMode` (e.g. `alphaMode: 'mask'` for an alpha-mapped cutout). The result is a

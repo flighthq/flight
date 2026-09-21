@@ -14,7 +14,7 @@ export type MaterialAlphaMode = 'blend' | 'mask' | 'opaque';
 //
 // Named for its dimension rather than for the surface it shades: "surface" is render-target vocabulary
 // elsewhere in graphics (SkSurface, VkSurface, an EGL surface) and Flight itself uses ImageSurface for
-// render targets, so the old SurfaceMaterial name collided with a concept it has nothing to do with.
+// render targets, so the old shared-material name collided with a concept it has nothing to do with.
 //
 // A material does NOT declare how its output encodes alpha. Every blend equation in the renderers'
 // tables is premultiplied and every built-in fragment tail emits premultiplied color, so there is one
