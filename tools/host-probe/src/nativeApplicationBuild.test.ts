@@ -46,7 +46,7 @@ describe('native host CI configuration', () => {
     };
     const workflow = readFileSync(resolve(repositoryRoot, '.github/workflows/host-matrix.yml'), 'utf8');
 
-    expect(packageJson.scripts['test:host-probe']).toBe('npm run test -- --project host-probe');
+    expect(packageJson.scripts['test:host-probe']).toBe('npm run test --workspace=@flighthq/tool-host-probe');
     expect(workflow).toContain('- run: npm run test:host-probe');
   });
 
