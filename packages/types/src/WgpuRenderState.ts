@@ -66,8 +66,7 @@ export interface WgpuRenderRegistries extends RenderRegistries {
   compressedTextureUpload: SlotTable<WgpuCompressedTextureUploader> | null;
   customMaterialShaders: KeyedTable<WgpuCustomMaterialShaderSource>;
   gpuSkinning: SlotTable<WgpuSkinningAdapter> | null;
-  materialRenderers: KeyedTable<WgpuQuadMaterialRenderer>;
-  meshMaterialRenderers: KeyedTable<WgpuMeshMaterialRenderer>;
+  materialRenderers: KeyedTable<WgpuMeshMaterialRenderer | WgpuQuadMaterialRenderer>;
   modifierSnippets: KeyedTable<WgpuModifierSnippet>;
   // Shader cache identity advances with every snippet-table replacement, including same-kind
   // replacements whose define signature is unchanged but whose emitted source differs.
@@ -266,8 +265,9 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // instanced draw claims a distinct slot; the cursor resets per frame alongside the quad-batch one.
   meshInstanceBufferPool: WgpuMeshInstanceBufferSlot[];
   meshInstanceBufferCursor: number;
-  // The 3D material dispatch policy lives in registries.meshMaterialRenderers, separate from the 2D
-  // material table because a material kind is either 2D or 3D, never both. This cache is the device-tier
+  // The 3D material dispatch policy lives in registries.materialRenderers alongside the 2D entries:
+  // a material kind is either 2D or 3D, never both, so the shared table holds both without collision.
+  // This cache is the device-tier
   // realization of lazily uploaded MeshGeometry data, keyed by the geometry entity (parallel to
   // MeshGeometryRuntime.webgpuData; scene-wgpu owns and casts the concrete value shape).
   sceneMeshUploadCache?: WeakMap<object, object> | null;

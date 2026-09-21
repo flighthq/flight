@@ -5,6 +5,7 @@ import type {
   KeyedTable,
   WgpuMeshMaterialRenderer,
   WgpuModifierSnippet,
+  WgpuQuadMaterialRenderer,
   WgpuRenderRegistries,
   WgpuTextureResolver,
 } from '@flighthq/types/contract';
@@ -55,8 +56,8 @@ import { wgpuVertexColorMeshMaterialRenderer } from './wgpuVertexColorMeshMateri
 import { wgpuWireframeMeshMaterialRenderer } from './wgpuWireframeMeshMaterialRenderer';
 
 function buildScene3DWgpuMeshMaterialRenderers(
-  base: Readonly<KeyedTable<WgpuMeshMaterialRenderer>>,
-): KeyedTable<WgpuMeshMaterialRenderer> {
+  base: Readonly<KeyedTable<WgpuMeshMaterialRenderer | WgpuQuadMaterialRenderer>>,
+): KeyedTable<WgpuMeshMaterialRenderer | WgpuQuadMaterialRenderer> {
   let table = base;
   table = withRegistryTableEntry(table, BlinnPhongMaterialKind, wgpuBlinnPhongMeshMaterialRenderer);
   table = withRegistryTableEntry(table, CustomShaderMaterialKind, wgpuCustomShaderMeshMaterialRenderer);
@@ -112,7 +113,7 @@ export const wgpuScene3DRenderRegistries: Readonly<WgpuRenderRegistries> = {
     ...createSlotTable('WgpuGpuSkinning', 'Unregistered'),
     entry: { state: RegistryEntryState.Bound, value: wgpuSkinningAdapter },
   },
-  meshMaterialRenderers: buildScene3DWgpuMeshMaterialRenderers(wgpuScene2DRenderRegistries.meshMaterialRenderers),
+  materialRenderers: buildScene3DWgpuMeshMaterialRenderers(wgpuScene2DRenderRegistries.materialRenderers),
   modifierSnippets: buildScene3DWgpuModifierSnippets(wgpuScene2DRenderRegistries.modifierSnippets),
   textureResolvers: buildScene3DWgpuTextureResolvers(wgpuScene2DRenderRegistries.textureResolvers),
 };

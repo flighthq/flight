@@ -52,7 +52,7 @@ describe('Scene3D size fixture isolation', () => {
     // fixture should import, and a substring ban on 'webHost' would forbid them along with it.
     expect(source).not.toMatch(/\bwebHost\b/);
     expect(source).toContain(`${spec.backend.toLowerCase()}UnlitMeshMaterialRenderer`);
-    expect(source).toContain('meshMaterialRenderers: withRegistryTableEntry(');
+    expect(source).toContain('materialRenderers: withRegistryTableEntry(');
 
     const bitmapResolver = `register${spec.backend}BitmapTextureResolver`;
     expect(source.includes(bitmapResolver)).toBe(spec.textured);

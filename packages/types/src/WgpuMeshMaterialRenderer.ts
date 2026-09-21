@@ -7,8 +7,8 @@ import type { WgpuRenderState } from './WgpuRenderState';
 
 // Per-backend 3D draw behavior for a material kind on Wgpu, registered against the kind via
 // registerWgpuMeshMaterialRenderer. This is the scene (3D) analog of WgpuQuadMaterialRenderer (the 2D
-// quad-batch material seam): registries.meshMaterialRenderers is distinct from the 2D
-// material-renderer table because a material kind is either 2D or 3D, never both.
+// quad-batch material seam): both share registries.materialRenderers because a material kind is
+// either 2D or 3D, never both, so the shared table holds both without collision.
 //
 // The renderer owns its pipeline (the StandardPbr uber-shader variant for its define key) and is
 // driven per draw in two steps. drawScene3D binds shared per-frame state once per material run, then

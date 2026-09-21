@@ -27,6 +27,7 @@ import {
   SheenPbrExtensionKind,
   SpecularGlossinessPbrMaterialKind,
   SpecularPbrExtensionKind,
+  StandardMaterialKind,
   StandardPbrMaterialKind,
   ToonMaterialKind,
   ToonModifierKind,
@@ -56,7 +57,6 @@ describe('glScene3DRenderRegistries', () => {
     expect(scene3D.compressedTextureUpload).toBe(scene2D.compressedTextureUpload);
     expect(scene3D.customEffectShaders).toBe(scene2D.customEffectShaders);
     expect(scene3D.customMaterialShaders).toBe(scene2D.customMaterialShaders);
-    expect(scene3D.materialRenderers).toBe(scene2D.materialRenderers);
     expect(scene3D.effects).toBe(scene2D.effects);
     expect(scene3D.nodeRenderers).toBe(scene2D.nodeRenderers);
     expect(scene3D.shapeRasterizer).toBe(scene2D.shapeRasterizer);
@@ -65,8 +65,8 @@ describe('glScene3DRenderRegistries', () => {
     expect(scene3D.velocityWriters).toBe(scene2D.velocityWriters);
   });
 
-  it('carries exactly the sixteen standard GL mesh material renderers', () => {
-    expectExactKeys(glScene3DRenderRegistries.meshMaterialRenderers, [
+  it('carries the standard quad material and all sixteen standard GL mesh material renderers', () => {
+    expectExactKeys(glScene3DRenderRegistries.materialRenderers, [
       BlinnPhongMaterialKind,
       CustomShaderMaterialKind,
       DepthMaterialKind,
@@ -78,6 +78,7 @@ describe('glScene3DRenderRegistries', () => {
       PhongMaterialKind,
       ShadedMaterialKind,
       SpecularGlossinessPbrMaterialKind,
+      StandardMaterialKind,
       StandardPbrMaterialKind,
       ToonMaterialKind,
       UnlitMaterialKind,

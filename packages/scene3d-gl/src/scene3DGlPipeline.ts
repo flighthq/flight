@@ -4,6 +4,7 @@ import type {
   GlMeshMaterialRenderer,
   GlModifierSnippet,
   GlPbrExtensionRegistration,
+  GlQuadMaterialRenderer,
   GlRenderRegistries,
   KeyedTable,
 } from '@flighthq/types/contract';
@@ -76,8 +77,8 @@ import { transmissionVolumePbrGlExtension } from './transmissionVolumePbrGlExten
 import { wrappedDiffusePbrGlExtension } from './wrappedDiffusePbrGlExtension';
 
 function buildScene3DGlMeshMaterialRenderers(
-  base: Readonly<KeyedTable<GlMeshMaterialRenderer>>,
-): KeyedTable<GlMeshMaterialRenderer> {
+  base: Readonly<KeyedTable<GlMeshMaterialRenderer | GlQuadMaterialRenderer>>,
+): KeyedTable<GlMeshMaterialRenderer | GlQuadMaterialRenderer> {
   let table = base;
   table = withRegistryTableEntry(table, BlinnPhongMaterialKind, glBlinnPhongMeshMaterialRenderer);
   table = withRegistryTableEntry(table, CustomShaderMaterialKind, glCustomShaderMeshMaterialRenderer);
@@ -124,7 +125,7 @@ function buildScene3DGlPbrExtensions(
 
 export const glScene3DRenderRegistries: Readonly<GlRenderRegistries> = {
   ...glScene2DRenderRegistries,
-  meshMaterialRenderers: buildScene3DGlMeshMaterialRenderers(glScene2DRenderRegistries.meshMaterialRenderers),
+  materialRenderers: buildScene3DGlMeshMaterialRenderers(glScene2DRenderRegistries.materialRenderers),
   modifierSnippets: buildScene3DGlModifierSnippets(glScene2DRenderRegistries.modifierSnippets),
   pbrExtensions: buildScene3DGlPbrExtensions(glScene2DRenderRegistries.pbrExtensions),
 };

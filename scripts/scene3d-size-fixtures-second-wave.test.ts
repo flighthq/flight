@@ -53,7 +53,7 @@ describe('Scene3D second-wave size fixture isolation', () => {
       // and which it is says nothing about this fixture being a renderer-free floor, which is the subject.
       expect(source).toMatch(new RegExp(`render${spec.backend}Scene3D\\((?:pass|state), scene, camera, lights\\)`));
       expect(source).not.toMatch(/\bregister(?:NodeRenderer|Renderers)\s*\(/);
-      expect(source).not.toContain('meshMaterialRenderers:');
+      expect(source).not.toContain('materialRenderers:');
       expect(source).not.toContain('createBillboard(');
       expect(source).not.toContain('createParticleEmitter3D(');
 
@@ -115,7 +115,7 @@ describe('Scene3D second-wave size fixture isolation', () => {
       expect(source).toContain("'screenAligned'");
       expect(source).toContain('orientScene3DBillboardsToCamera(scene, camera)');
       expect(source).toContain(`${spec.backend.toLowerCase()}UnlitMeshMaterialRenderer`);
-      expect(source).toContain('meshMaterialRenderers: withRegistryTableEntry(');
+      expect(source).toContain('materialRenderers: withRegistryTableEntry(');
       expect(source).not.toContain('createMesh(');
       expect(source).not.toContain('createParticleEmitter3D(');
       expect(source).not.toContain('TextureResolver');
@@ -131,7 +131,7 @@ describe('Scene3D second-wave size fixture isolation', () => {
       expect(source).toContain(`allocateEmpty${spec.backend}RenderRegistries()`);
       expect(source).not.toContain('createMesh(');
       expect(source).not.toContain('createBillboard(');
-      expect(source).not.toContain('meshMaterialRenderers:');
+      expect(source).not.toContain('materialRenderers:');
       expect(source).not.toContain('MaterialRenderer');
       expect(source).not.toContain('TextureResolver');
     },

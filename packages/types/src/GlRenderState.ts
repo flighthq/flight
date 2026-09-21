@@ -49,8 +49,7 @@ export interface GlRenderRegistries extends RenderRegistries {
   compressedTextureUpload: SlotTable<GlCompressedTextureUploader> | null;
   customEffectShaders: KeyedTable<string>;
   customMaterialShaders: KeyedTable<GlCustomMaterialShaderSource>;
-  materialRenderers: KeyedTable<GlQuadMaterialRenderer>;
-  meshMaterialRenderers: KeyedTable<GlMeshMaterialRenderer>;
+  materialRenderers: KeyedTable<GlMeshMaterialRenderer | GlQuadMaterialRenderer>;
   modifierSnippets: KeyedTable<GlModifierSnippet>;
   // Shader cache identity advances with every snippet-table replacement, including same-kind
   // replacements whose define signature is unchanged but whose emitted source differs.

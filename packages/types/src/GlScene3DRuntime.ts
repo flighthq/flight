@@ -62,9 +62,8 @@ export interface GlScene3DDrawEntry {
 
 // scene-gl's per-GlRenderState private state: the mesh-material program cache (keyed by family +
 // define key) and a reference to the context-owned geometry GPU-upload cache. These
-// are scene-gl-owned, distinct from the 2D renderer's material-renderer table/texture cache — a material
-// kind is either 2D or 3D, never both. Dispatch policy lives in
-// GlRenderStateRuntime.registries.meshMaterialRenderers; the upload cache is surfaced through the
+// are scene-gl-owned — a material kind is either 2D or 3D, never both, and both share
+// GlRenderStateRuntime.registries.materialRenderers. The upload cache is surfaced through the
 // header's sceneMeshUploadCache slot, and the program cache lives only here.
 // `activeMeshProgram` is the bind()→draw() handoff: bind selects a family's program and stores it
 // here; draw reads it back. The draw-entry pools (`blendedPool`/`opaquePool`) and the per-frame

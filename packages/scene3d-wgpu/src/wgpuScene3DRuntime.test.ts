@@ -19,11 +19,11 @@ describe('getWgpuScene3DRuntime', () => {
   it('surfaces its upload cache without replacing persistent material dispatch policy', () => {
     const { state } = makeWgpuScene3DState();
     const stateRuntime = state[EntityRuntimeKey] as WgpuRenderStateRuntime;
-    const materials = stateRuntime.registries.meshMaterialRenderers;
+    const materials = stateRuntime.registries.materialRenderers;
     const modifierSnippets = stateRuntime.registries.modifierSnippets;
     const modifierSnippetRevision = stateRuntime.registries.modifierSnippetRevision;
     const scene = getWgpuScene3DRuntime(state);
-    expect(stateRuntime.registries.meshMaterialRenderers).toBe(materials);
+    expect(stateRuntime.registries.materialRenderers).toBe(materials);
     expect(stateRuntime.registries.modifierSnippets).toBe(modifierSnippets);
     expect(stateRuntime.registries.modifierSnippetRevision).toBe(modifierSnippetRevision);
     expect(stateRuntime.context.sceneMeshUploadCache).toBe(scene.uploadCache);

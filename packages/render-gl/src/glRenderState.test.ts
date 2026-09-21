@@ -320,7 +320,6 @@ describe('createGlRenderState (context sharing)', () => {
     expect(offscreenRuntime.registries.customEffectShaders).toBe(screenRuntime.registries.customEffectShaders);
     expect(offscreenRuntime.registries.customMaterialShaders).toBe(screenRuntime.registries.customMaterialShaders);
     expect(offscreenRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
-    expect(offscreenRuntime.registries.meshMaterialRenderers).toBe(screenRuntime.registries.meshMaterialRenderers);
     expect(offscreenRuntime.registries.modifierSnippets).toBe(screenRuntime.registries.modifierSnippets);
     expect(offscreenRuntime.registries.modifierSnippetRevision).toBe(screenRuntime.registries.modifierSnippetRevision);
     expect(offscreenRuntime.registries.pbrExtensions).toBe(screenRuntime.registries.pbrExtensions);
@@ -421,16 +420,10 @@ describe('createGlRenderStateRuntime', () => {
     expect(runtime.registries.customMaterialShaders.entries.size).toBe(0);
     expect(runtime.registries.materialRenderers).toMatchObject({
       onMiss: 'StandardMaterial',
-      registry: 'GlQuadMaterialRenderer',
+      registry: 'GlMaterialRenderer',
       shape: 'keyed',
     });
     expect(runtime.registries.materialRenderers.entries.size).toBe(0);
-    expect(runtime.registries.meshMaterialRenderers).toMatchObject({
-      onMiss: 'StandardMaterial',
-      registry: 'GlMeshMaterialRenderer',
-      shape: 'keyed',
-    });
-    expect(runtime.registries.meshMaterialRenderers.entries.size).toBe(0);
     expect(runtime.registries.modifierSnippets).toMatchObject({
       onMiss: 'Unregistered',
       registry: 'GlModifierSnippet',

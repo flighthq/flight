@@ -80,12 +80,10 @@ describe('wgpuScene3DRenderRegistries', () => {
       TextLabelKind,
       TilemapKind,
     ]);
-    expect(registries.materialRenderers).toBe(scene2dRegistries.materialRenderers);
-    expect(registryKeys(registries.materialRenderers)).toEqual([StandardMaterialKind]);
   });
 
-  it('carries exactly every supported standard mesh-material renderer', () => {
-    expect(registryKeys(registries.meshMaterialRenderers)).toEqual([
+  it('carries the standard quad-material and every supported mesh-material renderer', () => {
+    expect(registryKeys(registries.materialRenderers)).toEqual([
       BlinnPhongMaterialKind,
       CustomShaderMaterialKind,
       DepthMaterialKind,
@@ -96,6 +94,7 @@ describe('wgpuScene3DRenderRegistries', () => {
       PhongMaterialKind,
       ShadedMaterialKind,
       SpecularGlossinessPbrMaterialKind,
+      StandardMaterialKind,
       StandardPbrMaterialKind,
       ToonMaterialKind,
       UnlitMaterialKind,
@@ -136,7 +135,7 @@ describe('wgpuScene3DRenderRegistries', () => {
   });
 
   it('does not claim GL-only Extended PBR support', () => {
-    expect(registries.meshMaterialRenderers.entries.has(ExtendedPbrMaterialKind)).toBe(false);
+    expect(registries.materialRenderers.entries.has(ExtendedPbrMaterialKind)).toBe(false);
     expect('pbrExtensions' in registries).toBe(false);
   });
 });
