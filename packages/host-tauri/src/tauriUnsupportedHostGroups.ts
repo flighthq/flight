@@ -1,3 +1,4 @@
+import { webHostTextShaperGroup } from '@flighthq/host-web/contract';
 import type {
   HostAccessibilityCapabilities,
   HostAudioCapabilities,
@@ -168,7 +169,7 @@ export function tauriHostTextSegment(): HostTextSegmentCapabilities {
 }
 
 export function tauriHostTextShaper(): HostTextShaperCapabilities {
-  return {};
+  return webHostTextShaperGroup;
 }
 
 export function tauriHostUpdater(): HostUpdaterCapabilities {

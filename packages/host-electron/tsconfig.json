@@ -26,6 +26,9 @@
       "path": "../host"
     },
     {
+      "path": "../host-web"
+    },
+    {
       "path": "../ipc"
     },
     {

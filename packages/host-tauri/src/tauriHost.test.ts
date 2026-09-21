@@ -127,7 +127,6 @@ const UNSUPPORTED_GROUPS = [
   'statusBar',
   'surface',
   'textSegment',
-  'textShaper',
   'updater',
   'video',
   'wgpu',

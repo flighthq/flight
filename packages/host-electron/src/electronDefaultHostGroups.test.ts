@@ -1,3 +1,4 @@
+import { webHostTextShaper } from '@flighthq/host-web/contract';
 import type { ElectronApi } from '@flighthq/types/contract';
 
 import {
@@ -70,7 +71,6 @@ const statusBarGroup = emptyGroup(() => electronHostStatusBarGroup(electron));
 const canvasGroup = emptyGroup(() => electronHostCanvasGroup(electron));
 const surfaceGroup = emptyGroup(() => electronHostSurfaceGroup(electron));
 const textSegmentGroup = emptyGroup(() => electronHostTextSegmentGroup(electron));
-const textShaperGroup = emptyGroup(() => electronHostTextShaperGroup(electron));
 const videoGroup = emptyGroup(() => electronHostVideoGroup(electron));
 const wgpuGroup = emptyGroup(() => electronHostWgpuGroup(electron));
 
@@ -101,6 +101,18 @@ describe('electronHostSoftKeyboardGroup', softKeyboardGroup);
 describe('electronHostStatusBarGroup', statusBarGroup);
 describe('electronHostSurfaceGroup', surfaceGroup);
 describe('electronHostTextSegmentGroup', textSegmentGroup);
-describe('electronHostTextShaperGroup', textShaperGroup);
+describe('electronHostTextShaperGroup', () => {
+  it('fills the shaper slot with the shared web text shaper', () => {
+    const group = electronHostTextShaperGroup(electron);
+    expect(group.shaper).toBe(webHostTextShaper);
+  });
+
+  it('is plain data with no Entity runtime and no symbol keys', () => {
+    const group = electronHostTextShaperGroup(electron);
+    expect(Symbol.for('EntityRuntime') in group).toBe(false);
+    expect(Object.getOwnPropertySymbols(group)).toEqual([]);
+    expect(Object.keys(group)).toEqual(['shaper']);
+  });
+});
 describe('electronHostVideoGroup', videoGroup);
 describe('electronHostWgpuGroup', wgpuGroup);

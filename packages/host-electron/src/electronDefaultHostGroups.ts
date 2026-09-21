@@ -1,3 +1,4 @@
+import { webHostTextShaperGroup } from '@flighthq/host-web/contract';
 import type {
   ElectronApi,
   HostAccessibilityCapabilities,
@@ -143,7 +144,7 @@ export function electronHostTextSegmentGroup(_electron: ElectronApi): HostTextSe
 }
 
 export function electronHostTextShaperGroup(_electron: ElectronApi): HostTextShaperCapabilities {
-  return {};
+  return webHostTextShaperGroup;
 }
 
 export function electronHostVideoGroup(_electron: ElectronApi): HostVideoCapabilities {
