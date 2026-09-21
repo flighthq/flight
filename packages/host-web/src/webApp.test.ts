@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   createWebAppCapabilities,
   initializeWebAppBadgeBackend,
-  initializeWebAppCapabilities,
   initializeWebAppFocusBackend,
   initializeWebAppLocaleBackend,
   initializeWebAppNameBackend,
@@ -13,9 +12,25 @@ import {
 } from './webApp';
 
 describe('createWebAppCapabilities', () => {
-  it('creates the exact genuine web app slots as Entities', () => {
+  it('creates the exact genuine web app slots', () => {
     const capabilities = createWebAppCapabilities();
     expect(Object.keys(capabilities).sort()).toEqual(['badge', 'focus', 'locale', 'name', 'quit', 'ready', 'relaunch']);
+  });
+
+  it('is plain data: the group carries no Entity runtime and no symbol keys at all', () => {
+    // A capability group is host dispatch infrastructure, not a domain object Flight allocates, so it
+    // must not carry the Entity runtime tier. EntityRuntimeKey is Symbol.for('EntityRuntime'), so a
+    // registered-symbol lookup catches it even if the entity package is not imported here.
+    const capabilities = createWebAppCapabilities();
+    expect(Symbol.for('EntityRuntime') in capabilities).toBe(false);
+    expect(Object.getOwnPropertySymbols(capabilities)).toEqual([]);
+  });
+
+  it('gives each group its own capability objects rather than sharing one instance', () => {
+    const first = createWebAppCapabilities();
+    const second = createWebAppCapabilities();
+    expect(first).not.toBe(second);
+    expect(first.badge).not.toBe(second.badge);
   });
 
   it('reports document and locale facts without inventing native process facts', () => {
@@ -39,12 +54,6 @@ describe('createWebAppCapabilities', () => {
 describe('initializeWebAppBadgeBackend', () => {
   it('is the construction initializer of createWebAppBadgeBackend', () => {
     expect(typeof initializeWebAppBadgeBackend).toBe('function');
-  });
-});
-
-describe('initializeWebAppCapabilities', () => {
-  it('is the construction initializer of createWebAppCapabilities', () => {
-    expect(typeof initializeWebAppCapabilities).toBe('function');
   });
 });
 

@@ -1,35 +1,29 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  Entity,
-  EntityConstruction,
   HostProtocolCapabilities,
   HostProtocolLaunchCapability,
   HostProtocolRegistrationCapability,
 } from '@flighthq/types/contract';
 
-type WebProtocolCapabilities = Entity & Required<Pick<HostProtocolCapabilities, 'launch' | 'registration'>>;
+// A capability GROUP: host dispatch infrastructure, not a domain object Flight defines and allocates,
+// so it is plain data formed as a literal — no Entity, no runtime tier, no allocate/finish bracket.
+type WebProtocolCapabilities = Required<Pick<HostProtocolCapabilities, 'launch' | 'registration'>>;
 
 export function createWebProtocolCapabilities(): WebProtocolCapabilities {
+  // The registered-scheme list is per-group state the registration capability closes over, so each
+  // group gets its own — the same isolation the previous per-call allocation gave.
   const registeredSchemes: string[] = [];
-  const out = allocateEntity<WebProtocolCapabilities>();
-  initializeWebProtocolCapabilities(out, registeredSchemes);
-  return finishEntity(out);
-}
-
-export function initializeWebProtocolCapabilities(
-  out: EntityConstruction<WebProtocolCapabilities>,
-  registeredSchemes: string[],
-): void {
-  out.launch = (() => {
-    const out = {} as HostProtocolLaunchCapability;
-    initializeWebProtocolLaunchBackend(out);
-    return out;
-  })();
-  out.registration = (() => {
-    const out = {} as HostProtocolRegistrationCapability;
-    initializeWebProtocolRegistrationBackend(out, registeredSchemes);
-    return out;
-  })();
+  return {
+    launch: (() => {
+      const out = {} as HostProtocolLaunchCapability;
+      initializeWebProtocolLaunchBackend(out);
+      return out;
+    })(),
+    registration: (() => {
+      const out = {} as HostProtocolRegistrationCapability;
+      initializeWebProtocolRegistrationBackend(out, registeredSchemes);
+      return out;
+    })(),
+  };
 }
 
 export function initializeWebProtocolLaunchBackend(out: HostProtocolLaunchCapability): void {

@@ -1,12 +1,5 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
-import type {
-  CanvasTextShaperBackend,
-  EntityConstruction,
-  EntityWithoutRuntime,
-  FontMetrics,
-  TextFormat,
-} from '@flighthq/types/contract';
+import type { CanvasTextShaperBackend, FontMetrics, TextFormat } from '@flighthq/types/contract';
 
 // Clears the advance cache on a backend returned by createCanvasTextShaperBackend. Call this after
 // a webfont finishes loading — document.fonts.ready resolves, FontFaceObserver fires, etc. — so
@@ -131,20 +124,9 @@ export function createCanvasTextShaperBackend(): CanvasTextShaperBackend {
       cache.set(cacheKey, width);
       return width;
     },
-  } satisfies EntityWithoutRuntime<CanvasTextShaperBackend>;
+  } satisfies CanvasTextShaperBackend;
 
-  const out = allocateEntity<CanvasTextShaperBackend>();
-  initializeCanvasTextShaperBackend(out, backend);
-  return finishEntity(out);
-}
-
-export function initializeCanvasTextShaperBackend(
-  out: EntityConstruction<CanvasTextShaperBackend>,
-  backend: EntityWithoutRuntime<CanvasTextShaperBackend>,
-): void {
-  out.clearCache = backend.clearCache;
-  out.getFontMetrics = backend.getFontMetrics;
-  out.measureText = backend.measureText;
+  return backend;
 }
 
 // Max number of (font, text) pairs held in the per-backend advance cache. Chosen to cover a
@@ -192,8 +174,6 @@ function _createSentinelBackend(): CanvasTextShaperBackend {
     measureText(_text: string, _format: Readonly<TextFormat>): number {
       return -1;
     },
-  } satisfies EntityWithoutRuntime<CanvasTextShaperBackend>;
-  const out = allocateEntity<CanvasTextShaperBackend>();
-  initializeCanvasTextShaperBackend(out, backend);
-  return finishEntity(out);
+  } satisfies CanvasTextShaperBackend;
+  return backend;
 }

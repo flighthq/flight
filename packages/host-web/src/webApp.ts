@@ -1,7 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  Entity,
-  EntityConstruction,
   HostAppBadgeCapability,
   HostAppCapabilities,
   HostAppFocusCapability,
@@ -12,13 +9,22 @@ import type {
   HostAppRelaunchCapability,
 } from '@flighthq/types/contract';
 
-type WebAppCapabilities = Entity &
-  Required<Pick<HostAppCapabilities, 'badge' | 'focus' | 'locale' | 'name' | 'quit' | 'ready' | 'relaunch'>>;
+// A capability GROUP: host dispatch infrastructure, not a domain object Flight defines and allocates,
+// so it is plain data formed as a literal — no Entity, no runtime tier, no allocate/finish bracket.
+type WebAppCapabilities = Required<
+  Pick<HostAppCapabilities, 'badge' | 'focus' | 'locale' | 'name' | 'quit' | 'ready' | 'relaunch'>
+>;
 
 export function createWebAppCapabilities(): WebAppCapabilities {
-  const out = allocateEntity<WebAppCapabilities>();
-  initializeWebAppCapabilities(out);
-  return finishEntity(out);
+  return {
+    badge: createWebAppCapability(initializeWebAppBadgeBackend),
+    focus: createWebAppCapability(initializeWebAppFocusBackend),
+    locale: createWebAppCapability(initializeWebAppLocaleBackend),
+    name: createWebAppCapability(initializeWebAppNameBackend),
+    quit: createWebAppCapability(initializeWebAppQuitBackend),
+    ready: createWebAppCapability(initializeWebAppReadyBackend),
+    relaunch: createWebAppCapability(initializeWebAppRelaunchBackend),
+  };
 }
 
 export function initializeWebAppBadgeBackend(out: HostAppBadgeCapability): void {
@@ -32,44 +38,6 @@ export function initializeWebAppBadgeBackend(out: HostAppBadgeCapability): void 
       return false;
     }
   };
-}
-
-export function initializeWebAppCapabilities(out: EntityConstruction<WebAppCapabilities>): void {
-  out.badge = (() => {
-    const out = {} as HostAppBadgeCapability;
-    initializeWebAppBadgeBackend(out);
-    return out;
-  })();
-  out.focus = (() => {
-    const out = {} as HostAppFocusCapability;
-    initializeWebAppFocusBackend(out);
-    return out;
-  })();
-  out.locale = (() => {
-    const out = {} as HostAppLocaleCapability;
-    initializeWebAppLocaleBackend(out);
-    return out;
-  })();
-  out.name = (() => {
-    const out = {} as HostAppNameCapability;
-    initializeWebAppNameBackend(out);
-    return out;
-  })();
-  out.quit = (() => {
-    const out = {} as HostAppQuitCapability;
-    initializeWebAppQuitBackend(out);
-    return out;
-  })();
-  out.ready = (() => {
-    const out = {} as HostAppReadyCapability;
-    initializeWebAppReadyBackend(out);
-    return out;
-  })();
-  out.relaunch = (() => {
-    const out = {} as HostAppRelaunchCapability;
-    initializeWebAppRelaunchBackend(out);
-    return out;
-  })();
 }
 
 export function initializeWebAppFocusBackend(out: HostAppFocusCapability): void {
