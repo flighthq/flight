@@ -44,6 +44,7 @@
     "@flighthq/clipboard": "*",
     "@flighthq/dialog": "*",
     "@flighthq/host": "*",
+    "@flighthq/host-web": "*",
     "@flighthq/ipc": "*",
     "@flighthq/menu": "*",
     "@flighthq/notification": "*",

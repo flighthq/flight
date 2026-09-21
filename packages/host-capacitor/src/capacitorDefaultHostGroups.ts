@@ -1,3 +1,4 @@
+import { webHostTextShaperGroup } from '@flighthq/host-web/contract';
 import type {
   HostAccessibilityCapabilities,
   HostAudioCapabilities,
@@ -146,7 +147,7 @@ export function capacitorHostTextSegment(): HostTextSegmentCapabilities {
 }
 
 export function capacitorHostTextShaper(): HostTextShaperCapabilities {
-  return {};
+  return webHostTextShaperGroup;
 }
 
 export function capacitorHostTray(): HostTrayCapabilities {

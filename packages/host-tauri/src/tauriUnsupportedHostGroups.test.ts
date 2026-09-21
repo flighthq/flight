@@ -1,3 +1,5 @@
+import { webHostTextShaper } from '@flighthq/host-web/contract';
+
 import {
   tauriHostAccessibility,
   tauriHostAudio,
@@ -78,7 +80,19 @@ describe('tauriHostStatusBar', returnsEmptyGroup(tauriHostStatusBar));
 
 describe('tauriHostSurface', returnsEmptyGroup(tauriHostSurface));
 describe('tauriHostTextSegment', returnsEmptyGroup(tauriHostTextSegment));
-describe('tauriHostTextShaper', returnsEmptyGroup(tauriHostTextShaper));
+describe('tauriHostTextShaper', () => {
+  it('fills the shaper slot with the shared web text shaper', () => {
+    const group = tauriHostTextShaper();
+    expect(group.shaper).toBe(webHostTextShaper);
+  });
+
+  it('is plain data with no Entity runtime and no symbol keys', () => {
+    const group = tauriHostTextShaper();
+    expect(Symbol.for('EntityRuntime') in group).toBe(false);
+    expect(Object.getOwnPropertySymbols(group)).toEqual([]);
+    expect(Object.keys(group)).toEqual(['shaper']);
+  });
+});
 describe('tauriHostUpdater', returnsEmptyGroup(tauriHostUpdater));
 describe('tauriHostVideo', returnsEmptyGroup(tauriHostVideo));
 describe('tauriHostWgpu', returnsEmptyGroup(tauriHostWgpu));

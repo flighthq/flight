@@ -1,3 +1,5 @@
+import { webHostTextShaper } from '@flighthq/host-web/contract';
+
 import {
   capacitorHostAccessibility,
   capacitorHostAudio,
@@ -143,7 +145,17 @@ describe('capacitorHostTextSegment', () => {
 });
 
 describe('capacitorHostTextShaper', () => {
-  it('claims no text-shaper slots', () => expect(capacitorHostTextShaper()).toEqual({}));
+  it('fills the shaper slot with the shared web text shaper', () => {
+    const group = capacitorHostTextShaper();
+    expect(group.shaper).toBe(webHostTextShaper);
+  });
+
+  it('is plain data with no Entity runtime and no symbol keys', () => {
+    const group = capacitorHostTextShaper();
+    expect(Symbol.for('EntityRuntime') in group).toBe(false);
+    expect(Object.getOwnPropertySymbols(group)).toEqual([]);
+    expect(Object.keys(group)).toEqual(['shaper']);
+  });
 });
 
 describe('capacitorHostTray', () => {
