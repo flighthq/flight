@@ -10,7 +10,7 @@ import {
   explainRenderRegistriesMisses,
   getOrCreateRenderProxy2D,
   prepareScene2DRender,
-  registerRenderer,
+  registerNodeRenderer,
 } from '@flighthq/render/contract';
 import {
   appendMorphShapeBeginFill,
@@ -79,7 +79,7 @@ describe('drawCanvasShape', () => {
   it('renders updated MorphShape geometry through stable retained path buffers', () => {
     const canvas = document.createElement('canvas');
     const state = makeShapeState(canvas);
-    registerRenderer(state, MorphShapeKind, canvasMorphShapeRenderer);
+    registerNodeRenderer(state, MorphShapeKind, canvasMorphShapeRenderer);
     const start = createPath();
     appendPathMoveTo(start, 0, 0);
     appendPathLineTo(start, 10, 0);
@@ -115,7 +115,7 @@ describe('drawCanvasShape', () => {
   it('renders MorphShapeKind through the explicit default renderer alias', () => {
     const canvas = document.createElement('canvas');
     const state = makeShapeState(canvas);
-    registerRenderer(state, MorphShapeKind, canvasMorphShapeRenderer);
+    registerNodeRenderer(state, MorphShapeKind, canvasMorphShapeRenderer);
     const shape = createMorphShape({
       [EntityRuntimeKey]: undefined,
       commands: [],
@@ -134,7 +134,7 @@ describe('drawCanvasShape', () => {
     canvas.width = 200;
     canvas.height = 200;
     const state = makeShapeState(canvas);
-    registerRenderer(state, ShapeKind, canvasShapeRenderer);
+    registerNodeRenderer(state, ShapeKind, canvasShapeRenderer);
     const shape = createShape();
     const data = getOrCreateRenderProxy2D(state, shape);
     expect(() => drawCanvasShape(state, data)).not.toThrow();
@@ -145,7 +145,7 @@ describe('drawCanvasShape', () => {
     canvas.width = 200;
     canvas.height = 200;
     const state = makeShapeState(canvas);
-    registerRenderer(state, ShapeKind, canvasShapeRenderer);
+    registerNodeRenderer(state, ShapeKind, canvasShapeRenderer);
     const shape = createShape();
     appendShapeBeginFill(shape, 0xff0000ff);
     appendShapeRectangle(shape, 0, 0, 50, 50);

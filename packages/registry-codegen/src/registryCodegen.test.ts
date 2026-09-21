@@ -12,7 +12,7 @@ const shapeRenderer: RegistryCatalogEntry = {
   implementationSymbol: 'glShapeRenderer',
   kind: 'Shape',
   registrarImport: '@flighthq/render',
-  registrarSymbol: 'registerRenderer',
+  registrarSymbol: 'registerNodeRenderer',
 };
 
 const shapeCommands: RegistryCatalogEntry = {

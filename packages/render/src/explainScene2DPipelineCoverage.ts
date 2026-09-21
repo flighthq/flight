@@ -12,7 +12,7 @@ export function explainScene2DPipelineCoverage(
   collectUsedKinds(usedSet, scene);
 
   const registeredKinds: Kind[] = [];
-  getRegistryTableKeys(registeredKinds, getRenderStateRuntime(state).registries.renderers);
+  getRegistryTableKeys(registeredKinds, getRenderStateRuntime(state).registries.nodeRenderers);
   registeredKinds.sort();
 
   const usedKinds = Array.from(usedSet).sort();

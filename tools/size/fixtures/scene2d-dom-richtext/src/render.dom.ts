@@ -1,5 +1,5 @@
 import { addNodeChild } from '@flighthq/node';
-import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { createDomRenderState, domRichTextRenderer, renderDomScene2D } from '@flighthq/scene2d-dom';
 import { createRichText } from '@flighthq/text';
@@ -16,7 +16,7 @@ const state = createDomRenderState(container, { pixelRatio: 1 });
 // already holds, set once rather than reapplied by a render function every frame.
 container.style.backgroundColor = '#1a1a2e';
 
-registerRenderer(state, RichTextKind, domRichTextRenderer);
+registerNodeRenderer(state, RichTextKind, domRichTextRenderer);
 
 const root = createDisplayObject();
 const field = createRichText();

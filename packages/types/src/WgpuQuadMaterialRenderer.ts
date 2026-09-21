@@ -2,7 +2,7 @@ import type { Material, MaterialData } from './Material';
 import type { WgpuRenderState } from './WgpuRenderState';
 
 // Per-backend behavior for a material kind on Wgpu, registered against the kind on the render
-// state via registerWgpuMaterialRenderer. The renderer owns its shader module; the quad-batch writer
+// state via registerWgpuQuadMaterialRenderer. The renderer owns its shader module; the quad-batch writer
 // holds no shader of its own, so every batch — including the bundled default — renders only through
 // a registered material. A material reads the fixed base instance record (world transform, region
 // size, UV rect, alpha) from the shared instance storage buffer and may append its own per-instance
@@ -12,7 +12,7 @@ import type { WgpuRenderState } from './WgpuRenderState';
 // per-instance layout and populate it from its own sources or each node's materialData. The base
 // instance layout is a fixed contract a material shader reads but never changes; geometry and
 // topology remain graph-kind territory.
-export interface WgpuMaterialRenderer {
+export interface WgpuQuadMaterialRenderer {
   // Number of per-instance floats this material appends to the parallel material storage buffer
   // (@group(3) @binding(0), declared as array<f32> in the material's shader). Zero for materials
   // that need no per-instance data.

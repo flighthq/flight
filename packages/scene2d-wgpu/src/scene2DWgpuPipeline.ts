@@ -1,6 +1,6 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
 import { allocateEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
-import type { KeyedTable, Renderer, WgpuRenderRegistries } from '@flighthq/types/contract';
+import type { KeyedTable, NodeRenderer, WgpuRenderRegistries } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
   DisplayObjectKind,
@@ -28,12 +28,12 @@ import { wgpuScale9ShapeRenderer } from './wgpuScale9Shape';
 import { wgpuScale9SpriteRenderer } from './wgpuScale9Sprite';
 import { wgpuMorphShapeRenderer, wgpuShapeRenderer } from './wgpuShape';
 import { wgpuSpriteRenderer } from './wgpuSprite';
-import { standardWgpuMaterialRenderer } from './wgpuStandardMaterial';
+import { standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial';
 import { wgpuTextLabelRenderer } from './wgpuTextLabel';
 import { wgpuTilemapRenderer } from './wgpuTilemap';
 
-function buildScene2dWgpuRenderers(): KeyedTable<Renderer> {
-  let table = allocateEmptyWgpuRenderRegistries().renderers;
+function buildScene2dWgpuRenderers(): KeyedTable<NodeRenderer> {
+  let table = allocateEmptyWgpuRenderRegistries().nodeRenderers;
   table = withRegistryTableEntry(table, BitmapTextKind, wgpuBitmapTextRenderer);
   table = withRegistryTableEntry(table, DisplayObjectKind, wgpuScene2DRenderer);
   table = withRegistryTableEntry(table, MorphShapeKind, wgpuMorphShapeRenderer);
@@ -57,7 +57,7 @@ export const wgpuScene2DRenderRegistries: Readonly<WgpuRenderRegistries> = {
   materialRenderers: withRegistryTableEntry(
     _registries.materialRenderers,
     StandardMaterialKind,
-    standardWgpuMaterialRenderer,
+    standardWgpuQuadMaterialRenderer,
   ),
-  renderers: buildScene2dWgpuRenderers(),
+  nodeRenderers: buildScene2dWgpuRenderers(),
 };

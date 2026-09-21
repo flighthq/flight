@@ -9,7 +9,7 @@ import type {
   BlendMode,
   ColorScaleBias,
   TintMaterialData,
-  GlMaterialRenderer,
+  GlQuadMaterialRenderer,
   GlQuadBatchShader,
   GlRenderState,
   Material,
@@ -255,7 +255,7 @@ export function prepareGlQuadBatchWrite(
   sampler: Readonly<SamplerLike> | null,
   blendMode: BlendMode | null,
   material: Material | null,
-  materialRenderer: GlMaterialRenderer,
+  materialRenderer: GlQuadMaterialRenderer,
   maxInstances: number,
   smoothing: boolean | null = null,
 ): number {

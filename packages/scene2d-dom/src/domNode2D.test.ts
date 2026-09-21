@@ -1,6 +1,6 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
-import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
+import { getOrCreateRenderProxy2D, prepareScene2DRender, registerNodeRenderer } from '@flighthq/render/contract';
 import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d/contract';
 import type { ClipRegion, Rectangle } from '@flighthq/types/contract';
 import { DisplayObjectKind, EntityRuntimeKey } from '@flighthq/types/contract';
@@ -19,7 +19,7 @@ function makeState() {
 }
 
 // Sets up a node with a mock renderer that registers a specific element without going
-// through registerRenderer (which would change rendererMapId and overwrite other nodes).
+// through registerNodeRenderer (which would change rendererMapId and overwrite other nodes).
 function setupRenderedNode(
   state: ReturnType<typeof makeState>,
   obj: ReturnType<typeof createDisplayObject>,
@@ -81,7 +81,7 @@ describe('renderDomScene2D', () => {
     invalidateNodeLocalTransform(obj);
 
     const renderer = { createData: vi.fn(), submit: vi.fn() };
-    registerRenderer(state, DisplayObjectKind, renderer);
+    registerNodeRenderer(state, DisplayObjectKind, renderer);
     prepareScene2DRender(state, obj);
     renderDomScene2D(state, obj);
 
@@ -94,7 +94,7 @@ describe('renderDomScene2D', () => {
     obj.visible = false;
 
     const renderer = { createData: vi.fn(), submit: vi.fn() };
-    registerRenderer(state, DisplayObjectKind, renderer);
+    registerNodeRenderer(state, DisplayObjectKind, renderer);
     prepareScene2DRender(state, obj);
     renderDomScene2D(state, obj);
 
@@ -107,7 +107,7 @@ describe('renderDomScene2D', () => {
     obj.alpha = 0;
 
     const renderer = { createData: vi.fn(), submit: vi.fn() };
-    registerRenderer(state, DisplayObjectKind, renderer);
+    registerNodeRenderer(state, DisplayObjectKind, renderer);
     prepareScene2DRender(state, obj);
     renderDomScene2D(state, obj);
 

@@ -1,6 +1,6 @@
 import { invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
-import { bindGlImageResourceTexture, resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
+import { bindGlImageResourceTexture, resolveGlQuadMaterialRenderer } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlRenderState, RenderProxy2D, Scene2DRenderer, Shape } from '@flighthq/types/contract';
 import { BatchFormat, RenderRegistryTable, ShapeKind } from '@flighthq/types/contract';
@@ -36,7 +36,7 @@ export function drawGlRasterShape(state: GlRenderState, renderProxy: RenderProxy
   }
 
   const material = renderProxy.material;
-  const materialRenderer = resolveGlMaterialRenderer(state, material);
+  const materialRenderer = resolveGlQuadMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
   const version = getNodeLocalContentRevision(source);

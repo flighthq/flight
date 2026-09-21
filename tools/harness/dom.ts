@@ -29,7 +29,7 @@ import {
   registerDomBitmapTextureResolver,
   registerDomImageTextureResolver,
   registerDomShapeRasterizer,
-  registerRenderer,
+  registerNodeRenderer,
   renderDomScene2D,
   RichTextKind,
   Scale9ShapeKind,
@@ -65,18 +65,18 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
   registerDomImageTextureResolver(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
-      registerRenderer(state, ShapeKind, domShapeRenderer);
+      registerNodeRenderer(state, ShapeKind, domShapeRenderer);
       registerDomShapeRasterizer(state, createHarnessShapeRasterizer());
       // The DOM shape renderer rasterizes paths through the canvas shape commands.
       registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
     } else if (kind === RichTextKind) {
-      registerRenderer(state, RichTextKind, domRichTextRenderer);
+      registerNodeRenderer(state, RichTextKind, domRichTextRenderer);
     } else if (kind === TextLabelKind) {
-      registerRenderer(state, TextLabelKind, domTextLabelRenderer);
+      registerNodeRenderer(state, TextLabelKind, domTextLabelRenderer);
     } else if (kind === SpriteKind) {
-      registerRenderer(state, SpriteKind, domSpriteRenderer);
+      registerNodeRenderer(state, SpriteKind, domSpriteRenderer);
     } else if (kind === Scale9ShapeKind) {
-      registerRenderer(state, Scale9ShapeKind, domScale9ShapeRenderer);
+      registerNodeRenderer(state, Scale9ShapeKind, domScale9ShapeRenderer);
       registerDomShapeRasterizer(state, createHarnessShapeRasterizer());
       registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
     }

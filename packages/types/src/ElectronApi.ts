@@ -270,7 +270,7 @@ export interface ElectronIpcMain {
   removeHandler(channel: string): void;
 }
 
-// Renderer-side IPC is injected separately from ElectronApi because ElectronApi represents the main
+// NodeRenderer-side IPC is injected separately from ElectronApi because ElectronApi represents the main
 // process module. This is exactly the renderer surface the send/invoke adapters consume.
 export interface ElectronIpcRenderer {
   invoke(channel: string, ...args: readonly unknown[]): Promise<unknown>;

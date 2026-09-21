@@ -2,7 +2,7 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import { emitSignal } from '@flighthq/signals/contract';
 import { RenderRegistryTable } from '@flighthq/types/contract';
 
-import { registerRenderer } from './renderer';
+import { registerNodeRenderer } from './renderer';
 import { createRenderProxy } from './renderProxy';
 import {
   areRenderRegistriesGuardsEnabled,
@@ -46,7 +46,7 @@ describe('enableRenderRegistriesGuards', () => {
       expect(entries[0]?.data).toMatchObject({
         kind: 'acme.Missing',
         message:
-          'createRenderProxy: node kind has no registered renderer — call registerRenderer(state, kind, renderer)',
+          'createRenderProxy: node kind has no registered renderer — call registerNodeRenderer(state, kind, renderer)',
         registry: RenderRegistryTable.NodeRenderer,
       });
     } finally {
@@ -59,7 +59,7 @@ describe('enableRenderRegistriesGuards', () => {
     const sink = createMemoryLogSink(1);
     addLogSink(sink.sink);
     enableRenderRegistriesGuards(state);
-    registerRenderer(state, 'acme.Registered', { createData: () => null, submit: () => {} });
+    registerNodeRenderer(state, 'acme.Registered', { createData: () => null, submit: () => {} });
     try {
       createRenderProxy(state, { kind: 'acme.Registered' } as never);
       expect(getMemoryLogSinkEntries(sink)).toHaveLength(0);

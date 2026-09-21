@@ -23,7 +23,7 @@ import {
   getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   prepareScene2DRender,
-  registerRenderer,
+  registerNodeRenderer,
   registerWgpuCompressedImageTextureResolver,
   registerWgpuCompressedTextureDecoder,
   registerWgpuCompressedTextureUpload,
@@ -93,8 +93,8 @@ export const width = WIDTH;
 export const height = HEIGHT;
 registerWgpuImageTextureResolver(state);
 registerWgpuCompressedImageTextureResolver(state);
-registerRenderer(state, DisplayObjectKind, wgpuScene2DRenderer);
-registerRenderer(state, SpriteKind, wgpuSpriteRenderer);
+registerNodeRenderer(state, DisplayObjectKind, wgpuScene2DRenderer);
+registerNodeRenderer(state, SpriteKind, wgpuSpriteRenderer);
 registerWgpuCompressedTextureUpload(state);
 registerWgpuCompressedTextureDecoder(state, (_format, w, h) => {
   const rgba = new Uint8ClampedArray(w * h * 4);

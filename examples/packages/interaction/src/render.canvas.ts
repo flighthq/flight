@@ -21,7 +21,7 @@ import {
   prepareScene2DRender,
   registerCanvasShapeCommands,
   registerCanvasSurfaceCreator,
-  registerRenderer,
+  registerNodeRenderer,
   renderCanvasScene2D,
   canvasScene2DRenderRegistries,
   ShapeKind,
@@ -49,8 +49,8 @@ registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 const screenClear = { color: [0x22 / 0xff, 0x22 / 0xff, 0x33 / 0xff, 1] } as const;
 enableFlightDiagnostics(state);
 
-registerRenderer(state, ShapeKind, canvasShapeRenderer);
-registerRenderer(state, TextLabelKind, canvasTextLabelRenderer);
+registerNodeRenderer(state, ShapeKind, canvasShapeRenderer);
+registerNodeRenderer(state, TextLabelKind, canvasTextLabelRenderer);
 registerCanvasShapeCommands(state, [
   canvasBeginFill,
   canvasDrawCircle,

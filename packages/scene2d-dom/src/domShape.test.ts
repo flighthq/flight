@@ -1,4 +1,4 @@
-﻿import { registerRenderer } from '@flighthq/render/contract';
+﻿import { registerNodeRenderer } from '@flighthq/render/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { canvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
 import {
@@ -23,7 +23,7 @@ function makeState() {
   const state = createDomRenderState(container);
   registerCanvasShapeCommands(state, canvasShapeCommands);
   registerDomShapeRasterizer(state, noopRasterizer);
-  registerRenderer(state, ShapeKind, domShapeRenderer);
+  registerNodeRenderer(state, ShapeKind, domShapeRenderer);
   return state;
 }
 

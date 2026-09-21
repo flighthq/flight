@@ -33,7 +33,7 @@ import {
   registerCanvasImageTextureResolver,
   registerCanvasRenderTextureResolver,
   registerCanvasShapeCommands,
-  registerRenderer,
+  registerNodeRenderer,
   renderCanvasScene2D,
   RichTextKind,
   canvasScene2DRenderRegistries,
@@ -88,22 +88,22 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
   registerCanvasRenderTextureResolver(getCanvasRenderStateTextureResolvers(state), state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
-      registerRenderer(state, ShapeKind, canvasShapeRenderer);
+      registerNodeRenderer(state, ShapeKind, canvasShapeRenderer);
       registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
     } else if (kind === RichTextKind) {
-      registerRenderer(state, RichTextKind, canvasRichTextRenderer);
+      registerNodeRenderer(state, RichTextKind, canvasRichTextRenderer);
     } else if (kind === TextLabelKind) {
-      registerRenderer(state, TextLabelKind, canvasTextLabelRenderer);
+      registerNodeRenderer(state, TextLabelKind, canvasTextLabelRenderer);
     } else if (kind === SpriteKind) {
-      registerRenderer(state, SpriteKind, canvasSpriteRenderer);
+      registerNodeRenderer(state, SpriteKind, canvasSpriteRenderer);
     } else if (kind === ParticleEmitter2DKind) {
-      registerRenderer(state, ParticleEmitter2DKind, canvasParticleEmitter2DRenderer);
+      registerNodeRenderer(state, ParticleEmitter2DKind, canvasParticleEmitter2DRenderer);
     } else if (kind === QuadBatchKind) {
-      registerRenderer(state, QuadBatchKind, canvasQuadBatchRenderer);
+      registerNodeRenderer(state, QuadBatchKind, canvasQuadBatchRenderer);
     } else if (kind === TilemapKind) {
-      registerRenderer(state, TilemapKind, canvasTilemapRenderer);
+      registerNodeRenderer(state, TilemapKind, canvasTilemapRenderer);
     } else if (kind === Scale9ShapeKind) {
-      registerRenderer(state, Scale9ShapeKind, canvasScale9ShapeRenderer);
+      registerNodeRenderer(state, Scale9ShapeKind, canvasScale9ShapeRenderer);
       // Scale9 rasterizes its nine patches through the same canvas shape commands as Shape.
       registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
     }

@@ -17,7 +17,7 @@ import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domSt
 
 // DOM is the backend for which a native text element makes sense; other backends either no-op or
 // composite this element over their canvas (decide later). Register app-side with
-// registerRenderer(state, NativeTextKind, domNativeTextRenderer).
+// registerNodeRenderer(state, NativeTextKind, domNativeTextRenderer).
 
 // createData returns null: the backing element is held on the runtime (a renderer-owned slot), not on
 // per-node RendererData, because the measured size must be visible to scene2d's DOM-free bounds.

@@ -16,7 +16,7 @@ import {
   QuadBatchKind,
   registerCanvasImageTextureResolver,
   registerCanvasSurfaceCreator,
-  registerRenderer,
+  registerNodeRenderer,
   renderCanvasScene2D,
   canvasScene2DRenderRegistries,
   TextLabelKind,
@@ -43,8 +43,8 @@ registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 const screenClear = { color: [0x2a / 0xff, 0x2a / 0xff, 0x3a / 0xff, 1] } as const;
 enableFlightDiagnostics(state);
 registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
-registerRenderer(state, QuadBatchKind, canvasQuadBatchRenderer);
-registerRenderer(state, TextLabelKind, canvasTextLabelRenderer);
+registerNodeRenderer(state, QuadBatchKind, canvasQuadBatchRenderer);
+registerNodeRenderer(state, TextLabelKind, canvasTextLabelRenderer);
 export const scale = pixelRatio;
 
 export function render(root: Node2D): void {

@@ -21,7 +21,7 @@ import { wgpuScene2DRenderRegistries } from './scene2DWgpuPipeline';
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
 import { prepareWgpuQuadBatchWrite, QUAD_BATCH_INSTANCE_FLOATS } from './wgpuQuadBatchWriter';
 import { wgpuScale9SpriteRenderer, drawWgpuScale9Sprite } from './wgpuScale9Sprite';
-import { registerWgpuStandardMaterial, standardWgpuMaterialRenderer } from './wgpuStandardMaterial';
+import { registerWgpuStandardMaterial, standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial';
 
 beforeAll(() => installWgpuMock());
 
@@ -66,7 +66,7 @@ describe('drawWgpuScale9Sprite', () => {
     registerWgpuStandardMaterial(state);
     registerWgpuColorAdjustmentMaterialFeature(state);
     const runtime = getWgpuRenderStateRuntime(state);
-    prepareWgpuQuadBatchWrite(state, createWgpuTextureEntry(), null, null, null, standardWgpuMaterialRenderer, 1);
+    prepareWgpuQuadBatchWrite(state, createWgpuTextureEntry(), null, null, null, standardWgpuQuadMaterialRenderer, 1);
     runtime.quadBatchWriterCount = 1;
     const tint = createTint();
     const renderProxy = createScale9RenderProxy(createResolvedRenderTexture(state));
@@ -86,7 +86,7 @@ describe('wgpuScale9SpriteRenderer', () => {
     expect(typeof wgpuScale9SpriteRenderer.createData).toBe('function');
     expect(typeof wgpuScale9SpriteRenderer.isDirty).toBe('function');
     expect(wgpuScale9SpriteRenderer.submit).toBe(drawWgpuScale9Sprite);
-    expect(wgpuScene2DRenderRegistries.renderers.entries.get(Scale9SpriteKind)).toEqual({
+    expect(wgpuScene2DRenderRegistries.nodeRenderers.entries.get(Scale9SpriteKind)).toEqual({
       state: RegistryEntryState.Bound,
       value: wgpuScale9SpriteRenderer,
     });

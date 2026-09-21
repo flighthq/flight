@@ -41,7 +41,7 @@ import {
   invalidateNodeLocalTransform,
   prepareScene2DRender,
   registerGlVelocityWriter,
-  registerRenderer,
+  registerNodeRenderer,
   renderGlScene2D,
   renderGlVelocity,
   reserveParticleEmitter2D,
@@ -79,7 +79,7 @@ const canvas = getWebSurfaceCanvas(glSurface)!;
 export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
   pixelRatio,
 });
-registerRenderer(state, ParticleEmitter2DKind, glParticleEmitter2DRenderer);
+registerNodeRenderer(state, ParticleEmitter2DKind, glParticleEmitter2DRenderer);
 registerGlMotionBlurEffect(state);
 registerGlVelocityWriter(state, ParticleEmitter2DKind, glParticleEmitter2DVelocityWriter);
 

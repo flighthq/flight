@@ -24,7 +24,7 @@ import {
   prepareScene2DRender,
   registerCanvasShapeCommands,
   registerCanvasSurfaceCreator,
-  registerRenderer,
+  registerNodeRenderer,
   renderCanvasScene2D,
   canvasScene2DRenderRegistries,
   ShapeKind,
@@ -62,7 +62,7 @@ export const state = createCanvasRenderState(
 registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x20 / 0xff, 0x28 / 0xff, 0x30 / 0xff, 1] } as const;
-registerRenderer(state, ShapeKind, canvasShapeRenderer);
+registerNodeRenderer(state, ShapeKind, canvasShapeRenderer);
 registerCanvasShapeCommands(state, canvasShapeCommands);
 
 const pipeline = createCanvasEffectState(state);

@@ -178,7 +178,7 @@ describe('minimal size fixture harness', () => {
       const bindsOnlyWebGlTraversal =
         fixture.name === 'scene2d-gl-pipeline-displayobject' &&
         fixture.rendererBindingCalls.length === 1 &&
-        fixture.rendererBindingCalls[0] === 'src/render.webgl.ts:registerRenderer';
+        fixture.rendererBindingCalls[0] === 'src/render.webgl.ts:registerNodeRenderer';
       if (fixture.rendererBindingCalls.length > 0 && !bindsOnlyWebGlTraversal) {
         problems.push(`binds renderer through ${fixture.rendererBindingCalls.join(', ')}`);
       }
@@ -445,7 +445,7 @@ function collectRendererBindingCalls(file: string, sourceDirectory: string): str
     if (bindings === undefined || !ts.isNamedImports(bindings)) continue;
     for (const element of bindings.elements) {
       const importedName = (element.propertyName ?? element.name).text;
-      if (importedName === 'registerRenderer' || importedName === 'registerRenderers') {
+      if (importedName === 'registerNodeRenderer' || importedName === 'registerNodeRenderers') {
         registrationNames.add(element.name.text);
       }
     }

@@ -6,7 +6,7 @@ import type { Kind } from './Entity';
 // whether anything is bound to serve it, so this reports kinds and never verdicts.
 //
 // Unlike Scene3DKindUsage, `nodeKinds` is a real requirement here: the 2D pipeline dispatches every node
-// through the renderer registry (`registerRenderer(state, kind, renderer)`), where the 3D pipeline
+// through the renderer registry (`registerNodeRenderer(state, kind, renderer)`), where the 3D pipeline
 // collects meshes structurally and registers nothing per node kind.
 //
 // Not yet reported: texture source kinds. A 2D document reaches textures through several unrelated

@@ -1,7 +1,7 @@
-import { registerRenderer } from '@flighthq/render/contract';
+import { registerNodeRenderer } from '@flighthq/render/contract';
 import type {
-  CanvasMaterialRenderer,
-  Renderer,
+  CanvasQuadMaterialRenderer,
+  NodeRenderer,
   Scene2DKindUsage,
   SceneCoverageCatalog,
   SceneCoverageEntry,
@@ -9,12 +9,12 @@ import type {
 import { BlendMode, RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { registerCanvasMaterialRenderer } from './canvasMaterialRegistry';
+import { registerCanvasQuadMaterialRenderer } from './canvasQuadMaterialRegistry';
 import { createCanvasRenderState } from './canvasTestSupport';
 import { explainCanvasScene2DCoverage, hasCanvasScene2DCoverage } from './explainCanvasScene2DCoverage';
 
-const materialRenderer = { getState: () => ({}) } as unknown as CanvasMaterialRenderer;
-const nodeRenderer: Renderer = { createData: () => null, submit: () => {} } as unknown as Renderer;
+const materialRenderer = { getState: () => ({}) } as unknown as CanvasQuadMaterialRenderer;
+const nodeRenderer: NodeRenderer = { createData: () => null, submit: () => {} } as unknown as NodeRenderer;
 const coverageCatalog: SceneCoverageCatalog = [
   {
     kind: 'acme.Custom',
@@ -44,7 +44,7 @@ function entries(
 describe('explainCanvasScene2DCoverage', () => {
   it('includes the shared node-renderer answer rather than restating it', () => {
     const state = makeState();
-    registerRenderer(state, 'Shape', nodeRenderer);
+    registerNodeRenderer(state, 'Shape', nodeRenderer);
     expect(entries(state, usage({ nodeKinds: ['Shape'] }))).toContainEqual({
       coverage: SceneCoverage.Satisfied,
       facet: RequirementFacet.SceneNodeKind,
@@ -81,7 +81,7 @@ describe('explainCanvasScene2DCoverage', () => {
 
   it('reports a registered material as Satisfied', () => {
     const state = makeState();
-    registerCanvasMaterialRenderer(state, 'acme.Custom', materialRenderer);
+    registerCanvasQuadMaterialRenderer(state, 'acme.Custom', materialRenderer);
     expect(entries(state, usage({ materialKinds: ['acme.Custom'] }))).toEqual([
       {
         coverage: SceneCoverage.Satisfied,
@@ -101,7 +101,7 @@ describe('explainCanvasScene2DCoverage', () => {
 describe('hasCanvasScene2DCoverage', () => {
   it('is false when only the shared half is unserved, so composition cannot hide a gap', () => {
     const state = makeState();
-    registerCanvasMaterialRenderer(state, 'acme.Custom', materialRenderer);
+    registerCanvasQuadMaterialRenderer(state, 'acme.Custom', materialRenderer);
     expect(hasCanvasScene2DCoverage(state, usage({ materialKinds: ['acme.Custom'], nodeKinds: ['acme.Node'] }))).toBe(
       false,
     );
@@ -109,7 +109,7 @@ describe('hasCanvasScene2DCoverage', () => {
 
   it('is false when only the Canvas half is unserved', () => {
     const state = makeState();
-    registerRenderer(state, 'acme.Node', nodeRenderer);
+    registerNodeRenderer(state, 'acme.Node', nodeRenderer);
     expect(hasCanvasScene2DCoverage(state, usage({ materialKinds: ['acme.Custom'], nodeKinds: ['acme.Node'] }))).toBe(
       false,
     );
@@ -117,8 +117,8 @@ describe('hasCanvasScene2DCoverage', () => {
 
   it('is true once both halves are served', () => {
     const state = makeState();
-    registerRenderer(state, 'acme.Node', nodeRenderer);
-    registerCanvasMaterialRenderer(state, 'acme.Custom', materialRenderer);
+    registerNodeRenderer(state, 'acme.Node', nodeRenderer);
+    registerCanvasQuadMaterialRenderer(state, 'acme.Custom', materialRenderer);
     expect(hasCanvasScene2DCoverage(state, usage({ materialKinds: ['acme.Custom'], nodeKinds: ['acme.Node'] }))).toBe(
       true,
     );

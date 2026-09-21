@@ -13,11 +13,11 @@ import { buildExamplesWebEntryHtml } from '../../../scripts/examples-web-entry-h
 import { workspacePackages } from '../../../scripts/workspaces';
 
 const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
-type Renderer = (typeof RENDERERS)[number];
+type NodeRenderer = (typeof RENDERERS)[number];
 
 interface Example {
   name: string;
-  renderers: Renderer[];
+  renderers: NodeRenderer[];
 }
 
 const projectRoot = resolve(__dirname, '../../..');

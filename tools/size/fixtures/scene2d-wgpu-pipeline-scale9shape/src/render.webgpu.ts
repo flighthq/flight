@@ -39,7 +39,7 @@ appendWebSurface(wgpuSurface, document.body);
 const registries = allocateEmptyWgpuRenderRegistries();
 const registry = {
   ...registries,
-  renderers: withRegistryTableEntry(registries.renderers, Scale9ShapeKind, wgpuScale9ShapeRenderer),
+  nodeRenderers: withRegistryTableEntry(registries.nodeRenderers, Scale9ShapeKind, wgpuScale9ShapeRenderer),
 };
 
 const acquisition = wgpuSurface.acquisition;

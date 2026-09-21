@@ -24,7 +24,7 @@ import {
   registerCanvasBitmapTextureResolver,
   registerCanvasImageTextureResolver,
   registerCanvasShapeCommands,
-  registerRenderer,
+  registerNodeRenderer,
   registerWgpuShapeRasterizer,
   renderWgpuScene2D,
   wgpuScene3DRenderRegistries,
@@ -55,7 +55,7 @@ export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRender
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1], depth: 1.0 } as const;
 enableFlightDiagnostics(state);
-registerRenderer(state, ShapeKind, wgpuShapeRenderer);
+registerNodeRenderer(state, ShapeKind, wgpuShapeRenderer);
 // Gradient and texture fills have no tessellated form on this backend, so they draw through an
 // explicit rasterizer. It paints into no canvas of its own, so it carries a resolution set
 // rather than a render state, and that set is pointed at this state's diagnostics.

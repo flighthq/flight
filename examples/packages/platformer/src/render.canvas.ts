@@ -20,7 +20,7 @@ import {
   registerCanvasImageTextureResolver,
   registerCanvasShapeCommands,
   registerCanvasSurfaceCreator,
-  registerRenderer,
+  registerNodeRenderer,
   renderCanvasScene2D,
   canvasScene2DRenderRegistries,
   ShapeKind,
@@ -49,9 +49,9 @@ registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 const screenClear = { color: [0x87 / 0xff, 0xce / 0xff, 0xeb / 0xff, 1] } as const;
 enableFlightDiagnostics(state);
 
-registerRenderer(state, ShapeKind, canvasShapeRenderer);
-registerRenderer(state, SpriteKind, canvasSpriteRenderer);
-registerRenderer(state, TextLabelKind, canvasTextLabelRenderer);
+registerNodeRenderer(state, ShapeKind, canvasShapeRenderer);
+registerNodeRenderer(state, SpriteKind, canvasSpriteRenderer);
+registerNodeRenderer(state, TextLabelKind, canvasTextLabelRenderer);
 registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
 registerCanvasShapeCommands(state, [canvasBeginFill, canvasDrawRectangle, canvasEndFill]);
 

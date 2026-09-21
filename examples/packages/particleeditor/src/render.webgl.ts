@@ -18,7 +18,7 @@ import {
   enableGlBlendModeSupport,
   ParticleEmitter2DKind,
   prepareScene2DRender,
-  registerRenderer,
+  registerNodeRenderer,
   renderGlScene2D,
   TextLabelKind,
   beginGlRenderPass,
@@ -47,8 +47,8 @@ export const state = createGlRenderState(glSurface.context, glScene3DRenderRegis
 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 enableFlightDiagnostics(state);
-registerRenderer(state, ParticleEmitter2DKind, glParticleEmitter2DRenderer);
-registerRenderer(state, TextLabelKind, glTextLabelRenderer);
+registerNodeRenderer(state, ParticleEmitter2DKind, glParticleEmitter2DRenderer);
+registerNodeRenderer(state, TextLabelKind, glTextLabelRenderer);
 enableGlBlendModeSupport(state);
 
 export const scale = pixelRatio;

@@ -29,7 +29,7 @@ export function createRenderStateRuntime(): RenderStateRuntime {
   runtime.renderProxySources = new Set();
   runtime.registryMiss = null;
   runtime.registries = {
-    renderers: createKeyedTable('NodeRenderer', 'Unregistered'),
+    nodeRenderers: createKeyedTable('NodeRenderer', 'Unregistered'),
     // Written as null rather than left off: the field's presence is what keeps every registries object
     // one hidden class, so the per-shape reads on the draw path stay monomorphic. The opt-in registrar
     // fills the slot; nothing allocates a table for a state that never opts in.

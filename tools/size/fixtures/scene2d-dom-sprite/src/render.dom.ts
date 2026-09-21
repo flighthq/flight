@@ -1,6 +1,6 @@
 import { createWebImageResourceFromCanvas } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
-import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
 import {
   createDomRenderState,
@@ -22,7 +22,7 @@ const state = createDomRenderState(container, { pixelRatio: 1 });
 // already holds, set once rather than reapplied by a render function every frame.
 container.style.backgroundColor = '#1a1a2e';
 
-registerRenderer(state, SpriteKind, domSpriteRenderer);
+registerNodeRenderer(state, SpriteKind, domSpriteRenderer);
 registerDomImageTextureResolver(state);
 
 const root = createDisplayObject();

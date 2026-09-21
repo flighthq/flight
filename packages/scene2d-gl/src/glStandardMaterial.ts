@@ -1,5 +1,5 @@
-import { registerGlMaterialRenderer } from '@flighthq/render-gl/contract';
-import type { GlMaterialRenderer, GlRenderState } from '@flighthq/types/contract';
+import { registerGlQuadMaterialRenderer } from '@flighthq/render-gl/contract';
+import type { GlQuadMaterialRenderer, GlRenderState } from '@flighthq/types/contract';
 import { StandardMaterialKind } from '@flighthq/types/contract';
 
 import {
@@ -14,10 +14,10 @@ import {
 // with no material renders only if a renderer is registered for StandardMaterialKind. A user can copy
 // this file, swap the shader, and register their own default the same way.
 export function registerGlStandardMaterial(state: GlRenderState): void {
-  registerGlMaterialRenderer(state, StandardMaterialKind, standardGlMaterialRenderer);
+  registerGlQuadMaterialRenderer(state, StandardMaterialKind, standardGlQuadMaterialRenderer);
 }
 
-export const standardGlMaterialRenderer: GlMaterialRenderer = {
+export const standardGlQuadMaterialRenderer: GlQuadMaterialRenderer = {
   instanceFloatCount: 0,
   bind(state: GlRenderState): void {
     const shader = ensureGlQuadBatchShader(state);

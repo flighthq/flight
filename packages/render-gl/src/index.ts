@@ -14,6 +14,7 @@ export { createExternalGlTexture, disposeExternalGlTexture } from './glExternalT
 export { clearGlRenderTarget, clearGlRenderTargetAttachments } from './glFullscreenPass';
 export { allocateEmptyGlRenderRegistries } from './glPipeline';
 export * from './glPresentRenderTarget';
+export * from './glQuadMaterialRegistry';
 export { beginGlRenderPass, endGlRenderPass, getGlCurrentRenderPass } from './glRenderPass';
 export { createGlRenderState, destroyGlRenderState } from './glRenderState';
 export * from './glRenderStateBracket';

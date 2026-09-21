@@ -25,7 +25,7 @@ import {
   registerCanvasImageTextureResolver,
   registerCanvasShapeCommands,
   registerGlShapeRasterizer,
-  registerRenderer,
+  registerNodeRenderer,
   renderGlScene2D,
   ShapeKind,
   beginGlRenderPass,
@@ -53,7 +53,7 @@ export const state = createGlRenderState(glSurface.context, glScene3DRenderRegis
 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 enableFlightDiagnostics(state);
-registerRenderer(state, ShapeKind, glShapeRenderer);
+registerNodeRenderer(state, ShapeKind, glShapeRenderer);
 
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
 // has no tessellated form and draws through this rasterizer instead. Registering it is what keeps a

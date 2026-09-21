@@ -1,10 +1,10 @@
 ﻿import type { Node2D } from './Node2D';
-import type { Renderer } from './Renderer';
+import type { NodeRenderer } from './NodeRenderer';
 import type { RendererData } from './RendererData';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState } from './RenderState';
 
-export interface Scene2DRenderer extends Renderer {
+export interface Scene2DRenderer extends NodeRenderer {
   createData(state: RenderState, source: Node2D): RendererData | null;
   submit(state: RenderState, node: RenderProxy2D): void;
 }

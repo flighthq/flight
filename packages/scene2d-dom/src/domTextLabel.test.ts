@@ -1,4 +1,4 @@
-﻿import { registerRenderer } from '@flighthq/render/contract';
+﻿import { registerNodeRenderer } from '@flighthq/render/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createTextLabel } from '@flighthq/text/contract';
 import { TextLabelKind } from '@flighthq/types/contract';
@@ -9,7 +9,7 @@ import { domTextLabelRenderer, drawDomTextLabel, initializeDomTextData } from '.
 function makeState() {
   const container = document.createElement('div');
   const state = createDomRenderState(container);
-  registerRenderer(state, TextLabelKind, domTextLabelRenderer);
+  registerNodeRenderer(state, TextLabelKind, domTextLabelRenderer);
   return state;
 }
 

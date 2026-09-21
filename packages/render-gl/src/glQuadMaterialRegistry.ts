@@ -1,15 +1,19 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
-import type { GlMaterialRenderer, GlRenderState, Kind, Material } from '@flighthq/types/contract';
+import type { GlQuadMaterialRenderer, GlRenderState, Kind, Material } from '@flighthq/types/contract';
 import { RegistryEntryState, RenderRegistryTable, StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 
-export function getGlMaterialRenderer(state: GlRenderState, kind: Kind): GlMaterialRenderer | null {
+export function getGlQuadMaterialRenderer(state: GlRenderState, kind: Kind): GlQuadMaterialRenderer | null {
   const entry = getGlRenderStateRuntime(state).registries.materialRenderers.entries.get(kind);
   return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
-export function registerGlMaterialRenderer(state: GlRenderState, kind: Kind, renderer: GlMaterialRenderer): void {
+export function registerGlQuadMaterialRenderer(
+  state: GlRenderState,
+  kind: Kind,
+  renderer: GlQuadMaterialRenderer,
+): void {
   const runtime = getGlRenderStateRuntime(state);
   runtime.registries.materialRenderers = withRegistryTableEntry(runtime.registries.materialRenderers, kind, renderer);
 }
@@ -18,7 +22,10 @@ export function registerGlMaterialRenderer(state: GlRenderState, kind: Kind, ren
 // registered for StandardMaterialKind, else null. The render path knows nothing about which materials
 // exist — every material (including the default) enters only through user registration, and an
 // unresolved material is a no-op (the node does not render), never a built-in fallback.
-export function resolveGlMaterialRenderer(state: GlRenderState, material: Material | null): GlMaterialRenderer | null {
+export function resolveGlQuadMaterialRenderer(
+  state: GlRenderState,
+  material: Material | null,
+): GlQuadMaterialRenderer | null {
   const runtime = getGlRenderStateRuntime(state);
   const entries = runtime.registries.materialRenderers.entries;
   const kind = material?.kind ?? StandardMaterialKind;

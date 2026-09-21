@@ -12,7 +12,7 @@ import {
   initializeRenderCacheAdapter,
   isRenderCache,
   isRenderCacheAdapter,
-  registerRenderCacheRenderer,
+  registerRenderCacheNodeRenderer,
   useRenderCache,
 } from './renderCache';
 import { createRenderProxy2D } from './renderProxy';
@@ -153,12 +153,14 @@ describe('isRenderCacheAdapter', () => {
   });
 });
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
-describe('registerRenderCacheRenderer', () => {
+describe('registerRenderCacheNodeRenderer', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = createRenderState();
     const renderer = { createData: () => null, submit: vi.fn() };
-    registerRenderCacheRenderer(state, renderer as any);
-    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.renderers, RenderCacheKind)).toBe(renderer);
+    registerRenderCacheNodeRenderer(state, renderer as any);
+    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.nodeRenderers, RenderCacheKind)).toBe(
+      renderer,
+    );
   });
 });
 

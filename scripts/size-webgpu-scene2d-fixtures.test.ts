@@ -60,13 +60,13 @@ describe('WebGPU Scene2D second-wave size fixtures', () => {
           const source = readFileSync(resolve(directory, 'src', 'render.webgpu.ts'), 'utf8');
           expect(metadata.flightSize).toEqual({ kind: 'size-only-control', name });
           expect(existsSync(manifest)).toBe(false);
-          expect(source).not.toMatch(/\bwgpu\w+Renderer\b/);
+          expect(source).not.toMatch(/\bwgpu\w+NodeRenderer\b/);
           expect(source).not.toContain('withRegistryTableEntry(');
         });
       } else {
         it('binds exactly its one renderer and has a single-route capture', () => {
           const source = readFileSync(resolve(directory, 'src', 'render.webgpu.ts'), 'utf8');
-          const renderers = [...new Set([...source.matchAll(/\bwgpu\w+Renderer\b/g)].map((match) => match[0]))];
+          const renderers = [...new Set([...source.matchAll(/\bwgpu\w+NodeRenderer\b/g)].map((match) => match[0]))];
           const kinds = [...new Set([...source.matchAll(/\b[A-Z]\w+Kind\b/g)].map((match) => match[0]))].filter(
             (value) => value !== 'StandardMaterialKind',
           );

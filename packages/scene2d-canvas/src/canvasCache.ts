@@ -7,7 +7,7 @@ import {
   getRenderProxyCache,
   noopRendererData,
   prepareScene2DRender,
-  registerRenderCacheRenderer,
+  registerRenderCacheNodeRenderer,
 } from '@flighthq/render/contract';
 import type {
   CanvasRenderOptions,
@@ -83,7 +83,7 @@ export function destroyCanvasRenderCacheTarget(state: CanvasRenderState, cache: 
 }
 
 export function enableCanvasRenderCache(state: RenderState): void {
-  registerRenderCacheRenderer(state, canvasRenderCacheRenderer);
+  registerRenderCacheNodeRenderer(state, canvasRenderCacheRenderer);
 }
 
 /**

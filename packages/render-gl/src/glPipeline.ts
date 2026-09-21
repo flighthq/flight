@@ -19,14 +19,14 @@ export function initializeEmptyGlRenderRegistries(out: GlRenderRegistries): void
   out.blendRealizations = createKeyedTable('GlBlendRealization', 'Normal');
   out.customEffectShaders = createKeyedTable('GlCustomEffectShader', 'Unregistered');
   out.customMaterialShaders = createKeyedTable('GlCustomMaterialShader', 'Unregistered');
-  out.materialRenderers = createKeyedTable('GlMaterialRenderer', 'StandardMaterial');
+  out.materialRenderers = createKeyedTable('GlQuadMaterialRenderer', 'StandardMaterial');
   out.meshMaterialRenderers = createKeyedTable('GlMeshMaterialRenderer', 'StandardMaterial');
   out.modifierSnippets = createKeyedTable('GlModifierSnippet', 'Unregistered');
   out.modifierSnippetRevision = 0;
   out.pbrExtensions = createKeyedTable('GlPbrExtension', 'Unregistered');
   out.pbrExtensionRevision = 0;
   out.effects = createKeyedTable('GlEffect', 'Unregistered');
-  out.renderers = createKeyedTable('NodeRenderer', 'Unregistered');
+  out.nodeRenderers = createKeyedTable('NodeRenderer', 'Unregistered');
   out.textureResolvers = createKeyedTable('GlTextureResolver', 'Unregistered');
   out.velocityWriters = createKeyedTable('GlVelocityWriter', 'Unregistered');
 }

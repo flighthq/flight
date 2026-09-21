@@ -46,7 +46,7 @@ import {
   registerCanvasBitmapTextureResolver,
   registerCanvasImageTextureResolver,
   registerCanvasRenderTextureResolver,
-  registerRenderer,
+  registerNodeRenderer,
   registerCanvasShapeCommands,
   registerWgpuShapeRasterizer,
   renderWgpuScene2D,
@@ -113,23 +113,23 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
   enableWgpuScreenRenderTargetCapture(screen);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
-      registerRenderer(state, ShapeKind, wgpuShapeRenderer);
+      registerNodeRenderer(state, ShapeKind, wgpuShapeRenderer);
       registerWgpuShapeRasterizer(state, createHarnessShapeRasterizer());
       registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
     } else if (kind === RichTextKind) {
-      registerRenderer(state, RichTextKind, wgpuRichTextRenderer);
+      registerNodeRenderer(state, RichTextKind, wgpuRichTextRenderer);
     } else if (kind === TextLabelKind) {
-      registerRenderer(state, TextLabelKind, wgpuTextLabelRenderer);
+      registerNodeRenderer(state, TextLabelKind, wgpuTextLabelRenderer);
     } else if (kind === SpriteKind) {
-      registerRenderer(state, SpriteKind, wgpuSpriteRenderer);
+      registerNodeRenderer(state, SpriteKind, wgpuSpriteRenderer);
     } else if (kind === ParticleEmitter2DKind) {
-      registerRenderer(state, ParticleEmitter2DKind, wgpuParticleEmitter2DRenderer);
+      registerNodeRenderer(state, ParticleEmitter2DKind, wgpuParticleEmitter2DRenderer);
     } else if (kind === QuadBatchKind) {
-      registerRenderer(state, QuadBatchKind, wgpuQuadBatchRenderer);
+      registerNodeRenderer(state, QuadBatchKind, wgpuQuadBatchRenderer);
     } else if (kind === TilemapKind) {
-      registerRenderer(state, TilemapKind, wgpuTilemapRenderer);
+      registerNodeRenderer(state, TilemapKind, wgpuTilemapRenderer);
     } else if (kind === Scale9ShapeKind) {
-      registerRenderer(state, Scale9ShapeKind, wgpuScale9ShapeRenderer);
+      registerNodeRenderer(state, Scale9ShapeKind, wgpuScale9ShapeRenderer);
       registerWgpuShapeRasterizer(state, createHarnessShapeRasterizer());
       registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
     }

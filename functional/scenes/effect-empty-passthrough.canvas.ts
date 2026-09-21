@@ -23,7 +23,7 @@ import {
   prepareScene2DRender,
   registerCanvasShapeCommands,
   registerCanvasSurfaceCreator,
-  registerRenderer,
+  registerNodeRenderer,
   renderCanvasScene2D,
   canvasScene2DRenderRegistries,
   ShapeKind,
@@ -72,7 +72,7 @@ const screenClear = {
     (BACKGROUND_COLOR & 0xff) / 0xff,
   ] as const,
 };
-registerRenderer(state, ShapeKind, canvasShapeRenderer);
+registerNodeRenderer(state, ShapeKind, canvasShapeRenderer);
 registerCanvasShapeCommands(state, canvasShapeCommands);
 
 const pipeline = createCanvasEffectState(state);

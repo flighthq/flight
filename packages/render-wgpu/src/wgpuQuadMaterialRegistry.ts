@@ -1,15 +1,19 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
-import type { Kind, Material, WgpuMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
+import type { Kind, Material, WgpuQuadMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
 import { RegistryEntryState, RenderRegistryTable, StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 
-export function getWgpuMaterialRenderer(state: WgpuRenderState, kind: Kind): WgpuMaterialRenderer | null {
+export function getWgpuQuadMaterialRenderer(state: WgpuRenderState, kind: Kind): WgpuQuadMaterialRenderer | null {
   const entry = getWgpuRenderStateRuntime(state).registries.materialRenderers.entries.get(kind);
   return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
-export function registerWgpuMaterialRenderer(state: WgpuRenderState, kind: Kind, renderer: WgpuMaterialRenderer): void {
+export function registerWgpuQuadMaterialRenderer(
+  state: WgpuRenderState,
+  kind: Kind,
+  renderer: WgpuQuadMaterialRenderer,
+): void {
   const runtime = getWgpuRenderStateRuntime(state);
   runtime.registries.materialRenderers = withRegistryTableEntry(runtime.registries.materialRenderers, kind, renderer);
 }
@@ -18,10 +22,10 @@ export function registerWgpuMaterialRenderer(state: WgpuRenderState, kind: Kind,
 // registered for StandardMaterialKind, else null. The render path knows nothing about which materials
 // exist — every material (including the default) enters only through user registration, and an
 // unresolved material is a no-op (the node does not render), never a built-in fallback.
-export function resolveWgpuMaterialRenderer(
+export function resolveWgpuQuadMaterialRenderer(
   state: WgpuRenderState,
   material: Material | null,
-): WgpuMaterialRenderer | null {
+): WgpuQuadMaterialRenderer | null {
   const runtime = getWgpuRenderStateRuntime(state);
   const entries = runtime.registries.materialRenderers.entries;
   const kind = material?.kind ?? StandardMaterialKind;

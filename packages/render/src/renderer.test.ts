@@ -2,7 +2,7 @@ import { createSlotTable, getRegistryTableEntry } from '@flighthq/registry/contr
 import type {
   ColorAdjustmentUnsupportedGuard,
   RenderRootGuard,
-  Renderer,
+  NodeRenderer,
   RenderState,
   Scene2DClipHooks,
 } from '@flighthq/types/contract';
@@ -13,8 +13,8 @@ import {
   copyRenderStateRegistrations,
   copyRenderersFromRenderState,
   noopRendererData,
-  registerRenderer,
-  registerRenderers,
+  registerNodeRenderer,
+  registerNodeRenderers,
 } from './renderer';
 import { createRenderState, getRenderStateRuntime } from './renderState';
 
@@ -23,18 +23,18 @@ describe('copyAllRenderersFromRenderState', () => {
     const source = createRenderState();
     const target = createRenderState();
     const kind = 'kind';
-    const renderer = { createData: vi.fn(), submit: vi.fn() } as unknown as Renderer;
+    const renderer = { createData: vi.fn(), submit: vi.fn() } as unknown as NodeRenderer;
     const hooks = {
       finalize: vi.fn(),
       popClip: vi.fn(),
       pushClip: vi.fn(),
     } as unknown as Scene2DClipHooks;
-    registerRenderer(source, kind, renderer);
+    registerNodeRenderer(source, kind, renderer);
     source.displayObjectClipHooks = hooks;
 
     copyAllRenderersFromRenderState(target, source);
 
-    expect(getRegistryTableEntry(getRenderStateRuntime(target).registries.renderers, kind)).toBe(renderer);
+    expect(getRegistryTableEntry(getRenderStateRuntime(target).registries.nodeRenderers, kind)).toBe(renderer);
     expect(target.displayObjectClipHooks).toBe(hooks);
   });
 
@@ -42,7 +42,7 @@ describe('copyAllRenderersFromRenderState', () => {
     const source = createRenderState();
     const target = createRenderState();
     copyAllRenderersFromRenderState(target, source);
-    expect(getRenderStateRuntime(target).registries.renderers.entries.size).toBe(0);
+    expect(getRenderStateRuntime(target).registries.nodeRenderers.entries.size).toBe(0);
     expect(target.displayObjectClipHooks).toBeNull();
   });
 });
@@ -52,26 +52,28 @@ describe('copyRenderersFromRenderState', () => {
     const source = createRenderState();
     const target = createRenderState();
     const kind = 'kind';
-    const renderer = { createData: vi.fn(), submit: vi.fn() } as unknown as Renderer;
-    registerRenderer(source, kind, renderer);
+    const renderer = { createData: vi.fn(), submit: vi.fn() } as unknown as NodeRenderer;
+    registerNodeRenderer(source, kind, renderer);
     copyRenderersFromRenderState(target, source);
-    expect(getRenderStateRuntime(target).registries.renderers).toBe(getRenderStateRuntime(source).registries.renderers);
-    expect(getRegistryTableEntry(getRenderStateRuntime(target).registries.renderers, kind)).toBe(renderer);
+    expect(getRenderStateRuntime(target).registries.nodeRenderers).toBe(
+      getRenderStateRuntime(source).registries.nodeRenderers,
+    );
+    expect(getRegistryTableEntry(getRenderStateRuntime(target).registries.nodeRenderers, kind)).toBe(renderer);
   });
 
   it('is a no-op when source has no renderer registrations', () => {
     const source = createRenderState();
     const target = createRenderState();
     copyRenderersFromRenderState(target, source);
-    expect(getRenderStateRuntime(target).registries.renderers.entries.size).toBe(0);
+    expect(getRenderStateRuntime(target).registries.nodeRenderers.entries.size).toBe(0);
   });
 
   it('does not affect source rendererMapId', () => {
     const source = createRenderState();
     const target = createRenderState();
     const kind = 'kind';
-    const renderer = { createData: vi.fn(), submit: vi.fn() } as unknown as Renderer;
-    registerRenderer(source, kind, renderer);
+    const renderer = { createData: vi.fn(), submit: vi.fn() } as unknown as NodeRenderer;
+    registerNodeRenderer(source, kind, renderer);
     const sourceIdBeforeCopy = getRenderStateRuntime(source).rendererMapId;
     copyRenderersFromRenderState(target, source);
     expect(getRenderStateRuntime(source).rendererMapId).toBe(sourceIdBeforeCopy);
@@ -80,16 +82,16 @@ describe('copyRenderersFromRenderState', () => {
   it('preserves target-only registrations while source registrations win collisions', () => {
     const source = createRenderState();
     const target = createRenderState();
-    const sourceRenderer = { submit: vi.fn() } as unknown as Renderer;
-    const targetRenderer = { submit: vi.fn() } as unknown as Renderer;
-    const targetOnlyRenderer = { submit: vi.fn() } as unknown as Renderer;
-    registerRenderer(source, 'shared', sourceRenderer);
-    registerRenderer(target, 'shared', targetRenderer);
-    registerRenderer(target, 'target-only', targetOnlyRenderer);
+    const sourceRenderer = { submit: vi.fn() } as unknown as NodeRenderer;
+    const targetRenderer = { submit: vi.fn() } as unknown as NodeRenderer;
+    const targetOnlyRenderer = { submit: vi.fn() } as unknown as NodeRenderer;
+    registerNodeRenderer(source, 'shared', sourceRenderer);
+    registerNodeRenderer(target, 'shared', targetRenderer);
+    registerNodeRenderer(target, 'target-only', targetOnlyRenderer);
 
     copyRenderersFromRenderState(target, source);
 
-    const targetTable = getRenderStateRuntime(target).registries.renderers;
+    const targetTable = getRenderStateRuntime(target).registries.nodeRenderers;
     expect(getRegistryTableEntry(targetTable, 'shared')).toBe(sourceRenderer);
     expect(getRegistryTableEntry(targetTable, 'target-only')).toBe(targetOnlyRenderer);
   });
@@ -97,17 +99,17 @@ describe('copyRenderersFromRenderState', () => {
   it('shares a fresh immutable snapshot and diverges on later registration', () => {
     const source = createRenderState();
     const target = createRenderState();
-    const renderer = { submit: vi.fn() } as unknown as Renderer;
-    const lateRenderer = { submit: vi.fn() } as unknown as Renderer;
-    registerRenderer(source, 'shared', renderer);
+    const renderer = { submit: vi.fn() } as unknown as NodeRenderer;
+    const lateRenderer = { submit: vi.fn() } as unknown as NodeRenderer;
+    registerNodeRenderer(source, 'shared', renderer);
 
     copyRenderersFromRenderState(target, source);
 
-    const sharedSnapshot = getRenderStateRuntime(target).registries.renderers;
-    expect(sharedSnapshot).toBe(getRenderStateRuntime(source).registries.renderers);
-    registerRenderer(source, 'late', lateRenderer);
-    expect(getRenderStateRuntime(target).registries.renderers).toBe(sharedSnapshot);
-    expect(getRenderStateRuntime(source).registries.renderers).not.toBe(sharedSnapshot);
+    const sharedSnapshot = getRenderStateRuntime(target).registries.nodeRenderers;
+    expect(sharedSnapshot).toBe(getRenderStateRuntime(source).registries.nodeRenderers);
+    registerNodeRenderer(source, 'late', lateRenderer);
+    expect(getRenderStateRuntime(target).registries.nodeRenderers).toBe(sharedSnapshot);
+    expect(getRenderStateRuntime(source).registries.nodeRenderers).not.toBe(sharedSnapshot);
     expect(getRegistryTableEntry(sharedSnapshot, 'late')).toBeNull();
   });
 });
@@ -238,80 +240,80 @@ describe('noopRendererData', () => {
   });
 });
 
-describe('registerRenderer', () => {
+describe('registerNodeRenderer', () => {
   let state: RenderState;
   let kindA: string;
   let kindB: string;
-  let renderer1: Renderer;
-  let renderer2: Renderer;
+  let renderer1: NodeRenderer;
+  let renderer2: NodeRenderer;
 
   beforeEach(() => {
     kindA = 'kindA';
     kindB = 'kindB';
-    renderer1 = { render: vi.fn() } as unknown as Renderer;
-    renderer2 = { render: vi.fn() } as unknown as Renderer;
+    renderer1 = { render: vi.fn() } as unknown as NodeRenderer;
+    renderer2 = { render: vi.fn() } as unknown as NodeRenderer;
     state = createRenderState();
   });
 
   it('should register a new renderer', () => {
-    const before = getRenderStateRuntime(state).registries.renderers;
+    const before = getRenderStateRuntime(state).registries.nodeRenderers;
     expect(getRegistryTableEntry(before, kindA)).toBeNull();
-    registerRenderer(state, kindA, renderer1);
-    expect(getRenderStateRuntime(state).registries.renderers).not.toBe(before);
-    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.renderers, kindA)).toBe(renderer1);
+    registerNodeRenderer(state, kindA, renderer1);
+    expect(getRenderStateRuntime(state).registries.nodeRenderers).not.toBe(before);
+    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.nodeRenderers, kindA)).toBe(renderer1);
     expect(getRenderStateRuntime(state).rendererMapId).toBe(1);
   });
 
   it('should increment rendererMapId for each new renderer', () => {
-    registerRenderer(state, kindA, renderer1);
+    registerNodeRenderer(state, kindA, renderer1);
     const idAfterFirst = getRenderStateRuntime(state).rendererMapId;
-    registerRenderer(state, kindB, renderer2);
-    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.renderers, kindB)).toBe(renderer2);
+    registerNodeRenderer(state, kindB, renderer2);
+    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.nodeRenderers, kindB)).toBe(renderer2);
     expect(getRenderStateRuntime(state).rendererMapId).toBe(idAfterFirst + 1);
   });
 
   it('should not increment rendererMapId if the same renderer is registered', () => {
-    registerRenderer(state, kindA, renderer1);
+    registerNodeRenderer(state, kindA, renderer1);
     const idBefore = getRenderStateRuntime(state).rendererMapId;
-    registerRenderer(state, kindA, renderer1);
-    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.renderers, kindA)).toBe(renderer1);
+    registerNodeRenderer(state, kindA, renderer1);
+    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.nodeRenderers, kindA)).toBe(renderer1);
     expect(getRenderStateRuntime(state).rendererMapId).toBe(idBefore);
   });
 
   it('should update renderer and increment rendererMapId if different renderer is registered', () => {
-    registerRenderer(state, kindA, renderer1);
+    registerNodeRenderer(state, kindA, renderer1);
     const idBefore = getRenderStateRuntime(state).rendererMapId;
-    registerRenderer(state, kindA, renderer2);
-    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.renderers, kindA)).toBe(renderer2);
+    registerNodeRenderer(state, kindA, renderer2);
+    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.nodeRenderers, kindA)).toBe(renderer2);
     expect(getRenderStateRuntime(state).rendererMapId).toBe(idBefore + 1);
   });
 
   it('should wrap around rendererMapId correctly using >>> 0', () => {
     getRenderStateRuntime(state).rendererMapId = 0xffffffff;
-    registerRenderer(state, kindA, renderer1);
+    registerNodeRenderer(state, kindA, renderer1);
     expect(getRenderStateRuntime(state).rendererMapId).toBe(0);
   });
 });
 
-describe('registerRenderers', () => {
+describe('registerNodeRenderers', () => {
   it('should register every [kind, renderer] pair in the supplied set', () => {
     const state = createRenderState();
     const kindA = 'A';
     const kindB = 'B';
-    const rendererA = {} as Renderer;
-    const rendererB = {} as Renderer;
-    registerRenderers(state, [
+    const rendererA = {} as NodeRenderer;
+    const rendererB = {} as NodeRenderer;
+    registerNodeRenderers(state, [
       [kindA, rendererA],
       [kindB, rendererB],
     ]);
-    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.renderers, kindA)).toBe(rendererA);
-    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.renderers, kindB)).toBe(rendererB);
+    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.nodeRenderers, kindA)).toBe(rendererA);
+    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.nodeRenderers, kindB)).toBe(rendererB);
   });
 
   it('should register nothing for an empty set', () => {
     const state = createRenderState();
     const idBefore = getRenderStateRuntime(state).rendererMapId;
-    registerRenderers(state, []);
+    registerNodeRenderers(state, []);
     expect(getRenderStateRuntime(state).rendererMapId).toBe(idBefore);
   });
 });

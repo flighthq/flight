@@ -11,7 +11,7 @@ import type { RichText, TextLayoutResult, TextSelectionRectangle } from '@flight
 
 import { registerWgpuTextInputOverlay } from './wgpuRichText';
 
-// Renderer-agnostic caret/selection overlay drawn onto the rich text offscreen canvas of a RichText whose
+// NodeRenderer-agnostic caret/selection overlay drawn onto the rich text offscreen canvas of a RichText whose
 // input slot is present. Identical to the Gl TextInput overlay — both backends rasterize the field to
 // a 2D canvas before uploading, so the chrome is plain Canvas2D drawing with no backend-specific calls.
 export function drawWgpuTextInputOverlay(

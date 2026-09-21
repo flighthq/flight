@@ -1,6 +1,6 @@
 ﻿import { addNodeChild } from '@flighthq/node/contract';
 import { allocateEmptyGlRenderRegistries, createGlRenderState } from '@flighthq/render-gl/contract';
-import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
+import { getOrCreateRenderProxy2D, prepareScene2DRender, registerNodeRenderer } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { GlRenderPass, GlRenderState, GlRenderTarget } from '@flighthq/types/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
@@ -65,7 +65,7 @@ describe('renderGlScene2D', () => {
   it('calls renderer.submit for a visible object with a renderer', () => {
     const state = makeState();
     const renderer = makeRenderer();
-    registerRenderer(state, DisplayObjectKind, renderer);
+    registerNodeRenderer(state, DisplayObjectKind, renderer);
     const obj = createDisplayObject();
     const data = getOrCreateRenderProxy2D(state, obj);
     prepareScene2DRender(state, obj);
@@ -78,7 +78,7 @@ describe('renderGlScene2D', () => {
   it('skips objects with zero alpha', () => {
     const state = makeState();
     const renderer = makeRenderer();
-    registerRenderer(state, DisplayObjectKind, renderer);
+    registerNodeRenderer(state, DisplayObjectKind, renderer);
     const obj = createDisplayObject();
     obj.alpha = 0;
     prepareScene2DRender(state, obj);
@@ -91,7 +91,7 @@ describe('renderGlScene2D', () => {
   it('traverses children and draws visible ones', () => {
     const state = makeState();
     const renderer = makeRenderer();
-    registerRenderer(state, DisplayObjectKind, renderer);
+    registerNodeRenderer(state, DisplayObjectKind, renderer);
     const parent = createDisplayObject();
     const child = createDisplayObject();
     addNodeChild(parent, child);

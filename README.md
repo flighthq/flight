@@ -44,7 +44,7 @@ import {
   loadImageResourceFromUrl,
   prepareScene2DRender,
   registerCanvasImageTextureResolver,
-  registerRenderer,
+  registerNodeRenderer,
   renderCanvasScene2D,
   scene2DCanvasPipeline,
   SpriteKind,
@@ -73,7 +73,7 @@ const state = createCanvasRenderState(
 const screenClear = { color: [0xee / 0xff, 0xdd / 0xff, 0xcc / 0xff, 1] } as const;
 
 registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
-registerRenderer(state, SpriteKind, canvasSpriteRenderer);
+registerNodeRenderer(state, SpriteKind, canvasSpriteRenderer);
 
 const root = createDisplayObject();
 root.scaleX = pixelRatio;

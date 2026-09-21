@@ -9,7 +9,7 @@ export * from './canvasElement';
 export * from './canvasFillPattern';
 export * from './canvasImageSource';
 export * from './canvasImageTextureResolver';
-export * from './canvasMaterialRegistry';
+export * from './canvasQuadMaterialRegistry';
 export * from './canvasMaterials';
 export * from './canvasNode2D';
 export * from './canvasParticleEmitter2D';

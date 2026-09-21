@@ -7,7 +7,7 @@ import {
   HtmlViewKind,
   prepareScene2DRender,
   registerDomImageTextureResolver,
-  registerRenderer,
+  registerNodeRenderer,
   renderDomScene2D,
   SpriteKind,
   TextLabelKind,
@@ -25,9 +25,9 @@ export const state = createDomRenderState(container, { sceneGraphSyncPolicy: 're
 container.style.backgroundColor = '#10141d';
 
 registerDomImageTextureResolver(state);
-registerRenderer(state, HtmlViewKind, domHtmlViewRenderer);
-registerRenderer(state, SpriteKind, domSpriteRenderer);
-registerRenderer(state, TextLabelKind, domTextLabelRenderer);
+registerNodeRenderer(state, HtmlViewKind, domHtmlViewRenderer);
+registerNodeRenderer(state, SpriteKind, domSpriteRenderer);
+registerNodeRenderer(state, TextLabelKind, domTextLabelRenderer);
 
 export const canvas: HTMLElement = container;
 export const scale = 1;

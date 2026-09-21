@@ -9,7 +9,7 @@ export interface Scene2DRenderExplanation {
   readonly kind: Kind;
   // A renderer is registered for `kind` on this state (the getOrCreateRenderProxy2D / buildRenderQueue
   // lookup, re-run). False is the classic blank-on-a-new-backend bug: prepared and visible, but no
-  // registerRenderer(state, kind, renderer) for this kind, so buildRenderQueue never emits a draw.
+  // registerNodeRenderer(state, kind, renderer) for this kind, so buildRenderQueue never emits a draw.
   readonly hasRenderer: boolean;
   // A render proxy exists for `source`, i.e. prepareScene2DRender reached it. False when prepare
   // was never called, or an ancestor was disabled/hidden so the prepare walk stopped before this node.

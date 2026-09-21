@@ -9,10 +9,10 @@ import type { GlContextState } from './GlContextState';
 import type { GlCubeRenderTarget } from './GlCubeRenderTarget';
 import type { GlCustomMaterialShaderSource } from './GlCustomMaterialShaderSource';
 import type { GlEffectRegistration } from './GlEffectState';
-import type { GlMaterialRenderer } from './GlMaterialRenderer';
 import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
 import type { GlModifierSnippet } from './GlModifierSnippet';
 import type { GlPbrExtensionRegistration } from './GlPbrExtensionRegistration';
+import type { GlQuadMaterialRenderer } from './GlQuadMaterialRenderer';
 import type { GlRenderPass } from './GlRenderPass';
 import type { GlRenderTarget } from './GlRenderTarget';
 import type { GlRenderTextureGuard } from './GlRenderTexture';
@@ -49,7 +49,7 @@ export interface GlRenderRegistries extends RenderRegistries {
   compressedTextureUpload: SlotTable<GlCompressedTextureUploader> | null;
   customEffectShaders: KeyedTable<string>;
   customMaterialShaders: KeyedTable<GlCustomMaterialShaderSource>;
-  materialRenderers: KeyedTable<GlMaterialRenderer>;
+  materialRenderers: KeyedTable<GlQuadMaterialRenderer>;
   meshMaterialRenderers: KeyedTable<GlMeshMaterialRenderer>;
   modifierSnippets: KeyedTable<GlModifierSnippet>;
   // Shader cache identity advances with every snippet-table replacement, including same-kind
@@ -156,7 +156,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // The active quad-batch writer material (flush key, compared by reference) and its resolved
   // renderer + per-instance float stride.
   quadBatchWriterMaterial: Material | null;
-  quadBatchWriterMaterialRenderer: GlMaterialRenderer | null;
+  quadBatchWriterMaterialRenderer: GlQuadMaterialRenderer | null;
   quadBatchWriterMaterialFloats: number;
   quadBatchWriterMaterialData: Float32Array;
   quadBatchWriterCount: number;

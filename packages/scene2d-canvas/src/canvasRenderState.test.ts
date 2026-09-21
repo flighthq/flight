@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
-import { prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
+import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { CanvasRenderOptions, HostImageCapability } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -66,7 +66,7 @@ describe('destroyCanvasRenderState', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     const root = createDisplayObject();
     const destroyData = vi.fn();
-    registerRenderer(state, root.kind, {
+    registerNodeRenderer(state, root.kind, {
       createData: () => finishEntity(allocateEntity()),
       destroyData,
       submit: vi.fn(),

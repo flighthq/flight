@@ -3,14 +3,14 @@ import { createRectangle } from '@flighthq/geometry/contract';
 import {
   getGlRenderStateRuntime,
   registerGlBitmapTextureResolver,
-  registerGlMaterialRenderer,
+  registerGlQuadMaterialRenderer,
 } from '@flighthq/render-gl/contract';
-import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
+import { getOrCreateRenderProxy2D, prepareScene2DRender, registerNodeRenderer } from '@flighthq/render/contract';
 import { createScale9Sprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type {
   GlColorAdjustmentMaterialFeature,
-  GlMaterialRenderer,
+  GlQuadMaterialRenderer,
   GlRenderState,
   Material,
   RenderProxy2D,
@@ -30,7 +30,7 @@ function createTestScale9Sprite(width = 40, height = 30): Scale9Sprite {
 }
 
 function prepareScale9Sprite(state: GlRenderState, source: Scale9Sprite): RenderProxy2D {
-  registerRenderer(state, Scale9SpriteKind, glScale9SpriteRenderer);
+  registerNodeRenderer(state, Scale9SpriteKind, glScale9SpriteRenderer);
   prepareScene2DRender(state, source);
   return getOrCreateRenderProxy2D(state, source);
 }
@@ -88,12 +88,12 @@ describe('drawGlScale9Sprite', () => {
     registerGlBitmapTextureResolver(state);
     const material = { kind: 'flight.test.Scale9Material' } as Material;
     const packInstance = vi.fn();
-    const materialRenderer: GlMaterialRenderer = {
+    const materialRenderer: GlQuadMaterialRenderer = {
       bind: vi.fn(),
       instanceFloatCount: 1,
       packInstance,
     };
-    registerGlMaterialRenderer(state, material.kind, materialRenderer);
+    registerGlQuadMaterialRenderer(state, material.kind, materialRenderer);
     const record = vi.fn();
     const colorAdjustmentFeature: GlColorAdjustmentMaterialFeature = {
       drawShapeMeshes: vi.fn(),

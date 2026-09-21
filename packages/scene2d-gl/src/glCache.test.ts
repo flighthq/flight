@@ -95,7 +95,7 @@ describe('createGlCacheState', () => {
     const screen = fakeScreen();
     enableGlRenderCache(screen);
     const cacheState = createGlCacheState(screen, { ...renderGl.getGlRenderStateRuntime(screen).registries });
-    expect(renderGl.getGlRenderStateRuntime(cacheState).registries.renderers.entries.get(RenderCacheKind)).toEqual({
+    expect(renderGl.getGlRenderStateRuntime(cacheState).registries.nodeRenderers.entries.get(RenderCacheKind)).toEqual({
       state: 'bound',
       value: glRenderCacheRenderer,
     });
@@ -121,7 +121,7 @@ describe('enableGlRenderCache', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = fakeScreen();
     enableGlRenderCache(state);
-    expect(renderGl.getGlRenderStateRuntime(state).registries.renderers.entries.get(RenderCacheKind)).toEqual({
+    expect(renderGl.getGlRenderStateRuntime(state).registries.nodeRenderers.entries.get(RenderCacheKind)).toEqual({
       state: 'bound',
       value: glRenderCacheRenderer,
     });

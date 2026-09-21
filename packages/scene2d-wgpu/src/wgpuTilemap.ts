@@ -1,4 +1,4 @@
-import { resolveWgpuMaterialRenderer, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
+import { resolveWgpuQuadMaterialRenderer, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
@@ -35,7 +35,7 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
   if (columns === 0 || rows === 0) return;
 
   const material = tilemapNode.material;
-  const materialRenderer = resolveWgpuMaterialRenderer(state, material);
+  const materialRenderer = resolveWgpuQuadMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const texture = atlas.texture;
   const textureEntry = resolveWgpuTexture(state, texture, true, SCENE2D_WORKING_COLOR_SPACE);

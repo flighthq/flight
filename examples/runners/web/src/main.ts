@@ -1,13 +1,13 @@
 import { examples } from 'virtual:examples-examples';
 
-type Renderer = 'dom' | 'canvas' | 'webgl' | 'webgpu';
+type NodeRenderer = 'dom' | 'canvas' | 'webgl' | 'webgpu';
 
-const ALL_RENDERERS: Renderer[] = ['dom', 'canvas', 'webgl', 'webgpu'];
+const ALL_RENDERERS: NodeRenderer[] = ['dom', 'canvas', 'webgl', 'webgpu'];
 const STORAGE_KEY = 'examples-selected';
 const FADE_MS = 250;
 
 let exampleIndex = 0;
-let renderer: Renderer = 'canvas';
+let renderer: NodeRenderer = 'canvas';
 
 const sidebar = document.getElementById('sidebar')!;
 const rendererBar = document.getElementById('renderer-bar')!;
@@ -20,15 +20,15 @@ function currentExample() {
   return examples[exampleIndex];
 }
 
-function hasRenderer(r: Renderer): boolean {
+function hasRenderer(r: NodeRenderer): boolean {
   return (currentExample().renderers as string[]).includes(r);
 }
 
-function availableRenderers(): Renderer[] {
+function availableRenderers(): NodeRenderer[] {
   return ALL_RENDERERS.filter((r) => hasRenderer(r));
 }
 
-function resolveRenderer(preferred: Renderer): Renderer {
+function resolveRenderer(preferred: NodeRenderer): NodeRenderer {
   if (hasRenderer(preferred)) return preferred;
   return availableRenderers()[0] ?? 'canvas';
 }
@@ -143,17 +143,17 @@ function selectExample(i: number): void {
   updateUrl();
 }
 
-function selectRenderer(r: Renderer): void {
+function selectRenderer(r: NodeRenderer): void {
   if (!hasRenderer(r)) return;
   renderer = r;
   showCurrent();
   updateUrl();
 }
 
-function stateFromHash(hash: string): { exampleIndex: number; renderer: Renderer } | null {
+function stateFromHash(hash: string): { exampleIndex: number; renderer: NodeRenderer } | null {
   const parts = hash.replace(/^\//, '').split('/');
   const name = parts[0];
-  const rendererPart = parts[1] as Renderer | undefined;
+  const rendererPart = parts[1] as NodeRenderer | undefined;
   if (!name) return null;
 
   const i = examples.findIndex((e) => e.name === name);
@@ -218,7 +218,7 @@ const initState = (() => {
     const fromSaved = stateFromHash(saved);
     if (fromSaved) return fromSaved;
   }
-  return { exampleIndex: 0, renderer: 'canvas' as Renderer };
+  return { exampleIndex: 0, renderer: 'canvas' as NodeRenderer };
 })();
 
 exampleIndex = initState.exampleIndex;

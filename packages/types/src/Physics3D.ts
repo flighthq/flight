@@ -1165,7 +1165,7 @@ export interface Physics3DShapeCastResult extends Entity {
 
 export type Physics3DDebugFeature = 'center-of-mass' | 'collider' | 'contact-normal' | 'joint';
 
-// Renderer-neutral output from a physics debug query. `bodyA`/`bodyB` retain the source identities so a
+// NodeRenderer-neutral output from a physics debug query. `bodyA`/`bodyB` retain the source identities so a
 // renderer can style or inspect a primitive without geometry knowing anything about colors, cameras, or
 // a graphics backend. `bodyB` is -1 for a primitive sourced from one body.
 export interface Physics3DDebugLine {

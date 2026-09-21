@@ -24,7 +24,7 @@ export function explainScene3DPipelineCoverage(
   collectUsed3DKinds(usedKindSet, usedMaterialKindSet, scene);
 
   const registeredKinds: Kind[] = [];
-  getRegistryTableKeys(registeredKinds, getRenderStateRuntime(state).registries.renderers);
+  getRegistryTableKeys(registeredKinds, getRenderStateRuntime(state).registries.nodeRenderers);
   registeredKinds.sort();
 
   const registeredMaterialKinds: Kind[] = [];

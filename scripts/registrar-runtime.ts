@@ -1198,7 +1198,7 @@ function deriveDomProbeState(source: ReturnType<typeof createDomRenderState>) {
   const derivedRuntime = getDomRenderStateRuntime(derived);
   derivedRuntime.registries = {
     colorAdjustments: sourceRuntime.registries.colorAdjustments,
-    renderers: derivedRuntime.registries.renderers,
+    nodeRenderers: derivedRuntime.registries.nodeRenderers,
     shapeRasterizer: sourceRuntime.registries.shapeRasterizer,
     strokeTessellator: sourceRuntime.registries.strokeTessellator,
     textureResolvers: sourceRuntime.registries.textureResolvers,

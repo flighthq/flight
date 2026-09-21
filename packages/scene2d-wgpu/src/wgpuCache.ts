@@ -20,7 +20,7 @@ import {
   getRenderProxyCache,
   noopRendererData,
   prepareScene2DRender,
-  registerRenderCacheRenderer,
+  registerRenderCacheNodeRenderer,
 } from '@flighthq/render/contract';
 import type {
   Matrix,
@@ -64,7 +64,7 @@ export function createWgpuCacheState(
 }
 
 export function enableWgpuRenderCache(state: WgpuRenderState): void {
-  registerRenderCacheRenderer(state, wgpuRenderCacheRenderer);
+  registerRenderCacheNodeRenderer(state, wgpuRenderCacheRenderer);
 }
 
 /**

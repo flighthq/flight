@@ -225,7 +225,7 @@ export function updateRenderProxyRenderer(state: RenderState, node: RenderProxy)
 
 function resolveRenderProxyRenderer(state: RenderState, kind: string) {
   const runtime = getRenderStateRuntime(state);
-  const entry = runtime.registries.renderers.entries.get(kind);
+  const entry = runtime.registries.nodeRenderers.entries.get(kind);
   if (entry?.state !== RegistryEntryState.Bound) {
     runtime.registryMiss?.(RenderRegistryTable.NodeRenderer, kind);
     return null;

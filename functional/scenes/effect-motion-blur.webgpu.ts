@@ -33,7 +33,7 @@ import {
   getNodeChildCount,
   prepareScene2DRender,
   registerDefaultShapeBoundsCommands,
-  registerRenderer,
+  registerNodeRenderer,
   registerWgpuMotionBlurEffect,
   registerWgpuVelocityWriter,
   renderWgpuScene2D,
@@ -79,7 +79,7 @@ export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRender
 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 1.0 } as const;
-registerRenderer(state, ShapeKind, wgpuShapeRenderer);
+registerNodeRenderer(state, ShapeKind, wgpuShapeRenderer);
 registerWgpuMotionBlurEffect(state);
 registerDefaultShapeBoundsCommands();
 // The velocity writer rasterizes each shape's contributed velocity into the velocity target.

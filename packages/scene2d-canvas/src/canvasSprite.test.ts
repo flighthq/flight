@@ -3,7 +3,7 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
-import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
+import { getOrCreateRenderProxy2D, prepareScene2DRender, registerNodeRenderer } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
 import {
   createPixelArtSampler,
@@ -34,7 +34,7 @@ function makeState() {
   const state = createCanvasRenderState(document.createElement('canvas'));
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
   registerCanvasRenderTextureResolver(getCanvasRenderStateTextureResolvers(state), state);
-  registerRenderer(state, SpriteKind, canvasSpriteRenderer);
+  registerNodeRenderer(state, SpriteKind, canvasSpriteRenderer);
   return state;
 }
 
@@ -56,7 +56,7 @@ describe('canvasSpriteRenderer', () => {
     const state = createCanvasRenderState(document.createElement('canvas'), {
       sceneGraphSyncPolicy: 'requiresInvalidation',
     });
-    registerRenderer(state, SpriteKind, canvasSpriteRenderer);
+    registerNodeRenderer(state, SpriteKind, canvasSpriteRenderer);
     const sprite = createSprite({ data: { texture: makeTexture() } });
     prepareScene2DRender(state, sprite);
     expect(prepareScene2DRender(state, sprite)).toBe(false);

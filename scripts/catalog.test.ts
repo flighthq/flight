@@ -10,7 +10,7 @@ const entry: RegistryCatalogEntry = {
   implementationSymbol: 'glShapeRenderer',
   kind: 'Shape',
   registrarImport: '@flighthq/render',
-  registrarSymbol: 'registerRenderer',
+  registrarSymbol: 'registerNodeRenderer',
 };
 
 describe('formatBuiltInRegistryCatalogSource', () => {
@@ -28,9 +28,9 @@ describe('verifyRegistryCatalogEntries', () => {
 
   it('rejects duplicate row identities and empty fields', () => {
     expect(verifyRegistryCatalogEntries([entry, entry, { ...entry, implementationSymbol: '' }])).toEqual([
-      'duplicate row: webgl:scene.node-kind:Shape:@flighthq/render:registerRenderer',
-      'empty implementationSymbol: webgl:scene.node-kind:Shape:@flighthq/render:registerRenderer',
-      'duplicate row: webgl:scene.node-kind:Shape:@flighthq/render:registerRenderer',
+      'duplicate row: webgl:scene.node-kind:Shape:@flighthq/render:registerNodeRenderer',
+      'empty implementationSymbol: webgl:scene.node-kind:Shape:@flighthq/render:registerNodeRenderer',
+      'duplicate row: webgl:scene.node-kind:Shape:@flighthq/render:registerNodeRenderer',
     ]);
   });
 });

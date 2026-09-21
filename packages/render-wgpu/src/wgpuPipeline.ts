@@ -18,12 +18,12 @@ export function initializeEmptyWgpuRenderRegistries(out: WgpuRenderRegistries): 
   out.strokeTessellator = null;
 
   out.customMaterialShaders = createKeyedTable('WgpuCustomMaterialShader', 'Unregistered');
-  out.materialRenderers = createKeyedTable('WgpuMaterialRenderer', 'StandardMaterial');
+  out.materialRenderers = createKeyedTable('WgpuQuadMaterialRenderer', 'StandardMaterial');
   out.meshMaterialRenderers = createKeyedTable('WgpuMeshMaterialRenderer', 'StandardMaterial');
   out.modifierSnippets = createKeyedTable('WgpuModifierSnippet', 'Unregistered');
   out.modifierSnippetRevision = 0;
   out.effects = createKeyedTable('WgpuEffect', 'Unregistered');
-  out.renderers = createKeyedTable('NodeRenderer', 'Unregistered');
+  out.nodeRenderers = createKeyedTable('NodeRenderer', 'Unregistered');
   out.textureResolvers = createKeyedTable('WgpuTextureResolver', 'Unregistered');
   out.velocityWriters = createKeyedTable('WgpuVelocityWriter', 'Unregistered');
 }

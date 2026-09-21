@@ -64,8 +64,8 @@ describe('wgpuScene3DRenderRegistries', () => {
   const scene2dRegistries = wgpuScene2DRenderRegistries;
 
   it('retains the complete standard Scene2D registry surface', () => {
-    expect(registries.renderers).toBe(scene2dRegistries.renderers);
-    expect(registryKeys(registries.renderers)).toEqual([
+    expect(registries.nodeRenderers).toBe(scene2dRegistries.nodeRenderers);
+    expect(registryKeys(registries.nodeRenderers)).toEqual([
       BitmapTextKind,
       DisplayObjectKind,
       MorphShapeKind,

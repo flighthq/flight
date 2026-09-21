@@ -25,7 +25,7 @@ import {
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
-  registerRenderer,
+  registerNodeRenderer,
   registerWgpuBevelEffect,
   renderWgpuScene2D,
   wgpuScene3DRenderRegistries,
@@ -69,7 +69,7 @@ export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRender
   format: acquisition.format,
   pixelRatio,
 });
-registerRenderer(state, ShapeKind, wgpuShapeRenderer);
+registerNodeRenderer(state, ShapeKind, wgpuShapeRenderer);
 registerWgpuBevelEffect(state);
 
 const pipeline = createWgpuEffectState(state, {

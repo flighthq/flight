@@ -49,7 +49,7 @@ describe('canvasScene2DRenderRegistries', () => {
       TilemapKind,
     ];
     for (const kind of expectedKinds) {
-      const entry = registries.renderers.entries.get(kind);
+      const entry = registries.nodeRenderers.entries.get(kind);
       expect(entry).toBeDefined();
       expect(entry?.state).toBe(RegistryEntryState.Bound);
     }

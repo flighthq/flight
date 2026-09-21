@@ -17,7 +17,7 @@ import {
   prepareScene2DRender,
   registerCanvasImageTextureResolver,
   registerCanvasSurfaceCreator,
-  registerRenderer,
+  registerNodeRenderer,
   renderCanvasScene2D,
   canvasScene2DRenderRegistries,
   TextLabelKind,
@@ -45,8 +45,8 @@ const screenClear = { color: [0x0a / 0xff, 0x0a / 0xff, 0x14 / 0xff, 1] } as con
 enableFlightDiagnostics(state);
 
 registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
-registerRenderer(state, ParticleEmitter2DKind, canvasParticleEmitter2DRenderer);
-registerRenderer(state, TextLabelKind, canvasTextLabelRenderer);
+registerNodeRenderer(state, ParticleEmitter2DKind, canvasParticleEmitter2DRenderer);
+registerNodeRenderer(state, TextLabelKind, canvasTextLabelRenderer);
 enableCanvasBlendMode(state);
 
 export const scale = pixelRatio;

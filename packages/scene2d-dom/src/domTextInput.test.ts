@@ -1,4 +1,4 @@
-import { getOrCreateRenderProxy2D, registerRenderer } from '@flighthq/render/contract';
+import { getOrCreateRenderProxy2D, registerNodeRenderer } from '@flighthq/render/contract';
 import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput, setTextInputSelection } from '@flighthq/textinput/contract';
 import type { RichText } from '@flighthq/types/contract';
@@ -10,7 +10,7 @@ import { drawDomTextInputOverlay, enableDomTextInput } from './domTextInput';
 
 function makeState() {
   const state = createDomRenderState(document.createElement('div'));
-  registerRenderer(state, RichTextKind, domRichTextRenderer);
+  registerNodeRenderer(state, RichTextKind, domRichTextRenderer);
   return state;
 }
 

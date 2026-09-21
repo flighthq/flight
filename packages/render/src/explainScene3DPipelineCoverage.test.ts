@@ -3,15 +3,15 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
 import { createMesh, createNode3D } from '@flighthq/scene3d/contract';
-import type { KeyedTable, Renderer } from '@flighthq/types/contract';
+import type { KeyedTable, NodeRenderer } from '@flighthq/types/contract';
 import { Node3DKind, StandardMaterialKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainScene3DPipelineCoverage } from './explainScene3DPipelineCoverage';
-import { registerRenderer } from './renderer';
+import { registerNodeRenderer } from './renderer';
 import { createRenderState } from './renderState';
 
-const renderer: Renderer = { createData: () => null, submit: () => {} } as unknown as Renderer;
+const renderer: NodeRenderer = { createData: () => null, submit: () => {} } as unknown as NodeRenderer;
 
 function box() {
   return createBoxMeshGeometry(1, 1, 1);
@@ -28,7 +28,7 @@ function materialTable(...kinds: string[]): KeyedTable<unknown> {
 describe('explainScene3DPipelineCoverage', () => {
   it('reports StandardMaterial as used when a mesh has only null material slots', () => {
     const state = createRenderState();
-    registerRenderer(state, 'Mesh', renderer);
+    registerNodeRenderer(state, 'Mesh', renderer);
     const matTable = materialTable(StandardMaterialKind);
     const root = createMesh(box(), [null]);
     const result = explainScene3DPipelineCoverage(state, root, matTable);
@@ -40,7 +40,7 @@ describe('explainScene3DPipelineCoverage', () => {
 
   it('reports uncovered material kinds when a custom material has no registered renderer', () => {
     const state = createRenderState();
-    registerRenderer(state, 'Mesh', renderer);
+    registerNodeRenderer(state, 'Mesh', renderer);
     const matTable = materialTable(StandardMaterialKind);
     const customMat = createMaterial3D('PhongMaterial');
     const root = createMesh(box(), [customMat]);
@@ -62,8 +62,8 @@ describe('explainScene3DPipelineCoverage', () => {
 
   it('reports unused node registrations for an empty scene', () => {
     const state = createRenderState();
-    registerRenderer(state, 'Mesh', renderer);
-    registerRenderer(state, 'InstancedMesh', renderer);
+    registerNodeRenderer(state, 'Mesh', renderer);
+    registerNodeRenderer(state, 'InstancedMesh', renderer);
     const matTable = materialTable(StandardMaterialKind);
     const root = createNode3D(Node3DKind);
     const result = explainScene3DPipelineCoverage(state, root, matTable);
@@ -76,8 +76,8 @@ describe('explainScene3DPipelineCoverage', () => {
 
   it('collects both node and material kinds across a mixed scene tree', () => {
     const state = createRenderState();
-    registerRenderer(state, 'Mesh', renderer);
-    registerRenderer(state, Node3DKind, renderer);
+    registerNodeRenderer(state, 'Mesh', renderer);
+    registerNodeRenderer(state, Node3DKind, renderer);
     const matTable = materialTable(StandardMaterialKind, 'PhongMaterial');
     const root = createNode3D(Node3DKind);
     const child1 = createMesh(box(), [null]);
@@ -95,9 +95,9 @@ describe('explainScene3DPipelineCoverage', () => {
 
   it('returns sorted, stable arrays for both dimensions', () => {
     const state = createRenderState();
-    registerRenderer(state, 'Mesh', renderer);
-    registerRenderer(state, 'InstancedMesh', renderer);
-    registerRenderer(state, Node3DKind, renderer);
+    registerNodeRenderer(state, 'Mesh', renderer);
+    registerNodeRenderer(state, 'InstancedMesh', renderer);
+    registerNodeRenderer(state, Node3DKind, renderer);
     const matTable = materialTable('ZebraMaterial', 'AlphaMaterial', StandardMaterialKind);
     const root = createNode3D(Node3DKind);
     const child = createMesh(box(), [createMaterial3D('ZebraMaterial'), null]);

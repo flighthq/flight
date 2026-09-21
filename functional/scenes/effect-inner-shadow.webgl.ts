@@ -24,7 +24,7 @@ import {
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerGlInnerShadowEffect,
-  registerRenderer,
+  registerNodeRenderer,
   renderGlScene2D,
   ShapeKind,
   setSurfaceDisplaySize,
@@ -64,7 +64,7 @@ appendWebSurface(glSurface, document.body);
 export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
   pixelRatio,
 });
-registerRenderer(state, ShapeKind, glShapeRenderer);
+registerNodeRenderer(state, ShapeKind, glShapeRenderer);
 registerGlInnerShadowEffect(state);
 
 const pipeline: GlEffectState = createGlEffectState(state, {

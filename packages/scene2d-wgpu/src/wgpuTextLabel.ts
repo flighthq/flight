@@ -1,7 +1,7 @@
 import { computeRgbaCssString } from '@flighthq/color/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
-import { bindWgpuImageResourceTexture, resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
+import { bindWgpuImageResourceTexture, resolveWgpuQuadMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createImageSurface, destroyImageSurface } from '@flighthq/render/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
@@ -81,7 +81,7 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
   if (renderProxy.rendererData === null) return;
 
   const material = renderProxy.material;
-  const materialRenderer = resolveWgpuMaterialRenderer(state, material);
+  const materialRenderer = resolveWgpuQuadMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
   if (state.imageSurfaceProvider === null) return;

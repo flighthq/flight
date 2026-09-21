@@ -1,6 +1,6 @@
 import {
   getWgpuRenderStateRuntime,
-  resolveWgpuMaterialRenderer,
+  resolveWgpuQuadMaterialRenderer,
   resolveWgpuTexture,
 } from '@flighthq/render-wgpu/contract';
 import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
@@ -38,7 +38,7 @@ function submitWgpuBitmapText(state: WgpuRenderState, node: RenderProxy2D): void
   const pages = (getNode2DRuntime(source) as BitmapTextRuntime).pages;
 
   const material = node.material;
-  const materialRenderer = resolveWgpuMaterialRenderer(state, material);
+  const materialRenderer = resolveWgpuQuadMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const nodeMaterialData = node.materialData;
   const nodeColorScaleBias = node.colorMatrix ?? node.colorScaleBias;

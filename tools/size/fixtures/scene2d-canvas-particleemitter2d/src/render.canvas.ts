@@ -2,7 +2,7 @@ import { createWebImageResourceFromCanvas, webCanvasRenderSurfaceCreator } from 
 import { addNodeChild } from '@flighthq/node';
 import { appendParticleEmitter2DParticle, createParticleEmitter2D } from '@flighthq/particleemitter';
 import { withRegistryTableEntry } from '@flighthq/registry';
-import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene2d';
 import {
   beginCanvasRenderPass,
@@ -47,7 +47,11 @@ document.body.appendChild(canvas);
 const emptyRegistries = allocateEmptyCanvasRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, ParticleEmitter2DKind, canvasParticleEmitter2DRenderer),
+  nodeRenderers: withRegistryTableEntry(
+    emptyRegistries.nodeRenderers,
+    ParticleEmitter2DKind,
+    canvasParticleEmitter2DRenderer,
+  ),
 };
 
 const screen = createCanvasScreenRenderTarget(
@@ -61,8 +65,8 @@ registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 
 const registries = registry;
-for (const [kind, entry] of registries.renderers.entries) {
-  if (entry.state === RegistryEntryState.Bound) registerRenderer(state, kind, entry.value);
+for (const [kind, entry] of registries.nodeRenderers.entries) {
+  if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(state, kind, entry.value);
 }
 registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
 

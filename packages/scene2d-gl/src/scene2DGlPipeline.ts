@@ -5,7 +5,7 @@ import {
   standardGlBlendRealizations,
   standardGlTextureResolvers,
 } from '@flighthq/render-gl/contract';
-import type { GlRenderRegistries, KeyedTable, Renderer } from '@flighthq/types/contract';
+import type { GlRenderRegistries, KeyedTable, NodeRenderer } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
   DisplayObjectKind,
@@ -34,13 +34,13 @@ import { glScale9ShapeRenderer } from './glScale9Shape';
 import { glScale9SpriteRenderer } from './glScale9Sprite';
 import { glShapeRenderer, glMorphShapeRenderer } from './glShape';
 import { glSpriteRenderer } from './glSprite';
-import { standardGlMaterialRenderer } from './glStandardMaterial';
+import { standardGlQuadMaterialRenderer } from './glStandardMaterial';
 import { glTextLabelRenderer } from './glTextLabel';
 import { glTilemapRenderer } from './glTilemap';
 
-function buildScene2DGlRenderers(): KeyedTable<Renderer> {
+function buildScene2DGlRenderers(): KeyedTable<NodeRenderer> {
   const registries = allocateEmptyGlRenderRegistries();
-  let table = registries.renderers;
+  let table = registries.nodeRenderers;
   table = withRegistryTableEntry(table, BitmapTextKind, glBitmapTextRenderer);
   table = withRegistryTableEntry(table, DisplayObjectKind, glScene2DRenderer);
   table = withRegistryTableEntry(table, MorphShapeKind, glMorphShapeRenderer);
@@ -63,9 +63,9 @@ export const glScene2DRenderRegistries: Readonly<GlRenderRegistries> = {
   materialRenderers: withRegistryTableEntry(
     allocateEmptyGlRenderRegistries().materialRenderers,
     StandardMaterialKind,
-    standardGlMaterialRenderer,
+    standardGlQuadMaterialRenderer,
   ),
-  renderers: buildScene2DGlRenderers(),
+  nodeRenderers: buildScene2DGlRenderers(),
   strokeTessellator: {
     ...createSlotTable('StrokeTessellator', 'Rasterize'),
     entry: { state: RegistryEntryState.Bound, value: tessellateStrokePath },

@@ -17,7 +17,7 @@ import {
   enableFlightDiagnostics,
   endWgpuRenderPass,
   prepareScene2DRender,
-  registerRenderer,
+  registerNodeRenderer,
   renderWgpuScene2D,
   wgpuScene3DRenderRegistries,
   SpriteKind,
@@ -47,8 +47,8 @@ export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRender
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x11 / 0xff, 0x18 / 0xff, 0x27 / 0xff, 1], depth: 1.0 } as const;
 enableFlightDiagnostics(state);
-registerRenderer(state, SpriteKind, wgpuSpriteRenderer);
-registerRenderer(state, BitmapTextKind, wgpuBitmapTextRenderer);
+registerNodeRenderer(state, SpriteKind, wgpuSpriteRenderer);
+registerNodeRenderer(state, BitmapTextKind, wgpuBitmapTextRenderer);
 
 export const scale = pixelRatio;
 

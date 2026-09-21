@@ -11,7 +11,7 @@ import {
   getColorAdjustmentUnsupportedGuard,
   getRenderStateRuntime,
   prepareScene2DRender,
-  registerRenderer,
+  registerNodeRenderer,
 } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
@@ -32,8 +32,8 @@ import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture';
 import { beginWgpuFrame, withWgpuFrameBorrow } from './wgpuFrame';
 import { createTestWgpuSurface, testWgpuHost } from './wgpuHost';
-import { registerWgpuMaterialRenderer } from './wgpuMaterialRegistry';
 import { allocateEmptyWgpuRenderRegistries } from './wgpuPipeline';
+import { registerWgpuQuadMaterialRenderer } from './wgpuQuadMaterialRegistry';
 import {
   createWgpuAcquisition,
   createWgpuDeviceState,
@@ -230,8 +230,8 @@ describe('createWgpuOffscreenRenderState', () => {
     };
     const colorAdjustmentFeatureGuard: WgpuColorAdjustmentMaterialFeatureGuard = vi.fn();
     const renderRootGuard: RenderRootGuard = vi.fn();
-    registerRenderer(screen, 'acme.Node', renderer);
-    registerWgpuMaterialRenderer(screen, 'acme.Material', materialRenderer);
+    registerNodeRenderer(screen, 'acme.Node', renderer);
+    registerWgpuQuadMaterialRenderer(screen, 'acme.Material', materialRenderer);
     registerWgpuTextureResolver(screen, 'acme.Texture', textureResolver);
     enableColorAdjustments(screen);
     enableColorAdjustmentGuards(screen);
@@ -269,7 +269,7 @@ describe('createWgpuOffscreenRenderState', () => {
     expect('surface' in offscreen).toBe(false);
     expect(offscreenRuntime.context).toBe(screenRuntime.context);
     expect(offscreenRuntime.uniformBuffer).not.toBe(screenRuntime.uniformBuffer);
-    expect(offscreenRuntime.registries.renderers).toBe(screenRuntime.registries.renderers);
+    expect(offscreenRuntime.registries.nodeRenderers).toBe(screenRuntime.registries.nodeRenderers);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
     expect(offscreenRuntime.registries.colorAdjustmentFeature).toBe(screenRuntime.registries.colorAdjustmentFeature);
     expect(getWgpuColorAdjustmentMaterialFeature(offscreen)).toBe(colorAdjustmentFeature);
@@ -327,7 +327,7 @@ describe('createWgpuOffscreenRenderState', () => {
     expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
     expect(offscreenRuntime.registries.velocityWriters).toBe(screenRuntime.registries.velocityWriters);
     expect(offscreenRuntime.registries.effectPaddingResolvers).toBe(screenRuntime.registries.effectPaddingResolvers);
-    expect(getRegistryTableEntry(offscreenRuntime.registries.renderers, 'acme.Node')).toBe(renderer);
+    expect(getRegistryTableEntry(offscreenRuntime.registries.nodeRenderers, 'acme.Node')).toBe(renderer);
     expect(getRegistryTableEntry(offscreenRuntime.registries.materialRenderers, 'acme.Material')).toBe(
       materialRenderer,
     );
@@ -342,7 +342,7 @@ describe('createWgpuOffscreenRenderState', () => {
     const screen = await createWgpuRenderStateForTest();
     const offscreen = createWgpuOffscreenRenderState(screen);
     const root = createDisplayObject();
-    registerRenderer(offscreen, root.kind, { createData: () => finishEntity(allocateEntity()), submit: vi.fn() });
+    registerNodeRenderer(offscreen, root.kind, { createData: () => finishEntity(allocateEntity()), submit: vi.fn() });
     prepareScene2DRender(offscreen, root);
     beginWgpuFrame(screen);
 
@@ -419,7 +419,7 @@ describe('createWgpuOffscreenRenderState', () => {
     const screen = await createWgpuRenderStateForTest();
     const root = createDisplayObject();
     const destroyData = vi.fn();
-    registerRenderer(screen, root.kind, {
+    registerNodeRenderer(screen, root.kind, {
       createData: () => finishEntity(allocateEntity()),
       destroyData,
       submit: vi.fn(),
@@ -441,14 +441,16 @@ describe('createWgpuOffscreenRenderState', () => {
     const offscreen = createWgpuOffscreenRenderState(screen);
     const renderer = { createData: () => null, submit: vi.fn() };
     const paddingResolver = vi.fn(() => ({ bottom: 2, left: 2, right: 2, top: 2 }));
-    registerRenderer(screen, 'acme.LateNode', renderer);
+    registerNodeRenderer(screen, 'acme.LateNode', renderer);
     registerPaddingResolver(screen, 'acme.LateEffect', paddingResolver);
 
-    expect(hasRegistryTableEntry(getRenderStateRuntime(offscreen).registries.renderers, 'acme.LateNode')).toBe(false);
+    expect(hasRegistryTableEntry(getRenderStateRuntime(offscreen).registries.nodeRenderers, 'acme.LateNode')).toBe(
+      false,
+    );
     expect(getPaddingResolver(offscreen, 'acme.LateEffect')).toBeNull();
 
     const refreshed = createWgpuOffscreenRenderState(screen);
-    expect(getRegistryTableEntry(getRenderStateRuntime(refreshed).registries.renderers, 'acme.LateNode')).toBe(
+    expect(getRegistryTableEntry(getRenderStateRuntime(refreshed).registries.nodeRenderers, 'acme.LateNode')).toBe(
       renderer,
     );
     expect(getPaddingResolver(refreshed, 'acme.LateEffect')).toBe(paddingResolver);
@@ -510,7 +512,7 @@ describe('createWgpuRenderStateRuntime', () => {
     expect(runtime.registries.customMaterialShaders.entries.size).toBe(0);
     expect(runtime.registries.materialRenderers).toMatchObject({
       onMiss: 'StandardMaterial',
-      registry: 'WgpuMaterialRenderer',
+      registry: 'WgpuQuadMaterialRenderer',
       shape: 'keyed',
     });
     expect(runtime.registries.materialRenderers.entries.size).toBe(0);
@@ -908,7 +910,7 @@ describe('WgpuRenderRegistries snapshots', () => {
     const resolver = vi.fn(() => null);
     registerWgpuCompressedTextureDecoder(screen, decoder);
     registerWgpuCompressedTextureUpload(screen);
-    registerWgpuMaterialRenderer(screen, 'acme.LateMaterial', materialRenderer);
+    registerWgpuQuadMaterialRenderer(screen, 'acme.LateMaterial', materialRenderer);
     registerWgpuTextureResolver(screen, 'acme.LateTexture', resolver);
     const offscreen = createWgpuOffscreenRenderState(screen);
 
@@ -928,7 +930,7 @@ describe('WgpuRenderRegistries snapshots', () => {
     expect(getWgpuRenderStateRuntime(offscreen).registries.compressedTextureUpload).toBe(
       getWgpuRenderStateRuntime(screen).registries.compressedTextureUpload,
     );
-    registerWgpuMaterialRenderer(offscreen, 'acme.LateMaterial', offscreenMaterialRenderer);
+    registerWgpuQuadMaterialRenderer(offscreen, 'acme.LateMaterial', offscreenMaterialRenderer);
     registerWgpuCompressedTextureDecoder(offscreen, null);
     registerWgpuCompressedTextureUpload(offscreen, null);
     registerWgpuTextureResolver(offscreen, 'acme.LateTexture', null);

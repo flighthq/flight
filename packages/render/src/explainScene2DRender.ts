@@ -17,19 +17,19 @@ import { getRenderStateRuntime } from './renderState';
 //
 // The reason is root-cause prioritized rather than following buildRenderQueue's literal check order
 // (which drops on proxy===undefined, then !proxy.visible, then renderer===null). no-renderer is
-// surfaced first because it is a static setup error — the "forgot registerRenderer for this kind"
+// surfaced first because it is a static setup error — the "forgot registerNodeRenderer for this kind"
 // bug — that keeps the node blank no matter how the transient visible/alpha gates are fixed, and it is
 // re-derivable from `kind` alone even before the node is prepared. not-prepared outranks the
 // appearance gates for the same reason: nothing downstream matters until a proxy exists.
 //
-// Colocated with the render functions whose blank frame it explains — registerRenderer (renderer.ts),
+// Colocated with the render functions whose blank frame it explains — registerNodeRenderer (renderer.ts),
 // prepareScene2DRender (renderProxy.ts), and buildRenderQueue (renderQueue.ts). This is the
 // maintenance seam: a pull query duplicates the draw path's drop conditions, so if the draw path grows
 // a new blank-reason gate, this function must gain the matching check or it silently goes stale.
 export function explainScene2DRender(state: RenderState, source: Renderable): Scene2DRenderExplanation {
   const kind = source.kind;
   const hasRenderer =
-    getRenderStateRuntime(state).registries.renderers.entries.get(kind)?.state === RegistryEntryState.Bound;
+    getRenderStateRuntime(state).registries.nodeRenderers.entries.get(kind)?.state === RegistryEntryState.Bound;
 
   const proxy = getRenderProxy2D(state, source);
   const prepared = proxy !== undefined;

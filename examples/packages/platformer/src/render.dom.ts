@@ -17,7 +17,7 @@ import {
   registerCanvasShapeCommands,
   registerDomImageTextureResolver,
   registerDomShapeRasterizer,
-  registerRenderer,
+  registerNodeRenderer,
   renderDomScene2D,
   ShapeKind,
   SpriteKind,
@@ -36,7 +36,7 @@ export const state = createDomRenderState(container, { sceneGraphSyncPolicy: 're
 container.style.backgroundColor = '#87ceeb';
 enableFlightDiagnostics(state);
 
-registerRenderer(state, ShapeKind, domShapeRenderer);
+registerNodeRenderer(state, ShapeKind, domShapeRenderer);
 
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
 // has no tessellated form and draws through this rasterizer instead. Registering it is what keeps a
@@ -48,8 +48,8 @@ registerCanvasBitmapTextureResolver(webHostImage, shapeRasterizerResolvers);
 registerCanvasShapeCommands(state, canvasShapeCommands);
 registerCanvasShapeCommands(state, canvasTextureShapeCommands);
 registerDomShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
-registerRenderer(state, SpriteKind, domSpriteRenderer);
-registerRenderer(state, TextLabelKind, domTextLabelRenderer);
+registerNodeRenderer(state, SpriteKind, domSpriteRenderer);
+registerNodeRenderer(state, TextLabelKind, domTextLabelRenderer);
 registerDomImageTextureResolver(state);
 
 export const canvas: HTMLElement = container;
