@@ -18,7 +18,7 @@ import {
   glQuadBatchRenderer,
   glTextLabelRenderer,
   prepareScene2DRender,
-  registerRenderer,
+  registerNodeRenderer,
   renderGlScene2D,
   beginGlRenderPass,
   endGlRenderPass,
@@ -46,8 +46,8 @@ export const state = createGlRenderState(glSurface.context, glScene3DRenderRegis
 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 enableFlightDiagnostics(state);
-registerRenderer(state, QuadBatchKind, glQuadBatchRenderer);
-registerRenderer(state, TextLabelKind, glTextLabelRenderer);
+registerNodeRenderer(state, QuadBatchKind, glQuadBatchRenderer);
+registerNodeRenderer(state, TextLabelKind, glTextLabelRenderer);
 
 export const scale = pixelRatio;
 

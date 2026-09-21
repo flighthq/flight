@@ -19,7 +19,7 @@ import {
 import { allocateEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { wgpuTilemapRenderer, renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
-import { standardWgpuMaterialRenderer } from '@flighthq/scene2d-wgpu/contract';
+import { standardWgpuQuadMaterialRenderer } from '@flighthq/scene2d-wgpu/contract';
 import { createWgpuSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas';
@@ -39,9 +39,9 @@ const registry = {
   materialRenderers: withRegistryTableEntry(
     registries.materialRenderers,
     StandardMaterialKind,
-    standardWgpuMaterialRenderer,
+    standardWgpuQuadMaterialRenderer,
   ),
-  renderers: withRegistryTableEntry(registries.renderers, TilemapKind, wgpuTilemapRenderer),
+  nodeRenderers: withRegistryTableEntry(registries.nodeRenderers, TilemapKind, wgpuTilemapRenderer),
 };
 
 const acquisition = wgpuSurface.acquisition;

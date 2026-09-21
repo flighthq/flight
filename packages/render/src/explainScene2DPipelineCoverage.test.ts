@@ -1,19 +1,19 @@
 import { addNodeChild } from '@flighthq/node/contract';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d/contract';
-import type { Renderer } from '@flighthq/types/contract';
+import type { NodeRenderer } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainScene2DPipelineCoverage } from './explainScene2DPipelineCoverage';
-import { registerRenderer } from './renderer';
+import { registerNodeRenderer } from './renderer';
 import { createRenderState } from './renderState';
 
-const renderer: Renderer = { createData: () => null, submit: () => {} } as unknown as Renderer;
+const renderer: NodeRenderer = { createData: () => null, submit: () => {} } as unknown as NodeRenderer;
 
 describe('explainScene2DPipelineCoverage', () => {
   it('reports unused registrations when the pipeline covers more kinds than the scene uses', () => {
     const state = createRenderState();
-    registerRenderer(state, 'Sprite', renderer);
-    registerRenderer(state, 'DisplayObject', renderer);
+    registerNodeRenderer(state, 'Sprite', renderer);
+    registerNodeRenderer(state, 'DisplayObject', renderer);
     const root = createSprite();
     const result = explainScene2DPipelineCoverage(state, root);
     expect(result.usedKinds).toEqual(['Sprite']);
@@ -25,7 +25,7 @@ describe('explainScene2DPipelineCoverage', () => {
 
   it('reports uncovered kinds when the scene uses kinds with no registered renderer', () => {
     const state = createRenderState();
-    registerRenderer(state, 'Sprite', renderer);
+    registerNodeRenderer(state, 'Sprite', renderer);
     const root = createDisplayObject();
     const child = createSprite();
     addNodeChild(root, child);
@@ -50,9 +50,9 @@ describe('explainScene2DPipelineCoverage', () => {
 
   it('returns sorted, stable arrays', () => {
     const state = createRenderState();
-    registerRenderer(state, 'Sprite', renderer);
-    registerRenderer(state, 'DisplayObject', renderer);
-    registerRenderer(state, 'BitmapText', renderer);
+    registerNodeRenderer(state, 'Sprite', renderer);
+    registerNodeRenderer(state, 'DisplayObject', renderer);
+    registerNodeRenderer(state, 'BitmapText', renderer);
     const root = createDisplayObject();
     const child = createSprite();
     addNodeChild(root, child);

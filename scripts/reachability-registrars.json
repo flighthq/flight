@@ -755,15 +755,15 @@
     },
     {
       "packageName": "render",
-      "registrar": "registerRenderCacheRenderer"
+      "registrar": "registerNodeRenderer"
     },
     {
       "packageName": "render",
-      "registrar": "registerRenderer"
+      "registrar": "registerNodeRenderers"
     },
     {
       "packageName": "render",
-      "registrar": "registerRenderers"
+      "registrar": "registerRenderCacheNodeRenderer"
     },
     {
       "packageName": "render-gl",
@@ -803,11 +803,11 @@
     },
     {
       "packageName": "render-gl",
-      "registrar": "registerGlMaterialRenderer"
+      "registrar": "registerGlMaterialShader"
     },
     {
       "packageName": "render-gl",
-      "registrar": "registerGlMaterialShader"
+      "registrar": "registerGlQuadMaterialRenderer"
     },
     {
       "packageName": "render-gl",
@@ -859,11 +859,11 @@
     },
     {
       "packageName": "render-wgpu",
-      "registrar": "registerWgpuMaterialRenderer"
+      "registrar": "registerWgpuMipmapGeneration"
     },
     {
       "packageName": "render-wgpu",
-      "registrar": "registerWgpuMipmapGeneration"
+      "registrar": "registerWgpuQuadMaterialRenderer"
     },
     {
       "packageName": "render-wgpu",
@@ -887,7 +887,7 @@
     },
     {
       "packageName": "scene2d-canvas",
-      "registrar": "registerCanvasMaterialRenderer"
+      "registrar": "registerCanvasQuadMaterialRenderer"
     },
     {
       "packageName": "scene2d-canvas",

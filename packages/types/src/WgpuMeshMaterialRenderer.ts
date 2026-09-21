@@ -6,7 +6,7 @@ import type { Scene3DRenderProxy } from './Scene3DRenderProxy';
 import type { WgpuRenderState } from './WgpuRenderState';
 
 // Per-backend 3D draw behavior for a material kind on Wgpu, registered against the kind via
-// registerWgpuMeshMaterialRenderer. This is the scene (3D) analog of WgpuMaterialRenderer (the 2D
+// registerWgpuMeshMaterialRenderer. This is the scene (3D) analog of WgpuQuadMaterialRenderer (the 2D
 // quad-batch material seam): registries.meshMaterialRenderers is distinct from the 2D
 // material-renderer table because a material kind is either 2D or 3D, never both.
 //

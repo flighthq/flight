@@ -28,7 +28,7 @@ import {
   registerGlVignetteEffect,
   endGlEffectPass,
   prepareScene2DRender,
-  registerRenderer,
+  registerNodeRenderer,
   renderGlScene2D,
   setSurfaceDisplaySize,
   createAppWindow,
@@ -71,7 +71,7 @@ appendWebSurface(glSurface, document.body);
 export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
   pixelRatio,
 });
-registerRenderer(state, ShapeKind, glShapeRenderer);
+registerNodeRenderer(state, ShapeKind, glShapeRenderer);
 registerGlBloomEffect(state);
 registerGlVignetteEffect(state);
 

@@ -28,7 +28,7 @@ import {
   registerCanvasImageTextureResolver,
   registerCanvasShapeCommands,
   registerGlShapeRasterizer,
-  registerRenderer,
+  registerNodeRenderer,
   renderGlScene2D,
   ShapeKind,
   SpriteKind,
@@ -59,7 +59,7 @@ export const state = createGlRenderState(glSurface.context, glScene3DRenderRegis
 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 enableFlightDiagnostics(state);
-registerRenderer(state, ShapeKind, glShapeRenderer);
+registerNodeRenderer(state, ShapeKind, glShapeRenderer);
 
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
 // has no tessellated form and draws through this rasterizer instead. Registering it is what keeps a
@@ -71,8 +71,8 @@ registerCanvasBitmapTextureResolver(webHostImage, shapeRasterizerResolvers);
 registerCanvasShapeCommands(state, canvasShapeCommands);
 registerCanvasShapeCommands(state, canvasTextureShapeCommands);
 registerGlShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
-registerRenderer(state, SpriteKind, glSpriteRenderer);
-registerRenderer(state, TextLabelKind, glTextLabelRenderer);
+registerNodeRenderer(state, SpriteKind, glSpriteRenderer);
+registerNodeRenderer(state, TextLabelKind, glTextLabelRenderer);
 export const scale = pixelRatio;
 
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.

@@ -1,9 +1,9 @@
 import { addNodeChild } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
-import type { Renderer, RenderProxy, RenderQueueEntry } from '@flighthq/types/contract';
+import type { NodeRenderer, RenderProxy, RenderQueueEntry } from '@flighthq/types/contract';
 
-import { registerRenderer } from './renderer';
+import { registerNodeRenderer } from './renderer';
 import { prepareScene2DRender } from './renderProxy';
 import {
   buildRenderQueue,
@@ -17,7 +17,7 @@ import {
 } from './renderQueue';
 import { createRenderState } from './renderState';
 
-function makeRenderer(): Renderer {
+function makeRenderer(): NodeRenderer {
   return { createData: () => null, submit: vi.fn() };
 }
 
@@ -35,7 +35,7 @@ describe('buildRenderQueue', () => {
     const root = createDisplayObject();
     const child = createDisplayObject();
     addNodeChild(root, child);
-    registerRenderer(state, root.kind, makeRenderer());
+    registerNodeRenderer(state, root.kind, makeRenderer());
     prepareScene2DRender(state, root);
     const queue = createRenderQueue();
     buildRenderQueue(state, root, queue);
@@ -45,7 +45,7 @@ describe('buildRenderQueue', () => {
     const state = createRenderState();
     const root = createDisplayObject();
     root.visible = false;
-    registerRenderer(state, root.kind, makeRenderer());
+    registerNodeRenderer(state, root.kind, makeRenderer());
     prepareScene2DRender(state, root);
     const queue = createRenderQueue();
     buildRenderQueue(state, root, queue);
@@ -54,7 +54,7 @@ describe('buildRenderQueue', () => {
   it('clears the queue before filling it', () => {
     const state = createRenderState();
     const root = createDisplayObject();
-    registerRenderer(state, root.kind, makeRenderer());
+    registerNodeRenderer(state, root.kind, makeRenderer());
     prepareScene2DRender(state, root);
     const queue = createRenderQueue();
     buildRenderQueue(state, root, queue);
@@ -69,9 +69,9 @@ describe('buildRenderQueue', () => {
     const child2 = createSprite();
     addNodeChild(root, child1);
     addNodeChild(root, child2);
-    registerRenderer(state, root.kind, makeRenderer());
-    registerRenderer(state, child1.kind, makeRenderer());
-    registerRenderer(state, child2.kind, makeRenderer());
+    registerNodeRenderer(state, root.kind, makeRenderer());
+    registerNodeRenderer(state, child1.kind, makeRenderer());
+    registerNodeRenderer(state, child2.kind, makeRenderer());
     prepareScene2DRender(state, root);
     const queue = createRenderQueue();
     buildRenderQueue(state, root, queue);

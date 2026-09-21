@@ -24,7 +24,7 @@ import {
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
-  registerRenderer,
+  registerNodeRenderer,
   registerWgpuToneMapEffect,
   renderWgpuScene2D,
   wgpuScene3DRenderRegistries,
@@ -70,7 +70,7 @@ export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRender
 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x05 / 0xff, 0x06 / 0xff, 0x0a / 0xff, 1], depth: 1.0 } as const;
-registerRenderer(state, ShapeKind, wgpuShapeRenderer);
+registerNodeRenderer(state, ShapeKind, wgpuShapeRenderer);
 registerWgpuToneMapEffect(state);
 
 const pipeline = createWgpuEffectState(state, { sampleCount: 1, format: 'rgba16f' });

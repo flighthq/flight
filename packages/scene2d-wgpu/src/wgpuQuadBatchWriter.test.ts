@@ -18,7 +18,7 @@ import {
   writeWgpuQuadBatchInstance,
 } from './wgpuQuadBatchWriter';
 import { getWgpuRenderStats, resetWgpuRenderStats } from './wgpuRenderStats';
-import { standardWgpuMaterialRenderer } from './wgpuStandardMaterial';
+import { standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial';
 
 beforeAll(() => {
   installWgpuMock();
@@ -96,7 +96,7 @@ describe('flushWgpuQuadBatchWriter', () => {
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = makeTexture();
 
-    prepareWgpuQuadBatchWrite(state, tex, null, null, null, standardWgpuMaterialRenderer, 1);
+    prepareWgpuQuadBatchWrite(state, tex, null, null, null, standardWgpuQuadMaterialRenderer, 1);
     runtime.quadBatchWriterCount = 1;
     flushWgpuQuadBatchWriter(state);
 
@@ -116,7 +116,7 @@ describe('flushWgpuQuadBatchWriter', () => {
     const runtime = getWgpuRenderStateRuntime(state);
     resetWgpuRenderStats(state);
 
-    prepareWgpuQuadBatchWrite(state, makeTexture(), null, null, null, standardWgpuMaterialRenderer, 1);
+    prepareWgpuQuadBatchWrite(state, makeTexture(), null, null, null, standardWgpuQuadMaterialRenderer, 1);
     runtime.quadBatchWriterCount = 3;
     flushWgpuQuadBatchWriter(state);
 
@@ -149,11 +149,11 @@ describe('flushWgpuQuadBatchWriter', () => {
     const tex1 = makeTexture();
     const tex2 = makeTexture();
 
-    prepareWgpuQuadBatchWrite(state, tex1, null, null, null, standardWgpuMaterialRenderer, 1);
+    prepareWgpuQuadBatchWrite(state, tex1, null, null, null, standardWgpuQuadMaterialRenderer, 1);
     runtime.quadBatchWriterCount = 1;
     flushWgpuQuadBatchWriter(state);
 
-    prepareWgpuQuadBatchWrite(state, tex2, null, null, null, standardWgpuMaterialRenderer, 1);
+    prepareWgpuQuadBatchWrite(state, tex2, null, null, null, standardWgpuQuadMaterialRenderer, 1);
     runtime.quadBatchWriterCount = 1;
     flushWgpuQuadBatchWriter(state);
 
@@ -225,7 +225,7 @@ describe('prepareWgpuQuadBatchWrite', () => {
     const state = await createWgpuRenderStateForTest();
     const tex = makeTexture();
 
-    const base = prepareWgpuQuadBatchWrite(state, tex, null, null, null, standardWgpuMaterialRenderer, 1);
+    const base = prepareWgpuQuadBatchWrite(state, tex, null, null, null, standardWgpuQuadMaterialRenderer, 1);
     expect(base).toBe(0);
   });
 
@@ -236,9 +236,9 @@ describe('prepareWgpuQuadBatchWrite', () => {
     const tex1 = makeTexture();
     const tex2 = makeTexture();
 
-    prepareWgpuQuadBatchWrite(state, tex1, null, null, null, standardWgpuMaterialRenderer, 1);
+    prepareWgpuQuadBatchWrite(state, tex1, null, null, null, standardWgpuQuadMaterialRenderer, 1);
     runtime.quadBatchWriterCount = 1;
-    prepareWgpuQuadBatchWrite(state, tex2, null, null, null, standardWgpuMaterialRenderer, 1);
+    prepareWgpuQuadBatchWrite(state, tex2, null, null, null, standardWgpuQuadMaterialRenderer, 1);
 
     expect(runtime.quadBatchWriterTexture).toBe(tex2);
     expect(runtime.quadBatchWriterCount).toBe(0);
@@ -253,9 +253,9 @@ describe('prepareWgpuQuadBatchWrite', () => {
     const materialA = makeMaterial();
     const materialB = makeMaterial();
 
-    prepareWgpuQuadBatchWrite(state, tex, null, null, materialA, standardWgpuMaterialRenderer, 1);
+    prepareWgpuQuadBatchWrite(state, tex, null, null, materialA, standardWgpuQuadMaterialRenderer, 1);
     runtime.quadBatchWriterCount = 1;
-    prepareWgpuQuadBatchWrite(state, tex, null, null, materialB, standardWgpuMaterialRenderer, 1);
+    prepareWgpuQuadBatchWrite(state, tex, null, null, materialB, standardWgpuQuadMaterialRenderer, 1);
 
     expect(runtime.quadBatchWriterMaterial).toBe(materialB);
     expect(runtime.quadBatchWriterCount).toBe(0);
@@ -292,7 +292,7 @@ describe('recordWgpuQuadBatchColorScaleBias', () => {
     beginWgpuScreenRenderPassForTest(state);
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = makeTexture();
-    prepareWgpuQuadBatchWrite(state, tex, null, null, null, standardWgpuMaterialRenderer, 1);
+    prepareWgpuQuadBatchWrite(state, tex, null, null, null, standardWgpuQuadMaterialRenderer, 1);
     recordWgpuQuadBatchColorScaleBias(state, null, 0);
     runtime.quadBatchWriterCount = 1;
     expect(() => flushWgpuQuadBatchWriter(state)).not.toThrow();
@@ -307,7 +307,7 @@ describe('resetWgpuQuadBatchWriterBufferPool', () => {
     const runtime = getWgpuRenderStateRuntime(state);
     const tex = makeTexture();
 
-    prepareWgpuQuadBatchWrite(state, tex, null, null, null, standardWgpuMaterialRenderer, 1);
+    prepareWgpuQuadBatchWrite(state, tex, null, null, null, standardWgpuQuadMaterialRenderer, 1);
     runtime.quadBatchWriterCount = 1;
     flushWgpuQuadBatchWriter(state);
     expect(runtime.quadBatchWriterBufferCursor).toBe(1);

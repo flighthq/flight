@@ -3,7 +3,7 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
-import { getOrCreateRenderProxy2D, registerRenderer } from '@flighthq/render/contract';
+import { getOrCreateRenderProxy2D, registerNodeRenderer } from '@flighthq/render/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
 import { createPixelArtSampler, createTexture } from '@flighthq/texture/contract';
 import { SpriteKind } from '@flighthq/types/contract';
@@ -23,7 +23,7 @@ afterEach(() => {
 function drawElement(source: CanvasImageSource): HTMLElement | null {
   const state = createDomRenderState(document.createElement('div'));
   registerDomImageTextureResolver(state);
-  registerRenderer(state, SpriteKind, domSpriteRenderer);
+  registerNodeRenderer(state, SpriteKind, domSpriteRenderer);
   const image = createImageResource(source);
   image.width = 64;
   image.height = 64;
@@ -56,7 +56,7 @@ describe('drawDomSprite', () => {
     const image = createImageResource(canvas);
     const state = createDomRenderState(document.createElement('div'));
     registerDomImageTextureResolver(state);
-    registerRenderer(state, SpriteKind, domSpriteRenderer);
+    registerNodeRenderer(state, SpriteKind, domSpriteRenderer);
     const sprite = createSprite({
       data: { texture: createTexture({ dimension: '2d', source: image }) },
     });
@@ -71,7 +71,7 @@ describe('drawDomSprite', () => {
     const image = createImageResource(canvas);
     const state = createDomRenderState(document.createElement('div'));
     registerDomImageTextureResolver(state);
-    registerRenderer(state, SpriteKind, domSpriteRenderer);
+    registerNodeRenderer(state, SpriteKind, domSpriteRenderer);
     const sprite = createSprite({
       data: {
         texture: createTexture({ dimension: '2d', sampler: createPixelArtSampler(), source: image }),
@@ -93,7 +93,7 @@ describe('drawDomSprite', () => {
     canvas.height = 50;
     const state = createDomRenderState(document.createElement('div'));
     registerDomImageTextureResolver(state);
-    registerRenderer(state, SpriteKind, domSpriteRenderer);
+    registerNodeRenderer(state, SpriteKind, domSpriteRenderer);
     const texture = createTexture({ dimension: '2d', source: createImageResource(canvas) });
     texture.uvOffset.x = 0.1;
     texture.uvOffset.y = 0.4;

@@ -15,7 +15,7 @@ import {
   prepareScene2DRender,
   registerCanvasImageTextureResolver,
   registerCanvasSurfaceCreator,
-  registerRenderer,
+  registerNodeRenderer,
   renderCanvasScene2D,
   canvasScene2DRenderRegistries,
   SpriteKind,
@@ -44,8 +44,8 @@ const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as con
 enableFlightDiagnostics(state);
 
 registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
-registerRenderer(state, SpriteKind, canvasSpriteRenderer);
-registerRenderer(state, TilemapKind, canvasTilemapRenderer);
+registerNodeRenderer(state, SpriteKind, canvasSpriteRenderer);
+registerNodeRenderer(state, TilemapKind, canvasTilemapRenderer);
 
 export const scale = pixelRatio;
 

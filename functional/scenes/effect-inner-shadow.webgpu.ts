@@ -25,7 +25,7 @@ import {
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
-  registerRenderer,
+  registerNodeRenderer,
   registerWgpuInnerShadowEffect,
   renderWgpuScene2D,
   wgpuScene3DRenderRegistries,
@@ -65,7 +65,7 @@ export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRender
   format: acquisition.format,
   pixelRatio,
 });
-registerRenderer(state, ShapeKind, wgpuShapeRenderer);
+registerNodeRenderer(state, ShapeKind, wgpuShapeRenderer);
 registerWgpuInnerShadowEffect(state);
 
 const pipeline = createWgpuEffectState(state, {

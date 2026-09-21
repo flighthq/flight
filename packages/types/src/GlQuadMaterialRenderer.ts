@@ -2,7 +2,7 @@ import type { GlRenderState } from './GlRenderState';
 import type { Material, MaterialData } from './Material';
 
 // Per-backend behavior for a material kind on Gl, registered against the kind on the
-// render state via registerGlMaterialRenderer. The renderer owns its shader (program and
+// render state via registerGlQuadMaterialRenderer. The renderer owns its shader (program and
 // uniform/attribute locations) and any per-render-state batch buffer it needs.
 //
 // A material may use only per-batch uniforms (instanceFloatCount = 0, no packInstance), it
@@ -16,7 +16,7 @@ import type { Material, MaterialData } from './Material';
 // instance count, so the base instance layout (locations 1–6) stays a fixed contract that
 // material shaders extend from location 7 upward. A material may not change the base geometry
 // or topology — that remains graph-kind territory.
-export interface GlMaterialRenderer {
+export interface GlQuadMaterialRenderer {
   readonly instanceFloatCount: number;
 
   // Bind the program, upload per-batch uniforms, and set up this material's vertex attributes.

@@ -14,7 +14,7 @@ import {
   registerCanvasImageTextureResolver,
   registerCanvasShapeCommands,
   registerDomShapeRasterizer,
-  registerRenderer,
+  registerNodeRenderer,
   renderDomScene2D,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -31,7 +31,7 @@ export const state = createDomRenderState(container, { sceneGraphSyncPolicy: 're
 container.style.backgroundColor = '#1a1a2e';
 enableFlightDiagnostics(state);
 
-registerRenderer(state, ShapeKind, domShapeRenderer);
+registerNodeRenderer(state, ShapeKind, domShapeRenderer);
 
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
 // has no tessellated form and draws through this rasterizer instead. Registering it is what keeps a

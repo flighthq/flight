@@ -3,7 +3,7 @@ import { allocateEmptyWgpuRenderRegistries, initializeEmptyWgpuRenderRegistries 
 describe('allocateEmptyWgpuRenderRegistries', () => {
   it('creates empty tables for every required WGPU policy seam', () => {
     const registries = allocateEmptyWgpuRenderRegistries();
-    expect(registries.renderers.shape).toBe('keyed');
+    expect(registries.nodeRenderers.shape).toBe('keyed');
     expect(registries.compressedTextureDecoder).toBeNull();
     expect(registries.compressedTextureUpload).toBeNull();
     expect(registries.customMaterialShaders.shape).toBe('keyed');

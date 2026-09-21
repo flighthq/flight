@@ -74,7 +74,7 @@ function collectGlScene2DCoverageGaps(
     );
   }
 
-  // resolveGlMaterialRenderer falls back to whatever is registered for StandardMaterialKind, so an
+  // resolveGlQuadMaterialRenderer falls back to whatever is registered for StandardMaterialKind, so an
   // unregistered kind may still draw — as the standard material, which is a downgrade worth naming
   // rather than a silence, and is NOT the same as nothing being registered at all.
   const materials = runtime.registries.materialRenderers.entries;

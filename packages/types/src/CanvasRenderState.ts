@@ -1,6 +1,6 @@
 import type { BlendMode } from './BlendMode';
 import type { CanvasEffectRunner } from './CanvasEffectState';
-import type { CanvasMaterialRenderer } from './CanvasMaterialRenderer';
+import type { CanvasQuadMaterialRenderer } from './CanvasQuadMaterialRenderer';
 import type { CanvasRenderPass } from './CanvasRenderPass';
 import type { CanvasRenderSurfaceCreator } from './CanvasRenderSurface';
 import type { CanvasRenderTarget, CanvasTextureRenderTarget } from './CanvasRenderTarget';
@@ -34,7 +34,7 @@ export interface CanvasRenderRegistries extends RenderRegistries {
   blendModeApplication?: ((state: CanvasRenderState, blendMode: BlendMode | null) => void) | null;
   // Absent until the first material registration so a Canvas-only application that uses no material
   // policy retains neither the table metadata nor the declarative renderer module.
-  materialRenderers?: KeyedTable<CanvasMaterialRenderer>;
+  materialRenderers?: KeyedTable<CanvasQuadMaterialRenderer>;
   effects: KeyedTable<CanvasEffectRunner>;
 }
 

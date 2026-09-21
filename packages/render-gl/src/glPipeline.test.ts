@@ -3,7 +3,7 @@ import { allocateEmptyGlRenderRegistries, initializeEmptyGlRenderRegistries } fr
 describe('allocateEmptyGlRenderRegistries', () => {
   it('creates a complete GlRenderRegistries with all required tables', () => {
     const registries = allocateEmptyGlRenderRegistries();
-    expect(registries.renderers.shape).toBe('keyed');
+    expect(registries.nodeRenderers.shape).toBe('keyed');
     expect(registries.blendRealizations.shape).toBe('keyed');
     expect(registries.compressedTextureDecoder).toBeNull();
     expect(registries.compressedTextureUpload).toBeNull();
@@ -24,7 +24,7 @@ describe('allocateEmptyGlRenderRegistries', () => {
 
   it('starts with zero entries in every keyed table', () => {
     const registries = allocateEmptyGlRenderRegistries();
-    expect(registries.renderers.entries.size).toBe(0);
+    expect(registries.nodeRenderers.entries.size).toBe(0);
     expect(registries.blendRealizations.entries.size).toBe(0);
     expect(registries.textureResolvers.entries.size).toBe(0);
   });

@@ -6,7 +6,7 @@ import type { Scene3DLightBlock } from './Scene3DLightBlock';
 import type { Scene3DRenderProxy } from './Scene3DRenderProxy';
 
 // Per-backend 3D draw behavior for a material kind on Gl, registered against the kind via
-// registerGlMeshMaterialRenderer. This is the scene (3D) analog of GlMaterialRenderer (the 2D
+// registerGlMeshMaterialRenderer. This is the scene (3D) analog of GlQuadMaterialRenderer (the 2D
 // quad-batch material seam): registries.meshMaterialRenderers is distinct from the 2D
 // material-renderer table because a material kind is either 2D or 3D, never both.
 //

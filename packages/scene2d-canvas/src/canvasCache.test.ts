@@ -77,9 +77,9 @@ describe('createCanvasCacheState', () => {
     const screen = makeCanvasState();
     enableCanvasRenderCache(screen);
     const cacheState = makeCacheState(screen);
-    expect(getRegistryTableEntry(getCanvasRenderStateRuntime(cacheState).registries.renderers, RenderCacheKind)).toBe(
-      canvasRenderCacheRenderer,
-    );
+    expect(
+      getRegistryTableEntry(getCanvasRenderStateRuntime(cacheState).registries.nodeRenderers, RenderCacheKind),
+    ).toBe(canvasRenderCacheRenderer);
   });
 
   it('propagates pixel ratio and scene graph sync policy without sharing node maps', () => {
@@ -179,7 +179,7 @@ describe('enableCanvasRenderCache', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = makeCanvasState();
     enableCanvasRenderCache(state);
-    expect(getRegistryTableEntry(getCanvasRenderStateRuntime(state).registries.renderers, RenderCacheKind)).toBe(
+    expect(getRegistryTableEntry(getCanvasRenderStateRuntime(state).registries.nodeRenderers, RenderCacheKind)).toBe(
       canvasRenderCacheRenderer,
     );
   });

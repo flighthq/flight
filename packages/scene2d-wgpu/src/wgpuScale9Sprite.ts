@@ -1,7 +1,7 @@
 import { createMatrix3 } from '@flighthq/geometry/contract';
 import {
   getWgpuRenderStateRuntime,
-  resolveWgpuMaterialRenderer,
+  resolveWgpuQuadMaterialRenderer,
   resolveWgpuTexture,
 } from '@flighthq/render-wgpu/contract';
 import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
@@ -38,7 +38,7 @@ export function drawWgpuScale9Sprite(state: WgpuRenderState, renderProxy: Render
   if (mapper === null) return;
 
   const material = renderProxy.material;
-  const materialRenderer = resolveWgpuMaterialRenderer(state, material);
+  const materialRenderer = resolveWgpuQuadMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const textureEntry = resolveWgpuTexture(state, texture, true, SCENE2D_WORKING_COLOR_SPACE);
   if (textureEntry === null) return;

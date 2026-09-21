@@ -5,14 +5,14 @@ import type {
   Renderable,
   RenderCache,
   RenderCacheAdapter,
-  Renderer,
+  NodeRenderer,
   RenderProxy2D,
   RenderState,
   EntityConstruction,
 } from '@flighthq/types/contract';
 import { RenderCacheKind } from '@flighthq/types/contract';
 
-import { registerRenderer } from './renderer';
+import { registerNodeRenderer } from './renderer';
 import { getRenderProxyAdapter, setRenderProxyAdapter } from './renderProxyAdapter';
 
 export { RenderCacheKind };
@@ -97,8 +97,8 @@ export function isRenderCacheAdapter(value: unknown): value is RenderCacheAdapte
   );
 }
 
-export function registerRenderCacheRenderer(state: RenderState, renderer: Renderer): void {
-  registerRenderer(state, RenderCacheKind, renderer);
+export function registerRenderCacheNodeRenderer(state: RenderState, renderer: NodeRenderer): void {
+  registerNodeRenderer(state, RenderCacheKind, renderer);
 }
 
 /**

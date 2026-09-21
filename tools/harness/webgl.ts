@@ -45,7 +45,7 @@ import {
   registerCanvasRenderTextureResolver,
   registerCanvasShapeCommands,
   registerGlShapeRasterizer,
-  registerRenderer,
+  registerNodeRenderer,
   renderGlScene2D,
   RichTextKind,
   Scale9ShapeKind,
@@ -102,23 +102,23 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   enableGlEffectGuards(state);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
-      registerRenderer(state, ShapeKind, glShapeRenderer);
+      registerNodeRenderer(state, ShapeKind, glShapeRenderer);
       registerGlShapeRasterizer(state, createHarnessShapeRasterizer());
       registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
     } else if (kind === RichTextKind) {
-      registerRenderer(state, RichTextKind, glRichTextRenderer);
+      registerNodeRenderer(state, RichTextKind, glRichTextRenderer);
     } else if (kind === TextLabelKind) {
-      registerRenderer(state, TextLabelKind, glTextLabelRenderer);
+      registerNodeRenderer(state, TextLabelKind, glTextLabelRenderer);
     } else if (kind === SpriteKind) {
-      registerRenderer(state, SpriteKind, glSpriteRenderer);
+      registerNodeRenderer(state, SpriteKind, glSpriteRenderer);
     } else if (kind === ParticleEmitter2DKind) {
-      registerRenderer(state, ParticleEmitter2DKind, glParticleEmitter2DRenderer);
+      registerNodeRenderer(state, ParticleEmitter2DKind, glParticleEmitter2DRenderer);
     } else if (kind === QuadBatchKind) {
-      registerRenderer(state, QuadBatchKind, glQuadBatchRenderer);
+      registerNodeRenderer(state, QuadBatchKind, glQuadBatchRenderer);
     } else if (kind === TilemapKind) {
-      registerRenderer(state, TilemapKind, glTilemapRenderer);
+      registerNodeRenderer(state, TilemapKind, glTilemapRenderer);
     } else if (kind === Scale9ShapeKind) {
-      registerRenderer(state, Scale9ShapeKind, glScale9ShapeRenderer);
+      registerNodeRenderer(state, Scale9ShapeKind, glScale9ShapeRenderer);
       registerGlShapeRasterizer(state, createHarnessShapeRasterizer());
       registerCanvasShapeCommands(state, [...canvasShapeCommands, ...canvasTextureShapeCommands]);
     }

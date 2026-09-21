@@ -1,4 +1,4 @@
-import { getWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
+import { getWgpuQuadMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import {
   allocateEmptyWgpuRenderRegistries,
   createWgpuDeviceState,
@@ -7,7 +7,7 @@ import {
 import type { WgpuRenderState } from '@flighthq/types/contract';
 import { EntityRuntimeKey, StandardMaterialKind } from '@flighthq/types/contract';
 
-import { registerWgpuStandardMaterial, standardWgpuMaterialRenderer } from './wgpuStandardMaterial';
+import { registerWgpuStandardMaterial, standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial';
 
 describe('registerWgpuStandardMaterial', () => {
   it('registers the default renderer under StandardMaterialKind', () => {
@@ -17,12 +17,12 @@ describe('registerWgpuStandardMaterial', () => {
       allocateEmptyWgpuRenderRegistries(),
     );
     registerWgpuStandardMaterial(state);
-    expect(getWgpuMaterialRenderer(state, StandardMaterialKind)).toBe(standardWgpuMaterialRenderer);
+    expect(getWgpuQuadMaterialRenderer(state, StandardMaterialKind)).toBe(standardWgpuQuadMaterialRenderer);
   });
 });
 
-describe('standardWgpuMaterialRenderer', () => {
+describe('standardWgpuQuadMaterialRenderer', () => {
   it('declares no per-instance float data', () => {
-    expect(standardWgpuMaterialRenderer.instanceFloatCount).toBe(0);
+    expect(standardWgpuQuadMaterialRenderer.instanceFloatCount).toBe(0);
   });
 });

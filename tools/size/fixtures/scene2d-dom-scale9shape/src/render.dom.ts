@@ -1,6 +1,6 @@
 import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
-import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene2d';
 import {
   createCanvasShapeRasterizer,
@@ -28,7 +28,7 @@ const state = createDomRenderState(container, { pixelRatio: 1 });
 // already holds, set once rather than reapplied by a render function every frame.
 container.style.backgroundColor = '#1a1a2e';
 
-registerRenderer(state, Scale9ShapeKind, domScale9ShapeRenderer);
+registerNodeRenderer(state, Scale9ShapeKind, domScale9ShapeRenderer);
 const resolvers = createCanvasTextureResolvers(webCanvasRenderSurfaceCreator);
 registerCanvasShapeCommands(state, canvasShapeCommands);
 registerDomShapeRasterizer(state, createCanvasShapeRasterizer(resolvers));

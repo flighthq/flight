@@ -12,7 +12,7 @@ import {
   getColorAdjustmentUnsupportedGuard,
   getRenderStateRuntime,
   prepareScene2DRender,
-  registerRenderer,
+  registerNodeRenderer,
 } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
@@ -28,8 +28,8 @@ import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
 import { areGlRenderStateGuardsEnabled, enableGlRenderStateGuards } from './enableGlRenderStateGuards';
 import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
 import { isBlendModeSupported, registerGlBlendMode, useGlProgram } from './glDraw';
-import { registerGlMaterialRenderer } from './glMaterialRegistry';
 import { allocateEmptyGlRenderRegistries } from './glPipeline';
+import { registerGlQuadMaterialRenderer } from './glQuadMaterialRegistry';
 import {
   createGlContextState,
   createGlRenderState,
@@ -237,8 +237,8 @@ describe('createGlRenderState (context sharing)', () => {
       record: vi.fn(),
     };
     const colorAdjustmentFeatureGuard: GlColorAdjustmentMaterialFeatureGuard = vi.fn();
-    registerRenderer(screen, 'acme.Node', renderer);
-    registerGlMaterialRenderer(screen, 'acme.Material', materialRenderer);
+    registerNodeRenderer(screen, 'acme.Node', renderer);
+    registerGlQuadMaterialRenderer(screen, 'acme.Material', materialRenderer);
     registerGlTextureResolver(screen, 'acme.Texture', textureResolver);
     enableColorAdjustments(screen);
     enableColorAdjustmentGuards(screen);
@@ -277,7 +277,7 @@ describe('createGlRenderState (context sharing)', () => {
     );
     expect(offscreenRuntime.context.glRenderTextureCache).toBe(screenRuntime.context.glRenderTextureCache);
     expect(offscreenRuntime.context.quadIndexBuffer).toBe(screenRuntime.context.quadIndexBuffer);
-    expect(offscreenRuntime.registries.renderers).toBe(screenRuntime.registries.renderers);
+    expect(offscreenRuntime.registries.nodeRenderers).toBe(screenRuntime.registries.nodeRenderers);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
     expect(offscreenRuntime.registries.blendRealizations).toBe(screenRuntime.registries.blendRealizations);
     expect(offscreenRuntime.registries.colorAdjustmentFeature).toBe(screenRuntime.registries.colorAdjustmentFeature);
@@ -331,7 +331,7 @@ describe('createGlRenderState (context sharing)', () => {
     expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
     expect(offscreenRuntime.registries.velocityWriters).toBe(screenRuntime.registries.velocityWriters);
     expect(offscreenRuntime.registries.effectPaddingResolvers).toBe(screenRuntime.registries.effectPaddingResolvers);
-    expect(getRegistryTableEntry(offscreenRuntime.registries.renderers, 'acme.Node')).toBe(renderer);
+    expect(getRegistryTableEntry(offscreenRuntime.registries.nodeRenderers, 'acme.Node')).toBe(renderer);
     expect(getRegistryTableEntry(offscreenRuntime.registries.materialRenderers, 'acme.Material')).toBe(
       materialRenderer,
     );
@@ -350,11 +350,13 @@ describe('createGlRenderState (context sharing)', () => {
     const renderer = { createData: () => null, submit: vi.fn() };
     const paddingResolver = vi.fn(() => ({ bottom: 2, left: 2, right: 2, top: 2 }));
     const resolver = vi.fn(() => null);
-    registerRenderer(screen, 'acme.LateNode', renderer);
+    registerNodeRenderer(screen, 'acme.LateNode', renderer);
     registerGlTextureResolver(screen, 'acme.LateTexture', resolver);
     registerPaddingResolver(screen, 'acme.LateEffect', paddingResolver);
 
-    expect(hasRegistryTableEntry(getRenderStateRuntime(offscreen).registries.renderers, 'acme.LateNode')).toBe(false);
+    expect(hasRegistryTableEntry(getRenderStateRuntime(offscreen).registries.nodeRenderers, 'acme.LateNode')).toBe(
+      false,
+    );
     expect(
       hasRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
     ).toBe(false);
@@ -362,7 +364,7 @@ describe('createGlRenderState (context sharing)', () => {
 
     destroyGlRenderState(offscreen);
     offscreen = createGlRenderState(screen.gl, { ...getGlRenderStateRuntime(screen).registries });
-    expect(getRegistryTableEntry(getRenderStateRuntime(offscreen).registries.renderers, 'acme.LateNode')).toBe(
+    expect(getRegistryTableEntry(getRenderStateRuntime(offscreen).registries.nodeRenderers, 'acme.LateNode')).toBe(
       renderer,
     );
     expect(
@@ -376,7 +378,7 @@ describe('createGlRenderState (context sharing)', () => {
     const screen = createTestGlRenderState(gl);
     const destroyData = vi.fn();
     const root = createDisplayObject();
-    registerRenderer(screen, root.kind, {
+    registerNodeRenderer(screen, root.kind, {
       createData: () => finishEntity(allocateEntity()),
       destroyData,
       submit: vi.fn(),
@@ -419,7 +421,7 @@ describe('createGlRenderStateRuntime', () => {
     expect(runtime.registries.customMaterialShaders.entries.size).toBe(0);
     expect(runtime.registries.materialRenderers).toMatchObject({
       onMiss: 'StandardMaterial',
-      registry: 'GlMaterialRenderer',
+      registry: 'GlQuadMaterialRenderer',
       shape: 'keyed',
     });
     expect(runtime.registries.materialRenderers.entries.size).toBe(0);
@@ -698,7 +700,7 @@ describe('pipeline-backed GL registrations', () => {
     registerGlBlendMode(screen, 'acme.LateBlend', { src: 'ONE', dst: 'ZERO' });
     registerGlCompressedTextureDecoder(screen, decoder);
     registerGlCompressedTextureUpload(screen);
-    registerGlMaterialRenderer(screen, 'acme.LateMaterial', materialRenderer);
+    registerGlQuadMaterialRenderer(screen, 'acme.LateMaterial', materialRenderer);
     registerGlTextureResolver(screen, 'acme.LateTexture', resolver);
 
     expect(isBlendModeSupported(offscreen, 'acme.LateBlend')).toBe(false);
@@ -729,7 +731,7 @@ describe('pipeline-backed GL registrations', () => {
     expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureUpload).toBe(
       getGlRenderStateRuntime(screen).registries.compressedTextureUpload,
     );
-    registerGlMaterialRenderer(offscreen, 'acme.LateMaterial', offscreenMaterialRenderer);
+    registerGlQuadMaterialRenderer(offscreen, 'acme.LateMaterial', offscreenMaterialRenderer);
     registerGlBlendMode(offscreen, 'acme.LateBlend', { src: 'ZERO', dst: 'ONE' });
     registerGlCompressedTextureDecoder(offscreen, null);
     registerGlCompressedTextureUpload(offscreen, null);

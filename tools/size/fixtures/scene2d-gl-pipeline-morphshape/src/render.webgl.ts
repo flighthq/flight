@@ -3,7 +3,7 @@ import { webHostGl, appendWebSurface, webHostWindowGeometry, webHostWindowLifecy
 import { addNodeChild } from '@flighthq/node';
 import { appendPathRectangle, createPath, createPathMorph } from '@flighthq/path';
 import { withRegistryTableEntry } from '@flighthq/registry';
-import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import {
   allocateEmptyGlRenderRegistries,
   createGlRenderState,
@@ -35,14 +35,14 @@ document.body.style.margin = '0';
 const emptyRegistries = allocateEmptyGlRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, MorphShapeKind, glMorphShapeRenderer),
+  nodeRenderers: withRegistryTableEntry(emptyRegistries.nodeRenderers, MorphShapeKind, glMorphShapeRenderer),
 };
 const state = createGlRenderState(glSurface.context, registry, { pixelRatio: 1 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 
 const registries = registry;
-for (const [kind, entry] of registries.renderers.entries) {
-  if (entry.state === RegistryEntryState.Bound) registerRenderer(state, kind, entry.value);
+for (const [kind, entry] of registries.nodeRenderers.entries) {
+  if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(state, kind, entry.value);
 }
 
 const start = createPath();

@@ -28,7 +28,7 @@ import {
   registerCanvasBitmapTextureResolver,
   registerCanvasImageTextureResolver,
   registerCanvasShapeCommands,
-  registerRenderer,
+  registerNodeRenderer,
   registerWgpuShapeRasterizer,
   renderWgpuScene2D,
   RichTextKind,
@@ -62,8 +62,8 @@ export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRender
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [1, 1, 1, 1], depth: 1.0 } as const;
 enableFlightDiagnostics(state);
-registerRenderer(state, RichTextKind, wgpuRichTextRenderer);
-registerRenderer(state, ShapeKind, wgpuShapeRenderer);
+registerNodeRenderer(state, RichTextKind, wgpuRichTextRenderer);
+registerNodeRenderer(state, ShapeKind, wgpuShapeRenderer);
 
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
 // has no tessellated form and draws through this rasterizer instead. Registering it is what keeps a
@@ -75,7 +75,7 @@ registerCanvasBitmapTextureResolver(webHostImage, shapeRasterizerResolvers);
 registerCanvasShapeCommands(state, canvasShapeCommands);
 registerCanvasShapeCommands(state, canvasTextureShapeCommands);
 registerWgpuShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
-registerRenderer(state, TextLabelKind, wgpuTextLabelRenderer);
+registerNodeRenderer(state, TextLabelKind, wgpuTextLabelRenderer);
 
 export const scale = pixelRatio;
 

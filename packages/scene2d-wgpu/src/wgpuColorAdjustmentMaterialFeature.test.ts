@@ -12,7 +12,7 @@ import {
   prepareWgpuQuadBatchWrite,
   recordWgpuQuadBatchColorScaleBias,
 } from './wgpuQuadBatchWriter';
-import { standardWgpuMaterialRenderer } from './wgpuStandardMaterial';
+import { standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial';
 
 beforeAll(() => {
   installWgpuMock();
@@ -127,7 +127,7 @@ describe('registerWgpuColorAdjustmentMaterialFeature', () => {
       texture: {} as GPUTexture,
       view: {} as GPUTextureView,
     };
-    prepareWgpuQuadBatchWrite(state, tex, null, null, null, standardWgpuMaterialRenderer, 2);
+    prepareWgpuQuadBatchWrite(state, tex, null, null, null, standardWgpuQuadMaterialRenderer, 2);
     recordWgpuQuadBatchColorScaleBias(state, ct(0.5), 0);
     recordWgpuQuadBatchColorScaleBias(state, ct(0.5), 1);
     runtime.quadBatchWriterCount = 2;

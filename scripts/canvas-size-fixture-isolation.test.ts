@@ -131,12 +131,12 @@ describe('canvas size fixture isolation', () => {
   it('registers exactly the one renderer its feature requires', () => {
     for (const fixture of DRAWING_FIXTURES) {
       const source = fixtureSource(fixture);
-      const bound = [...source.matchAll(/\bcanvas(\w+Renderer)\b/gu)].map((match) => `canvas${match[1]}`);
+      const bound = [...source.matchAll(/\bcanvas(\w+NodeRenderer)\b/gu)].map((match) => `canvas${match[1]}`);
       expect([...new Set(bound)].sort(), `${fixture} renderer set`).toEqual([...ALLOWED_RENDERER[fixture]].sort());
     }
   });
 
-  // Renderer isolation across backends: a Canvas fixture that reaches a GL or WGPU symbol would be
+  // NodeRenderer isolation across backends: a Canvas fixture that reaches a GL or WGPU symbol would be
   // measuring two backends at once, and its number would be quietly meaningless rather than wrong.
   it('reaches no other renderer backend', () => {
     for (const fixture of FEATURE_FIXTURES) {
@@ -209,8 +209,8 @@ describe('size-only control fixture', () => {
   it('registers no renderer and draws no visible content', () => {
     for (const fixture of CONTROL_FIXTURES) {
       const source = fixtureSource(fixture);
-      expect(source, `${fixture} must bind no renderer`).not.toMatch(/\bcanvas\w+Renderer\b/u);
-      expect(source, `${fixture} must not register a renderer`).not.toMatch(/\bregisterRenderer\b/u);
+      expect(source, `${fixture} must bind no renderer`).not.toMatch(/\bcanvas\w+NodeRenderer\b/u);
+      expect(source, `${fixture} must not register a renderer`).not.toMatch(/\bregisterNodeRenderer\b/u);
     }
   });
 

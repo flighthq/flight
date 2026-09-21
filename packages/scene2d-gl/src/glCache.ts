@@ -19,7 +19,7 @@ import {
   getRenderProxyCache,
   noopRendererData,
   prepareScene2DRender,
-  registerRenderCacheRenderer,
+  registerRenderCacheNodeRenderer,
 } from '@flighthq/render/contract';
 import type {
   Node2D,
@@ -48,7 +48,7 @@ export function createGlCacheState(
 }
 
 export function enableGlRenderCache(state: GlRenderState): void {
-  registerRenderCacheRenderer(state, glRenderCacheRenderer);
+  registerRenderCacheNodeRenderer(state, glRenderCacheRenderer);
 }
 
 /**

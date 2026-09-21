@@ -7,7 +7,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
-import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
   createWgpuRenderState,
@@ -40,8 +40,8 @@ export const state = createWgpuRenderState(acquisition.device, wgpuScene2DRender
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1], depth: 1.0 } as const;
 
 const registries = wgpuScene2DRenderRegistries;
-for (const [kind, entry] of registries.renderers.entries) {
-  if (entry.state === RegistryEntryState.Bound) registerRenderer(state, kind, entry.value);
+for (const [kind, entry] of registries.nodeRenderers.entries) {
+  if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(state, kind, entry.value);
 }
 registerWgpuImageTextureResolver(state);
 registerWgpuStandardMaterial(state);

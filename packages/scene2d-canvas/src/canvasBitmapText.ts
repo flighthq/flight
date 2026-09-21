@@ -10,7 +10,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { drawCanvasAtlasRegion } from './canvasAtlasRegion';
-import { applyCanvasMaterial } from './canvasMaterialRegistry';
+import { applyCanvasMaterial } from './canvasQuadMaterialRegistry';
 import {
   getCanvasRenderStateTextureResolvers,
   setCanvasGlobalAlpha,

@@ -1,13 +1,18 @@
-import type { Renderer, Scene2DKindUsage, SceneCoverageCatalog, SceneCoverageEntry } from '@flighthq/types/contract';
+import type {
+  NodeRenderer,
+  Scene2DKindUsage,
+  SceneCoverageCatalog,
+  SceneCoverageEntry,
+} from '@flighthq/types/contract';
 import { RegistryEntryState, RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainScene2DCoverage, hasScene2DCoverage } from './explainScene2DCoverage';
-import { registerRenderer } from './renderer';
+import { registerNodeRenderer } from './renderer';
 import { createRenderState } from './renderState';
 import { getRenderStateRuntime } from './renderState';
 
-const renderer: Renderer = { createData: () => null, submit: () => {} } as unknown as Renderer;
+const renderer: NodeRenderer = { createData: () => null, submit: () => {} } as unknown as NodeRenderer;
 const coverageCatalog: SceneCoverageCatalog = [
   {
     kind: 'Shape',
@@ -82,7 +87,7 @@ describe('explainScene2DCoverage', () => {
 
   it('reports a registered node kind as Satisfied rather than omitting it', () => {
     const state = createRenderState();
-    registerRenderer(state, 'Shape', renderer);
+    registerNodeRenderer(state, 'Shape', renderer);
     expect(entries(state, usage({ nodeKinds: ['Shape'] }))).toEqual([
       {
         coverage: SceneCoverage.Satisfied,
@@ -117,7 +122,7 @@ describe('explainScene2DCoverage', () => {
 
   it('answers both registries in one manifest', () => {
     const state = createRenderState();
-    registerRenderer(state, 'Shape', renderer);
+    registerNodeRenderer(state, 'Shape', renderer);
     const found = entries(state, usage({ nodeKinds: ['Shape', 'Sprite'], shapeCommandKeys: ['beginFill'] }));
     expect(found).toHaveLength(3);
     expect(found.filter((e) => e.coverage !== SceneCoverage.Satisfied).map((e) => e.kind)).toEqual([
@@ -144,7 +149,7 @@ describe('hasScene2DCoverage', () => {
 
   it('stays true when the manifest is all Satisfied entries, which are not shortfalls', () => {
     const state = createRenderState();
-    registerRenderer(state, 'Shape', renderer);
+    registerNodeRenderer(state, 'Shape', renderer);
     wireShapeCommand(state, 'beginFill');
     const u = usage({ nodeKinds: ['Shape'], shapeCommandKeys: ['beginFill'] });
     const out: SceneCoverageEntry[] = [];
@@ -155,7 +160,7 @@ describe('hasScene2DCoverage', () => {
 
   it('agrees with the explain tier, so the two can never disagree', () => {
     const state = createRenderState();
-    registerRenderer(state, 'Shape', renderer);
+    registerNodeRenderer(state, 'Shape', renderer);
     const u = usage({ nodeKinds: ['Shape', 'Sprite'] });
     const out: SceneCoverageEntry[] = [];
     explainScene2DCoverage(out, state, u, coverageCatalog);

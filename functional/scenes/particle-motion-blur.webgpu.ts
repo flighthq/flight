@@ -40,7 +40,7 @@ import {
   invalidateNodeLocalTransform,
   ParticleEmitter2DKind,
   prepareScene2DRender,
-  registerRenderer,
+  registerNodeRenderer,
   registerWgpuImageTextureResolver,
   registerWgpuMotionBlurEffect,
   registerWgpuVelocityWriter,
@@ -90,7 +90,7 @@ export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRender
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 1.0 } as const;
 registerWgpuImageTextureResolver(state);
-registerRenderer(state, ParticleEmitter2DKind, wgpuParticleEmitter2DRenderer);
+registerNodeRenderer(state, ParticleEmitter2DKind, wgpuParticleEmitter2DRenderer);
 registerWgpuMotionBlurEffect(state);
 registerWgpuVelocityWriter(state, ParticleEmitter2DKind, wgpuParticleEmitter2DVelocityWriter);
 

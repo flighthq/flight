@@ -1,5 +1,5 @@
 import { withRegistryTableEntry } from '@flighthq/registry/contract';
-import type { CanvasRenderRegistries, KeyedTable, Renderer } from '@flighthq/types/contract';
+import type { CanvasRenderRegistries, KeyedTable, NodeRenderer } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
   DisplayObjectKind,
@@ -32,9 +32,9 @@ import { canvasSpriteRenderer } from './canvasSprite';
 import { canvasTextLabelRenderer } from './canvasTextLabel';
 import { canvasTilemapRenderer } from './canvasTilemap';
 
-function buildScene2dCanvasRenderers(): KeyedTable<Renderer> {
+function buildScene2dCanvasRenderers(): KeyedTable<NodeRenderer> {
   const registries = allocateEmptyCanvasRenderRegistries();
-  let table = registries.renderers;
+  let table = registries.nodeRenderers;
   table = withRegistryTableEntry(table, BitmapTextKind, canvasBitmapTextRenderer);
   table = withRegistryTableEntry(table, DisplayObjectKind, canvasScene2DRenderer);
   table = withRegistryTableEntry(table, MorphShapeKind, canvasMorphShapeRenderer);
@@ -55,5 +55,5 @@ export const canvasScene2DRenderRegistries: Readonly<CanvasRenderRegistries> = {
   ...allocateEmptyCanvasRenderRegistries(),
   blendModeApplication: applyCanvasBlendMode,
   canvasShapeCommands: canvasShapeCommandTable(),
-  renderers: buildScene2dCanvasRenderers(),
+  nodeRenderers: buildScene2dCanvasRenderers(),
 };

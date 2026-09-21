@@ -1,5 +1,5 @@
-import { getWgpuRenderStateRuntime, registerWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
-import type { WgpuMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
+import { getWgpuRenderStateRuntime, registerWgpuQuadMaterialRenderer } from '@flighthq/render-wgpu/contract';
+import type { WgpuQuadMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
 import { StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getWgpuQuadBatchPreludeWGSL } from './wgpuQuadBatchWriter';
@@ -8,12 +8,12 @@ import { getWgpuQuadBatchPreludeWGSL } from './wgpuQuadBatchWriter';
 // other — no privileged status in the render path; a node with no material renders only if a renderer
 // is registered for StandardMaterialKind. A user can copy this file and register their own default.
 export function registerWgpuStandardMaterial(state: WgpuRenderState): void {
-  registerWgpuMaterialRenderer(state, StandardMaterialKind, standardWgpuMaterialRenderer);
+  registerWgpuQuadMaterialRenderer(state, StandardMaterialKind, standardWgpuQuadMaterialRenderer);
 }
 
 // Textured quad with per-instance alpha and no other effect. The batch holds no shader of its own, so
 // even the plain path is just a registered material — this module IS the base quad-batch writer shader.
-export const standardWgpuMaterialRenderer: WgpuMaterialRenderer = {
+export const standardWgpuQuadMaterialRenderer: WgpuQuadMaterialRenderer = {
   instanceFloatCount: 0,
   getShaderModule(state: WgpuRenderState): GPUShaderModule {
     const runtime = getWgpuRenderStateRuntime(state);

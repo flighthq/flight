@@ -29,7 +29,7 @@ import {
   registerCanvasImageTextureResolver,
   registerCanvasShapeCommands,
   registerGlShapeRasterizer,
-  registerRenderer,
+  registerNodeRenderer,
   renderGlScene2D,
   RichTextKind,
   ShapeKind,
@@ -61,8 +61,8 @@ export const state = createGlRenderState(glSurface.context, glScene3DRenderRegis
 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 enableFlightDiagnostics(state);
-registerRenderer(state, RichTextKind, glRichTextRenderer);
-registerRenderer(state, ShapeKind, glShapeRenderer);
+registerNodeRenderer(state, RichTextKind, glRichTextRenderer);
+registerNodeRenderer(state, ShapeKind, glShapeRenderer);
 
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
 // has no tessellated form and draws through this rasterizer instead. Registering it is what keeps a
@@ -74,7 +74,7 @@ registerCanvasBitmapTextureResolver(webHostImage, shapeRasterizerResolvers);
 registerCanvasShapeCommands(state, canvasShapeCommands);
 registerCanvasShapeCommands(state, canvasTextureShapeCommands);
 registerGlShapeRasterizer(state, createCanvasShapeRasterizer(shapeRasterizerResolvers));
-registerRenderer(state, TextLabelKind, glTextLabelRenderer);
+registerNodeRenderer(state, TextLabelKind, glTextLabelRenderer);
 enableGlTextInput();
 
 export const scale = pixelRatio;

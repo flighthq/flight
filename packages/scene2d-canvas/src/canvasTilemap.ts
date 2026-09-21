@@ -2,7 +2,7 @@
 import type { CanvasRenderState, RenderProxy2D, SpriteRenderer, Tilemap } from '@flighthq/types/contract';
 
 import { drawCanvasAtlasRegion } from './canvasAtlasRegion';
-import { applyCanvasMaterial } from './canvasMaterialRegistry';
+import { applyCanvasMaterial } from './canvasQuadMaterialRegistry';
 import {
   getCanvasRenderStateTextureResolvers,
   resolveCanvasTextureSmoothing,

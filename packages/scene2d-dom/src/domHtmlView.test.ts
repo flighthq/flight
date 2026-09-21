@@ -1,4 +1,4 @@
-﻿import { registerRenderer } from '@flighthq/render/contract';
+﻿import { registerNodeRenderer } from '@flighthq/render/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createHtmlView } from '@flighthq/scene2d/contract';
 import { HtmlViewKind } from '@flighthq/types/contract';
@@ -9,7 +9,7 @@ import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState
 function makeState() {
   const container = document.createElement('div');
   const state = createDomRenderState(container);
-  registerRenderer(state, HtmlViewKind, domHtmlViewRenderer);
+  registerNodeRenderer(state, HtmlViewKind, domHtmlViewRenderer);
   return state;
 }
 

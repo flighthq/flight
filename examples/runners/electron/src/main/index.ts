@@ -54,7 +54,7 @@ function loadRenderer(win: AppWindow): void {
   }
 }
 
-// Renderer → main bridge: capability calls that must run in the main process. The renderer invokes
+// NodeRenderer → main bridge: capability calls that must run in the main process. The renderer invokes
 // these over IPC (see preload); each handler is a plain Flight capability call that, thanks to
 // electronHost, is now serviced by Electron.
 function installIpcBridge(host: ReturnType<typeof electronHost>): void {

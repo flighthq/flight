@@ -1,18 +1,21 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from '@flighthq/render/contract';
-import type { Material, WgpuMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
+import type { Material, WgpuQuadMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
 import { StandardMaterialKind, EntityRuntimeKey, RenderRegistryTable } from '@flighthq/types/contract';
 
-import {
-  getWgpuMaterialRenderer,
-  registerWgpuMaterialRenderer,
-  resolveWgpuMaterialRenderer,
-} from './wgpuMaterialRegistry';
 import { allocateEmptyWgpuRenderRegistries } from './wgpuPipeline';
+import {
+  getWgpuQuadMaterialRenderer,
+  registerWgpuQuadMaterialRenderer,
+  resolveWgpuQuadMaterialRenderer,
+} from './wgpuQuadMaterialRegistry';
 import { createWgpuDeviceState, createWgpuRenderStateRuntime, getWgpuRenderStateRuntime } from './wgpuRenderState';
 
 const TestKind = 'TestMaterial';
-const testRenderer: WgpuMaterialRenderer = { instanceFloatCount: 0, getShaderModule: () => ({}) as GPUShaderModule };
+const testRenderer: WgpuQuadMaterialRenderer = {
+  instanceFloatCount: 0,
+  getShaderModule: () => ({}) as GPUShaderModule,
+};
 const _pipeline = allocateEmptyWgpuRenderRegistries();
 
 function makeState(): WgpuRenderState {
@@ -27,52 +30,55 @@ function makeMaterial(kind: string): Material {
   return { kind } as Material;
 }
 
-describe('getWgpuMaterialRenderer', () => {
+describe('getWgpuQuadMaterialRenderer', () => {
   it('returns null when nothing is registered for the kind', () => {
-    expect(getWgpuMaterialRenderer(makeState(), TestKind)).toBeNull();
+    expect(getWgpuQuadMaterialRenderer(makeState(), TestKind)).toBeNull();
   });
 });
 
-describe('registerWgpuMaterialRenderer', () => {
+describe('registerWgpuQuadMaterialRenderer', () => {
   it('registers a renderer retrievable by kind', () => {
     const state = makeState();
     const before = getWgpuRenderStateRuntime(state).registries.materialRenderers;
-    registerWgpuMaterialRenderer(state, TestKind, testRenderer);
-    expect(getWgpuMaterialRenderer(state, TestKind)).toBe(testRenderer);
+    registerWgpuQuadMaterialRenderer(state, TestKind, testRenderer);
+    expect(getWgpuQuadMaterialRenderer(state, TestKind)).toBe(testRenderer);
     expect(getWgpuRenderStateRuntime(state).registries.materialRenderers).not.toBe(before);
     expect(before.entries.size).toBe(0);
   });
 
   it('is last-write-wins without mutating the earlier snapshot', () => {
     const state = makeState();
-    const replacement: WgpuMaterialRenderer = { instanceFloatCount: 0, getShaderModule: () => ({}) as GPUShaderModule };
-    registerWgpuMaterialRenderer(state, TestKind, testRenderer);
+    const replacement: WgpuQuadMaterialRenderer = {
+      instanceFloatCount: 0,
+      getShaderModule: () => ({}) as GPUShaderModule,
+    };
+    registerWgpuQuadMaterialRenderer(state, TestKind, testRenderer);
     const before = getWgpuRenderStateRuntime(state).registries.materialRenderers;
 
-    registerWgpuMaterialRenderer(state, TestKind, replacement);
+    registerWgpuQuadMaterialRenderer(state, TestKind, replacement);
 
-    expect(getWgpuMaterialRenderer(state, TestKind)).toBe(replacement);
+    expect(getWgpuQuadMaterialRenderer(state, TestKind)).toBe(replacement);
     expect(before.entries.get(TestKind)).toEqual({ state: 'bound', value: testRenderer });
   });
 });
 
-describe('resolveWgpuMaterialRenderer', () => {
+describe('resolveWgpuQuadMaterialRenderer', () => {
   it('returns null when nothing is registered — no built-in fallback', () => {
-    expect(resolveWgpuMaterialRenderer(makeState(), null)).toBeNull();
-    expect(resolveWgpuMaterialRenderer(makeState(), makeMaterial(TestKind))).toBeNull();
+    expect(resolveWgpuQuadMaterialRenderer(makeState(), null)).toBeNull();
+    expect(resolveWgpuQuadMaterialRenderer(makeState(), makeMaterial(TestKind))).toBeNull();
   });
 
   it('returns the registered renderer for a material kind', () => {
     const state = makeState();
-    registerWgpuMaterialRenderer(state, TestKind, testRenderer);
-    expect(resolveWgpuMaterialRenderer(state, makeMaterial(TestKind))).toBe(testRenderer);
+    registerWgpuQuadMaterialRenderer(state, TestKind, testRenderer);
+    expect(resolveWgpuQuadMaterialRenderer(state, makeMaterial(TestKind))).toBe(testRenderer);
   });
 
   it('falls back to the renderer registered for StandardMaterialKind', () => {
     const state = makeState();
-    registerWgpuMaterialRenderer(state, StandardMaterialKind, testRenderer);
-    expect(resolveWgpuMaterialRenderer(state, makeMaterial('Other'))).toBe(testRenderer);
-    expect(resolveWgpuMaterialRenderer(state, null)).toBe(testRenderer);
+    registerWgpuQuadMaterialRenderer(state, StandardMaterialKind, testRenderer);
+    expect(resolveWgpuQuadMaterialRenderer(state, makeMaterial('Other'))).toBe(testRenderer);
+    expect(resolveWgpuQuadMaterialRenderer(state, null)).toBe(testRenderer);
   });
 
   it('reports the missing kind against the wgpu registrar, not the gl one', () => {
@@ -82,7 +88,7 @@ describe('resolveWgpuMaterialRenderer', () => {
     addLogSink(sink.sink);
 
     try {
-      resolveWgpuMaterialRenderer(state, makeMaterial(TestKind));
+      resolveWgpuQuadMaterialRenderer(state, makeMaterial(TestKind));
 
       expect(explainRenderRegistriesMisses(state).misses).toEqual([
         { kind: TestKind, registry: RenderRegistryTable.MaterialRenderer },
@@ -90,7 +96,7 @@ describe('resolveWgpuMaterialRenderer', () => {
       expect(getMemoryLogSinkEntries(sink)[0]?.data).toMatchObject({
         kind: TestKind,
         message:
-          'resolveWgpuMaterialRenderer: material kind has no registered renderer, so nodes using it do not draw — call registerWgpuMaterialRenderer(state, kind, renderer)',
+          'resolveWgpuQuadMaterialRenderer: material kind has no registered renderer, so nodes using it do not draw — call registerWgpuQuadMaterialRenderer(state, kind, renderer)',
         registry: RenderRegistryTable.MaterialRenderer,
       });
     } finally {

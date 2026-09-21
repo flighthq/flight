@@ -5,7 +5,7 @@ import type { VelocityField } from './Velocity';
 // its coverage and per-instance breakdown (a QuadBatch's per-instance velocities live nowhere else). A
 // GlVelocityWriter is registered per renderable Kind (registerGlVelocityWriter) and draws that
 // kind's velocity into the bound velocity target during the velocity pass. It is the draw-time analog of
-// a color renderer, kept as a separate concern — not the Renderer object — so the color contract stays
+// a color renderer, kept as a separate concern — not the NodeRenderer object — so the color contract stays
 // clean and velocity production tree-shakes independently. The generic VelocityField (velocity data) is
 // render-agnostic and lives in @flighthq/velocity; this is only the render-side hook into it.
 export interface GlVelocityContext {

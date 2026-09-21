@@ -1,4 +1,4 @@
-import { resolveWgpuMaterialRenderer, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
+import { resolveWgpuQuadMaterialRenderer, resolveWgpuTexture } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
@@ -39,7 +39,7 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
   if (atlas === null || atlas.texture === null || !hasTextureSource(atlas.texture) || instanceCount === 0) return;
 
   const material = quadBatch.material;
-  const materialRenderer = resolveWgpuMaterialRenderer(state, material);
+  const materialRenderer = resolveWgpuQuadMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const texture = atlas.texture;
   const textureEntry = resolveWgpuTexture(state, texture, true, SCENE2D_WORKING_COLOR_SPACE);

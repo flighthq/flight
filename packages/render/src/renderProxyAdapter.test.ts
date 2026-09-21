@@ -1,7 +1,7 @@
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { RenderProxy2D, RenderProxyAdapter } from '@flighthq/types/contract';
 
-import { registerRenderer } from './renderer';
+import { registerNodeRenderer } from './renderer';
 import { createRenderProxy2D } from './renderProxy';
 import { applyRenderProxyAdapter, getRenderProxyAdapter, setRenderProxyAdapter } from './renderProxyAdapter';
 import { createRenderState } from './renderState';
@@ -42,7 +42,7 @@ describe('applyRenderProxyAdapter', () => {
     const data = createRenderProxy2D(state, source);
     const kind = 'Adapted';
     const renderer = { createData: () => null, submit: vi.fn() };
-    registerRenderer(state, kind, renderer);
+    registerNodeRenderer(state, kind, renderer);
     const adapter: RenderProxyAdapter = {
       adapt: (_state, _source, node) => {
         node.kind = kind;

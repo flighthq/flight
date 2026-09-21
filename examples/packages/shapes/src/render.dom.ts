@@ -13,7 +13,7 @@ import {
   registerCanvasImageTextureResolver,
   registerCanvasShapeCommands,
   registerDomShapeRasterizer,
-  registerRenderer,
+  registerNodeRenderer,
   renderDomScene2D,
   ShapeKind,
 } from '@flighthq/sdk';
@@ -30,7 +30,7 @@ export const state = createDomRenderState(container, { sceneGraphSyncPolicy: 're
 container.style.backgroundColor = '#1a1a2e';
 enableFlightDiagnostics(state);
 
-registerRenderer(state, ShapeKind, domShapeRenderer);
+registerNodeRenderer(state, ShapeKind, domShapeRenderer);
 // Gradient and texture fills have no tessellated form on this backend, so they draw through an
 // explicit rasterizer. It paints into no canvas of its own, so it carries a resolution set
 // rather than a render state, and that set is pointed at this state's diagnostics.

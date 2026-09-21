@@ -1,4 +1,4 @@
-﻿import { registerRenderer } from '@flighthq/render/contract';
+﻿import { registerNodeRenderer } from '@flighthq/render/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape/contract';
 import { Scale9ShapeKind } from '@flighthq/types/contract';
@@ -18,7 +18,7 @@ describe('drawCanvasScale9Shape', () => {
     canvas.height = 200;
     const state = createCanvasRenderState(canvas);
     registerCanvasShapeCommands(state, canvasShapeCommands);
-    registerRenderer(state, Scale9ShapeKind, canvasScale9ShapeRenderer);
+    registerNodeRenderer(state, Scale9ShapeKind, canvasScale9ShapeRenderer);
     const shape = createScale9Shape(grid);
     const data = getOrCreateRenderProxy2D(state, shape);
     expect(() => drawCanvasScale9Shape(state, data)).not.toThrow();

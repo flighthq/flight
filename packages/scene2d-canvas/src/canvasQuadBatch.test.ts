@@ -4,7 +4,7 @@
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import { createQuadBatch, reserveQuadBatch } from '@flighthq/quadbatch/contract';
-import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
+import { getOrCreateRenderProxy2D, prepareScene2DRender, registerNodeRenderer } from '@flighthq/render/contract';
 import {
   addTextureAtlasRegion,
   createTextureAtlas,
@@ -45,7 +45,7 @@ function makeState() {
   canvas.height = 400;
   const state = createCanvasRenderState(canvas);
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
-  registerRenderer(state, QuadBatchKind, canvasQuadBatchRenderer);
+  registerNodeRenderer(state, QuadBatchKind, canvasQuadBatchRenderer);
   return state;
 }
 

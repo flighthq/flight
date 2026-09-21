@@ -14,5 +14,5 @@ export function initializeEmptyCanvasRenderRegistries(out: CanvasRenderRegistrie
   out.strokeTessellator = null;
 
   out.effects = createKeyedTable('CanvasEffect', 'Unregistered');
-  out.renderers = createKeyedTable('NodeRenderer', 'Unregistered');
+  out.nodeRenderers = createKeyedTable('NodeRenderer', 'Unregistered');
 }

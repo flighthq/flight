@@ -1,4 +1,4 @@
-import { getRenderProxyCache, noopRendererData, registerRenderCacheRenderer } from '@flighthq/render/contract';
+import { getRenderProxyCache, noopRendererData, registerRenderCacheNodeRenderer } from '@flighthq/render/contract';
 import {
   createCanvasTextureRenderTarget,
   destroyCanvasTextureRenderTarget,
@@ -18,7 +18,7 @@ import { prepareDomElement, setDomRendererElement } from './domStyle';
 import { setDomTransformWithOffset } from './domTransform';
 
 export function enableDomRenderCache(state: RenderState): void {
-  registerRenderCacheRenderer(state, domRenderCacheRenderer);
+  registerRenderCacheNodeRenderer(state, domRenderCacheRenderer);
 }
 
 /**

@@ -17,7 +17,7 @@ const first: RegistryCatalogEntry = {
   implementationSymbol: 'glShapeRenderer',
   kind: 'Shape',
   registrarImport: '@flighthq/render',
-  registrarSymbol: 'registerRenderer',
+  registrarSymbol: 'registerNodeRenderer',
 };
 
 describe('createRegistryCatalog', () => {

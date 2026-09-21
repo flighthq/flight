@@ -1,5 +1,5 @@
 import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
-import type { CanvasMaterialRenderer, CanvasRenderState, Kind, Material } from '@flighthq/types/contract';
+import type { CanvasQuadMaterialRenderer, CanvasRenderState, Kind, Material } from '@flighthq/types/contract';
 import { RegistryEntryState, StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
@@ -9,7 +9,7 @@ import { getCanvasRenderStateRuntime } from './canvasRenderState';
 // there is no material or no registered renderer, so the common path pays nothing.
 export function applyCanvasMaterial(state: CanvasRenderState, material: Material | null): boolean {
   if (material === null) return false;
-  const renderer = resolveCanvasMaterialRenderer(state, material);
+  const renderer = resolveCanvasQuadMaterialRenderer(state, material);
   if (renderer === null) return false;
   const drawState = renderer.getState(material);
   const context = state.context;
@@ -19,28 +19,29 @@ export function applyCanvasMaterial(state: CanvasRenderState, material: Material
   return true;
 }
 
-export function getCanvasMaterialRenderer(state: CanvasRenderState, kind: Kind): CanvasMaterialRenderer | null {
+export function getCanvasQuadMaterialRenderer(state: CanvasRenderState, kind: Kind): CanvasQuadMaterialRenderer | null {
   const entry = getCanvasRenderStateRuntime(state).registries.materialRenderers?.entries.get(kind);
   return entry?.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
-export function registerCanvasMaterialRenderer(
+export function registerCanvasQuadMaterialRenderer(
   state: CanvasRenderState,
   kind: Kind,
-  renderer: CanvasMaterialRenderer,
+  renderer: CanvasQuadMaterialRenderer,
 ): void {
   const runtime = getCanvasRenderStateRuntime(state);
-  const table = runtime.registries.materialRenderers ?? createKeyedTable('CanvasMaterialRenderer', 'StandardMaterial');
+  const table =
+    runtime.registries.materialRenderers ?? createKeyedTable('CanvasQuadMaterialRenderer', 'StandardMaterial');
   runtime.registries.materialRenderers = withRegistryTableEntry(table, kind, renderer);
 }
 
 // Resolves a node's material to its Canvas renderer, else the registered default, else null.
 // Unlike Gl there is no built-in fallback: a null result means "draw normally", since the
 // canvas renderer already performs the draw and a material only contributes extra draw state.
-export function resolveCanvasMaterialRenderer(
+export function resolveCanvasQuadMaterialRenderer(
   state: CanvasRenderState,
   material: Material | null,
-): CanvasMaterialRenderer | null {
+): CanvasQuadMaterialRenderer | null {
   const entries = getCanvasRenderStateRuntime(state).registries.materialRenderers?.entries;
   if (entries === undefined) return null;
   if (material !== null) {

@@ -181,7 +181,7 @@ export function effectReachabilitySymbols(backend: EffectBackend, sourceFiles: r
 export function defaultCompositionSymbols(sourceFiles: readonly string[]): Set<string> {
   const symbols = new Set<string>();
   for (const { name } of declarationsIn(sourceFiles)) {
-    if (/^(?:gl|canvas|dom|wgpu)[A-Z].*(?:Renderer|Runner)$/.test(name) && !name.endsWith('EffectRunner'))
+    if (/^(?:gl|canvas|dom|wgpu)[A-Z].*(?:NodeRenderer|Runner)$/.test(name) && !name.endsWith('EffectRunner'))
       symbols.add(name);
   }
   return symbols;

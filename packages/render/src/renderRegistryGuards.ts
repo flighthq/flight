@@ -52,8 +52,8 @@ function getRenderRegistriesMissMessage(state: RenderState, registry: RenderRegi
     // absence there is the ordinary case rather than a defect.
     case RenderRegistryTable.MaterialRenderer:
       if ('device' in state)
-        return 'resolveWgpuMaterialRenderer: material kind has no registered renderer, so nodes using it do not draw — call registerWgpuMaterialRenderer(state, kind, renderer)';
-      return 'resolveGlMaterialRenderer: material kind has no registered renderer, so nodes using it do not draw — call registerGlMaterialRenderer(state, kind, renderer)';
+        return 'resolveWgpuQuadMaterialRenderer: material kind has no registered renderer, so nodes using it do not draw — call registerWgpuQuadMaterialRenderer(state, kind, renderer)';
+      return 'resolveGlQuadMaterialRenderer: material kind has no registered renderer, so nodes using it do not draw — call registerGlQuadMaterialRenderer(state, kind, renderer)';
     // Reported by the proactive coverage checks (explainGlScene3DCoverage) rather than by a draw-time
     // miss: the shaded compiler resolves a whole stack at once, so a missing snippet surfaces as a
     // material that will not compile, not as one lookup returning null.
@@ -62,7 +62,7 @@ function getRenderRegistriesMissMessage(state: RenderState, registry: RenderRegi
         return 'a modifier on this material has no registered shader snippet — call registerWgpuModifierSnippet(state, snippet), or registerBuiltInWgpuModifierSnippets(state)';
       return 'a modifier on this material has no registered shader snippet — call registerGlModifierSnippet(state, snippet), or registerBuiltInGlModifierSnippets(state)';
     case RenderRegistryTable.NodeRenderer:
-      return 'createRenderProxy: node kind has no registered renderer — call registerRenderer(state, kind, renderer)';
+      return 'createRenderProxy: node kind has no registered renderer — call registerNodeRenderer(state, kind, renderer)';
     case RenderRegistryTable.ShapeCommandHandler:
       return 'renderCanvasShapeCommands: shape command key has no registered handler on this state — call registerCanvasShapeCommand(state, command)';
     // The kind reported is the node kind that went undrawn, since nothing here is keyed by anything else.

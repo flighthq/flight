@@ -2,7 +2,7 @@ import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import { addNodeChild, invalidateNodeAppearance } from '@flighthq/node';
 import { appendPathRectangle, createPath, createPathMorph } from '@flighthq/path';
 import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry';
-import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene2d';
 import {
   beginCanvasRenderPass,
@@ -55,7 +55,7 @@ for (const command of [canvasBeginFill, canvasDrawPath, canvasEndFill]) {
 const registry = {
   ...emptyRegistries,
   canvasShapeCommands: shapeCommands,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, MorphShapeKind, canvasMorphShapeRenderer),
+  nodeRenderers: withRegistryTableEntry(emptyRegistries.nodeRenderers, MorphShapeKind, canvasMorphShapeRenderer),
 };
 
 const screen = createCanvasScreenRenderTarget(
@@ -69,8 +69,8 @@ registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 
 const registries = registry;
-for (const [kind, entry] of registries.renderers.entries) {
-  if (entry.state === RegistryEntryState.Bound) registerRenderer(state, kind, entry.value);
+for (const [kind, entry] of registries.nodeRenderers.entries) {
+  if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(state, kind, entry.value);
 }
 
 const startPath = createPath();

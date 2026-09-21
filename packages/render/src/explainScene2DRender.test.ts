@@ -2,7 +2,7 @@ import { addNodeChild } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import { explainScene2DRender } from './explainScene2DRender';
-import { registerRenderer } from './renderer';
+import { registerNodeRenderer } from './renderer';
 import { getRenderProxy2D, prepareScene2DRender } from './renderProxy';
 import { createRenderState, getRenderStateRuntime } from './renderState';
 
@@ -26,7 +26,7 @@ describe('explainScene2DRender', () => {
   it('reports not-prepared for a registered node that was never prepared', () => {
     const state = createRenderState();
     const source = createDisplayObject();
-    registerRenderer(state, source.kind, makeRenderer());
+    registerNodeRenderer(state, source.kind, makeRenderer());
 
     const explanation = explainScene2DRender(state, source);
 
@@ -38,7 +38,7 @@ describe('explainScene2DRender', () => {
   it('reports ok for a prepared, visible, opaque node with a renderer', () => {
     const state = createRenderState();
     const source = createDisplayObject();
-    registerRenderer(state, source.kind, makeRenderer());
+    registerNodeRenderer(state, source.kind, makeRenderer());
     prepareScene2DRender(state, source);
 
     const explanation = explainScene2DRender(state, source);
@@ -53,7 +53,7 @@ describe('explainScene2DRender', () => {
     const state = createRenderState();
     const source = createDisplayObject();
     source.visible = false;
-    registerRenderer(state, source.kind, makeRenderer());
+    registerNodeRenderer(state, source.kind, makeRenderer());
     prepareScene2DRender(state, source);
 
     const explanation = explainScene2DRender(state, source);
@@ -66,7 +66,7 @@ describe('explainScene2DRender', () => {
     const state = createRenderState();
     const source = createDisplayObject();
     source.alpha = 0;
-    registerRenderer(state, source.kind, makeRenderer());
+    registerNodeRenderer(state, source.kind, makeRenderer());
     prepareScene2DRender(state, source);
 
     const explanation = explainScene2DRender(state, source);
@@ -82,7 +82,7 @@ describe('explainScene2DRender', () => {
     const child = createDisplayObject();
     parent.visible = false;
     addNodeChild(parent, child);
-    registerRenderer(state, child.kind, makeRenderer());
+    registerNodeRenderer(state, child.kind, makeRenderer());
     prepareScene2DRender(state, parent);
 
     const explanation = explainScene2DRender(state, child);
@@ -98,7 +98,7 @@ describe('explainScene2DRender', () => {
     parent.alpha = 0.5;
     child.alpha = 0.5;
     addNodeChild(parent, child);
-    registerRenderer(state, child.kind, makeRenderer());
+    registerNodeRenderer(state, child.kind, makeRenderer());
     prepareScene2DRender(state, parent);
 
     const explanation = explainScene2DRender(state, child);
@@ -110,7 +110,7 @@ describe('explainScene2DRender', () => {
   it('does not throw or mutate state, and never creates a proxy', () => {
     const state = createRenderState();
     const source = createDisplayObject();
-    registerRenderer(state, source.kind, makeRenderer());
+    registerNodeRenderer(state, source.kind, makeRenderer());
 
     expect(() => explainScene2DRender(state, source)).not.toThrow();
     // Two calls agree and neither materialized a proxy — the query is a pure read.

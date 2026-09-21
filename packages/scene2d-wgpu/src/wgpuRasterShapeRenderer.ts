@@ -1,6 +1,6 @@
 import { invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
-import { bindWgpuImageResourceTexture, resolveWgpuMaterialRenderer } from '@flighthq/render-wgpu/contract';
+import { bindWgpuImageResourceTexture, resolveWgpuQuadMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { RenderProxy2D, Scene2DRenderer, Shape, WgpuRenderState } from '@flighthq/types/contract';
 import { BatchFormat, RenderRegistryTable, ShapeKind } from '@flighthq/types/contract';
@@ -40,7 +40,7 @@ export function drawWgpuRasterShape(state: WgpuRenderState, renderProxy: RenderP
   }
 
   const material = renderProxy.material;
-  const materialRenderer = resolveWgpuMaterialRenderer(state, material);
+  const materialRenderer = resolveWgpuQuadMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
   const shapeData = getWgpuShapeData(renderProxy.rendererData);

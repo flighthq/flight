@@ -1,7 +1,7 @@
 import { createAppWindow, openWindow } from '@flighthq/app';
 import { webHostGl, appendWebSurface, webHostWindowGeometry, webHostWindowLifecycle } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
-import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import {
   createGlRenderState,
   enableGlBlendModeSupport,
@@ -28,8 +28,8 @@ const state = createGlRenderState(glSurface.context, glScene2DRenderRegistries, 
 const screenTarget = createGlScreenRenderTarget(state.gl);
 
 const registries = glScene2DRenderRegistries;
-for (const [kind, entry] of registries.renderers.entries) {
-  if (entry.state === RegistryEntryState.Bound) registerRenderer(state, kind, entry.value);
+for (const [kind, entry] of registries.nodeRenderers.entries) {
+  if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(state, kind, entry.value);
 }
 registerGlImageTextureResolver(state);
 registerGlStandardMaterial(state);

@@ -18,7 +18,7 @@ import type {
   MaterialData,
   MatrixLike,
   SamplerLike,
-  WgpuMaterialRenderer,
+  WgpuQuadMaterialRenderer,
   WgpuQuadBatchResources,
   WgpuRenderState,
   WgpuTextureEntry,
@@ -316,7 +316,7 @@ export function prepareWgpuQuadBatchWrite(
   sampler: Readonly<SamplerLike> | null,
   blendMode: BlendMode | null,
   material: Material | null,
-  materialRenderer: WgpuMaterialRenderer,
+  materialRenderer: WgpuQuadMaterialRenderer,
   maxInstances: number,
   smoothing: boolean | null = null,
 ): number {

@@ -30,7 +30,7 @@ import {
   prepareScene2DRender,
   QuadBatchKind,
   registerGlImageTextureResolver,
-  registerRenderer,
+  registerNodeRenderer,
   renderGlScene2D,
   setQuadBatchLocalBoundsRectangle,
   createAppWindow,
@@ -57,7 +57,7 @@ const producerState = createGlRenderState(producerGlSurface.context, glScene3DRe
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 registerGlImageTextureResolver(producerState);
-registerRenderer(producerState, QuadBatchKind, glQuadBatchRenderer);
+registerNodeRenderer(producerState, QuadBatchKind, glQuadBatchRenderer);
 const producerScreenTarget = createGlScreenRenderTarget(producerState.gl);
 
 const atlasCanvas = document.createElement('canvas');

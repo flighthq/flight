@@ -15,7 +15,7 @@ import {
   prepareScene2DRender,
   registerCanvasShapeCommands,
   registerCanvasSurfaceCreator,
-  registerRenderer,
+  registerNodeRenderer,
   renderCanvasScene2D,
   canvasScene2DRenderRegistries,
   ShapeKind,
@@ -47,8 +47,8 @@ registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 enableFlightDiagnostics(state);
 
-registerRenderer(state, ShapeKind, canvasShapeRenderer);
-registerRenderer(state, TextLabelKind, canvasTextLabelRenderer);
+registerNodeRenderer(state, ShapeKind, canvasShapeRenderer);
+registerNodeRenderer(state, TextLabelKind, canvasTextLabelRenderer);
 registerCanvasShapeCommands(state, canvasShapeCommands);
 
 export const scale = pixelRatio;

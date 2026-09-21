@@ -23,7 +23,7 @@ import {
   endWgpuRenderPass,
   getBitmapPixelRgb,
   prepareScene2DRender,
-  registerRenderer,
+  registerNodeRenderer,
   renderWgpuScene2D,
   wgpuScene3DRenderRegistries,
   ShapeKind,
@@ -77,7 +77,7 @@ const screenClear = {
   ] as const,
   depth: 1.0,
 };
-registerRenderer(state, ShapeKind, wgpuShapeRenderer);
+registerNodeRenderer(state, ShapeKind, wgpuShapeRenderer);
 const pipeline = createWgpuEffectState(state, { sampleCount: 1 });
 
 export const scale = pixelRatio;

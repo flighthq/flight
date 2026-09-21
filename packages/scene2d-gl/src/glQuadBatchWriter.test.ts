@@ -1,5 +1,11 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { BlendMode, ColorScaleBias, GlMaterialRenderer, GlRenderState, Material } from '@flighthq/types/contract';
+import type {
+  BlendMode,
+  ColorScaleBias,
+  GlQuadMaterialRenderer,
+  GlRenderState,
+  Material,
+} from '@flighthq/types/contract';
 
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
 import {
@@ -14,7 +20,7 @@ import {
   writeGlQuadBatchAffineInstance,
   writeGlQuadBatchInstance,
 } from './glQuadBatchWriter';
-import { standardGlMaterialRenderer } from './glStandardMaterial';
+import { standardGlQuadMaterialRenderer } from './glStandardMaterial';
 import { createGlState } from './glTestHelper';
 
 function makeTexture(): WebGLTexture {
@@ -30,7 +36,7 @@ function prepareGlQuadBatchWrite(
   texture: WebGLTexture,
   blendMode: BlendMode | null,
   material: Material | null,
-  materialRenderer: GlMaterialRenderer,
+  materialRenderer: GlQuadMaterialRenderer,
   maxInstances: number,
   smoothing: boolean | null = null,
 ): number {
@@ -112,7 +118,7 @@ describe('flushGlQuadBatchWriter', () => {
     const runtime = getGlRenderStateRuntime(state);
     const tex = makeTexture();
 
-    prepareGlQuadBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1);
+    prepareGlQuadBatchWrite(state, tex, null, null, standardGlQuadMaterialRenderer, 1);
     runtime.quadBatchWriterCount = 1;
     flushGlQuadBatchWriter(state);
 
@@ -138,7 +144,7 @@ describe('prepareGlQuadBatchWrite', () => {
     const runtime = getGlRenderStateRuntime(state);
 
     expect(runtime.flushPendingDraws).toBeNull();
-    prepareGlQuadBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
+    prepareGlQuadBatchWrite(state, makeTexture(), null, null, standardGlQuadMaterialRenderer, 1);
 
     expect(runtime.flushPendingDraws).toBe(flushGlQuadBatchWriter);
   });
@@ -147,7 +153,7 @@ describe('prepareGlQuadBatchWrite', () => {
     const { state } = createGlState();
     const tex = makeTexture();
 
-    const base = prepareGlQuadBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 2);
+    const base = prepareGlQuadBatchWrite(state, tex, null, null, standardGlQuadMaterialRenderer, 2);
     expect(base).toBe(0);
   });
 
@@ -157,10 +163,10 @@ describe('prepareGlQuadBatchWrite', () => {
     const tex1 = makeTexture();
     const tex2 = makeTexture();
 
-    prepareGlQuadBatchWrite(state, tex1, null, null, standardGlMaterialRenderer, 1);
+    prepareGlQuadBatchWrite(state, tex1, null, null, standardGlQuadMaterialRenderer, 1);
     runtime.quadBatchWriterCount = 1;
 
-    prepareGlQuadBatchWrite(state, tex2, null, null, standardGlMaterialRenderer, 1);
+    prepareGlQuadBatchWrite(state, tex2, null, null, standardGlQuadMaterialRenderer, 1);
 
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(runtime.quadBatchWriterTexture).toBe(tex2);
@@ -173,10 +179,10 @@ describe('prepareGlQuadBatchWrite', () => {
     const materialA = makeMaterial();
     const materialB = makeMaterial();
 
-    prepareGlQuadBatchWrite(state, tex, null, materialA, standardGlMaterialRenderer, 1);
+    prepareGlQuadBatchWrite(state, tex, null, materialA, standardGlQuadMaterialRenderer, 1);
     runtime.quadBatchWriterCount = 1;
 
-    prepareGlQuadBatchWrite(state, tex, null, materialB, standardGlMaterialRenderer, 1);
+    prepareGlQuadBatchWrite(state, tex, null, materialB, standardGlQuadMaterialRenderer, 1);
 
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(runtime.quadBatchWriterMaterial).toBe(materialB);
@@ -188,7 +194,7 @@ describe('prepareGlQuadBatchWrite', () => {
     const tex = makeTexture();
     const initialFloats = runtime.quadBatchWriterInstanceData.length;
 
-    prepareGlQuadBatchWrite(state, tex, null, null, standardGlMaterialRenderer, initialFloats + 100);
+    prepareGlQuadBatchWrite(state, tex, null, null, standardGlQuadMaterialRenderer, initialFloats + 100);
 
     expect(runtime.quadBatchWriterInstanceData.length).toBeGreaterThan(initialFloats);
   });
@@ -199,10 +205,10 @@ describe('prepareGlQuadBatchWrite', () => {
     const tex = makeTexture();
 
     // Same texture/blend/material, but a NEAREST bitmap must not share a bind with a LINEAR one.
-    prepareGlQuadBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1, false);
+    prepareGlQuadBatchWrite(state, tex, null, null, standardGlQuadMaterialRenderer, 1, false);
     runtime.quadBatchWriterCount = 1;
 
-    prepareGlQuadBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1, true);
+    prepareGlQuadBatchWrite(state, tex, null, null, standardGlQuadMaterialRenderer, 1, true);
 
     expect(gl.drawElementsInstanced).toHaveBeenCalledTimes(1);
     expect(runtime.quadBatchWriterSmoothing).toBe(true);
@@ -213,9 +219,9 @@ describe('prepareGlQuadBatchWrite', () => {
     const runtime = getGlRenderStateRuntime(state);
     const tex = makeTexture();
 
-    prepareGlQuadBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1, true);
+    prepareGlQuadBatchWrite(state, tex, null, null, standardGlQuadMaterialRenderer, 1, true);
     runtime.quadBatchWriterCount = 1;
-    prepareGlQuadBatchWrite(state, tex, null, null, standardGlMaterialRenderer, 1, true);
+    prepareGlQuadBatchWrite(state, tex, null, null, standardGlQuadMaterialRenderer, 1, true);
 
     expect(gl.drawElementsInstanced).not.toHaveBeenCalled();
   });
@@ -225,7 +231,7 @@ describe('recordGlQuadBatchColorScaleBias', () => {
   it('skips the tint (draws untinted) and records no fold state when color adjustment is not enabled', () => {
     const { state, gl } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
-    prepareGlQuadBatchWrite(state, makeTexture(), null, null, standardGlMaterialRenderer, 1);
+    prepareGlQuadBatchWrite(state, makeTexture(), null, null, standardGlQuadMaterialRenderer, 1);
     recordGlQuadBatchColorScaleBias(state, ct(0.5), 0);
     runtime.quadBatchWriterCount = 1;
     // No fold installed → the CT mode stays uninitialized and no CT program is bound.

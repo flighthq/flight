@@ -19,7 +19,8 @@ const OBSERVED_NODE_RENDERER_MISS = {
   channel: 'render',
   data: {
     kind: 'DisplayObject',
-    message: 'createRenderProxy: node kind has no registered renderer — call registerRenderer(state, kind, renderer)',
+    message:
+      'createRenderProxy: node kind has no registered renderer — call registerNodeRenderer(state, kind, renderer)',
     registry: RenderRegistryTable.NodeRenderer,
   },
 };

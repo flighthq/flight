@@ -17,7 +17,7 @@ import { createSprite } from '@flighthq/scene2d/contract';
 import type { ClipRegion, Node, RenderProxy, RenderProxy2D, RenderState } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
-import { registerRenderer } from './renderer';
+import { registerNodeRenderer } from './renderer';
 import {
   createRenderProxy,
   createRenderProxy2D,
@@ -89,7 +89,7 @@ describe('createRenderProxy', () => {
     const state = createRenderState();
     const source = makeSource();
     const renderer = makeRenderer();
-    registerRenderer(state, source.kind, renderer as any);
+    registerNodeRenderer(state, source.kind, renderer as any);
     const node = createRenderProxy(state, source);
     expect(node.renderer).toBe(renderer);
     expect(node.rendererData).toEqual({ tag: 'data' });
@@ -135,7 +135,11 @@ describe('disposeRenderProxy', () => {
     const state = createRenderState();
     const source = createSprite();
     const destroyData = vi.fn();
-    registerRenderer(state, source.kind, { createData: () => ({ tag: 'data' }), destroyData, submit: vi.fn() } as any);
+    registerNodeRenderer(state, source.kind, {
+      createData: () => ({ tag: 'data' }),
+      destroyData,
+      submit: vi.fn(),
+    } as any);
     const node = getOrCreateRenderProxy2D(state, source);
     const data = node.rendererData;
 
@@ -190,7 +194,11 @@ describe('disposeScene2DRender', () => {
     const child = createDisplayObject();
     addNodeChild(root, child);
     const destroyData = vi.fn();
-    registerRenderer(state, root.kind, { createData: () => ({ tag: 'data' }), destroyData, submit: vi.fn() } as any);
+    registerNodeRenderer(state, root.kind, {
+      createData: () => ({ tag: 'data' }),
+      destroyData,
+      submit: vi.fn(),
+    } as any);
     getOrCreateRenderProxy2D(state, root);
     getOrCreateRenderProxy2D(state, child);
 
@@ -240,10 +248,10 @@ describe('getOrCreateRenderProxy2D', () => {
 
     const renderer = makeRenderer();
     const runtime = getRenderStateRuntime(state);
-    const tableBeforeRegistration = runtime.registries.renderers;
+    const tableBeforeRegistration = runtime.registries.nodeRenderers;
     const idBeforeRegistration = runtime.rendererMapId;
-    registerRenderer(state, source.kind, renderer as any);
-    expect(runtime.registries.renderers).not.toBe(tableBeforeRegistration);
+    registerNodeRenderer(state, source.kind, renderer as any);
+    expect(runtime.registries.nodeRenderers).not.toBe(tableBeforeRegistration);
     expect(runtime.rendererMapId).toBe(idBeforeRegistration + 1);
     getOrCreateRenderProxy2D(state, source);
 
@@ -505,7 +513,7 @@ describe('prepareScene2DRender', () => {
     const state = createRenderState({ sceneGraphSyncPolicy: 'requiresInvalidation' });
     const root = createDisplayObject();
     let rendererDirty = false;
-    registerRenderer(state, root.kind, {
+    registerNodeRenderer(state, root.kind, {
       createData: () => null,
       isDirty: () => rendererDirty,
       submit: vi.fn(),
@@ -625,7 +633,7 @@ describe('updateRenderProxyRenderer', () => {
     const state = createRenderState();
     const source = makeSource();
     const renderer = makeRenderer();
-    registerRenderer(state, source.kind, renderer as any);
+    registerNodeRenderer(state, source.kind, renderer as any);
     const node = createRenderProxy(state, source);
     node.renderer = null;
     updateRenderProxyRenderer(state, node);
@@ -654,7 +662,7 @@ describe('updateRenderProxyRenderer', () => {
     const state = createRenderState();
     const source = makeSource();
     const renderer = makeRenderer();
-    registerRenderer(state, source.kind, renderer as any);
+    registerNodeRenderer(state, source.kind, renderer as any);
     const node = createRenderProxy(state, source);
     const newSource = makeSource();
     node.source = newSource;

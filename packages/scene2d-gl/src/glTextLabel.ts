@@ -2,7 +2,7 @@ import { computeRgbaCssString } from '@flighthq/color/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
-import { bindGlImageResourceTexture, resolveGlMaterialRenderer } from '@flighthq/render-gl/contract';
+import { bindGlImageResourceTexture, resolveGlQuadMaterialRenderer } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createImageSurface, destroyImageSurface } from '@flighthq/render/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
@@ -32,7 +32,7 @@ import {
   writeGlQuadBatchInstance,
 } from './glQuadBatchWriter';
 
-// Renderer-private scratch state stored as an Entity in the opaque RendererData slot.
+// NodeRenderer-private scratch state stored as an Entity in the opaque RendererData slot.
 interface GlTextLabelData extends RendererData {
   // Allocated on first draw so a node created before its host provider is enabled can recover. Once
   // acquired, the surface and its uploadable Image identity remain stable for the node's lifetime.
@@ -78,7 +78,7 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
   if (renderProxy.rendererData === null) return;
 
   const material = renderProxy.material;
-  const materialRenderer = resolveGlMaterialRenderer(state, material);
+  const materialRenderer = resolveGlQuadMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
   if (state.imageSurfaceProvider === null) return;

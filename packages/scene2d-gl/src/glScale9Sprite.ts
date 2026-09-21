@@ -1,5 +1,5 @@
 import { createMatrix3 } from '@flighthq/geometry/contract';
-import { getGlRenderStateRuntime, resolveGlMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
+import { getGlRenderStateRuntime, resolveGlQuadMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene2d/contract';
 import {
@@ -43,7 +43,7 @@ export function drawGlScale9Sprite(state: GlRenderState, renderProxy: RenderProx
   if (mapper === null) return;
 
   const material = renderProxy.material;
-  const materialRenderer = resolveGlMaterialRenderer(state, material);
+  const materialRenderer = resolveGlQuadMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const glTexture = resolveGlTexture(state, texture, true, SCENE2D_WORKING_COLOR_SPACE);
   if (glTexture === null) return;

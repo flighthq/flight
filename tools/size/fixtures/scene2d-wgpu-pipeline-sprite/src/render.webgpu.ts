@@ -8,7 +8,7 @@ import {
 } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { withRegistryTableEntry } from '@flighthq/registry';
-import { prepareScene2DRender, registerRenderer } from '@flighthq/render';
+import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
   createWgpuRenderState,
@@ -33,7 +33,7 @@ const canvas = getWebSurfaceElement(wgpuSurface)!;
 const emptyRegistries = allocateEmptyWgpuRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  renderers: withRegistryTableEntry(emptyRegistries.renderers, SpriteKind, wgpuSpriteRenderer),
+  nodeRenderers: withRegistryTableEntry(emptyRegistries.nodeRenderers, SpriteKind, wgpuSpriteRenderer),
 };
 
 const acquisition = wgpuSurface.acquisition;
@@ -45,8 +45,8 @@ export const state = createWgpuRenderState(acquisition.device, registry, { forma
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1], depth: 1.0 } as const;
 
 const registries = registry;
-for (const [kind, entry] of registries.renderers.entries) {
-  if (entry.state === RegistryEntryState.Bound) registerRenderer(state, kind, entry.value);
+for (const [kind, entry] of registries.nodeRenderers.entries) {
+  if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(state, kind, entry.value);
 }
 registerWgpuImageTextureResolver(state);
 registerWgpuStandardMaterial(state);

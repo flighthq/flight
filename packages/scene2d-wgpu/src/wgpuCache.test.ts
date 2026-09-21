@@ -13,7 +13,7 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   WgpuColorAdjustmentMaterialFeature,
   WgpuColorAdjustmentMaterialFeatureGuard,
-  WgpuMaterialRenderer,
+  WgpuQuadMaterialRenderer,
   WgpuRenderState,
   RenderRootGuard,
   WgpuTextureRenderTarget,
@@ -261,7 +261,9 @@ describe('createWgpuCacheState', () => {
     enableColorAdjustmentGuards(screen);
     enableWgpuRenderCache(screen);
     const cacheState = createCacheState(screen);
-    expect(renderWgpu.getWgpuRenderStateRuntime(cacheState).registries.renderers.entries.get(RenderCacheKind)).toEqual({
+    expect(
+      renderWgpu.getWgpuRenderStateRuntime(cacheState).registries.nodeRenderers.entries.get(RenderCacheKind),
+    ).toEqual({
       state: 'bound',
       value: wgpuRenderCacheRenderer,
     });
@@ -312,9 +314,9 @@ describe('createWgpuCacheState', () => {
 
   it('shares persistent registration snapshots through a distinct aggregate and then diverges', () => {
     const screen = fakeScreen();
-    const first: WgpuMaterialRenderer = { instanceFloatCount: 0, getShaderModule: vi.fn() };
-    const replacement: WgpuMaterialRenderer = { instanceFloatCount: 0, getShaderModule: vi.fn() };
-    renderWgpu.registerWgpuMaterialRenderer(screen, 'acme.Material', first);
+    const first: WgpuQuadMaterialRenderer = { instanceFloatCount: 0, getShaderModule: vi.fn() };
+    const replacement: WgpuQuadMaterialRenderer = { instanceFloatCount: 0, getShaderModule: vi.fn() };
+    renderWgpu.registerWgpuQuadMaterialRenderer(screen, 'acme.Material', first);
 
     const cacheState = createCacheState(screen);
     const screenRuntime = renderWgpu.getWgpuRenderStateRuntime(screen);
@@ -331,12 +333,12 @@ describe('createWgpuCacheState', () => {
     expect(cacheRuntime.registries.strokeTessellator).toBe(screenRuntime.registries.strokeTessellator);
     expect(cacheRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
     expect(cacheRuntime.registries.velocityWriters).toBe(screenRuntime.registries.velocityWriters);
-    expect(renderWgpu.getWgpuMaterialRenderer(cacheState, 'acme.Material')).toBe(first);
+    expect(renderWgpu.getWgpuQuadMaterialRenderer(cacheState, 'acme.Material')).toBe(first);
 
-    renderWgpu.registerWgpuMaterialRenderer(screen, 'acme.Material', replacement);
+    renderWgpu.registerWgpuQuadMaterialRenderer(screen, 'acme.Material', replacement);
 
-    expect(renderWgpu.getWgpuMaterialRenderer(screen, 'acme.Material')).toBe(replacement);
-    expect(renderWgpu.getWgpuMaterialRenderer(cacheState, 'acme.Material')).toBe(first);
+    expect(renderWgpu.getWgpuQuadMaterialRenderer(screen, 'acme.Material')).toBe(replacement);
+    expect(renderWgpu.getWgpuQuadMaterialRenderer(cacheState, 'acme.Material')).toBe(first);
   });
 });
 
@@ -344,7 +346,7 @@ describe('enableWgpuRenderCache', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = fakeScreen();
     enableWgpuRenderCache(state);
-    expect(renderWgpu.getWgpuRenderStateRuntime(state).registries.renderers.entries.get(RenderCacheKind)).toEqual({
+    expect(renderWgpu.getWgpuRenderStateRuntime(state).registries.nodeRenderers.entries.get(RenderCacheKind)).toEqual({
       state: 'bound',
       value: wgpuRenderCacheRenderer,
     });

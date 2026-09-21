@@ -18,11 +18,11 @@ import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderS
 import type { WgpuDeviceRuntime } from './WgpuDeviceRuntime';
 import type { WgpuDeviceState } from './WgpuDeviceState';
 import type { WgpuEffectRegistration } from './WgpuEffectState';
-import type { WgpuMaterialRenderer } from './WgpuMaterialRenderer';
 import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
 import type { WgpuModifierSnippet } from './WgpuModifierSnippet';
 import type { WgpuParticleResources } from './WgpuParticleResources';
 import type { WgpuQuadBatchResources } from './WgpuQuadBatchResources';
+import type { WgpuQuadMaterialRenderer } from './WgpuQuadMaterialRenderer';
 import type { WgpuRenderPass, WgpuRenderPassViewport } from './WgpuRenderPass';
 import type { WgpuRenderTarget, WgpuScreenRenderTarget } from './WgpuRenderTarget';
 import type { WgpuRenderTextureEntry, WgpuRenderTextureGuard } from './WgpuRenderTexture';
@@ -66,7 +66,7 @@ export interface WgpuRenderRegistries extends RenderRegistries {
   compressedTextureUpload: SlotTable<WgpuCompressedTextureUploader> | null;
   customMaterialShaders: KeyedTable<WgpuCustomMaterialShaderSource>;
   gpuSkinning: SlotTable<WgpuSkinningAdapter> | null;
-  materialRenderers: KeyedTable<WgpuMaterialRenderer>;
+  materialRenderers: KeyedTable<WgpuQuadMaterialRenderer>;
   meshMaterialRenderers: KeyedTable<WgpuMeshMaterialRenderer>;
   modifierSnippets: KeyedTable<WgpuModifierSnippet>;
   // Shader cache identity advances with every snippet-table replacement, including same-kind
@@ -222,7 +222,7 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // storage buffer.
   quadBatchWriterBlendMode: BlendMode | null;
   quadBatchWriterMaterial: Material | null;
-  quadBatchWriterMaterialRenderer: WgpuMaterialRenderer | null;
+  quadBatchWriterMaterialRenderer: WgpuQuadMaterialRenderer | null;
   quadBatchWriterMaterialFloats: number;
   quadBatchWriterCount: number;
   quadBatchWriterInstanceData: Float32Array;

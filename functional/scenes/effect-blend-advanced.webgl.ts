@@ -31,7 +31,7 @@ import {
   getBitmapPixelRgb,
   prepareScene2DRender,
   registerGlBlendEffectBackdrop,
-  registerRenderer,
+  registerNodeRenderer,
   renderGlScene2D,
   setSurfaceDisplaySize,
   createAppWindow,
@@ -78,7 +78,7 @@ const canvas = getWebSurfaceCanvas(glSurface)!;
 export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
   pixelRatio,
 });
-registerRenderer(state, ShapeKind, glShapeRenderer);
+registerNodeRenderer(state, ShapeKind, glShapeRenderer);
 registerGlBlendEffect(state);
 
 const pipeline: GlEffectState = createGlEffectState(state, {

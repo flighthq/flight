@@ -24,7 +24,7 @@ const pages: Record<string, string> = {
     gl.flush();
     queueMicrotask(() => { gl.disable(gl.SCISSOR_TEST); gl.clearColor(0,0,0,1); gl.clear(gl.COLOR_BUFFER_BIT); });
   </script>`,
-  '/blank-evidence': `<!doctype html><canvas width="320" height="180"></canvas><div id="error">Renderer failed to initialize</div>`,
+  '/blank-evidence': `<!doctype html><canvas width="320" height="180"></canvas><div id="error">NodeRenderer failed to initialize</div>`,
   '/flaky': `<!doctype html><canvas width="320" height="180"></canvas><script>
     const ctx=document.querySelector('canvas').getContext('2d'); ctx.fillStyle='#123'; ctx.fillRect(0,0,320,180); ctx.fillStyle='#0cf'; ctx.fillRect(40,30,240,120);
   </script>`,

@@ -25,7 +25,7 @@ function currentTest() {
 }
 
 function availableRenderers(): readonly string[] {
-  return currentTest().renderers;
+  return currentTest().nodeRenderers;
 }
 
 function resolveRenderer(preferred: string): string {
@@ -164,7 +164,7 @@ function stateFromHash(hash: string): { testIndex: number; renderer: string } | 
   if (i < 0) return null;
 
   const t = tests[i];
-  const resolved = r && t.renderers.includes(r) ? r : (t.renderers[0] ?? '');
+  const resolved = r && t.nodeRenderers.includes(r) ? r : (t.nodeRenderers[0] ?? '');
 
   return { testIndex: i, renderer: resolved };
 }
@@ -194,7 +194,7 @@ document.addEventListener('keydown', (e) => {
       selectRenderer(av[i + 1]);
     } else {
       testIndex = (testIndex + 1) % tests.length;
-      renderer = currentTest().renderers[0] ?? '';
+      renderer = currentTest().nodeRenderers[0] ?? '';
       showCurrent();
       updateUrl();
     }
@@ -218,7 +218,7 @@ const initState = (() => {
     const fromSaved = stateFromHash(saved);
     if (fromSaved) return fromSaved;
   }
-  return { testIndex: 0, renderer: tests[0]?.renderers[0] ?? '' };
+  return { testIndex: 0, renderer: tests[0]?.nodeRenderers[0] ?? '' };
 })();
 
 testIndex = initState.testIndex;

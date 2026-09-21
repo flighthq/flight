@@ -3,7 +3,7 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
-import { getOrCreateRenderProxy2D, registerRenderer } from '@flighthq/render/contract';
+import { getOrCreateRenderProxy2D, registerNodeRenderer } from '@flighthq/render/contract';
 import { createScale9Sprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import { Scale9SpriteKind } from '@flighthq/types/contract';
@@ -45,7 +45,7 @@ describe('drawDomScale9Sprite', () => {
     canvas.height = 100;
     const state = createDomRenderState(document.createElement('div'));
     registerDomImageTextureResolver(state);
-    registerRenderer(state, Scale9SpriteKind, domScale9SpriteRenderer);
+    registerNodeRenderer(state, Scale9SpriteKind, domScale9SpriteRenderer);
     const sprite = createScale9Sprite(
       { x: 20, y: 20, width: 60, height: 60 },
       {

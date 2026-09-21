@@ -4,7 +4,7 @@ import type { RendererData } from './RendererData';
 import type { RenderProxy } from './RenderProxy';
 import type { RenderState } from './RenderState';
 
-export interface Renderer {
+export interface NodeRenderer {
   // Declares which geometry accumulation pipeline this renderer submits into. When set, the
   // render walk can flush automatically on format changes instead of each immediate-draw renderer
   // flushing manually. Absent means the renderer manages its own flush boundaries.

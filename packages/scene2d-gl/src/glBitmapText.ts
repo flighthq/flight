@@ -1,4 +1,4 @@
-import { getGlRenderStateRuntime, resolveGlMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
+import { getGlRenderStateRuntime, resolveGlQuadMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
@@ -36,7 +36,7 @@ function submitGlBitmapText(state: GlRenderState, node: RenderProxy2D): void {
   const pages = (getNode2DRuntime(source) as BitmapTextRuntime).pages;
 
   const material = node.material;
-  const materialRenderer = resolveGlMaterialRenderer(state, material);
+  const materialRenderer = resolveGlQuadMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const nodeMaterialData = node.materialData;
   const nodeColorScaleBias = node.colorMatrix ?? node.colorScaleBias;

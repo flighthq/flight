@@ -34,7 +34,7 @@ export interface CaptureBenchmarkOptions {
   sampleDurationMs?: number;
   /** Fresh-page retries for transient navigation/protocol timeouts. Default: 1. */
   maxRetries?: number;
-  /** Renderer used for same-entry ratios, for example canvas. */
+  /** NodeRenderer used for same-entry ratios, for example canvas. */
   reference?: string;
   /** Maximum accepted slowdown as a fraction (0.2 = 20%). */
   regressionTolerance?: number;

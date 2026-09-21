@@ -12,10 +12,10 @@ export * from './canvasElement';
 export * from './canvasImageSource';
 export * from './canvasImageTextureResolver';
 export {
-  getCanvasMaterialRenderer,
-  registerCanvasMaterialRenderer,
-  resolveCanvasMaterialRenderer,
-} from './canvasMaterialRegistry';
+  getCanvasQuadMaterialRenderer,
+  registerCanvasQuadMaterialRenderer,
+  resolveCanvasQuadMaterialRenderer,
+} from './canvasQuadMaterialRegistry';
 export { enableCanvasBlendMode } from './canvasMaterials';
 export { canvasScene2DRenderer, renderCanvasScene2D } from './canvasNode2D';
 export { canvasParticleEmitter2DRenderer } from './canvasParticleEmitter2D';

@@ -9,7 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 import { RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 
-import { getCanvasMaterialRenderer } from './canvasMaterialRegistry';
+import { getCanvasQuadMaterialRenderer } from './canvasQuadMaterialRegistry';
 
 // Clears `out`, then reports every requirement in `usage` with how well this Canvas state is wired for
 // it — satisfied entries included, so one call is a complete manifest.
@@ -53,7 +53,7 @@ function collectCanvasScene2DCoverageGaps(
   // contribution. Nothing vanishes, so this is a downgrade to name rather than a failure to block on.
   for (let i = 0; i < usage.materialKinds.length; i++) {
     const kind = usage.materialKinds[i];
-    if (getCanvasMaterialRenderer(state, kind) !== null) {
+    if (getCanvasQuadMaterialRenderer(state, kind) !== null) {
       out?.push({
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneMaterialKind,

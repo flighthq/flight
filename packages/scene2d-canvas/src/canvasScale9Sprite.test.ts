@@ -4,10 +4,10 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
-import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
+import { getOrCreateRenderProxy2D, prepareScene2DRender, registerNodeRenderer } from '@flighthq/render/contract';
 import { createScale9Sprite, createSprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { Kind, Renderer } from '@flighthq/types/contract';
+import type { Kind, NodeRenderer } from '@flighthq/types/contract';
 import { RegistryEntryState, Scale9SpriteKind, SpriteKind } from '@flighthq/types/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
@@ -30,15 +30,15 @@ afterEach(() => {
 // The registry deliberately makes a tombstone unreachable without narrowing, so the helper narrows once
 // here rather than at four call sites. A missing or tombstoned entry reads as null, which is what the
 // coupling assertions want to distinguish from a bound renderer.
-function pipelineRenderer(kind: Kind): Renderer | null {
-  const entry = canvasScene2DRenderRegistries.renderers.entries.get(kind);
+function pipelineRenderer(kind: Kind): NodeRenderer | null {
+  const entry = canvasScene2DRenderRegistries.nodeRenderers.entries.get(kind);
   return entry !== undefined && entry.state === RegistryEntryState.Bound ? entry.value : null;
 }
 
 function makeState() {
   const state = createCanvasRenderState(document.createElement('canvas'));
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
-  registerRenderer(state, Scale9SpriteKind, canvasScale9SpriteRenderer);
+  registerNodeRenderer(state, Scale9SpriteKind, canvasScale9SpriteRenderer);
   return state;
 }
 
@@ -72,7 +72,7 @@ describe('canvasScale9SpriteRenderer', () => {
   it('draws a plain Sprite through the sprite renderer in exactly one blit', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
     registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
-    registerRenderer(state, SpriteKind, canvasSpriteRenderer);
+    registerNodeRenderer(state, SpriteKind, canvasSpriteRenderer);
     const draw = vi.spyOn(state.context, 'drawImage');
     const sprite = createSprite({ data: { texture: makeTexture() } });
     canvasSpriteRenderer.submit(state, getOrCreateRenderProxy2D(state, sprite));

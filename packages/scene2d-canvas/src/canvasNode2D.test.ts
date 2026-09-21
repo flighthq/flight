@@ -1,5 +1,5 @@
 ﻿import { addNodeChild } from '@flighthq/node/contract';
-import { getOrCreateRenderProxy2D, prepareScene2DRender, registerRenderer } from '@flighthq/render/contract';
+import { getOrCreateRenderProxy2D, prepareScene2DRender, registerNodeRenderer } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 
@@ -12,7 +12,7 @@ function makeState() {
   canvas.width = 200;
   canvas.height = 200;
   const state = createCanvasRenderState(canvas);
-  registerRenderer(state, DisplayObjectKind, canvasScene2DRenderer);
+  registerNodeRenderer(state, DisplayObjectKind, canvasScene2DRenderer);
   return state;
 }
 
@@ -55,7 +55,7 @@ describe('renderCanvasScene2D', () => {
     const state = makeState();
     const obj = createDisplayObject();
     const renderer = { createData: vi.fn().mockReturnValue(null), submit: vi.fn() };
-    registerRenderer(state, DisplayObjectKind, renderer);
+    registerNodeRenderer(state, DisplayObjectKind, renderer);
     prepareScene2DRender(state, obj);
 
     renderCanvasScene2D(getCanvasActiveRenderPass(state)!, obj);
@@ -68,7 +68,7 @@ describe('renderCanvasScene2D', () => {
     const obj = createDisplayObject();
     obj.visible = false;
     const renderer = { createData: vi.fn().mockReturnValue(null), submit: vi.fn() };
-    registerRenderer(state, DisplayObjectKind, renderer);
+    registerNodeRenderer(state, DisplayObjectKind, renderer);
     prepareScene2DRender(state, obj);
 
     renderCanvasScene2D(getCanvasActiveRenderPass(state)!, obj);
@@ -82,7 +82,7 @@ describe('renderCanvasScene2D', () => {
     const child = createDisplayObject();
     addNodeChild(parent, child);
     const renderer = { createData: vi.fn().mockReturnValue(null), submit: vi.fn() };
-    registerRenderer(state, DisplayObjectKind, renderer);
+    registerNodeRenderer(state, DisplayObjectKind, renderer);
     prepareScene2DRender(state, parent);
 
     renderCanvasScene2D(getCanvasActiveRenderPass(state)!, parent);
@@ -100,7 +100,7 @@ describe('renderCanvasScene2D', () => {
         observed = state.context.filter;
       }),
     };
-    registerRenderer(state, DisplayObjectKind, renderer);
+    registerNodeRenderer(state, DisplayObjectKind, renderer);
     enableCanvasCssFilter(state);
     setCanvasCssFilter(state, obj, 'blur(3px)');
     prepareScene2DRender(state, obj);

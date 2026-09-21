@@ -48,7 +48,7 @@ describe('glScene2DRenderRegistries', () => {
       TilemapKind,
     ];
     for (const kind of expectedKinds) {
-      const entry = registries.renderers.entries.get(kind);
+      const entry = registries.nodeRenderers.entries.get(kind);
       expect(entry).toBeDefined();
       expect(entry?.state).toBe(RegistryEntryState.Bound);
     }
@@ -104,11 +104,15 @@ describe('manual single-capability pipeline', () => {
   it('carries only the explicitly registered Sprite renderer', () => {
     const registry = {
       ...allocateEmptyGlRenderRegistries(),
-      renderers: withRegistryTableEntry(allocateEmptyGlRenderRegistries().renderers, SpriteKind, glSpriteRenderer),
+      nodeRenderers: withRegistryTableEntry(
+        allocateEmptyGlRenderRegistries().nodeRenderers,
+        SpriteKind,
+        glSpriteRenderer,
+      ),
     };
     const registries = registry;
-    expect(registries.renderers.entries.size).toBe(1);
-    expect(registries.renderers.entries.has(SpriteKind)).toBe(true);
+    expect(registries.nodeRenderers.entries.size).toBe(1);
+    expect(registries.nodeRenderers.entries.has(SpriteKind)).toBe(true);
     expect(registries.blendRealizations.entries.size).toBe(0);
     expect(registries.textureResolvers.entries.size).toBe(0);
   });

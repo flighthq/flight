@@ -19,7 +19,7 @@ import { getRenderStateRuntime } from './renderState';
 // blend realizations, per-backend material renderers — on top of this, rather than restating it.
 //
 // Unlike the 3D seam, node kinds ARE a requirement here: the 2D pipeline resolves every node through
-// `registerRenderer(state, kind, renderer)`, where the 3D pipeline collects meshes structurally.
+// `registerNodeRenderer(state, kind, renderer)`, where the 3D pipeline collects meshes structurally.
 // `catalog` is the caller's complete backend inventory; an unserved requirement uses its first ordered
 // registration as the primary remedy, while a satisfied requirement needs no catalog lookup.
 export function explainScene2DCoverage(
@@ -54,7 +54,7 @@ function collectScene2DCoverageGaps(
   // absent from the frame — the loudest failure in this seam and the one worth asking about first.
   for (let i = 0; i < usage.nodeKinds.length; i++) {
     const kind = usage.nodeKinds[i];
-    if (runtime.registries.renderers.entries.get(kind)?.state === RegistryEntryState.Bound) {
+    if (runtime.registries.nodeRenderers.entries.get(kind)?.state === RegistryEntryState.Bound) {
       out?.push({
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneNodeKind,

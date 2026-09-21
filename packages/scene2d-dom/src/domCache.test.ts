@@ -42,7 +42,7 @@ describe('enableDomRenderCache', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = makeState();
     enableDomRenderCache(state);
-    expect(getDomRenderStateRuntime(state).registries.renderers.entries.get(RenderCacheKind)).toEqual({
+    expect(getDomRenderStateRuntime(state).registries.nodeRenderers.entries.get(RenderCacheKind)).toEqual({
       state: 'bound',
       value: domRenderCacheRenderer,
     });

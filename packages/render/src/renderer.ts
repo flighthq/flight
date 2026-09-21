@@ -1,5 +1,5 @@
 import { getRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
-import type { Kind, Renderable, Renderer, RendererData, RenderState } from '@flighthq/types/contract';
+import type { Kind, Renderable, NodeRenderer, RendererData, RenderState } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';
@@ -13,25 +13,25 @@ export function copyAllRenderersFromRenderState(target: RenderState, source: Ren
 
 export function copyRenderersFromRenderState(target: RenderState, source: RenderState): void {
   const targetRuntime = getRenderStateRuntime(target);
-  const sourceTable = getRenderStateRuntime(source).registries.renderers;
-  const targetTable = targetRuntime.registries.renderers;
+  const sourceTable = getRenderStateRuntime(source).registries.nodeRenderers;
+  const targetTable = targetRuntime.registries.nodeRenderers;
 
   // A fresh derived pipeline can share the immutable source snapshot directly. A target that already
   // has policy keeps its target-only registrations, matching the additive copy contract, while source
-  // bindings remain last-write-wins through registerRenderer.
+  // bindings remain last-write-wins through registerNodeRenderer.
   if (targetTable.entries.size === 0) {
     let registrationCount = 0;
     for (const entry of sourceTable.entries.values()) {
       if (entry.state === RegistryEntryState.Bound) registrationCount++;
     }
     if (registrationCount === 0) return;
-    targetRuntime.registries.renderers = sourceTable;
+    targetRuntime.registries.nodeRenderers = sourceTable;
     targetRuntime.rendererMapId = (targetRuntime.rendererMapId + registrationCount) >>> 0;
     return;
   }
 
   for (const [kind, entry] of sourceTable.entries) {
-    if (entry.state === RegistryEntryState.Bound) registerRenderer(target, kind, entry.value);
+    if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(target, kind, entry.value);
   }
 }
 
@@ -56,17 +56,17 @@ export function noopRendererData(_state: RenderState, _source: Renderable): Rend
   return null;
 }
 
-export function registerRenderer(state: RenderState, kind: Kind, renderer: Renderer): void {
+export function registerNodeRenderer(state: RenderState, kind: Kind, renderer: NodeRenderer): void {
   const runtime = getRenderStateRuntime(state);
-  const table = runtime.registries.renderers;
+  const table = runtime.registries.nodeRenderers;
   if (getRegistryTableEntry(table, kind) === renderer) return;
-  runtime.registries.renderers = withRegistryTableEntry(table, kind, renderer);
+  runtime.registries.nodeRenderers = withRegistryTableEntry(table, kind, renderer);
   runtime.rendererMapId = (runtime.rendererMapId + 1) >>> 0;
 }
 
-// Batch form of registerRenderer over a caller-supplied set of [kind, renderer] pairs. The registry
+// Batch form of registerNodeRenderer over a caller-supplied set of [kind, renderer] pairs. The registry
 // stays open and tree-shakable: only the renderers the caller references are pulled in — there is no
 // "register all built-ins" set, which would force every renderer into the bundle.
-export function registerRenderers(state: RenderState, entries: ReadonlyArray<readonly [Kind, Renderer]>): void {
-  for (const [kind, renderer] of entries) registerRenderer(state, kind, renderer);
+export function registerNodeRenderers(state: RenderState, entries: ReadonlyArray<readonly [Kind, NodeRenderer]>): void {
+  for (const [kind, renderer] of entries) registerNodeRenderer(state, kind, renderer);
 }

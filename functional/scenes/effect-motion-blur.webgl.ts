@@ -36,7 +36,7 @@ import {
   getNodeChildCount,
   prepareScene2DRender,
   registerGlVelocityWriter,
-  registerRenderer,
+  registerNodeRenderer,
   renderGlScene2D,
   renderGlVelocity,
   setSurfaceDisplaySize,
@@ -69,7 +69,7 @@ const canvas = getWebSurfaceCanvas(glSurface)!;
 export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
   pixelRatio,
 });
-registerRenderer(state, ShapeKind, glShapeRenderer);
+registerNodeRenderer(state, ShapeKind, glShapeRenderer);
 registerGlMotionBlurEffect(state);
 registerDefaultShapeBoundsCommands();
 // The velocity writer rasterizes each shape's contributed velocity into the velocity target.

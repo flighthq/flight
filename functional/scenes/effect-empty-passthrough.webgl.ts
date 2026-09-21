@@ -23,7 +23,7 @@ import {
   glShapeRenderer,
   endGlEffectPass,
   prepareScene2DRender,
-  registerRenderer,
+  registerNodeRenderer,
   renderGlScene2D,
   setSurfaceDisplaySize,
   createAppWindow,
@@ -60,7 +60,7 @@ appendWebSurface(glSurface, document.body);
 export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
   pixelRatio,
 });
-registerRenderer(state, ShapeKind, glShapeRenderer);
+registerNodeRenderer(state, ShapeKind, glShapeRenderer);
 const pipeline: GlEffectState = createGlEffectState(state, { sampleCount: 1 });
 // What the effect pipeline's scene target is cleared to, derived from the one background constant this
 // scene already asserts against. The background is a per-pass value now: leave the chain's scene

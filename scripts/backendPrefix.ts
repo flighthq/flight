@@ -6,7 +6,7 @@
 // its backend already in front.
 //
 // The rule is not new. The TYPE layer has always obeyed it — GlTextureResolver, WgpuModifierSnippet,
-// CanvasMaterialRenderer, GlMeshMaterialRenderer — and what drifted was the function layer, for two
+// CanvasQuadMaterialRenderer, GlMeshMaterialRenderer — and what drifted was the function layer, for two
 // families: 33 material registrars and 7 PBR-extension registrars had grown as
 // `register<Kind><Backend><Thing>`, splitting the type name with the backend wedged inside it
 // (`registerSpecularGlossinessPbrGlMaterial` for the type `SpecularGlossinessPbrMaterial`). Finding that

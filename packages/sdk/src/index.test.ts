@@ -66,8 +66,8 @@ describe('package exports', () => {
       expect(sdk.createGlRenderState).toBeTypeOf('function');
     });
 
-    it('exports registerRenderer', () => {
-      expect(sdk.registerRenderer).toBeTypeOf('function');
+    it('exports registerNodeRenderer', () => {
+      expect(sdk.registerNodeRenderer).toBeTypeOf('function');
     });
   });
 

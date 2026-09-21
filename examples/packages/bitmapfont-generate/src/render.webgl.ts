@@ -17,7 +17,7 @@ import {
   glBitmapTextRenderer,
   glSpriteRenderer,
   prepareScene2DRender,
-  registerRenderer,
+  registerNodeRenderer,
   renderGlScene2D,
   beginGlRenderPass,
   endGlRenderPass,
@@ -44,8 +44,8 @@ export const state = createGlRenderState(glSurface.context, glScene3DRenderRegis
 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 enableFlightDiagnostics(state);
-registerRenderer(state, SpriteKind, glSpriteRenderer);
-registerRenderer(state, BitmapTextKind, glBitmapTextRenderer);
+registerNodeRenderer(state, SpriteKind, glSpriteRenderer);
+registerNodeRenderer(state, BitmapTextKind, glBitmapTextRenderer);
 
 export const scale = pixelRatio;
 

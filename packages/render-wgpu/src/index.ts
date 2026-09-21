@@ -11,6 +11,7 @@ export { enableWgpuBlendModeSupport } from './wgpuDraw';
 export { createExternalWgpuTexture, disposeExternalWgpuTexture } from './wgpuExternalTexture';
 export { beginWgpuFrame, submitWgpuFrame, withWgpuFrameBorrow } from './wgpuFrame';
 export { registerWgpuMipmapGeneration } from './wgpuMipmap';
+export * from './wgpuQuadMaterialRegistry';
 export { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass';
 export {
   createWgpuAcquisition,

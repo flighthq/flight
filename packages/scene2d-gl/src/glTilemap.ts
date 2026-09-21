@@ -1,4 +1,4 @@
-import { resolveGlMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
+import { resolveGlQuadMaterialRenderer, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { SCENE2D_WORKING_COLOR_SPACE } from '@flighthq/render/contract';
 import { noopRendererData } from '@flighthq/render/contract';
@@ -34,7 +34,7 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
   ensureGlQuadBatchShader(state);
 
   const material = tilemapNode.material;
-  const materialRenderer = resolveGlMaterialRenderer(state, material);
+  const materialRenderer = resolveGlQuadMaterialRenderer(state, material);
   if (materialRenderer === null) return;
   const texture = atlas.texture;
   const glTexture = resolveGlTexture(state, texture, true, SCENE2D_WORKING_COLOR_SPACE);
