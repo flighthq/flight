@@ -160,7 +160,6 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/scene2d-wgpu',
     '@flighthq/scene3d-gl',
     '@flighthq/scene3d-wgpu',
-    '@flighthq/textshaper-canvas',
   ],
   application: ['@flighthq/app'],
   'host-tool': [

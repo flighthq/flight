@@ -126,7 +126,7 @@ const tsxBinary = resolve(repoRoot, 'node_modules/tsx/dist/cli.mjs');
  * otherwise be believed; this one exists because a right number would otherwise arrive too late to want.
  *
  * Naming the matches rather than the count is the point: the reason `text` is thirteen packages is only
- * obvious once `textinput` and `textshaper-canvas` are on screen next to it.
+ * obvious once `textinput` and `textshaper` are on screen next to it.
  */
 export function explainOverbroadSelection(selectors: readonly string[], packages: readonly string[]): string {
   const named = selectors.map((selector) => `'${selector}'`).join(', ');

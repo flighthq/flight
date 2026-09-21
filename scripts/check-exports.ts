@@ -150,7 +150,6 @@ const GOVERNED_PACKAGES = [
   'textlayout',
   'textsegment',
   'textshaper',
-  'textshaper-canvas',
   'texture',
   'texture-formats',
   'textureatlas',

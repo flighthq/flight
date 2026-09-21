@@ -4,6 +4,7 @@ import type {
   HostAppFocusCapability,
   HostAppLocaleCapability,
   HostAppNameCapability,
+  NonEntityCreateResult,
   HostAppQuitCapability,
   HostAppReadyCapability,
   HostAppRelaunchCapability,
@@ -15,7 +16,7 @@ type WebAppCapabilities = Required<
   Pick<HostAppCapabilities, 'badge' | 'focus' | 'locale' | 'name' | 'quit' | 'ready' | 'relaunch'>
 >;
 
-export function createWebAppCapabilities(): WebAppCapabilities {
+export function createWebAppCapabilities(): NonEntityCreateResult<WebAppCapabilities, 'descriptor'> {
   return {
     badge: createWebAppCapability(initializeWebAppBadgeBackend),
     focus: createWebAppCapability(initializeWebAppFocusBackend),

@@ -122,7 +122,6 @@ const DEFAULT_PACKAGES = [
   'surface',
   'textinput',
   'textlayout',
-  'textshaper-canvas',
   'textshaper',
   'texture',
   'text',

@@ -129,7 +129,6 @@ const DEFAULT_PACKAGES = [
   'surface',
   'textinput',
   'textlayout',
-  'textshaper-canvas',
   'textshaper',
   'texture',
   'text',
@@ -151,7 +150,6 @@ const DEFAULT_TS_ONLY = [
   'filters-css',
   'host-electron',
   'surface-rs',
-  'textshaper-canvas',
 ];
 // Crates with NO TS package (intentionally Rust-only: native hosts, capture, software backend, test harness).
 const DEFAULT_RUST_ONLY = [

@@ -564,10 +564,6 @@
       "types": "./dist/textshaper.d.ts",
       "default": "./dist/textshaper.js"
     },
-    "./textshaper-canvas": {
-      "types": "./dist/textshaper-canvas.d.ts",
-      "default": "./dist/textshaper-canvas.js"
-    },
     "./texture": {
       "types": "./dist/texture.d.ts",
       "default": "./dist/texture.js"
@@ -790,7 +786,6 @@
     "@flighthq/textlayout": "*",
     "@flighthq/textsegment": "*",
     "@flighthq/textshaper": "*",
-    "@flighthq/textshaper-canvas": "*",
     "@flighthq/texture": "*",
     "@flighthq/texture-formats": "*",
     "@flighthq/textureatlas": "*",

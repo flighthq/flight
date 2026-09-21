@@ -1,5 +1,5 @@
 import { computeTextFormatFontString } from '@flighthq/text/contract';
-import type { CanvasTextShaperBackend, FontMetrics, TextFormat } from '@flighthq/types/contract';
+import type { CanvasTextShaperBackend, FontMetrics, NonEntityCreateResult, TextFormat } from '@flighthq/types/contract';
 
 // Clears the advance cache on a backend returned by createCanvasTextShaperBackend. Call this after
 // a webfont finishes loading — document.fonts.ready resolves, FontFaceObserver fires, etc. — so
@@ -26,7 +26,7 @@ export function clearCanvasTextShaperBackendCache(backend: CanvasTextShaperBacke
 //
 // This is the extraction of the former createCanvasTextMeasure — the SDK's existing measurement,
 // formalized as a HostTextShaperCapability.
-export function createCanvasTextShaperBackend(): CanvasTextShaperBackend {
+export function createCanvasTextShaperBackend(): NonEntityCreateResult<CanvasTextShaperBackend, 'descriptor'> {
   const ctx = _createContext();
   if (ctx === null) {
     return _createSentinelBackend();
@@ -177,3 +177,31 @@ function _createSentinelBackend(): CanvasTextShaperBackend {
   } satisfies CanvasTextShaperBackend;
   return backend;
 }
+
+// The shared web text-shaper provider. Every web-based host — host-web itself, and Electron or any
+// other host on a DOM/OffscreenCanvas runtime — reuses this one backend, so they share a single
+// advance cache; a host that wants an isolated cache still calls createCanvasTextShaperBackend().
+//
+// The real backend is built on FIRST USE, not at module scope: createCanvasTextShaperBackend creates a
+// canvas context, and host-web declares "sideEffects": false, so constructing eagerly would make
+// merely importing this package touch the DOM. Forwarding through one lazy instance also keeps
+// clearCache honest — it clears the same cache the measure calls fill.
+export const webHostTextShaper: CanvasTextShaperBackend = {
+  clearCache(): void {
+    _sharedBackend().clearCache();
+  },
+  getFontMetrics(format: Readonly<TextFormat>): FontMetrics | null {
+    // getFontMetrics is optional on the capability; the canvas backend always supplies it, and null is
+    // its documented sentinel, so the fallback is the same answer rather than a different one.
+    return _sharedBackend().getFontMetrics?.(format) ?? null;
+  },
+  measureText(text: string, format: Readonly<TextFormat>): number {
+    return _sharedBackend().measureText(text, format);
+  },
+};
+
+function _sharedBackend(): CanvasTextShaperBackend {
+  return (_shared ??= createCanvasTextShaperBackend());
+}
+
+let _shared: CanvasTextShaperBackend | null = null;
