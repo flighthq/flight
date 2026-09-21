@@ -241,6 +241,19 @@ describe('createClipRegionFromCircle', () => {
 });
 
 describe('createClipRegionFromContours', () => {
+  it('defensively skips malformed contours for bounds and point containment', () => {
+    const clip = createClipRegionFromContours(
+      [
+        [0, 0, 10],
+        [0, 0, 10, 0],
+      ],
+      'nonZero',
+    );
+    expect(clip.rect).toMatchObject({ height: 0, width: 0, x: 0, y: 0 });
+    expect(isClipRegionEmpty(clip)).toBe(true);
+    expect(clipRegionContainsPoint(clip, 0, 0)).toBe(false);
+  });
+
   it('deep-copies the provided contours and computes bounds', () => {
     const contours = [[0, 0, 10, 0, 10, 10, 0, 10]];
     const clip = createClipRegionFromContours(contours, 'nonZero');

@@ -630,7 +630,7 @@ function pointInContours(
   for (let c = 0; c < contours.length; c++) {
     const contour = contours[c];
     const n = contour.length;
-    if (n < 4) continue;
+    if (n < 6 || (n & 1) !== 0) continue;
     for (let i = 0; i < n; i += 2) {
       const x0 = contour[i];
       const y0 = contour[i + 1];
@@ -708,6 +708,7 @@ function setRectangleToContoursBounds(out: RectangleLike, contours: readonly (re
   let maxY = -Infinity;
   for (let c = 0; c < contours.length; c++) {
     const contour = contours[c];
+    if (contour.length < 6) continue;
     for (let i = 0; i < contour.length; i += 2) {
       const x = contour[i];
       const y = contour[i + 1];
