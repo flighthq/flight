@@ -426,6 +426,48 @@ describe('source-derived capability reachability', () => {
   });
 });
 
+describe('defaultCompositionSymbols', () => {
+  it('matches concrete renderers ending in Renderer, not only NodeRenderer', () => {
+    const fixture = entries(
+      `
+      export const glBitmapTextRenderer = {};
+      export const canvasSpriteRenderer = {};
+      export const wgpuShapeRenderer = {};
+      export const domTextLabelRenderer = {};
+    `,
+      [],
+    );
+    const symbols = defaultCompositionSymbols(fixture.sourceFiles);
+    expect(symbols).toEqual(
+      new Set(['glBitmapTextRenderer', 'canvasSpriteRenderer', 'wgpuShapeRenderer', 'domTextLabelRenderer']),
+    );
+  });
+
+  it('excludes EffectRunners while including other runners', () => {
+    const fixture = entries(
+      `
+      export const glBlurEffectRunner = {};
+      export const glScene2DRunner = {};
+    `,
+      [],
+    );
+    const symbols = defaultCompositionSymbols(fixture.sourceFiles);
+    expect(symbols).toEqual(new Set(['glScene2DRunner']));
+  });
+
+  it('excludes exports without a backend prefix', () => {
+    const fixture = entries(
+      `
+      export const spriteRenderer = {};
+      export const NodeRenderer = {};
+    `,
+      [],
+    );
+    const symbols = defaultCompositionSymbols(fixture.sourceFiles);
+    expect(symbols.size).toBe(0);
+  });
+});
+
 function entries(sourceText: string | readonly string[], publicValues: readonly string[]) {
   const directory = mkdtempSync(join(tmpdir(), 'flight-reachability-'));
   temporaryDirectories.push(directory);
