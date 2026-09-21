@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import type { PublishExpectation, PublishProblem, PublishedRegistryState } from './publish-verification.js';
-import { describePublishProblem, findPublishProblems, shouldKeepVerifying } from './publish-verification.js';
+import {
+  countTrailingRoundsWithoutProgress,
+  describePublishProblem,
+  findPublishProblems,
+  shouldKeepVerifying,
+} from './publish-verification.js';
 
 // The versions from the incident this module exists for: every package published at 1538 except
 // @flighthq/types, whose publish exited 0 and never reached the registry.
@@ -132,8 +137,22 @@ describe('findPublishProblems', () => {
   });
 });
 
+describe('countTrailingRoundsWithoutProgress', () => {
+  it('reports zero while the count is still falling', () => {
+    expect(countTrailingRoundsWithoutProgress([125, 100, 80])).toBe(0);
+  });
+
+  it('counts the flat tail only, not earlier flat stretches', () => {
+    expect(countTrailingRoundsWithoutProgress([9, 9, 9, 5, 2, 2, 2])).toBe(2);
+  });
+
+  it('is zero for an empty history', () => {
+    expect(countTrailingRoundsWithoutProgress([])).toBe(0);
+  });
+});
+
 describe('shouldKeepVerifying', () => {
-  const STALL = 12;
+  const STALL = 120;
 
   it('stops as soon as nothing is outstanding', () => {
     expect(shouldKeepVerifying([162, 40, 0], STALL)).toBe(false);
@@ -141,6 +160,18 @@ describe('shouldKeepVerifying', () => {
 
   it('keeps going while the count is still falling', () => {
     expect(shouldKeepVerifying([125, 100, 80], STALL)).toBe(true);
+  });
+
+  it('waits out the real 1556 tail, where two writes stayed pending ~12 minutes', () => {
+    // Measured from the registry's own publish times on a 162-package release: the bulk converged in
+    // minutes but snapshot committed +486s and @flighthq/types +871s after the first package. The
+    // count sat flat at 2 across ~72 ten-second rounds while those were still pending. A 12-round
+    // window called them permanent drops and failed a release in which nothing was actually lost.
+    const bulk = [126, 108, 101, 91, 72, 68, 54, 47, 42, 29, 22, 17, 15, 15, 11, 9, 8, 6, 6, 5, 5, 4];
+    const pendingTail = Array(72).fill(2);
+    expect(shouldKeepVerifying([...bulk, ...pendingTail], STALL)).toBe(true);
+    // And it still concludes once the tail finally lands.
+    expect(shouldKeepVerifying([...bulk, ...pendingTail, 0], STALL)).toBe(false);
   });
 
   it('keeps going through the real 1543 convergence rather than failing a good release', () => {

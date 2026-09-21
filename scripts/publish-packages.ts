@@ -66,7 +66,12 @@ import { promisify } from 'node:util';
 import { withTemporaryPublishArtifacts } from './package-publish-artifacts.js';
 import { classifyPublishError } from './publish-error-kind.js';
 import type { PublishExpectation, PublishProblem } from './publish-verification.js';
-import { describePublishProblem, findPublishProblems, shouldKeepVerifying } from './publish-verification.js';
+import {
+  countTrailingRoundsWithoutProgress,
+  describePublishProblem,
+  findPublishProblems,
+  shouldKeepVerifying,
+} from './publish-verification.js';
 import { isSnapshotVersionSuperseded } from './snapshot-version-order.js';
 
 const execFileAsync = promisify(execFile);
@@ -76,15 +81,25 @@ const execFileAsync = promisify(execFile);
 const PUBLISH_CONCURRENCY = Number(process.env.FLIGHT_PUBLISH_CONCURRENCY ?? '8');
 const REGISTRY_CHECK_CONCURRENCY = 12;
 const RETRY_ATTEMPTS = 4;
-// Read-back pacing. A write is acknowledged well before it is universally readable — a 162-package
-// release was measured still converging ~47s after the last publish returned — so the read-back is
-// bounded by PROGRESS, not by a fixed number of tries: it keeps going while the outstanding count is
-// falling and gives up only once it stops. VERIFY_STALL_ROUNDS is how many consecutive rounds may
+// Read-back pacing. A write is acknowledged well before it is universally readable, so the read-back
+// is bounded by PROGRESS, not by a fixed number of tries: it keeps going while the outstanding count
+// is falling and gives up only once it stops. VERIFY_STALL_ROUNDS is how many consecutive rounds may
 // pass with no decrease before the remainder is called real. The deadline is a backstop so a
 // pathological registry cannot hang CI; raise it with FLIGHT_PUBLISH_VERIFY_TIMEOUT_MS.
+//
+// THE WINDOW MUST EXCEED THE REGISTRY'S WORST COMMIT LATENCY, and that tail is much longer than the
+// bulk convergence suggests. Measured on one 162-package release, from each version's own registry
+// `time` entry: geometry committed first, sdk +83s, math +115s, xml +173s, snapshot +486s, and
+// @flighthq/types — the largest package in the graph — +871s. The count sat flat at 2 for the last
+// ~12 minutes while those two writes were still pending, which an earlier 120s window read as two
+// permanent drops and failed a perfectly good release on.
+//
+// So the stall window is deliberately generous: 20 minutes of NO progress before anything is called
+// missing. A false failure is the expensive error — it fails a good release and teaches everyone to
+// distrust the gate — whereas a genuine drop simply takes longer to report, and a drop is rare.
 const VERIFY_POLL_MS = 10_000;
-const VERIFY_STALL_ROUNDS = 12;
-const VERIFY_TIMEOUT_MS = Number(process.env.FLIGHT_PUBLISH_VERIFY_TIMEOUT_MS ?? '1200000');
+const VERIFY_STALL_ROUNDS = 120;
+const VERIFY_TIMEOUT_MS = Number(process.env.FLIGHT_PUBLISH_VERIFY_TIMEOUT_MS ?? '2700000');
 
 // npm prunes its log directory (~/.npm/_logs, honouring `logs-max`) on every startup, and concurrent
 // npm processes readdir and unlink the same files there. Losing that race makes npm die before it
@@ -336,9 +351,11 @@ async function verifyPublishedGraph(expectations: readonly Readonly<PublishExpec
       console.warn(`[publish] verify: deadline reached with ${problems.length} still not visible`);
       break;
     }
+    const flatRounds = countTrailingRoundsWithoutProgress(counts);
     console.warn(
       `[publish] verify: ${problems.length} not visible yet, re-reading in ${VERIFY_POLL_MS}ms` +
-        ` (round ${counts.length}, still converging)`,
+        ` (round ${counts.length}` +
+        `${flatRounds > 0 ? `, flat for ${flatRounds} of ${VERIFY_STALL_ROUNDS}` : ', still falling'})`,
     );
     await new Promise((resolve) => setTimeout(resolve, VERIFY_POLL_MS));
     outstanding = problems.map(({ name, version }) => ({ name, version }));

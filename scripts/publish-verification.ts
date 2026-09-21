@@ -70,6 +70,20 @@ export function describePublishProblem(problem: Readonly<PublishProblem>, target
 //
 // The target tag's NAME is not needed here: readRegistryState already resolved it to the version it
 // points at. Only describePublishProblem, which renders the message, takes the name.
+// How many rounds at the end of `counts` have produced no decrease. Reported on each polling line so
+// a long wait is legible as patience rather than a hang: "flat for 8 of 120" says the registry has
+// gone quiet, while "still falling" says it is working through the queue.
+export function countTrailingRoundsWithoutProgress(counts: readonly number[]): number {
+  const latest = counts[counts.length - 1];
+  if (latest === undefined) return 0;
+  let flat = 0;
+  for (let index = counts.length - 2; index >= 0; index--) {
+    if ((counts[index] ?? latest) > latest) break;
+    flat++;
+  }
+  return flat;
+}
+
 export function findPublishProblems(
   expectations: readonly Readonly<PublishExpectation>[],
   state: ReadonlyMap<string, Readonly<PublishedRegistryState>>,
