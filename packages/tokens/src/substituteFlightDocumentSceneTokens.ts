@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { initializeFlightDocumentRefusalExplanation } from '@flighthq/scene-document/contract';
 import type {
-  EntityConstruction,
   FlightDocumentFields,
   FlightDocumentNode,
   FlightDocumentRefusalExplanation,
@@ -20,27 +20,6 @@ export function explainFlightDocumentSceneTokenSubstitution(
   resolution: Readonly<FlightDocumentTokenResolution>,
 ): FlightDocumentRefusalExplanation | null {
   return readSubstitution(scene, resolution).refusal;
-}
-
-export function initializeFlightDocumentRefusalExplanation(
-  out: EntityConstruction<FlightDocumentRefusalExplanation>,
-  mode: FlightDocumentRefusalExplanation['mode'],
-  path: string,
-  reason: FlightDocumentRefusalReason,
-  tokenKey: string | null,
-): void {
-  out.actual = null;
-  out.column = null;
-  out.kind = null;
-  out.limit = null;
-  out.line = null;
-  out.mode = mode;
-  out.offset = null;
-  out.path = path;
-  out.reason = reason;
-  out.resourceKey = null;
-  out.tokenKey = tokenKey;
-  out.version = null;
 }
 
 // Pure: the input scene is never touched and a new entry is returned for later materialization. The
@@ -120,7 +99,21 @@ function refuse(
 ): void {
   state.refusal ??= (() => {
     const out = allocateEntity<FlightDocumentRefusalExplanation>();
-    initializeFlightDocumentRefusalExplanation(out, state.resolution.mode, path, reason, tokenKey);
+    initializeFlightDocumentRefusalExplanation(
+      out,
+      null,
+      null,
+      null,
+      null,
+      null,
+      state.resolution.mode,
+      null,
+      path,
+      reason,
+      null,
+      tokenKey,
+      null,
+    );
     return finishEntity(out);
   })();
 }

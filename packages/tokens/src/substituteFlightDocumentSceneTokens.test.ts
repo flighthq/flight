@@ -14,7 +14,6 @@ import {
 } from './flightDocumentSceneTokens';
 import {
   explainFlightDocumentSceneTokenSubstitution,
-  initializeFlightDocumentRefusalExplanation,
   substituteFlightDocumentSceneTokens,
 } from './substituteFlightDocumentSceneTokens';
 
@@ -57,12 +56,6 @@ describe('explainFlightDocumentSceneTokenSubstitution', () => {
       { key: 'color.background', kind: 'Color', values: { default: 0xffffffff } },
     ]);
     expect(explainFlightDocumentSceneTokenSubstitution(scene, resolutionOf(scene))).toBeNull();
-  });
-});
-
-describe('initializeFlightDocumentRefusalExplanation', () => {
-  it('is the construction initializer of createFlightDocumentRefusalExplanation', () => {
-    expect(typeof initializeFlightDocumentRefusalExplanation).toBe('function');
   });
 });
 
