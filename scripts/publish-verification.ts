@@ -1,5 +1,13 @@
 // Decides whether a finished publish actually reached the registry.
 //
+// A version is not readable the instant its publish returns. A 162-package release was measured
+// converging over ~47s, with a first read-back showing 125 absent that were all live shortly after —
+// so a fixed retry budget either fails good releases or has to be padded past any real failure. The
+// budget is therefore not time but PROGRESS: keep re-reading while the outstanding count is still
+// falling, and only report what remains once it stops falling (or the absolute deadline hits). A true
+// drop never becomes visible — the one this module exists for was still absent a day later — so it
+// shows up as a count that refuses to move.
+//
 // publish-packages.ts previously treated `npm publish` exiting 0 as proof of publication. It is not:
 // a publish has exited 0 with the registry never receiving the write at all. When that happened to
 // @flighthq/types, the run reported "published 162, skipped 0, failed 0" while types' packument was
@@ -82,4 +90,24 @@ export function findPublishProblems(
     problems.push({ name, version, kind: 'tag-stale', tagVersion: entry.tagVersion });
   }
   return problems;
+}
+
+// True while the read-back should keep going: the outstanding count has not reached zero, and it is
+// still dropping. `counts` is the outstanding count per round, oldest first.
+//
+// Stall is judged over a WINDOW rather than against the previous round alone. Propagation is uneven —
+// a round or two with no change is normal mid-convergence — so a single flat round must not end it.
+export function shouldKeepVerifying(counts: readonly number[], stallRounds: number): boolean {
+  const latest = counts[counts.length - 1];
+  if (latest === undefined) return true;
+  if (latest === 0) return false;
+  // Too early to call a stall: not enough rounds to fill the window yet.
+  if (counts.length <= stallRounds) return true;
+  const window = counts.slice(-(stallRounds + 1));
+  const oldest = window[0] ?? latest;
+  // Any decrease anywhere in the window is progress. The publisher's own counts never rise — it
+  // re-reads only the previous round's outstanding set — but a caller without that guarantee can
+  // see a transient read error push the count back up, and that must not erase a real decrease.
+  // Hence the window minimum rather than the newest entry.
+  return Math.min(...window) < oldest;
 }

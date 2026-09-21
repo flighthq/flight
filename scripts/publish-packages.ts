@@ -66,7 +66,7 @@ import { promisify } from 'node:util';
 import { withTemporaryPublishArtifacts } from './package-publish-artifacts.js';
 import { classifyPublishError } from './publish-error-kind.js';
 import type { PublishExpectation, PublishProblem } from './publish-verification.js';
-import { describePublishProblem, findPublishProblems } from './publish-verification.js';
+import { describePublishProblem, findPublishProblems, shouldKeepVerifying } from './publish-verification.js';
 import { isSnapshotVersionSuperseded } from './snapshot-version-order.js';
 
 const execFileAsync = promisify(execFile);
@@ -76,10 +76,15 @@ const execFileAsync = promisify(execFile);
 const PUBLISH_CONCURRENCY = Number(process.env.FLIGHT_PUBLISH_CONCURRENCY ?? '8');
 const REGISTRY_CHECK_CONCURRENCY = 12;
 const RETRY_ATTEMPTS = 4;
-// Read-backs of a just-written packument. A write is acknowledged before it is universally readable,
-// so a first miss is re-read rather than reported; only a version still absent at the end is a
-// failure.
-const VERIFY_ATTEMPTS = 3;
+// Read-back pacing. A write is acknowledged well before it is universally readable — a 162-package
+// release was measured still converging ~47s after the last publish returned — so the read-back is
+// bounded by PROGRESS, not by a fixed number of tries: it keeps going while the outstanding count is
+// falling and gives up only once it stops. VERIFY_STALL_ROUNDS is how many consecutive rounds may
+// pass with no decrease before the remainder is called real. The deadline is a backstop so a
+// pathological registry cannot hang CI; raise it with FLIGHT_PUBLISH_VERIFY_TIMEOUT_MS.
+const VERIFY_POLL_MS = 10_000;
+const VERIFY_STALL_ROUNDS = 12;
+const VERIFY_TIMEOUT_MS = Number(process.env.FLIGHT_PUBLISH_VERIFY_TIMEOUT_MS ?? '1200000');
 
 // npm prunes its log directory (~/.npm/_logs, honouring `logs-max`) on every startup, and concurrent
 // npm processes readdir and unlink the same files there. Losing that race makes npm die before it
@@ -309,24 +314,37 @@ async function readRegistryState(
   return state;
 }
 
-// Reads every intended version back and returns what is still not live. Retried because the registry
-// acknowledges a write before it is universally readable; a package that becomes visible on a later
-// attempt was never a problem, so only the still-outstanding set is re-read.
+// Reads every intended version back and returns what is still not live once the registry stops
+// catching up. Only the still-outstanding set is re-read, so the sweep shrinks as propagation lands.
+//
+// A release converges: the count falls to zero. A real drop does not — it sits at a fixed number,
+// which is what ends the loop and gets reported. Deliberately NOT a fixed retry budget: a budget
+// large enough never to fail a good release would be larger than any failure is worth waiting for.
 async function verifyPublishedGraph(expectations: readonly Readonly<PublishExpectation>[]): Promise<PublishProblem[]> {
   console.log(`[publish] verifying ${expectations.length} package(s) against the registry…`);
+  const deadline = Date.now() + VERIFY_TIMEOUT_MS;
   let outstanding: readonly Readonly<PublishExpectation>[] = expectations;
   let problems: PublishProblem[] = [];
-  for (let attempt = 1; attempt <= VERIFY_ATTEMPTS; attempt++) {
+  const counts: number[] = [];
+
+  for (;;) {
     const state = await readRegistryState(outstanding, true);
     problems = findPublishProblems(outstanding, state);
-    if (problems.length === 0) return [];
-    if (attempt === VERIFY_ATTEMPTS) break;
-    const backoffMs = 2000 * attempt;
+    counts.push(problems.length);
+    if (!shouldKeepVerifying(counts, VERIFY_STALL_ROUNDS)) break;
+    if (Date.now() >= deadline) {
+      console.warn(`[publish] verify: deadline reached with ${problems.length} still not visible`);
+      break;
+    }
     console.warn(
-      `[publish] verify: ${problems.length} not visible yet, re-reading in ${backoffMs}ms (${attempt}/${VERIFY_ATTEMPTS})`,
+      `[publish] verify: ${problems.length} not visible yet, re-reading in ${VERIFY_POLL_MS}ms` +
+        ` (round ${counts.length}, still converging)`,
     );
-    await new Promise((resolve) => setTimeout(resolve, backoffMs));
+    await new Promise((resolve) => setTimeout(resolve, VERIFY_POLL_MS));
     outstanding = problems.map(({ name, version }) => ({ name, version }));
+  }
+  if (problems.length > 0) {
+    console.warn(`[publish] verify: count stopped falling at ${problems.length} after ${counts.length} round(s)`);
   }
   return problems;
 }
