@@ -1,4 +1,4 @@
-import { createMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
+import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry/contract';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type { DomRenderState, Matrix, Node2D, RenderProxy2D, Scene2DRenderer } from '@flighthq/types/contract';
@@ -27,6 +27,7 @@ export function renderDomScene2D(
   const frameId = runtime.currentFrameId;
   const tempStack = runtime.tempStack;
   const hasRenderTransform = renderTransform != null;
+  const scratch = hasRenderTransform ? acquireMatrix() : null;
 
   let stackLength = 1;
   tempStack[0] = source;
@@ -42,8 +43,8 @@ export function renderDomScene2D(
 
     const savedTransform = data.transform2D;
     if (hasRenderTransform) {
-      multiplyMatrix(_scratchTransform, renderTransform, savedTransform);
-      data.transform2D = _scratchTransform;
+      multiplyMatrix(scratch!, renderTransform, savedTransform);
+      data.transform2D = scratch!;
     }
 
     clipHooks?.popClip(state, data, current);
@@ -73,6 +74,7 @@ export function renderDomScene2D(
     if (hasRenderTransform) data.transform2D = savedTransform;
   }
 
+  if (scratch !== null) releaseMatrix(scratch);
   clipHooks?.finalize(state);
 
   if (hasDomStructureChanged(runtime, newLength, needsReconcile)) {
@@ -81,5 +83,3 @@ export function renderDomScene2D(
 
   swapDomOrderLists(runtime, newLength);
 }
-
-const _scratchTransform = createMatrix();

@@ -1,4 +1,4 @@
-import { createMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
+import { acquireMatrix, multiplyMatrix, releaseMatrix } from '@flighthq/geometry/contract';
 import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@flighthq/render/contract';
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type {
@@ -35,6 +35,7 @@ export function renderCanvasScene2D(
   const tempStack = getCanvasRenderStateRuntime(state).tempStack;
   const clipHooks = state.displayObjectClipHooks;
   const hasRenderTransform = renderTransform != null;
+  const scratch = hasRenderTransform ? acquireMatrix() : null;
 
   let stackLength = 1;
   tempStack[0] = source;
@@ -48,8 +49,8 @@ export function renderCanvasScene2D(
 
     const savedTransform = data.transform2D;
     if (hasRenderTransform) {
-      multiplyMatrix(_scratchTransform, renderTransform, savedTransform);
-      data.transform2D = _scratchTransform;
+      multiplyMatrix(scratch!, renderTransform, savedTransform);
+      data.transform2D = scratch!;
     }
 
     clipHooks?.popClip(state, data, current);
@@ -81,16 +82,11 @@ export function renderCanvasScene2D(
     if (hasRenderTransform) data.transform2D = savedTransform;
   }
 
+  if (scratch !== null) releaseMatrix(scratch);
   clipHooks?.finalize(state);
 }
 
-// Zero-determinant transforms collapse the node to a line or point — Canvas 2D would draw nothing
-// visible but still pay transform setup and draw-call overhead. isRenderProxyVisible catches the
-// a===0 && d===0 case (identity-scaled to zero); this catches the remaining degenerate orientations
-// (e.g. rotated then scaled to zero on one axis) via the full 2×2 determinant.
 function isCanvasTransformDegenerate(data: RenderProxy2D): boolean {
   const t = data.transform2D;
   return t.a * t.d - t.b * t.c === 0;
 }
-
-const _scratchTransform = createMatrix();
