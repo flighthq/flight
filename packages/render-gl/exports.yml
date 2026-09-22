@@ -60,7 +60,6 @@ protected:
   - getGlShader
   - hasGlCompressedTextureFormat
   - initializeDefaultGlBitmapShader
-  - initializeEmptyGlRenderRegistries
   - initializeExternalGlTextureSource
   - initializeGlBitmapShader
   - initializeGlContextState

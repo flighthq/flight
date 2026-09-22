@@ -38,7 +38,7 @@ import {
   invalidateNodeLocalTransform,
   prepareScene3DRender,
   prepareScene3DSkinning,
-  wgpuScene3DRenderRegistries,
+  wgpuScene3DRenderPreset,
   setCamera3DViewMatrix4FromLookAt,
   setQuaternionFromAxisAngle,
   setVector3,
@@ -73,7 +73,8 @@ const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRenderRegistries, {
+export const state = createWgpuRenderState(acquisition.device, {
+  ...wgpuScene3DRenderPreset,
   format: acquisition.format,
   pixelRatio,
 });

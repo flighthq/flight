@@ -21,11 +21,11 @@ describe('getWgpuScene3DRuntime', () => {
     const stateRuntime = state[EntityRuntimeKey] as WgpuRenderStateRuntime;
     const materials = stateRuntime.registries.materialRenderers;
     const modifierSnippets = stateRuntime.registries.modifierSnippets;
-    const modifierSnippetRevision = stateRuntime.registries.modifierSnippetRevision;
+    const modifierSnippetRevision = stateRuntime.modifierSnippetRevision;
     const scene = getWgpuScene3DRuntime(state);
     expect(stateRuntime.registries.materialRenderers).toBe(materials);
     expect(stateRuntime.registries.modifierSnippets).toBe(modifierSnippets);
-    expect(stateRuntime.registries.modifierSnippetRevision).toBe(modifierSnippetRevision);
+    expect(stateRuntime.modifierSnippetRevision).toBe(modifierSnippetRevision);
     expect(stateRuntime.context.sceneMeshUploadCache).toBe(scene.uploadCache);
   });
 });

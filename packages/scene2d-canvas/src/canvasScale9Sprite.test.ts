@@ -15,7 +15,7 @@ import {} from './canvasPipeline';
 import { canvasScale9SpriteRenderer, drawCanvasScale9Sprite } from './canvasScale9Sprite';
 import { canvasSpriteRenderer } from './canvasSprite';
 import { createCanvasRenderState, getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
-import { canvasScene2DRenderRegistries } from './scene2DCanvasPipeline';
+import { canvasScene2DRenderPreset } from './scene2DCanvasPipeline';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.
@@ -28,7 +28,7 @@ afterEach(() => {
 });
 
 function pipelineRenderer(kind: Kind): NodeRenderer | null {
-  return canvasScene2DRenderRegistries.nodeRenderers.get(kind) ?? null;
+  return canvasScene2DRenderPreset.nodeRenderers.get(kind) ?? null;
 }
 
 function makeState() {

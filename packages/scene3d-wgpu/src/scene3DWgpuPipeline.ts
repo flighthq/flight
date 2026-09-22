@@ -1,6 +1,6 @@
 import { concatKindMap, withKindMapEntry } from '@flighthq/registry/contract';
 import { standardWgpuTextureResolvers } from '@flighthq/render-wgpu/contract';
-import { wgpuScene2DRenderRegistries } from '@flighthq/scene2d-wgpu/contract';
+import { wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu/contract';
 import type {
   Kind,
   WgpuMeshMaterialRenderer,
@@ -100,10 +100,10 @@ function buildScene3DWgpuTextureResolvers(
 // Node3D and ParticleEmitter3D are explicit renderWgpuScene3D passes rather than NodeRenderer entries.
 // WGPU also has no ExtendedPbrMaterial renderer or PBR-extension registry: the seven scene3d-gl
 // extensions stay GL-only until WGPU owns real registration and bind seams for them.
-export const wgpuScene3DRenderRegistries: Readonly<WgpuRenderRegistries> = {
-  ...wgpuScene2DRenderRegistries,
+export const wgpuScene3DRenderPreset: Readonly<WgpuRenderRegistries> = Object.freeze({
+  ...wgpuScene2DRenderPreset,
   gpuSkinning: wgpuSkinningAdapter,
-  materialRenderers: buildScene3DWgpuMeshMaterialRenderers(wgpuScene2DRenderRegistries.materialRenderers),
-  modifierSnippets: buildScene3DWgpuModifierSnippets(wgpuScene2DRenderRegistries.modifierSnippets),
-  textureResolvers: buildScene3DWgpuTextureResolvers(wgpuScene2DRenderRegistries.textureResolvers),
-};
+  materialRenderers: buildScene3DWgpuMeshMaterialRenderers(wgpuScene2DRenderPreset.materialRenderers),
+  modifierSnippets: buildScene3DWgpuModifierSnippets(wgpuScene2DRenderPreset.modifierSnippets),
+  textureResolvers: buildScene3DWgpuTextureResolvers(wgpuScene2DRenderPreset.textureResolvers),
+});

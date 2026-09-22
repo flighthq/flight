@@ -19,7 +19,7 @@ import {
   createCanvasTextureResolvers,
   getCanvasRenderStateRuntime,
   registerCanvasSurfaceCreator,
-  canvasScene2DRenderRegistries,
+  canvasScene2DRenderPreset,
 } from '@flighthq/scene2d-canvas/contract';
 import { createDomRenderState, getDomRenderStateRuntime } from '@flighthq/scene2d-dom/contract';
 import { createScene2DDocumentImporterRegistry } from '@flighthq/scene2d-resources/contract';
@@ -809,11 +809,10 @@ async function prepareArgument(
       parameter,
       state,
       () =>
-        createWgpuOffscreenRenderState(
-          state.deviceState,
-          { ...getWgpuRenderStateRuntime(state).registries },
-          { format: state.format },
-        ),
+        createWgpuOffscreenRenderState(state.deviceState, {
+          ...getWgpuRenderStateRuntime(state).registries,
+          format: state.format,
+        }),
       createWgpuRenderStateForTest,
     );
   }
@@ -1135,7 +1134,7 @@ function packageSourceFiles(packageName: string): string[] {
     .map((entry) => join(sourceDir, entry.name));
 }
 
-function createCanvasProbeState(registry = canvasScene2DRenderRegistries) {
+function createCanvasProbeState(registry = canvasScene2DRenderPreset) {
   const canvas = document.createElement('canvas');
   Object.defineProperty(canvas, 'getContext', { value: () => canvas2DContext });
   const state = createCanvasRenderState(registry, createCanvasTextureResolvers(webCanvasRenderSurfaceCreator));

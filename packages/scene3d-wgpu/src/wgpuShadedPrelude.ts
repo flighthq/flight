@@ -230,13 +230,13 @@ export function ensureWgpuShadedPipeline(
   material: Readonly<ShadedMaterial>,
   format: GPUTextureFormat,
 ): WgpuMeshPipeline {
-  const registries = getWgpuRenderStateRuntime(state).registries;
-  const registry = registries.modifierSnippets;
+  const runtime = getWgpuRenderStateRuntime(state);
+  const registry = runtime.registries.modifierSnippets;
   const defineKey = buildWgpuShadedCacheKey(material, registry);
   const plan = getCachedModifierPlan(state, material, registry, defineKey);
   const colorAdjusted = getWgpuScene3DRuntime(state).activeColorAdjustmentRun;
   const colorMatrix = getWgpuScene3DRuntime(state).activeColorMatrixRun;
-  const key = `${defineKey}|registry:${registries.modifierSnippetRevision}|${format}|${
+  const key = `${defineKey}|registry:${runtime.modifierSnippetRevision}|${format}|${
     colorMatrix ? 'color-matrix' : colorAdjusted ? 'color-adjusted' : 'base'
   }`;
   return ensureWgpuScene3DPipeline(state, key, (blended, skinned) => {

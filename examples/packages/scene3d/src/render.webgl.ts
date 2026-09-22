@@ -9,7 +9,7 @@ import {
 import type { Camera3D, GlEffectState, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
 import {
   createGlSurface,
-  glScene3DRenderRegistries,
+  glScene3DRenderPreset,
   beginGlEffectPass,
   createGlEffectState,
   createGlRenderState,
@@ -33,9 +33,7 @@ setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, 800, 600);
 appendWebSurface(glSurface, document.body);
 export const canvas = getWebSurfaceElement(glSurface)!;
 
-export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
-  pixelRatio,
-});
+export const state = createGlRenderState(glSurface.context, { ...glScene3DRenderPreset, pixelRatio });
 enableFlightDiagnostics(state);
 const pipeline: GlEffectState = createGlEffectState(state, {
   sampleCount: 4,

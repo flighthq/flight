@@ -28,7 +28,7 @@ import {
   registerNodeRenderer,
   registerWgpuGradientBevelEffect,
   renderWgpuScene2D,
-  wgpuScene3DRenderRegistries,
+  wgpuScene3DRenderPreset,
   createWgpuSurface,
   setSurfaceDisplaySize,
   createAppWindow,
@@ -63,7 +63,8 @@ const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRenderRegistries, {
+export const state = createWgpuRenderState(acquisition.device, {
+  ...wgpuScene3DRenderPreset,
   format: acquisition.format,
   pixelRatio,
 });

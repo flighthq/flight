@@ -1,5 +1,4 @@
 import { beginWgpuFrame, retireWgpuBuffer, retireWgpuTexture, submitWgpuFrame, withWgpuFrameBorrow } from './wgpuFrame';
-import { allocateEmptyWgpuRenderRegistries } from './wgpuPipeline';
 import { createWgpuOffscreenRenderState, getWgpuRenderStateRuntime } from './wgpuRenderState';
 import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
 
@@ -75,11 +74,10 @@ describe('submitWgpuFrame', () => {
 describe('withWgpuFrameBorrow', () => {
   it('returns callback values and closes a standalone frame', async () => {
     const screen = await createWgpuRenderStateForTest();
-    const offscreen = createWgpuOffscreenRenderState(
-      screen.deviceState,
-      { ...getWgpuRenderStateRuntime(screen).registries },
-      { format: screen.format },
-    );
+    const offscreen = createWgpuOffscreenRenderState(screen.deviceState, {
+      ...getWgpuRenderStateRuntime(screen).registries,
+      format: screen.format,
+    });
 
     expect(withWgpuFrameBorrow(screen, offscreen, () => 42)).toBe(42);
     expect(getWgpuRenderStateRuntime(screen).commandEncoder).toBeNull();
@@ -89,11 +87,10 @@ describe('withWgpuFrameBorrow', () => {
   it('rejects a borrower owned by a different GPU device', async () => {
     const owner = await createWgpuRenderStateForTest();
     const other = await createWgpuRenderStateForTest();
-    const borrower = createWgpuOffscreenRenderState(
-      other.deviceState,
-      { ...getWgpuRenderStateRuntime(other).registries },
-      { format: other.format },
-    );
+    const borrower = createWgpuOffscreenRenderState(other.deviceState, {
+      ...getWgpuRenderStateRuntime(other).registries,
+      format: other.format,
+    });
 
     expect(() => withWgpuFrameBorrow(owner, borrower, () => {})).toThrow(/same GPU device/);
     expect(getWgpuRenderStateRuntime(owner).commandEncoder).toBeNull();

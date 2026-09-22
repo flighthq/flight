@@ -3,8 +3,7 @@ import { createViewport } from '@flighthq/node/contract';
 import type {
   AppRenderViewTargetOptions,
   GlContext,
-  GlRenderOptions,
-  GlRenderRegistries,
+  GlRenderStateOptions,
   GlRenderViewResources,
 } from '@flighthq/types/contract';
 
@@ -24,15 +23,14 @@ import {
 // host.surface.resize, then calls resizeGlRenderViewResources with the same extent.
 export function createGlRenderViewResources(
   context: GlContext,
-  registry: Readonly<GlRenderRegistries>,
   width: number,
   height: number,
   devicePixelRatio: number,
-  render: Readonly<GlRenderOptions> = {},
+  options: Readonly<GlRenderStateOptions> = {},
   target: Readonly<AppRenderViewTargetOptions> = {},
 ): GlRenderViewResources {
   const out = allocateEntity<GlRenderViewResources>();
-  out.renderState = createGlRenderState(context, registry, { ...render, pixelRatio: devicePixelRatio });
+  out.renderState = createGlRenderState(context, { ...options, pixelRatio: devicePixelRatio });
   out.renderTarget = createGlTextureRenderTarget(out.renderState, { ...target, height, width });
   out.viewport = createViewport({ devicePixelRatio, height, width });
   return finishEntity(out);

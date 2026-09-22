@@ -14,11 +14,7 @@ import {
 } from '@flighthq/mesh/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
-import {
-  createWgpuOffscreenRenderState,
-  allocateEmptyWgpuRenderRegistries,
-  getWgpuRenderStateRuntime,
-} from '@flighthq/render-wgpu/contract';
+import { createWgpuOffscreenRenderState, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import {
   createInstancedMesh,
   createMesh,
@@ -83,11 +79,10 @@ describe('renderWgpuScene3D', () => {
   it('uploads one shared geometry once across a primary and derived state on the same device', () => {
     const { fake, pass, state } = makeWgpuScene3DState();
     registerWgpuStandardPbrMaterial(state);
-    const derived = createWgpuOffscreenRenderState(
-      state.deviceState,
-      { ...getWgpuRenderStateRuntime(state).registries },
-      { format: state.format },
-    );
+    const derived = createWgpuOffscreenRenderState(state.deviceState, {
+      ...getWgpuRenderStateRuntime(state).registries,
+      format: state.format,
+    });
     const stateRuntime = getWgpuRenderStateRuntime(state);
     const derivedRuntime = getWgpuRenderStateRuntime(derived);
     derivedRuntime.commandEncoder = stateRuntime.commandEncoder;

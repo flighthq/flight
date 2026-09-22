@@ -1,6 +1,5 @@
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import {
-  allocateEmptyWgpuRenderRegistries,
   getWgpuRenderStateRuntime,
   registerWgpuQuadMaterialRenderer,
   resolveWgpuQuadMaterialRenderer,

@@ -9,7 +9,7 @@ import {
 import type { Node2D, GlEffectState, GlRenderTarget, Bitmap } from '@flighthq/sdk';
 import {
   createGlSurface,
-  glScene3DRenderRegistries,
+  glScene3DRenderPreset,
   AdvancedBlendMode,
   ShapeKind,
   addNodeChild,
@@ -75,9 +75,7 @@ setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, 800, 600);
 appendWebSurface(glSurface, document.body);
 const canvas = getWebSurfaceCanvas(glSurface)!;
 
-export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
-  pixelRatio,
-});
+export const state = createGlRenderState(glSurface.context, { ...glScene3DRenderPreset, pixelRatio });
 registerNodeRenderer(state, ShapeKind, glShapeRenderer);
 registerGlBlendEffect(state);
 

@@ -16,7 +16,7 @@ import {
 } from '@flighthq/render-gl';
 import { presentGlRenderTarget } from '@flighthq/render-gl/contract';
 import { createMesh, createScene3D } from '@flighthq/scene3d';
-import { renderGlScene3D, glScene3DRenderRegistries } from '@flighthq/scene3d-gl';
+import { renderGlScene3D, glScene3DRenderPreset } from '@flighthq/scene3d-gl';
 import { emitSignal } from '@flighthq/signals';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -61,11 +61,10 @@ canvas.width = Math.round(applicationWindow.width * scale);
 canvas.height = Math.round(applicationWindow.height * scale);
 const resources = createGlRenderViewResources(
   context,
-  glScene3DRenderRegistries,
   canvas.width,
   canvas.height,
   scale,
-  {},
+  { ...glScene3DRenderPreset },
   {
     colorSpace: 'srgb',
     depth: 'depth-stencil',

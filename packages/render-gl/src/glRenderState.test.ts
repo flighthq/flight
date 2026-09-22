@@ -14,7 +14,7 @@ import type {
   GlBitmapShader,
   GlColorAdjustmentMaterialFeature,
   GlColorAdjustmentMaterialFeatureGuard,
-  GlRenderOptions,
+  GlRenderStateOptions,
   EffectPaddingResolver,
   RenderState,
 } from '@flighthq/types/contract';
@@ -23,9 +23,9 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { areGlRenderStateGuardsEnabled, enableGlRenderStateGuards } from './enableGlRenderStateGuards';
 import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
 import { isBlendModeSupported, registerGlBlendMode, useGlProgram } from './glDraw';
-import { allocateEmptyGlRenderRegistries } from './glPipeline';
 import { registerGlQuadMaterialRenderer } from './glQuadMaterialRegistry';
 import {
+  buildGlRenderRegistries,
   createGlContextState,
   createGlRenderState,
   createGlRenderStateRuntime,
@@ -54,10 +54,8 @@ function expectEntitySlot(slot: object & { readonly [EntityRuntimeKey]?: unknown
   expect(entityRuntime).toBeUndefined();
 }
 
-const testPipeline = allocateEmptyGlRenderRegistries();
-
-function createTestGlRenderState(gl: WebGL2RenderingContext, options: GlRenderOptions = {}) {
-  return createGlRenderState(gl, testPipeline, options);
+function createTestGlRenderState(gl: WebGL2RenderingContext, options: Readonly<GlRenderStateOptions> = {}) {
+  return createGlRenderState(gl, options);
 }
 
 function getPaddingResolver(state: RenderState, kind: string): EffectPaddingResolver | null {
@@ -74,6 +72,31 @@ function registerPaddingResolver(state: RenderState, kind: string, resolver: Eff
   );
 }
 
+describe('buildGlRenderRegistries', () => {
+  it('returns all required fields with default values', () => {
+    const registries = buildGlRenderRegistries({});
+    expect(registries.nodeRenderers).toBeInstanceOf(Map);
+    expect(registries.nodeRenderers.size).toBe(0);
+    expect(registries.blendRealizations).toBeInstanceOf(Map);
+    expect(registries.materialRenderers).toBeInstanceOf(Map);
+    expect(registries.modifierSnippets).toBeInstanceOf(Map);
+    expect(registries.pbrExtensions).toBeInstanceOf(Map);
+    expect(registries.textureResolvers).toBeInstanceOf(Map);
+    expect(registries.strokeTessellator).toBeNull();
+  });
+
+  it('clones provided registry maps and pass arrays into an isolated live aggregate', () => {
+    const nodeRenderers = new Map();
+    const passes: never[] = [];
+    const registries = buildGlRenderRegistries({ nodeRenderers, passes });
+    expect(registries.nodeRenderers).not.toBe(nodeRenderers);
+    expect(registries.passes).not.toBe(passes);
+
+    nodeRenderers.set('acme.Late', {});
+    expect(registries.nodeRenderers.has('acme.Late')).toBe(false);
+  });
+});
+
 describe('createGlContextState', () => {
   it('allocates a distinct owner for each call with the same raw context', () => {
     const { gl } = makeContext();
@@ -82,8 +105,8 @@ describe('createGlContextState', () => {
 
   it('returns a state that shares the context tier across derived render states', () => {
     const { gl } = makeContext();
-    const stateA = createGlRenderState(gl, testPipeline);
-    const stateB = createGlRenderState(gl, testPipeline);
+    const stateA = createGlRenderState(gl);
+    const stateB = createGlRenderState(gl);
     const runtimeA = getGlRenderStateRuntime(stateA);
     const runtimeB = getGlRenderStateRuntime(stateB);
 
@@ -119,8 +142,8 @@ describe('createGlContextState (Entity backing)', () => {
 
   it('shares the context tier between two render states built from the same GL handle', () => {
     const gl = makeGL();
-    const renderA = createGlRenderState(gl, testPipeline);
-    const renderB = createGlRenderState(gl, testPipeline);
+    const renderA = createGlRenderState(gl);
+    const renderB = createGlRenderState(gl);
 
     const runtimeA = getGlRenderStateRuntime(renderA);
     const runtimeB = getGlRenderStateRuntime(renderB);
@@ -199,10 +222,32 @@ describe('createGlRenderState', () => {
     const state = createTestGlRenderState(gl, { roundPixels: true });
     expect(state.roundPixels).toBe(true);
   });
+  it('does not mutate a frozen preset when used as options input', () => {
+    const { gl } = makeContext();
+    const preset = Object.freeze({
+      ...buildGlRenderRegistries({}),
+      nodeRenderers: new Map(),
+    });
+    const state = createTestGlRenderState(gl, { ...preset, pixelRatio: 1 });
+    registerNodeRenderer(state, 'acme.Test', { createData: () => null, submit: () => {} });
+    expect(preset.nodeRenderers.size).toBe(0);
+    expect(getGlRenderStateRuntime(state).registries.nodeRenderers.size).toBe(1);
+  });
+
+  it('keeps revision counters on the runtime, not in options', () => {
+    const { gl } = makeContext();
+    const state = createTestGlRenderState(gl);
+    const runtime = getGlRenderStateRuntime(state);
+    expect(runtime.modifierSnippetRevision).toBe(0);
+    expect(runtime.pbrExtensionRevision).toBe(0);
+    expect('modifierSnippetRevision' in runtime.registries).toBe(false);
+    expect('pbrExtensionRevision' in runtime.registries).toBe(false);
+  });
+
   it('shares the context tier when two states are built from the same GL handle', () => {
     const { gl } = makeContext();
-    const stateA = createGlRenderState(gl, testPipeline);
-    const stateB = createGlRenderState(gl, testPipeline);
+    const stateA = createGlRenderState(gl);
+    const stateB = createGlRenderState(gl);
     const runtimeA = getGlRenderStateRuntime(stateA);
     const runtimeB = getGlRenderStateRuntime(stateB);
 
@@ -254,16 +299,16 @@ describe('createGlRenderState (context sharing)', () => {
 
     expect(offscreen.gl).toBe(screen.gl);
     expect(offscreen.contextState).toBe(screen.contextState);
-    expect(offscreen.registries).toBe(offscreenRegistry);
+    expect(offscreen.registries).toStrictEqual(offscreenRegistry);
     expect(offscreenRuntime.context.textureCache).toBe(screenRuntime.context.textureCache);
     expect(offscreenRuntime.context.textureSourcePremultipliedTextureCache).toBe(
       screenRuntime.context.textureSourcePremultipliedTextureCache,
     );
     expect(offscreenRuntime.context.glRenderTextureCache).toBe(screenRuntime.context.glRenderTextureCache);
     expect(offscreenRuntime.context.quadIndexBuffer).toBe(screenRuntime.context.quadIndexBuffer);
-    expect(offscreenRuntime.registries.nodeRenderers).toBe(screenRuntime.registries.nodeRenderers);
+    expect(offscreenRuntime.registries.nodeRenderers).not.toBe(screenRuntime.registries.nodeRenderers);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
-    expect(offscreenRuntime.registries.blendRealizations).toBe(screenRuntime.registries.blendRealizations);
+    expect(offscreenRuntime.registries.blendRealizations).not.toBe(screenRuntime.registries.blendRealizations);
     expect(offscreenRuntime.registries.colorAdjustmentFeature).toBe(screenRuntime.registries.colorAdjustmentFeature);
     expect(getGlColorAdjustmentMaterialFeature(offscreen)).toBe(colorAdjustmentFeature);
     expect(offscreenRuntime.registries.colorAdjustmentFeatureGuard).toBe(
@@ -301,19 +346,21 @@ describe('createGlRenderState (context sharing)', () => {
       screenRuntime.registries.compressedTextureDecoder,
     );
     expect(offscreenRuntime.registries.compressedTextureUpload).toBe(screenRuntime.registries.compressedTextureUpload);
-    expect(offscreenRuntime.registries.customEffectShaders).toBe(screenRuntime.registries.customEffectShaders);
-    expect(offscreenRuntime.registries.customMaterialShaders).toBe(screenRuntime.registries.customMaterialShaders);
-    expect(offscreenRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
-    expect(offscreenRuntime.registries.modifierSnippets).toBe(screenRuntime.registries.modifierSnippets);
-    expect(offscreenRuntime.registries.modifierSnippetRevision).toBe(screenRuntime.registries.modifierSnippetRevision);
-    expect(offscreenRuntime.registries.pbrExtensions).toBe(screenRuntime.registries.pbrExtensions);
-    expect(offscreenRuntime.registries.pbrExtensionRevision).toBe(screenRuntime.registries.pbrExtensionRevision);
-    expect(offscreenRuntime.registries.effects).toBe(screenRuntime.registries.effects);
+    expect(offscreenRuntime.registries.customEffectShaders).not.toBe(screenRuntime.registries.customEffectShaders);
+    expect(offscreenRuntime.registries.customMaterialShaders).not.toBe(screenRuntime.registries.customMaterialShaders);
+    expect(offscreenRuntime.registries.materialRenderers).not.toBe(screenRuntime.registries.materialRenderers);
+    expect(offscreenRuntime.registries.modifierSnippets).not.toBe(screenRuntime.registries.modifierSnippets);
+    expect(offscreenRuntime.modifierSnippetRevision).toBe(screenRuntime.modifierSnippetRevision);
+    expect(offscreenRuntime.registries.pbrExtensions).not.toBe(screenRuntime.registries.pbrExtensions);
+    expect(offscreenRuntime.pbrExtensionRevision).toBe(screenRuntime.pbrExtensionRevision);
+    expect(offscreenRuntime.registries.effects).not.toBe(screenRuntime.registries.effects);
     expect(offscreenRuntime.registries.shapeRasterizer).toBe(screenRuntime.registries.shapeRasterizer);
     expect(offscreenRuntime.registries.strokeTessellator).toBe(screenRuntime.registries.strokeTessellator);
-    expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
-    expect(offscreenRuntime.registries.velocityWriters).toBe(screenRuntime.registries.velocityWriters);
-    expect(offscreenRuntime.registries.effectPaddingResolvers).toBe(screenRuntime.registries.effectPaddingResolvers);
+    expect(offscreenRuntime.registries.textureResolvers).not.toBe(screenRuntime.registries.textureResolvers);
+    expect(offscreenRuntime.registries.velocityWriters).not.toBe(screenRuntime.registries.velocityWriters);
+    expect(offscreenRuntime.registries.effectPaddingResolvers).not.toBe(
+      screenRuntime.registries.effectPaddingResolvers,
+    );
     expect(offscreenRuntime.registries.nodeRenderers.get('acme.Node') ?? null).toBe(renderer);
     expect(offscreenRuntime.registries.materialRenderers.get('acme.Material') ?? null).toBe(materialRenderer);
     expect(offscreenRuntime.registries.textureResolvers.get('acme.Texture') ?? null).toBe(textureResolver);
@@ -374,7 +421,7 @@ describe('createGlRenderState (context sharing)', () => {
 describe('createGlRenderStateRuntime', () => {
   it('returns a runtime with the base binding slot and empty named registration tables', () => {
     const contextState = createGlContextState(makeGL());
-    const runtime = createGlRenderStateRuntime(contextState, testPipeline);
+    const runtime = createGlRenderStateRuntime(contextState, {});
     expect(runtime.binding).toBeNull();
     expect(runtime.registries.blendRealizations).toBeInstanceOf(Map);
     expect(runtime.registries.blendRealizations.size).toBe(0);
@@ -386,10 +433,10 @@ describe('createGlRenderStateRuntime', () => {
     expect(runtime.registries.materialRenderers.size).toBe(0);
     expect(runtime.registries.modifierSnippets).toBeInstanceOf(Map);
     expect(runtime.registries.modifierSnippets.size).toBe(0);
-    expect(runtime.registries.modifierSnippetRevision).toBe(0);
+    expect(runtime.modifierSnippetRevision).toBe(0);
     expect(runtime.registries.pbrExtensions).toBeInstanceOf(Map);
     expect(runtime.registries.pbrExtensions.size).toBe(0);
-    expect(runtime.registries.pbrExtensionRevision).toBe(0);
+    expect(runtime.pbrExtensionRevision).toBe(0);
     expect(runtime.registries.effects).toBeInstanceOf(Map);
     expect(runtime.registries.effects.size).toBe(0);
     expect(runtime.registries.compressedTextureDecoder).toBeNull();
@@ -405,8 +452,8 @@ describe('createGlRenderStateRuntime', () => {
 describe('destroyGlRenderState', () => {
   it('runs registered context teardown once after the final shared owner is destroyed', () => {
     const { gl } = makeContext();
-    const first = createGlRenderState(gl, testPipeline);
-    const second = createGlRenderState(gl, testPipeline);
+    const first = createGlRenderState(gl);
+    const second = createGlRenderState(gl);
     const teardown = vi.fn();
     const runtime = getGlRenderStateRuntime(first);
     runtime.context.teardowns.push(teardown);
@@ -463,8 +510,8 @@ describe('destroyGlRenderState', () => {
 
   it('invokes registered teardown callbacks when the last reference is destroyed', () => {
     const { gl } = makeContext();
-    const stateA = createGlRenderState(gl, testPipeline);
-    const stateB = createGlRenderState(gl, testPipeline);
+    const stateA = createGlRenderState(gl);
+    const stateB = createGlRenderState(gl);
     const teardown = vi.fn();
     registerGlContextTeardown(stateA.contextState, teardown);
 
@@ -478,8 +525,8 @@ describe('destroyGlRenderState', () => {
 
   it('does not invoke teardowns when references remain', () => {
     const { gl } = makeContext();
-    const stateA = createGlRenderState(gl, testPipeline);
-    createGlRenderState(gl, testPipeline);
+    const stateA = createGlRenderState(gl);
+    createGlRenderState(gl);
     const teardown = vi.fn();
     registerGlContextTeardown(stateA.contextState, teardown);
 
@@ -675,7 +722,7 @@ describe('pipeline-backed GL registrations', () => {
 describe('registerGlContextTeardown', () => {
   it('pushes a callback that fires on context teardown', () => {
     const { gl } = makeContext();
-    const state = createGlRenderState(gl, testPipeline);
+    const state = createGlRenderState(gl);
     const teardown = vi.fn();
     registerGlContextTeardown(state.contextState, teardown);
     destroyGlRenderState(state);

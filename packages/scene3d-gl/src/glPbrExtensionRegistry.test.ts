@@ -1,7 +1,7 @@
 import { createMatrix3, createVector2 } from '@flighthq/geometry/contract';
 import { createAnisotropyPbrExtension } from '@flighthq/materials/contract';
 import {
-  allocateEmptyGlRenderRegistries,
+  buildGlRenderRegistries,
   getGlRenderStateRuntime,
   registerGlTextureResolver,
 } from '@flighthq/render-gl/contract';
@@ -163,9 +163,9 @@ describe('registerGlPbrExtension', () => {
     registerGlPbrExtension(screen, 'VendorExtension', replacement);
 
     expect(getGlRenderStateRuntime(derived).registries.pbrExtensions).toBe(snapshot);
-    expect(getGlRenderStateRuntime(derived).registries.pbrExtensionRevision).toBe(1);
+    expect(getGlRenderStateRuntime(derived).pbrExtensionRevision).toBe(0);
     expect(getGlRenderStateRuntime(screen).registries.pbrExtensions).not.toBe(snapshot);
-    expect(getGlRenderStateRuntime(screen).registries.pbrExtensionRevision).toBe(2);
+    expect(getGlRenderStateRuntime(screen).pbrExtensionRevision).toBe(2);
     expect(snapshot.get('VendorExtension') ?? null).toBe(registration);
     expect(getGlPbrExtensionRegistration(derived, 'VendorExtension')).toBe(registration);
     expect(getGlPbrExtensionRegistration(screen, 'VendorExtension')).toBe(replacement);

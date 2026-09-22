@@ -1,5 +1,5 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
-import { glScene2DRenderRegistries } from '@flighthq/scene2d-gl/contract';
+import { glScene2DRenderPreset } from '@flighthq/scene2d-gl/contract';
 import type {
   GlMeshMaterialRenderer,
   GlModifierSnippet,
@@ -125,9 +125,9 @@ function buildScene3DGlPbrExtensions(
   return withKindMapEntry(table, WrappedDiffusePbrExtensionKind, wrappedDiffusePbrGlExtension);
 }
 
-export const glScene3DRenderRegistries: Readonly<GlRenderRegistries> = {
-  ...glScene2DRenderRegistries,
-  materialRenderers: buildScene3DGlMeshMaterialRenderers(glScene2DRenderRegistries.materialRenderers),
-  modifierSnippets: buildScene3DGlModifierSnippets(glScene2DRenderRegistries.modifierSnippets),
-  pbrExtensions: buildScene3DGlPbrExtensions(glScene2DRenderRegistries.pbrExtensions),
-};
+export const glScene3DRenderPreset: Readonly<GlRenderRegistries> = Object.freeze({
+  ...glScene2DRenderPreset,
+  materialRenderers: buildScene3DGlMeshMaterialRenderers(glScene2DRenderPreset.materialRenderers),
+  modifierSnippets: buildScene3DGlModifierSnippets(glScene2DRenderPreset.modifierSnippets),
+  pbrExtensions: buildScene3DGlPbrExtensions(glScene2DRenderPreset.pbrExtensions),
+});

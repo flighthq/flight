@@ -4,7 +4,6 @@ import {
   acquireWgpuRenderTexture,
   beginWgpuFrame,
   createWgpuOffscreenRenderState,
-  allocateEmptyWgpuRenderRegistries,
   createWgpuRenderStateForTest,
   createWgpuRenderTexturePool,
   getWgpuRenderStateRuntime,
@@ -162,21 +161,19 @@ describe('offscreen effect pipeline snapshots', () => {
     const first: WgpuEffectRunner = vi.fn();
     const later: WgpuEffectRunner = vi.fn();
     registerWgpuEffect(screen, 'acme.First', first);
-    const offscreen = createWgpuOffscreenRenderState(
-      screen.deviceState,
-      { ...getWgpuRenderStateRuntime(screen).registries },
-      { format: screen.format },
-    );
+    const offscreen = createWgpuOffscreenRenderState(screen.deviceState, {
+      ...getWgpuRenderStateRuntime(screen).registries,
+      format: screen.format,
+    });
     registerWgpuEffect(screen, 'acme.Later', later);
 
     expect(getWgpuEffectRunner(offscreen, 'acme.First')).toBe(first);
     expect(getWgpuEffectRunner(offscreen, 'acme.Later')).toBeNull();
 
-    const refreshed = createWgpuOffscreenRenderState(
-      screen.deviceState,
-      { ...getWgpuRenderStateRuntime(screen).registries },
-      { format: screen.format },
-    );
+    const refreshed = createWgpuOffscreenRenderState(screen.deviceState, {
+      ...getWgpuRenderStateRuntime(screen).registries,
+      format: screen.format,
+    });
     expect(getWgpuEffectRunner(refreshed, 'acme.Later')).toBe(later);
   });
 });

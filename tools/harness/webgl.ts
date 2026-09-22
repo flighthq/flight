@@ -49,8 +49,8 @@ import {
   renderGlScene2D,
   RichTextKind,
   Scale9ShapeKind,
-  canvasScene2DRenderRegistries,
-  glScene3DRenderRegistries,
+  canvasScene2DRenderPreset,
+  glScene3DRenderPreset,
   ShapeKind,
   SpriteKind,
   TextLabelKind,
@@ -80,7 +80,8 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, width, height);
   appendWebSurface(glSurface, document.body);
 
-  const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
+  const state = createGlRenderState(glSurface.context, {
+    ...glScene3DRenderPreset,
     pixelRatio,
     imageSurfaceProvider: webImageSurfaceCreator,
     sceneGraphSyncPolicy: options.syncPolicy,
@@ -154,7 +155,7 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
 function createHarnessShapeRasterizer(): ShapeRasterizer {
   const canvas = document.createElement('canvas');
   const resolverState = createCanvasRenderState(
-    canvasScene2DRenderRegistries,
+    canvasScene2DRenderPreset,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   );
   // The rasterizer draws into its own canvas, so it opens its own pass over it and keeps it open for the

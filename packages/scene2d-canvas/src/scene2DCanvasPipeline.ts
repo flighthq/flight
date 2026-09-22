@@ -33,8 +33,7 @@ import { canvasTextLabelRenderer } from './canvasTextLabel';
 import { canvasTilemapRenderer } from './canvasTilemap';
 
 function buildScene2dCanvasRenderers(): ReadonlyMap<Kind, NodeRenderer> {
-  const registries = allocateEmptyCanvasRenderRegistries();
-  let table = registries.nodeRenderers;
+  let table: ReadonlyMap<Kind, NodeRenderer> = new Map();
   table = withKindMapEntry(table, BitmapTextKind, canvasBitmapTextRenderer);
   table = withKindMapEntry(table, DisplayObjectKind, canvasScene2DRenderer);
   table = withKindMapEntry(table, MorphShapeKind, canvasMorphShapeRenderer);
@@ -51,9 +50,9 @@ function buildScene2dCanvasRenderers(): ReadonlyMap<Kind, NodeRenderer> {
   return table;
 }
 
-export const canvasScene2DRenderRegistries: Readonly<CanvasRenderRegistries> = {
+export const canvasScene2DRenderPreset: Readonly<CanvasRenderRegistries> = Object.freeze({
   ...allocateEmptyCanvasRenderRegistries(),
   blendModeApplication: applyCanvasBlendMode,
   canvasShapeCommands: canvasShapeCommandTable(),
   nodeRenderers: buildScene2dCanvasRenderers(),
-};
+});

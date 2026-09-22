@@ -36,7 +36,7 @@ import {
   registerCanvasSurfaceCreator,
   registerNodeRenderer,
   renderCanvasScene2D,
-  canvasScene2DRenderRegistries,
+  canvasScene2DRenderPreset,
   ShapeKind,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -66,7 +66,7 @@ export const screen = createCanvasScreenRenderTarget(
   }),
 );
 export const state = createCanvasRenderState(
-  canvasScene2DRenderRegistries,
+  canvasScene2DRenderPreset,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { pixelRatio },
 );

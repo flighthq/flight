@@ -48,7 +48,6 @@ describe('Scene3D second-wave size fixture isolation', () => {
       expect(packageJson).toMatchObject({ flightSize: { kind: 'size-only-control', name: spec.name } });
       expect(existsSync(resolve(root, 'tool-capture.json'))).toBe(false);
       expect(source).toContain('createNode3D()');
-      expect(source).toContain(`allocateEmpty${spec.backend}RenderRegistries()`);
       // The first argument differs by backend — WGPU draws through a pass handle, GL through the state —
       // and which it is says nothing about this fixture being a renderer-free floor, which is the subject.
       expect(source).toMatch(new RegExp(`render${spec.backend}Scene3D\\((?:pass|state), scene, camera, lights\\)`));
@@ -128,7 +127,6 @@ describe('Scene3D second-wave size fixture isolation', () => {
       const source = readRenderSource(spec);
       expect(source).toContain('createParticleEmitter3D()');
       expect(source.match(/appendParticleEmitter3DParticle\(/g)).toHaveLength(3);
-      expect(source).toContain(`allocateEmpty${spec.backend}RenderRegistries()`);
       expect(source).not.toContain('createMesh(');
       expect(source).not.toContain('createBillboard(');
       expect(source).not.toContain('materialRenderers:');

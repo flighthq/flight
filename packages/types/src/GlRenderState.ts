@@ -51,13 +51,7 @@ export interface GlRenderRegistries extends RenderRegistries {
   customMaterialShaders: ReadonlyMap<Kind, GlCustomMaterialShaderSource>;
   materialRenderers: ReadonlyMap<Kind, GlMeshMaterialRenderer | GlQuadMaterialRenderer>;
   modifierSnippets: ReadonlyMap<Kind, GlModifierSnippet>;
-  // Shader cache identity advances with every snippet-table replacement, including same-kind
-  // replacements whose define signature is unchanged but whose emitted source differs.
-  modifierSnippetRevision: number;
   pbrExtensions: ReadonlyMap<Kind, GlPbrExtensionRegistration>;
-  // Incremented whenever pbrExtensions is replaced. The compiled-program cache key includes this
-  // revision so replacing a registration cannot reuse a shader compiled from the prior policy.
-  pbrExtensionRevision: number;
   effects: ReadonlyMap<Kind, GlEffectRegistration>;
   passes: readonly GlScene3DPass[] | null;
   shapeRasterizer: ShapeRasterizer | null;
@@ -134,6 +128,8 @@ export type GlColorAdjustmentMaterialFeatureGuard = (
 export interface GlRenderStateRuntime extends RenderStateRuntime {
   context: GlContextRuntime;
   registries: GlRenderRegistries;
+  modifierSnippetRevision: number;
+  pbrExtensionRevision: number;
   teardowns: ((state: GlRenderState) => void)[];
   // Opt-in dev guard: called where a draw path is about to TRUST a cached binding slot and skip the
   // rebind. Null in production, so the check costs nothing and the message lives in the guard module.

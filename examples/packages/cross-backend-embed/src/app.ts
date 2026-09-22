@@ -6,7 +6,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import {
-  glScene3DRenderRegistries,
+  glScene3DRenderPreset,
   addNodeChild,
   addTextureAtlasRegion,
   appendQuadBatchInstance,
@@ -53,7 +53,8 @@ const producerGlSurface = createGlSurface(webHostGl, appWindow, PRODUCER_WIDTH, 
 });
 if (producerGlSurface === null) throw new Error('Failed to acquire WebGL2 context');
 const producerCanvas = getWebSurfaceCanvas(producerGlSurface)!;
-const producerState = createGlRenderState(producerGlSurface.context, glScene3DRenderRegistries, {
+const producerState = createGlRenderState(producerGlSurface.context, {
+  ...glScene3DRenderPreset,
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 registerGlImageTextureResolver(producerState);

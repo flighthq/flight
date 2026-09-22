@@ -79,11 +79,9 @@ beforeEach(() => {
 
 afterEach(() => vi.restoreAllMocks());
 
-const testPipeline = renderGl.allocateEmptyGlRenderRegistries();
-
 function fakeScreen(options = {}): GlRenderState {
   const gl = document.createElement('canvas').getContext('webgl2')!;
-  return renderGl.createGlRenderState(gl, testPipeline, options);
+  return renderGl.createGlRenderState(gl, options);
 }
 
 function makeCacheNode(source: unknown): any {
@@ -218,7 +216,8 @@ describe('refreshGlRenderCache', () => {
 
   it('skips the bake under requiresInvalidation when nothing changed', () => {
     const screen = fakeScreen({ sceneGraphSyncPolicy: 'requiresInvalidation' });
-    const cacheState = createGlCacheState(screen, screen.registries, {
+    const cacheState = createGlCacheState(screen, {
+      ...screen.registries,
       sceneGraphSyncPolicy: 'requiresInvalidation',
     });
     const cache = createRenderCache();

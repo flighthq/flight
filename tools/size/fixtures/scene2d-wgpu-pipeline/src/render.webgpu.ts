@@ -16,7 +16,7 @@ import {
   registerWgpuImageTextureResolver,
 } from '@flighthq/render-wgpu';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
-import { registerWgpuStandardMaterial, renderWgpuScene2D, wgpuScene2DRenderRegistries } from '@flighthq/scene2d-wgpu';
+import { registerWgpuStandardMaterial, renderWgpuScene2D, wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu';
 import { createWgpuSurface } from '@flighthq/surface';
 
 const appWindow = createAppWindow();
@@ -31,14 +31,15 @@ document.body.style.margin = '0';
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, wgpuScene2DRenderRegistries, {
+export const state = createWgpuRenderState(acquisition.device, {
+  ...wgpuScene2DRenderPreset,
   format: acquisition.format,
   pixelRatio: 1,
 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1], depth: 1.0 } as const;
 
-const registries = wgpuScene2DRenderRegistries;
+const registries = wgpuScene2DRenderPreset;
 for (const [kind, renderer] of registries.nodeRenderers) {
   registerNodeRenderer(state, kind, renderer);
 }

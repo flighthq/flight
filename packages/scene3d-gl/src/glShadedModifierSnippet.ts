@@ -7,9 +7,9 @@ import type { GlModifierSnippet, GlRenderState, ModifierKind } from '@flighthq/t
 // kinds contribute no GLSL, so a ShadedMaterial whose modifier has no snippet renders as if that
 // modifier were absent. Register the built-ins with registerBuiltInGlModifierSnippets.
 export function registerGlModifierSnippet(state: GlRenderState, snippet: Readonly<GlModifierSnippet>): void {
-  const registries = getGlRenderStateRuntime(state).registries;
-  registries.modifierSnippets = withKindMapEntry(registries.modifierSnippets, snippet.kind, snippet);
-  registries.modifierSnippetRevision++;
+  const runtime = getGlRenderStateRuntime(state);
+  runtime.registries.modifierSnippets = withKindMapEntry(runtime.registries.modifierSnippets, snippet.kind, snippet);
+  runtime.modifierSnippetRevision++;
 }
 
 // Returns the GL snippet registered for a modifier kind on this state, or null when none is — the

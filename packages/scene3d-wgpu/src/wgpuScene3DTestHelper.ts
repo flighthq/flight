@@ -1,14 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import {
-  allocateEmptyWgpuRenderRegistries,
-  createWgpuDeviceState,
-  createWgpuRenderStateRuntime,
-} from '@flighthq/render-wgpu/contract';
+import { createWgpuDeviceState, createWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createRenderState } from '@flighthq/render/contract';
 import type {
   WgpuRenderPass,
-  WgpuRenderRegistries,
   WgpuRenderState,
+  WgpuRenderStateOptions,
   WgpuRenderStateRuntime,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
@@ -61,7 +57,7 @@ function installWgpuConstants(): void {
 // runtime (so bind/draw find runtime.renderPass), the uniform ring buffer wired up (so the draw path
 // can ring-allocate), and currentColorFormat set to the canvas format. scene-wgpu's own per-state
 // runtime is created lazily on first getWgpuScene3DRuntime, exactly as in production.
-export function makeWgpuScene3DState(registry: Readonly<WgpuRenderRegistries> = allocateEmptyWgpuRenderRegistries()): {
+export function makeWgpuScene3DState(registry: Readonly<WgpuRenderStateOptions> = {}): {
   fake: FakeWgpu;
   pass: WgpuRenderPass;
   state: WgpuRenderState;
@@ -166,17 +162,17 @@ export function makeWgpuScene3DState(registry: Readonly<WgpuRenderRegistries> = 
 
   const deviceState = createWgpuDeviceState(device);
 
+  const runtime = createWgpuRenderStateRuntime(deviceState, registry);
+
   Object.assign(state, {
     applyBlendMode: null,
     device,
     deviceState,
     format: 'bgra8unorm',
-    registry,
+    registries: runtime.registries,
   });
 
   const target = { colorAttachments: 1, context: null, height: 256, width: 256 } as WgpuTextureRenderTarget;
-
-  const runtime = createWgpuRenderStateRuntime(deviceState, registry);
   Object.assign(runtime, {
     commandEncoder,
     currentBlendMode: null,

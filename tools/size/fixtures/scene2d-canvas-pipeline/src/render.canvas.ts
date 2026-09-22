@@ -13,7 +13,7 @@ import {
   registerCanvasImageTextureResolver,
   registerCanvasSurfaceCreator,
   renderCanvasScene2D,
-  canvasScene2DRenderRegistries,
+  canvasScene2DRenderPreset,
 } from '@flighthq/scene2d-canvas';
 import { createTexture } from '@flighthq/texture';
 
@@ -27,7 +27,7 @@ const screen = createCanvasScreenRenderTarget(
   createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, { height: 300, pixelRatio: 1, width: 400 }),
 );
 const state = createCanvasRenderState(
-  canvasScene2DRenderRegistries,
+  canvasScene2DRenderPreset,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
   { pixelRatio: 1 },
 );
@@ -35,7 +35,7 @@ registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 
-const registries = canvasScene2DRenderRegistries;
+const registries = canvasScene2DRenderPreset;
 for (const [kind, renderer] of registries.nodeRenderers) {
   registerNodeRenderer(state, kind, renderer);
 }

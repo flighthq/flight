@@ -1,5 +1,5 @@
 import { getKindMapKeys } from '@flighthq/registry/contract';
-import { glScene2DRenderRegistries } from '@flighthq/scene2d-gl/contract';
+import { glScene2DRenderPreset } from '@flighthq/scene2d-gl/contract';
 import type { Kind } from '@flighthq/types/contract';
 import {
   AnimatedNormalModifierKind,
@@ -39,7 +39,7 @@ import {
   WrappedDiffusePbrExtensionKind,
 } from '@flighthq/types/contract';
 
-import { glScene3DRenderRegistries } from './scene3DGlPipeline';
+import { glScene3DRenderPreset } from './scene3DGlPipeline';
 
 function expectExactKeys(table: Readonly<ReadonlyMap<Kind, unknown>>, expected: readonly Kind[]): void {
   const actual: Kind[] = [];
@@ -48,10 +48,10 @@ function expectExactKeys(table: Readonly<ReadonlyMap<Kind, unknown>>, expected: 
   expect(table.size).toBe(expected.length);
 }
 
-describe('glScene3DRenderRegistries', () => {
+describe('glScene3DRenderPreset', () => {
   it('inherits every unchanged Scene2D GL registry table', () => {
-    const scene2D = { ...glScene2DRenderRegistries };
-    const scene3D = { ...glScene3DRenderRegistries };
+    const scene2D = { ...glScene2DRenderPreset };
+    const scene3D = { ...glScene3DRenderPreset };
     expect(scene3D.blendRealizations).toBe(scene2D.blendRealizations);
     expect(scene3D.compressedTextureDecoder).toBe(scene2D.compressedTextureDecoder);
     expect(scene3D.compressedTextureUpload).toBe(scene2D.compressedTextureUpload);
@@ -66,7 +66,7 @@ describe('glScene3DRenderRegistries', () => {
   });
 
   it('carries the standard quad material and all sixteen standard GL mesh material renderers', () => {
-    expectExactKeys(glScene3DRenderRegistries.materialRenderers, [
+    expectExactKeys(glScene3DRenderPreset.materialRenderers, [
       BlinnPhongMaterialKind,
       CustomShaderMaterialKind,
       DepthMaterialKind,
@@ -88,7 +88,7 @@ describe('glScene3DRenderRegistries', () => {
   });
 
   it('carries exactly the seven standard GL PBR extensions', () => {
-    expectExactKeys(glScene3DRenderRegistries.pbrExtensions, [
+    expectExactKeys(glScene3DRenderPreset.pbrExtensions, [
       AnisotropyPbrExtensionKind,
       ClearcoatPbrExtensionKind,
       IridescencePbrExtensionKind,
@@ -100,7 +100,7 @@ describe('glScene3DRenderRegistries', () => {
   });
 
   it('carries exactly the eight built-in GL modifier snippets', () => {
-    expectExactKeys(glScene3DRenderRegistries.modifierSnippets, [
+    expectExactKeys(glScene3DRenderPreset.modifierSnippets, [
       AnimatedNormalModifierKind,
       DissolveModifierKind,
       EmissiveModifierKind,
@@ -113,7 +113,7 @@ describe('glScene3DRenderRegistries', () => {
   });
 
   it('inherits exactly the three standard GL texture resolvers', () => {
-    expectExactKeys(glScene3DRenderRegistries.textureResolvers, [
+    expectExactKeys(glScene3DRenderPreset.textureResolvers, [
       BitmapTextureSourceKind,
       ImageTextureSourceKind,
       RenderTargetTextureSourceKind,

@@ -3,7 +3,6 @@ import type { WgpuHostAcquisition } from '@flighthq/types/contract';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createTestWgpuSurface, testWgpuHost } from './wgpuHost';
-import { allocateEmptyWgpuRenderRegistries } from './wgpuPipeline';
 import {
   createWgpuAcquisition,
   createWgpuRenderState,
@@ -13,8 +12,6 @@ import {
 import { installWgpuMock } from './wgpuTestHelper';
 
 beforeAll(installWgpuMock);
-
-const _pipeline = allocateEmptyWgpuRenderRegistries();
 
 describe('createTestWgpuSurface', () => {
   const ATTACHMENT = { alphaMode: 'premultiplied', device: {} as GPUDevice, format: 'bgra8unorm' } as const;
@@ -112,7 +109,7 @@ describe('testWgpuHost', () => {
     const destroy = vi.spyOn(acquired.device, 'destroy');
     const unconfigure = vi.spyOn(acquired.context, 'unconfigure');
 
-    destroyWgpuRenderState(createWgpuRenderState(acquired.device, _pipeline));
+    destroyWgpuRenderState(createWgpuRenderState(acquired.device));
 
     expect(destroy).not.toHaveBeenCalled();
     expect(unconfigure).not.toHaveBeenCalled();

@@ -45,25 +45,21 @@ beforeEach(() => {
     renderWgpu.getWgpuRenderStateRuntime(state).commandEncoder = null;
   }) as never);
   vi.spyOn(renderWgpu, 'beginWgpuRenderPass').mockImplementation((() => {}) as never);
-  vi.spyOn(renderWgpu, 'createWgpuOffscreenRenderState').mockImplementation(((
-    deviceState: any,
-    pipeline: any,
-    options: any = {},
-  ) => {
+  vi.spyOn(renderWgpu, 'createWgpuOffscreenRenderState').mockImplementation(((deviceState: any, options: any = {}) => {
     const state = createRenderState({
       allowSmoothing: options.imageSmoothingEnabled ?? true,
       pixelRatio: options.pixelRatio ?? 1,
       roundPixels: options.roundPixels ?? false,
       sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
     }) as WgpuRenderState;
+    const runtime = renderWgpu.createWgpuRenderStateRuntime(deviceState, options);
     Object.assign(state, {
       applyBlendMode: null,
       device: deviceState.device,
       deviceState,
       format: options.format ?? 'bgra8unorm',
-      pipeline,
+      registries: runtime.registries,
     });
-    const runtime = renderWgpu.createWgpuRenderStateRuntime(deviceState, pipeline);
     state[EntityRuntimeKey] = runtime;
     Object.assign(runtime, {
       commandEncoder: null,
@@ -139,35 +135,30 @@ function fakeScreen(options = {}): WgpuRenderState {
   const state = createRenderState(options) as unknown as WgpuRenderState;
   const device = {} as GPUDevice;
   const deviceState = renderWgpu.createWgpuDeviceState(device);
-  const pipeline = renderWgpu.allocateEmptyWgpuRenderRegistries();
+  const runtime = renderWgpu.createWgpuRenderStateRuntime(deviceState);
   Object.assign(state, {
     context: {} as GPUCanvasContext,
     device,
     deviceState,
     format: 'bgra8unorm' as GPUTextureFormat,
-    pipeline,
+    registries: runtime.registries,
     surface: { height: 600, width: 800 },
   });
-  state[EntityRuntimeKey] = renderWgpu.createWgpuRenderStateRuntime(deviceState, pipeline);
-  const runtime = renderWgpu.getWgpuRenderStateRuntime(state);
+  state[EntityRuntimeKey] = runtime;
   runtime.commandEncoder = null;
   runtime.currentBlendMode = null;
   return state;
 }
 
 function createCacheState(screen: WgpuRenderState): WgpuRenderState {
-  return createWgpuCacheState(
-    screen,
-    screen.deviceState,
-    { ...renderWgpu.getWgpuRenderStateRuntime(screen).registries },
-    {
-      format: screen.format,
-      imageSmoothingEnabled: screen.allowSmoothing,
-      pixelRatio: screen.pixelRatio,
-      roundPixels: screen.roundPixels,
-      sceneGraphSyncPolicy: screen.sceneGraphSyncPolicy,
-    },
-  );
+  return createWgpuCacheState(screen, screen.deviceState, {
+    ...renderWgpu.getWgpuRenderStateRuntime(screen).registries,
+    format: screen.format,
+    imageSmoothingEnabled: screen.allowSmoothing,
+    pixelRatio: screen.pixelRatio,
+    roundPixels: screen.roundPixels,
+    sceneGraphSyncPolicy: screen.sceneGraphSyncPolicy,
+  });
 }
 
 function makeCacheNode(source: unknown): any {

@@ -14,6 +14,7 @@ export { registerWgpuMipmapGeneration } from './wgpuMipmap';
 export * from './wgpuQuadMaterialRegistry';
 export { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass';
 export {
+  buildWgpuRenderRegistries,
   createWgpuAcquisition,
   createWgpuDeviceState,
   createWgpuOffscreenRenderState,

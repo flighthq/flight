@@ -5,7 +5,6 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { GlShaderLocations } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
-import { allocateEmptyGlRenderRegistries } from './glPipeline';
 import { createGlContextState, createGlRenderStateRuntime } from './glRenderState';
 
 export function createGlState(options?: { allowSmoothing?: boolean }): {
@@ -19,20 +18,18 @@ export function createGlState(options?: { allowSmoothing?: boolean }): {
   canvas.height = 100;
   const gl = makeGL();
   const contextState = createGlContextState(gl);
-  const registry = allocateEmptyGlRenderRegistries();
   const shaderLoc = makeShaderLoc();
   const state = createRenderState({
     allowSmoothing: options?.allowSmoothing ?? true,
   }) as GlRenderState;
 
+  const runtime = createGlRenderStateRuntime(contextState, {});
   Object.assign(state, {
     applyBlendMode: null,
     contextState,
     gl,
-    registry,
+    registries: runtime.registries,
   });
-
-  const runtime = createGlRenderStateRuntime(contextState, registry);
   Object.assign(runtime.context, {
     currentBlendSignature: null,
     currentShader: { locations: shaderLoc, program: shaderLoc.program },

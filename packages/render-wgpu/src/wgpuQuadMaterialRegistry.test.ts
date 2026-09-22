@@ -3,7 +3,6 @@ import { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from '@fl
 import type { Material, WgpuQuadMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
 import { StandardMaterialKind, EntityRuntimeKey, RenderRegistryTable } from '@flighthq/types/contract';
 
-import { allocateEmptyWgpuRenderRegistries } from './wgpuPipeline';
 import {
   getWgpuQuadMaterialRenderer,
   registerWgpuQuadMaterialRenderer,
@@ -16,13 +15,11 @@ const testRenderer: WgpuQuadMaterialRenderer = {
   instanceFloatCount: 0,
   getShaderModule: () => ({}) as GPUShaderModule,
 };
-const _pipeline = allocateEmptyWgpuRenderRegistries();
 
 function makeState(): WgpuRenderState {
-  // `device` is what the guard's message table dispatches on to name the wgpu registrar.
   const device = {} as GPUDevice;
   const state = { device } as WgpuRenderState;
-  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState(device), _pipeline);
+  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState(device));
   return state;
 }
 

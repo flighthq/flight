@@ -36,7 +36,7 @@ import {
   registerNodeRenderer,
   renderCanvasScene2D,
   RichTextKind,
-  canvasScene2DRenderRegistries,
+  canvasScene2DRenderPreset,
   Scale9ShapeKind,
   ShapeKind,
   SpriteKind,
@@ -63,7 +63,7 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
     }),
   );
   const state = createCanvasRenderState(
-    canvasScene2DRenderRegistries,
+    canvasScene2DRenderPreset,
     createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
     { pixelRatio, sceneGraphSyncPolicy: options.syncPolicy },
   );

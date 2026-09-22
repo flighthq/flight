@@ -106,8 +106,8 @@ export function ensureGlShadedProgram(
   key: Readonly<GlShadedDefineKey>,
   modifiers: readonly Modifier[],
 ): GlShadedProgram {
-  const registries = getGlRenderStateRuntime(state).registries;
-  const registry = registries.modifierSnippets;
+  const runtime = getGlRenderStateRuntime(state);
+  const registry = runtime.registries.modifierSnippets;
   const ordered = orderModifierStack(modifiers);
   // Fold the render-state skinned-run flag into the variant so a skinned draw of an otherwise-identical
   // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
@@ -119,7 +119,7 @@ export function ensureGlShadedProgram(
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   const cacheKey = `${buildGlShadedCacheKey(fullKey, getGlModifierDefineKey(modifiers, registry))}|registry:${
-    registries.modifierSnippetRevision
+    runtime.modifierSnippetRevision
   }`;
   return ensureGlScene3DProgram(state, cacheKey, (gl) =>
     compileGlShadedProgram(

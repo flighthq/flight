@@ -2,10 +2,8 @@ protected:
   - bindWgpuRenderTexture
   - resolveWgpuApplyBlendMode
   - resolveWgpuSmoothingBindGroup
-  - setWgpuRenderTransform2D
   - UNIFORM_BYTE_SIZE
   - acquireWgpuTextureRenderTarget
-  - allocateEmptyWgpuRenderRegistries
   - applyWgpuBlendMode
   - applyWgpuScissorRect
   - areWgpuTextureResolverGuardsEnabled
@@ -58,7 +56,6 @@ protected:
   - getWgpuSampler
   - getWgpuShader
   - hasWgpuCompressedTextureFormat
-  - initializeEmptyWgpuRenderRegistries
   - initializeExternalWgpuTextureEntry
   - initializeExternalWgpuTextureSource
   - initializeWgpuBindGroupLayouts

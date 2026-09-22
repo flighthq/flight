@@ -3,7 +3,6 @@ import { createQuadBatch, getQuadBatchRuntime } from '@flighthq/quadbatch/contra
 import {
   beginWgpuScreenRenderPassForTest,
   createWgpuOffscreenRenderState,
-  allocateEmptyWgpuRenderRegistries,
   getWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
@@ -69,11 +68,10 @@ describe('registerWgpuVelocityWriter', () => {
 
     registerWgpuVelocityWriter(state, kind, wgpuNode2DVelocityWriter);
     const registered = getWgpuRenderStateRuntime(state).registries.velocityWriters;
-    const offscreen = createWgpuOffscreenRenderState(
-      state.deviceState,
-      { ...getWgpuRenderStateRuntime(state).registries },
-      { format: state.format },
-    );
+    const offscreen = createWgpuOffscreenRenderState(state.deviceState, {
+      ...getWgpuRenderStateRuntime(state).registries,
+      format: state.format,
+    });
     registerWgpuVelocityWriter(state, kind, replacement);
 
     expect(registered).not.toBe(before);

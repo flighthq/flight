@@ -9,7 +9,7 @@ import {
 import type { Camera3D, GlEffectState, Node3D, Effect, Scene3DLightsLike } from '@flighthq/sdk';
 import {
   createGlSurface,
-  glScene3DRenderRegistries,
+  glScene3DRenderPreset,
   beginGlEffectPass,
   createGlEffectState,
   createGlRenderState,
@@ -37,9 +37,7 @@ if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
 setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, width, height);
 appendWebSurface(glSurface, document.body);
 export const canvas = getWebSurfaceElement(glSurface)!;
-export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
-  pixelRatio,
-});
+export const state = createGlRenderState(glSurface.context, { ...glScene3DRenderPreset, pixelRatio });
 // The particle pass is opt-in: without this registration renderGlScene3D draws no emitters.
 registerGlParticleEmitter3DPass(state);
 enableFlightDiagnostics(state);

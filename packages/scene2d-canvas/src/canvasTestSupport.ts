@@ -23,7 +23,7 @@ import {
 import { createCanvasScreenRenderTarget as createExplicitCanvasScreenRenderTarget } from './canvasScreenRenderTarget';
 import { createCanvasTextureRenderTarget as createExplicitCanvasRenderTarget } from './canvasTextureRenderTarget';
 import { createCanvasTextureResolvers as createExplicitCanvasTextureResolvers } from './canvasTextureResolver';
-import { canvasScene2DRenderRegistries } from './scene2DCanvasPipeline';
+import { canvasScene2DRenderPreset } from './scene2DCanvasPipeline';
 
 export * from './canvasRenderState';
 export * from './canvasRenderPass';
@@ -76,7 +76,7 @@ export function createCanvasRenderState(
   canvas: HTMLCanvasElement,
   options: Partial<CanvasRenderOptions> = {},
 ): CanvasRenderState {
-  const state = createExplicitCanvasRenderState(canvasScene2DRenderRegistries, createCanvasTextureResolvers(), options);
+  const state = createExplicitCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(), options);
   registerCanvasSurfaceCreator(state, canvasTestSurfaceCreator);
   beginCanvasRenderPass(state, createCanvasScreenRenderTargetForTest(canvas));
   return state;
@@ -84,7 +84,7 @@ export function createCanvasRenderState(
 
 // A state with no pass open, for tests about construction or about what a state carries before it draws.
 export function createCanvasRenderStateWithoutPass(options: Partial<CanvasRenderOptions> = {}): CanvasRenderState {
-  const state = createExplicitCanvasRenderState(canvasScene2DRenderRegistries, createCanvasTextureResolvers(), options);
+  const state = createExplicitCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(), options);
   registerCanvasSurfaceCreator(state, canvasTestSurfaceCreator);
   return state;
 }

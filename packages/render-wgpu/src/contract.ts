@@ -10,7 +10,6 @@ export * from './wgpuFrame';
 export * from './wgpuFullscreenPass';
 export * from './wgpuHost';
 export * from './wgpuMipmap';
-export * from './wgpuPipeline';
 export * from './wgpuQuadMaterialRegistry';
 export * from './wgpuRenderPass';
 export * from './wgpuRenderState';
