@@ -207,6 +207,7 @@ const HOST_GROUPS = [
   'accessibility',
   'app',
   'audio',
+  'audioDecode',
   'bitmap',
   'canvas',
   'clipboard',

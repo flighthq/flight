@@ -3,6 +3,7 @@ import type { EntityRuntimeKey, WebHost } from '@flighthq/types/contract';
 
 import { webHostAccessibilityGroup } from './webAccessibilityHost';
 import { webHostApp } from './webAppHost';
+import { webHostAudioDecode } from './webAudioDecodeHost';
 import { webHostAudioGroup } from './webAudioHost';
 import { webHostBitmap } from './webBitmapHost';
 import { webHostCanvasGroup } from './webCanvasHost';
@@ -63,6 +64,7 @@ const groups = {
   accessibility: webHostAccessibilityGroup,
   app: webHostApp,
   audio: webHostAudioGroup,
+  audioDecode: webHostAudioDecode,
   bitmap: webHostBitmap,
   canvas: webHostCanvasGroup,
   clipboard: webHostClipboard,

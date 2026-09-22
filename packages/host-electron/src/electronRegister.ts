@@ -13,6 +13,7 @@ import { electronHostApp } from './electronApp';
 import { electronHostClipboard } from './electronClipboard';
 import {
   electronHostAccessibilityGroup,
+  electronHostAudioDecodeGroup,
   electronHostAudioGroup,
   electronHostBitmapGroup,
   electronHostConnectivityGroup,
@@ -85,6 +86,7 @@ export function electronHost(
     accessibility: electronHostAccessibilityGroup(electron),
     app: electronHostApp(electron, options.platform),
     audio: electronHostAudioGroup(electron),
+    audioDecode: electronHostAudioDecodeGroup(electron),
     bitmap: electronHostBitmapGroup(electron),
     canvas: electronHostCanvasGroup(electron),
     clipboard: electronHostClipboard(electron),

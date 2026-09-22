@@ -5,7 +5,11 @@ import {
 } from '@flighthq/audio/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { connectSignal, createSignal } from '@flighthq/signals/contract';
-import type { AudioResourceFetch, Scene2DAudioResourceLoadProgress } from '@flighthq/types/contract';
+import type {
+  AudioResourceFetch,
+  HostAudioDecodeCapabilities,
+  Scene2DAudioResourceLoadProgress,
+} from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 
 import { loadScene2DAudioResources } from './loadScene2DAudioResources';
@@ -13,8 +17,11 @@ import { createScene2DDocument } from './scene2DDocument';
 
 const decodedBuffer = { duration: 1 } as AudioBuffer;
 
-function createContext(): AudioContext {
-  return { decodeAudioData: vi.fn().mockResolvedValue(decodedBuffer) } as unknown as AudioContext;
+// Every standard slot answers, the way a platform-backed host's do: a browser decodes by reading the
+// container rather than the MIME type, so one capability serves all seven.
+function createAudioDecode(): HostAudioDecodeCapabilities {
+  const slot = { decode: vi.fn(async () => decodedBuffer) };
+  return { aac: slot, flac: slot, mp3: slot, mp4: slot, ogg: slot, wav: slot, webm: slot };
 }
 
 describe('loadScene2DAudioResources', () => {
@@ -25,7 +32,7 @@ describe('loadScene2DAudioResources', () => {
     ];
     const document = createScene2DDocument(createDisplayObject(), [], 'swf', null, [], references);
 
-    const result = await loadScene2DAudioResources(document, { context: createContext() });
+    const result = await loadScene2DAudioResources(document, { audioDecode: createAudioDecode() });
 
     expect(result.resolved).toEqual(references);
     expect(result.unresolved).toEqual([]);
@@ -37,11 +44,11 @@ describe('loadScene2DAudioResources', () => {
   });
 
   it('separates the references it could not resolve from the ones it could', async () => {
-    // No context and no registered decoder, so this one has nothing that can take its bytes.
+    // No host slots and no caller decoder, so this one has nothing that can take its bytes.
     const undecodable = createEmbeddedAudioResourceReference(new Uint8Array([1]), 'audio/vnd.acme.thing');
     const document = createScene2DDocument(createDisplayObject(), [], 'swf', null, [], [undecodable]);
 
-    const result = await loadScene2DAudioResources(document, { context: null });
+    const result = await loadScene2DAudioResources(document, {});
 
     expect(result.resolved).toEqual([]);
     expect(result.unresolved).toEqual([undecodable]);
@@ -54,7 +61,7 @@ describe('loadScene2DAudioResources', () => {
     const document = createScene2DDocument(createDisplayObject(), [], 'swf', null, [], [wanted, skipped]);
 
     const result = await loadScene2DAudioResources(document, {
-      context: createContext(),
+      audioDecode: createAudioDecode(),
       select: (reference) => reference.mimeType === 'audio/mpeg',
     });
 
@@ -69,7 +76,7 @@ describe('loadScene2DAudioResources', () => {
     const reference = createExternalAudioResourceReference('hit.mp3', '/sounds');
     const document = createScene2DDocument(createDisplayObject(), [], 'spine', null, [], [reference]);
 
-    const result = await loadScene2DAudioResources(document, { context: null, fetch });
+    const result = await loadScene2DAudioResources(document, { fetch });
 
     expect(fetch).toHaveBeenCalledOnce();
     expect(result.resolved).toEqual([reference]);
@@ -79,7 +86,7 @@ describe('loadScene2DAudioResources', () => {
     const reference = createExternalAudioResourceReference('hit.mp3');
     const document = createScene2DDocument(createDisplayObject(), [], 'spine', null, [], [reference]);
 
-    const result = await loadScene2DAudioResources(document, { context: createContext() });
+    const result = await loadScene2DAudioResources(document, { audioDecode: createAudioDecode() });
 
     expect(result.unresolved).toEqual([reference]);
   });
@@ -94,7 +101,7 @@ describe('loadScene2DAudioResources', () => {
     ];
     const document = createScene2DDocument(createDisplayObject(), [], 'swf', null, [], references);
 
-    await loadScene2DAudioResources(document, { context: createContext(), progress });
+    await loadScene2DAudioResources(document, { audioDecode: createAudioDecode(), progress });
 
     expect(events.map((event) => event.loaded)).toEqual([1, 2]);
     expect(events.every((event) => event.total === 2)).toBe(true);

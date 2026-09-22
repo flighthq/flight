@@ -1,7 +1,13 @@
-import { webHostImageDecode, webHostImageEncode, webHostTextShaperGroup } from '@flighthq/host-web/contract';
+import {
+  webHostAudioDecode,
+  webHostImageDecode,
+  webHostImageEncode,
+  webHostTextShaperGroup,
+} from '@flighthq/host-web/contract';
 import type {
   HostAccessibilityCapabilities,
   HostAudioCapabilities,
+  HostAudioDecodeCapabilities,
   HostBitmapCapabilities,
   HostConnectivityCapabilities,
   HostDeviceCapabilities,
@@ -50,6 +56,10 @@ export function tauriHostAccessibility(): HostAccessibilityCapabilities {
 
 export function tauriHostAudio(): HostAudioCapabilities {
   return {};
+}
+
+export function tauriHostAudioDecode(): HostAudioDecodeCapabilities {
+  return webHostAudioDecode;
 }
 
 export function tauriHostBitmap(): HostBitmapCapabilities {

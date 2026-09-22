@@ -1,13 +1,14 @@
 import { sendNetRequest } from '@flighthq/net/contract';
 import type {
+  AudioDecoderRegistry,
   AudioResource,
   AudioResourceUrl,
   HostAudioCodecCapability,
+  HostAudioDecodeCapabilities,
   HostNetCapability,
 } from '@flighthq/types/contract';
 
-import { hasAudioDecoder } from './audioDecoderRegistry';
-import { canPlayAudioType, inferAudioMimeType } from './audioFormat';
+import { canPlayAudioType, getAudioMimeTypeEssence, inferAudioMimeType } from './audioFormat';
 import { createAudioResource } from './audioResource';
 import { decodeAudioResourceBytes } from './decodeAudioResourceBytes';
 
@@ -27,56 +28,69 @@ export function createAudioResourceFromSamples(channels: readonly Float32Array[]
   return createAudioResource(buffer);
 }
 
-// MIME type selects a registered decoder when present; Web Audio otherwise content-sniffs the container.
+// MIME type selects a caller-supplied decoder when one is given; the host's own slots otherwise decode
+// the container, content-sniffing it when the type is absent or names no standard format.
 export async function loadAudioResourceFromBase64(
-  context: AudioContext,
+  audioDecode: Readonly<HostAudioDecodeCapabilities>,
   base64: string,
   mimeType: string,
   signal?: AbortSignal,
+  decoders?: AudioDecoderRegistry,
 ): Promise<AudioResource> {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return loadAudioResourceFromBytes(context, bytes, mimeType, signal);
+  return loadAudioResourceFromBytes(audioDecode, bytes, mimeType, signal, decoders);
 }
 
 export async function loadAudioResourceFromBlob(
-  context: AudioContext,
+  audioDecode: Readonly<HostAudioDecodeCapabilities>,
   blob: Blob,
   signal?: AbortSignal,
+  decoders?: AudioDecoderRegistry,
 ): Promise<AudioResource> {
   const arrayBuffer = await blob.arrayBuffer();
-  return loadAudioResourceFromBytes(context, new Uint8Array(arrayBuffer), blob.type || undefined, signal);
+  return loadAudioResourceFromBytes(audioDecode, new Uint8Array(arrayBuffer), blob.type || undefined, signal, decoders);
 }
 
-// Decodes encoded audio bytes into a resource. A registered MIME-specific decoder wins; Web Audio
-// otherwise content-sniffs the container. Rejects when a registered decoder reports an expected miss.
+// Decodes encoded audio bytes into a resource. A caller-supplied decoder for the type wins; the host's
+// own slots decode everything else. Rejects when nothing could decode the payload, which is the one
+// place an expected miss becomes an error — the loaders promise a resource.
 export async function loadAudioResourceFromBytes(
-  context: AudioContext,
+  audioDecode: Readonly<HostAudioDecodeCapabilities>,
   bytes: Uint8Array,
   mimeType?: string,
   signal?: AbortSignal,
+  decoders?: AudioDecoderRegistry,
 ): Promise<AudioResource> {
-  const resource = await decodeAudioResourceBytes(context, bytes, mimeType, signal ?? new AbortController().signal);
+  const resource = await decodeAudioResourceBytes(
+    audioDecode,
+    bytes,
+    mimeType,
+    signal ?? new AbortController().signal,
+    decoders,
+  );
   if (resource === null) throw new Error(`Failed to decode audio${mimeType === undefined ? '' : `: ${mimeType}`}`);
   return resource;
 }
 
 export async function loadAudioResourceFromUrl(
   hostNet: Readonly<HostNetCapability>,
-  context: AudioContext,
+  audioDecode: Readonly<HostAudioDecodeCapabilities>,
   url: string,
   signal?: AbortSignal,
+  decoders?: AudioDecoderRegistry,
 ): Promise<AudioResource> {
-  return _loadAudioResourceFromUrl(hostNet, context, url, inferAudioMimeType(url) ?? undefined, signal);
+  return _loadAudioResourceFromUrl(hostNet, audioDecode, url, inferAudioMimeType(url) ?? undefined, signal, decoders);
 }
 
 async function _loadAudioResourceFromUrl(
   hostNet: Readonly<HostNetCapability>,
-  context: AudioContext,
+  audioDecode: Readonly<HostAudioDecodeCapabilities>,
   url: string,
   mimeType: string | undefined,
   signal?: AbortSignal,
+  decoders?: AudioDecoderRegistry,
 ): Promise<AudioResource> {
   const response = await sendNetRequest(
     hostNet,
@@ -89,40 +103,53 @@ async function _loadAudioResourceFromUrl(
   if (!response.ok) throw new Error(`Failed to load audio: ${url} (${response.status} ${response.statusText})`);
   if (!(response.body instanceof ArrayBuffer)) throw new Error(`Failed to load audio: ${url} (invalid body)`);
   return loadAudioResourceFromBytes(
-    context,
+    audioDecode,
     new Uint8Array(response.body),
     response.headers['content-type'] ?? mimeType,
     signal,
+    decoders,
   );
 }
 
 export async function loadAudioResourceFromUrls(
   hostNet: Readonly<HostNetCapability>,
   hostAudioCodec: Readonly<HostAudioCodecCapability>,
-  context: AudioContext,
+  audioDecode: Readonly<HostAudioDecodeCapabilities>,
   sources: readonly AudioResourceUrl[],
   signal?: AbortSignal,
+  decoders?: AudioDecoderRegistry,
 ): Promise<AudioResource> {
-  const selected = _selectAudioResourceSource(hostAudioCodec, sources);
+  const selected = _selectAudioResourceSource(hostAudioCodec, sources, decoders);
   if (selected === null) return createAudioResource();
   const mimeType = selected.type ?? inferAudioMimeType(selected.url) ?? undefined;
-  return _loadAudioResourceFromUrl(hostNet, context, selected.url, mimeType, signal);
+  return _loadAudioResourceFromUrl(hostNet, audioDecode, selected.url, mimeType, signal, decoders);
 }
 
 export function selectAudioResourceUrl(
   hostAudioCodec: Readonly<HostAudioCodecCapability>,
   sources: readonly AudioResourceUrl[],
+  decoders?: AudioDecoderRegistry,
 ): string | null {
-  return _selectAudioResourceSource(hostAudioCodec, sources)?.url ?? null;
+  return _selectAudioResourceSource(hostAudioCodec, sources, decoders)?.url ?? null;
 }
 
+// The two arms a source is accepted on: the caller brought a decoder for this type, or the platform can
+// play the container itself.
+//
+// The host's own audioDecode slots are deliberately NOT a third arm, and not a substitute for the
+// second. They answer a different question — whether bytes already in hand can be turned into samples —
+// and a platform-backed host declares all seven of them whatever its element can actually play. Letting
+// them vote here would make every standard container look selectable and leave `canPlayType` with no
+// veto, which is the opposite of what selecting among sources is for.
 function _selectAudioResourceSource(
   hostAudioCodec: Readonly<HostAudioCodecCapability>,
   sources: readonly AudioResourceUrl[],
+  decoders?: AudioDecoderRegistry,
 ): AudioResourceUrl | null {
   for (const source of sources) {
     const type = source.type ?? inferAudioMimeType(source.url) ?? '';
-    if (hasAudioDecoder(type) || canPlayAudioType(hostAudioCodec, type)) return source;
+    const supplied = type !== '' && decoders?.has(getAudioMimeTypeEssence(type)) === true;
+    if (supplied || canPlayAudioType(hostAudioCodec, type)) return source;
   }
   return null;
 }

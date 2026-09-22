@@ -1,4 +1,4 @@
-export * from './audioDecoderRegistry';
+export * from './audioDecodeSlot';
 export * from './audioFormat';
 export {
   cloneAudioResource,

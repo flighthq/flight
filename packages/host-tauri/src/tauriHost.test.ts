@@ -13,6 +13,7 @@ const GROUPS = [
   ['accessibility', 'tauriHostAccessibility'],
   ['app', 'tauriHostApp'],
   ['audio', 'tauriHostAudio'],
+  ['audioDecode', 'tauriHostAudioDecode'],
   ['bitmap', 'tauriHostBitmap'],
   ['clipboard', 'tauriHostClipboard'],
   ['compress', 'tauriHostCompress'],

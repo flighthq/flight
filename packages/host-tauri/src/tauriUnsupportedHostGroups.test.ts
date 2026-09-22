@@ -1,4 +1,9 @@
-import { webHostImageDecode, webHostImageEncode, webHostTextShaper } from '@flighthq/host-web/contract';
+import {
+  webHostAudioDecode,
+  webHostImageDecode,
+  webHostImageEncode,
+  webHostTextShaper,
+} from '@flighthq/host-web/contract';
 
 import {
   tauriHostAccessibility,
@@ -14,6 +19,7 @@ import {
   tauriHostGlyph,
   tauriHostHaptics,
   tauriHostImage,
+  tauriHostAudioDecode,
   tauriHostImageDecode,
   tauriHostImageEncode,
   tauriHostInput,
@@ -51,6 +57,11 @@ function returnsEmptyGroup(constructor: () => object): () => void {
 
 describe('tauriHostAccessibility', returnsEmptyGroup(tauriHostAccessibility));
 describe('tauriHostAudio', returnsEmptyGroup(tauriHostAudio));
+describe('tauriHostAudioDecode', () => {
+  it('delegates to the shared web audio decode capabilities', () => {
+    expect(tauriHostAudioDecode()).toBe(webHostAudioDecode);
+  });
+});
 describe('tauriHostBitmap', returnsEmptyGroup(tauriHostBitmap));
 describe('tauriHostCanvas', () => {
   it('claims no canvas slots', () => expect(tauriHostCanvas()).toEqual({}));

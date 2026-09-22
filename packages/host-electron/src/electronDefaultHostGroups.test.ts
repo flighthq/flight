@@ -1,4 +1,9 @@
-import { webHostImageDecode, webHostImageEncode, webHostTextShaper } from '@flighthq/host-web/contract';
+import {
+  webHostAudioDecode,
+  webHostImageDecode,
+  webHostImageEncode,
+  webHostTextShaper,
+} from '@flighthq/host-web/contract';
 import type { ElectronApi } from '@flighthq/types/contract';
 
 import {
@@ -14,6 +19,7 @@ import {
   electronHostGlGroup,
   electronHostGlyphGroup,
   electronHostHapticsGroup,
+  electronHostAudioDecodeGroup,
   electronHostImageDecodeGroup,
   electronHostImageEncodeGroup,
   electronHostImageGroup,
@@ -81,6 +87,11 @@ const videoGroup = emptyGroup(() => electronHostVideoGroup(electron));
 const wgpuGroup = emptyGroup(() => electronHostWgpuGroup(electron));
 
 describe('electronHostAccessibilityGroup', accessibilityGroup);
+describe('electronHostAudioDecodeGroup', () => {
+  it('delegates to the shared web audio decode capabilities', () => {
+    expect(electronHostAudioDecodeGroup(electron)).toBe(webHostAudioDecode);
+  });
+});
 describe('electronHostAudioGroup', audioGroup);
 describe('electronHostBitmapGroup', bitmapGroup);
 describe('electronHostCanvasGroup', canvasGroup);

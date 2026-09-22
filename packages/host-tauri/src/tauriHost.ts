@@ -13,6 +13,7 @@ import { tauriHostTray } from './tauriTray';
 import {
   tauriHostAccessibility,
   tauriHostAudio,
+  tauriHostAudioDecode,
   tauriHostBitmap,
   tauriHostConnectivity,
   tauriHostDevice,
@@ -61,6 +62,7 @@ export function tauriHost<Profile extends DesktopOsProfile>(tauri: TauriApi, pro
     accessibility: tauriHostAccessibility(),
     app: tauriHostApp(tauri),
     audio: tauriHostAudio(),
+    audioDecode: tauriHostAudioDecode(),
     bitmap: tauriHostBitmap(),
     canvas: tauriHostCanvas(),
     clipboard: tauriHostClipboard(tauri),

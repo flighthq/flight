@@ -7,6 +7,7 @@ import { capacitorHostConnectivity } from './capacitorConnectivity';
 import {
   capacitorHostAccessibility,
   capacitorHostAudio,
+  capacitorHostAudioDecode,
   capacitorHostBitmap,
   capacitorHostFont,
   capacitorHostFullscreen,
@@ -62,6 +63,7 @@ export function capacitorHost<Profile extends MobileOsProfile>(
     accessibility: capacitorHostAccessibility(),
     app: capacitorHostApp(capacitor, profile),
     audio: capacitorHostAudio(),
+    audioDecode: capacitorHostAudioDecode(),
     bitmap: capacitorHostBitmap(),
     canvas: capacitorHostCanvas(),
     clipboard: capacitorHostClipboard(capacitor),

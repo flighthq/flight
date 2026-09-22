@@ -1,8 +1,14 @@
-import { webHostImageDecode, webHostImageEncode, webHostTextShaperGroup } from '@flighthq/host-web/contract';
+import {
+  webHostAudioDecode,
+  webHostImageDecode,
+  webHostImageEncode,
+  webHostTextShaperGroup,
+} from '@flighthq/host-web/contract';
 import type {
   ElectronApi,
   HostAccessibilityCapabilities,
   HostAudioCapabilities,
+  HostAudioDecodeCapabilities,
   HostBitmapCapabilities,
   HostCompressCapabilities,
   HostConnectivityCapabilities,
@@ -41,6 +47,10 @@ import type {
 // 45-group composition boundary as every other canonical Host. Empty means absent, never stubbed.
 export function electronHostAccessibilityGroup(_electron: ElectronApi): HostAccessibilityCapabilities {
   return {};
+}
+
+export function electronHostAudioDecodeGroup(_electron: ElectronApi): HostAudioDecodeCapabilities {
+  return webHostAudioDecode;
 }
 
 export function electronHostAudioGroup(_electron: ElectronApi): HostAudioCapabilities {

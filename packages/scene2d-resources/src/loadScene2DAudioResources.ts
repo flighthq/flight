@@ -6,6 +6,7 @@ import type {
   AudioResourceReference,
   LoadScene2DAudioResourcesOptions,
   Scene2DAudioResources,
+  HostAudioDecodeCapabilities,
   Scene2DDocument,
 } from '@flighthq/types/contract';
 
@@ -22,14 +23,14 @@ export async function loadScene2DAudioResources(
     (reference) => options?.select === undefined || options.select(reference),
   );
   const signal = options?.signal ?? new AbortController().signal;
-  const context = options?.context ?? null;
+  const audioDecode = options?.audioDecode ?? EMPTY_AUDIO_DECODE;
   const fetch = options?.fetch ?? rejectExternalAudioResource;
   let loaded = 0;
 
   const resources = await Promise.all(
     selected.map(async (reference): Promise<AudioResource | null> => {
       try {
-        return await resolveAudioResourceReference(reference, context, fetch, signal);
+        return await resolveAudioResourceReference(reference, audioDecode, fetch, signal, options?.decoders);
       } finally {
         loaded++;
         if (options?.progress !== undefined) {
@@ -61,3 +62,8 @@ export async function loadScene2DAudioResources(
 // A document with no external sounds never needs a fetch seam, so the default reports the miss rather than
 // making the caller supply a fetcher it has no use for.
 const rejectExternalAudioResource: AudioResourceFetch = () => Promise.resolve(null);
+
+// A caller who names no host decoders gets a group with every slot empty rather than a thrown
+// precondition: a document whose sounds are all external, or all covered by the caller's own decoders,
+// has nothing for a standard container decoder to do.
+const EMPTY_AUDIO_DECODE: Readonly<HostAudioDecodeCapabilities> = {};

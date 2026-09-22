@@ -97,6 +97,19 @@ export type AudioResourceFetch = (
 // throwing. Anything the platform already understands needs no registration.
 export type AudioDecoder = (bytes: Uint8Array, mimeType: string, signal: AbortSignal) => Promise<AudioResource | null>;
 
+/**
+ * Caller-owned decoders for audio the platform's own codecs cannot read, keyed by MIME essence.
+ *
+ * This is the whole of the extension seam, and it is deliberately a value the caller builds, holds and
+ * passes — never a Host group and never module state. A SWF ADPCM sound is not a platform capability
+ * that some host might have and another might not; it is a decoder the engine embedding Flight brought
+ * with it, so the engine owns the map and hands it to the decode it wants it applied to. Two documents
+ * in one process can therefore disagree about what is decodable, which a global registry cannot express.
+ *
+ * An ordinary `Map` is the intended value; the type is read-only because the decode path only reads it.
+ */
+export type AudioDecoderRegistry = ReadonlyMap<string, AudioDecoder>;
+
 export interface AudioResourceReferenceResolutionExplanation {
   failure: AudioResourceFailure | null;
   kind: AudioResourceReferenceKind;

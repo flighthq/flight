@@ -16,6 +16,7 @@ export function initializeHost<Capabilities extends Partial<EntityWithoutRuntime
   out.accessibility = (capabilities.accessibility ?? {}) as Host['accessibility'];
   out.app = (capabilities.app ?? {}) as Host['app'];
   out.audio = (capabilities.audio ?? {}) as Host['audio'];
+  out.audioDecode = (capabilities.audioDecode ?? {}) as Host['audioDecode'];
   out.bitmap = (capabilities.bitmap ?? {}) as Host['bitmap'];
   out.canvas = (capabilities.canvas ?? {}) as Host['canvas'];
   out.clipboard = (capabilities.clipboard ?? {}) as Host['clipboard'];

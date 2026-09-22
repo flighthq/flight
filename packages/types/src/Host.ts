@@ -69,6 +69,7 @@ import type { HostHapticsCapability } from './Haptics';
 import type { HostAppExitCapability } from './HostAppExit';
 import type { HostAppLoopCapability } from './HostAppLoop';
 import type { HostAudioCodecCapability } from './HostAudioCodec';
+import type { HostAudioDecodeCapabilities } from './HostAudioDecode';
 import type { HostAudioDeviceCapability } from './HostAudioDevice';
 import type { HostAudioMixerCapability } from './HostAudioMixer';
 import type { HostBitmapEncodeCapability } from './HostBitmapEncode';
@@ -217,6 +218,7 @@ export interface Host extends Entity {
   readonly accessibility: HostAccessibilityCapabilities;
   readonly app: HostAppCapabilities;
   readonly audio: HostAudioCapabilities;
+  readonly audioDecode: HostAudioDecodeCapabilities;
   readonly bitmap: HostBitmapCapabilities;
   readonly canvas: HostCanvasCapabilities;
   readonly clipboard: HostClipboardCapabilities;
