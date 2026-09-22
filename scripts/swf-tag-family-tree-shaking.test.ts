@@ -139,13 +139,14 @@ describe('SWF artwork-only builds', () => {
     }
   });
 
-  // The one module that names all ten families is the only edge by which a build could acquire them, so
-  // an importer that reached it would make every other assertion here depend on tree shaking instead of
-  // on the import graph.
+  // swfAllTagHandlers is the one module that names all ten families, and so the only edge by which a
+  // build could acquire them. An importer that reached it would make every other assertion here depend
+  // on tree shaking instead of on the import graph. The dispatch builder, which names no family, is
+  // reached — that is what makes the exclusion structural rather than a shaker's favour.
   it('does not link the module that names every family', async () => {
     const bundle = await bundleSwfExports(ARTWORK_ENTRY);
-    expect(contributedBytes(bundle, 'swfTagFamilyRegistry.ts')).toBe(0);
-    expect(contributedBytes(bundle, 'swfTagFamilyDispatch.ts')).toBeGreaterThan(0);
+    expect(contributedBytes(bundle, 'swfAllTagHandlers.ts')).toBe(0);
+    expect(contributedBytes(bundle, 'expandSwfTagHandlerDispatch.ts')).toBeGreaterThan(0);
   });
 
   it('keeps the families it did register', async () => {
@@ -194,9 +195,9 @@ describe('SWF per-family isolation', () => {
 });
 
 describe('SWF zero-config builds', () => {
-  it('reaches every family through the default registry', async () => {
-    const bundle = await bundleSwfExports(['createScene2DFromSwf', 'createSwfDefaultTagFamilyRegistry']);
-    expect(contributedBytes(bundle, 'swfTagFamilyRegistry.ts')).toBeGreaterThan(0);
+  it('reaches every family through the all-handlers preset', async () => {
+    const bundle = await bundleSwfExports(['createScene2DFromSwf', 'swfAllTagHandlers']);
+    expect(contributedBytes(bundle, 'swfAllTagHandlers.ts')).toBeGreaterThan(0);
     for (const family of FAMILIES) {
       expect(contributedBytes(bundle, family.module), family.name).toBeGreaterThan(0);
       for (const name of family.packages) expect(bundle.packages.has(name), `@flighthq/${name}`).toBe(true);

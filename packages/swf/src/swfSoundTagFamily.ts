@@ -1,8 +1,5 @@
-import type { SwfTagFamily } from '@flighthq/types/contract';
+import type { SwfTagHandler } from '@flighthq/types/contract';
 
-import { composeSwfTagHandlers } from './composeSwfTagHandlers';
 import { swfSoundHandler } from './swfSoundHandler';
 
-export const swfSoundTagFamily: SwfTagFamily = composeSwfTagHandlers([swfSoundHandler]);
-
-export { initializeTimelineAudioCue, initializeTimelineStreamAudioCue } from './swfSoundHandler';
+export const swfSoundTagFamily: readonly SwfTagHandler[] = [swfSoundHandler];

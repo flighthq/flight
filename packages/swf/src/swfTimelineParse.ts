@@ -2,8 +2,8 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type {
   FrameScript,
   ImportDiagnostic,
-  SwfTagFamily,
-  SwfTagFamilyDispatch,
+  SwfTagHandler,
+  SwfTagHandlerDispatch,
   SwfTagParseState,
   SwfTagPlacement,
   SwfTagTimelineState,
@@ -171,8 +171,8 @@ export const MAX_TIMELINE_FRAME_ENTRIES = 1_000_000;
 
 // The distinct families behind a dispatch table, for the phases that run once per family rather than
 // once per tag. A family claims several tag codes, so the table names it more than once.
-function collectSwfTimelineFinishers(dispatch: SwfTagFamilyDispatch): Set<Readonly<SwfTagFamily>> {
-  const families = new Set<Readonly<SwfTagFamily>>();
+function collectSwfTimelineFinishers(dispatch: SwfTagHandlerDispatch): Set<Readonly<SwfTagHandler>> {
+  const families = new Set<Readonly<SwfTagHandler>>();
   for (const family of dispatch.values()) {
     if (family.finishTimeline !== undefined) families.add(family);
   }

@@ -40,9 +40,9 @@ import type {
   SwfDocumentImport,
   SwfJpegAlphaPayload,
   SwfNodeAppearance,
-  SwfTagFamily,
-  SwfTagFamilyRegistry,
-  SwfTagFamilyResources,
+  SwfTagHandler,
+  SwfParseOptions,
+  SwfTagHandlerResources,
   SwfTagParseResult,
   SwfTagMatrix,
   SwfTagParseState,
@@ -55,10 +55,10 @@ import type {
 } from '@flighthq/types/contract';
 import { Compression, CompressionFraming, ImportDiagnosticSeverity, MorphShapeKind } from '@flighthq/types/contract';
 
+import { expandSwfTagHandlerDispatch } from './expandSwfTagHandlerDispatch';
 import { applySwfMorphBounds, createSwfDisplayObject, createSwfMovieClip } from './swfNode';
 import { FIXED_8_8_ONE, readSwfRectangle, transformSwfRectangle, mergeSwfRectangles } from './swfPrimitive';
 import { SwfReader } from './swfReader';
-import { getSwfTagFamilyDispatch, getSwfTagFamilies } from './swfTagFamilyDispatch';
 import { MAX_TIMELINE_FRAME_ENTRIES, readSwfTimeline } from './swfTimelineParse';
 
 // Recovers every embedded DefineFont/2/3 as the generic, glyph-index-keyed outline seam. The map key
@@ -66,26 +66,22 @@ import { MAX_TIMELINE_FRAME_ENTRIES, readSwfTimeline } from './swfTimelineParse'
 // Scene2D construction so callers that only need embedded fonts do not have to retain a document.
 export function createGlyphOutlineSourcesFromSwf(
   source: Uint8Array,
-  registry: Readonly<SwfTagFamilyRegistry>,
-  deflate: Readonly<HostDecompressDeflateCapability> | null,
-  lzma: Readonly<HostDecompressLzmaCapability> | null,
+  options: Readonly<SwfParseOptions>,
   diagnostics?: ImportDiagnostic[],
 ): ReadonlyMap<number, GlyphOutlineSource> | null {
-  const file = readSwfFile(source, registry, deflate, lzma, diagnostics);
+  const file = readSwfFile(source, options, diagnostics);
   return file === null ? null : new Map(file.parsed.fontOutlineSources);
 }
 
-// The document alone, for a caller that wants the graph and nothing else — the importer registry among
+// The document alone, for a caller that wants the graph and nothing else — the document importer among
 // them. A file whose placements carry an advanced blend or a filter list still imports fully here; what
 // it loses is the report of them, which is what createScene2DImportFromSwf returns.
 export function createScene2DFromSwf(
   source: Uint8Array,
-  registry: Readonly<SwfTagFamilyRegistry>,
-  deflate: Readonly<HostDecompressDeflateCapability> | null,
-  lzma: Readonly<HostDecompressLzmaCapability> | null,
+  options: Readonly<SwfParseOptions>,
   diagnostics?: ImportDiagnostic[],
 ): Scene2DDocument | null {
-  return createScene2DImportFromSwf(source, registry, deflate, lzma, diagnostics)?.document ?? null;
+  return createScene2DImportFromSwf(source, options, diagnostics)?.document ?? null;
 }
 
 // The full import: the document, plus the placement appearance no node can carry. SWF puts a blend mode
@@ -95,19 +91,17 @@ export function createScene2DFromSwf(
 // dropped at the seam or silently flattened onto a node.
 export function createScene2DImportFromSwf(
   source: Uint8Array,
-  registry: Readonly<SwfTagFamilyRegistry>,
-  deflate: Readonly<HostDecompressDeflateCapability> | null,
-  lzma: Readonly<HostDecompressLzmaCapability> | null,
+  options: Readonly<SwfParseOptions>,
   diagnostics?: ImportDiagnostic[],
 ): SwfDocumentImport | null {
-  const file = readSwfFile(source, registry, deflate, lzma, diagnostics);
+  const file = readSwfFile(source, options, diagnostics);
   if (file === null) return null;
-  return instantiateSwfFile(file, registry, diagnostics);
+  return instantiateSwfFile(file, options, diagnostics);
 }
 
 function instantiateSwfFile(
   file: SwfFile,
-  registry: Readonly<SwfTagFamilyRegistry>,
+  options: Readonly<SwfParseOptions>,
   diagnostics: ImportDiagnostic[] | undefined,
 ): SwfDocumentImport | null {
   const { frameRate, parsed, stageBounds } = file;
@@ -116,7 +110,7 @@ function instantiateSwfFile(
     activeSymbols: new Set<number>(),
     appearances: [],
     diagnostics,
-    families: getSwfTagFamilies(registry),
+    handlers: options.tags,
     frameRate: frameRate > 0 ? frameRate : null,
     resolvingBounds: new Set<number>(),
     resolvedBounds: new Map<number, SwfTagRectangle | null>(),
@@ -134,8 +128,8 @@ function instantiateSwfFile(
   // Resources are built after the root, because a Texture a placement acquired during instantiation is
   // the one its payload has to be paired with. A family the build left out contributes nothing here and
   // is not reachable from it.
-  const resources: SwfTagFamilyResources = { audio: [], images: [], jpegAlphaPayloads: [] };
-  for (const family of instantiation.families) family.instantiate?.createResources?.(parsed, resources);
+  const resources: SwfTagHandlerResources = { audio: [], images: [], jpegAlphaPayloads: [] };
+  for (const handler of instantiation.handlers) handler.instantiate?.createResources?.(parsed, resources);
   const out = allocateEntity<SwfDocumentImport>();
   initializeSwfDocumentImport(
     out,
@@ -160,12 +154,10 @@ function instantiateSwfFile(
 export function createScene2DSymbolFromSwf(
   source: Uint8Array,
   linkageName: string,
-  registry: Readonly<SwfTagFamilyRegistry>,
-  deflate: Readonly<HostDecompressDeflateCapability> | null,
-  lzma: Readonly<HostDecompressLzmaCapability> | null,
+  options: Readonly<SwfParseOptions>,
   diagnostics?: ImportDiagnostic[],
 ): Scene2DDocument | null {
-  const file = readSwfFile(source, registry, deflate, lzma, diagnostics);
+  const file = readSwfFile(source, options, diagnostics);
   if (file === null) return null;
   const { frameRate, parsed } = file;
 
@@ -193,7 +185,7 @@ export function createScene2DSymbolFromSwf(
     activeSymbols: new Set<number>(),
     appearances: [],
     diagnostics,
-    families: getSwfTagFamilies(registry),
+    handlers: options.tags,
     frameRate: frameRate > 0 ? frameRate : null,
     resolvingBounds: new Set<number>(),
     resolvedBounds: new Map<number, SwfTagRectangle | null>(),
@@ -201,8 +193,8 @@ export function createScene2DSymbolFromSwf(
   const root = createSwfSymbolNode(parsed, characterId, slots, instantiation);
   if (root === null) return null;
 
-  const resources: SwfTagFamilyResources = { audio: [], images: [], jpegAlphaPayloads: [] };
-  for (const family of instantiation.families) family.instantiate?.createResources?.(parsed, resources);
+  const resources: SwfTagHandlerResources = { audio: [], images: [], jpegAlphaPayloads: [] };
+  for (const handler of instantiation.handlers) handler.instantiate?.createResources?.(parsed, resources);
   return createScene2DDocument(root, slots, 'swf', null, resources.images, resources.audio);
 }
 
@@ -234,33 +226,32 @@ interface SwfInstantiationState {
   appearances: SwfNodeAppearance[];
   // The same sink the parse carried, so instantiation-time losses report through one channel.
   diagnostics: ImportDiagnostic[] | undefined;
-  // The registered families, in the order a placed character is offered to them. Held here rather than
+  // The named handlers, in the order a placed character is offered to them. Held here rather than
   // rebuilt per node, because instantiation walks every placement of every frame of every symbol.
-  families: readonly Readonly<SwfTagFamily>[];
+  handlers: readonly Readonly<SwfTagHandler>[];
   frameRate: number | null;
   resolvedBounds: Map<number, SwfTagRectangle | null>;
   resolvingBounds: Set<number>;
 }
 
-// Walks the whole tag stream, then lets each registered family finish the work it could not do at a
-// tag. The five resolution steps that used to run unconditionally here are now the families' own
-// `resolve` callbacks, so a build that did not register a family never reaches the code behind it: the
-// AVM2 reader, the sound cue conversions, the text composer and the font table join all leave with
-// their families.
+// Walks the whole tag stream, then lets each named handler finish the work it could not do at a tag.
+// The five resolution steps that used to run unconditionally here are now the handlers' own `resolve`
+// callbacks, so a build that did not name a handler never reaches the code behind it: the AVM2 reader,
+// the sound cue conversions, the text composer and the font table join all leave with their handlers.
 function readSwfTags(
   reader: SwfReader,
-  registry: Readonly<SwfTagFamilyRegistry>,
+  options: Readonly<SwfParseOptions>,
   diagnostics: ImportDiagnostic[] | undefined,
 ): SwfTagParseResult | null {
-  const state: SwfTagParseState = createSwfTagParseState(getSwfTagFamilyDispatch(registry), diagnostics);
+  const state: SwfTagParseState = createSwfTagParseState(expandSwfTagHandlerDispatch(options.tags), diagnostics);
   const timeline = readSwfTimeline(reader, state);
   if (timeline === null) return null;
-  for (const family of getSwfTagFamilies(registry)) family.resolve?.(state, timeline);
+  for (const handler of options.tags) handler.resolve?.(state, timeline);
   return { ...state, timeline };
 }
 
-// The empty state one import fills. Every family writes into the same object, so a definition one family
-// reads can have been declared by another — which is what the format itself does.
+// The empty state one import fills. Every handler writes into the same object, so a definition one
+// handler reads can have been declared by another — which is what the format itself does.
 function createSwfTagParseState(
   dispatch: SwfTagParseState['dispatch'],
   diagnostics: ImportDiagnostic[] | undefined,
@@ -307,12 +298,11 @@ interface SwfFile {
 
 function readSwfFile(
   source: Uint8Array,
-  registry: Readonly<SwfTagFamilyRegistry>,
-  deflate: Readonly<HostDecompressDeflateCapability> | null,
-  lzma: Readonly<HostDecompressLzmaCapability> | null,
+  options: Readonly<SwfParseOptions>,
   diagnostics: ImportDiagnostic[] | undefined,
 ): SwfFile | null {
-  const uncompressed = uncompressSwfSource(source, deflate, lzma, diagnostics);
+  const decompress = options.host.decompress;
+  const uncompressed = uncompressSwfSource(source, decompress.deflate ?? null, decompress.lzma ?? null, diagnostics);
   if (uncompressed === null) return null;
 
   // Every rejection below loses the WHOLE document, and each has a distinct cause. Without a report per
@@ -362,7 +352,7 @@ function readSwfFile(
     return null;
   }
 
-  const parsed = readSwfTags(body, registry, diagnostics);
+  const parsed = readSwfTags(body, options, diagnostics);
   return parsed === null ? null : { frameRate, parsed, stageBounds };
 }
 
@@ -425,12 +415,12 @@ function populateSwfTimelineNode(
       // A placement earns a node when it is named, or when a registered family defined visual content for
       // its character. A character whose family this build left out is content the document does not
       // carry, and a placement of it is as empty as a placement of a character nothing defined.
-      if (!placement.name && !hasSwfFamilyPlacementContent(state.families, parsed, placement.characterId)) continue;
+      if (!placement.name && !hasSwfHandlerPlacementContent(state.handlers, parsed, placement.characterId)) continue;
       // The node and its reference exist before the symbol behind it is populated, so a manifest lists a
       // container ahead of the named descendants it carries.
       const targetBounds = resolveSwfCharacterBounds(parsed, placement.characterId, state, 0);
-      const claimed = createSwfFamilyPlacementNode(
-        state.families,
+      const claimed = createSwfHandlerPlacementNode(
+        state.handlers,
         parsed,
         placement.characterId,
         targetBounds,
@@ -750,39 +740,39 @@ function createSwfSymbolNode(
   state: SwfInstantiationState,
 ): Node2D | null {
   const bounds = resolveSwfCharacterBounds(parsed, characterId, state, 0);
-  const claimed = createSwfFamilyPlacementNode(state.families, parsed, characterId, bounds, state.diagnostics);
+  const claimed = createSwfHandlerPlacementNode(state.handlers, parsed, characterId, bounds, state.diagnostics);
   if (claimed !== null) return claimed;
   const sprite = parsed.sprites.get(characterId);
   return sprite === undefined ? null : createSwfTimelineNode(sprite, bounds, parsed, slots, state, 0);
 }
 
-// Asks each registered family, in the registry's own order, what a placed character becomes. A character
+// Asks each named handler, in the caller's own array order, what a placed character becomes. A character
 // id is defined exactly once — a second definition under the same id is refused at the tag — so at most
-// one family ever answers, and the order only decides which is asked first. Null means nothing this build
-// registered defined the character, which is the caller's cue to fall back to a bare container.
-function createSwfFamilyPlacementNode(
-  families: readonly Readonly<SwfTagFamily>[],
+// one handler ever answers, and the order only decides which is asked first. Null means nothing this
+// build named defined the character, which is the caller's cue to fall back to a bare container.
+function createSwfHandlerPlacementNode(
+  handlers: readonly Readonly<SwfTagHandler>[],
   parsed: Readonly<SwfTagParseResult>,
   characterId: number,
   bounds: SwfTagRectangle | null,
   diagnostics: ImportDiagnostic[] | undefined,
 ): Node2D | null {
-  for (const family of families) {
-    const node = family.instantiate?.createPlacementNode?.(parsed, characterId, bounds, diagnostics);
+  for (const handler of handlers) {
+    const node = handler.instantiate?.createPlacementNode?.(parsed, characterId, bounds, diagnostics);
     if (node !== undefined && node !== null) return node;
   }
   return null;
 }
 
-// Whether any registered family defined visual content for the character. Asked before a node is built,
+// Whether any named handler defined visual content for the character. Asked before a node is built,
 // so a placement that earns none allocates nothing.
-function hasSwfFamilyPlacementContent(
-  families: readonly Readonly<SwfTagFamily>[],
+function hasSwfHandlerPlacementContent(
+  handlers: readonly Readonly<SwfTagHandler>[],
   parsed: Readonly<SwfTagParseResult>,
   characterId: number,
 ): boolean {
-  for (const family of families) {
-    if (family.instantiate?.hasPlacementContent?.(parsed, characterId) === true) return true;
+  for (const handler of handlers) {
+    if (handler.instantiate?.hasPlacementContent?.(parsed, characterId) === true) return true;
   }
   return false;
 }
@@ -853,27 +843,20 @@ export function initializeSwfDocumentImport(
 
 // Every linkage name the file exported, whether or not the symbol was ever placed. Pair with
 // `createScene2DSymbolFromSwf` to instantiate one.
-export function readSwfExportedSymbolNames(
-  source: Uint8Array,
-  registry: Readonly<SwfTagFamilyRegistry>,
-  deflate: Readonly<HostDecompressDeflateCapability> | null,
-  lzma: Readonly<HostDecompressLzmaCapability> | null,
-): string[] {
-  const file = readSwfFile(source, registry, deflate, lzma, undefined);
+export function readSwfExportedSymbolNames(source: Uint8Array, options: Readonly<SwfParseOptions>): string[] {
+  const file = readSwfFile(source, options, undefined);
   return file === null ? [] : [...file.parsed.linkages.values()];
 }
 
-// Registers SWF with a document importer registry. The tag families are the caller's choice here as
-// everywhere else: an application that imports SWF for its artwork alone registers shape, placement and
+// Registers SWF with a document importer registry. The tag handlers are the caller's choice here as
+// everywhere else: an application that imports SWF for its artwork alone names shape, placement and
 // control and never links the script, audio or image-decoding chains.
 export function registerSwfScene2DDocumentImporter(
   importers: Scene2DDocumentImporterRegistry,
-  registry: Readonly<SwfTagFamilyRegistry>,
-  deflate: Readonly<HostDecompressDeflateCapability> | null,
-  lzma: Readonly<HostDecompressLzmaCapability> | null,
+  options: Readonly<SwfParseOptions>,
 ): void {
   registerScene2DDocumentImporter(importers, 'swf', matchesSwfDocument, (source) =>
-    createScene2DFromSwf(source, registry, deflate, lzma),
+    createScene2DFromSwf(source, options),
   );
 }
 

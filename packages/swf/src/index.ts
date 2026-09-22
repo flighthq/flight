@@ -1,7 +1,7 @@
 export * from './enableSwfGuards';
 export * from './swfBitmap';
+export * from './swfAllTagHandlers';
 export * from './swfBitmapTagFamily';
-export * from './composeSwfTagHandlers';
 export * from './swfControlHandler';
 export * from './swfControlTagFamily';
 export * from './swfDefineMorphShapeHandler';
@@ -39,8 +39,6 @@ export { swfSoundHandler } from './swfSoundHandler';
 export { swfSoundTagFamily } from './swfSoundTagFamily';
 export * from './swfSpriteHandler';
 export * from './swfSpriteTagFamily';
-export { createSwfTagFamilyRegistry } from './swfTagFamilyDispatch';
-export * from './swfTagFamilyRegistry';
 export * from './swfTagVocabulary';
 export * from './swfStaticTextHandler';
 export * from './swfText';

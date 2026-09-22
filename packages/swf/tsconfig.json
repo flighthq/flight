@@ -19,6 +19,7 @@
     { "path": "../compression" },
     { "path": "../effects" },
     { "path": "../font" },
+    { "path": "../host" },
     { "path": "../geometry" },
     { "path": "../glyphatlas" },
     { "path": "../image" },

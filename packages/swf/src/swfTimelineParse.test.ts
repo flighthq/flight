@@ -1,11 +1,11 @@
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
-import type { ImportDiagnostic, SwfTagFamily, SwfTimeline, TimelineLabel } from '@flighthq/types/contract';
+import type { ImportDiagnostic, SwfTagHandler, SwfTimeline, TimelineLabel } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import { expandSwfTagHandlerDispatch } from './expandSwfTagHandlerDispatch';
 import { swfControlTagFamily } from './swfControlTagFamily';
 import { swfPlacementTagFamily } from './swfPlacementTagFamily';
 import { SwfReader } from './swfReader';
-import { createSwfTagFamilyRegistry, getSwfTagFamilyDispatch } from './swfTagFamilyDispatch';
 import { createSwfTestParseState, createSwfTagRecord, joinSwfBytes, swfUint16Bytes } from './swfTagStreamTestHelper';
 import { addSwfTimelineLabel, readSwfTimeline } from './swfTimelineParse';
 
@@ -119,8 +119,8 @@ describe('readSwfTimeline', () => {
   });
 
   it('returns the sentinel when a family declares the stream unwalkable', () => {
-    const refusing: SwfTagFamily = { tags: [TAG_SET_BACKGROUND_COLOR], parse: () => false };
-    const state = createSwfTestParseState(getSwfTagFamilyDispatch(createSwfTagFamilyRegistry({ control: refusing })));
+    const refusing: SwfTagHandler = { tags: [TAG_SET_BACKGROUND_COLOR], parse: () => false };
+    const state = createSwfTestParseState(expandSwfTagHandlerDispatch([refusing]));
     const bytes = joinSwfBytes(
       createSwfTagRecord(TAG_SET_BACKGROUND_COLOR, new Uint8Array([1, 2, 3])),
       createSwfTagRecord(TAG_END),
@@ -192,9 +192,7 @@ function sceneLabelAt(frame: number, text: string): Uint8Array {
   );
 }
 
-const DISPATCH = getSwfTagFamilyDispatch(
-  createSwfTagFamilyRegistry({ control: swfControlTagFamily, placement: swfPlacementTagFamily }),
-);
+const DISPATCH = expandSwfTagHandlerDispatch([...swfControlTagFamily, ...swfPlacementTagFamily]);
 const TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA = 86;
 const TAG_DO_ABC = 82;
 const TAG_END = 0;

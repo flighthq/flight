@@ -4,7 +4,7 @@ import type {
   Awd2Block,
   Awd2BlockDispatch,
   Awd2BlockHandler,
-  Awd2BlockRegistry,
+  Awd2ParseOptions,
   Awd2ParseState,
   Decompressor,
   HostDecompressDeflateCapability,
@@ -15,7 +15,7 @@ import type {
 } from '@flighthq/types/contract';
 import { CompressionFraming, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { createAwd2ParseState, getAwd2BlockDispatch, getAwd2BlockHandlers } from './awd2BlockDispatch';
+import { expandAwd2BlockDispatch, createAwd2ParseState } from './awd2BlockDispatch';
 import {
   AWD2_BLOCK_HEADER_BYTES,
   AWD2_COMPRESSION_DEFLATE,
@@ -32,22 +32,18 @@ import {
 
 // Parses an Away3D AWD 2.x binary file into a Scene3D. Convenience over
 // `createScene3DFromDocument(parseAwd2(...))`. See parseAwd2 for the import model, and for why the block
-// registry is the caller's to choose.
+// handler array is the caller's to choose.
 export function createScene3DFromAwd2(
   bytes: Readonly<Uint8Array>,
-  registry: Readonly<Awd2BlockRegistry>,
-  deflate: Readonly<HostDecompressDeflateCapability> | null,
-  lzma: Readonly<HostDecompressLzmaCapability> | null,
+  options: Readonly<Awd2ParseOptions>,
   diagnostics?: ImportDiagnostic[],
 ): Scene3D {
-  return createScene3DFromDocument(parseAwd2(bytes, registry, deflate, lzma, diagnostics));
+  return createScene3DFromDocument(parseAwd2(bytes, options, diagnostics));
 }
 
 export function parseAwd2(
   bytes: Readonly<Uint8Array>,
-  registry: Readonly<Awd2BlockRegistry>,
-  deflate: Readonly<HostDecompressDeflateCapability> | null,
-  lzma: Readonly<HostDecompressLzmaCapability> | null,
+  options: Readonly<Awd2ParseOptions>,
   diagnostics?: ImportDiagnostic[],
 ): Scene3DDocument {
   const input = bytes as Uint8Array;
@@ -66,13 +62,14 @@ export function parseAwd2(
   // A compressed body is inflated and spliced back behind the header so the block walk below is identical
   // for compressed and uncompressed input; bails to empty when the caller supplied no codec for the
   // file's compression method.
-  const rehydrated = rehydrateAwdBody(input, deflate, lzma, diagnostics);
+  const decompress = options.host.decompress;
+  const rehydrated = rehydrateAwdBody(input, decompress.deflate ?? null, decompress.lzma ?? null, diagnostics);
   if (rehydrated === null) return emptyAwdDocument();
 
   const state = createAwd2ParseState(emptyAwdDocument(), rehydrated.source, rehydrated.view, diagnostics);
-  const dispatch = getAwd2BlockDispatch(registry);
-  walkAwd2Blocks(state, dispatch);
-  for (const handler of getAwd2BlockHandlers(registry)) handler.build?.(state);
+  walkAwd2Blocks(state, expandAwd2BlockDispatch(options.blocks));
+  // Build phases run in the caller's array order, which is the order they depend on each other in.
+  for (const handler of options.blocks) handler.build?.(state);
   return state.document;
 }
 

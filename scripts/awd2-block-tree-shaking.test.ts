@@ -89,9 +89,10 @@ describe('AWD2 static-scene builds', () => {
     }
   });
 
-  // The one module that names every handler is the only edge by which a build could acquire them all, so
-  // an importer that reached it would make every other assertion here depend on tree shaking instead of
-  // on the import graph.
+  // awd2BlockRegistry is the one module that names every handler, and so the only edge by which a build
+  // could acquire them all. An importer that reached it would make every other assertion here depend on
+  // tree shaking instead of on the import graph. The dispatch builder, which names no handler, is
+  // reached — that is what makes the exclusion structural rather than a shaker's favour.
   it('does not link the module that names every handler', async () => {
     const bundle = await bundleAwd2Exports(STATIC_ENTRY);
     expect(contributedBytes(bundle, 'awd2BlockRegistry.ts')).toBe(0);
@@ -120,8 +121,8 @@ describe('AWD2 per-family cost', () => {
 });
 
 describe('AWD2 zero-config builds', () => {
-  it('reaches every family through the default registry', async () => {
-    const bundle = await bundleAwd2Exports(['parseAwd2', 'createAwd2DefaultBlockRegistry']);
+  it('reaches every family through the all-handlers preset', async () => {
+    const bundle = await bundleAwd2Exports(['parseAwd2', 'awd2AllBlockHandlers']);
     expect(contributedBytes(bundle, 'awd2BlockRegistry.ts')).toBeGreaterThan(0);
     for (const family of FAMILIES) {
       expect(contributedBytes(bundle, family.module), family.name).toBeGreaterThan(0);

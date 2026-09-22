@@ -4,5 +4,5 @@
     "noEmit": true
   },
   "include": ["src/**/*.ts", "vite.config.ts"],
-  "references": [{ "path": "../../../packages/sdk" }]
+  "references": [{ "path": "../../../packages/host-web" }, { "path": "../../../packages/sdk" }]
 }

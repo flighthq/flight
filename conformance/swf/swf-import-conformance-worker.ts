@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { parentPort } from 'node:worker_threads';
 
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
-import { createScene2DFromSwf, createSwfDefaultTagFamilyRegistry } from '@flighthq/swf/contract';
+import { createHost } from '@flighthq/host/contract';
+import { createScene2DFromSwf, swfAllTagHandlers } from '@flighthq/swf/contract';
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 
 import type {
@@ -17,14 +18,7 @@ parentPort.on('message', (request: SwfImportConformanceWorkerRequest) => {
   let imported = false;
   let threw = false;
   try {
-    imported =
-      createScene2DFromSwf(
-        readFileSync(request.path),
-        createSwfDefaultTagFamilyRegistry(),
-        sdkHostDecompressDeflate,
-        null,
-        diagnostics,
-      ) !== null;
+    imported = createScene2DFromSwf(readFileSync(request.path), SWF_PARSE_OPTIONS, diagnostics) !== null;
   } catch {
     threw = true;
   }
@@ -40,3 +34,8 @@ parentPort.on('message', (request: SwfImportConformanceWorkerRequest) => {
   };
   parentPort!.postMessage(response);
 });
+
+const SWF_PARSE_OPTIONS = {
+  host: createHost({ decompress: { deflate: sdkHostDecompressDeflate } }),
+  tags: swfAllTagHandlers,
+};

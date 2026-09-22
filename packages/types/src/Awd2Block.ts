@@ -28,21 +28,13 @@ export interface Awd2Block {
 /**
  * One AWD2 block-type handler — the unit of opt-in.
  *
- * Registering a handler is what pulls its parsing, its build phase, and the packages behind them into a
- * build; leaving it out is what keeps them out. A file containing blocks nobody claimed still imports:
+ * Naming a handler in `Awd2ParseOptions.blocks` is what pulls its parsing, its build phase, and the
+ * packages behind them into a build; leaving it out is what keeps them out. A file containing blocks nobody claimed still imports:
  * the unclaimed blocks are skipped by their length prefix and reported once per distinct type.
  */
 export interface Awd2BlockHandler {
   /** Every AWD2 block type id this handler claims. Expanded once into the walk's flat dispatch table. */
   readonly blockTypes: readonly number[];
-  /**
-   * The primitives this handler composes, when it is a family rather than one of them.
-   *
-   * The walk dispatches to the PART that owns a block type rather than to the family, which is what lets
-   * `deferred` stay a plain per-handler flag: a skeleton family holds one handler read on the first pass
-   * and two read on the second, and neither the family nor the walk has to special-case that.
-   */
-  readonly parts?: readonly Awd2BlockHandler[];
   /**
    * True when this handler's blocks cannot be read on the first pass because they reference data an
    * earlier block type carries — a skeleton pose names the skeleton whose joint count it is written
@@ -59,35 +51,15 @@ export interface Awd2BlockHandler {
   build?(state: Awd2ParseState): void;
 }
 
-/**
- * The six block families an AWD2 file is read through. Every slot is optional: an absent family's blocks
- * are skipped by their length prefix, its build never runs, and the packages it would have reached are
- * absent from the module graph rather than merely unreferenced in it.
- *
- * A registry is assembled once and read many times, so it carries its own expanded `dispatch` rather than
- * being re-expanded per import. Reassigning a slot afterwards does not re-expand it: build the registry
- * you want rather than editing one you have handed to an importer.
- */
-export interface Awd2BlockRegistry extends Entity {
-  /** The six slots expanded into one flat block-type table, built when the registry is built. */
-  dispatch: Awd2BlockDispatch;
-  readonly camera?: Awd2BlockHandler | null;
-  readonly geometry?: Awd2BlockHandler | null;
-  readonly lighting?: Awd2BlockHandler | null;
-  readonly materials?: Awd2BlockHandler | null;
-  readonly sceneStructure?: Awd2BlockHandler | null;
-  readonly skeleton?: Awd2BlockHandler | null;
-}
-
-/** The flat block-type table the walk dispatches through, built once per registry. */
+/** The flat block-type table the walk dispatches through, expanded once per import. */
 export type Awd2BlockDispatch = ReadonlyMap<number, Readonly<Awd2BlockHandler>>;
 
 /**
- * Everything one AWD2 import accumulates, shared by every registered handler.
+ * Everything one AWD2 import accumulates, shared by every named handler.
  *
  * One state rather than per-handler state, because the format's cross-references are between families: a
  * mesh instance names a geometry and a material block, a light picker names lights, a pose names a
- * skeleton. Every lookup goes through a block id, so a family that was not registered leaves its map
+ * skeleton. Every lookup goes through a block id, so a handler that was not named leaves its map
  * empty and its references resolve to nothing — the same graceful degradation a missing block gets.
  */
 export interface Awd2ParseState extends Entity {
