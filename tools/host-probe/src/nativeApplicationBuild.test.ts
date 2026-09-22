@@ -81,6 +81,13 @@ describe('native host CI configuration', () => {
     expect(endToEndTest).toContain("status === 'pass' || status === 'fail'");
     expect(endToEndTest).toContain('document.documentElement.dataset.hostProbeReport');
     expect(endToEndTest).not.toContain('window.__flightHostProbeReport?.status');
+    // index.html titles the page before /src/main.ts runs, so readiness must additionally require the
+    // stage the probe stamps on entry; otherwise the report budget starts at page-parse time.
+    expect(endToEndTest).toContain('document.documentElement.dataset.hostProbeStage ?? null');
+    expect(endToEndTest).toContain('no hostProbeStage stamped yet');
+    // The wait's own error has to survive: a bare catch reports a published report as "did not publish".
+    expect(endToEndTest).toContain('catch (error)');
+    expect(endToEndTest).not.toMatch(/\}\s*catch\s*\{/);
     expect(main).toContain('document.documentElement.dataset.hostProbeReport = JSON.stringify(report)');
     expect(main).toContain('void runHostProbe();');
     expect(main).toMatch(/async function runHostProbe\(\): Promise<void> \{[\s\S]+await installHostProbe/);
