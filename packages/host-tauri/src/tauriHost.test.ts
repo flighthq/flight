@@ -16,6 +16,7 @@ const GROUPS = [
   ['bitmap', 'tauriHostBitmap'],
   ['clipboard', 'tauriHostClipboard'],
   ['connectivity', 'tauriHostConnectivity'],
+  ['decompress', 'tauriHostDecompress'],
   ['device', 'tauriHostDevice'],
   ['dialog', 'tauriHostDialog'],
   ['fileSystem', 'tauriHostFileSystem'],

@@ -75,7 +75,6 @@ function classifyCapabilityOutcome(
   if (diagnostics.some(isDefectDiagnostic)) return 'importedWrong';
   if (diagnostics.some(isUnsupportedDiagnostic)) return 'unsupportedClean';
   if (!observation.imported) {
-    if (observation.diagnostics.some(isNoDecompressorDiagnostic)) return 'unsupportedClean';
     if (observation.diagnostics.some(isDefectDiagnostic)) return 'importedWrong';
     return 'silentlyWrong';
   }
@@ -86,7 +85,7 @@ function isDefectDiagnostic(diagnostic: Readonly<ImportDiagnostic>): boolean {
   return (
     diagnostic.severity === ImportDiagnosticSeverity.Drop ||
     diagnostic.severity === ImportDiagnosticSeverity.Recover ||
-    (diagnostic.severity === ImportDiagnosticSeverity.Reject && !isNoDecompressorDiagnostic(diagnostic))
+    diagnostic.severity === ImportDiagnosticSeverity.Reject
   );
 }
 
@@ -94,10 +93,6 @@ function isCauseUnknownDiagnostic(diagnostic: Readonly<ImportDiagnostic>): boole
   return diagnostic.kind === 'swf.shape-body-unreadable';
 }
 
-function isNoDecompressorDiagnostic(diagnostic: Readonly<ImportDiagnostic>): boolean {
-  return diagnostic.kind === 'swf.no-decompressor-registered';
-}
-
 function isUnsupportedDiagnostic(diagnostic: Readonly<ImportDiagnostic>): boolean {
-  return diagnostic.severity === ImportDiagnosticSeverity.Skip || isNoDecompressorDiagnostic(diagnostic);
+  return diagnostic.severity === ImportDiagnosticSeverity.Skip;
 }

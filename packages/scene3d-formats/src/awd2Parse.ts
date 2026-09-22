@@ -1,6 +1,5 @@
 import { createAnimationChannel, createAnimationClip, createAnimationTrack } from '@flighthq/animation/contract';
 import { createOrthographicProjection, createPerspectiveProjection } from '@flighthq/camera/contract';
-import { getDecompressor } from '@flighthq/compression/contract';
 import {
   copyMatrix4,
   createMatrix4,
@@ -26,8 +25,12 @@ import {
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import { createShadedMaterial } from '@flighthq/shading/contract';
 import type { Scene3D } from '@flighthq/types/contract';
-import type { Decompressor } from '@flighthq/types/contract';
-import { Compression, CompressionFraming } from '@flighthq/types/contract';
+import type {
+  Decompressor,
+  HostDecompressDeflateCapability,
+  HostDecompressLzmaCapability,
+} from '@flighthq/types/contract';
+import { CompressionFraming } from '@flighthq/types/contract';
 import type {
   AnimationClip,
   AnimationTrack,
@@ -151,8 +154,13 @@ import {
 
 // Parses an Away3D AWD 2.x binary file into a Scene3D. Convenience over `createScene3DFromDocument(parseAwd2
 // (bytes, diagnostics))`. See parseAwd2 for the import model.
-export function createScene3DFromAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): Scene3D {
-  return createScene3DFromDocument(parseAwd2(bytes, diagnostics));
+export function createScene3DFromAwd2(
+  bytes: Readonly<Uint8Array>,
+  deflate: Readonly<HostDecompressDeflateCapability> | null,
+  lzma: Readonly<HostDecompressLzmaCapability> | null,
+  diagnostics?: ImportDiagnostic[],
+): Scene3D {
+  return createScene3DFromDocument(parseAwd2(bytes, deflate, lzma, diagnostics));
 }
 
 // Parses an Away3D AWD 2.x binary file into a format-neutral Scene3DDocument. The 12-byte header (magic
@@ -188,7 +196,12 @@ export function createScene3DFromAwd2(bytes: Readonly<Uint8Array>, diagnostics?:
 // has been registered for that algorithm in `@flighthq/compression`; with no codec registered
 // the file records a diagnostic and returns an empty document. Malformed input records a diagnostic and returns empty rather
 // than throwing.
-export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): Scene3DDocument {
+export function parseAwd2(
+  bytes: Readonly<Uint8Array>,
+  deflate: Readonly<HostDecompressDeflateCapability> | null,
+  lzma: Readonly<HostDecompressLzmaCapability> | null,
+  diagnostics?: ImportDiagnostic[],
+): Scene3DDocument {
   const input = bytes as Uint8Array;
   if (input.byteLength < AWD2_HEADER_BYTES) {
     reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'awd2.header-too-short', 'parseAwd2');
@@ -205,7 +218,7 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
   // A compressed body is inflated (via a registered decompressor) and spliced back behind the header so
   // the block walk below is identical for compressed and uncompressed input; bails to empty when no codec
   // is registered for the file's compression method.
-  const rehydrated = rehydrateAwdBody(input, diagnostics);
+  const rehydrated = rehydrateAwdBody(input, deflate, lzma, diagnostics);
   if (rehydrated === null) return emptyAwdDocument();
   const source = rehydrated.source;
   const view = rehydrated.view;
@@ -553,6 +566,8 @@ export function parseAwd2(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagn
 export function parseAwd2SkeletonAnimations(
   bytes: Readonly<Uint8Array>,
   joints: readonly Node3D[],
+  deflate: Readonly<HostDecompressDeflateCapability> | null,
+  lzma: Readonly<HostDecompressLzmaCapability> | null,
   diagnostics?: ImportDiagnostic[],
 ): Record<string, AnimationClip> {
   const input = bytes as Uint8Array;
@@ -580,7 +595,7 @@ export function parseAwd2SkeletonAnimations(
 
   // Inflate a compressed body and splice it back behind the header so the walk is identical to the
   // uncompressed path; bails to an empty result when no codec is registered for the compression method.
-  const rehydrated = rehydrateAwdBody(input, diagnostics);
+  const rehydrated = rehydrateAwdBody(input, deflate, lzma, diagnostics);
   if (rehydrated === null) return {};
   const source = rehydrated.source;
   const view = rehydrated.view;
@@ -2852,13 +2867,15 @@ function parseSkeletonAnimationBlock(
 // (after recording a diagnostic) when the compression method has no registered decompressor or the codec fails.
 function rehydrateAwdBody(
   input: Uint8Array,
+  deflate: Readonly<HostDecompressDeflateCapability> | null,
+  lzma: Readonly<HostDecompressLzmaCapability> | null,
   diagnostics?: ImportDiagnostic[],
 ): { source: Uint8Array; view: DataView } | null {
   const view = new DataView(input.buffer, input.byteOffset, input.byteLength);
   const compression = input[7];
   if (compression === AWD2_COMPRESSION_NONE) return { source: input, view };
 
-  const decompressor = resolveAwdDecompressor(compression);
+  const decompressor = resolveAwdDecompressor(compression, deflate, lzma);
   if (decompressor === null) {
     reportImportDiagnostic(
       diagnostics,
@@ -2904,12 +2921,16 @@ function rehydrateAwdBody(
 // it in one place if Away3D's convention proves to be the opposite chirality.
 const AWD2_TANGENT_HANDEDNESS = -1;
 
-// Maps AWD's header compression byte onto the algorithm the shared registry is keyed by. The file format
-// numbers its methods; the registry names them, so one registration serves every container that carries
-// the same algorithm.
-function resolveAwdDecompressor(compression: number): Decompressor | null {
-  if (compression === AWD2_COMPRESSION_DEFLATE) return getDecompressor(Compression.Deflate);
-  return compression === AWD2_COMPRESSION_LZMA ? getDecompressor(Compression.Lzma) : null;
+// Maps AWD's header compression byte onto the host slot that can read it. The file format numbers its
+// methods; the Host names them per algorithm, so the same slot serves every container carrying it. A
+// method the host cannot supply resolves to null, which the caller reports rather than guessing at.
+function resolveAwdDecompressor(
+  compression: number,
+  deflate: Readonly<HostDecompressDeflateCapability> | null,
+  lzma: Readonly<HostDecompressLzmaCapability> | null,
+): Decompressor | null {
+  if (compression === AWD2_COMPRESSION_DEFLATE) return deflate?.decompress ?? null;
+  return compression === AWD2_COMPRESSION_LZMA ? (lzma?.decompress ?? null) : null;
 }
 
 // Whether a decomposed pose scale departs from unit within tolerance — the gate for emitting a scale

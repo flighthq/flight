@@ -28,6 +28,7 @@ import {
   capacitorHostCanvas,
   capacitorHostSurface,
   capacitorHostTextSegment,
+  capacitorHostDecompress,
   capacitorHostTextShaper,
   capacitorHostTray,
   capacitorHostUpdater,
@@ -50,6 +51,10 @@ describe('capacitorHostBitmap', () => {
 
 describe('capacitorHostCanvas', () => {
   it('claims no canvas slots', () => expect(capacitorHostCanvas()).toEqual({}));
+});
+
+describe('capacitorHostDecompress', () => {
+  it('claims no decompression slots', () => expect(capacitorHostDecompress()).toEqual({}));
 });
 
 describe('capacitorHostFont', () => {

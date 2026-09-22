@@ -33,6 +33,7 @@ import {
   tauriHostCanvas,
   tauriHostSurface,
   tauriHostTextSegment,
+  tauriHostDecompress,
   tauriHostTextShaper,
   tauriHostUpdater,
   tauriHostVideo,
@@ -52,6 +53,7 @@ describe('tauriHostCanvas', () => {
   it('claims no canvas slots', () => expect(tauriHostCanvas()).toEqual({}));
 });
 describe('tauriHostConnectivity', returnsEmptyGroup(tauriHostConnectivity));
+describe('tauriHostDecompress', returnsEmptyGroup(tauriHostDecompress));
 describe('tauriHostDevice', returnsEmptyGroup(tauriHostDevice));
 describe('tauriHostFileSystem', returnsEmptyGroup(tauriHostFileSystem));
 describe('tauriHostFont', returnsEmptyGroup(tauriHostFont));
@@ -76,8 +78,8 @@ describe('tauriHostSensors', returnsEmptyGroup(tauriHostSensors));
 describe('tauriHostShare', returnsEmptyGroup(tauriHostShare));
 describe('tauriHostSocket', returnsEmptyGroup(tauriHostSocket));
 describe('tauriHostSoftKeyboard', returnsEmptyGroup(tauriHostSoftKeyboard));
-describe('tauriHostStatusBar', returnsEmptyGroup(tauriHostStatusBar));
 
+describe('tauriHostStatusBar', returnsEmptyGroup(tauriHostStatusBar));
 describe('tauriHostSurface', returnsEmptyGroup(tauriHostSurface));
 describe('tauriHostTextSegment', returnsEmptyGroup(tauriHostTextSegment));
 describe('tauriHostTextShaper', () => {

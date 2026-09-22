@@ -16,6 +16,7 @@ const GROUPS = [
   ['canvas', 'electronHostCanvasGroup'],
   ['clipboard', 'electronHostClipboard'],
   ['connectivity', 'electronHostConnectivityGroup'],
+  ['decompress', 'electronHostDecompressGroup'],
   ['device', 'electronHostDeviceGroup'],
   ['dialog', 'electronHostDialog'],
   ['fileSystem', 'electronHostFileSystemGroup'],

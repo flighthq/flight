@@ -211,6 +211,7 @@ const HOST_GROUPS = [
   'canvas',
   'clipboard',
   'connectivity',
+  'decompress',
   'device',
   'dialog',
   'fileSystem',

@@ -70,14 +70,6 @@
       "registrar": "registerDefaultCommandBindings"
     },
     {
-      "packageName": "compression",
-      "registrar": "registerDecompressor"
-    },
-    {
-      "packageName": "compression",
-      "registrar": "registerDeflateDecompressor"
-    },
-    {
       "packageName": "debug",
       "registrar": "registerDebugSubsystem"
     },

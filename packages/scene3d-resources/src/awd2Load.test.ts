@@ -50,7 +50,7 @@ describe('loadScene3DDocumentFromAwd2Url', () => {
     vi.mocked(scene3dFormatsContract.parseAwd2).mockReturnValue(document);
     vi.mocked(netContract.sendNetRequest).mockResolvedValue(okResponse(new Uint8Array([5, 6]).buffer));
 
-    const loaded = await loadScene3DDocumentFromAwd2Url(fakeHost().net.http, 'model.awd');
+    const loaded = await loadScene3DDocumentFromAwd2Url(fakeHost().net.http, 'model.awd', null, null);
 
     expect(Array.from(vi.mocked(scene3dFormatsContract.parseAwd2).mock.calls[0][0])).toEqual([5, 6]);
     expect(loaded).toBe(document);

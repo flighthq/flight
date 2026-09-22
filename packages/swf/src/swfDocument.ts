@@ -1,7 +1,6 @@
 import { createColorScaleBiasAdjustment } from '@flighthq/adjustments/contract';
 import { createAudioResource, createEmbeddedAudioResourceReference } from '@flighthq/audio/contract';
 import { createClipRegionFromContours, createClipRegionFromPath } from '@flighthq/clip/contract';
-import { getDecompressor } from '@flighthq/compression/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix, inverseMatrix, matrixTransformPointXY, multiplyMatrix } from '@flighthq/geometry/contract';
 import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
@@ -35,6 +34,8 @@ import {
 } from '@flighthq/shape/contract';
 import { createSampler, createTexture } from '@flighthq/texture/contract';
 import type {
+  HostDecompressDeflateCapability,
+  HostDecompressLzmaCapability,
   Adjustment,
   AudioResource,
   AudioResourceReference,
@@ -108,25 +109,34 @@ import { createSwfTextShape, readSwfFontGlyphOutlineSource } from './swfText';
 // Scene2D construction so callers that only need embedded fonts do not have to retain a document.
 export function createGlyphOutlineSourcesFromSwf(
   source: Uint8Array,
+  deflate: Readonly<HostDecompressDeflateCapability> | null,
+  lzma: Readonly<HostDecompressLzmaCapability> | null,
   diagnostics?: ImportDiagnostic[],
 ): ReadonlyMap<number, GlyphOutlineSource> | null {
-  const file = readSwfFile(source, diagnostics, createSwfDefaultTagHandlerRegistry());
+  const file = readSwfFile(source, deflate, lzma, diagnostics, createSwfDefaultTagHandlerRegistry());
   return file === null ? null : new Map(file.parsed.fontOutlineSources);
 }
 
 // The document alone, for a caller that wants the graph and nothing else — the importer registry among
 // them. A file whose placements carry an advanced blend or a filter list still imports fully here; what
 // it loses is the report of them, which is what createScene2DImportFromSwf returns.
-export function createScene2DFromSwf(source: Uint8Array, diagnostics?: ImportDiagnostic[]): Scene2DDocument | null {
-  return createScene2DImportFromSwf(source, diagnostics)?.document ?? null;
+export function createScene2DFromSwf(
+  source: Uint8Array,
+  deflate: Readonly<HostDecompressDeflateCapability> | null,
+  lzma: Readonly<HostDecompressLzmaCapability> | null,
+  diagnostics?: ImportDiagnostic[],
+): Scene2DDocument | null {
+  return createScene2DImportFromSwf(source, deflate, lzma, diagnostics)?.document ?? null;
 }
 
 export function createScene2DFromSwfWithTagHandlers(
   source: Uint8Array,
   registry: Readonly<SwfTagHandlerRegistry>,
+  deflate: Readonly<HostDecompressDeflateCapability> | null,
+  lzma: Readonly<HostDecompressLzmaCapability> | null,
   diagnostics?: ImportDiagnostic[],
 ): Scene2DDocument | null {
-  return createScene2DImportFromSwfWithTagHandlers(source, registry, diagnostics)?.document ?? null;
+  return createScene2DImportFromSwfWithTagHandlers(source, registry, deflate, lzma, diagnostics)?.document ?? null;
 }
 
 // The full import: the document, plus the placement appearance no node can carry. SWF puts a blend mode
@@ -136,9 +146,11 @@ export function createScene2DFromSwfWithTagHandlers(
 // dropped at the seam or silently flattened onto a node.
 export function createScene2DImportFromSwf(
   source: Uint8Array,
+  deflate: Readonly<HostDecompressDeflateCapability> | null,
+  lzma: Readonly<HostDecompressLzmaCapability> | null,
   diagnostics?: ImportDiagnostic[],
 ): SwfDocumentImport | null {
-  const file = readSwfFile(source, diagnostics, createSwfDefaultTagHandlerRegistry());
+  const file = readSwfFile(source, deflate, lzma, diagnostics, createSwfDefaultTagHandlerRegistry());
   if (file === null) return null;
   return instantiateSwfFile(file, diagnostics);
 }
@@ -146,9 +158,11 @@ export function createScene2DImportFromSwf(
 export function createScene2DImportFromSwfWithTagHandlers(
   source: Uint8Array,
   registry: Readonly<SwfTagHandlerRegistry>,
+  deflate: Readonly<HostDecompressDeflateCapability> | null,
+  lzma: Readonly<HostDecompressLzmaCapability> | null,
   diagnostics?: ImportDiagnostic[],
 ): SwfDocumentImport | null {
-  const file = readSwfFile(source, diagnostics, registry);
+  const file = readSwfFile(source, deflate, lzma, diagnostics, registry);
   if (file === null) return null;
   return instantiateSwfFile(file, diagnostics);
 }
@@ -206,9 +220,11 @@ function instantiateSwfFile(file: SwfFile, diagnostics: ImportDiagnostic[] | und
 export function createScene2DSymbolFromSwf(
   source: Uint8Array,
   linkageName: string,
+  deflate: Readonly<HostDecompressDeflateCapability> | null,
+  lzma: Readonly<HostDecompressLzmaCapability> | null,
   diagnostics?: ImportDiagnostic[],
 ): Scene2DDocument | null {
-  const file = readSwfFile(source, diagnostics, createSwfDefaultTagHandlerRegistry());
+  const file = readSwfFile(source, deflate, lzma, diagnostics, createSwfDefaultTagHandlerRegistry());
   if (file === null) return null;
   const { frameRate, parsed } = file;
 
@@ -657,10 +673,12 @@ interface SwfFile {
 
 function readSwfFile(
   source: Uint8Array,
+  deflate: Readonly<HostDecompressDeflateCapability> | null,
+  lzma: Readonly<HostDecompressLzmaCapability> | null,
   diagnostics: ImportDiagnostic[] | undefined,
   registry: Readonly<SwfTagHandlerRegistry>,
 ): SwfFile | null {
-  const uncompressed = uncompressSwfSource(source, diagnostics);
+  const uncompressed = uncompressSwfSource(source, deflate, lzma, diagnostics);
   if (uncompressed === null) return null;
 
   // Every rejection below loses the WHOLE document, and each has a distinct cause. Without a report per
@@ -3210,13 +3228,23 @@ export function initializeTimelineStreamAudioCue(
 
 // Every linkage name the file exported, whether or not the symbol was ever placed. Pair with
 // `createScene2DSymbolFromSwf` to instantiate one.
-export function readSwfExportedSymbolNames(source: Uint8Array): string[] {
-  const file = readSwfFile(source, undefined, createSwfDefaultTagHandlerRegistry());
+export function readSwfExportedSymbolNames(
+  source: Uint8Array,
+  deflate: Readonly<HostDecompressDeflateCapability> | null,
+  lzma: Readonly<HostDecompressLzmaCapability> | null,
+): string[] {
+  const file = readSwfFile(source, deflate, lzma, undefined, createSwfDefaultTagHandlerRegistry());
   return file === null ? [] : [...file.parsed.linkages.values()];
 }
 
-export function registerSwfScene2DDocumentImporter(registry: Scene2DDocumentImporterRegistry): void {
-  registerScene2DDocumentImporter(registry, 'swf', matchesSwfDocument, (source) => createScene2DFromSwf(source));
+export function registerSwfScene2DDocumentImporter(
+  registry: Scene2DDocumentImporterRegistry,
+  deflate: Readonly<HostDecompressDeflateCapability> | null,
+  lzma: Readonly<HostDecompressLzmaCapability> | null,
+): void {
+  registerScene2DDocumentImporter(registry, 'swf', matchesSwfDocument, (source) =>
+    createScene2DFromSwf(source, deflate, lzma),
+  );
 }
 
 // Presents any container form as the uncompressed bytes the rest of the importer reads. `FWS` is already
@@ -3225,7 +3253,12 @@ export function registerSwfScene2DDocumentImporter(registry: Scene2DDocumentImpo
 // to `FWS` — the declared length already counts uncompressed bytes, so it carries over untouched.
 // Compression the caller has not registered a decompressor for is reported as the document's null
 // sentinel, exactly like a malformed file: the bytes are unreadable either way.
-export function uncompressSwfSource(source: Uint8Array, diagnostics?: ImportDiagnostic[]): Uint8Array | null {
+export function uncompressSwfSource(
+  source: Uint8Array,
+  deflate: Readonly<HostDecompressDeflateCapability> | null,
+  lzma: Readonly<HostDecompressLzmaCapability> | null,
+  diagnostics?: ImportDiagnostic[],
+): Uint8Array | null {
   if (source.length < SWF_PREFIX_LENGTH || source[1] !== W_SIGNATURE || source[2] !== S_SIGNATURE) {
     reportImportDiagnostic(
       diagnostics,
@@ -3255,20 +3288,14 @@ export function uncompressSwfSource(source: Uint8Array, diagnostics?: ImportDiag
     );
     return null;
   }
-  const decompress = getDecompressor(compression);
-  // Distinct from a malformed body on purpose. Both return the same null sentinel, but a caller that
-  // never registered a decompressor has a file it could read after one registration, while a corrupt
-  // stream is unreadable however the caller is configured — and only the crumb can tell them apart.
-  if (decompress === null) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Reject,
-      'swf.no-decompressor-registered',
-      'uncompressSwfSource',
-      { compression },
-    );
-    return null;
-  }
+  // A slot the file selects but the host does not fill is simply absent. Absent stays explicit — null,
+  // not a stub that fails later — and needs no diagnostic of its own: the host's own group is the
+  // caller-visible record of what it can decompress.
+  // The container's own signature chose the algorithm; the caller supplied each provider directly, so
+  // this only picks between them. A provider the caller did not supply stays null, and null is the
+  // honest answer rather than a stub that fails later.
+  const slot = compression === Compression.Deflate ? deflate : lzma;
+  if (slot === null) return null;
 
   const header = new SwfReader(source, 0, SWF_PREFIX_LENGTH);
   header.readUint32();
@@ -3304,7 +3331,7 @@ export function uncompressSwfSource(source: Uint8Array, diagnostics?: ImportDiag
     return null;
   }
   const framing = compression === Compression.Deflate ? CompressionFraming.Rfc1950 : CompressionFraming.Raw;
-  const body = decompress(source.subarray(streamStart), bodyLength, framing);
+  const body = slot.decompress(source.subarray(streamStart), bodyLength, framing);
   if (body === null || body.length < bodyLength) {
     reportImportDiagnostic(
       diagnostics,

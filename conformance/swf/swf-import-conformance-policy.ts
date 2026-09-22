@@ -10,5 +10,5 @@ export const SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY: ImportConformanc
     { field: 'sceneCount', rule: { kind: 'nonnegative-integer' } },
   ],
   id: 'swf-diagnostic-evidence-v1',
-  unsupportedDiagnosticKinds: ['swf.no-decompressor-registered'],
+  unsupportedDiagnosticKinds: [],
 };

@@ -1,8 +1,4 @@
-import {
-  registerDecompressor,
-  registerDeflateDecompressor,
-  unregisterDecompressor,
-} from '@flighthq/compression/contract';
+import { decompressDeflate, sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import { Compression, CompressionFraming, EntityRuntimeKey, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { Path } from '@flighthq/types/contract';
@@ -18,11 +14,9 @@ import {
 import { readSfntTableDirectory } from './sfntTableDirectory';
 import { readWoffChecksumMismatches, readWoffFont } from './woffFont';
 
-afterEach(() => unregisterDecompressor(Compression.Deflate));
-
 describe('readWoffChecksumMismatches', () => {
   it('reports nothing when the container states its tables truthfully', () => {
-    expect(readWoffChecksumMismatches(encodeSyntheticWoff(createSyntheticFont()), null)).toEqual([]);
+    expect(readWoffChecksumMismatches(encodeSyntheticWoff(createSyntheticFont()), decompressDeflate)).toEqual([]);
   });
 
   it('names the table, what the file claimed, and what the bytes actually sum to', () => {
@@ -32,7 +26,7 @@ describe('readWoffChecksumMismatches', () => {
     const view = new DataView(woff.buffer);
     const tag = view.getUint32(44);
     view.setUint32(44 + 16, 0xdeadbeef);
-    const found = readWoffChecksumMismatches(woff, null);
+    const found = readWoffChecksumMismatches(woff, decompressDeflate);
     expect(found.length).toBe(1);
     expect(found[0]!.stored).toBe(0xdeadbeef);
     expect(found[0]!.computed).not.toBe(0xdeadbeef);
@@ -45,12 +39,12 @@ describe('readWoffChecksumMismatches', () => {
     // The whole point of the seam: a mismatch is information, not a verdict.
     const woff = encodeSyntheticWoff(createSyntheticFont());
     new DataView(woff.buffer).setUint32(44 + 16, 0xdeadbeef);
-    expect(readWoffChecksumMismatches(woff, null).length).toBe(1);
-    expect(readWoffFont(woff, null)).not.toBeNull();
+    expect(readWoffChecksumMismatches(woff, decompressDeflate).length).toBe(1);
+    expect(readWoffFont(woff, decompressDeflate)).not.toBeNull();
   });
 
   it('returns an empty report for a container it cannot read at all', () => {
-    expect(readWoffChecksumMismatches(new Uint8Array(8), null)).toEqual([]);
+    expect(readWoffChecksumMismatches(new Uint8Array(8), decompressDeflate)).toEqual([]);
   });
 });
 
@@ -60,9 +54,9 @@ describe('readWoffFont', () => {
     // never runs the outline readers. This drives the whole producer — directory, offsets, `loca`,
     // `glyf` — through both the plain font and its wrapper and compares what a caller actually gets.
     const original = createSyntheticFont({ glyphs: [emptySyntheticGlyph(), squareSyntheticGlyph(100)] });
-    const rebuilt = readWoffFont(encodeSyntheticWoff(original), null)!;
-    const before = createGlyphOutlineSourceFromOpenTypeFont(original)!;
-    const after = createGlyphOutlineSourceFromOpenTypeFont(rebuilt)!;
+    const rebuilt = readWoffFont(encodeSyntheticWoff(original), decompressDeflate)!;
+    const before = createGlyphOutlineSourceFromOpenTypeFont(original, sdkHostDecompressDeflate)!;
+    const after = createGlyphOutlineSourceFromOpenTypeFont(rebuilt, sdkHostDecompressDeflate)!;
     const a: Path = { [EntityRuntimeKey]: undefined, commands: [], data: [], winding: 'nonZero' };
     const b: Path = { [EntityRuntimeKey]: undefined, commands: [], data: [], winding: 'nonZero' };
     expect(before.getGlyphOutline(a, 1)).toBe(true);
@@ -75,7 +69,7 @@ describe('readWoffFont', () => {
 
   it('rebuilds an sfnt whose tables match the original', () => {
     const original = createSyntheticFont();
-    const rebuilt = readWoffFont(encodeSyntheticWoff(original), null)!;
+    const rebuilt = readWoffFont(encodeSyntheticWoff(original), decompressDeflate)!;
     const before = readSfntTableDirectory(original)!;
     const after = readSfntTableDirectory(rebuilt)!;
     expect([...after.tables.keys()].sort()).toEqual([...before.tables.keys()].sort());
@@ -83,7 +77,7 @@ describe('readWoffFont', () => {
 
   it('preserves each table byte for byte through the unwrap', () => {
     const original = createSyntheticFont();
-    const rebuilt = readWoffFont(encodeSyntheticWoff(original), null)!;
+    const rebuilt = readWoffFont(encodeSyntheticWoff(original), decompressDeflate)!;
     const before = readSfntTableDirectory(original)!;
     const after = readSfntTableDirectory(rebuilt)!;
     for (const [tag, range] of before.tables) {
@@ -98,7 +92,7 @@ describe('readWoffFont', () => {
   // declaring itself a CFF font rather than one inferred from which tables happen to be present.
   it('carries the original flavor through, rather than inferring one', () => {
     const cff = createSyntheticFont({ flavor: 'opentype' });
-    const rebuilt = readWoffFont(encodeSyntheticWoff(cff), null)!;
+    const rebuilt = readWoffFont(encodeSyntheticWoff(cff), decompressDeflate)!;
     expect(readSfntTableDirectory(rebuilt)?.sfntVersion).toBe(0x4f54544f);
   });
 
@@ -108,7 +102,7 @@ describe('readWoffFont', () => {
     // The container is built in DESCENDING tag order on purpose. A sorted fixture would let this pass
     // whether or not the rebuild sorted anything, which is how the first version of this test was
     // useless — mutation testing found it, not review.
-    const rebuilt = readWoffFont(encodeSyntheticWoff(createSyntheticFont(), true), null)!;
+    const rebuilt = readWoffFont(encodeSyntheticWoff(createSyntheticFont(), true), decompressDeflate)!;
     const view = new DataView(rebuilt.buffer, rebuilt.byteOffset, rebuilt.byteLength);
     const count = view.getUint16(4);
     const tags = Array.from({ length: count }, (_, index) => view.getUint32(12 + index * 16));
@@ -124,7 +118,7 @@ describe('readWoffFont', () => {
     // This reader indexes tables by explicit offset and length, so nothing else in the suite can
     // notice if the padding stops — which is why the assertion is on the byte layout rather than on
     // a round trip.
-    const rebuilt = readWoffFont(encodeSyntheticWoff(createSyntheticFont()), null)!;
+    const rebuilt = readWoffFont(encodeSyntheticWoff(createSyntheticFont()), decompressDeflate)!;
     const view = new DataView(rebuilt.buffer, rebuilt.byteOffset, rebuilt.byteLength);
     const count = view.getUint16(4);
     const lengths = Array.from({ length: count }, (_, index) => view.getUint32(12 + index * 16 + 12));
@@ -135,24 +129,23 @@ describe('readWoffFont', () => {
     expect(offsets.filter((offset) => offset % 4 !== 0)).toEqual([]);
   });
 
-  it('reads a deflated table when a decompressor is registered', () => {
-    registerDeflateDecompressor();
-    // The synthetic wrapper stores tables uncompressed, so this proves the registered path is reached
+  it('reads a deflated table through the supplied decompressor', () => {
+    // The synthetic wrapper stores tables uncompressed, so this proves the supplied path is reached
     // and returns the same bytes rather than proving inflate itself, which compression owns.
-    const rebuilt = readWoffFont(encodeSyntheticWoff(createSyntheticFont()), null);
+    const rebuilt = readWoffFont(encodeSyntheticWoff(createSyntheticFont()), decompressDeflate);
     expect(rebuilt).not.toBeNull();
   });
 
   it('returns the sentinel for a truncated container rather than a partial font', () => {
     const woff = encodeSyntheticWoff(createSyntheticFont());
-    expect(readWoffFont(woff.subarray(0, 20), null)).toBeNull();
-    expect(readWoffFont(woff.subarray(0, woff.length - 8), null)).toBeNull();
+    expect(readWoffFont(woff.subarray(0, 20), decompressDeflate)).toBeNull();
+    expect(readWoffFont(woff.subarray(0, woff.length - 8), decompressDeflate)).toBeNull();
   });
 
   it('returns the sentinel for a container declaring no tables', () => {
     const woff = encodeSyntheticWoff(createSyntheticFont());
     new DataView(woff.buffer).setUint16(12, 0);
-    expect(readWoffFont(woff, null)).toBeNull();
+    expect(readWoffFont(woff, decompressDeflate)).toBeNull();
   });
 
   // A decompressor returning the wrong length has produced something that is not this table, and
@@ -179,26 +172,18 @@ describe('readWoffFont', () => {
     expect(diagnostics[0]!.detail?.outputLength).toBe(3);
   });
 
-  it('returns the sentinel for a compressed table when no decompressor is available', () => {
-    const woff = encodeSyntheticWoff(createSyntheticFont());
-    new DataView(woff.buffer).setUint32(44 + 8, 4);
-    const diagnostics = collectImportDiagnostics((sink) => {
-      expect(readWoffFont(woff, null, sink)).toBeNull();
-    });
-    expect(diagnostics.map((entry) => entry.kind)).toEqual(['woff.no-decompressor-registered']);
-    expect(diagnostics[0]!.severity).toBe(ImportDiagnosticSeverity.Reject);
-  });
-
   it('emits a Reject diagnostic from the public WOFF importer when decompression fails', () => {
     const woff = encodeSyntheticWoff(createSyntheticFont());
     new DataView(woff.buffer).setUint32(44 + 8, 4);
-    registerDecompressor(Compression.Deflate, (_compressed, _uncompressedLength, framing) => {
-      expect(framing).toBe(CompressionFraming.Rfc1950);
-      return null;
-    });
+    const failing = {
+      decompress: (_compressed: Readonly<Uint8Array>, _uncompressedLength: number, framing: CompressionFraming) => {
+        expect(framing).toBe(CompressionFraming.Rfc1950);
+        return null;
+      },
+    };
 
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createGlyphOutlineSourceFromOpenTypeFont(woff, sink)).toBeNull();
+      expect(createGlyphOutlineSourceFromOpenTypeFont(woff, failing, sink)).toBeNull();
     });
     expect(diagnostics.map((entry) => entry.kind)).toEqual(['woff.decompression-failed']);
     expect(diagnostics[0]!.severity).toBe(ImportDiagnosticSeverity.Reject);

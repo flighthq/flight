@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 
-import { registerDeflateDecompressor } from '@flighthq/compression';
+import { sdkHostDecompressDeflate } from '@flighthq/compression';
 import { createGlyphOutlineSourceFromOpenTypeFont } from '@flighthq/font-formats';
 import { parseParticleConfigDocument } from '@flighthq/particles-formats';
 import { martinezPathBooleanKernel } from '@flighthq/path-boolean';
@@ -76,12 +76,11 @@ const SWF_DIAGNOSTIC_KIND_DISPOSITIONS = [
 ] as const satisfies readonly ConformanceFixtureDiagnosticKindDisposition[];
 
 export function createImportFixtureAdapters(): ConformanceFixtureAdapter[] {
-  // Fixture parsing is an explicit assembly. Both compressed SWF and compressed AWD2 go through the same
-  // public decompressor registry production applications use; merely importing this module registers nothing.
+  // Fixture parsing is an explicit assembly. Both compressed SWF and compressed AWD2 take the same Host
+  // decompress group a production application passes; merely importing this module assembles nothing.
   // A family without a Flight importer still owns an individual unavailable slot. Wiring support is therefore
   // local: import the public Flight method, add its runner below, and replace that family's unavailablePackAdapter
   // call with packAdapter. Discovery, scoring, selection, and report structure do not change.
-  registerDeflateDecompressor();
   return [
     unavailablePackAdapter('alembic', ['3d', 'alembic', 'mesh', 'model'], ['.abc']),
     adapter('atf', ['.atf'], runAtf),
@@ -187,7 +186,12 @@ async function runAtf(input: Readonly<ConformanceFixtureInput>): Promise<Conform
 
 async function runAwd2(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
   const diagnostics: ImportDiagnostic[] = [];
-  createScene3DFromAwd2(new Uint8Array(await readFile(input.absolutePath)), diagnostics);
+  createScene3DFromAwd2(
+    new Uint8Array(await readFile(input.absolutePath)),
+    sdkHostDecompressDeflate,
+    null,
+    diagnostics,
+  );
   return observation(diagnostics);
 }
 
@@ -273,7 +277,10 @@ async function runObjMaterial(input: Readonly<ConformanceFixtureInput>): Promise
 }
 
 async function runOpenTypeFont(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
-  const imported = createGlyphOutlineSourceFromOpenTypeFont(new Uint8Array(await readFile(input.absolutePath)));
+  const imported = createGlyphOutlineSourceFromOpenTypeFont(
+    new Uint8Array(await readFile(input.absolutePath)),
+    sdkHostDecompressDeflate,
+  );
   return { diagnostics: [], imported: imported !== null };
 }
 
@@ -312,7 +319,12 @@ async function runSvg(input: Readonly<ConformanceFixtureInput>): Promise<Conform
 
 async function runSwf(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
   const diagnostics: ImportDiagnostic[] = [];
-  const imported = createScene2DImportFromSwf(new Uint8Array(await readFile(input.absolutePath)), diagnostics);
+  const imported = createScene2DImportFromSwf(
+    new Uint8Array(await readFile(input.absolutePath)),
+    sdkHostDecompressDeflate,
+    null,
+    diagnostics,
+  );
   return { diagnostics, imported: imported !== null };
 }
 

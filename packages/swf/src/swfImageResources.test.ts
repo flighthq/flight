@@ -1,3 +1,4 @@
+import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 // @vitest-environment jsdom
 import { clearImageDecoders, registerImageDecoder } from '@flighthq/image-codec/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
@@ -31,7 +32,7 @@ describe('SWF image resources', () => {
     const imageBytes = decodeBase64(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
     );
-    const document = createScene2DFromSwf(createBitmapFillSwf(imageBytes))!;
+    const document = createScene2DFromSwf(createBitmapFillSwf(imageBytes), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)!;
     const shape = getNodeChildren(document.root)[0] as Shape;
     const texture = shape.data.commands[2] as Texture2D;
     const reference = document.imageResources[0];
@@ -169,3 +170,7 @@ const TAG_DEFINE_SHAPE_3 = 32;
 const TAG_END = 0;
 const TAG_PLACE_OBJECT_2 = 26;
 const TAG_SHOW_FRAME = 1;
+
+const DECOMPRESS_DEFLATE = sdkHostDecompressDeflate;
+// No LZMA implementation ships with Flight, so a ZWS/LZMA body reports an unread container.
+const DECOMPRESS_LZMA = null;

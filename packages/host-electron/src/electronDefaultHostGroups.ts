@@ -28,6 +28,7 @@ import type {
   HostCanvasCapabilities,
   HostSurfaceCapabilities,
   HostTextSegmentCapabilities,
+  HostDecompressCapabilities,
   HostTextShaperCapabilities,
   HostVideoCapabilities,
   HostWgpuCapabilities,
@@ -52,6 +53,10 @@ export function electronHostCanvasGroup(_electron: ElectronApi): HostCanvasCapab
 }
 
 export function electronHostConnectivityGroup(_electron: ElectronApi): HostConnectivityCapabilities {
+  return {};
+}
+
+export function electronHostDecompressGroup(_electron: ElectronApi): HostDecompressCapabilities {
   return {};
 }
 

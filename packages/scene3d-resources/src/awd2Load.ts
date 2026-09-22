@@ -1,5 +1,11 @@
 import { parseAwd2 } from '@flighthq/scene3d-formats/contract';
-import type { HostNetCapability, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
+import type {
+  HostDecompressDeflateCapability,
+  HostDecompressLzmaCapability,
+  HostNetCapability,
+  Scene3DDocument,
+  Scene3DDocumentLoadOptions,
+} from '@flighthq/types/contract';
 
 import { loadScene3DDocumentBytesFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource';
 
@@ -11,11 +17,13 @@ import { loadScene3DDocumentBytesFromUrl, setScene3DDocumentResourceBasePathFrom
 export async function loadScene3DDocumentFromAwd2Url(
   hostNet: Readonly<HostNetCapability>,
   url: string,
+  deflate: Readonly<HostDecompressDeflateCapability> | null,
+  lzma: Readonly<HostDecompressLzmaCapability> | null,
   options?: Readonly<Scene3DDocumentLoadOptions>,
 ): Promise<Scene3DDocument | null> {
   const bytes = await loadScene3DDocumentBytesFromUrl(hostNet, url, options);
   if (bytes === null) return null;
-  const document = parseAwd2(bytes);
+  const document = parseAwd2(bytes, deflate, lzma);
   setScene3DDocumentResourceBasePathFromUrl(document, url);
   return document;
 }

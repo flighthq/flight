@@ -15,6 +15,7 @@ const GROUPS = [
   ['canvas', 'webHostCanvasGroup'],
   ['clipboard', 'webHostClipboard'],
   ['connectivity', 'webHostConnectivity'],
+  ['decompress', 'webHostDecompress'],
   ['device', 'webHostDeviceGroup'],
   ['dialog', 'webHostDialog'],
   ['fileSystem', 'webHostFileSystemGroup'],

@@ -318,7 +318,6 @@ The dynamic element-kind emitter is finitely bounded by `isUnsupportedSvgElement
 | `swf.header-truncated` | `swfDocument.ts:541` | Reject | No | R | Required frame-rate/count header data is truncated. |
 | `swf.invalid-signature` | `swfDocument.ts:557` | Reject | No | R | Source is too short or lacks a valid signature. |
 | `swf.unknown-container` | `swfDocument.ts:574` | Reject | No | R | Container compression signature is unknown. |
-| `swf.no-decompressor-registered` | `swfDocument.ts:590` | Reject | No | R | Required container decompressor is not installed; the adapter normally registers Deflate explicitly. |
 | `swf.declared-length-too-small` | `swfDocument.ts:604` | Reject | No | R | Declared file length is smaller than the header/stream start. |
 | `swf.truncated-container` | `swfDocument.ts:621` | Reject | No | R | Container does not contain the declared body bytes. |
 | `swf.decompression-failed` | `swfDocument.ts:636` | Reject | No | R | Registered decompressor cannot produce the declared body. |

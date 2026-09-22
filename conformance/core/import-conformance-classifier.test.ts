@@ -28,21 +28,6 @@ describe('classifyImportConformanceObservation', () => {
     },
   );
 
-  it('keeps no-decompressor Reject in unsupportedClean', () => {
-    expect(
-      classify(
-        [
-          {
-            kind: 'swf.no-decompressor-registered',
-            origin: 'uncompressSwfSource',
-            severity: ImportDiagnosticSeverity.Reject,
-          },
-        ],
-        false,
-      ),
-    ).toMatchObject({ outcome: 'unsupportedClean' });
-  });
-
   it('distinguishes a silent refusal from successful diagnostic silence', () => {
     expect(classify([], false)).toMatchObject({
       capabilityOutcomes: [{ diagnosticReported: false, outcome: 'silentlyWrong' }],
