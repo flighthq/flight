@@ -77,12 +77,8 @@ describe('createDomRenderStateRuntime', () => {
     expect(runtime.binding).toBeNull();
     expect(runtime.registries.colorAdjustments).toBeUndefined();
     expect(runtime.registries.shapeRasterizer).toBeNull();
-    expect(runtime.registries.textureResolvers).toMatchObject({
-      onMiss: 'Unregistered',
-      registry: 'DomTextureResolver',
-      shape: 'keyed',
-    });
-    expect(runtime.registries.textureResolvers.entries.size).toBe(0);
+    expect(runtime.registries.textureResolvers).toBeInstanceOf(Map);
+    expect(runtime.registries.textureResolvers.size).toBe(0);
   });
 });
 

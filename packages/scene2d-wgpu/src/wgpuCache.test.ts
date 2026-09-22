@@ -1,5 +1,4 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import * as renderWgpu from '@flighthq/render-wgpu/contract';
 import {
   createRenderCache,
@@ -18,7 +17,7 @@ import type {
   RenderRootGuard,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   createWgpuCacheState,
@@ -234,39 +233,16 @@ describe('createWgpuCacheState', () => {
     const colorAdjustmentFeatureGuard: WgpuColorAdjustmentMaterialFeatureGuard = vi.fn();
     const renderRootGuard: RenderRootGuard = vi.fn();
     const screenRuntime = renderWgpu.getWgpuRenderStateRuntime(screen);
-    screenRuntime.registries.colorAdjustments = {
-      entry: { state: RegistryEntryState.Bound, value: resolver },
-      onMiss: 'Disabled',
-      registry: 'ColorAdjustments',
-      shape: 'slot',
-    };
-    screenRuntime.registries.colorAdjustmentFeature = {
-      entry: { state: RegistryEntryState.Bound, value: colorAdjustmentFeature },
-      onMiss: 'Disabled',
-      registry: 'WgpuColorAdjustmentFeature',
-      shape: 'slot',
-    };
-    screenRuntime.registries.colorAdjustmentFeatureGuard = {
-      entry: { state: RegistryEntryState.Bound, value: colorAdjustmentFeatureGuard },
-      onMiss: 'Disabled',
-      registry: 'WgpuColorAdjustmentFeatureGuard',
-      shape: 'slot',
-    };
-    screenRuntime.registries.renderRootGuard = {
-      entry: { state: RegistryEntryState.Bound, value: renderRootGuard },
-      onMiss: 'Disabled',
-      registry: 'RenderRootGuard',
-      shape: 'slot',
-    };
+    screenRuntime.registries.colorAdjustments = resolver;
+    screenRuntime.registries.colorAdjustmentFeature = colorAdjustmentFeature;
+    screenRuntime.registries.colorAdjustmentFeatureGuard = colorAdjustmentFeatureGuard;
+    screenRuntime.registries.renderRootGuard = renderRootGuard;
     enableColorAdjustmentGuards(screen);
     enableWgpuRenderCache(screen);
     const cacheState = createCacheState(screen);
-    expect(
-      renderWgpu.getWgpuRenderStateRuntime(cacheState).registries.nodeRenderers.entries.get(RenderCacheKind),
-    ).toEqual({
-      state: 'bound',
-      value: wgpuRenderCacheRenderer,
-    });
+    expect(renderWgpu.getWgpuRenderStateRuntime(cacheState).registries.nodeRenderers.get(RenderCacheKind)).toEqual(
+      wgpuRenderCacheRenderer,
+    );
     expect((cacheState as any).device).toBe((screen as any).device);
     expect(renderWgpu.getWgpuRenderStateRuntime(cacheState).renderProxyMap).not.toBe(
       renderWgpu.getWgpuRenderStateRuntime(screen).renderProxyMap,
@@ -294,22 +270,12 @@ describe('createWgpuCacheState', () => {
     expect(cacheRuntime.registries.colorAdjustmentUnsupportedGuard).toBe(sharedUnsupportedGuard);
     expect(getColorAdjustmentUnsupportedGuard(cacheState)).not.toBeNull();
     expect(cacheRuntime.registries.renderRootGuard).toBe(screenRuntime.registries.renderRootGuard);
-    expect(
-      getRegistryTableEntry(
-        cacheRuntime.registries.renderRootGuard!,
-        cacheRuntime.registries.renderRootGuard!.registry,
-      ),
-    ).toBe(renderRootGuard);
+    expect(cacheRuntime.registries.renderRootGuard).toBe(renderRootGuard);
     const sharedRootGuard = cacheRuntime.registries.renderRootGuard;
     screenRuntime.registries.renderRootGuard = undefined;
     expect(screenRuntime.registries.renderRootGuard).toBeUndefined();
     expect(cacheRuntime.registries.renderRootGuard).toBe(sharedRootGuard);
-    expect(
-      getRegistryTableEntry(
-        cacheRuntime.registries.renderRootGuard!,
-        cacheRuntime.registries.renderRootGuard!.registry,
-      ),
-    ).toBe(renderRootGuard);
+    expect(cacheRuntime.registries.renderRootGuard).toBe(renderRootGuard);
   });
 
   it('shares persistent registration snapshots through a distinct aggregate and then diverges', () => {
@@ -345,10 +311,9 @@ describe('enableWgpuRenderCache', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = fakeScreen();
     enableWgpuRenderCache(state);
-    expect(renderWgpu.getWgpuRenderStateRuntime(state).registries.nodeRenderers.entries.get(RenderCacheKind)).toEqual({
-      state: 'bound',
-      value: wgpuRenderCacheRenderer,
-    });
+    expect(renderWgpu.getWgpuRenderStateRuntime(state).registries.nodeRenderers.get(RenderCacheKind)).toEqual(
+      wgpuRenderCacheRenderer,
+    );
   });
 });
 

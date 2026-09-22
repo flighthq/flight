@@ -18,7 +18,6 @@ import {
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
 import { registerWgpuStandardMaterial, renderWgpuScene2D, wgpuScene2DRenderRegistries } from '@flighthq/scene2d-wgpu';
 import { createWgpuSurface } from '@flighthq/surface';
-import { RegistryEntryState } from '@flighthq/types';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
@@ -40,8 +39,8 @@ export const state = createWgpuRenderState(acquisition.device, wgpuScene2DRender
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1], depth: 1.0 } as const;
 
 const registries = wgpuScene2DRenderRegistries;
-for (const [kind, entry] of registries.nodeRenderers.entries) {
-  if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(state, kind, entry.value);
+for (const [kind, renderer] of registries.nodeRenderers) {
+  registerNodeRenderer(state, kind, renderer);
 }
 registerWgpuImageTextureResolver(state);
 registerWgpuStandardMaterial(state);

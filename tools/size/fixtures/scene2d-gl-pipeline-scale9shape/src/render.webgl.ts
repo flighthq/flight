@@ -9,7 +9,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
-import { withRegistryTableEntry } from '@flighthq/registry';
+import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import {
   allocateEmptyGlRenderRegistries,
@@ -28,7 +28,7 @@ import {
 import { glScale9ShapeRenderer, registerGlShapeRasterizer, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
 import { createGlSurface } from '@flighthq/surface';
-import { RegistryEntryState, Scale9ShapeKind } from '@flighthq/types';
+import { Scale9ShapeKind } from '@flighthq/types';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
@@ -42,7 +42,7 @@ document.body.style.margin = '0';
 const emptyRegistries = allocateEmptyGlRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  nodeRenderers: withRegistryTableEntry(emptyRegistries.nodeRenderers, Scale9ShapeKind, glScale9ShapeRenderer),
+  nodeRenderers: withKindMapEntry(emptyRegistries.nodeRenderers, Scale9ShapeKind, glScale9ShapeRenderer),
 };
 const state = createGlRenderState(glSurface.context, registry, {
   pixelRatio: 1,
@@ -51,8 +51,8 @@ const state = createGlRenderState(glSurface.context, registry, {
 const screenTarget = createGlScreenRenderTarget(state.gl);
 
 const registries = registry;
-for (const [kind, entry] of registries.nodeRenderers.entries) {
-  if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(state, kind, entry.value);
+for (const [kind, renderer] of registries.nodeRenderers) {
+  registerNodeRenderer(state, kind, renderer);
 }
 registerCanvasShapeCommands(state, canvasShapeCommands);
 registerGlShapeRasterizer(

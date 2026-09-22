@@ -1,6 +1,6 @@
 import { createAppWindow, openWindow } from '@flighthq/app';
 import { webHostGl, appendWebSurface, webHostWindowGeometry, webHostWindowLifecycle } from '@flighthq/host-web';
-import { withRegistryTableEntry } from '@flighthq/registry';
+import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import {
   allocateEmptyGlRenderRegistries,
@@ -12,7 +12,7 @@ import {
 import { createDisplayObject } from '@flighthq/scene2d';
 import { glScene2DRenderer, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { createGlSurface } from '@flighthq/surface';
-import { DisplayObjectKind, RegistryEntryState } from '@flighthq/types';
+import { DisplayObjectKind } from '@flighthq/types';
 
 // DisplayObject is a genuine non-visible container. This size-only control deliberately has no
 // capture manifest: its one registered renderer traverses children but submits no geometry of its own.
@@ -28,14 +28,14 @@ document.body.style.margin = '0';
 const emptyRegistries = allocateEmptyGlRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  nodeRenderers: withRegistryTableEntry(emptyRegistries.nodeRenderers, DisplayObjectKind, glScene2DRenderer),
+  nodeRenderers: withKindMapEntry(emptyRegistries.nodeRenderers, DisplayObjectKind, glScene2DRenderer),
 };
 const state = createGlRenderState(glSurface.context, registry, { pixelRatio: 1 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 
 const registries = registry;
-for (const [kind, entry] of registries.nodeRenderers.entries) {
-  if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(state, kind, entry.value);
+for (const [kind, renderer] of registries.nodeRenderers) {
+  registerNodeRenderer(state, kind, renderer);
 }
 
 const root = createDisplayObject();

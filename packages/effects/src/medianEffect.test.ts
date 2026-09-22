@@ -38,7 +38,7 @@ describe('registerMedianEffectPaddingResolver', () => {
     const state = createRenderState();
     const other = createRenderState();
     registerMedianEffectPaddingResolver(state);
-    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('MedianEffect')).toBe(true);
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.has('MedianEffect')).toBe(true);
     expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });

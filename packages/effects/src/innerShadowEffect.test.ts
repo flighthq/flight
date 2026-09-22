@@ -44,7 +44,7 @@ describe('registerInnerShadowEffectPaddingResolver', () => {
     const state = createRenderState();
     const other = createRenderState();
     registerInnerShadowEffectPaddingResolver(state);
-    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('InnerShadowEffect')).toBe(true);
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.has('InnerShadowEffect')).toBe(true);
     expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });

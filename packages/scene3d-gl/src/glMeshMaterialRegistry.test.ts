@@ -1,4 +1,3 @@
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import {
   allocateEmptyGlRenderRegistries,
   getGlRenderStateRuntime,
@@ -49,7 +48,7 @@ describe('registerGlMeshMaterialRenderer', () => {
 
     expect(getGlRenderStateRuntime(derived).registries.materialRenderers).toBe(snapshot);
     expect(getGlRenderStateRuntime(screen).registries.materialRenderers).not.toBe(snapshot);
-    expect(getRegistryTableEntry(snapshot, TestKind)).toBe(renderer);
+    expect(snapshot.get(TestKind) ?? null).toBe(renderer);
     expect(getGlMeshMaterialRenderer(derived, TestKind)).toBe(renderer);
     expect(getGlMeshMaterialRenderer(screen, TestKind)).toBe(replacement);
   });
@@ -88,8 +87,8 @@ describe('shared materialRenderers storage', () => {
     registerGlMeshMaterialRenderer(state, MeshKind, meshRenderer);
 
     const table = getGlRenderStateRuntime(state).registries.materialRenderers;
-    expect(table.entries.has(QuadKind)).toBe(true);
-    expect(table.entries.has(MeshKind)).toBe(true);
+    expect(table.has(QuadKind)).toBe(true);
+    expect(table.has(MeshKind)).toBe(true);
   });
 
   it('typed resolvers return the correct protocol from shared storage', () => {
@@ -107,8 +106,8 @@ describe('shared materialRenderers storage', () => {
     registerGlMeshMaterialRenderer(state, MeshKind, meshRenderer);
 
     const table = getGlRenderStateRuntime(state).registries.materialRenderers;
-    expect(table.entries.size).toBe(2);
-    expect(getRegistryTableEntry(table, QuadKind)).toBe(quadRenderer);
-    expect(getRegistryTableEntry(table, MeshKind)).toBe(meshRenderer);
+    expect(table.size).toBe(2);
+    expect(table.get(QuadKind) ?? null).toBe(quadRenderer);
+    expect(table.get(MeshKind) ?? null).toBe(meshRenderer);
   });
 });

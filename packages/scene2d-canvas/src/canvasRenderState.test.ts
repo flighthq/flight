@@ -42,11 +42,8 @@ describe('createCanvasRenderStateRuntime', () => {
     expect(runtime).not.toBeNull();
     expect(runtime.binding).toBeNull();
     expect(runtime.registries.colorAdjustments).toBeUndefined();
-    expect(runtime.registries.effects).toMatchObject({
-      onMiss: 'Unregistered',
-      registry: 'CanvasEffect',
-      shape: 'keyed',
-    });
+    expect(runtime.registries.effects).toBeInstanceOf(Map);
+    expect(runtime.registries.effects.size).toBe(0);
     expect(runtime.registries.materialRenderers).toBeUndefined();
   });
 });

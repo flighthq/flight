@@ -42,7 +42,7 @@ describe('registerOutlineEffectPaddingResolver', () => {
     const state = createRenderState();
     const other = createRenderState();
     registerOutlineEffectPaddingResolver(state);
-    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('OutlineEffect')).toBe(true);
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.has('OutlineEffect')).toBe(true);
     expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });

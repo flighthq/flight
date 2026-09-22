@@ -1,4 +1,3 @@
-import { createKeyedTable } from '@flighthq/registry/contract';
 import type { WgpuRenderRegistries } from '@flighthq/types/contract';
 
 export function allocateEmptyWgpuRenderRegistries(): WgpuRenderRegistries {
@@ -17,13 +16,13 @@ export function initializeEmptyWgpuRenderRegistries(out: WgpuRenderRegistries): 
   out.shapeRasterizer = null;
   out.strokeTessellator = null;
 
-  out.customMaterialShaders = createKeyedTable('WgpuCustomMaterialShader', 'Unregistered');
-  out.materialRenderers = createKeyedTable('WgpuMaterialRenderer', 'StandardMaterial');
-  out.modifierSnippets = createKeyedTable('WgpuModifierSnippet', 'Unregistered');
+  out.customMaterialShaders = new Map();
+  out.materialRenderers = new Map();
+  out.modifierSnippets = new Map();
   out.modifierSnippetRevision = 0;
-  out.effects = createKeyedTable('WgpuEffect', 'Unregistered');
-  out.nodeRenderers = createKeyedTable('NodeRenderer', 'Unregistered');
+  out.effects = new Map();
+  out.nodeRenderers = new Map();
   out.passes = null;
-  out.textureResolvers = createKeyedTable('WgpuTextureResolver', 'Unregistered');
-  out.velocityWriters = createKeyedTable('WgpuVelocityWriter', 'Unregistered');
+  out.textureResolvers = new Map();
+  out.velocityWriters = new Map();
 }

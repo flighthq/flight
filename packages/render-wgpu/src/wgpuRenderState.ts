@@ -22,7 +22,7 @@ import type {
   WgpuRenderState,
   WgpuRenderStateRuntime,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { observeWgpuDeviceLoss } from './wgpuDeviceLoss';
 import { warmWgpuPipelines } from './wgpuDraw';
@@ -285,15 +285,15 @@ function createWgpuRenderStateRuntimeInternal(
 export function getWgpuColorAdjustmentMaterialFeature(
   state: WgpuRenderState,
 ): Readonly<WgpuColorAdjustmentMaterialFeature> | null {
-  const entry = getWgpuRenderStateRuntime(state).registries.colorAdjustmentFeature?.entry;
-  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+  const entry = getWgpuRenderStateRuntime(state).registries.colorAdjustmentFeature;
+  return entry ?? null;
 }
 
 export function getWgpuColorAdjustmentMaterialFeatureGuard(
   state: WgpuRenderState,
 ): WgpuColorAdjustmentMaterialFeatureGuard | null {
-  const entry = getWgpuRenderStateRuntime(state).registries.colorAdjustmentFeatureGuard?.entry;
-  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+  const entry = getWgpuRenderStateRuntime(state).registries.colorAdjustmentFeatureGuard;
+  return entry ?? null;
 }
 
 export function getWgpuDeviceRuntime(deviceState: Readonly<WgpuDeviceState>): WgpuDeviceRuntime {

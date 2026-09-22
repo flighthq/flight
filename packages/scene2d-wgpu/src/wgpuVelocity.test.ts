@@ -77,8 +77,8 @@ describe('registerWgpuVelocityWriter', () => {
     registerWgpuVelocityWriter(state, kind, replacement);
 
     expect(registered).not.toBe(before);
-    expect(before.entries.has(kind)).toBe(false);
-    expect(registered.entries.get(kind)).toEqual({ state: 'bound', value: wgpuNode2DVelocityWriter });
+    expect(before.has(kind)).toBe(false);
+    expect(registered.get(kind)).toEqual(wgpuNode2DVelocityWriter);
     expect(getWgpuVelocityWriter(state, kind)).toBe(replacement);
     expect(getWgpuVelocityWriter(offscreen, kind)).toBe(wgpuNode2DVelocityWriter);
   });

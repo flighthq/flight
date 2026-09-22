@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { getRegistryTableKeys } from '@flighthq/registry/contract';
+import { getKindMapKeys } from '@flighthq/registry/contract';
 import type { ImageResource, RenderTarget, RenderTexture, Texture, TextureSource } from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
@@ -87,7 +87,7 @@ function renderTexture(): RenderTexture {
 
 function registeredTextureSourceKinds(state: Parameters<typeof getWgpuRenderStateRuntime>[0]): string[] {
   const kinds: string[] = [];
-  getRegistryTableKeys(kinds, getWgpuRenderStateRuntime(state).registries.textureResolvers);
+  getKindMapKeys(kinds, getWgpuRenderStateRuntime(state).registries.textureResolvers);
   return kinds;
 }
 
@@ -215,7 +215,7 @@ describe('resolveWgpuTexture', () => {
 describe('standardWgpuTextureResolvers', () => {
   it('carries exactly the three standard source kinds', () => {
     const kinds: string[] = [];
-    getRegistryTableKeys(kinds, standardWgpuTextureResolvers);
+    getKindMapKeys(kinds, standardWgpuTextureResolvers);
     expect(kinds).toEqual([BitmapTextureSourceKind, ImageTextureSourceKind, RenderTargetTextureSourceKind]);
   });
 });

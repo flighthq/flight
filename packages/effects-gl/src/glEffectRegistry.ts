@@ -1,7 +1,6 @@
-import { withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlEffectResolver, GlEffectRunner, GlRenderState, Effect } from '@flighthq/types/contract';
-import { RegistryEntryState } from '@flighthq/types/contract';
 
 // Per-state registry mapping an effect `kind` string to its Gl runner — the material-renderer
 // pattern one tier up. Registration is opt-in (import a runner only to register it) and dispatch is a
@@ -11,15 +10,15 @@ import { RegistryEntryState } from '@flighthq/types/contract';
 // installs no padding, shader-source, or backdrop companions.
 
 export function getGlEffectRunner(state: GlRenderState, kind: string): GlEffectRunner | null {
-  const entry = getGlRenderStateRuntime(state).registries.effects.entries.get(kind);
-  return entry?.state === RegistryEntryState.Bound ? entry.value.runner : null;
+  const entry = getGlRenderStateRuntime(state).registries.effects.get(kind);
+  return entry?.runner ?? null;
 }
 
 // Returns true if a runner is registered for the given kind in this state. Use to validate an effect
 // chain before dispatching — the pipeline silently skips unregistered kinds; check up front to apply
 // your own policy (warn, throw, filter) rather than relying on silent no-ops.
 export function hasGlEffectRunner(state: GlRenderState, kind: string): boolean {
-  return getGlRenderStateRuntime(state).registries.effects.entries.get(kind)?.state === RegistryEntryState.Bound;
+  return getGlRenderStateRuntime(state).registries.effects.has(kind);
 }
 
 // Whether this specific effect INSTANCE can resolve into a real pass — a separate axis from whether its
@@ -27,9 +26,9 @@ export function hasGlEffectRunner(state: GlRenderState, kind: string): boolean {
 // not resolvable because there is nothing to resolve it with, which the pipeline reports as a
 // registration miss rather than a resolution one.
 export function isGlEffectResolvable(state: GlRenderState, effect: Readonly<Effect>): boolean {
-  const entry = getGlRenderStateRuntime(state).registries.effects.entries.get(effect.kind);
-  if (entry?.state !== RegistryEntryState.Bound) return false;
-  return entry.value.isResolvable === undefined || entry.value.isResolvable(state, effect);
+  const entry = getGlRenderStateRuntime(state).registries.effects.get(effect.kind);
+  if (entry == null) return false;
+  return entry.isResolvable === undefined || entry.isResolvable(state, effect);
 }
 
 // `isResolvable` is optional and belongs to THIS call rather than a registry of its own: a runner that
@@ -44,7 +43,7 @@ export function registerGlEffect(
   isResolvable?: GlEffectResolver,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
-  runtime.registries.effects = withRegistryTableEntry(runtime.registries.effects, kind, {
+  runtime.registries.effects = withKindMapEntry(runtime.registries.effects, kind, {
     isResolvable,
     runner,
   });

@@ -1,6 +1,6 @@
 import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import { addNodeChild, invalidateNodeAppearance } from '@flighthq/node';
-import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry';
+import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene2d';
 import {
@@ -19,8 +19,8 @@ import {
   renderCanvasScene2D,
 } from '@flighthq/scene2d-canvas';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape';
-import type { CanvasShapeCommand } from '@flighthq/types';
-import { RegistryEntryState, Scale9ShapeKind } from '@flighthq/types';
+import type { CanvasShapeCommand, Kind } from '@flighthq/types';
+import { Scale9ShapeKind } from '@flighthq/types';
 
 // REQUIRED WIRING for one nine-sliced vector shape, and nothing else:
 //   surface   webCanvasRenderSurfaceCreator — the single Canvas surface provider, NOT the aggregate
@@ -45,15 +45,15 @@ document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
 const emptyRegistries = allocateEmptyCanvasRenderRegistries();
-let shapeCommands = createKeyedTable<CanvasShapeCommand>('CanvasShapeCommand', 'Unregistered');
+let shapeCommands = new Map<Kind, CanvasShapeCommand>();
 for (const command of [canvasBeginFill, canvasDrawRectangle, canvasEndFill]) {
-  shapeCommands = withRegistryTableEntry(shapeCommands, command.key, command);
+  shapeCommands = withKindMapEntry(shapeCommands, command.key, command);
 }
 
 const registry = {
   ...emptyRegistries,
   canvasShapeCommands: shapeCommands,
-  nodeRenderers: withRegistryTableEntry(emptyRegistries.nodeRenderers, Scale9ShapeKind, canvasScale9ShapeRenderer),
+  nodeRenderers: withKindMapEntry(emptyRegistries.nodeRenderers, Scale9ShapeKind, canvasScale9ShapeRenderer),
 };
 
 const screen = createCanvasScreenRenderTarget(
@@ -67,8 +67,8 @@ registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 
 const registries = registry;
-for (const [kind, entry] of registries.nodeRenderers.entries) {
-  if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(state, kind, entry.value);
+for (const [kind, renderer] of registries.nodeRenderers) {
+  registerNodeRenderer(state, kind, renderer);
 }
 
 const root = createDisplayObject();

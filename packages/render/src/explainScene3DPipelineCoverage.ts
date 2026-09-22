@@ -1,10 +1,9 @@
 import { getNodeRuntime } from '@flighthq/node/contract';
-import { getRegistryTableKeys } from '@flighthq/registry/contract';
+import { getKindMapKeys } from '@flighthq/registry/contract';
 import type {
   Kind,
   Material,
   NodeAny,
-  RegistryTable,
   RenderState,
   Scene3DPipelineCoverageExplanation,
 } from '@flighthq/types/contract';
@@ -17,19 +16,19 @@ import { getRenderStateRuntime } from './renderState';
 export function explainScene3DPipelineCoverage(
   state: RenderState,
   scene: Readonly<NodeAny>,
-  materialRenderers: Readonly<RegistryTable<unknown>> | null,
+  materialRenderers: ReadonlyMap<Kind, unknown> | null,
 ): Scene3DPipelineCoverageExplanation {
   const usedKindSet = new Set<Kind>();
   const usedMaterialKindSet = new Set<Kind>();
   collectUsed3DKinds(usedKindSet, usedMaterialKindSet, scene);
 
   const registeredKinds: Kind[] = [];
-  getRegistryTableKeys(registeredKinds, getRenderStateRuntime(state).registries.nodeRenderers);
+  getKindMapKeys(registeredKinds, getRenderStateRuntime(state).registries.nodeRenderers);
   registeredKinds.sort();
 
   const registeredMaterialKinds: Kind[] = [];
   if (materialRenderers !== null) {
-    getRegistryTableKeys(registeredMaterialKinds, materialRenderers);
+    getKindMapKeys(registeredMaterialKinds, materialRenderers);
   }
   registeredMaterialKinds.sort();
 

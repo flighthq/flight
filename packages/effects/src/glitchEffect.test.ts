@@ -43,7 +43,7 @@ describe('registerGlitchEffectPaddingResolver', () => {
     const state = createRenderState();
     const other = createRenderState();
     registerGlitchEffectPaddingResolver(state);
-    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('GlitchEffect')).toBe(true);
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.has('GlitchEffect')).toBe(true);
     expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });

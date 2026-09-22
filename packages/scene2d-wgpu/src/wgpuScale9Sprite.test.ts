@@ -15,7 +15,7 @@ import type {
   Texture2D,
   WgpuTextureEntry,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey, RegistryEntryState, Scale9SpriteKind } from '@flighthq/types/contract';
+import { EntityRuntimeKey, Scale9SpriteKind } from '@flighthq/types/contract';
 
 import { wgpuScene2DRenderRegistries } from './scene2DWgpuPipeline';
 import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
@@ -86,10 +86,7 @@ describe('wgpuScale9SpriteRenderer', () => {
     expect(typeof wgpuScale9SpriteRenderer.createData).toBe('function');
     expect(typeof wgpuScale9SpriteRenderer.isDirty).toBe('function');
     expect(wgpuScale9SpriteRenderer.submit).toBe(drawWgpuScale9Sprite);
-    expect(wgpuScene2DRenderRegistries.nodeRenderers.entries.get(Scale9SpriteKind)).toEqual({
-      state: RegistryEntryState.Bound,
-      value: wgpuScale9SpriteRenderer,
-    });
+    expect(wgpuScene2DRenderRegistries.nodeRenderers.get(Scale9SpriteKind)).toEqual(wgpuScale9SpriteRenderer);
   });
 });
 

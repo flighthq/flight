@@ -146,8 +146,8 @@ describe('registerGlVelocityWriter', () => {
     registerGlVelocityWriter(state, kind, replacement);
 
     expect(registered).not.toBe(before);
-    expect(before.entries.has(kind)).toBe(false);
-    expect(registered.entries.get(kind)).toEqual({ state: 'bound', value: glNode2DVelocityWriter });
+    expect(before.has(kind)).toBe(false);
+    expect(registered.get(kind)).toEqual(glNode2DVelocityWriter);
     expect(getGlVelocityWriter(state, kind)).toBe(replacement);
     expect(getGlVelocityWriter(offscreen, kind)).toBe(glNode2DVelocityWriter);
   });

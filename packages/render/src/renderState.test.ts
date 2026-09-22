@@ -1,6 +1,5 @@
-import { createKeyedTable, createSlotTable } from '@flighthq/registry/contract';
 import type { ColorAdjustmentUnsupportedGuard, RenderState } from '@flighthq/types/contract';
-import { BlendMode, EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
+import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   createRenderState,
@@ -34,7 +33,7 @@ describe('createRenderState', () => {
     expect(runtime.renderProxyMap).toStrictEqual(new WeakMap());
     expect(runtime.renderProxyAdapterMap).toStrictEqual(new WeakMap());
     expect(runtime.registries).toStrictEqual({
-      nodeRenderers: createKeyedTable('NodeRenderer', 'Unregistered'),
+      nodeRenderers: new Map(),
       // Present and null, not absent: the stable key set is what keeps the registries one hidden class.
       strokeTessellator: null,
     });
@@ -72,7 +71,7 @@ describe('createRenderStateRuntime', () => {
     expect(runtime.renderProxyMap).toStrictEqual(new WeakMap());
     expect(runtime.renderProxyAdapterMap).toStrictEqual(new WeakMap());
     expect(runtime.registries.colorAdjustments).toBeUndefined();
-    expect(runtime.registries.nodeRenderers).toStrictEqual(createKeyedTable('NodeRenderer', 'Unregistered'));
+    expect(runtime.registries.nodeRenderers).toStrictEqual(new Map());
     // Opt-in: the stroke kernel's slot is allocated by enable*StrokePathTessellation, never here.
     expect(runtime.registries.strokeTessellator).toBeNull();
     expect(runtime.rendererMapId).toStrictEqual(0);
@@ -92,12 +91,7 @@ describe('destroyRenderState', () => {
     const state = createRenderState();
     const runtime = getRenderStateRuntime(state);
     runtime.tempStack.push({} as never);
-    runtime.registries.effectPaddingResolvers = {
-      entries: new Map(),
-      onMiss: 'Zero',
-      registry: 'EffectPaddingResolver',
-      shape: 'keyed',
-    };
+    runtime.registries.effectPaddingResolvers = new Map();
 
     destroyRenderState(state);
 
@@ -113,17 +107,9 @@ describe('getColorAdjustmentUnsupportedGuard', () => {
     const runtime = getRenderStateRuntime(state);
 
     expect(getColorAdjustmentUnsupportedGuard(state)).toBeNull();
-    runtime.registries.colorAdjustmentUnsupportedGuard = {
-      entry: { state: RegistryEntryState.Bound, value: guard },
-      onMiss: 'Disabled',
-      registry: 'ColorAdjustmentUnsupportedGuard',
-      shape: 'slot',
-    };
+    runtime.registries.colorAdjustmentUnsupportedGuard = guard;
     expect(getColorAdjustmentUnsupportedGuard(state)).toBe(guard);
-    runtime.registries.colorAdjustmentUnsupportedGuard = {
-      ...runtime.registries.colorAdjustmentUnsupportedGuard,
-      entry: { state: RegistryEntryState.Tombstoned },
-    };
+    runtime.registries.colorAdjustmentUnsupportedGuard = undefined;
     expect(getColorAdjustmentUnsupportedGuard(state)).toBeNull();
   });
 });

@@ -1,7 +1,6 @@
-import { getRegistryTableKeys } from '@flighthq/registry/contract';
+import { getKindMapKeys } from '@flighthq/registry/contract';
 import {} from '@flighthq/render-wgpu/contract';
 import { wgpuScene2DRenderRegistries } from '@flighthq/scene2d-wgpu/contract';
-import type { RegistryTable } from '@flighthq/types/contract';
 import {
   AnimatedNormalModifierKind,
   BitmapTextKind,
@@ -24,7 +23,6 @@ import {
   ParticleEmitter2DKind,
   PhongMaterialKind,
   QuadBatchKind,
-  RegistryEntryState,
   RenderCacheKind,
   RenderTargetTextureSourceKind,
   RichTextKind,
@@ -53,9 +51,9 @@ import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 import { wgpuSkinningAdapter } from './wgpuSkinPalette';
 
-function registryKeys(table: Readonly<RegistryTable<unknown>>): string[] {
+function registryKeys(table: ReadonlyMap<string, unknown>): string[] {
   const keys: string[] = [];
-  getRegistryTableKeys(keys, table);
+  getKindMapKeys(keys, table);
   return keys;
 }
 
@@ -125,17 +123,14 @@ describe('wgpuScene3DRenderRegistries', () => {
   });
 
   it('carries GPU skinning through the pipeline and into state runtime', () => {
-    expect(registries.gpuSkinning?.entry).toEqual({
-      state: RegistryEntryState.Bound,
-      value: wgpuSkinningAdapter,
-    });
+    expect(registries.gpuSkinning).toEqual(wgpuSkinningAdapter);
 
     const { state } = makeWgpuScene3DState(wgpuScene3DRenderRegistries);
     expect(getWgpuSkinningAdapter(state)).toBe(wgpuSkinningAdapter);
   });
 
   it('does not claim GL-only Extended PBR support', () => {
-    expect(registries.materialRenderers.entries.has(ExtendedPbrMaterialKind)).toBe(false);
+    expect(registries.materialRenderers.has(ExtendedPbrMaterialKind)).toBe(false);
     expect('pbrExtensions' in registries).toBe(false);
   });
 });

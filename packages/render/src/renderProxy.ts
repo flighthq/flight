@@ -9,7 +9,6 @@ import {
   getNodeParent,
   getNodeRuntime,
 } from '@flighthq/node/contract';
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import type {
   EntityConstruction,
   Node,
@@ -21,7 +20,7 @@ import type {
   NodeAny,
   Spatial2DNodeAny,
 } from '@flighthq/types/contract';
-import { BlendMode, RegistryEntryState, RenderRegistryTable } from '@flighthq/types/contract';
+import { BlendMode, RenderRegistryTable } from '@flighthq/types/contract';
 
 import { updateRenderProxyAppearance } from './renderAppearance';
 import { updateRenderProxyMaterial } from './renderMaterial';
@@ -189,9 +188,9 @@ export function updateRenderProxy2D(
   updateRenderProxyAppearance(state, data, parentData);
   updateRenderProxy2DTransform(state, data, parentData);
   updateRenderProxyMaterial(state, data, parentData);
-  const colorAdjustmentResolver = getRenderStateRuntime(state).registries.colorAdjustments?.entry;
-  if (colorAdjustmentResolver?.state === RegistryEntryState.Bound) {
-    colorAdjustmentResolver.value(state, data, parentData);
+  const colorAdjustmentResolver = getRenderStateRuntime(state).registries.colorAdjustments;
+  if (colorAdjustmentResolver != null) {
+    colorAdjustmentResolver(state, data, parentData);
   }
   updateNodeClip(state, source, data, parentData);
   // Record the local and structural revisions this adaptation consumed.
@@ -216,12 +215,12 @@ export function updateRenderProxyRenderer(state: RenderState, node: RenderProxy)
 
 function resolveRenderProxyRenderer(state: RenderState, kind: string) {
   const runtime = getRenderStateRuntime(state);
-  const entry = runtime.registries.nodeRenderers.entries.get(kind);
-  if (entry?.state !== RegistryEntryState.Bound) {
+  const entry = runtime.registries.nodeRenderers.get(kind);
+  if (entry == null) {
     runtime.registryMiss?.(RenderRegistryTable.NodeRenderer, kind);
     return null;
   }
-  return entry.value;
+  return entry;
 }
 
 // One generic, dirty-checked pre-order walk over the 2D node graph. `visit` composes the trait
@@ -230,8 +229,8 @@ function resolveRenderProxyRenderer(state: RenderState, kind: string) {
 // trait update step in the visitor (updateNodeClip), realized at draw time by the backend clip hooks.
 export function walkNode(state: RenderState, root: Spatial2DNodeAny, visit: RenderProxyVisitor): boolean {
   const runtime = getRenderStateRuntime(state);
-  const rootGuardTable = runtime.registries.renderRootGuard;
-  if (rootGuardTable) getRegistryTableEntry(rootGuardTable, rootGuardTable.registry)?.(state, root);
+  const rootGuard = runtime.registries.renderRootGuard;
+  if (rootGuard) rootGuard(state, root);
   ++runtime.currentFrameId;
 
   const tempStack = runtime.tempStack;

@@ -2,7 +2,7 @@ import type { Bitmap } from './Bitmap';
 import type { BlendMode } from './BlendMode';
 import type { DomScene2DRectangle } from './DomScene2DRectangle';
 import type { DomTextureResolver } from './DomTextureResolver';
-import type { KeyedTable, SlotTable } from './RegistryTable';
+import type { Kind } from './Entity';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState';
 import type { PathWinding } from './ShapeCommand';
@@ -19,8 +19,8 @@ export interface DomRenderState extends RenderState {
 // Pure registration policy owned by one DOM render pipeline. Tables are persistent so a future
 // derived pipeline can share one snapshot while either aggregate later replaces a member independently.
 export interface DomRenderRegistries extends RenderRegistries {
-  shapeRasterizer: SlotTable<ShapeRasterizer> | null;
-  textureResolvers: KeyedTable<DomTextureResolver>;
+  shapeRasterizer: ShapeRasterizer | null;
+  textureResolvers: ReadonlyMap<Kind, DomTextureResolver>;
 }
 
 // Package-private DOM state for a DomRenderState entity. Lives in the runtime tier (not on the

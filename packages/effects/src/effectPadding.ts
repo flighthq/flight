@@ -1,4 +1,4 @@
-import { createKeyedTable, withRegistryTableEntry, withoutRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry, withoutKindMapEntry } from '@flighthq/registry/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
 import type {
   Kind,
@@ -8,7 +8,7 @@ import type {
   EffectPaddingResolver,
   RenderState,
 } from '@flighthq/types/contract';
-import { RegistryEntryState, RenderRegistryTable } from '@flighthq/types/contract';
+import { RenderRegistryTable } from '@flighthq/types/contract';
 
 // Computes the footprint of one effect or a sequential effect chain. Spatial effects add their
 // directional footprints per side; pointwise effects register the zero resolver. An unregistered kind
@@ -77,14 +77,10 @@ export function registerEffectPaddingResolver(
   const runtime = getRenderStateRuntime(state);
   const table = runtime.registries.effectPaddingResolvers;
   if (resolver === null) {
-    if (table !== undefined) runtime.registries.effectPaddingResolvers = withoutRegistryTableEntry(table, kind);
+    if (table !== undefined) runtime.registries.effectPaddingResolvers = withoutKindMapEntry(table, kind);
     return;
   }
-  runtime.registries.effectPaddingResolvers = withRegistryTableEntry(
-    table ?? createKeyedTable('EffectPaddingResolver', 'Zero'),
-    kind,
-    resolver,
-  );
+  runtime.registries.effectPaddingResolvers = withKindMapEntry(table ?? new Map(), kind, resolver);
 }
 
 function writeEffectPadding(
@@ -96,22 +92,22 @@ function writeEffectPadding(
 ): void {
   const list = Array.isArray(effects) ? effects : null;
   const length = list === null ? 1 : list.length;
-  const entries = getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries;
+  const resolvers = getRenderStateRuntime(state).registries.effectPaddingResolvers;
   let bottom = 0;
   let left = 0;
   let right = 0;
   let top = 0;
   for (let index = 0; index < length; index++) {
     const effect = (list === null ? effects : list[index]) as Readonly<Effect>;
-    const entry = entries?.get(effect.kind);
-    if (entry?.state !== RegistryEntryState.Bound) {
+    const entry = resolvers?.get(effect.kind);
+    if (entry == null) {
       if (!hasEarlierKind(list, index, effect.kind)) {
         missingKinds?.push(effect.kind);
         emitMiss?.(RenderRegistryTable.EffectPaddingResolver, effect.kind);
       }
       continue;
     }
-    const padding = entry.value(effect);
+    const padding = entry(effect);
     bottom += sanitizePadding(padding.bottom);
     left += sanitizePadding(padding.left);
     right += sanitizePadding(padding.right);

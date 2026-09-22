@@ -2,7 +2,6 @@ import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/co
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createCustomShaderMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import { allocateEmptyGlRenderRegistries, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { CustomShaderMaterialKind } from '@flighthq/types/contract';
@@ -163,7 +162,7 @@ describe('registerGlCustomMaterialShader', () => {
 
     expect(getGlRenderStateRuntime(derived).registries.customMaterialShaders).toBe(snapshot);
     expect(getGlRenderStateRuntime(screen).registries.customMaterialShaders).not.toBe(snapshot);
-    expect(getRegistryTableEntry(snapshot, 'ripple')).toBe(source);
+    expect(snapshot.get('ripple') ?? null).toBe(source);
     expect(getGlCustomMaterialShaderSource(derived, 'ripple')).toBe(source);
     expect(getGlCustomMaterialShaderSource(screen, 'ripple')).toBe(replacement);
   });

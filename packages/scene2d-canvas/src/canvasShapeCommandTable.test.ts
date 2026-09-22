@@ -6,20 +6,20 @@ describe('canvasShapeCommandTable', () => {
     const table = canvasShapeCommandTable();
     const keys = [...canvasShapeCommands, ...canvasTextureShapeCommands].map((command) => command.key);
     expect(new Set(keys).size).toBe(keys.length);
-    expect(table.entries.size).toBe(keys.length);
+    expect(table.size).toBe(keys.length);
   });
 
   it('includes every default shape command by key', () => {
     const table = canvasShapeCommandTable();
     for (const command of canvasShapeCommands) {
-      expect(table.entries.has(command.key)).toBe(true);
+      expect(table.has(command.key)).toBe(true);
     }
   });
 
   it('includes every texture shape command by key', () => {
     const table = canvasShapeCommandTable();
     for (const command of canvasTextureShapeCommands) {
-      expect(table.entries.has(command.key)).toBe(true);
+      expect(table.has(command.key)).toBe(true);
     }
   });
 
@@ -27,6 +27,6 @@ describe('canvasShapeCommandTable', () => {
     const a = canvasShapeCommandTable();
     const b = canvasShapeCommandTable();
     expect(a).not.toBe(b);
-    expect(a.entries.size).toBe(b.entries.size);
+    expect(a.size).toBe(b.size);
   });
 });

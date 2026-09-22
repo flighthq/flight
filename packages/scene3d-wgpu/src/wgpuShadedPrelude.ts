@@ -12,7 +12,7 @@ import type {
   EmissiveModifier,
   EnvReflectModifier,
   FogModifier,
-  KeyedTable,
+  Kind,
   LinearColor,
   Modifier,
   ModifierKind,
@@ -38,7 +38,6 @@ import {
   FogModifierKind,
   FogModifierMode,
   ModifierSlot,
-  RegistryEntryState,
   RimModifierKind,
   ToonModifierKind,
   VertexDisplaceModifierKind,
@@ -82,7 +81,7 @@ interface CachedShadedPlan {
   registry: WgpuModifierSnippetSource;
 }
 
-type WgpuModifierSnippetSource = Readonly<ModifierRegistry> | Readonly<KeyedTable<WgpuModifierSnippet>>;
+type WgpuModifierSnippetSource = Readonly<ModifierRegistry> | Readonly<ReadonlyMap<Kind, WgpuModifierSnippet>>;
 
 interface ShadedBinding {
   bindGroup: GPUBindGroup;
@@ -801,7 +800,7 @@ export function registerBuiltInWgpuModifierSnippets(state: WgpuRenderState): voi
   registerWgpuModifierSnippet(state, vertexDisplaceWgpuModifierSnippet);
 }
 
-function getModifierSnippetTable(state: WgpuRenderState): Readonly<KeyedTable<WgpuModifierSnippet>> {
+function getModifierSnippetTable(state: WgpuRenderState): Readonly<ReadonlyMap<Kind, WgpuModifierSnippet>> {
   return getWgpuRenderStateRuntime(state).registries.modifierSnippets;
 }
 
@@ -849,12 +848,12 @@ function resolveWgpuModifierSnippetSource(
   kind: ModifierKind,
 ): WgpuModifierSnippet | null {
   if (!isWgpuModifierSnippetTable(registry)) return resolveModifier(registry, kind) as WgpuModifierSnippet | null;
-  const entry = registry.entries.get(kind);
-  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+  const entry = registry.get(kind);
+  return entry ?? null;
 }
 
 function isWgpuModifierSnippetTable(
   registry: WgpuModifierSnippetSource,
-): registry is Readonly<KeyedTable<WgpuModifierSnippet>> {
-  return 'shape' in registry;
+): registry is Readonly<ReadonlyMap<Kind, WgpuModifierSnippet>> {
+  return !('definitions' in registry);
 }

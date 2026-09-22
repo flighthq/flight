@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { createKeyedTable, getRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import type {
   EntityConstruction,
   FlightDocumentRefusalExplanation,
@@ -9,6 +9,7 @@ import type {
   FlightDocumentTokenResolver,
   FlightDocumentTokenResolverRegistry,
   FlightDocumentValue,
+  Kind,
 } from '@flighthq/types/contract';
 import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
 
@@ -34,16 +35,16 @@ export function explainFlightDocumentSceneTokenResolution(
 }
 
 // The value kinds the SDK itself describes. A caller composes vendor kinds onto the returned table
-// with withRegistryTableEntry; nothing is registered at module scope, so a caller that never asks for
+// with withKindMapEntry; nothing is registered at module scope, so a caller that never asks for
 // the built-ins never pays for them.
 export function initializeFlightDocumentTokenResolverRegistry(
   out: EntityConstruction<FlightDocumentTokenResolverRegistry>,
 ): void {
-  let resolvers = createKeyedTable<FlightDocumentTokenResolver>(TOKEN_RESOLVER_REGISTRY_ID, TOKEN_RESOLVER_MISS_POLICY);
-  resolvers = withRegistryTableEntry(resolvers, 'Boolean', resolveBooleanTokenValue);
-  resolvers = withRegistryTableEntry(resolvers, 'Color', resolveColorTokenValue);
-  resolvers = withRegistryTableEntry(resolvers, 'Number', resolveNumberTokenValue);
-  resolvers = withRegistryTableEntry(resolvers, 'String', resolveStringTokenValue);
+  let resolvers: ReadonlyMap<Kind, FlightDocumentTokenResolver> = new Map();
+  resolvers = withKindMapEntry(resolvers, 'Boolean', resolveBooleanTokenValue);
+  resolvers = withKindMapEntry(resolvers, 'Color', resolveColorTokenValue);
+  resolvers = withKindMapEntry(resolvers, 'Number', resolveNumberTokenValue);
+  resolvers = withKindMapEntry(resolvers, 'String', resolveStringTokenValue);
   out.resolvers = resolvers;
 }
 
@@ -94,8 +95,7 @@ function resolveTokenKey(
   if (state.visiting.has(key)) {
     return refuse(state, FlightDocumentRefusalReason.TokenReferenceCycle, path, key, null, row.token.kind);
   }
-  const resolver =
-    state.resolvers === undefined ? null : getRegistryTableEntry(state.resolvers.resolvers, row.token.kind);
+  const resolver = state.resolvers === undefined ? null : (state.resolvers.resolvers.get(row.token.kind) ?? null);
   if (resolver === null) {
     const kindPath = `${path}.kind`;
     return refuse(state, FlightDocumentRefusalReason.TokenResolverUnregistered, kindPath, key, null, row.token.kind);
@@ -212,6 +212,3 @@ interface TokenRow {
 }
 
 const DEFAULT_MODE = 'default';
-// A miss is a named refusal, never a substituted value: an unregistered kind must not resolve.
-const TOKEN_RESOLVER_MISS_POLICY = 'Unregistered';
-const TOKEN_RESOLVER_REGISTRY_ID = 'flight-document-token-resolvers';

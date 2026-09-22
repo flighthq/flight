@@ -1,6 +1,6 @@
 import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import { addNodeChild, invalidateNodeAppearance } from '@flighthq/node';
-import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry';
+import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene2d';
 import {
@@ -19,8 +19,8 @@ import {
   renderCanvasScene2D,
 } from '@flighthq/scene2d-canvas';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
-import type { CanvasShapeCommand } from '@flighthq/types';
-import { RegistryEntryState, ShapeKind } from '@flighthq/types';
+import type { CanvasShapeCommand, Kind } from '@flighthq/types';
+import { ShapeKind } from '@flighthq/types';
 
 // REQUIRED WIRING for a filled vector rectangle, and nothing else:
 //   surface   webCanvasRenderSurfaceCreator — the single Canvas surface provider, NOT the aggregate
@@ -44,15 +44,15 @@ const emptyRegistries = allocateEmptyCanvasRenderRegistries();
 // Built from an empty table rather than from `emptyRegistries.canvasShapeCommands`, which is optional
 // on the registries type — starting from the explicit empty table states the three-command intent
 // without a non-null assertion.
-let shapeCommands = createKeyedTable<CanvasShapeCommand>('CanvasShapeCommand', 'Unregistered');
+let shapeCommands = new Map<Kind, CanvasShapeCommand>();
 for (const command of [canvasBeginFill, canvasDrawRectangle, canvasEndFill]) {
-  shapeCommands = withRegistryTableEntry(shapeCommands, command.key, command);
+  shapeCommands = withKindMapEntry(shapeCommands, command.key, command);
 }
 
 const registry = {
   ...emptyRegistries,
   canvasShapeCommands: shapeCommands,
-  nodeRenderers: withRegistryTableEntry(emptyRegistries.nodeRenderers, ShapeKind, canvasShapeRenderer),
+  nodeRenderers: withKindMapEntry(emptyRegistries.nodeRenderers, ShapeKind, canvasShapeRenderer),
 };
 
 const screen = createCanvasScreenRenderTarget(
@@ -66,8 +66,8 @@ registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 
 const registries = registry;
-for (const [kind, entry] of registries.nodeRenderers.entries) {
-  if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(state, kind, entry.value);
+for (const [kind, renderer] of registries.nodeRenderers) {
+  registerNodeRenderer(state, kind, renderer);
 }
 
 const root = createDisplayObject();

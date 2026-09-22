@@ -1,8 +1,7 @@
 import { logOnce } from '@flighthq/log/contract';
-import { createSlotTable } from '@flighthq/registry/contract';
 import { getWgpuColorAdjustmentMaterialFeatureGuard, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState } from '@flighthq/types/contract';
-import { LogLevel, RegistryEntryState } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/types/contract';
 
 // Returns whether color-adjustment guards are installed on `state` (enableWgpuColorAdjustmentGuards).
 export function areWgpuColorAdjustmentGuardsEnabled(state: WgpuRenderState): boolean {
@@ -16,13 +15,8 @@ export function areWgpuColorAdjustmentGuardsEnabled(state: WgpuRenderState): boo
 // the message and @flighthq/log dependency live only in this separately-imported module. Idempotent.
 export function enableWgpuColorAdjustmentGuards(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  const table =
-    runtime.registries.colorAdjustmentFeatureGuard ?? createSlotTable('WgpuColorAdjustmentFeatureGuard', 'Disabled');
-  if (table.entry?.state !== RegistryEntryState.Bound || table.entry.value !== warnWgpuColorAdjustmentNotEnabled) {
-    runtime.registries.colorAdjustmentFeatureGuard = {
-      ...table,
-      entry: { state: RegistryEntryState.Bound, value: warnWgpuColorAdjustmentNotEnabled },
-    };
+  if (runtime.registries.colorAdjustmentFeatureGuard !== warnWgpuColorAdjustmentNotEnabled) {
+    runtime.registries.colorAdjustmentFeatureGuard = warnWgpuColorAdjustmentNotEnabled;
   }
 }
 

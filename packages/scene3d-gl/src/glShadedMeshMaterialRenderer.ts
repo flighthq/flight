@@ -16,7 +16,7 @@ import type {
   Scene3DRenderProxy,
   ShadedMaterial,
 } from '@flighthq/types/contract';
-import { RegistryEntryState, ShadedMaterialKind } from '@flighthq/types/contract';
+import { ShadedMaterialKind } from '@flighthq/types/contract';
 
 import { bindGlMeshLightBlock } from './glLitProgram';
 import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
@@ -86,7 +86,7 @@ function bindGlShadedModifiers(
   program: Readonly<GlShadedProgram>,
   modifiers: readonly Modifier[],
 ): void {
-  const entries = getGlRenderStateRuntime(state).registries.modifierSnippets.entries;
+  const entries = getGlRenderStateRuntime(state).registries.modifierSnippets;
   const ordered = orderModifierStack(modifiers);
   let nextTextureUnit = MODIFIER_TEXTURE_UNIT_BASE;
   const context: GlModifierBindContext = {
@@ -101,9 +101,9 @@ function bindGlShadedModifiers(
   for (let index = 0; index < ordered.length; index++) {
     const modifier = ordered[index];
     const entry = entries.get(modifier.kind);
-    if (entry?.state !== RegistryEntryState.Bound || entry.value.bind === undefined) continue;
+    if (entry == null || entry.bind === undefined) continue;
     context.index = index;
-    entry.value.bind(modifier, context);
+    entry.bind(modifier, context);
   }
 }
 

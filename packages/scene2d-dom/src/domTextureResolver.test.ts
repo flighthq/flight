@@ -36,7 +36,7 @@ describe('registerDomTextureResolver', () => {
     const beforeRemoval = getDomRenderStateRuntime(state).registries.textureResolvers;
     registerDomTextureResolver(state, 'acme.test', null);
     expect(resolveDomTexture(state, texture)).toBeNull();
-    expect(beforeRemoval.entries.get('acme.test')).toEqual({ state: 'bound', value: resolver });
+    expect(beforeRemoval.get('acme.test')).toBe(resolver);
   });
 
   it('replaces the persistent table without mutating an earlier snapshot', () => {
@@ -48,8 +48,8 @@ describe('registerDomTextureResolver', () => {
 
     const after = getDomRenderStateRuntime(state).registries.textureResolvers;
     expect(after).not.toBe(before);
-    expect(before.entries.size).toBe(0);
-    expect(after.entries.get('acme.persistent')).toEqual({ state: 'bound', value: resolver });
+    expect(before.size).toBe(0);
+    expect(after.get('acme.persistent')).toBe(resolver);
   });
 
   it('is last-write-wins without mutating the registered snapshot', () => {
@@ -61,11 +61,8 @@ describe('registerDomTextureResolver', () => {
 
     registerDomTextureResolver(state, 'acme.replace', second);
 
-    expect(before.entries.get('acme.replace')).toEqual({ state: 'bound', value: first });
-    expect(getDomRenderStateRuntime(state).registries.textureResolvers.entries.get('acme.replace')).toEqual({
-      state: 'bound',
-      value: second,
-    });
+    expect(before.get('acme.replace')).toBe(first);
+    expect(getDomRenderStateRuntime(state).registries.textureResolvers.get('acme.replace')).toBe(second);
   });
 });
 

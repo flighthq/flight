@@ -16,7 +16,7 @@ import type {
   RenderProxy2D,
   Scale9Sprite,
 } from '@flighthq/types/contract';
-import { BatchFormat, RegistryEntryState, Scale9SpriteKind } from '@flighthq/types/contract';
+import { BatchFormat, Scale9SpriteKind } from '@flighthq/types/contract';
 
 import { glScale9SpriteRenderer, drawGlScale9Sprite } from './glScale9Sprite';
 import { registerGlStandardMaterial } from './glStandardMaterial';
@@ -103,12 +103,7 @@ describe('drawGlScale9Sprite', () => {
       record,
     };
     const runtime = getGlRenderStateRuntime(state);
-    runtime.registries.colorAdjustmentFeature = {
-      entry: { state: RegistryEntryState.Bound, value: colorAdjustmentFeature },
-      onMiss: 'Disabled',
-      registry: 'GlColorAdjustmentFeature',
-      shape: 'slot',
-    };
+    runtime.registries.colorAdjustmentFeature = colorAdjustmentFeature;
 
     const first = createTestScale9Sprite();
     first.material = material;

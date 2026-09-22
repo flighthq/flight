@@ -1,6 +1,6 @@
-import { getRegistryTableKeys } from '@flighthq/registry/contract';
+import { getKindMapKeys } from '@flighthq/registry/contract';
 import { glScene2DRenderRegistries } from '@flighthq/scene2d-gl/contract';
-import type { KeyedTable, Kind } from '@flighthq/types/contract';
+import type { Kind } from '@flighthq/types/contract';
 import {
   AnimatedNormalModifierKind,
   AnisotropyPbrExtensionKind,
@@ -41,11 +41,11 @@ import {
 
 import { glScene3DRenderRegistries } from './scene3DGlPipeline';
 
-function expectExactKeys(table: Readonly<KeyedTable<unknown>>, expected: readonly Kind[]): void {
+function expectExactKeys(table: Readonly<ReadonlyMap<Kind, unknown>>, expected: readonly Kind[]): void {
   const actual: Kind[] = [];
-  getRegistryTableKeys(actual, table);
+  getKindMapKeys(actual, table);
   expect(actual).toEqual(expected);
-  expect(table.entries.size).toBe(expected.length);
+  expect(table.size).toBe(expected.length);
 }
 
 describe('glScene3DRenderRegistries', () => {

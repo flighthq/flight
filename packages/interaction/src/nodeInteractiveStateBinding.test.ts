@@ -1,5 +1,5 @@
 import { getNodeAppearanceRevision, getNodeLocalTransformRevision, getNodeRuntime } from '@flighthq/node/contract';
-import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   FlightDocumentInteractiveStates,
@@ -71,7 +71,7 @@ describe('applyNodeInteractiveStates', () => {
     const node = createDisplayObject();
     const requests: Array<{ from: boolean | number; value: boolean | number }> = [];
     const schemas = createTestSchemas();
-    schemas.interactiveStateTransitionSchemas = withRegistryTableEntry(
+    schemas.interactiveStateTransitionSchemas = withKindMapEntry(
       schemas.interactiveStateTransitionSchemas,
       'acme.Transition',
       {
@@ -135,29 +135,25 @@ describe('applyNodeInteractiveStates', () => {
     const calls: string[] = [];
     const schemas = createTestSchemas();
     for (const kind of ['first', 'second'] as const) {
-      schemas.interactiveStateExtensionSchemas = withRegistryTableEntry(
-        schemas.interactiveStateExtensionSchemas,
+      schemas.interactiveStateExtensionSchemas = withKindMapEntry(schemas.interactiveStateExtensionSchemas, kind, {
+        createExtension: () => ({
+          apply: (fields) => {
+            calls.push(kind + ':' + String(fields['value']));
+            const value = fields['value'];
+            if (typeof value !== 'number') return false;
+            values[kind] = value;
+            return true;
+          },
+          capture: (out) => {
+            out['value'] = values[kind];
+            return true;
+          },
+          dispose: () => calls.push(kind + ':disposed'),
+        }),
+        fields: [{ name: 'value', required: true, validate: (value) => typeof value === 'number' }],
+        isSupported: () => true,
         kind,
-        {
-          createExtension: () => ({
-            apply: (fields) => {
-              calls.push(kind + ':' + String(fields['value']));
-              const value = fields['value'];
-              if (typeof value !== 'number') return false;
-              values[kind] = value;
-              return true;
-            },
-            capture: (out) => {
-              out['value'] = values[kind];
-              return true;
-            },
-            dispose: () => calls.push(kind + ':disposed'),
-          }),
-          fields: [{ name: 'value', required: true, validate: (value) => typeof value === 'number' }],
-          isSupported: () => true,
-          kind,
-        },
-      );
+      });
     }
     const states: FlightDocumentInteractiveStates = {
       disabled: null,
@@ -243,10 +239,10 @@ describe('explainNodeInteractiveStateBinding', () => {
 
 function createTestSchemas(): FlightDocumentSchemaRegistry {
   return {
-    interactiveStateExtensionSchemas: createKeyedTable('flight-document.interactive-state-extension', 'none'),
-    interactiveStateTransitionSchemas: createKeyedTable('flight-document.interactive-state-transition', 'none'),
-    nodeSchemas: createKeyedTable('flight-document.node', 'none'),
-    resourceSchemas: createKeyedTable('flight-document.resource', 'none'),
-    shapeCommandSchemas: createKeyedTable('flight-document.shape-command', 'none'),
+    interactiveStateExtensionSchemas: new Map(),
+    interactiveStateTransitionSchemas: new Map(),
+    nodeSchemas: new Map(),
+    resourceSchemas: new Map(),
+    shapeCommandSchemas: new Map(),
   };
 }

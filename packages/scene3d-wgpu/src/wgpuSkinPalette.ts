@@ -1,4 +1,3 @@
-import { createSlotTable } from '@flighthq/registry/contract';
 import { getWgpuRenderStateRuntime, retireWgpuTexture } from '@flighthq/render-wgpu/contract';
 import type {
   Mesh,
@@ -7,7 +6,7 @@ import type {
   MeshSkinBindPose,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
@@ -133,10 +132,7 @@ export function ensureWgpuSkinMeshDrawLayout(state: WgpuRenderState): GPUBindGro
 
 export function registerWgpuGpuSkinning(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  runtime.registries.gpuSkinning = {
-    ...(runtime.registries.gpuSkinning ?? createSlotTable('WgpuGpuSkinning', 'Unregistered')),
-    entry: { state: RegistryEntryState.Bound, value: wgpuSkinningAdapter },
-  };
+  runtime.registries.gpuSkinning = wgpuSkinningAdapter;
   getWgpuScene3DRuntime(state).skinningAdapter = wgpuSkinningAdapter;
 }
 

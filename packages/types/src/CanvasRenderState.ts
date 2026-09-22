@@ -5,7 +5,7 @@ import type { CanvasRenderPass } from './CanvasRenderPass';
 import type { CanvasRenderSurfaceCreator } from './CanvasRenderSurface';
 import type { CanvasRenderTarget, CanvasTextureRenderTarget } from './CanvasRenderTarget';
 import type { CanvasTextureResolvers } from './CanvasTextureResolver';
-import type { KeyedTable } from './RegistryTable';
+import type { Kind } from './Entity';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState';
 
@@ -34,8 +34,8 @@ export interface CanvasRenderRegistries extends RenderRegistries {
   blendModeApplication?: ((state: CanvasRenderState, blendMode: BlendMode | null) => void) | null;
   // Absent until the first material registration so a Canvas-only application that uses no material
   // policy retains neither the table metadata nor the declarative renderer module.
-  materialRenderers?: KeyedTable<CanvasQuadMaterialRenderer>;
-  effects: KeyedTable<CanvasEffectRunner>;
+  materialRenderers?: ReadonlyMap<Kind, CanvasQuadMaterialRenderer>;
+  effects: ReadonlyMap<Kind, CanvasEffectRunner>;
 }
 
 // Package-private 2D-canvas state for a CanvasRenderState entity. Lives in the runtime tier (not on

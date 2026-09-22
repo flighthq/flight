@@ -47,9 +47,7 @@ describe('registerGradientGlowEffectPaddingResolver', () => {
     const state = createRenderState();
     const other = createRenderState();
     registerGradientGlowEffectPaddingResolver(state);
-    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('GradientGlowEffect')).toBe(
-      true,
-    );
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.has('GradientGlowEffect')).toBe(true);
     expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });

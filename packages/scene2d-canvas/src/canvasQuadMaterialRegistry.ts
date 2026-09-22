@@ -1,6 +1,6 @@
-import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import type { CanvasQuadMaterialRenderer, CanvasRenderState, Kind, Material } from '@flighthq/types/contract';
-import { RegistryEntryState, StandardMaterialKind } from '@flighthq/types/contract';
+import { StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
 
@@ -20,8 +20,8 @@ export function applyCanvasMaterial(state: CanvasRenderState, material: Material
 }
 
 export function getCanvasQuadMaterialRenderer(state: CanvasRenderState, kind: Kind): CanvasQuadMaterialRenderer | null {
-  const entry = getCanvasRenderStateRuntime(state).registries.materialRenderers?.entries.get(kind);
-  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+  const entry = getCanvasRenderStateRuntime(state).registries.materialRenderers?.get(kind);
+  return entry ?? null;
 }
 
 export function registerCanvasQuadMaterialRenderer(
@@ -30,9 +30,8 @@ export function registerCanvasQuadMaterialRenderer(
   renderer: CanvasQuadMaterialRenderer,
 ): void {
   const runtime = getCanvasRenderStateRuntime(state);
-  const table =
-    runtime.registries.materialRenderers ?? createKeyedTable('CanvasQuadMaterialRenderer', 'StandardMaterial');
-  runtime.registries.materialRenderers = withRegistryTableEntry(table, kind, renderer);
+  const table = runtime.registries.materialRenderers ?? new Map();
+  runtime.registries.materialRenderers = withKindMapEntry(table, kind, renderer);
 }
 
 // Resolves a node's material to its Canvas renderer, else the registered default, else null.
@@ -42,12 +41,12 @@ export function resolveCanvasQuadMaterialRenderer(
   state: CanvasRenderState,
   material: Material | null,
 ): CanvasQuadMaterialRenderer | null {
-  const entries = getCanvasRenderStateRuntime(state).registries.materialRenderers?.entries;
-  if (entries === undefined) return null;
+  const table = getCanvasRenderStateRuntime(state).registries.materialRenderers;
+  if (table === undefined) return null;
   if (material !== null) {
-    const entry = entries.get(material.kind);
-    if (entry?.state === RegistryEntryState.Bound) return entry.value;
+    const entry = table.get(material.kind);
+    if (entry != null) return entry;
   }
-  const fallback = entries.get(StandardMaterialKind);
-  return fallback?.state === RegistryEntryState.Bound ? fallback.value : null;
+  const fallback = table.get(StandardMaterialKind);
+  return fallback ?? null;
 }

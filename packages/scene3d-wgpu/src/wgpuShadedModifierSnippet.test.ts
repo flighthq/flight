@@ -30,7 +30,7 @@ describe('registerWgpuModifierSnippet', () => {
     expect(getWgpuRenderStateRuntime(derived).registries.modifierSnippetRevision).toBe(1);
     expect(getWgpuRenderStateRuntime(screen).registries.modifierSnippets).not.toBe(snapshot);
     expect(getWgpuRenderStateRuntime(screen).registries.modifierSnippetRevision).toBe(2);
-    expect(getRegistryTableEntry(snapshot, 'acme.Test')).toBe(initial);
+    expect(snapshot.get('acme.Test') ?? null).toBe(initial);
     expect(resolveWgpuModifierSnippet(derived, 'acme.Test')).toBe(initial);
     expect(resolveWgpuModifierSnippet(screen, 'acme.Test')).toBe(override);
   });
@@ -42,5 +42,5 @@ describe('resolveWgpuModifierSnippet', () => {
     expect(resolveWgpuModifierSnippet(state, 'acme.Missing')).toBeNull();
   });
 });
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
+
 import { allocateEmptyWgpuRenderRegistries, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';

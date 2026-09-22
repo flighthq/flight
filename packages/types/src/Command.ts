@@ -1,6 +1,5 @@
 import type { Entity, Kind } from './Entity';
 import type { NodeAny } from './Node';
-import type { KeyedTable } from './RegistryTable';
 import type { Signal } from './Signal';
 
 // A recorded, reversible intent — PLAIN KIND-TAGGED DATA, never an object carrying execute/undo methods.
@@ -35,7 +34,7 @@ export interface CommandBinding {
   readonly undo: (command: Readonly<Command>) => void;
 }
 
-export interface CommandBindingTable extends KeyedTable<CommandBinding>, Entity {}
+export type CommandBindingTable = ReadonlyMap<Kind, CommandBinding>;
 
 // An undo/redo stack over commands, plus the bindings that give its entries behaviour.
 //
@@ -127,8 +126,3 @@ export const CompositeCommandKind = 'CompositeCommand';
 export const RemoveNodeChildCommandKind = 'RemoveNodeChildCommand';
 export const ReorderNodeChildCommandKind = 'ReorderNodeChildCommand';
 export const SetNodePropertyCommandKind = 'SetNodePropertyCommand';
-
-// The registry identity and miss policy the command binding table is created with, named here so a
-// consumer composing an overlay table uses the same pair rather than a guessed string.
-export const CommandBindingRegistryId = 'command.bindings';
-export const CommandBindingMissPolicy = 'ignore';

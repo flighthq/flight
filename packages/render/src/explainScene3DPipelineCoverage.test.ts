@@ -1,9 +1,9 @@
 import { createMaterial3D } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild } from '@flighthq/node/contract';
-import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createMesh, createNode3D } from '@flighthq/scene3d/contract';
-import type { KeyedTable, NodeRenderer } from '@flighthq/types/contract';
+import type { Kind, NodeRenderer } from '@flighthq/types/contract';
 import { Node3DKind, StandardMaterialKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -17,10 +17,10 @@ function box() {
   return createBoxMeshGeometry(1, 1, 1);
 }
 
-function materialTable(...kinds: string[]): KeyedTable<unknown> {
-  let table = createKeyedTable<unknown>('MaterialRenderer', 'Unregistered');
+function materialTable(...kinds: string[]): ReadonlyMap<Kind, unknown> {
+  let table: ReadonlyMap<string, unknown> = new Map();
   for (const kind of kinds) {
-    table = withRegistryTableEntry(table, kind, {});
+    table = withKindMapEntry(table, kind, {});
   }
   return table;
 }

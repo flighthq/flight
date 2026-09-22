@@ -1,4 +1,3 @@
-import { createSlotTable } from '@flighthq/registry/contract';
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { enableColorAdjustments } from '@flighthq/render/contract';
@@ -16,7 +15,6 @@ import type {
   TintMaterialData,
 } from '@flighthq/types/contract';
 import type { GlShapeMeshBinding } from '@flighthq/types/contract';
-import { RegistryEntryState } from '@flighthq/types/contract';
 
 import {
   bindGlQuadBatchBaseAttributes,
@@ -36,12 +34,8 @@ import { drawGlShapeMeshBatch, ensureGlShapeMeshProgram } from './glShapeMesh';
 export function registerGlColorAdjustmentMaterialFeature(state: GlRenderState): void {
   enableColorAdjustments(state);
   const runtime = getGlRenderStateRuntime(state);
-  const table = runtime.registries.colorAdjustmentFeature ?? createSlotTable('GlColorAdjustmentFeature', 'Disabled');
-  if (table.entry?.state !== RegistryEntryState.Bound || table.entry.value !== glColorAdjustmentMaterialFeature) {
-    runtime.registries.colorAdjustmentFeature = {
-      ...table,
-      entry: { state: RegistryEntryState.Bound, value: glColorAdjustmentMaterialFeature },
-    };
+  if (runtime.registries.colorAdjustmentFeature !== glColorAdjustmentMaterialFeature) {
+    runtime.registries.colorAdjustmentFeature = glColorAdjustmentMaterialFeature;
   }
   if (runtime.quadBatchWriterColorScaleBiasMode === undefined) runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_NONE;
 }

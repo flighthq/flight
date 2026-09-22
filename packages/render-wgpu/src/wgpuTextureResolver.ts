@@ -1,4 +1,4 @@
-import { createKeyedTable, withoutRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withoutKindMapEntry, withKindMapEntry } from '@flighthq/registry/contract';
 import { getTextureSampleColorSpace, getTextureSource, getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
   RenderTargetColorSpace,
@@ -18,7 +18,6 @@ import {
   CompressedImageTextureSourceKind,
   ImageTextureSourceKind,
   RenderRegistryTable,
-  RegistryEntryState,
   RenderTargetTextureSourceKind,
 } from '@flighthq/types/contract';
 
@@ -58,9 +57,7 @@ export function registerWgpuTextureResolver(
   const runtime = getWgpuRenderStateRuntime(state);
   const table = runtime.registries.textureResolvers;
   runtime.registries.textureResolvers =
-    resolver === null
-      ? withoutRegistryTableEntry(table, sourceKind)
-      : withRegistryTableEntry(table, sourceKind, resolver);
+    resolver === null ? withoutKindMapEntry(table, sourceKind) : withKindMapEntry(table, sourceKind, resolver);
 }
 
 // Resolves through one keyed lookup using the source's declared kind. Resolution may realize, upload,
@@ -75,12 +72,12 @@ export function resolveWgpuTexture(
   const sourceKind = getTextureSourceKind(texture);
   if (sourceKind === null) return null;
   const runtime = getWgpuRenderStateRuntime(state);
-  const entry = runtime.registries.textureResolvers.entries.get(sourceKind);
-  if (entry?.state !== RegistryEntryState.Bound) {
+  const entry = runtime.registries.textureResolvers.get(sourceKind);
+  if (entry == null) {
     runtime.registryMiss?.(RenderRegistryTable.TextureResolver, sourceKind);
     return null;
   }
-  return entry.value(state, texture, premultiply, getTextureSampleColorSpace(texture.colorSpace, workingColorSpace));
+  return entry(state, texture, premultiply, getTextureSampleColorSpace(texture.colorSpace, workingColorSpace));
 }
 
 function resolveWgpuBitmapTexture(
@@ -121,13 +118,9 @@ function resolveWgpuRenderTexture(state: WgpuRenderState, texture: Readonly<Text
   return bindWgpuRenderTexture(state, texture as Readonly<RenderTexture>);
 }
 
-const _standardWgpuTextureResolvers = withRegistryTableEntry(
-  withRegistryTableEntry(
-    withRegistryTableEntry(
-      createKeyedTable<WgpuTextureResolver>('WgpuTextureResolver', 'Unregistered'),
-      BitmapTextureSourceKind,
-      resolveWgpuBitmapTexture,
-    ),
+const _standardWgpuTextureResolvers = withKindMapEntry(
+  withKindMapEntry(
+    withKindMapEntry(new Map(), BitmapTextureSourceKind, resolveWgpuBitmapTexture),
     ImageTextureSourceKind,
     resolveWgpuImageTexture,
   ),

@@ -1,5 +1,4 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import { createRenderCache, getRenderProxy2D, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
@@ -77,9 +76,9 @@ describe('createCanvasCacheState', () => {
     const screen = makeCanvasState();
     enableCanvasRenderCache(screen);
     const cacheState = makeCacheState(screen);
-    expect(
-      getRegistryTableEntry(getCanvasRenderStateRuntime(cacheState).registries.nodeRenderers, RenderCacheKind),
-    ).toBe(canvasRenderCacheRenderer);
+    expect(getCanvasRenderStateRuntime(cacheState).registries.nodeRenderers.get(RenderCacheKind) ?? null).toBe(
+      canvasRenderCacheRenderer,
+    );
   });
 
   it('propagates pixel ratio and scene graph sync policy without sharing node maps', () => {
@@ -179,7 +178,7 @@ describe('enableCanvasRenderCache', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = makeCanvasState();
     enableCanvasRenderCache(state);
-    expect(getRegistryTableEntry(getCanvasRenderStateRuntime(state).registries.nodeRenderers, RenderCacheKind)).toBe(
+    expect(getCanvasRenderStateRuntime(state).registries.nodeRenderers.get(RenderCacheKind) ?? null).toBe(
       canvasRenderCacheRenderer,
     );
   });

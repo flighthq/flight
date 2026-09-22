@@ -41,12 +41,7 @@ export function createDomRenderStateRuntime(): DomRenderStateRuntime {
     nodeRenderers: runtime.registries.nodeRenderers,
     shapeRasterizer: null,
     strokeTessellator: runtime.registries.strokeTessellator,
-    textureResolvers: {
-      entries: new Map(),
-      onMiss: 'Unregistered',
-      registry: 'DomTextureResolver',
-      shape: 'keyed',
-    },
+    textureResolvers: new Map(),
   };
   return runtime;
 }

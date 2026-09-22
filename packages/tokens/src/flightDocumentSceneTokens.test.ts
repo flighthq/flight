@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import type {
   FlightDocumentScene2D,
   FlightDocumentToken,
@@ -176,7 +176,7 @@ function withResolver(
   kind: string,
   resolver: (value: unknown) => unknown,
 ): FlightDocumentTokenResolverRegistry['resolvers'] {
-  return withRegistryTableEntry(registry.resolvers, kind, resolver as never);
+  return withKindMapEntry(registry.resolvers, kind, resolver as never);
 }
 describe('resolveFlightDocumentSceneTokens', () => {
   it('prefers the requested mode over the default', () => {

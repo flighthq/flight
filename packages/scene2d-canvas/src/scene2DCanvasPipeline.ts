@@ -1,5 +1,5 @@
-import { withRegistryTableEntry } from '@flighthq/registry/contract';
-import type { CanvasRenderRegistries, KeyedTable, NodeRenderer } from '@flighthq/types/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
+import type { CanvasRenderRegistries, Kind, NodeRenderer } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
   DisplayObjectKind,
@@ -32,22 +32,22 @@ import { canvasSpriteRenderer } from './canvasSprite';
 import { canvasTextLabelRenderer } from './canvasTextLabel';
 import { canvasTilemapRenderer } from './canvasTilemap';
 
-function buildScene2dCanvasRenderers(): KeyedTable<NodeRenderer> {
+function buildScene2dCanvasRenderers(): ReadonlyMap<Kind, NodeRenderer> {
   const registries = allocateEmptyCanvasRenderRegistries();
   let table = registries.nodeRenderers;
-  table = withRegistryTableEntry(table, BitmapTextKind, canvasBitmapTextRenderer);
-  table = withRegistryTableEntry(table, DisplayObjectKind, canvasScene2DRenderer);
-  table = withRegistryTableEntry(table, MorphShapeKind, canvasMorphShapeRenderer);
-  table = withRegistryTableEntry(table, ParticleEmitter2DKind, canvasParticleEmitter2DRenderer);
-  table = withRegistryTableEntry(table, QuadBatchKind, canvasQuadBatchRenderer);
-  table = withRegistryTableEntry(table, RenderCacheKind, canvasRenderCacheRenderer);
-  table = withRegistryTableEntry(table, RichTextKind, canvasRichTextRenderer);
-  table = withRegistryTableEntry(table, Scale9ShapeKind, canvasScale9ShapeRenderer);
-  table = withRegistryTableEntry(table, Scale9SpriteKind, canvasScale9SpriteRenderer);
-  table = withRegistryTableEntry(table, ShapeKind, canvasShapeRenderer);
-  table = withRegistryTableEntry(table, SpriteKind, canvasSpriteRenderer);
-  table = withRegistryTableEntry(table, TextLabelKind, canvasTextLabelRenderer);
-  table = withRegistryTableEntry(table, TilemapKind, canvasTilemapRenderer);
+  table = withKindMapEntry(table, BitmapTextKind, canvasBitmapTextRenderer);
+  table = withKindMapEntry(table, DisplayObjectKind, canvasScene2DRenderer);
+  table = withKindMapEntry(table, MorphShapeKind, canvasMorphShapeRenderer);
+  table = withKindMapEntry(table, ParticleEmitter2DKind, canvasParticleEmitter2DRenderer);
+  table = withKindMapEntry(table, QuadBatchKind, canvasQuadBatchRenderer);
+  table = withKindMapEntry(table, RenderCacheKind, canvasRenderCacheRenderer);
+  table = withKindMapEntry(table, RichTextKind, canvasRichTextRenderer);
+  table = withKindMapEntry(table, Scale9ShapeKind, canvasScale9ShapeRenderer);
+  table = withKindMapEntry(table, Scale9SpriteKind, canvasScale9SpriteRenderer);
+  table = withKindMapEntry(table, ShapeKind, canvasShapeRenderer);
+  table = withKindMapEntry(table, SpriteKind, canvasSpriteRenderer);
+  table = withKindMapEntry(table, TextLabelKind, canvasTextLabelRenderer);
+  table = withKindMapEntry(table, TilemapKind, canvasTilemapRenderer);
   return table;
 }
 

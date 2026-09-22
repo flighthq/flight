@@ -1,5 +1,4 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import {
   appendShapeBeginTextureFill,
   appendShapeBeginFill,
@@ -144,7 +143,7 @@ function reconstructShapeCommandArg(value: unknown, resolveTexture: ShapeJsonPar
 // Runs after reconstruction, so matrices are already Matrix values and textures already resolved, and
 // after the drop check, so an unresolved texture is still a dropped command rather than a parse failure.
 function isValidShapeCommandArgs(key: string, args: readonly unknown[]): boolean {
-  const schema = getRegistryTableEntry(defaultShapeCommandSchemas, key);
+  const schema = defaultShapeCommandSchemas.get(key) ?? null;
   // A missing runtime schema invalidates the command. The full-vocabulary round-trip test therefore
   // fails if the appender table and the shared schema table ever drift apart.
   if (schema === null) return false;

@@ -1,11 +1,5 @@
-import {
-  createKeyedTable,
-  getRegistryTableEntry,
-  getRegistryTableKeys,
-  withRegistryTableEntry,
-  withoutRegistryTableEntry,
-} from '@flighthq/registry/contract';
-import type { ImportDiagnostic, KeyedTable, Skeleton2DImport } from '@flighthq/types/contract';
+import { getKindMapKeys, withKindMapEntry, withoutKindMapEntry } from '@flighthq/registry/contract';
+import type { ImportDiagnostic, Kind, Skeleton2DImport } from '@flighthq/types/contract';
 
 import { parseDragonBonesSkeleton } from './dragonBonesParse';
 import { parseSpineSkeleton } from './spineParse';
@@ -23,9 +17,9 @@ interface RegisteredSkeletonFormat {
   order: number;
 }
 
-function getRegistry(): KeyedTable<RegisteredSkeletonFormat> {
+function getRegistry(): ReadonlyMap<Kind, RegisteredSkeletonFormat> {
   if (_registry !== null) return _registry;
-  _registry = createKeyedTable('Skeleton2DFormat', 'Unclaimed');
+  _registry = new Map();
   bindSkeleton2DFormat('Spine', detectSpine, (text, diagnostics) => parseSpineSkeleton(text, diagnostics));
   bindSkeleton2DFormat('DragonBones', detectDragonBones, (text, diagnostics) =>
     parseDragonBonesSkeleton(text, diagnostics),
@@ -53,7 +47,7 @@ function detectSpine(text: string): boolean {
 // separately; this enumeration is stable for callers and agrees with resolution after removal.
 export function getSkeleton2DFormatKinds(): readonly string[] {
   const kinds: string[] = [];
-  getRegistryTableKeys(kinds, getRegistry());
+  getKindMapKeys(kinds, getRegistry());
   return kinds;
 }
 
@@ -82,7 +76,7 @@ export function registerSkeleton2DFormat(
 // its `register*` with this — a caller that can add a vendor format must be able to take it back out, and
 // a test that registers one has no way to leave the module global as it found it otherwise.
 export function unregisterSkeleton2DFormat(kind: string): void {
-  _registry = withoutRegistryTableEntry(getRegistry(), kind);
+  _registry = withoutKindMapEntry(getRegistry(), kind);
 }
 
 function bindSkeleton2DFormat(
@@ -91,8 +85,8 @@ function bindSkeleton2DFormat(
   parse: (text: string, diagnostics?: ImportDiagnostic[]) => Skeleton2DImport | null,
 ): void {
   const registry = getRegistry();
-  const current = getRegistryTableEntry(registry, kind);
-  _registry = withRegistryTableEntry(registry, kind, {
+  const current = registry.get(kind) ?? null;
+  _registry = withKindMapEntry(registry, kind, {
     entry: { detect, parse },
     order: current?.order ?? _nextFormatOrder++,
   });
@@ -101,12 +95,12 @@ function bindSkeleton2DFormat(
 function getSkeleton2DFormatsInDetectionOrder(): RegisteredSkeletonFormat[] {
   const formats: RegisteredSkeletonFormat[] = [];
   for (const kind of getSkeleton2DFormatKinds()) {
-    const registered = getRegistryTableEntry(getRegistry(), kind);
+    const registered = getRegistry().get(kind) ?? null;
     if (registered !== null) formats.push(registered);
   }
   formats.sort((a, b) => a.order - b.order);
   return formats;
 }
 
-let _registry: KeyedTable<RegisteredSkeletonFormat> | null = null;
+let _registry: ReadonlyMap<Kind, RegisteredSkeletonFormat> | null = null;
 let _nextFormatOrder = 0;

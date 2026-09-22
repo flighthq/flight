@@ -1,7 +1,6 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { ColorScaleBias } from '@flighthq/types/contract';
-import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { areGlColorAdjustmentGuardsEnabled, enableGlColorAdjustmentGuards } from './enableGlColorAdjustmentGuards';
 import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
@@ -27,15 +26,10 @@ describe('areGlColorAdjustmentGuardsEnabled', () => {
     expect(areGlColorAdjustmentGuardsEnabled(state)).toBe(false);
     enableGlColorAdjustmentGuards(state);
     expect(areGlColorAdjustmentGuardsEnabled(state)).toBe(true);
-    const table = getGlRenderStateRuntime(state).registries.colorAdjustmentFeatureGuard;
-    expect(table).toMatchObject({
-      entry: { state: RegistryEntryState.Bound },
-      onMiss: 'Disabled',
-      registry: 'GlColorAdjustmentFeatureGuard',
-      shape: 'slot',
-    });
+    const guard = getGlRenderStateRuntime(state).registries.colorAdjustmentFeatureGuard;
+    expect(guard).not.toBeNull();
     enableGlColorAdjustmentGuards(state);
-    expect(getGlRenderStateRuntime(state).registries.colorAdjustmentFeatureGuard).toBe(table);
+    expect(getGlRenderStateRuntime(state).registries.colorAdjustmentFeatureGuard).toBe(guard);
   });
 });
 

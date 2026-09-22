@@ -42,9 +42,7 @@ describe('registerDisplacementEffectPaddingResolver', () => {
     const state = createRenderState();
     const other = createRenderState();
     registerDisplacementEffectPaddingResolver(state);
-    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('DisplacementEffect')).toBe(
-      true,
-    );
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.has('DisplacementEffect')).toBe(true);
     expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });

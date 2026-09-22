@@ -7,12 +7,12 @@ import type {
   GlRenderState,
   GlShadedDefineKey,
   GlShadedProgram,
-  KeyedTable,
+  Kind,
   Modifier,
   ModifierKind,
   ModifierRegistry,
 } from '@flighthq/types/contract';
-import { MAX_FORWARD_LIGHTS, ModifierSlot, RegistryEntryState } from '@flighthq/types/contract';
+import { MAX_FORWARD_LIGHTS, ModifierSlot } from '@flighthq/types/contract';
 
 import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
@@ -24,7 +24,7 @@ import {
 } from './glMeshProgram';
 import { getGlScene3DRuntime } from './glScene3DRuntime';
 
-type GlModifierSnippetSource = Readonly<ModifierRegistry> | Readonly<KeyedTable<GlModifierSnippet>>;
+type GlModifierSnippetSource = Readonly<ModifierRegistry> | Readonly<ReadonlyMap<Kind, GlModifierSnippet>>;
 // The stable program-cache key for a ShadedMaterial variant: the base feature flags joined with the
 // modifier stack's define-key. Two materials sharing both the same base flags AND the same modifier
 // feature-set produce the same key and share one compiled program (and batch together); a different
@@ -513,12 +513,12 @@ function resolveGlModifierSnippetSource(
   kind: ModifierKind,
 ): GlModifierSnippet | null {
   if (!isGlModifierSnippetTable(registry)) return resolveModifier(registry, kind) as GlModifierSnippet | null;
-  const entry = registry.entries.get(kind);
-  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+  const entry = registry.get(kind);
+  return entry ?? null;
 }
 
 function isGlModifierSnippetTable(
   registry: GlModifierSnippetSource,
-): registry is Readonly<KeyedTable<GlModifierSnippet>> {
-  return 'shape' in registry;
+): registry is Readonly<ReadonlyMap<Kind, GlModifierSnippet>> {
+  return registry instanceof Map;
 }

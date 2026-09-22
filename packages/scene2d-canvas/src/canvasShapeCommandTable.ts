@@ -1,15 +1,15 @@
-import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
-import type { CanvasShapeCommand, KeyedTable } from '@flighthq/types/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
+import type { CanvasShapeCommand, Kind } from '@flighthq/types/contract';
 
 import { canvasShapeCommands, canvasTextureShapeCommands } from './canvasShapeCommands';
 
-export function canvasShapeCommandTable(): KeyedTable<CanvasShapeCommand> {
-  let table = createKeyedTable<CanvasShapeCommand>('CanvasShapeCommand', 'Unregistered');
+export function canvasShapeCommandTable(): ReadonlyMap<Kind, CanvasShapeCommand> {
+  let table: ReadonlyMap<Kind, CanvasShapeCommand> = new Map();
   for (const command of canvasShapeCommands) {
-    table = withRegistryTableEntry(table, command.key, command);
+    table = withKindMapEntry(table, command.key, command);
   }
   for (const command of canvasTextureShapeCommands) {
-    table = withRegistryTableEntry(table, command.key, command);
+    table = withKindMapEntry(table, command.key, command);
   }
   return table;
 }

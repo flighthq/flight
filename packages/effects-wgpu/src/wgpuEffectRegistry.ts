@@ -1,7 +1,6 @@
-import { withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { Effect, WgpuEffectResolver, WgpuEffectRunner, WgpuRenderState } from '@flighthq/types/contract';
-import { RegistryEntryState } from '@flighthq/types/contract';
 
 // Per-state registry mapping an effect `kind` string to its Wgpu runner — the material-renderer
 // pattern one tier up. Registration is opt-in (import a runner only to register it) and dispatch is a
@@ -12,8 +11,8 @@ import { RegistryEntryState } from '@flighthq/types/contract';
 // literal kind and public default runner, and installs no padding, shader-source, or backdrop companions.
 
 export function getWgpuEffectRunner(state: WgpuRenderState, kind: string): WgpuEffectRunner | null {
-  const entry = getWgpuRenderStateRuntime(state).registries.effects.entries.get(kind);
-  return entry?.state === RegistryEntryState.Bound ? entry.value.runner : null;
+  const entry = getWgpuRenderStateRuntime(state).registries.effects.get(kind);
+  return entry?.runner ?? null;
 }
 
 // Returns true if a runner is registered for the given kind in this state. Symmetric with
@@ -21,13 +20,13 @@ export function getWgpuEffectRunner(state: WgpuRenderState, kind: string): WgpuE
 // silently skips unregistered kinds; check up front to apply your own policy (warn, filter)
 // rather than relying on silent no-ops.
 export function hasWgpuEffectRunner(state: WgpuRenderState, kind: string): boolean {
-  return getWgpuRenderStateRuntime(state).registries.effects.entries.get(kind)?.state === RegistryEntryState.Bound;
+  return getWgpuRenderStateRuntime(state).registries.effects.has(kind);
 }
 
 export function isWgpuEffectResolvable(state: WgpuRenderState, effect: Readonly<Effect>): boolean {
-  const entry = getWgpuRenderStateRuntime(state).registries.effects.entries.get(effect.kind);
-  if (entry?.state !== RegistryEntryState.Bound) return false;
-  return entry.value.isResolvable === undefined || entry.value.isResolvable(state, effect);
+  const entry = getWgpuRenderStateRuntime(state).registries.effects.get(effect.kind);
+  if (entry == null) return false;
+  return entry.isResolvable === undefined || entry.isResolvable(state, effect);
 }
 
 export function registerWgpuEffect(
@@ -37,7 +36,7 @@ export function registerWgpuEffect(
   isResolvable?: WgpuEffectResolver,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  runtime.registries.effects = withRegistryTableEntry(runtime.registries.effects, kind, {
+  runtime.registries.effects = withKindMapEntry(runtime.registries.effects, kind, {
     isResolvable,
     runner,
   });

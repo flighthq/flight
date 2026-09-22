@@ -5,7 +5,6 @@ import type {
   NodeAny,
   RenderState,
 } from '@flighthq/types/contract';
-import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getRenderProxy2D } from './renderProxy';
 import { getRenderStateRuntime } from './renderState';
@@ -28,8 +27,7 @@ import { getRenderStateRuntime } from './renderState';
 // a new blank-reason gate, this function must gain the matching check or it silently goes stale.
 export function explainScene2DRender(state: RenderState, source: NodeAny): Scene2DRenderExplanation {
   const kind = source.kind;
-  const hasRenderer =
-    getRenderStateRuntime(state).registries.nodeRenderers.entries.get(kind)?.state === RegistryEntryState.Bound;
+  const hasRenderer = getRenderStateRuntime(state).registries.nodeRenderers.has(kind);
 
   const proxy = getRenderProxy2D(state, source);
   const prepared = proxy !== undefined;

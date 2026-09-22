@@ -42,7 +42,7 @@ describe('registerTiltShiftEffectPaddingResolver', () => {
     const state = createRenderState();
     const other = createRenderState();
     registerTiltShiftEffectPaddingResolver(state);
-    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('TiltShiftEffect')).toBe(true);
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.has('TiltShiftEffect')).toBe(true);
     expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });

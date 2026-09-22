@@ -1,5 +1,4 @@
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import {
   allocateEmptyWgpuRenderRegistries,
   getWgpuRenderStateRuntime,
@@ -52,7 +51,7 @@ describe('registerWgpuMeshMaterialRenderer', () => {
 
     expect(getWgpuRenderStateRuntime(derived).registries.materialRenderers).toBe(snapshot);
     expect(getWgpuRenderStateRuntime(screen).registries.materialRenderers).not.toBe(snapshot);
-    expect(getRegistryTableEntry(snapshot, StandardPbrMaterialKind)).toBe(renderer);
+    expect(snapshot.get(StandardPbrMaterialKind) ?? null).toBe(renderer);
     expect(getWgpuMeshMaterialRenderer(derived, StandardPbrMaterialKind)).toBe(renderer);
     expect(getWgpuMeshMaterialRenderer(screen, StandardPbrMaterialKind)).toBe(replacement);
   });
@@ -99,8 +98,8 @@ describe('shared materialRenderers storage', () => {
     registerWgpuMeshMaterialRenderer(state, MeshKind, meshRenderer);
 
     const table = getWgpuRenderStateRuntime(state).registries.materialRenderers;
-    expect(table.entries.has(QuadKind)).toBe(true);
-    expect(table.entries.has(MeshKind)).toBe(true);
+    expect(table.has(QuadKind)).toBe(true);
+    expect(table.has(MeshKind)).toBe(true);
   });
 
   it('typed resolvers return the correct protocol from shared storage', () => {
@@ -118,8 +117,8 @@ describe('shared materialRenderers storage', () => {
     registerWgpuMeshMaterialRenderer(state, MeshKind, meshRenderer);
 
     const table = getWgpuRenderStateRuntime(state).registries.materialRenderers;
-    expect(table.entries.size).toBe(2);
-    expect(getRegistryTableEntry(table, QuadKind)).toBe(quadRenderer);
-    expect(getRegistryTableEntry(table, MeshKind)).toBe(meshRenderer);
+    expect(table.size).toBe(2);
+    expect(table.get(QuadKind) ?? null).toBe(quadRenderer);
+    expect(table.get(MeshKind) ?? null).toBe(meshRenderer);
   });
 });

@@ -142,11 +142,11 @@ describe('registerEffectPaddingResolver', () => {
 
     registerEffectPaddingResolver(state, 'acme.Effect', resolver);
     const before = getRenderStateRuntime(state).registries.effectPaddingResolvers;
-    expect(before?.entries.get('acme.Effect')).toEqual({ state: 'bound', value: resolver });
+    expect(before?.get('acme.Effect')).toBe(resolver);
 
     registerEffectPaddingResolver(state, 'acme.Effect', null);
     expect(getRenderStateRuntime(state).registries.effectPaddingResolvers).not.toBe(before);
-    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('acme.Effect')).toBe(false);
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.has('acme.Effect')).toBe(false);
   });
 
   it('replaces a registration without mutating the earlier snapshot', () => {
@@ -158,10 +158,7 @@ describe('registerEffectPaddingResolver', () => {
 
     registerEffectPaddingResolver(state, 'acme.Effect', replacement);
 
-    expect(before?.entries.get('acme.Effect')).toEqual({ state: 'bound', value: first });
-    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.get('acme.Effect')).toEqual({
-      state: 'bound',
-      value: replacement,
-    });
+    expect(before?.get('acme.Effect')).toBe(first);
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.get('acme.Effect')).toBe(replacement);
   });
 });

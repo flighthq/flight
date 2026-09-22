@@ -25,13 +25,7 @@ describe('registerGlShapeRasterizer', () => {
     registerGlShapeRasterizer(state, rasterizer);
 
     expect(getGlShapeRasterizer(state)).toBe(rasterizer);
-    // The opt-in must build a whole table, not just an entry: `{...undefined}` is legal JavaScript,
-    // so a missing fallback would yield a slot with no shape, registry, or miss policy.
-    expect(getGlRenderStateRuntime(state).registries.shapeRasterizer).toMatchObject({
-      onMiss: 'Unregistered',
-      registry: 'GlShapeRasterizer',
-      shape: 'slot',
-    });
+    expect(getGlRenderStateRuntime(state).registries.shapeRasterizer).toBe(rasterizer);
     expect(getGlRenderStateRuntime(state).registries.shapeRasterizer).not.toBe(before);
     expect(before).toBeNull();
   });
@@ -45,6 +39,6 @@ describe('registerGlShapeRasterizer', () => {
 
     expect(getGlShapeRasterizer(state)).toBeNull();
     expect(getGlRenderStateRuntime(state).registries.shapeRasterizer).not.toBe(before);
-    expect(before?.entry?.state).toBe('bound');
+    expect(before).not.toBeNull();
   });
 });

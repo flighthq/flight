@@ -1,6 +1,6 @@
-import { withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import { allocateEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
-import type { KeyedTable, NodeRenderer, WgpuRenderRegistries } from '@flighthq/types/contract';
+import type { Kind, NodeRenderer, WgpuRenderRegistries } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
   DisplayObjectKind,
@@ -32,21 +32,21 @@ import { standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial';
 import { wgpuTextLabelRenderer } from './wgpuTextLabel';
 import { wgpuTilemapRenderer } from './wgpuTilemap';
 
-function buildScene2dWgpuRenderers(): KeyedTable<NodeRenderer> {
+function buildScene2dWgpuRenderers(): ReadonlyMap<Kind, NodeRenderer> {
   let table = allocateEmptyWgpuRenderRegistries().nodeRenderers;
-  table = withRegistryTableEntry(table, BitmapTextKind, wgpuBitmapTextRenderer);
-  table = withRegistryTableEntry(table, DisplayObjectKind, wgpuScene2DRenderer);
-  table = withRegistryTableEntry(table, MorphShapeKind, wgpuMorphShapeRenderer);
-  table = withRegistryTableEntry(table, ParticleEmitter2DKind, wgpuParticleEmitter2DRenderer);
-  table = withRegistryTableEntry(table, QuadBatchKind, wgpuQuadBatchRenderer);
-  table = withRegistryTableEntry(table, RenderCacheKind, wgpuRenderCacheRenderer);
-  table = withRegistryTableEntry(table, RichTextKind, wgpuRichTextRenderer);
-  table = withRegistryTableEntry(table, Scale9ShapeKind, wgpuScale9ShapeRenderer);
-  table = withRegistryTableEntry(table, Scale9SpriteKind, wgpuScale9SpriteRenderer);
-  table = withRegistryTableEntry(table, ShapeKind, wgpuShapeRenderer);
-  table = withRegistryTableEntry(table, SpriteKind, wgpuSpriteRenderer);
-  table = withRegistryTableEntry(table, TextLabelKind, wgpuTextLabelRenderer);
-  table = withRegistryTableEntry(table, TilemapKind, wgpuTilemapRenderer);
+  table = withKindMapEntry(table, BitmapTextKind, wgpuBitmapTextRenderer);
+  table = withKindMapEntry(table, DisplayObjectKind, wgpuScene2DRenderer);
+  table = withKindMapEntry(table, MorphShapeKind, wgpuMorphShapeRenderer);
+  table = withKindMapEntry(table, ParticleEmitter2DKind, wgpuParticleEmitter2DRenderer);
+  table = withKindMapEntry(table, QuadBatchKind, wgpuQuadBatchRenderer);
+  table = withKindMapEntry(table, RenderCacheKind, wgpuRenderCacheRenderer);
+  table = withKindMapEntry(table, RichTextKind, wgpuRichTextRenderer);
+  table = withKindMapEntry(table, Scale9ShapeKind, wgpuScale9ShapeRenderer);
+  table = withKindMapEntry(table, Scale9SpriteKind, wgpuScale9SpriteRenderer);
+  table = withKindMapEntry(table, ShapeKind, wgpuShapeRenderer);
+  table = withKindMapEntry(table, SpriteKind, wgpuSpriteRenderer);
+  table = withKindMapEntry(table, TextLabelKind, wgpuTextLabelRenderer);
+  table = withKindMapEntry(table, TilemapKind, wgpuTilemapRenderer);
   return table;
 }
 
@@ -54,7 +54,7 @@ const _registries = allocateEmptyWgpuRenderRegistries();
 
 export const wgpuScene2DRenderRegistries: Readonly<WgpuRenderRegistries> = {
   ..._registries,
-  materialRenderers: withRegistryTableEntry(
+  materialRenderers: withKindMapEntry(
     _registries.materialRenderers,
     StandardMaterialKind,
     standardWgpuQuadMaterialRenderer,

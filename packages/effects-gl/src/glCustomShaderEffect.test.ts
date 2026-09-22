@@ -1,5 +1,4 @@
 import { createCustomShaderEffect } from '@flighthq/effects/contract';
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import {
   allocateEmptyGlRenderRegistries,
   createGlContextState,
@@ -128,7 +127,7 @@ describe('registerGlCustomShaderSource', () => {
 
     expect(getGlRenderStateRuntime(derived).registries.customEffectShaders).toBe(snapshot);
     expect(getGlRenderStateRuntime(screen).registries.customEffectShaders).not.toBe(snapshot);
-    expect(getRegistryTableEntry(snapshot, 'ripple')).toBe(FRAGMENT_SRC);
+    expect(snapshot.get('ripple') ?? null).toBe(FRAGMENT_SRC);
     expect(getGlCustomShaderSource(derived, 'ripple')).toBe(FRAGMENT_SRC);
     expect(getGlCustomShaderSource(screen, 'ripple')).toBe(replacement);
   });

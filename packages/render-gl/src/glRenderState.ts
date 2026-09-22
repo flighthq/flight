@@ -16,7 +16,7 @@ import type {
   GlRenderStateRuntime,
   EntityConstruction,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 export function createGlContextState(gl: GlContext): GlContextState {
   const state = allocateEntity<GlContextState>();
@@ -116,15 +116,15 @@ export function destroyGlRenderState(state: GlRenderState): void {
 export function getGlColorAdjustmentMaterialFeature(
   state: GlRenderState,
 ): Readonly<GlColorAdjustmentMaterialFeature> | null {
-  const entry = getGlRenderStateRuntime(state).registries.colorAdjustmentFeature?.entry;
-  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+  const entry = getGlRenderStateRuntime(state).registries.colorAdjustmentFeature;
+  return entry ?? null;
 }
 
 export function getGlColorAdjustmentMaterialFeatureGuard(
   state: GlRenderState,
 ): GlColorAdjustmentMaterialFeatureGuard | null {
-  const entry = getGlRenderStateRuntime(state).registries.colorAdjustmentFeatureGuard?.entry;
-  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+  const entry = getGlRenderStateRuntime(state).registries.colorAdjustmentFeatureGuard;
+  return entry ?? null;
 }
 
 export function getGlContextRuntime(contextState: Readonly<GlContextState>): GlContextRuntime {

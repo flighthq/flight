@@ -1,16 +1,5 @@
-import {
-  createKeyedTable,
-  getRegistryTableEntry,
-  getRegistryTableKeys,
-  withRegistryTableEntry,
-  withoutRegistryTableEntry,
-} from '@flighthq/registry/contract';
-import type {
-  KeyedTable,
-  SpritesheetData,
-  SpritesheetFormatKind,
-  SpritesheetParseOptions,
-} from '@flighthq/types/contract';
+import { getKindMapKeys, withKindMapEntry, withoutKindMapEntry } from '@flighthq/registry/contract';
+import type { Kind, SpritesheetData, SpritesheetFormatKind, SpritesheetParseOptions } from '@flighthq/types/contract';
 import {
   SpritesheetFormatKindAseprite as ASEPRITE,
   SpritesheetFormatKindCocosPlist as COCOS_PLIST,
@@ -75,9 +64,9 @@ function detectLibgdxAtlas(text: string): boolean {
 // `registerSpritesheetFormat` call in each parser module would be exactly the import-time side effect
 // the SDK bans — and would defeat the tree-shaking that currently lets a caller importing one parser
 // pay for one parser.
-function getRegistry(): KeyedTable<RegisteredFormatEntry> {
+function getRegistry(): ReadonlyMap<Kind, RegisteredFormatEntry> {
   if (_registry !== null) return _registry;
-  _registry = createKeyedTable('SpritesheetFormat', 'Unclaimed');
+  _registry = new Map();
   bindSpritesheetFormat(ASEPRITE, {
     detect: detectAseprite,
     parse: (text) => parseAsepriteSpritesheet(text),
@@ -126,13 +115,13 @@ export function getSpritesheetFormat(kind: SpritesheetFormatKind): Readonly<{
   detect: (text: string) => boolean;
   parse: (text: string, options: SpritesheetParseOptions) => SpritesheetData;
 }> | null {
-  return getRegistryTableEntry(getRegistry(), kind)?.entry ?? null;
+  return getRegistry().get(kind)?.entry ?? null;
 }
 
 /** Return a sorted snapshot of every bound spritesheet-format kind. */
 export function getSpritesheetFormatKinds(): readonly SpritesheetFormatKind[] {
   const kinds: SpritesheetFormatKind[] = [];
-  getRegistryTableKeys(kinds, getRegistry());
+  getKindMapKeys(kinds, getRegistry());
   return kinds;
 }
 
@@ -150,7 +139,7 @@ export function parseSpritesheet(
   const opts: SpritesheetParseOptions = options ?? {};
   const kind = formatKind ?? detectSpritesheetFormat(text);
   if (!kind) return null;
-  const registered = getRegistryTableEntry(getRegistry(), kind);
+  const registered = getRegistry().get(kind) ?? null;
   if (registered === null) return null;
   return registered.entry.parse(text, opts);
 }
@@ -172,13 +161,13 @@ export function registerSpritesheetFormat(
 
 /** Remove a format binding, including a caller override of a built-in kind. */
 export function unregisterSpritesheetFormat(kind: SpritesheetFormatKind): void {
-  _registry = withoutRegistryTableEntry(getRegistry(), kind);
+  _registry = withoutKindMapEntry(getRegistry(), kind);
 }
 
 function bindSpritesheetFormat(kind: SpritesheetFormatKind, entry: FormatEntry): void {
   const registry = getRegistry();
-  const current = getRegistryTableEntry(registry, kind);
-  _registry = withRegistryTableEntry(registry, kind, {
+  const current = registry.get(kind) ?? null;
+  _registry = withKindMapEntry(registry, kind, {
     entry,
     order: current?.order ?? _nextFormatOrder++,
   });
@@ -187,12 +176,12 @@ function bindSpritesheetFormat(kind: SpritesheetFormatKind, entry: FormatEntry):
 function getSpritesheetFormatsInDetectionOrder(): Array<readonly [SpritesheetFormatKind, RegisteredFormatEntry]> {
   const formats: Array<readonly [SpritesheetFormatKind, RegisteredFormatEntry]> = [];
   for (const kind of getSpritesheetFormatKinds()) {
-    const registered = getRegistryTableEntry(getRegistry(), kind);
+    const registered = getRegistry().get(kind) ?? null;
     if (registered !== null) formats.push([kind, registered]);
   }
   formats.sort((a, b) => a[1].order - b[1].order);
   return formats;
 }
 
-let _registry: KeyedTable<RegisteredFormatEntry> | null = null;
+let _registry: ReadonlyMap<Kind, RegisteredFormatEntry> | null = null;
 let _nextFormatOrder = 0;

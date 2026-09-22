@@ -1,12 +1,12 @@
-import { withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import type { GlQuadMaterialRenderer, GlRenderState, Kind, Material } from '@flighthq/types/contract';
-import { RegistryEntryState, RenderRegistryTable, StandardMaterialKind } from '@flighthq/types/contract';
+import { RenderRegistryTable, StandardMaterialKind } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 
 export function getGlQuadMaterialRenderer(state: GlRenderState, kind: Kind): GlQuadMaterialRenderer | null {
-  const entry = getGlRenderStateRuntime(state).registries.materialRenderers.entries.get(kind);
-  return entry?.state === RegistryEntryState.Bound ? (entry.value as GlQuadMaterialRenderer) : null;
+  const entry = getGlRenderStateRuntime(state).registries.materialRenderers.get(kind);
+  return (entry as GlQuadMaterialRenderer | undefined) ?? null;
 }
 
 export function registerGlQuadMaterialRenderer(
@@ -15,7 +15,7 @@ export function registerGlQuadMaterialRenderer(
   renderer: GlQuadMaterialRenderer,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
-  runtime.registries.materialRenderers = withRegistryTableEntry(runtime.registries.materialRenderers, kind, renderer);
+  runtime.registries.materialRenderers = withKindMapEntry(runtime.registries.materialRenderers, kind, renderer);
 }
 
 // Resolves a node's material to its registered renderer: by the material's kind, else the renderer
@@ -27,16 +27,16 @@ export function resolveGlQuadMaterialRenderer(
   material: Material | null,
 ): GlQuadMaterialRenderer | null {
   const runtime = getGlRenderStateRuntime(state);
-  const entries = runtime.registries.materialRenderers.entries;
+  const table = runtime.registries.materialRenderers;
   const kind = material?.kind ?? StandardMaterialKind;
-  const entry = entries.get(kind);
-  if (entry?.state === RegistryEntryState.Bound) return entry.value as GlQuadMaterialRenderer;
+  const entry = table.get(kind);
+  if (entry != null) return entry as GlQuadMaterialRenderer;
 
   // The requested kind is absent. StandardMaterialKind still stands in where it is registered, but the
   // miss is reported either way — substituting a different shading family is as much worth knowing as
   // drawing nothing, and the seam records one miss per kind, so neither case repeats.
   runtime.registryMiss?.(RenderRegistryTable.MaterialRenderer, kind);
   if (kind === StandardMaterialKind) return null;
-  const fallback = entries.get(StandardMaterialKind);
-  return fallback?.state === RegistryEntryState.Bound ? (fallback.value as GlQuadMaterialRenderer) : null;
+  const fallback = table.get(StandardMaterialKind);
+  return (fallback as GlQuadMaterialRenderer | undefined) ?? null;
 }

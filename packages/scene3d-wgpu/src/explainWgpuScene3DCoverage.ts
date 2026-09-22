@@ -7,13 +7,7 @@ import type {
   SceneCoverageEntry,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import {
-  RegistryEntryState,
-  RenderRegistryTable,
-  RequirementFacet,
-  SceneCoverage,
-  StandardMaterialKind,
-} from '@flighthq/types/contract';
+import { RenderRegistryTable, RequirementFacet, SceneCoverage, StandardMaterialKind } from '@flighthq/types/contract';
 
 // Clears `out`, then reports every kind in `usage` with how well this state is wired for it — satisfied
 // ones included, so one call is a complete manifest. The WebGPU twin of explainGlScene3DCoverage, and
@@ -54,11 +48,11 @@ function collectWgpuScene3DCoverageGaps(
   // drawScene3D resolves a subset's material by kind, then falls back to whatever is registered for
   // StandardMaterialKind, then skips the subset. So an unregistered kind may still draw — as the
   // standard material — which is a downgrade worth naming rather than a silence.
-  const materials = getWgpuRenderStateRuntime(state).registries.materialRenderers.entries;
-  const hasStandard = materials.get(StandardMaterialKind)?.state === RegistryEntryState.Bound;
+  const materials = getWgpuRenderStateRuntime(state).registries.materialRenderers;
+  const hasStandard = materials.has(StandardMaterialKind);
   for (let i = 0; i < usage.materialKinds.length; i++) {
     const kind = usage.materialKinds[i];
-    if (materials.get(kind)?.state === RegistryEntryState.Bound) {
+    if (materials.has(kind)) {
       out?.push({
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneMaterialKind,
@@ -85,7 +79,7 @@ function collectWgpuScene3DCoverageGaps(
   const resolvers = getWgpuRenderStateRuntime(state).registries.textureResolvers;
   for (let i = 0; i < usage.textureSourceKinds.length; i++) {
     const kind = usage.textureSourceKinds[i];
-    if (resolvers.entries.get(kind)?.state === RegistryEntryState.Bound) {
+    if (resolvers.has(kind)) {
       out?.push({
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneTextureSourceKind,
@@ -110,10 +104,10 @@ function collectWgpuScene3DCoverageGaps(
   // The shaded compiler assembles base + ordered modifiers into ONE program, so an unregistered snippet
   // does not fail a single lookup — it fails the whole material. A modifier kind is therefore always
   // a total absence, never a fallback.
-  const snippets = getWgpuRenderStateRuntime(state).registries.modifierSnippets.entries;
+  const snippets = getWgpuRenderStateRuntime(state).registries.modifierSnippets;
   for (let i = 0; i < usage.modifierKinds.length; i++) {
     const kind = usage.modifierKinds[i];
-    if (snippets.get(kind)?.state === RegistryEntryState.Bound) {
+    if (snippets.has(kind)) {
       out?.push({
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneModifierKind,

@@ -12,7 +12,7 @@ import { createScene3DLights } from '@flighthq/lighting';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { CANONICAL_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
-import { withRegistryTableEntry } from '@flighthq/registry';
+import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene3DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
@@ -38,11 +38,7 @@ appendWebSurface(wgpuSurface, document.body);
 const registries = allocateEmptyWgpuRenderRegistries();
 const registry = {
   ...registries,
-  materialRenderers: withRegistryTableEntry(
-    registries.materialRenderers,
-    UnlitMaterialKind,
-    wgpuUnlitMeshMaterialRenderer,
-  ),
+  materialRenderers: withKindMapEntry(registries.materialRenderers, UnlitMaterialKind, wgpuUnlitMeshMaterialRenderer),
 };
 
 const acquisition = wgpuSurface.acquisition;

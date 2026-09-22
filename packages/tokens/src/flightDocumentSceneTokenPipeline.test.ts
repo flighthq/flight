@@ -1,5 +1,5 @@
 import { getNodeChildren } from '@flighthq/node/contract';
-import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createFlightDocumentScene2DMaterialization, parseFlightDocumentText } from '@flighthq/scene-document/contract';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d/contract';
 import type {
@@ -103,15 +103,15 @@ function createTestSchemas(): FlightDocumentSchemaRegistry {
     kind: SpriteKind,
     writeNodeFields: () => true,
   };
-  let nodeSchemas = createKeyedTable<FlightDocumentNodeSchema>('flight-document.node', 'none');
-  nodeSchemas = withRegistryTableEntry(nodeSchemas, DisplayObjectKind, displayObjectSchema);
-  nodeSchemas = withRegistryTableEntry(nodeSchemas, SpriteKind, spriteSchema);
+  let nodeSchemas: ReadonlyMap<string, FlightDocumentNodeSchema> = new Map();
+  nodeSchemas = withKindMapEntry(nodeSchemas, DisplayObjectKind, displayObjectSchema);
+  nodeSchemas = withKindMapEntry(nodeSchemas, SpriteKind, spriteSchema);
   return {
-    interactiveStateExtensionSchemas: createKeyedTable('flight-document.interactive-state-extension', 'none'),
-    interactiveStateTransitionSchemas: createKeyedTable('flight-document.interactive-state-transition', 'none'),
+    interactiveStateExtensionSchemas: new Map(),
+    interactiveStateTransitionSchemas: new Map(),
     nodeSchemas,
-    resourceSchemas: createKeyedTable('flight-document.resource', 'none'),
-    shapeCommandSchemas: createKeyedTable('flight-document.shape-command', 'none'),
+    resourceSchemas: new Map(),
+    shapeCommandSchemas: new Map(),
   };
 }
 

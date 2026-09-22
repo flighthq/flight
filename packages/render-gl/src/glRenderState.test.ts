@@ -1,11 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import {
-  createKeyedTable,
-  getRegistryTableEntry,
-  hasRegistryTableEntry,
-  withRegistryTableEntry,
-} from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import {
   enableColorAdjustmentGuards,
   enableColorAdjustments,
@@ -23,7 +18,7 @@ import type {
   EffectPaddingResolver,
   RenderState,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { areGlRenderStateGuardsEnabled, enableGlRenderStateGuards } from './enableGlRenderStateGuards';
 import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
@@ -67,14 +62,13 @@ function createTestGlRenderState(gl: WebGL2RenderingContext, options: GlRenderOp
 
 function getPaddingResolver(state: RenderState, kind: string): EffectPaddingResolver | null {
   const table = getRenderStateRuntime(state).registries.effectPaddingResolvers;
-  return table === undefined ? null : getRegistryTableEntry(table, kind);
+  return table === undefined ? null : (table.get(kind) ?? null);
 }
 
 function registerPaddingResolver(state: RenderState, kind: string, resolver: EffectPaddingResolver): void {
   const runtime = getRenderStateRuntime(state);
-  runtime.registries.effectPaddingResolvers = withRegistryTableEntry(
-    runtime.registries.effectPaddingResolvers ??
-      createKeyedTable<EffectPaddingResolver>('EffectPaddingResolver', 'Zero'),
+  runtime.registries.effectPaddingResolvers = withKindMapEntry(
+    runtime.registries.effectPaddingResolvers ?? new Map(),
     kind,
     resolver,
   );
@@ -243,24 +237,14 @@ describe('createGlRenderState (context sharing)', () => {
     enableColorAdjustments(screen);
     enableColorAdjustmentGuards(screen);
     enableGlRenderStateGuards(screen);
-    getGlRenderStateRuntime(screen).registries.effects = withRegistryTableEntry(
+    getGlRenderStateRuntime(screen).registries.effects = withKindMapEntry(
       getGlRenderStateRuntime(screen).registries.effects,
       'acme.Effect',
       { runner: effectRunner as never },
     );
     registerPaddingResolver(screen, 'acme.Effect', paddingResolver);
-    getGlRenderStateRuntime(screen).registries.colorAdjustmentFeature = {
-      entry: { state: RegistryEntryState.Bound, value: colorAdjustmentFeature },
-      onMiss: 'Disabled',
-      registry: 'GlColorAdjustmentFeature',
-      shape: 'slot',
-    };
-    getGlRenderStateRuntime(screen).registries.colorAdjustmentFeatureGuard = {
-      entry: { state: RegistryEntryState.Bound, value: colorAdjustmentFeatureGuard },
-      onMiss: 'Disabled',
-      registry: 'GlColorAdjustmentFeatureGuard',
-      shape: 'slot',
-    };
+    getGlRenderStateRuntime(screen).registries.colorAdjustmentFeature = colorAdjustmentFeature;
+    getGlRenderStateRuntime(screen).registries.colorAdjustmentFeatureGuard = colorAdjustmentFeatureGuard;
     getGlRenderStateRuntime(screen).context.glRenderTextureCache = new WeakMap();
 
     const screenRuntime = getGlRenderStateRuntime(screen);
@@ -330,12 +314,10 @@ describe('createGlRenderState (context sharing)', () => {
     expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
     expect(offscreenRuntime.registries.velocityWriters).toBe(screenRuntime.registries.velocityWriters);
     expect(offscreenRuntime.registries.effectPaddingResolvers).toBe(screenRuntime.registries.effectPaddingResolvers);
-    expect(getRegistryTableEntry(offscreenRuntime.registries.nodeRenderers, 'acme.Node')).toBe(renderer);
-    expect(getRegistryTableEntry(offscreenRuntime.registries.materialRenderers, 'acme.Material')).toBe(
-      materialRenderer,
-    );
-    expect(getRegistryTableEntry(offscreenRuntime.registries.textureResolvers, 'acme.Texture')).toBe(textureResolver);
-    expect(getRegistryTableEntry(offscreenRuntime.registries.effects, 'acme.Effect')?.runner).toBe(effectRunner);
+    expect(offscreenRuntime.registries.nodeRenderers.get('acme.Node') ?? null).toBe(renderer);
+    expect(offscreenRuntime.registries.materialRenderers.get('acme.Material') ?? null).toBe(materialRenderer);
+    expect(offscreenRuntime.registries.textureResolvers.get('acme.Texture') ?? null).toBe(textureResolver);
+    expect(offscreenRuntime.registries.effects.get('acme.Effect')?.runner).toBe(effectRunner);
     expect(getPaddingResolver(offscreen, 'acme.Effect')).toBe(paddingResolver);
 
     screenRuntime.context.currentShader = { locations: null, program: {} as WebGLProgram };
@@ -353,22 +335,16 @@ describe('createGlRenderState (context sharing)', () => {
     registerGlTextureResolver(screen, 'acme.LateTexture', resolver);
     registerPaddingResolver(screen, 'acme.LateEffect', paddingResolver);
 
-    expect(hasRegistryTableEntry(getRenderStateRuntime(offscreen).registries.nodeRenderers, 'acme.LateNode')).toBe(
-      false,
-    );
-    expect(
-      hasRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
-    ).toBe(false);
+    expect(getRenderStateRuntime(offscreen).registries.nodeRenderers.has('acme.LateNode')).toBe(false);
+    expect(getGlRenderStateRuntime(offscreen).registries.textureResolvers.has('acme.LateTexture')).toBe(false);
     expect(getPaddingResolver(offscreen, 'acme.LateEffect')).toBeNull();
 
     destroyGlRenderState(offscreen);
     offscreen = createGlRenderState(screen.gl, { ...getGlRenderStateRuntime(screen).registries });
-    expect(getRegistryTableEntry(getRenderStateRuntime(offscreen).registries.nodeRenderers, 'acme.LateNode')).toBe(
-      renderer,
+    expect(getRenderStateRuntime(offscreen).registries.nodeRenderers.get('acme.LateNode') ?? null).toBe(renderer);
+    expect(getGlRenderStateRuntime(offscreen).registries.textureResolvers.get('acme.LateTexture') ?? null).toBe(
+      resolver,
     );
-    expect(
-      getRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
-    ).toBe(resolver);
     expect(getPaddingResolver(offscreen, 'acme.LateEffect')).toBe(paddingResolver);
   });
 
@@ -400,60 +376,29 @@ describe('createGlRenderStateRuntime', () => {
     const contextState = createGlContextState(makeGL());
     const runtime = createGlRenderStateRuntime(contextState, testPipeline);
     expect(runtime.binding).toBeNull();
-    expect(runtime.registries.blendRealizations).toMatchObject({
-      onMiss: 'Normal',
-      registry: 'GlBlendRealization',
-      shape: 'keyed',
-    });
-    expect(runtime.registries.blendRealizations.entries.size).toBe(0);
-    expect(runtime.registries.customEffectShaders).toMatchObject({
-      onMiss: 'Unregistered',
-      registry: 'GlCustomEffectShader',
-      shape: 'keyed',
-    });
-    expect(runtime.registries.customEffectShaders.entries.size).toBe(0);
-    expect(runtime.registries.customMaterialShaders).toMatchObject({
-      onMiss: 'Unregistered',
-      registry: 'GlCustomMaterialShader',
-      shape: 'keyed',
-    });
-    expect(runtime.registries.customMaterialShaders.entries.size).toBe(0);
-    expect(runtime.registries.materialRenderers).toMatchObject({
-      onMiss: 'StandardMaterial',
-      registry: 'GlMaterialRenderer',
-      shape: 'keyed',
-    });
-    expect(runtime.registries.materialRenderers.entries.size).toBe(0);
-    expect(runtime.registries.modifierSnippets).toMatchObject({
-      onMiss: 'Unregistered',
-      registry: 'GlModifierSnippet',
-      shape: 'keyed',
-    });
-    expect(runtime.registries.modifierSnippets.entries.size).toBe(0);
+    expect(runtime.registries.blendRealizations).toBeInstanceOf(Map);
+    expect(runtime.registries.blendRealizations.size).toBe(0);
+    expect(runtime.registries.customEffectShaders).toBeInstanceOf(Map);
+    expect(runtime.registries.customEffectShaders.size).toBe(0);
+    expect(runtime.registries.customMaterialShaders).toBeInstanceOf(Map);
+    expect(runtime.registries.customMaterialShaders.size).toBe(0);
+    expect(runtime.registries.materialRenderers).toBeInstanceOf(Map);
+    expect(runtime.registries.materialRenderers.size).toBe(0);
+    expect(runtime.registries.modifierSnippets).toBeInstanceOf(Map);
+    expect(runtime.registries.modifierSnippets.size).toBe(0);
     expect(runtime.registries.modifierSnippetRevision).toBe(0);
-    expect(runtime.registries.pbrExtensions).toMatchObject({
-      onMiss: 'Unregistered',
-      registry: 'GlPbrExtension',
-      shape: 'keyed',
-    });
-    expect(runtime.registries.pbrExtensions.entries.size).toBe(0);
+    expect(runtime.registries.pbrExtensions).toBeInstanceOf(Map);
+    expect(runtime.registries.pbrExtensions.size).toBe(0);
     expect(runtime.registries.pbrExtensionRevision).toBe(0);
-    expect(runtime.registries.effects).toMatchObject({
-      onMiss: 'Unregistered',
-      registry: 'GlEffect',
-      shape: 'keyed',
-    });
+    expect(runtime.registries.effects).toBeInstanceOf(Map);
+    expect(runtime.registries.effects.size).toBe(0);
     expect(runtime.registries.compressedTextureDecoder).toBeNull();
     expect(runtime.registries.colorAdjustments).toBeUndefined();
     expect(runtime.registries.compressedTextureUpload).toBeNull();
     expect(runtime.registries.shapeRasterizer).toBeNull();
     expect(runtime.registries.strokeTessellator).toBeNull();
-    expect(runtime.registries.velocityWriters).toMatchObject({
-      onMiss: 'Unregistered',
-      registry: 'GlVelocityWriter',
-      shape: 'keyed',
-    });
-    expect(runtime.registries.velocityWriters.entries.size).toBe(0);
+    expect(runtime.registries.velocityWriters).toBeInstanceOf(Map);
+    expect(runtime.registries.velocityWriters.size).toBe(0);
   });
 });
 
@@ -576,17 +521,9 @@ describe('getGlColorAdjustmentMaterialFeature', () => {
     const runtime = getGlRenderStateRuntime(state);
 
     expect(getGlColorAdjustmentMaterialFeature(state)).toBeNull();
-    runtime.registries.colorAdjustmentFeature = {
-      entry: { state: RegistryEntryState.Bound, value: feature },
-      onMiss: 'Disabled',
-      registry: 'GlColorAdjustmentFeature',
-      shape: 'slot',
-    };
+    runtime.registries.colorAdjustmentFeature = feature;
     expect(getGlColorAdjustmentMaterialFeature(state)).toBe(feature);
-    runtime.registries.colorAdjustmentFeature = {
-      ...runtime.registries.colorAdjustmentFeature,
-      entry: { state: RegistryEntryState.Tombstoned },
-    };
+    runtime.registries.colorAdjustmentFeature = undefined;
     expect(getGlColorAdjustmentMaterialFeature(state)).toBeNull();
   });
 });
@@ -599,17 +536,9 @@ describe('getGlColorAdjustmentMaterialFeatureGuard', () => {
     const runtime = getGlRenderStateRuntime(state);
 
     expect(getGlColorAdjustmentMaterialFeatureGuard(state)).toBeNull();
-    runtime.registries.colorAdjustmentFeatureGuard = {
-      entry: { state: RegistryEntryState.Bound, value: guard },
-      onMiss: 'Disabled',
-      registry: 'GlColorAdjustmentFeatureGuard',
-      shape: 'slot',
-    };
+    runtime.registries.colorAdjustmentFeatureGuard = guard;
     expect(getGlColorAdjustmentMaterialFeatureGuard(state)).toBe(guard);
-    runtime.registries.colorAdjustmentFeatureGuard = {
-      ...runtime.registries.colorAdjustmentFeatureGuard,
-      entry: { state: RegistryEntryState.Tombstoned },
-    };
+    runtime.registries.colorAdjustmentFeatureGuard = undefined;
     expect(getGlColorAdjustmentMaterialFeatureGuard(state)).toBeNull();
   });
 });
@@ -697,30 +626,23 @@ describe('pipeline-backed GL registrations', () => {
     registerGlTextureResolver(screen, 'acme.LateTexture', resolver);
 
     expect(isBlendModeSupported(offscreen, 'acme.LateBlend')).toBe(false);
-    expect(
-      hasRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.materialRenderers, 'acme.LateMaterial'),
-    ).toBe(false);
-    expect(
-      hasRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
-    ).toBe(false);
+    expect(getGlRenderStateRuntime(offscreen).registries.materialRenderers.has('acme.LateMaterial')).toBe(false);
+    expect(getGlRenderStateRuntime(offscreen).registries.textureResolvers.has('acme.LateTexture')).toBe(false);
     expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder).toBeNull();
     expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureUpload).toBeNull();
     destroyGlRenderState(offscreen);
     offscreen = createGlRenderState(screen.gl, { ...getGlRenderStateRuntime(screen).registries });
     expect(isBlendModeSupported(offscreen, 'acme.LateBlend')).toBe(true);
-    expect(
-      getRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.materialRenderers, 'acme.LateMaterial'),
-    ).toBe(materialRenderer);
-    expect(
-      getRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
-    ).toBe(resolver);
+    expect(getGlRenderStateRuntime(offscreen).registries.materialRenderers.get('acme.LateMaterial') ?? null).toBe(
+      materialRenderer,
+    );
+    expect(getGlRenderStateRuntime(offscreen).registries.textureResolvers.get('acme.LateTexture') ?? null).toBe(
+      resolver,
+    );
     expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder).toBe(
       getGlRenderStateRuntime(screen).registries.compressedTextureDecoder,
     );
-    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder?.entry).toEqual({
-      state: RegistryEntryState.Bound,
-      value: decoder,
-    });
+    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder).toEqual(decoder);
     expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureUpload).toBe(
       getGlRenderStateRuntime(screen).registries.compressedTextureUpload,
     );
@@ -729,31 +651,24 @@ describe('pipeline-backed GL registrations', () => {
     registerGlCompressedTextureDecoder(offscreen, null);
     registerGlCompressedTextureUpload(offscreen, null);
     registerGlTextureResolver(offscreen, 'acme.LateTexture', null);
-    expect(
-      getRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.materialRenderers, 'acme.LateMaterial'),
-    ).toBe(offscreenMaterialRenderer);
-    expect(
-      getRegistryTableEntry(getGlRenderStateRuntime(screen).registries.materialRenderers, 'acme.LateMaterial'),
-    ).toBe(materialRenderer);
-    expect(
-      getRegistryTableEntry(getGlRenderStateRuntime(screen).registries.blendRealizations, 'acme.LateBlend'),
-    ).toEqual({ src: 'ONE', dst: 'ZERO' });
-    expect(
-      hasRegistryTableEntry(getGlRenderStateRuntime(offscreen).registries.textureResolvers, 'acme.LateTexture'),
-    ).toBe(false);
-    expect(getRegistryTableEntry(getGlRenderStateRuntime(screen).registries.textureResolvers, 'acme.LateTexture')).toBe(
-      resolver,
+    expect(getGlRenderStateRuntime(offscreen).registries.materialRenderers.get('acme.LateMaterial') ?? null).toBe(
+      offscreenMaterialRenderer,
     );
+    expect(getGlRenderStateRuntime(screen).registries.materialRenderers.get('acme.LateMaterial') ?? null).toBe(
+      materialRenderer,
+    );
+    expect(getGlRenderStateRuntime(screen).registries.blendRealizations.get('acme.LateBlend') ?? null).toEqual({
+      src: 'ONE',
+      dst: 'ZERO',
+    });
+    expect(getGlRenderStateRuntime(offscreen).registries.textureResolvers.has('acme.LateTexture')).toBe(false);
+    expect(getGlRenderStateRuntime(screen).registries.textureResolvers.get('acme.LateTexture') ?? null).toBe(resolver);
     // Unregistering is an opinion, so the slot exists on `offscreen` holding an empty entry — distinct
     // from a state that never touched the registry at all, where the slot is absent.
-    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder?.entry).toBeNull();
-    expect(getGlRenderStateRuntime(screen).registries.compressedTextureDecoder?.entry?.state).toBe(
-      RegistryEntryState.Bound,
-    );
-    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureUpload?.entry).toBeNull();
-    expect(getGlRenderStateRuntime(screen).registries.compressedTextureUpload?.entry?.state).toBe(
-      RegistryEntryState.Bound,
-    );
+    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureDecoder).toBeNull();
+    expect(getGlRenderStateRuntime(screen).registries.compressedTextureDecoder).not.toBeNull();
+    expect(getGlRenderStateRuntime(offscreen).registries.compressedTextureUpload).toBeNull();
+    expect(getGlRenderStateRuntime(screen).registries.compressedTextureUpload).not.toBeNull();
   });
 });
 

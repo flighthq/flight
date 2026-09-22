@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { getRegistryTableKeys } from '@flighthq/registry/contract';
+import { getKindMapKeys } from '@flighthq/registry/contract';
 import type { ImageResource, RenderTexture, TextureLike, TextureSource } from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
@@ -84,7 +84,7 @@ function textureWithTarget(): TextureLike {
 
 function registeredTextureSourceKinds(state: Parameters<typeof getGlRenderStateRuntime>[0]): string[] {
   const kinds: string[] = [];
-  getRegistryTableKeys(kinds, getGlRenderStateRuntime(state).registries.textureResolvers);
+  getKindMapKeys(kinds, getGlRenderStateRuntime(state).registries.textureResolvers);
   return kinds;
 }
 
@@ -237,7 +237,7 @@ describe('registerGlTextureResolver', () => {
 
     registerGlTextureResolver(a, sourceKind, second);
     expect(resolveGlTexture(a, texture)).toBe(secondTexture);
-    expect(getGlRenderStateRuntime(a).registries.textureResolvers.entries.size).toBe(1);
+    expect(getGlRenderStateRuntime(a).registries.textureResolvers.size).toBe(1);
 
     registerGlTextureResolver(a, sourceKind, null);
     expect(resolveGlTexture(a, texture)).toBeNull();
@@ -275,12 +275,12 @@ describe('resolveGlTexture', () => {
 
 describe('standardGlTextureResolvers', () => {
   it('carries the three standard source kinds', () => {
-    expect(standardGlTextureResolvers.entries.has(BitmapTextureSourceKind)).toBe(true);
-    expect(standardGlTextureResolvers.entries.has(ImageTextureSourceKind)).toBe(true);
-    expect(standardGlTextureResolvers.entries.has(RenderTargetTextureSourceKind)).toBe(true);
+    expect(standardGlTextureResolvers.has(BitmapTextureSourceKind)).toBe(true);
+    expect(standardGlTextureResolvers.has(ImageTextureSourceKind)).toBe(true);
+    expect(standardGlTextureResolvers.has(RenderTargetTextureSourceKind)).toBe(true);
   });
 
   it('does not include the compressed-image resolver', () => {
-    expect(standardGlTextureResolvers.entries.has(CompressedImageTextureSourceKind)).toBe(false);
+    expect(standardGlTextureResolvers.has(CompressedImageTextureSourceKind)).toBe(false);
   });
 });

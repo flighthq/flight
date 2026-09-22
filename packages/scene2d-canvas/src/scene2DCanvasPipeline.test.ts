@@ -6,7 +6,6 @@ import {
   ParticleEmitter2DKind,
   QuadBatchKind,
   RenderCacheKind,
-  RegistryEntryState,
   RichTextKind,
   Scale9ShapeKind,
   Scale9SpriteKind,
@@ -49,9 +48,9 @@ describe('canvasScene2DRenderRegistries', () => {
       TilemapKind,
     ];
     for (const kind of expectedKinds) {
-      const entry = registries.nodeRenderers.entries.get(kind);
+      const entry = registries.nodeRenderers.get(kind);
       expect(entry).toBeDefined();
-      expect(entry?.state).toBe(RegistryEntryState.Bound);
+      expect(entry).not.toBeNull();
     }
   });
 
@@ -65,14 +64,14 @@ describe('canvasScene2DRenderRegistries', () => {
 
   it('shape commands match the standalone table builder', () => {
     const standalone = canvasShapeCommandTable();
-    expect(registries.canvasShapeCommands!.entries.size).toBe(standalone.entries.size);
-    for (const [key] of standalone.entries) {
-      expect(registries.canvasShapeCommands!.entries.has(key)).toBe(true);
+    expect(registries.canvasShapeCommands!.size).toBe(standalone.size);
+    for (const [key] of standalone) {
+      expect(registries.canvasShapeCommands!.has(key)).toBe(true);
     }
   });
 
   it('starts with an empty render effects table', () => {
-    expect(registries.effects.entries.size).toBe(0);
+    expect(registries.effects.size).toBe(0);
   });
 
   it('does not carry material renderers when none are registered', () => {

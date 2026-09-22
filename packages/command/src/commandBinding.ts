@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { addNodeChildAt, getNodeChildCount, removeNodeChild, setNodeChildIndex } from '@flighthq/node/contract';
-import { createKeyedTable, getRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import type {
   AddNodeChildCommand,
   CommandBinding,
@@ -10,14 +10,13 @@ import type {
   EntityConstruction,
   Kind,
   NodeAny,
+  NonEntityCreateResult,
   RemoveNodeChildCommand,
   ReorderNodeChildCommand,
   SetNodePropertyCommand,
 } from '@flighthq/types/contract';
 import {
   AddNodeChildCommandKind,
-  CommandBindingMissPolicy,
-  CommandBindingRegistryId,
   CompositeCommandKind,
   RemoveNodeChildCommandKind,
   ReorderNodeChildCommandKind,
@@ -25,13 +24,13 @@ import {
 } from '@flighthq/types/contract';
 
 /** An empty command binding table. Every kind a history will dispatch must be registered into it. */
-export function createCommandBindingTable(): CommandBindingTable {
-  return createKeyedTable<CommandBinding>(CommandBindingRegistryId, CommandBindingMissPolicy);
+export function createCommandBindingTable(): NonEntityCreateResult<CommandBindingTable, 'descriptor'> {
+  return new Map<Kind, CommandBinding>();
 }
 
 /** The binding registered for `kind`, or `null` when nothing is. */
 export function getCommandBinding(history: Readonly<CommandHistory>, kind: Kind): CommandBinding | null {
-  return getRegistryTableEntry(history.bindings, kind);
+  return history.bindings.get(kind) ?? null;
 }
 
 // Why a `null` return and no throw: an unregistered kind is an expected lookup failure, not API misuse,
@@ -62,7 +61,7 @@ export function initializeSetNodePropertyCommand(
 // in, which is what keeps unused command kinds shakeable and lets a consumer override a built-in binding
 // or add a vendor-prefixed kind of their own. Last write wins.
 export function registerCommandBinding(history: CommandHistory, kind: Kind, binding: CommandBinding): void {
-  history.bindings = withRegistryTableEntry(history.bindings, kind, binding);
+  history.bindings = withKindMapEntry(history.bindings, kind, binding);
 }
 
 export function registerDefaultCommandBindings(history: CommandHistory): void {

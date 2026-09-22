@@ -87,7 +87,7 @@ describe('registerWgpuEffect', () => {
     registerWgpuEffect(state, 'VignetteEffect', runner);
     expect(getWgpuEffectRunner(state, 'VignetteEffect')).toBe(runner);
     expect(getWgpuRenderStateRuntime(state).registries.effects).not.toBe(before);
-    expect(before.entries.size).toBe(0);
+    expect(before.size).toBe(0);
   });
 
   it('is last-write-wins without mutating the earlier snapshot', async () => {
@@ -100,9 +100,6 @@ describe('registerWgpuEffect', () => {
     registerWgpuEffect(state, 'TestEffect', runnerB);
 
     expect(getWgpuEffectRunner(state, 'TestEffect')).toBe(runnerB);
-    expect(before.entries.get('TestEffect')).toEqual({
-      state: 'bound',
-      value: { isResolvable: undefined, runner: runnerA },
-    });
+    expect(before.get('TestEffect')).toEqual({ isResolvable: undefined, runner: runnerA });
   });
 });

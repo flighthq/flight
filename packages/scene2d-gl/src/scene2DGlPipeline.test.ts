@@ -1,4 +1,4 @@
-import { withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import {
   allocateEmptyGlRenderRegistries,
   standardGlBlendRealizations,
@@ -15,7 +15,6 @@ import {
   QuadBatchKind,
   RenderCacheKind,
   RenderTargetTextureSourceKind,
-  RegistryEntryState,
   RichTextKind,
   Scale9SpriteKind,
   Scale9ShapeKind,
@@ -48,9 +47,9 @@ describe('glScene2DRenderRegistries', () => {
       TilemapKind,
     ];
     for (const kind of expectedKinds) {
-      const entry = registries.nodeRenderers.entries.get(kind);
+      const entry = registries.nodeRenderers.get(kind);
       expect(entry).toBeDefined();
-      expect(entry?.state).toBe(RegistryEntryState.Bound);
+      expect(entry).not.toBeNull();
     }
   });
 
@@ -60,43 +59,39 @@ describe('glScene2DRenderRegistries', () => {
 
   it('carries the standard texture resolvers', () => {
     const registries = glScene2DRenderRegistries;
-    expect([...registries.textureResolvers.entries.keys()].sort()).toEqual(
-      [...standardGlTextureResolvers.entries.keys()].sort(),
-    );
-    expect(registries.textureResolvers.entries.has(BitmapTextureSourceKind)).toBe(true);
-    expect(registries.textureResolvers.entries.has(ImageTextureSourceKind)).toBe(true);
-    expect(registries.textureResolvers.entries.has(RenderTargetTextureSourceKind)).toBe(true);
+    expect([...registries.textureResolvers.keys()].sort()).toEqual([...standardGlTextureResolvers.keys()].sort());
+    expect(registries.textureResolvers.has(BitmapTextureSourceKind)).toBe(true);
+    expect(registries.textureResolvers.has(ImageTextureSourceKind)).toBe(true);
+    expect(registries.textureResolvers.has(RenderTargetTextureSourceKind)).toBe(true);
   });
 
   it('carries the standard fixed-function blend realizations', () => {
     const registries = glScene2DRenderRegistries;
-    expect([...registries.blendRealizations.entries.keys()].sort()).toEqual(
-      [...standardGlBlendRealizations.entries.keys()].sort(),
-    );
-    expect(registries.blendRealizations.entries.has(BlendMode.Normal)).toBe(true);
-    expect(registries.blendRealizations.entries.has(BlendMode.Add)).toBe(true);
-    expect(registries.blendRealizations.entries.has(BlendMode.Multiply)).toBe(true);
-    expect(registries.blendRealizations.entries.has(BlendMode.Screen)).toBe(true);
+    expect([...registries.blendRealizations.keys()].sort()).toEqual([...standardGlBlendRealizations.keys()].sort());
+    expect(registries.blendRealizations.has(BlendMode.Normal)).toBe(true);
+    expect(registries.blendRealizations.has(BlendMode.Add)).toBe(true);
+    expect(registries.blendRealizations.has(BlendMode.Multiply)).toBe(true);
+    expect(registries.blendRealizations.has(BlendMode.Screen)).toBe(true);
   });
 
   it('carries the stroke tessellator in the slot table', () => {
     const registries = glScene2DRenderRegistries;
-    expect(registries.strokeTessellator?.entry).not.toBeNull();
-    expect(registries.strokeTessellator?.entry?.state).toBe(RegistryEntryState.Bound);
+    expect(registries.strokeTessellator).not.toBeNull();
+    expect(registries.strokeTessellator).not.toBeNull();
   });
 
   it('carries the standard material renderer for StandardMaterialKind', () => {
     const registries = glScene2DRenderRegistries;
-    expect(registries.materialRenderers.entries.size).toBe(1);
-    const entry = registries.materialRenderers.entries.get(StandardMaterialKind);
+    expect(registries.materialRenderers.size).toBe(1);
+    const entry = registries.materialRenderers.get(StandardMaterialKind);
     expect(entry).toBeDefined();
-    expect(entry?.state).toBe(RegistryEntryState.Bound);
+    expect(entry).not.toBeNull();
   });
 
   it('starts with empty GL-specific tables that no family populates', () => {
     const registries = glScene2DRenderRegistries;
-    expect(registries.customEffectShaders.entries.size).toBe(0);
-    expect(registries.customMaterialShaders.entries.size).toBe(0);
+    expect(registries.customEffectShaders.size).toBe(0);
+    expect(registries.customMaterialShaders.size).toBe(0);
   });
 });
 
@@ -104,16 +99,12 @@ describe('manual single-capability pipeline', () => {
   it('carries only the explicitly registered Sprite renderer', () => {
     const registry = {
       ...allocateEmptyGlRenderRegistries(),
-      nodeRenderers: withRegistryTableEntry(
-        allocateEmptyGlRenderRegistries().nodeRenderers,
-        SpriteKind,
-        glSpriteRenderer,
-      ),
+      nodeRenderers: withKindMapEntry(allocateEmptyGlRenderRegistries().nodeRenderers, SpriteKind, glSpriteRenderer),
     };
     const registries = registry;
-    expect(registries.nodeRenderers.entries.size).toBe(1);
-    expect(registries.nodeRenderers.entries.has(SpriteKind)).toBe(true);
-    expect(registries.blendRealizations.entries.size).toBe(0);
-    expect(registries.textureResolvers.entries.size).toBe(0);
+    expect(registries.nodeRenderers.size).toBe(1);
+    expect(registries.nodeRenderers.has(SpriteKind)).toBe(true);
+    expect(registries.blendRealizations.size).toBe(0);
+    expect(registries.textureResolvers.size).toBe(0);
   });
 });

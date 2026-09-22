@@ -1,6 +1,5 @@
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type { TextureLike, TextureResolutionExplanation, WgpuRenderState } from '@flighthq/types/contract';
-import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getWgpuRenderStateRuntime } from './wgpuRenderState';
 
@@ -12,9 +11,6 @@ export function explainWgpuTextureResolution(
   if (kind === null) return { kind, status: 'missing-kind' };
   return {
     kind,
-    status:
-      getWgpuRenderStateRuntime(state).registries.textureResolvers.entries.get(kind)?.state === RegistryEntryState.Bound
-        ? 'registered'
-        : 'missing-resolver',
+    status: getWgpuRenderStateRuntime(state).registries.textureResolvers.has(kind) ? 'registered' : 'missing-resolver',
   };
 }

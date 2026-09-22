@@ -51,7 +51,7 @@ describe('registerCanvasEffect', () => {
 
     expect(getCanvasEffectRunner(state, 'TestEffect')).toBe(runner);
     expect(getCanvasRenderStateRuntime(state).registries.effects).not.toBe(before);
-    expect(before.entries.size).toBe(0);
+    expect(before.size).toBe(0);
   });
 
   it('is last-write-wins without mutating the earlier snapshot', () => {
@@ -64,6 +64,6 @@ describe('registerCanvasEffect', () => {
     registerCanvasEffect(state, 'TestEffect2', runnerB);
 
     expect(getCanvasEffectRunner(state, 'TestEffect2')).toBe(runnerB);
-    expect(before.entries.get('TestEffect2')).toEqual({ state: 'bound', value: runnerA });
+    expect(before.get('TestEffect2')).toEqual(runnerA);
   });
 });

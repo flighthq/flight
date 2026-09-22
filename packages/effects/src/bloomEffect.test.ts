@@ -71,7 +71,7 @@ describe('registerBloomEffectPaddingResolver', () => {
     const state = createRenderState();
     const other = createRenderState();
     registerBloomEffectPaddingResolver(state);
-    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('BloomEffect')).toBe(true);
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.has('BloomEffect')).toBe(true);
     expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });
