@@ -5,38 +5,24 @@ import {
   createRectangle,
   isEmptyRectangle,
 } from '@flighthq/geometry/contract';
-import { computeNodeRootLocalBoundsRectangle, getNodeRuntime } from '@flighthq/node/contract';
+import { computeNodeRootLocalBoundsRectangle } from '@flighthq/node/contract';
 import { computeRenderTargetSize, computeScene2DRenderTargetTransform } from '@flighthq/render/contract';
-import type {
-  Node2D,
-  NodeAny,
-  Effect,
-  EffectCaptureGeometry,
-  EffectPadding,
-  RenderState,
-} from '@flighthq/types/contract';
-import { Node2DTraitsKey } from '@flighthq/types/contract';
+import type { Node2D, Effect, EffectCaptureGeometry, EffectPadding, RenderState } from '@flighthq/types/contract';
 
 import { computeEffectPadding } from './effectPadding';
 
-/**
- * Writes the substrate-independent geometry needed to capture a 2D subtree for an effect chain.
- * Returns false without touching out when source is not a Node2D or its root-local bounds are empty.
- */
 export function computeEffectCaptureGeometry(
   out: EffectCaptureGeometry,
   state: RenderState,
-  source: NodeAny,
+  source: Node2D,
   effects: Readonly<Effect> | ReadonlyArray<Readonly<Effect>>,
 ): boolean {
-  if (getNodeRuntime(source).traits !== Node2DTraitsKey) return false;
-
-  computeNodeRootLocalBoundsRectangle(_bounds, source as Node2D);
+  computeNodeRootLocalBoundsRectangle(_bounds, source);
   if (isEmptyRectangle(_bounds)) return false;
 
   computeEffectPadding(state, effects, _padding);
   computeRenderTargetSize(_targetSize, _bounds, _padding);
-  computeScene2DRenderTargetTransform(_captureTransform, source as Node2D, _bounds, _padding.left, _padding.top);
+  computeScene2DRenderTargetTransform(_captureTransform, source, _bounds, _padding.left, _padding.top);
 
   copyRectangle(out.bounds, _bounds);
   copyPadding(out.padding, _padding);
