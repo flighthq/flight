@@ -15,6 +15,7 @@ const GROUPS = [
   ['audio', 'tauriHostAudio'],
   ['bitmap', 'tauriHostBitmap'],
   ['clipboard', 'tauriHostClipboard'],
+  ['compress', 'tauriHostCompress'],
   ['connectivity', 'tauriHostConnectivity'],
   ['decompress', 'tauriHostDecompress'],
   ['device', 'tauriHostDevice'],

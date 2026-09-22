@@ -16,6 +16,7 @@ export * from './webCanvasHost';
 export * from './webCanvasRenderSurface';
 export * from './webClipboard';
 export * from './webClipboardHost';
+export * from './webCompressHost';
 export * from './webConnectivity';
 export * from './webConnectivityHost';
 export * from './webCursor';

@@ -30,6 +30,7 @@ export {
   webHostClipboardText,
 } from './webClipboard';
 export * from './webClipboardHost';
+export * from './webCompressHost';
 export * from './webConnectivity';
 export * from './webConnectivityHost';
 export * from './webCursor';

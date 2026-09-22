@@ -15,6 +15,7 @@ const GROUPS = [
   ['bitmap', 'electronHostBitmapGroup'],
   ['canvas', 'electronHostCanvasGroup'],
   ['clipboard', 'electronHostClipboard'],
+  ['compress', 'electronHostCompressGroup'],
   ['connectivity', 'electronHostConnectivityGroup'],
   ['decompress', 'electronHostDecompressGroup'],
   ['device', 'electronHostDeviceGroup'],

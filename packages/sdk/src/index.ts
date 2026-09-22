@@ -48,6 +48,7 @@ export * from '@flighthq/gui';
 export * from '@flighthq/gizmo';
 export * from '@flighthq/haptics';
 export * from '@flighthq/host';
+export * from './sdkHost';
 export * from '@flighthq/image';
 export * from '@flighthq/image-codec';
 export * from '@flighthq/importdiagnostics';
