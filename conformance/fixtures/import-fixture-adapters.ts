@@ -3,6 +3,7 @@ import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 
 import { sdkHostDecompressDeflate } from '@flighthq/compression';
 import { createGlyphOutlineSourceFromOpenTypeFont } from '@flighthq/font-formats';
+import { createHost } from '@flighthq/host/contract';
 import { parseParticleConfigDocument } from '@flighthq/particles-formats';
 import { martinezPathBooleanKernel } from '@flighthq/path-boolean';
 import {
@@ -12,7 +13,7 @@ import {
 } from '@flighthq/scene2d-formats';
 import {
   createScene3DFrom3ds,
-  createAwd2DefaultBlockRegistry,
+  awd2AllBlockHandlers,
   createScene3DFromAwd2,
   createScene3DFromMd2,
   createScene3DFromMd5Mesh,
@@ -38,7 +39,7 @@ import {
   GltfVolumeExtensionHandler,
 } from '@flighthq/scene3d-formats/contract';
 import { parseSkeleton2D, parseSpineSkeletonBinary } from '@flighthq/skeleton2d-formats';
-import { createScene2DImportFromSwf, createSwfDefaultTagFamilyRegistry } from '@flighthq/swf';
+import { createScene2DImportFromSwf, swfAllTagHandlers } from '@flighthq/swf';
 import { explainTextureContainerParse, parseAtf, parseBasis, parseDds, parseKtx2 } from '@flighthq/texture-formats';
 import type {
   GltfDocument,
@@ -187,13 +188,7 @@ async function runAtf(input: Readonly<ConformanceFixtureInput>): Promise<Conform
 
 async function runAwd2(input: Readonly<ConformanceFixtureInput>): Promise<ConformanceFixtureObservation> {
   const diagnostics: ImportDiagnostic[] = [];
-  createScene3DFromAwd2(
-    new Uint8Array(await readFile(input.absolutePath)),
-    createAwd2DefaultBlockRegistry(),
-    sdkHostDecompressDeflate,
-    null,
-    diagnostics,
-  );
+  createScene3DFromAwd2(new Uint8Array(await readFile(input.absolutePath)), AWD2_PARSE_OPTIONS, diagnostics);
   return observation(diagnostics);
 }
 
@@ -323,9 +318,7 @@ async function runSwf(input: Readonly<ConformanceFixtureInput>): Promise<Conform
   const diagnostics: ImportDiagnostic[] = [];
   const imported = createScene2DImportFromSwf(
     new Uint8Array(await readFile(input.absolutePath)),
-    createSwfDefaultTagFamilyRegistry(),
-    sdkHostDecompressDeflate,
-    null,
+    SWF_PARSE_OPTIONS,
     diagnostics,
   );
   return { diagnostics, imported: imported !== null };
@@ -455,3 +448,15 @@ const GLTF_EXTENSION_HANDLERS: readonly GltfExtensionHandler[] = [
   GltfUnlitExtensionHandler,
   GltfVolumeExtensionHandler,
 ];
+
+// The SWF import these adapters run with: deflate for CWS bodies, and every tag handler, since a
+// conformance run is exactly the case that must read whatever a fixture contains.
+const SWF_PARSE_OPTIONS = {
+  host: createHost({ decompress: { deflate: sdkHostDecompressDeflate } }),
+  tags: swfAllTagHandlers,
+};
+
+const AWD2_PARSE_OPTIONS = {
+  blocks: awd2AllBlockHandlers,
+  host: createHost({ decompress: { deflate: sdkHostDecompressDeflate } }),
+};

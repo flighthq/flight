@@ -1,5 +1,4 @@
 import type { AudioResourceReference } from './AudioResourceReference';
-import type { Entity } from './Entity';
 import type { ImageResourceReference } from './ImageResourceReference';
 import type { ImportDiagnostic } from './ImportDiagnostic';
 import type { Node2D } from './Node2D';
@@ -14,20 +13,23 @@ import type {
 } from './SwfTagParseState';
 
 /**
- * One family of SWF tags — every tag the importer reads for one capability, together with the phases
- * that capability owns. A family is the unit of opt-in: registering it is what pulls its parsing, its
- * post-parse resolution, and its resource and node construction into a build, and leaving it out is
- * what keeps the packages behind those phases out of the bundle entirely.
+ * One SWF tag handler — the independently importable primitive a caller opts into. A handler covers a
+ * related set of tags together with the phases they own: naming it in `SwfParseOptions.tags` is what
+ * pulls its parsing, its post-parse resolution, and its resource and node construction into a build,
+ * and leaving it out is what keeps the packages behind those phases out of the bundle entirely.
+ *
+ * A family is not a separate type — it is `readonly SwfTagHandler[]`, composed by array spread. So a
+ * handler and a family differ only in arity, and both are named the same way at the call site.
  *
  * Tag bodies are length-prefixed, so a document containing tags no registered family claims still walks
  * correctly: the reader advances past an unclaimed body without interpreting it.
  */
-export interface SwfTagFamily {
+export interface SwfTagHandler {
   /**
    * Builds the document-level resources and placed nodes this family's definitions produce. Absent for
    * a family whose tags only contribute to the timeline or to other families' definitions.
    */
-  readonly instantiate?: SwfTagFamilyInstantiation;
+  readonly instantiate?: SwfTagHandlerInstantiation;
   /** Every tag code this family claims. Expanded once into the importer's flat dispatch table. */
   readonly tags: readonly number[];
   /**
@@ -63,9 +65,9 @@ export interface SwfTagFamily {
  * the packages that turn them into resources, and a caller that only wants the tag census pays for
  * neither.
  */
-export interface SwfTagFamilyInstantiation {
+export interface SwfTagHandlerInstantiation {
   /** Appends the document-level resources this family's definitions produce. */
-  createResources?(parsed: Readonly<SwfTagParseResult>, out: SwfTagFamilyResources): void;
+  createResources?(parsed: Readonly<SwfTagParseResult>, out: SwfTagHandlerResources): void;
   /**
    * Builds the node one placement of `characterId` becomes, or null when this family did not define
    * that character. `bounds` is the character's resolved authored extent, or null when it has none.
@@ -84,54 +86,18 @@ export interface SwfTagFamilyInstantiation {
 }
 
 /**
- * The ten tag families a SWF document is read through. Every slot is optional: an absent family's tags
- * are skipped by their length prefix, its resolution never runs, and nothing it would have constructed
- * is reachable from the build.
- *
- * Named slots rather than an open map, because the ten are the whole of what a SWF contains: a caller
- * reads their own build off the declaration, and a family nobody wrote is a compile error rather than a
- * string that silently matches nothing.
- *
- * A registry is assembled once and read many times, so it carries its own expanded `dispatch` rather
- * than being re-expanded per import. Reassigning a slot afterwards does not re-expand it: build the
- * registry you want, rather than editing one you have handed to an importer.
+ * The document-level resources every named handler contributes to, in the order the importer asks for
+ * them. Each list stays empty when the handler that fills it is not named.
  */
-export interface SwfTagFamilyRegistry extends Entity {
-  /** The ten slots expanded into one flat tag-code table, built when the registry is built. */
-  dispatch: SwfTagFamilyDispatch;
-  bitmap?: SwfTagFamily | null;
-  control?: SwfTagFamily | null;
-  font?: SwfTagFamily | null;
-  placement?: SwfTagFamily | null;
-  script?: SwfTagFamily | null;
-  shape?: SwfTagFamily | null;
-  sound?: SwfTagFamily | null;
-  sprite?: SwfTagFamily | null;
-  text?: SwfTagFamily | null;
-  video?: SwfTagFamily | null;
-}
-
-/**
- * The document-level resources every registered family contributes to, in the order the importer asks
- * for them. Each list stays empty when the family that fills it is not registered.
- */
-export interface SwfTagFamilyResources {
+export interface SwfTagHandlerResources {
   audio: AudioResourceReference[];
   images: ImageResourceReference[];
   jpegAlphaPayloads: SwfJpegAlphaPayload[];
 }
 
 /**
- * The flat tag-code dispatch table the importer walks a tag stream with. Built once per registry by
- * expanding every registered family's `tags`, so the per-tag cost is one lookup rather than a scan over
- * families however many are registered.
+ * The flat tag-code dispatch table the importer walks a tag stream with. The parser expands the
+ * caller's handler array into this once per import, so the per-tag cost is one lookup rather than a
+ * scan over handlers however many are named.
  */
-export type SwfTagFamilyDispatch = ReadonlyMap<number, Readonly<SwfTagFamily>>;
-
-/**
- * One tag handler — the independently-importable primitive a family composes from. Structurally
- * identical to `SwfTagFamily`: a handler that covers one related set of tags, composable with
- * `composeSwfTagHandlers` into a family. A single handler IS a valid family, and a family IS a
- * valid handler, so the two are assignment-compatible in every position.
- */
-export type SwfTagHandler = SwfTagFamily;
+export type SwfTagHandlerDispatch = ReadonlyMap<number, Readonly<SwfTagHandler>>;

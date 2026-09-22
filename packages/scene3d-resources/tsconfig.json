@@ -13,6 +13,9 @@
       "path": "../entity"
     },
     {
+      "path": "../host"
+    },
+    {
       "path": "../image"
     },
     {

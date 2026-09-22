@@ -21,12 +21,9 @@ protected:
   - file: src/swfFrameActionTestHelper.ts
   - file: src/swfTagStreamTestHelper.ts
 
-  # Registry infrastructure. `createSwfTagFamilyRegistry` and `createSwfDefaultTagFamilyRegistry` are the
-  # two an application calls; the rest is how the importer reads a registry it was handed.
-  - SWF_TAG_FAMILY_INSTANTIATION_ORDER
-  - getSwfTagFamilies
-  - getSwfTagFamilyDispatch
-  - initializeSwfTagFamilyRegistry
+  # Dispatch infrastructure. An application names handlers in `SwfParseOptions.tags` and the importer
+  # expands them itself, so this is how the importer reads what it was handed, not an app-facing call.
+  - expandSwfTagHandlerDispatch
 
   # Construction initializers. The paired `create*` is the app-facing half of each.
   - initializeSwfDocumentImport

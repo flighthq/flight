@@ -2,16 +2,14 @@ import { swfSpriteHandler } from './swfSpriteHandler';
 import { swfSpriteTagFamily } from './swfSpriteTagFamily';
 
 describe('swfSpriteTagFamily', () => {
-  it('contains the union of its handler tags', () => {
-    expect([...swfSpriteTagFamily.tags]).toEqual([...swfSpriteHandler.tags]);
+  it('is exactly its handlers, in the order a placed character is offered to them', () => {
+    expect(swfSpriteTagFamily).toHaveLength(1);
+    expect(swfSpriteTagFamily[0]).toBe(swfSpriteHandler);
   });
 
-  it('composes instantiate from its handler', () => {
-    expect(swfSpriteTagFamily.instantiate).toBeDefined();
-  });
-
-  it('does not define resolve or finishTimeline', () => {
-    expect(swfSpriteTagFamily.resolve).toBeUndefined();
-    expect(swfSpriteTagFamily.finishTimeline).toBeUndefined();
+  it('claims the union of its handlers tags, with no tag claimed twice', () => {
+    const claimed = swfSpriteTagFamily.flatMap((handler) => [...handler.tags]);
+    expect([...claimed].sort((a, b) => a - b)).toEqual([...swfSpriteHandler.tags].sort((a, b) => a - b));
+    expect(new Set(claimed).size).toBe(claimed.length);
   });
 });

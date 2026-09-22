@@ -1,6 +1,5 @@
-import type { SwfTagFamily } from '@flighthq/types/contract';
+import type { SwfTagHandler } from '@flighthq/types/contract';
 
-import { composeSwfTagHandlers } from './composeSwfTagHandlers';
 import { swfVideoHandler } from './swfVideoHandler';
 
-export const swfVideoTagFamily: SwfTagFamily = composeSwfTagHandlers([swfVideoHandler]);
+export const swfVideoTagFamily: readonly SwfTagHandler[] = [swfVideoHandler];

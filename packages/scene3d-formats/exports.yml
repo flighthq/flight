@@ -16,6 +16,8 @@ protected:
   - GltfTransmissionExtensionHandler
   - GltfUnlitExtensionHandler
   - GltfVolumeExtensionHandler
+  # Dispatch infrastructure. An application names handlers in `Awd2ParseOptions.blocks` and the importer
+  # expands them itself, so this is how the importer reads what it was handed, not an app-facing call.
+  - expandAwd2BlockDispatch
   # Construction initializers. The paired create* is the app-facing half of each.
-  - initializeAwd2BlockRegistry
   - initializeAwd2ParseState

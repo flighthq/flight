@@ -9,7 +9,7 @@ import type { ImportDiagnostic } from './ImportDiagnostic';
 import type { MorphShape } from './MorphShape';
 import type { RichText } from './RichText';
 import type { Shape } from './Shape';
-import type { SwfTagFamilyDispatch } from './SwfTagFamily';
+import type { SwfTagHandlerDispatch } from './SwfTagHandler';
 import type { Texture2D } from './Texture';
 import type { TimelineAudioCue } from './TimelineCue';
 import type { TimelineCue } from './TimelineCue';
@@ -98,7 +98,7 @@ export interface SwfTagParseState {
    * The flat tag-code table this document is being walked with, so a DefineSprite body reads its nested
    * tag stream through exactly the registry the root was given.
    */
-  readonly dispatch: SwfTagFamilyDispatch;
+  readonly dispatch: SwfTagHandlerDispatch;
   readonly diagnostics: ImportDiagnostic[] | undefined;
   readonly editTexts: Map<number, (resolveFontName: (fontId: number) => string) => RichText>;
   readonly fontCodePoints: Map<number, number[]>;

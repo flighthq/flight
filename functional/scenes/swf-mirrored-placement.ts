@@ -20,10 +20,11 @@ import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 //
 // The scene assertion gates canvas, webgl and webgpu — not dom. The DOM verifier has no pixels to read back and
 // returns after checking the target element has children, before any scene assertion runs (functionalVerify.ts).
+import { createHost } from '@flighthq/host/contract';
 import type { Bitmap, MovieClip } from '@flighthq/sdk';
 import {
   createScene2DFromSwf,
-  createSwfDefaultTagFamilyRegistry,
+  swfAllTagHandlers,
   getBitmapPixelRgb,
   getNodeChildren,
   MovieClipKind,
@@ -309,12 +310,10 @@ class ShapeWriter extends BitWriter {
   }
 }
 
-const document = createScene2DFromSwf(
-  createMirroredPlacementSwf(),
-  createSwfDefaultTagFamilyRegistry(),
-  sdkHostDecompressDeflate,
-  null,
-);
+const document = createScene2DFromSwf(createMirroredPlacementSwf(), {
+  host: createHost({ decompress: { deflate: sdkHostDecompressDeflate } }),
+  tags: swfAllTagHandlers,
+});
 if (document === null || document.root.kind !== MovieClipKind) {
   throw new Error('[swf-mirrored-placement] synthetic SWF did not import as a MovieClip document');
 }

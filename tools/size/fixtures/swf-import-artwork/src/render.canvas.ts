@@ -1,17 +1,18 @@
-// The same importer as swf-import, registering four tag families instead of ten.
+// The same importer as swf-import, naming four tag families instead of ten.
 //
 // swf-import measures what a SWF costs when a build asks for everything. This one measures what it costs
-// when a build asks for authored artwork and nothing else, which is the case the tag-family split exists
+// when a build asks for authored artwork and nothing else, which is the case the tag-handler split exists
 // to serve — and the pair is the measurement: the difference between them is what a caller saves by not
-// registering scripting, audio, bitmaps, video, fonts and text, and it is the number that says whether
-// the boundary is load-bearing or decorative.
+// naming scripting, audio, bitmaps, video, fonts and text, and it is the number that says whether the
+// boundary is load-bearing or decorative. Both fixtures build a host the same way, so the host's own cost
+// cancels in that difference.
 //
 // That the omitted families are absent from the module graph rather than merely unreferenced in it is
 // asserted separately, by module and package reachability, in scripts/swf-tag-family-tree-shaking.test.ts.
 // This fixture is the cost side of the same claim.
+import { createHost } from '@flighthq/host/contract';
 import {
   createScene2DFromSwf,
-  createSwfTagFamilyRegistry,
   swfControlTagFamily,
   swfPlacementTagFamily,
   swfShapeTagFamily,
@@ -19,15 +20,9 @@ import {
 } from '@flighthq/swf';
 
 // A document the importer rejects at the header still walks every reachable branch of the module graph,
-// which is what the measurement needs; decoding real bytes would only add fixture weight.
-export const document = createScene2DFromSwf(
-  new Uint8Array([0x46, 0x57, 0x53]),
-  createSwfTagFamilyRegistry({
-    control: swfControlTagFamily,
-    placement: swfPlacementTagFamily,
-    shape: swfShapeTagFamily,
-    sprite: swfSpriteTagFamily,
-  }),
-  null,
-  null,
-);
+// which is what the measurement needs; decoding real bytes would only add fixture weight. The host
+// carries no decompression: an uncompressed FWS header never reaches a codec.
+export const document = createScene2DFromSwf(new Uint8Array([0x46, 0x57, 0x53]), {
+  host: createHost(),
+  tags: [...swfShapeTagFamily, ...swfSpriteTagFamily, ...swfControlTagFamily, ...swfPlacementTagFamily],
+});

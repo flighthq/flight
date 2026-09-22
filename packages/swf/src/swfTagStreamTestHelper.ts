@@ -1,7 +1,7 @@
-import type { SwfTagFamilyDispatch, SwfTagParseState } from '@flighthq/types/contract';
+import type { SwfTagHandlerDispatch, SwfTagParseState } from '@flighthq/types/contract';
 
-import { getSwfTagFamilyDispatch } from './swfTagFamilyDispatch';
-import { createSwfDefaultTagFamilyRegistry } from './swfTagFamilyRegistry';
+import { expandSwfTagHandlerDispatch } from './expandSwfTagHandlerDispatch';
+import { swfAllTagHandlers } from './swfAllTagHandlers';
 
 // Builds the SWF containers and tag records the importer tests read. A test that asserts on what the
 // importer does with a document needs a document to hand it, and hand-writing the bit-packed RECT and
@@ -63,15 +63,15 @@ export function createSwfTagRecord(code: number, body: Uint8Array = new Uint8Arr
 }
 
 // The empty state one import fills, for a test that drives a single tag's reader rather than a whole
-// document. `dispatch` defaults to every family, which is what a nested sprite body would be walked with.
-export function createSwfTestParseState(dispatch?: SwfTagFamilyDispatch): SwfTagParseState {
+// document. `dispatch` defaults to every handler, which is what a nested sprite body would be walked with.
+export function createSwfTestParseState(dispatch?: SwfTagHandlerDispatch): SwfTagParseState {
   return {
     abcBlobs: [],
     backgroundColor: null,
     characterBounds: new Map(),
     definedCharacters: new Set(),
     diagnostics: undefined,
-    dispatch: dispatch ?? getSwfTagFamilyDispatch(createSwfDefaultTagFamilyRegistry()),
+    dispatch: dispatch ?? expandSwfTagHandlerDispatch(swfAllTagHandlers),
     editTexts: new Map(),
     fontCodePoints: new Map(),
     fontNames: new Map(),

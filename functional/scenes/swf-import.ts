@@ -1,4 +1,3 @@
-import { getRenderProxy2D } from '@flighthq/render/contract';
 // swf-import — imports one synthetic two-frame FWS file instead of rebuilding its intended scene with
 // Flight primitives. The file covers the render-bearing SWF surface that exists today: shape geometry,
 // a linear gradient, a stroke, static text, a lossless bitmap fill, and a parent placement colour
@@ -8,10 +7,12 @@ import { getRenderProxy2D } from '@flighthq/render/contract';
 // EM grid; DefineFont3 stores the same square as 10240 units on its twenty-times-finer grid. Both text
 // records author the same height, so their rendered extents must match. A wrong SWF EM-square conversion
 // makes the modern glyph twenty times too large instead of merely leaving a non-blank frame.
+import { createHost } from '@flighthq/host/contract';
+import { getRenderProxy2D } from '@flighthq/render/contract';
 import type { Bitmap, ColorScaleBias, MovieClip, RichText } from '@flighthq/sdk';
 import {
   createScene2DFromSwf,
-  createSwfDefaultTagFamilyRegistry,
+  swfAllTagHandlers,
   decodeSwfImage,
   getBitmapPixelRgb,
   getMovieClipTotalFrames,
@@ -864,12 +865,10 @@ const TINTED_CHILD_SHAPE_ID = 15;
 const TINTED_SPRITE_ID = 16;
 const TWIPS_PER_PIXEL = 20;
 
-const document = createScene2DFromSwf(
-  createFunctionalSwf(),
-  createSwfDefaultTagFamilyRegistry(),
-  sdkHostDecompressDeflate,
-  null,
-);
+const document = createScene2DFromSwf(createFunctionalSwf(), {
+  host: createHost({ decompress: { deflate: sdkHostDecompressDeflate } }),
+  tags: swfAllTagHandlers,
+});
 if (document === null || document.root.kind !== MovieClipKind) {
   throw new Error('[swf-import] synthetic SWF did not import as a MovieClip document');
 }

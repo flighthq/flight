@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
+import { createHost } from '@flighthq/host/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
 import { loadScene2DImageResources } from '@flighthq/scene2d-resources/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
@@ -18,9 +19,9 @@ import {
   ShapeKind,
 } from '@flighthq/types/contract';
 
+import { swfAllTagHandlers } from './swfAllTagHandlers';
 import { createScene2DFromSwf } from './swfDocument';
 import { ShapeWriter } from './swfShapeTestHelper';
-import { createSwfDefaultTagFamilyRegistry } from './swfTagFamilyRegistry';
 
 const fakeSlot: HostImageDecodeFormatCapability = {
   decode: vi.fn().mockResolvedValue({
@@ -45,12 +46,10 @@ describe('SWF image resources', () => {
     const imageBytes = decodeBase64(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
     );
-    const document = createScene2DFromSwf(
-      createBitmapFillSwf(imageBytes),
-      createSwfDefaultTagFamilyRegistry(),
-      DECOMPRESS_DEFLATE,
-      DECOMPRESS_LZMA,
-    )!;
+    const document = createScene2DFromSwf(createBitmapFillSwf(imageBytes), {
+      host: createHost({ decompress: { deflate: DECOMPRESS_DEFLATE } }),
+      tags: swfAllTagHandlers,
+    })!;
     const shape = getNodeChildren(document.root)[0] as Shape;
     const texture = shape.data.commands[2] as Texture2D;
     const reference = document.imageResources[0];
@@ -190,4 +189,3 @@ const TAG_PLACE_OBJECT_2 = 26;
 const TAG_SHOW_FRAME = 1;
 
 const DECOMPRESS_DEFLATE = sdkHostDecompressDeflate;
-const DECOMPRESS_LZMA = null;
