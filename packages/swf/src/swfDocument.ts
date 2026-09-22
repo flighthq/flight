@@ -58,7 +58,7 @@ import { Compression, CompressionFraming, ImportDiagnosticSeverity, MorphShapeKi
 import { applySwfMorphBounds, createSwfDisplayObject, createSwfMovieClip } from './swfNode';
 import { FIXED_8_8_ONE, readSwfRectangle, transformSwfRectangle, mergeSwfRectangles } from './swfPrimitive';
 import { SwfReader } from './swfReader';
-import { createSwfTagFamilyDispatch, getSwfTagFamilies } from './swfTagFamilyRegistry';
+import { createSwfTagFamilyDispatch, getSwfTagFamilies } from './swfTagFamilyDispatch';
 import { MAX_TIMELINE_FRAME_ENTRIES, readSwfTimeline } from './swfTimelineParse';
 
 // Recovers every embedded DefineFont/2/3 as the generic, glyph-index-keyed outline seam. The map key

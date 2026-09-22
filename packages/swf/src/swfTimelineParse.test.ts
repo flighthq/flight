@@ -5,7 +5,7 @@ import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { swfControlTagFamily } from './swfControlTagFamily';
 import { swfPlacementTagFamily } from './swfPlacementTagFamily';
 import { SwfReader } from './swfReader';
-import { createSwfTagFamilyDispatch } from './swfTagFamilyRegistry';
+import { createSwfTagFamilyDispatch } from './swfTagFamilyDispatch';
 import { createSwfTestParseState, createTag, joinBytes, uint16 } from './swfTagStreamTestHelper';
 import { addSwfTimelineLabel, readSwfTimeline } from './swfTimelineParse';
 

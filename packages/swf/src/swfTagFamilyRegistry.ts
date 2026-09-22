@@ -1,4 +1,4 @@
-import type { SwfTagFamily, SwfTagFamilyDispatch, SwfTagFamilyRegistry } from '@flighthq/types/contract';
+import type { SwfTagFamilyRegistry } from '@flighthq/types/contract';
 
 import { swfBitmapTagFamily } from './swfBitmapTagFamily';
 import { swfControlTagFamily } from './swfControlTagFamily';
@@ -11,30 +11,13 @@ import { swfSpriteTagFamily } from './swfSpriteTagFamily';
 import { swfTextTagFamily } from './swfTextTagFamily';
 import { swfVideoTagFamily } from './swfVideoTagFamily';
 
-// Turning a registry into the table a tag walk runs on, and the one factory that names every family.
-//
-// Nothing else in the importer imports a family module. That is the whole mechanism: a build that
-// assembles its own registry never reaches this file, so the nine families it did not ask for are not in
-// its module graph at all — not merely unreferenced in it.
+// The one file that names every family, and therefore the one edge by which a build can acquire all ten.
+// Nothing in the importer imports it: the tag walk takes a registry it was handed and reaches the
+// families only through that value, so a caller who assembles their own never links this module and
+// never links the nine families they left out.
 
-// The order registered families are consulted in when a placed character has to become a node. A
-// character id is defined exactly once — a second definition under the same id is refused at the tag —
-// so at most one family ever claims one, and this order only decides which is asked first.
-export const SWF_TAG_FAMILY_INSTANTIATION_ORDER = [
-  'text',
-  'bitmap',
-  'video',
-  'shape',
-  'sprite',
-  'control',
-  'font',
-  'placement',
-  'script',
-  'sound',
-] as const satisfies readonly (keyof SwfTagFamilyRegistry)[];
-
-// Every family, which is what reproduces the importer's full behavior. A caller that wants less builds
-// the registry itself and pays for nothing it left out.
+// Every family, which is what reproduces the importer's full behavior. A caller who wants less builds
+// the registry themselves and pays for nothing they left out.
 export function createSwfDefaultTagFamilyRegistry(): SwfTagFamilyRegistry {
   return {
     bitmap: swfBitmapTagFamily,
@@ -48,25 +31,4 @@ export function createSwfDefaultTagFamilyRegistry(): SwfTagFamilyRegistry {
     text: swfTextTagFamily,
     video: swfVideoTagFamily,
   };
-}
-
-// Expands every registered family's tag list into one flat table, once per import. The per-tag cost of
-// the walk is therefore a single lookup however many families are registered, rather than a scan.
-export function createSwfTagFamilyDispatch(registry: Readonly<SwfTagFamilyRegistry>): SwfTagFamilyDispatch {
-  const dispatch = new Map<number, Readonly<SwfTagFamily>>();
-  for (const family of getSwfTagFamilies(registry)) {
-    for (const tag of family.tags) dispatch.set(tag, family);
-  }
-  return dispatch;
-}
-
-// The registered families in instantiation order, which is also the order their resolve and resource
-// phases run in. Skipping the empty slots here is what keeps every later phase a plain iteration.
-export function getSwfTagFamilies(registry: Readonly<SwfTagFamilyRegistry>): Readonly<SwfTagFamily>[] {
-  const families: Readonly<SwfTagFamily>[] = [];
-  for (const slot of SWF_TAG_FAMILY_INSTANTIATION_ORDER) {
-    const family = registry[slot];
-    if (family !== undefined && family !== null) families.push(family);
-  }
-  return families;
 }
