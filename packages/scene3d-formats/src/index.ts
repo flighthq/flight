@@ -1,14 +1,21 @@
-export * from './awd2BlockDispatch';
+export {
+  AWD2_BLOCK_BUILD_ORDER,
+  composeAwd2BlockHandlers,
+  createAwd2BlockRegistry,
+  createAwd2ParseState,
+  getAwd2BlockDispatch,
+  getAwd2BlockHandlers,
+} from './awd2BlockDispatch';
 export * from './awd2BlockRegistry';
 export * from './awd2CameraHandler';
 export * from './awd2GeometryHandler';
 export * from './awd2LightingHandler';
 export * from './awd2MaterialHandler';
+export * from './awd2Parse';
 export * from './awd2Reader';
 export * from './awd2SceneStructureHandler';
-export * from './awd2SkeletonHandler';
-export * from './awd2Parse';
 export * from './awd2Schema';
+export * from './awd2SkeletonHandler';
 export * from './colladaMaterial';
 export * from './colladaParse';
 export * from './gltfCoreFeatureRegistry';

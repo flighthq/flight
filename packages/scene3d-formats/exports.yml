@@ -16,3 +16,6 @@ protected:
   - GltfTransmissionExtensionHandler
   - GltfUnlitExtensionHandler
   - GltfVolumeExtensionHandler
+  # Construction initializers. The paired create* is the app-facing half of each.
+  - initializeAwd2BlockRegistry
+  - initializeAwd2ParseState
