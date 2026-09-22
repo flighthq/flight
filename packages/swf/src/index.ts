@@ -26,7 +26,7 @@ export * from './swfShape';
 export { swfShapeTagFamily } from './swfShapeTagFamily';
 export { swfSoundTagFamily } from './swfSoundTagFamily';
 export { swfSpriteTagFamily } from './swfSpriteTagFamily';
-export { createSwfTagFamilyDispatch } from './swfTagFamilyDispatch';
+export { createSwfTagFamilyRegistry, getSwfTagFamilyDispatch } from './swfTagFamilyDispatch';
 export { createSwfDefaultTagFamilyRegistry } from './swfTagFamilyRegistry';
 export * from './swfTagVocabulary';
 export * from './swfText';

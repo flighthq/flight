@@ -90,7 +90,7 @@ export function resolveSwfBlendMode(value: number): BlendMode {
 }
 
 // One CXFORM, already split into the two homes a node gives it. See readSwfColorTransform.
-export interface SwfColorTransform {
+interface SwfColorTransform {
   alpha: number;
   colorAdjustments: readonly Adjustment[] | null;
 }

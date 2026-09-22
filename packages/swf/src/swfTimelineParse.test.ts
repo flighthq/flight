@@ -5,7 +5,7 @@ import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { swfControlTagFamily } from './swfControlTagFamily';
 import { swfPlacementTagFamily } from './swfPlacementTagFamily';
 import { SwfReader } from './swfReader';
-import { createSwfTagFamilyDispatch } from './swfTagFamilyDispatch';
+import { createSwfTagFamilyRegistry, getSwfTagFamilyDispatch } from './swfTagFamilyDispatch';
 import { createSwfTestParseState, createTag, joinBytes, uint16 } from './swfTagStreamTestHelper';
 import { addSwfTimelineLabel, readSwfTimeline } from './swfTimelineParse';
 
@@ -106,7 +106,7 @@ describe('readSwfTimeline', () => {
 
   it('returns the sentinel when a family declares the stream unwalkable', () => {
     const refusing: SwfTagFamily = { tags: [TAG_SET_BACKGROUND_COLOR], parse: () => false };
-    const state = createSwfTestParseState(createSwfTagFamilyDispatch({ control: refusing }));
+    const state = createSwfTestParseState(getSwfTagFamilyDispatch(createSwfTagFamilyRegistry({ control: refusing })));
     const bytes = joinBytes(createTag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([1, 2, 3])), createTag(TAG_END));
     expect(readSwfTimeline(new SwfReader(bytes, 0, bytes.length), state)).toBeNull();
   });
@@ -164,7 +164,9 @@ function sceneLabelAt(frame: number, text: string): Uint8Array {
   );
 }
 
-const DISPATCH = createSwfTagFamilyDispatch({ control: swfControlTagFamily, placement: swfPlacementTagFamily });
+const DISPATCH = getSwfTagFamilyDispatch(
+  createSwfTagFamilyRegistry({ control: swfControlTagFamily, placement: swfPlacementTagFamily }),
+);
 const TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA = 86;
 const TAG_DO_ABC = 82;
 const TAG_END = 0;

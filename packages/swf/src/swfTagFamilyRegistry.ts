@@ -8,6 +8,7 @@ import { swfScriptTagFamily } from './swfScriptTagFamily';
 import { swfShapeTagFamily } from './swfShapeTagFamily';
 import { swfSoundTagFamily } from './swfSoundTagFamily';
 import { swfSpriteTagFamily } from './swfSpriteTagFamily';
+import { createSwfTagFamilyRegistry } from './swfTagFamilyDispatch';
 import { swfTextTagFamily } from './swfTextTagFamily';
 import { swfVideoTagFamily } from './swfVideoTagFamily';
 
@@ -19,7 +20,7 @@ import { swfVideoTagFamily } from './swfVideoTagFamily';
 // Every family, which is what reproduces the importer's full behavior. A caller who wants less builds
 // the registry themselves and pays for nothing they left out.
 export function createSwfDefaultTagFamilyRegistry(): SwfTagFamilyRegistry {
-  return {
+  return createSwfTagFamilyRegistry({
     bitmap: swfBitmapTagFamily,
     control: swfControlTagFamily,
     font: swfFontTagFamily,
@@ -30,5 +31,5 @@ export function createSwfDefaultTagFamilyRegistry(): SwfTagFamilyRegistry {
     sprite: swfSpriteTagFamily,
     text: swfTextTagFamily,
     video: swfVideoTagFamily,
-  };
+  });
 }

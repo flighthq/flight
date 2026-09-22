@@ -1,4 +1,5 @@
 import type { AudioResourceReference } from './AudioResourceReference';
+import type { Entity } from './Entity';
 import type { ImageResourceReference } from './ImageResourceReference';
 import type { ImportDiagnostic } from './ImportDiagnostic';
 import type { Node2D } from './Node2D';
@@ -86,8 +87,18 @@ export interface SwfTagFamilyInstantiation {
  * The ten tag families a SWF document is read through. Every slot is optional: an absent family's tags
  * are skipped by their length prefix, its resolution never runs, and nothing it would have constructed
  * is reachable from the build.
+ *
+ * Named slots rather than an open map, because the ten are the whole of what a SWF contains: a caller
+ * reads their own build off the declaration, and a family nobody wrote is a compile error rather than a
+ * string that silently matches nothing.
+ *
+ * A registry is assembled once and read many times, so it carries its own expanded `dispatch` rather
+ * than being re-expanded per import. Reassigning a slot afterwards does not re-expand it: build the
+ * registry you want, rather than editing one you have handed to an importer.
  */
-export interface SwfTagFamilyRegistry {
+export interface SwfTagFamilyRegistry extends Entity {
+  /** The ten slots expanded into one flat tag-code table, built when the registry is built. */
+  dispatch: SwfTagFamilyDispatch;
   bitmap?: SwfTagFamily | null;
   control?: SwfTagFamily | null;
   font?: SwfTagFamily | null;
@@ -111,8 +122,8 @@ export interface SwfTagFamilyResources {
 }
 
 /**
- * The flat tag-code dispatch table the importer walks a tag stream with. Built once from a registry by
+ * The flat tag-code dispatch table the importer walks a tag stream with. Built once per registry by
  * expanding every registered family's `tags`, so the per-tag cost is one lookup rather than a scan over
- * families.
+ * families however many are registered.
  */
 export type SwfTagFamilyDispatch = ReadonlyMap<number, Readonly<SwfTagFamily>>;

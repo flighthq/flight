@@ -58,7 +58,7 @@ import { Compression, CompressionFraming, ImportDiagnosticSeverity, MorphShapeKi
 import { applySwfMorphBounds, createSwfDisplayObject, createSwfMovieClip } from './swfNode';
 import { FIXED_8_8_ONE, readSwfRectangle, transformSwfRectangle, mergeSwfRectangles } from './swfPrimitive';
 import { SwfReader } from './swfReader';
-import { createSwfTagFamilyDispatch, getSwfTagFamilies } from './swfTagFamilyDispatch';
+import { getSwfTagFamilyDispatch, getSwfTagFamilies } from './swfTagFamilyDispatch';
 import { MAX_TIMELINE_FRAME_ENTRIES, readSwfTimeline } from './swfTimelineParse';
 
 // Recovers every embedded DefineFont/2/3 as the generic, glyph-index-keyed outline seam. The map key
@@ -252,7 +252,7 @@ function readSwfTags(
   registry: Readonly<SwfTagFamilyRegistry>,
   diagnostics: ImportDiagnostic[] | undefined,
 ): SwfTagParseResult | null {
-  const state: SwfTagParseState = createSwfTagParseState(createSwfTagFamilyDispatch(registry), diagnostics);
+  const state: SwfTagParseState = createSwfTagParseState(getSwfTagFamilyDispatch(registry), diagnostics);
   const timeline = readSwfTimeline(reader, state);
   if (timeline === null) return null;
   for (const family of getSwfTagFamilies(registry)) family.resolve?.(state, timeline);

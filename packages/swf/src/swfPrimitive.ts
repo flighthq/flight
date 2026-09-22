@@ -4,10 +4,6 @@ import type { SwfTagMatrix, SwfTagReader, SwfTagRectangle } from '@flighthq/type
 // rectangle arithmetic their consumers do on the results. Nothing here knows what a tag means, which is
 // why a tag family can read its own bodies without reaching into the importer that dispatched it.
 
-export function createSwfDimensionBounds(width: number, height: number): SwfTagRectangle | null {
-  return width === 0 || height === 0 ? null : { height, width, x: 0, y: 0 };
-}
-
 export function mergeSwfRectangles(a: SwfTagRectangle, b: Readonly<SwfTagRectangle>): SwfTagRectangle {
   const x = Math.min(a.x, b.x);
   const y = Math.min(a.y, b.y);
@@ -66,6 +62,13 @@ export function readSwfRectangle(reader: SwfTagReader): SwfTagRectangle | null {
     x: xMin / TWIPS_PER_PIXEL,
     y: yMin / TWIPS_PER_PIXEL,
   };
+}
+
+// The authored extent a declared size describes, or the sentinel when the size declares none. A zero
+// dimension is not a box of zero area: it is a character the container gave no extent at all, which
+// instantiation has to tell apart so it does not pin a node to an empty box.
+export function resolveSwfDimensionBounds(width: number, height: number): SwfTagRectangle | null {
+  return width === 0 || height === 0 ? null : { height, width, x: 0, y: 0 };
 }
 
 export function transformSwfRectangle(

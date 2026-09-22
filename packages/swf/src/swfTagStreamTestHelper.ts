@@ -1,6 +1,6 @@
 import type { SwfTagFamilyDispatch, SwfTagParseState } from '@flighthq/types/contract';
 
-import { createSwfTagFamilyDispatch } from './swfTagFamilyDispatch';
+import { getSwfTagFamilyDispatch } from './swfTagFamilyDispatch';
 import { createSwfDefaultTagFamilyRegistry } from './swfTagFamilyRegistry';
 
 // Builds the SWF containers and tag records the importer tests read. A test that asserts on what the
@@ -51,7 +51,7 @@ export function createSwfTestParseState(dispatch?: SwfTagFamilyDispatch): SwfTag
     characterBounds: new Map(),
     definedCharacters: new Set(),
     diagnostics: undefined,
-    dispatch: dispatch ?? createSwfTagFamilyDispatch(createSwfDefaultTagFamilyRegistry()),
+    dispatch: dispatch ?? getSwfTagFamilyDispatch(createSwfDefaultTagFamilyRegistry()),
     editTexts: new Map(),
     fontCodePoints: new Map(),
     fontNames: new Map(),
