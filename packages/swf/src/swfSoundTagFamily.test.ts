@@ -8,7 +8,7 @@ import { initializeTimelineAudioCue, initializeTimelineStreamAudioCue, swfSoundT
 describe('initializeTimelineAudioCue', () => {
   it('writes every field of an event cue, at unit gain', () => {
     const resource = createAudioResource();
-    const envelope = [{ leftLevel: 1, position: 0, rightLevel: 1 }];
+    const envelope = [{ leftGain: 1, rightGain: 1, time: 0 }];
     const out = allocateEntity<TimelineAudioCue>();
     initializeTimelineAudioCue(out, 2.5, envelope, 7, 3, 0.25, resource, true, false);
     const cue = finishEntity(out);
