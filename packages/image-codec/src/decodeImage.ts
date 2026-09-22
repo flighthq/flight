@@ -1,30 +1,59 @@
-import type { DecodedImage, ImageDecoder } from '@flighthq/types/contract';
+import type {
+  DecodedImage,
+  HostImageDecodeCapabilities,
+  HostImageDecodeFormatCapability,
+} from '@flighthq/types/contract';
 
 import { detectImageMimeType } from './detectImageMimeType';
-import { getImageDecoder } from './imageDecoderRegistry';
 
-// Decodes encoded image bytes to straight (non-premultiplied) RGBA. Resolves the MIME type via
-// detectImageMimeType when mimeType is omitted, then dispatches to the registered decoder. Returns null
-// when the type cannot be determined or no decoder is registered for it.
-export async function decodeImage(bytes: Readonly<Uint8Array>, mimeType?: string): Promise<DecodedImage | null> {
-  const decoder = resolveImageDecoder(bytes, mimeType);
-  if (decoder === null) return null;
-  return decoder(bytes);
-}
-
-// As decodeImage, but requests premultiplied RGBA via the decoder's premultiplyAlpha option. A decoder
-// that can premultiply in one pass does so; the web/canvas decoder falls back to a JS premultiply pass.
-export async function decodeImagePremultiplied(
+export async function decodeImage(
+  imageDecode: Readonly<HostImageDecodeCapabilities>,
   bytes: Readonly<Uint8Array>,
   mimeType?: string,
 ): Promise<DecodedImage | null> {
-  const decoder = resolveImageDecoder(bytes, mimeType);
-  if (decoder === null) return null;
-  return decoder(bytes, { premultiplyAlpha: true });
+  const slot = resolveDecodeSlot(imageDecode, bytes, mimeType);
+  if (slot === null) return null;
+  return slot.decode(bytes);
 }
 
-function resolveImageDecoder(bytes: Readonly<Uint8Array>, mimeType?: string): ImageDecoder | null {
+export async function decodeImagePremultiplied(
+  imageDecode: Readonly<HostImageDecodeCapabilities>,
+  bytes: Readonly<Uint8Array>,
+  mimeType?: string,
+): Promise<DecodedImage | null> {
+  const slot = resolveDecodeSlot(imageDecode, bytes, mimeType);
+  if (slot === null) return null;
+  return slot.decode(bytes, { premultiplyAlpha: true });
+}
+
+function resolveDecodeSlot(
+  imageDecode: Readonly<HostImageDecodeCapabilities>,
+  bytes: Readonly<Uint8Array>,
+  mimeType?: string,
+): HostImageDecodeFormatCapability | null {
   const type = mimeType ?? detectImageMimeType(bytes);
   if (type === null) return null;
-  return getImageDecoder(type);
+  return getImageDecodeSlot(imageDecode, type);
+}
+
+function getImageDecodeSlot(
+  imageDecode: Readonly<HostImageDecodeCapabilities>,
+  mimeType: string,
+): HostImageDecodeFormatCapability | null {
+  switch (mimeType) {
+    case 'image/avif':
+      return imageDecode.avif ?? null;
+    case 'image/bmp':
+      return imageDecode.bmp ?? null;
+    case 'image/gif':
+      return imageDecode.gif ?? null;
+    case 'image/jpeg':
+      return imageDecode.jpeg ?? null;
+    case 'image/png':
+      return imageDecode.png ?? null;
+    case 'image/webp':
+      return imageDecode.webp ?? null;
+    default:
+      return null;
+  }
 }

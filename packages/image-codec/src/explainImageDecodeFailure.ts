@@ -1,16 +1,33 @@
-import type { ImageDecodeFailureExplanation } from '@flighthq/types/contract';
+import type { HostImageDecodeCapabilities, ImageDecodeFailureExplanation } from '@flighthq/types/contract';
 
 import { detectImageMimeType } from './detectImageMimeType';
-import { getImageDecoder } from './imageDecoderRegistry';
 
-// Explains the two dispatcher failures that decodeImage represents with null. Returns null when the
-// same request can reach a registered decoder. This is a read-only query and never invokes the codec.
 export function explainImageDecodeFailure(
+  imageDecode: Readonly<HostImageDecodeCapabilities>,
   bytes: Readonly<Uint8Array>,
   mimeType?: string,
 ): ImageDecodeFailureExplanation | null {
   const type = mimeType ?? detectImageMimeType(bytes);
   if (type === null) return { mimeType: null, reason: 'mime-type-undetected' };
-  if (getImageDecoder(type) === null) return { mimeType: type, reason: 'decoder-not-registered' };
-  return null;
+  if (getDecodeSlotPresent(imageDecode, type)) return null;
+  return { mimeType: type, reason: 'decoder-not-registered' };
+}
+
+function getDecodeSlotPresent(imageDecode: Readonly<HostImageDecodeCapabilities>, mimeType: string): boolean {
+  switch (mimeType) {
+    case 'image/avif':
+      return imageDecode.avif !== undefined;
+    case 'image/bmp':
+      return imageDecode.bmp !== undefined;
+    case 'image/gif':
+      return imageDecode.gif !== undefined;
+    case 'image/jpeg':
+      return imageDecode.jpeg !== undefined;
+    case 'image/png':
+      return imageDecode.png !== undefined;
+    case 'image/webp':
+      return imageDecode.webp !== undefined;
+    default:
+      return false;
+  }
 }

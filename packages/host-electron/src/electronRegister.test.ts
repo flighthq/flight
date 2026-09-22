@@ -28,6 +28,8 @@ const GROUPS = [
   ['glyph', 'electronHostGlyphGroup'],
   ['haptics', 'electronHostHapticsGroup'],
   ['image', 'electronHostImageGroup'],
+  ['imageDecode', 'electronHostImageDecodeGroup'],
+  ['imageEncode', 'electronHostImageEncodeGroup'],
   ['input', 'electronHostInputGroup'],
   ['ipc', 'electronHostIpc'],
   ['lifecycle', 'electronHostLifecycleGroup'],

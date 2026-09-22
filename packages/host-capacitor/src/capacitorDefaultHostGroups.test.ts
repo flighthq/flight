@@ -1,4 +1,4 @@
-import { webHostTextShaper } from '@flighthq/host-web/contract';
+import { webHostImageDecode, webHostImageEncode, webHostTextShaper } from '@flighthq/host-web/contract';
 
 import {
   capacitorHostAccessibility,
@@ -9,6 +9,8 @@ import {
   capacitorHostGl,
   capacitorHostGlyph,
   capacitorHostImage,
+  capacitorHostImageDecode,
+  capacitorHostImageEncode,
   capacitorHostInput,
   capacitorHostIpc,
   capacitorHostLifecycle,
@@ -80,6 +82,18 @@ describe('capacitorHostGlyph', () => {
 
 describe('capacitorHostImage', () => {
   it('claims no image slots', () => expect(capacitorHostImage()).toEqual({}));
+});
+
+describe('capacitorHostImageDecode', () => {
+  it('delegates to the shared web image decode capabilities', () => {
+    expect(capacitorHostImageDecode()).toBe(webHostImageDecode);
+  });
+});
+
+describe('capacitorHostImageEncode', () => {
+  it('delegates to the shared web image encode capabilities', () => {
+    expect(capacitorHostImageEncode()).toBe(webHostImageEncode);
+  });
 });
 
 describe('capacitorHostInput', () => {

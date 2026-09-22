@@ -1,15 +1,33 @@
-import type { DecodedImage, ImageEncodeOptions } from '@flighthq/types/contract';
+import type {
+  DecodedImage,
+  HostImageEncodeCapabilities,
+  HostImageEncodeFormatCapability,
+  ImageEncodeOptions,
+} from '@flighthq/types/contract';
 
-import { getImageEncoder } from './imageEncoderRegistry';
-
-// Encodes raw RGBA pixels to bytes of the given MIME type via the registered encoder. Returns null when
-// no encoder is registered for the type.
 export async function encodeImage(
+  imageEncode: Readonly<HostImageEncodeCapabilities>,
   image: Readonly<DecodedImage>,
   mimeType: string,
   options?: Readonly<ImageEncodeOptions>,
 ): Promise<Uint8Array | null> {
-  const encoder = getImageEncoder(mimeType);
-  if (encoder === null) return null;
-  return encoder(image, options);
+  const slot = getImageEncodeSlot(imageEncode, mimeType);
+  if (slot === null) return null;
+  return slot.encode(image, options);
+}
+
+function getImageEncodeSlot(
+  imageEncode: Readonly<HostImageEncodeCapabilities>,
+  mimeType: string,
+): HostImageEncodeFormatCapability | null {
+  switch (mimeType) {
+    case 'image/jpeg':
+      return imageEncode.jpeg ?? null;
+    case 'image/png':
+      return imageEncode.png ?? null;
+    case 'image/webp':
+      return imageEncode.webp ?? null;
+    default:
+      return null;
+  }
 }

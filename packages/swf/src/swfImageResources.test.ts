@@ -1,10 +1,15 @@
 // @vitest-environment jsdom
-import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
-import { clearImageDecoders, registerImageDecoder } from '@flighthq/image-codec/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
 import { loadScene2DImageResources } from '@flighthq/scene2d-resources/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { Bitmap, Shape, Texture2D, TextureSource } from '@flighthq/types/contract';
+import type {
+  Bitmap,
+  HostImageDecodeCapabilities,
+  HostImageDecodeFormatCapability,
+  Shape,
+  Texture2D,
+  TextureSource,
+} from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
   ImageResourceReferenceKind,
@@ -16,16 +21,22 @@ import { createScene2DFromSwf } from './swfDocument';
 import { ShapeWriter } from './swfShapeTestHelper';
 import { createSwfDefaultTagFamilyRegistry } from './swfTagFamilyRegistry';
 
-beforeEach(() => {
-  registerImageDecoder('image/png', async () => ({
+const fakeSlot: HostImageDecodeFormatCapability = {
+  decode: vi.fn().mockResolvedValue({
     data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0xff]),
     height: 1,
     width: 1,
-  }));
-});
+  }),
+};
 
-afterEach(() => {
-  clearImageDecoders();
+const caps: HostImageDecodeCapabilities = { png: fakeSlot };
+
+beforeEach(() => {
+  vi.mocked(fakeSlot.decode).mockResolvedValue({
+    data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0xff]),
+    height: 1,
+    width: 1,
+  });
 });
 
 describe('SWF image resources', () => {
@@ -52,7 +63,7 @@ describe('SWF image resources', () => {
     expect(reference.textures).toEqual([texture]);
     expect(getTextureSource(texture)).toBeNull();
 
-    const resources = await loadScene2DImageResources(document);
+    const resources = await loadScene2DImageResources(caps, document);
     const image = getTextureSource(texture);
 
     expect(resources.resolved).toEqual([reference]);
@@ -178,5 +189,4 @@ const TAG_PLACE_OBJECT_2 = 26;
 const TAG_SHOW_FRAME = 1;
 
 const DECOMPRESS_DEFLATE = sdkHostDecompressDeflate;
-// No LZMA implementation ships with Flight, so a ZWS/LZMA body reports an unread container.
 const DECOMPRESS_LZMA = null;

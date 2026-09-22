@@ -82,6 +82,8 @@ import type {
 import type { HostFontLoadingCapability } from './HostFontLoading';
 import type { HostElementFullscreenCapability } from './HostFullscreen';
 import type { HostGlCapability } from './HostGl';
+import type { HostImageDecodeCapabilities } from './HostImageDecode';
+import type { HostImageEncodeCapabilities } from './HostImageEncode';
 import type { HostImageOpenDialogCapability } from './HostImageOpenDialog';
 import type {
   HostInputDropFileCapability,
@@ -231,6 +233,8 @@ export interface Host extends Entity {
   readonly glyph: HostGlyphCapabilities;
   readonly haptics: HostHapticsCapabilities;
   readonly image: HostImageCapabilities;
+  readonly imageDecode: HostImageDecodeCapabilities;
+  readonly imageEncode: HostImageEncodeCapabilities;
   readonly input: HostInputCapabilities;
   readonly ipc: HostIpcCapabilities;
   readonly lifecycle: HostLifecycleCapabilities;

@@ -627,15 +627,7 @@
     },
     {
       "packageName": "host-web",
-      "registrar": "registerWebImageDecoders"
-    },
-    {
-      "packageName": "host-web",
       "registrar": "registerWebImageDimensionResolver"
-    },
-    {
-      "packageName": "host-web",
-      "registrar": "registerWebImageEncoders"
     },
     {
       "packageName": "image",
@@ -648,14 +640,6 @@
     {
       "packageName": "image",
       "registrar": "registerTestImageDimensionResolver"
-    },
-    {
-      "packageName": "image-codec",
-      "registrar": "registerImageDecoder"
-    },
-    {
-      "packageName": "image-codec",
-      "registrar": "registerImageEncoder"
     },
     {
       "packageName": "interaction",
@@ -1403,7 +1387,23 @@
     },
     {
       "packageName": "swf",
-      "registrar": "registerSwfImageDecoders"
+      "registrar": "registerAllSwfTagHandlers"
+    },
+    {
+      "packageName": "swf",
+      "registrar": "registerSwfBitmapTagHandlers"
+    },
+    {
+      "packageName": "swf",
+      "registrar": "registerSwfControlTagHandlers"
+    },
+    {
+      "packageName": "swf",
+      "registrar": "registerSwfFontTagHandlers"
+    },
+    {
+      "packageName": "swf",
+      "registrar": "registerSwfPlacementTagHandlers"
     },
     {
       "packageName": "swf",

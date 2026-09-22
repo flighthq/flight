@@ -12,6 +12,7 @@ import type { Bitmap, ColorScaleBias, MovieClip, RichText } from '@flighthq/sdk'
 import {
   createScene2DFromSwf,
   createSwfDefaultTagFamilyRegistry,
+  decodeSwfImage,
   getBitmapPixelRgb,
   getMovieClipTotalFrames,
   getNodeChildren,
@@ -21,7 +22,6 @@ import {
   MovieClipKind,
   registerGlColorAdjustmentMaterialFeature,
   sdkHostDecompressDeflate,
-  registerSwfImageDecoders,
   registerWgpuColorAdjustmentMaterialFeature,
   RichTextKind,
   ShapeKind,
@@ -874,8 +874,9 @@ if (document === null || document.root.kind !== MovieClipKind) {
   throw new Error('[swf-import] synthetic SWF did not import as a MovieClip document');
 }
 
-registerSwfImageDecoders(sdkHostDecompressDeflate);
-const imageResources = await loadScene2DImageResources(document);
+const imageResources = await loadScene2DImageResources({}, document, {
+  decode: (bytes, mime, opts) => decodeSwfImage(bytes, mime, sdkHostDecompressDeflate, opts),
+});
 if (imageResources.unresolved.length !== 0) {
   throw new Error(`[swf-import] ${imageResources.unresolved.length} embedded bitmap resource(s) did not resolve`);
 }

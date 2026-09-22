@@ -40,7 +40,7 @@ export function resolveOneScene3DResourceTexture(
   ref: ImageResourceReference,
   signal: AbortSignal,
 ): Promise<TextureSource | null> {
-  return resolveImageResourceReference(ref, resolver.fetch, signal);
+  return resolveImageResourceReference(resolver.imageDecode ?? {}, ref, resolver.fetch, signal);
 }
 
 // Reconciles the selected working set entirely synchronously. It groups shared references, recognizes

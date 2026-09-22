@@ -1,4 +1,4 @@
-import { webHostTextShaper } from '@flighthq/host-web/contract';
+import { webHostImageDecode, webHostImageEncode, webHostTextShaper } from '@flighthq/host-web/contract';
 
 import {
   tauriHostAccessibility,
@@ -14,6 +14,8 @@ import {
   tauriHostGlyph,
   tauriHostHaptics,
   tauriHostImage,
+  tauriHostImageDecode,
+  tauriHostImageEncode,
   tauriHostInput,
   tauriHostIpc,
   tauriHostLifecycle,
@@ -65,6 +67,16 @@ describe('tauriHostGl', returnsEmptyGroup(tauriHostGl));
 describe('tauriHostGlyph', returnsEmptyGroup(tauriHostGlyph));
 describe('tauriHostHaptics', returnsEmptyGroup(tauriHostHaptics));
 describe('tauriHostImage', returnsEmptyGroup(tauriHostImage));
+describe('tauriHostImageDecode', () => {
+  it('delegates to the shared web image decode capabilities', () => {
+    expect(tauriHostImageDecode()).toBe(webHostImageDecode);
+  });
+});
+describe('tauriHostImageEncode', () => {
+  it('delegates to the shared web image encode capabilities', () => {
+    expect(tauriHostImageEncode()).toBe(webHostImageEncode);
+  });
+});
 describe('tauriHostInput', returnsEmptyGroup(tauriHostInput));
 describe('tauriHostIpc', returnsEmptyGroup(tauriHostIpc));
 describe('tauriHostLifecycle', returnsEmptyGroup(tauriHostLifecycle));

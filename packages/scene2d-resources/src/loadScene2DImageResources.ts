@@ -2,6 +2,7 @@ import { resolveImageResourceReference } from '@flighthq/image/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import { setTextureSource } from '@flighthq/texture/contract';
 import type {
+  HostImageDecodeCapabilities,
   ImageResourceFetch,
   ImageResourceReference,
   LoadScene2DImageResourcesOptions,
@@ -16,6 +17,7 @@ import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics';
 // binds into every Texture waiting on it, so a bitmap character placed a hundred times costs one decode and
 // a hundred assignments. No resolver state survives this call.
 export async function loadScene2DImageResources(
+  imageDecode: Readonly<HostImageDecodeCapabilities>,
   document: Scene2DDocument,
   options?: Readonly<LoadScene2DImageResourcesOptions>,
 ): Promise<Scene2DImageResources> {
@@ -29,7 +31,7 @@ export async function loadScene2DImageResources(
   const sources = await Promise.all(
     selected.map(async (reference): Promise<TextureSource | null> => {
       try {
-        return await resolveImageResourceReference(reference, fetch, signal);
+        return await resolveImageResourceReference(imageDecode, reference, fetch, signal, options?.decode);
       } finally {
         loaded++;
         if (options?.progress !== undefined) {

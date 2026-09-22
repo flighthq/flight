@@ -19,6 +19,8 @@ import { webHostGeolocationGroup } from './webGeolocationHost';
 import { webHostGlGroup } from './webGlHost';
 import { webHostGlyph } from './webGlyphHost';
 import { webHostHapticsGroup } from './webHapticsHost';
+import { webHostImageDecode } from './webImageDecodeHost';
+import { webHostImageEncode } from './webImageEncodeHost';
 import { webHostImageGroup } from './webImageHost';
 import { webHostInput } from './webInputHost';
 import { webHostIpc } from './webIpcHost';
@@ -76,6 +78,8 @@ const groups = {
   glyph: webHostGlyph,
   haptics: webHostHapticsGroup,
   image: webHostImageGroup,
+  imageDecode: webHostImageDecode,
+  imageEncode: webHostImageEncode,
   input: webHostInput,
   ipc: webHostIpc,
   lifecycle: webHostLifecycleGroup,

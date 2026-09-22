@@ -1,35 +1,31 @@
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
-import {
-  clearImageDecoders,
-  decodeImage,
-  decodeImagePremultiplied,
-  hasImageDecoder,
-} from '@flighthq/image-codec/contract';
-import { Compression } from '@flighthq/types/contract';
 
-import { registerSwfImageDecoders, SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageDecoder';
+import { decodeSwfImage, SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageDecoder';
 
-beforeEach(() => clearImageDecoders());
+describe('decodeSwfImage', () => {
+  it('decodes both container-native lossless MIME types', async () => {
+    const payload = losslessPayload(5, 1, 1, stored([0x80, 0x40, 0x20, 0x10]));
 
-afterEach(() => clearImageDecoders());
+    const lossless = await decodeSwfImage(payload, SWF_LOSSLESS_MIME_TYPE, sdkHostDecompressDeflate);
+    const alpha = await decodeSwfImage(payload, SWF_LOSSLESS_ALPHA_MIME_TYPE, sdkHostDecompressDeflate);
 
-describe('registerSwfImageDecoders', () => {
-  it('explicitly registers both container-native lossless MIME types', () => {
-    expect(hasImageDecoder(SWF_LOSSLESS_MIME_TYPE)).toBe(false);
-    expect(hasImageDecoder(SWF_LOSSLESS_ALPHA_MIME_TYPE)).toBe(false);
+    expect(lossless).not.toBeNull();
+    expect(alpha).not.toBeNull();
+  });
 
-    registerSwfImageDecoders(sdkHostDecompressDeflate);
+  it('returns null for unrecognized MIME types', async () => {
+    const payload = losslessPayload(5, 1, 1, stored([0x80, 0x40, 0x20, 0x10]));
 
-    expect(hasImageDecoder(SWF_LOSSLESS_MIME_TYPE)).toBe(true);
-    expect(hasImageDecoder(SWF_LOSSLESS_ALPHA_MIME_TYPE)).toBe(true);
+    expect(await decodeSwfImage(payload, 'image/png', sdkHostDecompressDeflate)).toBeNull();
   });
 
   it('retains authored premultiplied pixels when requested and normalizes the default to straight', async () => {
-    registerSwfImageDecoders(sdkHostDecompressDeflate);
     const payload = losslessPayload(5, 1, 1, stored([0x80, 0x40, 0x20, 0x10]));
 
-    const premultiplied = await decodeImagePremultiplied(payload, SWF_LOSSLESS_ALPHA_MIME_TYPE);
-    const straight = await decodeImage(payload, SWF_LOSSLESS_ALPHA_MIME_TYPE);
+    const premultiplied = await decodeSwfImage(payload, SWF_LOSSLESS_ALPHA_MIME_TYPE, sdkHostDecompressDeflate, {
+      premultiplyAlpha: true,
+    });
+    const straight = await decodeSwfImage(payload, SWF_LOSSLESS_ALPHA_MIME_TYPE, sdkHostDecompressDeflate);
 
     expect([...premultiplied!.data]).toEqual([0x40, 0x20, 0x10, 0x80]);
     expect([...straight!.data]).toEqual([0x80, 0x40, 0x20, 0x80]);

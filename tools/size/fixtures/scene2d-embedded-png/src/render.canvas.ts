@@ -10,4 +10,4 @@ const reference = createEmbeddedImageResourceReference(
 );
 const document = createScene2DDocument(createDisplayObject(), [], 'size', null, [reference]);
 
-Reflect.set(globalThis, '__flightScene2DImageResources', loadScene2DImageResources(document));
+Reflect.set(globalThis, '__flightScene2DImageResources', loadScene2DImageResources({}, document));

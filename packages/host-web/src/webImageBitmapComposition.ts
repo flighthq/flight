@@ -1,24 +1,20 @@
 import { decodeImage } from '@flighthq/image-codec/contract';
 import { registerImageBitmapCompositionResolver } from '@flighthq/image/contract';
-import type { Bitmap, EmbeddedImageResourceReference, ImageBitmapComposer } from '@flighthq/types/contract';
-
-// Open, format-neutral composer registry and the join it feeds. A container puts only the stable key and
-// payload bytes on a reference; its package owns the callback that understands those bytes. Last
-// registration wins so an application can replace a built-in producer deliberately without embedding
-// executable state in a scene.
+import type {
+  Bitmap,
+  EmbeddedImageResourceReference,
+  HostImageDecodeCapabilities,
+  ImageBitmapComposer,
+} from '@flighthq/types/contract';
 
 export function clearWebImageBitmapComposers(): void {
   composers.clear();
 }
 
-// Takes the join back out of the image lane, restoring the plain straight-decode path.
 export function disableWebImageBitmapComposition(): void {
   registerImageBitmapCompositionResolver(null);
 }
 
-// Installs the optional decoded-pixel join without making an ordinary embedded-image consumer retain its
-// registry lookup or straight-decode branch. A format package calls this beside its composer
-// registrations; until then the image lane's nullable slot keeps the hot path tree-shakable.
 export function enableWebImageBitmapComposition(): void {
   registerImageBitmapCompositionResolver(resolveImageBitmapComposition);
 }
@@ -44,6 +40,7 @@ export function unregisterWebImageBitmapComposer(kind: string): void {
 }
 
 async function resolveImageBitmapComposition(
+  imageDecode: Readonly<HostImageDecodeCapabilities>,
   ref: Readonly<EmbeddedImageResourceReference>,
   signal: AbortSignal,
 ): Promise<Bitmap | null> {
@@ -51,9 +48,7 @@ async function resolveImageBitmapComposition(
   const composition = ref.bitmapComposition!;
   const composer = getWebImageBitmapComposer(composition.kind);
   if (composer === null) return null;
-  // A composer always receives straight decoded pixels. It may also own a raw raster with no MIME
-  // decoder, in which case decoded is null and its plain payload is the complete input.
-  const decoded = await decodeImage(ref.bytes, ref.mimeType ?? undefined);
+  const decoded = await decodeImage(imageDecode, ref.bytes, ref.mimeType ?? undefined);
   signal.throwIfAborted();
   return composer(decoded, composition.payload);
 }

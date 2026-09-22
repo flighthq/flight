@@ -1,10 +1,22 @@
-import type { ImageEncodeFailureExplanation } from '@flighthq/types/contract';
+import type { HostImageEncodeCapabilities, ImageEncodeFailureExplanation } from '@flighthq/types/contract';
 
-import { getImageEncoder } from './imageEncoderRegistry';
-
-// Explains the dispatcher failure that encodeImage represents with null. Returns null when an encoder
-// is registered for the requested MIME type. This is a read-only query and never invokes the codec.
-export function explainImageEncodeFailure(mimeType: string): ImageEncodeFailureExplanation | null {
-  if (getImageEncoder(mimeType) !== null) return null;
+export function explainImageEncodeFailure(
+  imageEncode: Readonly<HostImageEncodeCapabilities>,
+  mimeType: string,
+): ImageEncodeFailureExplanation | null {
+  if (getEncodeSlotPresent(imageEncode, mimeType)) return null;
   return { mimeType, reason: 'encoder-not-registered' };
+}
+
+function getEncodeSlotPresent(imageEncode: Readonly<HostImageEncodeCapabilities>, mimeType: string): boolean {
+  switch (mimeType) {
+    case 'image/jpeg':
+      return imageEncode.jpeg !== undefined;
+    case 'image/png':
+      return imageEncode.png !== undefined;
+    case 'image/webp':
+      return imageEncode.webp !== undefined;
+    default:
+      return false;
+  }
 }

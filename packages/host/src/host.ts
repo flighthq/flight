@@ -32,6 +32,8 @@ export function initializeHost<Capabilities extends Partial<EntityWithoutRuntime
   out.glyph = (capabilities.glyph ?? {}) as Host['glyph'];
   out.haptics = (capabilities.haptics ?? {}) as Host['haptics'];
   out.image = (capabilities.image ?? {}) as Host['image'];
+  out.imageDecode = (capabilities.imageDecode ?? {}) as Host['imageDecode'];
+  out.imageEncode = (capabilities.imageEncode ?? {}) as Host['imageEncode'];
   out.input = (capabilities.input ?? {}) as Host['input'];
   out.ipc = (capabilities.ipc ?? {}) as Host['ipc'];
   out.lifecycle = (capabilities.lifecycle ?? {}) as Host['lifecycle'];

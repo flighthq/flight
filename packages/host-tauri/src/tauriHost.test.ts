@@ -28,6 +28,8 @@ const GROUPS = [
   ['glyph', 'tauriHostGlyph'],
   ['haptics', 'tauriHostHaptics'],
   ['image', 'tauriHostImage'],
+  ['imageDecode', 'tauriHostImageDecode'],
+  ['imageEncode', 'tauriHostImageEncode'],
   ['input', 'tauriHostInput'],
   ['ipc', 'tauriHostIpc'],
   ['lifecycle', 'tauriHostLifecycle'],

@@ -5,6 +5,8 @@ import type {
   Bitmap,
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
+  HostImageDecodeCapabilities,
+  ImageDecodeFallback,
   ImageResourceFailure,
   ImageResourceFetch,
   ImageResourceReference,
@@ -44,16 +46,22 @@ export function createExternalImageResourceReference(
 // dispatch by kind. The reference's alpha request is carried onto the source verbatim, so bytes that
 // are already premultiplied never get multiplied a second time at renderer upload.
 async function decodeEmbeddedImageResourceReference(
+  imageDecode: Readonly<HostImageDecodeCapabilities>,
   ref: Readonly<EmbeddedImageResourceReference>,
   signal: AbortSignal,
+  fallbackDecode?: ImageDecodeFallback,
 ): Promise<Bitmap | null> {
   if (ref.bitmapComposition !== undefined && _resolveImageBitmapComposition !== null) {
-    return _resolveImageBitmapComposition(ref, signal);
+    return _resolveImageBitmapComposition(imageDecode, ref, signal);
   }
   signal.throwIfAborted();
-  const decoded = await (ref.alphaType === 'premultiplied'
-    ? decodeImagePremultiplied(ref.bytes, ref.mimeType ?? undefined)
-    : decodeImage(ref.bytes, ref.mimeType ?? undefined));
+  const premultiplied = ref.alphaType === 'premultiplied';
+  let decoded = await (premultiplied
+    ? decodeImagePremultiplied(imageDecode, ref.bytes, ref.mimeType ?? undefined)
+    : decodeImage(imageDecode, ref.bytes, ref.mimeType ?? undefined));
+  if (decoded === null && fallbackDecode !== undefined && ref.mimeType !== null) {
+    decoded = await fallbackDecode(ref.bytes, ref.mimeType, premultiplied ? { premultiplyAlpha: true } : undefined);
+  }
   signal.throwIfAborted();
   if (decoded === null) return null;
   const out = allocateEntity<Bitmap>();
@@ -158,9 +166,11 @@ export function resetFailedImageResourceReference(ref: ImageResourceReference): 
 // This is the whole lifecycle for a document that resolves its images once. A caller needing concurrency
 // limits, priority, or retry drives those around this atom rather than inside it.
 export async function resolveImageResourceReference(
+  imageDecode: Readonly<HostImageDecodeCapabilities>,
   ref: ImageResourceReference,
   fetch: ImageResourceFetch,
   signal: AbortSignal,
+  fallbackDecode?: ImageDecodeFallback,
 ): Promise<TextureSource | null> {
   ref.failure = null;
   ref.state = ResourceResolutionState.Loading;
@@ -170,11 +180,11 @@ export async function resolveImageResourceReference(
       (ref.bitmapComposition === undefined || _resolveImageBitmapComposition === null);
     const source =
       ref.kind === ImageResourceReferenceKind.Embedded
-        ? await decodeEmbeddedImageResourceReference(ref, signal)
+        ? await decodeEmbeddedImageResourceReference(imageDecode, ref, signal, fallbackDecode)
         : await fetch(ref, signal);
     if (source === null) {
       const decodeFailure = usesOrdinaryEmbeddedDecode
-        ? explainImageDecodeFailure(ref.bytes, ref.mimeType ?? undefined)
+        ? explainImageDecodeFailure(imageDecode, ref.bytes, ref.mimeType ?? undefined)
         : null;
       const out = allocateEntity<ImageResourceFailure>();
       out.kind = ImageResourceFailureKind.Unavailable;

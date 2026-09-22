@@ -1,4 +1,4 @@
-import { webHostTextShaperGroup } from '@flighthq/host-web/contract';
+import { webHostImageDecode, webHostImageEncode, webHostTextShaperGroup } from '@flighthq/host-web/contract';
 import type {
   ElectronApi,
   HostAccessibilityCapabilities,
@@ -15,6 +15,8 @@ import type {
   HostGlyphCapabilities,
   HostHapticsCapabilities,
   HostImageCapabilities,
+  HostImageDecodeCapabilities,
+  HostImageEncodeCapabilities,
   HostInputCapabilities,
   HostLifecycleCapabilities,
   HostMediaSessionCapabilities,
@@ -95,6 +97,14 @@ export function electronHostGlyphGroup(_electron: ElectronApi): HostGlyphCapabil
 
 export function electronHostHapticsGroup(_electron: ElectronApi): HostHapticsCapabilities {
   return {};
+}
+
+export function electronHostImageDecodeGroup(_electron: ElectronApi): HostImageDecodeCapabilities {
+  return webHostImageDecode;
+}
+
+export function electronHostImageEncodeGroup(_electron: ElectronApi): HostImageEncodeCapabilities {
+  return webHostImageEncode;
 }
 
 export function electronHostImageGroup(_electron: ElectronApi): HostImageCapabilities {

@@ -1,7 +1,7 @@
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { allocateGlyphRasterizerBackendFromGlyphOutlineSource } from '@flighthq/font/contract';
 import { createGlyphAtlas, getGlyphAtlasEntry } from '@flighthq/glyphatlas/contract';
-import { clearImageDecoders } from '@flighthq/image-codec/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import {
   getMovieClipCurrentFrame,
@@ -24,15 +24,16 @@ import {
 import {
   createScene2DDocumentFromBytes,
   createScene2DDocumentImporterRegistry,
-  loadScene2DImageResources,
   resolveScene2DResources,
 } from '@flighthq/scene2d-resources/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
+import { setTextureSource } from '@flighthq/texture/contract';
 import type {
   Bitmap,
   ColorScaleBiasAdjustment,
   EmbeddedAudioResourceReference,
+  EmbeddedImageResourceReference,
   ImportDiagnostic,
   TimelineAudioCue,
   MorphShape,
@@ -40,6 +41,7 @@ import type {
   Node2D,
   RichText,
   Scale9Shape,
+  Scene2DDocument,
   Shape,
   Sprite,
   Texture2D,
@@ -73,7 +75,7 @@ import {
   uncompressSwfSource,
 } from './swfDocument';
 import { buildFrameScriptAbc } from './swfFrameActionTestHelper';
-import { registerSwfImageDecoders } from './swfImageDecoder';
+import { decodeSwfImage } from './swfImageDecoder';
 import { ShapeWriter } from './swfShapeTestHelper';
 import { createSwfDefaultTagFamilyRegistry } from './swfTagFamilyRegistry';
 import {
@@ -91,9 +93,6 @@ import {
   swfUint16Bytes,
   swfUint32Bytes,
 } from './swfTagStreamTestHelper';
-
-beforeEach(() => clearImageDecoders());
-afterEach(() => clearImageDecoders());
 
 describe('createGlyphOutlineSourcesFromSwf', () => {
   it('funnels a DefineFont2 outline and code table through the font adapter into glyphatlas', () => {
@@ -1591,12 +1590,9 @@ describe('createScene2DFromSwf', () => {
     expect(reference.textures).toEqual([texture]);
     expect(getTextureSource(texture)).toBeNull();
 
-    // Registration is caller-owned and happens after parsing; neither parsing nor reference creation
-    // secretly installs a decoder or starts async work.
-    registerSwfImageDecoders(sdkHostDecompressDeflate);
-    const resources = await loadScene2DImageResources(document!);
+    await resolveSwfLosslessImages(document!);
 
-    expect(resources.resolved).toEqual([reference]);
+    expect(reference.state).toBe(ResourceResolutionState.Resolved);
     expectLosslessTexturePixel(texture);
   });
 
@@ -1671,8 +1667,7 @@ describe('createScene2DFromSwf', () => {
     const reference = document.imageResources[0];
     expect(reference.kind === ImageResourceReferenceKind.Embedded && reference.alphaType).toBe('premultiplied');
 
-    registerSwfImageDecoders(sdkHostDecompressDeflate);
-    await loadScene2DImageResources(document);
+    await resolveSwfLosslessImages(document);
 
     const drawn = getNodeChildren(document.root)[0] as Shape;
     const source = getTextureSource(drawn.data.commands[2] as Texture2D);
@@ -5204,8 +5199,7 @@ describe('createScene2DSymbolFromSwf', () => {
     expect(getTextureSource(texture)).toBeNull();
     expect(symbol!.imageResources).toHaveLength(1);
 
-    registerSwfImageDecoders(sdkHostDecompressDeflate);
-    await loadScene2DImageResources(symbol!);
+    await resolveSwfLosslessImages(symbol!);
 
     expectLosslessTexturePixel(texture);
   });
@@ -5299,6 +5293,33 @@ function expectLosslessTexturePixel(texture: Texture2D): void {
     kind: BitmapTextureSourceKind,
     width: 1,
   });
+}
+
+async function resolveSwfLosslessImages(document: Scene2DDocument): Promise<void> {
+  for (const ref of document.imageResources) {
+    if (ref.kind !== ImageResourceReferenceKind.Embedded) continue;
+    const decoded = await decodeSwfImage(
+      ref.bytes,
+      ref.mimeType!,
+      sdkHostDecompressDeflate,
+      ref.alphaType === 'premultiplied' ? { premultiplyAlpha: true } : undefined,
+    );
+    if (decoded === null) continue;
+    const bitmap = allocateEntity<Bitmap>();
+    bitmap.alphaType = ref.alphaType;
+    bitmap.data = new Uint8ClampedArray(decoded.data);
+    bitmap.format = 'rgba8unorm';
+    bitmap.gamut = 'srgb';
+    bitmap.height = decoded.height;
+    bitmap.kind = BitmapTextureSourceKind;
+    bitmap.version = 0;
+    bitmap.width = decoded.width;
+    const source = finishEntity(bitmap);
+    if (ref.textures !== undefined) {
+      for (const texture of ref.textures) setTextureSource(texture, source);
+    }
+    ref.state = ResourceResolutionState.Resolved;
+  }
 }
 
 // A colour transform in the format's own units: multiply terms are 8.8 fixed point (256 is 1.0) and add

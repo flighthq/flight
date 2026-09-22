@@ -1,7 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { clearImageDecoders, registerImageDecoder } from '@flighthq/image-codec/contract';
 import { createEmbeddedImageResourceReference, resolveImageResourceReference } from '@flighthq/image/contract';
-import type { Bitmap, ImageBitmapComposer, ImageDecoder } from '@flighthq/types/contract';
+import type {
+  Bitmap,
+  HostImageDecodeCapabilities,
+  HostImageDecodeFormatCapability,
+  ImageBitmapComposer,
+} from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ImageResourceFailureKind, ResourceResolutionState } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
@@ -18,21 +22,30 @@ import {
 
 const composer: ImageBitmapComposer = () => null;
 const unusedFetch = (): Promise<null> => Promise.resolve(null);
-let decoder: ReturnType<typeof vi.fn<ImageDecoder>>;
 
-beforeEach(() => {
-  decoder = vi.fn<ImageDecoder>().mockResolvedValue({
+const fakeSlot: HostImageDecodeFormatCapability = {
+  decode: vi.fn().mockResolvedValue({
     data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]),
     height: 1,
     width: 1,
-  });
-  registerImageDecoder('image/png', decoder);
+  }),
+};
+
+const caps: HostImageDecodeCapabilities = { png: fakeSlot };
+
+beforeEach(() => {
+  vi.mocked(fakeSlot.decode)
+    .mockReset()
+    .mockResolvedValue({
+      data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]),
+      height: 1,
+      width: 1,
+    });
 });
 
 afterEach(() => {
   disableWebImageBitmapComposition();
   clearWebImageBitmapComposers();
-  clearImageDecoders();
 });
 
 function createTestBitmap(alphaType: 'straight' | 'opaque'): Bitmap {
@@ -66,10 +79,10 @@ describe('disableWebImageBitmapComposition', () => {
     const ref = createEmbeddedImageResourceReference(new Uint8Array([1]), 'image/png');
     ref.bitmapComposition = { kind: 'acme/alpha-plane', payload: new Uint8Array([7]) };
 
-    const source = await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal);
+    const source = await resolveImageResourceReference(caps, ref, unusedFetch, new AbortController().signal);
 
     expect(composer).not.toHaveBeenCalled();
-    expect(decoder).toHaveBeenCalledWith(ref.bytes);
+    expect(fakeSlot.decode).toHaveBeenCalledWith(ref.bytes);
     expect(source?.kind).toBe(BitmapTextureSourceKind);
   });
 });
@@ -83,7 +96,7 @@ describe('enableWebImageBitmapComposition', () => {
     const ref = createEmbeddedImageResourceReference(new Uint8Array([1]), 'image/png');
     ref.bitmapComposition = { kind: 'acme/alpha-plane', payload: new Uint8Array([7]) };
 
-    expect(await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal)).toBe(bitmap);
+    expect(await resolveImageResourceReference(caps, ref, unusedFetch, new AbortController().signal)).toBe(bitmap);
     expect(composer).toHaveBeenCalledOnce();
   });
 
@@ -96,9 +109,9 @@ describe('enableWebImageBitmapComposition', () => {
     const ref = createEmbeddedImageResourceReference(new Uint8Array([1]), 'image/png', 'premultiplied');
     ref.bitmapComposition = { kind: 'acme/alpha-plane', payload };
 
-    const source = await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal);
+    const source = await resolveImageResourceReference(caps, ref, unusedFetch, new AbortController().signal);
 
-    expect(decoder).toHaveBeenCalledWith(ref.bytes);
+    expect(fakeSlot.decode).toHaveBeenCalledWith(ref.bytes);
     expect(composer).toHaveBeenCalledWith(
       { data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]), height: 1, width: 1 },
       payload,
@@ -114,7 +127,7 @@ describe('enableWebImageBitmapComposition', () => {
     const ref = createEmbeddedImageResourceReference(new Uint8Array([1]));
     ref.bitmapComposition = { kind: 'acme/raw-raster', payload: ref.bytes };
 
-    const source = await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal);
+    const source = await resolveImageResourceReference(caps, ref, unusedFetch, new AbortController().signal);
 
     expect(composer).toHaveBeenCalledWith(null, ref.bytes);
     expect(source).toBe(bitmap);
@@ -125,8 +138,8 @@ describe('enableWebImageBitmapComposition', () => {
     const ref = createEmbeddedImageResourceReference(new Uint8Array([1]));
     ref.bitmapComposition = { kind: 'acme/missing', payload: ref.bytes };
 
-    expect(await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal)).toBeNull();
-    expect(decoder).not.toHaveBeenCalled();
+    expect(await resolveImageResourceReference(caps, ref, unusedFetch, new AbortController().signal)).toBeNull();
+    expect(fakeSlot.decode).not.toHaveBeenCalled();
     expect(ref.state).toBe(ResourceResolutionState.Failed);
     expect(ref.failure?.kind).toBe(ImageResourceFailureKind.Unavailable);
   });

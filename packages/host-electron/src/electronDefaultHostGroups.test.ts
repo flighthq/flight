@@ -1,4 +1,4 @@
-import { webHostTextShaper } from '@flighthq/host-web/contract';
+import { webHostImageDecode, webHostImageEncode, webHostTextShaper } from '@flighthq/host-web/contract';
 import type { ElectronApi } from '@flighthq/types/contract';
 
 import {
@@ -14,6 +14,8 @@ import {
   electronHostGlGroup,
   electronHostGlyphGroup,
   electronHostHapticsGroup,
+  electronHostImageDecodeGroup,
+  electronHostImageEncodeGroup,
   electronHostImageGroup,
   electronHostInputGroup,
   electronHostLifecycleGroup,
@@ -93,6 +95,16 @@ describe('electronHostGeolocationGroup', geolocationGroup);
 describe('electronHostGlGroup', glGroup);
 describe('electronHostGlyphGroup', glyphGroup);
 describe('electronHostHapticsGroup', hapticsGroup);
+describe('electronHostImageDecodeGroup', () => {
+  it('delegates to the shared web image decode capabilities', () => {
+    expect(electronHostImageDecodeGroup(electron)).toBe(webHostImageDecode);
+  });
+});
+describe('electronHostImageEncodeGroup', () => {
+  it('delegates to the shared web image encode capabilities', () => {
+    expect(electronHostImageEncodeGroup(electron)).toBe(webHostImageEncode);
+  });
+});
 describe('electronHostImageGroup', imageGroup);
 describe('electronHostInputGroup', inputGroup);
 describe('electronHostLifecycleGroup', lifecycleGroup);
