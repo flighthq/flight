@@ -1,4 +1,5 @@
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import { getMovieClipFrameScript, getMovieClipTotalFrames } from '@flighthq/movieclip/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
@@ -12,8 +13,10 @@ import { swfShapeTagFamily } from './swfShapeTagFamily';
 import { ShapeWriter } from './swfShapeTestHelper';
 import { swfSpriteTagFamily } from './swfSpriteTagFamily';
 import {
-  createSwfTagFamilyDispatch,
+  createSwfTagFamilyRegistry,
   getSwfTagFamilies,
+  getSwfTagFamilyDispatch,
+  initializeSwfTagFamilyRegistry,
   SWF_TAG_FAMILY_INSTANTIATION_ORDER,
 } from './swfTagFamilyDispatch';
 import { createSwfDefaultTagFamilyRegistry } from './swfTagFamilyRegistry';
@@ -31,7 +34,7 @@ import {
 describe('createSwfTagFamilyDispatch', () => {
   it('expands every registered family into one flat table', () => {
     const registry = createSwfDefaultTagFamilyRegistry();
-    const dispatch = createSwfTagFamilyDispatch(registry);
+    const dispatch = getSwfTagFamilyDispatch(registry);
     let tags = 0;
     for (const slot of SWF_TAG_FAMILY_INSTANTIATION_ORDER) tags += registry[slot]!.tags.length;
     expect(dispatch.size).toBe(tags);
@@ -40,14 +43,14 @@ describe('createSwfTagFamilyDispatch', () => {
   });
 
   it('contains nothing for a slot the caller left empty', () => {
-    const dispatch = createSwfTagFamilyDispatch({ shape: swfShapeTagFamily });
+    const dispatch = getSwfTagFamilyDispatch(createSwfTagFamilyRegistry({ shape: swfShapeTagFamily }));
     expect(dispatch.get(TAG_DEFINE_SHAPE)).toBe(swfShapeTagFamily);
     expect(dispatch.get(TAG_DO_ABC)).toBeUndefined();
     expect(dispatch.size).toBe(swfShapeTagFamily.tags.length);
   });
 
   it('treats an explicitly null slot as absent', () => {
-    expect(createSwfTagFamilyDispatch({ script: null, shape: swfShapeTagFamily }).size).toBe(
+    expect(getSwfTagFamilyDispatch(createSwfTagFamilyRegistry({ script: null, shape: swfShapeTagFamily })).size).toBe(
       swfShapeTagFamily.tags.length,
     );
   });
@@ -63,10 +66,37 @@ describe('createSwfTagFamilyDispatch', () => {
       },
       parse: swfControlTagFamily.parse,
     };
-    const dispatch = createSwfTagFamilyDispatch({ control: counted });
+    const dispatch = getSwfTagFamilyDispatch(createSwfTagFamilyRegistry({ control: counted }));
     expect(reads).toBe(1);
     for (let i = 0; i < 1000; i++) dispatch.get(TAG_SET_BACKGROUND_COLOR);
     expect(reads).toBe(1);
+  });
+});
+
+describe('createSwfTagFamilyRegistry', () => {
+  it('keeps the families it was given and leaves the rest empty', () => {
+    const registry = createSwfTagFamilyRegistry({ control: swfControlTagFamily, shape: swfShapeTagFamily });
+    expect(registry.control).toBe(swfControlTagFamily);
+    expect(registry.shape).toBe(swfShapeTagFamily);
+    expect(registry.script).toBeNull();
+    expect(registry.sound).toBeNull();
+  });
+
+  it('declares every slot, so an empty one reads as absent rather than as missing', () => {
+    // A slot left undefined and a slot the type never had are indistinguishable at a property read, and
+    // the difference is what tells a caller they misspelled a family from what they deliberately omitted.
+    const registry = createSwfTagFamilyRegistry();
+    for (const slot of SWF_TAG_FAMILY_INSTANTIATION_ORDER) {
+      expect(slot in registry, slot).toBe(true);
+      expect(registry[slot], slot).toBeNull();
+    }
+  });
+
+  it('expands the flat table when the registry is built, not when it is first used', () => {
+    const registry = createSwfTagFamilyRegistry({ shape: swfShapeTagFamily });
+    expect(registry.dispatch.size).toBe(swfShapeTagFamily.tags.length);
+    // The same object every time: nothing re-expands per import, so per-tag cost cannot grow with reuse.
+    expect(getSwfTagFamilyDispatch(registry)).toBe(registry.dispatch);
   });
 });
 
@@ -81,7 +111,7 @@ describe('dispatch cost', () => {
   // slots instead of one lookup would show up here as a multiple, not as a few percent.
   it('parses one document at the same cost under a one-family and a ten-family registry', () => {
     const document = manyTagDocument(TAG_COUNT);
-    const lean: SwfTagFamilyRegistry = { control: swfControlTagFamily };
+    const lean = createSwfTagFamilyRegistry({ control: swfControlTagFamily });
     const full = createSwfDefaultTagFamilyRegistry();
 
     // A timing test that silently walked an empty document would report a fast, plausible number, so the
@@ -101,7 +131,7 @@ describe('dispatch cost', () => {
   // The table is built once per import, so its construction cost cannot ride on the tag count either.
   it('builds the table in one pass over the registered families', () => {
     const registry = createSwfDefaultTagFamilyRegistry();
-    const dispatch = createSwfTagFamilyDispatch(registry);
+    const dispatch = getSwfTagFamilyDispatch(registry);
     let claimed = 0;
     for (const family of getSwfTagFamilies(registry)) claimed += family.tags.length;
     // One entry per claimed tag and not one more: a table built by scanning would still be correct, but
@@ -112,13 +142,32 @@ describe('dispatch cost', () => {
 
 describe('getSwfTagFamilies', () => {
   it('returns the registered families in the order the registry declares', () => {
-    const families = getSwfTagFamilies({ shape: swfShapeTagFamily, control: swfControlTagFamily });
+    const families = getSwfTagFamilies(
+      createSwfTagFamilyRegistry({ shape: swfShapeTagFamily, control: swfControlTagFamily }),
+    );
     // shape precedes control in SWF_TAG_FAMILY_INSTANTIATION_ORDER regardless of object literal order.
     expect(families).toEqual([swfShapeTagFamily, swfControlTagFamily]);
   });
 
   it('returns nothing for an empty registry', () => {
-    expect(getSwfTagFamilies({})).toEqual([]);
+    expect(getSwfTagFamilies(createSwfTagFamilyRegistry({}))).toEqual([]);
+  });
+});
+
+describe('getSwfTagFamilyDispatch', () => {
+  it('returns the table the registry was expanded into', () => {
+    const registry = createSwfDefaultTagFamilyRegistry();
+    expect(getSwfTagFamilyDispatch(registry)).toBe(registry.dispatch);
+  });
+});
+
+describe('initializeSwfTagFamilyRegistry', () => {
+  it('is the construction initializer createSwfTagFamilyRegistry composes', () => {
+    const out = allocateEntity<SwfTagFamilyRegistry>();
+    initializeSwfTagFamilyRegistry(out, { placement: swfPlacementTagFamily });
+    const registry = finishEntity(out);
+    expect(registry.placement).toBe(swfPlacementTagFamily);
+    expect(registry.dispatch.size).toBe(swfPlacementTagFamily.tags.length);
   });
 });
 
@@ -163,12 +212,12 @@ function shapeDocument(): Uint8Array {
 
 const DEFLATE = sdkHostDecompressDeflate;
 // Everything needed to place artwork, and nothing else: the registry the tree-shaking fixture builds too.
-const ARTWORK_FAMILIES: SwfTagFamilyRegistry = {
+const ARTWORK_FAMILIES = createSwfTagFamilyRegistry({
   control: swfControlTagFamily,
   placement: swfPlacementTagFamily,
   shape: swfShapeTagFamily,
   sprite: swfSpriteTagFamily,
-};
+});
 const TAG_DEFINE_SHAPE = 2;
 const TAG_DEFINE_SPRITE = 39;
 const TAG_DO_ABC = 82;
@@ -228,7 +277,7 @@ describe('selective registries', () => {
 
     const without = createScene2DFromSwf(
       swf,
-      { control: swfControlTagFamily, placement: swfPlacementTagFamily },
+      createSwfTagFamilyRegistry({ control: swfControlTagFamily, placement: swfPlacementTagFamily }),
       DEFLATE,
       null,
     );

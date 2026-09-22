@@ -1403,59 +1403,11 @@
     },
     {
       "packageName": "swf",
-      "registrar": "registerAllSwfTagHandlers"
-    },
-    {
-      "packageName": "swf",
-      "registrar": "registerSwfBitmapTagHandlers"
-    },
-    {
-      "packageName": "swf",
-      "registrar": "registerSwfControlTagHandlers"
-    },
-    {
-      "packageName": "swf",
-      "registrar": "registerSwfFontTagHandlers"
-    },
-    {
-      "packageName": "swf",
       "registrar": "registerSwfImageDecoders"
     },
     {
       "packageName": "swf",
-      "registrar": "registerSwfPlacementTagHandlers"
-    },
-    {
-      "packageName": "swf",
       "registrar": "registerSwfScene2DDocumentImporter"
-    },
-    {
-      "packageName": "swf",
-      "registrar": "registerSwfScriptTagHandlers"
-    },
-    {
-      "packageName": "swf",
-      "registrar": "registerSwfShapeTagHandlers"
-    },
-    {
-      "packageName": "swf",
-      "registrar": "registerSwfSoundTagHandlers"
-    },
-    {
-      "packageName": "swf",
-      "registrar": "registerSwfSpriteTagHandlers"
-    },
-    {
-      "packageName": "swf",
-      "registrar": "registerSwfTagHandler"
-    },
-    {
-      "packageName": "swf",
-      "registrar": "registerSwfTextTagHandlers"
-    },
-    {
-      "packageName": "swf",
-      "registrar": "registerSwfVideoTagHandlers"
     },
     {
       "packageName": "text-markup",

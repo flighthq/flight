@@ -12,7 +12,6 @@ import type {
   Node2DTraits,
   NodeData,
   Rectangle,
-  ShapeData,
   Sprite,
   SwfTagRectangle,
   Texture2D,
@@ -111,7 +110,7 @@ export function createSwfTexturedSprite(texture: Texture2D, bounds: SwfTagRectan
   return target;
 }
 
-export interface SwfAuthoredBoundsData extends NodeData {
+interface SwfAuthoredBoundsData extends NodeData {
   authoredBounds: SwfTagRectangle;
 }
 
@@ -124,5 +123,3 @@ interface SwfMorphBoundsData extends SwfAuthoredBoundsData {
 }
 
 interface SwfMovieClipData extends MovieClipData, SwfAuthoredBoundsData {}
-
-export interface SwfShapeNodeData extends ShapeData, SwfAuthoredBoundsData {}

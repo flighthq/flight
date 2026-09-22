@@ -1,5 +1,5 @@
 import {
-  createSwfDimensionBounds,
+  resolveSwfDimensionBounds,
   mergeSwfRectangles,
   readBigEndianUint16,
   readBigEndianUint32,
@@ -9,19 +9,6 @@ import {
 } from './swfPrimitive';
 import { SwfReader } from './swfReader';
 import { BitWriter, createRectangle } from './swfTagStreamTestHelper';
-
-describe('createSwfDimensionBounds', () => {
-  it('returns a box at the origin for a declared size', () => {
-    expect(createSwfDimensionBounds(8, 4)).toEqual({ height: 4, width: 8, x: 0, y: 0 });
-  });
-
-  // A zero extent is not a box of zero area — it is a character with no declared size at all, which
-  // instantiation has to tell apart so it does not pin a node to an empty authored extent.
-  it('returns the sentinel when either dimension is zero', () => {
-    expect(createSwfDimensionBounds(0, 4)).toBeNull();
-    expect(createSwfDimensionBounds(8, 0)).toBeNull();
-  });
-});
 
 describe('mergeSwfRectangles', () => {
   it('produces the union of two disjoint boxes', () => {
@@ -128,6 +115,19 @@ describe('readSwfRectangle', () => {
   it('returns the sentinel when the record runs past the end of the reader', () => {
     const full = createRectangle(0, 2000, 0, 1000);
     expect(readSwfRectangle(reader(full.subarray(0, 1)))).toBeNull();
+  });
+});
+
+describe('resolveSwfDimensionBounds', () => {
+  it('returns a box at the origin for a declared size', () => {
+    expect(resolveSwfDimensionBounds(8, 4)).toEqual({ height: 4, width: 8, x: 0, y: 0 });
+  });
+
+  // A zero extent is not a box of zero area — it is a character with no declared size at all, which
+  // instantiation has to tell apart so it does not pin a node to an empty authored extent.
+  it('returns the sentinel when either dimension is zero', () => {
+    expect(resolveSwfDimensionBounds(0, 4)).toBeNull();
+    expect(resolveSwfDimensionBounds(8, 0)).toBeNull();
   });
 });
 

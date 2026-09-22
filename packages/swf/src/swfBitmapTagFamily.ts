@@ -15,7 +15,7 @@ import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageDecoder';
 import { acquireSwfImageTexture } from './swfImageTexture';
 import { createSwfTexturedSprite } from './swfNode';
-import { createSwfDimensionBounds, readBigEndianUint16, readBigEndianUint32 } from './swfPrimitive';
+import { resolveSwfDimensionBounds, readBigEndianUint16, readBigEndianUint32 } from './swfPrimitive';
 
 // Embedded bitmap definitions. Nothing is decoded at import: a payload rides out on an asset reference
 // for the resolve step, which may be asynchronous and which a caller that does not need pixels never
@@ -214,7 +214,7 @@ function readSwfEmbeddedImage(
     source[start + 14] === 0x44 &&
     source[start + 15] === 0x52
   ) {
-    const bounds = createSwfDimensionBounds(
+    const bounds = resolveSwfDimensionBounds(
       readBigEndianUint32(source, start + 16),
       readBigEndianUint32(source, start + 20),
     );
@@ -230,7 +230,7 @@ function readSwfEmbeddedImage(
     (source[start + 4] === 0x37 || source[start + 4] === 0x39) &&
     source[start + 5] === 0x61
   ) {
-    const bounds = createSwfDimensionBounds(
+    const bounds = resolveSwfDimensionBounds(
       source[start + 6] + source[start + 7] * 0x100,
       source[start + 8] + source[start + 9] * 0x100,
     );
@@ -265,7 +265,7 @@ function readSwfEmbeddedImage(
       marker !== JPEG_DEFINE_ARITHMETIC_CODING
     ) {
       if (length < 7) return null;
-      const bounds = createSwfDimensionBounds(
+      const bounds = resolveSwfDimensionBounds(
         readBigEndianUint16(source, pos + 5),
         readBigEndianUint16(source, pos + 3),
       );
