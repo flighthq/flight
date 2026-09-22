@@ -1,6 +1,8 @@
 import type { BlendMode } from './BlendMode';
+import type { Camera3D } from './Camera3D';
 import type { CustomShaderMaterial } from './CustomShaderMaterial';
 import type { Matrix4 } from './Matrix4';
+import type { Node3D } from './Node3D';
 import type { Scene3DLightsLike } from './Scene3DLights';
 import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource';
 import type { WgpuMeshPipeline } from './WgpuMeshPipeline';
@@ -72,6 +74,13 @@ export interface WgpuScene3DDrawEntry {
 // Frame + Draw bind-group layouts (every family pipeline targets these), and the shared GPU resources
 // the draw path reuses every frame (the Frame uniform buffer + its bind group, the dynamic-offset Draw
 // bind group, the 1x1 placeholder map texture, and a per-material bind-group cache). `activeMeshPipeline`
+export type WgpuScene3DPass = (
+  state: WgpuRenderState,
+  scene: Readonly<Node3D>,
+  camera: Readonly<Camera3D>,
+  lights: Readonly<Scene3DLightsLike>,
+) => void;
+
 // is the bind()→draw() handoff. All scene-wgpu-owned and distinct from the 2D renderer's
 // material-renderer table/texture cache — a material kind is either 2D or 3D, never both, and both
 // share WgpuRenderStateRuntime.registries.materialRenderers. The upload cache is surfaced through

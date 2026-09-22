@@ -26,6 +26,7 @@ import type { WgpuQuadMaterialRenderer } from './WgpuQuadMaterialRenderer';
 import type { WgpuRenderPass, WgpuRenderPassViewport } from './WgpuRenderPass';
 import type { WgpuRenderTarget, WgpuScreenRenderTarget } from './WgpuRenderTarget';
 import type { WgpuRenderTextureEntry, WgpuRenderTextureGuard } from './WgpuRenderTexture';
+import type { WgpuScene3DPass } from './WgpuScene3DRuntime';
 import type { WgpuShapeMesh } from './WgpuShapeMesh';
 import type { WgpuSkinningAdapter } from './WgpuSkinningAdapter';
 import type { WgpuTextureResolver } from './WgpuTextureResolver';
@@ -72,6 +73,7 @@ export interface WgpuRenderRegistries extends RenderRegistries {
   // replacements whose define signature is unchanged but whose emitted source differs.
   modifierSnippetRevision: number;
   effects: KeyedTable<WgpuEffectRegistration>;
+  passes: readonly WgpuScene3DPass[] | null;
   shapeRasterizer: SlotTable<ShapeRasterizer> | null;
   textureResolvers: KeyedTable<WgpuTextureResolver>;
   velocityWriters: KeyedTable<WgpuVelocityWriter>;
