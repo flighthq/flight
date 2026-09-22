@@ -1,6 +1,6 @@
 import type { Awd2BlockHandler, Awd2BlockRegistry } from '@flighthq/types/contract';
 
-import { composeAwd2BlockHandlers } from './awd2BlockDispatch';
+import { composeAwd2BlockHandlers, createAwd2BlockRegistry } from './awd2BlockDispatch';
 import { awd2CameraHandler } from './awd2CameraHandler';
 import { awd2TriangleGeometryHandler } from './awd2GeometryHandler';
 import { awd2LightHandler, awd2LightPickerHandler } from './awd2LightingHandler';
@@ -40,12 +40,12 @@ export function awd2SkeletonFamily(): Awd2BlockHandler {
 // Every family, which is what reproduces the importer's full behavior. A caller who wants less builds the
 // registry themselves and pays for nothing they left out.
 export function createAwd2DefaultBlockRegistry(): Awd2BlockRegistry {
-  return {
+  return createAwd2BlockRegistry({
     camera: awd2CameraHandler,
     geometry: awd2TriangleGeometryHandler,
     lighting: awd2LightingFamily(),
     materials: awd2MaterialsFamily(),
     sceneStructure: awd2SceneStructureFamily(),
     skeleton: awd2SkeletonFamily(),
-  };
+  });
 }

@@ -1,0 +1,8 @@
+{
+  "name": "awd2-import",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "name": "awd2-import"
+  }
+}

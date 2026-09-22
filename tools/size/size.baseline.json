@@ -65,5 +65,7 @@
   "scene3d-wgpu-billboard:webgpu": 30311,
   "scene3d-wgpu-node:webgpu": 16924,
   "scene3d-wgpu-particle-emitter:webgpu": 22406,
-  "swf-import-artwork:canvas": 21894
+  "swf-import-artwork:canvas": 21894,
+  "awd2-import-static:canvas": 8045,
+  "awd2-import:canvas": 11926
 }

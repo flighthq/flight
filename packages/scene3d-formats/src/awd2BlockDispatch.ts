@@ -1,8 +1,10 @@
+import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   Awd2BlockDispatch,
   Awd2BlockHandler,
   Awd2BlockRegistry,
   Awd2ParseState,
+  EntityConstruction,
   ImportDiagnostic,
   Scene3DDocument,
 } from '@flighthq/types/contract';
@@ -49,20 +51,12 @@ export function composeAwd2BlockHandlers(...parts: readonly Awd2BlockHandler[]):
   };
 }
 
-// Expands every registered handler's block-type list into one flat table, once per import, so the
-// per-block cost of the walk is a single lookup however many handlers are registered.
-//
-// A family resolves to its PARTS rather than to itself, so the walk dispatches to the primitive that owns
-// a block type. That is what keeps `deferred` a plain per-handler flag: the skeleton family holds one
-// handler read on the first pass and two read on the second, and the walk reads each part's own flag.
-export function createAwd2BlockDispatch(registry: Readonly<Awd2BlockRegistry>): Awd2BlockDispatch {
-  const dispatch = new Map<number, Readonly<Awd2BlockHandler>>();
-  for (const handler of getAwd2BlockHandlers(registry)) {
-    for (const part of handler.parts ?? [handler]) {
-      for (const blockType of part.blockTypes) dispatch.set(blockType, part);
-    }
-  }
-  return dispatch;
+// A registry carrying exactly the handlers the caller names, expanded into its flat table at
+// construction. Slots left out stay empty, and everything behind them is absent from the build.
+export function createAwd2BlockRegistry(handlers: Readonly<Partial<Awd2BlockRegistry>> = {}): Awd2BlockRegistry {
+  const out = allocateEntity<Awd2BlockRegistry>();
+  initializeAwd2BlockRegistry(out, handlers);
+  return finishEntity(out);
 }
 
 // The empty state one import fills. Every registered handler writes into the same object, because the
@@ -75,7 +69,55 @@ export function createAwd2ParseState(
   view: DataView,
   diagnostics: ImportDiagnostic[] | undefined,
 ): Awd2ParseState {
-  return {
+  const out = allocateEntity<Awd2ParseState>();
+  initializeAwd2ParseState(out, document, source, view, diagnostics);
+  return finishEntity(out);
+}
+
+// The flat block-type table this registry was expanded into when it was built.
+export function getAwd2BlockDispatch(registry: Readonly<Awd2BlockRegistry>): Awd2BlockDispatch {
+  return registry.dispatch;
+}
+
+// The registered handlers, in build order. Skipping the empty slots here is what keeps every later phase
+// a plain iteration.
+export function getAwd2BlockHandlers(registry: Readonly<Awd2BlockRegistry>): Readonly<Awd2BlockHandler>[] {
+  const handlers: Readonly<Awd2BlockHandler>[] = [];
+  for (const slot of AWD2_BLOCK_BUILD_ORDER) {
+    const handler = registry[slot];
+    if (handler !== undefined && handler !== null) handlers.push(handler);
+  }
+  return handlers;
+}
+
+export function initializeAwd2BlockRegistry(
+  out: EntityConstruction<Awd2BlockRegistry>,
+  handlers: Readonly<Partial<Awd2BlockRegistry>>,
+): void {
+  const dispatch = new Map<number, Readonly<Awd2BlockHandler>>();
+  for (const slot of AWD2_BLOCK_BUILD_ORDER) {
+    const handler = handlers[slot] ?? null;
+    out[slot] = handler;
+    // Expanding here rather than per import is what makes "the table is built once" a property of the
+    // registry rather than a convention every caller has to keep. A family resolves to its PARTS, so the
+    // walk dispatches to the primitive that owns a block type and reads that part's own `deferred` flag.
+    if (handler !== null) {
+      for (const part of handler.parts ?? [handler]) {
+        for (const blockType of part.blockTypes) dispatch.set(blockType, part);
+      }
+    }
+  }
+  out.dispatch = dispatch;
+}
+
+export function initializeAwd2ParseState(
+  out: EntityConstruction<Awd2ParseState>,
+  document: Scene3DDocument,
+  source: Uint8Array,
+  view: DataView,
+  diagnostics: ImportDiagnostic[] | undefined,
+): void {
+  Object.assign(out, {
     cameras: new Map(),
     containers: new Map(),
     diagnostics,
@@ -95,16 +137,5 @@ export function createAwd2ParseState(
     source,
     textures: new Map(),
     view,
-  };
-}
-
-// The registered handlers, in build order. Skipping the empty slots here is what keeps every later phase
-// a plain iteration.
-export function getAwd2BlockHandlers(registry: Readonly<Awd2BlockRegistry>): Readonly<Awd2BlockHandler>[] {
-  const handlers: Readonly<Awd2BlockHandler>[] = [];
-  for (const slot of AWD2_BLOCK_BUILD_ORDER) {
-    const handler = registry[slot];
-    if (handler !== undefined && handler !== null) handlers.push(handler);
-  }
-  return handlers;
+  });
 }

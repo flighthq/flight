@@ -43,6 +43,7 @@ import {
   ShadedMaterialKind,
 } from '@flighthq/types/contract';
 
+import { createAwd2BlockRegistry } from './awd2BlockDispatch';
 import { awd2SkeletonFamily, createAwd2DefaultBlockRegistry } from './awd2BlockRegistry';
 import { createScene3DFromAwd2, parseAwd2 } from './awd2Parse';
 import {
@@ -514,7 +515,8 @@ const firstAwdAnimation = (
   deflate: Readonly<HostDecompressDeflateCapability> | null = DECOMPRESS_DEFLATE,
   lzma: Readonly<HostDecompressLzmaCapability> | null = DECOMPRESS_LZMA,
 ): Scene3DDocumentAnimation | undefined =>
-  parseAwd2(bytes, { skeleton: awd2SkeletonFamily() }, deflate, lzma, diagnostics).animations[0];
+  parseAwd2(bytes, createAwd2BlockRegistry({ skeleton: awd2SkeletonFamily() }), deflate, lzma, diagnostics)
+    .animations[0];
 
 // Asserts EXACTLY ONE crumb of `kind` was recorded (guards the count) and returns it so a test can lock
 // the full contract — severity, true origin, and detail — for that emitted diagnostic.
@@ -860,7 +862,7 @@ describe('awd2 diagnostic crumb coverage', () => {
     const diagnostics: ImportDiagnostic[] = [];
     parseAwd2(
       concatBytes(buildAwdHeader(body.length), body),
-      { skeleton: awd2SkeletonFamily() },
+      createAwd2BlockRegistry({ skeleton: awd2SkeletonFamily() }),
       DECOMPRESS_DEFLATE,
       DECOMPRESS_LZMA,
       diagnostics,
@@ -926,7 +928,7 @@ describe('awd2 diagnostic crumb coverage', () => {
     const diagnostics: ImportDiagnostic[] = [];
     parseAwd2(
       concatBytes(buildAwdHeader(blockHeader.length), blockHeader),
-      { skeleton: awd2SkeletonFamily() },
+      createAwd2BlockRegistry({ skeleton: awd2SkeletonFamily() }),
       DECOMPRESS_DEFLATE,
       DECOMPRESS_LZMA,
       diagnostics,
@@ -3291,7 +3293,7 @@ describe('parseAwd2 skeleton animations', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const document = parseAwd2(
       awd3,
-      { skeleton: awd2SkeletonFamily() },
+      createAwd2BlockRegistry({ skeleton: awd2SkeletonFamily() }),
       DECOMPRESS_DEFLATE,
       DECOMPRESS_LZMA,
       diagnostics,
@@ -3573,7 +3575,7 @@ describe('parseAwd2 skeleton animations', () => {
     // ('idle' X=3, 'attack' X=9).
     const animations = parseAwd2(
       awd,
-      { skeleton: awd2SkeletonFamily() },
+      createAwd2BlockRegistry({ skeleton: awd2SkeletonFamily() }),
       DECOMPRESS_DEFLATE,
       DECOMPRESS_LZMA,
     ).animations;
