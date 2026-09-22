@@ -1275,6 +1275,10 @@
     },
     {
       "packageName": "scene3d-wgpu",
+      "registrar": "registerWgpuParticleEmitter3DPass"
+    },
+    {
+      "packageName": "scene3d-wgpu",
       "registrar": "registerWgpuPhongMaterial"
     },
     {

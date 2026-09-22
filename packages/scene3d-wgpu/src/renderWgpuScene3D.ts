@@ -9,6 +9,7 @@ import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import {
   declareWgpuRenderTargetColorSpace,
   getWgpuColorAdjustmentMaterialFeature,
+  getWgpuRenderStateRuntime,
 } from '@flighthq/render-wgpu/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { getNode3DRuntime, getNode3DWorldAlpha } from '@flighthq/scene3d/contract';
@@ -38,7 +39,6 @@ import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
 import { resolveWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
 import { INSTANCE_RECORD_FLOATS } from './wgpuMeshPipeline';
-import { drawWgpuScene3DParticleEmitter3Ds } from './wgpuParticleEmitter3D';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 
 export function isWgpuMeshGpuSkinned(state: WgpuRenderState, mesh: Readonly<Mesh>): boolean {
@@ -171,13 +171,10 @@ export function renderWgpuScene3D(
   proxy.instanceCount = 0;
   proxy.instanceMatrices = null;
 
-  // ParticleEmitter3D nodes carry no geometry, so prepareScene3DRender never lists them among the
-  // visible meshes above. Draw them here as a final transparent instanced pass so the common
-  // renderWgpuScene3D path renders a scene's emitters without the caller also invoking the emitter pass
-  // by hand — mirroring renderGlScene3D. drawWgpuScene3DParticleEmitter3Ds stays exported for manual ordering;
-  // it early-returns when the scene has no emitters, so the mesh-only path is unaffected. Runs inside
-  // this still-open render pass (it reads the pass off the render-state runtime).
-  drawWgpuScene3DParticleEmitter3Ds(state, scene, camera, lights);
+  const passes = getWgpuRenderStateRuntime(state).registries.passes;
+  if (passes != null) {
+    for (const pass of passes) pass(state, scene, camera, lights);
+  }
   runtime.activeBlendMode = null;
   runtime.activeBlendedRun = false;
   runtime.activeColorAdjustmentRun = false;

@@ -439,12 +439,6 @@ export function destroyWgpuParticleEmitter3DResources(state: WgpuRenderState): v
   dummyTextureCache.delete(state);
 }
 
-// Draws every ParticleEmitter3D under `scene` on the WebGPU backend — the WGSL mirror of scene-gl's
-// drawGlScene3DParticleEmitter3Ds. Camera3D-facing billboards, instanced, one pipeline per (blend mode,
-// textured) variant, depth-tested but not depth-writing. Must run inside an open scene render pass
-// (reuses the pass on the render-state runtime). renderWgpuScene3D calls this automatically as its final
-// transparent pass (mirroring renderGlScene3D), so the common path needs no manual call; it stays exported
-// for manual ordering and early-returns when the scene has no emitters.
 export function drawWgpuScene3DParticleEmitter3Ds(
   state: WgpuRenderState,
   scene: Readonly<Node3D>,
@@ -480,6 +474,14 @@ export function drawWgpuScene3DParticleEmitter3Ds(
   for (let i = 0; i < emitterScratch.length; i++) {
     drawParticleEmitter3DNode(state, resources, pass, emitterScratch[i]);
   }
+}
+
+export function registerWgpuParticleEmitter3DPass(state: WgpuRenderState): void {
+  const registries = getWgpuRenderStateRuntime(state).registries;
+  const passes = registries.passes;
+  if (passes != null && passes.includes(drawWgpuScene3DParticleEmitter3Ds)) return;
+  registries.passes =
+    passes != null ? [...passes, drawWgpuScene3DParticleEmitter3Ds] : [drawWgpuScene3DParticleEmitter3Ds];
 }
 
 // Per-instance vertex layout: the static corner quad (slot 0, per-vertex) + the per-particle instance
