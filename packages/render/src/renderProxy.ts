@@ -72,12 +72,12 @@ export function disposeScene2DRender(state: RenderState, root: NodeAny): void {
   walkRenderSubtree(state, root, disposeRenderProxy);
 }
 
-export function getOrCreateRenderProxy2D(state: RenderState, source: NodeAny): RenderProxy2D {
+export function getOrCreateRenderProxy2D(state: RenderState, source: Spatial2DNodeAny): RenderProxy2D {
   const runtime = getRenderStateRuntime(state);
   const renderProxyMap = runtime.renderProxyMap;
   let node = renderProxyMap.get(source) as RenderProxy2D | undefined;
   if (!node) {
-    node = createRenderProxy2D(state, source as Spatial2DNodeAny);
+    node = createRenderProxy2D(state, source);
     renderProxyMap.set(source, node);
     runtime.renderProxySources.add(source);
   }
@@ -153,7 +153,7 @@ export function isRenderProxyVisible(data: RenderProxy2D): boolean {
 // (Node + Node2D traits); the former per-graph prepares collapsed into this. Masks were retired
 // into clips, so there is no second tree pass; clips are realized by the backend clip hooks during the
 // draw walk, keyed off each node's `clip`.
-export function prepareScene2DRender(state: RenderState, source: NodeAny): boolean {
+export function prepareScene2DRender(state: RenderState, source: Spatial2DNodeAny): boolean {
   return walkNode(state, source, updateRenderProxy2D);
 }
 
@@ -228,7 +228,7 @@ function resolveRenderProxyRenderer(state: RenderState, kind: string) {
 // update* steps. Sprites and display objects share this single traversal and a single render-node
 // type — what differs is the traits they carry, not the path. Clip is not handled here: it is a
 // trait update step in the visitor (updateNodeClip), realized at draw time by the backend clip hooks.
-export function walkNode(state: RenderState, root: NodeAny, visit: RenderProxyVisitor): boolean {
+export function walkNode(state: RenderState, root: Spatial2DNodeAny, visit: RenderProxyVisitor): boolean {
   const runtime = getRenderStateRuntime(state);
   const rootGuardTable = runtime.registries.renderRootGuard;
   if (rootGuardTable) getRegistryTableEntry(rootGuardTable, rootGuardTable.registry)?.(state, root);
@@ -243,7 +243,12 @@ export function walkNode(state: RenderState, root: NodeAny, visit: RenderProxyVi
   let treeDirty = false;
 
   while (stackLength > 0) {
-    const current = tempStack[--stackLength] as NodeAny;
+    // tempStack is NodeAny[] because disposeScene2DRender shares it for a walk that needs no traits.
+    // Everything reached from a Spatial2DNodeAny root is itself spatial: addNodeChild<Traits> binds
+    // parent and child to ONE Traits parameter, so a hierarchy cannot mix families, and Node2DTraits
+    // carries HasBoundsRectangle and HasTransform2D. That is why the pop and the parent are asserted
+    // rather than probed. The four backend walks assert `as Node2D` at the same point.
+    const current = tempStack[--stackLength] as Spatial2DNodeAny;
     if (!(current as Node).enabled) continue;
 
     if (current !== root) {
@@ -252,7 +257,7 @@ export function walkNode(state: RenderState, root: NodeAny, visit: RenderProxyVi
         parentData = undefined;
         lastParent = undefined;
       } else if (parent !== lastParent) {
-        parentData = getOrCreateRenderProxy2D(state, parent);
+        parentData = getOrCreateRenderProxy2D(state, parent as Spatial2DNodeAny);
         lastParent = parent;
       }
     }
