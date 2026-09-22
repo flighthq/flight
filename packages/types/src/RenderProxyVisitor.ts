@@ -1,4 +1,4 @@
-import type { Renderable } from './Renderable';
+import type { NodeAny } from './Node';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderState } from './RenderState';
 
@@ -6,7 +6,7 @@ import type { RenderState } from './RenderState';
 // the parent's render node; composes the trait update* steps (appearance, transform, material, clip).
 export type RenderProxyVisitor = (
   state: RenderState,
-  source: Renderable,
+  source: NodeAny,
   data: RenderProxy2D,
   parentData: RenderProxy2D | undefined,
 ) => void;

@@ -5,7 +5,7 @@ import type {
   EntityConstruction,
   RenderProxy2D,
   RenderState,
-  Renderable,
+  NodeAny,
   RendererData,
   Scene2DRenderer,
   Shape,
@@ -22,7 +22,7 @@ interface DomShapeData extends RendererData {
   context: CanvasRenderingContext2D | null;
 }
 
-function createDomShapeData(_state: RenderState, _source: Renderable): DomShapeData {
+function createDomShapeData(_state: RenderState, _source: NodeAny): DomShapeData {
   const out = allocateEntity<DomShapeData>();
   initializeDomShapeData(out);
   return finishEntity(out);

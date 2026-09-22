@@ -1,10 +1,10 @@
 import { invalidateNodeAppearance } from '@flighthq/node/contract';
-import type { Node, Renderable, RenderProxy2D, RenderProxyAdapter, RenderState } from '@flighthq/types/contract';
+import type { Node, NodeAny, RenderProxy2D, RenderProxyAdapter, RenderState } from '@flighthq/types/contract';
 
 import { installRenderAdaptHook, updateRenderProxyRenderer } from './renderProxy';
 import { getRenderStateRuntime } from './renderState';
 
-export function applyRenderProxyAdapter(state: RenderState, source: Renderable, data: RenderProxy2D): void {
+export function applyRenderProxyAdapter(state: RenderState, source: NodeAny, data: RenderProxy2D): void {
   const renderAdapter = getRenderStateRuntime(state).renderProxyAdapterMap.get(source) ?? null;
   let traverseChildren = true;
   if (renderAdapter !== null) {
@@ -17,15 +17,11 @@ export function applyRenderProxyAdapter(state: RenderState, source: Renderable, 
   data.traverseChildren = traverseChildren;
 }
 
-export function getRenderProxyAdapter(state: RenderState, source: Renderable): RenderProxyAdapter | null {
+export function getRenderProxyAdapter(state: RenderState, source: NodeAny): RenderProxyAdapter | null {
   return getRenderStateRuntime(state).renderProxyAdapterMap.get(source) ?? null;
 }
 
-export function setRenderProxyAdapter(
-  state: RenderState,
-  source: Renderable,
-  adapter: RenderProxyAdapter | null,
-): void {
+export function setRenderProxyAdapter(state: RenderState, source: NodeAny, adapter: RenderProxyAdapter | null): void {
   if (getRenderStateRuntime(state).renderAdaptHook !== applyRenderProxyAdapter) {
     installRenderAdaptHook(state, applyRenderProxyAdapter);
   }

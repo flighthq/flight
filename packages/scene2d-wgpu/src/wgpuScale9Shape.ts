@@ -9,7 +9,7 @@ import type {
   ImageSurface,
   ImageSurfaceCreator,
   RenderState,
-  Renderable,
+  NodeAny,
   RendererData,
   Scale9Shape,
   Scene2DRenderer,
@@ -49,7 +49,7 @@ export function acquireWgpuScale9ShapeRasterSurface(
   return surface;
 }
 
-export function createWgpuScale9ShapeData(_state: RenderState, _source: Renderable): RendererData {
+export function createWgpuScale9ShapeData(_state: RenderState, _source: NodeAny): RendererData {
   return createWgpuRendererData({
     lastH: 0,
     lastScaleX: -1,

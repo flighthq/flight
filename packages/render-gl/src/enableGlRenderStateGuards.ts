@@ -1,7 +1,7 @@
 import { logOnce } from '@flighthq/log/contract';
 import { createSlotTable } from '@flighthq/registry/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
-import type { GlRenderState, Renderable, RenderState } from '@flighthq/types/contract';
+import type { GlRenderState, NodeAny, RenderState } from '@flighthq/types/contract';
 import { LogLevel, RegistryEntryState } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
@@ -52,7 +52,7 @@ function warnOnForeignGlBinding(state: GlRenderState, expectedProgram: WebGLProg
   );
 }
 
-function warnOnSecondRenderRoot(state: RenderState, root: Renderable): void {
+function warnOnSecondRenderRoot(state: RenderState, root: NodeAny): void {
   const glState = state as GlRenderState;
   const previous = _firstRoots.get(glState);
   if (previous === undefined) {
@@ -74,4 +74,4 @@ function warnOnSecondRenderRoot(state: RenderState, root: Renderable): void {
   );
 }
 
-const _firstRoots = new WeakMap<GlRenderState, Renderable>();
+const _firstRoots = new WeakMap<GlRenderState, NodeAny>();

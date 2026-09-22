@@ -18,7 +18,7 @@ import type {
   EntityConstruction,
   RenderProxy2D,
   RenderState,
-  Renderable,
+  NodeAny,
   RendererData,
   RichText,
   RichTextRuntime,
@@ -35,7 +35,7 @@ interface DomRichTextData extends RendererData {
   div: HTMLDivElement | null;
 }
 
-function createDomRichTextData(_state: RenderState, _source: Renderable): DomRichTextData {
+function createDomRichTextData(_state: RenderState, _source: NodeAny): DomRichTextData {
   const out = allocateEntity<DomRichTextData>();
   initializeDomRichTextData(out);
   return finishEntity(out);

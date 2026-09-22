@@ -3,7 +3,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import { setNodeColorAdjustments } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { Adjustment, Renderable, RenderProxy, RenderState } from '@flighthq/types/contract';
+import type { Adjustment, NodeAny, RenderProxy, RenderState } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { areColorAdjustmentGuardsEnabled, enableColorAdjustmentGuards } from './enableColorAdjustmentGuards';
@@ -38,7 +38,7 @@ describe('enableColorAdjustmentGuards', () => {
     const lut = allocateEntity<any>();
     lut.kind = 'acme.Lut';
     setNodeColorAdjustments(node, [lut as Adjustment]);
-    const data = createRenderProxy(state, node as unknown as Renderable);
+    const data = createRenderProxy(state, node as unknown as NodeAny);
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);
     try {
@@ -57,7 +57,7 @@ describe('enableColorAdjustmentGuards', () => {
     enableColorAdjustments(state);
     const node = createDisplayObject();
     setNodeColorAdjustments(node, [createTintAdjustment(0x7fffffff)]);
-    const data = createRenderProxy(state, node as unknown as Renderable);
+    const data = createRenderProxy(state, node as unknown as NodeAny);
     const sink = createMemoryLogSink(8);
     addLogSink(sink.sink);
     try {

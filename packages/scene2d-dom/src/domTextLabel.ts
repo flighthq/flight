@@ -8,7 +8,7 @@ import type {
   EntityConstruction,
   RenderProxy2D,
   RenderState,
-  Renderable,
+  NodeAny,
   RendererData,
   Scene2DRenderer,
   TextFormat,
@@ -23,7 +23,7 @@ interface DomTextData extends RendererData {
   div: HTMLDivElement | null;
 }
 
-function createDomTextData(_state: RenderState, _source: Renderable): DomTextData {
+function createDomTextData(_state: RenderState, _source: NodeAny): DomTextData {
   const out = allocateEntity<DomTextData>();
   initializeDomTextData(out);
   return finishEntity(out);

@@ -19,7 +19,7 @@ import type {
   Scene2DRenderer,
   ImageSurface,
   ImageSurfaceCreator,
-  Renderable,
+  NodeAny,
   RendererData,
   RenderProxy2D,
   RenderState,
@@ -40,7 +40,7 @@ interface WgpuRichTextData extends RendererData {
   surface: ImageSurface | null;
 }
 
-export function createWgpuRichTextData(_state: RenderState, _source: Renderable): RendererData {
+export function createWgpuRichTextData(_state: RenderState, _source: NodeAny): RendererData {
   return createWgpuRendererData({ surface: null });
 }
 

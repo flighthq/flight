@@ -7,7 +7,7 @@ import type {
   CanvasRenderState,
   EntityConstruction,
   RenderProxy2D,
-  Renderable,
+  NodeAny,
   RendererData,
   Scene2DRenderer,
   TextFormat,
@@ -22,7 +22,7 @@ interface CanvasTextLabelData extends RendererData {
   lastContentId: number;
 }
 
-function createCanvasTextLabelData(_state: CanvasRenderState, _source: Renderable): RendererData {
+function createCanvasTextLabelData(_state: CanvasRenderState, _source: NodeAny): RendererData {
   const out = allocateEntity<CanvasTextLabelData>();
   initializeCanvasTextLabelData(out);
   return finishEntity(out);

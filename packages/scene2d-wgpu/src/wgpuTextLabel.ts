@@ -11,7 +11,7 @@ import type {
   Scene2DRenderer,
   ImageSurface,
   ImageSurfaceCreator,
-  Renderable,
+  NodeAny,
   RendererData,
   RenderProxy2D,
   RenderState,
@@ -45,7 +45,7 @@ interface WgpuTextLabelData extends RendererData {
   logH: number;
 }
 
-function createWgpuTextLabelData(_state: RenderState, _source: Renderable): RendererData {
+function createWgpuTextLabelData(_state: RenderState, _source: NodeAny): RendererData {
   return createWgpuRendererData({
     surface: null,
     lastContentId: -1,

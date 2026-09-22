@@ -7,7 +7,7 @@ import type {
   Node2DTraits,
   PartialNode,
   Rectangle,
-  Renderable,
+  NodeAny,
   RendererData,
   RenderState,
   Sprite,
@@ -49,7 +49,7 @@ export function createSpriteData(data?: Readonly<Partial<SpriteData>>): SpriteDa
   return finishEntity(out);
 }
 
-export function createSpriteRendererData(_state: RenderState, source: Renderable): SpriteIdentityRendererData {
+export function createSpriteRendererData(_state: RenderState, source: NodeAny): SpriteIdentityRendererData {
   const out = allocateEntity<SpriteIdentityRendererData>();
   initializeSpriteRendererData(out, _state, source);
   return finishEntity(out);
@@ -75,7 +75,7 @@ export function initializeSpriteData(out: EntityConstruction<SpriteData>, data?:
 export function initializeSpriteRendererData(
   out: EntityConstruction<SpriteIdentityRendererData>,
   _state: RenderState,
-  source: Renderable,
+  source: NodeAny,
 ): void {
   const texture = (source as Sprite).data.texture;
   out.textureIdentity = texture;
@@ -86,7 +86,7 @@ export function initializeSpriteRendererData(
 // backend opts into this through its registered renderer; the generic walk never knows SpriteKind.
 export function isSpriteRendererDirty(
   _state: RenderState,
-  source: Renderable,
+  source: NodeAny,
   rendererData: RendererData | null,
 ): boolean {
   if (rendererData === null) return false;

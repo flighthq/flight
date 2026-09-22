@@ -24,7 +24,7 @@ import type {
   ImageSurface,
   ImageSurfaceCreator,
   RenderProxy2D,
-  Renderable,
+  NodeAny,
   RendererData,
   RichText,
   RichTextRuntime,
@@ -41,7 +41,7 @@ interface GlRichTextData extends RendererData {
   surface: ImageSurface | null;
 }
 
-export function createGlRichTextData(_state: GlRenderState, _source: Renderable): RendererData {
+export function createGlRichTextData(_state: GlRenderState, _source: NodeAny): RendererData {
   const out = allocateEntity<GlRichTextData>();
   initializeGlRichTextData(out, _state, _source);
   return finishEntity(out);
@@ -135,7 +135,7 @@ export function drawGlRichTextWithOverlay(
 export function initializeGlRichTextData(
   out: EntityConstruction<GlRichTextData>,
   _state: GlRenderState,
-  _source: Renderable,
+  _source: NodeAny,
 ): void {
   out.surface = null;
 }

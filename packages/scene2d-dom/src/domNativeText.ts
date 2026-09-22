@@ -6,7 +6,7 @@ import type {
   NativeText,
   NativeTextRuntime,
   NativeTextStyle,
-  Renderable,
+  NodeAny,
   RendererData,
   RenderProxy2D,
   RenderState,
@@ -21,7 +21,7 @@ import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domSt
 
 // createData returns null: the backing element is held on the runtime (a renderer-owned slot), not on
 // per-node RendererData, because the measured size must be visible to scene2d's DOM-free bounds.
-function createDomNativeTextData(_state: RenderState, _source: Renderable): RendererData | null {
+function createDomNativeTextData(_state: RenderState, _source: NodeAny): RendererData | null {
   return null;
 }
 
