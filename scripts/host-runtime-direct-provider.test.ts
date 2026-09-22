@@ -7,6 +7,11 @@ import { describe, expect, it } from 'vitest';
 const ROOT = process.cwd();
 const PACKAGES = resolve(ROOT, 'packages');
 const HOST_TYPE_NAME = /\bHost\b|\bHost\w*(?:Capabilities|Capability)\b/u;
+const DATA_SELECTED_CODEC_GROUPS = new Set([
+  'HostAudioDecodeCapabilities',
+  'HostImageDecodeCapabilities',
+  'HostImageEncodeCapabilities',
+]);
 
 interface Violation {
   declaration: string;
@@ -26,6 +31,7 @@ describe('runtime APIs use direct Host providers', () => {
   it('recognizes overbroad fixtures without rejecting direct providers', () => {
     const source = `
       interface Host {}
+      interface HostImageDecodeCapabilities {}
       interface HostTrayCapabilities {}
       interface HostTrayImageCapability {}
       export function whole(host: Host): void {}
@@ -33,6 +39,7 @@ describe('runtime APIs use direct Host providers', () => {
       export function structural<T extends { readonly tray: { readonly image: HostTrayImageCapability } }>(host: T): void {}
       export function structuralMethod(host: { readonly 'tray'?: { readonly create(): void } }): void {}
       export function direct(hostTrayImage: Readonly<HostTrayImageCapability>): void {}
+      export function dataSelectedCodec(imageDecode: Readonly<HostImageDecodeCapabilities>): void {}
       export const arrow = (host: Host): void => {};
       export const directArrow = (hostTrayImage: Readonly<HostTrayImageCapability>): void => {};
     `;
@@ -147,6 +154,7 @@ function collectSignatureViolations(
 }
 
 function isOverbroadType(type: ts.TypeNode, sourceFile: ts.SourceFile, hostGroups: ReadonlySet<string>): boolean {
+  if (isDataSelectedCodecGroup(type)) return false;
   const text = type.getText(sourceFile);
   if (/\bHost\b/u.test(text) || /\bHost\w*Capabilities\b/u.test(text)) return true;
 
@@ -164,6 +172,23 @@ function isOverbroadType(type: ts.TypeNode, sourceFile: ts.SourceFile, hostGroup
   };
   visit(type);
   return structuralHostGroup;
+}
+
+function isDataSelectedCodecGroup(type: ts.TypeNode): boolean {
+  let candidate = type;
+  if (
+    ts.isTypeReferenceNode(candidate) &&
+    ts.isIdentifier(candidate.typeName) &&
+    candidate.typeName.text === 'Readonly' &&
+    candidate.typeArguments?.length === 1
+  ) {
+    candidate = candidate.typeArguments[0];
+  }
+  return (
+    ts.isTypeReferenceNode(candidate) &&
+    ts.isIdentifier(candidate.typeName) &&
+    DATA_SELECTED_CODEC_GROUPS.has(candidate.typeName.text)
+  );
 }
 
 function containsCapabilityMember(type: ts.TypeNode, sourceFile: ts.SourceFile): boolean {
