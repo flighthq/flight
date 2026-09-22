@@ -30,7 +30,7 @@ import {
   registerNodeRenderer,
   registerWgpuShapeRasterizer,
   renderWgpuScene2D,
-  wgpuScene3DRenderRegistries,
+  wgpuScene3DRenderPreset,
   ShapeKind,
   TextLabelKind,
   createWgpuSurface,
@@ -53,7 +53,8 @@ document.body.style.margin = '0';
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRenderRegistries, {
+export const state = createWgpuRenderState(acquisition.device, {
+  ...wgpuScene3DRenderPreset,
   format: acquisition.format,
   pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',

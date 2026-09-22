@@ -21,7 +21,7 @@ import {
   registerCanvasSurfaceCreator,
   registerNodeRenderer,
   renderCanvasScene2D,
-  canvasScene2DRenderRegistries,
+  canvasScene2DRenderPreset,
   ShapeKind,
 } from '@flighthq/sdk';
 
@@ -46,7 +46,7 @@ const screen = createCanvasScreenRenderTarget(
   }),
 );
 const state = createCanvasRenderState(
-  canvasScene2DRenderRegistries,
+  canvasScene2DRenderPreset,
   createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
 );
 registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);

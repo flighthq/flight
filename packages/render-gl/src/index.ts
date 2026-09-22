@@ -12,11 +12,10 @@ export {
 export { enableGlBlendModeSupport } from './glDraw';
 export { createExternalGlTexture, disposeExternalGlTexture } from './glExternalTexture';
 export { clearGlRenderTarget, clearGlRenderTargetAttachments } from './glFullscreenPass';
-export { allocateEmptyGlRenderRegistries } from './glPipeline';
 export * from './glPresentRenderTarget';
 export * from './glQuadMaterialRegistry';
 export { beginGlRenderPass, endGlRenderPass, getGlCurrentRenderPass } from './glRenderPass';
-export { createGlRenderState, destroyGlRenderState } from './glRenderState';
+export { buildGlRenderRegistries, createGlRenderState, destroyGlRenderState } from './glRenderState';
 export * from './glRenderStateBracket';
 export {
   createGlScreenRenderTarget,

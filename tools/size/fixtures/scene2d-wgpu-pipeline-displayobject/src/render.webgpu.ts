@@ -13,7 +13,6 @@ import {
   createWgpuScreenRenderTarget,
   endWgpuRenderPass,
 } from '@flighthq/render-wgpu';
-import { allocateEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { createWgpuSurface } from '@flighthq/surface';
@@ -25,14 +24,17 @@ if (wgpuSurface === null) throw new Error('WebGPU is unavailable in this environ
 document.body.style.margin = '0';
 appendWebSurface(wgpuSurface, document.body);
 
-const registries = allocateEmptyWgpuRenderRegistries();
-const registry = { ...registries };
+const registry = {};
 
 const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, registry, { format: acquisition.format, pixelRatio: 1 });
+export const state = createWgpuRenderState(acquisition.device, {
+  ...registry,
+  format: acquisition.format,
+  pixelRatio: 1,
+});
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x10 / 0xff, 0x15 / 0xff, 0x22 / 0xff, 1], depth: 1.0 } as const;
 

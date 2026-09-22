@@ -30,9 +30,8 @@ import type {
   RenderProxy2D,
   Scene2DRenderer,
   WgpuDeviceState,
-  WgpuRenderOptions,
-  WgpuRenderRegistries,
   WgpuRenderState,
+  WgpuRenderStateOptions,
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
@@ -50,10 +49,9 @@ import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
 export function createWgpuCacheState(
   ownerState: WgpuRenderState,
   deviceState: Readonly<WgpuDeviceState>,
-  registry: Readonly<WgpuRenderRegistries>,
-  options: Readonly<WgpuRenderOptions> = {},
+  options: Readonly<WgpuRenderStateOptions> = {},
 ): WgpuRenderState {
-  const cacheState = createWgpuOffscreenRenderState(deviceState, registry, options);
+  const cacheState = createWgpuOffscreenRenderState(deviceState, options);
   // The explicit owner is retained only for late blend policy. Frame/resource ownership remains local,
   // and owner teardown closes this state exactly once.
   cacheState.applyBlendMode = null;

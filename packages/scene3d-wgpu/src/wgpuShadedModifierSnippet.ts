@@ -5,9 +5,9 @@ import type { ModifierKind, WgpuModifierSnippet, WgpuRenderState } from '@flight
 // State-scoped, last-write-wins WGSL compiler registry. Unknown kinds are an expected miss and
 // contribute nothing, matching scene-gl's open modifier compiler contract.
 export function registerWgpuModifierSnippet(state: WgpuRenderState, snippet: Readonly<WgpuModifierSnippet>): void {
-  const registries = getWgpuRenderStateRuntime(state).registries;
-  registries.modifierSnippets = withKindMapEntry(registries.modifierSnippets, snippet.kind, snippet);
-  registries.modifierSnippetRevision++;
+  const runtime = getWgpuRenderStateRuntime(state);
+  runtime.registries.modifierSnippets = withKindMapEntry(runtime.registries.modifierSnippets, snippet.kind, snippet);
+  runtime.modifierSnippetRevision++;
 }
 
 export function resolveWgpuModifierSnippet(state: WgpuRenderState, kind: ModifierKind): WgpuModifierSnippet | null {

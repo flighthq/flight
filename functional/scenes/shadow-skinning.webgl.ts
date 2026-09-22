@@ -10,7 +10,7 @@ import { registerGlMeshSkinning, renderGlScene3D, renderGlScene3DShadowMap } fro
 import type { Bitmap, GlEffectState } from '@flighthq/sdk';
 import {
   createGlSurface,
-  glScene3DRenderRegistries,
+  glScene3DRenderPreset,
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   addNodeChild,
   beginGlEffectPass,
@@ -72,9 +72,7 @@ if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
 setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, 800, 600);
 appendWebSurface(glSurface, document.body);
 
-export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
-  pixelRatio,
-});
+export const state = createGlRenderState(glSurface.context, { ...glScene3DRenderPreset, pixelRatio });
 // GPU skinning is opt-in: without this the mesh families compile no HAS_SKIN variant and this scene
 // would draw its skinned mesh at the bind pose — including its shadow caster, which gates on the same capability.
 registerGlMeshSkinning(state);

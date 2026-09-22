@@ -9,7 +9,6 @@ import { addNodeChild } from '@flighthq/node';
 import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene3DRender } from '@flighthq/render';
 import {
-  allocateEmptyGlRenderRegistries,
   createGlRenderState,
   beginGlRenderPass,
   endGlRenderPass,
@@ -29,12 +28,10 @@ if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
 appendWebSurface(glSurface, document.body);
 document.body.style.margin = '0';
 
-const registries = allocateEmptyGlRenderRegistries();
 const registry = {
-  ...registries,
-  materialRenderers: withKindMapEntry(registries.materialRenderers, UnlitMaterialKind, glUnlitMeshMaterialRenderer),
+  materialRenderers: withKindMapEntry(new Map(), UnlitMaterialKind, glUnlitMeshMaterialRenderer),
 };
-const state = createGlRenderState(glSurface.context, registry, { pixelRatio: 1 });
+const state = createGlRenderState(glSurface.context, { ...registry, pixelRatio: 1 });
 
 const geometry = createMeshGeometry({
   layout: CANONICAL_MESH_GEOMETRY_LAYOUT,

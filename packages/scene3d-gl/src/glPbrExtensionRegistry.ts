@@ -92,9 +92,9 @@ export function registerGlPbrExtension(
   kind: Kind,
   registration: GlPbrExtensionRegistration,
 ): void {
-  const registries = getGlRenderStateRuntime(state).registries;
-  registries.pbrExtensions = withKindMapEntry(registries.pbrExtensions, kind, registration);
-  registries.pbrExtensionRevision++;
+  const runtime = getGlRenderStateRuntime(state);
+  runtime.registries.pbrExtensions = withKindMapEntry(runtime.registries.pbrExtensions, kind, registration);
+  runtime.pbrExtensionRevision++;
 }
 
 export function resolveGlPbrExtensionContributions(

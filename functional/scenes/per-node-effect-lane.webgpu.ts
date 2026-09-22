@@ -69,11 +69,10 @@ const target = await createFunctionalTarget({
 if (target.kind !== 'webgpu') throw new Error('per-node-effect-lane requires WebGPU');
 const { render, state, width } = target;
 
-const offscreenState = createWgpuOffscreenRenderState(
-  state.deviceState,
-  { ...getWgpuRenderStateRuntime(state).registries },
-  { format: state.format },
-);
+const offscreenState = createWgpuOffscreenRenderState(state.deviceState, {
+  ...getWgpuRenderStateRuntime(state).registries,
+  format: state.format,
+});
 const pool = createWgpuRenderTexturePool();
 registerWgpuBlurEffect(offscreenState);
 registerBlurEffectPaddingResolver(offscreenState);

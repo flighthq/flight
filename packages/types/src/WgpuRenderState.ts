@@ -68,9 +68,6 @@ export interface WgpuRenderRegistries extends RenderRegistries {
   gpuSkinning: WgpuSkinningAdapter | null;
   materialRenderers: ReadonlyMap<Kind, WgpuMeshMaterialRenderer | WgpuQuadMaterialRenderer>;
   modifierSnippets: ReadonlyMap<Kind, WgpuModifierSnippet>;
-  // Shader cache identity advances with every snippet-table replacement, including same-kind
-  // replacements whose define signature is unchanged but whose emitted source differs.
-  modifierSnippetRevision: number;
   effects: ReadonlyMap<Kind, WgpuEffectRegistration>;
   passes: readonly WgpuScene3DPass[] | null;
   shapeRasterizer: ShapeRasterizer | null;
@@ -133,6 +130,7 @@ export interface WgpuBindGroupLayouts extends Entity {
 export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   context: WgpuDeviceRuntime;
   registries: WgpuRenderRegistries;
+  modifierSnippetRevision: number;
   // Derived pipelines resolve optional blend-mode wiring through this parent at the draw seam. The
   // entity's applyBlendMode member stays a plain field, so the delegation is explicit and portable.
   applyBlendModeParent: WgpuRenderState | null;

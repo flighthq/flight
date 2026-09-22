@@ -28,8 +28,9 @@ function makeLosableDevice(): { device: GPUDevice; resolveLost: (reason: GPUDevi
 }
 
 function makeStateOn(device: GPUDevice): WgpuRenderState {
-  const state = { applyBlendMode: null } as unknown as WgpuRenderState;
-  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(createWgpuDeviceState(device));
+  const deviceState = createWgpuDeviceState(device);
+  const state = { applyBlendMode: null, deviceState } as unknown as WgpuRenderState;
+  state[EntityRuntimeKey] = createWgpuRenderStateRuntime(deviceState);
   return state;
 }
 

@@ -1,7 +1,7 @@
 import { tessellateStrokePath } from '@flighthq/path/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import {
-  allocateEmptyGlRenderRegistries,
+  buildGlRenderRegistries,
   standardGlBlendRealizations,
   standardGlTextureResolvers,
 } from '@flighthq/render-gl/contract';
@@ -38,8 +38,7 @@ import { glTextLabelRenderer } from './glTextLabel';
 import { glTilemapRenderer } from './glTilemap';
 
 function buildScene2DGlRenderers(): ReadonlyMap<Kind, NodeRenderer> {
-  const registries = allocateEmptyGlRenderRegistries();
-  let table = registries.nodeRenderers;
+  let table: ReadonlyMap<Kind, NodeRenderer> = new Map();
   table = withKindMapEntry(table, BitmapTextKind, glBitmapTextRenderer);
   table = withKindMapEntry(table, DisplayObjectKind, glScene2DRenderer);
   table = withKindMapEntry(table, MorphShapeKind, glMorphShapeRenderer);
@@ -56,15 +55,11 @@ function buildScene2DGlRenderers(): ReadonlyMap<Kind, NodeRenderer> {
   return table;
 }
 
-export const glScene2DRenderRegistries: Readonly<GlRenderRegistries> = {
-  ...allocateEmptyGlRenderRegistries(),
+export const glScene2DRenderPreset: Readonly<GlRenderRegistries> = Object.freeze({
+  ...buildGlRenderRegistries({}),
   blendRealizations: standardGlBlendRealizations,
-  materialRenderers: withKindMapEntry(
-    allocateEmptyGlRenderRegistries().materialRenderers,
-    StandardMaterialKind,
-    standardGlQuadMaterialRenderer,
-  ),
+  materialRenderers: withKindMapEntry(new Map(), StandardMaterialKind, standardGlQuadMaterialRenderer),
   nodeRenderers: buildScene2DGlRenderers(),
   strokeTessellator: tessellateStrokePath,
   textureResolvers: standardGlTextureResolvers,
-};
+});

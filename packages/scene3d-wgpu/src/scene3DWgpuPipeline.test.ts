@@ -1,6 +1,6 @@
 import { getKindMapKeys } from '@flighthq/registry/contract';
 import {} from '@flighthq/render-wgpu/contract';
-import { wgpuScene2DRenderRegistries } from '@flighthq/scene2d-wgpu/contract';
+import { wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu/contract';
 import {
   AnimatedNormalModifierKind,
   BitmapTextKind,
@@ -46,7 +46,7 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { wgpuScene3DRenderRegistries } from './scene3DWgpuPipeline';
+import { wgpuScene3DRenderPreset } from './scene3DWgpuPipeline';
 import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 import { wgpuSkinningAdapter } from './wgpuSkinPalette';
@@ -57,9 +57,9 @@ function registryKeys(table: ReadonlyMap<string, unknown>): string[] {
   return keys;
 }
 
-describe('wgpuScene3DRenderRegistries', () => {
-  const registries = wgpuScene3DRenderRegistries;
-  const scene2dRegistries = wgpuScene2DRenderRegistries;
+describe('wgpuScene3DRenderPreset', () => {
+  const registries = wgpuScene3DRenderPreset;
+  const scene2dRegistries = wgpuScene2DRenderPreset;
 
   it('retains the complete standard Scene2D registry surface', () => {
     expect(registries.nodeRenderers).toBe(scene2dRegistries.nodeRenderers);
@@ -125,8 +125,12 @@ describe('wgpuScene3DRenderRegistries', () => {
   it('carries GPU skinning through the pipeline and into state runtime', () => {
     expect(registries.gpuSkinning).toEqual(wgpuSkinningAdapter);
 
-    const { state } = makeWgpuScene3DState(wgpuScene3DRenderRegistries);
+    const { state } = makeWgpuScene3DState(wgpuScene3DRenderPreset);
     expect(getWgpuSkinningAdapter(state)).toBe(wgpuSkinningAdapter);
+  });
+
+  it('is frozen so late-register calls cannot mutate a shared preset', () => {
+    expect(Object.isFrozen(wgpuScene3DRenderPreset)).toBe(true);
   });
 
   it('does not claim GL-only Extended PBR support', () => {

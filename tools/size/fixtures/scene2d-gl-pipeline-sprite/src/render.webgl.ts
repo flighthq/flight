@@ -10,7 +10,6 @@ import { addNodeChild } from '@flighthq/node';
 import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import {
-  allocateEmptyGlRenderRegistries,
   createGlRenderState,
   registerGlImageTextureResolver,
   beginGlRenderPass,
@@ -33,11 +32,11 @@ appendWebSurface(glSurface, document.body);
 document.body.style.margin = '0';
 
 const registry = {
-  ...allocateEmptyGlRenderRegistries(),
-  nodeRenderers: withKindMapEntry(allocateEmptyGlRenderRegistries().nodeRenderers, SpriteKind, glSpriteRenderer),
+  materialRenderers: new Map(),
+  nodeRenderers: withKindMapEntry(new Map(), SpriteKind, glSpriteRenderer),
 };
 
-const state = createGlRenderState(glSurface.context, registry, { pixelRatio: 1 });
+const state = createGlRenderState(glSurface.context, { ...registry, pixelRatio: 1 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 
 const registries = registry;

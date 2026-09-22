@@ -19,7 +19,7 @@ import {
 import type { Bitmap, Node2D, GlEffectState, GlTextureRenderTarget } from '@flighthq/sdk';
 import {
   createGlSurface,
-  glScene3DRenderRegistries,
+  glScene3DRenderPreset,
   ParticleEmitter2DKind,
   addNodeChild,
   addTextureAtlasRegion,
@@ -76,9 +76,7 @@ setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, 800, 600);
 appendWebSurface(glSurface, document.body);
 const canvas = getWebSurfaceCanvas(glSurface)!;
 
-export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
-  pixelRatio,
-});
+export const state = createGlRenderState(glSurface.context, { ...glScene3DRenderPreset, pixelRatio });
 registerNodeRenderer(state, ParticleEmitter2DKind, glParticleEmitter2DRenderer);
 registerGlMotionBlurEffect(state);
 registerGlVelocityWriter(state, ParticleEmitter2DKind, glParticleEmitter2DVelocityWriter);

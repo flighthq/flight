@@ -11,7 +11,7 @@ import {
   createGlScreenRenderTarget,
 } from '@flighthq/render-gl';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
-import { registerGlStandardMaterial, renderGlScene2D, glScene2DRenderRegistries } from '@flighthq/scene2d-gl';
+import { registerGlStandardMaterial, renderGlScene2D, glScene2DRenderPreset } from '@flighthq/scene2d-gl';
 import { createGlSurface } from '@flighthq/surface';
 
 const appWindow = createAppWindow();
@@ -23,10 +23,10 @@ if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
 appendWebSurface(glSurface, document.body);
 document.body.style.margin = '0';
 
-const state = createGlRenderState(glSurface.context, glScene2DRenderRegistries, { pixelRatio: 1 });
+const state = createGlRenderState(glSurface.context, { ...glScene2DRenderPreset, pixelRatio: 1 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 
-const registries = glScene2DRenderRegistries;
+const registries = glScene2DRenderPreset;
 for (const [kind, renderer] of registries.nodeRenderers) {
   registerNodeRenderer(state, kind, renderer);
 }

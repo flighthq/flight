@@ -1,5 +1,5 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
-import { allocateEmptyWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
+import { buildWgpuRenderRegistries } from '@flighthq/render-wgpu/contract';
 import type { Kind, NodeRenderer, WgpuRenderRegistries } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
@@ -33,7 +33,7 @@ import { wgpuTextLabelRenderer } from './wgpuTextLabel';
 import { wgpuTilemapRenderer } from './wgpuTilemap';
 
 function buildScene2dWgpuRenderers(): ReadonlyMap<Kind, NodeRenderer> {
-  let table = allocateEmptyWgpuRenderRegistries().nodeRenderers;
+  let table: ReadonlyMap<Kind, NodeRenderer> = new Map();
   table = withKindMapEntry(table, BitmapTextKind, wgpuBitmapTextRenderer);
   table = withKindMapEntry(table, DisplayObjectKind, wgpuScene2DRenderer);
   table = withKindMapEntry(table, MorphShapeKind, wgpuMorphShapeRenderer);
@@ -50,14 +50,8 @@ function buildScene2dWgpuRenderers(): ReadonlyMap<Kind, NodeRenderer> {
   return table;
 }
 
-const _registries = allocateEmptyWgpuRenderRegistries();
-
-export const wgpuScene2DRenderRegistries: Readonly<WgpuRenderRegistries> = {
-  ..._registries,
-  materialRenderers: withKindMapEntry(
-    _registries.materialRenderers,
-    StandardMaterialKind,
-    standardWgpuQuadMaterialRenderer,
-  ),
+export const wgpuScene2DRenderPreset: Readonly<WgpuRenderRegistries> = Object.freeze({
+  ...buildWgpuRenderRegistries({}),
+  materialRenderers: withKindMapEntry(new Map(), StandardMaterialKind, standardWgpuQuadMaterialRenderer),
   nodeRenderers: buildScene2dWgpuRenderers(),
-};
+});

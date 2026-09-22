@@ -10,11 +10,7 @@ import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
-import {
-  createGlRenderState,
-  allocateEmptyGlRenderRegistries,
-  getGlRenderStateRuntime,
-} from '@flighthq/render-gl/contract';
+import { createGlRenderState, buildGlRenderRegistries, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import {
   createInstancedMesh,
   createMesh,

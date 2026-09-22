@@ -70,7 +70,7 @@ export function ensureGlPbrProgram(
     hasSkin: getGlScene3DRuntime(state).activeSkinnedRun,
   };
   const extensionKey = contributions.map((contribution) => contribution.key).join(',');
-  const registryRevision = getGlRenderStateRuntime(state).registries.pbrExtensionRevision;
+  const registryRevision = getGlRenderStateRuntime(state).pbrExtensionRevision;
   return ensureGlScene3DProgram(
     state,
     `pbr:${buildGlPbrDefineKey(fullKey)}:${registryRevision}:${extensionKey}`,

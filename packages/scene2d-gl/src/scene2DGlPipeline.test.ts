@@ -1,6 +1,6 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import {
-  allocateEmptyGlRenderRegistries,
+  buildGlRenderRegistries,
   standardGlBlendRealizations,
   standardGlTextureResolvers,
 } from '@flighthq/render-gl/contract';
@@ -26,11 +26,11 @@ import {
 } from '@flighthq/types/contract';
 
 import { glSpriteRenderer } from './glSprite';
-import { glScene2DRenderRegistries } from './scene2DGlPipeline';
+import { glScene2DRenderPreset } from './scene2DGlPipeline';
 
-describe('glScene2DRenderRegistries', () => {
+describe('glScene2DRenderPreset', () => {
   it('carries every standard 2D GL renderer bound', () => {
-    const registries = glScene2DRenderRegistries;
+    const registries = glScene2DRenderPreset;
     const expectedKinds = [
       BitmapTextKind,
       DisplayObjectKind,
@@ -54,11 +54,11 @@ describe('glScene2DRenderRegistries', () => {
   });
 
   it('is a distinct object on every access (const identity, not a getter)', () => {
-    expect(glScene2DRenderRegistries).toBe(glScene2DRenderRegistries);
+    expect(glScene2DRenderPreset).toBe(glScene2DRenderPreset);
   });
 
   it('carries the standard texture resolvers', () => {
-    const registries = glScene2DRenderRegistries;
+    const registries = glScene2DRenderPreset;
     expect([...registries.textureResolvers.keys()].sort()).toEqual([...standardGlTextureResolvers.keys()].sort());
     expect(registries.textureResolvers.has(BitmapTextureSourceKind)).toBe(true);
     expect(registries.textureResolvers.has(ImageTextureSourceKind)).toBe(true);
@@ -66,7 +66,7 @@ describe('glScene2DRenderRegistries', () => {
   });
 
   it('carries the standard fixed-function blend realizations', () => {
-    const registries = glScene2DRenderRegistries;
+    const registries = glScene2DRenderPreset;
     expect([...registries.blendRealizations.keys()].sort()).toEqual([...standardGlBlendRealizations.keys()].sort());
     expect(registries.blendRealizations.has(BlendMode.Normal)).toBe(true);
     expect(registries.blendRealizations.has(BlendMode.Add)).toBe(true);
@@ -75,13 +75,13 @@ describe('glScene2DRenderRegistries', () => {
   });
 
   it('carries the stroke tessellator in the slot table', () => {
-    const registries = glScene2DRenderRegistries;
+    const registries = glScene2DRenderPreset;
     expect(registries.strokeTessellator).not.toBeNull();
     expect(registries.strokeTessellator).not.toBeNull();
   });
 
   it('carries the standard material renderer for StandardMaterialKind', () => {
-    const registries = glScene2DRenderRegistries;
+    const registries = glScene2DRenderPreset;
     expect(registries.materialRenderers.size).toBe(1);
     const entry = registries.materialRenderers.get(StandardMaterialKind);
     expect(entry).toBeDefined();
@@ -89,17 +89,21 @@ describe('glScene2DRenderRegistries', () => {
   });
 
   it('starts with empty GL-specific tables that no family populates', () => {
-    const registries = glScene2DRenderRegistries;
+    const registries = glScene2DRenderPreset;
     expect(registries.customEffectShaders.size).toBe(0);
     expect(registries.customMaterialShaders.size).toBe(0);
+  });
+
+  it('is frozen so late-register calls cannot mutate a shared preset', () => {
+    expect(Object.isFrozen(glScene2DRenderPreset)).toBe(true);
   });
 });
 
 describe('manual single-capability pipeline', () => {
   it('carries only the explicitly registered Sprite renderer', () => {
     const registry = {
-      ...allocateEmptyGlRenderRegistries(),
-      nodeRenderers: withKindMapEntry(allocateEmptyGlRenderRegistries().nodeRenderers, SpriteKind, glSpriteRenderer),
+      ...buildGlRenderRegistries({}),
+      nodeRenderers: withKindMapEntry(buildGlRenderRegistries({}).nodeRenderers, SpriteKind, glSpriteRenderer),
     };
     const registries = registry;
     expect(registries.nodeRenderers.size).toBe(1);

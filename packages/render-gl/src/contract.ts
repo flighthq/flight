@@ -8,7 +8,6 @@ export * from './glDraw';
 export * from './glExternalTexture';
 export * from './glFullscreenPass';
 export * from './glLinearToSrgbPass';
-export * from './glPipeline';
 export * from './glPresentRenderTarget';
 export * from './glProgram';
 export * from './glQuadMaterialRegistry';

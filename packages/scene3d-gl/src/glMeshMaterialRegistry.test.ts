@@ -1,5 +1,5 @@
 import {
-  allocateEmptyGlRenderRegistries,
+  buildGlRenderRegistries,
   getGlRenderStateRuntime,
   registerGlQuadMaterialRenderer,
   resolveGlQuadMaterialRenderer,

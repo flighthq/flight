@@ -1,11 +1,10 @@
 import { createCustomShaderEffect } from '@flighthq/effects/contract';
 import {
-  allocateEmptyGlRenderRegistries,
   createGlContextState,
   createGlRenderStateRuntime,
   getGlRenderStateRuntime,
 } from '@flighthq/render-gl/contract';
-import type { GlRenderRegistries, GlRenderState } from '@flighthq/types/contract';
+import type { GlRenderState, GlRenderStateOptions } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -18,16 +17,13 @@ import {
   setGlCustomShaderSourceGuard,
 } from './glCustomShaderEffect';
 
-const testPipeline = allocateEmptyGlRenderRegistries();
-
-function makeState(pipeline: Readonly<GlRenderRegistries> = testPipeline): GlRenderState {
+function makeState(options: Readonly<GlRenderStateOptions> = {}): GlRenderState {
   const gl = document.createElement('canvas').getContext('webgl2')!;
   const contextState = createGlContextState(gl);
   return {
-    [EntityRuntimeKey]: createGlRenderStateRuntime(contextState, pipeline),
+    [EntityRuntimeKey]: createGlRenderStateRuntime(contextState, options),
     contextState,
     gl,
-    pipeline,
   } as unknown as GlRenderState;
 }
 

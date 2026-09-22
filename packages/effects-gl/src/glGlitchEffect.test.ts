@@ -1,6 +1,6 @@
 import { createGlitchEffect } from '@flighthq/effects/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
-import { allocateEmptyGlRenderRegistries, createGlRenderState } from '@flighthq/render-gl/contract';
+import { createGlRenderState } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlitchEffect, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
@@ -140,10 +140,7 @@ describe('glGlitchEffectRunner', () => {
 
 describe('registerGlGlitchEffect', () => {
   it('makes the runner resolvable for the GlitchEffect kind', () => {
-    const state = createGlRenderState(
-      createWebGlContext(document.createElement('canvas')),
-      allocateEmptyGlRenderRegistries(),
-    );
+    const state = createGlRenderState(createWebGlContext(document.createElement('canvas')));
 
     expect(getGlEffectRunner(state, 'GlitchEffect')).toBeNull();
     registerGlGlitchEffect(state);

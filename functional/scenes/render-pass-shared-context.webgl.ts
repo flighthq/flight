@@ -18,7 +18,7 @@ import {
 } from '@flighthq/render-gl/contract';
 import { createDisplayObject } from '@flighthq/scene2d';
 import { createGlCacheState, refreshGlRenderCache } from '@flighthq/scene2d-gl';
-import { glScene3DRenderRegistries } from '@flighthq/scene3d-gl';
+import { glScene3DRenderPreset } from '@flighthq/scene3d-gl';
 import { createGlSurface, setSurfaceDisplaySize } from '@flighthq/surface';
 import type { Bitmap } from '@flighthq/types';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
@@ -50,15 +50,14 @@ setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, width, height);
 appendWebSurface(glSurface, document.body);
 const canvas = getWebSurfaceCanvas(glSurface)!;
 
-const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
-  pixelRatio: scale,
-});
+const state = createGlRenderState(glSurface.context, { ...glScene3DRenderPreset, pixelRatio: scale });
 const GREEN: readonly [number, number, number, number] = [24 / 255, 179 / 255, 58 / 255, 1];
 const screenTarget = createGlTextureRenderTarget(state, {
   height: canvas.height,
   width: canvas.width,
 });
-const cacheState = createGlCacheState(state, state.registries, {
+const cacheState = createGlCacheState(state, {
+  ...state.registries,
   allowSmoothing: state.allowSmoothing,
   pixelRatio: state.pixelRatio,
   roundPixels: state.roundPixels,

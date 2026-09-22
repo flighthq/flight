@@ -30,15 +30,12 @@ import {
   updateGlTexture,
   useGlProgram,
 } from './glDraw';
-import { allocateEmptyGlRenderRegistries } from './glPipeline';
 import { createGlRenderState, getGlRenderStateRuntime, invalidateGlRenderStateCache } from './glRenderState';
 import { registerGlBitmapShader } from './glShaderRegistry';
 import { createGlState, makeGL } from './glTestHelper';
 
-const testPipeline = allocateEmptyGlRenderRegistries();
-
 function createTestGlRenderState(gl: WebGL2RenderingContext) {
-  return createGlRenderState(gl, testPipeline);
+  return createGlRenderState(gl);
 }
 
 // A single 4×4 bc3 level for exercising the opt-in compressed upload seam.

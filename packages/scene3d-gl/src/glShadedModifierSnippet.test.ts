@@ -1,4 +1,4 @@
-import { allocateEmptyGlRenderRegistries, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { ModifierSlot } from '@flighthq/types/contract';
 import type { GlModifierSnippet } from '@flighthq/types/contract';
 
@@ -19,10 +19,10 @@ describe('registerGlModifierSnippet', () => {
   it('starts with empty persistent policy and advances its revision on registration', () => {
     const { state } = makeGlScene3DState();
     expect(getGlRenderStateRuntime(state).registries.modifierSnippets.size).toBe(0);
-    expect(getGlRenderStateRuntime(state).registries.modifierSnippetRevision).toBe(0);
+    expect(getGlRenderStateRuntime(state).modifierSnippetRevision).toBe(0);
     registerGlModifierSnippet(state, makeSnippet());
     expect(getGlRenderStateRuntime(state).registries.modifierSnippets.size).toBe(1);
-    expect(getGlRenderStateRuntime(state).registries.modifierSnippetRevision).toBe(1);
+    expect(getGlRenderStateRuntime(state).modifierSnippetRevision).toBe(1);
   });
 
   it('stores a snippet resolvable by its kind', () => {
@@ -44,9 +44,9 @@ describe('registerGlModifierSnippet', () => {
     registerGlModifierSnippet(screen, override);
 
     expect(getGlRenderStateRuntime(derived).registries.modifierSnippets).toBe(snapshot);
-    expect(getGlRenderStateRuntime(derived).registries.modifierSnippetRevision).toBe(1);
+    expect(getGlRenderStateRuntime(derived).modifierSnippetRevision).toBe(0);
     expect(getGlRenderStateRuntime(screen).registries.modifierSnippets).not.toBe(snapshot);
-    expect(getGlRenderStateRuntime(screen).registries.modifierSnippetRevision).toBe(2);
+    expect(getGlRenderStateRuntime(screen).modifierSnippetRevision).toBe(2);
     expect(snapshot.get('acme.Test') ?? null).toBe(initial);
     expect(resolveGlModifierSnippet(derived, 'acme.Test')).toBe(initial);
     expect(resolveGlModifierSnippet(screen, 'acme.Test')).toBe(override);

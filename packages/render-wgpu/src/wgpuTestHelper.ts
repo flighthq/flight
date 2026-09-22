@@ -10,7 +10,6 @@ import type {
 import { testWgpuHost, createTestWgpuSurface } from './wgpuHost';
 
 export { testWgpuHost, createTestWgpuSurface };
-import { allocateEmptyWgpuRenderRegistries } from './wgpuPipeline';
 import { beginWgpuRenderPass } from './wgpuRenderPass';
 import { createWgpuAcquisition, createWgpuRenderState } from './wgpuRenderState';
 import { enableWgpuScreenRenderTargetAntialias } from './wgpuScreenAntialias';
@@ -315,7 +314,7 @@ export async function createWgpuRenderStateForTest(options: WgpuRenderOptions = 
   const target = createTestWgpuSurface(canvas);
   const acquisition = await createWgpuAcquisition(_testWgpuBackend, target);
   if (acquisition === null) throw new Error('createWgpuRenderStateForTest: the mock adapter refused a device');
-  return createWgpuRenderState(acquisition.device, _testWgpuPipeline, { format: acquisition.format, ...options });
+  return createWgpuRenderState(acquisition.device, { ..._testWgpuPipeline, format: acquisition.format, ...options });
 }
 
 // The screen half of the test rig. A state and a screen target are independent, so a test that only
@@ -339,7 +338,7 @@ export function createWgpuScreenRenderTargetForTest(
 }
 
 const _testWgpuBackend = testWgpuHost;
-const _testWgpuPipeline = allocateEmptyWgpuRenderRegistries();
+const _testWgpuPipeline = {};
 
 export function installWgpuMock(): void {
   installWgpuConstants();

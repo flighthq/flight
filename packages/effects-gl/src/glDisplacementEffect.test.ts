@@ -1,6 +1,6 @@
 import { createDisplacementEffect } from '@flighthq/effects/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
-import { allocateEmptyGlRenderRegistries, createGlRenderState } from '@flighthq/render-gl/contract';
+import { createGlRenderState } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { DisplacementEffect, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
@@ -127,10 +127,7 @@ describe('glDisplacementEffectRunner', () => {
 
 describe('registerGlDisplacementEffect', () => {
   it('makes the runner resolvable for the DisplacementEffect kind', () => {
-    const state = createGlRenderState(
-      createWebGlContext(document.createElement('canvas')),
-      allocateEmptyGlRenderRegistries(),
-    );
+    const state = createGlRenderState(createWebGlContext(document.createElement('canvas')));
 
     expect(getGlEffectRunner(state, 'DisplacementEffect')).toBeNull();
     registerGlDisplacementEffect(state);

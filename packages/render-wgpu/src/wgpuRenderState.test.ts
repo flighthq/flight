@@ -18,7 +18,6 @@ import type {
   WgpuColorAdjustmentMaterialFeatureGuard,
   WgpuHostAcquisition,
   HostWgpuCapability,
-  WgpuRenderRegistries,
   WgpuRenderOptions,
   WgpuRenderState,
 } from '@flighthq/types/contract';
@@ -27,9 +26,9 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture';
 import { beginWgpuFrame, withWgpuFrameBorrow } from './wgpuFrame';
 import { createTestWgpuSurface, testWgpuHost } from './wgpuHost';
-import { allocateEmptyWgpuRenderRegistries } from './wgpuPipeline';
 import { registerWgpuQuadMaterialRenderer } from './wgpuQuadMaterialRegistry';
 import {
+  buildWgpuRenderRegistries,
   createWgpuAcquisition,
   createWgpuDeviceState,
   createWgpuOffscreenRenderState as createDeviceOnlyWgpuRenderState,
@@ -66,15 +65,15 @@ beforeAll(() => {
   installWgpuMock();
 });
 
-const _testPipeline = allocateEmptyWgpuRenderRegistries();
+const _testPipeline = {};
 const _webBackend = testWgpuHost;
 
 function createWgpuRenderState(device: GPUDevice, options: Readonly<WgpuRenderOptions> = {}) {
-  return createWgpuRenderStateWithPipeline(device, _testPipeline, options);
+  return createWgpuRenderStateWithPipeline(device, { ..._testPipeline, ...options });
 }
 
 function createWgpuRenderStateRuntime(deviceState: ReturnType<typeof createWgpuDeviceState>) {
-  return createWgpuRenderStateRuntimeWithPipeline(deviceState, _testPipeline);
+  return createWgpuRenderStateRuntimeWithPipeline(deviceState, { ..._testPipeline });
 }
 
 function entityHostBackend(fields: Omit<HostWgpuCapability, keyof Entity>): HostWgpuCapability {
@@ -86,8 +85,8 @@ function entityHostBackend(fields: Omit<HostWgpuCapability, keyof Entity>): Host
 }
 
 function createWgpuOffscreenRenderState(source: WgpuRenderState): WgpuRenderState {
-  const pipeline: WgpuRenderRegistries = { ...getWgpuRenderStateRuntime(source).registries };
-  const state = createDeviceOnlyWgpuRenderState(source.deviceState, pipeline, {
+  const state = createDeviceOnlyWgpuRenderState(source.deviceState, {
+    ...getWgpuRenderStateRuntime(source).registries,
     format: source.format,
     imageSmoothingEnabled: source.allowSmoothing,
     pixelRatio: source.pixelRatio,
@@ -118,6 +117,30 @@ function registerPaddingResolver(state: RenderState, kind: string, resolver: Eff
     resolver,
   );
 }
+
+describe('buildWgpuRenderRegistries', () => {
+  it('returns all required fields with default values', () => {
+    const registries = buildWgpuRenderRegistries({});
+    expect(registries.nodeRenderers).toBeInstanceOf(Map);
+    expect(registries.nodeRenderers.size).toBe(0);
+    expect(registries.materialRenderers).toBeInstanceOf(Map);
+    expect(registries.modifierSnippets).toBeInstanceOf(Map);
+    expect(registries.textureResolvers).toBeInstanceOf(Map);
+    expect(registries.strokeTessellator).toBeNull();
+    expect(registries.gpuSkinning).toBeNull();
+  });
+
+  it('clones provided registry maps and pass arrays into an isolated live aggregate', () => {
+    const nodeRenderers = new Map();
+    const passes: never[] = [];
+    const registries = buildWgpuRenderRegistries({ nodeRenderers, passes });
+    expect(registries.nodeRenderers).not.toBe(nodeRenderers);
+    expect(registries.passes).not.toBe(passes);
+
+    nodeRenderers.set('acme.Late', {});
+    expect(registries.nodeRenderers.has('acme.Late')).toBe(false);
+  });
+});
 
 describe('createWgpuAcquisition', () => {
   it('hands back handles the CALLER owns, so no state teardown can release them', async () => {
@@ -248,7 +271,7 @@ describe('createWgpuOffscreenRenderState', () => {
     expect('surface' in offscreen).toBe(false);
     expect(offscreenRuntime.context).toBe(screenRuntime.context);
     expect(offscreenRuntime.uniformBuffer).not.toBe(screenRuntime.uniformBuffer);
-    expect(offscreenRuntime.registries.nodeRenderers).toBe(screenRuntime.registries.nodeRenderers);
+    expect(offscreenRuntime.registries.nodeRenderers).not.toBe(screenRuntime.registries.nodeRenderers);
     expect(offscreenRuntime.registries).not.toBe(screenRuntime.registries);
     expect(offscreenRuntime.registries.colorAdjustmentFeature).toBe(screenRuntime.registries.colorAdjustmentFeature);
     expect(getWgpuColorAdjustmentMaterialFeature(offscreen)).toBe(colorAdjustmentFeature);
@@ -287,16 +310,18 @@ describe('createWgpuOffscreenRenderState', () => {
       screenRuntime.registries.compressedTextureDecoder,
     );
     expect(offscreenRuntime.registries.compressedTextureUpload).toBe(screenRuntime.registries.compressedTextureUpload);
-    expect(offscreenRuntime.registries.customMaterialShaders).toBe(screenRuntime.registries.customMaterialShaders);
-    expect(offscreenRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
-    expect(offscreenRuntime.registries.modifierSnippets).toBe(screenRuntime.registries.modifierSnippets);
-    expect(offscreenRuntime.registries.modifierSnippetRevision).toBe(screenRuntime.registries.modifierSnippetRevision);
-    expect(offscreenRuntime.registries.effects).toBe(screenRuntime.registries.effects);
+    expect(offscreenRuntime.registries.customMaterialShaders).not.toBe(screenRuntime.registries.customMaterialShaders);
+    expect(offscreenRuntime.registries.materialRenderers).not.toBe(screenRuntime.registries.materialRenderers);
+    expect(offscreenRuntime.registries.modifierSnippets).not.toBe(screenRuntime.registries.modifierSnippets);
+    expect(offscreenRuntime.modifierSnippetRevision).toBe(screenRuntime.modifierSnippetRevision);
+    expect(offscreenRuntime.registries.effects).not.toBe(screenRuntime.registries.effects);
     expect(offscreenRuntime.registries.shapeRasterizer).toBe(screenRuntime.registries.shapeRasterizer);
     expect(offscreenRuntime.registries.strokeTessellator).toBe(screenRuntime.registries.strokeTessellator);
-    expect(offscreenRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
-    expect(offscreenRuntime.registries.velocityWriters).toBe(screenRuntime.registries.velocityWriters);
-    expect(offscreenRuntime.registries.effectPaddingResolvers).toBe(screenRuntime.registries.effectPaddingResolvers);
+    expect(offscreenRuntime.registries.textureResolvers).not.toBe(screenRuntime.registries.textureResolvers);
+    expect(offscreenRuntime.registries.velocityWriters).not.toBe(screenRuntime.registries.velocityWriters);
+    expect(offscreenRuntime.registries.effectPaddingResolvers).not.toBe(
+      screenRuntime.registries.effectPaddingResolvers,
+    );
     expect(offscreenRuntime.registries.nodeRenderers.get('acme.Node') ?? null).toBe(renderer);
     expect(offscreenRuntime.registries.materialRenderers.get('acme.Material') ?? null).toBe(materialRenderer);
     expect(offscreenRuntime.registries.textureResolvers.get('acme.Texture') ?? null).toBe(textureResolver);
@@ -454,6 +479,24 @@ describe('createWgpuRenderState', () => {
     expect(runtime.uniformOffset).toBe(0);
   });
 
+  it('does not mutate a frozen preset when used as options input', async () => {
+    const preset = Object.freeze({
+      ...buildWgpuRenderRegistries({}),
+      nodeRenderers: new Map(),
+    });
+    const state = await createWgpuRenderStateForTest({ ...preset });
+    registerNodeRenderer(state, 'acme.Test', { createData: () => null, submit: () => {} });
+    expect(preset.nodeRenderers.size).toBe(0);
+    expect(getWgpuRenderStateRuntime(state).registries.nodeRenderers.size).toBe(1);
+  });
+
+  it('keeps revision counters on the runtime, not in registries', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const runtime = getWgpuRenderStateRuntime(state);
+    expect(runtime.modifierSnippetRevision).toBe(0);
+    expect('modifierSnippetRevision' in runtime.registries).toBe(false);
+  });
+
   it('starts with no open frame, pass, or target', async () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
@@ -471,7 +514,7 @@ describe('createWgpuRenderStateRuntime', () => {
     expect(runtime.registries.customMaterialShaders.size).toBe(0);
     expect(runtime.registries.materialRenderers.size).toBe(0);
     expect(runtime.registries.modifierSnippets.size).toBe(0);
-    expect(runtime.registries.modifierSnippetRevision).toBe(0);
+    expect(runtime.modifierSnippetRevision).toBe(0);
     expect(runtime.registries.effects.size).toBe(0);
     expect(runtime.registries.compressedTextureDecoder).toBeNull();
     expect(runtime.registries.colorAdjustments).toBeUndefined();

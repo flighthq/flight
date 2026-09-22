@@ -18,17 +18,17 @@ import {
 import { applyCanvasBlendMode } from './canvasMaterials';
 import {} from './canvasPipeline';
 import { canvasShapeCommandTable } from './canvasShapeCommandTable';
-import { canvasScene2DRenderRegistries } from './scene2DCanvasPipeline';
+import { canvasScene2DRenderPreset } from './scene2DCanvasPipeline';
 
-describe('canvasScene2DRenderRegistries', () => {
+describe('canvasScene2DRenderPreset', () => {
   let registries: Readonly<CanvasRenderRegistries>;
 
   beforeAll(() => {
-    registries = canvasScene2DRenderRegistries;
+    registries = canvasScene2DRenderPreset;
   });
 
   it('is a distinct object on every access (const identity, not a getter)', () => {
-    expect(canvasScene2DRenderRegistries).toBe(canvasScene2DRenderRegistries);
+    expect(canvasScene2DRenderPreset).toBe(canvasScene2DRenderPreset);
   });
 
   it('carries every standard 2D Canvas renderer bound', () => {

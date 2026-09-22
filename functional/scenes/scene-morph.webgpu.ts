@@ -31,7 +31,7 @@ import {
   normalizeVector3,
   prepareScene3DMorph,
   prepareScene3DRender,
-  wgpuScene3DRenderRegistries,
+  wgpuScene3DRenderPreset,
   setCamera3DViewMatrix4FromLookAt,
   createWgpuSurface,
   setSurfaceDisplaySize,
@@ -66,7 +66,8 @@ const acquisition = wgpuSurface.acquisition;
 export const screen = createWgpuScreenRenderTarget(webHostWgpuContext, acquisition.device, wgpuSurface, {
   format: acquisition.format,
 });
-export const state = createWgpuRenderState(acquisition.device, wgpuScene3DRenderRegistries, {
+export const state = createWgpuRenderState(acquisition.device, {
+  ...wgpuScene3DRenderPreset,
   format: acquisition.format,
   pixelRatio,
 });

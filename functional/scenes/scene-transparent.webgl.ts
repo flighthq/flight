@@ -27,7 +27,7 @@ import {
   getBitmapPixelRgb,
   invalidateNodeLocalTransform,
   prepareScene3DRender,
-  glScene3DRenderRegistries,
+  glScene3DRenderPreset,
   setCamera3DViewMatrix4FromLookAt,
   setSurfaceDisplaySize,
   createAppWindow,
@@ -55,9 +55,7 @@ if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
 setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, 800, 600);
 appendWebSurface(glSurface, document.body);
 
-export const state = createGlRenderState(glSurface.context, glScene3DRenderRegistries, {
-  pixelRatio,
-});
+export const state = createGlRenderState(glSurface.context, { ...glScene3DRenderPreset, pixelRatio });
 
 const pipeline = createGlEffectState(state, {
   sampleCount: 1,

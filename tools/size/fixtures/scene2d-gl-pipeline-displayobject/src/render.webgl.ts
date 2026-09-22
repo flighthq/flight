@@ -3,7 +3,6 @@ import { webHostGl, appendWebSurface, webHostWindowGeometry, webHostWindowLifecy
 import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import {
-  allocateEmptyGlRenderRegistries,
   createGlRenderState,
   beginGlRenderPass,
   endGlRenderPass,
@@ -25,12 +24,10 @@ if (glSurface === null) throw new Error('Failed to acquire WebGL2 context');
 appendWebSurface(glSurface, document.body);
 document.body.style.margin = '0';
 
-const emptyRegistries = allocateEmptyGlRenderRegistries();
 const registry = {
-  ...emptyRegistries,
-  nodeRenderers: withKindMapEntry(emptyRegistries.nodeRenderers, DisplayObjectKind, glScene2DRenderer),
+  nodeRenderers: withKindMapEntry(new Map(), DisplayObjectKind, glScene2DRenderer),
 };
-const state = createGlRenderState(glSurface.context, registry, { pixelRatio: 1 });
+const state = createGlRenderState(glSurface.context, { ...registry, pixelRatio: 1 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 
 const registries = registry;

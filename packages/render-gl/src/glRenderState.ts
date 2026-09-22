@@ -10,13 +10,43 @@ import type {
   GlContext,
   GlContextRuntime,
   GlContextState,
-  GlRenderOptions,
   GlRenderRegistries,
   GlRenderState,
+  GlRenderStateOptions,
   GlRenderStateRuntime,
   EntityConstruction,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
+
+export function buildGlRenderRegistries(options: Readonly<GlRenderStateOptions>): GlRenderRegistries {
+  const registries = {} as GlRenderRegistries;
+  if (options.canvasShapeCommands !== undefined) registries.canvasShapeCommands = new Map(options.canvasShapeCommands);
+  if (options.colorAdjustments !== undefined) registries.colorAdjustments = options.colorAdjustments;
+  if (options.colorAdjustmentUnsupportedGuard !== undefined)
+    registries.colorAdjustmentUnsupportedGuard = options.colorAdjustmentUnsupportedGuard;
+  if (options.effectPaddingResolvers !== undefined)
+    registries.effectPaddingResolvers = new Map(options.effectPaddingResolvers);
+  registries.nodeRenderers = new Map(options.nodeRenderers);
+  if (options.renderRootGuard !== undefined) registries.renderRootGuard = options.renderRootGuard;
+  registries.strokeTessellator = options.strokeTessellator ?? null;
+  registries.blendRealizations = new Map(options.blendRealizations);
+  if (options.colorAdjustmentFeature !== undefined) registries.colorAdjustmentFeature = options.colorAdjustmentFeature;
+  if (options.colorAdjustmentFeatureGuard !== undefined)
+    registries.colorAdjustmentFeatureGuard = options.colorAdjustmentFeatureGuard;
+  registries.compressedTextureDecoder = options.compressedTextureDecoder ?? null;
+  registries.compressedTextureUpload = options.compressedTextureUpload ?? null;
+  registries.customEffectShaders = new Map(options.customEffectShaders);
+  registries.customMaterialShaders = new Map(options.customMaterialShaders);
+  registries.effects = new Map(options.effects);
+  registries.materialRenderers = new Map(options.materialRenderers);
+  registries.modifierSnippets = new Map(options.modifierSnippets);
+  registries.passes = options.passes == null ? null : [...options.passes];
+  registries.pbrExtensions = new Map(options.pbrExtensions);
+  registries.shapeRasterizer = options.shapeRasterizer ?? null;
+  registries.textureResolvers = new Map(options.textureResolvers);
+  registries.velocityWriters = new Map(options.velocityWriters);
+  return registries;
+}
 
 export function createGlContextState(gl: GlContext): GlContextState {
   const state = allocateEntity<GlContextState>();
@@ -26,29 +56,27 @@ export function createGlContextState(gl: GlContext): GlContextState {
   return result;
 }
 
-export function createGlRenderState(
-  gl: GlContext,
-  registries: Readonly<GlRenderRegistries>,
-  options: GlRenderOptions = {},
-): GlRenderState {
+export function createGlRenderState(gl: GlContext, options: Readonly<GlRenderStateOptions> = {}): GlRenderState {
   let contextState = _contextStateByGl.get(gl);
   if (contextState === undefined) {
     contextState = createGlContextState(gl);
     _contextStateByGl.set(gl, contextState);
   }
-  return _createGlRenderStateFromContext(contextState, registries, options);
+  return _createGlRenderStateFromContext(contextState, options);
 }
 
 export function createGlRenderStateRuntime(
   contextState: Readonly<GlContextState>,
-  registries: Readonly<GlRenderRegistries>,
+  options: Readonly<GlRenderStateOptions>,
 ): GlRenderStateRuntime {
   const runtime = createRenderStateRuntime() as GlRenderStateRuntime;
   runtime.context = contextState[EntityRuntimeKey] as GlContextRuntime;
   runtime.context.references++;
   runtime.currentPass = null;
   runtime.currentRenderTarget = null;
-  runtime.registries = { ...registries };
+  runtime.registries = buildGlRenderRegistries(options);
+  runtime.modifierSnippetRevision = 0;
+  runtime.pbrExtensionRevision = 0;
   runtime.bindingCacheGuard = null;
   runtime.teardowns = [];
   return runtime;
@@ -198,14 +226,9 @@ export function registerGlContextTeardown(
   getGlContextRuntime(contextState).teardowns.push(teardown);
 }
 
-export function registerGlRenderStateTeardown(state: GlRenderState, teardown: (state: GlRenderState) => void): void {
-  getGlRenderStateRuntime(state).teardowns.push(teardown);
-}
-
 function _createGlRenderStateFromContext(
   contextState: Readonly<GlContextState>,
-  registries: Readonly<GlRenderRegistries>,
-  options: GlRenderOptions,
+  options: Readonly<GlRenderStateOptions>,
 ): GlRenderState {
   const gl = contextState.gl;
 
@@ -217,10 +240,9 @@ function _createGlRenderStateFromContext(
     sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
   }) as GlRenderState;
 
+  const runtime = createGlRenderStateRuntime(contextState, options);
   state.applyBlendMode = null;
-  Object.assign(state, { contextState, gl, registries });
-
-  const runtime = createGlRenderStateRuntime(contextState, registries);
+  Object.assign(state, { contextState, gl, registries: runtime.registries });
   state[EntityRuntimeKey] = runtime;
   runtime.currentFramebuffer = null;
   runtime.currentMaskDepth = 0;
@@ -249,6 +271,10 @@ function _createGlRenderStateFromContext(
   gl.disable(gl.DEPTH_TEST);
 
   return finishEntity(state);
+}
+
+export function registerGlRenderStateTeardown(state: GlRenderState, teardown: (state: GlRenderState) => void): void {
+  getGlRenderStateRuntime(state).teardowns.push(teardown);
 }
 
 const _contextStateByGl = new WeakMap<GlContext, GlContextState>();
