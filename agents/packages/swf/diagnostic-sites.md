@@ -10,7 +10,7 @@ generated: true
 Every place `packages/swf` reports an import diagnostic, as of the commit this file was committed in.
 Regenerate rather than trust the line column: **kind and severity survive edits, line numbers do not.**
 
-**43 sites across 15 files.** By severity: Drop 18 · Recover 3 · Reject 11 · Skip 11. By file: `swfBitmapTagFamily.ts` 3 · `swfControlTagFamily.ts` 2 · `swfDocument.ts` 15 · `swfFilter.ts` 2 · `swfFontTagFamily.ts` 2 · `swfFrameAction.ts` 1 · `swfMorphShape.ts` 1 · `swfPlacementTagFamily.ts` 1 · `swfScriptTagFamily.ts` 3 · `swfShape.ts` 1 · `swfShapeTagFamily.ts` 3 · `swfSoundTagFamily.ts` 1 · `swfText.ts` 1 · `swfTextTagFamily.ts` 3 · `swfTimelineParse.ts` 4.
+**43 sites across 6 files.** By severity: Drop 18 · Recover 3 · Reject 11 · Skip 11. By file: `swfDocument.ts` 37 · `swfFilter.ts` 2 · `swfFrameAction.ts` 1 · `swfMorphShape.ts` 1 · `swfShape.ts` 1 · `swfText.ts` 1.
 
 **A site count is not a coverage number, and the two must never be divided.** These sites and the loss
 families in `loss-path-audit.md` are different populations that only partly intersect: most of these
@@ -19,46 +19,46 @@ stated per family in that document and derived by checking each family, never by
 
 | File | Line | Severity | Kind |
 | --- | --- | --- | --- |
-| `swfBitmapTagFamily.ts` | 89 | Drop | `swf.jpeg-tables-missing` |
-| `swfBitmapTagFamily.ts` | 114 | Drop | `swf.jpeg-tables-unsplittable` |
-| `swfBitmapTagFamily.ts` | 177 | Skip | `swf.jpeg-alpha-stream` |
-| `swfControlTagFamily.ts` | 94 | Skip | `swf.scene-names` |
-| `swfControlTagFamily.ts` | 153 | Skip | `swf.button-interaction-state` |
-| `swfDocument.ts` | 126 | Reject | `swf.timeline-instantiation-failed` |
-| `swfDocument.ts` | 179 | Reject | `swf.unknown-linkage-name` |
-| `swfDocument.ts` | 330 | Reject | `swf.uncompressed-signature-invalid` |
-| `swfDocument.ts` | 342 | Reject | `swf.header-fields-invalid` |
-| `swfDocument.ts` | 353 | Reject | `swf.stage-bounds-unreadable` |
-| `swfDocument.ts` | 361 | Reject | `swf.header-truncated` |
-| `swfDocument.ts` | 494 | Drop | `swf.appearance-without-node` |
-| `swfDocument.ts` | 630 | Recover | `swf.mask-without-geometry` |
-| `swfDocument.ts` | 666 | Skip | `swf.nested-mask-collapsed` |
-| `swfDocument.ts` | 827 | Drop | `swf.sprite-bounds-short` |
-| `swfDocument.ts` | 893 | Reject | `swf.invalid-signature` |
-| `swfDocument.ts` | 910 | Reject | `swf.unknown-container` |
-| `swfDocument.ts` | 934 | Reject | `swf.declared-length-too-small` |
-| `swfDocument.ts` | 951 | Reject | `swf.truncated-container` |
-| `swfDocument.ts` | 966 | Reject | `swf.decompression-failed` |
+| `swfDocument.ts` | 183 | Reject | `swf.timeline-instantiation-failed` |
+| `swfDocument.ts` | 238 | Reject | `swf.unknown-linkage-name` |
+| `swfDocument.ts` | 696 | Reject | `swf.uncompressed-signature-invalid` |
+| `swfDocument.ts` | 708 | Reject | `swf.header-fields-invalid` |
+| `swfDocument.ts` | 719 | Reject | `swf.stage-bounds-unreadable` |
+| `swfDocument.ts` | 727 | Reject | `swf.header-truncated` |
+| `swfDocument.ts` | 746 | Skip | `swf.frame-script-declined` |
+| `swfDocument.ts` | 843 | Drop | `swf.scaling-grid-dropped` |
+| `swfDocument.ts` | 919 | Drop | `swf.appearance-without-node` |
+| `swfDocument.ts` | 1055 | Recover | `swf.mask-without-geometry` |
+| `swfDocument.ts` | 1091 | Skip | `swf.nested-mask-collapsed` |
+| `swfDocument.ts` | 1355 | Drop | `swf.edit-text-font-name-unresolved` |
+| `swfDocument.ts` | 1537 | Drop | `swf.sprite-bounds-short` |
+| `swfDocument.ts` | 1603 | Drop | `swf.blend-mode-behind-unread-filters` |
+| `swfDocument.ts` | 1905 | Drop | `swf.abc-frame-scripts-unreadable` |
+| `swfDocument.ts` | 1935 | Drop | `swf.text-shape-uncomposable` |
+| `swfDocument.ts` | 1999 | Drop | `swf.label-past-last-frame` |
+| `swfDocument.ts` | 2012 | Drop | `swf.cue-past-last-frame` |
+| `swfDocument.ts` | 2042 | Skip | `unresolved` |
+| `swfDocument.ts` | 2054 | Skip | `unresolved` |
+| `swfDocument.ts` | 2088 | Skip | `swf.button-interaction-state` |
+| `swfDocument.ts` | 2140 | Drop | `swf.font-glyph-table` |
+| `swfDocument.ts` | 2157 | Drop | `swf.font-character-id-reused` |
+| `swfDocument.ts` | 2265 | Skip | `swf.scene-names` |
+| `swfDocument.ts` | 2316 | Drop | `swf.edit-text-unparseable` |
+| `swfDocument.ts` | 2364 | Recover | `swf.shape-body-unreadable` |
+| `swfDocument.ts` | 2408 | Drop | `swf.morph-shape-undecodable` |
+| `swfDocument.ts` | 2444 | Drop | `swf.jpeg-tables-missing` |
+| `swfDocument.ts` | 2469 | Drop | `swf.jpeg-tables-unsplittable` |
+| `swfDocument.ts` | 2532 | Skip | `swf.jpeg-alpha-stream` |
+| `swfDocument.ts` | 2950 | Skip | `swf.frame-script-declined` |
+| `swfDocument.ts` | 3126 | Skip | `swf.stream-sound-format` |
+| `swfDocument.ts` | 3263 | Reject | `swf.invalid-signature` |
+| `swfDocument.ts` | 3280 | Reject | `swf.unknown-container` |
+| `swfDocument.ts` | 3304 | Reject | `swf.declared-length-too-small` |
+| `swfDocument.ts` | 3321 | Reject | `swf.truncated-container` |
+| `swfDocument.ts` | 3336 | Reject | `swf.decompression-failed` |
 | `swfFilter.ts` | 82 | Skip | `swf.filter-field-unrepresentable` |
 | `swfFilter.ts` | 169 | Skip | `swf.filter-field-unrepresentable` |
-| `swfFontTagFamily.ts` | 47 | Drop | `swf.font-glyph-table` |
-| `swfFontTagFamily.ts` | 64 | Drop | `swf.font-character-id-reused` |
 | `swfFrameAction.ts` | 180 | Drop | `swf.abc-frame-script-declined` |
 | `swfMorphShape.ts` | 75 | Drop | `swf.morph-path-pair-declined` |
-| `swfPlacementTagFamily.ts` | 96 | Drop | `swf.blend-mode-behind-unread-filters` |
-| `swfScriptTagFamily.ts` | 72 | Drop | `swf.abc-frame-scripts-unreadable` |
-| `swfScriptTagFamily.ts` | 97 | Skip | `swf.frame-script-declined` |
-| `swfScriptTagFamily.ts` | 113 | Skip | `swf.frame-script-declined` |
 | `swfShape.ts` | 692 | Recover | `swf.fill-matrix-singular` |
-| `swfShapeTagFamily.ts` | 47 | Drop | `swf.scaling-grid-dropped` |
-| `swfShapeTagFamily.ts` | 107 | Recover | `swf.shape-body-unreadable` |
-| `swfShapeTagFamily.ts` | 151 | Drop | `swf.morph-shape-undecodable` |
-| `swfSoundTagFamily.ts` | 403 | Skip | `swf.stream-sound-format` |
 | `swfText.ts` | 105 | Drop | `swf.font-glyph-outline` |
-| `swfTextTagFamily.ts` | 52 | Drop | `swf.edit-text-unparseable` |
-| `swfTextTagFamily.ts` | 94 | Drop | `swf.text-shape-uncomposable` |
-| `swfTextTagFamily.ts` | 128 | Drop | `swf.edit-text-font-name-unresolved` |
-| `swfTimelineParse.ts` | 38 | Skip | `unresolved` |
-| `swfTimelineParse.ts` | 50 | Skip | `unresolved` |
-| `swfTimelineParse.ts` | 110 | Drop | `swf.label-past-last-frame` |
-| `swfTimelineParse.ts` | 123 | Drop | `swf.cue-past-last-frame` |
