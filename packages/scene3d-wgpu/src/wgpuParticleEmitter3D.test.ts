@@ -7,7 +7,11 @@ import {
 } from '@flighthq/image/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
-import { createReadyImageElementForTest, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
+import {
+  createReadyImageElementForTest,
+  getWgpuRenderStateRuntime,
+  registerWgpuImageTextureResolver,
+} from '@flighthq/render-wgpu/contract';
 import { createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type {
@@ -20,7 +24,11 @@ import type {
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { destroyWgpuParticleEmitter3DResources, drawWgpuScene3DParticleEmitter3Ds } from './wgpuParticleEmitter3D';
+import {
+  destroyWgpuParticleEmitter3DResources,
+  drawWgpuScene3DParticleEmitter3Ds,
+  registerWgpuParticleEmitter3DPass,
+} from './wgpuParticleEmitter3D';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
@@ -278,5 +286,25 @@ describe('drawWgpuScene3DParticleEmitter3Ds', () => {
     expect(instanceData[0]).toBeCloseTo(11);
     expect(instanceData[1]).toBeCloseTo(22);
     expect(instanceData[2]).toBeCloseTo(33);
+  });
+});
+
+describe('registerWgpuParticleEmitter3DPass', () => {
+  it('appends the emitter draw to the pass list renderWgpuScene3D dispatches', () => {
+    const { state } = makeWgpuScene3DState();
+    registerWgpuParticleEmitter3DPass(state);
+    expect(getWgpuRenderStateRuntime(state).registries.passes).toEqual([drawWgpuScene3DParticleEmitter3Ds]);
+  });
+
+  it('registers no pass list until it is called, so the pass shakes out when unused', () => {
+    const { state } = makeWgpuScene3DState();
+    expect(getWgpuRenderStateRuntime(state).registries.passes).toBeNull();
+  });
+
+  it('is idempotent, so a repeated setup cannot draw the emitters twice', () => {
+    const { state } = makeWgpuScene3DState();
+    registerWgpuParticleEmitter3DPass(state);
+    registerWgpuParticleEmitter3DPass(state);
+    expect(getWgpuRenderStateRuntime(state).registries.passes).toHaveLength(1);
   });
 });
