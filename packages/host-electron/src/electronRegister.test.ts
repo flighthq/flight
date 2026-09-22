@@ -12,6 +12,7 @@ const GROUPS = [
   ['accessibility', 'electronHostAccessibilityGroup'],
   ['app', 'electronHostApp'],
   ['audio', 'electronHostAudioGroup'],
+  ['audioDecode', 'electronHostAudioDecodeGroup'],
   ['bitmap', 'electronHostBitmapGroup'],
   ['canvas', 'electronHostCanvasGroup'],
   ['clipboard', 'electronHostClipboard'],

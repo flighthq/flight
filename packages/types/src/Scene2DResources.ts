@@ -1,5 +1,6 @@
-import type { AudioResourceFetch, AudioResourceReference } from './AudioResourceReference';
+import type { AudioDecoderRegistry, AudioResourceFetch, AudioResourceReference } from './AudioResourceReference';
 import type { Entity } from './Entity';
+import type { HostAudioDecodeCapabilities } from './HostAudioDecode';
 import type { ImageDecodeFallback } from './ImageDecoder';
 import type { ImageResourceFetch, ImageResourceReference } from './ImageResourceReference';
 import type { Node2D } from './Node2D';
@@ -105,9 +106,13 @@ export interface Scene2DAudioResources {
 }
 
 export interface LoadScene2DAudioResourcesOptions {
-  // The platform decoder every standard container goes through. Null when each selected reference resolves
-  // through a registered decoder or the fetch seam, so a host with no Web Audio never has to build one.
-  context?: AudioContext | null;
+  // The host's standard-container decoders. Omitted when every selected reference resolves through a
+  // caller-supplied decoder or the fetch seam, so a host that ships no audio codec still loads a document.
+  audioDecode?: Readonly<HostAudioDecodeCapabilities>;
+  // Caller-owned decoders for formats outside the standard containers, keyed by MIME essence. This is the
+  // whole extension seam: it travels with the load rather than living anywhere global, so two documents
+  // in one process can disagree about what is decodable.
+  decoders?: AudioDecoderRegistry;
   // Resolves an External reference's uri. A document whose sounds are all embedded never needs one.
   fetch?: AudioResourceFetch;
   progress?: Signal<(event: Readonly<Scene2DAudioResourceLoadProgress>) => void>;

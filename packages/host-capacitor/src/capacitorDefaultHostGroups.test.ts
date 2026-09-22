@@ -1,4 +1,9 @@
-import { webHostImageDecode, webHostImageEncode, webHostTextShaper } from '@flighthq/host-web/contract';
+import {
+  webHostAudioDecode,
+  webHostImageDecode,
+  webHostImageEncode,
+  webHostTextShaper,
+} from '@flighthq/host-web/contract';
 
 import {
   capacitorHostAccessibility,
@@ -9,6 +14,7 @@ import {
   capacitorHostGl,
   capacitorHostGlyph,
   capacitorHostImage,
+  capacitorHostAudioDecode,
   capacitorHostImageDecode,
   capacitorHostImageEncode,
   capacitorHostInput,
@@ -48,6 +54,12 @@ describe('capacitorHostAudio', () => {
   it('claims no audio slots', () => expect(capacitorHostAudio()).toEqual({}));
 });
 
+describe('capacitorHostAudioDecode', () => {
+  it('delegates to the shared web audio decode capabilities', () => {
+    expect(capacitorHostAudioDecode()).toBe(webHostAudioDecode);
+  });
+});
+
 describe('capacitorHostBitmap', () => {
   it('claims no bitmap slots', () => expect(capacitorHostBitmap()).toEqual({}));
 });
@@ -83,7 +95,6 @@ describe('capacitorHostGlyph', () => {
 describe('capacitorHostImage', () => {
   it('claims no image slots', () => expect(capacitorHostImage()).toEqual({}));
 });
-
 describe('capacitorHostImageDecode', () => {
   it('delegates to the shared web image decode capabilities', () => {
     expect(capacitorHostImageDecode()).toBe(webHostImageDecode);

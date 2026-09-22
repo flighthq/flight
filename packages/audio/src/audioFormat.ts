@@ -27,6 +27,10 @@ export function detectAudioMimeType(data: ArrayBuffer | Uint8Array): string | nu
   if (b[0] === 0x4f && b[1] === 0x67 && b[2] === 0x67 && b[3] === 0x53) return 'audio/ogg';
 
   if (b[0] === 0x49 && b[1] === 0x44 && b[2] === 0x33) return 'audio/mpeg';
+  // Both ADTS AAC and MPEG audio open with the same 11-bit sync, and only the layer field separates
+  // them: ADTS is defined as layer 00, and MPEG audio never is. Checking it first is what keeps a bare
+  // AAC stream from being read as MP3 — they share a sync word but not a decoder.
+  if (b[0] === 0xff && (b[1] & 0xe0) === 0xe0 && (b[1] & 0x06) === 0x00) return 'audio/aac';
   if (b[0] === 0xff && (b[1] & 0xe0) === 0xe0) return 'audio/mpeg';
 
   if (b.byteLength >= 8 && b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70) return 'audio/mp4';

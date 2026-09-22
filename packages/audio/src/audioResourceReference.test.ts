@@ -1,8 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AudioDecoder, AudioResourceFetch } from '@flighthq/types/contract';
+import type { AudioDecoder, AudioResourceFetch, HostAudioDecodeCapabilities } from '@flighthq/types/contract';
 import { EntityRuntimeKey, ResourceResolutionState } from '@flighthq/types/contract';
 
-import { getAudioDecoderMimeTypes, registerAudioDecoder, unregisterAudioDecoder } from './audioDecoderRegistry';
 import { createAudioResource } from './audioResource';
 import {
   createAudioResourceFailure,
@@ -158,18 +157,14 @@ describe('resetFailedAudioResourceReference', () => {
 
 describe('resolveAudioResourceReference', () => {
   const decodedBuffer = { duration: 1 } as AudioBuffer;
-  const context = { decodeAudioData: vi.fn().mockResolvedValue(decodedBuffer) } as unknown as AudioContext;
+  const audioDecode: HostAudioDecodeCapabilities = { mp3: { decode: async () => decodedBuffer } };
   const noFetch: AudioResourceFetch = async () => null;
-
-  afterEach(() => {
-    for (const mimeType of [...getAudioDecoderMimeTypes()]) unregisterAudioDecoder(mimeType);
-  });
 
   it('decodes embedded bytes through the platform and binds them into the reference’s own resource', async () => {
     const reference = createEmbeddedAudioResourceReference(new Uint8Array([1, 2]), 'audio/mpeg');
     const resource = reference.resource;
 
-    const resolved = await resolveAudioResourceReference(reference, context, noFetch, new AbortController().signal);
+    const resolved = await resolveAudioResourceReference(reference, audioDecode, noFetch, new AbortController().signal);
 
     // The resource every cue already holds is the one that gains the samples; swapping in the decoder's
     // own would leave every cue pointing at an empty resource.
@@ -178,16 +173,16 @@ describe('resolveAudioResourceReference', () => {
     expect(reference.state).toBe(ResourceResolutionState.Resolved);
   });
 
-  it('prefers a registered decoder over the platform for a format the platform cannot parse', async () => {
+  it('prefers a caller-supplied decoder over the host for a format the platform cannot parse', async () => {
     const swfBuffer = { duration: 2 } as AudioBuffer;
     const decoder = vi.fn<AudioDecoder>(async () => createAudioResource(swfBuffer));
-    registerAudioDecoder('audio/vnd.adobe.swf-adpcm', decoder);
+    const decoders = new Map<string, AudioDecoder>([['audio/vnd.adobe.swf-adpcm', decoder]]);
     const reference = createEmbeddedAudioResourceReference(
       new Uint8Array([7]),
       'audio/vnd.adobe.swf-adpcm; rate=22050; channels=1',
     );
 
-    await resolveAudioResourceReference(reference, context, noFetch, new AbortController().signal);
+    await resolveAudioResourceReference(reference, audioDecode, noFetch, new AbortController().signal, decoders);
 
     expect(decoder).toHaveBeenCalledOnce();
     // The decoder gets the whole type, parameters included, because that is where its rate lives.
@@ -195,9 +190,9 @@ describe('resolveAudioResourceReference', () => {
     expect(reference.resource.buffer).toBe(swfBuffer);
   });
 
-  it('fails rather than throwing when no decoder and no context can take the bytes', async () => {
+  it('fails rather than throwing when nothing can take the bytes', async () => {
     const reference = createEmbeddedAudioResourceReference(new Uint8Array([7]), 'audio/vnd.adobe.swf-adpcm');
-    const resolved = await resolveAudioResourceReference(reference, null, noFetch, new AbortController().signal);
+    const resolved = await resolveAudioResourceReference(reference, {}, noFetch, new AbortController().signal);
 
     expect(resolved).toBeNull();
     expect(reference.state).toBe(ResourceResolutionState.Failed);
@@ -214,7 +209,7 @@ describe('resolveAudioResourceReference', () => {
     const fetch = vi.fn(async () => createAudioResource(fetched));
     const reference = createExternalAudioResourceReference('hit.mp3', '/sounds');
 
-    await resolveAudioResourceReference(reference, context, fetch, new AbortController().signal);
+    await resolveAudioResourceReference(reference, audioDecode, fetch, new AbortController().signal);
 
     expect(fetch).toHaveBeenCalledOnce();
     expect(reference.resource.buffer).toBe(fetched);
@@ -222,9 +217,11 @@ describe('resolveAudioResourceReference', () => {
   });
 
   it('records a thrown decode as a failure rather than propagating it', async () => {
-    const failing = {
-      decodeAudioData: vi.fn().mockRejectedValue(new TypeError('bad bytes')),
-    } as unknown as AudioContext;
+    const failing: HostAudioDecodeCapabilities = {
+      mp3: {
+        decode: () => Promise.reject(new TypeError('bad bytes')),
+      },
+    };
     const reference = createEmbeddedAudioResourceReference(new Uint8Array([1]), 'audio/mpeg');
 
     const resolved = await resolveAudioResourceReference(reference, failing, noFetch, new AbortController().signal);
@@ -237,9 +234,9 @@ describe('resolveAudioResourceReference', () => {
 
   it('treats an abort as a cancel, leaving the reference requestable rather than failed', async () => {
     const controller = new AbortController();
-    const failing = {
-      decodeAudioData: vi.fn().mockRejectedValue(new Error('cancelled')),
-    } as unknown as AudioContext;
+    const failing: HostAudioDecodeCapabilities = {
+      mp3: { decode: () => Promise.reject(new Error('cancelled')) },
+    };
     controller.abort(new Error('cancelled'));
     const reference = createEmbeddedAudioResourceReference(new Uint8Array([1]), 'audio/mpeg');
 

@@ -67,6 +67,7 @@ export * from './webHostSurface';
 export * from './webHostWgpuContext';
 export * from './webImage';
 export * from './webImageBitmapComposition';
+export * from './webAudioDecodeHost';
 export * from './webImageDecodeHost';
 export * from './webImageEncodeHost';
 export * from './webImageHost';

@@ -1,7 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { AudioDecoder, HostAudioCodecCapability, HostNetCapability } from '@flighthq/types/contract';
+import type {
+  AudioDecoder,
+  HostAudioCodecCapability,
+  HostAudioDecodeCapabilities,
+  HostAudioDecodeFormatCapability,
+  HostNetCapability,
+} from '@flighthq/types/contract';
 
-import { getAudioDecoderMimeTypes, registerAudioDecoder, unregisterAudioDecoder } from './audioDecoderRegistry';
 import { createAudioResource } from './audioResource';
 import {
   createAudioResourceFromSamples,
@@ -53,19 +58,30 @@ function fakeNetAudioHost(
 
 const decodedBuffer = { duration: 1 } as AudioBuffer;
 
-const mockContext = {
-  decodeAudioData: vi.fn().mockResolvedValue(decodedBuffer),
-} as unknown as AudioContext;
+const mockDecode = vi.fn(async () => decodedBuffer);
+// Every slot answers, the way a browser's own decoders do: Web Audio reads the container rather than the
+// MIME type, so a host that has it has it for all seven.
+const mockAudioDecode = allAudioDecodeSlots({ decode: mockDecode });
 
-// A context whose decode is held open, so a test can land an abort while the decode is still in
-// flight — the window the pre-abort fast path cannot see. `finishDecode` then completes it, modelling
-// the real decodeAudioData, which has no cancellation and so always runs to completion.
-function createPendingDecodeContext(): { context: AudioContext; finishDecode: () => void } {
+// A host group whose decode is held open, so a test can land an abort while the decode is still in
+// flight — the window the pre-abort fast path cannot see. `finishDecode` then completes it, modelling a
+// real platform decode, which has no cancellation and so always runs to completion.
+function createPendingAudioDecode(): { audioDecode: HostAudioDecodeCapabilities; finishDecode: () => void } {
   let release: (buffer: AudioBuffer) => void = () => {};
-  const context = {
-    decodeAudioData: vi.fn(() => new Promise<AudioBuffer>((resolve) => (release = resolve))),
-  } as unknown as AudioContext;
-  return { context, finishDecode: () => release(decodedBuffer) };
+  const audioDecode = allAudioDecodeSlots({
+    decode: vi.fn(() => new Promise<AudioBuffer>((resolve) => (release = resolve))),
+  });
+  return { audioDecode, finishDecode: () => release(decodedBuffer) };
+}
+
+function allAudioDecodeSlots(slot: HostAudioDecodeFormatCapability): HostAudioDecodeCapabilities {
+  return { aac: slot, flac: slot, mp3: slot, mp4: slot, ogg: slot, wav: slot, webm: slot };
+}
+
+// Four bytes of OggS, which is what an unlabeled payload needs to reach a slot at all: nothing declares a
+// type for these, so the container signature is the only thing that can route them.
+function oggBytes(): Uint8Array {
+  return new Uint8Array([0x4f, 0x67, 0x67, 0x53]);
 }
 
 // jsdom lacks the AudioBuffer constructor; this minimal stand-in honours the { length,
@@ -98,10 +114,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  for (const mimeType of [...getAudioDecoderMimeTypes()]) unregisterAudioDecoder(mimeType);
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
-  (mockContext.decodeAudioData as ReturnType<typeof vi.fn>).mockClear();
+  mockDecode.mockClear();
 });
 
 describe('createAudioResourceFromSamples', () => {
@@ -129,15 +144,15 @@ describe('createAudioResourceFromSamples', () => {
 
 describe('loadAudioResourceFromBase64', () => {
   it('decodes base64-encoded bytes into a resource', async () => {
-    const resource = await loadAudioResourceFromBase64(mockContext, btoa('abc'), 'audio/mpeg');
+    const resource = await loadAudioResourceFromBase64(mockAudioDecode, btoa('abc'), 'audio/mpeg');
     expect(resource.buffer).toBe(decodedBuffer);
-    expect(mockContext.decodeAudioData).toHaveBeenCalledOnce();
+    expect(mockDecode).toHaveBeenCalledOnce();
   });
 
   it('rejects when the signal aborts while the decode is in flight', async () => {
-    const { context, finishDecode } = createPendingDecodeContext();
+    const { audioDecode, finishDecode } = createPendingAudioDecode();
     const controller = new AbortController();
-    const promise = loadAudioResourceFromBase64(context, btoa('abc'), 'audio/mpeg', controller.signal);
+    const promise = loadAudioResourceFromBase64(audioDecode, btoa('abc'), 'audio/mpeg', controller.signal);
     controller.abort(new Error('cancelled'));
     finishDecode();
     await expect(promise).rejects.toThrow('cancelled');
@@ -148,22 +163,22 @@ describe('loadAudioResourceFromBlob', () => {
   it('decodes a blob into a resource', async () => {
     // jsdom's Blob does not implement arrayBuffer(); a minimal double supplies what the loader reads.
     const blob = {
-      arrayBuffer: () => Promise.resolve(new Uint8Array([1, 2, 3, 4]).buffer),
+      arrayBuffer: () => Promise.resolve(oggBytes().buffer),
       type: 'audio/wav',
     } as unknown as Blob;
-    const resource = await loadAudioResourceFromBlob(mockContext, blob);
+    const resource = await loadAudioResourceFromBlob(mockAudioDecode, blob);
     expect(resource.buffer).toBe(decodedBuffer);
-    expect(mockContext.decodeAudioData).toHaveBeenCalledOnce();
+    expect(mockDecode).toHaveBeenCalledOnce();
   });
 
   it('rejects when the signal aborts while the decode is in flight', async () => {
-    const { context, finishDecode } = createPendingDecodeContext();
+    const { audioDecode, finishDecode } = createPendingAudioDecode();
     const blob = {
-      arrayBuffer: () => Promise.resolve(new Uint8Array([1, 2, 3, 4]).buffer),
+      arrayBuffer: () => Promise.resolve(oggBytes().buffer),
       type: 'audio/wav',
     } as unknown as Blob;
     const controller = new AbortController();
-    const promise = loadAudioResourceFromBlob(context, blob, controller.signal);
+    const promise = loadAudioResourceFromBlob(audioDecode, blob, controller.signal);
     await Promise.resolve();
     controller.abort(new Error('cancelled'));
     finishDecode();
@@ -173,64 +188,74 @@ describe('loadAudioResourceFromBlob', () => {
 
 describe('loadAudioResourceFromBytes', () => {
   it('decodes bytes into a resource', async () => {
-    const resource = await loadAudioResourceFromBytes(mockContext, new Uint8Array([1, 2, 3, 4]));
+    const resource = await loadAudioResourceFromBytes(mockAudioDecode, oggBytes());
     expect(resource.buffer).toBe(decodedBuffer);
   });
 
   it('does not detach the caller’s Uint8Array', async () => {
-    const bytes = new Uint8Array([1, 2, 3, 4]);
-    await loadAudioResourceFromBytes(mockContext, bytes);
+    const bytes = oggBytes();
+    await loadAudioResourceFromBytes(mockAudioDecode, bytes);
     expect(bytes.byteLength).toBe(4);
   });
 
-  it('prefers a registered decoder when the MIME type is known', async () => {
+  it('prefers a caller-supplied decoder when the MIME type is known', async () => {
     const customBuffer = { duration: 2 } as AudioBuffer;
     const decoder = vi.fn<AudioDecoder>(async () => createAudioResource(customBuffer));
-    registerAudioDecoder('audio/vnd.acme.custom', decoder);
     const bytes = new Uint8Array([4, 3, 2, 1]);
     const signal = new AbortController().signal;
 
-    const resource = await loadAudioResourceFromBytes(mockContext, bytes, 'audio/vnd.acme.custom; rate=22050', signal);
+    const resource = await loadAudioResourceFromBytes(
+      mockAudioDecode,
+      bytes,
+      'audio/vnd.acme.custom; rate=22050',
+      signal,
+      new Map([['audio/vnd.acme.custom', decoder]]),
+    );
 
     expect(resource.buffer).toBe(customBuffer);
     expect(decoder).toHaveBeenCalledWith(bytes, 'audio/vnd.acme.custom; rate=22050', signal);
-    expect(mockContext.decodeAudioData).not.toHaveBeenCalled();
+    expect(mockDecode).not.toHaveBeenCalled();
   });
 
-  it('rejects when a registered decoder reports an expected miss', async () => {
+  it('rejects when a caller-supplied decoder reports an expected miss', async () => {
     const decoder = vi.fn<AudioDecoder>(async () => null);
-    registerAudioDecoder('audio/vnd.acme.custom', decoder);
 
-    await expect(loadAudioResourceFromBytes(mockContext, new Uint8Array([1]), 'audio/vnd.acme.custom')).rejects.toThrow(
-      'Failed to decode audio: audio/vnd.acme.custom',
-    );
-    expect(mockContext.decodeAudioData).not.toHaveBeenCalled();
+    await expect(
+      loadAudioResourceFromBytes(
+        mockAudioDecode,
+        new Uint8Array([1]),
+        'audio/vnd.acme.custom',
+        undefined,
+        new Map([['audio/vnd.acme.custom', decoder]]),
+      ),
+    ).rejects.toThrow('Failed to decode audio: audio/vnd.acme.custom');
+    expect(mockDecode).not.toHaveBeenCalled();
   });
 
   it('rejects when the signal is already aborted', async () => {
     const controller = new AbortController();
     controller.abort(new Error('cancelled'));
-    await expect(
-      loadAudioResourceFromBytes(mockContext, new Uint8Array([1, 2, 3, 4]), undefined, controller.signal),
-    ).rejects.toThrow('cancelled');
+    await expect(loadAudioResourceFromBytes(mockAudioDecode, oggBytes(), undefined, controller.signal)).rejects.toThrow(
+      'cancelled',
+    );
   });
 
   // Every loader in this family funnels through here, and each is covered separately, because the
   // guarantee is per entry point: a barrier that only holds for direct callers still lets the wrappers
   // resolve past an abort.
   it('rejects when the signal aborts while the decode is in flight', async () => {
-    const { context, finishDecode } = createPendingDecodeContext();
+    const { audioDecode, finishDecode } = createPendingAudioDecode();
     const controller = new AbortController();
-    const promise = loadAudioResourceFromBytes(context, new Uint8Array([1, 2, 3, 4]), undefined, controller.signal);
+    const promise = loadAudioResourceFromBytes(audioDecode, oggBytes(), undefined, controller.signal);
     controller.abort(new Error('cancelled'));
     finishDecode();
     await expect(promise).rejects.toThrow('cancelled');
   });
 
   it('does not resolve with a decoded buffer after an abort', async () => {
-    const { context, finishDecode } = createPendingDecodeContext();
+    const { audioDecode, finishDecode } = createPendingAudioDecode();
     const controller = new AbortController();
-    const promise = loadAudioResourceFromBytes(context, new Uint8Array([1, 2, 3, 4]), undefined, controller.signal);
+    const promise = loadAudioResourceFromBytes(audioDecode, oggBytes(), undefined, controller.signal);
     controller.abort(new Error('cancelled'));
     finishDecode();
     const settled = await promise.then(
@@ -253,7 +278,7 @@ describe('loadAudioResourceFromUrl', () => {
     });
     const host = fakeNetHost({ sendNetRequest: mockSendNetRequest });
 
-    const resource = await loadAudioResourceFromUrl(host.net.http, mockContext, 'sound.mp3');
+    const resource = await loadAudioResourceFromUrl(host.net.http, mockAudioDecode, 'sound.mp3');
 
     expect(resource.buffer).toBe(decodedBuffer);
     expect(mockSendNetRequest).toHaveBeenCalledWith(
@@ -273,7 +298,7 @@ describe('loadAudioResourceFromUrl', () => {
         url: 'sound.mp3',
       }),
     });
-    const resource = await loadAudioResourceFromUrl(host.net.http, mockContext, 'sound.mp3');
+    const resource = await loadAudioResourceFromUrl(host.net.http, mockAudioDecode, 'sound.mp3');
     expect(resource.buffer).toBe(decodedBuffer);
   });
 
@@ -290,13 +315,13 @@ describe('loadAudioResourceFromUrl', () => {
       }),
     });
     await expect(
-      loadAudioResourceFromUrl(host.net.http, { decodeAudioData } as unknown as AudioContext, 'missing.mp3'),
+      loadAudioResourceFromUrl(host.net.http, allAudioDecodeSlots({ decode: decodeAudioData }), 'missing.mp3'),
     ).rejects.toThrow('Failed to load audio: missing.mp3 (404 Not Found)');
     expect(decodeAudioData).not.toHaveBeenCalled();
   });
 
   it('rejects when the signal aborts while the decode is in flight', async () => {
-    const { context, finishDecode } = createPendingDecodeContext();
+    const { audioDecode, finishDecode } = createPendingAudioDecode();
     const host = fakeNetHost({
       sendNetRequest: async () => ({
         body: new ArrayBuffer(8),
@@ -308,7 +333,7 @@ describe('loadAudioResourceFromUrl', () => {
       }),
     });
     const controller = new AbortController();
-    const promise = loadAudioResourceFromUrl(host.net.http, context, 'sound.mp3', controller.signal);
+    const promise = loadAudioResourceFromUrl(host.net.http, audioDecode, 'sound.mp3', controller.signal);
     await Promise.resolve();
     controller.abort(new Error('cancelled'));
     finishDecode();
@@ -319,7 +344,7 @@ describe('loadAudioResourceFromUrl', () => {
 describe('loadAudioResourceFromUrls', () => {
   it('resolves with a null-buffer resource when sources is empty', async () => {
     const host = fakeNetAudioHost(() => false);
-    const resource = await loadAudioResourceFromUrls(host.net.http, host.media.audioCodec, mockContext, []);
+    const resource = await loadAudioResourceFromUrls(host.net.http, host.media.audioCodec, mockAudioDecode, []);
     expect(resource.buffer).toBeNull();
   });
 
@@ -334,7 +359,7 @@ describe('loadAudioResourceFromUrls', () => {
     });
     const host = fakeNetAudioHost((type) => type === 'audio/ogg', { sendNetRequest: mockSendNetRequest });
 
-    const resource = await loadAudioResourceFromUrls(host.net.http, host.media.audioCodec, mockContext, [
+    const resource = await loadAudioResourceFromUrls(host.net.http, host.media.audioCodec, mockAudioDecode, [
       { url: 'sound.mp3' },
       { url: 'sound.ogg' },
     ]);
@@ -346,10 +371,10 @@ describe('loadAudioResourceFromUrls', () => {
     );
   });
 
-  it('loads a registered format even when the platform cannot play it', async () => {
+  it('loads a caller-supplied format even when the platform cannot play it', async () => {
     const customBuffer = { duration: 2 } as AudioBuffer;
     const decoder = vi.fn<AudioDecoder>(async () => createAudioResource(customBuffer));
-    registerAudioDecoder('audio/vnd.acme.custom', decoder);
+    const decoders = new Map([['audio/vnd.acme.custom', decoder]]);
     const host = fakeNetAudioHost(() => false, {
       sendNetRequest: async () => ({
         body: new ArrayBuffer(8),
@@ -361,13 +386,18 @@ describe('loadAudioResourceFromUrls', () => {
       }),
     });
 
-    const resource = await loadAudioResourceFromUrls(host.net.http, host.media.audioCodec, mockContext, [
-      { type: 'audio/vnd.acme.custom', url: 'sound.custom' },
-    ]);
+    const resource = await loadAudioResourceFromUrls(
+      host.net.http,
+      host.media.audioCodec,
+      mockAudioDecode,
+      [{ type: 'audio/vnd.acme.custom', url: 'sound.custom' }],
+      undefined,
+      decoders,
+    );
 
     expect(resource.buffer).toBe(customBuffer);
     expect(decoder).toHaveBeenCalledOnce();
-    expect(mockContext.decodeAudioData).not.toHaveBeenCalled();
+    expect(mockDecode).not.toHaveBeenCalled();
   });
 });
 
@@ -386,12 +416,25 @@ describe('selectAudioResourceUrl', () => {
     expect(selectAudioResourceUrl(host.media.audioCodec, [{ url: 'a.mp3' }, { url: 'b.wav' }])).toBeNull();
   });
 
-  it('returns a source handled by a registered decoder', () => {
-    registerAudioDecoder('audio/vnd.acme.custom', async () => createAudioResource());
+  it('returns a source handled by a caller-supplied decoder the platform cannot play', () => {
+    // The decode arm of the dual gate, exercised alone: canPlayType says no to everything here, so the
+    // source is accepted only because something can decode it.
+    expect(
+      selectAudioResourceUrl(
+        fakeAudioCodecHost(() => false).media.audioCodec,
+        [{ type: 'audio/vnd.acme.custom', url: 'sound.custom' }],
+        new Map([['audio/vnd.acme.custom', async () => createAudioResource()]]),
+      ),
+    ).toBe('sound.custom');
+  });
+
+  // The host's decode slots are not a selection arm: a platform-backed host declares all seven whatever
+  // its element can play, so letting them vote would leave canPlayType with no veto.
+  it('does not accept a source on the strength of a host decode slot alone', () => {
     expect(
       selectAudioResourceUrl(fakeAudioCodecHost(() => false).media.audioCodec, [
-        { type: 'audio/vnd.acme.custom', url: 'sound.custom' },
+        { type: 'audio/ogg', url: 'sound.ogg' },
       ]),
-    ).toBe('sound.custom');
+    ).toBeNull();
   });
 });

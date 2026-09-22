@@ -11,6 +11,7 @@ const GROUPS = [
   ['accessibility', 'webHostAccessibilityGroup'],
   ['app', 'webHostApp'],
   ['audio', 'webHostAudioGroup'],
+  ['audioDecode', 'webHostAudioDecode'],
   ['bitmap', 'webHostBitmap'],
   ['canvas', 'webHostCanvasGroup'],
   ['clipboard', 'webHostClipboard'],

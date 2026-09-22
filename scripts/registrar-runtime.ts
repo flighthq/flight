@@ -158,21 +158,6 @@ const weakIndependentSeam = (name: string): ModuleGlobalRegistrySeam => ({
 const MODULE_GLOBAL_REGISTRIES: readonly ModuleGlobalRegistryInventory[] = [
   {
     clear: null,
-    door: 'registerAudioDecoder',
-    emptyAtImport: true,
-    enumerate: callerSeam('getAudioDecoderMimeTypes'),
-    initialization: 'empty',
-    module: '@flighthq/audio/contract',
-    packageName: 'audio',
-    population: 'caller-filled',
-    read: callerSeam('getAudioDecoder'),
-    readerPackages: ['audio'],
-    source: 'packages/audio/src/audioDecoderRegistry.ts',
-    table: 'audio decoders',
-    unregister: weakIndependentSeam('unregisterAudioDecoder'),
-  },
-  {
-    clear: null,
     door: 'registerDebugSubsystem',
     emptyAtImport: true,
     enumerate: null,

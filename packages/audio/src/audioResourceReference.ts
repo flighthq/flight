@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
+  AudioDecoderRegistry,
   AudioResource,
   AudioResourceFailure,
   AudioResourceFetch,
@@ -8,6 +9,7 @@ import type {
   EmbeddedAudioResourceReference,
   EntityConstruction,
   ExternalAudioResourceReference,
+  HostAudioDecodeCapabilities,
 } from '@flighthq/types/contract';
 import {
   AudioResourceFailureKind,
@@ -131,22 +133,24 @@ export function resetFailedAudioResourceReference(ref: AudioResourceReference): 
 // reference already handed out, returning it or null for an expected failure. An abort is a cancel rather
 // than a failure, so the reference reverts to Unresolved and the rejection propagates.
 //
-// Embedded bytes take a registered decoder when the MIME type has one and the platform decoder otherwise,
-// in that order: a format the browser cannot parse is exactly what a registration is for, and a format it
-// can parse needs no registration. `context` may be null when every reference in play resolves through a
-// registered decoder or the fetch seam, which is what lets a non-web host avoid constructing one at all.
+// Embedded bytes take a caller-supplied decoder when the MIME type has one and the host's own slots
+// otherwise, in that order: a format the platform cannot parse is exactly what a caller's decoder is
+// for, and a format it can parse needs none. A host that fills no slot still resolves every reference
+// that goes through the fetch seam or a caller's decoder, which is what lets a non-web host carry no
+// audio codec at all.
 export async function resolveAudioResourceReference(
   ref: AudioResourceReference,
-  context: AudioContext | null,
+  audioDecode: Readonly<HostAudioDecodeCapabilities>,
   fetch: AudioResourceFetch,
   signal: AbortSignal,
+  decoders?: AudioDecoderRegistry,
 ): Promise<AudioResource | null> {
   ref.failure = null;
   ref.state = ResourceResolutionState.Loading;
   try {
     const decoded =
       ref.kind === AudioResourceReferenceKind.Embedded
-        ? await decodeAudioResourceBytes(context, ref.bytes, ref.mimeType ?? undefined, signal)
+        ? await decodeAudioResourceBytes(audioDecode, ref.bytes, ref.mimeType ?? undefined, signal, decoders)
         : await fetch(ref, signal);
     if (decoded === null || decoded.buffer === null) {
       ref.failure = (() => {

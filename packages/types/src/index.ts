@@ -345,6 +345,7 @@ export * from './HitTestResult';
 export * from './HtmlView';
 export * from './Host';
 export * from './HostExplanation';
+export * from './HostAudioDecode';
 export * from './HostImageDecode';
 export * from './HostImageDimensions';
 export * from './HostImageEncode';

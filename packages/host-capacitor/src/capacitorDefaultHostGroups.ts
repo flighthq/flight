@@ -1,7 +1,13 @@
-import { webHostImageDecode, webHostImageEncode, webHostTextShaperGroup } from '@flighthq/host-web/contract';
+import {
+  webHostAudioDecode,
+  webHostImageDecode,
+  webHostImageEncode,
+  webHostTextShaperGroup,
+} from '@flighthq/host-web/contract';
 import type {
   HostAccessibilityCapabilities,
   HostAudioCapabilities,
+  HostAudioDecodeCapabilities,
   HostBitmapCapabilities,
   HostFontCapabilities,
   HostFullscreenCapabilities,
@@ -48,6 +54,10 @@ export function capacitorHostAccessibility(): HostAccessibilityCapabilities {
 
 export function capacitorHostAudio(): HostAudioCapabilities {
   return {};
+}
+
+export function capacitorHostAudioDecode(): HostAudioDecodeCapabilities {
+  return webHostAudioDecode;
 }
 
 export function capacitorHostBitmap(): HostBitmapCapabilities {
