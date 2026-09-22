@@ -1,7 +1,7 @@
 export * from './enableSwfGuards';
 export * from './swfBitmap';
-export { swfBitmapTagFamily } from './swfBitmapTagFamily';
-export { swfControlTagFamily } from './swfControlTagFamily';
+export * from './swfBitmapTagFamily';
+export * from './swfControlTagFamily';
 export {
   createGlyphOutlineSourcesFromSwf,
   createScene2DFromSwf,
@@ -14,21 +14,20 @@ export {
 export * from './swfEditText';
 export * from './swfExplain';
 export { readSwfFilterList } from './swfFilter';
-export { swfFontTagFamily } from './swfFontTagFamily';
+export * from './swfFontTagFamily';
 export * from './swfFrameAction';
-export * from './swfFrameActionTestHelper';
 export * from './swfImageDecoder';
 export * from './swfKnownTags';
 export * from './swfMorphShape';
-export { swfPlacementTagFamily } from './swfPlacementTagFamily';
-export { swfScriptTagFamily } from './swfScriptTagFamily';
+export * from './swfPlacementTagFamily';
+export * from './swfScriptTagFamily';
 export * from './swfShape';
-export { swfShapeTagFamily } from './swfShapeTagFamily';
+export * from './swfShapeTagFamily';
 export { swfSoundTagFamily } from './swfSoundTagFamily';
-export { swfSpriteTagFamily } from './swfSpriteTagFamily';
-export { createSwfTagFamilyRegistry, getSwfTagFamilyDispatch } from './swfTagFamilyDispatch';
-export { createSwfDefaultTagFamilyRegistry } from './swfTagFamilyRegistry';
+export * from './swfSpriteTagFamily';
+export { createSwfTagFamilyRegistry } from './swfTagFamilyDispatch';
+export * from './swfTagFamilyRegistry';
 export * from './swfTagVocabulary';
 export * from './swfText';
-export { swfTextTagFamily } from './swfTextTagFamily';
-export { swfVideoTagFamily } from './swfVideoTagFamily';
+export * from './swfTextTagFamily';
+export * from './swfVideoTagFamily';
