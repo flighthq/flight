@@ -100,6 +100,21 @@ const ARTWORK_FAMILY_VALUES = [
 
 const ARTWORK_ENTRY = ['createScene2DFromSwf', ...ARTWORK_FAMILY_VALUES];
 
+const FAMILY_MARKERS: readonly [family: string, included: string, excluded: string][] = [
+  ['swfBitmapTagFamily', 'swf.jpeg-tables-missing', 'swf.shape-body-unreadable'],
+  ['swfControlTagFamily', 'swf.scene-names', 'swf.font-glyph-table'],
+  ['swfFontTagFamily', 'swf.font-glyph-table', 'swf.scene-names'],
+  ['swfPlacementTagFamily', 'swf.blend-mode-behind-unread-filters', 'swf.font-glyph-table'],
+  ['swfScriptTagFamily', 'swf.script.do-abc', 'swf.font-glyph-table'],
+  ['swfShapeTagFamily', 'swf.shape-body-unreadable', 'swf.jpeg-tables-missing'],
+  ['swfSoundTagFamily', 'swf.stream-sound-format', 'swf.font-glyph-table'],
+  ['swfSpriteTagFamily', 'swf.tag-handler-unregistered', 'swf.font-glyph-table'],
+  ['swfTextTagFamily', 'swf.text-shape-uncomposable', 'swf.font-glyph-table'],
+  ['swfVideoTagFamily', 'videoTextures', 'swf.font-glyph-table'],
+];
+
+const ALL_FAMILY_MARKERS = FAMILY_MARKERS.map(([, marker]) => marker);
+
 describe('SWF artwork-only builds', () => {
   it('reaches no scripting, audio, image-decoding or text package', async () => {
     const bundle = await bundleSwfExports(ARTWORK_ENTRY);
@@ -158,6 +173,24 @@ describe('SWF per-family cost', () => {
       }
     });
   }
+});
+
+describe('SWF per-family isolation', () => {
+  it.each(FAMILY_MARKERS)('keeps %s independently bundleable', async (name, included, excluded) => {
+    const bundle = await bundleSwfExports([name]);
+
+    expect(bundle.code).toContain(included);
+    expect(bundle.code).not.toContain(excluded);
+  });
+
+  it.each(FAMILY_MARKERS)('keeps %s isolated from every other family marker', async (name, included) => {
+    const bundle = await bundleSwfExports([name]);
+
+    for (const marker of ALL_FAMILY_MARKERS) {
+      if (marker === included) continue;
+      expect(bundle.code).not.toContain(marker);
+    }
+  });
 });
 
 describe('SWF zero-config builds', () => {
