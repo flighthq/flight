@@ -1,0 +1,12 @@
+{
+  "subject": "swf-import-artwork-size-fixture",
+  "entries": [
+    {
+      "name": "swf-import-artwork",
+      "renderers": ["canvas"],
+      "routes": {
+        "canvas": "/"
+      }
+    }
+  ]
+}
