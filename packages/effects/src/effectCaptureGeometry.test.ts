@@ -21,7 +21,6 @@ import type {
   HasTransform2DRuntime,
   Node2D,
   Node2DRuntime,
-  NodeAny,
   MatrixLike,
   Rectangle,
   Effect,
@@ -174,15 +173,16 @@ describe('computeEffectCaptureGeometry', () => {
     expect(out.captureTransform).toBe(captureTransform);
   });
 
-  it('accepts a Node2D through NodeAny and refuses a non-2D node without mutation', () => {
+  it('returns false and preserves output for a Node2D whose bounds are zero-area', () => {
     const state = createRenderState();
-    const source: NodeAny = createCaptureNode(createRectangle(0, 0, 8, 9));
+    const source = createCaptureNode(createRectangle(5, 10, 0, 0));
     const out = createOut();
-    expect(computeEffectCaptureGeometry(out, state, source, [])).toBe(true);
-
-    const non2D: NodeAny = createNode('Non2D');
+    setRectangle(out.bounds, 1, 2, 3, 4);
+    out.targetWidth = 99;
+    out.targetHeight = 88;
     const before = captureOutValues(out);
-    expect(computeEffectCaptureGeometry(out, state, non2D, [])).toBe(false);
+
+    expect(computeEffectCaptureGeometry(out, state, source, [])).toBe(false);
     expect(captureOutValues(out)).toEqual(before);
   });
 });
