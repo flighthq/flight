@@ -77,19 +77,19 @@ import { registerSwfImageDecoders } from './swfImageDecoder';
 import { ShapeWriter } from './swfShapeTestHelper';
 import { createSwfDefaultTagFamilyRegistry } from './swfTagFamilyRegistry';
 import {
-  BitWriter,
-  createMatrix,
-  createRectangle,
-  createSwf,
-  createTag,
-  joinBytes,
-  PLACE_HAS_CHARACTER,
-  PLACE_HAS_COLOR_TRANSFORM,
-  PLACE_HAS_MATRIX,
-  PLACE_HAS_NAME,
-  signedBitCount,
-  uint16,
-  uint32,
+  SwfBitWriter,
+  createSwfMatrixRecord,
+  createSwfRectangleRecord,
+  createSwfFileBytes,
+  createSwfTagRecord,
+  joinSwfBytes,
+  SWF_PLACE_HAS_CHARACTER,
+  SWF_PLACE_HAS_COLOR_TRANSFORM,
+  SWF_PLACE_HAS_MATRIX,
+  SWF_PLACE_HAS_NAME,
+  countSwfSignedBits,
+  swfUint16Bytes,
+  swfUint32Bytes,
 } from './swfTagStreamTestHelper';
 
 beforeEach(() => clearImageDecoders());
@@ -106,24 +106,24 @@ describe('createGlyphOutlineSourcesFromSwf', () => {
     glyph.writeStraightEdge(0, -256);
     glyph.writeEndShape();
     const glyphBytes = glyph.toBytes();
-    const offsets = joinBytes(uint16(4), uint16(4 + glyphBytes.length));
-    const font = joinBytes(
-      uint16(4),
+    const offsets = joinSwfBytes(swfUint16Bytes(4), swfUint16Bytes(4 + glyphBytes.length));
+    const font = joinSwfBytes(
+      swfUint16Bytes(4),
       new Uint8Array([0x80, 0, 0]),
-      uint16(1),
+      swfUint16Bytes(1),
       offsets,
       glyphBytes,
       new Uint8Array([0x41]),
-      uint16(800),
-      uint16(200),
-      uint16(50),
-      uint16(600),
-      createRectangle(0, 256, 0, 256),
-      uint16(0),
+      swfUint16Bytes(800),
+      swfUint16Bytes(200),
+      swfUint16Bytes(50),
+      swfUint16Bytes(600),
+      createSwfRectangleRecord(0, 256, 0, 256),
+      swfUint16Bytes(0),
     );
 
     const sources = createGlyphOutlineSourcesFromSwf(
-      createSwf([createTag(TAG_DEFINE_FONT_2, font), createTag(TAG_END)]),
+      createSwfFileBytes([createSwfTagRecord(TAG_DEFINE_FONT_2, font), createSwfTagRecord(TAG_END)]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
       DECOMPRESS_LZMA,
@@ -155,11 +155,15 @@ describe('createGlyphOutlineSourcesFromSwf', () => {
     glyph.writeStraightEdge(-256, 0);
     glyph.writeStraightEdge(0, -256);
     glyph.writeEndShape();
-    const font = joinBytes(uint16(4), uint16(2), glyph.toBytes());
-    const fontInfo = joinBytes(uint16(4), new Uint8Array([0, 0, 0x41]));
+    const font = joinSwfBytes(swfUint16Bytes(4), swfUint16Bytes(2), glyph.toBytes());
+    const fontInfo = joinSwfBytes(swfUint16Bytes(4), new Uint8Array([0, 0, 0x41]));
 
     const sources = createGlyphOutlineSourcesFromSwf(
-      createSwf([createTag(TAG_DEFINE_FONT_INFO, fontInfo), createTag(TAG_DEFINE_FONT, font), createTag(TAG_END)]),
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_FONT_INFO, fontInfo),
+        createSwfTagRecord(TAG_DEFINE_FONT, font),
+        createSwfTagRecord(TAG_END),
+      ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
       DECOMPRESS_LZMA,
@@ -173,21 +177,24 @@ describe('createGlyphOutlineSourcesFromSwf', () => {
 describe('createScene2DFromSwf', () => {
   it('imports a named PlaceObject2 as a transformed slot with SymbolClass linkage', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_FILE_ATTRIBUTES, new Uint8Array(4)),
-        createTag(TAG_SYMBOL_CLASS, joinBytes(uint16(1), uint16(7), swfString('Game.Avatar'))),
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_FILE_ATTRIBUTES, new Uint8Array(4)),
+        createSwfTagRecord(
+          TAG_SYMBOL_CLASS,
+          joinSwfBytes(swfUint16Bytes(1), swfUint16Bytes(7), swfString('Game.Avatar')),
+        ),
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
-            uint16(3),
-            uint16(7),
-            createMatrix(1.5, 0.25, -0.125, 0.5, 200, -40),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_MATRIX | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(3),
+            swfUint16Bytes(7),
+            createSwfMatrixRecord(1.5, 0.25, -0.125, 0.5, 200, -40),
             swfString('avatarSlot'),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -224,20 +231,23 @@ describe('createScene2DFromSwf', () => {
     writer.writeEndShape();
 
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 2000, 0, 1000), writer.toBytes())),
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_DEFINE_SHAPE,
+          joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 2000, 0, 1000), writer.toBytes()),
+        ),
         // Unnamed: a shape earns a node because it has geometry, not because it is addressable.
-        createTag(
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
-            uint16(1),
-            uint16(7),
-            createMatrix(1, 0, 0, 1, 60, 80),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_MATRIX | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(1),
+            swfUint16Bytes(7),
+            createSwfMatrixRecord(1, 0, 0, 1, 60, 80),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -263,12 +273,21 @@ describe('createScene2DFromSwf', () => {
     writer.writeEndShape();
 
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 400, 0, 400), writer.toBytes())),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(7))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_DEFINE_SHAPE,
+          joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 400, 0, 400), writer.toBytes()),
+        ),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(7)),
+        ),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(2), swfUint16Bytes(7)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -284,15 +303,20 @@ describe('createScene2DFromSwf', () => {
 
   it('keeps a shape definition whose body does not parse as a bounded placeholder', () => {
     const document = createScene2DFromSwf(
-      createSwf([
+      createSwfFileBytes([
         // A bounds prefix with no readable SHAPEWITHSTYLE behind it.
-        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 200, 0, 100))),
-        createTag(
+        createSwfTagRecord(TAG_DEFINE_SHAPE, joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 200, 0, 100))),
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(7), swfString('boxed')),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(1),
+            swfUint16Bytes(7),
+            swfString('boxed'),
+          ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -317,16 +341,30 @@ describe('createScene2DFromSwf', () => {
     // are advisory, so the odd character costs its own size and nothing else — the shape placed beside
     // it still arrives.
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(400, -400, 300, -300))),
-        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(8), createRectangle(0, 400, 0, 400), writer.toBytes())),
-        createTag(
-          TAG_PLACE_OBJECT_2,
-          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(7), swfString('empty')),
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_DEFINE_SHAPE,
+          joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(400, -400, 300, -300)),
         ),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(8))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(
+          TAG_DEFINE_SHAPE,
+          joinSwfBytes(swfUint16Bytes(8), createSwfRectangleRecord(0, 400, 0, 400), writer.toBytes()),
+        ),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(1),
+            swfUint16Bytes(7),
+            swfString('empty'),
+          ),
+        ),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(2), swfUint16Bytes(8)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -351,23 +389,35 @@ describe('createScene2DFromSwf', () => {
 
     const diagnostics: ImportDiagnostic[] = [];
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 400, 0, 400), writer.toBytes())),
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_DEFINE_SHAPE,
+          joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 400, 0, 400), writer.toBytes()),
+        ),
+        createSwfTagRecord(
           TAG_DEFINE_SPRITE,
-          joinBytes(
-            uint16(20),
-            uint16(1),
-            createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
-            createTag(TAG_SHOW_FRAME),
-            createTag(TAG_END),
+          joinSwfBytes(
+            swfUint16Bytes(20),
+            swfUint16Bytes(1),
+            createSwfTagRecord(
+              TAG_PLACE_OBJECT_2,
+              joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(7)),
+            ),
+            createSwfTagRecord(TAG_SHOW_FRAME),
+            createSwfTagRecord(TAG_END),
           ),
         ),
         // The grid names the sprite, not the shape — the tag may also precede the sprite it names.
-        createTag(TAG_DEFINE_SCALING_GRID, joinBytes(uint16(20), createRectangle(100, 300, 100, 300))),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(20))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(
+          TAG_DEFINE_SCALING_GRID,
+          joinSwfBytes(swfUint16Bytes(20), createSwfRectangleRecord(100, 300, 100, 300)),
+        ),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(20)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -399,25 +449,40 @@ describe('createScene2DFromSwf', () => {
     writer.writeEndShape();
 
     const document = createScene2DFromSwf(
-      createSwf([
+      createSwfFileBytes([
         // A real shape body, so the layer count is the only thing that can disqualify the wrapper.
-        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 400, 0, 400), writer.toBytes())),
-        createTag(
+        createSwfTagRecord(
+          TAG_DEFINE_SHAPE,
+          joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 400, 0, 400), writer.toBytes()),
+        ),
+        createSwfTagRecord(
           TAG_DEFINE_SPRITE,
-          joinBytes(
-            uint16(20),
-            uint16(1),
+          joinSwfBytes(
+            swfUint16Bytes(20),
+            swfUint16Bytes(1),
             // Two layers, so the grid describes a composition no single shape's commands can carry.
-            createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
-            createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(7))),
-            createTag(TAG_SHOW_FRAME),
-            createTag(TAG_END),
+            createSwfTagRecord(
+              TAG_PLACE_OBJECT_2,
+              joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(7)),
+            ),
+            createSwfTagRecord(
+              TAG_PLACE_OBJECT_2,
+              joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(2), swfUint16Bytes(7)),
+            ),
+            createSwfTagRecord(TAG_SHOW_FRAME),
+            createSwfTagRecord(TAG_END),
           ),
         ),
-        createTag(TAG_DEFINE_SCALING_GRID, joinBytes(uint16(20), createRectangle(100, 300, 100, 300))),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(20))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(
+          TAG_DEFINE_SCALING_GRID,
+          joinSwfBytes(swfUint16Bytes(20), createSwfRectangleRecord(100, 300, 100, 300)),
+        ),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(20)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -439,12 +504,15 @@ describe('createScene2DFromSwf', () => {
     // bitstream is not part of, then the frames themselves.
     const frames = new Uint8Array([0xff, 0xfb, 0x90, 0x44, 0x11, 0x22]);
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), frames)),
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_DEFINE_SOUND,
+          joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x2b]), swfUint32Bytes(1152), swfUint16Bytes(0), frames),
+        ),
         // Publishing the sound by name is what makes it reachable when no frame ever cues it.
-        createTag(TAG_EXPORT_ASSETS, joinBytes(uint16(1), uint16(9), swfString('theme'))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_EXPORT_ASSETS, joinSwfBytes(swfUint16Bytes(1), swfUint16Bytes(9), swfString('theme'))),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -465,11 +533,14 @@ describe('createScene2DFromSwf', () => {
   it('tags a sound whose format has no standard container instead of dropping it untyped', () => {
     const payload = new Uint8Array([1, 2, 3, 4]);
     const document = createScene2DFromSwf(
-      createSwf([
+      createSwfFileBytes([
         // format 1 (ADPCM): no MIME type Flight can name, and no seek prefix to skip.
-        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x1b]), uint32(16), payload)),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(
+          TAG_DEFINE_SOUND,
+          joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x1b]), swfUint32Bytes(16), payload),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -488,13 +559,16 @@ describe('createScene2DFromSwf', () => {
 
   it('turns a StartSound into an audio cue sharing the document’s resource', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), mp3())),
-        createTag(TAG_SHOW_FRAME),
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_DEFINE_SOUND,
+          joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x2b]), swfUint32Bytes(1152), swfUint16Bytes(0), mp3()),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
         // 0x00: plain event sound, no in/out, no loops, no envelope.
-        createTag(TAG_START_SOUND, joinBytes(uint16(9), new Uint8Array([0x00]))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_START_SOUND, joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x00]))),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -519,13 +593,16 @@ describe('createScene2DFromSwf', () => {
 
   it('gives every cue naming one sound the same resource the document lists', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), mp3())),
-        createTag(TAG_START_SOUND, joinBytes(uint16(9), new Uint8Array([0x00]))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_START_SOUND, joinBytes(uint16(9), new Uint8Array([0x00]))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_DEFINE_SOUND,
+          joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x2b]), swfUint32Bytes(1152), swfUint16Bytes(0), mp3()),
+        ),
+        createSwfTagRecord(TAG_START_SOUND, joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x00]))),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_START_SOUND, joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x00]))),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -545,14 +622,20 @@ describe('createScene2DFromSwf', () => {
 
   it('resolves a StartSound2 class name against the character SymbolClass bound it to', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), mp3())),
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_DEFINE_SOUND,
+          joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x2b]), swfUint32Bytes(1152), swfUint16Bytes(0), mp3()),
+        ),
         // The trigger names a class, and SymbolClass — which says what that class is — comes after it, as
         // it does in every real file: it is written near the end, past the sprites that trigger sounds.
-        createTag(TAG_START_SOUND_2, joinBytes(swfString('Game.Theme'), new Uint8Array([0x00]))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_SYMBOL_CLASS, joinBytes(uint16(1), uint16(9), swfString('Game.Theme'))),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_START_SOUND_2, joinSwfBytes(swfString('Game.Theme'), new Uint8Array([0x00]))),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(
+          TAG_SYMBOL_CLASS,
+          joinSwfBytes(swfUint16Bytes(1), swfUint16Bytes(9), swfString('Game.Theme')),
+        ),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -569,13 +652,19 @@ describe('createScene2DFromSwf', () => {
 
   it('shares one resource between a class-named trigger and an id-named one', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), mp3())),
-        createTag(TAG_START_SOUND_2, joinBytes(swfString('Game.Theme'), new Uint8Array([0x00]))),
-        createTag(TAG_START_SOUND, joinBytes(uint16(9), new Uint8Array([0x00]))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_SYMBOL_CLASS, joinBytes(uint16(1), uint16(9), swfString('Game.Theme'))),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_DEFINE_SOUND,
+          joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x2b]), swfUint32Bytes(1152), swfUint16Bytes(0), mp3()),
+        ),
+        createSwfTagRecord(TAG_START_SOUND_2, joinSwfBytes(swfString('Game.Theme'), new Uint8Array([0x00]))),
+        createSwfTagRecord(TAG_START_SOUND, joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x00]))),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(
+          TAG_SYMBOL_CLASS,
+          joinSwfBytes(swfUint16Bytes(1), swfUint16Bytes(9), swfString('Game.Theme')),
+        ),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -591,13 +680,22 @@ describe('createScene2DFromSwf', () => {
 
   it('converts a class-named trigger’s in point once its character resolves', () => {
     const document = createScene2DFromSwf(
-      createSwf([
+      createSwfFileBytes([
         // 0x2b is 22.05kHz, so 11025 samples is half a second.
-        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(44100), uint16(0), mp3())),
-        createTag(TAG_START_SOUND_2, joinBytes(swfString('Game.Theme'), new Uint8Array([0x01]), uint32(11025))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_SYMBOL_CLASS, joinBytes(uint16(1), uint16(9), swfString('Game.Theme'))),
-        createTag(TAG_END),
+        createSwfTagRecord(
+          TAG_DEFINE_SOUND,
+          joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x2b]), swfUint32Bytes(44100), swfUint16Bytes(0), mp3()),
+        ),
+        createSwfTagRecord(
+          TAG_START_SOUND_2,
+          joinSwfBytes(swfString('Game.Theme'), new Uint8Array([0x01]), swfUint32Bytes(11025)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(
+          TAG_SYMBOL_CLASS,
+          joinSwfBytes(swfUint16Bytes(1), swfUint16Bytes(9), swfString('Game.Theme')),
+        ),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -611,11 +709,14 @@ describe('createScene2DFromSwf', () => {
 
   it('keeps a class-named trigger whose class nothing declares', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), mp3())),
-        createTag(TAG_START_SOUND_2, joinBytes(swfString('Game.Missing'), new Uint8Array([0x00]))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_DEFINE_SOUND,
+          joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x2b]), swfUint32Bytes(1152), swfUint16Bytes(0), mp3()),
+        ),
+        createSwfTagRecord(TAG_START_SOUND_2, joinSwfBytes(swfString('Game.Missing'), new Uint8Array([0x00]))),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -630,12 +731,15 @@ describe('createScene2DFromSwf', () => {
 
   it('reads a stop trigger as a stop rather than a play', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), mp3())),
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_DEFINE_SOUND,
+          joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x2b]), swfUint32Bytes(1152), swfUint16Bytes(0), mp3()),
+        ),
         // 0x20 is SyncStop; 0x10 alongside it is SyncNoMultiple, which a stop has no use for.
-        createTag(TAG_START_SOUND, joinBytes(uint16(9), new Uint8Array([0x30]))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_START_SOUND, joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x30]))),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -649,13 +753,19 @@ describe('createScene2DFromSwf', () => {
 
   it('converts in and out points from the sound’s own samples into seconds', () => {
     const document = createScene2DFromSwf(
-      createSwf([
+      createSwfFileBytes([
         // 0x2b is 22.05kHz, so 11025 samples is half a second.
-        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(44100), uint16(0), mp3())),
+        createSwfTagRecord(
+          TAG_DEFINE_SOUND,
+          joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x2b]), swfUint32Bytes(44100), swfUint16Bytes(0), mp3()),
+        ),
         // 0x03: has in point and out point.
-        createTag(TAG_START_SOUND, joinBytes(uint16(9), new Uint8Array([0x03]), uint32(11025), uint32(33075))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(
+          TAG_START_SOUND,
+          joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x03]), swfUint32Bytes(11025), swfUint32Bytes(33075)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -670,25 +780,28 @@ describe('createScene2DFromSwf', () => {
 
   it('reads a stereo envelope in 44.1kHz samples whatever the sound’s rate', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), mp3())),
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_DEFINE_SOUND,
+          joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x2b]), swfUint32Bytes(1152), swfUint16Bytes(0), mp3()),
+        ),
         // 0x08: has envelope. Two points, the second panned hard left.
-        createTag(
+        createSwfTagRecord(
           TAG_START_SOUND,
-          joinBytes(
-            uint16(9),
+          joinSwfBytes(
+            swfUint16Bytes(9),
             new Uint8Array([0x08]),
             new Uint8Array([2]),
-            uint32(0),
-            uint16(32768),
-            uint16(32768),
-            uint32(22050),
-            uint16(32768),
-            uint16(0),
+            swfUint32Bytes(0),
+            swfUint16Bytes(32768),
+            swfUint16Bytes(32768),
+            swfUint32Bytes(22050),
+            swfUint16Bytes(32768),
+            swfUint16Bytes(0),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -706,11 +819,14 @@ describe('createScene2DFromSwf', () => {
 
   it('lets a trigger name a sound the tag stream has not reached yet', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_START_SOUND, joinBytes(uint16(9), new Uint8Array([0x00]))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), mp3())),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_START_SOUND, joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x00]))),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(
+          TAG_DEFINE_SOUND,
+          joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x2b]), swfUint32Bytes(1152), swfUint16Bytes(0), mp3()),
+        ),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -724,7 +840,7 @@ describe('createScene2DFromSwf', () => {
 
   it('carries no audio references for a file that defines no sounds', () => {
     const document = createScene2DFromSwf(
-      createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]),
+      createSwfFileBytes([createSwfTagRecord(TAG_SHOW_FRAME), createSwfTagRecord(TAG_END)]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
       DECOMPRESS_LZMA,
@@ -735,11 +851,14 @@ describe('createScene2DFromSwf', () => {
   it('carries an embedded image out as undecoded bytes on a waiting texture', () => {
     const png = createPngHeader(24, 12);
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(9), png)),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(9))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_BITS_JPEG_2, joinSwfBytes(swfUint16Bytes(9), png)),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(9)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -760,14 +879,19 @@ describe('createScene2DFromSwf', () => {
 
   it('places a bitmap character as a sprite sized by its authored bounds before any pixels load', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(9), createJpegHeader(8, 8))),
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_BITS_JPEG_2, joinSwfBytes(swfUint16Bytes(9), createJpegHeader(8, 8))),
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(9), swfString('logo')),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(1),
+            swfUint16Bytes(9),
+            swfString('logo'),
+          ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -783,13 +907,22 @@ describe('createScene2DFromSwf', () => {
 
   it('shares one image resource across every placement of one bitmap character', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(9), createJpegHeader(8, 8))),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(9))),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(9))),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(3), uint16(9))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_BITS_JPEG_2, joinSwfBytes(swfUint16Bytes(9), createJpegHeader(8, 8))),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(9)),
+        ),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(2), swfUint16Bytes(9)),
+        ),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(3), swfUint16Bytes(9)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -806,21 +939,29 @@ describe('createScene2DFromSwf', () => {
     // Flash's own tooling ends a sprite — and sometimes the root — with its last content tag and no
     // terminator. Rejecting those would lose the whole document over a byte no reader needs.
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_DEFINE_SPRITE,
-          joinBytes(
-            uint16(20),
-            uint16(1),
-            createTag(
+          joinSwfBytes(
+            swfUint16Bytes(20),
+            swfUint16Bytes(1),
+            createSwfTagRecord(
               TAG_PLACE_OBJECT_2,
-              joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(7), swfString('kid')),
+              joinSwfBytes(
+                new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+                swfUint16Bytes(1),
+                swfUint16Bytes(7),
+                swfString('kid'),
+              ),
             ),
-            createTag(TAG_SHOW_FRAME),
+            createSwfTagRecord(TAG_SHOW_FRAME),
           ),
         ),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(20))),
-        createTag(TAG_SHOW_FRAME),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(20)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -829,9 +970,9 @@ describe('createScene2DFromSwf', () => {
 
     expect(document?.slots.map((reference) => reference.name)).toEqual(['kid']);
     // An empty stream is an empty movie, not a malformed one.
-    expect(createScene2DFromSwf(createSwf([]), DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)?.slots).toEqual(
-      [],
-    );
+    expect(
+      createScene2DFromSwf(createSwfFileBytes([]), DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)?.slots,
+    ).toEqual([]);
   });
 
   it('turns a clip-depth placement into a clip on what it covers, and draws no mask', () => {
@@ -855,33 +996,42 @@ describe('createScene2DFromSwf', () => {
     content.writeEndShape();
 
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 800, 0, 800), mask.toBytes())),
-        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(8), createRectangle(0, 2000, 0, 100), content.toBytes())),
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_DEFINE_SHAPE,
+          joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 800, 0, 800), mask.toBytes()),
+        ),
+        createSwfTagRecord(
+          TAG_DEFINE_SHAPE,
+          joinSwfBytes(swfUint16Bytes(8), createSwfRectangleRecord(0, 2000, 0, 100), content.toBytes()),
+        ),
         // The mask sits at depth 1 and covers through depth 5, offset 100 twips right of the origin.
-        createTag(
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_CLIP_DEPTH | PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
-            uint16(1),
-            uint16(7),
-            createMatrix(1, 0, 0, 1, 100, 0),
-            uint16(5),
+          joinSwfBytes(
+            new Uint8Array([PLACE_HAS_CLIP_DEPTH | SWF_PLACE_HAS_MATRIX | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(1),
+            swfUint16Bytes(7),
+            createSwfMatrixRecord(1, 0, 0, 1, 100, 0),
+            swfUint16Bytes(5),
           ),
         ),
-        createTag(
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
-            uint16(3),
-            uint16(8),
-            createMatrix(1, 0, 0, 1, 40, 0),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_MATRIX | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(3),
+            swfUint16Bytes(8),
+            createSwfMatrixRecord(1, 0, 0, 1, 40, 0),
           ),
         ),
         // Depth 9 is outside the mask's range, so nothing clips it.
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(9), uint16(8))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(9), swfUint16Bytes(8)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -906,19 +1056,24 @@ describe('createScene2DFromSwf', () => {
   });
 
   it('imports a compressed document through the supplied deflate slot', () => {
-    const uncompressed = createSwf([
-      createTag(
+    const uncompressed = createSwfFileBytes([
+      createSwfTagRecord(
         TAG_PLACE_OBJECT_2,
-        joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(7), swfString('packed')),
+        joinSwfBytes(
+          new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+          swfUint16Bytes(1),
+          swfUint16Bytes(7),
+          swfString('packed'),
+        ),
       ),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     // A CWS body is a zlib stream, so it resolves the shared Deflate algorithm — the same registration an
     // AWD2 file would use. A CWS file is the same 8-byte header over a compressed body; the declared length already counts
     // uncompressed bytes. This stand-in "compresses" by reversing, so the test exercises the seam and the
     // splice rather than any particular codec.
-    const compressed = joinBytes(uncompressed.subarray(0, 8), uncompressed.subarray(8).reverse());
+    const compressed = joinSwfBytes(uncompressed.subarray(0, 8), uncompressed.subarray(8).reverse());
     compressed[0] = 0x43;
 
     // A group with no deflate slot cannot read these bytes, and that reads as the document's null sentinel.
@@ -937,8 +1092,8 @@ describe('createScene2DFromSwf', () => {
   });
 
   it('rejects a compressed document whose deflate slot returns a short or failed body', () => {
-    const uncompressed = createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]);
-    const compressed = joinBytes(uncompressed.subarray(0, 8), uncompressed.subarray(8));
+    const uncompressed = createSwfFileBytes([createSwfTagRecord(TAG_SHOW_FRAME), createSwfTagRecord(TAG_END)]);
+    const compressed = joinSwfBytes(uncompressed.subarray(0, 8), uncompressed.subarray(8));
     compressed[0] = 0x43;
 
     expect(createScene2DFromSwf(compressed, DEFAULT_FAMILIES, { decompress: () => null }, null)).toBeNull();
@@ -949,10 +1104,10 @@ describe('createScene2DFromSwf', () => {
 
   it('imports the stage background colour as opaque packed RGBA', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([0x33, 0x66, 0x99])),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_SET_BACKGROUND_COLOR, new Uint8Array([0x33, 0x66, 0x99])),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -964,7 +1119,7 @@ describe('createScene2DFromSwf', () => {
     // A file that declares none reports null rather than a guessed default.
     expect(
       createScene2DFromSwf(
-        createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]),
+        createSwfFileBytes([createSwfTagRecord(TAG_SHOW_FRAME), createSwfTagRecord(TAG_END)]),
         DEFAULT_FAMILIES,
         DECOMPRESS_DEFLATE,
         DECOMPRESS_LZMA,
@@ -985,37 +1140,40 @@ describe('createScene2DFromSwf', () => {
     const glyphBytes = glyph.toBytes();
 
     // DefineFont: id, then an offset table whose first entry is its own byte length.
-    const font = joinBytes(uint16(4), uint16(2), glyphBytes);
+    const font = joinSwfBytes(swfUint16Bytes(4), swfUint16Bytes(2), glyphBytes);
 
     // One text record: font 4, height 1024 twips, one glyph at index 0, advancing 600 twips.
-    const record = new BitWriter();
+    const record = new SwfBitWriter();
     record.writeUnsigned(1, 1); // record type
     record.writeUnsigned(0, 3); // reserved
     record.writeUnsigned(1, 1); // has font
     record.writeUnsigned(1, 1); // has color
     record.writeUnsigned(0, 1); // has y offset
     record.writeUnsigned(0, 1); // has x offset
-    const text = joinBytes(
-      uint16(6),
-      createRectangle(0, 1024, 0, 1024),
-      createMatrix(1, 0, 0, 1, 0, 0),
+    const text = joinSwfBytes(
+      swfUint16Bytes(6),
+      createSwfRectangleRecord(0, 1024, 0, 1024),
+      createSwfMatrixRecord(1, 0, 0, 1, 0, 0),
       new Uint8Array([4, 8]), // glyph bits, advance bits
       record.toBytes(),
-      uint16(4),
+      swfUint16Bytes(4),
       new Uint8Array([0xff, 0x00, 0x00]),
-      uint16(1024),
+      swfUint16Bytes(1024),
       new Uint8Array([1]),
       packGlyphEntry(0, 600),
       new Uint8Array([0]),
     );
 
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_FONT, font),
-        createTag(TAG_DEFINE_TEXT, text),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(6))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_FONT, font),
+        createSwfTagRecord(TAG_DEFINE_TEXT, text),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(6)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1034,11 +1192,11 @@ describe('createScene2DFromSwf', () => {
 
   it('imports a button as the display list of its up state', () => {
     const record = (flags: number, characterId: number, depth: number): Uint8Array =>
-      joinBytes(
+      joinSwfBytes(
         new Uint8Array([flags]),
-        uint16(characterId),
-        uint16(depth),
-        createMatrix(1, 0, 0, 1, 40, 0),
+        swfUint16Bytes(characterId),
+        swfUint16Bytes(depth),
+        createSwfMatrixRecord(1, 0, 0, 1, 40, 0),
         createColorTransformWithAlpha(),
       );
 
@@ -1051,26 +1209,34 @@ describe('createScene2DFromSwf', () => {
     face.writeEndShape();
 
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 400, 0, 400), face.toBytes())),
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_DEFINE_SHAPE,
+          joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 400, 0, 400), face.toBytes()),
+        ),
+        createSwfTagRecord(
           TAG_DEFINE_BUTTON_2,
-          joinBytes(
-            uint16(20),
+          joinSwfBytes(
+            swfUint16Bytes(20),
             new Uint8Array([0]),
-            uint16(0),
+            swfUint16Bytes(0),
             // Up state, then a down-only state that must not appear in a still document.
             record(0x01, 7, 1),
             record(0x04, 7, 2),
             new Uint8Array([0]),
           ),
         ),
-        createTag(
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(20), swfString('btn')),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(1),
+            swfUint16Bytes(20),
+            swfString('btn'),
+          ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1091,12 +1257,15 @@ describe('createScene2DFromSwf', () => {
     const image = createJpegHeader(16, 8);
 
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_JPEG_TABLES, tables),
-        createTag(TAG_DEFINE_BITS, joinBytes(uint16(9), image)),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(9))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_JPEG_TABLES, tables),
+        createSwfTagRecord(TAG_DEFINE_BITS, joinSwfBytes(swfUint16Bytes(9), image)),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(9)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1114,12 +1283,12 @@ describe('createScene2DFromSwf', () => {
 
   it('binds a recognized DoAction to the frame that carries it', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_SHOW_FRAME),
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_SHOW_FRAME),
         // Frame 2 carries a bare stop, the overwhelmingly common timeline script.
-        createTag(TAG_DO_ACTION, new Uint8Array([0x07, 0x00])),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_DO_ACTION, new Uint8Array([0x07, 0x00])),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1141,11 +1310,11 @@ describe('createScene2DFromSwf', () => {
 
   it('leaves a frame whose actions are not purely playback commands unbound', () => {
     const document = createScene2DFromSwf(
-      createSwf([
+      createSwfFileBytes([
         // A push then a stop: partially legible, and therefore declined whole.
-        createTag(TAG_DO_ACTION, new Uint8Array([0x96, 0x02, 0x00, 0x08, 0x00, 0x07, 0x00])),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_DO_ACTION, new Uint8Array([0x96, 0x02, 0x00, 0x08, 0x00, 0x07, 0x00])),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1156,32 +1325,37 @@ describe('createScene2DFromSwf', () => {
   });
 
   it('imports an edit text field as a text node rather than flattening it to paths', () => {
-    const field = joinBytes(
-      uint16(12),
-      createRectangle(0, 4000, 0, 800),
+    const field = joinSwfBytes(
+      swfUint16Bytes(12),
+      createSwfRectangleRecord(0, 4000, 0, 800),
       // HasText | WordWrap | Multiline | HasTextColor | HasFont, then HasLayout | Border.
       new Uint8Array([0x80 | 0x40 | 0x20 | 0x04 | 0x01, 0x20 | 0x08]),
-      uint16(7),
-      uint16(240),
+      swfUint16Bytes(7),
+      swfUint16Bytes(240),
       new Uint8Array([0x11, 0x22, 0x33, 0xff]),
       new Uint8Array([2]),
-      uint16(20),
-      uint16(40),
-      uint16(60),
-      uint16(80),
+      swfUint16Bytes(20),
+      swfUint16Bytes(40),
+      swfUint16Bytes(60),
+      swfUint16Bytes(80),
       swfString('varName'),
       swfString('Hello'),
     );
 
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_EDIT_TEXT, field),
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_EDIT_TEXT, field),
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(12), swfString('score')),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(1),
+            swfUint16Bytes(12),
+            swfString('score'),
+          ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1217,11 +1391,17 @@ describe('createScene2DFromSwf', () => {
     // A picture this decoder cannot read costs that picture, not the import — the same rule an unreadable
     // shape body, font glyph, or legacy image pair already follows.
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(1), new Uint8Array([0xff, 0xd8, 0xff, 0xd9]))),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(1))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_DEFINE_BITS_JPEG_2,
+          joinSwfBytes(swfUint16Bytes(1), new Uint8Array([0xff, 0xd8, 0xff, 0xd9])),
+        ),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(1)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1236,18 +1416,31 @@ describe('createScene2DFromSwf', () => {
     // The package's whole error contract is a null sentinel, so the property that matters is that no
     // input produces an exception. Mutations are seeded rather than random so a failure is reproducible,
     // and the corpus sweep runs the same property over real files.
-    const valid = createSwf([
-      createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 2000, 0, 1000))),
-      createTag(TAG_DEFINE_SPRITE, joinBytes(uint16(20), uint16(1), createTag(TAG_SHOW_FRAME), createTag(TAG_END))),
-      createTag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([1, 2, 3])),
-      createTag(TAG_SYMBOL_CLASS, joinBytes(uint16(1), uint16(20), swfString('Game.Clip'))),
-      createTag(
-        TAG_PLACE_OBJECT_2,
-        joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(20), swfString('slot')),
+    const valid = createSwfFileBytes([
+      createSwfTagRecord(TAG_DEFINE_SHAPE, joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 2000, 0, 1000))),
+      createSwfTagRecord(
+        TAG_DEFINE_SPRITE,
+        joinSwfBytes(
+          swfUint16Bytes(20),
+          swfUint16Bytes(1),
+          createSwfTagRecord(TAG_SHOW_FRAME),
+          createSwfTagRecord(TAG_END),
+        ),
       ),
-      createTag(TAG_DO_ACTION, new Uint8Array([0x07, 0x00])),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(TAG_SET_BACKGROUND_COLOR, new Uint8Array([1, 2, 3])),
+      createSwfTagRecord(TAG_SYMBOL_CLASS, joinSwfBytes(swfUint16Bytes(1), swfUint16Bytes(20), swfString('Game.Clip'))),
+      createSwfTagRecord(
+        TAG_PLACE_OBJECT_2,
+        joinSwfBytes(
+          new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+          swfUint16Bytes(1),
+          swfUint16Bytes(20),
+          swfString('slot'),
+        ),
+      ),
+      createSwfTagRecord(TAG_DO_ACTION, new Uint8Array([0x07, 0x00])),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
 
     let seed = 0x1234abcd;
@@ -1284,24 +1477,32 @@ describe('createScene2DFromSwf', () => {
     face.writeEndShape();
 
     // A library symbol the authoring tool published for code to create, with nothing on the timeline.
-    const file = createSwf([
-      createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 600, 0, 600), face.toBytes())),
-      createTag(
+    const file = createSwfFileBytes([
+      createSwfTagRecord(
+        TAG_DEFINE_SHAPE,
+        joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 600, 0, 600), face.toBytes()),
+      ),
+      createSwfTagRecord(
         TAG_DEFINE_SPRITE,
-        joinBytes(
-          uint16(20),
-          uint16(1),
-          createTag(
+        joinSwfBytes(
+          swfUint16Bytes(20),
+          swfUint16Bytes(1),
+          createSwfTagRecord(
             TAG_PLACE_OBJECT_2,
-            joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(7), swfString('art')),
+            joinSwfBytes(
+              new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+              swfUint16Bytes(1),
+              swfUint16Bytes(7),
+              swfString('art'),
+            ),
           ),
-          createTag(TAG_SHOW_FRAME),
-          createTag(TAG_END),
+          createSwfTagRecord(TAG_SHOW_FRAME),
+          createSwfTagRecord(TAG_END),
         ),
       ),
-      createTag(TAG_EXPORT_ASSETS, joinBytes(uint16(1), uint16(20), swfString('Layout'))),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(TAG_EXPORT_ASSETS, joinSwfBytes(swfUint16Bytes(1), swfUint16Bytes(20), swfString('Layout'))),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
 
     // The document itself is empty, because nothing was placed — which is exactly what a consumer sees.
@@ -1325,11 +1526,17 @@ describe('createScene2DFromSwf', () => {
     art.writeEndShape();
 
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 800, 0, 800), art.toBytes())),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_DEFINE_SHAPE,
+          joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 800, 0, 800), art.toBytes()),
+        ),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(7)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1357,12 +1564,18 @@ describe('createScene2DFromSwf', () => {
     const pixels = losslessPayload(5, 1, 1, storedDeflate([0, 0x11, 0x22, 0x33]));
 
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_BITS_LOSSLESS, joinBytes(uint16(9), pixels)),
-        createTag(TAG_DEFINE_SHAPE_3, joinBytes(uint16(7), createRectangle(0, 800, 0, 800), art.toBytes())),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_BITS_LOSSLESS, joinSwfBytes(swfUint16Bytes(9), pixels)),
+        createSwfTagRecord(
+          TAG_DEFINE_SHAPE_3,
+          joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 800, 0, 800), art.toBytes()),
+        ),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(7)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1399,12 +1612,18 @@ describe('createScene2DFromSwf', () => {
     const pixels = losslessPayload(5, 1, 1, storedDeflate([0, 0x11, 0x22, 0x33]));
 
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_BITS_LOSSLESS, joinBytes(uint16(9), pixels)),
-        createTag(TAG_DEFINE_SHAPE_3, joinBytes(uint16(7), createRectangle(0, 800, 0, 800), art.toBytes())),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_BITS_LOSSLESS, joinSwfBytes(swfUint16Bytes(9), pixels)),
+        createSwfTagRecord(
+          TAG_DEFINE_SHAPE_3,
+          joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 800, 0, 800), art.toBytes()),
+        ),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(7)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1432,12 +1651,18 @@ describe('createScene2DFromSwf', () => {
     art.writeEndShape();
     const pixels = losslessPayload(5, 1, 1, storedDeflate([0x80, 0x40, 0x20, 0x10]));
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_BITS_LOSSLESS_2, joinBytes(uint16(9), pixels)),
-        createTag(TAG_DEFINE_SHAPE_3, joinBytes(uint16(7), createRectangle(0, 800, 0, 800), art.toBytes())),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_BITS_LOSSLESS_2, joinSwfBytes(swfUint16Bytes(9), pixels)),
+        createSwfTagRecord(
+          TAG_DEFINE_SHAPE_3,
+          joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 800, 0, 800), art.toBytes()),
+        ),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(7)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1472,12 +1697,18 @@ describe('createScene2DFromSwf', () => {
     art.writeEndShape();
 
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(9), createJpegHeader(8, 8))),
-        createTag(TAG_DEFINE_SHAPE_3, joinBytes(uint16(7), createRectangle(0, 800, 0, 800), art.toBytes())),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_BITS_JPEG_2, joinSwfBytes(swfUint16Bytes(9), createJpegHeader(8, 8))),
+        createSwfTagRecord(
+          TAG_DEFINE_SHAPE_3,
+          joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 800, 0, 800), art.toBytes()),
+        ),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(7)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1499,14 +1730,17 @@ describe('createScene2DFromSwf', () => {
     // payload commonly contains an end-of-image immediately followed by a second start-of-image before the
     // frame header ever appears.
     const image = createJpegHeader(32, 16);
-    const legacy = joinBytes(new Uint8Array([0xff, 0xd8, 0xff, 0xdb, 0x00, 0x04, 0x11, 0x22, 0xff, 0xd9]), image);
+    const legacy = joinSwfBytes(new Uint8Array([0xff, 0xd8, 0xff, 0xdb, 0x00, 0x04, 0x11, 0x22, 0xff, 0xd9]), image);
 
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(9), legacy)),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(9))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_BITS_JPEG_2, joinSwfBytes(swfUint16Bytes(9), legacy)),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(9)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1523,14 +1757,19 @@ describe('createScene2DFromSwf', () => {
 
   it('imports a named empty shape with zero-bit RECT bounds', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SHAPE_3, joinBytes(uint16(1), new Uint8Array([0]))),
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_SHAPE_3, joinSwfBytes(swfUint16Bytes(1), new Uint8Array([0]))),
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(1), swfString('empty')),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(1),
+            swfUint16Bytes(1),
+            swfString('empty'),
+          ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1549,20 +1788,20 @@ describe('createScene2DFromSwf', () => {
 
   it('uses a PlaceObject3 class name as direct slot linkage', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_3,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER, PLACE_HAS_CLASS_NAME]),
-            uint16(1),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_MATRIX | SWF_PLACE_HAS_CHARACTER, PLACE_HAS_CLASS_NAME]),
+            swfUint16Bytes(1),
             swfString('Game.ExternalAvatar'),
-            uint16(9),
-            createMatrix(1, 0, 0, 1, 0, 0),
+            swfUint16Bytes(9),
+            createSwfMatrixRecord(1, 0, 0, 1, 0, 0),
             swfString('externalSlot'),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1574,24 +1813,31 @@ describe('createScene2DFromSwf', () => {
 
   it('updates an existing PlaceObject2 when the move flag is set', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_SYMBOL_CLASS, joinBytes(uint16(1), uint16(7), swfString('Game.Avatar'))),
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_SYMBOL_CLASS,
+          joinSwfBytes(swfUint16Bytes(1), swfUint16Bytes(7), swfString('Game.Avatar')),
+        ),
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
-            uint16(3),
-            uint16(7),
-            createMatrix(1, 0, 0, 1, 0, 0),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_MATRIX | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(3),
+            swfUint16Bytes(7),
+            createSwfMatrixRecord(1, 0, 0, 1, 0, 0),
             swfString('avatarSlot'),
           ),
         ),
-        createTag(
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(new Uint8Array([PLACE_MOVE | PLACE_HAS_MATRIX]), uint16(3), createMatrix(2, 0, 0, 3, 40, -60)),
+          joinSwfBytes(
+            new Uint8Array([PLACE_MOVE | SWF_PLACE_HAS_MATRIX]),
+            swfUint16Bytes(3),
+            createSwfMatrixRecord(2, 0, 0, 3, 40, -60),
+          ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1606,19 +1852,22 @@ describe('createScene2DFromSwf', () => {
 
   it('does not inherit stale fields for a fresh placement at an occupied depth', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
-            uint16(3),
-            uint16(7),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(3),
+            swfUint16Bytes(7),
             swfString('staleSlot'),
           ),
         ),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(3), uint16(8))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(3), swfUint16Bytes(8)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1630,18 +1879,18 @@ describe('createScene2DFromSwf', () => {
 
   it('ignores a PlaceObject3 move with no display-list target', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_3,
-          joinBytes(
-            new Uint8Array([PLACE_MOVE | PLACE_HAS_NAME, PLACE_HAS_CLASS_NAME]),
-            uint16(1),
+          joinSwfBytes(
+            new Uint8Array([PLACE_MOVE | SWF_PLACE_HAS_NAME, PLACE_HAS_CLASS_NAME]),
+            swfUint16Bytes(1),
             swfString('Game.Ghost'),
             swfString('ghostSlot'),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1653,29 +1902,29 @@ describe('createScene2DFromSwf', () => {
 
   it('enumerates named instances from every frame while attaching only the current one', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
-            uint16(1),
-            uint16(7),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(1),
+            swfUint16Bytes(7),
             swfString('firstFrameSlot'),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_REMOVE_OBJECT_2, uint16(1)),
-        createTag(
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_REMOVE_OBJECT_2, swfUint16Bytes(1)),
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
-            uint16(2),
-            uint16(8),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(2),
+            swfUint16Bytes(8),
             swfString('secondFrameSlot'),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1703,24 +1952,28 @@ describe('createScene2DFromSwf', () => {
 
   it('replays a later frame move onto the instance the move targets', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
-            uint16(3),
-            uint16(7),
-            createMatrix(1, 0, 0, 1, 20, 40),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_MATRIX | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(3),
+            swfUint16Bytes(7),
+            createSwfMatrixRecord(1, 0, 0, 1, 20, 40),
             swfString('mover'),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(new Uint8Array([PLACE_MOVE | PLACE_HAS_MATRIX]), uint16(3), createMatrix(2, 0, 0, 2, 200, -60)),
+          joinSwfBytes(
+            new Uint8Array([PLACE_MOVE | SWF_PLACE_HAS_MATRIX]),
+            swfUint16Bytes(3),
+            createSwfMatrixRecord(2, 0, 0, 2, 200, -60),
+          ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1740,20 +1993,20 @@ describe('createScene2DFromSwf', () => {
 
   it('splits a placement colour transform across node alpha and a colour scale/bias adjustment', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_COLOR_TRANSFORM | PLACE_HAS_CHARACTER]),
-            uint16(3),
-            uint16(7),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_COLOR_TRANSFORM | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(3),
+            swfUint16Bytes(7),
             // Half red, double green, unchanged blue, half alpha; +51/255 blue, no alpha add.
             createColorTransform([128, 512, 256, 128], [0, 0, 51, 0]),
             swfString('tinted'),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1776,19 +2029,19 @@ describe('createScene2DFromSwf', () => {
 
   it('carries no colour adjustment for a placement whose transform only fades', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_COLOR_TRANSFORM | PLACE_HAS_CHARACTER]),
-            uint16(3),
-            uint16(7),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_COLOR_TRANSFORM | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(3),
+            swfUint16Bytes(7),
             createColorTransform([256, 256, 256, 64], [0, 0, 0, 0]),
             swfString('faded'),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1802,19 +2055,19 @@ describe('createScene2DFromSwf', () => {
 
   it('pre-divides an alpha add so the adjustment and node alpha compose to the authored transform', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_COLOR_TRANSFORM | PLACE_HAS_CHARACTER]),
-            uint16(3),
-            uint16(7),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_COLOR_TRANSFORM | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(3),
+            swfUint16Bytes(7),
             createColorTransform([256, 256, 256, 128], [0, 0, 0, 51]),
             swfString('lifted'),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1831,31 +2084,31 @@ describe('createScene2DFromSwf', () => {
 
   it('replays a per-frame colour transform onto the instance the move targets', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_COLOR_TRANSFORM | PLACE_HAS_CHARACTER]),
-            uint16(3),
-            uint16(7),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_COLOR_TRANSFORM | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(3),
+            swfUint16Bytes(7),
             createColorTransform([128, 256, 256, 256], [0, 0, 0, 0]),
             swfString('shifting'),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_MOVE | PLACE_HAS_COLOR_TRANSFORM]),
-            uint16(3),
+          joinSwfBytes(
+            new Uint8Array([PLACE_MOVE | SWF_PLACE_HAS_COLOR_TRANSFORM]),
+            swfUint16Bytes(3),
             createColorTransform([256, 256, 256, 256], [64, 0, 0, 0]),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_SHOW_FRAME),
         // A move that declares no transform inherits the one already in force.
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_MOVE]), uint16(3))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_PLACE_OBJECT_2, joinSwfBytes(new Uint8Array([PLACE_MOVE]), swfUint16Bytes(3))),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1886,19 +2139,22 @@ describe('createScene2DFromSwf', () => {
     face.writeEndShape();
 
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 400, 0, 400), face.toBytes())),
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_DEFINE_SHAPE,
+          joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 400, 0, 400), face.toBytes()),
+        ),
+        createSwfTagRecord(
           TAG_PLACE_OBJECT,
-          joinBytes(
-            uint16(7),
-            uint16(3),
-            createMatrix(1, 0, 0, 1, 0, 0),
+          joinSwfBytes(
+            swfUint16Bytes(7),
+            swfUint16Bytes(3),
+            createSwfMatrixRecord(1, 0, 0, 1, 0, 0),
             createColorTransform([128, 256, 256], [0, 0, 0]),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1913,19 +2169,19 @@ describe('createScene2DFromSwf', () => {
 
   it('folds a fixed-function PlaceObject3 blend mode onto the node', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_3,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE3_HAS_BLEND_MODE]),
-            uint16(3),
-            uint16(7),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER, PLACE3_HAS_BLEND_MODE]),
+            swfUint16Bytes(3),
+            swfUint16Bytes(7),
             swfString('multiplied'),
             new Uint8Array([SWF_BLEND_MULTIPLY]),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1937,22 +2193,37 @@ describe('createScene2DFromSwf', () => {
 
   it('keeps instances in depth order when a later frame places one between them', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(7), swfString('under')),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(1),
+            swfUint16Bytes(7),
+            swfString('under'),
+          ),
         ),
-        createTag(
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(9), uint16(8), swfString('over')),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(9),
+            swfUint16Bytes(8),
+            swfString('over'),
+          ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(5), uint16(9), swfString('between')),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(5),
+            swfUint16Bytes(9),
+            swfString('between'),
+          ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -1971,18 +2242,23 @@ describe('createScene2DFromSwf', () => {
 
   it('imports frame labels and the header frame rate as timeline playback data', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_FRAME_LABEL, swfString('intro')),
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_FRAME_LABEL, swfString('intro')),
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(7), swfString('slot')),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(1),
+            swfUint16Bytes(7),
+            swfString('slot'),
+          ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_FRAME_LABEL, swfString('outro')),
-        createTag(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_FRAME_LABEL, swfString('outro')),
+        createSwfTagRecord(TAG_SHOW_FRAME),
         // A label after the last ShowFrame names a frame the timeline never reaches.
-        createTag(TAG_FRAME_LABEL, swfString('unreached')),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_FRAME_LABEL, swfString('unreached')),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -2005,10 +2281,10 @@ describe('createScene2DFromSwf', () => {
 
   it('imports root frame labels declared by DefineSceneAndFrameLabelData', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA,
-          joinBytes(
+          joinSwfBytes(
             encodedUint32(1),
             encodedUint32(200),
             swfString('Scene 1'),
@@ -2019,9 +2295,9 @@ describe('createScene2DFromSwf', () => {
             swfString('finish'),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -2037,42 +2313,47 @@ describe('createScene2DFromSwf', () => {
 
   it('plays a nested sprite timeline on its own playhead', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_DEFINE_SPRITE,
-          joinBytes(
-            uint16(20),
-            uint16(2),
-            createTag(
+          joinSwfBytes(
+            swfUint16Bytes(20),
+            swfUint16Bytes(2),
+            createSwfTagRecord(
               TAG_PLACE_OBJECT_2,
-              joinBytes(
-                new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
-                uint16(1),
-                uint16(7),
+              joinSwfBytes(
+                new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+                swfUint16Bytes(1),
+                swfUint16Bytes(7),
                 swfString('firstChild'),
               ),
             ),
-            createTag(TAG_SHOW_FRAME),
-            createTag(TAG_REMOVE_OBJECT_2, uint16(1)),
-            createTag(
+            createSwfTagRecord(TAG_SHOW_FRAME),
+            createSwfTagRecord(TAG_REMOVE_OBJECT_2, swfUint16Bytes(1)),
+            createSwfTagRecord(
               TAG_PLACE_OBJECT_2,
-              joinBytes(
-                new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
-                uint16(2),
-                uint16(8),
+              joinSwfBytes(
+                new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+                swfUint16Bytes(2),
+                swfUint16Bytes(8),
                 swfString('secondChild'),
               ),
             ),
-            createTag(TAG_SHOW_FRAME),
-            createTag(TAG_END),
+            createSwfTagRecord(TAG_SHOW_FRAME),
+            createSwfTagRecord(TAG_END),
           ),
         ),
-        createTag(
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(20), swfString('panel')),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(1),
+            swfUint16Bytes(20),
+            swfString('panel'),
+          ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -2100,27 +2381,38 @@ describe('createScene2DFromSwf', () => {
     // updated. Both are deliberate, and both are what an author expects to be free — so they are pinned
     // here rather than left to be rediscovered by a sample that renders one frame and stops.
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_DEFINE_SPRITE,
-          joinBytes(
-            uint16(20),
-            uint16(2),
-            createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
-            createTag(TAG_SHOW_FRAME),
-            createTag(TAG_REMOVE_OBJECT_2, uint16(1)),
-            createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(8))),
-            createTag(TAG_SHOW_FRAME),
-            createTag(TAG_END),
+          joinSwfBytes(
+            swfUint16Bytes(20),
+            swfUint16Bytes(2),
+            createSwfTagRecord(
+              TAG_PLACE_OBJECT_2,
+              joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(7)),
+            ),
+            createSwfTagRecord(TAG_SHOW_FRAME),
+            createSwfTagRecord(TAG_REMOVE_OBJECT_2, swfUint16Bytes(1)),
+            createSwfTagRecord(
+              TAG_PLACE_OBJECT_2,
+              joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(2), swfUint16Bytes(8)),
+            ),
+            createSwfTagRecord(TAG_SHOW_FRAME),
+            createSwfTagRecord(TAG_END),
           ),
         ),
-        createTag(
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]), uint16(1), uint16(20), swfString('panel')),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(1),
+            swfUint16Bytes(20),
+            swfString('panel'),
+          ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -2156,21 +2448,21 @@ describe('createScene2DFromSwf', () => {
 
   it('uses a PlaceObject4 class name as direct slot linkage while ignoring later metadata', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_4,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER, PLACE_HAS_CLASS_NAME]),
-            uint16(1),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_MATRIX | SWF_PLACE_HAS_CHARACTER, PLACE_HAS_CLASS_NAME]),
+            swfUint16Bytes(1),
             swfString('Game.MetadataAvatar'),
-            uint16(9),
-            createMatrix(1, 0, 0, 1, 60, 80),
+            swfUint16Bytes(9),
+            createSwfMatrixRecord(1, 0, 0, 1, 60, 80),
             swfString('metadataSlot'),
             new Uint8Array([0xde, 0xad, 0xbe, 0xef]),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -2185,33 +2477,41 @@ describe('createScene2DFromSwf', () => {
 
   it('uses legacy PlaceObject transforms to import named descendants from a sprite', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 200, 0, 100))),
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_SHAPE, joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 200, 0, 100))),
+        createSwfTagRecord(
           TAG_DEFINE_SPRITE,
-          joinBytes(
-            uint16(20),
-            uint16(1),
-            createTag(
+          joinSwfBytes(
+            swfUint16Bytes(20),
+            swfUint16Bytes(1),
+            createSwfTagRecord(
               TAG_PLACE_OBJECT_2,
-              joinBytes(
-                new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
-                uint16(2),
-                uint16(7),
+              joinSwfBytes(
+                new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+                swfUint16Bytes(2),
+                swfUint16Bytes(7),
                 swfString('legacyChild'),
               ),
             ),
-            createTag(TAG_SHOW_FRAME),
-            createTag(TAG_END),
+            createSwfTagRecord(TAG_SHOW_FRAME),
+            createSwfTagRecord(TAG_END),
           ),
         ),
-        createTag(TAG_SYMBOL_CLASS, joinBytes(uint16(1), uint16(7), swfString('Game.LegacyChild'))),
-        createTag(
-          TAG_PLACE_OBJECT,
-          joinBytes(uint16(20), uint16(1), createMatrix(2, 0, 0, 3, 100, -40), createLegacyColorTransform()),
+        createSwfTagRecord(
+          TAG_SYMBOL_CLASS,
+          joinSwfBytes(swfUint16Bytes(1), swfUint16Bytes(7), swfString('Game.LegacyChild')),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT,
+          joinSwfBytes(
+            swfUint16Bytes(20),
+            swfUint16Bytes(1),
+            createSwfMatrixRecord(2, 0, 0, 3, 100, -40),
+            createLegacyColorTransform(),
+          ),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -2226,29 +2526,32 @@ describe('createScene2DFromSwf', () => {
 
   it('applies legacy RemoveObject before freezing the first frame', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_DEFINE_SPRITE,
-          joinBytes(
-            uint16(20),
-            uint16(1),
-            createTag(
+          joinSwfBytes(
+            swfUint16Bytes(20),
+            swfUint16Bytes(1),
+            createSwfTagRecord(
               TAG_PLACE_OBJECT_2,
-              joinBytes(
-                new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
-                uint16(1),
-                uint16(7),
+              joinSwfBytes(
+                new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+                swfUint16Bytes(1),
+                swfUint16Bytes(7),
                 swfString('removedChild'),
               ),
             ),
-            createTag(TAG_SHOW_FRAME),
-            createTag(TAG_END),
+            createSwfTagRecord(TAG_SHOW_FRAME),
+            createSwfTagRecord(TAG_END),
           ),
         ),
-        createTag(TAG_PLACE_OBJECT, joinBytes(uint16(20), uint16(4), createMatrix(1, 0, 0, 1, 0, 0))),
-        createTag(TAG_REMOVE_OBJECT, joinBytes(uint16(20), uint16(4))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT,
+          joinSwfBytes(swfUint16Bytes(20), swfUint16Bytes(4), createSwfMatrixRecord(1, 0, 0, 1, 0, 0)),
+        ),
+        createSwfTagRecord(TAG_REMOVE_OBJECT, joinSwfBytes(swfUint16Bytes(20), swfUint16Bytes(4))),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -2260,19 +2563,19 @@ describe('createScene2DFromSwf', () => {
 
   it('applies RemoveObject2 before freezing the first frame', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
-            uint16(4),
-            uint16(7),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(4),
+            swfUint16Bytes(7),
             swfString('removedSlot'),
           ),
         ),
-        createTag(TAG_REMOVE_OBJECT_2, uint16(4)),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_REMOVE_OBJECT_2, swfUint16Bytes(4)),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -2284,61 +2587,70 @@ describe('createScene2DFromSwf', () => {
 
   it('imports named slots from nested DefineSprite timelines', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(-20, 180, -40, 160))),
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
+          TAG_DEFINE_SHAPE,
+          joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(-20, 180, -40, 160)),
+        ),
+        createSwfTagRecord(
           TAG_DEFINE_SPRITE,
-          joinBytes(
-            uint16(20),
-            uint16(1),
-            createTag(
+          joinSwfBytes(
+            swfUint16Bytes(20),
+            swfUint16Bytes(1),
+            createSwfTagRecord(
               TAG_PLACE_OBJECT_2,
-              joinBytes(
-                new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
-                uint16(2),
-                uint16(7),
-                createMatrix(1, 0, 0, 1, 40, 60),
+              joinSwfBytes(
+                new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_MATRIX | SWF_PLACE_HAS_CHARACTER]),
+                swfUint16Bytes(2),
+                swfUint16Bytes(7),
+                createSwfMatrixRecord(1, 0, 0, 1, 40, 60),
                 swfString('avatarSlot'),
               ),
             ),
-            createTag(TAG_SHOW_FRAME),
-            createTag(TAG_END),
+            createSwfTagRecord(TAG_SHOW_FRAME),
+            createSwfTagRecord(TAG_END),
           ),
         ),
-        createTag(
+        createSwfTagRecord(
           TAG_DEFINE_SPRITE,
-          joinBytes(
-            uint16(30),
-            uint16(1),
-            createTag(
+          joinSwfBytes(
+            swfUint16Bytes(30),
+            swfUint16Bytes(1),
+            createSwfTagRecord(
               TAG_PLACE_OBJECT_2,
-              joinBytes(
-                new Uint8Array([PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
-                uint16(1),
-                uint16(20),
-                createMatrix(2, 0, 0, 3, 20, 20),
+              joinSwfBytes(
+                new Uint8Array([SWF_PLACE_HAS_MATRIX | SWF_PLACE_HAS_CHARACTER]),
+                swfUint16Bytes(1),
+                swfUint16Bytes(20),
+                createSwfMatrixRecord(2, 0, 0, 3, 20, 20),
               ),
             ),
-            createTag(TAG_SHOW_FRAME),
-            createTag(TAG_END),
+            createSwfTagRecord(TAG_SHOW_FRAME),
+            createSwfTagRecord(TAG_END),
           ),
         ),
-        createTag(
+        createSwfTagRecord(
           TAG_SYMBOL_CLASS,
-          joinBytes(uint16(2), uint16(30), swfString('Game.Panel'), uint16(7), swfString('Game.Avatar')),
+          joinSwfBytes(
+            swfUint16Bytes(2),
+            swfUint16Bytes(30),
+            swfString('Game.Panel'),
+            swfUint16Bytes(7),
+            swfString('Game.Avatar'),
+          ),
         ),
-        createTag(
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
-            uint16(1),
-            uint16(30),
-            createMatrix(2, 0, 0, 3, 100, 40),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_MATRIX | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(1),
+            swfUint16Bytes(30),
+            createSwfMatrixRecord(2, 0, 0, 3, 100, 40),
             swfString('panelSlot'),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -2367,41 +2679,46 @@ describe('createScene2DFromSwf', () => {
 
   it('preserves authored dimensions from lossless bitmap definitions', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_DEFINE_BITS_LOSSLESS,
-          joinBytes(uint16(11), new Uint8Array([LOSSLESS_BITMAP_FORMAT_32_BIT]), uint16(32), uint16(16)),
+          joinSwfBytes(
+            swfUint16Bytes(11),
+            new Uint8Array([LOSSLESS_BITMAP_FORMAT_32_BIT]),
+            swfUint16Bytes(32),
+            swfUint16Bytes(16),
+          ),
         ),
-        createTag(
+        createSwfTagRecord(
           TAG_DEFINE_BITS_LOSSLESS_2,
-          joinBytes(
-            uint16(12),
+          joinSwfBytes(
+            swfUint16Bytes(12),
             new Uint8Array([LOSSLESS_BITMAP_FORMAT_COLORMAPPED]),
-            uint16(8),
-            uint16(4),
+            swfUint16Bytes(8),
+            swfUint16Bytes(4),
             new Uint8Array([0]),
           ),
         ),
-        createTag(
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
-            uint16(1),
-            uint16(11),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(1),
+            swfUint16Bytes(11),
             swfString('rgbBitmap'),
           ),
         ),
-        createTag(
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
-            uint16(2),
-            uint16(12),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(2),
+            swfUint16Bytes(12),
             swfString('alphaBitmap'),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -2424,38 +2741,50 @@ describe('createScene2DFromSwf', () => {
 
   it('materializes an unnamed video stream through eleven consecutive move records without pixels', () => {
     const timelineTags: Uint8Array[] = [
-      createTag(
+      createSwfTagRecord(
         TAG_DEFINE_VIDEO_STREAM,
-        joinBytes(uint16(4), uint16(12), uint16(320), uint16(180), new Uint8Array([0x07, 2])),
-      ),
-      createTag(
-        TAG_PLACE_OBJECT_2,
-        joinBytes(
-          new Uint8Array([PLACE_HAS_CHARACTER | PLACE_HAS_MATRIX]),
-          uint16(2),
-          uint16(4),
-          createMatrix(1, 0, 0, 1, 0, 0),
+        joinSwfBytes(
+          swfUint16Bytes(4),
+          swfUint16Bytes(12),
+          swfUint16Bytes(320),
+          swfUint16Bytes(180),
+          new Uint8Array([0x07, 2]),
         ),
       ),
-      createTag(TAG_VIDEO_FRAME, joinBytes(uint16(4), uint16(0), new Uint8Array([0xde, 0xad, 0]))),
-      createTag(TAG_SHOW_FRAME),
+      createSwfTagRecord(
+        TAG_PLACE_OBJECT_2,
+        joinSwfBytes(
+          new Uint8Array([SWF_PLACE_HAS_CHARACTER | SWF_PLACE_HAS_MATRIX]),
+          swfUint16Bytes(2),
+          swfUint16Bytes(4),
+          createSwfMatrixRecord(1, 0, 0, 1, 0, 0),
+        ),
+      ),
+      createSwfTagRecord(
+        TAG_VIDEO_FRAME,
+        joinSwfBytes(swfUint16Bytes(4), swfUint16Bytes(0), new Uint8Array([0xde, 0xad, 0])),
+      ),
+      createSwfTagRecord(TAG_SHOW_FRAME),
     ];
     for (let move = 1; move <= 11; move++) {
       timelineTags.push(
-        createTag(
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(new Uint8Array([PLACE_MOVE | PLACE_HAS_RATIO]), uint16(2), uint16(move)),
+          joinSwfBytes(new Uint8Array([PLACE_MOVE | PLACE_HAS_RATIO]), swfUint16Bytes(2), swfUint16Bytes(move)),
         ),
         // The packet stays a bounded unsupported payload: it neither rejects the file nor supplies a
         // texture source, even while the character itself participates in every frame.
-        createTag(TAG_VIDEO_FRAME, joinBytes(uint16(4), uint16(move), new Uint8Array([0xde, 0xad, move]))),
-        createTag(TAG_SHOW_FRAME),
+        createSwfTagRecord(
+          TAG_VIDEO_FRAME,
+          joinSwfBytes(swfUint16Bytes(4), swfUint16Bytes(move), new Uint8Array([0xde, 0xad, move])),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
       );
     }
-    timelineTags.push(createTag(TAG_END));
+    timelineTags.push(createSwfTagRecord(TAG_END));
 
     const document = createScene2DFromSwf(
-      createSwf(timelineTags),
+      createSwfFileBytes(timelineTags),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
       DECOMPRESS_LZMA,
@@ -2492,13 +2821,19 @@ describe('createScene2DFromSwf', () => {
   });
 
   it('instantiates an exported video stream as a sourceless Sprite', () => {
-    const source = createSwf([
-      createTag(
+    const source = createSwfFileBytes([
+      createSwfTagRecord(
         TAG_DEFINE_VIDEO_STREAM,
-        joinBytes(uint16(13), uint16(10), uint16(320), uint16(180), new Uint8Array([0, 2])),
+        joinSwfBytes(
+          swfUint16Bytes(13),
+          swfUint16Bytes(10),
+          swfUint16Bytes(320),
+          swfUint16Bytes(180),
+          new Uint8Array([0, 2]),
+        ),
       ),
-      createTag(TAG_EXPORT_ASSETS, joinBytes(uint16(1), uint16(13), swfString('Video'))),
-      createTag(TAG_END),
+      createSwfTagRecord(TAG_EXPORT_ASSETS, joinSwfBytes(swfUint16Bytes(1), swfUint16Bytes(13), swfString('Video'))),
+      createSwfTagRecord(TAG_END),
     ]);
     const symbol = createScene2DSymbolFromSwf(source, 'Video', DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)!;
 
@@ -2512,29 +2847,29 @@ describe('createScene2DFromSwf', () => {
 
   it('preserves PNG and GIF dimensions embedded by DefineBitsJPEG2', () => {
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(14), createPngHeader(48, 24))),
-        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(15), createGifHeader(17, 9))),
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_BITS_JPEG_2, joinSwfBytes(swfUint16Bytes(14), createPngHeader(48, 24))),
+        createSwfTagRecord(TAG_DEFINE_BITS_JPEG_2, joinSwfBytes(swfUint16Bytes(15), createGifHeader(17, 9))),
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
-            uint16(1),
-            uint16(14),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(1),
+            swfUint16Bytes(14),
             swfString('pngBitmap'),
           ),
         ),
-        createTag(
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
-            uint16(2),
-            uint16(15),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(2),
+            swfUint16Bytes(15),
             swfString('gifBitmap'),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -2559,35 +2894,41 @@ describe('createScene2DFromSwf', () => {
     const jpeg3 = createJpegHeader(64, 32);
     const jpeg4 = createJpegHeader(31, 19);
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_DEFINE_BITS_JPEG_3,
-          joinBytes(uint16(16), uint32(jpeg3.length), jpeg3, new Uint8Array([1, 2, 3])),
+          joinSwfBytes(swfUint16Bytes(16), swfUint32Bytes(jpeg3.length), jpeg3, new Uint8Array([1, 2, 3])),
         ),
-        createTag(
+        createSwfTagRecord(
           TAG_DEFINE_BITS_JPEG_4,
-          joinBytes(uint16(17), uint32(jpeg4.length + 2), uint16(0), jpeg4, new Uint8Array([4, 5, 6])),
+          joinSwfBytes(
+            swfUint16Bytes(17),
+            swfUint32Bytes(jpeg4.length + 2),
+            swfUint16Bytes(0),
+            jpeg4,
+            new Uint8Array([4, 5, 6]),
+          ),
         ),
-        createTag(
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
-            uint16(1),
-            uint16(16),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(1),
+            swfUint16Bytes(16),
             swfString('jpeg3Bitmap'),
           ),
         ),
-        createTag(
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
-            uint16(2),
-            uint16(17),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+            swfUint16Bytes(2),
+            swfUint16Bytes(17),
             swfString('jpeg4Bitmap'),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -2609,7 +2950,7 @@ describe('createScene2DFromSwf', () => {
   });
 
   it('rejects compressed and truncated inputs without throwing', () => {
-    const compressed = createSwf([createTag(TAG_END)]);
+    const compressed = createSwfFileBytes([createSwfTagRecord(TAG_END)]);
     compressed[0] = 0x43;
     expect(createScene2DFromSwf(compressed, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)).toBeNull();
     expect(
@@ -2617,12 +2958,18 @@ describe('createScene2DFromSwf', () => {
     ).toBeNull();
     expect(
       createScene2DFromSwf(
-        createSwf([
-          createTag(
+        createSwfFileBytes([
+          createSwfTagRecord(
             TAG_DEFINE_VIDEO_STREAM,
-            joinBytes(uint16(1), uint16(10), uint16(320), uint16(180), new Uint8Array([0])),
+            joinSwfBytes(
+              swfUint16Bytes(1),
+              swfUint16Bytes(10),
+              swfUint16Bytes(320),
+              swfUint16Bytes(180),
+              new Uint8Array([0]),
+            ),
           ),
-          createTag(TAG_END),
+          createSwfTagRecord(TAG_END),
         ]),
         DEFAULT_FAMILIES,
         DECOMPRESS_DEFLATE,
@@ -2631,25 +2978,9 @@ describe('createScene2DFromSwf', () => {
     ).toBeNull();
     expect(
       createScene2DFromSwf(
-        createSwf([createTag(TAG_PLACE_OBJECT, joinBytes(uint16(7), uint16(1))), createTag(TAG_END)]),
-        DEFAULT_FAMILIES,
-        DECOMPRESS_DEFLATE,
-        DECOMPRESS_LZMA,
-      ),
-    ).toBeNull();
-    expect(
-      createScene2DFromSwf(
-        createSwf([createTag(TAG_REMOVE_OBJECT, uint16(7)), createTag(TAG_END)]),
-        DEFAULT_FAMILIES,
-        DECOMPRESS_DEFLATE,
-        DECOMPRESS_LZMA,
-      ),
-    ).toBeNull();
-    expect(
-      createScene2DFromSwf(
-        createSwf([
-          createTag(TAG_PLACE_OBJECT_4, new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE_HAS_CLASS_NAME])),
-          createTag(TAG_END),
+        createSwfFileBytes([
+          createSwfTagRecord(TAG_PLACE_OBJECT, joinSwfBytes(swfUint16Bytes(7), swfUint16Bytes(1))),
+          createSwfTagRecord(TAG_END),
         ]),
         DEFAULT_FAMILIES,
         DECOMPRESS_DEFLATE,
@@ -2658,12 +2989,34 @@ describe('createScene2DFromSwf', () => {
     ).toBeNull();
     expect(
       createScene2DFromSwf(
-        createSwf([
-          createTag(
+        createSwfFileBytes([createSwfTagRecord(TAG_REMOVE_OBJECT, swfUint16Bytes(7)), createSwfTagRecord(TAG_END)]),
+        DEFAULT_FAMILIES,
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
+      ),
+    ).toBeNull();
+    expect(
+      createScene2DFromSwf(
+        createSwfFileBytes([
+          createSwfTagRecord(
+            TAG_PLACE_OBJECT_4,
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER, PLACE_HAS_CLASS_NAME]),
+          ),
+          createSwfTagRecord(TAG_END),
+        ]),
+        DEFAULT_FAMILIES,
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
+      ),
+    ).toBeNull();
+    expect(
+      createScene2DFromSwf(
+        createSwfFileBytes([
+          createSwfTagRecord(
             TAG_DEFINE_BITS_LOSSLESS,
-            joinBytes(new Uint8Array([1, 0, LOSSLESS_BITMAP_FORMAT_32_BIT]), uint16(32)),
+            joinSwfBytes(new Uint8Array([1, 0, LOSSLESS_BITMAP_FORMAT_32_BIT]), swfUint16Bytes(32)),
           ),
-          createTag(TAG_END),
+          createSwfTagRecord(TAG_END),
         ]),
         DEFAULT_FAMILIES,
         DECOMPRESS_DEFLATE,
@@ -2672,12 +3025,17 @@ describe('createScene2DFromSwf', () => {
     ).toBeNull();
     expect(
       createScene2DFromSwf(
-        createSwf([
-          createTag(
+        createSwfFileBytes([
+          createSwfTagRecord(
             TAG_DEFINE_BITS_LOSSLESS_2,
-            joinBytes(uint16(1), new Uint8Array([LOSSLESS_BITMAP_FORMAT_15_BIT]), uint16(8), uint16(4)),
+            joinSwfBytes(
+              swfUint16Bytes(1),
+              new Uint8Array([LOSSLESS_BITMAP_FORMAT_15_BIT]),
+              swfUint16Bytes(8),
+              swfUint16Bytes(4),
+            ),
           ),
-          createTag(TAG_END),
+          createSwfTagRecord(TAG_END),
         ]),
         DEFAULT_FAMILIES,
         DECOMPRESS_DEFLATE,
@@ -2686,16 +3044,27 @@ describe('createScene2DFromSwf', () => {
     ).toBeNull();
     expect(
       createScene2DFromSwf(
-        createSwf([
-          createTag(
+        createSwfFileBytes([
+          createSwfTagRecord(
             TAG_DEFINE_BITS_LOSSLESS,
-            joinBytes(uint16(1), new Uint8Array([LOSSLESS_BITMAP_FORMAT_32_BIT]), uint16(8), uint16(4)),
+            joinSwfBytes(
+              swfUint16Bytes(1),
+              new Uint8Array([LOSSLESS_BITMAP_FORMAT_32_BIT]),
+              swfUint16Bytes(8),
+              swfUint16Bytes(4),
+            ),
           ),
-          createTag(
+          createSwfTagRecord(
             TAG_DEFINE_VIDEO_STREAM,
-            joinBytes(uint16(1), uint16(10), uint16(320), uint16(180), new Uint8Array([0, 2])),
+            joinSwfBytes(
+              swfUint16Bytes(1),
+              swfUint16Bytes(10),
+              swfUint16Bytes(320),
+              swfUint16Bytes(180),
+              new Uint8Array([0, 2]),
+            ),
           ),
-          createTag(TAG_END),
+          createSwfTagRecord(TAG_END),
         ]),
         DEFAULT_FAMILIES,
         DECOMPRESS_DEFLATE,
@@ -2707,36 +3076,36 @@ describe('createScene2DFromSwf', () => {
   it('rejects recursive sprite definitions without overflowing the graph walk', () => {
     expect(
       createScene2DFromSwf(
-        createSwf([
-          createTag(
+        createSwfFileBytes([
+          createSwfTagRecord(
             TAG_DEFINE_SPRITE,
-            joinBytes(
-              uint16(1),
-              uint16(1),
-              createTag(
+            joinSwfBytes(
+              swfUint16Bytes(1),
+              swfUint16Bytes(1),
+              createSwfTagRecord(
                 TAG_PLACE_OBJECT_2,
-                joinBytes(
-                  new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
-                  uint16(1),
-                  uint16(1),
+                joinSwfBytes(
+                  new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+                  swfUint16Bytes(1),
+                  swfUint16Bytes(1),
                   swfString('recursiveChild'),
                 ),
               ),
-              createTag(TAG_SHOW_FRAME),
-              createTag(TAG_END),
+              createSwfTagRecord(TAG_SHOW_FRAME),
+              createSwfTagRecord(TAG_END),
             ),
           ),
-          createTag(
+          createSwfTagRecord(
             TAG_PLACE_OBJECT_2,
-            joinBytes(
-              new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER]),
-              uint16(1),
-              uint16(1),
+            joinSwfBytes(
+              new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER]),
+              swfUint16Bytes(1),
+              swfUint16Bytes(1),
               swfString('recursiveRoot'),
             ),
           ),
-          createTag(TAG_SHOW_FRAME),
-          createTag(TAG_END),
+          createSwfTagRecord(TAG_SHOW_FRAME),
+          createSwfTagRecord(TAG_END),
         ]),
         DEFAULT_FAMILIES,
         DECOMPRESS_DEFLATE,
@@ -2749,15 +3118,20 @@ describe('createScene2DFromSwf', () => {
     const tags: Uint8Array[] = [];
     for (let depth = 1; depth <= 200; depth++) {
       tags.push(
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(depth), uint16(7))),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(depth), swfUint16Bytes(7)),
+        ),
       );
     }
     // Placing 200 depths costs a few kilobytes; showing them 5001 times would retain over a million
     // display-list entries, so the snapshot budget rejects the document instead of materializing it.
-    for (let frame = 0; frame < 5001; frame++) tags.push(createTag(TAG_SHOW_FRAME));
-    tags.push(createTag(TAG_END));
+    for (let frame = 0; frame < 5001; frame++) tags.push(createSwfTagRecord(TAG_SHOW_FRAME));
+    tags.push(createSwfTagRecord(TAG_END));
 
-    expect(createScene2DFromSwf(createSwf(tags), DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)).toBeNull();
+    expect(
+      createScene2DFromSwf(createSwfFileBytes(tags), DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA),
+    ).toBeNull();
   });
 });
 
@@ -2774,21 +3148,24 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('raises no data-integrity diagnostic for a well-formed file', () => {
     const crumbs = collectImportDiagnostics((sink) => {
       createScene2DFromSwf(
-        createSwf([
-          createTag(TAG_FILE_ATTRIBUTES, new Uint8Array(4)),
-          createTag(TAG_SYMBOL_CLASS, joinBytes(uint16(1), uint16(7), swfString('Game.Avatar'))),
-          createTag(
+        createSwfFileBytes([
+          createSwfTagRecord(TAG_FILE_ATTRIBUTES, new Uint8Array(4)),
+          createSwfTagRecord(
+            TAG_SYMBOL_CLASS,
+            joinSwfBytes(swfUint16Bytes(1), swfUint16Bytes(7), swfString('Game.Avatar')),
+          ),
+          createSwfTagRecord(
             TAG_PLACE_OBJECT_2,
-            joinBytes(
-              new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
-              uint16(3),
-              uint16(7),
-              createMatrix(1.5, 0.25, -0.125, 0.5, 200, -40),
+            joinSwfBytes(
+              new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_MATRIX | SWF_PLACE_HAS_CHARACTER]),
+              swfUint16Bytes(3),
+              swfUint16Bytes(7),
+              createSwfMatrixRecord(1.5, 0.25, -0.125, 0.5, 200, -40),
               swfString('avatarSlot'),
             ),
           ),
-          createTag(TAG_SHOW_FRAME),
-          createTag(TAG_END),
+          createSwfTagRecord(TAG_SHOW_FRAME),
+          createSwfTagRecord(TAG_END),
         ]),
         DEFAULT_FAMILIES,
         DECOMPRESS_DEFLATE,
@@ -2816,8 +3193,8 @@ describe('createScene2DFromSwf import diagnostics', () => {
   });
 
   it('separates an absent deflate slot from a corrupt body, which share one null sentinel', () => {
-    const uncompressed = createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]);
-    const compressed = joinBytes(uncompressed.subarray(0, 8), uncompressed.subarray(8));
+    const uncompressed = createSwfFileBytes([createSwfTagRecord(TAG_SHOW_FRAME), createSwfTagRecord(TAG_END)]);
+    const compressed = joinSwfBytes(uncompressed.subarray(0, 8), uncompressed.subarray(8));
     compressed[0] = 0x43;
 
     // No deflate slot: the file is readable once the host supplies one, which is not the same failure
@@ -2848,14 +3225,20 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('reports a deliberately declined tag as a Skip, which is correct behaviour rather than failure', () => {
     // VideoFrame payloads are codec packets this importer does not carry. The document still imports;
     // what the crumb adds is that a caller can now tell "declined on purpose" from "silently lost".
-    const file = createSwf([
-      createTag(
+    const file = createSwfFileBytes([
+      createSwfTagRecord(
         TAG_DEFINE_VIDEO_STREAM,
-        joinBytes(uint16(4), uint16(1), uint16(16), uint16(16), new Uint8Array([0x01, 2])),
+        joinSwfBytes(
+          swfUint16Bytes(4),
+          swfUint16Bytes(1),
+          swfUint16Bytes(16),
+          swfUint16Bytes(16),
+          new Uint8Array([0x01, 2]),
+        ),
       ),
-      createTag(61, joinBytes(uint16(4), uint16(0), new Uint8Array([0, 0, 0, 0]))),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(61, joinSwfBytes(swfUint16Bytes(4), swfUint16Bytes(0), new Uint8Array([0, 0, 0, 0]))),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
@@ -2870,11 +3253,11 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('stays silent on metadata tags, whose absence costs a document nothing', () => {
     // The line this asserts is the one that keeps the report usable: a caller filtering crumbs should not
     // have to skip past authoring metadata to find the entries that mean something.
-    const file = createSwf([
-      createTag(69, new Uint8Array([0, 0, 0, 0])),
-      createTag(77, swfString('<rdf/>')),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+    const file = createSwfFileBytes([
+      createSwfTagRecord(69, new Uint8Array([0, 0, 0, 0])),
+      createSwfTagRecord(77, swfString('<rdf/>')),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
@@ -2886,10 +3269,13 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('reports an unreadable shape body as a Recover, since the placeholder still places and sizes', () => {
     // A body the decoder cannot read costs that character's drawing and nothing else, so the honest
     // outcome is Recover: the document still imports and the character still has its authored bounds.
-    const file = createSwf([
-      createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(1), createRectangle(0, 20, 0, 20), new Uint8Array([0xff]))),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+    const file = createSwfFileBytes([
+      createSwfTagRecord(
+        TAG_DEFINE_SHAPE,
+        joinSwfBytes(swfUint16Bytes(1), createSwfRectangleRecord(0, 20, 0, 20), new Uint8Array([0xff])),
+      ),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
@@ -2904,17 +3290,17 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('reports a morph definition that does not decode, which otherwise leaves no trace at all', () => {
     // Header reads cleanly — id and both bounds — so the definition is accepted and only the morph body
     // fails. That is the case with no signal: the character is absent and the import still succeeds.
-    const body = joinBytes(
-      uint16(7),
-      createRectangle(0, 200, 0, 200),
-      createRectangle(0, 400, 0, 400),
-      uint32(0xffff),
+    const body = joinSwfBytes(
+      swfUint16Bytes(7),
+      createSwfRectangleRecord(0, 200, 0, 200),
+      createSwfRectangleRecord(0, 400, 0, 400),
+      swfUint32Bytes(0xffff),
       new Uint8Array([0]),
     );
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
         createScene2DFromSwf(
-          createSwf([createTag(TAG_DEFINE_MORPH_SHAPE, body), createTag(TAG_END)]),
+          createSwfFileBytes([createSwfTagRecord(TAG_DEFINE_MORPH_SHAPE, body), createSwfTagRecord(TAG_END)]),
           DEFAULT_FAMILIES,
           DECOMPRESS_DEFLATE,
           DECOMPRESS_LZMA,
@@ -2932,15 +3318,15 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('stays silent about a morph definition that decodes, so the drop entry carries information', () => {
     const startEdges = morphBox(200);
     const endEdges = morphBox(400);
-    const styles = joinBytes(
+    const styles = joinSwfBytes(
       new Uint8Array([1, 0x00, 0xff, 0x00, 0x00, 0xff, 0x00, 0x00, 0xff, 0xff]),
       new Uint8Array([0]),
     );
-    const body = joinBytes(
-      uint16(7),
-      createRectangle(0, 200, 0, 200),
-      createRectangle(0, 400, 0, 400),
-      uint32(styles.length + startEdges.length),
+    const body = joinSwfBytes(
+      swfUint16Bytes(7),
+      createSwfRectangleRecord(0, 200, 0, 200),
+      createSwfRectangleRecord(0, 400, 0, 400),
+      swfUint32Bytes(styles.length + startEdges.length),
       styles,
       startEdges,
       endEdges,
@@ -2948,7 +3334,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
         createScene2DFromSwf(
-          createSwf([createTag(TAG_DEFINE_MORPH_SHAPE, body), createTag(TAG_END)]),
+          createSwfFileBytes([createSwfTagRecord(TAG_DEFINE_MORPH_SHAPE, body), createSwfTagRecord(TAG_END)]),
           DEFAULT_FAMILIES,
           DECOMPRESS_DEFLATE,
           DECOMPRESS_LZMA,
@@ -2963,24 +3349,24 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('reports a static text body that does not compose, which the deferred pass would otherwise swallow', () => {
     // A record header declaring a font and a colour, then nothing to read them from. Composition is
     // deferred to after every font is parsed, so this failure surfaces far from the tag that carried it.
-    const record = new BitWriter();
+    const record = new SwfBitWriter();
     record.writeUnsigned(1, 1);
     record.writeUnsigned(0, 3);
     record.writeUnsigned(1, 1);
     record.writeUnsigned(1, 1);
     record.writeUnsigned(0, 1);
     record.writeUnsigned(0, 1);
-    const text = joinBytes(
-      uint16(6),
-      createRectangle(0, 1024, 0, 1024),
-      createMatrix(1, 0, 0, 1, 0, 0),
+    const text = joinSwfBytes(
+      swfUint16Bytes(6),
+      createSwfRectangleRecord(0, 1024, 0, 1024),
+      createSwfMatrixRecord(1, 0, 0, 1, 0, 0),
       new Uint8Array([4, 8]),
       record.toBytes(),
     );
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
         createScene2DFromSwf(
-          createSwf([createTag(TAG_DEFINE_TEXT, text), createTag(TAG_END)]),
+          createSwfFileBytes([createSwfTagRecord(TAG_DEFINE_TEXT, text), createSwfTagRecord(TAG_END)]),
           DEFAULT_FAMILIES,
           DECOMPRESS_DEFLATE,
           DECOMPRESS_LZMA,
@@ -2997,23 +3383,23 @@ describe('createScene2DFromSwf import diagnostics', () => {
 
   it('stays silent about a static text body that composes, so the drop entry carries information', () => {
     const glyphBytes = new Uint8Array([0x30, 0x28, 0x00, 0x00, 0x40, 0x00]);
-    const font = joinBytes(uint16(4), uint16(2), glyphBytes);
-    const record = new BitWriter();
+    const font = joinSwfBytes(swfUint16Bytes(4), swfUint16Bytes(2), glyphBytes);
+    const record = new SwfBitWriter();
     record.writeUnsigned(1, 1);
     record.writeUnsigned(0, 3);
     record.writeUnsigned(1, 1);
     record.writeUnsigned(1, 1);
     record.writeUnsigned(0, 1);
     record.writeUnsigned(0, 1);
-    const text = joinBytes(
-      uint16(6),
-      createRectangle(0, 1024, 0, 1024),
-      createMatrix(1, 0, 0, 1, 0, 0),
+    const text = joinSwfBytes(
+      swfUint16Bytes(6),
+      createSwfRectangleRecord(0, 1024, 0, 1024),
+      createSwfMatrixRecord(1, 0, 0, 1, 0, 0),
       new Uint8Array([4, 8]),
       record.toBytes(),
-      uint16(4),
+      swfUint16Bytes(4),
       new Uint8Array([0xff, 0x00, 0x00]),
-      uint16(1024),
+      swfUint16Bytes(1024),
       new Uint8Array([1]),
       packGlyphEntry(0, 600),
       new Uint8Array([0]),
@@ -3021,12 +3407,15 @@ describe('createScene2DFromSwf import diagnostics', () => {
     let document: ReturnType<typeof createScene2DFromSwf> = null;
     const diagnostics = collectImportDiagnostics((sink) => {
       document = createScene2DFromSwf(
-        createSwf([
-          createTag(TAG_DEFINE_FONT, font),
-          createTag(TAG_DEFINE_TEXT, text),
-          createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(6))),
-          createTag(TAG_SHOW_FRAME),
-          createTag(TAG_END),
+        createSwfFileBytes([
+          createSwfTagRecord(TAG_DEFINE_FONT, font),
+          createSwfTagRecord(TAG_DEFINE_TEXT, text),
+          createSwfTagRecord(
+            TAG_PLACE_OBJECT_2,
+            joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(6)),
+          ),
+          createSwfTagRecord(TAG_SHOW_FRAME),
+          createSwfTagRecord(TAG_END),
         ]),
         DEFAULT_FAMILIES,
         DECOMPRESS_DEFLATE,
@@ -3043,11 +3432,15 @@ describe('createScene2DFromSwf import diagnostics', () => {
 
   it('reports an edit text body that does not parse, which otherwise loses the field with no signal', () => {
     // HasFont is set and the font id and height that must follow it are not there.
-    const field = joinBytes(uint16(12), createRectangle(0, 4000, 0, 800), new Uint8Array([0x80 | 0x01, 0x00]));
+    const field = joinSwfBytes(
+      swfUint16Bytes(12),
+      createSwfRectangleRecord(0, 4000, 0, 800),
+      new Uint8Array([0x80 | 0x01, 0x00]),
+    );
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
         createScene2DFromSwf(
-          createSwf([createTag(TAG_DEFINE_EDIT_TEXT, field), createTag(TAG_END)]),
+          createSwfFileBytes([createSwfTagRecord(TAG_DEFINE_EDIT_TEXT, field), createSwfTagRecord(TAG_END)]),
           DEFAULT_FAMILIES,
           DECOMPRESS_DEFLATE,
           DECOMPRESS_LZMA,
@@ -3063,29 +3456,32 @@ describe('createScene2DFromSwf import diagnostics', () => {
   });
 
   it('stays silent about an edit text body that parses, so the drop entry carries information', () => {
-    const field = joinBytes(
-      uint16(12),
-      createRectangle(0, 4000, 0, 800),
+    const field = joinSwfBytes(
+      swfUint16Bytes(12),
+      createSwfRectangleRecord(0, 4000, 0, 800),
       new Uint8Array([0x80 | 0x40 | 0x20 | 0x04 | 0x01, 0x20 | 0x08]),
-      uint16(7),
-      uint16(240),
+      swfUint16Bytes(7),
+      swfUint16Bytes(240),
       new Uint8Array([0x11, 0x22, 0x33, 0xff]),
       new Uint8Array([2]),
-      uint16(20),
-      uint16(40),
-      uint16(60),
-      uint16(80),
+      swfUint16Bytes(20),
+      swfUint16Bytes(40),
+      swfUint16Bytes(60),
+      swfUint16Bytes(80),
       swfString('varName'),
       swfString('Hello'),
     );
     let document: ReturnType<typeof createScene2DFromSwf> = null;
     const diagnostics = collectImportDiagnostics((sink) => {
       document = createScene2DFromSwf(
-        createSwf([
-          createTag(TAG_DEFINE_EDIT_TEXT, field),
-          createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(12))),
-          createTag(TAG_SHOW_FRAME),
-          createTag(TAG_END),
+        createSwfFileBytes([
+          createSwfTagRecord(TAG_DEFINE_EDIT_TEXT, field),
+          createSwfTagRecord(
+            TAG_PLACE_OBJECT_2,
+            joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(12)),
+          ),
+          createSwfTagRecord(TAG_SHOW_FRAME),
+          createSwfTagRecord(TAG_END),
         ]),
         DEFAULT_FAMILIES,
         DECOMPRESS_DEFLATE,
@@ -3102,11 +3498,11 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('reports an ABC blob that yields no frame scripts, naming which of the two DoABC forms it was', () => {
     // A DoABC payload whose ABC body is not readable. The two tag forms are separate capabilities, so
     // the entry has to name which one it was or it cannot be joined to either.
-    const named = joinBytes(uint32(0), swfString('frame'), new Uint8Array([0xff, 0xff, 0xff, 0xff]));
+    const named = joinSwfBytes(swfUint32Bytes(0), swfString('frame'), new Uint8Array([0xff, 0xff, 0xff, 0xff]));
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
         createScene2DFromSwf(
-          createSwf([createTag(TAG_DO_ABC, named), createTag(TAG_END)]),
+          createSwfFileBytes([createSwfTagRecord(TAG_DO_ABC, named), createSwfTagRecord(TAG_END)]),
           DEFAULT_FAMILIES,
           DECOMPRESS_DEFLATE,
           DECOMPRESS_LZMA,
@@ -3126,7 +3522,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
         createScene2DFromSwf(
-          createSwf([createTag(TAG_DO_ABC_ANONYMOUS, anonymous), createTag(TAG_END)]),
+          createSwfFileBytes([createSwfTagRecord(TAG_DO_ABC_ANONYMOUS, anonymous), createSwfTagRecord(TAG_END)]),
           DEFAULT_FAMILIES,
           DECOMPRESS_DEFLATE,
           DECOMPRESS_LZMA,
@@ -3146,20 +3542,23 @@ describe('createScene2DFromSwf import diagnostics', () => {
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
         createScene2DFromSwf(
-          createSwf([
-            createTag(
+          createSwfFileBytes([
+            createSwfTagRecord(
               TAG_PLACE_OBJECT_3,
-              joinBytes(
-                new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE3_HAS_FILTER_LIST | PLACE3_HAS_BLEND_MODE]),
-                uint16(3),
-                uint16(7),
+              joinSwfBytes(
+                new Uint8Array([
+                  SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER,
+                  PLACE3_HAS_FILTER_LIST | PLACE3_HAS_BLEND_MODE,
+                ]),
+                swfUint16Bytes(3),
+                swfUint16Bytes(7),
                 swfString('filtered'),
                 new Uint8Array([1, 0xff]),
                 new Uint8Array([SWF_BLEND_MULTIPLY]),
               ),
             ),
-            createTag(TAG_SHOW_FRAME),
-            createTag(TAG_END),
+            createSwfTagRecord(TAG_SHOW_FRAME),
+            createSwfTagRecord(TAG_END),
           ]),
           DEFAULT_FAMILIES,
           DECOMPRESS_DEFLATE,
@@ -3179,19 +3578,19 @@ describe('createScene2DFromSwf import diagnostics', () => {
     let document: ReturnType<typeof createScene2DFromSwf> = null;
     const diagnostics = collectImportDiagnostics((sink) => {
       document = createScene2DFromSwf(
-        createSwf([
-          createTag(
+        createSwfFileBytes([
+          createSwfTagRecord(
             TAG_PLACE_OBJECT_3,
-            joinBytes(
-              new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE3_HAS_BLEND_MODE]),
-              uint16(3),
-              uint16(7),
+            joinSwfBytes(
+              new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER, PLACE3_HAS_BLEND_MODE]),
+              swfUint16Bytes(3),
+              swfUint16Bytes(7),
               swfString('multiplied'),
               new Uint8Array([SWF_BLEND_MULTIPLY]),
             ),
           ),
-          createTag(TAG_SHOW_FRAME),
-          createTag(TAG_END),
+          createSwfTagRecord(TAG_SHOW_FRAME),
+          createSwfTagRecord(TAG_END),
         ]),
         DEFAULT_FAMILIES,
         DECOMPRESS_DEFLATE,
@@ -3211,22 +3610,34 @@ describe('createScene2DFromSwf import diagnostics', () => {
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
         createScene2DFromSwf(
-          createSwf([
-            createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 200, 0, 100))),
-            createTag(
+          createSwfFileBytes([
+            createSwfTagRecord(
+              TAG_DEFINE_SHAPE,
+              joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 200, 0, 100)),
+            ),
+            createSwfTagRecord(
               TAG_DEFINE_SPRITE,
-              joinBytes(
-                uint16(20),
-                uint16(1),
-                createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
-                createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(9))),
-                createTag(TAG_SHOW_FRAME),
-                createTag(TAG_END),
+              joinSwfBytes(
+                swfUint16Bytes(20),
+                swfUint16Bytes(1),
+                createSwfTagRecord(
+                  TAG_PLACE_OBJECT_2,
+                  joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(7)),
+                ),
+                createSwfTagRecord(
+                  TAG_PLACE_OBJECT_2,
+                  joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(2), swfUint16Bytes(9)),
+                ),
+                createSwfTagRecord(TAG_SHOW_FRAME),
+                createSwfTagRecord(TAG_END),
               ),
             ),
-            createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(20))),
-            createTag(TAG_SHOW_FRAME),
-            createTag(TAG_END),
+            createSwfTagRecord(
+              TAG_PLACE_OBJECT_2,
+              joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(20)),
+            ),
+            createSwfTagRecord(TAG_SHOW_FRAME),
+            createSwfTagRecord(TAG_END),
           ]),
           DEFAULT_FAMILIES,
           DECOMPRESS_DEFLATE,
@@ -3250,21 +3661,30 @@ describe('createScene2DFromSwf import diagnostics', () => {
     let document: ReturnType<typeof createScene2DFromSwf> = null;
     const diagnostics = collectImportDiagnostics((sink) => {
       document = createScene2DFromSwf(
-        createSwf([
-          createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 200, 0, 100))),
-          createTag(
+        createSwfFileBytes([
+          createSwfTagRecord(
+            TAG_DEFINE_SHAPE,
+            joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 200, 0, 100)),
+          ),
+          createSwfTagRecord(
             TAG_DEFINE_SPRITE,
-            joinBytes(
-              uint16(20),
-              uint16(1),
-              createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
-              createTag(TAG_SHOW_FRAME),
-              createTag(TAG_END),
+            joinSwfBytes(
+              swfUint16Bytes(20),
+              swfUint16Bytes(1),
+              createSwfTagRecord(
+                TAG_PLACE_OBJECT_2,
+                joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(7)),
+              ),
+              createSwfTagRecord(TAG_SHOW_FRAME),
+              createSwfTagRecord(TAG_END),
             ),
           ),
-          createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(20))),
-          createTag(TAG_SHOW_FRAME),
-          createTag(TAG_END),
+          createSwfTagRecord(
+            TAG_PLACE_OBJECT_2,
+            joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(20)),
+          ),
+          createSwfTagRecord(TAG_SHOW_FRAME),
+          createSwfTagRecord(TAG_END),
         ]),
         DEFAULT_FAMILIES,
         DECOMPRESS_DEFLATE,
@@ -3284,18 +3704,18 @@ describe('createScene2DFromSwf import diagnostics', () => {
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
         createScene2DFromSwf(
-          createSwf([
-            createTag(
+          createSwfFileBytes([
+            createSwfTagRecord(
               TAG_PLACE_OBJECT_3,
-              joinBytes(
-                new Uint8Array([PLACE_HAS_CHARACTER, PLACE3_HAS_BLEND_MODE]),
-                uint16(1),
-                uint16(7),
+              joinSwfBytes(
+                new Uint8Array([SWF_PLACE_HAS_CHARACTER, PLACE3_HAS_BLEND_MODE]),
+                swfUint16Bytes(1),
+                swfUint16Bytes(7),
                 new Uint8Array([SWF_BLEND_OVERLAY]),
               ),
             ),
-            createTag(TAG_SHOW_FRAME),
-            createTag(TAG_END),
+            createSwfTagRecord(TAG_SHOW_FRAME),
+            createSwfTagRecord(TAG_END),
           ]),
           DEFAULT_FAMILIES,
           DECOMPRESS_DEFLATE,
@@ -3314,19 +3734,19 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('stays silent when an advanced blend has a node to carry it, so the drop entry carries information', () => {
     const diagnostics = collectImportDiagnostics((sink) => {
       const result = createScene2DImportFromSwf(
-        createSwf([
-          createTag(
+        createSwfFileBytes([
+          createSwfTagRecord(
             TAG_PLACE_OBJECT_3,
-            joinBytes(
-              new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE3_HAS_BLEND_MODE]),
-              uint16(3),
-              uint16(7),
+            joinSwfBytes(
+              new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER, PLACE3_HAS_BLEND_MODE]),
+              swfUint16Bytes(3),
+              swfUint16Bytes(7),
               swfString('overlaid'),
               new Uint8Array([SWF_BLEND_OVERLAY]),
             ),
           ),
-          createTag(TAG_SHOW_FRAME),
-          createTag(TAG_END),
+          createSwfTagRecord(TAG_SHOW_FRAME),
+          createSwfTagRecord(TAG_END),
         ]),
         DEFAULT_FAMILIES,
         DECOMPRESS_DEFLATE,
@@ -3344,11 +3764,15 @@ describe('createScene2DFromSwf import diagnostics', () => {
     // Two DefineFont tags claim id 4. The second replaces the first; the document imports, the font
     // exists, and it is the wrong font — the substituted case no existence check and no count can see.
     const glyphBytes = new Uint8Array([0x30, 0x28, 0x00, 0x00, 0x40, 0x00]);
-    const font = joinBytes(uint16(4), uint16(2), glyphBytes);
+    const font = joinSwfBytes(swfUint16Bytes(4), swfUint16Bytes(2), glyphBytes);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
         createScene2DFromSwf(
-          createSwf([createTag(TAG_DEFINE_FONT, font), createTag(TAG_DEFINE_FONT, font), createTag(TAG_END)]),
+          createSwfFileBytes([
+            createSwfTagRecord(TAG_DEFINE_FONT, font),
+            createSwfTagRecord(TAG_DEFINE_FONT, font),
+            createSwfTagRecord(TAG_END),
+          ]),
           DEFAULT_FAMILIES,
           DECOMPRESS_DEFLATE,
           DECOMPRESS_LZMA,
@@ -3368,10 +3792,10 @@ describe('createScene2DFromSwf import diagnostics', () => {
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
         createScene2DFromSwf(
-          createSwf([
-            createTag(TAG_DEFINE_FONT, joinBytes(uint16(4), uint16(2), glyphBytes)),
-            createTag(TAG_DEFINE_FONT, joinBytes(uint16(5), uint16(2), glyphBytes)),
-            createTag(TAG_END),
+          createSwfFileBytes([
+            createSwfTagRecord(TAG_DEFINE_FONT, joinSwfBytes(swfUint16Bytes(4), swfUint16Bytes(2), glyphBytes)),
+            createSwfTagRecord(TAG_DEFINE_FONT, joinSwfBytes(swfUint16Bytes(5), swfUint16Bytes(2), glyphBytes)),
+            createSwfTagRecord(TAG_END),
           ]),
           DEFAULT_FAMILIES,
           DECOMPRESS_DEFLATE,
@@ -3387,29 +3811,32 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('reports an edit text whose font id resolves to no name, leaving the field sized but unfamilied', () => {
     // The field keeps its box, colour and size and simply has no font family. Asserting the box survives
     // is what makes this the diminished case rather than a missing field.
-    const field = joinBytes(
-      uint16(12),
-      createRectangle(0, 4000, 0, 800),
+    const field = joinSwfBytes(
+      swfUint16Bytes(12),
+      createSwfRectangleRecord(0, 4000, 0, 800),
       new Uint8Array([0x80 | 0x40 | 0x20 | 0x04 | 0x01, 0x20 | 0x08]),
-      uint16(7),
-      uint16(240),
+      swfUint16Bytes(7),
+      swfUint16Bytes(240),
       new Uint8Array([0x11, 0x22, 0x33, 0xff]),
       new Uint8Array([2]),
-      uint16(20),
-      uint16(40),
-      uint16(60),
-      uint16(80),
+      swfUint16Bytes(20),
+      swfUint16Bytes(40),
+      swfUint16Bytes(60),
+      swfUint16Bytes(80),
       swfString('varName'),
       swfString('Hello'),
     );
     let document: ReturnType<typeof createScene2DFromSwf> = null;
     const diagnostics = collectImportDiagnostics((sink) => {
       document = createScene2DFromSwf(
-        createSwf([
-          createTag(TAG_DEFINE_EDIT_TEXT, field),
-          createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(12))),
-          createTag(TAG_SHOW_FRAME),
-          createTag(TAG_END),
+        createSwfFileBytes([
+          createSwfTagRecord(TAG_DEFINE_EDIT_TEXT, field),
+          createSwfTagRecord(
+            TAG_PLACE_OBJECT_2,
+            joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(12)),
+          ),
+          createSwfTagRecord(TAG_SHOW_FRAME),
+          createSwfTagRecord(TAG_END),
         ]),
         DEFAULT_FAMILIES,
         DECOMPRESS_DEFLATE,
@@ -3430,11 +3857,11 @@ describe('createScene2DFromSwf import diagnostics', () => {
     // Family 8 was reachable only by a route other than the one predicted, so this asks the same question
     // of the frame-script wire by carrying a real DoABC payload through createScene2DFromSwf.
     const abc = buildFrameScriptAbc(1);
-    const payload = joinBytes(uint32(0), swfString('frame'), abc);
+    const payload = joinSwfBytes(swfUint32Bytes(0), swfString('frame'), abc);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
         createScene2DFromSwf(
-          createSwf([createTag(TAG_DO_ABC, payload), createTag(TAG_END)]),
+          createSwfFileBytes([createSwfTagRecord(TAG_DO_ABC, payload), createSwfTagRecord(TAG_END)]),
           DEFAULT_FAMILIES,
           DECOMPRESS_DEFLATE,
           DECOMPRESS_LZMA,
@@ -3451,20 +3878,20 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('reports an undecodable morph for DefineMorphShape2, not only the generation the wire was written on', () => {
     // A wire carrying a version ternary is only proven for the branch a test exercises. This is the same
     // check already applied to the shape generations, applied to the morph wire.
-    const body = joinBytes(
-      uint16(7),
-      createRectangle(0, 200, 0, 200),
-      createRectangle(0, 400, 0, 400),
-      createRectangle(0, 200, 0, 200),
-      createRectangle(0, 400, 0, 400),
+    const body = joinSwfBytes(
+      swfUint16Bytes(7),
+      createSwfRectangleRecord(0, 200, 0, 200),
+      createSwfRectangleRecord(0, 400, 0, 400),
+      createSwfRectangleRecord(0, 200, 0, 200),
+      createSwfRectangleRecord(0, 400, 0, 400),
       new Uint8Array([0]),
-      uint32(0xffff),
+      swfUint32Bytes(0xffff),
       new Uint8Array([0]),
     );
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
         createScene2DFromSwf(
-          createSwf([createTag(TAG_DEFINE_MORPH_SHAPE_2, body), createTag(TAG_END)]),
+          createSwfFileBytes([createSwfTagRecord(TAG_DEFINE_MORPH_SHAPE_2, body), createSwfTagRecord(TAG_END)]),
           DEFAULT_FAMILIES,
           DECOMPRESS_DEFLATE,
           DECOMPRESS_LZMA,
@@ -3479,24 +3906,24 @@ describe('createScene2DFromSwf import diagnostics', () => {
   });
 
   it('reports an uncomposable body for DefineText2, not only the generation the wire was written on', () => {
-    const record = new BitWriter();
+    const record = new SwfBitWriter();
     record.writeUnsigned(1, 1);
     record.writeUnsigned(0, 3);
     record.writeUnsigned(1, 1);
     record.writeUnsigned(1, 1);
     record.writeUnsigned(0, 1);
     record.writeUnsigned(0, 1);
-    const text = joinBytes(
-      uint16(6),
-      createRectangle(0, 1024, 0, 1024),
-      createMatrix(1, 0, 0, 1, 0, 0),
+    const text = joinSwfBytes(
+      swfUint16Bytes(6),
+      createSwfRectangleRecord(0, 1024, 0, 1024),
+      createSwfMatrixRecord(1, 0, 0, 1, 0, 0),
       new Uint8Array([4, 8]),
       record.toBytes(),
     );
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
         createScene2DFromSwf(
-          createSwf([createTag(TAG_DEFINE_TEXT_2, text), createTag(TAG_END)]),
+          createSwfFileBytes([createSwfTagRecord(TAG_DEFINE_TEXT_2, text), createSwfTagRecord(TAG_END)]),
           DEFAULT_FAMILIES,
           DECOMPRESS_DEFLATE,
           DECOMPRESS_LZMA,
@@ -3512,11 +3939,15 @@ describe('createScene2DFromSwf import diagnostics', () => {
 
   it('reports a reused character id for DefineFont2, not only the generation the wire was written on', () => {
     // A glyph-less DefineFont2 still parses and still claims the id, which is all the duplicate needs.
-    const font2 = joinBytes(uint16(4), new Uint8Array([0, 0, 0]), uint16(0), uint16(0));
+    const font2 = joinSwfBytes(swfUint16Bytes(4), new Uint8Array([0, 0, 0]), swfUint16Bytes(0), swfUint16Bytes(0));
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
         createScene2DFromSwf(
-          createSwf([createTag(TAG_DEFINE_FONT_2, font2), createTag(TAG_DEFINE_FONT_2, font2), createTag(TAG_END)]),
+          createSwfFileBytes([
+            createSwfTagRecord(TAG_DEFINE_FONT_2, font2),
+            createSwfTagRecord(TAG_DEFINE_FONT_2, font2),
+            createSwfTagRecord(TAG_END),
+          ]),
           DEFAULT_FAMILIES,
           DECOMPRESS_DEFLATE,
           DECOMPRESS_LZMA,
@@ -3534,31 +3965,40 @@ describe('createScene2DFromSwf import diagnostics', () => {
     // Recorded earlier as an absent silence proof: it needs a DefineFont2 that parses, and none existed.
     // The version-routing work produced one — a glyph-less DefineFont2 parses and carries a name — so the
     // hole closes. Worth noting the fixture came from unrelated work rather than from trying harder.
-    const font2 = joinBytes(uint16(7), new Uint8Array([0, 0, 5]), swfBytes('Arial'), uint16(0), uint16(0));
-    const field = joinBytes(
-      uint16(12),
-      createRectangle(0, 4000, 0, 800),
+    const font2 = joinSwfBytes(
+      swfUint16Bytes(7),
+      new Uint8Array([0, 0, 5]),
+      swfBytes('Arial'),
+      swfUint16Bytes(0),
+      swfUint16Bytes(0),
+    );
+    const field = joinSwfBytes(
+      swfUint16Bytes(12),
+      createSwfRectangleRecord(0, 4000, 0, 800),
       new Uint8Array([0x80 | 0x40 | 0x20 | 0x04 | 0x01, 0x20 | 0x08]),
-      uint16(7),
-      uint16(240),
+      swfUint16Bytes(7),
+      swfUint16Bytes(240),
       new Uint8Array([0x11, 0x22, 0x33, 0xff]),
       new Uint8Array([2]),
-      uint16(20),
-      uint16(40),
-      uint16(60),
-      uint16(80),
+      swfUint16Bytes(20),
+      swfUint16Bytes(40),
+      swfUint16Bytes(60),
+      swfUint16Bytes(80),
       swfString('varName'),
       swfString('Hello'),
     );
     let document: ReturnType<typeof createScene2DFromSwf> = null;
     const diagnostics = collectImportDiagnostics((sink) => {
       document = createScene2DFromSwf(
-        createSwf([
-          createTag(TAG_DEFINE_FONT_2, font2),
-          createTag(TAG_DEFINE_EDIT_TEXT, field),
-          createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(12))),
-          createTag(TAG_SHOW_FRAME),
-          createTag(TAG_END),
+        createSwfFileBytes([
+          createSwfTagRecord(TAG_DEFINE_FONT_2, font2),
+          createSwfTagRecord(TAG_DEFINE_EDIT_TEXT, field),
+          createSwfTagRecord(
+            TAG_PLACE_OBJECT_2,
+            joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(12)),
+          ),
+          createSwfTagRecord(TAG_SHOW_FRAME),
+          createSwfTagRecord(TAG_END),
         ]),
         DEFAULT_FAMILIES,
         DECOMPRESS_DEFLATE,
@@ -3578,7 +4018,10 @@ describe('createScene2DFromSwf import diagnostics', () => {
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
         createScene2DFromSwf(
-          createSwf([createTag(TAG_DO_ABC_ANONYMOUS, buildFrameScriptAbc()), createTag(TAG_END)]),
+          createSwfFileBytes([
+            createSwfTagRecord(TAG_DO_ABC_ANONYMOUS, buildFrameScriptAbc()),
+            createSwfTagRecord(TAG_END),
+          ]),
           DEFAULT_FAMILIES,
           DECOMPRESS_DEFLATE,
           DECOMPRESS_LZMA,
@@ -3593,25 +4036,25 @@ describe('createScene2DFromSwf import diagnostics', () => {
 
   it('stays silent about a DefineText2 body that composes, so the drop entry carries information', () => {
     const glyphBytes = new Uint8Array([0x30, 0x28, 0x00, 0x00, 0x40, 0x00]);
-    const font = joinBytes(uint16(4), uint16(2), glyphBytes);
-    const record = new BitWriter();
+    const font = joinSwfBytes(swfUint16Bytes(4), swfUint16Bytes(2), glyphBytes);
+    const record = new SwfBitWriter();
     record.writeUnsigned(1, 1);
     record.writeUnsigned(0, 3);
     record.writeUnsigned(1, 1);
     record.writeUnsigned(1, 1);
     record.writeUnsigned(0, 1);
     record.writeUnsigned(0, 1);
-    const text = joinBytes(
-      uint16(6),
-      createRectangle(0, 1024, 0, 1024),
-      createMatrix(1, 0, 0, 1, 0, 0),
+    const text = joinSwfBytes(
+      swfUint16Bytes(6),
+      createSwfRectangleRecord(0, 1024, 0, 1024),
+      createSwfMatrixRecord(1, 0, 0, 1, 0, 0),
       new Uint8Array([4, 8]),
       record.toBytes(),
-      uint16(4),
+      swfUint16Bytes(4),
       // DefineText2 records carry RGBA where DefineText carries RGB — the version difference that makes
       // this a separate silence proof rather than the same one relabelled.
       new Uint8Array([0xff, 0x00, 0x00, 0xff]),
-      uint16(1024),
+      swfUint16Bytes(1024),
       new Uint8Array([1]),
       packGlyphEntry(0, 600),
       new Uint8Array([0]),
@@ -3619,12 +4062,15 @@ describe('createScene2DFromSwf import diagnostics', () => {
     let document: ReturnType<typeof createScene2DFromSwf> = null;
     const diagnostics = collectImportDiagnostics((sink) => {
       document = createScene2DFromSwf(
-        createSwf([
-          createTag(TAG_DEFINE_FONT, font),
-          createTag(TAG_DEFINE_TEXT_2, text),
-          createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(6))),
-          createTag(TAG_SHOW_FRAME),
-          createTag(TAG_END),
+        createSwfFileBytes([
+          createSwfTagRecord(TAG_DEFINE_FONT, font),
+          createSwfTagRecord(TAG_DEFINE_TEXT_2, text),
+          createSwfTagRecord(
+            TAG_PLACE_OBJECT_2,
+            joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(6)),
+          ),
+          createSwfTagRecord(TAG_SHOW_FRAME),
+          createSwfTagRecord(TAG_END),
         ]),
         DEFAULT_FAMILIES,
         DECOMPRESS_DEFLATE,
@@ -3647,26 +4093,37 @@ describe('createScene2DFromSwf import diagnostics', () => {
       }).map((entry) => entry.kind);
 
     // Version 0 is invalid however well-formed the rest is.
-    const zeroVersion = joinBytes(new Uint8Array([0x46, 0x57, 0x53, 0]), uint32(64), createRectangle(0, 10, 0, 10));
+    const zeroVersion = joinSwfBytes(
+      new Uint8Array([0x46, 0x57, 0x53, 0]),
+      swfUint32Bytes(64),
+      createSwfRectangleRecord(0, 10, 0, 10),
+    );
     expect(kindFor(zeroVersion)).toContain('swf.header-fields-invalid');
 
     // A declared length that passes the minimum, and a stage RECT claiming 31 bits per field with far
     // too few bytes behind it inside that length.
-    const noStage = joinBytes(new Uint8Array([0x46, 0x57, 0x53, 9]), uint32(12), new Uint8Array([0xf8, 0, 0, 0]));
+    const noStage = joinSwfBytes(
+      new Uint8Array([0x46, 0x57, 0x53, 9]),
+      swfUint32Bytes(12),
+      new Uint8Array([0xf8, 0, 0, 0]),
+    );
     expect(kindFor(noStage)).toContain('swf.stage-bounds-unreadable');
 
     // A stage RECT that reads, then no frame rate or frame count behind it.
-    const stage = createRectangle(0, 2000, 0, 1000);
-    const noFrameRate = joinBytes(new Uint8Array([0x46, 0x57, 0x53, 9]), uint32(8 + stage.length), stage);
+    const stage = createSwfRectangleRecord(0, 2000, 0, 1000);
+    const noFrameRate = joinSwfBytes(new Uint8Array([0x46, 0x57, 0x53, 9]), swfUint32Bytes(8 + stage.length), stage);
     expect(kindFor(noFrameRate)).toContain('swf.header-truncated');
   });
 
   it('reports a discarded JPEG alpha stream as a Skip, since alpha compositing is not implemented yet', () => {
     const jpeg3 = createJpegHeader(23, 17);
-    const file = createSwf([
-      createTag(TAG_DEFINE_BITS_JPEG_3, joinBytes(uint16(16), uint32(jpeg3.length), jpeg3, new Uint8Array([1, 2, 3]))),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+    const file = createSwfFileBytes([
+      createSwfTagRecord(
+        TAG_DEFINE_BITS_JPEG_3,
+        joinSwfBytes(swfUint16Bytes(16), swfUint32Bytes(jpeg3.length), jpeg3, new Uint8Array([1, 2, 3])),
+      ),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
@@ -3683,10 +4140,10 @@ describe('createScene2DFromSwf import diagnostics', () => {
   });
 
   it('reports a legacy split JPEG with no tables in the file as a Drop', () => {
-    const file = createSwf([
-      createTag(TAG_DEFINE_BITS, joinBytes(uint16(9), new Uint8Array([0xff, 0xd8, 0xff, 0xd9]))),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+    const file = createSwfFileBytes([
+      createSwfTagRecord(TAG_DEFINE_BITS, joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0xff, 0xd8, 0xff, 0xd9]))),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
@@ -3699,13 +4156,13 @@ describe('createScene2DFromSwf import diagnostics', () => {
   });
 
   it('reports scene names as a Skip, since labels import and the named range has no subject', () => {
-    const file = createSwf([
-      createTag(
+    const file = createSwfFileBytes([
+      createSwfTagRecord(
         TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA,
-        joinBytes(encodedUint32(1), encodedUint32(0), swfString('Scene 1'), encodedUint32(0)),
+        joinSwfBytes(encodedUint32(1), encodedUint32(0), swfString('Scene 1'), encodedUint32(0)),
       ),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
@@ -3723,10 +4180,10 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('reports a frame script declined for carrying more than playback commands', () => {
     // 0x96 push, then a non-playback action: the block is declined WHOLE, because honouring the legible
     // half would misrepresent the frame. The crumb is what tells a caller the frame had a script at all.
-    const file = createSwf([
-      createTag(TAG_DO_ACTION, new Uint8Array([0x96, 0x02, 0x00, 0x08, 0x00, 0x3d, 0x00])),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+    const file = createSwfFileBytes([
+      createSwfTagRecord(TAG_DO_ACTION, new Uint8Array([0x96, 0x02, 0x00, 0x08, 0x00, 0x3d, 0x00])),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
@@ -3741,10 +4198,13 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('reports an init action declined the same way DoAction is, which it silently did not', () => {
     // The identical decline four lines above the DoAction case reported nothing. Found by the silent-drop
     // shape sweep, not by reading — three passes over this file read both branches and saw no asymmetry.
-    const file = createSwf([
-      createTag(TAG_DO_INIT_ACTION, joinBytes(uint16(20), new Uint8Array([0x96, 0x02, 0x00, 0x08, 0x00, 0x3d, 0x00]))),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+    const file = createSwfFileBytes([
+      createSwfTagRecord(
+        TAG_DO_INIT_ACTION,
+        joinSwfBytes(swfUint16Bytes(20), new Uint8Array([0x96, 0x02, 0x00, 0x08, 0x00, 0x3d, 0x00])),
+      ),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
@@ -3757,10 +4217,10 @@ describe('createScene2DFromSwf import diagnostics', () => {
   });
 
   it('stays silent about an init action it does obey, so the skip entry carries information', () => {
-    const file = createSwf([
-      createTag(TAG_DO_INIT_ACTION, joinBytes(uint16(20), new Uint8Array([0x07, 0x00]))),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+    const file = createSwfFileBytes([
+      createSwfTagRecord(TAG_DO_INIT_ACTION, joinSwfBytes(swfUint16Bytes(20), new Uint8Array([0x07, 0x00]))),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
@@ -3772,18 +4232,31 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('reports nested masks collapsing, since the outer one is not applied at all', () => {
     // Two clip depths covering one instance: Flight carries one clip per node, so the outer mask is
     // simply not applied and the instance shows more than the file said. The crumb is the only signal.
-    const file = createSwf([
-      createTag(
+    const file = createSwfFileBytes([
+      createSwfTagRecord(
         TAG_PLACE_OBJECT_2,
-        joinBytes(new Uint8Array([PLACE_HAS_CLIP_DEPTH | PLACE_HAS_CHARACTER]), uint16(1), uint16(1), uint16(9)),
+        joinSwfBytes(
+          new Uint8Array([PLACE_HAS_CLIP_DEPTH | SWF_PLACE_HAS_CHARACTER]),
+          swfUint16Bytes(1),
+          swfUint16Bytes(1),
+          swfUint16Bytes(9),
+        ),
       ),
-      createTag(
+      createSwfTagRecord(
         TAG_PLACE_OBJECT_2,
-        joinBytes(new Uint8Array([PLACE_HAS_CLIP_DEPTH | PLACE_HAS_CHARACTER]), uint16(2), uint16(2), uint16(9)),
+        joinSwfBytes(
+          new Uint8Array([PLACE_HAS_CLIP_DEPTH | SWF_PLACE_HAS_CHARACTER]),
+          swfUint16Bytes(2),
+          swfUint16Bytes(2),
+          swfUint16Bytes(9),
+        ),
       ),
-      createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(3), uint16(3))),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(
+        TAG_PLACE_OBJECT_2,
+        joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(3), swfUint16Bytes(3)),
+      ),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       createScene2DFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink);
@@ -3804,21 +4277,21 @@ describe('createScene2DFromSwf import diagnostics', () => {
   });
 
   it('reports a button interaction state other than up, which a still scene does not hold', () => {
-    const file = createSwf([
-      createTag(
+    const file = createSwfFileBytes([
+      createSwfTagRecord(
         TAG_DEFINE_BUTTON_2,
-        joinBytes(
-          uint16(12),
+        joinSwfBytes(
+          swfUint16Bytes(12),
           new Uint8Array([0, 0, 0]),
           new Uint8Array([0x02]),
-          uint16(7),
-          uint16(1),
-          createRectangle(0, 0, 0, 0),
+          swfUint16Bytes(7),
+          swfUint16Bytes(1),
+          createSwfRectangleRecord(0, 0, 0, 0),
           new Uint8Array([0, 0]),
         ),
       ),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
@@ -3834,11 +4307,11 @@ describe('createScene2DFromSwf import diagnostics', () => {
   });
 
   it('reports a legacy split JPEG whose halves will not splice into a readable image', () => {
-    const file = createSwf([
-      createTag(TAG_JPEG_TABLES, new Uint8Array([0xff, 0xd8, 0xff, 0xd9])),
-      createTag(TAG_DEFINE_BITS, joinBytes(uint16(9), new Uint8Array([0x01, 0x02, 0x03, 0x04]))),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+    const file = createSwfFileBytes([
+      createSwfTagRecord(TAG_JPEG_TABLES, new Uint8Array([0xff, 0xd8, 0xff, 0xd9])),
+      createSwfTagRecord(TAG_DEFINE_BITS, joinSwfBytes(swfUint16Bytes(9), new Uint8Array([0x01, 0x02, 0x03, 0x04]))),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
@@ -3853,10 +4326,10 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('reports a font whose glyph table does not decode, which costs the whole font not one glyph', () => {
     // Found by auditing my own trustworthy-silence claim rather than by a failing test: a font that
     // vanishes entirely and a font that imports cleanly both produced no crumb before this.
-    const file = createSwf([
-      createTag(TAG_DEFINE_FONT_2, joinBytes(uint16(4), new Uint8Array([0xff, 0xff, 0xff, 0xff]))),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+    const file = createSwfFileBytes([
+      createSwfTagRecord(TAG_DEFINE_FONT_2, joinSwfBytes(swfUint16Bytes(4), new Uint8Array([0xff, 0xff, 0xff, 0xff]))),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
@@ -3871,11 +4344,11 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('reports a non-MP3 sound stream, whose blocks do not concatenate', () => {
     // Stream format 1 (ADPCM) in the high nibble of the stream flags, with a non-zero samples-per-frame
     // so the header actually starts a stream. Only MP3 blocks concatenate, so the rest are a real loss.
-    const file = createSwf([
-      createTag(18, joinBytes(new Uint8Array([0, 1 << 4]), uint16(1152))),
-      createTag(19, new Uint8Array([1, 2, 3, 4])),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+    const file = createSwfFileBytes([
+      createSwfTagRecord(18, joinSwfBytes(new Uint8Array([0, 1 << 4]), swfUint16Bytes(1152))),
+      createSwfTagRecord(19, new Uint8Array([1, 2, 3, 4])),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
@@ -3900,14 +4373,26 @@ describe('createScene2DFromSwf import diagnostics', () => {
     glyph.writeEndShape();
     const good = glyph.toBytes();
     const bad = new Uint8Array([0xff]);
-    const offsets = joinBytes(uint16(6), uint16(6 + good.length), uint16(6 + good.length + bad.length));
-    const file = createSwf([
-      createTag(
+    const offsets = joinSwfBytes(
+      swfUint16Bytes(6),
+      swfUint16Bytes(6 + good.length),
+      swfUint16Bytes(6 + good.length + bad.length),
+    );
+    const file = createSwfFileBytes([
+      createSwfTagRecord(
         TAG_DEFINE_FONT_2,
-        joinBytes(uint16(4), new Uint8Array([0, 0, 0]), uint16(2), offsets, good, bad, new Uint8Array([0x41, 0x42])),
+        joinSwfBytes(
+          swfUint16Bytes(4),
+          new Uint8Array([0, 0, 0]),
+          swfUint16Bytes(2),
+          offsets,
+          good,
+          bad,
+          new Uint8Array([0x41, 0x42]),
+        ),
       ),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
@@ -3935,21 +4420,36 @@ describe('createScene2DFromSwf import diagnostics', () => {
     writer.writeStraightEdge(0, -400);
     writer.writeEndShape();
 
-    const file = createSwf([
-      createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 400, 0, 400), writer.toBytes())),
-      createTag(
+    const file = createSwfFileBytes([
+      createSwfTagRecord(
+        TAG_DEFINE_SHAPE,
+        joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 400, 0, 400), writer.toBytes()),
+      ),
+      createSwfTagRecord(
         TAG_DEFINE_VIDEO_STREAM,
-        joinBytes(uint16(4), uint16(1), uint16(16), uint16(16), new Uint8Array([0x01, 2])),
+        joinSwfBytes(
+          swfUint16Bytes(4),
+          swfUint16Bytes(1),
+          swfUint16Bytes(16),
+          swfUint16Bytes(16),
+          new Uint8Array([0x01, 2]),
+        ),
       ),
       // A scene table with zero scenes still carries its label, so the tag is exercised and loses nothing.
-      createTag(
+      createSwfTagRecord(
         TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA,
-        joinBytes(encodedUint32(0), encodedUint32(1), encodedUint32(0), swfString('start')),
+        joinSwfBytes(encodedUint32(0), encodedUint32(1), encodedUint32(0), swfString('start')),
       ),
-      createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(7))),
-      createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(4))),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(
+        TAG_PLACE_OBJECT_2,
+        joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(7)),
+      ),
+      createSwfTagRecord(
+        TAG_PLACE_OBJECT_2,
+        joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(2), swfUint16Bytes(4)),
+      ),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
 
     const diagnostics = collectImportDiagnostics((sink) => {
@@ -3979,19 +4479,30 @@ describe('createScene2DFromSwf import diagnostics', () => {
     mask.writeStraightEdge(0, -200);
     mask.writeEndShape();
 
-    const file = createSwf([
-      createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(5), createRectangle(0, 200, 0, 200), mask.toBytes())),
+    const file = createSwfFileBytes([
+      createSwfTagRecord(
+        TAG_DEFINE_SHAPE,
+        joinSwfBytes(swfUint16Bytes(5), createSwfRectangleRecord(0, 200, 0, 200), mask.toBytes()),
+      ),
       // One mask with real geometry over one instance: clip-depth is exercised and neither of its two
       // loss paths applies.
-      createTag(
+      createSwfTagRecord(
         TAG_PLACE_OBJECT_2,
-        joinBytes(new Uint8Array([PLACE_HAS_CLIP_DEPTH | PLACE_HAS_CHARACTER]), uint16(1), uint16(5), uint16(3)),
+        joinSwfBytes(
+          new Uint8Array([PLACE_HAS_CLIP_DEPTH | SWF_PLACE_HAS_CHARACTER]),
+          swfUint16Bytes(1),
+          swfUint16Bytes(5),
+          swfUint16Bytes(3),
+        ),
       ),
-      createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(5))),
+      createSwfTagRecord(
+        TAG_PLACE_OBJECT_2,
+        joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(2), swfUint16Bytes(5)),
+      ),
       // A block that is ONLY playback commands is recognized whole, so nothing is declined.
-      createTag(TAG_DO_ACTION, new Uint8Array([0x07, 0x00])),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(TAG_DO_ACTION, new Uint8Array([0x07, 0x00])),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
 
     const diagnostics = collectImportDiagnostics((sink) => {
@@ -4020,29 +4531,35 @@ describe('createScene2DFromSwf import diagnostics', () => {
     const tables = new Uint8Array([0xff, 0xd8, 0xff, 0xdb, 0x00, 0x04, 0x11, 0x22, 0xff, 0xd9]);
     const jpeg3 = createJpegHeader(23, 17);
 
-    const file = createSwf([
-      createTag(
+    const file = createSwfFileBytes([
+      createSwfTagRecord(
         TAG_DEFINE_FONT_2,
-        joinBytes(
-          uint16(4),
+        joinSwfBytes(
+          swfUint16Bytes(4),
           new Uint8Array([0, 0, 0]),
-          uint16(1),
-          joinBytes(uint16(4), uint16(4 + glyphBytes.length)),
+          swfUint16Bytes(1),
+          joinSwfBytes(swfUint16Bytes(4), swfUint16Bytes(4 + glyphBytes.length)),
           glyphBytes,
           new Uint8Array([0x41]),
         ),
       ),
-      createTag(TAG_JPEG_TABLES, tables),
-      createTag(TAG_DEFINE_BITS, joinBytes(uint16(9), createJpegHeader(11, 13))),
+      createSwfTagRecord(TAG_JPEG_TABLES, tables),
+      createSwfTagRecord(TAG_DEFINE_BITS, joinSwfBytes(swfUint16Bytes(9), createJpegHeader(11, 13))),
       // alphaDataOffset equal to the payload length: the colour stream is the whole body, so there is
       // no alpha block to discard and nothing is lost.
-      createTag(TAG_DEFINE_BITS_JPEG_3, joinBytes(uint16(16), uint32(jpeg3.length), jpeg3)),
+      createSwfTagRecord(TAG_DEFINE_BITS_JPEG_3, joinSwfBytes(swfUint16Bytes(16), swfUint32Bytes(jpeg3.length), jpeg3)),
       // Placed, because an image earns a resource only when something samples it — without these the
       // silence below would be silence about constructs that never entered the document.
-      createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(9))),
-      createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(16))),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(
+        TAG_PLACE_OBJECT_2,
+        joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(9)),
+      ),
+      createSwfTagRecord(
+        TAG_PLACE_OBJECT_2,
+        joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(2), swfUint16Bytes(16)),
+      ),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
 
     const diagnostics = collectImportDiagnostics((sink) => {
@@ -4065,11 +4582,14 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('stays silent about an MP3 stream, whose blocks do concatenate', () => {
     // The last capability without a silence proof, and the only one that never fires on the sampled
     // corpus — so it is last by the ordering rather than unimportant. Format 2 is MP3 in the high nibble.
-    const file = createSwf([
-      createTag(18, joinBytes(new Uint8Array([0, 2 << 4]), uint16(1152))),
-      createTag(19, joinBytes(uint16(1), uint16(0), new Uint8Array([0xff, 0xfb, 0x90, 0x00]))),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+    const file = createSwfFileBytes([
+      createSwfTagRecord(18, joinSwfBytes(new Uint8Array([0, 2 << 4]), swfUint16Bytes(1152))),
+      createSwfTagRecord(
+        19,
+        joinSwfBytes(swfUint16Bytes(1), swfUint16Bytes(0), new Uint8Array([0xff, 0xfb, 0x90, 0x00])),
+      ),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
 
     const diagnostics = collectImportDiagnostics((sink) => {
@@ -4085,13 +4605,13 @@ describe('createScene2DFromSwf import diagnostics', () => {
     // The second way DefineSceneAndFrameLabelData loses data, found by auditing the CLAIM rather than
     // the wire: swf.scene-names covered the scene table only, while an out-of-range label was filtered
     // out silently and the capability still claimed trustworthy silence.
-    const past = createSwf([
-      createTag(
+    const past = createSwfFileBytes([
+      createSwfTagRecord(
         TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA,
-        joinBytes(encodedUint32(0), encodedUint32(1), encodedUint32(40), swfString('never')),
+        joinSwfBytes(encodedUint32(0), encodedUint32(1), encodedUint32(40), swfString('never')),
       ),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const dropped = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(past, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
@@ -4101,13 +4621,13 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(dropped[0].detail).toEqual({ capability: 'swf.timeline.frame-label', dropped: 1, frames: 1 });
 
     // A label the timeline does reach loses nothing, so no crumb — and it really did import.
-    const reached = createSwf([
-      createTag(
+    const reached = createSwfFileBytes([
+      createSwfTagRecord(
         TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA,
-        joinBytes(encodedUint32(0), encodedUint32(1), encodedUint32(0), swfString('start')),
+        joinSwfBytes(encodedUint32(0), encodedUint32(1), encodedUint32(0), swfString('start')),
       ),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const quiet = collectImportDiagnostics((sink) => {
       const document = createScene2DFromSwf(reached, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink);
@@ -4120,15 +4640,26 @@ describe('createScene2DFromSwf import diagnostics', () => {
     // PROPERTY 4 APPLIED TO THE PROOF MAPPING: the shape wire was proven on DefineShape alone while the
     // mapping claimed all four generations. The code path is shared and parameterised by version, so what
     // was untested was the ROUTING — that each tag reaches it and reports its own capability id.
-    const file = createSwf([
-      createTag(TAG_DEFINE_SHAPE_2, joinBytes(uint16(2), createRectangle(0, 20, 0, 20), new Uint8Array([0xff]))),
-      createTag(TAG_DEFINE_SHAPE_3, joinBytes(uint16(3), createRectangle(0, 20, 0, 20), new Uint8Array([0xff]))),
-      createTag(
-        TAG_DEFINE_SHAPE_4,
-        joinBytes(uint16(4), createRectangle(0, 20, 0, 20), createRectangle(0, 20, 0, 20), new Uint8Array([0, 0xff])),
+    const file = createSwfFileBytes([
+      createSwfTagRecord(
+        TAG_DEFINE_SHAPE_2,
+        joinSwfBytes(swfUint16Bytes(2), createSwfRectangleRecord(0, 20, 0, 20), new Uint8Array([0xff])),
       ),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(
+        TAG_DEFINE_SHAPE_3,
+        joinSwfBytes(swfUint16Bytes(3), createSwfRectangleRecord(0, 20, 0, 20), new Uint8Array([0xff])),
+      ),
+      createSwfTagRecord(
+        TAG_DEFINE_SHAPE_4,
+        joinSwfBytes(
+          swfUint16Bytes(4),
+          createSwfRectangleRecord(0, 20, 0, 20),
+          createSwfRectangleRecord(0, 20, 0, 20),
+          new Uint8Array([0, 0xff]),
+        ),
+      ),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
@@ -4141,11 +4672,11 @@ describe('createScene2DFromSwf import diagnostics', () => {
   });
 
   it('reports an unreadable glyph table for DefineFont and DefineFont3, not only DefineFont2', () => {
-    const file = createSwf([
-      createTag(TAG_DEFINE_FONT, joinBytes(uint16(6), new Uint8Array([0xff, 0xff]))),
-      createTag(TAG_DEFINE_FONT_3, joinBytes(uint16(7), new Uint8Array([0xff, 0xff, 0xff, 0xff]))),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+    const file = createSwfFileBytes([
+      createSwfTagRecord(TAG_DEFINE_FONT, joinSwfBytes(swfUint16Bytes(6), new Uint8Array([0xff, 0xff]))),
+      createSwfTagRecord(TAG_DEFINE_FONT_3, joinSwfBytes(swfUint16Bytes(7), new Uint8Array([0xff, 0xff, 0xff, 0xff]))),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
@@ -4159,15 +4690,21 @@ describe('createScene2DFromSwf import diagnostics', () => {
 
   it('reports a discarded alpha stream for DefineBitsJPEG4, whose header differs from JPEG3', () => {
     const jpeg4 = createJpegHeader(31, 19);
-    const file = createSwf([
-      // JPEG4 carries a deblocking uint16 between the offset and the payload, so its routing is a
+    const file = createSwfFileBytes([
+      // JPEG4 carries a deblocking swfUint16Bytes between the offset and the payload, so its routing is a
       // genuinely different path from JPEG3's and needs its own proof.
-      createTag(
+      createSwfTagRecord(
         TAG_DEFINE_BITS_JPEG_4,
-        joinBytes(uint16(17), uint32(jpeg4.length + 2), uint16(0), jpeg4, new Uint8Array([4, 5, 6])),
+        joinSwfBytes(
+          swfUint16Bytes(17),
+          swfUint32Bytes(jpeg4.length + 2),
+          swfUint16Bytes(0),
+          jpeg4,
+          new Uint8Array([4, 5, 6]),
+        ),
       ),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
@@ -4183,7 +4720,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
   });
 
   it('names the symbol a caller asked for that the file does not export', () => {
-    const file = createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]);
+    const file = createSwfFileBytes([createSwfTagRecord(TAG_SHOW_FRAME), createSwfTagRecord(TAG_END)]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
         createScene2DSymbolFromSwf(file, 'absent', DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink),
@@ -4199,33 +4736,38 @@ describe('createScene2DFromSwf morph bounds', () => {
   it('reports the box the morph occupies at its ratio, not the union of both endpoints', () => {
     const startEdges = morphBox(200);
     const endEdges = morphBox(400);
-    const styles = joinBytes(
+    const styles = joinSwfBytes(
       new Uint8Array([1, 0x00, 0xff, 0x00, 0x00, 0xff, 0x00, 0x00, 0xff, 0xff]),
       new Uint8Array([0]),
     );
-    const body = joinBytes(
-      uint16(7),
-      createRectangle(0, 200, 0, 200),
-      createRectangle(0, 400, 0, 400),
-      uint32(styles.length + startEdges.length),
+    const body = joinSwfBytes(
+      swfUint16Bytes(7),
+      createSwfRectangleRecord(0, 200, 0, 200),
+      createSwfRectangleRecord(0, 400, 0, 400),
+      swfUint32Bytes(styles.length + startEdges.length),
       styles,
       startEdges,
       endEdges,
     );
     const place = (depth: number, ratio: number): Uint8Array =>
-      createTag(
+      createSwfTagRecord(
         TAG_PLACE_OBJECT_2,
-        joinBytes(new Uint8Array([PLACE_HAS_CHARACTER | PLACE_HAS_RATIO]), uint16(depth), uint16(7), uint16(ratio)),
+        joinSwfBytes(
+          new Uint8Array([SWF_PLACE_HAS_CHARACTER | PLACE_HAS_RATIO]),
+          swfUint16Bytes(depth),
+          swfUint16Bytes(7),
+          swfUint16Bytes(ratio),
+        ),
       );
 
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_MORPH_SHAPE, body),
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_MORPH_SHAPE, body),
         place(1, 0),
         place(2, 0x7fff),
         place(3, 0xffff),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -4245,34 +4787,44 @@ describe('createScene2DFromSwf morph shapes', () => {
   it('places a morph character and drives its progress from the placement ratio', () => {
     const startEdges = morphBox(200);
     const endEdges = morphBox(400);
-    const styles = joinBytes(
+    const styles = joinSwfBytes(
       new Uint8Array([1, 0x00, 0xff, 0x00, 0x00, 0xff, 0x00, 0x00, 0xff, 0xff]),
       new Uint8Array([0]),
     );
-    const body = joinBytes(
-      uint16(7),
-      createRectangle(0, 200, 0, 200),
-      createRectangle(0, 400, 0, 400),
-      uint32(styles.length + startEdges.length),
+    const body = joinSwfBytes(
+      swfUint16Bytes(7),
+      createSwfRectangleRecord(0, 200, 0, 200),
+      createSwfRectangleRecord(0, 400, 0, 400),
+      swfUint32Bytes(styles.length + startEdges.length),
       styles,
       startEdges,
       endEdges,
     );
 
     const document = createScene2DFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_MORPH_SHAPE, body),
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_MORPH_SHAPE, body),
         // Two placements of one character at different ratios: the case a single shared node cannot serve.
-        createTag(
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(new Uint8Array([PLACE_HAS_CHARACTER | PLACE_HAS_RATIO]), uint16(1), uint16(7), uint16(0)),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_CHARACTER | PLACE_HAS_RATIO]),
+            swfUint16Bytes(1),
+            swfUint16Bytes(7),
+            swfUint16Bytes(0),
+          ),
         ),
-        createTag(
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_2,
-          joinBytes(new Uint8Array([PLACE_HAS_CHARACTER | PLACE_HAS_RATIO]), uint16(2), uint16(7), uint16(0xffff)),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_CHARACTER | PLACE_HAS_RATIO]),
+            swfUint16Bytes(2),
+            swfUint16Bytes(7),
+            swfUint16Bytes(0xffff),
+          ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -4298,16 +4850,28 @@ describe('createScene2DImportFromSwf', () => {
     const jpeg4 = createJpegHeader(31, 19);
     const alpha4 = new Uint8Array([0x78, 0x01, 0x41, 0x42, 0x43]);
     const deblockingParameterRaw = 0x81fe;
-    const file = createSwf([
-      createTag(TAG_DEFINE_BITS_JPEG_3, joinBytes(uint16(16), uint32(jpeg3.length), jpeg3, alpha3)),
-      createTag(
+    const file = createSwfFileBytes([
+      createSwfTagRecord(
+        TAG_DEFINE_BITS_JPEG_3,
+        joinSwfBytes(swfUint16Bytes(16), swfUint32Bytes(jpeg3.length), jpeg3, alpha3),
+      ),
+      createSwfTagRecord(
         TAG_DEFINE_BITS_JPEG_4,
-        joinBytes(uint16(17), uint32(jpeg4.length + 2), uint16(deblockingParameterRaw), jpeg4, alpha4),
+        joinSwfBytes(
+          swfUint16Bytes(17),
+          swfUint32Bytes(jpeg4.length + 2),
+          swfUint16Bytes(deblockingParameterRaw),
+          jpeg4,
+          alpha4,
+        ),
       ),
       // Only JPEG3 is placed. JPEG4 still belongs on the full report, but not in document resources.
-      createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(16))),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(
+        TAG_PLACE_OBJECT_2,
+        joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(16)),
+      ),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
 
     const result = createScene2DImportFromSwf(file, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)!;
@@ -4345,14 +4909,26 @@ describe('createScene2DImportFromSwf', () => {
     const jpeg3 = createJpegHeader(23, 17);
     const jpeg4 = createJpegHeader(31, 19);
     const result = createScene2DImportFromSwf(
-      createSwf([
+      createSwfFileBytes([
         // JPEG3 points beyond the tag; JPEG4 points into its own two-byte deblocking field.
-        createTag(TAG_DEFINE_BITS_JPEG_3, joinBytes(uint16(16), uint32(jpeg3.length + 1), jpeg3)),
-        createTag(TAG_DEFINE_BITS_JPEG_4, joinBytes(uint16(17), uint32(1), uint16(0x1234), jpeg4)),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(16))),
-        createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(2), uint16(17))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(
+          TAG_DEFINE_BITS_JPEG_3,
+          joinSwfBytes(swfUint16Bytes(16), swfUint32Bytes(jpeg3.length + 1), jpeg3),
+        ),
+        createSwfTagRecord(
+          TAG_DEFINE_BITS_JPEG_4,
+          joinSwfBytes(swfUint16Bytes(17), swfUint32Bytes(1), swfUint16Bytes(0x1234), jpeg4),
+        ),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(1), swfUint16Bytes(16)),
+        ),
+        createSwfTagRecord(
+          TAG_PLACE_OBJECT_2,
+          joinSwfBytes(new Uint8Array([SWF_PLACE_HAS_CHARACTER]), swfUint16Bytes(2), swfUint16Bytes(17)),
+        ),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -4366,19 +4942,19 @@ describe('createScene2DImportFromSwf', () => {
 
   it('keeps an advanced blend mode off the node and reports it for a BlendEffect instead', () => {
     const result = createScene2DImportFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_3,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE3_HAS_BLEND_MODE]),
-            uint16(3),
-            uint16(7),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER, PLACE3_HAS_BLEND_MODE]),
+            swfUint16Bytes(3),
+            swfUint16Bytes(7),
             swfString('overlaid'),
             new Uint8Array([SWF_BLEND_OVERLAY]),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -4396,21 +4972,24 @@ describe('createScene2DImportFromSwf', () => {
 
   it('does not invent a trailing blend mode from an unknown filter payload', () => {
     const result = createScene2DImportFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_3,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE3_HAS_FILTER_LIST | PLACE3_HAS_BLEND_MODE]),
-            uint16(3),
-            uint16(7),
+          joinSwfBytes(
+            new Uint8Array([
+              SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER,
+              PLACE3_HAS_FILTER_LIST | PLACE3_HAS_BLEND_MODE,
+            ]),
+            swfUint16Bytes(3),
+            swfUint16Bytes(7),
             swfString('unknown-filter'),
             // Filter 0xfe is variable-width and unknown. Its first payload byte deliberately spells
             // Overlay; the real blend byte after it spells Multiply. Neither offset is safely reachable.
             new Uint8Array([1, 0xfe, SWF_BLEND_OVERLAY, SWF_BLEND_MULTIPLY]),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -4424,22 +5003,22 @@ describe('createScene2DImportFromSwf', () => {
 
   it('reports a placement filter list as effect descriptors and attaches nothing', () => {
     const result = createScene2DImportFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_3,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE3_HAS_FILTER_LIST]),
-            uint16(3),
-            uint16(7),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER, PLACE3_HAS_FILTER_LIST]),
+            swfUint16Bytes(3),
+            swfUint16Bytes(7),
             swfString('blurred'),
             new Uint8Array([1, 1]),
-            uint32(4 * FIXED_16_ONE),
-            uint32(2 * FIXED_16_ONE),
+            swfUint32Bytes(4 * FIXED_16_ONE),
+            swfUint32Bytes(2 * FIXED_16_ONE),
             new Uint8Array([0]),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -4456,20 +5035,20 @@ describe('createScene2DImportFromSwf', () => {
     const cells: Uint8Array[] = [];
     for (let index = 0; index < 20; index++) cells.push(float32(index % 6 === 0 ? 1 : 0));
     const result = createScene2DImportFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_3,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE3_HAS_FILTER_LIST]),
-            uint16(3),
-            uint16(7),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER, PLACE3_HAS_FILTER_LIST]),
+            swfUint16Bytes(3),
+            swfUint16Bytes(7),
             swfString('remapped'),
             new Uint8Array([1, 6]),
             ...cells,
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -4483,28 +5062,28 @@ describe('createScene2DImportFromSwf', () => {
 
   it('reports appearance per frame, so a filter list a later frame drops stops being reported', () => {
     const result = createScene2DImportFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_3,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE3_HAS_FILTER_LIST]),
-            uint16(3),
-            uint16(7),
+          joinSwfBytes(
+            new Uint8Array([SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_CHARACTER, PLACE3_HAS_FILTER_LIST]),
+            swfUint16Bytes(3),
+            swfUint16Bytes(7),
             swfString('fading'),
             new Uint8Array([1, 1]),
-            uint32(FIXED_16_ONE),
-            uint32(FIXED_16_ONE),
+            swfUint32Bytes(FIXED_16_ONE),
+            swfUint32Bytes(FIXED_16_ONE),
             new Uint8Array([0]),
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_SHOW_FRAME),
         // Frame 2 declares an empty list, which is a removal rather than silence.
-        createTag(
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_3,
-          joinBytes(new Uint8Array([PLACE_MOVE, PLACE3_HAS_FILTER_LIST]), uint16(3), new Uint8Array([0])),
+          joinSwfBytes(new Uint8Array([PLACE_MOVE, PLACE3_HAS_FILTER_LIST]), swfUint16Bytes(3), new Uint8Array([0])),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -4518,26 +5097,29 @@ describe('createScene2DImportFromSwf', () => {
     const cells: Uint8Array[] = [];
     for (let index = 0; index < 20; index++) cells.push(float32(index % 6 === 0 ? 1 : 0));
     const result = createScene2DImportFromSwf(
-      createSwf([
-        createTag(
+      createSwfFileBytes([
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_3,
-          joinBytes(
-            new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_COLOR_TRANSFORM | PLACE_HAS_CHARACTER, PLACE3_HAS_FILTER_LIST]),
-            uint16(3),
-            uint16(7),
+          joinSwfBytes(
+            new Uint8Array([
+              SWF_PLACE_HAS_NAME | SWF_PLACE_HAS_COLOR_TRANSFORM | SWF_PLACE_HAS_CHARACTER,
+              PLACE3_HAS_FILTER_LIST,
+            ]),
+            swfUint16Bytes(3),
+            swfUint16Bytes(7),
             createColorTransform([128, 256, 256, 256], [0, 0, 0, 0]),
             swfString('remapped'),
             new Uint8Array([1, 6]),
             ...cells,
           ),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(
           TAG_PLACE_OBJECT_3,
-          joinBytes(new Uint8Array([PLACE_MOVE, PLACE3_HAS_FILTER_LIST]), uint16(3), new Uint8Array([0])),
+          joinSwfBytes(new Uint8Array([PLACE_MOVE, PLACE3_HAS_FILTER_LIST]), swfUint16Bytes(3), new Uint8Array([0])),
         ),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       DEFAULT_FAMILIES,
       DECOMPRESS_DEFLATE,
@@ -4601,12 +5183,15 @@ describe('createScene2DSymbolFromSwf', () => {
     // The bitmap-filled shape is exported by name and never placed, so nothing but the symbol entry
     // reaches it — which is exactly the case that used to hand back artwork with no pixels behind it.
     const symbol = createScene2DSymbolFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_BITS_LOSSLESS, joinBytes(uint16(9), pixels)),
-        createTag(TAG_DEFINE_SHAPE_3, joinBytes(uint16(7), createRectangle(0, 800, 0, 800), art.toBytes())),
-        createTag(TAG_EXPORT_ASSETS, joinBytes(uint16(1), uint16(7), swfString('Art'))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_BITS_LOSSLESS, joinSwfBytes(swfUint16Bytes(9), pixels)),
+        createSwfTagRecord(
+          TAG_DEFINE_SHAPE_3,
+          joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 800, 0, 800), art.toBytes()),
+        ),
+        createSwfTagRecord(TAG_EXPORT_ASSETS, joinSwfBytes(swfUint16Bytes(1), swfUint16Bytes(7), swfString('Art'))),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       'Art',
       DEFAULT_FAMILIES,
@@ -4637,12 +5222,15 @@ describe('createScene2DSymbolFromSwf', () => {
     art.writeEndShape();
 
     const symbol = createScene2DSymbolFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(9), createJpegHeader(2, 3))),
-        createTag(TAG_DEFINE_SHAPE_3, joinBytes(uint16(7), createRectangle(0, 800, 0, 800), art.toBytes())),
-        createTag(TAG_EXPORT_ASSETS, joinBytes(uint16(1), uint16(7), swfString('Art'))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_BITS_JPEG_2, joinSwfBytes(swfUint16Bytes(9), createJpegHeader(2, 3))),
+        createSwfTagRecord(
+          TAG_DEFINE_SHAPE_3,
+          joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 800, 0, 800), art.toBytes()),
+        ),
+        createSwfTagRecord(TAG_EXPORT_ASSETS, joinSwfBytes(swfUint16Bytes(1), swfUint16Bytes(7), swfString('Art'))),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       'Art',
       DEFAULT_FAMILIES,
@@ -4659,11 +5247,11 @@ describe('createScene2DSymbolFromSwf', () => {
 
   it('instantiates a bitmap character exported by linkage, not only a sprite or a shape', () => {
     const symbol = createScene2DSymbolFromSwf(
-      createSwf([
-        createTag(TAG_DEFINE_BITS_JPEG_2, joinBytes(uint16(9), createJpegHeader(2, 3))),
-        createTag(TAG_EXPORT_ASSETS, joinBytes(uint16(1), uint16(9), swfString('Pixels'))),
-        createTag(TAG_SHOW_FRAME),
-        createTag(TAG_END),
+      createSwfFileBytes([
+        createSwfTagRecord(TAG_DEFINE_BITS_JPEG_2, joinSwfBytes(swfUint16Bytes(9), createJpegHeader(2, 3))),
+        createSwfTagRecord(TAG_EXPORT_ASSETS, joinSwfBytes(swfUint16Bytes(1), swfUint16Bytes(9), swfString('Pixels'))),
+        createSwfTagRecord(TAG_SHOW_FRAME),
+        createSwfTagRecord(TAG_END),
       ]),
       'Pixels',
       DEFAULT_FAMILIES,
@@ -4716,8 +5304,8 @@ function expectLosslessTexturePixel(texture: Texture2D): void {
 // A colour transform in the format's own units: multiply terms are 8.8 fixed point (256 is 1.0) and add
 // terms are signed byte offsets. Passing three channels writes the alpha-less form the legacy record uses.
 function createColorTransform(multiply: ReadonlyArray<number>, add: ReadonlyArray<number>): Uint8Array {
-  const writer = new BitWriter();
-  const bits = signedBitCount([...multiply, ...add]);
+  const writer = new SwfBitWriter();
+  const bits = countSwfSignedBits([...multiply, ...add]);
   writer.writeUnsigned(1, 1);
   writer.writeUnsigned(1, 1);
   writer.writeUnsigned(bits, 4);
@@ -4728,7 +5316,7 @@ function createColorTransform(multiply: ReadonlyArray<number>, add: ReadonlyArra
 
 // A CXFORMWITHALPHA with neither multiply nor add terms — the shortest legal form.
 function createColorTransformWithAlpha(): Uint8Array {
-  const writer = new BitWriter();
+  const writer = new SwfBitWriter();
   writer.writeUnsigned(0, 1);
   writer.writeUnsigned(0, 1);
   writer.writeUnsigned(0, 4);
@@ -4736,7 +5324,7 @@ function createColorTransformWithAlpha(): Uint8Array {
 }
 
 function createLegacyColorTransform(): Uint8Array {
-  const writer = new BitWriter();
+  const writer = new SwfBitWriter();
   writer.writeUnsigned(1, 1);
   writer.writeUnsigned(1, 1);
   writer.writeUnsigned(2, 4);
@@ -4746,7 +5334,7 @@ function createLegacyColorTransform(): Uint8Array {
 }
 
 function createGifHeader(width: number, height: number): Uint8Array {
-  return joinBytes(_encoder.encode('GIF89a'), uint16(width), uint16(height));
+  return joinSwfBytes(_encoder.encode('GIF89a'), swfUint16Bytes(width), swfUint16Bytes(height));
 }
 
 function createJpegHeader(width: number, height: number): Uint8Array {
@@ -4808,7 +5396,7 @@ function createPngHeader(width: number, height: number): Uint8Array {
 
 // One GLYPHENTRY: a 4-bit glyph index followed by an 8-bit signed advance, bit-packed then byte-aligned.
 function packGlyphEntry(index: number, advance: number): Uint8Array {
-  const writer = new BitWriter();
+  const writer = new SwfBitWriter();
   writer.writeUnsigned(index, 4);
   writer.writeSigned(advance, 8);
   return writer.toBytes();
@@ -4844,7 +5432,7 @@ function swfBytes(value: string): Uint8Array {
 }
 
 function swfString(value: string): Uint8Array {
-  return joinBytes(_encoder.encode(value), new Uint8Array([0]));
+  return joinSwfBytes(_encoder.encode(value), new Uint8Array([0]));
 }
 
 // A minimal MP3 payload: one frame sync is all any of these tests reads back.
@@ -4996,7 +5584,7 @@ describe('readSwfExportedSymbolNames', () => {
 describe('registerSwfScene2DDocumentImporter', () => {
   it('adds an opt-in SWF codec without global registration', () => {
     const registry = createScene2DDocumentImporterRegistry();
-    const source = createSwf([createTag(TAG_END)]);
+    const source = createSwfFileBytes([createSwfTagRecord(TAG_END)]);
     expect(createScene2DDocumentFromBytes(source, registry)).toBeNull();
 
     registerSwfScene2DDocumentImporter(registry, DEFAULT_FAMILIES, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
@@ -5007,7 +5595,7 @@ describe('registerSwfScene2DDocumentImporter', () => {
 
 describe('uncompressSwfSource', () => {
   it('returns the uncompressed bytes for an FWS file', () => {
-    const swf = createSwf([createTag(TAG_END)]);
+    const swf = createSwfFileBytes([createSwfTagRecord(TAG_END)]);
     const result = uncompressSwfSource(swf, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     expect(result).not.toBeNull();
     expect(result![0]).toBe(0x46);

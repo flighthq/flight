@@ -8,7 +8,7 @@ import {
   transformSwfRectangle,
 } from './swfPrimitive';
 import { SwfReader } from './swfReader';
-import { BitWriter, createRectangle } from './swfTagStreamTestHelper';
+import { SwfBitWriter, createSwfRectangleRecord } from './swfTagStreamTestHelper';
 
 describe('mergeSwfRectangles', () => {
   it('produces the union of two disjoint boxes', () => {
@@ -57,7 +57,7 @@ describe('readBigEndianUint32', () => {
 
 describe('readSwfMatrix', () => {
   it('returns identity for a record that declares neither scale nor rotation nor translation', () => {
-    const writer = new BitWriter();
+    const writer = new SwfBitWriter();
     writer.writeUnsigned(0, 1);
     writer.writeUnsigned(0, 1);
     writer.writeUnsigned(0, 5);
@@ -65,7 +65,7 @@ describe('readSwfMatrix', () => {
   });
 
   it('reads scale as 16.16 fixed point and translation in twips', () => {
-    const writer = new BitWriter();
+    const writer = new SwfBitWriter();
     writer.writeUnsigned(1, 1);
     writer.writeUnsigned(20, 5);
     writer.writeSigned(2 * 0x10000, 20);
@@ -79,7 +79,7 @@ describe('readSwfMatrix', () => {
   });
 
   it('reads the rotation terms into b and c', () => {
-    const writer = new BitWriter();
+    const writer = new SwfBitWriter();
     writer.writeUnsigned(0, 1);
     writer.writeUnsigned(1, 1);
     writer.writeUnsigned(18, 5);
@@ -92,7 +92,7 @@ describe('readSwfMatrix', () => {
 
 describe('readSwfRectangle', () => {
   it('converts twips to pixels', () => {
-    expect(readSwfRectangle(reader(createRectangle(0, 2000, 0, 1000)))).toEqual({
+    expect(readSwfRectangle(reader(createSwfRectangleRecord(0, 2000, 0, 1000)))).toEqual({
       height: 50,
       width: 100,
       x: 0,
@@ -104,7 +104,7 @@ describe('readSwfRectangle', () => {
   // advisory extent rather than the geometry. Reading one as an empty box is what keeps a single odd
   // character from discarding the whole file.
   it('clamps an inverted extent to empty rather than refusing it', () => {
-    expect(readSwfRectangle(reader(createRectangle(2000, 0, 1000, 0)))).toEqual({
+    expect(readSwfRectangle(reader(createSwfRectangleRecord(2000, 0, 1000, 0)))).toEqual({
       height: 0,
       width: 0,
       x: 100,
@@ -113,7 +113,7 @@ describe('readSwfRectangle', () => {
   });
 
   it('returns the sentinel when the record runs past the end of the reader', () => {
-    const full = createRectangle(0, 2000, 0, 1000);
+    const full = createSwfRectangleRecord(0, 2000, 0, 1000);
     expect(readSwfRectangle(reader(full.subarray(0, 1)))).toBeNull();
   });
 });

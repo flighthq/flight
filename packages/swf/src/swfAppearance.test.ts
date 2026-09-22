@@ -11,7 +11,7 @@ import {
   resolveSwfBlendMode,
 } from './swfAppearance';
 import { SwfReader } from './swfReader';
-import { BitWriter } from './swfTagStreamTestHelper';
+import { SwfBitWriter } from './swfTagStreamTestHelper';
 
 describe('EMPTY_ADJUSTMENTS', () => {
   it('is the one empty array every untinted placement shares', () => {
@@ -121,7 +121,7 @@ describe('resolveSwfBlendMode', () => {
 
 // One CXFORM carrying multiply terms and no add terms, each term in 8.8 fixed point (256 is 1.0).
 function multiplyTerms(terms: readonly number[]): Uint8Array {
-  const writer = new BitWriter();
+  const writer = new SwfBitWriter();
   writer.writeUnsigned(0, 1);
   writer.writeUnsigned(1, 1);
   writer.writeUnsigned(10, 4);

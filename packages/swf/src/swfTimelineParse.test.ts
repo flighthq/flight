@@ -6,7 +6,7 @@ import { swfControlTagFamily } from './swfControlTagFamily';
 import { swfPlacementTagFamily } from './swfPlacementTagFamily';
 import { SwfReader } from './swfReader';
 import { createSwfTagFamilyRegistry, getSwfTagFamilyDispatch } from './swfTagFamilyDispatch';
-import { createSwfTestParseState, createTag, joinBytes, uint16 } from './swfTagStreamTestHelper';
+import { createSwfTestParseState, createSwfTagRecord, joinSwfBytes, swfUint16Bytes } from './swfTagStreamTestHelper';
 import { addSwfTimelineLabel, readSwfTimeline } from './swfTimelineParse';
 
 describe('addSwfTimelineLabel', () => {
@@ -44,10 +44,10 @@ describe('readSwfTimeline', () => {
   it('counts a frame per ShowFrame and snapshots the display list at each', () => {
     const timeline = read([
       place(1, 7),
-      createTag(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_SHOW_FRAME),
       place(2, 8),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ])!;
     expect(timeline.frames).toHaveLength(2);
     expect([...timeline.frames[0].keys()]).toEqual([1]);
@@ -58,23 +58,30 @@ describe('readSwfTimeline', () => {
   it('ends at the bounded end when a stream carries no End tag', () => {
     // Real files written by Flash's own tooling end a sprite, and sometimes the root, with the last
     // content tag and no terminator; rejecting those loses the document over a byte no reader needs.
-    const timeline = read([place(1, 7), createTag(TAG_SHOW_FRAME)])!;
+    const timeline = read([place(1, 7), createSwfTagRecord(TAG_SHOW_FRAME)])!;
     expect(timeline.frames).toHaveLength(1);
   });
 
   it('stops at End and ignores every tag after it', () => {
-    const timeline = read([createTag(TAG_SHOW_FRAME), createTag(TAG_END), createTag(TAG_SHOW_FRAME)])!;
+    const timeline = read([
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+    ])!;
     expect(timeline.frames).toHaveLength(1);
   });
 
   it('gives a stream with no ShowFrame a single frame', () => {
-    expect(read([place(1, 7), createTag(TAG_END)])!.frames).toHaveLength(1);
+    expect(read([place(1, 7), createSwfTagRecord(TAG_END)])!.frames).toHaveLength(1);
   });
 
   it('returns the sentinel for a tag body reaching past the stream', () => {
     // A 0x3f short length means an extended uint32 length follows; declaring more than the stream holds
     // is the truncation case the bounded end catches.
-    const truncated = joinBytes(uint16((TAG_SET_BACKGROUND_COLOR << 6) | 0x3f), new Uint8Array([64, 0, 0, 0]));
+    const truncated = joinSwfBytes(
+      swfUint16Bytes((TAG_SET_BACKGROUND_COLOR << 6) | 0x3f),
+      new Uint8Array([64, 0, 0, 0]),
+    );
     expect(read([truncated])).toBeNull();
   });
 
@@ -83,7 +90,12 @@ describe('readSwfTimeline', () => {
     const opaque = new Uint8Array(120).fill(0xff);
     const diagnostics = collectImportDiagnostics((sink) => {
       const timeline = read(
-        [createTag(TAG_DO_ABC, opaque), place(1, 7), createTag(TAG_SHOW_FRAME), createTag(TAG_END)],
+        [
+          createSwfTagRecord(TAG_DO_ABC, opaque),
+          place(1, 7),
+          createSwfTagRecord(TAG_SHOW_FRAME),
+          createSwfTagRecord(TAG_END),
+        ],
         sink,
       )!;
       expect([...timeline.frames[0].keys()]).toEqual([1]);
@@ -93,7 +105,7 @@ describe('readSwfTimeline', () => {
 
   it('tells an unknown tag code apart from a known one nothing registered', () => {
     const diagnostics = collectImportDiagnostics((sink) => {
-      read([createTag(TAG_UNKNOWN, new Uint8Array([1, 2, 3])), createTag(TAG_END)], sink);
+      read([createSwfTagRecord(TAG_UNKNOWN, new Uint8Array([1, 2, 3])), createSwfTagRecord(TAG_END)], sink);
     });
     expect(diagnostics).toMatchObject([
       { detail: { tag: TAG_UNKNOWN }, kind: 'swf.tag-unknown', severity: ImportDiagnosticSeverity.Skip },
@@ -101,13 +113,18 @@ describe('readSwfTimeline', () => {
   });
 
   it('skips unclaimed payloads with no diagnostics collector engaged', () => {
-    expect(read([createTag(TAG_UNKNOWN, new Uint8Array([1, 2, 3])), createTag(TAG_END)])).not.toBeNull();
+    expect(
+      read([createSwfTagRecord(TAG_UNKNOWN, new Uint8Array([1, 2, 3])), createSwfTagRecord(TAG_END)]),
+    ).not.toBeNull();
   });
 
   it('returns the sentinel when a family declares the stream unwalkable', () => {
     const refusing: SwfTagFamily = { tags: [TAG_SET_BACKGROUND_COLOR], parse: () => false };
     const state = createSwfTestParseState(getSwfTagFamilyDispatch(createSwfTagFamilyRegistry({ control: refusing })));
-    const bytes = joinBytes(createTag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([1, 2, 3])), createTag(TAG_END));
+    const bytes = joinSwfBytes(
+      createSwfTagRecord(TAG_SET_BACKGROUND_COLOR, new Uint8Array([1, 2, 3])),
+      createSwfTagRecord(TAG_END),
+    );
     expect(readSwfTimeline(new SwfReader(bytes, 0, bytes.length), state)).toBeNull();
   });
 
@@ -116,13 +133,21 @@ describe('readSwfTimeline', () => {
   it('returns the sentinel when the frame-entry budget is exhausted', () => {
     const state = createSwfTestParseState(DISPATCH);
     state.remainingFrameEntries = 1;
-    const bytes = joinBytes(place(1, 7), createTag(TAG_SHOW_FRAME), createTag(TAG_SHOW_FRAME), createTag(TAG_END));
+    const bytes = joinSwfBytes(
+      place(1, 7),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
+    );
     expect(readSwfTimeline(new SwfReader(bytes, 0, bytes.length), state)).toBeNull();
   });
 
   it('drops a label past the last frame, and reports how many', () => {
     const diagnostics = collectImportDiagnostics((sink) => {
-      const timeline = read([createTag(TAG_SHOW_FRAME), sceneLabelAt(40, 'late'), createTag(TAG_END)], sink)!;
+      const timeline = read(
+        [createSwfTagRecord(TAG_SHOW_FRAME), sceneLabelAt(40, 'late'), createSwfTagRecord(TAG_END)],
+        sink,
+      )!;
       expect(timeline.labels).toEqual([]);
     });
     // The scene table itself is reported as declined; the label past the last frame is the second entry,
@@ -133,10 +158,10 @@ describe('readSwfTimeline', () => {
 
   it('sorts reachable labels by frame', () => {
     const timeline = read([
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_FRAME_LABEL, name('second')),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_FRAME_LABEL, name('second')),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ])!;
     expect(timeline.labels.map((label) => label.frame)).toEqual([2]);
   });
@@ -144,7 +169,7 @@ describe('readSwfTimeline', () => {
 
 function read(tags: readonly Uint8Array[], diagnostics?: ImportDiagnostic[]): SwfTimeline | null {
   const state = { ...createSwfTestParseState(DISPATCH), diagnostics };
-  const bytes = joinBytes(...tags);
+  const bytes = joinSwfBytes(...tags);
   return readSwfTimeline(new SwfReader(bytes, 0, bytes.length), state);
 }
 
@@ -153,14 +178,17 @@ function name(text: string): Uint8Array {
 }
 
 function place(depth: number, characterId: number): Uint8Array {
-  return createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([0x02]), uint16(depth), uint16(characterId)));
+  return createSwfTagRecord(
+    TAG_PLACE_OBJECT_2,
+    joinSwfBytes(new Uint8Array([0x02]), swfUint16Bytes(depth), swfUint16Bytes(characterId)),
+  );
 }
 
 function sceneLabelAt(frame: number, text: string): Uint8Array {
   // DefineSceneAndFrameLabelData: one scene at frame 0, then one frame label, both zero-based.
-  return createTag(
+  return createSwfTagRecord(
     TAG_DEFINE_SCENE_AND_FRAME_LABEL_DATA,
-    joinBytes(new Uint8Array([1, 0]), name('scene'), new Uint8Array([1, frame]), name(text)),
+    joinSwfBytes(new Uint8Array([1, 0]), name('scene'), new Uint8Array([1, frame]), name(text)),
   );
 }
 
