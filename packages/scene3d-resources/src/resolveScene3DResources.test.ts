@@ -112,7 +112,12 @@ describe('resolveOneScene3DResourceTexture', () => {
     const ref = embeddedRef('image/jpeg');
     const signal = new AbortController().signal;
     const result = await resolveOneScene3DResourceTexture(resolver, ref, signal);
-    expect(imageModule.resolveImageResourceReference).toHaveBeenCalledWith(ref, resolver.fetch, signal);
+    expect(imageModule.resolveImageResourceReference).toHaveBeenCalledWith(
+      resolver.imageDecode ?? {},
+      ref,
+      resolver.fetch,
+      signal,
+    );
     expect(result).toBe(fakeImage);
     disposeScene3DResourceResolver(resolver);
   });
