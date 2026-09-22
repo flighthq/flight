@@ -7,11 +7,7 @@ import { describe, expect, it } from 'vitest';
 const ROOT = process.cwd();
 const PACKAGES = resolve(ROOT, 'packages');
 const HOST_TYPE_NAME = /\bHost\b|\bHost\w*(?:Capabilities|Capability)\b/u;
-const DATA_SELECTED_CODEC_GROUPS = new Set([
-  'HostAudioDecodeCapabilities',
-  'HostImageDecodeCapabilities',
-  'HostImageEncodeCapabilities',
-]);
+const CODEC_SLOT_GROUP = /\bHost(?:Image|Audio)(?:Decode|Encode)Capabilities\b/u;
 
 interface Violation {
   declaration: string;
@@ -58,6 +54,31 @@ describe('runtime APIs use direct Host providers', () => {
         type: "{ readonly 'tray'?: { readonly create(): void } }",
       },
       { declaration: 'whole', file: 'fixture.ts', type: 'Host' },
+    ]);
+  });
+
+  it('permits codec slot group types while rejecting ordinary Host groups', () => {
+    const source = `
+      interface Host {}
+      interface HostDecompressCapabilities {}
+      interface HostTrayCapabilities {}
+      interface HostImageDecodeCapabilities {}
+      interface HostImageEncodeCapabilities {}
+      interface HostAudioDecodeCapabilities {}
+      interface HostImageDecodeFormatCapability {}
+      export function decodeImage(caps: Readonly<HostImageDecodeCapabilities>): void {}
+      export function encodeImage(caps: Readonly<HostImageEncodeCapabilities>): void {}
+      export function decodeAudio(caps: Readonly<HostAudioDecodeCapabilities>): void {}
+      export function directSlot(slot: Readonly<HostImageDecodeFormatCapability>): void {}
+      export function wholeHost(host: Host): void {}
+      export function decompress(caps: Readonly<HostDecompressCapabilities>): void {}
+      export function tray(caps: Readonly<HostTrayCapabilities>): void {}
+    `;
+
+    expect(collectOverbroadRuntimeParameters([{ file: 'fixture.ts', source }])).toEqual([
+      { declaration: 'decompress', file: 'fixture.ts', type: 'Readonly<HostDecompressCapabilities>' },
+      { declaration: 'tray', file: 'fixture.ts', type: 'Readonly<HostTrayCapabilities>' },
+      { declaration: 'wholeHost', file: 'fixture.ts', type: 'Host' },
     ]);
   });
 });
@@ -154,8 +175,8 @@ function collectSignatureViolations(
 }
 
 function isOverbroadType(type: ts.TypeNode, sourceFile: ts.SourceFile, hostGroups: ReadonlySet<string>): boolean {
-  if (isDataSelectedCodecGroup(type)) return false;
   const text = type.getText(sourceFile);
+  if (CODEC_SLOT_GROUP.test(text)) return false;
   if (/\bHost\b/u.test(text) || /\bHost\w*Capabilities\b/u.test(text)) return true;
 
   let structuralHostGroup = false;
@@ -172,23 +193,6 @@ function isOverbroadType(type: ts.TypeNode, sourceFile: ts.SourceFile, hostGroup
   };
   visit(type);
   return structuralHostGroup;
-}
-
-function isDataSelectedCodecGroup(type: ts.TypeNode): boolean {
-  let candidate = type;
-  if (
-    ts.isTypeReferenceNode(candidate) &&
-    ts.isIdentifier(candidate.typeName) &&
-    candidate.typeName.text === 'Readonly' &&
-    candidate.typeArguments?.length === 1
-  ) {
-    candidate = candidate.typeArguments[0];
-  }
-  return (
-    ts.isTypeReferenceNode(candidate) &&
-    ts.isIdentifier(candidate.typeName) &&
-    DATA_SELECTED_CODEC_GROUPS.has(candidate.typeName.text)
-  );
 }
 
 function containsCapabilityMember(type: ts.TypeNode, sourceFile: ts.SourceFile): boolean {

@@ -1,5 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { decodeImage, decodeImagePremultiplied, explainImageDecodeFailure } from '@flighthq/image-codec/contract';
+import { decodeImage, decodeImagePremultiplied } from '@flighthq/image-codec/contract';
 import type {
   AlphaType,
   Bitmap,
@@ -175,20 +175,14 @@ export async function resolveImageResourceReference(
   ref.failure = null;
   ref.state = ResourceResolutionState.Loading;
   try {
-    const usesOrdinaryEmbeddedDecode =
-      ref.kind === ImageResourceReferenceKind.Embedded &&
-      (ref.bitmapComposition === undefined || _resolveImageBitmapComposition === null);
     const source =
       ref.kind === ImageResourceReferenceKind.Embedded
         ? await decodeEmbeddedImageResourceReference(imageDecode, ref, signal, fallbackDecode)
         : await fetch(ref, signal);
     if (source === null) {
-      const decodeFailure = usesOrdinaryEmbeddedDecode
-        ? explainImageDecodeFailure(imageDecode, ref.bytes, ref.mimeType ?? undefined)
-        : null;
       const out = allocateEntity<ImageResourceFailure>();
       out.kind = ImageResourceFailureKind.Unavailable;
-      out.message = decodeFailure?.reason ?? 'Image resource unavailable';
+      out.message = 'Image resource unavailable';
       out.name = null;
       ref.failure = finishEntity(out);
       ref.state = ResourceResolutionState.Failed;
