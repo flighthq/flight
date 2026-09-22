@@ -1,5 +1,3 @@
 export * from './decodeImage';
 export * from './detectImageMimeType';
 export * from './encodeImage';
-export * from './explainImageDecodeFailure';
-export * from './explainImageEncodeFailure';

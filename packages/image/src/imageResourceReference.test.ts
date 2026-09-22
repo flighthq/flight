@@ -217,7 +217,7 @@ describe('resolveImageResourceReference', () => {
     expect(await resolveImageResourceReference({}, ref, unusedFetch, new AbortController().signal)).toBeNull();
     expect(ref.failure).toMatchObject({
       kind: ImageResourceFailureKind.Unavailable,
-      message: 'decoder-not-registered',
+      message: 'Image resource unavailable',
       name: null,
     });
   });
