@@ -11,6 +11,7 @@ import { getRenderProxy2D } from '@flighthq/render/contract';
 import type { Bitmap, ColorScaleBias, MovieClip, RichText } from '@flighthq/sdk';
 import {
   createScene2DFromSwf,
+  createSwfDefaultTagFamilyRegistry,
   getBitmapPixelRgb,
   getMovieClipTotalFrames,
   getNodeChildren,
@@ -863,7 +864,12 @@ const TINTED_CHILD_SHAPE_ID = 15;
 const TINTED_SPRITE_ID = 16;
 const TWIPS_PER_PIXEL = 20;
 
-const document = createScene2DFromSwf(createFunctionalSwf(), sdkHostDecompressDeflate, null);
+const document = createScene2DFromSwf(
+  createFunctionalSwf(),
+  createSwfDefaultTagFamilyRegistry(),
+  sdkHostDecompressDeflate,
+  null,
+);
 if (document === null || document.root.kind !== MovieClipKind) {
   throw new Error('[swf-import] synthetic SWF did not import as a MovieClip document');
 }
