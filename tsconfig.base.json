@@ -46,6 +46,8 @@
       "@flighthq/host-web/*": ["./packages/host-web/src/*"],
       "@flighthq/tool-capture": ["./packages/tool-capture/src/index.ts"],
       "@flighthq/tool-capture/*": ["./packages/tool-capture/src/*"],
+      "@flighthq/tool-manifest": ["./packages/tool-manifest/src/index.ts"],
+      "@flighthq/tool-manifest/*": ["./packages/tool-manifest/src/*"],
       "@flighthq/tool-pipeline": ["./packages/tool-pipeline/src/index.ts"],
       "@flighthq/tool-pipeline/*": ["./packages/tool-pipeline/src/*"],
       "@flighthq/notification": ["./packages/notification/src/index.ts"],
