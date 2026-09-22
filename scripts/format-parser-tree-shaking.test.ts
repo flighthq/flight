@@ -84,48 +84,9 @@ const SPINE_TIMELINE_READER_SYMBOLS = [
   'readSpineBinaryTransformTimelines',
 ] as const;
 
-const SWF_BITMAP_HANDLER_SYMBOLS = [
-  'handleSwfEmbeddedImageDefinitionTag',
-  'handleSwfJpegTablesTag',
-  'handleSwfLegacyImageDefinitionTag',
-  'handleSwfLosslessBitmapDefinitionTag',
-] as const;
-
-const SWF_CONTROL_HANDLER_SYMBOLS = [
-  'handleSwfBackgroundColorTag',
-  'handleSwfButtonDefinitionTag',
-  'handleSwfExportAssetsTag',
-  'handleSwfFrameLabelTag',
-  'handleSwfScalingGridTag',
-  'handleSwfSceneAndFrameLabelDataTag',
-] as const;
-
-const SWF_FONT_HANDLER_SYMBOLS = ['handleSwfFontDefinitionTag', 'handleSwfFontInfoTag'] as const;
-
-const SWF_PLACEMENT_HANDLER_SYMBOLS = ['handleSwfPlaceObjectTag', 'handleSwfRemoveObjectTag'] as const;
-
-const SWF_SCRIPT_HANDLER_SYMBOLS = ['handleSwfDoAbcTag', 'handleSwfDoActionTag', 'handleSwfDoInitActionTag'] as const;
-
-const SWF_SOUND_HANDLER_SYMBOLS = [
-  'handleSwfSoundDefinitionTag',
-  'handleSwfSoundStreamBlockTag',
-  'handleSwfSoundStreamHeadTag',
-  'handleSwfStartSound2Tag',
-  'handleSwfStartSoundTag',
-] as const;
-
-const SWF_HANDLER_SYMBOLS = [
-  ...SWF_BITMAP_HANDLER_SYMBOLS,
-  ...SWF_CONTROL_HANDLER_SYMBOLS,
-  ...SWF_FONT_HANDLER_SYMBOLS,
-  ...SWF_PLACEMENT_HANDLER_SYMBOLS,
-  ...SWF_SCRIPT_HANDLER_SYMBOLS,
-  'handleSwfBoundedDefinitionTag',
-  ...SWF_SOUND_HANDLER_SYMBOLS,
-  'handleSwfDefineSpriteTag',
-  'handleSwfVideoStreamDefinitionTag',
-] as const;
-
+// SWF is not here. Its families are registry VALUES rather than `register*Handlers` functions, and its
+// boundaries are asserted at package reachability rather than at exported-symbol presence, so it has a
+// harness of its own in swf-tag-family-tree-shaking.test.ts.
 const CASES: readonly FormatParserTreeShakingCase[] = [
   {
     allRegistrar: 'registerAllGltfHandlers',
@@ -360,99 +321,6 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
     name: 'Rive',
     packageDirectory: 'scene2d-formats',
     publicInfrastructureExports: ['createRiveImportRegistry', 'registerRiveCoreObjectHandler'],
-  },
-  {
-    allRegistrar: 'registerAllSwfTagHandlers',
-    contractOnlyExports: SWF_HANDLER_SYMBOLS,
-    excludedExports: ['registerSwfDefinitionTagHandlers', 'registerSwfTimelineTagHandlers'],
-    families: [
-      {
-        isolationSymbols: ['registerSwfBitmapTagHandlers', ...SWF_BITMAP_HANDLER_SYMBOLS],
-        modules: [],
-        name: 'bitmap',
-        registrar: 'registerSwfBitmapTagHandlers',
-        symbols: SWF_BITMAP_HANDLER_SYMBOLS,
-      },
-      {
-        isolationSymbols: ['registerSwfControlTagHandlers', ...SWF_CONTROL_HANDLER_SYMBOLS],
-        modules: [],
-        name: 'control',
-        registrar: 'registerSwfControlTagHandlers',
-        symbols: SWF_CONTROL_HANDLER_SYMBOLS,
-      },
-      {
-        isolationSymbols: ['registerSwfFontTagHandlers', ...SWF_FONT_HANDLER_SYMBOLS],
-        modules: [],
-        name: 'font',
-        registrar: 'registerSwfFontTagHandlers',
-        symbols: SWF_FONT_HANDLER_SYMBOLS,
-      },
-      {
-        isolationSymbols: ['registerSwfPlacementTagHandlers', ...SWF_PLACEMENT_HANDLER_SYMBOLS],
-        modules: [],
-        name: 'placement',
-        registrar: 'registerSwfPlacementTagHandlers',
-        symbols: SWF_PLACEMENT_HANDLER_SYMBOLS,
-      },
-      {
-        isolationSymbols: ['registerSwfScriptTagHandlers', ...SWF_SCRIPT_HANDLER_SYMBOLS],
-        modules: [],
-        name: 'scripts',
-        registrar: 'registerSwfScriptTagHandlers',
-        symbols: SWF_SCRIPT_HANDLER_SYMBOLS,
-      },
-      {
-        isolationSymbols: ['registerSwfShapeTagHandlers'],
-        modules: [],
-        name: 'shape',
-        registrar: 'registerSwfShapeTagHandlers',
-        symbols: ['handleSwfBoundedDefinitionTag'],
-      },
-      {
-        isolationSymbols: ['registerSwfSoundTagHandlers', ...SWF_SOUND_HANDLER_SYMBOLS],
-        modules: [],
-        name: 'sound',
-        registrar: 'registerSwfSoundTagHandlers',
-        symbols: SWF_SOUND_HANDLER_SYMBOLS,
-      },
-      {
-        isolationSymbols: ['registerSwfSpriteTagHandlers', 'handleSwfDefineSpriteTag'],
-        modules: [],
-        name: 'sprite',
-        registrar: 'registerSwfSpriteTagHandlers',
-        symbols: ['handleSwfDefineSpriteTag'],
-      },
-      {
-        isolationSymbols: ['registerSwfTextTagHandlers'],
-        modules: [],
-        name: 'text',
-        registrar: 'registerSwfTextTagHandlers',
-        symbols: ['handleSwfBoundedDefinitionTag'],
-      },
-      {
-        isolationSymbols: ['registerSwfVideoTagHandlers', 'handleSwfVideoStreamDefinitionTag'],
-        modules: [],
-        name: 'video',
-        registrar: 'registerSwfVideoTagHandlers',
-        symbols: ['handleSwfVideoStreamDefinitionTag'],
-      },
-    ],
-    fullAssemblies: [
-      {
-        exports: ['createScene2DFromSwf'],
-        families: ['bitmap', 'control', 'font', 'placement', 'scripts', 'shape', 'sound', 'sprite', 'text', 'video'],
-        name: 'zero-config document importer',
-      },
-      {
-        exports: ['createScene2DImportFromSwf'],
-        families: ['bitmap', 'control', 'font', 'placement', 'scripts', 'shape', 'sound', 'sprite', 'text', 'video'],
-        name: 'zero-config detailed importer',
-      },
-    ],
-    leanExports: ['createScene2DFromSwfWithTagHandlers', 'createScene2DImportFromSwfWithTagHandlers'],
-    name: 'SWF',
-    packageDirectory: 'swf',
-    publicInfrastructureExports: ['createSwfTagHandlerRegistry', 'registerSwfTagHandler'],
   },
 ];
 

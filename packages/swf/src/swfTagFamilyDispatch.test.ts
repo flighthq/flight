@@ -70,6 +70,46 @@ describe('createSwfTagFamilyDispatch', () => {
   });
 });
 
+describe('dispatch cost', () => {
+  // The design claim the flat table exists to make: per-tag cost does not grow with how many families
+  // were registered. A registry-order scan would make a document's parse time depend on the caller's
+  // registry rather than on the document, and the regression is invisible on the small fixtures the rest
+  // of the suite uses — which is why this one is deliberately large.
+  //
+  // Asserted as a RATIO between two registries over the same document, not as a wall-clock budget: an
+  // absolute threshold is a claim about this machine, and would be flaky on a loaded one. A scan over ten
+  // slots instead of one lookup would show up here as a multiple, not as a few percent.
+  it('parses one document at the same cost under a one-family and a ten-family registry', () => {
+    const document = manyTagDocument(TAG_COUNT);
+    const lean: SwfTagFamilyRegistry = { control: swfControlTagFamily };
+    const full = createSwfDefaultTagFamilyRegistry();
+
+    // A timing test that silently walked an empty document would report a fast, plausible number, so the
+    // document is read once for its LAST tag's colour before either measurement: nothing else in the file
+    // produces that value, and producing it means every tag before it was dispatched.
+    expect(createScene2DFromSwf(document, lean, DEFLATE, null)!.backgroundColor).toBe(LAST_BACKGROUND_COLOR);
+    expect(createScene2DFromSwf(document, full, DEFLATE, null)!.backgroundColor).toBe(LAST_BACKGROUND_COLOR);
+
+    // Both registries claim TAG_SET_BACKGROUND_COLOR, so both take the same branch for every tag; only
+    // the size of the table they look it up in differs.
+    const leanMilliseconds = timeImport(document, lean);
+    const fullMilliseconds = timeImport(document, full);
+    const baseline = Math.max(leanMilliseconds, 1);
+    expect(fullMilliseconds / baseline).toBeLessThan(3);
+  });
+
+  // The table is built once per import, so its construction cost cannot ride on the tag count either.
+  it('builds the table in one pass over the registered families', () => {
+    const registry = createSwfDefaultTagFamilyRegistry();
+    const dispatch = createSwfTagFamilyDispatch(registry);
+    let claimed = 0;
+    for (const family of getSwfTagFamilies(registry)) claimed += family.tags.length;
+    // One entry per claimed tag and not one more: a table built by scanning would still be correct, but
+    // a table built twice, or built per tag, would not have exactly this size.
+    expect(dispatch.size).toBe(claimed);
+  });
+});
+
 describe('getSwfTagFamilies', () => {
   it('returns the registered families in the order the registry declares', () => {
     const families = getSwfTagFamilies({ shape: swfShapeTagFamily, control: swfControlTagFamily });
@@ -81,6 +121,62 @@ describe('getSwfTagFamilies', () => {
     expect(getSwfTagFamilies({})).toEqual([]);
   });
 });
+
+function scriptedDocument(): Uint8Array {
+  // A DoAction whose whole body is one `stop` (0x07), which the importer recognizes as a frame script.
+  return createSwf([
+    createTag(TAG_DO_ACTION, new Uint8Array([0x07, 0x00])),
+    createTag(TAG_SHOW_FRAME),
+    createTag(TAG_END),
+  ]);
+}
+
+// One solid rectangle, defined and placed: the smallest document that produces a drawable node, which is
+// what makes "the node is gone when the shape family is" a claim about the family rather than about a
+// fixture that never drew anything.
+function shapeDocument(): Uint8Array {
+  const shape = new ShapeWriter();
+  shape.writeSolidFillStyles([0x3366cc]);
+  shape.writeLineStyleCount(0);
+  shape.writeStyleBits(1, 0);
+  shape.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
+  shape.writeStraightEdge(400, 0);
+  shape.writeStraightEdge(0, 400);
+  shape.writeStraightEdge(-400, 0);
+  shape.writeStraightEdge(0, -400);
+  shape.writeEndShape();
+  return createSwf([
+    createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 400, 0, 400), shape.toBytes())),
+    createTag(
+      TAG_PLACE_OBJECT_2,
+      joinBytes(
+        new Uint8Array([PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
+        uint16(1),
+        uint16(7),
+        createMatrix(1, 0, 0, 1, 0, 0),
+      ),
+    ),
+    createTag(TAG_SHOW_FRAME),
+    createTag(TAG_END),
+  ]);
+}
+
+const DEFLATE = sdkHostDecompressDeflate;
+// Everything needed to place artwork, and nothing else: the registry the tree-shaking fixture builds too.
+const ARTWORK_FAMILIES: SwfTagFamilyRegistry = {
+  control: swfControlTagFamily,
+  placement: swfPlacementTagFamily,
+  shape: swfShapeTagFamily,
+  sprite: swfSpriteTagFamily,
+};
+const TAG_DEFINE_SHAPE = 2;
+const TAG_DEFINE_SPRITE = 39;
+const TAG_DO_ABC = 82;
+const TAG_DO_ACTION = 12;
+const TAG_END = 0;
+const TAG_PLACE_OBJECT_2 = 26;
+const TAG_SET_BACKGROUND_COLOR = 9;
+const TAG_SHOW_FRAME = 1;
 
 describe('selective registries', () => {
   // The headline claim: a document carrying script tags parses without the script family, reports the
@@ -169,58 +265,26 @@ describe('selective registries', () => {
   });
 });
 
-function scriptedDocument(): Uint8Array {
-  // A DoAction whose whole body is one `stop` (0x07), which the importer recognizes as a frame script.
-  return createSwf([
-    createTag(TAG_DO_ACTION, new Uint8Array([0x07, 0x00])),
-    createTag(TAG_SHOW_FRAME),
-    createTag(TAG_END),
-  ]);
+// A stream of one tag repeated, so the measurement is of dispatch rather than of any one parser. The
+// last tag's red channel counts the stream, which is what makes the walk checkable from the result.
+function manyTagDocument(tagCount: number): Uint8Array {
+  const tags: Uint8Array[] = [];
+  for (let i = 0; i < tagCount; i++) {
+    tags.push(createTag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([i & 0xff, 0x22, 0x33])));
+  }
+  tags.push(createTag(TAG_SHOW_FRAME), createTag(TAG_END));
+  return createSwf(tags);
 }
 
-// One solid rectangle, defined and placed: the smallest document that produces a drawable node, which is
-// what makes "the node is gone when the shape family is" a claim about the family rather than about a
-// fixture that never drew anything.
-function shapeDocument(): Uint8Array {
-  const shape = new ShapeWriter();
-  shape.writeSolidFillStyles([0x3366cc]);
-  shape.writeLineStyleCount(0);
-  shape.writeStyleBits(1, 0);
-  shape.writeStyleChange({ fill1: 1, moveToX: 0, moveToY: 0 });
-  shape.writeStraightEdge(400, 0);
-  shape.writeStraightEdge(0, 400);
-  shape.writeStraightEdge(-400, 0);
-  shape.writeStraightEdge(0, -400);
-  shape.writeEndShape();
-  return createSwf([
-    createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 400, 0, 400), shape.toBytes())),
-    createTag(
-      TAG_PLACE_OBJECT_2,
-      joinBytes(
-        new Uint8Array([PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
-        uint16(1),
-        uint16(7),
-        createMatrix(1, 0, 0, 1, 0, 0),
-      ),
-    ),
-    createTag(TAG_SHOW_FRAME),
-    createTag(TAG_END),
-  ]);
+function timeImport(document: Uint8Array, registry: SwfTagFamilyRegistry): number {
+  // One warm run so neither measurement pays for first-call compilation.
+  createScene2DFromSwf(document, registry, DEFLATE, null);
+  const started = performance.now();
+  for (let run = 0; run < 3; run++) createScene2DFromSwf(document, registry, DEFLATE, null);
+  return performance.now() - started;
 }
 
-const DEFLATE = sdkHostDecompressDeflate;
-// Everything needed to place artwork, and nothing else: the registry the tree-shaking fixture builds too.
-const ARTWORK_FAMILIES: SwfTagFamilyRegistry = {
-  control: swfControlTagFamily,
-  placement: swfPlacementTagFamily,
-  shape: swfShapeTagFamily,
-  sprite: swfSpriteTagFamily,
-};
-const TAG_DEFINE_SHAPE = 2;
-const TAG_DEFINE_SPRITE = 39;
-const TAG_DO_ABC = 82;
-const TAG_DO_ACTION = 12;
-const TAG_END = 0;
-const TAG_PLACE_OBJECT_2 = 26;
-const TAG_SET_BACKGROUND_COLOR = 9;
-const TAG_SHOW_FRAME = 1;
+const TAG_COUNT = 20_000;
+// Last declaration wins, so the document's colour is the final tag's: red counts the stream, and the
+// remaining channels and full opacity are what the reader packs around it.
+const LAST_BACKGROUND_COLOR = (((TAG_COUNT - 1) & 0xff) << 24) + 0x2233ff;
