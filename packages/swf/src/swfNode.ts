@@ -29,7 +29,11 @@ import type {
 // stream does not carry, so it is the extent a document is laid out against.
 export function applySwfAuthoredBounds(node: Node2D, bounds: Readonly<SwfTagRectangle> | null): void {
   if (bounds === null) return;
-  (node.data as unknown as SwfAuthoredBoundsData).authoredBounds = { ...bounds };
+  const data = node.data as unknown as SwfAuthoredBoundsData | null;
+  // A bare display object carries no data of its own, so the box becomes its data rather than a field
+  // written onto data that is not there.
+  if (data === null) node.data = { authoredBounds: { ...bounds } } as unknown as Node2DData;
+  else data.authoredBounds = { ...bounds };
   (getNodeRuntime(node) as Node2DRuntime).computeLocalBoundsRectangle = computeSwfLocalBoundsRectangle;
 }
 
@@ -59,10 +63,7 @@ export function computeSwfLocalBoundsRectangle(out: Rectangle, source: Readonly<
 
 export function createSwfDisplayObject(bounds: SwfTagRectangle | null): ReturnType<typeof createDisplayObject> {
   const target = createDisplayObject();
-  if (bounds !== null) {
-    target.data = { authoredBounds: { ...bounds } } as SwfDisplayObjectData;
-    (getNodeRuntime(target) as Node2DRuntime).computeLocalBoundsRectangle = computeSwfLocalBoundsRectangle;
-  }
+  applySwfAuthoredBounds(target, bounds);
   return target;
 }
 
@@ -121,8 +122,6 @@ interface SwfMorphBoundsData extends SwfAuthoredBoundsData {
   morphEndBounds: SwfTagRectangle;
   morphStartBounds: SwfTagRectangle;
 }
-
-interface SwfDisplayObjectData extends Node2DData, SwfAuthoredBoundsData {}
 
 interface SwfMovieClipData extends MovieClipData, SwfAuthoredBoundsData {}
 
