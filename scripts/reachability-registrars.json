@@ -18,10 +18,6 @@
       "registrar": "registerAssetManifest"
     },
     {
-      "packageName": "audio",
-      "registrar": "registerAudioDecoder"
-    },
-    {
       "packageName": "collision",
       "registrar": "registerBuiltInCollisionFaceQueries3D"
     },
