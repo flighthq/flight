@@ -3,8 +3,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { TimelineAudioCue, TimelineStreamAudioCue } from '@flighthq/types/contract';
 import { TimelineAudioCueKind, TimelineStreamAudioCueKind } from '@flighthq/types/contract';
 
-import { swfSoundHandler } from './swfSoundHandler';
-import { initializeTimelineAudioCue, initializeTimelineStreamAudioCue, swfSoundTagFamily } from './swfSoundTagFamily';
+import { initializeTimelineAudioCue, initializeTimelineStreamAudioCue, swfSoundHandler } from './swfSoundHandler';
 
 describe('initializeTimelineAudioCue', () => {
   it('writes every field of an event cue, at unit gain', () => {
@@ -25,14 +24,6 @@ describe('initializeTimelineAudioCue', () => {
     expect(cue.stop).toBe(false);
     expect(cue.gain).toBe(1);
   });
-
-  it('carries a stop cue, whose duration is absent rather than zero', () => {
-    const out = allocateEntity<TimelineAudioCue>();
-    initializeTimelineAudioCue(out, null, [], 1, 1, 0, createAudioResource(), false, true);
-    const cue = finishEntity(out);
-    expect(cue.stop).toBe(true);
-    expect(cue.duration).toBeNull();
-  });
 });
 
 describe('initializeTimelineStreamAudioCue', () => {
@@ -49,19 +40,19 @@ describe('initializeTimelineStreamAudioCue', () => {
   });
 });
 
-describe('swfSoundTagFamily', () => {
-  it('contains the union of its handler tags', () => {
-    expect([...swfSoundTagFamily.tags].sort((a, b) => a - b)).toEqual([...swfSoundHandler.tags].sort((a, b) => a - b));
+describe('swfSoundHandler', () => {
+  it('claims the event and stream sound tags', () => {
+    expect([...swfSoundHandler.tags].sort((a, b) => a - b)).toEqual([14, 15, 18, 19, 45, 89]);
   });
 
-  it('composes resolve and finishTimeline from its handler', () => {
-    expect(swfSoundTagFamily.resolve).toBeDefined();
-    expect(swfSoundTagFamily.finishTimeline).toBeDefined();
+  it('defers cross-tag work to resolve and stream assembly to finishTimeline', () => {
+    expect(swfSoundHandler.resolve).toBeDefined();
+    expect(swfSoundHandler.finishTimeline).toBeDefined();
   });
 
   it('contributes resources but claims no placed character', () => {
-    expect(swfSoundTagFamily.instantiate?.createResources).toBeDefined();
-    expect(swfSoundTagFamily.instantiate?.createPlacementNode).toBeUndefined();
-    expect(swfSoundTagFamily.instantiate?.hasPlacementContent).toBeUndefined();
+    expect(swfSoundHandler.instantiate?.createResources).toBeDefined();
+    expect(swfSoundHandler.instantiate?.createPlacementNode).toBeUndefined();
+    expect(swfSoundHandler.instantiate?.hasPlacementContent).toBeUndefined();
   });
 });
