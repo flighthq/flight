@@ -1,9 +1,5 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
-import {
-  registerDecompressor,
-  registerDeflateDecompressor,
-  unregisterDecompressor,
-} from '@flighthq/compression/contract';
+import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { createVector3, rotateVector3ByQuaternion } from '@flighthq/geometry/contract';
 import {
   getMeshGeometryIndexCount,
@@ -15,7 +11,11 @@ import {
 import { getNodeChildren, getNodeLocalMatrix4, getNodeParent } from '@flighthq/node/contract';
 import { createNode3D, isMesh } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
-import type { Decompressor } from '@flighthq/types/contract';
+import type {
+  Decompressor,
+  HostDecompressDeflateCapability,
+  HostDecompressLzmaCapability,
+} from '@flighthq/types/contract';
 import { Compression, CompressionFraming } from '@flighthq/types/contract';
 import type {
   AmbientLight,
@@ -507,7 +507,10 @@ const firstAwdClip = (
   bytes: Readonly<Uint8Array>,
   joints: readonly Node3D[],
   diagnostics?: ImportDiagnostic[],
-): AnimationClip | undefined => Object.values(parseAwd2SkeletonAnimations(bytes, joints, diagnostics))[0];
+  deflate: Readonly<HostDecompressDeflateCapability> | null = DECOMPRESS_DEFLATE,
+  lzma: Readonly<HostDecompressLzmaCapability> | null = DECOMPRESS_LZMA,
+): AnimationClip | undefined =>
+  Object.values(parseAwd2SkeletonAnimations(bytes, joints, deflate, lzma, diagnostics))[0];
 
 // Asserts EXACTLY ONE crumb of `kind` was recorded (guards the count) and returns it so a test can lock
 // the full contract — severity, true origin, and detail — for that emitted diagnostic.
@@ -522,7 +525,7 @@ describe('awd2 diagnostic crumb coverage', () => {
     'records $kind (field $field) on the createScene3DFromAwd2 path',
     ({ blockType, body, bytes, cut, field, kind, lights, origin }) => {
       const diagnostics: ImportDiagnostic[] = [];
-      createScene3DFromAwd2(truncatedAwd(blockType, body, cut), diagnostics);
+      createScene3DFromAwd2(truncatedAwd(blockType, body, cut), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, diagnostics);
       expect(diagnostics).toHaveLength(1);
       const crumb = expectOneCrumb(diagnostics, kind);
       expect(crumb.severity).toBe('Drop');
@@ -541,7 +544,12 @@ describe('awd2 diagnostic crumb coverage', () => {
     'records $kind (field $field) on the repaired createScene3DFromAwd2 document path',
     ({ blockType, body, cut, field, kind, origin }) => {
       const diagnostics: ImportDiagnostic[] = [];
-      createScene3DFromAwd2(docPathTruncatedAwd(blockType, body, cut), diagnostics);
+      createScene3DFromAwd2(
+        docPathTruncatedAwd(blockType, body, cut),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
+        diagnostics,
+      );
       expect(diagnostics).toHaveLength(1);
       const crumb = expectOneCrumb(diagnostics, kind);
       expect(crumb.severity).toBe('Drop');
@@ -560,7 +568,12 @@ describe('awd2 diagnostic crumb coverage', () => {
       skel,
     );
     const diagnostics: ImportDiagnostic[] = [];
-    createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.multiple-skeletons');
     expect(crumb.severity).toBe('Drop');
@@ -573,7 +586,12 @@ describe('awd2 diagnostic crumb coverage', () => {
     const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [idxStream] }]);
     const body = concatBytes(buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length), geomBody);
     const diagnostics: ImportDiagnostic[] = [];
-    createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.submesh-no-positions');
     expect(crumb.detail).toBeUndefined();
@@ -585,7 +603,12 @@ describe('awd2 diagnostic crumb coverage', () => {
     const geomBody = new Uint8Array(1); // less than the 2 bytes a VarString length needs
     const body = concatBytes(buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length), geomBody);
     const diagnostics: ImportDiagnostic[] = [];
-    createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.geometry-truncated');
     expect(crumb.severity).toBe('Drop');
@@ -599,7 +622,12 @@ describe('awd2 diagnostic crumb coverage', () => {
     const geomBody = new Uint8Array([10, 0, 65]);
     const body = concatBytes(buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length), geomBody);
     const diagnostics: ImportDiagnostic[] = [];
-    createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.geometry-truncated');
     expect(crumb.severity).toBe('Drop');
@@ -611,7 +639,12 @@ describe('awd2 diagnostic crumb coverage', () => {
     const geomBody = buildAwdString('Geo'); // name only, nothing after
     const body = concatBytes(buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length), geomBody);
     const diagnostics: ImportDiagnostic[] = [];
-    createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.geometry-truncated');
     expect(crumb.severity).toBe('Drop');
@@ -625,7 +658,12 @@ describe('awd2 diagnostic crumb coverage', () => {
     const geomBody = concatBytes(buildAwdString('Geo'), numSubMeshes, new Uint8Array(4));
     const body = concatBytes(buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length), geomBody);
     const diagnostics: ImportDiagnostic[] = [];
-    createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.submesh-truncated');
     expect(crumb.severity).toBe('Drop');
@@ -647,7 +685,12 @@ describe('awd2 diagnostic crumb coverage', () => {
     const geomBody = buildTriangleGeometryBody('Geo', [{ streams: [posStream, badStream] }]);
     const body = concatBytes(buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length), geomBody);
     const diagnostics: ImportDiagnostic[] = [];
-    createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.stream-data-past-end');
     expect(crumb.detail).toBeUndefined();
@@ -674,7 +717,12 @@ describe('awd2 diagnostic crumb coverage', () => {
     ]);
     const body = concatBytes(buildBlockHeader(1, AWD2_BLOCK_TRIANGLE_GEOMETRY, geomBody.length), geomBody);
     const diagnostics: ImportDiagnostic[] = [];
-    createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.skin-streams-mismatch');
     expect(crumb.detail).toBeUndefined();
@@ -698,7 +746,12 @@ describe('awd2 diagnostic crumb coverage', () => {
       miBody,
     );
     const diagnostics: ImportDiagnostic[] = [];
-    createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.material-missing');
     expect(crumb.severity).toBe('Drop');
@@ -725,7 +778,12 @@ describe('awd2 diagnostic crumb coverage', () => {
       miBody,
     );
     const diagnostics: ImportDiagnostic[] = [];
-    createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.texture-missing');
     expect(crumb.severity).toBe('Drop');
@@ -755,7 +813,12 @@ describe('awd2 diagnostic crumb coverage', () => {
       miBody,
     );
     const diagnostics: ImportDiagnostic[] = [];
-    createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.texture-unrecognized-format');
     expect(crumb.detail).toBeUndefined();
@@ -773,7 +836,13 @@ describe('awd2 diagnostic crumb coverage', () => {
       anim,
     );
     const diagnostics: ImportDiagnostic[] = [];
-    parseAwd2SkeletonAnimations(concatBytes(buildAwdHeader(body.length), body), [createNode3D()], diagnostics);
+    parseAwd2SkeletonAnimations(
+      concatBytes(buildAwdHeader(body.length), body),
+      [createNode3D()],
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.animation-no-poses');
     expect(crumb.detail).toBeUndefined();
@@ -791,7 +860,12 @@ describe('awd2 diagnostic crumb coverage', () => {
       anim,
     );
     const diagnostics: ImportDiagnostic[] = [];
-    createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.animation-no-poses');
     expect(crumb.detail).toBeUndefined();
@@ -809,7 +883,12 @@ describe('awd2 diagnostic crumb coverage', () => {
       anim,
     );
     const diagnostics: ImportDiagnostic[] = [];
-    createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.pose-block-missing');
     expect(crumb.severity).toBe('Recover');
@@ -821,7 +900,13 @@ describe('awd2 diagnostic crumb coverage', () => {
   it('records block-length-past-end (Drop, parseAwd2SkeletonAnimations) when a block overruns the body', () => {
     const blockHeader = buildBlockHeader(1, AWD2_BLOCK_SKELETON, 9999);
     const diagnostics: ImportDiagnostic[] = [];
-    parseAwd2SkeletonAnimations(concatBytes(buildAwdHeader(blockHeader.length), blockHeader), [], diagnostics);
+    parseAwd2SkeletonAnimations(
+      concatBytes(buildAwdHeader(blockHeader.length), blockHeader),
+      [],
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
     // The overrun aborts the walk with no skeleton parsed, so the full emitted set is exactly these two,
     // in walk order: the block-length abort, then the empty-result no-skeleton-blocks reject. Lock both.
     expect(diagnostics.map((d) => d.kind)).toEqual(['awd2.block-length-past-end', 'awd2.no-skeleton-blocks']);
@@ -928,7 +1013,7 @@ describe('createScene3DFromAwd2', () => {
     const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const scene = createScene3DFromAwd2(awd);
+    const scene = createScene3DFromAwd2(awd, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     const children = getNodeChildren(scene.root);
     expect(children).toHaveLength(1);
     expect(isMesh(children[0] as Node3D)).toBe(true);
@@ -961,7 +1046,11 @@ describe('createScene3DFromAwd2', () => {
     const meshBlockHeader = buildBlockHeader(2, AWD2_BLOCK_MESH_INSTANCE, meshBody.length);
     const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
 
-    const scene = createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body));
+    const scene = createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+    );
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
 
     expect(getMeshGeometryIndexCount(geometry)).toBe(0);
@@ -985,7 +1074,11 @@ describe('createScene3DFromAwd2', () => {
     const meshBlockHeader = buildBlockHeader(2, AWD2_BLOCK_MESH_INSTANCE, meshBody.length);
     const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
 
-    const scene = createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body));
+    const scene = createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+    );
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
 
     const floatsPerVertex = geometry.layout.stride / 4;
@@ -1009,7 +1102,11 @@ describe('createScene3DFromAwd2', () => {
     const meshBlockHeader = buildBlockHeader(2, AWD2_BLOCK_MESH_INSTANCE, meshBody.length);
     const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
 
-    const scene = createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body));
+    const scene = createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+    );
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
 
     const floatsPerVertex = geometry.layout.stride / 4;
@@ -1041,7 +1138,7 @@ describe('createScene3DFromAwd2', () => {
     const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const scene = createScene3DFromAwd2(awd);
+    const scene = createScene3DFromAwd2(awd, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
 
     const n = { x: 0, y: 0, z: 0 };
@@ -1073,7 +1170,8 @@ describe('createScene3DFromAwd2', () => {
     const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const geometry = (getNodeChildren(createScene3DFromAwd2(awd).root)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(createScene3DFromAwd2(awd, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA).root)[0] as Mesh)
+      .geometry;
     const floatsPerVertex = geometry.layout.stride / 4; // 12 for the canonical (non-skinned) layout
 
     // Tangent xyz (float offset 6-8) carries the AWD tangent with Z negated by the handedness conversion.
@@ -1105,7 +1203,8 @@ describe('createScene3DFromAwd2', () => {
     const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const geometry = (getNodeChildren(createScene3DFromAwd2(awd).root)[0] as Mesh).geometry;
+    const geometry = (getNodeChildren(createScene3DFromAwd2(awd, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA).root)[0] as Mesh)
+      .geometry;
     // Tangent xyz (float offset 6-8) is a real unit-length vector, not the zero a missing stream leaves.
     const [tx, ty, tz] = [geometry.vertices[6], geometry.vertices[7], geometry.vertices[8]];
     expect(Math.hypot(tx, ty, tz)).toBeCloseTo(1, 3);
@@ -1130,7 +1229,7 @@ describe('createScene3DFromAwd2', () => {
     const body = concatBytes(geomBlockHeader, geomBody, containerBlockHeader, containerBody, meshBlockHeader, meshBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const scene = createScene3DFromAwd2(awd);
+    const scene = createScene3DFromAwd2(awd, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     const roots = getNodeChildren(scene.root);
     expect(roots).toHaveLength(1);
     const container = roots[0] as Node3D;
@@ -1144,7 +1243,7 @@ describe('createScene3DFromAwd2', () => {
   it('records a diagnostic and returns empty scene for compressed AWD', () => {
     const awd = buildAwdHeader(0, AWD2_COMPRESSION_DEFLATE);
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createScene3DFromAwd2(awd, diagnostics);
+    const scene = createScene3DFromAwd2(awd, null, null, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.compression-no-decompressor');
@@ -1155,7 +1254,7 @@ describe('createScene3DFromAwd2', () => {
 
   it('returns an empty scene and records a diagnostic for truncated input', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createScene3DFromAwd2(new Uint8Array(4), diagnostics);
+    const scene = createScene3DFromAwd2(new Uint8Array(4), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.header-too-short');
@@ -1168,7 +1267,7 @@ describe('createScene3DFromAwd2', () => {
     const bogus = new Uint8Array(12);
     bogus[0] = 0x00;
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createScene3DFromAwd2(bogus, diagnostics);
+    const scene = createScene3DFromAwd2(bogus, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.bad-magic');
@@ -1182,7 +1281,7 @@ describe('createScene3DFromAwd2', () => {
     // silently produce an empty/garbage scene, so it must be rejected by version with an AWD3-naming diagnostic.
     const awd3 = buildAwdHeader(0, 0, 0, 3);
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createScene3DFromAwd2(awd3, diagnostics);
+    const scene = createScene3DFromAwd2(awd3, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.unsupported-version');
@@ -1193,7 +1292,7 @@ describe('createScene3DFromAwd2', () => {
 
   it('returns an empty scene for a valid header with no blocks', () => {
     const awd = buildAwdHeader(0);
-    const scene = createScene3DFromAwd2(awd);
+    const scene = createScene3DFromAwd2(awd, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     expect(getNodeChildren(scene.root)).toHaveLength(0);
   });
 
@@ -1212,7 +1311,7 @@ describe('createScene3DFromAwd2', () => {
     const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const scene = createScene3DFromAwd2(awd);
+    const scene = createScene3DFromAwd2(awd, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     const meshNode = getNodeChildren(scene.root)[0] as Node3D;
     const m = getNodeLocalMatrix4(meshNode).m;
     expect(m[12]).toBeCloseTo(10);
@@ -1229,7 +1328,7 @@ describe('createScene3DFromAwd2', () => {
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
     const diagnostics: ImportDiagnostic[] = [];
-    createScene3DFromAwd2(awd, diagnostics);
+    createScene3DFromAwd2(awd, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, diagnostics);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.block-length-past-end');
     expect(crumb.detail).toBeUndefined();
@@ -1245,7 +1344,7 @@ describe('createScene3DFromAwd2', () => {
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createScene3DFromAwd2(awd, diagnostics);
+    const scene = createScene3DFromAwd2(awd, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, diagnostics);
     expect(getNodeChildren(scene.root)).toHaveLength(1);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.mesh-instance-missing-geometry');
@@ -1267,7 +1366,7 @@ describe('createScene3DFromAwd2', () => {
     const body = concatBytes(geomBlockHeader, geomBody, meshBlockHeader, meshBody);
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
-    const scene = createScene3DFromAwd2(awd);
+    const scene = createScene3DFromAwd2(awd, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
     expect(getMeshGeometryVertexCount(geometry)).toBe(3);
     expect(getMeshGeometryIndexCount(geometry)).toBe(0);
@@ -1315,7 +1414,12 @@ describe('createScene3DFromAwd2', () => {
       miBody,
     );
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    const scene = createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
 
     const mesh = getNodeChildren(scene.root)[0] as Mesh;
     expect(isMesh(mesh)).toBe(true);
@@ -1362,7 +1466,11 @@ describe('createScene3DFromAwd2', () => {
       buildBlockHeader(4, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
       miBody,
     );
-    const scene = createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body));
+    const scene = createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+    );
 
     const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial;
     expect(material.normalMap).not.toBeNull();
@@ -1397,7 +1505,11 @@ describe('createScene3DFromAwd2', () => {
       buildBlockHeader(4, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
       miBody,
     );
-    const scene = createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body));
+    const scene = createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+    );
 
     const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial;
     expect(material.specularMap).not.toBeNull();
@@ -1413,7 +1525,11 @@ describe('createScene3DFromAwd2', () => {
     // at createShadedMaterial's own default exponent of 32 would visibly widen every authored highlight.
     const material = (
       getNodeChildren(
-        createScene3DFromAwd2(buildSingleMaterialAwd(buildMaterialBody('Bare', AWD2_MATERIAL_TYPE_COLOR, []))).root,
+        createScene3DFromAwd2(
+          buildSingleMaterialAwd(buildMaterialBody('Bare', AWD2_MATERIAL_TYPE_COLOR, [])),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
+        ).root,
       )[0] as Mesh
     ).materials[0] as ShadedMaterial;
     expect(material.shininess).toBe(50);
@@ -1426,8 +1542,11 @@ describe('createScene3DFromAwd2', () => {
       [AWD2_MATERIAL_PROP_GLOSS, float32Bits(12.5)],
       [AWD2_MATERIAL_PROP_SPECULAR_COLOR, 0x336699],
     ]);
-    const material = (getNodeChildren(createScene3DFromAwd2(buildSingleMaterialAwd(matBody)).root)[0] as Mesh)
-      .materials[0] as ShadedMaterial;
+    const material = (
+      getNodeChildren(
+        createScene3DFromAwd2(buildSingleMaterialAwd(matBody), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA).root,
+      )[0] as Mesh
+    ).materials[0] as ShadedMaterial;
     expect(material.shininess).toBe(12.5);
     expect(material.specular).toBe(0x336699ff);
   });
@@ -1442,7 +1561,9 @@ describe('createScene3DFromAwd2', () => {
     ]);
     const diagnostics: ImportDiagnostic[] = [];
     const material = (
-      getNodeChildren(createScene3DFromAwd2(buildSingleMaterialAwd(matBody), diagnostics).root)[0] as Mesh
+      getNodeChildren(
+        createScene3DFromAwd2(buildSingleMaterialAwd(matBody), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, diagnostics).root,
+      )[0] as Mesh
     ).materials[0] as ShadedMaterial;
     expect(material.specular).toBe(0x404040ff);
     expect(diagnostics).toHaveLength(0);
@@ -1456,7 +1577,9 @@ describe('createScene3DFromAwd2', () => {
     ]);
     const diagnostics: ImportDiagnostic[] = [];
     const material = (
-      getNodeChildren(createScene3DFromAwd2(buildSingleMaterialAwd(matBody), diagnostics).root)[0] as Mesh
+      getNodeChildren(
+        createScene3DFromAwd2(buildSingleMaterialAwd(matBody), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, diagnostics).root,
+      )[0] as Mesh
     ).materials[0] as ShadedMaterial;
     expect(material.specular).toBe(0x808080ff);
     const crumb = expectOneCrumb(diagnostics, 'awd2.material-specular-strength-clamped');
@@ -1484,7 +1607,11 @@ describe('createScene3DFromAwd2', () => {
       buildBlockHeader(3, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
       miBody,
     );
-    const scene = createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body));
+    const scene = createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+    );
 
     const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial | null;
     expect(material).not.toBeNull();
@@ -1517,7 +1644,9 @@ describe('createScene3DFromAwd2', () => {
       miBody,
     );
     const material = (
-      getNodeChildren(createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body)).root)[0] as Mesh
+      getNodeChildren(
+        createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA).root,
+      )[0] as Mesh
     ).materials[0] as ShadedMaterial;
     expect(material.diffuse).toBe(0x33669980);
     expect(material.alphaMode).toBe('blend');
@@ -1549,7 +1678,12 @@ describe('createScene3DFromAwd2', () => {
       miBody,
     );
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    const scene = createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
     const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial;
     expect(material.kind).toBe(ShadedMaterialKind);
     expect(material.diffuse).toBe(0x112233ff); // base still imported despite the unmapped methods
@@ -1567,6 +1701,8 @@ describe('createScene3DFromAwd2', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const scene = createScene3DFromAwd2(
       buildSingleMaterialAwd(buildMaterialBody('Empty', AWD2_MATERIAL_TYPE_COLOR, [])),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
       diagnostics,
     );
     const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial | null;
@@ -1585,8 +1721,11 @@ describe('createScene3DFromAwd2', () => {
     const matBody = buildMaterialBody('AlphaOnly', AWD2_MATERIAL_TYPE_COLOR, [
       [AWD2_MATERIAL_PROP_ALPHA, float32Bits(0.25)],
     ]);
-    const material = (getNodeChildren(createScene3DFromAwd2(buildSingleMaterialAwd(matBody)).root)[0] as Mesh)
-      .materials[0] as ShadedMaterial;
+    const material = (
+      getNodeChildren(
+        createScene3DFromAwd2(buildSingleMaterialAwd(matBody), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA).root,
+      )[0] as Mesh
+    ).materials[0] as ShadedMaterial;
     expect(material.kind).toBe(ShadedMaterialKind);
     expect(material.diffuse).toBe(0xffffff40);
     expect(material.alphaMode).toBe('blend');
@@ -1597,7 +1736,12 @@ describe('createScene3DFromAwd2', () => {
     // silently disappeared. It must import a default-white ShadedMaterial and still emit the method Skip crumb.
     const diagnostics: ImportDiagnostic[] = [];
     const matBody = buildMaterialBody('MethodOnly', AWD2_MATERIAL_TYPE_COLOR, [], 3);
-    const scene = createScene3DFromAwd2(buildSingleMaterialAwd(matBody), diagnostics);
+    const scene = createScene3DFromAwd2(
+      buildSingleMaterialAwd(matBody),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
     const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial | null;
     expect(material).not.toBeNull();
     expect(material!.kind).toBe(ShadedMaterialKind);
@@ -1633,7 +1777,12 @@ describe('createScene3DFromAwd2', () => {
       miBody,
     );
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    const scene = createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
 
     const material = (getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial;
     expect(material.kind).toBe(ShadedMaterialKind);
@@ -1667,7 +1816,11 @@ describe('createScene3DFromAwd2', () => {
       buildBlockHeader(4, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
       miBody,
     );
-    const scene = createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body));
+    const scene = createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+    );
 
     const texture = ((getNodeChildren(scene.root)[0] as Mesh).materials[0] as ShadedMaterial).diffuseMap!;
     expect(getTextureSource(texture)).toBeNull(); // parse never allocates or fills an Image
@@ -1679,7 +1832,7 @@ describe('createScene3DFromAwd2', () => {
   });
 
   it('emits joints0/weights0 into the skinned layout and binds the skeleton via mesh.skin', () => {
-    const scene = createScene3DFromAwd2(SKINNED_TRIANGLE_AWD);
+    const scene = createScene3DFromAwd2(SKINNED_TRIANGLE_AWD, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as Node3D)) as unknown as Mesh;
     expect(mesh).toBeTruthy();
 
@@ -1717,7 +1870,7 @@ describe('createScene3DFromAwd2', () => {
   });
 
   it('binds the animation clip to the same joint nodes the mesh skins from (identity)', () => {
-    const scene = createScene3DFromAwd2(SKINNED_TRIANGLE_AWD);
+    const scene = createScene3DFromAwd2(SKINNED_TRIANGLE_AWD, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as Node3D)) as unknown as Mesh;
     const joints = mesh.skin!.skeleton.joints;
 
@@ -1750,7 +1903,11 @@ describe('createScene3DFromAwd2', () => {
       buildBlockHeader(3, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
       miBody,
     );
-    const scene = createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body));
+    const scene = createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+    );
     const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as Node3D)) as unknown as Mesh;
 
     expect(mesh.geometry.layout.stride).toBe(48); // canonical (non-skinned) layout
@@ -1760,7 +1917,7 @@ describe('createScene3DFromAwd2', () => {
 
 describe('createScene3DFromAwd2 animations', () => {
   it('returns the scene plus the skeleton animation bound to the scene’s own joints', () => {
-    const scene = createScene3DFromAwd2(SKINNED_TRIANGLE_AWD);
+    const scene = createScene3DFromAwd2(SKINNED_TRIANGLE_AWD, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     expect(Object.keys(scene.animations)).toHaveLength(1);
 
     // The clip binds the SAME joint nodes the imported scene's mesh skins from — no caller threading.
@@ -1788,7 +1945,11 @@ describe('createScene3DFromAwd2 animations', () => {
       buildBlockHeader(2, AWD2_BLOCK_MESH_INSTANCE, miBody.length),
       miBody,
     );
-    const scene = createScene3DFromAwd2(concatBytes(buildAwdHeader(body.length), body));
+    const scene = createScene3DFromAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+    );
     expect(Object.keys(scene.animations)).toHaveLength(0);
     expect(getNodeChildren(scene.root).length).toBeGreaterThan(0);
   });
@@ -1801,15 +1962,11 @@ describe('createScene3DFromAwd2 animations', () => {
     const blockStream = SKINNED_TRIANGLE_AWD.subarray(AWD2_HEADER_BYTES);
     const onDiskPayload = new Uint8Array(blockStream.length); // stand-in "compressed" bytes the stub inflates
     const compressed = concatBytes(buildAwdHeader(onDiskPayload.length, AWD2_COMPRESSION_DEFLATE), onDiskPayload);
-    registerDecompressor(Compression.Deflate, () => blockStream);
-    try {
-      const scene = createScene3DFromAwd2(compressed);
-      expect(Object.keys(scene.animations)).toHaveLength(1);
-      const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as Node3D)) as unknown as Mesh;
-      expect(mesh.skin).not.toBeNull();
-    } finally {
-      unregisterDecompressor(Compression.Deflate);
-    }
+    const stub = { decompress: () => blockStream };
+    const scene = createScene3DFromAwd2(compressed, stub, null);
+    expect(Object.keys(scene.animations)).toHaveLength(1);
+    const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as Node3D)) as unknown as Mesh;
+    expect(mesh.skin).not.toBeNull();
   });
 });
 
@@ -1843,7 +2000,7 @@ describe('parseAwd2', () => {
     );
     const diagnostics: ImportDiagnostic[] = [];
 
-    parseAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    parseAwd2(concatBytes(buildAwdHeader(body.length), body), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, diagnostics);
 
     const complaints = diagnostics.map((diagnostic) => diagnostic.kind);
     expect(complaints, `a good awd2 file made the parser complain: ${complaints.join(', ')}`).toEqual([]);
@@ -1863,7 +2020,7 @@ describe('parseAwd2', () => {
       meshBody,
     );
 
-    const doc = parseAwd2(concatBytes(buildAwdHeader(body.length), body));
+    const doc = parseAwd2(concatBytes(buildAwdHeader(body.length), body), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     expect(doc.meshes).toHaveLength(1);
     expect(doc.nodes).toHaveLength(1);
     expect(doc.nodes[0].name).toBe('TriMesh');
@@ -1891,7 +2048,7 @@ describe('parseAwd2', () => {
       meshBody,
     );
 
-    const doc = parseAwd2(concatBytes(buildAwdHeader(body.length), body));
+    const doc = parseAwd2(concatBytes(buildAwdHeader(body.length), body), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     const parentIndex = doc.nodes.findIndex((n) => n.name === 'Parent');
     const childIndex = doc.nodes.findIndex((n) => n.name === 'Child');
     expect(parentIndex).toBeGreaterThanOrEqual(0);
@@ -1903,7 +2060,7 @@ describe('parseAwd2', () => {
   });
 
   it('decomposes a skeleton into skins (joints by node index) + node-index-bound animation channels', () => {
-    const doc = parseAwd2(SKINNED_TRIANGLE_AWD);
+    const doc = parseAwd2(SKINNED_TRIANGLE_AWD, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
 
     // The skeleton becomes a skin whose joints are document node indices, with one inverse-bind per joint.
     expect(doc.skins).toHaveLength(1);
@@ -1942,7 +2099,7 @@ describe('parseAwd2', () => {
       miBody,
     );
 
-    const doc = parseAwd2(concatBytes(buildAwdHeader(body.length), body));
+    const doc = parseAwd2(concatBytes(buildAwdHeader(body.length), body), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     expect(doc.materials).toHaveLength(1);
     expect(doc.materials[0].name).toBe('Red');
     // The mesh's subset references the material by its document index.
@@ -1978,7 +2135,7 @@ describe('parseAwd2', () => {
       meshBody,
     );
 
-    const doc = parseAwd2(concatBytes(buildAwdHeader(body.length), body));
+    const doc = parseAwd2(concatBytes(buildAwdHeader(body.length), body), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     const first = doc.materials[0] as ShadedMaterial;
     const second = doc.materials[1] as ShadedMaterial;
     expect(doc.resources).toHaveLength(1);
@@ -1989,7 +2146,7 @@ describe('parseAwd2', () => {
 
   it('returns an empty document with a diagnostic for compressed input', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const doc = parseAwd2(buildAwdHeader(0, AWD2_COMPRESSION_DEFLATE), diagnostics);
+    const doc = parseAwd2(buildAwdHeader(0, AWD2_COMPRESSION_DEFLATE), null, null, diagnostics);
     expect(doc.nodes).toHaveLength(0);
     expect(doc.meshes).toHaveLength(0);
     expect(doc.scenes).toHaveLength(1);
@@ -2057,6 +2214,8 @@ describe('parseAwd2 cameras', () => {
       buildAwdFileOfBlocks([
         { body: buildCameraBody('Cam', projectionType, props, transform), id: 1, type: AWD2_BLOCK_CAMERA },
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
       diagnostics,
     );
   }
@@ -2168,7 +2327,12 @@ describe('parseAwd2 joint matrix recovery', () => {
     );
     const body = concatBytes(buildBlockHeader(1, AWD2_BLOCK_SKELETON, skel.length), skel);
     const diagnostics: ImportDiagnostic[] = [];
-    const document = parseAwd2(concatBytes(buildAwdHeader(body.length), body), diagnostics);
+    const document = parseAwd2(
+      concatBytes(buildAwdHeader(body.length), body),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
     return { diagnostics, document };
   }
 
@@ -2235,6 +2399,8 @@ describe('parseAwd2 lights', () => {
         ],
         'Sun',
       ),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
       diagnostics,
     );
 
@@ -2272,6 +2438,8 @@ describe('parseAwd2 lights', () => {
         [AWD2_LIGHT_PROP_DIRECTION_Y, propFloat32(-3)],
         [AWD2_LIGHT_PROP_DIRECTION_Z, propFloat32(4)],
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     // AWD's world-space aim becomes the transform's rotation off local -Z, not a descriptor direction.
@@ -2293,6 +2461,8 @@ describe('parseAwd2 lights', () => {
         'Sun',
         [0, 1, 0, -1, 0, 0, 0, 0, 1, 5, 6, 7],
       ),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const placement = document.lights[0].transform;
@@ -2307,6 +2477,8 @@ describe('parseAwd2 lights', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const document = parseAwd2(
       buildSingleLightAwd(AWD2_LIGHT_TYPE_DIRECTIONAL, [[AWD2_LIGHT_PROP_DIFFUSE, propFloat32(1)]]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
       diagnostics,
     );
 
@@ -2319,7 +2491,12 @@ describe('parseAwd2 lights', () => {
   // empty property list must import a usable white unit-intensity light and record nothing.
   it('applies the AWD defaults when the light block carries an empty property list', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const document = parseAwd2(buildSingleLightAwd(AWD2_LIGHT_TYPE_DIRECTIONAL, []), diagnostics);
+    const document = parseAwd2(
+      buildSingleLightAwd(AWD2_LIGHT_TYPE_DIRECTIONAL, []),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
 
     expect(diagnostics).toHaveLength(0);
     expect(document.lights).toHaveLength(1);
@@ -2337,6 +2514,8 @@ describe('parseAwd2 lights', () => {
   it('marks a light that carries a shadow mapper as casting a shadow', () => {
     const document = parseAwd2(
       buildSingleLightAwd(AWD2_LIGHT_TYPE_DIRECTIONAL, [[AWD2_LIGHT_PROP_SHADOW_MAPPER, propUint8(1)]]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect((document.lights[0].descriptor as DirectionalLight).castsShadow).toBe(true);
@@ -2355,6 +2534,8 @@ describe('parseAwd2 lights', () => {
         'Lamp',
         [1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 4, 5],
       ),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
       diagnostics,
     );
 
@@ -2389,6 +2570,8 @@ describe('parseAwd2 lights', () => {
         ],
         'Lamp',
       ),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
       diagnostics,
     );
 
@@ -2404,7 +2587,12 @@ describe('parseAwd2 lights', () => {
 
   it('records nothing for a point light that omits the falloff start distance', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    parseAwd2(buildSingleLightAwd(AWD2_LIGHT_TYPE_POINT, [[AWD2_LIGHT_PROP_FALLOFF, propFloat32(40)]]), diagnostics);
+    parseAwd2(
+      buildSingleLightAwd(AWD2_LIGHT_TYPE_POINT, [[AWD2_LIGHT_PROP_FALLOFF, propFloat32(40)]]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
 
     expect(diagnostics).toHaveLength(0);
   });
@@ -2420,6 +2608,8 @@ describe('parseAwd2 lights', () => {
         ],
         'Sun',
       ),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
       diagnostics,
     );
 
@@ -2439,6 +2629,8 @@ describe('parseAwd2 lights', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const document = parseAwd2(
       buildSingleLightAwd(7, [[AWD2_LIGHT_PROP_AMBIENT, propFloat32(0.5)]], 'Odd'),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
       diagnostics,
     );
 
@@ -2462,6 +2654,8 @@ describe('parseAwd2 lights', () => {
         [AWD2_LIGHT_PROP_DIFFUSE, propFloat64(0.125)],
         [AWD2_LIGHT_PROP_AMBIENT, propFloat64(0.375)],
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect((document.lights[0].descriptor as DirectionalLight).intensity).toBe(0.125);
@@ -2482,6 +2676,8 @@ describe('parseAwd2 lights', () => {
           type: AWD2_BLOCK_LIGHT,
         },
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document.nodes[0].name).toBe('Rig');
@@ -2498,6 +2694,8 @@ describe('parseAwd2 lights', () => {
           type: AWD2_BLOCK_LIGHT,
         },
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document.lights[0].node).toBeUndefined();
@@ -2523,6 +2721,8 @@ describe('parseAwd2 lights', () => {
           type: AWD2_BLOCK_LIGHT,
         },
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
       diagnostics,
     );
 
@@ -2546,6 +2746,8 @@ describe('parseAwd2 lights', () => {
         },
         { body: buildLightPickerBody('Picker', [1]), id: 2, type: AWD2_BLOCK_LIGHT_PICKER },
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
       diagnostics,
     );
 
@@ -2557,7 +2759,7 @@ describe('parseAwd2 lights', () => {
   // is inert until a caller draws with it.
   it('records no scope diagnostic when the file declares lights but no picker', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    parseAwd2(buildSingleLightAwd(AWD2_LIGHT_TYPE_DIRECTIONAL, []), diagnostics);
+    parseAwd2(buildSingleLightAwd(AWD2_LIGHT_TYPE_DIRECTIONAL, []), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, diagnostics);
 
     expect(diagnostics).toHaveLength(0);
   });
@@ -2578,6 +2780,8 @@ describe('parseAwd2 lights', () => {
         },
         { body: buildLightPickerBody('Partial', [1]), id: 3, type: AWD2_BLOCK_LIGHT_PICKER },
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
       diagnostics,
     );
 
@@ -2602,6 +2806,8 @@ describe('parseAwd2 lights', () => {
         },
         { body: buildLightPickerBody('Picker', [1, 77]), id: 2, type: AWD2_BLOCK_LIGHT_PICKER },
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
       diagnostics,
     );
 
@@ -2629,6 +2835,8 @@ describe('parseAwd2 lights', () => {
         },
         { body: buildLightPickerBody('Picker', [1]), id: 2, type: AWD2_BLOCK_LIGHT_PICKER },
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
       diagnostics,
     );
 
@@ -2981,7 +3189,12 @@ describe('parseAwd2 unhandled blocks', () => {
     // The silence this replaces was the real defect: the offset advanced, the block vanished, and a file
     // using a format feature nobody has written was indistinguishable from a file that uses none.
     const diagnostics: ImportDiagnostic[] = [];
-    parseAwd2(fileWithBlocks([{ blockId: 7, blockType: UNHANDLED_BLOCK_TYPE }]), diagnostics);
+    parseAwd2(
+      fileWithBlocks([{ blockId: 7, blockType: UNHANDLED_BLOCK_TYPE }]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
 
     expect(diagnostics).toEqual([
       {
@@ -2995,7 +3208,12 @@ describe('parseAwd2 unhandled blocks', () => {
 
   it('reports a block in a namespace that is not CORE', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    parseAwd2(fileWithBlocks([{ blockId: 3, blockType: AWD2_BLOCK_TRIANGLE_GEOMETRY, namespace: 5 }]), diagnostics);
+    parseAwd2(
+      fileWithBlocks([{ blockId: 3, blockType: AWD2_BLOCK_TRIANGLE_GEOMETRY, namespace: 5 }]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+      diagnostics,
+    );
 
     // Reported even though the TYPE is one we handle, because in another namespace it is somebody else's
     // block that merely shares a number.
@@ -3015,6 +3233,8 @@ describe('parseAwd2 unhandled blocks', () => {
         { blockId: 12, blockType: OTHER_UNHANDLED_BLOCK_TYPE },
         { blockId: 13, blockType: UNHANDLED_BLOCK_TYPE },
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
       diagnostics,
     );
 
@@ -3034,6 +3254,8 @@ describe('parseAwd2 unhandled blocks', () => {
         { blockId: 20, blockType: AWD2_BLOCK_SKELETON_POSE },
         { blockId: 21, blockType: AWD2_BLOCK_SKELETON_ANIMATION },
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
       diagnostics,
     );
 
@@ -3044,7 +3266,7 @@ describe('parseAwd2 unhandled blocks', () => {
     // Guards the guard: if this fired on ordinary content the diagnostic would be noise, and every test
     // above would pass just as well against a parser that reported unconditionally.
     const diagnostics: ImportDiagnostic[] = [];
-    parseAwd2(SKINNED_TRIANGLE_AWD, diagnostics);
+    parseAwd2(SKINNED_TRIANGLE_AWD, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, diagnostics);
 
     expect(diagnostics.filter((d) => d.kind === 'awd2.block-unhandled')).toEqual([]);
   });
@@ -3054,7 +3276,7 @@ describe('parseAwd2SkeletonAnimations', () => {
   it('rejects a version-3 (AWD3) file by version with an empty map and an AWD3-naming diagnostic', () => {
     const awd3 = buildAwdHeader(0, 0, 0, 3);
     const diagnostics: ImportDiagnostic[] = [];
-    const clips = parseAwd2SkeletonAnimations(awd3, [], diagnostics);
+    const clips = parseAwd2SkeletonAnimations(awd3, [], DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, diagnostics);
     expect(Object.keys(clips)).toHaveLength(0);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.unsupported-version');
@@ -3458,7 +3680,7 @@ describe('parseAwd2SkeletonAnimations', () => {
     };
 
     // Every named block is keyed into the map, each sampling its own poses ('idle' X=3, 'attack' X=9).
-    const clips = parseAwd2SkeletonAnimations(awd, [createNode3D()]);
+    const clips = parseAwd2SkeletonAnimations(awd, [createNode3D()], DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     expect(Object.keys(clips).sort()).toEqual(['attack', 'idle']);
     expect(sampleX(clips.idle)).toBeCloseTo(3);
     expect(sampleX(clips.attack)).toBeCloseTo(9);
@@ -3484,15 +3706,16 @@ describe('rehydrateAwdBody', () => {
     return concatBytes(header, payload);
   };
 
-  afterEach(() => {
-    unregisterDecompressor(Compression.Deflate);
-    unregisterDecompressor(Compression.Lzma);
-  });
+  // A stub slot standing in for a real inflater, so these tests pin the seam rather than the codec.
+  const stubbed = (decompress: Decompressor) => ({ decompress });
 
   it('inflates a compressed geometry file through the registered codec, matching the uncompressed parse', () => {
-    registerDecompressor(Compression.Deflate, stripMarker);
-    const fromCompressed = parseAwd2(asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE));
-    const fromUncompressed = parseAwd2(SKINNED_TRIANGLE_AWD);
+    const fromCompressed = parseAwd2(
+      asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE),
+      stubbed(stripMarker),
+      null,
+    );
+    const fromUncompressed = parseAwd2(SKINNED_TRIANGLE_AWD, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     expect(fromCompressed.meshes).toHaveLength(fromUncompressed.meshes.length);
     expect(fromCompressed.nodes).toHaveLength(fromUncompressed.nodes.length);
     expect(getMeshGeometryVertexCount(fromCompressed.meshes[0].geometry)).toBe(
@@ -3501,17 +3724,21 @@ describe('rehydrateAwdBody', () => {
   });
 
   it('routes compressed skeleton-animation files through the same seam', () => {
-    registerDecompressor(Compression.Deflate, stripMarker);
     const joints = [createNode3D(), createNode3D()];
     const compressed = asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE);
-    const clip = firstAwdClip(compressed, joints);
+    const clip = firstAwdClip(compressed, joints, undefined, stubbed(stripMarker), null);
     expect(clip).toBeDefined();
     expect(clip!.channels).toHaveLength(4); // 2 joints × (translation + rotation)
   });
 
-  it('records a diagnostic and returns empty when the compression method has no registered codec', () => {
+  it('records a diagnostic and returns empty when the host supplies no slot for the method', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createScene3DFromAwd2(asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE), diagnostics);
+    const scene = createScene3DFromAwd2(
+      asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE),
+      null,
+      null,
+      diagnostics,
+    );
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.compression-no-decompressor');
@@ -3521,24 +3748,17 @@ describe('rehydrateAwdBody', () => {
   });
 
   it('records a diagnostic and returns empty when the registered codec fails to inflate', () => {
-    registerDecompressor(Compression.Deflate, () => null);
     const diagnostics: ImportDiagnostic[] = [];
-    const scene = createScene3DFromAwd2(asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE), diagnostics);
+    const scene = createScene3DFromAwd2(
+      asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE),
+      stubbed(() => null),
+      null,
+      diagnostics,
+    );
     expect(getNodeChildren(scene.root)).toHaveLength(0);
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.decompression-failed');
     expect(crumb.severity).toBe('Reject');
-    expect(crumb.origin).toBe('rehydrateAwdBody');
-    expect(crumb.detail?.compression).toBe(AWD2_COMPRESSION_DEFLATE);
-  });
-
-  it('clears a codec when registered with null', () => {
-    registerDecompressor(Compression.Deflate, stripMarker);
-    unregisterDecompressor(Compression.Deflate);
-    const diagnostics: ImportDiagnostic[] = [];
-    parseAwd2(asCompressed(SKINNED_TRIANGLE_AWD, AWD2_COMPRESSION_DEFLATE), diagnostics);
-    expect(diagnostics).toHaveLength(1);
-    const crumb = expectOneCrumb(diagnostics, 'awd2.compression-no-decompressor');
     expect(crumb.origin).toBe('rehydrateAwdBody');
     expect(crumb.detail?.compression).toBe(AWD2_COMPRESSION_DEFLATE);
   });
@@ -3574,14 +3794,13 @@ describe('rehydrateAwdBody', () => {
   };
 
   it('reconstructs the identical scene from a genuinely zlib-compressed AWD via the vendored inflater', () => {
-    registerDeflateDecompressor();
     const compressedBody = decodeBase64(SKINNED_BODY_COMPRESSED);
     const header = SKINNED_TRIANGLE_AWD.slice(0, 12);
     header[7] = AWD2_COMPRESSION_DEFLATE;
     new DataView(header.buffer).setUint32(8, compressedBody.length, true);
 
-    const fromCompressed = parseAwd2(concatBytes(header, compressedBody));
-    const fromUncompressed = parseAwd2(SKINNED_TRIANGLE_AWD);
+    const fromCompressed = parseAwd2(concatBytes(header, compressedBody), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
+    const fromUncompressed = parseAwd2(SKINNED_TRIANGLE_AWD, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     expect(fromCompressed.meshes).toHaveLength(fromUncompressed.meshes.length);
     expect(fromCompressed.nodes).toHaveLength(fromUncompressed.nodes.length);
     expect(getMeshGeometryVertexCount(fromCompressed.meshes[0].geometry)).toBe(
@@ -3591,3 +3810,9 @@ describe('rehydrateAwdBody', () => {
     expect(fromCompressed.skins).toHaveLength(fromUncompressed.skins.length);
   });
 });
+
+// The decompression these tests run with: Flight's portable inflater in the deflate slot. LZMA is
+// deliberately absent, so an LZMA-flagged fixture reports an unread body rather than succeeding.
+const DECOMPRESS_DEFLATE = sdkHostDecompressDeflate;
+// No LZMA implementation ships with Flight, so a ZWS/LZMA body reports an unread container.
+const DECOMPRESS_LZMA = null;

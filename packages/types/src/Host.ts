@@ -50,6 +50,11 @@ import type {
   HostClipboardTextCapability,
 } from './Clipboard';
 import type {
+  HostDecompressBrotliCapability,
+  HostDecompressDeflateCapability,
+  HostDecompressLzmaCapability,
+} from './Compression';
+import type {
   HostConnectivityChangeCapability,
   HostConnectivityReachabilityCapability,
   HostConnectivityStatusCapability,
@@ -213,6 +218,7 @@ export interface Host extends Entity {
   readonly canvas: HostCanvasCapabilities;
   readonly clipboard: HostClipboardCapabilities;
   readonly connectivity: HostConnectivityCapabilities;
+  readonly decompress: HostDecompressCapabilities;
   readonly device: HostDeviceCapabilities;
   readonly dialog: HostDialogCapabilities;
   readonly fileSystem: HostFileSystemCapabilities;
@@ -515,6 +521,16 @@ export interface HostSurfaceCapabilities {
 
 export interface HostTextSegmentCapabilities {
   readonly segmenter?: HostTextSegmenterCapability;
+}
+
+// Decompression the host supplies, one slot per algorithm. Plain data with named slots, like every
+// other Host group: no registry, no ambient lookup, and no import-order dependence — a parser that
+// needs to inflate takes the slot (or this group, when the FILE's own bytes select the algorithm) as
+// an explicit argument, so what it needs is visible in its signature.
+export interface HostDecompressCapabilities {
+  readonly brotli?: HostDecompressBrotliCapability;
+  readonly deflate?: HostDecompressDeflateCapability;
+  readonly lzma?: HostDecompressLzmaCapability;
 }
 
 export interface HostTextShaperCapabilities {

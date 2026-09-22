@@ -1,21 +1,20 @@
-import type { Decompressor } from '@flighthq/types/contract';
-import { Compression, CompressionFraming } from '@flighthq/types/contract';
+import type { Decompressor, HostDecompressDeflateCapability } from '@flighthq/types/contract';
+import { CompressionFraming } from '@flighthq/types/contract';
 
-import { registerDecompressor } from './decompressor';
 import { computeAdler32, DISTANCE_BASE, DISTANCE_EXTRA, LENGTH_BASE, LENGTH_EXTRA } from './deflateFormat';
 
 // Dependency-free, synchronous RFC 1951 (DEFLATE) and RFC 1950 (zlib) decoding. Kept in its own module so
-// the registry stays tree-shakable: a bundle that never calls `registerDeflateDecompressor` pays nothing
-// for this Huffman decoder. Sync because inflate is a straight-line state machine, which keeps every
-// synchronous parser that resolves through the registry synchronous too; a host with a faster native or
-// wasm codec registers that instead.
+// this stays tree-shakable: a bundle that never references `sdkHostDecompressDeflate` pays nothing for
+// this Huffman decoder. Sync because inflate is a straight-line state machine, which keeps every
+// synchronous parser that takes a decompress slot synchronous too; a host with a faster native or wasm
+// codec supplies that slot instead.
 //
 // Real containers mix the two framings — SWF's `CWS` body and Away3D's `ByteArray.compress()` are zlib
 // (a 2-byte header, the DEFLATE stream, an Adler-32), while other producers emit the bare stream. The
 // caller supplies that container-owned fact explicitly because the first raw bytes can also form a valid
 // zlib header. A nonzero `uncompressedLength` is a ceiling enforced while bytes are written; callers
 // without one pass 0 and retain the package-wide safety cap.
-export const inflateDeflate: Decompressor = (compressed, uncompressedLength, framing) => {
+export const decompressDeflate: Decompressor = (compressed, uncompressedLength, framing) => {
   const input = compressed as Uint8Array;
   let start = 0;
   let end = input.length;
@@ -37,12 +36,11 @@ export const inflateDeflate: Decompressor = (compressed, uncompressedLength, fra
   }
 };
 
-// Registers `inflateDeflate` for `Compression.Deflate`, which is what lets every consumer read a
-// zlib-or-raw compressed body. Opt-in, so the codec is only bundled when a caller asks for it.
-// Idempotent; last registration wins.
-export function registerDeflateDecompressor(): void {
-  registerDecompressor(Compression.Deflate, inflateDeflate);
-}
+// The deflate slot Flight itself can fill, ready to drop into a Host's `decompress` group. A caller
+// that wants the portable decoder passes this; a host with a native or wasm codec supplies its own
+// slot instead and never bundles this module. Named for the Host slot it fills rather than for the
+// registry it used to feed.
+export const sdkHostDecompressDeflate: HostDecompressDeflateCapability = { decompress: decompressDeflate };
 
 // The order in which the 19 code-length-code lengths are written in a dynamic-Huffman block header.
 const CODE_LENGTH_ORDER = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];

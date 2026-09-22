@@ -1,3 +1,4 @@
+import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import type { MovieClip } from '@flighthq/sdk';
 import { createScene2DFromSwf, MovieClipKind } from '@flighthq/sdk';
 
@@ -55,7 +56,7 @@ function createSwfTransformMovieClip(width: number, height: number, tags: readon
     ...tags,
   );
   const bytes = joinBytes(new Uint8Array([0x46, 0x57, 0x53, 9]), uint32(SWF_PREFIX_LENGTH + body.length), body);
-  const document = createScene2DFromSwf(bytes);
+  const document = createScene2DFromSwf(bytes, sdkHostDecompressDeflate, null);
   if (document === null || document.root.kind !== MovieClipKind) {
     throw new Error('[swf-transform-fixture] synthetic SWF did not import as a MovieClip document');
   }

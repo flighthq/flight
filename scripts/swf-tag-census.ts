@@ -15,7 +15,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { inflateDeflate, registerDeflateDecompressor } from '@flighthq/compression/contract';
+import { decompressDeflate, sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { createScene2DFromSwf } from '@flighthq/swf/contract';
 import { CompressionFraming } from '@flighthq/types/contract';
 
@@ -31,7 +31,7 @@ function uncompressContainer(source: Uint8Array): Uint8Array | null {
   if (source[0] === FWS) return source;
   if (source[0] !== CWS) return null;
   const length = source[4] | (source[5] << 8) | (source[6] << 16) | (source[7] << 24);
-  const body = inflateDeflate(source.subarray(8), length - 8, CompressionFraming.Rfc1950);
+  const body = decompressDeflate(source.subarray(8), length - 8, CompressionFraming.Rfc1950);
   if (body === null) return null;
   const out = new Uint8Array(length);
   out.set(source.subarray(0, 8));
@@ -67,7 +67,6 @@ if (directory === undefined) {
   process.stderr.write('usage: npm run capabilities:tag-census -- <corpus-directory>\n');
   process.exitCode = 1;
 } else {
-  registerDeflateDecompressor();
   const counts = new Map<number, number>();
   let readable = 0;
   let total = 0;
@@ -79,7 +78,7 @@ if (directory === undefined) {
     const raw = new Uint8Array(readFileSync(join(directory, name)));
     // "Readable" means the importer produced a document. An unreadable file contributes to no tag count,
     // which is why the readable total is printed beside the rows rather than left implicit.
-    if (createScene2DFromSwf(raw) === null) continue;
+    if (createScene2DFromSwf(raw, sdkHostDecompressDeflate, null) === null) continue;
     readable++;
     const bytes = uncompressContainer(raw);
     if (bytes === null) continue;

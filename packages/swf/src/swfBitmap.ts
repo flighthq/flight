@@ -1,7 +1,11 @@
 import { createBitmap } from '@flighthq/bitmap/contract';
-import { getDecompressor } from '@flighthq/compression/contract';
-import type { Bitmap, DecodedImage, SwfJpegAlphaPayload } from '@flighthq/types/contract';
-import { Compression, CompressionFraming } from '@flighthq/types/contract';
+import type {
+  Bitmap,
+  DecodedImage,
+  HostDecompressDeflateCapability,
+  SwfJpegAlphaPayload,
+} from '@flighthq/types/contract';
+import { CompressionFraming } from '@flighthq/types/contract';
 
 // Joins a decoded JPEG colour plane with the separately-compressed alpha plane retained from its SWF
 // definition. Decoding stays outside this pure format step: the caller chooses and awaits the image
@@ -10,14 +14,13 @@ import { Compression, CompressionFraming } from '@flighthq/types/contract';
 export function createSwfJpegAlphaBitmap(
   decoded: Readonly<DecodedImage>,
   payload: Readonly<SwfJpegAlphaPayload>,
+  deflate: Readonly<HostDecompressDeflateCapability>,
 ): Bitmap | null {
   if (decoded.width !== payload.width || decoded.height !== payload.height) return null;
   const pixelCount = payload.width * payload.height;
   if (pixelCount <= 0 || pixelCount > MAX_PIXELS || decoded.data.length !== pixelCount * 4) return null;
 
-  const decompress = getDecompressor(Compression.Deflate);
-  if (decompress === null) return null;
-  const alpha = decompress(payload.compressedAlphaBytes, pixelCount, CompressionFraming.Rfc1950);
+  const alpha = deflate.decompress(payload.compressedAlphaBytes, pixelCount, CompressionFraming.Rfc1950);
   if (alpha === null || alpha.length !== pixelCount) return null;
 
   const bitmap = createBitmap(payload.width, payload.height);
@@ -36,7 +39,11 @@ export function createSwfJpegAlphaBitmap(
 //
 // Returns null when no deflate decompressor is registered or the payload does not unpack, so a caller that
 // never registered one simply gets no pixels rather than an error.
-export function createSwfLosslessBitmap(payload: Readonly<Uint8Array>, hasAlpha: boolean): Bitmap | null {
+export function createSwfLosslessBitmap(
+  payload: Readonly<Uint8Array>,
+  hasAlpha: boolean,
+  deflate: Readonly<HostDecompressDeflateCapability>,
+): Bitmap | null {
   const source = payload as Uint8Array;
   if (source.length < LOSSLESS_HEADER_BYTES) return null;
   const format = source[0];
@@ -54,9 +61,7 @@ export function createSwfLosslessBitmap(payload: Readonly<Uint8Array>, hasAlpha:
       ? alignSwfRow(width * 2) * height
       : width * 4 * height;
 
-  const decompress = getDecompressor(Compression.Deflate);
-  if (decompress === null) return null;
-  const pixels = decompress(compressed, uncompressedLength, CompressionFraming.Rfc1950);
+  const pixels = deflate.decompress(compressed, uncompressedLength, CompressionFraming.Rfc1950);
   if (pixels === null || pixels.length !== uncompressedLength) return null;
 
   const bitmap = createBitmap(width, height);

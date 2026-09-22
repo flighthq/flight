@@ -29,6 +29,7 @@ import {
   electronHostCanvasGroup,
   electronHostSurfaceGroup,
   electronHostTextSegmentGroup,
+  electronHostDecompressGroup,
   electronHostTextShaperGroup,
   electronHostVideoGroup,
   electronHostWgpuGroup,
@@ -71,6 +72,7 @@ const statusBarGroup = emptyGroup(() => electronHostStatusBarGroup(electron));
 const canvasGroup = emptyGroup(() => electronHostCanvasGroup(electron));
 const surfaceGroup = emptyGroup(() => electronHostSurfaceGroup(electron));
 const textSegmentGroup = emptyGroup(() => electronHostTextSegmentGroup(electron));
+const decompressGroup = emptyGroup(() => electronHostDecompressGroup(electron));
 const videoGroup = emptyGroup(() => electronHostVideoGroup(electron));
 const wgpuGroup = emptyGroup(() => electronHostWgpuGroup(electron));
 
@@ -79,6 +81,7 @@ describe('electronHostAudioGroup', audioGroup);
 describe('electronHostBitmapGroup', bitmapGroup);
 describe('electronHostCanvasGroup', canvasGroup);
 describe('electronHostConnectivityGroup', connectivityGroup);
+describe('electronHostDecompressGroup', decompressGroup);
 describe('electronHostDeviceGroup', deviceGroup);
 describe('electronHostFileSystemGroup', fileSystemGroup);
 describe('electronHostFontGroup', fontGroup);
@@ -100,6 +103,7 @@ describe('electronHostSocketGroup', socketGroup);
 describe('electronHostSoftKeyboardGroup', softKeyboardGroup);
 describe('electronHostStatusBarGroup', statusBarGroup);
 describe('electronHostSurfaceGroup', surfaceGroup);
+
 describe('electronHostTextSegmentGroup', textSegmentGroup);
 describe('electronHostTextShaperGroup', () => {
   it('fills the shaper slot with the shared web text shaper', () => {

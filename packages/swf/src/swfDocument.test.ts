@@ -1,8 +1,4 @@
-import {
-  registerDecompressor,
-  registerDeflateDecompressor,
-  unregisterDecompressor,
-} from '@flighthq/compression/contract';
+import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { allocateGlyphRasterizerBackendFromGlyphOutlineSource } from '@flighthq/font/contract';
 import { createGlyphAtlas, getGlyphAtlasEntry } from '@flighthq/glyphatlas/contract';
 import { clearImageDecoders } from '@flighthq/image-codec/contract';
@@ -111,14 +107,8 @@ import { registerSwfImageDecoders } from './swfImageDecoder';
 import { ShapeWriter } from './swfShapeTestHelper';
 import { createSwfTagHandlerRegistry, registerAllSwfTagHandlers, registerSwfTagHandler } from './swfTagRegistry';
 
-beforeEach(() => {
-  clearImageDecoders();
-  unregisterDecompressor(Compression.Deflate);
-});
-afterEach(() => {
-  clearImageDecoders();
-  unregisterDecompressor(Compression.Deflate);
-});
+beforeEach(() => clearImageDecoders());
+afterEach(() => clearImageDecoders());
 
 describe('createGlyphOutlineSourcesFromSwf', () => {
   it('funnels a DefineFont2 outline and code table through the font adapter into glyphatlas', () => {
@@ -149,6 +139,8 @@ describe('createGlyphOutlineSourcesFromSwf', () => {
 
     const sources = createGlyphOutlineSourcesFromSwf(
       createSwf([createTag(TAG_DEFINE_FONT_2, font), createTag(TAG_END)]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     )!;
     const source = sources.get(4)!;
     const rasterizerBackend = allocateGlyphRasterizerBackendFromGlyphOutlineSource(source);
@@ -182,6 +174,8 @@ describe('createGlyphOutlineSourcesFromSwf', () => {
 
     const sources = createGlyphOutlineSourcesFromSwf(
       createSwf([createTag(TAG_DEFINE_FONT_INFO, fontInfo), createTag(TAG_DEFINE_FONT, font), createTag(TAG_END)]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     )!;
 
     expect(sources.get(4)?.getGlyphOutlineIndexForCodePoint(0x41)).toBe(0);
@@ -208,6 +202,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document?.sourceKind).toBe('swf');
@@ -255,6 +251,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document?.slots).toEqual([]);
@@ -283,6 +281,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const children = getNodeChildren(document!.root) as Shape[];
@@ -304,6 +304,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const target = document!.slots[0].target;
@@ -335,6 +337,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document).not.toBeNull();
@@ -373,6 +377,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
       diagnostics,
     );
 
@@ -420,6 +426,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
       diagnostics,
     );
 
@@ -444,6 +452,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document!.audioResources).toHaveLength(1);
@@ -466,6 +476,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document!.audioResources).toHaveLength(1);
@@ -488,6 +500,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const source = (document!.root as MovieClip).data.timeline!.source!;
@@ -516,6 +530,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const cues = (document!.root as MovieClip).data.timeline!.source!.cues as readonly TimelineAudioCue[];
@@ -540,6 +556,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SYMBOL_CLASS, joinBytes(uint16(1), uint16(9), swfString('Game.Theme'))),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const cue = (document!.root as MovieClip).data.timeline!.source!.cues[0] as TimelineAudioCue;
@@ -560,6 +578,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SYMBOL_CLASS, joinBytes(uint16(1), uint16(9), swfString('Game.Theme'))),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const cues = (document!.root as MovieClip).data.timeline!.source!.cues as readonly TimelineAudioCue[];
@@ -579,6 +599,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SYMBOL_CLASS, joinBytes(uint16(1), uint16(9), swfString('Game.Theme'))),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const cue = (document!.root as MovieClip).data.timeline!.source!.cues[0] as TimelineAudioCue;
@@ -594,6 +616,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const cue = (document!.root as MovieClip).data.timeline!.source!.cues[0] as TimelineAudioCue;
@@ -611,6 +635,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const cue = (document!.root as MovieClip).data.timeline!.source!.cues[0] as TimelineAudioCue;
@@ -628,6 +654,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const cue = (document!.root as MovieClip).data.timeline!.source!.cues[0] as TimelineAudioCue;
@@ -658,6 +686,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const cue = (document!.root as MovieClip).data.timeline!.source!.cues[0] as TimelineAudioCue;
@@ -677,6 +707,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_DEFINE_SOUND, joinBytes(uint16(9), new Uint8Array([0x2b]), uint32(1152), uint16(0), mp3())),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const cue = (document!.root as MovieClip).data.timeline!.source!.cues[0] as TimelineAudioCue;
@@ -685,7 +717,11 @@ describe('createScene2DFromSwf', () => {
   });
 
   it('carries no audio references for a file that defines no sounds', () => {
-    const document = createScene2DFromSwf(createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]));
+    const document = createScene2DFromSwf(
+      createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+    );
     expect(document!.audioResources).toEqual([]);
   });
 
@@ -698,6 +734,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document!.imageResources).toHaveLength(1);
@@ -723,6 +761,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const target = document!.slots[0].target;
@@ -742,6 +782,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     // Three placements, one reference, one texture: the decode is paid for once no matter how often the
@@ -770,11 +812,13 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_PLACE_OBJECT_2, joinBytes(new Uint8Array([PLACE_HAS_CHARACTER]), uint16(1), uint16(20))),
         createTag(TAG_SHOW_FRAME),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document?.slots.map((reference) => reference.name)).toEqual(['kid']);
     // An empty stream is an empty movie, not a malformed one.
-    expect(createScene2DFromSwf(createSwf([]))?.slots).toEqual([]);
+    expect(createScene2DFromSwf(createSwf([]), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)?.slots).toEqual([]);
   });
 
   it('turns a clip-depth placement into a clip on what it covers, and draws no mask', () => {
@@ -826,6 +870,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     // The mask itself is never drawn: two placements are covered content, the third is the mask.
@@ -845,7 +891,7 @@ describe('createScene2DFromSwf', () => {
     });
   });
 
-  it('imports a compressed document through a registered decompressor', () => {
+  it('imports a compressed document through the supplied deflate slot', () => {
     const uncompressed = createSwf([
       createTag(
         TAG_PLACE_OBJECT_2,
@@ -861,34 +907,28 @@ describe('createScene2DFromSwf', () => {
     const compressed = joinBytes(uncompressed.subarray(0, 8), uncompressed.subarray(8).reverse());
     compressed[0] = 0x43;
 
-    // Without a decompressor the bytes are unreadable, and that reads as the document's null sentinel.
-    expect(createScene2DFromSwf(compressed)).toBeNull();
+    // A group with no deflate slot cannot read these bytes, and that reads as the document's null sentinel.
+    expect(createScene2DFromSwf(compressed, null, null)).toBeNull();
 
-    registerDecompressor(Compression.Deflate, (body, uncompressedLength, framing) => {
-      expect(uncompressedLength).toBe(uncompressed.length - 8);
-      expect(framing).toBe(CompressionFraming.Rfc1950);
-      return new Uint8Array(body).reverse();
-    });
-    try {
-      const document = createScene2DFromSwf(compressed);
-      expect(document?.sourceKind).toBe('swf');
-      expect(document?.slots.map((reference) => reference.name)).toEqual(['packed']);
-    } finally {
-      unregisterDecompressor(Compression.Deflate);
-    }
+    const reversing = {
+      decompress: (body: Readonly<Uint8Array>, uncompressedLength: number, framing: CompressionFraming) => {
+        expect(uncompressedLength).toBe(uncompressed.length - 8);
+        expect(framing).toBe(CompressionFraming.Rfc1950);
+        return new Uint8Array(body).reverse();
+      },
+    };
+    const document = createScene2DFromSwf(compressed, reversing, null);
+    expect(document?.sourceKind).toBe('swf');
+    expect(document?.slots.map((reference) => reference.name)).toEqual(['packed']);
   });
 
-  it('rejects a compressed document whose decompressor returns a short or failed body', () => {
+  it('rejects a compressed document whose deflate slot returns a short or failed body', () => {
     const uncompressed = createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]);
     const compressed = joinBytes(uncompressed.subarray(0, 8), uncompressed.subarray(8));
     compressed[0] = 0x43;
 
-    registerDecompressor(Compression.Deflate, () => null);
-    expect(createScene2DFromSwf(compressed)).toBeNull();
-
-    registerDecompressor(Compression.Deflate, () => new Uint8Array(2));
-    expect(createScene2DFromSwf(compressed)).toBeNull();
-    unregisterDecompressor(Compression.Deflate);
+    expect(createScene2DFromSwf(compressed, { decompress: () => null }, null)).toBeNull();
+    expect(createScene2DFromSwf(compressed, { decompress: () => new Uint8Array(2) }, null)).toBeNull();
   });
 
   it('imports the stage background colour as opaque packed RGBA', () => {
@@ -898,13 +938,19 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     // SWF gives the stage colour no alpha and a stage is opaque, so it packs fully opaque.
     expect(document?.backgroundColor).toBe(0x336699ff);
     // A file that declares none reports null rather than a guessed default.
     expect(
-      createScene2DFromSwf(createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]))?.backgroundColor,
+      createScene2DFromSwf(
+        createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
+      )?.backgroundColor,
     ).toBeNull();
   });
 
@@ -953,6 +999,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const drawn = getNodeChildren(document!.root)[0] as Shape;
@@ -1005,6 +1053,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const button = document!.slots[0].target;
@@ -1028,6 +1078,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const reference = document!.imageResources[0];
@@ -1048,6 +1100,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const root = document!.root as MovieClip;
@@ -1071,6 +1125,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(getMovieClipFrameScript(document!.root as MovieClip, 1)).toBeNull();
@@ -1104,6 +1160,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const node = document!.slots[0].target as RichText;
@@ -1141,6 +1199,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document).not.toBeNull();
@@ -1181,8 +1241,8 @@ describe('createScene2DFromSwf', () => {
       }
       const cut = i % 3 === 2 ? next() % mutant.length : mutant.length;
       const bytes = mutant.subarray(0, cut);
-      expect(() => createScene2DFromSwf(bytes)).not.toThrow();
-      if (createScene2DFromSwf(bytes) !== null) imported++;
+      expect(() => createScene2DFromSwf(bytes, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)).not.toThrow();
+      if (createScene2DFromSwf(bytes, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA) !== null) imported++;
     }
     // Some mutants must still import, or the property would be passing only because everything is
     // rejected before any real parsing happens.
@@ -1220,7 +1280,7 @@ describe('createScene2DFromSwf', () => {
     ]);
 
     // The document itself is empty, because nothing was placed — which is exactly what a consumer sees.
-    expect(getNodeChildren(createScene2DFromSwf(file)!.root)).toEqual([]);
+    expect(getNodeChildren(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)!.root)).toEqual([]);
     _exportedSymbolFile = file;
   });
 
@@ -1244,6 +1304,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     // Artwork built entirely from bitmap-filled shapes used to import as an empty document.
@@ -1274,6 +1336,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
     const drawn = getNodeChildren(document!.root)[0] as Shape;
     expect(drawn.data.commands[0]).toBe('beginTextureFill');
@@ -1287,8 +1351,7 @@ describe('createScene2DFromSwf', () => {
 
     // Registration is caller-owned and happens after parsing; neither parsing nor reference creation
     // secretly installs a decoder or starts async work.
-    registerDeflateDecompressor();
-    registerSwfImageDecoders();
+    registerSwfImageDecoders(sdkHostDecompressDeflate);
     const resources = await loadScene2DImageResources(document!);
 
     expect(resources.resolved).toEqual([reference]);
@@ -1314,6 +1377,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     // The geometry still imports; only the paint is missing, which is the same shape as a caller who
@@ -1344,12 +1409,13 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     )!;
     const reference = document.imageResources[0];
     expect(reference.kind === ImageResourceReferenceKind.Embedded && reference.alphaType).toBe('premultiplied');
 
-    registerDeflateDecompressor();
-    registerSwfImageDecoders();
+    registerSwfImageDecoders(sdkHostDecompressDeflate);
     await loadScene2DImageResources(document);
 
     const drawn = getNodeChildren(document.root)[0] as Shape;
@@ -1382,6 +1448,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     // Pixels are shared and sampling is not: two textures, one reference, one decode.
@@ -1408,6 +1476,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     // The placement is unnamed, so it earns no slot: the image travels as a resource and the node it
@@ -1429,6 +1499,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document?.slots).toHaveLength(1);
@@ -1458,6 +1530,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document?.slots[0].linkage).toBe('Game.ExternalAvatar');
@@ -1484,6 +1558,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const reference = document?.slots[0];
@@ -1508,6 +1584,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document?.slots).toEqual([]);
@@ -1528,6 +1606,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document?.slots).toEqual([]);
@@ -1559,6 +1639,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document?.slots.map((reference) => reference.name)).toEqual(['firstFrameSlot', 'secondFrameSlot']);
@@ -1601,6 +1683,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const root = document!.root as MovieClip;
@@ -1631,6 +1715,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const tinted = document!.slots[0].target;
@@ -1663,6 +1749,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const faded = document!.slots[0].target;
@@ -1686,6 +1774,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const lifted = document!.slots[0].target;
@@ -1724,6 +1814,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const root = document!.root as MovieClip;
@@ -1764,6 +1856,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const placed = getNodeChildren(document!.root)[0];
@@ -1788,6 +1882,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document!.slots[0].target.blendMode).toBe(BlendMode.Multiply);
@@ -1812,6 +1908,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const root = document!.root as MovieClip;
@@ -1839,6 +1937,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_FRAME_LABEL, swfString('unreached')),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const root = document!.root as MovieClip;
@@ -1875,6 +1975,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const root = document!.root as MovieClip;
@@ -1923,6 +2025,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const root = document!.root as MovieClip;
@@ -1968,6 +2072,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const root = document!.root as MovieClip;
@@ -2015,6 +2121,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const reference = document?.slots[0];
@@ -2053,6 +2161,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const reference = document?.slots[0];
@@ -2087,6 +2197,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document?.slots).toEqual([]);
@@ -2108,6 +2220,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document?.slots).toEqual([]);
@@ -2171,6 +2285,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(document?.slots).toHaveLength(2);
@@ -2231,6 +2347,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(getNodeLocalBoundsRectangle(document!.slots[0].target)).toMatchObject({
@@ -2279,7 +2397,7 @@ describe('createScene2DFromSwf', () => {
     }
     timelineTags.push(createTag(TAG_END));
 
-    const document = createScene2DFromSwf(createSwf(timelineTags))!;
+    const document = createScene2DFromSwf(createSwf(timelineTags), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)!;
     const root = document.root as MovieClip;
     const video = getNodeChildren(root)[0] as Sprite;
 
@@ -2320,7 +2438,7 @@ describe('createScene2DFromSwf', () => {
       createTag(TAG_EXPORT_ASSETS, joinBytes(uint16(1), uint16(13), swfString('Video'))),
       createTag(TAG_END),
     ]);
-    const symbol = createScene2DSymbolFromSwf(source, 'Video')!;
+    const symbol = createScene2DSymbolFromSwf(source, 'Video', DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)!;
 
     expect(symbol.slots).toEqual([]);
     expect(symbol.root.kind).toBe(SpriteKind);
@@ -2356,6 +2474,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(getNodeLocalBoundsRectangle(document!.slots[0].target)).toMatchObject({
@@ -2406,6 +2526,8 @@ describe('createScene2DFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(getNodeLocalBoundsRectangle(document!.slots[0].target)).toMatchObject({
@@ -2425,8 +2547,8 @@ describe('createScene2DFromSwf', () => {
   it('rejects compressed and truncated inputs without throwing', () => {
     const compressed = createSwf([createTag(TAG_END)]);
     compressed[0] = 0x43;
-    expect(createScene2DFromSwf(compressed)).toBeNull();
-    expect(createScene2DFromSwf(new Uint8Array([0x46, 0x57, 0x53]))).toBeNull();
+    expect(createScene2DFromSwf(compressed, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)).toBeNull();
+    expect(createScene2DFromSwf(new Uint8Array([0x46, 0x57, 0x53]), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)).toBeNull();
     expect(
       createScene2DFromSwf(
         createSwf([
@@ -2436,20 +2558,32 @@ describe('createScene2DFromSwf', () => {
           ),
           createTag(TAG_END),
         ]),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
       ),
     ).toBeNull();
     expect(
       createScene2DFromSwf(
         createSwf([createTag(TAG_PLACE_OBJECT, joinBytes(uint16(7), uint16(1))), createTag(TAG_END)]),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
       ),
     ).toBeNull();
-    expect(createScene2DFromSwf(createSwf([createTag(TAG_REMOVE_OBJECT, uint16(7)), createTag(TAG_END)]))).toBeNull();
+    expect(
+      createScene2DFromSwf(
+        createSwf([createTag(TAG_REMOVE_OBJECT, uint16(7)), createTag(TAG_END)]),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
+      ),
+    ).toBeNull();
     expect(
       createScene2DFromSwf(
         createSwf([
           createTag(TAG_PLACE_OBJECT_4, new Uint8Array([PLACE_HAS_NAME | PLACE_HAS_CHARACTER, PLACE_HAS_CLASS_NAME])),
           createTag(TAG_END),
         ]),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
       ),
     ).toBeNull();
     expect(
@@ -2461,6 +2595,8 @@ describe('createScene2DFromSwf', () => {
           ),
           createTag(TAG_END),
         ]),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
       ),
     ).toBeNull();
     expect(
@@ -2472,6 +2608,8 @@ describe('createScene2DFromSwf', () => {
           ),
           createTag(TAG_END),
         ]),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
       ),
     ).toBeNull();
     expect(
@@ -2487,6 +2625,8 @@ describe('createScene2DFromSwf', () => {
           ),
           createTag(TAG_END),
         ]),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
       ),
     ).toBeNull();
   });
@@ -2525,6 +2665,8 @@ describe('createScene2DFromSwf', () => {
           createTag(TAG_SHOW_FRAME),
           createTag(TAG_END),
         ]),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
       ),
     ).toBeNull();
   });
@@ -2541,7 +2683,7 @@ describe('createScene2DFromSwf', () => {
     for (let frame = 0; frame < 5001; frame++) tags.push(createTag(TAG_SHOW_FRAME));
     tags.push(createTag(TAG_END));
 
-    expect(createScene2DFromSwf(createSwf(tags))).toBeNull();
+    expect(createScene2DFromSwf(createSwf(tags), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)).toBeNull();
   });
 });
 
@@ -2574,6 +2716,8 @@ describe('createScene2DFromSwf import diagnostics', () => {
           createTag(TAG_SHOW_FRAME),
           createTag(TAG_END),
         ]),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
         sink,
       );
     });
@@ -2588,7 +2732,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('reports an unreadable container as a Reject naming which check refused it', () => {
     const notSwf = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 0, 0, 0]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(notSwf, sink)).toBeNull();
+      expect(createScene2DFromSwf(notSwf, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).toBeNull();
     });
 
     expect(diagnostics.map((entry) => entry.kind)).toEqual(['swf.invalid-signature']);
@@ -2596,36 +2740,33 @@ describe('createScene2DFromSwf import diagnostics', () => {
     expect(diagnostics[0].origin).toBe('uncompressSwfSource');
   });
 
-  it('separates an unregistered decompressor from a corrupt body, which share one null sentinel', () => {
+  it('separates an absent deflate slot from a corrupt body, which share one null sentinel', () => {
     const uncompressed = createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]);
     const compressed = joinBytes(uncompressed.subarray(0, 8), uncompressed.subarray(8));
     compressed[0] = 0x43;
 
-    // Nothing registered: the file is readable after one registration, which is not the same failure as
-    // a corrupt stream even though both come back null.
+    // No deflate slot: the file is readable once the host supplies one, which is not the same failure
+    // as a corrupt stream even though both come back null.
     const unregistered = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(compressed, sink)).toBeNull();
+      expect(createScene2DFromSwf(compressed, null, null, sink)).toBeNull();
     });
-    expect(unregistered.map((entry) => entry.kind)).toEqual(['swf.no-decompressor-registered']);
-    expect(unregistered[0]!.severity).toBe(ImportDiagnosticSeverity.Reject);
+    // A group with no deflate slot reports nothing of its own — absence is the host's own record —
+    // so the only crumb left to assert is the one a failing codec produces.
+    expect(unregistered).toEqual([]);
 
-    registerDecompressor(Compression.Deflate, () => null);
-    try {
-      const failed = collectImportDiagnostics((sink) => {
-        expect(createScene2DFromSwf(compressed, sink)).toBeNull();
-      });
-      expect(failed.map((entry) => entry.kind)).toEqual(['swf.decompression-failed']);
-      expect(failed[0]!.severity).toBe(ImportDiagnosticSeverity.Reject);
-    } finally {
-      unregisterDecompressor(Compression.Deflate);
-    }
+    const failing = { decompress: () => null };
+    const failed = collectImportDiagnostics((sink) => {
+      expect(createScene2DFromSwf(compressed, failing, null, sink)).toBeNull();
+    });
+    expect(failed.map((entry) => entry.kind)).toEqual(['swf.decompression-failed']);
+    expect(failed[0]!.severity).toBe(ImportDiagnosticSeverity.Reject);
   });
 
   it('records nothing at all when the caller engages no collector', () => {
     const notSwf = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0, 0, 0, 0]);
     // The whole seam is opt-in: the ordinary call must not build a crumb, so this asserts the shape of
     // the default path rather than any particular diagnostic.
-    expect(createScene2DFromSwf(notSwf)).toBeNull();
+    expect(createScene2DFromSwf(notSwf, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)).toBeNull();
     expect(collectImportDiagnostics(() => {})).toEqual([]);
   });
 
@@ -2642,7 +2783,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+      expect(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
     });
 
     const declined = diagnostics.filter((entry) => entry.kind === 'swf.video-frame-payload');
@@ -2661,7 +2802,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+      expect(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
     });
 
     expect(diagnostics).toEqual([]);
@@ -2676,7 +2817,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+      expect(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
     });
 
     const recovered = diagnostics.filter((entry) => entry.kind === 'swf.shape-body-unreadable');
@@ -2697,7 +2838,12 @@ describe('createScene2DFromSwf import diagnostics', () => {
     );
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
-        createScene2DFromSwf(createSwf([createTag(TAG_DEFINE_MORPH_SHAPE, body), createTag(TAG_END)]), sink),
+        createScene2DFromSwf(
+          createSwf([createTag(TAG_DEFINE_MORPH_SHAPE, body), createTag(TAG_END)]),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
+          sink,
+        ),
       ).not.toBeNull();
     });
 
@@ -2725,7 +2871,12 @@ describe('createScene2DFromSwf import diagnostics', () => {
     );
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
-        createScene2DFromSwf(createSwf([createTag(TAG_DEFINE_MORPH_SHAPE, body), createTag(TAG_END)]), sink),
+        createScene2DFromSwf(
+          createSwf([createTag(TAG_DEFINE_MORPH_SHAPE, body), createTag(TAG_END)]),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
+          sink,
+        ),
       ).not.toBeNull();
     });
 
@@ -2751,7 +2902,12 @@ describe('createScene2DFromSwf import diagnostics', () => {
     );
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
-        createScene2DFromSwf(createSwf([createTag(TAG_DEFINE_TEXT, text), createTag(TAG_END)]), sink),
+        createScene2DFromSwf(
+          createSwf([createTag(TAG_DEFINE_TEXT, text), createTag(TAG_END)]),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
+          sink,
+        ),
       ).not.toBeNull();
     });
 
@@ -2794,6 +2950,8 @@ describe('createScene2DFromSwf import diagnostics', () => {
           createTag(TAG_SHOW_FRAME),
           createTag(TAG_END),
         ]),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
         sink,
       );
     });
@@ -2809,7 +2967,12 @@ describe('createScene2DFromSwf import diagnostics', () => {
     const field = joinBytes(uint16(12), createRectangle(0, 4000, 0, 800), new Uint8Array([0x80 | 0x01, 0x00]));
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
-        createScene2DFromSwf(createSwf([createTag(TAG_DEFINE_EDIT_TEXT, field), createTag(TAG_END)]), sink),
+        createScene2DFromSwf(
+          createSwf([createTag(TAG_DEFINE_EDIT_TEXT, field), createTag(TAG_END)]),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
+          sink,
+        ),
       ).not.toBeNull();
     });
 
@@ -2844,6 +3007,8 @@ describe('createScene2DFromSwf import diagnostics', () => {
           createTag(TAG_SHOW_FRAME),
           createTag(TAG_END),
         ]),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
         sink,
       );
     });
@@ -2858,7 +3023,14 @@ describe('createScene2DFromSwf import diagnostics', () => {
     // the entry has to name which one it was or it cannot be joined to either.
     const named = joinBytes(uint32(0), swfString('frame'), new Uint8Array([0xff, 0xff, 0xff, 0xff]));
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(createSwf([createTag(TAG_DO_ABC, named), createTag(TAG_END)]), sink)).not.toBeNull();
+      expect(
+        createScene2DFromSwf(
+          createSwf([createTag(TAG_DO_ABC, named), createTag(TAG_END)]),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
+          sink,
+        ),
+      ).not.toBeNull();
     });
 
     const dropped = diagnostics.filter((entry) => entry.kind === 'swf.abc-frame-scripts-unreadable');
@@ -2871,7 +3043,12 @@ describe('createScene2DFromSwf import diagnostics', () => {
     const anonymous = new Uint8Array([0xff, 0xff, 0xff, 0xff]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
-        createScene2DFromSwf(createSwf([createTag(TAG_DO_ABC_ANONYMOUS, anonymous), createTag(TAG_END)]), sink),
+        createScene2DFromSwf(
+          createSwf([createTag(TAG_DO_ABC_ANONYMOUS, anonymous), createTag(TAG_END)]),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
+          sink,
+        ),
       ).not.toBeNull();
     });
 
@@ -2901,6 +3078,8 @@ describe('createScene2DFromSwf import diagnostics', () => {
             createTag(TAG_SHOW_FRAME),
             createTag(TAG_END),
           ]),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
           sink,
         ),
       ).not.toBeNull();
@@ -2930,6 +3109,8 @@ describe('createScene2DFromSwf import diagnostics', () => {
           createTag(TAG_SHOW_FRAME),
           createTag(TAG_END),
         ]),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
         sink,
       );
     });
@@ -2962,6 +3143,8 @@ describe('createScene2DFromSwf import diagnostics', () => {
             createTag(TAG_SHOW_FRAME),
             createTag(TAG_END),
           ]),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
           sink,
         ),
       ).not.toBeNull();
@@ -2997,6 +3180,8 @@ describe('createScene2DFromSwf import diagnostics', () => {
           createTag(TAG_SHOW_FRAME),
           createTag(TAG_END),
         ]),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
         sink,
       );
     });
@@ -3025,6 +3210,8 @@ describe('createScene2DFromSwf import diagnostics', () => {
             createTag(TAG_SHOW_FRAME),
             createTag(TAG_END),
           ]),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
           sink,
         ),
       ).not.toBeNull();
@@ -3053,6 +3240,8 @@ describe('createScene2DFromSwf import diagnostics', () => {
           createTag(TAG_SHOW_FRAME),
           createTag(TAG_END),
         ]),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
         sink,
       );
       // Non-vacuous: the appearance really was recorded against a node.
@@ -3071,6 +3260,8 @@ describe('createScene2DFromSwf import diagnostics', () => {
       expect(
         createScene2DFromSwf(
           createSwf([createTag(TAG_DEFINE_FONT, font), createTag(TAG_DEFINE_FONT, font), createTag(TAG_END)]),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
           sink,
         ),
       ).not.toBeNull();
@@ -3092,6 +3283,8 @@ describe('createScene2DFromSwf import diagnostics', () => {
             createTag(TAG_DEFINE_FONT, joinBytes(uint16(5), uint16(2), glyphBytes)),
             createTag(TAG_END),
           ]),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
           sink,
         ),
       ).not.toBeNull();
@@ -3127,6 +3320,8 @@ describe('createScene2DFromSwf import diagnostics', () => {
           createTag(TAG_SHOW_FRAME),
           createTag(TAG_END),
         ]),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
         sink,
       );
     });
@@ -3146,7 +3341,12 @@ describe('createScene2DFromSwf import diagnostics', () => {
     const payload = joinBytes(uint32(0), swfString('frame'), abc);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
-        createScene2DFromSwf(createSwf([createTag(TAG_DO_ABC, payload), createTag(TAG_END)]), sink),
+        createScene2DFromSwf(
+          createSwf([createTag(TAG_DO_ABC, payload), createTag(TAG_END)]),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
+          sink,
+        ),
       ).not.toBeNull();
     });
 
@@ -3170,7 +3370,12 @@ describe('createScene2DFromSwf import diagnostics', () => {
     );
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
-        createScene2DFromSwf(createSwf([createTag(TAG_DEFINE_MORPH_SHAPE_2, body), createTag(TAG_END)]), sink),
+        createScene2DFromSwf(
+          createSwf([createTag(TAG_DEFINE_MORPH_SHAPE_2, body), createTag(TAG_END)]),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
+          sink,
+        ),
       ).not.toBeNull();
     });
 
@@ -3196,7 +3401,12 @@ describe('createScene2DFromSwf import diagnostics', () => {
     );
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(
-        createScene2DFromSwf(createSwf([createTag(TAG_DEFINE_TEXT_2, text), createTag(TAG_END)]), sink),
+        createScene2DFromSwf(
+          createSwf([createTag(TAG_DEFINE_TEXT_2, text), createTag(TAG_END)]),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
+          sink,
+        ),
       ).not.toBeNull();
     });
 
@@ -3212,6 +3422,8 @@ describe('createScene2DFromSwf import diagnostics', () => {
       expect(
         createScene2DFromSwf(
           createSwf([createTag(TAG_DEFINE_FONT_2, font2), createTag(TAG_DEFINE_FONT_2, font2), createTag(TAG_END)]),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
           sink,
         ),
       ).not.toBeNull();
@@ -3252,6 +3464,8 @@ describe('createScene2DFromSwf import diagnostics', () => {
           createTag(TAG_SHOW_FRAME),
           createTag(TAG_END),
         ]),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
         sink,
       );
     });
@@ -3268,6 +3482,8 @@ describe('createScene2DFromSwf import diagnostics', () => {
       expect(
         createScene2DFromSwf(
           createSwf([createTag(TAG_DO_ABC_ANONYMOUS, buildFrameScriptAbc()), createTag(TAG_END)]),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
           sink,
         ),
       ).not.toBeNull();
@@ -3312,6 +3528,8 @@ describe('createScene2DFromSwf import diagnostics', () => {
           createTag(TAG_SHOW_FRAME),
           createTag(TAG_END),
         ]),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
         sink,
       );
     });
@@ -3326,7 +3544,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
     // not tell a truncated header from an unregistered decompressor, which IS reported upstream.
     const kindFor = (file: Uint8Array): readonly string[] =>
       collectImportDiagnostics((sink) => {
-        expect(createScene2DFromSwf(file, sink)).toBeNull();
+        expect(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).toBeNull();
       }).map((entry) => entry.kind);
 
     // Version 0 is invalid however well-formed the rest is.
@@ -3352,7 +3570,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+      expect(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
     });
 
     const dropped = diagnostics.filter((entry) => entry.kind === 'swf.jpeg-alpha-stream');
@@ -3372,7 +3590,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+      expect(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
     });
 
     const dropped = diagnostics.filter((entry) => entry.kind === 'swf.jpeg-tables-missing');
@@ -3391,7 +3609,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+      expect(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
     });
 
     const skipped = diagnostics.filter((entry) => entry.kind === 'swf.scene-names');
@@ -3412,7 +3630,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+      expect(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
     });
 
     const skipped = diagnostics.filter((entry) => entry.kind === 'swf.frame-script-declined');
@@ -3430,7 +3648,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+      expect(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
     });
 
     const skipped = diagnostics.filter((entry) => entry.kind === 'swf.frame-script-declined');
@@ -3446,7 +3664,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+      expect(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
     });
 
     expect(diagnostics.filter((entry) => entry.kind === 'swf.frame-script-declined')).toEqual([]);
@@ -3469,7 +3687,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      createScene2DFromSwf(file, sink);
+      createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink);
     });
 
     const collapsed = diagnostics.filter((entry) => entry.kind === 'swf.nested-mask-collapsed');
@@ -3504,7 +3722,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+      expect(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
     });
 
     const skipped = diagnostics.filter((entry) => entry.kind === 'swf.button-interaction-state');
@@ -3524,7 +3742,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+      expect(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
     });
 
     const dropped = diagnostics.filter((entry) => entry.kind === 'swf.jpeg-tables-unsplittable');
@@ -3542,7 +3760,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+      expect(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
     });
 
     const dropped = diagnostics.filter((entry) => entry.kind === 'swf.font-glyph-table');
@@ -3561,7 +3779,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+      expect(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
     });
 
     const skipped = diagnostics.filter((entry) => entry.kind === 'swf.stream-sound-format');
@@ -3593,7 +3811,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+      expect(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
     });
 
     const dropped = diagnostics.filter((entry) => entry.kind === 'swf.font-glyph-outline');
@@ -3636,7 +3854,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
     ]);
 
     const diagnostics = collectImportDiagnostics((sink) => {
-      const document = createScene2DFromSwf(file, sink);
+      const document = createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink);
       // The capabilities really were exercised: the shape drew, the video character materialized, and
       // the label survived.
       const children = getNodeChildren(document?.root as Node2D);
@@ -3678,7 +3896,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
     ]);
 
     const diagnostics = collectImportDiagnostics((sink) => {
-      const document = createScene2DFromSwf(file, sink);
+      const document = createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink);
       expect(getMovieClipFrameScript(document?.root as MovieClip, 1)).not.toBeNull();
     });
 
@@ -3729,10 +3947,10 @@ describe('createScene2DFromSwf import diagnostics', () => {
     ]);
 
     const diagnostics = collectImportDiagnostics((sink) => {
-      const document = createScene2DFromSwf(file, sink);
+      const document = createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink);
       // All three constructs really imported: two image resources plus a recoverable font.
       expect(document?.imageResources.length).toBe(2);
-      expect(createGlyphOutlineSourcesFromSwf(file)?.size).toBe(1);
+      expect(createGlyphOutlineSourcesFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)?.size).toBe(1);
     });
 
     const kinds = diagnostics.map((entry) => entry.kind);
@@ -3754,7 +3972,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
     ]);
 
     const diagnostics = collectImportDiagnostics((sink) => {
-      const document = createScene2DFromSwf(file, sink);
+      const document = createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink);
       // The stream really was carried: an MP3 head plus a block produces an audio resource.
       expect(document?.audioResources.length).toBe(1);
     });
@@ -3775,7 +3993,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const dropped = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(past, sink)).not.toBeNull();
+      expect(createScene2DFromSwf(past, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
     }).filter((entry) => entry.kind === 'swf.label-past-last-frame');
     expect(dropped).toHaveLength(1);
     expect(dropped[0].severity).toBe(ImportDiagnosticSeverity.Drop);
@@ -3791,7 +4009,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const quiet = collectImportDiagnostics((sink) => {
-      const document = createScene2DFromSwf(reached, sink);
+      const document = createScene2DFromSwf(reached, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink);
       expect(getMovieClipCurrentLabel(document?.root as MovieClip)?.name).toBe('start');
     });
     expect(quiet.map((entry) => entry.kind)).not.toContain('swf.label-past-last-frame');
@@ -3812,7 +4030,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+      expect(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
     });
 
     const capabilities = diagnostics
@@ -3829,7 +4047,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+      expect(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
     });
 
     const capabilities = diagnostics
@@ -3851,7 +4069,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
       createTag(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DFromSwf(file, sink)).not.toBeNull();
+      expect(createScene2DFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).not.toBeNull();
     });
 
     const dropped = diagnostics.filter((entry) => entry.kind === 'swf.jpeg-alpha-stream');
@@ -3866,7 +4084,7 @@ describe('createScene2DFromSwf import diagnostics', () => {
   it('names the symbol a caller asked for that the file does not export', () => {
     const file = createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]);
     const diagnostics = collectImportDiagnostics((sink) => {
-      expect(createScene2DSymbolFromSwf(file, 'absent', sink)).toBeNull();
+      expect(createScene2DSymbolFromSwf(file, 'absent', DECOMPRESS_DEFLATE, DECOMPRESS_LZMA, sink)).toBeNull();
     });
 
     expect(diagnostics.map((entry) => entry.kind)).toEqual(['swf.unknown-linkage-name']);
@@ -3906,6 +4124,8 @@ describe('createScene2DFromSwf morph bounds', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     // The union would report 20 for all three. Each instance reports the box it is actually at, which is
@@ -3950,6 +4170,8 @@ describe('createScene2DFromSwf morph shapes', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const [first, second] = getNodeChildren(document!.root) as MorphShape[];
@@ -3972,7 +4194,7 @@ describe('createScene2DFromSwfWithTagHandlers', () => {
       createTag(TAG_SHOW_FRAME),
       createTag(TAG_END),
     ]);
-    const doc = createScene2DFromSwfWithTagHandlers(swf, registry);
+    const doc = createScene2DFromSwfWithTagHandlers(swf, registry, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     expect(doc).not.toBeNull();
   });
 
@@ -3986,6 +4208,8 @@ describe('createScene2DFromSwfWithTagHandlers', () => {
             createTag(TAG_END),
           ]),
           createSwfTagHandlerRegistry(),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
           sink,
         ),
       ).not.toBeNull();
@@ -4007,6 +4231,8 @@ describe('createScene2DFromSwfWithTagHandlers', () => {
         createScene2DFromSwfWithTagHandlers(
           createSwf([createTag(TAG_UNKNOWN, new Uint8Array([1, 2, 3])), createTag(TAG_SHOW_FRAME), createTag(TAG_END)]),
           createSwfTagHandlerRegistry(),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
           sink,
         ),
       ).not.toBeNull();
@@ -4038,6 +4264,8 @@ describe('createScene2DFromSwfWithTagHandlers', () => {
             createTag(TAG_END),
           ]),
           registry,
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
           sink,
         ),
       ).not.toBeNull();
@@ -4067,6 +4295,8 @@ describe('createScene2DFromSwfWithTagHandlers', () => {
             createTag(TAG_END),
           ]),
           registry,
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
           sink,
         ),
       ).not.toBeNull();
@@ -4082,6 +4312,8 @@ describe('createScene2DFromSwfWithTagHandlers', () => {
         createScene2DFromSwfWithTagHandlers(
           createSwf([createTag(TAG_DEFINE_BINARY_DATA, new Uint8Array([1, 2, 3])), createTag(TAG_END)]),
           createSwfTagHandlerRegistry(),
+          DECOMPRESS_DEFLATE,
+          DECOMPRESS_LZMA,
           sink,
         ),
       ).not.toBeNull();
@@ -4101,6 +4333,8 @@ describe('createScene2DFromSwfWithTagHandlers', () => {
           createTag(TAG_END),
         ]),
         createSwfTagHandlerRegistry(),
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
       ),
     ).not.toBeNull();
   });
@@ -4117,6 +4351,8 @@ describe('createScene2DFromSwfWithTagHandlers', () => {
           createTag(TAG_END),
         ]),
         registry,
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
         sink,
       );
     });
@@ -4150,6 +4386,8 @@ describe('createScene2DFromSwfWithTagHandlers', () => {
           createTag(TAG_END),
         ]),
         registry,
+        DECOMPRESS_DEFLATE,
+        DECOMPRESS_LZMA,
         sink,
       );
     });
@@ -4177,7 +4415,7 @@ describe('createScene2DImportFromSwf', () => {
       createTag(TAG_END),
     ]);
 
-    const result = createScene2DImportFromSwf(file)!;
+    const result = createScene2DImportFromSwf(file, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)!;
 
     expect(result.jpegAlphaPayloads).toHaveLength(2);
     const [jpeg3Payload, jpeg4Payload] = result.jpegAlphaPayloads;
@@ -4221,6 +4459,8 @@ describe('createScene2DImportFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(result).not.toBeNull();
@@ -4244,6 +4484,8 @@ describe('createScene2DImportFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const overlaid = result!.document.slots[0].target;
@@ -4273,6 +4515,8 @@ describe('createScene2DImportFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const node = result!.document.slots[0].target;
@@ -4299,6 +4543,8 @@ describe('createScene2DImportFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const blurred = result!.document.slots[0].target;
@@ -4326,6 +4572,8 @@ describe('createScene2DImportFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const remapped = result!.document.slots[0].target;
@@ -4358,6 +4606,8 @@ describe('createScene2DImportFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(result!.appearances.map((appearance) => appearance.frame)).toEqual([1]);
@@ -4388,6 +4638,8 @@ describe('createScene2DImportFromSwf', () => {
         createTag(TAG_SHOW_FRAME),
         createTag(TAG_END),
       ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     const root = result!.document.root as MovieClip;
@@ -4407,7 +4659,7 @@ describe('createScene2DImportFromSwfWithTagHandlers', () => {
       createTag(TAG_SHOW_FRAME),
       createTag(TAG_END),
     ]);
-    const result = createScene2DImportFromSwfWithTagHandlers(swf, registry);
+    const result = createScene2DImportFromSwfWithTagHandlers(swf, registry, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     expect(result).not.toBeNull();
     expect(result!.document).not.toBeNull();
   });
@@ -4415,17 +4667,19 @@ describe('createScene2DImportFromSwfWithTagHandlers', () => {
 
 describe('createScene2DSymbolFromSwf', () => {
   it('builds a fresh instance of a symbol the file exported but never placed', () => {
-    const symbol = createScene2DSymbolFromSwf(_exportedSymbolFile, 'Layout');
+    const symbol = createScene2DSymbolFromSwf(_exportedSymbolFile, 'Layout', DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
 
     expect(symbol).not.toBeNull();
     expect(symbol!.root.kind).toBe(MovieClipKind);
     expect(getNodeChildren(symbol!.root)).toHaveLength(1);
     // Each call builds its own: a library symbol is a template, not a shared node.
-    expect(createScene2DSymbolFromSwf(_exportedSymbolFile, 'Layout')!.root).not.toBe(symbol!.root);
+    expect(
+      createScene2DSymbolFromSwf(_exportedSymbolFile, 'Layout', DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)!.root,
+    ).not.toBe(symbol!.root);
   });
 
   it('carries the named slots inside the symbol, so a caller can fill them', () => {
-    const symbol = createScene2DSymbolFromSwf(_exportedSymbolFile, 'Layout')!;
+    const symbol = createScene2DSymbolFromSwf(_exportedSymbolFile, 'Layout', DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)!;
 
     expect(symbol.slots.map((slot) => slot.name)).toEqual(['art']);
     expect(symbol.slots[0].target).toBe(getNodeChildren(symbol.root)[0]);
@@ -4454,6 +4708,8 @@ describe('createScene2DSymbolFromSwf', () => {
         createTag(TAG_END),
       ]),
       'Art',
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
     const drawn = symbol!.root as Shape;
     expect(drawn.data.commands[0]).toBe('beginTextureFill');
@@ -4461,8 +4717,7 @@ describe('createScene2DSymbolFromSwf', () => {
     expect(getTextureSource(texture)).toBeNull();
     expect(symbol!.imageResources).toHaveLength(1);
 
-    registerDeflateDecompressor();
-    registerSwfImageDecoders();
+    registerSwfImageDecoders(sdkHostDecompressDeflate);
     await loadScene2DImageResources(symbol!);
 
     expectLosslessTexturePixel(texture);
@@ -4488,6 +4743,8 @@ describe('createScene2DSymbolFromSwf', () => {
         createTag(TAG_END),
       ]),
       'Art',
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     // An encoded payload decodes through @flighthq/image later, so the symbol must carry the same
@@ -4506,6 +4763,8 @@ describe('createScene2DSymbolFromSwf', () => {
         createTag(TAG_END),
       ]),
       'Pixels',
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
     );
 
     expect(symbol!.root.kind).toBe(SpriteKind);
@@ -4513,7 +4772,7 @@ describe('createScene2DSymbolFromSwf', () => {
   });
 
   it('reports nothing for a name the file does not export', () => {
-    expect(createScene2DSymbolFromSwf(_exportedSymbolFile, 'Missing')).toBeNull();
+    expect(createScene2DSymbolFromSwf(_exportedSymbolFile, 'Missing', DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)).toBeNull();
   });
 });
 
@@ -5093,11 +5352,11 @@ describe('initializeTimelineStreamAudioCue', () => {
 
 describe('readSwfExportedSymbolNames', () => {
   it('lists every exported linkage name, placed or not', () => {
-    expect(readSwfExportedSymbolNames(_exportedSymbolFile)).toEqual(['Layout']);
+    expect(readSwfExportedSymbolNames(_exportedSymbolFile, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)).toEqual(['Layout']);
   });
 
   it('reports an empty list rather than throwing for unreadable bytes', () => {
-    expect(readSwfExportedSymbolNames(new Uint8Array([1, 2, 3]))).toEqual([]);
+    expect(readSwfExportedSymbolNames(new Uint8Array([1, 2, 3]), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)).toEqual([]);
   });
 });
 
@@ -5107,7 +5366,7 @@ describe('registerSwfScene2DDocumentImporter', () => {
     const source = createSwf([createTag(TAG_END)]);
     expect(createScene2DDocumentFromBytes(source, registry)).toBeNull();
 
-    registerSwfScene2DDocumentImporter(registry);
+    registerSwfScene2DDocumentImporter(registry, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
 
     expect(createScene2DDocumentFromBytes(source, registry)?.sourceKind).toBe('swf');
   });
@@ -5116,7 +5375,7 @@ describe('registerSwfScene2DDocumentImporter', () => {
 describe('uncompressSwfSource', () => {
   it('returns the uncompressed bytes for an FWS file', () => {
     const swf = createSwf([createTag(TAG_END)]);
-    const result = uncompressSwfSource(swf);
+    const result = uncompressSwfSource(swf, DECOMPRESS_DEFLATE, DECOMPRESS_LZMA);
     expect(result).not.toBeNull();
     expect(result![0]).toBe(0x46);
     expect(result![1]).toBe(0x57);
@@ -5124,6 +5383,13 @@ describe('uncompressSwfSource', () => {
   });
 
   it('returns null for empty input', () => {
-    expect(uncompressSwfSource(new Uint8Array())).toBeNull();
+    expect(uncompressSwfSource(new Uint8Array(), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)).toBeNull();
   });
 });
+
+// The decompression these tests run with. Deflate only: SWF's CWS bodies are zlib, and no LZMA
+// implementation ships with Flight, so a ZWS fixture must report an unread container rather than
+// appear to succeed.
+const DECOMPRESS_DEFLATE = sdkHostDecompressDeflate;
+// No LZMA implementation ships with Flight, so a ZWS/LZMA body reports an unread container.
+const DECOMPRESS_LZMA = null;

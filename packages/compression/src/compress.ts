@@ -11,7 +11,7 @@ import { computeAdler32, DISTANCE_BASE, DISTANCE_EXTRA, LENGTH_BASE, LENGTH_EXTR
 // is what incompressible input does — stored blocks are emitted instead, so compressing never meaningfully
 // grows a payload. Output is a pure function of the input: no timestamps, no heuristics that vary.
 
-// Raw RFC 1951: the DEFLATE stream alone, with no wrapper. This is the framing `inflateDeflate` reads as
+// Raw RFC 1951: the DEFLATE stream alone, with no wrapper. This is the framing `decompressDeflate` reads as
 // CompressionFraming.Raw.
 export function compressDeflate(bytes: Readonly<Uint8Array>): Uint8Array {
   const input = bytes as Uint8Array;
@@ -20,7 +20,7 @@ export function compressDeflate(bytes: Readonly<Uint8Array>): Uint8Array {
 }
 
 // RFC 1950: a two-byte header, the same DEFLATE stream, and an Adler-32 of the UNCOMPRESSED bytes, in
-// big-endian order. This is the framing `inflateDeflate` reads as CompressionFraming.Rfc1950.
+// big-endian order. This is the framing `decompressDeflate` reads as CompressionFraming.Rfc1950.
 export function compressDeflateZlib(bytes: Readonly<Uint8Array>): Uint8Array {
   const deflated = compressDeflate(bytes);
   const out = new Uint8Array(ZLIB_HEADER_BYTES + deflated.length + ZLIB_TRAILER_BYTES);

@@ -97,7 +97,7 @@ describe('import conformance result cache', () => {
         diagnostics: [
           {
             detail: { compression: 'lzma' },
-            kind: 'swf.no-decompressor-registered',
+            kind: 'swf.decompression-failed',
             origin: 'uncompressSwfSource',
             severity: 'Reject',
           },

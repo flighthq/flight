@@ -7,4 +7,4 @@ import { createScene2DFromSwf } from '@flighthq/swf';
 
 // A document the importer rejects at the header still walks every reachable branch of the module graph,
 // which is what the measurement needs; decoding real bytes would only add fixture weight.
-export const document = createScene2DFromSwf(new Uint8Array([0x46, 0x57, 0x53]));
+export const document = createScene2DFromSwf(new Uint8Array([0x46, 0x57, 0x53]), null, null);

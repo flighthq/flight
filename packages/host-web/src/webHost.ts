@@ -8,6 +8,7 @@ import { webHostBitmap } from './webBitmapHost';
 import { webHostCanvasGroup } from './webCanvasHost';
 import { webHostClipboard } from './webClipboardHost';
 import { webHostConnectivity } from './webConnectivityHost';
+import { webHostDecompress } from './webDecompressHost';
 import { webHostDeviceGroup } from './webDeviceHost';
 import { webHostDialog } from './webDialogHost';
 import { webHostFileSystemGroup } from './webFileSystemHost';
@@ -96,6 +97,7 @@ const groups = {
   statusBar: webHostStatusBar,
   surface: webHostSurfaceGroup,
   textSegment: webHostTextSegment,
+  decompress: webHostDecompress,
   textShaper: webHostTextShaperGroup,
   tray: webHostTray,
   updater: webHostUpdater,

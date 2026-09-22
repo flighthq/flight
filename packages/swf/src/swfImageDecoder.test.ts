@@ -1,4 +1,4 @@
-import { registerDeflateDecompressor, unregisterDecompressor } from '@flighthq/compression/contract';
+import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import {
   clearImageDecoders,
   decodeImage,
@@ -9,30 +9,23 @@ import { Compression } from '@flighthq/types/contract';
 
 import { registerSwfImageDecoders, SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageDecoder';
 
-beforeEach(() => {
-  clearImageDecoders();
-  unregisterDecompressor(Compression.Deflate);
-});
+beforeEach(() => clearImageDecoders());
 
-afterEach(() => {
-  clearImageDecoders();
-  unregisterDecompressor(Compression.Deflate);
-});
+afterEach(() => clearImageDecoders());
 
 describe('registerSwfImageDecoders', () => {
   it('explicitly registers both container-native lossless MIME types', () => {
     expect(hasImageDecoder(SWF_LOSSLESS_MIME_TYPE)).toBe(false);
     expect(hasImageDecoder(SWF_LOSSLESS_ALPHA_MIME_TYPE)).toBe(false);
 
-    registerSwfImageDecoders();
+    registerSwfImageDecoders(sdkHostDecompressDeflate);
 
     expect(hasImageDecoder(SWF_LOSSLESS_MIME_TYPE)).toBe(true);
     expect(hasImageDecoder(SWF_LOSSLESS_ALPHA_MIME_TYPE)).toBe(true);
   });
 
   it('retains authored premultiplied pixels when requested and normalizes the default to straight', async () => {
-    registerDeflateDecompressor();
-    registerSwfImageDecoders();
+    registerSwfImageDecoders(sdkHostDecompressDeflate);
     const payload = losslessPayload(5, 1, 1, stored([0x80, 0x40, 0x20, 0x10]));
 
     const premultiplied = await decodeImagePremultiplied(payload, SWF_LOSSLESS_ALPHA_MIME_TYPE);

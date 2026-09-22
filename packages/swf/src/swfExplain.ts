@@ -1,4 +1,10 @@
-import type { SwfContentEntry, SwfContentManifest, SwfTagRectangle } from '@flighthq/types/contract';
+import type {
+  HostDecompressDeflateCapability,
+  HostDecompressLzmaCapability,
+  SwfContentEntry,
+  SwfContentManifest,
+  SwfTagRectangle,
+} from '@flighthq/types/contract';
 
 import { uncompressSwfSource } from './swfDocument';
 import { SWF_TAG_NAMES } from './swfTagVocabulary';
@@ -7,8 +13,12 @@ const SWF_EXPLAIN_PREFIX_LENGTH = 8;
 const SWF_EXPLAIN_MIN_LENGTH = 12;
 const SWF_FIXED_8_8_ONE = 0x100;
 
-export function explainSwfContent(source: Uint8Array): SwfContentManifest | null {
-  const uncompressed = uncompressSwfSource(source);
+export function explainSwfContent(
+  source: Uint8Array,
+  deflate: Readonly<HostDecompressDeflateCapability> | null,
+  lzma: Readonly<HostDecompressLzmaCapability> | null,
+): SwfContentManifest | null {
+  const uncompressed = uncompressSwfSource(source, deflate, lzma);
   if (uncompressed === null) return null;
   if (uncompressed.length < SWF_EXPLAIN_MIN_LENGTH) return null;
   const version = uncompressed[3];

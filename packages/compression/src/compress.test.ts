@@ -1,27 +1,27 @@
 import { CompressionFraming } from '@flighthq/types/contract';
 
 import { compressDeflate, compressDeflateZlib } from './compress';
-import { inflateDeflate } from './deflate';
+import { decompressDeflate } from './deflate';
 
-// Every round trip is checked through inflateDeflate, which was written independently of this encoder
+// Every round trip is checked through decompressDeflate, which was written independently of this encoder
 // and is already pinned by its own tests. A compressor checked against its own decoder would agree with
 // itself about a stream neither reads correctly; this one has to satisfy a reader it did not author.
 describe('compressDeflate', () => {
   it('round-trips an empty input as a raw stream', () => {
     const compressed = compressDeflate(new Uint8Array(0));
-    expect(inflateDeflate(compressed, 0, CompressionFraming.Raw)).toEqual(new Uint8Array(0));
+    expect(decompressDeflate(compressed, 0, CompressionFraming.Raw)).toEqual(new Uint8Array(0));
   });
 
   it('round-trips text through the raw framing', () => {
     const bytes = new TextEncoder().encode('the quick brown fox jumps over the lazy dog');
     const compressed = compressDeflate(bytes);
-    expect(inflateDeflate(compressed, bytes.length, CompressionFraming.Raw)).toEqual(bytes);
+    expect(decompressDeflate(compressed, bytes.length, CompressionFraming.Raw)).toEqual(bytes);
   });
 
   it('round-trips highly repetitive text and actually shrinks it', () => {
     const bytes = new TextEncoder().encode('abcabcabc'.repeat(400));
     const compressed = compressDeflate(bytes);
-    expect(inflateDeflate(compressed, bytes.length, CompressionFraming.Raw)).toEqual(bytes);
+    expect(decompressDeflate(compressed, bytes.length, CompressionFraming.Raw)).toEqual(bytes);
     // A "compress" function that never shrinks anything would satisfy every round-trip assertion above.
     expect(compressed.length).toBeLessThan(bytes.length / 4);
   });
@@ -36,7 +36,7 @@ describe('compressDeflate', () => {
       bytes[i] = seed & 0xff;
     }
     const compressed = compressDeflate(bytes);
-    expect(inflateDeflate(compressed, bytes.length, CompressionFraming.Raw)).toEqual(bytes);
+    expect(decompressDeflate(compressed, bytes.length, CompressionFraming.Raw)).toEqual(bytes);
     expect(compressed.length).toBeLessThanOrEqual(bytes.length + 16);
   });
 
@@ -44,7 +44,7 @@ describe('compressDeflate', () => {
     const bytes = new Uint8Array(70_000);
     for (let i = 0; i < bytes.length; i++) bytes[i] = i & 0xff;
     const compressed = compressDeflate(bytes);
-    expect(inflateDeflate(compressed, bytes.length, CompressionFraming.Raw)).toEqual(bytes);
+    expect(decompressDeflate(compressed, bytes.length, CompressionFraming.Raw)).toEqual(bytes);
   });
 
   it('round-trips every byte value, so no literal is mis-coded', () => {
@@ -53,7 +53,7 @@ describe('compressDeflate', () => {
     const bytes = new Uint8Array(256);
     for (let i = 0; i < 256; i++) bytes[i] = i;
     const compressed = compressDeflate(bytes);
-    expect(inflateDeflate(compressed, bytes.length, CompressionFraming.Raw)).toEqual(bytes);
+    expect(decompressDeflate(compressed, bytes.length, CompressionFraming.Raw)).toEqual(bytes);
   });
 
   it('round-trips a deterministic sweep of shapes a fixed corpus would miss', () => {
@@ -73,9 +73,9 @@ describe('compressDeflate', () => {
       const alphabet = 1 + (length % 7);
       for (let i = 0; i < length; i++) bytes[i] = next() % alphabet;
       const raw = compressDeflate(bytes);
-      expect(inflateDeflate(raw, length, CompressionFraming.Raw)).toEqual(bytes);
+      expect(decompressDeflate(raw, length, CompressionFraming.Raw)).toEqual(bytes);
       const wrapped = compressDeflateZlib(bytes);
-      expect(inflateDeflate(wrapped, length, CompressionFraming.Rfc1950)).toEqual(bytes);
+      expect(decompressDeflate(wrapped, length, CompressionFraming.Rfc1950)).toEqual(bytes);
     }
   });
 
@@ -84,7 +84,7 @@ describe('compressDeflate', () => {
     // extra bits. An input built only from short repeats never reaches it.
     const bytes = new Uint8Array(2048).fill(7);
     const compressed = compressDeflate(bytes);
-    expect(inflateDeflate(compressed, bytes.length, CompressionFraming.Raw)).toEqual(bytes);
+    expect(decompressDeflate(compressed, bytes.length, CompressionFraming.Raw)).toEqual(bytes);
   });
 
   it('round-trips a repeat at the far edge of the window', () => {
@@ -92,7 +92,7 @@ describe('compressDeflate', () => {
     for (let i = 0; i < bytes.length; i++) bytes[i] = (i * 31) & 0xff;
     bytes.set(bytes.subarray(0, 64), bytes.length - 64);
     const compressed = compressDeflate(bytes);
-    expect(inflateDeflate(compressed, bytes.length, CompressionFraming.Raw)).toEqual(bytes);
+    expect(decompressDeflate(compressed, bytes.length, CompressionFraming.Raw)).toEqual(bytes);
   });
 
   it('produces the same bytes for the same input', () => {
@@ -103,7 +103,7 @@ describe('compressDeflate', () => {
   it('emits no zlib wrapper, so the zlib reader refuses it', () => {
     const bytes = new TextEncoder().encode('raw means raw'.repeat(20));
     const compressed = compressDeflate(bytes);
-    expect(inflateDeflate(compressed, bytes.length, CompressionFraming.Rfc1950)).toBeNull();
+    expect(decompressDeflate(compressed, bytes.length, CompressionFraming.Rfc1950)).toBeNull();
   });
 
   it('does not mutate the input it was given', () => {
@@ -117,20 +117,20 @@ describe('compressDeflate', () => {
 describe('compressDeflateZlib', () => {
   it('round-trips an empty input through the zlib framing', () => {
     const compressed = compressDeflateZlib(new Uint8Array(0));
-    expect(inflateDeflate(compressed, 0, CompressionFraming.Rfc1950)).toEqual(new Uint8Array(0));
+    expect(decompressDeflate(compressed, 0, CompressionFraming.Rfc1950)).toEqual(new Uint8Array(0));
   });
 
   it('round-trips text through the zlib framing', () => {
     const bytes = new TextEncoder().encode('the quick brown fox jumps over the lazy dog');
     const compressed = compressDeflateZlib(bytes);
-    expect(inflateDeflate(compressed, bytes.length, CompressionFraming.Rfc1950)).toEqual(bytes);
+    expect(decompressDeflate(compressed, bytes.length, CompressionFraming.Rfc1950)).toEqual(bytes);
   });
 
   it('round-trips binary bytes through the zlib framing', () => {
     const bytes = new Uint8Array(1024);
     for (let i = 0; i < bytes.length; i++) bytes[i] = (i * 37) & 0xff;
     const compressed = compressDeflateZlib(bytes);
-    expect(inflateDeflate(compressed, bytes.length, CompressionFraming.Rfc1950)).toEqual(bytes);
+    expect(decompressDeflate(compressed, bytes.length, CompressionFraming.Rfc1950)).toEqual(bytes);
   });
 
   it('wraps the same raw stream in a header and an Adler-32 trailer', () => {
@@ -158,7 +158,7 @@ describe('compressDeflateZlib', () => {
     // stream would still be self-consistent, so only a corrupted payload can tell the two apart.
     const bytes = new TextEncoder().encode('checksum me'.repeat(30));
     const compressed = compressDeflateZlib(bytes);
-    expect(inflateDeflate(compressed, bytes.length, CompressionFraming.Rfc1950)).toEqual(bytes);
+    expect(decompressDeflate(compressed, bytes.length, CompressionFraming.Rfc1950)).toEqual(bytes);
     const trailer = compressed.subarray(compressed.length - 4);
     expect(trailer).not.toEqual(new Uint8Array([0, 0, 0, 0]));
   });
@@ -166,7 +166,7 @@ describe('compressDeflateZlib', () => {
   it('emits a wrapper, so the raw reader does not read it back unchanged', () => {
     const bytes = new TextEncoder().encode('zlib means zlib'.repeat(20));
     const compressed = compressDeflateZlib(bytes);
-    expect(inflateDeflate(compressed, bytes.length, CompressionFraming.Raw)).not.toEqual(bytes);
+    expect(decompressDeflate(compressed, bytes.length, CompressionFraming.Raw)).not.toEqual(bytes);
   });
 
   it('produces the same bytes for the same input', () => {

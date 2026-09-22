@@ -36,3 +36,20 @@ export const Compression = {
 } as const;
 
 export type Compression = (typeof Compression)[keyof typeof Compression];
+
+// One host slot per algorithm. Named per algorithm rather than one slot taking a Compression argument,
+// because a host declares exactly what it can actually do: a host with zlib but no Brotli fills
+// `deflate` and leaves `brotli` absent, and an absent slot is then a fact a caller can read rather
+// than a runtime failure it discovers mid-parse. Each carries the same container-agnostic Decompressor
+// contract — payload bytes in, raw bytes out.
+export interface HostDecompressBrotliCapability {
+  decompress: Decompressor;
+}
+
+export interface HostDecompressDeflateCapability {
+  decompress: Decompressor;
+}
+
+export interface HostDecompressLzmaCapability {
+  decompress: Decompressor;
+}

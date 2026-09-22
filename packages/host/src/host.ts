@@ -20,6 +20,7 @@ export function initializeHost<Capabilities extends Partial<EntityWithoutRuntime
   out.canvas = (capabilities.canvas ?? {}) as Host['canvas'];
   out.clipboard = (capabilities.clipboard ?? {}) as Host['clipboard'];
   out.connectivity = (capabilities.connectivity ?? {}) as Host['connectivity'];
+  out.decompress = (capabilities.decompress ?? {}) as Host['decompress'];
   out.device = (capabilities.device ?? {}) as Host['device'];
   out.dialog = (capabilities.dialog ?? {}) as Host['dialog'];
   out.fileSystem = (capabilities.fileSystem ?? {}) as Host['fileSystem'];

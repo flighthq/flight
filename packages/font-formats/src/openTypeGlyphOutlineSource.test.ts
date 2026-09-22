@@ -1,3 +1,4 @@
+import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -53,11 +54,14 @@ function createPath(): Path {
 
 describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
   it('produces a source from a well-formed TrueType font', () => {
-    expect(createGlyphOutlineSourceFromOpenTypeFont(createSyntheticFont())).not.toBeNull();
+    expect(createGlyphOutlineSourceFromOpenTypeFont(createSyntheticFont(), sdkHostDecompressDeflate)).not.toBeNull();
   });
 
   it('reports the font-wide metrics in design units, with descent as a positive distance', () => {
-    const source = createGlyphOutlineSourceFromOpenTypeFont(createSyntheticFont({ unitsPerEm: 2048 }));
+    const source = createGlyphOutlineSourceFromOpenTypeFont(
+      createSyntheticFont({ unitsPerEm: 2048 }),
+      sdkHostDecompressDeflate,
+    );
     // The fixture stores descender as -200, as the format requires; the seam flips it.
     expect(source?.getGlyphOutlineMetrics()).toEqual({ ascent: 800, descent: 200, lineGap: 100, unitsPerEm: 2048 });
   });
@@ -68,6 +72,7 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
         codepoints: new Map([[65, 1]]),
         glyphs: [emptySyntheticGlyph(), squareSyntheticGlyph(100)],
       }),
+      sdkHostDecompressDeflate,
     );
     expect(source?.getGlyphOutlineIndexForCodePoint(65)).toBe(1);
     expect(source?.getGlyphOutlineIndexForCodePoint(66)).toBe(-1);
@@ -76,6 +81,7 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
   it('reads a square contour into the path, with y negated into the downward convention', () => {
     const source = createGlyphOutlineSourceFromOpenTypeFont(
       createSyntheticFont({ glyphs: [emptySyntheticGlyph(), squareSyntheticGlyph(100)] }),
+      sdkHostDecompressDeflate,
     );
     const path = createPath();
     expect(source?.getGlyphOutline(path, 1)).toBe(true);
@@ -91,7 +97,10 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
   });
 
   it('returns true with an empty path for a glyph that legitimately has no outline', () => {
-    const source = createGlyphOutlineSourceFromOpenTypeFont(createSyntheticFont({ glyphs: [emptySyntheticGlyph()] }));
+    const source = createGlyphOutlineSourceFromOpenTypeFont(
+      createSyntheticFont({ glyphs: [emptySyntheticGlyph()] }),
+      sdkHostDecompressDeflate,
+    );
     const path = createPath();
     // True, not false: a space still has to advance, so its absence of ink must stay observable.
     expect(source?.getGlyphOutline(path, 0)).toBe(true);
@@ -99,7 +108,7 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
   });
 
   it('returns false for a glyph index the font does not have', () => {
-    const source = createGlyphOutlineSourceFromOpenTypeFont(createSyntheticFont());
+    const source = createGlyphOutlineSourceFromOpenTypeFont(createSyntheticFont(), sdkHostDecompressDeflate);
     expect(source?.getGlyphOutline(createPath(), 99)).toBe(false);
     expect(source?.getGlyphOutline(createPath(), -1)).toBe(false);
   });
@@ -107,6 +116,7 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
   it('reports each glyph its own advance', () => {
     const source = createGlyphOutlineSourceFromOpenTypeFont(
       createSyntheticFont({ advances: [300, 750], glyphs: [emptySyntheticGlyph(), squareSyntheticGlyph(50)] }),
+      sdkHostDecompressDeflate,
     );
     expect(source?.getGlyphOutlineAdvance(0)).toBe(300);
     expect(source?.getGlyphOutlineAdvance(1)).toBe(750);
@@ -121,6 +131,7 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
         advances: [600],
         glyphs: [emptySyntheticGlyph(), squareSyntheticGlyph(10), squareSyntheticGlyph(20)],
       }),
+      sdkHostDecompressDeflate,
     );
     expect(source?.getGlyphOutlineAdvance(1)).toBe(600);
     expect(source?.getGlyphOutlineAdvance(2)).toBe(600);
@@ -128,21 +139,26 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
 
   it('returns the sentinel rather than throwing for bytes that are not a font', () => {
     expect(
-      createGlyphOutlineSourceFromOpenTypeFont(new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])),
+      createGlyphOutlineSourceFromOpenTypeFont(
+        new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]),
+        sdkHostDecompressDeflate,
+      ),
     ).toBeNull();
-    expect(createGlyphOutlineSourceFromOpenTypeFont(new Uint8Array(0))).toBeNull();
+    expect(createGlyphOutlineSourceFromOpenTypeFont(new Uint8Array(0), sdkHostDecompressDeflate)).toBeNull();
   });
 
   // CFF outlines are read now. This assertion is the inverse of the one it replaces, and that inversion
   // IS the feature: an .otf used to reject with `unsupported-outlines` and now produces a source.
   it('produces a source from a CFF-outline font, which used to be a stated rejection', () => {
-    expect(createGlyphOutlineSourceFromOpenTypeFont(createSyntheticFont({ flavor: 'opentype' }))).not.toBeNull();
+    expect(
+      createGlyphOutlineSourceFromOpenTypeFont(createSyntheticFont({ flavor: 'opentype' }), sdkHostDecompressDeflate),
+    ).not.toBeNull();
   });
 
   it('reads a CFF glyph outline as cubic curves, end to end from the container', () => {
     const charstring = new Uint8Array([139, 139, 21, 149, 139, 149, 149, 139, 149, 8, 14]);
     const font = createSyntheticFont({ flavor: 'opentype', charstrings: [new Uint8Array([14]), charstring] });
-    const source = createGlyphOutlineSourceFromOpenTypeFont(font)!;
+    const source = createGlyphOutlineSourceFromOpenTypeFont(font, sdkHostDecompressDeflate)!;
     const path = createPath();
     expect(source.getGlyphOutline(path, 1)).toBe(true);
     expect(path.commands).toEqual([PathCommand.MOVE_TO, PathCommand.CUBIC_CURVE_TO, PathCommand.CLOSE]);
@@ -162,7 +178,7 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
       },
       flavor: 'opentype',
     });
-    const source = createGlyphOutlineSourceFromOpenTypeFont(font)!;
+    const source = createGlyphOutlineSourceFromOpenTypeFont(font, sdkHostDecompressDeflate)!;
     const first = createPath();
     const second = createPath();
     expect(source.getGlyphOutline(first, 0)).toBe(true);
@@ -179,7 +195,7 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
     const woff = encodeSyntheticWoff(
       createSyntheticFont({ glyphs: [emptySyntheticGlyph(), squareSyntheticGlyph(100)] }),
     );
-    const source = createGlyphOutlineSourceFromOpenTypeFont(woff)!;
+    const source = createGlyphOutlineSourceFromOpenTypeFont(woff, sdkHostDecompressDeflate)!;
     expect(source).not.toBeNull();
     const path = createPath();
     expect(source.getGlyphOutline(path, 1)).toBe(true);
@@ -188,34 +204,38 @@ describe('createGlyphOutlineSourceFromOpenTypeFont', () => {
 
   it('reads a CFF font through the WOFF wrapper, since the wrapper is flavor-agnostic', () => {
     const woff = encodeSyntheticWoff(createSyntheticFont({ flavor: 'opentype' }));
-    expect(createGlyphOutlineSourceFromOpenTypeFont(woff)).not.toBeNull();
+    expect(createGlyphOutlineSourceFromOpenTypeFont(woff, sdkHostDecompressDeflate)).not.toBeNull();
   });
 
   it('still rejects CFF2, which is a different charstring dialect and remains a stated absence', () => {
     const font = createSyntheticFont({ flavor: 'opentype', omitTable: 'CFF ' });
     // Re-add only CFF2, so the font carries charstrings this package deliberately does not read.
-    expect(explainOpenTypeFont(font).reason).toBe('missing-required-table');
+    expect(explainOpenTypeFont(font, sdkHostDecompressDeflate).reason).toBe('missing-required-table');
   });
 
   it('returns the sentinel when a required table is missing', () => {
     for (const table of ['cmap', 'head', 'hhea', 'hmtx', 'maxp', 'loca', 'glyf']) {
-      expect(createGlyphOutlineSourceFromOpenTypeFont(createSyntheticFont({ omitTable: table }))).toBeNull();
+      expect(
+        createGlyphOutlineSourceFromOpenTypeFont(createSyntheticFont({ omitTable: table }), sdkHostDecompressDeflate),
+      ).toBeNull();
     }
   });
 
   it('returns the sentinel for a truncated font rather than reading past the buffer', () => {
     const font = createSyntheticFont({ glyphs: [emptySyntheticGlyph(), squareSyntheticGlyph(100)] });
-    expect(createGlyphOutlineSourceFromOpenTypeFont(font.subarray(0, font.length - 8))).toBeNull();
+    expect(
+      createGlyphOutlineSourceFromOpenTypeFont(font.subarray(0, font.length - 8), sdkHostDecompressDeflate),
+    ).toBeNull();
   });
 });
 
 describe('explainOpenTypeFont', () => {
   it('accepts a font the producer accepts, and the two never disagree', () => {
     const font = createSyntheticFont();
-    const explanation = explainOpenTypeFont(font);
+    const explanation = explainOpenTypeFont(font, sdkHostDecompressDeflate);
     expect(explanation.accepted).toBe(true);
     expect(explanation.reason).toBe('ok');
-    expect(createGlyphOutlineSourceFromOpenTypeFont(font)).not.toBeNull();
+    expect(createGlyphOutlineSourceFromOpenTypeFont(font, sdkHostDecompressDeflate)).not.toBeNull();
   });
 
   // ALL SEVEN REJECTION REASONS, EACH ASSERTING **BOTH** THE EXPLANATION AND THE PRODUCER ON THE SAME
@@ -231,71 +251,71 @@ describe('explainOpenTypeFont', () => {
     ['unsupported-outlines', cff2OnlyFont()],
     ['malformed-table', malformedUnitsPerEmFont()],
   ])('rejects with reason %s, and the producer returns the sentinel on the same bytes', (reason, bytes) => {
-    const explanation = explainOpenTypeFont(bytes);
+    const explanation = explainOpenTypeFont(bytes, sdkHostDecompressDeflate);
     expect(explanation.reason).toBe(reason);
     expect(explanation.accepted).toBe(false);
-    expect(createGlyphOutlineSourceFromOpenTypeFont(bytes)).toBeNull();
+    expect(createGlyphOutlineSourceFromOpenTypeFont(bytes, sdkHostDecompressDeflate)).toBeNull();
   });
 
   // The seventh reason, `ok`, is the inverse pairing: the explanation accepts AND the producer succeeds.
   it('accepts with reason ok, and the producer returns a source on the same bytes', () => {
     const font = createSyntheticFont();
-    expect(explainOpenTypeFont(font).reason).toBe('ok');
-    expect(explainOpenTypeFont(font).accepted).toBe(true);
-    expect(createGlyphOutlineSourceFromOpenTypeFont(font)).not.toBeNull();
+    expect(explainOpenTypeFont(font, sdkHostDecompressDeflate).reason).toBe('ok');
+    expect(explainOpenTypeFont(font, sdkHostDecompressDeflate).accepted).toBe(true);
+    expect(createGlyphOutlineSourceFromOpenTypeFont(font, sdkHostDecompressDeflate)).not.toBeNull();
   });
 
   it('reports the container it recognized even on success', () => {
-    expect(explainOpenTypeFont(createSyntheticFont()).format).toBe('truetype');
+    expect(explainOpenTypeFont(createSyntheticFont(), sdkHostDecompressDeflate).format).toBe('truetype');
   });
 
   it('accepts a CFF font now that its charstrings are read', () => {
-    const explanation = explainOpenTypeFont(createSyntheticFont({ flavor: 'opentype' }));
+    const explanation = explainOpenTypeFont(createSyntheticFont({ flavor: 'opentype' }), sdkHostDecompressDeflate);
     expect(explanation.reason).toBe('ok');
     expect(explanation.accepted).toBe(true);
   });
 
   it('names the specific missing table', () => {
-    expect(explainOpenTypeFont(createSyntheticFont({ omitTable: 'cmap' })).table).toBe('cmap');
-    expect(explainOpenTypeFont(createSyntheticFont({ omitTable: 'hmtx' })).table).toBe('hmtx');
-    expect(explainOpenTypeFont(createSyntheticFont({ omitTable: 'loca' })).table).toBe('loca');
-    expect(explainOpenTypeFont(createSyntheticFont({ omitTable: 'cmap' })).reason).toBe('missing-required-table');
+    expect(explainOpenTypeFont(createSyntheticFont({ omitTable: 'cmap' }), sdkHostDecompressDeflate).table).toBe(
+      'cmap',
+    );
+    expect(explainOpenTypeFont(createSyntheticFont({ omitTable: 'hmtx' }), sdkHostDecompressDeflate).table).toBe(
+      'hmtx',
+    );
+    expect(explainOpenTypeFont(createSyntheticFont({ omitTable: 'loca' }), sdkHostDecompressDeflate).table).toBe(
+      'loca',
+    );
+    expect(explainOpenTypeFont(createSyntheticFont({ omitTable: 'cmap' }), sdkHostDecompressDeflate).reason).toBe(
+      'missing-required-table',
+    );
   });
 
   it('reports a missing glyf as a missing table when no charstring table stands in its place', () => {
-    const explanation = explainOpenTypeFont(createSyntheticFont({ omitTable: 'glyf' }));
+    const explanation = explainOpenTypeFont(createSyntheticFont({ omitTable: 'glyf' }), sdkHostDecompressDeflate);
     expect(explanation.reason).toBe('missing-required-table');
     expect(explanation.table).toBe('glyf');
   });
 
   it('distinguishes bytes that are no font at all from a font it will not open', () => {
-    expect(explainOpenTypeFont(new Uint8Array(20)).reason).toBe('unrecognized');
+    expect(explainOpenTypeFont(new Uint8Array(20), sdkHostDecompressDeflate).reason).toBe('unrecognized');
     // WOFF2 needs Brotli and a table-transform reversal, so it stays a container this package does not
     // open — unlike WOFF, which is read now.
     const woff2 = new Uint8Array(20);
     woff2.set([0x77, 0x4f, 0x46, 0x32]);
-    expect(explainOpenTypeFont(woff2).reason).toBe('unsupported-container');
-    expect(explainOpenTypeFont(woff2).format).toBe('woff2');
-  });
-
-  // The decompressor is deliberately not bundled, so an unregistered one is a real outcome with a
-  // one-line remedy — distinct from a container needing a different producer entirely.
-  it('reports a missing decompressor as its own reason rather than an unsupported container', () => {
-    const woff = encodeSyntheticWoff(createSyntheticFont());
-    new DataView(woff.buffer).setUint32(44 + 8, 4);
-    expect(explainOpenTypeFont(woff).reason).toBe('missing-decompressor');
+    expect(explainOpenTypeFont(woff2, sdkHostDecompressDeflate).reason).toBe('unsupported-container');
+    expect(explainOpenTypeFont(woff2, sdkHostDecompressDeflate).format).toBe('woff2');
   });
 
   it('reports too-short for bytes below the sfnt header', () => {
-    expect(explainOpenTypeFont(new Uint8Array([0, 1, 0, 0])).reason).toBe('too-short');
+    expect(explainOpenTypeFont(new Uint8Array([0, 1, 0, 0]), sdkHostDecompressDeflate).reason).toBe('too-short');
   });
 
   it('counts declared tables against readable ones, localizing a truncation', () => {
     const font = createSyntheticFont();
-    const whole = explainOpenTypeFont(font);
+    const whole = explainOpenTypeFont(font, sdkHostDecompressDeflate);
     expect(whole.tableCount).toBe(whole.readableTableCount);
 
-    const truncated = explainOpenTypeFont(font.subarray(0, font.length - 8));
+    const truncated = explainOpenTypeFont(font.subarray(0, font.length - 8), sdkHostDecompressDeflate);
     // The directory still declares every table; fewer of them now fit inside the file.
     expect(truncated.readableTableCount).toBeLessThan(truncated.tableCount);
   });

@@ -20,6 +20,7 @@ import {
   rotateOrbitCameraController,
   updateOrbitCameraController,
 } from '@flighthq/sdk/camera-controls';
+import { sdkHostDecompressDeflate } from '@flighthq/sdk/compression';
 
 import { createSyntheticAwd2 } from './createSyntheticAwd2';
 import { canvas, render, scale } from './render';
@@ -29,7 +30,7 @@ import { canvas, render, scale } from './render';
 // light table into the renderer-ready draw argument used below.
 const awdBytes = createSyntheticAwd2();
 const diagnostics: ImportDiagnostic[] = [];
-const awdDocument = parseAwd2(awdBytes, diagnostics);
+const awdDocument = parseAwd2(awdBytes, sdkHostDecompressDeflate, null, diagnostics);
 const documentScene3D = createScene3DFromDocument(awdDocument);
 const importedMeshes = getNodeChildren(documentScene3D.root).filter(isMesh);
 for (const mesh of importedMeshes) {

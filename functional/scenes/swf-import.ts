@@ -19,7 +19,7 @@ import {
   loadScene2DImageResources,
   MovieClipKind,
   registerGlColorAdjustmentMaterialFeature,
-  registerDeflateDecompressor,
+  sdkHostDecompressDeflate,
   registerSwfImageDecoders,
   registerWgpuColorAdjustmentMaterialFeature,
   RichTextKind,
@@ -863,13 +863,12 @@ const TINTED_CHILD_SHAPE_ID = 15;
 const TINTED_SPRITE_ID = 16;
 const TWIPS_PER_PIXEL = 20;
 
-const document = createScene2DFromSwf(createFunctionalSwf());
+const document = createScene2DFromSwf(createFunctionalSwf(), sdkHostDecompressDeflate, null);
 if (document === null || document.root.kind !== MovieClipKind) {
   throw new Error('[swf-import] synthetic SWF did not import as a MovieClip document');
 }
 
-registerDeflateDecompressor();
-registerSwfImageDecoders();
+registerSwfImageDecoders(sdkHostDecompressDeflate);
 const imageResources = await loadScene2DImageResources(document);
 if (imageResources.unresolved.length !== 0) {
   throw new Error(`[swf-import] ${imageResources.unresolved.length} embedded bitmap resource(s) did not resolve`);

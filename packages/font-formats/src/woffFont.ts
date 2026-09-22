@@ -12,7 +12,7 @@ import { assembleSfntFont, computeSfntTableChecksum } from './sfntAssembly';
 // The container layout is an interface fact about the format. The reconstruction is Flight's own.
 //
 // ★ THE DECOMPRESSOR IS NOT BUNDLED HERE, DELIBERATELY. It is fetched from `@flighthq/compression`'s
-// registry, which a caller opts into with `registerDeflateDecompressor()`. Importing the codec directly
+// deflate slot the caller supplies — `sdkHostDecompressDeflate`, or a host's own. Importing the codec directly
 // would drag DEFLATE into every bundle that reads a `.ttf`, which is the bundle invariant this repository
 // enforces — an assembly never inflates the bundle cost of a primitive. The cost of that choice is that
 // an unregistered decompressor is a real outcome, so it gets its own reported reason rather than being
@@ -32,7 +32,7 @@ const WOFF_DIRECTORY_ENTRY_BYTES = 20;
 // arithmetic — the same shape as `explainOpenTypeFont`, for the same reason.
 export function readWoffChecksumMismatches(
   bytes: Readonly<Uint8Array>,
-  decompress: Decompressor | null,
+  decompress: Decompressor,
 ): readonly WoffChecksumMismatch[] {
   if (bytes.byteLength < WOFF_HEADER_BYTES) return [];
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -76,7 +76,7 @@ export const WOFF_COMPRESSION: Compression = Compression.Deflate;
 // `explainOpenTypeFont`, since one wants a repaired file and the other wants one line of registration.
 export function readWoffFont(
   bytes: Readonly<Uint8Array>,
-  decompress: Decompressor | null,
+  decompress: Decompressor,
   diagnostics?: ImportDiagnostic[],
 ): Uint8Array | null {
   if (bytes.byteLength < WOFF_HEADER_BYTES) return null;
@@ -113,16 +113,6 @@ export function readWoffFont(
       continue;
     }
 
-    if (decompress === null) {
-      reportImportDiagnostic(
-        diagnostics,
-        ImportDiagnosticSeverity.Reject,
-        'woff.no-decompressor-registered',
-        'readWoffFont',
-        { table: readWoffTagText(view, record) },
-      );
-      return null;
-    }
     const inflated = decompress(stored, originalLength, CompressionFraming.Rfc1950);
     // A decompressor that returns the wrong length has produced something that is not this table, and
     // reassembling it would yield a font whose directory lengths lie about its own contents.

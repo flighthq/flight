@@ -1,3 +1,4 @@
+import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 // swf-mirrored-placement — render coverage for a SWF PlaceObject2 matrix that MIRRORS (negative
 // determinant). Flipped symbols are ordinary in authored Flash content, and swfDocument hands each
 // placement matrix straight to setNodeLocalMatrix, which decomposes it into the node's transform
@@ -301,7 +302,7 @@ class ShapeWriter extends BitWriter {
   }
 }
 
-const document = createScene2DFromSwf(createMirroredPlacementSwf());
+const document = createScene2DFromSwf(createMirroredPlacementSwf(), sdkHostDecompressDeflate, null);
 if (document === null || document.root.kind !== MovieClipKind) {
   throw new Error('[swf-mirrored-placement] synthetic SWF did not import as a MovieClip document');
 }

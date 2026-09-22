@@ -892,7 +892,7 @@ describe('createImportConformanceScore', () => {
         ...result('a.swf', [], 'unsupportedClean'),
         probeUnreadableEvidence: {
           diagnostics: [
-            { kind: 'swf.no-decompressor-registered', origin: 'uncompressSwfSource', severity: 'Reject' as const },
+            { kind: 'swf.decompression-failed', origin: 'uncompressSwfSource', severity: 'Reject' as const },
           ],
           imported: false,
           threw: false,

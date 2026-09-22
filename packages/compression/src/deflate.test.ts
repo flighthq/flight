@@ -1,7 +1,6 @@
 import { Compression, CompressionFraming } from '@flighthq/types/contract';
 
-import { getDecompressor, unregisterDecompressor } from './decompressor';
-import { inflateDeflate, registerDeflateDecompressor } from './deflate';
+import { decompressDeflate, sdkHostDecompressDeflate } from './deflate';
 
 // The compressed fixtures below are precomputed with Node's zlib and embedded as base64 rather than
 // generated at test time: `scene-formats` is a browser-clean package whose build carries no `@types/node`,
@@ -216,9 +215,9 @@ function createRawStoredStreamStartingWithZlibHeader(): { payload: Uint8Array; s
   return { payload, stream };
 }
 
-describe('inflateDeflate', () => {
+describe('decompressDeflate', () => {
   it('round-trips empty input', () => {
-    expect(inflateDeflate(decodeBase64(FIXTURES.EMPTY), 0, CompressionFraming.Rfc1950)).toEqual(new Uint8Array(0));
+    expect(decompressDeflate(decodeBase64(FIXTURES.EMPTY), 0, CompressionFraming.Rfc1950)).toEqual(new Uint8Array(0));
   });
 
   it('keeps inflating a stream whose expansion ratio is large but bounded', () => {
@@ -228,36 +227,36 @@ describe('inflateDeflate', () => {
     // fixture is 124 bytes expanding 528x to 64 KB, and must still round-trip byte for byte.
     const source = new Uint8Array(64 * 1024);
     for (let i = 0; i < source.length; i++) source[i] = i % 7;
-    expect(inflateDeflate(decodeBase64(FIXTURES.HIGH_RATIO), 0, CompressionFraming.Rfc1950)).toEqual(source);
+    expect(decompressDeflate(decodeBase64(FIXTURES.HIGH_RATIO), 0, CompressionFraming.Rfc1950)).toEqual(source);
   });
 
   it('stops expansion at the container-declared output bound', () => {
     const compressed = decodeBase64(FIXTURES.HIGH_RATIO);
-    expect(inflateDeflate(compressed, 64 * 1024, CompressionFraming.Rfc1950)).toHaveLength(64 * 1024);
-    expect(inflateDeflate(compressed, 64 * 1024 - 1, CompressionFraming.Rfc1950)).toBeNull();
+    expect(decompressDeflate(compressed, 64 * 1024, CompressionFraming.Rfc1950)).toHaveLength(64 * 1024);
+    expect(decompressDeflate(compressed, 64 * 1024 - 1, CompressionFraming.Rfc1950)).toBeNull();
   });
 
   it('round-trips a short literal run (zlib-wrapped)', () => {
-    expect(inflateDeflate(decodeBase64(FIXTURES.LITERAL), 0, CompressionFraming.Rfc1950)).toEqual(
+    expect(decompressDeflate(decodeBase64(FIXTURES.LITERAL), 0, CompressionFraming.Rfc1950)).toEqual(
       encode('flighthq scene-formats'),
     );
   });
 
   it('round-trips a headerless raw DEFLATE stream when explicitly requested', () => {
-    expect(inflateDeflate(decodeBase64(FIXTURES.RAW_LITERAL), 0, CompressionFraming.Raw)).toEqual(
+    expect(decompressDeflate(decodeBase64(FIXTURES.RAW_LITERAL), 0, CompressionFraming.Raw)).toEqual(
       encode('flighthq scene-formats'),
     );
   });
 
   it('does not mistake a valid raw stream beginning 78 9c for zlib framing', () => {
     const { payload, stream } = createRawStoredStreamStartingWithZlibHeader();
-    expect(inflateDeflate(stream, payload.length, CompressionFraming.Raw)).toEqual(payload);
-    expect(inflateDeflate(stream, payload.length, CompressionFraming.Rfc1950)).toBeNull();
+    expect(decompressDeflate(stream, payload.length, CompressionFraming.Raw)).toEqual(payload);
+    expect(decompressDeflate(stream, payload.length, CompressionFraming.Rfc1950)).toBeNull();
   });
 
   it('round-trips highly repetitive data through back-references and grows the output buffer', () => {
     // 5400 bytes out — past the 1024-byte initial buffer, exercising the grow path.
-    expect(inflateDeflate(decodeBase64(FIXTURES.REPETITIVE), 0, CompressionFraming.Rfc1950)).toEqual(
+    expect(decompressDeflate(decodeBase64(FIXTURES.REPETITIVE), 0, CompressionFraming.Rfc1950)).toEqual(
       encode('abcABC123'.repeat(600)),
     );
   });
@@ -265,87 +264,91 @@ describe('inflateDeflate', () => {
   it('round-trips prose through a genuine dynamic-Huffman block', () => {
     // Verified offline that zlib emits BTYPE=2 (dynamic Huffman) for this input, exercising the
     // dynamic literal/length + distance code-length decode path.
-    expect(inflateDeflate(decodeBase64(FIXTURES.LOREM), 0, CompressionFraming.Rfc1950)).toEqual(
+    expect(decompressDeflate(decodeBase64(FIXTURES.LOREM), 0, CompressionFraming.Rfc1950)).toEqual(
       encode(LOREM.repeat(12)),
     );
   });
 
   it('round-trips a stored (level 0) block', () => {
-    expect(inflateDeflate(decodeBase64(FIXTURES.STORED_L0), 0, CompressionFraming.Rfc1950)).toEqual(
+    expect(decompressDeflate(decodeBase64(FIXTURES.STORED_L0), 0, CompressionFraming.Rfc1950)).toEqual(
       encode('the quick brown fox jumps over the lazy dog'),
     );
   });
 
   it('returns null on a truncated stream rather than throwing', () => {
-    expect(inflateDeflate(decodeBase64(FIXTURES.REPETITIVE).subarray(0, 6), 0, CompressionFraming.Rfc1950)).toBeNull();
+    expect(
+      decompressDeflate(decodeBase64(FIXTURES.REPETITIVE).subarray(0, 6), 0, CompressionFraming.Rfc1950),
+    ).toBeNull();
   });
 
   it('returns null on a corrupt (invalid block type) stream', () => {
     // 0x78 0x9c is a valid zlib header; 0xff 0xff after it decodes an invalid block type.
     expect(
-      inflateDeflate(new Uint8Array([0x78, 0x9c, 0xff, 0xff, 0, 0, 0, 0]), 0, CompressionFraming.Rfc1950),
+      decompressDeflate(new Uint8Array([0x78, 0x9c, 0xff, 0xff, 0, 0, 0, 0]), 0, CompressionFraming.Rfc1950),
     ).toBeNull();
   });
 
   it('rejects undersized zlib wrappers and unknown framing values', () => {
-    expect(inflateDeflate(new Uint8Array([0x78, 0x9c, 0, 0, 0]), 0, CompressionFraming.Rfc1950)).toBeNull();
-    expect(inflateDeflate(decodeBase64(FIXTURES.RAW_LITERAL), 0, 'Unknown' as never)).toBeNull();
+    expect(decompressDeflate(new Uint8Array([0x78, 0x9c, 0, 0, 0]), 0, CompressionFraming.Rfc1950)).toBeNull();
+    expect(decompressDeflate(decodeBase64(FIXTURES.RAW_LITERAL), 0, 'Unknown' as never)).toBeNull();
   });
 
   it('rejects truncated stored-block headers and payloads', () => {
-    expect(inflateDeflate(new Uint8Array([0x01, 0, 0]), 0, CompressionFraming.Raw)).toBeNull();
-    expect(inflateDeflate(new Uint8Array([0x01, 0x02, 0, 0xfd, 0xff, 0x41]), 0, CompressionFraming.Raw)).toBeNull();
+    expect(decompressDeflate(new Uint8Array([0x01, 0, 0]), 0, CompressionFraming.Raw)).toBeNull();
+    expect(decompressDeflate(new Uint8Array([0x01, 0x02, 0, 0xfd, 0xff, 0x41]), 0, CompressionFraming.Raw)).toBeNull();
   });
 
   it('rejects reserved fixed length symbols and back-references before the output', () => {
-    expect(inflateDeflate(createFixedBackReferenceStream(286), 0, CompressionFraming.Raw)).toBeNull();
-    expect(inflateDeflate(createFixedBackReferenceStream(257, 0), 0, CompressionFraming.Raw)).toBeNull();
+    expect(decompressDeflate(createFixedBackReferenceStream(286), 0, CompressionFraming.Raw)).toBeNull();
+    expect(decompressDeflate(createFixedBackReferenceStream(257, 0), 0, CompressionFraming.Raw)).toBeNull();
   });
 
   it('rejects a reserved dynamic distance symbol', () => {
-    expect(inflateDeflate(createReservedDynamicDistanceStream(), 0, CompressionFraming.Raw)).toBeNull();
+    expect(decompressDeflate(createReservedDynamicDistanceStream(), 0, CompressionFraming.Raw)).toBeNull();
   });
 
   it('rejects a missing or corrupt zlib Adler-32 trailer', () => {
     const valid = decodeBase64(FIXTURES.LITERAL);
     const corrupt = valid.slice();
     corrupt[corrupt.length - 1] ^= 1;
-    expect(inflateDeflate(valid.subarray(0, valid.length - 4), 0, CompressionFraming.Rfc1950)).toBeNull();
-    expect(inflateDeflate(corrupt, 0, CompressionFraming.Rfc1950)).toBeNull();
+    expect(decompressDeflate(valid.subarray(0, valid.length - 4), 0, CompressionFraming.Rfc1950)).toBeNull();
+    expect(decompressDeflate(corrupt, 0, CompressionFraming.Rfc1950)).toBeNull();
   });
 
   it('rejects illegal zlib methods, window sizes, check bits, and preset dictionaries', () => {
     const illegalMethod = decodeBase64(FIXTURES.LITERAL);
     illegalMethod[0] = 0x77;
     illegalMethod[1] = 0x09; // FCHECK-valid for CM=7, so only the forbidden compression method rejects it.
-    expect(inflateDeflate(illegalMethod, 0, CompressionFraming.Rfc1950)).toBeNull();
+    expect(decompressDeflate(illegalMethod, 0, CompressionFraming.Rfc1950)).toBeNull();
 
     const illegalWindow = decodeBase64(FIXTURES.LITERAL);
     illegalWindow[0] = 0xf8;
     illegalWindow[1] = 0x00;
-    expect(inflateDeflate(illegalWindow, 0, CompressionFraming.Rfc1950)).toBeNull();
+    expect(decompressDeflate(illegalWindow, 0, CompressionFraming.Rfc1950)).toBeNull();
 
     const illegalCheck = decodeBase64(FIXTURES.LITERAL);
     illegalCheck[1] ^= 1;
-    expect(inflateDeflate(illegalCheck, 0, CompressionFraming.Rfc1950)).toBeNull();
+    expect(decompressDeflate(illegalCheck, 0, CompressionFraming.Rfc1950)).toBeNull();
 
     const presetDictionary = decodeBase64(FIXTURES.LITERAL);
     presetDictionary[1] = 0xbb;
-    expect(inflateDeflate(presetDictionary, 0, CompressionFraming.Rfc1950)).toBeNull();
+    expect(decompressDeflate(presetDictionary, 0, CompressionFraming.Rfc1950)).toBeNull();
   });
 
   it('rejects a dynamic code-length repeat that exceeds the declared table', () => {
-    expect(inflateDeflate(decodeHex('05c0050900000000a0ffaf15'), 0, CompressionFraming.Raw)).toEqual(new Uint8Array());
-    expect(inflateDeflate(decodeHex('05c0050900000000a0ffaf0d'), 0, CompressionFraming.Raw)).toBeNull();
+    expect(decompressDeflate(decodeHex('05c0050900000000a0ffaf15'), 0, CompressionFraming.Raw)).toEqual(
+      new Uint8Array(),
+    );
+    expect(decompressDeflate(decodeHex('05c0050900000000a0ffaf0d'), 0, CompressionFraming.Raw)).toBeNull();
   });
 
   it.each([16, 17, 18] as const)('rejects dynamic repeat symbol %i when it exceeds the declared table', (symbol) => {
-    expect(inflateDeflate(createDynamicRepeatOverflowStream(symbol), 0, CompressionFraming.Raw)).toBeNull();
+    expect(decompressDeflate(createDynamicRepeatOverflowStream(symbol), 0, CompressionFraming.Raw)).toBeNull();
   });
 
   it('accepts every dynamic repeat form when it ends inside the declared table', () => {
     for (const symbol of [16, 17, 18] as const) {
-      expect(inflateDeflate(createValidDynamicRepeatStream(symbol), 0, CompressionFraming.Raw)).toEqual(
+      expect(decompressDeflate(createValidDynamicRepeatStream(symbol), 0, CompressionFraming.Raw)).toEqual(
         new Uint8Array(),
       );
     }
@@ -364,30 +367,29 @@ describe('inflateDeflate', () => {
       ]),
     );
     pushCanonicalCode(bits, 3, 2);
-    expect(inflateDeflate(packDeflateBits(bits), 0, CompressionFraming.Raw)).toBeNull();
+    expect(decompressDeflate(packDeflateBits(bits), 0, CompressionFraming.Raw)).toBeNull();
   });
 
   it('rejects forbidden dynamic literal counts without rejecting the maximum valid count', () => {
-    expect(inflateDeflate(decodeHex('edc0210900000000a0ffaf5d22'), 0, CompressionFraming.Raw)).toEqual(
+    expect(decompressDeflate(decodeHex('edc0210900000000a0ffaf5d22'), 0, CompressionFraming.Raw)).toEqual(
       new Uint8Array(),
     );
-    expect(inflateDeflate(decodeHex('f5c0210900000000a0ffaf7d22'), 0, CompressionFraming.Raw)).toBeNull();
-    expect(inflateDeflate(decodeHex('fdc0210900000000a0ffaf9d22'), 0, CompressionFraming.Raw)).toBeNull();
+    expect(decompressDeflate(decodeHex('f5c0210900000000a0ffaf7d22'), 0, CompressionFraming.Raw)).toBeNull();
+    expect(decompressDeflate(decodeHex('fdc0210900000000a0ffaf9d22'), 0, CompressionFraming.Raw)).toBeNull();
   });
 });
 
-describe('registerDeflateDecompressor', () => {
-  afterEach(() => unregisterDecompressor(Compression.Deflate));
+describe('sdkHostDecompressDeflate', () => {
+  it('is a ready-made deflate slot carrying the portable inflater', () => {
+    // What a caller drops into a Host's decompress group when it wants Flight's own decoder rather
+    // than a native or wasm one. There is no registration step and no import-order dependence: the
+    // slot IS the value.
+    expect(sdkHostDecompressDeflate.decompress).toBe(decompressDeflate);
+  });
 
-  it('puts the inflater in the shared registry every consumer resolves through', () => {
-    expect(getDecompressor(Compression.Deflate)).toBeNull();
-
-    registerDeflateDecompressor();
-
-    // One registration is what every container format reads through — none of them owns its own registry.
-    expect(getDecompressor(Compression.Deflate)).toBe(inflateDeflate);
-    expect(
-      getDecompressor(Compression.Deflate)?.(decodeBase64(FIXTURES.LITERAL), 0, CompressionFraming.Rfc1950),
-    ).toEqual(encode('flighthq scene-formats'));
+  it('inflates through the slot exactly as the bare function does', () => {
+    expect(sdkHostDecompressDeflate.decompress(decodeBase64(FIXTURES.LITERAL), 0, CompressionFraming.Rfc1950)).toEqual(
+      encode('flighthq scene-formats'),
+    );
   });
 });

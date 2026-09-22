@@ -32,6 +32,7 @@ import type {
   HostCanvasCapabilities,
   HostSurfaceCapabilities,
   HostTextSegmentCapabilities,
+  HostDecompressCapabilities,
   HostTextShaperCapabilities,
   HostUpdaterCapabilities,
   HostVideoCapabilities,
@@ -57,6 +58,10 @@ export function tauriHostCanvas(): HostCanvasCapabilities {
 }
 
 export function tauriHostConnectivity(): HostConnectivityCapabilities {
+  return {};
+}
+
+export function tauriHostDecompress(): HostDecompressCapabilities {
   return {};
 }
 

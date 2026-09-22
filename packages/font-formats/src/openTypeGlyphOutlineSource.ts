@@ -1,7 +1,7 @@
-import { getDecompressor } from '@flighthq/compression/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { detectFontFormat } from '@flighthq/font/contract';
 import type {
+  HostDecompressDeflateCapability,
   CffTable,
   Entity,
   EntityConstruction,
@@ -24,7 +24,7 @@ import {
   readOpenTypeMetrics,
 } from './openTypeMetrics';
 import { readSfntTableDirectory } from './sfntTableDirectory';
-import { readWoffFont, WOFF_COMPRESSION } from './woffFont';
+import { readWoffFont } from './woffFont';
 
 /**
  * OPENTYPE/TRUETYPE BYTES → THE EXISTING `GlyphOutlineSource` SEAM.
@@ -51,12 +51,13 @@ import { readWoffFont, WOFF_COMPRESSION } from './woffFont';
 // not open or one whose tables need a decompressor nobody registered.
 function unwrapFontContainer(
   source: Readonly<Uint8Array>,
+  deflate: Readonly<HostDecompressDeflateCapability>,
   diagnostics?: ImportDiagnostic[],
 ): Readonly<Uint8Array> | null {
   const format = detectFontFormat(source as Uint8Array);
   if (format === 'truetype' || format === 'opentype') return source;
   if (format !== 'woff') return null;
-  return readWoffFont(source, getDecompressor(WOFF_COMPRESSION), diagnostics);
+  return readWoffFont(source, deflate.decompress, diagnostics);
 }
 
 // The producer. Returns the null sentinel for any font this package cannot read, which covers cases
@@ -64,9 +65,10 @@ function unwrapFontContainer(
 // them, and a caller diagnosing a rejection calls it rather than reading a message string.
 export function createGlyphOutlineSourceFromOpenTypeFont(
   source: Readonly<Uint8Array>,
+  deflate: Readonly<HostDecompressDeflateCapability>,
   diagnostics?: ImportDiagnostic[],
 ): (GlyphOutlineSource & Entity) | null {
-  const parsed = readOpenTypeFontTables(source, diagnostics);
+  const parsed = readOpenTypeFontTables(source, deflate, diagnostics);
   if (parsed === null) return null;
 
   const out = allocateEntity<GlyphOutlineSource & Entity>();
@@ -79,25 +81,23 @@ export function createGlyphOutlineSourceFromOpenTypeFont(
 // Kept separate from the producer, and re-reading the bytes rather than being handed its intermediate
 // state, so a caller that never diagnoses anything does not link it. That costs a second parse on the
 // failure path only, which is the path where nobody is counting microseconds.
-export function explainOpenTypeFont(bytes: Readonly<Uint8Array>): OpenTypeFontExplanation {
+export function explainOpenTypeFont(
+  bytes: Readonly<Uint8Array>,
+  deflate: Readonly<HostDecompressDeflateCapability>,
+): OpenTypeFontExplanation {
   const format = detectFontFormat(bytes as Uint8Array) ?? '';
   const empty = { format, readableTableCount: 0, table: '', tableCount: 0 };
 
   if (bytes.byteLength < 12) return { ...empty, accepted: false, reason: 'too-short' };
   if (format === '') return { ...empty, accepted: false, reason: 'unrecognized' };
-  // WOFF is opened now: it wraps these same tables, so it is unwrapped and read like any other font. It
-  // needs a DEFLATE decompressor, which `@flighthq/compression` provides on request — an unregistered one
-  // is its own reason, because the remedy is one line of registration rather than a different producer.
+  // WOFF is opened now: it wraps these same tables, so it is unwrapped and read like any other font.
   // WOFF2 and a collection are still not opened: WOFF2 needs Brotli and a table-transform reversal, and a
   // collection holds several fonts with no rule here for which is meant.
-  if (format === 'woff' && getDecompressor(WOFF_COMPRESSION) === null) {
-    return { ...empty, accepted: false, reason: 'missing-decompressor' };
-  }
   if (format !== 'truetype' && format !== 'opentype' && format !== 'woff') {
     return { ...empty, accepted: false, reason: 'unsupported-container' };
   }
 
-  const unwrapped = format === 'woff' ? readWoffFont(bytes, getDecompressor(WOFF_COMPRESSION)) : bytes;
+  const unwrapped = format === 'woff' ? readWoffFont(bytes, deflate.decompress) : bytes;
   if (unwrapped === null) return { ...empty, accepted: false, reason: 'malformed-table', table: '' };
 
   const directory = readSfntTableDirectory(unwrapped);
@@ -130,7 +130,7 @@ export function explainOpenTypeFont(bytes: Readonly<Uint8Array>): OpenTypeFontEx
   }
 
   // Every table is present, so anything still wrong is a table that disagrees with its own extent.
-  const parsed = readOpenTypeFontTables(bytes);
+  const parsed = readOpenTypeFontTables(bytes, deflate);
   if (parsed === null) return { ...counted, accepted: false, reason: 'malformed-table', table: '' };
   return { ...counted, accepted: true, reason: 'ok', table: '' };
 }
@@ -184,9 +184,10 @@ interface OpenTypeFontTables {
 // fine and still gets null.
 function readOpenTypeFontTables(
   source: Readonly<Uint8Array>,
+  deflate: Readonly<HostDecompressDeflateCapability>,
   diagnostics?: ImportDiagnostic[],
 ): OpenTypeFontTables | null {
-  const bytes = unwrapFontContainer(source, diagnostics);
+  const bytes = unwrapFontContainer(source, deflate, diagnostics);
   if (bytes === null) return null;
 
   const directory = readSfntTableDirectory(bytes);
