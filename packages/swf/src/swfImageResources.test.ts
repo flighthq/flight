@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
-import { createHost } from '@flighthq/host/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
 import { loadScene2DImageResources } from '@flighthq/scene2d-resources/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
@@ -47,7 +46,7 @@ describe('SWF image resources', () => {
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
     );
     const document = createScene2DFromSwf(createBitmapFillSwf(imageBytes), {
-      host: createHost({ decompress: { deflate: DECOMPRESS_DEFLATE } }),
+      deflate: DECOMPRESS_DEFLATE,
       tags: swfAllTagHandlers,
     })!;
     const shape = getNodeChildren(document.root)[0] as Shape;

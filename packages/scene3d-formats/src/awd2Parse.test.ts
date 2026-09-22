@@ -1,7 +1,6 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { createVector3, rotateVector3ByQuaternion } from '@flighthq/geometry/contract';
-import { createHost } from '@flighthq/host/contract';
 import {
   getMeshGeometryIndexCount,
   getMeshGeometryVertexCount,
@@ -3510,31 +3509,21 @@ const DECOMPRESS_DEFLATE = sdkHostDecompressDeflate;
 // No LZMA implementation ships with Flight, so a ZWS/LZMA body reports an unread container.
 const DECOMPRESS_LZMA = null;
 
-const DEFAULT_OPTIONS: Awd2ParseOptions = {
-  host: createHost({ decompress: { deflate: DECOMPRESS_DEFLATE } }),
-  blocks: awd2AllBlockHandlers,
-};
+const DEFAULT_OPTIONS: Awd2ParseOptions = { blocks: awd2AllBlockHandlers, deflate: DECOMPRESS_DEFLATE };
 
 // Only the skeleton family, which is the composition that replaced the retired
 // parseAwd2SkeletonAnimations: same block walk, different handler array, no duplicated header validation.
-const SKELETON_ONLY_OPTIONS: Awd2ParseOptions = {
-  host: createHost({ decompress: { deflate: DECOMPRESS_DEFLATE } }),
-  blocks: awd2SkeletonFamily,
-};
+const SKELETON_ONLY_OPTIONS: Awd2ParseOptions = { blocks: awd2SkeletonFamily, deflate: DECOMPRESS_DEFLATE };
 
-// A build whose host carries exactly the named deflate capability: the container tests turn on what the
-// host can inflate, so each needs its own host rather than the shared one.
+// The container tests turn on what the caller can inflate, so each names its own codec rather than the
+// shared one.
 function awd2OptionsWithDeflate(deflate: Readonly<HostDecompressDeflateCapability> | null): Awd2ParseOptions {
-  return {
-    host: deflate === null ? createHost() : createHost({ decompress: { deflate } }),
-    blocks: awd2AllBlockHandlers,
-  };
+  return { blocks: awd2AllBlockHandlers, deflate };
 }
 
 function skeletonOnlyOptions(
   deflate: Readonly<HostDecompressDeflateCapability> | null,
   lzma: Readonly<HostDecompressLzmaCapability> | null,
 ): Awd2ParseOptions {
-  const decompress = { ...(deflate === null ? {} : { deflate }), ...(lzma === null ? {} : { lzma }) };
-  return { host: createHost({ decompress }), blocks: awd2SkeletonFamily };
+  return { blocks: awd2SkeletonFamily, deflate, lzma };
 }

@@ -1,4 +1,3 @@
-import { webHost } from '@flighthq/host-web';
 import type { ImportDiagnostic, Scene3DLightsLike, ShadedMaterial } from '@flighthq/sdk';
 import {
   createCamera3D,
@@ -31,13 +30,9 @@ import { canvas, render, scale } from './render';
 // light table into the renderer-ready draw argument used below.
 const awdBytes = createSyntheticAwd2();
 const diagnostics: ImportDiagnostic[] = [];
-const awdDocument = parseAwd2(
-  awdBytes,
-  // The backend host an app already has. This fixture's header sets the compression byte to 0, so it
-  // never reaches a decompressor; a compressed file would need a host carrying a deflate capability.
-  { blocks: awd2AllBlockHandlers, host: webHost },
-  diagnostics,
-);
+// This fixture's header sets the compression byte to 0, so no codec is reached; a compressed file
+// would name deflate here.
+const awdDocument = parseAwd2(awdBytes, { blocks: awd2AllBlockHandlers }, diagnostics);
 const documentScene3D = createScene3DFromDocument(awdDocument);
 const importedMeshes = getNodeChildren(documentScene3D.root).filter(isMesh);
 for (const mesh of importedMeshes) {

@@ -7,7 +7,6 @@
 // EM grid; DefineFont3 stores the same square as 10240 units on its twenty-times-finer grid. Both text
 // records author the same height, so their rendered extents must match. A wrong SWF EM-square conversion
 // makes the modern glyph twenty times too large instead of merely leaving a non-blank frame.
-import { createHost } from '@flighthq/host/contract';
 import { getRenderProxy2D } from '@flighthq/render/contract';
 import type { Bitmap, ColorScaleBias, MovieClip, RichText } from '@flighthq/sdk';
 import {
@@ -866,7 +865,7 @@ const TINTED_SPRITE_ID = 16;
 const TWIPS_PER_PIXEL = 20;
 
 const document = createScene2DFromSwf(createFunctionalSwf(), {
-  host: createHost({ decompress: { deflate: sdkHostDecompressDeflate } }),
+  deflate: sdkHostDecompressDeflate,
   tags: swfAllTagHandlers,
 });
 if (document === null || document.root.kind !== MovieClipKind) {
