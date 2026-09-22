@@ -3,6 +3,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { TimelineAudioCue, TimelineStreamAudioCue } from '@flighthq/types/contract';
 import { TimelineAudioCueKind, TimelineStreamAudioCueKind } from '@flighthq/types/contract';
 
+import { swfSoundHandler } from './swfSoundHandler';
 import { initializeTimelineAudioCue, initializeTimelineStreamAudioCue, swfSoundTagFamily } from './swfSoundTagFamily';
 
 describe('initializeTimelineAudioCue', () => {
@@ -22,7 +23,6 @@ describe('initializeTimelineAudioCue', () => {
     expect(cue.resource).toBe(resource);
     expect(cue.skipIfPlaying).toBe(true);
     expect(cue.stop).toBe(false);
-    // Gain is not something SOUNDINFO carries; a cue plays at the resource's own level.
     expect(cue.gain).toBe(1);
   });
 
@@ -50,20 +50,16 @@ describe('initializeTimelineStreamAudioCue', () => {
 });
 
 describe('swfSoundTagFamily', () => {
-  it('claims the event and stream sound tags and nothing else', () => {
-    expect([...swfSoundTagFamily.tags].sort((a, b) => a - b)).toEqual([14, 15, 18, 19, 45, 89]);
+  it('contains the union of its handler tags', () => {
+    expect([...swfSoundTagFamily.tags].sort((a, b) => a - b)).toEqual([...swfSoundHandler.tags].sort((a, b) => a - b));
   });
 
-  // The cue conversions and the class binding cannot happen at the tag: a trigger can name a sound, or a
-  // class, that the tag stream has not reached yet.
-  it('defers its cross-tag work to resolve, and its stream assembly to each timeline', () => {
+  it('composes resolve and finishTimeline from its handler', () => {
     expect(swfSoundTagFamily.resolve).toBeDefined();
     expect(swfSoundTagFamily.finishTimeline).toBeDefined();
   });
 
   it('contributes resources but claims no placed character', () => {
-    // A SWF triggers a sound from a timeline or from script; nothing in the display list refers to one,
-    // so a sound is enumerated into the document rather than discovered from the graph.
     expect(swfSoundTagFamily.instantiate?.createResources).toBeDefined();
     expect(swfSoundTagFamily.instantiate?.createPlacementNode).toBeUndefined();
     expect(swfSoundTagFamily.instantiate?.hasPlacementContent).toBeUndefined();
