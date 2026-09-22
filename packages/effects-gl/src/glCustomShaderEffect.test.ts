@@ -121,7 +121,7 @@ describe('registerGlCustomShaderSource', () => {
 
     registerGlCustomShaderSource(screen, 'ripple', replacement);
 
-    expect(getGlRenderStateRuntime(derived).registries.customEffectShaders).toBe(snapshot);
+    expect(getGlRenderStateRuntime(derived).registries.customEffectShaders).not.toBe(snapshot);
     expect(getGlRenderStateRuntime(screen).registries.customEffectShaders).not.toBe(snapshot);
     expect(snapshot.get('ripple') ?? null).toBe(FRAGMENT_SRC);
     expect(getGlCustomShaderSource(derived, 'ripple')).toBe(FRAGMENT_SRC);

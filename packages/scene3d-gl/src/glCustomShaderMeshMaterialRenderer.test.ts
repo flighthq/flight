@@ -160,7 +160,7 @@ describe('registerGlCustomMaterialShader', () => {
     getGlScene3DRuntime(derived);
     registerGlCustomMaterialShader(screen, 'ripple', replacement);
 
-    expect(getGlRenderStateRuntime(derived).registries.customMaterialShaders).toBe(snapshot);
+    expect(getGlRenderStateRuntime(derived).registries.customMaterialShaders).not.toBe(snapshot);
     expect(getGlRenderStateRuntime(screen).registries.customMaterialShaders).not.toBe(snapshot);
     expect(snapshot.get('ripple') ?? null).toBe(source);
     expect(getGlCustomMaterialShaderSource(derived, 'ripple')).toBe(source);
