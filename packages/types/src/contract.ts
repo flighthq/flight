@@ -101,6 +101,7 @@ export * from './AudioResourceReference';
 export * from './AutoExposureEffect';
 export * from './BarrelDistortionEffect';
 export * from './BatchBarrier';
+export * from './Awd2Block';
 export * from './BatchFormat';
 export * from './BevelEffect';
 export * from './Bidi';

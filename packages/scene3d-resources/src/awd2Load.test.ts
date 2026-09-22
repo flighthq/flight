@@ -1,4 +1,5 @@
 import * as netContract from '@flighthq/net/contract';
+import { createAwd2DefaultBlockRegistry } from '@flighthq/scene3d-formats/contract';
 import * as scene3dFormatsContract from '@flighthq/scene3d-formats/contract';
 import type { HostNetCapability, NetResponse, Scene3DDocument } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -50,7 +51,13 @@ describe('loadScene3DDocumentFromAwd2Url', () => {
     vi.mocked(scene3dFormatsContract.parseAwd2).mockReturnValue(document);
     vi.mocked(netContract.sendNetRequest).mockResolvedValue(okResponse(new Uint8Array([5, 6]).buffer));
 
-    const loaded = await loadScene3DDocumentFromAwd2Url(fakeHost().net.http, 'model.awd', null, null);
+    const loaded = await loadScene3DDocumentFromAwd2Url(
+      fakeHost().net.http,
+      'model.awd',
+      createAwd2DefaultBlockRegistry(),
+      null,
+      null,
+    );
 
     expect(Array.from(vi.mocked(scene3dFormatsContract.parseAwd2).mock.calls[0][0])).toEqual([5, 6]);
     expect(loaded).toBe(document);

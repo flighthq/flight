@@ -12,6 +12,7 @@ import {
 } from '@flighthq/scene2d-formats';
 import {
   createScene3DFrom3ds,
+  createAwd2DefaultBlockRegistry,
   createScene3DFromAwd2,
   createScene3DFromMd2,
   createScene3DFromMd5Mesh,
@@ -188,6 +189,7 @@ async function runAwd2(input: Readonly<ConformanceFixtureInput>): Promise<Confor
   const diagnostics: ImportDiagnostic[] = [];
   createScene3DFromAwd2(
     new Uint8Array(await readFile(input.absolutePath)),
+    createAwd2DefaultBlockRegistry(),
     sdkHostDecompressDeflate,
     null,
     diagnostics,

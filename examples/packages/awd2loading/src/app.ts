@@ -10,6 +10,7 @@ import {
   getNodeChildren,
   isMesh,
   invalidateNodeLocalTransform,
+  createAwd2DefaultBlockRegistry,
   parseAwd2,
   setQuaternionFromEuler,
   ShadedMaterialKind,
@@ -30,7 +31,7 @@ import { canvas, render, scale } from './render';
 // light table into the renderer-ready draw argument used below.
 const awdBytes = createSyntheticAwd2();
 const diagnostics: ImportDiagnostic[] = [];
-const awdDocument = parseAwd2(awdBytes, sdkHostDecompressDeflate, null, diagnostics);
+const awdDocument = parseAwd2(awdBytes, createAwd2DefaultBlockRegistry(), sdkHostDecompressDeflate, null, diagnostics);
 const documentScene3D = createScene3DFromDocument(awdDocument);
 const importedMeshes = getNodeChildren(documentScene3D.root).filter(isMesh);
 for (const mesh of importedMeshes) {
