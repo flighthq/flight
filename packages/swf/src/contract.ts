@@ -23,6 +23,7 @@ export * from './swfShape';
 export * from './swfShapeTagFamily';
 export * from './swfSoundTagFamily';
 export * from './swfSpriteTagFamily';
+export * from './swfTagFamilyDispatch';
 export * from './swfTagFamilyRegistry';
 export * from './swfTagVocabulary';
 export * from './swfText';

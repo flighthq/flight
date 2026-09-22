@@ -1,6 +1,7 @@
 import type { SwfTagFamilyDispatch, SwfTagParseState } from '@flighthq/types/contract';
 
-import { createSwfDefaultTagFamilyRegistry, createSwfTagFamilyDispatch } from './swfTagFamilyRegistry';
+import { createSwfTagFamilyDispatch } from './swfTagFamilyDispatch';
+import { createSwfDefaultTagFamilyRegistry } from './swfTagFamilyRegistry';
 
 // Builds the SWF containers and tag records the importer tests read. A test that asserts on what the
 // importer does with a document needs a document to hand it, and hand-writing the bit-packed RECT and
