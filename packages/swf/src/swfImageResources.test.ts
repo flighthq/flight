@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
 import { loadScene2DImageResources } from '@flighthq/scene2d-resources/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
