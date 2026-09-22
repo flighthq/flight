@@ -1,5 +1,6 @@
 import type { Bitmap } from './Bitmap';
 import type { DecodedImage } from './DecodedImage';
+import type { HostImageDecodeCapabilities } from './HostImageDecode';
 import type { EmbeddedImageResourceReference } from './ImageResourceReference';
 
 // Plain data selecting an explicitly registered pixel composer. `payload` belongs to the producer that
@@ -20,6 +21,7 @@ export type ImageBitmapComposer = (
 // reference that names a composer and the Bitmap that composer produces; @flighthq/image holds the slot
 // and knows nothing about which composers exist.
 export type ImageBitmapCompositionResolver = (
+  imageDecode: Readonly<HostImageDecodeCapabilities>,
   ref: Readonly<EmbeddedImageResourceReference>,
   signal: AbortSignal,
 ) => Promise<Bitmap | null>;

@@ -1,6 +1,7 @@
 import type { EasingFunction } from './EasingFunction';
 import type { Entity, Kind } from './Entity';
 import type { GltfExtensionHandler } from './GltfExtension';
+import type { HostImageDecodeCapabilities } from './HostImageDecode';
 import type { ImageResourceFetch, ImageResourceReference } from './ImageResourceReference';
 import type { ImportDiagnostic } from './ImportDiagnostic';
 import type { Material } from './Material';
@@ -35,11 +36,13 @@ export interface Scene3DResourceSignals extends Entity {
 // seams, then advance/query the resolver through named functions rather than mutating its machinery.
 export interface Scene3DResourceResolver extends Entity {
   fetch: ImageResourceFetch;
+  imageDecode?: HostImageDecodeCapabilities;
   registry: Scene3DMaterialTextureRegistry;
 }
 
 export interface Scene3DResourceResolverOptions {
   fetch?: ImageResourceFetch;
+  imageDecode?: HostImageDecodeCapabilities;
   maxConcurrent?: number;
   registry?: Scene3DMaterialTextureRegistry;
 }

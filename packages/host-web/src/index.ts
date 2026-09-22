@@ -67,8 +67,8 @@ export * from './webHostSurface';
 export * from './webHostWgpuContext';
 export * from './webImage';
 export * from './webImageBitmapComposition';
-export * from './webImageDecoders';
-export * from './webImageEncoders';
+export * from './webImageDecodeHost';
+export * from './webImageEncodeHost';
 export * from './webImageHost';
 export {
   createWebImageResourceFromCanvas,

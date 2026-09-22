@@ -89,7 +89,7 @@ describe('setScene2DResourceFailureGuard', () => {
     resolveScene2DResources(createScene2DDocument(createDisplayObject(), [slot]));
 
     const image = createExternalImageResourceReference('missing.png');
-    await loadScene2DImageResources(createScene2DDocument(createDisplayObject(), [], null, null, [image]));
+    await loadScene2DImageResources({}, createScene2DDocument(createDisplayObject(), [], null, null, [image]));
 
     const audio = createExternalAudioResourceReference('missing.mp3');
     await loadScene2DAudioResources(createScene2DDocument(createDisplayObject(), [], null, null, [], [audio]));

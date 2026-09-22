@@ -1,6 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { clearImageDecoders, registerImageDecoder } from '@flighthq/image-codec/contract';
-import type { Bitmap, ImageResource, ImageDecoder } from '@flighthq/types/contract';
+import type {
+  Bitmap,
+  HostImageDecodeCapabilities,
+  HostImageDecodeFormatCapability,
+  ImageResource,
+} from '@flighthq/types/contract';
 import {
   BitmapTextureSourceKind,
   EntityRuntimeKey,
@@ -20,20 +24,26 @@ import {
   resolveImageResourceReference,
 } from './imageResourceReference';
 
-let decoder: ReturnType<typeof vi.fn<ImageDecoder>>;
+const fakeSlot: HostImageDecodeFormatCapability = {
+  decode: vi.fn().mockResolvedValue({
+    data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]),
+    height: 1,
+    width: 1,
+  }),
+};
+
+const caps: HostImageDecodeCapabilities = { png: fakeSlot };
 
 beforeEach(() => {
-  decoder = vi.fn<ImageDecoder>().mockResolvedValue({
+  vi.mocked(fakeSlot.decode).mockResolvedValue({
     data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]),
     height: 1,
     width: 1,
   });
-  registerImageDecoder('image/png', decoder);
 });
 
 afterEach(() => {
   registerImageBitmapCompositionResolver(null);
-  clearImageDecoders();
 });
 
 const unusedFetch = () => Promise.resolve(null);
@@ -134,22 +144,20 @@ describe('registerImageBitmapCompositionResolver', () => {
     const ref = createEmbeddedImageResourceReference(new Uint8Array([1]), 'image/png');
     ref.bitmapComposition = { kind: 'acme/alpha-plane', payload: new Uint8Array([7]) };
 
-    expect(await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal)).toBe(bitmap);
+    expect(await resolveImageResourceReference(caps, ref, unusedFetch, new AbortController().signal)).toBe(bitmap);
     expect(resolver).toHaveBeenCalledOnce();
-    expect(decoder).not.toHaveBeenCalled();
+    expect(fakeSlot.decode).not.toHaveBeenCalled();
   });
 
-  // Null is how the owner takes the join back out. The slot is the whole of image's knowledge about
-  // composition, so an emptied slot must leave the ordinary straight-decode path exactly as it was.
   it('restores the ordinary decode path when the resolver is taken back out', async () => {
     registerImageBitmapCompositionResolver(vi.fn().mockResolvedValue(createTestBitmap('straight')));
     registerImageBitmapCompositionResolver(null);
     const ref = createEmbeddedImageResourceReference(new Uint8Array([1]), 'image/png');
     ref.bitmapComposition = { kind: 'acme/alpha-plane', payload: new Uint8Array([7]) };
 
-    const source = await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal);
+    const source = await resolveImageResourceReference(caps, ref, unusedFetch, new AbortController().signal);
 
-    expect(decoder).toHaveBeenCalledWith(ref.bytes);
+    expect(fakeSlot.decode).toHaveBeenCalledWith(ref.bytes);
     expect(source?.kind).toBe(BitmapTextureSourceKind);
   });
 });
@@ -180,7 +188,7 @@ describe('resetFailedImageResourceReference', () => {
 describe('resolveImageResourceReference', () => {
   it('decodes embedded bytes and marks the reference resolved', async () => {
     const ref = createEmbeddedImageResourceReference(new Uint8Array([0x89, 0x50, 0x4e, 0x47]), 'image/png');
-    const source = await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal);
+    const source = await resolveImageResourceReference(caps, ref, unusedFetch, new AbortController().signal);
     expect(source).toMatchObject({
       alphaType: 'straight',
       data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]),
@@ -189,7 +197,7 @@ describe('resolveImageResourceReference', () => {
       width: 1,
     });
     expect(EntityRuntimeKey in source!).toBe(true);
-    expect(decoder).toHaveBeenCalledWith(ref.bytes);
+    expect(fakeSlot.decode).toHaveBeenCalledWith(ref.bytes);
     expect(ref.state).toBe(ResourceResolutionState.Resolved);
     expect(ref.failure).toBeNull();
   });
@@ -197,17 +205,16 @@ describe('resolveImageResourceReference', () => {
   it('requests and declares premultiplied output when the plain reference says its source retains it', async () => {
     const ref = createEmbeddedImageResourceReference(new Uint8Array([1]), 'image/png', 'premultiplied');
 
-    const source = await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal);
+    const source = await resolveImageResourceReference(caps, ref, unusedFetch, new AbortController().signal);
 
-    expect(decoder).toHaveBeenCalledWith(ref.bytes, { premultiplyAlpha: true });
+    expect(fakeSlot.decode).toHaveBeenCalledWith(ref.bytes, { premultiplyAlpha: true });
     expect(source?.alphaType).toBe('premultiplied');
   });
 
   it('retains the missing-decoder cause when embedded bytes cannot be decoded', async () => {
-    clearImageDecoders();
     const ref = createEmbeddedImageResourceReference(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
 
-    expect(await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal)).toBeNull();
+    expect(await resolveImageResourceReference({}, ref, unusedFetch, new AbortController().signal)).toBeNull();
     expect(ref.failure).toMatchObject({
       kind: ImageResourceFailureKind.Unavailable,
       message: 'decoder-not-registered',
@@ -219,14 +226,14 @@ describe('resolveImageResourceReference', () => {
     const ref = createExternalImageResourceReference('atlas.png', '/assets');
     const fetched = { width: 2 } as ImageResource;
     const fetch = vi.fn().mockResolvedValue(fetched);
-    expect(await resolveImageResourceReference(ref, fetch, new AbortController().signal)).toBe(fetched);
+    expect(await resolveImageResourceReference(caps, ref, fetch, new AbortController().signal)).toBe(fetched);
     expect(fetch).toHaveBeenCalledOnce();
     expect(ref.state).toBe(ResourceResolutionState.Resolved);
   });
 
   it('records an unavailable failure when the fetch seam returns null', async () => {
     const ref = createExternalImageResourceReference('missing.png');
-    expect(await resolveImageResourceReference(ref, unusedFetch, new AbortController().signal)).toBeNull();
+    expect(await resolveImageResourceReference(caps, ref, unusedFetch, new AbortController().signal)).toBeNull();
     expect(ref.state).toBe(ResourceResolutionState.Failed);
     expect(ref.failure?.kind).toBe(ImageResourceFailureKind.Unavailable);
   });
@@ -234,7 +241,7 @@ describe('resolveImageResourceReference', () => {
   it('records a thrown cause as a failure rather than rethrowing', async () => {
     const ref = createExternalImageResourceReference('boom.png');
     const fetch = vi.fn().mockRejectedValue(new Error('network down'));
-    expect(await resolveImageResourceReference(ref, fetch, new AbortController().signal)).toBeNull();
+    expect(await resolveImageResourceReference(caps, ref, fetch, new AbortController().signal)).toBeNull();
     expect(ref.state).toBe(ResourceResolutionState.Failed);
     expect(ref.failure).toMatchObject({ kind: ImageResourceFailureKind.Error, message: 'network down', name: 'Error' });
   });
@@ -246,7 +253,7 @@ describe('resolveImageResourceReference', () => {
       controller.abort();
       return Promise.reject(new Error('aborted'));
     });
-    await expect(resolveImageResourceReference(ref, fetch, controller.signal)).rejects.toThrow('aborted');
+    await expect(resolveImageResourceReference(caps, ref, fetch, controller.signal)).rejects.toThrow('aborted');
     expect(ref.state).toBe(ResourceResolutionState.Unresolved);
     expect(ref.failure).toBeNull();
   });
@@ -256,7 +263,7 @@ describe('resolveImageResourceReference', () => {
     ref.failure = { [EntityRuntimeKey]: undefined, kind: ImageResourceFailureKind.Error, message: 'old', name: null };
     ref.state = ResourceResolutionState.Failed;
     const fetch = vi.fn().mockResolvedValue({ width: 1 } as ImageResource);
-    await resolveImageResourceReference(ref, fetch, new AbortController().signal);
+    await resolveImageResourceReference(caps, ref, fetch, new AbortController().signal);
     expect(ref.failure).toBeNull();
     expect(ref.state).toBe(ResourceResolutionState.Resolved);
   });

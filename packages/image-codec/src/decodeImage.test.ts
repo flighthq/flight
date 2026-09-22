@@ -1,70 +1,71 @@
-import type { DecodedImage, ImageDecodeOptions } from '@flighthq/types/contract';
+import type {
+  DecodedImage,
+  HostImageDecodeCapabilities,
+  HostImageDecodeFormatCapability,
+} from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
 import { decodeImage, decodeImagePremultiplied } from './decodeImage';
-import { clearImageDecoders, registerImageDecoder } from './imageDecoderRegistry';
 
-// PNG magic bytes so the omitted-mimeType path resolves through detectImageMimeType.
 const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 function fakeDecoded(): DecodedImage {
   return { data: new Uint8ClampedArray([1, 2, 3, 4]), width: 1, height: 1 };
 }
 
-afterEach(() => {
-  clearImageDecoders();
-});
+function fakeSlot(): HostImageDecodeFormatCapability {
+  return { decode: vi.fn(async () => fakeDecoded()) };
+}
 
 describe('decodeImage', () => {
-  it('auto-detects the MIME type when omitted and dispatches to the registered decoder', async () => {
-    const decoder = vi.fn(async () => fakeDecoded());
-    registerImageDecoder('image/png', decoder);
-    const result = await decodeImage(pngBytes);
+  it('auto-detects the MIME type when omitted and dispatches to the capability slot', async () => {
+    const slot = fakeSlot();
+    const caps: HostImageDecodeCapabilities = { png: slot };
+    const result = await decodeImage(caps, pngBytes);
     expect(result).toEqual(fakeDecoded());
-    expect(decoder).toHaveBeenCalledWith(pngBytes);
+    expect(slot.decode).toHaveBeenCalledWith(pngBytes);
   });
 
   it('uses an explicit MIME type over detection', async () => {
-    const decoder = vi.fn(async () => fakeDecoded());
-    registerImageDecoder('image/jpeg', decoder);
-    await decodeImage(pngBytes, 'image/jpeg');
-    expect(decoder).toHaveBeenCalledOnce();
+    const slot = fakeSlot();
+    const caps: HostImageDecodeCapabilities = { jpeg: slot };
+    await decodeImage(caps, pngBytes, 'image/jpeg');
+    expect(slot.decode).toHaveBeenCalledOnce();
   });
 
-  it('returns null when no decoder is registered', async () => {
-    expect(await decodeImage(pngBytes)).toBeNull();
+  it('returns null when no slot is present for the detected type', async () => {
+    expect(await decodeImage({}, pngBytes)).toBeNull();
   });
 
   it('returns null when the MIME type cannot be determined', async () => {
-    expect(await decodeImage(new Uint8Array([0, 1, 2, 3]))).toBeNull();
+    const caps: HostImageDecodeCapabilities = { png: fakeSlot() };
+    expect(await decodeImage(caps, new Uint8Array([0, 1, 2, 3]))).toBeNull();
   });
 
   it('does not request premultiplied output', async () => {
-    const decoder = vi.fn(async () => fakeDecoded());
-    registerImageDecoder('image/png', decoder);
-    await decodeImage(pngBytes);
-    expect(decoder).toHaveBeenCalledWith(pngBytes);
+    const slot = fakeSlot();
+    const caps: HostImageDecodeCapabilities = { png: slot };
+    await decodeImage(caps, pngBytes);
+    expect(slot.decode).toHaveBeenCalledWith(pngBytes);
   });
 });
 
 describe('decodeImagePremultiplied', () => {
-  it('passes premultiplyAlpha true to the decoder', async () => {
-    const decoder = vi.fn(async (_bytes: Readonly<Uint8Array>, _options?: Readonly<ImageDecodeOptions>) =>
-      fakeDecoded(),
-    );
-    registerImageDecoder('image/png', decoder);
-    await decodeImagePremultiplied(pngBytes, 'image/png');
-    expect(decoder).toHaveBeenCalledWith(pngBytes, { premultiplyAlpha: true });
+  it('passes premultiplyAlpha true to the slot', async () => {
+    const slot = fakeSlot();
+    const caps: HostImageDecodeCapabilities = { png: slot };
+    await decodeImagePremultiplied(caps, pngBytes, 'image/png');
+    expect(slot.decode).toHaveBeenCalledWith(pngBytes, { premultiplyAlpha: true });
   });
 
   it('auto-detects the MIME type when omitted', async () => {
-    const decoder = vi.fn(async () => fakeDecoded());
-    registerImageDecoder('image/png', decoder);
-    expect(await decodeImagePremultiplied(pngBytes)).toEqual(fakeDecoded());
-    expect(decoder).toHaveBeenCalledWith(pngBytes, { premultiplyAlpha: true });
+    const slot = fakeSlot();
+    const caps: HostImageDecodeCapabilities = { png: slot };
+    expect(await decodeImagePremultiplied(caps, pngBytes)).toEqual(fakeDecoded());
+    expect(slot.decode).toHaveBeenCalledWith(pngBytes, { premultiplyAlpha: true });
   });
 
-  it('returns null when no decoder is registered', async () => {
-    expect(await decodeImagePremultiplied(pngBytes)).toBeNull();
+  it('returns null when no slot is present for the detected type', async () => {
+    expect(await decodeImagePremultiplied({}, pngBytes)).toBeNull();
   });
 });

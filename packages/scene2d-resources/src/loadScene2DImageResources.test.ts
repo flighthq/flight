@@ -1,10 +1,15 @@
-import { clearImageDecoders, registerImageDecoder } from '@flighthq/image-codec/contract';
 // @vitest-environment jsdom
 import { createEmbeddedImageResourceReference, createExternalImageResourceReference } from '@flighthq/image/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { connectSignal, createSignal } from '@flighthq/signals/contract';
 import { createTexture, getTextureSource } from '@flighthq/texture/contract';
-import type { ImageResource, ImageResourceReference, Scene2DImageResourceLoadProgress } from '@flighthq/types/contract';
+import type {
+  HostImageDecodeCapabilities,
+  HostImageDecodeFormatCapability,
+  ImageResource,
+  ImageResourceReference,
+  Scene2DImageResourceLoadProgress,
+} from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ResourceResolutionState } from '@flighthq/types/contract';
 
 import { loadScene2DImageResources } from './loadScene2DImageResources';
@@ -12,20 +17,26 @@ import { createScene2DDocument } from './scene2DDocument';
 
 const fetchedImage = { height: 4, width: 4 } as ImageResource;
 
+const fakeSlot: HostImageDecodeFormatCapability = {
+  decode: vi.fn().mockResolvedValue({
+    data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0xff]),
+    height: 1,
+    width: 1,
+  }),
+};
+
+const caps: HostImageDecodeCapabilities = { png: fakeSlot };
+
 function externalResource(uri: string): ImageResourceReference {
   return createExternalImageResourceReference(uri);
 }
 
 beforeEach(() => {
-  registerImageDecoder('image/png', async () => ({
+  vi.mocked(fakeSlot.decode).mockResolvedValue({
     data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0xff]),
     height: 1,
     width: 1,
-  }));
-});
-
-afterEach(() => {
-  clearImageDecoders();
+  });
 });
 
 describe('loadScene2DImageResources', () => {
@@ -37,7 +48,7 @@ describe('loadScene2DImageResources', () => {
     const document = createScene2DDocument(createDisplayObject(), [], 'acme', null, [reference]);
     const fetch = vi.fn().mockResolvedValue(fetchedImage);
 
-    const resources = await loadScene2DImageResources(document, { fetch });
+    const resources = await loadScene2DImageResources(caps, document, { fetch });
 
     expect(fetch).toHaveBeenCalledOnce();
     expect(getTextureSource(tiled)).toBe(fetchedImage);
@@ -51,7 +62,7 @@ describe('loadScene2DImageResources', () => {
     const texture = createTexture();
     reference.textures = [texture];
     const before = texture.version;
-    await loadScene2DImageResources(createScene2DDocument(createDisplayObject(), [], 'acme', null, [reference]), {
+    await loadScene2DImageResources(caps, createScene2DDocument(createDisplayObject(), [], 'acme', null, [reference]), {
       fetch: () => Promise.resolve(fetchedImage),
     });
     expect(texture.version).not.toBe(before);
@@ -62,6 +73,7 @@ describe('loadScene2DImageResources', () => {
     const texture = createTexture();
     reference.textures = [texture];
     const resources = await loadScene2DImageResources(
+      caps,
       createScene2DDocument(createDisplayObject(), [], 'acme', null, [reference]),
       { fetch: () => Promise.resolve(null) },
     );
@@ -74,6 +86,7 @@ describe('loadScene2DImageResources', () => {
   it('reports a miss rather than demanding a fetch seam a document has no use for', async () => {
     const reference = externalResource('atlas.png');
     const resources = await loadScene2DImageResources(
+      caps,
       createScene2DDocument(createDisplayObject(), [], 'acme', null, [reference]),
     );
     expect(resources.unresolved).toEqual([reference]);
@@ -84,6 +97,7 @@ describe('loadScene2DImageResources', () => {
     const skipped = externalResource('b.png');
     const fetch = vi.fn().mockResolvedValue(fetchedImage);
     const resources = await loadScene2DImageResources(
+      caps,
       createScene2DDocument(createDisplayObject(), [], 'acme', null, [selected, skipped]),
       { fetch, select: (reference) => reference === selected },
     );
@@ -101,7 +115,10 @@ describe('loadScene2DImageResources', () => {
       externalResource('b.png'),
     ]);
 
-    await loadScene2DImageResources(document, { fetch: () => Promise.resolve(fetchedImage), progress });
+    await loadScene2DImageResources(caps, document, {
+      fetch: () => Promise.resolve(fetchedImage),
+      progress,
+    });
 
     expect(events.map((event) => event.loaded)).toEqual([1, 2]);
     expect(events.every((event) => event.total === 2)).toBe(true);
@@ -112,6 +129,7 @@ describe('loadScene2DImageResources', () => {
     const texture = createTexture();
     reference.textures = [texture];
     const resources = await loadScene2DImageResources(
+      caps,
       createScene2DDocument(createDisplayObject(), [], 'acme', null, [reference]),
     );
     expect(resources.resolved).toEqual([reference]);

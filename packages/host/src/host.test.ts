@@ -82,6 +82,8 @@ const HOST_GROUPS = [
   'glyph',
   'haptics',
   'image',
+  'imageDecode',
+  'imageEncode',
   'input',
   'ipc',
   'lifecycle',

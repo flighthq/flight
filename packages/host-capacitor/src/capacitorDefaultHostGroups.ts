@@ -1,4 +1,4 @@
-import { webHostTextShaperGroup } from '@flighthq/host-web/contract';
+import { webHostImageDecode, webHostImageEncode, webHostTextShaperGroup } from '@flighthq/host-web/contract';
 import type {
   HostAccessibilityCapabilities,
   HostAudioCapabilities,
@@ -8,6 +8,8 @@ import type {
   HostGlCapabilities,
   HostGlyphCapabilities,
   HostImageCapabilities,
+  HostImageDecodeCapabilities,
+  HostImageEncodeCapabilities,
   HostInputCapabilities,
   HostIpcCapabilities,
   HostLifecycleCapabilities,
@@ -82,6 +84,14 @@ export function capacitorHostGlyph(): HostGlyphCapabilities {
 
 export function capacitorHostImage(): HostImageCapabilities {
   return {};
+}
+
+export function capacitorHostImageDecode(): HostImageDecodeCapabilities {
+  return webHostImageDecode;
+}
+
+export function capacitorHostImageEncode(): HostImageEncodeCapabilities {
+  return webHostImageEncode;
 }
 
 export function capacitorHostInput(): HostInputCapabilities {

@@ -123,13 +123,18 @@ describe('resolveOneScene3DResourceTexture', () => {
     const ref = embeddedRef(null);
     const signal = new AbortController().signal;
     await resolveOneScene3DResourceTexture(resolver, ref, signal);
-    expect(imageModule.resolveImageResourceReference).toHaveBeenCalledWith(ref, resolver.fetch, signal);
+    expect(imageModule.resolveImageResourceReference).toHaveBeenCalledWith(
+      resolver.imageDecode ?? {},
+      ref,
+      resolver.fetch,
+      signal,
+    );
     disposeScene3DResourceResolver(resolver);
   });
 
   it('routes external refs through the resolver fetch seam', async () => {
     const fetch = vi.fn(async () => fakeImage);
-    vi.mocked(imageModule.resolveImageResourceReference).mockImplementation((ref, resolveFetch, signal) =>
+    vi.mocked(imageModule.resolveImageResourceReference).mockImplementation((_imageDecode, ref, resolveFetch, signal) =>
       ref.kind === ImageResourceReferenceKind.External ? resolveFetch(ref, signal) : Promise.resolve(null),
     );
     const resolver = createBuiltInScene3DResourceResolver(host.graphics.image, { fetch });
@@ -146,10 +151,10 @@ describe('resolveScene3DResources', () => {
   it('does not cancel acquisition owned by a streaming update', async () => {
     let loadSignal: AbortSignal | undefined;
     vi.mocked(imageModule.resolveImageResourceReference).mockImplementation(
-      (_ref, _fetch, signal) =>
+      (_imageDecode, _ref, _fetch, signal) =>
         new Promise<ImageResource>((_resolve, reject) => {
           loadSignal = signal;
-          signal?.addEventListener('abort', () => reject(signal.reason));
+          signal.addEventListener('abort', () => reject(signal.reason));
         }),
     );
     const ref = embeddedRef();
@@ -243,10 +248,10 @@ describe('updateScene3DResourceStreaming', () => {
   it('keeps a shared load alive until its final subscriber leaves the working set', async () => {
     let loadSignal: AbortSignal | undefined;
     vi.mocked(imageModule.resolveImageResourceReference).mockImplementation(
-      (_ref, _fetch, signal) =>
+      (_imageDecode, _ref, _fetch, signal) =>
         new Promise<ImageResource>((_resolve, reject) => {
           loadSignal = signal;
-          signal?.addEventListener('abort', () => reject(signal.reason));
+          signal.addEventListener('abort', () => reject(signal.reason));
         }),
     );
     const ref = embeddedRef();
@@ -303,20 +308,22 @@ describe('updateScene3DResourceStreaming', () => {
   });
 
   it('fails a texture whose external fetch returns null', async () => {
-    vi.mocked(imageModule.resolveImageResourceReference).mockImplementation(async (ref, fetch, signal) => {
-      if (ref.kind !== ImageResourceReferenceKind.External) return null;
-      const source = await fetch(ref, signal);
-      if (source === null) {
-        ref.failure = {
-          [EntityRuntimeKey]: undefined,
-          kind: ImageResourceFailureKind.Unavailable,
-          message: 'ImageResource resource unavailable',
-          name: null,
-        };
-        ref.state = ResourceResolutionState.Failed;
-      }
-      return source;
-    });
+    vi.mocked(imageModule.resolveImageResourceReference).mockImplementation(
+      async (_imageDecode, ref, fetch, signal) => {
+        if (ref.kind !== ImageResourceReferenceKind.External) return null;
+        const source = await fetch(ref, signal);
+        if (source === null) {
+          ref.failure = {
+            [EntityRuntimeKey]: undefined,
+            kind: ImageResourceFailureKind.Unavailable,
+            message: 'ImageResource resource unavailable',
+            name: null,
+          };
+          ref.state = ResourceResolutionState.Failed;
+        }
+        return source;
+      },
+    );
     const texture = createTexture({ resource: externalRef() });
     const scene = meshScene3D(texture);
     const resolver = createBuiltInScene3DResourceResolver(host.graphics.image, { fetch: async () => null });
@@ -356,10 +363,10 @@ describe('updateScene3DResourceStreaming', () => {
     const loadSignals: AbortSignal[] = [];
     // A load that hangs until its signal aborts, so we can drop it mid-flight.
     vi.mocked(imageModule.resolveImageResourceReference).mockImplementation(
-      (_ref, _fetch, signal) =>
+      (_imageDecode, _ref, _fetch, signal) =>
         new Promise<ImageResource>((_resolve, reject) => {
-          if (signal !== undefined) loadSignals.push(signal);
-          signal?.addEventListener('abort', () => reject(signal.reason));
+          loadSignals.push(signal);
+          signal.addEventListener('abort', () => reject(signal.reason));
         }),
     );
     const texture = pendingTexture();

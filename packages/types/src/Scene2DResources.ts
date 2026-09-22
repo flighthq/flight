@@ -1,5 +1,6 @@
 import type { AudioResourceFetch, AudioResourceReference } from './AudioResourceReference';
 import type { Entity } from './Entity';
+import type { ImageDecodeFallback } from './ImageDecoder';
 import type { ImageResourceFetch, ImageResourceReference } from './ImageResourceReference';
 import type { Node2D } from './Node2D';
 import type { Scene2DDocument, Scene2DSlotReference } from './Scene2DDocument';
@@ -83,6 +84,7 @@ export interface Scene2DImageResources {
 }
 
 export interface LoadScene2DImageResourcesOptions {
+  decode?: ImageDecodeFallback;
   // Resolves an External reference's uri. A document whose images are all embedded never needs one.
   fetch?: ImageResourceFetch;
   progress?: Signal<(event: Readonly<Scene2DImageResourceLoadProgress>) => void>;

@@ -1,4 +1,4 @@
-import { webHostTextShaperGroup } from '@flighthq/host-web/contract';
+import { webHostImageDecode, webHostImageEncode, webHostTextShaperGroup } from '@flighthq/host-web/contract';
 import type {
   HostAccessibilityCapabilities,
   HostAudioCapabilities,
@@ -13,6 +13,8 @@ import type {
   HostGlyphCapabilities,
   HostHapticsCapabilities,
   HostImageCapabilities,
+  HostImageDecodeCapabilities,
+  HostImageEncodeCapabilities,
   HostInputCapabilities,
   HostIpcCapabilities,
   HostLifecycleCapabilities,
@@ -104,6 +106,14 @@ export function tauriHostHaptics(): HostHapticsCapabilities {
 
 export function tauriHostImage(): HostImageCapabilities {
   return {};
+}
+
+export function tauriHostImageDecode(): HostImageDecodeCapabilities {
+  return webHostImageDecode;
+}
+
+export function tauriHostImageEncode(): HostImageEncodeCapabilities {
+  return webHostImageEncode;
 }
 
 export function tauriHostInput(): HostInputCapabilities {

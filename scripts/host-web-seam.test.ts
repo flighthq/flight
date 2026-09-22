@@ -47,8 +47,6 @@ const MOVED_TO_HOST_WEB = [
   'initializeWebImageResourceFromImageBitmap',
   'initializeWebImageResourceFromImageElement',
   'registerWebImageBitmapComposer',
-  'registerWebImageDecoders',
-  'registerWebImageEncoders',
   'unregisterWebImageBitmapComposer',
 ];
 

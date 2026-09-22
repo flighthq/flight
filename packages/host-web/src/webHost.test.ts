@@ -27,6 +27,8 @@ const GROUPS = [
   ['glyph', 'webHostGlyph'],
   ['haptics', 'webHostHapticsGroup'],
   ['image', 'webHostImageGroup'],
+  ['imageDecode', 'webHostImageDecode'],
+  ['imageEncode', 'webHostImageEncode'],
   ['input', 'webHostInput'],
   ['ipc', 'webHostIpc'],
   ['lifecycle', 'webHostLifecycleGroup'],

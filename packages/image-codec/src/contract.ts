@@ -3,5 +3,3 @@ export * from './detectImageMimeType';
 export * from './encodeImage';
 export * from './explainImageDecodeFailure';
 export * from './explainImageEncodeFailure';
-export * from './imageDecoderRegistry';
-export * from './imageEncoderRegistry';
