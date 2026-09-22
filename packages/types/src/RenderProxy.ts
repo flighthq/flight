@@ -2,12 +2,12 @@ import type { BlendMode } from './BlendMode';
 import type { ColorScaleBias } from './ColorScaleBias';
 import type { Entity, Kind } from './Entity';
 import type { Material, MaterialData } from './Material';
+import type { NodeAny } from './Node';
 import type { NodeRenderer } from './NodeRenderer';
-import type { Renderable } from './Renderable';
 import type { RendererData } from './RendererData';
 
 export interface RenderProxy extends Entity {
-  source: Renderable;
+  source: NodeAny;
   kind: Kind;
   next: RenderProxy | null;
 
@@ -39,7 +39,7 @@ export interface RenderProxy extends Entity {
   name: string | null;
   renderer: NodeRenderer | null;
   rendererData: RendererData | null;
-  rendererDataSource: Renderable | null;
+  rendererDataSource: NodeAny | null;
   rendererMapId: number;
   transformFrameId: number;
   visible: boolean;

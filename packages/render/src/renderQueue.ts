@@ -8,7 +8,6 @@ import type {
   RenderQueueEntry,
   RenderSortKey,
   RenderState,
-  Renderable,
 } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';
@@ -20,7 +19,7 @@ import { getRenderStateRuntime } from './renderState';
 //
 // Does not advance the frame id — the prepare pass has already done that. Call
 // prepareScene2DRender before buildRenderQueue.
-export function buildRenderQueue(state: RenderState, source: Renderable, out: RenderQueue): void {
+export function buildRenderQueue(state: RenderState, source: NodeAny, out: RenderQueue): void {
   clearRenderQueue(out);
   const runtime = getRenderStateRuntime(state);
   const renderProxyMap = runtime.renderProxyMap;
@@ -37,9 +36,7 @@ export function buildRenderQueue(state: RenderState, source: Renderable, out: Re
       pushRenderQueueEntry(out, proxy, sceneOrder);
     }
     sceneOrder++;
-    // A Renderable is a node or a RenderCache leaf; only nodes carry children, and a cache yields a
-    // null-children runtime, so it is safe to read children through the node runtime view.
-    const children = getNodeRuntime(current as NodeAny).children;
+    const children = getNodeRuntime(current).children;
     if (children !== null) {
       for (let i = children.length - 1; i >= 0; i--) {
         stack[stackLength++] = children[i];
@@ -121,4 +118,4 @@ function compareRenderQueueEntriesByKey(a: RenderQueueEntry, b: RenderQueueEntry
 
 // Module-level scratch stack used by buildRenderQueue. Not shared with the per-state tempStack,
 // so prepare, draw, and queue-build can be interleaved safely.
-const _buildStack: Renderable[] = [];
+const _buildStack: NodeAny[] = [];

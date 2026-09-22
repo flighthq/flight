@@ -7,7 +7,7 @@ import type {
   MatrixLike,
   RenderProxy2D,
   RenderState,
-  Renderable,
+  NodeAny,
   RendererData,
   Scale9Shape,
   Scene2DRenderer,
@@ -28,7 +28,7 @@ interface DomScale9ShapeData extends RendererData {
 
 const _remappedCommands: ShapeCommandToken[] = [];
 
-export function createDomScale9ShapeData(_state: RenderState, _source: Renderable): DomScale9ShapeData {
+export function createDomScale9ShapeData(_state: RenderState, _source: NodeAny): DomScale9ShapeData {
   const out = allocateEntity<DomScale9ShapeData>();
   initializeDomScale9ShapeData(out, _state, _source);
   return finishEntity(out);
@@ -89,7 +89,7 @@ export function drawDomScale9Shape(state: DomRenderState, renderProxy: RenderPro
 export function initializeDomScale9ShapeData(
   out: EntityConstruction<DomScale9ShapeData>,
   _state: RenderState,
-  _source: Renderable,
+  _source: NodeAny,
 ): void {
   out.canvas = null;
   out.context = null;

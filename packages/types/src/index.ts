@@ -556,7 +556,7 @@ export * from './Rectangle';
 export * from './RectangleCollider';
 export * from './RiveDocument';
 export * from './RiveImportRegistry';
-export * from './Renderable';
+export * from './Node';
 export * from './RenderBlendStateEntry';
 export * from './RenderCache';
 export * from './RenderDrawContext';

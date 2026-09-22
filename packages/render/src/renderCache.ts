@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type {
-  Renderable,
+  NodeAny,
   RenderCache,
   RenderCacheAdapter,
   NodeRenderer,
@@ -41,7 +41,7 @@ export function enableRenderCacheAdapterSignals(adapter: RenderCacheAdapter): vo
  * Resolves the cache handle a cache renderer should composite for a render node, by reading the
  * cache adapter attached to the node's source on this state. Returns null if none is attached.
  */
-export function getRenderProxyCache(state: RenderState, source: Renderable): RenderCache | null {
+export function getRenderProxyCache(state: RenderState, source: NodeAny): RenderCache | null {
   const adapter = getRenderProxyAdapter(state, source);
   return isRenderCacheAdapter(adapter) ? (adapter.cache ?? null) : null;
 }
@@ -70,7 +70,7 @@ export function initializeRenderCacheAdapter(
   // after construction.
   adapter.cache = cache;
   adapter.signals = null as RenderCacheAdapter['signals'];
-  adapter.adapt = (_state: RenderState, _source: Renderable, node: RenderProxy2D): boolean | null => {
+  adapter.adapt = (_state: RenderState, _source: NodeAny, node: RenderProxy2D): boolean | null => {
     adapter.signals?.onPrepare.emit();
     const attached = adapter.cache ?? null;
     if (attached === null) return null;
@@ -106,7 +106,7 @@ export function registerRenderCacheNodeRenderer(state: RenderState, renderer: No
  * instead of rendering the source subtree. Reuses an existing cache adapter on the source
  * if present. The cache shows nothing until it is refreshed with content.
  */
-export function useRenderCache(state: RenderState, source: Renderable, cache: RenderCache): RenderCacheAdapter {
+export function useRenderCache(state: RenderState, source: NodeAny, cache: RenderCache): RenderCacheAdapter {
   const existing = getRenderProxyAdapter(state, source);
   if (isRenderCacheAdapter(existing)) {
     existing.cache = cache;

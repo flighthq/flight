@@ -20,7 +20,7 @@ import type {
   RenderProxy2D,
   RenderProxyVisitor,
   RenderState,
-  Renderable,
+  NodeAny,
 } from '@flighthq/types/contract';
 import { BlendMode, RegistryEntryState, RenderRegistryTable } from '@flighthq/types/contract';
 
@@ -29,9 +29,9 @@ import { updateRenderProxyMaterial } from './renderMaterial';
 import { getRenderStateRuntime } from './renderState';
 import { updateRenderProxy2DTransform } from './renderTransform2d';
 
-type AdaptHook = (state: RenderState, source: Renderable, data: RenderProxy2D) => void;
+type AdaptHook = (state: RenderState, source: NodeAny, data: RenderProxy2D) => void;
 
-export function createRenderProxy(state: RenderState, source: Renderable): RenderProxy {
+export function createRenderProxy(state: RenderState, source: NodeAny): RenderProxy {
   const out = allocateEntity<RenderProxy>();
   initializeRenderProxy(out, state, source);
   return finishEntity(out);
@@ -42,7 +42,7 @@ export function createRenderProxy(state: RenderState, source: Renderable): Rende
 // their source carries (the clip trait), not the render node type.
 export function createRenderProxy2D(
   state: RenderState,
-  source: Renderable & HasTransform2D & HasBoundsRectangle,
+  source: NodeAny & HasTransform2D & HasBoundsRectangle,
 ): RenderProxy2D {
   const node = createRenderProxy(state, source) as RenderProxy2D;
   node.transform2D = createMatrix();
@@ -55,7 +55,7 @@ export function createRenderProxy2D(
 // WeakMap, so this just makes the GC-managed proxy collectable sooner) and cascades to the
 // renderer's destroyData to free the non-GC GPU resources it owns. Call when a node is removed from
 // rendering for good — otherwise those GPU textures/framebuffers linger until the source is GC'd.
-export function disposeRenderProxy(state: RenderState, source: Renderable): void {
+export function disposeRenderProxy(state: RenderState, source: NodeAny): void {
   const runtime = getRenderStateRuntime(state);
   const renderProxyMap = runtime.renderProxyMap;
   const node = renderProxyMap.get(source);
@@ -72,16 +72,16 @@ export function disposeRenderProxy(state: RenderState, source: Renderable): void
 // there is no mask proxy to dispose separately (masks were retired into clips). Call after
 // removeNodeChild for nodes that will never be rendered again. Unlike prepareScene2DRender, this visits
 // all nodes regardless of enabled or visible state.
-export function disposeScene2DRender(state: RenderState, root: Renderable): void {
+export function disposeScene2DRender(state: RenderState, root: NodeAny): void {
   walkRenderSubtree(state, root, disposeRenderProxy);
 }
 
-export function getOrCreateRenderProxy2D(state: RenderState, source: Renderable): RenderProxy2D {
+export function getOrCreateRenderProxy2D(state: RenderState, source: NodeAny): RenderProxy2D {
   const runtime = getRenderStateRuntime(state);
   const renderProxyMap = runtime.renderProxyMap;
   let node = renderProxyMap.get(source) as RenderProxy2D | undefined;
   if (!node) {
-    node = createRenderProxy2D(state, source as Renderable & HasTransform2D & HasBoundsRectangle);
+    node = createRenderProxy2D(state, source as NodeAny & HasTransform2D & HasBoundsRectangle);
     renderProxyMap.set(source, node);
     runtime.renderProxySources.add(source);
   }
@@ -91,15 +91,11 @@ export function getOrCreateRenderProxy2D(state: RenderState, source: Renderable)
   return node;
 }
 
-export function getRenderProxy2D(state: RenderState, source: Renderable): RenderProxy2D | undefined {
+export function getRenderProxy2D(state: RenderState, source: NodeAny): RenderProxy2D | undefined {
   return getRenderStateRuntime(state).renderProxyMap.get(source) as RenderProxy2D | undefined;
 }
 
-export function initializeRenderProxy(
-  out: EntityConstruction<RenderProxy>,
-  state: RenderState,
-  source: Renderable,
-): void {
+export function initializeRenderProxy(out: EntityConstruction<RenderProxy>, state: RenderState, source: NodeAny): void {
   const runtime = getRenderStateRuntime(state);
   const renderer = resolveRenderProxyRenderer(state, source.kind);
   out.source = source;
@@ -132,7 +128,7 @@ export function installRenderAdaptHook(state: RenderState, fn: AdaptHook): void 
 
 export function isRenderProxyDirty(
   state: RenderState,
-  source: Renderable,
+  source: NodeAny,
   data: RenderProxy,
   parentData?: RenderProxy,
 ): boolean {
@@ -161,17 +157,16 @@ export function isRenderProxyVisible(data: RenderProxy2D): boolean {
 // (Node + Node2D traits); the former per-graph prepares collapsed into this. Masks were retired
 // into clips, so there is no second tree pass; clips are realized by the backend clip hooks during the
 // draw walk, keyed off each node's `clip`.
-export function prepareScene2DRender(state: RenderState, source: Renderable): boolean {
+export function prepareScene2DRender(state: RenderState, source: NodeAny): boolean {
   return walkNode(state, source, updateRenderProxy2D);
 }
 
 // Sets a node's clip nesting depth from its parent. Stateless (derived from the parent's depth), so it
 // composes as a trait update step. Both display objects and sprites carry the HasClip trait; a null
 // clip contributes no depth (rect and path clips both count), so the same step is safe in every walk.
-// Render caches (the other Renderable) leave the field undefined, which is also null-ish.
 export function updateNodeClip(
   _state: RenderState,
-  source: Renderable,
+  source: NodeAny,
   data: RenderProxy2D,
   parentData: RenderProxy2D | undefined,
 ): void {
@@ -183,7 +178,7 @@ export function updateNodeClip(
 // then the clip nesting depth. Sprites and display objects share this single visitor.
 export function updateRenderProxy2D(
   state: RenderState,
-  source: Renderable,
+  source: NodeAny,
   data: RenderProxy2D,
   parentData: RenderProxy2D | undefined,
 ): void {
@@ -237,7 +232,7 @@ function resolveRenderProxyRenderer(state: RenderState, kind: string) {
 // update* steps. Sprites and display objects share this single traversal and a single render-node
 // type — what differs is the traits they carry, not the path. Clip is not handled here: it is a
 // trait update step in the visitor (updateNodeClip), realized at draw time by the backend clip hooks.
-export function walkNode(state: RenderState, root: Renderable, visit: RenderProxyVisitor): boolean {
+export function walkNode(state: RenderState, root: NodeAny, visit: RenderProxyVisitor): boolean {
   const runtime = getRenderStateRuntime(state);
   const rootGuardTable = runtime.registries.renderRootGuard;
   if (rootGuardTable) getRegistryTableEntry(rootGuardTable, rootGuardTable.registry)?.(state, root);
@@ -252,7 +247,7 @@ export function walkNode(state: RenderState, root: Renderable, visit: RenderProx
   let treeDirty = false;
 
   while (stackLength > 0) {
-    const current = tempStack[--stackLength] as Renderable;
+    const current = tempStack[--stackLength] as NodeAny;
     if (!(current as Node).enabled) continue;
 
     if (current !== root) {
@@ -261,7 +256,7 @@ export function walkNode(state: RenderState, root: Renderable, visit: RenderProx
         parentData = undefined;
         lastParent = undefined;
       } else if (parent !== lastParent) {
-        parentData = getOrCreateRenderProxy2D(state, parent as unknown as Renderable);
+        parentData = getOrCreateRenderProxy2D(state, parent);
         lastParent = parent;
       }
     }
@@ -279,7 +274,7 @@ export function walkNode(state: RenderState, root: Renderable, visit: RenderProx
       const children = getNodeRuntime(current as Node).children;
       if (children !== null) {
         for (let i = children.length - 1; i >= 0; i--) {
-          tempStack[stackLength++] = children[i] as unknown as Renderable;
+          tempStack[stackLength++] = children[i];
         }
       }
     }
@@ -294,20 +289,20 @@ export function walkNode(state: RenderState, root: Renderable, visit: RenderProx
 // dispose* render-teardown functions. Uses state.tempStack as scratch, so it must not run re-entrantly.
 function walkRenderSubtree(
   state: RenderState,
-  root: Renderable,
-  visit: (state: RenderState, node: Renderable) => void,
+  root: NodeAny,
+  visit: (state: RenderState, node: NodeAny) => void,
 ): void {
   const tempStack = getRenderStateRuntime(state).tempStack;
   let stackLength = 1;
   tempStack[0] = root;
 
   while (stackLength > 0) {
-    const current = tempStack[--stackLength] as Renderable;
+    const current = tempStack[--stackLength] as NodeAny;
     visit(state, current);
     const children = getNodeRuntime(current as Node).children;
     if (children !== null) {
       for (let i = children.length - 1; i >= 0; i--) {
-        tempStack[stackLength++] = children[i] as unknown as Renderable;
+        tempStack[stackLength++] = children[i];
       }
     }
   }

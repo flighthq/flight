@@ -14,7 +14,7 @@ import type {
   ImageSurface,
   ImageSurfaceCreator,
   RenderProxy2D,
-  Renderable,
+  NodeAny,
   RendererData,
   Scale9Shape,
   Scene2DRenderer,
@@ -51,7 +51,7 @@ export function acquireGlScale9ShapeRasterSurface(
   return surface;
 }
 
-export function createGlScale9ShapeData(_state: GlRenderState, _source: Renderable): RendererData | null {
+export function createGlScale9ShapeData(_state: GlRenderState, _source: NodeAny): RendererData | null {
   const out = allocateEntity<GlScale9ShapeData>();
   initializeGlScale9ShapeData(out, _state, _source);
   return finishEntity(out);
@@ -174,7 +174,7 @@ export const glScale9ShapeRenderer: Scene2DRenderer = {
 export function initializeGlScale9ShapeData(
   out: EntityConstruction<GlScale9ShapeData>,
   _state: GlRenderState,
-  _source: Renderable,
+  _source: NodeAny,
 ): void {
   out.lastH = 0;
   out.lastScaleX = -1;

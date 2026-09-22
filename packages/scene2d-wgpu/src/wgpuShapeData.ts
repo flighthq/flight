@@ -3,7 +3,7 @@ import { createImageSurface, destroyImageSurface } from '@flighthq/render/contra
 import type {
   ImageSurface,
   ImageSurfaceCreator,
-  Renderable,
+  NodeAny,
   RendererData,
   RenderState,
   WgpuRenderState,
@@ -29,7 +29,7 @@ export function acquireWgpuShapeRasterSurface(
 
 // Shared by all three shape strategies so a node keeps one cache whichever one draws it. Both halves
 // start empty: nothing is allocated until a strategy needs it.
-export function createWgpuShapeData(_state: RenderState, _source: Renderable): RendererData {
+export function createWgpuShapeData(_state: RenderState, _source: NodeAny): RendererData {
   return createWgpuRendererData({
     surface: null,
     lastContentId: -1,

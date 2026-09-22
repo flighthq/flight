@@ -14,7 +14,7 @@ import type {
   ImageSurface,
   ImageSurfaceCreator,
   RenderProxy2D,
-  Renderable,
+  NodeAny,
   RendererData,
   Scene2DRenderer,
   TextFormat,
@@ -50,7 +50,7 @@ function getGlTextLabelData(data: RendererData): GlTextLabelData {
   return data as GlTextLabelData;
 }
 
-function createGlTextLabelData(_state: GlRenderState, _source: Renderable): RendererData {
+function createGlTextLabelData(_state: GlRenderState, _source: NodeAny): RendererData {
   const out = allocateEntity<GlTextLabelData>();
   initializeGlTextLabelData(out);
   return finishEntity(out);

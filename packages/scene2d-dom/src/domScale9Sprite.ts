@@ -6,7 +6,7 @@ import type {
   EntityConstruction,
   RenderProxy2D,
   RenderState,
-  Renderable,
+  NodeAny,
   RendererData,
   Scale9Sprite,
   Scene2DRenderer,
@@ -19,7 +19,7 @@ interface DomScale9SpriteData extends RendererData {
   element: HTMLDivElement | null;
   pieces: HTMLCanvasElement[];
 }
-export function createDomScale9SpriteData(_state: RenderState, _source: Renderable): DomScale9SpriteData {
+export function createDomScale9SpriteData(_state: RenderState, _source: NodeAny): DomScale9SpriteData {
   const out = allocateEntity<DomScale9SpriteData>();
   initializeDomScale9SpriteData(out, _state, _source);
   return finishEntity(out);
@@ -91,7 +91,7 @@ export function drawDomScale9Sprite(state: DomRenderState, renderProxy: RenderPr
 export function initializeDomScale9SpriteData(
   out: EntityConstruction<DomScale9SpriteData>,
   _state: RenderState,
-  _source: Renderable,
+  _source: NodeAny,
 ): void {
   out.element = null;
   out.pieces = [];

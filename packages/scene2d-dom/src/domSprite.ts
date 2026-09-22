@@ -3,7 +3,7 @@ import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene
 import { getTextureHeight, getTextureViewSize, getTextureWidth } from '@flighthq/texture/contract';
 import type {
   DomRenderState,
-  Renderable,
+  NodeAny,
   RenderProxy2D,
   RenderState,
   Scene2DRenderer,
@@ -22,7 +22,7 @@ interface DomSpriteData extends SpriteIdentityRendererData {
   video: HTMLVideoElement | null;
 }
 
-function createDomSpriteData(state: RenderState, source: Renderable): DomSpriteData {
+function createDomSpriteData(state: RenderState, source: NodeAny): DomSpriteData {
   const data = createSpriteRendererData(state, source) as DomSpriteData;
   data.canvas = null;
   data.context = null;

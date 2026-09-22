@@ -2,7 +2,7 @@ import type {
   Scene2DRenderBlankReason,
   Scene2DRenderExplanation,
   HasAppearance,
-  Renderable,
+  NodeAny,
   RenderState,
 } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
@@ -26,7 +26,7 @@ import { getRenderStateRuntime } from './renderState';
 // prepareScene2DRender (renderProxy.ts), and buildRenderQueue (renderQueue.ts). This is the
 // maintenance seam: a pull query duplicates the draw path's drop conditions, so if the draw path grows
 // a new blank-reason gate, this function must gain the matching check or it silently goes stale.
-export function explainScene2DRender(state: RenderState, source: Renderable): Scene2DRenderExplanation {
+export function explainScene2DRender(state: RenderState, source: NodeAny): Scene2DRenderExplanation {
   const kind = source.kind;
   const hasRenderer =
     getRenderStateRuntime(state).registries.nodeRenderers.entries.get(kind)?.state === RegistryEntryState.Bound;

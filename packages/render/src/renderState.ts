@@ -4,7 +4,7 @@ import type {
   ColorAdjustmentUnsupportedGuard,
   RenderState,
   RenderStateRuntime,
-  Renderable,
+  NodeAny,
   EntityConstruction,
 } from '@flighthq/types/contract';
 import { BlendMode, EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
@@ -75,7 +75,7 @@ export function initializeRenderState(state: EntityConstruction<RenderState>, ob
   state[EntityRuntimeKey] = createRenderStateRuntime();
 }
 
-function disposeRenderProxyForShutdown(state: RenderState, source: Renderable): void {
+function disposeRenderProxyForShutdown(state: RenderState, source: NodeAny): void {
   const runtime = getRenderStateRuntime(state);
   const proxy = runtime.renderProxyMap.get(source);
   if (proxy?.rendererData !== null && proxy?.rendererData !== undefined) {

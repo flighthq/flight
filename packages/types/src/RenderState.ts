@@ -3,11 +3,11 @@ import type { CanvasShapeCommand } from './CanvasShapeRegistry';
 import type { EffectPaddingResolver } from './EffectPadding';
 import type { Entity, EntityRuntime, Kind } from './Entity';
 import type { ImageSurfaceCreator } from './ImageSurface';
+import type { NodeAny } from './Node';
 import type { NodeRenderer } from './NodeRenderer';
 import type { Path } from './Path';
 import type { PathMesh } from './PathMesh';
 import type { KeyedTable, SlotTable } from './RegistryTable';
-import type { Renderable } from './Renderable';
 import type { RenderProxy } from './RenderProxy';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderProxyAdapter } from './RenderProxyAdapter';
@@ -60,8 +60,8 @@ export interface RenderRegistries {
   strokeTessellator: SlotTable<StrokeTessellator> | null;
 }
 
-export type ColorAdjustmentUnsupportedGuard = (state: RenderState, source: Renderable) => void;
-export type RenderRootGuard = (state: RenderState, root: Renderable) => void;
+export type ColorAdjustmentUnsupportedGuard = (state: RenderState, source: NodeAny) => void;
+export type RenderRootGuard = (state: RenderState, root: NodeAny) => void;
 
 /**
  * Tessellates a stroked path into a mesh, or `null` when the stroke has no representable geometry.
@@ -95,12 +95,12 @@ export type StrokeTessellator = (
 // @flighthq/types — the header layer — so out-of-package code can reach the same state.
 export interface RenderStateRuntime extends EntityRuntime {
   currentFrameId: number;
-  renderAdaptHook: ((state: RenderState, source: Renderable, data: RenderProxy2D) => void) | null;
-  renderProxyAdapterMap: WeakMap<Renderable, RenderProxyAdapter>;
-  renderProxyMap: WeakMap<Renderable, RenderProxy>;
+  renderAdaptHook: ((state: RenderState, source: NodeAny, data: RenderProxy2D) => void) | null;
+  renderProxyAdapterMap: WeakMap<NodeAny, RenderProxyAdapter>;
+  renderProxyMap: WeakMap<NodeAny, RenderProxy>;
   // WeakMap alone cannot support deterministic shutdown. This companion set contains exactly the
   // sources with live proxies so destroyRenderState can run every renderer's destroyData hook.
-  renderProxySources: Set<Renderable>;
+  renderProxySources: Set<NodeAny>;
   // Opt-in, shakeable registry-miss seam. Core dispatch retains only this nullable callback; the
   // signal allocation/emission and warning policy live in the separately imported diagnostics lane.
   registryMiss:
@@ -113,5 +113,5 @@ export interface RenderStateRuntime extends EntityRuntime {
   // Advances whenever the persistent renderer table is replaced so existing proxies re-resolve their
   // renderer before reuse. The table itself lives in registries.nodeRenderers with the rest of the policy.
   rendererMapId: number;
-  tempStack: Renderable[];
+  tempStack: NodeAny[];
 }

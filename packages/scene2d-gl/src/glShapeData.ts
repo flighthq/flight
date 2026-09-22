@@ -7,7 +7,7 @@ import type {
   GlShapeRendererData,
   ImageSurface,
   ImageSurfaceCreator,
-  Renderable,
+  NodeAny,
   RendererData,
 } from '@flighthq/types/contract';
 
@@ -27,7 +27,7 @@ export function acquireGlShapeRasterSurface(
   return surface;
 }
 
-export function createGlShapeData(_state: GlRenderState, _source: Renderable): RendererData | null {
+export function createGlShapeData(_state: GlRenderState, _source: NodeAny): RendererData | null {
   const out = allocateEntity<GlShapeRendererData>();
   initializeGlShapeData(out, _state, _source);
   return finishEntity(out);
@@ -57,7 +57,7 @@ export function getGlShapeData(data: RendererData): GlShapeRendererData {
 export function initializeGlShapeData(
   out: EntityConstruction<GlShapeRendererData>,
   _state: GlRenderState,
-  _source: Renderable,
+  _source: NodeAny,
 ): void {
   out.surface = null;
   out.lastContentId = -1;

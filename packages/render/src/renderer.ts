@@ -1,5 +1,5 @@
 import { getRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
-import type { Kind, Renderable, NodeRenderer, RendererData, RenderState } from '@flighthq/types/contract';
+import type { Kind, NodeAny, NodeRenderer, RendererData, RenderState } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';
@@ -52,7 +52,7 @@ export function copyRenderStateRegistrations(target: RenderState, source: Render
   targetRuntime.registries.strokeTessellator = sourceRuntime.registries.strokeTessellator;
 }
 
-export function noopRendererData(_state: RenderState, _source: Renderable): RendererData | null {
+export function noopRendererData(_state: RenderState, _source: NodeAny): RendererData | null {
   return null;
 }
 

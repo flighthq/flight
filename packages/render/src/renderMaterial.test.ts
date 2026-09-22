@@ -1,5 +1,5 @@
 import { createMaterial } from '@flighthq/materials/contract';
-import type { Renderable } from '@flighthq/types/contract';
+import type { NodeAny } from '@flighthq/types/contract';
 
 import { updateRenderProxyMaterial } from './renderMaterial';
 import { createRenderProxy } from './renderProxy';
@@ -12,7 +12,7 @@ describe('updateRenderProxyMaterial', () => {
     const state = createRenderState();
     const material = createMaterial(TestKind);
     const materialData = {};
-    const source = { kind: TestKind, material, materialData } as unknown as Renderable;
+    const source = { kind: TestKind, material, materialData } as unknown as NodeAny;
     const data = createRenderProxy(state, source);
     updateRenderProxyMaterial(state, data);
     expect(data.material).toBe(material);
@@ -21,7 +21,7 @@ describe('updateRenderProxyMaterial', () => {
 
   it('resolves to null when the source has no material', () => {
     const state = createRenderState();
-    const source = { kind: TestKind } as unknown as Renderable;
+    const source = { kind: TestKind } as unknown as NodeAny;
     const data = createRenderProxy(state, source);
     updateRenderProxyMaterial(state, data);
     expect(data.material).toBeNull();

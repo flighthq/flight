@@ -2,14 +2,7 @@ import { multiplyColorMatrix } from '@flighthq/adjustments/contract';
 import { concatColorScaleBias, createColorScaleBias } from '@flighthq/materials/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
 import { createSlotTable } from '@flighthq/registry/contract';
-import type {
-  ColorAdjustmentRuntime,
-  ColorScaleBias,
-  Node,
-  Renderable,
-  RenderProxy,
-  RenderState,
-} from '@flighthq/types/contract';
+import type { ColorAdjustmentRuntime, ColorScaleBias, Node, RenderProxy, RenderState } from '@flighthq/types/contract';
 import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getColorAdjustmentUnsupportedGuard, getRenderStateRuntime } from './renderState';
@@ -69,7 +62,7 @@ function updateRenderProxyColorScaleBias(state: RenderState, data: RenderProxy, 
     );
   }
   if (runtime.colorAdjustmentsUnsupported) {
-    getColorAdjustmentUnsupportedGuard(state)?.(state, data.source as Renderable);
+    getColorAdjustmentUnsupportedGuard(state)?.(state, data.source);
   }
 }
 
