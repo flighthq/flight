@@ -549,8 +549,8 @@ describe('awd2 diagnostic crumb coverage', () => {
   );
 
   // The pose/animation truncation crumbs on the createScene3DFromAwd2 DOCUMENT path — the path the sink
-  // repair fixed. A valid skeleton drives buildAwdDocumentAnimations (and suppresses no-skeleton-blocks),
-  // so the truncated block's crumb is the ONLY diagnostic: assert the full set is exactly one, not merely
+  // repair fixed. A valid skeleton is what lets the skeleton family's build phase run at all, so the
+  // truncated block's crumb is the ONLY diagnostic: assert the full set is exactly one, not merely
   // that this kind appears among others.
   it.each(ANIM_PATH_TRUNCATIONS)(
     'records $kind (field $field) on the repaired createScene3DFromAwd2 document path',
@@ -2975,11 +2975,11 @@ function truncatedAwd(blockType: number, fullBody: Uint8Array, cut: number): Uin
   return concatBytes(buildAwdHeader(body.length), body);
 }
 
-// A VALID skeleton block followed by ONE truncated pose/animation block. Pose/animation blocks are not
-// parsed by parseAwd2's first walk, so the ONLY thing that parses them on the createScene3DFromAwd2 document
-// path is buildAwdDocumentAnimations — the exact call the sink-threading repair targeted. The valid
-// skeleton drives that second walk (and means no no-skeleton-blocks crumb is emitted), so the truncated
-// block's crumb is the sole diagnostic: this fixture regression-guards the repaired path directly.
+// A VALID skeleton block followed by ONE truncated pose/animation block. The pose and animation handlers
+// are `deferred`, so the registry walk parses those blocks on its SECOND pass and the skeleton family's
+// build phase turns them into document animations — the call the sink-threading repair targeted. The valid
+// skeleton is what lets that build phase run at all (it returns early when no joint nodes exist), so the
+// truncated block's crumb is the sole diagnostic: this fixture regression-guards the repaired path directly.
 function docPathTruncatedAwd(blockType: number, fullBody: Uint8Array, cut: number): Uint8Array {
   const skel = buildSkeletonBody('Rig', [{ name: 'Root', parentIndex: 0, transform: IDENTITY_TRANSFORM }]);
   const body = concatBytes(
@@ -3209,8 +3209,8 @@ const CREATE_PATH_TRUNCATIONS: Array<{
   },
 ];
 
-// Pose/animation blocks are NOT parsed by the first walk; parseAwd2SkeletonAnimations is their reporting
-// site (it also returns {} with a no-skeleton-blocks crumb, which expectOneCrumb ignores by kind).
+// Pose/animation blocks are parsed on the registry walk's SECOND pass, because their handlers are
+// `deferred`; each reports truncation from its own parse function's origin.
 const POSE_BODY_T = buildSkeletonPoseBody('', [IDENTITY_TRANSFORM]);
 const ANIM_BODY_T = buildSkeletonAnimationBody('', [{ duration: 100, poseBlockId: 1 }]);
 const ANIM_PATH_TRUNCATIONS: Array<{
@@ -3668,9 +3668,9 @@ describe('parseAwd2 unhandled blocks', () => {
   });
 
   it('reports nothing for skeleton pose and skeleton animation blocks', () => {
-    // These are consumed by the SECOND walk (buildAwdDocumentAnimations), which re-reads the block stream
-    // once the joint nodes exist. The first walk passing over them is deferral, not a gap — reporting
-    // them would put a false Drop on every skinned AWD file, including ones that import perfectly.
+    // Their handlers are `deferred`, so the registry walk claims these blocks on its SECOND pass, once
+    // the joint nodes exist. The first pass skipping them is deferral, not a gap — reporting them would
+    // put a false Drop on every skinned AWD file, including ones that import perfectly.
     const diagnostics: ImportDiagnostic[] = [];
     parseAwd2(
       fileWithBlocks([
