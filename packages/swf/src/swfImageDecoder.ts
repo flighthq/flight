@@ -2,6 +2,7 @@ import { convertBitmapAlphaType } from '@flighthq/bitmap/contract';
 import type { DecodedImage, HostDecompressDeflateCapability, ImageDecodeOptions } from '@flighthq/types/contract';
 
 import { createSwfLosslessBitmap } from './swfBitmap';
+import { SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageMimeType';
 
 export async function decodeSwfImage(
   bytes: Readonly<Uint8Array>,
@@ -31,5 +32,4 @@ async function decodeSwfLosslessImage(
   return { data: bitmap.data, height: bitmap.height, width: bitmap.width };
 }
 
-export const SWF_LOSSLESS_ALPHA_MIME_TYPE = 'image/x-swf-lossless-alpha';
-export const SWF_LOSSLESS_MIME_TYPE = 'image/x-swf-lossless';
+export { SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageMimeType';

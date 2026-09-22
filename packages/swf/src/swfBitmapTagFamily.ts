@@ -12,7 +12,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageDecoder';
+import { SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageMimeType';
 import { acquireSwfImageTexture } from './swfImageTexture';
 import { createSwfTexturedSprite } from './swfNode';
 import { resolveSwfDimensionBounds, readBigEndianUint16, readBigEndianUint32 } from './swfPrimitive';
