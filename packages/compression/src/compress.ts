@@ -1,3 +1,6 @@
+import type { HostCompressDeflateCapability } from '@flighthq/types/contract';
+import { CompressionFraming } from '@flighthq/types/contract';
+
 import { computeAdler32, DISTANCE_BASE, DISTANCE_EXTRA, LENGTH_BASE, LENGTH_EXTRA } from './deflateFormat';
 
 // Dependency-free, synchronous RFC 1951 (DEFLATE) and RFC 1950 (zlib) encoding, in its own module so a
@@ -35,6 +38,14 @@ export function compressDeflateZlib(bytes: Readonly<Uint8Array>): Uint8Array {
   out[trailer + 3] = checksum & 0xff;
   return out;
 }
+
+// The deflate compress slot Flight itself can fill, ready to drop into a Host's `compress` group.
+// Dispatches on framing to the matching encoder. Named for the Host slot it fills.
+export const sdkHostCompressDeflate: HostCompressDeflateCapability = {
+  compress(bytes: Readonly<Uint8Array>, framing: CompressionFraming): Uint8Array {
+    return framing === CompressionFraming.Rfc1950 ? compressDeflateZlib(bytes) : compressDeflate(bytes);
+  },
+};
 
 // Bit order is the format's, not one convention throughout: block headers and extra bits are packed
 // least-significant-bit first, while a Huffman code is packed most-significant-bit first. Mixing the two

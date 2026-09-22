@@ -1,6 +1,6 @@
 import { CompressionFraming } from '@flighthq/types/contract';
 
-import { compressDeflate, compressDeflateZlib } from './compress';
+import { compressDeflate, compressDeflateZlib, sdkHostCompressDeflate } from './compress';
 import { decompressDeflate } from './deflate';
 
 // Every round trip is checked through decompressDeflate, which was written independently of this encoder
@@ -172,5 +172,29 @@ describe('compressDeflateZlib', () => {
   it('produces the same bytes for the same input', () => {
     const bytes = new TextEncoder().encode('deterministic zlib output'.repeat(10));
     expect(compressDeflateZlib(bytes)).toEqual(compressDeflateZlib(bytes));
+  });
+});
+
+describe('sdkHostCompressDeflate', () => {
+  it('is a ready-made deflate slot carrying the portable encoder', () => {
+    expect(sdkHostCompressDeflate.compress).toBeTypeOf('function');
+  });
+
+  it('dispatches Raw framing to compressDeflate', () => {
+    const bytes = new TextEncoder().encode('slot raw framing'.repeat(10));
+    expect(sdkHostCompressDeflate.compress(bytes, CompressionFraming.Raw)).toEqual(compressDeflate(bytes));
+  });
+
+  it('dispatches Rfc1950 framing to compressDeflateZlib', () => {
+    const bytes = new TextEncoder().encode('slot zlib framing'.repeat(10));
+    expect(sdkHostCompressDeflate.compress(bytes, CompressionFraming.Rfc1950)).toEqual(compressDeflateZlib(bytes));
+  });
+
+  it('round-trips through decompressDeflate for both framings', () => {
+    const bytes = new TextEncoder().encode('round trip through the slot'.repeat(8));
+    const raw = sdkHostCompressDeflate.compress(bytes, CompressionFraming.Raw);
+    expect(decompressDeflate(raw, bytes.length, CompressionFraming.Raw)).toEqual(bytes);
+    const zlib = sdkHostCompressDeflate.compress(bytes, CompressionFraming.Rfc1950);
+    expect(decompressDeflate(zlib, bytes.length, CompressionFraming.Rfc1950)).toEqual(bytes);
   });
 });

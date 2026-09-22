@@ -33,6 +33,7 @@ import {
   tauriHostCanvas,
   tauriHostSurface,
   tauriHostTextSegment,
+  tauriHostCompress,
   tauriHostDecompress,
   tauriHostTextShaper,
   tauriHostUpdater,
@@ -52,6 +53,7 @@ describe('tauriHostBitmap', returnsEmptyGroup(tauriHostBitmap));
 describe('tauriHostCanvas', () => {
   it('claims no canvas slots', () => expect(tauriHostCanvas()).toEqual({}));
 });
+describe('tauriHostCompress', returnsEmptyGroup(tauriHostCompress));
 describe('tauriHostConnectivity', returnsEmptyGroup(tauriHostConnectivity));
 describe('tauriHostDecompress', returnsEmptyGroup(tauriHostDecompress));
 describe('tauriHostDevice', returnsEmptyGroup(tauriHostDevice));

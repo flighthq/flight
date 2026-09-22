@@ -29,6 +29,7 @@ import {
   electronHostCanvasGroup,
   electronHostSurfaceGroup,
   electronHostTextSegmentGroup,
+  electronHostCompressGroup,
   electronHostDecompressGroup,
   electronHostTextShaperGroup,
   electronHostVideoGroup,
@@ -72,6 +73,7 @@ const statusBarGroup = emptyGroup(() => electronHostStatusBarGroup(electron));
 const canvasGroup = emptyGroup(() => electronHostCanvasGroup(electron));
 const surfaceGroup = emptyGroup(() => electronHostSurfaceGroup(electron));
 const textSegmentGroup = emptyGroup(() => electronHostTextSegmentGroup(electron));
+const compressGroup = emptyGroup(() => electronHostCompressGroup(electron));
 const decompressGroup = emptyGroup(() => electronHostDecompressGroup(electron));
 const videoGroup = emptyGroup(() => electronHostVideoGroup(electron));
 const wgpuGroup = emptyGroup(() => electronHostWgpuGroup(electron));
@@ -80,6 +82,7 @@ describe('electronHostAccessibilityGroup', accessibilityGroup);
 describe('electronHostAudioGroup', audioGroup);
 describe('electronHostBitmapGroup', bitmapGroup);
 describe('electronHostCanvasGroup', canvasGroup);
+describe('electronHostCompressGroup', compressGroup);
 describe('electronHostConnectivityGroup', connectivityGroup);
 describe('electronHostDecompressGroup', decompressGroup);
 describe('electronHostDeviceGroup', deviceGroup);

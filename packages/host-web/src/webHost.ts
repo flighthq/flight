@@ -7,6 +7,7 @@ import { webHostAudioGroup } from './webAudioHost';
 import { webHostBitmap } from './webBitmapHost';
 import { webHostCanvasGroup } from './webCanvasHost';
 import { webHostClipboard } from './webClipboardHost';
+import { webHostCompress } from './webCompressHost';
 import { webHostConnectivity } from './webConnectivityHost';
 import { webHostDecompress } from './webDecompressHost';
 import { webHostDeviceGroup } from './webDeviceHost';
@@ -63,6 +64,7 @@ const groups = {
   bitmap: webHostBitmap,
   canvas: webHostCanvasGroup,
   clipboard: webHostClipboard,
+  compress: webHostCompress,
   connectivity: webHostConnectivity,
   device: webHostDeviceGroup,
   dialog: webHostDialog,

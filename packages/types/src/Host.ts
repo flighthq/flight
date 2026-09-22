@@ -50,6 +50,7 @@ import type {
   HostClipboardTextCapability,
 } from './Clipboard';
 import type {
+  HostCompressDeflateCapability,
   HostDecompressBrotliCapability,
   HostDecompressDeflateCapability,
   HostDecompressLzmaCapability,
@@ -217,6 +218,7 @@ export interface Host extends Entity {
   readonly bitmap: HostBitmapCapabilities;
   readonly canvas: HostCanvasCapabilities;
   readonly clipboard: HostClipboardCapabilities;
+  readonly compress: HostCompressCapabilities;
   readonly connectivity: HostConnectivityCapabilities;
   readonly decompress: HostDecompressCapabilities;
   readonly device: HostDeviceCapabilities;
@@ -309,6 +311,10 @@ export interface HostClipboardCapabilities {
   readonly formats?: HostClipboardFormatsCapability;
   readonly image?: HostClipboardImageCapability;
   readonly text?: HostClipboardTextCapability;
+}
+
+export interface HostCompressCapabilities {
+  readonly deflate?: HostCompressDeflateCapability;
 }
 
 export interface HostConnectivityCapabilities {

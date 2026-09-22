@@ -27,6 +27,7 @@ import type {
   HostCanvasCapabilities,
   HostSurfaceCapabilities,
   HostTextSegmentCapabilities,
+  HostCompressCapabilities,
   HostDecompressCapabilities,
   HostTextShaperCapabilities,
   HostTrayCapabilities,
@@ -52,6 +53,10 @@ export function capacitorHostBitmap(): HostBitmapCapabilities {
 }
 
 export function capacitorHostCanvas(): HostCanvasCapabilities {
+  return {};
+}
+
+export function capacitorHostCompress(): HostCompressCapabilities {
   return {};
 }
 

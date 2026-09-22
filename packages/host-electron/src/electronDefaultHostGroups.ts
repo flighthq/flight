@@ -4,6 +4,7 @@ import type {
   HostAccessibilityCapabilities,
   HostAudioCapabilities,
   HostBitmapCapabilities,
+  HostCompressCapabilities,
   HostConnectivityCapabilities,
   HostDeviceCapabilities,
   HostFileSystemCapabilities,
@@ -49,6 +50,10 @@ export function electronHostBitmapGroup(_electron: ElectronApi): HostBitmapCapab
 }
 
 export function electronHostCanvasGroup(_electron: ElectronApi): HostCanvasCapabilities {
+  return {};
+}
+
+export function electronHostCompressGroup(_electron: ElectronApi): HostCompressCapabilities {
   return {};
 }
 

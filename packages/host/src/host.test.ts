@@ -69,6 +69,7 @@ const HOST_GROUPS = [
   'bitmap',
   'canvas',
   'clipboard',
+  'compress',
   'connectivity',
   'decompress',
   'device',

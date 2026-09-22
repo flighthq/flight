@@ -53,3 +53,10 @@ export interface HostDecompressDeflateCapability {
 export interface HostDecompressLzmaCapability {
   decompress: Decompressor;
 }
+
+// Compression (encoding) the host supplies, one slot per algorithm. Mirrors the decompress slots but
+// takes only the bytes and the framing — there is no uncompressedLength because the encoder sees the
+// whole input. Plain data, not Entity.
+export interface HostCompressDeflateCapability {
+  compress(bytes: Readonly<Uint8Array>, framing: CompressionFraming): Uint8Array;
+}
