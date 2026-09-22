@@ -1,6 +1,6 @@
 import type {
   RenderTargetClear,
-  WgpuRenderOptions,
+  WgpuRenderStateOptions,
   WgpuRenderPass,
   WgpuRenderState,
   WgpuScreenRenderTarget,
@@ -307,7 +307,7 @@ export function createReadyImageElementForTest(width = 1, height = 1): HTMLImage
   return image;
 }
 
-export async function createWgpuRenderStateForTest(options: WgpuRenderOptions = {}): Promise<WgpuRenderState> {
+export async function createWgpuRenderStateForTest(options: WgpuRenderStateOptions = {}): Promise<WgpuRenderState> {
   const canvas = document.createElement('canvas');
   canvas.width = 800;
   canvas.height = 600;
