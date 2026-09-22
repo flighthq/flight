@@ -37,7 +37,7 @@ import {
   GltfVolumeExtensionHandler,
 } from '@flighthq/scene3d-formats/contract';
 import { parseSkeleton2D, parseSpineSkeletonBinary } from '@flighthq/skeleton2d-formats';
-import { createScene2DImportFromSwf } from '@flighthq/swf';
+import { createScene2DImportFromSwf, createSwfDefaultTagFamilyRegistry } from '@flighthq/swf';
 import { explainTextureContainerParse, parseAtf, parseBasis, parseDds, parseKtx2 } from '@flighthq/texture-formats';
 import type {
   GltfDocument,
@@ -321,6 +321,7 @@ async function runSwf(input: Readonly<ConformanceFixtureInput>): Promise<Conform
   const diagnostics: ImportDiagnostic[] = [];
   const imported = createScene2DImportFromSwf(
     new Uint8Array(await readFile(input.absolutePath)),
+    createSwfDefaultTagFamilyRegistry(),
     sdkHostDecompressDeflate,
     null,
     diagnostics,

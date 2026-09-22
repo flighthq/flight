@@ -1,5 +1,5 @@
-import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 // @vitest-environment jsdom
+import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { clearImageDecoders, registerImageDecoder } from '@flighthq/image-codec/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
 import { loadScene2DImageResources } from '@flighthq/scene2d-resources/contract';
@@ -14,6 +14,7 @@ import {
 
 import { createScene2DFromSwf } from './swfDocument';
 import { ShapeWriter } from './swfShapeTestHelper';
+import { createSwfDefaultTagFamilyRegistry } from './swfTagFamilyRegistry';
 
 beforeEach(() => {
   registerImageDecoder('image/png', async () => ({
@@ -32,7 +33,12 @@ describe('SWF image resources', () => {
     const imageBytes = decodeBase64(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
     );
-    const document = createScene2DFromSwf(createBitmapFillSwf(imageBytes), DECOMPRESS_DEFLATE, DECOMPRESS_LZMA)!;
+    const document = createScene2DFromSwf(
+      createBitmapFillSwf(imageBytes),
+      createSwfDefaultTagFamilyRegistry(),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+    )!;
     const shape = getNodeChildren(document.root)[0] as Shape;
     const texture = shape.data.commands[2] as Texture2D;
     const reference = document.imageResources[0];

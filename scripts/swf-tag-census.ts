@@ -16,7 +16,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { decompressDeflate, sdkHostDecompressDeflate } from '@flighthq/compression/contract';
-import { createScene2DFromSwf } from '@flighthq/swf/contract';
+import { createScene2DFromSwf, createSwfDefaultTagFamilyRegistry } from '@flighthq/swf/contract';
 import { CompressionFraming } from '@flighthq/types/contract';
 
 const DEFINE_SPRITE = 39;
@@ -78,7 +78,8 @@ if (directory === undefined) {
     const raw = new Uint8Array(readFileSync(join(directory, name)));
     // "Readable" means the importer produced a document. An unreadable file contributes to no tag count,
     // which is why the readable total is printed beside the rows rather than left implicit.
-    if (createScene2DFromSwf(raw, sdkHostDecompressDeflate, null) === null) continue;
+    if (createScene2DFromSwf(raw, createSwfDefaultTagFamilyRegistry(), sdkHostDecompressDeflate, null) === null)
+      continue;
     readable++;
     const bytes = uncompressContainer(raw);
     if (bytes === null) continue;

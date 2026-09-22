@@ -9,6 +9,7 @@ import type { ImportDiagnostic } from './ImportDiagnostic';
 import type { MorphShape } from './MorphShape';
 import type { RichText } from './RichText';
 import type { Shape } from './Shape';
+import type { SwfTagFamilyDispatch } from './SwfTagFamily';
 import type { Texture2D } from './Texture';
 import type { TimelineAudioCue } from './TimelineCue';
 import type { TimelineCue } from './TimelineCue';
@@ -19,6 +20,8 @@ import type { TimelineLabel } from './TimelineLabel';
  * for bits within a byte, and a read past `end` sets `valid` to false and returns zero.
  */
 export interface SwfTagReader {
+  /** The bit cursor within the byte at `pos`, 0..7. Byte reads align to the next byte boundary first. */
+  bitPosition: number;
   readonly end: number;
   pos: number;
   readonly source: Uint8Array;
@@ -33,22 +36,6 @@ export interface SwfTagReader {
   readUint32(): number;
   readUnsignedBits(count: number): number;
 }
-
-/**
- * One SWF tag handler, registered by numeric tag code. A handler reads its tag body from the
- * bounded reader and writes results into the shared parse and timeline state. Returns false
- * to abort the entire timeline (a hard structural failure), true otherwise.
- */
-export type SwfTagHandler = (
-  body: SwfTagReader,
-  tag: number,
-  state: SwfTagParseState,
-  timeline: SwfTagTimelineState,
-  diagnostics: ImportDiagnostic[] | undefined,
-) => boolean;
-
-/** The registry of tag handlers, keyed by numeric SWF tag code. */
-export type SwfTagHandlerRegistry = Map<number, SwfTagHandler>;
 
 /** A rectangle as the SWF reader produces it — in pixels, origin at top-left. */
 export interface SwfTagRectangle {
@@ -107,6 +94,11 @@ export interface SwfTagParseState {
   backgroundColor: number | null;
   readonly characterBounds: Map<number, SwfTagRectangle>;
   readonly definedCharacters: Set<number>;
+  /**
+   * The flat tag-code table this document is being walked with, so a DefineSprite body reads its nested
+   * tag stream through exactly the registry the root was given.
+   */
+  readonly dispatch: SwfTagFamilyDispatch;
   readonly diagnostics: ImportDiagnostic[] | undefined;
   readonly editTexts: Map<number, (resolveFontName: (fontId: number) => string) => RichText>;
   readonly fontCodePoints: Map<number, number[]>;
@@ -129,7 +121,14 @@ export interface SwfTagParseState {
   readonly morphBounds: Map<number, { end: SwfTagRectangle; start: SwfTagRectangle }>;
   readonly morphShapes: Map<number, () => MorphShape | null>;
   readonly pendingInitActions: { characterId: number; script: FrameScript }[];
-  readonly pendingTexts: { characterId: number; end: number; start: number; version: number }[];
+  readonly pendingTexts: {
+    characterId: number;
+    end: number;
+    /** The decompressed file body the offsets index into, so composition needs no reader of its own. */
+    source: Uint8Array;
+    start: number;
+    version: number;
+  }[];
   remainingFrameEntries: number;
   readonly scalingGrids: Map<number, SwfTagRectangle>;
   readonly shapes: Map<number, Shape>;
@@ -179,4 +178,13 @@ export interface SwfContentManifest {
   frameRate: number;
   stageBounds: SwfTagRectangle | null;
   totalTags: number;
+}
+
+/**
+ * The finished parse of one SWF file: every definition the tag walk collected, joined to the root
+ * timeline it produced. It is the same object the handlers wrote into rather than a copy, so a Texture a
+ * shape fill acquired during parsing is the one a placement of that bitmap samples.
+ */
+export interface SwfTagParseResult extends SwfTagParseState {
+  readonly timeline: SwfTimeline;
 }
