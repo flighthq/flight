@@ -16,6 +16,7 @@ import type { GlQuadMaterialRenderer } from './GlQuadMaterialRenderer';
 import type { GlRenderPass } from './GlRenderPass';
 import type { GlRenderTarget } from './GlRenderTarget';
 import type { GlRenderTextureGuard } from './GlRenderTexture';
+import type { GlScene3DPass } from './GlScene3DRuntime';
 import type { GlBitmapShader, GlShaderLocations } from './GlShaderLocations';
 import type { GlShapeMesh } from './GlShapeMesh';
 import type { GlTextureResolver } from './GlTextureResolver';
@@ -59,6 +60,7 @@ export interface GlRenderRegistries extends RenderRegistries {
   // revision so replacing a registration cannot reuse a shader compiled from the prior policy.
   pbrExtensionRevision: number;
   effects: KeyedTable<GlEffectRegistration>;
+  passes: readonly GlScene3DPass[] | null;
   shapeRasterizer: SlotTable<ShapeRasterizer> | null;
   textureResolvers: KeyedTable<GlTextureResolver>;
   velocityWriters: KeyedTable<GlVelocityWriter>;

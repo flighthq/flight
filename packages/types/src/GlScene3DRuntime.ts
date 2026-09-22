@@ -164,8 +164,6 @@ export interface GlScene3DRuntime {
   forwardLightSelectionGuard?: ((lights: Readonly<Scene3DLightsLike>) => void) | null;
   opaqueDrawList: GlScene3DDrawEntry[];
   opaquePool: GlScene3DDrawEntry[];
-  // Opt-in post-mesh draw passes, in registration order. Empty/absent until a register* installs one.
-  passes?: GlScene3DPass[] | null;
   pbrExtensionGuard?: ((extensions: readonly PbrExtension[]) => void) | null;
   pbrTransmissionSceneColor: GlPbrTransmissionSceneColor | null;
   programCache: Map<string, GlMeshProgram>;
