@@ -1,31 +1,34 @@
 # swf: exports where the shared classifier gets it wrong.
+#
+# The public lane is what an application decides: which tag families to register, the entry points that
+# read a document, and the readers for the sub-structures a caller may want on their own. Everything the
+# importer needs to assemble itself out of — the bounded reader's primitives, the node builders, the tag
+# walk, the flat dispatch table — is intra-SDK machinery a family module reaches by relative path and
+# nobody else should reach at all.
 
 protected:
-  # Individual handler atoms. A caller installs a FAMILY registrar or the whole set; reaching a
-  # single handler is an intra-SDK concern. scripts/format-parser-tree-shaking.test.ts states this
-  # as contractOnlyExports, and asserts the atoms tree-shake out of a lean public bundle.
-  - handleSwfBackgroundColorTag
-  - handleSwfBoundedDefinitionTag
-  - handleSwfButtonDefinitionTag
-  - handleSwfDefineSpriteTag
-  - handleSwfDoAbcTag
-  - handleSwfDoActionTag
-  - handleSwfDoInitActionTag
-  - handleSwfEmbeddedImageDefinitionTag
-  - handleSwfExportAssetsTag
-  - handleSwfFontDefinitionTag
-  - handleSwfFontInfoTag
-  - handleSwfFrameLabelTag
-  - handleSwfJpegTablesTag
-  - handleSwfLegacyImageDefinitionTag
-  - handleSwfLosslessBitmapDefinitionTag
-  - handleSwfPlaceObjectTag
-  - handleSwfRemoveObjectTag
-  - handleSwfScalingGridTag
-  - handleSwfSceneAndFrameLabelDataTag
-  - handleSwfSoundDefinitionTag
-  - handleSwfSoundStreamBlockTag
-  - handleSwfSoundStreamHeadTag
-  - handleSwfStartSound2Tag
-  - handleSwfStartSoundTag
-  - handleSwfVideoStreamDefinitionTag
+  # The byte-level and node-level layers the families are composed from. A user registers a family; they
+  # do not read a SWF RECT or build a SWF display object themselves, and exposing these as app API would
+  # make every one of them a compatibility surface for a decomposition that is still being shaped.
+  - file: src/swfAppearance.ts
+  - file: src/swfBoundedDefinition.ts
+  - file: src/swfImageTexture.ts
+  - file: src/swfNode.ts
+  - file: src/swfPrimitive.ts
+  - file: src/swfTimelineParse.ts
+
+  # Fixture builders for this package's own tests and its siblings'. Never app API.
+  - file: src/swfFrameActionTestHelper.ts
+  - file: src/swfTagStreamTestHelper.ts
+
+  # Registry infrastructure. `createSwfTagFamilyRegistry` and `createSwfDefaultTagFamilyRegistry` are the
+  # two an application calls; the rest is how the importer reads a registry it was handed.
+  - SWF_TAG_FAMILY_INSTANTIATION_ORDER
+  - getSwfTagFamilies
+  - getSwfTagFamilyDispatch
+  - initializeSwfTagFamilyRegistry
+
+  # Construction initializers. The paired `create*` is the app-facing half of each.
+  - initializeSwfDocumentImport
+  - initializeTimelineAudioCue
+  - initializeTimelineStreamAudioCue

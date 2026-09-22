@@ -25,6 +25,7 @@ export * from './swfSoundTagFamily';
 export * from './swfSpriteTagFamily';
 export * from './swfTagFamilyDispatch';
 export * from './swfTagFamilyRegistry';
+export * from './swfTagStreamTestHelper';
 export * from './swfTagVocabulary';
 export * from './swfText';
 export * from './swfTextTagFamily';
