@@ -15,7 +15,7 @@ import type {
 } from '@flighthq/types/contract';
 import { CompressionFraming, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { createAwd2BlockDispatch, createAwd2ParseState, getAwd2BlockHandlers } from './awd2BlockDispatch';
+import { createAwd2ParseState, getAwd2BlockDispatch, getAwd2BlockHandlers } from './awd2BlockDispatch';
 import {
   AWD2_BLOCK_HEADER_BYTES,
   AWD2_COMPRESSION_DEFLATE,
@@ -70,7 +70,7 @@ export function parseAwd2(
   if (rehydrated === null) return emptyAwdDocument();
 
   const state = createAwd2ParseState(emptyAwdDocument(), rehydrated.source, rehydrated.view, diagnostics);
-  const dispatch = createAwd2BlockDispatch(registry);
+  const dispatch = getAwd2BlockDispatch(registry);
   walkAwd2Blocks(state, dispatch);
   for (const handler of getAwd2BlockHandlers(registry)) handler.build?.(state);
   return state.document;

@@ -1,3 +1,4 @@
+import type { Entity } from './Entity';
 import type { ImportDiagnostic } from './ImportDiagnostic';
 import type { MeshGeometry } from './MeshGeometry';
 import type { Scene3DDocument } from './Scene3DDocument';
@@ -62,8 +63,14 @@ export interface Awd2BlockHandler {
  * The six block families an AWD2 file is read through. Every slot is optional: an absent family's blocks
  * are skipped by their length prefix, its build never runs, and the packages it would have reached are
  * absent from the module graph rather than merely unreferenced in it.
+ *
+ * A registry is assembled once and read many times, so it carries its own expanded `dispatch` rather than
+ * being re-expanded per import. Reassigning a slot afterwards does not re-expand it: build the registry
+ * you want rather than editing one you have handed to an importer.
  */
-export interface Awd2BlockRegistry {
+export interface Awd2BlockRegistry extends Entity {
+  /** The six slots expanded into one flat block-type table, built when the registry is built. */
+  dispatch: Awd2BlockDispatch;
   readonly camera?: Awd2BlockHandler | null;
   readonly geometry?: Awd2BlockHandler | null;
   readonly lighting?: Awd2BlockHandler | null;
@@ -83,7 +90,7 @@ export type Awd2BlockDispatch = ReadonlyMap<number, Readonly<Awd2BlockHandler>>;
  * skeleton. Every lookup goes through a block id, so a family that was not registered leaves its map
  * empty and its references resolve to nothing — the same graceful degradation a missing block gets.
  */
-export interface Awd2ParseState {
+export interface Awd2ParseState extends Entity {
   readonly cameras: Map<number, Awd2ParsedCamera>;
   readonly containers: Map<number, Awd2ParsedContainer>;
   readonly diagnostics: ImportDiagnostic[] | undefined;
