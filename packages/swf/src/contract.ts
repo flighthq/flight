@@ -12,6 +12,7 @@ export * from './swfFontTagFamily';
 export * from './swfFrameAction';
 export * from './swfFrameActionTestHelper';
 export * from './swfImageDecoder';
+export * from './swfImageMimeType';
 export * from './swfImageTexture';
 export * from './swfKnownTags';
 export * from './swfMorphShape';

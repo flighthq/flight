@@ -17,6 +17,7 @@ export { readSwfFilterList } from './swfFilter';
 export * from './swfFontTagFamily';
 export * from './swfFrameAction';
 export * from './swfImageDecoder';
+export * from './swfImageMimeType';
 export * from './swfKnownTags';
 export * from './swfMorphShape';
 export * from './swfPlacementTagFamily';
