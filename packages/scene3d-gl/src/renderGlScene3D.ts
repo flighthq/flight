@@ -6,6 +6,7 @@ import {
   declareGlRenderTargetColorSpace,
   enableGlBlendModeSupport,
   getGlColorAdjustmentMaterialFeature,
+  getGlRenderStateRuntime,
   invalidateGlRenderStateCache,
 } from '@flighthq/render-gl/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
@@ -347,11 +348,7 @@ export function renderGlScene3D(
     proxy.instanceColors = null;
   }
 
-  // Post-mesh passes, in registration order, drawn after all mesh depth is established. The particle
-  // emitter pass registers here via registerGlParticleEmitter3DPass rather than being called directly:
-  // an early-returning call still bundles its module, so an unregistered pass must be absent from the
-  // dispatch entirely. drawGlScene3DParticleEmitter3Ds stays exported for manual ordering.
-  const passes = runtime.passes;
+  const passes = getGlRenderStateRuntime(state).registries.passes;
   if (passes != null) {
     for (const pass of passes) pass(state, scene, camera, lights);
   }

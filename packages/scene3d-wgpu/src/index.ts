@@ -40,5 +40,6 @@ export {
   registerBuiltInWgpuModifierSnippets,
 } from './wgpuShadedPrelude';
 export { renderWgpuScene3DShadowMap } from './wgpuShadowMap';
+export { registerWgpuParticleEmitter3DPass } from './wgpuParticleEmitter3D';
 export { registerWgpuGpuSkinning } from './wgpuSkinPalette';
 export * from './wgpuWireframeMeshMaterialRenderer';

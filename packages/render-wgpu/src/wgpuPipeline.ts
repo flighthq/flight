@@ -23,6 +23,7 @@ export function initializeEmptyWgpuRenderRegistries(out: WgpuRenderRegistries): 
   out.modifierSnippetRevision = 0;
   out.effects = createKeyedTable('WgpuEffect', 'Unregistered');
   out.nodeRenderers = createKeyedTable('NodeRenderer', 'Unregistered');
+  out.passes = null;
   out.textureResolvers = createKeyedTable('WgpuTextureResolver', 'Unregistered');
   out.velocityWriters = createKeyedTable('WgpuVelocityWriter', 'Unregistered');
 }
