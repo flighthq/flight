@@ -33,6 +33,7 @@ import { BlendMode } from '@flighthq/types/contract';
 
 import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMaterial';
 import { renderWgpuScene3D, isWgpuMeshGpuSkinned } from './renderWgpuScene3D';
+import { registerWgpuParticleEmitter3DPass } from './wgpuParticleEmitter3D';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
 import { registerWgpuGpuSkinning } from './wgpuSkinPalette';
@@ -302,12 +303,11 @@ describe('renderWgpuScene3D', () => {
     expect(runtime.blendedPool).toHaveLength(0);
   });
 
-  it('draws a scene ParticleEmitter3D as a final pass without a manual emitter call', () => {
+  it('draws a ParticleEmitter3D node in the scene via the single renderWgpuScene3D call', () => {
     const { fake, pass, state } = makeWgpuScene3DState();
+    registerWgpuParticleEmitter3DPass(state);
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, makeParticleEmitter2D(3));
-    // No mesh and no manual drawWgpuScene3DParticleEmitter3Ds — renderWgpuScene3D must render the emitter itself
-    // (a 6-index instanced quad draw), mirroring renderGlScene3D's automatic emitter pass.
     renderWgpuScene3D(pass, scene, makeCamera(), LIGHTS);
     const draw = fake.calls.find((c) => c.name === 'drawIndexed');
     expect(draw).toBeDefined();
