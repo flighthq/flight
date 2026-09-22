@@ -1,8 +1,9 @@
+import { createRectangle } from '@flighthq/geometry/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import { appendPathLineTo, appendPathMoveTo, createPath, createPathMorph } from '@flighthq/path/contract';
 import { createMorphShape, setMorphShapeProgress } from '@flighthq/shape/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { MorphShape, Node2D } from '@flighthq/types/contract';
+import type { MorphShape, Node2D, Rectangle } from '@flighthq/types/contract';
 import { MovieClipKind, SpriteKind } from '@flighthq/types/contract';
 
 import {
@@ -66,9 +67,9 @@ describe('applySwfMorphBounds', () => {
 describe('computeSwfLocalBoundsRectangle', () => {
   it('writes the authored box of the node into the out parameter', () => {
     const node = createSwfDisplayObject({ height: 4, width: 8, x: 1, y: 2 });
-    const out = { height: 0, width: 0, x: 0, y: 0 };
+    const out = createRectangle();
     computeSwfLocalBoundsRectangle(out, node);
-    expect(out).toEqual({ height: 4, width: 8, x: 1, y: 2 });
+    expect(out).toMatchObject({ height: 4, width: 8, x: 1, y: 2 });
   });
 
   // The box is read through the hook rather than copied out of it, which is what lets a morph's extent
@@ -76,7 +77,7 @@ describe('computeSwfLocalBoundsRectangle', () => {
   it('reports the box currently on the node, not the one it was installed with', () => {
     const node = createSwfDisplayObject({ height: 4, width: 8, x: 0, y: 0 });
     applySwfAuthoredBounds(node, { height: 40, width: 80, x: 0, y: 0 });
-    const out = { height: 0, width: 0, x: 0, y: 0 };
+    const out = createRectangle();
     computeSwfLocalBoundsRectangle(out, node);
     expect(out).toMatchObject({ height: 40, width: 80 });
   });
@@ -143,8 +144,8 @@ describe('createSwfTexturedSprite', () => {
   });
 });
 
-function localBounds(node: Node2D) {
-  return getNodeLocalBoundsRectangle(node, { height: 0, width: 0, x: 0, y: 0 });
+function localBounds(node: Node2D): Readonly<Rectangle> {
+  return getNodeLocalBoundsRectangle(node);
 }
 
 function morphWithBounds(): MorphShape {

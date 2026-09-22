@@ -1,3 +1,4 @@
+import { createColorScaleBiasAdjustment } from '@flighthq/adjustments/contract';
 import type { ColorScaleBiasAdjustment } from '@flighthq/types/contract';
 import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 
@@ -133,19 +134,16 @@ function reader(bytes: Uint8Array): SwfReader {
 }
 
 function scaleBias(redScale: number): ColorScaleBiasAdjustment {
-  return {
-    colorScaleBias: {
-      alphaBias: 0,
-      alphaScale: 1,
-      blueBias: 0,
-      blueScale: 1,
-      greenBias: 0,
-      greenScale: 1,
-      redBias: 0,
-      redScale,
-    },
-    kind: 'colorScaleBias',
-  } as ColorScaleBiasAdjustment;
+  return createColorScaleBiasAdjustment({
+    alphaBias: 0,
+    alphaScale: 1,
+    blueBias: 0,
+    blueScale: 1,
+    greenBias: 0,
+    greenScale: 1,
+    redBias: 0,
+    redScale,
+  });
 }
 
 const SWF_BLEND_ADD = 8;
