@@ -1,7 +1,10 @@
 export * from './enableSwfGuards';
 export * from './swfBitmap';
 export * from './swfBitmapTagFamily';
+export * from './composeSwfTagHandlers';
 export * from './swfControlTagFamily';
+export * from './swfDefineMorphShapeHandler';
+export * from './swfDefineShapeHandler';
 export {
   createGlyphOutlineSourcesFromSwf,
   createScene2DFromSwf,
@@ -17,8 +20,10 @@ export { readSwfFilterList } from './swfFilter';
 export * from './swfFontTagFamily';
 export * from './swfFrameAction';
 export * from './swfImageDecoder';
+export * from './swfJpegBitmapHandler';
 export * from './swfImageMimeType';
 export * from './swfKnownTags';
+export * from './swfLosslessBitmapHandler';
 export * from './swfMorphShape';
 export * from './swfPlacementTagFamily';
 export * from './swfScriptTagFamily';

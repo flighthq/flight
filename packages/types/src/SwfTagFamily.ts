@@ -127,3 +127,11 @@ export interface SwfTagFamilyResources {
  * families however many are registered.
  */
 export type SwfTagFamilyDispatch = ReadonlyMap<number, Readonly<SwfTagFamily>>;
+
+/**
+ * One tag handler — the independently-importable primitive a family composes from. Structurally
+ * identical to `SwfTagFamily`: a handler that covers one related set of tags, composable with
+ * `composeSwfTagHandlers` into a family. A single handler IS a valid family, and a family IS a
+ * valid handler, so the two are assignment-compatible in every position.
+ */
+export type SwfTagHandler = SwfTagFamily;
