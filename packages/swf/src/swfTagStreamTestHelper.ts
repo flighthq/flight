@@ -1,6 +1,30 @@
+import type { SwfTagFamilyDispatch, SwfTagParseState } from '@flighthq/types/contract';
+
+import { createSwfDefaultTagFamilyRegistry, createSwfTagFamilyDispatch } from './swfTagFamilyRegistry';
+
 // Builds the SWF containers and tag records the importer tests read. A test that asserts on what the
 // importer does with a document needs a document to hand it, and hand-writing the bit-packed RECT and
 // the two tag-header widths in each test file is where the earlier copies of these drifted apart.
+
+export function createMatrix(a: number, b: number, c: number, d: number, tx: number, ty: number): Uint8Array {
+  const writer = new BitWriter();
+  const scales = [Math.round(a * FIXED_16_ONE), Math.round(d * FIXED_16_ONE)];
+  const rotates = [Math.round(b * FIXED_16_ONE), Math.round(c * FIXED_16_ONE)];
+  const scaleBits = signedBitCount(scales);
+  const rotateBits = signedBitCount(rotates);
+  const translateBits = signedBitCount([tx, ty]);
+
+  writer.writeUnsigned(1, 1);
+  writer.writeUnsigned(scaleBits, 5);
+  for (const value of scales) writer.writeSigned(value, scaleBits);
+  writer.writeUnsigned(1, 1);
+  writer.writeUnsigned(rotateBits, 5);
+  for (const value of rotates) writer.writeSigned(value, rotateBits);
+  writer.writeUnsigned(translateBits, 5);
+  writer.writeSigned(tx, translateBits);
+  writer.writeSigned(ty, translateBits);
+  return writer.toBytes();
+}
 
 export function createRectangle(xMin: number, xMax: number, yMin: number, yMax: number): Uint8Array {
   const writer = new BitWriter();
@@ -15,6 +39,43 @@ export function createSwf(tags: ReadonlyArray<Uint8Array>): Uint8Array {
   const body = joinBytes(createRectangle(0, 2000, 0, 1000), uint16(24 * 256), uint16(1), ...tags);
   const fileLength = SWF_PREFIX_LENGTH + body.length;
   return joinBytes(new Uint8Array([0x46, 0x57, 0x53, 9]), uint32(fileLength), body);
+}
+
+// The empty state one import fills, for a test that drives a single tag's reader rather than a whole
+// document. `dispatch` defaults to every family, which is what a nested sprite body would be walked with.
+export function createSwfTestParseState(dispatch?: SwfTagFamilyDispatch): SwfTagParseState {
+  return {
+    abcBlobs: [],
+    backgroundColor: null,
+    characterBounds: new Map(),
+    definedCharacters: new Set(),
+    diagnostics: undefined,
+    dispatch: dispatch ?? createSwfTagFamilyDispatch(createSwfDefaultTagFamilyRegistry()),
+    editTexts: new Map(),
+    fontCodePoints: new Map(),
+    fontNames: new Map(),
+    fontOutlineSources: new Map(),
+    images: new Map(),
+    imageTextures: new Map(),
+    jpegAlphaPayloads: new Map(),
+    jpegTables: null,
+    linkages: new Map(),
+    morphBounds: new Map(),
+    morphShapes: new Map(),
+    pendingInitActions: [],
+    pendingTexts: [],
+    remainingFrameEntries: 1_000_000,
+    scalingGrids: new Map(),
+    shapes: new Map(),
+    soundCuesAwaitingClass: [],
+    soundCuesAwaitingRate: [],
+    soundResources: new Map(),
+    sounds: new Map(),
+    sprites: new Map(),
+    streamSounds: [],
+    videoTextures: new Map(),
+    videos: new Map(),
+  };
 }
 
 export function createTag(code: number, body: Uint8Array = new Uint8Array()): Uint8Array {
@@ -44,14 +105,6 @@ export function signedBitCount(values: ReadonlyArray<number>): number {
   return 32;
 }
 
-export function uint16(value: number): Uint8Array {
-  return new Uint8Array([value & 0xff, (value >> 8) & 0xff]);
-}
-
-export function uint32(value: number): Uint8Array {
-  return new Uint8Array([value & 0xff, (value >> 8) & 0xff, (value >> 16) & 0xff, (value >> 24) & 0xff]);
-}
-
 export class BitWriter {
   private readonly bits: number[] = [];
 
@@ -73,3 +126,23 @@ export class BitWriter {
 }
 
 const SWF_PREFIX_LENGTH = 8;
+
+export function uint16(value: number): Uint8Array {
+  return new Uint8Array([value & 0xff, (value >> 8) & 0xff]);
+}
+
+export const PLACE_HAS_CHARACTER = 0x02;
+
+export const PLACE_HAS_COLOR_TRANSFORM = 0x08;
+
+export const PLACE_HAS_MATRIX = 0x04;
+
+export const PLACE_HAS_NAME = 0x20;
+
+export function uint32(value: number): Uint8Array {
+  return new Uint8Array([value & 0xff, (value >> 8) & 0xff, (value >> 16) & 0xff, (value >> 24) & 0xff]);
+}
+
+// Written out here rather than imported from the reader these fixtures are read by: a writer sharing
+// the reader's scale factor would cancel its own error out, and a round trip would pass at any value.
+const FIXED_16_ONE = 65536;

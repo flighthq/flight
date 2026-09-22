@@ -78,10 +78,15 @@ import { ShapeWriter } from './swfShapeTestHelper';
 import { createSwfDefaultTagFamilyRegistry } from './swfTagFamilyRegistry';
 import {
   BitWriter,
+  createMatrix,
   createRectangle,
   createSwf,
   createTag,
   joinBytes,
+  PLACE_HAS_CHARACTER,
+  PLACE_HAS_COLOR_TRANSFORM,
+  PLACE_HAS_MATRIX,
+  PLACE_HAS_NAME,
   signedBitCount,
   uint16,
   uint32,
@@ -4708,26 +4713,6 @@ function expectLosslessTexturePixel(texture: Texture2D): void {
   });
 }
 
-function createMatrix(a: number, b: number, c: number, d: number, tx: number, ty: number): Uint8Array {
-  const writer = new BitWriter();
-  const scales = [Math.round(a * FIXED_16_ONE), Math.round(d * FIXED_16_ONE)];
-  const rotates = [Math.round(b * FIXED_16_ONE), Math.round(c * FIXED_16_ONE)];
-  const scaleBits = signedBitCount(scales);
-  const rotateBits = signedBitCount(rotates);
-  const translateBits = signedBitCount([tx, ty]);
-
-  writer.writeUnsigned(1, 1);
-  writer.writeUnsigned(scaleBits, 5);
-  for (const value of scales) writer.writeSigned(value, scaleBits);
-  writer.writeUnsigned(1, 1);
-  writer.writeUnsigned(rotateBits, 5);
-  for (const value of rotates) writer.writeSigned(value, rotateBits);
-  writer.writeUnsigned(translateBits, 5);
-  writer.writeSigned(tx, translateBits);
-  writer.writeSigned(ty, translateBits);
-  return writer.toBytes();
-}
-
 // A colour transform in the format's own units: multiply terms are 8.8 fixed point (256 is 1.0) and add
 // terms are signed byte offsets. Passing three channels writes the alpha-less form the legacy record uses.
 function createColorTransform(multiply: ReadonlyArray<number>, add: ReadonlyArray<number>): Uint8Array {
@@ -4877,14 +4862,10 @@ const FIXED_16_ONE = 0x10000;
 const LOSSLESS_BITMAP_FORMAT_15_BIT = 4;
 const LOSSLESS_BITMAP_FORMAT_32_BIT = 5;
 const LOSSLESS_BITMAP_FORMAT_COLORMAPPED = 3;
-const PLACE_HAS_CHARACTER = 0x02;
 const PLACE_HAS_CLASS_NAME = 0x08;
 const PLACE3_HAS_BLEND_MODE = 0x02;
 const PLACE3_HAS_FILTER_LIST = 0x01;
 const PLACE_HAS_CLIP_DEPTH = 0x40;
-const PLACE_HAS_COLOR_TRANSFORM = 0x08;
-const PLACE_HAS_MATRIX = 0x04;
-const PLACE_HAS_NAME = 0x20;
 const PLACE_MOVE = 0x01;
 const SWF_BLEND_MULTIPLY = 3;
 const SWF_BLEND_OVERLAY = 13;
