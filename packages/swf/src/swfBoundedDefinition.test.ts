@@ -1,11 +1,16 @@
 import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition';
 import { SwfReader } from './swfReader';
-import { createRectangle, createSwfTestParseState, joinBytes, uint16 } from './swfTagStreamTestHelper';
+import {
+  createSwfRectangleRecord,
+  createSwfTestParseState,
+  joinSwfBytes,
+  swfUint16Bytes,
+} from './swfTagStreamTestHelper';
 
 describe('readSwfBoundedDefinitionHeader', () => {
   it('records the character and its authored extent, and returns the id', () => {
     const state = createSwfTestParseState();
-    const body = reader(joinBytes(uint16(7), createRectangle(0, 400, 0, 200)));
+    const body = reader(joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 400, 0, 200)));
 
     expect(readSwfBoundedDefinitionHeader(body, state, false)).toBe(7);
     expect(state.characterBounds.get(7)).toEqual({ height: 10, width: 20, x: 0, y: 0 });
@@ -17,7 +22,13 @@ describe('readSwfBoundedDefinitionHeader', () => {
   // everything needing only a size reads.
   it('keeps both endpoints for a morph, and merges them for the shared extent', () => {
     const state = createSwfTestParseState();
-    const body = reader(joinBytes(uint16(3), createRectangle(0, 200, 0, 200), createRectangle(0, 400, 0, 400)));
+    const body = reader(
+      joinSwfBytes(
+        swfUint16Bytes(3),
+        createSwfRectangleRecord(0, 200, 0, 200),
+        createSwfRectangleRecord(0, 400, 0, 400),
+      ),
+    );
 
     expect(readSwfBoundedDefinitionHeader(body, state, true)).toBe(3);
     expect(state.characterBounds.get(3)).toEqual({ height: 20, width: 20, x: 0, y: 0 });
@@ -30,21 +41,25 @@ describe('readSwfBoundedDefinitionHeader', () => {
   it('refuses character 0, which the format reserves', () => {
     const state = createSwfTestParseState();
     expect(
-      readSwfBoundedDefinitionHeader(reader(joinBytes(uint16(0), createRectangle(0, 1, 0, 1))), state, false),
+      readSwfBoundedDefinitionHeader(
+        reader(joinSwfBytes(swfUint16Bytes(0), createSwfRectangleRecord(0, 1, 0, 1))),
+        state,
+        false,
+      ),
     ).toBe(0);
     expect(state.characterBounds.size).toBe(0);
   });
 
   it('refuses a second definition of a character already read', () => {
     const state = createSwfTestParseState();
-    const first = joinBytes(uint16(5), createRectangle(0, 200, 0, 200));
+    const first = joinSwfBytes(swfUint16Bytes(5), createSwfRectangleRecord(0, 200, 0, 200));
     expect(readSwfBoundedDefinitionHeader(reader(first), state, false)).toBe(5);
     expect(readSwfBoundedDefinitionHeader(reader(first), state, false)).toBe(0);
   });
 
   it('refuses a record truncated before its extent', () => {
     const state = createSwfTestParseState();
-    expect(readSwfBoundedDefinitionHeader(reader(uint16(9)), state, false)).toBe(0);
+    expect(readSwfBoundedDefinitionHeader(reader(swfUint16Bytes(9)), state, false)).toBe(0);
     expect(state.definedCharacters.has(9)).toBe(false);
   });
 
@@ -52,7 +67,7 @@ describe('readSwfBoundedDefinitionHeader', () => {
   // would leave every later record in the stream misaligned.
   it('refuses a morph record missing its second extent', () => {
     const state = createSwfTestParseState();
-    const body = reader(joinBytes(uint16(4), createRectangle(0, 200, 0, 200)));
+    const body = reader(joinSwfBytes(swfUint16Bytes(4), createSwfRectangleRecord(0, 200, 0, 200)));
     expect(readSwfBoundedDefinitionHeader(body, state, true)).toBe(0);
   });
 });

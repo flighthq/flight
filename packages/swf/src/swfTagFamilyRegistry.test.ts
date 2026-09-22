@@ -5,14 +5,14 @@ import { ShapeWriter } from './swfShapeTestHelper';
 import { SWF_TAG_FAMILY_INSTANTIATION_ORDER, getSwfTagFamilies } from './swfTagFamilyDispatch';
 import { createSwfDefaultTagFamilyRegistry } from './swfTagFamilyRegistry';
 import {
-  createMatrix,
-  createRectangle,
-  createSwf,
-  createTag,
-  joinBytes,
-  PLACE_HAS_CHARACTER,
-  PLACE_HAS_MATRIX,
-  uint16,
+  createSwfMatrixRecord,
+  createSwfRectangleRecord,
+  createSwfFileBytes,
+  createSwfTagRecord,
+  joinSwfBytes,
+  SWF_PLACE_HAS_CHARACTER,
+  SWF_PLACE_HAS_MATRIX,
+  swfUint16Bytes,
 } from './swfTagStreamTestHelper';
 
 describe('createSwfDefaultTagFamilyRegistry', () => {
@@ -51,19 +51,22 @@ describe('createSwfDefaultTagFamilyRegistry', () => {
     shape.writeStraightEdge(-400, 0);
     shape.writeStraightEdge(0, -400);
     shape.writeEndShape();
-    const swf = createSwf([
-      createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 400, 0, 400), shape.toBytes())),
-      createTag(
+    const swf = createSwfFileBytes([
+      createSwfTagRecord(
+        TAG_DEFINE_SHAPE,
+        joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 400, 0, 400), shape.toBytes()),
+      ),
+      createSwfTagRecord(
         TAG_PLACE_OBJECT_2,
-        joinBytes(
-          new Uint8Array([PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
-          uint16(1),
-          uint16(7),
-          createMatrix(1, 0, 0, 1, 0, 0),
+        joinSwfBytes(
+          new Uint8Array([SWF_PLACE_HAS_MATRIX | SWF_PLACE_HAS_CHARACTER]),
+          swfUint16Bytes(1),
+          swfUint16Bytes(7),
+          createSwfMatrixRecord(1, 0, 0, 1, 0, 0),
         ),
       ),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     expect(
       createScene2DFromSwf(swf, createSwfDefaultTagFamilyRegistry(), sdkHostDecompressDeflate, null),

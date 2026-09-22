@@ -21,14 +21,14 @@ import {
 } from './swfTagFamilyDispatch';
 import { createSwfDefaultTagFamilyRegistry } from './swfTagFamilyRegistry';
 import {
-  createMatrix,
-  createRectangle,
-  createSwf,
-  createTag,
-  joinBytes,
-  PLACE_HAS_CHARACTER,
-  PLACE_HAS_MATRIX,
-  uint16,
+  createSwfMatrixRecord,
+  createSwfRectangleRecord,
+  createSwfFileBytes,
+  createSwfTagRecord,
+  joinSwfBytes,
+  SWF_PLACE_HAS_CHARACTER,
+  SWF_PLACE_HAS_MATRIX,
+  swfUint16Bytes,
 } from './swfTagStreamTestHelper';
 
 describe('createSwfTagFamilyDispatch', () => {
@@ -173,10 +173,10 @@ describe('initializeSwfTagFamilyRegistry', () => {
 
 function scriptedDocument(): Uint8Array {
   // A DoAction whose whole body is one `stop` (0x07), which the importer recognizes as a frame script.
-  return createSwf([
-    createTag(TAG_DO_ACTION, new Uint8Array([0x07, 0x00])),
-    createTag(TAG_SHOW_FRAME),
-    createTag(TAG_END),
+  return createSwfFileBytes([
+    createSwfTagRecord(TAG_DO_ACTION, new Uint8Array([0x07, 0x00])),
+    createSwfTagRecord(TAG_SHOW_FRAME),
+    createSwfTagRecord(TAG_END),
   ]);
 }
 
@@ -194,19 +194,22 @@ function shapeDocument(): Uint8Array {
   shape.writeStraightEdge(-400, 0);
   shape.writeStraightEdge(0, -400);
   shape.writeEndShape();
-  return createSwf([
-    createTag(TAG_DEFINE_SHAPE, joinBytes(uint16(7), createRectangle(0, 400, 0, 400), shape.toBytes())),
-    createTag(
+  return createSwfFileBytes([
+    createSwfTagRecord(
+      TAG_DEFINE_SHAPE,
+      joinSwfBytes(swfUint16Bytes(7), createSwfRectangleRecord(0, 400, 0, 400), shape.toBytes()),
+    ),
+    createSwfTagRecord(
       TAG_PLACE_OBJECT_2,
-      joinBytes(
-        new Uint8Array([PLACE_HAS_MATRIX | PLACE_HAS_CHARACTER]),
-        uint16(1),
-        uint16(7),
-        createMatrix(1, 0, 0, 1, 0, 0),
+      joinSwfBytes(
+        new Uint8Array([SWF_PLACE_HAS_MATRIX | SWF_PLACE_HAS_CHARACTER]),
+        swfUint16Bytes(1),
+        swfUint16Bytes(7),
+        createSwfMatrixRecord(1, 0, 0, 1, 0, 0),
       ),
     ),
-    createTag(TAG_SHOW_FRAME),
-    createTag(TAG_END),
+    createSwfTagRecord(TAG_SHOW_FRAME),
+    createSwfTagRecord(TAG_END),
   ]);
 }
 
@@ -257,11 +260,11 @@ describe('selective registries', () => {
   // document below puts a long unregistered body between two registered ones.
   it('advances past an unregistered body by its length prefix', () => {
     const opaque = new Uint8Array(200).fill(0xff);
-    const swf = createSwf([
-      createTag(TAG_DO_ABC, opaque),
-      createTag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([0x11, 0x22, 0x33])),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+    const swf = createSwfFileBytes([
+      createSwfTagRecord(TAG_DO_ABC, opaque),
+      createSwfTagRecord(TAG_SET_BACKGROUND_COLOR, new Uint8Array([0x11, 0x22, 0x33])),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const document = createScene2DFromSwf(swf, ARTWORK_FAMILIES, DEFLATE, null);
     expect(document).not.toBeNull();
@@ -286,13 +289,18 @@ describe('selective registries', () => {
   });
 
   it('walks a nested sprite body with the same registry as the root', () => {
-    const swf = createSwf([
-      createTag(
+    const swf = createSwfFileBytes([
+      createSwfTagRecord(
         TAG_DEFINE_SPRITE,
-        joinBytes(uint16(10), uint16(1), createTag(TAG_DO_ACTION, new Uint8Array([0x07, 0x00])), createTag(TAG_END)),
+        joinSwfBytes(
+          swfUint16Bytes(10),
+          swfUint16Bytes(1),
+          createSwfTagRecord(TAG_DO_ACTION, new Uint8Array([0x07, 0x00])),
+          createSwfTagRecord(TAG_END),
+        ),
       ),
-      createTag(TAG_SHOW_FRAME),
-      createTag(TAG_END),
+      createSwfTagRecord(TAG_SHOW_FRAME),
+      createSwfTagRecord(TAG_END),
     ]);
     const diagnostics = collectImportDiagnostics((sink) => {
       expect(createScene2DFromSwf(swf, ARTWORK_FAMILIES, DEFLATE, null, sink)).not.toBeNull();
@@ -319,10 +327,10 @@ describe('selective registries', () => {
 function manyTagDocument(tagCount: number): Uint8Array {
   const tags: Uint8Array[] = [];
   for (let i = 0; i < tagCount; i++) {
-    tags.push(createTag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([i & 0xff, 0x22, 0x33])));
+    tags.push(createSwfTagRecord(TAG_SET_BACKGROUND_COLOR, new Uint8Array([i & 0xff, 0x22, 0x33])));
   }
-  tags.push(createTag(TAG_SHOW_FRAME), createTag(TAG_END));
-  return createSwf(tags);
+  tags.push(createSwfTagRecord(TAG_SHOW_FRAME), createSwfTagRecord(TAG_END));
+  return createSwfFileBytes(tags);
 }
 
 function timeImport(document: Uint8Array, registry: SwfTagFamilyRegistry): number {
