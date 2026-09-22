@@ -1,43 +1,30 @@
-import { getEntityRuntime, hasEntityRuntime } from '@flighthq/entity/contract';
 import { createRectangle, matrixTransformRectangle } from '@flighthq/geometry/contract';
 import { getNodeWorldBoundsRectangle } from '@flighthq/node/contract';
-import type {
-  Matrix,
-  Rectangle,
-  RenderProxy2D,
-  Viewport,
-  HasBoundsRectangleRuntime,
-  HasTransform2DRuntime,
-  Spatial2DNode,
-} from '@flighthq/types/contract';
+import type { Matrix, Rectangle, RenderProxy2D, Spatial2DNodeAny, Viewport } from '@flighthq/types/contract';
 
-// Writes the world-space axis-aligned bounding box of `source` into `out`. Returns true when
-// `source` is a Spatial2DNode and the bounds were written; returns false and leaves `out`
-// unchanged when the source has no spatial traits.
+// Writes the world-space axis-aligned bounding box of `source` into `out`. `source` is a Spatial2DNodeAny,
+// so the bounds runtime is present by type rather than by inspection: nodes reach a 2D render proxy only
+// through createRenderProxy2D, which requires HasTransform2D & HasBoundsRectangle.
 export function computeRenderProxyWorldBounds(
   out: Pick<Rectangle, 'x' | 'y' | 'width' | 'height'>,
-  source: unknown,
-): boolean {
-  if (!isSpatial2DNode(source)) return false;
+  source: Spatial2DNodeAny,
+): void {
   const worldBounds = getNodeWorldBoundsRectangle(source);
   out.x = worldBounds.x;
   out.y = worldBounds.y;
   out.width = worldBounds.width;
   out.height = worldBounds.height;
-  return true;
 }
 
-// Returns true when `source` may be visible within `viewport`. Conservative: returns true when
-// the source carries no spatial traits (bounds unknown). When spatial bounds are available, uses
-// an inclusive overlap test on all four edges so that a zero-size object touching any viewport
-// edge is considered in-viewport. When `renderTransform2D` is provided, the world bounds are
-// transformed into screen space before the overlap test.
+// Returns true when `source` may be visible within `viewport`. Uses an inclusive overlap test on all four
+// edges, so a zero-size object touching any viewport edge is considered in-viewport. When
+// `renderTransform2D` is provided, the world bounds are transformed into screen space before the test.
 export function isRenderableInViewport(
-  source: unknown,
+  source: Spatial2DNodeAny,
   viewport: Readonly<Viewport>,
   renderTransform2D?: Readonly<Matrix> | null,
 ): boolean {
-  if (!computeRenderProxyWorldBounds(_scratchBounds, source)) return true;
+  computeRenderProxyWorldBounds(_scratchBounds, source);
 
   let bounds = _scratchBounds;
   if (renderTransform2D != null) {
@@ -66,18 +53,6 @@ export function isRenderProxyInViewport(
   renderTransform2D?: Readonly<Matrix> | null,
 ): boolean {
   return isRenderableInViewport(proxy.source, viewport, renderTransform2D);
-}
-
-// Detects whether `source` carries the HasTransform2D trait (and thus is at least a Transform2DNode).
-// Nodes that pass through createRenderProxy2D carry both HasTransform2D and HasBoundsRectangle,
-// making them Spatial2DNode — the bounds runtime is guaranteed present.
-function isSpatial2DNode(source: unknown): source is Spatial2DNode {
-  if (source === null || typeof source !== 'object') return false;
-  if (!hasEntityRuntime(source as Parameters<typeof hasEntityRuntime>[0])) return false;
-  const runtime = getEntityRuntime(source as Parameters<typeof getEntityRuntime>[0]) as Partial<
-    HasBoundsRectangleRuntime & HasTransform2DRuntime
-  >;
-  return typeof runtime.computeLocalBoundsRectangle === 'function' && 'worldMatrix' in runtime;
 }
 
 // Module-level scratch rectangles used by isRenderableInViewport to avoid allocation on every call.

@@ -1,3 +1,4 @@
+import type { Spatial2DNodeAny } from './HasBoundsRectangle';
 import type { Material2D } from './Material2D';
 import type { Matrix } from './Matrix';
 import type { RenderProxy } from './RenderProxy';
@@ -10,6 +11,11 @@ export interface RenderProxy2D extends RenderProxy {
   // infrastructure. The 2D walk populates this from HasMaterial.material, already Material2D | null,
   // so the quad resolve reads it with no cast and no runtime dimensionality check.
   material: Material2D | null;
+  // Narrowed from RenderProxy.source, which stays NodeAny for the base walk that also carries 3D
+  // proxies. createRenderProxy2D already requires HasTransform2D & HasBoundsRectangle, so a 2D proxy's
+  // source carries both traits by construction; declaring that here is what lets the viewport bounds
+  // read it with no cast and no runtime trait sniff.
+  source: Spatial2DNodeAny;
   transform2D: Matrix;
   traverseChildren: boolean;
   // Clip nesting depth at this node (rect + path clips); the backend unwinds its clip gates to this on

@@ -12,8 +12,6 @@ import {
 import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import type {
   EntityConstruction,
-  HasBoundsRectangle,
-  HasTransform2D,
   Node,
   Node2D,
   RenderProxy,
@@ -21,6 +19,7 @@ import type {
   RenderProxyVisitor,
   RenderState,
   NodeAny,
+  Spatial2DNodeAny,
 } from '@flighthq/types/contract';
 import { BlendMode, RegistryEntryState, RenderRegistryTable } from '@flighthq/types/contract';
 
@@ -40,10 +39,7 @@ export function createRenderProxy(state: RenderState, source: NodeAny): RenderPr
 // The one render-node allocator for the 2D graph. Sprites and display objects produce the same
 // RenderProxy2D — there is no per-family render identity. What differs between them is the traits
 // their source carries (the clip trait), not the render node type.
-export function createRenderProxy2D(
-  state: RenderState,
-  source: NodeAny & HasTransform2D & HasBoundsRectangle,
-): RenderProxy2D {
+export function createRenderProxy2D(state: RenderState, source: Spatial2DNodeAny): RenderProxy2D {
   const node = createRenderProxy(state, source) as RenderProxy2D;
   node.transform2D = createMatrix();
   node.traverseChildren = true;
@@ -81,7 +77,7 @@ export function getOrCreateRenderProxy2D(state: RenderState, source: NodeAny): R
   const renderProxyMap = runtime.renderProxyMap;
   let node = renderProxyMap.get(source) as RenderProxy2D | undefined;
   if (!node) {
-    node = createRenderProxy2D(state, source as NodeAny & HasTransform2D & HasBoundsRectangle);
+    node = createRenderProxy2D(state, source as Spatial2DNodeAny);
     renderProxyMap.set(source, node);
     runtime.renderProxySources.add(source);
   }
