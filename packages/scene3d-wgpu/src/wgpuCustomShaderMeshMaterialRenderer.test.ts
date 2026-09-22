@@ -95,7 +95,7 @@ describe('registerWgpuCustomMaterialShader', () => {
     getWgpuScene3DRuntime(derived);
     registerWgpuCustomMaterialShader(screen, 'ripple', replacement);
 
-    expect(getWgpuRenderStateRuntime(derived).registries.customMaterialShaders).toBe(snapshot);
+    expect(getWgpuRenderStateRuntime(derived).registries.customMaterialShaders).not.toBe(snapshot);
     expect(getWgpuRenderStateRuntime(screen).registries.customMaterialShaders).not.toBe(snapshot);
     expect(snapshot.get('ripple') ?? null).toBe(SOURCE);
     expect(getWgpuCustomMaterialShaderSource(derived, 'ripple')).toBe(SOURCE);

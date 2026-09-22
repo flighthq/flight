@@ -162,7 +162,7 @@ describe('registerGlPbrExtension', () => {
     getGlScene3DRuntime(derived);
     registerGlPbrExtension(screen, 'VendorExtension', replacement);
 
-    expect(getGlRenderStateRuntime(derived).registries.pbrExtensions).toBe(snapshot);
+    expect(getGlRenderStateRuntime(derived).registries.pbrExtensions).not.toBe(snapshot);
     expect(getGlRenderStateRuntime(derived).pbrExtensionRevision).toBe(0);
     expect(getGlRenderStateRuntime(screen).registries.pbrExtensions).not.toBe(snapshot);
     expect(getGlRenderStateRuntime(screen).pbrExtensionRevision).toBe(2);

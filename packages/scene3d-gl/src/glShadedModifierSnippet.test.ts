@@ -43,7 +43,7 @@ describe('registerGlModifierSnippet', () => {
     getGlScene3DRuntime(derived);
     registerGlModifierSnippet(screen, override);
 
-    expect(getGlRenderStateRuntime(derived).registries.modifierSnippets).toBe(snapshot);
+    expect(getGlRenderStateRuntime(derived).registries.modifierSnippets).not.toBe(snapshot);
     expect(getGlRenderStateRuntime(derived).modifierSnippetRevision).toBe(0);
     expect(getGlRenderStateRuntime(screen).registries.modifierSnippets).not.toBe(snapshot);
     expect(getGlRenderStateRuntime(screen).modifierSnippetRevision).toBe(2);

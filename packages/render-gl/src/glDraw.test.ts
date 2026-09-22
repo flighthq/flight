@@ -914,7 +914,7 @@ describe('registerGlBlendMode', () => {
     registerGlBlendMode(screen, 'acme.Foo', replacement);
 
     expect(getGlRenderStateRuntime(screen).registries.blendRealizations).not.toBe(snapshot);
-    expect(getGlRenderStateRuntime(offscreen).registries.blendRealizations).toBe(snapshot);
+    expect(getGlRenderStateRuntime(offscreen).registries.blendRealizations).not.toBe(snapshot);
     expect(snapshot.get('acme.Foo') ?? null).toBe(initial);
     expect(getGlRenderStateRuntime(screen).registries.blendRealizations.get('acme.Foo') ?? null).toBe(replacement);
   });

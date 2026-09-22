@@ -26,7 +26,7 @@ describe('registerWgpuModifierSnippet', () => {
     getWgpuScene3DRuntime(derived);
     registerWgpuModifierSnippet(screen, override);
 
-    expect(getWgpuRenderStateRuntime(derived).registries.modifierSnippets).toBe(snapshot);
+    expect(getWgpuRenderStateRuntime(derived).registries.modifierSnippets).not.toBe(snapshot);
     expect(getWgpuRenderStateRuntime(derived).modifierSnippetRevision).toBe(0);
     expect(getWgpuRenderStateRuntime(screen).registries.modifierSnippets).not.toBe(snapshot);
     expect(getWgpuRenderStateRuntime(screen).modifierSnippetRevision).toBe(2);

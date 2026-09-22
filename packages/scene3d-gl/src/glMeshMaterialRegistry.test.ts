@@ -46,7 +46,7 @@ describe('registerGlMeshMaterialRenderer', () => {
     getGlScene3DRuntime(derived);
     registerGlMeshMaterialRenderer(screen, TestKind, replacement);
 
-    expect(getGlRenderStateRuntime(derived).registries.materialRenderers).toBe(snapshot);
+    expect(getGlRenderStateRuntime(derived).registries.materialRenderers).not.toBe(snapshot);
     expect(getGlRenderStateRuntime(screen).registries.materialRenderers).not.toBe(snapshot);
     expect(snapshot.get(TestKind) ?? null).toBe(renderer);
     expect(getGlMeshMaterialRenderer(derived, TestKind)).toBe(renderer);

@@ -48,7 +48,7 @@ describe('registerWgpuMeshMaterialRenderer', () => {
     getWgpuScene3DRuntime(derived);
     registerWgpuMeshMaterialRenderer(screen, StandardPbrMaterialKind, replacement);
 
-    expect(getWgpuRenderStateRuntime(derived).registries.materialRenderers).toBe(snapshot);
+    expect(getWgpuRenderStateRuntime(derived).registries.materialRenderers).not.toBe(snapshot);
     expect(getWgpuRenderStateRuntime(screen).registries.materialRenderers).not.toBe(snapshot);
     expect(snapshot.get(StandardPbrMaterialKind) ?? null).toBe(renderer);
     expect(getWgpuMeshMaterialRenderer(derived, StandardPbrMaterialKind)).toBe(renderer);

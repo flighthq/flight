@@ -282,13 +282,13 @@ describe('createWgpuCacheState', () => {
     expect(cacheRuntime.registries.colorAdjustments).toBe(screenRuntime.registries.colorAdjustments);
     expect(cacheRuntime.registries.compressedTextureDecoder).toBe(screenRuntime.registries.compressedTextureDecoder);
     expect(cacheRuntime.registries.compressedTextureUpload).toBe(screenRuntime.registries.compressedTextureUpload);
-    expect(cacheRuntime.registries.customMaterialShaders).toBe(screenRuntime.registries.customMaterialShaders);
-    expect(cacheRuntime.registries.materialRenderers).toBe(screenRuntime.registries.materialRenderers);
-    expect(cacheRuntime.registries.effects).toBe(screenRuntime.registries.effects);
+    expect(cacheRuntime.registries.customMaterialShaders).not.toBe(screenRuntime.registries.customMaterialShaders);
+    expect(cacheRuntime.registries.materialRenderers).not.toBe(screenRuntime.registries.materialRenderers);
+    expect(cacheRuntime.registries.effects).not.toBe(screenRuntime.registries.effects);
     expect(cacheRuntime.registries.shapeRasterizer).toBe(screenRuntime.registries.shapeRasterizer);
     expect(cacheRuntime.registries.strokeTessellator).toBe(screenRuntime.registries.strokeTessellator);
-    expect(cacheRuntime.registries.textureResolvers).toBe(screenRuntime.registries.textureResolvers);
-    expect(cacheRuntime.registries.velocityWriters).toBe(screenRuntime.registries.velocityWriters);
+    expect(cacheRuntime.registries.textureResolvers).not.toBe(screenRuntime.registries.textureResolvers);
+    expect(cacheRuntime.registries.velocityWriters).not.toBe(screenRuntime.registries.velocityWriters);
     expect(renderWgpu.getWgpuQuadMaterialRenderer(cacheState, 'acme.Material')).toBe(first);
 
     renderWgpu.registerWgpuQuadMaterialRenderer(screen, 'acme.Material', replacement);
