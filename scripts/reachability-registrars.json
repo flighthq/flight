@@ -1387,26 +1387,6 @@
     },
     {
       "packageName": "swf",
-      "registrar": "registerAllSwfTagHandlers"
-    },
-    {
-      "packageName": "swf",
-      "registrar": "registerSwfBitmapTagHandlers"
-    },
-    {
-      "packageName": "swf",
-      "registrar": "registerSwfControlTagHandlers"
-    },
-    {
-      "packageName": "swf",
-      "registrar": "registerSwfFontTagHandlers"
-    },
-    {
-      "packageName": "swf",
-      "registrar": "registerSwfPlacementTagHandlers"
-    },
-    {
-      "packageName": "swf",
       "registrar": "registerSwfScene2DDocumentImporter"
     },
     {
