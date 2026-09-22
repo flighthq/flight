@@ -301,8 +301,7 @@ function readSwfFile(
   options: Readonly<SwfParseOptions>,
   diagnostics: ImportDiagnostic[] | undefined,
 ): SwfFile | null {
-  const decompress = options.host.decompress;
-  const uncompressed = uncompressSwfSource(source, decompress.deflate ?? null, decompress.lzma ?? null, diagnostics);
+  const uncompressed = uncompressSwfSource(source, options.deflate ?? null, options.lzma ?? null, diagnostics);
   if (uncompressed === null) return null;
 
   // Every rejection below loses the WHOLE document, and each has a distinct cause. Without a report per

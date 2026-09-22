@@ -52,7 +52,6 @@
     "@flighthq/types": "*"
   },
   "devDependencies": {
-    "@flighthq/host": "*",
     "@flighthq/materials": "*",
     "@flighthq/mesh": "*",
     "@flighthq/shading": "*",

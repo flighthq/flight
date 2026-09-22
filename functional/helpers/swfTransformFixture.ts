@@ -1,5 +1,4 @@
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
-import { createHost } from '@flighthq/host/contract';
 import type { MovieClip } from '@flighthq/sdk';
 import { createScene2DFromSwf, MovieClipKind, swfAllTagHandlers } from '@flighthq/sdk';
 
@@ -58,7 +57,7 @@ function createSwfTransformMovieClip(width: number, height: number, tags: readon
   );
   const bytes = joinBytes(new Uint8Array([0x46, 0x57, 0x53, 9]), uint32(SWF_PREFIX_LENGTH + body.length), body);
   const document = createScene2DFromSwf(bytes, {
-    host: createHost({ decompress: { deflate: sdkHostDecompressDeflate } }),
+    deflate: sdkHostDecompressDeflate,
     tags: swfAllTagHandlers,
   });
   if (document === null || document.root.kind !== MovieClipKind) {

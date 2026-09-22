@@ -5,7 +5,6 @@
 // That @flighthq/animation, @flighthq/lighting and @flighthq/camera are absent from the module graph
 // rather than merely unreferenced in it is asserted separately, by module and package reachability, in
 // scripts/awd2-block-tree-shaking.test.ts. This fixture is the cost side of the same claim.
-import { createHost } from '@flighthq/host/contract';
 import {
   awd2ContainerHandler,
   awd2MaterialHandler,
@@ -24,5 +23,4 @@ export const document = parseAwd2(new Uint8Array([0x41, 0x57, 0x44]), {
     awd2ContainerHandler,
     awd2MeshInstanceHandler,
   ],
-  host: createHost(),
 });

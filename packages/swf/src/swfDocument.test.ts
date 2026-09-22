@@ -2,7 +2,6 @@ import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { allocateGlyphRasterizerBackendFromGlyphOutlineSource } from '@flighthq/font/contract';
 import { createGlyphAtlas, getGlyphAtlasEntry } from '@flighthq/glyphatlas/contract';
-import { createHost } from '@flighthq/host/contract';
 import { collectImportDiagnostics } from '@flighthq/importdiagnostics/contract';
 import {
   getMovieClipCurrentFrame,
@@ -5373,16 +5372,10 @@ const DECOMPRESS_DEFLATE = sdkHostDecompressDeflate;
 // No LZMA implementation ships with Flight, so a ZWS/LZMA body reports an unread container.
 const DECOMPRESS_LZMA = null;
 
-const DEFAULT_OPTIONS: SwfParseOptions = {
-  host: createHost({ decompress: { deflate: DECOMPRESS_DEFLATE } }),
-  tags: swfAllTagHandlers,
-};
+const DEFAULT_OPTIONS: SwfParseOptions = { deflate: DECOMPRESS_DEFLATE, tags: swfAllTagHandlers };
 
-// A build whose host carries exactly the named deflate capability, for the container tests: they turn
-// on what the host can inflate, so each needs its own host rather than the shared one.
+// The container tests turn on what the caller can inflate, so each names its own codec rather than the
+// shared one.
 function swfOptionsWithDeflate(deflate: Readonly<HostDecompressDeflateCapability> | null): SwfParseOptions {
-  return {
-    host: deflate === null ? createHost() : createHost({ decompress: { deflate } }),
-    tags: swfAllTagHandlers,
-  };
+  return { deflate, tags: swfAllTagHandlers };
 }

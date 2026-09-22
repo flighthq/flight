@@ -62,8 +62,7 @@ export function parseAwd2(
   // A compressed body is inflated and spliced back behind the header so the block walk below is identical
   // for compressed and uncompressed input; bails to empty when the caller supplied no codec for the
   // file's compression method.
-  const decompress = options.host.decompress;
-  const rehydrated = rehydrateAwdBody(input, decompress.deflate ?? null, decompress.lzma ?? null, diagnostics);
+  const rehydrated = rehydrateAwdBody(input, options.deflate ?? null, options.lzma ?? null, diagnostics);
   if (rehydrated === null) return emptyAwdDocument();
 
   const state = createAwd2ParseState(emptyAwdDocument(), rehydrated.source, rehydrated.view, diagnostics);

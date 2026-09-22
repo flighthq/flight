@@ -16,7 +16,6 @@
     { "path": "../color" },
     { "path": "../entity" },
     { "path": "../geometry" },
-    { "path": "../host" },
     { "path": "../image" },
     { "path": "../image-codec" },
     { "path": "../importdiagnostics" },

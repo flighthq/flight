@@ -3,7 +3,6 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@flighthq/host-web": "*",
     "@flighthq/sdk": "*"
   },
   "scripts": {
