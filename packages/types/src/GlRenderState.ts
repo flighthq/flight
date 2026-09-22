@@ -22,7 +22,6 @@ import type { GlShapeMesh } from './GlShapeMesh';
 import type { GlTextureResolver } from './GlTextureResolver';
 import type { GlVelocityWriter } from './GlVelocityWriter';
 import type { Material } from './Material';
-import type { KeyedTable, SlotTable } from './RegistryTable';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState';
 import type { SamplerLike } from './Sampler';
@@ -39,31 +38,31 @@ export interface GlRenderState extends RenderState {
 // Pure registration policy owned by one WebGL render pipeline. Tables are persistent: a derived
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface GlRenderRegistries extends RenderRegistries {
-  blendRealizations: KeyedTable<GlBlendRealization>;
-  colorAdjustmentFeature?: SlotTable<GlColorAdjustmentMaterialFeature>;
+  blendRealizations: ReadonlyMap<Kind, GlBlendRealization>;
+  colorAdjustmentFeature?: GlColorAdjustmentMaterialFeature | null;
   // Optional diagnostic policy stays separate from the rendering feature: binding this callback
   // reports an unwired feature but never enables color-adjustment rendering behavior.
-  colorAdjustmentFeatureGuard?: SlotTable<GlColorAdjustmentMaterialFeatureGuard>;
+  colorAdjustmentFeatureGuard?: GlColorAdjustmentMaterialFeatureGuard | null;
   // Optional compressed-container policy. Both slots are empty until explicitly registered so
   // ordinary bitmap bundles retain neither the format table nor a fallback decoder.
-  compressedTextureDecoder: SlotTable<GlCompressedTextureDecoder> | null;
-  compressedTextureUpload: SlotTable<GlCompressedTextureUploader> | null;
-  customEffectShaders: KeyedTable<string>;
-  customMaterialShaders: KeyedTable<GlCustomMaterialShaderSource>;
-  materialRenderers: KeyedTable<GlMeshMaterialRenderer | GlQuadMaterialRenderer>;
-  modifierSnippets: KeyedTable<GlModifierSnippet>;
+  compressedTextureDecoder: GlCompressedTextureDecoder | null;
+  compressedTextureUpload: GlCompressedTextureUploader | null;
+  customEffectShaders: ReadonlyMap<Kind, string>;
+  customMaterialShaders: ReadonlyMap<Kind, GlCustomMaterialShaderSource>;
+  materialRenderers: ReadonlyMap<Kind, GlMeshMaterialRenderer | GlQuadMaterialRenderer>;
+  modifierSnippets: ReadonlyMap<Kind, GlModifierSnippet>;
   // Shader cache identity advances with every snippet-table replacement, including same-kind
   // replacements whose define signature is unchanged but whose emitted source differs.
   modifierSnippetRevision: number;
-  pbrExtensions: KeyedTable<GlPbrExtensionRegistration>;
+  pbrExtensions: ReadonlyMap<Kind, GlPbrExtensionRegistration>;
   // Incremented whenever pbrExtensions is replaced. The compiled-program cache key includes this
   // revision so replacing a registration cannot reuse a shader compiled from the prior policy.
   pbrExtensionRevision: number;
-  effects: KeyedTable<GlEffectRegistration>;
+  effects: ReadonlyMap<Kind, GlEffectRegistration>;
   passes: readonly GlScene3DPass[] | null;
-  shapeRasterizer: SlotTable<ShapeRasterizer> | null;
-  textureResolvers: KeyedTable<GlTextureResolver>;
-  velocityWriters: KeyedTable<GlVelocityWriter>;
+  shapeRasterizer: ShapeRasterizer | null;
+  textureResolvers: ReadonlyMap<Kind, GlTextureResolver>;
+  velocityWriters: ReadonlyMap<Kind, GlVelocityWriter>;
 }
 
 // A WebGL fixed-function realization of a blend-mode intent, registered per render state against a

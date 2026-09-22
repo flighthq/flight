@@ -1,17 +1,11 @@
 import { sampleAnimationTrack } from '@flighthq/animation/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import {
-  createKeyedTable,
-  getRegistryTableEntry,
-  getRegistryTableKeys,
-  withRegistryTableEntry,
-  withoutRegistryTableEntry,
-} from '@flighthq/registry/contract';
+import { getKindMapKeys, withKindMapEntry, withoutKindMapEntry } from '@flighthq/registry/contract';
 import type {
   AnimationChannel,
   Attachment2D,
   EntityConstruction,
-  KeyedTable,
+  Kind,
   Skeleton2D,
   Skeleton2DAnimationPath,
   Skeleton2DAnimationTarget,
@@ -69,14 +63,14 @@ export function findSkeleton2DStepKeyframe(times: ArrayLike<number>, time: numbe
 export function getSkeleton2DAnimationTargetBinder(
   kind: Skeleton2DAnimationTargetKind,
 ): Skeleton2DAnimationTargetBinder | null {
-  return getRegistryTableEntry(getSkeleton2DAnimationTargetBinderRegistry(), kind);
+  return getSkeleton2DAnimationTargetBinderRegistry().get(kind) ?? null;
 }
 
 // A sorted snapshot of every target kind with a binder. The array is detached from process-wide registry
 // state, so callers can inspect or mutate it without changing which channels the posing pass can bind.
 export function getSkeleton2DAnimationTargetBinderKinds(): readonly Skeleton2DAnimationTargetKind[] {
   const kinds: Skeleton2DAnimationTargetKind[] = [];
-  getRegistryTableKeys(kinds, getSkeleton2DAnimationTargetBinderRegistry());
+  getKindMapKeys(kinds, getSkeleton2DAnimationTargetBinderRegistry());
   return kinds;
 }
 
@@ -114,11 +108,11 @@ export function registerSkeleton2DAnimationTargetBinder(
   kind: Skeleton2DAnimationTargetKind,
   bind: Skeleton2DAnimationTargetBinder,
 ): void {
-  _binders = withRegistryTableEntry(getSkeleton2DAnimationTargetBinderRegistry(), kind, bind);
+  _binders = withKindMapEntry(getSkeleton2DAnimationTargetBinderRegistry(), kind, bind);
 }
 
 export function unregisterSkeleton2DAnimationTargetBinder(kind: Skeleton2DAnimationTargetKind): void {
-  _binders = withoutRegistryTableEntry(getSkeleton2DAnimationTargetBinderRegistry(), kind);
+  _binders = withoutKindMapEntry(getSkeleton2DAnimationTargetBinderRegistry(), kind);
 }
 
 // Composes one bone channel's sampled delta onto the setup bone. Translate, rotate and shear ADD; scale
@@ -254,15 +248,15 @@ function clampColorChannel(value: number): number {
 // bone binder would leave `applyAnimationClipToSkeleton2D` a silent no-op. Every family beyond those two
 // registers explicitly and shakes out when unused, which is the part the registry buys. The table is
 // created on first use, so importing the package performs no observable registration.
-function getSkeleton2DAnimationTargetBinderRegistry(): KeyedTable<Skeleton2DAnimationTargetBinder> {
+function getSkeleton2DAnimationTargetBinderRegistry(): ReadonlyMap<Kind, Skeleton2DAnimationTargetBinder> {
   if (_binders !== null) return _binders;
-  _binders = createKeyedTable('Skeleton2DAnimationTargetBinder', 'Unclaimed');
-  _binders = withRegistryTableEntry(_binders, TargetKind.Bone, bindSkeleton2DBoneChannel);
-  _binders = withRegistryTableEntry(_binders, TargetKind.Slot, bindSkeleton2DSlotChannel);
+  _binders = new Map();
+  _binders = withKindMapEntry(_binders, TargetKind.Bone, bindSkeleton2DBoneChannel);
+  _binders = withKindMapEntry(_binders, TargetKind.Slot, bindSkeleton2DSlotChannel);
   return _binders;
 }
 
-let _binders: KeyedTable<Skeleton2DAnimationTargetBinder> | null = null;
+let _binders: ReadonlyMap<Kind, Skeleton2DAnimationTargetBinder> | null = null;
 const _scratch = [0, 0, 0, 0];
 
 // The walk every non-blendable channel is forced onto, named once so the guard and the walk agree.

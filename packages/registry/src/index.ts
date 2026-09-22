@@ -1,13 +1,8 @@
 export {
-  concatRegistryTable,
-  createKeyedTable,
+  concatKindMap,
   createOrdinalTable,
-  createSlotTable,
+  getKindMapKeys,
   getOrdinalTableEntry,
-  getRegistryTableEntry,
-  getRegistryTableKeys,
-  hasRegistryTableEntry,
-  withoutRegistryTableEntry,
-  withRegistryTableEntry,
-  withRegistryTableTombstone,
+  withKindMapEntry,
+  withoutKindMapEntry,
 } from './registryTable';

@@ -1,4 +1,4 @@
-import { withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import {
   getWgpuRenderStateRuntime,
   registerWgpuBitmapTextureResolver,
@@ -16,7 +16,7 @@ import type {
   WgpuMeshPipeline,
   WgpuRenderState,
 } from '@flighthq/types/contract';
-import { CustomShaderMaterialKind, RegistryEntryState } from '@flighthq/types/contract';
+import { CustomShaderMaterialKind } from '@flighthq/types/contract';
 
 import { WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY, WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY } from './wgpuCustomMaterialAbi';
 import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
@@ -115,8 +115,8 @@ export function getWgpuCustomMaterialShaderSource(
   state: WgpuRenderState,
   shaderKey: string,
 ): WgpuCustomMaterialShaderSource | null {
-  const entry = getWgpuRenderStateRuntime(state).registries.customMaterialShaders.entries.get(shaderKey);
-  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+  const entry = getWgpuRenderStateRuntime(state).registries.customMaterialShaders.get(shaderKey);
+  return entry ?? null;
 }
 
 // Registers a complete WGSL module for a CustomShaderMaterial shaderKey.
@@ -144,7 +144,7 @@ export function registerWgpuCustomMaterialShader(
   wgslSource: WgpuCustomMaterialShaderSource,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  runtime.registries.customMaterialShaders = withRegistryTableEntry(
+  runtime.registries.customMaterialShaders = withKindMapEntry(
     runtime.registries.customMaterialShaders,
     shaderKey,
     wgslSource,

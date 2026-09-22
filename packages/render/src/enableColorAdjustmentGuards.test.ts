@@ -4,7 +4,6 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import { setNodeColorAdjustments } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { Adjustment, NodeAny, RenderProxy, RenderState } from '@flighthq/types/contract';
-import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { areColorAdjustmentGuardsEnabled, enableColorAdjustmentGuards } from './enableColorAdjustmentGuards';
 import { enableColorAdjustments } from './enableColorAdjustments';
@@ -17,15 +16,10 @@ describe('areColorAdjustmentGuardsEnabled', () => {
     expect(areColorAdjustmentGuardsEnabled(state)).toBe(false);
     enableColorAdjustmentGuards(state);
     expect(areColorAdjustmentGuardsEnabled(state)).toBe(true);
-    const table = getRenderStateRuntime(state).registries.colorAdjustmentUnsupportedGuard;
-    expect(table).toMatchObject({
-      entry: { state: RegistryEntryState.Bound },
-      onMiss: 'Disabled',
-      registry: 'ColorAdjustmentUnsupportedGuard',
-      shape: 'slot',
-    });
+    const guard = getRenderStateRuntime(state).registries.colorAdjustmentUnsupportedGuard;
+    expect(guard).not.toBeNull();
     enableColorAdjustmentGuards(state);
-    expect(getRenderStateRuntime(state).registries.colorAdjustmentUnsupportedGuard).toBe(table);
+    expect(getRenderStateRuntime(state).registries.colorAdjustmentUnsupportedGuard).toBe(guard);
   });
 });
 
@@ -70,7 +64,7 @@ describe('enableColorAdjustmentGuards', () => {
 });
 
 function resolveColorAdjustments(state: RenderState, data: RenderProxy): void {
-  const entry = getRenderStateRuntime(state).registries.colorAdjustments?.entry;
-  if (entry?.state !== RegistryEntryState.Bound) throw new Error('Color-adjustment resolver is not enabled');
-  entry.value(state, data);
+  const resolver = getRenderStateRuntime(state).registries.colorAdjustments;
+  if (resolver == null) throw new Error('Color-adjustment resolver is not enabled');
+  resolver(state, data);
 }

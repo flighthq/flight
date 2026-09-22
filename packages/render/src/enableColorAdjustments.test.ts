@@ -7,7 +7,6 @@ import {
 import { addNodeChild, setNodeColorAdjustments } from '@flighthq/node/contract';
 import { createDisplayObject, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type { NodeAny, RenderProxy, RenderState } from '@flighthq/types/contract';
-import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { areColorAdjustmentsEnabled, enableColorAdjustments } from './enableColorAdjustments';
 import { createRenderProxy, getRenderProxy2D, prepareScene2DRender } from './renderProxy';
@@ -32,7 +31,7 @@ describe('enableColorAdjustments', () => {
 
     const bound = runtime.registries.colorAdjustments!;
     expect(bound).not.toBe(empty);
-    expect(bound.entry?.state).toBe(RegistryEntryState.Bound);
+    expect(bound).not.toBeNull();
     enableColorAdjustments(state);
     expect(runtime.registries.colorAdjustments).toBe(bound);
   });
@@ -244,7 +243,7 @@ function createEnabledRenderState(): RenderState {
 }
 
 function resolveColorAdjustments(state: RenderState, data: RenderProxy, parentData?: RenderProxy): void {
-  const entry = getRenderStateRuntime(state).registries.colorAdjustments?.entry;
-  if (entry?.state !== RegistryEntryState.Bound) throw new Error('Color-adjustment resolver is not enabled');
-  entry.value(state, data, parentData);
+  const resolver = getRenderStateRuntime(state).registries.colorAdjustments;
+  if (resolver == null) throw new Error('Color-adjustment resolver is not enabled');
+  resolver(state, data, parentData);
 }

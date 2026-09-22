@@ -1,10 +1,9 @@
 import type { BlendMode } from './BlendMode';
 import type { ColorScaleBias } from './ColorScaleBias';
-import type { Entity } from './Entity';
+import type { Entity, Kind } from './Entity';
 import type { ExternalTexture } from './ExternalTexture';
 import type { ImageResource } from './ImageResource';
 import type { Material } from './Material';
-import type { KeyedTable, SlotTable } from './RegistryTable';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState';
 import type { RenderTexture } from './RenderTexture';
@@ -57,26 +56,26 @@ export type WgpuOffscreenRenderStateResult = Entity &
 // Pure registration policy owned by one WebGPU render pipeline. Tables are persistent: a derived
 // pipeline may initially share them, while either aggregate can later replace a member independently.
 export interface WgpuRenderRegistries extends RenderRegistries {
-  colorAdjustmentFeature?: SlotTable<WgpuColorAdjustmentMaterialFeature>;
+  colorAdjustmentFeature?: WgpuColorAdjustmentMaterialFeature | null;
   // Optional diagnostic policy stays separate from the rendering feature: binding this callback
   // reports an unwired feature but never enables color-adjustment rendering behavior.
-  colorAdjustmentFeatureGuard?: SlotTable<WgpuColorAdjustmentMaterialFeatureGuard>;
+  colorAdjustmentFeatureGuard?: WgpuColorAdjustmentMaterialFeatureGuard | null;
   // Optional compressed-container policy. Both slots are empty until explicitly registered so
   // ordinary bitmap bundles retain neither the format table nor a fallback decoder.
-  compressedTextureDecoder: SlotTable<WgpuCompressedTextureDecoder> | null;
-  compressedTextureUpload: SlotTable<WgpuCompressedTextureUploader> | null;
-  customMaterialShaders: KeyedTable<WgpuCustomMaterialShaderSource>;
-  gpuSkinning: SlotTable<WgpuSkinningAdapter> | null;
-  materialRenderers: KeyedTable<WgpuMeshMaterialRenderer | WgpuQuadMaterialRenderer>;
-  modifierSnippets: KeyedTable<WgpuModifierSnippet>;
+  compressedTextureDecoder: WgpuCompressedTextureDecoder | null;
+  compressedTextureUpload: WgpuCompressedTextureUploader | null;
+  customMaterialShaders: ReadonlyMap<Kind, WgpuCustomMaterialShaderSource>;
+  gpuSkinning: WgpuSkinningAdapter | null;
+  materialRenderers: ReadonlyMap<Kind, WgpuMeshMaterialRenderer | WgpuQuadMaterialRenderer>;
+  modifierSnippets: ReadonlyMap<Kind, WgpuModifierSnippet>;
   // Shader cache identity advances with every snippet-table replacement, including same-kind
   // replacements whose define signature is unchanged but whose emitted source differs.
   modifierSnippetRevision: number;
-  effects: KeyedTable<WgpuEffectRegistration>;
+  effects: ReadonlyMap<Kind, WgpuEffectRegistration>;
   passes: readonly WgpuScene3DPass[] | null;
-  shapeRasterizer: SlotTable<ShapeRasterizer> | null;
-  textureResolvers: KeyedTable<WgpuTextureResolver>;
-  velocityWriters: KeyedTable<WgpuVelocityWriter>;
+  shapeRasterizer: ShapeRasterizer | null;
+  textureResolvers: ReadonlyMap<Kind, WgpuTextureResolver>;
+  velocityWriters: ReadonlyMap<Kind, WgpuVelocityWriter>;
 }
 
 // The opt-in inline color-adjustment fold for the WebGPU sprite/quad batch. Registered as persistent

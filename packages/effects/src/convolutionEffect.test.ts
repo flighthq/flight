@@ -47,7 +47,7 @@ describe('registerConvolutionEffectPaddingResolver', () => {
     const state = createRenderState();
     const other = createRenderState();
     registerConvolutionEffectPaddingResolver(state);
-    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('ConvolutionEffect')).toBe(true);
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.has('ConvolutionEffect')).toBe(true);
     expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });

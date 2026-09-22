@@ -8,7 +8,7 @@ import {
 } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { appendParticleEmitter2DParticle, createParticleEmitter2D } from '@flighthq/particleemitter';
-import { withRegistryTableEntry } from '@flighthq/registry';
+import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
@@ -35,7 +35,7 @@ appendWebSurface(wgpuSurface, document.body);
 const registries = allocateEmptyWgpuRenderRegistries();
 const registry = {
   ...registries,
-  nodeRenderers: withRegistryTableEntry(registries.nodeRenderers, ParticleEmitter2DKind, wgpuParticleEmitter2DRenderer),
+  nodeRenderers: withKindMapEntry(registries.nodeRenderers, ParticleEmitter2DKind, wgpuParticleEmitter2DRenderer),
 };
 
 const acquisition = wgpuSurface.acquisition;

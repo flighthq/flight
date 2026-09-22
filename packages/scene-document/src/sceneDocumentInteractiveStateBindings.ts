@@ -1,4 +1,3 @@
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import type {
   FlightDocumentFields,
   FlightDocumentInteractiveState,
@@ -49,7 +48,7 @@ export function isInteractiveStateBindingTargetSupported(
   ]) {
     if (state === null) continue;
     for (const extension of state.extensions) {
-      const schema = getRegistryTableEntry(schemas.interactiveStateExtensionSchemas, extension.kind);
+      const schema = schemas.interactiveStateExtensionSchemas.get(extension.kind) ?? null;
       if (schema === null || !schema.isSupported(node)) return false;
     }
   }
@@ -69,13 +68,13 @@ export function readInteractiveStateBindingMetadata(
   for (const state of [interactiveStates.disabled, interactiveStates.hover, interactiveStates.pressed]) {
     if (state === null) continue;
     for (const extension of state.extensions) {
-      const schema = getRegistryTableEntry(schemas.interactiveStateExtensionSchemas, extension.kind);
+      const schema = schemas.interactiveStateExtensionSchemas.get(extension.kind) ?? null;
       if (schema !== null) elideDefaultFields(extension.fields, schema.fields);
     }
   }
   const transition = binding.transition === null ? null : cloneTransition(binding.transition);
   if (transition !== null) {
-    const schema = getRegistryTableEntry(schemas.interactiveStateTransitionSchemas, transition.kind);
+    const schema = schemas.interactiveStateTransitionSchemas.get(transition.kind) ?? null;
     if (schema !== null) elideDefaultFields(transition.fields, schema.fields);
   }
   return { interactiveStates, transition };

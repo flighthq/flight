@@ -1,4 +1,3 @@
-import { createSlotTable } from '@flighthq/registry/contract';
 import type {
   GlContext,
   CompressedImageResource,
@@ -9,7 +8,6 @@ import type {
   TextureContainerFormat,
   TextureColorSpace,
 } from '@flighthq/types/contract';
-import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 
@@ -206,13 +204,7 @@ export function registerGlCompressedTextureDecoder(
   state: GlRenderState,
   decode: GlCompressedTextureDecoder | null,
 ): void {
-  const runtime = getGlRenderStateRuntime(state);
-  const table =
-    runtime.registries.compressedTextureDecoder ?? createSlotTable('GlCompressedTextureDecoder', 'Unregistered');
-  runtime.registries.compressedTextureDecoder = {
-    ...table,
-    entry: decode === null ? null : { state: RegistryEntryState.Bound, value: decode },
-  };
+  getGlRenderStateRuntime(state).registries.compressedTextureDecoder = decode;
 }
 
 // Installs the block-compressed upload seam on a render state, opting the ~40-format
@@ -221,13 +213,8 @@ export function registerGlCompressedTextureDecoder(
 // source when none is registered, so ImageResource/Bitmap bundles do not carry the compression enum
 // table. Opt-in and last-write-wins; pass null to clear a previously installed uploader.
 export function registerGlCompressedTextureUpload(state: GlRenderState, uploader?: null): void {
-  const runtime = getGlRenderStateRuntime(state);
-  const table =
-    runtime.registries.compressedTextureUpload ?? createSlotTable('GlCompressedTextureUpload', 'Unregistered');
-  runtime.registries.compressedTextureUpload = {
-    ...table,
-    entry: uploader === null ? null : { state: RegistryEntryState.Bound, value: uploadGlCompressedImage },
-  };
+  getGlRenderStateRuntime(state).registries.compressedTextureUpload =
+    uploader === null ? null : uploadGlCompressedImage;
 }
 
 // Uploads every stored sub-image of a compressed container to the texture the caller has bound. Takes

@@ -43,7 +43,7 @@ describe('registerWgpuQuadMaterialRenderer', () => {
     registerWgpuQuadMaterialRenderer(state, TestKind, testRenderer);
     expect(getWgpuQuadMaterialRenderer(state, TestKind)).toBe(testRenderer);
     expect(getWgpuRenderStateRuntime(state).registries.materialRenderers).not.toBe(before);
-    expect(before.entries.size).toBe(0);
+    expect(before.size).toBe(0);
   });
 
   it('is last-write-wins without mutating the earlier snapshot', () => {
@@ -58,7 +58,7 @@ describe('registerWgpuQuadMaterialRenderer', () => {
     registerWgpuQuadMaterialRenderer(state, TestKind, replacement);
 
     expect(getWgpuQuadMaterialRenderer(state, TestKind)).toBe(replacement);
-    expect(before.entries.get(TestKind)).toEqual({ state: 'bound', value: testRenderer });
+    expect(before.get(TestKind)).toEqual(testRenderer);
   });
 });
 

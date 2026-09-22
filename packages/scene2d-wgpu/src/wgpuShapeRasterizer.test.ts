@@ -32,14 +32,7 @@ describe('registerWgpuShapeRasterizer', () => {
     registerWgpuShapeRasterizer(state, rasterizer);
 
     expect(getWgpuShapeRasterizer(state)).toBe(rasterizer);
-    // The opt-in must build a whole table, not just an entry: `{...undefined}` is legal JavaScript,
-    // so a missing fallback would yield a slot with no shape, registry, or miss policy.
-    expect(getWgpuRenderStateRuntime(state).registries.shapeRasterizer).toMatchObject({
-      onMiss: 'Unregistered',
-      registry: 'WgpuShapeRasterizer',
-      shape: 'slot',
-    });
-    expect(getWgpuRenderStateRuntime(state).registries.shapeRasterizer).not.toBe(before);
+    expect(getWgpuRenderStateRuntime(state).registries.shapeRasterizer).toBe(rasterizer);
     expect(before).toBeNull();
   });
 
@@ -51,7 +44,7 @@ describe('registerWgpuShapeRasterizer', () => {
     registerWgpuShapeRasterizer(state, null);
 
     expect(getWgpuShapeRasterizer(state)).toBeNull();
-    expect(getWgpuRenderStateRuntime(state).registries.shapeRasterizer).not.toBe(before);
-    expect(before?.entry?.state).toBe('bound');
+    expect(getWgpuRenderStateRuntime(state).registries.shapeRasterizer).toBeNull();
+    expect(before).not.toBeNull();
   });
 });

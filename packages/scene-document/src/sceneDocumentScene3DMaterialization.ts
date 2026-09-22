@@ -9,7 +9,6 @@ import {
   releaseMatrix4,
 } from '@flighthq/geometry/contract';
 import { addNodeChild, getNodeChildren, getNodeWorldMatrix4 } from '@flighthq/node/contract';
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import { createScene3D, createScene3DLightsFromDocument } from '@flighthq/scene3d/contract';
 import type {
   Camera3D,
@@ -337,7 +336,7 @@ function materializeChildren(
   materializedNodes: Map<Readonly<FlightDocumentNode>, Node3D>,
 ): boolean {
   for (const child of children) {
-    const schema = getRegistryTableEntry(schemas.nodeSchemas, child.kind);
+    const schema = schemas.nodeSchemas.get(child.kind) ?? null;
     if (schema === null) continue;
     const node = schema.createNode(child.fields, resources);
     if (node === null) continue;
@@ -374,7 +373,7 @@ function resolveResources(
   const out: Record<string, unknown> = {};
   if (resolvers === undefined) return out;
   for (const descriptor of descriptors) {
-    const resolver = getRegistryTableEntry(resolvers.resolvers, descriptor.kind);
+    const resolver = resolvers.resolvers.get(descriptor.kind) ?? null;
     if (resolver === null) continue;
     const resolved = resolver(descriptor.key, descriptor);
     if (resolved !== null) out[descriptor.key] = resolved;
@@ -390,7 +389,7 @@ function writeNode(
   writtenNodes: Map<Readonly<NodeAny>, FlightDocumentNode>,
 ): FlightDocumentNode {
   const fields: FlightDocumentFields = {};
-  const schema = getRegistryTableEntry(schemas.nodeSchemas, source.kind);
+  const schema = schemas.nodeSchemas.get(source.kind) ?? null;
   if (schema !== null) {
     writeFieldsWithDefaults(fields, source, schema);
   }
@@ -429,7 +428,7 @@ function adoptDocumentRoot3D(
   schemas: Readonly<FlightDocumentSchemaRegistry>,
   resources: FlightDocumentResourceLookup,
 ): boolean {
-  const schema = getRegistryTableEntry(schemas.nodeSchemas, documentRoot.kind);
+  const schema = schemas.nodeSchemas.get(documentRoot.kind) ?? null;
   if (schema === null) return true;
   const root = schema.createNode(documentRoot.fields, resources);
   if (root === null) return false;
@@ -445,7 +444,7 @@ function checkRootKindDimension3D(
   schemas: Readonly<FlightDocumentSchemaRegistry>,
   sceneIndex: number,
 ): FlightDocumentRefusalExplanation | null {
-  const schema = getRegistryTableEntry(schemas.nodeSchemas, documentRoot.kind);
+  const schema = schemas.nodeSchemas.get(documentRoot.kind) ?? null;
   if (schema === null) return null;
   const probe = schema.createNode(documentRoot.fields, {});
   if (probe === null) return null;

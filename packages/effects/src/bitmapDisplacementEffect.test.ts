@@ -84,9 +84,7 @@ describe('registerBitmapDisplacementEffectPaddingResolver', () => {
     const state = createRenderState();
     const other = createRenderState();
     registerBitmapDisplacementEffectPaddingResolver(state);
-    expect(
-      getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('BitmapDisplacementEffect'),
-    ).toBe(true);
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.has('BitmapDisplacementEffect')).toBe(true);
     expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });

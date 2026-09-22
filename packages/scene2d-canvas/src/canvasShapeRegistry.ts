@@ -1,8 +1,7 @@
-import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
 import { registerShapeBoundsCommand } from '@flighthq/shape/contract';
 import type { CanvasShapeCommand, RenderState, ShapeCommandKey } from '@flighthq/types/contract';
-import { RegistryEntryState } from '@flighthq/types/contract';
 
 // The command set is per render state, like every other kind-keyed handler registry: the state a
 // caller already holds is what carries the wiring, so `renderCanvasShapeCommands` can reach it from
@@ -12,8 +11,8 @@ import { RegistryEntryState } from '@flighthq/types/contract';
 // Returns null rather than undefined for an unregistered key — the ordinary "not wired" answer, not an
 // error. Callers report the miss through the state's registryMiss seam.
 export function getCanvasShapeCommand(state: RenderState, key: string): CanvasShapeCommand | null {
-  const entry = getRenderStateRuntime(state).registries.canvasShapeCommands?.entries.get(key);
-  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+  const entry = getRenderStateRuntime(state).registries.canvasShapeCommands?.get(key);
+  return entry ?? null;
 }
 
 export function registerCanvasShapeCommand<K extends ShapeCommandKey>(
@@ -22,8 +21,8 @@ export function registerCanvasShapeCommand<K extends ShapeCommandKey>(
 ): void {
   registerShapeBoundsCommand(command);
   const runtime = getRenderStateRuntime(state);
-  const table = runtime.registries.canvasShapeCommands ?? createKeyedTable('CanvasShapeCommand', 'Unregistered');
-  runtime.registries.canvasShapeCommands = withRegistryTableEntry(table, command.key, command);
+  const table = runtime.registries.canvasShapeCommands ?? new Map();
+  runtime.registries.canvasShapeCommands = withKindMapEntry(table, command.key, command);
 }
 
 export function registerCanvasShapeCommands(state: RenderState, commands: readonly CanvasShapeCommand[]): void {

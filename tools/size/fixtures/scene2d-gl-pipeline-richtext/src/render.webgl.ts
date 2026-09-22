@@ -7,7 +7,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
-import { withRegistryTableEntry } from '@flighthq/registry';
+import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import {
   allocateEmptyGlRenderRegistries,
@@ -20,7 +20,7 @@ import { createDisplayObject } from '@flighthq/scene2d';
 import { glRichTextRenderer, renderGlScene2D } from '@flighthq/scene2d-gl';
 import { createGlSurface } from '@flighthq/surface';
 import { createRichText } from '@flighthq/text';
-import { RegistryEntryState, RichTextKind } from '@flighthq/types';
+import { RichTextKind } from '@flighthq/types';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
@@ -34,7 +34,7 @@ document.body.style.margin = '0';
 const emptyRegistries = allocateEmptyGlRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  nodeRenderers: withRegistryTableEntry(emptyRegistries.nodeRenderers, RichTextKind, glRichTextRenderer),
+  nodeRenderers: withKindMapEntry(emptyRegistries.nodeRenderers, RichTextKind, glRichTextRenderer),
 };
 const state = createGlRenderState(glSurface.context, registry, {
   pixelRatio: 1,
@@ -43,8 +43,8 @@ const state = createGlRenderState(glSurface.context, registry, {
 const screenTarget = createGlScreenRenderTarget(state.gl);
 
 const registries = registry;
-for (const [kind, entry] of registries.nodeRenderers.entries) {
-  if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(state, kind, entry.value);
+for (const [kind, renderer] of registries.nodeRenderers) {
+  registerNodeRenderer(state, kind, renderer);
 }
 
 const root = createDisplayObject();

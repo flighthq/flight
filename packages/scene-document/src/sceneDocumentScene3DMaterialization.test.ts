@@ -8,7 +8,7 @@ import {
   createSpotLight,
 } from '@flighthq/lighting/contract';
 import { getNodeChildren, invalidateNodeLocalTransform } from '@flighthq/node/contract';
-import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { createNode3D, createScene3D } from '@flighthq/scene3d/contract';
 import type {
@@ -817,15 +817,15 @@ function createTestSchemas(): FlightDocumentSchemaRegistry {
     },
   };
 
-  let nodeSchemas = createKeyedTable<FlightDocumentNodeSchema>('flight-document.node', 'none');
-  nodeSchemas = withRegistryTableEntry(nodeSchemas, Node3DKind, node3DSchema);
+  let nodeSchemas: ReadonlyMap<string, FlightDocumentNodeSchema> = new Map();
+  nodeSchemas = withKindMapEntry(nodeSchemas, Node3DKind, node3DSchema);
 
   return {
-    interactiveStateExtensionSchemas: createKeyedTable('flight-document.interactive-state-extension', 'none'),
-    interactiveStateTransitionSchemas: createKeyedTable('flight-document.interactive-state-transition', 'none'),
+    interactiveStateExtensionSchemas: new Map(),
+    interactiveStateTransitionSchemas: new Map(),
     nodeSchemas,
-    resourceSchemas: createKeyedTable('flight-document.resource', 'none'),
-    shapeCommandSchemas: createKeyedTable('flight-document.shape-command', 'none'),
+    resourceSchemas: new Map(),
+    shapeCommandSchemas: new Map(),
   };
 }
 
@@ -851,7 +851,7 @@ describe('Scene3D root fidelity', () => {
 
   it('refuses a registered root whose kind belongs to the other dimension', () => {
     const schemas = createTestSchemas();
-    schemas.nodeSchemas = withRegistryTableEntry(schemas.nodeSchemas, DisplayObjectKind, {
+    schemas.nodeSchemas = withKindMapEntry(schemas.nodeSchemas, DisplayObjectKind, {
       createNode: () => createDisplayObject() as unknown as NodeAny,
       fields: [],
       kind: DisplayObjectKind,
@@ -867,7 +867,7 @@ describe('Scene3D root fidelity', () => {
   it('passes a genuinely empty resource map to a root-dimension probe', () => {
     const schemas = createTestSchemas();
     let resourceKeys: string[] | null = null;
-    schemas.nodeSchemas = withRegistryTableEntry(schemas.nodeSchemas, DisplayObjectKind, {
+    schemas.nodeSchemas = withKindMapEntry(schemas.nodeSchemas, DisplayObjectKind, {
       createNode: (_fields, resources) => {
         resourceKeys = Object.keys(resources);
         return createDisplayObject() as unknown as NodeAny;
@@ -888,7 +888,7 @@ function rootDocument3D(
   fields: Record<string, unknown>,
   schemas: FlightDocumentSchemaRegistry,
 ): FlightDocument {
-  schemas.nodeSchemas = withRegistryTableEntry(schemas.nodeSchemas, Node3DKind, {
+  schemas.nodeSchemas = withKindMapEntry(schemas.nodeSchemas, Node3DKind, {
     createNode: (nodeFields) => {
       const node = createNode3D();
       if (typeof nodeFields['name'] === 'string') node.name = nodeFields['name'];

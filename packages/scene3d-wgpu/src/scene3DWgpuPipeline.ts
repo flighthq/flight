@@ -1,8 +1,8 @@
-import { concatRegistryTable, createSlotTable, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { concatKindMap, withKindMapEntry } from '@flighthq/registry/contract';
 import { standardWgpuTextureResolvers } from '@flighthq/render-wgpu/contract';
 import { wgpuScene2DRenderRegistries } from '@flighthq/scene2d-wgpu/contract';
 import type {
-  KeyedTable,
+  Kind,
   WgpuMeshMaterialRenderer,
   WgpuModifierSnippet,
   WgpuQuadMaterialRenderer,
@@ -18,7 +18,6 @@ import {
   MatcapMaterialKind,
   NormalMaterialKind,
   PhongMaterialKind,
-  RegistryEntryState,
   ShadedMaterialKind,
   SpecularGlossinessPbrMaterialKind,
   StandardPbrMaterialKind,
@@ -56,52 +55,46 @@ import { wgpuVertexColorMeshMaterialRenderer } from './wgpuVertexColorMeshMateri
 import { wgpuWireframeMeshMaterialRenderer } from './wgpuWireframeMeshMaterialRenderer';
 
 function buildScene3DWgpuMeshMaterialRenderers(
-  base: Readonly<KeyedTable<WgpuMeshMaterialRenderer | WgpuQuadMaterialRenderer>>,
-): KeyedTable<WgpuMeshMaterialRenderer | WgpuQuadMaterialRenderer> {
+  base: Readonly<ReadonlyMap<Kind, WgpuMeshMaterialRenderer | WgpuQuadMaterialRenderer>>,
+): ReadonlyMap<Kind, WgpuMeshMaterialRenderer | WgpuQuadMaterialRenderer> {
   let table = base;
-  table = withRegistryTableEntry(table, BlinnPhongMaterialKind, wgpuBlinnPhongMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, CustomShaderMaterialKind, wgpuCustomShaderMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, DepthMaterialKind, wgpuDepthMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, EmissiveMaterialKind, wgpuEmissiveMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, LambertMaterialKind, wgpuLambertMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, MatcapMaterialKind, wgpuMatcapMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, NormalMaterialKind, wgpuNormalMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, PhongMaterialKind, wgpuPhongMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, ShadedMaterialKind, wgpuShadedMeshMaterialRenderer);
-  table = withRegistryTableEntry(
-    table,
-    SpecularGlossinessPbrMaterialKind,
-    wgpuSpecularGlossinessPbrMeshMaterialRenderer,
-  );
-  table = withRegistryTableEntry(table, StandardPbrMaterialKind, wgpuStandardPbrMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, ToonMaterialKind, wgpuToonMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, UnlitMaterialKind, wgpuUnlitMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, VertexColorMaterialKind, wgpuVertexColorMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, WireframeMaterialKind, wgpuWireframeMeshMaterialRenderer);
+  table = withKindMapEntry(table, BlinnPhongMaterialKind, wgpuBlinnPhongMeshMaterialRenderer);
+  table = withKindMapEntry(table, CustomShaderMaterialKind, wgpuCustomShaderMeshMaterialRenderer);
+  table = withKindMapEntry(table, DepthMaterialKind, wgpuDepthMeshMaterialRenderer);
+  table = withKindMapEntry(table, EmissiveMaterialKind, wgpuEmissiveMeshMaterialRenderer);
+  table = withKindMapEntry(table, LambertMaterialKind, wgpuLambertMeshMaterialRenderer);
+  table = withKindMapEntry(table, MatcapMaterialKind, wgpuMatcapMeshMaterialRenderer);
+  table = withKindMapEntry(table, NormalMaterialKind, wgpuNormalMeshMaterialRenderer);
+  table = withKindMapEntry(table, PhongMaterialKind, wgpuPhongMeshMaterialRenderer);
+  table = withKindMapEntry(table, ShadedMaterialKind, wgpuShadedMeshMaterialRenderer);
+  table = withKindMapEntry(table, SpecularGlossinessPbrMaterialKind, wgpuSpecularGlossinessPbrMeshMaterialRenderer);
+  table = withKindMapEntry(table, StandardPbrMaterialKind, wgpuStandardPbrMeshMaterialRenderer);
+  table = withKindMapEntry(table, ToonMaterialKind, wgpuToonMeshMaterialRenderer);
+  table = withKindMapEntry(table, UnlitMaterialKind, wgpuUnlitMeshMaterialRenderer);
+  table = withKindMapEntry(table, VertexColorMaterialKind, wgpuVertexColorMeshMaterialRenderer);
+  table = withKindMapEntry(table, WireframeMaterialKind, wgpuWireframeMeshMaterialRenderer);
   return table;
 }
 
 function buildScene3DWgpuModifierSnippets(
-  base: Readonly<KeyedTable<WgpuModifierSnippet>>,
-): KeyedTable<WgpuModifierSnippet> {
+  base: Readonly<ReadonlyMap<Kind, WgpuModifierSnippet>>,
+): ReadonlyMap<Kind, WgpuModifierSnippet> {
   let table = base;
-  table = withRegistryTableEntry(table, animatedNormalWgpuModifierSnippet.kind, animatedNormalWgpuModifierSnippet);
-  table = withRegistryTableEntry(table, dissolveWgpuModifierSnippet.kind, dissolveWgpuModifierSnippet);
-  table = withRegistryTableEntry(table, emissiveWgpuModifierSnippet.kind, emissiveWgpuModifierSnippet);
-  table = withRegistryTableEntry(table, envReflectWgpuModifierSnippet.kind, envReflectWgpuModifierSnippet);
-  table = withRegistryTableEntry(table, fogWgpuModifierSnippet.kind, fogWgpuModifierSnippet);
-  table = withRegistryTableEntry(table, rimWgpuModifierSnippet.kind, rimWgpuModifierSnippet);
-  table = withRegistryTableEntry(table, toonWgpuModifierSnippet.kind, toonWgpuModifierSnippet);
-  table = withRegistryTableEntry(table, vertexDisplaceWgpuModifierSnippet.kind, vertexDisplaceWgpuModifierSnippet);
+  table = withKindMapEntry(table, animatedNormalWgpuModifierSnippet.kind, animatedNormalWgpuModifierSnippet);
+  table = withKindMapEntry(table, dissolveWgpuModifierSnippet.kind, dissolveWgpuModifierSnippet);
+  table = withKindMapEntry(table, emissiveWgpuModifierSnippet.kind, emissiveWgpuModifierSnippet);
+  table = withKindMapEntry(table, envReflectWgpuModifierSnippet.kind, envReflectWgpuModifierSnippet);
+  table = withKindMapEntry(table, fogWgpuModifierSnippet.kind, fogWgpuModifierSnippet);
+  table = withKindMapEntry(table, rimWgpuModifierSnippet.kind, rimWgpuModifierSnippet);
+  table = withKindMapEntry(table, toonWgpuModifierSnippet.kind, toonWgpuModifierSnippet);
+  table = withKindMapEntry(table, vertexDisplaceWgpuModifierSnippet.kind, vertexDisplaceWgpuModifierSnippet);
   return table;
 }
 
 function buildScene3DWgpuTextureResolvers(
-  base: Readonly<KeyedTable<WgpuTextureResolver>>,
-): KeyedTable<WgpuTextureResolver> {
-  const table = concatRegistryTable(base, standardWgpuTextureResolvers);
-  if (table.shape !== 'keyed') throw new Error('wgpuScene3DRenderRegistries: expected keyed texture resolver tables');
-  return table;
+  base: Readonly<ReadonlyMap<Kind, WgpuTextureResolver>>,
+): ReadonlyMap<Kind, WgpuTextureResolver> {
+  return concatKindMap(base, standardWgpuTextureResolvers);
 }
 
 // Node3D and ParticleEmitter3D are explicit renderWgpuScene3D passes rather than NodeRenderer entries.
@@ -109,10 +102,7 @@ function buildScene3DWgpuTextureResolvers(
 // extensions stay GL-only until WGPU owns real registration and bind seams for them.
 export const wgpuScene3DRenderRegistries: Readonly<WgpuRenderRegistries> = {
   ...wgpuScene2DRenderRegistries,
-  gpuSkinning: {
-    ...createSlotTable('WgpuGpuSkinning', 'Unregistered'),
-    entry: { state: RegistryEntryState.Bound, value: wgpuSkinningAdapter },
-  },
+  gpuSkinning: wgpuSkinningAdapter,
   materialRenderers: buildScene3DWgpuMeshMaterialRenderers(wgpuScene2DRenderRegistries.materialRenderers),
   modifierSnippets: buildScene3DWgpuModifierSnippets(wgpuScene2DRenderRegistries.modifierSnippets),
   textureResolvers: buildScene3DWgpuTextureResolvers(wgpuScene2DRenderRegistries.textureResolvers),

@@ -1,4 +1,4 @@
-import { withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import { drawGlFullscreenPass, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type {
   CustomShaderEffect,
@@ -8,7 +8,6 @@ import type {
   GlTextureRenderTarget,
   Effect,
 } from '@flighthq/types/contract';
-import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
 import { registerGlEffect } from './glEffectRegistry';
@@ -72,8 +71,8 @@ export function applyCustomShaderEffectToGl(
 // registered. Doubles as the introspection query for the identity-passthrough fallback in
 // applyCustomShaderEffectToGl.
 export function getGlCustomShaderSource(state: GlRenderState, shaderKey: string): string | null {
-  const entry = getGlRenderStateRuntime(state).registries.customEffectShaders.entries.get(shaderKey);
-  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+  const entry = getGlRenderStateRuntime(state).registries.customEffectShaders.get(shaderKey);
+  return entry ?? null;
 }
 
 export const glCustomShaderEffectRunner: GlEffectRunner = (ctx, effect) => {
@@ -109,7 +108,7 @@ export function registerGlCustomShaderSource(state: GlRenderState, shaderKey: st
   if (previousSource !== null && previousSource !== fragmentSource) {
     _sourceGuards.get(state)?.(state, shaderKey, previousSource, fragmentSource);
   }
-  runtime.registries.customEffectShaders = withRegistryTableEntry(
+  runtime.registries.customEffectShaders = withKindMapEntry(
     runtime.registries.customEffectShaders,
     shaderKey,
     fragmentSource,

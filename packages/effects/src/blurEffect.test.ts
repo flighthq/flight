@@ -46,7 +46,7 @@ describe('registerBlurEffectPaddingResolver', () => {
 
     registerBlurEffectPaddingResolver(state);
 
-    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('BlurEffect')).toBe(true);
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.has('BlurEffect')).toBe(true);
     expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });

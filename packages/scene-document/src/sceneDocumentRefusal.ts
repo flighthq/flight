@@ -1,5 +1,4 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import type {
   EntityConstruction,
   FlightDocumentFieldSchema,
@@ -92,7 +91,7 @@ export function checkFlightDocumentInteractiveStates(
       );
     }
     if (node.transition != null) {
-      const transitionSchema = getRegistryTableEntry(schemas.interactiveStateTransitionSchemas, node.transition.kind);
+      const transitionSchema = schemas.interactiveStateTransitionSchemas.get(node.transition.kind) ?? null;
       if (transitionSchema === null) {
         return createKindRefusal(
           FlightDocumentRefusalReason.InteractiveStateTransitionKindUnregistered,
@@ -129,7 +128,7 @@ export function checkFlightDocumentNodeFields(
   sceneIndex: number,
   nodePath: string,
 ): FlightDocumentRefusalExplanation | null {
-  const schema = getRegistryTableEntry(schemas.nodeSchemas, node.kind);
+  const schema = schemas.nodeSchemas.get(node.kind) ?? null;
   if (schema === null) return null;
   const fieldRefusal = checkFlightDocumentFields(node.fields, schema.fields, sceneIndex, nodePath);
   if (fieldRefusal !== null) return fieldRefusal;
@@ -188,7 +187,7 @@ function checkInteractiveState(
       );
     }
     kinds.add(extension.kind);
-    const schema = getRegistryTableEntry(schemas.interactiveStateExtensionSchemas, extension.kind);
+    const schema = schemas.interactiveStateExtensionSchemas.get(extension.kind) ?? null;
     if (schema === null) {
       return createKindRefusal(
         FlightDocumentRefusalReason.InteractiveStateExtensionKindUnregistered,
@@ -199,7 +198,7 @@ function checkInteractiveState(
     }
     const fieldsRefusal = checkFlightDocumentFields(extension.fields, schema.fields, sceneIndex, extensionPath);
     if (fieldsRefusal !== null) return fieldsRefusal;
-    const nodeSchema = getRegistryTableEntry(schemas.nodeSchemas, documentNode.kind);
+    const nodeSchema = schemas.nodeSchemas.get(documentNode.kind) ?? null;
     const probe = nodeSchema?.createNode(documentNode.fields, {}) ?? null;
     if (probe !== null && !schema.isSupported(probe as NodeAny)) {
       return createKindRefusal(
@@ -219,7 +218,7 @@ export function checkUnregisteredNodeKinds(
   sceneIndex: number,
   nodePath: string,
 ): FlightDocumentRefusalExplanation | null {
-  const schema = getRegistryTableEntry(schemas.nodeSchemas, node.kind);
+  const schema = schemas.nodeSchemas.get(node.kind) ?? null;
   if (schema === null) {
     const refusal = createSceneRefusal(FlightDocumentRefusalReason.NodeKindUnregistered, sceneIndex, nodePath);
     refusal.kind = node.kind;
@@ -243,7 +242,7 @@ export function checkUnregisteredNodeKindsFromRaw(
   const mapping = value as Record<string, unknown>;
   const kind = mapping['kind'];
   if (typeof kind !== 'string') return null;
-  const schema = getRegistryTableEntry(schemas.nodeSchemas, kind);
+  const schema = schemas.nodeSchemas.get(kind) ?? null;
   if (schema === null) {
     const refusal = createSceneRefusal(FlightDocumentRefusalReason.NodeKindUnregistered, sceneIndex, nodePath);
     refusal.kind = kind;

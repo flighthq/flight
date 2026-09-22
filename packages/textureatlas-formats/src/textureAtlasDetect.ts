@@ -1,16 +1,5 @@
-import {
-  createKeyedTable,
-  getRegistryTableEntry,
-  getRegistryTableKeys,
-  withRegistryTableEntry,
-  withoutRegistryTableEntry,
-} from '@flighthq/registry/contract';
-import type {
-  KeyedTable,
-  TextureAtlas,
-  TextureAtlasFormatKind,
-  TextureAtlasParseOptions,
-} from '@flighthq/types/contract';
+import { getKindMapKeys, withKindMapEntry, withoutKindMapEntry } from '@flighthq/registry/contract';
+import type { Kind, TextureAtlas, TextureAtlasFormatKind, TextureAtlasParseOptions } from '@flighthq/types/contract';
 import {
   TextureAtlasFormatKindAseprite,
   TextureAtlasFormatKindLibgdxAtlas,
@@ -48,9 +37,9 @@ interface RegisteredFormatEntry {
 // package declares `"sideEffects": false`, so a top-level `registerTextureAtlasFormat` call in each
 // parser would be the import-time side effect the SDK bans, and it would drag every parser into any
 // consumer that imported one.
-function getRegistry(): KeyedTable<RegisteredFormatEntry> {
+function getRegistry(): ReadonlyMap<Kind, RegisteredFormatEntry> {
   if (_registry !== null) return _registry;
-  _registry = createKeyedTable('TextureAtlasFormat', 'Unclaimed');
+  _registry = new Map();
   bindTextureAtlasFormat(TextureAtlasFormatKindAseprite, {
     detect: detectAseprite,
     parse: (content, atlas) => parseTextureAtlasAsepriteJson(content, atlas),
@@ -143,13 +132,13 @@ export function getTextureAtlasFormat(kind: TextureAtlasFormatKind): Readonly<{
   detect: (content: string) => boolean;
   parse: (content: string, atlas: TextureAtlas, options: TextureAtlasParseOptions) => TextureAtlas;
 }> | null {
-  return getRegistryTableEntry(getRegistry(), kind)?.entry ?? null;
+  return getRegistry().get(kind)?.entry ?? null;
 }
 
 /** Return a sorted snapshot of every bound texture-atlas format kind. */
 export function getTextureAtlasFormatKinds(): readonly TextureAtlasFormatKind[] {
   const kinds: TextureAtlasFormatKind[] = [];
-  getRegistryTableKeys(kinds, getRegistry());
+  getKindMapKeys(kinds, getRegistry());
   return kinds;
 }
 
@@ -167,7 +156,7 @@ export function parseTextureAtlas(
 ): TextureAtlas | null {
   const kind = formatKind ?? detectTextureAtlasFormat(content);
   if (kind === null || kind === undefined) return null;
-  const registered = getRegistryTableEntry(getRegistry(), kind);
+  const registered = getRegistry().get(kind) ?? null;
   if (registered === null) return null;
   return registered.entry.parse(content, atlas, options ?? {});
 }
@@ -192,13 +181,13 @@ export function registerTextureAtlasFormat(
 
 /** Remove a format binding, including a caller override of a built-in kind. */
 export function unregisterTextureAtlasFormat(kind: TextureAtlasFormatKind): void {
-  _registry = withoutRegistryTableEntry(getRegistry(), kind);
+  _registry = withoutKindMapEntry(getRegistry(), kind);
 }
 
 function bindTextureAtlasFormat(kind: TextureAtlasFormatKind, entry: FormatEntry): void {
   const registry = getRegistry();
-  const current = getRegistryTableEntry(registry, kind);
-  _registry = withRegistryTableEntry(registry, kind, {
+  const current = registry.get(kind) ?? null;
+  _registry = withKindMapEntry(registry, kind, {
     entry,
     order: current?.order ?? _nextFormatOrder++,
   });
@@ -207,7 +196,7 @@ function bindTextureAtlasFormat(kind: TextureAtlasFormatKind, entry: FormatEntry
 function getTextureAtlasFormatsInDetectionOrder(): Array<readonly [TextureAtlasFormatKind, RegisteredFormatEntry]> {
   const formats: Array<readonly [TextureAtlasFormatKind, RegisteredFormatEntry]> = [];
   for (const kind of getTextureAtlasFormatKinds()) {
-    const registered = getRegistryTableEntry(getRegistry(), kind);
+    const registered = getRegistry().get(kind) ?? null;
     if (registered !== null) formats.push([kind, registered]);
   }
   formats.sort((a, b) => a[1].order - b[1].order);
@@ -233,5 +222,5 @@ function readMetaApp(meta: unknown): string {
   return typeof app === 'string' ? app : '';
 }
 
-let _registry: KeyedTable<RegisteredFormatEntry> | null = null;
+let _registry: ReadonlyMap<Kind, RegisteredFormatEntry> | null = null;
 let _nextFormatOrder = 0;

@@ -1,5 +1,4 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type { Bitmap, CompressedImageResource, ImageResource, SamplerLike, Texture } from '@flighthq/types/contract';
 import {
@@ -919,10 +918,8 @@ describe('registerGlBlendMode', () => {
 
     expect(getGlRenderStateRuntime(screen).registries.blendRealizations).not.toBe(snapshot);
     expect(getGlRenderStateRuntime(offscreen).registries.blendRealizations).toBe(snapshot);
-    expect(getRegistryTableEntry(snapshot, 'acme.Foo')).toBe(initial);
-    expect(getRegistryTableEntry(getGlRenderStateRuntime(screen).registries.blendRealizations, 'acme.Foo')).toBe(
-      replacement,
-    );
+    expect(snapshot.get('acme.Foo') ?? null).toBe(initial);
+    expect(getGlRenderStateRuntime(screen).registries.blendRealizations.get('acme.Foo') ?? null).toBe(replacement);
   });
 });
 
@@ -954,17 +951,17 @@ describe('setGlQuadMatrixFromOffset', () => {
 
 describe('standardGlBlendRealizations', () => {
   it('carries the six default fixed-function blend modes', () => {
-    expect(standardGlBlendRealizations.entries.has(BlendMode.Add)).toBe(true);
-    expect(standardGlBlendRealizations.entries.has(BlendMode.Darken)).toBe(true);
-    expect(standardGlBlendRealizations.entries.has(BlendMode.Lighten)).toBe(true);
-    expect(standardGlBlendRealizations.entries.has(BlendMode.Multiply)).toBe(true);
-    expect(standardGlBlendRealizations.entries.has(BlendMode.Normal)).toBe(true);
-    expect(standardGlBlendRealizations.entries.has(BlendMode.Screen)).toBe(true);
+    expect(standardGlBlendRealizations.has(BlendMode.Add)).toBe(true);
+    expect(standardGlBlendRealizations.has(BlendMode.Darken)).toBe(true);
+    expect(standardGlBlendRealizations.has(BlendMode.Lighten)).toBe(true);
+    expect(standardGlBlendRealizations.has(BlendMode.Multiply)).toBe(true);
+    expect(standardGlBlendRealizations.has(BlendMode.Normal)).toBe(true);
+    expect(standardGlBlendRealizations.has(BlendMode.Screen)).toBe(true);
   });
 
   it('does not include advanced blend modes that need a shader pass', () => {
-    expect(standardGlBlendRealizations.entries.has(AdvancedBlendMode.Overlay)).toBe(false);
-    expect(standardGlBlendRealizations.entries.has(AdvancedBlendMode.HardLight)).toBe(false);
+    expect(standardGlBlendRealizations.has(AdvancedBlendMode.Overlay)).toBe(false);
+    expect(standardGlBlendRealizations.has(AdvancedBlendMode.HardLight)).toBe(false);
   });
 });
 

@@ -3,7 +3,6 @@ import {
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
-import { createSlotTable } from '@flighthq/registry/contract';
 import {
   getGlRenderStateRuntime,
   registerGlCompressedImageTextureResolver,
@@ -11,7 +10,7 @@ import {
 } from '@flighthq/render-gl/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { CompressedImageResource, RenderProxy2D } from '@flighthq/types/contract';
-import { CompressedImageTextureSourceKind, RegistryEntryState, TextureAtlasRotation } from '@flighthq/types/contract';
+import { CompressedImageTextureSourceKind, TextureAtlasRotation } from '@flighthq/types/contract';
 
 import { glParticleEmitter2DRenderer, drawGlParticleEmitter2D } from './glParticleEmitter2D';
 import { createGlState } from './glTestHelper';
@@ -150,10 +149,7 @@ describe('drawGlParticleEmitter2D', () => {
     const { state, gl } = createAtlasGlState();
     registerGlCompressedImageTextureResolver(state);
     const runtime = getGlRenderStateRuntime(state);
-    runtime.registries.compressedTextureUpload = {
-      ...createSlotTable('GlCompressedTextureUpload', 'Unregistered'),
-      entry: { state: RegistryEntryState.Bound, value: () => true },
-    };
+    runtime.registries.compressedTextureUpload = () => true;
     const image = {
       compressed: { container: {}, payload: new Uint8Array() },
       height: 4,

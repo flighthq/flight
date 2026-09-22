@@ -2,7 +2,6 @@ import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/co
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createCustomShaderMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import {
   allocateEmptyWgpuRenderRegistries,
   getWgpuRenderStateRuntime,
@@ -102,7 +101,7 @@ describe('registerWgpuCustomMaterialShader', () => {
 
     expect(getWgpuRenderStateRuntime(derived).registries.customMaterialShaders).toBe(snapshot);
     expect(getWgpuRenderStateRuntime(screen).registries.customMaterialShaders).not.toBe(snapshot);
-    expect(getRegistryTableEntry(snapshot, 'ripple')).toBe(SOURCE);
+    expect(snapshot.get('ripple') ?? null).toBe(SOURCE);
     expect(getWgpuCustomMaterialShaderSource(derived, 'ripple')).toBe(SOURCE);
     expect(getWgpuCustomMaterialShaderSource(screen, 'ripple')).toBe(replacement);
   });

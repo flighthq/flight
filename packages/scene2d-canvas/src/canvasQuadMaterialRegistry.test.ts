@@ -64,7 +64,7 @@ describe('registerCanvasQuadMaterialRenderer', () => {
     registerCanvasQuadMaterialRenderer(state, TestKind, replacement);
 
     expect(getCanvasQuadMaterialRenderer(state, TestKind)).toBe(replacement);
-    expect(before!.entries.get(TestKind)).toEqual({ state: 'bound', value: testRenderer });
+    expect(before!.get(TestKind)).toBe(testRenderer);
   });
 
   it('keeps per-state registration mutations isolated', () => {

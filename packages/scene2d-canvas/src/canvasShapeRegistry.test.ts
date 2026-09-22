@@ -67,9 +67,11 @@ describe('registerCanvasShapeCommand', () => {
 
     registerCanvasShapeCommand(state, createTestCommand('__test_snapshot__', second));
 
-    expect(before?.entries.get('__test_snapshot__')).toEqual({
-      state: 'bound',
-      value: { draw: first, fillBounds: null, key: '__test_snapshot__', strokeBounds: null },
+    expect(before?.get('__test_snapshot__')).toEqual({
+      draw: first,
+      fillBounds: null,
+      key: '__test_snapshot__',
+      strokeBounds: null,
     });
     expect(getCanvasShapeCommand(state, '__test_snapshot__')?.draw).toBe(second);
   });

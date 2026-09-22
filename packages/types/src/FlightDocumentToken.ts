@@ -1,6 +1,5 @@
 import type { Entity, Kind } from './Entity';
 import type { FlightDocumentValue } from './FlightDocumentFieldSchema';
-import type { KeyedTable } from './RegistryTable';
 
 // One authored token row, shaped like a resource descriptor: kind-tagged, keyed, with the
 // kind-specific payload beside it. The kind sits on the ROW rather than on each mode variant because
@@ -38,5 +37,5 @@ export type FlightDocumentTokenResolver = (
 // policy is caller-owned, so an application registers only the kinds it authors and unregistered
 // kinds refuse by name rather than resolving to something plausible.
 export interface FlightDocumentTokenResolverRegistry extends Entity {
-  resolvers: KeyedTable<FlightDocumentTokenResolver>;
+  resolvers: ReadonlyMap<Kind, FlightDocumentTokenResolver>;
 }

@@ -7,7 +7,7 @@ import {
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
-import { withRegistryTableEntry } from '@flighthq/registry';
+import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender } from '@flighthq/render';
 import {
   beginWgpuRenderPass,
@@ -33,12 +33,12 @@ appendWebSurface(wgpuSurface, document.body);
 const registries = allocateEmptyWgpuRenderRegistries();
 const registry = {
   ...registries,
-  materialRenderers: withRegistryTableEntry(
+  materialRenderers: withKindMapEntry(
     registries.materialRenderers,
     StandardMaterialKind,
     standardWgpuQuadMaterialRenderer,
   ),
-  nodeRenderers: withRegistryTableEntry(registries.nodeRenderers, TextLabelKind, wgpuTextLabelRenderer),
+  nodeRenderers: withKindMapEntry(registries.nodeRenderers, TextLabelKind, wgpuTextLabelRenderer),
 };
 
 const acquisition = wgpuSurface.acquisition;

@@ -7,7 +7,7 @@ import { createScene3DLights } from '@flighthq/lighting';
 import { createUnlitMaterial } from '@flighthq/materials';
 import { CANONICAL_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
 import { addNodeChild } from '@flighthq/node';
-import { withRegistryTableEntry } from '@flighthq/registry';
+import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene3DRender } from '@flighthq/render';
 import {
   allocateEmptyGlRenderRegistries,
@@ -35,11 +35,7 @@ document.body.style.margin = '0';
 const registries = allocateEmptyGlRenderRegistries();
 const registry = {
   ...registries,
-  materialRenderers: withRegistryTableEntry(
-    registries.materialRenderers,
-    UnlitMaterialKind,
-    glUnlitMeshMaterialRenderer,
-  ),
+  materialRenderers: withKindMapEntry(registries.materialRenderers, UnlitMaterialKind, glUnlitMeshMaterialRenderer),
 };
 const state = createGlRenderState(glSurface.context, registry, { pixelRatio: 1 });
 registerGlBitmapTextureResolver(state);

@@ -1,8 +1,7 @@
 import { logOnce } from '@flighthq/log/contract';
-import { createSlotTable } from '@flighthq/registry/contract';
 import { getGlColorAdjustmentMaterialFeatureGuard, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlRenderState } from '@flighthq/types/contract';
-import { LogLevel, RegistryEntryState } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/types/contract';
 
 // Returns whether color-adjustment guards are installed on `state` (enableGlColorAdjustmentGuards).
 export function areGlColorAdjustmentGuardsEnabled(state: GlRenderState): boolean {
@@ -16,13 +15,8 @@ export function areGlColorAdjustmentGuardsEnabled(state: GlRenderState): boolean
 // the message and @flighthq/log dependency live only in this separately-imported module. Idempotent.
 export function enableGlColorAdjustmentGuards(state: GlRenderState): void {
   const runtime = getGlRenderStateRuntime(state);
-  const table =
-    runtime.registries.colorAdjustmentFeatureGuard ?? createSlotTable('GlColorAdjustmentFeatureGuard', 'Disabled');
-  if (table.entry?.state !== RegistryEntryState.Bound || table.entry.value !== warnGlColorAdjustmentNotEnabled) {
-    runtime.registries.colorAdjustmentFeatureGuard = {
-      ...table,
-      entry: { state: RegistryEntryState.Bound, value: warnGlColorAdjustmentNotEnabled },
-    };
+  if (runtime.registries.colorAdjustmentFeatureGuard !== warnGlColorAdjustmentNotEnabled) {
+    runtime.registries.colorAdjustmentFeatureGuard = warnGlColorAdjustmentNotEnabled;
   }
 }
 

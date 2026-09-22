@@ -31,7 +31,7 @@ describe('registerGlQuadMaterialRenderer', () => {
     registerGlQuadMaterialRenderer(state, TestKind, testRenderer);
     expect(getGlQuadMaterialRenderer(state, TestKind)).toBe(testRenderer);
     expect(getGlRenderStateRuntime(state).registries.materialRenderers).not.toBe(before);
-    expect(before.entries.size).toBe(0);
+    expect(before.size).toBe(0);
   });
 
   it('is last-write-wins without mutating the earlier snapshot', () => {
@@ -43,7 +43,7 @@ describe('registerGlQuadMaterialRenderer', () => {
     registerGlQuadMaterialRenderer(state, TestKind, replacement);
 
     expect(getGlQuadMaterialRenderer(state, TestKind)).toBe(replacement);
-    expect(before.entries.get(TestKind)).toEqual({ state: 'bound', value: testRenderer });
+    expect(before.get(TestKind)).toEqual(testRenderer);
   });
 });
 

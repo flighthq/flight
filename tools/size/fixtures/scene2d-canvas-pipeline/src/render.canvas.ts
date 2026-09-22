@@ -16,7 +16,6 @@ import {
   canvasScene2DRenderRegistries,
 } from '@flighthq/scene2d-canvas';
 import { createTexture } from '@flighthq/texture';
-import { RegistryEntryState } from '@flighthq/types';
 
 const canvas = document.createElement('canvas');
 canvas.width = 400;
@@ -37,8 +36,8 @@ registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 
 const registries = canvasScene2DRenderRegistries;
-for (const [kind, entry] of registries.nodeRenderers.entries) {
-  if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(state, kind, entry.value);
+for (const [kind, renderer] of registries.nodeRenderers) {
+  registerNodeRenderer(state, kind, renderer);
 }
 registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
 

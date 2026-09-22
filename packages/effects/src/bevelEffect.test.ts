@@ -41,7 +41,7 @@ describe('registerBevelEffectPaddingResolver', () => {
     const state = createRenderState();
     const other = createRenderState();
     registerBevelEffectPaddingResolver(state);
-    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('BevelEffect')).toBe(true);
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.has('BevelEffect')).toBe(true);
     expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });

@@ -1,16 +1,11 @@
-import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
-import type {
-  KeyedTable,
-  ShapeCommandKey,
-  ShapeCommandSchema,
-  ShapeCommandSchemaArgument,
-} from '@flighthq/types/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
+import type { Kind, ShapeCommandKey, ShapeCommandSchema, ShapeCommandSchemaArgument } from '@flighthq/types/contract';
 
-function createDefaultShapeCommandSchemas(): KeyedTable<ShapeCommandSchema> {
-  let table = createKeyedTable<ShapeCommandSchema>('ShapeCommandSchema', 'Unregistered');
+function createDefaultShapeCommandSchemas(): ReadonlyMap<Kind, ShapeCommandSchema> {
+  let table: ReadonlyMap<Kind, ShapeCommandSchema> = new Map();
   for (const key of Object.keys(SHAPE_COMMAND_SCHEMA_ARGUMENTS) as ShapeCommandKey[]) {
     const schema = SHAPE_COMMAND_SCHEMA_ARGUMENTS[key];
-    table = withRegistryTableEntry(table, key, {
+    table = withKindMapEntry(table, key, {
       arguments: schema.arguments,
       key,
       requiredArgumentCount: schema.requiredArgumentCount,
@@ -112,8 +107,8 @@ const SHAPE_COMMAND_SCHEMA_ARGUMENTS = {
 
 // The one runtime schema table for the built-in retained-shape vocabulary. Native shape JSON uses
 // its positional types and arity; scene-document text uses the same entries' argument names. Custom
-// commands belong in a caller-owned table assembled with the same KeyedTable vocabulary.
-export const defaultShapeCommandSchemas: KeyedTable<ShapeCommandSchema> = createDefaultShapeCommandSchemas();
+// commands belong in a caller-owned ReadonlyMap<Kind, ShapeCommandSchema>.
+export const defaultShapeCommandSchemas: ReadonlyMap<Kind, ShapeCommandSchema> = createDefaultShapeCommandSchemas();
 
 function argument(name: string, type: ShapeCommandSchemaArgument['type']): ShapeCommandSchemaArgument {
   return { name, type };

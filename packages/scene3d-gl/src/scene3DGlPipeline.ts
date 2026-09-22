@@ -1,4 +1,4 @@
-import { withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import { glScene2DRenderRegistries } from '@flighthq/scene2d-gl/contract';
 import type {
   GlMeshMaterialRenderer,
@@ -6,7 +6,7 @@ import type {
   GlPbrExtensionRegistration,
   GlQuadMaterialRenderer,
   GlRenderRegistries,
-  KeyedTable,
+  Kind,
 } from '@flighthq/types/contract';
 import {
   AnimatedNormalModifierKind,
@@ -77,50 +77,52 @@ import { transmissionVolumePbrGlExtension } from './transmissionVolumePbrGlExten
 import { wrappedDiffusePbrGlExtension } from './wrappedDiffusePbrGlExtension';
 
 function buildScene3DGlMeshMaterialRenderers(
-  base: Readonly<KeyedTable<GlMeshMaterialRenderer | GlQuadMaterialRenderer>>,
-): KeyedTable<GlMeshMaterialRenderer | GlQuadMaterialRenderer> {
+  base: Readonly<ReadonlyMap<Kind, GlMeshMaterialRenderer | GlQuadMaterialRenderer>>,
+): ReadonlyMap<Kind, GlMeshMaterialRenderer | GlQuadMaterialRenderer> {
   let table = base;
-  table = withRegistryTableEntry(table, BlinnPhongMaterialKind, glBlinnPhongMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, CustomShaderMaterialKind, glCustomShaderMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, DepthMaterialKind, glDepthMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, EmissiveMaterialKind, glEmissiveMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, ExtendedPbrMaterialKind, glExtendedPbrMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, LambertMaterialKind, glLambertMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, MatcapMaterialKind, glMatcapMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, NormalMaterialKind, glNormalMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, PhongMaterialKind, glPhongMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, ShadedMaterialKind, glShadedMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, SpecularGlossinessPbrMaterialKind, glSpecularGlossinessPbrMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, StandardPbrMaterialKind, glStandardPbrMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, ToonMaterialKind, glToonMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, UnlitMaterialKind, glUnlitMeshMaterialRenderer);
-  table = withRegistryTableEntry(table, VertexColorMaterialKind, glVertexColorMeshMaterialRenderer);
-  return withRegistryTableEntry(table, WireframeMaterialKind, glWireframeMeshMaterialRenderer);
+  table = withKindMapEntry(table, BlinnPhongMaterialKind, glBlinnPhongMeshMaterialRenderer);
+  table = withKindMapEntry(table, CustomShaderMaterialKind, glCustomShaderMeshMaterialRenderer);
+  table = withKindMapEntry(table, DepthMaterialKind, glDepthMeshMaterialRenderer);
+  table = withKindMapEntry(table, EmissiveMaterialKind, glEmissiveMeshMaterialRenderer);
+  table = withKindMapEntry(table, ExtendedPbrMaterialKind, glExtendedPbrMeshMaterialRenderer);
+  table = withKindMapEntry(table, LambertMaterialKind, glLambertMeshMaterialRenderer);
+  table = withKindMapEntry(table, MatcapMaterialKind, glMatcapMeshMaterialRenderer);
+  table = withKindMapEntry(table, NormalMaterialKind, glNormalMeshMaterialRenderer);
+  table = withKindMapEntry(table, PhongMaterialKind, glPhongMeshMaterialRenderer);
+  table = withKindMapEntry(table, ShadedMaterialKind, glShadedMeshMaterialRenderer);
+  table = withKindMapEntry(table, SpecularGlossinessPbrMaterialKind, glSpecularGlossinessPbrMeshMaterialRenderer);
+  table = withKindMapEntry(table, StandardPbrMaterialKind, glStandardPbrMeshMaterialRenderer);
+  table = withKindMapEntry(table, ToonMaterialKind, glToonMeshMaterialRenderer);
+  table = withKindMapEntry(table, UnlitMaterialKind, glUnlitMeshMaterialRenderer);
+  table = withKindMapEntry(table, VertexColorMaterialKind, glVertexColorMeshMaterialRenderer);
+  return withKindMapEntry(table, WireframeMaterialKind, glWireframeMeshMaterialRenderer);
 }
 
-function buildScene3DGlModifierSnippets(base: Readonly<KeyedTable<GlModifierSnippet>>): KeyedTable<GlModifierSnippet> {
+function buildScene3DGlModifierSnippets(
+  base: Readonly<ReadonlyMap<Kind, GlModifierSnippet>>,
+): ReadonlyMap<Kind, GlModifierSnippet> {
   let table = base;
-  table = withRegistryTableEntry(table, AnimatedNormalModifierKind, animatedNormalGlModifierSnippet);
-  table = withRegistryTableEntry(table, DissolveModifierKind, dissolveGlModifierSnippet);
-  table = withRegistryTableEntry(table, EmissiveModifierKind, emissiveGlModifierSnippet);
-  table = withRegistryTableEntry(table, EnvReflectModifierKind, envReflectGlModifierSnippet);
-  table = withRegistryTableEntry(table, FogModifierKind, fogGlModifierSnippet);
-  table = withRegistryTableEntry(table, RimModifierKind, rimGlModifierSnippet);
-  table = withRegistryTableEntry(table, ToonModifierKind, toonGlModifierSnippet);
-  return withRegistryTableEntry(table, VertexDisplaceModifierKind, vertexDisplaceGlModifierSnippet);
+  table = withKindMapEntry(table, AnimatedNormalModifierKind, animatedNormalGlModifierSnippet);
+  table = withKindMapEntry(table, DissolveModifierKind, dissolveGlModifierSnippet);
+  table = withKindMapEntry(table, EmissiveModifierKind, emissiveGlModifierSnippet);
+  table = withKindMapEntry(table, EnvReflectModifierKind, envReflectGlModifierSnippet);
+  table = withKindMapEntry(table, FogModifierKind, fogGlModifierSnippet);
+  table = withKindMapEntry(table, RimModifierKind, rimGlModifierSnippet);
+  table = withKindMapEntry(table, ToonModifierKind, toonGlModifierSnippet);
+  return withKindMapEntry(table, VertexDisplaceModifierKind, vertexDisplaceGlModifierSnippet);
 }
 
 function buildScene3DGlPbrExtensions(
-  base: Readonly<KeyedTable<GlPbrExtensionRegistration>>,
-): KeyedTable<GlPbrExtensionRegistration> {
+  base: Readonly<ReadonlyMap<Kind, GlPbrExtensionRegistration>>,
+): ReadonlyMap<Kind, GlPbrExtensionRegistration> {
   let table = base;
-  table = withRegistryTableEntry(table, AnisotropyPbrExtensionKind, anisotropyPbrGlExtension);
-  table = withRegistryTableEntry(table, ClearcoatPbrExtensionKind, clearcoatPbrGlExtension);
-  table = withRegistryTableEntry(table, IridescencePbrExtensionKind, iridescencePbrGlExtension);
-  table = withRegistryTableEntry(table, SheenPbrExtensionKind, sheenPbrGlExtension);
-  table = withRegistryTableEntry(table, SpecularPbrExtensionKind, specularPbrGlExtension);
-  table = withRegistryTableEntry(table, TransmissionVolumePbrExtensionKind, transmissionVolumePbrGlExtension);
-  return withRegistryTableEntry(table, WrappedDiffusePbrExtensionKind, wrappedDiffusePbrGlExtension);
+  table = withKindMapEntry(table, AnisotropyPbrExtensionKind, anisotropyPbrGlExtension);
+  table = withKindMapEntry(table, ClearcoatPbrExtensionKind, clearcoatPbrGlExtension);
+  table = withKindMapEntry(table, IridescencePbrExtensionKind, iridescencePbrGlExtension);
+  table = withKindMapEntry(table, SheenPbrExtensionKind, sheenPbrGlExtension);
+  table = withKindMapEntry(table, SpecularPbrExtensionKind, specularPbrGlExtension);
+  table = withKindMapEntry(table, TransmissionVolumePbrExtensionKind, transmissionVolumePbrGlExtension);
+  return withKindMapEntry(table, WrappedDiffusePbrExtensionKind, wrappedDiffusePbrGlExtension);
 }
 
 export const glScene3DRenderRegistries: Readonly<GlRenderRegistries> = {

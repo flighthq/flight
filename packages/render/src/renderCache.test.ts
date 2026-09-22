@@ -152,15 +152,13 @@ describe('isRenderCacheAdapter', () => {
     expect(isRenderCacheAdapter(null)).toBe(false);
   });
 });
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
+
 describe('registerRenderCacheNodeRenderer', () => {
   it('registers the renderer for the render cache kind', () => {
     const state = createRenderState();
     const renderer = { createData: () => null, submit: vi.fn() };
     registerRenderCacheNodeRenderer(state, renderer as any);
-    expect(getRegistryTableEntry(getRenderStateRuntime(state).registries.nodeRenderers, RenderCacheKind)).toBe(
-      renderer,
-    );
+    expect(getRenderStateRuntime(state).registries.nodeRenderers.get(RenderCacheKind) ?? null).toBe(renderer);
   });
 });
 

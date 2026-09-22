@@ -1,4 +1,3 @@
-import { createKeyedTable } from '@flighthq/registry/contract';
 import type { CanvasRenderRegistries } from '@flighthq/types/contract';
 
 export function allocateEmptyCanvasRenderRegistries(): CanvasRenderRegistries {
@@ -13,6 +12,6 @@ export function initializeEmptyCanvasRenderRegistries(out: CanvasRenderRegistrie
   // fills the slot; a pipeline nobody opts in on allocates no table.
   out.strokeTessellator = null;
 
-  out.effects = createKeyedTable('CanvasEffect', 'Unregistered');
-  out.nodeRenderers = createKeyedTable('NodeRenderer', 'Unregistered');
+  out.effects = new Map();
+  out.nodeRenderers = new Map();
 }

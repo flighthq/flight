@@ -17,7 +17,7 @@ import type {
   WgpuTextureSourceTextureEntry,
   WgpuVideoTextureEntry,
 } from '@flighthq/types/contract';
-import { BlendMode, RegistryEntryState } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
 
 import { isWgpuExternalImageSourceReady, tryCopyWgpuExternalImageToTexture } from './wgpuExternalImageSource';
 import { retireWgpuTexture } from './wgpuFrame';
@@ -587,15 +587,10 @@ function uploadWgpuCompressedImageEntry(
   colorSpace: TextureColorSpace,
 ): WgpuTextureEntry | null {
   const runtime = getWgpuRenderStateRuntime(state);
-  const uploadEntry = runtime.registries.compressedTextureUpload?.entry;
-  if (uploadEntry?.state !== RegistryEntryState.Bound) return null;
-  const decoderEntry = runtime.registries.compressedTextureDecoder?.entry;
-  return uploadEntry.value(
-    state,
-    image as Readonly<CompressedImageResource>,
-    decoderEntry?.state === RegistryEntryState.Bound ? decoderEntry.value : null,
-    colorSpace,
-  );
+  const uploadEntry = runtime.registries.compressedTextureUpload;
+  if (uploadEntry == null) return null;
+  const decoderEntry = runtime.registries.compressedTextureDecoder;
+  return uploadEntry(state, image as Readonly<CompressedImageResource>, decoderEntry ?? null, colorSpace);
 }
 
 function uploadWgpuImageResourceEntry(

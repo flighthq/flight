@@ -8,13 +8,7 @@ import type {
   SceneCoverageCatalog,
   SceneCoverageEntry,
 } from '@flighthq/types/contract';
-import {
-  RegistryEntryState,
-  RenderRegistryTable,
-  RequirementFacet,
-  SceneCoverage,
-  StandardMaterialKind,
-} from '@flighthq/types/contract';
+import { RenderRegistryTable, RequirementFacet, SceneCoverage, StandardMaterialKind } from '@flighthq/types/contract';
 
 // Clears `out`, then reports every requirement in `usage` with how well this GL state is wired for it —
 // satisfied entries included, so one call is a complete manifest.
@@ -55,10 +49,10 @@ function collectGlScene2DCoverageGaps(
   // GL composites through an explicit per-mode realization; an unregistered mode falls back to normal
   // compositing, so the node still draws but not as authored. Canvas and DOM express these natively and
   // report nothing here, which is why this half is GL's and not the shared check's.
-  const blendModes = runtime.registries.blendRealizations.entries;
+  const blendModes = runtime.registries.blendRealizations;
   for (let i = 0; i < usage.blendModes.length; i++) {
     const kind = usage.blendModes[i];
-    if (blendModes.get(kind)?.state === RegistryEntryState.Bound) {
+    if (blendModes.has(kind)) {
       out?.push({
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneBlendMode,
@@ -77,11 +71,11 @@ function collectGlScene2DCoverageGaps(
   // resolveGlQuadMaterialRenderer falls back to whatever is registered for StandardMaterialKind, so an
   // unregistered kind may still draw — as the standard material, which is a downgrade worth naming
   // rather than a silence, and is NOT the same as nothing being registered at all.
-  const materials = runtime.registries.materialRenderers.entries;
-  const hasStandard = materials.get(StandardMaterialKind)?.state === RegistryEntryState.Bound;
+  const materials = runtime.registries.materialRenderers;
+  const hasStandard = materials.has(StandardMaterialKind);
   for (let i = 0; i < usage.materialKinds.length; i++) {
     const kind = usage.materialKinds[i];
-    if (materials.get(kind)?.state === RegistryEntryState.Bound) {
+    if (materials.has(kind)) {
       out?.push({
         coverage: SceneCoverage.Satisfied,
         facet: RequirementFacet.SceneMaterialKind,

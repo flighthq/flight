@@ -3,29 +3,27 @@ import { allocateEmptyGlRenderRegistries, initializeEmptyGlRenderRegistries } fr
 describe('allocateEmptyGlRenderRegistries', () => {
   it('creates a complete GlRenderRegistries with all required tables', () => {
     const registries = allocateEmptyGlRenderRegistries();
-    expect(registries.nodeRenderers.shape).toBe('keyed');
-    expect(registries.blendRealizations.shape).toBe('keyed');
+    expect(registries.nodeRenderers).toBeInstanceOf(Map);
+    expect(registries.blendRealizations).toBeInstanceOf(Map);
     expect(registries.compressedTextureDecoder).toBeNull();
     expect(registries.compressedTextureUpload).toBeNull();
-    expect(registries.customEffectShaders.shape).toBe('keyed');
-    expect(registries.customMaterialShaders.shape).toBe('keyed');
-    expect(registries.materialRenderers.shape).toBe('keyed');
-    expect(registries.modifierSnippets.shape).toBe('keyed');
-    expect(registries.pbrExtensions.shape).toBe('keyed');
-    expect(registries.effects.shape).toBe('keyed');
+    expect(registries.customEffectShaders).toBeInstanceOf(Map);
+    expect(registries.customMaterialShaders).toBeInstanceOf(Map);
+    expect(registries.materialRenderers).toBeInstanceOf(Map);
+    expect(registries.modifierSnippets).toBeInstanceOf(Map);
+    expect(registries.pbrExtensions).toBeInstanceOf(Map);
+    expect(registries.effects).toBeInstanceOf(Map);
     expect(registries.shapeRasterizer).toBeNull();
-    // Opt-in: the stroke kernel's slot is allocated by enable*StrokePathTessellation, not by the
-    // pipeline, so a pipeline nobody opted in on carries no table for it.
     expect(registries.strokeTessellator).toBeNull();
-    expect(registries.textureResolvers.shape).toBe('keyed');
-    expect(registries.velocityWriters.shape).toBe('keyed');
+    expect(registries.textureResolvers).toBeInstanceOf(Map);
+    expect(registries.velocityWriters).toBeInstanceOf(Map);
   });
 
   it('starts with zero entries in every keyed table', () => {
     const registries = allocateEmptyGlRenderRegistries();
-    expect(registries.nodeRenderers.entries.size).toBe(0);
-    expect(registries.blendRealizations.entries.size).toBe(0);
-    expect(registries.textureResolvers.entries.size).toBe(0);
+    expect(registries.nodeRenderers.size).toBe(0);
+    expect(registries.blendRealizations.size).toBe(0);
+    expect(registries.textureResolvers.size).toBe(0);
   });
 });
 

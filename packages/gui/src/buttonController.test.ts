@@ -119,12 +119,11 @@ describe('setButtonControllerDisabled', () => {
 });
 
 function createEmptySchemas(): FlightDocumentSchemaRegistry {
-  const table = (registry: string) => ({ entries: new Map(), onMiss: 'none', registry, shape: 'keyed' as const });
   return {
-    interactiveStateExtensionSchemas: table('flight-document.interactive-state-extension'),
-    interactiveStateTransitionSchemas: table('flight-document.interactive-state-transition'),
-    nodeSchemas: table('flight-document.node'),
-    resourceSchemas: table('flight-document.resource'),
-    shapeCommandSchemas: table('flight-document.shape-command'),
+    interactiveStateExtensionSchemas: new Map(),
+    interactiveStateTransitionSchemas: new Map(),
+    nodeSchemas: new Map(),
+    resourceSchemas: new Map(),
+    shapeCommandSchemas: new Map(),
   };
 }

@@ -13,7 +13,6 @@ import {
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
 import { registerGlStandardMaterial, renderGlScene2D, glScene2DRenderRegistries } from '@flighthq/scene2d-gl';
 import { createGlSurface } from '@flighthq/surface';
-import { RegistryEntryState } from '@flighthq/types';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
@@ -28,8 +27,8 @@ const state = createGlRenderState(glSurface.context, glScene2DRenderRegistries, 
 const screenTarget = createGlScreenRenderTarget(state.gl);
 
 const registries = glScene2DRenderRegistries;
-for (const [kind, entry] of registries.nodeRenderers.entries) {
-  if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(state, kind, entry.value);
+for (const [kind, renderer] of registries.nodeRenderers) {
+  registerNodeRenderer(state, kind, renderer);
 }
 registerGlImageTextureResolver(state);
 registerGlStandardMaterial(state);

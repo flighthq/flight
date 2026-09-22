@@ -1,5 +1,5 @@
 import { getNodeRuntime } from '@flighthq/node/contract';
-import { getRegistryTableKeys } from '@flighthq/registry/contract';
+import { getKindMapKeys } from '@flighthq/registry/contract';
 import type { Kind, NodeAny, RenderState, Scene2DPipelineCoverageExplanation } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';
@@ -12,7 +12,7 @@ export function explainScene2DPipelineCoverage(
   collectUsedKinds(usedSet, scene);
 
   const registeredKinds: Kind[] = [];
-  getRegistryTableKeys(registeredKinds, getRenderStateRuntime(state).registries.nodeRenderers);
+  getKindMapKeys(registeredKinds, getRenderStateRuntime(state).registries.nodeRenderers);
   registeredKinds.sort();
 
   const usedKinds = Array.from(usedSet).sort();

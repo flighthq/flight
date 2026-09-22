@@ -66,7 +66,7 @@ describe('registerGlEffect', () => {
     registerGlEffect(state, 'TestEffect', runner);
     expect(getGlEffectRunner(state, 'TestEffect')).toBe(runner);
     expect(getGlRenderStateRuntime(state).registries.effects).not.toBe(before);
-    expect(before.entries.size).toBe(0);
+    expect(before.size).toBe(0);
   });
 
   it('overwrites an existing runner under the same kind', () => {
@@ -77,10 +77,7 @@ describe('registerGlEffect', () => {
     const before = getGlRenderStateRuntime(state).registries.effects;
     registerGlEffect(state, 'TestEffect2', runnerB);
     expect(getGlEffectRunner(state, 'TestEffect2')).toBe(runnerB);
-    expect(before.entries.get('TestEffect2')).toEqual({
-      state: 'bound',
-      value: { isResolvable: undefined, runner: runnerA },
-    });
+    expect(before.get('TestEffect2')).toEqual({ isResolvable: undefined, runner: runnerA });
   });
 });
 

@@ -2,7 +2,7 @@ import { createBitmapFont, createGlyphSourceFromBitmapFont } from '@flighthq/bit
 import { createBitmapText, setBitmapTextText, updateBitmapText } from '@flighthq/bitmaptext';
 import { createWebImageResourceFromCanvas, webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
-import { withRegistryTableEntry } from '@flighthq/registry';
+import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene2d';
 import {
@@ -21,7 +21,7 @@ import {
 } from '@flighthq/scene2d-canvas';
 import { createTexture } from '@flighthq/texture';
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
-import { BitmapTextKind, RegistryEntryState } from '@flighthq/types';
+import { BitmapTextKind } from '@flighthq/types';
 
 // REQUIRED WIRING for one static bitmap-font text run, and nothing else:
 //   surface   webCanvasRenderSurfaceCreator — the single Canvas surface provider, NOT the aggregate
@@ -49,7 +49,7 @@ document.body.appendChild(canvas);
 const emptyRegistries = allocateEmptyCanvasRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  nodeRenderers: withRegistryTableEntry(emptyRegistries.nodeRenderers, BitmapTextKind, canvasBitmapTextRenderer),
+  nodeRenderers: withKindMapEntry(emptyRegistries.nodeRenderers, BitmapTextKind, canvasBitmapTextRenderer),
 };
 
 const screen = createCanvasScreenRenderTarget(
@@ -63,8 +63,8 @@ registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 
 const registries = registry;
-for (const [kind, entry] of registries.nodeRenderers.entries) {
-  if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(state, kind, entry.value);
+for (const [kind, renderer] of registries.nodeRenderers) {
+  registerNodeRenderer(state, kind, renderer);
 }
 registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
 

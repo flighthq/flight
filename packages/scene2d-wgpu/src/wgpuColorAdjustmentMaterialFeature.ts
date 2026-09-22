@@ -1,4 +1,3 @@
-import { createSlotTable } from '@flighthq/registry/contract';
 import { getWgpuBlendState, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { enableColorAdjustments } from '@flighthq/render/contract';
 import type {
@@ -13,7 +12,6 @@ import type {
   WgpuShapeMeshPipeline,
   TintMaterialData,
 } from '@flighthq/types/contract';
-import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getWgpuQuadBatchPreludeWGSL } from './wgpuQuadBatchWriter';
 import { drawWgpuShapeMeshBatch } from './wgpuShapeMesh';
@@ -28,12 +26,8 @@ import { drawWgpuShapeMeshBatch } from './wgpuShapeMesh';
 export function registerWgpuColorAdjustmentMaterialFeature(state: WgpuRenderState): void {
   enableColorAdjustments(state);
   const runtime = getWgpuRenderStateRuntime(state);
-  const table = runtime.registries.colorAdjustmentFeature ?? createSlotTable('WgpuColorAdjustmentFeature', 'Disabled');
-  if (table.entry?.state !== RegistryEntryState.Bound || table.entry.value !== wgpuColorAdjustmentMaterialFeature) {
-    runtime.registries.colorAdjustmentFeature = {
-      ...table,
-      entry: { state: RegistryEntryState.Bound, value: wgpuColorAdjustmentMaterialFeature },
-    };
+  if (runtime.registries.colorAdjustmentFeature !== wgpuColorAdjustmentMaterialFeature) {
+    runtime.registries.colorAdjustmentFeature = wgpuColorAdjustmentMaterialFeature;
   }
   if (runtime.quadBatchWriterColorScaleBiasMode === undefined) runtime.quadBatchWriterColorScaleBiasMode = CT_MODE_NONE;
 }

@@ -1,14 +1,13 @@
 import { logOnce } from '@flighthq/log/contract';
-import { createSlotTable } from '@flighthq/registry/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
 import type { GlRenderState, NodeAny, RenderState } from '@flighthq/types/contract';
-import { LogLevel, RegistryEntryState } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 
 export function areGlRenderStateGuardsEnabled(state: GlRenderState): boolean {
-  const entry = getRenderStateRuntime(state).registries.renderRootGuard?.entry;
-  return entry?.state === RegistryEntryState.Bound && entry.value === warnOnSecondRenderRoot;
+  const guard = getRenderStateRuntime(state).registries.renderRootGuard;
+  return guard === warnOnSecondRenderRoot;
 }
 
 // Installs the GL pipeline-policy guard. A render state derives proxy transforms relative to one root;
@@ -16,12 +15,8 @@ export function areGlRenderStateGuardsEnabled(state: GlRenderState): boolean {
 // rendered root its own createGlRenderState(gl, pipeline) state.
 export function enableGlRenderStateGuards(state: GlRenderState): void {
   const runtime = getRenderStateRuntime(state);
-  const table = runtime.registries.renderRootGuard ?? createSlotTable('RenderRootGuard', 'Disabled');
-  if (table.entry?.state !== RegistryEntryState.Bound || table.entry.value !== warnOnSecondRenderRoot) {
-    runtime.registries.renderRootGuard = {
-      ...table,
-      entry: { state: RegistryEntryState.Bound, value: warnOnSecondRenderRoot },
-    };
+  if (runtime.registries.renderRootGuard !== warnOnSecondRenderRoot) {
+    runtime.registries.renderRootGuard = warnOnSecondRenderRoot;
   }
   getGlRenderStateRuntime(state).bindingCacheGuard = warnOnForeignGlBinding;
 }

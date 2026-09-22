@@ -1,4 +1,4 @@
-import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import type {
   FlightDocument,
   FlightDocumentResourceDescriptor,
@@ -69,15 +69,18 @@ function createResource(
 }
 
 function createSchemas(...resourceKinds: string[]): FlightDocumentSchemaRegistry {
-  let resourceSchemas = createKeyedTable<FlightDocumentResourceSchema>('flight-document.resource', 'none');
+  let resourceSchemas: ReadonlyMap<string, FlightDocumentResourceSchema> = new Map();
   for (const kind of resourceKinds) {
-    resourceSchemas = withRegistryTableEntry(resourceSchemas, kind, { fields: [], kind });
+    resourceSchemas = withKindMapEntry(resourceSchemas, kind, {
+      fields: [],
+      kind,
+    } as unknown as FlightDocumentResourceSchema);
   }
   return {
-    interactiveStateExtensionSchemas: createKeyedTable('flight-document.interactive-state-extension', 'none'),
-    interactiveStateTransitionSchemas: createKeyedTable('flight-document.interactive-state-transition', 'none'),
-    nodeSchemas: createKeyedTable('flight-document.node', 'none'),
+    interactiveStateExtensionSchemas: new Map(),
+    interactiveStateTransitionSchemas: new Map(),
+    nodeSchemas: new Map(),
     resourceSchemas,
-    shapeCommandSchemas: createKeyedTable('flight-document.shape-command', 'none'),
+    shapeCommandSchemas: new Map(),
   };
 }

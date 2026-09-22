@@ -1,6 +1,6 @@
 import { createTransform3D } from '@flighthq/geometry/contract';
 import { createAmbientLight } from '@flighthq/lighting/contract';
-import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { createNode3D } from '@flighthq/scene3d/contract';
 import type {
@@ -163,8 +163,8 @@ function createMixedDocument(): FlightDocument {
 }
 
 function createTestResolvers(sharedResource: unknown): FlightDocumentResourceResolverRegistry {
-  let resolvers = createKeyedTable<FlightDocumentResourceResolver>('flight-document.resolver', 'none');
-  resolvers = withRegistryTableEntry(resolvers, 'TestResource', () => sharedResource);
+  let resolvers: ReadonlyMap<string, FlightDocumentResourceResolver> = new Map();
+  resolvers = withKindMapEntry(resolvers, 'TestResource', (() => sharedResource) as FlightDocumentResourceResolver);
   return { resolvers };
 }
 
@@ -178,13 +178,13 @@ function createTestSchemas(seenResources: unknown[]): FlightDocumentSchemaRegist
     kind,
     writeNodeFields: (_out: FlightDocumentFields, _source: Readonly<NodeAny>) => true,
   });
-  let nodeSchemas = createKeyedTable<FlightDocumentNodeSchema>('flight-document.node', 'none');
-  nodeSchemas = withRegistryTableEntry(
+  let nodeSchemas: ReadonlyMap<string, FlightDocumentNodeSchema> = new Map();
+  nodeSchemas = withKindMapEntry(
     nodeSchemas,
     DisplayObjectKind,
     createSchema(DisplayObjectKind, () => createDisplayObject()),
   );
-  nodeSchemas = withRegistryTableEntry(
+  nodeSchemas = withKindMapEntry(
     nodeSchemas,
     TestScene2DNodeKind,
     createSchema(TestScene2DNodeKind, (resources) => {
@@ -192,12 +192,12 @@ function createTestSchemas(seenResources: unknown[]): FlightDocumentSchemaRegist
       return createDisplayObject();
     }),
   );
-  nodeSchemas = withRegistryTableEntry(
+  nodeSchemas = withKindMapEntry(
     nodeSchemas,
     Node3DKind,
     createSchema(Node3DKind, () => createNode3D()),
   );
-  nodeSchemas = withRegistryTableEntry(
+  nodeSchemas = withKindMapEntry(
     nodeSchemas,
     TestScene3DNodeKind,
     createSchema(TestScene3DNodeKind, (resources) => {
@@ -206,10 +206,10 @@ function createTestSchemas(seenResources: unknown[]): FlightDocumentSchemaRegist
     }),
   );
   return {
-    interactiveStateExtensionSchemas: createKeyedTable('flight-document.interactive-state-extension', 'none'),
-    interactiveStateTransitionSchemas: createKeyedTable('flight-document.interactive-state-transition', 'none'),
+    interactiveStateExtensionSchemas: new Map(),
+    interactiveStateTransitionSchemas: new Map(),
     nodeSchemas,
-    resourceSchemas: createKeyedTable('flight-document.resource', 'none'),
-    shapeCommandSchemas: createKeyedTable('flight-document.shape-command', 'none'),
+    resourceSchemas: new Map(),
+    shapeCommandSchemas: new Map(),
   };
 }

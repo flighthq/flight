@@ -1,4 +1,4 @@
-import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getTextureSource } from '@flighthq/texture/contract';
 import type {
   GlContext,
@@ -18,7 +18,7 @@ import type {
   TextureFilter,
   TextureWrap,
 } from '@flighthq/types/contract';
-import { BlendMode, RegistryEntryState } from '@flighthq/types/contract';
+import { BlendMode } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 import { ensureDefaultGlBitmapShader, setGlAttributes, setGlMatrixFromValues } from './glShader';
@@ -33,8 +33,8 @@ import { uploadGlTextureVideoFrame } from './glTextureVideoUpload';
 export function applyGlBlendMode(state: GlRenderState, blendMode: BlendMode | null): void {
   const runtime = getGlRenderStateRuntime(state);
   const gl = state.gl;
-  const entry = blendMode !== null ? runtime.registries.blendRealizations.entries.get(blendMode) : null;
-  const realization = entry?.state === RegistryEntryState.Bound ? entry.value : NORMAL_BLEND;
+  const entry = blendMode !== null ? runtime.registries.blendRealizations.get(blendMode) : null;
+  const realization = entry ?? NORMAL_BLEND;
   const signature: GlBlendSignature = {
     dst: gl[realization.dst],
     equation: gl[realization.equation ?? 'FUNC_ADD'],
@@ -363,10 +363,7 @@ export function enableGlBlendModeSupport(state: GlRenderState): void {
 // result means applyGlBlendMode would fall back to normal compositing for it — either an unregistered
 // vendor mode or a built-in (Overlay, HardLight, Difference, Invert) that needs a shader pass.
 export function isBlendModeSupported(state: GlRenderState, blendMode: BlendMode): boolean {
-  return (
-    getGlRenderStateRuntime(state).registries.blendRealizations.entries.get(blendMode)?.state ===
-    RegistryEntryState.Bound
-  );
+  return getGlRenderStateRuntime(state).registries.blendRealizations.has(blendMode);
 }
 
 // Registers the built-in fixed-function blend modes on the state. Overlay/HardLight/Difference/Invert
@@ -381,11 +378,7 @@ export function registerDefaultGlBlendModes(state: GlRenderState): void {
 // leaves any already-derived render state on its prior snapshot.
 export function registerGlBlendMode(state: GlRenderState, blendMode: BlendMode, realization: GlBlendRealization): void {
   const runtime = getGlRenderStateRuntime(state);
-  runtime.registries.blendRealizations = withRegistryTableEntry(
-    runtime.registries.blendRealizations,
-    blendMode,
-    realization,
-  );
+  runtime.registries.blendRealizations = withKindMapEntry(runtime.registries.blendRealizations, blendMode, realization);
 }
 
 export function setGlQuadMatrixFromOffset(
@@ -466,15 +459,10 @@ function uploadGlCompressedImage(
   colorSpace: TextureColorSpace,
 ): void {
   const runtime = getGlRenderStateRuntime(state);
-  const uploadEntry = runtime.registries.compressedTextureUpload?.entry;
-  if (uploadEntry?.state !== RegistryEntryState.Bound) return;
-  const decoderEntry = runtime.registries.compressedTextureDecoder?.entry;
-  uploadEntry.value(
-    state.gl,
-    image as Readonly<CompressedImageResource>,
-    decoderEntry?.state === RegistryEntryState.Bound ? decoderEntry.value : null,
-    colorSpace,
-  );
+  const uploadEntry = runtime.registries.compressedTextureUpload;
+  if (uploadEntry == null) return;
+  const decoderEntry = runtime.registries.compressedTextureDecoder;
+  uploadEntry(state.gl, image as Readonly<CompressedImageResource>, decoderEntry ?? null, colorSpace);
 }
 
 function uploadGlImageResource(
@@ -632,9 +620,9 @@ const DEFAULT_GL_BLEND_MODES: readonly (readonly [BlendMode, GlBlendRealization]
   [BlendMode.Screen, { src: 'ONE', dst: 'ONE_MINUS_SRC_COLOR' }],
 ];
 
-let _standardGlBlendRealizations = createKeyedTable<GlBlendRealization>('GlBlendRealization', 'Normal');
+let _standardGlBlendRealizations: ReadonlyMap<string, GlBlendRealization> = new Map();
 for (const [mode, realization] of DEFAULT_GL_BLEND_MODES) {
-  _standardGlBlendRealizations = withRegistryTableEntry(_standardGlBlendRealizations, mode, realization);
+  _standardGlBlendRealizations = withKindMapEntry(_standardGlBlendRealizations, mode, realization);
 }
 
 export { _standardGlBlendRealizations as standardGlBlendRealizations };

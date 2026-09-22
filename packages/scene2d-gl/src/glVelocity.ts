@@ -6,6 +6,7 @@ import {
   getNodeWorldBoundsRectangle,
   getNodeWorldMatrix,
 } from '@flighthq/node/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createGlTextureRenderTarget } from '@flighthq/render-gl/contract';
@@ -25,7 +26,7 @@ import type {
   Velocity2D,
   VelocityField,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { getVelocity } from '@flighthq/velocity/contract';
 
 // Gl velocity-buffer production. Velocity is tied to the draw, so production is per-kind: the velocity
@@ -72,8 +73,8 @@ export function drawGlVelocityQuad(
 }
 
 export function getGlVelocityWriter(state: GlRenderState, kind: Kind): GlVelocityWriter | null {
-  const entry = getGlRenderStateRuntime(state).registries.velocityWriters.entries.get(kind);
-  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+  const entry = getGlRenderStateRuntime(state).registries.velocityWriters.get(kind);
+  return entry ?? null;
 }
 
 // The default writer for plain display-object nodes: cover the node's world bounds with its velocity.
@@ -266,10 +267,7 @@ export const glQuadBatchVelocityWriter: GlVelocityWriter = (ctx, node) => {
 
 export function registerGlVelocityWriter(state: GlRenderState, kind: Kind, writer: GlVelocityWriter): void {
   const runtime = getGlRenderStateRuntime(state);
-  const table = runtime.registries.velocityWriters;
-  const entries = new Map(table.entries);
-  entries.set(kind, { state: RegistryEntryState.Bound, value: writer });
-  runtime.registries.velocityWriters = { ...table, entries };
+  runtime.registries.velocityWriters = withKindMapEntry(runtime.registries.velocityWriters, kind, writer);
 }
 
 /**

@@ -1,5 +1,4 @@
 import { invalidateNodeAppearance, invalidateNodeLocalTransform } from '@flighthq/node/contract';
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import type {
   FlightDocumentFields,
   FlightDocumentInteractiveState,
@@ -163,7 +162,7 @@ function buildInteractiveStateRuntime(
 
   let transition: Readonly<NodeInteractiveStateTransition> | null = null;
   if (transitionDescriptor !== null) {
-    const schema = getRegistryTableEntry(schemas.interactiveStateTransitionSchemas, transitionDescriptor.kind);
+    const schema = schemas.interactiveStateTransitionSchemas.get(transitionDescriptor.kind) ?? null;
     if (schema === null) {
       return {
         explanation: {
@@ -187,7 +186,7 @@ function buildInteractiveStateRuntime(
 
   const extensions: InteractiveExtension[] = [];
   for (const [kind, fieldNames] of collectExtensionFieldNames(interactiveStates)) {
-    const schema = getRegistryTableEntry(schemas.interactiveStateExtensionSchemas, kind);
+    const schema = schemas.interactiveStateExtensionSchemas.get(kind) ?? null;
     if (schema === null) {
       disposeExtensions(extensions);
       return {

@@ -42,7 +42,7 @@ describe('registerInnerGlowEffectPaddingResolver', () => {
     const state = createRenderState();
     const other = createRenderState();
     registerInnerGlowEffectPaddingResolver(state);
-    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.entries.has('InnerGlowEffect')).toBe(true);
+    expect(getRenderStateRuntime(state).registries.effectPaddingResolvers?.has('InnerGlowEffect')).toBe(true);
     expect(getRenderStateRuntime(other).registries.effectPaddingResolvers).toBeUndefined();
   });
 });

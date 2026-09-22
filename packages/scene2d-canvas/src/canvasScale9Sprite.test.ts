@@ -8,7 +8,7 @@ import { getOrCreateRenderProxy2D, prepareScene2DRender, registerNodeRenderer } 
 import { createScale9Sprite, createSprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { Kind, NodeRenderer } from '@flighthq/types/contract';
-import { RegistryEntryState, Scale9SpriteKind, SpriteKind } from '@flighthq/types/contract';
+import { Scale9SpriteKind, SpriteKind } from '@flighthq/types/contract';
 
 import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
 import {} from './canvasPipeline';
@@ -27,12 +27,8 @@ afterEach(() => {
   unregisterTestImageDimensionResolver();
 });
 
-// The registry deliberately makes a tombstone unreachable without narrowing, so the helper narrows once
-// here rather than at four call sites. A missing or tombstoned entry reads as null, which is what the
-// coupling assertions want to distinguish from a bound renderer.
 function pipelineRenderer(kind: Kind): NodeRenderer | null {
-  const entry = canvasScene2DRenderRegistries.nodeRenderers.entries.get(kind);
-  return entry !== undefined && entry.state === RegistryEntryState.Bound ? entry.value : null;
+  return canvasScene2DRenderRegistries.nodeRenderers.get(kind) ?? null;
 }
 
 function makeState() {

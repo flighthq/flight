@@ -1,4 +1,3 @@
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import type {
   FlightDocument,
   FlightDocumentResourceDescriptor,
@@ -13,7 +12,7 @@ export function getFlightDocumentResourceDependencies(
   schemas: Readonly<FlightDocumentSchemaRegistry>,
 ): readonly Readonly<FlightDocumentResourceDescriptor>[] | null {
   for (const descriptor of document.resources) {
-    if (getRegistryTableEntry(schemas.resourceSchemas, descriptor.kind) === null) return null;
+    if (!schemas.resourceSchemas.has(descriptor.kind)) return null;
   }
   return document.resources;
 }

@@ -1,4 +1,3 @@
-import { createKeyedTable } from '@flighthq/registry/contract';
 import type { GlRenderRegistries } from '@flighthq/types/contract';
 
 export function allocateEmptyGlRenderRegistries(): GlRenderRegistries {
@@ -16,17 +15,17 @@ export function initializeEmptyGlRenderRegistries(out: GlRenderRegistries): void
   out.shapeRasterizer = null;
   out.strokeTessellator = null;
 
-  out.blendRealizations = createKeyedTable('GlBlendRealization', 'Normal');
-  out.customEffectShaders = createKeyedTable('GlCustomEffectShader', 'Unregistered');
-  out.customMaterialShaders = createKeyedTable('GlCustomMaterialShader', 'Unregistered');
-  out.materialRenderers = createKeyedTable('GlMaterialRenderer', 'StandardMaterial');
-  out.modifierSnippets = createKeyedTable('GlModifierSnippet', 'Unregistered');
+  out.blendRealizations = new Map();
+  out.customEffectShaders = new Map();
+  out.customMaterialShaders = new Map();
+  out.materialRenderers = new Map();
+  out.modifierSnippets = new Map();
   out.modifierSnippetRevision = 0;
-  out.pbrExtensions = createKeyedTable('GlPbrExtension', 'Unregistered');
+  out.pbrExtensions = new Map();
   out.pbrExtensionRevision = 0;
-  out.effects = createKeyedTable('GlEffect', 'Unregistered');
-  out.nodeRenderers = createKeyedTable('NodeRenderer', 'Unregistered');
+  out.effects = new Map();
+  out.nodeRenderers = new Map();
   out.passes = null;
-  out.textureResolvers = createKeyedTable('GlTextureResolver', 'Unregistered');
-  out.velocityWriters = createKeyedTable('GlVelocityWriter', 'Unregistered');
+  out.textureResolvers = new Map();
+  out.velocityWriters = new Map();
 }

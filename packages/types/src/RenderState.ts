@@ -7,7 +7,6 @@ import type { NodeAny } from './Node';
 import type { NodeRenderer } from './NodeRenderer';
 import type { Path } from './Path';
 import type { PathMesh } from './PathMesh';
-import type { KeyedTable, SlotTable } from './RegistryTable';
 import type { RenderProxy } from './RenderProxy';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderProxyAdapter } from './RenderProxyAdapter';
@@ -41,23 +40,23 @@ export interface RenderState extends Entity {
 // Pure registration policy shared by every render backend. Members remain optional when importing the
 // corresponding registrar is optional, so an unwired base state carries no table metadata.
 export interface RenderRegistries {
-  canvasShapeCommands?: KeyedTable<CanvasShapeCommand>;
+  canvasShapeCommands?: ReadonlyMap<Kind, CanvasShapeCommand>;
   // Opt-in color-adjustment accumulation. The empty slot keeps adjustment/material math out of the
   // base walk; a bound pure function is safe to snapshot across derived pipelines.
-  colorAdjustments?: SlotTable<(state: RenderState, data: RenderProxy, parentData?: RenderProxy) => void>;
+  colorAdjustments?: ((state: RenderState, data: RenderProxy, parentData?: RenderProxy) => void) | null;
   // Optional diagnostic policy for operations the inline color-adjustment resolver cannot represent.
   // Binding this callback reports the omission but never enables accumulation or backend realization.
-  colorAdjustmentUnsupportedGuard?: SlotTable<ColorAdjustmentUnsupportedGuard>;
-  effectPaddingResolvers?: KeyedTable<EffectPaddingResolver>;
-  nodeRenderers: KeyedTable<NodeRenderer>;
+  colorAdjustmentUnsupportedGuard?: ColorAdjustmentUnsupportedGuard | null;
+  effectPaddingResolvers?: ReadonlyMap<Kind, EffectPaddingResolver>;
+  nodeRenderers: ReadonlyMap<Kind, NodeRenderer>;
   // Optional diagnostic policy reached before a root walk. Backends bind this to diagnose pipeline-
   // policy mistakes without adding their warning dependency to the substrate-independent render path.
-  renderRootGuard?: SlotTable<RenderRootGuard>;
+  renderRootGuard?: RenderRootGuard | null;
   // Opt-in closed-ring/self-intersection stroke kernel. Absent means the compact mesh lane rasterizes
   // closed strokes, which is the default every pipeline gets for free: the slot is allocated by
   // enableGlStrokePathTessellation / enableWgpuStrokePathTessellation, not by pipeline construction, so
   // a state that never opts in carries no table for it.
-  strokeTessellator: SlotTable<StrokeTessellator> | null;
+  strokeTessellator: StrokeTessellator | null;
 }
 
 export type ColorAdjustmentUnsupportedGuard = (state: RenderState, source: NodeAny) => void;

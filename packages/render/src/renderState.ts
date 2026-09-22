@@ -1,5 +1,4 @@
 import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
-import { createKeyedTable } from '@flighthq/registry/contract';
 import type {
   ColorAdjustmentUnsupportedGuard,
   RenderState,
@@ -7,7 +6,7 @@ import type {
   NodeAny,
   EntityConstruction,
 } from '@flighthq/types/contract';
-import { BlendMode, EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
+import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
 
 export function createRenderState(obj?: Partial<RenderState>): RenderState {
   const state = allocateEntity<RenderState>();
@@ -29,7 +28,7 @@ export function createRenderStateRuntime(): RenderStateRuntime {
   runtime.renderProxySources = new Set();
   runtime.registryMiss = null;
   runtime.registries = {
-    nodeRenderers: createKeyedTable('NodeRenderer', 'Unregistered'),
+    nodeRenderers: new Map(),
     // Written as null rather than left off: the field's presence is what keeps every registries object
     // one hidden class, so the per-shape reads on the draw path stay monomorphic. The opt-in registrar
     // fills the slot; nothing allocates a table for a state that never opts in.
@@ -52,8 +51,7 @@ export function destroyRenderState(state: RenderState): void {
 }
 
 export function getColorAdjustmentUnsupportedGuard(state: RenderState): ColorAdjustmentUnsupportedGuard | null {
-  const entry = getRenderStateRuntime(state).registries.colorAdjustmentUnsupportedGuard?.entry;
-  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+  return getRenderStateRuntime(state).registries.colorAdjustmentUnsupportedGuard ?? null;
 }
 
 // Resolves the package-private machinery runtime attached to a RenderState. Mutable by design: the

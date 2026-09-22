@@ -1,6 +1,5 @@
-import { getRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import type { Kind, NodeAny, NodeRenderer, RendererData, RenderState } from '@flighthq/types/contract';
-import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getRenderStateRuntime } from './renderState';
 
@@ -19,19 +18,15 @@ export function copyRenderersFromRenderState(target: RenderState, source: Render
   // A fresh derived pipeline can share the immutable source snapshot directly. A target that already
   // has policy keeps its target-only registrations, matching the additive copy contract, while source
   // bindings remain last-write-wins through registerNodeRenderer.
-  if (targetTable.entries.size === 0) {
-    let registrationCount = 0;
-    for (const entry of sourceTable.entries.values()) {
-      if (entry.state === RegistryEntryState.Bound) registrationCount++;
-    }
-    if (registrationCount === 0) return;
+  if (targetTable.size === 0) {
+    if (sourceTable.size === 0) return;
     targetRuntime.registries.nodeRenderers = sourceTable;
-    targetRuntime.rendererMapId = (targetRuntime.rendererMapId + registrationCount) >>> 0;
+    targetRuntime.rendererMapId = (targetRuntime.rendererMapId + sourceTable.size) >>> 0;
     return;
   }
 
-  for (const [kind, entry] of sourceTable.entries) {
-    if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(target, kind, entry.value);
+  for (const [kind, renderer] of sourceTable) {
+    registerNodeRenderer(target, kind, renderer);
   }
 }
 
@@ -59,8 +54,8 @@ export function noopRendererData(_state: RenderState, _source: NodeAny): Rendere
 export function registerNodeRenderer(state: RenderState, kind: Kind, renderer: NodeRenderer): void {
   const runtime = getRenderStateRuntime(state);
   const table = runtime.registries.nodeRenderers;
-  if (getRegistryTableEntry(table, kind) === renderer) return;
-  runtime.registries.nodeRenderers = withRegistryTableEntry(table, kind, renderer);
+  if (table.get(kind) === renderer) return;
+  runtime.registries.nodeRenderers = withKindMapEntry(table, kind, renderer);
   runtime.rendererMapId = (runtime.rendererMapId + 1) >>> 0;
 }
 

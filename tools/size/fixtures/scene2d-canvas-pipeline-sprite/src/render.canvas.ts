@@ -1,6 +1,6 @@
 import { createWebImageResourceFromCanvas, webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
-import { withRegistryTableEntry } from '@flighthq/registry';
+import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import { createDisplayObject, createSprite } from '@flighthq/scene2d';
 import {
@@ -18,7 +18,7 @@ import {
   renderCanvasScene2D,
 } from '@flighthq/scene2d-canvas';
 import { createTexture } from '@flighthq/texture';
-import { RegistryEntryState, SpriteKind } from '@flighthq/types';
+import { SpriteKind } from '@flighthq/types';
 
 const canvas = document.createElement('canvas');
 canvas.width = 400;
@@ -29,7 +29,7 @@ document.body.appendChild(canvas);
 const emptyRegistries = allocateEmptyCanvasRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  nodeRenderers: withRegistryTableEntry(emptyRegistries.nodeRenderers, SpriteKind, canvasSpriteRenderer),
+  nodeRenderers: withKindMapEntry(emptyRegistries.nodeRenderers, SpriteKind, canvasSpriteRenderer),
 };
 const screen = createCanvasScreenRenderTarget(
   createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, { height: 300, pixelRatio: 1, width: 400 }),
@@ -42,8 +42,8 @@ registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 
 const registries = registry;
-for (const [kind, entry] of registries.nodeRenderers.entries) {
-  if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(state, kind, entry.value);
+for (const [kind, renderer] of registries.nodeRenderers) {
+  registerNodeRenderer(state, kind, renderer);
 }
 registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
 

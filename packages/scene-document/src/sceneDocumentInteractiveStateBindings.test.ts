@@ -1,4 +1,4 @@
-import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   FlightDocumentInteractiveStateBinding,
@@ -50,7 +50,7 @@ describe('isInteractiveStateBindingTargetSupported', () => {
       transition: null,
     };
     const schemas = createSchemas();
-    schemas.interactiveStateExtensionSchemas = withRegistryTableEntry(
+    schemas.interactiveStateExtensionSchemas = withKindMapEntry(
       schemas.interactiveStateExtensionSchemas,
       'acme.Outline',
       {
@@ -72,7 +72,7 @@ describe('readInteractiveStateBindingMetadata', () => {
     binding.interactiveStates.hover!.extensions.push({ fields: { width: 1 }, kind: 'acme.Outline' });
     binding.transition = { fields: { duration: 100 }, kind: 'acme.Transition' };
     const schemas = createSchemas();
-    schemas.interactiveStateExtensionSchemas = withRegistryTableEntry(
+    schemas.interactiveStateExtensionSchemas = withKindMapEntry(
       schemas.interactiveStateExtensionSchemas,
       'acme.Outline',
       {
@@ -82,7 +82,7 @@ describe('readInteractiveStateBindingMetadata', () => {
         kind: 'acme.Outline',
       },
     );
-    schemas.interactiveStateTransitionSchemas = withRegistryTableEntry(
+    schemas.interactiveStateTransitionSchemas = withKindMapEntry(
       schemas.interactiveStateTransitionSchemas,
       'acme.Transition',
       {
@@ -120,10 +120,10 @@ function createBinding(node: ReturnType<typeof createDisplayObject>): FlightDocu
 
 function createSchemas(): FlightDocumentSchemaRegistry {
   return {
-    interactiveStateExtensionSchemas: createKeyedTable('flight-document.interactive-state-extension', 'none'),
-    interactiveStateTransitionSchemas: createKeyedTable('flight-document.interactive-state-transition', 'none'),
-    nodeSchemas: createKeyedTable('flight-document.node', 'none'),
-    resourceSchemas: createKeyedTable('flight-document.resource', 'none'),
-    shapeCommandSchemas: createKeyedTable('flight-document.shape-command', 'none'),
+    interactiveStateExtensionSchemas: new Map(),
+    interactiveStateTransitionSchemas: new Map(),
+    nodeSchemas: new Map(),
+    resourceSchemas: new Map(),
+    shapeCommandSchemas: new Map(),
   };
 }

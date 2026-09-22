@@ -1,7 +1,6 @@
 import { logOnce } from '@flighthq/log/contract';
-import { createSlotTable } from '@flighthq/registry/contract';
 import type { RenderState } from '@flighthq/types/contract';
-import { LogLevel, RegistryEntryState } from '@flighthq/types/contract';
+import { LogLevel } from '@flighthq/types/contract';
 
 import { getColorAdjustmentUnsupportedGuard, getRenderStateRuntime } from './renderState';
 
@@ -17,15 +16,8 @@ export function areColorAdjustmentGuardsEnabled(state: RenderState): boolean {
 // Idempotent.
 export function enableColorAdjustmentGuards(state: RenderState): void {
   const runtime = getRenderStateRuntime(state);
-  const table =
-    runtime.registries.colorAdjustmentUnsupportedGuard ??
-    createSlotTable('ColorAdjustmentUnsupportedGuard', 'Disabled');
-  if (table.entry?.state !== RegistryEntryState.Bound || table.entry.value !== warnUnsupportedColorAdjustment) {
-    runtime.registries.colorAdjustmentUnsupportedGuard = {
-      ...table,
-      entry: { state: RegistryEntryState.Bound, value: warnUnsupportedColorAdjustment },
-    };
-  }
+  if (runtime.registries.colorAdjustmentUnsupportedGuard === warnUnsupportedColorAdjustment) return;
+  runtime.registries.colorAdjustmentUnsupportedGuard = warnUnsupportedColorAdjustment;
 }
 
 function warnUnsupportedColorAdjustment(): void {

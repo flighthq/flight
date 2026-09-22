@@ -1,11 +1,9 @@
-import { createSlotTable } from '@flighthq/registry/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState, ShapeRasterizer } from '@flighthq/types/contract';
-import { RegistryEntryState } from '@flighthq/types/contract';
 
 export function getWgpuShapeRasterizer(state: WgpuRenderState): ShapeRasterizer | null {
-  const entry = getWgpuRenderStateRuntime(state).registries.shapeRasterizer?.entry;
-  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+  const entry = getWgpuRenderStateRuntime(state).registries.shapeRasterizer;
+  return entry ?? null;
 }
 
 // Installs the fallback that draws fills the mesh path cannot express. Registration is the opt-in: a
@@ -13,9 +11,5 @@ export function getWgpuShapeRasterizer(state: WgpuRenderState): ShapeRasterizer 
 // reaches for a rasterizer the caller did not name. Pass null to remove one.
 export function registerWgpuShapeRasterizer(state: WgpuRenderState, rasterizer: ShapeRasterizer | null): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  const table = runtime.registries.shapeRasterizer ?? createSlotTable('WgpuShapeRasterizer', 'Unregistered');
-  runtime.registries.shapeRasterizer = {
-    ...table,
-    entry: rasterizer === null ? null : { state: RegistryEntryState.Bound, value: rasterizer },
-  };
+  runtime.registries.shapeRasterizer = rasterizer;
 }

@@ -1,4 +1,4 @@
-import { createKeyedTable, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import type {
   FlightDocumentFields,
   FlightDocumentNode,
@@ -81,7 +81,7 @@ describe('checkFlightDocumentInteractiveStates', () => {
 describe('checkFlightDocumentNodeFields', () => {
   it('walks registered nodes recursively', () => {
     const schemas = createTestSchemas('TestKind');
-    schemas.nodeSchemas = withRegistryTableEntry(schemas.nodeSchemas, 'TestKind', {
+    schemas.nodeSchemas = withKindMapEntry(schemas.nodeSchemas, 'TestKind', {
       createNode: () => null,
       fields: [{ name: 'name', required: true, validate: (value) => typeof value === 'string' }],
       kind: 'TestKind',
@@ -216,14 +216,14 @@ function createTestSchemas(registeredKind: string): FlightDocumentSchemaRegistry
     kind: registeredKind,
     writeNodeFields: (_out: FlightDocumentFields, _source: Readonly<NodeAny>) => true,
   };
-  let nodeSchemas = createKeyedTable<FlightDocumentNodeSchema>('flight-document.node', 'none');
-  nodeSchemas = withRegistryTableEntry(nodeSchemas, registeredKind, schema);
+  let nodeSchemas: ReadonlyMap<string, FlightDocumentNodeSchema> = new Map();
+  nodeSchemas = withKindMapEntry(nodeSchemas, registeredKind, schema);
   return {
-    interactiveStateExtensionSchemas: createKeyedTable('flight-document.interactive-state-extension', 'none'),
-    interactiveStateTransitionSchemas: createKeyedTable('flight-document.interactive-state-transition', 'none'),
+    interactiveStateExtensionSchemas: new Map(),
+    interactiveStateTransitionSchemas: new Map(),
     nodeSchemas,
-    resourceSchemas: createKeyedTable('flight-document.resource', 'none'),
-    shapeCommandSchemas: createKeyedTable('flight-document.shape-command', 'none'),
+    resourceSchemas: new Map(),
+    shapeCommandSchemas: new Map(),
   };
 }
 describe('initializeDocumentRefusal', () => {

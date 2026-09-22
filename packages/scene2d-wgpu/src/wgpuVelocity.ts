@@ -28,7 +28,7 @@ import type {
   WgpuVelocityContext,
   WgpuVelocityWriter,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey, RegistryEntryState } from '@flighthq/types/contract';
+import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { getVelocity } from '@flighthq/velocity/contract';
 
 // Wgpu velocity-buffer production, the mirror of scene2d-gl's webglVelocity. Velocity is tied to the
@@ -92,16 +92,16 @@ export function drawWgpuVelocityQuad(
 }
 
 export function getWgpuVelocityWriter(state: WgpuRenderState, kind: Kind): WgpuVelocityWriter | null {
-  const entry = getWgpuRenderStateRuntime(state).registries.velocityWriters.entries.get(kind);
-  return entry?.state === RegistryEntryState.Bound ? entry.value : null;
+  const entry = getWgpuRenderStateRuntime(state).registries.velocityWriters.get(kind);
+  return entry ?? null;
 }
 
 export function registerWgpuVelocityWriter(state: WgpuRenderState, kind: Kind, writer: WgpuVelocityWriter): void {
   const runtime = getWgpuRenderStateRuntime(state);
   const table = runtime.registries.velocityWriters;
-  const entries = new Map(table.entries);
-  entries.set(kind, { state: RegistryEntryState.Bound, value: writer });
-  runtime.registries.velocityWriters = { ...table, entries };
+  const entries = new Map(table);
+  entries.set(kind, writer);
+  runtime.registries.velocityWriters = entries;
 }
 
 /**

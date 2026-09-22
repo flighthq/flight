@@ -1,4 +1,4 @@
-import { createKeyedTable, withoutRegistryTableEntry, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withoutKindMapEntry, withKindMapEntry } from '@flighthq/registry/contract';
 import { getTextureSampleColorSpace, getTextureSource, getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
   RenderTargetColorSpace,
@@ -18,7 +18,6 @@ import {
   CompressedImageTextureSourceKind,
   ImageTextureSourceKind,
   RenderRegistryTable,
-  RegistryEntryState,
   RenderTargetTextureSourceKind,
 } from '@flighthq/types/contract';
 
@@ -59,9 +58,7 @@ export function registerGlTextureResolver(
   const runtime = getGlRenderStateRuntime(state);
   const table = runtime.registries.textureResolvers;
   runtime.registries.textureResolvers =
-    resolver === null
-      ? withoutRegistryTableEntry(table, sourceKind)
-      : withRegistryTableEntry(table, sourceKind, resolver);
+    resolver === null ? withoutKindMapEntry(table, sourceKind) : withKindMapEntry(table, sourceKind, resolver);
 }
 
 export function registerStandardGlTextureResolvers(state: GlRenderState): void {
@@ -88,12 +85,12 @@ export function resolveGlTexture(
   const sourceKind = getTextureSourceKind(texture);
   if (sourceKind === null) return null;
   const runtime = getGlRenderStateRuntime(state);
-  const entry = runtime.registries.textureResolvers.entries.get(sourceKind);
-  if (entry?.state !== RegistryEntryState.Bound) {
+  const entry = runtime.registries.textureResolvers.get(sourceKind);
+  if (entry == null) {
     runtime.registryMiss?.(RenderRegistryTable.TextureResolver, sourceKind);
     return null;
   }
-  const realization = entry.value(
+  const realization = entry(
     state,
     texture,
     premultiply,
@@ -149,13 +146,9 @@ function resolveGlRenderTexture(state: GlRenderState, texture: Readonly<TextureL
   return handle === null ? null : { straightAlpha: false, texture: handle };
 }
 
-const _standardGlTextureResolvers = withRegistryTableEntry(
-  withRegistryTableEntry(
-    withRegistryTableEntry(
-      createKeyedTable<GlTextureResolver>('GlTextureResolver', 'Unregistered'),
-      BitmapTextureSourceKind,
-      resolveGlBitmapTexture,
-    ),
+const _standardGlTextureResolvers = withKindMapEntry(
+  withKindMapEntry(
+    withKindMapEntry(new Map(), BitmapTextureSourceKind, resolveGlBitmapTexture),
     ImageTextureSourceKind,
     resolveGlImageTexture,
   ),

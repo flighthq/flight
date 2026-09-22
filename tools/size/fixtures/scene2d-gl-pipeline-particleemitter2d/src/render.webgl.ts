@@ -8,7 +8,7 @@ import {
 } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { createParticleEmitter2D } from '@flighthq/particleemitter';
-import { withRegistryTableEntry } from '@flighthq/registry';
+import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
 import {
   allocateEmptyGlRenderRegistries,
@@ -23,7 +23,7 @@ import { glParticleEmitter2DRenderer, renderGlScene2D } from '@flighthq/scene2d-
 import { createGlSurface } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas';
-import { ParticleEmitter2DKind, RegistryEntryState } from '@flighthq/types';
+import { ParticleEmitter2DKind } from '@flighthq/types';
 
 const appWindow = createAppWindow();
 openWindow(webHostWindowLifecycle, webHostWindowGeometry, appWindow, {});
@@ -37,18 +37,14 @@ document.body.style.margin = '0';
 const emptyRegistries = allocateEmptyGlRenderRegistries();
 const registry = {
   ...emptyRegistries,
-  nodeRenderers: withRegistryTableEntry(
-    emptyRegistries.nodeRenderers,
-    ParticleEmitter2DKind,
-    glParticleEmitter2DRenderer,
-  ),
+  nodeRenderers: withKindMapEntry(emptyRegistries.nodeRenderers, ParticleEmitter2DKind, glParticleEmitter2DRenderer),
 };
 const state = createGlRenderState(glSurface.context, registry, { pixelRatio: 1 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 
 const registries = registry;
-for (const [kind, entry] of registries.nodeRenderers.entries) {
-  if (entry.state === RegistryEntryState.Bound) registerNodeRenderer(state, kind, entry.value);
+for (const [kind, renderer] of registries.nodeRenderers) {
+  registerNodeRenderer(state, kind, renderer);
 }
 registerGlImageTextureResolver(state);
 

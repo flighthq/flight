@@ -1,15 +1,13 @@
 import { multiplyColorMatrix } from '@flighthq/adjustments/contract';
 import { concatColorScaleBias, createColorScaleBias } from '@flighthq/materials/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
-import { createSlotTable } from '@flighthq/registry/contract';
 import type { ColorAdjustmentRuntime, ColorScaleBias, Node, RenderProxy, RenderState } from '@flighthq/types/contract';
-import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getColorAdjustmentUnsupportedGuard, getRenderStateRuntime } from './renderState';
 
 // Returns whether color-adjustment accumulation is installed on `state`.
 export function areColorAdjustmentsEnabled(state: RenderState): boolean {
-  return getRenderStateRuntime(state).registries.colorAdjustments?.entry?.state === RegistryEntryState.Bound;
+  return getRenderStateRuntime(state).registries.colorAdjustments != null;
 }
 
 // Installs color-adjustment accumulation on `state`. The base render walk reaches this module only
@@ -18,12 +16,8 @@ export function areColorAdjustmentsEnabled(state: RenderState): boolean {
 // that can realize these values call this as part of their own opt-in. Idempotent.
 export function enableColorAdjustments(state: RenderState): void {
   const runtime = getRenderStateRuntime(state);
-  const table = runtime.registries.colorAdjustments ?? createSlotTable('ColorAdjustments', 'Disabled');
-  if (table.entry?.state === RegistryEntryState.Bound && table.entry.value === updateRenderProxyColorScaleBias) return;
-  runtime.registries.colorAdjustments = {
-    ...table,
-    entry: { state: RegistryEntryState.Bound, value: updateRenderProxyColorScaleBias },
-  };
+  if (runtime.registries.colorAdjustments === updateRenderProxyColorScaleBias) return;
+  runtime.registries.colorAdjustments = updateRenderProxyColorScaleBias;
 }
 
 // Hands the node's resolved color adjustment to the render node. A node's color-adjustment stack

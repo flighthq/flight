@@ -1,10 +1,11 @@
 import type {
+  CanvasShapeCommand,
   NodeRenderer,
   Scene2DKindUsage,
   SceneCoverageCatalog,
   SceneCoverageEntry,
 } from '@flighthq/types/contract';
-import { RegistryEntryState, RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
+import { RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { explainScene2DCoverage, hasScene2DCoverage } from './explainScene2DCoverage';
@@ -52,12 +53,7 @@ function entries(
 // scene2d-canvas, which render cannot depend on, so the test installs the binding directly.
 function wireShapeCommand(state: ReturnType<typeof createRenderState>, key: string): void {
   const runtime = getRenderStateRuntime(state);
-  runtime.registries.canvasShapeCommands = {
-    entries: new Map([[key, { state: RegistryEntryState.Bound, value: { key, draw: () => {} } as never }]]),
-    onMiss: 'Unregistered',
-    registry: 'CanvasShapeCommand',
-    shape: 'keyed',
-  };
+  runtime.registries.canvasShapeCommands = new Map([[key, { key, draw: () => {} } as unknown as CanvasShapeCommand]]);
 }
 
 describe('explainScene2DCoverage', () => {

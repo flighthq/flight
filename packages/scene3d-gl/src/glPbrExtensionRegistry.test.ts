@@ -1,6 +1,5 @@
 import { createMatrix3, createVector2 } from '@flighthq/geometry/contract';
 import { createAnisotropyPbrExtension } from '@flighthq/materials/contract';
-import { getRegistryTableEntry } from '@flighthq/registry/contract';
 import {
   allocateEmptyGlRenderRegistries,
   getGlRenderStateRuntime,
@@ -167,7 +166,7 @@ describe('registerGlPbrExtension', () => {
     expect(getGlRenderStateRuntime(derived).registries.pbrExtensionRevision).toBe(1);
     expect(getGlRenderStateRuntime(screen).registries.pbrExtensions).not.toBe(snapshot);
     expect(getGlRenderStateRuntime(screen).registries.pbrExtensionRevision).toBe(2);
-    expect(getRegistryTableEntry(snapshot, 'VendorExtension')).toBe(registration);
+    expect(snapshot.get('VendorExtension') ?? null).toBe(registration);
     expect(getGlPbrExtensionRegistration(derived, 'VendorExtension')).toBe(registration);
     expect(getGlPbrExtensionRegistration(screen, 'VendorExtension')).toBe(replacement);
   });

@@ -1,6 +1,5 @@
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type { GlRenderState, TextureLike, TextureResolutionExplanation } from '@flighthq/types/contract';
-import { RegistryEntryState } from '@flighthq/types/contract';
 
 import { getGlRenderStateRuntime } from './glRenderState';
 
@@ -12,9 +11,6 @@ export function explainGlTextureResolution(
   if (kind === null) return { kind, status: 'missing-kind' };
   return {
     kind,
-    status:
-      getGlRenderStateRuntime(state).registries.textureResolvers.entries.get(kind)?.state === RegistryEntryState.Bound
-        ? 'registered'
-        : 'missing-resolver',
+    status: getGlRenderStateRuntime(state).registries.textureResolvers.has(kind) ? 'registered' : 'missing-resolver',
   };
 }

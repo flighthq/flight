@@ -1,11 +1,11 @@
 import { tessellateStrokePath } from '@flighthq/path/contract';
-import { createSlotTable, withRegistryTableEntry } from '@flighthq/registry/contract';
+import { withKindMapEntry } from '@flighthq/registry/contract';
 import {
   allocateEmptyGlRenderRegistries,
   standardGlBlendRealizations,
   standardGlTextureResolvers,
 } from '@flighthq/render-gl/contract';
-import type { GlRenderRegistries, KeyedTable, NodeRenderer } from '@flighthq/types/contract';
+import type { GlRenderRegistries, Kind, NodeRenderer } from '@flighthq/types/contract';
 import {
   BitmapTextKind,
   DisplayObjectKind,
@@ -13,7 +13,6 @@ import {
   ParticleEmitter2DKind,
   QuadBatchKind,
   RenderCacheKind,
-  RegistryEntryState,
   RichTextKind,
   Scale9SpriteKind,
   Scale9ShapeKind,
@@ -38,37 +37,34 @@ import { standardGlQuadMaterialRenderer } from './glStandardMaterial';
 import { glTextLabelRenderer } from './glTextLabel';
 import { glTilemapRenderer } from './glTilemap';
 
-function buildScene2DGlRenderers(): KeyedTable<NodeRenderer> {
+function buildScene2DGlRenderers(): ReadonlyMap<Kind, NodeRenderer> {
   const registries = allocateEmptyGlRenderRegistries();
   let table = registries.nodeRenderers;
-  table = withRegistryTableEntry(table, BitmapTextKind, glBitmapTextRenderer);
-  table = withRegistryTableEntry(table, DisplayObjectKind, glScene2DRenderer);
-  table = withRegistryTableEntry(table, MorphShapeKind, glMorphShapeRenderer);
-  table = withRegistryTableEntry(table, ParticleEmitter2DKind, glParticleEmitter2DRenderer);
-  table = withRegistryTableEntry(table, QuadBatchKind, glQuadBatchRenderer);
-  table = withRegistryTableEntry(table, RenderCacheKind, glRenderCacheRenderer);
-  table = withRegistryTableEntry(table, RichTextKind, glRichTextRenderer);
-  table = withRegistryTableEntry(table, Scale9SpriteKind, glScale9SpriteRenderer);
-  table = withRegistryTableEntry(table, Scale9ShapeKind, glScale9ShapeRenderer);
-  table = withRegistryTableEntry(table, ShapeKind, glShapeRenderer);
-  table = withRegistryTableEntry(table, SpriteKind, glSpriteRenderer);
-  table = withRegistryTableEntry(table, TextLabelKind, glTextLabelRenderer);
-  table = withRegistryTableEntry(table, TilemapKind, glTilemapRenderer);
+  table = withKindMapEntry(table, BitmapTextKind, glBitmapTextRenderer);
+  table = withKindMapEntry(table, DisplayObjectKind, glScene2DRenderer);
+  table = withKindMapEntry(table, MorphShapeKind, glMorphShapeRenderer);
+  table = withKindMapEntry(table, ParticleEmitter2DKind, glParticleEmitter2DRenderer);
+  table = withKindMapEntry(table, QuadBatchKind, glQuadBatchRenderer);
+  table = withKindMapEntry(table, RenderCacheKind, glRenderCacheRenderer);
+  table = withKindMapEntry(table, RichTextKind, glRichTextRenderer);
+  table = withKindMapEntry(table, Scale9SpriteKind, glScale9SpriteRenderer);
+  table = withKindMapEntry(table, Scale9ShapeKind, glScale9ShapeRenderer);
+  table = withKindMapEntry(table, ShapeKind, glShapeRenderer);
+  table = withKindMapEntry(table, SpriteKind, glSpriteRenderer);
+  table = withKindMapEntry(table, TextLabelKind, glTextLabelRenderer);
+  table = withKindMapEntry(table, TilemapKind, glTilemapRenderer);
   return table;
 }
 
 export const glScene2DRenderRegistries: Readonly<GlRenderRegistries> = {
   ...allocateEmptyGlRenderRegistries(),
   blendRealizations: standardGlBlendRealizations,
-  materialRenderers: withRegistryTableEntry(
+  materialRenderers: withKindMapEntry(
     allocateEmptyGlRenderRegistries().materialRenderers,
     StandardMaterialKind,
     standardGlQuadMaterialRenderer,
   ),
   nodeRenderers: buildScene2DGlRenderers(),
-  strokeTessellator: {
-    ...createSlotTable('StrokeTessellator', 'Rasterize'),
-    entry: { state: RegistryEntryState.Bound, value: tessellateStrokePath },
-  },
+  strokeTessellator: tessellateStrokePath,
   textureResolvers: standardGlTextureResolvers,
 };
