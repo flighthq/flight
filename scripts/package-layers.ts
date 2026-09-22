@@ -169,6 +169,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/host-web',
     '@flighthq/sdk',
     '@flighthq/tool-capture',
+    '@flighthq/tool-manifest',
     '@flighthq/tool-pipeline',
     '@flighthq/tool-registry',
   ],
