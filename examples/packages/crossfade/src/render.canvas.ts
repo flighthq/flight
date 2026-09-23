@@ -1,10 +1,10 @@
-import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web/contract';
+import { webHostCanvas } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
   beginCanvasRenderPass,
   createCanvasElement,
   createCanvasRenderState,
-  createCanvasRenderSurface,
+  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   canvasBeginFill,
@@ -19,7 +19,7 @@ import {
   endCanvasRenderPass,
   prepareScene2DRender,
   registerCanvasShapeCommands,
-  registerCanvasSurfaceCreator,
+  registerCanvasHost,
   registerNodeRenderer,
   renderCanvasScene2D,
   canvasScene2DRenderPreset,
@@ -28,22 +28,14 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-export const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 800, 500, pixelRatio);
+export const canvas = createCanvasElement(webHostCanvas, 800, 500, pixelRatio);
 document.body.appendChild(canvas);
 
-export const screen = createCanvasScreenRenderTarget(
-  createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, {
-    height: canvas.height / pixelRatio,
-    pixelRatio,
-    width: canvas.width / pixelRatio,
-  }),
-);
-export const state = createCanvasRenderState(
-  canvasScene2DRenderPreset,
-  createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
-  { sceneGraphSyncPolicy: 'requiresInvalidation' },
-);
-registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+export const screen = createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas));
+export const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas), {
+  sceneGraphSyncPolicy: 'requiresInvalidation',
+});
+registerCanvasHost(state, webHostCanvas);
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x15 / 0xff, 0x1b / 0xff, 0x2b / 0xff, 1] } as const;
 enableFlightDiagnostics(state);

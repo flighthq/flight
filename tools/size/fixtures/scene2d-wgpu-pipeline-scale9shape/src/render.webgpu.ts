@@ -1,8 +1,7 @@
 import { createAppWindow, openWindow } from '@flighthq/app';
 import {
   webHostWgpuContext,
-  webCanvasRenderSurfaceCreator,
-  webImageSurfaceCreator,
+  webHostCanvas,
   appendWebSurface,
   webHostWindowGeometry,
   webHostWindowLifecycle,
@@ -47,15 +46,12 @@ export const state = createWgpuRenderState(acquisition.device, {
   ...registry,
   format: acquisition.format,
   pixelRatio: 1,
-  imageSurfaceProvider: webImageSurfaceCreator,
+  canvasHost: webHostCanvas,
 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 export const screenClear = { color: [0x10 / 0xff, 0x15 / 0xff, 0x22 / 0xff, 1], depth: 1.0 } as const;
 registerCanvasShapeCommands(state, canvasShapeCommands);
-registerWgpuShapeRasterizer(
-  state,
-  createCanvasShapeRasterizer(createCanvasTextureResolvers(webCanvasRenderSurfaceCreator)),
-);
+registerWgpuShapeRasterizer(state, createCanvasShapeRasterizer(createCanvasTextureResolvers(webHostCanvas)));
 
 const root = createDisplayObject();
 const shape = createScale9Shape({ height: 50, width: 80, x: 20, y: 15 });

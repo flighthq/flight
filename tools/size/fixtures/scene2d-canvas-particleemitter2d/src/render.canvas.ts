@@ -1,4 +1,4 @@
-import { createWebImageResourceFromCanvas, webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
+import { createWebImageResourceFromCanvas, webHostCanvas } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { appendParticleEmitter2DParticle, createParticleEmitter2D } from '@flighthq/particleemitter';
 import { withKindMapEntry } from '@flighthq/registry';
@@ -7,7 +7,7 @@ import { createDisplayObject } from '@flighthq/scene2d';
 import {
   beginCanvasRenderPass,
   createCanvasRenderState,
-  createCanvasRenderSurface,
+  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   allocateEmptyCanvasRenderRegistries,
@@ -15,7 +15,7 @@ import {
   endCanvasRenderPass,
   getCanvasRenderStateTextureResolvers,
   registerCanvasImageTextureResolver,
-  registerCanvasSurfaceCreator,
+  registerCanvasHost,
   renderCanvasScene2D,
 } from '@flighthq/scene2d-canvas';
 import { createTexture } from '@flighthq/texture';
@@ -23,7 +23,7 @@ import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatla
 import { ParticleEmitter2DKind } from '@flighthq/types';
 
 // REQUIRED WIRING for one particle emitter node, and nothing else:
-//   surface   webCanvasRenderSurfaceCreator — the single Canvas surface provider, NOT the aggregate
+//   surface   webHostCanvas — the single Canvas surface provider, NOT the aggregate
 //             webHost.
 //   renderer  ParticleEmitter2DKind -> canvasParticleEmitter2DRenderer
 //   commands  NONE. An emitter replays no shape command stream.
@@ -54,13 +54,11 @@ const registry = {
   ),
 };
 
-const screen = createCanvasScreenRenderTarget(
-  createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, { height: 300, pixelRatio: 1, width: 400 }),
-);
-const state = createCanvasRenderState(registry, createCanvasTextureResolvers(webCanvasRenderSurfaceCreator), {
+const screen = createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas));
+const state = createCanvasRenderState(registry, createCanvasTextureResolvers(webHostCanvas), {
   pixelRatio: 1,
 });
-registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+registerCanvasHost(state, webHostCanvas);
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 

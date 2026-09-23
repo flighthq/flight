@@ -1,4 +1,4 @@
-import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
+import { webHostCanvas } from '@flighthq/host-web';
 import { computeRenderTargetSize, computeScene2DRenderTargetTransform } from '@flighthq/render/contract';
 import { isCanvasRenderTextureReady } from '@flighthq/scene2d-canvas/contract';
 import type { Bitmap, Effect, RenderTexture } from '@flighthq/sdk';
@@ -28,7 +28,7 @@ import {
   prepareScene2DRender,
   registerBlurEffectPaddingResolver,
   registerCanvasBlurEffect,
-  registerCanvasSurfaceCreator,
+  registerCanvasHost,
   releaseCanvasRenderTexture,
   renderCanvasScene2D,
   renderIntoCanvasRenderTexture,
@@ -74,13 +74,11 @@ const { render, state, width } = target;
 
 // The state owns no surface any more, so the creator comes from the host directly — the same one the
 // harness registered on the state for its own offscreen work.
-const offscreenState = createCanvasOffscreenRenderState(
-  state.registries,
-  createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
-  { pixelRatio: state.pixelRatio },
-);
-registerCanvasSurfaceCreator(offscreenState, webCanvasRenderSurfaceCreator);
-const pool = createCanvasRenderTexturePool(webCanvasRenderSurfaceCreator);
+const offscreenState = createCanvasOffscreenRenderState(state.registries, createCanvasTextureResolvers(webHostCanvas), {
+  pixelRatio: state.pixelRatio,
+});
+registerCanvasHost(offscreenState, webHostCanvas);
+const pool = createCanvasRenderTexturePool(webHostCanvas);
 registerCanvasBlurEffect(offscreenState);
 registerBlurEffectPaddingResolver(offscreenState);
 const effects: ReadonlyArray<Readonly<Effect>> = [createBlurEffect({ blurX: 8, blurY: 6 })];

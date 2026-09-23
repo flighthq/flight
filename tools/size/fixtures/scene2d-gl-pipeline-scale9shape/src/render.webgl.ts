@@ -2,8 +2,7 @@ import { createAppWindow, openWindow } from '@flighthq/app';
 import { createRectangle } from '@flighthq/geometry';
 import {
   webHostGl,
-  webCanvasRenderSurfaceCreator,
-  webImageSurfaceCreator,
+  webHostCanvas,
   appendWebSurface,
   webHostWindowGeometry,
   webHostWindowLifecycle,
@@ -44,7 +43,7 @@ const registry = {
 const state = createGlRenderState(glSurface.context, {
   ...registry,
   pixelRatio: 1,
-  imageSurfaceProvider: webImageSurfaceCreator,
+  canvasHost: webHostCanvas,
 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 
@@ -53,10 +52,7 @@ for (const [kind, renderer] of registries.nodeRenderers) {
   registerNodeRenderer(state, kind, renderer);
 }
 registerCanvasShapeCommands(state, canvasShapeCommands);
-registerGlShapeRasterizer(
-  state,
-  createCanvasShapeRasterizer(createCanvasTextureResolvers(webCanvasRenderSurfaceCreator)),
-);
+registerGlShapeRasterizer(state, createCanvasShapeRasterizer(createCanvasTextureResolvers(webHostCanvas)));
 
 const root = createDisplayObject();
 const scale9Shape = createScale9Shape(createRectangle(24, 20, 72, 60));

@@ -1,8 +1,7 @@
 import {
   webHostWgpuContext,
-  webCanvasRenderSurfaceCreator,
+  webHostCanvas,
   webHostImage,
-  webImageSurfaceCreator,
   appendWebSurface,
   getWebSurfaceElement,
   webHostSurfaceDisplay,
@@ -56,7 +55,7 @@ export const state = createWgpuRenderState(acquisition.device, {
   format: acquisition.format,
   pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',
-  imageSurfaceProvider: webImageSurfaceCreator,
+  canvasHost: webHostCanvas,
 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x15 / 0xff, 0x1b / 0xff, 0x2b / 0xff, 1], depth: 1.0 } as const;
@@ -66,7 +65,7 @@ registerNodeRenderer(state, ShapeKind, wgpuShapeRenderer);
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
 // has no tessellated form and draws through this rasterizer instead. Registering it is what keeps a
 // shape from silently going missing the moment one is added.
-const shapeRasterizerResolvers = createCanvasTextureResolvers(webCanvasRenderSurfaceCreator);
+const shapeRasterizerResolvers = createCanvasTextureResolvers(webHostCanvas);
 connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
 registerCanvasBitmapTextureResolver(webHostImage, shapeRasterizerResolvers);

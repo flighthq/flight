@@ -1,16 +1,16 @@
-import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
+import { webHostCanvas } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { prepareScene2DRender } from '@flighthq/render';
 import { createDisplayObject } from '@flighthq/scene2d';
 import {
   beginCanvasRenderPass,
   createCanvasRenderState,
-  createCanvasRenderSurface,
+  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   allocateEmptyCanvasRenderRegistries,
   endCanvasRenderPass,
-  registerCanvasSurfaceCreator,
+  registerCanvasHost,
   renderCanvasScene2D,
 } from '@flighthq/scene2d-canvas';
 
@@ -26,7 +26,7 @@ import {
 // every other measurement conflates the feature with the substrate it sits on.
 //
 // REQUIRED WIRING:
-//   surface   webCanvasRenderSurfaceCreator — the single Canvas surface provider, NOT aggregate webHost
+//   surface   webHostCanvas — the single Canvas surface provider, NOT aggregate webHost
 //   renderer  none
 //   commands  none
 //   resolvers an EMPTY CanvasTextureResolvers container
@@ -50,13 +50,11 @@ document.body.appendChild(canvas);
 const emptyRegistries = allocateEmptyCanvasRenderRegistries();
 const registry = { ...emptyRegistries };
 
-const screen = createCanvasScreenRenderTarget(
-  createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, { height: 300, pixelRatio: 1, width: 400 }),
-);
-const state = createCanvasRenderState(registry, createCanvasTextureResolvers(webCanvasRenderSurfaceCreator), {
+const screen = createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas));
+const state = createCanvasRenderState(registry, createCanvasTextureResolvers(webHostCanvas), {
   pixelRatio: 1,
 });
-registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+registerCanvasHost(state, webHostCanvas);
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 

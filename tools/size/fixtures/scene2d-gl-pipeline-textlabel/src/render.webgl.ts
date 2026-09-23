@@ -1,7 +1,7 @@
 import { createAppWindow, openWindow } from '@flighthq/app';
 import {
   webHostGl,
-  webImageSurfaceCreator,
+  webHostCanvas,
   appendWebSurface,
   webHostWindowGeometry,
   webHostWindowLifecycle,
@@ -36,7 +36,7 @@ const registry = {
 const state = createGlRenderState(glSurface.context, {
   ...registry,
   pixelRatio: 1,
-  imageSurfaceProvider: webImageSurfaceCreator,
+  canvasHost: webHostCanvas,
 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 

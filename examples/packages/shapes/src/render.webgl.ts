@@ -1,6 +1,6 @@
 import {
   webHostGl,
-  webCanvasRenderSurfaceCreator,
+  webHostCanvas,
   webHostImage,
   appendWebSurface,
   getWebSurfaceElement,
@@ -57,7 +57,7 @@ registerNodeRenderer(state, ShapeKind, glShapeRenderer);
 // Gradient and texture fills have no tessellated form on this backend, so they draw through an
 // explicit rasterizer. It paints into no canvas of its own, so it carries a resolution set
 // rather than a render state, and that set is pointed at this state's diagnostics.
-const shapeRasterizerResolvers = createCanvasTextureResolvers(webCanvasRenderSurfaceCreator);
+const shapeRasterizerResolvers = createCanvasTextureResolvers(webHostCanvas);
 connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasBitmapTextureResolver(webHostImage, shapeRasterizerResolvers);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);

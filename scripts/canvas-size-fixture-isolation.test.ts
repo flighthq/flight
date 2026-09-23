@@ -124,7 +124,7 @@ describe('canvas size fixture isolation', () => {
     for (const fixture of FEATURE_FIXTURES) {
       const source = fixtureSource(fixture);
       expect(source, `${fixture} must not import webHost`).not.toMatch(/\bwebHost\b/u);
-      expect(source, `${fixture} needs the Canvas surface provider`).toContain('webCanvasRenderSurfaceCreator');
+      expect(source, `${fixture} needs the Canvas surface provider`).toContain('webHostCanvas');
     }
   });
 

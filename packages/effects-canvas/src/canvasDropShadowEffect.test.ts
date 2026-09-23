@@ -7,7 +7,7 @@ import {
 } from './canvasDropShadowEffect';
 import * as canvasEffectCompositing from './canvasEffectCompositing';
 import * as canvasEffectState from './canvasEffectState';
-import { canvasTestSurfaceCreator } from './canvasEffectTestSupport';
+import { canvasTestHost } from './canvasEffectTestSupport';
 import * as canvasSourceModeCompositing from './canvasSourceModeCompositing';
 
 let nextTargetId = 0;
@@ -93,7 +93,7 @@ describe('registerCanvasDropShadowEffect', () => {
 });
 
 function createTarget(id: string, width = 32, height = 16): never {
-  return { id, canvas: {}, context: {}, surface: { creator: canvasTestSurfaceCreator }, width, height } as never;
+  return { id, canvas: {}, context: {}, surface: { canvasHost: canvasTestHost }, width, height } as never;
 }
 
 describe('registerCanvasDropShadowEffect', () => {

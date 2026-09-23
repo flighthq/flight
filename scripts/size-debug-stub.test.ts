@@ -20,7 +20,7 @@ describe('createSizeDebugStub', () => {
     const source = [
       'enableFlightDiagnostics(',
       '  createCanvasRenderState(',
-      '    createCanvasRenderSurface(canvas),',
+      '    createCanvasSurfaceFromNativeHandle(canvas),',
       '    canvasScene2DRenderPreset,',
       '  ),',
       ');',
@@ -30,7 +30,7 @@ describe('createSizeDebugStub', () => {
       [
         'void (',
         '  createCanvasRenderState(',
-        '    createCanvasRenderSurface(canvas),',
+        '    createCanvasSurfaceFromNativeHandle(canvas),',
         '    canvasScene2DRenderPreset,',
         '  ));',
       ].join('\n'),

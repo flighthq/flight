@@ -1,4 +1,4 @@
-import { webCanvasRenderSurfaceCreator, webHostImage } from '@flighthq/host-web/contract';
+import { webHostCanvas, webHostImage } from '@flighthq/host-web/contract';
 import type { Node2D } from '@flighthq/sdk';
 import {
   connectCanvasTextureResolverMisses,
@@ -38,7 +38,7 @@ registerNodeRenderer(state, ShapeKind, domShapeRenderer);
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
 // has no tessellated form and draws through this rasterizer instead. Registering it is what keeps a
 // shape from silently going missing the moment one is added.
-const shapeRasterizerResolvers = createCanvasTextureResolvers(webCanvasRenderSurfaceCreator);
+const shapeRasterizerResolvers = createCanvasTextureResolvers(webHostCanvas);
 connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
 registerCanvasBitmapTextureResolver(webHostImage, shapeRasterizerResolvers);

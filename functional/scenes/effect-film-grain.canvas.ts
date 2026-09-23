@@ -1,4 +1,4 @@
-import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
+import { webHostCanvas } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is PER-PIXEL NOISE of about +-3 levels and the fingerprint is a block average — averaging is
 // precisely the operation that removes noise, so the instrument cancels the subject; committed contrast is
@@ -19,7 +19,7 @@ import {
   createCanvasElement,
   createCanvasEffectState,
   createCanvasRenderState,
-  createCanvasRenderSurface,
+  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   createDisplayObject,
@@ -33,7 +33,7 @@ import {
   prepareScene2DRender,
   registerCanvasFilmGrainEffect,
   registerCanvasShapeCommands,
-  registerCanvasSurfaceCreator,
+  registerCanvasHost,
   registerNodeRenderer,
   renderCanvasScene2D,
   canvasScene2DRenderPreset,
@@ -55,22 +55,14 @@ declareExpectedImageDescription(
     'the underlying tone stays mid-grey rather than drifting lighter or darker overall.',
 );
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 800, 600, pixelRatio);
+const canvas = createCanvasElement(webHostCanvas, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const screen = createCanvasScreenRenderTarget(
-  createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, {
-    height: canvas.height / pixelRatio,
-    pixelRatio,
-    width: canvas.width / pixelRatio,
-  }),
-);
-export const state = createCanvasRenderState(
-  canvasScene2DRenderPreset,
-  createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
-  { pixelRatio },
-);
-registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+export const screen = createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas));
+export const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas), {
+  pixelRatio,
+});
+registerCanvasHost(state, webHostCanvas);
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x80 / 0xff, 0x80 / 0xff, 0x80 / 0xff, 1] } as const;
 registerNodeRenderer(state, ShapeKind, canvasShapeRenderer);

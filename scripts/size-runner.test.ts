@@ -78,9 +78,9 @@ describe('dom fixture import structure', () => {
     expect(specifiers).not.toContain('@flighthq/scene2d-wgpu');
   });
 
-  test('dom-shape imports webCanvasRenderSurfaceCreator but not aggregate webHost', () => {
+  test('dom-shape imports webHostCanvas but not aggregate webHost', () => {
     const source = readFileSync(resolve(fixturesDirectory, 'scene2d-dom-shape/src/render.dom.ts'), 'utf-8');
-    expect(source).toContain('webCanvasRenderSurfaceCreator');
+    expect(source).toContain('webHostCanvas');
     expect(source).not.toContain('webHost');
     const specifiers = extractImportSpecifiers(resolve(fixturesDirectory, 'scene2d-dom-shape/src/render.dom.ts'));
     expect(specifiers).not.toContain('@flighthq/sdk');
@@ -204,7 +204,7 @@ describe('minimal size fixture harness', () => {
 
   test('limits DOM shape Canvas bridge fixtures to their exact rasterization symbols', () => {
     const expectedBridge = [
-      '@flighthq/host-web:webCanvasRenderSurfaceCreator',
+      '@flighthq/host-web:webHostCanvas',
       '@flighthq/scene2d-canvas:canvasShapeCommands',
       '@flighthq/scene2d-canvas:createCanvasShapeRasterizer',
       '@flighthq/scene2d-canvas:createCanvasTextureResolvers',
@@ -479,7 +479,7 @@ function importFamily(specifier: string): ImportFamily | null {
 // that draws shapes must read them from here.
 //
 // TWO SETS, NOT ONE, because they differ in the HOST half of the bridge and only share the canvas half:
-// the DOM fixtures also take `webCanvasRenderSurfaceCreator` from `@flighthq/host-web`, while the
+// the DOM fixtures also take `webHostCanvas` from `@flighthq/host-web`, while the
 // pipeline fixtures build their own surface through `createGlSurface`/`createWgpuSurface`. Merging them
 // made the DOM pinning case below start policing fixtures whose bridge is legitimately different.
 const domShapeCanvasBridgeFixtures = new Set([

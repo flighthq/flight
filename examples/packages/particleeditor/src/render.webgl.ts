@@ -1,6 +1,6 @@
 import {
   webHostGl,
-  webImageSurfaceCreator,
+  webHostCanvas,
   appendWebSurface,
   getWebSurfaceElement,
   webHostSurfaceDisplay,
@@ -44,7 +44,7 @@ export const state = createGlRenderState(glSurface.context, {
   ...glScene3DRenderPreset,
   pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',
-  imageSurfaceProvider: webImageSurfaceCreator,
+  canvasHost: webHostCanvas,
 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 enableFlightDiagnostics(state);

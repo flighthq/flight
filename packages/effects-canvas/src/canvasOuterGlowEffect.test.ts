@@ -2,7 +2,7 @@ import { createOuterGlowEffect } from '@flighthq/effects/contract';
 
 import * as canvasEffectCompositing from './canvasEffectCompositing';
 import * as canvasEffectState from './canvasEffectState';
-import { canvasTestSurfaceCreator } from './canvasEffectTestSupport';
+import { canvasTestHost } from './canvasEffectTestSupport';
 import {
   applyOuterGlowEffectToCanvas,
   canvasOuterGlowEffectRunner,
@@ -93,7 +93,7 @@ describe('registerCanvasOuterGlowEffect', () => {
 });
 
 function createTarget(id: string, width = 32, height = 16): never {
-  return { id, canvas: {}, context: {}, surface: { creator: canvasTestSurfaceCreator }, width, height } as never;
+  return { id, canvas: {}, context: {}, surface: { canvasHost: canvasTestHost }, width, height } as never;
 }
 
 describe('registerCanvasOuterGlowEffect', () => {

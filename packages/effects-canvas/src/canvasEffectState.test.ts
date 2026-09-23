@@ -14,7 +14,7 @@ import {
   initializeCanvasRenderTargetPool,
   releaseCanvasRenderTarget,
 } from './canvasEffectState';
-import { canvasTestSurfaceCreator, createCanvasRenderState } from './canvasEffectTestSupport';
+import { canvasTestHost, createCanvasRenderState } from './canvasEffectTestSupport';
 
 describe('acquireCanvasRenderTarget', () => {
   it('is a function', () => {
@@ -40,7 +40,7 @@ describe('createCanvasTextureRenderTargetPool', () => {
   });
 
   it('returns a pool with empty free and inUse lists', () => {
-    const pool = createCanvasTextureRenderTargetPool(canvasTestSurfaceCreator);
+    const pool = createCanvasTextureRenderTargetPool(canvasTestHost);
     expect(pool.free).toEqual([]);
     expect(pool.inUse).toEqual([]);
   });
@@ -129,7 +129,7 @@ describe('releaseCanvasRenderTarget', () => {
   });
 
   it('moves an acquired target back to the free list', () => {
-    const pool = createCanvasTextureRenderTargetPool(canvasTestSurfaceCreator);
+    const pool = createCanvasTextureRenderTargetPool(canvasTestHost);
     const target = acquireCanvasRenderTarget(pool, 16, 16);
     expect(pool.inUse).toContain(target);
     releaseCanvasRenderTarget(pool, target);
