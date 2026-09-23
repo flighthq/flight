@@ -8,7 +8,6 @@ import { createDisplayObject } from '@flighthq/scene2d';
 import {
   beginCanvasRenderPass,
   createCanvasRenderState,
-  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   allocateEmptyCanvasRenderRegistries,
@@ -19,6 +18,7 @@ import {
   registerCanvasHost,
   renderCanvasScene2D,
 } from '@flighthq/scene2d-canvas';
+import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 import { addTextureAtlasRegion, createTextureAtlas } from '@flighthq/textureatlas';
 import { BitmapTextKind } from '@flighthq/types';

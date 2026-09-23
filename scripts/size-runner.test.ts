@@ -81,7 +81,7 @@ describe('dom fixture import structure', () => {
   test('dom-shape imports webHostCanvas but not aggregate webHost', () => {
     const source = readFileSync(resolve(fixturesDirectory, 'scene2d-dom-shape/src/render.dom.ts'), 'utf-8');
     expect(source).toContain('webHostCanvas');
-    expect(source).not.toContain('webHost');
+    expect(source).not.toMatch(/\bwebHost\b/);
     const specifiers = extractImportSpecifiers(resolve(fixturesDirectory, 'scene2d-dom-shape/src/render.dom.ts'));
     expect(specifiers).not.toContain('@flighthq/sdk');
     expect(specifiers).not.toContain('@flighthq/scene2d-gl');

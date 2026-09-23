@@ -5,7 +5,6 @@ import { createDisplayObject, createSprite } from '@flighthq/scene2d';
 import {
   beginCanvasRenderPass,
   createCanvasRenderState,
-  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   endCanvasRenderPass,
@@ -15,6 +14,7 @@ import {
   renderCanvasScene2D,
   canvasScene2DRenderPreset,
 } from '@flighthq/scene2d-canvas';
+import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface';
 import { createTexture } from '@flighthq/texture';
 
 const canvas = document.createElement('canvas');

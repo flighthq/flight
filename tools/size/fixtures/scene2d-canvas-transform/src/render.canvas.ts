@@ -5,7 +5,6 @@ import { createDisplayObject } from '@flighthq/scene2d';
 import {
   beginCanvasRenderPass,
   createCanvasRenderState,
-  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   allocateEmptyCanvasRenderRegistries,
@@ -13,6 +12,7 @@ import {
   registerCanvasHost,
   renderCanvasScene2D,
 } from '@flighthq/scene2d-canvas';
+import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface';
 
 // THE CONTAINER-ONLY PATH, and why it is a distinct fixture rather than a smaller sprite one.
 //

@@ -7,7 +7,6 @@ import { createDisplayObject } from '@flighthq/scene2d';
 import {
   beginCanvasRenderPass,
   createCanvasRenderState,
-  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   allocateEmptyCanvasRenderRegistries,
@@ -20,6 +19,7 @@ import {
   renderCanvasScene2D,
 } from '@flighthq/scene2d-canvas';
 import { appendMorphShapeBeginFill, appendMorphShapePath, appendShapeEndFill, createMorphShape } from '@flighthq/shape';
+import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface';
 import type { CanvasShapeCommand, Kind } from '@flighthq/types';
 import { MorphShapeKind } from '@flighthq/types';
 

@@ -6,7 +6,6 @@ import { createDisplayObject } from '@flighthq/scene2d';
 import {
   beginCanvasRenderPass,
   createCanvasRenderState,
-  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   allocateEmptyCanvasRenderRegistries,
@@ -15,6 +14,7 @@ import {
   registerCanvasHost,
   renderCanvasScene2D,
 } from '@flighthq/scene2d-canvas';
+import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface';
 import { appendRichTextString, createRichText, setRichTextDefaultTextFormat } from '@flighthq/text';
 import { RichTextKind } from '@flighthq/types';
 
