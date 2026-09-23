@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { createAssetLibrary } from '@flighthq/assets/contract';
-import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web/contract';
+import { webHostCanvas } from '@flighthq/host-web/contract';
 import { createPhysics2DWorld } from '@flighthq/physics2d/contract';
 import {
   copyAllRenderersFromRenderState,
@@ -14,11 +14,11 @@ import {
 import {
   beginCanvasRenderPass,
   createCanvasRenderState,
-  createCanvasRenderSurface,
+  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   getCanvasRenderStateRuntime,
-  registerCanvasSurfaceCreator,
+  registerCanvasHost,
   canvasScene2DRenderPreset,
 } from '@flighthq/scene2d-canvas/contract';
 import { createDomRenderState, getDomRenderStateRuntime } from '@flighthq/scene2d-dom/contract';
@@ -1137,17 +1137,17 @@ function packageSourceFiles(packageName: string): string[] {
 function createCanvasProbeState(registry = canvasScene2DRenderPreset) {
   const canvas = document.createElement('canvas');
   Object.defineProperty(canvas, 'getContext', { value: () => canvas2DContext });
-  const state = createCanvasRenderState(registry, createCanvasTextureResolvers(webCanvasRenderSurfaceCreator));
-  registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+  const state = createCanvasRenderState(registry, createCanvasTextureResolvers(webHostCanvas));
+  registerCanvasHost(state, webHostCanvas);
   beginCanvasRenderPass(
     state,
-    createCanvasScreenRenderTarget(createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas)),
+    createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas)),
   );
   return state;
 }
 
 function createCanvasTextureResolversForProbe() {
-  const resolvers = createCanvasTextureResolvers(webCanvasRenderSurfaceCreator);
+  const resolvers = createCanvasTextureResolvers(webHostCanvas);
   resolvers.registry = new Map();
   return resolvers;
 }

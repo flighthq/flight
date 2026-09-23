@@ -1,4 +1,4 @@
-import { webCanvasRenderSurfaceCreator, webHostImage } from '@flighthq/host-web';
+import { webHostCanvas, webHostImage } from '@flighthq/host-web';
 import type { Node2D } from '@flighthq/sdk';
 import {
   createCanvasElement,
@@ -6,8 +6,8 @@ import {
   createCanvasRenderState,
   createCanvasScreenRenderTarget,
   endCanvasRenderPass,
-  registerCanvasSurfaceCreator,
-  createCanvasRenderSurface,
+  registerCanvasHost,
+  createCanvasSurfaceFromNativeHandle,
   createCanvasTextureResolvers,
   createMatrix,
   canvasParticleEmitter2DRenderer,
@@ -51,23 +51,22 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
   const { width, height } = options;
   const pixelRatio = window.devicePixelRatio || 1;
 
-  const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, width, height, pixelRatio);
+  const canvas = createCanvasElement(webHostCanvas, width, height, pixelRatio);
   document.body.appendChild(canvas);
 
   const screen = createCanvasScreenRenderTarget(
-    createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, {
+    createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas, {
       contextAttributes: options.contextAttributes ?? { alpha: false },
       height,
       pixelRatio,
       width,
     }),
   );
-  const state = createCanvasRenderState(
-    canvasScene2DRenderPreset,
-    createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
-    { pixelRatio, sceneGraphSyncPolicy: options.syncPolicy },
-  );
-  registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+  const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas), {
+    pixelRatio,
+    sceneGraphSyncPolicy: options.syncPolicy,
+  });
+  registerCanvasHost(state, webHostCanvas);
   // The background is what the frame is cleared to — a per-pass value the render loop below passes in,
   // rather than a property the state carries for every pass it will ever open.
   const background = options.background ?? 0x00000000;

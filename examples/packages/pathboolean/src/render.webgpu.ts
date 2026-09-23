@@ -1,6 +1,6 @@
 import {
   webHostWgpuContext,
-  webCanvasRenderSurfaceCreator,
+  webHostCanvas,
   webHostImage,
   appendWebSurface,
   getWebSurfaceElement,
@@ -62,7 +62,7 @@ registerNodeRenderer(state, ShapeKind, wgpuShapeRenderer);
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
 // has no tessellated form and draws through this rasterizer instead. Registering it is what keeps a
 // shape from silently going missing the moment one is added.
-const shapeRasterizerResolvers = createCanvasTextureResolvers(webCanvasRenderSurfaceCreator);
+const shapeRasterizerResolvers = createCanvasTextureResolvers(webHostCanvas);
 connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
 registerCanvasBitmapTextureResolver(webHostImage, shapeRasterizerResolvers);

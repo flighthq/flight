@@ -1,6 +1,6 @@
 import {
   webHostWgpuContext,
-  webImageSurfaceCreator,
+  webHostCanvas,
   appendWebSurface,
   getWebSurfaceElement,
   webHostSurfaceDisplay,
@@ -45,7 +45,7 @@ export const state = createWgpuRenderState(acquisition.device, {
   format: acquisition.format,
   pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',
-  imageSurfaceProvider: webImageSurfaceCreator,
+  canvasHost: webHostCanvas,
 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x2a / 0xff, 0x2a / 0xff, 0x3a / 0xff, 1], depth: 1.0 } as const;

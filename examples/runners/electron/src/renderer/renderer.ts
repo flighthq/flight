@@ -1,4 +1,4 @@
-import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web/contract';
+import { webHostCanvas } from '@flighthq/host-web/contract';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -7,7 +7,7 @@ import {
   beginCanvasRenderPass,
   createCanvasElement,
   createCanvasRenderState,
-  createCanvasRenderSurface,
+  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   createDisplayObject,
@@ -18,7 +18,7 @@ import {
   prepareScene2DRender,
   endCanvasRenderPass,
   registerCanvasShapeCommands,
-  registerCanvasSurfaceCreator,
+  registerCanvasHost,
   registerNodeRenderer,
   renderCanvasScene2D,
   canvasScene2DRenderPreset,
@@ -35,21 +35,12 @@ declare global {
 
 // ── Flight scene (the renderer is a normal browser context, so it uses the web canvas renderer) ──
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 1024, 560, pixelRatio);
+const canvas = createCanvasElement(webHostCanvas, 1024, 560, pixelRatio);
 document.body.appendChild(canvas);
 
-const screen = createCanvasScreenRenderTarget(
-  createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, {
-    height: canvas.height / pixelRatio,
-    pixelRatio,
-    width: canvas.width / pixelRatio,
-  }),
-);
-const state = createCanvasRenderState(
-  canvasScene2DRenderPreset,
-  createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
-);
-registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+const screen = createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas));
+const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas));
+registerCanvasHost(state, webHostCanvas);
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x1d / 0xff, 0x1f / 0xff, 0x23 / 0xff, 1] } as const;
 registerNodeRenderer(state, ShapeKind, canvasShapeRenderer);

@@ -3,7 +3,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CanvasTextureRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
 import { getCanvasEffectRunner } from './canvasEffectRegistry';
-import { canvasTestSurfaceCreator, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport';
+import { canvasTestHost, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport';
 import {
   applyPosterizeEffectToCanvas,
   canvasPosterizeEffectRunner,
@@ -125,7 +125,7 @@ describe('canvasPosterizeEffectRunner', () => {
         dest,
         pool: (() => {
           const out = allocateEntity<any>();
-          out.creator = canvasTestSurfaceCreator;
+          out.canvasHost = canvasTestHost;
           out.free = [];
           out.inUse = [];
           return finishEntity(out) as unknown;

@@ -1,9 +1,9 @@
-import { webCanvasRenderSurfaceCreator, webHostImage } from '@flighthq/host-web';
+import { webHostCanvas, webHostImage } from '@flighthq/host-web';
 import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
   beginCanvasRenderPass,
   createCanvasRenderState,
-  createCanvasRenderSurface,
+  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasShapeRasterizer,
   createCanvasTextureResolvers,
@@ -108,15 +108,12 @@ export function createDomTarget(options: Readonly<FunctionalTargetOptions>): Fun
 // registered here are exactly what those fills can paint.
 function createHarnessShapeRasterizer(): ShapeRasterizer {
   const canvas = document.createElement('canvas');
-  const resolverState = createCanvasRenderState(
-    canvasScene2DRenderPreset,
-    createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
-  );
+  const resolverState = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas));
   // The rasterizer draws into its own canvas, so it opens its own pass over it and keeps it open for the
   // life of the state — every fill it paints happens inside that bracket.
   beginCanvasRenderPass(
     resolverState,
-    createCanvasScreenRenderTarget(createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas)),
+    createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas)),
   );
   registerCanvasBitmapTextureResolver(webHostImage, getCanvasRenderStateTextureResolvers(resolverState));
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));

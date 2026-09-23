@@ -1,8 +1,7 @@
 import {
   webHostGl,
-  webCanvasRenderSurfaceCreator,
+  webHostCanvas,
   webHostImage,
-  webImageSurfaceCreator,
   appendWebSurface,
   getWebSurfaceElement,
   webHostSurfaceDisplay,
@@ -56,7 +55,7 @@ export const state = createGlRenderState(glSurface.context, {
   ...glScene3DRenderPreset,
   pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',
-  imageSurfaceProvider: webImageSurfaceCreator,
+  canvasHost: webHostCanvas,
 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 enableFlightDiagnostics(state);
@@ -66,7 +65,7 @@ registerNodeRenderer(state, ShapeKind, glShapeRenderer);
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
 // has no tessellated form and draws through this rasterizer instead. Registering it is what keeps a
 // shape from silently going missing the moment one is added.
-const shapeRasterizerResolvers = createCanvasTextureResolvers(webCanvasRenderSurfaceCreator);
+const shapeRasterizerResolvers = createCanvasTextureResolvers(webHostCanvas);
 connectCanvasTextureResolverMisses(shapeRasterizerResolvers, state);
 registerCanvasImageTextureResolver(shapeRasterizerResolvers);
 registerCanvasBitmapTextureResolver(webHostImage, shapeRasterizerResolvers);

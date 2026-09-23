@@ -1,4 +1,4 @@
-import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
+import { webHostCanvas } from '@flighthq/host-web';
 import { addNodeChild, invalidateNodeAppearance } from '@flighthq/node';
 import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
@@ -6,7 +6,7 @@ import { createDisplayObject } from '@flighthq/scene2d';
 import {
   beginCanvasRenderPass,
   createCanvasRenderState,
-  createCanvasRenderSurface,
+  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   allocateEmptyCanvasRenderRegistries,
@@ -15,7 +15,7 @@ import {
   canvasEndFill,
   canvasShapeRenderer,
   endCanvasRenderPass,
-  registerCanvasSurfaceCreator,
+  registerCanvasHost,
   renderCanvasScene2D,
 } from '@flighthq/scene2d-canvas';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape';
@@ -23,7 +23,7 @@ import type { CanvasShapeCommand, Kind } from '@flighthq/types';
 import { ShapeKind } from '@flighthq/types';
 
 // REQUIRED WIRING for a filled vector rectangle, and nothing else:
-//   surface   webCanvasRenderSurfaceCreator — the single Canvas surface provider, NOT the aggregate
+//   surface   webHostCanvas — the single Canvas surface provider, NOT the aggregate
 //             webHost. Nothing here reaches a whole-store host.
 //   renderer  ShapeKind -> canvasShapeRenderer
 //   commands  beginFill, drawRectangle, endFill — the three this shape's stream actually replays.
@@ -55,13 +55,11 @@ const registry = {
   nodeRenderers: withKindMapEntry(emptyRegistries.nodeRenderers, ShapeKind, canvasShapeRenderer),
 };
 
-const screen = createCanvasScreenRenderTarget(
-  createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, { height: 300, pixelRatio: 1, width: 400 }),
-);
-const state = createCanvasRenderState(registry, createCanvasTextureResolvers(webCanvasRenderSurfaceCreator), {
+const screen = createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas));
+const state = createCanvasRenderState(registry, createCanvasTextureResolvers(webHostCanvas), {
   pixelRatio: 1,
 });
-registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+registerCanvasHost(state, webHostCanvas);
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 

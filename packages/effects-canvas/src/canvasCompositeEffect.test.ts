@@ -15,11 +15,7 @@ import {
   registerCanvasCompositeEffect,
 } from './canvasCompositeEffect';
 import { getCanvasEffectRunner } from './canvasEffectRegistry';
-import {
-  canvasTestSurfaceCreator,
-  createCanvasRenderState,
-  createCanvasTextureRenderTarget,
-} from './canvasEffectTestSupport';
+import { canvasTestHost, createCanvasRenderState, createCanvasTextureRenderTarget } from './canvasEffectTestSupport';
 
 // Draw-contract assertions rather than pixels, for the reason spelled out in canvasBlendEffect.test.ts:
 // jsdom's 2D context accepts every call and rasterizes nothing, so a pixel assertion would pass
@@ -139,7 +135,7 @@ describe('canvasCompositeEffectRunner', () => {
         dest,
         pool: (() => {
           const out = allocateEntity<any>();
-          out.creator = canvasTestSurfaceCreator;
+          out.canvasHost = canvasTestHost;
           out.free = [];
           out.inUse = [];
           return finishEntity(out) as unknown;

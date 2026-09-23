@@ -1,4 +1,4 @@
-import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
+import { webHostCanvas } from '@flighthq/host-web';
 import { addNodeChild, invalidateNodeAppearance } from '@flighthq/node';
 import { appendPathRectangle, createPath, createPathMorph } from '@flighthq/path';
 import { withKindMapEntry } from '@flighthq/registry';
@@ -7,7 +7,7 @@ import { createDisplayObject } from '@flighthq/scene2d';
 import {
   beginCanvasRenderPass,
   createCanvasRenderState,
-  createCanvasRenderSurface,
+  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   allocateEmptyCanvasRenderRegistries,
@@ -16,7 +16,7 @@ import {
   canvasEndFill,
   canvasMorphShapeRenderer,
   endCanvasRenderPass,
-  registerCanvasSurfaceCreator,
+  registerCanvasHost,
   renderCanvasScene2D,
 } from '@flighthq/scene2d-canvas';
 import { appendMorphShapeBeginFill, appendMorphShapePath, appendShapeEndFill, createMorphShape } from '@flighthq/shape';
@@ -24,7 +24,7 @@ import type { CanvasShapeCommand, Kind } from '@flighthq/types';
 import { MorphShapeKind } from '@flighthq/types';
 
 // REQUIRED WIRING for one interpolated vector shape, and nothing else:
-//   surface   webCanvasRenderSurfaceCreator — the single Canvas surface provider, NOT the aggregate
+//   surface   webHostCanvas — the single Canvas surface provider, NOT the aggregate
 //             webHost.
 //   renderer  MorphShapeKind -> canvasMorphShapeRenderer
 //   commands  beginFill, drawPath, endFill. A MorphShape does NOT record the same commands the plain
@@ -58,13 +58,11 @@ const registry = {
   nodeRenderers: withKindMapEntry(emptyRegistries.nodeRenderers, MorphShapeKind, canvasMorphShapeRenderer),
 };
 
-const screen = createCanvasScreenRenderTarget(
-  createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, { height: 300, pixelRatio: 1, width: 400 }),
-);
-const state = createCanvasRenderState(registry, createCanvasTextureResolvers(webCanvasRenderSurfaceCreator), {
+const screen = createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas));
+const state = createCanvasRenderState(registry, createCanvasTextureResolvers(webHostCanvas), {
   pixelRatio: 1,
 });
-registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+registerCanvasHost(state, webHostCanvas);
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 

@@ -3,11 +3,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CanvasTextureRenderTarget, CanvasRenderTargetPool, GradientBevelEffect } from '@flighthq/types/contract';
 
 import { getCanvasEffectRunner } from './canvasEffectRegistry';
-import {
-  canvasTestSurfaceCreator,
-  createCanvasRenderState,
-  createCanvasTextureRenderTarget,
-} from './canvasEffectTestSupport';
+import { canvasTestHost, createCanvasRenderState, createCanvasTextureRenderTarget } from './canvasEffectTestSupport';
 import {
   applyGradientBevelEffectToCanvas,
   canvasGradientBevelEffectRunner,
@@ -25,7 +21,7 @@ function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; tar
   return {
     pool: (() => {
       const out = allocateEntity<any>();
-      out.creator = canvasTestSurfaceCreator;
+      out.canvasHost = canvasTestHost;
       out.free = [...targets].reverse();
       out.inUse = [];
       return finishEntity(out) as unknown;

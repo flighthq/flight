@@ -9,11 +9,7 @@ import {
   registerCanvasBevelEffect,
 } from './canvasBevelEffect';
 import { getCanvasEffectRunner } from './canvasEffectRegistry';
-import {
-  canvasTestSurfaceCreator,
-  createCanvasRenderState,
-  createCanvasTextureRenderTarget,
-} from './canvasEffectTestSupport';
+import { canvasTestHost, createCanvasRenderState, createCanvasTextureRenderTarget } from './canvasEffectTestSupport';
 
 // Recipe assertions rather than pixels — see canvasBlendEffect.test.ts. Scratch targets are pre-seeded so
 // every pass is identifiable; the pool pops from the end, so the seed order reverses the acquire order.
@@ -26,7 +22,7 @@ function seededPool(ids: readonly string[]): { pool: CanvasRenderTargetPool; tar
   return {
     pool: (() => {
       const out = allocateEntity<any>();
-      out.creator = canvasTestSurfaceCreator;
+      out.canvasHost = canvasTestHost;
       out.free = [...targets].reverse();
       out.inUse = [];
       return finishEntity(out) as unknown;

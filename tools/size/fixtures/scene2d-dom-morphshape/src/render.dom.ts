@@ -1,4 +1,4 @@
-import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
+import { webHostCanvas } from '@flighthq/host-web';
 import { addNodeChild } from '@flighthq/node';
 import { appendPathRectangle, createPath, createPathMorph } from '@flighthq/path';
 import { prepareScene2DRender, registerNodeRenderer } from '@flighthq/render';
@@ -30,7 +30,7 @@ const state = createDomRenderState(container, { pixelRatio: 1 });
 container.style.backgroundColor = '#1a1a2e';
 
 registerNodeRenderer(state, MorphShapeKind, domMorphShapeRenderer);
-const resolvers = createCanvasTextureResolvers(webCanvasRenderSurfaceCreator);
+const resolvers = createCanvasTextureResolvers(webHostCanvas);
 registerCanvasShapeCommands(state, canvasShapeCommands);
 registerDomShapeRasterizer(state, createCanvasShapeRasterizer(resolvers));
 

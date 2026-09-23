@@ -1,4 +1,4 @@
-import { webCanvasRenderSurfaceCreator } from '@flighthq/host-web';
+import { webHostCanvas } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -11,7 +11,7 @@ import {
   createCanvasElement,
   createCanvasEffectState,
   createCanvasRenderState,
-  createCanvasRenderSurface,
+  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   createDisplayObject,
@@ -24,7 +24,7 @@ import {
   prepareScene2DRender,
   registerCanvasBloomEffect,
   registerCanvasShapeCommands,
-  registerCanvasSurfaceCreator,
+  registerCanvasHost,
   registerNodeRenderer,
   renderCanvasScene2D,
   canvasScene2DRenderPreset,
@@ -58,22 +58,14 @@ declareExpectedImageDescription(
     'between the four tiles stays dark. The tiles do not overlap each other.',
 );
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(webCanvasRenderSurfaceCreator, 800, 600, pixelRatio);
+const canvas = createCanvasElement(webHostCanvas, 800, 600, pixelRatio);
 document.body.appendChild(canvas);
 
-export const screen = createCanvasScreenRenderTarget(
-  createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas, {
-    height: canvas.height / pixelRatio,
-    pixelRatio,
-    width: canvas.width / pixelRatio,
-  }),
-);
-export const state = createCanvasRenderState(
-  canvasScene2DRenderPreset,
-  createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
-  { pixelRatio },
-);
-registerCanvasSurfaceCreator(state, webCanvasRenderSurfaceCreator);
+export const screen = createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas));
+export const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas), {
+  pixelRatio,
+});
+registerCanvasHost(state, webHostCanvas);
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x05 / 0xff, 0x06 / 0xff, 0x0a / 0xff, 1] } as const;
 registerNodeRenderer(state, ShapeKind, canvasShapeRenderer);

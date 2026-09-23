@@ -4,7 +4,7 @@ import type { CanvasTextureRenderTarget, CanvasRenderTargetPool } from '@flighth
 
 import { applyBloomEffectToCanvas, canvasBloomEffectRunner, registerCanvasBloomEffect } from './canvasBloomEffect';
 import { getCanvasEffectRunner } from './canvasEffectRegistry';
-import { canvasTestSurfaceCreator, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport';
+import { canvasTestHost, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport';
 
 // A target whose ImageData is a real buffer, so the bright pass and the composite run their actual
 // arithmetic rather than being observed through a spy. `filter` is accepted and ignored: the only CSS
@@ -50,7 +50,7 @@ function createTarget(pixels: ReadonlyArray<number>): CanvasTextureRenderTarget 
 function createPool(width: number): CanvasRenderTargetPool {
   const blank = (): CanvasTextureRenderTarget => createTarget(new Array(width * 4).fill(0));
   const out = allocateEntity<any>();
-  out.creator = canvasTestSurfaceCreator;
+  out.canvasHost = canvasTestHost;
   out.free = [blank(), blank()];
   out.inUse = [];
   return finishEntity(out) as CanvasRenderTargetPool;
