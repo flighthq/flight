@@ -48,8 +48,8 @@ function fakeElectron(supported = true) {
 
 function notificationLeaf(factory: () => object): () => void {
   return () => {
-    it('constructs the requested Entity-backed notification provider', () => {
-      expect(EntityRuntimeKey in factory()).toBe(true);
+    it('constructs a plain frozen notification provider without Entity', () => {
+      expect(EntityRuntimeKey in factory()).toBe(false);
     });
   };
 }
@@ -61,9 +61,9 @@ describe('electronHostNotification', () => {
     ['linux', ['click', 'close', 'delivery', 'dismiss', 'lifecycle', 'received']],
   ] as const)('constructs the exact %s profile', (platform, expected) => {
     const capabilities = electronHostNotification(fakeElectron().electron, { platform });
-    expect(EntityRuntimeKey in capabilities).toBe(true);
+    expect(EntityRuntimeKey in capabilities).toBe(false);
     expect(Object.keys(capabilities).sort()).toEqual(expected);
-    for (const provider of Object.values(capabilities)) expect(EntityRuntimeKey in provider).toBe(true);
+    for (const provider of Object.values(capabilities)) expect(EntityRuntimeKey in provider).toBe(false);
     expect('permission' in capabilities).toBe(false);
   });
 

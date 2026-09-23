@@ -1,8 +1,6 @@
-import { allocateEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   ElectronProtocolCapabilities,
-  EntityConstruction,
   HostProtocolDefaultCapability,
   HostProtocolOpenCapability,
   HostProtocolRegistrationCapability,
@@ -30,7 +28,7 @@ function protocolUnregistration(electron: ElectronApi, registered: Set<string>):
 
 export function electronHostProtocol(electron: ElectronApi): ElectronProtocolCapabilities {
   const registered = new Set<string>();
-  const out = allocateEntity<ElectronProtocolCapabilities>();
+  const out = {} as { -readonly [K in keyof ElectronProtocolCapabilities]: ElectronProtocolCapabilities[K] };
   populateElectronHostProtocol(
     out,
     protocolDefault(electron, registered),
@@ -39,7 +37,7 @@ export function electronHostProtocol(electron: ElectronApi): ElectronProtocolCap
     electronHostProtocolRegistrationQuery(electron),
     protocolUnregistration(electron, registered),
   );
-  return out;
+  return Object.freeze(out) as ElectronProtocolCapabilities;
 }
 
 export function electronHostProtocolDefault(electron: ElectronApi): HostProtocolDefaultCapability {
@@ -67,7 +65,7 @@ export function electronHostProtocolUnregistration(electron: ElectronApi): HostP
 }
 
 export function populateElectronHostProtocol(
-  out: EntityConstruction<ElectronProtocolCapabilities>,
+  out: { -readonly [K in keyof ElectronProtocolCapabilities]: ElectronProtocolCapabilities[K] },
   defaultProvider: HostProtocolDefaultCapability,
   open: HostProtocolOpenCapability,
   registration: HostProtocolRegistrationCapability,

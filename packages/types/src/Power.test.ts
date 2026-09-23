@@ -25,7 +25,7 @@ type PowerCapabilitiesAreStructural = [
   HostPowerThermalCapability extends Entity ? true : false,
 ];
 
-type ConcretePowerBundlesAreEntities = [
+type ConcretePowerBundlesAreStructural = [
   ElectronPowerCapabilities extends Entity ? true : false,
   WebPowerCapabilities extends Entity ? true : false,
   WebPowerReadingCapabilities extends Entity ? true : false,
@@ -50,8 +50,8 @@ describe('power Entity boundaries', () => {
     >();
   });
 
-  it('makes concrete platform bundles entities', () => {
-    expectTypeOf<ConcretePowerBundlesAreEntities>().toEqualTypeOf<[true, true, true]>();
+  it('keeps concrete platform bundles structural', () => {
+    expectTypeOf<ConcretePowerBundlesAreStructural>().toEqualTypeOf<[false, false, false]>();
   });
 
   it('keeps generic host groups and Has traits structural', () => {

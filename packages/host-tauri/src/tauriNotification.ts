@@ -1,4 +1,3 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createNotificationResource } from '@flighthq/notification/contract';
 import type {
   NotificationRequest,
@@ -12,11 +11,11 @@ import type {
 
 export function tauriHostNotification(tauri: TauriApi): TauriNotificationCapabilities {
   const state = createNotificationState(tauri);
-  const out = allocateEntity<TauriNotificationCapabilities>();
-  out.delivery = createNotificationDelivery(state);
-  out.lifecycle = createNotificationLifecycle(state);
-  out.permission = createNotificationPermission(state);
-  return finishEntity(out);
+  return Object.freeze({
+    delivery: createNotificationDelivery(state),
+    lifecycle: createNotificationLifecycle(state),
+    permission: createNotificationPermission(state),
+  });
 }
 
 export function tauriHostNotificationDelivery(tauri: TauriApi): HostNotificationDeliveryCapability {

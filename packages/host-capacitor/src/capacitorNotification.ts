@@ -1,4 +1,3 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   bindScheduledNotificationCancel,
   createNotificationResource,
@@ -24,13 +23,10 @@ import type {
   NotificationRequestField,
   NotificationSchedule,
   ScheduledNotification,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
 export function capacitorHostNotification(capacitor: CapacitorApi): CapacitorNotificationCapabilities {
-  const out = allocateEntity<CapacitorNotificationCapabilities>();
-  populateCapacitorNotification(out, capacitor);
-  return finishEntity(out);
+  return createCapacitorNotificationCapabilities(capacitor);
 }
 
 export function capacitorHostNotificationAction(capacitor: CapacitorApi): HostNotificationActionCapability {
@@ -57,10 +53,7 @@ export function capacitorHostNotificationScheduling(capacitor: CapacitorApi): Ho
   return capacitorHostNotification(capacitor).scheduling;
 }
 
-function populateCapacitorNotification(
-  out: EntityConstruction<CapacitorNotificationCapabilities>,
-  capacitor: CapacitorApi,
-): void {
+function createCapacitorNotificationCapabilities(capacitor: CapacitorApi): CapacitorNotificationCapabilities {
   const notifications = capacitor.localNotifications;
   const notificationByNumber = new Map<number, Notification>();
   const scheduledByNumber = new Map<number, ScheduledNotification>();
@@ -132,147 +125,152 @@ function populateCapacitorNotification(
     liveAttachments.set(attachment, `subscription-${nextAttachmentId++}`);
     return { attachment, reason: 'ok' };
   }
-  out.action = {
-    attach(listener) {
-      return attachEvent((action) => listener(getNotification(action.notification.id), action.actionId));
+  return Object.freeze({
+    action: {
+      attach(listener) {
+        return attachEvent((action) => listener(getNotification(action.notification.id), action.actionId));
+      },
     },
-  };
-  out.click = {
-    attach(listener) {
-      return attachEvent((action) => {
-        if (action.actionId === 'tap') listener(getNotification(action.notification.id));
-      });
-    },
-  };
-  out.delivery = {
-    async notify(request) {
-      if (destroyed) return { reason: 'operation-failed' };
-      const invalid = getCapacitorInvalidNotificationRequestFields(request);
-      if (invalid.length > 0) return { fields: invalid, reason: 'invalid-request' };
-      let permission;
-      try {
-        permission = (await notifications.checkPermissions()).display;
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-      if (permission !== 'granted') return { reason: 'permission-denied' };
-      const number = nextNumericId++;
-      let result;
-      try {
-        result = await notifications.schedule({
-          notifications: [{ body: request.body, id: number, title: request.title }],
+    click: {
+      attach(listener) {
+        return attachEvent((action) => {
+          if (action.actionId === 'tap') listener(getNotification(action.notification.id));
         });
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-      if (!result.notifications.some((entry) => entry.id === number)) return { reason: 'operation-failed' };
-      const notification = createNotificationResource(request.id ?? `capacitor-notification-${number}`, request.title);
-      notificationByNumber.set(number, notification);
-      return { notification, reason: 'accepted' };
+      },
     },
-  };
-  out.lifecycle = {
-    async destroy() {
-      if (destroyCompleted) return { reason: 'already-destroyed' };
-      destroyed = true;
-      const failures: NotificationLifecycleFailure[] = [];
-      const cancellation = await cancelAll();
-      if (cancellation.reason === 'operation-failed') failures.push(...cancellation.failures);
-      for (const [attachment, id] of [...liveAttachments]) {
-        const outcome = await attachment.release();
-        if (outcome.reason === 'operation-failed') failures.push({ id, operation: 'release' });
-      }
-      if (failures.length > 0) return { failures, reason: 'operation-failed' };
-      notificationByNumber.clear();
-      destroyCompleted = true;
-      return { reason: 'ok' };
-    },
-  };
-  out.permission = {
-    async getPermission() {
-      try {
-        return {
-          permission: toNotificationPermission((await notifications.checkPermissions()).display),
-          reason: 'ok',
-        };
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-    },
-    async requestPermission() {
-      try {
-        const permission = toNotificationPermission((await notifications.requestPermissions()).display);
-        return {
-          reason: permission === 'default' ? 'dismissed' : permission,
-        };
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-    },
-  };
-  out.scheduling = {
-    cancelAllScheduledNotifications: cancelAll,
-    async getPendingNotifications() {
-      let pending;
-      try {
-        pending = await notifications.getPending();
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-      const values = pending.notifications.map((schema) => {
-        let scheduled = scheduledByNumber.get(schema.id);
-        if (scheduled === undefined) {
-          const id = `capacitor-scheduled-notification-${schema.id}`;
-          const request = { body: schema.body, id, title: schema.title };
-          const schedule = {
-            at: schema.schedule?.at?.getTime() ?? 0,
-            repeat: toNotificationRepeat(schema.schedule?.every),
-          };
-          scheduled = createScheduledNotificationResource(id, request, schedule);
-          trackScheduled(schema.id, scheduled);
+    delivery: {
+      async notify(request) {
+        if (destroyed) return { reason: 'operation-failed' };
+        const invalid = getCapacitorInvalidNotificationRequestFields(request);
+        if (invalid.length > 0) return { fields: invalid, reason: 'invalid-request' };
+        let permission;
+        try {
+          permission = (await notifications.checkPermissions()).display;
+        } catch {
+          return { reason: 'operation-failed' };
         }
-        return scheduled;
-      });
-      return { notifications: values, reason: 'ok' };
+        if (permission !== 'granted') return { reason: 'permission-denied' };
+        const number = nextNumericId++;
+        let result;
+        try {
+          result = await notifications.schedule({
+            notifications: [{ body: request.body, id: number, title: request.title }],
+          });
+        } catch {
+          return { reason: 'operation-failed' };
+        }
+        if (!result.notifications.some((entry) => entry.id === number)) return { reason: 'operation-failed' };
+        const notification = createNotificationResource(
+          request.id ?? `capacitor-notification-${number}`,
+          request.title,
+        );
+        notificationByNumber.set(number, notification);
+        return { notification, reason: 'accepted' };
+      },
     },
-    async scheduleNotification(request, schedule) {
-      if (destroyed) return { reason: 'operation-failed' };
-      const invalid = getCapacitorInvalidScheduleFields(request, schedule);
-      if (invalid.length > 0) return { fields: invalid, reason: 'invalid-schedule' };
-      let permission;
-      try {
-        permission = (await notifications.checkPermissions()).display;
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-      if (permission !== 'granted') return { reason: 'permission-denied' };
-      const number = nextNumericId++;
-      const schema: CapacitorLocalNotificationSchema = {
-        body: request.body,
-        id: number,
-        schedule: {
-          at: new Date(schedule.at),
-          every: schedule.repeat,
-          repeats: schedule.repeat !== undefined,
-        },
-        title: request.title,
-      };
-      let result;
-      try {
-        result = await notifications.schedule({ notifications: [schema] });
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-      if (!result.notifications.some((entry) => entry.id === number)) return { reason: 'operation-failed' };
-      const scheduled = createScheduledNotificationResource(
-        request.id ?? `capacitor-scheduled-notification-${number}`,
-        request,
-        schedule,
-      );
-      trackScheduled(number, scheduled);
-      return { precision: 'inexact', reason: 'scheduled', scheduled };
+    lifecycle: {
+      async destroy() {
+        if (destroyCompleted) return { reason: 'already-destroyed' };
+        destroyed = true;
+        const failures: NotificationLifecycleFailure[] = [];
+        const cancellation = await cancelAll();
+        if (cancellation.reason === 'operation-failed') failures.push(...cancellation.failures);
+        for (const [attachment, id] of [...liveAttachments]) {
+          const outcome = await attachment.release();
+          if (outcome.reason === 'operation-failed') failures.push({ id, operation: 'release' });
+        }
+        if (failures.length > 0) return { failures, reason: 'operation-failed' };
+        notificationByNumber.clear();
+        destroyCompleted = true;
+        return { reason: 'ok' };
+      },
     },
-  };
+    permission: {
+      async getPermission() {
+        try {
+          return {
+            permission: toNotificationPermission((await notifications.checkPermissions()).display),
+            reason: 'ok',
+          };
+        } catch {
+          return { reason: 'operation-failed' };
+        }
+      },
+      async requestPermission() {
+        try {
+          const permission = toNotificationPermission((await notifications.requestPermissions()).display);
+          return {
+            reason: permission === 'default' ? 'dismissed' : permission,
+          };
+        } catch {
+          return { reason: 'operation-failed' };
+        }
+      },
+    },
+    scheduling: {
+      cancelAllScheduledNotifications: cancelAll,
+      async getPendingNotifications() {
+        let pending;
+        try {
+          pending = await notifications.getPending();
+        } catch {
+          return { reason: 'operation-failed' };
+        }
+        const values = pending.notifications.map((schema) => {
+          let scheduled = scheduledByNumber.get(schema.id);
+          if (scheduled === undefined) {
+            const id = `capacitor-scheduled-notification-${schema.id}`;
+            const request = { body: schema.body, id, title: schema.title };
+            const schedule = {
+              at: schema.schedule?.at?.getTime() ?? 0,
+              repeat: toNotificationRepeat(schema.schedule?.every),
+            };
+            scheduled = createScheduledNotificationResource(id, request, schedule);
+            trackScheduled(schema.id, scheduled);
+          }
+          return scheduled;
+        });
+        return { notifications: values, reason: 'ok' };
+      },
+      async scheduleNotification(request, schedule) {
+        if (destroyed) return { reason: 'operation-failed' };
+        const invalid = getCapacitorInvalidScheduleFields(request, schedule);
+        if (invalid.length > 0) return { fields: invalid, reason: 'invalid-schedule' };
+        let permission;
+        try {
+          permission = (await notifications.checkPermissions()).display;
+        } catch {
+          return { reason: 'operation-failed' };
+        }
+        if (permission !== 'granted') return { reason: 'permission-denied' };
+        const number = nextNumericId++;
+        const schema: CapacitorLocalNotificationSchema = {
+          body: request.body,
+          id: number,
+          schedule: {
+            at: new Date(schedule.at),
+            every: schedule.repeat,
+            repeats: schedule.repeat !== undefined,
+          },
+          title: request.title,
+        };
+        let result;
+        try {
+          result = await notifications.schedule({ notifications: [schema] });
+        } catch {
+          return { reason: 'operation-failed' };
+        }
+        if (!result.notifications.some((entry) => entry.id === number)) return { reason: 'operation-failed' };
+        const scheduled = createScheduledNotificationResource(
+          request.id ?? `capacitor-scheduled-notification-${number}`,
+          request,
+          schedule,
+        );
+        trackScheduled(number, scheduled);
+        return { precision: 'inexact', reason: 'scheduled', scheduled };
+      },
+    },
+  } satisfies CapacitorNotificationCapabilities);
 }
 
 function getCapacitorInvalidNotificationRequestFields(

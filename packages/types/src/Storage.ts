@@ -84,11 +84,11 @@ export interface WebWindowStoragePersistenceApi extends WebWorkerStoragePersiste
   persist(): Promise<boolean>;
 }
 
-export interface WebWorkerStoragePersistenceCapabilities extends Entity {
+export interface WebWorkerStoragePersistenceCapabilities {
   readonly persistenceQuery: HostPreferencesPersistenceQueryCapability;
 }
 
-export interface WebWindowStoragePersistenceCapabilities extends Entity {
+export interface WebWindowStoragePersistenceCapabilities {
   readonly persistenceQuery: HostPreferencesPersistenceQueryCapability;
   readonly persistenceRequest: HostPreferencesPersistenceRequestCapability;
 }

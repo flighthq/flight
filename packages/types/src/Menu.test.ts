@@ -16,7 +16,7 @@ type MenuCapabilitiesAreStructural = [
   HostMenuSelectCapability extends Entity ? true : false,
 ];
 
-type ConcreteMenuBundlesAreEntities = [
+type ConcreteMenuBundlesAreStructural = [
   ElectronMenuCapabilities extends Entity ? true : false,
   TauriMenuCapabilities extends Entity ? true : false,
 ];
@@ -34,8 +34,8 @@ describe('menu Entity boundaries', () => {
     expectTypeOf<MenuCapabilitiesAreStructural>().toEqualTypeOf<[false, false, false, false]>();
   });
 
-  it('makes concrete platform bundles entities', () => {
-    expectTypeOf<ConcreteMenuBundlesAreEntities>().toEqualTypeOf<[true, true]>();
+  it('keeps concrete platform bundles structural', () => {
+    expectTypeOf<ConcreteMenuBundlesAreStructural>().toEqualTypeOf<[false, false]>();
   });
 
   it('keeps generic host groups and Has traits structural', () => {

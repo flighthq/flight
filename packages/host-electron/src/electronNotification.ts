@@ -1,4 +1,3 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { bindNotificationClose, createNotificationResource } from '@flighthq/notification/contract';
 import type {
   DesktopOsProfile,
@@ -7,9 +6,6 @@ import type {
   ElectronMacosNotificationCapabilities,
   ElectronNotification,
   ElectronNotificationCapabilities,
-  Entity,
-  EntityConstruction,
-  EntityRuntimeKey,
   Notification,
   NotificationEventBackendAttachOutcome,
   NotificationLifecycleFailure,
@@ -74,10 +70,10 @@ export function electronHostNotification(
     return failures.length === 0 ? { reason: 'ok' } : { failures, reason: 'operation-failed' };
   }
 
-  const capabilities: Omit<ElectronNotificationCapabilities, typeof EntityRuntimeKey> = {
+  const capabilities: ElectronNotificationCapabilities = {
     click: electronHostNotificationEventProvider(clickListeners, () => destroyed),
-    close: finishNotificationProvider({ closeAllNotifications: closeAll }),
-    delivery: finishNotificationProvider({
+    close: { closeAllNotifications: closeAll },
+    delivery: {
       async notify(request) {
         if (destroyed || !electron.Notification.isSupported()) return { reason: 'operation-failed' };
         const invalid = getElectronInvalidNotificationRequestFields(request, options.platform === 'macos');
@@ -157,9 +153,9 @@ export function electronHostNotification(
           }
         });
       },
-    }),
+    },
     dismiss: electronHostNotificationEventProvider(dismissListeners, () => destroyed),
-    lifecycle: finishNotificationProvider({
+    lifecycle: {
       async destroy() {
         if (destroyCompleted) return { reason: 'already-destroyed' };
         destroyed = true;
@@ -172,23 +168,18 @@ export function electronHostNotification(
         if (outcome.reason === 'ok') destroyCompleted = true;
         return outcome;
       },
-    }),
+    },
     received: electronHostNotificationEventProvider(receivedListeners, () => destroyed),
   };
 
   if (options.platform !== 'macos') {
-    const out = allocateEntity<ElectronNotificationCapabilities>();
-    populateElectronHostNotificationCommon(out, capabilities);
-    return finishEntity(out);
+    return Object.freeze(capabilities);
   }
-  const out = allocateEntity<ElectronMacosNotificationCapabilities>();
-  populateElectronHostNotificationMacos(
-    out,
-    capabilities,
-    electronHostNotificationEventProvider(actionListeners, () => destroyed),
-    electronHostNotificationEventProvider(replyListeners, () => destroyed),
-  );
-  return finishEntity(out);
+  return Object.freeze({
+    ...capabilities,
+    action: electronHostNotificationEventProvider(actionListeners, () => destroyed),
+    reply: electronHostNotificationEventProvider(replyListeners, () => destroyed),
+  } as ElectronMacosNotificationCapabilities);
 }
 
 export function electronHostNotificationAction(
@@ -248,8 +239,8 @@ export function electronHostNotificationReply(
 }
 
 export function populateElectronHostNotificationCommon(
-  out: EntityConstruction<ElectronNotificationCapabilities>,
-  capabilities: Readonly<Omit<ElectronNotificationCapabilities, typeof EntityRuntimeKey>>,
+  out: { -readonly [K in keyof ElectronNotificationCapabilities]: ElectronNotificationCapabilities[K] },
+  capabilities: Readonly<ElectronNotificationCapabilities>,
 ): void {
   out.click = capabilities.click;
   out.close = capabilities.close;
@@ -260,8 +251,8 @@ export function populateElectronHostNotificationCommon(
 }
 
 export function populateElectronHostNotificationMacos(
-  out: EntityConstruction<ElectronMacosNotificationCapabilities>,
-  capabilities: Readonly<Omit<ElectronNotificationCapabilities, typeof EntityRuntimeKey>>,
+  out: { -readonly [K in keyof ElectronMacosNotificationCapabilities]: ElectronMacosNotificationCapabilities[K] },
+  capabilities: Readonly<ElectronNotificationCapabilities>,
   action: ElectronMacosNotificationCapabilities['action'],
   reply: ElectronMacosNotificationCapabilities['reply'],
 ): void {
@@ -276,7 +267,7 @@ export function populateElectronHostNotificationMacos(
 }
 
 function electronHostNotificationEventProvider<TListener>(listeners: Set<TListener>, isDestroyed: () => boolean) {
-  return finishNotificationProvider({
+  return {
     async attach(listener: TListener): Promise<NotificationEventBackendAttachOutcome> {
       if (isDestroyed()) return { reason: 'operation-failed', releaseFailed: false };
       listeners.add(listener);
@@ -292,13 +283,7 @@ function electronHostNotificationEventProvider<TListener>(listeners: Set<TListen
         reason: 'ok',
       };
     },
-  });
-}
-
-function finishNotificationProvider<Provider extends object>(provider: Provider): Provider & Entity {
-  const out = allocateEntity<Provider & Entity>();
-  Object.assign(out, provider);
-  return finishEntity(out);
+  };
 }
 
 function getElectronInvalidNotificationRequestFields(

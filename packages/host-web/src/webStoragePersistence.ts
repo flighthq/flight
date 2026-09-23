@@ -1,8 +1,6 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityConstruction,
   HostPreferencesPersistenceQueryCapability,
-  HostPreferencesPersistenceRequestCapability,
+  NonEntityCreateResult,
   PermissionState,
   StoragePersistenceOutcome,
   WebWindowStoragePersistenceApi,
@@ -13,45 +11,37 @@ import type {
 
 export function createWebWindowStoragePersistenceCapabilities(
   api: Readonly<WebWindowStoragePersistenceApi>,
-): WebWindowStoragePersistenceCapabilities {
-  const persistenceRequest = {} as HostPreferencesPersistenceRequestCapability;
-  persistenceRequest.requestPersistence = async (): Promise<StoragePersistenceOutcome> => {
-    const outcome = await observePersistenceOutcome(() => api.persist());
-    const permissionState = await observePermissionState(() => api.getPermissionState());
-    return { outcome, permissionState };
-  };
-  const capabilities = (() => {
-    const out = allocateEntity<WebWindowStoragePersistenceCapabilities>();
-    out.persistenceQuery = createPersistenceQueryBackend(api);
-    out.persistenceRequest = persistenceRequest;
-    return finishEntity(out);
-  })();
-  return capabilities;
+): NonEntityCreateResult<WebWindowStoragePersistenceCapabilities, 'descriptor'> {
+  return Object.freeze({
+    persistenceQuery: createPersistenceQueryBackend(api),
+    persistenceRequest: {
+      async requestPersistence(): Promise<StoragePersistenceOutcome> {
+        const outcome = await observePersistenceOutcome(() => api.persist());
+        const permissionState = await observePermissionState(() => api.getPermissionState());
+        return { outcome, permissionState };
+      },
+    },
+  });
 }
 
 export function createWebWorkerStoragePersistenceCapabilities(
   api: Readonly<WebWorkerStoragePersistenceApi>,
-): WebWorkerStoragePersistenceCapabilities {
-  const capabilities = allocateEntity<WebWorkerStoragePersistenceCapabilities>();
-  initializeWebWorkerStoragePersistenceCapabilities(capabilities, api);
-  return capabilities;
+): NonEntityCreateResult<WebWorkerStoragePersistenceCapabilities, 'descriptor'> {
+  return Object.freeze({
+    persistenceQuery: createPersistenceQueryBackend(api),
+  });
 }
 
-export function initializeWebWorkerStoragePersistenceCapabilities(
-  capabilities: EntityConstruction<WebWorkerStoragePersistenceCapabilities>,
+function createPersistenceQueryBackend(
   api: Readonly<WebWorkerStoragePersistenceApi>,
-): void {
-  capabilities.persistenceQuery = createPersistenceQueryBackend(api);
-}
-
-function createPersistenceQueryBackend(api: Readonly<WebWorkerStoragePersistenceApi>) {
-  const backend = {} as HostPreferencesPersistenceQueryCapability;
-  backend.getPersistence = async (): Promise<StoragePersistenceOutcome> => {
-    const outcome = await observePersistenceOutcome(() => api.persisted());
-    const permissionState = await observePermissionState(() => api.getPermissionState());
-    return { outcome, permissionState };
+): HostPreferencesPersistenceQueryCapability {
+  return {
+    async getPersistence(): Promise<StoragePersistenceOutcome> {
+      const outcome = await observePersistenceOutcome(() => api.persisted());
+      const permissionState = await observePermissionState(() => api.getPermissionState());
+      return { outcome, permissionState };
+    },
   };
-  return backend;
 }
 
 const webWindowStoragePersistenceCapabilities = createWebWindowStoragePersistenceCapabilities({

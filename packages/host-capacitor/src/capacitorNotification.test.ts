@@ -68,7 +68,7 @@ function fakeCapacitor(display = 'granted') {
 describe('capacitorHostNotification', () => {
   it('constructs the exact Android/iOS common profile', () => {
     const capabilities = capacitorHostNotification(fakeCapacitor().capacitor);
-    expect(EntityRuntimeKey in capabilities).toBe(true);
+    expect(EntityRuntimeKey in capabilities).toBe(false);
     expect(Object.keys(capabilities).sort()).toEqual([
       'action',
       'click',

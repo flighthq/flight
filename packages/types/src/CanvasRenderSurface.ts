@@ -1,6 +1,6 @@
 import type { Entity } from './Entity';
 
-export interface CanvasRenderSurfaceCreator extends Entity {
+export interface CanvasRenderSurfaceCreator {
   createRenderSurface(width: number, height: number, pixelRatio: number): HTMLCanvasElement | null;
   destroyRenderSurface(canvas: HTMLCanvasElement): void;
 }

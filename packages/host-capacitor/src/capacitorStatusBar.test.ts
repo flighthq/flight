@@ -54,17 +54,17 @@ function blankInfo(): StatusBarInfo {
 }
 
 describe('capacitorHostStatusBarColor', () => {
-  it('constructs the color provider as an Entity', () => {
-    expect(EntityRuntimeKey in capacitorHostStatusBarColor(fakeCapacitor().capacitor)).toBe(true);
+  it('constructs the color provider as a plain frozen object', () => {
+    expect(EntityRuntimeKey in capacitorHostStatusBarColor(fakeCapacitor().capacitor)).toBe(false);
   });
 });
 
 describe('capacitorHostStatusBarGroup', () => {
-  it('publishes the exact status-bar slots over one shared Entity', () => {
+  it('publishes the exact status-bar slots over one shared provider', () => {
     const statusBar = capacitorHostStatusBarGroup(fakeCapacitor().capacitor);
     expect(Object.keys(statusBar).sort()).toEqual(['color', 'info', 'overlays', 'style', 'visibility']);
     expect(new Set(Object.values(statusBar))).toHaveLength(1);
-    expect(EntityRuntimeKey in statusBar.info).toBe(true);
+    expect(EntityRuntimeKey in statusBar.info).toBe(false);
   });
 
   it('maps setters onto the Capacitor plugin', () => {
@@ -93,25 +93,25 @@ describe('capacitorHostStatusBarGroup', () => {
 });
 
 describe('capacitorHostStatusBarInfo', () => {
-  it('constructs the info provider as an Entity', () => {
-    expect(EntityRuntimeKey in capacitorHostStatusBarInfo(fakeCapacitor().capacitor)).toBe(true);
+  it('constructs the info provider as a plain frozen object', () => {
+    expect(EntityRuntimeKey in capacitorHostStatusBarInfo(fakeCapacitor().capacitor)).toBe(false);
   });
 });
 
 describe('capacitorHostStatusBarOverlays', () => {
-  it('constructs the overlays provider as an Entity', () => {
-    expect(EntityRuntimeKey in capacitorHostStatusBarOverlays(fakeCapacitor().capacitor)).toBe(true);
+  it('constructs the overlays provider as a plain frozen object', () => {
+    expect(EntityRuntimeKey in capacitorHostStatusBarOverlays(fakeCapacitor().capacitor)).toBe(false);
   });
 });
 
 describe('capacitorHostStatusBarStyle', () => {
-  it('constructs the style provider as an Entity', () => {
-    expect(EntityRuntimeKey in capacitorHostStatusBarStyle(fakeCapacitor().capacitor)).toBe(true);
+  it('constructs the style provider as a plain frozen object', () => {
+    expect(EntityRuntimeKey in capacitorHostStatusBarStyle(fakeCapacitor().capacitor)).toBe(false);
   });
 });
 
 describe('capacitorHostStatusBarVisibility', () => {
-  it('constructs the visibility provider as an Entity', () => {
-    expect(EntityRuntimeKey in capacitorHostStatusBarVisibility(fakeCapacitor().capacitor)).toBe(true);
+  it('constructs the visibility provider as a plain frozen object', () => {
+    expect(EntityRuntimeKey in capacitorHostStatusBarVisibility(fakeCapacitor().capacitor)).toBe(false);
   });
 });

@@ -1,26 +1,24 @@
-import type { Entity } from './Entity';
 import type { HostAppCapabilities } from './Host';
 import type { DesktopOsProfile } from './Tray';
 
-export type ElectronCommonAppCapabilities = Entity &
-  Required<
-    Pick<
-      HostAppCapabilities,
-      | 'allWindowsClosed'
-      | 'focus'
-      | 'locale'
-      | 'name'
-      | 'nameWrite'
-      | 'path'
-      | 'quit'
-      | 'quitRequest'
-      | 'ready'
-      | 'relaunch'
-      | 'secondInstance'
-      | 'singleInstance'
-      | 'version'
-    >
-  >;
+export type ElectronCommonAppCapabilities = Required<
+  Pick<
+    HostAppCapabilities,
+    | 'allWindowsClosed'
+    | 'focus'
+    | 'locale'
+    | 'name'
+    | 'nameWrite'
+    | 'path'
+    | 'quit'
+    | 'quitRequest'
+    | 'ready'
+    | 'relaunch'
+    | 'secondInstance'
+    | 'singleInstance'
+    | 'version'
+  >
+>;
 export type ElectronMacosAppCapabilities = ElectronCommonAppCapabilities &
   Required<
     Pick<

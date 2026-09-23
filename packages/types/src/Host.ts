@@ -477,7 +477,7 @@ export interface HostScreenCapabilities {
   readonly query?: HostScreenQueryCapability;
 }
 
-export type WebScreenCapabilities = Entity & Required<HostScreenCapabilities>;
+export type WebScreenCapabilities = Required<HostScreenCapabilities>;
 
 export interface HostSensorsCapabilities {
   readonly query?: HostSensorsCapability;

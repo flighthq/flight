@@ -27,7 +27,7 @@ function fakeTauri(granted = true, permission: TauriNotificationPermission = 'gr
 describe('tauriHostNotification', () => {
   it('constructs exactly permission, delivery, and lifecycle', () => {
     const capabilities = tauriHostNotification(fakeTauri().tauri);
-    expect(EntityRuntimeKey in capabilities).toBe(true);
+    expect(EntityRuntimeKey in capabilities).toBe(false);
     expect(Object.keys(capabilities).sort()).toEqual(['delivery', 'lifecycle', 'permission']);
   });
 

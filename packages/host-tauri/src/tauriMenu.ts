@@ -1,4 +1,3 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   HostAppMenuCapability,
   MenuItemTemplate,
@@ -23,11 +22,11 @@ export function tauriHostAppMenu(tauri: TauriApi): HostAppMenuCapability {
 //
 export function tauriHostMenu(tauri: TauriApi): TauriMenuCapabilities {
   const state = createMenuState();
-  const out = allocateEntity<TauriMenuCapabilities>();
-  out.app = createAppMenu(tauri, state);
-  out.popup = createMenuPopup(tauri);
-  out.select = createMenuSelect(state);
-  return finishEntity(out);
+  return Object.freeze({
+    app: createAppMenu(tauri, state),
+    popup: createMenuPopup(tauri),
+    select: createMenuSelect(state),
+  });
 }
 
 export function tauriHostMenuPopup(tauri: TauriApi): HostMenuPopupCapability {

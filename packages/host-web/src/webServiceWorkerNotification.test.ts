@@ -1,5 +1,4 @@
 import { closeNotification } from '@flighthq/notification/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   NotificationPermission,
   WebNotificationOptions,
@@ -9,7 +8,6 @@ import type {
 
 import {
   createWebServiceWorkerNotificationCapabilities,
-  initializeWebServiceWorkerNotificationCapabilities,
   notifyWebServiceWorkerNotificationEvent,
 } from './webServiceWorkerNotification';
 
@@ -58,7 +56,6 @@ function fakeServiceWorker(permission: NotificationPermission = 'granted') {
 describe('createWebServiceWorkerNotificationCapabilities', () => {
   it('constructs the persistent profile without timers, reply, or synthetic received', () => {
     const capabilities = createWebServiceWorkerNotificationCapabilities(fakeServiceWorker().api);
-    expect(EntityRuntimeKey in capabilities).toBe(true);
     expect(Object.keys(capabilities)).toEqual(
       expect.arrayContaining([
         'action',
@@ -118,11 +115,6 @@ describe('createWebServiceWorkerNotificationCapabilities', () => {
   });
 });
 
-describe('initializeWebServiceWorkerNotificationCapabilities', () => {
-  it('is the construction initializer of createWebServiceWorkerNotificationCapabilities', () => {
-    expect(typeof initializeWebServiceWorkerNotificationCapabilities).toBe('function');
-  });
-});
 describe('notifyWebServiceWorkerNotificationEvent', () => {
   it('routes real action/click/close events without fabricating reply', async () => {
     const { api } = fakeServiceWorker();

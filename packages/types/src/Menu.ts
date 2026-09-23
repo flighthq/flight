@@ -1,4 +1,3 @@
-import type { Entity } from './Entity';
 import type { HostMenuCapabilities } from './Host';
 import type { WellKnownMenuItemRoleValue } from './WellKnownMenuItemRole';
 
@@ -76,8 +75,6 @@ export interface HostMenuSelectCapability {
   subscribe(listener: (id: string) => void): () => void;
 }
 
-// These concrete bundles are identity-bearing results of platform factories. HostMenuCapabilities
-// stays structural so generic host composition remains structural.
-export type ElectronMenuCapabilities = Entity & Required<Pick<HostMenuCapabilities, 'app' | 'popup' | 'select'>>;
+export type ElectronMenuCapabilities = Required<Pick<HostMenuCapabilities, 'app' | 'popup' | 'select'>>;
 
-export type TauriMenuCapabilities = Entity & Required<Pick<HostMenuCapabilities, 'app' | 'popup' | 'select'>>;
+export type TauriMenuCapabilities = Required<Pick<HostMenuCapabilities, 'app' | 'popup' | 'select'>>;
