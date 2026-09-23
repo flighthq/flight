@@ -1,4 +1,4 @@
-import { getCanvasHostSurface } from '@flighthq/render/contract';
+import { getCanvasSurfaceHost } from '@flighthq/scene2d-canvas/contract';
 import type {
   CanvasEffectRunner,
   CanvasRenderState,
@@ -49,7 +49,7 @@ export function applyGradientBevelEffectToCanvas(
   const effect = maybeEffect ?? (poolOrEffect as Readonly<GradientBevelEffect>);
   const pool =
     maybeEffect === undefined
-      ? createCanvasTextureRenderTargetPool(getCanvasHostSurface(source.surface)!)
+      ? createCanvasTextureRenderTargetPool(getCanvasSurfaceHost(source.surface)!)
       : (poolOrEffect as CanvasRenderTargetPool);
   applyGradientBevelEffectToCanvasWithPool(source, dest, pool, effect);
 }
