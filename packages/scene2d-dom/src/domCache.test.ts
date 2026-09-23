@@ -1,8 +1,12 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { createRenderCache, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { CanvasRenderSurfaceCreator } from '@flighthq/types/contract';
+import {
+  createCanvasSurfaceFromNativeHandle,
+  destroyCanvasSurface,
+  getSurfaceHandle,
+} from '@flighthq/surface/contract';
+import type { HostCanvasCapability } from '@flighthq/types/contract';
 
 import {
   domRenderCacheRenderer,
@@ -32,7 +36,7 @@ describe('domRenderCacheRenderer', () => {
     const obj = createDisplayObject();
     const cache = createRenderCache();
     useRenderCache(state, obj, cache);
-    const target = ensureDomRenderCacheTarget(canvasSurfaceCreator, state, cache, 16, 16);
+    const target = ensureDomRenderCacheTarget(canvasHost, state, cache, 16, 16);
     domRenderCacheRenderer.submit(state, makeCacheNode(obj));
     expect(target.canvas.style.transform).not.toBe('');
   });
@@ -49,7 +53,7 @@ describe('enableDomRenderCache', () => {
 describe('ensureDomRenderCacheTarget', () => {
   it('creates a target sized to the request', () => {
     const state = makeState();
-    const target = ensureDomRenderCacheTarget(canvasSurfaceCreator, state, createRenderCache(), 64, 32);
+    const target = ensureDomRenderCacheTarget(canvasHost, state, createRenderCache(), 64, 32);
     expect(target.width).toBe(64);
     expect(target.height).toBe(32);
   });
@@ -57,8 +61,8 @@ describe('ensureDomRenderCacheTarget', () => {
   it('reuses and resizes the same target on subsequent calls', () => {
     const state = makeState();
     const cache = createRenderCache();
-    const first = ensureDomRenderCacheTarget(canvasSurfaceCreator, state, cache, 64, 32);
-    const second = ensureDomRenderCacheTarget(canvasSurfaceCreator, state, cache, 16, 16);
+    const first = ensureDomRenderCacheTarget(canvasHost, state, cache, 64, 32);
+    const second = ensureDomRenderCacheTarget(canvasHost, state, cache, 16, 16);
     expect(second).toBe(first);
     expect(second.width).toBe(16);
   });
@@ -67,8 +71,8 @@ describe('ensureDomRenderCacheTarget', () => {
     const stateA = makeState();
     const stateB = makeState();
     const cache = createRenderCache();
-    expect(ensureDomRenderCacheTarget(canvasSurfaceCreator, stateA, cache, 8, 8)).not.toBe(
-      ensureDomRenderCacheTarget(canvasSurfaceCreator, stateB, cache, 8, 8),
+    expect(ensureDomRenderCacheTarget(canvasHost, stateA, cache, 8, 8)).not.toBe(
+      ensureDomRenderCacheTarget(canvasHost, stateB, cache, 8, 8),
     );
   });
 });
@@ -81,7 +85,7 @@ describe('getDomRenderCacheTarget', () => {
   it('returns the allocated target', () => {
     const state = makeState();
     const cache = createRenderCache();
-    const target = ensureDomRenderCacheTarget(canvasSurfaceCreator, state, cache, 8, 8);
+    const target = ensureDomRenderCacheTarget(canvasHost, state, cache, 8, 8);
     expect(getDomRenderCacheTarget(state, cache)).toBe(target);
   });
 });
@@ -90,7 +94,7 @@ describe('releaseDomRenderCache', () => {
   it('drops the target for the cache', () => {
     const state = makeState();
     const cache = createRenderCache();
-    const target = ensureDomRenderCacheTarget(canvasSurfaceCreator, state, cache, 8, 8);
+    const target = ensureDomRenderCacheTarget(canvasHost, state, cache, 8, 8);
     releaseDomRenderCache(state, cache);
     expect(getDomRenderCacheTarget(state, cache)).toBeNull();
     expect(target.canvas.width).toBe(0);
@@ -98,17 +102,31 @@ describe('releaseDomRenderCache', () => {
   });
 });
 
-const canvasSurfaceCreator = (() => {
-  const out = allocateEntity<any>();
-  out.createRenderSurface = (width: number, height: number, pixelRatio: number): HTMLCanvasElement => {
+const canvasHost: HostCanvasCapability = {
+  acquire(surface, options) {
+    const handle = getSurfaceHandle(surface) as HTMLCanvasElement;
+    return handle.getContext('2d', options);
+  },
+  create(_win, width, height) {
     const canvas = document.createElement('canvas');
-    canvas.width = width * pixelRatio;
-    canvas.height = height * pixelRatio;
+    canvas.width = width;
+    canvas.height = height;
     return canvas;
-  };
-  out.destroyRenderSurface = (canvas: HTMLCanvasElement): void => {
+  },
+  createImageResource() {
+    throw new Error('test canvasHost: createImageResource not available');
+  },
+  createSurface(width, height) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    return createCanvasSurfaceFromNativeHandle(canvasHost, canvas);
+  },
+  destroySurface(surface) {
+    const canvas = getSurfaceHandle(surface) as HTMLCanvasElement;
+    destroyCanvasSurface(canvasHost, surface);
     canvas.width = 0;
     canvas.height = 0;
-  };
-  return finishEntity(out);
-})();
+  },
+  release() {},
+};

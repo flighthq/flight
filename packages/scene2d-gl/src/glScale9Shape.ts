@@ -4,15 +4,17 @@ import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@fligh
 import { bindGlImageResourceTexture, drawGlQuad, useGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { setGlBaseUniforms, setGlMatrixFromValues } from '@flighthq/render-gl/contract';
-import { createImageSurface, destroyImageSurface } from '@flighthq/render/contract';
+import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type {
+  CanvasSurface,
   EntityConstruction,
   GlContext,
   GlRenderState,
+  HostCanvasCapability,
+  HostImageCapability,
+  ImageResource,
   MatrixLike,
-  ImageSurface,
-  ImageSurfaceCreator,
   RenderProxy2D,
   NodeAny,
   RendererData,
@@ -28,26 +30,29 @@ import { drawGlShape } from './glShape';
 import { getGlShapeRasterizer } from './glShapeRasterizer';
 
 interface GlScale9ShapeData extends RendererData {
+  image: ImageResource | null;
   lastH: number;
   lastScaleX: number;
   lastScaleY: number;
   lastContentId: number;
   lastPixelRatio: number;
   lastW: number;
-  surface: ImageSurface | null;
+  surface: CanvasSurface | null;
 }
 
 const _remappedCommands: ShapeCommandToken[] = [];
 
 export function acquireGlScale9ShapeRasterSurface(
-  provider: Readonly<ImageSurfaceCreator>,
+  canvasHost: Readonly<HostCanvasCapability>,
+  imageHost: Readonly<HostImageCapability>,
   data: GlScale9ShapeData,
-): ImageSurface | null {
+): CanvasSurface | null {
   const existing = data.surface;
   if (existing !== null) return existing;
-  const surface = createImageSurface(provider, 1, 1);
+  const surface = createCanvasHostSurface(canvasHost, 1, 1);
   if (surface === null) return null;
   data.surface = surface;
+  data.image = imageHost.createImageFromSurface?.(surface) ?? null;
   return surface;
 }
 
@@ -59,15 +64,17 @@ export function createGlScale9ShapeData(_state: GlRenderState, _source: NodeAny)
 
 // Remove the Image-keyed GPU entry before returning this per-node surface to the provider that created it.
 export function destroyGlScale9ShapeData(state: GlRenderState, data: RendererData): void {
-  const { surface } = getGlScale9ShapeData(data);
-  if (surface === null) return;
-  const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
-  const entry = cache.get(surface.image);
-  if (entry !== undefined) {
-    state.gl.deleteTexture(entry.texture);
-    cache.delete(surface.image);
+  const shapeData = getGlScale9ShapeData(data);
+  const { image, surface } = shapeData;
+  if (image !== null) {
+    const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
+    const entry = cache.get(image);
+    if (entry !== undefined) {
+      state.gl.deleteTexture(entry.texture);
+      cache.delete(image);
+    }
   }
-  destroyImageSurface(surface);
+  if (surface !== null) destroyCanvasHostSurface(surface);
 }
 
 export function drawGlScale9Shape(state: GlRenderState, renderProxy: RenderProxy2D): void {
@@ -99,8 +106,8 @@ export function drawGlScale9Shape(state: GlRenderState, renderProxy: RenderProxy
   const w = Math.ceil(bounds.width * source.scaleX);
   const h = Math.ceil(bounds.height * source.scaleY);
   if (w <= 0 || h <= 0) return;
-  if (state.imageSurfaceProvider === null) return;
-  const surface = acquireGlScale9ShapeRasterSurface(state.imageSurfaceProvider, shapeData);
+  if (state.canvasHost === null || state.imageHost === null) return;
+  const surface = acquireGlScale9ShapeRasterSurface(state.canvasHost, state.imageHost, shapeData);
   if (surface === null) return;
   // Sized in device pixels with the replay pre-scaled to match, exactly as glTextLabel and glRichText
   // treat their offscreen canvases. The quad below stays in local units and samples the whole texture,
@@ -124,7 +131,7 @@ export function drawGlScale9Shape(state: GlRenderState, renderProxy: RenderProxy
     mapScale9ShapeCommands(_remappedCommands, commands, mapper);
     rasterizer(context, _remappedCommands, state);
     context.setTransform(1, 0, 0, 1, 0, 0);
-    invalidateImageResource(surface.image);
+    if (shapeData.image !== null) invalidateImageResource(shapeData.image);
     shapeData.lastH = h;
     shapeData.lastScaleX = source.scaleX;
     shapeData.lastScaleY = source.scaleY;
@@ -136,7 +143,8 @@ export function drawGlScale9Shape(state: GlRenderState, renderProxy: RenderProxy
   useGlProgram(state);
 
   const gl = state.gl;
-  bindGlImageResourceTexture(state, surface.image, null, null, true);
+  if (shapeData.image === null) return;
+  bindGlImageResourceTexture(state, shapeData.image, null, null, true);
 
   const { matrixArray } = runtime;
   const locations = runtime.context.currentShader!.locations!;
@@ -176,6 +184,7 @@ export function initializeGlScale9ShapeData(
   _state: GlRenderState,
   _source: NodeAny,
 ): void {
+  out.image = null;
   out.lastH = 0;
   out.lastScaleX = -1;
   out.lastScaleY = -1;

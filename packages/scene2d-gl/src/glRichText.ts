@@ -1,10 +1,10 @@
-﻿import { computeRgbHexString } from '@flighthq/color/contract';
+import { computeRgbHexString } from '@flighthq/color/contract';
 import { computeRgbaCssString } from '@flighthq/color/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
 import { bindGlImageResourceTexture, drawGlQuad, useGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime, resolveGlShader } from '@flighthq/render-gl/contract';
-import { createImageSurface, destroyImageSurface } from '@flighthq/render/contract';
+import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
 import {
@@ -18,11 +18,11 @@ import {
   getTextLayoutResult,
 } from '@flighthq/textlayout/contract';
 import type {
+  CanvasSurface,
   EntityConstruction,
   GlRenderState,
   GlRichTextOverlay,
-  ImageSurface,
-  ImageSurfaceCreator,
+  ImageResource,
   RenderProxy2D,
   NodeAny,
   RendererData,
@@ -38,7 +38,10 @@ import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
 // The raster surface belongs to the render node rather than the module. Its Image identity is the
 // GPU-cache key, so two RichText nodes drawn in one frame cannot overwrite each other's upload.
 interface GlRichTextData extends RendererData {
-  surface: ImageSurface | null;
+  allocH: number;
+  allocW: number;
+  image: ImageResource | null;
+  surface: CanvasSurface | null;
 }
 
 export function createGlRichTextData(_state: GlRenderState, _source: NodeAny): RendererData {
@@ -50,15 +53,17 @@ export function createGlRichTextData(_state: GlRenderState, _source: NodeAny): R
 // Remove the GPU realization while its Image key is still valid, then return the raster allocation to
 // the provider that created it. A node that never rasterized owns neither resource.
 export function destroyGlRichTextData(state: GlRenderState, data: RendererData): void {
-  const { surface } = data as GlRichTextData;
-  if (surface === null) return;
-  const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
-  const entry = cache.get(surface.image);
-  if (entry !== undefined) {
-    state.gl.deleteTexture(entry.texture);
-    cache.delete(surface.image);
+  const richData = data as GlRichTextData;
+  const { image, surface } = richData;
+  if (image !== null) {
+    const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
+    const entry = cache.get(image);
+    if (entry !== undefined) {
+      state.gl.deleteTexture(entry.texture);
+      cache.delete(image);
+    }
   }
-  destroyImageSurface(surface);
+  if (surface !== null) destroyCanvasHostSurface(surface);
 }
 
 export function drawGlRichText(state: GlRenderState, renderProxy: RenderProxy2D): void {
@@ -84,9 +89,9 @@ export function drawGlRichTextWithOverlay(
   const content = getRichTextContent(richTextRuntime);
   computeRichTextContent(content, data, getRichTextPasswordCharacter(source));
   if (content.text.length === 0 && !data.background && !data.border) return;
-  if (renderProxy.rendererData === null || state.imageSurfaceProvider === null) return;
+  if (renderProxy.rendererData === null || state.canvasHost === null || state.imageHost === null) return;
   const richTextData = renderProxy.rendererData as GlRichTextData;
-  const surface = acquireGlRichTextRasterSurface(state.imageSurfaceProvider, richTextData);
+  let surface = _ensureGlRichTextSurface(state, richTextData, 1, 1);
   if (surface === null) return;
 
   const result = layoutRichText(source, richTextRuntime, content.text, content.formatRanges, surface.context);
@@ -97,8 +102,8 @@ export function drawGlRichTextWithOverlay(
   const pixelRatio = state.pixelRatio;
   const pw = Math.ceil(fieldW * pixelRatio);
   const ph = Math.ceil(fieldH * pixelRatio);
-  if (surface.width !== pw) surface.width = pw;
-  if (surface.height !== ph) surface.height = ph;
+  surface = _ensureGlRichTextSurface(state, richTextData, pw, ph);
+  if (surface === null) return;
   const offCtx = surface.context;
   offCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   offCtx.clearRect(0, 0, fieldW, fieldH);
@@ -118,11 +123,12 @@ export function drawGlRichTextWithOverlay(
     drawRichTextToCanvas(offCtx, source, result, fieldW, fieldH, content.text);
   }
   overlay?.(offCtx, source, result, fieldW, fieldH, content.text);
-  invalidateImageResource(surface.image);
+  if (richTextData.image !== null) invalidateImageResource(richTextData.image);
 
   const shader = resolveGlShader(state, renderProxy);
   useGlProgram(state, shader);
-  bindGlImageResourceTexture(state, surface.image, null, null, true);
+  if (richTextData.image === null) return;
+  bindGlImageResourceTexture(state, richTextData.image, null, null, true);
 
   shader.bind(state.gl, state, renderProxy);
 
@@ -137,6 +143,9 @@ export function initializeGlRichTextData(
   _state: GlRenderState,
   _source: NodeAny,
 ): void {
+  out.allocH = 0;
+  out.allocW = 0;
+  out.image = null;
   out.surface = null;
 }
 
@@ -232,13 +241,47 @@ function layoutRichText(
   return result;
 }
 
-function acquireGlRichTextRasterSurface(
-  provider: Readonly<ImageSurfaceCreator>,
+// Returns a surface at the requested pixel dimensions, creating or resizing via destroy+recreate as
+// needed. The paired image resource stays in sync with the surface lifecycle.
+function _ensureGlRichTextSurface(
+  state: GlRenderState,
   data: GlRichTextData,
-): ImageSurface | null {
-  if (data.surface !== null) return data.surface;
-  const surface = createImageSurface(provider, 1, 1);
-  if (surface !== null) data.surface = surface;
+  pw: number,
+  ph: number,
+): CanvasSurface | null {
+  if (data.surface !== null && data.allocW === pw && data.allocH === ph) return data.surface;
+  if (data.surface !== null) {
+    if (data.image !== null) {
+      const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
+      const entry = cache.get(data.image);
+      if (entry !== undefined) {
+        state.gl.deleteTexture(entry.texture);
+        cache.delete(data.image);
+      }
+    }
+    destroyCanvasHostSurface(data.surface);
+  }
+  const canvasHost = state.canvasHost;
+  const imageHost = state.imageHost;
+  if (canvasHost === null || imageHost === null) {
+    data.surface = null;
+    data.image = null;
+    data.allocW = 0;
+    data.allocH = 0;
+    return null;
+  }
+  const surface = createCanvasHostSurface(canvasHost, pw, ph);
+  if (surface === null) {
+    data.surface = null;
+    data.image = null;
+    data.allocW = 0;
+    data.allocH = 0;
+    return null;
+  }
+  data.surface = surface;
+  data.image = imageHost.createImageFromSurface?.(surface) ?? null;
+  data.allocW = pw;
+  data.allocH = ph;
   return surface;
 }
 

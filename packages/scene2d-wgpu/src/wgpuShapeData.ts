@@ -1,8 +1,9 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { createImageSurface, destroyImageSurface } from '@flighthq/render/contract';
+import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import type {
-  ImageSurface,
-  ImageSurfaceCreator,
+  CanvasSurface,
+  HostCanvasCapability,
+  HostImageCapability,
   NodeAny,
   RendererData,
   RenderState,
@@ -16,14 +17,16 @@ import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData'
 // tessellate never touches this, so a scene drawn entirely through the mesh path carries no raster
 // surface.
 export function acquireWgpuShapeRasterSurface(
-  provider: Readonly<ImageSurfaceCreator>,
+  canvasHost: Readonly<HostCanvasCapability>,
+  imageHost: Readonly<HostImageCapability>,
   data: WgpuShapeRendererData,
-): ImageSurface | null {
+): CanvasSurface | null {
   const existing = data.surface;
   if (existing !== null) return existing;
-  const surface = createImageSurface(provider, 1, 1);
+  const surface = createCanvasHostSurface(canvasHost, 1, 1);
   if (surface === null) return null;
   data.surface = surface;
+  data.image = imageHost.createImageFromSurface?.(surface) ?? null;
   return surface;
 }
 
@@ -31,6 +34,7 @@ export function acquireWgpuShapeRasterSurface(
 // start empty: nothing is allocated until a strategy needs it.
 export function createWgpuShapeData(_state: RenderState, _source: NodeAny): RendererData {
   return createWgpuRendererData({
+    image: null,
     surface: null,
     lastContentId: -1,
     lastPixelRatio: 0,
@@ -58,15 +62,15 @@ export function destroyWgpuShapeData(state: WgpuRenderState, data: RendererData)
   const runtime = getWgpuRenderStateRuntime(state);
   const shapeData = getWgpuShapeData(data);
   if (shapeData === null) return;
-  const surface = shapeData.surface;
-  if (surface !== null) {
-    const entry = runtime.context.textureSourcePremultipliedTextureCache.get(surface.image);
+  const { image, surface } = shapeData;
+  if (image !== null) {
+    const entry = runtime.context.textureSourcePremultipliedTextureCache.get(image);
     if (entry !== undefined) {
       entry.texture.destroy();
-      runtime.context.textureSourcePremultipliedTextureCache.delete(surface.image);
+      runtime.context.textureSourcePremultipliedTextureCache.delete(image);
     }
-    destroyImageSurface(surface);
   }
+  if (surface !== null) destroyCanvasHostSurface(surface);
   const b = shapeData.meshBuffers;
   for (const buffer of b.vertexBuffers) buffer.destroy();
   for (const buffer of b.indexBuffers) buffer.destroy();

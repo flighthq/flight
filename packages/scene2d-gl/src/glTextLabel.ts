@@ -4,15 +4,15 @@ import { invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { bindGlImageResourceTexture, resolveGlQuadMaterialRenderer } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { createImageSurface, destroyImageSurface } from '@flighthq/render/contract';
+import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getTextLabelRuntime } from '@flighthq/text/contract';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
+  CanvasSurface,
   EntityConstruction,
   GlRenderState,
-  ImageSurface,
-  ImageSurfaceCreator,
+  ImageResource,
   RenderProxy2D,
   NodeAny,
   RendererData,
@@ -34,16 +34,15 @@ import {
 
 // NodeRenderer-private scratch state stored as an Entity in the opaque RendererData slot.
 interface GlTextLabelData extends RendererData {
-  // Allocated on first draw so a node created before its host provider is enabled can recover. Once
-  // acquired, the surface and its uploadable Image identity remain stable for the node's lifetime.
-  surface: ImageSurface | null;
-  // Content revision and pixel ratio at last rasterization. Re-rasterization is driven by the
-  // upstream TextLabel content version (bumped by TextLabel setters on layout-affecting changes), never by
-  // appearance-only changes such as alpha.
+  allocH: number;
+  allocW: number;
+  image: ImageResource | null;
+  // Content revision and pixel ratio at last rasterization.
   lastContentId: number;
   lastPixelRatio: number;
-  logW: number;
   logH: number;
+  logW: number;
+  surface: CanvasSurface | null;
 }
 
 function getGlTextLabelData(data: RendererData): GlTextLabelData {
@@ -57,17 +56,19 @@ function createGlTextLabelData(_state: GlRenderState, _source: NodeAny): Rendere
 }
 
 // Remove the GPU cache entry while its Image key is still valid, then return the raster allocation to
-// the provider that created it. A node that never rasterized owns neither resource.
+// the host that created it. A node that never rasterized owns neither resource.
 function destroyGlTextLabelData(state: GlRenderState, data: RendererData): void {
   const runtime = getGlRenderStateRuntime(state);
-  const { surface } = getGlTextLabelData(data);
-  if (surface === null) return;
-  const entry = runtime.context.textureSourcePremultipliedTextureCache.get(surface.image);
-  if (entry !== undefined) {
-    state.gl.deleteTexture(entry.texture);
-    runtime.context.textureSourcePremultipliedTextureCache.delete(surface.image);
+  const textData = getGlTextLabelData(data);
+  if (textData.surface === null) return;
+  if (textData.image !== null) {
+    const entry = runtime.context.textureSourcePremultipliedTextureCache.get(textData.image);
+    if (entry !== undefined) {
+      state.gl.deleteTexture(entry.texture);
+      runtime.context.textureSourcePremultipliedTextureCache.delete(textData.image);
+    }
   }
-  destroyImageSurface(surface);
+  destroyCanvasHostSurface(textData.surface);
 }
 
 export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D): void {
@@ -81,17 +82,17 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
   const materialRenderer = resolveGlQuadMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
-  if (state.imageSurfaceProvider === null) return;
+  if (state.canvasHost === null || state.imageHost === null) return;
   const textData = getGlTextLabelData(renderProxy.rendererData);
-  const surface = acquireGlTextLabelRasterSurface(state.imageSurfaceProvider, textData);
+  let surface = _ensureGlTextLabelSurface(state, textData, 1, 1);
   if (surface === null) return;
   const pixelRatio = state.pixelRatio;
   const version = getNodeLocalContentRevision(source);
 
   if (version !== textData.lastContentId || pixelRatio !== textData.lastPixelRatio) {
     const measure = (t: string, format: TextFormat): number => {
-      surface.context.font = computeTextFormatFontString(format);
-      return surface.context.measureText(t).width;
+      surface!.context.font = computeTextFormatFontString(format);
+      return surface!.context.measureText(t).width;
     };
 
     const result = getTextLayoutResult(getTextLabelRuntime(source) as TextLabelRuntime);
@@ -125,8 +126,8 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
 
     const pw = Math.ceil(w * pixelRatio);
     const ph = Math.ceil(h * pixelRatio);
-    surface.width = pw;
-    surface.height = ph;
+    surface = _ensureGlTextLabelSurface(state, textData, pw, ph);
+    if (surface === null) return;
 
     const ctx = surface.context;
     ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
@@ -141,8 +142,7 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
       ctx.fillText(slice, group.offsetX, group.offsetY + group.ascent * 0.815);
     }
 
-    // Re-read surface dimensions and bump the resource version so the batch's version-aware cache re-uploads.
-    invalidateImageResource(surface.image);
+    invalidateImageResource(textData.image!);
     textData.logW = w;
     textData.logH = h;
   }
@@ -151,7 +151,7 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
 
   ensureGlQuadBatchShader(state);
 
-  const texture = bindGlImageResourceTexture(state, surface.image, null, null, true);
+  const texture = bindGlImageResourceTexture(state, textData.image!, null, null, true);
   const straightAlpha = runtime.context.currentTextureRealization!.straightAlpha;
   const startInstance = prepareGlQuadBatchWrite(
     state,
@@ -173,6 +173,9 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
 }
 
 export function initializeGlTextLabelData(out: EntityConstruction<GlTextLabelData>): void {
+  out.allocH = 0;
+  out.allocW = 0;
+  out.image = null;
   out.lastContentId = -1;
   out.lastPixelRatio = 0;
   out.logH = 0;
@@ -187,12 +190,44 @@ export const glTextLabelRenderer: Scene2DRenderer = {
   submit: drawGlTextLabel,
 };
 
-function acquireGlTextLabelRasterSurface(
-  provider: Readonly<ImageSurfaceCreator>,
+function _ensureGlTextLabelSurface(
+  state: GlRenderState,
   data: GlTextLabelData,
-): ImageSurface | null {
-  if (data.surface !== null) return data.surface;
-  const surface = createImageSurface(provider, 1, 1);
-  if (surface !== null) data.surface = surface;
+  pw: number,
+  ph: number,
+): CanvasSurface | null {
+  if (data.surface !== null && data.allocW === pw && data.allocH === ph) return data.surface;
+  if (data.surface !== null) {
+    if (data.image !== null) {
+      const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
+      const entry = cache.get(data.image);
+      if (entry !== undefined) {
+        state.gl.deleteTexture(entry.texture);
+        cache.delete(data.image);
+      }
+    }
+    destroyCanvasHostSurface(data.surface);
+  }
+  const canvasHost = state.canvasHost;
+  const imageHost = state.imageHost;
+  if (canvasHost === null || imageHost === null) {
+    data.surface = null;
+    data.image = null;
+    data.allocW = 0;
+    data.allocH = 0;
+    return null;
+  }
+  const surface = createCanvasHostSurface(canvasHost, pw, ph);
+  if (surface === null) {
+    data.surface = null;
+    data.image = null;
+    data.allocW = 0;
+    data.allocH = 0;
+    return null;
+  }
+  data.surface = surface;
+  data.image = imageHost.createImageFromSurface?.(surface) ?? null;
+  data.allocW = pw;
+  data.allocH = ph;
   return surface;
 }
