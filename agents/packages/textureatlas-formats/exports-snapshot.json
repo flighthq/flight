@@ -1,0 +1,19 @@
+{
+  "exports": [
+    "detectTextureAtlasFormat",
+    "getTextureAtlasFormat",
+    "getTextureAtlasFormatKinds",
+    "parseTextureAtlas",
+    "parseTextureAtlasAsepriteDocument",
+    "parseTextureAtlasAsepriteJson",
+    "parseTextureAtlasLibgdxAtlas",
+    "parseTextureAtlasStarlingXml",
+    "parseTexturePackerAtlasDocument",
+    "parseTexturePackerAtlasJson",
+    "readTextureAtlasScale",
+    "registerTextureAtlasFormat",
+    "resetTextureAtlasPageMeta",
+    "unregisterTextureAtlasFormat"
+  ],
+  "updated": "2026-09-23"
+}

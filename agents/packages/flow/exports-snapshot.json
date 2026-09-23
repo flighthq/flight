@@ -1,0 +1,16 @@
+{
+  "exports": [
+    "clearFlowStack",
+    "createFlowStack",
+    "disableFlowGuards",
+    "enableFlowGuards",
+    "getActiveFlowState",
+    "getFlowStackDepth",
+    "getFlowStackVisibleStates",
+    "popFlowState",
+    "pushFlowState",
+    "replaceFlowState",
+    "updateFlowStack"
+  ],
+  "updated": "2026-09-23"
+}

@@ -1,0 +1,25 @@
+{
+  "exports": [
+    "areGlColorAdjustmentGuardsEnabled",
+    "createGlCacheState",
+    "createGlVelocityTarget",
+    "enableGlClipSupport",
+    "enableGlColorAdjustmentGuards",
+    "enableGlRenderCache",
+    "enableGlStrokePathTessellation",
+    "enableGlTextInput",
+    "explainGlScene2DCoverage",
+    "getGlShapeRasterizer",
+    "glNode2DVelocityWriter",
+    "glParticleEmitter2DVelocityWriter",
+    "hasGlScene2DCoverage",
+    "refreshGlRenderCache",
+    "registerGlColorAdjustmentMaterialFeature",
+    "registerGlShapeRasterizer",
+    "registerGlStandardMaterial",
+    "registerGlVelocityWriter",
+    "renderGlScene2D",
+    "renderGlVelocity"
+  ],
+  "updated": "2026-09-23"
+}

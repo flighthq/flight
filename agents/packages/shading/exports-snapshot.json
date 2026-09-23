@@ -1,0 +1,23 @@
+{
+  "exports": [
+    "createAnimatedNormalModifier",
+    "createDissolveModifier",
+    "createEmissiveModifier",
+    "createEnvReflectModifier",
+    "createFogModifier",
+    "createModifierRegistry",
+    "createRimModifier",
+    "createShadedMaterial",
+    "createToonModifier",
+    "createVertexDisplaceModifier",
+    "getModifierDefineKey",
+    "getUnregisteredModifierKinds",
+    "isBuiltInModifierSlot",
+    "isModifierStackValid",
+    "orderModifierStack",
+    "registerBuiltInModifiers",
+    "registerModifier",
+    "resolveModifier"
+  ],
+  "updated": "2026-09-23"
+}

@@ -1,0 +1,21 @@
+{
+  "exports": [
+    "canPlayVideoType",
+    "createVideoResource",
+    "destroyVideoResource",
+    "detectVideoMimeType",
+    "disposeVideoResource",
+    "getVideoResourceDuration",
+    "getVideoResourceHeight",
+    "getVideoResourceWidth",
+    "hasVideoResourceElement",
+    "inferVideoMimeType",
+    "isVideoResourceEmpty",
+    "isVideoResourceReady",
+    "loadVideoResourceFromBlob",
+    "loadVideoResourceFromUrl",
+    "loadVideoResourceFromUrls",
+    "selectVideoResourceUrl"
+  ],
+  "updated": "2026-09-23"
+}

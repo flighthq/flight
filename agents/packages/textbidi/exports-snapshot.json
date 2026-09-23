@@ -1,0 +1,11 @@
+{
+  "exports": [
+    "disableTextBidiGuards",
+    "enableTextBidiGuards",
+    "explainBidiClassKernel",
+    "getBidiRuns",
+    "reorderBidiLine",
+    "resolveBidiLevels"
+  ],
+  "updated": "2026-09-23"
+}

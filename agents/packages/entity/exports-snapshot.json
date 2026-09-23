@@ -1,0 +1,23 @@
+{
+  "exports": [
+    "allocateEntity",
+    "areEntityRuntimeGuardsEnabled",
+    "attachEntityBinding",
+    "cloneEntity",
+    "createGuardedEntity",
+    "detachEntityBinding",
+    "disableEntityRuntimeGuards",
+    "enableEntityRuntimeGuards",
+    "explainEntityRuntimeWrite",
+    "finishEntity",
+    "getEntityBinding",
+    "getEntityBindingAs",
+    "getEntityUid",
+    "hasEntityBinding",
+    "hasEntityRuntime",
+    "setEntityRuntimeGuardMode",
+    "setEntityUid",
+    "stripEntityRuntime"
+  ],
+  "updated": "2026-09-23"
+}

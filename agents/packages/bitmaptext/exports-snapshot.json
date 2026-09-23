@@ -1,0 +1,27 @@
+{
+  "exports": [
+    "computeBitmapTextLocalBoundsRectangle",
+    "createBitmapText",
+    "disableBitmapTextGuards",
+    "enableBitmapTextGuards",
+    "explainBitmapTextMissingGlyphs",
+    "getBitmapTextBounds",
+    "getBitmapTextLineCount",
+    "getBitmapTextPages",
+    "isBitmapTextGlyphLayoutStale",
+    "isBitmapTextTruncated",
+    "refreshBitmapTextGlyphLayout",
+    "reserveBitmapText",
+    "setBitmapTextAlign",
+    "setBitmapTextEllipsis",
+    "setBitmapTextGlyphSource",
+    "setBitmapTextLetterSpacing",
+    "setBitmapTextLineHeight",
+    "setBitmapTextMaxLines",
+    "setBitmapTextMissingGlyphGuard",
+    "setBitmapTextText",
+    "setBitmapTextWrapWidth",
+    "updateBitmapText"
+  ],
+  "updated": "2026-09-23"
+}

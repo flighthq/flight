@@ -1,0 +1,18 @@
+{
+  "exports": [
+    "disableTextSegmentGuards",
+    "enableTextSegmentGuards",
+    "explainTextSegmenterBackend",
+    "getNextGraphemeBoundary",
+    "getNextSentenceBoundary",
+    "getNextWordBoundary",
+    "getPreviousGraphemeBoundary",
+    "getPreviousSentenceBoundary",
+    "getPreviousWordBoundary",
+    "getWordRangeAt",
+    "segmentGraphemes",
+    "segmentSentences",
+    "segmentWords"
+  ],
+  "updated": "2026-09-23"
+}

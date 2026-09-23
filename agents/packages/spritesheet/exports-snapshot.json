@@ -1,0 +1,33 @@
+{
+  "exports": [
+    "acquireSpritesheetPlayer",
+    "cloneSpritesheet",
+    "cloneSpritesheetPlayer",
+    "createSpritesheet",
+    "createSpritesheetAnimation",
+    "createSpritesheetAnimationData",
+    "createSpritesheetAnimationFromFrameNames",
+    "createSpritesheetData",
+    "createSpritesheetFrame",
+    "createSpritesheetFrameData",
+    "createSpritesheetFromData",
+    "createSpritesheetFromGrid",
+    "createSpritesheetPlayer",
+    "disposeSpritesheetPlayer",
+    "getSpritesheetAnimation",
+    "getSpritesheetPlayerFrame",
+    "getSpritesheetPlayerFrameAt",
+    "pauseSpritesheetPlayer",
+    "playSpritesheetAnimation",
+    "queueSpritesheetAnimation",
+    "releaseSpritesheetPlayer",
+    "resumeSpritesheetPlayer",
+    "seekSpritesheetPlayerToFrame",
+    "seekSpritesheetPlayerToTime",
+    "stopSpritesheetPlayer",
+    "updateSpritesheetPlayer",
+    "validateSpritesheet",
+    "validateSpritesheetData"
+  ],
+  "updated": "2026-09-23"
+}

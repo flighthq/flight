@@ -1,0 +1,31 @@
+{
+  "exports": [
+    "appendQuadBatchInstance",
+    "clearQuadBatch",
+    "cloneQuadBatch",
+    "compactQuadBatch",
+    "computeQuadBatchLocalBoundsRectangle",
+    "createQuadBatch",
+    "enableQuadBatchSignals",
+    "getQuadBatchCapacity",
+    "getQuadBatchInstanceId",
+    "getQuadBatchInstanceTransform",
+    "getQuadBatchSignals",
+    "getQuadBatchTransformStride",
+    "hitTestQuadBatchPoint",
+    "hitTestQuadBatchPointExact",
+    "hitTestQuadBatchPointExactXY",
+    "hitTestQuadBatchPointXY",
+    "iterateQuadBatchInstances",
+    "removeQuadBatchInstance",
+    "reserveQuadBatch",
+    "resizeQuadBatch",
+    "setQuadBatchInstance",
+    "setQuadBatchInstanceMatrix",
+    "setQuadBatchInstanceRange",
+    "setQuadBatchInstanceTint",
+    "setQuadBatchLocalBoundsRectangle",
+    "setQuadBatchTransformType"
+  ],
+  "updated": "2026-09-23"
+}

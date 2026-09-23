@@ -1,0 +1,16 @@
+{
+  "exports": [
+    "allocateGlyphRasterizerBackendFromGlyphOutlineSource",
+    "createFontResource",
+    "detectFontFormat",
+    "getFontShorthand",
+    "inferFontFormatFromUrl",
+    "isFontLoaded",
+    "loadFontResourceFromBytes",
+    "loadFontResourceFromName",
+    "loadFontResourceFromUrl",
+    "loadFontResourceFromUrls",
+    "whenFontsReady"
+  ],
+  "updated": "2026-09-23"
+}

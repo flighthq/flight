@@ -1,0 +1,23 @@
+{
+  "exports": [
+    "computeGizmoAlignmentDeltas",
+    "createGizmoState",
+    "createNode2DGizmoFeatures",
+    "disposeGizmoState",
+    "findGizmoSmartGuides",
+    "getGizmoMode",
+    "getGizmoSignals",
+    "getGizmoSpace",
+    "setGizmoCustomPivot",
+    "setGizmoMode",
+    "setGizmoPivot",
+    "setGizmoSelectionOutlineColor",
+    "setGizmoSelectionOutlineEnabled",
+    "setGizmoSnapRotation",
+    "setGizmoSnapScale",
+    "setGizmoSnapTranslate",
+    "setGizmoSpace",
+    "updateGizmo"
+  ],
+  "updated": "2026-09-23"
+}

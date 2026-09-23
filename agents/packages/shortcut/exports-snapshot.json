@@ -1,0 +1,25 @@
+{
+  "exports": [
+    "attachGlobalShortcut",
+    "createGlobalShortcut",
+    "destroyShortcutTrigger",
+    "detachGlobalShortcut",
+    "disposeGlobalShortcut",
+    "equalsAccelerator",
+    "findAcceleratorConflict",
+    "formatAcceleratorForDisplay",
+    "getAcceleratorKey",
+    "getAcceleratorKeyLabel",
+    "getAcceleratorModifierLabel",
+    "getAcceleratorModifiers",
+    "isAcceleratorValid",
+    "makeParsedAccelerator",
+    "normalizeAccelerator",
+    "parseAccelerator",
+    "parseAcceleratorDetailed",
+    "queryGlobalShortcutConflict",
+    "queryGlobalShortcutRegistration",
+    "resolveCommandOrControlModifier"
+  ],
+  "updated": "2026-09-23"
+}

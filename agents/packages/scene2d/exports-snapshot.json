@@ -1,0 +1,24 @@
+{
+  "exports": [
+    "applyAnimationClipToNode2D",
+    "cloneSprite",
+    "computeHtmlViewLocalBoundsRectangle",
+    "computeSpriteLocalBoundsRectangle",
+    "createDisplayObject",
+    "createHtmlView",
+    "createNode2D",
+    "createScale9Sprite",
+    "createScene2D",
+    "createScene2DKindUsage",
+    "createSprite",
+    "enableScene2DSignals",
+    "getScene2DKindUsage",
+    "getScene2DRoot",
+    "getScene2DSignals",
+    "isNode2D",
+    "setHtmlViewSize",
+    "setNode2DClip",
+    "setScene2DSize"
+  ],
+  "updated": "2026-09-23"
+}

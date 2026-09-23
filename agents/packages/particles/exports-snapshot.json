@@ -1,0 +1,29 @@
+{
+  "exports": [
+    "applyParticleCollisions",
+    "applyParticleForces",
+    "applyParticleObjectCollisions",
+    "applyParticleObjectForces",
+    "buildParticleColorCurve",
+    "buildParticleCurve",
+    "createParticleEmitterConfig",
+    "createParticleEmitterState",
+    "createParticleObjectsState",
+    "enableParticleEmitterSignals",
+    "getParticleEmitterSignals",
+    "isParticleObjectsComplete",
+    "lerpHsvDirect",
+    "lerpHsvInPlace",
+    "normalizeParticleEmitterConfig",
+    "particleColorCurveFromKeyframes",
+    "particleColorCurveToKeyframes",
+    "particleCurveFromKeyframes",
+    "particleCurveToKeyframes",
+    "sampleParticleColorCurve",
+    "sampleParticleCurve",
+    "stepParticleObjects",
+    "updateParticleObjects",
+    "validateParticleEmitterConfig"
+  ],
+  "updated": "2026-09-23"
+}

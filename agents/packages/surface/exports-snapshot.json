@@ -1,0 +1,16 @@
+{
+  "exports": [
+    "createCanvasSurface",
+    "createCanvasSurfaceFromNativeHandle",
+    "createGlSurface",
+    "createGlSurfaceFromNativeHandle",
+    "createWgpuSurface",
+    "createWgpuSurfaceFromNativeHandle",
+    "destroyCanvasSurface",
+    "destroyGlSurface",
+    "destroyWgpuSurface",
+    "resizeSurface",
+    "setSurfaceDisplaySize"
+  ],
+  "updated": "2026-09-23"
+}

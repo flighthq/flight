@@ -1,0 +1,31 @@
+{
+  "exports": [
+    "attachClipboardWatch",
+    "clearClipboard",
+    "createClipboardWatch",
+    "detachClipboardWatch",
+    "disposeClipboardWatch",
+    "getClipboardFormats",
+    "hasClipboardBookmark",
+    "hasClipboardFormat",
+    "hasClipboardHtml",
+    "hasClipboardImage",
+    "hasClipboardRTF",
+    "hasClipboardText",
+    "readClipboard",
+    "readClipboardBookmark",
+    "readClipboardFormat",
+    "readClipboardHtml",
+    "readClipboardImage",
+    "readClipboardRTF",
+    "readClipboardText",
+    "writeClipboard",
+    "writeClipboardBookmark",
+    "writeClipboardFormat",
+    "writeClipboardHtml",
+    "writeClipboardImage",
+    "writeClipboardRTF",
+    "writeClipboardText"
+  ],
+  "updated": "2026-09-23"
+}

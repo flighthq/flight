@@ -1,0 +1,20 @@
+{
+  "exports": [
+    "contentToManifest",
+    "createManifest",
+    "diffManifest",
+    "extendManifest",
+    "generateManifestSource",
+    "getManifestFeatures",
+    "isManifestDiffSatisfied",
+    "readContentAnalysis",
+    "readManifest",
+    "resolveManifestImports",
+    "runManifestTool",
+    "unionManifests",
+    "validateContentAnalysis",
+    "validateManifest",
+    "writeManifest"
+  ],
+  "updated": "2026-09-23"
+}

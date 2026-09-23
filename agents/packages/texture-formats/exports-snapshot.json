@@ -1,0 +1,28 @@
+{
+  "exports": [
+    "computeTextureContainerLevels",
+    "createByteReader",
+    "detectTextureContainer",
+    "explainTextureContainerParse",
+    "getAtfParseFailureReason",
+    "getBasisParseFailureReason",
+    "getDdsParseFailureReason",
+    "getKtx2ParseFailureReason",
+    "getTextureContainerLevelByteLength",
+    "hasByteReaderBytes",
+    "parseAtf",
+    "parseBasis",
+    "parseDds",
+    "parseKtx2",
+    "readByteReaderU16",
+    "readByteReaderU24",
+    "readByteReaderU24BigEndian",
+    "readByteReaderU32",
+    "readByteReaderU32BigEndian",
+    "readByteReaderU64",
+    "readByteReaderU8",
+    "selectTextureContainer",
+    "skipByteReader"
+  ],
+  "updated": "2026-09-23"
+}

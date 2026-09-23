@@ -1,0 +1,31 @@
+{
+  "exports": [
+    "applyTween",
+    "completeTween",
+    "createColorTween",
+    "createTween",
+    "createTweenManager",
+    "createTweenStagger",
+    "createTweenTimer",
+    "getActiveTweenCount",
+    "getTweenProgress",
+    "getTweensOf",
+    "hasTweensOf",
+    "killTweensOfProperty",
+    "pauseAllTweens",
+    "pauseTween",
+    "pauseTweens",
+    "resetAllTweens",
+    "restartTween",
+    "resumeAllTweens",
+    "resumeTween",
+    "resumeTweens",
+    "seekTween",
+    "setTweenProgress",
+    "stopAllTweens",
+    "stopTween",
+    "stopTweens",
+    "updateTweens"
+  ],
+  "updated": "2026-09-23"
+}

@@ -1,0 +1,15 @@
+{
+  "exports": [
+    "isShellUrlAllowed",
+    "moveShellItemToTrash",
+    "moveShellItemsToTrash",
+    "openShellExternalUrl",
+    "openShellPath",
+    "readShellShortcutLink",
+    "revealShellPath",
+    "shellBeep",
+    "spawnShellProcess",
+    "writeShellShortcutLink"
+  ],
+  "updated": "2026-09-23"
+}

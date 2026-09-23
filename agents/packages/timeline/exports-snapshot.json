@@ -1,0 +1,24 @@
+{
+  "exports": [
+    "addTimelineFrameScript",
+    "clearTimelineFrameScripts",
+    "createTimeline",
+    "createTimelineSource",
+    "disposeTimelineSignals",
+    "enableTimelineSignals",
+    "findTimelineLabel",
+    "getTimelineCurrentLabel",
+    "getTimelineFrameScript",
+    "getTimelineFrameScriptFrames",
+    "getTimelineLabels",
+    "gotoAndPlayTimeline",
+    "gotoAndStopTimeline",
+    "nextFrameTimeline",
+    "playTimeline",
+    "prevFrameTimeline",
+    "removeTimelineFrameScript",
+    "stopTimeline",
+    "updateTimeline"
+  ],
+  "updated": "2026-09-23"
+}

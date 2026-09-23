@@ -1,0 +1,10 @@
+{
+  "exports": [
+    "createFlightDocumentTokenResolverRegistry",
+    "explainFlightDocumentSceneTokenResolution",
+    "explainFlightDocumentSceneTokenSubstitution",
+    "resolveFlightDocumentSceneTokens",
+    "substituteFlightDocumentSceneTokens"
+  ],
+  "updated": "2026-09-23"
+}
