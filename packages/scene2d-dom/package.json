@@ -60,6 +60,7 @@
     "@flighthq/bitmap": "*",
     "@flighthq/font": "*",
     "@flighthq/image": "*",
+    "@flighthq/surface": "*",
     "typescript": "^5.3.0"
   },
   "description": "DOM renderer implementation",

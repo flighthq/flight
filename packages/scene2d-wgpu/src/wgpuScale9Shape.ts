@@ -2,15 +2,17 @@ import { invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { bindWgpuImageResourceTexture, drawWgpuQuadWithTransform } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { createImageSurface, destroyImageSurface } from '@flighthq/render/contract';
+import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import { mapScale9ShapeCommands } from '@flighthq/shape/contract';
 import type {
-  RenderProxy2D,
-  ImageSurface,
-  ImageSurfaceCreator,
-  RenderState,
+  CanvasSurface,
+  HostCanvasCapability,
+  HostImageCapability,
+  ImageResource,
   NodeAny,
   RendererData,
+  RenderProxy2D,
+  RenderState,
   Scale9Shape,
   Scene2DRenderer,
   ShapeCommandToken,
@@ -28,29 +30,33 @@ import { getWgpuShapeRasterizer } from './wgpuShapeRasterizer';
 // that surface's stable Image through the shared texture cache, and draws a quad with the scale stripped
 // from the transform (the size is already baked into the texture). Mirrors the Gl Scale9 renderer.
 interface WgpuScale9ShapeData extends RendererData {
+  image: ImageResource | null;
   lastH: number;
   lastScaleX: number;
   lastScaleY: number;
   lastContentId: number;
   lastPixelRatio: number;
   lastW: number;
-  surface: ImageSurface | null;
+  surface: CanvasSurface | null;
 }
 
 export function acquireWgpuScale9ShapeRasterSurface(
-  provider: Readonly<ImageSurfaceCreator>,
+  canvasHost: Readonly<HostCanvasCapability>,
+  imageHost: Readonly<HostImageCapability>,
   data: WgpuScale9ShapeData,
-): ImageSurface | null {
+): CanvasSurface | null {
   const existing = data.surface;
   if (existing !== null) return existing;
-  const surface = createImageSurface(provider, 1, 1);
+  const surface = createCanvasHostSurface(canvasHost, 1, 1);
   if (surface === null) return null;
   data.surface = surface;
+  data.image = imageHost.createImageFromSurface?.(surface) ?? null;
   return surface;
 }
 
 export function createWgpuScale9ShapeData(_state: RenderState, _source: NodeAny): RendererData {
   return createWgpuRendererData({
+    image: null,
     lastH: 0,
     lastScaleX: -1,
     lastScaleY: -1,
@@ -61,18 +67,19 @@ export function createWgpuScale9ShapeData(_state: RenderState, _source: NodeAny)
   });
 }
 
-// Remove the Image-keyed GPU entry before returning this per-node surface to the provider that created it.
 export function destroyWgpuScale9ShapeData(state: WgpuRenderState, data: RendererData): void {
   const shapeData = getWgpuScale9ShapeData(data);
-  if (shapeData === null || shapeData.surface === null) return;
-  const { surface } = shapeData;
-  const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
-  const entry = cache.get(surface.image);
-  if (entry !== undefined) {
-    entry.texture.destroy();
-    cache.delete(surface.image);
+  if (shapeData === null) return;
+  const { image, surface } = shapeData;
+  if (image !== null) {
+    const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
+    const entry = cache.get(image);
+    if (entry !== undefined) {
+      entry.texture.destroy();
+      cache.delete(image);
+    }
   }
-  destroyImageSurface(surface);
+  if (surface !== null) destroyCanvasHostSurface(surface);
 }
 
 export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderProxy2D): void {
@@ -107,8 +114,8 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
   const w = Math.ceil(bounds.width * source.scaleX);
   const h = Math.ceil(bounds.height * source.scaleY);
   if (w <= 0 || h <= 0) return;
-  if (state.imageSurfaceProvider === null) return;
-  const surface = acquireWgpuScale9ShapeRasterSurface(state.imageSurfaceProvider, shapeData);
+  if (state.canvasHost === null || state.imageHost === null) return;
+  const surface = acquireWgpuScale9ShapeRasterSurface(state.canvasHost, state.imageHost, shapeData);
   if (surface === null) return;
 
   if (
@@ -129,7 +136,7 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
     mapScale9ShapeCommands(_remappedCommands, commands, mapper);
     rasterizer(context, _remappedCommands, state);
     context.setTransform(1, 0, 0, 1, 0, 0);
-    invalidateImageResource(surface.image);
+    if (shapeData.image !== null) invalidateImageResource(shapeData.image);
 
     shapeData.lastH = h;
     shapeData.lastScaleX = source.scaleX;
@@ -139,7 +146,8 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
     shapeData.lastW = w;
   }
 
-  const entry = bindWgpuImageResourceTexture(state, surface.image, false, true);
+  if (shapeData.image === null) return;
+  const entry = bindWgpuImageResourceTexture(state, shapeData.image, false, true);
   if (entry === null) return;
 
   // Strip the node scale from the transform: the texture is already rasterized at the scaled size, so

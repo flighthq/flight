@@ -3,18 +3,20 @@ import { invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { bindWgpuImageResourceTexture, resolveWgpuQuadMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import { createImageSurface, destroyImageSurface } from '@flighthq/render/contract';
+import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getTextLabelRuntime } from '@flighthq/text/contract';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
-  Scene2DRenderer,
-  ImageSurface,
-  ImageSurfaceCreator,
+  CanvasSurface,
+  HostCanvasCapability,
+  HostImageCapability,
+  ImageResource,
   NodeAny,
   RendererData,
   RenderProxy2D,
   RenderState,
+  Scene2DRenderer,
   TextFormat,
   TextLabel,
   TextLabelRuntime,
@@ -33,42 +35,38 @@ import {
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 
 interface WgpuTextLabelData extends RendererData {
-  // Allocated on first draw so a node created before its host provider is enabled can recover. Once
-  // acquired, the surface and its uploadable Image identity remain stable for the node's lifetime.
-  surface: ImageSurface | null;
-  // Content revision and pixel ratio at last rasterization. Re-rasterization is driven by the
-  // upstream TextLabel content version (bumped by TextLabel setters on layout-affecting changes), never by
-  // appearance-only changes such as alpha.
+  image: ImageResource | null;
   lastContentId: number;
   lastPixelRatio: number;
-  logW: number;
   logH: number;
+  logW: number;
+  surface: CanvasSurface | null;
 }
 
 function createWgpuTextLabelData(_state: RenderState, _source: NodeAny): RendererData {
   return createWgpuRendererData({
-    surface: null,
+    image: null,
     lastContentId: -1,
     lastPixelRatio: 0,
-    logW: 0,
     logH: 0,
+    logW: 0,
+    surface: null,
   });
 }
 
-// Remove the GPU cache entry while its Image key is still valid, then return the raster allocation to
-// the provider that created it. A node that never rasterized owns neither resource.
 function destroyWgpuTextLabelData(state: WgpuRenderState, data: RendererData): void {
   const runtime = getWgpuRenderStateRuntime(state);
   const textLabelData = getWgpuRendererData<WgpuTextLabelData>(data);
   if (textLabelData === null) return;
-  const { surface } = textLabelData;
-  if (surface === null) return;
-  const entry = runtime.context.textureSourcePremultipliedTextureCache.get(surface.image);
-  if (entry !== undefined) {
-    entry.texture.destroy();
-    runtime.context.textureSourcePremultipliedTextureCache.delete(surface.image);
+  const { image, surface } = textLabelData;
+  if (image !== null) {
+    const entry = runtime.context.textureSourcePremultipliedTextureCache.get(image);
+    if (entry !== undefined) {
+      entry.texture.destroy();
+      runtime.context.textureSourcePremultipliedTextureCache.delete(image);
+    }
   }
-  destroyImageSurface(surface);
+  if (surface !== null) destroyCanvasHostSurface(surface);
 }
 
 export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderProxy2D): void {
@@ -84,10 +82,10 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
   const materialRenderer = resolveWgpuQuadMaterialRenderer(state, material);
   if (materialRenderer === null) return;
 
-  if (state.imageSurfaceProvider === null) return;
+  if (state.canvasHost === null || state.imageHost === null) return;
   const textData = getWgpuRendererData<WgpuTextLabelData>(renderProxy.rendererData);
   if (textData === null) return;
-  const surface = acquireWgpuTextLabelRasterSurface(state.imageSurfaceProvider, textData);
+  const surface = acquireWgpuTextLabelRasterSurface(state.canvasHost, state.imageHost, textData);
   if (surface === null) return;
   const maxTexDim = state.device.limits.maxTextureDimension2D;
   const pixelRatio = state.pixelRatio;
@@ -148,9 +146,7 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
       ctx.fillText(slice, group.offsetX, group.offsetY + group.ascent * 0.815);
     }
 
-    // Bump the resource version so the batch's version-aware cache re-uploads (recreating the GPU texture,
-    // which covers a physical-size change too).
-    invalidateImageResource(surface.image);
+    if (textData.image !== null) invalidateImageResource(textData.image);
 
     textData.logW = w;
     textData.logH = h;
@@ -160,7 +156,8 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
 
   ensureWgpuQuadBatchResources(state);
 
-  const textureEntry = bindWgpuImageResourceTexture(state, surface.image, false, true);
+  if (textData.image === null) return;
+  const textureEntry = bindWgpuImageResourceTexture(state, textData.image, false, true);
   if (textureEntry === null) return;
   const startInstance = prepareWgpuQuadBatchWrite(
     state,
@@ -188,11 +185,14 @@ export const wgpuTextLabelRenderer: Scene2DRenderer = {
 };
 
 function acquireWgpuTextLabelRasterSurface(
-  provider: Readonly<ImageSurfaceCreator>,
+  canvasHost: Readonly<HostCanvasCapability>,
+  imageHost: Readonly<HostImageCapability>,
   data: WgpuTextLabelData,
-): ImageSurface | null {
+): CanvasSurface | null {
   if (data.surface !== null) return data.surface;
-  const surface = createImageSurface(provider, 1, 1);
-  if (surface !== null) data.surface = surface;
+  const surface = createCanvasHostSurface(canvasHost, 1, 1);
+  if (surface === null) return null;
+  data.surface = surface;
+  data.image = imageHost.createImageFromSurface?.(surface) ?? null;
   return surface;
 }

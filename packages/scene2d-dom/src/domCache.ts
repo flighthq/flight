@@ -6,7 +6,7 @@ import {
 } from '@flighthq/scene2d-canvas/contract';
 import type {
   CanvasTextureRenderTarget,
-  CanvasRenderSurfaceCreator,
+  HostCanvasCapability,
   Scene2DRenderer,
   DomRenderState,
   RenderCache,
@@ -29,7 +29,7 @@ export function enableDomRenderCache(state: RenderState): void {
  * element. The returned canvas is pre-styled for DOM placement.
  */
 export function ensureDomRenderCacheTarget(
-  creator: Readonly<CanvasRenderSurfaceCreator>,
+  canvasHost: Readonly<HostCanvasCapability>,
   state: DomRenderState,
   cache: RenderCache,
   width: number,
@@ -38,7 +38,7 @@ export function ensureDomRenderCacheTarget(
   const targets = getTargets(state);
   let target = targets.get(cache);
   if (target === undefined) {
-    target = createCanvasTextureRenderTarget(creator, width, height);
+    target = createCanvasTextureRenderTarget(canvasHost, width, height);
     prepareDomElement(target.canvas);
     targets.set(cache, target);
   } else {

@@ -2,7 +2,7 @@ import { computeRgbHexString, computeRgbaCssString } from '@flighthq/color/contr
 import { invalidateImageResource } from '@flighthq/image/contract';
 import { bindWgpuImageResourceTexture, drawWgpuQuad } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime, resolveWgpuApplyBlendMode } from '@flighthq/render-wgpu/contract';
-import { createImageSurface, destroyImageSurface } from '@flighthq/render/contract';
+import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
 import {
@@ -16,15 +16,17 @@ import {
   getTextLayoutResult,
 } from '@flighthq/textlayout/contract';
 import type {
-  Scene2DRenderer,
-  ImageSurface,
-  ImageSurfaceCreator,
+  CanvasSurface,
+  HostCanvasCapability,
+  HostImageCapability,
+  ImageResource,
   NodeAny,
   RendererData,
   RenderProxy2D,
   RenderState,
   RichText,
   RichTextRuntime,
+  Scene2DRenderer,
   TextFormat,
   TextLabelRuntime,
   WgpuRenderState,
@@ -37,11 +39,12 @@ import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData'
 // The raster surface belongs to the render node rather than the module. Its Image identity is the
 // GPU-cache key, so two RichText nodes drawn in one frame cannot overwrite each other's upload.
 interface WgpuRichTextData extends RendererData {
-  surface: ImageSurface | null;
+  image: ImageResource | null;
+  surface: CanvasSurface | null;
 }
 
 export function createWgpuRichTextData(_state: RenderState, _source: NodeAny): RendererData {
-  return createWgpuRendererData({ surface: null });
+  return createWgpuRendererData({ image: null, surface: null });
 }
 
 // Remove the GPU cache entry while its Image key is still valid, then return the raster allocation to
@@ -49,15 +52,16 @@ export function createWgpuRichTextData(_state: RenderState, _source: NodeAny): R
 export function destroyWgpuRichTextData(state: WgpuRenderState, data: RendererData): void {
   const richData = getWgpuRendererData<WgpuRichTextData>(data);
   if (richData === null) return;
-  const { surface } = richData;
-  if (surface === null) return;
-  const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
-  const entry = cache.get(surface.image);
-  if (entry !== undefined) {
-    entry.texture.destroy();
-    cache.delete(surface.image);
+  const { image, surface } = richData;
+  if (image !== null) {
+    const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
+    const entry = cache.get(image);
+    if (entry !== undefined) {
+      entry.texture.destroy();
+      cache.delete(image);
+    }
   }
-  destroyImageSurface(surface);
+  if (surface !== null) destroyCanvasHostSurface(surface);
 }
 
 export function drawWgpuRichText(state: WgpuRenderState, renderProxy: RenderProxy2D): void {
@@ -87,8 +91,8 @@ export function drawWgpuRichTextWithOverlay(
   computeRichTextContent(content, data, getRichTextPasswordCharacter(source));
   if (content.text.length === 0 && !data.background && !data.border) return;
   const richData = getWgpuRendererData<WgpuRichTextData>(renderProxy.rendererData);
-  if (richData === null || state.imageSurfaceProvider === null) return;
-  const surface = acquireWgpuRichTextRasterSurface(state.imageSurfaceProvider, richData);
+  if (richData === null || state.canvasHost === null || state.imageHost === null) return;
+  const surface = acquireWgpuRichTextRasterSurface(state.canvasHost, state.imageHost, richData);
   if (surface === null) return;
 
   const result = layoutRichText(source, richTextRuntime, content.text, content.formatRanges, state, surface.context);
@@ -122,10 +126,11 @@ export function drawWgpuRichTextWithOverlay(
     drawRichTextToCanvas(offCtx, source, result, fieldW, fieldH, content.text);
   }
   overlay?.(offCtx, source, result, fieldW, fieldH, content.text);
-  invalidateImageResource(surface.image);
+  if (richData.image !== null) invalidateImageResource(richData.image);
 
   resolveWgpuApplyBlendMode(state)?.(state, renderProxy.blendMode);
-  const entry = bindWgpuImageResourceTexture(state, surface.image, false, true);
+  if (richData.image === null) return;
+  const entry = bindWgpuImageResourceTexture(state, richData.image, false, true);
   if (entry === null) return;
 
   // Anchor the field box for autoSize 'right'/'center' so the rendered quad lines up with the local
@@ -231,12 +236,15 @@ function layoutRichText(
 }
 
 function acquireWgpuRichTextRasterSurface(
-  provider: Readonly<ImageSurfaceCreator>,
+  canvasHost: Readonly<HostCanvasCapability>,
+  imageHost: Readonly<HostImageCapability>,
   data: WgpuRichTextData,
-): ImageSurface | null {
+): CanvasSurface | null {
   if (data.surface !== null) return data.surface;
-  const surface = createImageSurface(provider, 1, 1);
-  if (surface !== null) data.surface = surface;
+  const surface = createCanvasHostSurface(canvasHost, 1, 1);
+  if (surface === null) return null;
+  data.surface = surface;
+  data.image = imageHost.createImageFromSurface?.(surface) ?? null;
   return surface;
 }
 
