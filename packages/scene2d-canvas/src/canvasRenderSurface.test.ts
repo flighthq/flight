@@ -5,6 +5,7 @@ import {
   acquireCanvasSurface,
   destroyCanvasSurfaceOwned,
   getCanvasHost,
+  getCanvasSurfaceHost,
   registerCanvasHost,
 } from './canvasRenderSurface';
 import { canvasTestHost, createCanvasTextureResolvers } from './canvasTestSupport';
@@ -83,6 +84,29 @@ describe('getCanvasHost', () => {
     registerCanvasHost(state, canvasTestHost);
 
     expect(getCanvasHost(state)).toBe(canvasTestHost);
+  });
+});
+
+describe('getCanvasSurfaceHost', () => {
+  it('returns the host that created the surface via acquireCanvasSurface', () => {
+    const surface = {} as CanvasSurface;
+    const host = mockHost({ createSurface: () => surface });
+    acquireCanvasSurface(host, 10, 10);
+
+    expect(getCanvasSurfaceHost(surface)).toBe(host);
+  });
+
+  it('returns null for an unknown surface', () => {
+    expect(getCanvasSurfaceHost({} as CanvasSurface)).toBeNull();
+  });
+
+  it('returns null after the surface has been destroyed', () => {
+    const surface = {} as CanvasSurface;
+    const host = mockHost({ createSurface: () => surface, destroySurface: () => {} });
+    acquireCanvasSurface(host, 10, 10);
+    destroyCanvasSurfaceOwned(surface);
+
+    expect(getCanvasSurfaceHost(surface)).toBeNull();
   });
 });
 

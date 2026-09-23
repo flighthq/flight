@@ -1,4 +1,4 @@
-import { webHostCanvas } from '@flighthq/host-web';
+import { getWebSurfaceCanvasHandle, webHostCanvas } from '@flighthq/host-web';
 import type { Bitmap, Node2D } from '@flighthq/sdk';
 import {
   addNodeChild,
@@ -10,7 +10,6 @@ import {
   createCanvasElement,
   createCanvasEffectState,
   createCanvasRenderState,
-  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   createDisplayObject,
@@ -49,10 +48,10 @@ declareExpectedImageDescription(
 );
 
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(webHostCanvas, 800, 600, pixelRatio);
-document.body.appendChild(canvas);
+const surface = createCanvasElement(webHostCanvas, 800, 600, pixelRatio);
+document.body.appendChild(getWebSurfaceCanvasHandle(surface) as HTMLCanvasElement);
 
-export const screen = createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas));
+export const screen = createCanvasScreenRenderTarget(surface);
 export const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas), {
   pixelRatio,
 });

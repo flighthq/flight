@@ -167,12 +167,11 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
 function createHarnessShapeRasterizer(): ShapeRasterizer {
   const canvas = document.createElement('canvas');
   const resolverState = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas));
+  const surface = createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas);
+  if (surface === null) throw new Error('Failed to create Canvas surface from element.');
   // The rasterizer draws into its own canvas, so it opens its own pass over it and keeps it open for the
   // life of the state — every fill it paints happens inside that bracket.
-  beginCanvasRenderPass(
-    resolverState,
-    createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas)),
-  );
+  beginCanvasRenderPass(resolverState, createCanvasScreenRenderTarget(surface));
   registerCanvasBitmapTextureResolver(webHostImage, getCanvasRenderStateTextureResolvers(resolverState));
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));
   registerCanvasRenderTextureResolver(getCanvasRenderStateTextureResolvers(resolverState), resolverState);

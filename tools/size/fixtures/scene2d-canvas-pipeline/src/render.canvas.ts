@@ -23,7 +23,9 @@ canvas.height = 300;
 document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
-const screen = createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas));
+const canvasSurface = createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas);
+if (canvasSurface === null) throw new Error('Failed to create Canvas surface from element.');
+const screen = createCanvasScreenRenderTarget(canvasSurface);
 const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas), {
   pixelRatio: 1,
 });

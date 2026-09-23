@@ -1,4 +1,4 @@
-import { webHostCanvas, webHostImage } from '@flighthq/host-web';
+import { getWebSurfaceCanvasHandle, webHostCanvas, webHostImage } from '@flighthq/host-web';
 import type { Node2D } from '@flighthq/sdk';
 import {
   createCanvasElement,
@@ -7,7 +7,6 @@ import {
   createCanvasScreenRenderTarget,
   endCanvasRenderPass,
   registerCanvasHost,
-  createCanvasSurfaceFromNativeHandle,
   createCanvasTextureResolvers,
   createMatrix,
   canvasParticleEmitter2DRenderer,
@@ -51,17 +50,10 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
   const { width, height } = options;
   const pixelRatio = window.devicePixelRatio || 1;
 
-  const canvas = createCanvasElement(webHostCanvas, width, height, pixelRatio);
-  document.body.appendChild(canvas);
+  const surface = createCanvasElement(webHostCanvas, width, height, pixelRatio);
+  document.body.appendChild(getWebSurfaceCanvasHandle(surface) as HTMLCanvasElement);
 
-  const screen = createCanvasScreenRenderTarget(
-    createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas, {
-      contextAttributes: options.contextAttributes ?? { alpha: false },
-      height,
-      pixelRatio,
-      width,
-    }),
-  );
+  const screen = createCanvasScreenRenderTarget(surface);
   const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas), {
     pixelRatio,
     sceneGraphSyncPolicy: options.syncPolicy,
