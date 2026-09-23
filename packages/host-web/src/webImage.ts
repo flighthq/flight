@@ -1,6 +1,7 @@
-import type { HostImageCapability, ImageResource } from '@flighthq/types/contract';
+import type { HostImageCapability, ImageResource, Surface } from '@flighthq/types/contract';
 
 import { createWebImageResourceFromCanvas, createWebImageResourceFromImageElement } from './webImageResource';
+import { getWebSurfaceCanvasHandle } from './webSurfaceHandle';
 
 export const webHostImage: HostImageCapability = {
   createImageFromBitmap: (bitmap): ImageResource => {
@@ -10,6 +11,10 @@ export const webHostImage: HostImageCapability = {
     const domImageData = new globalThis.ImageData(bitmap.width, bitmap.height);
     domImageData.data.set(bitmap.alphaType === 'premultiplied' ? unpremultiplyRgba8(bitmap.data) : bitmap.data);
     canvas.getContext('2d')!.putImageData(domImageData, 0, 0);
+    return createWebImageResourceFromCanvas(canvas);
+  },
+  createImageFromSurface: (surface: Readonly<Surface>): ImageResource => {
+    const canvas = getWebSurfaceCanvasHandle(surface) as HTMLCanvasElement;
     return createWebImageResourceFromCanvas(canvas);
   },
   loadImageFromUrl: async (url, crossOrigin, signal): Promise<ImageResource> => {

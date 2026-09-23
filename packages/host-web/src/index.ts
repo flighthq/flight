@@ -22,7 +22,6 @@ export { createWebBitmapFromCanvas } from './webBitmapFrom';
 export * from './webBitmapHost';
 export * from './webBitmapReadback';
 export * from './webCanvasHost';
-export { createWebCanvasRenderSurfaceCreator, webCanvasRenderSurfaceCreator } from './webCanvasRenderSurface';
 export {
   webHostClipboardChange,
   webHostClipboardFormats,
@@ -78,7 +77,6 @@ export {
   registerWebImageDimensionResolver,
   webImageDimensionResolver,
 } from './webImageResource';
-export { createWebImageSurfaceCreator, webImageSurfaceCreator } from './webImageSurface';
 export * from './webInputHost';
 export * from './webInputIngress';
 export {
