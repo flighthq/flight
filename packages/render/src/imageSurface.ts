@@ -1,23 +1,23 @@
-import type { ImageSurface, ImageSurfaceCreator } from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/types/contract';
 
-export function createImageSurface(
-  provider: Readonly<ImageSurfaceCreator>,
+export function createCanvasHostSurface(
+  host: Readonly<HostCanvasCapability>,
   width: number,
   height: number,
-): ImageSurface | null {
-  const surface = provider.createImageSurface(width, height);
-  if (surface !== null) _surfaceProviders.set(surface, provider);
+): CanvasSurface | null {
+  const surface = host.createSurface(width, height);
+  if (surface !== null) _surfaceHosts.set(surface, host);
   return surface;
 }
 
-// A surface must return to the provider that allocated it even when the provider reference changes
-// during its lifetime. Delete the ownership record before invoking the provider so repeated or
-// reentrant destruction is a no-op and no non-GC resource can be freed twice.
-export function destroyImageSurface(surface: ImageSurface): void {
-  const provider = _surfaceProviders.get(surface);
-  if (provider === undefined) return;
-  _surfaceProviders.delete(surface);
-  provider.destroyImageSurface(surface);
+// A surface must return to the host that allocated it even when the host reference changes during its
+// lifetime. Delete the ownership record before invoking the host so repeated or reentrant destruction is
+// a no-op and no non-GC resource can be freed twice.
+export function destroyCanvasHostSurface(surface: CanvasSurface): void {
+  const host = _surfaceHosts.get(surface);
+  if (host === undefined) return;
+  _surfaceHosts.delete(surface);
+  host.destroySurface(surface);
 }
 
-const _surfaceProviders = new WeakMap<ImageSurface, Readonly<ImageSurfaceCreator>>();
+const _surfaceHosts = new WeakMap<CanvasSurface, Readonly<HostCanvasCapability>>();
