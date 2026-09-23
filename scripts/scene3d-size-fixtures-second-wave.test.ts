@@ -114,7 +114,7 @@ describe('Scene3D second-wave size fixture isolation', () => {
       expect(source).toContain("'screenAligned'");
       expect(source).toContain('orientScene3DBillboardsToCamera(scene, camera)');
       expect(source).toContain(`${spec.backend.toLowerCase()}UnlitMeshMaterialRenderer`);
-      expect(source).toContain('materialRenderers: withRegistryTableEntry(');
+      expect(source).toContain('materialRenderers: withKindMapEntry(');
       expect(source).not.toContain('createMesh(');
       expect(source).not.toContain('createParticleEmitter3D(');
       expect(source).not.toContain('TextureResolver');
