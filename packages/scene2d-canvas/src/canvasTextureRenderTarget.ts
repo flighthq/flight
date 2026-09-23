@@ -1,4 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { getSurfaceHandle } from '@flighthq/surface/contract';
 import type { CanvasTextureRenderTarget, EntityConstruction, HostCanvasCapability } from '@flighthq/types/contract';
 
 import { acquireCanvasSurface, destroyCanvasSurfaceOwned } from './canvasRenderSurface';
@@ -29,7 +30,7 @@ export function initializeCanvasTextureRenderTarget(
   const targetHeight = Math.max(1, Math.ceil(height));
   const surface = acquireCanvasSurface(canvasHost, targetWidth, targetHeight);
   if (surface === null) throw new Error('Failed to acquire Canvas render target surface.');
-  out.canvas = surface.context.canvas as HTMLCanvasElement;
+  out.canvas = getSurfaceHandle(surface) as HTMLCanvasElement;
   out.colorAttachments = 1;
   out.context = surface.context;
   out.height = targetHeight;

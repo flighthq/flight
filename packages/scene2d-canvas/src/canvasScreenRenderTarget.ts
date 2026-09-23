@@ -1,4 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { getSurfaceHandle } from '@flighthq/surface/contract';
 import type {
   CanvasRenderTarget,
   CanvasScreenRenderTarget,
@@ -30,7 +31,7 @@ export function initializeCanvasScreenRenderTarget(
   out: EntityConstruction<CanvasScreenRenderTarget>,
   surface: CanvasSurface,
 ): void {
-  const canvas = surface.context.canvas as HTMLCanvasElement;
+  const canvas = getSurfaceHandle(surface) as HTMLCanvasElement;
   out.canvas = canvas;
   out.colorAttachments = 1;
   out.context = surface.context;

@@ -1,3 +1,4 @@
+import { getSurfaceHandle } from '@flighthq/surface/contract';
 import { getTextureHeight, getTextureViewSize, getTextureWidth } from '@flighthq/texture/contract';
 import type { CanvasTextureResolvers, Texture } from '@flighthq/types/contract';
 
@@ -67,7 +68,7 @@ export function resolveCanvasTextureWindowSource(
   );
   if (surface === null) return null;
   const context = surface.context;
-  const element = context.canvas as HTMLCanvasElement;
+  const element = getSurfaceHandle(surface) as HTMLCanvasElement;
   context.setTransform(1, 0, 0, 1, 0, 0);
   context.clearRect(0, 0, element.width, element.height);
   context.imageSmoothingEnabled = !texture.sampler.magFilter.startsWith('nearest');

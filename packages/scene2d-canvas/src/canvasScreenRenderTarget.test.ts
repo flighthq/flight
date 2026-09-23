@@ -1,4 +1,4 @@
-import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface/contract';
+import { createCanvasSurfaceFromNativeHandle, getSurfaceHandle } from '@flighthq/surface/contract';
 import type { CanvasSurface } from '@flighthq/types/contract';
 
 import { beginCanvasRenderPass, endCanvasRenderPass } from './canvasRenderPass';
@@ -29,7 +29,7 @@ describe('createCanvasScreenRenderTarget', () => {
 
     const screen = createCanvasScreenRenderTarget(surface);
 
-    expect(screen.canvas).toBe(surface.context.canvas);
+    expect(screen.canvas).toBe(getSurfaceHandle(surface));
     expect(screen.context).toBe(surface.context);
     expect(screen.colorAttachments).toBe(1);
     expect(screen.width).toBe(320);
@@ -48,8 +48,9 @@ describe('disposeCanvasScreenRenderTarget', () => {
 
     disposeCanvasScreenRenderTarget(screen);
 
-    expect(surface.context.canvas.width).toBe(200);
-    expect(surface.context.canvas.height).toBe(100);
+    const canvas = getSurfaceHandle(surface) as HTMLCanvasElement;
+    expect(canvas.width).toBe(200);
+    expect(canvas.height).toBe(100);
     expect(screen.width).toBe(0);
   });
 });

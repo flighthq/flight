@@ -1,4 +1,5 @@
 import { createMatrix } from '@flighthq/geometry/contract';
+import { getSurfaceHandle } from '@flighthq/surface/contract';
 import type {
   CanvasTextureResolvers,
   GradientType,
@@ -117,7 +118,7 @@ function createLinearGradient(
 
   const surface = acquireCanvasTextureResolverSurface(resolvers, context.canvas.width, context.canvas.height);
   if (surface === null) return null;
-  const offscreen = surface.context.canvas;
+  const offscreen = getSurfaceHandle(surface) as HTMLCanvasElement;
   const octx = surface.context;
 
   const tiledGradient = octx.createLinearGradient(
