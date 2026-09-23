@@ -31,7 +31,6 @@ export {
   acquireCanvasSurface,
   destroyCanvasSurfaceOwned,
   getCanvasHost,
-  getCanvasSurfaceHost,
   registerCanvasHost,
 } from './canvasRenderSurface';
 export {
