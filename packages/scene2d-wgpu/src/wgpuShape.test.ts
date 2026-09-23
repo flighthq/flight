@@ -61,7 +61,22 @@ function createTestSurface(width: number, height: number): CanvasSurface {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  return { context: canvas.getContext('2d')! } as unknown as CanvasSurface;
+  const context = canvas.getContext('2d')!;
+  return {
+    get width() {
+      return canvas.width;
+    },
+    set width(value: number) {
+      canvas.width = value;
+    },
+    get height() {
+      return canvas.height;
+    },
+    set height(value: number) {
+      canvas.height = value;
+    },
+    context,
+  } as unknown as CanvasSurface;
 }
 
 function createTestCanvasHost(): HostCanvasCapability {
