@@ -12,8 +12,8 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
-import type { RenderProxy2D } from '@flighthq/types/contract';
-import { BatchFormat, EntityRuntimeKey, RenderRegistryTable } from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability, HostImageCapability, RenderProxy2D } from '@flighthq/types/contract';
+import { BatchFormat, RenderRegistryTable } from '@flighthq/types/contract';
 
 import { wgpuRasterShapeRenderer, drawWgpuRasterShape } from './wgpuRasterShapeRenderer';
 import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';
@@ -47,38 +47,40 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function createTestImageSurfaceCreator() {
+function createTestSurface(width: number, height: number): CanvasSurface {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  return { context: canvas.getContext('2d')! } as unknown as CanvasSurface;
+}
+
+function createTestCanvasHost(): HostCanvasCapability {
   return {
-    [EntityRuntimeKey]: undefined,
-    createImageSurface(width: number, height: number) {
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const context = canvas.getContext('2d')!;
-      return {
-        [EntityRuntimeKey]: undefined,
-        get width() {
-          return canvas.width;
-        },
-        set width(value: number) {
-          canvas.width = value;
-        },
-        get height() {
-          return canvas.height;
-        },
-        set height(value: number) {
-          canvas.height = value;
-        },
-        context,
-        image: createImageResource(canvas),
-      };
-    },
-    destroyImageSurface() {},
+    acquire: () => null,
+    create: () => null,
+    createSurface: createTestSurface,
+    destroySurface() {},
+    release() {},
   };
+}
+
+function createTestImageHost(): HostImageCapability {
+  return {
+    createImageFromSurface(surface) {
+      return createImageResource((surface as unknown as { context: CanvasRenderingContext2D }).context.canvas);
+    },
+    loadImageFromUrl: () => Promise.reject(new Error('not implemented')),
+  };
+}
+
+function setTestHosts(state: { canvasHost: unknown; imageHost: unknown }): void {
+  state.canvasHost = createTestCanvasHost();
+  state.imageHost = createTestImageHost();
 }
 
 function makeShapeData() {
   return {
+    image: null,
     surface: null,
     lastContentId: -1,
     lastPixelRatio: 0,
@@ -136,7 +138,7 @@ function solidShape() {
 describe('drawWgpuRasterShape', () => {
   it('rasterizes a fill the mesh path could have tessellated, which is what pinning this strategy means', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.imageSurfaceProvider = createTestImageSurfaceCreator();
+    setTestHosts(state);
     beginWgpuScreenRenderPassForTest(state);
     registerWgpuStandardMaterial(state);
     const pass = makeMeshPassSpy();
@@ -153,7 +155,7 @@ describe('drawWgpuRasterShape', () => {
 
   it('replays the whole command stream, not the subset a mesh path could not express', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.imageSurfaceProvider = createTestImageSurfaceCreator();
+    setTestHosts(state);
     beginWgpuScreenRenderPassForTest(state);
     registerWgpuStandardMaterial(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
@@ -170,7 +172,7 @@ describe('drawWgpuRasterShape', () => {
 
   it('reports a ShapeRasterizer miss when no rasterizer is registered', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.imageSurfaceProvider = createTestImageSurfaceCreator();
+    setTestHosts(state);
     beginWgpuScreenRenderPassForTest(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
     enableRenderRegistriesGuards(state);
@@ -199,7 +201,7 @@ describe('drawWgpuRasterShape', () => {
 
   it('does nothing without a render pass, for an empty command list, or with absent renderer data', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.imageSurfaceProvider = createTestImageSurfaceCreator();
+    setTestHosts(state);
     beginWgpuScreenRenderPassForTest(state);
     registerWgpuStandardMaterial(state);
     const rasterizer = vi.fn();

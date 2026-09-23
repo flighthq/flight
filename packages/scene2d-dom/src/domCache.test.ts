@@ -113,9 +113,6 @@ const canvasHost: HostCanvasCapability = {
     canvas.height = height;
     return canvas;
   },
-  createImageResource() {
-    throw new Error('test canvasHost: createImageResource not available');
-  },
   createSurface(width, height) {
     const canvas = document.createElement('canvas');
     canvas.width = width;

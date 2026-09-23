@@ -6,7 +6,15 @@ import {
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createTextLabel, setTextLabelString } from '@flighthq/text/contract';
 import * as textlayout from '@flighthq/textlayout/contract';
-import type { ImageSurface, RendererData, RenderProxy2D, TextLabel } from '@flighthq/types/contract';
+import type {
+  CanvasSurface,
+  HostCanvasCapability,
+  HostImageCapability,
+  ImageResource,
+  RendererData,
+  RenderProxy2D,
+  TextLabel,
+} from '@flighthq/types/contract';
 import { BatchFormat, EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
@@ -47,33 +55,18 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function createTestImageSurface(width: number, height: number): ImageSurface {
+function createTestSurface(width: number, height: number): CanvasSurface {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  const context = canvas.getContext('2d')!;
-  return {
-    [EntityRuntimeKey]: undefined,
-    get width() {
-      return canvas.width;
-    },
-    set width(value) {
-      canvas.width = value;
-    },
-    get height() {
-      return canvas.height;
-    },
-    set height(value) {
-      canvas.height = value;
-    },
-    context,
-    image: createImageResource(canvas),
-  };
+  return { context: canvas.getContext('2d')! } as unknown as CanvasSurface;
 }
 
 function makeTextData() {
+  const surface = createTestSurface(1, 1);
   return {
-    surface: createTestImageSurface(1, 1),
+    image: createImageResource(surface.context.canvas),
+    surface,
     lastContentId: -1,
     lastPixelRatio: 0,
     logW: 0,
@@ -98,23 +91,29 @@ function makeTextProxy(text = '', rendererData: unknown = null): RenderProxy2D {
   } as unknown as RenderProxy2D;
 }
 
-function installTestImageSurfaceCreator(
-  state: { imageSurfaceProvider: unknown },
-  destroyImageSurface: (surface: ImageSurface) => void = () => {},
+function installTestHosts(
+  state: { canvasHost: unknown; imageHost: unknown },
+  destroySurface: (surface: CanvasSurface) => void = () => {},
 ): void {
-  state.imageSurfaceProvider = {
-    [EntityRuntimeKey]: undefined,
-    createImageSurface(width: number, height: number) {
-      return createTestImageSurface(width, height);
+  state.canvasHost = {
+    acquire: () => null,
+    create: () => null,
+    createSurface: createTestSurface,
+    destroySurface,
+    release() {},
+  } satisfies HostCanvasCapability;
+  state.imageHost = {
+    createImageFromSurface(surface) {
+      return createImageResource((surface as unknown as { context: CanvasRenderingContext2D }).context.canvas);
     },
-    destroyImageSurface,
-  };
+    loadImageFromUrl: () => Promise.reject(new Error('not implemented')),
+  } satisfies HostImageCapability;
 }
 
 describe('drawGlTextLabel', () => {
   it('keeps different text nodes on distinct surfaces and GPU textures in one frame', () => {
     const { state } = createGlState();
-    installTestImageSurfaceCreator(state);
+    installTestHosts(state);
     registerGlStandardMaterial(state);
     const firstData = glTextLabelRenderer.createData!(state, createTextLabel())!;
     const secondData = glTextLabelRenderer.createData!(state, createTextLabel())!;
@@ -122,17 +121,18 @@ describe('drawGlTextLabel', () => {
     drawGlTextLabel(state, makeTextProxy('first', firstData));
     drawGlTextLabel(state, makeTextProxy('second', secondData));
 
-    const firstSurface = (firstData as unknown as { surface: ImageSurface }).surface;
-    const secondSurface = (secondData as unknown as { surface: ImageSurface }).surface;
+    const firstOwned = firstData as unknown as { image: ImageResource; surface: CanvasSurface };
+    const secondOwned = secondData as unknown as { image: ImageResource; surface: CanvasSurface };
     const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
-    const firstImage = firstSurface.image;
-    expect(firstSurface).not.toBe(secondSurface);
-    expect(firstSurface.image).not.toBe(secondSurface.image);
-    expect(cache.get(firstSurface.image)?.texture).not.toBe(cache.get(secondSurface.image)?.texture);
+    const firstSurface = firstOwned.surface;
+    const firstImage = firstOwned.image;
+    expect(firstOwned.surface).not.toBe(secondOwned.surface);
+    expect(firstOwned.image).not.toBe(secondOwned.image);
+    expect(cache.get(firstOwned.image)?.texture).not.toBe(cache.get(secondOwned.image)?.texture);
 
     drawGlTextLabel(state, makeTextProxy('first', firstData));
-    expect((firstData as unknown as { surface: ImageSurface }).surface).toBe(firstSurface);
-    expect(firstSurface.image).toBe(firstImage);
+    expect(firstOwned.surface).toBe(firstSurface);
+    expect(firstOwned.image).toBe(firstImage);
   });
 
   it('returns early without writing to batch when text is empty', () => {
@@ -157,7 +157,7 @@ describe('drawGlTextLabel', () => {
 
   it('writes one instance to the quad-batch writer when text has content', () => {
     const { state } = createGlState();
-    installTestImageSurfaceCreator(state);
+    installTestHosts(state);
     registerGlStandardMaterial(state);
     drawGlTextLabel(state, makeTextProxy('hello', makeTextData()));
     expect(getGlRenderStateRuntime(state).quadBatchWriterCount).toBe(1);
@@ -165,7 +165,7 @@ describe('drawGlTextLabel', () => {
 
   it('rasterizes packed run alpha into the canvas color', () => {
     const { state } = createGlState();
-    installTestImageSurfaceCreator(state);
+    installTestHosts(state);
     registerGlStandardMaterial(state);
     const data = makeTextData();
     const proxy = makeTextProxy('hello', data);
@@ -180,7 +180,7 @@ describe('drawGlTextLabel', () => {
 
   it('draws via drawElementsInstanced after flush', () => {
     const { state, gl } = createGlState();
-    installTestImageSurfaceCreator(state);
+    installTestHosts(state);
     registerGlStandardMaterial(state);
     drawGlTextLabel(state, makeTextProxy('hello', makeTextData()));
     flushGlQuadBatchWriter(state);
@@ -189,43 +189,43 @@ describe('drawGlTextLabel', () => {
 
   it('skips layout and rasterization on repeated calls when the content version is unchanged', () => {
     const { state } = createGlState();
-    installTestImageSurfaceCreator(state);
+    installTestHosts(state);
     registerGlStandardMaterial(state);
     const data = makeTextData();
     const proxy = makeTextProxy('hello', data);
     drawGlTextLabel(state, proxy);
     // Rasterization bumps the canvas resource's version (invalidateImageResource); a skipped raster leaves
     // it untouched. First draw rasterizes (version → 1); the repeat is skipped.
-    const rasterized = data.surface.image.version;
+    const rasterized = data.image.version;
     drawGlTextLabel(state, proxy);
-    expect(data.surface.image.version).toBe(rasterized);
+    expect(data.image.version).toBe(rasterized);
   });
 
   it('re-rasterizes when the content version is bumped', () => {
     const { state } = createGlState();
-    installTestImageSurfaceCreator(state);
+    installTestHosts(state);
     registerGlStandardMaterial(state);
     const data = makeTextData();
     const proxy = makeTextProxy('hello', data);
     drawGlTextLabel(state, proxy);
-    const rasterized = data.surface.image.version;
+    const rasterized = data.image.version;
     setTextLabelString(proxy.source as TextLabel, 'world');
     drawGlTextLabel(state, proxy);
-    expect(data.surface.image.version).toBeGreaterThan(rasterized);
+    expect(data.image.version).toBeGreaterThan(rasterized);
   });
 
   it('does not re-rasterize when only alpha changes (version unchanged)', () => {
     const { state } = createGlState();
-    installTestImageSurfaceCreator(state);
+    installTestHosts(state);
     registerGlStandardMaterial(state);
     const data = makeTextData();
     const proxy = makeTextProxy('hello', data);
     drawGlTextLabel(state, proxy);
-    const rasterized = data.surface.image.version;
+    const rasterized = data.image.version;
     proxy.alpha = 0.5;
     drawGlTextLabel(state, proxy);
     // Alpha is applied per-instance in the batch; the expensive raster (and its version bump) is untouched.
-    expect(data.surface.image.version).toBe(rasterized);
+    expect(data.image.version).toBe(rasterized);
   });
 });
 
@@ -251,22 +251,22 @@ describe('glTextLabelRenderer', () => {
     const order: string[] = [];
     const { state, gl } = createGlState();
     const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
-    installTestImageSurfaceCreator(state, (surface) => {
+    installTestHosts(state, () => {
       order.push('surface');
-      expect(cache.has(surface.image)).toBe(false);
     });
     registerGlStandardMaterial(state);
     const data = glTextLabelRenderer.createData!(state, createTextLabel())!;
     drawGlTextLabel(state, makeTextProxy('owned', data));
-    const surface = (data as RendererData & { surface: ImageSurface }).surface;
-    const entry = cache.get(surface.image)!;
+    const owned = data as RendererData & { image: ImageResource; surface: CanvasSurface };
+    const image = owned.image;
+    const entry = cache.get(image)!;
     vi.spyOn(gl, 'deleteTexture').mockImplementation((texture) => {
       if (texture === entry.texture) order.push('texture');
     });
 
     glTextLabelRenderer.destroyData!(state, data);
 
-    expect(cache.has(surface.image)).toBe(false);
+    expect(cache.has(image)).toBe(false);
     expect(order).toEqual(['texture', 'surface']);
   });
 });

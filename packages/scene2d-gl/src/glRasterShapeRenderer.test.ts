@@ -7,8 +7,8 @@ import * as flightNode from '@flighthq/node/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeEndFill, appendShapeRectangle, createShape } from '@flighthq/shape/contract';
-import type { ImageSurface, RenderProxy2D } from '@flighthq/types/contract';
-import { BatchFormat, EntityRuntimeKey, RenderRegistryTable } from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability, HostImageCapability, RenderProxy2D } from '@flighthq/types/contract';
+import { BatchFormat, RenderRegistryTable } from '@flighthq/types/contract';
 
 beforeEach(() => {
   vi.spyOn(flightNode, 'getNodeLocalBoundsRectangle').mockImplementation((() => ({
@@ -41,40 +41,48 @@ afterEach(() => {
   unregisterTestImageDimensionResolver();
 });
 
-function createTestImageSurface(width: number, height: number): ImageSurface {
+function createTestSurface(width: number, height: number): CanvasSurface {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  const context = canvas.getContext('2d')!;
+  return { context: canvas.getContext('2d')! } as unknown as CanvasSurface;
+}
+
+function createTestCanvasHost(): HostCanvasCapability {
   return {
-    [EntityRuntimeKey]: undefined,
-    get width() {
-      return canvas.width;
-    },
-    set width(value) {
-      canvas.width = value;
-    },
-    get height() {
-      return canvas.height;
-    },
-    set height(value) {
-      canvas.height = value;
-    },
-    context,
-    image: createImageResource(canvas),
+    acquire: () => null,
+    create: () => null,
+    createSurface: createTestSurface,
+    destroySurface() {},
+    release() {},
   };
 }
 
-function setTestRasterProvider(state: { imageSurfaceProvider: unknown }): void {
-  state.imageSurfaceProvider = {
-    [EntityRuntimeKey]: undefined,
-    createImageSurface: createTestImageSurface,
-    destroyImageSurface() {},
+function createTestImageHost(): HostImageCapability {
+  return {
+    createImageFromSurface(surface) {
+      return createImageResource((surface as unknown as { context: CanvasRenderingContext2D }).context.canvas);
+    },
+    loadImageFromUrl: () => Promise.reject(new Error('not implemented')),
   };
+}
+
+function setTestRasterHosts(state: { canvasHost: unknown; imageHost: unknown }): void {
+  state.canvasHost = createTestCanvasHost();
+  state.imageHost = createTestImageHost();
 }
 
 function makeShapeData() {
-  return { surface: null, lastContentId: -1, lastPixelRatio: 0, lastW: 0, lastH: 0, meshVersion: -1, meshes: null };
+  return {
+    image: null,
+    surface: null,
+    lastContentId: -1,
+    lastPixelRatio: 0,
+    lastW: 0,
+    lastH: 0,
+    meshVersion: -1,
+    meshes: null,
+  };
 }
 
 function makeShapeNode(data: Record<string, unknown>, rendererData: unknown = makeShapeData()): RenderProxy2D {
@@ -103,7 +111,7 @@ describe('drawGlRasterShape', () => {
     // The behavioural difference from glShapeRenderer: no tessellation is attempted first, so a
     // solid rectangle still goes through the canvas replay.
     const { state, gl } = createGlState();
-    setTestRasterProvider(state);
+    setTestRasterHosts(state);
     registerGlStandardMaterial(state);
     const rasterizer = vi.fn();
     registerGlShapeRasterizer(state, rasterizer);
@@ -117,7 +125,7 @@ describe('drawGlRasterShape', () => {
   it('replays the whole command stream, not the subset a mesh path could not express', () => {
     // Why a rasterizing state needs the full canvas command vocabulary rather than some gap set.
     const { state } = createGlState();
-    setTestRasterProvider(state);
+    setTestRasterHosts(state);
     registerGlStandardMaterial(state);
     const shape = solidShape();
     let replayed: readonly unknown[] = [];

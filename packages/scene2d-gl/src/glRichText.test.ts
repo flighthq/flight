@@ -7,7 +7,15 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
 import { createTextFormatRange } from '@flighthq/textlayout/contract';
-import type { ImageSurface, RendererData, RenderProxy2D, RichText } from '@flighthq/types/contract';
+import type {
+  CanvasSurface,
+  HostCanvasCapability,
+  HostImageCapability,
+  ImageResource,
+  RendererData,
+  RenderProxy2D,
+  RichText,
+} from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -31,7 +39,7 @@ afterEach(() => {
   unregisterTestImageDimensionResolver();
 });
 
-function makeRichTextNode(rendererData: unknown = { surface: createTestImageSurface(1, 1) }): RenderProxy2D {
+function makeRichTextNode(rendererData: unknown = { surface: createTestSurface(1, 1) }): RenderProxy2D {
   const richText = createRichText();
   return {
     source: richText,
@@ -42,51 +50,39 @@ function makeRichTextNode(rendererData: unknown = { surface: createTestImageSurf
   } as unknown as RenderProxy2D;
 }
 
-function createTestImageSurface(width: number, height: number): ImageSurface {
+function createTestSurface(width: number, height: number): CanvasSurface {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  const context = canvas.getContext('2d')!;
-  return {
-    [EntityRuntimeKey]: undefined,
-    get width() {
-      return canvas.width;
-    },
-    set width(value) {
-      canvas.width = value;
-    },
-    get height() {
-      return canvas.height;
-    },
-    set height(value) {
-      canvas.height = value;
-    },
-    context,
-    image: createImageResource(canvas),
-  };
+  return { context: canvas.getContext('2d')! } as unknown as CanvasSurface;
 }
 
-function installTestImageSurfaceCreator(
-  state: { imageSurfaceProvider: unknown },
-  destroyImageSurface: (surface: ImageSurface) => void = () => {},
+function installTestHosts(
+  state: { canvasHost: unknown; imageHost: unknown },
+  destroySurface: (surface: CanvasSurface) => void = () => {},
 ): void {
-  state.imageSurfaceProvider = {
-    [EntityRuntimeKey]: undefined,
-    createImageSurface(width: number, height: number) {
-      return createTestImageSurface(width, height);
+  state.canvasHost = {
+    acquire: () => null,
+    create: () => null,
+    createSurface: createTestSurface,
+    destroySurface,
+    release() {},
+  } satisfies HostCanvasCapability;
+  state.imageHost = {
+    createImageFromSurface(surface) {
+      return createImageResource((surface as unknown as { context: CanvasRenderingContext2D }).context.canvas);
     },
-    destroyImageSurface,
-  };
+    loadImageFromUrl: () => Promise.reject(new Error('not implemented')),
+  } satisfies HostImageCapability;
 }
 
 describe('createGlRichTextData', () => {
   it('starts without a raster surface until the node first draws', () => {
     const { state } = createGlState();
     const data = createGlRichTextData(state, createRichText()) as RendererData & {
-      surface: ImageSurface | null;
+      surface: CanvasSurface | null;
     };
     expect(data.surface).toBeNull();
-    expect(EntityRuntimeKey in data).toBe(true);
   });
 });
 
@@ -95,23 +91,23 @@ describe('destroyGlRichTextData', () => {
     const order: string[] = [];
     const { state, gl } = createGlState();
     const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
-    installTestImageSurfaceCreator(state, (surface) => {
+    installTestHosts(state, () => {
       order.push('surface');
-      expect(cache.has(surface.image)).toBe(false);
     });
     const data = createGlRichTextData(state, createRichText());
     const proxy = makeRichTextNode(data);
     (proxy.source as RichText).data.text = 'owned';
     drawGlRichText(state, proxy);
-    const surface = (data as RendererData & { surface: ImageSurface }).surface;
-    const entry = cache.get(surface.image)!;
+    const owned = data as RendererData & { image: ImageResource; surface: CanvasSurface };
+    const image = owned.image;
+    const entry = cache.get(image)!;
     vi.spyOn(gl, 'deleteTexture').mockImplementation((texture) => {
       if (texture === entry.texture) order.push('texture');
     });
 
     destroyGlRichTextData(state, data);
 
-    expect(cache.has(surface.image)).toBe(false);
+    expect(cache.has(image)).toBe(false);
     expect(order).toEqual(['texture', 'surface']);
   });
 
@@ -126,7 +122,7 @@ describe('destroyGlRichTextData', () => {
 describe('drawGlRichText', () => {
   it('keeps different text nodes on distinct surfaces and GPU textures in one frame', () => {
     const { state } = createGlState();
-    installTestImageSurfaceCreator(state);
+    installTestHosts(state);
     const firstData = createGlRichTextData(state, createRichText());
     const secondData = createGlRichTextData(state, createRichText());
     const first = makeRichTextNode(firstData);
@@ -137,23 +133,23 @@ describe('drawGlRichText', () => {
     drawGlRichText(state, first);
     drawGlRichText(state, second);
 
-    const firstOwned = firstData as RendererData & { surface: ImageSurface };
-    const secondOwned = secondData as RendererData & { surface: ImageSurface };
+    const firstOwned = firstData as RendererData & { image: ImageResource; surface: CanvasSurface };
+    const secondOwned = secondData as RendererData & { image: ImageResource; surface: CanvasSurface };
     const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     const firstSurface = firstOwned.surface;
-    const firstImage = firstSurface.image;
+    const firstImage = firstOwned.image;
     expect(firstOwned.surface).not.toBe(secondOwned.surface);
-    expect(firstOwned.surface.image).not.toBe(secondOwned.surface.image);
-    expect(cache.get(firstOwned.surface.image)?.texture).not.toBe(cache.get(secondOwned.surface.image)?.texture);
+    expect(firstOwned.image).not.toBe(secondOwned.image);
+    expect(cache.get(firstOwned.image)?.texture).not.toBe(cache.get(secondOwned.image)?.texture);
 
     drawGlRichText(state, first);
     expect(firstOwned.surface).toBe(firstSurface);
-    expect(firstOwned.surface.image).toBe(firstImage);
+    expect(firstOwned.image).toBe(firstImage);
   });
 
   it('binds the active bitmap shader when drawing rich text', () => {
     const { state } = createGlState();
-    installTestImageSurfaceCreator(state);
+    installTestHosts(state);
     const renderProxy = makeRichTextNode();
     (renderProxy.source as RichText).data.text = 'hello';
 
@@ -179,7 +175,7 @@ describe('drawGlRichText', () => {
 
   it('draws when text is non-empty', () => {
     const { state, gl } = createGlState();
-    installTestImageSurfaceCreator(state);
+    installTestHosts(state);
     const renderProxy = makeRichTextNode();
     (renderProxy.source as RichText).data.text = 'hello';
     drawGlRichText(state, renderProxy);
@@ -188,7 +184,7 @@ describe('drawGlRichText', () => {
 
   it('draws resolved multi-format spans', () => {
     const { state, gl } = createGlState();
-    installTestImageSurfaceCreator(state);
+    installTestHosts(state);
     const renderProxy = makeRichTextNode();
     const node = renderProxy.source as RichText;
     node.data.text = 'BoldGreen';
@@ -202,7 +198,7 @@ describe('drawGlRichText', () => {
 
   it('draws field chrome even when text is empty', () => {
     const { state, gl } = createGlState();
-    installTestImageSurfaceCreator(state);
+    installTestHosts(state);
     const renderProxy = makeRichTextNode();
     (renderProxy.source as RichText).data.background = true;
     drawGlRichText(state, renderProxy);
@@ -213,7 +209,7 @@ describe('drawGlRichText', () => {
 describe('drawGlRichTextWithOverlay', () => {
   it('runs an optional canvas overlay after layout', () => {
     const { state } = createGlState();
-    installTestImageSurfaceCreator(state);
+    installTestHosts(state);
     const renderProxy = makeRichTextNode();
     (renderProxy.source as RichText).data.text = 'hello';
     const overlay = vi.fn();
@@ -244,7 +240,7 @@ describe('registerGlTextInputOverlay', () => {
     const overlay = vi.fn();
     registerGlTextInputOverlay(overlay);
     const { state } = createGlState();
-    installTestImageSurfaceCreator(state);
+    installTestHosts(state);
 
     const plain = makeRichTextNode();
     (plain.source as RichText).data.text = 'x';
