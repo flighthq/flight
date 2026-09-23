@@ -1,4 +1,5 @@
 import { getColorAlpha, getColorRgb } from '@flighthq/color/contract';
+import { getCanvasHostSurface } from '@flighthq/render/contract';
 import type {
   BevelEffect,
   CanvasEffectRunner,
@@ -51,7 +52,7 @@ export function applyBevelEffectToCanvas(
   const effect = maybeEffect ?? (poolOrEffect as Readonly<BevelEffect>);
   const pool =
     maybeEffect === undefined
-      ? createCanvasTextureRenderTargetPool(source.surface.creator)
+      ? createCanvasTextureRenderTargetPool(getCanvasHostSurface(source.surface)!)
       : (poolOrEffect as CanvasRenderTargetPool);
   applyBevelEffectToCanvasWithPool(source, dest, pool, effect);
 }

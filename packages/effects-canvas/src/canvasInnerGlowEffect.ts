@@ -1,3 +1,4 @@
+import { getCanvasHostSurface } from '@flighthq/render/contract';
 import type {
   CanvasEffectRunner,
   CanvasRenderState,
@@ -52,7 +53,7 @@ export function applyInnerGlowEffectToCanvas(
   const effect = maybeEffect ?? (poolOrEffect as Readonly<InnerGlowEffect>);
   const pool =
     maybeEffect === undefined
-      ? createCanvasTextureRenderTargetPool(source.surface.creator)
+      ? createCanvasTextureRenderTargetPool(getCanvasHostSurface(source.surface)!)
       : (poolOrEffect as CanvasRenderTargetPool);
   applyInnerGlowEffectToCanvasWithPool(source, dest, pool, effect);
 }

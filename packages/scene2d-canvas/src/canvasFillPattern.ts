@@ -115,13 +115,9 @@ function createLinearGradient(
   const dx = x2 - x1;
   const dy = y2 - y1;
 
-  const surface = acquireCanvasTextureResolverSurface(resolvers, {
-    height: context.canvas.height,
-    pixelRatio: 1,
-    width: context.canvas.width,
-  });
+  const surface = acquireCanvasTextureResolverSurface(resolvers, context.canvas.width, context.canvas.height);
   if (surface === null) return null;
-  const offscreen = surface.canvas;
+  const offscreen = surface.context.canvas;
   const octx = surface.context;
 
   const tiledGradient = octx.createLinearGradient(

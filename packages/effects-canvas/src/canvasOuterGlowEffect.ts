@@ -1,3 +1,4 @@
+import { getCanvasHostSurface } from '@flighthq/render/contract';
 import type {
   CanvasEffectRunner,
   CanvasRenderState,
@@ -50,7 +51,7 @@ export function applyOuterGlowEffectToCanvas(
 
   const pool =
     maybeEffect === undefined
-      ? createCanvasTextureRenderTargetPool(source.surface.creator)
+      ? createCanvasTextureRenderTargetPool(getCanvasHostSurface(source.surface)!)
       : (poolOrEffect as CanvasRenderTargetPool);
   applyOuterGlowEffectToCanvasWithPool(source, dest, pool, effect);
 }

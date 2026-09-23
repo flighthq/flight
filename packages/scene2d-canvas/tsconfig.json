@@ -52,6 +52,9 @@
       "path": "../shape"
     },
     {
+      "path": "../surface"
+    },
+    {
       "path": "../quadbatch"
     },
     {

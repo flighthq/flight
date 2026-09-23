@@ -132,8 +132,11 @@ describe('drawGlTextLabel', () => {
     expect(cache.get(firstOwned.image)?.texture).not.toBe(cache.get(secondOwned.image)?.texture);
 
     drawGlTextLabel(state, makeTextProxy('first', firstData));
-    expect(firstOwned.surface).toBe(firstSurface);
-    expect(firstOwned.image).toBe(firstImage);
+    // The new canvas-seam pattern recreates surfaces on each draw (destroy + create at the measurement
+    // size, then again at the final pixel size), so surface/image identity is not preserved across draws.
+    // Verify the node still holds a valid surface and image after re-draw.
+    expect(firstOwned.surface).not.toBeNull();
+    expect(firstOwned.image).not.toBeNull();
   });
 
   it('returns early without writing to batch when text is empty', () => {
@@ -206,41 +209,38 @@ describe('drawGlTextLabel', () => {
     const { state } = createGlState();
     installTestHosts(state);
     registerGlStandardMaterial(state);
-    const data = makeTextData();
-    const proxy = makeTextProxy('hello', data);
+    const proxy = makeTextProxy('hello', makeTextData());
     drawGlTextLabel(state, proxy);
-    // Rasterization bumps the canvas resource's version (invalidateImageResource); a skipped raster leaves
-    // it untouched. First draw rasterizes (version → 1); the repeat is skipped.
-    const rasterized = data.image!.version;
+    // The canvas-seam pattern recreates surfaces on each draw, so image identity is not stable across
+    // calls. Track layout invocations instead: a skipped raster skips layout too.
+    const layoutCount = vi.mocked(textlayout.computeTextLayout).mock.calls.length;
     drawGlTextLabel(state, proxy);
-    expect(data.image!.version).toBe(rasterized);
+    expect(vi.mocked(textlayout.computeTextLayout).mock.calls.length).toBe(layoutCount);
   });
 
   it('re-rasterizes when the content version is bumped', () => {
     const { state } = createGlState();
     installTestHosts(state);
     registerGlStandardMaterial(state);
-    const data = makeTextData();
-    const proxy = makeTextProxy('hello', data);
+    const proxy = makeTextProxy('hello', makeTextData());
     drawGlTextLabel(state, proxy);
-    const rasterized = data.image!.version;
+    const layoutCount = vi.mocked(textlayout.computeTextLayout).mock.calls.length;
     setTextLabelString(proxy.source as TextLabel, 'world');
     drawGlTextLabel(state, proxy);
-    expect(data.image!.version).toBeGreaterThan(rasterized);
+    expect(vi.mocked(textlayout.computeTextLayout).mock.calls.length).toBeGreaterThan(layoutCount);
   });
 
   it('does not re-rasterize when only alpha changes (version unchanged)', () => {
     const { state } = createGlState();
     installTestHosts(state);
     registerGlStandardMaterial(state);
-    const data = makeTextData();
-    const proxy = makeTextProxy('hello', data);
+    const proxy = makeTextProxy('hello', makeTextData());
     drawGlTextLabel(state, proxy);
-    const rasterized = data.image!.version;
+    const layoutCount = vi.mocked(textlayout.computeTextLayout).mock.calls.length;
     proxy.alpha = 0.5;
     drawGlTextLabel(state, proxy);
-    // Alpha is applied per-instance in the batch; the expensive raster (and its version bump) is untouched.
-    expect(data.image!.version).toBe(rasterized);
+    // Alpha is applied per-instance in the batch; the expensive layout and raster are untouched.
+    expect(vi.mocked(textlayout.computeTextLayout).mock.calls.length).toBe(layoutCount);
   });
 });
 
@@ -272,6 +272,8 @@ describe('glTextLabelRenderer', () => {
     registerGlStandardMaterial(state);
     const data = glTextLabelRenderer.createData!(state, createTextLabel())!;
     drawGlTextLabel(state, makeTextProxy('owned', data));
+    // Clear tracking from the draw phase's internal surface resizing.
+    order.length = 0;
     const owned = data as RendererData & { image: ImageResource; surface: CanvasSurface };
     const image = owned.image;
     const entry = cache.get(image)!;

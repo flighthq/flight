@@ -45,6 +45,7 @@
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/registry": "*",
+    "@flighthq/render": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

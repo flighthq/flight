@@ -1,3 +1,4 @@
+import { getCanvasHostSurface } from '@flighthq/render/contract';
 import type {
   CanvasEffectRunner,
   CanvasRenderState,
@@ -43,7 +44,7 @@ export function applyGradientGlowEffectToCanvas(
   const effect = maybeEffect ?? (poolOrEffect as Readonly<GradientGlowEffect>);
   const pool =
     maybeEffect === undefined
-      ? createCanvasTextureRenderTargetPool(source.surface.creator)
+      ? createCanvasTextureRenderTargetPool(getCanvasHostSurface(source.surface)!)
       : (poolOrEffect as CanvasRenderTargetPool);
   applyGradientGlowEffectToCanvasWithPool(source, dest, pool, effect);
 }

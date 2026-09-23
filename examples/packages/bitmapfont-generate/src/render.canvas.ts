@@ -5,7 +5,6 @@ import {
   BitmapTextKind,
   createCanvasElement,
   createCanvasRenderState,
-  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   canvasBitmapTextRenderer,
@@ -23,10 +22,11 @@ import {
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
-export const canvas = createCanvasElement(webHostCanvas, 800, 600, pixelRatio);
+const surface = createCanvasElement(webHostCanvas, 800, 600, pixelRatio);
+export const canvas = surface.context.canvas as HTMLCanvasElement;
 document.body.appendChild(canvas);
 
-export const screen = createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas));
+export const screen = createCanvasScreenRenderTarget(surface);
 export const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas), {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });

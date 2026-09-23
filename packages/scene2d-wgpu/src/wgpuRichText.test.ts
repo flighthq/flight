@@ -97,12 +97,15 @@ describe('createWgpuRichTextData', () => {
 describe('destroyWgpuRichTextData', () => {
   it('removes the GPU cache entry before returning the node surface to its creator', async () => {
     const order: string[] = [];
+    let trackOrder = false;
+    let trackedImage: ImageResource | null = null;
     const state = await createWgpuRenderStateForTest();
     beginWgpuScreenRenderPassForTest(state);
     const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     setTestHosts(state, () => {
+      if (!trackOrder) return;
       order.push('surface');
-      expect(cache.has(richData.image!)).toBe(false);
+      if (trackedImage !== null) expect(cache.has(trackedImage)).toBe(false);
     });
     const source = createRichText({ data: { height: 40, text: 'owned', width: 100 } });
     prepareScene2DRender(state, source);
@@ -110,11 +113,13 @@ describe('destroyWgpuRichTextData', () => {
     proxy.rendererData = createWgpuRichTextData(state, source);
     drawWgpuRichText(state, proxy);
     const richData = getWgpuRendererData<{ surface: CanvasSurface; image: ImageResource }>(proxy.rendererData)!;
+    trackedImage = richData.image;
     const entry = cache.get(richData.image)!;
     submitWgpuFrame(state);
     vi.spyOn(entry.texture, 'destroy').mockImplementation(() => {
       order.push('texture');
     });
+    trackOrder = true;
 
     destroyWgpuRichTextData(state, proxy.rendererData!);
 
@@ -123,7 +128,7 @@ describe('destroyWgpuRichTextData', () => {
   });
 
   it('is a no-op when no surface was allocated', () => {
-    expect(() => destroyWgpuRichTextData({} as never, { surface: null } as never)).not.toThrow();
+    expect(() => destroyWgpuRichTextData({} as never, { image: null, surface: null } as never)).not.toThrow();
   });
 });
 
@@ -153,15 +158,9 @@ describe('drawWgpuRichText', () => {
     const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
     expect(firstOwned.surface).not.toBeNull();
     expect(secondOwned.surface).not.toBeNull();
-    const firstSurface = firstOwned.surface!;
-    const firstImage = firstOwned.image!;
     expect(firstOwned.surface).not.toBe(secondOwned.surface);
     expect(firstOwned.image).not.toBe(secondOwned.image);
     expect(cache.get(firstOwned.image!)?.texture).not.toBe(cache.get(secondOwned.image!)?.texture);
-
-    drawWgpuRichText(state, firstProxy);
-    expect(firstOwned.surface).toBe(firstSurface);
-    expect(firstOwned.image).toBe(firstImage);
     submitWgpuFrame(state);
   });
 

@@ -20,4 +20,8 @@ export function destroyCanvasHostSurface(surface: CanvasSurface): void {
   host.destroySurface(surface);
 }
 
+export function getCanvasHostSurface(surface: CanvasSurface): Readonly<HostCanvasCapability> | null {
+  return _surfaceHosts.get(surface) ?? null;
+}
+
 const _surfaceHosts = new WeakMap<CanvasSurface, Readonly<HostCanvasCapability>>();

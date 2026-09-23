@@ -15,7 +15,12 @@ describe('createCanvasSurface', () => {
   it('allocates a drawable in the window and acquires a 2D context on it', () => {
     const create = vi.fn(() => 'canvas');
     const acquire = vi.fn(() => context);
-    const surface = createCanvasSurface(canvasCapability({ acquire, create, release() {} }), appWindow, 320, 240);
+    const surface = createCanvasSurface(
+      canvasCapability({ acquire, create, createSurface: () => null, destroySurface() {}, release() {} }),
+      appWindow,
+      320,
+      240,
+    );
 
     expect(surface!.__brand).toBe('CanvasSurface');
     expect(surface!.context).toBe(context);
@@ -26,7 +31,12 @@ describe('createCanvasSurface', () => {
   it('returns null without acquiring when the window cannot yield a drawable', () => {
     const acquire = vi.fn(() => context);
     expect(
-      createCanvasSurface(canvasCapability({ acquire, create: () => null, release() {} }), appWindow, 8, 8),
+      createCanvasSurface(
+        canvasCapability({ acquire, create: () => null, createSurface: () => null, destroySurface() {}, release() {} }),
+        appWindow,
+        8,
+        8,
+      ),
     ).toBeNull();
     expect(acquire).not.toHaveBeenCalled();
   });
@@ -34,7 +44,13 @@ describe('createCanvasSurface', () => {
   it('returns null when the drawable cannot rasterize 2D', () => {
     expect(
       createCanvasSurface(
-        canvasCapability({ acquire: () => null, create: () => 'canvas', release() {} }),
+        canvasCapability({
+          acquire: () => null,
+          create: () => 'canvas',
+          createSurface: () => null,
+          destroySurface() {},
+          release() {},
+        }),
         appWindow,
         8,
         8,
@@ -47,7 +63,13 @@ describe('createCanvasSurfaceFromNativeHandle', () => {
   it('adopts a drawable the caller owns without allocating one', () => {
     const create = vi.fn(() => 'unused');
     const surface = createCanvasSurfaceFromNativeHandle(
-      canvasCapability({ acquire: () => context, create, release() {} }),
+      canvasCapability({
+        acquire: () => context,
+        create,
+        createSurface: () => null,
+        destroySurface() {},
+        release() {},
+      }),
       'adopted',
     );
 
@@ -59,7 +81,13 @@ describe('createCanvasSurfaceFromNativeHandle', () => {
 describe('destroyCanvasSurface', () => {
   it('releases the surface through the capability', () => {
     const release = vi.fn();
-    const capability = canvasCapability({ acquire: () => context, create: () => 'canvas', release });
+    const capability = canvasCapability({
+      acquire: () => context,
+      create: () => 'canvas',
+      createSurface: () => null,
+      destroySurface() {},
+      release,
+    });
     const surface = createCanvasSurface(capability, appWindow, 8, 8) as CanvasSurface;
     destroyCanvasSurface(capability, surface);
 

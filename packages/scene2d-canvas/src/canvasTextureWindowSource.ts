@@ -60,13 +60,14 @@ export function resolveCanvasTextureWindowSource(
     return entry.element;
   }
 
-  const surface = acquireCanvasTextureResolverSurface(resolvers, {
-    height: Math.max(1, Math.ceil(viewHeight)),
-    pixelRatio: 1,
-    width: Math.max(1, Math.ceil(viewWidth)),
-  });
+  const surface = acquireCanvasTextureResolverSurface(
+    resolvers,
+    Math.max(1, Math.ceil(viewWidth)),
+    Math.max(1, Math.ceil(viewHeight)),
+  );
   if (surface === null) return null;
-  const { canvas: element, context } = surface;
+  const context = surface.context;
+  const element = context.canvas as HTMLCanvasElement;
   context.setTransform(1, 0, 0, 1, 0, 0);
   context.clearRect(0, 0, element.width, element.height);
   context.imageSmoothingEnabled = !texture.sampler.magFilter.startsWith('nearest');

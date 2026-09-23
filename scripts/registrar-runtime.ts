@@ -1141,7 +1141,7 @@ function createCanvasProbeState(registry = canvasScene2DRenderPreset) {
   registerCanvasHost(state, webHostCanvas);
   beginCanvasRenderPass(
     state,
-    createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas)),
+    createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas)!),
   );
   return state;
 }

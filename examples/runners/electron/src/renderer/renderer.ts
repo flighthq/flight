@@ -7,7 +7,6 @@ import {
   beginCanvasRenderPass,
   createCanvasElement,
   createCanvasRenderState,
-  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   createDisplayObject,
@@ -35,10 +34,11 @@ declare global {
 
 // ── Flight scene (the renderer is a normal browser context, so it uses the web canvas renderer) ──
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(webHostCanvas, 1024, 560, pixelRatio);
+const surface = createCanvasElement(webHostCanvas, 1024, 560, pixelRatio);
+const canvas = surface.context.canvas as HTMLCanvasElement;
 document.body.appendChild(canvas);
 
-const screen = createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas));
+const screen = createCanvasScreenRenderTarget(surface);
 const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas));
 registerCanvasHost(state, webHostCanvas);
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.

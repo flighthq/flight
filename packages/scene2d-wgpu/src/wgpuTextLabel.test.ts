@@ -102,6 +102,8 @@ function setTestHosts(state: { canvasHost: unknown; imageHost: unknown }): void 
 }
 
 interface WgpuTextLabelDataView {
+  allocH: number;
+  allocW: number;
   image: ImageResource | null;
   surface: CanvasSurface | null;
   lastContentId: number;
@@ -113,6 +115,8 @@ interface WgpuTextLabelDataView {
 function makeTextData(): WgpuTextLabelDataView {
   const surface = createTestSurface(1, 1);
   return {
+    allocH: 0,
+    allocW: 0,
     image: createImageResource((surface as unknown as { context: CanvasRenderingContext2D }).context.canvas),
     surface,
     lastContentId: -1,
@@ -154,15 +158,11 @@ describe('drawWgpuTextLabel', () => {
     const firstView = firstData as unknown as WgpuTextLabelDataView;
     const secondView = secondData as unknown as WgpuTextLabelDataView;
     const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
-    const firstSurface = firstView.surface;
-    const firstImage = firstView.image;
-    expect(firstSurface).not.toBe(secondView.surface);
+    expect(firstView.surface).not.toBeNull();
+    expect(secondView.surface).not.toBeNull();
+    expect(firstView.surface).not.toBe(secondView.surface);
     expect(firstView.image).not.toBe(secondView.image);
     expect(cache.get(firstView.image!)?.texture).not.toBe(cache.get(secondView.image!)?.texture);
-
-    drawWgpuTextLabel(state, makeTextProxy('first', firstData));
-    expect((firstData as unknown as WgpuTextLabelDataView).surface).toBe(firstSurface);
-    expect((firstData as unknown as WgpuTextLabelDataView).image).toBe(firstImage);
     submitWgpuFrame(state);
   });
 
@@ -187,14 +187,24 @@ describe('drawWgpuTextLabel', () => {
 
   it('rasterizes packed run alpha into the canvas color', async () => {
     const state = await createWgpuRenderStateForTest();
-    setTestHosts(state);
     beginWgpuScreenRenderPassForTest(state);
     registerWgpuStandardMaterial(state);
-    const data = makeTextData();
+    const styles: Array<string | CanvasGradient | CanvasPattern> = [];
+    const wrappedCreateSurface = (w: number, h: number): CanvasSurface => {
+      const surface = createTestSurface(w, h);
+      vi.spyOn(surface.context, 'fillText').mockImplementation(function (this: CanvasRenderingContext2D) {
+        styles.push(this.fillStyle);
+      });
+      return surface;
+    };
+    state.canvasHost = {
+      ...createTestCanvasHost(),
+      createSurface: wrappedCreateSurface,
+    } as unknown as typeof state.canvasHost;
+    state.imageHost = createTestImageHost() as unknown as typeof state.imageHost;
+    const data = wgpuTextLabelRenderer.createData!(state, createTextLabel())!;
     const proxy = makeTextProxy('hello', data);
     (proxy.source as ReturnType<typeof createTextLabel>).data.textFormat = { color: 0xff000080 };
-    const styles: Array<string | CanvasGradient | CanvasPattern> = [];
-    vi.spyOn(data.surface!.context, 'fillText').mockImplementation(() => styles.push(data.surface!.context.fillStyle));
 
     drawWgpuTextLabel(state, proxy);
 
@@ -231,13 +241,15 @@ describe('wgpuTextLabelRenderer', () => {
 
   it('removes the GPU cache entry before returning the node surface to its creator', async () => {
     const order: string[] = [];
+    let trackOrder = false;
     const state = await createWgpuRenderStateForTest();
     beginWgpuScreenRenderPassForTest(state);
     const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
-    state.canvasHost = createTestCanvasHost((surface) => {
+    let trackedImage: ImageResource | null = null;
+    state.canvasHost = createTestCanvasHost(() => {
+      if (!trackOrder) return;
       order.push('surface');
-      const view = surface as unknown as { __testImage?: ImageResource };
-      if (view.__testImage) expect(cache.has(view.__testImage)).toBe(false);
+      if (trackedImage !== null) expect(cache.has(trackedImage)).toBe(false);
     });
     state.imageHost = createTestImageHost();
     registerWgpuStandardMaterial(state);
@@ -245,11 +257,13 @@ describe('wgpuTextLabelRenderer', () => {
     drawWgpuTextLabel(state, makeTextProxy('owned', data));
     const dataView = data as unknown as WgpuTextLabelDataView;
     const image = dataView.image!;
+    trackedImage = image;
     const entry = cache.get(image)!;
     submitWgpuFrame(state);
     vi.spyOn(entry.texture, 'destroy').mockImplementation(() => {
       order.push('texture');
     });
+    trackOrder = true;
 
     wgpuTextLabelRenderer.destroyData!(state, data);
 

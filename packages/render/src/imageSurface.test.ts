@@ -1,6 +1,6 @@
 import type { CanvasSurface, HostCanvasCapability } from '@flighthq/types/contract';
 
-import { createCanvasHostSurface, destroyCanvasHostSurface } from './imageSurface';
+import { createCanvasHostSurface, destroyCanvasHostSurface, getCanvasHostSurface } from './imageSurface';
 
 function mockHost(overrides: Partial<HostCanvasCapability> = {}): HostCanvasCapability {
   return {
@@ -64,5 +64,26 @@ describe('destroyCanvasHostSurface', () => {
 
   it('is a no-op for an unknown surface', () => {
     expect(() => destroyCanvasHostSurface({} as CanvasSurface)).not.toThrow();
+  });
+});
+
+describe('getCanvasHostSurface', () => {
+  it('returns the host that created the surface', () => {
+    const surface = {} as CanvasSurface;
+    const host = mockHost({ createSurface: () => surface });
+    createCanvasHostSurface(host, 1, 1);
+    expect(getCanvasHostSurface(surface)).toBe(host);
+  });
+
+  it('returns null for an unknown surface', () => {
+    expect(getCanvasHostSurface({} as CanvasSurface)).toBeNull();
+  });
+
+  it('returns null after the surface has been destroyed', () => {
+    const surface = {} as CanvasSurface;
+    const host = mockHost({ createSurface: () => surface });
+    createCanvasHostSurface(host, 1, 1);
+    destroyCanvasHostSurface(surface);
+    expect(getCanvasHostSurface(surface)).toBeNull();
   });
 });
