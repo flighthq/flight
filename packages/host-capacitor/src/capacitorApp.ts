@@ -1,4 +1,3 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   HostAppActivateCapability,
   HostAppHideCapability,
@@ -10,7 +9,6 @@ import type {
   CapacitorAppCapabilitiesFor,
   CapacitorCommonAppCapabilities,
   CapacitorPluginListenerHandle,
-  EntityConstruction,
   MobileOsProfile,
 } from '@flighthq/types/contract';
 
@@ -28,13 +26,9 @@ export function capacitorHostApp(
   capacitor: CapacitorApi,
   profile: MobileOsProfile,
 ): CapacitorAndroidAppCapabilities | CapacitorCommonAppCapabilities {
-  const common = allocateEntity<CapacitorCommonAppCapabilities>();
-  populateCapacitorCommonApp(common, capacitor);
-  const finished = finishEntity(common);
-  if (profile === 'ios') return finished;
-  const android = allocateEntity<CapacitorAndroidAppCapabilities>();
-  populateCapacitorAndroidApp(android, finished, capacitor);
-  return finishEntity(android);
+  const common = createCapacitorCommonApp(capacitor);
+  if (profile === 'ios') return common;
+  return createCapacitorAndroidApp(common, capacitor);
 }
 
 export function capacitorHostAppActivate(capacitor: CapacitorApi): HostAppActivateCapability {
@@ -57,26 +51,24 @@ export function capacitorHostAppVersion(capacitor: CapacitorApi): HostAppVersion
   return capacitorHostApp(capacitor, 'ios').version;
 }
 
-function populateCapacitorAndroidApp(
-  out: EntityConstruction<CapacitorAndroidAppCapabilities>,
+function createCapacitorAndroidApp(
   common: CapacitorCommonAppCapabilities,
   capacitor: CapacitorApi,
-): void {
-  out.activate = common.activate;
+): CapacitorAndroidAppCapabilities {
   const h = {} as HostAppHideCapability;
   h.hideApp = () => void capacitor.app.minimizeApp().catch(() => {});
-  out.hide = h;
-  out.name = common.name;
   const q = {} as HostAppQuitCapability;
   q.quit = () => void capacitor.app.exitApp().catch(() => {});
-  out.quit = q;
-  out.version = common.version;
+  return Object.freeze({
+    activate: common.activate,
+    hide: h,
+    name: common.name,
+    quit: q,
+    version: common.version,
+  });
 }
 
-function populateCapacitorCommonApp(
-  out: EntityConstruction<CapacitorCommonAppCapabilities>,
-  capacitor: CapacitorApi,
-): void {
+function createCapacitorCommonApp(capacitor: CapacitorApi): CapacitorCommonAppCapabilities {
   let name = '';
   let version = '';
   void capacitor.app
@@ -93,13 +85,11 @@ function populateCapacitorCommonApp(
         if (state.isActive) listener();
       }),
     );
-  out.activate = a;
   const n = {} as HostAppNameCapability;
   n.getName = () => name;
-  out.name = n;
   const v = {} as HostAppVersionCapability;
   v.getVersion = () => version;
-  out.version = v;
+  return Object.freeze({ activate: a, name: n, version: v });
 }
 
 function toCapacitorUnsubscribe(handlePromise: Promise<CapacitorPluginListenerHandle>): () => void {

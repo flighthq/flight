@@ -14,13 +14,7 @@ const PACKAGE_ROOT = resolve(__dirname, '..');
 const DIST_ROOT = resolve(PACKAGE_ROOT, 'dist');
 const PACK_TIMEOUT_MS = 120_000;
 
-const ENTITY_CONSTRUCTORS = [
-  'tauriHost',
-  'tauriHostApp',
-  'tauriHostMenu',
-  'tauriHostNotification',
-  'tauriHostTray',
-] as const;
+const ENTITY_CONSTRUCTORS = ['tauriHost'] as const;
 
 const LEAF_MODULE_BY_EXPORT = {
   tauriHostAppHide: 'tauriApp.js',

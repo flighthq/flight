@@ -1,11 +1,10 @@
-import { allocateEntity } from '@flighthq/entity/contract';
 import { createScreenInfo } from '@flighthq/screen/contract';
 import type {
-  EntityConstruction,
   HostScreenChangeCapability,
   HostScreenDetailsCapability,
   HostScreenPermissionChangeCapability,
   HostScreenQueryCapability,
+  NonEntityCreateResult,
   ScreenChangeEvent,
   ScreenInfo,
   ScreenPermissionState,
@@ -54,7 +53,7 @@ interface OrientationLike {
   removeEventListener?(type: 'change', listener: () => void): void;
 }
 
-export function createWebScreenCapabilities(): WebScreenCapabilities {
+export function createWebScreenCapabilities(): NonEntityCreateResult<WebScreenCapabilities, 'descriptor'> {
   let cached: ScreenInfo[] = [];
   let cursorX = 0;
   let cursorY = 0;
@@ -307,22 +306,7 @@ export function createWebScreenCapabilities(): WebScreenCapabilities {
     return out;
   })();
 
-  const out = allocateEntity<WebScreenCapabilities>();
-  initializeWebScreenCapabilities(out, change, detailsBackend, permissionChange, query);
-  return out;
-}
-
-export function initializeWebScreenCapabilities(
-  out: EntityConstruction<WebScreenCapabilities>,
-  change: HostScreenChangeCapability,
-  detailsBackend: HostScreenDetailsCapability,
-  permissionChange: HostScreenPermissionChangeCapability,
-  query: HostScreenQueryCapability,
-): void {
-  out.change = change;
-  out.details = detailsBackend;
-  out.permissionChange = permissionChange;
-  out.query = query;
+  return Object.freeze({ change, details: detailsBackend, permissionChange, query });
 }
 
 const screenGroup = createWebScreenCapabilities();

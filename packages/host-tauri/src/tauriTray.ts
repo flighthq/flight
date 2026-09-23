@@ -1,9 +1,6 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   DesktopOsProfile,
-  Entity,
-  EntityConstruction,
   HostTrayImageCapability,
   HostTrayInteractionEventsCapability,
   HostTrayLifecycleCapability,
@@ -53,55 +50,32 @@ export function tauriHostTray<Profile extends DesktopOsProfile>(
   };
 
   if (profile === 'linux') {
-    // Entity + cast: TauriTrayCapabilitiesFor<Profile> is a conditional type that allocateEntity cannot see through.
-    const out = allocateEntity<Entity>();
-    configureTray(
-      out,
-      common.image,
-      null,
-      common.lifecycle,
-      common.menu,
-      common.menuSelectionEvents,
-      null,
-      createTrayTitle(records),
-      null,
-    );
-    return finishEntity(out) as unknown as TauriTrayCapabilitiesFor<Profile>;
+    // Double cast: TauriTrayCapabilitiesFor<Profile> is a conditional type that cannot be narrowed statically.
+    return Object.freeze({
+      ...common,
+      title: createTrayTitle(records),
+    }) as unknown as TauriTrayCapabilitiesFor<Profile>;
   }
 
   const interactionEvents = createTrayInteractionEvents(records);
   const tooltip = createTrayTooltip(records);
 
   if (profile === 'windows') {
-    // Entity + cast: TauriTrayCapabilitiesFor<Profile> is a conditional type that allocateEntity cannot see through.
-    const out = allocateEntity<Entity>();
-    configureTray(
-      out,
-      common.image,
+    // Double cast: TauriTrayCapabilitiesFor<Profile> is a conditional type that cannot be narrowed statically.
+    return Object.freeze({
+      ...common,
       interactionEvents,
-      common.lifecycle,
-      common.menu,
-      common.menuSelectionEvents,
-      null,
-      null,
       tooltip,
-    );
-    return finishEntity(out) as unknown as TauriTrayCapabilitiesFor<Profile>;
+    }) as unknown as TauriTrayCapabilitiesFor<Profile>;
   }
-  // Entity + cast: TauriTrayCapabilitiesFor<Profile> is a conditional type that allocateEntity cannot see through.
-  const out = allocateEntity<Entity>();
-  configureTray(
-    out,
-    common.image,
+  // Double cast: TauriTrayCapabilitiesFor<Profile> is a conditional type that cannot be narrowed statically.
+  return Object.freeze({
+    ...common,
     interactionEvents,
-    common.lifecycle,
-    common.menu,
-    common.menuSelectionEvents,
-    createTrayTemplateImage(records),
-    createTrayTitle(records),
+    templateImage: createTrayTemplateImage(records),
+    title: createTrayTitle(records),
     tooltip,
-  );
-  return finishEntity(out) as unknown as TauriTrayCapabilitiesFor<Profile>;
+  }) as unknown as TauriTrayCapabilitiesFor<Profile>;
 }
 
 export function tauriHostTrayImage<Profile extends DesktopOsProfile>(
@@ -371,27 +345,6 @@ function createTrayTooltip(records: ReadonlyMap<TrayIcon, TrayRecord>): HostTray
     return result;
   };
   return out;
-}
-
-function configureTray(
-  out: EntityConstruction<Entity>,
-  image: HostTrayImageCapability,
-  interactionEvents: HostTrayInteractionEventsCapability | null,
-  lifecycle: HostTrayLifecycleCapability,
-  menu: HostTrayMenuCapability,
-  menuSelectionEvents: HostTrayMenuSelectionEventsCapability,
-  templateImage: HostTrayTemplateImageCapability | null,
-  title: HostTrayTitleCapability | null,
-  tooltip: HostTrayTooltipCapability | null,
-): void {
-  (out as any).image = image;
-  if (interactionEvents !== null) (out as any).interactionEvents = interactionEvents;
-  (out as any).lifecycle = lifecycle;
-  (out as any).menu = menu;
-  (out as any).menuSelectionEvents = menuSelectionEvents;
-  if (templateImage !== null) (out as any).templateImage = templateImage;
-  if (title !== null) (out as any).title = title;
-  if (tooltip !== null) (out as any).tooltip = tooltip;
 }
 
 function activeRecord(records: ReadonlyMap<TrayIcon, TrayRecord>, tray: TrayIcon): TrayRecord | null {

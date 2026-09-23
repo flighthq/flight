@@ -1,18 +1,6 @@
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
-import {
-  createWebCanvasRenderSurfaceCreator,
-  initializeWebCanvasRenderSurfaceCreator,
-  webCanvasRenderSurfaceCreator,
-} from './webCanvasRenderSurface';
+import { createWebCanvasRenderSurfaceCreator, webCanvasRenderSurfaceCreator } from './webCanvasRenderSurface';
 
 describe('createWebCanvasRenderSurfaceCreator', () => {
-  it('creates a complete host Entity', () => {
-    const creator = createWebCanvasRenderSurfaceCreator();
-
-    expect(creator[EntityRuntimeKey]).toEqual({ binding: null });
-  });
-
   it('creates fresh canvases with logical CSS and scaled backing dimensions', () => {
     const creator = createWebCanvasRenderSurfaceCreator();
     const first = creator.createRenderSurface(100, 50, 2)!;
@@ -36,13 +24,8 @@ describe('createWebCanvasRenderSurfaceCreator', () => {
   });
 });
 
-describe('initializeWebCanvasRenderSurfaceCreator', () => {
-  it('is the construction initializer of createWebCanvasRenderSurfaceCreator', () => {
-    expect(typeof initializeWebCanvasRenderSurfaceCreator).toBe('function');
-  });
-});
 describe('webCanvasRenderSurfaceCreator', () => {
-  it('is the reusable web-host creator', () => {
-    expect(webCanvasRenderSurfaceCreator[EntityRuntimeKey]).toEqual({ binding: null });
+  it('is a stable singleton', () => {
+    expect(webCanvasRenderSurfaceCreator).toBe(webCanvasRenderSurfaceCreator);
   });
 });

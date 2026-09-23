@@ -1,6 +1,6 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { bindNotificationClose, createNotificationResource } from '@flighthq/notification/contract';
 import type {
+  NonEntityCreateResult,
   Notification,
   NotificationEventBackendAttachOutcome,
   NotificationLifecycleFailure,
@@ -10,7 +10,6 @@ import type {
   WebServiceWorkerNotificationApi,
   WebServiceWorkerNotificationCapabilities,
   WebServiceWorkerNotificationEvent,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 
 interface WebServiceWorkerNotificationDispatch {
@@ -21,16 +20,7 @@ interface WebServiceWorkerNotificationDispatch {
 
 export function createWebServiceWorkerNotificationCapabilities(
   api: Readonly<WebServiceWorkerNotificationApi>,
-): WebServiceWorkerNotificationCapabilities {
-  const capabilities = allocateEntity<WebServiceWorkerNotificationCapabilities>();
-  initializeWebServiceWorkerNotificationCapabilities(capabilities, api);
-  return finishEntity(capabilities);
-}
-
-export function initializeWebServiceWorkerNotificationCapabilities(
-  capabilities: EntityConstruction<WebServiceWorkerNotificationCapabilities>,
-  api: Readonly<WebServiceWorkerNotificationApi>,
-): void {
+): NonEntityCreateResult<WebServiceWorkerNotificationCapabilities, 'descriptor'> {
   const notificationByTag = new Map<string, Notification>();
   const actionListeners = new Set<(notification: Readonly<Notification>, actionId: string) => void>();
   const clickListeners = new Set<(notification: Readonly<Notification>) => void>();
@@ -64,77 +54,79 @@ export function initializeWebServiceWorkerNotificationCapabilities(
     }
     return failures.length === 0 ? { reason: 'ok' } : { failures, reason: 'operation-failed' };
   }
-  capabilities.action = makeWebServiceWorkerNotificationEventBackend(actionListeners, () => destroyed);
-  capabilities.activeList = {
-    async getActiveNotifications() {
-      let nativeNotifications;
-      try {
-        nativeNotifications = await api.registration.getNotifications();
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-      const notifications: Notification[] = [];
-      for (const native of nativeNotifications) {
-        const notification = notificationByTag.get(native.tag);
-        if (notification !== undefined) notifications.push(notification);
-      }
-      return { notifications, reason: 'ok' };
+  const capabilities: WebServiceWorkerNotificationCapabilities = Object.freeze({
+    action: makeWebServiceWorkerNotificationEventBackend(actionListeners, () => destroyed),
+    activeList: {
+      async getActiveNotifications() {
+        let nativeNotifications;
+        try {
+          nativeNotifications = await api.registration.getNotifications();
+        } catch {
+          return { reason: 'operation-failed' };
+        }
+        const notifications: Notification[] = [];
+        for (const native of nativeNotifications) {
+          const notification = notificationByTag.get(native.tag);
+          if (notification !== undefined) notifications.push(notification);
+        }
+        return { notifications, reason: 'ok' };
+      },
     },
-  };
-  capabilities.click = makeWebServiceWorkerNotificationEventBackend(clickListeners, () => destroyed);
-  capabilities.close = { closeAllNotifications: closeAll };
-  capabilities.delivery = {
-    async notify(request) {
-      if (destroyed) return { reason: 'operation-failed' };
-      if (api.permission.getPermission() !== 'granted') return { reason: 'permission-denied' };
-      const id = request.id ?? `service-worker-notification-${nextId++}`;
-      const tag = request.tag ?? `flight-service-worker-notification-${nextId++}`;
-      try {
-        await api.registration.showNotification(request.title, toServiceWorkerNotificationOptions(request, tag));
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-      let notification = notificationByTag.get(tag);
-      if (notification === undefined) {
-        notification = createNotificationResource(id, request.title, tag);
-        notificationByTag.set(tag, notification);
-        bindNotificationClose(notification, () => closeOne(notification!));
-      }
-      return { notification, reason: 'accepted' };
+    click: makeWebServiceWorkerNotificationEventBackend(clickListeners, () => destroyed),
+    close: { closeAllNotifications: closeAll },
+    delivery: {
+      async notify(request) {
+        if (destroyed) return { reason: 'operation-failed' };
+        if (api.permission.getPermission() !== 'granted') return { reason: 'permission-denied' };
+        const id = request.id ?? `service-worker-notification-${nextId++}`;
+        const tag = request.tag ?? `flight-service-worker-notification-${nextId++}`;
+        try {
+          await api.registration.showNotification(request.title, toServiceWorkerNotificationOptions(request, tag));
+        } catch {
+          return { reason: 'operation-failed' };
+        }
+        let notification = notificationByTag.get(tag);
+        if (notification === undefined) {
+          notification = createNotificationResource(id, request.title, tag);
+          notificationByTag.set(tag, notification);
+          bindNotificationClose(notification, () => closeOne(notification!));
+        }
+        return { notification, reason: 'accepted' };
+      },
     },
-  };
-  capabilities.dismiss = makeWebServiceWorkerNotificationEventBackend(dismissListeners, () => destroyed);
-  capabilities.lifecycle = {
-    async destroy() {
-      if (destroyCompleted) return { reason: 'already-destroyed' };
-      destroyed = true;
-      actionListeners.clear();
-      clickListeners.clear();
-      dismissListeners.clear();
-      const outcome = await closeAll();
-      if (outcome.reason === 'ok') destroyCompleted = true;
-      return outcome;
+    dismiss: makeWebServiceWorkerNotificationEventBackend(dismissListeners, () => destroyed),
+    lifecycle: {
+      async destroy() {
+        if (destroyCompleted) return { reason: 'already-destroyed' };
+        destroyed = true;
+        actionListeners.clear();
+        clickListeners.clear();
+        dismissListeners.clear();
+        const outcome = await closeAll();
+        if (outcome.reason === 'ok') destroyCompleted = true;
+        return outcome;
+      },
     },
-  };
-  capabilities.permission = {
-    async getPermission() {
-      try {
-        return { permission: api.permission.getPermission(), reason: 'ok' };
-      } catch {
-        return { reason: 'operation-failed' };
-      }
+    permission: {
+      async getPermission() {
+        try {
+          return { permission: api.permission.getPermission(), reason: 'ok' };
+        } catch {
+          return { reason: 'operation-failed' };
+        }
+      },
+      async requestPermission() {
+        try {
+          const permission = await api.permission.requestPermission();
+          return {
+            reason: permission === 'default' ? 'dismissed' : permission,
+          };
+        } catch {
+          return { reason: 'operation-failed' };
+        }
+      },
     },
-    async requestPermission() {
-      try {
-        const permission = await api.permission.requestPermission();
-        return {
-          reason: permission === 'default' ? 'dismissed' : permission,
-        };
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-    },
-  };
+  } satisfies WebServiceWorkerNotificationCapabilities);
 
   _webServiceWorkerNotificationDispatch.set(capabilities, {
     action(notification, actionId) {
@@ -148,6 +140,8 @@ export function initializeWebServiceWorkerNotificationCapabilities(
     },
   });
   _webServiceWorkerNotificationByTag.set(capabilities, notificationByTag);
+
+  return capabilities;
 }
 
 export function notifyWebServiceWorkerNotificationEvent(

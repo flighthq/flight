@@ -1,8 +1,5 @@
 import {
   createWebPowerReadings,
-  initializeWebPowerKeepAwakeBackend,
-  initializeWebPowerReadings,
-  initializeWebPowerSuspensionBackend,
   webHostPowerChange,
   webHostPowerKeepAwake,
   webHostPowerStatus,
@@ -74,23 +71,6 @@ describe('createWebPowerReadings status', () => {
     expect(out.batteryLevel).toBe(-1);
     // Web cannot read thermal pressure at all, which is why it exposes no thermal slot.
     expect(out.thermalState).toBe('Unknown');
-  });
-});
-
-describe('initializeWebPowerKeepAwakeBackend', () => {
-  it('is the construction initializer of createWebPowerKeepAwakeBackend', () => {
-    expect(typeof initializeWebPowerKeepAwakeBackend).toBe('function');
-  });
-});
-
-describe('initializeWebPowerReadings', () => {
-  it('is the construction initializer of createWebPowerReadings', () => {
-    expect(typeof initializeWebPowerReadings).toBe('function');
-  });
-});
-describe('initializeWebPowerSuspensionBackend', () => {
-  it('is the construction initializer of createWebPowerSuspensionBackend', () => {
-    expect(typeof initializeWebPowerSuspensionBackend).toBe('function');
   });
 });
 

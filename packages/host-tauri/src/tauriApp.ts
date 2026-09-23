@@ -1,4 +1,3 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   HostAppHideCapability,
   HostAppLocaleCapability,
@@ -12,15 +11,15 @@ import type {
 } from '@flighthq/types/contract';
 
 export function tauriHostApp(tauri: TauriApi): TauriAppCapabilities {
-  const group = allocateEntity<TauriAppCapabilities>();
-  group.hide = tauriHostAppHide(tauri);
-  group.locale = tauriHostAppLocale(tauri);
-  group.name = tauriHostAppName(tauri);
-  group.quit = tauriHostAppQuit(tauri);
-  group.relaunch = tauriHostAppRelaunch(tauri);
-  group.show = tauriHostAppShow(tauri);
-  group.version = tauriHostAppVersion(tauri);
-  return finishEntity(group);
+  return Object.freeze({
+    hide: tauriHostAppHide(tauri),
+    locale: tauriHostAppLocale(tauri),
+    name: tauriHostAppName(tauri),
+    quit: tauriHostAppQuit(tauri),
+    relaunch: tauriHostAppRelaunch(tauri),
+    show: tauriHostAppShow(tauri),
+    version: tauriHostAppVersion(tauri),
+  });
 }
 
 export function tauriHostAppHide(tauri: TauriApi): HostAppHideCapability {

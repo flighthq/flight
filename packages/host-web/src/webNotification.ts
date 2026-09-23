@@ -1,8 +1,7 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { bindNotificationClose, createNotificationResource } from '@flighthq/notification/contract';
 import type {
-  EntityConstruction,
   HostNotificationPermissionCapability,
+  NonEntityCreateResult,
   Notification,
   NotificationEventBackendAttachOutcome,
   NotificationLifecycleFailure,
@@ -18,17 +17,7 @@ import type {
 export function createWebPageNotificationCapabilities(
   api: Readonly<WebPageNotificationApi>,
   hostNotificationPermission: Readonly<HostNotificationPermissionCapability>,
-): WebPageNotificationCapabilities {
-  const out = allocateEntity<WebPageNotificationCapabilities>();
-  initializeWebPageNotificationCapabilities(out, api, hostNotificationPermission);
-  return finishEntity(out);
-}
-
-export function initializeWebPageNotificationCapabilities(
-  out: EntityConstruction<WebPageNotificationCapabilities>,
-  api: Readonly<WebPageNotificationApi>,
-  hostNotificationPermission: Readonly<HostNotificationPermissionCapability>,
-): void {
+): NonEntityCreateResult<WebPageNotificationCapabilities, 'descriptor'> {
   const nativeByNotification = new Map<Notification, WebPageNotificationInstance>();
   const clickListeners = new Set<(notification: Readonly<Notification>) => void>();
   const dismissListeners = new Set<(notification: Readonly<Notification>) => void>();
@@ -55,62 +44,64 @@ export function initializeWebPageNotificationCapabilities(
     }
     return failures.length === 0 ? { reason: 'ok' } : { failures, reason: 'operation-failed' };
   }
-  out.click = makeWebNotificationEventBackend(clickListeners, () => destroyed);
-  out.close = { closeAllNotifications: closeAll };
-  out.delivery = {
-    async notify(request) {
-      if (destroyed) return { reason: 'operation-failed' };
-      const invalid = getWebPageInvalidNotificationRequestFields(request);
-      if (invalid.length > 0) return { fields: invalid, reason: 'invalid-request' };
-      try {
-        const outcome = await hostNotificationPermission.getPermission();
-        if (outcome.reason !== 'ok') return { reason: 'operation-failed' };
-        if (outcome.permission !== 'granted') return { reason: 'permission-denied' };
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-      const id = request.id ?? `web-notification-${nextId++}`;
-      const tag = request.tag ?? `flight-web-notification-${nextId++}`;
-      let native: WebPageNotificationInstance;
-      try {
-        native = new api.Notification(request.title, toWebNotificationOptions(request, tag));
-      } catch {
-        return { reason: 'operation-failed' };
-      }
-      const notification = createNotificationResource(id, request.title, tag);
-      nativeByNotification.set(notification, native);
-      bindNotificationClose(notification, () => closeOne(notification));
-      native.onclick = () => {
-        for (const listener of clickListeners) listener(notification);
-      };
-      native.onclose = () => {
-        nativeByNotification.delete(notification);
-        for (const listener of dismissListeners) listener(notification);
-      };
-      native.onerror = () => {
-        nativeByNotification.delete(notification);
-      };
-      native.onshow = () => {
-        for (const listener of receivedListeners) listener(notification);
-      };
-      return { notification, reason: 'accepted' };
+  return Object.freeze({
+    click: makeWebNotificationEventBackend(clickListeners, () => destroyed),
+    close: { closeAllNotifications: closeAll },
+    delivery: {
+      async notify(request) {
+        if (destroyed) return { reason: 'operation-failed' };
+        const invalid = getWebPageInvalidNotificationRequestFields(request);
+        if (invalid.length > 0) return { fields: invalid, reason: 'invalid-request' };
+        try {
+          const outcome = await hostNotificationPermission.getPermission();
+          if (outcome.reason !== 'ok') return { reason: 'operation-failed' };
+          if (outcome.permission !== 'granted') return { reason: 'permission-denied' };
+        } catch {
+          return { reason: 'operation-failed' };
+        }
+        const id = request.id ?? `web-notification-${nextId++}`;
+        const tag = request.tag ?? `flight-web-notification-${nextId++}`;
+        let native: WebPageNotificationInstance;
+        try {
+          native = new api.Notification(request.title, toWebNotificationOptions(request, tag));
+        } catch {
+          return { reason: 'operation-failed' };
+        }
+        const notification = createNotificationResource(id, request.title, tag);
+        nativeByNotification.set(notification, native);
+        bindNotificationClose(notification, () => closeOne(notification));
+        native.onclick = () => {
+          for (const listener of clickListeners) listener(notification);
+        };
+        native.onclose = () => {
+          nativeByNotification.delete(notification);
+          for (const listener of dismissListeners) listener(notification);
+        };
+        native.onerror = () => {
+          nativeByNotification.delete(notification);
+        };
+        native.onshow = () => {
+          for (const listener of receivedListeners) listener(notification);
+        };
+        return { notification, reason: 'accepted' };
+      },
     },
-  };
-  out.dismiss = makeWebNotificationEventBackend(dismissListeners, () => destroyed);
-  out.lifecycle = {
-    async destroy() {
-      if (destroyCompleted) return { reason: 'already-destroyed' };
-      destroyed = true;
-      clickListeners.clear();
-      dismissListeners.clear();
-      receivedListeners.clear();
-      const outcome = await closeAll();
-      if (outcome.reason === 'ok') destroyCompleted = true;
-      return outcome;
+    dismiss: makeWebNotificationEventBackend(dismissListeners, () => destroyed),
+    lifecycle: {
+      async destroy() {
+        if (destroyCompleted) return { reason: 'already-destroyed' };
+        destroyed = true;
+        clickListeners.clear();
+        dismissListeners.clear();
+        receivedListeners.clear();
+        const outcome = await closeAll();
+        if (outcome.reason === 'ok') destroyCompleted = true;
+        return outcome;
+      },
     },
-  };
-  out.permission = hostNotificationPermission;
-  out.received = makeWebNotificationEventBackend(receivedListeners, () => destroyed);
+    permission: hostNotificationPermission,
+    received: makeWebNotificationEventBackend(receivedListeners, () => destroyed),
+  } satisfies WebPageNotificationCapabilities);
 }
 
 function makeWebNotificationEventBackend<TListener>(listeners: Set<TListener>, isDestroyed: () => boolean) {

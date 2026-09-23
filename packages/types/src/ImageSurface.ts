@@ -12,9 +12,7 @@ export interface ImageSurface extends Entity {
   readonly image: ImageResource;
 }
 
-export interface ImageSurfaceCreator extends Entity {
+export interface ImageSurfaceCreator {
   createImageSurface(width: number, height: number): ImageSurface | null;
-  // Called by @flighthq/render's destroyImageSurface routing, which preserves the creator identity
-  // across process-global provider changes. Consumers destroy through that free function, not directly.
   destroyImageSurface(surface: ImageSurface): void;
 }

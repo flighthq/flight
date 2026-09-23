@@ -1,4 +1,3 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AppLoginItem,
   AppPathKind,
@@ -9,7 +8,6 @@ import type {
   ElectronLinuxAppCapabilities,
   ElectronMacosAppCapabilities,
   ElectronWindowsAppCapabilities,
-  EntityConstruction,
   HostAppActivateCapability,
   HostAppActivationPolicyCapability,
   HostAppAllWindowsClosedCapability,
@@ -59,7 +57,7 @@ export function electronHostApp<Profile extends DesktopOsProfile>(
   profile: Profile,
 ): ElectronAppCapabilitiesFor<Profile> {
   const common = (() => {
-    const out = allocateEntity<ElectronCommonAppCapabilities>();
+    const out = {} as { -readonly [K in keyof ElectronCommonAppCapabilities]: ElectronCommonAppCapabilities[K] };
     populateElectronHostAppCommon(
       out,
       electronHostAppAllWindowsClosed(electron),
@@ -76,11 +74,11 @@ export function electronHostApp<Profile extends DesktopOsProfile>(
       electronHostAppSingleInstance(electron),
       electronHostAppVersion(electron),
     );
-    return finishEntity(out);
+    return Object.freeze(out) as ElectronCommonAppCapabilities;
   })();
 
   if (profile === 'macos') {
-    const macos = allocateEntity<ElectronMacosAppCapabilities>();
+    const macos = {} as { -readonly [K in keyof ElectronMacosAppCapabilities]: ElectronMacosAppCapabilities[K] };
     populateElectronHostAppMacos(
       macos,
       common,
@@ -94,11 +92,11 @@ export function electronHostApp<Profile extends DesktopOsProfile>(
       electronHostAppRecentDocuments(electron),
       electronHostAppShow(electron),
     );
-    return finishEntity(macos) as ElectronAppCapabilitiesFor<Profile>;
+    return Object.freeze(macos) as ElectronAppCapabilitiesFor<Profile>;
   }
 
   if (profile === 'windows') {
-    const win = allocateEntity<ElectronWindowsAppCapabilities>();
+    const win = {} as { -readonly [K in keyof ElectronWindowsAppCapabilities]: ElectronWindowsAppCapabilities[K] };
     populateElectronHostAppWindows(
       win,
       common,
@@ -106,12 +104,12 @@ export function electronHostApp<Profile extends DesktopOsProfile>(
       electronHostAppRecentDocuments(electron),
       electronHostAppUserModelId(electron),
     );
-    return finishEntity(win) as ElectronAppCapabilitiesFor<Profile>;
+    return Object.freeze(win) as ElectronAppCapabilitiesFor<Profile>;
   }
 
-  const linux = allocateEntity<ElectronLinuxAppCapabilities>();
+  const linux = {} as { -readonly [K in keyof ElectronLinuxAppCapabilities]: ElectronLinuxAppCapabilities[K] };
   populateElectronHostAppLinux(linux, common, electronHostAppBadge(electron));
-  return finishEntity(linux) as ElectronAppCapabilitiesFor<Profile>;
+  return Object.freeze(linux) as ElectronAppCapabilitiesFor<Profile>;
 }
 
 export function electronHostAppActivate(electron: ElectronApi): HostAppActivateCapability {
@@ -234,7 +232,7 @@ export function populateElectronHostAppBadge(out: HostAppBadgeCapability, app: E
 }
 
 export function populateElectronHostAppCommon(
-  out: EntityConstruction<ElectronCommonAppCapabilities>,
+  out: { -readonly [K in keyof ElectronCommonAppCapabilities]: ElectronCommonAppCapabilities[K] },
   allWindowsClosed: HostAppAllWindowsClosedCapability,
   focus: HostAppFocusCapability,
   locale: HostAppLocaleCapability,
@@ -287,7 +285,7 @@ export function populateElectronHostAppHide(out: HostAppHideCapability, app: Ele
 }
 
 export function populateElectronHostAppLinux(
-  out: EntityConstruction<ElectronLinuxAppCapabilities>,
+  out: { -readonly [K in keyof ElectronLinuxAppCapabilities]: ElectronLinuxAppCapabilities[K] },
   common: Readonly<ElectronCommonAppCapabilities>,
   badge: HostAppBadgeCapability,
 ): void {
@@ -334,7 +332,7 @@ export function populateElectronHostAppLoginItem(out: HostAppLoginItemCapability
 }
 
 export function populateElectronHostAppMacos(
-  out: EntityConstruction<ElectronMacosAppCapabilities>,
+  out: { -readonly [K in keyof ElectronMacosAppCapabilities]: ElectronMacosAppCapabilities[K] },
   common: Readonly<ElectronCommonAppCapabilities>,
   activate: HostAppActivateCapability,
   activationPolicy: HostAppActivationPolicyCapability,
@@ -459,7 +457,7 @@ export function populateElectronHostAppVersion(out: HostAppVersionCapability, ap
 }
 
 export function populateElectronHostAppWindows(
-  out: EntityConstruction<ElectronWindowsAppCapabilities>,
+  out: { -readonly [K in keyof ElectronWindowsAppCapabilities]: ElectronWindowsAppCapabilities[K] },
   common: Readonly<ElectronCommonAppCapabilities>,
   loginItem: HostAppLoginItemCapability,
   recentDocuments: HostAppRecentDocumentsCapability,

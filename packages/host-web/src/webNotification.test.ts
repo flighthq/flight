@@ -7,7 +7,7 @@ import type {
   WebPageNotificationInstance,
 } from '@flighthq/types/contract';
 
-import { createWebPageNotificationCapabilities, initializeWebPageNotificationCapabilities } from './webNotification';
+import { createWebPageNotificationCapabilities } from './webNotification';
 
 interface FakeWebNotification extends WebPageNotificationInstance {
   options?: Readonly<WebNotificationOptions>;
@@ -51,7 +51,6 @@ describe('createWebPageNotificationCapabilities', () => {
   it('constructs the exact page profile without scheduling, reply, or update', () => {
     const { api, permission } = fakeWebPage();
     const capabilities = createWebPageNotificationCapabilities(api, permission);
-    expect(EntityRuntimeKey in capabilities).toBe(true);
     expect(Object.keys(capabilities).sort()).toEqual([
       'click',
       'close',
@@ -112,10 +111,5 @@ describe('createWebPageNotificationCapabilities', () => {
     });
     expect(firstCloses).toBe(1);
     expect(secondCloses).toBe(2);
-  });
-});
-describe('initializeWebPageNotificationCapabilities', () => {
-  it('is the construction initializer of createWebPageNotificationCapabilities', () => {
-    expect(typeof initializeWebPageNotificationCapabilities).toBe('function');
   });
 });

@@ -1,8 +1,6 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   ElectronPowerCapabilities,
-  EntityConstruction,
   HostPowerBatteryHealthCapability,
   HostPowerChangeCapability,
   HostPowerIdleCapability,
@@ -33,7 +31,7 @@ function finishProvider<Provider>(populate: (out: Provider) => void): Provider {
 // Electron omits nothing here except low-power mode, which its powerMonitor cannot report at all — so
 // there is no such slot rather than an inert subscription.
 export function electronHostPower(electron: ElectronApi): ElectronPowerCapabilities {
-  const providers = allocateEntity<ElectronPowerCapabilities>();
+  const providers = {} as { -readonly [K in keyof ElectronPowerCapabilities]: ElectronPowerCapabilities[K] };
   populateElectronHostPower(
     providers,
     electronHostPowerBatteryHealth(electron),
@@ -51,7 +49,7 @@ export function electronHostPower(electron: ElectronApi): ElectronPowerCapabilit
   // rather than shipping a void event whose state is permanently 'Unknown'.
   const thermal = electronHostPowerThermal(electron);
   if (thermal !== undefined) providers.thermal = thermal;
-  return finishEntity(providers);
+  return Object.freeze(providers) as ElectronPowerCapabilities;
 }
 
 export function electronHostPowerBatteryHealth(_electron: ElectronApi): HostPowerBatteryHealthCapability {
@@ -90,7 +88,7 @@ export function electronHostPowerThermal(electron: ElectronApi): HostPowerTherma
 }
 
 export function populateElectronHostPower(
-  out: EntityConstruction<ElectronPowerCapabilities>,
+  out: { -readonly [K in keyof ElectronPowerCapabilities]: ElectronPowerCapabilities[K] },
   batteryHealth: HostPowerBatteryHealthCapability,
   change: HostPowerChangeCapability,
   idle: HostPowerIdleCapability,

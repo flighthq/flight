@@ -120,22 +120,19 @@ export interface HostPowerThermalCapability {
   subscribeThermalStateChange(listener: (state: PowerThermalState) => void): () => void;
 }
 
-// Concrete platform capability bundles carry identity because their create functions construct and
-// return them as one composed entity. HostPowerCapabilities itself stays structural so callers can
-// describe arbitrary partial host coverage without manufacturing an identity-bearing wrapper.
-export type ElectronPowerCapabilities = Entity &
-  Required<
-    Pick<
-      HostPowerCapabilities,
-      'batteryHealth' | 'change' | 'idle' | 'keepAwake' | 'sessionLock' | 'status' | 'suspension'
-    >
-  > &
+export type ElectronPowerCapabilities = Required<
+  Pick<
+    HostPowerCapabilities,
+    'batteryHealth' | 'change' | 'idle' | 'keepAwake' | 'sessionLock' | 'status' | 'suspension'
+  >
+> &
   Pick<HostPowerCapabilities, 'thermal'>;
 
-export type WebPowerReadingCapabilities = Entity & Required<Pick<HostPowerCapabilities, 'change' | 'status'>>;
+export type WebPowerReadingCapabilities = Required<Pick<HostPowerCapabilities, 'change' | 'status'>>;
 
-export type WebPowerCapabilities = Entity &
-  Required<Pick<HostPowerCapabilities, 'change' | 'keepAwake' | 'status' | 'suspension'>>;
+export type WebPowerCapabilities = Required<
+  Pick<HostPowerCapabilities, 'change' | 'keepAwake' | 'status' | 'suspension'>
+>;
 
 // The consumer-held power event entity. Signals are null until enablePowerSignals allocates them, so an
 // unused group tree-shakes out. Entity-composed: this is a user-held identity-bearing object, unlike the

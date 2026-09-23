@@ -1,4 +1,3 @@
-import { allocateEntity } from '@flighthq/entity/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type {
   DesktopOsProfile,
@@ -8,7 +7,6 @@ import type {
   ElectronRectangle,
   ElectronTray,
   ElectronTrayCapabilitiesFor,
-  Entity,
   HostTrayCapabilities,
   MenuItemTemplate,
   Signal,
@@ -143,11 +141,7 @@ export function electronHostTray<Profile extends DesktopOsProfile>(
         return out;
       })(),
     };
-    // The conditional type ElectronTrayCapabilitiesFor<Profile> cannot be resolved by EntityConstruction
-    // when Profile is generic, so the outer entity uses Entity and casts the result.
-    const out = allocateEntity<Entity>();
-    Object.assign(out, common, macos);
-    return out as unknown as ElectronTrayCapabilitiesFor<Profile>;
+    return Object.freeze({ ...common, ...macos }) as unknown as ElectronTrayCapabilitiesFor<Profile>;
   }
 
   if (profile === 'windows') {
@@ -163,16 +157,10 @@ export function electronHostTray<Profile extends DesktopOsProfile>(
         return out;
       })(),
     };
-    const out = allocateEntity<Entity>();
-    Object.assign(out, common, windows);
-    return out as unknown as ElectronTrayCapabilitiesFor<Profile>;
+    return Object.freeze({ ...common, ...windows }) as unknown as ElectronTrayCapabilitiesFor<Profile>;
   }
 
-  // The double cast is what a generic conditional return costs; allocateEntity/finishEntity is what
-  // makes the Entity arm of that claim true at runtime rather than only in the annotation.
-  const out = allocateEntity<Entity>();
-  Object.assign(out, common);
-  return out as unknown as ElectronTrayCapabilitiesFor<Profile>;
+  return Object.freeze({ ...common }) as unknown as ElectronTrayCapabilitiesFor<Profile>;
 }
 
 export function electronHostTrayBalloon(electron: ElectronApi): HostTrayBalloonCapability {

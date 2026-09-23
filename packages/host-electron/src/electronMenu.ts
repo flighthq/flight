@@ -1,8 +1,6 @@
-import { allocateEntity } from '@flighthq/entity/contract';
 import type {
   ElectronApi,
   ElectronMenuCapabilities,
-  EntityConstruction,
   HostAppMenuCapability,
   HostMenuPopupCapability,
   HostMenuSelectCapability,
@@ -50,9 +48,9 @@ export function electronHostMenu(electron: ElectronApi): ElectronMenuCapabilitie
   const application = menuApplication(electron, state);
   const popup = electronHostMenuPopup(electron);
   const select = menuSelect(state);
-  const out = allocateEntity<ElectronMenuCapabilities>();
+  const out = {} as { -readonly [K in keyof ElectronMenuCapabilities]: ElectronMenuCapabilities[K] };
   populateElectronHostMenu(out, application, popup, select);
-  return out;
+  return Object.freeze(out) as ElectronMenuCapabilities;
 }
 
 export function electronHostMenuPopup(electron: ElectronApi): HostMenuPopupCapability {
@@ -86,7 +84,7 @@ export function populateElectronHostAppMenu(
 }
 
 export function populateElectronHostMenu(
-  out: EntityConstruction<ElectronMenuCapabilities>,
+  out: { -readonly [K in keyof ElectronMenuCapabilities]: ElectronMenuCapabilities[K] },
   app: HostAppMenuCapability,
   popup: HostMenuPopupCapability,
   select: HostMenuSelectCapability,

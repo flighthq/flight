@@ -1,17 +1,8 @@
 import { invalidateImageResource, unregisterHostImageDimensionResolver } from '@flighthq/image/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import {
-  createWebImageSurfaceCreator,
-  initializeWebImageSurfaceCreator,
-  webImageSurfaceCreator,
-} from './webImageSurface';
+import { createWebImageSurfaceCreator, webImageSurfaceCreator } from './webImageSurface';
 
 describe('createWebImageSurfaceCreator', () => {
-  it('returns an Entity', () => {
-    expect(EntityRuntimeKey in createWebImageSurfaceCreator()).toBe(true);
-  });
-
   it('returns a fresh instance on each call', () => {
     expect(createWebImageSurfaceCreator()).not.toBe(createWebImageSurfaceCreator());
   });
@@ -65,16 +56,7 @@ describe('createWebImageSurfaceCreator', () => {
   });
 });
 
-describe('initializeWebImageSurfaceCreator', () => {
-  it('is the construction initializer of createWebImageSurfaceCreator', () => {
-    expect(typeof initializeWebImageSurfaceCreator).toBe('function');
-  });
-});
 describe('webImageSurfaceCreator', () => {
-  it('is an Entity', () => {
-    expect(EntityRuntimeKey in webImageSurfaceCreator).toBe(true);
-  });
-
   it('is a stable singleton', () => {
     expect(webImageSurfaceCreator).toBe(webImageSurfaceCreator);
   });
