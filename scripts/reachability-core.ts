@@ -418,7 +418,7 @@ function registrarMechanismShape(declaration: Node): RegistrarMechanismShape | n
   visitWithAncestors(declaration, [], (node, ancestors) => {
     if (
       node.type !== 'CallExpression' ||
-      (!isRegistrationCall(node.callee) && !isPersistentRegistryTableRegistrationCall(node.callee))
+      (!isRegistrationCall(node.callee) && !isPersistentKindMapRegistrationCall(node.callee))
     ) {
       return;
     }
@@ -431,7 +431,7 @@ function registrarMechanismShape(declaration: Node): RegistrarMechanismShape | n
       batch = true;
       return;
     }
-    if (isPersistentRegistryTableRegistrationCall(node.callee)) {
+    if (isPersistentKindMapRegistrationCall(node.callee)) {
       const kind = node.arguments[1];
       if (kind !== undefined && expressionReferencesAny(kind, callerValues)) direct = true;
       return;
@@ -586,8 +586,11 @@ function isRegistrationCall(callee: Node): boolean {
   );
 }
 
-function isPersistentRegistryTableRegistrationCall(callee: Node): boolean {
-  return callee.type === 'Identifier' && callee.name === 'withRegistryTableEntry';
+// Recognizes the copy-on-write kind-map registrar from @flighthq/registry. It is the one registration
+// form that is neither a register*() call nor a .set() on a table, so the walk must name it explicitly
+// — which also means a rename of the helper silently blinds this detector rather than failing it.
+function isPersistentKindMapRegistrationCall(callee: Node): boolean {
+  return callee.type === 'Identifier' && callee.name === 'withKindMapEntry';
 }
 
 function registrationPairArguments(args: readonly Node[]): { kind: Node; implementation: Node } | null {
