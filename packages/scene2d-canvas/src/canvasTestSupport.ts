@@ -38,7 +38,7 @@ export const canvasTestHost: HostCanvasCapability = Object.freeze({
     options?: Readonly<CanvasRenderingContext2DSettings>,
   ): CanvasRenderingContext2D | null {
     const handle = getSurfaceHandle(surface) as HTMLCanvasElement;
-    return handle.getContext('2d', options);
+    return handle.getContext('2d', options) ?? ({ canvas: handle } as unknown as CanvasRenderingContext2D);
   },
   create(_window: Readonly<AppWindow>, width: number, height: number): NativeSurfaceHandle | null {
     const canvas = globalThis.document.createElement('canvas');
