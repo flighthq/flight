@@ -151,7 +151,6 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
     contractOnlyExports: [
       'getSpineBinarySectionHandler',
       'getSpineBinaryTimelineHandler',
-      'initializeSpineBinaryRegistry',
       'spineBinaryAnimationsSectionHandler',
       'spineBinaryBonesSectionHandler',
       'spineBinaryEventsSectionHandler',
@@ -227,7 +226,6 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
       'importRiveTextComponent',
       'initializeRiveArtboardImportContext',
       'initializeRiveDocumentImportContext',
-      'initializeRiveImportRegistry',
       'rebuildRiveShapes',
     ],
     families: [
