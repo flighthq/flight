@@ -1,4 +1,4 @@
-import { getCanvasHostSurface } from '@flighthq/render/contract';
+import { getCanvasSurfaceHost } from '@flighthq/scene2d-canvas/contract';
 import type {
   CanvasEffectRunner,
   CanvasRenderState,
@@ -51,7 +51,7 @@ export function applyDropShadowEffectToCanvas(
 
   const pool =
     maybeEffect === undefined
-      ? createCanvasTextureRenderTargetPool(getCanvasHostSurface(source.surface)!)
+      ? createCanvasTextureRenderTargetPool(getCanvasSurfaceHost(source.surface)!)
       : (poolOrEffect as CanvasRenderTargetPool);
   applyDropShadowEffectToCanvasWithPool(source, dest, pool, effect);
 }
