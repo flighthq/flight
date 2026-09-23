@@ -1,11 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { createRegistryCatalog } from '@flighthq/registry-catalog/contract';
-import type { RegistryCatalogEntry, RequirementSet } from '@flighthq/types/contract';
+import { createRequirementCatalog } from '@flighthq/requirement-catalog/contract';
+import type { RequirementCatalogEntry, RequirementSet } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RequirementFacet } from '@flighthq/types/contract';
 
-import { createRegistryCodegenPlan, initializeRegistryCodegenPlan } from './registryCodegen';
+import { createRequirementCodegenPlan, initializeRequirementCodegenPlan } from './requirementCodegen';
 
-const shapeRenderer: RegistryCatalogEntry = {
+const shapeRenderer: RequirementCatalogEntry = {
   backend: 'webgl',
   facet: RequirementFacet.SceneNodeKind,
   implementationImport: '@flighthq/scene2d-gl',
@@ -15,15 +15,15 @@ const shapeRenderer: RegistryCatalogEntry = {
   registrarSymbol: 'registerNodeRenderer',
 };
 
-const shapeCommands: RegistryCatalogEntry = {
+const shapeCommands: RequirementCatalogEntry = {
   ...shapeRenderer,
   registrarImport: '@flighthq/scene2d-gl',
   registrarSymbol: 'registerGlShapeCommands',
 };
 
-describe('createRegistryCodegenPlan', () => {
+describe('createRequirementCodegenPlan', () => {
   it('selects the matching backend rows in requirement and catalog order', () => {
-    const catalog = createRegistryCatalog([shapeRenderer, shapeCommands, { ...shapeRenderer, backend: 'webgpu' }]);
+    const catalog = createRequirementCatalog([shapeRenderer, shapeCommands, { ...shapeRenderer, backend: 'webgpu' }]);
     const requirements = (() => {
       const out = allocateEntity<RequirementSet>();
       out.covers = [RequirementFacet.SceneNodeKind];
@@ -34,7 +34,7 @@ describe('createRegistryCodegenPlan', () => {
       return finishEntity(out);
     })();
 
-    const plan = createRegistryCodegenPlan(catalog, requirements, 'webgl');
+    const plan = createRequirementCodegenPlan(catalog, requirements, 'webgl');
     expect(EntityRuntimeKey in plan).toBe(true);
     expect(plan).toMatchObject({
       backend: 'webgl',
@@ -44,7 +44,7 @@ describe('createRegistryCodegenPlan', () => {
   });
 
   it('deduplicates repeated positive requirements without treating covers as requests', () => {
-    const catalog = createRegistryCatalog([shapeRenderer]);
+    const catalog = createRequirementCatalog([shapeRenderer]);
     const requirement = { facet: RequirementFacet.SceneNodeKind, key: 'Shape' } as const;
     const requirements = (() => {
       const out = allocateEntity<RequirementSet>();
@@ -53,7 +53,7 @@ describe('createRegistryCodegenPlan', () => {
       return finishEntity(out);
     })();
 
-    expect(createRegistryCodegenPlan(catalog, requirements, 'webgl')).toMatchObject({
+    expect(createRequirementCodegenPlan(catalog, requirements, 'webgl')).toMatchObject({
       backend: 'webgl',
       entries: [shapeRenderer],
       unresolved: [],
@@ -62,8 +62,8 @@ describe('createRegistryCodegenPlan', () => {
 
   it('returns an empty plan for empty catalog contents and requirements', () => {
     expect(
-      createRegistryCodegenPlan(
-        createRegistryCatalog(),
+      createRequirementCodegenPlan(
+        createRequirementCatalog(),
         (() => {
           const out = allocateEntity<any>();
           out.covers = [];
@@ -79,8 +79,8 @@ describe('createRegistryCodegenPlan', () => {
     });
   });
 });
-describe('initializeRegistryCodegenPlan', () => {
-  it('is the construction initializer of createRegistryCodegenPlan', () => {
-    expect(typeof initializeRegistryCodegenPlan).toBe('function');
+describe('initializeRequirementCodegenPlan', () => {
+  it('is the construction initializer of createRequirementCodegenPlan', () => {
+    expect(typeof initializeRequirementCodegenPlan).toBe('function');
   });
 });

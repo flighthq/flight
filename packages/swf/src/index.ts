@@ -17,7 +17,8 @@ export {
 } from './swfDocument';
 export * from './swfEditText';
 export * from './swfEditTextHandler';
-export * from './swfExplain';
+export * from './swfHeader';
+export * from './swfRequirements';
 export { readSwfFilterList } from './swfFilter';
 export * from './swfFontHandler';
 export * from './swfFontTagFamily';

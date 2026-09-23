@@ -283,16 +283,16 @@
       "path": "../render-wgpu"
     },
     {
-      "path": "../requirements"
+      "path": "../requirement"
     },
     {
       "path": "../registry"
     },
     {
-      "path": "../registry-catalog"
+      "path": "../requirement-catalog"
     },
     {
-      "path": "../registry-codegen"
+      "path": "../requirement-codegen"
     },
     {
       "path": "../scene3d"

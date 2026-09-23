@@ -1,12 +1,12 @@
 {
-  "name": "@flighthq/requirements",
+  "name": "@flighthq/requirement-codegen",
   "version": "0.5.0",
   "author": "Joshua Granick and other contributors",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/flighthq/flight.git",
-    "directory": "packages/requirements"
+    "directory": "packages/requirement-codegen"
   },
   "type": "module",
   "main": "dist/index.js",
@@ -39,11 +39,12 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
+    "@flighthq/requirement-catalog": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"
   },
-  "description": "Plain requirement collection and set algebra for content-to-registration resolution",
+  "description": "Emission-neutral planning kernel for selective registry generation",
   "sideEffects": false
 }

@@ -161,25 +161,6 @@ export interface SwfTagTimelineState {
   streamStartFrame: number;
 }
 
-/** One entry in the manifest `explainSwfContent` returns. */
-export interface SwfContentEntry {
-  code: number;
-  count: number;
-  handled: boolean;
-  name: string;
-}
-
-/**
- * Plain-data manifest describing what a SWF file contains, without interpreting any tag
- * bodies. The diagnostic companion to `createScene2DFromSwf`.
- */
-export interface SwfContentManifest {
-  entries: SwfContentEntry[];
-  frameRate: number;
-  stageBounds: SwfTagRectangle | null;
-  totalTags: number;
-}
-
 /**
  * The finished parse of one SWF file: every definition the tag walk collected, joined to the root
  * timeline it produced. It is the same object the handlers wrote into rather than a copy, so a Texture a

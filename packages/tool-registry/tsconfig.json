@@ -9,6 +9,6 @@
     "sourceMap": true,
     "types": ["node", "vitest/globals"]
   },
-  "references": [{ "path": "../registry-catalog" }],
+  "references": [{ "path": "../requirement-catalog" }],
   "include": ["src"]
 }

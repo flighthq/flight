@@ -41,8 +41,14 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "devDependencies": {
+    "@flighthq/compression": "*",
     "typescript": "^5.3.0"
   },
   "description": "Domain-agnostic build manifest model, content-analysis mapping, diffing and TypeScript codegen",
-  "sideEffects": false
+  "sideEffects": false,
+  "dependencies": {
+    "@flighthq/requirement": "*",
+    "@flighthq/swf": "*",
+    "@flighthq/types": "*"
+  }
 }
