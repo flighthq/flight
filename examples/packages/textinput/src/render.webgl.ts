@@ -58,6 +58,7 @@ export const state = createGlRenderState(glSurface.context, {
   pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',
   canvasHost: webHostCanvas,
+  imageHost: webHostImage,
 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
 enableFlightDiagnostics(state);
