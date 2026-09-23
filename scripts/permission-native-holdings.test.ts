@@ -44,7 +44,7 @@ describe('permission host ownership', () => {
   it('makes the page Notification profile consume the provider instead of a second native owner', () => {
     const source = readFileSync(resolve('packages/host-web/src/webNotification.ts'), 'utf8');
     expect(source).toContain('hostNotificationPermission: Readonly<HostNotificationPermissionCapability>');
-    expect(source).toContain('out.permission = hostNotificationPermission;');
+    expect(source).toContain('permission: hostNotificationPermission,');
     expect(source).not.toMatch(/api\.Notification\.permission/u);
     expect(source).not.toMatch(/api\.Notification\.requestPermission/u);
   });

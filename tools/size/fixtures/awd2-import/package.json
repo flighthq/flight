@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "flightSize": {
+    "kind": "size-only-control",
     "name": "awd2-import"
   }
 }

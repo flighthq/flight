@@ -79,7 +79,6 @@ describe('Scene3D second-wave size fixture isolation', () => {
       '@flighthq/lighting',
       '@flighthq/render',
       `@flighthq/render-${backend}`,
-      ...(backend === 'wgpu' ? ['@flighthq/render-wgpu/contract'] : []),
       '@flighthq/scene3d',
       `@flighthq/scene3d-${backend}`,
       '@flighthq/surface',

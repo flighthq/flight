@@ -26,7 +26,7 @@ import type {
 } from '@flighthq/types/contract';
 
 export function capacitorHostNotification(capacitor: CapacitorApi): CapacitorNotificationCapabilities {
-  return createCapacitorNotificationCapabilities(capacitor);
+  return buildCapacitorHostNotification(capacitor);
 }
 
 export function capacitorHostNotificationAction(capacitor: CapacitorApi): HostNotificationActionCapability {
@@ -53,7 +53,7 @@ export function capacitorHostNotificationScheduling(capacitor: CapacitorApi): Ho
   return capacitorHostNotification(capacitor).scheduling;
 }
 
-function createCapacitorNotificationCapabilities(capacitor: CapacitorApi): CapacitorNotificationCapabilities {
+function buildCapacitorHostNotification(capacitor: CapacitorApi): CapacitorNotificationCapabilities {
   const notifications = capacitor.localNotifications;
   const notificationByNumber = new Map<number, Notification>();
   const scheduledByNumber = new Map<number, ScheduledNotification>();
