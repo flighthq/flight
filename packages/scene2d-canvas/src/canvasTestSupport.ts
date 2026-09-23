@@ -1,4 +1,3 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   CanvasRenderOptions,
   CanvasRenderState,
@@ -9,9 +8,7 @@ import type {
   CanvasTextureRenderTarget,
   RenderTargetClear,
   CanvasTextureResolvers,
-  EntityConstruction,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { beginCanvasRenderPass } from './canvasRenderPass';
 import { createCanvasRenderState as createExplicitCanvasRenderState } from './canvasRenderState';
@@ -31,26 +28,20 @@ export * from './canvasScreenRenderTarget';
 export * from './canvasTextureRenderTarget';
 export * from './canvasTextureResolver';
 
-export const canvasTestSurfaceCreator: CanvasRenderSurfaceCreator = (() => {
-  const creator = allocateEntity<CanvasRenderSurfaceCreator>();
-  initializeCanvasRenderSurfaceCreator(
-    creator,
-    (width: number, height: number, pixelRatio: number): HTMLCanvasElement => {
-      const canvas = globalThis.document.createElement('canvas');
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-      canvas.width = width * pixelRatio;
-      canvas.height = height * pixelRatio;
-      return canvas;
-    },
-    (canvas: HTMLCanvasElement): void => {
-      canvas.width = 0;
-      canvas.height = 0;
-    },
-  );
-  creator[EntityRuntimeKey] = { binding: null };
-  return finishEntity(creator);
-})();
+export const canvasTestSurfaceCreator: CanvasRenderSurfaceCreator = Object.freeze({
+  createRenderSurface(width: number, height: number, pixelRatio: number): HTMLCanvasElement {
+    const canvas = globalThis.document.createElement('canvas');
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    canvas.width = width * pixelRatio;
+    canvas.height = height * pixelRatio;
+    return canvas;
+  },
+  destroyRenderSurface(canvas: HTMLCanvasElement): void {
+    canvas.width = 0;
+    canvas.height = 0;
+  },
+});
 
 export function acquireTestCanvasRenderSurface(width = 1, height = 1): CanvasRenderSurface {
   const surface = acquireCanvasRenderSurface(canvasTestSurfaceCreator, { height, pixelRatio: 1, width });
@@ -101,13 +92,4 @@ export function createCanvasTextureRenderTarget(width: number, height: number): 
 
 export function createCanvasTextureResolvers(): CanvasTextureResolvers {
   return createExplicitCanvasTextureResolvers(canvasTestSurfaceCreator);
-}
-
-export function initializeCanvasRenderSurfaceCreator(
-  out: EntityConstruction<CanvasRenderSurfaceCreator>,
-  createRenderSurface: CanvasRenderSurfaceCreator['createRenderSurface'],
-  destroyRenderSurface: CanvasRenderSurfaceCreator['destroyRenderSurface'],
-): void {
-  out.createRenderSurface = createRenderSurface;
-  out.destroyRenderSurface = destroyRenderSurface;
 }
