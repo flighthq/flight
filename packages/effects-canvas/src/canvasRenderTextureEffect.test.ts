@@ -11,17 +11,13 @@ import {
 import type { CanvasEffectRunner } from '@flighthq/types/contract';
 
 import { getCanvasEffectRunner, registerCanvasEffect } from './canvasEffectRegistry';
-import {
-  acquireTestCanvasRenderSurface,
-  canvasTestSurfaceCreator,
-  createCanvasRenderState,
-} from './canvasEffectTestSupport';
+import { canvasTestHost, createCanvasRenderState } from './canvasEffectTestSupport';
 import { applyCanvasEffectsToRenderTexture } from './canvasRenderTextureEffect';
 
 describe('applyCanvasEffectsToRenderTexture', () => {
   it('ping-pongs an even registered chain so the last operation publishes destination', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
-    const pool = createCanvasRenderTexturePool(canvasTestSurfaceCreator);
+    const pool = createCanvasRenderTexturePool(canvasTestHost);
     const source = acquireCanvasRenderTexture(state, pool, { width: 8, height: 8 });
     const dest = acquireCanvasRenderTexture(state, pool, { width: 8, height: 8 });
     const scratch = acquireCanvasRenderTexture(state, pool, { width: 8, height: 8 });
@@ -55,7 +51,7 @@ describe('applyCanvasEffectsToRenderTexture', () => {
 
   it('leaves destination unpublished when no effect kind is registered', () => {
     const state = createCanvasRenderState(document.createElement('canvas'));
-    const pool = createCanvasRenderTexturePool(canvasTestSurfaceCreator);
+    const pool = createCanvasRenderTexturePool(canvasTestHost);
     const source = acquireCanvasRenderTexture(state, pool, { width: 8, height: 8 });
     const dest = acquireCanvasRenderTexture(state, pool, { width: 8, height: 8 });
     const scratch = acquireCanvasRenderTexture(state, pool, { width: 8, height: 8 });
@@ -80,10 +76,7 @@ describe('offscreen effect registration snapshots', () => {
     const first: CanvasEffectRunner = vi.fn();
     const later: CanvasEffectRunner = vi.fn();
     registerCanvasEffect(screen, 'acme.First', first);
-    const offscreen = createCanvasOffscreenRenderState(
-      screen.registries,
-      createCanvasTextureResolvers(canvasTestSurfaceCreator),
-    );
+    const offscreen = createCanvasOffscreenRenderState(screen.registries, createCanvasTextureResolvers(canvasTestHost));
     registerCanvasEffect(screen, 'acme.Later', later);
 
     expect(getCanvasEffectRunner(offscreen, 'acme.First')).toBe(first);

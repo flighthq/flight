@@ -1,5 +1,5 @@
 import {
-  acquireTestCanvasRenderSurface,
+  acquireTestCanvasSurface,
   beginCanvasScreenRenderPassForTest,
   createCanvasRenderState,
   createCanvasRenderStateWithoutPass,
@@ -10,12 +10,12 @@ import {
   getCanvasActiveRenderPass,
 } from './canvasTestSupport';
 
-describe('acquireTestCanvasRenderSurface', () => {
+describe('acquireTestCanvasSurface', () => {
   it('returns an owned test surface', () => {
-    const surface = acquireTestCanvasRenderSurface(12, 8);
+    const surface = acquireTestCanvasSurface(12, 8);
 
-    expect(surface.canvas.width).toBe(12);
-    expect(surface.canvas.height).toBe(8);
+    expect(surface.context.canvas.width).toBe(12);
+    expect(surface.context.canvas.height).toBe(8);
   });
 });
 
@@ -47,8 +47,9 @@ describe('createCanvasRenderStateWithoutPass', () => {
     expect(getCanvasActiveRenderPass(state)).toBeNull();
   });
 });
+
 describe('createCanvasScreenRenderTargetForTest', () => {
-  it('wraps a canvas as a screen target through the test creator', () => {
+  it('wraps a canvas as a screen target through the test host', () => {
     const canvas = document.createElement('canvas');
     canvas.width = 64;
     canvas.height = 32;

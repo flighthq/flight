@@ -1,4 +1,5 @@
-import type { ImageSurface } from './ImageSurface';
+import type { CanvasSurface } from './CanvasSurface';
+import type { ImageResource } from './ImageResource';
 import type { RendererData } from './RendererData';
 import type { WgpuShapeMeshBuffers } from './WgpuRenderState';
 import type { WgpuShapeMesh } from './WgpuShapeMesh';
@@ -8,16 +9,18 @@ import type { WgpuShapeMesh } from './WgpuShapeMesh';
 // hybrid that composes them — are separate modules so an app pays only for the one it registers, and all
 // three read and write this same per-node cache. Mirrors GlShapeRendererData.
 //
-// The two halves are independent: `meshes` plus `meshBuffers` cache the tessellated form, and `surface`
-// plus the last* fields cache the rasterized form. A strategy touches only its own half, and the surface
-// is allocated on first rasterization rather than with the node, so a mesh-only scene carries none.
+// The two halves are independent: `meshes` plus `meshBuffers` cache the tessellated form, and
+// `surface`/`image` plus the last* fields cache the rasterized form. A strategy touches only its own half,
+// and the surface is allocated on first rasterization rather than with the node, so a mesh-only scene
+// carries none. `surface` provides the 2D drawing context; `image` is the uploadable texture source.
 export interface WgpuShapeRendererData extends RendererData {
-  surface: ImageSurface | null;
+  image: ImageResource | null;
   lastContentId: number;
+  lastH: number;
   lastPixelRatio: number;
   lastW: number;
-  lastH: number;
+  meshBuffers: WgpuShapeMeshBuffers;
   meshVersion: number;
   meshes: WgpuShapeMesh[] | null;
-  meshBuffers: WgpuShapeMeshBuffers;
+  surface: CanvasSurface | null;
 }

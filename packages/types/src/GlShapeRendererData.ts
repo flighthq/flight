@@ -1,5 +1,6 @@
+import type { CanvasSurface } from './CanvasSurface';
 import type { GlShapeMesh } from './GlShapeMesh';
-import type { ImageSurface } from './ImageSurface';
+import type { ImageResource } from './ImageResource';
 import type { RendererData } from './RendererData';
 
 // NodeRenderer-private scratch for a Shape node on the WebGL backend, held in the opaque RendererData slot.
@@ -8,13 +9,15 @@ import type { RendererData } from './RendererData';
 // three read and write this same per-node cache.
 //
 // The two halves are independent: `meshes` caches the tessellated form (null when some region has none),
-// and `surface` plus the last* fields cache the rasterized form. A strategy touches only its own half.
+// and `surface`/`image` plus the last* fields cache the rasterized form. A strategy touches only its own
+// half. `surface` provides the 2D drawing context; `image` is the uploadable texture source.
 export interface GlShapeRendererData extends RendererData {
-  surface: ImageSurface | null;
+  image: ImageResource | null;
   lastContentId: number;
+  lastH: number;
   lastPixelRatio: number;
   lastW: number;
-  lastH: number;
   meshVersion: number;
   meshes: GlShapeMesh[] | null;
+  surface: CanvasSurface | null;
 }

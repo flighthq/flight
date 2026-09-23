@@ -1,18 +1,18 @@
 import { getCanvasActiveRenderPass } from '@flighthq/scene2d-canvas/contract';
 
 import {
-  acquireTestCanvasRenderSurface,
+  acquireTestCanvasSurface,
   createCanvasRenderState,
   createCanvasRenderStateWithoutPass,
   createCanvasTextureRenderTarget,
 } from './canvasEffectTestSupport';
 
-describe('acquireTestCanvasRenderSurface', () => {
+describe('acquireTestCanvasSurface', () => {
   it('returns an owned effect-test surface', () => {
-    const surface = acquireTestCanvasRenderSurface(12, 8);
+    const surface = acquireTestCanvasSurface(12, 8);
 
-    expect(surface.canvas.width).toBe(12);
-    expect(surface.canvas.height).toBe(8);
+    expect(surface.context.canvas.width).toBe(12);
+    expect(surface.context.canvas.height).toBe(8);
   });
 });
 

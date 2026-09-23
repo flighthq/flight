@@ -20,7 +20,7 @@ import {
   releaseCanvasRenderCache,
 } from './canvasCache';
 import {
-  acquireTestCanvasRenderSurface,
+  acquireTestCanvasSurface,
   beginCanvasRenderPass,
   createCanvasRenderState,
   createCanvasTextureRenderTarget,

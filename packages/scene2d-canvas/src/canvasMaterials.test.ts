@@ -4,22 +4,17 @@ import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 import { applyCanvasBlendMode, enableCanvasBlendMode } from './canvasMaterials';
 import { allocateEmptyCanvasRenderRegistries } from './canvasPipeline';
 import { createCanvasRenderState as createExplicitCanvasRenderState } from './canvasRenderState';
-import { createCanvasRenderSurface } from './canvasRenderSurface';
 import {
   beginCanvasRenderPass,
-  canvasTestSurfaceCreator,
   createCanvasRenderState,
-  createCanvasScreenRenderTarget,
+  createCanvasScreenRenderTargetForTest,
   createCanvasTextureResolvers,
   getCanvasRenderStateRuntime,
 } from './canvasTestSupport';
 
 function createBlendlessState(canvas: HTMLCanvasElement): CanvasRenderState {
   const state = createExplicitCanvasRenderState(allocateEmptyCanvasRenderRegistries(), createCanvasTextureResolvers());
-  beginCanvasRenderPass(
-    state,
-    createCanvasScreenRenderTarget(createCanvasRenderSurface(canvasTestSurfaceCreator, canvas)),
-  );
+  beginCanvasRenderPass(state, createCanvasScreenRenderTargetForTest(canvas));
   return state;
 }
 

@@ -1,119 +1,99 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability } from '@flighthq/types/contract';
 
 import { createCanvasRenderState } from './canvasRenderState';
 import {
-  acquireCanvasRenderSurface,
-  createCanvasRenderSurface,
-  destroyCanvasRenderSurface,
-  getCanvasSurfaceCreator,
-  initializeCanvasRenderSurface,
-  registerCanvasSurfaceCreator,
+  acquireCanvasSurface,
+  destroyCanvasSurfaceOwned,
+  getCanvasHost,
+  registerCanvasHost,
 } from './canvasRenderSurface';
-import { canvasTestSurfaceCreator, createCanvasTextureResolvers } from './canvasTestSupport';
+import { canvasTestHost, createCanvasTextureResolvers } from './canvasTestSupport';
 import { canvasScene2DRenderPreset } from './scene2DCanvasPipeline';
 
-function makeCreator(createRenderSurface = () => document.createElement('canvas')) {
-  const destroyRenderSurface = vi.fn((canvas: HTMLCanvasElement) => {
-    canvas.width = 0;
-    canvas.height = 0;
-  });
-  const creator = (() => {
-    const out = allocateEntity<any>();
-    out.createRenderSurface = createRenderSurface;
-    out.destroyRenderSurface = destroyRenderSurface;
-    return finishEntity(out);
-  })();
-  return { creator, destroyRenderSurface };
+function mockHost(overrides: Partial<HostCanvasCapability> = {}): HostCanvasCapability {
+  return {
+    acquire: () => null,
+    create: () => null,
+    createImageResource: () => ({}) as any,
+    createSurface: overrides.createSurface ?? (() => null),
+    destroySurface: overrides.destroySurface ?? (() => {}),
+    release: () => {},
+    ...overrides,
+  } as HostCanvasCapability;
 }
 
-describe('acquireCanvasRenderSurface', () => {
-  it('publishes a complete Entity only after context acquisition succeeds', () => {
-    const { creator } = makeCreator();
-    const surface = acquireCanvasRenderSurface(creator, { height: 24, pixelRatio: 2, width: 32 });
+describe('acquireCanvasSurface', () => {
+  it('passes exact dimensions through the given host and preserves its result', () => {
+    const surface = {} as CanvasSurface;
+    const createSurface = vi.fn(() => surface);
+    const host = mockHost({ createSurface });
 
-    expect(surface).not.toBeNull();
-    expect(surface![EntityRuntimeKey]).toEqual({ binding: null });
-    expect(surface!.creator).toBe(creator);
-    expect(surface!.context).not.toBeNull();
+    expect(acquireCanvasSurface(host, 30, 40)).toBe(surface);
+    expect(createSurface).toHaveBeenCalledOnce();
+    expect(createSurface).toHaveBeenCalledWith(30, 40);
   });
 
-  it('destroys the raw canvas and returns null when context acquisition fails', () => {
-    const canvas = document.createElement('canvas');
-    canvas.getContext = vi.fn().mockReturnValue(null);
-    const { creator, destroyRenderSurface } = makeCreator(() => canvas);
-
-    expect(acquireCanvasRenderSurface(creator, { height: 24, pixelRatio: 2, width: 32 })).toBeNull();
-    expect(destroyRenderSurface).toHaveBeenCalledOnce();
-    expect(destroyRenderSurface).toHaveBeenCalledWith(canvas);
-  });
-
-  it('stores a frozen copy of its acquisition options', () => {
-    const { creator } = makeCreator();
-    const options = { height: 24, pixelRatio: 2, width: 32 };
-    const surface = acquireCanvasRenderSurface(creator, options)!;
-    options.width = 99;
-
-    expect(surface.options).toEqual({ contextAttributes: undefined, height: 24, pixelRatio: 2, width: 32 });
-    expect(Object.isFrozen(surface.options)).toBe(true);
+  it('preserves host refusal as expected absence', () => {
+    const host = mockHost({ createSurface: () => null });
+    expect(acquireCanvasSurface(host, 10, 20)).toBeNull();
   });
 });
 
-describe('createCanvasRenderSurface', () => {
-  it('wraps a caller-owned canvas without claiming teardown ownership', () => {
-    const canvas = document.createElement('canvas');
-    const { creator, destroyRenderSurface } = makeCreator();
-    const surface = createCanvasRenderSurface(creator, canvas);
+describe('destroyCanvasSurfaceOwned', () => {
+  it('routes each surface to its host even when different hosts were used', () => {
+    const firstSurface = {} as CanvasSurface;
+    const secondSurface = {} as CanvasSurface;
+    const firstDestroy = vi.fn();
+    const secondDestroy = vi.fn();
+    const first = mockHost({ createSurface: () => firstSurface, destroySurface: firstDestroy });
+    const second = mockHost({ createSurface: () => secondSurface, destroySurface: secondDestroy });
 
-    destroyCanvasRenderSurface(surface);
+    expect(acquireCanvasSurface(first, 10, 20)).toBe(firstSurface);
+    expect(acquireCanvasSurface(second, 30, 40)).toBe(secondSurface);
 
-    expect(destroyRenderSurface).not.toHaveBeenCalled();
-    expect(canvas.width).not.toBe(0);
+    destroyCanvasSurfaceOwned(firstSurface);
+    destroyCanvasSurfaceOwned(secondSurface);
+
+    expect(firstDestroy).toHaveBeenCalledExactlyOnceWith(firstSurface);
+    expect(secondDestroy).toHaveBeenCalledExactlyOnceWith(secondSurface);
+  });
+
+  it('is a no-op after the surface has been destroyed once', () => {
+    const surface = {} as CanvasSurface;
+    const destroySurface = vi.fn();
+    const host = mockHost({ createSurface: () => surface, destroySurface });
+    expect(acquireCanvasSurface(host, 10, 20)).toBe(surface);
+
+    destroyCanvasSurfaceOwned(surface);
+    destroyCanvasSurfaceOwned(surface);
+
+    expect(destroySurface).toHaveBeenCalledOnce();
+  });
+
+  it('is a no-op for an unknown surface', () => {
+    expect(() => destroyCanvasSurfaceOwned({} as CanvasSurface)).not.toThrow();
   });
 });
 
-describe('destroyCanvasRenderSurface', () => {
-  it('routes teardown to the pinned creator exactly once', () => {
-    const { creator, destroyRenderSurface } = makeCreator();
-    const surface = acquireCanvasRenderSurface(creator, { height: 24, pixelRatio: 2, width: 32 })!;
-
-    destroyCanvasRenderSurface(surface);
-    destroyCanvasRenderSurface(surface);
-
-    expect(destroyRenderSurface).toHaveBeenCalledOnce();
-    expect(destroyRenderSurface).toHaveBeenCalledWith(surface.canvas);
-  });
-});
-describe('getCanvasSurfaceCreator', () => {
-  // ★ THE STATE OWNS NO SURFACE, SO IT CANNOT INVENT A CANVAS. Offscreen work — cache targets, render
-  // textures — needs one, and the only honest answer to "where from" is the creator the host registered.
-  // Throwing names the missing call; returning null would surface later as a null canvas somewhere else.
-  it('throws until a creator is registered, then returns exactly that one', () => {
-    // The bare factory, not the test rig: the rig registers a creator for convenience, which is exactly
-    // what this test must not start from.
+describe('getCanvasHost', () => {
+  it('throws until a host is registered, then returns exactly that one', () => {
     const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers());
-    expect(() => getCanvasSurfaceCreator(state)).toThrow(/registerCanvasSurfaceCreator/);
+    expect(() => getCanvasHost(state)).toThrow(/registerCanvasHost/);
 
-    registerCanvasSurfaceCreator(state, canvasTestSurfaceCreator);
+    registerCanvasHost(state, canvasTestHost);
 
-    expect(getCanvasSurfaceCreator(state)).toBe(canvasTestSurfaceCreator);
+    expect(getCanvasHost(state)).toBe(canvasTestHost);
   });
 });
 
-describe('initializeCanvasRenderSurface', () => {
-  it('is the construction initializer of createCanvasRenderSurface', () => {
-    expect(typeof initializeCanvasRenderSurface).toBe('function');
-  });
-});
-
-describe('registerCanvasSurfaceCreator', () => {
-  it('replaces the creator a state allocates through', () => {
+describe('registerCanvasHost', () => {
+  it('replaces the host a state allocates through', () => {
     const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers());
-    const { creator } = makeCreator();
+    const replacement = mockHost();
 
-    registerCanvasSurfaceCreator(state, canvasTestSurfaceCreator);
-    registerCanvasSurfaceCreator(state, creator);
+    registerCanvasHost(state, canvasTestHost);
+    registerCanvasHost(state, replacement);
 
-    expect(getCanvasSurfaceCreator(state)).toBe(creator);
+    expect(getCanvasHost(state)).toBe(replacement);
   });
 });

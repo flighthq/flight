@@ -1,5 +1,6 @@
 import type { Bitmap } from './Bitmap';
 import type { HostImageSource } from './HostImageSource';
+import type { Surface } from './Surface';
 import type { TextureSource } from './TextureSource';
 import type { ImageTextureSourceKind } from './TextureSourceKind';
 
@@ -28,6 +29,10 @@ export interface HostImageCapability {
   // because native providers may decode URLs without owning a synchronous raw-pixel bridge; absence
   // is the capability signal and callers must not silently fall back to browser globals.
   createImageFromBitmap?(bitmap: Readonly<Bitmap>): ImageResource;
+  // Wraps a surface's backing drawable as an uploadable ImageResource. The result is a live reference
+  // to the surface's content, not a copy — drawing on the surface updates the image. Optional because
+  // not every host has a surface-to-image bridge; GL/WGPU text and shape renderers require it.
+  createImageFromSurface?(surface: Readonly<Surface>): ImageResource;
   loadImageFromUrl(
     url: string,
     crossOrigin?: 'anonymous' | 'use-credentials',

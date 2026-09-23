@@ -2,10 +2,10 @@ import type { BlendMode } from './BlendMode';
 import type { CanvasEffectRunner } from './CanvasEffectState';
 import type { CanvasQuadMaterialRenderer } from './CanvasQuadMaterialRenderer';
 import type { CanvasRenderPass } from './CanvasRenderPass';
-import type { CanvasRenderSurfaceCreator } from './CanvasRenderSurface';
 import type { CanvasRenderTarget, CanvasTextureRenderTarget } from './CanvasRenderTarget';
 import type { CanvasTextureResolvers } from './CanvasTextureResolver';
 import type { Kind } from './Entity';
+import type { HostCanvasCapability } from './HostCanvas';
 import type { RenderProxy2D } from './RenderProxy2D';
 import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState';
 
@@ -58,11 +58,10 @@ export interface CanvasRenderStateRuntime extends RenderStateRuntime {
   // The state's own texture-resolution set, created with the state and wired to its miss emitter. It is
   // a separate primitive so a shape rasterizer on another backend can share it — see CanvasTextureResolvers.
   canvasTextureResolvers: CanvasTextureResolvers;
-  // The host seam this state allocates offscreen canvases through — render-cache targets, render
-  // textures — installed by registerCanvasSurfaceCreator. The state owns no surface of its own, so the
-  // one thing offscreen work needs from the host is named once rather than passed on every call.
-  // Absent until registered, so a state that only ever draws to the screen carries no creator.
-  canvasSurfaceCreator?: Readonly<CanvasRenderSurfaceCreator>;
+  // The host canvas capability this state allocates offscreen surfaces through — render-cache targets,
+  // render textures, and image resources for GPU upload. Installed by registerCanvasHost. The state owns
+  // no surface of its own. Absent until registered, so a state that only draws to the screen carries none.
+  canvasHost?: Readonly<HostCanvasCapability>;
   imageSmoothingEnabled: boolean;
   imageSmoothingQuality: ImageSmoothingQuality;
   teardowns: ((state: CanvasRenderState) => void)[];
