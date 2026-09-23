@@ -18,6 +18,32 @@ describe('mergeAwd2ParseOptions', () => {
     expect(mergeAwd2ParseOptions({ blocks: [a] }, { blocks: [b] }).blocks).toEqual([a, b]);
   });
 
+  it('composes three documents in one call, preserving the order they were given', () => {
+    const a = handler('a');
+    const b = handler('b');
+    const c = handler('c');
+    expect(mergeAwd2ParseOptions({ blocks: [a] }, { blocks: [b] }, { blocks: [c] }).blocks).toEqual([a, b, c]);
+  });
+
+  it('keeps multi-handler fragments intact, not just their first entry', () => {
+    const [a, b, c, d] = [handler('a'), handler('b'), handler('c'), handler('d')];
+    expect(mergeAwd2ParseOptions({ blocks: [a, b] }, { blocks: [c, d] }).blocks).toEqual([a, b, c, d]);
+  });
+
+  it('is order-sensitive: swapping the fragments swaps the build order', () => {
+    const a = handler('a');
+    const b = handler('b');
+    expect(mergeAwd2ParseOptions({ blocks: [a] }, { blocks: [b] }).blocks).not.toEqual(
+      mergeAwd2ParseOptions({ blocks: [b] }, { blocks: [a] }).blocks,
+    );
+  });
+
+  it('lets an empty fragment pass through without disturbing build order', () => {
+    const a = handler('a');
+    const b = handler('b');
+    expect(mergeAwd2ParseOptions({ blocks: [a] }, { blocks: [] }, { blocks: [b] }).blocks).toEqual([a, b]);
+  });
+
   it('keeps a duplicate handler, because position is the caller’s statement', () => {
     const a = handler('a');
     expect(mergeAwd2ParseOptions({ blocks: [a] }, { blocks: [a] }).blocks).toEqual([a, a]);

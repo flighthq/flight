@@ -26,13 +26,16 @@ describe('createManifestPlugin', () => {
   it('serves fragments for the one file imported, resolved across every backend', async () => {
     const { dir, plugin } = await fixture();
     const source = (await load(plugin, dir, 'a.swf'))!;
-    expect(source).toContain("import { canvasShowFrame } from '@acme/canvas';");
     expect(source).toContain("import { glShowFrame } from '@acme/gl';");
-    expect(source).toContain(
-      "export const canvasOptions = {\n  nodeRenderers: new Map([\n    ['ShowFrame', canvasShowFrame],",
-    );
+    expect(source).toContain("import { wgpuShowFrame } from '@acme/wgpu';");
     expect(source).toContain("export const glOptions = {\n  nodeRenderers: new Map([\n    ['ShowFrame', glShowFrame],");
-    expect(source).toContain('export const wgpuOptions = {};');
+    expect(source).toContain(
+      "export const wgpuOptions = {\n  nodeRenderers: new Map([\n    ['ShowFrame', wgpuShowFrame],",
+    );
+    // canvas and dom carry no kind-keyed options fields on base, so their fragments are empty and
+    // still exported — an application can spread every fragment unconditionally.
+    expect(source).toContain('export const canvasOptions = {};');
+    expect(source).toContain('export const domOptions = {};');
   });
 
   it('reads the exact file imported, so two documents give different modules', async () => {
@@ -41,8 +44,8 @@ describe('createManifestPlugin', () => {
     const a = await load(plugin, dir, 'a.swf');
     const b = await load(plugin, dir, 'b.swf');
     expect(a).not.toBe(b);
-    expect(a).toContain("['ShowFrame', canvasShowFrame]");
-    expect(b).toContain('export const canvasOptions = {};');
+    expect(a).toContain("['ShowFrame', wgpuShowFrame]");
+    expect(b).toContain('export const wgpuOptions = {};');
   });
 
   it('invalidates per imported source, leaving other files cached', async () => {
@@ -88,20 +91,29 @@ describe('createManifestPlugin', () => {
     expect(diagnostics.some((m) => m.includes('no catalog entry for document.format ShowFrame'))).toBe(true);
   });
 
-  it('lets a caller-supplied analyzer add a format the plugin does not know', async () => {
+  it('drives resolution through an EXTERNAL catalog, since the built-in catalog ships empty', async () => {
+    const { dir, plugin } = await fixture();
+    // BUILT_IN_REQUIREMENT_CATALOG_ENTRIES is deliberately empty on base, so every row that reaches a
+    // fragment came from the catalog the caller passed in. This pins that the external path is the
+    // real one rather than incidental.
+    expect(await load(plugin, dir, 'a.swf')).toContain("['ShowFrame', glShowFrame]");
+
+    const empty = createManifestPlugin({ catalog: { entries: [] }, onDiagnostic: () => {} });
+    const source = (await load(empty, dir, 'a.swf'))!;
+    expect(source).toContain('export const glOptions = {};');
+    expect(source).not.toContain('glShowFrame');
+  });
+
+  it('reports every requirement no backend in the external catalog can satisfy', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'flight-vite-'));
-    await writeFile(join(dir, 'thing.acme'), 'anything');
+    await writeFile(join(dir, 'a.swf'), Buffer.from(createSwf(TAG_SHOW_FRAME)));
+    const diagnostics: string[] = [];
     const plugin = createManifestPlugin({
-      analyzers: {
-        '.acme': () =>
-          createRequirementSet(
-            [RequirementFacet.SceneNodeKind],
-            [{ facet: RequirementFacet.SceneNodeKind, key: 'AcmeThing' }],
-          ),
-      },
-      catalog: { entries: [entry('canvas', RequirementFacet.SceneNodeKind, 'AcmeThing', 'canvasAcme')] },
+      catalog: { entries: [] },
+      onDiagnostic: (message) => diagnostics.push(message),
     });
-    expect(await load(plugin, dir, 'thing.acme')).toContain("['AcmeThing', canvasAcme]");
+    await load(plugin, dir, 'a.swf');
+    expect(diagnostics.some((m) => m.includes('no catalog entry for document.format ShowFrame'))).toBe(true);
   });
 });
 
@@ -127,7 +139,7 @@ async function fixture() {
   const plugin = createManifestPlugin({
     catalog: {
       entries: [
-        entry('canvas', RequirementFacet.DocumentFormat, 'ShowFrame', 'canvasShowFrame'),
+        entry('wgpu', RequirementFacet.DocumentFormat, 'ShowFrame', 'wgpuShowFrame'),
         entry('gl', RequirementFacet.DocumentFormat, 'ShowFrame', 'glShowFrame'),
         entry(MANIFEST_PARSER_BACKEND, RequirementFacet.DocumentFormat, 'ShowFrame', 'parserShowFrame'),
       ],

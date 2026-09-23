@@ -1,6 +1,6 @@
 import type { RequirementCatalogEntry } from '@flighthq/types/contract';
 
-import { PARSER_HANDLER_FIELDS, REQUIREMENT_OPTION_FIELDS } from './requirementOptionFields';
+import { BACKEND_OPTION_FIELDS, PARSER_HANDLER_FIELDS, REQUIREMENT_OPTION_FIELDS } from './requirementOptionFields';
 
 /** The backends a manifest module always exports a fragment for, and the export name each one uses. */
 export const MANIFEST_BACKEND_EXPORTS: Readonly<Record<string, string>> = Object.freeze({
@@ -25,6 +25,13 @@ export interface ManifestModuleEntry {
   readonly kind: string;
 }
 
+/** What the emitter produced, and every row it could not place. */
+export interface ManifestModuleResult {
+  /** Rows dropped with the reason, so a caller reports them instead of losing them silently. */
+  readonly problems: readonly string[];
+  readonly source: string;
+}
+
 /**
  * Emits the per-file manifest module for one content file.
  *
@@ -42,21 +49,41 @@ export interface ManifestModuleEntry {
  * emitted in sorted kind order, and array entries keep catalog order. The same inputs always produce
  * byte-identical source.
  */
-export function generateManifestModuleSource(rows: readonly ManifestModuleEntry[], extension: string): string {
+export function generateManifestModuleSource(
+  rows: readonly ManifestModuleEntry[],
+  extension: string,
+): ManifestModuleResult {
   const importsByModule = new Map<string, Set<string>>();
   const byBackend = new Map<string, ManifestModuleEntry[]>();
   const parserRows: ManifestModuleEntry[] = [];
 
+  const problems: string[] = [];
   for (const row of rows) {
     if (row.entry.backend === MANIFEST_PARSER_BACKEND) {
       addImport(importsByModule, row.entry.implementationImport, row.entry.implementationSymbol);
       parserRows.push(row);
       continue;
     }
-    // A render-backend row needs a field to land in. A facet with no render-state field — a parser-only
-    // concern aimed at a backend — is skipped here and reported by the caller rather than emitted into
-    // a field that does not exist.
-    if (REQUIREMENT_OPTION_FIELDS[row.entry.facet] === undefined) continue;
+    // Two ways a render-backend row cannot be placed, and NEITHER is a silent skip. A facet with no
+    // render-state field at all (compression, physics, resource mime type) has nowhere to go; and a
+    // field this particular backend does not declare — blendRealizations on WGPU, say — would emit a
+    // fragment that spreads into nothing. Both are reported so the build can see what it lost.
+    const field = REQUIREMENT_OPTION_FIELDS[row.entry.facet];
+    if (field === undefined) {
+      problems.push(
+        `facet ${row.entry.facet} has no render-state options field: dropped ${row.kind} for ${row.entry.backend}`,
+      );
+      continue;
+    }
+    const accepted = BACKEND_OPTION_FIELDS[row.entry.backend];
+    if (accepted === undefined) {
+      problems.push(`unknown backend ${row.entry.backend}: dropped ${row.entry.facet} ${row.kind}`);
+      continue;
+    }
+    if (!accepted.has(field)) {
+      problems.push(`backend ${row.entry.backend} has no ${field} field: dropped ${row.entry.facet} ${row.kind}`);
+      continue;
+    }
     addImport(importsByModule, row.entry.implementationImport, row.entry.implementationSymbol);
     let list = byBackend.get(row.entry.backend);
     if (list === undefined) {
@@ -79,7 +106,7 @@ export function generateManifestModuleSource(rows: readonly ManifestModuleEntry[
     lines.push('', ...backendFragment(MANIFEST_BACKEND_EXPORTS[backend], byBackend.get(backend) ?? []));
   }
   lines.push('', ...parserFragment(parserRows, PARSER_HANDLER_FIELDS[extension] ?? 'handlers'));
-  return `${lines.join('\n')}\n`;
+  return { problems, source: `${lines.join('\n')}\n` };
 }
 
 function addImport(importsByModule: Map<string, Set<string>>, module: string, symbol: string): void {

@@ -49,19 +49,19 @@ describe('vite build', () => {
   );
 
   it(
-    'keeps every implementation an entry actually imports',
+    'keeps every implementation an entry actually imports, across two backends',
     async () => {
       const dir = await project();
       await writeFile(
         join(dir, 'src', 'main.js'),
-        `import { canvasOptions, glOptions } from './asset.swf${MANIFEST_QUERY_SUFFIX}';\n` +
-          'globalThis.out = [canvasOptions, glOptions];\n',
+        `import { glOptions, wgpuOptions } from './asset.swf${MANIFEST_QUERY_SUFFIX}';\n` +
+          'globalThis.out = [glOptions, wgpuOptions];\n',
       );
       const bundle = await bundleOf(dir);
 
       expect(bundle).toContain('GL_IMPLEMENTATION_MARKER');
-      expect(bundle).toContain('CANVAS_IMPLEMENTATION_MARKER');
-      expect(bundle).not.toContain('WGPU_IMPLEMENTATION_MARKER');
+      expect(bundle).toContain('WGPU_IMPLEMENTATION_MARKER');
+      expect(bundle).not.toContain('PARSER_IMPLEMENTATION_MARKER');
     },
     BUILD_TIMEOUT_MS,
   );
@@ -79,6 +79,27 @@ describe('vite build', () => {
       // what lets an application spread it straight into createGlRenderState.
       expect(bundle).toContain('ShowFrame');
       expect(bundle).toContain('nodeRenderers');
+    },
+    BUILD_TIMEOUT_MS,
+  );
+
+  it(
+    'keeps gl while canvas contributes nothing, because CanvasRenderOptions has no map fields',
+    async () => {
+      const dir = await project();
+      await writeFile(
+        join(dir, 'src', 'main.js'),
+        `import { canvasOptions, glOptions } from './asset.swf${MANIFEST_QUERY_SUFFIX}';\n` +
+          'globalThis.out = [canvasOptions, glOptions];\n',
+      );
+      const bundle = await bundleOf(dir);
+
+      // GL survives because its fragment carries a real Map. Canvas contributes nothing — not because
+      // the bundler shook it out, but because the plugin emits `canvasOptions = {}` and REPORTS the
+      // dropped row: CanvasRenderOptions declares no kind-keyed field for it to spread into. This pins
+      // today's truth; it changes the moment the canvas construction API gains one.
+      expect(bundle).toContain('GL_IMPLEMENTATION_MARKER');
+      expect(bundle).not.toContain('CANVAS_IMPLEMENTATION_MARKER');
     },
     BUILD_TIMEOUT_MS,
   );
