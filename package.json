@@ -72,6 +72,7 @@
     "check:data-cast-colour": "tsx ./scripts/check-data-cast-colour.ts",
     "check:degree-constants": "tsx ./scripts/check-degree-constants.ts",
     "check:double-casts": "tsx ./scripts/check-double-casts.ts",
+    "check:docs": "tsx ./scripts/check-docs.ts",
     "check:documented-commands": "tsx ./scripts/check-documented-commands.ts --check",
     "check:expected-image-descriptions": "tsx ./scripts/check-expected-image-descriptions.ts --check",
     "check:exports": "tsx ./scripts/check-exports.ts",
