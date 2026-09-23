@@ -37,10 +37,26 @@ describe('generateManifestModuleSource', () => {
   // registries as a separate constructor parameter and DOM accepts none. So a row aimed at either is
   // reported rather than emitted into a field that does not exist. Pending an API ruling, this pins
   // what the plugin does today instead of pretending the fragment would spread.
-  it.each(['canvas', 'dom'])('reports a %s row, because that options type has no map fields', (backend) => {
+  it.each(['canvas', 'dom', 'gl', 'wgpu'])('emits a nodeRenderers fragment for %s', (backend) => {
     const result = generateManifestModuleSource([row(backend, 'scene.node-kind', 'Shape')], '.swf');
-    expect(result.source).toContain(`export const ${backend}Options = {};`);
-    expect(result.problems).toEqual([`backend ${backend} has no nodeRenderers field: dropped scene.node-kind Shape`]);
+    expect(result.source).toContain(`export const ${backend}Options = {\n  nodeRenderers: new Map([`);
+    expect(result.problems).toEqual([]);
+  });
+
+  // The backend sets are NOT interchangeable, and these are the real differences on base.
+  it('reports materialRenderers aimed at dom, which DomRenderOptions does not declare', () => {
+    const result = generateManifestModuleSource([row('dom', 'scene.material-kind', 'Standard')], '.swf');
+    expect(result.source).toContain('export const domOptions = {};');
+    expect(result.problems).toEqual([
+      'backend dom has no materialRenderers field: dropped scene.material-kind Standard',
+    ]);
+  });
+
+  it('reports blendRealizations aimed at canvas, which CanvasRenderRegistries does not declare', () => {
+    const result = generateManifestModuleSource([row('canvas', 'scene.blend-mode', 'Multiply')], '.swf');
+    expect(result.problems).toEqual([
+      'backend canvas has no blendRealizations field: dropped scene.blend-mode Multiply',
+    ]);
   });
 
   it('keeps each backend in its own fragment', () => {

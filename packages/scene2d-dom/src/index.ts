@@ -1,3 +1,4 @@
+export { mergeDomRenderOptions } from './mergeDomRenderOptions';
 export * from './domBitmapTextureResolver';
 export { enableDomCssFilterSupport, setDomCssFilter } from './domCSSFilterBinding';
 export { enableDomRenderCache, domRenderCacheRenderer } from './domCache';

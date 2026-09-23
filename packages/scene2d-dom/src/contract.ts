@@ -1,3 +1,4 @@
+export * from './mergeDomRenderOptions';
 export * from './domBitmapTextureResolver';
 export * from './domCSSFilterBinding';
 export * from './domCache';

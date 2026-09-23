@@ -84,7 +84,7 @@ describe('vite build', () => {
   );
 
   it(
-    'keeps gl while canvas contributes nothing, because CanvasRenderOptions has no map fields',
+    'retains BOTH canvas and gl when the entry imports both fragments',
     async () => {
       const dir = await project();
       await writeFile(
@@ -94,12 +94,13 @@ describe('vite build', () => {
       );
       const bundle = await bundleOf(dir);
 
-      // GL survives because its fragment carries a real Map. Canvas contributes nothing — not because
-      // the bundler shook it out, but because the plugin emits `canvasOptions = {}` and REPORTS the
-      // dropped row: CanvasRenderOptions declares no kind-keyed field for it to spread into. This pins
-      // today's truth; it changes the moment the canvas construction API gains one.
+      // C1: a canvas fragment is a Partial<CanvasRenderRegistries> spread into constructor argument 1,
+      // so canvas now carries real implementations and both survive. wgpu and the parser do not,
+      // which is what makes this a retention test rather than a tautology.
+      expect(bundle).toContain('CANVAS_IMPLEMENTATION_MARKER');
       expect(bundle).toContain('GL_IMPLEMENTATION_MARKER');
-      expect(bundle).not.toContain('CANVAS_IMPLEMENTATION_MARKER');
+      expect(bundle).not.toContain('WGPU_IMPLEMENTATION_MARKER');
+      expect(bundle).not.toContain('PARSER_IMPLEMENTATION_MARKER');
     },
     BUILD_TIMEOUT_MS,
   );

@@ -22,6 +22,9 @@
       "path": "../requirement-codegen"
     },
     {
+      "path": "../scene2d-dom"
+    },
+    {
       "path": "../scene3d-formats"
     },
     {
