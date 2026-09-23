@@ -89,6 +89,6 @@ export interface RiveDocumentImportContext extends Entity {
  * installs a whole family also fixes that family's place in the sequence. The built-in registrar
  * installs them in the order the passes depend on each other.
  */
-export interface RiveImportRegistry extends Entity {
+export interface RiveImportRegistry {
   handlers: Map<number, RiveCoreObjectHandler>;
 }

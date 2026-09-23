@@ -1,4 +1,3 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   HostDeviceCapability,
   DeviceCapabilities,
@@ -31,12 +30,12 @@ export function enableWebSafeAreaInsets(): () => void {
 
   function readInsets(): void {
     const style = getComputedStyle(el);
-    const _entity = allocateEntity<SafeAreaInsets>();
-    _entity.bottom = parseFloat(style.bottom) || 0;
-    _entity.left = parseFloat(style.left) || 0;
-    _entity.right = parseFloat(style.right) || 0;
-    _entity.top = parseFloat(style.top) || 0;
-    _safeAreaInsets = finishEntity(_entity);
+    _safeAreaInsets = {
+      bottom: parseFloat(style.bottom) || 0,
+      left: parseFloat(style.left) || 0,
+      right: parseFloat(style.right) || 0,
+      top: parseFloat(style.top) || 0,
+    };
   }
 
   readInsets();

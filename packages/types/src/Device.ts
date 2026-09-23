@@ -1,12 +1,11 @@
 import type { DeviceCapabilities } from './DeviceCapabilities';
 import type { DeviceDisplayMetrics } from './DeviceDisplayMetrics';
 import type { DeviceFormFactor } from './DeviceFormFactor';
-import type { Entity } from './Entity';
 
 // Device identity and environment seam. Free functions in @flighthq/device delegate to the active
 // HostDeviceCapability (web default or a native host's). Snapshot reads fill an `out` value and return it;
 // unknown or unavailable fields resolve to sentinels ('' / -1 / false), never throwing.
-export interface DeviceInfo extends Entity {
+export interface DeviceInfo {
   arch: string;
   availableMemory: number;
   boardName: string;
@@ -37,7 +36,7 @@ export interface DeviceInfo extends Entity {
 }
 
 // Edge insets, in CSS pixels, that keep content clear of notches, rounded corners, and system bars.
-export interface SafeAreaInsets extends Entity {
+export interface SafeAreaInsets {
   top: number;
   right: number;
   bottom: number;

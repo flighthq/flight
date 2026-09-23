@@ -3,6 +3,7 @@ import type {
   DisplayObject,
   EntityConstruction,
   ImportDiagnostic,
+  NonEntityCreateResult,
   RiveArtboardGraph,
   RiveArtboardImportContext,
   RiveCoreObject,
@@ -62,10 +63,8 @@ export function createRiveDocumentImportContext(
   return finishEntity(out);
 }
 
-export function createRiveImportRegistry(): RiveImportRegistry {
-  const out = allocateEntity<RiveImportRegistry>();
-  initializeRiveImportRegistry(out);
-  return finishEntity(out);
+export function createRiveImportRegistry(): NonEntityCreateResult<RiveImportRegistry, 'descriptor'> {
+  return { handlers: new Map<number, RiveCoreObjectHandler>() };
 }
 
 /**
@@ -135,10 +134,6 @@ export function initializeRiveDocumentImportContext(
   out.diagnostics = diagnostics;
   out.objects = objects;
   out.registry = registry;
-}
-
-export function initializeRiveImportRegistry(out: EntityConstruction<RiveImportRegistry>): void {
-  out.handlers = new Map<number, RiveCoreObjectHandler>();
 }
 
 /**

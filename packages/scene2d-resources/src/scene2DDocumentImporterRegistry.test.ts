@@ -4,7 +4,6 @@ import { createScene2DDocument } from './scene2DDocument';
 import {
   createScene2DDocumentFromBytes,
   createScene2DDocumentImporterRegistry,
-  initializeScene2DDocumentImporterRegistry,
   registerScene2DDocumentImporter,
   unregisterScene2DDocumentImporter,
 } from './scene2DDocumentImporterRegistry';
@@ -33,12 +32,6 @@ describe('createScene2DDocumentImporterRegistry', () => {
     const second = createScene2DDocumentImporterRegistry();
     expect(first.entries).toEqual([]);
     expect(second.entries).not.toBe(first.entries);
-  });
-});
-
-describe('initializeScene2DDocumentImporterRegistry', () => {
-  it('is the construction initializer of createScene2DDocumentImporterRegistry', () => {
-    expect(typeof initializeScene2DDocumentImporterRegistry).toBe('function');
   });
 });
 

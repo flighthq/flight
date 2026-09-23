@@ -5,7 +5,6 @@ import {
   createRegistryCatalog,
   findRegistryCatalogEntries,
   getRegistryCatalogEntries,
-  initializeRegistryCatalog,
   registerRegistryCatalogEntry,
   unregisterRegistryCatalogEntry,
 } from './registryCatalog';
@@ -49,12 +48,6 @@ describe('getRegistryCatalogEntries', () => {
     expect(getRegistryCatalogEntries(catalog)).toEqual([first]);
     expect(snapshot).not.toBe(catalog.entries);
     expect(snapshot[0]).not.toBe(catalog.entries[0]);
-  });
-});
-
-describe('initializeRegistryCatalog', () => {
-  it('is the construction initializer of createRegistryCatalog', () => {
-    expect(typeof initializeRegistryCatalog).toBe('function');
   });
 });
 

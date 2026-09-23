@@ -2,7 +2,6 @@ import type { AnimationChannel } from './AnimationChannel';
 import type { AttachmentSkin2D } from './AttachmentSkin2D';
 import type { Bone2D } from './Bone2D';
 import type { ByteReader } from './ByteReader';
-import type { Entity } from './Entity';
 import type { ImportDiagnostic } from './ImportDiagnostic';
 import type { Skeleton2DDrawOrderTimeline } from './Skeleton2DDrawOrderTimeline';
 import type { Skeleton2DImportAnimation } from './Skeleton2DImport';
@@ -81,7 +80,7 @@ export interface SpineBinaryTimelineHandlerEntry {
 
 // Caller-owned so two import pipelines can select different handler sets and no registration leaks across
 // tests, workers, or assets. Registration is last-write-wins per key, matching the rest of Flight.
-export interface SpineBinaryRegistry extends Entity {
+export interface SpineBinaryRegistry {
   sectionHandlers: SpineBinarySectionHandlerEntry[];
   timelineHandlers: SpineBinaryTimelineHandlerEntry[];
 }

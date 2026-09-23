@@ -20,7 +20,6 @@ import {
   createScene3DMaterialTextureRegistry,
   getScene3DMaterialTextures,
   hasScene3DMaterialTextureLister,
-  initializeScene3DMaterialTextureRegistry,
   registerExtendedPbrScene3DMaterialTextures,
   registerScene3DMaterialTextures,
   registerScene3DPbrExtensionTextures,
@@ -30,8 +29,9 @@ import {
 
 describe('createScene3DMaterialTextureRegistry', () => {
   it('creates an empty registry', () => {
+    // No EntityRuntimeKey assertion: this registry is dispatch infrastructure, which AGENTS.md puts
+    // outside Entity, so it is plain data with no runtime to carry.
     const registry = createScene3DMaterialTextureRegistry();
-    expect(EntityRuntimeKey in registry).toBe(true);
     expect(registry.extensionListers.size).toBe(0);
     expect(registry.listers.size).toBe(0);
   });
@@ -67,12 +67,6 @@ describe('hasScene3DMaterialTextureLister', () => {
     registerUnlitScene3DMaterialTextures(registry);
     expect(hasScene3DMaterialTextureLister(registry, UnlitMaterialKind)).toBe(true);
     expect(hasScene3DMaterialTextureLister(registry, StandardPbrMaterialKind)).toBe(false);
-  });
-});
-
-describe('initializeScene3DMaterialTextureRegistry', () => {
-  it('is the construction initializer of createScene3DMaterialTextureRegistry', () => {
-    expect(typeof initializeScene3DMaterialTextureRegistry).toBe('function');
   });
 });
 

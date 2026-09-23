@@ -1,6 +1,5 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityConstruction,
+  NonEntityCreateResult,
   SpineBinaryRegistry,
   SpineBinarySectionHandler,
   SpineBinarySectionKind,
@@ -8,10 +7,8 @@ import type {
   SpineBinaryTimelineKind,
 } from '@flighthq/types/contract';
 
-export function createSpineBinaryRegistry(): SpineBinaryRegistry {
-  const out = allocateEntity<SpineBinaryRegistry>();
-  initializeSpineBinaryRegistry(out);
-  return finishEntity(out);
+export function createSpineBinaryRegistry(): NonEntityCreateResult<SpineBinaryRegistry, 'descriptor'> {
+  return { sectionHandlers: [], timelineHandlers: [] };
 }
 
 export function getSpineBinarySectionHandler(
@@ -26,11 +23,6 @@ export function getSpineBinaryTimelineHandler(
   kind: SpineBinaryTimelineKind,
 ): SpineBinaryTimelineHandler | null {
   return registry.timelineHandlers.find((entry) => entry.kind === kind)?.handle ?? null;
-}
-
-export function initializeSpineBinaryRegistry(out: EntityConstruction<SpineBinaryRegistry>): void {
-  out.sectionHandlers = [];
-  out.timelineHandlers = [];
 }
 
 export function registerSpineBinarySectionHandler(
