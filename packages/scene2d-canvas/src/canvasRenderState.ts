@@ -30,10 +30,14 @@ export function createCanvasRenderState(
 
   state.applyBlendMode = registries.blendModeApplication ?? null;
   state.canvasCssFilterResolver = null;
-  (state as { registries: Readonly<CanvasRenderRegistries> }).registries = registries;
 
   const runtime = createCanvasRenderStateRuntime(registries, canvasTextureResolvers);
   state[EntityRuntimeKey] = runtime;
+  // The entity field is a read view of the SAME aggregate the runtime holds, as on GL and WGPU — not
+  // the caller's object. Registrars replace tables on the runtime copy-on-write, so a field pointing
+  // at a separate object would be frozen at construction: it would never observe a registration, and
+  // the offscreen factories that derive a pipeline from it would snapshot an empty policy.
+  (state as { registries: Readonly<CanvasRenderRegistries> }).registries = runtime.registries;
   // The state owns a resolution set and points its miss seam at its own emitter. The closure reads the
   // emitter at call time, so enabling the guards later still reports through it.
   runtime.canvasTextureResolvers.registryMiss = (registry, kind) => runtime.registryMiss?.(registry, kind);
@@ -53,7 +57,7 @@ export function createCanvasRenderStateRuntime(
   canvasTextureResolvers: CanvasTextureResolvers,
 ): CanvasRenderStateRuntime {
   const runtime = createRenderStateRuntime() as CanvasRenderStateRuntime;
-  runtime.registries = { ...registries };
+  runtime.registries = cloneCanvasRenderRegistries(registries);
   runtime.canvasTextureResolvers = canvasTextureResolvers;
   runtime.currentRenderTarget = null;
   runtime.passStack = [];
@@ -106,6 +110,23 @@ export function setCanvasImageSmoothing(state: CanvasRenderState, enabled: boole
   if (runtime.imageSmoothingEnabled === enabled) return;
   runtime.imageSmoothingEnabled = enabled;
   state.context.imageSmoothingEnabled = enabled;
+}
+
+// Copies every table out of the caller's aggregate so the state owns its own. The input is routinely a
+// module-level frozen preset shared by every state on this backend, so a shallow spread would hand each
+// state the preset's own Map objects — correct only for as long as every registrar stays copy-on-write,
+// and silently global the first time one writes in place. Optional slots are copied only when present:
+// field presence is what keeps every registries object one hidden class, so the per-shape reads on the
+// draw path stay monomorphic.
+function cloneCanvasRenderRegistries(registries: Readonly<CanvasRenderRegistries>): CanvasRenderRegistries {
+  const out = { ...registries } as CanvasRenderRegistries;
+  if (registries.canvasShapeCommands !== undefined) out.canvasShapeCommands = new Map(registries.canvasShapeCommands);
+  if (registries.effectPaddingResolvers !== undefined)
+    out.effectPaddingResolvers = new Map(registries.effectPaddingResolvers);
+  if (registries.materialRenderers !== undefined) out.materialRenderers = new Map(registries.materialRenderers);
+  out.effects = new Map(registries.effects);
+  out.nodeRenderers = new Map(registries.nodeRenderers);
+  return out;
 }
 
 const _destroyedStates = new WeakSet<CanvasRenderState>();

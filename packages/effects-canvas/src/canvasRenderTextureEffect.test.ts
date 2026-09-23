@@ -74,8 +74,8 @@ describe('applyCanvasEffectsToRenderTexture', () => {
   });
 });
 
-describe('offscreen effect registration policy', () => {
-  it('does not copy per-state mutations through a hidden parent link', () => {
+describe('offscreen effect registration snapshots', () => {
+  it('captures registered runners in a rebuilt pipeline without observing later replacements', () => {
     const screen = createCanvasRenderState(document.createElement('canvas'));
     const first: CanvasEffectRunner = vi.fn();
     const later: CanvasEffectRunner = vi.fn();
@@ -86,7 +86,7 @@ describe('offscreen effect registration policy', () => {
     );
     registerCanvasEffect(screen, 'acme.Later', later);
 
-    expect(getCanvasEffectRunner(offscreen, 'acme.First')).toBeNull();
+    expect(getCanvasEffectRunner(offscreen, 'acme.First')).toBe(first);
     expect(getCanvasEffectRunner(offscreen, 'acme.Later')).toBeNull();
   });
 });

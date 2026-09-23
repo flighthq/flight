@@ -1,5 +1,11 @@
 import { createMatrix } from '@flighthq/geometry/contract';
-import { createRenderCache, getRenderProxy2D, RenderCacheKind, useRenderCache } from '@flighthq/render/contract';
+import {
+  createRenderCache,
+  getRenderProxy2D,
+  RenderCacheKind,
+  registerNodeRenderer,
+  useRenderCache,
+} from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
 import {
@@ -97,9 +103,17 @@ describe('createCanvasCacheState', () => {
     const cacheState = makeCacheState(screen);
     const cacheRuntime = getCanvasRenderStateRuntime(cacheState);
 
-    expect(cacheState.registries).toBe(screen.registries);
+    // Each state owns its aggregate and its tables, so neither can reach into the other's policy.
+    expect(cacheState.registries).toBe(cacheRuntime.registries);
     expect(cacheRuntime.registries).not.toBe(screenRuntime.registries);
-    expect(cacheRuntime.registries.effects).toBe(screenRuntime.registries.effects);
+    expect(cacheRuntime.registries.effects).not.toBe(screenRuntime.registries.effects);
+
+    // What it takes is the policy the pipeline carried when it was built, and nothing added after.
+    expect([...cacheRuntime.registries.nodeRenderers.keys()]).toEqual([
+      ...screenRuntime.registries.nodeRenderers.keys(),
+    ]);
+    registerNodeRenderer(screen, 'acme.Later', { createData: () => null, submit: () => {} });
+    expect(cacheRuntime.registries.nodeRenderers.has('acme.Later')).toBe(false);
   });
 
   it('releases every target it allocated when its explicit owner is destroyed', () => {

@@ -6,6 +6,8 @@ import type { CanvasRenderOptions, HostImageCapability } from '@flighthq/types/c
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
+import { allocateEmptyCanvasRenderRegistries } from './canvasPipeline';
+import { createCanvasRenderState as createExplicitCanvasRenderState } from './canvasRenderState';
 import {
   createCanvasRenderState,
   createCanvasRenderStateRuntime,
@@ -34,6 +36,24 @@ describe('createCanvasRenderState', () => {
     expect(state[EntityRuntimeKey]).not.toBeUndefined();
     expect(getCanvasRenderStateRuntime(state)).toBe(state[EntityRuntimeKey]);
   });
+
+  it('does not mutate a frozen preset when used as the registries input', () => {
+    const preset = Object.freeze({
+      ...allocateEmptyCanvasRenderRegistries(),
+      nodeRenderers: new Map(),
+    });
+    const state = createExplicitCanvasRenderState(preset, createCanvasTextureResolvers());
+    registerNodeRenderer(state, 'acme.Test', { createData: () => null, submit: () => {} });
+    expect(preset.nodeRenderers.size).toBe(0);
+    expect(getCanvasRenderStateRuntime(state).registries.nodeRenderers.size).toBe(1);
+  });
+
+  it('exposes the live runtime aggregate through state.registries', () => {
+    const state = createCanvasRenderState(document.createElement('canvas'));
+    expect(state.registries).toBe(getCanvasRenderStateRuntime(state).registries);
+    registerNodeRenderer(state, 'acme.Test', { createData: () => null, submit: () => {} });
+    expect(state.registries.nodeRenderers.has('acme.Test')).toBe(true);
+  });
 });
 
 describe('createCanvasRenderStateRuntime', () => {
@@ -45,6 +65,27 @@ describe('createCanvasRenderStateRuntime', () => {
     expect(runtime.registries.effects).toBeInstanceOf(Map);
     expect(runtime.registries.effects.size).toBe(0);
     expect(runtime.registries.materialRenderers).toBeUndefined();
+  });
+
+  it('clones provided registry maps into an isolated live aggregate', () => {
+    const effects = new Map();
+    const nodeRenderers = new Map();
+    const runtime = createCanvasRenderStateRuntime(
+      { ...allocateEmptyCanvasRenderRegistries(), effects, nodeRenderers },
+      createCanvasTextureResolvers(),
+    );
+    expect(runtime.registries.effects).not.toBe(effects);
+    expect(runtime.registries.nodeRenderers).not.toBe(nodeRenderers);
+
+    nodeRenderers.set('acme.Late', {});
+    expect(runtime.registries.nodeRenderers.has('acme.Late')).toBe(false);
+  });
+
+  it('leaves an absent optional table absent rather than present-and-undefined', () => {
+    const runtime = createCanvasRenderStateRuntime(canvasScene2DRenderPreset, createCanvasTextureResolvers());
+    expect('materialRenderers' in runtime.registries).toBe(false);
+    expect('effectPaddingResolvers' in runtime.registries).toBe(false);
+    expect(runtime.registries.canvasShapeCommands).not.toBe(canvasScene2DRenderPreset.canvasShapeCommands);
   });
 });
 
