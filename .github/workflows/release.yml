@@ -139,15 +139,26 @@ jobs:
           # Attaches build provenance to each package (public repo + id-token: write above).
           NPM_CONFIG_PROVENANCE: 'true'
 
-      # The npm artifact must exist before the port is asked to release.
-      # Dispatch before examples: an unrelated examples failure must not block the port release.
-      # GitHub can return 204 even when Flight-RS has no workflow matching this event_type; keep its receiver matched.
+      # The npm artifact must exist before downstream ports and tools are asked to release.
+      # Dispatch before examples: an unrelated examples failure must not block downstream releases.
+      # GitHub can return 204 even when a repository has no workflow matching this event_type; keep
+      # both receivers matched to `flight-release` when changing this payload.
       - name: Dispatch Flight-RS release
         env:
           GH_TOKEN: ${{ secrets.FLIGHT_RS_DISPATCH_TOKEN }}
         run: |
           # version is authoritative for the port release; commit is informational source traceability.
           gh api --method POST repos/flighthq/flight-rs/dispatches \
+            --raw-field event_type=flight-release \
+            --raw-field "client_payload[version]=${GITHUB_REF_NAME}" \
+            --raw-field "client_payload[commit]=${GITHUB_SHA}"
+
+      - name: Dispatch Flight-Compiler release
+        env:
+          GH_TOKEN: ${{ secrets.FLIGHT_COMPILER_DISPATCH_TOKEN }}
+        run: |
+          # version is authoritative for the compiler release; commit is informational source traceability.
+          gh api --method POST repos/flighthq/flight-compiler/dispatches \
             --raw-field event_type=flight-release \
             --raw-field "client_payload[version]=${GITHUB_REF_NAME}" \
             --raw-field "client_payload[commit]=${GITHUB_SHA}"
