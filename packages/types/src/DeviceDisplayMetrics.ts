@@ -1,7 +1,7 @@
 // Built-in display metrics for the running device, filled by HostDeviceCapability.getDisplayMetrics.
 // For live multi-display enumeration and work-area geometry, use @flighthq/screen. Unknown or
 // unavailable fields resolve to the -1 sentinel, never throwing.
-export interface DeviceDisplayMetrics extends Entity {
+export interface DeviceDisplayMetrics {
   colorDepth: number;
   densityDpi: number;
   logicalHeight: number;
@@ -10,4 +10,3 @@ export interface DeviceDisplayMetrics extends Entity {
   physicalWidth: number;
   pixelRatio: number;
 }
-import type { Entity } from './Entity';

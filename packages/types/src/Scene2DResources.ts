@@ -1,5 +1,4 @@
 import type { AudioDecoderRegistry, AudioResourceFetch, AudioResourceReference } from './AudioResourceReference';
-import type { Entity } from './Entity';
 import type { HostAudioDecodeCapabilities } from './HostAudioDecode';
 import type { ImageDecodeFallback } from './ImageDecoder';
 import type { ImageResourceFetch, ImageResourceReference } from './ImageResourceReference';
@@ -40,7 +39,7 @@ export interface Scene2DDocumentImporterEntry {
   matches: Scene2DDocumentImporterMatcher;
 }
 
-export interface Scene2DDocumentImporterRegistry extends Entity {
+export interface Scene2DDocumentImporterRegistry {
   entries: Scene2DDocumentImporterEntry[];
 }
 

@@ -1,21 +1,14 @@
 import { packOpaqueColor } from '@flighthq/color/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityConstruction,
   MarkupClassResolver,
   MarkupColorResolver,
   MarkupTagHandler,
   MarkupTagRegistry,
+  NonEntityCreateResult,
   TextFormat,
   TextFormatAlign,
   TextFormatListMarker,
 } from '@flighthq/types/contract';
-
-export function createMarkupTagRegistry(): MarkupTagRegistry {
-  const out = allocateEntity<MarkupTagRegistry>();
-  initializeMarkupTagRegistry(out);
-  return finishEntity(out);
-}
 
 /**
  * Creates an empty markup tag registry — the meaning layer `parseTextMarkup` composes over the parse
@@ -23,8 +16,8 @@ export function createMarkupTagRegistry(): MarkupTagRegistry {
  * `registerStandardMarkupTags`. The registered set of tag names is the supported dialect; a custom
  * registry that omits the standard tags lets them tree-shake out.
  */
-export function initializeMarkupTagRegistry(out: EntityConstruction<MarkupTagRegistry>): void {
-  out.handlers = new Map();
+export function createMarkupTagRegistry(): NonEntityCreateResult<MarkupTagRegistry, 'descriptor'> {
+  return { handlers: new Map() };
 }
 
 /**

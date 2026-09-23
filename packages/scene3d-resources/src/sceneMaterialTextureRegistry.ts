@@ -1,9 +1,8 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityConstruction,
   ExtendedPbrMaterial,
   Kind,
   Material,
+  NonEntityCreateResult,
   Scene3DMaterialTextureLister,
   Scene3DMaterialTextureRegistry,
   Scene3DPbrExtensionTextureLister,
@@ -14,10 +13,11 @@ import type {
 } from '@flighthq/types/contract';
 import { ExtendedPbrMaterialKind, StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types/contract';
 
-export function createScene3DMaterialTextureRegistry(): Scene3DMaterialTextureRegistry {
-  const out = allocateEntity<Scene3DMaterialTextureRegistry>();
-  initializeScene3DMaterialTextureRegistry(out);
-  return finishEntity(out);
+export function createScene3DMaterialTextureRegistry(): NonEntityCreateResult<
+  Scene3DMaterialTextureRegistry,
+  'descriptor'
+> {
+  return { extensionListers: new Map(), listers: new Map() };
 }
 
 // Looks up the lister for `material.kind` and, when present, appends the material's non-null Textures
@@ -40,13 +40,6 @@ export function hasScene3DMaterialTextureLister(
   kind: Kind,
 ): boolean {
   return registry.listers.has(kind);
-}
-
-export function initializeScene3DMaterialTextureRegistry(
-  out: EntityConstruction<Scene3DMaterialTextureRegistry>,
-): void {
-  out.extensionListers = new Map();
-  out.listers = new Map();
 }
 
 export function registerExtendedPbrScene3DMaterialTextures(registry: Scene3DMaterialTextureRegistry): void {

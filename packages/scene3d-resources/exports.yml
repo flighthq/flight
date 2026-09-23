@@ -6,7 +6,6 @@ protected:
   - hasScene3DMaterialTextureLister
   - hasScene3DResourceCoverage
   - initializeImageResourceFailure
-  - initializeScene3DMaterialTextureRegistry
   - initializeScene3DResourceResolver
   - initializeScene3DResourceSignals
   - registerAnisotropyPbrScene3DMaterialTextures

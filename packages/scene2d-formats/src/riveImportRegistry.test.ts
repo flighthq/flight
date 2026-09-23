@@ -11,7 +11,6 @@ import {
   importRiveCoreObjectAsData,
   initializeRiveArtboardImportContext,
   initializeRiveDocumentImportContext,
-  initializeRiveImportRegistry,
   registerRiveCoreObjectHandler,
 } from './riveImportRegistry';
 
@@ -115,6 +114,15 @@ describe('createRiveImportRegistry', () => {
   it('starts empty, so nothing is read until a family is registered', () => {
     expect(createRiveImportRegistry().handlers.size).toBe(0);
   });
+
+  // Each registry owns its own table. The retired initializer asserted this; a shared table would let
+  // one import pipeline's registrations leak into another's, across tests and workers alike.
+  it('gives every registry its own handler table', () => {
+    const first = createRiveImportRegistry();
+    const second = createRiveImportRegistry();
+    registerRiveCoreObjectHandler(first, PATH, { importComponent: importRiveCoreObjectAsData });
+    expect(second.handlers.size).toBe(0);
+  });
 });
 
 describe('getRiveCoreObjectHandler', () => {
@@ -179,18 +187,6 @@ describe('initializeRiveDocumentImportContext', () => {
 
     expect(out.registry).toBe(registry);
     expect(out.assets).toEqual([]);
-  });
-});
-
-describe('initializeRiveImportRegistry', () => {
-  it('gives the registry its own handler table', () => {
-    const first = {} as RiveImportRegistry;
-    const second = {} as RiveImportRegistry;
-    initializeRiveImportRegistry(first);
-    initializeRiveImportRegistry(second);
-    registerRiveCoreObjectHandler(first, PATH, { importComponent: importRiveCoreObjectAsData });
-
-    expect(second.handlers.size).toBe(0);
   });
 });
 

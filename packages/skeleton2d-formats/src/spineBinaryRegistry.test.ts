@@ -5,7 +5,6 @@ import {
   createSpineBinaryRegistry,
   getSpineBinarySectionHandler,
   getSpineBinaryTimelineHandler,
-  initializeSpineBinaryRegistry,
   registerSpineBinarySectionHandler,
   registerSpineBinaryTimelineHandler,
   unregisterSpineBinarySectionHandler,
@@ -16,6 +15,10 @@ describe('createSpineBinaryRegistry', () => {
   it('creates independent empty registries', () => {
     const first = createSpineBinaryRegistry();
     const second = createSpineBinaryRegistry();
+    // Both families start empty — the retired initializer asserted this, and losing it would let a
+    // registry ship with one family pre-populated and nothing notice.
+    expect(first.sectionHandlers).toEqual([]);
+    expect(first.timelineHandlers).toEqual([]);
     registerSpineBinarySectionHandler(first, SpineBinarySectionKind.Bones, () => {});
     expect(first.sectionHandlers).toHaveLength(1);
     expect(second.sectionHandlers).toEqual([]);
@@ -31,15 +34,6 @@ describe('getSpineBinarySectionHandler', () => {
 describe('getSpineBinaryTimelineHandler', () => {
   it('returns null for an unregistered timeline family', () => {
     expect(getSpineBinaryTimelineHandler(createSpineBinaryRegistry(), SpineBinaryTimelineKind.Bone)).toBeNull();
-  });
-});
-
-describe('initializeSpineBinaryRegistry', () => {
-  it('initializes both handler families', () => {
-    const out = {} as ReturnType<typeof createSpineBinaryRegistry>;
-    initializeSpineBinaryRegistry(out);
-    expect(out.sectionHandlers).toEqual([]);
-    expect(out.timelineHandlers).toEqual([]);
   });
 });
 

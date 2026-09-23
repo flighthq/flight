@@ -1,16 +1,15 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
-  EntityConstruction,
   Kind,
+  NonEntityCreateResult,
   RegistryCatalog,
   RegistryCatalogEntry,
   RequirementFacet,
 } from '@flighthq/types/contract';
 
-export function createRegistryCatalog(entries: readonly Readonly<RegistryCatalogEntry>[] = []): RegistryCatalog {
-  const out = allocateEntity<RegistryCatalog>();
-  initializeRegistryCatalog(out, entries);
-  return finishEntity(out);
+export function createRegistryCatalog(
+  entries: readonly Readonly<RegistryCatalogEntry>[] = [],
+): NonEntityCreateResult<RegistryCatalog, 'descriptor'> {
+  return { entries: entries.map(copyCatalogEntry) };
 }
 
 export function findRegistryCatalogEntries(
@@ -26,13 +25,6 @@ export function findRegistryCatalogEntries(
 
 export function getRegistryCatalogEntries(catalog: Readonly<RegistryCatalog>): readonly RegistryCatalogEntry[] {
   return catalog.entries.map(copyCatalogEntry);
-}
-
-export function initializeRegistryCatalog(
-  out: EntityConstruction<RegistryCatalog>,
-  entries: readonly Readonly<RegistryCatalogEntry>[] = [],
-): void {
-  out.entries = entries.map(copyCatalogEntry);
 }
 
 // The row identity includes the registrar. One requirement may need multiple registrations, so adding a

@@ -16,7 +16,7 @@ export type Scene3DMaterialTextureLister = (material: Readonly<Material>, out: T
 
 export type Scene3DPbrExtensionTextureLister = (extension: Readonly<PbrExtension>, out: Texture[]) => void;
 
-export interface Scene3DMaterialTextureRegistry extends Entity {
+export interface Scene3DMaterialTextureRegistry {
   extensionListers: Map<Kind, Scene3DPbrExtensionTextureLister>;
   listers: Map<Kind, Scene3DMaterialTextureLister>;
 }

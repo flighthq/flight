@@ -2,12 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Modifier } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import {
-  createModifierRegistry,
-  initializeModifierRegistry,
-  registerModifier,
-  resolveModifier,
-} from './modifierRegistry';
+import { createModifierRegistry, registerModifier, resolveModifier } from './modifierRegistry';
 
 describe('createModifierRegistry', () => {
   it('allocates an empty registry', () => {
@@ -20,12 +15,6 @@ describe('createModifierRegistry', () => {
     const b = createModifierRegistry();
     registerModifier(a, { kind: 'acme.Foo', slot: 'Effect' });
     expect(resolveModifier(b, 'acme.Foo')).toBeNull();
-  });
-});
-
-describe('initializeModifierRegistry', () => {
-  it('is the construction initializer of createModifierRegistry', () => {
-    expect(typeof initializeModifierRegistry).toBe('function');
   });
 });
 

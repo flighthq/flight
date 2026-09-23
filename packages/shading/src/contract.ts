@@ -24,4 +24,3 @@ export { initializeToonModifier } from './createToonModifier';
 export { initializeDissolveModifier } from './createDissolveModifier';
 export { initializeFogModifier } from './createFogModifier';
 export { initializeRimModifier } from './createRimModifier';
-export { initializeModifierRegistry } from './modifierRegistry';

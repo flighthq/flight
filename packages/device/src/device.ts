@@ -1,36 +1,63 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   DeviceCapabilities,
   DeviceDisplayMetrics,
   DeviceInfo,
-  EntityConstruction,
   HostDeviceCapability,
+  NonEntityCreateResult,
   SafeAreaInsets,
 } from '@flighthq/types/contract';
 import { DeviceFormFactorUnknown } from '@flighthq/types/contract';
 
-export function createDeviceCapabilities(): DeviceCapabilities {
-  const out = allocateEntity<DeviceCapabilities>();
-  initializeDeviceCapabilities(out);
-  return finishEntity(out);
+export function createDeviceCapabilities(): NonEntityCreateResult<DeviceCapabilities, 'descriptor'> {
+  return { hasKeyboard: false, hasMouse: false, hasStylus: false };
 }
 
-export function createDeviceDisplayMetrics(): DeviceDisplayMetrics {
-  const out = allocateEntity<DeviceDisplayMetrics>();
-  initializeDeviceDisplayMetrics(out);
-  return finishEntity(out);
+export function createDeviceDisplayMetrics(): NonEntityCreateResult<DeviceDisplayMetrics, 'descriptor'> {
+  // -1 is the "not reported" sentinel every field starts at, so a host that supplies only some of
+  // them leaves the rest visibly unknown rather than reading as a real zero.
+  return {
+    colorDepth: -1,
+    densityDpi: -1,
+    logicalHeight: -1,
+    logicalWidth: -1,
+    physicalHeight: -1,
+    physicalWidth: -1,
+    pixelRatio: -1,
+  };
 }
 
-export function createDeviceInfo(): DeviceInfo {
-  const out = allocateEntity<DeviceInfo>();
-  initializeDeviceInfo(out);
-  return finishEntity(out);
+export function createDeviceInfo(): NonEntityCreateResult<DeviceInfo, 'descriptor'> {
+  return {
+    arch: '',
+    availableMemory: -1,
+    boardName: '',
+    colorGamut: '',
+    cpuCores: -1,
+    fontScale: -1,
+    formFactor: DeviceFormFactorUnknown,
+    gpuRenderer: '',
+    gpuVendor: '',
+    isHdr: false,
+    isJailbroken: false,
+    isLowEndDevice: false,
+    isRooted: false,
+    isVirtual: false,
+    manufacturer: '',
+    marketingName: '',
+    model: '',
+    osBuild: '',
+    osName: '',
+    osVersion: '',
+    platformString: '',
+    productName: '',
+    supportedAbis: [],
+    totalMemory: -1,
+    webViewVersion: '',
+  };
 }
 
-export function createSafeAreaInsets(): SafeAreaInsets {
-  const out = allocateEntity<SafeAreaInsets>();
-  initializeSafeAreaInsets(out);
-  return finishEntity(out);
+export function createSafeAreaInsets(): NonEntityCreateResult<SafeAreaInsets, 'descriptor'> {
+  return { bottom: 0, left: 0, right: 0, top: 0 };
 }
 
 export function getDeviceCapabilities(
@@ -57,57 +84,6 @@ export function getDeviceInfo(hostDevice: Readonly<HostDeviceCapability>, out: D
 
 export function getSafeAreaInsets(hostDevice: Readonly<HostDeviceCapability>, out: SafeAreaInsets): SafeAreaInsets {
   return hostDevice.getSafeAreaInsets(out);
-}
-
-export function initializeDeviceCapabilities(out: EntityConstruction<DeviceCapabilities>): void {
-  out.hasKeyboard = false;
-  out.hasMouse = false;
-  out.hasStylus = false;
-}
-
-export function initializeDeviceDisplayMetrics(out: EntityConstruction<DeviceDisplayMetrics>): void {
-  out.colorDepth = -1;
-  out.densityDpi = -1;
-  out.logicalHeight = -1;
-  out.logicalWidth = -1;
-  out.physicalHeight = -1;
-  out.physicalWidth = -1;
-  out.pixelRatio = -1;
-}
-
-export function initializeDeviceInfo(out: EntityConstruction<DeviceInfo>): void {
-  out.arch = '';
-  out.availableMemory = -1;
-  out.boardName = '';
-  out.colorGamut = '';
-  out.cpuCores = -1;
-  out.fontScale = -1;
-  out.formFactor = DeviceFormFactorUnknown;
-  out.gpuRenderer = '';
-  out.gpuVendor = '';
-  out.isHdr = false;
-  out.isJailbroken = false;
-  out.isLowEndDevice = false;
-  out.isRooted = false;
-  out.isVirtual = false;
-  out.manufacturer = '';
-  out.marketingName = '';
-  out.model = '';
-  out.osBuild = '';
-  out.osName = '';
-  out.osVersion = '';
-  out.platformString = '';
-  out.productName = '';
-  out.supportedAbis = [];
-  out.totalMemory = -1;
-  out.webViewVersion = '';
-}
-
-export function initializeSafeAreaInsets(out: EntityConstruction<SafeAreaInsets>): void {
-  out.bottom = 0;
-  out.left = 0;
-  out.right = 0;
-  out.top = 0;
 }
 
 export function refreshDeviceInfo(hostDevice: Readonly<HostDeviceCapability>): void {
