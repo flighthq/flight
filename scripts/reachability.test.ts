@@ -235,7 +235,7 @@ describe('source-derived capability reachability', () => {
         registry.set(normalized, implementation);
       }
       export function registerPersistent(state: object, kind: string, implementation: object): void {
-        state.registries.renderers = withRegistryTableEntry(state.registries.renderers, kind, implementation);
+        state.registries.renderers = withKindMapEntry(state.registries.renderers, kind, implementation);
       }
       export function registerBatch(entries: ReadonlyArray<readonly [string, object]>): void {
         for (const [kind, implementation] of entries) registry.set(kind, implementation);
