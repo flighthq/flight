@@ -24,7 +24,3 @@ export type BoundsNode<Traits extends object = NodeTraits> = NodeOf<Traits> & Ha
 export type BoundsNodeAny = NodeAny & HasBoundsRectangle;
 
 export type Spatial2DNode<Traits extends object = NodeTraits> = NodeOf<Traits> & HasBoundsRectangle & HasTransform2D;
-// The trait-erased spelling, for APIs that accept any node family carrying both spatial traits.
-// Spatial2DNode<NodeTraits> would reject a DisplayObject, because the traits parameter keys the node
-// family; erasing it the way BoundsNodeAny does is what lets one signature serve every 2D graph.
-export type Spatial2DNodeAny = NodeAny & HasBoundsRectangle & HasTransform2D;

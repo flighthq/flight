@@ -7,7 +7,7 @@ import {
   invalidateNodeLocalTransform,
 } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import type { HasBoundsRectangleRuntime } from '@flighthq/types/contract';
+import type { Node2DRuntime } from '@flighthq/types/contract';
 
 import { createRenderProxy2D, prepareScene2DRender } from './renderProxy';
 import { createRenderState } from './renderState';
@@ -18,7 +18,7 @@ function makeObjectWithBounds(x: number, y: number, width: number, height: numbe
   obj.x = x;
   obj.y = y;
   invalidateNodeLocalTransform(obj);
-  const runtime = getNodeRuntime(obj) as unknown as HasBoundsRectangleRuntime;
+  const runtime = getNodeRuntime(obj) as Node2DRuntime;
   runtime.computeLocalBoundsRectangle = (out) => {
     out.x = 0;
     out.y = 0;
@@ -40,8 +40,8 @@ describe('computeRenderProxyWorldBounds', () => {
     expect(out.height).toBe(30);
   });
 
-  // The bounds runtime is guaranteed by the Spatial2DNodeAny parameter rather than probed, so a plain
-  // out object (not a Rectangle entity) is still filled — the writer only needs the four fields.
+  // The bounds runtime is guaranteed by the Node2D parameter rather than probed, so a plain out object
+  // (not a Rectangle entity) is still filled — the writer only needs the four fields.
   it('writes into a bare out object', () => {
     const obj = makeObjectWithBounds(7, 9, 11, 13);
     const out = { x: 0, y: 0, width: 0, height: 0 };
