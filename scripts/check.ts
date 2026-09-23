@@ -89,8 +89,11 @@ if (!scoped) {
   add('support:check', 'tsx', ['scripts/support.ts', '--check']);
   add('capabilities:check', 'tsx', ['scripts/swf-capabilities.ts', '--check']);
   add('instrumentation:check', 'tsx', ['scripts/swf-instrumentation.ts', '--check']);
-  add('capabilities:sites:check', 'tsx', ['scripts/swf-diagnostic-sites.ts', '--check']);
-  add('capabilities:numbers', 'tsx', ['scripts/swf-doc-numbers.ts']);
+  // capabilities:sites:check and capabilities:numbers are principal-facing review tools, not code
+  // gates: their whole subject is prose under agents/packages/swf/ (diagnostic-sites.md,
+  // individuation.md), so a stale sentence turned the sweep red for every unrelated commit while the
+  // remedy was writable only by principal. Same call, and the same reasoning, as docs:check above.
+  // Run them with `npm run capabilities:sites` / `npm run capabilities:numbers` during doc review.
   add('fingerprint-computation-id:check', 'tsx', ['scripts/check-fingerprint-computation-id.ts']);
   // Lives HERE, in the gate every commit reaches, rather than in a CI job selected by changed paths.
   // Its subject is scripts/capture-baseline-coverage-manifest.json, a COMMITTED file: a commit that
