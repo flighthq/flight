@@ -1,3 +1,4 @@
+export { mergeRenderOptions } from './mergeRenderOptions';
 export * from './enableColorAdjustments';
 export * from './enableSceneRenderGuards';
 export * from './explainScene2DPipelineCoverage';

@@ -1,3 +1,4 @@
+export * from './mergeRenderOptions';
 export * from './enableColorAdjustmentGuards';
 export * from './enableColorAdjustments';
 export * from './enableSceneRenderGuards';

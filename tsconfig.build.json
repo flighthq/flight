@@ -155,6 +155,7 @@
     { "path": "./packages/tween" },
     { "path": "./packages/easing" },
     { "path": "./packages/types" },
+    { "path": "./packages/vite-plugin-manifest" },
     { "path": "./packages/updater" },
     { "path": "./packages/useragent" },
     { "path": "./packages/velocity" },

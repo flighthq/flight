@@ -55,7 +55,10 @@ function exportedTypeNames(file: string): string[] {
 const perPackage: Array<{ pkg: string; count: number }> = [];
 let total = 0;
 for (const e of readdirSync(packagesDir, { withFileTypes: true })) {
-  if (!e.isDirectory() || e.name === 'types' || e.name.startsWith('tool-')) continue; // tool-* tier exempt
+  // tool-* and vite-plugin-* are build-side tiers: their exported types name bundler and Node
+  // surfaces that @flighthq/types must not depend on, so they keep their types locally.
+  if (!e.isDirectory() || e.name === 'types' || e.name.startsWith('tool-') || e.name.startsWith('vite-plugin-'))
+    continue;
   if (!selected.has(e.name)) continue;
   let count = 0;
   for (const f of sourceFiles(join(packagesDir, e.name, 'src'))) count += exportedTypeNames(f).length;

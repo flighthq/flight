@@ -1,3 +1,4 @@
+export { mergeSwfParseOptions } from './mergeSwfParseOptions';
 export * from './enableSwfGuards';
 export * from './swfBitmap';
 export * from './swfAllTagHandlers';

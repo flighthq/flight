@@ -1,3 +1,4 @@
+export * from './mergeSwfParseOptions';
 export * from './enableSwfGuards';
 export * from './swfAppearance';
 export * from './swfBitmap';
