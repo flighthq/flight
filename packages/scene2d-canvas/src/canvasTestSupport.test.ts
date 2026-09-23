@@ -1,3 +1,5 @@
+import { getSurfaceHandle } from '@flighthq/surface/contract';
+
 import {
   acquireTestCanvasSurface,
   beginCanvasScreenRenderPassForTest,
@@ -13,9 +15,10 @@ import {
 describe('acquireTestCanvasSurface', () => {
   it('returns an owned test surface', () => {
     const surface = acquireTestCanvasSurface(12, 8);
+    const canvas = getSurfaceHandle(surface) as HTMLCanvasElement;
 
-    expect(surface.context.canvas.width).toBe(12);
-    expect(surface.context.canvas.height).toBe(8);
+    expect(canvas.width).toBe(12);
+    expect(canvas.height).toBe(8);
   });
 });
 
