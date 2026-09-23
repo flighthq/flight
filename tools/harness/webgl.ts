@@ -1,8 +1,7 @@
 import {
-  webCanvasRenderSurfaceCreator,
+  webHostCanvas,
   webHostGl,
   webHostImage,
-  webImageSurfaceCreator,
   appendWebSurface,
   webHostSurfaceDisplay,
   webHostWindowGeometry,
@@ -12,7 +11,7 @@ import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
 import {
   beginCanvasRenderPass,
   createCanvasRenderState,
-  createCanvasRenderSurface,
+  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasShapeRasterizer,
   createCanvasTextureResolvers,
@@ -83,7 +82,8 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
   const state = createGlRenderState(glSurface.context, {
     ...glScene3DRenderPreset,
     pixelRatio,
-    imageSurfaceProvider: webImageSurfaceCreator,
+    canvasHost: webHostCanvas,
+    imageHost: webHostImage,
     sceneGraphSyncPolicy: options.syncPolicy,
   });
   const screenTarget = createGlScreenRenderTarget(state.gl);
@@ -154,15 +154,12 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
 // registered here are exactly what those fills can paint.
 function createHarnessShapeRasterizer(): ShapeRasterizer {
   const canvas = document.createElement('canvas');
-  const resolverState = createCanvasRenderState(
-    canvasScene2DRenderPreset,
-    createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
-  );
+  const resolverState = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas));
   // The rasterizer draws into its own canvas, so it opens its own pass over it and keeps it open for the
   // life of the state — every fill it paints happens inside that bracket.
   beginCanvasRenderPass(
     resolverState,
-    createCanvasScreenRenderTarget(createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas)),
+    createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas)),
   );
   registerCanvasBitmapTextureResolver(webHostImage, getCanvasRenderStateTextureResolvers(resolverState));
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));
