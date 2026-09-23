@@ -62,7 +62,7 @@ export function parseAwd2(
   // A compressed body is inflated and spliced back behind the header so the block walk below is identical
   // for compressed and uncompressed input; bails to empty when the caller supplied no codec for the
   // file's compression method.
-  const rehydrated = rehydrateAwdBody(input, options.deflate ?? null, options.lzma ?? null, diagnostics);
+  const rehydrated = rehydrateAwd2Body(input, options.deflate ?? null, options.lzma ?? null, diagnostics);
   if (rehydrated === null) return emptyAwdDocument();
 
   const state = createAwd2ParseState(emptyAwdDocument(), rehydrated.source, rehydrated.view, diagnostics);
@@ -181,7 +181,7 @@ function emptyAwdDocument(): Scene3DDocument {
 // header spliced in front of the inflated body for a compressed one — so the caller's walk is identical
 // either way (compression byte rewritten to NONE, body-length field to the inflated length). Returns null
 // (after recording a diagnostic) when the compression method has no registered decompressor or the codec fails.
-function rehydrateAwdBody(
+export function rehydrateAwd2Body(
   input: Uint8Array,
   deflate: Readonly<HostDecompressDeflateCapability> | null,
   lzma: Readonly<HostDecompressLzmaCapability> | null,
@@ -197,7 +197,7 @@ function rehydrateAwdBody(
       diagnostics,
       ImportDiagnosticSeverity.Reject,
       'awd2.compression-no-decompressor',
-      'rehydrateAwdBody',
+      'rehydrateAwd2Body',
       { compression },
     );
     return null;
@@ -215,7 +215,7 @@ function rehydrateAwdBody(
       diagnostics,
       ImportDiagnosticSeverity.Reject,
       'awd2.decompression-failed',
-      'rehydrateAwdBody',
+      'rehydrateAwd2Body',
       { compression },
     );
     return null;

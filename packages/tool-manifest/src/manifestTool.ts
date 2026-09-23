@@ -1,15 +1,13 @@
 import { readdir, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { extname, join } from 'node:path';
 
-import type { AnalysisMappings } from './contentAnalysis.js';
-import { contentToManifest, readContentAnalysis } from './contentAnalysis.js';
-import { diffManifest, isManifestDiffSatisfied } from './diffManifest.js';
-import { unionManifests } from './extendManifest.js';
-import { generateManifestSource } from './generateManifestSource.js';
-import type { Manifest } from './manifest.js';
-import { createManifest, readManifest, writeManifest } from './manifest.js';
-import type { ManifestImportRegistry } from './manifestImports.js';
-import { resolveManifestImports } from './manifestImports.js';
+import { createRequirementCodegenPlan } from '@flighthq/requirement-codegen/contract';
+import { diffRequirementSets, mergeRequirementSets } from '@flighthq/requirement/contract';
+import { parseAwd2Requirements } from '@flighthq/scene3d-formats/contract';
+import { parseSwfRequirements } from '@flighthq/swf/contract';
+import type { RequirementSet } from '@flighthq/types/contract';
+
+import { readRequirementCatalogFile, readRequirementSetFile, writeRequirementSetFile } from './requirementSetFile.js';
 
 /** Where the tool writes. Injected so the whole CLI is testable without a process or a terminal. */
 export interface ManifestToolIO {
@@ -17,28 +15,27 @@ export interface ManifestToolIO {
   readonly writeOutput: (message: string) => void;
 }
 
-// WHY THERE IS NO CONTENT PARSER HERE. Turning a .swf or .awd into observations is a DOMAIN job, and
-// domain analyzers are deliberately out of this package's scope. So `scan` consumes analyses a domain
-// already produced and serialized, and `analyze` maps one such analysis through a caller-supplied
-// mapping. Both are honest with no format knowledge whatsoever; neither pretends to read content. A
-// domain plugs in by writing ContentAnalysis JSON, which is the documented seam.
+// This CLI is a thin shell over four things it does not reimplement: the per-format requirement
+// analyzers, `mergeRequirementSets`/`diffRequirementSets`, the catalog, and the codegen kernel. It reads
+// content directly — the analyzers live in the format packages, so the tool needs no format knowledge of
+// its own and gains a format by that package exporting one.
+//
+// Scalar build settings are deliberately NOT part of a requirement set. A requirement names content the
+// producer observed; a scalar is a choice the consumer makes. They stay codegen options so a setting
+// can never masquerade as something a file demanded.
 const USAGE = `Usage: flight-manifest <command>
 
-  scan     --analyses <dir> --out <file>
-           Union every *.json content analysis in <dir> into one manifest.
-           Analyses are produced by DOMAIN analyzers; this tool does not read content itself.
+  scan     --content <dir> --out <file>
+           Analyze every .swf and .awd file in <dir> and merge them into one requirement set.
 
-  analyze  --analysis <file> --mapping <file> [--out <file>]
-           Map one content analysis through a mapping into a manifest.
-
-  union    --manifest <file> [--manifest <file>...] --out <file>
-           Fold manifests left to right: features union, later settings win.
+  merge    --set <file> [--set <file>...] --out <file>
+           Merge requirement sets. Requirements union; covers intersect.
 
   diff     --required <file> --available <file>
-           Report supported, unused and missing features. Exit 1 when anything is missing.
+           Report requirements not covered by the baseline. Exit 1 when any remain.
 
-  generate --manifest <file> --registry <file> --out <file>
-           Emit a TypeScript module importing exactly the required features.
+  plan     --set <file> --catalog <file> --backend <name> [--out <file>]
+           Resolve a requirement set against a catalog into a codegen plan.
 `;
 
 export async function runManifestTool(args: readonly string[], io: Readonly<ManifestToolIO>): Promise<number> {
@@ -56,158 +53,134 @@ export async function runManifestTool(args: readonly string[], io: Readonly<Mani
 
   try {
     switch (command) {
-      case 'scan':
-        return await runScan(flags, io);
-      case 'analyze':
-        return await runAnalyze(flags, io);
-      case 'union':
-        return await runUnion(flags, io);
       case 'diff':
         return await runDiff(flags, io);
-      case 'generate':
-        return await runGenerate(flags, io);
+      case 'merge':
+        return await runMerge(flags, io);
+      case 'plan':
+        return await runPlan(flags, io);
+      case 'scan':
+        return await runScan(flags, io);
       default:
-        io.writeError(USAGE);
+        io.writeError(`unknown command: ${command}\n\n${USAGE}`);
         return 1;
     }
   } catch (error) {
-    io.writeError(`${error instanceof Error ? error.message : String(error)}\n`);
+    io.writeError(`${(error as Error).message}\n`);
     return 1;
   }
 }
 
-async function runScan(flags: Flags, io: Readonly<ManifestToolIO>): Promise<number> {
-  const directory = single(flags, 'analyses');
-  const out = single(flags, 'out');
-  if (directory === null || out === null) return usageError(io);
+type Flags = Readonly<Record<string, readonly string[]>>;
 
-  const files = (await readdir(directory, { recursive: true, withFileTypes: true }))
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.json'))
-    .map((entry) => join(entry.parentPath, entry.name))
-    .sort();
+const CONTENT_ANALYZERS: ReadonlyMap<string, (source: Uint8Array) => RequirementSet> = new Map([
+  ['.awd', (source: Uint8Array) => parseAwd2Requirements(source, null, null)],
+  ['.swf', (source: Uint8Array) => parseSwfRequirements(source, null, null)],
+]);
 
-  const manifests: Manifest[] = [];
-  for (const file of files) {
-    const validation = readContentAnalysis(await readFile(file, 'utf8'));
-    if (validation.analysis === null) return problemsError(io, file, validation.problems);
-    // No mappings at scan time: an analysis is unioned as the observations it already is, so `scan`
-    // reports what content contains without deciding what any of it requires.
-    manifests.push(createManifest(validation.analysis.observations));
-  }
-
-  await writeFile(out, writeManifest(unionManifests(manifests)), 'utf8');
-  io.writeOutput(`${files.length} analysis file(s) -> ${out}\n`);
-  return 0;
+function first(flags: Flags, name: string): string | null {
+  const values = flags[name];
+  return values === undefined || values.length === 0 ? null : values[values.length - 1];
 }
-
-async function runAnalyze(flags: Flags, io: Readonly<ManifestToolIO>): Promise<number> {
-  const analysisPath = single(flags, 'analysis');
-  const mappingPath = single(flags, 'mapping');
-  if (analysisPath === null || mappingPath === null) return usageError(io);
-
-  const validation = readContentAnalysis(await readFile(analysisPath, 'utf8'));
-  if (validation.analysis === null) return problemsError(io, analysisPath, validation.problems);
-
-  const mappings = JSON.parse(await readFile(mappingPath, 'utf8')) as AnalysisMappings;
-  const result = contentToManifest(validation.analysis, mappings);
-  for (const unmapped of result.unmapped) io.writeError(`unmapped: ${unmapped}\n`);
-
-  const out = single(flags, 'out');
-  if (out === null) io.writeOutput(writeManifest(result.manifest));
-  else await writeFile(out, writeManifest(result.manifest), 'utf8');
-  // Unmapped observations are reported but not fatal: a domain still growing its mapping is a normal
-  // state, and the caller decides whether shipping without those features is acceptable.
-  return 0;
-}
-
-async function runUnion(flags: Flags, io: Readonly<ManifestToolIO>): Promise<number> {
-  const paths = flags.get('manifest') ?? [];
-  const out = single(flags, 'out');
-  if (paths.length === 0 || out === null) return usageError(io);
-
-  const manifests: Manifest[] = [];
-  for (const path of paths) {
-    const validation = readManifest(await readFile(path, 'utf8'));
-    if (validation.manifest === null) return problemsError(io, path, validation.problems);
-    manifests.push(validation.manifest);
-  }
-
-  await writeFile(out, writeManifest(unionManifests(manifests)), 'utf8');
-  io.writeOutput(`${manifests.length} manifest(s) -> ${out}\n`);
-  return 0;
-}
-
-async function runDiff(flags: Flags, io: Readonly<ManifestToolIO>): Promise<number> {
-  const requiredPath = single(flags, 'required');
-  const availablePath = single(flags, 'available');
-  if (requiredPath === null || availablePath === null) return usageError(io);
-
-  const required = readManifest(await readFile(requiredPath, 'utf8'));
-  if (required.manifest === null) return problemsError(io, requiredPath, required.problems);
-  const available = readManifest(await readFile(availablePath, 'utf8'));
-  if (available.manifest === null) return problemsError(io, availablePath, available.problems);
-
-  const diff = diffManifest(required.manifest, available.manifest);
-  io.writeOutput(`${JSON.stringify(diff, null, 2)}\n`);
-  return isManifestDiffSatisfied(diff) ? 0 : 1;
-}
-
-async function runGenerate(flags: Flags, io: Readonly<ManifestToolIO>): Promise<number> {
-  const manifestPath = single(flags, 'manifest');
-  const registryPath = single(flags, 'registry');
-  const out = single(flags, 'out');
-  if (manifestPath === null || registryPath === null || out === null) return usageError(io);
-
-  const validation = readManifest(await readFile(manifestPath, 'utf8'));
-  if (validation.manifest === null) return problemsError(io, manifestPath, validation.problems);
-
-  const registry = JSON.parse(await readFile(registryPath, 'utf8')) as ManifestImportRegistry;
-  const resolution = resolveManifestImports(validation.manifest, registry);
-  if (resolution.missing.length > 0) {
-    for (const missing of resolution.missing) io.writeError(`no import for: ${missing}\n`);
-    // Fatal, unlike an unmapped observation: a generated file that quietly omits a required feature is
-    // a build that is wrong in a way nothing downstream can detect.
-    return 1;
-  }
-
-  await writeFile(
-    out,
-    generateManifestSource(resolution.entries, {
-      banner: ['// Generated by flight-manifest. Do not edit.'],
-    }),
-    'utf8',
-  );
-  io.writeOutput(`${out}\n`);
-  return 0;
-}
-
-type Flags = Map<string, string[]>;
 
 function parseFlags(args: readonly string[]): Flags | null {
-  const flags: Flags = new Map();
+  const flags: Record<string, string[]> = {};
   for (let index = 0; index < args.length; index += 2) {
-    const flag = args[index];
+    const name = args[index];
     const value = args[index + 1];
-    if (flag === undefined || !flag.startsWith('--') || value === undefined || value.startsWith('--')) return null;
-    const name = flag.slice(2);
-    const existing = flags.get(name);
-    if (existing === undefined) flags.set(name, [value]);
-    else existing.push(value);
+    if (!name.startsWith('--') || value === undefined || value.startsWith('--')) return null;
+    (flags[name.slice(2)] ??= []).push(value);
   }
   return flags;
 }
 
-function single(flags: Flags, name: string): string | null {
-  const values = flags.get(name);
-  return values === undefined || values.length !== 1 ? null : values[0]!;
+async function readSet(path: string): Promise<RequirementSet> {
+  const validation = readRequirementSetFile(await readFile(path, 'utf8'));
+  if (validation.requirementSet === null) throw new Error(`${path}: ${validation.problems.join('; ')}`);
+  return validation.requirementSet;
 }
 
-function problemsError(io: Readonly<ManifestToolIO>, path: string, problems: readonly string[]): number {
-  for (const problem of problems) io.writeError(`${path}: ${problem}\n`);
+async function runDiff(flags: Flags, io: Readonly<ManifestToolIO>): Promise<number> {
+  const required = first(flags, 'required');
+  const available = first(flags, 'available');
+  if (required === null || available === null) {
+    io.writeError(USAGE);
+    return 1;
+  }
+  const missing = diffRequirementSets(await readSet(required), await readSet(available));
+  if (missing.requirements.length === 0) {
+    io.writeOutput('all requirements are covered\n');
+    return 0;
+  }
+  for (const requirement of missing.requirements) {
+    io.writeError(`missing ${requirement.facet} ${requirement.key}\n`);
+  }
   return 1;
 }
 
-function usageError(io: Readonly<ManifestToolIO>): number {
-  io.writeError(USAGE);
-  return 1;
+async function runMerge(flags: Flags, io: Readonly<ManifestToolIO>): Promise<number> {
+  const out = first(flags, 'out');
+  const paths = flags.set ?? [];
+  if (out === null || paths.length === 0) {
+    io.writeError(USAGE);
+    return 1;
+  }
+  const sets = [];
+  for (const path of paths) sets.push(await readSet(path));
+  const merged = mergeRequirementSets(sets);
+  await writeFile(out, writeRequirementSetFile(merged), 'utf8');
+  io.writeOutput(`${out}: ${merged.requirements.length} requirements over ${merged.covers.length} facets\n`);
+  return 0;
+}
+
+async function runPlan(flags: Flags, io: Readonly<ManifestToolIO>): Promise<number> {
+  const setPath = first(flags, 'set');
+  const catalogPath = first(flags, 'catalog');
+  const backend = first(flags, 'backend');
+  if (setPath === null || catalogPath === null || backend === null) {
+    io.writeError(USAGE);
+    return 1;
+  }
+  const catalogValidation = readRequirementCatalogFile(await readFile(catalogPath, 'utf8'));
+  if (catalogValidation.catalog === null) {
+    io.writeError(`${catalogPath}: ${catalogValidation.problems.join('; ')}\n`);
+    return 1;
+  }
+  const plan = createRequirementCodegenPlan(catalogValidation.catalog, await readSet(setPath), backend);
+  const text = `${JSON.stringify(
+    { backend: plan.backend, entries: plan.entries, unresolved: plan.unresolved },
+    null,
+    2,
+  )}\n`;
+  const out = first(flags, 'out');
+  if (out === null) io.writeOutput(text);
+  else await writeFile(out, text, 'utf8');
+  // Unresolved rows are reported, never dropped: a requirement with no catalog entry is the gap this
+  // pipeline exists to make visible before a build silently ships without it.
+  if (plan.unresolved.length > 0) {
+    for (const requirement of plan.unresolved) {
+      io.writeError(`unresolved ${requirement.facet} ${requirement.key}\n`);
+    }
+    return 1;
+  }
+  return 0;
+}
+
+async function runScan(flags: Flags, io: Readonly<ManifestToolIO>): Promise<number> {
+  const dir = first(flags, 'content');
+  const out = first(flags, 'out');
+  if (dir === null || out === null) {
+    io.writeError(USAGE);
+    return 1;
+  }
+  const names = (await readdir(dir)).filter((name) => CONTENT_ANALYZERS.has(extname(name).toLowerCase())).sort();
+  const sets: RequirementSet[] = [];
+  for (const name of names) {
+    const analyze = CONTENT_ANALYZERS.get(extname(name).toLowerCase())!;
+    sets.push(analyze(new Uint8Array(await readFile(join(dir, name)))));
+  }
+  const merged = mergeRequirementSets(sets);
+  await writeFile(out, writeRequirementSetFile(merged), 'utf8');
+  io.writeOutput(`${out}: ${names.length} files, ${merged.requirements.length} requirements\n`);
+  return 0;
 }

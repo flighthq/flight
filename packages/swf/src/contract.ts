@@ -12,6 +12,8 @@ export * from './swfDocument';
 export * from './swfEditText';
 export * from './swfEditTextHandler';
 export * from './swfHeader';
+export * from './swfHeaderReader';
+export * from './swfTagCensus';
 export * from './swfRequirements';
 export * from './swfFilter';
 export * from './swfFontHandler';

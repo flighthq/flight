@@ -10,26 +10,69 @@
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
-    { "path": "../camera" },
-    { "path": "../compression" },
-    { "path": "../animation" },
-    { "path": "../color" },
-    { "path": "../entity" },
-    { "path": "../geometry" },
-    { "path": "../image" },
-    { "path": "../image-codec" },
-    { "path": "../importdiagnostics" },
-    { "path": "../lighting" },
-    { "path": "../materials" },
-    { "path": "../math" },
-    { "path": "../mesh" },
-    { "path": "../node" },
-    { "path": "../scene3d" },
-    { "path": "../shading" },
-    { "path": "../skeleton3d" },
-    { "path": "../texture" },
-    { "path": "../types" },
-    { "path": "../xml" }
+    {
+      "path": "../animation"
+    },
+    {
+      "path": "../camera"
+    },
+    {
+      "path": "../color"
+    },
+    {
+      "path": "../compression"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../image"
+    },
+    {
+      "path": "../image-codec"
+    },
+    {
+      "path": "../importdiagnostics"
+    },
+    {
+      "path": "../lighting"
+    },
+    {
+      "path": "../materials"
+    },
+    {
+      "path": "../math"
+    },
+    {
+      "path": "../mesh"
+    },
+    {
+      "path": "../node"
+    },
+    {
+      "path": "../requirement"
+    },
+    {
+      "path": "../scene3d"
+    },
+    {
+      "path": "../shading"
+    },
+    {
+      "path": "../skeleton3d"
+    },
+    {
+      "path": "../texture"
+    },
+    {
+      "path": "../types"
+    },
+    {
+      "path": "../xml"
+    }
   ],
   "include": ["src"]
 }

@@ -4,6 +4,7 @@ export * from './awd2CameraHandler';
 export * from './awd2GeometryHandler';
 export * from './awd2LightingHandler';
 export * from './awd2MaterialHandler';
+export * from './awd2Header';
 export * from './awd2Parse';
 export * from './awd2Reader';
 export * from './awd2SceneStructureHandler';

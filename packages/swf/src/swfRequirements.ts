@@ -7,7 +7,7 @@ import type {
 } from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
-import { collectSwfTagCounts, getSwfTagName } from './swfHeader';
+import { collectSwfTagCounts, getSwfTagName } from './swfTagCensus';
 
 /**
  * Build-time inventory of what one SWF file asks a build to support: one requirement per distinct tag

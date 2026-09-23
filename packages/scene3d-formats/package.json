@@ -52,6 +52,7 @@
     "@flighthq/math": "*",
     "@flighthq/mesh": "*",
     "@flighthq/node": "*",
+    "@flighthq/requirement": "*",
     "@flighthq/scene3d": "*",
     "@flighthq/shading": "*",
     "@flighthq/skeleton3d": "*",
