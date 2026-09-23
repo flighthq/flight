@@ -53,12 +53,12 @@ beforeEach(() => {
   destroySurface.mockReset();
 });
 
-function createTestCanvasHost(destroyFn: (surface: CanvasSurface) => void = destroySurface): HostCanvasCapability {
+function createTestCanvasHost(): HostCanvasCapability {
   return {
     acquire: () => null,
     create: () => null,
     createSurface: createTestSurface,
-    destroySurface: destroyFn,
+    destroySurface,
     release() {},
   };
 }
@@ -89,7 +89,8 @@ describe('acquireWgpuScale9ShapeRasterSurface', () => {
       release() {},
     };
     const imageHost = createTestImageHost();
-    const data = getWgpuScale9ShapeData(createWgpuScale9ShapeData({} as never, createScale9Shape(grid)))!;
+    const state = { canvasHost, imageHost } as never;
+    const data = getWgpuScale9ShapeData(createWgpuScale9ShapeData(state, createScale9Shape(grid)))!;
 
     expect(acquireWgpuScale9ShapeRasterSurface(canvasHost, imageHost, data)).toBeNull();
     expect(data.surface).toBeNull();
@@ -101,14 +102,12 @@ describe('acquireWgpuScale9ShapeRasterSurface', () => {
   it('presents different textures for two nodes with different content in the same frame', async () => {
     const state = await createWgpuRenderStateForTest();
     setTestHosts(state);
+    const canvasHost = createTestCanvasHost();
+    const imageHost = createTestImageHost();
     const firstData = getWgpuScale9ShapeData(createWgpuScale9ShapeData(state, createScale9Shape(grid)))!;
     const secondData = getWgpuScale9ShapeData(createWgpuScale9ShapeData(state, createScale9Shape(grid)))!;
-    const firstCanvasHost = createTestCanvasHost();
-    const firstImageHost = createTestImageHost();
-    const secondCanvasHost = createTestCanvasHost();
-    const secondImageHost = createTestImageHost();
-    acquireWgpuScale9ShapeRasterSurface(firstCanvasHost, firstImageHost, firstData);
-    acquireWgpuScale9ShapeRasterSurface(secondCanvasHost, secondImageHost, secondData);
+    acquireWgpuScale9ShapeRasterSurface(canvasHost, imageHost, firstData);
+    acquireWgpuScale9ShapeRasterSurface(canvasHost, imageHost, secondData);
     const first = firstData.surface!;
     const second = secondData.surface!;
     first.context.fillStyle = '#f00';

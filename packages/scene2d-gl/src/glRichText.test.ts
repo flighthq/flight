@@ -16,7 +16,6 @@ import type {
   RenderProxy2D,
   RichText,
 } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
   createGlRichTextData,
