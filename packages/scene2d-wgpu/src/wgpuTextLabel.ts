@@ -9,8 +9,6 @@ import { getTextLabelRuntime } from '@flighthq/text/contract';
 import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   CanvasSurface,
-  HostCanvasCapability,
-  HostImageCapability,
   ImageResource,
   NodeAny,
   RendererData,
@@ -35,6 +33,8 @@ import {
 import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
 
 interface WgpuTextLabelData extends RendererData {
+  allocH: number;
+  allocW: number;
   image: ImageResource | null;
   lastContentId: number;
   lastPixelRatio: number;
@@ -45,6 +45,8 @@ interface WgpuTextLabelData extends RendererData {
 
 function createWgpuTextLabelData(_state: RenderState, _source: NodeAny): RendererData {
   return createWgpuRendererData({
+    allocH: 0,
+    allocW: 0,
     image: null,
     lastContentId: -1,
     lastPixelRatio: 0,
@@ -85,7 +87,7 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
   if (state.canvasHost === null || state.imageHost === null) return;
   const textData = getWgpuRendererData<WgpuTextLabelData>(renderProxy.rendererData);
   if (textData === null) return;
-  const surface = acquireWgpuTextLabelRasterSurface(state.canvasHost, state.imageHost, textData);
+  let surface = _ensureWgpuTextLabelSurface(state, textData, 1, 1);
   if (surface === null) return;
   const maxTexDim = state.device.limits.maxTextureDimension2D;
   const pixelRatio = state.pixelRatio;
@@ -93,8 +95,8 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
 
   if (version !== textData.lastContentId || pixelRatio !== textData.lastPixelRatio) {
     const measure = (t: string, format: TextFormat): number => {
-      surface.context.font = computeTextFormatFontString(format);
-      return surface.context.measureText(t).width;
+      surface!.context.font = computeTextFormatFontString(format);
+      return surface!.context.measureText(t).width;
     };
 
     const result = getTextLayoutResult(getTextLabelRuntime(source) as TextLabelRuntime);
@@ -130,8 +132,8 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
 
     const pw = Math.ceil(w * pixelRatio);
     const ph = Math.ceil(h * pixelRatio);
-    surface.width = pw;
-    surface.height = ph;
+    surface = _ensureWgpuTextLabelSurface(state, textData, pw, ph);
+    if (surface === null) return;
 
     const ctx = surface.context;
     ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
@@ -184,15 +186,44 @@ export const wgpuTextLabelRenderer: Scene2DRenderer = {
   submit: drawWgpuTextLabel,
 };
 
-function acquireWgpuTextLabelRasterSurface(
-  canvasHost: Readonly<HostCanvasCapability>,
-  imageHost: Readonly<HostImageCapability>,
+function _ensureWgpuTextLabelSurface(
+  state: WgpuRenderState,
   data: WgpuTextLabelData,
+  pw: number,
+  ph: number,
 ): CanvasSurface | null {
-  if (data.surface !== null) return data.surface;
-  const surface = createCanvasHostSurface(canvasHost, 1, 1);
-  if (surface === null) return null;
+  if (data.surface !== null && data.allocW === pw && data.allocH === ph) return data.surface;
+  if (data.surface !== null) {
+    if (data.image !== null) {
+      const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
+      const entry = cache.get(data.image);
+      if (entry !== undefined) {
+        entry.texture.destroy();
+        cache.delete(data.image);
+      }
+    }
+    destroyCanvasHostSurface(data.surface);
+  }
+  const canvasHost = state.canvasHost;
+  const imageHost = state.imageHost;
+  if (canvasHost === null || imageHost === null) {
+    data.surface = null;
+    data.image = null;
+    data.allocW = 0;
+    data.allocH = 0;
+    return null;
+  }
+  const surface = createCanvasHostSurface(canvasHost, pw, ph);
+  if (surface === null) {
+    data.surface = null;
+    data.image = null;
+    data.allocW = 0;
+    data.allocH = 0;
+    return null;
+  }
   data.surface = surface;
   data.image = imageHost.createImageFromSurface?.(surface) ?? null;
+  data.allocW = pw;
+  data.allocH = ph;
   return surface;
 }

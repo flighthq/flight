@@ -18,7 +18,6 @@ import type {
   CanvasSurface,
   CanvasTextureRenderTarget,
   HostCanvasCapability,
-  ImageResource,
 } from '@flighthq/types/contract';
 
 export const canvasTestHost: HostCanvasCapability = {
@@ -31,9 +30,6 @@ export const canvasTestHost: HostCanvasCapability = {
     canvas.width = width;
     canvas.height = height;
     return canvas;
-  },
-  createImageResource(_surface: Readonly<CanvasSurface>): ImageResource {
-    throw new Error('canvasTestHost does not support createImageResource');
   },
   createSurface(width, height) {
     const canvas = globalThis.document.createElement('canvas');

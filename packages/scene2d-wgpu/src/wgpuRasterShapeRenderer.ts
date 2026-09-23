@@ -2,6 +2,7 @@ import { invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { bindWgpuImageResourceTexture, resolveWgpuQuadMaterialRenderer } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
+import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import type { RenderProxy2D, Scene2DRenderer, Shape, WgpuRenderState } from '@flighthq/types/contract';
 import { BatchFormat, RenderRegistryTable, ShapeKind } from '@flighthq/types/contract';
 
@@ -55,8 +56,8 @@ export function drawWgpuRasterShape(state: WgpuRenderState, renderProxy: RenderP
   // raster is only sharper — no geometry moves with it.
   const version = getNodeLocalContentRevision(source);
   const pixelRatio = state.pixelRatio;
-  if (state.imageSurfaceProvider === null) return;
-  const surface = acquireWgpuShapeRasterSurface(state.imageSurfaceProvider, shapeData);
+  if (state.canvasHost === null || state.imageHost === null) return;
+  let surface = acquireWgpuShapeRasterSurface(state.canvasHost, state.imageHost, shapeData);
   if (surface === null) return;
   if (
     version !== shapeData.lastContentId ||
@@ -64,20 +65,36 @@ export function drawWgpuRasterShape(state: WgpuRenderState, renderProxy: RenderP
     h !== shapeData.lastH ||
     pixelRatio !== shapeData.lastPixelRatio
   ) {
-    // Reassigning either surface dimension may reset its 2D context even when the value is unchanged.
-    // Animated shapes invalidate their commands every frame, so resize only when their bounds change.
     const pw = Math.ceil(w * pixelRatio);
     const ph = Math.ceil(h * pixelRatio);
-    if (surface.width !== pw) surface.width = pw;
-    if (surface.height !== ph) surface.height = ph;
+    const oldPw = shapeData.lastW > 0 ? Math.ceil(shapeData.lastW * shapeData.lastPixelRatio) : 0;
+    const oldPh = shapeData.lastH > 0 ? Math.ceil(shapeData.lastH * shapeData.lastPixelRatio) : 0;
+    if (pw !== oldPw || ph !== oldPh) {
+      if (shapeData.image !== null) {
+        const cache = runtime.context.textureSourcePremultipliedTextureCache;
+        const entry = cache.get(shapeData.image);
+        if (entry !== undefined) {
+          entry.texture.destroy();
+          cache.delete(shapeData.image);
+        }
+      }
+      destroyCanvasHostSurface(surface);
+      const newSurface = createCanvasHostSurface(state.canvasHost, pw, ph);
+      if (newSurface === null) {
+        shapeData.surface = null;
+        shapeData.image = null;
+        return;
+      }
+      shapeData.surface = newSurface;
+      shapeData.image = state.imageHost.createImageFromSurface?.(newSurface) ?? null;
+      surface = newSurface;
+    }
     const { context } = surface;
     context.setTransform(pixelRatio, 0, 0, pixelRatio, -bounds.x * pixelRatio, -bounds.y * pixelRatio);
     context.clearRect(bounds.x, bounds.y, w, h);
     rasterizer(context, commands, state);
     context.setTransform(1, 0, 0, 1, 0, 0);
-    // Re-read the surface dimensions and bump the resource version so the batch's version-aware cache
-    // re-uploads (recreating the GPU texture, which covers a size change too).
-    invalidateImageResource(surface.image);
+    if (shapeData.image !== null) invalidateImageResource(shapeData.image);
     shapeData.lastContentId = version;
     shapeData.lastPixelRatio = pixelRatio;
     shapeData.lastW = w;
@@ -90,7 +107,8 @@ export function drawWgpuRasterShape(state: WgpuRenderState, renderProxy: RenderP
   const tx = t.tx + t.a * bounds.x + t.c * bounds.y;
   const ty = t.ty + t.b * bounds.x + t.d * bounds.y;
 
-  const textureEntry = bindWgpuImageResourceTexture(state, surface.image, false, true);
+  if (shapeData.image === null) return;
+  const textureEntry = bindWgpuImageResourceTexture(state, shapeData.image, false, true);
   if (textureEntry === null) return;
   const startInstance = prepareWgpuQuadBatchWrite(
     state,

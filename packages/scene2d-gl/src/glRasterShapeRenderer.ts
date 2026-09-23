@@ -2,6 +2,7 @@ import { invalidateImageResource } from '@flighthq/image/contract';
 import { getNodeLocalBoundsRectangle, getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { bindGlImageResourceTexture, resolveGlQuadMaterialRenderer } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
+import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import type { GlRenderState, RenderProxy2D, Scene2DRenderer, Shape } from '@flighthq/types/contract';
 import { BatchFormat, RenderRegistryTable, ShapeKind } from '@flighthq/types/contract';
 
@@ -53,7 +54,7 @@ export function drawGlRasterShape(state: GlRenderState, renderProxy: RenderProxy
   // a state that changes it must re-rasterize at the new density.
   const pixelRatio = state.pixelRatio;
   if (state.canvasHost === null || state.imageHost === null) return;
-  const surface = acquireGlShapeRasterSurface(state.canvasHost, state.imageHost, shapeData);
+  let surface = acquireGlShapeRasterSurface(state.canvasHost, state.imageHost, shapeData);
   if (surface === null) return;
   if (
     version !== shapeData.lastContentId ||
@@ -61,8 +62,29 @@ export function drawGlRasterShape(state: GlRenderState, renderProxy: RenderProxy
     h !== shapeData.lastH ||
     pixelRatio !== shapeData.lastPixelRatio
   ) {
-    surface.width = Math.ceil(w * pixelRatio);
-    surface.height = Math.ceil(h * pixelRatio);
+    const pw = Math.ceil(w * pixelRatio);
+    const ph = Math.ceil(h * pixelRatio);
+    const oldPw = shapeData.lastW > 0 ? Math.ceil(shapeData.lastW * shapeData.lastPixelRatio) : 0;
+    const oldPh = shapeData.lastH > 0 ? Math.ceil(shapeData.lastH * shapeData.lastPixelRatio) : 0;
+    if (pw !== oldPw || ph !== oldPh) {
+      if (shapeData.image !== null) {
+        const entry = runtime.context.textureSourcePremultipliedTextureCache.get(shapeData.image);
+        if (entry !== undefined) {
+          state.gl.deleteTexture(entry.texture);
+          runtime.context.textureSourcePremultipliedTextureCache.delete(shapeData.image);
+        }
+      }
+      destroyCanvasHostSurface(surface);
+      const newSurface = createCanvasHostSurface(state.canvasHost, pw, ph);
+      if (newSurface === null) {
+        shapeData.surface = null;
+        shapeData.image = null;
+        return;
+      }
+      shapeData.surface = newSurface;
+      shapeData.image = state.imageHost.createImageFromSurface?.(newSurface) ?? null;
+      surface = newSurface;
+    }
     const { context } = surface;
     context.setTransform(pixelRatio, 0, 0, pixelRatio, -bounds.x * pixelRatio, -bounds.y * pixelRatio);
     context.clearRect(bounds.x, bounds.y, w, h);
@@ -70,7 +92,7 @@ export function drawGlRasterShape(state: GlRenderState, renderProxy: RenderProxy
     context.setTransform(1, 0, 0, 1, 0, 0);
     // Re-reads the surface dimensions and bumps the resource version so the batch's version-aware cache
     // re-uploads from the updated backing store.
-    invalidateImageResource(surface.image);
+    if (shapeData.image !== null) invalidateImageResource(shapeData.image);
     shapeData.lastContentId = version;
     shapeData.lastPixelRatio = pixelRatio;
     shapeData.lastW = w;
@@ -83,7 +105,8 @@ export function drawGlRasterShape(state: GlRenderState, renderProxy: RenderProxy
   const tx = t.tx + t.a * bounds.x + t.c * bounds.y;
   const ty = t.ty + t.b * bounds.x + t.d * bounds.y;
 
-  const texture = bindGlImageResourceTexture(state, surface.image, null, null, true);
+  if (shapeData.image === null) return;
+  const texture = bindGlImageResourceTexture(state, shapeData.image, null, null, true);
   const straightAlpha = runtime.context.currentTextureRealization!.straightAlpha;
   const startInstance = prepareGlQuadBatchWrite(
     state,
