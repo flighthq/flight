@@ -2,10 +2,9 @@ import { readFile } from 'node:fs/promises';
 import { dirname, extname, isAbsolute, resolve } from 'node:path';
 
 import { logWarn } from '@flighthq/log/contract';
-import { findRequirementCatalogEntries } from '@flighthq/requirement-catalog/contract';
-import type { NonEntityCreateResult, RequirementCatalog } from '@flighthq/types/contract';
+import { createRequirementCodegenPlan } from '@flighthq/requirement-codegen/contract';
+import type { NonEntityCreateResult, Requirement, RequirementCatalog } from '@flighthq/types/contract';
 
-import type { ContentAnalyzer } from './contentAnalyzers';
 import { DEFAULT_CONTENT_ANALYZERS } from './contentAnalyzers';
 import type { ManifestModuleEntry } from './manifestModuleSource';
 import {
@@ -19,11 +18,6 @@ export const MANIFEST_QUERY_SUFFIX = '?manifest';
 
 /** What `createManifestPlugin` accepts. Every input is explicit; nothing is discovered by convention. */
 export interface ManifestPluginOptions {
-  /**
-   * Extra or replacement analyzers by lowercase extension, merged over the built-in table. Supplying
-   * one is how a project adds a format without this package learning it.
-   */
-  readonly analyzers?: Readonly<Record<string, ContentAnalyzer>>;
   /** The catalog mapping a requirement to the implementation that satisfies it, for every backend. */
   readonly catalog: Readonly<RequirementCatalog>;
   /**
@@ -65,7 +59,6 @@ export interface ManifestPlugin {
 export function createManifestPlugin(
   options: Readonly<ManifestPluginOptions>,
 ): NonEntityCreateResult<ManifestPlugin, 'descriptor'> {
-  const analyzers = { ...DEFAULT_CONTENT_ANALYZERS, ...options.analyzers };
   const report = options.onDiagnostic ?? ((message: string) => logWarn(message, MANIFEST_LOG_CHANNEL));
   // Keyed by the absolute content path, so invalidation is per imported source: editing one document
   // rebuilds that document's module and leaves every other file's cached module untouched.
@@ -73,39 +66,46 @@ export function createManifestPlugin(
 
   async function build(path: string): Promise<string> {
     const extension = extname(path).toLowerCase();
-    const analyze = analyzers[extension];
+    const analyze = DEFAULT_CONTENT_ANALYZERS[extension];
     if (analyze === undefined) {
       report(`unsupported content format, no analyzer for ${extension}: ${path}`);
-      return generateManifestModuleSource([], extension);
+      return generateManifestModuleSource([], extension).source;
     }
     let requirements;
     try {
       requirements = analyze(new Uint8Array(await readFile(path)));
     } catch (error) {
       report(`analyzer failed for ${path}: ${(error as Error).message}`);
-      return generateManifestModuleSource([], extension);
+      return generateManifestModuleSource([], extension).source;
     }
 
+    // Resolution is the codegen kernel's job, not this plugin's. Every backend is planned, not a
+    // configured one: the module exports a fragment per backend and the application's import decides
+    // which survive the bundle. The parser is planned alongside them because parserOptions is one of
+    // those exports.
     const rows: ManifestModuleEntry[] = [];
-    for (const requirement of requirements.requirements) {
-      let placed = false;
-      // Every backend is resolved, not a configured one: the module exports a fragment per backend and
-      // the application's import decides which survive the bundle. The parser is queried alongside them
-      // because parserOptions is one of those exports.
-      for (const backend of MANIFEST_RESOLVED_BACKENDS) {
-        for (const entry of findRequirementCatalogEntries(
-          options.catalog,
-          backend,
-          requirement.facet,
-          requirement.key,
-        )) {
-          rows.push({ entry, kind: requirement.key });
-          placed = true;
-        }
+    const unresolvedEverywhere = new Map<string, Requirement>();
+    const resolvedSomewhere = new Set<string>();
+    for (const backend of MANIFEST_RESOLVED_BACKENDS) {
+      const plan = createRequirementCodegenPlan(options.catalog, requirements, backend);
+      for (const entry of plan.entries) {
+        rows.push({ entry, kind: entry.kind });
+        resolvedSomewhere.add(`${entry.facet}\u0000${entry.kind}`);
       }
-      if (!placed) report(`no catalog entry for ${requirement.facet} ${requirement.key}: ${path}`);
+      for (const requirement of plan.unresolved) {
+        unresolvedEverywhere.set(`${requirement.facet}\u0000${requirement.key}`, requirement);
+      }
     }
-    return generateManifestModuleSource(rows, extension);
+    // Reported only when NO backend could place it. A requirement satisfied by GL but absent from the
+    // WGPU catalog is a normal per-backend gap, not a hole in the content's coverage.
+    for (const [identity, requirement] of unresolvedEverywhere) {
+      if (resolvedSomewhere.has(identity)) continue;
+      report(`no catalog entry for ${requirement.facet} ${requirement.key}: ${path}`);
+    }
+
+    const generated = generateManifestModuleSource(rows, extension);
+    for (const problem of generated.problems) report(`${problem}: ${path}`);
+    return generated.source;
   }
 
   return {

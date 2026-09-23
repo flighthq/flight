@@ -19,9 +19,6 @@
       "path": "../requirement"
     },
     {
-      "path": "../requirement-catalog"
-    },
-    {
       "path": "../requirement-codegen"
     },
     {
