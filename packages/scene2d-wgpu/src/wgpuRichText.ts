@@ -17,8 +17,6 @@ import {
 } from '@flighthq/textlayout/contract';
 import type {
   CanvasSurface,
-  HostCanvasCapability,
-  HostImageCapability,
   ImageResource,
   NodeAny,
   RendererData,
@@ -39,12 +37,14 @@ import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData'
 // The raster surface belongs to the render node rather than the module. Its Image identity is the
 // GPU-cache key, so two RichText nodes drawn in one frame cannot overwrite each other's upload.
 interface WgpuRichTextData extends RendererData {
+  allocH: number;
+  allocW: number;
   image: ImageResource | null;
   surface: CanvasSurface | null;
 }
 
 export function createWgpuRichTextData(_state: RenderState, _source: NodeAny): RendererData {
-  return createWgpuRendererData({ image: null, surface: null });
+  return createWgpuRendererData({ allocH: 0, allocW: 0, image: null, surface: null });
 }
 
 // Remove the GPU cache entry while its Image key is still valid, then return the raster allocation to
@@ -92,7 +92,7 @@ export function drawWgpuRichTextWithOverlay(
   if (content.text.length === 0 && !data.background && !data.border) return;
   const richData = getWgpuRendererData<WgpuRichTextData>(renderProxy.rendererData);
   if (richData === null || state.canvasHost === null || state.imageHost === null) return;
-  const surface = acquireWgpuRichTextRasterSurface(state.canvasHost, state.imageHost, richData);
+  let surface = _ensureWgpuRichTextSurface(state, richData, 1, 1);
   if (surface === null) return;
 
   const result = layoutRichText(source, richTextRuntime, content.text, content.formatRanges, state, surface.context);
@@ -105,8 +105,8 @@ export function drawWgpuRichTextWithOverlay(
 
   const pw = Math.ceil(fieldW * pixelRatio);
   const ph = Math.ceil(fieldH * pixelRatio);
-  if (surface.width !== pw) surface.width = pw;
-  if (surface.height !== ph) surface.height = ph;
+  surface = _ensureWgpuRichTextSurface(state, richData, pw, ph);
+  if (surface === null) return;
   const offCtx = surface.context;
   offCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   offCtx.clearRect(0, 0, fieldW, fieldH);
@@ -235,16 +235,47 @@ function layoutRichText(
   return result;
 }
 
-function acquireWgpuRichTextRasterSurface(
-  canvasHost: Readonly<HostCanvasCapability>,
-  imageHost: Readonly<HostImageCapability>,
+// Returns a surface at the requested pixel dimensions, creating or resizing via destroy+recreate as
+// needed. The paired image resource stays in sync with the surface lifecycle.
+function _ensureWgpuRichTextSurface(
+  state: WgpuRenderState,
   data: WgpuRichTextData,
+  pw: number,
+  ph: number,
 ): CanvasSurface | null {
-  if (data.surface !== null) return data.surface;
-  const surface = createCanvasHostSurface(canvasHost, 1, 1);
-  if (surface === null) return null;
+  if (data.surface !== null && data.allocW === pw && data.allocH === ph) return data.surface;
+  if (data.surface !== null) {
+    if (data.image !== null) {
+      const cache = getWgpuRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
+      const entry = cache.get(data.image);
+      if (entry !== undefined) {
+        entry.texture.destroy();
+        cache.delete(data.image);
+      }
+    }
+    destroyCanvasHostSurface(data.surface);
+  }
+  const canvasHost = state.canvasHost;
+  const imageHost = state.imageHost;
+  if (canvasHost === null || imageHost === null) {
+    data.surface = null;
+    data.image = null;
+    data.allocW = 0;
+    data.allocH = 0;
+    return null;
+  }
+  const surface = createCanvasHostSurface(canvasHost, pw, ph);
+  if (surface === null) {
+    data.surface = null;
+    data.image = null;
+    data.allocW = 0;
+    data.allocH = 0;
+    return null;
+  }
   data.surface = surface;
   data.image = imageHost.createImageFromSurface?.(surface) ?? null;
+  data.allocW = pw;
+  data.allocH = ph;
   return surface;
 }
 

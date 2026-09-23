@@ -115,7 +115,7 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
   const h = Math.ceil(bounds.height * source.scaleY);
   if (w <= 0 || h <= 0) return;
   if (state.canvasHost === null || state.imageHost === null) return;
-  const surface = acquireWgpuScale9ShapeRasterSurface(state.canvasHost, state.imageHost, shapeData);
+  let surface = acquireWgpuScale9ShapeRasterSurface(state.canvasHost, state.imageHost, shapeData);
   if (surface === null) return;
 
   if (
@@ -128,8 +128,28 @@ export function drawWgpuScale9Shape(state: WgpuRenderState, renderProxy: RenderP
   ) {
     const pw = Math.ceil(w * pixelRatio);
     const ph = Math.ceil(h * pixelRatio);
-    if (surface.width !== pw) surface.width = pw;
-    if (surface.height !== ph) surface.height = ph;
+    const oldPw = shapeData.lastW > 0 ? Math.ceil(shapeData.lastW * shapeData.lastPixelRatio) : 0;
+    const oldPh = shapeData.lastH > 0 ? Math.ceil(shapeData.lastH * shapeData.lastPixelRatio) : 0;
+    if (pw !== oldPw || ph !== oldPh) {
+      if (shapeData.image !== null) {
+        const cache = runtime.context.textureSourcePremultipliedTextureCache;
+        const entry = cache.get(shapeData.image);
+        if (entry !== undefined) {
+          entry.texture.destroy();
+          cache.delete(shapeData.image);
+        }
+      }
+      destroyCanvasHostSurface(surface);
+      const newSurface = createCanvasHostSurface(state.canvasHost, pw, ph);
+      if (newSurface === null) {
+        shapeData.surface = null;
+        shapeData.image = null;
+        return;
+      }
+      shapeData.surface = newSurface;
+      shapeData.image = state.imageHost.createImageFromSurface?.(newSurface) ?? null;
+      surface = newSurface;
+    }
     const { context } = surface;
     context.setTransform(pixelRatio, 0, 0, pixelRatio, -bounds.x * pixelRatio, -bounds.y * pixelRatio);
     context.clearRect(bounds.x, bounds.y, w, h);
