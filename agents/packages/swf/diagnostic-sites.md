@@ -10,7 +10,7 @@ generated: true
 Every place `packages/swf` reports an import diagnostic, as of the commit this file was committed in.
 Regenerate rather than trust the line column: **kind and severity survive edits, line numbers do not.**
 
-**43 sites across 15 files.** By severity: Drop 18 · Recover 3 · Reject 11 · Skip 11. By file: `swfBitmapTagFamily.ts` 3 · `swfControlTagFamily.ts` 2 · `swfDocument.ts` 15 · `swfFilter.ts` 2 · `swfFontTagFamily.ts` 2 · `swfFrameAction.ts` 1 · `swfMorphShape.ts` 1 · `swfPlacementTagFamily.ts` 1 · `swfScriptTagFamily.ts` 3 · `swfShape.ts` 1 · `swfShapeTagFamily.ts` 3 · `swfSoundTagFamily.ts` 1 · `swfText.ts` 1 · `swfTextTagFamily.ts` 3 · `swfTimelineParse.ts` 4.
+**43 sites across 17 files.** By severity: Drop 18 · Recover 3 · Reject 11 · Skip 11. By file: `swfControlHandler.ts` 2 · `swfDefineMorphShapeHandler.ts` 1 · `swfDefineShapeHandler.ts` 2 · `swfDocument.ts` 15 · `swfEditTextHandler.ts` 2 · `swfFilter.ts` 2 · `swfFontHandler.ts` 2 · `swfFrameAction.ts` 1 · `swfJpegBitmapHandler.ts` 3 · `swfMorphShape.ts` 1 · `swfPlaceObject3Handler.ts` 1 · `swfScriptHandler.ts` 3 · `swfShape.ts` 1 · `swfSoundHandler.ts` 1 · `swfStaticTextHandler.ts` 1 · `swfText.ts` 1 · `swfTimelineParse.ts` 4.
 
 **A site count is not a coverage number, and the two must never be divided.** These sites and the loss
 families in `loss-path-audit.md` are different populations that only partly intersect: most of these
@@ -19,45 +19,45 @@ stated per family in that document and derived by checking each family, never by
 
 | File | Line | Severity | Kind |
 | --- | --- | --- | --- |
-| `swfBitmapTagFamily.ts` | 89 | Drop | `swf.jpeg-tables-missing` |
-| `swfBitmapTagFamily.ts` | 114 | Drop | `swf.jpeg-tables-unsplittable` |
-| `swfBitmapTagFamily.ts` | 177 | Skip | `swf.jpeg-alpha-stream` |
-| `swfControlTagFamily.ts` | 94 | Skip | `swf.scene-names` |
-| `swfControlTagFamily.ts` | 153 | Skip | `swf.button-interaction-state` |
-| `swfDocument.ts` | 126 | Reject | `swf.timeline-instantiation-failed` |
-| `swfDocument.ts` | 179 | Reject | `swf.unknown-linkage-name` |
-| `swfDocument.ts` | 330 | Reject | `swf.uncompressed-signature-invalid` |
-| `swfDocument.ts` | 342 | Reject | `swf.header-fields-invalid` |
-| `swfDocument.ts` | 353 | Reject | `swf.stage-bounds-unreadable` |
-| `swfDocument.ts` | 361 | Reject | `swf.header-truncated` |
-| `swfDocument.ts` | 494 | Drop | `swf.appearance-without-node` |
-| `swfDocument.ts` | 630 | Recover | `swf.mask-without-geometry` |
-| `swfDocument.ts` | 666 | Skip | `swf.nested-mask-collapsed` |
-| `swfDocument.ts` | 827 | Drop | `swf.sprite-bounds-short` |
-| `swfDocument.ts` | 893 | Reject | `swf.invalid-signature` |
-| `swfDocument.ts` | 910 | Reject | `swf.unknown-container` |
-| `swfDocument.ts` | 934 | Reject | `swf.declared-length-too-small` |
-| `swfDocument.ts` | 951 | Reject | `swf.truncated-container` |
-| `swfDocument.ts` | 966 | Reject | `swf.decompression-failed` |
+| `swfControlHandler.ts` | 92 | Skip | `swf.scene-names` |
+| `swfControlHandler.ts` | 151 | Skip | `swf.button-interaction-state` |
+| `swfDefineMorphShapeHandler.ts` | 59 | Drop | `swf.morph-shape-undecodable` |
+| `swfDefineShapeHandler.ts` | 38 | Drop | `swf.scaling-grid-dropped` |
+| `swfDefineShapeHandler.ts` | 77 | Recover | `swf.shape-body-unreadable` |
+| `swfDocument.ts` | 120 | Reject | `swf.timeline-instantiation-failed` |
+| `swfDocument.ts` | 171 | Reject | `swf.unknown-linkage-name` |
+| `swfDocument.ts` | 319 | Reject | `swf.uncompressed-signature-invalid` |
+| `swfDocument.ts` | 331 | Reject | `swf.header-fields-invalid` |
+| `swfDocument.ts` | 342 | Reject | `swf.stage-bounds-unreadable` |
+| `swfDocument.ts` | 350 | Reject | `swf.header-truncated` |
+| `swfDocument.ts` | 483 | Drop | `swf.appearance-without-node` |
+| `swfDocument.ts` | 619 | Recover | `swf.mask-without-geometry` |
+| `swfDocument.ts` | 655 | Skip | `swf.nested-mask-collapsed` |
+| `swfDocument.ts` | 816 | Drop | `swf.sprite-bounds-short` |
+| `swfDocument.ts` | 875 | Reject | `swf.invalid-signature` |
+| `swfDocument.ts` | 892 | Reject | `swf.unknown-container` |
+| `swfDocument.ts` | 916 | Reject | `swf.declared-length-too-small` |
+| `swfDocument.ts` | 933 | Reject | `swf.truncated-container` |
+| `swfDocument.ts` | 948 | Reject | `swf.decompression-failed` |
+| `swfEditTextHandler.ts` | 38 | Drop | `swf.edit-text-unparseable` |
+| `swfEditTextHandler.ts` | 64 | Drop | `swf.edit-text-font-name-unresolved` |
 | `swfFilter.ts` | 82 | Skip | `swf.filter-field-unrepresentable` |
 | `swfFilter.ts` | 169 | Skip | `swf.filter-field-unrepresentable` |
-| `swfFontTagFamily.ts` | 47 | Drop | `swf.font-glyph-table` |
-| `swfFontTagFamily.ts` | 64 | Drop | `swf.font-character-id-reused` |
+| `swfFontHandler.ts` | 45 | Drop | `swf.font-glyph-table` |
+| `swfFontHandler.ts` | 62 | Drop | `swf.font-character-id-reused` |
 | `swfFrameAction.ts` | 180 | Drop | `swf.abc-frame-script-declined` |
+| `swfJpegBitmapHandler.ts` | 62 | Drop | `swf.jpeg-tables-missing` |
+| `swfJpegBitmapHandler.ts` | 87 | Drop | `swf.jpeg-tables-unsplittable` |
+| `swfJpegBitmapHandler.ts` | 145 | Skip | `swf.jpeg-alpha-stream` |
 | `swfMorphShape.ts` | 75 | Drop | `swf.morph-path-pair-declined` |
-| `swfPlacementTagFamily.ts` | 96 | Drop | `swf.blend-mode-behind-unread-filters` |
-| `swfScriptTagFamily.ts` | 72 | Drop | `swf.abc-frame-scripts-unreadable` |
-| `swfScriptTagFamily.ts` | 97 | Skip | `swf.frame-script-declined` |
-| `swfScriptTagFamily.ts` | 113 | Skip | `swf.frame-script-declined` |
+| `swfPlaceObject3Handler.ts` | 65 | Drop | `swf.blend-mode-behind-unread-filters` |
+| `swfScriptHandler.ts` | 70 | Drop | `swf.abc-frame-scripts-unreadable` |
+| `swfScriptHandler.ts` | 95 | Skip | `swf.frame-script-declined` |
+| `swfScriptHandler.ts` | 111 | Skip | `swf.frame-script-declined` |
 | `swfShape.ts` | 692 | Recover | `swf.fill-matrix-singular` |
-| `swfShapeTagFamily.ts` | 47 | Drop | `swf.scaling-grid-dropped` |
-| `swfShapeTagFamily.ts` | 107 | Recover | `swf.shape-body-unreadable` |
-| `swfShapeTagFamily.ts` | 151 | Drop | `swf.morph-shape-undecodable` |
-| `swfSoundTagFamily.ts` | 403 | Skip | `swf.stream-sound-format` |
+| `swfSoundHandler.ts` | 391 | Skip | `swf.stream-sound-format` |
+| `swfStaticTextHandler.ts` | 44 | Drop | `swf.text-shape-uncomposable` |
 | `swfText.ts` | 105 | Drop | `swf.font-glyph-outline` |
-| `swfTextTagFamily.ts` | 52 | Drop | `swf.edit-text-unparseable` |
-| `swfTextTagFamily.ts` | 94 | Drop | `swf.text-shape-uncomposable` |
-| `swfTextTagFamily.ts` | 128 | Drop | `swf.edit-text-font-name-unresolved` |
 | `swfTimelineParse.ts` | 38 | Skip | `unresolved` |
 | `swfTimelineParse.ts` | 50 | Skip | `unresolved` |
 | `swfTimelineParse.ts` | 110 | Drop | `swf.label-past-last-frame` |

@@ -44,8 +44,8 @@ Run `npm run capabilities:individuation`. On the tree that produced this doc:
 
 | Reading | Total | Composition |
 | --- | --- | --- |
-| A — discriminated | **80** | 49 non-tag rows + 31 tag classes |
-| B — same dispatch arm | **82** | 49 non-tag rows + 33 tag classes |
+| A — discriminated | **81** | 52 non-tag rows + 29 tag classes |
+| B — same dispatch arm | **82** | 52 non-tag rows + 30 tag classes |
 | committed | 82 | — |
 
 Reading A merges one row pair the importer genuinely cannot tell apart: `PlaceObject3`/`PlaceObject4`.
