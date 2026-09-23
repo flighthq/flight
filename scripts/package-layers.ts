@@ -172,6 +172,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/tool-manifest',
     '@flighthq/tool-pipeline',
     '@flighthq/tool-registry',
+    '@flighthq/vite-plugin-manifest',
   ],
 };
 

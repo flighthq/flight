@@ -1,3 +1,4 @@
+export { mergeAwd2ParseOptions } from './mergeAwd2ParseOptions';
 export { createAwd2ParseState } from './awd2BlockDispatch';
 export * from './awd2BlockRegistry';
 export * from './awd2CameraHandler';

@@ -153,6 +153,7 @@ export const UNIT_TEST_COST_EXEMPTIONS: readonly UnitTestCostExemption[] = [
   { capability: 'builds-bundle', path: 'packages/scene3d-formats/src/gltfTreeShaking.test.ts' },
   { capability: 'builds-bundle', path: 'packages/scene3d-resources/src/sceneResourceResolverTreeShaking.test.ts' },
   { capability: 'builds-bundle', path: 'packages/skeleton2d-formats/src/spineBinaryTreeShaking.test.ts' },
+  { capability: 'builds-bundle', path: 'packages/vite-plugin-manifest/src/manifestTreeShaking.test.ts' },
 
   // RUNS-COMPILER — builds a TypeScript program to assert a structural rule over real source.
 

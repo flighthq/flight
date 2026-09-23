@@ -1,3 +1,4 @@
+export * from './mergeAwd2ParseOptions';
 export * from './awd2BlockDispatch';
 export * from './awd2BlockRegistry';
 export * from './awd2CameraHandler';
