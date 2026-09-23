@@ -126,6 +126,12 @@ if (!scoped) {
   add('capability-arrival:check', 'tsx', ['scripts/capability-arrival.ts']);
   add('host-bypasses:check', 'tsx', ['scripts/check-host-bypasses.ts']);
 
+  // Script tests live outside any package (scripts/**/*.test.ts) and use their own vitest config,
+  // so neither `npm run test <package>` nor the scoped `npm run check <package>` reaches them.
+  // Without this gate, script test failures accumulate silently: `npm run check` passes, agents
+  // attest green, and the breakage surfaces only in CI's `npm run test:scripts` lane.
+  add('test:scripts', 'npx', ['vitest', 'run', '--config', 'vitest.config.scripts.ts']);
+
   // Advisory, and deliberately not a gate. `fingerprint-source-hashes:check` above proves a baseline
   // column RECORDS a sourceHash; nothing proved that hash still names the current scene bytes, and the
   // instrument that answers it existed unrun. It cannot become a gate: measured 2026-08-19 the functional
