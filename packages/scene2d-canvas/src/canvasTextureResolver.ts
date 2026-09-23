@@ -2,25 +2,25 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type {
-  CanvasRenderSurface,
-  CanvasRenderSurfaceCreator,
-  CanvasRenderSurfaceOptions,
+  CanvasSurface,
   CanvasTextureResolver,
   CanvasTextureResolvers,
+  EntityConstruction,
+  HostCanvasCapability,
   RenderState,
   Texture,
   TextureSourceKind,
-  EntityConstruction,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RenderRegistryTable } from '@flighthq/types/contract';
 
-import { acquireCanvasRenderSurface, destroyCanvasRenderSurface } from './canvasRenderSurface';
+import { acquireCanvasSurface, destroyCanvasSurfaceOwned } from './canvasRenderSurface';
 
 export function acquireCanvasTextureResolverSurface(
   resolvers: CanvasTextureResolvers,
-  options: Readonly<CanvasRenderSurfaceOptions>,
-): CanvasRenderSurface | null {
-  const surface = acquireCanvasRenderSurface(resolvers.surfaceCreator, options);
+  width: number,
+  height: number,
+): CanvasSurface | null {
+  const surface = acquireCanvasSurface(resolvers.canvasHost, width, height);
   if (surface !== null) _ownedSurfaces.get(resolvers)?.add(surface);
   return surface;
 }
@@ -41,11 +41,9 @@ export function connectCanvasTextureResolverMisses(resolvers: CanvasTextureResol
   resolvers.registryMiss = (registry, kind) => runtime.registryMiss?.(registry, kind);
 }
 
-export function createCanvasTextureResolvers(
-  surfaceCreator: Readonly<CanvasRenderSurfaceCreator>,
-): CanvasTextureResolvers {
+export function createCanvasTextureResolvers(canvasHost: Readonly<HostCanvasCapability>): CanvasTextureResolvers {
   const resolvers = allocateEntity<CanvasTextureResolvers>();
-  initializeCanvasTextureResolvers(resolvers, surfaceCreator);
+  initializeCanvasTextureResolvers(resolvers, canvasHost);
   return finishEntity(resolvers);
 }
 
@@ -53,7 +51,7 @@ export function destroyCanvasTextureResolvers(resolvers: CanvasTextureResolvers)
   const surfaces = _ownedSurfaces.get(resolvers);
   if (surfaces === undefined) return;
   _ownedSurfaces.delete(resolvers);
-  for (const surface of surfaces) destroyCanvasRenderSurface(surface);
+  for (const surface of surfaces) destroyCanvasSurfaceOwned(surface);
   surfaces.clear();
   resolvers.registry?.clear();
   resolvers.registry = null;
@@ -64,11 +62,11 @@ export function destroyCanvasTextureResolvers(resolvers: CanvasTextureResolvers)
 // caller installs on it, which is what makes a rasterizer's capability inspectable rather than implied.
 export function initializeCanvasTextureResolvers(
   resolvers: EntityConstruction<CanvasTextureResolvers>,
-  surfaceCreator: Readonly<CanvasRenderSurfaceCreator>,
+  canvasHost: Readonly<HostCanvasCapability>,
 ): void {
   resolvers.registry = null;
   resolvers.registryMiss = null;
-  resolvers.surfaceCreator = surfaceCreator;
+  resolvers.canvasHost = canvasHost;
   resolvers[EntityRuntimeKey] = { binding: null };
   _ownedSurfaces.set(resolvers, new Set());
 }
@@ -98,4 +96,4 @@ export function resolveCanvasTexture(
   return resolver(resolvers, texture);
 }
 
-const _ownedSurfaces = new WeakMap<CanvasTextureResolvers, Set<CanvasRenderSurface>>();
+const _ownedSurfaces = new WeakMap<CanvasTextureResolvers, Set<CanvasSurface>>();

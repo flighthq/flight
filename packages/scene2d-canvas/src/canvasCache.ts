@@ -31,7 +31,7 @@ import {
   destroyCanvasRenderState,
   registerCanvasRenderStateTeardown,
 } from './canvasRenderState';
-import { getCanvasSurfaceCreator } from './canvasRenderSurface';
+import { getCanvasHost } from './canvasRenderSurface';
 import {
   createCanvasTextureRenderTarget,
   destroyCanvasTextureRenderTarget,
@@ -97,11 +97,11 @@ export function ensureCanvasRenderCacheTarget(
   width: number,
   height: number,
 ): CanvasTextureRenderTarget {
-  const creator = getCanvasSurfaceCreator(state);
+  const canvasHost = getCanvasHost(state);
   const targets = getTargets(state);
   let target = targets.get(cache);
   if (target === undefined) {
-    target = createCanvasTextureRenderTarget(creator, width, height);
+    target = createCanvasTextureRenderTarget(canvasHost, width, height);
     targets.set(cache, target);
   } else {
     resizeCanvasTextureRenderTarget(target, width, height);

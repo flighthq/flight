@@ -11,7 +11,7 @@ import {
   createCanvasTextureRenderTarget,
   endCanvasRenderPass,
   getCanvasActiveRenderPass,
-  getCanvasSurfaceCreator,
+  getCanvasHost,
   resizeCanvasTextureRenderTarget,
 } from '@flighthq/scene2d-canvas/contract';
 import type {
@@ -19,12 +19,12 @@ import type {
   CanvasEffectState,
   CanvasRenderPass,
   CanvasRenderState,
-  CanvasRenderSurfaceCreator,
   CanvasTextureRenderTarget,
   CanvasRenderTargetPool,
   EntityConstruction,
   Effect,
   EffectStateOptions,
+  HostCanvasCapability,
   NonEntityCreateResult,
   RenderTargetClear,
 } from '@flighthq/types/contract';
@@ -51,7 +51,7 @@ export function acquireCanvasRenderTarget(
 ): CanvasTextureRenderTarget {
   const w = Math.max(1, Math.ceil(width));
   const h = Math.max(1, Math.ceil(height));
-  const target = pool.free.pop() ?? createCanvasTextureRenderTarget(pool.creator, w, h);
+  const target = pool.free.pop() ?? createCanvasTextureRenderTarget(pool.canvasHost, w, h);
   if (target.width !== w || target.height !== h) resizeCanvasTextureRenderTarget(target, w, h);
   pool.inUse.push(target);
   return target;
@@ -69,7 +69,7 @@ export function beginCanvasEffectPass(
   const { height: h, width: w } = pass.viewport;
 
   if (pipeline.sceneTarget === null) {
-    pipeline.sceneTarget = createCanvasTextureRenderTarget(getCanvasSurfaceCreator(state), w, h);
+    pipeline.sceneTarget = createCanvasTextureRenderTarget(getCanvasHost(state), w, h);
   } else {
     resizeCanvasTextureRenderTarget(pipeline.sceneTarget, w, h);
   }
@@ -83,16 +83,16 @@ export function createCanvasEffectState(
   return {
     options: { ...options },
     sceneTarget: null,
-    pool: createCanvasTextureRenderTargetPool(getCanvasSurfaceCreator(state)),
+    pool: createCanvasTextureRenderTargetPool(getCanvasHost(state)),
     lutCache: createColorLutCache(),
   };
 }
 
 export function createCanvasTextureRenderTargetPool(
-  creator: Readonly<CanvasRenderSurfaceCreator>,
+  canvasHost: Readonly<HostCanvasCapability>,
 ): CanvasRenderTargetPool {
   const out = allocateEntity<CanvasRenderTargetPool>();
-  initializeCanvasRenderTargetPool(out, creator);
+  initializeCanvasRenderTargetPool(out, canvasHost);
   return finishEntity(out);
 }
 
@@ -176,9 +176,9 @@ export function endCanvasEffectPass(
 
 export function initializeCanvasRenderTargetPool(
   out: EntityConstruction<CanvasRenderTargetPool>,
-  creator: Readonly<CanvasRenderSurfaceCreator>,
+  canvasHost: Readonly<HostCanvasCapability>,
 ): void {
-  out.creator = creator;
+  out.canvasHost = canvasHost;
   out.free = [];
   out.inUse = [];
 }
