@@ -855,6 +855,10 @@
     },
     {
       "packageName": "scene2d-canvas",
+      "registrar": "registerCanvasHost"
+    },
+    {
+      "packageName": "scene2d-canvas",
       "registrar": "registerCanvasImageTextureResolver"
     },
     {
@@ -876,10 +880,6 @@
     {
       "packageName": "scene2d-canvas",
       "registrar": "registerCanvasShapeCommands"
-    },
-    {
-      "packageName": "scene2d-canvas",
-      "registrar": "registerCanvasHost"
     },
     {
       "packageName": "scene2d-canvas",
