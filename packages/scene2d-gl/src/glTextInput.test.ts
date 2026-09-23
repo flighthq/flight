@@ -5,8 +5,13 @@ import {
 } from '@flighthq/image/contract';
 import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput, setTextInputSelection } from '@flighthq/textinput/contract';
-import type { ImageSurface, RenderProxy2D, RichText } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type {
+  CanvasSurface,
+  HostCanvasCapability,
+  HostImageCapability,
+  RenderProxy2D,
+  RichText,
+} from '@flighthq/types/contract';
 
 import { createGlRichTextData, drawGlRichText } from './glRichText';
 import { createGlState } from './glTestHelper';
@@ -34,26 +39,29 @@ function makeFocusedInputProxy(state: Parameters<typeof createGlRichTextData>[0]
   } as unknown as RenderProxy2D;
 }
 
-function createTestImageSurface(width: number, height: number): ImageSurface {
+function createTestSurface(width: number, height: number): CanvasSurface {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
+  return { context: canvas.getContext('2d')! } as unknown as CanvasSurface;
+}
+
+function createTestCanvasHost(): HostCanvasCapability {
   return {
-    [EntityRuntimeKey]: undefined,
-    get width() {
-      return canvas.width;
+    acquire: () => null,
+    create: () => null,
+    createSurface: createTestSurface,
+    destroySurface() {},
+    release() {},
+  };
+}
+
+function createTestImageHost(): HostImageCapability {
+  return {
+    createImageFromSurface(surface) {
+      return createImageResource((surface as unknown as { context: CanvasRenderingContext2D }).context.canvas);
     },
-    set width(value) {
-      canvas.width = value;
-    },
-    get height() {
-      return canvas.height;
-    },
-    set height(value) {
-      canvas.height = value;
-    },
-    context: canvas.getContext('2d')!,
-    image: createImageResource(canvas),
+    loadImageFromUrl: () => Promise.reject(new Error('not implemented')),
   };
 }
 
@@ -65,10 +73,8 @@ describe('drawGlTextInputOverlay', () => {
   it('rasterizes a focused collapsed selection without throwing', () => {
     enableGlTextInput();
     const { state, gl } = createGlState();
-    state.imageSurfaceProvider = {
-      createImageSurface: createTestImageSurface,
-      destroyImageSurface() {},
-    };
+    state.canvasHost = createTestCanvasHost();
+    state.imageHost = createTestImageHost();
     const renderProxy = makeFocusedInputProxy(state);
     setTextInputSelection(renderProxy.source as RichText, 2, 2);
 
@@ -79,10 +85,8 @@ describe('drawGlTextInputOverlay', () => {
   it('rasterizes a focused expanded selection without throwing', () => {
     enableGlTextInput();
     const { state, gl } = createGlState();
-    state.imageSurfaceProvider = {
-      createImageSurface: createTestImageSurface,
-      destroyImageSurface() {},
-    };
+    state.canvasHost = createTestCanvasHost();
+    state.imageHost = createTestImageHost();
     const renderProxy = makeFocusedInputProxy(state);
     setTextInputSelection(renderProxy.source as RichText, 1, 4);
 
