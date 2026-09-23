@@ -65,7 +65,6 @@ beforeEach(() => {
 
 function setTestRasterProvider(state: { imageSurfaceProvider: unknown }): void {
   state.imageSurfaceProvider = {
-    [EntityRuntimeKey]: undefined,
     createImageSurface: createTestSurface,
     destroyImageSurface: destroySurface,
   };
@@ -77,7 +76,6 @@ describe('acquireGlScale9ShapeRasterSurface', () => {
     const createSurface = vi.fn().mockReturnValueOnce(null).mockReturnValue(surface);
     const { state } = createGlState();
     state.imageSurfaceProvider = {
-      [EntityRuntimeKey]: undefined,
       createImageSurface: createSurface,
       destroyImageSurface: destroySurface,
     };

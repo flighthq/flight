@@ -71,10 +71,10 @@ function createTestImageSurface(width: number, height: number): ImageSurface {
 }
 
 function createTestProvider(): ImageSurfaceCreator {
-  const out = allocateEntity<any>();
-  out.createImageSurface = createTestImageSurface;
-  out.destroyImageSurface = destroySurface;
-  return finishEntity(out);
+  return {
+    createImageSurface: createTestImageSurface,
+    destroyImageSurface: destroySurface,
+  };
 }
 
 function setTestRasterProvider(state: { imageSurfaceProvider: unknown }): void {
@@ -97,9 +97,10 @@ describe('acquireGlShapeRasterSurface', () => {
   });
 
   it('preserves expected absence without caching it when the provider refuses', () => {
-    const provider = allocateEntity<ImageSurfaceCreator>();
-    provider.createImageSurface = () => null;
-    provider.destroyImageSurface = destroySurface;
+    const provider: ImageSurfaceCreator = {
+      createImageSurface: () => null,
+      destroyImageSurface: destroySurface,
+    };
     const data = emptyData();
     expect(acquireGlShapeRasterSurface(provider, data)).toBeNull();
     expect(data.surface).toBeNull();

@@ -8,7 +8,6 @@ import {
   createCanvasTextureResolvers,
   endCanvasRenderPass,
   getCanvasActiveRenderPass,
-  initializeCanvasRenderSurfaceCreator,
 } from './canvasTestSupport';
 
 describe('acquireTestCanvasRenderSurface', () => {
@@ -73,11 +72,5 @@ describe('createCanvasTextureRenderTarget', () => {
 describe('createCanvasTextureResolvers', () => {
   it('creates an empty test resolver set', () => {
     expect(createCanvasTextureResolvers().registry).toBeNull();
-  });
-});
-
-describe('initializeCanvasRenderSurfaceCreator', () => {
-  it('is the construction initializer of createCanvasRenderSurfaceCreator', () => {
-    expect(typeof initializeCanvasRenderSurfaceCreator).toBe('function');
   });
 });

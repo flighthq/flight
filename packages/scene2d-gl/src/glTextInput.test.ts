@@ -66,7 +66,6 @@ describe('drawGlTextInputOverlay', () => {
     enableGlTextInput();
     const { state, gl } = createGlState();
     state.imageSurfaceProvider = {
-      [EntityRuntimeKey]: undefined,
       createImageSurface: createTestImageSurface,
       destroyImageSurface() {},
     };
@@ -81,7 +80,6 @@ describe('drawGlTextInputOverlay', () => {
     enableGlTextInput();
     const { state, gl } = createGlState();
     state.imageSurfaceProvider = {
-      [EntityRuntimeKey]: undefined,
       createImageSurface: createTestImageSurface,
       destroyImageSurface() {},
     };
