@@ -1,6 +1,5 @@
 import type { ColorLutCache } from './ColorLutCache';
 import type { Effect } from './Effect';
-import type { Entity } from './Entity';
 import type { GlColorLutTextureCache } from './GlColorLutTextureCache';
 import type { GlRenderState } from './GlRenderState';
 import type { GlTextureRenderTarget, GlTextureRenderTargetPool } from './GlRenderTarget';
@@ -124,7 +123,7 @@ export interface EffectStateOptions {
 // Retains the GPU resources an effect pass needs across frames: the scene target the pipeline renders
 // into and the intermediate-target pool. The per-frame effect list is data passed to
 // endGlEffectPass, not retained here.
-export interface GlEffectState extends Entity {
+export interface GlEffectState {
   readonly options: Readonly<EffectStateOptions>;
   sceneTarget: GlTextureRenderTarget | null;
   readonly pool: GlTextureRenderTargetPool;

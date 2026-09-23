@@ -6,7 +6,6 @@ import {
   isColorLutAdjustment,
 } from '@flighthq/adjustments/contract';
 import { srgbChannelToLinear } from '@flighthq/color/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   acquireWgpuTextureRenderTarget,
   beginWgpuRenderPass,
@@ -23,7 +22,6 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import type {
   Adjustment,
-  EntityConstruction,
   Effect,
   EffectStateOptions,
   RenderTargetClear,
@@ -78,9 +76,19 @@ export function createWgpuEffectState(
   state: WgpuRenderState,
   options: Readonly<EffectStateOptions> = {},
 ): WgpuEffectState {
-  const out = allocateEntity<WgpuEffectState>();
-  initializeWgpuEffectState(out, state, options);
-  return finishEntity(out);
+  const requestedSampleCount = options.sampleCount ?? 1;
+  const appliedSampleCount = requestedSampleCount > 1 ? 4 : 1;
+  if (requestedSampleCount !== appliedSampleCount) {
+    _sampleCountGuards.get(state)?.(state, requestedSampleCount, appliedSampleCount);
+  }
+  return {
+    options: { ...options, sampleCount: appliedSampleCount },
+    sceneTarget: null,
+    pool: createWgpuRenderTargetPool(),
+    lutCache: createColorLutCache(),
+    lutTexture: { texture: null, size: 0, lut: null },
+    velocityTexture: null,
+  };
 }
 
 export function destroyWgpuEffectState(state: WgpuRenderState, pipeline: WgpuEffectState): void {
@@ -181,24 +189,6 @@ export function endWgpuEffectPass(
 
   if (scratchA !== null) releaseWgpuTextureRenderTarget(pipeline.pool, scratchA);
   if (scratchB !== null) releaseWgpuTextureRenderTarget(pipeline.pool, scratchB);
-}
-
-export function initializeWgpuEffectState(
-  out: EntityConstruction<WgpuEffectState>,
-  state: WgpuRenderState,
-  options: Readonly<EffectStateOptions> = {},
-): void {
-  const requestedSampleCount = options.sampleCount ?? 1;
-  const appliedSampleCount = requestedSampleCount > 1 ? 4 : 1;
-  if (requestedSampleCount !== appliedSampleCount) {
-    _sampleCountGuards.get(state)?.(state, requestedSampleCount, appliedSampleCount);
-  }
-  out.options = { ...options, sampleCount: appliedSampleCount };
-  out.sceneTarget = null;
-  out.pool = createWgpuRenderTargetPool();
-  out.lutCache = createColorLutCache();
-  out.lutTexture = { texture: null, size: 0, lut: null };
-  out.velocityTexture = null;
 }
 
 // The diagnostics seam for sample-count substitutions. Core stays free of warning strings and

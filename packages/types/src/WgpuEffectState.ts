@@ -1,6 +1,5 @@
 import type { ColorLutCache } from './ColorLutCache';
 import type { Effect } from './Effect';
-import type { Entity } from './Entity';
 import type { EffectStateOptions } from './GlEffectState';
 import type { WgpuColorLutTextureCache } from './WgpuColorLutTextureCache';
 import type { WgpuRenderState } from './WgpuRenderState';
@@ -37,7 +36,7 @@ export interface WgpuEffectRegistration {
 // into and the intermediate-target pool. The per-frame effect list is data passed to
 // endWgpuEffectPass, not retained here. Mirrors GlEffectState; shares
 // EffectStateOptions with the Gl pipeline.
-export interface WgpuEffectState extends Entity {
+export interface WgpuEffectState {
   readonly options: Readonly<EffectStateOptions>;
   sceneTarget: WgpuTextureRenderTarget | null;
   readonly pool: WgpuRenderTargetPool;
