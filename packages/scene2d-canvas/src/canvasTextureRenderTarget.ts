@@ -1,43 +1,35 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  CanvasRenderSurfaceCreator,
-  CanvasTextureRenderTarget,
-  EntityConstruction,
-} from '@flighthq/types/contract';
+import type { CanvasTextureRenderTarget, EntityConstruction, HostCanvasCapability } from '@flighthq/types/contract';
 
-import { acquireCanvasRenderSurface, destroyCanvasRenderSurface } from './canvasRenderSurface';
+import { acquireCanvasSurface, destroyCanvasSurfaceOwned } from './canvasRenderSurface';
 
 export function createCanvasTextureRenderTarget(
-  creator: Readonly<CanvasRenderSurfaceCreator>,
+  canvasHost: Readonly<HostCanvasCapability>,
   width: number,
   height: number,
 ): CanvasTextureRenderTarget {
   const out = allocateEntity<CanvasTextureRenderTarget>();
-  initializeCanvasTextureRenderTarget(out, creator, width, height);
+  initializeCanvasTextureRenderTarget(out, canvasHost, width, height);
   return finishEntity(out);
 }
 
 export function destroyCanvasTextureRenderTarget(target: CanvasTextureRenderTarget): void {
-  destroyCanvasRenderSurface(target.surface);
+  destroyCanvasSurfaceOwned(target.surface);
   target.width = 0;
   target.height = 0;
 }
 
 export function initializeCanvasTextureRenderTarget(
   out: EntityConstruction<CanvasTextureRenderTarget>,
-  creator: Readonly<CanvasRenderSurfaceCreator>,
+  canvasHost: Readonly<HostCanvasCapability>,
   width: number,
   height: number,
 ): void {
   const targetWidth = Math.max(1, Math.ceil(width));
   const targetHeight = Math.max(1, Math.ceil(height));
-  const surface = acquireCanvasRenderSurface(creator, {
-    height: targetHeight,
-    pixelRatio: 1,
-    width: targetWidth,
-  });
+  const surface = acquireCanvasSurface(canvasHost, targetWidth, targetHeight);
   if (surface === null) throw new Error('Failed to acquire Canvas render target surface.');
-  out.canvas = surface.canvas;
+  out.canvas = surface.context.canvas as HTMLCanvasElement;
   out.colorAttachments = 1;
   out.context = surface.context;
   out.height = targetHeight;

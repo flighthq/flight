@@ -2,10 +2,10 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createRenderTexture, resetTextureUvTransform } from '@flighthq/texture/contract';
 import type {
   CanvasRenderState,
-  CanvasRenderSurfaceCreator,
   CanvasRenderTargetPool,
   CanvasRenderTexturePool,
   EntityConstruction,
+  HostCanvasCapability,
   RenderTarget,
   RenderTargetDescriptor,
   RenderTexture,
@@ -29,9 +29,9 @@ export function acquireCanvasRenderTexture(
   return renderTexture;
 }
 
-export function createCanvasRenderTexturePool(creator: Readonly<CanvasRenderSurfaceCreator>): CanvasRenderTexturePool {
+export function createCanvasRenderTexturePool(canvasHost: Readonly<HostCanvasCapability>): CanvasRenderTexturePool {
   const effectTargets = allocateEntity<CanvasRenderTargetPool>();
-  assignCanvasRenderTargetPoolFields(effectTargets, creator);
+  assignCanvasRenderTargetPoolFields(effectTargets, canvasHost);
   const out = allocateEntity<CanvasRenderTexturePool>();
   initializeCanvasRenderTexturePool(out, finishEntity(effectTargets));
   return finishEntity(out);
@@ -56,9 +56,9 @@ export function destroyCanvasRenderTexturePool(state: CanvasRenderState, pool: C
 
 function assignCanvasRenderTargetPoolFields(
   out: EntityConstruction<CanvasRenderTargetPool>,
-  creator: Readonly<CanvasRenderSurfaceCreator>,
+  canvasHost: Readonly<HostCanvasCapability>,
 ): void {
-  out.creator = creator;
+  out.canvasHost = canvasHost;
   out.free = [];
   out.inUse = [];
 }
