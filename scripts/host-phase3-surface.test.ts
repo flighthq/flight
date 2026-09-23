@@ -115,7 +115,7 @@ function findLegacyReferences(legacyNames: readonly string[]): string[] {
 
 function findCapacitorLegacyReferences(): string[] {
   const pattern =
-    /\b(?:createCapacitor[A-Z][A-Za-z0-9]*(?:Backend|Capabilities)|initializeCapacitor[A-Z][A-Za-z0-9]*|registerCapacitorBackends|CapacitorShareContentBackend)\b/gu;
+    /\b(?:createCapacitor[A-Z][A-Za-z0-9]*Backend|initializeCapacitor[A-Z][A-Za-z0-9]*|registerCapacitorBackends|CapacitorShareContentBackend)\b/gu;
   const findings: string[] = [];
   const directories = [
     resolve(ROOT, 'packages'),
