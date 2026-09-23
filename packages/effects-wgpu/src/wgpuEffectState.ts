@@ -24,6 +24,7 @@ import type {
   Adjustment,
   Effect,
   EffectStateOptions,
+  NonEntityCreateResult,
   RenderTargetClear,
   RenderTargetColorSpace,
   WgpuEffectState,
@@ -75,7 +76,7 @@ export function beginWgpuEffectPass(
 export function createWgpuEffectState(
   state: WgpuRenderState,
   options: Readonly<EffectStateOptions> = {},
-): WgpuEffectState {
+): NonEntityCreateResult<WgpuEffectState, 'descriptor'> {
   const requestedSampleCount = options.sampleCount ?? 1;
   const appliedSampleCount = requestedSampleCount > 1 ? 4 : 1;
   if (requestedSampleCount !== appliedSampleCount) {

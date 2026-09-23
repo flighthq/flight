@@ -25,6 +25,7 @@ import type {
   EntityConstruction,
   Effect,
   EffectStateOptions,
+  NonEntityCreateResult,
   RenderTargetClear,
 } from '@flighthq/types/contract';
 
@@ -78,7 +79,7 @@ export function beginCanvasEffectPass(
 export function createCanvasEffectState(
   state: CanvasRenderState,
   options: Readonly<EffectStateOptions> = {},
-): CanvasEffectState {
+): NonEntityCreateResult<CanvasEffectState, 'descriptor'> {
   return {
     options: { ...options },
     sceneTarget: null,
