@@ -60,7 +60,7 @@ describe('WebGPU Scene2D second-wave size fixtures', () => {
           expect(metadata.flightSize).toEqual({ kind: 'size-only-control', name });
           expect(existsSync(manifest)).toBe(false);
           expect(source).not.toMatch(/\bwgpu\w+Renderer\b/);
-          expect(source).not.toContain('withRegistryTableEntry(');
+          expect(source).not.toContain('withKindMapEntry(');
         });
       } else {
         it('binds exactly its one renderer and has a single-route capture', () => {
@@ -72,7 +72,7 @@ describe('WebGPU Scene2D second-wave size fixtures', () => {
           const manifest = JSON.parse(readFileSync(resolve(directory, 'tool-capture.json'), 'utf8'));
           expect(renderers).toEqual([renderer]);
           expect(kinds).toEqual([kind]);
-          expect(source.match(/nodeRenderers:\s*withRegistryTableEntry\s*\(/g)).toHaveLength(1);
+          expect(source.match(/nodeRenderers:\s*withKindMapEntry\s*\(/g)).toHaveLength(1);
           expect(manifest).toEqual({
             subject: `${name}-size-fixture`,
             entries: [{ name, renderers: ['webgpu'], routes: { webgpu: '/' } }],
