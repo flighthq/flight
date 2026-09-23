@@ -475,6 +475,7 @@ function checkCells(files: ReadonlySet<string>): void {
     }
 
     for (const entry of findGateEntries(files, dir)) {
+      if (entry === 'exports-snapshot.json') continue;
       if (!(CELL_FILES as readonly string[]).includes(entry)) {
         warn(`agents/packages/${cell}/${entry}: not a contract file (${CELL_FILES.join(', ')})`);
       }
