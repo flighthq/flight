@@ -174,7 +174,8 @@ function initializeWgpuDeviceRenderState(
   const state = _createRenderState({
     allowSmoothing: options.imageSmoothingEnabled ?? true,
     pixelRatio: options.pixelRatio ?? 1,
-    imageSurfaceProvider: options.imageSurfaceProvider ?? null,
+    canvasHost: options.canvasHost ?? null,
+    imageHost: options.imageHost ?? null,
     roundPixels: options.roundPixels ?? false,
     sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
   }) as WgpuRenderState;
