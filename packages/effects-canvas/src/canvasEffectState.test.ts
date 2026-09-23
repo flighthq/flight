@@ -11,7 +11,6 @@ import {
   createCanvasTextureRenderTargetPool,
   destroyCanvasEffectState,
   endCanvasEffectPass,
-  initializeCanvasEffectState,
   initializeCanvasRenderTargetPool,
   releaseCanvasRenderTarget,
 } from './canvasEffectState';
@@ -118,11 +117,6 @@ describe('endCanvasEffectPass', () => {
   });
 });
 
-describe('initializeCanvasEffectState', () => {
-  it('is the construction initializer of createCanvasEffectState', () => {
-    expect(typeof initializeCanvasEffectState).toBe('function');
-  });
-});
 describe('initializeCanvasRenderTargetPool', () => {
   it('is the construction initializer of createCanvasTextureRenderTargetPool', () => {
     expect(typeof initializeCanvasRenderTargetPool).toBe('function');

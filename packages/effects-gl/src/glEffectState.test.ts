@@ -8,7 +8,6 @@ import {
   createGlEffectState,
   destroyGlEffectState,
   endGlEffectPass,
-  initializeGlEffectState,
   setGlEffectStateSkipGuard,
   setGlEffectVelocityTexture,
 } from './glEffectState';
@@ -47,12 +46,6 @@ describe('destroyGlEffectState', () => {
 describe('endGlEffectPass', () => {
   it('is a function', () => {
     expect(typeof endGlEffectPass).toBe('function');
-  });
-});
-
-describe('initializeGlEffectState', () => {
-  it('is the construction initializer of createGlEffectState', () => {
-    expect(typeof initializeGlEffectState).toBe('function');
   });
 });
 

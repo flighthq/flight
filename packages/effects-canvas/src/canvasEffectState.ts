@@ -79,9 +79,12 @@ export function createCanvasEffectState(
   state: CanvasRenderState,
   options: Readonly<EffectStateOptions> = {},
 ): CanvasEffectState {
-  const out = allocateEntity<CanvasEffectState>();
-  initializeCanvasEffectState(out, state, options);
-  return finishEntity(out);
+  return {
+    options: { ...options },
+    sceneTarget: null,
+    pool: createCanvasTextureRenderTargetPool(getCanvasSurfaceCreator(state)),
+    lutCache: createColorLutCache(),
+  };
 }
 
 export function createCanvasTextureRenderTargetPool(
@@ -168,17 +171,6 @@ export function endCanvasEffectPass(
 
   if (scratchA !== null) releaseCanvasRenderTarget(pool, scratchA);
   if (scratchB !== null) releaseCanvasRenderTarget(pool, scratchB);
-}
-
-export function initializeCanvasEffectState(
-  out: EntityConstruction<CanvasEffectState>,
-  state: CanvasRenderState,
-  options: Readonly<EffectStateOptions> = {},
-): void {
-  out.options = { ...options };
-  out.sceneTarget = null;
-  out.pool = createCanvasTextureRenderTargetPool(getCanvasSurfaceCreator(state));
-  out.lutCache = createColorLutCache();
 }
 
 export function initializeCanvasRenderTargetPool(

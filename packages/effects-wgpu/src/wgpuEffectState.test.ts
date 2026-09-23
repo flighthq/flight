@@ -7,7 +7,6 @@ import {
   installWgpuMock,
 } from '@flighthq/render-wgpu/contract';
 import type { Effect } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
 import {
@@ -15,7 +14,6 @@ import {
   createWgpuEffectState,
   destroyWgpuEffectState,
   endWgpuEffectPass,
-  initializeWgpuEffectState,
   setWgpuEffectStateSampleCountGuard,
   setWgpuEffectStateSkipGuard,
   setWgpuEffectVelocityTexture,
@@ -302,12 +300,6 @@ describe('endWgpuEffectPass', () => {
   });
 });
 
-describe('initializeWgpuEffectState', () => {
-  it('is the construction initializer of createWgpuEffectState', () => {
-    expect(typeof initializeWgpuEffectState).toBe('function');
-  });
-});
-
 describe('setWgpuEffectStateSkipGuard', () => {
   it('reports every effect kind the pass drops, and goes silent again when cleared', async () => {
     const state = await createWgpuRenderStateForTest();
@@ -340,14 +332,14 @@ describe('setWgpuEffectStateSkipGuard', () => {
 });
 describe('setWgpuEffectVelocityTexture', () => {
   it('sets the velocity texture on the pipeline', () => {
-    const _pipeline = allocateEntity<any>();
-    _pipeline.options = {};
-    _pipeline.sceneTarget = null;
-    _pipeline.pool = { [EntityRuntimeKey]: undefined, free: [] };
-    _pipeline.lutCache = createColorLutCache();
-    _pipeline.lutTexture = { texture: null, size: 0, lut: null };
-    _pipeline.velocityTexture = null;
-    const pipeline = finishEntity(_pipeline);
+    const pipeline = {
+      options: {},
+      sceneTarget: null,
+      pool: { free: [] },
+      lutCache: createColorLutCache(),
+      lutTexture: { texture: null, size: 0, lut: null },
+      velocityTexture: null,
+    } as any;
     const texture = {} as GPUTexture;
     setWgpuEffectVelocityTexture(pipeline, texture);
     expect(pipeline.velocityTexture).toBe(texture);

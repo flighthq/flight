@@ -6,7 +6,6 @@ import {
   isColorLutAdjustment,
 } from '@flighthq/adjustments/contract';
 import { srgbChannelToLinear } from '@flighthq/color/contract';
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   acquireGlTextureRenderTarget,
   beginGlRenderPass,
@@ -22,7 +21,6 @@ import {
 } from '@flighthq/render-gl/contract';
 import type {
   Adjustment,
-  EntityConstruction,
   GlEffectState,
   GlEffectStateSkipGuard,
   GlRenderPass,
@@ -70,9 +68,14 @@ export function beginGlEffectPass(
 }
 
 export function createGlEffectState(_state: GlRenderState, options: Readonly<EffectStateOptions> = {}): GlEffectState {
-  const out = allocateEntity<GlEffectState>();
-  initializeGlEffectState(out, _state, options);
-  return finishEntity(out);
+  return {
+    options: { ...options },
+    sceneTarget: null,
+    pool: createGlTextureRenderTargetPool(),
+    lutCache: createColorLutCache(),
+    lutTexture: { texture: null, lut: null },
+    velocityTexture: null,
+  };
 }
 
 export function destroyGlEffectState(state: GlRenderState, pipeline: GlEffectState): void {
@@ -174,19 +177,6 @@ export function endGlEffectPass(
 
   if (scratchA !== null) releaseGlTextureRenderTarget(pipeline.pool, scratchA);
   if (scratchB !== null) releaseGlTextureRenderTarget(pipeline.pool, scratchB);
-}
-
-export function initializeGlEffectState(
-  out: EntityConstruction<GlEffectState>,
-  _state: GlRenderState,
-  options: Readonly<EffectStateOptions> = {},
-): void {
-  out.options = { ...options };
-  out.sceneTarget = null;
-  out.pool = createGlTextureRenderTargetPool();
-  out.lutCache = createColorLutCache();
-  out.lutTexture = { texture: null, lut: null };
-  out.velocityTexture = null;
 }
 
 // Sets the velocity G-buffer the pipeline feeds to velocity-driven effects this frame. Pass the texture
