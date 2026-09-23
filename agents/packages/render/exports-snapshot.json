@@ -1,9 +1,9 @@
 {
   "exports": [
     "areColorAdjustmentsEnabled",
-    "createImageSurface",
+    "createCanvasHostSurface",
     "createRenderCache",
-    "destroyImageSurface",
+    "destroyCanvasHostSurface",
     "destroyRenderState",
     "disableSceneRenderGuards",
     "disposeScene2DRender",
@@ -14,6 +14,7 @@
     "explainRenderRegistriesMisses",
     "explainScene2DPipelineCoverage",
     "explainScene3DPipelineCoverage",
+    "getCanvasHostSurface",
     "prepareScene2DRender",
     "prepareScene3DRender",
     "registerNodeRenderer",

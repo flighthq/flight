@@ -1,96 +1,81 @@
 ---
 package: '@flighthq/render'
 status: solid
-score: 80
-updated: 2026-09-02
+score: 84
+updated: 2026-09-23
 ingested:
   - charter.md
   - status.md
-  - prior review.md (2026-08-25)
-  - assessment.md (2026-08-25)
-  - source + tests (live tree, 22 source files + 22 test files)
-  - agents/render-architecture.md
+  - source
+  - tests
+  - package.json
+  - assessment.md
 ---
 
 # render — Review
 
-> Full survey of the live package (22 source files, 22 test files, ~263 test cases, `packages/render/src/`). Replaces the 2026-08-25 review. Since that review: the `raster2DSurface` abstraction landed (new file pair), `collectVisibleMeshes` was converted from call-stack recursion to an explicit-stack walk, `computeRenderTargetSize` gained an `out` parameter, `RenderTargetSizeOptions` was deleted from `@flighthq/types`, the stale `drawDriver` comment was removed from `renderQueue.ts`, and a registry migration refactored the renderer table, color-adjustment resolver, stroke tessellator, effect padding resolvers, render root guard, and canvas shape commands into a unified `RenderStateRuntime.registries` aggregate backed by `@flighthq/registry` keyed and slot tables.
-
 ## Verdict
 
-**solid — 80/100.** The package is healthier than the prior review found. Three of the prior review's Recommended items have landed (stale comment, dead type, `collectVisibleMeshes` iterative conversion). The registry migration is a meaningful structural improvement: every render-state-scoped policy table uses a consistent `@flighthq/registry` pattern, making the per-state coexistence model more uniform and the diagnostics seam (`enableRenderRegistrySignals` / `enableRenderRegistryGuards` / `explainRenderRegistryMisses`) genuinely cross-cutting. The raster surface abstraction is clean (provider-tracked teardown, conflict detection, test-resettable, `BackendExplanation` explain query). The score increases from 76 to 80 because shipped sweep items reduced concrete debt and the diagnostics surface is broader than before.
+`solid — 84/100`. The backend-neutral preparation layer has sound state ownership, deterministic proxy
+teardown, typed 2D bounds, iterative 3D collection, registry diagnostics, and honest host-backed canvas
+surface helpers. The stale review understated those fixes while describing several removed APIs.
 
-What keeps it from solid-high: the chartered draw driver remains the keystone gap and the consumer that would redeem the queue and viewport seams. The chartered aggregate guard/explain set (`enableRenderGuards` / `explainRenderState` / `formatRenderStateExplanation`) is still unbuilt, though the package now has a broader diagnostics surface than the charter envisioned (scene-render guards, registry miss guards, color-adjustment guards, coverage explain, per-node explain). Several module-level mutable state patterns remain outside `RenderStateRuntime`, including a new one (`raster2DSurface`). The `pivotX` duck-type sniff survives.
+The package is not yet authoritative against its own charter. Its retained queue and viewport culling
+have no production consumer, and the chartered shared draw driver, counter snapshot, blend stack, and
+render-pass/graph layer do not exist. The current code is reliable preparation infrastructure; it is not
+yet the complete backend-neutral render orchestration described by the charter.
 
-## Present capabilities
+## Current architecture
 
-- **Renderer registration** (`renderer.ts`): `registerRenderer` (last-write-wins with `rendererMapId` bump for proxy resync), `registerRenderers` (batch form), `copyRenderersFromRenderState` / `copyAllRenderersFromRenderState` (fast immutable-snapshot share for fresh states, additive merge for populated ones), `copyRenderStateRegistrations` (policy registries: color adjustments, effect padding, render root guard, shape commands, stroke tessellator), `noopRendererData`. All registries use `@flighthq/registry` keyed/slot tables.
-- **Render state** (`renderState.ts`, `renderColor.ts`): `createRenderState` / `createRenderStateRuntime` / `getRenderStateRuntime` / `destroyRenderState`. Mutable machinery (frame counter, proxy maps, registry aggregate, `tempStack`, `renderAdaptHook`, `registryMiss` signal slot) lives on `RenderStateRuntime`. `setRenderStateBackgroundColor` derives packed/RGBA/string forms through a documented narrow writable cast. `getColorAdjustmentUnsupportedGuard` resolves the opt-in guard slot.
-- **2D prepare pipeline** (`renderProxy.ts` + trait visitors): `prepareScene2DRender` delegates to `walkNode`, an explicit-stack, frame-id'd, dirty-checked pre-order walk. Per-node update composed of `updateRenderProxyAppearance` (visibility, alpha, blend mode inheritance), `updateRenderProxy2DTransform` (matrix composition, `renderTransform2D` root), `updateRenderProxyMaterial` (non-inheriting), opt-in `enableColorAdjustments` (registry-driven, affine scale/bias + 4x5 matrix paths, inherited composition), and `updateNodeClip` (depth from parent + local clip). `isRenderProxyDirty` checks local-transform / appearance / content / children / parent-reference revisions and the `sceneGraphSyncPolicy`. One proxy type (`RenderProxy2D`) serves display objects, sprites, and tilemaps. Teardown: `disposeRenderProxy` / `disposeScene2DRender` (iterative full-subtree walk visiting disabled/hidden nodes, cascading `destroyData`).
-- **Adapter + render cache** (`renderProxyAdapter.ts`, `renderCache.ts`): per-state adapt hook (`installRenderAdaptHook(state, fn)` on `RenderStateRuntime`), `setRenderProxyAdapter` / `getRenderProxyAdapter` / `applyRenderProxyAdapter`. `createRenderCache` / `createRenderCacheAdapter` / `useRenderCache` / `getRenderProxyCache` / `isRenderCache` / `isRenderCacheAdapter` / `registerRenderCacheRenderer`. Opt-in `enableRenderCacheAdapterSignals` for lazy refresh.
-- **Render-target math** (`renderTarget.ts`): `computeScene2DRenderTargetTransform` (inverse-local + translation into target pixel space), `computeRenderCacheTransform`, `computeRenderTargetSize` (now with `out` parameter, padding-aware, min-clamp), `resolveRenderTargetDescriptor` (substrate-independent normalization: MRT color formats, sample count, depth, color space, clear values), `explainRenderTargetAxes` (plain-data axis-by-axis diff between requested and effective).
-- **Retained queue** (`renderQueue.ts`): `createRenderQueue`, `buildRenderQueue` (scene-order keys over prepared proxies using a module-level `_buildStack`), `sortRenderQueue` (custom comparator, slices the valid window), `packRenderSortKey` (15-bit layer / transparent bit / 15-bit depth), `pushRenderQueueEntry` / `clearRenderQueue` / `compareRenderQueueEntries`. Queue capacity reuses across frames (`clearRenderQueue` zeroes `entryCount` without shrinking).
-- **Viewport culling** (`renderViewport.ts`): `computeRenderProxyWorldBounds` reads `getNodeWorldBoundsRectangle` (real cached world-space AABB, not the old local-x/y-zero-size stub), `isRenderableInViewport` / `isRenderProxyInViewport` take an optional `renderTransform2D` for world-to-screen, inclusive-edge overlap test, conservative `true` for non-spatial sources. Module-level scratch rectangles.
-- **3D scene prepare** (`sceneRender.ts`): `prepareScene3DRender` — world-matrix propagation (respecting `sceneGraphSyncPolicy` and `isNodeLocalMatrix4Detached`), view-projection composition (perspective with viewport-aspect authority, orthographic, jitter), frustum cull against world-space mesh AABBs (preferring `deformedLocalBounds` from a prior skinning pass, falling back to `ensureMeshGeometryBounds`). `collectVisibleMeshes` is now an explicit-stack iterative walk (converted from the prior review's call-stack recursion). `packScene3DLightBlock` — directional/ambient + point/spot/hemisphere up to `MAX_FORWARD_LIGHTS`, sRGB-to-linear premultiplied radiance, std140-exact offsets, pack-then-compare so `version` bumps only on real change. Per-render-state scratch via `WeakMap<RenderState, PreparedScene3D>`.
-- **Raster surface abstraction** (`raster2DSurface.ts`, new): `createRaster2DSurface` / `destroyRaster2DSurface` (provider-tracked teardown — a surface always returns to its creator even when the process-global provider changes during its lifetime), `getRaster2DSurfaceProvider` / `setRaster2DSurfaceProvider` / `installRaster2DSurfaceHostProvider` / `hasRaster2DSurfaceHostProvider`, `explainRaster2DSurfaceProvider` (returns `BackendExplanation` with conflict flag and layer), `resetRaster2DSurfaceProviderForTest`.
-- **Color space** (`scene2dWorkingColorSpace.ts`): `SCENE2D_WORKING_COLOR_SPACE` = `'srgb'` — the byte-through 2D compositing policy, documented as a seam (not a claim about texture data).
-- **Diagnostics** — five shakeable modules, each independently importable:
-  - `enableColorAdjustmentGuards` / `areColorAdjustmentGuardsEnabled` — warn-once on unsupported (non-matrix) color adjustments.
-  - `enableSceneRenderGuards` / `disableSceneRenderGuards` — warn-once on skinned mesh culled against bind-pose bounds (missing deform pass).
-  - `enableRenderRegistryGuards` / `areRenderRegistryGuardsEnabled` / `explainRenderRegistryMisses` — cross-registry miss guard (node renderer, blend realization, material renderer, effect padding, shape command, shape rasterizer, texture resolver, modifier snippet, material texture lister), per-state signal-driven, `logOnce` with kind + registry + remedy message. Backend-aware messages (GL vs WGPU vs Canvas vs DOM).
-  - `enableRenderRegistrySignals` — the opt-in signal seam (`onRegistryMiss`) the registry guards connect to; independently importable for custom diagnostics.
-  - `explainScene2DRender` — per-node blank-frame reason query (root-cause prioritized: `no-renderer` > `not-prepared` > `not-visible` > `zero-alpha` > `ok`), returns `Scene2DRenderExplanation` (types in `@flighthq/types`).
-  - `explainScene2DCoverage` / `hasScene2DCoverage` — manifests which node kinds and shape commands `usage` names are served by this state's registries, with catalog-driven remediation (module + registrar). The explain and predicate share one implementation so they cannot disagree.
+- `RenderStateRuntime` owns proxy maps, live proxy sources, registries, miss signaling, and traversal
+  scratch. `destroyRenderState` runs renderer teardown for every live proxy and clears state-owned
+  bookkeeping.
+- `prepareScene2DRender` maintains the scene-to-proxy layer and exposes explicit coverage diagnostics.
+  `computeRenderProxyWorldBounds` and viewport tests now accept `Node2D` directly and use real cached
+  world bounds; the former `pivotX` duck-typing path is gone.
+- `prepareScene3DRender` packs lights and collects visible Mesh and InstancedMesh nodes with an explicit
+  stack. It honors the scene-graph sync policy and maintains stable reusable lists, including cached
+  instanced-mesh bounds.
+- `RenderQueue` is a reusable retained container with explicit build, clear, sort, and sort-key helpers.
+  It is currently an isolated primitive: production code outside the module does not consume it.
+- `createCanvasHostSurface`, `getCanvasHostSurface`, and `destroyCanvasHostSurface` provide a small
+  backend-neutral ownership bridge for raster fallbacks. Destruction returns a surface to its original
+  `HostCanvasCapability` exactly once.
+- The package has 23 implementation files and 23 colocated test files after excluding its barrels.
+  The tests cover every implementation module, including state isolation, coverage diagnostics, queue
+  behavior, 2D bounds, canvas-surface ownership, and 3D preparation.
 
 ## Gaps
 
-Versus a mature backend-agnostic render-abstraction layer and the charter's in-scope list:
+- The shared draw driver blessed by the charter is absent: there is no `drawRenderProxy`,
+  `submitRenderProxy`, `flushRenderBatch`, or `registerRenderBatchFlush`. Concrete backends still own
+  their draw walks.
+- `buildRenderQueue`, `sortRenderQueue`, `isRenderableInViewport`, and `isRenderProxyInViewport` have
+  no production callers outside their defining modules. The queue also allocates an entry object per
+  push and a slice per sort, contrary to its intended hot-path posture.
+- The counter-level stats seam, blend save/restore stack, and optional render-pass/render-graph layer
+  named by the charter are unimplemented.
+- `prepareScene3DRender` clears and walks the visible subtree on every call. It has no root aggregate
+  revision that can prove a prepared list remains current.
+- Some mutable state remains at module scope: `preparedScene3Ds`, `_buildStack`, `_collectStack`, and
+  guard/scratch values. WeakMap-keyed state and reusable scratch are behaviorally safer than a shared
+  provider, but they still diverge from the charter's strict runtime-slot north star and complicate
+  re-entrancy.
 
-- **No shared draw driver.** `Renderer.submit` / `format` exist in `@flighthq/types` for a core-owned walk-and-flush, but `drawRenderProxy` / `submitRenderProxy` / `flushRenderBatch` / `registerRenderBatchFlush` do not exist. Each backend still owns its draw walk. Charter Decision #1 blessed this; it has never landed. This is the keystone gap.
-- **Orphaned header types.** `RenderDrawContext`, `RenderStateStats`, `RenderBlendStateEntry` remain in `@flighthq/types` with no implementation and no consumer anywhere in the tree.
-- **Queue and viewport culling are unconsumed.** `buildRenderQueue` / `sortRenderQueue` and `isRenderableInViewport` have zero callers outside their own tests. No `drawRenderQueue`, no cull integration in the prepare or queue-build paths.
-- **No stats/counter seam.** `getRenderStateStats` does not exist; the charter's "What it is" names a counter-level stats snapshot in the present tense.
-- **No blend save/restore stack** (`pushRenderBlendState` / `popRenderBlendState` — charter Open direction #5).
-- **No render-pass / render-graph abstraction** — in scope per charter Decision #2, undesigned.
-- **Chartered aggregate guard/explain set unbuilt.** `enableRenderGuards(state)` (unregistered-kind, draw-before-prepare, clip-data-with-null-hook), `explainRenderState(state, root)`, and `formatRenderStateExplanation` do not exist. What the package has instead is a broader but differently shaped diagnostics surface: per-concern `enable*Guards` functions, per-concern `explain*` queries, and the cross-registry miss guard. Whether the chartered aggregate is still the right target or the per-concern pattern supersedes it is an open question.
-- **`prepareScene3DRender` has no dirty short-circuit.** Full re-walk / re-cull / re-pack every call under both sync policies. The 3D analog of `isRenderProxyDirty` is absent. Light-block versioning (the groundwork) is done. Gated on a scene-root aggregate revision in `@flighthq/node`.
-- **3D prepare depth**: no material/opaque-transparent sort, no shadow-caster collection, instancing, or LOD (charter Open direction #4, gated on scene/lighting/mesh roadmap).
+## Charter fit
 
-## Charter contradictions
+The package maintains the important boundaries: it contains no concrete GL/WGPU draw code, consumes
+node and lighting contracts rather than defining them, keeps public types in `@flighthq/types`, and
+makes 3D additive. Its charter overstates current ownership of a shared draw contract, stats, and a
+render graph. Those are valid directed goals, not present capabilities.
 
-- **"What it is" overclaims stats**: the charter states the package owns "a counter-level stats snapshot"; no such export exists. Charter drift — describing the target as current.
-- **North star #4 (state on `RenderStateRuntime`, not module globals) has multiple soft spots:**
-  - `preparedScene3Ds` — a module-level `WeakMap<RenderState, PreparedScene3D>`. Per-state coexistence holds, but the blessed pattern is a runtime slot.
-  - `_buildStack` (`renderQueue.ts`) — module-level scratch where the prepare walk's `tempStack` lives on the runtime. Functionally distinct (queue-build vs prepare), but a pattern inconsistency.
-  - `raster2DSurface.ts` — three module-level `let` variables (`_custom`, `_host`, `_hostConflict`) and a WeakMap for surface-to-provider tracking. This is process-global mutable state, not per-state. It is new since the prior review and is the most direct violation of North star #4 in the package — a custom provider set by one caller silently affects every render state. `resetRaster2DSurfaceProviderForTest` exists but is a test workaround, not an architecture fix.
-  - `_skinnedBoundsGuard` (`sceneRender.ts`) — a module-level `let` slot, process-global. Set by `enableSceneRenderGuards` / `disableSceneRenderGuards`.
-  - `_collectStack` (`sceneRender.ts`) — module-level scratch array for the 3D mesh collection walk.
-  - `_nextStateId` / `_stateIds` / `_stateMisses` (`renderRegistryGuards.ts`) — module-level state for the diagnostics layer. WeakMap-keyed so per-state, but the `_nextStateId` counter is process-global.
-  - Scratch objects (`_scratchBounds`, `_scratchTransformed` in `renderViewport.ts`; `_tempInvLocal`, `_tempTranslation` in `renderTarget.ts`; `scratchColor`, `scratchProjection`, `scratchLightData` in `sceneRender.ts`; `parentColorMatrixScratch`, `localColorMatrixScratch` in `enableColorAdjustments.ts`) — immutable-intent scratch for hot-loop allocation avoidance; single-threaded-safe but module-level by necessity. Not violations per se, since they are reused write-targets rather than shared mutable state.
-  
-  Of these, `raster2DSurface.ts` is the strongest violation because it is genuinely process-global and affects the behavior of every render state. The rest are either WeakMap-keyed (per-state semantics at module scope) or write-only scratch.
+The existing assessment's two remaining Recommended items have landed: viewport narrowing no longer
+duck-types a node, and 3D collection is iterative. Its Backlog remains the more accurate description of
+the work needed to complete the charter. The append-only Approved history was left untouched.
 
-- **`isSpatial2DNode` duck-types the trait** — `renderViewport.ts:71` tests `'pivotX' in source && 'skewX' in source`. The approved viewport fix's trait-detection residual. This is the one piece of the approved item that did not land.
+## Export review
 
-- Otherwise clean: no pixels in core, registry at the backend seam, no eager registration, 3D strictly additive (2D imports never touch `sceneRender`), lighting definitions consumed from descriptors not defined here. The previously-decided violations (no-op export, alias, global adapt hook, fake world bounds, font-string scope leak) are all verified gone.
-
-## Contract & docs fit
-
-- **Export lanes: correct.** Two blessed lanes (`.` via `index.ts`, `./contract` via `contract.ts`). `index.ts` cultivates a public subset (20 exports); `contract.ts` re-exports all 22 source modules. `sideEffects: false` declared.
-- **Types-first: satisfied.** All exported types (`Scene2DRenderExplanation`, `Scene2DRenderBlankReason`, `RenderRegistryMissExplanation`, `SceneCoverageEntry`, `Scene2DKindUsage`, `SceneCoverageCatalog`, `BackendExplanation`, `RenderTargetAxes`, `RenderTargetAxisDifference`, `RenderTargetDescriptor`, `ResolvedRenderTargetDescriptor`, and all entity/runtime types) live in `@flighthq/types`. No locally defined exported types. One value re-export from types: `RenderCacheKind` (a const string, not a type definition — correct).
-- **Naming: good.** Unabbreviated self-identifying function names throughout (`computeRenderProxyWorldBounds`, `packScene3DLightBlock`, `enableRenderRegistryGuards`). `get*` for accessors, `is*` / `has*` / `are*` for booleans, `create*` for allocators, `destroy*` for GPU teardown, `dispose*` for GC-release, `enable*` for opt-in, `explain*` for diagnostics.
-- **Out-params: mostly satisfied.** `computeRenderCacheTransform`, `computeScene2DRenderTargetTransform`, `computeRenderTargetSize` all write to `out`. `packScene3DLightBlock` writes to `out`. `explainScene2DCoverage` writes to an `out` array. `explainRenderTargetAxes` allocates its return (minor — diagnostics path, not hot loop).
-- **Readonly: good.** Input parameters use `Readonly<>` consistently (`Readonly<Scene3DLightsLike>`, `Readonly<Camera3D>`, `Readonly<RenderViewport2D>`, `Readonly<Matrix>`, `Readonly<RectangleLike>`, etc.).
-- **Test coverage: good.** 22 test files for 22 source files (excluding `contract.ts` and `index.ts`, which are pure re-export barrels). ~263 `it()` blocks. Tests use constructors (`createRenderState`, `createMatrix`, `createRectangle`) rather than literals for entity types.
-- **Diagnostics convention: satisfied.** Core modules expose seams (`registryMiss` callback slot, `_skinnedBoundsGuard` hook), never messages. All log-emitting code lives in separately importable guard modules that import `@flighthq/log`. Messages name the function, the invariant broken, and the exact exported call that fixes it. `logOnce` used for all warnings. Production bundles that omit the guard modules carry no `@flighthq/log` dependency.
-- **Residual `pivotX` duck-type.** `isSpatial2DNode` (`renderViewport.ts:71`) detects the `Spatial2DNode` trait via `'pivotX' in source && 'skewX' in source` rather than using a proper trait predicate. The one remaining piece of the approved viewport fix.
-- **`sortRenderQueue` allocates a slice.** Line 102: `queue.entries.slice(0, queue.entryCount)` creates a temporary array every sort. For a queue that grows but never shrinks this is a per-frame allocation in the hot path if sorting is used. The entries themselves also allocate `{ proxy, sortKey }` per push (line 84). Both are minor given the queue is currently unconsumed.
-- **`pushRenderQueueEntry` allocates per entry.** Each call creates a fresh `{ proxy, sortKey }` object even when reusing a slot in the entries array. The capacity-reuse pattern (`entryCount < entries.length`) reuses the array slot but not the entry object.
-
-## Candidate open directions
-
-- **Chartered vs shipped diagnostics shape.** The charter names `enableRenderGuards(state)` as a single bundle of three checks; the shipped surface is per-concern (`enableSceneRenderGuards`, `enableColorAdjustmentGuards`, `enableRenderRegistryGuards`). The per-concern pattern is arguably better (finer tree-shaking, clearer opt-in), but it diverges from the chartered name. Should the charter be updated to bless the per-concern pattern, or should an aggregate `enableRenderGuards` be added as a convenience that enables all three?
-- **Raster surface global state.** `raster2DSurface.ts` is process-global mutable state. If multiple render states need different surface providers (one Canvas, one GL), the current design cannot express that. Should the provider move to a `RenderStateRuntime` slot, or is process-global the correct model for a host-provided capability?
-- **Queue entry allocation.** `pushRenderQueueEntry` allocates a new `{ proxy, sortKey }` object per call. If the queue becomes the driver's input (charter Open direction #1), this is a per-node-per-frame allocation in the hot path. A pooled or rewritten-in-place pattern would align with the "no hidden per-frame allocation" North star.
-- **Orphaned driver-family types.** Should `RenderDrawContext` / `RenderStateStats` / `RenderBlendStateEntry` stay as pre-declared headers for the blessed driver work, or be removed until implementation lands?
-- **`computeRenderTargetSize` return value.** The function now writes to an `out` parameter but also returns it. The return is convenient for chaining but is redundant with the `out` contract — the convention elsewhere is `void` for out-param functions.
+The old `createImageSurface` / `destroyImageSurface` pair was replaced with the explicit
+`createCanvasHostSurface`, `destroyCanvasHostSurface`, and `getCanvasHostSurface` ownership seam. The
+helpers are used by canvas-backed fallbacks in downstream render backends, and the refreshed export
+snapshot records the reviewed rename and accessor addition.
