@@ -195,7 +195,7 @@ it('should use provided options', () => {
 it('should succeed with the test host even when getContext returns null', () => {
   canvas.getContext = vi.fn().mockReturnValue(null);
 
-  const renderer = createCanvasRenderState(canvas);
+  const renderer = createCanvasRenderStateWithoutPass();
   expect(renderer).toBeDefined();
 });
 
