@@ -1,3 +1,4 @@
+import { getCanvasHostSurface } from '@flighthq/render/contract';
 import type {
   CanvasEffectRunner,
   CanvasRenderState,
@@ -48,7 +49,7 @@ export function applyInnerShadowEffectToCanvas(
   const effect = maybeEffect ?? (poolOrEffect as Readonly<InnerShadowEffect>);
   const pool =
     maybeEffect === undefined
-      ? createCanvasTextureRenderTargetPool(source.surface.creator)
+      ? createCanvasTextureRenderTargetPool(getCanvasHostSurface(source.surface)!)
       : (poolOrEffect as CanvasRenderTargetPool);
   applyInnerShadowEffectToCanvasWithPool(source, dest, pool, effect);
 }

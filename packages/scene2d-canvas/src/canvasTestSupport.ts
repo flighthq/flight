@@ -4,6 +4,7 @@ import {
   getSurfaceHandle,
 } from '@flighthq/surface/contract';
 import type {
+  AppWindow,
   CanvasRenderOptions,
   CanvasRenderPass,
   CanvasRenderState,
@@ -12,7 +13,9 @@ import type {
   CanvasTextureRenderTarget,
   CanvasTextureResolvers,
   HostCanvasCapability,
+  NativeSurfaceHandle,
   RenderTargetClear,
+  Surface,
 } from '@flighthq/types/contract';
 
 import { beginCanvasRenderPass } from './canvasRenderPass';
@@ -30,29 +33,32 @@ export * from './canvasTextureRenderTarget';
 export * from './canvasTextureResolver';
 
 export const canvasTestHost: HostCanvasCapability = Object.freeze({
-  acquire(surface, options) {
+  acquire(
+    surface: Readonly<Surface>,
+    options?: Readonly<CanvasRenderingContext2DSettings>,
+  ): CanvasRenderingContext2D | null {
     const handle = getSurfaceHandle(surface) as HTMLCanvasElement;
     return handle.getContext('2d', options);
   },
-  create(_window, width, height) {
+  create(_window: Readonly<AppWindow>, width: number, height: number): NativeSurfaceHandle | null {
     const canvas = globalThis.document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     return canvas;
   },
-  createSurface(width: number, height: number) {
+  createSurface(width: number, height: number): CanvasSurface | null {
     const canvas = globalThis.document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     return createCanvasSurfaceFromNativeHandle(canvasTestHost, canvas);
   },
-  destroySurface(surface: CanvasSurface) {
+  destroySurface(surface: CanvasSurface): void {
     const canvas = getSurfaceHandle(surface) as HTMLCanvasElement;
     destroyCanvasSurface(canvasTestHost, surface);
     canvas.width = 0;
     canvas.height = 0;
   },
-  release(_surface) {
+  release(_surface: Readonly<Surface>): void {
     // No-op for test host.
   },
 });

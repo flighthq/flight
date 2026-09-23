@@ -4,7 +4,6 @@ import {
   beginCanvasRenderPass,
   createCanvasElement,
   createCanvasRenderState,
-  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   canvasShapeCommands,
@@ -27,10 +26,11 @@ export const CANVAS_HEIGHT = 600;
 
 const pixelRatio = window.devicePixelRatio || 1;
 
-export const canvas = createCanvasElement(webHostCanvas, CANVAS_WIDTH, CANVAS_HEIGHT, pixelRatio);
+const surface = createCanvasElement(webHostCanvas, CANVAS_WIDTH, CANVAS_HEIGHT, pixelRatio);
+export const canvas = surface.context.canvas as HTMLCanvasElement;
 document.body.appendChild(canvas);
 
-export const screen = createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas));
+export const screen = createCanvasScreenRenderTarget(surface);
 export const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas), {
   pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',

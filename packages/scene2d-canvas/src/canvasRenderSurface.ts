@@ -19,8 +19,6 @@ export function destroyCanvasSurfaceOwned(surface: CanvasSurface): void {
   canvasHost.destroySurface(surface);
 }
 
-const _ownedSurfaces = new WeakMap<CanvasSurface, Readonly<HostCanvasCapability>>();
-
 // The host canvas capability this state allocates offscreen surfaces through: render-cache targets and
 // render textures both ask for one, and neither can invent it — a canvas comes from the host. Registered
 // once, read by name, and absent until then so a screen-only state carries nothing.
@@ -32,6 +30,12 @@ export function getCanvasHost(state: CanvasRenderState): Readonly<HostCanvasCapa
   return canvasHost;
 }
 
+export function getCanvasSurfaceHost(surface: Readonly<CanvasSurface>): Readonly<HostCanvasCapability> | null {
+  return _ownedSurfaces.get(surface as CanvasSurface) ?? null;
+}
+
 export function registerCanvasHost(state: CanvasRenderState, canvasHost: Readonly<HostCanvasCapability>): void {
   getCanvasRenderStateRuntime(state).canvasHost = canvasHost;
 }
+
+const _ownedSurfaces = new WeakMap<CanvasSurface, Readonly<HostCanvasCapability>>();
