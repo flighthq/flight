@@ -1,7 +1,7 @@
 ---
 package: '@flighthq/render'
-updated: 2026-08-08
-by: principal
+updated: 2026-09-23
+by: auditor
 ---
 
 # render — Status
@@ -11,38 +11,33 @@ by: principal
 
 ## Open
 
-Every item below was re-checked against `packages/render/src/` on 2026-08-08. A file:line here is a
-claim about this tree, not about a session.
+Re-checked against `packages/render/src/` on 2026-09-23.
 
-- **No render-state-wide guard/explain surface.** `enableSceneRenderGuards` and
-  `explainScene2DRender` / `explainScene2DCoverage` exist, but each is scoped to a scene pass. The
-  older combined `enableRenderGuards` / `explainRenderState` contract — draw-before-prepare, missing
-  clip hooks — has no implementation; neither name appears in the tree.
-- **`RenderTargetSizeOptions` is an exported header with no consumer.** Declared in
-  `packages/types/src/RenderTargetSizeOptions.ts` and re-exported from `contract.ts`; zero importers
-  outside `packages/types`. Either wire it or delete it.
-- **`computeRenderTargetSize` allocates its result** (`renderTarget.ts:32`) — returns a fresh
-  `{width, height}` rather than writing an `out`, against the explicit-allocation rule.
-- **`renderQueue.ts` names `drawDriver._drawStack`, and there is no draw driver.** `renderDriver.ts`
-  does not exist in this tree, so the reference points at nothing.
-- **`RenderViewport2D` still duck-types the transform** — `renderViewport.ts:71` tests
-  `'pivotX' in source` to decide whether a source carries a 2D transform.
-- **3D prepare has no dirty short-circuit.** `prepareScene3DRender` (`sceneRender.ts:157`) clears and
-  refills `prepared.meshes` every call, and `collectVisibleMeshes` (`:190`, self-call at `:228`) is
-  recursive. `sceneGraphSyncPolicy` reaches only transform freshness, not the walk. An O(1) cached
-  path needs a scene-root aggregate revision first.
-- **Cross-backend viewport authority is unsettled.** GL derives camera aspect from the active
-  viewport; the WGPU draw path still falls back to the camera-authored aspect. Tied to the held
-  `RenderView` / sub-target ownership question in
-  [render view model](../../render-view-model.md) — unratified, do not build on it.
-- **No render graph, and the prerequisites are unbuilt.** Explicit pass/attachment descriptors and a
-  view-ownership contract come first; both are cross-package (`render-gl`, `render-wgpu`) and want a
-  ruling before anyone starts.
+- **The shared draw driver is absent.** The chartered `drawRenderProxy`, `submitRenderProxy`,
+  `flushRenderBatch`, and `registerRenderBatchFlush` functions do not exist, so concrete backends still
+  own their draw walks.
+- **Queue and viewport primitives are unconsumed.** `buildRenderQueue`, `sortRenderQueue`,
+  `isRenderableInViewport`, and `isRenderProxyInViewport` have no production callers outside their
+  modules. Queue push allocates an entry object and queue sort allocates a slice.
+- **Stats, blend stack, and render graph remain targets, not capabilities.** There is no
+  `getRenderStateStats`, `pushRenderBlendState` / `popRenderBlendState`, or render-pass/graph API despite
+  the charter naming them in scope.
+- **3D preparation still re-walks the scene.** Collection is now iterative and includes InstancedMesh,
+  but every prepare clears and repopulates the visible lists; no root aggregate revision proves reuse is
+  safe.
+- **Some state remains module-scoped.** `preparedScene3Ds`, `_buildStack`, `_collectStack`, and guard or
+  scratch values have per-state or reusable semantics but do not satisfy the charter's strict runtime-slot
+  posture and are not re-entrant.
+- **The charter describes planned work as present ownership.** Its draw driver, counter snapshot, and
+  render-graph claims should remain read as directed architecture until implementations land.
 
 ## Log
 
 <!-- newest entry on top; one dated line each, naming what changed and where to look -->
 
+- **2026-09-23** — Re-audited current source: typed `Node2D` viewport bounds and iterative 3D collection
+  have landed; canvas fallback ownership now uses `HostCanvasCapability`; the unconsumed queue, missing
+  driver/stats/graph, full 3D re-walk, and module-scoped state remain open.
 - **2026-08-08** — Rewritten to the `Open` + `Log` contract. Dropped ~130 lines describing the
   `builder-67dc46d64` bundle as implemented: `renderDriver.ts`, `renderBlendState.ts`,
   `getRenderStateStats`, `drawRenderProxy`, and `pushRenderBlendState` are all absent from this tree,
