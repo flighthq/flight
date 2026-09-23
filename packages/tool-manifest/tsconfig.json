@@ -11,7 +11,19 @@
   },
   "references": [
     {
+      "path": "../compression"
+    },
+    {
       "path": "../requirement"
+    },
+    {
+      "path": "../requirement-catalog"
+    },
+    {
+      "path": "../requirement-codegen"
+    },
+    {
+      "path": "../scene3d-formats"
     },
     {
       "path": "../swf"

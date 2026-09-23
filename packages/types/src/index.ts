@@ -98,6 +98,7 @@ export * from './AudioResourceReference';
 export * from './AutoExposureEffect';
 export * from './BarrelDistortionEffect';
 export * from './BatchBarrier';
+export * from './Awd2Header';
 export * from './Awd2Block';
 export * from './Awd2ParseOptions';
 export * from './BatchFormat';

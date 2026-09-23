@@ -10,33 +10,90 @@
     "types": ["@testing-library/jest-dom", "vitest/globals", "@webgpu/types"]
   },
   "references": [
-    { "path": "../abc" },
-    { "path": "../adjustments" },
-    { "path": "../audio" },
-    { "path": "../bitmap" },
-    { "path": "../clip" },
-    { "path": "../color" },
-    { "path": "../compression" },
-    { "path": "../effects" },
-    { "path": "../font" },
-    { "path": "../geometry" },
-    { "path": "../glyphatlas" },
-    { "path": "../image" },
-    { "path": "../image-codec" },
-    { "path": "../importdiagnostics" },
-    { "path": "../log" },
-    { "path": "../math" },
-    { "path": "../movieclip" },
-    { "path": "../node" },
-    { "path": "../path" },
-    { "path": "../scene2d" },
-    { "path": "../scene2d-resources" },
-    { "path": "../shape" },
-    { "path": "../text" },
-    { "path": "../texture" },
-    { "path": "../text-markup" },
-    { "path": "../entity" },
-    { "path": "../types" }
+    {
+      "path": "../abc"
+    },
+    {
+      "path": "../adjustments"
+    },
+    {
+      "path": "../audio"
+    },
+    {
+      "path": "../bitmap"
+    },
+    {
+      "path": "../clip"
+    },
+    {
+      "path": "../color"
+    },
+    {
+      "path": "../compression"
+    },
+    {
+      "path": "../effects"
+    },
+    {
+      "path": "../entity"
+    },
+    {
+      "path": "../font"
+    },
+    {
+      "path": "../geometry"
+    },
+    {
+      "path": "../glyphatlas"
+    },
+    {
+      "path": "../image"
+    },
+    {
+      "path": "../image-codec"
+    },
+    {
+      "path": "../importdiagnostics"
+    },
+    {
+      "path": "../log"
+    },
+    {
+      "path": "../math"
+    },
+    {
+      "path": "../movieclip"
+    },
+    {
+      "path": "../node"
+    },
+    {
+      "path": "../path"
+    },
+    {
+      "path": "../requirement"
+    },
+    {
+      "path": "../scene2d"
+    },
+    {
+      "path": "../scene2d-resources"
+    },
+    {
+      "path": "../shape"
+    },
+    {
+      "path": "../text"
+    },
+    {
+      "path": "../text-markup"
+    },
+    {
+      "path": "../texture"
+    },
+    {
+      "path": "../types"
+    }
   ],
   "include": ["src"]
 }

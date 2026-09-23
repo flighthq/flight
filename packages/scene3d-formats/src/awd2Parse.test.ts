@@ -1157,7 +1157,7 @@ describe('createScene3DFromAwd2', () => {
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.compression-no-decompressor');
     expect(crumb.severity).toBe('Reject');
-    expect(crumb.origin).toBe('rehydrateAwdBody');
+    expect(crumb.origin).toBe('rehydrateAwd2Body');
     expect(crumb.detail?.compression).toBe(AWD2_COMPRESSION_DEFLATE);
   });
 
@@ -2014,7 +2014,7 @@ describe('parseAwd2', () => {
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.compression-no-decompressor');
     expect(crumb.severity).toBe('Reject');
-    expect(crumb.origin).toBe('rehydrateAwdBody');
+    expect(crumb.origin).toBe('rehydrateAwd2Body');
     expect(crumb.detail?.compression).toBe(AWD2_COMPRESSION_DEFLATE);
   });
 });
@@ -3382,7 +3382,7 @@ describe('parseAwd2 unhandled blocks', () => {
   });
 });
 
-describe('rehydrateAwdBody', () => {
+describe('rehydrateAwd2Body', () => {
   // A trivial reversible "codec": the compressed body is a 4-byte marker followed by the real block
   // stream, and the decompressor strips the marker. A compressed length that differs from the inflated
   // length exercises the header body-length rewrite the rehydration performs.
@@ -3435,7 +3435,7 @@ describe('rehydrateAwdBody', () => {
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.compression-no-decompressor');
     expect(crumb.severity).toBe('Reject');
-    expect(crumb.origin).toBe('rehydrateAwdBody');
+    expect(crumb.origin).toBe('rehydrateAwd2Body');
     expect(crumb.detail?.compression).toBe(AWD2_COMPRESSION_DEFLATE);
   });
 
@@ -3450,7 +3450,7 @@ describe('rehydrateAwdBody', () => {
     expect(diagnostics).toHaveLength(1);
     const crumb = expectOneCrumb(diagnostics, 'awd2.decompression-failed');
     expect(crumb.severity).toBe('Reject');
-    expect(crumb.origin).toBe('rehydrateAwdBody');
+    expect(crumb.origin).toBe('rehydrateAwd2Body');
     expect(crumb.detail?.compression).toBe(AWD2_COMPRESSION_DEFLATE);
   });
 

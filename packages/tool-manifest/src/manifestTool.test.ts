@@ -1,153 +1,122 @@
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { afterEach, beforeEach } from 'vitest';
-
 import { runManifestTool } from './manifestTool.js';
 
-let directory: string;
-let errors: string[];
-let outputs: string[];
+describe('runManifestTool', () => {
+  it('prints usage and fails with no arguments, succeeds for an explicit --help', async () => {
+    const noArgs = createIO();
+    expect(await runManifestTool([], noArgs.io)).toBe(1);
+    expect(noArgs.output()).toContain('Usage: flight-manifest');
 
-const io = {
-  writeError: (message: string) => {
-    errors.push(message);
-  },
-  writeOutput: (message: string) => {
-    outputs.push(message);
-  },
-};
+    const help = createIO();
+    expect(await runManifestTool(['--help'], help.io)).toBe(0);
+  });
 
-beforeEach(async () => {
-  directory = await mkdtemp(join(tmpdir(), 'flight-manifest-'));
-  errors = [];
-  outputs = [];
+  it('rejects an unknown command rather than doing nothing quietly', async () => {
+    const io = createIO();
+    expect(await runManifestTool(['frobnicate'], io.io)).toBe(1);
+    expect(io.errors()).toContain('unknown command: frobnicate');
+  });
+
+  it('scans a directory of content into one merged requirement set', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'flight-manifest-'));
+    await writeFile(join(dir, 'a.swf'), createSwf());
+    await writeFile(join(dir, 'ignored.txt'), 'not content');
+    const out = join(dir, 'set.json');
+
+    const io = createIO();
+    expect(await runManifestTool(['scan', '--content', dir, '--out', out], io.io)).toBe(0);
+    const written = JSON.parse(await readFile(out, 'utf8'));
+    expect(written.covers).toEqual(['document.format']);
+    expect(written.requirements).toEqual([{ facet: 'document.format', key: 'ShowFrame' }]);
+  });
+
+  it('reports a requirement the baseline does not cover and fails', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'flight-manifest-'));
+    const required = join(dir, 'required.json');
+    const available = join(dir, 'available.json');
+    await writeFile(required, JSON.stringify(set([{ facet: 'document.format', key: 'ShowFrame' }])));
+    await writeFile(available, JSON.stringify(set([])));
+
+    const io = createIO();
+    expect(await runManifestTool(['diff', '--required', required, '--available', available], io.io)).toBe(1);
+    expect(io.errors()).toContain('missing document.format ShowFrame');
+  });
+
+  it('passes a diff whose requirements are all covered', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'flight-manifest-'));
+    const path = join(dir, 'both.json');
+    await writeFile(path, JSON.stringify(set([{ facet: 'document.format', key: 'ShowFrame' }])));
+
+    const io = createIO();
+    expect(await runManifestTool(['diff', '--required', path, '--available', path], io.io)).toBe(0);
+    expect(io.output()).toContain('all requirements are covered');
+  });
+
+  it('merges several sets into one', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'flight-manifest-'));
+    const a = join(dir, 'a.json');
+    const b = join(dir, 'b.json');
+    const out = join(dir, 'merged.json');
+    await writeFile(a, JSON.stringify(set([{ facet: 'document.format', key: 'ShowFrame' }])));
+    await writeFile(b, JSON.stringify(set([{ facet: 'document.format', key: 'DefineShape' }])));
+
+    const io = createIO();
+    expect(await runManifestTool(['merge', '--set', a, '--set', b, '--out', out], io.io)).toBe(0);
+    expect(JSON.parse(await readFile(out, 'utf8')).requirements).toEqual([
+      { facet: 'document.format', key: 'DefineShape' },
+      { facet: 'document.format', key: 'ShowFrame' },
+    ]);
+  });
+
+  it('fails a plan that leaves a requirement unresolved, naming it', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'flight-manifest-'));
+    const setPath = join(dir, 'set.json');
+    const catalogPath = join(dir, 'catalog.json');
+    await writeFile(setPath, JSON.stringify(set([{ facet: 'document.format', key: 'ShowFrame' }])));
+    await writeFile(catalogPath, JSON.stringify({ entries: [] }));
+
+    const io = createIO();
+    expect(
+      await runManifestTool(['plan', '--set', setPath, '--catalog', catalogPath, '--backend', 'canvas'], io.io),
+    ).toBe(1);
+    expect(io.errors()).toContain('unresolved document.format ShowFrame');
+  });
+
+  it('reports a malformed input file instead of throwing', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'flight-manifest-'));
+    const bad = join(dir, 'bad.json');
+    await writeFile(bad, '{');
+
+    const io = createIO();
+    expect(await runManifestTool(['diff', '--required', bad, '--available', bad], io.io)).toBe(1);
+    expect(io.errors()).toContain('not valid JSON');
+  });
 });
 
-afterEach(async () => {
-  await rm(directory, { force: true, recursive: true });
-});
-
-const path = (name: string): string => join(directory, name);
-
-async function write(name: string, value: unknown): Promise<string> {
-  const file = path(name);
-  await writeFile(file, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
-  return file;
+function createIO() {
+  const errors: string[] = [];
+  const output: string[] = [];
+  return {
+    errors: () => errors.join(''),
+    io: { writeError: (m: string) => errors.push(m), writeOutput: (m: string) => output.push(m) },
+    output: () => output.join(''),
+  };
 }
 
-const manifest = (features: Record<string, string[]>) => ({ features, schemaVersion: 1, settings: {} });
-const analysis = (source: string, observations: Record<string, string[]>) => ({
-  observations,
-  schemaVersion: 1,
-  source,
-});
+function set(requirements: ReadonlyArray<{ facet: string; key: string }>) {
+  return { covers: ['document.format'], requirements };
+}
 
-describe('runManifestTool', () => {
-  it('prints usage and fails with no arguments', async () => {
-    expect(await runManifestTool([], io)).toBe(1);
-    expect(outputs.join('')).toContain('Usage: flight-manifest');
-  });
-
-  it('prints usage and succeeds for --help', async () => {
-    expect(await runManifestTool(['--help'], io)).toBe(0);
-  });
-
-  it('rejects an unknown command', async () => {
-    expect(await runManifestTool(['frobnicate'], io)).toBe(1);
-  });
-
-  // scan consumes analyses a DOMAIN produced. This tool reads no content itself, which is why the
-  // fixtures here are serialized analyses rather than .swf or .awd files.
-  it('scans a directory of serialized analyses into one manifest', async () => {
-    const analyses = path('analyses');
-    await mkdir(join(analyses, 'nested'), { recursive: true });
-    await writeFile(join(analyses, 'a.json'), JSON.stringify(analysis('a', { k: ['one'] })), 'utf8');
-    await writeFile(join(analyses, 'nested', 'b.json'), JSON.stringify(analysis('b', { k: ['two'] })), 'utf8');
-
-    const out = path('scanned.json');
-    expect(await runManifestTool(['scan', '--analyses', analyses, '--out', out], io)).toBe(0);
-    expect(JSON.parse(await readFile(out, 'utf8')).features).toEqual({ k: ['one', 'two'] });
-  });
-
-  it('fails a scan when an analysis file is malformed, naming the file', async () => {
-    const analyses = path('bad');
-    await mkdir(analyses, { recursive: true });
-    await writeFile(join(analyses, 'broken.json'), '{ "schemaVersion": 9 }', 'utf8');
-    expect(await runManifestTool(['scan', '--analyses', analyses, '--out', path('x.json')], io)).toBe(1);
-    expect(errors.join('')).toContain('broken.json');
-  });
-
-  it('analyzes one analysis through a mapping', async () => {
-    const analysisFile = await write('analysis.json', analysis('fixture', { k: ['one'] }));
-    const mappingFile = await write('mapping.json', { k: { features: { one: ['feature.one'] }, group: 'g' } });
-    const out = path('analyzed.json');
-    expect(
-      await runManifestTool(['analyze', '--analysis', analysisFile, '--mapping', mappingFile, '--out', out], io),
-    ).toBe(0);
-    expect(JSON.parse(await readFile(out, 'utf8')).features).toEqual({ g: ['feature.one'] });
-  });
-
-  it('reports unmapped observations without failing, since a growing mapping is normal', async () => {
-    const analysisFile = await write('analysis.json', analysis('fixture', { k: ['unknown'] }));
-    const mappingFile = await write('mapping.json', { k: { features: {}, group: 'g' } });
-    expect(await runManifestTool(['analyze', '--analysis', analysisFile, '--mapping', mappingFile], io)).toBe(0);
-    expect(errors.join('')).toContain('unmapped: k:unknown');
-  });
-
-  it('unions several manifests', async () => {
-    const first = await write('first.json', manifest({ g: ['a'] }));
-    const second = await write('second.json', manifest({ g: ['b'] }));
-    const out = path('united.json');
-    expect(await runManifestTool(['union', '--manifest', first, '--manifest', second, '--out', out], io)).toBe(0);
-    expect(JSON.parse(await readFile(out, 'utf8')).features).toEqual({ g: ['a', 'b'] });
-  });
-
-  it('exits 0 for a satisfied diff and 1 when a feature is missing', async () => {
-    const required = await write('required.json', manifest({ g: ['a'] }));
-    const satisfied = await write('satisfied.json', manifest({ g: ['a', 'b'] }));
-    const lacking = await write('lacking.json', manifest({ g: ['b'] }));
-    expect(await runManifestTool(['diff', '--required', required, '--available', satisfied], io)).toBe(0);
-    expect(await runManifestTool(['diff', '--required', required, '--available', lacking], io)).toBe(1);
-  });
-
-  it('generates a module importing exactly the required features', async () => {
-    const manifestFile = await write('manifest.json', manifest({ g: ['feature.one'] }));
-    const registryFile = await write('registry.json', {
-      g: { 'feature.one': { binding: 'one', module: '@example/one' } },
-    });
-    const out = path('generated.ts');
-    expect(
-      await runManifestTool(['generate', '--manifest', manifestFile, '--registry', registryFile, '--out', out], io),
-    ).toBe(0);
-    const source = await readFile(out, 'utf8');
-    expect(source).toContain("import { one } from '@example/one';");
-    expect(source).toContain('export const g = [one];');
-  });
-
-  // Fatal, unlike an unmapped observation: a generated file quietly missing a required feature is a
-  // build that is wrong in a way nothing downstream can detect.
-  it('fails generation when a required feature has no import', async () => {
-    const manifestFile = await write('manifest.json', manifest({ g: ['feature.missing'] }));
-    const registryFile = await write('registry.json', { g: {} });
-    expect(
-      await runManifestTool(
-        ['generate', '--manifest', manifestFile, '--registry', registryFile, '--out', path('o.ts')],
-        io,
-      ),
-    ).toBe(1);
-    expect(errors.join('')).toContain('no import for: g:feature.missing');
-  });
-
-  it('rejects a command missing a required flag', async () => {
-    expect(await runManifestTool(['union', '--out', path('o.json')], io)).toBe(1);
-  });
-
-  it('reports a read failure rather than throwing', async () => {
-    expect(
-      await runManifestTool(['diff', '--required', path('absent.json'), '--available', path('also.json')], io),
-    ).toBe(1);
-    expect(errors.join('')).not.toBe('');
-  });
-});
+// A minimal SWF carrying exactly one ShowFrame tag, built here so the test needs no fixture file.
+function createSwf(): Uint8Array {
+  const rectangle = new Uint8Array([0x00]);
+  const body = new Uint8Array([...rectangle, 0x00, 0x18, 0x01, 0x00, 0x40, 0x00, 0x00, 0x00]);
+  const file = new Uint8Array(8 + body.length);
+  file.set([0x46, 0x57, 0x53, 9], 0);
+  new DataView(file.buffer).setUint32(4, file.length, true);
+  file.set(body, 8);
+  return file;
+}

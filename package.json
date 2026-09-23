@@ -236,7 +236,7 @@
     "test:regression:baseline": "npm run test:functional:regression:baseline && npm run test:examples:regression:baseline",
     "test:scripts": "npx vitest run --config vitest.config.scripts.ts",
     "test:smoke": "npm run test:functional:smoke && npm run test:examples:smoke",
-    "test:tools": "npm run test --workspace=@flighthq/tool-capture --workspace=@flighthq/tool-registry --workspace=@flighthq/tool-pipeline",
+    "test:tools": "npm run test --workspace=@flighthq/tool-capture --workspace=@flighthq/tool-manifest --workspace=@flighthq/tool-registry --workspace=@flighthq/tool-pipeline",
     "test:unit": "tsx ./scripts/test-packages.ts",
     "type-home": "tsx ./scripts/type-home-progress.ts",
     "type-home:check": "tsx ./scripts/type-home-progress.ts --gate",

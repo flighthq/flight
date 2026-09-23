@@ -1,6 +1,9 @@
 # scene3d-formats: exports where the shared classifier gets it wrong.
 
 protected:
+  - collectAwd2BlockCounts
+  - getAwd2BlockName
+  - parseAwd2Requirements
   - GltfAnimationsCoreFeatureHandler
   - GltfAnisotropyExtensionHandler
   - GltfCamerasCoreFeatureHandler
