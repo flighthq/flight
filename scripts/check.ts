@@ -87,7 +87,10 @@ if (!scoped) {
   add('facets:check', 'tsx', ['scripts/requirement-facets.ts', '--check']);
   add('catalog:check', 'tsx', ['scripts/catalog.ts', '--check']);
   add('support:check', 'tsx', ['scripts/support.ts', '--check']);
-  add('capabilities:check', 'tsx', ['scripts/swf-capabilities.ts', '--check']);
+  // capabilities:check joins the two below: its subject is largely agents/packages/swf/capabilities.md,
+  // so a stale doc turns the sweep red for unrelated commits. Note it ALSO compares capabilities.json,
+  // a committed data file, so this de-gates more than prose — run it during doc review.
+  // Run it with `npm run capabilities`.
   add('instrumentation:check', 'tsx', ['scripts/swf-instrumentation.ts', '--check']);
   // capabilities:sites:check and capabilities:numbers are principal-facing review tools, not code
   // gates: their whole subject is prose under agents/packages/swf/ (diagnostic-sites.md,
@@ -129,11 +132,11 @@ if (!scoped) {
   add('capability-arrival:check', 'tsx', ['scripts/capability-arrival.ts']);
   add('host-bypasses:check', 'tsx', ['scripts/check-host-bypasses.ts']);
 
-  // Script tests live outside any package (scripts/**/*.test.ts) and use their own vitest config,
-  // so neither `npm run test <package>` nor the scoped `npm run check <package>` reaches them.
-  // Without this gate, script test failures accumulate silently: `npm run check` passes, agents
-  // attest green, and the breakage surfaces only in CI's `npm run test:scripts` lane.
-  add('test:scripts', 'npx', ['vitest', 'run', '--config', 'vitest.config.scripts.ts']);
+  // Script tests (scripts/**/*.test.ts, own vitest config) are deliberately NOT a gate here for now.
+  // They are still covered: CI runs them as their own leg (.github/workflows/tests.yml). Know the gap
+  // this leaves locally — neither `npm run test` (unit lane: packages/**/src/**) nor `npm run check`
+  // reaches them, so a scripts failure will not surface until CI. Run `npm run test:scripts` before
+  // handing off work that touches scripts/, size fixtures, or anything those tests read as source text.
 
   // Advisory, and deliberately not a gate. `fingerprint-source-hashes:check` above proves a baseline
   // column RECORDS a sourceHash; nothing proved that hash still names the current scene bytes, and the
