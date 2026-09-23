@@ -54,6 +54,7 @@
     "@flighthq/textlayout": "*",
     "@flighthq/texture": "*",
     "@flighthq/textureatlas": "*",
+    "@flighthq/surface": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
@@ -61,7 +62,6 @@
     "@flighthq/bitmaptext": "*",
     "@flighthq/path": "*",
     "@flighthq/quadbatch": "*",
-    "@flighthq/surface": "*",
     "@flighthq/tilemap": "*",
     "typescript": "^5.3.0"
   },

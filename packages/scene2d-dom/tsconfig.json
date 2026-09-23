@@ -49,6 +49,9 @@
       "path": "../shape"
     },
     {
+      "path": "../surface"
+    },
+    {
       "path": "../signals"
     },
     {
