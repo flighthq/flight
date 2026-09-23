@@ -29,15 +29,19 @@ export const REQUIREMENT_OPTION_FIELDS: Readonly<Record<string, string>> = Objec
  * silently does nothing when spread, so routing is per backend and a row naming a field its backend
  * does not accept is REPORTED rather than emitted.
  *
- * `canvas` and `dom` are deliberately EMPTY. `CanvasRenderOptions` and `DomRenderOptions` declare no
- * kind-keyed fields at all — canvas takes its registries as a separate constructor parameter and DOM
- * accepts none — so there is no options field on either for a fragment to spread into today. Their
- * fragments are emitted empty and every row aimed at them is reported, rather than inventing a field
- * that does not exist. See this package's status note for the open API question.
+ * Canvas and DOM reach their registries by different routes, and the sets reflect that rather than
+ * pretending the four backends are alike. A canvas fragment is a `Partial<CanvasRenderRegistries>`
+ * spread into constructor argument 1; a DOM fragment is a `Partial<DomRenderOptions>` whose registry
+ * fields the constructor seeds into the runtime. Neither carries `blendRealizations`, and DOM carries
+ * no material or effect tables, so a row naming one is reported rather than emitted into a field that
+ * does not exist.
  */
 export const BACKEND_OPTION_FIELDS: Readonly<Record<string, ReadonlySet<string>>> = Object.freeze({
-  canvas: new Set<string>(),
-  dom: new Set<string>(),
+  // C1: canvas fragments are Partial<CanvasRenderRegistries>, spreadable into createCanvasRenderState
+  // ARGUMENT 1 rather than its options parameter, so the fields are the registries' kind-keyed ones.
+  canvas: new Set(['canvasShapeCommands', 'effectPaddingResolvers', 'effects', 'materialRenderers', 'nodeRenderers']),
+  // D3: DomRenderOptions now declares registry fields, seeded into the runtime at construction.
+  dom: new Set(['canvasShapeCommands', 'effectPaddingResolvers', 'nodeRenderers', 'textureResolvers']),
   gl: new Set([
     'blendRealizations',
     'canvasShapeCommands',

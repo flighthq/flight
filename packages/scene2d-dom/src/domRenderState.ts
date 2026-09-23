@@ -14,7 +14,7 @@ export function createDomRenderState(element: HTMLElement, options: Partial<DomR
   (state as { element: HTMLElement }).element = element;
   state.allowSmoothing = options.imageSmoothingEnabled ?? true;
 
-  const runtime = createDomRenderStateRuntime();
+  const runtime = createDomRenderStateRuntime(options);
   state[EntityRuntimeKey] = runtime;
   runtime.currentBlendMode = null;
   runtime.domClipHooks = null;
@@ -35,14 +35,25 @@ export function createDomRenderState(element: HTMLElement, options: Partial<DomR
 // each state under EntityRuntimeKey and populates its fields; getDomRenderStateRuntime reads it back.
 // The render path writes the returned object every frame, so the return is intentionally mutable (not
 // Readonly).
-export function createDomRenderStateRuntime(): DomRenderStateRuntime {
+export function createDomRenderStateRuntime(options: Partial<DomRenderOptions> = {}): DomRenderStateRuntime {
   const runtime = createRenderStateRuntime() as DomRenderStateRuntime;
+  // Each table is COPIED out of the options fragment, never aliased. A fragment is routinely shared —
+  // one generated manifest module can build several states — so seeding by reference would let a later
+  // registration on one state appear in another, which is the isolation the copy-on-write registrars
+  // rely on. Absent fields keep the exact defaults this constructor had before options could seed it.
   runtime.registries = {
-    nodeRenderers: runtime.registries.nodeRenderers,
-    shapeRasterizer: null,
-    strokeTessellator: runtime.registries.strokeTessellator,
-    textureResolvers: new Map(),
+    nodeRenderers:
+      options.nodeRenderers === undefined ? runtime.registries.nodeRenderers : new Map(options.nodeRenderers),
+    shapeRasterizer: options.shapeRasterizer ?? null,
+    strokeTessellator: options.strokeTessellator ?? runtime.registries.strokeTessellator,
+    textureResolvers: options.textureResolvers === undefined ? new Map() : new Map(options.textureResolvers),
   };
+  if (options.canvasShapeCommands !== undefined) {
+    runtime.registries.canvasShapeCommands = new Map(options.canvasShapeCommands);
+  }
+  if (options.effectPaddingResolvers !== undefined) {
+    runtime.registries.effectPaddingResolvers = new Map(options.effectPaddingResolvers);
+  }
   return runtime;
 }
 

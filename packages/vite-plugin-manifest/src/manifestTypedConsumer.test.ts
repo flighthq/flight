@@ -1,7 +1,8 @@
+import { mergeDomRenderOptions } from '@flighthq/scene2d-dom/contract';
 import { mergeSwfParseOptions } from '@flighthq/swf/contract';
 import type {
   Awd2ParseOptions,
-  CanvasRenderOptions,
+  CanvasRenderRegistries,
   DomRenderOptions,
   GlRenderStateOptions,
   Kind,
@@ -58,31 +59,52 @@ describe('typed consumer fixtures', () => {
     expect(options.blocks).toEqual([]);
   });
 
-  // CANVAS AND DOM ARE THE OPEN QUESTION, and these two make it concrete. Both options types declare
-  // ONLY scalars today — canvas takes its registries as a separate constructor parameter and DOM
-  // accepts none — so an empty fragment is the only one that fits. A `nodeRenderers` fragment does NOT
-  // satisfy Spreads<> against either, which is precisely why the emitter reports those rows.
-  it('accepts an EMPTY canvasOptions, and rejects a map fragment, against CanvasRenderOptions', () => {
-    const canvasOptions = {};
-    const fits: Spreads<typeof canvasOptions, CanvasRenderOptions> = true;
-    const rejected: Spreads<{ nodeRenderers: Map<Kind, NodeRenderer> }, CanvasRenderOptions> extends never
-      ? true
-      : false = true;
-    const options: Partial<CanvasRenderOptions> = { ...canvasOptions, pixelRatio: 2 };
+  // C1 — a canvas fragment is a Partial<CanvasRenderRegistries>, spread into createCanvasRenderState
+  // ARGUMENT 1 rather than its options parameter. No canvas API changed to make this true.
+  it('spreads canvasOptions into CanvasRenderRegistries, constructor argument 1', () => {
+    const canvasOptions = {
+      nodeRenderers: new Map<Kind, NodeRenderer>([['ShowFrame', RENDERER]]),
+      effects: new Map(),
+    };
+    const fits: Spreads<typeof canvasOptions, CanvasRenderRegistries> = true;
+    const registries: Partial<CanvasRenderRegistries> = { ...canvasOptions };
     expect(fits).toBe(true);
-    expect(rejected).toBe(true);
-    expect(options.pixelRatio).toBe(2);
+    expect(registries.nodeRenderers!.get('ShowFrame')).toBe(RENDERER);
   });
 
-  it('accepts an EMPTY domOptions, and rejects a map fragment, against DomRenderOptions', () => {
-    const domOptions = {};
+  it('rejects a canvas fragment naming a field CanvasRenderRegistries does not have', () => {
+    const rejected: Spreads<{ blendRealizations: Map<Kind, unknown> }, CanvasRenderRegistries> extends never
+      ? true
+      : false = true;
+    expect(rejected).toBe(true);
+  });
+
+  // D3 — DomRenderOptions now declares registry fields, so a DOM fragment spreads into the options
+  // parameter and the constructor seeds the runtime registries from it.
+  it('spreads domOptions into DomRenderOptions', () => {
+    const domOptions = {
+      nodeRenderers: new Map<Kind, NodeRenderer>([['ShowFrame', RENDERER]]),
+      textureResolvers: new Map(),
+    };
     const fits: Spreads<typeof domOptions, DomRenderOptions> = true;
-    const rejected: Spreads<{ nodeRenderers: Map<Kind, NodeRenderer> }, DomRenderOptions> extends never ? true : false =
-      true;
     const options: Partial<DomRenderOptions> = { ...domOptions, roundPixels: true };
     expect(fits).toBe(true);
-    expect(rejected).toBe(true);
+    expect(options.nodeRenderers!.get('ShowFrame')).toBe(RENDERER);
     expect(options.roundPixels).toBe(true);
+  });
+
+  it('rejects a DOM fragment naming a field DomRenderOptions does not have', () => {
+    const rejected: Spreads<{ materialRenderers: Map<Kind, unknown> }, DomRenderOptions> extends never ? true : false =
+      true;
+    expect(rejected).toBe(true);
+  });
+
+  it('composes DOM fragments with named semantics, not a generic merge', () => {
+    const merged = mergeDomRenderOptions(
+      { nodeRenderers: new Map<Kind, NodeRenderer>([['ShowFrame', RENDERER]]) },
+      { nodeRenderers: new Map<Kind, NodeRenderer>([['DefineShape', RENDERER]]) },
+    );
+    expect([...merged.nodeRenderers!.keys()]).toEqual(['ShowFrame', 'DefineShape']);
   });
 });
 
