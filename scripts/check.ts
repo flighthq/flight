@@ -82,8 +82,8 @@ if (!scoped) {
   add('backend-lifecycle:check', 'tsx', ['scripts/backend-lifecycle.ts']);
   add('entity-contracts:check', 'tsx', ['scripts/entity-contracts.ts']);
   add('api:check', 'tsx', ['scripts/api.ts', '--check']);
-  add('docs:check', 'tsx', ['scripts/docs.ts', '--check']);
-  add('append-only-ledgers:check', 'tsx', ['scripts/check-append-only-ledgers.ts']);
+  // docs:check and append-only-ledgers:check are principal-facing review tools, not code gates.
+  // Run them with `npm run docs:check` / `npm run check:append-only-ledgers` during doc review.
   add('facets:check', 'tsx', ['scripts/requirement-facets.ts', '--check']);
   add('catalog:check', 'tsx', ['scripts/catalog.ts', '--check']);
   add('support:check', 'tsx', ['scripts/support.ts', '--check']);

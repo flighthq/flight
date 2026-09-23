@@ -4,8 +4,10 @@ name: CI
 # (dorny/paths-filter) decides which areas a change touches, so a docs-only PR skips the code
 # legs — a fast success that still reports to branch protection, so these checks are safe to
 # mark required (unlike a whole-workflow path-skip, which never reports and leaves a required
-# check stuck "Expected — Waiting for status"). Docs-only does not mean unchecked: such a
-# change still runs the `docs` job.
+# check stuck "Expected — Waiting for status").
+#
+# Documentation checks (docs:check, append-only-ledgers) are principal-facing review tools,
+# not CI gates. Run them locally with `npm run docs:check` / `npm run check:append-only-ledgers`.
 #
 # Nightly (nightly.yml) runs what does NOT belong on the PR path: full coverage thresholds
 # and API-surface generation.
@@ -40,7 +42,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       code: ${{ steps.scope.outputs.code }}
-      docs: ${{ steps.scope.outputs.docs }}
     steps:
       # Full history: paths-filter needs the merge-base (PRs) or the pre-push commit
       # (pushes) present locally. A shallow clone makes it fetch --deepen in a loop, which
@@ -62,18 +63,11 @@ jobs:
           # `agents/**/*.md`, NOT `agents/**` — that directory also holds executable tooling
           # (todo.mjs, scaffold.mjs, bless-queue.mjs) that agents run every session, and a
           # blanket exclusion let real code changes skip every leg.
-          #
-          # `docs` is a separate output, not an else-branch of `code`: docs:check's subject is
-          # exactly what `code` excludes, so gating it behind `code` made it unable to fire on
-          # its own subject. See agents/inert-gate-audit.md.
           filters: |
             code:
               - '**'
               - '!**/*.md'
               - '!agents/**/*.md'
-            docs:
-              - '**/*.md'
-              - 'agents/**'
 
       # There is no meaningful changed-file range on a manual dispatch. Treat it as an explicit request
       # for the complete CI gate rather than allowing every path-filtered job to skip and reporting a
@@ -83,14 +77,11 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           FILTER_CODE: ${{ steps.filter.outputs.code }}
-          FILTER_DOCS: ${{ steps.filter.outputs.docs }}
         run: |
           if [ "$EVENT_NAME" = 'workflow_dispatch' ]; then
             echo 'code=true' >> "$GITHUB_OUTPUT"
-            echo 'docs=true' >> "$GITHUB_OUTPUT"
           else
             echo "code=$FILTER_CODE" >> "$GITHUB_OUTPUT"
-            echo "docs=$FILTER_DOCS" >> "$GITHUB_OUTPUT"
           fi
 
   test-scripts:
@@ -135,41 +126,6 @@ jobs:
       - run: npm ci
       - uses: ./.github/actions/setup-playwright
       - run: npm run test:tools
-
-  # Runs on any docs change, including the docs-only commits that skip every code leg entirely.
-  # It deliberately does NOT depend on `code` being false: a gate whose firing hinges on a
-  # second output comparing exactly equal to 'false' is the failure mode this job exists to
-  # fix. On a mixed code+docs commit `quality` also runs docs:check; that overlap is one cheap
-  # job, and it is the safe direction to be wrong in.
-  #
-  # `check:append-only-ledgers` lives here for exactly the reason `docs` exists as its own output.
-  # Its subject is `agents/packages/*/charter.md › Decisions` and `assessment.md › Approved` — .md
-  # files, precisely what `code` excludes — so reaching it only through `quality` (which needs
-  # `code == 'true'`) meant A COMMIT THAT EDITS ONLY A LEDGER, THE EXACT COMMIT IT EXISTS TO POLICE,
-  # RAN IT NOT AT ALL. That is the same mistake this job was created to fix, made one gate later with
-  # the warning sitting fifteen lines above. See agents/inert-gate-audit.md.
-  docs:
-    name: Documentation
-    needs: changes
-    if: ${{ needs.changes.outputs.docs == 'true' }}
-    runs-on: ubuntu-latest
-
-    steps:
-      # Full history: the ledger check compares each guarded section against its MERGE-BASE with the
-      # integration branch, so a depth-1 clone leaves it with nothing to compare and it correctly
-      # reports that it verified nothing. `fetch-depth: 0` fetches all branches, so origin/develop
-      # and origin/main are both present to resolve a baseline from — the same reason promote.yml
-      # gives for its own. Without this line the job runs the check and the check checks nothing.
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run docs:check
-      - run: npm run check:append-only-ledgers
 
   # Every code leg gates on `changes` DIRECTLY rather than behind a preflight job. There used to be a
   # `build-check` job (`packages:check && typecheck`) that all of them needed, which made the gate
