@@ -16,8 +16,6 @@
  *   - @flighthq/tool-* harness/CI tooling packages (not app-facing; consumed by a build/test
  *     harness, may depend on Node/Playwright, never in a browser bundle — the dev/CI sibling
  *     of host-*: opt-in tooling primitives that a harness composes)
- *   - @flighthq/vite-plugin-* bundler plugins (not app-facing; they RUN in the build, configured
- *     from vite.config.ts, and depend on Node — the bundler-side sibling of tool-*)
  *   - @flighthq/*-rs Rust wasm drop-ins (not TS API packages; mixable leaf crates)
  */
 export function isSdkBarrelExcludedPackage(name: string): boolean {
@@ -25,7 +23,6 @@ export function isSdkBarrelExcludedPackage(name: string): boolean {
     name === '@flighthq/sdk' ||
     name.startsWith('@flighthq/host-') ||
     name.startsWith('@flighthq/tool-') ||
-    name.startsWith('@flighthq/vite-plugin-') ||
     name.endsWith('-rs')
   );
 }

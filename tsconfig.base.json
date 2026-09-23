@@ -340,8 +340,6 @@
       "@flighthq/textsegment/*": ["./packages/textsegment/src/*"],
       "@flighthq/textshaper": ["./packages/textshaper/src/index.ts"],
       "@flighthq/textshaper/*": ["./packages/textshaper/src/*"],
-      "@flighthq/vite-plugin-manifest": ["./packages/vite-plugin-manifest/src/index.ts"],
-      "@flighthq/vite-plugin-manifest/*": ["./packages/vite-plugin-manifest/src/*"],
       "@flighthq/types": ["./packages/types/src/index.ts"],
       "@flighthq/types/*": ["./packages/types/src/*"]
     },
