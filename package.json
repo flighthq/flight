@@ -205,6 +205,8 @@
     "test:baseline": "npm run test:regression:baseline",
     "test:browser": "tsx ./packages/tool-capture/src/bin.ts batch",
     "test:cost": "tsx ./scripts/test-cost.ts",
+    "test:docs": "tsx ./scripts/test-docs.ts",
+    "test:docs:snapshot": "tsx ./scripts/test-docs.ts --snapshot",
     "test:coverage": "tsx ./scripts/test.ts --coverage",
     "test:examples": "tsx ./packages/tool-capture/src/bin.ts batch --only=examples",
     "test:examples:baseline": "npm run test:examples:regression:baseline",
