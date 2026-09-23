@@ -82,21 +82,13 @@ if (!scoped) {
   add('backend-lifecycle:check', 'tsx', ['scripts/backend-lifecycle.ts']);
   add('entity-contracts:check', 'tsx', ['scripts/entity-contracts.ts']);
   add('api:check', 'tsx', ['scripts/api.ts', '--check']);
-  // docs:check and append-only-ledgers:check are principal-facing review tools, not code gates.
-  // Run them with `npm run docs:check` / `npm run check:append-only-ledgers` during doc review.
+  // Doc-lane checks live in `npm run check:docs`, not here — doc staleness is principal's
+  // responsibility on principal's schedule, not something that gates the fleet's commit path.
   add('facets:check', 'tsx', ['scripts/requirement-facets.ts', '--check']);
   add('catalog:check', 'tsx', ['scripts/catalog.ts', '--check']);
   add('support:check', 'tsx', ['scripts/support.ts', '--check']);
-  // capabilities:check joins the two below: its subject is largely agents/packages/swf/capabilities.md,
-  // so a stale doc turns the sweep red for unrelated commits. Note it ALSO compares capabilities.json,
-  // a committed data file, so this de-gates more than prose — run it during doc review.
-  // Run it with `npm run capabilities`.
+  // capabilities:check, capabilities:sites:check, and capabilities:numbers live in `npm run check:docs`.
   add('instrumentation:check', 'tsx', ['scripts/swf-instrumentation.ts', '--check']);
-  // capabilities:sites:check and capabilities:numbers are principal-facing review tools, not code
-  // gates: their whole subject is prose under agents/packages/swf/ (diagnostic-sites.md,
-  // individuation.md), so a stale sentence turned the sweep red for every unrelated commit while the
-  // remedy was writable only by principal. Same call, and the same reasoning, as docs:check above.
-  // Run them with `npm run capabilities:sites` / `npm run capabilities:numbers` during doc review.
   add('fingerprint-computation-id:check', 'tsx', ['scripts/check-fingerprint-computation-id.ts']);
   // Lives HERE, in the gate every commit reaches, rather than in a CI job selected by changed paths.
   // Its subject is scripts/capture-baseline-coverage-manifest.json, a COMMITTED file: a commit that
