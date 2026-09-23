@@ -879,7 +879,7 @@
     },
     {
       "packageName": "scene2d-canvas",
-      "registrar": "registerCanvasSurfaceCreator"
+      "registrar": "registerCanvasHost"
     },
     {
       "packageName": "scene2d-canvas",

@@ -1,29 +1,28 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import { createImageSurface, destroyImageSurface } from '@flighthq/render/contract';
+import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import type {
+  CanvasSurface,
   EntityConstruction,
   GlRenderState,
   GlShapeRendererData,
-  ImageSurface,
-  ImageSurfaceCreator,
+  HostCanvasCapability,
+  HostImageCapability,
   NodeAny,
   RendererData,
 } from '@flighthq/types/contract';
 
-// Allocates the rasterization surface on first use. Its uploadable Image lets the shared quad-batch
-// writer treat a rasterized shape uniformly with bitmaps and atlases; re-rendering the backing store
-// bumps the resource's version (invalidateImageResource), which the batch's version-aware cache uses
-// to re-upload.
 export function acquireGlShapeRasterSurface(
-  provider: Readonly<ImageSurfaceCreator>,
+  canvasHost: Readonly<HostCanvasCapability>,
+  imageHost: Readonly<HostImageCapability>,
   data: GlShapeRendererData,
-): ImageSurface | null {
+): CanvasSurface | null {
   const existing = data.surface;
   if (existing !== null) return existing;
-  const surface = createImageSurface(provider, 1, 1);
+  const surface = createCanvasHostSurface(canvasHost, 1, 1);
   if (surface === null) return null;
   data.surface = surface;
+  data.image = imageHost.createImageFromSurface?.(surface) ?? null;
   return surface;
 }
 
@@ -34,18 +33,20 @@ export function createGlShapeData(_state: GlRenderState, _source: NodeAny): Rend
 }
 
 // The batch uploads this shape's raster resource into the shared cache. Teardown deletes that GPU texture
-// and removes its key before destroying the provider-owned surface; a native provider may hold a non-GC
+// and removes its key before destroying the host-owned surface; a native host may hold a non-GC
 // raster allocation beneath it. A shape that only ever tessellated owns neither resource.
 export function destroyGlShapeData(state: GlRenderState, data: RendererData): void {
   const runtime = getGlRenderStateRuntime(state);
-  const surface = getGlShapeData(data).surface;
-  if (surface === null) return;
-  const entry = runtime.context.textureSourcePremultipliedTextureCache.get(surface.image);
-  if (entry !== undefined) {
-    state.gl.deleteTexture(entry.texture);
-    runtime.context.textureSourcePremultipliedTextureCache.delete(surface.image);
+  const shapeData = getGlShapeData(data);
+  const image = shapeData.image;
+  if (image !== null) {
+    const entry = runtime.context.textureSourcePremultipliedTextureCache.get(image);
+    if (entry !== undefined) {
+      state.gl.deleteTexture(entry.texture);
+      runtime.context.textureSourcePremultipliedTextureCache.delete(image);
+    }
   }
-  destroyImageSurface(surface);
+  if (shapeData.surface !== null) destroyCanvasHostSurface(shapeData.surface);
 }
 
 export function getGlShapeData(data: RendererData): GlShapeRendererData {
@@ -59,13 +60,14 @@ export function initializeGlShapeData(
   _state: GlRenderState,
   _source: NodeAny,
 ): void {
-  out.surface = null;
+  out.image = null;
   out.lastContentId = -1;
+  out.lastH = 0;
   out.lastPixelRatio = 0;
   out.lastW = 0;
-  out.lastH = 0;
   out.meshVersion = -1;
   out.meshes = null;
+  out.surface = null;
 }
 
 export function toGlShapeRendererData(data: GlShapeRendererData): RendererData {

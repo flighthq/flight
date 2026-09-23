@@ -1,8 +1,7 @@
 import {
   webHostWgpuContext,
-  webCanvasRenderSurfaceCreator,
+  webHostCanvas,
   webHostImage,
-  webImageSurfaceCreator,
   appendWebSurface,
   webHostSurfaceDisplay,
   webHostWindowGeometry,
@@ -13,7 +12,7 @@ import {
   beginCanvasRenderPass,
   beginWgpuRenderPass,
   createCanvasRenderState,
-  createCanvasRenderSurface,
+  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasShapeRasterizer,
   createCanvasTextureResolvers,
@@ -86,7 +85,8 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
     ...wgpuScene3DRenderPreset,
     format: acquisition.format,
     pixelRatio,
-    imageSurfaceProvider: webImageSurfaceCreator,
+    canvasHost: webHostCanvas,
+    imageHost: webHostImage,
     sceneGraphSyncPolicy: options.syncPolicy,
   });
   // The background is what the frame is cleared to — a per-pass value the render loop below passes in,
@@ -166,15 +166,12 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
 // registered here are exactly what those fills can paint.
 function createHarnessShapeRasterizer(): ShapeRasterizer {
   const canvas = document.createElement('canvas');
-  const resolverState = createCanvasRenderState(
-    canvasScene2DRenderPreset,
-    createCanvasTextureResolvers(webCanvasRenderSurfaceCreator),
-  );
+  const resolverState = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas));
   // The rasterizer draws into its own canvas, so it opens its own pass over it and keeps it open for the
   // life of the state — every fill it paints happens inside that bracket.
   beginCanvasRenderPass(
     resolverState,
-    createCanvasScreenRenderTarget(createCanvasRenderSurface(webCanvasRenderSurfaceCreator, canvas)),
+    createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas)),
   );
   registerCanvasBitmapTextureResolver(webHostImage, getCanvasRenderStateTextureResolvers(resolverState));
   registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(resolverState));
