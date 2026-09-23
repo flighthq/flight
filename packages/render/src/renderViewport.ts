@@ -1,13 +1,12 @@
 import { createRectangle, matrixTransformRectangle } from '@flighthq/geometry/contract';
 import { getNodeWorldBoundsRectangle } from '@flighthq/node/contract';
-import type { Matrix, Rectangle, RenderProxy2D, Spatial2DNodeAny, Viewport } from '@flighthq/types/contract';
+import type { Matrix, Node2D, Rectangle, RenderProxy2D, Viewport } from '@flighthq/types/contract';
 
-// Writes the world-space axis-aligned bounding box of `source` into `out`. `source` is a Spatial2DNodeAny,
-// so the bounds runtime is present by type rather than by inspection: nodes reach a 2D render proxy only
-// through createRenderProxy2D, which requires HasTransform2D & HasBoundsRectangle.
+// Writes the world-space axis-aligned bounding box of `source` into `out`. Node2D carries the bounds and
+// transform traits while retaining the concrete Node2DTraits family required by native ports.
 export function computeRenderProxyWorldBounds(
   out: Pick<Rectangle, 'x' | 'y' | 'width' | 'height'>,
-  source: Spatial2DNodeAny,
+  source: Node2D,
 ): void {
   const worldBounds = getNodeWorldBoundsRectangle(source);
   out.x = worldBounds.x;
@@ -20,7 +19,7 @@ export function computeRenderProxyWorldBounds(
 // edges, so a zero-size object touching any viewport edge is considered in-viewport. When
 // `renderTransform2D` is provided, the world bounds are transformed into screen space before the test.
 export function isRenderableInViewport(
-  source: Spatial2DNodeAny,
+  source: Node2D,
   viewport: Readonly<Viewport>,
   renderTransform2D?: Readonly<Matrix> | null,
 ): boolean {

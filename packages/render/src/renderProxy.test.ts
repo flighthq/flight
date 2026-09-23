@@ -14,7 +14,7 @@ import {
 } from '@flighthq/node/contract';
 import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
-import type { ClipRegion, Node, RenderProxy, RenderProxy2D, RenderState } from '@flighthq/types/contract';
+import type { ClipRegion, Node, Node2D, RenderProxy, RenderProxy2D, RenderState } from '@flighthq/types/contract';
 
 import { registerNodeRenderer } from './renderer';
 import {
@@ -126,6 +126,11 @@ describe('createRenderProxy2D', () => {
       expect(node.clipDepth).toBe(0);
       expect(node.traverseChildren).toBe(true);
     }
+  });
+
+  it('retains the concrete Node2D source family', () => {
+    expectTypeOf(createRenderProxy2D).parameter(1).toEqualTypeOf<Node2D>();
+    expectTypeOf<RenderProxy2D['source']>().toEqualTypeOf<Node2D>();
   });
 });
 

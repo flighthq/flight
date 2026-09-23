@@ -18,7 +18,6 @@ import type {
   RenderProxyVisitor,
   RenderState,
   NodeAny,
-  Spatial2DNodeAny,
 } from '@flighthq/types/contract';
 import { BlendMode, RenderRegistryTable } from '@flighthq/types/contract';
 
@@ -38,7 +37,7 @@ export function createRenderProxy(state: RenderState, source: NodeAny): RenderPr
 // The one render-node allocator for the 2D graph. Sprites and display objects produce the same
 // RenderProxy2D — there is no per-family render identity. What differs between them is the traits
 // their source carries (the clip trait), not the render node type.
-export function createRenderProxy2D(state: RenderState, source: Spatial2DNodeAny): RenderProxy2D {
+export function createRenderProxy2D(state: RenderState, source: Node2D): RenderProxy2D {
   const node = createRenderProxy(state, source) as RenderProxy2D;
   node.transform2D = createMatrix();
   node.traverseChildren = true;
@@ -71,7 +70,7 @@ export function disposeScene2DRender(state: RenderState, root: NodeAny): void {
   walkRenderSubtree(state, root, disposeRenderProxy);
 }
 
-export function getOrCreateRenderProxy2D(state: RenderState, source: Spatial2DNodeAny): RenderProxy2D {
+export function getOrCreateRenderProxy2D(state: RenderState, source: Node2D): RenderProxy2D {
   const runtime = getRenderStateRuntime(state);
   const renderProxyMap = runtime.renderProxyMap;
   let node = renderProxyMap.get(source) as RenderProxy2D | undefined;
@@ -152,7 +151,7 @@ export function isRenderProxyVisible(data: RenderProxy2D): boolean {
 // (Node + Node2D traits); the former per-graph prepares collapsed into this. Masks were retired
 // into clips, so there is no second tree pass; clips are realized by the backend clip hooks during the
 // draw walk, keyed off each node's `clip`.
-export function prepareScene2DRender(state: RenderState, source: Spatial2DNodeAny): boolean {
+export function prepareScene2DRender(state: RenderState, source: Node2D): boolean {
   return walkNode(state, source, updateRenderProxy2D);
 }
 
@@ -227,7 +226,7 @@ function resolveRenderProxyRenderer(state: RenderState, kind: string) {
 // update* steps. Sprites and display objects share this single traversal and a single render-node
 // type — what differs is the traits they carry, not the path. Clip is not handled here: it is a
 // trait update step in the visitor (updateNodeClip), realized at draw time by the backend clip hooks.
-export function walkNode(state: RenderState, root: Spatial2DNodeAny, visit: RenderProxyVisitor): boolean {
+export function walkNode(state: RenderState, root: Node2D, visit: RenderProxyVisitor): boolean {
   const runtime = getRenderStateRuntime(state);
   const rootGuard = runtime.registries.renderRootGuard;
   if (rootGuard) rootGuard(state, root);
@@ -238,25 +237,23 @@ export function walkNode(state: RenderState, root: Spatial2DNodeAny, visit: Rend
   tempStack[0] = root;
 
   let parentData: RenderProxy2D | undefined = undefined;
-  let lastParent: Node | undefined;
+  let lastParent: Node2D | undefined;
   let treeDirty = false;
 
   while (stackLength > 0) {
     // tempStack is NodeAny[] because disposeScene2DRender shares it for a walk that needs no traits.
-    // Everything reached from a Spatial2DNodeAny root is itself spatial: addNodeChild<Traits> binds
-    // parent and child to ONE Traits parameter, so a hierarchy cannot mix families, and Node2DTraits
-    // carries HasBoundsRectangle and HasTransform2D. That is why the pop and the parent are asserted
-    // rather than probed. The four backend walks assert `as Node2D` at the same point.
-    const current = tempStack[--stackLength] as Spatial2DNodeAny;
-    if (!(current as Node).enabled) continue;
+    // This walk accepts Node2D and NodeRuntime<Node2DTraits> preserves that family through children;
+    // the assertion restores only the specialisation erased by the shared scratch array.
+    const current = tempStack[--stackLength] as Node2D;
+    if (!current.enabled) continue;
 
     if (current !== root) {
-      const parent = getNodeParent(current as Node);
+      const parent = getNodeParent(current);
       if (parent === null) {
         parentData = undefined;
         lastParent = undefined;
       } else if (parent !== lastParent) {
-        parentData = getOrCreateRenderProxy2D(state, parent as Spatial2DNodeAny);
+        parentData = getOrCreateRenderProxy2D(state, parent);
         lastParent = parent;
       }
     }
@@ -271,7 +268,7 @@ export function walkNode(state: RenderState, root: Spatial2DNodeAny, visit: Rend
     if (!isRenderProxyVisible(data)) continue;
 
     if (data.traverseChildren) {
-      const children = getNodeRuntime(current as Node).children;
+      const children = getNodeRuntime(current).children;
       if (children !== null) {
         for (let i = children.length - 1; i >= 0; i--) {
           tempStack[stackLength++] = children[i];
