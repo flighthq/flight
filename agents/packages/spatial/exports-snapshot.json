@@ -1,0 +1,33 @@
+{
+  "exports": [
+    "clearSpatialIndex2D",
+    "clearSpatialIndex3D",
+    "createBvhSpatialBackend3D",
+    "createSpatialIndex2D",
+    "createSpatialIndex3D",
+    "createUniformGridSpatialBackend2D",
+    "createUniformGridSpatialBackend3D",
+    "explainSpatialIndexing2D",
+    "explainSpatialIndexing3D",
+    "formatSpatialIndexingNotice",
+    "insertSpatialObject2D",
+    "insertSpatialObject3D",
+    "querySpatialFrustum3D",
+    "querySpatialPairs2D",
+    "querySpatialPairs3D",
+    "querySpatialPoint2D",
+    "querySpatialPoint3D",
+    "querySpatialRay2D",
+    "querySpatialRay3D",
+    "querySpatialRegion2D",
+    "querySpatialRegion3D",
+    "querySpatialSphere3D",
+    "removeSpatialObject2D",
+    "removeSpatialObject3D",
+    "reportSpatialIndexing",
+    "setSpatialIndexingGuard",
+    "updateSpatialObject2D",
+    "updateSpatialObject3D"
+  ],
+  "updated": "2026-09-23"
+}

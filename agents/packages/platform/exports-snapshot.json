@@ -1,0 +1,18 @@
+{
+  "exports": [
+    "comparePlatformVersions",
+    "createPlatformInfo",
+    "getPlatformEngine",
+    "getPlatformInfo",
+    "getPlatformKind",
+    "getPlatformName",
+    "getPlatformRuntime",
+    "isPlatformDesktop",
+    "isPlatformMobile",
+    "isPlatformNative",
+    "isPlatformTouch",
+    "isPlatformVersionAtLeast",
+    "isPlatformWeb"
+  ],
+  "updated": "2026-09-23"
+}

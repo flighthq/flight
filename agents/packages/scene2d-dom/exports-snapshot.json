@@ -1,0 +1,28 @@
+{
+  "exports": [
+    "applyDomSvgFilterToNode",
+    "areDomTextureResolverGuardsEnabled",
+    "createDomRenderState",
+    "createDomSvgConvolutionFilter",
+    "createDomSvgDisplacementMapFilter",
+    "enableDomBlendModeSupport",
+    "enableDomClipSupport",
+    "enableDomCssFilterSupport",
+    "enableDomRasterFilterSupport",
+    "enableDomRenderCache",
+    "enableDomTextInput",
+    "enableDomTextureResolverGuards",
+    "explainDomImageSource",
+    "explainDomTextureResolution",
+    "getDomShapeRasterizer",
+    "getDomSvgFilter",
+    "registerDomBitmapTextureResolver",
+    "registerDomImageTextureResolver",
+    "registerDomShapeRasterizer",
+    "registerDomTextureResolver",
+    "removeDomSvgFilterFromNode",
+    "renderDomScene2D",
+    "setDomCssFilter"
+  ],
+  "updated": "2026-09-23"
+}

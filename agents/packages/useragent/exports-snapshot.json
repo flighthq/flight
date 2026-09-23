@@ -1,0 +1,17 @@
+{
+  "exports": [
+    "detectEndianness",
+    "parseUserAgentArch",
+    "parseUserAgentEngine",
+    "parseUserAgentEngineVersion",
+    "parseUserAgentFormFactor",
+    "parseUserAgentKind",
+    "parseUserAgentName",
+    "parseUserAgentOsName",
+    "parseUserAgentOsVersion",
+    "parseUserAgentPointerWidth",
+    "parseUserAgentRuntime",
+    "parseUserAgentVersion"
+  ],
+  "updated": "2026-09-23"
+}

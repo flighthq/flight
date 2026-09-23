@@ -1,0 +1,32 @@
+{
+  "exports": [
+    "areSwfGuardsEnabled",
+    "createGlyphOutlineSourcesFromSwf",
+    "createScene2DFromSwf",
+    "createScene2DImportFromSwf",
+    "createScene2DSymbolFromSwf",
+    "createSwfGlyphShape",
+    "createSwfJpegAlphaBitmap",
+    "createSwfLosslessBitmap",
+    "createSwfMorphShape",
+    "createSwfShape",
+    "createSwfTextShape",
+    "decodeSwfImage",
+    "disableSwfGuards",
+    "enableSwfGuards",
+    "explainSwfContent",
+    "isKnownSwfTag",
+    "readSwfAbcFrameScripts",
+    "readSwfEditTextFactory",
+    "readSwfExportedSymbolNames",
+    "readSwfFilterList",
+    "readSwfFontGlyphOutlineSource",
+    "readSwfFontGlyphs",
+    "readSwfFrameActions",
+    "readSwfMorphShapePaths",
+    "registerSwfScene2DDocumentImporter",
+    "resolveSwfFontUnitsPerEm",
+    "uncompressSwfSource"
+  ],
+  "updated": "2026-09-23"
+}

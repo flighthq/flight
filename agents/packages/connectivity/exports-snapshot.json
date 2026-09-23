@@ -1,0 +1,16 @@
+{
+  "exports": [
+    "attachConnectivity",
+    "createConnectivity",
+    "destroyConnectivity",
+    "detachConnectivity",
+    "detectConnectivityReachability",
+    "disposeConnectivity",
+    "getConnectivityOnline",
+    "getConnectivityStatus",
+    "hasConnectivityStatusChanged",
+    "isConnectivityMetered",
+    "isConnectivitySaveDataEnabled"
+  ],
+  "updated": "2026-09-23"
+}

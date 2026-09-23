@@ -1,0 +1,19 @@
+{
+  "exports": [
+    "attachStatusBar",
+    "clearStatusBarStyleStack",
+    "createStatusBar",
+    "detachStatusBar",
+    "disposeStatusBar",
+    "getStatusBarHeight",
+    "getStatusBarInfo",
+    "hasStatusBarStyleEntry",
+    "popStatusBarStyleEntry",
+    "pushStatusBarStyleEntry",
+    "setStatusBarColor",
+    "setStatusBarOverlaysContent",
+    "setStatusBarStyle",
+    "setStatusBarVisible"
+  ],
+  "updated": "2026-09-23"
+}

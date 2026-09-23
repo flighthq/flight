@@ -1,0 +1,31 @@
+{
+  "exports": [
+    "createTrayIcon",
+    "destroyTrayIcon",
+    "disableTrayGuards",
+    "displayTrayBalloon",
+    "enableTrayGuards",
+    "getTrayIconBounds",
+    "getTrayIconTitle",
+    "getTrayIconTooltip",
+    "getTrayIcons",
+    "isTrayDestroyed",
+    "isTrayIconAnimating",
+    "onTrayBalloonEvent",
+    "onTrayDrop",
+    "onTrayInteraction",
+    "onTrayMenuSelection",
+    "popupTrayContextMenu",
+    "removeTrayBalloon",
+    "setTrayIcon",
+    "setTrayIconContextMenu",
+    "setTrayIconTemplate",
+    "setTrayIconTitle",
+    "setTrayIconTooltip",
+    "setTrayIgnoreDoubleClickEvents",
+    "setTrayPressedIcon",
+    "startTrayIconAnimation",
+    "stopTrayIconAnimation"
+  ],
+  "updated": "2026-09-23"
+}

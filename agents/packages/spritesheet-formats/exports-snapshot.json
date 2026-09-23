@@ -1,0 +1,25 @@
+{
+  "exports": [
+    "detectSpritesheetFormat",
+    "formatLibgdxAtlas",
+    "getSpritesheetFormat",
+    "getSpritesheetFormatKinds",
+    "parseAsepriteSpritesheet",
+    "parseAsepriteSpritesheetDocument",
+    "parseCocosPlistSpritesheet",
+    "parseCocosPlistSpritesheetDocument",
+    "parseLibgdxAtlasSpritesheet",
+    "parseSpritesheet",
+    "parseStarlingSpritesheet",
+    "parseStarlingSpritesheetDocument",
+    "parseTexturePackerSpritesheet",
+    "parseTexturePackerSpritesheetDocument",
+    "registerSpritesheetFormat",
+    "serializeAsepriteSpritesheet",
+    "serializeCocosPlistSpritesheet",
+    "serializeStarlingSpritesheet",
+    "serializeTexturePackerSpritesheet",
+    "unregisterSpritesheetFormat"
+  ],
+  "updated": "2026-09-23"
+}

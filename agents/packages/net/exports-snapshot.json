@@ -1,0 +1,11 @@
+{
+  "exports": [
+    "areNetGuardsEnabled",
+    "disableNetGuards",
+    "enableNetGuards",
+    "explainNetResponse",
+    "formatNetFormBody",
+    "sendNetRequest"
+  ],
+  "updated": "2026-09-23"
+}

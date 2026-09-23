@@ -1,0 +1,19 @@
+{
+  "exports": [
+    "compareStrings",
+    "formatCompactNumber",
+    "formatCurrency",
+    "formatDate",
+    "formatDateTime",
+    "formatList",
+    "formatNumber",
+    "formatPercent",
+    "formatRelativeTime",
+    "formatTime",
+    "formatUnit",
+    "selectOrdinalCategory",
+    "selectPluralCategory",
+    "sortStrings"
+  ],
+  "updated": "2026-09-23"
+}

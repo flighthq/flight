@@ -1,0 +1,18 @@
+{
+  "exports": [
+    "attachSoftKeyboard",
+    "createSoftKeyboard",
+    "detachSoftKeyboard",
+    "disposeSoftKeyboard",
+    "getSoftKeyboardHeight",
+    "getSoftKeyboardInfo",
+    "hideSoftKeyboard",
+    "isSoftKeyboardVisible",
+    "setSoftKeyboardAccessoryBarVisible",
+    "setSoftKeyboardResizeMode",
+    "setSoftKeyboardScrollAssistEnabled",
+    "setSoftKeyboardStyle",
+    "showSoftKeyboard"
+  ],
+  "updated": "2026-09-23"
+}

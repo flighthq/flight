@@ -1,0 +1,14 @@
+{
+  "exports": [
+    "createMotionPath",
+    "getMotionPathHeading",
+    "getMotionPathPosition",
+    "getMotionPathProgress",
+    "isMotionPathAtEnd",
+    "setMotionPathDirection",
+    "setMotionPathDistance",
+    "setMotionPathProgress",
+    "updateMotionPath"
+  ],
+  "updated": "2026-09-23"
+}

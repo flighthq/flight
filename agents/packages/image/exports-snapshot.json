@@ -1,0 +1,22 @@
+{
+  "exports": [
+    "cloneImageResource",
+    "createCompressedImageResource",
+    "createEmbeddedImageResourceReference",
+    "createExternalImageResourceReference",
+    "createImageResource",
+    "createImageResourceFailure",
+    "createImageResourceFromBitmap",
+    "explainImageResourceReferenceResolution",
+    "invalidateImageResource",
+    "isImageResourceEmpty",
+    "isImageUrlSameOrigin",
+    "loadImageResourceFromBase64",
+    "loadImageResourceFromBlob",
+    "loadImageResourceFromBytes",
+    "loadImageResourceFromUrl",
+    "resetFailedImageResourceReference",
+    "resolveImageResourceReference"
+  ],
+  "updated": "2026-09-23"
+}

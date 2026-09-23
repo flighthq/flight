@@ -1,0 +1,8 @@
+{
+  "exports": [
+    "getPermissionState",
+    "getPermissionStates",
+    "requestPermission"
+  ],
+  "updated": "2026-09-23"
+}

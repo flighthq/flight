@@ -1,0 +1,27 @@
+{
+  "exports": [
+    "attachMenuHighlight",
+    "attachMenuSelect",
+    "cloneMenuTemplate",
+    "createDefaultAppMenuTemplate",
+    "createDefaultEditMenuTemplate",
+    "createDefaultFileMenuTemplate",
+    "createDefaultHelpMenuTemplate",
+    "createDefaultViewMenuTemplate",
+    "createDefaultWindowMenuTemplate",
+    "createMenuHighlight",
+    "createMenuItemTemplate",
+    "createMenuSelect",
+    "destroyAppMenu",
+    "detachMenuHighlight",
+    "detachMenuSelect",
+    "disposeMenuHighlight",
+    "disposeMenuSelect",
+    "enableMenuSignals",
+    "getMenuSignals",
+    "setAppMenu",
+    "showContextMenu",
+    "validateMenuItemTemplate"
+  ],
+  "updated": "2026-09-23"
+}

@@ -1,0 +1,23 @@
+{
+  "exports": [
+    "cancelSignal",
+    "clearSignal",
+    "connectSignal",
+    "connectSignalAtFrameRate",
+    "connectSignalDebounced",
+    "connectSignalThrottled",
+    "connectSignalTracked",
+    "createSignal",
+    "createSignalScope",
+    "disconnectSignal",
+    "disconnectSignalConnection",
+    "disconnectSignalScope",
+    "emitSignal",
+    "emitSignalSafe",
+    "hasSignalSlots",
+    "isSlotConnected",
+    "pauseSignalConnection",
+    "resumeSignalConnection"
+  ],
+  "updated": "2026-09-23"
+}

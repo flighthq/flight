@@ -1,0 +1,15 @@
+{
+  "exports": [
+    "compareCaptureFingerprints",
+    "createCaptureBaseline",
+    "evaluateCaptureParity",
+    "evaluateCaptureRegression",
+    "formatCaptureBaseline",
+    "getCaptureBaselineField",
+    "getCaptureBaselineProvenance",
+    "parseCaptureBaseline",
+    "setCaptureBaselineField",
+    "setCaptureBaselineProvenance"
+  ],
+  "updated": "2026-09-23"
+}

@@ -1,0 +1,30 @@
+{
+  "exports": [
+    "areSkeleton3DGuardsEnabled",
+    "captureMeshSkinBindPose",
+    "cloneSkeleton3D",
+    "cloneSkeleton3DJointHierarchy",
+    "computeSkeleton3DJointMatrices",
+    "createSkeleton3D",
+    "disableSkeleton3DGuards",
+    "disposeSkeleton3D",
+    "enableSkeleton3DGuards",
+    "equalsSkeleton3D",
+    "getMeshSkinConservativeBounds",
+    "getMeshSkinExactBounds",
+    "getSkeleton3DJointIndexByName",
+    "getSkeleton3DJointWorldMatrix",
+    "getSkeleton3DJointWorldMatrixByName",
+    "prepareMeshSkinning",
+    "prepareScene3DSkinning",
+    "setSkeleton3DBindPose",
+    "skinMeshGeometry",
+    "skinTangents",
+    "skinVertices",
+    "updateMeshDeformation",
+    "updateMeshSkin",
+    "updateMeshSkinBindPoseDeformInput",
+    "validateSkeleton3D"
+  ],
+  "updated": "2026-09-23"
+}

@@ -1,0 +1,8 @@
+{
+  "exports": [
+    "compressDeflate",
+    "compressDeflateZlib",
+    "decompressDeflate"
+  ],
+  "updated": "2026-09-23"
+}

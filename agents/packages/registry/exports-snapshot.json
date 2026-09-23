@@ -1,0 +1,11 @@
+{
+  "exports": [
+    "concatKindMap",
+    "createOrdinalTable",
+    "getKindMapKeys",
+    "getOrdinalTableEntry",
+    "withKindMapEntry",
+    "withoutKindMapEntry"
+  ],
+  "updated": "2026-09-23"
+}

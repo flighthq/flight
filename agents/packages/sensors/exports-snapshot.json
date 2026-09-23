@@ -1,0 +1,27 @@
+{
+  "exports": [
+    "attachSensors",
+    "computeEulerFromQuaternion",
+    "computeGravityFromOrientation",
+    "computeQuaternionFromOrientationReading",
+    "computeRotationMatrixFromQuaternion",
+    "computeScreenRelativeOrientation",
+    "computeWorldAccelerationFromDeviceAcceleration",
+    "createSensors",
+    "detachSensors",
+    "disposeSensors",
+    "getSensorsPermissionState",
+    "hasAccelerometer",
+    "hasAmbientLightSensor",
+    "hasBarometer",
+    "hasGravitySensor",
+    "hasGyroscope",
+    "hasLinearAccelerationSensor",
+    "hasMagnetometer",
+    "hasOrientationSensor",
+    "hasProximitySensor",
+    "isSensorsSupported",
+    "requestSensorsPermission"
+  ],
+  "updated": "2026-09-23"
+}

@@ -1,0 +1,25 @@
+{
+  "exports": [
+    "addVelocity",
+    "beginVelocityFrame",
+    "clampVelocity",
+    "contributeTransformVelocity",
+    "contributeVelocity",
+    "copyVelocity",
+    "createVelocityField",
+    "dampVelocity",
+    "explainVelocity",
+    "getVelocity",
+    "getVelocitySampleAt",
+    "hasVelocity",
+    "isVelocityZero",
+    "lengthOfVelocity",
+    "lerpVelocity",
+    "normalizeVelocity",
+    "scaleVelocity",
+    "subtractVelocity",
+    "suppressVelocity",
+    "zeroVelocity"
+  ],
+  "updated": "2026-09-23"
+}

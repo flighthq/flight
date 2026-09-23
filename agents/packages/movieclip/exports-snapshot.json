@@ -1,0 +1,29 @@
+{
+  "exports": [
+    "addMovieClipFrameScript",
+    "areMovieClipGuardsEnabled",
+    "createMovieClip",
+    "createSpritesheetTimelineSource",
+    "disableMovieClipGuards",
+    "disposeMovieClipSignals",
+    "enableMovieClipGuards",
+    "enableMovieClipSignals",
+    "explainSpritesheetTimelineSource",
+    "getMovieClipCurrentFrame",
+    "getMovieClipCurrentLabel",
+    "getMovieClipFrameScript",
+    "getMovieClipSignals",
+    "getMovieClipTotalFrames",
+    "gotoAndPlayMovieClip",
+    "gotoAndStopMovieClip",
+    "isMovieClipPlaying",
+    "nextFrameMovieClip",
+    "playMovieClip",
+    "prevFrameMovieClip",
+    "removeMovieClipFrameScript",
+    "setMovieClipSource",
+    "stopMovieClip",
+    "updateMovieClip"
+  ],
+  "updated": "2026-09-23"
+}

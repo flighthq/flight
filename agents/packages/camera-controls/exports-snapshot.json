@@ -1,0 +1,32 @@
+{
+  "exports": [
+    "addCameraShakeTrauma",
+    "cloneFlyCameraController",
+    "cloneOrbitCameraController",
+    "copyFlyCameraController",
+    "copyOrbitCameraController",
+    "createCameraShake",
+    "createCameraShakeOffset",
+    "createFlyCameraController",
+    "createOrbitCameraController",
+    "dollyOrbitCameraController",
+    "frameOrbitCameraControllerToSphere",
+    "getPerspectiveProjectionFrameDistanceToSphere",
+    "lookFlyCameraController",
+    "moveFlyCameraController",
+    "panOrbitCameraController",
+    "panOrbitCameraControllerInViewPlane",
+    "resetCameraShake",
+    "resetFlyCameraController",
+    "resetOrbitCameraController",
+    "rotateOrbitCameraController",
+    "setOrthographicProjectionFrameToSphere",
+    "snapFlyCameraController",
+    "snapOrbitCameraController",
+    "updateCamera2DFollow",
+    "updateCameraShake",
+    "updateFlyCameraController",
+    "updateOrbitCameraController"
+  ],
+  "updated": "2026-09-23"
+}

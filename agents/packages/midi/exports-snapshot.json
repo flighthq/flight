@@ -1,0 +1,28 @@
+{
+  "exports": [
+    "attachMidiAccessStateSubscription",
+    "attachMidiInputMessageSubscription",
+    "attachMidiPortStateSubscription",
+    "closeMidiPort",
+    "createMidiAccessStateSubscription",
+    "createMidiInputMessageSubscription",
+    "createMidiPortStateSubscription",
+    "detachMidiAccessStateSubscription",
+    "detachMidiInputMessageSubscription",
+    "detachMidiPortStateSubscription",
+    "disposeMidiAccess",
+    "disposeMidiAccessStateSubscription",
+    "disposeMidiInputMessageSubscription",
+    "disposeMidiPort",
+    "disposeMidiPortStateSubscription",
+    "getMidiAccessInputPorts",
+    "getMidiAccessOutputPorts",
+    "getMidiPermission",
+    "getMidiPortConnection",
+    "getMidiPortState",
+    "openMidiPort",
+    "requestMidiAccess",
+    "sendMidiMessage"
+  ],
+  "updated": "2026-09-23"
+}
