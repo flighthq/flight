@@ -39,6 +39,7 @@ protected:
   - getCanvasRenderTextureTarget
   - getCanvasShapeCommand
   - getCanvasSurfaceCreator
+  - getCanvasSurfaceHost
   - initializeCanvasRenderSurface
   - initializeCanvasRenderTexturePool
   - initializeCanvasScreenRenderTarget
