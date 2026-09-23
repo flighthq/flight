@@ -67,7 +67,7 @@ export function createCanvasOffscreenRenderState(
   canvasTextureResolvers: CanvasTextureResolvers,
   options: Partial<CanvasRenderOptions> = {},
 ): CanvasRenderState {
-  return createCanvasRenderState(registry, canvasTextureResolvers, options);
+  return createCanvasRenderState({ ...registry, canvasTextureResolvers, ...options });
 }
 
 export function destroyCanvasRenderCacheTarget(state: CanvasRenderState, cache: RenderCache): void {

@@ -6,8 +6,6 @@ import {
   createCanvasRenderState,
   createCanvasScreenRenderTarget,
   endCanvasRenderPass,
-  registerCanvasHost,
-  createCanvasTextureResolvers,
   createMatrix,
   canvasParticleEmitter2DRenderer,
   canvasQuadBatchRenderer,
@@ -54,11 +52,12 @@ export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): 
   document.body.appendChild(getWebSurfaceCanvasHandle(surface) as HTMLCanvasElement);
 
   const screen = createCanvasScreenRenderTarget(surface);
-  const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas), {
+  const state = createCanvasRenderState({
+    ...canvasScene2DRenderPreset,
+    canvasHost: webHostCanvas,
     pixelRatio,
     sceneGraphSyncPolicy: options.syncPolicy,
   });
-  registerCanvasHost(state, webHostCanvas);
   // The background is what the frame is cleared to — a per-pass value the render loop below passes in,
   // rather than a property the state carries for every pass it will ever open.
   const background = options.background ?? 0x00000000;

@@ -6,11 +6,9 @@ import {
   beginCanvasRenderPass,
   createCanvasRenderState,
   createCanvasScreenRenderTarget,
-  createCanvasTextureResolvers,
   endCanvasRenderPass,
   getCanvasRenderStateTextureResolvers,
   registerCanvasImageTextureResolver,
-  registerCanvasHost,
   renderCanvasScene2D,
   canvasScene2DRenderPreset,
 } from '@flighthq/scene2d-canvas';
@@ -26,10 +24,7 @@ document.body.appendChild(canvas);
 const canvasSurface = createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas);
 if (canvasSurface === null) throw new Error('Failed to create Canvas surface from element.');
 const screen = createCanvasScreenRenderTarget(canvasSurface);
-const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas), {
-  pixelRatio: 1,
-});
-registerCanvasHost(state, webHostCanvas);
+const state = createCanvasRenderState({ ...canvasScene2DRenderPreset, canvasHost: webHostCanvas, pixelRatio: 1 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
 

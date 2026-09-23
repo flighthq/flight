@@ -49,6 +49,7 @@ const ALLOWLIST: ReadonlySet<string> = new Set([
   'AnchorLayoutItemStyle.right',
   'AnchorLayoutItemStyle.top',
   'AnchorLayoutItemStyle.width',
+  'CanvasRenderStateOptions.blendModeApplication',
   'CapacitorGeolocationCoordinates.altitudeAccuracy',
 ]);
 

@@ -8,7 +8,6 @@ import {
   createCanvasElement,
   createCanvasRenderState,
   createCanvasScreenRenderTarget,
-  createCanvasTextureResolvers,
   createDisplayObject,
   createShape,
   canvasShapeCommands,
@@ -17,7 +16,6 @@ import {
   prepareScene2DRender,
   endCanvasRenderPass,
   registerCanvasShapeCommands,
-  registerCanvasHost,
   registerNodeRenderer,
   renderCanvasScene2D,
   canvasScene2DRenderPreset,
@@ -39,8 +37,7 @@ const canvas = surface.context.canvas as HTMLCanvasElement;
 document.body.appendChild(canvas);
 
 const screen = createCanvasScreenRenderTarget(surface);
-const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas));
-registerCanvasHost(state, webHostCanvas);
+const state = createCanvasRenderState({ ...canvasScene2DRenderPreset, canvasHost: webHostCanvas });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x1d / 0xff, 0x1f / 0xff, 0x23 / 0xff, 1] } as const;
 registerNodeRenderer(state, ShapeKind, canvasShapeRenderer);

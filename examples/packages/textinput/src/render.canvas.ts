@@ -5,7 +5,6 @@ import {
   createCanvasElement,
   createCanvasRenderState,
   createCanvasScreenRenderTarget,
-  createCanvasTextureResolvers,
   canvasBeginFill,
   canvasDrawRectangle,
   canvasEndFill,
@@ -19,7 +18,6 @@ import {
   endCanvasRenderPass,
   prepareScene2DRender,
   registerCanvasShapeCommands,
-  registerCanvasHost,
   registerNodeRenderer,
   renderCanvasScene2D,
   RichTextKind,
@@ -36,11 +34,12 @@ document.body.style.margin = '0';
 document.body.appendChild(canvas);
 
 export const screen = createCanvasScreenRenderTarget(surface);
-export const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas), {
+export const state = createCanvasRenderState({
+  ...canvasScene2DRenderPreset,
+  canvasHost: webHostCanvas,
   sceneGraphSyncPolicy: 'requiresInvalidation',
   pixelRatio,
 });
-registerCanvasHost(state, webHostCanvas);
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0xd0 / 0xff, 0xd0 / 0xff, 0xd0 / 0xff, 1] } as const;
 enableFlightDiagnostics(state);

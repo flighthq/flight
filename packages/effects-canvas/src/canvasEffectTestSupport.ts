@@ -3,8 +3,6 @@ import {
   createCanvasRenderState as createExplicitCanvasRenderState,
   createCanvasScreenRenderTarget,
   createCanvasTextureRenderTarget as createExplicitCanvasRenderTarget,
-  createCanvasTextureResolvers,
-  registerCanvasHost,
   canvasScene2DRenderPreset,
 } from '@flighthq/scene2d-canvas/contract';
 import {
@@ -56,12 +54,11 @@ export function createCanvasRenderState(
   canvas: HTMLCanvasElement,
   options: Partial<CanvasRenderOptions> = {},
 ): CanvasRenderState {
-  const state = createExplicitCanvasRenderState(
-    canvasScene2DRenderPreset,
-    createCanvasTextureResolvers(canvasTestHost),
-    options,
-  );
-  registerCanvasHost(state, canvasTestHost);
+  const state = createExplicitCanvasRenderState({
+    ...canvasScene2DRenderPreset,
+    canvasHost: canvasTestHost,
+    ...options,
+  });
   const surface = createCanvasSurfaceFromNativeHandle(canvasTestHost, canvas);
   if (surface === null) throw new Error('Failed to create test screen surface.');
   beginCanvasRenderPass(state, createCanvasScreenRenderTarget(surface));
@@ -69,12 +66,11 @@ export function createCanvasRenderState(
 }
 
 export function createCanvasRenderStateWithoutPass(options: Partial<CanvasRenderOptions> = {}): CanvasRenderState {
-  const state = createExplicitCanvasRenderState(
-    canvasScene2DRenderPreset,
-    createCanvasTextureResolvers(canvasTestHost),
-    options,
-  );
-  registerCanvasHost(state, canvasTestHost);
+  const state = createExplicitCanvasRenderState({
+    ...canvasScene2DRenderPreset,
+    canvasHost: canvasTestHost,
+    ...options,
+  });
   return state;
 }
 

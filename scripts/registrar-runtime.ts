@@ -17,7 +17,6 @@ import {
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   getCanvasRenderStateRuntime,
-  registerCanvasHost,
   canvasScene2DRenderPreset,
 } from '@flighthq/scene2d-canvas/contract';
 import { createDomRenderState, getDomRenderStateRuntime } from '@flighthq/scene2d-dom/contract';
@@ -1137,8 +1136,7 @@ function packageSourceFiles(packageName: string): string[] {
 function createCanvasProbeState(registry = canvasScene2DRenderPreset) {
   const canvas = document.createElement('canvas');
   Object.defineProperty(canvas, 'getContext', { value: () => canvas2DContext });
-  const state = createCanvasRenderState(registry, createCanvasTextureResolvers(webHostCanvas));
-  registerCanvasHost(state, webHostCanvas);
+  const state = createCanvasRenderState({ ...registry, canvasHost: webHostCanvas });
   beginCanvasRenderPass(
     state,
     createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas)!),
