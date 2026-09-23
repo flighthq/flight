@@ -1,4 +1,4 @@
-import { BUILT_IN_REGISTRY_CATALOG_ENTRIES } from '@flighthq/registry-catalog/contract';
+import { BUILT_IN_REQUIREMENT_CATALOG_ENTRIES } from '@flighthq/requirement-catalog/contract';
 
 export interface RegistryToolIO {
   readonly writeError: (message: string) => void;
@@ -13,7 +13,7 @@ export function runRegistryTool(args: readonly string[], io: Readonly<RegistryTo
     return 0;
   }
   if (args.length === 2 && args[0] === 'catalog' && args[1] === '--json') {
-    io.writeOutput(`${JSON.stringify(BUILT_IN_REGISTRY_CATALOG_ENTRIES, null, 2)}\n`);
+    io.writeOutput(`${JSON.stringify(BUILT_IN_REQUIREMENT_CATALOG_ENTRIES, null, 2)}\n`);
     return 0;
   }
   io.writeError(USAGE);

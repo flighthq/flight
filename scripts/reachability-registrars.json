@@ -722,8 +722,8 @@
       "registrar": "registerProtocolSchemes"
     },
     {
-      "packageName": "registry-catalog",
-      "registrar": "registerRegistryCatalogEntry"
+      "packageName": "requirement-catalog",
+      "registrar": "registerRequirementCatalogEntry"
     },
     {
       "packageName": "render",

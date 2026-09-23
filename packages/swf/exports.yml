@@ -7,6 +7,8 @@
 # nobody else should reach at all.
 
 protected:
+  - collectSwfTagCounts
+  - parseSwfRequirements
   # The byte-level and node-level layers the families are composed from. A user registers a family; they
   # do not read a SWF RECT or build a SWF display object themselves, and exposing these as app API would
   # make every one of them a compatibility surface for a decomposition that is still being shaped.

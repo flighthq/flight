@@ -9,6 +9,16 @@
     "sourceMap": true,
     "types": ["node", "vitest/globals"]
   },
-  "references": [],
+  "references": [
+    {
+      "path": "../requirement"
+    },
+    {
+      "path": "../swf"
+    },
+    {
+      "path": "../types"
+    }
+  ],
   "include": ["src"]
 }

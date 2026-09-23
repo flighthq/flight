@@ -13,7 +13,7 @@
       "path": "../entity"
     },
     {
-      "path": "../registry-catalog"
+      "path": "../requirement-catalog"
     },
     {
       "path": "../types"

@@ -3,24 +3,24 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { RegistryCatalogEntry } from '@flighthq/types/contract';
+import type { RequirementCatalogEntry } from '@flighthq/types/contract';
 
-import { formatBuiltInRegistryCatalogSource, verifyRegistryCatalogEntries } from './catalog-core';
+import { formatBuiltInRequirementCatalogSource, verifyRequirementCatalogEntries } from './catalog-core';
 
-const ENTRIES: readonly RegistryCatalogEntry[] = [];
+const ENTRIES: readonly RequirementCatalogEntry[] = [];
 const REPO_ROOT = join(import.meta.dirname, '..');
-const OUTPUT_PATH = join(REPO_ROOT, 'packages', 'registry-catalog', 'src', 'builtInRegistryCatalogEntries.ts');
+const OUTPUT_PATH = join(REPO_ROOT, 'packages', 'requirement-catalog', 'src', 'builtInRequirementCatalogEntries.ts');
 
-const problems = verifyRegistryCatalogEntries(ENTRIES);
+const problems = verifyRequirementCatalogEntries(ENTRIES);
 if (problems.length > 0) {
   console.error(`✗ registry catalog is malformed:\n  ${problems.join('\n  ')}`);
   process.exitCode = 1;
 } else {
-  const source = formatBuiltInRegistryCatalogSource(ENTRIES);
+  const source = formatBuiltInRequirementCatalogSource(ENTRIES);
   if (process.argv.includes('--check')) {
     if (readIfPresent(OUTPUT_PATH) !== source) {
       console.error(
-        '✗ stale, run `npm run catalog`:\n  packages/registry-catalog/src/builtInRegistryCatalogEntries.ts',
+        '✗ stale, run `npm run catalog`:\n  packages/requirement-catalog/src/builtInRequirementCatalogEntries.ts',
       );
       process.exitCode = 1;
     } else {

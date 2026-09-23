@@ -1,9 +1,9 @@
-import type { RegistryCatalogEntry } from '@flighthq/types/contract';
+import type { RequirementCatalogEntry } from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
-import { formatBuiltInRegistryCatalogSource, verifyRegistryCatalogEntries } from './catalog-core';
+import { formatBuiltInRequirementCatalogSource, verifyRequirementCatalogEntries } from './catalog-core';
 
-const entry: RegistryCatalogEntry = {
+const entry: RequirementCatalogEntry = {
   backend: 'webgl',
   facet: RequirementFacet.SceneNodeKind,
   implementationImport: '@flighthq/scene2d-gl',
@@ -13,21 +13,23 @@ const entry: RegistryCatalogEntry = {
   registrarSymbol: 'registerNodeRenderer',
 };
 
-describe('formatBuiltInRegistryCatalogSource', () => {
+describe('formatBuiltInRequirementCatalogSource', () => {
   it('formats a non-empty inventory as typed deterministic source', () => {
-    const source = formatBuiltInRegistryCatalogSource([entry]);
-    expect(source).toContain('readonly RegistryCatalogEntry[]');
+    const source = formatBuiltInRequirementCatalogSource([entry]);
+    expect(source).toContain('readonly RequirementCatalogEntry[]');
     expect(source).toContain('"implementationSymbol": "glShapeRenderer"');
   });
 });
 
-describe('verifyRegistryCatalogEntries', () => {
+describe('verifyRequirementCatalogEntries', () => {
   it('accepts distinct complete factual rows', () => {
-    expect(verifyRegistryCatalogEntries([entry, { ...entry, registrarSymbol: 'registerGlShapeCommands' }])).toEqual([]);
+    expect(verifyRequirementCatalogEntries([entry, { ...entry, registrarSymbol: 'registerGlShapeCommands' }])).toEqual(
+      [],
+    );
   });
 
   it('rejects duplicate row identities and empty fields', () => {
-    expect(verifyRegistryCatalogEntries([entry, entry, { ...entry, implementationSymbol: '' }])).toEqual([
+    expect(verifyRequirementCatalogEntries([entry, entry, { ...entry, implementationSymbol: '' }])).toEqual([
       'duplicate row: webgl:scene.node-kind:Shape:@flighthq/render:registerNodeRenderer',
       'empty implementationSymbol: webgl:scene.node-kind:Shape:@flighthq/render:registerNodeRenderer',
       'duplicate row: webgl:scene.node-kind:Shape:@flighthq/render:registerNodeRenderer',

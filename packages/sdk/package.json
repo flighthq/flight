@@ -368,13 +368,13 @@
       "types": "./dist/registry.d.ts",
       "default": "./dist/registry.js"
     },
-    "./registry-catalog": {
-      "types": "./dist/registry-catalog.d.ts",
-      "default": "./dist/registry-catalog.js"
+    "./requirement-catalog": {
+      "types": "./dist/requirement-catalog.d.ts",
+      "default": "./dist/requirement-catalog.js"
     },
-    "./registry-codegen": {
-      "types": "./dist/registry-codegen.d.ts",
-      "default": "./dist/registry-codegen.js"
+    "./requirement-codegen": {
+      "types": "./dist/requirement-codegen.d.ts",
+      "default": "./dist/requirement-codegen.js"
     },
     "./render": {
       "types": "./dist/render.d.ts",
@@ -388,9 +388,9 @@
       "types": "./dist/render-wgpu.d.ts",
       "default": "./dist/render-wgpu.js"
     },
-    "./requirements": {
-      "types": "./dist/requirements.d.ts",
-      "default": "./dist/requirements.js"
+    "./requirement": {
+      "types": "./dist/requirement.d.ts",
+      "default": "./dist/requirement.js"
     },
     "./scene-document": {
       "types": "./dist/scene-document.d.ts",
@@ -736,12 +736,12 @@
     "@flighthq/protocol": "*",
     "@flighthq/quadbatch": "*",
     "@flighthq/registry": "*",
-    "@flighthq/registry-catalog": "*",
-    "@flighthq/registry-codegen": "*",
+    "@flighthq/requirement-catalog": "*",
+    "@flighthq/requirement-codegen": "*",
     "@flighthq/render": "*",
     "@flighthq/render-gl": "*",
     "@flighthq/render-wgpu": "*",
-    "@flighthq/requirements": "*",
+    "@flighthq/requirement": "*",
     "@flighthq/scene-document": "*",
     "@flighthq/scene2d": "*",
     "@flighthq/scene2d-canvas": "*",

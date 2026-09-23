@@ -56,6 +56,7 @@
     "@flighthq/movieclip": "*",
     "@flighthq/node": "*",
     "@flighthq/path": "*",
+    "@flighthq/requirement": "*",
     "@flighthq/scene2d": "*",
     "@flighthq/scene2d-resources": "*",
     "@flighthq/shape": "*",
