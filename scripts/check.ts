@@ -131,6 +131,7 @@ if (!scoped) {
   add('degree-constants:check', 'tsx', ['scripts/check-degree-constants.ts']);
   add('capability-arrival:check', 'tsx', ['scripts/capability-arrival.ts']);
   add('host-bypasses:check', 'tsx', ['scripts/check-host-bypasses.ts']);
+  add('mixed-absence:check', 'tsx', ['scripts/check-mixed-absence.ts', '--check']);
 
   // Script tests (scripts/**/*.test.ts, own vitest config) are deliberately NOT a gate here for now.
   // They are still covered: CI runs them as their own leg (.github/workflows/tests.yml). Know the gap
