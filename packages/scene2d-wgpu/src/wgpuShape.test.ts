@@ -17,8 +17,8 @@ import {
   appendShapeRectangle,
   createShape,
 } from '@flighthq/shape/contract';
-import type { RenderProxy2D } from '@flighthq/types/contract';
-import { BatchFormat, EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability, HostImageCapability, RenderProxy2D } from '@flighthq/types/contract';
+import { BatchFormat, PathCommand } from '@flighthq/types/contract';
 
 import { enableWgpuStrokePathTessellation } from './enableWgpuStrokePathTessellation';
 import { wgpuMorphShapeRenderer, wgpuShapeRenderer, drawWgpuShape } from './wgpuShape';
@@ -57,40 +57,42 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function createTestImageSurfaceCreator() {
+function createTestSurface(width: number, height: number): CanvasSurface {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  return { context: canvas.getContext('2d')! } as unknown as CanvasSurface;
+}
+
+function createTestCanvasHost(): HostCanvasCapability {
   return {
-    [EntityRuntimeKey]: undefined,
-    createImageSurface(width: number, height: number) {
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const context = canvas.getContext('2d')!;
-      return {
-        [EntityRuntimeKey]: undefined,
-        get width() {
-          return canvas.width;
-        },
-        set width(value: number) {
-          canvas.width = value;
-        },
-        get height() {
-          return canvas.height;
-        },
-        set height(value: number) {
-          canvas.height = value;
-        },
-        context,
-        image: createImageResource(canvas),
-      };
-    },
-    destroyImageSurface() {},
+    acquire: () => null,
+    create: () => null,
+    createSurface: createTestSurface,
+    destroySurface() {},
+    release() {},
   };
+}
+
+function createTestImageHost(): HostImageCapability {
+  return {
+    createImageFromSurface(surface) {
+      return createImageResource((surface as unknown as { context: CanvasRenderingContext2D }).context.canvas);
+    },
+    loadImageFromUrl: () => Promise.reject(new Error('not implemented')),
+  };
+}
+
+function setTestHosts(state: { canvasHost: unknown; imageHost: unknown }): void {
+  state.canvasHost = createTestCanvasHost();
+  state.imageHost = createTestImageHost();
 }
 
 // Mirrors createWgpuShapeData: the rasterization surface is absent until a shape actually needs one,
 // so a scene drawn entirely through the mesh path carries no canvases.
 function makeShapeData() {
   return {
+    image: null,
     surface: null,
     lastContentId: -1,
     lastPixelRatio: 0,
@@ -139,7 +141,7 @@ function makeMeshPassSpy(): GPURenderPassEncoder {
 describe('drawWgpuShape', () => {
   it('draws a solid fill and open solid stroke as GPU meshes in one shape', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.imageSurfaceProvider = createTestImageSurfaceCreator();
+    setTestHosts(state);
     registerWgpuShapeRasterizer(state, noopRasterizer);
     beginWgpuScreenRenderPassForTest(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
@@ -164,7 +166,7 @@ describe('drawWgpuShape', () => {
 
   it('draws a closed solid stroke ring as one GPU mesh', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.imageSurfaceProvider = createTestImageSurfaceCreator();
+    setTestHosts(state);
     registerWgpuShapeRasterizer(state, noopRasterizer);
     enableWgpuStrokePathTessellation(state);
     beginWgpuScreenRenderPassForTest(state);
@@ -186,7 +188,7 @@ describe('drawWgpuShape', () => {
 
   it('keeps a closed stroke on the raster lane until stroke-path tessellation is enabled', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.imageSurfaceProvider = createTestImageSurfaceCreator();
+    setTestHosts(state);
     registerWgpuShapeRasterizer(state, noopRasterizer);
     beginWgpuScreenRenderPassForTest(state);
     registerWgpuStandardMaterial(state);
@@ -206,7 +208,7 @@ describe('drawWgpuShape', () => {
 
   it('falls back to the raster quad for a self-intersecting stroke centerline', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.imageSurfaceProvider = createTestImageSurfaceCreator();
+    setTestHosts(state);
     registerWgpuShapeRasterizer(state, noopRasterizer);
     enableWgpuStrokePathTessellation(state);
     beginWgpuScreenRenderPassForTest(state);
@@ -245,7 +247,7 @@ describe('drawWgpuShape', () => {
 
   it('returns early without writing to batch when commands are empty', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.imageSurfaceProvider = createTestImageSurfaceCreator();
+    setTestHosts(state);
     registerWgpuShapeRasterizer(state, noopRasterizer);
     beginWgpuScreenRenderPassForTest(state);
     registerWgpuStandardMaterial(state);
@@ -256,7 +258,7 @@ describe('drawWgpuShape', () => {
 
   it('returns early without writing to batch when rendererData is null', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.imageSurfaceProvider = createTestImageSurfaceCreator();
+    setTestHosts(state);
     registerWgpuShapeRasterizer(state, noopRasterizer);
     beginWgpuScreenRenderPassForTest(state);
     registerWgpuStandardMaterial(state);
@@ -267,14 +269,14 @@ describe('drawWgpuShape', () => {
 
   it('does not throw when renderPass is null', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.imageSurfaceProvider = createTestImageSurfaceCreator();
+    setTestHosts(state);
     registerWgpuShapeRasterizer(state, noopRasterizer);
     expect(() => drawWgpuShape(state, makeShapeProxy({ commands: [{}] }, makeShapeData()))).not.toThrow();
   });
 
   it('writes one instance to the quad-batch writer when shape has valid commands and bounds', async () => {
     const state = await createWgpuRenderStateForTest();
-    state.imageSurfaceProvider = createTestImageSurfaceCreator();
+    setTestHosts(state);
     registerWgpuShapeRasterizer(state, noopRasterizer);
     beginWgpuScreenRenderPassForTest(state);
     registerWgpuStandardMaterial(state);

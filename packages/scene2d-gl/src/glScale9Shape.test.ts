@@ -7,7 +7,7 @@
 import { bindGlImageResourceTexture, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape/contract';
-import type { ImageSurface } from '@flighthq/types/contract';
+import type { CanvasSurface, HostCanvasCapability, HostImageCapability } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -35,27 +35,29 @@ afterEach(() => {
 const grid = { height: 80, width: 80, x: 10, y: 10 };
 const destroySurface = vi.fn();
 
-function createTestSurface(width = 1, height = 1): ImageSurface {
+function createTestSurface(width = 1, height = 1): CanvasSurface {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  const context = canvas.getContext('2d')!;
+  return { context: canvas.getContext('2d')! } as unknown as CanvasSurface;
+}
+
+function createTestCanvasHost(): HostCanvasCapability {
   return {
-    [EntityRuntimeKey]: undefined,
-    get width() {
-      return canvas.width;
+    acquire: () => null,
+    create: () => null,
+    createSurface: createTestSurface,
+    destroySurface,
+    release() {},
+  };
+}
+
+function createTestImageHost(): HostImageCapability {
+  return {
+    createImageFromSurface(surface) {
+      return createImageResource((surface as unknown as { context: CanvasRenderingContext2D }).context.canvas);
     },
-    set width(value) {
-      canvas.width = value;
-    },
-    get height() {
-      return canvas.height;
-    },
-    set height(value) {
-      canvas.height = value;
-    },
-    context,
-    image: createImageResource(canvas),
+    loadImageFromUrl: () => Promise.reject(new Error('not implemented')),
   };
 }
 
@@ -63,51 +65,56 @@ beforeEach(() => {
   destroySurface.mockReset();
 });
 
-function setTestRasterProvider(state: { imageSurfaceProvider: unknown }): void {
-  state.imageSurfaceProvider = {
-    createImageSurface: createTestSurface,
-    destroyImageSurface: destroySurface,
-  };
+function setTestHosts(state: { canvasHost: unknown; imageHost: unknown }): void {
+  state.canvasHost = createTestCanvasHost();
+  state.imageHost = createTestImageHost();
 }
 
 describe('acquireGlScale9ShapeRasterSurface', () => {
   it('does not cache provider absence and retries on the next draw', () => {
     const surface = createTestSurface();
-    const createSurface = vi.fn().mockReturnValueOnce(null).mockReturnValue(surface);
+    const createSurfaceMock = vi.fn().mockReturnValueOnce(null).mockReturnValue(surface);
     const { state } = createGlState();
-    state.imageSurfaceProvider = {
-      createImageSurface: createSurface,
-      destroyImageSurface: destroySurface,
+    const canvasHost: HostCanvasCapability = {
+      acquire: () => null,
+      create: () => null,
+      createSurface: createSurfaceMock,
+      destroySurface,
+      release() {},
     };
+    const imageHost = createTestImageHost();
     const data = getGlScale9ShapeData(createGlScale9ShapeData(state, createScale9Shape(grid))!);
 
-    const provider = state.imageSurfaceProvider!;
-    expect(acquireGlScale9ShapeRasterSurface(provider, data)).toBeNull();
+    expect(acquireGlScale9ShapeRasterSurface(canvasHost, imageHost, data)).toBeNull();
     expect(data.surface).toBeNull();
-    expect(acquireGlScale9ShapeRasterSurface(provider, data)).toBe(surface);
-    expect(acquireGlScale9ShapeRasterSurface(provider, data)).toBe(surface);
-    expect(createSurface).toHaveBeenCalledTimes(2);
+    expect(acquireGlScale9ShapeRasterSurface(canvasHost, imageHost, data)).toBe(surface);
+    expect(acquireGlScale9ShapeRasterSurface(canvasHost, imageHost, data)).toBe(surface);
+    expect(createSurfaceMock).toHaveBeenCalledTimes(2);
   });
 
   it('presents different textures for two nodes with different content in the same frame', () => {
     const { state } = createGlState();
-    setTestRasterProvider(state);
+    setTestHosts(state);
+    const canvasHost = state.canvasHost!;
+    const imageHost = state.imageHost!;
     const firstData = getGlScale9ShapeData(createGlScale9ShapeData(state, createScale9Shape(grid))!);
     const secondData = getGlScale9ShapeData(createGlScale9ShapeData(state, createScale9Shape(grid))!);
-    const first = acquireGlScale9ShapeRasterSurface(state.imageSurfaceProvider!, firstData)!;
-    const second = acquireGlScale9ShapeRasterSurface(state.imageSurfaceProvider!, secondData)!;
+    const first = acquireGlScale9ShapeRasterSurface(canvasHost, imageHost, firstData)!;
+    const second = acquireGlScale9ShapeRasterSurface(canvasHost, imageHost, secondData)!;
     first.context.fillStyle = '#f00';
     first.context.fillRect(0, 0, 1, 1);
     second.context.fillStyle = '#00f';
     second.context.fillRect(0, 0, 1, 1);
-    invalidateImageResource(first.image);
-    invalidateImageResource(second.image);
+    const firstImage = firstData.image!;
+    const secondImage = secondData.image!;
+    invalidateImageResource(firstImage);
+    invalidateImageResource(secondImage);
 
-    const firstTexture = bindGlImageResourceTexture(state, first.image, null, null, true);
-    const secondTexture = bindGlImageResourceTexture(state, second.image, null, null, true);
+    const firstTexture = bindGlImageResourceTexture(state, firstImage, null, null, true);
+    const secondTexture = bindGlImageResourceTexture(state, secondImage, null, null, true);
 
     expect(first).not.toBe(second);
-    expect(first.image).not.toBe(second.image);
+    expect(firstImage).not.toBe(secondImage);
     expect(firstTexture).not.toBe(secondTexture);
   });
 });
@@ -115,7 +122,7 @@ describe('acquireGlScale9ShapeRasterSurface', () => {
 describe('createGlScale9ShapeData', () => {
   it('leaves its per-node raster surface lazy', () => {
     const { state, gl } = createGlState();
-    setTestRasterProvider(state);
+    setTestHosts(state);
     const data = getGlScale9ShapeData(createGlScale9ShapeData(state, createScale9Shape(grid))!);
 
     expect(data.surface).toBeNull();
@@ -126,7 +133,7 @@ describe('createGlScale9ShapeData', () => {
 describe('destroyGlScale9ShapeData', () => {
   it('is a no-op when its lazy surface was never allocated', () => {
     const { state, gl } = createGlState();
-    setTestRasterProvider(state);
+    setTestHosts(state);
     const data = createGlScale9ShapeData(state, createScale9Shape(grid))!;
 
     destroyGlScale9ShapeData(state, data);
@@ -137,16 +144,18 @@ describe('destroyGlScale9ShapeData', () => {
 
   it('removes its cached texture before destroying its per-node surface, idempotently', () => {
     const { state, gl } = createGlState();
-    setTestRasterProvider(state);
+    setTestHosts(state);
     const data = createGlScale9ShapeData(state, createScale9Shape(grid))!;
-    const surface = acquireGlScale9ShapeRasterSurface(state.imageSurfaceProvider!, getGlScale9ShapeData(data))!;
+    const shapeData = getGlScale9ShapeData(data);
+    const surface = acquireGlScale9ShapeRasterSurface(state.canvasHost!, state.imageHost!, shapeData)!;
+    const image = shapeData.image!;
     const texture = {} as WebGLTexture;
     const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
-    cache.set(surface.image, { texture } as never);
+    cache.set(image, { texture } as never);
     const order: string[] = [];
     vi.mocked(gl.deleteTexture).mockImplementation(() => order.push('texture'));
-    destroySurface.mockImplementation((destroyed) => {
-      expect(cache.has(destroyed.image)).toBe(false);
+    destroySurface.mockImplementation(() => {
+      expect(cache.has(image)).toBe(false);
       order.push('surface');
     });
 
@@ -155,7 +164,7 @@ describe('destroyGlScale9ShapeData', () => {
 
     expect(gl.deleteTexture).toHaveBeenCalledOnce();
     expect(gl.deleteTexture).toHaveBeenCalledWith(texture);
-    expect(cache.has(surface.image)).toBe(false);
+    expect(cache.has(image)).toBe(false);
     expect(destroySurface).toHaveBeenCalledOnce();
     expect(destroySurface).toHaveBeenCalledWith(surface);
     expect(order).toEqual(['texture', 'surface']);
@@ -163,9 +172,9 @@ describe('destroyGlScale9ShapeData', () => {
 
   it('destroys its raster surface even when it never acquired a GPU cache entry', () => {
     const { state } = createGlState();
-    setTestRasterProvider(state);
+    setTestHosts(state);
     const data = createGlScale9ShapeData(state, createScale9Shape(grid))!;
-    const surface = acquireGlScale9ShapeRasterSurface(state.imageSurfaceProvider!, getGlScale9ShapeData(data))!;
+    const surface = acquireGlScale9ShapeRasterSurface(state.canvasHost!, state.imageHost!, getGlScale9ShapeData(data))!;
 
     destroyGlScale9ShapeData(state, data);
 
@@ -176,7 +185,7 @@ describe('destroyGlScale9ShapeData', () => {
 describe('drawGlScale9Shape', () => {
   it('returns early when commands are empty', () => {
     const { state, gl } = createGlState();
-    setTestRasterProvider(state);
+    setTestHosts(state);
     const shape = createScale9Shape(grid);
     const data = getOrCreateRenderProxy2D(state, shape);
 
@@ -187,7 +196,7 @@ describe('drawGlScale9Shape', () => {
 
   it('returns early when rendererData is null', () => {
     const { state, gl } = createGlState();
-    setTestRasterProvider(state);
+    setTestHosts(state);
     const shape = createScale9Shape(grid);
     appendShapeBeginFill(shape, 0xff0000ff);
     appendShapeRectangle(shape, 0, 0, 100, 100);
@@ -202,7 +211,7 @@ describe('drawGlScale9Shape', () => {
 describe('drawGlScale9ShapeMask', () => {
   it('uses the same draw path as normal Scale9 rendering', () => {
     const { state, gl } = createGlState();
-    setTestRasterProvider(state);
+    setTestHosts(state);
     const shape = createScale9Shape(grid);
     const data = getOrCreateRenderProxy2D(state, shape);
 
@@ -215,7 +224,7 @@ describe('drawGlScale9ShapeMask', () => {
 describe('getGlScale9ShapeData', () => {
   it('recovers the per-node Scale9 renderer data', () => {
     const { state } = createGlState();
-    setTestRasterProvider(state);
+    setTestHosts(state);
     const rendererData = createGlScale9ShapeData(state, createScale9Shape(grid))!;
 
     expect(getGlScale9ShapeData(rendererData).surface).toBeNull();

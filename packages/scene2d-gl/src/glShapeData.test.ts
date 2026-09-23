@@ -5,7 +5,12 @@ import {
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
-import type { GlShapeRendererData, ImageSurface, ImageSurfaceCreator } from '@flighthq/types/contract';
+import type {
+  CanvasSurface,
+  GlShapeRendererData,
+  HostCanvasCapability,
+  HostImageCapability,
+} from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import {
@@ -32,13 +37,14 @@ const destroySurface = vi.fn();
 
 function emptyData(): GlShapeRendererData {
   const out = allocateEntity<GlShapeRendererData>();
-  out.surface = null;
+  out.image = null;
   out.lastContentId = -1;
+  out.lastH = 0;
   out.lastPixelRatio = 0;
   out.lastW = 0;
-  out.lastH = 0;
   out.meshVersion = -1;
   out.meshes = null;
+  out.surface = null;
   return finishEntity(out);
 }
 
@@ -46,63 +52,65 @@ beforeEach(() => {
   destroySurface.mockReset();
 });
 
-function createTestImageSurface(width: number, height: number): ImageSurface {
+function createTestSurface(width: number, height: number): CanvasSurface {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  const context = canvas.getContext('2d')!;
+  return { context: canvas.getContext('2d')! } as unknown as CanvasSurface;
+}
+
+function createTestCanvasHost(): HostCanvasCapability {
   return {
-    [EntityRuntimeKey]: undefined,
-    get width() {
-      return canvas.width;
-    },
-    set width(value) {
-      canvas.width = value;
-    },
-    get height() {
-      return canvas.height;
-    },
-    set height(value) {
-      canvas.height = value;
-    },
-    context,
-    image: createImageResource(canvas),
+    acquire: () => null,
+    create: () => null,
+    createSurface: createTestSurface,
+    destroySurface,
+    release() {},
   };
 }
 
-function createTestProvider(): ImageSurfaceCreator {
+function createTestImageHost(): HostImageCapability {
   return {
-    createImageSurface: createTestImageSurface,
-    destroyImageSurface: destroySurface,
+    createImageFromSurface(surface) {
+      return createImageResource((surface as unknown as { context: CanvasRenderingContext2D }).context.canvas);
+    },
+    loadImageFromUrl: () => Promise.reject(new Error('not implemented')),
   };
 }
 
-function setTestRasterProvider(state: { imageSurfaceProvider: unknown }): void {
-  state.imageSurfaceProvider = createTestProvider();
+function setTestHosts(state: { canvasHost: unknown; imageHost: unknown }): void {
+  state.canvasHost = createTestCanvasHost();
+  state.imageHost = createTestImageHost();
 }
 
 describe('acquireGlShapeRasterSurface', () => {
   it('allocates once and returns the same surface thereafter', () => {
-    const provider = createTestProvider();
+    const canvasHost = createTestCanvasHost();
+    const imageHost = createTestImageHost();
     const data = emptyData();
-    const first = acquireGlShapeRasterSurface(provider, data);
+    const first = acquireGlShapeRasterSurface(canvasHost, imageHost, data);
     expect(data.surface).toBe(first);
-    expect(acquireGlShapeRasterSurface(provider, data)).toBe(first);
+    expect(acquireGlShapeRasterSurface(canvasHost, imageHost, data)).toBe(first);
   });
 
   it('wraps the canvas as an Image so the quad batch treats it like any other texture source', () => {
-    const surface = acquireGlShapeRasterSurface(createTestProvider(), emptyData())!;
-    expect(surface.image.source).toBe(surface.context.canvas);
+    const data = emptyData();
+    const surface = acquireGlShapeRasterSurface(createTestCanvasHost(), createTestImageHost(), data)!;
+    expect(data.image!.source).toBe(surface.context.canvas);
     expect('canvas' in surface).toBe(false);
   });
 
   it('preserves expected absence without caching it when the provider refuses', () => {
-    const provider: ImageSurfaceCreator = {
-      createImageSurface: () => null,
-      destroyImageSurface: destroySurface,
+    const canvasHost: HostCanvasCapability = {
+      acquire: () => null,
+      create: () => null,
+      createSurface: () => null,
+      destroySurface,
+      release() {},
     };
+    const imageHost = createTestImageHost();
     const data = emptyData();
-    expect(acquireGlShapeRasterSurface(provider, data)).toBeNull();
+    expect(acquireGlShapeRasterSurface(canvasHost, imageHost, data)).toBeNull();
     expect(data.surface).toBeNull();
   });
 });
@@ -129,21 +137,24 @@ describe('destroyGlShapeData', () => {
   it('frees the cached GPU texture before destroying the raster surface', () => {
     const { state, gl } = createGlState();
     const data = emptyData();
-    const surface = acquireGlShapeRasterSurface(createTestProvider(), data)!;
+    const canvasHost = createTestCanvasHost();
+    const imageHost = createTestImageHost();
+    const surface = acquireGlShapeRasterSurface(canvasHost, imageHost, data)!;
+    const image = data.image!;
     const texture = {} as WebGLTexture;
     const cache = getGlRenderStateRuntime(state).context.textureSourcePremultipliedTextureCache;
-    cache.set(surface.image, { texture } as never);
+    cache.set(image, { texture } as never);
     const order: string[] = [];
     vi.mocked(gl.deleteTexture).mockImplementation(() => order.push('texture'));
-    destroySurface.mockImplementation((destroyed) => {
-      expect(cache.has(destroyed.image)).toBe(false);
+    destroySurface.mockImplementation(() => {
+      expect(cache.has(image)).toBe(false);
       order.push('surface');
     });
 
     destroyGlShapeData(state, toGlShapeRendererData(data));
 
     expect(gl.deleteTexture).toHaveBeenCalledWith(texture);
-    expect(cache.has(surface.image)).toBe(false);
+    expect(cache.has(image)).toBe(false);
     expect(destroySurface).toHaveBeenCalledWith(surface);
     expect(order).toEqual(['texture', 'surface']);
   });
@@ -151,7 +162,9 @@ describe('destroyGlShapeData', () => {
   it('destroys a raster surface even when it never acquired a GPU cache entry', () => {
     const { state } = createGlState();
     const data = emptyData();
-    const surface = acquireGlShapeRasterSurface(createTestProvider(), data)!;
+    const canvasHost = createTestCanvasHost();
+    const imageHost = createTestImageHost();
+    const surface = acquireGlShapeRasterSurface(canvasHost, imageHost, data)!;
 
     destroyGlShapeData(state, toGlShapeRendererData(data));
 
