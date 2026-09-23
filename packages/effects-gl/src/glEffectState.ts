@@ -28,6 +28,7 @@ import type {
   GlTextureRenderTarget,
   Effect,
   EffectStateOptions,
+  NonEntityCreateResult,
   RenderTargetClear,
   RenderTargetColorSpace,
 } from '@flighthq/types/contract';
@@ -67,7 +68,10 @@ export function beginGlEffectPass(
   return beginGlRenderPass(state, pipeline.sceneTarget, colorSpace === 'linear' ? linearizeClear(clear) : clear);
 }
 
-export function createGlEffectState(_state: GlRenderState, options: Readonly<EffectStateOptions> = {}): GlEffectState {
+export function createGlEffectState(
+  _state: GlRenderState,
+  options: Readonly<EffectStateOptions> = {},
+): NonEntityCreateResult<GlEffectState, 'descriptor'> {
   return {
     options: { ...options },
     sceneTarget: null,
