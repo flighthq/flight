@@ -1,4 +1,4 @@
-import { webHostCanvas } from '@flighthq/host-web';
+import { getWebSurfaceCanvasHandle, webHostCanvas } from '@flighthq/host-web';
 // ★ SCOPE DECLARATION, NOT A GAP. The fingerprint regression gate is NOT the instrument for this scene:
 // the subject is PER-PIXEL NOISE of about +-3 levels and the fingerprint is a block average — averaging is
 // precisely the operation that removes noise, so the instrument cancels the subject; committed contrast is
@@ -19,7 +19,6 @@ import {
   createCanvasElement,
   createCanvasEffectState,
   createCanvasRenderState,
-  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   createDisplayObject,
@@ -55,10 +54,10 @@ declareExpectedImageDescription(
     'the underlying tone stays mid-grey rather than drifting lighter or darker overall.',
 );
 const pixelRatio = window.devicePixelRatio || 1;
-const canvas = createCanvasElement(webHostCanvas, 800, 600, pixelRatio);
-document.body.appendChild(canvas);
+const surface = createCanvasElement(webHostCanvas, 800, 600, pixelRatio);
+document.body.appendChild(getWebSurfaceCanvasHandle(surface) as HTMLCanvasElement);
 
-export const screen = createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas));
+export const screen = createCanvasScreenRenderTarget(surface);
 export const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas), {
   pixelRatio,
 });

@@ -31,7 +31,9 @@ const registry = {
   ...emptyRegistries,
   nodeRenderers: withKindMapEntry(emptyRegistries.nodeRenderers, SpriteKind, canvasSpriteRenderer),
 };
-const screen = createCanvasScreenRenderTarget(createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas));
+const canvasSurface = createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas);
+if (canvasSurface === null) throw new Error('Failed to create Canvas surface from element.');
+const screen = createCanvasScreenRenderTarget(canvasSurface);
 const state = createCanvasRenderState(registry, createCanvasTextureResolvers(webHostCanvas), {
   pixelRatio: 1,
 });
