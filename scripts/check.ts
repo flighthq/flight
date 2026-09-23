@@ -132,6 +132,8 @@ if (!scoped) {
   add('capability-arrival:check', 'tsx', ['scripts/capability-arrival.ts']);
   add('host-bypasses:check', 'tsx', ['scripts/check-host-bypasses.ts']);
   add('mixed-absence:check', 'tsx', ['scripts/check-mixed-absence.ts', '--check']);
+  add('opaque-values:check', 'tsx', ['scripts/check-opaque-values.ts']);
+  add('double-casts:check', 'tsx', ['scripts/check-double-casts.ts']);
 
   // Script tests (scripts/**/*.test.ts, own vitest config) are deliberately NOT a gate here for now.
   // They are still covered: CI runs them as their own leg (.github/workflows/tests.yml). Know the gap
