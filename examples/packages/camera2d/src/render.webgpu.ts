@@ -65,6 +65,7 @@ export const state = createWgpuRenderState(acquisition.device, {
   pixelRatio,
   sceneGraphSyncPolicy: 'requiresInvalidation',
   canvasHost: webHostCanvas,
+  imageHost: webHostImage,
 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1], depth: 1.0 } as const;
