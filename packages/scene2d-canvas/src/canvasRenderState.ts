@@ -4,34 +4,33 @@ import {
   destroyRenderState,
 } from '@flighthq/render/contract';
 import type {
-  CanvasRenderOptions,
   CanvasRenderRegistries,
   CanvasRenderState,
+  CanvasRenderStateOptions,
   CanvasRenderStateRuntime,
   CanvasTextureResolvers,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { destroyCanvasTextureResolvers } from './canvasTextureResolver';
+import { createCanvasTextureResolvers, destroyCanvasTextureResolvers } from './canvasTextureResolver';
 
 // Takes no driver handle: a state is "how to draw" — the pipeline, the resolvers, the smoothing policy
 // — while "where" is a render target that flows in at beginCanvasRenderPass. On this backend that
 // separation is what lets one state draw to several canvases, since each canvas carries its own context.
-export function createCanvasRenderState(
-  registries: Readonly<CanvasRenderRegistries>,
-  canvasTextureResolvers: CanvasTextureResolvers,
-  options: Partial<CanvasRenderOptions> = {},
-): CanvasRenderState {
+export function createCanvasRenderState(options: Readonly<CanvasRenderStateOptions> = {}): CanvasRenderState {
   const state = _createRenderState({
     pixelRatio: options.pixelRatio ?? 1,
     roundPixels: options.roundPixels ?? false,
     sceneGraphSyncPolicy: options.sceneGraphSyncPolicy,
   }) as CanvasRenderState;
 
-  state.applyBlendMode = registries.blendModeApplication ?? null;
+  state.applyBlendMode = options.blendModeApplication ?? null;
   state.canvasCssFilterResolver = null;
 
+  const registries = buildCanvasRenderRegistries(options);
+  const canvasTextureResolvers = options.canvasTextureResolvers ?? createCanvasTextureResolvers(options.canvasHost!);
   const runtime = createCanvasRenderStateRuntime(registries, canvasTextureResolvers);
+  if (options.canvasHost !== undefined) runtime.canvasHost = options.canvasHost;
   state[EntityRuntimeKey] = runtime;
   // The entity field is a read view of the SAME aggregate the runtime holds, as on GL and WGPU — not
   // the caller's object. Registrars replace tables on the runtime copy-on-write, so a field pointing
@@ -110,6 +109,23 @@ export function setCanvasImageSmoothing(state: CanvasRenderState, enabled: boole
   if (runtime.imageSmoothingEnabled === enabled) return;
   runtime.imageSmoothingEnabled = enabled;
   state.context.imageSmoothingEnabled = enabled;
+}
+
+function buildCanvasRenderRegistries(options: Readonly<CanvasRenderStateOptions>): CanvasRenderRegistries {
+  const out = {} as CanvasRenderRegistries;
+  out.strokeTessellator = options.strokeTessellator ?? null;
+  out.nodeRenderers = new Map(options.nodeRenderers);
+  out.effects = new Map(options.effects);
+  if (options.canvasShapeCommands !== undefined) out.canvasShapeCommands = new Map(options.canvasShapeCommands);
+  if (options.effectPaddingResolvers !== undefined)
+    out.effectPaddingResolvers = new Map(options.effectPaddingResolvers);
+  if (options.materialRenderers !== undefined) out.materialRenderers = new Map(options.materialRenderers);
+  if (options.colorAdjustments !== undefined) out.colorAdjustments = options.colorAdjustments;
+  if (options.colorAdjustmentUnsupportedGuard !== undefined)
+    out.colorAdjustmentUnsupportedGuard = options.colorAdjustmentUnsupportedGuard;
+  if (options.renderRootGuard !== undefined) out.renderRootGuard = options.renderRootGuard;
+  if (options.blendModeApplication !== undefined) out.blendModeApplication = options.blendModeApplication;
+  return out;
 }
 
 // Copies every table out of the caller's aggregate so the state owns its own. The input is routinely a

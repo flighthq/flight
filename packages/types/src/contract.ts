@@ -138,6 +138,7 @@ export * from './CanvasSurface';
 export * from './CanvasEffectState';
 export * from './CanvasEffectSupport';
 export * from './CanvasRenderOptions';
+export * from './CanvasRenderStateOptions';
 export * from './CanvasRenderPass';
 export * from './CanvasRenderState';
 export * from './CanvasTextureResolver';

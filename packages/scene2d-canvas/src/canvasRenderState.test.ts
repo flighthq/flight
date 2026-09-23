@@ -42,7 +42,10 @@ describe('createCanvasRenderState', () => {
       ...allocateEmptyCanvasRenderRegistries(),
       nodeRenderers: new Map(),
     });
-    const state = createExplicitCanvasRenderState(preset, createCanvasTextureResolvers());
+    const state = createExplicitCanvasRenderState({
+      ...preset,
+      canvasTextureResolvers: createCanvasTextureResolvers(),
+    });
     registerNodeRenderer(state, 'acme.Test', { createData: () => null, submit: () => {} });
     expect(preset.nodeRenderers.size).toBe(0);
     expect(getCanvasRenderStateRuntime(state).registries.nodeRenderers.size).toBe(1);

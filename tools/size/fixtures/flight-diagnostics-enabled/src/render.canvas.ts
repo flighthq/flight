@@ -1,11 +1,4 @@
 import { webHostCanvas } from '@flighthq/host-web';
-import {
-  createCanvasRenderState,
-  createCanvasTextureResolvers,
-  enableFlightDiagnostics,
-  canvasScene2DRenderPreset,
-} from '@flighthq/sdk';
+import { createCanvasRenderState, enableFlightDiagnostics, canvasScene2DRenderPreset } from '@flighthq/sdk';
 
-enableFlightDiagnostics(
-  createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas)),
-);
+enableFlightDiagnostics(createCanvasRenderState({ ...canvasScene2DRenderPreset, canvasHost: webHostCanvas }));

@@ -13,7 +13,10 @@ import {
 } from './canvasTestSupport';
 
 function createBlendlessState(canvas: HTMLCanvasElement): CanvasRenderState {
-  const state = createExplicitCanvasRenderState(allocateEmptyCanvasRenderRegistries(), createCanvasTextureResolvers());
+  const state = createExplicitCanvasRenderState({
+    ...allocateEmptyCanvasRenderRegistries(),
+    canvasTextureResolvers: createCanvasTextureResolvers(),
+  });
   beginCanvasRenderPass(state, createCanvasScreenRenderTargetForTest(canvas));
   return state;
 }

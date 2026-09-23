@@ -15,7 +15,6 @@ import {
   createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasShapeRasterizer,
-  createCanvasTextureResolvers,
   createMatrix,
   createWgpuRenderState,
   createWgpuScreenRenderTarget,
@@ -166,7 +165,7 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
 // registered here are exactly what those fills can paint.
 function createHarnessShapeRasterizer(): ShapeRasterizer {
   const canvas = document.createElement('canvas');
-  const resolverState = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas));
+  const resolverState = createCanvasRenderState({ ...canvasScene2DRenderPreset, canvasHost: webHostCanvas });
   const surface = createCanvasSurfaceFromNativeHandle(webHostCanvas, canvas);
   if (surface === null) throw new Error('Failed to create Canvas surface from element.');
   // The rasterizer draws into its own canvas, so it opens its own pass over it and keeps it open for the

@@ -11,7 +11,6 @@ import {
   createCanvasEffectState,
   createCanvasRenderState,
   createCanvasScreenRenderTarget,
-  createCanvasTextureResolvers,
   createDisplayObject,
   createScanlinesEffect,
   createShape,
@@ -23,7 +22,6 @@ import {
   prepareScene2DRender,
   registerCanvasScanlinesEffect,
   registerCanvasShapeCommands,
-  registerCanvasHost,
   registerNodeRenderer,
   renderCanvasScene2D,
   canvasScene2DRenderPreset,
@@ -51,10 +49,11 @@ const surface = createCanvasElement(webHostCanvas, 800, 600, pixelRatio);
 document.body.appendChild(getWebSurfaceCanvasHandle(surface) as HTMLCanvasElement);
 
 export const screen = createCanvasScreenRenderTarget(surface);
-export const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(webHostCanvas), {
+export const state = createCanvasRenderState({
+  ...canvasScene2DRenderPreset,
+  canvasHost: webHostCanvas,
   pixelRatio,
 });
-registerCanvasHost(state, webHostCanvas);
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1] } as const;
 registerNodeRenderer(state, ShapeKind, canvasShapeRenderer);

@@ -78,7 +78,10 @@ describe('destroyCanvasSurfaceOwned', () => {
 
 describe('getCanvasHost', () => {
   it('throws until a host is registered, then returns exactly that one', () => {
-    const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers());
+    const state = createCanvasRenderState({
+      ...canvasScene2DRenderPreset,
+      canvasTextureResolvers: createCanvasTextureResolvers(),
+    });
     expect(() => getCanvasHost(state)).toThrow(/registerCanvasHost/);
 
     registerCanvasHost(state, canvasTestHost);
@@ -112,7 +115,10 @@ describe('getCanvasSurfaceHost', () => {
 
 describe('registerCanvasHost', () => {
   it('replaces the host a state allocates through', () => {
-    const state = createCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers());
+    const state = createCanvasRenderState({
+      ...canvasScene2DRenderPreset,
+      canvasTextureResolvers: createCanvasTextureResolvers(),
+    });
     const replacement = mockHost();
 
     registerCanvasHost(state, canvasTestHost);

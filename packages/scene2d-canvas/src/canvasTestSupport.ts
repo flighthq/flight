@@ -20,7 +20,6 @@ import type {
 
 import { beginCanvasRenderPass } from './canvasRenderPass';
 import { createCanvasRenderState as createExplicitCanvasRenderState } from './canvasRenderState';
-import { registerCanvasHost } from './canvasRenderSurface';
 import { createCanvasScreenRenderTarget as createExplicitCanvasScreenRenderTarget } from './canvasScreenRenderTarget';
 import { createCanvasTextureRenderTarget as createExplicitCanvasRenderTarget } from './canvasTextureRenderTarget';
 import { createCanvasTextureResolvers as createExplicitCanvasTextureResolvers } from './canvasTextureResolver';
@@ -91,15 +90,21 @@ export function createCanvasRenderState(
   canvas: HTMLCanvasElement,
   options: Partial<CanvasRenderOptions> = {},
 ): CanvasRenderState {
-  const state = createExplicitCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(), options);
-  registerCanvasHost(state, canvasTestHost);
+  const state = createExplicitCanvasRenderState({
+    ...canvasScene2DRenderPreset,
+    canvasHost: canvasTestHost,
+    ...options,
+  });
   beginCanvasRenderPass(state, createCanvasScreenRenderTargetForTest(canvas));
   return state;
 }
 
 export function createCanvasRenderStateWithoutPass(options: Partial<CanvasRenderOptions> = {}): CanvasRenderState {
-  const state = createExplicitCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(), options);
-  registerCanvasHost(state, canvasTestHost);
+  const state = createExplicitCanvasRenderState({
+    ...canvasScene2DRenderPreset,
+    canvasHost: canvasTestHost,
+    ...options,
+  });
   return state;
 }
 
