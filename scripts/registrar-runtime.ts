@@ -14,7 +14,6 @@ import {
 import {
   beginCanvasRenderPass,
   createCanvasRenderState,
-  createCanvasSurfaceFromNativeHandle,
   createCanvasScreenRenderTarget,
   createCanvasTextureResolvers,
   getCanvasRenderStateRuntime,
@@ -25,6 +24,7 @@ import { createDomRenderState, getDomRenderStateRuntime } from '@flighthq/scene2
 import { createScene2DDocumentImporterRegistry } from '@flighthq/scene2d-resources/contract';
 import { createScene3DMaterialTextureRegistry } from '@flighthq/scene3d-resources/contract';
 import { createModifierRegistry } from '@flighthq/shading/contract';
+import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface/contract';
 import { createMarkupTagRegistry } from '@flighthq/text-markup/contract';
 import { JSDOM } from 'jsdom';
 

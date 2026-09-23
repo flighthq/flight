@@ -63,14 +63,15 @@ function createTestSurface(width: number, height: number): CanvasSurface {
 }
 
 function makeTextData() {
-  const surface = createTestSurface(1, 1);
   return {
-    image: createImageResource(surface.context.canvas),
-    surface,
+    allocH: 0,
+    allocW: 0,
+    image: null as ImageResource | null,
     lastContentId: -1,
     lastPixelRatio: 0,
-    logW: 0,
     logH: 0,
+    logW: 0,
+    surface: null as CanvasSurface | null,
   };
 }
 
@@ -165,13 +166,27 @@ describe('drawGlTextLabel', () => {
 
   it('rasterizes packed run alpha into the canvas color', () => {
     const { state } = createGlState();
-    installTestHosts(state);
     registerGlStandardMaterial(state);
-    const data = makeTextData();
-    const proxy = makeTextProxy('hello', data);
-    (proxy.source as TextLabel).data.textFormat = { color: 0xff000080 };
     const styles: Array<string | CanvasGradient | CanvasPattern> = [];
-    vi.spyOn(data.surface.context, 'fillText').mockImplementation(() => styles.push(data.surface.context.fillStyle));
+    state.canvasHost = {
+      acquire: () => null,
+      create: () => null,
+      createSurface(w: number, h: number) {
+        const surface = createTestSurface(w, h);
+        vi.spyOn(surface.context, 'fillText').mockImplementation(() => styles.push(surface.context.fillStyle));
+        return surface;
+      },
+      destroySurface() {},
+      release() {},
+    } satisfies HostCanvasCapability;
+    state.imageHost = {
+      createImageFromSurface(surface) {
+        return createImageResource((surface as unknown as { context: CanvasRenderingContext2D }).context.canvas);
+      },
+      loadImageFromUrl: () => Promise.reject(new Error('not implemented')),
+    } satisfies HostImageCapability;
+    const proxy = makeTextProxy('hello', makeTextData());
+    (proxy.source as TextLabel).data.textFormat = { color: 0xff000080 };
 
     drawGlTextLabel(state, proxy);
 
@@ -196,9 +211,9 @@ describe('drawGlTextLabel', () => {
     drawGlTextLabel(state, proxy);
     // Rasterization bumps the canvas resource's version (invalidateImageResource); a skipped raster leaves
     // it untouched. First draw rasterizes (version → 1); the repeat is skipped.
-    const rasterized = data.image.version;
+    const rasterized = data.image!.version;
     drawGlTextLabel(state, proxy);
-    expect(data.image.version).toBe(rasterized);
+    expect(data.image!.version).toBe(rasterized);
   });
 
   it('re-rasterizes when the content version is bumped', () => {
@@ -208,10 +223,10 @@ describe('drawGlTextLabel', () => {
     const data = makeTextData();
     const proxy = makeTextProxy('hello', data);
     drawGlTextLabel(state, proxy);
-    const rasterized = data.image.version;
+    const rasterized = data.image!.version;
     setTextLabelString(proxy.source as TextLabel, 'world');
     drawGlTextLabel(state, proxy);
-    expect(data.image.version).toBeGreaterThan(rasterized);
+    expect(data.image!.version).toBeGreaterThan(rasterized);
   });
 
   it('does not re-rasterize when only alpha changes (version unchanged)', () => {
@@ -221,11 +236,11 @@ describe('drawGlTextLabel', () => {
     const data = makeTextData();
     const proxy = makeTextProxy('hello', data);
     drawGlTextLabel(state, proxy);
-    const rasterized = data.image.version;
+    const rasterized = data.image!.version;
     proxy.alpha = 0.5;
     drawGlTextLabel(state, proxy);
     // Alpha is applied per-instance in the batch; the expensive raster (and its version bump) is untouched.
-    expect(data.image.version).toBe(rasterized);
+    expect(data.image!.version).toBe(rasterized);
   });
 });
 
