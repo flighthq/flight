@@ -1,4 +1,4 @@
-import type { CanvasRenderSurface } from './CanvasRenderSurface';
+import type { CanvasSurface } from './CanvasSurface';
 import type { Entity } from './Entity';
 import type { RenderTargetDimensions } from './RenderTarget';
 
@@ -10,7 +10,7 @@ export interface CanvasRenderTarget extends Entity, RenderTargetDimensions {
   canvas: HTMLCanvasElement;
   colorAttachments: number;
   context: CanvasRenderingContext2D;
-  readonly surface: CanvasRenderSurface;
+  readonly surface: CanvasSurface;
   // Who owns the surface, in the same vocabulary WgpuHostAcquisition uses: 'caller' for a canvas the
   // host made and still owns, 'flight' for storage this target allocated. Teardown reads it, so the two
   // realizations below differ in a fact the type system can check rather than in a comment.

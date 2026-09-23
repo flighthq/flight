@@ -1,95 +1,37 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  CanvasRenderState,
-  CanvasRenderSurface,
-  CanvasRenderSurfaceCreator,
-  CanvasRenderSurfaceOptions,
-  EntityConstruction,
-} from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { CanvasRenderState, CanvasSurface, HostCanvasCapability } from '@flighthq/types/contract';
 
 import { getCanvasRenderStateRuntime } from './canvasRenderState';
 
-export function acquireCanvasRenderSurface(
-  creator: Readonly<CanvasRenderSurfaceCreator>,
-  options: Readonly<CanvasRenderSurfaceOptions>,
-): CanvasRenderSurface | null {
-  const canvas = creator.createRenderSurface(options.width, options.height, options.pixelRatio);
-  if (canvas === null) return null;
-  let surface: CanvasRenderSurface;
-  try {
-    surface = finishCanvasRenderSurface(creator, canvas, options);
-  } catch {
-    creator.destroyRenderSurface(canvas);
-    return null;
+export function acquireCanvasSurface(
+  canvasHost: Readonly<HostCanvasCapability>,
+  width: number,
+  height: number,
+): CanvasSurface | null {
+  const surface = canvasHost.createSurface(width, height);
+  if (surface !== null) _ownedSurfaces.set(surface, canvasHost);
+  return surface;
+}
+
+export function destroyCanvasSurfaceOwned(surface: CanvasSurface): void {
+  const canvasHost = _ownedSurfaces.get(surface);
+  if (canvasHost === undefined) return;
+  _ownedSurfaces.delete(surface);
+  canvasHost.destroySurface(surface);
+}
+
+const _ownedSurfaces = new WeakMap<CanvasSurface, Readonly<HostCanvasCapability>>();
+
+// The host canvas capability this state allocates offscreen surfaces through: render-cache targets and
+// render textures both ask for one, and neither can invent it — a canvas comes from the host. Registered
+// once, read by name, and absent until then so a screen-only state carries nothing.
+export function getCanvasHost(state: CanvasRenderState): Readonly<HostCanvasCapability> {
+  const canvasHost = getCanvasRenderStateRuntime(state).canvasHost;
+  if (canvasHost === undefined) {
+    throw new Error('This CanvasRenderState has no canvas host — call registerCanvasHost first');
   }
-  _ownedSurfaceCreators.set(surface, creator);
-  return finishEntity(surface);
+  return canvasHost;
 }
 
-export function createCanvasRenderSurface(
-  creator: Readonly<CanvasRenderSurfaceCreator>,
-  canvas: HTMLCanvasElement,
-  options: Partial<CanvasRenderSurfaceOptions> = {},
-): CanvasRenderSurface {
-  return finishCanvasRenderSurface(creator, canvas, options);
+export function registerCanvasHost(state: CanvasRenderState, canvasHost: Readonly<HostCanvasCapability>): void {
+  getCanvasRenderStateRuntime(state).canvasHost = canvasHost;
 }
-
-export function destroyCanvasRenderSurface(surface: CanvasRenderSurface): void {
-  const creator = _ownedSurfaceCreators.get(surface);
-  if (creator === undefined) return;
-  _ownedSurfaceCreators.delete(surface);
-  creator.destroyRenderSurface(surface.canvas);
-}
-
-// The creator this state allocates offscreen canvases through: render-cache targets and render textures
-// both ask for one, and neither can invent it — a canvas element comes from the host. Registered once,
-// read by name, and absent until then so a screen-only state carries nothing.
-export function getCanvasSurfaceCreator(state: CanvasRenderState): Readonly<CanvasRenderSurfaceCreator> {
-  const creator = getCanvasRenderStateRuntime(state).canvasSurfaceCreator;
-  if (creator === undefined) {
-    throw new Error('This CanvasRenderState has no surface creator — call registerCanvasSurfaceCreator first');
-  }
-  return creator;
-}
-
-export function initializeCanvasRenderSurface(
-  out: EntityConstruction<CanvasRenderSurface>,
-  creator: Readonly<CanvasRenderSurfaceCreator>,
-  canvas: HTMLCanvasElement,
-  context: CanvasRenderingContext2D,
-  options: Partial<CanvasRenderSurfaceOptions>,
-): void {
-  out.canvas = canvas;
-  out.context = context;
-  out.contextAttributes = context.getContextAttributes();
-  out.creator = creator;
-  out.options = Object.freeze({
-    contextAttributes: options.contextAttributes,
-    height: options.height ?? canvas.height,
-    pixelRatio: options.pixelRatio ?? 1,
-    width: options.width ?? canvas.width,
-  });
-  out[EntityRuntimeKey] = { binding: null };
-}
-
-export function registerCanvasSurfaceCreator(
-  state: CanvasRenderState,
-  creator: Readonly<CanvasRenderSurfaceCreator>,
-): void {
-  getCanvasRenderStateRuntime(state).canvasSurfaceCreator = creator;
-}
-
-function finishCanvasRenderSurface(
-  creator: Readonly<CanvasRenderSurfaceCreator>,
-  canvas: HTMLCanvasElement,
-  options: Partial<CanvasRenderSurfaceOptions>,
-): CanvasRenderSurface {
-  const context = canvas.getContext('2d', options.contextAttributes);
-  if (context === null) throw new Error('Failed to get context for canvas.');
-  const surface = allocateEntity<CanvasRenderSurface>();
-  initializeCanvasRenderSurface(surface, creator, canvas, context, options);
-  return finishEntity(surface);
-}
-
-const _ownedSurfaceCreators = new WeakMap<CanvasRenderSurface, Readonly<CanvasRenderSurfaceCreator>>();

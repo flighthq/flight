@@ -1,22 +1,23 @@
+import {
+  createCanvasSurfaceFromNativeHandle,
+  destroyCanvasSurface,
+  getSurfaceHandle,
+} from '@flighthq/surface/contract';
 import type {
   CanvasRenderOptions,
-  CanvasRenderState,
-  CanvasRenderSurface,
   CanvasRenderPass,
-  CanvasRenderSurfaceCreator,
+  CanvasRenderState,
   CanvasScreenRenderTarget,
+  CanvasSurface,
   CanvasTextureRenderTarget,
-  RenderTargetClear,
   CanvasTextureResolvers,
+  HostCanvasCapability,
+  RenderTargetClear,
 } from '@flighthq/types/contract';
 
 import { beginCanvasRenderPass } from './canvasRenderPass';
 import { createCanvasRenderState as createExplicitCanvasRenderState } from './canvasRenderState';
-import {
-  acquireCanvasRenderSurface,
-  createCanvasRenderSurface,
-  registerCanvasSurfaceCreator,
-} from './canvasRenderSurface';
+import { registerCanvasHost } from './canvasRenderSurface';
 import { createCanvasScreenRenderTarget as createExplicitCanvasScreenRenderTarget } from './canvasScreenRenderTarget';
 import { createCanvasTextureRenderTarget as createExplicitCanvasRenderTarget } from './canvasTextureRenderTarget';
 import { createCanvasTextureResolvers as createExplicitCanvasTextureResolvers } from './canvasTextureResolver';
@@ -28,23 +29,36 @@ export * from './canvasScreenRenderTarget';
 export * from './canvasTextureRenderTarget';
 export * from './canvasTextureResolver';
 
-export const canvasTestSurfaceCreator: CanvasRenderSurfaceCreator = Object.freeze({
-  createRenderSurface(width: number, height: number, pixelRatio: number): HTMLCanvasElement {
+export const canvasTestHost: HostCanvasCapability = Object.freeze({
+  acquire(surface, options) {
+    const handle = getSurfaceHandle(surface) as HTMLCanvasElement;
+    return handle.getContext('2d', options);
+  },
+  create(_window, width, height) {
     const canvas = globalThis.document.createElement('canvas');
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    canvas.width = width * pixelRatio;
-    canvas.height = height * pixelRatio;
+    canvas.width = width;
+    canvas.height = height;
     return canvas;
   },
-  destroyRenderSurface(canvas: HTMLCanvasElement): void {
+  createSurface(width: number, height: number) {
+    const canvas = globalThis.document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    return createCanvasSurfaceFromNativeHandle(canvasTestHost, canvas);
+  },
+  destroySurface(surface: CanvasSurface) {
+    const canvas = getSurfaceHandle(surface) as HTMLCanvasElement;
+    destroyCanvasSurface(canvasTestHost, surface);
     canvas.width = 0;
     canvas.height = 0;
   },
+  release(_surface) {
+    // No-op for test host.
+  },
 });
 
-export function acquireTestCanvasRenderSurface(width = 1, height = 1): CanvasRenderSurface {
-  const surface = acquireCanvasRenderSurface(canvasTestSurfaceCreator, { height, pixelRatio: 1, width });
+export function acquireTestCanvasSurface(width = 1, height = 1): CanvasSurface {
+  const surface = canvasTestHost.createSurface(width, height);
   if (surface === null) throw new Error('Failed to acquire test Canvas surface.');
   return surface;
 }
@@ -59,7 +73,7 @@ export function beginCanvasScreenRenderPassForTest(
   return beginCanvasRenderPass(state, createCanvasScreenRenderTargetForTest(canvas), clear);
 }
 
-// The whole test rig in one call: a state with the test surface creator registered, and a screen pass
+// The whole test rig in one call: a state with the test canvas host registered, and a screen pass
 // already open over `canvas`. The open pass is the point — drawing happens inside one, so a unit test
 // whose subject is a draw should start where a draw starts. Tests whose subject IS the bracket use
 // createCanvasScreenRenderTargetForTest and open their own.
@@ -68,28 +82,27 @@ export function createCanvasRenderState(
   options: Partial<CanvasRenderOptions> = {},
 ): CanvasRenderState {
   const state = createExplicitCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(), options);
-  registerCanvasSurfaceCreator(state, canvasTestSurfaceCreator);
+  registerCanvasHost(state, canvasTestHost);
   beginCanvasRenderPass(state, createCanvasScreenRenderTargetForTest(canvas));
   return state;
 }
 
-// A state with no pass open, for tests about construction or about what a state carries before it draws.
 export function createCanvasRenderStateWithoutPass(options: Partial<CanvasRenderOptions> = {}): CanvasRenderState {
   const state = createExplicitCanvasRenderState(canvasScene2DRenderPreset, createCanvasTextureResolvers(), options);
-  registerCanvasSurfaceCreator(state, canvasTestSurfaceCreator);
+  registerCanvasHost(state, canvasTestHost);
   return state;
 }
 
-// The screen half. A state and a screen target are independent, so a test whose subject is neither the
-// bracket nor the surface takes the state alone.
 export function createCanvasScreenRenderTargetForTest(canvas: HTMLCanvasElement): CanvasScreenRenderTarget {
-  return createExplicitCanvasScreenRenderTarget(createCanvasRenderSurface(canvasTestSurfaceCreator, canvas));
+  const surface = createCanvasSurfaceFromNativeHandle(canvasTestHost, canvas);
+  if (surface === null) throw new Error('Failed to create test Canvas surface from element.');
+  return createExplicitCanvasScreenRenderTarget(surface);
 }
 
 export function createCanvasTextureRenderTarget(width: number, height: number): CanvasTextureRenderTarget {
-  return createExplicitCanvasRenderTarget(canvasTestSurfaceCreator, width, height);
+  return createExplicitCanvasRenderTarget(canvasTestHost, width, height);
 }
 
 export function createCanvasTextureResolvers(): CanvasTextureResolvers {
-  return createExplicitCanvasTextureResolvers(canvasTestSurfaceCreator);
+  return createExplicitCanvasTextureResolvers(canvasTestHost);
 }

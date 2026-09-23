@@ -1,21 +1,22 @@
 import { createCanvasElement } from './canvasElement';
-import { canvasTestSurfaceCreator } from './canvasTestSupport';
+import { canvasTestHost } from './canvasTestSupport';
 
 describe('createCanvasElement', () => {
   it('sets pixel dimensions equal to logical size with default pixelRatio', () => {
-    const canvas = createCanvasElement(canvasTestSurfaceCreator, 100, 200);
-    expect(canvas.width).toBe(100);
-    expect(canvas.height).toBe(200);
+    const surface = createCanvasElement(canvasTestHost, 100, 200);
+    expect(surface.context.canvas.width).toBe(100);
+    expect(surface.context.canvas.height).toBe(200);
   });
 
   it('scales pixel dimensions by pixelRatio', () => {
-    const canvas = createCanvasElement(canvasTestSurfaceCreator, 100, 200, 2);
-    expect(canvas.width).toBe(200);
-    expect(canvas.height).toBe(400);
+    const surface = createCanvasElement(canvasTestHost, 100, 200, 2);
+    expect(surface.context.canvas.width).toBe(200);
+    expect(surface.context.canvas.height).toBe(400);
   });
 
   it('sets CSS style dimensions to the logical size', () => {
-    const canvas = createCanvasElement(canvasTestSurfaceCreator, 100, 200, 2);
+    const surface = createCanvasElement(canvasTestHost, 100, 200, 2);
+    const canvas = surface.context.canvas as HTMLCanvasElement;
     expect(canvas.style.width).toBe('100px');
     expect(canvas.style.height).toBe('200px');
   });

@@ -9,7 +9,7 @@ import type {
 
 import { beginCanvasRenderPass, endCanvasRenderPass } from './canvasRenderPass';
 import { registerCanvasRenderStateTeardown } from './canvasRenderState';
-import { getCanvasSurfaceCreator } from './canvasRenderSurface';
+import { getCanvasHost } from './canvasRenderSurface';
 import {
   createCanvasTextureRenderTarget,
   destroyCanvasTextureRenderTarget,
@@ -117,7 +117,7 @@ function ensureEntry(state: CanvasRenderState, renderTexture: Readonly<RenderTex
   if (entry === undefined) {
     entry = {
       status: 'unrendered',
-      target: createCanvasTextureRenderTarget(getCanvasSurfaceCreator(state), descriptor.width, descriptor.height),
+      target: createCanvasTextureRenderTarget(getCanvasHost(state), descriptor.width, descriptor.height),
     };
     targets.set(renderTexture, entry);
   } else {

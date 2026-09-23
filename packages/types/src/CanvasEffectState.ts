@@ -1,10 +1,10 @@
 import type { CanvasRenderState } from './CanvasRenderState';
-import type { CanvasRenderSurfaceCreator } from './CanvasRenderSurface';
 import type { CanvasTextureRenderTarget } from './CanvasRenderTarget';
 import type { ColorLutCache } from './ColorLutCache';
 import type { Effect } from './Effect';
 import type { Entity } from './Entity';
 import type { EffectStateOptions } from './GlEffectState';
+import type { HostCanvasCapability } from './HostCanvas';
 
 // What a Canvas 2D effect runner is handed: the state, the offscreen scene canvas it reads, the
 // offscreen canvas it writes, and a scratch pool it borrows intermediate canvases from. `source` and
@@ -31,7 +31,7 @@ export type CanvasEffectRunner = (ctx: Readonly<CanvasEffectContext>, effect: Re
 // target pool. Each acquire returns a canvas sized to the requested descriptor; each must be matched by
 // a release so the canvas can be reused next frame without reallocating.
 export interface CanvasRenderTargetPool extends Entity {
-  readonly creator: Readonly<CanvasRenderSurfaceCreator>;
+  readonly canvasHost: Readonly<HostCanvasCapability>;
   free: CanvasTextureRenderTarget[];
   inUse: CanvasTextureRenderTarget[];
 }

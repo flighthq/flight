@@ -1,5 +1,7 @@
+import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface/contract';
+import type { CanvasSurface } from '@flighthq/types/contract';
+
 import { beginCanvasRenderPass, endCanvasRenderPass } from './canvasRenderPass';
-import { createCanvasRenderSurface } from './canvasRenderSurface';
 import {
   createCanvasScreenRenderTarget,
   disposeCanvasScreenRenderTarget,
@@ -7,16 +9,18 @@ import {
   isCanvasScreenRenderTarget,
 } from './canvasScreenRenderTarget';
 import {
-  canvasTestSurfaceCreator,
+  canvasTestHost,
   createCanvasRenderStateWithoutPass,
   createCanvasTextureRenderTarget,
 } from './canvasTestSupport';
 
-function makeSurface(width = 320, height = 240) {
+function makeSurface(width = 320, height = 240): CanvasSurface {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  return createCanvasRenderSurface(canvasTestSurfaceCreator, canvas);
+  const surface = createCanvasSurfaceFromNativeHandle(canvasTestHost, canvas);
+  if (surface === null) throw new Error('Failed to create test surface');
+  return surface;
 }
 
 describe('createCanvasScreenRenderTarget', () => {
@@ -25,30 +29,27 @@ describe('createCanvasScreenRenderTarget', () => {
 
     const screen = createCanvasScreenRenderTarget(surface);
 
-    expect(screen.canvas).toBe(surface.canvas);
+    expect(screen.canvas).toBe(surface.context.canvas);
     expect(screen.context).toBe(surface.context);
     expect(screen.colorAttachments).toBe(1);
     expect(screen.width).toBe(320);
     expect(screen.height).toBe(240);
   });
 
-  it('declares the surface as the caller’s, not Flight’s', () => {
+  it("declares the surface as the caller's, not Flight's", () => {
     expect(createCanvasScreenRenderTarget(makeSurface()).surfaceOwnership).toBe('caller');
   });
 });
 
 describe('disposeCanvasScreenRenderTarget', () => {
-  // ★ THE HOST STILL OWNS THE CANVAS. A texture target destroys the storage it allocated; a screen
-  // target must not, because the element came from the caller and outlives the target. Collapsing it
-  // here would blank the page's canvas on teardown.
-  it('unbinds without collapsing the caller’s canvas', () => {
+  it("unbinds without collapsing the caller's canvas", () => {
     const surface = makeSurface(200, 100);
     const screen = createCanvasScreenRenderTarget(surface);
 
     disposeCanvasScreenRenderTarget(screen);
 
-    expect(surface.canvas.width).toBe(200);
-    expect(surface.canvas.height).toBe(100);
+    expect(surface.context.canvas.width).toBe(200);
+    expect(surface.context.canvas.height).toBe(100);
     expect(screen.width).toBe(0);
   });
 });
@@ -68,7 +69,6 @@ describe('isCanvasScreenRenderTarget', () => {
     expect(isCanvasScreenRenderTarget(screen)).toBe(true);
     expect(isCanvasScreenRenderTarget(texture)).toBe(false);
 
-    // Both bind the same way — the split is about teardown, not about what a pass can draw into.
     endCanvasRenderPass(beginCanvasRenderPass(state, screen));
     endCanvasRenderPass(beginCanvasRenderPass(state, texture));
   });

@@ -1,72 +1,87 @@
 import {
-  acquireCanvasRenderSurface,
   beginCanvasRenderPass,
   createCanvasRenderState as createExplicitCanvasRenderState,
-  createCanvasRenderSurface,
   createCanvasScreenRenderTarget,
   createCanvasTextureRenderTarget as createExplicitCanvasRenderTarget,
   createCanvasTextureResolvers,
-  registerCanvasSurfaceCreator,
+  registerCanvasHost,
   canvasScene2DRenderPreset,
 } from '@flighthq/scene2d-canvas/contract';
+import {
+  createCanvasSurfaceFromNativeHandle,
+  destroyCanvasSurface,
+  getSurfaceHandle,
+} from '@flighthq/surface/contract';
 import type {
   CanvasRenderOptions,
   CanvasRenderState,
-  CanvasRenderSurface,
-  CanvasRenderSurfaceCreator,
+  CanvasSurface,
   CanvasTextureRenderTarget,
+  HostCanvasCapability,
+  ImageResource,
 } from '@flighthq/types/contract';
 
-export const canvasTestSurfaceCreator: CanvasRenderSurfaceCreator = {
-  createRenderSurface(width, height, pixelRatio) {
+export const canvasTestHost: HostCanvasCapability = {
+  acquire(surface, options) {
+    const handle = getSurfaceHandle(surface) as HTMLCanvasElement;
+    return handle.getContext('2d', options);
+  },
+  create(_win, width, height) {
     const canvas = globalThis.document.createElement('canvas');
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    canvas.width = width * pixelRatio;
-    canvas.height = height * pixelRatio;
+    canvas.width = width;
+    canvas.height = height;
     return canvas;
   },
-  destroyRenderSurface(canvas) {
+  createImageResource(_surface: Readonly<CanvasSurface>): ImageResource {
+    throw new Error('canvasTestHost does not support createImageResource');
+  },
+  createSurface(width, height) {
+    const canvas = globalThis.document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    return createCanvasSurfaceFromNativeHandle(canvasTestHost, canvas);
+  },
+  destroySurface(surface: CanvasSurface) {
+    const canvas = getSurfaceHandle(surface) as HTMLCanvasElement;
+    destroyCanvasSurface(canvasTestHost, surface);
     canvas.width = 0;
     canvas.height = 0;
   },
+  release() {},
 };
 
-export function acquireTestCanvasRenderSurface(width = 1, height = 1): CanvasRenderSurface {
-  const surface = acquireCanvasRenderSurface(canvasTestSurfaceCreator, { height, pixelRatio: 1, width });
+export function acquireTestCanvasSurface(width = 1, height = 1): CanvasSurface {
+  const surface = canvasTestHost.createSurface(width, height);
   if (surface === null) throw new Error('Failed to acquire test Canvas surface.');
   return surface;
 }
 
-// A state with a screen pass already open over `canvas`, so an effect test starts where an effect runs.
 export function createCanvasRenderState(
   canvas: HTMLCanvasElement,
   options: Partial<CanvasRenderOptions> = {},
 ): CanvasRenderState {
   const state = createExplicitCanvasRenderState(
     canvasScene2DRenderPreset,
-    createCanvasTextureResolvers(canvasTestSurfaceCreator),
+    createCanvasTextureResolvers(canvasTestHost),
     options,
   );
-  registerCanvasSurfaceCreator(state, canvasTestSurfaceCreator);
-  beginCanvasRenderPass(
-    state,
-    createCanvasScreenRenderTarget(createCanvasRenderSurface(canvasTestSurfaceCreator, canvas)),
-  );
+  registerCanvasHost(state, canvasTestHost);
+  const surface = createCanvasSurfaceFromNativeHandle(canvasTestHost, canvas);
+  if (surface === null) throw new Error('Failed to create test screen surface.');
+  beginCanvasRenderPass(state, createCanvasScreenRenderTarget(surface));
   return state;
 }
 
-// A state with no pass open, for tests about registration or construction rather than about drawing.
 export function createCanvasRenderStateWithoutPass(options: Partial<CanvasRenderOptions> = {}): CanvasRenderState {
   const state = createExplicitCanvasRenderState(
     canvasScene2DRenderPreset,
-    createCanvasTextureResolvers(canvasTestSurfaceCreator),
+    createCanvasTextureResolvers(canvasTestHost),
     options,
   );
-  registerCanvasSurfaceCreator(state, canvasTestSurfaceCreator);
+  registerCanvasHost(state, canvasTestHost);
   return state;
 }
 
 export function createCanvasTextureRenderTarget(width: number, height: number): CanvasTextureRenderTarget {
-  return createExplicitCanvasRenderTarget(canvasTestSurfaceCreator, width, height);
+  return createExplicitCanvasRenderTarget(canvasTestHost, width, height);
 }

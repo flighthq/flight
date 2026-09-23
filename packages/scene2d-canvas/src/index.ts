@@ -28,10 +28,10 @@ export {
   getCanvasRenderStateTextureResolvers,
 } from './canvasRenderState';
 export {
-  acquireCanvasRenderSurface,
-  createCanvasRenderSurface,
-  destroyCanvasRenderSurface,
-  registerCanvasSurfaceCreator,
+  acquireCanvasSurface,
+  destroyCanvasSurfaceOwned,
+  getCanvasHost,
+  registerCanvasHost,
 } from './canvasRenderSurface';
 export {
   destroyCanvasRenderTexture,
