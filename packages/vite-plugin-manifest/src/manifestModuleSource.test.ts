@@ -52,7 +52,7 @@ describe('generateManifestModuleSource', () => {
     ]);
   });
 
-  it('reports blendRealizations aimed at canvas, which CanvasRenderRegistries does not declare', () => {
+  it('reports blendRealizations aimed at canvas, which CanvasRenderStateOptions does not declare', () => {
     const result = generateManifestModuleSource([row('canvas', 'scene.blend-mode', 'Multiply')], '.swf');
     expect(result.problems).toEqual([
       'backend canvas has no blendRealizations field: dropped scene.blend-mode Multiply',

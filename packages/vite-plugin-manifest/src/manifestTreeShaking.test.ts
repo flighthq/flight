@@ -94,9 +94,9 @@ describe('vite build', () => {
       );
       const bundle = await bundleOf(dir);
 
-      // C1: a canvas fragment is a Partial<CanvasRenderRegistries> spread into constructor argument 1,
-      // so canvas now carries real implementations and both survive. wgpu and the parser do not,
-      // which is what makes this a retention test rather than a tautology.
+      // A canvas fragment is a Partial<CanvasRenderStateOptions> spread straight into
+      // createCanvasRenderState(options), so canvas carries real implementations and both survive.
+      // wgpu and the parser do not, which is what makes this a retention test rather than a tautology.
       expect(bundle).toContain('CANVAS_IMPLEMENTATION_MARKER');
       expect(bundle).toContain('GL_IMPLEMENTATION_MARKER');
       expect(bundle).not.toContain('WGPU_IMPLEMENTATION_MARKER');
