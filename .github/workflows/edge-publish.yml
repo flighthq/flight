@@ -204,6 +204,20 @@ jobs:
           NPM_CONFIG_PROVENANCE: 'true'
         run: npm run release -- --no-build --tag "${EDGE_TAG}"
 
+      # The npm artifact must exist before the downstream port and compiler are asked to release, so
+      # this follows the publish rather than running beside it. `flight-snapshot`, NOT
+      # `flight-release`: a receiver that has not learned about snapshots must do NOTHING rather than
+      # publish a prerelease to `latest`. The action documents that inversion and the 204 caveat.
+      - name: Dispatch downstream snapshot releases
+        uses: ./.github/actions/dispatch-downstream
+        with:
+          commit: ${{ inputs.sha }}
+          dist-tag: ${{ steps.edge.outputs.tag }}
+          event-type: flight-snapshot
+          flight-compiler-token: ${{ secrets.FLIGHT_COMPILER_DISPATCH_TOKEN }}
+          flight-rs-token: ${{ secrets.FLIGHT_RS_DISPATCH_TOKEN }}
+          version: ${{ steps.edge.outputs.version }}
+
       # Correlation in the direction that is fully supported: this run names the promote run that asked
       # for it, in `run-name` above and in the summary here. The reverse link is best-effort on the
       # promote side, because the dispatch API returns no run id.

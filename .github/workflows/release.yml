@@ -141,27 +141,17 @@ jobs:
 
       # The npm artifact must exist before downstream ports and tools are asked to release.
       # Dispatch before examples: an unrelated examples failure must not block downstream releases.
-      # GitHub can return 204 even when a repository has no workflow matching this event_type; keep
-      # both receivers matched to `flight-release` when changing this payload.
-      - name: Dispatch Flight-RS release
-        env:
-          GH_TOKEN: ${{ secrets.FLIGHT_RS_DISPATCH_TOKEN }}
-        run: |
-          # version is authoritative for the port release; commit is informational source traceability.
-          gh api --method POST repos/flighthq/flight-rs/dispatches \
-            --raw-field event_type=flight-release \
-            --raw-field "client_payload[version]=${GITHUB_REF_NAME}" \
-            --raw-field "client_payload[commit]=${GITHUB_SHA}"
-
-      - name: Dispatch Flight-Compiler release
-        env:
-          GH_TOKEN: ${{ secrets.FLIGHT_COMPILER_DISPATCH_TOKEN }}
-        run: |
-          # version is authoritative for the compiler release; commit is informational source traceability.
-          gh api --method POST repos/flighthq/flight-compiler/dispatches \
-            --raw-field event_type=flight-release \
-            --raw-field "client_payload[version]=${GITHUB_REF_NAME}" \
-            --raw-field "client_payload[commit]=${GITHUB_SHA}"
+      # The payload contract and the 204 caveat live in the action; this is the STABLE lane, so the
+      # event type stays `flight-release` and the dist-tag is `latest`.
+      - name: Dispatch downstream releases
+        uses: ./.github/actions/dispatch-downstream
+        with:
+          commit: ${{ github.sha }}
+          dist-tag: latest
+          event-type: flight-release
+          flight-compiler-token: ${{ secrets.FLIGHT_COMPILER_DISPATCH_TOKEN }}
+          flight-rs-token: ${{ secrets.FLIGHT_RS_DISPATCH_TOKEN }}
+          version: ${{ github.ref_name }}
 
       # Examples site → GitHub release asset for the site repo's /examples route. Built at this tag,
       # where the workspace source is exactly the SDK version just published.
