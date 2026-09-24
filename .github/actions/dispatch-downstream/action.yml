@@ -1,0 +1,87 @@
+name: Dispatch downstream release
+description: Ask flight-rs and flight-compiler to release at a version this repo just published to npm
+
+# ONE PLACE THAT OWNS THE PAYLOAD CONTRACT. Three workflows publish @flighthq/* to npm — release.yml
+# (stable tags), edge-publish.yml (`edge`, from main) and tests.yml (`next`, from develop) — and each
+# must ask the same two downstream repos to release the matching version. Six hand-written `gh api`
+# calls would be six chances for the payload to drift out of step with the receivers, which is the one
+# failure this contract cannot detect (see the 204 note below). So the call lives here once.
+#
+# ★ THE DISPATCH API CANNOT TELL YOU THE RECEIVER HEARD YOU. GitHub returns 204 for a well-formed
+# dispatch even when the target repository has NO workflow matching the event_type. A missing,
+# misnamed, or not-yet-merged receiver is therefore indistinguishable from a working one: the step is
+# green and nothing is released. When changing `event-type` or the payload fields, change both
+# receivers first and confirm a run actually appears in each downstream repo.
+#
+# ★ WHY SNAPSHOTS USE A DIFFERENT event_type THAN STABLE RELEASES, AND WHY THAT IS THE SAFE DEFAULT.
+# `flight-release` has always meant "publish this as the current release". A receiver written against
+# it may reasonably publish to the `latest` dist-tag without reading any tag field. If snapshots were
+# dispatched under that same event_type, every push to develop would ask the downstream repos to
+# publish a PRERELEASE to `latest` — handing a half-finished version to everyone who installs without
+# a tag, dozens of times a day. Sending snapshots as `flight-snapshot` inverts the failure: a receiver
+# that has not been taught about snapshots yet matches nothing and does nothing (the 204 above), which
+# is a missing release rather than a poisoned `latest`. Add the receiver when ready; until then this
+# side is already correct.
+
+inputs:
+  commit:
+    description: Source commit the release is built from; informational traceability only
+    required: true
+  dist-tag:
+    description: npm dist-tag the downstream artifact must publish under (latest, edge, next)
+    required: true
+  event-type:
+    description: repository_dispatch event_type — flight-release for stable tags, flight-snapshot otherwise
+    required: true
+  flight-compiler-token:
+    description: Token with dispatch access to flighthq/flight-compiler
+    required: true
+  flight-rs-token:
+    description: Token with dispatch access to flighthq/flight-rs
+    required: true
+  version:
+    description: Version the downstream repos must release; authoritative for the downstream release
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # ★ EVERY INTERPOLATED VALUE ARRIVES THROUGH `env`, never `${{ }}` inside the script. A value
+    # substituted directly into a `run:` block becomes shell SOURCE before bash sees it; through the
+    # environment it stays data, and every reference below is quoted so word-splitting cannot
+    # reassemble it. Same rule edge-publish.yml documents for its summary step.
+    - name: Dispatch downstream releases
+      shell: bash
+      env:
+        COMMIT: ${{ inputs.commit }}
+        DIST_TAG: ${{ inputs.dist-tag }}
+        EVENT_TYPE: ${{ inputs.event-type }}
+        FLIGHT_COMPILER_TOKEN: ${{ inputs.flight-compiler-token }}
+        FLIGHT_RS_TOKEN: ${{ inputs.flight-rs-token }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        # Deliberately NOT `set -e`: both repos must be attempted even when the first one fails. A
+        # bad or expired token for one receiver must not silently skip the other, which is exactly
+        # what a fail-fast sequence of two steps would do.
+        set -uo pipefail
+
+        dispatch() {
+          repo="$1"
+          token="$2"
+          if GH_TOKEN="${token}" gh api --method POST "repos/flighthq/${repo}/dispatches" \
+            --raw-field "event_type=${EVENT_TYPE}" \
+            --raw-field "client_payload[version]=${VERSION}" \
+            --raw-field "client_payload[commit]=${COMMIT}" \
+            --raw-field "client_payload[dist_tag]=${DIST_TAG}"; then
+            echo "dispatched ${EVENT_TYPE} to ${repo}: version ${VERSION} under dist-tag ${DIST_TAG}"
+            echo "  (a 204 here does NOT prove ${repo} has a workflow listening for ${EVENT_TYPE})"
+            return 0
+          fi
+          echo "::error::failed to dispatch ${EVENT_TYPE} to ${repo} for version ${VERSION}"
+          return 1
+        }
+
+        status=0
+        dispatch flight-rs "${FLIGHT_RS_TOKEN}" || status=1
+        dispatch flight-compiler "${FLIGHT_COMPILER_TOKEN}" || status=1
+        exit "${status}"
