@@ -17,7 +17,10 @@ describe('formatBuiltInRequirementCatalogSource', () => {
   it('formats a non-empty inventory as typed deterministic source', () => {
     const source = formatBuiltInRequirementCatalogSource([entry]);
     expect(source).toContain('readonly RequirementCatalogEntry[]');
-    expect(source).toContain('"implementationSymbol": "glShapeRenderer"');
+    // Repository source style, NOT JSON: a JSON-shaped file is rewritten by `npm run fix` on contact,
+    // which leaves `catalog --check` permanently stale.
+    expect(source).toContain("implementationSymbol: 'glShapeRenderer',");
+    expect(source).not.toContain('"implementationSymbol"');
   });
 });
 

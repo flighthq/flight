@@ -11,8 +11,20 @@ function run(args: readonly string[]): { errors: string[]; exitCode: number; out
 }
 
 describe('runRegistryTool', () => {
-  it('prints the deliberately empty built-in catalog as JSON', () => {
-    expect(run(['catalog', '--json'])).toEqual({ errors: [], exitCode: 0, output: ['[]\n'] });
+  it('prints the built-in catalog as JSON a consumer can parse and act on', () => {
+    const result = run(['catalog', '--json']);
+    expect(result.exitCode).toBe(0);
+    expect(result.errors).toEqual([]);
+    const rows = JSON.parse(result.output.join('')) as readonly Record<string, string>[];
+    // The catalog ships populated, so this asserts the CLI relays real rows rather than an empty list.
+    // Shape, not count: a row added to a format family must not fail an unrelated CLI test.
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      expect(row.backend).toBe('parser');
+      expect(row.facet).toBe('document.format');
+      expect(row.kind).toMatch(/^(swf|awd2)\./);
+      expect(row.implementationSymbol.length).toBeGreaterThan(0);
+    }
   });
 
   it('prints help successfully', () => {
