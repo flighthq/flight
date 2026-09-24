@@ -3,7 +3,13 @@ import { dirname, extname, isAbsolute, resolve } from 'node:path';
 
 import { logWarn } from '@flighthq/log/contract';
 import { createRequirementCodegenPlan } from '@flighthq/requirement-codegen/contract';
-import type { NonEntityCreateResult, Requirement, RequirementCatalog } from '@flighthq/types/contract';
+import type {
+  HostDecompressDeflateCapability,
+  HostDecompressLzmaCapability,
+  NonEntityCreateResult,
+  Requirement,
+  RequirementCatalog,
+} from '@flighthq/types/contract';
 
 import { DEFAULT_CONTENT_ANALYZERS } from './contentAnalyzers';
 import type { ManifestModuleEntry } from './manifestModuleSource';
@@ -20,6 +26,14 @@ export const MANIFEST_QUERY_SUFFIX = '?manifest';
 export interface ManifestPluginOptions {
   /** The catalog mapping a requirement to the implementation that satisfies it, for every backend. */
   readonly catalog: Readonly<RequirementCatalog>;
+  /**
+   * Inflates a `CWS` SWF body or a deflate-compressed AWD2 body. Without it, compressed content cannot
+   * be read at all — and an unreadable file is REPORTED rather than analyzed to an empty manifest,
+   * because a silently empty manifest is a bundle missing every handler the content needed.
+   */
+  readonly deflate?: Readonly<HostDecompressDeflateCapability> | null;
+  /** Decodes a `ZWS` SWF body or an LZMA-compressed AWD2 body. Absent behaves as for `deflate`. */
+  readonly lzma?: Readonly<HostDecompressLzmaCapability> | null;
   /**
    * Called for every unsupported format, unreadable file, analyzer failure and unresolved requirement.
    * Defaults to a warning on the `flight-manifest` channel through `@flighthq/log`. A requirement the
@@ -60,20 +74,32 @@ export function createManifestPlugin(
   options: Readonly<ManifestPluginOptions>,
 ): NonEntityCreateResult<ManifestPlugin, 'descriptor'> {
   const report = options.onDiagnostic ?? ((message: string) => logWarn(message, MANIFEST_LOG_CHANNEL));
+  const decompressors = { deflate: options.deflate ?? null, lzma: options.lzma ?? null };
   // Keyed by the absolute content path, so invalidation is per imported source: editing one document
   // rebuilds that document's module and leaves every other file's cached module untouched.
   const sourceByPath = new Map<string, string>();
 
   async function build(path: string): Promise<string> {
     const extension = extname(path).toLowerCase();
-    const analyze = DEFAULT_CONTENT_ANALYZERS[extension];
-    if (analyze === undefined) {
+    const analyzer = DEFAULT_CONTENT_ANALYZERS[extension];
+    if (analyzer === undefined) {
       report(`unsupported content format, no analyzer for ${extension}: ${path}`);
       return generateManifestModuleSource([], extension).source;
     }
     let requirements;
     try {
-      requirements = analyze(new Uint8Array(await readFile(path)));
+      const source = new Uint8Array(await readFile(path));
+      // Readability is checked SEPARATELY from analysis. An analyzer reports an empty set both for a
+      // file that requires nothing and for one it could not decode, so without this probe a compressed
+      // asset silently yields an empty manifest and a bundle missing every handler it needed.
+      if (!analyzer.isReadable(source, decompressors)) {
+        report(
+          `unreadable content, analyzed to nothing: ${path}` +
+            ` — if it is compressed, pass a matching deflate/lzma capability to createManifestPlugin`,
+        );
+        return generateManifestModuleSource([], extension).source;
+      }
+      requirements = analyzer.analyze(source, decompressors);
     } catch (error) {
       report(`analyzer failed for ${path}: ${(error as Error).message}`);
       return generateManifestModuleSource([], extension).source;

@@ -1,7 +1,9 @@
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { deflateSync } from 'node:zlib';
 
+import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { createRequirementSet } from '@flighthq/requirement/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
@@ -71,6 +73,38 @@ describe('createManifestPlugin', () => {
     expect(diagnostics.some((m) => m.includes('unsupported content format'))).toBe(true);
     expect(source).toContain('export const canvasOptions = {};');
     expect(source).toContain('export const parserOptions = {};');
+  });
+
+  // Downstream report: a CWS SWF and a deflate AWD produced `parserOptions = {}` with NO diagnostic,
+  // because nothing is "unresolved" when nothing was read. That is a bundle missing every handler the
+  // content needed — exactly what onDiagnostic exists to prevent.
+  it('REPORTS compressed content it cannot decode, instead of emitting an empty manifest silently', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'flight-vite-'));
+    await writeFile(join(dir, 'a.swf'), Buffer.from(compressedSwf()));
+    const diagnostics: string[] = [];
+    const plugin = createManifestPlugin({
+      catalog: { entries: [] },
+      onDiagnostic: (message) => diagnostics.push(message),
+    });
+    const source = (await load(plugin, dir, 'a.swf'))!;
+    expect(source).toContain('export const parserOptions = {};');
+    expect(diagnostics.some((m) => m.includes('unreadable content') && m.includes('deflate/lzma'))).toBe(true);
+  });
+
+  it('reads that same compressed file once a deflate capability is supplied', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'flight-vite-'));
+    await writeFile(join(dir, 'a.swf'), Buffer.from(compressedSwf()));
+    const diagnostics: string[] = [];
+    const plugin = createManifestPlugin({
+      catalog: {
+        entries: [entry(MANIFEST_PARSER_BACKEND, RequirementFacet.DocumentFormat, 'ShowFrame', 'parserShowFrame')],
+      },
+      deflate: sdkHostDecompressDeflate,
+      onDiagnostic: (message) => diagnostics.push(message),
+    });
+    const source = (await load(plugin, dir, 'a.swf'))!;
+    expect(source).toContain('parserShowFrame,');
+    expect(diagnostics.filter((m) => m.includes('unreadable content'))).toEqual([]);
   });
 
   it('reports an unreadable file rather than failing the build', async () => {
@@ -161,6 +195,16 @@ function createSwf(code: number): Uint8Array {
   const file = new Uint8Array(8 + body.length);
   file.set([0x46, 0x57, 0x53, 9], 0);
   new DataView(file.buffer).setUint32(4, file.length, true);
+  file.set(body, 8);
+  return file;
+}
+
+function compressedSwf(): Uint8Array {
+  const uncompressed = createSwf(TAG_SHOW_FRAME);
+  const body = new Uint8Array(deflateSync(Buffer.from(uncompressed.subarray(8))));
+  const file = new Uint8Array(8 + body.length);
+  file.set(uncompressed.subarray(0, 8), 0);
+  file[0] = 0x43;
   file.set(body, 8);
   return file;
 }

@@ -144,8 +144,14 @@ function backendFragment(exportName: string, rows: readonly ManifestModuleEntry[
 
 function parserFragment(rows: readonly ManifestModuleEntry[], field: string): string[] {
   if (rows.length === 0) return ['export const parserOptions = {};'];
-  // Catalog order is preserved rather than sorted: a handler list is ordered, and reordering it
-  // changes which handler claims a contested tag and whether AWD2's build phases see their inputs.
+  // Emitted in the order the rows arrive, which is NOT catalog order: `createRequirementSet`
+  // canonicalizes by facet then key, and the codegen plan walks that, so handlers come out sorted by
+  // kind. Downstream measurement confirmed this is safe — AWD2 build phases run in caller array order
+  // but read state populated by the Map-driven walk, which is order-independent, and PolarBear.awd and
+  // tictac.awd produce byte-identical documents under sorted versus preset order. Recorded because the
+  // ordering here is a CONSEQUENCE of canonicalization rather than a guarantee this function makes: a
+  // format whose handlers genuinely contend for the same key would need its own ordering, and this
+  // comment is the warning that it would not get one for free.
   const handlers = rows.map((row) => `    ${row.entry.implementationSymbol},`);
   return [`export const parserOptions = {`, `  ${field}: [`, ...handlers, '  ],', '};'];
 }
