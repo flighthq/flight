@@ -29,18 +29,19 @@ export const REQUIREMENT_OPTION_FIELDS: Readonly<Record<string, string>> = Objec
  * silently does nothing when spread, so routing is per backend and a row naming a field its backend
  * does not accept is REPORTED rather than emitted.
  *
- * Canvas and DOM reach their registries by different routes, and the sets reflect that rather than
- * pretending the four backends are alike. A canvas fragment is a `Partial<CanvasRenderRegistries>`
- * spread into constructor argument 1; a DOM fragment is a `Partial<DomRenderOptions>` whose registry
- * fields the constructor seeds into the runtime. Neither carries `blendRealizations`, and DOM carries
- * no material or effect tables, so a row naming one is reported rather than emitted into a field that
- * does not exist.
+ * All four backends now take ONE options object, and every set below is derived from the options type
+ * that backend actually declares rather than from a guess about which fields it ought to have.
+ * `CanvasRenderStateOptions` carries the registries and texture resolvers directly, so a canvas
+ * fragment spreads into `createCanvasRenderState(options)` like every other backend's. DOM's registry
+ * fields are seeded into the runtime at construction. Neither canvas nor DOM declares
+ * `blendRealizations`, and DOM declares no material or effect tables, so a row naming one is reported
+ * rather than emitted into a field that does not exist.
  */
 export const BACKEND_OPTION_FIELDS: Readonly<Record<string, ReadonlySet<string>>> = Object.freeze({
-  // C1: canvas fragments are Partial<CanvasRenderRegistries>, spreadable into createCanvasRenderState
-  // ARGUMENT 1 rather than its options parameter, so the fields are the registries' kind-keyed ones.
+  // Derived from the landed CanvasRenderStateOptions: it extends RenderStateOptions and
+  // CanvasRenderOptions and adds effects and materialRenderers, so these are its kind-keyed fields.
   canvas: new Set(['canvasShapeCommands', 'effectPaddingResolvers', 'effects', 'materialRenderers', 'nodeRenderers']),
-  // D3: DomRenderOptions now declares registry fields, seeded into the runtime at construction.
+  // D3: DomRenderOptions declares registry fields, seeded into the runtime at construction.
   dom: new Set(['canvasShapeCommands', 'effectPaddingResolvers', 'nodeRenderers', 'textureResolvers']),
   gl: new Set([
     'blendRealizations',

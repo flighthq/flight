@@ -2,7 +2,7 @@ import { mergeDomRenderOptions } from '@flighthq/scene2d-dom/contract';
 import { mergeSwfParseOptions } from '@flighthq/swf/contract';
 import type {
   Awd2ParseOptions,
-  CanvasRenderRegistries,
+  CanvasRenderStateOptions,
   DomRenderOptions,
   GlRenderStateOptions,
   Kind,
@@ -59,21 +59,23 @@ describe('typed consumer fixtures', () => {
     expect(options.blocks).toEqual([]);
   });
 
-  // C1 — a canvas fragment is a Partial<CanvasRenderRegistries>, spread into createCanvasRenderState
-  // ARGUMENT 1 rather than its options parameter. No canvas API changed to make this true.
-  it('spreads canvasOptions into CanvasRenderRegistries, constructor argument 1', () => {
+  // Canvas takes ONE options object now, like every other backend: registries and texture resolvers
+  // live inside CanvasRenderStateOptions, so the fragment spreads straight into
+  // createCanvasRenderState(options) with no separate registries argument.
+  it('spreads canvasOptions directly into CanvasRenderStateOptions', () => {
     const canvasOptions = {
       nodeRenderers: new Map<Kind, NodeRenderer>([['ShowFrame', RENDERER]]),
       effects: new Map(),
     };
-    const fits: Spreads<typeof canvasOptions, CanvasRenderRegistries> = true;
-    const registries: Partial<CanvasRenderRegistries> = { ...canvasOptions };
+    const fits: Spreads<typeof canvasOptions, CanvasRenderStateOptions> = true;
+    const options: CanvasRenderStateOptions = { ...canvasOptions, pixelRatio: 2 };
     expect(fits).toBe(true);
-    expect(registries.nodeRenderers!.get('ShowFrame')).toBe(RENDERER);
+    expect(options.nodeRenderers!.get('ShowFrame')).toBe(RENDERER);
+    expect(options.pixelRatio).toBe(2);
   });
 
-  it('rejects a canvas fragment naming a field CanvasRenderRegistries does not have', () => {
-    const rejected: Spreads<{ blendRealizations: Map<Kind, unknown> }, CanvasRenderRegistries> extends never
+  it('rejects a canvas fragment naming a field CanvasRenderStateOptions does not have', () => {
+    const rejected: Spreads<{ blendRealizations: Map<Kind, unknown> }, CanvasRenderStateOptions> extends never
       ? true
       : false = true;
     expect(rejected).toBe(true);
