@@ -11,21 +11,38 @@ import { createManifestPlugin } from './manifestPlugin';
 // or naming tags no document contains. So this drives the SHIPPED catalog through the SHIPPED plugin
 // against a SWF built here, and asserts on what a consumer would actually import.
 describe('BUILT_IN_REQUIREMENT_CATALOG_ENTRIES through the plugin', () => {
-  it('resolves a real document to the exact families its tags need, and nothing else', async () => {
+  it('resolves a real document to the exact handlers its tags need, and nothing else', async () => {
     const { diagnostics, source } = await load(
       swfFile(tag(TAG_DEFINE_SHAPE), tag(TAG_DEFINE_SPRITE), tag(TAG_DEFINE_TEXT)),
     );
 
     expect(source).toContain(
-      "import { swfShapeTagFamily, swfSpriteTagFamily, swfTextTagFamily } from '@flighthq/swf';",
+      "import { swfDefineShapeHandler, swfSpriteHandler, swfStaticTextHandler } from '@flighthq/swf';",
     );
     expect(source).toContain('export const parserOptions = {\n  tags: [');
-    // The families this content does NOT need must be absent, or the catalog has bought nothing over
-    // registering everything: that absence is the entire tree-shaking value.
-    for (const unused of ['swfSoundTagFamily', 'swfVideoTagFamily', 'swfFontTagFamily', 'swfScriptTagFamily']) {
+    expect(diagnostics).toEqual([]);
+  });
+
+  // ★ THE ASSERTION THAT MAKES PRECISION MEAN SOMETHING. Resolving to a FAMILY would satisfy the test
+  // above just as well, while landing every handler that family spans. These two are siblings of the
+  // handlers this document genuinely needs — `swfDefineMorphShapeHandler` shares swfShapeTagFamily with
+  // the shape handler, and `swfEditTextHandler` shares swfTextTagFamily with the static-text handler,
+  // dragging the text-input machinery behind it. A document with no morph shape and no edit text must
+  // land neither.
+  it('lands neither sibling handler from the families its handlers belong to', async () => {
+    const { source } = await load(swfFile(tag(TAG_DEFINE_SHAPE), tag(TAG_DEFINE_TEXT)));
+    for (const sibling of ['swfDefineMorphShapeHandler', 'swfEditTextHandler']) {
+      expect(source, `${sibling} rode in on its family`).not.toContain(sibling);
+    }
+    // And no family array is ever named, which is how a sibling would get in.
+    expect(source).not.toContain('TagFamily');
+  });
+
+  it('omits every handler the content does not use at all', async () => {
+    const { source } = await load(swfFile(tag(TAG_DEFINE_SHAPE)));
+    for (const unused of ['swfSoundHandler', 'swfVideoHandler', 'swfFontHandler', 'swfScriptHandler']) {
       expect(source, `${unused} leaked into a document that does not use it`).not.toContain(unused);
     }
-    expect(diagnostics).toEqual([]);
   });
 
   it('reports nothing for a document whose tags the built-in catalog covers', async () => {

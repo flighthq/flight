@@ -1,12 +1,13 @@
 import * as scene3dFormats from '@flighthq/scene3d-formats';
 import * as swf from '@flighthq/swf';
+import { getSwfTagName } from '@flighthq/swf/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
 import {
-  AWD2_BLOCK_FAMILIES,
+  AWD2_BLOCK_HANDLERS,
   buildRequirementCatalogRows,
   CATALOG_PARSER_BACKEND,
-  SWF_TAG_FAMILIES,
+  SWF_TAG_HANDLERS,
 } from './catalog-rows';
 
 const MODULES: Readonly<Record<string, Record<string, unknown>>> = {
@@ -73,29 +74,56 @@ describe('buildRequirementCatalogRows', () => {
   // so they grep and so the catalog states what ships. That hand-written list is exactly the thing that
   // can silently fall behind, and a test that re-read the same list would agree with itself. So the
   // expectation comes from the format packages' own exported surface instead.
-  it('lists every tag family the swf package exports, so a new family cannot be left out', () => {
+  it('lists every tag handler the swf package exports, so a new handler cannot be left out', () => {
     const exported = Object.keys(swf)
-      .filter((name) => name.endsWith('TagFamily'))
+      .filter((name) => isTagHandler((swf as unknown as Record<string, unknown>)[name]))
       .sort();
-    expect([...SWF_TAG_FAMILIES.keys()].sort()).toEqual(exported);
+    expect([...SWF_TAG_HANDLERS.keys()].sort()).toEqual(exported);
   });
 
-  it('lists every block family the scene3d-formats package exports', () => {
+  it('lists every block handler the scene3d-formats package exports', () => {
     const exported = Object.keys(scene3dFormats)
-      .filter((name) => name.startsWith('awd2') && name.endsWith('Family'))
+      .filter((name) => isBlockHandler((scene3dFormats as unknown as Record<string, unknown>)[name]))
       .sort();
-    expect([...AWD2_BLOCK_FAMILIES.keys()].sort()).toEqual(exported);
+    expect([...AWD2_BLOCK_HANDLERS.keys()].sort()).toEqual(exported);
   });
 
-  it('emits one row per tag code each family declares, covering every code', () => {
+  it('emits one row per code each handler declares, covering every code', () => {
     const rows = buildRequirementCatalogRows();
-    for (const [symbol, family] of SWF_TAG_FAMILIES) {
-      const declared = family.flatMap((handler) => handler.tags).length;
-      expect(rows.filter((row) => row.implementationSymbol === symbol).length, symbol).toBe(declared);
+    for (const [symbol, handler] of SWF_TAG_HANDLERS) {
+      expect(rows.filter((row) => row.implementationSymbol === symbol).length, symbol).toBe(handler.tags.length);
     }
-    for (const [symbol, family] of AWD2_BLOCK_FAMILIES) {
-      const declared = family.flatMap((handler) => handler.blockTypes).length;
-      expect(rows.filter((row) => row.implementationSymbol === symbol).length, symbol).toBe(declared);
+    for (const [symbol, handler] of AWD2_BLOCK_HANDLERS) {
+      expect(rows.filter((row) => row.implementationSymbol === symbol).length, symbol).toBe(handler.blockTypes.length);
+    }
+  });
+
+  // ★ THE PRECISION THE ROWS EXIST FOR. A family is an array spanning several handlers, so a row that
+  // named one would resolve `swf.DefineShape` to the morph-shape handler as well. Requiring the named
+  // symbol to be a single handler is what keeps resolution from quietly re-inflating the bundle.
+  it('names a single handler, never a family array', () => {
+    for (const row of buildRequirementCatalogRows()) {
+      const value = MODULES[row.implementationImport][row.implementationSymbol];
+      expect(Array.isArray(value), `${row.implementationSymbol} is a family, not one handler`).toBe(false);
+      expect(isTagHandler(value) || isBlockHandler(value), `${row.implementationSymbol}`).toBe(true);
+    }
+  });
+
+  it('routes each tag to the handler that actually claims it', () => {
+    const rows = buildRequirementCatalogRows();
+    for (const [symbol, handler] of SWF_TAG_HANDLERS) {
+      const claimed = new Set(handler.tags.map((code) => `swf.${getSwfTagName(code)}`));
+      for (const row of rows.filter((candidate) => candidate.implementationSymbol === symbol)) {
+        expect(claimed.has(row.kind), `${symbol} does not claim ${row.kind}`).toBe(true);
+      }
     }
   });
 });
+
+function isTagHandler(value: unknown): boolean {
+  return typeof value === 'object' && value !== null && !Array.isArray(value) && 'tags' in value;
+}
+
+function isBlockHandler(value: unknown): boolean {
+  return typeof value === 'object' && value !== null && !Array.isArray(value) && 'blockTypes' in value;
+}
