@@ -30,7 +30,7 @@ describe('runManifestTool', () => {
     expect(await runManifestTool(['scan', '--content', dir, '--out', out], io.io)).toBe(0);
     const written = JSON.parse(await readFile(out, 'utf8'));
     expect(written.covers).toEqual(['document.format']);
-    expect(written.requirements).toEqual([{ facet: 'document.format', key: 'ShowFrame' }]);
+    expect(written.requirements).toEqual([{ facet: 'document.format', key: 'DefineShape' }]);
   });
 
   it('reports a requirement the baseline does not cover and fails', async () => {
@@ -110,10 +110,12 @@ function set(requirements: ReadonlyArray<{ facet: string; key: string }>) {
   return { covers: ['document.format'], requirements };
 }
 
-// A minimal SWF carrying exactly one ShowFrame tag, built here so the test needs no fixture file.
+// A minimal SWF carrying exactly one DefineShape tag, built here so the test needs no fixture file.
+// It must be a CONTENT tag: `parseSwfRequirements` emits nothing for structural or metadata tags,
+// so a ShowFrame-only file scans to an empty set and would make this assertion vacuous.
 function createSwf(): Uint8Array {
   const rectangle = new Uint8Array([0x00]);
-  const body = new Uint8Array([...rectangle, 0x00, 0x18, 0x01, 0x00, 0x40, 0x00, 0x00, 0x00]);
+  const body = new Uint8Array([...rectangle, 0x00, 0x18, 0x01, 0x00, 0x80, 0x00, 0x00, 0x00]);
   const file = new Uint8Array(8 + body.length);
   file.set([0x46, 0x57, 0x53, 9], 0);
   new DataView(file.buffer).setUint32(4, file.length, true);

@@ -22,11 +22,11 @@ describe('compressed content readability', () => {
       deflate: sdkHostDecompressDeflate,
       lzma: null,
     });
-    expect(set.requirements.map((requirement) => requirement.key)).toEqual(['ShowFrame']);
+    expect(set.requirements.map((requirement) => requirement.key)).toEqual(['DefineShape']);
   });
 
   it('reports an uncompressed file as readable, so the probe does not reject good content', () => {
-    expect(DEFAULT_CONTENT_ANALYZERS['.swf'].isReadable(createSwfWithShowFrame(), NO_DECOMPRESSORS)).toBe(true);
+    expect(DEFAULT_CONTENT_ANALYZERS['.swf'].isReadable(createSwfWithDefineShape(), NO_DECOMPRESSORS)).toBe(true);
     expect(DEFAULT_CONTENT_ANALYZERS['.awd'].isReadable(createAwd2WithCamera(), NO_DECOMPRESSORS)).toBe(true);
   });
 
@@ -36,8 +36,8 @@ describe('compressed content readability', () => {
   });
 });
 
-function createSwfWithShowFrame(): Uint8Array {
-  const body = new Uint8Array([0x00, 0x00, 0x18, 0x01, 0x00, 0x40, 0x00, 0x00, 0x00]);
+function createSwfWithDefineShape(): Uint8Array {
+  const body = new Uint8Array([0x00, 0x00, 0x18, 0x01, 0x00, 0x80, 0x00, 0x00, 0x00]);
   const file = new Uint8Array(8 + body.length);
   file.set([0x46, 0x57, 0x53, 9], 0);
   new DataView(file.buffer).setUint32(4, file.length, true);
@@ -70,9 +70,9 @@ describe('DEFAULT_CONTENT_ANALYZERS', () => {
   });
 
   it('delegates to the SWF analyzer rather than reimplementing the walk', () => {
-    const set = DEFAULT_CONTENT_ANALYZERS['.swf'].analyze(createSwfWithShowFrame(), NO_DECOMPRESSORS);
+    const set = DEFAULT_CONTENT_ANALYZERS['.swf'].analyze(createSwfWithDefineShape(), NO_DECOMPRESSORS);
     expect(set.covers).toEqual([RequirementFacet.DocumentFormat]);
-    expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: 'ShowFrame' }]);
+    expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: 'DefineShape' }]);
   });
 
   it('accepts either AWD suffix, resolving both to the same analyzer', () => {
@@ -96,7 +96,7 @@ describe('DEFAULT_CONTENT_ANALYZERS', () => {
 
 // A real zlib-compressed SWF: 'CWS', version, total uncompressed length, then the deflated body.
 function compressedSwf(): Uint8Array {
-  const uncompressed = createSwfWithShowFrame();
+  const uncompressed = createSwfWithDefineShape();
   const body = new Uint8Array(deflateSync(Buffer.from(uncompressed.subarray(8))));
   const file = new Uint8Array(8 + body.length);
   file.set(uncompressed.subarray(0, 8), 0);

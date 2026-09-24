@@ -28,11 +28,13 @@ describe('createManifestPlugin', () => {
   it('serves fragments for the one file imported, resolved across every backend', async () => {
     const { dir, plugin } = await fixture();
     const source = (await load(plugin, dir, 'a.swf'))!;
-    expect(source).toContain("import { glShowFrame } from '@acme/gl';");
-    expect(source).toContain("import { wgpuShowFrame } from '@acme/wgpu';");
-    expect(source).toContain("export const glOptions = {\n  nodeRenderers: new Map([\n    ['ShowFrame', glShowFrame],");
+    expect(source).toContain("import { glDefineShape } from '@acme/gl';");
+    expect(source).toContain("import { wgpuDefineShape } from '@acme/wgpu';");
     expect(source).toContain(
-      "export const wgpuOptions = {\n  nodeRenderers: new Map([\n    ['ShowFrame', wgpuShowFrame],",
+      "export const glOptions = {\n  nodeRenderers: new Map([\n    ['DefineShape', glDefineShape],",
+    );
+    expect(source).toContain(
+      "export const wgpuOptions = {\n  nodeRenderers: new Map([\n    ['DefineShape', wgpuDefineShape],",
     );
     // canvas and dom carry no kind-keyed options fields on base, so their fragments are empty and
     // still exported — an application can spread every fragment unconditionally.
@@ -46,17 +48,17 @@ describe('createManifestPlugin', () => {
     const a = await load(plugin, dir, 'a.swf');
     const b = await load(plugin, dir, 'b.swf');
     expect(a).not.toBe(b);
-    expect(a).toContain("['ShowFrame', wgpuShowFrame]");
+    expect(a).toContain("['DefineShape', wgpuDefineShape]");
     expect(b).toContain('export const wgpuOptions = {};');
   });
 
   it('invalidates per imported source, leaving other files cached', async () => {
     const { dir, plugin } = await fixture();
-    await writeFile(join(dir, 'b.swf'), Buffer.from(createSwf(TAG_SHOW_FRAME)));
+    await writeFile(join(dir, 'b.swf'), Buffer.from(createSwf(TAG_DEFINE_SHAPE)));
     const beforeA = await load(plugin, dir, 'a.swf');
     const beforeB = await load(plugin, dir, 'b.swf');
 
-    // Rewrite a.swf to content with no ShowFrame, then invalidate ONLY a.swf.
+    // Rewrite a.swf to content with no DefineShape, then invalidate ONLY a.swf.
     await writeFile(join(dir, 'a.swf'), Buffer.from(createSwf(TAG_SET_BACKGROUND_COLOR)));
     await writeFile(join(dir, 'b.swf'), Buffer.from(createSwf(TAG_SET_BACKGROUND_COLOR)));
     plugin.handleHotUpdate({ file: join(dir, 'a.swf') });
@@ -97,13 +99,13 @@ describe('createManifestPlugin', () => {
     const diagnostics: string[] = [];
     const plugin = createManifestPlugin({
       catalog: {
-        entries: [entry(MANIFEST_PARSER_BACKEND, RequirementFacet.DocumentFormat, 'ShowFrame', 'parserShowFrame')],
+        entries: [entry(MANIFEST_PARSER_BACKEND, RequirementFacet.DocumentFormat, 'DefineShape', 'parserDefineShape')],
       },
       deflate: sdkHostDecompressDeflate,
       onDiagnostic: (message) => diagnostics.push(message),
     });
     const source = (await load(plugin, dir, 'a.swf'))!;
-    expect(source).toContain('parserShowFrame,');
+    expect(source).toContain('parserDefineShape,');
     expect(diagnostics.filter((m) => m.includes('unreadable content'))).toEqual([]);
   });
 
@@ -115,14 +117,14 @@ describe('createManifestPlugin', () => {
 
   it('reports a requirement no catalog entry satisfies', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'flight-vite-'));
-    await writeFile(join(dir, 'a.swf'), Buffer.from(createSwf(TAG_SHOW_FRAME)));
+    await writeFile(join(dir, 'a.swf'), Buffer.from(createSwf(TAG_DEFINE_SHAPE)));
     const diagnostics: string[] = [];
     const plugin = createManifestPlugin({
       catalog: { entries: [] },
       onDiagnostic: (message) => diagnostics.push(message),
     });
     await load(plugin, dir, 'a.swf');
-    expect(diagnostics.some((m) => m.includes('no catalog entry for document.format ShowFrame'))).toBe(true);
+    expect(diagnostics.some((m) => m.includes('no catalog entry for document.format DefineShape'))).toBe(true);
   });
 
   it('drives resolution through an EXTERNAL catalog, since the built-in catalog ships empty', async () => {
@@ -130,28 +132,28 @@ describe('createManifestPlugin', () => {
     // BUILT_IN_REQUIREMENT_CATALOG_ENTRIES is deliberately empty on base, so every row that reaches a
     // fragment came from the catalog the caller passed in. This pins that the external path is the
     // real one rather than incidental.
-    expect(await load(plugin, dir, 'a.swf')).toContain("['ShowFrame', glShowFrame]");
+    expect(await load(plugin, dir, 'a.swf')).toContain("['DefineShape', glDefineShape]");
 
     const empty = createManifestPlugin({ catalog: { entries: [] }, onDiagnostic: () => {} });
     const source = (await load(empty, dir, 'a.swf'))!;
     expect(source).toContain('export const glOptions = {};');
-    expect(source).not.toContain('glShowFrame');
+    expect(source).not.toContain('glDefineShape');
   });
 
   it('reports every requirement no backend in the external catalog can satisfy', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'flight-vite-'));
-    await writeFile(join(dir, 'a.swf'), Buffer.from(createSwf(TAG_SHOW_FRAME)));
+    await writeFile(join(dir, 'a.swf'), Buffer.from(createSwf(TAG_DEFINE_SHAPE)));
     const diagnostics: string[] = [];
     const plugin = createManifestPlugin({
       catalog: { entries: [] },
       onDiagnostic: (message) => diagnostics.push(message),
     });
     await load(plugin, dir, 'a.swf');
-    expect(diagnostics.some((m) => m.includes('no catalog entry for document.format ShowFrame'))).toBe(true);
+    expect(diagnostics.some((m) => m.includes('no catalog entry for document.format DefineShape'))).toBe(true);
   });
 });
 
-const TAG_SHOW_FRAME = 1;
+const TAG_DEFINE_SHAPE = 2;
 const TAG_SET_BACKGROUND_COLOR = 9;
 
 function entry(backend: string, facet: string, kind: string, symbol: string) {
@@ -168,14 +170,14 @@ function entry(backend: string, facet: string, kind: string, symbol: string) {
 
 async function fixture() {
   const dir = await mkdtemp(join(tmpdir(), 'flight-vite-'));
-  await writeFile(join(dir, 'a.swf'), Buffer.from(createSwf(TAG_SHOW_FRAME)));
+  await writeFile(join(dir, 'a.swf'), Buffer.from(createSwf(TAG_DEFINE_SHAPE)));
   const diagnostics: string[] = [];
   const plugin = createManifestPlugin({
     catalog: {
       entries: [
-        entry('wgpu', RequirementFacet.DocumentFormat, 'ShowFrame', 'wgpuShowFrame'),
-        entry('gl', RequirementFacet.DocumentFormat, 'ShowFrame', 'glShowFrame'),
-        entry(MANIFEST_PARSER_BACKEND, RequirementFacet.DocumentFormat, 'ShowFrame', 'parserShowFrame'),
+        entry('wgpu', RequirementFacet.DocumentFormat, 'DefineShape', 'wgpuDefineShape'),
+        entry('gl', RequirementFacet.DocumentFormat, 'DefineShape', 'glDefineShape'),
+        entry(MANIFEST_PARSER_BACKEND, RequirementFacet.DocumentFormat, 'DefineShape', 'parserDefineShape'),
       ],
     },
     onDiagnostic: (message) => diagnostics.push(message),
@@ -200,7 +202,7 @@ function createSwf(code: number): Uint8Array {
 }
 
 function compressedSwf(): Uint8Array {
-  const uncompressed = createSwf(TAG_SHOW_FRAME);
+  const uncompressed = createSwf(TAG_DEFINE_SHAPE);
   const body = new Uint8Array(deflateSync(Buffer.from(uncompressed.subarray(8))));
   const file = new Uint8Array(8 + body.length);
   file.set(uncompressed.subarray(0, 8), 0);
