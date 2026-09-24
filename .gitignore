@@ -153,6 +153,7 @@ tools/site/
 # Transient capture output (screenshots, logs, status.json). Committed baselines instead live in
 # tests/<subject>/baselines/<name>.json — small tracked JSON keyed by column id, not PNGs.
 .artifacts/
+artifacts/
 
 # Generic build-output dir guard. Kept so a stray `target/` from any tool never gets tracked or
 # swept into a working-tree sync.

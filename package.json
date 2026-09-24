@@ -69,6 +69,7 @@
     "check": "tsx ./scripts/check.ts",
     "check:append-only-ledgers": "tsx ./scripts/check-append-only-ledgers.ts",
     "check:capability-arrival": "tsx ./scripts/capability-arrival.ts",
+    "check:compiler:cpp": "flight-compile check . --target cpp --format json --report artifacts/flight-compiler-cpp.json",
     "check:data-cast-colour": "tsx ./scripts/check-data-cast-colour.ts",
     "check:degree-constants": "tsx ./scripts/check-degree-constants.ts",
     "check:double-casts": "tsx ./scripts/check-double-casts.ts",
@@ -252,6 +253,7 @@
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
+    "@flighthq/tool-compiler": "^0.5.1-next.1687.b63c819",
     "@playwright/test": "^1.50.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
