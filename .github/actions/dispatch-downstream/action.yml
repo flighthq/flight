@@ -39,6 +39,10 @@ inputs:
   flight-rs-token:
     description: Token with dispatch access to flighthq/flight-rs
     required: true
+  probe-package:
+    description: Package read back to confirm the dist-tag really points at `version` before dispatching
+    required: false
+    default: '@flighthq/sdk'
   version:
     description: Version the downstream repos must release; authoritative for the downstream release
     required: true
@@ -46,11 +50,46 @@ inputs:
 runs:
   using: composite
   steps:
+    # ★ CONFIRM THE PUBLISH ACTUALLY LANDED ON THIS TAG BEFORE ASKING ANYONE TO MATCH IT.
+    # `publish-packages.ts` already reads every package back and exits non-zero if any is not live, so
+    # a failed or partial publish fails the job and never reaches this action. ONE PATH ESCAPES THAT:
+    # a SUPERSEDED graph. When the dist-tag has already moved to a higher snapshot version (a later
+    # run finished first), the publish deliberately uploads nothing, verifies nothing — `expectations`
+    # is empty, so there is nothing to verify — and exits 0. Dispatching there would name a version
+    # that was never published, and because a receiver MOVES a dist-tag, it would drag the downstream
+    # channel BACKWARD to an older version than the SDK's. That is precisely the incoherence this
+    # whole dispatch exists to prevent.
+    #
+    # So the tag is read back and must resolve to exactly the version being dispatched. A mismatch is
+    # a normal no-op, not a failure: the run that owns the newer version dispatches it. A tag that
+    # cannot be read at all IS a failure, because the publish just claimed it verified this graph.
+    - name: Confirm the dist-tag resolves to this version
+      id: confirm
+      shell: bash
+      env:
+        DIST_TAG: ${{ inputs.dist-tag }}
+        PROBE_PACKAGE: ${{ inputs.probe-package }}
+        VERSION: ${{ inputs.version }}
+      run: |
+        set -uo pipefail
+        if ! live=$(npm view "${PROBE_PACKAGE}@${DIST_TAG}" version 2>/dev/null) || [ -z "${live}" ]; then
+          echo "::error::cannot read ${PROBE_PACKAGE}@${DIST_TAG} from the registry; refusing to dispatch ${VERSION}"
+          exit 1
+        fi
+        if [ "${live}" != "${VERSION}" ]; then
+          echo "::notice::${PROBE_PACKAGE}@${DIST_TAG} is ${live}, not ${VERSION} — this graph was superseded; skipping dispatch"
+          echo "proceed=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        echo "${PROBE_PACKAGE}@${DIST_TAG} is ${VERSION}; dispatching"
+        echo "proceed=true" >> "$GITHUB_OUTPUT"
+
     # ★ EVERY INTERPOLATED VALUE ARRIVES THROUGH `env`, never `${{ }}` inside the script. A value
     # substituted directly into a `run:` block becomes shell SOURCE before bash sees it; through the
     # environment it stays data, and every reference below is quoted so word-splitting cannot
     # reassemble it. Same rule edge-publish.yml documents for its summary step.
     - name: Dispatch downstream releases
+      if: steps.confirm.outputs.proceed == 'true'
       shell: bash
       env:
         COMMIT: ${{ inputs.commit }}
