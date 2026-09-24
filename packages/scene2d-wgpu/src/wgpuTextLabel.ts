@@ -87,7 +87,7 @@ export function drawWgpuTextLabel(state: WgpuRenderState, renderProxy: RenderPro
   if (state.canvasHost === null || state.imageHost === null) return;
   const textData = getWgpuRendererData<WgpuTextLabelData>(renderProxy.rendererData);
   if (textData === null) return;
-  let surface = _ensureWgpuTextLabelSurface(state, textData, 1, 1);
+  let surface = textData.surface ?? _ensureWgpuTextLabelSurface(state, textData, 1, 1);
   if (surface === null) return;
   const maxTexDim = state.device.limits.maxTextureDimension2D;
   const pixelRatio = state.pixelRatio;

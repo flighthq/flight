@@ -92,7 +92,7 @@ export function drawWgpuRichTextWithOverlay(
   if (content.text.length === 0 && !data.background && !data.border) return;
   const richData = getWgpuRendererData<WgpuRichTextData>(renderProxy.rendererData);
   if (richData === null || state.canvasHost === null || state.imageHost === null) return;
-  let surface = _ensureWgpuRichTextSurface(state, richData, 1, 1);
+  let surface = richData.surface ?? _ensureWgpuRichTextSurface(state, richData, 1, 1);
   if (surface === null) return;
 
   const result = layoutRichText(source, richTextRuntime, content.text, content.formatRanges, state, surface.context);

@@ -91,7 +91,7 @@ export function drawGlRichTextWithOverlay(
   if (content.text.length === 0 && !data.background && !data.border) return;
   if (renderProxy.rendererData === null || state.canvasHost === null || state.imageHost === null) return;
   const richTextData = renderProxy.rendererData as GlRichTextData;
-  let surface = _ensureGlRichTextSurface(state, richTextData, 1, 1);
+  let surface = richTextData.surface ?? _ensureGlRichTextSurface(state, richTextData, 1, 1);
   if (surface === null) return;
 
   const result = layoutRichText(source, richTextRuntime, content.text, content.formatRanges, surface.context);
