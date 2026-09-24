@@ -8,15 +8,15 @@ describe('parseSwfRequirements', () => {
     const set = parseSwfRequirements(
       createSwf([
         createTag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([0xff, 0xff, 0xff])),
-        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_DEFINE_SHAPE, createMinimalShapeBody()),
         createTag(TAG_END),
       ]),
       DECOMPRESS_DEFLATE,
       DECOMPRESS_LZMA,
     );
     expect(set.requirements).toEqual([
+      { facet: RequirementFacet.DocumentFormat, key: 'DefineShape' },
       { facet: RequirementFacet.DocumentFormat, key: 'SetBackgroundColor' },
-      { facet: RequirementFacet.DocumentFormat, key: 'ShowFrame' },
     ]);
   });
 
@@ -45,15 +45,73 @@ describe('parseSwfRequirements', () => {
   });
 
   it('reports an unregistered tag exactly like a registered one, carrying no registrar identity', () => {
+    // Both tags below carry scene content, so both are requirements. Whether a handler happens to be
+    // registered for one is not visible here — that is the consumer's business, not the producer's.
     const set = parseSwfRequirements(
-      createSwf([createTag(TAG_PROTECT, new Uint8Array([0])), createTag(TAG_SHOW_FRAME), createTag(TAG_END)]),
+      createSwf([
+        createTag(TAG_DEFINE_SHAPE, createMinimalShapeBody()),
+        createTag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([0xff, 0xff, 0xff])),
+        createTag(TAG_END),
+      ]),
       DECOMPRESS_DEFLATE,
       DECOMPRESS_LZMA,
     );
     expect(set.requirements).toEqual([
-      { facet: RequirementFacet.DocumentFormat, key: 'Protect' },
-      { facet: RequirementFacet.DocumentFormat, key: 'ShowFrame' },
+      { facet: RequirementFacet.DocumentFormat, key: 'DefineShape' },
+      { facet: RequirementFacet.DocumentFormat, key: 'SetBackgroundColor' },
     ]);
+  });
+
+  // Downstream report: a complete, correct build warned six times per SWF for kinds no catalog row
+  // could ever answer. Five were metadata tags the timeline walk already skips; the sixth was
+  // ShowFrame, which the walk consumes structurally. A permanently unresolvable warning on every build
+  // teaches a reader to ignore the channel that reports a genuinely missing handler.
+  it.each([
+    ['FileAttributes', 69],
+    ['Metadata', 77],
+    ['CSMTextSettings', 74],
+    ['DefineFontAlignZones', 73],
+    ['DefineFontName', 88],
+    ['Protect', TAG_PROTECT],
+  ])('emits no requirement for %s, which carries no scene content', (_name, code) => {
+    const set = parseSwfRequirements(
+      createSwf([createTag(code, new Uint8Array([1])), createTag(TAG_END)]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+    );
+    expect(set.requirements).toEqual([]);
+  });
+
+  it('emits no requirement for ShowFrame, which the walk consumes structurally', () => {
+    const set = parseSwfRequirements(
+      createSwf([createTag(TAG_SHOW_FRAME), createTag(TAG_END)]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+    );
+    expect(set.requirements).toEqual([]);
+  });
+
+  it('STILL reports an unrecognized tag — that gap is real and is what the channel is for', () => {
+    const set = parseSwfRequirements(
+      createSwf([createTag(TAG_UNKNOWN, new Uint8Array([1])), createTag(TAG_END)]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+    );
+    expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: `Unknown(${TAG_UNKNOWN})` }]);
+  });
+
+  it('still reports content tags beside excluded ones, so exclusion is not over-broad', () => {
+    const set = parseSwfRequirements(
+      createSwf([
+        createTag(69, new Uint8Array([1])),
+        createTag(TAG_SHOW_FRAME),
+        createTag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([0xff, 0xff, 0xff])),
+        createTag(TAG_END),
+      ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+    );
+    expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: 'SetBackgroundColor' }]);
   });
 
   it('returns an empty set that still declares coverage when the source is unreadable', () => {

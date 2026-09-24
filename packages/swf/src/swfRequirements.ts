@@ -8,6 +8,7 @@ import type {
 import { RequirementFacet } from '@flighthq/types/contract';
 
 import { collectSwfTagCounts, getSwfTagName } from './swfTagCensus';
+import { SWF_NON_CONTENT_TAGS } from './swfTagVocabulary';
 
 /**
  * Build-time inventory of what one SWF file asks a build to support: one requirement per distinct tag
@@ -29,6 +30,14 @@ import { collectSwfTagCounts, getSwfTagName } from './swfTagCensus';
  *
  * Returns an empty set that still declares its coverage when the source is not a readable SWF, so a
  * caller can tell "inspected, found nothing" from "never looked".
+ *
+ * TAGS THAT NOTHING CAN SATISFY ARE NOT REQUIREMENTS. A requirement names something a build can supply
+ * by registering an implementation, so two groups are excluded: tags carrying no scene content
+ * (`SWF_NON_CONTENT_TAGS`, the same list the timeline walk skips) and tags the document walk consumes
+ * structurally, which no registrable handler claims. Emitting them would put a permanently unresolvable
+ * entry in every manifest — a warning on every build that no catalog row could ever answer, which
+ * teaches a reader to ignore the channel that reports a genuinely missing handler. An UNRECOGNIZED tag
+ * is still reported: that one is real, and is exactly what the channel is for.
  */
 export function parseSwfRequirements(
   source: Uint8Array,
@@ -41,8 +50,13 @@ export function parseSwfRequirements(
     // Order is not chosen here: RequirementSet canonicalizes by facet then key, so a set is equal to
     // another with the same content regardless of the order a walk happened to observe it in.
     for (const code of counts.keys()) {
+      if (SWF_NON_CONTENT_TAGS.has(code) || SWF_STRUCTURAL_TAGS.has(code)) continue;
       requirements.push({ facet: RequirementFacet.DocumentFormat, key: getSwfTagName(code) });
     }
   }
   return createRequirementSet([RequirementFacet.DocumentFormat], requirements);
 }
+
+// Tags the document/timeline walk consumes itself. `End` never reaches here — the census stops at it —
+// and `ShowFrame` advances the frame cursor rather than defining content, so no handler claims either.
+const SWF_STRUCTURAL_TAGS: ReadonlySet<number> = new Set([0, 1]);

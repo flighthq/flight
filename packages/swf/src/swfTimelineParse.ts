@@ -14,6 +14,7 @@ import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { isKnownSwfTag } from './swfKnownTags';
 import { SwfReader } from './swfReader';
+import { SWF_NON_CONTENT_TAGS } from './swfTagVocabulary';
 
 // The tag walk itself: one flat lookup per tag, and a length-prefixed skip for every tag no registered
 // family claims. It is deliberately the only module that knows how a tag stream is framed, so the root
@@ -44,7 +45,7 @@ function reportSwfUnhandledTag(diagnostics: ImportDiagnostic[] | undefined, code
     );
     return;
   }
-  if (SWF_SILENT_TAGS.has(code)) return;
+  if (SWF_NON_CONTENT_TAGS.has(code)) return;
 
   const kind = isKnownSwfTag(code) ? 'swf.tag-handler-unregistered' : 'swf.tag-unknown';
   reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, kind, 'readSwfTimeline', { tag: code });
@@ -143,10 +144,6 @@ function compareSwfTimelineLabelFrame(a: Readonly<TimelineLabel>, b: Readonly<Ti
   return a.frame - b.frame;
 }
 
-// Only tags whose absence loses something a caller could want. Metadata tags — `FileAttributes`,
-// `Metadata`, `ProductInfo`, `ScriptLimits`, `DebugID`, `EnableDebugger2`, `EnableTelemetry`, `Protect`,
-// `SetTabIndex`, `DefineButtonCxform`, and the font hinting/naming tables — are deliberately absent: they
-// carry no scene content, so skipping one is not a loss to report.
 // The declared capability a declined tag costs, where one exists. Deliberately partial: `DefineFont4`,
 // `DefineBinaryData`, `ImportAssets` and `DefineButtonSound` name no declared capability, and inventing
 // one so every crumb could carry a join key would put entries in the denominator that nothing measures.
@@ -160,8 +157,6 @@ const SWF_DECLINED_TAG_KINDS = new Map<number, string>([
   [87, 'swf.define-binary-data'],
   [91, 'swf.define-font-4'],
 ]);
-
-const SWF_SILENT_TAGS = new Set<number>([23, 24, 41, 58, 63, 64, 65, 66, 69, 73, 74, 77, 88, 93]);
 
 const TAG_END = 0;
 
