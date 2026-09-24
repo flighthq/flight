@@ -77,7 +77,7 @@ describe('vite build', () => {
       const bundle = await bundleOf(dir);
       // The fragment reaches the bundle as a real Map literal keyed by the requirement's kind, which is
       // what lets an application spread it straight into createGlRenderState.
-      expect(bundle).toContain('ShowFrame');
+      expect(bundle).toContain('DefineShape');
       expect(bundle).toContain('nodeRenderers');
     },
     BUILD_TIMEOUT_MS,
@@ -130,10 +130,10 @@ async function bundleOf(dir: string): Promise<string> {
 function catalogEntries(dir: string) {
   const impl = (backend: string) => join(dir, 'src', `${backend}Impl.js`);
   return [
-    entry('canvas', RequirementFacet.DocumentFormat, 'ShowFrame', 'canvasShowFrame', impl('canvas')),
-    entry('gl', RequirementFacet.DocumentFormat, 'ShowFrame', 'glShowFrame', impl('gl')),
-    entry('wgpu', RequirementFacet.DocumentFormat, 'ShowFrame', 'wgpuShowFrame', impl('wgpu')),
-    entry(MANIFEST_PARSER_BACKEND, RequirementFacet.DocumentFormat, 'ShowFrame', 'parserShowFrame', impl('parser')),
+    entry('canvas', RequirementFacet.DocumentFormat, 'DefineShape', 'canvasDefineShape', impl('canvas')),
+    entry('gl', RequirementFacet.DocumentFormat, 'DefineShape', 'glDefineShape', impl('gl')),
+    entry('wgpu', RequirementFacet.DocumentFormat, 'DefineShape', 'wgpuDefineShape', impl('wgpu')),
+    entry(MANIFEST_PARSER_BACKEND, RequirementFacet.DocumentFormat, 'DefineShape', 'parserDefineShape', impl('parser')),
   ];
 }
 
@@ -152,18 +152,18 @@ function entry(backend: string, facet: string, kind: string, symbol: string, mod
 async function project(): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), 'flight-vite-build-'));
   await mkdir(join(dir, 'src'), { recursive: true });
-  await writeFile(join(dir, 'src', 'asset.swf'), Buffer.from(createSwfWithShowFrame()));
+  await writeFile(join(dir, 'src', 'asset.swf'), Buffer.from(createSwfWithDefineShape()));
   for (const backend of ['canvas', 'gl', 'wgpu', 'parser']) {
     await writeFile(
       join(dir, 'src', `${backend}Impl.js`),
-      `export const ${backend}ShowFrame = '${backend.toUpperCase()}_IMPLEMENTATION_MARKER';\n`,
+      `export const ${backend}DefineShape = '${backend.toUpperCase()}_IMPLEMENTATION_MARKER';\n`,
     );
   }
   return dir;
 }
 
-function createSwfWithShowFrame(): Uint8Array {
-  const body = new Uint8Array([0x00, 0x00, 0x18, 0x01, 0x00, 0x40, 0x00, 0x00, 0x00]);
+function createSwfWithDefineShape(): Uint8Array {
+  const body = new Uint8Array([0x00, 0x00, 0x18, 0x01, 0x00, 0x80, 0x00, 0x00, 0x00]);
   const file = new Uint8Array(8 + body.length);
   file.set([0x46, 0x57, 0x53, 9], 0);
   new DataView(file.buffer).setUint32(4, file.length, true);
