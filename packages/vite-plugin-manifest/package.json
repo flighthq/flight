@@ -30,7 +30,7 @@
     "!dist/**/*.test.d.ts.map"
   ],
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && tsx ../../scripts/bundle-node-package.ts",
     "clean": "tsc -b --clean",
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --watch --config vitest.config.ts",
@@ -49,6 +49,7 @@
     "@flighthq/render": "*",
     "@flighthq/requirement": "*",
     "@flighthq/scene2d-dom": "*",
+    "esbuild": "*",
     "typescript": "^5.3.0",
     "vite": "*"
   },
