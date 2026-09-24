@@ -129,11 +129,12 @@ describe('createManifestPlugin', () => {
     expect(diagnostics.some((m) => m.includes('no catalog entry for document.format swf.DefineShape'))).toBe(true);
   });
 
-  it('drives resolution through an EXTERNAL catalog, since the built-in catalog ships empty', async () => {
+  it('drives resolution through an EXTERNAL catalog, separate from the built-in one', async () => {
     const { dir, plugin } = await fixture();
-    // BUILT_IN_REQUIREMENT_CATALOG_ENTRIES is deliberately empty on base, so every row that reaches a
-    // fragment came from the catalog the caller passed in. This pins that the external path is the
-    // real one rather than incidental.
+    // The plugin resolves ONLY against the catalog it is handed — it never consults the built-in one
+    // implicitly. The built-in set now ships 58 parser rows, so this can no longer lean on it being
+    // empty: instead the same file is loaded through a caller catalog and through an empty one, and
+    // the gl row appears only in the first.
     expect(await load(plugin, dir, 'a.swf')).toContain("['swf.DefineShape', glDefineShape]");
 
     const empty = createManifestPlugin({ catalog: { entries: [] }, onDiagnostic: () => {} });

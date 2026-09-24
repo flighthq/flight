@@ -1,13 +1,14 @@
-// The canonical built-in registry ownership inventory. Stage 4 deliberately leaves this list empty:
-// population belongs to the later migration thread, after the rendering-drift gate closes.
+// The canonical built-in registry ownership inventory, DERIVED from the shipped handler families
+// rather than transcribed — see scripts/catalog-rows.ts for why only the parser backend is populated.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { RequirementCatalogEntry } from '@flighthq/types/contract';
 
 import { formatBuiltInRequirementCatalogSource, verifyRequirementCatalogEntries } from './catalog-core';
+import { buildRequirementCatalogRows } from './catalog-rows';
 
-const ENTRIES: readonly RequirementCatalogEntry[] = [];
+const ENTRIES: readonly RequirementCatalogEntry[] = buildRequirementCatalogRows();
 const REPO_ROOT = join(import.meta.dirname, '..');
 const OUTPUT_PATH = join(REPO_ROOT, 'packages', 'requirement-catalog', 'src', 'builtInRequirementCatalogEntries.ts');
 

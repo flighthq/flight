@@ -47,6 +47,7 @@
   "devDependencies": {
     "@flighthq/compression": "*",
     "@flighthq/render": "*",
+    "@flighthq/requirement-catalog": "*",
     "@flighthq/requirement": "*",
     "@flighthq/scene2d-dom": "*",
     "esbuild": "*",
