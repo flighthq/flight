@@ -84,7 +84,7 @@ export function drawGlTextLabel(state: GlRenderState, renderProxy: RenderProxy2D
 
   if (state.canvasHost === null || state.imageHost === null) return;
   const textData = getGlTextLabelData(renderProxy.rendererData);
-  let surface = _ensureGlTextLabelSurface(state, textData, 1, 1);
+  let surface = textData.surface ?? _ensureGlTextLabelSurface(state, textData, 1, 1);
   if (surface === null) return;
   const pixelRatio = state.pixelRatio;
   const version = getNodeLocalContentRevision(source);
