@@ -77,7 +77,7 @@ describe('vite build', () => {
       const bundle = await bundleOf(dir);
       // The fragment reaches the bundle as a real Map literal keyed by the requirement's kind, which is
       // what lets an application spread it straight into createGlRenderState.
-      expect(bundle).toContain('DefineShape');
+      expect(bundle).toContain('swf.DefineShape');
       expect(bundle).toContain('nodeRenderers');
     },
     BUILD_TIMEOUT_MS,
@@ -130,10 +130,16 @@ async function bundleOf(dir: string): Promise<string> {
 function catalogEntries(dir: string) {
   const impl = (backend: string) => join(dir, 'src', `${backend}Impl.js`);
   return [
-    entry('canvas', RequirementFacet.DocumentFormat, 'DefineShape', 'canvasDefineShape', impl('canvas')),
-    entry('gl', RequirementFacet.DocumentFormat, 'DefineShape', 'glDefineShape', impl('gl')),
-    entry('wgpu', RequirementFacet.DocumentFormat, 'DefineShape', 'wgpuDefineShape', impl('wgpu')),
-    entry(MANIFEST_PARSER_BACKEND, RequirementFacet.DocumentFormat, 'DefineShape', 'parserDefineShape', impl('parser')),
+    entry('canvas', RequirementFacet.DocumentFormat, 'swf.DefineShape', 'canvasDefineShape', impl('canvas')),
+    entry('gl', RequirementFacet.DocumentFormat, 'swf.DefineShape', 'glDefineShape', impl('gl')),
+    entry('wgpu', RequirementFacet.DocumentFormat, 'swf.DefineShape', 'wgpuDefineShape', impl('wgpu')),
+    entry(
+      MANIFEST_PARSER_BACKEND,
+      RequirementFacet.DocumentFormat,
+      'swf.DefineShape',
+      'parserDefineShape',
+      impl('parser'),
+    ),
   ];
 }
 

@@ -31,6 +31,13 @@ import { SWF_NON_CONTENT_TAGS } from './swfTagVocabulary';
  * Returns an empty set that still declares its coverage when the source is not a readable SWF, so a
  * caller can tell "inspected, found nothing" from "never looked".
  *
+ * KEYS ARE NAMESPACED BY FORMAT (`swf.DefineShape`). The `document.format` facet is shared by every
+ * format Flight reads, and a bare block/tag name is not unique across them: AWD2 alone contributes
+ * `Camera`, `Material`, `Texture` and `Light`, names a second 3D format will certainly reuse. Without
+ * the namespace a catalog row written for one format would silently satisfy another format's identical
+ * key. The separator is the dot the kind convention already uses for namespacing (`acme.Bloom`), not a
+ * second spelling invented here.
+ *
  * TAGS THAT NOTHING CAN SATISFY ARE NOT REQUIREMENTS. A requirement names something a build can supply
  * by registering an implementation, so two groups are excluded: tags carrying no scene content
  * (`SWF_NON_CONTENT_TAGS`, the same list the timeline walk skips) and tags the document walk consumes
@@ -51,11 +58,17 @@ export function parseSwfRequirements(
     // another with the same content regardless of the order a walk happened to observe it in.
     for (const code of counts.keys()) {
       if (SWF_NON_CONTENT_TAGS.has(code) || SWF_STRUCTURAL_TAGS.has(code)) continue;
-      requirements.push({ facet: RequirementFacet.DocumentFormat, key: getSwfTagName(code) });
+      requirements.push({
+        facet: RequirementFacet.DocumentFormat,
+        key: `${SWF_REQUIREMENT_KEY_NAMESPACE}.${getSwfTagName(code)}`,
+      });
     }
   }
   return createRequirementSet([RequirementFacet.DocumentFormat], requirements);
 }
+
+/** The format namespace every SWF `document.format` requirement key carries. */
+export const SWF_REQUIREMENT_KEY_NAMESPACE = 'swf';
 
 // Tags the document/timeline walk consumes itself. `End` never reaches here — the census stops at it —
 // and `ShowFrame` advances the frame cursor rather than defining content, so no handler claims either.

@@ -31,10 +31,10 @@ describe('createManifestPlugin', () => {
     expect(source).toContain("import { glDefineShape } from '@acme/gl';");
     expect(source).toContain("import { wgpuDefineShape } from '@acme/wgpu';");
     expect(source).toContain(
-      "export const glOptions = {\n  nodeRenderers: new Map([\n    ['DefineShape', glDefineShape],",
+      "export const glOptions = {\n  nodeRenderers: new Map([\n    ['swf.DefineShape', glDefineShape],",
     );
     expect(source).toContain(
-      "export const wgpuOptions = {\n  nodeRenderers: new Map([\n    ['DefineShape', wgpuDefineShape],",
+      "export const wgpuOptions = {\n  nodeRenderers: new Map([\n    ['swf.DefineShape', wgpuDefineShape],",
     );
     // canvas and dom carry no kind-keyed options fields on base, so their fragments are empty and
     // still exported — an application can spread every fragment unconditionally.
@@ -48,7 +48,7 @@ describe('createManifestPlugin', () => {
     const a = await load(plugin, dir, 'a.swf');
     const b = await load(plugin, dir, 'b.swf');
     expect(a).not.toBe(b);
-    expect(a).toContain("['DefineShape', wgpuDefineShape]");
+    expect(a).toContain("['swf.DefineShape', wgpuDefineShape]");
     expect(b).toContain('export const wgpuOptions = {};');
   });
 
@@ -99,7 +99,9 @@ describe('createManifestPlugin', () => {
     const diagnostics: string[] = [];
     const plugin = createManifestPlugin({
       catalog: {
-        entries: [entry(MANIFEST_PARSER_BACKEND, RequirementFacet.DocumentFormat, 'DefineShape', 'parserDefineShape')],
+        entries: [
+          entry(MANIFEST_PARSER_BACKEND, RequirementFacet.DocumentFormat, 'swf.DefineShape', 'parserDefineShape'),
+        ],
       },
       deflate: sdkHostDecompressDeflate,
       onDiagnostic: (message) => diagnostics.push(message),
@@ -124,7 +126,7 @@ describe('createManifestPlugin', () => {
       onDiagnostic: (message) => diagnostics.push(message),
     });
     await load(plugin, dir, 'a.swf');
-    expect(diagnostics.some((m) => m.includes('no catalog entry for document.format DefineShape'))).toBe(true);
+    expect(diagnostics.some((m) => m.includes('no catalog entry for document.format swf.DefineShape'))).toBe(true);
   });
 
   it('drives resolution through an EXTERNAL catalog, since the built-in catalog ships empty', async () => {
@@ -132,7 +134,7 @@ describe('createManifestPlugin', () => {
     // BUILT_IN_REQUIREMENT_CATALOG_ENTRIES is deliberately empty on base, so every row that reaches a
     // fragment came from the catalog the caller passed in. This pins that the external path is the
     // real one rather than incidental.
-    expect(await load(plugin, dir, 'a.swf')).toContain("['DefineShape', glDefineShape]");
+    expect(await load(plugin, dir, 'a.swf')).toContain("['swf.DefineShape', glDefineShape]");
 
     const empty = createManifestPlugin({ catalog: { entries: [] }, onDiagnostic: () => {} });
     const source = (await load(empty, dir, 'a.swf'))!;
@@ -149,7 +151,7 @@ describe('createManifestPlugin', () => {
       onDiagnostic: (message) => diagnostics.push(message),
     });
     await load(plugin, dir, 'a.swf');
-    expect(diagnostics.some((m) => m.includes('no catalog entry for document.format DefineShape'))).toBe(true);
+    expect(diagnostics.some((m) => m.includes('no catalog entry for document.format swf.DefineShape'))).toBe(true);
   });
 });
 
@@ -175,9 +177,9 @@ async function fixture() {
   const plugin = createManifestPlugin({
     catalog: {
       entries: [
-        entry('wgpu', RequirementFacet.DocumentFormat, 'DefineShape', 'wgpuDefineShape'),
-        entry('gl', RequirementFacet.DocumentFormat, 'DefineShape', 'glDefineShape'),
-        entry(MANIFEST_PARSER_BACKEND, RequirementFacet.DocumentFormat, 'DefineShape', 'parserDefineShape'),
+        entry('wgpu', RequirementFacet.DocumentFormat, 'swf.DefineShape', 'wgpuDefineShape'),
+        entry('gl', RequirementFacet.DocumentFormat, 'swf.DefineShape', 'glDefineShape'),
+        entry(MANIFEST_PARSER_BACKEND, RequirementFacet.DocumentFormat, 'swf.DefineShape', 'parserDefineShape'),
       ],
     },
     onDiagnostic: (message) => diagnostics.push(message),

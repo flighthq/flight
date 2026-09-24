@@ -6,8 +6,8 @@ describe('parseAwd2Requirements', () => {
   it('reports one requirement per distinct block type, keyed by the AWD2 block name', () => {
     const set = parseAwd2Requirements(createAwd2([createBlock(BLOCK_MATERIAL), createBlock(BLOCK_CAMERA)]), null, null);
     expect(set.requirements).toEqual([
-      { facet: RequirementFacet.DocumentFormat, key: 'Camera' },
-      { facet: RequirementFacet.DocumentFormat, key: 'Material' },
+      { facet: RequirementFacet.DocumentFormat, key: 'awd2.Camera' },
+      { facet: RequirementFacet.DocumentFormat, key: 'awd2.Material' },
     ]);
   });
 
@@ -22,13 +22,13 @@ describe('parseAwd2Requirements', () => {
       null,
       null,
     );
-    expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: 'Material' }]);
+    expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: 'awd2.Material' }]);
   });
 
   it('keeps a block type this build does not name rather than shrinking the inventory', () => {
     const set = parseAwd2Requirements(createAwd2([createBlock(UNKNOWN_BLOCK_TYPE)]), null, null);
     expect(set.requirements).toEqual([
-      { facet: RequirementFacet.DocumentFormat, key: `Unknown(${UNKNOWN_BLOCK_TYPE})` },
+      { facet: RequirementFacet.DocumentFormat, key: `awd2.Unknown(${UNKNOWN_BLOCK_TYPE})` },
     ]);
   });
 
