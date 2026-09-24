@@ -15,8 +15,8 @@ describe('parseSwfRequirements', () => {
       DECOMPRESS_LZMA,
     );
     expect(set.requirements).toEqual([
-      { facet: RequirementFacet.DocumentFormat, key: 'DefineShape' },
-      { facet: RequirementFacet.DocumentFormat, key: 'SetBackgroundColor' },
+      { facet: RequirementFacet.DocumentFormat, key: 'swf.DefineShape' },
+      { facet: RequirementFacet.DocumentFormat, key: 'swf.SetBackgroundColor' },
     ]);
   });
 
@@ -32,7 +32,7 @@ describe('parseSwfRequirements', () => {
       DECOMPRESS_DEFLATE,
       DECOMPRESS_LZMA,
     );
-    expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: 'DefineShape' }]);
+    expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: 'swf.DefineShape' }]);
   });
 
   it('keeps a tag this build does not name rather than shrinking the inventory', () => {
@@ -41,7 +41,7 @@ describe('parseSwfRequirements', () => {
       DECOMPRESS_DEFLATE,
       DECOMPRESS_LZMA,
     );
-    expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: `Unknown(${TAG_UNKNOWN})` }]);
+    expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: `swf.Unknown(${TAG_UNKNOWN})` }]);
   });
 
   it('reports an unregistered tag exactly like a registered one, carrying no registrar identity', () => {
@@ -57,8 +57,8 @@ describe('parseSwfRequirements', () => {
       DECOMPRESS_LZMA,
     );
     expect(set.requirements).toEqual([
-      { facet: RequirementFacet.DocumentFormat, key: 'DefineShape' },
-      { facet: RequirementFacet.DocumentFormat, key: 'SetBackgroundColor' },
+      { facet: RequirementFacet.DocumentFormat, key: 'swf.DefineShape' },
+      { facet: RequirementFacet.DocumentFormat, key: 'swf.SetBackgroundColor' },
     ]);
   });
 
@@ -97,7 +97,7 @@ describe('parseSwfRequirements', () => {
       DECOMPRESS_DEFLATE,
       DECOMPRESS_LZMA,
     );
-    expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: `Unknown(${TAG_UNKNOWN})` }]);
+    expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: `swf.Unknown(${TAG_UNKNOWN})` }]);
   });
 
   it('still reports content tags beside excluded ones, so exclusion is not over-broad', () => {
@@ -111,7 +111,7 @@ describe('parseSwfRequirements', () => {
       DECOMPRESS_DEFLATE,
       DECOMPRESS_LZMA,
     );
-    expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: 'SetBackgroundColor' }]);
+    expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: 'swf.SetBackgroundColor' }]);
   });
 
   it('returns an empty set that still declares coverage when the source is unreadable', () => {

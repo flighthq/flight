@@ -30,7 +30,7 @@ describe('runManifestTool', () => {
     expect(await runManifestTool(['scan', '--content', dir, '--out', out], io.io)).toBe(0);
     const written = JSON.parse(await readFile(out, 'utf8'));
     expect(written.covers).toEqual(['document.format']);
-    expect(written.requirements).toEqual([{ facet: 'document.format', key: 'DefineShape' }]);
+    expect(written.requirements).toEqual([{ facet: 'document.format', key: 'swf.DefineShape' }]);
   });
 
   it('reports a requirement the baseline does not cover and fails', async () => {
