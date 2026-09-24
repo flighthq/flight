@@ -72,3 +72,20 @@ export const SWF_TAG_NAMES: ReadonlyMap<number, string> = new Map([
   [93, 'EnableTelemetry'],
   [94, 'PlaceObject4'],
 ]);
+
+/**
+ * Tags that carry no scene content.
+ *
+ * Metadata and tooling tags — FileAttributes, Metadata, ProductInfo, ScriptLimits, DebugID,
+ * EnableDebugger/EnableDebugger2, EnableTelemetry, Protect, SetTabIndex, DefineButtonCxform, and the
+ * font hinting/naming tables. Two consumers depend on this being one list rather than two:
+ *
+ * - the timeline walk skips them silently, because an absent one loses nothing a caller could want;
+ * - the build-time requirement analyzer emits no requirement for them, because a requirement names
+ *   something a build can SATISFY and no handler can ever claim these. Reporting them would produce a
+ *   permanently unactionable warning on every build, which trains a reader to ignore the very channel
+ *   that reports a genuinely missing handler.
+ */
+export const SWF_NON_CONTENT_TAGS: ReadonlySet<number> = new Set([
+  23, 24, 41, 58, 63, 64, 65, 66, 69, 73, 74, 77, 88, 93,
+]);
