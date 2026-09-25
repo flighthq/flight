@@ -60,3 +60,7 @@ export interface HostDecompressLzmaCapability {
 export interface HostCompressDeflateCapability {
   compress(bytes: Readonly<Uint8Array>, framing: CompressionFraming): Uint8Array;
 }
+
+export interface HostCompressLzmaCapability {
+  compress(bytes: Readonly<Uint8Array>, framing: CompressionFraming): Uint8Array;
+}
