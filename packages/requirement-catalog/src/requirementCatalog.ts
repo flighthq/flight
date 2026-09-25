@@ -3,6 +3,7 @@ import type {
   NonEntityCreateResult,
   RequirementCatalog,
   RequirementCatalogEntry,
+  RequirementDisposition,
   RequirementFacet,
   RequirementTranslation,
 } from '@flighthq/types/contract';
@@ -19,8 +20,22 @@ import type {
 export function createRequirementCatalog(
   entries: readonly Readonly<RequirementCatalogEntry>[] = [],
   translations: readonly Readonly<RequirementTranslation>[] = [],
+  dispositions: readonly Readonly<RequirementDisposition>[] = [],
 ): NonEntityCreateResult<RequirementCatalog, 'descriptor'> {
-  return { entries: entries.map(copyCatalogEntry), translations: translations.map(copyCatalogTranslation) };
+  return {
+    dispositions: dispositions.map(copyCatalogDisposition),
+    entries: entries.map(copyCatalogEntry),
+    translations: translations.map(copyCatalogTranslation),
+  };
+}
+
+function copyCatalogDisposition(disposition: Readonly<RequirementDisposition>): RequirementDisposition {
+  return {
+    backend: disposition.backend,
+    facet: disposition.facet,
+    kind: disposition.kind,
+    reason: disposition.reason,
+  };
 }
 
 function copyCatalogTranslation(translation: Readonly<RequirementTranslation>): RequirementTranslation {

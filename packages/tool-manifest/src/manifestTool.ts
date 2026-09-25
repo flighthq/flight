@@ -148,13 +148,20 @@ async function runPlan(flags: Flags, io: Readonly<ManifestToolIO>): Promise<numb
   }
   const plan = createRequirementCodegenPlan(catalogValidation.catalog, await readSet(setPath), backend);
   const text = `${JSON.stringify(
-    { backend: plan.backend, entries: plan.entries, unresolved: plan.unresolved },
+    { backend: plan.backend, declined: plan.declined, entries: plan.entries, unresolved: plan.unresolved },
     null,
     2,
   )}\n`;
   const out = first(flags, 'out');
   if (out === null) io.writeOutput(text);
   else await writeFile(out, text, 'utf8');
+  // A declined requirement is reported and does NOT fail the plan: the catalog states this backend
+  // does not implement it and why, so the build is complete as designed. Printed rather than dropped
+  // because a decision nobody can see is indistinguishable from an omission — which is the whole
+  // difference this records. Written to the output stream, not the error stream, for the same reason.
+  for (const declination of plan.declined) {
+    io.writeOutput(`declined ${declination.requirement.facet} ${declination.requirement.key}: ${declination.reason}\n`);
+  }
   // Unresolved rows are reported, never dropped: a requirement with no catalog entry is the gap this
   // pipeline exists to make visible before a build silently ships without it.
   if (plan.unresolved.length > 0) {
