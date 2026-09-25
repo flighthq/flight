@@ -1,4 +1,9 @@
-import { canvasScene2DRenderPreset } from '@flighthq/scene2d-canvas';
+import {
+  canvasScene2DRenderPreset,
+  canvasShapeCommands,
+  canvasTextureShapeCommands,
+  applyCanvasBlendMode,
+} from '@flighthq/scene2d-canvas';
 import * as canvas from '@flighthq/scene2d-canvas';
 import { domScene2DRenderPreset } from '@flighthq/scene2d-dom';
 import * as dom from '@flighthq/scene2d-dom';
@@ -9,6 +14,7 @@ import * as wgpu from '@flighthq/scene2d-wgpu';
 import { SWF_DOCUMENT_NODE_KINDS, SWF_REQUIREMENT_KEY_NAMESPACE, SWF_TAG_NODE_KINDS } from '@flighthq/swf/contract';
 import { getSwfTagName } from '@flighthq/swf/contract';
 import type {
+  CanvasShapeCommand,
   Kind,
   NodeRenderer,
   RequirementBackend,
@@ -39,7 +45,63 @@ export function buildRenderCatalogRows(): readonly RequirementCatalogEntry[] {
       rows.push(renderRow(backend.name, backend.module, symbol, kind));
     }
   }
-  return rows.sort((a, b) => a.backend.localeCompare(b.backend) || a.kind.localeCompare(b.kind));
+  rows.push(...buildShapeCommandCatalogRows());
+  rows.push(...buildBlendModeCatalogRows());
+  return rows.sort(
+    (a, b) => a.backend.localeCompare(b.backend) || a.facet.localeCompare(b.facet) || a.kind.localeCompare(b.kind),
+  );
+}
+
+/**
+ * Shape command catalog rows: each canvas shape command is individually keyed and exported.
+ *
+ * All four backends consume the same `CanvasShapeCommand` objects — GL and WGPU use them for their
+ * canvas-rasterized fallback paths. The implementation module is always `@flighthq/scene2d-canvas`
+ * because that is where the commands are defined and exported.
+ */
+function buildShapeCommandCatalogRows(): RequirementCatalogEntry[] {
+  const canvasSymbols = symbolsOf(canvas);
+  const rows: RequirementCatalogEntry[] = [];
+  const allCommands: readonly CanvasShapeCommand[] = [...canvasShapeCommands, ...canvasTextureShapeCommands];
+  for (const command of allCommands) {
+    const symbol = canvasSymbols.get(command);
+    if (symbol === undefined) continue;
+    for (const backend of SHAPE_COMMAND_BACKENDS) {
+      rows.push({
+        backend,
+        facet: RequirementFacet.SceneShapeCommand,
+        implementationImport: '@flighthq/scene2d-canvas',
+        implementationSymbol: symbol,
+        kind: command.key,
+      });
+    }
+  }
+  return rows;
+}
+
+const SHAPE_COMMAND_BACKENDS = ['canvas', 'dom', 'gl', 'wgpu'];
+
+/**
+ * Blend mode application catalog rows.
+ *
+ * Canvas blend mode application is a single function, not a kind-keyed map. The catalog entry uses
+ * the key `standard` to represent the standard blend mode set (Normal, Multiply, Screen, etc.).
+ * GL uses `blendRealizations` (a per-mode map) which is a different mechanism — its entries would be
+ * per blend mode value, not a single function. For now, only canvas is populated.
+ */
+function buildBlendModeCatalogRows(): RequirementCatalogEntry[] {
+  const canvasSymbols = symbolsOf(canvas);
+  const symbol = canvasSymbols.get(applyCanvasBlendMode);
+  if (symbol === undefined) return [];
+  return [
+    {
+      backend: 'canvas',
+      facet: RequirementFacet.SceneBlendMode,
+      implementationImport: '@flighthq/scene2d-canvas',
+      implementationSymbol: symbol,
+      kind: 'standard',
+    },
+  ];
 }
 
 /** Format-to-render implications, derived from the kinds each tag actually builds. */
