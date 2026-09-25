@@ -29,8 +29,18 @@ describe('runManifestTool', () => {
     const io = createIO();
     expect(await runManifestTool(['scan', '--content', dir, '--out', out], io.io)).toBe(0);
     const written = JSON.parse(await readFile(out, 'utf8'));
-    expect(written.covers).toEqual(['document.format']);
-    expect(written.requirements).toEqual([{ facet: 'document.format', key: 'swf.DefineShape' }]);
+    expect(written.covers).toEqual(['document.format', 'scene.shape-command']);
+    expect(written.requirements.filter(({ facet }: { facet: string }) => facet === 'document.format')).toEqual([
+      { facet: 'document.format', key: 'swf.DefineShape' },
+    ]);
+    // The SWF analyzer owns the exact core-command vocabulary. This tool-level test verifies that scan
+    // preserves its second facet and requirements instead of duplicating that vocabulary here.
+    const shapeCommands = written.requirements.filter(
+      ({ facet }: { facet: string }) => facet === 'scene.shape-command',
+    );
+    expect(shapeCommands.length).toBeGreaterThan(0);
+    expect(shapeCommands).toContainEqual({ facet: 'scene.shape-command', key: 'beginFill' });
+    expect(shapeCommands).toContainEqual({ facet: 'scene.shape-command', key: 'quadraticCurveTo' });
   });
 
   it('reports a requirement the baseline does not cover and fails', async () => {
