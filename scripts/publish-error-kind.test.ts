@@ -14,6 +14,18 @@ cause
 call config.load() before reading values
 `;
 
+const OBSERVED_EMPTY_RESPONSE = `npm error code EJSONPARSE
+npm error JSON.parse Invalid package.json: JSONParseError: Unexpected end of JSON input while parsing empty string
+npm error JSON.parse Failed to parse JSON data.
+npm error JSON.parse Note: package.json must be actual JSON, not just JavaScript.
+npm error Log files were not written due to the config logs-max=0
+Command failed: npm publish --access public --ignore-scripts --tag next
+npm error code EJSONPARSE
+npm error JSON.parse Invalid package.json: JSONParseError: Unexpected end of JSON input while parsing empty string
+npm error JSON.parse Failed to parse JSON data.
+npm error JSON.parse Note: package.json must be actual JSON, not just JavaScript.
+npm error Log files were not written due to the config logs-max=0`;
+
 describe('classifyPublishError', () => {
   it('classifies the observed npm startup race as transient', () => {
     expect(classifyPublishError(OBSERVED_STARTUP_RACE)).toBe('transient');
@@ -48,6 +60,23 @@ describe('classifyPublishError', () => {
     expect(classifyPublishError('npm ERR! code ENEEDAUTH')).toBe('fatal');
     expect(classifyPublishError('npm ERR! Tarball is not a bzip2 archive')).toBe('fatal');
     expect(classifyPublishError('')).toBe('fatal');
+  });
+
+  it('classifies the observed EJSONPARSE empty-response error as transient', () => {
+    expect(classifyPublishError(OBSERVED_EMPTY_RESPONSE)).toBe('transient');
+  });
+
+  it('classifies each EJSONPARSE variant independently', () => {
+    expect(classifyPublishError('npm error code EJSONPARSE\nUnexpected end of JSON input')).toBe('transient');
+    expect(
+      classifyPublishError('EJSONPARSE\nJSONParseError: Unexpected end of JSON input while parsing empty string'),
+    ).toBe('transient');
+  });
+
+  it('does not treat a genuine EJSONPARSE from a malformed manifest as transient', () => {
+    expect(classifyPublishError('npm ERR! code ESYNTAX\nnpm ERR! Unexpected token } in JSON at position 42')).toBe(
+      'fatal',
+    );
   });
 
   it('does not treat an ordinary config mention as a startup race', () => {
