@@ -6,6 +6,7 @@ export * from './swfAppearance';
 export * from './swfBitmap';
 export * from './swfBitmapTagFamily';
 export * from './swfBoundedDefinition';
+export * from './swfContentCapabilities';
 export * from './swfControlHandler';
 export * from './swfControlTagFamily';
 export * from './swfDefineMorphShapeHandler';
