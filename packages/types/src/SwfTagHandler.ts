@@ -1,4 +1,5 @@
 import type { AudioResourceReference } from './AudioResourceReference';
+import type { Kind } from './Entity';
 import type { ImageResourceReference } from './ImageResourceReference';
 import type { ImportDiagnostic } from './ImportDiagnostic';
 import type { Node2D } from './Node2D';
@@ -66,6 +67,22 @@ export interface SwfTagHandler {
  * neither.
  */
 export interface SwfTagHandlerInstantiation {
+  /**
+   * The node kinds `createPlacementNode` can return — the fact that lets a build-time inventory turn a
+   * TAG requirement into a RENDERER requirement.
+   *
+   * A `document.format` requirement names a tag (`swf.DefineShape`); a node renderer is keyed by a node
+   * kind (`Shape`). Only the code that builds the node knows which is which, so the claim is declared
+   * next to that code rather than inferred elsewhere — inferring it would mean a catalog guessing at
+   * importer behaviour, and a wrong guess binds a renderer to a kind no node ever carries, which fails
+   * silently at run time rather than loudly at build time.
+   *
+   * Every kind this handler can EVER return belongs here, including the conditional ones: the shape
+   * handler yields `Scale9Shape` when a scaling grid is present and `Shape` otherwise, and a build must
+   * be able to draw either. Over-declaring costs one unused renderer; under-declaring costs a missing
+   * one, so the list is what the handler CAN produce, not what a particular document happened to need.
+   */
+  readonly producesKinds?: readonly Kind[];
   /** Appends the document-level resources this family's definitions produce. */
   createResources?(parsed: Readonly<SwfTagParseResult>, out: SwfTagHandlerResources): void;
   /**
