@@ -52,11 +52,10 @@ describe('generateManifestModuleSource', () => {
     ]);
   });
 
-  it('reports blendRealizations aimed at canvas, which CanvasRenderStateOptions does not declare', () => {
-    const result = generateManifestModuleSource([row('canvas', 'scene.blend-mode', 'Multiply')], '.swf');
-    expect(result.problems).toEqual([
-      'backend canvas has no blendRealizations field: dropped scene.blend-mode Multiply',
-    ]);
+  it('emits canvas blend mode as a scalar blendModeApplication field, not a Map', () => {
+    const result = generateManifestModuleSource([row('canvas', 'scene.blend-mode', 'standard')], '.swf');
+    expect(result.problems).toEqual([]);
+    expect(result.source).toContain('blendModeApplication: canvasstandardImpl,');
   });
 
   it('keeps each backend in its own fragment', () => {

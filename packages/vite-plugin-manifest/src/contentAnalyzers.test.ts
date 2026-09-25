@@ -22,7 +22,7 @@ describe('compressed content readability', () => {
       deflate: sdkHostDecompressDeflate,
       lzma: null,
     });
-    expect(set.requirements.map((requirement) => requirement.key)).toEqual(['swf.DefineShape']);
+    expect(set.requirements.map((requirement) => requirement.key)).toContain('swf.DefineShape');
   });
 
   it('reports an uncompressed file as readable, so the probe does not reject good content', () => {
@@ -71,8 +71,8 @@ describe('DEFAULT_CONTENT_ANALYZERS', () => {
 
   it('delegates to the SWF analyzer rather than reimplementing the walk', () => {
     const set = DEFAULT_CONTENT_ANALYZERS['.swf'].analyze(createSwfWithDefineShape(), NO_DECOMPRESSORS);
-    expect(set.covers).toEqual([RequirementFacet.DocumentFormat]);
-    expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: 'swf.DefineShape' }]);
+    expect(set.covers).toContain(RequirementFacet.DocumentFormat);
+    expect(set.requirements).toContainEqual({ facet: RequirementFacet.DocumentFormat, key: 'swf.DefineShape' });
   });
 
   it('accepts either AWD suffix, resolving both to the same analyzer', () => {

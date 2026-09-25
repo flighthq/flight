@@ -1,6 +1,12 @@
 import type { RequirementBackend, RequirementCatalogEntry } from '@flighthq/types/contract';
 
-import { BACKEND_OPTION_FIELDS, PARSER_HANDLER_FIELDS, REQUIREMENT_OPTION_FIELDS } from './requirementOptionFields';
+import {
+  BACKEND_OPTION_FIELD_OVERRIDES,
+  BACKEND_OPTION_FIELDS,
+  PARSER_HANDLER_FIELDS,
+  REQUIREMENT_OPTION_FIELDS,
+  SCALAR_OPTION_FIELDS,
+} from './requirementOptionFields';
 
 /** The backends a manifest module always exports a fragment for, and the export name each one uses. */
 export const MANIFEST_BACKEND_EXPORTS: Readonly<Record<string, string>> = Object.freeze({
@@ -92,7 +98,8 @@ export function generateManifestModuleSource(
     // render-state field at all (compression, physics, resource mime type) has nowhere to go; and a
     // field this particular backend does not declare — blendRealizations on WGPU, say — would emit a
     // fragment that spreads into nothing. Both are reported so the build can see what it lost.
-    const field = REQUIREMENT_OPTION_FIELDS[row.entry.facet];
+    const overrides = BACKEND_OPTION_FIELD_OVERRIDES[row.entry.backend];
+    const field = overrides?.[row.entry.facet] ?? REQUIREMENT_OPTION_FIELDS[row.entry.facet];
     if (field === undefined) {
       problems.push(
         `facet ${row.entry.facet} has no render-state options field: dropped ${row.kind} for ${row.entry.backend}`,
@@ -134,7 +141,7 @@ export function generateManifestModuleSource(
   if (importLines.length > 0) lines.push('', ...importLines);
 
   for (const backend of Object.keys(MANIFEST_BACKEND_EXPORTS).sort()) {
-    lines.push('', ...backendFragment(MANIFEST_BACKEND_EXPORTS[backend], byBackend.get(backend) ?? []));
+    lines.push('', ...backendFragment(backend, MANIFEST_BACKEND_EXPORTS[backend], byBackend.get(backend) ?? []));
     // Only a backend the catalog DECLARES gets a full-options export. A catalog that names no
     // infrastructure still produces the content fragment, and omitting the composed object is how the
     // module avoids implying a working configuration it cannot actually assemble.
@@ -162,10 +169,11 @@ function addImport(importsByModule: Map<string, Set<string>>, module: string, sy
   symbols.add(symbol);
 }
 
-function backendFragment(exportName: string, rows: readonly ManifestModuleEntry[]): string[] {
+function backendFragment(backend: string, exportName: string, rows: readonly ManifestModuleEntry[]): string[] {
+  const overrides = BACKEND_OPTION_FIELD_OVERRIDES[backend];
   const byField = new Map<string, ManifestModuleEntry[]>();
   for (const row of rows) {
-    const field = REQUIREMENT_OPTION_FIELDS[row.entry.facet]!;
+    const field = overrides?.[row.entry.facet] ?? REQUIREMENT_OPTION_FIELDS[row.entry.facet]!;
     let list = byField.get(field);
     if (list === undefined) {
       list = [];
@@ -173,15 +181,17 @@ function backendFragment(exportName: string, rows: readonly ManifestModuleEntry[
     }
     list.push(row);
   }
-  // An empty fragment is still exported. A backend this content needs nothing for must spread to
-  // nothing rather than fail to import, so an application can spread every fragment unconditionally.
   if (byField.size === 0) return [`export const ${exportName} = {};`];
 
   const fields = [...byField.keys()].sort().map((field) => {
-    const entries = [...byField.get(field)!]
+    const entries = byField.get(field)!;
+    if (SCALAR_OPTION_FIELDS.has(field)) {
+      return `  ${field}: ${entries[0].entry.implementationSymbol},`;
+    }
+    const mapEntries = [...entries]
       .sort((a, b) => a.kind.localeCompare(b.kind))
       .map((row) => `    ['${row.kind}', ${row.entry.implementationSymbol}],`);
-    return `  ${field}: new Map([\n${entries.join('\n')}\n  ]),`;
+    return `  ${field}: new Map([\n${mapEntries.join('\n')}\n  ]),`;
   });
   return [`export const ${exportName} = {`, ...fields, '};'];
 }
