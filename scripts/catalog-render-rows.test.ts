@@ -63,8 +63,11 @@ describe('buildRenderCatalogRows', () => {
     expect([...backends].sort()).toEqual(['canvas', 'dom', 'gl', 'wgpu']);
   });
 
-  it('files every render row under scene.node-kind', () => {
-    for (const row of buildRenderCatalogRows()) expect(row.facet).toBe(RequirementFacet.SceneNodeKind);
+  it('files rows under the expected render facets', () => {
+    const facets = new Set(buildRenderCatalogRows().map((row) => row.facet));
+    expect(facets).toContain(RequirementFacet.SceneNodeKind);
+    expect(facets).toContain(RequirementFacet.SceneShapeCommand);
+    expect(facets).toContain(RequirementFacet.SceneBlendMode);
   });
 
   it('gives each backend-and-kind pair exactly one row', () => {
