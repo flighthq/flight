@@ -23,6 +23,7 @@ export function classifyPublishError(detail: string): PublishErrorKind {
   if (ALREADY_PUBLISHED.test(detail)) return 'already-published';
   if (RATE_LIMITED.test(detail)) return 'rate-limited';
   if (NPM_STARTUP_RACE.test(detail)) return 'transient';
+  if (REGISTRY_EMPTY_RESPONSE.test(detail)) return 'transient';
   return 'fatal';
 }
 
@@ -35,3 +36,8 @@ const RATE_LIMITED = /\b429\b|too many requests|rate.?limit/i;
 // most often pruning ~/.npm/_logs at startup, where several processes readdir and unlink the same
 // files. The package is fine; the same command run again succeeds.
 const NPM_STARTUP_RACE = /Exit prior to config file resolving|call config\.load\(\) before reading values/i;
+
+// The registry returned an empty or truncated HTTP response body that npm tried to parse as JSON.
+// Under concurrent publishes to a large monorepo the registry or its CDN occasionally drops a
+// response, and npm reports EJSONPARSE against the empty string. The package itself is fine.
+const REGISTRY_EMPTY_RESPONSE = /EJSONPARSE.*(?:empty string|Unexpected end of JSON)/is;
