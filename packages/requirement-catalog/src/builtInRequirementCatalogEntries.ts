@@ -824,6 +824,14 @@ export const BUILT_IN_REQUIREMENT_TRANSLATIONS: readonly RequirementTranslation[
     ],
   },
   {
+    from: { facet: 'document.format', key: 'swf.DefineText' },
+    to: [{ facet: 'scene.node-kind', key: 'Shape' }],
+  },
+  {
+    from: { facet: 'document.format', key: 'swf.DefineText2' },
+    to: [{ facet: 'scene.node-kind', key: 'Shape' }],
+  },
+  {
     from: { facet: 'document.format', key: 'swf.DefineVideoStream' },
     to: [{ facet: 'scene.node-kind', key: 'Sprite' }],
   },

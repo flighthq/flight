@@ -54,14 +54,15 @@ describe('swfAllTagHandlers', () => {
     }
   });
 
-  // The converse: a kind declared for a tag that builds nothing puts a renderer in a build that never
-  // draws with it, which is the bundle cost this pipeline exists to remove.
-  it('maps no tag whose handler builds nothing', () => {
-    const building = new Set(
-      swfAllTagHandlers.filter((h) => h.instantiate?.createPlacementNode !== undefined).flatMap((h) => h.tags),
-    );
+  // NOT asserted: that only placement-node handlers may map kinds. That converse WAS asserted and was
+  // wrong — `DefineText` builds no placement node yet becomes a Shape, because the document importer
+  // constructs those nodes rather than the handler. Encoding the narrow rule as a test made the gap
+  // look verified. What can be checked cheaply is that every mapped tag is one some handler claims, so
+  // a code that belongs to no handler at all cannot sit in the table.
+  it('maps only tag codes some handler actually claims', () => {
+    const claimed = new Set(swfAllTagHandlers.flatMap((handler) => handler.tags));
     for (const code of SWF_TAG_NODE_KINDS.keys()) {
-      expect(building.has(code), `tag ${code} declares kinds but builds no placement node`).toBe(true);
+      expect(claimed.has(code), `tag ${code} is mapped but no handler claims it`).toBe(true);
     }
   });
 
