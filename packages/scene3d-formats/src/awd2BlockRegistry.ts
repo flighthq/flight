@@ -46,12 +46,9 @@ export const awd2SkeletonFamily: readonly Awd2BlockHandler[] = [
  * Every block handler Flight reads an AWD2 file with — the full-support preset, which reproduces the
  * importer's complete behavior.
  *
- * The order is load-bearing and is the order the retired named-slot registry declared: materials,
- * skeleton, geometry, scene structure, lighting, camera. Build phases run in array order and genuinely
- * depend on each other — materials install the resolver scene structure reads, the skeleton builds the
- * joint nodes mesh instances bind to, scene structure creates the nodes lighting and camera parent
- * themselves to. Reordering silently produces unparented lights or unskinned meshes, which is why the
- * order lives here as one declaration rather than as an emergent property of six files.
+ * Array order is cosmetic — `parseAwd2` sorts build phases by each handler's `buildPhase` number, so
+ * the caller's array order is irrelevant. The dependency chain is materials → skeleton → scene
+ * structure → lighting → camera, encoded in the `buildPhase` constants each handler declares.
  */
 export const awd2AllBlockHandlers: readonly Awd2BlockHandler[] = [
   ...awd2MaterialsFamily,

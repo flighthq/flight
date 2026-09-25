@@ -2004,6 +2004,22 @@ describe('parseAwd2', () => {
     expect(getTestTextureResource(doc.resources, second.diffuseMap!)).toBe(doc.resources[0]);
   });
 
+  it('produces the same document regardless of handler array order', () => {
+    const forward = parseAwd2(SKINNED_TRIANGLE_AWD, DEFAULT_OPTIONS);
+    const reversed = parseAwd2(SKINNED_TRIANGLE_AWD, {
+      ...DEFAULT_OPTIONS,
+      blocks: [...awd2AllBlockHandlers].reverse(),
+    });
+    expect(reversed.nodes).toHaveLength(forward.nodes.length);
+    expect(reversed.meshes).toHaveLength(forward.meshes.length);
+    expect(reversed.skins).toHaveLength(forward.skins.length);
+    expect(reversed.animations).toHaveLength(forward.animations.length);
+    for (let i = 0; i < forward.nodes.length; i++) {
+      expect(reversed.nodes[i].name).toBe(forward.nodes[i].name);
+      expect(reversed.nodes[i].kind).toBe(forward.nodes[i].kind);
+    }
+  });
+
   it('returns an empty document with a diagnostic for compressed input', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const doc = parseAwd2(buildAwdHeader(0, AWD2_COMPRESSION_DEFLATE), awd2OptionsWithDeflate(null), diagnostics);

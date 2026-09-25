@@ -24,6 +24,7 @@ import {
 import {
   AWD2_BLOCK_MATERIAL,
   AWD2_BLOCK_TEXTURE,
+  AWD2_BUILD_PHASE_MATERIALS,
   AWD2_MATERIAL_DEFAULT_GLOSS,
   AWD2_MATERIAL_DEFAULT_SPECULAR_RGB,
   AWD2_MATERIAL_DEFAULT_SPECULAR_STRENGTH,
@@ -50,6 +51,7 @@ import { createEmbeddedTextureRef, createExternalTextureRef } from './shared.ts'
 
 export const awd2MaterialHandler: Awd2BlockHandler = {
   blockTypes: [AWD2_BLOCK_MATERIAL],
+  buildPhase: AWD2_BUILD_PHASE_MATERIALS,
   parse(state, block) {
     const material = parseMaterialBlock(block.view, block.source, block.dataStart, block.dataEnd, state.diagnostics);
     if (material !== null) state.materials.set(block.blockId, material);
