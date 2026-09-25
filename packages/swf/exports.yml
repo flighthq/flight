@@ -14,6 +14,11 @@ protected:
   - readSwfHeaderUint32
   - parseSwfRequirements
   - SWF_REQUIREMENT_KEY_NAMESPACE
+  # Build-time only: the tag-to-node-kind fact a manifest build reads to turn a TAG requirement
+  # into a RENDERER requirement. An application never needs it, and keeping it off the public lane is
+  # also what keeps it out of runtime bundles.
+  - SWF_DOCUMENT_NODE_KINDS
+  - SWF_TAG_NODE_KINDS
   # The byte-level and node-level layers the families are composed from. A user registers a family; they
   # do not read a SWF RECT or build a SWF display object themselves, and exposing these as app API would
   # make every one of them a compatibility surface for a decomposition that is still being shaped.

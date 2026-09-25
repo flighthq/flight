@@ -10,7 +10,7 @@ import type {
   SwfTagReader,
   SwfTagRectangle,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, SpriteKind } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageMimeType';
 import { acquireSwfImageTexture } from './swfImageTexture';
@@ -29,7 +29,6 @@ const TAG_JPEG_TABLES = 8;
 
 export const swfJpegBitmapHandler: SwfTagHandler = {
   instantiate: {
-    producesKinds: [SpriteKind],
     createPlacementNode(parsed, characterId, bounds) {
       if (!parsed.images.has(characterId)) return null;
       return createSwfTexturedSprite(acquireSwfImageTexture(parsed, characterId, false, true), bounds);
