@@ -1,6 +1,6 @@
 import type { HostSensorsCapability } from '@flighthq/types/contract';
 
-import { getSensorsPermissionState, hasAccelerometer, hasBarometer, isSensorsSupported } from './sensors';
+import { getSensorsPermissionState, hasAccelerometer, hasBarometer, isSensorsSupported } from './sensors.ts';
 
 function hostWith(backend: Partial<HostSensorsCapability>): {
   readonly system: { readonly sensors: HostSensorsCapability };

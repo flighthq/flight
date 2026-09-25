@@ -10,10 +10,10 @@ import {
   sampleAnimationBlendTree,
   sampleAnimationBlendTreeChannel,
   setAnimationBlendTreeInputWeight,
-} from './animationBlendTree';
-import { createAnimationChannel, createAnimationClip } from './animationClip';
-import { createAnimationPlayer } from './animationPlayer';
-import { createAnimationTrack } from './animationTrack';
+} from './animationBlendTree.ts';
+import { createAnimationChannel, createAnimationClip } from './animationClip.ts';
+import { createAnimationPlayer } from './animationPlayer.ts';
+import { createAnimationTrack } from './animationTrack.ts';
 
 function player(targetRef: unknown, value: number, duration = 0): AnimationPlayer {
   const times = duration > 0 ? [0, duration] : [0];

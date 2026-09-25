@@ -14,7 +14,7 @@ import {
   findFunctionalParityConfounds,
   formatFunctionalParityConfoundReport,
   readFunctionalSceneSources,
-} from '../packages/tool-capture/src/functionalParityConfounds.js';
+} from '../packages/tool-capture/src/functionalParityConfounds.ts';
 
 export {
   describeFunctionalParityFixtureState,
@@ -22,11 +22,11 @@ export {
   findFunctionalSceneClearColor,
   formatFunctionalParityConfoundReport,
   readFunctionalSceneSources,
-} from '../packages/tool-capture/src/functionalParityConfounds.js';
+} from '../packages/tool-capture/src/functionalParityConfounds.ts';
 export type {
   FunctionalParityConfound,
   FunctionalParityConfoundReport,
-} from '../packages/tool-capture/src/functionalParityConfounds.js';
+} from '../packages/tool-capture/src/functionalParityConfounds.ts';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 

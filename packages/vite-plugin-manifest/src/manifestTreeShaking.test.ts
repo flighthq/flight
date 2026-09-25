@@ -5,8 +5,8 @@ import { join } from 'node:path';
 import { RequirementFacet } from '@flighthq/types/contract';
 import { build } from 'vite';
 
-import { MANIFEST_PARSER_BACKEND } from './manifestModuleSource';
-import { createManifestPlugin, MANIFEST_QUERY_SUFFIX } from './manifestPlugin';
+import { MANIFEST_PARSER_BACKEND } from './manifestModuleSource.ts';
+import { createManifestPlugin, MANIFEST_QUERY_SUFFIX } from './manifestPlugin.ts';
 
 // Tree shaking is a property of a BUNDLER, not of the emitted string. Reading the generated source
 // only shows what was offered; these tests run a real Vite production build and read what survived.

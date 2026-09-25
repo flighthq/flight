@@ -1,9 +1,9 @@
-import type { AmbientLight } from './AmbientLight';
-import type { DirectionalLight } from './DirectionalLight';
-import type { Entity, EntityWithoutRuntime } from './Entity';
-import type { HemisphereLight } from './HemisphereLight';
-import type { PointLight } from './PointLight';
-import type { SpotLight } from './SpotLight';
+import type { AmbientLight } from './AmbientLight.ts';
+import type { DirectionalLight } from './DirectionalLight.ts';
+import type { Entity, EntityWithoutRuntime } from './Entity.ts';
+import type { HemisphereLight } from './HemisphereLight.ts';
+import type { PointLight } from './PointLight.ts';
+import type { SpotLight } from './SpotLight.ts';
 
 // The set of light DATA descriptors passed to one drawScene3D call as a draw-argument (lights are
 // not scene members: `scene` = what exists, `camera`/`lights` = what we render now). It carries at

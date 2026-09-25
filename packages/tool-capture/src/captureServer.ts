@@ -8,10 +8,10 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { basename, extname, join, relative } from 'node:path';
 
-import type { CaptureBuildIdentity } from './captureBuildIdentity.js';
-import { readCaptureBuildIdentity } from './captureBuildIdentity.js';
-import type { Tool } from './captureEntries.js';
-import { discoverFunctionalScene3Ds } from './functionalScene3Ds.js';
+import type { CaptureBuildIdentity } from './captureBuildIdentity.ts';
+import { readCaptureBuildIdentity } from './captureBuildIdentity.ts';
+import type { Tool } from './captureEntries.ts';
+import { discoverFunctionalScene3Ds } from './functionalScene3Ds.ts';
 
 export interface Server {
   url: string;

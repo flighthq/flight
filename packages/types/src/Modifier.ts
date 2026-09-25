@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { ModifierKind } from './ModifierKind';
-import type { ModifierSlot } from './ModifierSlot';
+import type { Entity } from './Entity.ts';
+import type { ModifierKind } from './ModifierKind.ts';
+import type { ModifierSlot } from './ModifierSlot.ts';
 
 // A compiled shader augmentation injected into a ShadedMaterial's shading computation — the
 // Material Feature / Modifier tier (see agents/effect-adjustment-architecture.md). Plain data

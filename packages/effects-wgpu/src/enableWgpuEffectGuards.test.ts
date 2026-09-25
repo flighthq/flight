@@ -18,10 +18,14 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import type { LogEntry, Effect, WgpuEffectRunner, WgpuRenderState } from '@flighthq/types/contract';
 
-import { areWgpuEffectGuardsEnabled, disableWgpuEffectGuards, enableWgpuEffectGuards } from './enableWgpuEffectGuards';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
-import { beginWgpuEffectPass, createWgpuEffectState, endWgpuEffectPass } from './wgpuEffectState';
-import { applyWgpuEffectsToRenderTexture } from './wgpuRenderTextureEffect';
+import {
+  areWgpuEffectGuardsEnabled,
+  disableWgpuEffectGuards,
+  enableWgpuEffectGuards,
+} from './enableWgpuEffectGuards.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
+import { beginWgpuEffectPass, createWgpuEffectState, endWgpuEffectPass } from './wgpuEffectState.ts';
+import { applyWgpuEffectsToRenderTexture } from './wgpuRenderTextureEffect.ts';
 
 beforeAll(() => installWgpuMock());
 beforeEach(() => clearLogOnceKeys());

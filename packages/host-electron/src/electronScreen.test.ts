@@ -7,7 +7,7 @@ import {
   electronHostScreenQuery,
   populateElectronHostScreenChange,
   populateElectronHostScreenQuery,
-} from './electronScreen';
+} from './electronScreen.ts';
 
 function display(id: number, x: number): ElectronDisplay {
   return {

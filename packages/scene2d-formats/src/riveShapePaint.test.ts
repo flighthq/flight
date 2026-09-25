@@ -3,8 +3,8 @@ import { createShape } from '@flighthq/shape/contract';
 import type { ImportDiagnostic, RiveArtboardGraph, RiveCoreObject, RivePathRecord } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, PathCommand, RiveFieldType } from '@flighthq/types/contract';
 
-import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry';
-import { appendRiveShapeGeometry, appendRiveShapePaint, registerRivePaintHandlers } from './riveShapePaint';
+import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry.ts';
+import { appendRiveShapeGeometry, appendRiveShapePaint, registerRivePaintHandlers } from './riveShapePaint.ts';
 
 // A Rive shape states a LIST of paints and each one covers every path of that shape. Modelling it as
 // one slot per kind is the bug that had to be retrofitted out of the Lottie importer, so these cases

@@ -1,8 +1,8 @@
 import {
   createColorBlindSimulationAdjustment,
   initializeColorBlindSimulationAdjustment,
-} from './colorBlindSimulationAdjustment';
-import { applyColorMatrixToColor } from './colorMatrixMath';
+} from './colorBlindSimulationAdjustment.ts';
+import { applyColorMatrixToColor } from './colorMatrixMath.ts';
 
 describe('createColorBlindSimulationAdjustment', () => {
   it('defaults to deuteranopia and bakes its linear matrix, preserving alpha', () => {

@@ -1,10 +1,10 @@
-import { parseXmlDocument } from './xmlParse';
+import { parseXmlDocument } from './xmlParse.ts';
 import {
   getXmlElementAttribute,
   getXmlElementAttributeNumber,
   getXmlElementChildByName,
   getXmlElementChildrenByName,
-} from './xmlQuery';
+} from './xmlQuery.ts';
 
 describe('getXmlElementAttribute', () => {
   it('returns the attribute value when present', () => {

@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Awd2BlockHandler, Awd2ParseState } from '@flighthq/types/contract';
 
-import { expandAwd2BlockDispatch, createAwd2ParseState, initializeAwd2ParseState } from './awd2BlockDispatch';
-import { awd2AllBlockHandlers } from './awd2BlockRegistry';
+import { expandAwd2BlockDispatch, createAwd2ParseState, initializeAwd2ParseState } from './awd2BlockDispatch.ts';
+import { awd2AllBlockHandlers } from './awd2BlockRegistry.ts';
 
 describe('createAwd2ParseState', () => {
   it('starts every block map empty and every build slot unset', () => {

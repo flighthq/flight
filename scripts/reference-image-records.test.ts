@@ -2,7 +2,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { ReferenceImageRequest } from './reference-image-records';
+import type { ReferenceImageRequest } from './reference-image-records.ts';
 import {
   getOracleLockImages,
   getOracleRequestCells,
@@ -10,7 +10,7 @@ import {
   readReferenceImageLockPins,
   readOracleRequest,
   readReferenceImageHolds,
-} from './reference-image-records';
+} from './reference-image-records.ts';
 
 const COMMIT = 'a'.repeat(40);
 const SHA = 'b'.repeat(64);

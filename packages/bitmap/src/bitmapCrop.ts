@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bitmap, BitmapEdgeMode, RectangleLike } from '@flighthq/types/contract';
 
-import { initializeBitmap } from './bitmapChannel';
+import { initializeBitmap } from './bitmapChannel.ts';
 
 /**
  * Allocates a new `Bitmap` containing the pixels of `source` cropped to

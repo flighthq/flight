@@ -1,4 +1,4 @@
-import type { TextFormat } from './TextFormat';
+import type { TextFormat } from './TextFormat.ts';
 
 // Resolves a single `<span class>` token to the TextFormat fields that class contributes, or null when
 // the class is unknown. The style seam a `MarkupTagRegistry` carries and the standard `<span>` handler

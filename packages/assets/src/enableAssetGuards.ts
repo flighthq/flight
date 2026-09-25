@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { AssetLibrary, AssetLoadExplanation } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setAssetAcquireGuard } from './assetLibrary';
+import { setAssetAcquireGuard } from './assetLibrary.ts';
 
 export function areAssetGuardsEnabled(library: Readonly<AssetLibrary>): boolean {
   return library.runtime.acquireGuard === warnOnAssetAcquireFailure;

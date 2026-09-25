@@ -1,7 +1,7 @@
 import type { ConsoleMessage, Page, Request, Response } from '@playwright/test';
 import { describe, expect, it, vi } from 'vitest';
 
-import { formatCaptureConsoleMessage, listenForCaptureResourceFailures } from './captureResourceFailure';
+import { formatCaptureConsoleMessage, listenForCaptureResourceFailures } from './captureResourceFailure.ts';
 
 describe('formatCaptureConsoleMessage', () => {
   it('adds the source URL when Chromium omits it from a resource error', () => {

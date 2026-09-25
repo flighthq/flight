@@ -1,4 +1,4 @@
-import type { WgpuMeshPipeline } from './WgpuMeshPipeline';
+import type { WgpuMeshPipeline } from './WgpuMeshPipeline.ts';
 
 // One classic shading model. Lambert is diffuse-only; Phong and BlinnPhong add a specular lobe that
 // differs only in the reflection geometry (reflection vector vs. half vector). The model is encoded

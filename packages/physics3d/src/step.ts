@@ -8,23 +8,23 @@ import type {
   RigidBody3D,
 } from '@flighthq/types/contract';
 
-import { buildPhysics3DContacts, refreshPhysics3DContacts } from './contactIntake';
-import { hasActivePhysics3DBullet, integratePhysics3DContinuous } from './continuous';
+import { buildPhysics3DContacts, refreshPhysics3DContacts } from './contactIntake.ts';
+import { hasActivePhysics3DBullet, integratePhysics3DContinuous } from './continuous.ts';
 import {
   clearRigidBody3DForces,
   integrateRigidBody3DPose,
   integrateRigidBody3DVelocity,
   refreshRigidBody3DWorldInertia,
-} from './integrate';
-import { buildPhysics3DSolveIslands, updatePhysics3DSleep } from './islands';
-import { evaluatePhysics3DJointBreakage } from './jointBreakage';
-import { steppingPhysics3DWorlds } from './ownership';
+} from './integrate.ts';
+import { buildPhysics3DSolveIslands, updatePhysics3DSleep } from './islands.ts';
+import { evaluatePhysics3DJointBreakage } from './jointBreakage.ts';
+import { steppingPhysics3DWorlds } from './ownership.ts';
 import {
   preparePhysics3DContactConstraints,
   solvePhysics3DContactPositions,
   solvePhysics3DContactVelocities,
   warmStartPhysics3DContacts,
-} from './solver';
+} from './solver.ts';
 import {
   isPhysics3DBodyStateValid,
   isPhysics3DColliderStateValid,
@@ -37,7 +37,7 @@ import {
   isPhysics3DSubstepsValid,
   isPhysics3DTimestepValid,
   isPhysics3DVelocityIterationsValid,
-} from './stepValidation';
+} from './stepValidation.ts';
 
 // Installs the optional diagnostics seam consulted when a step declines its preconditions. Null by
 // default and set only by `enablePhysics3DGuards`, so a build that never enables guards links neither the

@@ -1,4 +1,4 @@
-import type { PathWinding } from './ShapeCommand';
+import type { PathWinding } from './ShapeCommand.ts';
 
 // Options for a boolean operation between two paths. `fillRule` decides how each operand's own
 // contours resolve to a filled region before combining (`nonZero` = winding-number fill, the default;

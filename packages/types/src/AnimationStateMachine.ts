@@ -1,8 +1,8 @@
-import type { AnimationBlendTree } from './AnimationBlendTree';
-import type { AnimationChannel } from './AnimationChannel';
-import type { AnimationPlayer } from './AnimationPlayer';
-import type { EasingFunction } from './EasingFunction';
-import type { Entity } from './Entity';
+import type { AnimationBlendTree } from './AnimationBlendTree.ts';
+import type { AnimationChannel } from './AnimationChannel.ts';
+import type { AnimationPlayer } from './AnimationPlayer.ts';
+import type { EasingFunction } from './EasingFunction.ts';
+import type { Entity } from './Entity.ts';
 
 // One named pose state. A state owns no hidden playback behavior: its blend tree contains the explicit
 // players and weights that the caller may inspect or edit.

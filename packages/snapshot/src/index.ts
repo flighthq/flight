@@ -5,4 +5,4 @@ export {
   equalsSnapshot,
   interpolateSnapshots,
   restoreSnapshot,
-} from './contract';
+} from './contract.ts';

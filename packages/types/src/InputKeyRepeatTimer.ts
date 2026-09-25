@@ -8,4 +8,4 @@ export interface InputKeyRepeatTimer extends Entity {
   start(callback: () => void): void;
   stop(): void;
 }
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';

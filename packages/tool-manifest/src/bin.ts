@@ -3,7 +3,7 @@
 // repo compiles with moduleResolution "Bundler", which lets TypeScript accept an extensionless relative
 // import that Node's ESM loader then refuses at runtime. TypeScript resolves this `.js` to the sibling
 // `.ts`, so one spelling satisfies both the compiler and the shipped binary.
-import { runManifestTool } from './manifestTool.js';
+import { runManifestTool } from './manifestTool.ts';
 
 process.exitCode = await runManifestTool(process.argv.slice(2), {
   writeError: (message) => process.stderr.write(message),

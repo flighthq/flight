@@ -1,12 +1,12 @@
-import type { Bitmap } from './Bitmap';
-import type { BlendMode } from './BlendMode';
-import type { DomScene2DRectangle } from './DomScene2DRectangle';
-import type { DomTextureResolver } from './DomTextureResolver';
-import type { Kind } from './Entity';
-import type { RenderProxy2D } from './RenderProxy2D';
-import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState';
-import type { PathWinding } from './ShapeCommand';
-import type { ShapeRasterizer } from './ShapeRasterizer';
+import type { Bitmap } from './Bitmap.ts';
+import type { BlendMode } from './BlendMode.ts';
+import type { DomScene2DRectangle } from './DomScene2DRectangle.ts';
+import type { DomTextureResolver } from './DomTextureResolver.ts';
+import type { Kind } from './Entity.ts';
+import type { RenderProxy2D } from './RenderProxy2D.ts';
+import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState.ts';
+import type { PathWinding } from './ShapeCommand.ts';
+import type { ShapeRasterizer } from './ShapeRasterizer.ts';
 
 export interface DomRenderState extends RenderState {
   applyBlendMode: ((element: HTMLElement, blendMode: BlendMode | null) => void) | null;

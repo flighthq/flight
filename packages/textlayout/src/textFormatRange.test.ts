@@ -1,4 +1,4 @@
-import { createTextFormatRange, initializeTextFormatRange } from './textFormatRange';
+import { createTextFormatRange, initializeTextFormatRange } from './textFormatRange.ts';
 
 describe('createTextFormatRange', () => {
   it('creates a range with the given fields', () => {

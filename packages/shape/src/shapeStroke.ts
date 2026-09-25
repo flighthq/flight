@@ -8,8 +8,8 @@ import type {
 } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
-import { writeShapeGeometryCommandEnd } from './shapeCommandGeometry';
-import { appendShapeGeometryCommand } from './shapeFill';
+import { writeShapeGeometryCommandEnd } from './shapeCommandGeometry.ts';
+import { appendShapeGeometryCommand } from './shapeFill.ts';
 
 // Resolves each solid lineStyle span into its authored centerline + stroke style. The backend-neutral
 // tessellateStrokePath consumer turns that pair into non-overlapping triangles for both open strokes and

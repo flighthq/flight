@@ -2,7 +2,7 @@ import { createBitmapFromImageSource, explainBitmapReadback } from '@flighthq/bi
 import type { HostBitmapReadbackCapability } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
-import { webHostBitmapReadback } from './webBitmapReadback';
+import { webHostBitmapReadback } from './webBitmapReadback.ts';
 
 function hostWith(backend: HostBitmapReadbackCapability): HostBitmapReadbackCapability {
   return backend;

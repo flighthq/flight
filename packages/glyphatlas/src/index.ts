@@ -14,4 +14,4 @@ export {
   getGlyphAtlasMetrics,
   getGlyphAtlasBitmap,
   getGlyphAtlasLayoutVersion,
-} from './contract';
+} from './contract.ts';

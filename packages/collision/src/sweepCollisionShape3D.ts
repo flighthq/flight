@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CollisionShape3D, CollisionTimeOfImpact3D, EntityConstruction } from '@flighthq/types/contract';
 
-import { createCollisionDistance3D, writeCollisionDistance3D } from './gjkDistance3D';
+import { createCollisionDistance3D, writeCollisionDistance3D } from './gjkDistance3D.ts';
 
 export function createCollisionTimeOfImpact3D(): CollisionTimeOfImpact3D {
   const out = allocateEntity<CollisionTimeOfImpact3D>();

@@ -1,6 +1,6 @@
 import type { HostNotificationCapabilities } from '@flighthq/types/contract';
 
-import type { HostProbeHost, HostProbeResult } from './contract';
+import type { HostProbeHost, HostProbeResult } from './contract.ts';
 
 export const HostProbeCapabilities = [
   'accessibility',

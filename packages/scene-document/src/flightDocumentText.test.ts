@@ -9,8 +9,8 @@ import {
   formatFlightDocumentText,
   initializeFlightDocumentRefusalExplanation,
   parseFlightDocumentText,
-} from './flightDocumentText';
-import { parseSceneDocumentYamlSubset } from './sceneDocumentYamlSubset';
+} from './flightDocumentText.ts';
+import { parseSceneDocumentYamlSubset } from './sceneDocumentYamlSubset.ts';
 
 describe('explainFlightDocumentText', () => {
   it('names an empty scenes collection independently', () => {

@@ -5,12 +5,12 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { WireframeMaterialKind } from '@flighthq/types/contract';
 
-import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { SKIN_PALETTE_TEXTURE_UNIT } from './glMeshProgram';
-import { registerGlMeshSkinning } from './glMeshSkinning';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerGlWireframeMaterial, glWireframeMeshMaterialRenderer } from './glWireframeMeshMaterialRenderer';
+import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { SKIN_PALETTE_TEXTURE_UNIT } from './glMeshProgram.ts';
+import { registerGlMeshSkinning } from './glMeshSkinning.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { registerGlWireframeMaterial, glWireframeMeshMaterialRenderer } from './glWireframeMeshMaterialRenderer.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

@@ -3,7 +3,7 @@ import { getNodeWorldMatrix } from '@flighthq/node/contract';
 import type { Matrix, Node2D, NodeAny, QuadBatch, TextureAtlasRegion } from '@flighthq/types/contract';
 import { QuadBatchKind, TextureAtlasRotation } from '@flighthq/types/contract';
 
-import { registerHitTestPrecise } from './hitTests';
+import { registerHitTestPrecise } from './hitTests.ts';
 
 /**
  * Opt-in exact hit provider for quad batches: the point resolves to the *instance* under it, so

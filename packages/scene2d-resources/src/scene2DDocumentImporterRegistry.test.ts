@@ -1,12 +1,12 @@
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
-import { createScene2DDocument } from './scene2DDocument';
+import { createScene2DDocument } from './scene2DDocument.ts';
 import {
   createScene2DDocumentFromBytes,
   createScene2DDocumentImporterRegistry,
   registerScene2DDocumentImporter,
   unregisterScene2DDocumentImporter,
-} from './scene2DDocumentImporterRegistry';
+} from './scene2DDocumentImporterRegistry.ts';
 
 describe('createScene2DDocumentFromBytes', () => {
   it('dispatches to the first matching registered importer', () => {

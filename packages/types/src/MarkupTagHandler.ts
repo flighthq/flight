@@ -1,4 +1,4 @@
-import type { TextFormat } from './TextFormat';
+import type { TextFormat } from './TextFormat.ts';
 
 // The contribution a markup tag makes when it opens. The common case is a plain `Partial<TextFormat>`
 // (a formatting tag such as `<b>` or `<font color>`): the fields it names are merged onto the format

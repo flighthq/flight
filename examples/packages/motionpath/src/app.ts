@@ -25,7 +25,7 @@ import {
 } from '@flighthq/sdk/motionpath';
 import { appendPathCubicCurveTo, appendPathMoveTo, createPath } from '@flighthq/sdk/path';
 
-import { render, scale } from './render';
+import { render, scale } from './render.ts';
 
 const root = createDisplayObject();
 root.scaleX = scale;

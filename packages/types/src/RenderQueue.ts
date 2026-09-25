@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { RenderProxy } from './RenderProxy';
+import type { Entity } from './Entity.ts';
+import type { RenderProxy } from './RenderProxy.ts';
 export type RenderSortKey = number;
 export interface RenderQueueEntry {
   readonly proxy: RenderProxy;

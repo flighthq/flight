@@ -1,5 +1,5 @@
-import type { PbrExtension, PbrUvSet } from './PbrExtension';
-import type { Texture } from './Texture';
+import type { PbrExtension, PbrUvSet } from './PbrExtension.ts';
+import type { Texture } from './Texture.ts';
 
 // KHR_materials_anisotropy: directionally stretches the microfacet response along mesh tangents.
 // The map stores tangent-space direction in RG and strength in B.

@@ -11,8 +11,8 @@ import type {
 } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import * as statusbar from './statusbar';
-import { initializeStatusBar, initializeStatusBarInfo } from './statusbar';
+import * as statusbar from './statusbar.ts';
+import { initializeStatusBar, initializeStatusBarInfo } from './statusbar.ts';
 
 describe('attachStatusBar', () => {
   it('pins both event and snapshot providers at attachment time', () => {

@@ -1,5 +1,5 @@
-import type { Adjustment } from './Adjustment';
-import { EntityRuntimeKey } from './Entity';
+import type { Adjustment } from './Adjustment.ts';
+import { EntityRuntimeKey } from './Entity.ts';
 
 describe('Adjustment', () => {
   describe('open base contract', () => {

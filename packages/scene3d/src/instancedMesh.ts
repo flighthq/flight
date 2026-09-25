@@ -18,7 +18,7 @@ import { InstancedMeshKind } from '@flighthq/types/contract';
 
 export { InstancedMeshKind };
 
-import { createNode3D } from './sceneNode';
+import { createNode3D } from './sceneNode.ts';
 
 /**
  * Appends one instance at the end of `target`, growing `instanceCount` (and capacity, via

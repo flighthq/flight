@@ -8,9 +8,9 @@ import type {
 } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
-import { compactStrokePath } from './compactStrokePath';
-import { writeShapeGeometryCommandEnd } from './shapeCommandGeometry';
-import { appendShapeGeometryCommand, getPathCommandOperandCount } from './shapeFill';
+import { compactStrokePath } from './compactStrokePath.ts';
+import { writeShapeGeometryCommandEnd } from './shapeCommandGeometry.ts';
+import { appendShapeGeometryCommand, getPathCommandOperandCount } from './shapeFill.ts';
 
 // Resolves a Shape's drawing-command stream into stroke OUTLINE regions for the GPU fill path: each
 // `lineStyle` span's centerline geometry is offset by the compact open-stroke kernel (real

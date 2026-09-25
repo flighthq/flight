@@ -1,8 +1,8 @@
 import { getMeshGeometrySkinBindPose, setMeshGeometrySkinBindPose } from '@flighthq/mesh/contract';
 import type { Mesh } from '@flighthq/types/contract';
 
-import { computeSkeleton3DJointMatrices } from './skeleton3d';
-import { captureMeshSkinBindPose, skinMeshGeometry, updateMeshSkinBindPoseDeformInput } from './skinMeshGeometry';
+import { computeSkeleton3DJointMatrices } from './skeleton3d.ts';
+import { captureMeshSkinBindPose, skinMeshGeometry, updateMeshSkinBindPoseDeformInput } from './skinMeshGeometry.ts';
 
 // Deforms a skinned mesh into its geometry for the current joint pose — the explicit per-frame
 // skinning call. Run it after the pose is set (an animation clip applied to the joint nodes, or

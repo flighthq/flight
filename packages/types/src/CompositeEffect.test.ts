@@ -1,7 +1,7 @@
-import type { CompositeEffect } from './CompositeEffect';
-import { CompositeOperator } from './CompositeOperator';
-import type { Effect } from './Effect';
-import { EntityRuntimeKey } from './Entity';
+import type { CompositeEffect } from './CompositeEffect.ts';
+import { CompositeOperator } from './CompositeOperator.ts';
+import type { Effect } from './Effect.ts';
+import { EntityRuntimeKey } from './Entity.ts';
 
 describe('CompositeEffect', () => {
   it('is assignable to the open Effect base with a CompositeEffect kind', () => {

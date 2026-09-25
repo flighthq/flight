@@ -9,9 +9,9 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-import { blendAnimationSamples } from './animationBlend';
-import { sampleAnimationBlendTreeChannel } from './animationBlendTree';
-import { advanceAnimationStateMachineWithScratch } from './animationStateMachineAdvance';
+import { blendAnimationSamples } from './animationBlend.ts';
+import { sampleAnimationBlendTreeChannel } from './animationBlendTree.ts';
+import { advanceAnimationStateMachineWithScratch } from './animationStateMachineAdvance.ts';
 
 // Advances the current state, or both sides of an active transition, then advances transition time.
 // Shared player identity is advanced once. Completion selects the destination state by elapsed duration,

@@ -37,7 +37,7 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import { formatFlightDocumentText } from './flightDocumentText';
+import { formatFlightDocumentText } from './flightDocumentText.ts';
 import {
   createFlightDocumentFromScene3D,
   createFlightDocumentScene3DMaterialization,
@@ -46,7 +46,7 @@ import {
   explainFlightDocumentScene3DRefusalFromText,
   initializeFlightDocumentFromScene3D,
   initializeFlightDocumentScene3DMaterialization,
-} from './sceneDocumentScene3DMaterialization';
+} from './sceneDocumentScene3DMaterialization.ts';
 
 describe('createFlightDocumentFromScene3D', () => {
   it('creates a model from an empty Scene3D', () => {

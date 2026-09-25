@@ -1,5 +1,5 @@
-import type { Effect } from './Effect';
-import type { EffectSourceMode } from './EffectSourceMode';
+import type { Effect } from './Effect.ts';
+import type { EffectSourceMode } from './EffectSourceMode.ts';
 
 // Gradient-bevel composite effect: a bevel whose highlight→shadow band color is looked up from a colors/alphas/ratios gradient ramp indexed by the encoded bevel depth, then sourceMode decides source compositing.
 // Full-frame composite effect over the scene's alpha silhouette; colors are packed RGB integers with a

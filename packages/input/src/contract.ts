@@ -1,1 +1,1 @@
-export * from './inputManager';
+export * from './inputManager.ts';

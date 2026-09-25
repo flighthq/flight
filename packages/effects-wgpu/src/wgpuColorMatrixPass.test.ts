@@ -1,8 +1,8 @@
 import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 
-import { applyColorMatrixPassToWgpu } from './wgpuColorMatrixPass';
-import * as wgpuEffectPassModule from './wgpuEffectPass';
-import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache';
+import { applyColorMatrixPassToWgpu } from './wgpuColorMatrixPass.ts';
+import * as wgpuEffectPassModule from './wgpuEffectPass.ts';
+import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache.ts';
 
 const uniformState = { uploads: [] as number[][] };
 

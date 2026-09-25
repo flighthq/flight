@@ -1,4 +1,4 @@
-import { swfPlaceObject3Handler } from './swfPlaceObject3Handler';
+import { swfPlaceObject3Handler } from './swfPlaceObject3Handler.ts';
 
 describe('swfPlaceObject3Handler', () => {
   it('claims the PlaceObject3 and PlaceObject4 tags', () => {

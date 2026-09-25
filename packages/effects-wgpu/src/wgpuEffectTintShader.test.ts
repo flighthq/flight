@@ -1,9 +1,9 @@
-import * as wgpuEffectPassMod from './wgpuEffectPass';
+import * as wgpuEffectPassMod from './wgpuEffectPass.ts';
 import {
   applyWgpuEffectInnerClipPass,
   applyWgpuEffectInvertTintPass,
   applyWgpuEffectTintPass,
-} from './wgpuEffectTintShader';
+} from './wgpuEffectTintShader.ts';
 
 beforeEach(() => {
   vi.spyOn(wgpuEffectPassMod, 'createWgpuDualSourceEffectPipeline').mockReturnValue({

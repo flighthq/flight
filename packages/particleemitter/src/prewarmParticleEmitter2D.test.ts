@@ -1,8 +1,8 @@
 import { createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles/contract';
 import type { TextureAtlas } from '@flighthq/types/contract';
 
-import { createParticleEmitter2D } from './particleEmitter';
-import { prewarmParticleEmitter2D } from './prewarmParticleEmitter2D';
+import { createParticleEmitter2D } from './particleEmitter.ts';
+import { prewarmParticleEmitter2D } from './prewarmParticleEmitter2D.ts';
 
 function makeAtlas(): TextureAtlas {
   return {

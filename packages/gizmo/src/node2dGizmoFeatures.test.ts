@@ -10,7 +10,7 @@ import {
   registerDefaultShapeBoundsCommands,
 } from '@flighthq/shape/contract';
 
-import { createNode2DGizmoFeatures } from './node2dGizmoFeatures';
+import { createNode2DGizmoFeatures } from './node2dGizmoFeatures.ts';
 
 describe('createNode2DGizmoFeatures', () => {
   it('adapts Node2D world bounds, pivot origin, and composed rotation in degrees', () => {

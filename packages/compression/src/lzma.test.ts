@@ -1,6 +1,6 @@
 import { CompressionFraming } from '@flighthq/types/contract';
 
-import { decompressLzma, sdkHostDecompressLzma } from './lzma';
+import { decompressLzma, sdkHostDecompressLzma } from './lzma.ts';
 
 // The compressed fixtures below are precomputed with Python 3's `lzma` module in LZMA alone format
 // (13-byte header: 1 byte properties + 4 bytes dictionary size + 8 bytes uncompressed size LE, followed

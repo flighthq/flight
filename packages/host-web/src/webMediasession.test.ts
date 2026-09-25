@@ -1,8 +1,8 @@
 import type { MediaSessionActionDetails } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { webHost } from './webHost';
-import { webHostMediaSessionAction, webHostMediaSession } from './webMediasession';
+import { webHost } from './webHost.ts';
+import { webHostMediaSessionAction, webHostMediaSession } from './webMediasession.ts';
 
 interface FakeMediaSession {
   handlers: Map<string, ((details: MediaSessionActionDetails) => void) | null>;

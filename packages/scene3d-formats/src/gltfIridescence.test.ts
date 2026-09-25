@@ -1,8 +1,8 @@
 import type { ExtendedPbrMaterial, GltfDocument, IridescencePbrExtension } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { GltfIridescenceExtensionHandler } from './gltfIridescence';
-import { parseGltf } from './gltfParse';
+import { GltfIridescenceExtensionHandler } from './gltfIridescence.ts';
+import { parseGltf } from './gltfParse.ts';
 
 function makeGltf(material: unknown): GltfDocument {
   return {

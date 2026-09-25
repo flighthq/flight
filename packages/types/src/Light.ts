@@ -1,4 +1,4 @@
-import type { Entity, Kind } from './Entity';
+import type { Entity, Kind } from './Entity.ts';
 
 // Light DATA descriptors for single-pass forward lighting. Pure data — enabled/color/intensity/
 // range/cone/shadow params only; placement comes from the owning scene node's transform in a later

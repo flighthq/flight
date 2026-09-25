@@ -1,9 +1,9 @@
 import type { Environment, ImageResource, Texture } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
-import { bakeWgpuEnvironmentIbl, destroyWgpuScene3DIbl } from './wgpuEnvironmentIblBake';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+import { bakeWgpuEnvironmentIbl, destroyWgpuScene3DIbl } from './wgpuEnvironmentIblBake.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 
 // The GPU bake (irradiance / prefiltered specular / BRDF LUT) is validated by the functional `env-ibl`
 // capture — jsdom cannot run WGSL. These cover the CPU-side wiring: the no-op sentinel, the split-sum set's

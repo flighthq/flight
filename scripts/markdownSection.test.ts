@@ -1,4 +1,4 @@
-import { readSection } from './markdownSection';
+import { readSection } from './markdownSection.ts';
 
 describe('readSection', () => {
   it('reads the body between a heading and the next one', () => {

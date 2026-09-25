@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { Scene2DResourceFailureNotice } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setScene2DResourceFailureGuard } from './scene2DResourceDiagnostics';
+import { setScene2DResourceFailureGuard } from './scene2DResourceDiagnostics.ts';
 
 export function areScene2DResourceFailureGuardsEnabled(): boolean {
   return _enabled;

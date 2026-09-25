@@ -1,8 +1,8 @@
 import { createTextMetrics, setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
 
-import { createRichText, setRichTextString } from './richText';
-import { createTextLabel, setTextLabelString } from './textLabel';
-import { ensureTextLayout, getTextLayout, getTextLayoutMetrics, setTextLabelGuard } from './textLabelLayout';
+import { createRichText, setRichTextString } from './richText.ts';
+import { createTextLabel, setTextLabelString } from './textLabel.ts';
+import { ensureTextLayout, getTextLayout, getTextLayoutMetrics, setTextLabelGuard } from './textLabelLayout.ts';
 
 // A fake fixed-advance measure (7px per char) — exercises the ensure path without a renderer.
 const measure = (text: string) => text.length * 7;

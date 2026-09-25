@@ -1,4 +1,4 @@
-import type { TimelineSignals } from './TimelineSignals';
+import type { TimelineSignals } from './TimelineSignals.ts';
 
 // A MovieClip's per-frame lifecycle signals are exactly its timeline's signals — enableMovieClipSignals
 // arms the underlying timeline and exposes the same group on the clip's runtime.

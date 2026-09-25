@@ -6,8 +6,8 @@ import {
 import type { HostBitmapReadbackCapability } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
-import { createBitmap } from './bitmap';
-import { captureBitmapFromImageResource, createBitmapFromImageSource } from './bitmapFrom';
+import { createBitmap } from './bitmap.ts';
+import { captureBitmapFromImageResource, createBitmapFromImageSource } from './bitmapFrom.ts';
 
 beforeEach(() => {
   registerTestImageDimensionResolver();

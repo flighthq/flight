@@ -1,6 +1,6 @@
 import { BitmapCompositeMode } from '@flighthq/types/contract';
 
-import { createBitmap } from './bitmap';
+import { createBitmap } from './bitmap.ts';
 import {
   compositeBitmapPixels,
   compositeBitmapRegion,
@@ -8,7 +8,7 @@ import {
   extractBitmapPixels32,
   writeBitmapPixels,
   writeBitmapPixels32,
-} from './bitmapComposite';
+} from './bitmapComposite.ts';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };

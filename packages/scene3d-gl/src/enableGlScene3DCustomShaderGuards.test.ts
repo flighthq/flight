@@ -6,12 +6,12 @@ import type { Camera3D, Scene3DLightBlock } from '@flighthq/types/contract';
 import {
   areGlScene3DCustomShaderGuardsEnabled,
   enableGlScene3DCustomShaderGuards,
-} from './enableGlScene3DCustomShaderGuards';
+} from './enableGlScene3DCustomShaderGuards.ts';
 import {
   glCustomShaderMeshMaterialRenderer,
   registerGlCustomMaterialShader,
-} from './glCustomShaderMeshMaterialRenderer';
-import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
+} from './glCustomShaderMeshMaterialRenderer.ts';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 // GL uniform-type enums the mock and the guard compare against (WebGL2 spec values).
 const GL_FLOAT_MAT3 = 0x8b5b;

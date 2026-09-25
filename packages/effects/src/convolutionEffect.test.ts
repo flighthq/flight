@@ -5,7 +5,7 @@ import {
   getConvolutionEffectPadding,
   initializeConvolutionEffect,
   registerConvolutionEffectPaddingResolver,
-} from './convolutionEffect';
+} from './convolutionEffect.ts';
 
 describe('createConvolutionEffect', () => {
   it('tags the intent type', () => {

@@ -7,13 +7,13 @@ import type {
   VertexAttributeLayout,
 } from '@flighthq/types/contract';
 
-import { createMeshGeometry, getMeshGeometryVertexCount } from './meshGeometry';
+import { createMeshGeometry, getMeshGeometryVertexCount } from './meshGeometry.ts';
 import {
   computeMeshGeometryNormals,
   computeMeshGeometryTangents,
   refreshMeshGeometryBounds,
-} from './meshGeometryCompute';
-import { CANONICAL_MESH_GEOMETRY_LAYOUT } from './meshGeometryLayout';
+} from './meshGeometryCompute.ts';
+import { CANONICAL_MESH_GEOMETRY_LAYOUT } from './meshGeometryLayout.ts';
 
 // Builds a MeshGeometry from separate position/normal/uv arrays using the canonical 12-float
 // PBR record (position + normal + tangent.w + uv0). Normals are computed when omitted;

@@ -9,9 +9,9 @@ import {
 import { emitSignal } from '@flighthq/signals/contract';
 import type { Node, NodeOf, NodeRuntime, Transform2DNode } from '@flighthq/types/contract';
 
-import { getNodeRuntime } from './node';
-import { ensureNodeWorldMatrix, getNodeWorldMatrix } from './nodeTransform2d';
-import { invalidateNodeLocalTransform, invalidateNodeParentReference, invalidateNodeWorldBounds } from './revision';
+import { getNodeRuntime } from './node.ts';
+import { ensureNodeWorldMatrix, getNodeWorldMatrix } from './nodeTransform2d.ts';
+import { invalidateNodeLocalTransform, invalidateNodeParentReference, invalidateNodeWorldBounds } from './revision.ts';
 
 /**
  * Adds a child Node instance to this Node

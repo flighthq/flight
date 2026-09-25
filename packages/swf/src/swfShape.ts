@@ -25,7 +25,7 @@ import type {
 } from '@flighthq/types/contract';
 import type { ImportDiagnostic, SwfMorphShapePaths } from '@flighthq/types/contract';
 
-import type { SwfReader } from './swfReader';
+import type { SwfReader } from './swfReader.ts';
 
 // Decodes a glyph outline. A glyph is a bare SHAPE rather than a SHAPEWITHSTYLE — a font's glyphs carry
 // no styles of their own, because the colour belongs to whatever text record draws the glyph. So the

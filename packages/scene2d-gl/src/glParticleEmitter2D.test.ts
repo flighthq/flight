@@ -12,8 +12,8 @@ import { createTexture } from '@flighthq/texture/contract';
 import type { CompressedImageResource, RenderProxy2D } from '@flighthq/types/contract';
 import { CompressedImageTextureSourceKind, TextureAtlasRotation } from '@flighthq/types/contract';
 
-import { glParticleEmitter2DRenderer, drawGlParticleEmitter2D } from './glParticleEmitter2D';
-import { createGlState } from './glTestHelper';
+import { glParticleEmitter2DRenderer, drawGlParticleEmitter2D } from './glParticleEmitter2D.ts';
+import { createGlState } from './glTestHelper.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

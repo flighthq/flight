@@ -1,8 +1,8 @@
-import type { Entity } from './Entity';
-import type { GuiControllerOptions } from './GuiController';
-import type { Node2D } from './Node2D';
-import type { ScrollBarController } from './ScrollBarController';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { GuiControllerOptions } from './GuiController.ts';
+import type { Node2D } from './Node2D.ts';
+import type { ScrollBarController } from './ScrollBarController.ts';
+import type { Signal } from './Signal.ts';
 
 declare const ListControllerTypeKey: unique symbol;
 

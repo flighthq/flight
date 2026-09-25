@@ -2,7 +2,7 @@ import {
   applyGradientGlowEffectToWgpu,
   wgpuGradientGlowEffectRunner,
   registerWgpuGradientGlowEffect,
-} from './wgpuGradientGlowEffect';
+} from './wgpuGradientGlowEffect.ts';
 
 describe('applyGradientGlowEffectToWgpu', () => {
   it('is a function', () => {

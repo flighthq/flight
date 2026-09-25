@@ -5,7 +5,7 @@ import { getShapeFillRegions } from '@flighthq/shape/contract';
 import type { Node2D, NodeAny, Shape } from '@flighthq/types/contract';
 import { MorphShapeKind, Scale9ShapeKind, ShapeKind } from '@flighthq/types/contract';
 
-import { registerHitTestPrecise } from './hitTests';
+import { registerHitTestPrecise } from './hitTests.ts';
 
 /**
  * Opt-in exact hit provider for shapes: the `*Precise` queries then hit a Shape/MorphShape/Scale9Shape

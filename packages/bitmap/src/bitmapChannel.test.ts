@@ -1,7 +1,7 @@
-import { createBitmap } from './bitmap';
-import { initializeBitmap, mergeBitmapChannels, splitBitmapChannels } from './bitmapChannel';
-import { getBitmapPixel, setBitmapPixel } from './bitmapPixel';
-import { createBitmapRegion } from './bitmapRegion';
+import { createBitmap } from './bitmap.ts';
+import { initializeBitmap, mergeBitmapChannels, splitBitmapChannels } from './bitmapChannel.ts';
+import { getBitmapPixel, setBitmapPixel } from './bitmapPixel.ts';
+import { createBitmapRegion } from './bitmapRegion.ts';
 
 describe('initializeBitmap', () => {
   it('is the construction initializer of createBitmap', () => {

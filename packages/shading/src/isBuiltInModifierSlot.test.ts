@@ -1,7 +1,7 @@
 import { ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { isBuiltInModifierSlot } from './isBuiltInModifierSlot';
+import { isBuiltInModifierSlot } from './isBuiltInModifierSlot.ts';
 
 describe('isBuiltInModifierSlot', () => {
   it('accepts every built-in slot name', () => {

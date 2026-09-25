@@ -1,8 +1,8 @@
 import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 
-import { disableSkeleton2DGuards, enableSkeleton2DGuards } from './enableSkeleton2DGuards';
-import { reportSkeleton2DCoercedInterpolation, reportSkeleton2DDeformLengthMismatch } from './skeleton2dGuards';
+import { disableSkeleton2DGuards, enableSkeleton2DGuards } from './enableSkeleton2DGuards.ts';
+import { reportSkeleton2DCoercedInterpolation, reportSkeleton2DDeformLengthMismatch } from './skeleton2dGuards.ts';
 
 // Each case uses its own subject string. `logOnce` keys are process-wide with no reset, which is the
 // behaviour a shipped app wants — one warning per subject, not one per frame — but it means two cases

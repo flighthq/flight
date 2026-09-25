@@ -7,8 +7,8 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import type { BrowserContext } from '@playwright/test';
 
-import type { CaptureStatus } from './captureEntry.js';
-import { captureEntry, getCaptureOutputPaths } from './captureEntry.js';
+import type { CaptureStatus } from './captureEntry.ts';
+import { captureEntry, getCaptureOutputPaths } from './captureEntry.ts';
 
 export interface CaptureRenderTargetOptions {
   context: BrowserContext;

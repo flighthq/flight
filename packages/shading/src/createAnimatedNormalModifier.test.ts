@@ -2,7 +2,7 @@ import type { Texture, Vector2Like } from '@flighthq/types/contract';
 import { AnimatedNormalModifierKind, ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createAnimatedNormalModifier, initializeAnimatedNormalModifier } from './createAnimatedNormalModifier';
+import { createAnimatedNormalModifier, initializeAnimatedNormalModifier } from './createAnimatedNormalModifier.ts';
 
 describe('createAnimatedNormalModifier', () => {
   const scroll: Vector2Like = { x: 0.1, y: 0 };

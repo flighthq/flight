@@ -1,5 +1,5 @@
-import { swfSpriteHandler } from './swfSpriteHandler';
-import { swfSpriteTagFamily } from './swfSpriteTagFamily';
+import { swfSpriteHandler } from './swfSpriteHandler.ts';
+import { swfSpriteTagFamily } from './swfSpriteTagFamily.ts';
 
 describe('swfSpriteTagFamily', () => {
   it('is exactly its handlers, in the order a placed character is offered to them', () => {

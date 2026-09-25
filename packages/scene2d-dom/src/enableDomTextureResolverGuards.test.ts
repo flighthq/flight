@@ -2,9 +2,12 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import { createTexture } from '@flighthq/texture/contract';
 import type { ImageResource } from '@flighthq/types/contract';
 
-import { createDomRenderState } from './domRenderState';
-import { registerDomTextureResolver, resolveDomTexture } from './domTextureResolver';
-import { areDomTextureResolverGuardsEnabled, enableDomTextureResolverGuards } from './enableDomTextureResolverGuards';
+import { createDomRenderState } from './domRenderState.ts';
+import { registerDomTextureResolver, resolveDomTexture } from './domTextureResolver.ts';
+import {
+  areDomTextureResolverGuardsEnabled,
+  enableDomTextureResolverGuards,
+} from './enableDomTextureResolverGuards.ts';
 
 describe('areDomTextureResolverGuardsEnabled', () => {
   it('reports whether diagnostics were installed for the state', () => {

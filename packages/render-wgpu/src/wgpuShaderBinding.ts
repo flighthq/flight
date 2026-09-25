@@ -1,7 +1,7 @@
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import type { Node2D, RenderProxy2D, WgpuBitmapShader, WgpuRenderState } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
 const _shaderBindings = new WeakMap<RenderProxy2D, WgpuBitmapShader>();
 

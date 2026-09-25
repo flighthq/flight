@@ -1,7 +1,7 @@
 import { RenderRegistryTable } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { findUndrawnRegistryMisses, formatUndrawnRegistryMisses } from './captureRegistryMiss.js';
+import { findUndrawnRegistryMisses, formatUndrawnRegistryMisses } from './captureRegistryMiss.ts';
 
 // A verbatim line from a captured page, so the shape this parses is the shape the guards actually emit
 // rather than one invented to match the parser.

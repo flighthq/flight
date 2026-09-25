@@ -1,7 +1,7 @@
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 
-import { parseTextureAtlasStarlingXml } from './textureAtlasStarlingParse';
+import { parseTextureAtlasStarlingXml } from './textureAtlasStarlingParse.ts';
 
 const SIMPLE_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <TextureAtlas imagePath="atlas.png">

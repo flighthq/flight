@@ -5,9 +5,9 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { LambertMaterialKind } from '@flighthq/types/contract';
 
-import { wgpuLambertMeshMaterialRenderer, registerWgpuLambertMaterial } from './wgpuLambertMeshMaterialRenderer';
-import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+import { wgpuLambertMeshMaterialRenderer, registerWgpuLambertMaterial } from './wgpuLambertMeshMaterialRenderer.ts';
+import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

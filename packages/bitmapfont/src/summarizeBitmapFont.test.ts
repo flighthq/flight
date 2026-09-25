@@ -3,8 +3,8 @@ import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type { Bitmap, BitmapFontData, TextureAtlas } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-import { createBitmapFont } from './bitmapFont';
-import { summarizeBitmapFont } from './summarizeBitmapFont';
+import { createBitmapFont } from './bitmapFont.ts';
+import { summarizeBitmapFont } from './summarizeBitmapFont.ts';
 
 // A page whose CPU-side image data is `bytes` long. The summary reports the byte footprint of the
 // actual data rather than width times height, so the fixture supplies data rather than dimensions.

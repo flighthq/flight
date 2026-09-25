@@ -1,5 +1,5 @@
-import { createChannelMixerAdjustment, initializeChannelMixerAdjustment } from './channelMixerAdjustment';
-import { applyColorMatrixToColor } from './colorMatrixMath';
+import { createChannelMixerAdjustment, initializeChannelMixerAdjustment } from './channelMixerAdjustment.ts';
+import { applyColorMatrixToColor } from './colorMatrixMath.ts';
 
 describe('createChannelMixerAdjustment', () => {
   it('rotates channels via a 3×4 row-major mix and carries the fusable kind', () => {

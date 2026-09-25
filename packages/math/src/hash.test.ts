@@ -1,4 +1,4 @@
-import { createRandomSourceFromHash, hash2D, hash3D, hashCombine, hashUint32 } from './hash';
+import { createRandomSourceFromHash, hash2D, hash3D, hashCombine, hashUint32 } from './hash.ts';
 
 describe('createRandomSourceFromHash', () => {
   it('returns a random source that produces values in [0, 1)', () => {

@@ -12,8 +12,8 @@ import {
   hasGltfDracoDecoder,
   registerGltfDracoDecoder,
   unregisterGltfDracoDecoder,
-} from './gltfDraco';
-import { parseGltf } from './gltfParse';
+} from './gltfDraco.ts';
+import { parseGltf } from './gltfParse.ts';
 
 // A STUB decoder. The seam's whole point is that Flight ships no Draco implementation, so the tests
 // prove the wiring — payload located, attribute ids handed over, decoded arrays preferred over the

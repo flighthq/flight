@@ -15,13 +15,13 @@ import type {
   Texture,
 } from '@flighthq/types/contract';
 
-import { anisotropyPbrGlExtension } from './anisotropyPbrGlExtension';
-import { clearcoatPbrGlExtension } from './clearcoatPbrGlExtension';
-import { iridescencePbrGlExtension } from './iridescencePbrGlExtension';
-import { sheenPbrGlExtension } from './sheenPbrGlExtension';
-import { specularPbrGlExtension } from './specularPbrGlExtension';
-import { transmissionVolumePbrGlExtension } from './transmissionVolumePbrGlExtension';
-import { wrappedDiffusePbrGlExtension } from './wrappedDiffusePbrGlExtension';
+import { anisotropyPbrGlExtension } from './anisotropyPbrGlExtension.ts';
+import { clearcoatPbrGlExtension } from './clearcoatPbrGlExtension.ts';
+import { iridescencePbrGlExtension } from './iridescencePbrGlExtension.ts';
+import { sheenPbrGlExtension } from './sheenPbrGlExtension.ts';
+import { specularPbrGlExtension } from './specularPbrGlExtension.ts';
+import { transmissionVolumePbrGlExtension } from './transmissionVolumePbrGlExtension.ts';
+import { wrappedDiffusePbrGlExtension } from './wrappedDiffusePbrGlExtension.ts';
 
 interface ExpectedMap {
   name: string;

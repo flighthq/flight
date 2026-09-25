@@ -9,7 +9,7 @@ import {
   PathMorphIssueContourOrientationMismatch,
   PathMorphIssueNone,
   PathMorphIssueWindingMismatch,
-} from './pathMorphGeometry';
+} from './pathMorphGeometry.ts';
 
 // Pure diagnostic twin of createPathMorph. Re-runs preparation, retains and mutates nothing, and
 // returns detached data explaining whether the two paths have compatible morph topology. Kept in its

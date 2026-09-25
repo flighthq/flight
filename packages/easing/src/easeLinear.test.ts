@@ -1,4 +1,4 @@
-import { easeLinear } from './easeLinear';
+import { easeLinear } from './easeLinear.ts';
 
 describe('easeLinear', () => {
   it('returns 0 at t=0', () => {

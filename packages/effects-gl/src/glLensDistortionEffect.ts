@@ -6,8 +6,8 @@ import type {
   LensDistortionEffect,
 } from '@flighthq/types/contract';
 
-import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Lens distortion: remap uv by a radial polynomial. Positive amount bulges outward (barrel), negative
 // pinches inward (pincushion); scale re-frames the result so corners stay in view.

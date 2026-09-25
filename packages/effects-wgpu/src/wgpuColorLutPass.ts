@@ -7,8 +7,8 @@ import type {
 } from '@flighthq/types/contract';
 import type { WgpuEffectPipeline } from '@flighthq/types/contract';
 
-import { initializeWgpuEffectPipeline } from './wgpuBitmapDisplacementEffect';
-import { EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass';
+import { initializeWgpuEffectPipeline } from './wgpuBitmapDisplacementEffect.ts';
+import { EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass.ts';
 
 // Generic pointwise color-LUT pass — the single fold-in realization for the whole LUT-tier Adjustment
 // family on WebGPU. A run of consecutive pointwise adjustments containing any nonlinear (LUT-tier) member

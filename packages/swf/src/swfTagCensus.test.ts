@@ -1,6 +1,6 @@
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 
-import { collectSwfTagCounts, getSwfTagName } from './swfTagCensus';
+import { collectSwfTagCounts, getSwfTagName } from './swfTagCensus.ts';
 
 describe('collectSwfTagCounts', () => {
   it('returns null for input that is not a readable SWF', () => {

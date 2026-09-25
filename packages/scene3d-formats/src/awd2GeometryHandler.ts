@@ -8,7 +8,7 @@ import {
 import type { Awd2BlockHandler, Awd2ParsedGeometry, ImportDiagnostic, SkinInfluence } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { awdDataTypeByteSize, readAwdDataValue, readAwdString, skipAwdAttrList } from './awd2Reader';
+import { awdDataTypeByteSize, readAwdDataValue, readAwdString, skipAwdAttrList } from './awd2Reader.ts';
 import {
   AWD2_BLOCK_TRIANGLE_GEOMETRY,
   AWD2_STREAM_INDICES,
@@ -18,7 +18,7 @@ import {
   AWD2_STREAM_POSITIONS,
   AWD2_STREAM_TANGENTS,
   AWD2_STREAM_UVS,
-} from './awd2Schema';
+} from './awd2Schema.ts';
 import {
   CANONICAL_FLOATS_PER_VERTEX,
   CANONICAL_LAYOUT,
@@ -27,7 +27,7 @@ import {
   reverseTriangleWinding,
   reverseVertexTriangleWinding,
   SKINNED_FLOATS_PER_VERTEX,
-} from './shared';
+} from './shared.ts';
 
 // Triangle geometry: the vertex streams a mesh is drawn from. This is the one handler a build that
 // renders anything at all registers, and the only one that reaches @flighthq/mesh.

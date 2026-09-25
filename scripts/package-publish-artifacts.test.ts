@@ -9,7 +9,7 @@ import {
   createPublishedPackageReadme,
   getPublishedPackageArtifacts,
   withTemporaryPublishArtifacts,
-} from './package-publish-artifacts';
+} from './package-publish-artifacts.ts';
 
 const sourceRef = '0123456789abcdef0123456789abcdef01234567';
 const manifest = {

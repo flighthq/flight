@@ -1,4 +1,4 @@
-import type { ColorLutAdjustment } from './ColorLutAdjustment';
+import type { ColorLutAdjustment } from './ColorLutAdjustment.ts';
 
 // The full pointwise color grade as one LUT-tier adjustment: exposure/brightness/contrast/saturation/
 // temperature/tint (the linear-ish tone controls) plus a lift/gamma/gain scene2d (shadows/midtones/

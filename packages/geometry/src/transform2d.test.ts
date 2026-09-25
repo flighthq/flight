@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { createMatrix } from './matrix';
-import { createTransform2D, decomposeMatrixToTransform2D, initializeTransform2D } from './transform2d';
+import { createMatrix } from './matrix.ts';
+import { createTransform2D, decomposeMatrixToTransform2D, initializeTransform2D } from './transform2d.ts';
 
 const DEG_TO_RAD = Math.PI / 180;
 

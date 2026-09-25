@@ -1,6 +1,6 @@
-import type { AlphaType } from './AlphaType';
-import type { Entity } from './Entity';
-import type { TextureSourceKind } from './TextureSourceKind';
+import type { AlphaType } from './AlphaType.ts';
+import type { Entity } from './Entity.ts';
+import type { TextureSourceKind } from './TextureSourceKind.ts';
 
 /**
  * Shared identity, dimensions, and PIXEL FACTS for an open texture-source family. Concrete sources

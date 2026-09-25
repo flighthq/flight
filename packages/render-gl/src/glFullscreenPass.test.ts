@@ -7,9 +7,9 @@ import {
   compileGlFullscreenProgram,
   drawGlFullscreenPass,
   fillGlRect,
-} from './glFullscreenPass';
-import { getGlRenderStateRuntime } from './glRenderState';
-import { createGlState, makeGL } from './glTestHelper';
+} from './glFullscreenPass.ts';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
+import { createGlState, makeGL } from './glTestHelper.ts';
 
 function makePass(state: GlRenderState): GlRenderPass {
   const pass = allocateEntity<GlRenderPass>();

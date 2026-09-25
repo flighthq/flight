@@ -1,8 +1,8 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlEffectRunner, GlRenderState, GlTextureRenderTarget, LensFlareEffect } from '@flighthq/types/contract';
 
-import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Lens flare: a single-pass approximation. A true flare is a multi-pass recipe (downsample a bright
 // pass, then accumulate ghosts and a halo from it). Here, on each fragment, we sample the source's

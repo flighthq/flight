@@ -12,7 +12,7 @@ import {
   initializeRiveArtboardImportContext,
   initializeRiveDocumentImportContext,
   registerRiveCoreObjectHandler,
-} from './riveImportRegistry';
+} from './riveImportRegistry.ts';
 
 // Rive core type keys, and the inheritance that makes the registry worth keying by type: a Star is a
 // Polygon is a ParametricPath is a Path, and a Fill is a ShapePaint.

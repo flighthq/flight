@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { mixPhysics3DFriction, mixPhysics3DRestitution } from './material';
+import { mixPhysics3DFriction, mixPhysics3DRestitution } from './material.ts';
 
 describe('mixPhysics3DFriction', () => {
   it('keeps a coefficient two equal surfaces share', () => {

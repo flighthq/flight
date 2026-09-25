@@ -1,7 +1,7 @@
-import type { ImportDiagnostic } from './ImportDiagnostic';
-import type { ParseParticleConfigOptions } from './ParticleConfigParse';
-import type { ParticleEmitterConfig } from './ParticleEmitterConfig';
-import type { ParticleSerializeResult } from './ParticleSerializeResult';
+import type { ImportDiagnostic } from './ImportDiagnostic.ts';
+import type { ParseParticleConfigOptions } from './ParticleConfigParse.ts';
+import type { ParticleEmitterConfig } from './ParticleEmitterConfig.ts';
+import type { ParticleSerializeResult } from './ParticleSerializeResult.ts';
 
 export interface ParticleFormatCodec {
   /** Return `true` when `text` is recognisable as this format. Must not throw. */

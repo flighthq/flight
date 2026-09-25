@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 import pc from 'picocolors';
 import ts from 'typescript';
 
-import { formatGateProvenance, readGateTreeState } from './gate-provenance';
+import { formatGateProvenance, readGateTreeState } from './gate-provenance.ts';
 
 export type TransportPrimitive = 'EventSource' | 'fetch' | 'Image' | 'Request' | 'WebSocket' | 'XMLHttpRequest';
 

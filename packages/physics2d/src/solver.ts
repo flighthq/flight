@@ -1,7 +1,7 @@
 import type { Physics2DContact, Physics2DContactPoint, Physics2DWorld, RigidBody2D } from '@flighthq/types/contract';
 
-import { isRigidBody2DPairAwake } from './islands';
-import { findPhysics2DBody } from './world';
+import { isRigidBody2DPairAwake } from './islands.ts';
+import { findPhysics2DBody } from './world.ts';
 
 // Applies equal and opposite impulses at the pair's contact point. The angular term is the lever arm
 // crossed with the impulse — the reason an off-centre contact spins a body instead of only shoving it.

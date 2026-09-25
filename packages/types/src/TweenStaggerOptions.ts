@@ -1,4 +1,4 @@
-import type { EasingFunction } from './EasingFunction';
+import type { EasingFunction } from './EasingFunction.ts';
 
 export interface TweenStaggerOptions {
   /**

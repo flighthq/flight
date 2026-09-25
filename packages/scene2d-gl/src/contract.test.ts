@@ -1,4 +1,4 @@
-import { glShapeRenderer, registerGlShapeRasterizer } from './contract';
+import { glShapeRenderer, registerGlShapeRasterizer } from './contract.ts';
 
 describe('glShapeRenderer', () => {
   it('is a Scene2DRenderer with a submit function', () => {

@@ -14,7 +14,7 @@ import {
   setVideoChannelPlaybackRate,
 } from '@flighthq/sdk';
 
-import { render, scale } from './render';
+import { render, scale } from './render.ts';
 
 const captureWindow = window as typeof window & { __flightCapture?: boolean };
 const root = createDisplayObject();

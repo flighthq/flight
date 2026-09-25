@@ -13,12 +13,17 @@ import type {
 } from '@flighthq/types/contract';
 import { SpecularGlossinessPbrMaterialKind } from '@flighthq/types/contract';
 
-import { bindGlMeshLightBlock } from './glLitProgram';
-import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshCameraPosition, setGlMeshViewProjection } from './glMeshProgram';
-import { ensureGlPbrProgram } from './glPbrProgramCache';
-import { bindGlPbrStandardBlock, buildGlPbrStandardDefineKey } from './glPbrStandardBlock';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { bindGlMeshLightBlock } from './glLitProgram.ts';
+import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import {
+  beginGlMeshDraw,
+  drawGlMeshSubset,
+  setGlMeshCameraPosition,
+  setGlMeshViewProjection,
+} from './glMeshProgram.ts';
+import { ensureGlPbrProgram } from './glPbrProgramCache.ts';
+import { bindGlPbrStandardBlock, buildGlPbrStandardDefineKey } from './glPbrStandardBlock.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // The built-in SpecularGlossiness forward-lit mesh-material renderer (legacy KHR_materials_
 // pbrSpecularGlossiness workflow). There is no spec-gloss path in the shader: this renderer converts

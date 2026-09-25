@@ -1,6 +1,6 @@
-import type { HasAppearance, HasAppearanceRuntime } from './HasAppearance';
-import type { HasTransform3D, HasTransform3DRuntime } from './HasTransform3D';
-import type { Node, NodeRuntime } from './Node';
+import type { HasAppearance, HasAppearanceRuntime } from './HasAppearance.ts';
+import type { HasTransform3D, HasTransform3DRuntime } from './HasTransform3D.ts';
+import type { Node, NodeRuntime } from './Node.ts';
 export const Node3DKind = 'Node3D';
 export interface Node3DTraits extends HasAppearance, HasTransform3D {}
 export type Node3D = Node<Node3DTraits> & Node3DTraits;

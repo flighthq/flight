@@ -18,8 +18,8 @@ import type {
   Vector2Like,
 } from '@flighthq/types/contract';
 
-import { computeNodeWorldTransformRevision } from './revision';
-import { invalidateNodeLocalTransform } from './revision';
+import { computeNodeWorldTransformRevision } from './revision.ts';
+import { invalidateNodeLocalTransform } from './revision.ts';
 
 /**
  * Converts the `vector` object from the Scene2D (global) coordinates

@@ -1,6 +1,6 @@
-import type { AnimationChannel } from './AnimationChannel';
-import type { AnimationClipEvent } from './AnimationClipEvent';
-import type { Entity } from './Entity';
+import type { AnimationChannel } from './AnimationChannel.ts';
+import type { AnimationClipEvent } from './AnimationClipEvent.ts';
+import type { Entity } from './Entity.ts';
 
 // A bundle of channels with a total `duration` in seconds. Sampling a clip means sampling each
 // channel's track at the playhead time (sampleAnimationTrack) and applying it to that channel's

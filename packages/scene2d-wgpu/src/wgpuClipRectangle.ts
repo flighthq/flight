@@ -5,7 +5,7 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import type { MatrixLike, RectangleLike, WgpuRenderState, WgpuScissorRect } from '@flighthq/types/contract';
 
-import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 
 export function popWgpuClipRectangle(state: WgpuRenderState): void {
   const runtime = getWgpuRenderStateRuntime(state);

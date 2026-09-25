@@ -1,1 +1,1 @@
-export { checkForAppUpdate, destroyUpdater, installDownloadedUpdate } from './contract';
+export { checkForAppUpdate, destroyUpdater, installDownloadedUpdate } from './contract.ts';

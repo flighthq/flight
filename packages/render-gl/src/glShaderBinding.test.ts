@@ -2,15 +2,15 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import type { Node2D, Kind } from '@flighthq/types/contract';
 
-import { getGlRenderStateRuntime } from './glRenderState';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
 import {
   getGlMaterialShader,
   getGlShader,
   registerGlMaterialShader,
   resolveGlShader,
   setGlShader,
-} from './glShaderBinding';
-import { createGlState } from './glTestHelper';
+} from './glShaderBinding.ts';
+import { createGlState } from './glTestHelper.ts';
 
 function makeShader() {
   const out = allocateEntity<any>();

@@ -1,9 +1,9 @@
 import path from 'path';
 import { defineConfig } from 'vitest/config';
 
-import { TestRunCompletenessReporter } from './scripts/testRunCompleteness.js';
-import { TestRunCoverageReporter } from './scripts/testRunCoverage.js';
-import { createVitestTypeScriptConfig } from './scripts/vitestTypeScriptConfig.js';
+import { TestRunCompletenessReporter } from './scripts/testRunCompleteness.ts';
+import { TestRunCoverageReporter } from './scripts/testRunCoverage.ts';
+import { createVitestTypeScriptConfig } from './scripts/vitestTypeScriptConfig.ts';
 
 const rootDir = __dirname;
 

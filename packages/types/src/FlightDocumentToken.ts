@@ -1,5 +1,5 @@
-import type { Entity, Kind } from './Entity';
-import type { FlightDocumentValue } from './FlightDocumentFieldSchema';
+import type { Entity, Kind } from './Entity.ts';
+import type { FlightDocumentValue } from './FlightDocumentFieldSchema.ts';
 
 // One authored token row, shaped like a resource descriptor: kind-tagged, keyed, with the
 // kind-specific payload beside it. The kind sits on the ROW rather than on each mode variant because

@@ -1,4 +1,4 @@
-import { createBitmap } from './bitmap';
+import { createBitmap } from './bitmap.ts';
 import {
   buildBitmapBrightnessColorMatrix,
   buildBitmapContrastColorMatrix,
@@ -10,7 +10,7 @@ import {
   colorMatrixBitmap,
   concatBitmapColorMatrix,
   setBitmapColorMatrixIdentity,
-} from './bitmapColorMatrix';
+} from './bitmapColorMatrix.ts';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };

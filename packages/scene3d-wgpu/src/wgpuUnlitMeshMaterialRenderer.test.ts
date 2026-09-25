@@ -8,9 +8,9 @@ import type { Camera3D, HostVideoCapability, Scene3DLightBlock, Scene3DRenderPro
 import { UnlitMaterialKind } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 
-import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
-import { registerWgpuUnlitMaterial, wgpuUnlitMeshMaterialRenderer } from './wgpuUnlitMeshMaterialRenderer';
+import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
+import { registerWgpuUnlitMaterial, wgpuUnlitMeshMaterialRenderer } from './wgpuUnlitMeshMaterialRenderer.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

@@ -5,9 +5,9 @@ import type {
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { drawWgpuEffectPass } from './wgpuEffectPass';
-import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
+import { drawWgpuEffectPass } from './wgpuEffectPass.ts';
+import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
 
 // Tone map: compress HDR to displayable range via the selected operator. Single-pass reference recipe,
 // the Wgpu mirror of effects-gl's applyToneMapEffectToGl. The operator selects a tonemap body

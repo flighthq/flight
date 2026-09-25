@@ -1,7 +1,7 @@
-import type { ElectronIpcTarget } from './ElectronApi';
-import type { ElectronAppCapabilitiesFor } from './ElectronAppCapabilitiesFor';
-import type { ElectronProtocolCapabilities } from './ElectronProtocolCapabilities';
-import type { ElectronTrayCapabilitiesFor } from './ElectronTrayCapabilitiesFor';
+import type { ElectronIpcTarget } from './ElectronApi.ts';
+import type { ElectronAppCapabilitiesFor } from './ElectronAppCapabilitiesFor.ts';
+import type { ElectronProtocolCapabilities } from './ElectronProtocolCapabilities.ts';
+import type { ElectronTrayCapabilitiesFor } from './ElectronTrayCapabilitiesFor.ts';
 import type {
   Host,
   HostClipboardCapabilities,
@@ -14,12 +14,12 @@ import type {
   HostShortcutCapabilities,
   HostUpdaterCapabilities,
   HostWindowCapabilities,
-} from './Host';
-import type { HostIpcTargetedSendCapability } from './Ipc';
-import type { ElectronMenuCapabilities } from './Menu';
-import type { ElectronMacosNotificationCapabilities, ElectronNotificationCapabilities } from './Notification';
-import type { ElectronPowerCapabilities } from './Power';
-import type { DesktopOsProfile } from './Tray';
+} from './Host.ts';
+import type { HostIpcTargetedSendCapability } from './Ipc.ts';
+import type { ElectronMenuCapabilities } from './Menu.ts';
+import type { ElectronMacosNotificationCapabilities, ElectronNotificationCapabilities } from './Notification.ts';
+import type { ElectronPowerCapabilities } from './Power.ts';
+import type { DesktopOsProfile } from './Tray.ts';
 
 type ElectronNotificationCapabilitiesFor<Profile extends DesktopOsProfile> = Profile extends 'macos'
   ? ElectronMacosNotificationCapabilities

@@ -5,7 +5,7 @@ import {
   _loadFontFaceFromUrl,
   _loadFontFaceFromUrls,
   _loadFontFacesFromName,
-} from './_fontFaceLoad';
+} from './_fontFaceLoad.ts';
 
 interface FontFaceConstruction {
   family: string;

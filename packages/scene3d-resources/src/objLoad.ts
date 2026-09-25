@@ -6,7 +6,7 @@ import type {
   Scene3DDocumentLoadOptions,
 } from '@flighthq/types/contract';
 
-import { loadScene3DDocumentTextFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource';
+import { loadScene3DDocumentTextFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource.ts';
 
 // Fetches a Wavefront OBJ file from a URL and parses it into a format-neutral Scene3DDocument, using an
 // optional already-parsed MTL library for its materials. Fetches only the OBJ FILE (the `.mtl` sidecar and

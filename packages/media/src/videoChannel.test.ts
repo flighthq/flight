@@ -23,7 +23,7 @@ import {
   setVideoChannelMuted,
   setVideoChannelPlaybackRate,
   stopVideoChannel,
-} from './videoChannel';
+} from './videoChannel.ts';
 
 const webVideoHost: HostVideoCapability = {
   addEndedListener: (element, listener) => {

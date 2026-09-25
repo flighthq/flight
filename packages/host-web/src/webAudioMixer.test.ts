@@ -1,7 +1,7 @@
 import type { AudioDeviceHandle } from '@flighthq/types/contract';
 
-import { webHostAudioDevice } from './webAudioDevice';
-import { webHostAudioMixer } from './webAudioMixer';
+import { webHostAudioDevice } from './webAudioDevice.ts';
+import { webHostAudioMixer } from './webAudioMixer.ts';
 
 let device: AudioDeviceHandle | null = null;
 

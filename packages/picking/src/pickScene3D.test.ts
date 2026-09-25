@@ -28,7 +28,7 @@ import {
   pickScene3DAll,
   pickScene3DAllWithRay3D,
   pickScene3DWithRay3D,
-} from './pickScene3D';
+} from './pickScene3D.ts';
 
 function makeCamera(): Camera3D {
   const camera = createCamera3D({

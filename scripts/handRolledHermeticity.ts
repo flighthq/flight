@@ -33,7 +33,7 @@
 // `contrast`: an address list to go and read.
 import { readFileSync } from 'node:fs';
 
-import { REGISTRY_ISOLATED_TESTS } from './registryIsolatedTests';
+import { REGISTRY_ISOLATED_TESTS } from './registryIsolatedTests.ts';
 
 export interface HandRolledHermeticityReport {
   readonly dynamicMocking: readonly string[];

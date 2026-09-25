@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { BrightnessContrastAdjustment, EntityRuntimeKey, EntityConstruction } from '@flighthq/types/contract';
 
-import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment';
+import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment.ts';
 
 export function createBrightnessContrastAdjustment(
   options: Readonly<Omit<BrightnessContrastAdjustment, typeof EntityRuntimeKey | 'kind' | 'colorMatrix'>> = {},

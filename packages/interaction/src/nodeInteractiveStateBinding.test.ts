@@ -13,7 +13,7 @@ import {
   createNodeInteractiveStateBinding,
   disposeNodeInteractiveStateBinding,
   explainNodeInteractiveStateBinding,
-} from './nodeInteractiveStateBinding';
+} from './nodeInteractiveStateBinding.ts';
 
 describe('applyNodeInteractiveStates', () => {
   it('composes hover then pressed by property and treats disabled as exclusive', () => {

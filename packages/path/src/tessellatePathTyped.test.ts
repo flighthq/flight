@@ -1,6 +1,6 @@
-import { appendPathRectangle, createPath } from './path';
-import { tessellatePath } from './tessellatePath';
-import { tessellatePathTyped, tessellatePathTypedInto } from './tessellatePathTyped';
+import { appendPathRectangle, createPath } from './path.ts';
+import { tessellatePath } from './tessellatePath.ts';
+import { tessellatePathTyped, tessellatePathTypedInto } from './tessellatePathTyped.ts';
 
 describe('tessellatePathTyped', () => {
   it('returns Float32Array vertices and Uint32Array indices', () => {

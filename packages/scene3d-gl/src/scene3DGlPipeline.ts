@@ -42,17 +42,17 @@ import {
   WrappedDiffusePbrExtensionKind,
 } from '@flighthq/types/contract';
 
-import { anisotropyPbrGlExtension } from './anisotropyPbrGlExtension';
-import { clearcoatPbrGlExtension } from './clearcoatPbrGlExtension';
-import { glBlinnPhongMeshMaterialRenderer } from './glBlinnPhongMeshMaterialRenderer';
-import { glCustomShaderMeshMaterialRenderer } from './glCustomShaderMeshMaterialRenderer';
-import { glDepthMeshMaterialRenderer } from './glDepthMeshMaterialRenderer';
-import { glEmissiveMeshMaterialRenderer } from './glEmissiveMeshMaterialRenderer';
-import { glExtendedPbrMeshMaterialRenderer } from './glExtendedPbrMeshMaterialRenderer';
-import { glLambertMeshMaterialRenderer } from './glLambertMeshMaterialRenderer';
-import { glMatcapMeshMaterialRenderer } from './glMatcapMeshMaterialRenderer';
-import { glNormalMeshMaterialRenderer } from './glNormalMeshMaterialRenderer';
-import { glPhongMeshMaterialRenderer } from './glPhongMeshMaterialRenderer';
+import { anisotropyPbrGlExtension } from './anisotropyPbrGlExtension.ts';
+import { clearcoatPbrGlExtension } from './clearcoatPbrGlExtension.ts';
+import { glBlinnPhongMeshMaterialRenderer } from './glBlinnPhongMeshMaterialRenderer.ts';
+import { glCustomShaderMeshMaterialRenderer } from './glCustomShaderMeshMaterialRenderer.ts';
+import { glDepthMeshMaterialRenderer } from './glDepthMeshMaterialRenderer.ts';
+import { glEmissiveMeshMaterialRenderer } from './glEmissiveMeshMaterialRenderer.ts';
+import { glExtendedPbrMeshMaterialRenderer } from './glExtendedPbrMeshMaterialRenderer.ts';
+import { glLambertMeshMaterialRenderer } from './glLambertMeshMaterialRenderer.ts';
+import { glMatcapMeshMaterialRenderer } from './glMatcapMeshMaterialRenderer.ts';
+import { glNormalMeshMaterialRenderer } from './glNormalMeshMaterialRenderer.ts';
+import { glPhongMeshMaterialRenderer } from './glPhongMeshMaterialRenderer.ts';
 import {
   animatedNormalGlModifierSnippet,
   dissolveGlModifierSnippet,
@@ -62,19 +62,19 @@ import {
   rimGlModifierSnippet,
   toonGlModifierSnippet,
   vertexDisplaceGlModifierSnippet,
-} from './glShadedBuiltInModifiers';
-import { glShadedMeshMaterialRenderer } from './glShadedMeshMaterialRenderer';
-import { glSpecularGlossinessPbrMeshMaterialRenderer } from './glSpecularGlossinessPbrMeshMaterialRenderer';
-import { glStandardPbrMeshMaterialRenderer } from './glStandardPbrMeshMaterialRenderer';
-import { glToonMeshMaterialRenderer } from './glToonMeshMaterialRenderer';
-import { glUnlitMeshMaterialRenderer } from './glUnlitMeshMaterialRenderer';
-import { glVertexColorMeshMaterialRenderer } from './glVertexColorMeshMaterialRenderer';
-import { glWireframeMeshMaterialRenderer } from './glWireframeMeshMaterialRenderer';
-import { iridescencePbrGlExtension } from './iridescencePbrGlExtension';
-import { sheenPbrGlExtension } from './sheenPbrGlExtension';
-import { specularPbrGlExtension } from './specularPbrGlExtension';
-import { transmissionVolumePbrGlExtension } from './transmissionVolumePbrGlExtension';
-import { wrappedDiffusePbrGlExtension } from './wrappedDiffusePbrGlExtension';
+} from './glShadedBuiltInModifiers.ts';
+import { glShadedMeshMaterialRenderer } from './glShadedMeshMaterialRenderer.ts';
+import { glSpecularGlossinessPbrMeshMaterialRenderer } from './glSpecularGlossinessPbrMeshMaterialRenderer.ts';
+import { glStandardPbrMeshMaterialRenderer } from './glStandardPbrMeshMaterialRenderer.ts';
+import { glToonMeshMaterialRenderer } from './glToonMeshMaterialRenderer.ts';
+import { glUnlitMeshMaterialRenderer } from './glUnlitMeshMaterialRenderer.ts';
+import { glVertexColorMeshMaterialRenderer } from './glVertexColorMeshMaterialRenderer.ts';
+import { glWireframeMeshMaterialRenderer } from './glWireframeMeshMaterialRenderer.ts';
+import { iridescencePbrGlExtension } from './iridescencePbrGlExtension.ts';
+import { sheenPbrGlExtension } from './sheenPbrGlExtension.ts';
+import { specularPbrGlExtension } from './specularPbrGlExtension.ts';
+import { transmissionVolumePbrGlExtension } from './transmissionVolumePbrGlExtension.ts';
+import { wrappedDiffusePbrGlExtension } from './wrappedDiffusePbrGlExtension.ts';
 
 function buildScene3DGlMeshMaterialRenderers(
   base: Readonly<ReadonlyMap<Kind, GlMeshMaterialRenderer | GlQuadMaterialRenderer>>,

@@ -6,9 +6,9 @@ import {
   disableInteractionGuards,
   enableInteractionGuards,
   explainInteractionHitEligibility,
-} from './enableInteractionGuards';
-import { connectInteractionSignal, createInteractionManager } from './interactionManager';
-import { setNodeFocusable, setNodeHitTestEnabled } from './nodeInteractionState';
+} from './enableInteractionGuards.ts';
+import { connectInteractionSignal, createInteractionManager } from './interactionManager.ts';
+import { setNodeFocusable, setNodeHitTestEnabled } from './nodeInteractionState.ts';
 
 afterEach(() => {
   disableInteractionGuards();

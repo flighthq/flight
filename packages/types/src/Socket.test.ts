@@ -1,4 +1,4 @@
-import type { HostSocketCapability, SocketConnection, TcpSocketConnection, TcpSocketOptions } from './index';
+import type { HostSocketCapability, SocketConnection, TcpSocketConnection, TcpSocketOptions } from './index.ts';
 
 describe('TcpSocketConnection', () => {
   it('publishes a byte-stream contract distinct from framed SocketConnection', () => {

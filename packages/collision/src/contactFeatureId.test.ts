@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { FEATURE_INDEX_LIMIT, packContactFeatureId } from './contactFeatureId';
+import { FEATURE_INDEX_LIMIT, packContactFeatureId } from './contactFeatureId.ts';
 
 describe('packContactFeatureId', () => {
   it('separates the exact face pairs the previous shift packing aliased', () => {

@@ -1,4 +1,4 @@
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';
 
 export type FullscreenTargetHandle = Entity & { readonly __brand: 'FullscreenTargetHandle' };
 

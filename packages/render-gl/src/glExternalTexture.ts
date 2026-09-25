@@ -11,9 +11,9 @@ import type {
 } from '@flighthq/types/contract';
 import { ExternalTextureSourceKind } from '@flighthq/types/contract';
 
-import { applyGlSamplerState, bindGlTextureRealization } from './glDraw';
-import { getGlRenderStateRuntime } from './glRenderState';
-import { registerGlTextureResolver } from './glTextureResolver';
+import { applyGlSamplerState, bindGlTextureRealization } from './glDraw.ts';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
+import { registerGlTextureResolver } from './glTextureResolver.ts';
 
 export function createExternalGlTexture(
   state: GlRenderState,

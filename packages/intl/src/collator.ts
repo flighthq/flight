@@ -1,6 +1,6 @@
 import type { LocaleInput } from '@flighthq/types/contract';
 
-import { getCacheKey, getCached } from './cache';
+import { getCacheKey, getCached } from './cache.ts';
 
 /**
  * Compare strings `a` and `b` for locale-aware ordering in `locale`, returning

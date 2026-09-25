@@ -5,7 +5,7 @@ import {
   isSpineBinaryReaderOverrun,
   readSpineBinaryString,
   skipSpineBinaryBytes,
-} from './spineBinaryReader';
+} from './spineBinaryReader.ts';
 
 // The Spine `.skel` VERSION ACCESSOR — layer 1 of the version-keyed import model
 // (agents/version-keyed-import-model.md). It reads the header and nothing else: no skeleton data, no

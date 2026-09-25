@@ -2,7 +2,7 @@ import type { GlyphEntry, GlyphSource } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { explainBitmapTextMissingGlyphs } from './explainBitmapTextMissingGlyphs';
+import { explainBitmapTextMissingGlyphs } from './explainBitmapTextMissingGlyphs.ts';
 
 function createSource(codepoints: readonly number[]): GlyphSource {
   const entries = new Map<number, GlyphEntry>();

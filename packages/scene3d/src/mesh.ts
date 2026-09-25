@@ -18,7 +18,7 @@ import type {
 } from '@flighthq/types/contract';
 import { MeshDeformerMorph, MeshDeformerNone, MeshDeformerSkeletal, MeshKind } from '@flighthq/types/contract';
 
-import { createNode3D, getNode3DRuntime } from './sceneNode';
+import { createNode3D, getNode3DRuntime } from './sceneNode.ts';
 
 export { MeshKind } from '@flighthq/types/contract';
 

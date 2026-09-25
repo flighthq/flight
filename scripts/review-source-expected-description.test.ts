@@ -4,7 +4,7 @@ import {
   sourceContainsExpectedDescription,
   sourceDeclaresFunctionalBackendControl,
   sourceWithheldExpectedDescription,
-} from '../tools/review/src/sourceExpectedDescription';
+} from '../tools/review/src/sourceExpectedDescription.ts';
 
 describe('sourceDeclaresFunctionalBackendControl', () => {
   it('recognizes the exported const declaration with or without an as-const assertion', () => {

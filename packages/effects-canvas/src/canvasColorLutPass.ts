@@ -1,7 +1,7 @@
 import { sampleColorLut } from '@flighthq/adjustments/contract';
 import type { CanvasTextureRenderTarget, ColorLut } from '@flighthq/types/contract';
 
-import { drawCanvasImageDataPass } from './canvasEffectCompositing';
+import { drawCanvasImageDataPass } from './canvasEffectCompositing.ts';
 
 // Generic pointwise color-LUT pass — the single fold-in realization for the whole LUT-tier Adjustment
 // family on Canvas 2D. A run of consecutive pointwise adjustments containing any nonlinear (LUT-tier)

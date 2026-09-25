@@ -1,3 +1,3 @@
-export * from './transformVelocity';
-export * from './velocityField';
-export * from './velocitySample';
+export * from './transformVelocity.ts';
+export * from './velocityField.ts';
+export * from './velocitySample.ts';

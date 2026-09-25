@@ -1,4 +1,4 @@
-import { CIRCLE_KAPPA, DEG_TO_RAD, EPSILON, HALF_PI, RAD_TO_DEG, TAU } from './constants';
+import { CIRCLE_KAPPA, DEG_TO_RAD, EPSILON, HALF_PI, RAD_TO_DEG, TAU } from './constants.ts';
 
 describe('constants', () => {
   describe('CIRCLE_KAPPA', () => {

@@ -1,6 +1,6 @@
 import { AbcMultinameKind, AbcTraitKind } from '@flighthq/types/contract';
 
-import { readAbcFile } from './abcFile';
+import { readAbcFile } from './abcFile.ts';
 
 describe('readAbcFile', () => {
   it('reads the version and the whole constant pool, keeping the reserved zero entry', () => {

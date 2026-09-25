@@ -5,10 +5,10 @@ import type {
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { drawWgpuEffectPass } from './wgpuEffectPass';
-import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
-import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale';
+import { drawWgpuEffectPass } from './wgpuEffectPass.ts';
+import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
+import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale.ts';
 
 // Sharpen: unsharp mask via a 3x3 Laplacian kernel; `amount` scales the high-frequency boost.
 export function applySharpenEffectToWgpu(

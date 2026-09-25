@@ -9,13 +9,13 @@ import type { HostImageCapability, Scene3DResourceResolverOptions, EntityConstru
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 import type { Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
-import { createWebImageResourceFetch } from './imageResourceFetch';
+import { createWebImageResourceFetch } from './imageResourceFetch.ts';
 import {
   createScene3DMaterialTextureRegistry,
   registerExtendedPbrScene3DMaterialTextures,
   registerStandardPbrScene3DMaterialTextures,
   registerUnlitScene3DMaterialTextures,
-} from './sceneMaterialTextureRegistry';
+} from './sceneMaterialTextureRegistry.ts';
 
 // Explicit preconfigured assembly for the common Standard PBR + Unlit path. The primitive constructor
 // above stays empty so importing/creating it cannot silently pull material families into a custom lane.

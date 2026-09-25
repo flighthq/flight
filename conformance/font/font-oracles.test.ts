@@ -9,7 +9,7 @@ import {
   outlinesAreIdentical,
   tallyWoff2OnCurveSense,
   woff2StreamRange,
-} from './font-oracles';
+} from './font-oracles.ts';
 
 const HEAD = { xMax: 100, xMin: -10, yMax: 200, yMin: -20 };
 

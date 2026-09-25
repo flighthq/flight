@@ -6,8 +6,8 @@ import {
   createScene3DMaterialTextureRegistry,
   getScene3DMaterialTextures,
   registerExtendedPbrScene3DMaterialTextures,
-} from './sceneMaterialTextureRegistry';
-import { registerSheenPbrScene3DMaterialTextures } from './sheenPbrScene3DMaterialTextures';
+} from './sceneMaterialTextureRegistry.ts';
+import { registerSheenPbrScene3DMaterialTextures } from './sheenPbrScene3DMaterialTextures.ts';
 
 describe('registerSheenPbrScene3DMaterialTextures', () => {
   it('lists the sheen color and roughness maps', () => {

@@ -11,8 +11,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { getRiveCoreTypeName, isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
-import { registerRiveCoreObjectHandler } from './riveImportRegistry';
+import { getRiveCoreTypeName, isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
+import { registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
 
 /**
  * Reads an artboard's state machines as plain data.

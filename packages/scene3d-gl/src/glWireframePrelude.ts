@@ -1,8 +1,8 @@
 import type { GlContext, GlWireframeProgram, GlRenderState } from '@flighthq/types/contract';
 
-import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
-import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail.ts';
+import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // The Gl wireframe prelude: a minimal GLSL 300 es shader that transforms the position attribute by
 // the model + view-projection matrices and outputs a single flat LINE color. It has no lighting and

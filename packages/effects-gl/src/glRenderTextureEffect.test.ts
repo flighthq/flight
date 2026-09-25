@@ -12,13 +12,13 @@ import {
 } from '@flighthq/render-gl/contract';
 import type { GlEffectRunner, GlRenderState, Effect } from '@flighthq/types/contract';
 
-import { applyGaussianBlurToGlRenderTextures } from './glBlurEffect';
-import { getGlEffectRunner, registerGlEffect } from './glEffectRegistry';
+import { applyGaussianBlurToGlRenderTextures } from './glBlurEffect.ts';
+import { getGlEffectRunner, registerGlEffect } from './glEffectRegistry.ts';
 import {
   applyGlEffectsToRenderTexture,
   explainGlEffectApplication,
   setGlEffectApplicationGuard,
-} from './glRenderTextureEffect';
+} from './glRenderTextureEffect.ts';
 
 describe('applyGaussianBlurToGlRenderTextures', () => {
   it('publishes destination and scratch RenderTextures after the two Gaussian target passes', () => {

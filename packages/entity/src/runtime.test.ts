@@ -2,9 +2,9 @@ import type { Entity } from '@flighthq/types/contract';
 import type { EntityRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { attachEntityBinding } from './binding';
-import { allocateEntity, finishEntity } from './entity';
-import { createEntityRuntime, getEntityRuntime, hasEntityRuntime } from './runtime';
+import { attachEntityBinding } from './binding.ts';
+import { allocateEntity, finishEntity } from './entity.ts';
+import { createEntityRuntime, getEntityRuntime, hasEntityRuntime } from './runtime.ts';
 
 function createTestEntity(): Entity {
   return finishEntity(allocateEntity<Entity>());

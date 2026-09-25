@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { Signal } from './Signal.ts';
 /** Opt-in signals for a particle emitter. Acquired via `enableParticleEmitterSignals`. */
 export interface ParticleEmitterSignals extends Entity {
   /** Fired when a particle spawns. Payload: world-space x/y/z, initial velocity vx/vy/vz. 2D emitters

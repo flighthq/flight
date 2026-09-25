@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { RimModifier, RimModifierOptions, EntityConstruction } from '@flighthq/types/contract';
 import { ModifierSlot, RimModifierKind } from '@flighthq/types/contract';
 
-import { initializeModifier } from './modifier';
+import { initializeModifier } from './modifier.ts';
 
 // The options for `createRimModifier`. Only `color` is required; `power`/`intensity`/`bias` carry
 // documented defaults. All three are uniform-fed scalars — they do not change the emitted program,

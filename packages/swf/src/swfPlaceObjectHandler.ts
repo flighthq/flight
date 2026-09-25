@@ -1,8 +1,8 @@
 import type { SwfTagHandler, SwfTagPlacement, SwfTagReader } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
-import { EMPTY_ADJUSTMENTS, EMPTY_EFFECTS, readSwfColorTransform } from './swfAppearance';
-import { IDENTITY_MATRIX, readSwfMatrix } from './swfPrimitive';
+import { EMPTY_ADJUSTMENTS, EMPTY_EFFECTS, readSwfColorTransform } from './swfAppearance.ts';
+import { IDENTITY_MATRIX, readSwfMatrix } from './swfPrimitive.ts';
 
 const TAG_PLACE_OBJECT = 4;
 const TAG_PLACE_OBJECT_2 = 26;

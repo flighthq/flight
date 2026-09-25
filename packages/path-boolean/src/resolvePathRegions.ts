@@ -1,6 +1,6 @@
 import type { PathBooleanKernel, Path, PathBooleanContour, PathBooleanFillRule } from '@flighthq/types/contract';
 
-import { writePathBooleanContours } from './writePathBooleanContours';
+import { writePathBooleanContours } from './writePathBooleanContours.ts';
 
 export function resolvePathRegions(
   pathBooleanKernel: Readonly<PathBooleanKernel>,

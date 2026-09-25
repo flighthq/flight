@@ -2,8 +2,8 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'n
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { readCaptureBaselineCoverageManifest } from '../packages/tool-capture/src/captureBaselineCoverageManifest';
-import type { FunctionalBackend } from '../packages/tool-capture/src/functionalScene3Ds';
+import { readCaptureBaselineCoverageManifest } from '../packages/tool-capture/src/captureBaselineCoverageManifest.ts';
+import type { FunctionalBackend } from '../packages/tool-capture/src/functionalScene3Ds.ts';
 import {
   buildGroups,
   cellGlyph,
@@ -14,7 +14,7 @@ import {
   loadRealizationCoverage,
   renderJson,
   renderMarkdown,
-} from './support';
+} from './support.ts';
 
 const REPO_ROOT = join(import.meta.dirname, '..');
 const FUNCTIONAL_BASELINES = join(REPO_ROOT, 'functional', 'baselines');

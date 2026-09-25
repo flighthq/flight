@@ -2,7 +2,7 @@ import type { MeshGeometry, MeshGeometryRuntime, WgpuRenderState, WgpuMeshUpload
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 
 // Lazily uploads a MeshGeometry's interleaved vertex buffer + index buffer into GPU buffers for this
 // WgpuRenderState's device, caching the result by geometry in the device-owned scene mesh cache.

@@ -1,6 +1,6 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
 
-import { capacitorHostDeviceGroup, capacitorHostGeolocationGroup } from './capacitorSystemHost';
+import { capacitorHostDeviceGroup, capacitorHostGeolocationGroup } from './capacitorSystemHost.ts';
 
 function fakeCapacitor(): CapacitorApi {
   return {

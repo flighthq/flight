@@ -1,4 +1,4 @@
-import type { Attachment2D } from './Attachment2D';
+import type { Attachment2D } from './Attachment2D.ts';
 
 /**
  * The per-vertex offset stream in effect on a slot, together with THE ATTACHMENT IT WAS AUTHORED FOR.

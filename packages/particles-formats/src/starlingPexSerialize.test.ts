@@ -1,7 +1,7 @@
 import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 
-import { parseStarlingPex, parseStarlingPexDocument } from './starlingPexParse';
-import { serializeStarlingPex, serializeStarlingPexDocument } from './starlingPexSerialize';
+import { parseStarlingPex, parseStarlingPexDocument } from './starlingPexParse.ts';
+import { serializeStarlingPex, serializeStarlingPexDocument } from './starlingPexSerialize.ts';
 
 // Attribute-style PEX (the canonical Sparrow/Starling variant)
 const FIRE_PEX_ATTR = `<?xml version="1.0" encoding="utf-8"?>

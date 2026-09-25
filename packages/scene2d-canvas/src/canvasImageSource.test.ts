@@ -7,14 +7,14 @@ import {
 import { createRenderTexture, createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
 import type { HostImageCapability, TextureSource } from '@flighthq/types/contract';
 
-import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
-import { explainCanvasImageSource } from './canvasImageSource';
-import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
-import { renderIntoCanvasRenderTexture } from './canvasRenderTexture';
-import { registerCanvasRenderTextureResolver } from './canvasRenderTextureResolver';
-import { createCanvasRenderState, getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
-import { registerCanvasTextureResolver, resolveCanvasTexture } from './canvasTestSupport';
-import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource';
+import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver.ts';
+import { explainCanvasImageSource } from './canvasImageSource.ts';
+import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver.ts';
+import { renderIntoCanvasRenderTexture } from './canvasRenderTexture.ts';
+import { registerCanvasRenderTextureResolver } from './canvasRenderTextureResolver.ts';
+import { createCanvasRenderState, getCanvasRenderStateTextureResolvers } from './canvasTestSupport.ts';
+import { registerCanvasTextureResolver, resolveCanvasTexture } from './canvasTestSupport.ts';
+import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource.ts';
 
 beforeEach(() => {
   registerTestImageDimensionResolver();

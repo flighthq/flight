@@ -1,4 +1,4 @@
-import { acquireShapedRun, releaseShapedRun, setShapedRunReleaseGuard } from './textShaperPool';
+import { acquireShapedRun, releaseShapedRun, setShapedRunReleaseGuard } from './textShaperPool.ts';
 
 describe('acquireShapedRun', () => {
   it('returns a ShapedRun with the expected shape', () => {

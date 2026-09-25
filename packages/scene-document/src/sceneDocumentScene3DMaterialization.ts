@@ -42,25 +42,25 @@ import {
   Node3DTraitsKey,
 } from '@flighthq/types/contract';
 
-import { explainFlightDocumentText, parseFlightDocumentText } from './flightDocumentText';
+import { explainFlightDocumentText, parseFlightDocumentText } from './flightDocumentText.ts';
 import {
   assertAllInteractiveStateBindingsUsed,
   createInteractiveStateBindingLookup,
   isInteractiveStateBindingTargetSupported,
   readInteractiveStateBindingMetadata,
-} from './sceneDocumentInteractiveStateBindings';
+} from './sceneDocumentInteractiveStateBindings.ts';
 import {
   checkFlightDocumentLayoutTargets,
   createFlightDocumentLayoutBindings,
   writeFlightDocumentLayoutBindings,
-} from './sceneDocumentLayoutBindings';
-import { selectFlightDocumentScene } from './sceneDocumentMaterializationSelection';
+} from './sceneDocumentLayoutBindings.ts';
+import { selectFlightDocumentScene } from './sceneDocumentMaterializationSelection.ts';
 import {
   checkFlightDocumentInteractiveStates,
   checkFlightDocumentNodeFields,
   checkUnregisteredNodeKinds,
   createSceneRefusal,
-} from './sceneDocumentRefusal';
+} from './sceneDocumentRefusal.ts';
 
 export function createFlightDocumentFromScene3D(
   source: Readonly<Scene3D>,

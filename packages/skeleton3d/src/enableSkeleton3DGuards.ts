@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { Skeleton3D } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setSkeleton3DBindPoseGuard } from './skeleton3d';
+import { setSkeleton3DBindPoseGuard } from './skeleton3d.ts';
 
 export function areSkeleton3DGuardsEnabled(): boolean {
   return skeleton3DGuardsEnabled;

@@ -1,4 +1,4 @@
-import type { SpritesheetData } from './SpritesheetData';
+import type { SpritesheetData } from './SpritesheetData.ts';
 
 // Starling / Sparrow spritesheet XML schema — field names as they appear in the file.
 // Reference: https://doc.starling-framework.org/current/starling/textures/TextureAtlas.html

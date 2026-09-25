@@ -2,8 +2,8 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import * as midi from './contract';
-import { initializeMidiInputPortResource, initializeMidiOutputPortResource } from './midiPort';
+import * as midi from './contract.ts';
+import { initializeMidiInputPortResource, initializeMidiOutputPortResource } from './midiPort.ts';
 
 describe('closeMidiPort', () => {
   it('distinguishes a successful close, an already-closed port, disposal, and provider failure', async () => {

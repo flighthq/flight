@@ -1,10 +1,10 @@
 import { createTextureAtlasFromGrid } from '@flighthq/textureatlas/contract';
 import type { GridSliceOptions, Spritesheet, SpritesheetAnimation, TextureAtlas } from '@flighthq/types/contract';
 
-import { createSpritesheet } from './spritesheet';
-import { createSpritesheetAnimation } from './spritesheetAnimation';
-import type { SpritesheetData } from './spritesheetData';
-import { createSpritesheetFrame } from './spritesheetFrame';
+import { createSpritesheet } from './spritesheet.ts';
+import { createSpritesheetAnimation } from './spritesheetAnimation.ts';
+import type { SpritesheetData } from './spritesheetData.ts';
+import { createSpritesheetFrame } from './spritesheetFrame.ts';
 
 // Hydrates a runtime `Spritesheet` from a `SpritesheetData` descriptor and a pre-built `TextureAtlas`.
 // Resolves `frameNames` to atlas region IDs via name lookup (or positional index when a name is absent),

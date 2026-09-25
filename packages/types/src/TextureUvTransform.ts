@@ -1,4 +1,4 @@
-import type { Vector2 } from './Vector2';
+import type { Vector2 } from './Vector2.ts';
 
 // The KHR_texture_transform fields shared by every uv-carrying Texture source. `uvOffset`/`uvScale`
 // shift and tile the sampled coordinates

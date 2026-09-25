@@ -60,4 +60,4 @@ export {
   setLogRedactionPaths,
   setLogSink,
   startLogTimer,
-} from './contract';
+} from './contract.ts';

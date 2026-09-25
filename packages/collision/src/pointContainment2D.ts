@@ -1,6 +1,6 @@
 import type { CollisionBuiltInShape2D } from '@flighthq/types/contract';
 
-import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation2D';
+import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation2D.ts';
 
 const RELATIVE_EPSILON = 1e-9;
 

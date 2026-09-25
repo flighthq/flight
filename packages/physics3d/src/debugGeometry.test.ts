@@ -7,22 +7,22 @@ import {
 import type { CollisionBuiltInShape3D, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { buildPhysics3DContacts } from './contactIntake';
+import { buildPhysics3DContacts } from './contactIntake.ts';
 import {
   createPhysics3DDebugGeometry,
   initializePhysics3DDebugGeometry,
   writePhysics3DDebugGeometry,
-} from './debugGeometry';
-import { createPhysics3DBallAndSocketJoint } from './jointFactories';
-import { addPhysics3DJoint } from './jointRegistry';
-import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
+} from './debugGeometry.ts';
+import { createPhysics3DBallAndSocketJoint } from './jointFactories.ts';
+import { addPhysics3DJoint } from './jointRegistry.ts';
+import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers.ts';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,
   createPhysics3DCollider,
   createPhysics3DWorld,
   createRigidBody3D,
-} from './world';
+} from './world.ts';
 
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();

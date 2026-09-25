@@ -1,10 +1,10 @@
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { RenderProxy2D, RenderProxyAdapter } from '@flighthq/types/contract';
 
-import { registerNodeRenderer } from './renderer';
-import { createRenderProxy2D } from './renderProxy';
-import { applyRenderProxyAdapter, getRenderProxyAdapter, setRenderProxyAdapter } from './renderProxyAdapter';
-import { createRenderState } from './renderState';
+import { registerNodeRenderer } from './renderer.ts';
+import { createRenderProxy2D } from './renderProxy.ts';
+import { applyRenderProxyAdapter, getRenderProxyAdapter, setRenderProxyAdapter } from './renderProxyAdapter.ts';
+import { createRenderState } from './renderState.ts';
 
 describe('applyRenderProxyAdapter', () => {
   it('accepts the canonical RenderProxy2D type without a redundant refinement', () => {

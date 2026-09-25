@@ -1,7 +1,7 @@
 import type { MeshGeometry, VertexAttributeLayout } from '@flighthq/types/contract';
 
-import { createMeshGeometry } from './meshGeometry';
-import { computeMeshGeometryTangents, refreshMeshGeometryBounds } from './meshGeometryCompute';
+import { createMeshGeometry } from './meshGeometry.ts';
+import { computeMeshGeometryTangents, refreshMeshGeometryBounds } from './meshGeometryCompute.ts';
 
 // Primitive builders for the canonical interleaved PBR vertex record:
 //   position(3) + normal(3) + tangent(4, w = handedness) + uv0(2) = 12 f32 / 48 bytes.

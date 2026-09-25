@@ -1,16 +1,16 @@
-import type { EasingFunction } from './EasingFunction';
-import type { Entity, Kind } from './Entity';
-import type { GltfExtensionHandler } from './GltfExtension';
-import type { HostImageDecodeCapabilities } from './HostImageDecode';
-import type { ImageResourceFetch, ImageResourceReference } from './ImageResourceReference';
-import type { ImportDiagnostic } from './ImportDiagnostic';
-import type { Material } from './Material';
-import type { PbrExtension } from './PbrExtension';
-import type { ResourceLoader } from './ResourceLoader';
-import type { Scene3D } from './Scene3D';
-import type { Signal } from './Signal';
-import type { Texture } from './Texture';
-import type { TextureSource } from './TextureSource';
+import type { EasingFunction } from './EasingFunction.ts';
+import type { Entity, Kind } from './Entity.ts';
+import type { GltfExtensionHandler } from './GltfExtension.ts';
+import type { HostImageDecodeCapabilities } from './HostImageDecode.ts';
+import type { ImageResourceFetch, ImageResourceReference } from './ImageResourceReference.ts';
+import type { ImportDiagnostic } from './ImportDiagnostic.ts';
+import type { Material } from './Material.ts';
+import type { PbrExtension } from './PbrExtension.ts';
+import type { ResourceLoader } from './ResourceLoader.ts';
+import type { Scene3D } from './Scene3D.ts';
+import type { Signal } from './Signal.ts';
+import type { Texture } from './Texture.ts';
+import type { TextureSource } from './TextureSource.ts';
 
 export type Scene3DMaterialTextureLister = (material: Readonly<Material>, out: Texture[]) => void;
 

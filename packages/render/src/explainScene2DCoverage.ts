@@ -8,7 +8,7 @@ import type {
 } from '@flighthq/types/contract';
 import { RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 
-import { getRenderStateRuntime } from './renderState';
+import { getRenderStateRuntime } from './renderState.ts';
 
 // Clears `out`, then reports every requirement in `usage` that any 2D backend answers the same way,
 // with how well this state is wired for it — satisfied entries included, so one call is a manifest.

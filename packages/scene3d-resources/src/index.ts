@@ -29,4 +29,4 @@ export {
   setScene3DDocumentResourceBasePathFromUrl,
   updateScene3DResourceStreaming,
   waitForScene3DResourceResolver,
-} from './contract';
+} from './contract.ts';

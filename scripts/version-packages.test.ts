@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getWorkspaceLockVersionMismatches, hasOnlyWorkspaceVersionChanges } from './version-packages';
+import { getWorkspaceLockVersionMismatches, hasOnlyWorkspaceVersionChanges } from './version-packages.ts';
 
 describe('getWorkspaceLockVersionMismatches', () => {
   it('accepts a complete lockfile bump', () => {

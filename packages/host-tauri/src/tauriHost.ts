@@ -1,15 +1,15 @@
 import { createHost } from '@flighthq/host/contract';
 import type { DesktopOsProfile, EntityRuntimeKey, TauriApi, TauriHost } from '@flighthq/types/contract';
 
-import { tauriHostApp } from './tauriApp';
-import { tauriHostClipboard } from './tauriClipboard';
-import { tauriHostDialog } from './tauriDialog';
-import { tauriHostMenu } from './tauriMenu';
-import { tauriHostNotification } from './tauriNotification';
-import { tauriHostPlatformGroup } from './tauriPlatform';
-import { tauriHostShell } from './tauriShell';
-import { tauriHostShortcut } from './tauriShortcut';
-import { tauriHostTray } from './tauriTray';
+import { tauriHostApp } from './tauriApp.ts';
+import { tauriHostClipboard } from './tauriClipboard.ts';
+import { tauriHostDialog } from './tauriDialog.ts';
+import { tauriHostMenu } from './tauriMenu.ts';
+import { tauriHostNotification } from './tauriNotification.ts';
+import { tauriHostPlatformGroup } from './tauriPlatform.ts';
+import { tauriHostShell } from './tauriShell.ts';
+import { tauriHostShortcut } from './tauriShortcut.ts';
+import { tauriHostTray } from './tauriTray.ts';
 import {
   tauriHostAccessibility,
   tauriHostAudio,
@@ -52,8 +52,8 @@ import {
   tauriHostUpdater,
   tauriHostVideo,
   tauriHostWgpu,
-} from './tauriUnsupportedHostGroups';
-import { tauriHostWindow } from './tauriWindow';
+} from './tauriUnsupportedHostGroups.ts';
+import { tauriHostWindow } from './tauriWindow.ts';
 
 // Builds the explicit Tauri host from an injected aggregate of the Tauri v2 JS API modules and
 // plugins. Unsupported groups are constructed explicitly so capability absence remains honest.

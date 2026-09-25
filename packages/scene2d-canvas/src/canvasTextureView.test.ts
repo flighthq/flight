@@ -5,7 +5,7 @@ import {
 } from '@flighthq/image/contract';
 import { createTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
 
-import { drawCanvasTextureView } from './canvasTextureView';
+import { drawCanvasTextureView } from './canvasTextureView.ts';
 
 // drawCanvasTextureView reads the texture's backing size and draws nothing when it is zero, and a
 // resource only knows its size once a host measures its handle. That dependency is declared here rather

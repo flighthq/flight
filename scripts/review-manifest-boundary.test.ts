@@ -3,13 +3,13 @@ import { resolve } from 'node:path';
 
 import { describe, expect, test } from 'vitest';
 
-import { parseReviewManifest } from '../tools/review/src/reviewManifest';
-import type { ReviewTest } from '../tools/review/src/reviewManifest';
+import { parseReviewManifest } from '../tools/review/src/reviewManifest.ts';
+import type { ReviewTest } from '../tools/review/src/reviewManifest.ts';
 import {
   createReviewManifestPlugin,
   REVIEW_MANIFEST_PUBLIC_ID,
   REVIEW_MANIFEST_RESOLVED_ID,
-} from '../tools/review/src/reviewManifestPlugin';
+} from '../tools/review/src/reviewManifestPlugin.ts';
 
 const root = resolve(import.meta.dirname, '..');
 
@@ -21,9 +21,9 @@ describe('review manifest type boundary', () => {
     expect(main).not.toContain('@ts-expect-error');
     expect(main).not.toContain('as ReviewTest[]');
     expect(vite).not.toMatch(/interface Review(?:Cell|Test)\b/);
-    expect(main).toContain("from './reviewManifest'");
+    expect(main).toContain("from './reviewManifest.ts'");
     expect(main).toContain('parseReviewManifest(tests)');
-    expect(vite).toContain("from './src/reviewManifest'");
+    expect(vite).toContain("from './src/reviewManifest.ts'");
   });
 
   test('runtime schema rejects a producer payload that drifts from the consumer contract', () => {

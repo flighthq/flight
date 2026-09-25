@@ -19,8 +19,8 @@ import type { CanvasShapeCommand, LineScaleMode, Matrix, Texture } from '@flight
 
 const _fillMatrixInverse: Matrix = createMatrix();
 
-import { createBitmapPattern, createGradientPattern } from './canvasFillPattern';
-import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource';
+import { createBitmapPattern, createGradientPattern } from './canvasFillPattern.ts';
+import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource.ts';
 
 export const canvasBeginTextureFill: CanvasShapeCommand<'beginTextureFill'> = {
   fillBounds: defaultShapeBoundsFlush,

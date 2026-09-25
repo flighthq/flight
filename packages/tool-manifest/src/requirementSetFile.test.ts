@@ -1,7 +1,7 @@
 import { createRequirementSet } from '@flighthq/requirement/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
-import { readRequirementCatalogFile, readRequirementSetFile, writeRequirementSetFile } from './requirementSetFile.js';
+import { readRequirementCatalogFile, readRequirementSetFile, writeRequirementSetFile } from './requirementSetFile.ts';
 
 describe('readRequirementCatalogFile', () => {
   it('reads entries and reports a malformed row by index rather than dropping it', () => {

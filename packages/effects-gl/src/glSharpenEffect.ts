@@ -1,8 +1,8 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlEffectRunner, GlRenderState, GlTextureRenderTarget, SharpenEffect } from '@flighthq/types/contract';
 
-import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Sharpen: unsharp mask via a 3x3 Laplacian kernel; `amount` scales the high-frequency boost.
 export function applySharpenEffectToGl(

@@ -1,5 +1,5 @@
-import { appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path';
-import { acquirePathMesh, acquirePathMeshTyped, releasePathMesh, releasePathMeshTyped } from './pathMeshPool';
+import { appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path.ts';
+import { acquirePathMesh, acquirePathMeshTyped, releasePathMesh, releasePathMeshTyped } from './pathMeshPool.ts';
 
 describe('acquirePathMesh', () => {
   it('returns a PathMesh for an empty path', () => {

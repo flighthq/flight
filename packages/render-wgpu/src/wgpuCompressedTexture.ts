@@ -11,7 +11,7 @@ import type {
   WgpuTextureEntry,
 } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
 interface WgpuCompressedFormatInfo {
   blockHeight: number;

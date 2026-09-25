@@ -24,7 +24,7 @@ import {
   getNode2DRuntime,
   isNode2D,
   setNode2DClip,
-} from './displayObject';
+} from './displayObject.ts';
 
 function getRuntime_(obj: Node2D): Node2DRuntime {
   return getEntityRuntime(obj) as Node2DRuntime;

@@ -11,7 +11,7 @@ import {
   readByteReaderU64,
   readByteReaderU8,
   skipByteReader,
-} from './byteReader';
+} from './byteReader.ts';
 
 describe('createByteReader', () => {
   it('starts at the given offset', () => {

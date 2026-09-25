@@ -1,2 +1,2 @@
-export * from './quadBatch';
-export { initializeQuadBatchData, initializeQuadBatchSignals } from './quadBatch';
+export * from './quadBatch.ts';
+export { initializeQuadBatchData, initializeQuadBatchSignals } from './quadBatch.ts';

@@ -1,10 +1,10 @@
 import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/mesh/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
-import { wgpuSkinningAdapter } from './wgpuSkinPalette';
-import { ensureWgpuWireframeUpload } from './wgpuWireframeUpload';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
+import { wgpuSkinningAdapter } from './wgpuSkinPalette.ts';
+import { ensureWgpuWireframeUpload } from './wgpuWireframeUpload.ts';
 
 describe('ensureWgpuWireframeUpload', () => {
   it('builds a line-index buffer sized two indices per triangle edge', () => {

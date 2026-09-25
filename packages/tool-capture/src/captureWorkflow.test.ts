@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { runCaptureBatch, runCaptureWorkflow } from './captureWorkflow';
+import { runCaptureBatch, runCaptureWorkflow } from './captureWorkflow.ts';
 
 describe('runCaptureBatch', () => {
   it('exports the batch orchestrator', () => {

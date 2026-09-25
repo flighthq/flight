@@ -1,6 +1,6 @@
 import type { CapacitorApi, HostShareContentCapability } from '@flighthq/types/contract';
 
-import { capacitorHostShare, capacitorHostShareContent } from './capacitorShare';
+import { capacitorHostShare, capacitorHostShareContent } from './capacitorShare.ts';
 
 function fakeCapacitor(shareImpl?: () => Promise<{ activityType?: string }>) {
   const shared: Array<{ dialogTitle?: string; title?: string; text?: string; url?: string }> = [];

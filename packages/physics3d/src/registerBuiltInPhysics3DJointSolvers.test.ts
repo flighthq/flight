@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getPhysics3DJointSolver } from './jointRegistry';
+import { getPhysics3DJointSolver } from './jointRegistry.ts';
 import {
   physics3DBallAndSocketJointSolver,
   physics3DConeTwistJointSolver,
@@ -16,9 +16,9 @@ import {
   Physics3DGeneric6DofJointKind,
   Physics3DHingeJointKind,
   Physics3DSliderJointKind,
-} from './joints';
-import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
-import { createPhysics3DWorld } from './world';
+} from './joints.ts';
+import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers.ts';
+import { createPhysics3DWorld } from './world.ts';
 
 describe('registerBuiltInPhysics3DJointSolvers', () => {
   it('binds every built-in kind to its own solver', () => {

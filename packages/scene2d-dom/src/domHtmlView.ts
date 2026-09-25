@@ -1,8 +1,8 @@
 ﻿import { noopRendererData } from '@flighthq/render/contract';
 import type { Scene2DRenderer, DomRenderState, HtmlView, RenderProxy2D } from '@flighthq/types/contract';
 
-import { setDomRendererElement } from './domStyle';
-import { setDomTransform } from './domTransform';
+import { setDomRendererElement } from './domStyle.ts';
+import { setDomTransform } from './domTransform.ts';
 
 export function drawDomHtmlView(state: DomRenderState, renderProxy: RenderProxy2D): void {
   const source = renderProxy.source as HtmlView;

@@ -1,5 +1,5 @@
-import type { AdjustmentKind } from './AdjustmentKind';
-import type { Entity } from './Entity';
+import type { AdjustmentKind } from './AdjustmentKind.ts';
+import type { Entity } from './Entity.ts';
 
 // Substrate-agnostic pointwise value-remap intents. Each is plain data carrying a `kind` discriminant;
 // a stack of adjustments (a plain `readonly Adjustment[]`) fuses into ONE artifact as data — a single

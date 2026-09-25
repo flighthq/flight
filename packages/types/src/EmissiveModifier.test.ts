@@ -1,7 +1,7 @@
-import type { EmissiveModifier } from './EmissiveModifier';
-import { EmissiveModifierFacing, EmissiveModifierKind } from './EmissiveModifier';
-import { EntityRuntimeKey } from './Entity';
-import type { Modifier } from './Modifier';
+import type { EmissiveModifier } from './EmissiveModifier.ts';
+import { EmissiveModifierFacing, EmissiveModifierKind } from './EmissiveModifier.ts';
+import { EntityRuntimeKey } from './Entity.ts';
+import type { Modifier } from './Modifier.ts';
 
 describe('EmissiveModifier', () => {
   describe('EmissiveModifierKind', () => {

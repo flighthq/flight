@@ -4,8 +4,8 @@ import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render
 import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
 
-import { drawWgpuRichText } from './wgpuRichText';
-import { drawWgpuTextInputOverlay, enableWgpuTextInput } from './wgpuTextInput';
+import { drawWgpuRichText } from './wgpuRichText.ts';
+import { drawWgpuTextInputOverlay, enableWgpuTextInput } from './wgpuTextInput.ts';
 
 beforeAll(() => {
   installWgpuMock();

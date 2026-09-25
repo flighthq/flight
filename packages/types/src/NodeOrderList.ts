@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Node, NodeTraits } from './Node';
+import type { Entity } from './Entity.ts';
+import type { Node, NodeTraits } from './Node.ts';
 export interface NodeOrderList<Traits extends object = NodeTraits> extends Entity {
   entryCount: number;
   nodes: Node<Traits>[];

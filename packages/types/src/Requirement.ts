@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { Kind } from './Entity';
-import type { RequirementFacet } from './RequirementFacet';
+import type { Entity } from './Entity.ts';
+import type { Kind } from './Entity.ts';
+import type { RequirementFacet } from './RequirementFacet.ts';
 
 // One producer fact. It names content in the producer's vocabulary and deliberately carries no backend,
 // registry, or registrar identity; only the consumer can map the requirement to an implementation.

@@ -1,14 +1,14 @@
-export * from './enableTextShaperGuards';
-export * from './textShaper';
+export * from './enableTextShaperGuards.ts';
+export * from './textShaper.ts';
 export {
   clearTextShaperCache,
   createTextShaperCache,
   disposeTextShaperCache,
   shapeTextRunCached,
-} from './textShaperCache';
-export * from './textShaperCluster';
-export * from './textShaperItemize';
-export { acquireShapedRun, releaseShapedRun } from './textShaperPool';
+} from './textShaperCache.ts';
+export * from './textShaperCluster.ts';
+export * from './textShaperItemize.ts';
+export { acquireShapedRun, releaseShapedRun } from './textShaperPool.ts';
 export {
   clearShapedRun,
   createShapedRun,
@@ -23,5 +23,5 @@ export {
   getGlyphName,
   shapeTextRun,
   shapeTextRunInto,
-} from './textShaperRun';
-export { disposeTextShaperSignals, enableTextShaperSignals, getTextShaperSignals } from './textShaperSignals';
+} from './textShaperRun.ts';
+export { disposeTextShaperSignals, enableTextShaperSignals, getTextShaperSignals } from './textShaperSignals.ts';

@@ -1,4 +1,4 @@
-import type { NodeAny } from './Node';
+import type { NodeAny } from './Node.ts';
 
 /**
  * Payload for the node focus signals `onFocusIn` / `onFocusOut`. Mirrors the DOM `FocusEvent` shape in

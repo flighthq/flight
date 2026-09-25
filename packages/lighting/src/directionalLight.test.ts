@@ -7,7 +7,7 @@ import {
   initializeDirectionalLight,
   setDirectionalLightDirection,
   setDirectionalLightTarget,
-} from './directionalLight';
+} from './directionalLight.ts';
 
 describe('cloneDirectionalLight', () => {
   it('creates an independent copy with a fresh direction vector', () => {

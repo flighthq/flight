@@ -3,8 +3,8 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { resolveReferenceImageCommissionState } from '../tools/review/src/referenceImageCommission';
-import { joinOracleState } from './reference-image-state';
+import { resolveReferenceImageCommissionState } from '../tools/review/src/referenceImageCommission.ts';
+import { joinOracleState } from './reference-image-state.ts';
 import {
   compareReferenceImage,
   LEGACY_EXACT_COMPARISON_POLICY_ID,
@@ -13,7 +13,7 @@ import {
   referenceImageComparisonPasses,
   resolveReferenceImageTolerance,
   writeReferenceImageSceneTolerance,
-} from './reference-image-tolerance';
+} from './reference-image-tolerance.ts';
 
 const SCENE = 'functional/text-basic';
 const POLICY_ID = 'registered-per-scene-policy-test';

@@ -3,7 +3,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { TimelineAudioCue, TimelineStreamAudioCue } from '@flighthq/types/contract';
 import { TimelineAudioCueKind, TimelineStreamAudioCueKind } from '@flighthq/types/contract';
 
-import { initializeTimelineAudioCue, initializeTimelineStreamAudioCue, swfSoundHandler } from './swfSoundHandler';
+import { initializeTimelineAudioCue, initializeTimelineStreamAudioCue, swfSoundHandler } from './swfSoundHandler.ts';
 
 describe('initializeTimelineAudioCue', () => {
   it('writes every field of an event cue, at unit gain', () => {

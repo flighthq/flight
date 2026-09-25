@@ -9,4 +9,4 @@ export {
   getDeviceInfo,
   getSafeAreaInsets,
   refreshDeviceInfo,
-} from './contract';
+} from './contract.ts';

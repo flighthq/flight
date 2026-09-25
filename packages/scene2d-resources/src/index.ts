@@ -1,15 +1,15 @@
-export * from './builtInScene2DDocumentImporters';
-export * from './enableScene2DResourceFailureGuards';
-export * from './loadScene2DAudioResources';
-export * from './loadScene2DImageResources';
-export * from './resolveScene2DResources';
-export { createScene2DDocument, createScene2DSlotReference } from './scene2DDocument';
+export * from './builtInScene2DDocumentImporters.ts';
+export * from './enableScene2DResourceFailureGuards.ts';
+export * from './loadScene2DAudioResources.ts';
+export * from './loadScene2DImageResources.ts';
+export * from './resolveScene2DResources.ts';
+export { createScene2DDocument, createScene2DSlotReference } from './scene2DDocument.ts';
 export {
   createScene2DDocumentFromBytes,
   createScene2DDocumentImporterRegistry,
   registerScene2DDocumentImporter,
   unregisterScene2DDocumentImporter,
-} from './scene2DDocumentImporterRegistry';
-export * from './scene2DDocumentSource';
-export { explainScene2DResourceCoverage } from './scene2DResourceDiagnostics';
-export * from './scene2DSlotReference';
+} from './scene2DDocumentImporterRegistry.ts';
+export * from './scene2DDocumentSource.ts';
+export { explainScene2DResourceCoverage } from './scene2DResourceDiagnostics.ts';
+export * from './scene2DSlotReference.ts';

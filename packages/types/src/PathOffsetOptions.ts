@@ -1,5 +1,5 @@
-import type { PathOffsetEnd } from './PathOffsetEnd';
-import type { PathOffsetJoin } from './PathOffsetJoin';
+import type { PathOffsetEnd } from './PathOffsetEnd.ts';
+import type { PathOffsetJoin } from './PathOffsetJoin.ts';
 
 // Options for offsetting a path by a signed distance. `join` picks the corner style on the convex side
 // of each vertex (`miter` by default, the sharpest common choice); `end` picks the terminal cap style

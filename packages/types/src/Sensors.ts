@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { Signal } from './Signal.ts';
 
 // Reported confidence of a sensor reading. 'unknown' when the host does not supply an accuracy level.
 export type SensorAccuracy = 'high' | 'low' | 'medium' | 'unknown';

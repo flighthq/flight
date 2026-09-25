@@ -1,1 +1,1 @@
-export * from './render.dom';
+export * from './render.dom.ts';

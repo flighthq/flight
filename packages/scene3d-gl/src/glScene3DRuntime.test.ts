@@ -11,7 +11,7 @@ import type {
 } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { renderGlEnvironmentSkybox } from './glEnvironmentSkybox';
+import { renderGlEnvironmentSkybox } from './glEnvironmentSkybox.ts';
 import {
   addGlScene3DResourceCleanup,
   destroyGlScene3DRuntime,
@@ -20,8 +20,8 @@ import {
   ensureGlSkinNormalPalette,
   ensureGlSkinPalette,
   getGlScene3DRuntime,
-} from './glScene3DRuntime';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+} from './glScene3DRuntime.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 describe('addGlScene3DResourceCleanup', () => {
   it('runs a registered cleanup on teardown and clears the list', () => {

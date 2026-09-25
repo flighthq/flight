@@ -1,4 +1,4 @@
-import { createBitmap } from './bitmap';
+import { createBitmap } from './bitmap.ts';
 import {
   blurBitmapPixelsHorizontal,
   blurBitmapPixelsHorizontalWeighted,
@@ -7,8 +7,8 @@ import {
   boxBlurBitmap,
   computeGaussianKernel,
   gaussianBlurBitmap,
-} from './bitmapBlur';
-import { premultiplyBitmapPixels, unpremultiplyBitmapPixels } from './bitmapFormat';
+} from './bitmapBlur.ts';
+import { premultiplyBitmapPixels, unpremultiplyBitmapPixels } from './bitmapFormat.ts';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };

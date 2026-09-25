@@ -14,16 +14,16 @@ import type {
 } from '@flighthq/types/contract';
 import { UnlitMaterialKind } from '@flighthq/types/contract';
 
-import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
+import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
 import {
   beginGlMeshDraw,
   bindGlUvTransform,
   drawGlMeshSubset,
   hasGlUvTransform,
   setGlMeshViewProjection,
-} from './glMeshProgram';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { bindGlUnlitSurface, ensureGlUnlitProgram } from './glUnlitPrelude';
+} from './glMeshProgram.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { bindGlUnlitSurface, ensureGlUnlitProgram } from './glUnlitPrelude.ts';
 
 // The built-in Unlit forward renderer (GlMeshMaterialRenderer for UnlitMaterialKind). Lighting-
 // independent flat color: bind selects the unlit variant for the material's base-color map / alpha

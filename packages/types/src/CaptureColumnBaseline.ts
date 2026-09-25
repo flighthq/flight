@@ -1,4 +1,4 @@
-import type { CaptureBaselineProvenance } from './CaptureBaselineProvenance';
+import type { CaptureBaselineProvenance } from './CaptureBaselineProvenance.ts';
 
 /**
  * The committed baseline values for a single column (backend/renderer) of one capture test. Each field

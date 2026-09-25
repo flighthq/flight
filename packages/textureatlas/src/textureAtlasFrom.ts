@@ -7,7 +7,7 @@ import {
 import { createTexture } from '@flighthq/texture/contract';
 import type { HostImageCapability, ImageResource, TextureAtlas } from '@flighthq/types/contract';
 
-import { createTextureAtlas } from './textureAtlas';
+import { createTextureAtlas } from './textureAtlas.ts';
 
 export function createTextureAtlasFromImageResource(resource: ImageResource): TextureAtlas {
   return createTextureAtlas({ texture: createTexture({ dimension: '2d', source: resource }) });

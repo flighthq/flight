@@ -1,4 +1,4 @@
-import type { TransformInherit2D } from './TransformInherit2D';
+import type { TransformInherit2D } from './TransformInherit2D.ts';
 
 // Named `TransformInherit2D` presets for the five Spine/DragonBones inherit modes — a one-token authoring
 // vocabulary over the four-axis boolean model, not a distinct type. A caller who thinks in Spine terms

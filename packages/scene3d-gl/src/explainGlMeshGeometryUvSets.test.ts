@@ -1,7 +1,7 @@
 import { createMeshGeometry } from '@flighthq/mesh/contract';
 import type { PbrUvSet, VertexAttribute, VertexSemantic } from '@flighthq/types/contract';
 
-import { explainGlMeshGeometryUvSets } from './explainGlMeshGeometryUvSets';
+import { explainGlMeshGeometryUvSets } from './explainGlMeshGeometryUvSets.ts';
 
 // One float32x2 per named semantic, which is all this query reads — it looks only at which semantics
 // the layout carries, never at the vertex data itself.

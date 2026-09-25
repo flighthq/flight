@@ -5,9 +5,9 @@ import { setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
 import type { HitTestResult, TextLabel } from '@flighthq/types/contract';
 import { TextLabelKind } from '@flighthq/types/contract';
 
-import { describeGraphHit, findGraphHitTargetPrecise, hitTestGraphLocalBounds, registerHitTest } from './hitTests';
-import { setNodeHitTestEnabled } from './nodeInteractionState';
-import { registerTextHitTest } from './registerTextHitTest';
+import { describeGraphHit, findGraphHitTargetPrecise, hitTestGraphLocalBounds, registerHitTest } from './hitTests.ts';
+import { setNodeHitTestEnabled } from './nodeInteractionState.ts';
+import { registerTextHitTest } from './registerTextHitTest.ts';
 
 function hittableLabel(text: string): TextLabel {
   const label = createTextLabel();

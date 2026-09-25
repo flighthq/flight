@@ -3,9 +3,9 @@ import { createMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { Node3DKind } from '@flighthq/types/contract';
 
-import { createMesh } from './mesh';
-import { createNode3D } from './sceneNode';
-import { buildScene3DFrustum, cullNode3DByFrustum } from './sceneNodeCulling';
+import { createMesh } from './mesh.ts';
+import { createNode3D } from './sceneNode.ts';
+import { buildScene3DFrustum, cullNode3DByFrustum } from './sceneNodeCulling.ts';
 
 // Builds a simple box geometry centered at origin with side 2 (bounds [-1,-1,-1] to [1,1,1]).
 function makeBoxGeometry() {

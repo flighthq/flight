@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories';
+import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories.ts';
 
 describe('SCAN_SKIP_DIRECTORIES', () => {
   it('skips the fixture cache, which is the drift this set exists to have ended', () => {

@@ -7,7 +7,7 @@ import type {
   Texture2D,
 } from '@flighthq/types/contract';
 
-import { createSwfTexturedSprite } from './swfNode';
+import { createSwfTexturedSprite } from './swfNode.ts';
 
 // Video characters. A DefineVideoStream declares a packet sequence rather than a browser-playable file,
 // so what this family retains is the character's identity and authored extent — enough to materialize

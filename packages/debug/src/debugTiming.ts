@@ -1,7 +1,7 @@
 import { endLogTimer, logDebug, startLogTimer } from '@flighthq/log/contract';
 import type { LogTimer } from '@flighthq/types/contract';
 
-import { isDebugEnabled } from './debug';
+import { isDebugEnabled } from './debug.ts';
 
 // Opens a named timing span, but only while a debug session is active: returns a LogTimer to hand to
 // endDebugSpan, or null when debug is disabled (production, or before enableDebug). Gating here is the

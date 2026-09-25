@@ -1,6 +1,6 @@
 import { createFontResource } from '@flighthq/font/contract';
 
-import { getDomFontAscentCached, invalidateDomFontResource, setDomFontAscentCached } from './domFontSource';
+import { getDomFontAscentCached, invalidateDomFontResource, setDomFontAscentCached } from './domFontSource.ts';
 
 describe('getDomFontAscentCached', () => {
   it('returns undefined for an unknown font key', () => {

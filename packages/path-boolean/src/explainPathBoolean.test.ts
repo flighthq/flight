@@ -1,8 +1,8 @@
 import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
 import { describe, expect, it } from 'vitest';
 
-import { explainOffsetPath, explainSimplifyPath } from './explainPathBoolean';
-import { martinezPathBooleanKernel } from './martinezKernel';
+import { explainOffsetPath, explainSimplifyPath } from './explainPathBoolean.ts';
+import { martinezPathBooleanKernel } from './martinezKernel.ts';
 
 const kernel = martinezPathBooleanKernel;
 

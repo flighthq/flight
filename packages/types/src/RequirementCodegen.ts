@@ -1,5 +1,5 @@
-import type { Requirement } from './Requirement';
-import type { RequirementCatalogEntry } from './RequirementCatalog';
+import type { Requirement } from './Requirement.ts';
+import type { RequirementCatalogEntry } from './RequirementCatalog.ts';
 
 // Emission-neutral input to a future source writer. The kernel resolves factual ownership rows and
 // reports gaps, but does not choose arguments, source expressions, or an ambient/caller-filled module.

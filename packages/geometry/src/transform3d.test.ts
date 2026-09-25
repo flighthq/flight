@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { createMatrix4 } from './matrix4';
-import { createQuaternion } from './quaternion';
+import { createMatrix4 } from './matrix4.ts';
+import { createQuaternion } from './quaternion.ts';
 import {
   composeMatrix4FromTransform3D,
   createTransform3D,
   decomposeMatrix4ToTransform3D,
   initializeTransform3D,
-} from './transform3d';
-import { createVector3 } from './vector3';
+} from './transform3d.ts';
+import { createVector3 } from './vector3.ts';
 
 describe('composeMatrix4FromTransform3D', () => {
   it('composes translation, rotation, and scale into a matrix', () => {

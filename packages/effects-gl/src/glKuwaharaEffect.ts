@@ -1,8 +1,8 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlEffectRunner, GlRenderState, GlTextureRenderTarget, KuwaharaEffect } from '@flighthq/types/contract';
 
-import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Kuwahara: edge-preserving smoothing. Over a fixed small radius split the neighborhood into four
 // overlapping quadrants, compute each mean and variance, and emit the lowest-variance mean — flattens

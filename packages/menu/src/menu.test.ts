@@ -27,7 +27,7 @@ import {
   setAppMenu,
   showContextMenu,
   validateMenuItemTemplate,
-} from './menu';
+} from './menu.ts';
 
 // A host exposing exactly the slots a test needs. Nothing is installed anywhere: two of these can be
 // live at once, which is the property the ambient model could not express.

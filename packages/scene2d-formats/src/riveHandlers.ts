@@ -1,16 +1,16 @@
 import type { PathBooleanKernel, RiveImportRegistry } from '@flighthq/types/contract';
 
-import { registerRiveAssetHandlers } from './riveAssets';
-import { registerRiveClippingHandlers } from './riveClipping';
-import { registerRiveDrawOrderHandlers } from './riveDrawOrder';
-import { registerRiveLayoutHandlers } from './riveLayout';
-import { registerRiveShapeHandlers } from './riveShapeNode';
-import { registerRivePaintHandlers } from './riveShapePaint';
-import { registerRivePathHandlers } from './riveShapePath';
-import { registerRiveSkeletonHandlers } from './riveSkeleton';
-import { registerRiveSoloHandlers } from './riveSolo';
-import { registerRiveStateMachineHandlers } from './riveStateMachine';
-import { registerRiveTextHandlers } from './riveText';
+import { registerRiveAssetHandlers } from './riveAssets.ts';
+import { registerRiveClippingHandlers } from './riveClipping.ts';
+import { registerRiveDrawOrderHandlers } from './riveDrawOrder.ts';
+import { registerRiveLayoutHandlers } from './riveLayout.ts';
+import { registerRiveShapeHandlers } from './riveShapeNode.ts';
+import { registerRivePaintHandlers } from './riveShapePaint.ts';
+import { registerRivePathHandlers } from './riveShapePath.ts';
+import { registerRiveSkeletonHandlers } from './riveSkeleton.ts';
+import { registerRiveSoloHandlers } from './riveSolo.ts';
+import { registerRiveStateMachineHandlers } from './riveStateMachine.ts';
+import { registerRiveTextHandlers } from './riveText.ts';
 
 /**
  * Installs every Rive family this package reads, in the order their passes depend on each other.

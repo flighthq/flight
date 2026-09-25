@@ -1,2 +1,2 @@
-export { readAbcFile } from './abcFile';
-export { readAbcInstructions } from './abcInstruction';
+export { readAbcFile } from './abcFile.ts';
+export { readAbcInstructions } from './abcInstruction.ts';

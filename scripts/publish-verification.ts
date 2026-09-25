@@ -19,7 +19,7 @@
 // so it can be tested — publish-packages.ts runs its publish on import, so nothing inside it can be
 // exercised from a test (the same reason publish-error-kind.ts is split out).
 
-import { isSnapshotVersionSuperseded } from './snapshot-version-order.js';
+import { isSnapshotVersionSuperseded } from './snapshot-version-order.ts';
 
 export type PublishProblemKind =
   // The version we published is not on the registry. The failure this module exists for.

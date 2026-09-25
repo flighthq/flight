@@ -1,4 +1,8 @@
-import { applyKuwaharaEffectToWgpu, wgpuKuwaharaEffectRunner, registerWgpuKuwaharaEffect } from './wgpuKuwaharaEffect';
+import {
+  applyKuwaharaEffectToWgpu,
+  wgpuKuwaharaEffectRunner,
+  registerWgpuKuwaharaEffect,
+} from './wgpuKuwaharaEffect.ts';
 
 describe('applyKuwaharaEffectToWgpu', () => {
   it('is a function', () => {

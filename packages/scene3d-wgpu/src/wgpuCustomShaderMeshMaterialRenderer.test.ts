@@ -12,10 +12,10 @@ import {
   getWgpuCustomMaterialShaderSource,
   registerWgpuCustomShaderMaterial,
   registerWgpuCustomMaterialShader,
-} from './wgpuCustomShaderMeshMaterialRenderer';
-import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+} from './wgpuCustomShaderMeshMaterialRenderer.ts';
+import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 
 const SOURCE = `
 @group(0) @binding(0) var<uniform> frame: vec4f;

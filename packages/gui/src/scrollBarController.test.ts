@@ -1,13 +1,13 @@
 import { connectSignal } from '@flighthq/signals/contract';
 
-import { createGuiTestNode, emitGuiPointer } from './guiTestHelper';
+import { createGuiTestNode, emitGuiPointer } from './guiTestHelper.ts';
 import {
   createScrollBarController,
   disposeScrollBarController,
   getScrollBarControllerSignals,
   getScrollBarControllerValue,
   setScrollBarControllerValue,
-} from './scrollBarController';
+} from './scrollBarController.ts';
 
 describe('createScrollBarController', () => {
   it('pages on track clicks and positions the thumb', () => {

@@ -1,4 +1,4 @@
-import { createCameraMotionBlurEffect, initializeCameraMotionBlurEffect } from './cameraMotionBlurEffect';
+import { createCameraMotionBlurEffect, initializeCameraMotionBlurEffect } from './cameraMotionBlurEffect.ts';
 
 describe('createCameraMotionBlurEffect', () => {
   it('tags the intent type', () => {

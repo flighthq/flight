@@ -1,7 +1,7 @@
-import type { Entity, EntityWithoutRuntime } from './Entity';
-import type { Matrix4 } from './Matrix4';
-import type { Plane } from './Plane';
-import type { Vector2 } from './Vector2';
+import type { Entity, EntityWithoutRuntime } from './Entity.ts';
+import type { Matrix4 } from './Matrix4.ts';
+import type { Plane } from './Plane.ts';
+import type { Vector2 } from './Vector2.ts';
 
 // 3D scene camera. Device media selection and capture live in the dialog capability group.
 // `view` is the world->view Matrix4 (the inverse of the camera's world transform); `projection`

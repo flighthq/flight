@@ -4,9 +4,9 @@ import { createTexture } from '@flighthq/texture/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { Texture2D } from '@flighthq/types/contract';
 
-import { createSwfMorphShape } from './swfMorphShape';
-import { SwfReader } from './swfReader';
-import { ShapeWriter } from './swfShapeTestHelper';
+import { createSwfMorphShape } from './swfMorphShape.ts';
+import { SwfReader } from './swfReader.ts';
+import { ShapeWriter } from './swfShapeTestHelper.ts';
 
 describe('createSwfMorphShape', () => {
   it('morphs a solid fill’s geometry and its colour under one progress', () => {

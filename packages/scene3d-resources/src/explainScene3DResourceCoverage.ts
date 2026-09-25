@@ -8,7 +8,7 @@ import type {
 } from '@flighthq/types/contract';
 import { RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 
-import { hasScene3DMaterialTextureLister } from './sceneMaterialTextureRegistry';
+import { hasScene3DMaterialTextureLister } from './sceneMaterialTextureRegistry.ts';
 
 // Clears `out`, then reports EVERY material kind in `usage` with how well this resolver describes it —
 // satisfied ones included, so one call is a complete manifest rather than only a list of complaints. The resource

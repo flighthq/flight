@@ -7,10 +7,10 @@ import {
   collideCapsuleObbContactManifold2D,
   collideCapsulePolygonContactManifold2D,
   collideCircleCapsuleContactManifold2D,
-} from './capsuleContact2D';
-import { collideContactManifold2D } from './collideContactManifold2D';
-import { createCollisionContactManifold2D } from './contactManifold2D';
-import { getCollisionShapeContainsPoint2D } from './pointContainment2D';
+} from './capsuleContact2D.ts';
+import { collideContactManifold2D } from './collideContactManifold2D.ts';
+import { createCollisionContactManifold2D } from './contactManifold2D.ts';
+import { getCollisionShapeContainsPoint2D } from './pointContainment2D.ts';
 
 function manifold() {
   return createCollisionContactManifold2D();

@@ -1,4 +1,4 @@
-import type { Path } from './Path';
+import type { Path } from './Path.ts';
 
 // Font-wide vertical metrics in the same design-unit coordinate space as a GlyphOutlineSource.
 // `unitsPerEm` is the scale denominator: rendering at N pixels per em multiplies every outline,

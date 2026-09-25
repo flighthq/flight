@@ -5,9 +5,9 @@ import type {
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { drawWgpuEffectPass } from './wgpuEffectPass';
-import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
+import { drawWgpuEffectPass } from './wgpuEffectPass.ts';
+import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
 
 // Outline: Sobel edge detection on luminance; where the gradient magnitude exceeds `threshold`, mix
 // the pixel toward the outline color by `thickness`. Color arrives packed RGBA, unpacked to 0..1 here.

@@ -2,8 +2,8 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import type { RenderTargetClear, RenderTexture } from '@flighthq/types/contract';
 import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
-import { enableGlRenderTextureGuards } from './enableGlRenderTextureGuards';
-import { getGlRenderStateRuntime } from './glRenderState';
+import { enableGlRenderTextureGuards } from './enableGlRenderTextureGuards.ts';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
 import {
   bindGlRenderTexture,
   clearGlRenderTexture,
@@ -16,8 +16,8 @@ import {
   renderIntoGlRenderTexture,
   setGlRenderTextureGuard,
   writeGlRenderTextureTarget,
-} from './glRenderTexture';
-import { createGlState } from './glTestHelper';
+} from './glRenderTexture.ts';
+import { createGlState } from './glTestHelper.ts';
 
 describe('bindGlRenderTexture', () => {
   it('binds the existing target texture without uploading pixels', () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { reorderBidiLine } from './reorderBidiLine';
+import { reorderBidiLine } from './reorderBidiLine.ts';
 
 describe('reorderBidiLine', () => {
   it('reverses a pure-RTL run to visual order', () => {

@@ -6,7 +6,7 @@ import type {
   HostMenuSelectCapability,
 } from '@flighthq/types/contract';
 
-import { toElectronTemplate } from './electronMenuTemplate';
+import { toElectronTemplate } from './electronMenuTemplate.ts';
 
 interface ElectronMenuState {
   destroyed: boolean;

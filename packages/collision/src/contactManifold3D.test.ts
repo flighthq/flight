@@ -5,7 +5,7 @@ import {
   clearCollisionContactManifold3D,
   createCollisionContactManifold3D,
   initializeCollisionContactManifold3D,
-} from './contactManifold3D';
+} from './contactManifold3D.ts';
 
 describe('clearCollisionContactManifold3D', () => {
   it('resets the overlap state and the point count', () => {

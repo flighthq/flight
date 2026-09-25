@@ -56,7 +56,7 @@ import type {
   ConformanceFixtureInput,
   ConformanceFixtureObservation,
   ConformanceFixtureTree,
-} from '../core/fixture-conformance';
+} from '../core/fixture-conformance.ts';
 
 const MD5_ANIMATION_DIAGNOSTIC_KIND_DISPOSITIONS = [
   { disposition: 'intentional-choice', kind: 'md5anim.bounds-unsupported' },

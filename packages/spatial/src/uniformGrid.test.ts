@@ -2,12 +2,12 @@ import type { SpatialAabb2D, SpatialObjectId, SpatialPair } from '@flighthq/type
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { setSpatialIndexingGuard } from './spatialIndexingGuard';
+import { setSpatialIndexingGuard } from './spatialIndexingGuard.ts';
 import {
   MAX_INDEXED_CELLS_PER_OBJECT,
   createUniformGridSpatialBackend2D,
   initializeUniformGridSpatialBackend2D,
-} from './uniformGrid';
+} from './uniformGrid.ts';
 
 afterEach(() => {
   setSpatialIndexingGuard(null);

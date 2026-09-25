@@ -15,7 +15,7 @@ import {
   initializeGeolocationPosition,
   isGeolocationAvailable,
   watchGeolocationPosition,
-} from './geolocation';
+} from './geolocation.ts';
 
 function fakeBackend(available: boolean = true): HostGeolocationCapability & { cleared: number[]; lastWatch: number } {
   const out = allocateEntity<any>();

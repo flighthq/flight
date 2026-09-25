@@ -20,7 +20,7 @@ import {
   readAwdPropertyNumber,
   readAwdPropertyUint32,
   readAwdString,
-} from './awd2Reader';
+} from './awd2Reader.ts';
 import {
   AWD2_BLOCK_MATERIAL,
   AWD2_BLOCK_TEXTURE,
@@ -36,8 +36,8 @@ import {
   AWD2_MATERIAL_PROP_SPECULAR_STRENGTH,
   AWD2_MATERIAL_PROP_SPECULAR_TEXTURE,
   AWD2_TEXTURE_TYPE_EMBEDDED,
-} from './awd2Schema';
-import { createEmbeddedTextureRef, createExternalTextureRef } from './shared';
+} from './awd2Schema.ts';
+import { createEmbeddedTextureRef, createExternalTextureRef } from './shared.ts';
 
 // Materials and the textures they sample. This handler owns the only reach into @flighthq/shading and the
 // image-codec chain, so a build that loads geometry and scene structure without registering it carries

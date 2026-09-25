@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { SCENE2D_WORKING_COLOR_SPACE } from './scene2dWorkingColorSpace';
+import { SCENE2D_WORKING_COLOR_SPACE } from './scene2dWorkingColorSpace.ts';
 
 describe('SCENE2D_WORKING_COLOR_SPACE', () => {
   // The 2D tower composites in the encoded domain — byte-through, no decode, no encode. Changing this

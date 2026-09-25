@@ -1,19 +1,19 @@
-import type { Camera3D } from './Camera3D';
-import type { GlMeshProgram } from './GlMeshProgram';
-import type { GlPbrTransmissionSceneColor } from './GlPbrTransmissionSceneColor';
-import type { GlRenderState } from './GlRenderState';
-import type { GlTextureRenderTarget } from './GlRenderTarget';
-import type { GlSkinPaletteTexture } from './GlSkinPaletteTexture';
-import type { Matrix4 } from './Matrix4';
-import type { Mesh } from './Mesh';
-import type { MeshGeometry } from './MeshGeometry';
-import type { Node3D } from './Node3D';
-import type { PbrExtension } from './PbrExtension';
-import type { Scene3DLightBlock } from './Scene3DLightBlock';
-import type { Scene3DLightsLike } from './Scene3DLights';
-import type { Scene3DRenderProxy } from './Scene3DRenderProxy';
-import type { Texture } from './Texture';
-import type { TextureColorSpace } from './Texture';
+import type { Camera3D } from './Camera3D.ts';
+import type { GlMeshProgram } from './GlMeshProgram.ts';
+import type { GlPbrTransmissionSceneColor } from './GlPbrTransmissionSceneColor.ts';
+import type { GlRenderState } from './GlRenderState.ts';
+import type { GlTextureRenderTarget } from './GlRenderTarget.ts';
+import type { GlSkinPaletteTexture } from './GlSkinPaletteTexture.ts';
+import type { Matrix4 } from './Matrix4.ts';
+import type { Mesh } from './Mesh.ts';
+import type { MeshGeometry } from './MeshGeometry.ts';
+import type { Node3D } from './Node3D.ts';
+import type { PbrExtension } from './PbrExtension.ts';
+import type { Scene3DLightBlock } from './Scene3DLightBlock.ts';
+import type { Scene3DLightsLike } from './Scene3DLights.ts';
+import type { Scene3DRenderProxy } from './Scene3DRenderProxy.ts';
+import type { Texture } from './Texture.ts';
+import type { TextureColorSpace } from './Texture.ts';
 
 // The directional shadow resource for this state, set by renderGlScene3DShadowMap and read by the lit bind
 // (bindGlMeshLightBlock) so every lit family samples the same shadow map. `enabled` is the per-frame gate;

@@ -24,7 +24,7 @@ import {
   getElectronBrowserWindow,
   getElectronWindowId,
   resetElectronHostWindowForTest,
-} from './electronWindow';
+} from './electronWindow.ts';
 
 interface FakeBrowserWindow {
   id: number;

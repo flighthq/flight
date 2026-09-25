@@ -37,7 +37,7 @@ import {
   makePowerStatus,
   releasePowerKeepAwake,
   setPowerIdlePollingIntervalMs,
-} from './power';
+} from './power.ts';
 
 // A host built from exactly the slots a test needs. Nothing installs anywhere, so two hosts can be live
 // at once — the property the ambient seam could not express.

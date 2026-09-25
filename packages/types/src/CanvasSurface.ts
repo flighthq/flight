@@ -1,4 +1,4 @@
-import type { Surface } from './Surface';
+import type { Surface } from './Surface.ts';
 
 // A Canvas 2D rendering surface: a host-allocated drawable with an acquired 2D drawing context. Used for
 // both presentation (via HostCanvasCapability.create/acquire) and offscreen allocation (via createSurface).

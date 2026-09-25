@@ -1,6 +1,6 @@
-import type { Material3D } from './Material3D';
-import type { PbrExtension } from './PbrExtension';
-import type { StandardPbrMaterialProperties } from './StandardPbrMaterial';
+import type { Material3D } from './Material3D.ts';
+import type { PbrExtension } from './PbrExtension.ts';
+import type { StandardPbrMaterialProperties } from './StandardPbrMaterial.ts';
 
 // Metallic-roughness PBR plus an ordered set of independently registered contributions. Extension
 // order is semantic: backends compose shader source and bind inputs in this order after rejecting

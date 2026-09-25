@@ -1,7 +1,7 @@
 import { parseMd2 } from '@flighthq/scene3d-formats/contract';
 import type { HostNetCapability, Scene3DDocument, Scene3DDocumentLoadOptions } from '@flighthq/types/contract';
 
-import { loadScene3DDocumentBytesFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource';
+import { loadScene3DDocumentBytesFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource.ts';
 
 // Fetches an id Software MD2 (Quake 2) model from a URL and parses it into a format-neutral Scene3DDocument
 // (a morph-animated mesh). Fetches only the FILE — the document's skin texture ref stays unresolved;

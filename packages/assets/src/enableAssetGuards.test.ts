@@ -1,8 +1,8 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 
-import { acquireAsset, createAssetLibrary, registerAssetDescriptor } from './assetLibrary';
-import { areAssetGuardsEnabled, disableAssetGuards, enableAssetGuards } from './enableAssetGuards';
+import { acquireAsset, createAssetLibrary, registerAssetDescriptor } from './assetLibrary.ts';
+import { areAssetGuardsEnabled, disableAssetGuards, enableAssetGuards } from './enableAssetGuards.ts';
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);

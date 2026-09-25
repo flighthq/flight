@@ -1,4 +1,4 @@
-import { collectUntestedBranches, extractArmText, rankUntestedFiles } from './untested';
+import { collectUntestedBranches, extractArmText, rankUntestedFiles } from './untested.ts';
 
 const SOURCE = ['const first = 1;', 'if (a > b && c) return -1;', 'const last = 2;'].join('\n');
 const LINES = SOURCE.split('\n');

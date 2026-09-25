@@ -30,11 +30,11 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
-import { registerGlParticleEmitter3DPass } from './glParticleEmitter3D';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerGlStandardPbrMaterial } from './registerGlStandardPbrMaterial';
-import { renderGlScene3D } from './renderGlScene3D';
+import { registerGlParticleEmitter3DPass } from './glParticleEmitter3D.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { registerGlStandardPbrMaterial } from './registerGlStandardPbrMaterial.ts';
+import { renderGlScene3D } from './renderGlScene3D.ts';
 
 function makeCamera(): Camera3D {
   const camera = createCamera3D({

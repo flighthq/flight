@@ -1,4 +1,4 @@
-import { resolveSpineDrawOrdering } from './spineDrawOrder';
+import { resolveSpineDrawOrdering } from './spineDrawOrder.ts';
 
 // A keyframe names only the slots that MOVE; the rest keep their relative order and close the gaps.
 // Both Spine encodings resolve through this one function so they cannot drift apart.

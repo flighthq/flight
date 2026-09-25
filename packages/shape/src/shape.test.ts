@@ -8,9 +8,9 @@ import { createPath, createPathMorph } from '@flighthq/path/contract';
 import type { ShapeCommandToken } from '@flighthq/types/contract';
 import { EntityRuntimeKey, ShapeKind } from '@flighthq/types/contract';
 
-import { createMorphShape, setMorphShapeProgress } from './morphShape';
-import { appendMorphShapeBeginFill } from './morphShapePaint';
-import { registerDefaultShapeBoundsCommands } from './registerDefaultShapeBoundsCommands';
+import { createMorphShape, setMorphShapeProgress } from './morphShape.ts';
+import { appendMorphShapeBeginFill } from './morphShapePaint.ts';
+import { registerDefaultShapeBoundsCommands } from './registerDefaultShapeBoundsCommands.ts';
 import {
   clearShapeCommands,
   computeShapeLocalBoundsRectangle,
@@ -23,7 +23,7 @@ import {
   getShapeRuntime,
   initializeShapeData,
   isShapeEmpty,
-} from './shape';
+} from './shape.ts';
 import {
   appendShapeCircle,
   appendShapeCubicCurveTo,
@@ -33,7 +33,7 @@ import {
   appendShapeLineTo,
   appendShapeMoveTo,
   appendShapeRectangle,
-} from './shapeCommands';
+} from './shapeCommands.ts';
 
 beforeAll(() => {
   registerDefaultShapeBoundsCommands();

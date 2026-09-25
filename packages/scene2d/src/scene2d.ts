@@ -11,7 +11,7 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createDisplayObject } from './displayObject';
+import { createDisplayObject } from './displayObject.ts';
 
 // Allocates a Scene2D: a presentation-context Entity that owns a display-object `root` (allocated here), not a
 // node in the tree. Carries the fit context (`align`/`scaleMode`) directly — fit is the Scene2D's concern, and

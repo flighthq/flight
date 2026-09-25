@@ -16,8 +16,8 @@ import type {
   TextLabelRuntime,
 } from '@flighthq/types/contract';
 
-import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle';
-import { escapeDomHtmlString } from './domTextHelpers';
+import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle.ts';
+import { escapeDomHtmlString } from './domTextHelpers.ts';
 
 interface DomTextData extends RendererData {
   div: HTMLDivElement | null;

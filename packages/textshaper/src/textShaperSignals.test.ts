@@ -3,7 +3,7 @@ import {
   enableTextShaperSignals,
   getTextShaperSignals,
   initializeTextShaperSignals,
-} from './textShaperSignals';
+} from './textShaperSignals.ts';
 
 afterEach(() => {
   disposeTextShaperSignals();

@@ -1,6 +1,6 @@
 import type { DomRenderState, ShapeRasterizer } from '@flighthq/types/contract';
 
-import { getDomRenderStateRuntime } from './domRenderState';
+import { getDomRenderStateRuntime } from './domRenderState.ts';
 
 export function getDomShapeRasterizer(state: DomRenderState): ShapeRasterizer | null {
   const entry = getDomRenderStateRuntime(state).registries.shapeRasterizer;

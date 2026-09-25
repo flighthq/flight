@@ -1,5 +1,5 @@
-import type { ColorLut } from './ColorLut';
-import type { ColorLutAdjustment } from './ColorLutAdjustment';
+import type { ColorLut } from './ColorLut.ts';
+import type { ColorLutAdjustment } from './ColorLutAdjustment.ts';
 
 // A supplied 3D color grade LUT applied at `strength` (0 = original, 1 = full grade). Already a LUT, so
 // it carries one directly (`lut`); with no `lut` it is identity (a neutral passthrough). Its `transform`

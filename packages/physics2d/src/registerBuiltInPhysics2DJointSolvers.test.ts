@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { createPhysics2DDistanceJoint } from './jointFactories';
-import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry';
+import { createPhysics2DDistanceJoint } from './jointFactories.ts';
+import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry.ts';
 import {
   Physics2DDistanceJointKind,
   Physics2DGearJointKind,
@@ -21,9 +21,9 @@ import {
   physics2DRopeJointSolver,
   physics2DWeldJointSolver,
   physics2DWheelJointSolver,
-} from './joints';
-import { registerBuiltInPhysics2DJointSolvers } from './registerBuiltInPhysics2DJointSolvers';
-import { addPhysics2DBody, createPhysics2DWorld, createRigidBody2D } from './world';
+} from './joints.ts';
+import { registerBuiltInPhysics2DJointSolvers } from './registerBuiltInPhysics2DJointSolvers.ts';
+import { addPhysics2DBody, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 describe('registerBuiltInPhysics2DJointSolvers', () => {
   it('installs the complete built-in bank under its public kinds', () => {

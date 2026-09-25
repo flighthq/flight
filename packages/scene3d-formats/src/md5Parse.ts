@@ -42,8 +42,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, MeshKind, Node3DKind } from '@flighthq/types/contract';
 
-import { parseMd5Anim } from './md5AnimParse';
-import { findScene3DSkeletonJoints } from './sceneSkeleton';
+import { parseMd5Anim } from './md5AnimParse.ts';
+import { findScene3DSkeletonJoints } from './sceneSkeleton.ts';
 import {
   convertPositionsZUpToYUp,
   convertQuaternionsZUpToYUp,
@@ -52,7 +52,7 @@ import {
   packSkinInfluences,
   reverseTriangleWinding,
   SKINNED_FLOATS_PER_VERTEX,
-} from './shared';
+} from './shared.ts';
 
 // A single MD5 joint influence on a vertex, extended (over the shared SkinInfluence) with the weight's
 // resolved model-space position so the bind position can be baked from the same top-4 reduced set the

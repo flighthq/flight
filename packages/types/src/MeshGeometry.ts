@@ -1,7 +1,7 @@
-import type { Aabb } from './Aabb';
-import type { Entity, EntityRuntime } from './Entity';
-import type { MeshMorphBindPose } from './MeshMorphBindPose';
-import type { MeshSkinBindPose } from './MeshSkinBindPose';
+import type { Aabb } from './Aabb.ts';
+import type { Entity, EntityRuntime } from './Entity.ts';
+import type { MeshMorphBindPose } from './MeshMorphBindPose.ts';
+import type { MeshSkinBindPose } from './MeshSkinBindPose.ts';
 
 // Handedness is pinned across the 3D suite: right-handed coordinates, CCW front-face, and the
 // tangent `w` component is the bitangent sign per glTF (bitangent = cross(normal, tangent.xyz)

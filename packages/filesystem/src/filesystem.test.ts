@@ -2,7 +2,7 @@ import { createFileDialogHandle } from '@flighthq/dialog/contract';
 import type { HostFileSystemCapability } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import * as filesystem from './filesystem';
+import * as filesystem from './filesystem.ts';
 
 describe('appendTextFile', () => {
   it('uses the provider on the passed host', async () => {

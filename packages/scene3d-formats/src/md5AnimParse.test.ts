@@ -7,7 +7,7 @@ import {
   Scene3DAnimationPathTranslation,
 } from '@flighthq/types/contract';
 
-import { parseMd5Anim } from './md5AnimParse';
+import { parseMd5Anim } from './md5AnimParse.ts';
 
 // Minimal valid MD5 anim with one joint, one frame, no animated components (all from baseframe).
 const SINGLE_JOINT_STATIC = [

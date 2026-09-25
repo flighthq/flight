@@ -19,9 +19,9 @@ import type {
   ResolvedRenderTargetDescriptor,
 } from '@flighthq/types/contract';
 
-import { bindGlTextureRealization, drawGlQuad, useGlProgram } from './glDraw';
-import { getGlRenderStateRuntime } from './glRenderState';
-import { setGlAttributes, setGlBaseUniforms, setGlMatrixFromTransform } from './glShader';
+import { bindGlTextureRealization, drawGlQuad, useGlProgram } from './glDraw.ts';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
+import { setGlAttributes, setGlBaseUniforms, setGlMatrixFromTransform } from './glShader.ts';
 
 interface GlTextureRenderTargetStorage extends RenderTargetAxes {
   framebuffer: WebGLFramebuffer;

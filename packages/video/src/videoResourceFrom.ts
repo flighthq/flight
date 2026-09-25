@@ -5,8 +5,8 @@ import type {
   VideoResourceUrl,
 } from '@flighthq/types/contract';
 
-import { selectVideoResourceUrl } from './videoFormat';
-import { createVideoResource } from './videoResource';
+import { selectVideoResourceUrl } from './videoFormat.ts';
+import { createVideoResource } from './videoResource.ts';
 
 export async function loadVideoResourceFromBlob(
   hostVideo: Readonly<HostVideoCapability>,

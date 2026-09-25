@@ -1,4 +1,4 @@
-import { computeAdler32, DISTANCE_BASE, DISTANCE_EXTRA, LENGTH_BASE, LENGTH_EXTRA } from './deflateFormat';
+import { computeAdler32, DISTANCE_BASE, DISTANCE_EXTRA, LENGTH_BASE, LENGTH_EXTRA } from './deflateFormat.ts';
 
 describe('computeAdler32', () => {
   it('returns the initial value for an empty input', () => {

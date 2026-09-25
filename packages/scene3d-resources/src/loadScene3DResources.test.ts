@@ -14,8 +14,8 @@ import type {
 import { EntityRuntimeKey, ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import { loadScene3DResources, waitForScene3DResourceResolver } from './loadScene3DResources';
-import { createBuiltInScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver';
+import { loadScene3DResources, waitForScene3DResourceResolver } from './loadScene3DResources.ts';
+import { createBuiltInScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver.ts';
 
 const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },

@@ -6,9 +6,9 @@ import {
   ensureGlEnvironmentSourceCube,
   getGlCubeFaceTarget,
   updateGlEnvironmentCubeFace,
-} from './glEnvironmentCube';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+} from './glEnvironmentCube.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 // The GPU upload + sampling is validated by the functional `env-skybox` capture (jsdom has no real
 // WebGL2 cubemap). These cover the CPU-side guards: the face-target arithmetic, the "no complete

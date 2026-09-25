@@ -4,9 +4,9 @@ import { enableTextInput, setTextInputSelection } from '@flighthq/textinput/cont
 import type { RichText } from '@flighthq/types/contract';
 import { RichTextKind } from '@flighthq/types/contract';
 
-import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
-import { domRichTextRenderer, drawDomRichText } from './domRichText';
-import { drawDomTextInputOverlay, enableDomTextInput } from './domTextInput';
+import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
+import { domRichTextRenderer, drawDomRichText } from './domRichText.ts';
+import { drawDomTextInputOverlay, enableDomTextInput } from './domTextInput.ts';
 
 function makeState() {
   const state = createDomRenderState(document.createElement('div'));

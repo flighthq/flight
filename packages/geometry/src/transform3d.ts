@@ -8,9 +8,9 @@ import type {
   Vector3,
 } from '@flighthq/types/contract';
 
-import { composeMatrix4, decomposeMatrix4 } from './matrix4';
-import { createQuaternion } from './quaternion';
-import { createVector3 } from './vector3';
+import { composeMatrix4, decomposeMatrix4 } from './matrix4.ts';
+import { createQuaternion } from './quaternion.ts';
+import { createVector3 } from './vector3.ts';
 
 // Composes a carrier's translation/rotation/scale into `out`. Canonical and lossless (TRS -> matrix).
 export function composeMatrix4FromTransform3D(out: Matrix4Like, source: Readonly<Transform3DLike>): void {

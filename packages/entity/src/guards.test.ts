@@ -2,15 +2,15 @@ import type { Entity } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { EntityRuntimeWriteSlot } from '@flighthq/types/contract';
 
-import { allocateEntity, finishEntity } from './entity';
+import { allocateEntity, finishEntity } from './entity.ts';
 import {
   areEntityRuntimeGuardsEnabled,
   createGuardedEntity,
   createGuardedEntityRuntime,
   setEntityRuntimeGuardMode,
   setEntityRuntimeWriteGuard,
-} from './guards';
-import { createEntityRuntime } from './runtime';
+} from './guards.ts';
+import { createEntityRuntime } from './runtime.ts';
 
 function createTestEntity(fields?: Record<string, unknown>): Entity & Record<string, unknown> {
   const out = allocateEntity<Entity>();

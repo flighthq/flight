@@ -9,7 +9,7 @@ import {
   formatFunctionalOrientationReport,
   mirrorBitmapFingerprintVertically,
   readFunctionalBaselineFingerprints,
-} from './functional-parity-orientation';
+} from './functional-parity-orientation.ts';
 
 // Built from synthetic fingerprints rather than the committed baselines, so the check keeps working
 // when a baseline is re-captured and still runs where the render suite cannot.

@@ -1,7 +1,7 @@
 import { createMatrix, inverseMatrixTransformPointXY, matrixTransformPointXY } from '@flighthq/geometry/contract';
 import type { Camera2D, Vector2Like } from '@flighthq/types/contract';
 
-import { getCamera2DViewMatrix } from './viewMatrix';
+import { getCamera2DViewMatrix } from './viewMatrix.ts';
 
 // Projects a world point to its screen position through the camera's view matrix and writes the
 // result to `out` (world -> screen). The inverse is `unprojectCamera2DPoint`.

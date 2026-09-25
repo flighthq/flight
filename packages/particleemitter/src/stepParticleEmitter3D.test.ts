@@ -2,9 +2,9 @@ import { createParticleEmitterConfig, createParticleEmitterState } from '@flight
 import type { ParticleForce, PlaneCollider } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createParticleEmitter3D } from './particleEmitter3D';
-import { stepParticleEmitter3D } from './stepParticleEmitter3D';
-import { updateParticleEmitter3D } from './updateParticleEmitter3D';
+import { createParticleEmitter3D } from './particleEmitter3D.ts';
+import { stepParticleEmitter3D } from './stepParticleEmitter3D.ts';
+import { updateParticleEmitter3D } from './updateParticleEmitter3D.ts';
 
 function seededRandom(seed: number): () => number {
   let s = seed;

@@ -1,7 +1,7 @@
-import { advanceAnimationPlayers } from './animationAdvance';
-import { createAnimationChannel, createAnimationClip } from './animationClip';
-import { createAnimationPlayer } from './animationPlayer';
-import { createAnimationTrack } from './animationTrack';
+import { advanceAnimationPlayers } from './animationAdvance.ts';
+import { createAnimationChannel, createAnimationClip } from './animationClip.ts';
+import { createAnimationPlayer } from './animationPlayer.ts';
+import { createAnimationTrack } from './animationTrack.ts';
 
 describe('advanceAnimationPlayers', () => {
   it('records identity in caller-owned scratch and skips an already advanced player', () => {

@@ -20,7 +20,7 @@ import {
   setSkeleton2DBindPose,
   setSkeleton2DSkin,
   validateSkeleton2D,
-} from './skeleton2d';
+} from './skeleton2d.ts';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
   return {

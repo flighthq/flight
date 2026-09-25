@@ -11,11 +11,11 @@ import {
   applyWgpuEffectBlitOffsetPass,
   applyWgpuEffectBlitPass,
   applyWgpuEffectErasePass,
-} from './wgpuEffectBlitShader';
-import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
-import { clearWgpuEffectTarget } from './wgpuEffectPass';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
-import { applyWgpuEffectTintPass } from './wgpuEffectTintShader';
+} from './wgpuEffectBlitShader.ts';
+import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur.ts';
+import { clearWgpuEffectTarget } from './wgpuEffectPass.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
+import { applyWgpuEffectTintPass } from './wgpuEffectTintShader.ts';
 
 // Drop-shadow composite effect: tint the scene silhouette, blur it, offset it by angle/distance, then apply sourceMode compositing.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the

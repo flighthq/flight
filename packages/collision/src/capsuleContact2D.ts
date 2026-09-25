@@ -7,9 +7,9 @@ import type {
   CollisionPolygon2D,
 } from '@flighthq/types/contract';
 
-import { packContactFeatureId } from './contactFeatureId';
-import { clearCollisionContactManifold2D } from './contactManifold2D';
-import { writeAabbVertices, writeObbVertices } from './convexVertices2D';
+import { packContactFeatureId } from './contactFeatureId.ts';
+import { clearCollisionContactManifold2D } from './contactManifold2D.ts';
+import { writeAabbVertices, writeObbVertices } from './convexVertices2D.ts';
 
 // Capsule contact manifolds. Separate from `shapeContact2D.ts` because the capsule is the one built-in
 // whose surface is neither a polygon nor a single disc, so it shares neither the SAT-over-vertices core

@@ -6,7 +6,7 @@ import {
   isMaterial3DBlended,
   isMaterial3DMasked,
   isMaterial3DOpaque,
-} from './material3d';
+} from './material3d.ts';
 
 const TestMaterial3DKind = 'TestMaterial3D';
 

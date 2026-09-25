@@ -99,7 +99,7 @@ import {
   setWindowSkipTaskbar,
   setWindowTitle,
   showWindow,
-} from './appWindow';
+} from './appWindow.ts';
 
 // The double implements every window capability, so one object stands in for the whole window
 // group at each call site: the command functions each select the single capability they need, and

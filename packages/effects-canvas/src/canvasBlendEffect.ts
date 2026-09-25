@@ -7,8 +7,8 @@ import type {
   CanvasTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { registerCanvasEffect } from './canvasEffectRegistry';
+import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
+import { registerCanvasEffect } from './canvasEffectRegistry.ts';
 
 // Advanced-blend composite pass: draw a registered backdrop, then draw the incoming layer over it with
 // the Canvas 2D compositing operation named by the effect's `mode`. This is the Canvas realization of the

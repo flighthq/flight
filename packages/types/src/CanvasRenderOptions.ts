@@ -1,4 +1,4 @@
-import type { Scene3DGraphSyncPolicy } from './RenderState';
+import type { Scene3DGraphSyncPolicy } from './RenderState.ts';
 
 export interface CanvasRenderOptions {
   imageSmoothingEnabled?: boolean;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { runCaptureSuite } from './captureSuite';
+import { runCaptureSuite } from './captureSuite.ts';
 
 describe('runCaptureSuite', () => {
   // Browser-backed execution is covered by the repository capture commands; the public orchestrator

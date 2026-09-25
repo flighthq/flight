@@ -9,10 +9,14 @@ import type {
 } from '@flighthq/types/contract';
 import type { WgpuDualSourceEffectPipeline } from '@flighthq/types/contract';
 
-import { applyGaussianBlurToWgpu } from './wgpuBlurEffect';
-import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass, drawWgpuEffectPass } from './wgpuEffectPass';
-import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
+import { applyGaussianBlurToWgpu } from './wgpuBlurEffect.ts';
+import {
+  createWgpuDualSourceEffectPipeline,
+  drawWgpuDualSourceEffectPass,
+  drawWgpuEffectPass,
+} from './wgpuEffectPass.ts';
+import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
 
 // Bloom: bright-pass → blur the bright branch (via the effects-owned separable gaussian blur) →
 // additively composite back. The multi-pass reference recipe — it acquires intermediate targets from

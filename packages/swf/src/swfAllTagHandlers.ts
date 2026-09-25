@@ -1,15 +1,15 @@
 import type { SwfTagHandler } from '@flighthq/types/contract';
 
-import { swfBitmapTagFamily } from './swfBitmapTagFamily';
-import { swfControlTagFamily } from './swfControlTagFamily';
-import { swfFontTagFamily } from './swfFontTagFamily';
-import { swfPlacementTagFamily } from './swfPlacementTagFamily';
-import { swfScriptTagFamily } from './swfScriptTagFamily';
-import { swfShapeTagFamily } from './swfShapeTagFamily';
-import { swfSoundTagFamily } from './swfSoundTagFamily';
-import { swfSpriteTagFamily } from './swfSpriteTagFamily';
-import { swfTextTagFamily } from './swfTextTagFamily';
-import { swfVideoTagFamily } from './swfVideoTagFamily';
+import { swfBitmapTagFamily } from './swfBitmapTagFamily.ts';
+import { swfControlTagFamily } from './swfControlTagFamily.ts';
+import { swfFontTagFamily } from './swfFontTagFamily.ts';
+import { swfPlacementTagFamily } from './swfPlacementTagFamily.ts';
+import { swfScriptTagFamily } from './swfScriptTagFamily.ts';
+import { swfShapeTagFamily } from './swfShapeTagFamily.ts';
+import { swfSoundTagFamily } from './swfSoundTagFamily.ts';
+import { swfSpriteTagFamily } from './swfSpriteTagFamily.ts';
+import { swfTextTagFamily } from './swfTextTagFamily.ts';
+import { swfVideoTagFamily } from './swfVideoTagFamily.ts';
 
 /**
  * Every tag handler Flight reads a SWF with — the full-support preset.

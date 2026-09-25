@@ -1,7 +1,7 @@
 import { PathCommand } from '@flighthq/types/contract';
 
-import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path';
-import { reversePath } from './reversePath';
+import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
+import { reversePath } from './reversePath.ts';
 
 describe('reversePath', () => {
   it('reverses a simple open polyline', () => {

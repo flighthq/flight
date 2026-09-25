@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { CAPTURE_FRAME_DURATION_MS, getCaptureFrameTimestamp } from './captureFrameClock';
+import { CAPTURE_FRAME_DURATION_MS, getCaptureFrameTimestamp } from './captureFrameClock.ts';
 
 describe('getCaptureFrameTimestamp', () => {
   it('uses a stable 60 Hz interval', () => {

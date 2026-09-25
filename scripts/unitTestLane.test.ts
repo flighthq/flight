@@ -2,8 +2,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { REGISTRY_ISOLATED_TEST_FILES } from './registryIsolatedTests';
-import { UNIT_TEST_LANE_EXCLUDE, UNIT_TEST_LANE_INCLUDE, readUnitTestLaneFiles } from './unitTestLane';
+import { REGISTRY_ISOLATED_TEST_FILES } from './registryIsolatedTests.ts';
+import { UNIT_TEST_LANE_EXCLUDE, UNIT_TEST_LANE_INCLUDE, readUnitTestLaneFiles } from './unitTestLane.ts';
 
 describe('readUnitTestLaneFiles', () => {
   it('collects package src tests only', () => {

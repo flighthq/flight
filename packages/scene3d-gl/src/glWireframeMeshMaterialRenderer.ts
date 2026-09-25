@@ -12,11 +12,11 @@ import type {
 } from '@flighthq/types/contract';
 import { WireframeMaterialKind } from '@flighthq/types/contract';
 
-import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { beginGlMeshDraw, setGlMeshViewProjection, uploadGlMeshDrawAlpha } from './glMeshProgram';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { ensureGlWireframeProgram } from './glWireframePrelude';
-import { ensureGlWireframeUpload } from './glWireframeUpload';
+import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { beginGlMeshDraw, setGlMeshViewProjection, uploadGlMeshDrawAlpha } from './glMeshProgram.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { ensureGlWireframeProgram } from './glWireframePrelude.ts';
+import { ensureGlWireframeUpload } from './glWireframeUpload.ts';
 
 // The built-in Wireframe forward renderer (GlMeshMaterialRenderer for WireframeMaterialKind). Draws
 // the mesh's triangle edges as GL lines in a single flat linear color. Unlike the triangle families

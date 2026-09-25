@@ -1,9 +1,9 @@
-import type { ColorLutCache } from './ColorLutCache';
-import type { Effect } from './Effect';
-import type { EffectStateOptions } from './GlEffectState';
-import type { WgpuColorLutTextureCache } from './WgpuColorLutTextureCache';
-import type { WgpuRenderState } from './WgpuRenderState';
-import type { WgpuRenderTargetPool, WgpuTextureRenderTarget } from './WgpuRenderTarget';
+import type { ColorLutCache } from './ColorLutCache.ts';
+import type { Effect } from './Effect.ts';
+import type { EffectStateOptions } from './GlEffectState.ts';
+import type { WgpuColorLutTextureCache } from './WgpuColorLutTextureCache.ts';
+import type { WgpuRenderState } from './WgpuRenderState.ts';
+import type { WgpuRenderTargetPool, WgpuTextureRenderTarget } from './WgpuRenderTarget.ts';
 
 // What a Wgpu effect runner is handed: the state, the input it reads, the output it writes, the pool
 // it borrows intermediate targets from, and the scene G-buffer attachments. `source` and `dest` are

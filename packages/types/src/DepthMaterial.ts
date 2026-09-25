@@ -1,4 +1,4 @@
-import type { Material3D } from './Material3D';
+import type { Material3D } from './Material3D.ts';
 
 // Pass-infrastructure material: outputs linearized view-space depth, used by shadow and
 // depth-of-field/velocity passes. `near`/`far` set the linearization range when the material is

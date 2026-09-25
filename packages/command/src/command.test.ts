@@ -21,7 +21,7 @@ import {
   initializeCompositeCommand,
   initializeRemoveNodeChildCommand,
   initializeReorderNodeChildCommand,
-} from './command';
+} from './command.ts';
 
 describe('createAddNodeChildCommand', () => {
   it('is Entity data carrying its kind, and appends by default', () => {

@@ -6,9 +6,9 @@ import {
   compileWgpuMatcapPipeline,
   ensureWgpuMatcapPipeline,
   getWgpuMatcapModuleSourceForKey,
-} from './wgpuMatcapPrelude';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
+} from './wgpuMatcapPrelude.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper.ts';
 
 const FLAT: WgpuMatcapDefineKey = { alphaMaskEnabled: false, doubleSided: false, hasMatcap: false };
 const TINT: LinearColor = [0.5, 0.25, 0.1, 1];

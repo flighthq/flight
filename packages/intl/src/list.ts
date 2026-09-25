@@ -1,6 +1,6 @@
 import type { LocaleInput } from '@flighthq/types/contract';
 
-import { getCacheKey, getCached } from './cache';
+import { getCacheKey, getCached } from './cache.ts';
 
 /**
  * Join `items` into one locale-aware list string in `locale` — for example

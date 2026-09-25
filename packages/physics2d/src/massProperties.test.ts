@@ -6,8 +6,8 @@ import type {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { computePhysics2DColliderMassData, updateRigidBody2DMassData } from './massProperties';
-import { createPhysics2DCollider, createRigidBody2D } from './world';
+import { computePhysics2DColliderMassData, updateRigidBody2DMassData } from './massProperties.ts';
+import { createPhysics2DCollider, createRigidBody2D } from './world.ts';
 
 function collider(local: CollisionBuiltInShape2D, density = 1): Physics2DCollider {
   return createPhysics2DCollider(local, { density, friction: 0.2, restitution: 0 });

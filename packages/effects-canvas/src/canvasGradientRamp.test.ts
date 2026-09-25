@@ -1,5 +1,5 @@
-import { createCanvasTextureRenderTarget } from './canvasEffectTestSupport';
-import { applyCanvasGradientRampLookup, buildCanvasGradientRamp } from './canvasGradientRamp';
+import { createCanvasTextureRenderTarget } from './canvasEffectTestSupport.ts';
+import { applyCanvasGradientRampLookup, buildCanvasGradientRamp } from './canvasGradientRamp.ts';
 
 function entry(ramp: Readonly<Uint8ClampedArray>, index: number): number[] {
   return [ramp[index * 4], ramp[index * 4 + 1], ramp[index * 4 + 2], ramp[index * 4 + 3]];

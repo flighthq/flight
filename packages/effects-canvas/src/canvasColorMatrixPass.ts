@@ -1,6 +1,6 @@
 import type { CanvasTextureRenderTarget } from '@flighthq/types/contract';
 
-import { drawCanvasImageDataPass } from './canvasEffectCompositing';
+import { drawCanvasImageDataPass } from './canvasEffectCompositing.ts';
 
 // Generic pointwise color-matrix pass — the single fold-in realization for the whole matrix-tier
 // Adjustment family on Canvas 2D. A run of consecutive matrix-tier adjustments fuses to ONE 4×5 matrix

@@ -1,7 +1,7 @@
-import { EntityRuntimeKey } from './Entity';
-import type { Modifier } from './Modifier';
-import { ToonModifierKind } from './ToonModifier';
-import type { ToonModifier } from './ToonModifier';
+import { EntityRuntimeKey } from './Entity.ts';
+import type { Modifier } from './Modifier.ts';
+import { ToonModifierKind } from './ToonModifier.ts';
+import type { ToonModifier } from './ToonModifier.ts';
 
 describe('ToonModifier', () => {
   describe('ToonModifierKind', () => {

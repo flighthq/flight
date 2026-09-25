@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { CFF_OPERATOR_CHARSTRINGS, CFF_OPERATOR_PRIVATE, CFF_OPERATOR_ROS, readCffDict } from './cffDict';
+import { CFF_OPERATOR_CHARSTRINGS, CFF_OPERATOR_PRIVATE, CFF_OPERATOR_ROS, readCffDict } from './cffDict.ts';
 
 function dict(...bytes: number[]): Map<number, number[]> | null {
   const buffer = new Uint8Array(bytes);

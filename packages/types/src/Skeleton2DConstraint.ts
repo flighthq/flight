@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Skeleton2D } from './Skeleton2D';
+import type { Entity } from './Entity.ts';
+import type { Skeleton2D } from './Skeleton2D.ts';
 
 /**
  * A pose rule applied after the bones are placed and before they are drawn — inverse kinematics, transform

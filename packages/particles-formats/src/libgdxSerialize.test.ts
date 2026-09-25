@@ -1,7 +1,7 @@
 import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 
-import { parseLibgdxParticle, parseLibgdxParticleDocument } from './libgdxParse';
-import { serializeLibgdxParticle, serializeLibgdxParticleDocument } from './libgdxSerialize';
+import { parseLibgdxParticle, parseLibgdxParticleDocument } from './libgdxParse.ts';
+import { serializeLibgdxParticle, serializeLibgdxParticleDocument } from './libgdxSerialize.ts';
 
 const SPARK_P = `Particle Effect
 - Spark -

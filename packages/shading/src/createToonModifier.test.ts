@@ -1,7 +1,7 @@
 import { ModifierSlot, ToonModifierKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createToonModifier, initializeToonModifier } from './createToonModifier';
+import { createToonModifier, initializeToonModifier } from './createToonModifier.ts';
 
 describe('createToonModifier', () => {
   it('sets the kind and Effect slot', () => {

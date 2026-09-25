@@ -25,4 +25,4 @@ export {
   setTrayPressedIcon,
   startTrayIconAnimation,
   stopTrayIconAnimation,
-} from './contract';
+} from './contract.ts';

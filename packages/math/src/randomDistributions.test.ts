@@ -1,4 +1,4 @@
-import { createRandomSource } from './random';
+import { createRandomSource } from './random.ts';
 import {
   pick,
   randomExponential,
@@ -12,7 +12,7 @@ import {
   randomWeighted,
   shuffle,
   shuffleInPlace,
-} from './randomDistributions';
+} from './randomDistributions.ts';
 
 const rng = () => createRandomSource(0xabcdef);
 

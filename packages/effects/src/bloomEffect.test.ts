@@ -8,7 +8,7 @@ import {
   getBloomEffectPadding,
   initializeBloomEffect,
   registerBloomEffectPaddingResolver,
-} from './bloomEffect';
+} from './bloomEffect.ts';
 
 describe('computeBloomBlurRadius', () => {
   it('defaults to 8 when radius is unset', () => {

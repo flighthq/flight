@@ -1,6 +1,6 @@
 import type { CanvasTextureRenderTarget } from '@flighthq/types/contract';
 
-import { drawCanvasImageDataPass } from './canvasEffectCompositing';
+import { drawCanvasImageDataPass } from './canvasEffectCompositing.ts';
 
 // The 256-entry colour ramp the gradient effects index, and the pass that indexes it.
 //

@@ -9,9 +9,9 @@ import {
   getBillboardRuntime,
   getBillboardSignals,
   isBillboard,
-} from './billboard';
-import { createMesh } from './mesh';
-import { createNode3D } from './sceneNode';
+} from './billboard.ts';
+import { createMesh } from './mesh.ts';
+import { createNode3D } from './sceneNode.ts';
 
 describe('createBillboard', () => {
   it('uses BillboardKind and full facing by default', () => {

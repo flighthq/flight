@@ -1,8 +1,8 @@
 import { createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createParticleEmitter3D } from './particleEmitter3D';
-import { prewarmParticleEmitter3D } from './prewarmParticleEmitter3D';
+import { createParticleEmitter3D } from './particleEmitter3D.ts';
+import { prewarmParticleEmitter3D } from './prewarmParticleEmitter3D.ts';
 
 function seededRandom(seed: number): () => number {
   let s = seed;

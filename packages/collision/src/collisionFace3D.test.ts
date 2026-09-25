@@ -9,7 +9,7 @@ import {
   queryCollisionConvexFace3D,
   registerBuiltInCollisionFaceQueries3D,
   registerCollisionFaceQuery3D,
-} from './collisionFace3D';
+} from './collisionFace3D.ts';
 
 beforeEach(() => {
   registerBuiltInCollisionFaceQueries3D();

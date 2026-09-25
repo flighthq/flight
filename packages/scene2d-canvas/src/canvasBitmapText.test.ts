@@ -8,10 +8,10 @@ import type { BitmapText, GlyphEntry, GlyphSource, ImageResource, RenderProxy2D 
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
-import { canvasBitmapTextRenderer, drawCanvasSpriteText } from './canvasBitmapText';
-import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
-import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
-import { createCanvasRenderState } from './canvasTestSupport';
+import { canvasBitmapTextRenderer, drawCanvasSpriteText } from './canvasBitmapText.ts';
+import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver.ts';
+import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport.ts';
+import { createCanvasRenderState } from './canvasTestSupport.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

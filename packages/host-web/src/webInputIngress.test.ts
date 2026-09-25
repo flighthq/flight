@@ -18,8 +18,8 @@ import { connectSignal } from '@flighthq/signals/contract';
 import type { InputIngressSink, InputPointerData } from '@flighthq/types/contract';
 import { KeyCode, KeyModifier } from '@flighthq/types/contract';
 
-import * as hostWebPublic from './index';
-import { webHostInput } from './webInputHost';
+import * as hostWebPublic from './index.ts';
+import { webHostInput } from './webInputHost.ts';
 import {
   getWebCoalescedPointerEvents,
   getWebKeyCodeFromKeyboardEvent,
@@ -28,7 +28,7 @@ import {
   releaseWebInputPointerCapture,
   setWebInputPointerCapture,
   webHostInputIngress,
-} from './webInputIngress';
+} from './webInputIngress.ts';
 
 afterEach(() => {
   vi.restoreAllMocks();

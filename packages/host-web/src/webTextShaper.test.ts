@@ -1,6 +1,6 @@
 import type { CanvasTextShaperBackend } from '@flighthq/types/contract';
 
-import { clearCanvasTextShaperBackendCache, createCanvasTextShaperBackend } from './webTextShaper';
+import { clearCanvasTextShaperBackendCache, createCanvasTextShaperBackend } from './webTextShaper.ts';
 
 describe('CanvasTextShaperBackend', () => {
   it('satisfies the HostTextShaperCapability seam contract', () => {

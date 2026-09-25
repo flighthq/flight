@@ -1,7 +1,7 @@
-import type { Entity } from './Entity';
-import type { GuiControllerOptions } from './GuiController';
-import type { Node2D } from './Node2D';
-import type { Vector2Like } from './Vector2';
+import type { Entity } from './Entity.ts';
+import type { GuiControllerOptions } from './GuiController.ts';
+import type { Node2D } from './Node2D.ts';
+import type { Vector2Like } from './Vector2.ts';
 
 declare const TooltipControllerTypeKey: unique symbol;
 

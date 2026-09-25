@@ -1,5 +1,5 @@
-import type { Effect } from './Effect';
-import type { InnerEffectSourceMode } from './EffectSourceMode';
+import type { Effect } from './Effect.ts';
+import type { InnerEffectSourceMode } from './EffectSourceMode.ts';
 
 // Inner-shadow composite effect: tint the inverted silhouette, blur, offset by angle/distance, clip to the source alpha, then draw or hide the source.
 // Full-frame composite effect over the scene's alpha silhouette; the color is a packed RGBA integer

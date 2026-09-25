@@ -1,7 +1,7 @@
-export { parseXmlAttributes, parseXmlDocument } from './xmlParse';
+export { parseXmlAttributes, parseXmlDocument } from './xmlParse.ts';
 export {
   getXmlElementAttribute,
   getXmlElementAttributeNumber,
   getXmlElementChildByName,
   getXmlElementChildrenByName,
-} from './xmlQuery';
+} from './xmlQuery.ts';

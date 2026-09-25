@@ -12,4 +12,4 @@ export {
   setSoftKeyboardScrollAssistEnabled,
   setSoftKeyboardStyle,
   showSoftKeyboard,
-} from './contract';
+} from './contract.ts';

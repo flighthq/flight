@@ -3,15 +3,15 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { FIXTURE_RELEASE_TAG, writeFixtureTreeStamp } from '../../scripts/fixtures';
-import { deriveImportConformanceCapabilityScopedUnknownEvidence } from '../core/import-conformance-score';
+import { FIXTURE_RELEASE_TAG, writeFixtureTreeStamp } from '../../scripts/fixtures.ts';
+import { deriveImportConformanceCapabilityScopedUnknownEvidence } from '../core/import-conformance-score.ts';
 import {
   SWF_CAPABILITY_SCOPED_UNKNOWN_MAPPINGS,
   SWF_IMPORTER_DECLARED_INDIVIDUATION_MARGIN,
   UNVERIFIED_SWF_FIXTURE_TREE_MESSAGE,
   createSwfImportConformanceDenominators,
   resolveVerifiedSwfFixturePack,
-} from './swf-capability-index';
+} from './swf-capability-index.ts';
 
 describe('SWF scoreboard declarations', () => {
   it('adapts the frozen SWF measurement method into generic denominator readings', () => {

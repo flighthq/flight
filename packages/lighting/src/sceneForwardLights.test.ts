@@ -1,9 +1,9 @@
 import { createBoundingSphere } from '@flighthq/geometry/contract';
 import type { Scene3DForwardLightSelection, Scene3DLightsLike } from '@flighthq/types/contract';
 
-import { createPointLight } from './pointLight';
-import { selectScene3DForwardLights } from './sceneForwardLights';
-import { createSpotLight } from './spotLight';
+import { createPointLight } from './pointLight.ts';
+import { selectScene3DForwardLights } from './sceneForwardLights.ts';
+import { createSpotLight } from './spotLight.ts';
 
 function selection(): Scene3DForwardLightSelection {
   return { indices: [], point: [], spot: [] };

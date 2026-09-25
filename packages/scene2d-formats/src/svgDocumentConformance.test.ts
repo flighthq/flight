@@ -4,8 +4,8 @@ import { getShapeBounds } from '@flighthq/shape/contract';
 import type { Node2D, ImportDiagnostic, RichText, Shape } from '@flighthq/types/contract';
 import { ShapeKind } from '@flighthq/types/contract';
 
-import { createScene2DFromSvgDocument } from './svgDocument';
-import { createReadyImageResourceForTest } from './testHelper';
+import { createScene2DFromSvgDocument } from './svgDocument.ts';
+import { createReadyImageResourceForTest } from './testHelper.ts';
 
 describe('SVG conformance matrix', () => {
   it.each([

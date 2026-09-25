@@ -1,7 +1,7 @@
 import type { CanvasRenderState } from '@flighthq/types/contract';
 import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 
-import { getCanvasRenderStateRuntime } from './canvasRenderState';
+import { getCanvasRenderStateRuntime } from './canvasRenderState.ts';
 
 // Auditable map from a blend-mode intent to the Canvas2D globalCompositeOperation
 // that realizes it. `null` means there is no faithful Canvas2D equivalent, so the

@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { parseSync } from 'oxc-parser';
 import pc from 'picocolors';
 
-import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories';
-import { filterPaths, getSelectors } from './select';
+import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories.ts';
+import { filterPaths, getSelectors } from './select.ts';
 
 interface OrderIssue {
   labels: string[];

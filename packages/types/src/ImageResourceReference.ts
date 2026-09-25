@@ -1,9 +1,9 @@
-import type { AlphaType } from './AlphaType';
-import type { Entity } from './Entity';
-import type { ImageBitmapComposition } from './ImageBitmapComposition';
-import type { ImageResource } from './ImageResource';
-import type { ResourceResolutionState } from './ResourceResolutionState';
-import type { Texture } from './Texture';
+import type { AlphaType } from './AlphaType.ts';
+import type { Entity } from './Entity.ts';
+import type { ImageBitmapComposition } from './ImageBitmapComposition.ts';
+import type { ImageResource } from './ImageResource.ts';
+import type { ResourceResolutionState } from './ResourceResolutionState.ts';
+import type { Texture } from './Texture.ts';
 
 // A lightweight, plain-data reference to a texture image source that a document parser emits
 // synchronously instead of decoding inline. A document owns these references as sidecar data; each

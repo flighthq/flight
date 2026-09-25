@@ -1,8 +1,8 @@
 import { finishEntity } from '@flighthq/entity/contract';
 import type { AppWindow, Entity, HostWgpuCapability, WgpuHostAcquisition, WgpuSurface } from '@flighthq/types/contract';
 
-import { allocateSurface, getSurfaceHandle } from './surface';
-import { createWgpuSurface, createWgpuSurfaceFromNativeHandle, destroyWgpuSurface } from './wgpuSurface';
+import { allocateSurface, getSurfaceHandle } from './surface.ts';
+import { createWgpuSurface, createWgpuSurfaceFromNativeHandle, destroyWgpuSurface } from './wgpuSurface.ts';
 
 function wgpuCapability(fields: HostWgpuCapability): HostWgpuCapability {
   return finishEntity(Object.assign(allocateSurface(null), fields) as never) as unknown as HostWgpuCapability;

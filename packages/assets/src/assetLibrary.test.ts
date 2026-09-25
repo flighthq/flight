@@ -18,7 +18,7 @@ import {
   releaseAsset,
   releaseAssetGroup,
   setAssetAcquireGuard,
-} from './assetLibrary';
+} from './assetLibrary.ts';
 
 // A mock loader adapter: counts load calls, records disposed values, and holds each load open until
 // flush() so tests can observe in-flight state (dedup, bounded concurrency). Each load resolves a

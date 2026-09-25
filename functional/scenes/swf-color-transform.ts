@@ -15,7 +15,7 @@ import {
 } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
-import { createSwfColorTransformMovieClip } from '../helpers/swfTransformFixture';
+import { createSwfColorTransformMovieClip } from '../helpers/swfTransformFixture.ts';
 
 const WIDTH = 220;
 const HEIGHT = 220;

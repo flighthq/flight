@@ -5,9 +5,9 @@ import type {
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { drawWgpuEffectPass } from './wgpuEffectPass';
-import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
+import { drawWgpuEffectPass } from './wgpuEffectPass.ts';
+import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
 
 // Lens flare: a single-pass approximation. A true flare is a multi-pass recipe (downsample a bright
 // pass, then accumulate ghosts and a halo from it). Here, on each fragment, we sample the source's

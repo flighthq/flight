@@ -1,5 +1,5 @@
-import type { Node3D } from './Node3D';
-import type { Scene3DAnimationPath } from './Scene3DAnimationPath';
+import type { Node3D } from './Node3D.ts';
+import type { Scene3DAnimationPath } from './Scene3DAnimationPath.ts';
 
 // The `targetRef` an AnimationChannel carries when it is bound to a 3D Node3D: which node and which
 // sink (Translation / Rotation / Scale transform component, or the mesh's morph-target Weights array)

@@ -1,6 +1,6 @@
 import type { LocaleInput } from '@flighthq/types/contract';
 
-import { getCacheKey, getCached } from './cache';
+import { getCacheKey, getCached } from './cache.ts';
 
 /**
  * Format `value` as a compact number in `locale` (`notation: 'compact'`) — for

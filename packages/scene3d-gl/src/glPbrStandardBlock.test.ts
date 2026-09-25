@@ -2,14 +2,14 @@ import { createStandardPbrMaterial, createStandardPbrMaterialProperties } from '
 import { registerGlTextureResolver } from '@flighthq/render-gl/contract';
 import type { StandardPbrMaterialProperties, Texture } from '@flighthq/types/contract';
 
-import { compileGlPbrProgram } from './glPbrProgramCache';
+import { compileGlPbrProgram } from './glPbrProgramCache.ts';
 import {
   bindGlPbrStandardBlock,
   bindGlPbrStandardTexture,
   buildGlPbrStandardDefineKey,
   isGlTextureReady,
-} from './glPbrStandardBlock';
-import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
+} from './glPbrStandardBlock.ts';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 function makeProgram() {
   const { state } = makeGlScene3DState();

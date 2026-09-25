@@ -1,7 +1,7 @@
-import type { CompressedImageResource } from './CompressedImageResource';
-import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder';
-import type { GlContext } from './GlContext';
-import type { TextureColorSpace } from './Texture';
+import type { CompressedImageResource } from './CompressedImageResource.ts';
+import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder.ts';
+import type { GlContext } from './GlContext.ts';
+import type { TextureColorSpace } from './Texture.ts';
 
 // The opt-in seam that uploads a CompressedImageResource's payload to the currently-bound GL
 // texture. Installed per render state by registerGlCompressedTextureUpload; unset until then, so a

@@ -1,9 +1,9 @@
-import type { AttractorForce } from './AttractorForce';
-import type { DragForce } from './DragForce';
-import type { ParticleForce } from './ParticleForce';
-import type { TurbulenceForce } from './TurbulenceForce';
-import type { VortexForce } from './VortexForce';
-import type { WindForce } from './WindForce';
+import type { AttractorForce } from './AttractorForce.ts';
+import type { DragForce } from './DragForce.ts';
+import type { ParticleForce } from './ParticleForce.ts';
+import type { TurbulenceForce } from './TurbulenceForce.ts';
+import type { VortexForce } from './VortexForce.ts';
+import type { WindForce } from './WindForce.ts';
 
 // ParticleForce is a closed discriminated union — verify exhaustiveness at the type level.
 // If a new member is added to the union, these exhaustiveness checks will produce a type error,

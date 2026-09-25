@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { explainPhysics2DStep } from './explainPhysics2DStep';
-import { createPhysics2DWorld, createRigidBody2D } from './world';
+import { explainPhysics2DStep } from './explainPhysics2DStep.ts';
+import { createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 describe('explainPhysics2DStep', () => {
   it('reports a valid step as ready', () => {

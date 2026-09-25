@@ -1,6 +1,6 @@
 import type { VertexAttributeLayout } from '@flighthq/types/contract';
 
-import { createMeshGeometry } from './meshGeometry';
+import { createMeshGeometry } from './meshGeometry.ts';
 import {
   getMeshGeometryVertexColor0,
   getMeshGeometryVertexJoints0,
@@ -20,7 +20,7 @@ import {
   setMeshGeometryVertexUv0,
   setMeshGeometryVertexUv1,
   setMeshGeometryVertexWeights0,
-} from './meshGeometryAttributes';
+} from './meshGeometryAttributes.ts';
 
 const CANONICAL_LAYOUT: VertexAttributeLayout = {
   attributes: [

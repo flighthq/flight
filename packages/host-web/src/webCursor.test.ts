@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { allocateWebCursorBackend } from './webCursor';
+import { allocateWebCursorBackend } from './webCursor.ts';
 
 describe('allocateWebCursorBackend', () => {
   it('sets element.style.cursor to the given cursor value', () => {

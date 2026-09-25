@@ -2,10 +2,10 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Modifier } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createAnimatedNormalModifier } from './createAnimatedNormalModifier';
-import { createEmissiveModifier } from './createEmissiveModifier';
-import { createRimModifier } from './createRimModifier';
-import { orderModifierStack } from './orderModifierStack';
+import { createAnimatedNormalModifier } from './createAnimatedNormalModifier.ts';
+import { createEmissiveModifier } from './createEmissiveModifier.ts';
+import { createRimModifier } from './createRimModifier.ts';
+import { orderModifierStack } from './orderModifierStack.ts';
 
 describe('orderModifierStack', () => {
   const normal = createAnimatedNormalModifier({ map: null, scroll: { x: 0, y: 0 } });

@@ -1,8 +1,8 @@
-import { createBloomEffect } from './bloomEffect';
-import { validateEffectList } from './effectValidation';
-import { createSsaoEffect } from './ssaoEffect';
-import { createToneMapEffect } from './toneMapEffect';
-import { createVignetteEffect } from './vignetteEffect';
+import { createBloomEffect } from './bloomEffect.ts';
+import { validateEffectList } from './effectValidation.ts';
+import { createSsaoEffect } from './ssaoEffect.ts';
+import { createToneMapEffect } from './toneMapEffect.ts';
+import { createVignetteEffect } from './vignetteEffect.ts';
 
 describe('validateEffectList', () => {
   it('returns null when all required inputs are available', () => {

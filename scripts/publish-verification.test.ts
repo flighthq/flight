@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import type { PublishExpectation, PublishProblem, PublishedRegistryState } from './publish-verification.js';
+import type { PublishExpectation, PublishProblem, PublishedRegistryState } from './publish-verification.ts';
 import {
   countTrailingRoundsWithoutProgress,
   describePublishProblem,
   findPublishProblems,
   shouldKeepVerifying,
-} from './publish-verification.js';
+} from './publish-verification.ts';
 
 // The versions from the incident this module exists for: every package published at 1538 except
 // @flighthq/types, whose publish exited 0 and never reached the registry.

@@ -1,4 +1,4 @@
-import { swfDefineMorphShapeHandler } from './swfDefineMorphShapeHandler';
+import { swfDefineMorphShapeHandler } from './swfDefineMorphShapeHandler.ts';
 
 describe('swfDefineMorphShapeHandler', () => {
   it('claims the two morph shape tags', () => {

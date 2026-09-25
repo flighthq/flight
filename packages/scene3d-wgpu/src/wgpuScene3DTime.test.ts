@@ -1,5 +1,5 @@
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
-import { getWgpuScene3DTime, setWgpuScene3DTime } from './wgpuScene3DTime';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
+import { getWgpuScene3DTime, setWgpuScene3DTime } from './wgpuScene3DTime.ts';
 
 describe('getWgpuScene3DTime', () => {
   it('defaults to zero and reads the state-scoped value', () => {

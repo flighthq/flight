@@ -3,8 +3,8 @@ import { getTextureSource } from '@flighthq/texture/contract';
 import type { Bitmap, DomRenderState, HostImageCapability, Texture } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-import { getDomRenderStateRuntime } from './domRenderState';
-import { registerDomTextureResolver } from './domTextureResolver';
+import { getDomRenderStateRuntime } from './domRenderState.ts';
+import { registerDomTextureResolver } from './domTextureResolver.ts';
 
 export function registerDomBitmapTextureResolver(
   hostImage: Readonly<HostImageCapability>,

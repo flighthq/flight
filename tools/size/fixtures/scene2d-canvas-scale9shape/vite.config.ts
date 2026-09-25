@@ -1,3 +1,3 @@
-import { createBaseConfig } from '../../../../scripts/vite-base';
+import { createBaseConfig } from '../../../../scripts/vite-base.ts';
 
-export default createBaseConfig('development', 'canvas');
+export default createBaseConfig('development');

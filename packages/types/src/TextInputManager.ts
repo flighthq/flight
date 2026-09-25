@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { InputSignals } from './InputSignals';
-import type { RichText } from './RichText';
+import type { Entity } from './Entity.ts';
+import type { InputSignals } from './InputSignals.ts';
+import type { RichText } from './RichText.ts';
 
 export interface TextInputSource extends Pick<InputSignals, 'onKeyDown' | 'onTextInput'> {}
 

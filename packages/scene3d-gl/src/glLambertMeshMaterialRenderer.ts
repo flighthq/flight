@@ -15,17 +15,17 @@ import type {
 } from '@flighthq/types/contract';
 import { LambertMaterialKind } from '@flighthq/types/contract';
 
-import { ensureGlClassicProgram } from './glClassicPrelude';
-import { bindGlMeshLightBlock } from './glLitProgram';
-import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
+import { ensureGlClassicProgram } from './glClassicPrelude.ts';
+import { bindGlMeshLightBlock } from './glLitProgram.ts';
+import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
 import {
   beginGlMeshDraw,
   bindGlUvTransform,
   drawGlMeshSubset,
   hasGlUvTransform,
   setGlMeshViewProjection,
-} from './glMeshProgram';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+} from './glMeshProgram.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // The built-in classic Lambert forward-lit mesh-material renderer (GlMeshMaterialRenderer for
 // LambertMaterialKind). Diffuse-only Lambertian shading: bind selects the classic uber-shader's

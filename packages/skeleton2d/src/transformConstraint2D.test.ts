@@ -3,16 +3,16 @@ import type { Bone2D, Skeleton2DTransformConstraint } from '@flighthq/types/cont
 import { Skeleton2DConstraintKind, TransformMode2D } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
+import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d.ts';
 import {
   getSkeleton2DConstraintSolver,
   registerSkeleton2DConstraintSolver,
   unregisterSkeleton2DConstraintSolver,
-} from './skeleton2dConstraint';
+} from './skeleton2dConstraint.ts';
 import {
   registerSkeleton2DTransformConstraintSolver,
   solveSkeleton2DTransformConstraint,
-} from './transformConstraint2D';
+} from './transformConstraint2D.ts';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
   return {

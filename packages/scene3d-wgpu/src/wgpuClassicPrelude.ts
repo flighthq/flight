@@ -9,7 +9,7 @@ import type {
   WgpuSkinningAdapter,
 } from '@flighthq/types/contract';
 
-import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
+import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail.ts';
 import {
   createWgpuMeshPipeline,
   ensureWgpuPerMapMaterialBinding,
@@ -21,8 +21,8 @@ import {
   spliceWgpuColorAdjustmentPrelude,
   stashWgpuUvTransform,
   WGPU_DIRECTIONAL_SHADOW_WGSL,
-} from './wgpuMeshPipeline';
-import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
+} from './wgpuMeshPipeline.ts';
+import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime.ts';
 // Ensures (and caches per material reference) the classic Material bind group — a uniform buffer + the
 // shared sampler + the placeholder diffuse/specular/normal textures — and rewrites its uniform with
 // this surface's linear diffuse + specular colors, shininess, and alpha cutoff. Mirrors scene-gl's

@@ -27,9 +27,9 @@ import {
   getWgpuRenderCacheTarget,
   refreshWgpuRenderCache,
   releaseWgpuRenderCache,
-} from './wgpuCache';
-import * as wgpuNode2D from './wgpuNode2D';
-import * as wgpuQuadBatchWriter from './wgpuQuadBatchWriter';
+} from './wgpuCache.ts';
+import * as wgpuNode2D from './wgpuNode2D.ts';
+import * as wgpuQuadBatchWriter from './wgpuQuadBatchWriter.ts';
 
 // The GPU render-target lifecycle (@flighthq/render-wgpu) and the two local collaborators
 // ./wgpuQuadBatchWriter and ./wgpuNode2D are stubbed so cache orchestration can be unit-tested without a

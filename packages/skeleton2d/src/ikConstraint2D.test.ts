@@ -3,14 +3,14 @@ import type { Bone2D, Skeleton2D, Skeleton2DIkConstraint } from '@flighthq/types
 import { Skeleton2DConstraintKind, TransformMode2D } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { registerSkeleton2DIkConstraintSolver, solveSkeleton2DIkConstraint } from './ikConstraint2D';
-import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
+import { registerSkeleton2DIkConstraintSolver, solveSkeleton2DIkConstraint } from './ikConstraint2D.ts';
+import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d.ts';
 import {
   getSkeleton2DConstraintSolver,
   registerSkeleton2DConstraintSolver,
   solveSkeleton2DConstraints,
   unregisterSkeleton2DConstraintSolver,
-} from './skeleton2dConstraint';
+} from './skeleton2dConstraint.ts';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
   return {

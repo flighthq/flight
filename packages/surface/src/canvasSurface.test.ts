@@ -1,8 +1,8 @@
 import { finishEntity } from '@flighthq/entity/contract';
 import type { AppWindow, CanvasSurface, Entity, HostCanvasCapability } from '@flighthq/types/contract';
 
-import { createCanvasSurface, createCanvasSurfaceFromNativeHandle, destroyCanvasSurface } from './canvasSurface';
-import { allocateSurface, getSurfaceHandle } from './surface';
+import { createCanvasSurface, createCanvasSurfaceFromNativeHandle, destroyCanvasSurface } from './canvasSurface.ts';
+import { allocateSurface, getSurfaceHandle } from './surface.ts';
 
 function canvasCapability(fields: HostCanvasCapability): HostCanvasCapability {
   return finishEntity(Object.assign(allocateSurface(null), fields) as never) as unknown as HostCanvasCapability;

@@ -9,7 +9,7 @@ import type {
   ParticleForce,
 } from '@flighthq/types/contract';
 
-import { updateParticleEmitter3D } from './updateParticleEmitter3D';
+import { updateParticleEmitter3D } from './updateParticleEmitter3D.ts';
 
 export function stepParticleEmitter3D(
   emitter: ParticleEmitter3D,

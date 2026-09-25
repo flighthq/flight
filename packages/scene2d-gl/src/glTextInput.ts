@@ -9,7 +9,7 @@ import {
 import { getRichTextScrollYOffset } from '@flighthq/textlayout/contract';
 import type { RichText, TextLayoutResult, TextSelectionRectangle } from '@flighthq/types/contract';
 
-import { registerGlTextInputOverlay } from './glRichText';
+import { registerGlTextInputOverlay } from './glRichText.ts';
 
 // Rasterizes the editable-field overlay (selection highlight + caret) onto the offscreen field canvas of
 // a RichText whose input slot is present. Passed into the Gl RichText rasterization pass.

@@ -23,9 +23,9 @@ import type {
   SpatialAabb2D,
 } from '@flighthq/types/contract';
 
-import { synchronizePhysics2DBroadphase } from './broadphase';
-import { writePhysics2DColliderBounds } from './colliderTransform';
-import { findPhysics2DBody } from './world';
+import { synchronizePhysics2DBroadphase } from './broadphase.ts';
+import { writePhysics2DColliderBounds } from './colliderTransform.ts';
+import { findPhysics2DBody } from './world.ts';
 
 export function createPhysics2DQueryFilter(): NonEntityCreateResult<Physics2DQueryFilter, 'options'> {
   return {

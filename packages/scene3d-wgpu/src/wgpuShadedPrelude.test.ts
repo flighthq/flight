@@ -26,9 +26,9 @@ import {
   VertexDisplaceModifierSource,
 } from '@flighthq/types/contract';
 
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
-import { registerWgpuModifierSnippet, resolveWgpuModifierSnippet } from './wgpuShadedModifierSnippet';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper.ts';
+import { registerWgpuModifierSnippet, resolveWgpuModifierSnippet } from './wgpuShadedModifierSnippet.ts';
 import {
   animatedNormalWgpuModifierSnippet,
   bindWgpuShadedSurface,
@@ -43,7 +43,7 @@ import {
   rimWgpuModifierSnippet,
   toonWgpuModifierSnippet,
   vertexDisplaceWgpuModifierSnippet,
-} from './wgpuShadedPrelude';
+} from './wgpuShadedPrelude.ts';
 
 const COLOR_FEATURE: WgpuColorAdjustmentMaterialFeature = {
   fragmentShaderChunk: 'fn applyFlightColorAdjustment(c : vec4f, m : vec4f, o : vec4f) -> vec4f { return c; }',

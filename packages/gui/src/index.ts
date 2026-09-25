@@ -1,5 +1,5 @@
-export * from './buttonController';
-export * from './comboBoxController';
+export * from './buttonController.ts';
+export * from './comboBoxController.ts';
 export {
   clampGuiValue,
   configureGuiHitArea,
@@ -14,19 +14,19 @@ export {
   setGuiVisible,
   setGuiVisualProperty,
   snapGuiValue,
-} from './guiController';
-export * from './guiDialog';
-export * from './guiTestHelper';
-export * from './listController';
-export * from './progressBarController';
-export * from './radioGroupController';
-export * from './scrollBarController';
-export * from './scrollViewController';
-export * from './sliderController';
-export * from './splitPaneController';
-export * from './tabBarController';
-export * from './textInputController';
-export * from './toggleController';
-export * from './tooltipController';
-export * from './treeViewController';
-export * from './windowController';
+} from './guiController.ts';
+export * from './guiDialog.ts';
+export * from './guiTestHelper.ts';
+export * from './listController.ts';
+export * from './progressBarController.ts';
+export * from './radioGroupController.ts';
+export * from './scrollBarController.ts';
+export * from './scrollViewController.ts';
+export * from './sliderController.ts';
+export * from './splitPaneController.ts';
+export * from './tabBarController.ts';
+export * from './textInputController.ts';
+export * from './toggleController.ts';
+export * from './tooltipController.ts';
+export * from './treeViewController.ts';
+export * from './windowController.ts';

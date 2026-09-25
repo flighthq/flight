@@ -4,7 +4,7 @@ import type {
   HostImageSource,
 } from '@flighthq/types/contract';
 
-import { resolveBitmapReadback } from './bitmapReadbackResolver';
+import { resolveBitmapReadback } from './bitmapReadbackResolver.ts';
 
 export function explainBitmapReadback(
   hostBitmapReadback: Readonly<HostBitmapReadbackCapability>,

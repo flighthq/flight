@@ -5,9 +5,9 @@ import type {
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { drawWgpuEffectPass } from './wgpuEffectPass';
-import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
+import { drawWgpuEffectPass } from './wgpuEffectPass.ts';
+import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
 
 // Screen-space fog: blends the scene toward an unpacked fog color by a depth proxy. The real recipe
 // reads a sampleable DEPTH texture per fragment — fog = 1 - exp(-density * remap(depth, near, far)) — but

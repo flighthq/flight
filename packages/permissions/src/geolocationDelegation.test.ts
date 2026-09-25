@@ -4,7 +4,7 @@ import type {
   HostPermissionsCapability,
 } from '@flighthq/types/contract';
 
-import { requestPermission } from './permission';
+import { requestPermission } from './permission.ts';
 
 function geolocationProvider(outcome: GeolocationAccessOutcome, calls?: { count: number }): HostGeolocationCapability {
   return {

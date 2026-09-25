@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { writeCollisionConvexHullFaces3D } from './convexHull3D';
+import { writeCollisionConvexHullFaces3D } from './convexHull3D.ts';
 
 const faces: number[] = [];
 

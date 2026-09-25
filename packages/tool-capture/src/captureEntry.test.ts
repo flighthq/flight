@@ -11,7 +11,7 @@ import {
   isTransientCaptureError,
   isRejectedCaptureBaselineHash,
   isVerifiedCaptureTool,
-} from './captureEntry';
+} from './captureEntry.ts';
 
 describe('buildCaptureObserveDiagnostics', () => {
   it('passes through the render facts and separates page exceptions from console/network errors', () => {

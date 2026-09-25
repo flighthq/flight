@@ -1,2 +1,2 @@
-export * from './abcFile';
-export * from './abcInstruction';
+export * from './abcFile.ts';
+export * from './abcInstruction.ts';

@@ -1,6 +1,6 @@
 import { CustomShaderMaterialKind } from '@flighthq/types/contract';
 
-import { createCustomShaderMaterial } from './customShaderMaterial';
+import { createCustomShaderMaterial } from './customShaderMaterial.ts';
 
 describe('createCustomShaderMaterial', () => {
   it('creates a custom shader material with default sentinel values', () => {

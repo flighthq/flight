@@ -1,6 +1,6 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
 
-import { capacitorHostFileSystemGroup } from './capacitorStorageHost';
+import { capacitorHostFileSystemGroup } from './capacitorStorageHost.ts';
 
 describe('capacitorHostFileSystemGroup', () => {
   it('publishes only the file-system access slot', () => {

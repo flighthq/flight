@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import {
   isPhysics2DPairJointSuppressed,
   rebuildPhysics2DJointCollisionSuppressions,
-} from './jointCollisionSuppression';
-import { registerPhysics2DJointSolver } from './jointRegistry';
-import { createPhysics2DWorld } from './world';
+} from './jointCollisionSuppression.ts';
+import { registerPhysics2DJointSolver } from './jointRegistry.ts';
+import { createPhysics2DWorld } from './world.ts';
 
 describe('isPhysics2DPairJointSuppressed', () => {
   it('looks up either endpoint order and becomes false after the index is cleared', () => {

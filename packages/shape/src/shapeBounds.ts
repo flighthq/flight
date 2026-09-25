@@ -12,7 +12,7 @@ import type {
   ShapeCommandToken,
 } from '@flighthq/types/contract';
 
-import { getShapeBoundsCommand } from './shapeBoundsRegistry';
+import { getShapeBoundsCommand } from './shapeBoundsRegistry.ts';
 
 export function computeShapeBoundsRectangle(
   out: Rectangle,

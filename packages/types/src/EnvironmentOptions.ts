@@ -1,4 +1,4 @@
-import type { Texture } from './Texture';
+import type { Texture } from './Texture.ts';
 
 export interface EnvironmentOptions {
   enabled?: boolean;

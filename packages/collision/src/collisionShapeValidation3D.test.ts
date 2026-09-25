@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getCollisionConvexValidationStatus3D,
   getCollisionShapeValidationStatus3D,
-} from './collisionShapeValidation3D';
+} from './collisionShapeValidation3D.ts';
 
 describe('getCollisionConvexValidationStatus3D', () => {
   it('accepts a triangle, which is coplanar and encloses no volume', () => {

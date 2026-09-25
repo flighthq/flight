@@ -7,9 +7,9 @@ import {
   clipCanvasBevelBand,
   canvasBevelEffectRunner,
   registerCanvasBevelEffect,
-} from './canvasBevelEffect';
-import { getCanvasEffectRunner } from './canvasEffectRegistry';
-import { canvasTestHost, createCanvasRenderState, createCanvasTextureRenderTarget } from './canvasEffectTestSupport';
+} from './canvasBevelEffect.ts';
+import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
+import { canvasTestHost, createCanvasRenderState, createCanvasTextureRenderTarget } from './canvasEffectTestSupport.ts';
 
 // Recipe assertions rather than pixels — see canvasBlendEffect.test.ts. Scratch targets are pre-seeded so
 // every pass is identifiable; the pool pops from the end, so the seed order reverses the acquire order.

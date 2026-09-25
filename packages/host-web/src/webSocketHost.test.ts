@@ -1,7 +1,7 @@
 import type { HostSocketCapabilities } from '@flighthq/types/contract';
 
-import { webHostSocket } from './webSocket';
-import { webHostSocketGroup } from './webSocketHost';
+import { webHostSocket } from './webSocket.ts';
+import { webHostSocketGroup } from './webSocketHost.ts';
 
 describe('webHostSocketGroup', () => {
   it('publishes the socket leaf under the group slot that scopes it', () => {
@@ -14,7 +14,7 @@ describe('webHostSocketGroup', () => {
   });
 
   it('exports only the direct group value', async () => {
-    const source = await import('./webSocketHost');
+    const source = await import('./webSocketHost.ts');
     expect(Object.keys(source)).toEqual(['webHostSocketGroup']);
   });
 });

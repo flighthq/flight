@@ -2,7 +2,7 @@ import {
   applyDisplacementEffectToWgpu,
   wgpuDisplacementEffectRunner,
   registerWgpuDisplacementEffect,
-} from './wgpuDisplacementEffect';
+} from './wgpuDisplacementEffect.ts';
 
 describe('applyDisplacementEffectToWgpu', () => {
   it('is a function', () => {

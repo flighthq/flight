@@ -5,4 +5,4 @@ export {
   removeAccessibilityNode,
   setAccessibilityFocus,
   setAccessibilityNode,
-} from './contract';
+} from './contract.ts';

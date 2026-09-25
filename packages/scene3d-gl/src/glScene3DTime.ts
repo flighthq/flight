@@ -1,6 +1,6 @@
 import type { GlRenderState } from '@flighthq/types/contract';
 
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // The per-frame `time` uniform seam owned by the shading GL assembly. The bind-once-per-material
 // model has no per-frame channel, so animated modifiers (a scrolling AnimatedNormalModifier) read a

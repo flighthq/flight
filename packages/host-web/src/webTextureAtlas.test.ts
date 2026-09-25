@@ -5,7 +5,7 @@ import {
   createWebTextureAtlasFromCanvas,
   createWebTextureAtlasFromImageBitmap,
   createWebTextureAtlasFromImageElement,
-} from './webTextureAtlas';
+} from './webTextureAtlas.ts';
 
 describe('createWebTextureAtlasFromCanvas', () => {
   it('wraps a canvas with correct dimensions', () => {

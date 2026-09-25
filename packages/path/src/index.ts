@@ -1,21 +1,21 @@
-export * from './cleanPath';
-export * from './containsPathPoint';
-export * from './copyPath';
-export * from './dashPath';
-export * from './decimatePath';
-export * from './explainPathMorphCreation';
-export * from './explainStrokePathTessellation';
-export * from './fitPathCurves';
-export * from './flattenPath';
-export * from './forEachPathSegment';
-export * from './getPathBounds';
-export * from './getPathContourLengths';
-export * from './getPathCurvatureAtDistance';
-export * from './getPathLength';
-export * from './getPathNearestPoint';
-export * from './getPathPointAtDistance';
-export * from './getPathSegmentAtParameter';
-export * from './getPathSignedArea';
+export * from './cleanPath.ts';
+export * from './containsPathPoint.ts';
+export * from './copyPath.ts';
+export * from './dashPath.ts';
+export * from './decimatePath.ts';
+export * from './explainPathMorphCreation.ts';
+export * from './explainStrokePathTessellation.ts';
+export * from './fitPathCurves.ts';
+export * from './flattenPath.ts';
+export * from './forEachPathSegment.ts';
+export * from './getPathBounds.ts';
+export * from './getPathContourLengths.ts';
+export * from './getPathCurvatureAtDistance.ts';
+export * from './getPathLength.ts';
+export * from './getPathNearestPoint.ts';
+export * from './getPathPointAtDistance.ts';
+export * from './getPathSegmentAtParameter.ts';
+export * from './getPathSignedArea.ts';
 export {
   appendPathArc,
   appendPathCircle,
@@ -34,9 +34,9 @@ export {
   appendPathTangentArcTo,
   createPath,
   getPathLastPoint,
-} from './path';
-export * from './pathMeshPool';
-export { createPathMorph, samplePathMorph } from './pathMorph';
+} from './path.ts';
+export * from './pathMeshPool.ts';
+export { createPathMorph, samplePathMorph } from './pathMorph.ts';
 export {
   PathMorphIssueNone,
   PathMorphIssueWindingMismatch,
@@ -44,11 +44,11 @@ export {
   PathMorphIssueContourClosednessMismatch,
   PathMorphIssueContourOrientationMismatch,
   buildPathMorph,
-} from './pathMorphGeometry';
-export * from './reversePath';
-export * from './strokePath';
-export * from './strokePathGeometry';
-export * from './tessellatePath';
-export * from './tessellatePathTyped';
-export * from './tessellateStrokePath';
-export * from './transformPath';
+} from './pathMorphGeometry.ts';
+export * from './reversePath.ts';
+export * from './strokePath.ts';
+export * from './strokePathGeometry.ts';
+export * from './tessellatePath.ts';
+export * from './tessellatePathTyped.ts';
+export * from './tessellateStrokePath.ts';
+export * from './transformPath.ts';

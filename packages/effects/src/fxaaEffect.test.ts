@@ -1,4 +1,4 @@
-import { createFxaaEffect, initializeFxaaEffect } from './fxaaEffect';
+import { createFxaaEffect, initializeFxaaEffect } from './fxaaEffect.ts';
 
 describe('createFxaaEffect', () => {
   it('tags the intent type', () => {

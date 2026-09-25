@@ -6,9 +6,9 @@ import pc from 'picocolors';
 import type { FunctionDeclaration } from 'ts-morph';
 import { Node, Project } from 'ts-morph';
 
-import { collectEntryPointInventory } from './export-inventory';
-import { collectFastEntryPointInventory } from './fast-export-inventory';
-import { matchesPackageName } from './select';
+import { collectEntryPointInventory } from './export-inventory.ts';
+import { collectFastEntryPointInventory } from './fast-export-inventory.ts';
+import { matchesPackageName } from './select.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');

@@ -3,7 +3,7 @@ import { createNode3D } from '@flighthq/scene3d/contract';
 import type { RigidBody3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { syncPhysics3DBodyToNode3D } from './nodeSync';
+import { syncPhysics3DBodyToNode3D } from './nodeSync.ts';
 
 function stubBody(x: number, y: number, z: number, qx: number, qy: number, qz: number, qw: number): RigidBody3D {
   return {

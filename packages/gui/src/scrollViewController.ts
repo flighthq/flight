@@ -18,8 +18,8 @@ import {
   disposeGuiController,
   getGuiControllerRuntime,
   setGuiVisualProperty,
-} from './guiController';
-import { getScrollBarControllerSignals, setScrollBarControllerValue } from './scrollBarController';
+} from './guiController.ts';
+import { getScrollBarControllerSignals, setScrollBarControllerValue } from './scrollBarController.ts';
 
 interface ScrollViewControllerFields {
   baseContentX: number;

@@ -11,7 +11,7 @@ import type {
   NodeTraits,
 } from '@flighthq/types/contract';
 
-import { getNodeRuntime } from './node';
+import { getNodeRuntime } from './node.ts';
 
 /**
  * Appends one entry to the list's valid window. Capacity past `entryCount` is reused, so a list

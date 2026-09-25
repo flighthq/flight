@@ -1,7 +1,7 @@
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { RiveFieldType } from '@flighthq/types/contract';
 
-import { parseRiveDocument } from './riveDocument';
+import { parseRiveDocument } from './riveDocument.ts';
 
 // WHAT THESE TESTS PROVE. The fixtures here are bytes this suite writes, which on its own would
 // only show the decoder agrees with itself. Three things make them worth more. The primitives are

@@ -19,9 +19,14 @@ import type {
 } from '@flighthq/types/contract';
 import { UnlitMaterialKind } from '@flighthq/types/contract';
 
-import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { beginWgpuMeshDraw, drawWgpuMeshSubset, isWgpuTextureReady, writeWgpuFrameUniform } from './wgpuMeshPipeline';
-import { bindWgpuUnlitSurface, ensureWgpuUnlitPipeline } from './wgpuUnlitPrelude';
+import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import {
+  beginWgpuMeshDraw,
+  drawWgpuMeshSubset,
+  isWgpuTextureReady,
+  writeWgpuFrameUniform,
+} from './wgpuMeshPipeline.ts';
+import { bindWgpuUnlitSurface, ensureWgpuUnlitPipeline } from './wgpuUnlitPrelude.ts';
 
 // The built-in Unlit forward renderer (WgpuMeshMaterialRenderer for UnlitMaterialKind) — the WGSL
 // mirror of glUnlitMeshMaterialRenderer. Lighting-independent flat color: bind selects the unlit

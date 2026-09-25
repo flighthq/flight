@@ -43,8 +43,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { readCaptureBaselineCoverageManifest } from '../packages/tool-capture/src/captureBaselineCoverageManifest.js';
-import { getCaptureFingerprintContrast } from '../packages/tool-capture/src/captureContrast.js';
+import { readCaptureBaselineCoverageManifest } from '../packages/tool-capture/src/captureBaselineCoverageManifest.ts';
+import { getCaptureFingerprintContrast } from '../packages/tool-capture/src/captureContrast.ts';
 
 // The gate's own pass mark, from captureValidation's regression tolerance. Contrast is only meaningful
 // against it: the number that matters is the ratio, not the magnitude.

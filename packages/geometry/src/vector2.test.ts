@@ -36,7 +36,7 @@ import {
 } from '@flighthq/geometry/contract';
 import type { Vector2 } from '@flighthq/types/contract';
 
-import { initializeVector2 } from './vector2';
+import { initializeVector2 } from './vector2.ts';
 
 let pt: Vector2;
 let pt2: Vector2;

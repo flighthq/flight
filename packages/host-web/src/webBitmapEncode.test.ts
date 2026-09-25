@@ -3,7 +3,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bitmap, HostBitmapEncodeCapability } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-import { webHostBitmapEncode } from './webBitmapEncode';
+import { webHostBitmapEncode } from './webBitmapEncode.ts';
 
 function createTestBitmap(): Bitmap {
   const out = allocateEntity<Bitmap>();

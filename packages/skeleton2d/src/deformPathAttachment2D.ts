@@ -1,6 +1,6 @@
 import type { Path, PathAttachment2D, Skeleton2D } from '@flighthq/types/contract';
 
-import { skinSkeleton2DAttachmentPoints } from './skinAttachment2DPoints';
+import { skinSkeleton2DAttachmentPoints } from './skinAttachment2DPoints.ts';
 
 // Deforms a PathAttachment2D into `out`, filling its `data` with world coordinates under the attachment's
 // own verb stream. Requires `computeSkeleton2DWorldTransforms` to have filled `skeleton.worldMatrices`.

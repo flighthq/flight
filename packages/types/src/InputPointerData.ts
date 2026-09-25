@@ -1,5 +1,5 @@
-import type { MouseWheelMode } from './MouseWheelMode';
-import type { PointerType } from './PointerEventData';
+import type { MouseWheelMode } from './MouseWheelMode.ts';
+import type { PointerType } from './PointerEventData.ts';
 
 export interface InputPointerData {
   altKey: boolean;

@@ -4,14 +4,14 @@ import { connectSignal } from '@flighthq/signals/contract';
 import type { Effect, RenderState } from '@flighthq/types/contract';
 import { RenderRegistryTable } from '@flighthq/types/contract';
 
-import { createBlurEffect, registerBlurEffectPaddingResolver } from './blurEffect';
+import { createBlurEffect, registerBlurEffectPaddingResolver } from './blurEffect.ts';
 import {
   computeEffectPadding,
   explainEffectPadding,
   getDirectionalEffectPadding,
   getGaussianEffectPadding,
   registerEffectPaddingResolver,
-} from './effectPadding';
+} from './effectPadding.ts';
 
 describe('computeEffectPadding', () => {
   let state: RenderState;

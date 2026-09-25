@@ -1,5 +1,5 @@
-import { getPathNearestPoint } from './getPathNearestPoint';
-import { appendPathCircle, appendPathLineTo, appendPathMoveTo, createPath } from './path';
+import { getPathNearestPoint } from './getPathNearestPoint.ts';
+import { appendPathCircle, appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
 
 describe('getPathNearestPoint', () => {
   it('returns -1 for an empty path', () => {

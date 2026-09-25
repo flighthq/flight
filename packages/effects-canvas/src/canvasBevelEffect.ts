@@ -8,14 +8,14 @@ import type {
   CanvasRenderTargetPool,
 } from '@flighthq/types/contract';
 
-import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { registerCanvasEffect } from './canvasEffectRegistry';
+import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
+import { registerCanvasEffect } from './canvasEffectRegistry.ts';
 import {
   acquireCanvasRenderTarget,
   createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
-} from './canvasEffectState';
-import { clearCanvasTarget, compositeCanvasImage, drawCanvasTintedAlphaMask } from './canvasSourceModeCompositing';
+} from './canvasEffectState.ts';
+import { clearCanvasTarget, compositeCanvasImage, drawCanvasTintedAlphaMask } from './canvasSourceModeCompositing.ts';
 
 // Bevel composite effect: light the edge from one direction by differencing two offset copies of the
 // blurred silhouette, tint the lit side with the highlight colour and the unlit side with the shadow

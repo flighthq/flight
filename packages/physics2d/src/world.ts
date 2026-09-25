@@ -13,17 +13,17 @@ import type {
   SpatialIndexBackend2D,
 } from '@flighthq/types/contract';
 
-import { synchronizePhysics2DBroadphase } from './broadphase';
-import { createPhysics2DColliderWorldShape } from './colliderTransform';
-import { rebuildPhysics2DJointCollisionSuppressions } from './jointCollisionSuppression';
-import { updateRigidBody2DMassData } from './massProperties';
+import { synchronizePhysics2DBroadphase } from './broadphase.ts';
+import { createPhysics2DColliderWorldShape } from './colliderTransform.ts';
+import { rebuildPhysics2DJointCollisionSuppressions } from './jointCollisionSuppression.ts';
+import { updateRigidBody2DMassData } from './massProperties.ts';
 import {
   assertPhysics2DBodyNotStepping,
   assertPhysics2DWorldNotStepping,
   physics2DBodyOwners,
   physics2DColliderOwners,
   physics2DJointOwners,
-} from './ownership';
+} from './ownership.ts';
 
 // Adds `body` to `world`, assigning it the persistent index every contact is keyed and ordered by, and
 // returns it. The index comes from a monotonic counter rather than the array position, so removing a

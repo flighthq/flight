@@ -8,9 +8,9 @@ import {
   webHostAppQuit,
   webHostAppReady,
   webHostAppRelaunch,
-} from './webApp';
-import { webHostAppLoopExit } from './webAppLoopExit';
-import { webHostLoop } from './webLoop';
+} from './webApp.ts';
+import { webHostAppLoopExit } from './webAppLoopExit.ts';
+import { webHostLoop } from './webLoop.ts';
 
 export const webHostApp = {
   badge: webHostAppBadge,

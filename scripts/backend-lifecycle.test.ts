@@ -4,7 +4,7 @@ import { join, resolve } from 'node:path';
 
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { collectFunctionBodies, collectSetterBodies, packageSourceFiles } from './backend-lifecycle-collect';
+import { collectFunctionBodies, collectSetterBodies, packageSourceFiles } from './backend-lifecycle-collect.ts';
 import {
   BACKEND_LIFECYCLE_SCOPE_CAVEAT,
   collectExplicitHostDestroyOwners,
@@ -17,11 +17,11 @@ import {
   formatBackendLifecycleDelta,
   formatBackendLifecycleReport,
   hasBackendLifecycleFailure,
-} from './backend-lifecycle-core';
-import type { BackendLifecycleDelta, BackendLifecycleFloor, BackendLifecycleReport } from './backend-lifecycle-core';
-import { collectBackendInterfaceNames, collectExplicitHostLifecycleSlots } from './backend-operation-seam-core';
-import { GATE_STRUCTURAL_LIMIT } from './gate-provenance';
-import { runGates } from './gateRunner';
+} from './backend-lifecycle-core.ts';
+import type { BackendLifecycleDelta, BackendLifecycleFloor, BackendLifecycleReport } from './backend-lifecycle-core.ts';
+import { collectBackendInterfaceNames, collectExplicitHostLifecycleSlots } from './backend-operation-seam-core.ts';
+import { GATE_STRUCTURAL_LIMIT } from './gate-provenance.ts';
+import { runGates } from './gateRunner.ts';
 
 // P4's provider-lifetime census. Population and exclusions are both derived: a backend can only leak a
 // resource it owns, and ownership is the interface declaring a NO-ARGUMENT `destroy()`/`dispose()`.

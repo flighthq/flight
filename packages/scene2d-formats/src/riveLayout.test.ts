@@ -2,8 +2,8 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { DisplayObject, ImportDiagnostic, RiveArtboardGraph, RiveCoreObject } from '@flighthq/types/contract';
 import { FlexLayoutKind, GridLayoutKind, RiveFieldType } from '@flighthq/types/contract';
 
-import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry';
-import { createRiveLayoutImports, importRiveLayoutComponent, registerRiveLayoutHandlers } from './riveLayout';
+import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry.ts';
+import { createRiveLayoutImports, importRiveLayoutComponent, registerRiveLayoutHandlers } from './riveLayout.ts';
 
 const ARTBOARD = 1;
 const SHAPE = 3;

@@ -1,4 +1,4 @@
-import type { PathMorphCreationReason } from './PathMorphCreationReason';
+import type { PathMorphCreationReason } from './PathMorphCreationReason.ts';
 
 // Detached plain-data diagnostic for createPathMorph. `contour` identifies the first incompatible
 // zero-based contour (including a closedness or traversal-orientation mismatch), or is null when the

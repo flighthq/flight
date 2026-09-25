@@ -1,5 +1,5 @@
-import type { GlContext } from './GlContext';
-import type { Surface } from './Surface';
+import type { GlContext } from './GlContext.ts';
+import type { Surface } from './Surface.ts';
 
 // A GL rendering surface: a host-allocated drawable with an acquired GL context. Created by
 // createGlSurface from a window, or by createGlSurfaceFromNativeHandle for a drawable the caller already

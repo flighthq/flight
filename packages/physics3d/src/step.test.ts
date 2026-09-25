@@ -5,13 +5,13 @@ import {
 import type { Physics3DContact, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { buildPhysics3DContacts } from './contactIntake';
-import { refreshRigidBody3DWorldInertia } from './integrate';
-import { createPhysics3DFixedJoint, createPhysics3DHingeJoint } from './jointFactories';
-import { addPhysics3DJoint, removePhysics3DJoint } from './jointRegistry';
-import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties';
-import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
-import { setPhysics3DStepGuard, stepPhysics3D, stepPhysics3DInterval } from './step';
+import { buildPhysics3DContacts } from './contactIntake.ts';
+import { refreshRigidBody3DWorldInertia } from './integrate.ts';
+import { createPhysics3DFixedJoint, createPhysics3DHingeJoint } from './jointFactories.ts';
+import { addPhysics3DJoint, removePhysics3DJoint } from './jointRegistry.ts';
+import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties.ts';
+import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers.ts';
+import { setPhysics3DStepGuard, stepPhysics3D, stepPhysics3DInterval } from './step.ts';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,
@@ -22,7 +22,7 @@ import {
   removePhysics3DBody,
   setPhysics3DBodyFixedRotation,
   setPhysics3DBodyType,
-} from './world';
+} from './world.ts';
 
 // Contact generation dispatches through the collision registries, so a world whose supports were never
 // registered detects nothing at all — see `explainPhysics3DCollision`.

@@ -1,7 +1,7 @@
 import type { RequirementCatalogEntry } from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
-import { formatBuiltInRequirementCatalogSource, verifyRequirementCatalogEntries } from './catalog-core';
+import { formatBuiltInRequirementCatalogSource, verifyRequirementCatalogEntries } from './catalog-core.ts';
 
 const entry: RequirementCatalogEntry = {
   backend: 'webgl',

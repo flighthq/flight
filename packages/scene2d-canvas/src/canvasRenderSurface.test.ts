@@ -1,15 +1,15 @@
 import type { CanvasSurface, HostCanvasCapability } from '@flighthq/types/contract';
 
-import { createCanvasRenderState } from './canvasRenderState';
+import { createCanvasRenderState } from './canvasRenderState.ts';
 import {
   acquireCanvasSurface,
   destroyCanvasSurfaceOwned,
   getCanvasHost,
   getCanvasSurfaceHost,
   registerCanvasHost,
-} from './canvasRenderSurface';
-import { canvasTestHost, createCanvasTextureResolvers } from './canvasTestSupport';
-import { canvasScene2DRenderPreset } from './scene2DCanvasPipeline';
+} from './canvasRenderSurface.ts';
+import { canvasTestHost, createCanvasTextureResolvers } from './canvasTestSupport.ts';
+import { canvasScene2DRenderPreset } from './scene2DCanvasPipeline.ts';
 
 function mockHost(overrides: Partial<HostCanvasCapability> = {}): HostCanvasCapability {
   return {

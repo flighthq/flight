@@ -1,7 +1,7 @@
 import { createClearcoatPbrExtension } from '@flighthq/materials/contract';
 import type { GltfExtensionHandler } from '@flighthq/types/contract';
 
-import { attachGltfPbrExtension } from './gltfMaterialExtension';
+import { attachGltfPbrExtension } from './gltfMaterialExtension.ts';
 
 // KHR_materials_clearcoat — a second dielectric specular layer over the standard surface. The factor
 // textures are LINEAR data, not color: the layer factor rides the red channel of `clearcoatTexture` and

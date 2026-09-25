@@ -1,6 +1,6 @@
-import type { AabbLike } from './Aabb';
-import type { Entity } from './Entity';
-import type { Vector3, Vector3Like } from './Vector3';
+import type { AabbLike } from './Aabb.ts';
+import type { Entity } from './Entity.ts';
+import type { Vector3, Vector3Like } from './Vector3.ts';
 
 // The number of floats in a probe's `shCoefficients`: 9 L2 spherical-harmonic coefficients, each an
 // RGB triplet. Exported because callers allocating their own scratch buffer for `sampleLightProbeGrid`

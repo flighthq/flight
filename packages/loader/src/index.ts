@@ -16,4 +16,4 @@ export {
   setResourceLoadPriority,
   setResourceLoaderConcurrency,
   startResourceLoad,
-} from './contract';
+} from './contract.ts';

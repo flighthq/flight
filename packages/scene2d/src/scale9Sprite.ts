@@ -9,8 +9,8 @@ import type {
 } from '@flighthq/types/contract';
 import { Scale9SpriteKind } from '@flighthq/types/contract';
 
-import { createNode2D, getNode2DRuntime } from './displayObject';
-import { createSpriteRuntime } from './sprite';
+import { createNode2D, getNode2DRuntime } from './displayObject.ts';
+import { createSpriteRuntime } from './sprite.ts';
 
 export function createScale9Sprite(
   scale9Grid: Readonly<RectangleLike>,

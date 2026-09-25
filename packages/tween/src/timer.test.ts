@@ -1,8 +1,8 @@
 import { connectSignal } from '@flighthq/signals/contract';
 
-import { createTweenTimer } from './timer';
-import { createTweenManager } from './tweenManager';
-import { updateTweens } from './updateTweens';
+import { createTweenTimer } from './timer.ts';
+import { createTweenManager } from './tweenManager.ts';
+import { updateTweens } from './updateTweens.ts';
 
 describe('createTweenTimer', () => {
   it('fires onComplete after the specified duration', () => {

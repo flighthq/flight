@@ -8,8 +8,8 @@ import {
   detachAppRenderView,
   initializeAppRenderView,
   synchronizeAppRenderView,
-} from './appRenderView';
-import { createAppWindow } from './appWindow';
+} from './appRenderView.ts';
+import { createAppWindow } from './appWindow.ts';
 
 describe('attachAppRenderView', () => {
   it('tracks window resize through one idempotent signal connection', () => {

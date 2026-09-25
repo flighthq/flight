@@ -1,7 +1,7 @@
 import { getNodeAppearanceRevision } from '@flighthq/node/contract';
 import type { HasAppearance, HasBlendMode, Node, RenderProxy, RenderState } from '@flighthq/types/contract';
 
-import { getRenderStateRuntime } from './renderState';
+import { getRenderStateRuntime } from './renderState.ts';
 
 export function updateRenderProxyAppearance(state: RenderState, data: RenderProxy, parentData?: RenderProxy): boolean {
   const appearanceId = getNodeAppearanceRevision(data.source as Node);

@@ -20,10 +20,10 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
-import { getGlRenderStateRuntime } from './glRenderState';
-import { ensureDefaultGlBitmapShader, setGlAttributes, setGlMatrixFromValues } from './glShader';
-import { uploadGlTextureData, uploadGlTextureElement } from './glTextureUpload';
-import { uploadGlTextureVideoFrame } from './glTextureVideoUpload';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
+import { ensureDefaultGlBitmapShader, setGlAttributes, setGlMatrixFromValues } from './glShader.ts';
+import { uploadGlTextureData, uploadGlTextureElement } from './glTextureUpload.ts';
+import { uploadGlTextureVideoFrame } from './glTextureVideoUpload.ts';
 
 // Applies the blend mode's registered fixed-function realization to the GL context, skipping the
 // work only when its resolved numeric signature is unchanged. A mode with no registered realization (an unregistered vendor

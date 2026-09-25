@@ -16,7 +16,7 @@ import {
   updateSpritesheetPlayer,
 } from '@flighthq/sdk';
 
-import { render, scale } from './render';
+import { render, scale } from './render.ts';
 
 // Frames are authored at a higher resolution than they are shown. Downsampling the procedural
 // source keeps the wing curves and small face details crisp on every renderer.

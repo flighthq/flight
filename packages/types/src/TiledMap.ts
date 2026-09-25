@@ -1,6 +1,6 @@
-import type { TiledLayer } from './TiledLayer';
-import type { TiledProperty } from './TiledProperty';
-import type { TiledTilesetRef } from './TiledTileset';
+import type { TiledLayer } from './TiledLayer.ts';
+import type { TiledProperty } from './TiledProperty.ts';
+import type { TiledTilesetRef } from './TiledTileset.ts';
 
 // Which axis the stagger offset runs along for `staggered` and `hexagonal` maps.
 export type TiledStaggerAxis = 'x' | 'y';

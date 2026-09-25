@@ -1,8 +1,8 @@
-import type { AudioResourceReference } from './AudioResourceReference';
-import type { ImageResourceReference } from './ImageResourceReference';
-import type { ImportDiagnostic } from './ImportDiagnostic';
-import type { Node2D } from './Node2D';
-import type { SwfJpegAlphaPayload } from './SwfDocumentImport';
+import type { AudioResourceReference } from './AudioResourceReference.ts';
+import type { ImageResourceReference } from './ImageResourceReference.ts';
+import type { ImportDiagnostic } from './ImportDiagnostic.ts';
+import type { Node2D } from './Node2D.ts';
+import type { SwfJpegAlphaPayload } from './SwfDocumentImport.ts';
 import type {
   SwfTagParseResult,
   SwfTagParseState,
@@ -10,7 +10,7 @@ import type {
   SwfTagRectangle,
   SwfTagTimelineState,
   SwfTimeline,
-} from './SwfTagParseState';
+} from './SwfTagParseState.ts';
 
 /**
  * One SWF tag handler — the independently importable primitive a caller opts into. A handler covers a

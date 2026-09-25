@@ -6,7 +6,7 @@ import type {
   UnpackedRectangleReason,
 } from '@flighthq/types/contract';
 
-import { BIN_PACK_DEFAULT_MAX_EXTENT, packRectangles } from './packRectangles';
+import { BIN_PACK_DEFAULT_MAX_EXTENT, packRectangles } from './packRectangles.ts';
 
 // Says WHY each unplaced rectangle did not fit. `packRectangles` reports `unpacked` as bare ids, which is
 // the right shape for the hot path but tells a caller nothing about the remedy — and the three causes have

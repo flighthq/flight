@@ -1,6 +1,6 @@
-import type { Kind } from './Entity';
-import type { Requirement } from './Requirement';
-import type { RequirementFacet } from './RequirementFacet';
+import type { Kind } from './Entity.ts';
+import type { Requirement } from './Requirement.ts';
+import type { RequirementFacet } from './RequirementFacet.ts';
 
 // One factual ownership row. It deliberately stops before argument/source expressions: those depend on
 // whether generated registries are caller-filled or ambiently self-filling, while every field here is

@@ -1,4 +1,4 @@
-import { computeDepthOfFieldCoc, computeLinearDepthFromNonlinear, computeSsaoSampleKernel } from './depthMath';
+import { computeDepthOfFieldCoc, computeLinearDepthFromNonlinear, computeSsaoSampleKernel } from './depthMath.ts';
 
 describe('computeDepthOfFieldCoc', () => {
   it('returns 0 when depth equals focusDistance', () => {

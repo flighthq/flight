@@ -1,7 +1,7 @@
 import type { WgpuRenderState } from '@flighthq/types/contract';
 
-import * as wgpuEffectPassMod from './wgpuEffectPass';
-import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import * as wgpuEffectPassMod from './wgpuEffectPass.ts';
+import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
 
 beforeEach(() => {
   // The cache's whole job is deciding when NOT to call this, so it has to be observable.

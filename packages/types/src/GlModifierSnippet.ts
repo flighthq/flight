@@ -1,6 +1,6 @@
-import type { GlRenderState } from './GlRenderState';
-import type { Modifier } from './Modifier';
-import type { ModifierDefinition } from './ModifierDefinition';
+import type { GlRenderState } from './GlRenderState.ts';
+import type { Modifier } from './Modifier.ts';
+import type { ModifierDefinition } from './ModifierDefinition.ts';
 
 // The per-modifier binding context the ShadedMaterial renderer hands each snippet's `bind`. It
 // carries the live GL state, the linked ShadedMaterial `program` (for uniform-location lookups by

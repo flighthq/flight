@@ -1,11 +1,11 @@
-import { createBitmap } from './bitmap';
+import { createBitmap } from './bitmap.ts';
 import {
   fillBitmapNoise,
   fillBitmapPerlinNoise,
   fillBitmapTurbulence,
   BITMAP_NOISE_CHANNEL_A,
   BITMAP_NOISE_CHANNEL_R,
-} from './bitmapNoise';
+} from './bitmapNoise.ts';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };

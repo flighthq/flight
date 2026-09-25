@@ -6,9 +6,9 @@ import {
   areTextureAtlasGuardsEnabled,
   disableTextureAtlasGuards,
   enableTextureAtlasGuards,
-} from './enableTextureAtlasGuards';
-import { createTextureAtlas } from './textureAtlas';
-import { addTextureAtlasRegion, getTextureAtlasRegionTexture } from './textureAtlasRegion';
+} from './enableTextureAtlasGuards.ts';
+import { createTextureAtlas } from './textureAtlas.ts';
+import { addTextureAtlasRegion, getTextureAtlasRegionTexture } from './textureAtlasRegion.ts';
 
 afterEach(() => {
   disableTextureAtlasGuards();

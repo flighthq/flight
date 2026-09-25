@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import pc from 'picocolors';
 
-import { CHECK_PROGRESS_TOKEN_ENV } from './check-progress';
+import { CHECK_PROGRESS_TOKEN_ENV } from './check-progress.ts';
 import {
   auditEffectBackend,
   collectRegistrarKindConstants,
@@ -12,25 +12,25 @@ import {
   collectReachabilityLanes,
   defaultCompositionSymbols,
   effectReachabilitySymbols,
-} from './reachability-core';
+} from './reachability-core.ts';
 import type {
   EffectBackend,
   ReachabilityLaneEntry,
   ReachabilityViolation,
   RegistrarOwnershipEntry,
   UncataloguedRegistrarBucket,
-} from './reachability-core';
+} from './reachability-core.ts';
 import {
   collectRegistrarIdentities,
   diffRegistrarIdentityManifest,
   hasRegistrarIdentityManifestDrift,
-} from './reachability-registrar-manifest';
+} from './reachability-registrar-manifest.ts';
 import type {
   RegistrarIdentity,
   RegistrarIdentityManifest,
   RegistrarIdentityManifestDiff,
-} from './reachability-registrar-manifest';
-import { getSelectors, selectPackages } from './select';
+} from './reachability-registrar-manifest.ts';
+import { getSelectors, selectPackages } from './select.ts';
 
 interface ReachabilityBaseline {
   schemaVersion: 1;

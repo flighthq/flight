@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { Signal } from './Signal.ts';
 
 // The shared time primitive: a node in a clock tree that turns a real per-frame delta into scaled,
 // pausable time. Driven by whoever owns the frame loop (@flighthq/app) via advanceClock on the

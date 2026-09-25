@@ -1,7 +1,7 @@
 import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 
-import { applyDomBlendMode, enableDomBlendModeSupport, getDomBlendModeFidelity } from './domMaterials';
-import { createDomRenderState } from './domRenderState';
+import { applyDomBlendMode, enableDomBlendModeSupport, getDomBlendModeFidelity } from './domMaterials.ts';
+import { createDomRenderState } from './domRenderState.ts';
 
 describe('applyDomBlendMode', () => {
   let el: HTMLElement;

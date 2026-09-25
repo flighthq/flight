@@ -1,6 +1,6 @@
 import type { HostWindowFocusCapability } from '@flighthq/types/contract';
 
-import { captureHostProbeBackends, diffHostProbeBackends } from './capabilityBackends';
+import { captureHostProbeBackends, diffHostProbeBackends } from './capabilityBackends.ts';
 
 describe('captureHostProbeBackends', () => {
   it('does not treat an empty window group as a provider', () => {

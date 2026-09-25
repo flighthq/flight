@@ -1,5 +1,5 @@
-import type { ImageResourceReference } from './ImageResourceReference';
-import type { TextureLike } from './Texture';
+import type { ImageResourceReference } from './ImageResourceReference.ts';
+import type { TextureLike } from './Texture.ts';
 
 type CreateTextureVariantOptions<Type extends TextureLike> = Type extends TextureLike
   ? Omit<Partial<Type>, 'dimension'> &

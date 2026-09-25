@@ -1,4 +1,4 @@
-import { applyFxaaEffectToWgpu, wgpuFxaaEffectRunner, registerWgpuFxaaEffect } from './wgpuFxaaEffect';
+import { applyFxaaEffectToWgpu, wgpuFxaaEffectRunner, registerWgpuFxaaEffect } from './wgpuFxaaEffect.ts';
 
 describe('applyFxaaEffectToWgpu', () => {
   it('is a function', () => {

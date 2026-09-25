@@ -8,8 +8,8 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { applyAnimationClipToSkeleton2D } from './applyAnimationClipToSkeleton2D';
-import { cloneSkeleton2D, createSkeleton2D } from './skeleton2d';
+import { applyAnimationClipToSkeleton2D } from './applyAnimationClipToSkeleton2D.ts';
+import { cloneSkeleton2D, createSkeleton2D } from './skeleton2d.ts';
 import {
   createSkeleton2DBoneAnimationTarget,
   createSkeleton2DSlotAnimationTarget,
@@ -20,7 +20,7 @@ import {
   initializeSkeleton2DSlotAnimationTarget,
   registerSkeleton2DAnimationTargetBinder,
   unregisterSkeleton2DAnimationTargetBinder,
-} from './skeleton2dAnimationTarget';
+} from './skeleton2dAnimationTarget.ts';
 
 describe('createSkeleton2DBoneAnimationTarget', () => {
   it('stamps the bone kind, which is what the binder dispatches on', () => {

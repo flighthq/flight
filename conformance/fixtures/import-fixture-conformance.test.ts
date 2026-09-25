@@ -4,8 +4,8 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { FIXTURE_RELEASE_TAG, writeFixtureTreeStamp } from '../../scripts/fixtures';
-import { parseImportFixtureConformanceArguments, runImportFixtureConformance } from './import-fixture-conformance';
+import { FIXTURE_RELEASE_TAG, writeFixtureTreeStamp } from '../../scripts/fixtures.ts';
+import { parseImportFixtureConformanceArguments, runImportFixtureConformance } from './import-fixture-conformance.ts';
 
 let fixtureCache = '';
 

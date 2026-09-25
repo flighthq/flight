@@ -4,7 +4,7 @@ import {
   createTransmissionVolumePbrExtension,
   initializeTransmissionVolumePbrExtension,
   isValidTransmissionVolumePbrExtension,
-} from './transmissionVolumePbrExtension';
+} from './transmissionVolumePbrExtension.ts';
 
 describe('createTransmissionVolumePbrExtension', () => {
   it('creates an Entity with glTF defaults and independent UV sets', () => {

@@ -1,8 +1,8 @@
 import type { AnisotropyPbrExtension, ExtendedPbrMaterial, GltfDocument } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { GltfAnisotropyExtensionHandler } from './gltfAnisotropy';
-import { parseGltf } from './gltfParse';
+import { GltfAnisotropyExtensionHandler } from './gltfAnisotropy.ts';
+import { parseGltf } from './gltfParse.ts';
 
 function makeGltf(material: unknown): GltfDocument {
   return {

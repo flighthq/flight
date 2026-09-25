@@ -3,7 +3,7 @@ import { createVector2 } from '@flighthq/geometry/contract';
 import type { Texture, Sampler } from '@flighthq/types/contract';
 import { EnvironmentKind } from '@flighthq/types/contract';
 
-import { cloneEnvironment, createEnvironment, initializeEnvironment } from './environment';
+import { cloneEnvironment, createEnvironment, initializeEnvironment } from './environment.ts';
 
 function createTestCubeTexture(): Texture {
   const sampler = allocateEntity<any>();

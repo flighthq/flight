@@ -1,4 +1,4 @@
-import { resolveCaptureWorkerCount } from './captureWorkerCount';
+import { resolveCaptureWorkerCount } from './captureWorkerCount.ts';
 
 describe('resolveCaptureWorkerCount', () => {
   it('derives the default from available parallelism with host headroom', () => {

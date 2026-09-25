@@ -10,7 +10,7 @@ import type {
   RenderState,
 } from '@flighthq/types/contract';
 
-import { getRenderStateRuntime } from './renderState';
+import { getRenderStateRuntime } from './renderState.ts';
 
 // Fills `out` by walking the prepared subtree rooted at `source` and pushing one entry per visible
 // proxy with a renderer. The sort key is the scene-order index (order of encounter in a pre-order

@@ -22,7 +22,7 @@ import {
   fuseColorMatrices,
 } from '@flighthq/sdk/adjustments';
 
-import { render, scale } from './render';
+import { render, scale } from './render.ts';
 
 const CANVAS_HEIGHT = 600;
 

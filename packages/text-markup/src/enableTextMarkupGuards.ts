@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { TextMarkupIssue } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setTextMarkupGuard } from './textMarkupGuards';
+import { setTextMarkupGuard } from './textMarkupGuards.ts';
 
 /** Uninstalls the guard installed by enableTextMarkupGuards. */
 export function disableTextMarkupGuards(): void {

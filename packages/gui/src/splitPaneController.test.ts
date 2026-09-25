@@ -1,13 +1,13 @@
 import { connectSignal } from '@flighthq/signals/contract';
 
-import { createGuiTestNode, emitGuiPointer } from './guiTestHelper';
+import { createGuiTestNode, emitGuiPointer } from './guiTestHelper.ts';
 import {
   createSplitPaneController,
   disposeSplitPaneController,
   getSplitPaneControllerPosition,
   getSplitPaneControllerSignals,
   setSplitPaneControllerPosition,
-} from './splitPaneController';
+} from './splitPaneController.ts';
 
 describe('createSplitPaneController', () => {
   it('drags a distinct constrained divider behavior', () => {

@@ -8,10 +8,14 @@ import type {
   WgpuRenderTargetPool,
 } from '@flighthq/types/contract';
 
-import { applyGaussianBlurToWgpu } from './wgpuBlurEffect';
-import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass, drawWgpuEffectPass } from './wgpuEffectPass';
-import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
+import { applyGaussianBlurToWgpu } from './wgpuBlurEffect.ts';
+import {
+  createWgpuDualSourceEffectPipeline,
+  drawWgpuDualSourceEffectPass,
+  drawWgpuEffectPass,
+} from './wgpuEffectPass.ts';
+import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
 
 // Lens dirt: isolate bright energy, spread it spatially, then admit it through a procedural smudge mask.
 // The bright branch must blur before the mask: masking only the source pixel cannot carry any energy

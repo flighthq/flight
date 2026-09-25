@@ -9,15 +9,15 @@ import type {
 } from '@flighthq/types/contract';
 import type { WgpuDualSourceEffectPipeline } from '@flighthq/types/contract';
 
-import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader';
-import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
+import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader.ts';
+import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur.ts';
 import {
   clearWgpuEffectTarget,
   createWgpuDualSourceEffectPipeline,
   drawWgpuDualSourceEffectPass,
-} from './wgpuEffectPass';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
-import { applyWgpuEffectTintPass } from './wgpuEffectTintShader';
+} from './wgpuEffectPass.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
+import { applyWgpuEffectTintPass } from './wgpuEffectTintShader.ts';
 
 // Bevel composite effect: the directional gradient of the blurred silhouette drives a highlight/shadow edge band, clipped by bevelType, then sourceMode decides source compositing.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the

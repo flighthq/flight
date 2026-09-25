@@ -1,6 +1,6 @@
-import type { Cursor } from './Cursor';
-import type { Entity } from './Entity';
-import type { HitArea } from './NodeInteraction';
+import type { Cursor } from './Cursor.ts';
+import type { Entity } from './Entity.ts';
+import type { HitArea } from './NodeInteraction.ts';
 
 /**
  * Per-node interaction settings — the runtime-slot cell that governs how a single node participates

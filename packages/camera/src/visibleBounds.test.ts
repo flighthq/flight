@@ -1,9 +1,9 @@
 import { createRectangle, createVector2, intersectsRectangle } from '@flighthq/geometry/contract';
 import { describe, expect, it, test } from 'vitest';
 
-import { createCamera2D } from './camera2d';
-import { unprojectCamera2DPoint } from './projection2d';
-import { getCamera2DVisibleBounds, setCamera2DVisibleBoundsGuard } from './visibleBounds';
+import { createCamera2D } from './camera2d.ts';
+import { unprojectCamera2DPoint } from './projection2d.ts';
+import { getCamera2DVisibleBounds, setCamera2DVisibleBoundsGuard } from './visibleBounds.ts';
 
 describe('getCamera2DVisibleBounds', () => {
   it('covers the full viewport in world units at zoom 1', () => {

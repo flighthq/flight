@@ -1,5 +1,5 @@
-import { swfFontHandler } from './swfFontHandler';
-import { swfFontTagFamily } from './swfFontTagFamily';
+import { swfFontHandler } from './swfFontHandler.ts';
+import { swfFontTagFamily } from './swfFontTagFamily.ts';
 
 describe('swfFontTagFamily', () => {
   it('is exactly its handlers, in the order a placed character is offered to them', () => {

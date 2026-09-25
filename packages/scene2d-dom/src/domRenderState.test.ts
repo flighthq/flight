@@ -1,6 +1,6 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createDomRenderState, createDomRenderStateRuntime, getDomRenderStateRuntime } from './domRenderState';
+import { createDomRenderState, createDomRenderStateRuntime, getDomRenderStateRuntime } from './domRenderState.ts';
 
 describe('createDomRenderState', () => {
   it('returns a state with the provided element', () => {

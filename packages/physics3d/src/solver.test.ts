@@ -5,15 +5,15 @@ import {
 import type { Physics3DContact, Physics3DContactPoint, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { buildPhysics3DContacts } from './contactIntake';
+import { buildPhysics3DContacts } from './contactIntake.ts';
 import {
   createPhysics3DContact as createPhysics3DContactRecord,
   createPhysics3DContactPoint as createPhysics3DContactPointRecord,
-} from './contacts';
-import { refreshRigidBody3DWorldInertia } from './integrate';
-import { buildPhysics3DSolveIslands, updatePhysics3DSleep } from './islands';
-import { computePhysics3DBoxMassData, createPhysics3DMassData } from './massProperties';
-import { setRigidBody3DMassData } from './massProperties';
+} from './contacts.ts';
+import { refreshRigidBody3DWorldInertia } from './integrate.ts';
+import { buildPhysics3DSolveIslands, updatePhysics3DSleep } from './islands.ts';
+import { computePhysics3DBoxMassData, createPhysics3DMassData } from './massProperties.ts';
+import { setRigidBody3DMassData } from './massProperties.ts';
 import {
   createPhysics3DContactConstraint,
   createPhysics3DContactConstraintPoint,
@@ -23,7 +23,7 @@ import {
   solvePhysics3DContactPositions,
   solvePhysics3DContactVelocities,
   warmStartPhysics3DContacts,
-} from './solver';
+} from './solver.ts';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,
@@ -31,7 +31,7 @@ import {
   createPhysics3DWorld,
   createRigidBody3D,
   setPhysics3DBodyType,
-} from './world';
+} from './world.ts';
 
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();

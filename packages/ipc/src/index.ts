@@ -1,1 +1,1 @@
-export { invokeIpc, onIpcInvoke, onIpcMessage, onceIpcMessage, sendIpcMessage, sendIpcMessageTo } from './contract';
+export { invokeIpc, onIpcInvoke, onIpcMessage, onceIpcMessage, sendIpcMessage, sendIpcMessageTo } from './contract.ts';

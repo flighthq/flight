@@ -1,7 +1,7 @@
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setGlyphAtlasEntryGuard } from './glyphAtlasEntry';
+import { setGlyphAtlasEntryGuard } from './glyphAtlasEntry.ts';
 
 /** Uninstalls the guard installed by `enableGlyphAtlasGuards`. */
 export function disableGlyphAtlasGuards(): void {

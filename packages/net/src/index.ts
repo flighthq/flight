@@ -6,4 +6,4 @@ export {
   formatNetFormBody,
   NetFormContentType,
   sendNetRequest,
-} from './contract';
+} from './contract.ts';

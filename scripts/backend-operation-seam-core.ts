@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 
 import type { Node } from 'oxc-parser';
 
-import { formatGateProvenance, GATE_STRUCTURAL_LIMIT, readGateTreeState } from './gate-provenance';
-import { getParsedOxcSource } from './oxc-source';
+import { formatGateProvenance, GATE_STRUCTURAL_LIMIT, readGateTreeState } from './gate-provenance.ts';
+import { getParsedOxcSource } from './oxc-source.ts';
 
 // The per-operation availability ratchet.
 //

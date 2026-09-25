@@ -1,7 +1,7 @@
 ﻿import type { DomRenderState, RenderProxy2D } from '@flighthq/types/contract';
 
-import { getDomRenderStateRuntime } from './domRenderState';
-import { setDomTransform } from './domTransform';
+import { getDomRenderStateRuntime } from './domRenderState.ts';
+import { setDomTransform } from './domTransform.ts';
 
 export function applyDomStyle(state: DomRenderState, element: HTMLElement, node: RenderProxy2D): void {
   setDomTransform(element, node.transform2D, state.roundPixels);

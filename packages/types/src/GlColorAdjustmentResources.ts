@@ -1,4 +1,4 @@
-import type { GlColorScaleBiasInstancedShader, GlUniformColorScaleBiasShader } from './GlRenderState';
+import type { GlColorScaleBiasInstancedShader, GlUniformColorScaleBiasShader } from './GlRenderState.ts';
 
 export interface GlColorAdjustmentResources {
   matrixInstancedShader: GlColorScaleBiasInstancedShader;

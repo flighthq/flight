@@ -1,12 +1,12 @@
-import type { BlendMode } from './BlendMode';
-import type { Camera3D } from './Camera3D';
-import type { CustomShaderMaterial } from './CustomShaderMaterial';
-import type { Matrix4 } from './Matrix4';
-import type { Node3D } from './Node3D';
-import type { Scene3DLightsLike } from './Scene3DLights';
-import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource';
-import type { WgpuMeshPipeline } from './WgpuMeshPipeline';
-import type { WgpuRenderState } from './WgpuRenderState';
+import type { BlendMode } from './BlendMode.ts';
+import type { Camera3D } from './Camera3D.ts';
+import type { CustomShaderMaterial } from './CustomShaderMaterial.ts';
+import type { Matrix4 } from './Matrix4.ts';
+import type { Node3D } from './Node3D.ts';
+import type { Scene3DLightsLike } from './Scene3DLights.ts';
+import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource.ts';
+import type { WgpuMeshPipeline } from './WgpuMeshPipeline.ts';
+import type { WgpuRenderState } from './WgpuRenderState.ts';
 
 // The active directional shadow for this state, set by renderWgpuScene3DShadowMap and read by the lit bind
 // (beginWgpuMeshDraw → ensureWgpuShadowSampleBindGroup) so every lit family samples the same shadow map.

@@ -1,8 +1,8 @@
 import type { ParticleEmitter2D } from '@flighthq/types/contract';
 import type { ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types/contract';
 
-import type { ParticleEmitterCallbacks } from './updateParticleEmitter2D';
-import { updateParticleEmitter2D } from './updateParticleEmitter2D';
+import type { ParticleEmitterCallbacks } from './updateParticleEmitter2D.ts';
+import { updateParticleEmitter2D } from './updateParticleEmitter2D.ts';
 
 export function prewarmParticleEmitter2D(
   emitter: ParticleEmitter2D,

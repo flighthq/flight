@@ -4,8 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 
-import type { ReferenceImageToleranceCatalog } from './reference-image-tolerance';
-import { readPackManifest, verifyOracleCaptures, verifyOracleLockImages } from './reference-image-verify';
+import type { ReferenceImageToleranceCatalog } from './reference-image-tolerance.ts';
+import { readPackManifest, verifyOracleCaptures, verifyOracleLockImages } from './reference-image-verify.ts';
 
 // ★ EACH CASE ASSERTS A DIFFERENT CAUSE PRODUCES A DIFFERENT NAME. The whole value of this layer is that
 // a corrupt pack, an absent capture, an undecodable file and a genuine render change do not collapse into

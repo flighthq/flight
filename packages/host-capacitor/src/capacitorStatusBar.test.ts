@@ -8,7 +8,7 @@ import {
   capacitorHostStatusBarStyle,
   capacitorHostStatusBarVisibility,
   capacitorHostStatusBarGroup,
-} from './capacitorStatusBar';
+} from './capacitorStatusBar.ts';
 
 const flush = async () => {
   await Promise.resolve();

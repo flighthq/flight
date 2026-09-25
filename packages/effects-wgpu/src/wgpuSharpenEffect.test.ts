@@ -1,4 +1,4 @@
-import { applySharpenEffectToWgpu, wgpuSharpenEffectRunner, registerWgpuSharpenEffect } from './wgpuSharpenEffect';
+import { applySharpenEffectToWgpu, wgpuSharpenEffectRunner, registerWgpuSharpenEffect } from './wgpuSharpenEffect.ts';
 
 describe('applySharpenEffectToWgpu', () => {
   it('is a function', () => {

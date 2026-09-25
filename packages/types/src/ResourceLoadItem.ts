@@ -1,4 +1,4 @@
-import type { ResourceLoadBytesReporter } from './ResourceLoadBytesReporter';
+import type { ResourceLoadBytesReporter } from './ResourceLoadBytesReporter.ts';
 
 export interface ResourceLoadItem<T> {
   bytesHint?: number;

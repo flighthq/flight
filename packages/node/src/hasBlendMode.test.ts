@@ -1,8 +1,8 @@
 import type { HasBlendMode } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
-import { initBlendModeTrait } from './hasBlendMode';
-import { createNode } from './node';
+import { initBlendModeTrait } from './hasBlendMode.ts';
+import { createNode } from './node.ts';
 
 const TestKind = 'Test';
 

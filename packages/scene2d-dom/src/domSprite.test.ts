@@ -8,9 +8,9 @@ import { createSprite } from '@flighthq/scene2d/contract';
 import { createPixelArtSampler, createTexture } from '@flighthq/texture/contract';
 import { SpriteKind } from '@flighthq/types/contract';
 
-import { registerDomImageTextureResolver } from './domImageTextureResolver';
-import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
-import { domSpriteRenderer, drawDomSprite } from './domSprite';
+import { registerDomImageTextureResolver } from './domImageTextureResolver.ts';
+import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
+import { domSpriteRenderer, drawDomSprite } from './domSprite.ts';
 
 beforeEach(() => {
   registerTestImageDimensionResolver();

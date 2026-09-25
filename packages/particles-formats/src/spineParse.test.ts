@@ -7,8 +7,8 @@ import {
 } from '@flighthq/particles/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { parseSpineParticle, parseSpineParticleDocument } from './spineParse';
-import { serializeSpineParticle } from './spineSerialize';
+import { parseSpineParticle, parseSpineParticleDocument } from './spineParse.ts';
+import { serializeSpineParticle } from './spineSerialize.ts';
 
 const SPARK_JSON = JSON.stringify({
   name: 'spark',

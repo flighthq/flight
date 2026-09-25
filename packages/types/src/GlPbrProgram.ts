@@ -1,4 +1,4 @@
-import type { GlLitProgram } from './GlLitProgram';
+import type { GlLitProgram } from './GlLitProgram.ts';
 
 // A compiled PBR uber-shader variant plus its resolved uniform locations. One of these exists per
 // distinct GlPbrDefineKey (maps-present / alpha-mask + extension-lobe combination), built once and

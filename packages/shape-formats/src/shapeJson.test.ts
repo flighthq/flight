@@ -22,7 +22,7 @@ import {
 } from '@flighthq/shape/contract';
 import type { Texture } from '@flighthq/types/contract';
 
-import { formatShapeJson, parseShapeJson } from './shapeJson';
+import { formatShapeJson, parseShapeJson } from './shapeJson.ts';
 
 function createEveryNonBitmapCommandShape() {
   const shape = createShape();

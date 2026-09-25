@@ -10,10 +10,10 @@ import { createMesh } from '@flighthq/scene3d/contract';
 import type { MeshGeometryRuntime, MeshMorph, VertexAttributeLayout } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
-import { registerWgpuGpuSkinning } from './wgpuSkinPalette';
+import { ensureWgpuMeshUpload } from './wgpuMeshUpload.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
+import { registerWgpuGpuSkinning } from './wgpuSkinPalette.ts';
 
 const POSITION_LAYOUT: VertexAttributeLayout = {
   attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],

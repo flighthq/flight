@@ -18,4 +18,4 @@ export {
   removeTimelineFrameScript,
   stopTimeline,
   updateTimeline,
-} from './contract';
+} from './contract.ts';

@@ -2,14 +2,14 @@
 import { canvasShapeCommands, registerCanvasShapeCommands } from '@flighthq/scene2d-canvas/contract';
 import { appendShapeBeginFill, appendShapeRectangle, createScale9Shape } from '@flighthq/shape/contract';
 
-import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
+import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
 import {
   createDomScale9ShapeData,
   domScale9ShapeRenderer,
   drawDomScale9Shape,
   initializeDomScale9ShapeData,
-} from './domScale9Shape';
-import { registerDomShapeRasterizer } from './domShapeRasterizer';
+} from './domScale9Shape.ts';
+import { registerDomShapeRasterizer } from './domShapeRasterizer.ts';
 
 const noopRasterizer = (): void => {};
 

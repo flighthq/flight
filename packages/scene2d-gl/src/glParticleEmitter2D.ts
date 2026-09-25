@@ -13,7 +13,7 @@ import type {
 } from '@flighthq/types/contract';
 import type { GlParticleShader } from '@flighthq/types/contract';
 
-import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
 
 // Per-instance layout (14 floats = 56 bytes):
 // [0]  px         float

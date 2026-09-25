@@ -1,15 +1,15 @@
 ﻿import { noopRendererData } from '@flighthq/render/contract';
 import type { CanvasRenderState, RenderProxy2D, SpriteRenderer, Tilemap } from '@flighthq/types/contract';
 
-import { drawCanvasAtlasRegion } from './canvasAtlasRegion';
-import { applyCanvasMaterial } from './canvasQuadMaterialRegistry';
+import { drawCanvasAtlasRegion } from './canvasAtlasRegion.ts';
+import { applyCanvasMaterial } from './canvasQuadMaterialRegistry.ts';
 import {
   getCanvasRenderStateTextureResolvers,
   resolveCanvasTextureSmoothing,
   setCanvasGlobalAlpha,
   setCanvasImageSmoothing,
-} from './canvasRenderState';
-import { resolveCanvasTexture } from './canvasTextureResolver';
+} from './canvasRenderState.ts';
+import { resolveCanvasTexture } from './canvasTextureResolver.ts';
 
 export function drawCanvasTilemap(state: CanvasRenderState, tilemapNode: RenderProxy2D): void {
   const source = tilemapNode.source as Tilemap;

@@ -2,8 +2,8 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { endCanvasRenderPass, getCanvasActiveRenderPass } from '@flighthq/scene2d-canvas/contract';
 import type { CanvasEffectRunner, Effect } from '@flighthq/types/contract';
 
-import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { registerCanvasEffect } from './canvasEffectRegistry';
+import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
+import { registerCanvasEffect } from './canvasEffectRegistry.ts';
 import {
   acquireCanvasRenderTarget,
   beginCanvasEffectPass,
@@ -13,8 +13,8 @@ import {
   endCanvasEffectPass,
   initializeCanvasRenderTargetPool,
   releaseCanvasRenderTarget,
-} from './canvasEffectState';
-import { canvasTestHost, createCanvasRenderState } from './canvasEffectTestSupport';
+} from './canvasEffectState.ts';
+import { canvasTestHost, createCanvasRenderState } from './canvasEffectTestSupport.ts';
 
 describe('acquireCanvasRenderTarget', () => {
   it('is a function', () => {

@@ -4,8 +4,8 @@ import {
   webHostPowerKeepAwake,
   webHostPowerStatus,
   webHostPowerSuspension,
-} from './webPower';
-import { webHostPower } from './webPowerHost';
+} from './webPower.ts';
+import { webHostPower } from './webPowerHost.ts';
 
 interface FakeSentinel {
   addEventListener?: (type: 'release', listener: () => void) => void;

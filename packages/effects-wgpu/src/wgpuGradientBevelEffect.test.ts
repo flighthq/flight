@@ -8,17 +8,17 @@ import type {
   WgpuRenderTargetPool,
 } from '@flighthq/types/contract';
 
-import * as wgpuEffectBlitShaderModule from './wgpuEffectBlitShader';
-import * as wgpuEffectBoxBlurModule from './wgpuEffectBoxBlur';
-import * as wgpuEffectGradientRampModule from './wgpuEffectGradientRamp';
-import * as wgpuEffectPassModule from './wgpuEffectPass';
-import { getWgpuEffectRunner } from './wgpuEffectRegistry';
-import * as wgpuEffectTintShaderModule from './wgpuEffectTintShader';
+import * as wgpuEffectBlitShaderModule from './wgpuEffectBlitShader.ts';
+import * as wgpuEffectBoxBlurModule from './wgpuEffectBoxBlur.ts';
+import * as wgpuEffectGradientRampModule from './wgpuEffectGradientRamp.ts';
+import * as wgpuEffectPassModule from './wgpuEffectPass.ts';
+import { getWgpuEffectRunner } from './wgpuEffectRegistry.ts';
+import * as wgpuEffectTintShaderModule from './wgpuEffectTintShader.ts';
 import {
   applyGradientBevelEffectToWgpu,
   wgpuGradientBevelEffectRunner,
   registerWgpuGradientBevelEffect,
-} from './wgpuGradientBevelEffect';
+} from './wgpuGradientBevelEffect.ts';
 
 const recorded = {
   acquired: [] as unknown[],

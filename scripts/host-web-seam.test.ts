@@ -186,7 +186,7 @@ function readLaneWithWildcards(packageName: string, lane: string): string[] {
   const source = readFileSync(resolve(directory, lane), 'utf-8');
   const wildcards = [...source.matchAll(/export \* from '\.\/([^']+)';/gu)].map((match) => match[1]);
   const expanded = wildcards.map((module) => {
-    const path = resolve(directory, `${module}.ts`);
+    const path = resolve(directory, module.endsWith('.ts') ? module : `${module}.ts`);
     return existsSync(path) ? readFileSync(path, 'utf-8') : '';
   });
   // Each file is stripped and searched on its own. Concatenating first would let one file's leftover

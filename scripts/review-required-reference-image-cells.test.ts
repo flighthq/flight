@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { readRequiredReferenceImageCells } from '../tools/review/src/requiredReferenceImageCells';
+import { readRequiredReferenceImageCells } from '../tools/review/src/requiredReferenceImageCells.ts';
 
 describe('readRequiredReferenceImageCells', () => {
   // ★ THE CASE THAT MADE THIS EXIST: effect-bokeh-dof owes a reference image on webgl, and its only other

@@ -1,6 +1,6 @@
-import type { AnimationInterpolation } from './AnimationInterpolation';
-import type { EasingFunction } from './EasingFunction';
-import type { Entity } from './Entity';
+import type { AnimationInterpolation } from './AnimationInterpolation.ts';
+import type { EasingFunction } from './EasingFunction.ts';
+import type { Entity } from './Entity.ts';
 
 // A target-free animation curve: ascending keyframe `times` plus a flat `values` buffer, sampled by
 // sampleAnimationTrack. `components` is the value width per keyframe (1 = scalar, 3 = Vector3, 4 =

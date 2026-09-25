@@ -11,8 +11,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ExternalTextureSourceKind } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateRuntime, getWgpuSampler } from './wgpuRenderState';
-import { registerWgpuTextureResolver } from './wgpuTextureResolver';
+import { getWgpuRenderStateRuntime, getWgpuSampler } from './wgpuRenderState.ts';
+import { registerWgpuTextureResolver } from './wgpuTextureResolver.ts';
 
 export function createExternalWgpuTexture(
   state: WgpuRenderState,

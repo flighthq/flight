@@ -8,7 +8,7 @@ import {
   defaultQuadBatchHitTestHandler,
   defaultSpriteHitTestHandler,
   defaultTilemapHitTestHandler,
-} from './spriteHitTests';
+} from './spriteHitTests.ts';
 
 function makeSprite(boundsW = 100, boundsH = 100) {
   const parent = createSprite();

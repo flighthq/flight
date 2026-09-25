@@ -2,8 +2,12 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import { StatechartAtomicStateKind, StatechartTransitionStatus } from '@flighthq/types/contract';
 import type { LogEntry, Statechart } from '@flighthq/types/contract';
 
-import { areStatechartGuardsEnabled, disableStatechartGuards, enableStatechartGuards } from './enableStatechartGuards';
-import { advanceStatechartInstance, createStatechartInstance, setStatechartRegionDuration } from './statechart';
+import {
+  areStatechartGuardsEnabled,
+  disableStatechartGuards,
+  enableStatechartGuards,
+} from './enableStatechartGuards.ts';
+import { advanceStatechartInstance, createStatechartInstance, setStatechartRegionDuration } from './statechart.ts';
 
 describe('areStatechartGuardsEnabled', () => {
   it('reports guard state per actor', () => {

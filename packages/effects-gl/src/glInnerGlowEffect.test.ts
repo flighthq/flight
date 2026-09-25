@@ -1,10 +1,10 @@
 import { createInnerGlowEffect } from '@flighthq/effects/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 
-import * as glEffectBlitShader from './glEffectBlitShader';
-import * as glEffectBoxBlur from './glEffectBoxBlur';
-import * as glEffectTintShader from './glEffectTintShader';
-import { applyInnerGlowEffectToGl, glInnerGlowEffectRunner, registerGlInnerGlowEffect } from './glInnerGlowEffect';
+import * as glEffectBlitShader from './glEffectBlitShader.ts';
+import * as glEffectBoxBlur from './glEffectBoxBlur.ts';
+import * as glEffectTintShader from './glEffectTintShader.ts';
+import { applyInnerGlowEffectToGl, glInnerGlowEffectRunner, registerGlInnerGlowEffect } from './glInnerGlowEffect.ts';
 
 let nextTargetId = 0;
 

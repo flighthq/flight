@@ -6,9 +6,9 @@ import type {
   GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass';
-import { drawGlLinearToSrgbPass } from './glLinearToSrgbPass';
-import { getGlRenderStateRuntime } from './glRenderState';
+import { compileGlFullscreenProgram, drawGlFullscreenPass } from './glFullscreenPass.ts';
+import { drawGlLinearToSrgbPass } from './glLinearToSrgbPass.ts';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
 
 // Presents `target` onto `dest` (the canvas when null): the generic, subject-agnostic final step that
 // puts a finished render target on screen. It reads the target's DECLARED color space — 'linear' content

@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { SpritesheetAnimationDirection } from './SpritesheetAnimationDirection';
+import type { Entity } from './Entity.ts';
+import type { SpritesheetAnimationDirection } from './SpritesheetAnimationDirection.ts';
 
 export interface SpritesheetAnimation extends Entity {
   frames: number[];

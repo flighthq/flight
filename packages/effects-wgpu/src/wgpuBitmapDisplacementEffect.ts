@@ -13,9 +13,9 @@ import type {
 } from '@flighthq/types/contract';
 import { ImageChannel } from '@flighthq/types/contract';
 
-import { drawWgpuEffectPass, EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass';
-import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
+import { drawWgpuEffectPass, EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass.ts';
+import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
 
 export function applyBitmapDisplacementEffectToWgpu(
   state: WgpuRenderState,

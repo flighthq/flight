@@ -2,11 +2,11 @@ import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { readOpenTypeGlyphOutline, readOpenTypeGlyphRanges } from './openTypeGlyf';
-import { readOpenTypeGlyphCount, readOpenTypeLocaFormat } from './openTypeMetrics';
-import { createSyntheticFont, emptySyntheticGlyph, squareSyntheticGlyph } from './openTypeTestHelper';
-import type { SyntheticGlyph } from './openTypeTestHelper';
-import { readSfntTableDirectory } from './sfntTableDirectory';
+import { readOpenTypeGlyphOutline, readOpenTypeGlyphRanges } from './openTypeGlyf.ts';
+import { readOpenTypeGlyphCount, readOpenTypeLocaFormat } from './openTypeMetrics.ts';
+import { createSyntheticFont, emptySyntheticGlyph, squareSyntheticGlyph } from './openTypeTestHelper.ts';
+import type { SyntheticGlyph } from './openTypeTestHelper.ts';
+import { readSfntTableDirectory } from './sfntTableDirectory.ts';
 
 function createPath(): Path {
   return { [EntityRuntimeKey]: undefined, commands: [], data: [], winding: 'evenOdd' };

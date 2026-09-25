@@ -1,2 +1,2 @@
-export * from './protocol';
-export { initializeProtocolHandler } from './protocol';
+export * from './protocol.ts';
+export { initializeProtocolHandler } from './protocol.ts';

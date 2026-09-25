@@ -1,7 +1,7 @@
 import type { WgpuRenderState, WgpuScissorRect } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
-import { getWgpuRenderTargetSupersampleScale } from './wgpuRenderTarget';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
+import { getWgpuRenderTargetSupersampleScale } from './wgpuRenderTarget.ts';
 
 // Applies the current scissor rectangle to the active render pass. No-op when there is no active
 // scissor or no open render pass. Call after each draw call or once per pass when the active

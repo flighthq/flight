@@ -22,7 +22,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, MeshKind } from '@flighthq/types/contract';
 
-import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef } from './shared';
+import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef } from './shared.ts';
 
 // Parses a Wavefront OBJ text source into a Scene3D. Convenience over `createScene3DFromDocument(parseObj
 // (source, materials))`. See parseObj for the import model.

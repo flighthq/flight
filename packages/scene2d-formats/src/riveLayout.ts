@@ -20,8 +20,8 @@ import type {
 } from '@flighthq/types/contract';
 import { FlexLayoutKind, GridLayoutKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
-import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry';
+import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
+import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
 
 interface RiveLayoutProvider {
   sourceIndex: number;

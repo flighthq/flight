@@ -11,7 +11,7 @@ import {
   pushFlowState,
   replaceFlowState,
   updateFlowStack,
-} from './flow';
+} from './flow.ts';
 
 describe('clearFlowStack', () => {
   it('exits every state top-to-bottom and empties the stack', () => {

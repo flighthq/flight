@@ -1,5 +1,5 @@
-import type { MessageDialogOptions } from './Dialog';
-import type { MessageDialogResult } from './Dialog';
+import type { MessageDialogOptions } from './Dialog.ts';
+import type { MessageDialogResult } from './Dialog.ts';
 
 export interface HostMessageDialogCapability {
   confirm(options: Readonly<MessageDialogOptions>): Promise<boolean>;

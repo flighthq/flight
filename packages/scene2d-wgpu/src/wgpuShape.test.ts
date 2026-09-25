@@ -20,10 +20,10 @@ import {
 import type { CanvasSurface, HostCanvasCapability, HostImageCapability, RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, PathCommand } from '@flighthq/types/contract';
 
-import { enableWgpuStrokePathTessellation } from './enableWgpuStrokePathTessellation';
-import { wgpuMorphShapeRenderer, wgpuShapeRenderer, drawWgpuShape } from './wgpuShape';
-import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';
-import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
+import { enableWgpuStrokePathTessellation } from './enableWgpuStrokePathTessellation.ts';
+import { wgpuMorphShapeRenderer, wgpuShapeRenderer, drawWgpuShape } from './wgpuShape.ts';
+import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer.ts';
+import { registerWgpuStandardMaterial } from './wgpuStandardMaterial.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

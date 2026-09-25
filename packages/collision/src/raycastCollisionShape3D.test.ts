@@ -1,12 +1,12 @@
 import type { CollisionBuiltInShape3D, CollisionRaycastHit3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { registerBuiltInCollisionSupports3D } from './collisionSupport3D';
+import { registerBuiltInCollisionSupports3D } from './collisionSupport3D.ts';
 import {
   createCollisionRaycastHit3D,
   initializeCollisionRaycastHit3D,
   raycastCollisionShape3D,
-} from './raycastCollisionShape3D';
+} from './raycastCollisionShape3D.ts';
 
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();

@@ -2,7 +2,7 @@ import {
   generateManifestModuleSource,
   MANIFEST_BACKEND_EXPORTS,
   MANIFEST_PARSER_BACKEND,
-} from './manifestModuleSource';
+} from './manifestModuleSource.ts';
 
 describe('generateManifestModuleSource', () => {
   it('exports every backend fragment plus parserOptions, even when a backend needs nothing', () => {

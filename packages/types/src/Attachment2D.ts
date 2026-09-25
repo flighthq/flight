@@ -1,4 +1,4 @@
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';
 
 // The base contract for a 2D skeletal attachment — the drawable (or queryable) thing a Slot2D shows on
 // its bone: a textured region, a deformable mesh, and later a bounding box / path / clipping / point.

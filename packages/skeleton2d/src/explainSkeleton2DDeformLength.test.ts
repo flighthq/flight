@@ -1,8 +1,8 @@
 import type { Skin2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { explainSkeleton2DDeformLength } from './explainSkeleton2DDeformLength';
-import { createSkin2D } from './skin2D';
+import { explainSkeleton2DDeformLength } from './explainSkeleton2DDeformLength.ts';
+import { createSkin2D } from './skin2D.ts';
 
 // One vertex bound to two bones: eight floats of influence data, so the deform stream it parallels is
 // FOUR floats — twice what a per-vertex reading predicts.

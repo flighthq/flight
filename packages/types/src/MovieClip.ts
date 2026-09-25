@@ -1,6 +1,6 @@
-import type { MovieClipSignals } from './MovieClipSignals';
-import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
-import type { Timeline } from './Timeline';
+import type { MovieClipSignals } from './MovieClipSignals.ts';
+import type { Node2D, Node2DData, Node2DRuntime } from './Node2D.ts';
+import type { Timeline } from './Timeline.ts';
 
 export interface MovieClipData extends Node2DData {
   timeline: Timeline | null;

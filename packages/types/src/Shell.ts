@@ -1,4 +1,4 @@
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';
 
 // Opening an external URL is security-sensitive, so every call must name the schemes it permits.
 // There is deliberately no default and no allow-all sentinel: callers decide policy before a provider

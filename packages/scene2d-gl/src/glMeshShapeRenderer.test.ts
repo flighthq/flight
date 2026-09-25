@@ -10,9 +10,9 @@ import {
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, RenderRegistryTable } from '@flighthq/types/contract';
 
-import { glMeshShapeRenderer, drawGlMeshShape } from './glMeshShapeRenderer';
-import { registerGlShapeRasterizer } from './glShapeRasterizer';
-import { createGlState } from './glTestHelper';
+import { glMeshShapeRenderer, drawGlMeshShape } from './glMeshShapeRenderer.ts';
+import { registerGlShapeRasterizer } from './glShapeRasterizer.ts';
+import { createGlState } from './glTestHelper.ts';
 
 beforeEach(() => {
   vi.spyOn(flightNode, 'getNodeLocalBoundsRectangle').mockImplementation((() => ({

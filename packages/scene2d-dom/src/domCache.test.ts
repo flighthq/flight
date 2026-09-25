@@ -14,8 +14,8 @@ import {
   ensureDomRenderCacheTarget,
   getDomRenderCacheTarget,
   releaseDomRenderCache,
-} from './domCache';
-import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
+} from './domCache.ts';
+import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
 
 function makeState() {
   return createDomRenderState(document.createElement('div'));

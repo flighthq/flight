@@ -8,9 +8,9 @@ import {
 import { createMesh } from '@flighthq/scene3d/contract';
 import type { Mesh, MeshMorph, MeshSkinBindPose, VertexAttributeLayout, GlMeshUpload } from '@flighthq/types/contract';
 
-import { bindGlVertexAttribute, destroyGlMeshUpload, ensureGlMeshUpload } from './glMeshUpload';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+import { bindGlVertexAttribute, destroyGlMeshUpload, ensureGlMeshUpload } from './glMeshUpload.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 describe('bindGlVertexAttribute', () => {
   it('binds normalized packed weights to the shader float input', () => {

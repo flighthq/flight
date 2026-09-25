@@ -1,7 +1,7 @@
 import type { Decompressor, Woff2TableDirectory, Woff2TableEntry } from '@flighthq/types/contract';
 import { Compression, CompressionFraming } from '@flighthq/types/contract';
 
-import { assembleSfntFont, packSfntTag } from './sfntAssembly';
+import { assembleSfntFont, packSfntTag } from './sfntAssembly.ts';
 
 // WOFF2 is WOFF's wrapper idea taken two steps further, and both steps are why it needs its own reader
 // rather than a flag on the WOFF one.

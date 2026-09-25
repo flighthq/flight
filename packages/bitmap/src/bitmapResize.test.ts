@@ -1,6 +1,6 @@
-import { createBitmap } from './bitmap';
-import { getBitmapPixel } from './bitmapPixel';
-import { resizeBitmap } from './bitmapResize';
+import { createBitmap } from './bitmap.ts';
+import { getBitmapPixel } from './bitmapPixel.ts';
+import { resizeBitmap } from './bitmapResize.ts';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };

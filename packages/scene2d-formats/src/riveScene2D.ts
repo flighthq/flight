@@ -18,10 +18,10 @@ import type {
 } from '@flighthq/types/contract';
 import { AdvancedBlendMode, BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { createRiveAnimationClips } from './riveAnimation';
-import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
-import { parseRiveDocument } from './riveDocument';
-import { registerAllRiveHandlers } from './riveHandlers';
+import { createRiveAnimationClips } from './riveAnimation.ts';
+import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
+import { parseRiveDocument } from './riveDocument.ts';
+import { registerAllRiveHandlers } from './riveHandlers.ts';
 import {
   applyRiveArtboardHandlers,
   applyRiveDocumentHandlers,
@@ -29,8 +29,8 @@ import {
   createRiveDocumentImportContext,
   createRiveImportRegistry,
   getRiveCoreObjectHandler,
-} from './riveImportRegistry';
-import { createRiveObjectGraph } from './riveObjectGraph';
+} from './riveImportRegistry.ts';
+import { createRiveObjectGraph } from './riveObjectGraph.ts';
 
 /**
  * Imports a `.riv` into one display subtree per artboard, reading exactly the core types `registry`

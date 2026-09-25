@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CanvasTextureRenderTarget } from '@flighthq/types/contract';
 
-import { applyColorMatrixPassToCanvas, applyColorMatrixToImageDataBytes } from './canvasColorMatrixPass';
+import { applyColorMatrixPassToCanvas, applyColorMatrixToImageDataBytes } from './canvasColorMatrixPass.ts';
 
 // Minimal stand-ins for the two canvas contexts drawCanvasImageDataPass touches. Using plain objects
 // rather than substituting the compositing module keeps the wiring assertion independent of module

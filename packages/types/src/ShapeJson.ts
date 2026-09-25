@@ -1,4 +1,4 @@
-import type { Texture } from './Texture';
+import type { Texture } from './Texture.ts';
 
 // The reference persisted for a `beginTextureFill`/`lineTextureStyle` command in place of its live
 // `Texture`. A Texture carries no stable serializable id (it is a runtime entity over backing storage

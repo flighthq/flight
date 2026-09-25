@@ -44,8 +44,8 @@ import type {
 } from '@flighthq/types/contract';
 import { RichTextKind } from '@flighthq/types/contract';
 
-import { createTextLabelData } from './textLabel';
-import { ensureTextLayout, getTextLayout } from './textLabelLayout';
+import { createTextLabelData } from './textLabel.ts';
+import { ensureTextLayout, getTextLayout } from './textLabelLayout.ts';
 
 export function appendRichTextString(source: RichText, value: string): void {
   if (value.length === 0) return;

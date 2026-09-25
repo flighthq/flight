@@ -1,7 +1,7 @@
-import type { Entity } from './Entity';
-import type { SpritesheetAnimation } from './SpritesheetAnimation';
-import type { SpritesheetFrame } from './SpritesheetFrame';
-import type { TextureAtlas } from './TextureAtlas';
+import type { Entity } from './Entity.ts';
+import type { SpritesheetAnimation } from './SpritesheetAnimation.ts';
+import type { SpritesheetFrame } from './SpritesheetFrame.ts';
+import type { TextureAtlas } from './TextureAtlas.ts';
 
 export interface Spritesheet extends Entity {
   atlas: TextureAtlas | null;

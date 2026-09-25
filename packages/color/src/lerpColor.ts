@@ -1,7 +1,7 @@
 import type { LinearColor } from '@flighthq/types/contract';
 
-import { packLinearToColor } from './packColor';
-import { srgbChannelToLinear } from './srgbTransfer';
+import { packLinearToColor } from './packColor.ts';
+import { srgbChannelToLinear } from './srgbTransfer.ts';
 
 // Linearly interpolates between two packed sRGB colors `start` and `end` by `t` in [0, 1].
 // Interpolation is performed in linear space for perceptual correctness (gamma-correct mix),

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { formatImportConformanceSubset } from './import-conformance-subset';
+import { formatImportConformanceSubset } from './import-conformance-subset.ts';
 
 describe('formatImportConformanceSubset', () => {
   it('reports outcomes with an explicit not-a-score warning', () => {

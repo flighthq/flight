@@ -1,18 +1,18 @@
 import type { Physics3DWorld } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createPhysics3DContact } from './contacts';
-import { explainPhysics3DStep } from './explainPhysics3DStep';
-import { createPhysics3DBallAndSocketJoint } from './jointFactories';
-import { addPhysics3DJoint } from './jointRegistry';
-import { stepPhysics3D } from './step';
+import { createPhysics3DContact } from './contacts.ts';
+import { explainPhysics3DStep } from './explainPhysics3DStep.ts';
+import { createPhysics3DBallAndSocketJoint } from './jointFactories.ts';
+import { addPhysics3DJoint } from './jointRegistry.ts';
+import { stepPhysics3D } from './step.ts';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,
   createPhysics3DCollider,
   createPhysics3DWorld,
   createRigidBody3D,
-} from './world';
+} from './world.ts';
 
 describe('explainPhysics3DStep', () => {
   it('reports a ready world', () => {

@@ -1,16 +1,16 @@
-import type { EntityRuntime } from './Entity';
-import type { ExternalTexture } from './ExternalTexture';
-import type { GlColorAdjustmentResources } from './GlColorAdjustmentResources';
-import type { GlContext } from './GlContext';
-import type { GlParticleResources } from './GlParticleResources';
-import type { GlQuadBatchResources } from './GlQuadBatchResources';
-import type { GlBlendSignature, GlBoundShader } from './GlRenderState';
-import type { GlRenderTextureEntry } from './GlRenderTexture';
-import type { GlShapeMeshResources } from './GlShapeMeshResources';
-import type { GlTextureRealization } from './GlTextureResolver';
-import type { ImageResource } from './ImageResource';
-import type { RenderTexture } from './RenderTexture';
-import type { TextureSource } from './TextureSource';
+import type { EntityRuntime } from './Entity.ts';
+import type { ExternalTexture } from './ExternalTexture.ts';
+import type { GlColorAdjustmentResources } from './GlColorAdjustmentResources.ts';
+import type { GlContext } from './GlContext.ts';
+import type { GlParticleResources } from './GlParticleResources.ts';
+import type { GlQuadBatchResources } from './GlQuadBatchResources.ts';
+import type { GlBlendSignature, GlBoundShader } from './GlRenderState.ts';
+import type { GlRenderTextureEntry } from './GlRenderTexture.ts';
+import type { GlShapeMeshResources } from './GlShapeMeshResources.ts';
+import type { GlTextureRealization } from './GlTextureResolver.ts';
+import type { ImageResource } from './ImageResource.ts';
+import type { RenderTexture } from './RenderTexture.ts';
+import type { TextureSource } from './TextureSource.ts';
 
 // Shared GPU state for one WebGL context, stored as the Entity runtime of a GlContextState. Wraps
 // the acquired GlContext and owns the binding shadow, compiled shader programs, texture upload

@@ -1,8 +1,8 @@
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
-import { contributeTransformVelocity } from './transformVelocity';
-import { beginVelocityFrame, contributeVelocity, createVelocityField, getVelocity } from './velocityField';
+import { contributeTransformVelocity } from './transformVelocity.ts';
+import { beginVelocityFrame, contributeVelocity, createVelocityField, getVelocity } from './velocityField.ts';
 
 describe('contributeTransformVelocity', () => {
   it('reports zero velocity on the first frame', () => {

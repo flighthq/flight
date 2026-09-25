@@ -1,4 +1,4 @@
-import { allocateHsvColor, hsvToRgb, rgbToHsv } from './hsvColor';
+import { allocateHsvColor, hsvToRgb, rgbToHsv } from './hsvColor.ts';
 
 describe('allocateHsvColor', () => {
   it('allocates a zeroed three-component HSV color', () => {

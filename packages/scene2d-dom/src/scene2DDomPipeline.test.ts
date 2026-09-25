@@ -1,7 +1,7 @@
 import { DisplayObjectKind, MorphShapeKind, ShapeKind } from '@flighthq/types/contract';
 
-import * as domPackage from './contract';
-import { domScene2DRenderPreset } from './scene2DDomPipeline';
+import * as domPackage from './contract.ts';
+import { domScene2DRenderPreset } from './scene2DDomPipeline.ts';
 
 describe('domScene2DRenderPreset', () => {
   it('binds every renderer this package exports, so none is unreachable through the preset', () => {

@@ -20,7 +20,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry';
+import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
 
 /**
  * Applies the artboard's draw rules, which override hierarchy order for the nodes they govern.

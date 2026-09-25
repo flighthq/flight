@@ -1,7 +1,7 @@
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setBitmapFontGuard } from './bitmapFont';
+import { setBitmapFontGuard } from './bitmapFont.ts';
 
 /** Uninstalls the guard installed by `enableBitmapFontGuards`. */
 export function disableBitmapFontGuards(): void {

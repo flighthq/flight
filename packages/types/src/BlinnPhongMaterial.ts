@@ -1,5 +1,5 @@
-import type { Material3D } from './Material3D';
-import type { Texture } from './Texture';
+import type { Material3D } from './Material3D.ts';
+import type { Texture } from './Texture.ts';
 
 // Classic Blinn-Phong shading: diffuse plus a half-vector specular lobe (cheaper, smoother
 // highlights than reflection-vector Phong). `diffuse`/`specular` are packed sRgb-albedo RGBA

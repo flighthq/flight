@@ -1,7 +1,7 @@
-import type { Entity } from './Entity';
-import type { GlContext } from './GlContext';
-import type { GlRenderState } from './GlRenderState';
-import type { GlRenderTarget } from './GlRenderTarget';
+import type { Entity } from './Entity.ts';
+import type { GlContext } from './GlContext.ts';
+import type { GlRenderState } from './GlRenderState.ts';
+import type { GlRenderTarget } from './GlRenderTarget.ts';
 
 // An active render pass bracket opened by beginGlRenderPass. Carries the render state,
 // context, and bound target for the pass lifetime. Draw functions accept the pass as

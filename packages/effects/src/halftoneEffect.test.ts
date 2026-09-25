@@ -1,4 +1,4 @@
-import { createHalftoneEffect, initializeHalftoneEffect } from './halftoneEffect';
+import { createHalftoneEffect, initializeHalftoneEffect } from './halftoneEffect.ts';
 
 describe('createHalftoneEffect', () => {
   it('tags the intent type', () => {

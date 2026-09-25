@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { Skeleton2DAnimationPath } from './Skeleton2DAnimationPath';
-import type { Skeleton2DAnimationTargetKind } from './Skeleton2DAnimationTargetKind';
+import type { Entity } from './Entity.ts';
+import type { Skeleton2DAnimationPath } from './Skeleton2DAnimationPath.ts';
+import type { Skeleton2DAnimationTargetKind } from './Skeleton2DAnimationTargetKind.ts';
 
 // The binding target an AnimationChannel carries when it drives a Skeleton2D bone: which bone (by index
 // into the skeleton's flat bone array) and which transform group (`path`). The 2D-skeletal analogue of

@@ -1,1 +1,1 @@
-export * from './registryTool';
+export * from './registryTool.ts';

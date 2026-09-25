@@ -1,12 +1,12 @@
-export * from './boundsRectangle';
-export * from './enableNodeGuards';
-export * from './hasAppearance';
-export * from './hasBlendMode';
-export * from './hasBoundsRectangle';
-export * from './hasClip';
-export * from './hasMaterial';
-export * from './hasTransform2d';
-export * from './hasTransform3d';
+export * from './boundsRectangle.ts';
+export * from './enableNodeGuards.ts';
+export * from './hasAppearance.ts';
+export * from './hasBlendMode.ts';
+export * from './hasBoundsRectangle.ts';
+export * from './hasClip.ts';
+export * from './hasMaterial.ts';
+export * from './hasTransform2d.ts';
+export * from './hasTransform3d.ts';
 export {
   addNodeChild,
   addNodeChildAt,
@@ -30,7 +30,7 @@ export {
   setNodeChildIndex,
   swapNodeChildren,
   swapNodeChildrenAt,
-} from './hierarchy';
+} from './hierarchy.ts';
 export {
   createNode,
   createNodeSignals,
@@ -39,8 +39,8 @@ export {
   enableNodeSignals,
   getNodeSignals,
   setNodeEnabled,
-} from './node';
-export * from './nodeColorAdjustment';
+} from './node.ts';
+export * from './nodeColorAdjustment.ts';
 export {
   addNodeOrderListEntry,
   applyNodeOrderList,
@@ -56,10 +56,10 @@ export {
   setNodeOrderListEntryBelow,
   setNodeOrderListFromNodeChildren,
   swapNodeOrderListEntries,
-} from './nodeOrderList';
-export * from './nodeTransform2d';
-export * from './nodeTransform3d';
-export * from './revision';
-export * from './stageFit';
-export * from './traversal';
-export { createViewport, getViewportAspect } from './viewport';
+} from './nodeOrderList.ts';
+export * from './nodeTransform2d.ts';
+export * from './nodeTransform3d.ts';
+export * from './revision.ts';
+export * from './stageFit.ts';
+export * from './traversal.ts';
+export { createViewport, getViewportAspect } from './viewport.ts';

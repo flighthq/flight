@@ -1,14 +1,14 @@
 import { createPath } from '@flighthq/path/contract';
 import type { GlyphOutlineSource, Shape } from '@flighthq/types/contract';
 
-import { SwfReader } from './swfReader';
-import { ShapeWriter } from './swfShapeTestHelper';
+import { SwfReader } from './swfReader.ts';
+import { ShapeWriter } from './swfShapeTestHelper.ts';
 import {
   createSwfTextShape,
   readSwfFontGlyphOutlineSource,
   readSwfFontGlyphs,
   resolveSwfFontUnitsPerEm,
-} from './swfText';
+} from './swfText.ts';
 
 describe('createSwfTextShape', () => {
   it('places a glyph outline at the record height and colour, then advances the pen', () => {

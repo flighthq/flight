@@ -1,4 +1,4 @@
-import type { ColorLut } from './ColorLut';
+import type { ColorLut } from './ColorLut.ts';
 
 // GPU-upload memo for the fused color LUT on WebGPU: the uploaded `size³` 3D texture, the axis `size` it
 // was created at (the texture is recreated when size changes), and the ColorLut reference last written

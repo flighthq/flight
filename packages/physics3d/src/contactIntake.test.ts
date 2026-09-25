@@ -5,15 +5,15 @@ import {
 import type { CollisionBuiltInShape3D, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { buildPhysics3DContacts, refreshPhysics3DContacts, setPhysics3DContactIntakeGuard } from './contactIntake';
-import { stepPhysics3D } from './step';
+import { buildPhysics3DContacts, refreshPhysics3DContacts, setPhysics3DContactIntakeGuard } from './contactIntake.ts';
+import { stepPhysics3D } from './step.ts';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,
   createPhysics3DCollider,
   createPhysics3DWorld,
   createRigidBody3D,
-} from './world';
+} from './world.ts';
 
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();

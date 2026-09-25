@@ -1,4 +1,4 @@
-import type { ScreenInfo } from './Screen';
+import type { ScreenInfo } from './Screen.ts';
 
 // What kind of display change an event reports: a screen attached, a screen detached, or an existing
 // screen's metrics (bounds, work area, scale, orientation) changed.

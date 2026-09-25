@@ -7,7 +7,7 @@ import { parseAwd2Requirements } from '@flighthq/scene3d-formats/contract';
 import { parseSwfRequirements } from '@flighthq/swf/contract';
 import type { RequirementSet } from '@flighthq/types/contract';
 
-import { readRequirementCatalogFile, readRequirementSetFile, writeRequirementSetFile } from './requirementSetFile.js';
+import { readRequirementCatalogFile, readRequirementSetFile, writeRequirementSetFile } from './requirementSetFile.ts';
 
 /** Where the tool writes. Injected so the whole CLI is testable without a process or a terminal. */
 export interface ManifestToolIO {

@@ -12,9 +12,9 @@ import type { Camera3D, HostVideoCapability, Scene3DLightBlock, Scene3DRenderPro
 import { UnlitMaterialKind } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 
-import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerGlUnlitMaterial, glUnlitMeshMaterialRenderer } from './glUnlitMeshMaterialRenderer';
+import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { registerGlUnlitMaterial, glUnlitMeshMaterialRenderer } from './glUnlitMeshMaterialRenderer.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

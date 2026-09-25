@@ -1,4 +1,4 @@
-import { applyVignetteEffectToGl, glVignetteEffectRunner, registerGlVignetteEffect } from './glVignetteEffect';
+import { applyVignetteEffectToGl, glVignetteEffectRunner, registerGlVignetteEffect } from './glVignetteEffect.ts';
 
 describe('applyVignetteEffectToGl', () => {
   it('is a function', () => {

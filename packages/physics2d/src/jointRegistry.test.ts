@@ -8,15 +8,15 @@ import {
   invalidatePhysics2DJoint,
   registerPhysics2DJointSolver,
   removePhysics2DJoint,
-} from './jointRegistry';
-import { stepPhysics2D } from './step';
+} from './jointRegistry.ts';
+import { stepPhysics2D } from './step.ts';
 import {
   addPhysics2DBody,
   createPhysics2DCollider,
   createPhysics2DWorld,
   createRigidBody2D,
   removePhysics2DBody,
-} from './world';
+} from './world.ts';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
 

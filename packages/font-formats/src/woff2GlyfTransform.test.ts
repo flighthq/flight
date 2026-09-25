@@ -10,7 +10,7 @@ import {
   readWoff2GlyfStreams,
   readWoff2Short,
   reverseWoff2GlyfTransform,
-} from './woff2GlyfTransform';
+} from './woff2GlyfTransform.ts';
 
 // Builds a transformed `glyf` header over seven streams of the given sizes, filled with a distinct byte
 // each so a mis-ordered carve shows up as the wrong contents rather than only the wrong length.

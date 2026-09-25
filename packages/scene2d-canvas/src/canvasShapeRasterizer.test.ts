@@ -9,12 +9,12 @@ import { appendShapeRectangle, appendShapeBeginTextureFill, createShape } from '
 import { createTexture, setTextureSource } from '@flighthq/texture/contract';
 import type { HostImageCapability, RenderState } from '@flighthq/types/contract';
 
-import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
-import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
-import { canvasShapeCommands, canvasTextureShapeCommands } from './canvasShapeCommands';
-import { createCanvasShapeRasterizer } from './canvasShapeRasterizer';
-import { registerCanvasShapeCommands } from './canvasShapeRegistry';
-import { createCanvasTextureResolvers } from './canvasTestSupport';
+import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver.ts';
+import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver.ts';
+import { canvasShapeCommands, canvasTextureShapeCommands } from './canvasShapeCommands.ts';
+import { createCanvasShapeRasterizer } from './canvasShapeRasterizer.ts';
+import { registerCanvasShapeCommands } from './canvasShapeRegistry.ts';
+import { createCanvasTextureResolvers } from './canvasTestSupport.ts';
 
 beforeEach(() => {
   registerTestImageDimensionResolver();

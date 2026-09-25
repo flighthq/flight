@@ -21,15 +21,15 @@ import {
 } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { waitForScene3DResourceResolver } from './loadScene3DResources';
+import { waitForScene3DResourceResolver } from './loadScene3DResources.ts';
 import {
   initializeImageResourceFailure,
   resolveOneScene3DResourceTexture,
   resolveScene3DResources,
   updateScene3DResourceStreaming,
-} from './resolveScene3DResources';
-import { createBuiltInScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver';
-import { enableScene3DResourceSignals } from './sceneResourceSignals';
+} from './resolveScene3DResources.ts';
+import { createBuiltInScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver.ts';
+import { enableScene3DResourceSignals } from './sceneResourceSignals.ts';
 
 const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },

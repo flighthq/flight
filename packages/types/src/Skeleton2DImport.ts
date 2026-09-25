@@ -1,6 +1,6 @@
-import type { AnimationClip } from './AnimationClip';
-import type { Skeleton2D } from './Skeleton2D';
-import type { Skeleton2DDrawOrderTimeline } from './Skeleton2DDrawOrderTimeline';
+import type { AnimationClip } from './AnimationClip.ts';
+import type { Skeleton2D } from './Skeleton2D.ts';
+import type { Skeleton2DDrawOrderTimeline } from './Skeleton2DDrawOrderTimeline.ts';
 
 // The result of importing a 2D skeletal rig file (Spine / DragonBones): the setup-pose `Skeleton2D` plus
 // its named animations. Each animation is an `@flighthq/animation` `AnimationClip` whose channels carry

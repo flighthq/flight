@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Matrix } from './Matrix';
+import type { Entity } from './Entity.ts';
+import type { Matrix } from './Matrix.ts';
 
 /**
  * Backend-agnostic handle for a cached rendering. The user creates and holds a

@@ -139,4 +139,4 @@ export * from '@flighthq/velocity';
 export * from '@flighthq/video';
 export * from '@flighthq/webcam';
 export * from '@flighthq/xml';
-export * from './sdkHost';
+export * from './sdkHost.ts';

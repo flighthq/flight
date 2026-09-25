@@ -1,4 +1,4 @@
-import { applyPosterizeEffectToGl, glPosterizeEffectRunner, registerGlPosterizeEffect } from './glPosterizeEffect';
+import { applyPosterizeEffectToGl, glPosterizeEffectRunner, registerGlPosterizeEffect } from './glPosterizeEffect.ts';
 
 describe('applyPosterizeEffectToGl', () => {
   it('is a function', () => {

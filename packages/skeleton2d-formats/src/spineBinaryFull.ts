@@ -1,8 +1,8 @@
 import type { ImportDiagnostic, Skeleton2DImport } from '@flighthq/types/contract';
 
-import { registerAllSpineBinaryHandlers } from './spineBinaryHandlers';
-import { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse';
-import { createSpineBinaryRegistry } from './spineBinaryRegistry';
+import { registerAllSpineBinaryHandlers } from './spineBinaryHandlers.ts';
+import { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse.ts';
+import { createSpineBinaryRegistry } from './spineBinaryRegistry.ts';
 
 /** Parses a Spine 4.1 binary with every built-in section and timeline handler. */
 export function parseSpineSkeletonBinary(

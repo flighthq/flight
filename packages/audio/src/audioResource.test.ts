@@ -10,7 +10,7 @@ import {
   hasAudioResourceBuffer,
   initializeAudioResource,
   isAudioResourceEmpty,
-} from './audioResource';
+} from './audioResource.ts';
 
 // jsdom has no AudioBuffer; the media package models it the same way — a plain cast carrying only the
 // fields under test (mirrors its createMockAudioBuffer helper).

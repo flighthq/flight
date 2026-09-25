@@ -1,4 +1,4 @@
-import type { BitmapEdgeMode } from './BitmapEdgeMode';
+import type { BitmapEdgeMode } from './BitmapEdgeMode.ts';
 
 export interface BitmapConvolutionOptions {
   bias?: number;

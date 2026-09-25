@@ -10,10 +10,10 @@ import type {
 } from '@flighthq/types/contract';
 import { RenderRegistryTable } from '@flighthq/types/contract';
 
-import { drawCanvasScene2D } from './canvasNode2D';
-import { getCanvasRenderStateTextureResolvers, setCanvasGlobalAlpha } from './canvasRenderState';
-import { getCanvasShapeCommand } from './canvasShapeRegistry';
-import { setCanvasTransform } from './canvasTransform';
+import { drawCanvasScene2D } from './canvasNode2D.ts';
+import { getCanvasRenderStateTextureResolvers, setCanvasGlobalAlpha } from './canvasRenderState.ts';
+import { getCanvasShapeCommand } from './canvasShapeRegistry.ts';
+import { setCanvasTransform } from './canvasTransform.ts';
 
 export function drawCanvasShape(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
   drawCanvasScene2D(state, renderProxy);

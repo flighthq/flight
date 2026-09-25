@@ -22,10 +22,10 @@ import type {
 } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { parseMd5Anim } from './md5AnimParse';
-import { canonicalizeMd5TangentHandedness, createScene3DFromMd5Mesh, importMd5Mesh, parseMd5Mesh } from './md5Parse';
-import { getTestTextureResource } from './scene3DFormatsTestHelper';
-import { findScene3DSkeletonJoints } from './sceneSkeleton';
+import { parseMd5Anim } from './md5AnimParse.ts';
+import { canonicalizeMd5TangentHandedness, createScene3DFromMd5Mesh, importMd5Mesh, parseMd5Mesh } from './md5Parse.ts';
+import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
+import { findScene3DSkeletonJoints } from './sceneSkeleton.ts';
 
 function findDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic | undefined {
   return diagnostics.find((diagnostic) => diagnostic.kind === kind);

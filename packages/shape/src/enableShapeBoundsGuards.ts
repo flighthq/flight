@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { Shape, ShapeBoundsMode } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setShapeBoundsGuard } from './shapeBounds';
+import { setShapeBoundsGuard } from './shapeBounds.ts';
 
 export function areShapeBoundsGuardsEnabled(): boolean {
   return _enabled;

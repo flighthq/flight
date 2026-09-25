@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, MotionBlurEffect } from '@flighthq/types/contract';
 
-import { initializeEffect } from './effect';
+import { initializeEffect } from './effect.ts';
 
 export function createMotionBlurEffect(
   options: Readonly<Omit<EntityWithoutRuntime<MotionBlurEffect>, 'kind'>> = {},

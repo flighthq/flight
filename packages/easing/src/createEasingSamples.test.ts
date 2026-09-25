@@ -1,6 +1,6 @@
-import { createEasingSamples } from './createEasingSamples';
-import { easeInCubic } from './easeCubic';
-import { easeLinear } from './easeLinear';
+import { createEasingSamples } from './createEasingSamples.ts';
+import { easeInCubic } from './easeCubic.ts';
+import { easeLinear } from './easeLinear.ts';
 
 describe('createEasingSamples', () => {
   it('throws for count < 1', () => {

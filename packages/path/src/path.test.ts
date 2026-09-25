@@ -19,7 +19,7 @@ import {
   createPath,
   getPathLastPoint,
   initializePath,
-} from './path';
+} from './path.ts';
 
 describe('appendPathArc', () => {
   it('produces a MOVE_TO and at least one CUBIC_CURVE_TO for a non-zero arc', () => {

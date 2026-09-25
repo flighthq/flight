@@ -1,6 +1,6 @@
 import type { Path, Vector2Like } from '@flighthq/types/contract';
 
-import { flattenPath } from './flattenPath';
+import { flattenPath } from './flattenPath.ts';
 
 // Finds the closest point on `path` to (px, py), writing the result into `out`. Returns the
 // distance from (px, py) to the nearest point. Returns -1 and leaves `out` unchanged for an

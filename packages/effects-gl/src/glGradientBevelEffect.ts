@@ -15,11 +15,11 @@ import type {
   GlTextureRenderTargetPool,
 } from '@flighthq/types/contract';
 
-import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
-import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
-import { createGlEffectGradientRampTexture } from './glEffectGradientRamp';
-import { registerGlEffect } from './glEffectRegistry';
-import { applyGlEffectTintPass } from './glEffectTintShader';
+import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader.ts';
+import { applyGlEffectBoxBlur } from './glEffectBoxBlur.ts';
+import { createGlEffectGradientRampTexture } from './glEffectGradientRamp.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
+import { applyGlEffectTintPass } from './glEffectTintShader.ts';
 
 // Samples the blurred alpha at +offset and -offset to compute a bevel value
 // in [-1, 1], mapped to [0, 1] for gradient lookup. Outputs the encoded

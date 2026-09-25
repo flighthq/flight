@@ -13,7 +13,7 @@ import type {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry';
+import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry.ts';
 import {
   Physics2DDistanceJointKind,
   Physics2DGearJointKind,
@@ -33,9 +33,9 @@ import {
   physics2DRopeJointSolver,
   physics2DWheelJointSolver,
   physics2DWeldJointSolver,
-} from './joints';
-import { stepPhysics2D } from './step';
-import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world';
+} from './joints.ts';
+import { stepPhysics2D } from './step.ts';
+import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
 

@@ -10,7 +10,7 @@ import {
   tauriHostAppRelaunch,
   tauriHostAppShow,
   tauriHostAppVersion,
-} from './tauriApp';
+} from './tauriApp.ts';
 
 const flush = async () => {
   await Promise.resolve();

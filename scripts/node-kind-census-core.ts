@@ -1,6 +1,6 @@
 import type { Node } from 'oxc-parser';
 
-import { getParsedOxcSource } from './oxc-source';
+import { getParsedOxcSource } from './oxc-source.ts';
 
 // The three functions that mint a graph node. Every Node2D/Node3D in the SDK is created through one of
 // them, because they are the only callers of the two runtime factories that stamp a family traits key

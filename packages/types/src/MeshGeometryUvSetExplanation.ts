@@ -1,4 +1,4 @@
-import type { PbrUvSet } from './PbrExtension';
+import type { PbrUvSet } from './PbrExtension.ts';
 
 // What a geometry's vertex layout can actually serve when a material's maps ask for a UV set.
 //

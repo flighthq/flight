@@ -1,8 +1,8 @@
 import { finishEntity } from '@flighthq/entity/contract';
 import type { AppWindow, Entity, GlContext, GlSurface, HostGlCapability } from '@flighthq/types/contract';
 
-import { createGlSurface, createGlSurfaceFromNativeHandle, destroyGlSurface } from './glSurface';
-import { allocateSurface, getSurfaceHandle } from './surface';
+import { createGlSurface, createGlSurfaceFromNativeHandle, destroyGlSurface } from './glSurface.ts';
+import { allocateSurface, getSurfaceHandle } from './surface.ts';
 
 function glCapability(fields: HostGlCapability): HostGlCapability {
   return finishEntity(Object.assign(allocateSurface(null), fields) as never) as unknown as HostGlCapability;

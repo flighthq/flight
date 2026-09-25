@@ -1,4 +1,4 @@
-import { SwfReader } from './swfReader';
+import { SwfReader } from './swfReader.ts';
 
 describe('SwfReader', () => {
   it('reads little-endian integers and reports an overrun instead of throwing', () => {

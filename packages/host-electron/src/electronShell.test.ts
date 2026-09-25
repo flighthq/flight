@@ -14,7 +14,7 @@ import {
   populateElectronHostShellPathReveal,
   populateElectronHostShellShortcutLink,
   populateElectronHostShellTrash,
-} from './electronShell';
+} from './electronShell.ts';
 
 function fakeElectron(shell: Partial<ElectronApi['shell']>): ElectronApi {
   return { shell } as unknown as ElectronApi;

@@ -2,10 +2,10 @@ import type { Bone2D, Skin2D } from '@flighthq/types/contract';
 import { TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
-import { setSkeleton2DDeformLengthGuard } from './skeleton2dGuards';
-import { createSkin2D } from './skin2D';
-import { skinSkeleton2DAttachmentPoints } from './skinAttachment2DPoints';
+import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d.ts';
+import { setSkeleton2DDeformLengthGuard } from './skeleton2dGuards.ts';
+import { createSkin2D } from './skin2D.ts';
+import { skinSkeleton2DAttachmentPoints } from './skinAttachment2DPoints.ts';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
   return {

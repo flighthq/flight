@@ -23,8 +23,8 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { DescriptorRecord } from './verify-expected-image-backgrounds';
-import { readSceneDescriptors } from './verify-expected-image-backgrounds';
+import type { DescriptorRecord } from './verify-expected-image-backgrounds.ts';
+import { readSceneDescriptors } from './verify-expected-image-backgrounds.ts';
 
 export interface SceneSizeClaim {
   /** Whatever names this descriptor's subject — a scene file today, a cell id under a later shape. */

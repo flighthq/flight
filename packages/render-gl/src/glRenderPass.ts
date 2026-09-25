@@ -11,8 +11,8 @@ import type {
   Viewport,
 } from '@flighthq/types/contract';
 
-import { getGlRenderStateRuntime } from './glRenderState';
-import { resolveGlTextureRenderTarget } from './glRenderTarget';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
+import { resolveGlTextureRenderTarget } from './glRenderTarget.ts';
 
 type SavedGlPassState = {
   clipForms: ('rect' | 'contour')[];

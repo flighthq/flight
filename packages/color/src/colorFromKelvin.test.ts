@@ -1,4 +1,4 @@
-import { colorFromKelvin } from './colorFromKelvin';
+import { colorFromKelvin } from './colorFromKelvin.ts';
 
 describe('colorFromKelvin', () => {
   it('returns opaque alpha (0xff) for all temperatures', () => {

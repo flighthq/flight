@@ -1,5 +1,5 @@
-import { webHost } from './webHost';
-import { webHostLoop } from './webLoop';
+import { webHost } from './webHost.ts';
+import { webHostLoop } from './webLoop.ts';
 
 afterEach(() => {
   vi.restoreAllMocks();

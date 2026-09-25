@@ -2,7 +2,7 @@ import { finishEntity } from '@flighthq/entity/contract';
 import { allocateSurface, getSurfaceHandle } from '@flighthq/surface/contract';
 import type { AppWindow, NativeSurfaceHandle, Surface } from '@flighthq/types/contract';
 
-import { getWebWindowHandle } from './webWindow';
+import { getWebWindowHandle } from './webWindow.ts';
 
 // Allocates a canvas in the given window's document, sized in device pixels. Every web drawable capability
 // creates through here: on the web the element factory and the drawable are the same call, which is why no

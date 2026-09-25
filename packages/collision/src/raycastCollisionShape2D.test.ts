@@ -1,12 +1,12 @@
 import type { CollisionRaycastHit2D, CollisionBuiltInShape2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { getCollisionShapeContainsPoint2D } from './pointContainment2D';
+import { getCollisionShapeContainsPoint2D } from './pointContainment2D.ts';
 import {
   createCollisionRaycastHit2D,
   initializeCollisionRaycastHit2D,
   raycastCollisionShape2D,
-} from './raycastCollisionShape2D';
+} from './raycastCollisionShape2D.ts';
 
 function hit(): CollisionRaycastHit2D {
   return createCollisionRaycastHit2D();

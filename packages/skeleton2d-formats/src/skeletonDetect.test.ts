@@ -6,7 +6,7 @@ import {
   parseSkeleton2D,
   registerSkeleton2DFormat,
   unregisterSkeleton2DFormat,
-} from './skeletonDetect';
+} from './skeletonDetect.ts';
 
 describe('getSkeleton2DFormatKinds', () => {
   it('enumerates sorted bound kinds and stops naming one after it is unregistered', () => {

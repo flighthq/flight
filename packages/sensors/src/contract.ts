@@ -1,4 +1,4 @@
-export * from './sensors';
+export * from './sensors.ts';
 export {
   initializeAmbientLightReading,
   initializeMotionReading,
@@ -8,4 +8,4 @@ export {
   initializeQuaternionReading,
   initializeRotationRateReading,
   initializeSensors,
-} from './sensors';
+} from './sensors.ts';

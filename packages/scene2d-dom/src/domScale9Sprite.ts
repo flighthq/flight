@@ -12,8 +12,8 @@ import type {
   Scene2DRenderer,
 } from '@flighthq/types/contract';
 
-import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle';
-import { resolveDomTexture } from './domTextureResolver';
+import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle.ts';
+import { resolveDomTexture } from './domTextureResolver.ts';
 
 interface DomScale9SpriteData extends RendererData {
   element: HTMLDivElement | null;

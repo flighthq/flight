@@ -1,5 +1,5 @@
-import type { Awd2BlockHandler } from './Awd2Block';
-import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from './Compression';
+import type { Awd2BlockHandler } from './Awd2Block.ts';
+import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from './Compression.ts';
 
 /**
  * Everything an AWD2 import depends on, in one literal: the codecs it may need to reach the block

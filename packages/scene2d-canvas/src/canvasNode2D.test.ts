@@ -3,9 +3,9 @@ import { getOrCreateRenderProxy2D, prepareScene2DRender, registerNodeRenderer } 
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 
-import { enableCanvasCssFilter, setCanvasCssFilter } from './canvasCSSFilterBinding';
-import { canvasScene2DRenderer, drawCanvasScene2D, renderCanvasScene2D } from './canvasNode2D';
-import { createCanvasRenderState, getCanvasActiveRenderPass } from './canvasTestSupport';
+import { enableCanvasCssFilter, setCanvasCssFilter } from './canvasCSSFilterBinding.ts';
+import { canvasScene2DRenderer, drawCanvasScene2D, renderCanvasScene2D } from './canvasNode2D.ts';
+import { createCanvasRenderState, getCanvasActiveRenderPass } from './canvasTestSupport.ts';
 
 function makeState() {
   const canvas = document.createElement('canvas');

@@ -1,7 +1,7 @@
 import type { HostImageCapability, ImageResource, Surface } from '@flighthq/types/contract';
 
-import { createWebImageResourceFromCanvas, createWebImageResourceFromImageElement } from './webImageResource';
-import { getWebSurfaceCanvasHandle } from './webSurfaceHandle';
+import { createWebImageResourceFromCanvas, createWebImageResourceFromImageElement } from './webImageResource.ts';
+import { getWebSurfaceCanvasHandle } from './webSurfaceHandle.ts';
 
 export const webHostImage: HostImageCapability = {
   createImageFromBitmap: (bitmap): ImageResource => {

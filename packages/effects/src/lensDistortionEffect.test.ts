@@ -1,4 +1,4 @@
-import { createLensDistortionEffect, initializeLensDistortionEffect } from './lensDistortionEffect';
+import { createLensDistortionEffect, initializeLensDistortionEffect } from './lensDistortionEffect.ts';
 
 describe('createLensDistortionEffect', () => {
   it('tags the intent type', () => {

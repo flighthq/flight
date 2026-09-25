@@ -1,4 +1,4 @@
-import type { Signal } from './Signal';
+import type { Signal } from './Signal.ts';
 export type MediaReadyState = 'buffering' | 'error' | 'idle' | 'ready';
 // Opt-in notification for one media channel, enabled per channel through enableAudioChannelSignals /
 // enableVideoChannelSignals so a caller that never asks pays nothing.

@@ -1,7 +1,7 @@
 import { connectSignal } from '@flighthq/signals/contract';
 import { createRichText } from '@flighthq/text/contract';
 
-import { createGuiTestNode } from './guiTestHelper';
+import { createGuiTestNode } from './guiTestHelper.ts';
 import {
   blurTextInputController,
   createTextInputController,
@@ -10,7 +10,7 @@ import {
   disposeTextInputController,
   focusTextInputController,
   getTextInputControllerSignals,
-} from './textInputController';
+} from './textInputController.ts';
 
 describe('blurTextInputController', () => {
   it('hides a caller caret', () => {

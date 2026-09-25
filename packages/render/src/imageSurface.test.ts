@@ -1,6 +1,6 @@
 import type { CanvasSurface, HostCanvasCapability } from '@flighthq/types/contract';
 
-import { createCanvasHostSurface, destroyCanvasHostSurface, getCanvasHostSurface } from './imageSurface';
+import { createCanvasHostSurface, destroyCanvasHostSurface, getCanvasHostSurface } from './imageSurface.ts';
 
 function mockHost(overrides: Partial<HostCanvasCapability> = {}): HostCanvasCapability {
   return {

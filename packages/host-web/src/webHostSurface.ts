@@ -1,6 +1,6 @@
 import type { HostSurfaceDisplayCapability, HostSurfaceResizeCapability, Surface } from '@flighthq/types/contract';
 
-import { getWebSurfaceCanvasHandle, getWebSurfaceElementHandle } from './webSurfaceHandle';
+import { getWebSurfaceCanvasHandle, getWebSurfaceElementHandle } from './webSurfaceHandle.ts';
 
 export const webHostSurfaceDisplay = (() => {
   const out = {} as HostSurfaceDisplayCapability;

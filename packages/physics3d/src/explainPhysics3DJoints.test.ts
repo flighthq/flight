@@ -1,12 +1,12 @@
 import type { Physics3DJointSolver, Physics3DWorld } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { explainPhysics3DJoints } from './explainPhysics3DJoints';
-import { createPhysics3DBallAndSocketJoint, createPhysics3DHingeJoint } from './jointFactories';
-import { addPhysics3DJoint, registerPhysics3DJointSolver } from './jointRegistry';
-import { Physics3DBallAndSocketJointKind } from './joints';
-import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
-import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world';
+import { explainPhysics3DJoints } from './explainPhysics3DJoints.ts';
+import { createPhysics3DBallAndSocketJoint, createPhysics3DHingeJoint } from './jointFactories.ts';
+import { addPhysics3DJoint, registerPhysics3DJointSolver } from './jointRegistry.ts';
+import { Physics3DBallAndSocketJointKind } from './joints.ts';
+import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers.ts';
+import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world.ts';
 
 describe('explainPhysics3DJoints', () => {
   it('reports nothing for a world with no joints', () => {

@@ -11,8 +11,8 @@ import type {
   RenderTexture,
 } from '@flighthq/types/contract';
 
-import { destroyCanvasRenderTexture, invalidateCanvasRenderTexture } from './canvasRenderTexture';
-import { destroyCanvasTextureRenderTarget } from './canvasTextureRenderTarget';
+import { destroyCanvasRenderTexture, invalidateCanvasRenderTexture } from './canvasRenderTexture.ts';
+import { destroyCanvasTextureRenderTarget } from './canvasTextureRenderTarget.ts';
 
 export function acquireCanvasRenderTexture(
   state: CanvasRenderState,

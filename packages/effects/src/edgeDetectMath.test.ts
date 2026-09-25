@@ -3,9 +3,9 @@ import {
   computeOutlineThicknessPx,
   computeSketchEdgeParams,
   getSobelKernelCoefficients,
-} from './edgeDetectMath';
-import { createOutlineEffect } from './outlineEffect';
-import { createSketchEffect } from './sketchEffect';
+} from './edgeDetectMath.ts';
+import { createOutlineEffect } from './outlineEffect.ts';
+import { createSketchEffect } from './sketchEffect.ts';
 
 describe('computeOutlineEdgeParams', () => {
   it('writes threshold, feather, and color into out', () => {

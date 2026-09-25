@@ -1,5 +1,5 @@
-import type { SignalConnectOptions } from './SignalConnectOptions';
-import type { SignalScope } from './SignalScope';
+import type { SignalConnectOptions } from './SignalConnectOptions.ts';
+import type { SignalScope } from './SignalScope.ts';
 
 /**
  * Options for `connectSignalTracked`. A separate type from `SignalConnectOptions` because `scope` is

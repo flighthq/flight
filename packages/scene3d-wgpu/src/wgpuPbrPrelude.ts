@@ -1,8 +1,8 @@
 import type { WgpuColorAdjustmentMaterialFeature, WgpuPbrDefineKey } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
-import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
-import { spliceWgpuColorAdjustmentPrelude, WGPU_DIRECTIONAL_SHADOW_WGSL } from './wgpuMeshPipeline';
+import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail.ts';
+import { spliceWgpuColorAdjustmentPrelude, WGPU_DIRECTIONAL_SHADOW_WGSL } from './wgpuMeshPipeline.ts';
 // The shared Wgpu PBR prelude: the WGSL vertex + fragment uber-shader for the StandardPbr forward-lit
 // path AND every PBR-extension variant — the WGSL mirror of scene-gl's glPbrPrelude. One module source
 // is specialized per material at compile time by prepending a const-flag block (see WgpuPbrDefineKey /

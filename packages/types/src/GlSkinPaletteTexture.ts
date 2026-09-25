@@ -12,4 +12,4 @@ export interface GlSkinPaletteTexture extends Entity {
   jointCapacity: number;
   texture: WebGLTexture;
 }
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';

@@ -7,7 +7,7 @@ import {
   findFunctionalSceneClearColor,
   formatFunctionalParityConfoundReport,
   readFunctionalSceneSources,
-} from './functional-parity-confounds';
+} from './functional-parity-confounds.ts';
 
 // These run on synthetic fixtures rather than the scene tree, so the check stays valid when scenes are
 // added or aligned — and so a run in an environment without the scene tree still exercises the logic.

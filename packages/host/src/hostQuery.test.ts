@@ -1,6 +1,6 @@
 import type { EntityWithoutRuntime, Host } from '@flighthq/types/contract';
 
-import { createHost } from './host';
+import { createHost } from './host.ts';
 import {
   getHostAudioDevice,
   getHostAudioMixer,
@@ -58,7 +58,7 @@ import {
   hasHostTextShaper,
   hasHostVideo,
   hasHostWgpu,
-} from './hostQuery';
+} from './hostQuery.ts';
 
 // Each accessor is exercised through a host built by GROUP AND SLOT NAME, so the spelling the test
 // asserts is independent of the static property access the accessor compiles to.

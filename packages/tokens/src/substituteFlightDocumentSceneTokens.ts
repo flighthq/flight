@@ -13,7 +13,7 @@ import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
 import {
   INVALID_FLIGHT_DOCUMENT_TOKEN_VALUE,
   substituteFlightDocumentTokenValue,
-} from './flightDocumentTokenReference';
+} from './flightDocumentTokenReference.ts';
 
 export function explainFlightDocumentSceneTokenSubstitution(
   scene: Readonly<FlightDocumentScene>,

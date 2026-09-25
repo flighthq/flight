@@ -14,8 +14,8 @@ import {
   initializePhysics2DAbiExecutionResult,
   initializePhysics2DAbiJointBuffer,
   initializePhysics2DAbiQueryBuffer,
-} from './physics2DAbiBuffer';
-import { writePhysics2DAbiSetGravityCommand } from './physics2DAbiCommand';
+} from './physics2DAbiBuffer.ts';
+import { writePhysics2DAbiSetGravityCommand } from './physics2DAbiCommand.ts';
 import {
   Physics2DAbiBodyValueStride,
   Physics2DAbiCommandHeaderByteLength,
@@ -26,7 +26,7 @@ import {
   Physics2DAbiJointValueStride,
   Physics2DAbiQueryValueStride,
   Physics2DAbiVersion,
-} from './physics2DAbiLayout';
+} from './physics2DAbiLayout.ts';
 
 describe('clearPhysics2DAbiCommandBuffer', () => {
   it('rewrites the header so a reused buffer cannot carry a stale count', () => {

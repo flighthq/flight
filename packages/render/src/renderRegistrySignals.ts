@@ -1,7 +1,7 @@
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { RenderRegistrySignals, RenderState, RenderStateRuntime } from '@flighthq/types/contract';
 
-import { getRenderStateRuntime } from './renderState';
+import { getRenderStateRuntime } from './renderState.ts';
 
 type RenderRegistriesMissEmitter = NonNullable<RenderStateRuntime['registryMiss']>;
 

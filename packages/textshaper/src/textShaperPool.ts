@@ -1,6 +1,6 @@
 import type { ShapedRun } from '@flighthq/types/contract';
 
-import { createShapedRun } from './textShaperRun';
+import { createShapedRun } from './textShaperRun.ts';
 
 // Acquires a ShapedRun from the pool, allocating a new one when the pool is empty.
 // Must be paired with a matching `releaseShapedRun` call. Treat as paired brackets:

@@ -3,7 +3,7 @@ import * as scene3dFormatsModule from '@flighthq/scene3d-formats/contract';
 import type { HostNetCapability, NetResponse, Scene3DDocument } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { loadScene3DDocumentFromObjUrl } from './objLoad';
+import { loadScene3DDocumentFromObjUrl } from './objLoad.ts';
 
 function emptyDocument(): Scene3DDocument {
   return {

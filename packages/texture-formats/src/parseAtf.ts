@@ -8,7 +8,7 @@ import {
   hasByteReaderBytes,
   readByteReaderU24BigEndian,
   readByteReaderU32BigEndian,
-} from './byteReader';
+} from './byteReader.ts';
 
 export function getAtfParseFailureReason(bytes: Readonly<Uint8Array>): TextureContainerParseFailureReason | null {
   const failure: ParseFailure = { reason: null };

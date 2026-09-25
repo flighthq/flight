@@ -1,6 +1,6 @@
 import type { EntityRuntimeWriteGuard } from '@flighthq/types/contract';
 
-import { setEntityRuntimeGuardMode, setEntityRuntimeWriteGuard } from './guards';
+import { setEntityRuntimeGuardMode, setEntityRuntimeWriteGuard } from './guards.ts';
 
 // Uninstalls the guard installed by enableEntityRuntimeGuards, restoring unguarded entities.
 export function disableEntityRuntimeGuards(): void {

@@ -2,9 +2,9 @@ import { invalidateNodeAppearance } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
-import { updateRenderProxyAppearance } from './renderAppearance';
-import { createRenderProxy } from './renderProxy';
-import { createRenderState, getRenderStateRuntime } from './renderState';
+import { updateRenderProxyAppearance } from './renderAppearance.ts';
+import { createRenderProxy } from './renderProxy.ts';
+import { createRenderState, getRenderStateRuntime } from './renderState.ts';
 
 describe('updateRenderProxyAppearance', () => {
   it('returns true on first call (lastAppearanceId starts at -1)', () => {

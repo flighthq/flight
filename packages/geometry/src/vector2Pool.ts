@@ -1,8 +1,8 @@
 import type { Vector2 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { geometryPoolReleaseGuard } from './geometryPoolGuards';
-import { createVector2 } from './vector2';
+import { geometryPoolReleaseGuard } from './geometryPoolGuards.ts';
+import { createVector2 } from './vector2.ts';
 
 export function acquireEmptyVector2(): Vector2 {
   const v = acquireVector2();

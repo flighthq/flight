@@ -3,9 +3,9 @@ import { createDisplayObject, createSprite } from '@flighthq/scene2d/contract';
 import type { NodeRenderer } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { explainScene2DPipelineCoverage } from './explainScene2DPipelineCoverage';
-import { registerNodeRenderer } from './renderer';
-import { createRenderState } from './renderState';
+import { explainScene2DPipelineCoverage } from './explainScene2DPipelineCoverage.ts';
+import { registerNodeRenderer } from './renderer.ts';
+import { createRenderState } from './renderState.ts';
 
 const renderer: NodeRenderer = { createData: () => null, submit: () => {} } as unknown as NodeRenderer;
 

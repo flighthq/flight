@@ -1,6 +1,6 @@
 import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 
-import { createShape } from './shape';
+import { createShape } from './shape.ts';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
@@ -14,14 +14,14 @@ import {
   appendShapeRectangle,
   appendShapeRoundedRectangle,
   appendShapeTangentArcTo,
-} from './shapeCommands';
+} from './shapeCommands.ts';
 import {
   appendShapeGeometryCommand,
   getPathCommandOperandCount,
   getShapeFillRegions,
   hasNonSolidShapeFill,
   hasShapeFill,
-} from './shapeFill';
+} from './shapeFill.ts';
 
 describe('appendShapeGeometryCommand', () => {
   it('appends polyline verbs and expands primitives, ignoring non-geometry names', () => {

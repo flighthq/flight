@@ -7,7 +7,7 @@ import {
   compactBidiClassKernel,
   explainBidiClassKernel,
   initializeCompactBidiClassKernel,
-} from './bidiClassKernel';
+} from './bidiClassKernel.ts';
 
 describe('compactBidiClassKernel', () => {
   it('is the shared kernel the bidi operations are handed', () => {

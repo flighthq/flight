@@ -1,7 +1,7 @@
-import { createBitmap } from './bitmap';
-import { dissolveBitmapPixels } from './bitmapDissolve';
-import { getBitmapPixel, setBitmapPixel } from './bitmapPixel';
-import { createBitmapRegion } from './bitmapRegion';
+import { createBitmap } from './bitmap.ts';
+import { dissolveBitmapPixels } from './bitmapDissolve.ts';
+import { getBitmapPixel, setBitmapPixel } from './bitmapPixel.ts';
+import { createBitmapRegion } from './bitmapRegion.ts';
 
 function countChangedPixels(data: Readonly<Uint8ClampedArray>, original: Readonly<Uint8ClampedArray>): number {
   let changed = 0;

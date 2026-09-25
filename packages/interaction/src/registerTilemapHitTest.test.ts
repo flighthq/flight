@@ -1,8 +1,8 @@
 import { createTilemap, fillTilemapTiles, setTilemapTile } from '@flighthq/tilemap/contract';
 import type { HitTestResult, TextureAtlas, Tilemap } from '@flighthq/types/contract';
 
-import { describeGraphHit } from './hitTests';
-import { registerTilemapHitTest } from './registerTilemapHitTest';
+import { describeGraphHit } from './hitTests.ts';
+import { registerTilemapHitTest } from './registerTilemapHitTest.ts';
 
 // A 3x2 grid of 32x16 cells, every cell filled — the atlas is only a non-null presence check here.
 function filledTilemap(): Tilemap {

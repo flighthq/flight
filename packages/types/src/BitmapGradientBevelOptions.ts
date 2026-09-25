@@ -1,4 +1,4 @@
-import type { BitmapBevelType } from './BitmapBevelType';
+import type { BitmapBevelType } from './BitmapBevelType.ts';
 
 export interface BitmapGradientBevelOptions {
   /** Light direction in radians, pointing toward the light source. Default π/4. */

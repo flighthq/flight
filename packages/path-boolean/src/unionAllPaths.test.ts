@@ -2,8 +2,8 @@ import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath, flatte
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { martinezPathBooleanKernel } from './martinezKernel';
-import { unionAllPaths } from './unionAllPaths';
+import { martinezPathBooleanKernel } from './martinezKernel.ts';
+import { unionAllPaths } from './unionAllPaths.ts';
 
 const kernel = martinezPathBooleanKernel;
 

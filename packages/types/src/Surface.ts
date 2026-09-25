@@ -1,4 +1,4 @@
-import type { Entity, EntityRuntime } from './Entity';
+import type { Entity, EntityRuntime } from './Entity.ts';
 
 // A host-defined native drawable identity. Web supplies an HTMLCanvasElement, SDL an SDL_Window, EGL an
 // EGLSurface, and lower-level hosts may use an integer, so the common contract deliberately does not

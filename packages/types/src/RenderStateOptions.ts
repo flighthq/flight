@@ -1,9 +1,14 @@
-import type { CanvasShapeCommand } from './CanvasShapeRegistry';
-import type { EffectPaddingResolver } from './EffectPadding';
-import type { Kind } from './Entity';
-import type { NodeRenderer } from './NodeRenderer';
-import type { RenderProxy } from './RenderProxy';
-import type { ColorAdjustmentUnsupportedGuard, RenderRootGuard, RenderState, StrokeTessellator } from './RenderState';
+import type { CanvasShapeCommand } from './CanvasShapeRegistry.ts';
+import type { EffectPaddingResolver } from './EffectPadding.ts';
+import type { Kind } from './Entity.ts';
+import type { NodeRenderer } from './NodeRenderer.ts';
+import type { RenderProxy } from './RenderProxy.ts';
+import type {
+  ColorAdjustmentUnsupportedGuard,
+  RenderRootGuard,
+  RenderState,
+  StrokeTessellator,
+} from './RenderState.ts';
 
 export interface RenderStateOptions {
   canvasShapeCommands?: ReadonlyMap<Kind, CanvasShapeCommand>;

@@ -1,7 +1,7 @@
-import { EntityRuntimeKey } from './Entity';
-import type { Modifier } from './Modifier';
-import { VertexDisplaceModifierKind, VertexDisplaceModifierSource } from './VertexDisplaceModifier';
-import type { VertexDisplaceModifier } from './VertexDisplaceModifier';
+import { EntityRuntimeKey } from './Entity.ts';
+import type { Modifier } from './Modifier.ts';
+import { VertexDisplaceModifierKind, VertexDisplaceModifierSource } from './VertexDisplaceModifier.ts';
+import type { VertexDisplaceModifier } from './VertexDisplaceModifier.ts';
 
 describe('VertexDisplaceModifier', () => {
   describe('VertexDisplaceModifierKind', () => {

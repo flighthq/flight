@@ -16,7 +16,7 @@ import {
   initializeSpriteData,
   initializeSpriteRendererData,
   isSpriteRendererDirty,
-} from './sprite';
+} from './sprite.ts';
 
 describe('cloneSprite', () => {
   it('shares the texture through a fresh sprite', () => {

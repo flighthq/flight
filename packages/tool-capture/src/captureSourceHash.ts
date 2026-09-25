@@ -2,8 +2,8 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { Entry } from './captureEntries.js';
-import { functionalScene3DFile } from './functionalScene3Ds.js';
+import type { Entry } from './captureEntries.ts';
+import { functionalScene3DFile } from './functionalScene3Ds.ts';
 
 /** Returns the SHA-256 of the built-in scene source for one capture target, or null when it has no local source. */
 export function getCaptureSceneSourceHash(

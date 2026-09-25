@@ -2,7 +2,7 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { ImportDiagnostic, Skeleton2DImport, SpineBinaryParser } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { getSpineBinaryVersion } from './spineBinaryVersion';
+import { getSpineBinaryVersion } from './spineBinaryVersion.ts';
 
 // The Spine `.skel` VERSION REGISTRY — layer 3 of the version-keyed import model
 // (agents/version-keyed-import-model.md). Probe, look up, delegate. It owns no record layout of its own.

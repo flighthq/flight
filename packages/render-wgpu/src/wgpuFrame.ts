@@ -1,7 +1,7 @@
 import type { WgpuRenderState, WgpuRenderStateRuntime } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
-import { endWgpuScreenRenderTargetFrame } from './wgpuScreenRenderTarget';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
+import { endWgpuScreenRenderTargetFrame } from './wgpuScreenRenderTarget.ts';
 
 /**
  * Opens the command encoder a frame records into, without opening any render pass.

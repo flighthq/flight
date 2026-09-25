@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { collectSizeCases, getSizeCaseKey } from './size-runner';
+import { collectSizeCases, getSizeCaseKey } from './size-runner.ts';
 
 const root = resolve(import.meta.dirname, '..');
 const fixturesDirectory = resolve(root, 'tools', 'size', 'fixtures');

@@ -1,4 +1,4 @@
-import { explainGlRenderTexture, isGlRenderTextureReady, writeGlRenderTextureTarget } from './glRenderTexture';
+import { explainGlRenderTexture, isGlRenderTextureReady, writeGlRenderTextureTarget } from './glRenderTexture.ts';
 import {
   acquireGlRenderTexture,
   createGlRenderTexturePool,
@@ -6,8 +6,8 @@ import {
   initializeGlRenderTexturePool,
   releaseGlRenderTexture,
   withGlRenderTextures,
-} from './glRenderTexturePool';
-import { createGlState } from './glTestHelper';
+} from './glRenderTexturePool.ts';
+import { createGlState } from './glTestHelper.ts';
 
 describe('acquireGlRenderTexture', () => {
   it('reuses a released handle and applies current dimensions on every acquisition', () => {

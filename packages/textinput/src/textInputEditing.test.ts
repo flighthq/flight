@@ -9,7 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, KeyCode } from '@flighthq/types/contract';
 
-import { enableTextInput, getTextInputState } from './textInput';
+import { enableTextInput, getTextInputState } from './textInput.ts';
 import {
   appendTextInput,
   applyTextInputRestriction,
@@ -45,7 +45,7 @@ import {
   selectWordAtTextInputIndex,
   setTextInputSelection,
   undoTextInput,
-} from './textInputEditing';
+} from './textInputEditing.ts';
 
 // Editing operates on a RichText with the input capability enabled. Field/maxChars/multiline live on
 // RichTextData; restrict/password live on the enableTextInput options (the TextInputState slot).

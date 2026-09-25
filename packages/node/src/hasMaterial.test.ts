@@ -1,7 +1,7 @@
 import type { HasMaterial } from '@flighthq/types/contract';
 
-import { initMaterialTrait } from './hasMaterial';
-import { createNode } from './node';
+import { initMaterialTrait } from './hasMaterial.ts';
+import { createNode } from './node.ts';
 
 const TestKind = 'Test';
 

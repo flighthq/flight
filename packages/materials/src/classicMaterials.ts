@@ -1,7 +1,7 @@
 import type { BlinnPhongMaterial, LambertMaterial, PhongMaterial } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind, LambertMaterialKind, PhongMaterialKind } from '@flighthq/types/contract';
 
-import { createMaterial3D } from './material3d';
+import { createMaterial3D } from './material3d.ts';
 
 // Classic Blinn-Phong material: diffuse plus a half-vector specular lobe. `diffuse`/`specular`
 // default to white, `shininess` to 32, `normalScale` to 1, all maps to null.

@@ -1,4 +1,4 @@
-import type { Entity, EntityWithoutRuntime } from './Entity';
+import type { Entity, EntityWithoutRuntime } from './Entity.ts';
 
 export enum TextureAtlasRotation {
   Counterclockwise90 = -1,

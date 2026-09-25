@@ -4,8 +4,8 @@ import { pathToFileURL } from 'node:url';
 
 import ts from 'typescript';
 
-import { discoverEntries } from '../packages/tool-capture/src/captureEntries.js';
-import { functionalScene3DFile } from '../packages/tool-capture/src/functionalScene3Ds.js';
+import { discoverEntries } from '../packages/tool-capture/src/captureEntries.ts';
+import { functionalScene3DFile } from '../packages/tool-capture/src/functionalScene3Ds.ts';
 
 export type ArrivalSuite = 'examples' | 'functional';
 

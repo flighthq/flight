@@ -12,9 +12,9 @@ import {
 } from '@flighthq/shape/contract';
 import { MorphShapeKind, ShapeKind } from '@flighthq/types/contract';
 
-import { findGraphHitTargetPrecise, hitTestGraphLocalBounds, hitTestGraphPoint, registerHitTest } from './hitTests';
-import { setNodeHitTestEnabled } from './nodeInteractionState';
-import { registerShapeHitTest } from './registerShapeHitTest';
+import { findGraphHitTargetPrecise, hitTestGraphLocalBounds, hitTestGraphPoint, registerHitTest } from './hitTests.ts';
+import { setNodeHitTestEnabled } from './nodeInteractionState.ts';
+import { registerShapeHitTest } from './registerShapeHitTest.ts';
 
 describe('registerShapeHitTest', () => {
   it('winding-tests the MorphShape live sample for precise queries', () => {

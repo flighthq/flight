@@ -10,7 +10,7 @@ import {
 } from '@flighthq/render/contract';
 import { RenderRegistries } from '@flighthq/types/contract';
 
-import { getWgpuShapeRasterizer, registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';
+import { getWgpuShapeRasterizer, registerWgpuShapeRasterizer } from './wgpuShapeRasterizer.ts';
 
 beforeAll(() => {
   installWgpuMock();

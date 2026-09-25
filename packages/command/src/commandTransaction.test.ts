@@ -3,21 +3,21 @@ import type { CommandHistory, CompositeCommand, NodeAny } from '@flighthq/types/
 import { CompositeCommandKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createAddNodeChildCommand, createSetNodePropertyCommand } from './command';
-import { registerDefaultCommandBindings } from './commandBinding';
+import { createAddNodeChildCommand, createSetNodePropertyCommand } from './command.ts';
+import { registerDefaultCommandBindings } from './commandBinding.ts';
 import {
   createCommandHistory,
   executeCommand,
   getCommandHistoryEntries,
   getCommandHistoryUndoLabel,
   undoCommand,
-} from './commandHistory';
+} from './commandHistory.ts';
 import {
   abortCommandTransaction,
   beginCommandTransaction,
   endCommandTransaction,
   isCommandTransactionOpen,
-} from './commandTransaction';
+} from './commandTransaction.ts';
 
 describe('abortCommandTransaction', () => {
   it('returns false when no bracket is open', () => {

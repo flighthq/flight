@@ -1,8 +1,8 @@
-export * from './binding';
-export * from './clone';
-export * from './enableEntityRuntimeGuards';
-export * from './entity';
-export * from './entityUid';
-export * from './explainEntityRuntimeWrite';
-export { areEntityRuntimeGuardsEnabled, createGuardedEntity, setEntityRuntimeGuardMode } from './guards';
-export { hasEntityRuntime } from './runtime';
+export * from './binding.ts';
+export * from './clone.ts';
+export * from './enableEntityRuntimeGuards.ts';
+export * from './entity.ts';
+export * from './entityUid.ts';
+export * from './explainEntityRuntimeWrite.ts';
+export { areEntityRuntimeGuardsEnabled, createGuardedEntity, setEntityRuntimeGuardMode } from './guards.ts';
+export { hasEntityRuntime } from './runtime.ts';

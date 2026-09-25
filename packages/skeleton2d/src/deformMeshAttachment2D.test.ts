@@ -3,10 +3,10 @@ import type { Bone2D, MeshAttachment2D, Skeleton2DDeformLengthMismatch, Skin2D }
 import { MeshAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { deformSkeleton2DMeshAttachment } from './deformMeshAttachment2D';
-import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
-import { setSkeleton2DDeformLengthGuard } from './skeleton2dGuards';
-import { createSkin2D } from './skin2D';
+import { deformSkeleton2DMeshAttachment } from './deformMeshAttachment2D.ts';
+import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d.ts';
+import { setSkeleton2DDeformLengthGuard } from './skeleton2dGuards.ts';
+import { createSkin2D } from './skin2D.ts';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
   return {

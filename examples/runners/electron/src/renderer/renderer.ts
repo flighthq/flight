@@ -22,7 +22,7 @@ import {
   ShapeKind,
 } from '@flighthq/sdk';
 
-import type { FlightHarnessApi } from '../preload'; // eslint-disable-line
+import type { FlightHarnessApi } from '../preload/index.ts'; // eslint-disable-line
 
 declare global {
   interface Window {

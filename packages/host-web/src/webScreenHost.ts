@@ -5,7 +5,7 @@ import {
   webHostScreenDetails,
   webHostScreenPermissionChange,
   webHostScreenQuery,
-} from './webScreen';
+} from './webScreen.ts';
 
 export const webHostScreen = {
   change: webHostScreenChange,

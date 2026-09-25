@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { computeTextureContainerLevels, getTextureContainerLevelByteLength } from './textureLevelLayout';
+import { computeTextureContainerLevels, getTextureContainerLevelByteLength } from './textureLevelLayout.ts';
 
 describe('computeTextureContainerLevels', () => {
   it('builds a contiguous mip chain with descending dimensions and offsets', () => {

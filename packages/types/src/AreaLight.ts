@@ -1,6 +1,6 @@
-import type { Light } from './Light';
-import type { LightUnit } from './LightUnit';
-import type { Vector3 } from './Vector3';
+import type { Light } from './Light.ts';
+import type { LightUnit } from './LightUnit.ts';
+import type { Vector3 } from './Vector3.ts';
 
 // Rectangular area light (LTC-shaded). `position` is the rectangle center, `direction` its
 // facing normal, `right`/`up` its half-extent axes (length encodes half-width/half-height) in

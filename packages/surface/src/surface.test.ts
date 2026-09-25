@@ -2,7 +2,7 @@ import { finishEntity } from '@flighthq/entity/contract';
 import type { Surface } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { allocateSurface, getSurfaceHandle, getSurfaceRuntime } from './surface';
+import { allocateSurface, getSurfaceHandle, getSurfaceRuntime } from './surface.ts';
 
 describe('allocateSurface', () => {
   it('puts the drawable on the runtime and nothing on the entity', () => {

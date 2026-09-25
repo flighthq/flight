@@ -29,10 +29,10 @@ import type {
   RenderTargetClear,
 } from '@flighthq/types/contract';
 
-import { applyColorLutPassToCanvas } from './canvasColorLutPass';
-import { applyColorMatrixPassToCanvas } from './canvasColorMatrixPass';
-import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { getCanvasEffectRunner } from './canvasEffectRegistry';
+import { applyColorLutPassToCanvas } from './canvasColorLutPass.ts';
+import { applyColorMatrixPassToCanvas } from './canvasColorMatrixPass.ts';
+import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
+import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
 
 // Opt-in Canvas 2D post-process pipeline — the parallel of the Gl effect pipeline. The scene renders
 // into the pipeline's offscreen canvas between begin/end; end runs the agnostic effect list through the

@@ -1,4 +1,4 @@
-import type { ShareFile } from './ShareFile';
+import type { ShareFile } from './ShareFile.ts';
 
 // Content and file sharing are separate capability slots. A content payload requires at least one
 // declared vector, while the runtime probe below the slot rejects empty strings. File sharing has a

@@ -1,7 +1,11 @@
-import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass';
-import { enableWgpuScreenRenderTargetAntialias } from './wgpuScreenAntialias';
-import { bindWgpuScreenRenderTarget } from './wgpuScreenRenderTarget';
-import { createWgpuRenderStateForTest, createWgpuScreenRenderTargetForTest, installWgpuMock } from './wgpuTestHelper';
+import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass.ts';
+import { enableWgpuScreenRenderTargetAntialias } from './wgpuScreenAntialias.ts';
+import { bindWgpuScreenRenderTarget } from './wgpuScreenRenderTarget.ts';
+import {
+  createWgpuRenderStateForTest,
+  createWgpuScreenRenderTargetForTest,
+  installWgpuMock,
+} from './wgpuTestHelper.ts';
 
 beforeAll(() => {
   installWgpuMock();

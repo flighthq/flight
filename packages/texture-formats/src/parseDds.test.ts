@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getDdsParseFailureReason, parseDds } from './parseDds';
+import { getDdsParseFailureReason, parseDds } from './parseDds.ts';
 
 function fourCC(text: string): number {
   return (

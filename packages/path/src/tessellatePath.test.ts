@@ -1,7 +1,7 @@
 import type { PathMesh } from '@flighthq/types/contract';
 
-import { appendPathLineTo, appendPathMoveTo, createPath } from './path';
-import { tessellatePath, tessellatePathInto } from './tessellatePath';
+import { appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
+import { tessellatePath, tessellatePathInto } from './tessellatePath.ts';
 
 function meshArea(mesh: PathMesh): number {
   let area = 0;

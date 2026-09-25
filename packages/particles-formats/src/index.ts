@@ -31,4 +31,4 @@ export {
   serializeUnityParticle,
   serializeUnityParticleDocument,
   unregisterParticleFormat,
-} from './contract';
+} from './contract.ts';

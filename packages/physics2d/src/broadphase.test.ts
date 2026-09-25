@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { synchronizePhysics2DBroadphase, synchronizePhysics2DSweptBroadphase } from './broadphase';
-import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world';
+import { synchronizePhysics2DBroadphase, synchronizePhysics2DSweptBroadphase } from './broadphase.ts';
+import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
 

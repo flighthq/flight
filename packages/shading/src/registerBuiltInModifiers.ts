@@ -21,7 +21,7 @@ import {
 } from '@flighthq/types/contract';
 import type { ModifierDefinition, ModifierRegistry } from '@flighthq/types/contract';
 
-import { registerModifier } from './modifierRegistry';
+import { registerModifier } from './modifierRegistry.ts';
 
 // The substrate-agnostic AnimatedNormal built-in definition (slot: Normal). Its signature keys the
 // layer count from map structure — `0` disabled (no map), `1` single-layer, `2` dual-layer

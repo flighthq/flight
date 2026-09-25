@@ -11,7 +11,7 @@ import { ImageResourceReferenceKind, ImportDiagnosticSeverity } from '@flighthq/
 import { parseXmlDocument } from '@flighthq/xml/contract';
 import { describe, expect, it } from 'vitest';
 
-import { appendColladaMaterials } from './colladaMaterial';
+import { appendColladaMaterials } from './colladaMaterial.ts';
 
 describe('appendColladaMaterials', () => {
   it('converts Lambert, Phong, and Blinn factors to standard PBR', () => {

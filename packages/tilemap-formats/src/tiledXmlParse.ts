@@ -28,8 +28,8 @@ import {
   parseXmlDocument,
 } from '@flighthq/xml/contract';
 
-import { parseTiledColor } from './tiledColor';
-import { decodeTiledBase64Layer, decodeTiledCsvLayer } from './tiledLayerData';
+import { parseTiledColor } from './tiledColor.ts';
+import { decodeTiledBase64Layer, decodeTiledCsvLayer } from './tiledLayerData.ts';
 
 // XML front-end of the Tiled codec: TMX maps and standalone TSX tilesets. Both are the same XML tree
 // (`@flighthq/xml`), so they share the tileset/layer/object/property builders below. Numeric byte

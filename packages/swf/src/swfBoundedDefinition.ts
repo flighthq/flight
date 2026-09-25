@@ -1,6 +1,6 @@
 import type { SwfTagParseState, SwfTagReader } from '@flighthq/types/contract';
 
-import { mergeSwfRectangles, readSwfRectangle } from './swfPrimitive';
+import { mergeSwfRectangles, readSwfRectangle } from './swfPrimitive.ts';
 
 // The header every bounded definition tag opens with — a character id and one or two RECTs — shared by
 // the shape and text families, which own different halves of that tag range and would otherwise each

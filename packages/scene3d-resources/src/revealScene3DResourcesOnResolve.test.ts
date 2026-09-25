@@ -16,9 +16,9 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, ImageTextureSourceKind, ResourceResolutionState } from '@flighthq/types/contract';
 
-import { revealScene3DResourcesOnResolve } from './revealScene3DResourcesOnResolve';
-import { createBuiltInScene3DResourceResolver } from './sceneResourceResolver';
-import { enableScene3DResourceSignals } from './sceneResourceSignals';
+import { revealScene3DResourcesOnResolve } from './revealScene3DResourcesOnResolve.ts';
+import { createBuiltInScene3DResourceResolver } from './sceneResourceResolver.ts';
+import { enableScene3DResourceSignals } from './sceneResourceSignals.ts';
 
 const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },

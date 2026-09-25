@@ -7,20 +7,20 @@ import type {
   OuterGlowEffect,
 } from '@flighthq/types/contract';
 
-import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { computeOuterGlowEffectCss } from './canvasEffectDropShadowCss';
-import { registerCanvasEffect } from './canvasEffectRegistry';
+import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
+import { computeOuterGlowEffectCss } from './canvasEffectDropShadowCss.ts';
+import { registerCanvasEffect } from './canvasEffectRegistry.ts';
 import {
   acquireCanvasRenderTarget,
   createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
-} from './canvasEffectState';
+} from './canvasEffectState.ts';
 import {
   clearCanvasTarget,
   compositeCanvasImage,
   compositeCanvasSourceMode,
   drawCanvasTintedAlphaMask,
-} from './canvasSourceModeCompositing';
+} from './canvasSourceModeCompositing.ts';
 
 // Outer-glow composite effect: tint the scene silhouette, blur it centered (no offset), then apply sourceMode compositing.
 // Canvas 2D keeps the CSS `drop-shadow()` fast path for sourceMode 'draw' with isotropic blur. Source

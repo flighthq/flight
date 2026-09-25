@@ -7,7 +7,7 @@ import {
   Scene3DAnimationPathTranslation,
 } from '@flighthq/types/contract';
 
-import { convertPositionsZUpToYUp, convertQuaternionsZUpToYUp } from './shared';
+import { convertPositionsZUpToYUp, convertQuaternionsZUpToYUp } from './shared.ts';
 
 // Parses an id Tech 4 MD5 animation file (.md5anim) into an AnimationClip that drives the given
 // joint Node3Ds (produced by createScene3DFromMd5Mesh). The ASCII line-oriented format declares a

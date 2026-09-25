@@ -1,4 +1,4 @@
-import { defaultShapeCommandSchemas } from './shapeCommandSchemas';
+import { defaultShapeCommandSchemas } from './shapeCommandSchemas.ts';
 
 describe('defaultShapeCommandSchemas', () => {
   it('pins the authored quadratic curve argument names to the ShapeCommandRegistry labels', () => {

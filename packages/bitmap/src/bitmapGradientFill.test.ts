@@ -1,8 +1,8 @@
-import { createBitmap } from './bitmap';
-import { buildBitmapGradientRamp } from './bitmapGradient';
-import { fillBitmapLinearGradient, fillBitmapRadialGradient } from './bitmapGradientFill';
-import { getBitmapPixel } from './bitmapPixel';
-import { createBitmapRegion } from './bitmapRegion';
+import { createBitmap } from './bitmap.ts';
+import { buildBitmapGradientRamp } from './bitmapGradient.ts';
+import { fillBitmapLinearGradient, fillBitmapRadialGradient } from './bitmapGradientFill.ts';
+import { getBitmapPixel } from './bitmapPixel.ts';
+import { createBitmapRegion } from './bitmapRegion.ts';
 
 function buildTwoStopRamp(colorA: number, colorB: number): Uint8ClampedArray {
   const ramp = new Uint8ClampedArray(1024);

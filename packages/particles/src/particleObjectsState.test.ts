@@ -2,7 +2,7 @@ import {
   createParticleObjectsState,
   ensureParticleObjectsStateCapacity,
   initializeParticleObjectsState,
-} from './particleObjectsState';
+} from './particleObjectsState.ts';
 
 describe('createParticleObjectsState', () => {
   it('allocates arrays sized to capacity', () => {

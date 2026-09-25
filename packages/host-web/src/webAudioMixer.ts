@@ -7,7 +7,7 @@ import type {
   HostAudioMixerCapability,
 } from '@flighthq/types/contract';
 
-import { webHostAudioDevice } from './webAudioDevice';
+import { webHostAudioDevice } from './webAudioDevice.ts';
 
 function createWebAudioMixerBackend(): HostAudioMixerCapability {
   const out = {} as HostAudioMixerCapability;

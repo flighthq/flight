@@ -10,7 +10,7 @@ import type {
   TextInputSource,
 } from '@flighthq/types/contract';
 
-import { getTextInputState } from './textInput';
+import { getTextInputState } from './textInput.ts';
 import {
   getTextInputCharacterIndexAtPoint,
   handleTextInputKeyboard,
@@ -18,7 +18,7 @@ import {
   moveTextInputCaret,
   selectLineAtTextInputIndex,
   selectWordAtTextInputIndex,
-} from './textInputEditing';
+} from './textInputEditing.ts';
 
 export function blurTextInput(manager: TextInputManager): void {
   const target = manager.focused;

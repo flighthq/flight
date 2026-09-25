@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { mixPhysics2DFriction, mixPhysics2DRestitution } from './material';
+import { mixPhysics2DFriction, mixPhysics2DRestitution } from './material.ts';
 
 describe('mixPhysics2DFriction', () => {
   it('keeps a pair frictionless when either surface has zero friction', () => {

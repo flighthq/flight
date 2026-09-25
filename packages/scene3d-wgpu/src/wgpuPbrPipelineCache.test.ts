@@ -1,8 +1,8 @@
 import type { WgpuPbrDefineKey } from '@flighthq/types/contract';
 
-import { compileWgpuPbrPipeline, ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+import { compileWgpuPbrPipeline, ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 
 function key(overrides?: Partial<WgpuPbrDefineKey>): WgpuPbrDefineKey {
   return {

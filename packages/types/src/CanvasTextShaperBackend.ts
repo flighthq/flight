@@ -1,4 +1,4 @@
-import type { HostTextShaperCapability } from './TextShaper';
+import type { HostTextShaperCapability } from './TextShaper.ts';
 
 // The full type returned by createCanvasTextShaperBackend — a HostTextShaperCapability plus an explicit
 // cache-clear method. Callers that only need the seam contract can hold this as HostTextShaperCapability;

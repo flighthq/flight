@@ -6,8 +6,8 @@ import {
   resetSpring,
   updateSpring,
   updateSpringAngle,
-} from './spring';
-import { createSpringConfig } from './springConfig';
+} from './spring.ts';
+import { createSpringConfig } from './springConfig.ts';
 
 describe('addSpringImpulse', () => {
   it('adds velocity without changing position and composes repeated impulses', () => {

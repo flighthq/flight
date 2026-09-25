@@ -1,5 +1,5 @@
-import type { Light } from './Light';
-import type { LightUnit } from './LightUnit';
+import type { Light } from './Light.ts';
+import type { LightUnit } from './LightUnit.ts';
 
 // Gradient ambient: `skyColor` from above, `groundColor` from below, blended by the surface
 // normal's vertical component. Does not cast shadows.

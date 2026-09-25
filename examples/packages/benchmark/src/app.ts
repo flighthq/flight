@@ -13,7 +13,7 @@ import {
   setTextLabelString,
 } from '@flighthq/sdk';
 
-import { canvas, render, scale } from './render';
+import { canvas, render, scale } from './render.ts';
 
 const GRAVITY = 0.5;
 const WIDTH = 800;

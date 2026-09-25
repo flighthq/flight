@@ -1,7 +1,7 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import type { CanvasShapeCommand, Kind } from '@flighthq/types/contract';
 
-import { canvasShapeCommands, canvasTextureShapeCommands } from './canvasShapeCommands';
+import { canvasShapeCommands, canvasTextureShapeCommands } from './canvasShapeCommands.ts';
 
 export function canvasShapeCommandTable(): ReadonlyMap<Kind, CanvasShapeCommand> {
   let table: ReadonlyMap<Kind, CanvasShapeCommand> = new Map();

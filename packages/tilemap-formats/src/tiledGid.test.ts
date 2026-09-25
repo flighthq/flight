@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { decodeTiledGid, getTiledTilesetRefForGid } from './tiledGid';
-import { parseTiledTmx } from './tiledXmlParse';
+import { decodeTiledGid, getTiledTilesetRefForGid } from './tiledGid.ts';
+import { parseTiledTmx } from './tiledXmlParse.ts';
 
 const twoTilesetMap = parseTiledTmx(
   '<map version="1" width="1" height="1" tilewidth="1" tileheight="1">' +

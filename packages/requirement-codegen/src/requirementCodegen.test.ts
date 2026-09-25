@@ -9,7 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RequirementFacet } from '@flighthq/types/contract';
 
-import { createRequirementCodegenPlan, initializeRequirementCodegenPlan } from './requirementCodegen';
+import { createRequirementCodegenPlan, initializeRequirementCodegenPlan } from './requirementCodegen.ts';
 
 const shapeRenderer: RequirementCatalogEntry = {
   backend: 'webgl',

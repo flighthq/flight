@@ -1,14 +1,14 @@
 import { connectSignal } from '@flighthq/signals/contract';
 
-import { createGuiTestNode } from './guiTestHelper';
+import { createGuiTestNode } from './guiTestHelper.ts';
 import {
   createRadioGroupController,
   disposeRadioGroupController,
   getRadioGroupControllerSelectedIndex,
   getRadioGroupControllerSignals,
   setRadioGroupControllerSelectedIndex,
-} from './radioGroupController';
-import { createToggleController, isToggleControllerChecked, setToggleControllerChecked } from './toggleController';
+} from './radioGroupController.ts';
+import { createToggleController, isToggleControllerChecked, setToggleControllerChecked } from './toggleController.ts';
 
 function toggle() {
   return createToggleController({ checkedState: createGuiTestNode(), uncheckedState: createGuiTestNode() });

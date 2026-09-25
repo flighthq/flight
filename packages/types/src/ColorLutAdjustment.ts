@@ -1,5 +1,5 @@
-import type { Adjustment } from './Adjustment';
-import type { ColorTransformFunction } from './ColorTransformFunction';
+import type { Adjustment } from './Adjustment.ts';
+import type { ColorTransformFunction } from './ColorTransformFunction.ts';
 
 // A LUT-tier adjustment: its pointwise value remap is an arbitrary rgb→rgb function (`transform`), not a
 // pure affine matrix. Carrying `transform` is what makes an adjustment LUT-tier, independent of `kind`: a

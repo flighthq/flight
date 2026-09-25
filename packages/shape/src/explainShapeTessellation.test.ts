@@ -1,5 +1,5 @@
-import { explainShapeTessellation } from './explainShapeTessellation';
-import { createShape } from './shape';
+import { explainShapeTessellation } from './explainShapeTessellation.ts';
+import { createShape } from './shape.ts';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
@@ -8,7 +8,7 @@ import {
   appendShapeLineTo,
   appendShapeMoveTo,
   appendShapeRectangle,
-} from './shapeCommands';
+} from './shapeCommands.ts';
 
 describe('explainShapeTessellation', () => {
   it('reports a solid fill as tessellating at any alpha, opaque or not', () => {

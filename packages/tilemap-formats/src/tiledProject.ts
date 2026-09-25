@@ -3,7 +3,7 @@ import { createTilemapData } from '@flighthq/tilemap/contract';
 import type { ImportDiagnostic, TiledMap, TiledTilesetResolver, TilemapData } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { decodeTiledGid, getTiledTilesetRefForGid } from './tiledGid';
+import { decodeTiledGid, getTiledTilesetRefForGid } from './tiledGid.ts';
 
 // Projects one Tiled tile layer into runtime `TilemapData`, split by tileset. A Flight `Tilemap`
 // batches a single tileset per draw, so a layer that draws from N tilesets becomes N single-tileset

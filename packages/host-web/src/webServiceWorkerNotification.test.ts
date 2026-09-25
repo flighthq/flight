@@ -9,7 +9,7 @@ import type {
 import {
   createWebServiceWorkerNotificationCapabilities,
   notifyWebServiceWorkerNotificationEvent,
-} from './webServiceWorkerNotification';
+} from './webServiceWorkerNotification.ts';
 
 function fakeServiceWorker(permission: NotificationPermission = 'granted') {
   const shown: Array<{

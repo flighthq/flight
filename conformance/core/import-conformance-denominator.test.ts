@@ -1,7 +1,7 @@
 import {
   assertImportConformanceDenominators,
   formatImportConformanceDenominators,
-} from './import-conformance-denominator';
+} from './import-conformance-denominator.ts';
 
 describe('import conformance denominators', () => {
   it('validates a format-neutral producer methodology against its declared partition', () => {

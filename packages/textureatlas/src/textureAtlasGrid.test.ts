@@ -1,6 +1,6 @@
 import { createTexture } from '@flighthq/texture/contract';
 
-import { createTextureAtlasFromGrid } from './textureAtlasGrid';
+import { createTextureAtlasFromGrid } from './textureAtlasGrid.ts';
 
 describe('createTextureAtlasFromGrid', () => {
   it('attaches the optional Texture', () => {

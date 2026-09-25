@@ -1,7 +1,7 @@
 import type { Path } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
-import { flattenPath } from './flattenPath';
+import { flattenPath } from './flattenPath.ts';
 
 // Cleans `source` by flattening curves and removing redundant vertices from each contour: consecutive
 // coincident points within `tolerance`, near-collinear vertices whose perpendicular distance to the line

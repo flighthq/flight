@@ -16,7 +16,7 @@ import type {
   TextSelectionRectangle,
 } from '@flighthq/types/contract';
 
-import { registerDomTextInputOverlay } from './domRichText';
+import { registerDomTextInputOverlay } from './domRichText.ts';
 
 let _keyframesInjected = false;
 

@@ -1,1 +1,1 @@
-export { createBaseConfig } from './scripts/vite-base';
+export { createBaseConfig } from './scripts/vite-base.ts';

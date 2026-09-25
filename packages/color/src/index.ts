@@ -30,4 +30,4 @@ export {
   unpackColorRgba,
   unpackColorToLinear,
   unpremultiplyColorAlpha,
-} from './contract';
+} from './contract.ts';

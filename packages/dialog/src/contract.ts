@@ -1,4 +1,4 @@
-export * from './dialog';
-export * from './fileDialog';
-export * from './mediaDialog';
-export { initializeFileDialogHandle } from './fileDialog';
+export * from './dialog.ts';
+export * from './fileDialog.ts';
+export * from './mediaDialog.ts';
+export { initializeFileDialogHandle } from './fileDialog.ts';

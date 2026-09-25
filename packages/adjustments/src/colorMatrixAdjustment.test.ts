@@ -3,9 +3,9 @@ import {
   getAdjustmentColorMatrix,
   initializeColorMatrixAdjustment,
   isColorMatrixAdjustment,
-} from './colorMatrixAdjustment';
-import { createIdentityColorMatrix } from './colorMatrixMath';
-import { createInvertAdjustment } from './invertAdjustment';
+} from './colorMatrixAdjustment.ts';
+import { createIdentityColorMatrix } from './colorMatrixMath.ts';
+import { createInvertAdjustment } from './invertAdjustment.ts';
 
 describe('createColorMatrixAdjustment', () => {
   it('creates an authored generic matrix adjustment without a parallel transform payload', () => {

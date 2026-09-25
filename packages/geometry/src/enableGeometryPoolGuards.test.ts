@@ -11,15 +11,15 @@ import {
   areGeometryPoolGuardsEnabled,
   disableGeometryPoolGuards,
   enableGeometryPoolGuards,
-} from './enableGeometryPoolGuards';
-import { acquireMatrix3, clearMatrix3Pool, releaseMatrix3 } from './matrix3Pool';
-import { acquireMatrix4, clearMatrix4Pool, releaseMatrix4 } from './matrix4Pool';
-import { acquireMatrix, clearMatrixPool, releaseMatrix } from './matrixPool';
-import { acquireQuaternion, clearQuaternionPool, releaseQuaternion } from './quaternionPool';
-import { acquireRectangle, clearRectanglePool, releaseRectangle } from './rectanglePool';
-import { acquireVector2, clearVector2Pool, releaseVector2 } from './vector2Pool';
-import { acquireVector3, clearVector3Pool, releaseVector3 } from './vector3Pool';
-import { acquireVector4, clearVector4Pool, releaseVector4 } from './vector4Pool';
+} from './enableGeometryPoolGuards.ts';
+import { acquireMatrix3, clearMatrix3Pool, releaseMatrix3 } from './matrix3Pool.ts';
+import { acquireMatrix4, clearMatrix4Pool, releaseMatrix4 } from './matrix4Pool.ts';
+import { acquireMatrix, clearMatrixPool, releaseMatrix } from './matrixPool.ts';
+import { acquireQuaternion, clearQuaternionPool, releaseQuaternion } from './quaternionPool.ts';
+import { acquireRectangle, clearRectanglePool, releaseRectangle } from './rectanglePool.ts';
+import { acquireVector2, clearVector2Pool, releaseVector2 } from './vector2Pool.ts';
+import { acquireVector3, clearVector3Pool, releaseVector3 } from './vector3Pool.ts';
+import { acquireVector4, clearVector4Pool, releaseVector4 } from './vector4Pool.ts';
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(16);

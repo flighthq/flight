@@ -1,6 +1,6 @@
-import type { CanvasTextureResolvers } from './CanvasTextureResolver';
-import type { Matrix } from './Matrix';
-import type { LineScaleMode } from './ShapeCommand';
+import type { CanvasTextureResolvers } from './CanvasTextureResolver.ts';
+import type { Matrix } from './Matrix.ts';
+import type { LineScaleMode } from './ShapeCommand.ts';
 
 export interface CanvasShapeDrawState {
   // The set the fill commands resolve textures through. What a replay can paint is exactly what is

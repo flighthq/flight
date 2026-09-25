@@ -1,6 +1,6 @@
 import type { RichTextData, TextLayoutResult } from '@flighthq/types/contract';
 
-import { computeTextBoundsHeight, computeTextBoundsWidth, TEXT_BOUNDS_GUTTER } from './textBounds';
+import { computeTextBoundsHeight, computeTextBoundsWidth, TEXT_BOUNDS_GUTTER } from './textBounds.ts';
 
 export function computeRichTextBottomScrollV(data: Readonly<RichTextData>, layout: Readonly<TextLayoutResult>): number {
   return Math.min(layout.numLines, data.scrollV + getVisibleLineCount(data, layout) - 1);

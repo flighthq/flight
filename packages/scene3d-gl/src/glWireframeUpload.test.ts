@@ -1,8 +1,8 @@
 import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/mesh/contract';
 import type { VertexAttributeLayout } from '@flighthq/types/contract';
 
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { destroyGlWireframeUpload, ensureGlWireframeUpload } from './glWireframeUpload';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { destroyGlWireframeUpload, ensureGlWireframeUpload } from './glWireframeUpload.ts';
 
 describe('destroyGlWireframeUpload', () => {
   it('deletes the VAO and the line-index buffer, but not the shared vertex buffer', () => {

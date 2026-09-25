@@ -1,5 +1,5 @@
-import { createBitmap } from './bitmap';
-import { displaceBitmap } from './bitmapDisplacement';
+import { createBitmap } from './bitmap.ts';
+import { displaceBitmap } from './bitmapDisplacement.ts';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };

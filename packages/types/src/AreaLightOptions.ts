@@ -1,5 +1,5 @@
-import type { LightUnit } from './LightUnit';
-import type { Vector3Like } from './Vector3';
+import type { LightUnit } from './LightUnit.ts';
+import type { Vector3Like } from './Vector3.ts';
 
 // Shadow options are retained as future area-shadow intent only. Current scene3d-gl/scene3d-wgpu
 // area lights do not consume them.

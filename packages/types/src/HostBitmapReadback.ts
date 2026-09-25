@@ -1,6 +1,6 @@
-import type { Bitmap } from './Bitmap';
-import type { BitmapReadbackBlockReason } from './BitmapReadback';
-import type { HostImageSource } from './HostImageSource';
+import type { Bitmap } from './Bitmap.ts';
+import type { BitmapReadbackBlockReason } from './BitmapReadback.ts';
+import type { HostImageSource } from './HostImageSource.ts';
 
 // `probe` settles only expected source/canvas refusal with one pixel and never allocates a Bitmap.
 // `bitmap` performs the full read and returns the materialized Bitmap on success.

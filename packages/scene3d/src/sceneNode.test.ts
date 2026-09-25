@@ -26,7 +26,7 @@ import {
   getNode3DSignals,
   isNode3D,
   Node3DKind,
-} from './sceneNode';
+} from './sceneNode.ts';
 
 function createTransformNode(): Node3D {
   const node = createNode3D();

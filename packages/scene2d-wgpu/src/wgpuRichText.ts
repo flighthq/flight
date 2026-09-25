@@ -31,8 +31,8 @@ import type {
   WgpuRichTextOverlay,
 } from '@flighthq/types/contract';
 
-import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
-import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
+import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData.ts';
 
 // The raster surface belongs to the render node rather than the module. Its Image identity is the
 // GPU-cache key, so two RichText nodes drawn in one frame cannot overwrite each other's upload.

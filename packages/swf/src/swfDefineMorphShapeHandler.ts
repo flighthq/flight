@@ -8,11 +8,11 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition';
-import { acquireSwfImageTexture } from './swfImageTexture';
-import { createSwfMorphShape } from './swfMorphShape';
-import { createSwfMorphShapeTarget } from './swfNode';
-import { SwfReader } from './swfReader';
+import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition.ts';
+import { acquireSwfImageTexture } from './swfImageTexture.ts';
+import { createSwfMorphShape } from './swfMorphShape.ts';
+import { createSwfMorphShapeTarget } from './swfNode.ts';
+import { SwfReader } from './swfReader.ts';
 
 const TAG_DEFINE_MORPH_SHAPE = 46;
 

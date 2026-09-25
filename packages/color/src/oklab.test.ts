@@ -1,4 +1,4 @@
-import { clampLinearRgb, linearRgbToOklab, oklabToLinearRgb } from './oklab';
+import { clampLinearRgb, linearRgbToOklab, oklabToLinearRgb } from './oklab.ts';
 
 describe('clampLinearRgb', () => {
   it('explicitly clamps out-of-gamut channels to the displayable linear-sRGB range', () => {

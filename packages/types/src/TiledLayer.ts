@@ -1,5 +1,5 @@
-import type { TiledObject } from './TiledObject';
-import type { TiledProperty } from './TiledProperty';
+import type { TiledObject } from './TiledObject.ts';
+import type { TiledProperty } from './TiledProperty.ts';
 
 // The Tiled layer family. This is a *closed* discriminated union on `type`: Tiled defines exactly
 // these four layer kinds and users do not extend the format, so a fixed union (not an open kind

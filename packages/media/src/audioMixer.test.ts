@@ -8,7 +8,7 @@ import type {
   HostAudioMixerCapability,
 } from '@flighthq/types/contract';
 
-import { pauseAudioChannel, playAudioResource } from './audioChannel';
+import { pauseAudioChannel, playAudioResource } from './audioChannel.ts';
 import {
   addAudioBusToMixer,
   createAudioBus,
@@ -28,7 +28,7 @@ import {
   setAudioMixerMasterMuted,
   stopAllAudioMixerChannels,
   unrouteAudioChannelFromMixerBus,
-} from './audioMixer';
+} from './audioMixer.ts';
 
 let nextSourceHandle = 1;
 let mockBackend: HostAudioDeviceCapability;

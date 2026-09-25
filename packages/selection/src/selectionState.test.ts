@@ -16,7 +16,7 @@ import {
   selectAllNodes,
   selectNode,
   toggleNodeSelection,
-} from './index';
+} from './index.ts';
 
 describe('addNodeToSelection', () => {
   it('adds in order, makes the new node active, and ignores duplicates', () => {

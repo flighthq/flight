@@ -1,10 +1,10 @@
-import type { Entity } from './Entity';
-import type { GuiControllerOptions } from './GuiController';
-import type { InputKeyboardData } from './InputKeyboardData';
-import type { Node2D } from './Node2D';
-import type { RichText } from './RichText';
-import type { Signal } from './Signal';
-import type { TextInputManager, TextInputSource } from './TextInputManager';
+import type { Entity } from './Entity.ts';
+import type { GuiControllerOptions } from './GuiController.ts';
+import type { InputKeyboardData } from './InputKeyboardData.ts';
+import type { Node2D } from './Node2D.ts';
+import type { RichText } from './RichText.ts';
+import type { Signal } from './Signal.ts';
+import type { TextInputManager, TextInputSource } from './TextInputManager.ts';
 
 declare const TextInputControllerTypeKey: unique symbol;
 

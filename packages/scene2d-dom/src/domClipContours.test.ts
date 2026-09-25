@@ -1,7 +1,7 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import type { DomClipContourEntry } from '@flighthq/types/contract';
 
-import { buildDomContourClipPath, pushDomClipContours } from './domClipContours';
+import { buildDomContourClipPath, pushDomClipContours } from './domClipContours.ts';
 
 const identityMap = (x: number, y: number): readonly [number, number] => [x, y];
 

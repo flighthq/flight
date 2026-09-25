@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { collectSizeCases, getSizeCaseKey } from './size-runner';
+import { collectSizeCases, getSizeCaseKey } from './size-runner.ts';
 
 const root = resolve(import.meta.dirname, '..');
 const fixturesDirectory = resolve(root, 'tools', 'size', 'fixtures');

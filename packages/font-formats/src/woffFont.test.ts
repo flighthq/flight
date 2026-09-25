@@ -4,15 +4,15 @@ import { Compression, CompressionFraming, EntityRuntimeKey, ImportDiagnosticSeve
 import type { Path } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createGlyphOutlineSourceFromOpenTypeFont } from './openTypeGlyphOutlineSource';
+import { createGlyphOutlineSourceFromOpenTypeFont } from './openTypeGlyphOutlineSource.ts';
 import {
   createSyntheticFont,
   encodeSyntheticWoff,
   squareSyntheticGlyph,
   emptySyntheticGlyph,
-} from './openTypeTestHelper';
-import { readSfntTableDirectory } from './sfntTableDirectory';
-import { readWoffChecksumMismatches, readWoffFont } from './woffFont';
+} from './openTypeTestHelper.ts';
+import { readSfntTableDirectory } from './sfntTableDirectory.ts';
+import { readWoffChecksumMismatches, readWoffFont } from './woffFont.ts';
 
 describe('readWoffChecksumMismatches', () => {
   it('reports nothing when the container states its tables truthfully', () => {

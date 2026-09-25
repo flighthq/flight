@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Rectangle } from './Rectangle';
+import type { Entity } from './Entity.ts';
+import type { Rectangle } from './Rectangle.ts';
 
 // 2D game-camera header. `@flighthq/camera` operates on this plain-data camera to produce the
 // world<->screen transform, follow a target with a deadzone and frame-rate-independent smoothing,

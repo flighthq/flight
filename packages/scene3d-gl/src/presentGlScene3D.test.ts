@@ -13,9 +13,9 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import type { Camera3D, GlTextureRenderTarget, Scene3DLightsLike } from '@flighthq/types/contract';
 
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { presentGlScene3D } from './presentGlScene3D';
-import { registerGlStandardPbrMaterial } from './registerGlStandardPbrMaterial';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { presentGlScene3D } from './presentGlScene3D.ts';
+import { registerGlStandardPbrMaterial } from './registerGlStandardPbrMaterial.ts';
 
 function makeCamera(): Camera3D {
   const camera = createCamera3D({

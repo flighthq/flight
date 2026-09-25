@@ -1,4 +1,4 @@
-import { applySharpenEffectToGl, glSharpenEffectRunner, registerGlSharpenEffect } from './glSharpenEffect';
+import { applySharpenEffectToGl, glSharpenEffectRunner, registerGlSharpenEffect } from './glSharpenEffect.ts';
 
 describe('applySharpenEffectToGl', () => {
   it('is a function', () => {

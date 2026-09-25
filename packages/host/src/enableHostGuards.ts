@@ -10,7 +10,7 @@ import {
   explainHostTextSegmenter,
   explainHostTextShaper,
   explainHostVideo,
-} from './hostExplain';
+} from './hostExplain.ts';
 
 // Opt-in warnings for a host that is missing a capability Flight packages commonly need. Importing this
 // module is what costs; a build that never diagnoses a host carries neither the sentences nor the

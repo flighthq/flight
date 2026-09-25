@@ -3,7 +3,7 @@ import type { EntityConstruction, Path, PathMorph } from '@flighthq/types/contra
 
 export type { PathMorph } from '@flighthq/types/contract';
 
-import { buildPathMorph } from './pathMorphGeometry';
+import { buildPathMorph } from './pathMorphGeometry.ts';
 
 // Allocates a prepared interpolation between two paths. The paths may use different line, quadratic,
 // and cubic verbs and may contain different segment counts; preparation converts them to exact cubic

@@ -1,4 +1,4 @@
-import { swfJpegBitmapHandler } from './swfJpegBitmapHandler';
+import { swfJpegBitmapHandler } from './swfJpegBitmapHandler.ts';
 
 describe('swfJpegBitmapHandler', () => {
   it('claims the JPEG bitmap tags and the JPEG tables tag', () => {

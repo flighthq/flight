@@ -1,5 +1,5 @@
-import { swfScriptHandler } from './swfScriptHandler';
-import { swfScriptTagFamily } from './swfScriptTagFamily';
+import { swfScriptHandler } from './swfScriptHandler.ts';
+import { swfScriptTagFamily } from './swfScriptTagFamily.ts';
 
 describe('swfScriptTagFamily', () => {
   it('is exactly its handlers, in the order a placed character is offered to them', () => {

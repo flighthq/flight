@@ -1,17 +1,17 @@
-export * from './dragonBonesParse';
-export * from './skeletonDetect';
-export * from './spineBinaryFull';
-export * from './spineBinaryHandlers';
-export { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse';
-export * from './spineBinaryReader';
+export * from './dragonBonesParse.ts';
+export * from './skeletonDetect.ts';
+export * from './spineBinaryFull.ts';
+export * from './spineBinaryHandlers.ts';
+export { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse.ts';
+export * from './spineBinaryReader.ts';
 export {
   createSpineBinaryRegistry,
   registerSpineBinarySectionHandler,
   registerSpineBinaryTimelineHandler,
-} from './spineBinaryRegistry';
-export { registerSpineBinarySectionHandlers } from './spineBinarySectionHandlers';
-export { registerSpineBinaryTimelineHandlers } from './spineBinaryTimelineHandlers';
-export * from './spineBinaryVersion';
-export * from './spineBinaryVersioned';
-export * from './spineDrawOrder';
-export * from './spineParse';
+} from './spineBinaryRegistry.ts';
+export { registerSpineBinarySectionHandlers } from './spineBinarySectionHandlers.ts';
+export { registerSpineBinaryTimelineHandlers } from './spineBinaryTimelineHandlers.ts';
+export * from './spineBinaryVersion.ts';
+export * from './spineBinaryVersioned.ts';
+export * from './spineDrawOrder.ts';
+export * from './spineParse.ts';

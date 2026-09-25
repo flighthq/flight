@@ -2,7 +2,7 @@ import {
   applyFilmGrainEffectToCanvas,
   canvasFilmGrainEffectRunner,
   registerCanvasFilmGrainEffect,
-} from './canvasFilmGrainEffect';
+} from './canvasFilmGrainEffect.ts';
 
 describe('applyFilmGrainEffectToCanvas', () => {
   it('is a function', () => {

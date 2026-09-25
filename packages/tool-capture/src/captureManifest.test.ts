@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { parseCaptureManifest, readCaptureManifest } from './captureManifest';
+import { parseCaptureManifest, readCaptureManifest } from './captureManifest.ts';
 
 describe('parseCaptureManifest', () => {
   it('parses a declarative entry and its renderer routes', () => {

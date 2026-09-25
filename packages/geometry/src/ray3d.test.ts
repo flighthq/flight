@@ -1,9 +1,9 @@
-import { createAabb } from './aabb';
-import { createBoundingSphere } from './boundingSphere';
-import { createCapsule, intersectRay3DCapsule } from './capsule';
-import { createMatrix4, translateMatrix4 } from './matrix4';
-import { createObb, intersectRay3DObb } from './obb';
-import { createPlane } from './plane';
+import { createAabb } from './aabb.ts';
+import { createBoundingSphere } from './boundingSphere.ts';
+import { createCapsule, intersectRay3DCapsule } from './capsule.ts';
+import { createMatrix4, translateMatrix4 } from './matrix4.ts';
+import { createObb, intersectRay3DObb } from './obb.ts';
+import { createPlane } from './plane.ts';
 import {
   createRay3D,
   getClosestPointBetweenRay3Ds,
@@ -16,8 +16,8 @@ import {
   intersectRay3DTriangle,
   setRay3D,
   transformRay3DByMatrix4,
-} from './ray3d';
-import { createVector3 } from './vector3';
+} from './ray3d.ts';
+import { createVector3 } from './vector3.ts';
 
 describe('createRay3D', () => {
   it('creates a ray at the origin pointing in +Z by default', () => {

@@ -1,5 +1,5 @@
-import type { VelocityField } from './Velocity';
-import type { WgpuRenderState } from './WgpuRenderState';
+import type { VelocityField } from './Velocity.ts';
+import type { WgpuRenderState } from './WgpuRenderState.ts';
 
 // Per-draw velocity production, the Wgpu mirror of GlVelocityWriter. Velocity is tied to the draw:
 // only the thing that draws a renderable knows its coverage and per-instance breakdown (a QuadBatch's

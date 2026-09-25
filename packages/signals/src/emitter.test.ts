@@ -1,6 +1,6 @@
-import { cancelSignal, emitSignal } from './emitter';
-import { createSignal } from './signal';
-import { connectSignal } from './slot';
+import { cancelSignal, emitSignal } from './emitter.ts';
+import { createSignal } from './signal.ts';
+import { connectSignal } from './slot.ts';
 
 describe('cancelSignal', () => {
   it('does nothing when no slots are connected', () => {

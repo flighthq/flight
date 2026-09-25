@@ -1,6 +1,6 @@
-import type { Attachment2D } from './Attachment2D';
-import type { PathWinding } from './ShapeCommand';
-import type { Skin2D } from './Skin2D';
+import type { Attachment2D } from './Attachment2D.ts';
+import type { PathWinding } from './ShapeCommand.ts';
+import type { Skin2D } from './Skin2D.ts';
 
 // A deformable 2D vector PATH attached to a slot — the third member of the attachment family beside
 // RegionAttachment2D (rigid quad) and MeshAttachment2D (deformable triangle mesh). Its deformed world

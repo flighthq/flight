@@ -1,6 +1,6 @@
-import type { ClipRegion } from './ClipRegion';
-import type { Entity } from './Entity';
-import type { NodeOf, NodeTraits } from './Node';
+import type { ClipRegion } from './ClipRegion.ts';
+import type { Entity } from './Entity.ts';
+import type { NodeOf, NodeTraits } from './Node.ts';
 
 export interface HasClip extends Entity {
   /**

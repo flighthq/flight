@@ -1,9 +1,9 @@
 import type { AnchorLayoutItemStyle, LayoutNode, LayoutTree } from '@flighthq/types/contract';
 import { AnchorLayoutKind } from '@flighthq/types/contract';
 
-import { registerAnchorLayoutResolver } from './anchorLayout';
-import { createLayoutState } from './layoutState';
-import { explainLayoutResolution, resolveLayoutTree } from './resolveLayoutTree';
+import { registerAnchorLayoutResolver } from './anchorLayout.ts';
+import { createLayoutState } from './layoutState.ts';
+import { explainLayoutResolution, resolveLayoutTree } from './resolveLayoutTree.ts';
 
 function node(parentIndex: number, itemStyle: AnchorLayoutItemStyle | null = null): LayoutNode {
   return { containerStyle: null, itemStyle, kind: AnchorLayoutKind, parentIndex };

@@ -2,7 +2,7 @@ import { availableParallelism } from 'node:os';
 import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
 
-import type { SwfImportConformanceObservation } from './swf-import-conformance-worker-protocol';
+import type { SwfImportConformanceObservation } from './swf-import-conformance-worker-protocol.ts';
 
 export interface SwfImportConformanceWorkerFixture {
   path: string;

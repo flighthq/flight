@@ -1,7 +1,7 @@
 import type { RichText } from '@flighthq/types/contract';
 
-import { readSwfEditTextFactory } from './swfEditText';
-import { SwfReader } from './swfReader';
+import { readSwfEditTextFactory } from './swfEditText.ts';
+import { SwfReader } from './swfReader.ts';
 
 describe('readSwfEditTextFactory', () => {
   it('keeps the authored string as text rather than flattening it into artwork', () => {

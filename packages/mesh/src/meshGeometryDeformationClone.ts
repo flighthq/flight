@@ -1,9 +1,9 @@
 import { createAabb } from '@flighthq/geometry/contract';
 import type { MeshGeometry, MeshMorphBindPose, MeshSkinBindPose } from '@flighthq/types/contract';
 
-import { cloneMeshGeometry, getMeshGeometryMorphBindPose, getMeshGeometrySkinBindPose } from './meshGeometry';
-import { getVertexAttributeFloatOffset } from './meshGeometryAttributes';
-import { computeMeshGeometryBounds } from './meshGeometryCompute';
+import { cloneMeshGeometry, getMeshGeometryMorphBindPose, getMeshGeometrySkinBindPose } from './meshGeometry.ts';
+import { getVertexAttributeFloatOffset } from './meshGeometryAttributes.ts';
+import { computeMeshGeometryBounds } from './meshGeometryCompute.ts';
 
 // Clones geometry for an independently updated CPU-deformed mesh. Unlike the general clone, this
 // restores the deepest captured undeformed attributes when the source has already been morphed or

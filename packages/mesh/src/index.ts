@@ -12,9 +12,9 @@ export {
   invalidateMeshGeometry,
   setMeshGeometryMorphBindPose,
   setMeshGeometrySkinBindPose,
-} from './meshGeometry';
-export * from './meshGeometryAttributes';
-export * from './meshGeometryBuilders';
+} from './meshGeometry.ts';
+export * from './meshGeometryAttributes.ts';
+export * from './meshGeometryBuilders.ts';
 export {
   computeMeshGeometryBoundingSphere,
   computeMeshGeometryBounds,
@@ -23,13 +23,13 @@ export {
   computeMeshGeometryPositionGroups,
   computeMeshGeometryTangents,
   refreshMeshGeometryBounds,
-} from './meshGeometryCompute';
-export * from './meshGeometryDeformationClone';
-export * from './meshGeometryIndex';
-export * from './meshGeometryLayout';
-export * from './meshGeometryOperations';
-export * from './meshGeometrySubset';
-export * from './meshGeometryTransforms';
-export * from './meshGeometryUvs';
-export * from './morphMeshGeometry';
-export * from './updateMeshMorph';
+} from './meshGeometryCompute.ts';
+export * from './meshGeometryDeformationClone.ts';
+export * from './meshGeometryIndex.ts';
+export * from './meshGeometryLayout.ts';
+export * from './meshGeometryOperations.ts';
+export * from './meshGeometrySubset.ts';
+export * from './meshGeometryTransforms.ts';
+export * from './meshGeometryUvs.ts';
+export * from './morphMeshGeometry.ts';
+export * from './updateMeshMorph.ts';

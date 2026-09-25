@@ -1,4 +1,4 @@
-import { reserveFloat32Array, reserveInt16Array, reserveUint16Array } from './typedarray';
+import { reserveFloat32Array, reserveInt16Array, reserveUint16Array } from './typedarray.ts';
 
 describe('reserveFloat32Array', () => {
   it('returns the same array if the capacity is equal', () => {

@@ -21,7 +21,7 @@ import {
   invalidateNodeLocalTransform,
 } from '@flighthq/sdk';
 
-import { canvas, render, scale } from './render';
+import { canvas, render, scale } from './render.ts';
 
 const main = createDisplayObject();
 main.scaleX = scale;

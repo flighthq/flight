@@ -1,13 +1,13 @@
-import { canvasBloomEffectRunner, registerCanvasBloomEffect } from './canvasBloomEffect';
-import { canvasBlurEffectRunner, registerCanvasBlurEffect } from './canvasBlurEffect';
-import { canvasDropShadowEffectRunner, registerCanvasDropShadowEffect } from './canvasDropShadowEffect';
-import { getCanvasEffectRunner } from './canvasEffectRegistry';
-import { createCanvasRenderState } from './canvasEffectTestSupport';
-import { canvasFilmGrainEffectRunner, registerCanvasFilmGrainEffect } from './canvasFilmGrainEffect';
-import { canvasOuterGlowEffectRunner, registerCanvasOuterGlowEffect } from './canvasOuterGlowEffect';
-import { canvasPixelateEffectRunner, registerCanvasPixelateEffect } from './canvasPixelateEffect';
-import { canvasScanlinesEffectRunner, registerCanvasScanlinesEffect } from './canvasScanlinesEffect';
-import { canvasVignetteEffectRunner, registerCanvasVignetteEffect } from './canvasVignetteEffect';
+import { canvasBloomEffectRunner, registerCanvasBloomEffect } from './canvasBloomEffect.ts';
+import { canvasBlurEffectRunner, registerCanvasBlurEffect } from './canvasBlurEffect.ts';
+import { canvasDropShadowEffectRunner, registerCanvasDropShadowEffect } from './canvasDropShadowEffect.ts';
+import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
+import { createCanvasRenderState } from './canvasEffectTestSupport.ts';
+import { canvasFilmGrainEffectRunner, registerCanvasFilmGrainEffect } from './canvasFilmGrainEffect.ts';
+import { canvasOuterGlowEffectRunner, registerCanvasOuterGlowEffect } from './canvasOuterGlowEffect.ts';
+import { canvasPixelateEffectRunner, registerCanvasPixelateEffect } from './canvasPixelateEffect.ts';
+import { canvasScanlinesEffectRunner, registerCanvasScanlinesEffect } from './canvasScanlinesEffect.ts';
+import { canvasVignetteEffectRunner, registerCanvasVignetteEffect } from './canvasVignetteEffect.ts';
 
 const CASES = [
   ['BloomEffect', registerCanvasBloomEffect, canvasBloomEffectRunner],

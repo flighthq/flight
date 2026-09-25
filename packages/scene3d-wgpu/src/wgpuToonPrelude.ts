@@ -7,7 +7,7 @@ import type {
 } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
-import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
+import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail.ts';
 import {
   createWgpuMeshPipeline,
   ensureWgpuPlaceholderTextureView,
@@ -16,9 +16,9 @@ import {
   getWgpuMeshPreludeWgsl,
   stashWgpuUvTransform,
   WGPU_DIRECTIONAL_SHADOW_WGSL,
-} from './wgpuMeshPipeline';
-import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+} from './wgpuMeshPipeline.ts';
+import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 // Ensures (and caches per material reference) the Toon Material bind group — a uniform buffer + the
 // shared sampler + the placeholder base-color and ramp textures — and rewrites its uniform with this
 // surface's linear base color, step count, and alpha cutoff. Mirrors scene-gl's bindGlToonMaterialUniforms

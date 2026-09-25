@@ -1,6 +1,6 @@
 import { BlinnPhongMaterialKind, LambertMaterialKind, PhongMaterialKind } from '@flighthq/types/contract';
 
-import { createBlinnPhongMaterial, createLambertMaterial, createPhongMaterial } from './classicMaterials';
+import { createBlinnPhongMaterial, createLambertMaterial, createPhongMaterial } from './classicMaterials.ts';
 
 describe('createBlinnPhongMaterial', () => {
   it('creates a white Blinn-Phong material with a shininess of 32', () => {

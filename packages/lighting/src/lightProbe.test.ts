@@ -10,7 +10,7 @@ import {
   initializeLightProbeGrid,
   sampleLightProbeGrid,
   setLightProbeShFromColors,
-} from './lightProbe';
+} from './lightProbe.ts';
 
 // The six axis directions. Every SH band above l=0 sums to exactly zero over this set (the odd bands
 // cancel between opposite poles; 3z^2-1 sums to -1*4 + 2*2 = 0 and x^2-y^2 to 1+1-1-1 = 0), which is

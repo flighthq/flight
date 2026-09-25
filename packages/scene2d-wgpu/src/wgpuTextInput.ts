@@ -9,7 +9,7 @@ import {
 import { getRichTextScrollYOffset } from '@flighthq/textlayout/contract';
 import type { RichText, TextLayoutResult, TextSelectionRectangle } from '@flighthq/types/contract';
 
-import { registerWgpuTextInputOverlay } from './wgpuRichText';
+import { registerWgpuTextInputOverlay } from './wgpuRichText.ts';
 
 // NodeRenderer-agnostic caret/selection overlay drawn onto the rich text offscreen canvas of a RichText whose
 // input slot is present. Identical to the Gl TextInput overlay — both backends rasterize the field to

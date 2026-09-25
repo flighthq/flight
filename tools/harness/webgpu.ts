@@ -63,7 +63,7 @@ import {
 } from '@flighthq/sdk';
 import { registerFunctionalTarget } from '@ft/verify';
 
-import type { FunctionalTargetOptions, FunctionalWgpuTarget } from './target';
+import type { FunctionalTargetOptions, FunctionalWgpuTarget } from './target.ts';
 
 export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions>): Promise<FunctionalWgpuTarget> {
   const { width, height } = options;

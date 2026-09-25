@@ -1,36 +1,36 @@
-export { canvasBevelEffectRunner, registerCanvasBevelEffect } from './canvasBevelEffect';
+export { canvasBevelEffectRunner, registerCanvasBevelEffect } from './canvasBevelEffect.ts';
 export {
   canvasBlendEffectRunner,
   getCanvasBlendEffectBackdrop,
   getCanvasBlendEffectCompositeOperation,
   registerCanvasBlendEffect,
   registerCanvasBlendEffectBackdrop,
-} from './canvasBlendEffect';
-export { canvasBloomEffectRunner, registerCanvasBloomEffect } from './canvasBloomEffect';
-export { canvasBlurEffectRunner, registerCanvasBlurEffect } from './canvasBlurEffect';
+} from './canvasBlendEffect.ts';
+export { canvasBloomEffectRunner, registerCanvasBloomEffect } from './canvasBloomEffect.ts';
+export { canvasBlurEffectRunner, registerCanvasBlurEffect } from './canvasBlurEffect.ts';
 export {
   canvasCompositeEffectRunner,
   getCanvasCompositeEffectOperation,
   registerCanvasCompositeEffect,
-} from './canvasCompositeEffect';
-export { canvasDropShadowEffectRunner, registerCanvasDropShadowEffect } from './canvasDropShadowEffect';
+} from './canvasCompositeEffect.ts';
+export { canvasDropShadowEffectRunner, registerCanvasDropShadowEffect } from './canvasDropShadowEffect.ts';
 export {
   beginCanvasEffectPass,
   createCanvasEffectState,
   destroyCanvasEffectState,
   endCanvasEffectPass,
-} from './canvasEffectState';
-export { canvasFilmGrainEffectRunner, registerCanvasFilmGrainEffect } from './canvasFilmGrainEffect';
-export { canvasGradientBevelEffectRunner, registerCanvasGradientBevelEffect } from './canvasGradientBevelEffect';
-export { canvasGradientGlowEffectRunner, registerCanvasGradientGlowEffect } from './canvasGradientGlowEffect';
-export { canvasInnerGlowEffectRunner, registerCanvasInnerGlowEffect } from './canvasInnerGlowEffect';
-export { canvasInnerShadowEffectRunner, registerCanvasInnerShadowEffect } from './canvasInnerShadowEffect';
-export { canvasLensDistortionEffectRunner, registerCanvasLensDistortionEffect } from './canvasLensDistortionEffect';
-export { canvasOuterGlowEffectRunner, registerCanvasOuterGlowEffect } from './canvasOuterGlowEffect';
-export { canvasPixelateEffectRunner, registerCanvasPixelateEffect } from './canvasPixelateEffect';
-export { canvasPosterizeEffectRunner, registerCanvasPosterizeEffect } from './canvasPosterizeEffect';
-export * from './canvasEffectRegistry';
-export * from './canvasRenderTextureEffect';
-export { canvasScanlinesEffectRunner, registerCanvasScanlinesEffect } from './canvasScanlinesEffect';
-export { canvasTiltShiftEffectRunner, registerCanvasTiltShiftEffect } from './canvasTiltShiftEffect';
-export { canvasVignetteEffectRunner, registerCanvasVignetteEffect } from './canvasVignetteEffect';
+} from './canvasEffectState.ts';
+export { canvasFilmGrainEffectRunner, registerCanvasFilmGrainEffect } from './canvasFilmGrainEffect.ts';
+export { canvasGradientBevelEffectRunner, registerCanvasGradientBevelEffect } from './canvasGradientBevelEffect.ts';
+export { canvasGradientGlowEffectRunner, registerCanvasGradientGlowEffect } from './canvasGradientGlowEffect.ts';
+export { canvasInnerGlowEffectRunner, registerCanvasInnerGlowEffect } from './canvasInnerGlowEffect.ts';
+export { canvasInnerShadowEffectRunner, registerCanvasInnerShadowEffect } from './canvasInnerShadowEffect.ts';
+export { canvasLensDistortionEffectRunner, registerCanvasLensDistortionEffect } from './canvasLensDistortionEffect.ts';
+export { canvasOuterGlowEffectRunner, registerCanvasOuterGlowEffect } from './canvasOuterGlowEffect.ts';
+export { canvasPixelateEffectRunner, registerCanvasPixelateEffect } from './canvasPixelateEffect.ts';
+export { canvasPosterizeEffectRunner, registerCanvasPosterizeEffect } from './canvasPosterizeEffect.ts';
+export * from './canvasEffectRegistry.ts';
+export * from './canvasRenderTextureEffect.ts';
+export { canvasScanlinesEffectRunner, registerCanvasScanlinesEffect } from './canvasScanlinesEffect.ts';
+export { canvasTiltShiftEffectRunner, registerCanvasTiltShiftEffect } from './canvasTiltShiftEffect.ts';
+export { canvasVignetteEffectRunner, registerCanvasVignetteEffect } from './canvasVignetteEffect.ts';

@@ -1,3 +1,3 @@
-export * from './gizmoAlignment';
-export * from './gizmoState';
-export * from './node2dGizmoFeatures';
+export * from './gizmoAlignment.ts';
+export * from './gizmoState.ts';
+export * from './node2dGizmoFeatures.ts';

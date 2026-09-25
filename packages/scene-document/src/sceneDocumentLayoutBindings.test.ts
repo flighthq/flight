@@ -7,7 +7,7 @@ import {
   checkFlightDocumentLayoutTargets,
   createFlightDocumentLayoutBindings,
   writeFlightDocumentLayoutBindings,
-} from './sceneDocumentLayoutBindings';
+} from './sceneDocumentLayoutBindings.ts';
 
 describe('checkFlightDocumentLayoutTargets', () => {
   it('distinguishes missing and multiply-authored names', () => {

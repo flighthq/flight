@@ -1,4 +1,4 @@
-import type { DesktopOsProfile } from './Tray';
+import type { DesktopOsProfile } from './Tray.ts';
 
 export interface ElectronHostOptions {
   // Injected by the Electron entry point. Host construction uses this fact to preserve exact

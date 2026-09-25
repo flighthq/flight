@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { ShapedRun } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setShapedRunReleaseGuard } from './textShaperPool';
+import { setShapedRunReleaseGuard } from './textShaperPool.ts';
 
 /** Uninstalls the guard installed by `enableTextShaperGuards`. */
 export function disableTextShaperGuards(): void {

@@ -4,7 +4,7 @@ import {
   capacitorHostConnectivity,
   capacitorHostConnectivityChange,
   capacitorHostConnectivityStatus,
-} from './capacitorConnectivity';
+} from './capacitorConnectivity.ts';
 
 async function flush(): Promise<void> {
   await Promise.resolve();

@@ -1,11 +1,11 @@
 import type { Physics2DWorld, RigidBody2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createPhysics2DDistanceJoint } from './jointFactories';
-import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry';
-import { Physics2DDistanceJointKind, physics2DDistanceJointSolver } from './joints';
-import { stepPhysics2D } from './step';
-import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world';
+import { createPhysics2DDistanceJoint } from './jointFactories.ts';
+import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry.ts';
+import { Physics2DDistanceJointKind, physics2DDistanceJointSolver } from './joints.ts';
+import { stepPhysics2D } from './step.ts';
+import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 const MATERIAL = { density: 1, friction: 0.4, restitution: 0 };
 

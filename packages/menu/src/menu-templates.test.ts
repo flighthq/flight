@@ -7,7 +7,7 @@ import {
   createDefaultHelpMenuTemplate,
   createDefaultViewMenuTemplate,
   createDefaultWindowMenuTemplate,
-} from './menu-templates';
+} from './menu-templates.ts';
 
 function collectIds(items: readonly MenuItemTemplate[]): string[] {
   const ids: string[] = [];

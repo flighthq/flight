@@ -1,6 +1,6 @@
 import type { ParticleFormatKind } from '@flighthq/types/contract';
 
-import { detectRegisteredParticleFormat } from './formatRegistry';
+import { detectRegisteredParticleFormat } from './formatRegistry.ts';
 
 /** Sniff the text content of a particle file and return the format kind, or `null`
  *  when no supported format is recognisable.

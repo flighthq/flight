@@ -1,8 +1,8 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlitchEffect, GlEffectRunner, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Glitch: split the frame into horizontal blocks, displace each by a per-block hash (data-mosh tear),
 // separate the RGB channels, and corrupt the occasional block to white. `seed` animates it.

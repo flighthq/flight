@@ -13,7 +13,7 @@ import type {
   TextVerticalAlign,
 } from '@flighthq/types/contract';
 
-import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle';
+import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle.ts';
 
 // DOM is the backend for which a native text element makes sense; other backends either no-op or
 // composite this element over their canvas (decide later). Register app-side with

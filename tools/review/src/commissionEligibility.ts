@@ -1,4 +1,4 @@
-import type { ReviewCellRole } from './cellRole';
+import type { ReviewCellRole } from './cellRole.ts';
 
 export interface ReviewCommissionCandidate {
   role: ReviewCellRole;

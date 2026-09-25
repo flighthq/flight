@@ -10,7 +10,7 @@ import type {
   Vector4Like,
 } from '@flighthq/types/contract';
 
-import { acquireIdentityMatrix4, acquireMatrix4, releaseMatrix4 } from './matrix4Pool';
+import { acquireIdentityMatrix4, acquireMatrix4, releaseMatrix4 } from './matrix4Pool.ts';
 
 /**
  * Appends a matrix in world space: `other` applies AFTER everything already in `source`.

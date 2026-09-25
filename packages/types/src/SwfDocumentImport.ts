@@ -1,9 +1,9 @@
-import type { AdvancedBlendMode } from './AdvancedBlendMode';
-import type { Effect } from './Effect';
-import type { Entity } from './Entity';
-import type { EmbeddedImageResourceReference } from './ImageResourceReference';
-import type { Node2D } from './Node2D';
-import type { Scene2DDocument } from './Scene2DDocument';
+import type { AdvancedBlendMode } from './AdvancedBlendMode.ts';
+import type { Effect } from './Effect.ts';
+import type { Entity } from './Entity.ts';
+import type { EmbeddedImageResourceReference } from './ImageResourceReference.ts';
+import type { Node2D } from './Node2D.ts';
+import type { Scene2DDocument } from './Scene2DDocument.ts';
 
 /**
  * A SWF import, with the appearance a display tree cannot carry travelling beside the document rather

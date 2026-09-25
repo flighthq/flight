@@ -18,9 +18,9 @@ import {
   ShapeKind,
 } from '@flighthq/types/contract';
 
-import { swfAllTagHandlers } from './swfAllTagHandlers';
-import { createScene2DFromSwf } from './swfDocument';
-import { ShapeWriter } from './swfShapeTestHelper';
+import { swfAllTagHandlers } from './swfAllTagHandlers.ts';
+import { createScene2DFromSwf } from './swfDocument.ts';
+import { ShapeWriter } from './swfShapeTestHelper.ts';
 
 const fakeSlot: HostImageDecodeFormatCapability = {
   decode: vi.fn().mockResolvedValue({

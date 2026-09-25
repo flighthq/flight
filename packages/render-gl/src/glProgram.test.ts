@@ -1,5 +1,5 @@
-import { compileGlShader, createGlProgram, linkGlProgram } from './glProgram';
-import { makeGL } from './glTestHelper';
+import { compileGlShader, createGlProgram, linkGlProgram } from './glProgram.ts';
+import { makeGL } from './glTestHelper.ts';
 
 describe('compileGlShader', () => {
   it('compiles a shader of the requested type and returns it', () => {

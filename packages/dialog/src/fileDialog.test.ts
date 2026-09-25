@@ -9,7 +9,7 @@ import {
   showOpenDirectoryDialog,
   showOpenFileDialog,
   showSaveFileDialog,
-} from './fileDialog';
+} from './fileDialog.ts';
 
 function fakeHost() {
   const directory = createFileDialogHandle('Directory', 'mydir', '/tmp/mydir');

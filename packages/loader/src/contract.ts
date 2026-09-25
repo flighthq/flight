@@ -1,2 +1,2 @@
-export * from './resourceLoader';
-export * from './load';
+export * from './resourceLoader.ts';
+export * from './load.ts';

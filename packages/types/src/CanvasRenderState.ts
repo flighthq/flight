@@ -1,13 +1,13 @@
-import type { BlendMode } from './BlendMode';
-import type { CanvasEffectRunner } from './CanvasEffectState';
-import type { CanvasQuadMaterialRenderer } from './CanvasQuadMaterialRenderer';
-import type { CanvasRenderPass } from './CanvasRenderPass';
-import type { CanvasRenderTarget, CanvasTextureRenderTarget } from './CanvasRenderTarget';
-import type { CanvasTextureResolvers } from './CanvasTextureResolver';
-import type { Kind } from './Entity';
-import type { HostCanvasCapability } from './HostCanvas';
-import type { RenderProxy2D } from './RenderProxy2D';
-import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState';
+import type { BlendMode } from './BlendMode.ts';
+import type { CanvasEffectRunner } from './CanvasEffectState.ts';
+import type { CanvasQuadMaterialRenderer } from './CanvasQuadMaterialRenderer.ts';
+import type { CanvasRenderPass } from './CanvasRenderPass.ts';
+import type { CanvasRenderTarget, CanvasTextureRenderTarget } from './CanvasRenderTarget.ts';
+import type { CanvasTextureResolvers } from './CanvasTextureResolver.ts';
+import type { Kind } from './Entity.ts';
+import type { HostCanvasCapability } from './HostCanvas.ts';
+import type { RenderProxy2D } from './RenderProxy2D.ts';
+import type { RenderRegistries, RenderState, RenderStateRuntime } from './RenderState.ts';
 
 export interface CanvasRenderState extends RenderState {
   applyBlendMode: ((state: CanvasRenderState, blendMode: BlendMode | null) => void) | null;

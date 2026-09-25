@@ -38,9 +38,9 @@ import pc from 'picocolors';
 
 import { readPackageLastCommitDates } from '../agents/packages/todo-churn.mjs';
 import { getNewestStatusEntryDate } from '../agents/packages/todo-status-date.mjs';
-import { auditDocumentedCommands, formatDocumentedCommandAuditSummary } from './check-documented-commands';
-import { readSection } from './markdownSection';
-import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories';
+import { auditDocumentedCommands, formatDocumentedCommandAuditSummary } from './check-documented-commands.ts';
+import { readSection } from './markdownSection.ts';
+import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories.ts';
 
 // Every doc with a self-declared size budget. Keep the number here identical to the one the doc states
 // in its own prose — the doc is where a reader meets the rule, this table is only what enforces it.

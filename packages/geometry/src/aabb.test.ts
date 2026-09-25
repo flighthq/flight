@@ -22,7 +22,7 @@ import {
   unionAabb,
 } from '@flighthq/geometry/contract';
 
-import { initializeAabb } from './aabb';
+import { initializeAabb } from './aabb.ts';
 
 describe('cloneAabb', () => {
   it('creates an independent copy with independent corner vectors', () => {

@@ -1,4 +1,4 @@
-import { createRandomSource } from './random';
+import { createRandomSource } from './random.ts';
 
 describe('createRandomSource', () => {
   it('produces values in [0, 1)', () => {

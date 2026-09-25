@@ -1,7 +1,7 @@
 import { flattenPath } from '@flighthq/path/contract';
 import type { PathBooleanKernel, Path, PathBooleanOptions } from '@flighthq/types/contract';
 
-import { resolvePathRegions } from './resolvePathRegions';
+import { resolvePathRegions } from './resolvePathRegions.ts';
 
 export function simplifyPath(
   pathBooleanKernel: Readonly<PathBooleanKernel>,

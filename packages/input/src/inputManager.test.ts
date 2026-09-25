@@ -44,7 +44,7 @@ import {
   wasInputGamepadButtonReleased,
   wasInputKeyPressed,
   wasInputKeyReleased,
-} from './inputManager';
+} from './inputManager.ts';
 
 afterEach(() => {
   vi.unstubAllGlobals();

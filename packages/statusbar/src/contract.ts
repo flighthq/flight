@@ -1,2 +1,2 @@
-export * from './statusbar';
-export { initializeStatusBar, initializeStatusBarInfo } from './statusbar';
+export * from './statusbar.ts';
+export { initializeStatusBar, initializeStatusBarInfo } from './statusbar.ts';

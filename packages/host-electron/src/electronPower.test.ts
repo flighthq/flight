@@ -19,7 +19,7 @@ import {
   populateElectronHostPowerStatus,
   populateElectronHostPowerSuspension,
   populateElectronHostPowerThermal,
-} from './electronPower';
+} from './electronPower.ts';
 
 function emptyStatus(): PowerStatus {
   return {

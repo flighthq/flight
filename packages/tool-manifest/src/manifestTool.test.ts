@@ -2,7 +2,7 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { runManifestTool } from './manifestTool.js';
+import { runManifestTool } from './manifestTool.ts';
 
 describe('runManifestTool', () => {
   it('prints usage and fails with no arguments, succeeds for an explicit --help', async () => {

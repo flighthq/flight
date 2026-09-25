@@ -1,7 +1,7 @@
 import type { Path } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
-import { flattenPath } from './flattenPath';
+import { flattenPath } from './flattenPath.ts';
 
 // Decimates `source` by flattening curves and applying Douglas-Peucker point reduction to each
 // contour, removing points that deviate less than `tolerance` from the decimated line. Writes

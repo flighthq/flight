@@ -24,9 +24,9 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { observeWgpuDeviceLoss } from './wgpuDeviceLoss';
-import { warmWgpuPipelines } from './wgpuDraw';
-import { createWgpuBindGroupLayouts, UNIFORM_BYTE_SIZE } from './wgpuShader';
+import { observeWgpuDeviceLoss } from './wgpuDeviceLoss.ts';
+import { warmWgpuPipelines } from './wgpuDraw.ts';
+import { createWgpuBindGroupLayouts, UNIFORM_BYTE_SIZE } from './wgpuShader.ts';
 
 // Ring buffer: 4096 draw slots per frame. Stride is clamped to at least 256 by the spec.
 const RING_SLOT_COUNT = 4096;

@@ -5,7 +5,7 @@ import {
   createMartinezPathBooleanKernel,
   initializeMartinezPathBooleanKernel,
   martinezPathBooleanKernel,
-} from './martinezKernel';
+} from './martinezKernel.ts';
 
 // A closed square contour [x, y, x+s, y, x+s, y+s, x, y+s], wound consistently (screen y-down CW).
 function square(x: number, y: number, s: number): number[] {

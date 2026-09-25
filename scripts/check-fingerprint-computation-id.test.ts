@@ -2,7 +2,7 @@ import {
   checkFingerprintComputationIds,
   FINGERPRINT_COMPUTATION_ID_ALLOWANCES,
   formatFingerprintComputationIdReport,
-} from './check-fingerprint-computation-id';
+} from './check-fingerprint-computation-id.ts';
 
 describe('fingerprint source-hash completeness', () => {
   it('accepts a partial legacy column while labelling its named allowance and migration state', () => {

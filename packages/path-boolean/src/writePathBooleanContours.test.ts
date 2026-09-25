@@ -1,7 +1,7 @@
 import { createPath } from '@flighthq/path/contract';
 import { describe, expect, it } from 'vitest';
 
-import { writePathBooleanContours } from './writePathBooleanContours';
+import { writePathBooleanContours } from './writePathBooleanContours.ts';
 
 describe('writePathBooleanContours', () => {
   it('rebuilds into a supplied path without allocation', () => {

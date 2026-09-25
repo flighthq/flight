@@ -8,7 +8,7 @@ import type {
   OpenImageDialogOptions,
 } from '@flighthq/types/contract';
 
-import { showCapturePhotoDialog, showCaptureVideoDialog, showOpenImageDialog } from './mediaDialog';
+import { showCapturePhotoDialog, showCaptureVideoDialog, showOpenImageDialog } from './mediaDialog.ts';
 
 describe('showCapturePhotoDialog', () => {
   it('routes capture through the explicit photo-capture slot and forwards options', async () => {

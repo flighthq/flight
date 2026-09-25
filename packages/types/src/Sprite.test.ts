@@ -1,6 +1,6 @@
-import type { Node2D, Node2DData } from './Node2D';
-import type { Sprite, SpriteData, SpriteRuntime } from './Sprite';
-import { SpriteKind } from './Sprite';
+import type { Node2D, Node2DData } from './Node2D.ts';
+import type { Sprite, SpriteData, SpriteRuntime } from './Sprite.ts';
+import { SpriteKind } from './Sprite.ts';
 
 describe('Sprite', () => {
   describe('SpriteKind', () => {

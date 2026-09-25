@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { collectFastEntryPointInventory } from './fast-export-inventory';
+import { collectFastEntryPointInventory } from './fast-export-inventory.ts';
 
 const temporaryDirectories: string[] = [];
 

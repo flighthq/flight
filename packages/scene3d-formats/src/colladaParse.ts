@@ -42,8 +42,8 @@ import type {
 import { ImportDiagnosticSeverity, Node3DKind } from '@flighthq/types/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
-import { appendColladaMaterials } from './colladaMaterial';
-import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared';
+import { appendColladaMaterials } from './colladaMaterial.ts';
+import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared.ts';
 const Y_UP_ROOT = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] as const;
 const Z_UP_ROOT = [1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1] as const;
 const X_UP_ROOT = [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1] as const;

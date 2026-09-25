@@ -2,8 +2,8 @@ import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/co
 import type { Bitmap, Environment, Texture } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-import { destroyGlEnvironmentSkybox, renderGlEnvironmentSkybox } from './glEnvironmentSkybox';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+import { destroyGlEnvironmentSkybox, renderGlEnvironmentSkybox } from './glEnvironmentSkybox.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 // The skybox draw itself is validated by the functional `env-skybox` capture. This covers the guard:
 // with no complete source cube the pass is a no-op (it must not touch GL), so an app that always calls

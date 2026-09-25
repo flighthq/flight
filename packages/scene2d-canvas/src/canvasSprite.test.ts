@@ -13,12 +13,12 @@ import {
 } from '@flighthq/texture/contract';
 import { SpriteKind } from '@flighthq/types/contract';
 
-import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
-import { renderIntoCanvasRenderTexture } from './canvasRenderTexture';
-import { registerCanvasRenderTextureResolver } from './canvasRenderTextureResolver';
-import { canvasSpriteRenderer, drawCanvasSprite } from './canvasSprite';
-import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
-import { createCanvasRenderState } from './canvasTestSupport';
+import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver.ts';
+import { renderIntoCanvasRenderTexture } from './canvasRenderTexture.ts';
+import { registerCanvasRenderTextureResolver } from './canvasRenderTextureResolver.ts';
+import { canvasSpriteRenderer, drawCanvasSprite } from './canvasSprite.ts';
+import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport.ts';
+import { createCanvasRenderState } from './canvasTestSupport.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

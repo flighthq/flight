@@ -15,9 +15,9 @@ import type {
 } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 
-import { ensureGlClassicProgram } from './glClassicPrelude';
-import { bindGlMeshLightBlock } from './glLitProgram';
-import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
+import { ensureGlClassicProgram } from './glClassicPrelude.ts';
+import { bindGlMeshLightBlock } from './glLitProgram.ts';
+import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
 import {
   beginGlMeshDraw,
   bindGlUvTransform,
@@ -25,9 +25,9 @@ import {
   hasGlUvTransform,
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
-} from './glMeshProgram';
-import { isGlTextureReady } from './glPbrStandardBlock';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+} from './glMeshProgram.ts';
+import { isGlTextureReady } from './glPbrStandardBlock.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // The built-in classic BlinnPhong forward-lit mesh-material renderer (GlMeshMaterialRenderer for
 // BlinnPhongMaterialKind). Lambert diffuse plus a half-vector specular lobe (cheaper, smoother

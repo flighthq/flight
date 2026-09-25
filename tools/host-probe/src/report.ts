@@ -1,5 +1,5 @@
-import { HostProbeProtocolVersion } from './contract';
-import type { HostProbeHost, HostProbeReport, HostProbeResult } from './contract';
+import { HostProbeProtocolVersion } from './contract.ts';
+import type { HostProbeHost, HostProbeReport, HostProbeResult } from './contract.ts';
 
 export function createHostProbeReport(
   host: HostProbeHost,

@@ -121,4 +121,4 @@ export {
   stopAppLoop,
   synchronizeAppRenderView,
   unregisterAppLoopWindow,
-} from './contract';
+} from './contract.ts';

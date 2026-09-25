@@ -1,5 +1,5 @@
-import type { AudioBufferHandle, AudioDeviceHandle, AudioSourceHandle } from './AudioDeviceHandle';
-import type { Entity } from './Entity';
+import type { AudioBufferHandle, AudioDeviceHandle, AudioSourceHandle } from './AudioDeviceHandle.ts';
+import type { Entity } from './Entity.ts';
 
 export interface HostAudioDeviceCapability {
   createBuffer(

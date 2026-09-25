@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { createPhongMaterial } from './classicMaterials';
-import { explainPhongConversion, explainSpecularGlossinessConversion } from './explainMaterialConversion';
-import { createSpecularGlossinessPbrMaterial } from './pbrMaterials';
+import { createPhongMaterial } from './classicMaterials.ts';
+import { explainPhongConversion, explainSpecularGlossinessConversion } from './explainMaterialConversion.ts';
+import { createSpecularGlossinessPbrMaterial } from './pbrMaterials.ts';
 
 const texture = {} as never;
 

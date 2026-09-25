@@ -2,7 +2,7 @@ import {
   applyPixelateEffectToCanvas,
   canvasPixelateEffectRunner,
   registerCanvasPixelateEffect,
-} from './canvasPixelateEffect';
+} from './canvasPixelateEffect.ts';
 
 describe('applyPixelateEffectToCanvas', () => {
   it('is a function', () => {

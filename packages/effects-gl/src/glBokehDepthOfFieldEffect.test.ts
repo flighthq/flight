@@ -2,7 +2,7 @@ import {
   applyBokehDepthOfFieldEffectToGl,
   glBokehDepthOfFieldEffectRunner,
   registerGlBokehDepthOfFieldEffect,
-} from './glBokehDepthOfFieldEffect';
+} from './glBokehDepthOfFieldEffect.ts';
 
 describe('applyBokehDepthOfFieldEffectToGl', () => {
   it('is a function', () => {

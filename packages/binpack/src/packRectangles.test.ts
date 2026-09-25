@@ -1,7 +1,7 @@
 import type { PackableRectangle, PackedRectangle, RectangleId } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { BIN_PACK_DEFAULT_MAX_EXTENT, getPackResultOccupancy, packRectangles } from './packRectangles';
+import { BIN_PACK_DEFAULT_MAX_EXTENT, getPackResultOccupancy, packRectangles } from './packRectangles.ts';
 
 describe('BIN_PACK_DEFAULT_MAX_EXTENT', () => {
   it('is the cap the packer actually applies when the caller names none', () => {

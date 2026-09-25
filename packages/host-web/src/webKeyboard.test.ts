@@ -1,6 +1,6 @@
 import type { SoftKeyboardInfo } from '@flighthq/types/contract';
 
-import { webHostSoftKeyboardVisibility, webHostSoftKeyboardInfo, webHostSoftKeyboardChange } from './webKeyboard';
+import { webHostSoftKeyboardVisibility, webHostSoftKeyboardInfo, webHostSoftKeyboardChange } from './webKeyboard.ts';
 
 type VirtualKeyboardStub = {
   boundingRect: DOMRect;

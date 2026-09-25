@@ -1,4 +1,4 @@
-import { assessVitestRun, preserveRequiredReporter, resolveVitestArguments } from './test';
+import { assessVitestRun, preserveRequiredReporter, resolveVitestArguments } from './test.ts';
 
 const completeReport = {
   completed: ['/repo/a.test.ts', '/repo/b.test.ts'],

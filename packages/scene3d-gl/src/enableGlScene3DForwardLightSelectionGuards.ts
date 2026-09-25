@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { GlRenderState, Scene3DLightsLike } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // Returns whether the forward-light selection guard is installed on `state`.
 export function areGlScene3DForwardLightSelectionGuardsEnabled(state: GlRenderState): boolean {

@@ -1,6 +1,6 @@
 import { RiveFieldType } from '@flighthq/types/contract';
 
-import { getRiveCorePropertyFieldType, isRiveCoreBytesProperty } from './riveCoreProperties';
+import { getRiveCorePropertyFieldType, isRiveCoreBytesProperty } from './riveCoreProperties.ts';
 
 describe('getRiveCorePropertyFieldType', () => {
   it('answers for the core properties every file uses', () => {

@@ -11,7 +11,7 @@ import type {
   TextureSource,
 } from '@flighthq/types/contract';
 
-import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics';
+import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
 
 // Operation-scoped asynchronous boundary for a document's pixels. Each selected reference decodes once and
 // binds into every Texture waiting on it, so a bitmap character placed a hundred times costs one decode and

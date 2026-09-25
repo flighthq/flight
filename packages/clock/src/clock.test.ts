@@ -15,8 +15,8 @@ import {
   resetClock,
   resumeClock,
   setClockScale,
-} from './clock';
-import { enableClockSignals } from './clockSignals';
+} from './clock.ts';
+import { enableClockSignals } from './clockSignals.ts';
 
 describe('addClockChild', () => {
   it('attaches a child and sets its parent', () => {

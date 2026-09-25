@@ -1,5 +1,5 @@
-import type { RichText } from './RichText';
-import type { TextLayoutResult } from './TextLayout';
+import type { RichText } from './RichText.ts';
+import type { TextLayoutResult } from './TextLayout.ts';
 
 export type WgpuRichTextOverlay = (
   context: CanvasRenderingContext2D,

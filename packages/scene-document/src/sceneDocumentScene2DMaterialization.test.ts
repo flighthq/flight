@@ -24,7 +24,7 @@ import type {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { formatFlightDocumentText } from './flightDocumentText';
+import { formatFlightDocumentText } from './flightDocumentText.ts';
 import {
   createFlightDocumentFromScene2D,
   createFlightDocumentScene2DMaterialization,
@@ -33,7 +33,7 @@ import {
   explainFlightDocumentRefusalFromText,
   initializeFlightDocumentFromScene2D,
   initializeFlightDocumentScene2DMaterialization,
-} from './sceneDocumentScene2DMaterialization';
+} from './sceneDocumentScene2DMaterialization.ts';
 
 describe('createFlightDocumentFromScene2D', () => {
   it('creates a model from an empty Scene2D', () => {

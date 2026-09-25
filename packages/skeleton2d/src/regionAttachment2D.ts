@@ -2,7 +2,7 @@ import { matrixTransformPointXY, multiplyMatrix, setTransformMatrix } from '@fli
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import type { MatrixLike, RegionAttachment2D, Skeleton2D } from '@flighthq/types/contract';
 
-import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants';
+import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants.ts';
 
 // Writes a RegionAttachment2D's four world corner positions into `out` as flat interleaved pairs — order
 // bottom-left, top-left, top-right, bottom-right (`[blx, bly, tlx, tly, trx, try, brx, bry]`, 8 floats).

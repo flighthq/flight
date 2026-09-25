@@ -8,7 +8,7 @@ import {
   setRichTextContent,
 } from '@flighthq/sdk';
 
-import { render, scale } from './render';
+import { render, scale } from './render.ts';
 
 const root = createDisplayObject();
 root.scaleX = scale;

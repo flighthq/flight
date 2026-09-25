@@ -6,10 +6,10 @@ import type {
   WgpuPbrDefineKey,
 } from '@flighthq/types/contract';
 
-import { createWgpuMeshPipeline, ensureWgpuPbrSampleLayout, ensureWgpuScene3DPipeline } from './wgpuMeshPipeline';
-import { buildWgpuPbrDefineKey, getWgpuPbrModuleSourceForKey } from './wgpuPbrPrelude';
-import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { createWgpuMeshPipeline, ensureWgpuPbrSampleLayout, ensureWgpuScene3DPipeline } from './wgpuMeshPipeline.ts';
+import { buildWgpuPbrDefineKey, getWgpuPbrModuleSourceForKey } from './wgpuPbrPrelude.ts';
+import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 // Compiles the PBR uber-shader module for a define key and builds the render pipeline for the given
 // color-attachment format. Pure GPU work — no caching — used by ensureWgpuPbrPipeline. The group(2)
 // material layout is a uniform (the MaterialBlock) + one filtering sampler per standard map + six

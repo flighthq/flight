@@ -8,8 +8,8 @@ import {
 import type { ParticleEmitterCallbacks } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createParticleEmitter3D } from './particleEmitter3D';
-import { isParticleEmitter3DComplete, updateParticleEmitter3D } from './updateParticleEmitter3D';
+import { createParticleEmitter3D } from './particleEmitter3D.ts';
+import { isParticleEmitter3DComplete, updateParticleEmitter3D } from './updateParticleEmitter3D.ts';
 
 function seededRandom(seed: number): () => number {
   let s = seed;

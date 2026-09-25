@@ -9,7 +9,7 @@ import type {
   BitmapFontRecord,
 } from '@flighthq/types/contract';
 
-import { buildBitmapFontFromRecord, reportDroppedBitmapFontRecords } from './bitmapFontRecord';
+import { buildBitmapFontFromRecord, reportDroppedBitmapFontRecords } from './bitmapFontRecord.ts';
 
 // Parses the BMFont binary `.fnt` format (version 3) into a `BitmapFont`. The binary layout is a
 // 4-byte header (`BMF` + version byte 3) followed by typed blocks: block 1 = info, block 2 =

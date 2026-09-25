@@ -1,9 +1,9 @@
-import { createAnimationBlendTree, createAnimationBlendTreeInput } from './animationBlendTree';
-import { createAnimationChannel, createAnimationClip } from './animationClip';
-import { createAnimationPlayer } from './animationPlayer';
-import { createAnimationStateMachine, createAnimationStateMachineState } from './animationStateMachine';
-import { advanceAnimationStateMachineWithScratch } from './animationStateMachineAdvance';
-import { createAnimationTrack } from './animationTrack';
+import { createAnimationBlendTree, createAnimationBlendTreeInput } from './animationBlendTree.ts';
+import { createAnimationChannel, createAnimationClip } from './animationClip.ts';
+import { createAnimationPlayer } from './animationPlayer.ts';
+import { createAnimationStateMachine, createAnimationStateMachineState } from './animationStateMachine.ts';
+import { advanceAnimationStateMachineWithScratch } from './animationStateMachineAdvance.ts';
+import { createAnimationTrack } from './animationTrack.ts';
 
 describe('advanceAnimationStateMachineWithScratch', () => {
   it('uses outer-controller scratch while advancing players', () => {

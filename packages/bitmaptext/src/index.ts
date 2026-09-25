@@ -15,7 +15,7 @@ export {
   setBitmapTextMaxLines,
   setBitmapTextText,
   setBitmapTextWrapWidth,
-} from './bitmapText';
-export * from './enableBitmapTextGuards';
-export * from './explainBitmapTextMissingGlyphs';
-export { refreshBitmapTextGlyphLayout, setBitmapTextMissingGlyphGuard, updateBitmapText } from './updateBitmapText';
+} from './bitmapText.ts';
+export * from './enableBitmapTextGuards.ts';
+export * from './explainBitmapTextMissingGlyphs.ts';
+export { refreshBitmapTextGlyphLayout, setBitmapTextMissingGlyphGuard, updateBitmapText } from './updateBitmapText.ts';

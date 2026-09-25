@@ -40,7 +40,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { isBreakingCommitMessage, isFeatureCommitMessage } from './conventional-commits.js';
+import { isBreakingCommitMessage, isFeatureCommitMessage } from './conventional-commits.ts';
 
 type BumpLevel = 'breaking' | 'feature' | 'fix';
 

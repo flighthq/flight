@@ -1,5 +1,5 @@
-import type { Shape } from './Shape';
-import type { CapsStyle, JointStyle, ShapeCommandKey, ShapeCommandToken } from './ShapeCommand';
+import type { Shape } from './Shape.ts';
+import type { CapsStyle, JointStyle, ShapeCommandKey, ShapeCommandToken } from './ShapeCommand.ts';
 
 export type ShapeBoundsMode = 'fill' | 'ink';
 

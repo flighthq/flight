@@ -1,7 +1,7 @@
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { CompressionFraming } from '@flighthq/types/contract';
 
-import { parseSwfHeader } from './swfHeader';
+import { parseSwfHeader } from './swfHeader.ts';
 
 describe('parseSwfHeader', () => {
   it('returns null for empty input', () => {

@@ -3,7 +3,7 @@ import { ensureMeshGeometryBounds } from '@flighthq/mesh/contract';
 import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import type { AabbLike, Node3D } from '@flighthq/types/contract';
 
-import { isMesh } from './mesh';
+import { isMesh } from './mesh.ts';
 
 // Accumulates the world-space AABB of `node` and all of its descendants into `out`. Each Mesh
 // leaf contributes its local-space geometry bounds transformed by its world matrix. Transform-only

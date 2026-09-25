@@ -1,4 +1,4 @@
-import { getBlurDownsampleLevel, getBlurResidualSigma } from './blurDownsample';
+import { getBlurDownsampleLevel, getBlurResidualSigma } from './blurDownsample.ts';
 
 describe('getBlurDownsampleLevel', () => {
   it('stays at full resolution at or below the max sigma threshold', () => {

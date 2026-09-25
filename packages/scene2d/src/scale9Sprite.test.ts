@@ -10,8 +10,8 @@ import {
   createScale9SpriteRuntime,
   getScale9SpriteRuntime,
   initializeScale9SpriteData,
-} from './scale9Sprite';
-import { computeSpriteLocalBoundsRectangle } from './sprite';
+} from './scale9Sprite.ts';
+import { computeSpriteLocalBoundsRectangle } from './sprite.ts';
 
 const grid = { height: 80, width: 80, x: 10, y: 10 };
 

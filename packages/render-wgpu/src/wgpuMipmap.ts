@@ -1,6 +1,6 @@
 import type { WgpuRenderState } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
 // Generates the mip chain for an already-uploaded texture by downsampling each level into the next
 // through a cached fullscreen pipeline. WebGPU has no generateMipmap, so lower levels are rendered:

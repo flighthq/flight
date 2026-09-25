@@ -1,4 +1,4 @@
-import { createLiftGammaGainAdjustment, initializeLiftGammaGainAdjustment } from './liftGammaGainAdjustment';
+import { createLiftGammaGainAdjustment, initializeLiftGammaGainAdjustment } from './liftGammaGainAdjustment.ts';
 
 describe('createLiftGammaGainAdjustment', () => {
   it('defaults to approximately neutral', () => {

@@ -26,8 +26,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
-import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry';
+import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
+import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
 
 /**
  * Builds one Rive path component's geometry in its own local space.

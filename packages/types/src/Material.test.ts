@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import { EntityRuntimeKey } from './Entity';
-import type { Material, MaterialData, MaterialLike } from './Material';
+import type { Entity } from './Entity.ts';
+import { EntityRuntimeKey } from './Entity.ts';
+import type { Material, MaterialData, MaterialLike } from './Material.ts';
 
 describe('Material', () => {
   describe('Material base contract', () => {

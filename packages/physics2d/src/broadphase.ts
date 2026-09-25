@@ -1,6 +1,6 @@
 import type { Physics2DWorld, SpatialAabb2D } from '@flighthq/types/contract';
 
-import { updatePhysics2DColliderWorldShape, writePhysics2DColliderBounds } from './colliderTransform';
+import { updatePhysics2DColliderWorldShape, writePhysics2DColliderBounds } from './colliderTransform.ts';
 
 // Refreshes every collider's world shape and republishes its bounds to the broadphase index. The step
 // and public world queries share this path so a query observes the body's current authored pose, not

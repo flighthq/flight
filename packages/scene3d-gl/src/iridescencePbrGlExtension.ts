@@ -1,7 +1,7 @@
 import type { GlPbrExtensionRegistration, GlRenderState, IridescencePbrExtension } from '@flighthq/types/contract';
 import { IridescencePbrExtensionKind } from '@flighthq/types/contract';
 
-import { registerGlPbrExtension } from './glPbrExtensionRegistry';
+import { registerGlPbrExtension } from './glPbrExtensionRegistry.ts';
 
 export const iridescencePbrGlExtension: GlPbrExtensionRegistration = {
   bind(context, value): void {

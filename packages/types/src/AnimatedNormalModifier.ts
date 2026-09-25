@@ -1,6 +1,6 @@
-import type { Modifier } from './Modifier';
-import type { Texture } from './Texture';
-import type { Vector2Like } from './Vector2';
+import type { Modifier } from './Modifier.ts';
+import type { Texture } from './Texture.ts';
+import type { Vector2Like } from './Vector2.ts';
 
 // Perturbs the surface normal by a UV-panned normal map (slot: Normal), driven by the shading
 // tier's per-frame `time` uniform so the sample offset scrolls each frame. Generalizes the globe's

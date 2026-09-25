@@ -1,7 +1,7 @@
 import { createAppWindow, getWindowBounds, openWindow, setWindowTitle } from '@flighthq/app';
 import { webHost } from '@flighthq/host-web';
 
-import { renderHostWebFullCard } from './render.canvas';
+import { renderHostWebFullCard } from './render.canvas.ts';
 
 const applicationWindow = createAppWindow();
 // The aggregate window group is a struct of capability leaves; the ones this card uses are typed

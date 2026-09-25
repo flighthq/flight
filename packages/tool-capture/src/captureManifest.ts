@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-import type { Entry } from './captureEntries.js';
+import type { Entry } from './captureEntries.ts';
 
 export interface CaptureManifest {
   entries: Entry[];

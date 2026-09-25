@@ -23,10 +23,10 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture';
-import { beginWgpuFrame, withWgpuFrameBorrow } from './wgpuFrame';
-import { createTestWgpuSurface, testWgpuHost } from './wgpuHost';
-import { registerWgpuQuadMaterialRenderer } from './wgpuQuadMaterialRegistry';
+import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture.ts';
+import { beginWgpuFrame, withWgpuFrameBorrow } from './wgpuFrame.ts';
+import { createTestWgpuSurface, testWgpuHost } from './wgpuHost.ts';
+import { registerWgpuQuadMaterialRenderer } from './wgpuQuadMaterialRegistry.ts';
 import {
   buildWgpuRenderRegistries,
   createWgpuAcquisition,
@@ -50,9 +50,9 @@ import {
   registerWgpuRenderStateTeardown,
   releaseWgpuAcquisition,
   resolveWgpuApplyBlendMode,
-} from './wgpuRenderState';
-import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
-import { registerWgpuTextureResolver } from './wgpuTextureResolver';
+} from './wgpuRenderState.ts';
+import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';
+import { registerWgpuTextureResolver } from './wgpuTextureResolver.ts';
 
 function expectEntitySlot(slot: object & { readonly [EntityRuntimeKey]?: unknown }, fields: object): void {
   const { [EntityRuntimeKey]: entityRuntime, ...slotFields } = slot;

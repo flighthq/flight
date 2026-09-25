@@ -6,8 +6,8 @@ import type {
   GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Directional blur: accumulate samples stepped along `angle` over `length` texels, normalized by the
 // sample count. Single-pass reference recipe. u_resolution converts the texel length into UV space.

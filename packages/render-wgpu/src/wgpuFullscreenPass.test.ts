@@ -1,12 +1,12 @@
-import { submitWgpuFrame } from './wgpuFrame';
+import { submitWgpuFrame } from './wgpuFrame.ts';
 import {
   createWgpuFullscreenPipeline,
   destroyWgpuFullscreenPipeline,
   drawWgpuFullscreenPass,
   initializeWgpuFullscreenPipeline,
-} from './wgpuFullscreenPass';
-import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
-import { createWgpuTextureRenderTarget } from './wgpuTextureRenderTarget';
+} from './wgpuFullscreenPass.ts';
+import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';
+import { createWgpuTextureRenderTarget } from './wgpuTextureRenderTarget.ts';
 
 beforeAll(() => {
   installWgpuMock();

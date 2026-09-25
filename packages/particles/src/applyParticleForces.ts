@@ -7,7 +7,7 @@ import type {
   ParticleObjectsState,
 } from '@flighthq/types/contract';
 
-import { PARTICLE_VELOCITY_STRIDE } from './particleEmitterState';
+import { PARTICLE_VELOCITY_STRIDE } from './particleEmitterState.ts';
 
 // Per-particle acceleration scratch, reused across the loop to avoid allocation.
 const accel: [number, number, number] = [0, 0, 0];

@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { readToolsCoverage } from './typecheck-core';
+import { readToolsCoverage } from './typecheck-core.ts';
 
 // ★ CALIBRATION. The coverage guard in `typecheck.test.ts` models both projects by parsing their
 // `include`/`exclude` patterns, because it has to pass on a clone with no optional host toolchains — asking

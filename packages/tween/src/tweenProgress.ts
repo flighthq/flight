@@ -3,7 +3,7 @@
 import { emitSignal } from '@flighthq/signals/contract';
 import type { Tween } from '@flighthq/types/contract';
 
-import { initializeTween } from './internal';
+import { initializeTween } from './internal.ts';
 
 /**
  * Return the normalized playback progress of a tween in the range 0..1.

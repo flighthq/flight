@@ -5,9 +5,9 @@ import { createGlCubeRenderTarget, destroyGlCubeRenderTarget } from '@flighthq/r
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import type { GlMeshMaterialRenderer, Scene3DLightsLike } from '@flighthq/types/contract';
 
-import { getGlEnvironmentCaptureTexture, renderGlEnvironmentCapture } from './glEnvironmentCapture';
-import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
+import { getGlEnvironmentCaptureTexture, renderGlEnvironmentCapture } from './glEnvironmentCapture.ts';
+import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 const CaptureMaterialKind = 'test:EnvironmentCapture';
 const NO_LIGHTS: Scene3DLightsLike = { ambient: null, directional: null };

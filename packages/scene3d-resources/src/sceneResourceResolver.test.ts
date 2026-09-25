@@ -11,13 +11,13 @@ import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 import type { ImageResourceReference, Scene3DResourceInFlight } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createScene3DMaterialTextureRegistry } from './sceneMaterialTextureRegistry';
+import { createScene3DMaterialTextureRegistry } from './sceneMaterialTextureRegistry.ts';
 import {
   createBuiltInScene3DResourceResolver,
   createScene3DResourceResolver,
   disposeScene3DResourceResolver,
   initializeScene3DResourceResolver,
-} from './sceneResourceResolver';
+} from './sceneResourceResolver.ts';
 
 const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },

@@ -5,7 +5,7 @@ import {
   reviewCommissionIneligibility,
   reviewCommissionIneligibilityMessage,
   selectReviewCommissionCells,
-} from '../tools/review/src/commissionEligibility';
+} from '../tools/review/src/commissionEligibility.ts';
 
 const COMMIT = 'a'.repeat(40);
 

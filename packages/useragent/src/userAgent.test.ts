@@ -10,8 +10,8 @@ import {
   parseUserAgentPointerWidth,
   parseUserAgentRuntime,
   parseUserAgentVersion,
-} from './userAgent';
-import { parseUserAgentOsVersion } from './userAgentParse';
+} from './userAgent.ts';
+import { parseUserAgentOsVersion } from './userAgentParse.ts';
 
 describe('detectEndianness', () => {
   it('returns a known canonical value', () => {

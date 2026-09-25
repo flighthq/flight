@@ -8,14 +8,14 @@ import {
 import type { LogEntry } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { createPhongMaterial } from './classicMaterials';
-import { disableMaterialConversionGuards, enableMaterialConversionGuards } from './enableMaterialConversionGuards';
+import { createPhongMaterial } from './classicMaterials.ts';
+import { disableMaterialConversionGuards, enableMaterialConversionGuards } from './enableMaterialConversionGuards.ts';
 import {
   convertSpecularGlossinessToStandardPbr,
   createSpecularGlossinessPbrMaterial,
   createStandardPbrMaterial,
-} from './pbrMaterials';
-import { convertPhongToStandardPbrMaterial } from './phongToPbr';
+} from './pbrMaterials.ts';
+import { convertPhongToStandardPbrMaterial } from './phongToPbr.ts';
 
 // logOnce dedupes by key for the life of the PROCESS, so without clearing, the first test to warn under
 // a given key silences every later one — a test would then pass or fail on its position in the file.

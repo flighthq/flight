@@ -10,21 +10,21 @@ import type {
 } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry';
-import { physics2DDistanceJointSolver, physics2DWeldJointSolver } from './joints';
+import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry.ts';
+import { physics2DDistanceJointSolver, physics2DWeldJointSolver } from './joints.ts';
 import {
   setPhysics2DContactIntakeGuard,
   setPhysics2DJointResolutionGuard,
   setPhysics2DStepGuard,
   stepPhysics2D,
-} from './step';
+} from './step.ts';
 import {
   addPhysics2DBody,
   applyPhysics2DForce,
   createPhysics2DCollider,
   createPhysics2DWorld,
   createRigidBody2D,
-} from './world';
+} from './world.ts';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
 

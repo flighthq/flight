@@ -1,6 +1,6 @@
 import type { BitmapBevelOptions, BitmapRegion } from '@flighthq/types/contract';
 
-import { blurBitmapPixelsHorizontal, blurBitmapPixelsVertical } from './bitmapBlur';
+import { blurBitmapPixelsHorizontal, blurBitmapPixelsVertical } from './bitmapBlur.ts';
 
 /**
  * Produces a bevel mask in `out`: a tinted highlight on the edge facing the

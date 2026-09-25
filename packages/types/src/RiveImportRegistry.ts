@@ -1,6 +1,6 @@
-import type { DisplayObject } from './DisplayObject';
-import type { Entity } from './Entity';
-import type { ImportDiagnostic } from './ImportDiagnostic';
+import type { DisplayObject } from './DisplayObject.ts';
+import type { Entity } from './Entity.ts';
+import type { ImportDiagnostic } from './ImportDiagnostic.ts';
 import type {
   RiveAdvancedBlend,
   RiveArtboardGraph,
@@ -10,7 +10,7 @@ import type {
   RivePathRecord,
   RiveSkeleton2DImport,
   RiveStateMachineDescriptor,
-} from './RiveDocument';
+} from './RiveDocument.ts';
 
 /**
  * The seam that turns a Rive core object type into imported content.

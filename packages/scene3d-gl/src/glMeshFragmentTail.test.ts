@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { GL_MESH_FRAGMENT_TAIL } from './glMeshFragmentTail';
+import { GL_MESH_FRAGMENT_TAIL } from './glMeshFragmentTail.ts';
 
 describe('GL_MESH_FRAGMENT_TAIL', () => {
   it('applies node alpha before premultiplying', () => {

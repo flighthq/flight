@@ -1,6 +1,6 @@
-import { createBitmap } from './bitmap';
-import { flipBitmapHorizontal, flipBitmapVertical } from './bitmapFlip';
-import { getBitmapPixel } from './bitmapPixel';
+import { createBitmap } from './bitmap.ts';
+import { flipBitmapHorizontal, flipBitmapVertical } from './bitmapFlip.ts';
+import { getBitmapPixel } from './bitmapPixel.ts';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };

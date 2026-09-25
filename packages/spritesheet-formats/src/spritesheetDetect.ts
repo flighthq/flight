@@ -8,11 +8,11 @@ import {
   SpritesheetFormatKindTexturePacker as TEXTURE_PACKER,
 } from '@flighthq/types/contract';
 
-import { parseAsepriteSpritesheet } from './asepriteParse';
-import { parseCocosPlistSpritesheet } from './cocosPlistParse';
-import { parseLibgdxAtlasSpritesheet } from './libgdxAtlasParse';
-import { parseStarlingSpritesheet } from './starlingParse';
-import { parseTexturePackerSpritesheet } from './texturePackerParse';
+import { parseAsepriteSpritesheet } from './asepriteParse.ts';
+import { parseCocosPlistSpritesheet } from './cocosPlistParse.ts';
+import { parseLibgdxAtlasSpritesheet } from './libgdxAtlasParse.ts';
+import { parseStarlingSpritesheet } from './starlingParse.ts';
+import { parseTexturePackerSpritesheet } from './texturePackerParse.ts';
 
 interface FormatEntry {
   detect: (text: string) => boolean;

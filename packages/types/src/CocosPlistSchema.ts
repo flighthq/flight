@@ -1,4 +1,4 @@
-import type { SpritesheetData } from './SpritesheetData';
+import type { SpritesheetData } from './SpritesheetData.ts';
 
 // Cocos Creator / Cocos2d-x plist atlas schema — field names as they appear in the plist file.
 // Supports both old-style keys (frame, offset, sourceSize, size, rotated, trimmed) and

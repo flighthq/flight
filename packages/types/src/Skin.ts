@@ -1,5 +1,5 @@
-import type { Node3D } from './Node3D';
-import type { Skeleton3D } from './Skeleton3D';
+import type { Node3D } from './Node3D.ts';
+import type { Skeleton3D } from './Skeleton3D.ts';
 
 // A mesh skin: the binding that turns a Mesh's per-vertex joint influences (the joints0/weights0
 // channels in its geometry layout) into deformation driven by a Skeleton3D. Held as the nullable

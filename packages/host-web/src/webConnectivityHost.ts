@@ -4,7 +4,7 @@ import {
   webHostConnectivityChange,
   webHostConnectivityReachability,
   webHostConnectivityStatus,
-} from './webConnectivity';
+} from './webConnectivity.ts';
 
 export const webHostConnectivity = {
   change: webHostConnectivityChange,

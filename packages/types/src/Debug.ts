@@ -1,4 +1,4 @@
-import type { LogLevel, LogSink } from './Log';
+import type { LogLevel, LogSink } from './Log.ts';
 
 // The name of a diagnostic subsystem switched on through @flighthq/debug — a curated label
 // ('render', 'input', 'audio', …) grouping a set of log channels and a guard-enabler. An open

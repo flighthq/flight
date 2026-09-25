@@ -1,5 +1,5 @@
-import type { GlTextureFilterKind } from './GlTextureFilterKind';
-import type { GlTextureWrapKind } from './GlTextureWrapKind';
+import type { GlTextureFilterKind } from './GlTextureFilterKind.ts';
+import type { GlTextureWrapKind } from './GlTextureWrapKind.ts';
 export interface GlTextureDescriptor {
   readonly wrapS?: GlTextureWrapKind;
   readonly wrapT?: GlTextureWrapKind;

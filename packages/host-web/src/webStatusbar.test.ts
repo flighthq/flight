@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { webHostStatusBarColor } from './webStatusbar';
+import { webHostStatusBarColor } from './webStatusbar.ts';
 
 describe('webHostStatusBarColor', () => {
   it('claims only theme-color writing', () => {

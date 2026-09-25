@@ -12,7 +12,7 @@ import type {
   RigidBody3D,
 } from '@flighthq/types/contract';
 
-import { writeRigidBody3DWorldCenter } from './world';
+import { writeRigidBody3DWorldCenter } from './world.ts';
 
 export function createPhysics3DDebugGeometry(): Physics3DDebugGeometry {
   const out = allocateEntity<Physics3DDebugGeometry>();

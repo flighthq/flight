@@ -1,6 +1,6 @@
-import type { Material3DOptions } from './Material3DOptions';
-import type { StandardPbrMaterialProperties } from './StandardPbrMaterial';
-import type { TransmissionVolumePbrExtension } from './TransmissionVolumePbrExtension';
+import type { Material3DOptions } from './Material3DOptions.ts';
+import type { StandardPbrMaterialProperties } from './StandardPbrMaterial.ts';
+import type { TransmissionVolumePbrExtension } from './TransmissionVolumePbrExtension.ts';
 
 // Construction options for the canonical clear-glass preset. The standard property block and
 // transmission-volume contribution remain independently configurable without nesting a material

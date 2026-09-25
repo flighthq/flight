@@ -12,4 +12,4 @@ export {
   isPlatformTouch,
   isPlatformVersionAtLeast,
   isPlatformWeb,
-} from './platform';
+} from './platform.ts';

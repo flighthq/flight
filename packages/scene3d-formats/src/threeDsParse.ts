@@ -86,7 +86,7 @@ import {
   CANONICAL_LAYOUT,
   convertPositionsZUpToYUp,
   createExternalTextureRef,
-} from './shared';
+} from './shared.ts';
 
 // Parses an Autodesk 3DS binary file into a Scene3D. The 3DS format is a recursive chunk tree
 // (little-endian): each chunk has a uint16 ID, a uint32 total length (including the 6-byte header),

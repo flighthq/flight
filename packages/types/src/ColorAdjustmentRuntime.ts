@@ -1,5 +1,5 @@
-import type { Adjustment } from './Adjustment';
-import type { ColorScaleBias } from './ColorScaleBias';
+import type { Adjustment } from './Adjustment.ts';
+import type { ColorScaleBias } from './ColorScaleBias.ts';
 
 // Pointwise color-adjustment authoring and its fused bind caches live on the base Node runtime so one
 // dimension-agnostic API serves 2D and 3D. Null is the allocation-free untinted default.

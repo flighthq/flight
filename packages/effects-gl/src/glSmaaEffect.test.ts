@@ -1,4 +1,4 @@
-import { applySmaaEffectToGl, glSmaaEffectRunner, registerGlSmaaEffect } from './glSmaaEffect';
+import { applySmaaEffectToGl, glSmaaEffectRunner, registerGlSmaaEffect } from './glSmaaEffect.ts';
 
 describe('applySmaaEffectToGl', () => {
   it('is a function', () => {

@@ -1,8 +1,8 @@
 import { spawn } from 'node:child_process';
 import { availableParallelism } from 'node:os';
 
-import { runTypechecks, typecheckProjects } from './typecheck-core';
-import type { TypecheckProject, TypecheckResult } from './typecheck-core';
+import { runTypechecks, typecheckProjects } from './typecheck-core.ts';
+import type { TypecheckProject, TypecheckResult } from './typecheck-core.ts';
 
 const configuredConcurrency = Number.parseInt(process.env.FLIGHT_TYPECHECK_CONCURRENCY ?? '', 10);
 const concurrency = Number.isFinite(configuredConcurrency)

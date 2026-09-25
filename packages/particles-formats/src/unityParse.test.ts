@@ -7,8 +7,8 @@ import {
 } from '@flighthq/particles/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { parseUnityParticle, parseUnityParticleDocument } from './unityParse';
-import { serializeUnityParticle } from './unitySerialize';
+import { parseUnityParticle, parseUnityParticleDocument } from './unityParse.ts';
+import { serializeUnityParticle } from './unitySerialize.ts';
 
 const SMOKE_JSON = JSON.stringify({
   name: 'smoke',

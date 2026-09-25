@@ -8,7 +8,7 @@ import {
   finishAnimationSample,
   initializeAnimationSampleAccumulator,
   resetAnimationSampleAccumulator,
-} from './animationBlend';
+} from './animationBlend.ts';
 
 describe('accumulateAnimationSample', () => {
   it('adds positive weighted samples and ignores zero/negative weights', () => {

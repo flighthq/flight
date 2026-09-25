@@ -1,16 +1,16 @@
-export * from './applyAnimationClipToSkeleton2D';
-export * from './boundingBoxAttachment2D';
-export * from './clippingAttachment2D';
-export * from './deformAnimationTarget2D';
-export * from './deformMeshAttachment2D';
-export * from './deformPathAttachment2D';
-export * from './enableSkeleton2DGuards';
-export * from './explainSkeleton2DChannel';
-export * from './explainSkeleton2DDeformLength';
-export * from './ikConstraint2D';
-export * from './pathConstraint2D';
-export * from './pointAttachment2D';
-export * from './regionAttachment2D';
+export * from './applyAnimationClipToSkeleton2D.ts';
+export * from './boundingBoxAttachment2D.ts';
+export * from './clippingAttachment2D.ts';
+export * from './deformAnimationTarget2D.ts';
+export * from './deformMeshAttachment2D.ts';
+export * from './deformPathAttachment2D.ts';
+export * from './enableSkeleton2DGuards.ts';
+export * from './explainSkeleton2DChannel.ts';
+export * from './explainSkeleton2DDeformLength.ts';
+export * from './ikConstraint2D.ts';
+export * from './pathConstraint2D.ts';
+export * from './pointAttachment2D.ts';
+export * from './regionAttachment2D.ts';
 export {
   cloneSkeleton2D,
   computeSkeleton2DBoneMatrices,
@@ -26,7 +26,7 @@ export {
   setSkeleton2DBindPose,
   setSkeleton2DSkin,
   validateSkeleton2D,
-} from './skeleton2d';
+} from './skeleton2d.ts';
 export {
   createSkeleton2DBoneAnimationTarget,
   createSkeleton2DSlotAnimationTarget,
@@ -35,16 +35,16 @@ export {
   getSkeleton2DAnimationTargetBinderKinds,
   registerSkeleton2DAnimationTargetBinder,
   unregisterSkeleton2DAnimationTargetBinder,
-} from './skeleton2dAnimationTarget';
-export * from './skeleton2dConstants';
-export * from './skeleton2dConstraint';
+} from './skeleton2dAnimationTarget.ts';
+export * from './skeleton2dConstants.ts';
+export * from './skeleton2dConstraint.ts';
 export {
   createSkeleton2DDrawOrderAnimationTarget,
   createSkeleton2DDrawOrderChannel,
   registerSkeleton2DDrawOrderAnimationBinder,
   unregisterSkeleton2DDrawOrderAnimationBinder,
-} from './skeleton2dDrawOrderTarget';
-export { createSkin2D } from './skin2D';
-export * from './skinAttachment2DPoints';
-export * from './slotDeform2D';
-export * from './transformConstraint2D';
+} from './skeleton2dDrawOrderTarget.ts';
+export { createSkin2D } from './skin2D.ts';
+export * from './skinAttachment2DPoints.ts';
+export * from './slotDeform2D.ts';
+export * from './transformConstraint2D.ts';

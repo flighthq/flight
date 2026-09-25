@@ -8,8 +8,8 @@ import type {
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeEffect } from './effect';
-import { registerEffectPaddingResolver } from './effectPadding';
+import { initializeEffect } from './effect.ts';
+import { registerEffectPaddingResolver } from './effectPadding.ts';
 
 export function createOutlineEffect(
   options: Readonly<Omit<EntityWithoutRuntime<OutlineEffect>, 'kind'>> = {},

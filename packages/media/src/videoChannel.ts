@@ -8,7 +8,7 @@ import type {
   VideoResource,
 } from '@flighthq/types/contract';
 
-import { getVideoChannelSignals } from './mediaChannelSignals';
+import { getVideoChannelSignals } from './mediaChannelSignals.ts';
 
 export function destroyVideoChannel(hostVideo: HostVideoCapability, channel: VideoChannel): void {
   const element = channelElements.get(channel) ?? getElement(channel.source);

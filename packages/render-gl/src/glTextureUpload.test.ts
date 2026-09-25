@@ -1,6 +1,6 @@
 import type { ImageResource } from '@flighthq/types/contract';
 
-import { uploadGlTextureData, uploadGlTextureElement, uploadGlTextureImageResource } from './glTextureUpload';
+import { uploadGlTextureData, uploadGlTextureElement, uploadGlTextureImageResource } from './glTextureUpload.ts';
 
 // The GL enums the primitives read; texImage2D is a spy so a test can assert which overload was driven.
 function makeGl(): WebGL2RenderingContext {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isBreakingCommitMessage, isFeatureCommitMessage, parseConventionalCommit } from './conventional-commits';
+import { isBreakingCommitMessage, isFeatureCommitMessage, parseConventionalCommit } from './conventional-commits.ts';
 
 describe('conventional commits', () => {
   it('parses a scoped feature', () => {

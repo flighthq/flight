@@ -1,14 +1,14 @@
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 
-import { registerDefaultShapeBoundsCommands } from './registerDefaultShapeBoundsCommands';
-import { createShape } from './shape';
+import { registerDefaultShapeBoundsCommands } from './registerDefaultShapeBoundsCommands.ts';
+import { createShape } from './shape.ts';
 import {
   clearShapeBoundsCommands,
   getShapeBoundsCommand,
   getShapeBoundsCommandRegistryRevision,
   registerShapeBoundsCommand,
   unregisterShapeBoundsCommand,
-} from './shapeBoundsRegistry';
+} from './shapeBoundsRegistry.ts';
 
 describe('clearShapeBoundsCommands', () => {
   it('removes all registered commands and bumps the revision', () => {

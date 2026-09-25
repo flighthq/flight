@@ -19,7 +19,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { resolveGateExitStatus } from './reference-image-gate-exit';
+import { resolveGateExitStatus } from './reference-image-gate-exit.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');

@@ -1,8 +1,8 @@
 import { createVector2 } from '@flighthq/geometry/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createCamera2D } from './camera2d';
-import { projectCamera2DPoint, unprojectCamera2DPoint } from './projection2d';
+import { createCamera2D } from './camera2d.ts';
+import { projectCamera2DPoint, unprojectCamera2DPoint } from './projection2d.ts';
 
 describe('projectCamera2DPoint', () => {
   it('projects the camera center to the viewport center', () => {

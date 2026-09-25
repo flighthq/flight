@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import * as hostWebContract from './contract';
-import { webHost } from './webHost';
+import * as hostWebContract from './contract.ts';
+import { webHost } from './webHost.ts';
 
 describe('webHost app and protocol ownership', () => {
   it('publishes only genuine app capability slots', () => {

@@ -1,6 +1,6 @@
-import type { CollisionBuiltInShape2D } from './Collision';
-import type { Entity } from './Entity';
-import type { SpatialIndexBackend2D } from './Spatial';
+import type { CollisionBuiltInShape2D } from './Collision.ts';
+import type { Entity } from './Entity.ts';
+import type { SpatialIndexBackend2D } from './Spatial.ts';
 
 // 2D rigid-body dynamics header. `@flighthq/physics2d` is the solver that sits on top of
 // `@flighthq/spatial` (broadphase) and `@flighthq/collision` (narrow-phase): it owns integration and

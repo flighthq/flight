@@ -1,1 +1,1 @@
-export { getPermissionState, getPermissionStates, requestPermission } from './contract';
+export { getPermissionState, getPermissionStates, requestPermission } from './contract.ts';

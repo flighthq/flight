@@ -8,7 +8,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ClearcoatPbrExtensionKind } from '@flighthq/types/contract';
 
-import { registerGlPbrExtension } from './glPbrExtensionRegistry';
+import { registerGlPbrExtension } from './glPbrExtensionRegistry.ts';
 
 export const clearcoatPbrGlExtension: GlPbrExtensionRegistration = {
   bind(context, value): void {

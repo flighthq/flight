@@ -8,7 +8,7 @@ import {
   buildRequirementCatalogRows,
   CATALOG_PARSER_BACKEND,
   SWF_TAG_HANDLERS,
-} from './catalog-rows';
+} from './catalog-rows.ts';
 
 const MODULES: Readonly<Record<string, Record<string, unknown>>> = {
   '@flighthq/scene3d-formats': scene3dFormats as unknown as Record<string, unknown>,

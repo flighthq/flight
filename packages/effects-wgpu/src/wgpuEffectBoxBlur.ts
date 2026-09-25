@@ -2,7 +2,7 @@ import { computeBoxBlurPassRadius } from '@flighthq/effects/contract';
 import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 import type { WgpuEffectPipeline } from '@flighthq/types/contract';
 
-import { createWgpuEffectPipeline, drawWgpuEffectPass } from './wgpuEffectPass';
+import { createWgpuEffectPipeline, drawWgpuEffectPass } from './wgpuEffectPass.ts';
 
 // Uniforms layout:
 //   offset  0: texelSize (vec2f)

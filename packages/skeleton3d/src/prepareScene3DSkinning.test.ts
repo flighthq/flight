@@ -9,8 +9,8 @@ import { createMesh, createNode3D } from '@flighthq/scene3d/contract';
 import type { MeshRuntime } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { prepareMeshSkinning, prepareScene3DSkinning } from './prepareScene3DSkinning';
-import { createSkeleton3D } from './skeleton3d';
+import { prepareMeshSkinning, prepareScene3DSkinning } from './prepareScene3DSkinning.ts';
+import { createSkeleton3D } from './skeleton3d.ts';
 
 function createOneVertexSkinnedMesh() {
   const vertices = new Float32Array(20);

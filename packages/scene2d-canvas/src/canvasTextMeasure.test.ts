@@ -1,5 +1,5 @@
-import { acquireTestCanvasSurface } from './canvasTestSupport';
-import { createCanvasTextMeasure } from './canvasTextMeasure';
+import { acquireTestCanvasSurface } from './canvasTestSupport.ts';
+import { createCanvasTextMeasure } from './canvasTextMeasure.ts';
 
 describe('createCanvasTextMeasure', () => {
   it('returns a measure function that reports a non-negative width', () => {

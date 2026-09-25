@@ -5,11 +5,14 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy, WgpuSkinningAdapter } from '@flighthq/types/contract';
 import { WireframeMaterialKind } from '@flighthq/types/contract';
 
-import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
-import { wgpuSkinningAdapter } from './wgpuSkinPalette';
-import { registerWgpuWireframeMaterial, wgpuWireframeMeshMaterialRenderer } from './wgpuWireframeMeshMaterialRenderer';
+import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
+import { wgpuSkinningAdapter } from './wgpuSkinPalette.ts';
+import {
+  registerWgpuWireframeMaterial,
+  wgpuWireframeMeshMaterialRenderer,
+} from './wgpuWireframeMeshMaterialRenderer.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

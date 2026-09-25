@@ -1,4 +1,4 @@
-import { createColorGradeAdjustment, initializeColorGradeAdjustment } from './colorGradeAdjustment';
+import { createColorGradeAdjustment, initializeColorGradeAdjustment } from './colorGradeAdjustment.ts';
 
 describe('createColorGradeAdjustment', () => {
   it('defaults to approximately neutral (contrast 1, all stages near-neutral)', () => {

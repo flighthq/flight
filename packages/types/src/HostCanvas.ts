@@ -1,6 +1,6 @@
-import type { AppWindow } from './AppWindow';
-import type { CanvasSurface } from './CanvasSurface';
-import type { NativeSurfaceHandle, Surface } from './Surface';
+import type { AppWindow } from './AppWindow.ts';
+import type { CanvasSurface } from './CanvasSurface.ts';
+import type { NativeSurfaceHandle, Surface } from './Surface.ts';
 
 // Canvas 2D drawable lifecycle for presentation and offscreen surfaces. Presentation: `create` allocates
 // a drawable from a window, `acquire`/`release` bracket context use. Offscreen: `createSurface` allocates

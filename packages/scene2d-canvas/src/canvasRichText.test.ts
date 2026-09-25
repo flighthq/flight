@@ -8,8 +8,8 @@ import {
   drawCanvasRichText,
   drawCanvasRichTextMask,
   registerCanvasTextInputOverlay,
-} from './canvasRichText';
-import { createCanvasRenderState } from './canvasTestSupport';
+} from './canvasRichText.ts';
+import { createCanvasRenderState } from './canvasTestSupport.ts';
 
 function makeState() {
   const canvas = document.createElement('canvas');

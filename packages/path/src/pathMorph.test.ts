@@ -9,8 +9,8 @@ import {
   appendPathMoveTo,
   appendPathRectangle,
   createPath,
-} from './path';
-import { createPathMorph, samplePathMorph } from './pathMorph';
+} from './path.ts';
+import { createPathMorph, samplePathMorph } from './pathMorph.ts';
 
 describe('createPathMorph', () => {
   it('normalizes different line and quadratic verbs to one cubic command stream', () => {

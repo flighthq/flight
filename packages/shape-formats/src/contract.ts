@@ -1,2 +1,2 @@
-export * from './shapeJson';
-export * from './shapeCommandSchemas';
+export * from './shapeJson.ts';
+export * from './shapeCommandSchemas.ts';

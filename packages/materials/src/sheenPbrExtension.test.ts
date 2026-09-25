@@ -1,6 +1,6 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createSheenPbrExtension, initializeSheenPbrExtension, isValidSheenPbrExtension } from './sheenPbrExtension';
+import { createSheenPbrExtension, initializeSheenPbrExtension, isValidSheenPbrExtension } from './sheenPbrExtension.ts';
 
 describe('createSheenPbrExtension', () => {
   it('creates an Entity with independent color and roughness UV sets', () => {

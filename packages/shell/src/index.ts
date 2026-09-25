@@ -9,4 +9,4 @@ export {
   shellBeep,
   spawnShellProcess,
   writeShellShortcutLink,
-} from './contract';
+} from './contract.ts';

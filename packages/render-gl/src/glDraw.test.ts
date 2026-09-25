@@ -9,7 +9,7 @@ import {
   ImageTextureSourceKind,
 } from '@flighthq/types/contract';
 
-import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
+import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture.ts';
 import {
   applyGlBlendMode,
   applyGlSamplerState,
@@ -29,10 +29,10 @@ import {
   standardGlBlendRealizations,
   updateGlTexture,
   useGlProgram,
-} from './glDraw';
-import { createGlRenderState, getGlRenderStateRuntime, invalidateGlRenderStateCache } from './glRenderState';
-import { registerGlBitmapShader } from './glShaderRegistry';
-import { createGlState, makeGL } from './glTestHelper';
+} from './glDraw.ts';
+import { createGlRenderState, getGlRenderStateRuntime, invalidateGlRenderStateCache } from './glRenderState.ts';
+import { registerGlBitmapShader } from './glShaderRegistry.ts';
+import { createGlState, makeGL } from './glTestHelper.ts';
 
 function createTestGlRenderState(gl: WebGL2RenderingContext) {
   return createGlRenderState(gl);

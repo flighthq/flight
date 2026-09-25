@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Spring3D, SpringConfig, EntityConstruction } from '@flighthq/types/contract';
 
-import { addSpringImpulse, createSpring, isSpringSettled, resetSpring, updateSpring } from './spring';
+import { addSpringImpulse, createSpring, isSpringSettled, resetSpring, updateSpring } from './spring.ts';
 
 // Add independent velocity impulses to all three axes without allocating or changing their values.
 export function addSpringImpulse3D(spring3D: Spring3D, velocityX: number, velocityY: number, velocityZ: number): void {

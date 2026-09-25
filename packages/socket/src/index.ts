@@ -12,4 +12,4 @@ export {
   getSocketReadyState,
   openTcpSocket,
   sendSocketMessage,
-} from './contract';
+} from './contract.ts';

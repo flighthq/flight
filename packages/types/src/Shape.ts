@@ -1,5 +1,5 @@
-import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
-import type { ShapeCommandToken } from './ShapeCommand';
+import type { Node2D, Node2DData, Node2DRuntime } from './Node2D.ts';
+import type { ShapeCommandToken } from './ShapeCommand.ts';
 
 export interface ShapeData extends Node2DData {
   commands: ShapeCommandToken[];

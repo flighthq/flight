@@ -11,8 +11,8 @@ import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract
 import type { Camera3D, Scene3DLightsLike } from '@flighthq/types/contract';
 import { SCENE_LIGHT_POINT_OFFSET } from '@flighthq/types/contract';
 
-import { prepareWgpuScene3DForwardLights } from './prepareWgpuScene3DForwardLights';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+import { prepareWgpuScene3DForwardLights } from './prepareWgpuScene3DForwardLights.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 
 function camera(): Camera3D {
   const result = createCamera3D({

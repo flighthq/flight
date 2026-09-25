@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getInvalidExampleFlightDependencies, getInvalidExampleFlightImportSpecifiers } from './example-sdk-policy';
+import { getInvalidExampleFlightDependencies, getInvalidExampleFlightImportSpecifiers } from './example-sdk-policy.ts';
 
 describe('example SDK consumption policy', () => {
   it('allows the SDK root and per-package subpaths', () => {

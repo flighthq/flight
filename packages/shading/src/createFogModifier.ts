@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { FogModifier, FogModifierOptions, EntityConstruction } from '@flighthq/types/contract';
 import { FogModifierKind, FogModifierMode, ModifierSlot } from '@flighthq/types/contract';
 
-import { initializeModifier } from './modifier';
+import { initializeModifier } from './modifier.ts';
 
 // The options for `createFogModifier`. Only `color` is required; `mode`/`near`/`far`/`density` carry
 // documented defaults. `mode` is compile-time structural (each curve emits different GLSL, so it

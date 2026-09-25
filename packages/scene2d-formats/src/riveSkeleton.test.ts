@@ -2,8 +2,8 @@ import { RAD_TO_DEG } from '@flighthq/math/contract';
 import type { RiveArtboardGraph, RiveCoreObject } from '@flighthq/types/contract';
 import { RiveFieldType } from '@flighthq/types/contract';
 
-import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry';
-import { createRiveSkeleton2D, initializeRiveSkeleton2DImport, registerRiveSkeletonHandlers } from './riveSkeleton';
+import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry.ts';
+import { createRiveSkeleton2D, initializeRiveSkeleton2DImport, registerRiveSkeletonHandlers } from './riveSkeleton.ts';
 
 // Rive keeps bones in the artboard's component tree as TransformComponents, while Skeleton2D needs a
 // flat parent-before-child array. Bone(40) and RootBone(41) are the two concrete types; a RootBone

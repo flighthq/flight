@@ -1,11 +1,11 @@
-import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition';
-import { SwfReader } from './swfReader';
+import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition.ts';
+import { SwfReader } from './swfReader.ts';
 import {
   createSwfRectangleRecord,
   createSwfTestParseState,
   joinSwfBytes,
   swfUint16Bytes,
-} from './swfTagStreamTestHelper';
+} from './swfTagStreamTestHelper.ts';
 
 describe('readSwfBoundedDefinitionHeader', () => {
   it('records the character and its authored extent, and returns the id', () => {

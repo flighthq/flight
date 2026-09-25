@@ -3,13 +3,13 @@ import type { HostImageCapability, ImageResourceReference, Texture } from '@flig
 import { EntityRuntimeKey, ResourceResolutionState, ImageResourceReferenceKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver';
+import { createScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver.ts';
 import {
   createScene3DResourceSignals,
   enableScene3DResourceSignals,
   getScene3DResourceSignals,
   initializeScene3DResourceSignals,
-} from './sceneResourceSignals';
+} from './sceneResourceSignals.ts';
 
 const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },

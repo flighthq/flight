@@ -6,7 +6,7 @@ import type {
   PermissionName,
   PermissionQueryOutcome,
   PermissionRequestOutcome,
-} from './index';
+} from './index.ts';
 
 describe('HostPermissionsCapability', () => {
   it('has the native permission operations and Notification provider', () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getSourcePublishedValueExports, getSourceValueExports } from './export-lane-source';
+import { getSourcePublishedValueExports, getSourceValueExports } from './export-lane-source.ts';
 
 describe('getSourceValueExports', () => {
   it('discovers local value aliases without exposing their private backing names', () => {

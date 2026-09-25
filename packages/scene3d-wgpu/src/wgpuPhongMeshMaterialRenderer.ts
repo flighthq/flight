@@ -18,9 +18,14 @@ import type {
 } from '@flighthq/types/contract';
 import { PhongMaterialKind } from '@flighthq/types/contract';
 
-import { bindWgpuClassicSurface, ensureWgpuClassicPipeline } from './wgpuClassicPrelude';
-import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { beginWgpuMeshDraw, drawWgpuMeshSubset, isWgpuTextureReady, writeWgpuFrameUniform } from './wgpuMeshPipeline';
+import { bindWgpuClassicSurface, ensureWgpuClassicPipeline } from './wgpuClassicPrelude.ts';
+import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import {
+  beginWgpuMeshDraw,
+  drawWgpuMeshSubset,
+  isWgpuTextureReady,
+  writeWgpuFrameUniform,
+} from './wgpuMeshPipeline.ts';
 
 // The built-in classic Phong forward-lit mesh-material renderer (WgpuMeshMaterialRenderer for
 // PhongMaterialKind) — the WGSL mirror of glPhongMeshMaterialRenderer. Lambert diffuse plus a

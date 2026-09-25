@@ -1,9 +1,9 @@
 import type { SsaoEffect, WgpuEffectRunner, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 
-import { drawWgpuEffectPass } from './wgpuEffectPass';
-import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
-import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale';
+import { drawWgpuEffectPass } from './wgpuEffectPass.ts';
+import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
+import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale.ts';
 
 // SSAO: ambient-occlusion approximation. Real SSAO reconstructs view-space position/normals from a
 // sampleable DEPTH texture and accumulates occlusion over `samples` kernel offsets within `radius`,

@@ -2,9 +2,9 @@ import { setLogSink } from '@flighthq/log/contract';
 import { setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 
-import { disableTextLabelGuards, enableTextLabelGuards } from './enableTextLabelGuards';
-import { createTextLabel, setTextLabelString } from './textLabel';
-import { ensureTextLayout } from './textLabelLayout';
+import { disableTextLabelGuards, enableTextLabelGuards } from './enableTextLabelGuards.ts';
+import { createTextLabel, setTextLabelString } from './textLabel.ts';
+import { ensureTextLayout } from './textLabelLayout.ts';
 
 const measure = (text: string) => text.length * 7;
 

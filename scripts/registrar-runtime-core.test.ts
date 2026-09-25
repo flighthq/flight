@@ -7,7 +7,7 @@ import {
   describeRuntimeValue,
   explainPairDerivationScope,
   findRegistrarPairCollisions,
-} from './registrar-runtime-core';
+} from './registrar-runtime-core.ts';
 
 describe('runtime registrar provenance', () => {
   it('attributes only writes made through a named registration door', async () => {

@@ -4,8 +4,8 @@ import {
   destroyGlTextureRenderTargetPool,
   initializeGlTextureRenderTargetPool,
   releaseGlTextureRenderTarget,
-} from './glRenderTargetPool';
-import { createGlState } from './glTestHelper';
+} from './glRenderTargetPool.ts';
+import { createGlState } from './glTestHelper.ts';
 
 describe('acquireGlTextureRenderTarget', () => {
   it('allocates a new target when the pool is empty', () => {

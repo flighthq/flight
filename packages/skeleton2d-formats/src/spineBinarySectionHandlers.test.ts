@@ -2,7 +2,7 @@ import type { SpineBinarySectionHandler, SpineBinarySectionKind } from '@flighth
 import { SpineBinarySectionKind as SectionKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createSpineBinaryRegistry, getSpineBinarySectionHandler } from './spineBinaryRegistry';
+import { createSpineBinaryRegistry, getSpineBinarySectionHandler } from './spineBinaryRegistry.ts';
 import {
   registerSpineBinarySectionHandlers,
   spineBinaryAnimationsSectionHandler,
@@ -13,7 +13,7 @@ import {
   spineBinarySkinsSectionHandler,
   spineBinarySlotsSectionHandler,
   spineBinaryTransformConstraintsSectionHandler,
-} from './spineBinarySectionHandlers';
+} from './spineBinarySectionHandlers.ts';
 
 function expectRegisteredSection(kind: SpineBinarySectionKind, handler: SpineBinarySectionHandler): void {
   const registry = createSpineBinaryRegistry();

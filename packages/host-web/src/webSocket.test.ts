@@ -1,7 +1,7 @@
 import type { SocketCloseInfo, SocketEventSink, SocketMessage } from '@flighthq/types/contract';
 
-import { webHostSocket as fromPublicLane } from './index';
-import { webHostSocket } from './webSocket';
+import { webHostSocket as fromPublicLane } from './index.ts';
+import { webHostSocket } from './webSocket.ts';
 
 describe('webHostSocket', () => {
   it('constructs a WebSocket with url and protocols and sets binaryType', () => {

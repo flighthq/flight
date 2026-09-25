@@ -9,8 +9,8 @@ import type {
   Texture2D,
 } from '@flighthq/types/contract';
 
-import { initializeEffect } from './effect';
-import { registerEffectPaddingResolver } from './effectPadding';
+import { initializeEffect } from './effect.ts';
+import { registerEffectPaddingResolver } from './effectPadding.ts';
 
 export function createBitmapDisplacementEffect(
   map: Readonly<Texture2D> | null,

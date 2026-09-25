@@ -7,7 +7,7 @@ import type {
   BitmapShadowBlurOptions,
 } from '@flighthq/types/contract';
 
-import { blurBitmapPixelsHorizontal, blurBitmapPixelsVertical } from './bitmapBlur';
+import { blurBitmapPixelsHorizontal, blurBitmapPixelsVertical } from './bitmapBlur.ts';
 
 interface BitmapInnerEffectOptions extends BitmapShadowBlurOptions {
   intensity?: number;

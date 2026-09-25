@@ -1,4 +1,4 @@
-import { applyKuwaharaEffectToGl, glKuwaharaEffectRunner, registerGlKuwaharaEffect } from './glKuwaharaEffect';
+import { applyKuwaharaEffectToGl, glKuwaharaEffectRunner, registerGlKuwaharaEffect } from './glKuwaharaEffect.ts';
 
 describe('applyKuwaharaEffectToGl', () => {
   it('is a function', () => {

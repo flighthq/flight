@@ -1,8 +1,8 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { CrtEffect, GlEffectRunner, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // CRT: barrel-distort the uv (curvature), darken alternating scanlines, vignette the edges, and split
 // the channels outward (chromatic aberration) for a tube-monitor look.

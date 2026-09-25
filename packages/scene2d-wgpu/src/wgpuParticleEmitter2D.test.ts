@@ -17,7 +17,7 @@ import { createTexture } from '@flighthq/texture/contract';
 import type { CompressedImageResource, RenderProxy2D } from '@flighthq/types/contract';
 import { CompressedImageTextureSourceKind, EntityRuntimeKey, TextureAtlasRotation } from '@flighthq/types/contract';
 
-import { wgpuParticleEmitter2DRenderer, drawWgpuParticleEmitter2D } from './wgpuParticleEmitter2D';
+import { wgpuParticleEmitter2DRenderer, drawWgpuParticleEmitter2D } from './wgpuParticleEmitter2D.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

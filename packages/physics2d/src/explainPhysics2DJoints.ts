@@ -5,7 +5,7 @@ import type {
   Physics2DWorld,
 } from '@flighthq/types/contract';
 
-import { findPhysics2DBody } from './world';
+import { findPhysics2DBody } from './world.ts';
 
 // Pure diagnostic twin of the step's silent joint skips. It re-walks the world as it exists now and
 // retains nothing, letting callers distinguish an intentionally extensible unknown kind from missing

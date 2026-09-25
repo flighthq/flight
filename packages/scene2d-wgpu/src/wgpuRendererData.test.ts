@@ -1,6 +1,6 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createWgpuRendererData, getWgpuRendererData, initializeWgpuRendererData } from './wgpuRendererData';
+import { createWgpuRendererData, getWgpuRendererData, initializeWgpuRendererData } from './wgpuRendererData.ts';
 
 describe('createWgpuRendererData', () => {
   it('adds the RendererData entity slot to the input object', () => {

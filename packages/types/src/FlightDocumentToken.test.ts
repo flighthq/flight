@@ -1,9 +1,9 @@
-import type { FlightDocument } from './FlightDocument';
+import type { FlightDocument } from './FlightDocument.ts';
 import type {
   FlightDocumentToken,
   FlightDocumentTokenResolution,
   FlightDocumentTokenResolver,
-} from './FlightDocumentToken';
+} from './FlightDocumentToken.ts';
 
 describe('FlightDocumentToken', () => {
   it('carries the kind on the row so every mode variant shares one semantic type', () => {

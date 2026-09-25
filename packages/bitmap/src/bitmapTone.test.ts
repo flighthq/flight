@@ -1,7 +1,7 @@
-import { createBitmap } from './bitmap';
-import { getBitmapPixel, setBitmapPixel } from './bitmapPixel';
-import { createBitmapRegion } from './bitmapRegion';
-import { applyBitmapCurve, applyBitmapLevels } from './bitmapTone';
+import { createBitmap } from './bitmap.ts';
+import { getBitmapPixel, setBitmapPixel } from './bitmapPixel.ts';
+import { createBitmapRegion } from './bitmapRegion.ts';
+import { applyBitmapCurve, applyBitmapLevels } from './bitmapTone.ts';
 
 function buildIdentityLut() {
   return Uint8Array.from({ length: 256 }, (_, i) => i);

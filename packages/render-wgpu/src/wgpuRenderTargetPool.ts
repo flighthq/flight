@@ -7,7 +7,7 @@ import type {
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { createWgpuTextureRenderTarget, destroyWgpuTextureRenderTarget } from './wgpuTextureRenderTarget';
+import { createWgpuTextureRenderTarget, destroyWgpuTextureRenderTarget } from './wgpuTextureRenderTarget.ts';
 
 // Lends reusable intermediate targets to multi-pass effect recipes. acquire/release are paired
 // brackets: every acquireWgpuTextureRenderTarget must have a matching releaseWgpuTextureRenderTarget. A released

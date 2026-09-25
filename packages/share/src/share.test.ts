@@ -8,7 +8,7 @@ import type {
   ShareResult,
 } from '@flighthq/types/contract';
 
-import * as shareContract from './contract';
+import * as shareContract from './contract.ts';
 import {
   attachShareSignals,
   canShareContent,
@@ -24,7 +24,7 @@ import {
   shareFiles,
   shareText,
   shareUrl,
-} from './share';
+} from './share.ts';
 
 function contentHost(overrides: Partial<HostShareContentCapability> = {}): {
   readonly share: { readonly content: HostShareContentCapability };

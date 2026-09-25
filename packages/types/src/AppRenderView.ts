@@ -1,12 +1,12 @@
-import type { AppWindow } from './AppWindow';
-import type { Entity } from './Entity';
-import type { GlContextOptions } from './GlContext';
-import type { GlRenderState } from './GlRenderState';
-import type { GlRenderStateOptions } from './GlRenderStateOptions';
-import type { GlTextureRenderTarget } from './GlRenderTarget';
-import type { RenderState } from './RenderState';
-import type { RenderTargetDescriptor, RenderTargetDimensions } from './RenderTarget';
-import type { Viewport } from './Viewport';
+import type { AppWindow } from './AppWindow.ts';
+import type { Entity } from './Entity.ts';
+import type { GlContextOptions } from './GlContext.ts';
+import type { GlRenderState } from './GlRenderState.ts';
+import type { GlRenderStateOptions } from './GlRenderStateOptions.ts';
+import type { GlTextureRenderTarget } from './GlRenderTarget.ts';
+import type { RenderState } from './RenderState.ts';
+import type { RenderTargetDescriptor, RenderTargetDimensions } from './RenderTarget.ts';
+import type { Viewport } from './Viewport.ts';
 
 // The explicit application-side assembly for one drawable view. The four components stay independently
 // accessible: the window is the logical-size authority, the RenderState is the current command context,

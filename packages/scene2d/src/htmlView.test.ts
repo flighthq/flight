@@ -10,7 +10,7 @@ import {
   getHtmlViewRuntime,
   initializeHtmlViewData,
   setHtmlViewSize,
-} from './htmlView';
+} from './htmlView.ts';
 
 describe('computeHtmlViewLocalBoundsRectangle', () => {
   it('sets out dimensions from data width and height', () => {

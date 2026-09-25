@@ -1,4 +1,4 @@
-import { applyCrtEffectToWgpu, wgpuCrtEffectRunner, registerWgpuCrtEffect } from './wgpuCrtEffect';
+import { applyCrtEffectToWgpu, wgpuCrtEffectRunner, registerWgpuCrtEffect } from './wgpuCrtEffect.ts';
 
 describe('applyCrtEffectToWgpu', () => {
   it('is a function', () => {

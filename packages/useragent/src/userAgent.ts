@@ -6,7 +6,7 @@ import type {
   PlatformRuntime,
 } from '@flighthq/types/contract';
 
-import { parseUserAgentOsVersion } from './userAgentParse';
+import { parseUserAgentOsVersion } from './userAgentParse.ts';
 
 // Probe host CPU byte order via a DataView write-then-read.
 // Overwhelmingly 'little' on all modern hardware (x86/x64/arm/arm64/wasm).

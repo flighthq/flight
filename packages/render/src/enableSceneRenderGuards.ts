@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { Mesh } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setSkinnedMeshBoundsGuard } from './sceneRender';
+import { setSkinnedMeshBoundsGuard } from './sceneRender.ts';
 
 /** Uninstalls the guards installed by `enableSceneRenderGuards`. */
 export function disableSceneRenderGuards(): void {

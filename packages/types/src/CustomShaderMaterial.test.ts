@@ -1,4 +1,4 @@
-import { CustomShaderMaterialKind } from './CustomShaderMaterial';
+import { CustomShaderMaterialKind } from './CustomShaderMaterial.ts';
 
 describe('CustomShaderMaterialKind', () => {
   it('is the string CustomShaderMaterial', () => {

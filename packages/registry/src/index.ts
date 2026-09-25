@@ -5,4 +5,4 @@ export {
   getOrdinalTableEntry,
   withKindMapEntry,
   withoutKindMapEntry,
-} from './registryTable';
+} from './registryTable.ts';

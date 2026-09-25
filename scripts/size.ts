@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
-import type { FastSizeDelta } from './size-fast-runner';
+import type { FastSizeDelta } from './size-fast-runner.ts';
 import {
   compareFastSizes,
   getChangedFastSizes,
@@ -16,8 +16,8 @@ import {
   selectFastSizeUnit,
   writeFastSizeBaseline,
   writeFastSizeCache,
-} from './size-fast-runner';
-import { collectSizeCases, getSizeCaseKey, parseFilter } from './size-runner';
+} from './size-fast-runner.ts';
+import { collectSizeCases, getSizeCaseKey, parseFilter } from './size-runner.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, '..');

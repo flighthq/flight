@@ -1,4 +1,4 @@
-import type { WgpuMeshPipeline } from './WgpuMeshPipeline';
+import type { WgpuMeshPipeline } from './WgpuMeshPipeline.ts';
 
 // A compiled wireframe pipeline — a WgpuMeshPipeline (pipeline + group(2) color-uniform layout).
 export interface WgpuWireframePipeline extends WgpuMeshPipeline {}

@@ -16,8 +16,8 @@ import {
 import type { RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, RenderRegistryTable } from '@flighthq/types/contract';
 
-import { wgpuMeshShapeRenderer, drawWgpuMeshShape } from './wgpuMeshShapeRenderer';
-import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer';
+import { wgpuMeshShapeRenderer, drawWgpuMeshShape } from './wgpuMeshShapeRenderer.ts';
+import { registerWgpuShapeRasterizer } from './wgpuShapeRasterizer.ts';
 
 beforeAll(() => installWgpuMock());
 

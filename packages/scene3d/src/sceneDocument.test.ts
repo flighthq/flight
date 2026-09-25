@@ -7,8 +7,8 @@ import type { MaterialLike, Mesh, Scene3DDocument, Node3D } from '@flighthq/type
 import { EntityRuntimeKey, Scene3DAnimationPathTranslation, Node3DKind, MeshKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { isMesh } from './mesh';
-import { createScene3DFromDocument, createScene3DsFromDocument } from './sceneDocument';
+import { isMesh } from './mesh.ts';
+import { createScene3DFromDocument, createScene3DsFromDocument } from './sceneDocument.ts';
 
 function emptyDocument(): Scene3DDocument {
   return {

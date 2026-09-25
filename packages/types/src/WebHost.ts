@@ -38,7 +38,7 @@ import type {
   HostSurfaceCapabilities,
   HostVideoCapabilities,
   HostWindowCapabilities,
-} from './Host';
+} from './Host.ts';
 
 export type WebHost = Omit<
   Host,

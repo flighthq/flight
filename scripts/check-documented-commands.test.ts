@@ -9,7 +9,7 @@ import {
   classifyDocumentedCommands,
   formatDocumentedCommandAuditSummary,
   parseDocumentedCommands,
-} from './check-documented-commands';
+} from './check-documented-commands.ts';
 
 describe('auditDocumentedCommands', () => {
   it('audits the exact markdown population supplied by its parent gate', () => {

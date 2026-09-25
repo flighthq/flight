@@ -7,11 +7,11 @@ import type {
   WgpuRenderTargetPool,
 } from '@flighthq/types/contract';
 
-import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader';
-import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
-import { clearWgpuEffectTarget } from './wgpuEffectPass';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
-import { applyWgpuEffectTintPass } from './wgpuEffectTintShader';
+import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader.ts';
+import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur.ts';
+import { clearWgpuEffectTarget } from './wgpuEffectPass.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
+import { applyWgpuEffectTintPass } from './wgpuEffectTintShader.ts';
 
 // Outer-glow composite effect: tint the scene silhouette, blur it centered (no offset), then apply sourceMode compositing.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the

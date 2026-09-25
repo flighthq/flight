@@ -1,1 +1,1 @@
-export * from './registryTable';
+export * from './registryTable.ts';

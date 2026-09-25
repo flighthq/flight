@@ -2,8 +2,8 @@ import { logOnce } from '@flighthq/log/contract';
 import type { GlPbrExtensionIssue, GlRenderState, PbrExtension } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { explainGlPbrExtensions } from './glPbrExtensionRegistry';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { explainGlPbrExtensions } from './glPbrExtensionRegistry.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 export function areGlPbrExtensionGuardsEnabled(state: GlRenderState): boolean {
   return getGlScene3DRuntime(state).pbrExtensionGuard !== null;

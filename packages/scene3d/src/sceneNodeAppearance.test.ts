@@ -1,8 +1,8 @@
 import { addNodeChild, invalidateNodeAppearance } from '@flighthq/node/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createNode3D } from './sceneNode';
-import { ensureNode3DWorldAlpha, getNode3DWorldAlpha, setNode3DAlpha } from './sceneNodeAppearance';
+import { createNode3D } from './sceneNode.ts';
+import { ensureNode3DWorldAlpha, getNode3DWorldAlpha, setNode3DAlpha } from './sceneNodeAppearance.ts';
 
 describe('ensureNode3DWorldAlpha', () => {
   it('caches until the appearance is invalidated (revision-gated, not recomputed every read)', () => {

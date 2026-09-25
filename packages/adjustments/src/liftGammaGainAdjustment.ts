@@ -6,7 +6,7 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-import { initializeColorLutAdjustment } from './colorLutAdjustment';
+import { initializeColorLutAdjustment } from './colorLutAdjustment.ts';
 
 export function createLiftGammaGainAdjustment(
   options: Readonly<Omit<LiftGammaGainAdjustment, typeof EntityRuntimeKey | 'kind' | 'transform'>> = {},

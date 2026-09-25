@@ -1,3 +1,3 @@
-export * from './enableHostGuards';
-export * from './hostExplain';
-export * from './hostQuery';
+export * from './enableHostGuards.ts';
+export * from './hostExplain.ts';
+export * from './hostQuery.ts';

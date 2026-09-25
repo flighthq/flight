@@ -1,4 +1,4 @@
-import type { Attachment2D } from './Attachment2D';
+import type { Attachment2D } from './Attachment2D.ts';
 
 // A textured quad attached to a slot's bone — the Spine region attachment, the common case (a limb
 // image, a prop). It is rigid: its four world corners are the bone's world transform applied to the

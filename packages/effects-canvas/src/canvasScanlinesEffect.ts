@@ -5,8 +5,8 @@ import type {
   ScanlinesEffect,
 } from '@flighthq/types/contract';
 
-import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { registerCanvasEffect } from './canvasEffectRegistry';
+import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
+import { registerCanvasEffect } from './canvasEffectRegistry.ts';
 
 // Scanlines (REAL): draw the scene, then overlay evenly spaced darkening bands. `count` horizontal
 // lines span the frame; each darkens its row by `intensity` via a 'multiply' fill.

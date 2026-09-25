@@ -1,6 +1,6 @@
 import type { MeshGeometry } from '@flighthq/types/contract';
 
-import { getVertexAttributeFloatOffset } from './meshGeometryAttributes';
+import { getVertexAttributeFloatOffset } from './meshGeometryAttributes.ts';
 
 // UV transform helpers for the uv0 channel. All functions write directly into geometry.vertices
 // and bump geometry.version. They operate on whatever attribute is registered under the 'uv0'

@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { HostImageSource } from './HostImageSource';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { HostImageSource } from './HostImageSource.ts';
+import type { Signal } from './Signal.ts';
 
 export type VideoChannelState = 'complete' | 'paused' | 'playing' | 'stopped';
 

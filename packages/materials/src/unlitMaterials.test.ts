@@ -18,7 +18,7 @@ import {
   createUnlitMaterial,
   createVertexColorMaterial,
   createWireframeMaterial,
-} from './unlitMaterials';
+} from './unlitMaterials.ts';
 
 describe('createDepthMaterial', () => {
   it('creates a depth material with a unit range', () => {

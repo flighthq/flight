@@ -1,4 +1,4 @@
-import { explainEntityRuntimeWrite } from './explainEntityRuntimeWrite';
+import { explainEntityRuntimeWrite } from './explainEntityRuntimeWrite.ts';
 
 describe('explainEntityRuntimeWrite', () => {
   it('names both binding helpers for a binding-slot write', () => {

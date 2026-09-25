@@ -1,7 +1,7 @@
-import type { HasBoundsRectangleRuntime } from './HasBoundsRectangle';
-import type { HasTransform2DRuntime } from './HasTransform2D';
-import type { NodeRuntime } from './Node';
-import type { Node2DRuntime, Node2DTraits } from './Node2D';
+import type { HasBoundsRectangleRuntime } from './HasBoundsRectangle.ts';
+import type { HasTransform2DRuntime } from './HasTransform2D.ts';
+import type { NodeRuntime } from './Node.ts';
+import type { Node2DRuntime, Node2DTraits } from './Node2D.ts';
 
 describe('Node2DRuntime', () => {
   // These do NOT prove the interface form: an interface and the intersection typedef it replaced are

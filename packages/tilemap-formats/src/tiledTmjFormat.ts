@@ -8,7 +8,7 @@ import type {
   TiledTilesetTile,
 } from '@flighthq/types/contract';
 
-import { formatTiledColor } from './tiledColor';
+import { formatTiledColor } from './tiledColor.ts';
 
 // Re-emits a standalone tileset as a TSJ document. Same body as an embedded tileset, plus the
 // `type: 'tileset'` marker a standalone file carries and without the `firstgid` it has no map to be

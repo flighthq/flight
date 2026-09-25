@@ -1,7 +1,7 @@
-import type { BatchFormat } from './BatchFormat';
-import type { BlendMode } from './BlendMode';
-import type { Kind } from './Entity';
-import type { Material } from './Material';
+import type { BatchFormat } from './BatchFormat.ts';
+import type { BlendMode } from './BlendMode.ts';
+import type { Kind } from './Entity.ts';
+import type { Material } from './Material.ts';
 export interface RenderBatchKey {
   readonly blend: BlendMode | null;
   readonly format: BatchFormat;

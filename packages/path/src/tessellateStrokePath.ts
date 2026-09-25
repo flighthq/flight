@@ -1,6 +1,6 @@
 import type { Path, PathMesh, StrokeStyle } from '@flighthq/types/contract';
 
-import { buildStrokePathGeometry, StrokePathTessellationIssueNone } from './strokePathGeometry';
+import { buildStrokePathGeometry, StrokePathTessellationIssueNone } from './strokePathGeometry.ts';
 
 // Builds a non-overlapping triangle mesh directly from stroke cross-sections. Unlike tessellating the
 // outline as a fill, this represents a closed stroke's hollow ring without asking the generic path-fill

@@ -2,7 +2,7 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlRenderState, MatrixLike, RectangleLike } from '@flighthq/types/contract';
 import type { GlScissorRect } from '@flighthq/types/contract';
 
-import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
 
 export function popGlClipRectangle(state: GlRenderState): void {
   const runtime = getGlRenderStateRuntime(state);

@@ -17,7 +17,7 @@ import type {
   Signal,
 } from '@flighthq/types/contract';
 
-import { getMidiAccessResourceState, getMidiPortResourceState } from './midiResource';
+import { getMidiAccessResourceState, getMidiPortResourceState } from './midiResource.ts';
 
 export function attachMidiAccessStateSubscription(
   access: MidiAccess,

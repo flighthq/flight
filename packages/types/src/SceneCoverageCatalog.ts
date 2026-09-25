@@ -1,5 +1,5 @@
-import type { Kind } from './Entity';
-import type { RenderRegistryTable } from './RenderRegistrySignals';
+import type { Kind } from './Entity.ts';
+import type { RenderRegistryTable } from './RenderRegistrySignals.ts';
 
 // One public registration call that can satisfy a catalog entry. Registrations are ordered: the first
 // one is the primary remedy surfaced by SceneCoverageEntry, while diagnostics may show the full list.

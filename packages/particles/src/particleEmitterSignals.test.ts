@@ -3,8 +3,8 @@ import {
   enableParticleEmitterSignals,
   getParticleEmitterSignals,
   initializeParticleEmitterSignals,
-} from './particleEmitterSignals';
-import { createParticleEmitterState } from './particleEmitterState';
+} from './particleEmitterSignals.ts';
+import { createParticleEmitterState } from './particleEmitterState.ts';
 
 describe('createParticleEmitterSignals', () => {
   it('creates a signals group with all three signal slots', () => {

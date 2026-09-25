@@ -9,7 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { loadScene3DDocumentFromGlbUrl, loadScene3DDocumentFromGltfUrl } from './gltfLoad';
+import { loadScene3DDocumentFromGlbUrl, loadScene3DDocumentFromGltfUrl } from './gltfLoad.ts';
 
 function emptyDocument(): Scene3DDocument {
   return {

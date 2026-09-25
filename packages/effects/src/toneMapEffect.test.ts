@@ -1,4 +1,4 @@
-import { createToneMapEffect, initializeToneMapEffect } from './toneMapEffect';
+import { createToneMapEffect, initializeToneMapEffect } from './toneMapEffect.ts';
 
 describe('createToneMapEffect', () => {
   it('tags the intent type and operator', () => {

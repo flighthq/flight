@@ -5,7 +5,7 @@ import {
   getDisplacementEffectPadding,
   initializeDisplacementEffect,
   registerDisplacementEffectPaddingResolver,
-} from './displacementEffect';
+} from './displacementEffect.ts';
 
 describe('createDisplacementEffect', () => {
   it('tags the intent type', () => {

@@ -1,5 +1,5 @@
-import type { Effect } from './Effect';
-import type { EffectSourceMode } from './EffectSourceMode';
+import type { Effect } from './Effect.ts';
+import type { EffectSourceMode } from './EffectSourceMode.ts';
 
 // Bevel composite effect: the directional gradient of the blurred silhouette drives a highlight/shadow edge band, clipped by bevelType, then applies sourceMode compositing.
 // Full-frame composite effect over the scene's alpha silhouette; the highlight and shadow colors are

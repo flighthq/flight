@@ -1,7 +1,7 @@
 import type { GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import { readGlRenderTargetPixels } from './glReadback';
-import { createGlState } from './glTestHelper';
+import { readGlRenderTargetPixels } from './glReadback.ts';
+import { createGlState } from './glTestHelper.ts';
 
 function makeTarget(overrides?: Partial<GlTextureRenderTarget>): GlTextureRenderTarget {
   return {

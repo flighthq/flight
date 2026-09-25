@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
+import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail.ts';
 
 describe('WGPU_MESH_FRAGMENT_TAIL', () => {
   it('declares the premultiply helper the preludes return through', () => {

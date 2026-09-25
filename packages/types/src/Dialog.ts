@@ -1,5 +1,5 @@
-import type { AppWindow } from './AppWindow';
-import type { Entity, EntityRuntime } from './Entity';
+import type { AppWindow } from './AppWindow.ts';
+import type { Entity, EntityRuntime } from './Entity.ts';
 
 // One picker filter. Each MIME key owns exactly the extensions it describes; native providers flatten
 // the extension values while Web passes the pairing through to the File System Access API.

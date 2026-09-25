@@ -1,6 +1,6 @@
 import type { TextLayoutResult } from '@flighthq/types/contract';
 
-import { createTextMetrics, getTextMetrics, initializeTextMetrics } from './textMetrics';
+import { createTextMetrics, getTextMetrics, initializeTextMetrics } from './textMetrics.ts';
 
 describe('createTextMetrics', () => {
   it('creates a zeroed metrics object', () => {

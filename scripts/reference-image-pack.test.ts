@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 
-import { getOracleAssetUrl, verifyOraclePackBytes, verifyOracleRelease } from './reference-image-pack';
-import type { ReferenceImageLock } from './reference-image-records';
+import { getOracleAssetUrl, verifyOraclePackBytes, verifyOracleRelease } from './reference-image-pack.ts';
+import type { ReferenceImageLock } from './reference-image-records.ts';
 
 // ★ EVERY CASE HERE IS A SUPPLY-CHAIN FAULT WEARING A RENDER REGRESSION'S CLOTHES. Each asserts that the
 // fault is named for what actually broke, because the failure mode this module exists to prevent is a

@@ -16,8 +16,8 @@ import {
 import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import * as wgpuEffectPassModule from './wgpuEffectPass';
-import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache';
+import * as wgpuEffectPassModule from './wgpuEffectPass.ts';
+import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache.ts';
 
 // This file is in REGISTRY_ISOLATED_TESTS because its two top-level mocks replace shared effect-pass
 // modules for every table row. The private registry makes the hoisted form file-scoped without rebuilding
@@ -57,19 +57,19 @@ beforeEach(() => {
 
 afterEach(() => vi.restoreAllMocks());
 
-import { applyCrtEffectToWgpu } from './wgpuCrtEffect';
-import { applyDirectionalBlurEffectToWgpu } from './wgpuDirectionalBlurEffect';
-import { applyDisplacementEffectToWgpu } from './wgpuDisplacementEffect';
-import { applyDitherEffectToWgpu } from './wgpuDitherEffect';
-import { applyFxaaEffectToWgpu } from './wgpuFxaaEffect';
-import { applyGlitchEffectToWgpu } from './wgpuGlitchEffect';
-import { applyKuwaharaEffectToWgpu } from './wgpuKuwaharaEffect';
-import { applyMotionBlurEffectToWgpu } from './wgpuMotionBlurEffect';
-import { applyPixelateEffectToWgpu } from './wgpuPixelateEffect';
-import { applySharpenEffectToWgpu } from './wgpuSharpenEffect';
-import { applySmaaEffectToWgpu } from './wgpuSmaaEffect';
-import { applySsaoEffectToWgpu } from './wgpuSsaoEffect';
-import { applyTiltShiftEffectToWgpu } from './wgpuTiltShiftEffect';
+import { applyCrtEffectToWgpu } from './wgpuCrtEffect.ts';
+import { applyDirectionalBlurEffectToWgpu } from './wgpuDirectionalBlurEffect.ts';
+import { applyDisplacementEffectToWgpu } from './wgpuDisplacementEffect.ts';
+import { applyDitherEffectToWgpu } from './wgpuDitherEffect.ts';
+import { applyFxaaEffectToWgpu } from './wgpuFxaaEffect.ts';
+import { applyGlitchEffectToWgpu } from './wgpuGlitchEffect.ts';
+import { applyKuwaharaEffectToWgpu } from './wgpuKuwaharaEffect.ts';
+import { applyMotionBlurEffectToWgpu } from './wgpuMotionBlurEffect.ts';
+import { applyPixelateEffectToWgpu } from './wgpuPixelateEffect.ts';
+import { applySharpenEffectToWgpu } from './wgpuSharpenEffect.ts';
+import { applySmaaEffectToWgpu } from './wgpuSmaaEffect.ts';
+import { applySsaoEffectToWgpu } from './wgpuSsaoEffect.ts';
+import { applyTiltShiftEffectToWgpu } from './wgpuTiltShiftEffect.ts';
 
 type ApplyEffect = (
   state: WgpuRenderState,

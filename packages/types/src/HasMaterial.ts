@@ -1,6 +1,6 @@
-import type { MaterialData } from './Material';
-import type { Material2D } from './Material2D';
-import type { NodeOf, NodeTraits } from './Node';
+import type { MaterialData } from './Material.ts';
+import type { Material2D } from './Material2D.ts';
+import type { NodeOf, NodeTraits } from './Node.ts';
 
 // Opt-in node trait. A freshly created node has no material (null → StandardMaterialKind, the
 // standard pipeline). `materialData` holds per-node data the material consumes, and is null until

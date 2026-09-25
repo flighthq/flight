@@ -13,7 +13,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
-import { cloneTexture, copyTexture, createTexture, getTextureUvMatrix } from './texture';
+import { cloneTexture, copyTexture, createTexture, getTextureUvMatrix } from './texture.ts';
 
 // Marks a fresh decoded frame on a video-backed Texture. The ImageResource is the shared CPU-origin source
 // and owns the upload revision; Texture.version mirrors it as the sampled object's dirty-bit.

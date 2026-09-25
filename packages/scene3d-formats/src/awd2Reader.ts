@@ -10,8 +10,8 @@ import {
   AWD2_DATA_UINT16,
   AWD2_DATA_UINT32,
   AWD2_DATA_UINT8,
-} from './awd2Schema';
-import { convertTransformLhToRh } from './shared';
+} from './awd2Schema.ts';
+import { convertTransformLhToRh } from './shared.ts';
 
 // The byte-level structures every AWD2 block is written out of: its string and transform records, its
 // typed property lists, and the left-to-right-handed conversion every transform goes through. Nothing

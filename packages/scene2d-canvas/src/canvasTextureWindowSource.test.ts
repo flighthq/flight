@@ -5,10 +5,10 @@ import {
 } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
 
-import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
-import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
-import { createCanvasRenderState } from './canvasTestSupport';
-import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource';
+import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver.ts';
+import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport.ts';
+import { createCanvasRenderState } from './canvasTestSupport.ts';
+import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

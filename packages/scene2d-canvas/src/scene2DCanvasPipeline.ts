@@ -16,21 +16,21 @@ import {
   TilemapKind,
 } from '@flighthq/types/contract';
 
-import { canvasBitmapTextRenderer } from './canvasBitmapText';
-import { canvasRenderCacheRenderer } from './canvasCache';
-import { applyCanvasBlendMode } from './canvasMaterials';
-import { canvasScene2DRenderer } from './canvasNode2D';
-import { canvasParticleEmitter2DRenderer } from './canvasParticleEmitter2D';
-import { allocateEmptyCanvasRenderRegistries } from './canvasPipeline';
-import { canvasQuadBatchRenderer } from './canvasQuadBatch';
-import { canvasRichTextRenderer } from './canvasRichText';
-import { canvasScale9ShapeRenderer } from './canvasScale9Shape';
-import { canvasScale9SpriteRenderer } from './canvasScale9Sprite';
-import { canvasShapeRenderer, canvasMorphShapeRenderer } from './canvasShape';
-import { canvasShapeCommandTable } from './canvasShapeCommandTable';
-import { canvasSpriteRenderer } from './canvasSprite';
-import { canvasTextLabelRenderer } from './canvasTextLabel';
-import { canvasTilemapRenderer } from './canvasTilemap';
+import { canvasBitmapTextRenderer } from './canvasBitmapText.ts';
+import { canvasRenderCacheRenderer } from './canvasCache.ts';
+import { applyCanvasBlendMode } from './canvasMaterials.ts';
+import { canvasScene2DRenderer } from './canvasNode2D.ts';
+import { canvasParticleEmitter2DRenderer } from './canvasParticleEmitter2D.ts';
+import { allocateEmptyCanvasRenderRegistries } from './canvasPipeline.ts';
+import { canvasQuadBatchRenderer } from './canvasQuadBatch.ts';
+import { canvasRichTextRenderer } from './canvasRichText.ts';
+import { canvasScale9ShapeRenderer } from './canvasScale9Shape.ts';
+import { canvasScale9SpriteRenderer } from './canvasScale9Sprite.ts';
+import { canvasShapeRenderer, canvasMorphShapeRenderer } from './canvasShape.ts';
+import { canvasShapeCommandTable } from './canvasShapeCommandTable.ts';
+import { canvasSpriteRenderer } from './canvasSprite.ts';
+import { canvasTextLabelRenderer } from './canvasTextLabel.ts';
+import { canvasTilemapRenderer } from './canvasTilemap.ts';
 
 function buildScene2dCanvasRenderers(): ReadonlyMap<Kind, NodeRenderer> {
   let table: ReadonlyMap<Kind, NodeRenderer> = new Map();

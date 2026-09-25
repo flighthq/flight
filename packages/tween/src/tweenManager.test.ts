@@ -1,6 +1,6 @@
-import { createTween } from './tween';
-import { createTweenManager, defaultManager, initializeTweenManager } from './tweenManager';
-import { updateTweens } from './updateTweens';
+import { createTween } from './tween.ts';
+import { createTweenManager, defaultManager, initializeTweenManager } from './tweenManager.ts';
+import { updateTweens } from './updateTweens.ts';
 
 describe('createTweenManager', () => {
   it('returns a TweenManager with empty tweens map', () => {

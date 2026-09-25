@@ -6,8 +6,8 @@ import type {
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { registerWgpuEffect } from './wgpuEffectRegistry';
-import { applySsaoEffectToWgpu } from './wgpuSsaoEffect';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
+import { applySsaoEffectToWgpu } from './wgpuSsaoEffect.ts';
 
 // Mirrors the GL contact-shadow leaf through the existing local-occlusion realization. The runner
 // remains independently replaceable when the WGPU effect context gains a sampleable depth target.

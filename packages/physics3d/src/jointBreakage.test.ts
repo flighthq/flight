@@ -1,13 +1,13 @@
 import type { Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { breakPhysics3DJoint, evaluatePhysics3DJointBreakage, isPhysics3DJointBreakable } from './jointBreakage';
-import { createPhysics3DBallAndSocketJoint } from './jointFactories';
-import { addPhysics3DJoint } from './jointRegistry';
-import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties';
-import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
-import { stepPhysics3D } from './step';
-import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world';
+import { breakPhysics3DJoint, evaluatePhysics3DJointBreakage, isPhysics3DJointBreakable } from './jointBreakage.ts';
+import { createPhysics3DBallAndSocketJoint } from './jointFactories.ts';
+import { addPhysics3DJoint } from './jointRegistry.ts';
+import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties.ts';
+import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers.ts';
+import { stepPhysics3D } from './step.ts';
+import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world.ts';
 
 describe('breakPhysics3DJoint', () => {
   it('marks the joint and records the break', () => {

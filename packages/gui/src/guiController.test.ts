@@ -18,8 +18,8 @@ import {
   setGuiVisible,
   setGuiVisualProperty,
   snapGuiValue,
-} from './guiController';
-import { createGuiTestNode, emitGuiPointer } from './guiTestHelper';
+} from './guiController.ts';
+import { createGuiTestNode, emitGuiPointer } from './guiTestHelper.ts';
 
 describe('clampGuiValue', () => {
   it('clamps finite values and normalizes reversed bounds', () => {

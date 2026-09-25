@@ -1,9 +1,9 @@
 import type { Physics3DWorld } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createPhysics3DContact, createPhysics3DContactPoint } from './contacts';
-import { createPhysics3DBallAndSocketJoint, createPhysics3DDistanceJoint } from './jointFactories';
-import { addPhysics3DJoint } from './jointRegistry';
+import { createPhysics3DContact, createPhysics3DContactPoint } from './contacts.ts';
+import { createPhysics3DBallAndSocketJoint, createPhysics3DDistanceJoint } from './jointFactories.ts';
+import { addPhysics3DJoint } from './jointRegistry.ts';
 import {
   isPhysics3DBodyStateValid,
   isPhysics3DColliderStateValid,
@@ -16,14 +16,14 @@ import {
   isPhysics3DSubstepsValid,
   isPhysics3DTimestepValid,
   isPhysics3DVelocityIterationsValid,
-} from './stepValidation';
+} from './stepValidation.ts';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,
   createPhysics3DCollider,
   createPhysics3DWorld,
   createRigidBody3D,
-} from './world';
+} from './world.ts';
 
 describe('isPhysics3DBodyStateValid', () => {
   it('accepts a freshly built world', () => {

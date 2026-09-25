@@ -1,10 +1,10 @@
 import type { TextureContainerParseExplanation } from '@flighthq/types/contract';
 
-import { detectTextureContainer } from './detectTextureContainer';
-import { getAtfParseFailureReason } from './parseAtf';
-import { getBasisParseFailureReason } from './parseBasis';
-import { getDdsParseFailureReason } from './parseDds';
-import { getKtx2ParseFailureReason } from './parseKtx2';
+import { detectTextureContainer } from './detectTextureContainer.ts';
+import { getAtfParseFailureReason } from './parseAtf.ts';
+import { getBasisParseFailureReason } from './parseBasis.ts';
+import { getDdsParseFailureReason } from './parseDds.ts';
+import { getKtx2ParseFailureReason } from './parseKtx2.ts';
 
 // Explains why the detected texture container's parser would return null. Returns null when parsing
 // succeeds. The query does not retain payload bytes or expose parser-internal reader state.

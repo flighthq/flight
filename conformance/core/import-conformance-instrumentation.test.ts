@@ -1,4 +1,4 @@
-import { parseImportConformanceInstrumentationMapping } from './import-conformance-instrumentation';
+import { parseImportConformanceInstrumentationMapping } from './import-conformance-instrumentation.ts';
 
 const DEFINITIONS = [
   { id: 'swf.fill.solid', label: 'fill: solid' },

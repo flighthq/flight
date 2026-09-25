@@ -5,10 +5,10 @@ import type {
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { drawWgpuEffectPass } from './wgpuEffectPass';
-import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
-import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale';
+import { drawWgpuEffectPass } from './wgpuEffectPass.ts';
+import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
+import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale.ts';
 
 // Directional blur: accumulate samples stepped along `angle` over `length` texels, normalized by the
 // sample count. Single-pass reference recipe, the Wgpu mirror of effects-gl's

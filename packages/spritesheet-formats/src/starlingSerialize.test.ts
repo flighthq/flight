@@ -1,5 +1,5 @@
-import { parseStarlingSpritesheet, parseStarlingSpritesheetDocument } from './starlingParse';
-import { serializeStarlingSpritesheet } from './starlingSerialize';
+import { parseStarlingSpritesheet, parseStarlingSpritesheetDocument } from './starlingParse.ts';
+import { serializeStarlingSpritesheet } from './starlingSerialize.ts';
 
 const XML = `<?xml version="1.0" encoding="UTF-8"?>
 <TextureAtlas imagePath="atlas.png">

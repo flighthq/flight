@@ -12,7 +12,7 @@ import type {
 } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ImageChannel, ImageTextureSourceKind, SpriteKind } from '@flighthq/types/contract';
 
-import { hitTestGraphLocalBounds, registerHitTestPrecise } from './hitTests';
+import { hitTestGraphLocalBounds, registerHitTestPrecise } from './hitTests.ts';
 
 export function registerSpriteHitTest(
   hostBitmapReadback: Readonly<HostBitmapReadbackCapability>,

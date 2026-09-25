@@ -1,8 +1,8 @@
-export * from './flightDocumentResourceDependencies';
-export { explainFlightDocumentText, formatFlightDocumentText, parseFlightDocumentText } from './flightDocumentText';
-export * from './sceneDocumentInteractiveStateBindings';
-export * from './sceneDocumentLayoutBindings';
-export * from './sceneDocumentMaterializationSelection';
+export * from './flightDocumentResourceDependencies.ts';
+export { explainFlightDocumentText, formatFlightDocumentText, parseFlightDocumentText } from './flightDocumentText.ts';
+export * from './sceneDocumentInteractiveStateBindings.ts';
+export * from './sceneDocumentLayoutBindings.ts';
+export * from './sceneDocumentMaterializationSelection.ts';
 export {
   checkFlightDocumentFields,
   checkFlightDocumentInteractiveStates,
@@ -11,19 +11,19 @@ export {
   checkUnregisteredNodeKindsFromRaw,
   createDocumentRefusal,
   createSceneRefusal,
-} from './sceneDocumentRefusal';
+} from './sceneDocumentRefusal.ts';
 export {
   createFlightDocumentFromScene2D,
   createFlightDocumentScene2DMaterialization,
   createFlightDocumentScene2DMaterializationFromText,
   explainFlightDocumentRefusal,
   explainFlightDocumentRefusalFromText,
-} from './sceneDocumentScene2DMaterialization';
+} from './sceneDocumentScene2DMaterialization.ts';
 export {
   createFlightDocumentFromScene3D,
   createFlightDocumentScene3DMaterialization,
   createFlightDocumentScene3DMaterializationFromText,
   explainFlightDocumentScene3DRefusal,
   explainFlightDocumentScene3DRefusalFromText,
-} from './sceneDocumentScene3DMaterialization';
-export * from './sceneDocumentYamlSubset';
+} from './sceneDocumentScene3DMaterialization.ts';
+export * from './sceneDocumentYamlSubset.ts';

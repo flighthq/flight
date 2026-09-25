@@ -8,14 +8,14 @@ import {
   getQuadraticBezierCurvature,
   getQuadraticBezierPoint,
   getQuadraticBezierTangent,
-} from './getPathSegmentAtParameter';
+} from './getPathSegmentAtParameter.ts';
 import {
   appendPathCubicCurveTo,
   appendPathQuadraticCurveTo,
   appendPathLineTo,
   appendPathMoveTo,
   createPath,
-} from './path';
+} from './path.ts';
 
 describe('getCubicBezierCurvature', () => {
   it('returns zero for a straight cubic', () => {

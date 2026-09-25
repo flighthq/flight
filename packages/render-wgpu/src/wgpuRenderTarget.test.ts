@@ -1,15 +1,15 @@
 import type { WgpuRenderTarget, WgpuScreenRenderTarget } from '@flighthq/types/contract';
 
-import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
-import { declareWgpuRenderTargetColorSpace, getWgpuRenderTargetSupersampleScale } from './wgpuRenderTarget';
+import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass.ts';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
+import { declareWgpuRenderTargetColorSpace, getWgpuRenderTargetSupersampleScale } from './wgpuRenderTarget.ts';
 import {
   beginWgpuScreenRenderPassForTest,
   createWgpuRenderStateForTest,
   createWgpuScreenRenderTargetForTest,
   installWgpuMock,
-} from './wgpuTestHelper';
-import { createWgpuTextureRenderTarget } from './wgpuTextureRenderTarget';
+} from './wgpuTestHelper.ts';
+import { createWgpuTextureRenderTarget } from './wgpuTextureRenderTarget.ts';
 
 beforeAll(() => {
   installWgpuMock();

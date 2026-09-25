@@ -15,7 +15,7 @@ import {
 import type { CollisionBuiltInShape2D, Physics2DJoint } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createPhysics2DAbiCommandBuffer } from './physics2DAbiBuffer';
+import { createPhysics2DAbiCommandBuffer } from './physics2DAbiBuffer.ts';
 import {
   getPhysics2DAbiSetColliderCommandByteLength,
   writePhysics2DAbiApplyForceAtPointCommand,
@@ -32,7 +32,7 @@ import {
   writePhysics2DAbiSetJointCommand,
   writePhysics2DAbiSetSolverConfigCommand,
   writePhysics2DAbiWakeBodyCommand,
-} from './physics2DAbiCommand';
+} from './physics2DAbiCommand.ts';
 import {
   Physics2DAbiCommandByteLength,
   Physics2DAbiCommandHeaderByteLength,
@@ -42,7 +42,7 @@ import {
   Physics2DAbiJointKind,
   Physics2DAbiShapeHeaderByteLength,
   Physics2DAbiShapeKind,
-} from './physics2DAbiLayout';
+} from './physics2DAbiLayout.ts';
 
 const MATERIAL = { density: 1, friction: 0.3, restitution: 0.1 };
 

@@ -1,6 +1,6 @@
-import { createCamera3D } from './camera';
-import { getCamera3DLinearDepth, getCamera3DViewSpaceZ } from './depth';
-import { createOrthographicProjection, createPerspectiveProjection } from './projection';
+import { createCamera3D } from './camera.ts';
+import { getCamera3DLinearDepth, getCamera3DViewSpaceZ } from './depth.ts';
+import { createOrthographicProjection, createPerspectiveProjection } from './projection.ts';
 
 function makeCamera(near = 0.1, far = 100) {
   return createCamera3D({

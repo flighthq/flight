@@ -1,6 +1,6 @@
 import { createPlatformInfo } from '@flighthq/platform/contract';
 
-import { webHostPlatform } from './webPlatform';
+import { webHostPlatform } from './webPlatform.ts';
 
 describe('web backend UA detection', () => {
   function withUserAgent(ua: string, fn: () => void): void {

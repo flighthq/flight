@@ -1,10 +1,10 @@
-import { webHost } from './webHost';
+import { webHost } from './webHost.ts';
 import {
   initializeWebShareContentBackend,
   initializeWebShareFilesBackend,
   webHostShareContent,
   webHostShareFiles,
-} from './webShare';
+} from './webShare.ts';
 
 afterEach(() => vi.unstubAllGlobals());
 

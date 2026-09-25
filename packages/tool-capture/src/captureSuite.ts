@@ -7,16 +7,16 @@ import { resolve } from 'node:path';
 import type { CaptureBaselineProvenance } from '@flighthq/types/contract';
 import pc from 'picocolors';
 
-import { launchBrowser } from './captureBrowser.js';
-import type { CaptureBrowserSession } from './captureBrowser.js';
-import type { Entry } from './captureEntries.js';
-import { captureParallel, isVerifiedCaptureTool } from './captureEntry.js';
-import type { CaptureTargetReport } from './captureEntry.js';
-import { assertCaptureSelectionNotEmpty, selectCaptureEntriesByName } from './captureEntryFilter.js';
-import { formatSummaryCount, formatSummaryLine } from './captureFormat.js';
-import { installAbortHandler } from './captureInterrupt.js';
-import { writeCaptureReport } from './captureReport.js';
-import type { Server } from './captureServer.js';
+import { launchBrowser } from './captureBrowser.ts';
+import type { CaptureBrowserSession } from './captureBrowser.ts';
+import type { Entry } from './captureEntries.ts';
+import { captureParallel, isVerifiedCaptureTool } from './captureEntry.ts';
+import type { CaptureTargetReport } from './captureEntry.ts';
+import { assertCaptureSelectionNotEmpty, selectCaptureEntriesByName } from './captureEntryFilter.ts';
+import { formatSummaryCount, formatSummaryLine } from './captureFormat.ts';
+import { installAbortHandler } from './captureInterrupt.ts';
+import { writeCaptureReport } from './captureReport.ts';
+import type { Server } from './captureServer.ts';
 
 export interface CaptureSuiteOptions {
   /** Stable output/baseline namespace, for example `examples`, `functional`, or an application name. */

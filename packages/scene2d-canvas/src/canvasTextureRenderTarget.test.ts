@@ -3,7 +3,7 @@ import {
   destroyCanvasTextureRenderTarget,
   initializeCanvasTextureRenderTarget,
   resizeCanvasTextureRenderTarget,
-} from './canvasTestSupport';
+} from './canvasTestSupport.ts';
 
 describe('createCanvasTextureRenderTarget', () => {
   it('creates a canvas with the requested dimensions', () => {

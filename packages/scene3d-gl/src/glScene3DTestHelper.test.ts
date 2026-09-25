@@ -1,4 +1,4 @@
-import { makeFakeGl2 } from './glScene3DTestHelper';
+import { makeFakeGl2 } from './glScene3DTestHelper.ts';
 
 describe('makeFakeGl2', () => {
   it('sets and consumes the first GL draw error without recording an invalid draw', () => {

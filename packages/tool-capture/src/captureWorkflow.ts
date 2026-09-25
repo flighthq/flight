@@ -6,18 +6,18 @@ import { resolve } from 'node:path';
 
 import pc from 'picocolors';
 
-import type { CaptureBenchmarkOptions, CaptureBenchmarkResult } from './captureBenchmark.js';
-import { runCaptureBenchmark } from './captureBenchmark.js';
-import { launchBrowser } from './captureBrowser.js';
-import type { CaptureBrowserSession } from './captureBrowser.js';
-import type { Entry } from './captureEntries.js';
-import { isVerifiedCaptureTool } from './captureEntry.js';
-import { writeCaptureReport } from './captureReport.js';
-import type { Server } from './captureServer.js';
-import type { CaptureSuiteOptions, CaptureSuiteResult } from './captureSuite.js';
-import { runCaptureSuite } from './captureSuite.js';
-import type { CaptureValidationOptions, CaptureValidationResult } from './captureValidation.js';
-import { runCaptureValidation } from './captureValidation.js';
+import type { CaptureBenchmarkOptions, CaptureBenchmarkResult } from './captureBenchmark.ts';
+import { runCaptureBenchmark } from './captureBenchmark.ts';
+import { launchBrowser } from './captureBrowser.ts';
+import type { CaptureBrowserSession } from './captureBrowser.ts';
+import type { Entry } from './captureEntries.ts';
+import { isVerifiedCaptureTool } from './captureEntry.ts';
+import { writeCaptureReport } from './captureReport.ts';
+import type { Server } from './captureServer.ts';
+import type { CaptureSuiteOptions, CaptureSuiteResult } from './captureSuite.ts';
+import { runCaptureSuite } from './captureSuite.ts';
+import type { CaptureValidationOptions, CaptureValidationResult } from './captureValidation.ts';
+import { runCaptureValidation } from './captureValidation.ts';
 
 export type CaptureWorkflowCaptureOptions = Omit<
   CaptureSuiteOptions,

@@ -13,7 +13,7 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RenderRegistryTable } from '@flighthq/types/contract';
 
-import { acquireCanvasSurface, destroyCanvasSurfaceOwned } from './canvasRenderSurface';
+import { acquireCanvasSurface, destroyCanvasSurfaceOwned } from './canvasRenderSurface.ts';
 
 export function acquireCanvasTextureResolverSurface(
   resolvers: CanvasTextureResolvers,

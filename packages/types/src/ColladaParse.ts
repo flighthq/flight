@@ -1,5 +1,5 @@
-import type { ImportDiagnostic } from './ImportDiagnostic';
-import type { Scene3DDocument } from './Scene3DDocument';
+import type { ImportDiagnostic } from './ImportDiagnostic.ts';
+import type { Scene3DDocument } from './Scene3DDocument.ts';
 export type ColladaUpAxis = 'X_UP' | 'Y_UP' | 'Z_UP';
 export interface ColladaImportOptions {
   readonly baseUrl?: string;

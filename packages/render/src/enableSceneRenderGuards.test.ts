@@ -12,9 +12,9 @@ import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract
 import type { Camera3D, LogEntry, Mesh, MeshGeometry, Skin } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { disableSceneRenderGuards, enableSceneRenderGuards } from './enableSceneRenderGuards';
-import { createRenderState } from './renderState';
-import { prepareScene3DRender } from './sceneRender';
+import { disableSceneRenderGuards, enableSceneRenderGuards } from './enableSceneRenderGuards.ts';
+import { createRenderState } from './renderState.ts';
+import { prepareScene3DRender } from './sceneRender.ts';
 
 let entries: LogEntry[];
 

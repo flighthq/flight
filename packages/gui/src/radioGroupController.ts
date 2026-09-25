@@ -12,8 +12,8 @@ import {
   createGuiControllerRuntime,
   disposeGuiController,
   getGuiControllerRuntime,
-} from './guiController';
-import { getToggleControllerSignals, setToggleControllerChecked } from './toggleController';
+} from './guiController.ts';
+import { getToggleControllerSignals, setToggleControllerChecked } from './toggleController.ts';
 
 interface RadioGroupControllerFields {
   selectedIndex: number;

@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { assertPhysics2DBodyNotStepping, assertPhysics2DWorldNotStepping, steppingPhysics2DWorlds } from './ownership';
-import { addPhysics2DBody, createPhysics2DWorld, createRigidBody2D } from './world';
+import {
+  assertPhysics2DBodyNotStepping,
+  assertPhysics2DWorldNotStepping,
+  steppingPhysics2DWorlds,
+} from './ownership.ts';
+import { addPhysics2DBody, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 describe('assertPhysics2DBodyNotStepping', () => {
   it('resolves an owned body to its active world while leaving detached authoring data available', () => {

@@ -1,7 +1,7 @@
-import type { Entity } from './Entity';
-import type { RenderTexture } from './RenderTexture';
-import type { WgpuRenderState } from './WgpuRenderState';
-import type { WgpuRenderTargetPool, WgpuTextureRenderTarget } from './WgpuRenderTarget';
+import type { Entity } from './Entity.ts';
+import type { RenderTexture } from './RenderTexture.ts';
+import type { WgpuRenderState } from './WgpuRenderState.ts';
+import type { WgpuRenderTargetPool, WgpuTextureRenderTarget } from './WgpuRenderTarget.ts';
 
 export type WgpuRenderTextureStatus = 'ready' | 'released' | 'unrendered' | 'writing';
 

@@ -8,8 +8,8 @@ import type {
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeEffect } from './effect';
-import { getGaussianEffectPadding, registerEffectPaddingResolver } from './effectPadding';
+import { initializeEffect } from './effect.ts';
+import { getGaussianEffectPadding, registerEffectPaddingResolver } from './effectPadding.ts';
 
 // HDR bloom intent and its shared recipe math. The parameter math is substrate-agnostic so the Gl and
 // Wgpu bloom recipes derive identical bright-pass cutoff, additive strength, and blur radius from the

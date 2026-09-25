@@ -16,7 +16,7 @@ import {
   disposeGuiController,
   getGuiControllerRuntime,
   setGuiVisible,
-} from './guiController';
+} from './guiController.ts';
 
 interface ButtonControllerFields {
   disabled: boolean;

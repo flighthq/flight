@@ -1,6 +1,6 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 
-import { buildGlScale9Mapper } from './glScale9Mapper';
+import { buildGlScale9Mapper } from './glScale9Mapper.ts';
 
 describe('buildGlScale9Mapper', () => {
   it('returns null for invalid scale or bounds', () => {

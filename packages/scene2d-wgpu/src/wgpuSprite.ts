@@ -20,7 +20,7 @@ import {
   prepareWgpuQuadBatchWrite,
   recordWgpuQuadBatchColorScaleBias,
   writeWgpuQuadBatchAffineInstance,
-} from './wgpuQuadBatchWriter';
+} from './wgpuQuadBatchWriter.ts';
 
 export function drawWgpuSprite(state: WgpuRenderState, renderProxy: RenderProxy2D): void {
   const runtime = getWgpuRenderStateRuntime(state);

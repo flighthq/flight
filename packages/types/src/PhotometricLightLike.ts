@@ -1,4 +1,4 @@
-import type { LightUnit } from './LightUnit';
+import type { LightUnit } from './LightUnit.ts';
 
 // Any light descriptor that declares both a linear `intensity` and the photometric `intensityUnit` that
 // intensity was authored in. Structural on purpose: every concrete light type carries these two fields,

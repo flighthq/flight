@@ -1,6 +1,6 @@
-import type { MobileOsProfile } from './App';
-import type { CapacitorAppCapabilitiesFor } from './CapacitorAppCapabilitiesFor';
-import type { CapacitorProtocolCapabilities } from './CapacitorProtocolCapabilities';
+import type { MobileOsProfile } from './App.ts';
+import type { CapacitorAppCapabilitiesFor } from './CapacitorAppCapabilitiesFor.ts';
+import type { CapacitorProtocolCapabilities } from './CapacitorProtocolCapabilities.ts';
 import type {
   Host,
   HostClipboardCapabilities,
@@ -13,9 +13,9 @@ import type {
   HostShareCapabilities,
   HostSoftKeyboardCapabilities,
   HostStatusBarCapabilities,
-} from './Host';
-import type { CapacitorNotificationCapabilities } from './Notification';
-import type { HostCapacitorShareContentCapability } from './Share';
+} from './Host.ts';
+import type { CapacitorNotificationCapabilities } from './Notification.ts';
+import type { HostCapacitorShareContentCapability } from './Share.ts';
 
 export type CapacitorHost<Profile extends MobileOsProfile> = Host & {
   readonly app: CapacitorAppCapabilitiesFor<Profile>;

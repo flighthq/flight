@@ -6,7 +6,7 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-import { initializeColorLutAdjustment } from './colorLutAdjustment';
+import { initializeColorLutAdjustment } from './colorLutAdjustment.ts';
 
 export function createHueSaturationAdjustment(
   options: Readonly<Omit<HueSaturationAdjustment, typeof EntityRuntimeKey | 'kind' | 'transform'>> = {},

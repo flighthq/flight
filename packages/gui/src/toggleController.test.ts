@@ -1,13 +1,13 @@
 import { connectSignal } from '@flighthq/signals/contract';
 
-import { createGuiTestNode, emitGuiPointer } from './guiTestHelper';
+import { createGuiTestNode, emitGuiPointer } from './guiTestHelper.ts';
 import {
   createToggleController,
   disposeToggleController,
   getToggleControllerSignals,
   isToggleControllerChecked,
   setToggleControllerChecked,
-} from './toggleController';
+} from './toggleController.ts';
 
 describe('createToggleController', () => {
   it('toggles through either state visual and an optional label', () => {

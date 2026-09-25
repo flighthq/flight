@@ -2,7 +2,7 @@ import {
   applyCameraMotionBlurEffectToWgpu,
   wgpuCameraMotionBlurEffectRunner,
   registerWgpuCameraMotionBlurEffect,
-} from './wgpuCameraMotionBlurEffect';
+} from './wgpuCameraMotionBlurEffect.ts';
 
 describe('applyCameraMotionBlurEffectToWgpu', () => {
   it('is a function', () => {

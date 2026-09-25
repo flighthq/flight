@@ -1,12 +1,12 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createAnimationChannel, createAnimationClip } from './animationClip';
+import { createAnimationChannel, createAnimationClip } from './animationClip.ts';
 import {
   createAnimationRootMotionExtractor,
   extractAnimationRootMotion,
   initializeAnimationRootMotionExtractor,
-} from './animationRootMotion';
-import { createAnimationTrack } from './animationTrack';
+} from './animationRootMotion.ts';
+import { createAnimationTrack } from './animationTrack.ts';
 
 describe('createAnimationRootMotionExtractor', () => {
   it('creates reusable Entity-backed scratch for one explicit channel', () => {

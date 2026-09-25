@@ -1,4 +1,4 @@
-import { approxEqual, approxEqualRelative, approxZero } from './comparison';
+import { approxEqual, approxEqualRelative, approxZero } from './comparison.ts';
 
 describe('approxEqual', () => {
   it('returns true for identical values', () => {

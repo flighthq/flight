@@ -5,7 +5,7 @@ import {
   getBlurEffectPadding,
   initializeBlurEffect,
   registerBlurEffectPaddingResolver,
-} from './blurEffect';
+} from './blurEffect.ts';
 
 describe('createBlurEffect', () => {
   it('sets the kind', () => {

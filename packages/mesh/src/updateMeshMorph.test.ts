@@ -1,9 +1,9 @@
 import type { Mesh, MeshGeometry, MeshMorph, VertexAttributeLayout } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createMeshGeometry, getMeshGeometryMorphBindPose } from './meshGeometry';
-import { ensureMeshGeometryBounds } from './meshGeometryCompute';
-import { updateMeshMorph } from './updateMeshMorph';
+import { createMeshGeometry, getMeshGeometryMorphBindPose } from './meshGeometry.ts';
+import { ensureMeshGeometryBounds } from './meshGeometryCompute.ts';
+import { updateMeshMorph } from './updateMeshMorph.ts';
 
 const POSITION_LAYOUT: VertexAttributeLayout = {
   attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],

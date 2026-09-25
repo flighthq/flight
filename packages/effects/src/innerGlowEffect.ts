@@ -8,8 +8,8 @@ import type {
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeEffect } from './effect';
-import { getGaussianEffectPadding, registerEffectPaddingResolver } from './effectPadding';
+import { initializeEffect } from './effect.ts';
+import { getGaussianEffectPadding, registerEffectPaddingResolver } from './effectPadding.ts';
 
 // Inner-glow composite effect: tint the inverted silhouette, blur inward, clip to the source alpha, then draw or hide the source.
 export function createInnerGlowEffect(

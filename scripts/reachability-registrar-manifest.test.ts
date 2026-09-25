@@ -4,7 +4,7 @@ import {
   collectRegistrarIdentities,
   diffRegistrarIdentityManifest,
   hasRegistrarIdentityManifestDrift,
-} from './reachability-registrar-manifest';
+} from './reachability-registrar-manifest.ts';
 
 describe('reachability registrar identity manifest', () => {
   it('deduplicates multi-mapping ownership rows into a sorted registrar identity set', () => {

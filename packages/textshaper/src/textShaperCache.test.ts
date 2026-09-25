@@ -6,7 +6,7 @@ import {
   disposeTextShaperCache,
   initializeTextShaperCache,
   shapeTextRunCached,
-} from './textShaperCache';
+} from './textShaperCache.ts';
 
 const _stubRun: ShapedRun = {
   advanceWidth: 15,

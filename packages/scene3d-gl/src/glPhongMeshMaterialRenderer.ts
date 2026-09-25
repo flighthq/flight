@@ -15,9 +15,9 @@ import type {
 } from '@flighthq/types/contract';
 import { PhongMaterialKind } from '@flighthq/types/contract';
 
-import { ensureGlClassicProgram } from './glClassicPrelude';
-import { bindGlMeshLightBlock } from './glLitProgram';
-import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
+import { ensureGlClassicProgram } from './glClassicPrelude.ts';
+import { bindGlMeshLightBlock } from './glLitProgram.ts';
+import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
 import {
   beginGlMeshDraw,
   bindGlUvTransform,
@@ -25,8 +25,8 @@ import {
   hasGlUvTransform,
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
-} from './glMeshProgram';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+} from './glMeshProgram.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // The built-in classic Phong forward-lit mesh-material renderer (GlMeshMaterialRenderer for
 // PhongMaterialKind). Lambert diffuse plus a reflection-vector specular lobe: bind selects the classic

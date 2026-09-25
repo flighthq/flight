@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, GrayscaleAdjustment, EntityConstruction } from '@flighthq/types/contract';
 
-import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment';
+import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment.ts';
 
 export function createGrayscaleAdjustment(
   options: Readonly<Omit<GrayscaleAdjustment, typeof EntityRuntimeKey | 'kind' | 'colorMatrix'>> = {},

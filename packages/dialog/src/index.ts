@@ -14,4 +14,4 @@ export {
   showPromptDialog,
   showSaveFileDialog,
   showWarningDialog,
-} from './contract';
+} from './contract.ts';

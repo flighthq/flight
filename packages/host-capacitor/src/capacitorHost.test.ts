@@ -3,7 +3,7 @@ import { createHost } from '@flighthq/host/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { CapacitorApi } from '@flighthq/types/contract';
 
-import { capacitorHost } from './capacitorHost';
+import { capacitorHost } from './capacitorHost.ts';
 
 // A fake Capacitor API broad enough that every provider constructs without touching missing members.
 // Providers close over `capacitor` and only call in when their methods run (plus the app, device,

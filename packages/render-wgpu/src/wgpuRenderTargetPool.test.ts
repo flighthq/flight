@@ -4,8 +4,8 @@ import {
   destroyWgpuRenderTargetPool,
   initializeWgpuRenderTargetPool,
   releaseWgpuTextureRenderTarget,
-} from './wgpuRenderTargetPool';
-import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+} from './wgpuRenderTargetPool.ts';
+import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';
 
 beforeAll(() => {
   installWgpuMock();

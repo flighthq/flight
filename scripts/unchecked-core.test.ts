@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 import { parseSync } from 'oxc-parser';
 
-import type { Mutant, TestCoverageProfile, UncheckedFile } from './unchecked-core';
+import type { Mutant, TestCoverageProfile, UncheckedFile } from './unchecked-core.ts';
 import {
   applyMutantText,
   collectExecutedLines,
@@ -14,7 +14,7 @@ import {
   rankUncheckedFiles,
   readMutantRunResult,
   selectReachableMutants,
-} from './unchecked-core';
+} from './unchecked-core.ts';
 
 describe('applyMutantText', () => {
   it('splices one mutant at its own offsets', () => {

@@ -2,7 +2,7 @@ import { packLinearToColor } from '@flighthq/color/contract';
 import { createSpecularPbrExtension } from '@flighthq/materials/contract';
 import type { GltfExtensionHandler } from '@flighthq/types/contract';
 
-import { attachGltfPbrExtension } from './gltfMaterialExtension';
+import { attachGltfPbrExtension } from './gltfMaterialExtension.ts';
 
 // KHR_materials_specular — retunes the dielectric F0 independently of roughness and metalness, so a
 // surface can be made less (or differently) reflective without pretending to be rough. Both factors

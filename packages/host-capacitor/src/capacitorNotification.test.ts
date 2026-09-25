@@ -14,7 +14,7 @@ import {
   capacitorHostNotificationLifecycle,
   capacitorHostNotificationPermission,
   capacitorHostNotificationScheduling,
-} from './capacitorNotification';
+} from './capacitorNotification.ts';
 
 function fakeCapacitor(display = 'granted') {
   const scheduled: CapacitorLocalNotificationSchema[] = [];

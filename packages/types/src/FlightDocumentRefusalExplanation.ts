@@ -1,4 +1,4 @@
-import type { Entity, Kind } from './Entity';
+import type { Entity, Kind } from './Entity.ts';
 
 // Stable identities shared by text parsing, logical validation, resource resolution, and scene
 // materialization. Limit values are intentionally not caller-configurable; the six limit identities

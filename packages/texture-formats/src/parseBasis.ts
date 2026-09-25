@@ -10,7 +10,7 @@ import {
   readByteReaderU24,
   readByteReaderU32,
   readByteReaderU8,
-} from './byteReader';
+} from './byteReader.ts';
 
 export function getBasisParseFailureReason(bytes: Readonly<Uint8Array>): TextureContainerParseFailureReason | null {
   const failure: ParseFailure = { reason: null };

@@ -1,4 +1,4 @@
-import { reportTextBidiCompactTableMiss, setTextBidiGuard } from './textBidiGuards';
+import { reportTextBidiCompactTableMiss, setTextBidiGuard } from './textBidiGuards.ts';
 
 afterEach(() => setTextBidiGuard(null));
 

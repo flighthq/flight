@@ -15,11 +15,11 @@ import {
 } from '@flighthq/render-gl/contract';
 import type { GlEffectRunner, GlRenderState, LogEntry, Effect } from '@flighthq/types/contract';
 
-import { areGlEffectGuardsEnabled, disableGlEffectGuards, enableGlEffectGuards } from './enableGlEffectGuards';
-import { registerGlCustomShaderSource } from './glCustomShaderEffect';
-import { registerGlEffect } from './glEffectRegistry';
-import { beginGlEffectPass, createGlEffectState, endGlEffectPass } from './glEffectState';
-import { applyGlEffectsToRenderTexture } from './glRenderTextureEffect';
+import { areGlEffectGuardsEnabled, disableGlEffectGuards, enableGlEffectGuards } from './enableGlEffectGuards.ts';
+import { registerGlCustomShaderSource } from './glCustomShaderEffect.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
+import { beginGlEffectPass, createGlEffectState, endGlEffectPass } from './glEffectState.ts';
+import { applyGlEffectsToRenderTexture } from './glRenderTextureEffect.ts';
 
 beforeEach(() => clearLogOnceKeys());
 

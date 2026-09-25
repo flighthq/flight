@@ -2,7 +2,7 @@ import { createGlProgram } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlContext, GlRenderState, Matrix, PathWinding } from '@flighthq/types/contract';
 
-import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
 
 // Stencil-then-cover fill of arbitrary flattened contours, used to realize a *path* ClipRegion exactly
 // (crisp at any zoom — the contours are transformed in the vertex shader each frame, never cached as a

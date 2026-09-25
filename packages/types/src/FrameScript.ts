@@ -1,4 +1,4 @@
-import type { Node2D } from './Node2D';
+import type { Node2D } from './Node2D.ts';
 
 // A per-frame callback attached to a timeline frame. Invoked on frame entry with the timeline's
 // construct target and the 1-based frame number.

@@ -5,13 +5,13 @@ import {
   registerLottieScene2DDocumentImporter,
   registerRiveScene2DDocumentImporter,
   registerSvgScene2DDocumentImporter,
-} from './builtInScene2DDocumentImporters';
+} from './builtInScene2DDocumentImporters.ts';
 
 const kernel = martinezPathBooleanKernel;
 import {
   createScene2DDocumentFromBytes,
   createScene2DDocumentImporterRegistry,
-} from './scene2DDocumentImporterRegistry';
+} from './scene2DDocumentImporterRegistry.ts';
 
 const encode = (source: string) => new TextEncoder().encode(source);
 

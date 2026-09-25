@@ -1,2 +1,2 @@
-export * from './manifestTool.js';
-export * from './requirementSetFile.js';
+export * from './manifestTool.ts';
+export * from './requirementSetFile.ts';

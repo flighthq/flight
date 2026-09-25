@@ -18,7 +18,7 @@ export {
   setAudioChannelPan,
   setAudioChannelPlaybackRate,
   stopAudioChannel,
-} from './audioChannel';
+} from './audioChannel.ts';
 export {
   addAudioBusToMixer,
   createAudioBus,
@@ -36,7 +36,7 @@ export {
   setAudioMixerMasterMuted,
   stopAllAudioMixerChannels,
   unrouteAudioChannelFromMixerBus,
-} from './audioMixer';
-export * from './enableAudioMixerGuards';
-export * from './mediaChannelSignals';
-export * from './videoChannel';
+} from './audioMixer.ts';
+export * from './enableAudioMixerGuards.ts';
+export * from './mediaChannelSignals.ts';
+export * from './videoChannel.ts';

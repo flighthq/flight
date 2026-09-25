@@ -1,4 +1,4 @@
-import { buildToolPipeline } from './pipelineBuild';
+import { buildToolPipeline } from './pipelineBuild.ts';
 
 export interface ToolPipelineToolIO {
   readonly writeError: (message: string) => void;

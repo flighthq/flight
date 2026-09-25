@@ -15,13 +15,13 @@ import {
   formatNodeKindCensusReport,
   hasNodeKindCensusFailure,
   isKindPreservingConstructor,
-} from './node-kind-census-core';
+} from './node-kind-census-core.ts';
 import type {
   NodeKindCensusReport,
   NodeKindChokepointSite,
   NodeKindFamily,
   NodeKindProbeOutcome,
-} from './node-kind-census-core';
+} from './node-kind-census-core.ts';
 
 // The arbiter for D3. The population is DERIVED on every run — discovered statically, then classified by
 // probing the live public lane — and compared to whatever coverage a document registry declares. There is

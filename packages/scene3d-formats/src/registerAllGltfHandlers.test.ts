@@ -1,13 +1,13 @@
 import type { GltfCoreFeatureHandler, GltfExtensionHandler } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { GltfCamerasCoreFeatureHandler } from './gltfCameras';
-import { registerAllGltfHandlers } from './registerAllGltfHandlers';
-import { registerGltfAnimationHandlers } from './registerGltfAnimationHandlers';
-import { registerGltfCameraHandlers } from './registerGltfCameraHandlers';
-import { registerGltfLightingExtensionHandlers } from './registerGltfLightingExtensionHandlers';
-import { registerGltfMaterialExtensionHandlers } from './registerGltfMaterialExtensionHandlers';
-import { registerGltfSkinHandlers } from './registerGltfSkinHandlers';
+import { GltfCamerasCoreFeatureHandler } from './gltfCameras.ts';
+import { registerAllGltfHandlers } from './registerAllGltfHandlers.ts';
+import { registerGltfAnimationHandlers } from './registerGltfAnimationHandlers.ts';
+import { registerGltfCameraHandlers } from './registerGltfCameraHandlers.ts';
+import { registerGltfLightingExtensionHandlers } from './registerGltfLightingExtensionHandlers.ts';
+import { registerGltfMaterialExtensionHandlers } from './registerGltfMaterialExtensionHandlers.ts';
+import { registerGltfSkinHandlers } from './registerGltfSkinHandlers.ts';
 
 describe('registerAllGltfHandlers', () => {
   it('registers every built-in optional family across both handler lists', () => {

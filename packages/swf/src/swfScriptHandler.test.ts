@@ -1,4 +1,4 @@
-import { swfScriptHandler } from './swfScriptHandler';
+import { swfScriptHandler } from './swfScriptHandler.ts';
 
 describe('swfScriptHandler', () => {
   it('claims the script tags', () => {

@@ -9,7 +9,7 @@ import type {
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 
 export function destroyWgpuSkinPalette(state: WgpuRenderState): void {
   const runtime = getWgpuScene3DRuntime(state);

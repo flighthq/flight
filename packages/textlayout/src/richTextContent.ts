@@ -8,8 +8,8 @@ import type {
   TextFormatRange,
 } from '@flighthq/types/contract';
 
-import { mergeTextFormat } from './textFormat';
-import { createTextFormatRange } from './textFormatRange';
+import { mergeTextFormat } from './textFormat.ts';
+import { createTextFormatRange } from './textFormatRange.ts';
 
 export function clearRichTextContent(runtime: RichTextRuntime): void {
   runtime.richTextContent = null;

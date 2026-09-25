@@ -23,8 +23,8 @@ import {
   VertexDisplaceModifierSource,
 } from '@flighthq/types/contract';
 
-import type { FakeGl2 } from './glScene3DTestHelper';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+import type { FakeGl2 } from './glScene3DTestHelper.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 import {
   animatedNormalGlModifierSnippet,
   dissolveGlModifierSnippet,
@@ -35,8 +35,8 @@ import {
   rimGlModifierSnippet,
   toonGlModifierSnippet,
   vertexDisplaceGlModifierSnippet,
-} from './glShadedBuiltInModifiers';
-import { resolveGlModifierSnippet } from './glShadedModifierSnippet';
+} from './glShadedBuiltInModifiers.ts';
+import { resolveGlModifierSnippet } from './glShadedModifierSnippet.ts';
 
 // A Texture whose image is unloaded — the snippet binds the sampler unit without an upload.
 const UNLOADED_TEXTURE = { dimension: '2d', source: null } as unknown as Texture;

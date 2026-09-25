@@ -1,2 +1,2 @@
-export * from './userAgent';
-export * from './userAgentParse';
+export * from './userAgent.ts';
+export * from './userAgentParse.ts';

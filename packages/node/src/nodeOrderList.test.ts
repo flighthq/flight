@@ -2,8 +2,8 @@ import { connectSignal } from '@flighthq/signals/contract';
 import type { Node, NodeTraits } from '@flighthq/types/contract';
 import { NodeKind } from '@flighthq/types/contract';
 
-import { addNodeChild, removeNodeChild } from './hierarchy';
-import { createNode, enableNodeSignals, getNodeRuntime } from './node';
+import { addNodeChild, removeNodeChild } from './hierarchy.ts';
+import { createNode, enableNodeSignals, getNodeRuntime } from './node.ts';
 import {
   addNodeOrderListEntry,
   applyNodeOrderList,
@@ -20,8 +20,8 @@ import {
   setNodeOrderListEntryBelow,
   setNodeOrderListFromNodeChildren,
   swapNodeOrderListEntries,
-} from './nodeOrderList';
-import { getNodeChildrenRevision } from './revision';
+} from './nodeOrderList.ts';
+import { getNodeChildrenRevision } from './revision.ts';
 
 let container: Node<NodeTraits>;
 let childA: Node<NodeTraits>;

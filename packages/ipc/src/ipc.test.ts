@@ -6,7 +6,7 @@ import type {
   HostIpcTargetedSendCapability,
 } from '@flighthq/types/contract';
 
-import { invokeIpc, onIpcInvoke, onIpcMessage, onceIpcMessage, sendIpcMessage, sendIpcMessageTo } from './ipc';
+import { invokeIpc, onIpcInvoke, onIpcMessage, onceIpcMessage, sendIpcMessage, sendIpcMessageTo } from './ipc.ts';
 
 // A host carrying a recording message provider. Nothing installs anywhere, so two hosts can be live at
 // once — the property the ambient seam could not express.

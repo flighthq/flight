@@ -29,8 +29,8 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, FlightDocumentRefusalReason } from '@flighthq/types/contract';
 
-import { createDocumentRefusal } from './sceneDocumentRefusal';
-import { parseSceneDocumentYamlSubset } from './sceneDocumentYamlSubset';
+import { createDocumentRefusal } from './sceneDocumentRefusal.ts';
+import { parseSceneDocumentYamlSubset } from './sceneDocumentYamlSubset.ts';
 
 export function explainFlightDocumentText(text: FlightDocumentText): FlightDocumentRefusalExplanation | null {
   return readFlightDocumentText(text).refusal;

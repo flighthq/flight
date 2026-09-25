@@ -1,5 +1,5 @@
-import type { Kind } from './Entity';
-import type { Scene2DRenderBlankReason } from './Scene2DRenderBlankReason';
+import type { Kind } from './Entity.ts';
+import type { Scene2DRenderBlankReason } from './Scene2DRenderBlankReason.ts';
 
 // Plain-data answer to "why is this display object blank?", the pull half of the diagnostics
 // convention: recomputed on demand from live render state, holding no reference to it. Every field is

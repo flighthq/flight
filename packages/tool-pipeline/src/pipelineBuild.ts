@@ -4,8 +4,8 @@ import { basename, dirname, join, resolve } from 'node:path';
 
 import type { AssetType } from '@flighthq/types/contract';
 
-import { parseToolPipelineConfig } from './pipelineConfig';
-import type { ToolPipelineSource } from './pipelineConfig';
+import { parseToolPipelineConfig } from './pipelineConfig.ts';
+import type { ToolPipelineSource } from './pipelineConfig.ts';
 
 export const TOOL_PIPELINE_MANIFEST_SCHEMA_VERSION = 1;
 

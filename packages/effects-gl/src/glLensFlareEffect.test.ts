@@ -2,8 +2,8 @@ import { createLensFlareEffect } from '@flighthq/effects/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import * as glEffectProgramCache from './glEffectProgramCache';
-import { applyLensFlareEffectToGl, glLensFlareEffectRunner, registerGlLensFlareEffect } from './glLensFlareEffect';
+import * as glEffectProgramCache from './glEffectProgramCache.ts';
+import { applyLensFlareEffectToGl, glLensFlareEffectRunner, registerGlLensFlareEffect } from './glLensFlareEffect.ts';
 
 // ★ THE SHADER IS READ FROM THE ARGUMENT THE EFFECT HANDS THE PROGRAM CACHE, not from the source file on
 // disk. Both reach the same text, but the disk route needs `node:fs` in a RENDER package's tests, which

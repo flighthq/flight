@@ -1,7 +1,7 @@
 import type { GlPbrExtensionRegistration, GlRenderState, SheenPbrExtension } from '@flighthq/types/contract';
 import { SheenPbrExtensionKind } from '@flighthq/types/contract';
 
-import { registerGlPbrExtension } from './glPbrExtensionRegistry';
+import { registerGlPbrExtension } from './glPbrExtensionRegistry.ts';
 
 export const sheenPbrGlExtension: GlPbrExtensionRegistration = {
   bind(context, value): void {

@@ -4,7 +4,7 @@ import {
   createWebProtocolCapabilities,
   initializeWebProtocolLaunchBackend,
   initializeWebProtocolRegistrationBackend,
-} from './webProtocol';
+} from './webProtocol.ts';
 
 describe('createWebProtocolCapabilities', () => {
   it('creates only launch and registration', () => {

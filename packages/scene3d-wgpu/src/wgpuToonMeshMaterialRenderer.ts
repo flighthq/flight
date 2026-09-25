@@ -18,9 +18,9 @@ import type {
 } from '@flighthq/types/contract';
 import { ToonMaterialKind } from '@flighthq/types/contract';
 
-import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline';
-import { bindWgpuToonSurface, ensureWgpuToonPipeline } from './wgpuToonPrelude';
+import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline.ts';
+import { bindWgpuToonSurface, ensureWgpuToonPipeline } from './wgpuToonPrelude.ts';
 
 // The built-in Toon (cel-shading) forward-lit mesh-material renderer (WgpuMeshMaterialRenderer for
 // ToonMaterialKind) — the WGSL mirror of glToonMeshMaterialRenderer. bind selects the pipeline variant

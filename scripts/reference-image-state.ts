@@ -1,4 +1,4 @@
-import type { ReferenceImageCellComparison } from './reference-image-compare';
+import type { ReferenceImageCellComparison } from './reference-image-compare.ts';
 // The Flight-side join of the render-oracle proposal (agents/render-reference-image-repository.md §6 and §9):
 // given what the coverage manifest REQUIRES, what the lock PINS, and what the request queue has
 // OUTSTANDING, decide each cell's verdict — and decide it in one place so "pending" cannot mean two
@@ -17,11 +17,11 @@ import type { ReferenceImageCellComparison } from './reference-image-compare';
 //
 // ★ IDENTITIES ARE OPAQUE. Nothing here parses `subject/entry/renderer`. §10 has not been ruled, so the
 // keying may gain an environment column; when it does, the generator changes and this file does not.
-import type { ReferenceImageRequest } from './reference-image-records';
-import { getOracleRequestCells } from './reference-image-records';
-import { referenceImageComparisonPasses, type ReferenceImageVerdictPolicy } from './reference-image-tolerance';
+import type { ReferenceImageRequest } from './reference-image-records.ts';
+import { getOracleRequestCells } from './reference-image-records.ts';
+import { referenceImageComparisonPasses, type ReferenceImageVerdictPolicy } from './reference-image-tolerance.ts';
 
-export type { ReferenceImageCellComparison } from './reference-image-compare';
+export type { ReferenceImageCellComparison } from './reference-image-compare.ts';
 
 /** What CI may claim about one required cell. Ordered worst-first for stable reporting. */
 export type ReferenceImageCellVerdict =

@@ -1,6 +1,6 @@
 import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import {
   UNIFORM_BYTE_SIZE,
   createWgpuBindGroupLayouts,
@@ -12,8 +12,8 @@ import {
   setWgpuMatrixFromTransform,
   writeWgpuMatrixOnlyUniforms,
   writeWgpuQuadUniforms,
-} from './wgpuShader';
-import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+} from './wgpuShader.ts';
+import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';
 
 beforeAll(() => {
   installWgpuMock();

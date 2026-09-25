@@ -10,8 +10,8 @@ import {
   collideCapsuleObbContactManifold2D,
   collideCapsulePolygonContactManifold2D,
   collideCircleCapsuleContactManifold2D,
-} from './capsuleContact2D';
-import { clearCollisionContactManifold2D } from './contactManifold2D';
+} from './capsuleContact2D.ts';
+import { clearCollisionContactManifold2D } from './contactManifold2D.ts';
 import {
   collideAabbAabbContactManifold2D,
   collideAabbObbContactManifold2D,
@@ -23,7 +23,7 @@ import {
   collideObbObbContactManifold2D,
   collideObbPolygonContactManifold2D,
   collidePolygonPolygonContactManifold2D,
-} from './shapeContact2D';
+} from './shapeContact2D.ts';
 
 // Generic narrow-phase contact test: the `testCollision2D` dispatcher's contact-resolving twin.
 // Dispatches on the two shapes' `kind`s and writes the full contact manifold pushing **A out of B**.

@@ -1,6 +1,6 @@
-import type { AppWindow } from './AppWindow';
-import type { GlContext, GlContextOptions } from './GlContext';
-import type { NativeSurfaceHandle, Surface } from './Surface';
+import type { AppWindow } from './AppWindow.ts';
+import type { GlContext, GlContextOptions } from './GlContext.ts';
+import type { NativeSurfaceHandle, Surface } from './Surface.ts';
 
 // GL drawable lifecycle. `create` is the allocating lane: it takes the window because a window is what
 // every host needs in order to make a drawable at all — the document on web, the SDL_Window on SDL, the

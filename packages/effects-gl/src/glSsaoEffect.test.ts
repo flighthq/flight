@@ -1,4 +1,4 @@
-import { applySsaoEffectToGl, glSsaoEffectRunner, registerGlSsaoEffect } from './glSsaoEffect';
+import { applySsaoEffectToGl, glSsaoEffectRunner, registerGlSsaoEffect } from './glSsaoEffect.ts';
 
 describe('applySsaoEffectToGl', () => {
   it('is a function', () => {

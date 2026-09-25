@@ -9,11 +9,11 @@ import type {
   ShapeCommandToken,
 } from '@flighthq/types/contract';
 
-import { drawCanvasScene2D } from './canvasNode2D';
-import { getCanvasRenderStateTextureResolvers } from './canvasRenderState';
-import { buildScale9Mapper } from './canvasScale9Mapper';
-import { renderCanvasShapeCommands } from './canvasShape';
-import { setCanvasTransform } from './canvasTransform';
+import { drawCanvasScene2D } from './canvasNode2D.ts';
+import { getCanvasRenderStateTextureResolvers } from './canvasRenderState.ts';
+import { buildScale9Mapper } from './canvasScale9Mapper.ts';
+import { renderCanvasShapeCommands } from './canvasShape.ts';
+import { setCanvasTransform } from './canvasTransform.ts';
 
 const _remappedCommands: ShapeCommandToken[] = [];
 

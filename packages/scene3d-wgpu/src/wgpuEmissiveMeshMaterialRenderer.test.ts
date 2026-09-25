@@ -5,9 +5,9 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { EmissiveMaterialKind } from '@flighthq/types/contract';
 
-import { wgpuEmissiveMeshMaterialRenderer, registerWgpuEmissiveMaterial } from './wgpuEmissiveMeshMaterialRenderer';
-import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+import { wgpuEmissiveMeshMaterialRenderer, registerWgpuEmissiveMaterial } from './wgpuEmissiveMeshMaterialRenderer.ts';
+import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

@@ -3,13 +3,13 @@ import { createRichText, getRichTextRuntime } from '@flighthq/text/contract';
 import type { RichText, RichTextData, RichTextRuntime, TextLayoutResult } from '@flighthq/types/contract';
 import { EntityRuntimeKey, KeyCode } from '@flighthq/types/contract';
 
-import { enableTextInput, getTextInputState } from './textInput';
+import { enableTextInput, getTextInputState } from './textInput.ts';
 import {
   getTextInputCaretIndex,
   getTextInputSelectionBeginIndex,
   getTextInputSelectionEndIndex,
   setTextInputSelection,
-} from './textInputEditing';
+} from './textInputEditing.ts';
 import {
   blurTextInput,
   connectInputToTextInput,
@@ -21,7 +21,7 @@ import {
   dispatchTextInputWheel,
   focusTextInput,
   initializeTextInputManager,
-} from './textInputManager';
+} from './textInputManager.ts';
 
 function createInput(data: Partial<RichTextData> = {}): RichText {
   const text = createRichText({ data });

@@ -13,9 +13,9 @@ import type {
   RichText,
 } from '@flighthq/types/contract';
 
-import { createGlRichTextData, drawGlRichText } from './glRichText';
-import { createGlState } from './glTestHelper';
-import { drawGlTextInputOverlay, enableGlTextInput } from './glTextInput';
+import { createGlRichTextData, drawGlRichText } from './glRichText.ts';
+import { createGlState } from './glTestHelper.ts';
+import { drawGlTextInputOverlay, enableGlTextInput } from './glTextInput.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

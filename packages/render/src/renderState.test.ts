@@ -8,7 +8,7 @@ import {
   getColorAdjustmentUnsupportedGuard,
   getRenderStateRuntime,
   initializeRenderState,
-} from './renderState';
+} from './renderState.ts';
 
 describe('createRenderState', () => {
   let state: RenderState;

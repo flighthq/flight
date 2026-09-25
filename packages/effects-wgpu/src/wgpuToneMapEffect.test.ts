@@ -1,4 +1,4 @@
-import { applyToneMapEffectToWgpu, wgpuToneMapEffectRunner, registerWgpuToneMapEffect } from './wgpuToneMapEffect';
+import { applyToneMapEffectToWgpu, wgpuToneMapEffectRunner, registerWgpuToneMapEffect } from './wgpuToneMapEffect.ts';
 
 describe('applyToneMapEffectToWgpu', () => {
   it('is a function', () => {

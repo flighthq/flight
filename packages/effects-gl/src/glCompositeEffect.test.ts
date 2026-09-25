@@ -5,7 +5,7 @@ import {
   glCompositeEffectRunner,
   getCompositeEffectOperatorIndex,
   registerGlCompositeEffect,
-} from './glCompositeEffect';
+} from './glCompositeEffect.ts';
 
 // The pure operator→index mapping is asserted here; the compile/draw path is exercised pixel-for-pixel by
 // the functional composite scene (an isolated layer erased/masked over a backdrop).

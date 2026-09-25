@@ -27,5 +27,5 @@ export {
   setClipRegionToRectangle,
   transformClipRegion,
   unionClipRegions,
-} from './clipRegion';
-export * from './enableClipGuards';
+} from './clipRegion.ts';
+export * from './enableClipGuards.ts';

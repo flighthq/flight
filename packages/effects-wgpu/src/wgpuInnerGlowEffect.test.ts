@@ -1,15 +1,15 @@
 import { createInnerGlowEffect } from '@flighthq/effects/contract';
 import * as renderWgpuContract from '@flighthq/render-wgpu/contract';
 
-import * as wgpuEffectBlitShaderMod from './wgpuEffectBlitShader';
-import * as wgpuEffectBoxBlurMod from './wgpuEffectBoxBlur';
-import * as wgpuEffectPassMod from './wgpuEffectPass';
-import * as wgpuEffectTintShaderMod from './wgpuEffectTintShader';
+import * as wgpuEffectBlitShaderMod from './wgpuEffectBlitShader.ts';
+import * as wgpuEffectBoxBlurMod from './wgpuEffectBoxBlur.ts';
+import * as wgpuEffectPassMod from './wgpuEffectPass.ts';
+import * as wgpuEffectTintShaderMod from './wgpuEffectTintShader.ts';
 import {
   applyInnerGlowEffectToWgpu,
   wgpuInnerGlowEffectRunner,
   registerWgpuInnerGlowEffect,
-} from './wgpuInnerGlowEffect';
+} from './wgpuInnerGlowEffect.ts';
 
 let nextTargetId = 0;
 

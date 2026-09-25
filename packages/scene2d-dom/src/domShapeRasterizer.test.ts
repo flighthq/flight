@@ -5,8 +5,8 @@ import {
 } from '@flighthq/render/contract';
 import { RenderRegistries } from '@flighthq/types/contract';
 
-import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
-import { getDomShapeRasterizer, registerDomShapeRasterizer } from './domShapeRasterizer';
+import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
+import { getDomShapeRasterizer, registerDomShapeRasterizer } from './domShapeRasterizer.ts';
 
 describe('getDomShapeRasterizer', () => {
   it('reports none until one is registered', () => {

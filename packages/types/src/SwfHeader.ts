@@ -1,4 +1,4 @@
-import type { SwfTagRectangle } from './SwfTagParseState';
+import type { SwfTagRectangle } from './SwfTagParseState.ts';
 
 /**
  * The fixed header of one SWF file, after any container decompression and before any tag is read.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatDate, formatDateTime, formatTime } from './datetime';
+import { formatDate, formatDateTime, formatTime } from './datetime.ts';
 
 // A fixed instant (2020-01-15T13:05:00Z). Assertions pass an explicit
 // `timeZone: 'UTC'` so they are deterministic regardless of the host time zone.

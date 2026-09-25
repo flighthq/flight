@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { classifyPublishError } from './publish-error-kind.js';
+import { classifyPublishError } from './publish-error-kind.ts';
 
 // The exact stderr observed from a concurrent publish of @flighthq/capture. Kept verbatim: this
 // classifier exists because of this text, and a paraphrase would not prove it is matched.

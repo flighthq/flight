@@ -1,4 +1,4 @@
-import { applyToneMapEffectToGl, glToneMapEffectRunner, registerGlToneMapEffect } from './glToneMapEffect';
+import { applyToneMapEffectToGl, glToneMapEffectRunner, registerGlToneMapEffect } from './glToneMapEffect.ts';
 
 describe('applyToneMapEffectToGl', () => {
   it('is a function', () => {

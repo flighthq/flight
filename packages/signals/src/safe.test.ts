@@ -1,7 +1,7 @@
-import { cancelSignal } from './emitter';
-import { emitSignalSafe } from './safe';
-import { createSignal } from './signal';
-import { connectSignal, disconnectSignal } from './slot';
+import { cancelSignal } from './emitter.ts';
+import { emitSignalSafe } from './safe.ts';
+import { createSignal } from './signal.ts';
+import { connectSignal, disconnectSignal } from './slot.ts';
 
 describe('emitSignalSafe', () => {
   it('passes typed arguments in priority order', () => {

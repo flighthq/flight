@@ -28,7 +28,7 @@ import {
   setNodeHitTestEnabled,
 } from '@flighthq/sdk/interaction';
 
-import { canvas, render, scale } from './render';
+import { canvas, render, scale } from './render.ts';
 
 const CANVAS_HEIGHT = 600;
 

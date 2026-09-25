@@ -1,6 +1,6 @@
-import type { Texture } from './Texture';
-import type { Vector3Like } from './Vector3';
-import type { VertexDisplaceModifierSource } from './VertexDisplaceModifier';
+import type { Texture } from './Texture.ts';
+import type { Vector3Like } from './Vector3.ts';
+import type { VertexDisplaceModifierSource } from './VertexDisplaceModifier.ts';
 
 export interface VertexDisplaceModifierOptions {
   source: VertexDisplaceModifierSource;

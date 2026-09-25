@@ -6,7 +6,7 @@ import {
 } from '@flighthq/device/contract';
 import { DeviceFormFactorDesktop, DeviceFormFactorUnknown } from '@flighthq/types/contract';
 
-import { enableWebSafeAreaInsets, webHostDevice } from './webDevice';
+import { enableWebSafeAreaInsets, webHostDevice } from './webDevice.ts';
 
 describe('enableWebSafeAreaInsets', () => {
   it('returns a dispose function and does not throw in jsdom', () => {

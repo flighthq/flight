@@ -1,7 +1,7 @@
 import type { HostNetCapabilities } from '@flighthq/types/contract';
 
-import { webHostNet } from './webNet';
-import { webHostNetGroup } from './webNetHost';
+import { webHostNet } from './webNet.ts';
+import { webHostNetGroup } from './webNetHost.ts';
 
 describe('webHostNetGroup', () => {
   it('uses the narrow collision escape while the explicit leaf keeps webHostNet', () => {
@@ -14,7 +14,7 @@ describe('webHostNetGroup', () => {
   });
 
   it('exports only the direct group value', async () => {
-    const source = await import('./webNetHost');
+    const source = await import('./webNetHost.ts');
     expect(Object.keys(source)).toEqual(['webHostNetGroup']);
   });
 });

@@ -1,7 +1,7 @@
 import type { TextureAtlas } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { explainBitmapFontParse } from './explainBitmapFontParse';
+import { explainBitmapFontParse } from './explainBitmapFontParse.ts';
 
 describe('explainBitmapFontParse', () => {
   it('returns invalid-data for empty string', () => {

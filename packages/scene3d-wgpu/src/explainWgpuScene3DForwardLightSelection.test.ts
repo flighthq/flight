@@ -1,6 +1,6 @@
 import { createPointLight } from '@flighthq/lighting/contract';
 
-import { explainWgpuScene3DForwardLightSelection } from './explainWgpuScene3DForwardLightSelection';
+import { explainWgpuScene3DForwardLightSelection } from './explainWgpuScene3DForwardLightSelection.ts';
 
 describe('explainWgpuScene3DForwardLightSelection', () => {
   it('distinguishes within-budget, required, and prepared selection', () => {

@@ -1,9 +1,9 @@
 import { createWrappedDiffusePbrExtension } from '@flighthq/materials/contract';
 import { WrappedDiffusePbrExtensionKind } from '@flighthq/types/contract';
 
-import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry';
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerGlWrappedDiffusePbrExtension, wrappedDiffusePbrGlExtension } from './wrappedDiffusePbrGlExtension';
+import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { registerGlWrappedDiffusePbrExtension, wrappedDiffusePbrGlExtension } from './wrappedDiffusePbrGlExtension.ts';
 
 describe('registerGlWrappedDiffusePbrExtension', () => {
   it('registers the honestly named wrapped-diffuse kind', () => {

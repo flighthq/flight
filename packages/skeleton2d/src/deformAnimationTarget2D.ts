@@ -2,8 +2,8 @@ import { sampleAnimationTrack } from '@flighthq/animation/contract';
 import type { AnimationChannel, Skeleton2D, Skeleton2DDeformAnimationTarget } from '@flighthq/types/contract';
 import { Skeleton2DAnimationTargetKind } from '@flighthq/types/contract';
 
-import { registerSkeleton2DAnimationTargetBinder } from './skeleton2dAnimationTarget';
-import { setSkeleton2DSlotDeform } from './slotDeform2D';
+import { registerSkeleton2DAnimationTargetBinder } from './skeleton2dAnimationTarget.ts';
+import { setSkeleton2DSlotDeform } from './slotDeform2D.ts';
 
 // Opts a bundle into deform channels. Unlike the bone and slot binders — which are pre-entered because a
 // bundle that shed them would leave the pose pass a silent no-op — a rig with no deform timeline should

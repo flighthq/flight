@@ -21,7 +21,7 @@ import {
   resumeAudioChannel,
   setAudioChannelSourceRoute,
   stopAudioChannel,
-} from './audioChannel';
+} from './audioChannel.ts';
 
 export function addAudioBusToMixer(
   hostAudioMixer: Readonly<HostAudioMixerCapability>,

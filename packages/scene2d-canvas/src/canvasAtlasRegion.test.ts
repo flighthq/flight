@@ -1,7 +1,7 @@
 import { createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 
-import { drawCanvasAtlasRegion } from './canvasAtlasRegion';
+import { drawCanvasAtlasRegion } from './canvasAtlasRegion.ts';
 
 function makeDrawHarness(rotation: TextureAtlasRotation) {
   const source = document.createElement('canvas');

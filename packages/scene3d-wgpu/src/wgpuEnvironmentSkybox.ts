@@ -2,8 +2,8 @@ import { updateCamera3DInverseViewProjection } from '@flighthq/camera/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { Camera3D, Environment, WgpuRenderPass, WgpuRenderState } from '@flighthq/types/contract';
 
-import { ensureWgpuEnvironmentSourceCube } from './wgpuEnvironmentCube';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { ensureWgpuEnvironmentSourceCube } from './wgpuEnvironmentCube.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 
 // Draws the environment's radiance cubemap as the scene backdrop — the WGSL mirror of scene-gl's
 // renderGlEnvironmentSkybox. A screen-filling triangle that, per pixel, reconstructs the world-space view

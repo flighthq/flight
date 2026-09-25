@@ -1,4 +1,4 @@
-import { writeShapeGeometryCommandEnd } from './shapeCommandGeometry';
+import { writeShapeGeometryCommandEnd } from './shapeCommandGeometry.ts';
 
 describe('writeShapeGeometryCommandEnd', () => {
   it('writes primitive and raw-path endpoints using canonical tuple semantics', () => {

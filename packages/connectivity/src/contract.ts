@@ -1,2 +1,2 @@
-export * from './connectivity';
-export { initializeConnectivity } from './connectivity';
+export * from './connectivity.ts';
+export { initializeConnectivity } from './connectivity.ts';

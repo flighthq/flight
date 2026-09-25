@@ -9,13 +9,13 @@ import type {
 } from '@flighthq/types/contract';
 import type { WgpuEffectPipeline } from '@flighthq/types/contract';
 
-import { initializeWgpuEffectPipeline } from './wgpuBitmapDisplacementEffect';
-import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader';
-import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
-import { getWgpuEffectGradientRampTexture } from './wgpuEffectGradientRamp';
-import { clearWgpuEffectTarget, EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
-import { applyWgpuEffectTintPass } from './wgpuEffectTintShader';
+import { initializeWgpuEffectPipeline } from './wgpuBitmapDisplacementEffect.ts';
+import { applyWgpuEffectBlitPass, applyWgpuEffectErasePass } from './wgpuEffectBlitShader.ts';
+import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur.ts';
+import { getWgpuEffectGradientRampTexture } from './wgpuEffectGradientRamp.ts';
+import { clearWgpuEffectTarget, EFFECT_VERTEX_WGSL, getWgpuEffectPassState } from './wgpuEffectPass.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
+import { applyWgpuEffectTintPass } from './wgpuEffectTintShader.ts';
 
 // Gradient-glow composite effect: an outer glow whose color is looked up from a colors/alphas/ratios gradient ramp indexed by the blurred silhouette alpha, then sourceMode decides source compositing.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the

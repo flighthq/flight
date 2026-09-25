@@ -1,4 +1,4 @@
-import { applyBloomEffectToWgpu, wgpuBloomEffectRunner, registerWgpuBloomEffect } from './wgpuBloomEffect';
+import { applyBloomEffectToWgpu, wgpuBloomEffectRunner, registerWgpuBloomEffect } from './wgpuBloomEffect.ts';
 
 describe('applyBloomEffectToWgpu', () => {
   it('is a function', () => {

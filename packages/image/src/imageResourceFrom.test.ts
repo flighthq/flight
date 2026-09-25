@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Bitmap, HostImageCapability, ImageResource } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-import { createImageResource } from './imageResource';
+import { createImageResource } from './imageResource.ts';
 import {
   createImageResourceFromBitmap,
   isImageUrlSameOrigin,
@@ -10,8 +10,8 @@ import {
   loadImageResourceFromBlob,
   loadImageResourceFromBytes,
   loadImageResourceFromUrl,
-} from './imageResourceFrom';
-import { registerTestImageDimensionResolver, unregisterTestImageDimensionResolver } from './imageTestHelper';
+} from './imageResourceFrom.ts';
+import { registerTestImageDimensionResolver, unregisterTestImageDimensionResolver } from './imageTestHelper.ts';
 
 beforeEach(() => {
   registerTestImageDimensionResolver();

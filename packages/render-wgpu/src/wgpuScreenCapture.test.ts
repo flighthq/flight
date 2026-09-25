@@ -1,13 +1,17 @@
 import type { WgpuScreenRenderTarget } from '@flighthq/types/contract';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass';
+import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass.ts';
 import {
   createBitmapFromWgpuScreenRenderTarget,
   enableWgpuScreenRenderTargetCapture,
   encodeWgpuScreenRenderTargetCapture,
-} from './wgpuScreenCapture';
-import { createWgpuRenderStateForTest, createWgpuScreenRenderTargetForTest, installWgpuMock } from './wgpuTestHelper';
+} from './wgpuScreenCapture.ts';
+import {
+  createWgpuRenderStateForTest,
+  createWgpuScreenRenderTargetForTest,
+  installWgpuMock,
+} from './wgpuTestHelper.ts';
 
 beforeAll(() => {
   installWgpuMock();

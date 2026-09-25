@@ -1,4 +1,4 @@
-import { createSpritesheetFrame, initializeSpritesheetFrame } from './spritesheetFrame';
+import { createSpritesheetFrame, initializeSpritesheetFrame } from './spritesheetFrame.ts';
 
 describe('createSpritesheetFrame', () => {
   it('initializes default values', () => {

@@ -1,4 +1,4 @@
-import type { InputTargetHandle } from './HostInputTarget';
+import type { InputTargetHandle } from './HostInputTarget.ts';
 
 // Host-emitted file drops are an event capability, separate from target preparation and pointer-lock
 // commands even when one platform covers all three. The returned release closes over the exact provider

@@ -1,4 +1,4 @@
-import type { CaptureColumnBaseline } from './CaptureColumnBaseline';
+import type { CaptureColumnBaseline } from './CaptureColumnBaseline.ts';
 
 /**
  * A single capture test's committed baseline: a map from column name (backend/renderer id, e.g.

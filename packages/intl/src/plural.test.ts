@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { selectOrdinalCategory, selectPluralCategory } from './plural';
+import { selectOrdinalCategory, selectPluralCategory } from './plural.ts';
 
 describe('selectOrdinalCategory', () => {
   it('distinguishes ordinal forms in en-US', () => {

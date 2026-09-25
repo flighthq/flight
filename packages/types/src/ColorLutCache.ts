@@ -1,5 +1,5 @@
-import type { ColorLut } from './ColorLut';
-import type { Entity } from './Entity';
+import type { ColorLut } from './ColorLut.ts';
+import type { Entity } from './Entity.ts';
 
 // A single-slot memo of the fused color LUT for a run of pointwise adjustments, so a static grade does
 // not re-bake its size³ cells every frame. `signature` is the run's content key — its ops' kinds and

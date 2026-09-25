@@ -4,20 +4,20 @@ import {
   BACKEND_LIFECYCLE_SCOPE_CAVEAT,
   createEmptyBackendLifecycleReport,
   formatBackendLifecycleReport,
-} from './backend-lifecycle-core';
+} from './backend-lifecycle-core.ts';
 import {
   BACKEND_OPERATION_SEAM_SCOPE_CAVEAT,
   createEmptyBackendOperationSeamReport,
   formatBackendOperationSeamReport,
-} from './backend-operation-seam-core';
-import { createEmptyHostBypassReport, formatHostBypassReport } from './check-host-bypasses';
-import { createEmptyTransportBypassReport, formatTransportBypassReport } from './check-transport-bypasses';
+} from './backend-operation-seam-core.ts';
+import { createEmptyHostBypassReport, formatHostBypassReport } from './check-host-bypasses.ts';
+import { createEmptyTransportBypassReport, formatTransportBypassReport } from './check-transport-bypasses.ts';
 import {
   GATE_PROVENANCE_FIELDS,
   GATE_STRUCTURAL_LIMIT,
   formatGateProvenance,
   readGateTreeState,
-} from './gate-provenance';
+} from './gate-provenance.ts';
 
 const PROVENANCE = {
   command: 'npm run example (scripts/example.ts)',

@@ -1,6 +1,6 @@
 import type { LinearColor } from '@flighthq/types/contract';
 
-import { linearChannelToSrgb, srgbChannelToLinear } from './srgbTransfer';
+import { linearChannelToSrgb, srgbChannelToLinear } from './srgbTransfer.ts';
 
 // Allocates a fresh zeroed `LinearColor` for use as an `unpackColorToLinear` out parameter.
 export function allocateLinearColor(): LinearColor {

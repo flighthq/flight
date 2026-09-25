@@ -1,2 +1,2 @@
-export * from './debug';
-export * from './debugTiming';
+export * from './debug.ts';
+export * from './debugTiming.ts';

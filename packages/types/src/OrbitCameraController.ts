@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { Vector3 } from './Vector3';
-import type { Vector3Like } from './Vector3';
+import type { Entity } from './Entity.ts';
+import type { Vector3 } from './Vector3.ts';
+import type { Vector3Like } from './Vector3.ts';
 
 // A stateful orbit (arcball) camera controller: plain data holding spherical coordinates around a
 // `target` point. Intent verbs (`rotateOrbitCameraController`/`dollyOrbitCameraController`/`panOrbitCameraController`)

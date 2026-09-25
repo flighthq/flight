@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { PermissionState } from './Permission';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { PermissionState } from './Permission.ts';
+import type { Signal } from './Signal.ts';
 
 export type StorageClearFailureReason = 'runtime-unavailable' | 'security-denied' | 'quota-exceeded' | 'clear-failed';
 

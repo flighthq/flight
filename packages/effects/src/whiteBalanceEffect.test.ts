@@ -1,4 +1,4 @@
-import { createWhiteBalanceEffect, initializeWhiteBalanceEffect } from './whiteBalanceEffect';
+import { createWhiteBalanceEffect, initializeWhiteBalanceEffect } from './whiteBalanceEffect.ts';
 
 describe('createWhiteBalanceEffect', () => {
   it('tags the intent type', () => {

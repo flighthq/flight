@@ -1,4 +1,4 @@
-import type { Entity, EntityWithoutRuntime } from './Entity';
+import type { Entity, EntityWithoutRuntime } from './Entity.ts';
 
 // Texture-coordinate wrap behavior on one axis, mirroring the GL/Wgpu address modes.
 export type TextureWrap = 'clamp-to-edge' | 'mirror-repeat' | 'repeat';

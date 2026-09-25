@@ -1,4 +1,4 @@
-import { linearChannelToSrgb, srgbChannelToLinear } from './srgbTransfer';
+import { linearChannelToSrgb, srgbChannelToLinear } from './srgbTransfer.ts';
 
 describe('linearChannelToSrgb', () => {
   it('maps 0 → 0', () => {

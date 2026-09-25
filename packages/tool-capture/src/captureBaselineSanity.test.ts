@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isRejectedCaptureBaselineHash, isUniformCaptureFingerprint } from './captureBaselineSanity';
+import { isRejectedCaptureBaselineHash, isUniformCaptureFingerprint } from './captureBaselineSanity.ts';
 
 describe('isRejectedCaptureBaselineHash', () => {
   it('rejects the known blank frame a software WebGPU adapter produces', () => {

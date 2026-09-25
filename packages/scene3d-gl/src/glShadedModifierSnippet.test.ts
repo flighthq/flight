@@ -2,9 +2,9 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { ModifierSlot } from '@flighthq/types/contract';
 import type { GlModifierSnippet } from '@flighthq/types/contract';
 
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerGlModifierSnippet, resolveGlModifierSnippet } from './glShadedModifierSnippet';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { registerGlModifierSnippet, resolveGlModifierSnippet } from './glShadedModifierSnippet.ts';
 
 function makeSnippet(overrides?: Partial<GlModifierSnippet>): GlModifierSnippet {
   return {

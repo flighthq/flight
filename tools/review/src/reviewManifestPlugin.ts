@@ -1,7 +1,7 @@
 import type { Plugin } from 'vite';
 
-import { parseReviewManifest } from './reviewManifest';
-import type { ReviewTest } from './reviewManifest';
+import { parseReviewManifest } from './reviewManifest.ts';
+import type { ReviewTest } from './reviewManifest.ts';
 
 export const REVIEW_MANIFEST_PUBLIC_ID = 'virtual:review-manifest';
 export const REVIEW_MANIFEST_RESOLVED_ID = '\0virtual:review-manifest';

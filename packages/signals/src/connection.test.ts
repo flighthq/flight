@@ -3,11 +3,11 @@ import {
   disconnectSignalConnection,
   pauseSignalConnection,
   resumeSignalConnection,
-} from './connection';
-import { emitSignal } from './emitter';
-import { emitSignalSafe } from './safe';
-import { createSignal } from './signal';
-import { connectSignal, isSlotConnected } from './slot';
+} from './connection.ts';
+import { emitSignal } from './emitter.ts';
+import { emitSignalSafe } from './safe.ts';
+import { createSignal } from './signal.ts';
+import { connectSignal, isSlotConnected } from './slot.ts';
 
 describe('connectSignalTracked', () => {
   it('returns a connected handle whose slot receives typed arguments', () => {

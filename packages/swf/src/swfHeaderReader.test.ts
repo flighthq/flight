@@ -1,4 +1,4 @@
-import { readSwfHeaderRectangle, readSwfHeaderUint32, SWF_HEADER_PREFIX_LENGTH } from './swfHeaderReader';
+import { readSwfHeaderRectangle, readSwfHeaderUint32, SWF_HEADER_PREFIX_LENGTH } from './swfHeaderReader.ts';
 
 describe('readSwfHeaderRectangle', () => {
   it('decodes a rectangle and reports where the next field starts', () => {

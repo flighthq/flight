@@ -1,7 +1,7 @@
-import type { EasingFunction } from './EasingFunction';
-import type { Entity } from './Entity';
-import type { Signal } from './Signal';
-import type { TweenPropertyDetail } from './TweenPropertyDetail';
+import type { EasingFunction } from './EasingFunction.ts';
+import type { Entity } from './Entity.ts';
+import type { Signal } from './Signal.ts';
+import type { TweenPropertyDetail } from './TweenPropertyDetail.ts';
 
 export type NumericProps<T> = { [K in keyof T as T[K] extends number ? K : never]?: number };
 

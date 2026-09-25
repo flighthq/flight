@@ -2,12 +2,12 @@ import { createAnisotropyPbrExtension, createExtendedPbrMaterial } from '@flight
 import { createTexture } from '@flighthq/texture/contract';
 import type { Texture } from '@flighthq/types/contract';
 
-import { registerAnisotropyPbrScene3DMaterialTextures } from './anisotropyPbrScene3DMaterialTextures';
+import { registerAnisotropyPbrScene3DMaterialTextures } from './anisotropyPbrScene3DMaterialTextures.ts';
 import {
   createScene3DMaterialTextureRegistry,
   getScene3DMaterialTextures,
   registerExtendedPbrScene3DMaterialTextures,
-} from './sceneMaterialTextureRegistry';
+} from './sceneMaterialTextureRegistry.ts';
 
 describe('registerAnisotropyPbrScene3DMaterialTextures', () => {
   it('lists the anisotropy map through the generic Extended PBR material lister', () => {

@@ -7,7 +7,7 @@ import type {
   HostNetCapability,
 } from '@flighthq/types/contract';
 
-import { createAudioResource } from './audioResource';
+import { createAudioResource } from './audioResource.ts';
 import {
   createAudioResourceFromSamples,
   loadAudioResourceFromBase64,
@@ -16,7 +16,7 @@ import {
   loadAudioResourceFromUrl,
   loadAudioResourceFromUrls,
   selectAudioResourceUrl,
-} from './audioResourceFrom';
+} from './audioResourceFrom.ts';
 
 function fakeAudioCodecHost(canPlay: (type: string) => boolean): {
   readonly media: { readonly audioCodec: HostAudioCodecCapability };

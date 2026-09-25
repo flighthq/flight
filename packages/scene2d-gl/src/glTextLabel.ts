@@ -30,7 +30,7 @@ import {
   prepareGlQuadBatchWrite,
   recordGlQuadBatchColorScaleBias,
   writeGlQuadBatchInstance,
-} from './glQuadBatchWriter';
+} from './glQuadBatchWriter.ts';
 
 // NodeRenderer-private scratch state stored as an Entity in the opaque RendererData slot.
 interface GlTextLabelData extends RendererData {

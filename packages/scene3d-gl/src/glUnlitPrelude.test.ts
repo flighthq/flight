@@ -17,9 +17,9 @@ import {
 import type { GlUnlitDefineKey, HostVideoCapability, LinearColor } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 
-import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
+import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper.ts';
 import {
   bindGlUnlitSurface,
   buildGlUnlitDefineKey,
@@ -27,7 +27,7 @@ import {
   ensureGlUnlitProgram,
   getGlUnlitFragmentSourceForKey,
   getGlUnlitVertexSourceForKey,
-} from './glUnlitPrelude';
+} from './glUnlitPrelude.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

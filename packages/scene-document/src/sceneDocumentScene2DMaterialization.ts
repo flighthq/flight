@@ -25,25 +25,25 @@ import type {
   Scene2D,
 } from '@flighthq/types/contract';
 
-import { explainFlightDocumentText, parseFlightDocumentText } from './flightDocumentText';
+import { explainFlightDocumentText, parseFlightDocumentText } from './flightDocumentText.ts';
 import {
   assertAllInteractiveStateBindingsUsed,
   createInteractiveStateBindingLookup,
   isInteractiveStateBindingTargetSupported,
   readInteractiveStateBindingMetadata,
-} from './sceneDocumentInteractiveStateBindings';
+} from './sceneDocumentInteractiveStateBindings.ts';
 import {
   checkFlightDocumentLayoutTargets,
   createFlightDocumentLayoutBindings,
   writeFlightDocumentLayoutBindings,
-} from './sceneDocumentLayoutBindings';
-import { selectFlightDocumentScene } from './sceneDocumentMaterializationSelection';
+} from './sceneDocumentLayoutBindings.ts';
+import { selectFlightDocumentScene } from './sceneDocumentMaterializationSelection.ts';
 import {
   checkFlightDocumentInteractiveStates,
   checkFlightDocumentNodeFields,
   checkUnregisteredNodeKinds,
   createSceneRefusal,
-} from './sceneDocumentRefusal';
+} from './sceneDocumentRefusal.ts';
 
 export function createFlightDocumentFromScene2D(
   source: Readonly<Scene2D>,

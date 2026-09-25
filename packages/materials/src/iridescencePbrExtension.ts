@@ -2,8 +2,12 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { IridescencePbrExtension, EntityConstruction } from '@flighthq/types/contract';
 import { IridescencePbrExtensionKind } from '@flighthq/types/contract';
 
-import { isValidMaterialIor, isValidMaterialIridescenceThickness, isValidMaterialWeight } from './materialValidation';
-import { isValidPbrUvSet } from './pbrExtension';
+import {
+  isValidMaterialIor,
+  isValidMaterialIridescenceThickness,
+  isValidMaterialWeight,
+} from './materialValidation.ts';
+import { isValidPbrUvSet } from './pbrExtension.ts';
 
 export function createIridescencePbrExtension(
   opts?: Readonly<Partial<IridescencePbrExtension>>,

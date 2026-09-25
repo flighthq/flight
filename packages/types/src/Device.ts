@@ -1,6 +1,6 @@
-import type { DeviceCapabilities } from './DeviceCapabilities';
-import type { DeviceDisplayMetrics } from './DeviceDisplayMetrics';
-import type { DeviceFormFactor } from './DeviceFormFactor';
+import type { DeviceCapabilities } from './DeviceCapabilities.ts';
+import type { DeviceDisplayMetrics } from './DeviceDisplayMetrics.ts';
+import type { DeviceFormFactor } from './DeviceFormFactor.ts';
 
 // Device identity and environment seam. Free functions in @flighthq/device delegate to the active
 // HostDeviceCapability (web default or a native host's). Snapshot reads fill an `out` value and return it;

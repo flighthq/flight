@@ -1,4 +1,4 @@
-import type { Effect } from './Effect';
+import type { Effect } from './Effect.ts';
 
 // Plain separable Gaussian blur — the spatial-effect primitive underneath soft spreads (glow, shadow,
 // bloom). `blurX`/`blurY` are the Gaussian standard deviations in pixels along each axis (CSS

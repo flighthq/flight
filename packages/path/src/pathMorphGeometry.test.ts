@@ -1,5 +1,5 @@
-import { appendPathLineTo, appendPathMoveTo, createPath } from './path';
-import { PathMorphIssueNone, buildPathMorph, initializePathMorph } from './pathMorphGeometry';
+import { appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
+import { PathMorphIssueNone, buildPathMorph, initializePathMorph } from './pathMorphGeometry.ts';
 
 describe('buildPathMorph', () => {
   it('returns the prepared buffers with the internal success issue', () => {

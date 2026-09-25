@@ -33,7 +33,7 @@ import {
   Physics2DRopeJointKind,
   Physics2DWeldJointKind,
   Physics2DWheelJointKind,
-} from './joints';
+} from './joints.ts';
 
 // Joint factories mirror Flight's other descriptor factories: they allocate plain data, accept one
 // readonly options object, and make only authoring choices. Registration and world mutation remain

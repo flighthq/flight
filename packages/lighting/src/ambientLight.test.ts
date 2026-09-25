@@ -1,6 +1,6 @@
 import { AmbientLightKind, LuxLightUnit, UnitlessLightUnit } from '@flighthq/types/contract';
 
-import { cloneAmbientLight, createAmbientLight, initializeAmbientLight } from './ambientLight';
+import { cloneAmbientLight, createAmbientLight, initializeAmbientLight } from './ambientLight.ts';
 
 describe('cloneAmbientLight', () => {
   it('creates an independent copy with the same fields', () => {

@@ -20,9 +20,9 @@ import type {
 } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind, ImportDiagnosticSeverity, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
-import { parseObjMaterialLibrary } from './mtlParse';
-import { createScene3DFromObj, parseObj } from './objParse';
-import { getTestTextureResource } from './scene3DFormatsTestHelper';
+import { parseObjMaterialLibrary } from './mtlParse.ts';
+import { createScene3DFromObj, parseObj } from './objParse.ts';
+import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 
 // Asserts EXACTLY ONE crumb of `kind` was recorded (guards the count) and returns it so a test can lock
 // the full contract — severity, true origin, and detail — for that emitted diagnostic.

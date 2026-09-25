@@ -1,8 +1,8 @@
 import { setLogSink } from '@flighthq/log/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 
-import { captureSnapshot } from './captureSnapshot';
-import { disableSnapshotGuards, enableSnapshotGuards } from './enableSnapshotGuards';
+import { captureSnapshot } from './captureSnapshot.ts';
+import { disableSnapshotGuards, enableSnapshotGuards } from './enableSnapshotGuards.ts';
 
 let entries: LogEntry[];
 

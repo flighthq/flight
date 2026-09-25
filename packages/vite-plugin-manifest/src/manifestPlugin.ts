@@ -11,13 +11,13 @@ import type {
   RequirementCatalog,
 } from '@flighthq/types/contract';
 
-import { DEFAULT_CONTENT_ANALYZERS } from './contentAnalyzers';
-import type { ManifestModuleEntry } from './manifestModuleSource';
+import { DEFAULT_CONTENT_ANALYZERS } from './contentAnalyzers.ts';
+import type { ManifestModuleEntry } from './manifestModuleSource.ts';
 import {
   generateManifestModuleSource,
   MANIFEST_BACKEND_EXPORTS,
   MANIFEST_PARSER_BACKEND,
-} from './manifestModuleSource';
+} from './manifestModuleSource.ts';
 
 /** The import suffix that asks this plugin for a file's manifest instead of the file itself. */
 export const MANIFEST_QUERY_SUFFIX = '?manifest';

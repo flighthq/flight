@@ -25,7 +25,7 @@ import {
 import { createScene3DHit, pickScene3D } from '@flighthq/sdk/picking';
 import { createNode3D } from '@flighthq/sdk/scene3d';
 
-import { canvas, render, scale } from './render';
+import { canvas, render, scale } from './render.ts';
 
 interface Pickable {
   baseColor: number;

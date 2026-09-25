@@ -11,8 +11,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, MeshKind, Node3DKind } from '@flighthq/types/contract';
 
-import { awdTransformToTransform3D, readAwdString, readAwdTransform, skipAwdAttrList } from './awd2Reader';
-import { AWD2_BLOCK_CONTAINER, AWD2_BLOCK_MESH_INSTANCE } from './awd2Schema';
+import { awdTransformToTransform3D, readAwdString, readAwdTransform, skipAwdAttrList } from './awd2Reader.ts';
+import { AWD2_BLOCK_CONTAINER, AWD2_BLOCK_MESH_INSTANCE } from './awd2Schema.ts';
 
 // Containers and mesh instances: the scene hierarchy itself. This is the handler that turns parsed blocks
 // into document nodes and wires their parenting.

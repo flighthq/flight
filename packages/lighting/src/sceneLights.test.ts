@@ -1,10 +1,10 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createAmbientLight } from './ambientLight';
-import { createDirectionalLight } from './directionalLight';
-import { createPointLight } from './pointLight';
-import { createScene3DLights, initializeScene3DLights } from './sceneLights';
+import { createAmbientLight } from './ambientLight.ts';
+import { createDirectionalLight } from './directionalLight.ts';
+import { createPointLight } from './pointLight.ts';
+import { createScene3DLights, initializeScene3DLights } from './sceneLights.ts';
 
 describe('createScene3DLights', () => {
   it('fills every absent slot — singles to null, punctual arrays to empty', () => {

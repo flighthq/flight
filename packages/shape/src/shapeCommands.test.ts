@@ -1,6 +1,6 @@
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 
-import { createShape } from './shape';
+import { createShape } from './shape.ts';
 import {
   appendShapeArc,
   appendShapeEllipticalArcTo,
@@ -26,7 +26,7 @@ import {
   appendShapeRoundedRectangle,
   appendShapeRoundedRectangleWithCornerRadii,
   PathCommand,
-} from './shapeCommands';
+} from './shapeCommands.ts';
 
 const fakeTexture = { id: 1 } as never;
 const fakeMatrix = { id: 2, a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 } as never;

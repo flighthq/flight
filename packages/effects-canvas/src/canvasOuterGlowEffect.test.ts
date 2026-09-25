@@ -1,14 +1,14 @@
 import { createOuterGlowEffect } from '@flighthq/effects/contract';
 
-import * as canvasEffectCompositing from './canvasEffectCompositing';
-import * as canvasEffectState from './canvasEffectState';
-import { canvasTestHost } from './canvasEffectTestSupport';
+import * as canvasEffectCompositing from './canvasEffectCompositing.ts';
+import * as canvasEffectState from './canvasEffectState.ts';
+import { canvasTestHost } from './canvasEffectTestSupport.ts';
 import {
   applyOuterGlowEffectToCanvas,
   canvasOuterGlowEffectRunner,
   registerCanvasOuterGlowEffect,
-} from './canvasOuterGlowEffect';
-import * as canvasSourceModeCompositing from './canvasSourceModeCompositing';
+} from './canvasOuterGlowEffect.ts';
+import * as canvasSourceModeCompositing from './canvasSourceModeCompositing.ts';
 
 let nextTargetId = 0;
 

@@ -10,7 +10,7 @@ import {
   hasWgpuEffectRunner,
   isWgpuEffectResolvable,
   registerWgpuEffect,
-} from './wgpuEffectRegistry';
+} from './wgpuEffectRegistry.ts';
 
 beforeAll(() => {
   installWgpuMock();

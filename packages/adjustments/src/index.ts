@@ -1,23 +1,23 @@
-export { createBrightnessContrastAdjustment } from './brightnessContrastAdjustment';
-export { createChannelMixerAdjustment } from './channelMixerAdjustment';
-export * from './colorAdjustmentResolution';
-export { createColorBlindSimulationAdjustment } from './colorBlindSimulationAdjustment';
-export { createColorGradeAdjustment } from './colorGradeAdjustment';
-export * from './colorLut';
-export { getAdjustmentColorTransform, isColorLutAdjustment } from './colorLutAdjustment';
-export { bakeColorLutForRun, createColorLutCache } from './colorLutCache';
+export { createBrightnessContrastAdjustment } from './brightnessContrastAdjustment.ts';
+export { createChannelMixerAdjustment } from './channelMixerAdjustment.ts';
+export * from './colorAdjustmentResolution.ts';
+export { createColorBlindSimulationAdjustment } from './colorBlindSimulationAdjustment.ts';
+export { createColorGradeAdjustment } from './colorGradeAdjustment.ts';
+export * from './colorLut.ts';
+export { getAdjustmentColorTransform, isColorLutAdjustment } from './colorLutAdjustment.ts';
+export { bakeColorLutForRun, createColorLutCache } from './colorLutCache.ts';
 export {
   createColorMatrixAdjustment,
   getAdjustmentColorMatrix,
   isColorMatrixAdjustment,
-} from './colorMatrixAdjustment';
-export * from './colorMatrixMath';
-export { createColorScaleBiasAdjustment } from './colorScaleBiasAdjustment';
-export { createExposureAdjustment } from './exposureAdjustment';
-export { createGrayscaleAdjustment } from './grayscaleAdjustment';
-export { createHueSaturationAdjustment } from './hueSaturationAdjustment';
-export { createInvertAdjustment } from './invertAdjustment';
-export { createLiftGammaGainAdjustment } from './liftGammaGainAdjustment';
-export { createLookupTableGradeAdjustment } from './lookupTableGradeAdjustment';
-export { createSepiaAdjustment } from './sepiaAdjustment';
-export { createTintAdjustment } from './tintAdjustment';
+} from './colorMatrixAdjustment.ts';
+export * from './colorMatrixMath.ts';
+export { createColorScaleBiasAdjustment } from './colorScaleBiasAdjustment.ts';
+export { createExposureAdjustment } from './exposureAdjustment.ts';
+export { createGrayscaleAdjustment } from './grayscaleAdjustment.ts';
+export { createHueSaturationAdjustment } from './hueSaturationAdjustment.ts';
+export { createInvertAdjustment } from './invertAdjustment.ts';
+export { createLiftGammaGainAdjustment } from './liftGammaGainAdjustment.ts';
+export { createLookupTableGradeAdjustment } from './lookupTableGradeAdjustment.ts';
+export { createSepiaAdjustment } from './sepiaAdjustment.ts';
+export { createTintAdjustment } from './tintAdjustment.ts';

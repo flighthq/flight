@@ -13,9 +13,9 @@ import type {
 import { EntityRuntimeKey, RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { explainScene3DResourceCoverage, hasScene3DResourceCoverage } from './explainScene3DResourceCoverage';
-import { createBuiltInScene3DResourceResolver, createScene3DResourceResolver } from './sceneResourceResolver';
-import { registerShadedScene3DMaterialTextures } from './shadedScene3DMaterialTextures';
+import { explainScene3DResourceCoverage, hasScene3DResourceCoverage } from './explainScene3DResourceCoverage.ts';
+import { createBuiltInScene3DResourceResolver, createScene3DResourceResolver } from './sceneResourceResolver.ts';
+import { registerShadedScene3DMaterialTextures } from './shadedScene3DMaterialTextures.ts';
 
 const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },

@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, InvertAdjustment, EntityConstruction } from '@flighthq/types/contract';
 
-import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment';
+import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment.ts';
 
 export function createInvertAdjustment(
   options: Readonly<Omit<InvertAdjustment, typeof EntityRuntimeKey | 'kind' | 'colorMatrix'>> = {},

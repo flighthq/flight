@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { Vector3 } from './Vector3';
-import type { Vector3Like } from './Vector3';
+import type { Entity } from './Entity.ts';
+import type { Vector3 } from './Vector3.ts';
+import type { Vector3Like } from './Vector3.ts';
 
 // A stateful fly / first-person camera controller: plain data holding a world `position` and look
 // angles `yaw`/`pitch` (radians). `moveFlyCameraController` translates `position` along the current

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { launchBrowser } from './captureBrowser';
+import { launchBrowser } from './captureBrowser.ts';
 
 describe('launchBrowser', () => {
   // Launching headless Chromium requires the Playwright browser binaries and is exercised end to end by

@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { GlContext, GlRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // Returns whether the scene custom-shader guard is installed on `state` (enableGlScene3DCustomShaderGuards).
 export function areGlScene3DCustomShaderGuardsEnabled(state: GlRenderState): boolean {

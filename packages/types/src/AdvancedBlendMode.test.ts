@@ -1,5 +1,5 @@
-import { AdvancedBlendMode } from './AdvancedBlendMode';
-import { BlendMode } from './BlendMode';
+import { AdvancedBlendMode } from './AdvancedBlendMode.ts';
+import { BlendMode } from './BlendMode.ts';
 
 describe('AdvancedBlendMode', () => {
   it('carries the full destination-reading / non-separable set', () => {

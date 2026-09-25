@@ -6,8 +6,8 @@ import {
   applyGaussianBlurToWgpu,
   wgpuBlurEffectRunner,
   registerWgpuBlurEffect,
-} from './wgpuBlurEffect';
-import { getWgpuEffectRunner } from './wgpuEffectRegistry';
+} from './wgpuBlurEffect.ts';
+import { getWgpuEffectRunner } from './wgpuEffectRegistry.ts';
 
 beforeAll(() => installWgpuMock());
 

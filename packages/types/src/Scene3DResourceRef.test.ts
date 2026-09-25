@@ -1,11 +1,11 @@
-import { EntityRuntimeKey } from './Entity';
+import { EntityRuntimeKey } from './Entity.ts';
 import type {
   EmbeddedImageResourceReference,
   ExternalImageResourceReference,
   ImageResourceReference,
-} from './ImageResourceReference';
-import { ImageResourceReferenceKind } from './ImageResourceReference';
-import { ResourceResolutionState } from './ResourceResolutionState';
+} from './ImageResourceReference.ts';
+import { ImageResourceReferenceKind } from './ImageResourceReference.ts';
+import { ResourceResolutionState } from './ResourceResolutionState.ts';
 
 describe('ImageResourceReference', () => {
   describe('ImageResourceReferenceKind', () => {

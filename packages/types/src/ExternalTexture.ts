@@ -1,5 +1,5 @@
-import type { TextureSource } from './TextureSource';
-import type { ExternalTextureSourceKind } from './TextureSourceKind';
+import type { TextureSource } from './TextureSource.ts';
+import type { ExternalTextureSourceKind } from './TextureSourceKind.ts';
 
 /**
  * A foreign GPU texture bound by one render backend. The backend borrows and never uploads or owns

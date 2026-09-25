@@ -1,7 +1,7 @@
-import { easeInOutCubic } from './easeCubic';
-import { easeInOutPower, easeInPower, easeOutPower } from './easePower';
-import { easeInQuadratic, easeOutQuadratic } from './easeQuadratic';
-import { easeInQuintic } from './easeQuintic';
+import { easeInOutCubic } from './easeCubic.ts';
+import { easeInOutPower, easeInPower, easeOutPower } from './easePower.ts';
+import { easeInQuadratic, easeOutQuadratic } from './easeQuadratic.ts';
+import { easeInQuintic } from './easeQuintic.ts';
 
 describe('easeInOutPower', () => {
   it('returns 0 at t=0 and 1 at t=1', () => {

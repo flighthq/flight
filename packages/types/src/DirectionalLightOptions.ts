@@ -1,5 +1,5 @@
-import type { LightUnit } from './LightUnit';
-import type { Vector3Like } from './Vector3';
+import type { LightUnit } from './LightUnit.ts';
+import type { Vector3Like } from './Vector3.ts';
 
 export interface DirectionalLightOptions {
   cascadeCount?: number;

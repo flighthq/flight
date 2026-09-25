@@ -12,7 +12,7 @@ import type {
   Physics2DAbiWorldStatus,
 } from '@flighthq/types/contract';
 
-import { createReferencePhysics2DAbi } from './referencePhysics2DAbi';
+import { createReferencePhysics2DAbi } from './referencePhysics2DAbi.ts';
 
 // Creates the executable TypeScript reference ABI. A drop-in package shadows this one constructor and
 // returns the same interface backed by its own persistent storage; every codec and wrapper remains

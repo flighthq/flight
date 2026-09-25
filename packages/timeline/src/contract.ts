@@ -1,2 +1,2 @@
-export * from './timeline';
-export { initializeTimeline, initializeTimelineSource } from './timeline';
+export * from './timeline.ts';
+export { initializeTimeline, initializeTimelineSource } from './timeline.ts';

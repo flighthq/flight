@@ -1,6 +1,6 @@
-import type { Light } from './Light';
-import type { LightUnit } from './LightUnit';
-import type { Vector3 } from './Vector3';
+import type { Light } from './Light.ts';
+import type { LightUnit } from './LightUnit.ts';
+import type { Vector3 } from './Vector3.ts';
 
 // Cone-restricted point light. `position`/`direction` are world-space; the cone is described by
 // the precomputed cosines of its inner and outer half-angles (innerConeCos >= outerConeCos),

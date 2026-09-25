@@ -1,4 +1,4 @@
-import { reportTextSegmenterUnavailable, setTextSegmentGuard } from './textSegmentGuards';
+import { reportTextSegmenterUnavailable, setTextSegmentGuard } from './textSegmentGuards.ts';
 
 afterEach(() => setTextSegmentGuard(null));
 

@@ -1,9 +1,9 @@
-import type { EmissiveModifier } from './EmissiveModifier';
-import { EntityRuntimeKey } from './Entity';
-import type { Material3D } from './Material3D';
-import type { RimModifier } from './RimModifier';
-import type { ShadedMaterial } from './ShadedMaterial';
-import { ShadedMaterialKind } from './ShadedMaterial';
+import type { EmissiveModifier } from './EmissiveModifier.ts';
+import { EntityRuntimeKey } from './Entity.ts';
+import type { Material3D } from './Material3D.ts';
+import type { RimModifier } from './RimModifier.ts';
+import type { ShadedMaterial } from './ShadedMaterial.ts';
+import { ShadedMaterialKind } from './ShadedMaterial.ts';
 
 describe('ShadedMaterial', () => {
   describe('ShadedMaterialKind', () => {

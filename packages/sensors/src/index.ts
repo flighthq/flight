@@ -21,4 +21,4 @@ export {
   hasProximitySensor,
   isSensorsSupported,
   requestSensorsPermission,
-} from './contract';
+} from './contract.ts';

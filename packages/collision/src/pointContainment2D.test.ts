@@ -1,7 +1,7 @@
 import type { CollisionBuiltInShape2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { getCollisionShapeContainsPoint2D } from './pointContainment2D';
+import { getCollisionShapeContainsPoint2D } from './pointContainment2D.ts';
 
 describe('getCollisionShapeContainsPoint2D', () => {
   it('contains a point within the radius of a capsule anywhere along it, ends included', () => {

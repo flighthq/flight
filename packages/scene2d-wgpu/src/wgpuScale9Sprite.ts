@@ -16,8 +16,8 @@ import {
   QUAD_BATCH_INSTANCE_FLOATS,
   recordWgpuQuadBatchColorScaleBias,
   writeWgpuQuadBatchAffineInstance,
-} from './wgpuQuadBatchWriter';
-import { buildWgpuScale9Mapper } from './wgpuScale9Mapper';
+} from './wgpuQuadBatchWriter.ts';
+import { buildWgpuScale9Mapper } from './wgpuScale9Mapper.ts';
 
 const SLICE_COUNT = 9;
 

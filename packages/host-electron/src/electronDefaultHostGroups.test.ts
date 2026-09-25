@@ -42,7 +42,7 @@ import {
   electronHostTextShaperGroup,
   electronHostVideoGroup,
   electronHostWgpuGroup,
-} from './electronDefaultHostGroups';
+} from './electronDefaultHostGroups.ts';
 
 const electron = {} as ElectronApi;
 

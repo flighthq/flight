@@ -6,12 +6,12 @@ import type {
   HostShellCapabilities,
   HostShortcutCapabilities,
   HostWindowCapabilities,
-} from './Host';
-import type { TauriMenuCapabilities } from './Menu';
-import type { TauriNotificationCapabilities } from './Notification';
-import type { TauriAppCapabilities } from './TauriAppCapabilities';
-import type { TauriTrayCapabilitiesFor } from './TauriTrayCapabilitiesFor';
-import type { DesktopOsProfile } from './Tray';
+} from './Host.ts';
+import type { TauriMenuCapabilities } from './Menu.ts';
+import type { TauriNotificationCapabilities } from './Notification.ts';
+import type { TauriAppCapabilities } from './TauriAppCapabilities.ts';
+import type { TauriTrayCapabilitiesFor } from './TauriTrayCapabilitiesFor.ts';
+import type { DesktopOsProfile } from './Tray.ts';
 
 export type TauriHost<Profile extends DesktopOsProfile> = Host & {
   readonly app: TauriAppCapabilities;

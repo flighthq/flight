@@ -1,7 +1,7 @@
 import type { Node } from 'oxc-parser';
 
-import { formatGateProvenance, readGateTreeState } from './gate-provenance';
-import { getParsedOxcSource } from './oxc-source';
+import { formatGateProvenance, readGateTreeState } from './gate-provenance.ts';
+import { getParsedOxcSource } from './oxc-source.ts';
 
 // Un-awaited promises inside a teardown `try`.
 //

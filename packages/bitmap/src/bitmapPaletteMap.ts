@@ -1,6 +1,6 @@
 import type { BitmapRegion } from '@flighthq/types/contract';
 
-import { invalidateBitmap } from './bitmap';
+import { invalidateBitmap } from './bitmap.ts';
 
 /**
  * Remaps each color channel of `source` independently through a 256-entry

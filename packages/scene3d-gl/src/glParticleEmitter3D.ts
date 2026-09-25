@@ -22,7 +22,7 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode, ParticleEmitter3DKind, TextureAtlasRotation } from '@flighthq/types/contract';
 
-import { getGlScene3DViewportAspect } from './glViewportAspect';
+import { getGlScene3DViewportAspect } from './glViewportAspect.ts';
 
 // Per-instance layout (16 floats = 64 bytes):
 // [0]  px         float   world x

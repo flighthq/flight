@@ -13,7 +13,7 @@ import type {
   Rectangle,
 } from '@flighthq/types/contract';
 
-import { isBitmapTextGlyphLayoutStale } from './bitmapText';
+import { isBitmapTextGlyphLayoutStale } from './bitmapText.ts';
 
 // Re-lays-out `bitmapText` when, and only when, its glyph source has repacked since the last layout —
 // the pairing that keeps a dynamic atlas correct. Returns whether it re-laid-out, so a caller can count

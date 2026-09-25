@@ -1,6 +1,6 @@
 import type { GlWireframeUpload, GlRenderState, MeshGeometry } from '@flighthq/types/contract';
 
-import { bindGlVertexAttribute, ensureGlMeshUpload } from './glMeshUpload';
+import { bindGlVertexAttribute, ensureGlMeshUpload } from './glMeshUpload.ts';
 // Lazily derives and uploads the wireframe line-index VAO for a geometry on this state, caching it
 // keyed by the geometry entity. Reuses the geometry's interleaved vertex buffer (ensuring the
 // triangle upload first), binds only the position attribute at location 0, and builds a line-list

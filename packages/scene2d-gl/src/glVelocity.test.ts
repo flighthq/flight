@@ -6,7 +6,7 @@ import type { QuadBatchRuntime, TextureAtlas, TextureAtlasRegion } from '@flight
 import { QuadBatchKind } from '@flighthq/types/contract';
 import { beginVelocityFrame, contributeVelocity, createVelocityField } from '@flighthq/velocity/contract';
 
-import { createGlState } from './glTestHelper';
+import { createGlState } from './glTestHelper.ts';
 import {
   createGlVelocityTarget,
   glNode2DVelocityWriter,
@@ -16,7 +16,7 @@ import {
   getGlVelocityWriter,
   registerGlVelocityWriter,
   renderGlVelocity,
-} from './glVelocity';
+} from './glVelocity.ts';
 
 describe('createGlVelocityTarget', () => {
   it('allocates an rgba16f target at the requested size', () => {

@@ -1,4 +1,4 @@
-import { swfStaticTextHandler } from './swfStaticTextHandler';
+import { swfStaticTextHandler } from './swfStaticTextHandler.ts';
 
 describe('swfStaticTextHandler', () => {
   it('claims the static text tags', () => {

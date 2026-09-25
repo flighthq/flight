@@ -9,7 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 
 // Uploads an Environment's source radiance cubemap (six ImageResource faces) to a wgpu cube texture,
 // caching it on the scene runtime. Returns null when the environment has no complete cube — all six faces

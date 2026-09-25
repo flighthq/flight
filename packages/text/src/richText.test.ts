@@ -64,7 +64,7 @@ import {
   setRichTextVerticalAlign,
   setRichTextWidth,
   setRichTextWordWrap,
-} from './richText';
+} from './richText.ts';
 
 describe('appendRichTextString', () => {
   it('appends the value to the existing text', () => {

@@ -1,5 +1,5 @@
-import type { CompositeOperator } from './CompositeOperator';
-import type { Effect } from './Effect';
+import type { CompositeOperator } from './CompositeOperator.ts';
+import type { Effect } from './Effect.ts';
 
 // Merge this node's isolated layer into its parent with a Porter-Duff coverage operator instead of the
 // default source-over. Unlike BlendEffect (which samples a backdrop and runs blend math in a shader), a

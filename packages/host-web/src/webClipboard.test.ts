@@ -6,8 +6,8 @@ import {
   webHostClipboardFormats,
   webHostClipboardImage,
   webHostClipboardText,
-} from './webClipboard';
-import { webHost } from './webHost';
+} from './webClipboard.ts';
+import { webHost } from './webHost.ts';
 
 afterEach(() => vi.unstubAllGlobals());
 

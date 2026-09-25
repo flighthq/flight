@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { TiledCompression, TiledLayerDataFailure } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setTiledLayerDataGuard } from './tiledLayerData';
+import { setTiledLayerDataGuard } from './tiledLayerData.ts';
 
 // Uninstalls the guard, restoring the silent parse.
 export function disableTilemapFormatsGuards(): void {

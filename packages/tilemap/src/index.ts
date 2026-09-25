@@ -17,4 +17,4 @@ export {
   setTilemapTile,
   setTilemapTiles,
   setTilemapTileTint,
-} from './tilemap';
+} from './tilemap.ts';

@@ -1,8 +1,8 @@
 import type { CommandHistory } from '@flighthq/types/contract';
 
-import { createCompositeCommand } from './command';
-import { getCommandBinding } from './commandBinding';
-import { notifyCommandHistoryChanged } from './commandHistory';
+import { createCompositeCommand } from './command.ts';
+import { getCommandBinding } from './commandBinding.ts';
+import { notifyCommandHistoryChanged } from './commandHistory.ts';
 
 // Transaction brackets, for operations whose full set of sub-commands is not known upfront — a gizmo drag
 // that emits one command per frame, a paste that discovers what it is pasting as it goes.

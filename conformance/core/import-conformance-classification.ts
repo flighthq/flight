@@ -1,8 +1,8 @@
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import type { ImportConformanceResult } from './import-conformance-core';
-import type { ImportConformanceDiagnosticEvidencePolicy } from './import-conformance-diagnostic-evidence';
+import type { ImportConformanceResult } from './import-conformance-core.ts';
+import type { ImportConformanceDiagnosticEvidencePolicy } from './import-conformance-diagnostic-evidence.ts';
 
 export interface ImportConformanceDiagnosticObservation {
   diagnostics: readonly Readonly<ImportDiagnostic>[];

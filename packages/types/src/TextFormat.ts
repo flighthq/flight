@@ -1,4 +1,4 @@
-import type { FontVariation } from './FontVariation';
+import type { FontVariation } from './FontVariation.ts';
 
 export type TextFormatAlign = 'center' | 'end' | 'justify' | 'left' | 'right' | 'start';
 

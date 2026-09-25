@@ -10,7 +10,7 @@
 // Substring stays the default because it is the useful thing for read-only exploration. Exactness is
 // opt-in, and it is what any writing operation should use.
 
-import { rendererMatchesFilter } from './captureEntries.js';
+import { rendererMatchesFilter } from './captureEntries.ts';
 
 export function assertCaptureSelectionNotEmpty<T extends { name: string; renderers: readonly string[] }>(
   entries: readonly T[],

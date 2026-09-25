@@ -1,1 +1,1 @@
-export { decodeImage, decodeImagePremultiplied, detectImageMimeType, encodeImage } from './contract';
+export { decodeImage, decodeImagePremultiplied, detectImageMimeType, encodeImage } from './contract.ts';

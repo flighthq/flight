@@ -1,6 +1,6 @@
-import type { CanvasRenderState } from './CanvasRenderState';
-import type { CanvasRenderTarget } from './CanvasRenderTarget';
-import type { Entity } from './Entity';
+import type { CanvasRenderState } from './CanvasRenderState.ts';
+import type { CanvasRenderTarget } from './CanvasRenderTarget.ts';
+import type { Entity } from './Entity.ts';
 
 // The Canvas drawing bracket, the web-only emulation of the GL and WGPU pass handle.
 // beginCanvasRenderPass acquires one from a pool and endCanvasRenderPass returns it, so a render loop

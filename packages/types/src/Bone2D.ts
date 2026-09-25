@@ -1,4 +1,4 @@
-import type { TransformInherit2D } from './TransformInherit2D';
+import type { TransformInherit2D } from './TransformInherit2D.ts';
 
 // One bone in a Skeleton2D's flat, parent-before-child ordered bone array. It carries its LOCAL setup
 // transform (the pose that animation mutates), its parent link, and its inherit mode. World transforms

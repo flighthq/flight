@@ -1,2 +1,2 @@
-export * from './builtInRequirementCatalogEntries';
-export * from './requirementCatalog';
+export * from './builtInRequirementCatalogEntries.ts';
+export * from './requirementCatalog.ts';

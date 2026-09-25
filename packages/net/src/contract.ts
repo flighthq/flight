@@ -1,3 +1,3 @@
-export * from './enableNetGuards';
-export * from './net';
-export * from './netForm';
+export * from './enableNetGuards.ts';
+export * from './net.ts';
+export * from './netForm.ts';

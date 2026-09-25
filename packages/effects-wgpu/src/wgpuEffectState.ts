@@ -35,11 +35,11 @@ import type {
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { applyColorLutPassToWgpu } from './wgpuColorLutPass';
-import { applyColorMatrixPassToWgpu } from './wgpuColorMatrixPass';
-import { drawWgpuEffectPass } from './wgpuEffectPass';
-import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { getWgpuEffectRunner } from './wgpuEffectRegistry';
+import { applyColorLutPassToWgpu } from './wgpuColorLutPass.ts';
+import { applyColorMatrixPassToWgpu } from './wgpuColorMatrixPass.ts';
+import { drawWgpuEffectPass } from './wgpuEffectPass.ts';
+import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
+import { getWgpuEffectRunner } from './wgpuEffectRegistry.ts';
 
 // Opt-in post-process pipeline, the Wgpu mirror of effects-gl's effectState. The caller opens a
 // pass on the screen, then:

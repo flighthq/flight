@@ -16,19 +16,19 @@ import type {
   SpatialIndexBackend3D,
 } from '@flighthq/types/contract';
 
-import { synchronizePhysics3DBroadphase } from './broadphase';
-import { createPhysics3DColliderWorldShape } from './colliderTransform';
-import { refreshRigidBody3DWorldInertia } from './integrate';
-import { rebuildPhysics3DJointCollisionSuppressions } from './jointCollisionSuppression';
-import { createPhysics3DMassData, setRigidBody3DMassData, updateRigidBody3DMassData } from './massProperties';
+import { synchronizePhysics3DBroadphase } from './broadphase.ts';
+import { createPhysics3DColliderWorldShape } from './colliderTransform.ts';
+import { refreshRigidBody3DWorldInertia } from './integrate.ts';
+import { rebuildPhysics3DJointCollisionSuppressions } from './jointCollisionSuppression.ts';
+import { createPhysics3DMassData, setRigidBody3DMassData, updateRigidBody3DMassData } from './massProperties.ts';
 import {
   assertPhysics3DBodyNotStepping,
   assertPhysics3DWorldNotStepping,
   physics3DBodyOwners,
   physics3DColliderOwners,
   physics3DJointOwners,
-} from './ownership';
-import { withdrawPhysics3DBroadphaseBody } from './physics3DBroadphasePublication';
+} from './ownership.ts';
+import { withdrawPhysics3DBroadphaseBody } from './physics3DBroadphasePublication.ts';
 import {
   applySymmetricTensor,
   TENSOR_XX,
@@ -37,7 +37,7 @@ import {
   TENSOR_YY,
   TENSOR_YZ,
   TENSOR_ZZ,
-} from './symmetricTensor';
+} from './symmetricTensor.ts';
 
 // World and body lifecycle: allocation, membership, and the mutations that have to run through a
 // function because something derived follows from them.

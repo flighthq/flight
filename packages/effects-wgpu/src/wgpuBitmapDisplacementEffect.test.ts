@@ -16,10 +16,10 @@ import {
   initializeWgpuEffectPipeline,
   isWgpuBitmapDisplacementEffectResolvable,
   registerWgpuBitmapDisplacementEffect,
-} from './wgpuBitmapDisplacementEffect';
-import * as wgpuEffectPass from './wgpuEffectPass';
-import * as wgpuEffectProgramCache from './wgpuEffectProgramCache';
-import { getWgpuEffectRunner, isWgpuEffectResolvable } from './wgpuEffectRegistry';
+} from './wgpuBitmapDisplacementEffect.ts';
+import * as wgpuEffectPass from './wgpuEffectPass.ts';
+import * as wgpuEffectProgramCache from './wgpuEffectProgramCache.ts';
+import { getWgpuEffectRunner, isWgpuEffectResolvable } from './wgpuEffectRegistry.ts';
 
 const sourceView = {} as GPUTextureView;
 const mapView = {} as GPUTextureView;

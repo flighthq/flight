@@ -50,4 +50,4 @@ export interface PlatformInfo extends Entity {
 export interface HostPlatformCapability {
   getInfo(out: PlatformInfo): PlatformInfo;
 }
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';

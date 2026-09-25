@@ -1,7 +1,7 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 import type { GizmoAlignment, GizmoSmartGuideResult } from '@flighthq/types/contract';
 
-import { computeGizmoAlignmentDeltas, findGizmoSmartGuides } from './gizmoAlignment';
+import { computeGizmoAlignmentDeltas, findGizmoSmartGuides } from './gizmoAlignment.ts';
 
 describe('computeGizmoAlignmentDeltas', () => {
   it('aligns every selection bound to the combined selection edge', () => {

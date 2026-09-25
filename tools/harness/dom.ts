@@ -39,7 +39,7 @@ import {
 } from '@flighthq/sdk';
 import { registerFunctionalTarget } from '@ft/verify';
 
-import type { FunctionalDomTarget, FunctionalTargetOptions } from './target';
+import type { FunctionalDomTarget, FunctionalTargetOptions } from './target.ts';
 
 export function createDomTarget(options: Readonly<FunctionalTargetOptions>): FunctionalDomTarget {
   const { width, height } = options;

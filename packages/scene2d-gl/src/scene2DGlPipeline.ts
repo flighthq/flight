@@ -23,19 +23,19 @@ import {
   TilemapKind,
 } from '@flighthq/types/contract';
 
-import { glBitmapTextRenderer } from './glBitmapText';
-import { glRenderCacheRenderer } from './glCache';
-import { glScene2DRenderer } from './glNode2D';
-import { glParticleEmitter2DRenderer } from './glParticleEmitter2D';
-import { glQuadBatchRenderer } from './glQuadBatch';
-import { glRichTextRenderer } from './glRichText';
-import { glScale9ShapeRenderer } from './glScale9Shape';
-import { glScale9SpriteRenderer } from './glScale9Sprite';
-import { glShapeRenderer, glMorphShapeRenderer } from './glShape';
-import { glSpriteRenderer } from './glSprite';
-import { standardGlQuadMaterialRenderer } from './glStandardMaterial';
-import { glTextLabelRenderer } from './glTextLabel';
-import { glTilemapRenderer } from './glTilemap';
+import { glBitmapTextRenderer } from './glBitmapText.ts';
+import { glRenderCacheRenderer } from './glCache.ts';
+import { glScene2DRenderer } from './glNode2D.ts';
+import { glParticleEmitter2DRenderer } from './glParticleEmitter2D.ts';
+import { glQuadBatchRenderer } from './glQuadBatch.ts';
+import { glRichTextRenderer } from './glRichText.ts';
+import { glScale9ShapeRenderer } from './glScale9Shape.ts';
+import { glScale9SpriteRenderer } from './glScale9Sprite.ts';
+import { glShapeRenderer, glMorphShapeRenderer } from './glShape.ts';
+import { glSpriteRenderer } from './glSprite.ts';
+import { standardGlQuadMaterialRenderer } from './glStandardMaterial.ts';
+import { glTextLabelRenderer } from './glTextLabel.ts';
+import { glTilemapRenderer } from './glTilemap.ts';
 
 function buildScene2DGlRenderers(): ReadonlyMap<Kind, NodeRenderer> {
   let table: ReadonlyMap<Kind, NodeRenderer> = new Map();

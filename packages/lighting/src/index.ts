@@ -38,4 +38,4 @@ export {
   setSpotLightCone,
   setSpotLightDirection,
   setSpotLightTarget,
-} from './contract';
+} from './contract.ts';

@@ -1,4 +1,4 @@
-import { wgpuShapeRenderer, registerWgpuShapeRasterizer } from './contract';
+import { wgpuShapeRenderer, registerWgpuShapeRasterizer } from './contract.ts';
 
 describe('registerWgpuShapeRasterizer', () => {
   it('is exported as a function', () => {

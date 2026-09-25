@@ -1,5 +1,5 @@
-import type { TiledTilesetRef } from './TiledTileset';
-import type { TilemapData } from './Tilemap';
+import type { TiledTilesetRef } from './TiledTileset.ts';
+import type { TilemapData } from './Tilemap.ts';
 
 // Compression applied to a base64-encoded tile-layer payload. Tiled emits `gzip`/`zlib` (and,
 // recently, `zstd`); the codec never bundles a decompressor, so the caller decodes these through a

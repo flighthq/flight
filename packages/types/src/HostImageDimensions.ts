@@ -1,4 +1,4 @@
-import type { HostImageSource } from './HostImageSource';
+import type { HostImageSource } from './HostImageSource.ts';
 
 // Pixel size of a borrowed host image handle, written into a caller-owned pair rather than allocated.
 export interface HostImageDimensions {

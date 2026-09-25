@@ -1,4 +1,4 @@
-import type { Adjustment } from './Adjustment';
+import type { Adjustment } from './Adjustment.ts';
 
 // A matrix-tier adjustment: its pointwise value remap is a pure affine 4×5 color matrix (the
 // @flighthq/adjustments colorMatrixMath convention — linear RGBA coefficients with a normalized bias

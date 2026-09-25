@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseTiledTmj } from './tiledJsonParse';
-import { formatTiledTmj } from './tiledTmjFormat';
-import { formatTiledTmx } from './tiledTmxFormat';
-import { parseTiledTmx } from './tiledXmlParse';
+import { parseTiledTmj } from './tiledJsonParse.ts';
+import { formatTiledTmj } from './tiledTmjFormat.ts';
+import { formatTiledTmx } from './tiledTmxFormat.ts';
+import { parseTiledTmx } from './tiledXmlParse.ts';
 
 // Every field this sweep added, in one document per front-end, so a round trip proves the whole set
 // rather than each field in isolation. Each construct carries a NON-DEFAULT value: a field that

@@ -7,10 +7,10 @@ import {
   ensureGlMatcapProgram,
   getGlMatcapFragmentSourceForKey,
   getGlMatcapVertexSourceForKey,
-} from './glMatcapPrelude';
-import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
+} from './glMatcapPrelude.ts';
+import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 const FLAT: GlMatcapDefineKey = { alphaMaskEnabled: false, hasMatcap: false };
 const TINT: LinearColor = [0.5, 0.25, 0.1, 1];

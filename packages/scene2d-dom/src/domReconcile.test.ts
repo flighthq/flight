@@ -1,7 +1,7 @@
 import type { DomRenderStateRuntime } from '@flighthq/types/contract';
 
-import { hasDomStructureChanged, processDomNode, reconcileDomContainer, swapDomOrderLists } from './domReconcile';
-import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
+import { hasDomStructureChanged, processDomNode, reconcileDomContainer, swapDomOrderLists } from './domReconcile.ts';
+import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
 
 function makeRuntime(): DomRenderStateRuntime {
   const container = document.createElement('div');

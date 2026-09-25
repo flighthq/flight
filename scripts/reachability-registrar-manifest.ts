@@ -1,4 +1,4 @@
-import type { RegistrarOwnershipEntry } from './reachability-core';
+import type { RegistrarOwnershipEntry } from './reachability-core.ts';
 
 export interface RegistrarIdentity {
   packageName: string;

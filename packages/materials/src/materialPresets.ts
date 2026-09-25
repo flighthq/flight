@@ -4,9 +4,9 @@ import type {
   StandardPbrMaterial,
 } from '@flighthq/types/contract';
 
-import { createExtendedPbrMaterial } from './extendedPbrMaterial';
-import { createStandardPbrMaterial, createStandardPbrMaterialProperties } from './pbrMaterials';
-import { createTransmissionVolumePbrExtension } from './transmissionVolumePbrExtension';
+import { createExtendedPbrMaterial } from './extendedPbrMaterial.ts';
+import { createStandardPbrMaterial, createStandardPbrMaterialProperties } from './pbrMaterials.ts';
+import { createTransmissionVolumePbrExtension } from './transmissionVolumePbrExtension.ts';
 
 // Named presets for common real-world materials using glTF metallic-roughness PBR values.
 // These are thin assemblies of standard property blocks, surface materials, and extension

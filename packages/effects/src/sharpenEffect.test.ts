@@ -1,4 +1,4 @@
-import { createSharpenEffect, initializeSharpenEffect } from './sharpenEffect';
+import { createSharpenEffect, initializeSharpenEffect } from './sharpenEffect.ts';
 
 describe('createSharpenEffect', () => {
   it('tags the intent type', () => {

@@ -1,4 +1,4 @@
-import { createChromaticAberrationEffect, initializeChromaticAberrationEffect } from './chromaticAberrationEffect';
+import { createChromaticAberrationEffect, initializeChromaticAberrationEffect } from './chromaticAberrationEffect.ts';
 
 describe('createChromaticAberrationEffect', () => {
   it('tags the intent type', () => {

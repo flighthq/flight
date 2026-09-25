@@ -17,7 +17,7 @@ import {
   setSkeleton3DBindPose,
   setSkeleton3DBindPoseGuard,
   validateSkeleton3D,
-} from './skeleton3d';
+} from './skeleton3d.ts';
 
 describe('cloneSkeleton3D', () => {
   it('copies buffers and arrays into a new identity while sharing joint nodes', () => {

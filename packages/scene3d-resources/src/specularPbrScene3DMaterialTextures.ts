@@ -1,7 +1,7 @@
 import type { Scene3DMaterialTextureRegistry, SpecularPbrExtension } from '@flighthq/types/contract';
 import { SpecularPbrExtensionKind } from '@flighthq/types/contract';
 
-import { registerScene3DPbrExtensionTextures } from './sceneMaterialTextureRegistry';
+import { registerScene3DPbrExtensionTextures } from './sceneMaterialTextureRegistry.ts';
 
 export function registerSpecularPbrScene3DMaterialTextures(registry: Scene3DMaterialTextureRegistry): void {
   registerScene3DPbrExtensionTextures(registry, SpecularPbrExtensionKind, (extension, out): void => {

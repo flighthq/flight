@@ -1,6 +1,6 @@
 import type { CollisionAabb2D, CollisionCircle2D, CollisionObb2D, CollisionPolygon2D } from '@flighthq/types/contract';
 
-import { registerCollisionPairTest2D } from './collisionSupport2D';
+import { registerCollisionPairTest2D } from './collisionSupport2D.ts';
 import {
   testAabbAabbCollision2D,
   testAabbObbCollision2D,
@@ -12,7 +12,7 @@ import {
   testObbObbCollision2D,
   testObbPolygonCollision2D,
   testPolygonPolygonCollision2D,
-} from './shapeCollision2D';
+} from './shapeCollision2D.ts';
 
 // Registers the ten SAT pairs over the generic support-function floor.
 //

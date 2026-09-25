@@ -1,6 +1,6 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createSkin2D, initializeSkin2D } from './skin2D';
+import { createSkin2D, initializeSkin2D } from './skin2D.ts';
 
 describe('createSkin2D', () => {
   it('adopts the streams it is given rather than copying them', () => {

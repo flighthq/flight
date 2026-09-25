@@ -10,7 +10,12 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { decodeColladaAnimations, decodeColladaControllers, decodeColladaMorphs, parseCollada } from './colladaParse';
+import {
+  decodeColladaAnimations,
+  decodeColladaControllers,
+  decodeColladaMorphs,
+  parseCollada,
+} from './colladaParse.ts';
 
 function near(a: number, b: number, eps = 1e-5): void {
   expect(a).toBeCloseTo(b, -Math.log10(eps));

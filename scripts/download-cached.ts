@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 
-import { downloadConsumerAssets } from './asset-cache';
+import { downloadConsumerAssets } from './asset-cache.ts';
 
 // The monorepo predev/prebuild entry: download one consumer's manifest into the shared cache (or its
 // own public/assets when the cache is disabled). The consumer directory defaults to the current

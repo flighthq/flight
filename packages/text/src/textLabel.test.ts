@@ -24,7 +24,7 @@ import {
   setTextLabelString,
   setTextLabelVerticalAlign,
   setTextLabelWidth,
-} from './textLabel';
+} from './textLabel.ts';
 
 describe('appendTextLabelString', () => {
   it('appends the value to the existing text', () => {

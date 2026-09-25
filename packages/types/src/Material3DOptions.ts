@@ -1,5 +1,5 @@
-import type { BlendMode } from './BlendMode';
-import type { MaterialAlphaMode } from './Material3D';
+import type { BlendMode } from './BlendMode.ts';
+import type { MaterialAlphaMode } from './Material3D.ts';
 
 // The optional-everywhere options block for the shared Material3D trailer. Every concrete 3D
 // material options type extends this (BlinnPhong/PBR via `Partial<…Material>`, ShadedMaterial

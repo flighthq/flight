@@ -1,10 +1,10 @@
-import type { Node2D } from './Node2D';
+import type { Node2D } from './Node2D.ts';
 import type {
   NodeInteractiveStateProperty,
   NodeInteractiveStateTransition,
   NodeInteractiveStateTransitionRequest,
   NodeInteractiveStateTransitionValue,
-} from './NodeInteractiveStateBinding';
+} from './NodeInteractiveStateBinding.ts';
 
 export type GuiOrientation = 'horizontal' | 'vertical';
 

@@ -5,14 +5,14 @@ export {
   createReorderNodeChildCommand,
   createSetNodePropertyCommand,
   createSetNodePropertyCommandBatch,
-} from './command';
+} from './command.ts';
 export {
   createCommandBindingTable,
   getCommandBinding,
   hasCommandBinding,
   registerCommandBinding,
   registerDefaultCommandBindings,
-} from './commandBinding';
+} from './commandBinding.ts';
 export {
   canRedoCommand,
   canUndoCommand,
@@ -26,7 +26,7 @@ export {
   notifyCommandHistoryChanged,
   redoCommand,
   undoCommand,
-} from './commandHistory';
-export * from './commandHistorySignals';
-export * from './commandTransaction';
-export * from './explainCommandDispatch';
+} from './commandHistory.ts';
+export * from './commandHistorySignals.ts';
+export * from './commandTransaction.ts';
+export * from './explainCommandDispatch.ts';

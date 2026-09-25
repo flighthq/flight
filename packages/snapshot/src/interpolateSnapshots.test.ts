@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { captureSnapshot } from './captureSnapshot';
-import { interpolateSnapshots } from './interpolateSnapshots';
-import { restoreSnapshot } from './restoreSnapshot';
+import { captureSnapshot } from './captureSnapshot.ts';
+import { interpolateSnapshots } from './interpolateSnapshots.ts';
+import { restoreSnapshot } from './restoreSnapshot.ts';
 
 describe('interpolateSnapshots', () => {
   it('lerps numerics and snaps the string at t=0.5', () => {

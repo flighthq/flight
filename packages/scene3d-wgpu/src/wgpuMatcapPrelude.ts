@@ -8,15 +8,15 @@ import type {
   WgpuSkinningAdapter,
 } from '@flighthq/types/contract';
 
-import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
+import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail.ts';
 import {
   createWgpuMeshPipeline,
   ensureWgpuPlaceholderTextureView,
   ensureWgpuScene3DPipeline,
   getWgpuMeshPreludeWgsl,
   stashWgpuUvTransform,
-} from './wgpuMeshPipeline';
-import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
+} from './wgpuMeshPipeline.ts';
+import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime.ts';
 
 // The shared Wgpu matcap prelude — the WGSL mirror of scene-gl's glMatcapPrelude. One module for the
 // lighting-independent Matcap (material-capture) material: a matcap is a prebaked-lit sphere texture

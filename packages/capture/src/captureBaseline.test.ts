@@ -8,7 +8,7 @@ import {
   parseCaptureBaseline,
   setCaptureBaselineField,
   setCaptureBaselineProvenance,
-} from './captureBaseline';
+} from './captureBaseline.ts';
 
 describe('createCaptureBaseline', () => {
   it('allocates an empty record', () => {

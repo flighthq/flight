@@ -3,7 +3,7 @@ import {
   getColorLuminance,
   getRec2020LuminanceWeights,
   getRec709LuminanceWeights,
-} from './luminance';
+} from './luminance.ts';
 
 describe('getColorContrastRatio', () => {
   it('returns 21 for black on white', () => {

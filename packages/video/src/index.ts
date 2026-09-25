@@ -15,4 +15,4 @@ export {
   loadVideoResourceFromUrl,
   loadVideoResourceFromUrls,
   selectVideoResourceUrl,
-} from './contract';
+} from './contract.ts';

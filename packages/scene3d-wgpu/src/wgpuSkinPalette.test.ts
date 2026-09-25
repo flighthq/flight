@@ -1,8 +1,8 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { describe, expect, it } from 'vitest';
 
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 import {
   destroyWgpuSkinPalette,
   wgpuSkinningAdapter,
@@ -13,7 +13,7 @@ import {
   registerWgpuGpuSkinning,
   uploadWgpuSkinNormalPalette,
   uploadWgpuSkinPalette,
-} from './wgpuSkinPalette';
+} from './wgpuSkinPalette.ts';
 
 describe('destroyWgpuSkinPalette', () => {
   it('clears every palette and draw-group cache slot', () => {

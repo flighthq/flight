@@ -1,5 +1,5 @@
-import { applyColorMatrixToColor } from './colorMatrixMath';
-import { createGrayscaleAdjustment, initializeGrayscaleAdjustment } from './grayscaleAdjustment';
+import { applyColorMatrixToColor } from './colorMatrixMath.ts';
+import { createGrayscaleAdjustment, initializeGrayscaleAdjustment } from './grayscaleAdjustment.ts';
 
 describe('createGrayscaleAdjustment', () => {
   it('defaults to full BT.709 luma desaturation', () => {

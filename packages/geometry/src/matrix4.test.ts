@@ -58,7 +58,7 @@ import {
 } from '@flighthq/geometry/contract';
 import type { Matrix, Matrix4 } from '@flighthq/types/contract';
 
-import { initializeMatrix4 } from './matrix4';
+import { initializeMatrix4 } from './matrix4.ts';
 
 const X_AXIS = { x: 1, y: 0, z: 0, w: 0 };
 const Y_AXIS = { x: 0, y: 1, z: 0, w: 0 };

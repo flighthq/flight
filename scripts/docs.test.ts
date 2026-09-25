@@ -19,8 +19,8 @@ import {
   hasGatePath,
   isAuthorityBearingDoc,
   reportDocBudget,
-} from './docs';
-import type { StatusLogEntry } from './docs';
+} from './docs.ts';
+import type { StatusLogEntry } from './docs.ts';
 
 function mapWith(...entries: readonly string[]): string {
   return ['# Map', '', '## Domain Conventions', '', ...entries, '', '## Next Section', ''].join('\n');

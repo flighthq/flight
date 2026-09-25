@@ -3,8 +3,8 @@ import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import type { LogEntry, TrayIcon } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { disableTrayGuards, enableTrayGuards } from './enableTrayGuards';
-import { createTrayIcon, destroyTrayIcon, startTrayIconAnimation } from './tray';
+import { disableTrayGuards, enableTrayGuards } from './enableTrayGuards.ts';
+import { createTrayIcon, destroyTrayIcon, startTrayIconAnimation } from './tray.ts';
 
 let entries: LogEntry[];
 

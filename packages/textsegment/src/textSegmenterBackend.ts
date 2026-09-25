@@ -5,7 +5,7 @@ import type {
   TextSegmenterExplanation,
 } from '@flighthq/types/contract';
 
-import { reportTextSegmenterUnavailable } from './textSegmentGuards';
+import { reportTextSegmenterUnavailable } from './textSegmentGuards.ts';
 
 // Stable bundled web provider. Hosts can import this directly when composing their explicit
 // capability object.

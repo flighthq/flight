@@ -12,4 +12,4 @@ export {
   shareFiles,
   shareText,
   shareUrl,
-} from './contract';
+} from './contract.ts';

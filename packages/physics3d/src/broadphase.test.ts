@@ -8,7 +8,7 @@ import type {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { synchronizePhysics3DBroadphase, synchronizePhysics3DSweptBroadphase } from './broadphase';
+import { synchronizePhysics3DBroadphase, synchronizePhysics3DSweptBroadphase } from './broadphase.ts';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,
@@ -16,7 +16,7 @@ import {
   createPhysics3DWorld,
   createRigidBody3D,
   removePhysics3DBody,
-} from './world';
+} from './world.ts';
 
 afterEach(() => {
   setSpatialIndexingGuard(null);

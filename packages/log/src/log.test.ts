@@ -74,7 +74,7 @@ import {
   setLogRedactionPaths,
   setLogSink,
   startLogTimer,
-} from './log';
+} from './log.ts';
 
 function recordingSink(): { entries: LogEntry[]; sink: (entry: LogEntry) => void } {
   const entries: LogEntry[] = [];

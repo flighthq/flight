@@ -1,7 +1,7 @@
-import { getCanvasEffectRunner } from './canvasEffectRegistry';
-import { createCanvasRenderState } from './canvasEffectTestSupport';
-import * as contractEffects from './contract';
-import * as publicEffects from './index';
+import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
+import { createCanvasRenderState } from './canvasEffectTestSupport.ts';
+import * as contractEffects from './contract.ts';
+import * as publicEffects from './index.ts';
 
 describe('Canvas effect registration', () => {
   it.each([

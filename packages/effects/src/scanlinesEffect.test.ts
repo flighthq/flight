@@ -1,4 +1,4 @@
-import { createScanlinesEffect, initializeScanlinesEffect } from './scanlinesEffect';
+import { createScanlinesEffect, initializeScanlinesEffect } from './scanlinesEffect.ts';
 
 describe('createScanlinesEffect', () => {
   it('tags the intent type', () => {

@@ -16,7 +16,7 @@ import {
   readAwdPropertyFloat32,
   readAwdString,
   readAwdTransform,
-} from './awd2Reader';
+} from './awd2Reader.ts';
 import {
   AWD2_BLOCK_CAMERA,
   AWD2_CAMERA_PROJECTION_ORTHOGRAPHIC,
@@ -27,7 +27,7 @@ import {
   AWD2_CAMERA_PROP_ORTHO_LEFT,
   AWD2_CAMERA_PROP_ORTHO_RIGHT,
   AWD2_CAMERA_PROP_ORTHO_TOP,
-} from './awd2Schema';
+} from './awd2Schema.ts';
 
 // Cameras. Like lights, a camera fills the document's PLACEMENT TABLE rather than the node graph — it is
 // not a scene member in Flight — so this handler builds after the node passes, when a camera parented to

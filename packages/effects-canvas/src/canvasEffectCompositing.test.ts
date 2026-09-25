@@ -6,7 +6,7 @@ import {
   drawCanvasEffectPass,
   drawCanvasImageDataPass,
   passthroughCanvasEffectPass,
-} from './canvasEffectCompositing';
+} from './canvasEffectCompositing.ts';
 
 describe('drawCanvasAccumulationPass', () => {
   it('is a function', () => {

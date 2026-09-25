@@ -1,4 +1,4 @@
-import { degToRad, deltaAngle, normalizeAngle, radToDeg } from './angle';
+import { degToRad, deltaAngle, normalizeAngle, radToDeg } from './angle.ts';
 
 describe('degToRad', () => {
   it('converts 0 degrees to 0 radians', () => {

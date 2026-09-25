@@ -3,8 +3,8 @@ import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createHtmlView } from '@flighthq/scene2d/contract';
 import { HtmlViewKind } from '@flighthq/types/contract';
 
-import { domHtmlViewRenderer, drawDomHtmlView } from './domHtmlView';
-import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
+import { domHtmlViewRenderer, drawDomHtmlView } from './domHtmlView.ts';
+import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
 
 function makeState() {
   const container = document.createElement('div');

@@ -10,8 +10,8 @@ import type {
 } from '@flighthq/types/contract';
 import { PathCommand, RiveFieldType } from '@flighthq/types/contract';
 
-import { applyRiveClipping, registerRiveClippingHandlers } from './riveClipping';
-import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry';
+import { applyRiveClipping, registerRiveClippingHandlers } from './riveClipping.ts';
+import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry.ts';
 
 const kernel = martinezPathBooleanKernel;
 

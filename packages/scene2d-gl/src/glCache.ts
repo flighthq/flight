@@ -33,8 +33,8 @@ import type {
   RenderProxy2D,
 } from '@flighthq/types/contract';
 
-import { renderGlScene2D } from './glNode2D';
-import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
+import { renderGlScene2D } from './glNode2D.ts';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
 
 export function createGlCacheState(
   ownerState: GlRenderState,

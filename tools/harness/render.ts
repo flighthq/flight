@@ -3,7 +3,7 @@
 // `/tests/<name>/<backend>/` route before the scene module evaluates, so one backend-agnostic scene
 // file runs on every backend with no build-time import resolution (no `?render=` trampoline). A
 // backend-specific `<name>.<backend>.ts` scene does not use this — it builds its own state directly.
-import type { FunctionalTarget, FunctionalTargetOptions } from './target';
+import type { FunctionalTarget, FunctionalTargetOptions } from './target.ts';
 
 export type {
   FunctionalCanvasTarget,
@@ -11,7 +11,7 @@ export type {
   FunctionalGlTarget,
   FunctionalTarget,
   FunctionalWgpuTarget,
-} from './target';
+} from './target.ts';
 export type { FunctionalTargetOptions };
 
 type BackendWindow = typeof window & {
@@ -59,12 +59,12 @@ export async function createFunctionalTarget(options: FunctionalTargetOptions): 
   const backend = (window as BackendWindow).__ftBackend ?? 'webgl';
   switch (backend) {
     case 'canvas':
-      return (await import('./canvas')).createCanvasTarget(options);
+      return (await import('./canvas.ts')).createCanvasTarget(options);
     case 'dom':
-      return (await import('./dom')).createDomTarget(options);
+      return (await import('./dom.ts')).createDomTarget(options);
     case 'webgpu':
-      return (await import('./webgpu')).createWgpuTarget(options);
+      return (await import('./webgpu.ts')).createWgpuTarget(options);
     default:
-      return (await import('./webgl')).createGlTarget(options);
+      return (await import('./webgl.ts')).createGlTarget(options);
   }
 }

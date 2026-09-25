@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Spritesheet, SpritesheetAnimation, EntityConstruction } from '@flighthq/types/contract';
 
-import { createSpritesheetFrame } from './spritesheetFrame';
+import { createSpritesheetFrame } from './spritesheetFrame.ts';
 
 export function cloneSpritesheet(spritesheet: Readonly<Spritesheet>): Spritesheet {
   const frames = spritesheet.frames.map((f) =>

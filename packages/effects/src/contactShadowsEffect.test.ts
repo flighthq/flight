@@ -5,7 +5,7 @@ import {
   getContactShadowsEffectPadding,
   initializeContactShadowsEffect,
   registerContactShadowsEffectPaddingResolver,
-} from './contactShadowsEffect';
+} from './contactShadowsEffect.ts';
 
 describe('createContactShadowsEffect', () => {
   it('carries options', () => {

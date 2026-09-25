@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { isKnownSwfTag } from './swfKnownTags';
-import { SWF_TAG_NAMES } from './swfTagVocabulary';
+import { isKnownSwfTag } from './swfKnownTags.ts';
+import { SWF_TAG_NAMES } from './swfTagVocabulary.ts';
 
 describe('isKnownSwfTag', () => {
   it('matches the named vocabulary throughout the complete ten-bit tag-code range', () => {

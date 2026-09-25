@@ -1,9 +1,9 @@
-import { appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path';
+import { appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path.ts';
 import {
   buildStrokePathGeometry,
   StrokePathTessellationIssueNone,
   StrokePathTessellationIssueSelfIntersectingCenterline,
-} from './strokePathGeometry';
+} from './strokePathGeometry.ts';
 
 describe('buildStrokePathGeometry', () => {
   it('builds paired closed-ring sections and reports pathological centerlines', () => {

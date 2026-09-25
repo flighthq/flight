@@ -10,8 +10,8 @@ import {
   spineBinaryPathTimelineReader,
   spineBinarySlotTimelineReader,
   spineBinaryTransformTimelineReader,
-} from './spineBinaryParse';
-import { registerSpineBinaryTimelineHandler } from './spineBinaryRegistry';
+} from './spineBinaryParse.ts';
+import { registerSpineBinaryTimelineHandler } from './spineBinaryRegistry.ts';
 
 /** Registers all eight animation timeline-family handlers. */
 export function registerSpineBinaryTimelineHandlers(registry: SpineBinaryRegistry): void {

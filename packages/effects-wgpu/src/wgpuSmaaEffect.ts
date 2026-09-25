@@ -1,8 +1,8 @@
 import type { SmaaEffect, WgpuEffectRunner, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 
-import { drawWgpuEffectPass } from './wgpuEffectPass';
-import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
+import { drawWgpuEffectPass } from './wgpuEffectPass.ts';
+import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
 
 // SMAA: a single-pass edge-aware blur approximation. Full SMAA needs separate edge-detection and
 // blend-weight passes against precomputed area/search lookup textures; this single-pass approximation

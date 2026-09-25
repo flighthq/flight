@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { InputSignals } from './InputSignals';
-import type { Node, NodeAny, NodeTraits } from './Node';
+import type { Entity } from './Entity.ts';
+import type { InputSignals } from './InputSignals.ts';
+import type { Node, NodeAny, NodeTraits } from './Node.ts';
 
 export type FocusDirection = 'down' | 'left' | 'right' | 'up';
 

@@ -12,7 +12,7 @@ import {
   createInteractiveStateBindingLookup,
   isInteractiveStateBindingTargetSupported,
   readInteractiveStateBindingMetadata,
-} from './sceneDocumentInteractiveStateBindings';
+} from './sceneDocumentInteractiveStateBindings.ts';
 
 describe('assertAllInteractiveStateBindingsUsed', () => {
   it('rejects a lookup containing a foreign scene node', () => {

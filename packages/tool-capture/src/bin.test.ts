@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { CAPTURE_CLI_BOOLEAN_OPTIONS, CAPTURE_CLI_OPTION_GROUPS } from './captureCliOptions';
+import { CAPTURE_CLI_BOOLEAN_OPTIONS, CAPTURE_CLI_OPTION_GROUPS } from './captureCliOptions.ts';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 

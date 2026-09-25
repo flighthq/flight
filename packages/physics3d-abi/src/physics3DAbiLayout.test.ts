@@ -25,7 +25,7 @@ import {
   Physics3DAbiShapeHeaderByteLength,
   Physics3DAbiShapeKind,
   Physics3DAbiVersion,
-} from './physics3DAbiLayout';
+} from './physics3DAbiLayout.ts';
 
 describe('Physics3D ABI wire layout', () => {
   it('locks the version, magic bytes, and record framing', () => {

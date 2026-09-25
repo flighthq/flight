@@ -30,7 +30,7 @@ import {
   undoTextInput,
 } from '@flighthq/sdk/textinput';
 
-import { canvas, render, scale } from './render';
+import { canvas, render, scale } from './render.ts';
 
 const FIELD_WIDTH = 340;
 const FIELD_HEIGHT = 28;

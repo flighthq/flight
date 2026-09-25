@@ -9,7 +9,7 @@ import type {
   WgpuSurface,
 } from '@flighthq/types/contract';
 
-import { allocateSurface } from './surface';
+import { allocateSurface } from './surface.ts';
 
 // Allocates a drawable in the given window, sized in device pixels, and acquires a WebGPU device and
 // presentation context for it. Returns null when the environment cannot provide WebGPU at all — no

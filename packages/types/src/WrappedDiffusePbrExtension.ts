@@ -1,5 +1,5 @@
-import type { PbrExtension, PbrUvSet } from './PbrExtension';
-import type { Texture } from './Texture';
+import type { PbrExtension, PbrUvSet } from './PbrExtension.ts';
+import type { Texture } from './Texture.ts';
 
 // Flight-specific wrapped diffuse contribution. This is deliberately not named "subsurface": it
 // widens direct diffuse lighting around the terminator but does not model subsurface transport.

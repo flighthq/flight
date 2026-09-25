@@ -1,7 +1,7 @@
 import type { Physics3DJointSolver, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createPhysics3DBallAndSocketJoint, createPhysics3DHingeJoint } from './jointFactories';
+import { createPhysics3DBallAndSocketJoint, createPhysics3DHingeJoint } from './jointFactories.ts';
 import {
   addPhysics3DJoint,
   getPhysics3DJointSolver,
@@ -9,10 +9,10 @@ import {
   isPhysics3DPairOrdered,
   registerPhysics3DJointSolver,
   removePhysics3DJoint,
-} from './jointRegistry';
-import { physics3DBallAndSocketJointSolver, physics3DHingeJointSolver, Physics3DHingeJointKind } from './joints';
-import { steppingPhysics3DWorlds } from './ownership';
-import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world';
+} from './jointRegistry.ts';
+import { physics3DBallAndSocketJointSolver, physics3DHingeJointSolver, Physics3DHingeJointKind } from './joints.ts';
+import { steppingPhysics3DWorlds } from './ownership.ts';
+import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world.ts';
 
 describe('addPhysics3DJoint', () => {
   it('returns the joint it was given and records it on the world', () => {

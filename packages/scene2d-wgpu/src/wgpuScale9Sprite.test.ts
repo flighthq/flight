@@ -17,11 +17,11 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey, Scale9SpriteKind } from '@flighthq/types/contract';
 
-import { wgpuScene2DRenderPreset } from './scene2DWgpuPipeline';
-import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
-import { prepareWgpuQuadBatchWrite, QUAD_BATCH_INSTANCE_FLOATS } from './wgpuQuadBatchWriter';
-import { wgpuScale9SpriteRenderer, drawWgpuScale9Sprite } from './wgpuScale9Sprite';
-import { registerWgpuStandardMaterial, standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial';
+import { wgpuScene2DRenderPreset } from './scene2DWgpuPipeline.ts';
+import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature.ts';
+import { prepareWgpuQuadBatchWrite, QUAD_BATCH_INSTANCE_FLOATS } from './wgpuQuadBatchWriter.ts';
+import { wgpuScale9SpriteRenderer, drawWgpuScale9Sprite } from './wgpuScale9Sprite.ts';
+import { registerWgpuStandardMaterial, standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial.ts';
 
 beforeAll(() => installWgpuMock());
 

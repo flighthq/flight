@@ -1,5 +1,5 @@
-import { webHostSurfaceDisplay, webHostSurfaceResize } from './webHostSurface';
-import { createWebSurfaceFromElement } from './webSurfaceHandle';
+import { webHostSurfaceDisplay, webHostSurfaceResize } from './webHostSurface.ts';
+import { createWebSurfaceFromElement } from './webSurfaceHandle.ts';
 
 describe('webHostSurfaceDisplay', () => {
   it('sets the presented size without touching the backing store', () => {

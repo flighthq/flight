@@ -5,8 +5,8 @@ import type {
   PosterizeEffect,
 } from '@flighthq/types/contract';
 
-import { drawCanvasImageDataPass } from './canvasEffectCompositing';
-import { registerCanvasEffect } from './canvasEffectRegistry';
+import { drawCanvasImageDataPass } from './canvasEffectCompositing.ts';
+import { registerCanvasEffect } from './canvasEffectRegistry.ts';
 
 // Posterize (REAL): floor each channel to `levels` discrete steps, matching the Gl/Wgpu recipe
 // `floor(c * levels) / (levels - 1)` exactly rather than approximating it.

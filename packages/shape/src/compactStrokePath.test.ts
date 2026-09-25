@@ -1,7 +1,7 @@
 import type { Path } from '@flighthq/types/contract';
 import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 
-import { compactStrokePath } from './compactStrokePath';
+import { compactStrokePath } from './compactStrokePath.ts';
 
 describe('compactStrokePath', () => {
   it('converts an open centerline into a closed fill outline', () => {

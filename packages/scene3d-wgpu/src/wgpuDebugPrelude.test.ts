@@ -6,9 +6,9 @@ import {
   compileWgpuDebugPipeline,
   ensureWgpuDebugPipeline,
   getWgpuDebugModuleSourceForKey,
-} from './wgpuDebugPrelude';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
+} from './wgpuDebugPrelude.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper.ts';
 
 const DEPTH: WgpuDebugDefineKey = { hasNormalMap: false, mode: 'depth' };
 const NORMAL: WgpuDebugDefineKey = { hasNormalMap: false, mode: 'normal' };

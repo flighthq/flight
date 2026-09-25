@@ -1,4 +1,4 @@
-import { createBitmap } from './bitmap';
+import { createBitmap } from './bitmap.ts';
 import {
   BITMAP_FINGERPRINT_COMPUTATION_ID,
   compareBitmapFingerprints,
@@ -6,8 +6,8 @@ import {
   formatBitmapFingerprint,
   initializeBitmapFingerprint,
   parseBitmapFingerprint,
-} from './bitmapFingerprint';
-import { setBitmapPixel } from './bitmapPixel';
+} from './bitmapFingerprint.ts';
+import { setBitmapPixel } from './bitmapPixel.ts';
 
 describe('BITMAP_FINGERPRINT_COMPUTATION_ID', () => {
   it('is a non-empty string identifying the current computation', () => {

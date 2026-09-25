@@ -6,8 +6,8 @@ import type {
   WhiteBalanceEffect,
 } from '@flighthq/types/contract';
 
-import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // White balance: warm/cool temperature and magenta/green tint channel shift.
 export function applyWhiteBalanceEffectToGl(

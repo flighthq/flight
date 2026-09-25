@@ -1,4 +1,4 @@
-import { swfDefineShapeHandler } from './swfDefineShapeHandler';
+import { swfDefineShapeHandler } from './swfDefineShapeHandler.ts';
 
 describe('swfDefineShapeHandler', () => {
   it('claims the four static shape tags', () => {

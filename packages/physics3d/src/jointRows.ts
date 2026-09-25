@@ -14,8 +14,8 @@ import {
   writePhysics3DJointPointMass,
   writePhysics3DJointRotationError,
   writePhysics3DJointSeparation,
-} from './jointMath';
-import { applySymmetricTensor, inverseSymmetricTensor } from './symmetricTensor';
+} from './jointMath.ts';
+import { applySymmetricTensor, inverseSymmetricTensor } from './symmetricTensor.ts';
 
 // The constraint FAMILIES every 3D joint kind is composed from. `jointMath` is the arithmetic; this is the
 // sequential-impulse pattern applied to it — prepare a block, warm-start it, solve it — so a kind reads as a

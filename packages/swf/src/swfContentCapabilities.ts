@@ -1,8 +1,8 @@
 import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/types/contract';
 
-import { uncompressSwfSource } from './swfDocument';
-import { parseSwfHeader } from './swfHeader';
-import { readSwfHeaderRectangle, readSwfHeaderUint32, SWF_HEADER_PREFIX_LENGTH } from './swfHeaderReader';
+import { uncompressSwfSource } from './swfDocument.ts';
+import { parseSwfHeader } from './swfHeader.ts';
+import { readSwfHeaderRectangle, readSwfHeaderUint32, SWF_HEADER_PREFIX_LENGTH } from './swfHeaderReader.ts';
 
 /**
  * Content-level capability signals extracted from a SWF's tag stream.

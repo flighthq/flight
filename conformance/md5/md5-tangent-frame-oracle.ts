@@ -18,8 +18,8 @@ import {
   getFixtureTreePath,
   readFixtureTreeStamp,
   resolveFixtureCacheDirectory,
-} from '../../scripts/fixtures';
-import { probeMd5Sections } from './md5-section-probe';
+} from '../../scripts/fixtures.ts';
+import { probeMd5Sections } from './md5-section-probe.ts';
 
 export const MD5_TANGENT_ORTHOGONALITY_ORACLE_ID = 'md5.tangent-orthogonality';
 export const MD5_TANGENT_HANDEDNESS_ORACLE_ID = 'md5.tangent-handedness';

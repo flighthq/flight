@@ -8,8 +8,8 @@ import type {
 } from '@flighthq/types/contract';
 import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
-import { copySampler } from './sampler';
-import { createTexture } from './texture';
+import { copySampler } from './sampler.ts';
+import { createTexture } from './texture.ts';
 
 // Creates a universal Texture with a GPU-origin render-target source. Backend allocation stays lazy;
 // renderIntoGlRenderTexture realizes the target in one state and resolveGlTexture later returns its

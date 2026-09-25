@@ -1,4 +1,4 @@
-import { swfControlHandler } from './swfControlHandler';
+import { swfControlHandler } from './swfControlHandler.ts';
 
 describe('swfControlHandler', () => {
   it('claims the control tags', () => {

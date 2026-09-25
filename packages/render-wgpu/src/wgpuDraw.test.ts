@@ -15,7 +15,7 @@ import {
   ImageTextureSourceKind,
 } from '@flighthq/types/contract';
 
-import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture';
+import { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture.ts';
 import {
   applyWgpuBlendMode,
   bindWgpuBitmapTexture,
@@ -34,11 +34,11 @@ import {
   submitWgpuQuadDraw,
   updateWgpuTextureEntry,
   warmWgpuPipelines,
-} from './wgpuDraw';
-import { submitWgpuFrame } from './wgpuFrame';
-import { registerWgpuMipmapGeneration } from './wgpuMipmap';
-import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
-import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+} from './wgpuDraw.ts';
+import { submitWgpuFrame } from './wgpuFrame.ts';
+import { registerWgpuMipmapGeneration } from './wgpuMipmap.ts';
+import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
+import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';
 
 beforeAll(() => {
   installWgpuMock();

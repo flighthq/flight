@@ -1,6 +1,6 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
 
-import { capacitorHostHapticsGroup, capacitorHostSoftKeyboardGroup } from './capacitorInputHost';
+import { capacitorHostHapticsGroup, capacitorHostSoftKeyboardGroup } from './capacitorInputHost.ts';
 
 function fakeCapacitor(): CapacitorApi {
   return {

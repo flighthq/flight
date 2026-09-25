@@ -1,4 +1,4 @@
-import type { TextureAtlas } from './TextureAtlas';
+import type { TextureAtlas } from './TextureAtlas.ts';
 
 export type TextureAtlasRegionTextureStatus = 'ready' | 'missing-region' | 'missing-texture' | 'rotated-page';
 

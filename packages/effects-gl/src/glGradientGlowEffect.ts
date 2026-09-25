@@ -15,11 +15,11 @@ import type {
   GlTextureRenderTargetPool,
 } from '@flighthq/types/contract';
 
-import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
-import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
-import { createGlEffectGradientRampTexture } from './glEffectGradientRamp';
-import { registerGlEffect } from './glEffectRegistry';
-import { applyGlEffectTintPass } from './glEffectTintShader';
+import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader.ts';
+import { applyGlEffectBoxBlur } from './glEffectBoxBlur.ts';
+import { createGlEffectGradientRampTexture } from './glEffectGradientRamp.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
+import { applyGlEffectTintPass } from './glEffectTintShader.ts';
 
 // Uses the blurred alpha (unit 0) to index into a gradient ramp texture (unit 1).
 // Outputs the gradient-colored glow at the correct intensity per pixel.

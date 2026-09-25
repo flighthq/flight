@@ -16,10 +16,10 @@ import type {
   GlTextureRenderTargetPool,
 } from '@flighthq/types/contract';
 
-import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
-import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
-import { registerGlEffect } from './glEffectRegistry';
-import { applyGlEffectTintPass } from './glEffectTintShader';
+import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader.ts';
+import { applyGlEffectBoxBlur } from './glEffectBoxBlur.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
+import { applyGlEffectTintPass } from './glEffectTintShader.ts';
 
 // Bevel composite effect: the directional gradient of the blurred silhouette drives a highlight/shadow edge band, clipped by bevelType and composited over the source.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the

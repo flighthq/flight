@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { FixtureManifest } from './fixtures-core';
+import type { FixtureManifest } from './fixtures-core.ts';
 import {
   crossCheckFixtureChecksums,
   crossCheckFixtureTag,
@@ -9,7 +9,7 @@ import {
   parseFixtureChecksums,
   parseFixtureManifest,
   planFixtureFetch,
-} from './fixtures-core';
+} from './fixtures-core.ts';
 
 // The shape of the real 0.1.0 release in miniature: a full-only pack, a pack missing `permissive`, a
 // two-member merge group, and an ungrouped pack with all three variants. Every rule this file pins has

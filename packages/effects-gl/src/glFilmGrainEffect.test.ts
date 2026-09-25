@@ -1,4 +1,4 @@
-import { applyFilmGrainEffectToGl, glFilmGrainEffectRunner, registerGlFilmGrainEffect } from './glFilmGrainEffect';
+import { applyFilmGrainEffectToGl, glFilmGrainEffectRunner, registerGlFilmGrainEffect } from './glFilmGrainEffect.ts';
 
 describe('applyFilmGrainEffectToGl', () => {
   it('is a function', () => {

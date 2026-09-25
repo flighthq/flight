@@ -3,7 +3,7 @@ import { connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import { webHost } from './webHost';
+import { webHost } from './webHost.ts';
 import {
   webMidiAccess,
   webMidiPermission,
@@ -12,7 +12,7 @@ import {
   initializeWebMidiPermissionBackend,
   webHostMidiAccess,
   webHostMidiPermission,
-} from './webMidi';
+} from './webMidi.ts';
 
 describe('initializeWebMidiAccessBackend', () => {
   it('is the construction initializer of webMidiAccess', () => {

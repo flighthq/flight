@@ -4,7 +4,7 @@ import {
   clearCollisionContactManifold2D,
   createCollisionContactManifold2D,
   initializeCollisionContactManifold2D,
-} from './contactManifold2D';
+} from './contactManifold2D.ts';
 
 describe('clearCollisionContactManifold2D', () => {
   it('resets the manifold to the non-overlapping state', () => {

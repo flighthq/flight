@@ -3,7 +3,7 @@ import { createTexture, getTextureSource, transformTextureUv } from '@flighthq/t
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type { ImageResource, TextureAtlasRegion } from '@flighthq/types/contract';
 
-import { createTextureAtlas } from './textureAtlas';
+import { createTextureAtlas } from './textureAtlas.ts';
 import {
   addTextureAtlasRegion,
   addTextureAtlasRegionCorners,
@@ -28,7 +28,7 @@ import {
   removeTextureAtlasRegion,
   setTextureAtlasRegion,
   setTextureAtlasRegionTextureGuard,
-} from './textureAtlasRegion';
+} from './textureAtlasRegion.ts';
 
 describe('addTextureAtlasRegion', () => {
   it('pushes a new region onto the atlas with the given coordinates', () => {

@@ -5,10 +5,10 @@ import {
   createExternalGlTexture,
   disposeExternalGlTexture,
   initializeExternalGlTextureSource,
-} from './glExternalTexture';
-import { getGlRenderStateRuntime } from './glRenderState';
-import { createGlState } from './glTestHelper';
-import { resolveGlTexture } from './glTextureResolver';
+} from './glExternalTexture.ts';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
+import { createGlState } from './glTestHelper.ts';
+import { resolveGlTexture } from './glTextureResolver.ts';
 
 describe('createExternalGlTexture', () => {
   it('replaces a prior straight-alpha texture shadow atomically', () => {

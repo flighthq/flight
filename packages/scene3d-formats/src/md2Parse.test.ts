@@ -18,9 +18,9 @@ import type {
 } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 
-import { createScene3DFromMd2, parseMd2 } from './md2Parse';
-import { MD2_ANORMS } from './md2Schema';
-import { getTestTextureResource } from './scene3DFormatsTestHelper';
+import { createScene3DFromMd2, parseMd2 } from './md2Parse.ts';
+import { MD2_ANORMS } from './md2Schema.ts';
+import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 
 // Builds a minimal valid MD2 binary buffer with one frame and the given triangles, vertices, and
 // texcoords. All offsets are computed from the data sizes.

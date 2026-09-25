@@ -9,9 +9,9 @@ import type { ImportDiagnostic } from '@flighthq/types/contract';
 import type { BitmapFont } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseBitmapFontFnt } from './bitmapFontFnt';
-import { parseBitmapFontJson } from './bitmapFontJson';
-import { parseBitmapFontXml } from './bitmapFontXml';
+import { parseBitmapFontFnt } from './bitmapFontFnt.ts';
+import { parseBitmapFontJson } from './bitmapFontJson.ts';
+import { parseBitmapFontXml } from './bitmapFontXml.ts';
 
 const FNT_JSON = JSON.stringify({
   chars: [

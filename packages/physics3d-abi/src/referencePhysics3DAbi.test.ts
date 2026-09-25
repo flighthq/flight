@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { Physics3DAbiVersion } from './physics3DAbiLayout';
-import { createReferencePhysics3DAbi, initializeReferencePhysics3DAbi } from './referencePhysics3DAbi';
+import { Physics3DAbiVersion } from './physics3DAbiLayout.ts';
+import { createReferencePhysics3DAbi, initializeReferencePhysics3DAbi } from './referencePhysics3DAbi.ts';
 
 describe('createReferencePhysics3DAbi', () => {
   it('creates isolated persistent-world storage under the public ABI version', () => {

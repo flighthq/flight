@@ -4,14 +4,14 @@ import type {
   ReferenceImageDeterminismScope,
   ReferenceImageEligibilityInput,
   ReferenceImageParityWithholding,
-} from './reference-image-eligibility';
+} from './reference-image-eligibility.ts';
 import {
   addReferenceImageCoverage,
   findParityWithholdings,
   findStaleCaptures,
   selectCommissionableCells,
   summarizeOracleBlocks,
-} from './reference-image-eligibility';
+} from './reference-image-eligibility.ts';
 
 // ★ EVERY CONDITION IN THE BAR HAS A TEST THAT WATCHES IT WITHHOLD A CELL, because the bar is the only
 // thing between a bad capture and a permanent reference. A condition nobody has seen fire is a condition

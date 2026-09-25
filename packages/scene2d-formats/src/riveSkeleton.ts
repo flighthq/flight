@@ -13,8 +13,8 @@ import type {
 } from '@flighthq/types/contract';
 import { TransformMode2D } from '@flighthq/types/contract';
 
-import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
-import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry';
+import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
+import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
 
 /**
  * Flattens an artboard's bones into a `Skeleton2D`.

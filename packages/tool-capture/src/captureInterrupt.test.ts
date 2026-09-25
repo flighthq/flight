@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { installAbortHandler, isBrowserClosedError } from './captureInterrupt';
+import { installAbortHandler, isBrowserClosedError } from './captureInterrupt.ts';
 
 describe('installAbortHandler', () => {
   it('returns a getter that is false before any interrupt', () => {

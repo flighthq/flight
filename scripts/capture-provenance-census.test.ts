@@ -9,7 +9,7 @@ import {
   formatCaptureProvenanceCensus,
   loadCaptureProvenanceColumns,
   readGatedValidationIdentities,
-} from './capture-provenance-census';
+} from './capture-provenance-census.ts';
 
 // Formatted-output assertions test content, not whether this machine's terminal enables ANSI styling.
 // eslint-disable-next-line no-control-regex -- ESC (0x1b) is required to strip ANSI color codes

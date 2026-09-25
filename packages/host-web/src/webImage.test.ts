@@ -1,7 +1,7 @@
 import type { Bitmap, HostImageCapability } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-import { webHostImage } from './webImage';
+import { webHostImage } from './webImage.ts';
 
 function hostWith(backend = webHostImage): { readonly graphics: { readonly image: HostImageCapability } } {
   return { graphics: { image: backend } } as { readonly graphics: { readonly image: HostImageCapability } };

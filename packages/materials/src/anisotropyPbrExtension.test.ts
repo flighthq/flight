@@ -4,7 +4,7 @@ import {
   createAnisotropyPbrExtension,
   initializeAnisotropyPbrExtension,
   isValidAnisotropyPbrExtension,
-} from './anisotropyPbrExtension';
+} from './anisotropyPbrExtension.ts';
 
 describe('createAnisotropyPbrExtension', () => {
   it('creates an Entity with canonical defaults and per-map UV selection', () => {

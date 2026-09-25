@@ -6,7 +6,7 @@ import type {
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
 export function createWgpuFullscreenPipeline(
   state: WgpuRenderState,

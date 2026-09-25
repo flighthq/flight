@@ -1,8 +1,8 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { DitherEffect, GlEffectRunner, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Dither: quantize each channel to `levels` steps with a 4x4 ordered Bayer threshold for a retro
 // banded-but-textured look.

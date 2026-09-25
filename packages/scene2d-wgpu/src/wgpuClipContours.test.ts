@@ -7,7 +7,7 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState } from '@flighthq/types/contract';
 
-import { popWgpuClipContours, pushWgpuClipContours } from './wgpuClipContours';
+import { popWgpuClipContours, pushWgpuClipContours } from './wgpuClipContours.ts';
 
 beforeAll(() => {
   installWgpuMock();

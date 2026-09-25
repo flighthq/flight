@@ -1,14 +1,14 @@
 import { connectSignal } from '@flighthq/signals/contract';
 
-import { createButtonController } from './buttonController';
-import { createGuiTestNode, emitGuiPointer } from './guiTestHelper';
+import { createButtonController } from './buttonController.ts';
+import { createGuiTestNode, emitGuiPointer } from './guiTestHelper.ts';
 import {
   createWindowController,
   disposeWindowController,
   getWindowControllerSignals,
   setWindowControllerPosition,
   setWindowControllerSize,
-} from './windowController';
+} from './windowController.ts';
 
 describe('createWindowController', () => {
   it('moves from a title bar and resizes from a handle', () => {

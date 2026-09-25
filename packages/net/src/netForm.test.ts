@@ -1,4 +1,4 @@
-import { formatNetFormBody, NetFormContentType } from './netForm';
+import { formatNetFormBody, NetFormContentType } from './netForm.ts';
 
 describe('formatNetFormBody', () => {
   it('encodes fields in insertion order with HTML form space semantics', () => {

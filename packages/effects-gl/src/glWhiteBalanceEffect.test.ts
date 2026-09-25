@@ -2,7 +2,7 @@ import {
   applyWhiteBalanceEffectToGl,
   glWhiteBalanceEffectRunner,
   registerGlWhiteBalanceEffect,
-} from './glWhiteBalanceEffect';
+} from './glWhiteBalanceEffect.ts';
 
 describe('applyWhiteBalanceEffectToGl', () => {
   it('is a function', () => {

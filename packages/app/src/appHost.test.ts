@@ -3,8 +3,8 @@ import { connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import { attachAppEvents, createAppEvents, focusApp, getAppName, quitApp, setAppBadgeCount } from './app';
-import * as appContract from './contract';
+import { attachAppEvents, createAppEvents, focusApp, getAppName, quitApp, setAppBadgeCount } from './app.ts';
+import * as appContract from './contract.ts';
 
 describe('app explicit Host ownership', () => {
   it('delegates commands and queries only through the selected direct providers', async () => {

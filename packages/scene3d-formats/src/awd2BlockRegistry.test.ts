@@ -6,7 +6,7 @@ import {
   awd2MaterialsFamily,
   awd2SceneStructureFamily,
   awd2SkeletonFamily,
-} from './awd2BlockRegistry';
+} from './awd2BlockRegistry.ts';
 import {
   AWD2_BLOCK_CAMERA,
   AWD2_BLOCK_CONTAINER,
@@ -19,7 +19,7 @@ import {
   AWD2_BLOCK_SKELETON_POSE,
   AWD2_BLOCK_TEXTURE,
   AWD2_BLOCK_TRIANGLE_GEOMETRY,
-} from './awd2Schema';
+} from './awd2Schema.ts';
 
 const claimedBy = (family: readonly { readonly blockTypes: readonly number[] }[]): number[] =>
   family.flatMap((handler) => [...handler.blockTypes]).sort((a, b) => a - b);

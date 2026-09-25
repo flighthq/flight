@@ -1,5 +1,5 @@
-import type { GlRenderState } from './GlRenderState';
-import type { Material, MaterialData } from './Material';
+import type { GlRenderState } from './GlRenderState.ts';
+import type { Material, MaterialData } from './Material.ts';
 
 // Per-backend behavior for a material kind on Gl, registered against the kind on the
 // render state via registerGlQuadMaterialRenderer. The renderer owns its shader (program and

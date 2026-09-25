@@ -9,8 +9,8 @@ import {
   initializeDomScene2DRectangle,
   pushDomClipRectangle,
   setDomClipHooks,
-} from './domClipRectangle';
-import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
+} from './domClipRectangle.ts';
+import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
 
 function makeState(): DomRenderState {
   return createDomRenderState(document.createElement('div'));

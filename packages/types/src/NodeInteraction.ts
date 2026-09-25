@@ -1,6 +1,6 @@
-import type { NodeAny } from './Node';
-import type { Path } from './Path';
-import type { Rectangle } from './Rectangle';
+import type { NodeAny } from './Node.ts';
+import type { Path } from './Path.ts';
+import type { Rectangle } from './Rectangle.ts';
 /**
  * The hit region a node presents in place of descending into its own geometry. Setting a `hitArea`
  * (via `setNodeHitArea`) makes the node an atomic hit unit: the hit-test walk stops recursing into its

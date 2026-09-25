@@ -1,15 +1,15 @@
 import { connectSignal } from '@flighthq/signals/contract';
 
-import { createButtonController } from './buttonController';
+import { createButtonController } from './buttonController.ts';
 import {
   createComboBoxController,
   disposeComboBoxController,
   getComboBoxControllerSignals,
   isComboBoxControllerOpen,
   setComboBoxControllerOpen,
-} from './comboBoxController';
-import { createGuiTestNode, emitGuiPointer } from './guiTestHelper';
-import { createListController } from './listController';
+} from './comboBoxController.ts';
+import { createGuiTestNode, emitGuiPointer } from './guiTestHelper.ts';
+import { createListController } from './listController.ts';
 
 function parts() {
   const buttonNode = createGuiTestNode();

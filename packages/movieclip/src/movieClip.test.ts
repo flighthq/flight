@@ -26,7 +26,7 @@ import {
   setMovieClipSource,
   stopMovieClip,
   updateMovieClip,
-} from './movieClip';
+} from './movieClip.ts';
 
 describe('addMovieClipFrameScript', () => {
   it('does nothing when timeline is null', () => {

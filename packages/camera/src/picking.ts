@@ -7,7 +7,7 @@ import {
 } from '@flighthq/geometry/contract';
 import type { Camera3D, Ray3DLike, Vector3Like } from '@flighthq/types/contract';
 
-import { getCamera3DViewProjectionMatrix4 } from './camera';
+import { getCamera3DViewProjectionMatrix4 } from './camera.ts';
 
 // Writes the world-space ray from the camera through an NDC screen point (ndcX, ndcY) into
 // `out` and returns true, or returns false (leaving `out` untouched) when the view-projection

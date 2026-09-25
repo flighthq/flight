@@ -36,7 +36,7 @@ import {
   TransformMode2D,
 } from '@flighthq/types/contract';
 
-import { resolveSpineDrawOrdering } from './spineDrawOrder';
+import { resolveSpineDrawOrdering } from './spineDrawOrder.ts';
 
 function initializeMeshAttachment2D(
   out: EntityConstruction<MeshAttachment2D>,

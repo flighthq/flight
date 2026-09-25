@@ -23,7 +23,7 @@ import {
   setAudioChannelPlaybackRate,
   setAudioChannelSourceRoute,
   stopAudioChannel,
-} from './audioChannel';
+} from './audioChannel.ts';
 
 let deviceTime = 0;
 let nextSourceHandle = 1;

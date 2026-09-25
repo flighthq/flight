@@ -1,5 +1,5 @@
-import type { Kind } from './Entity';
-import type { FlightDocumentFieldSchema } from './FlightDocumentFieldSchema';
+import type { Kind } from './Entity.ts';
+import type { FlightDocumentFieldSchema } from './FlightDocumentFieldSchema.ts';
 
 export interface FlightDocumentResourceSchema {
   fields: readonly Readonly<FlightDocumentFieldSchema>[];

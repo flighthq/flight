@@ -9,4 +9,4 @@ export {
   vibrateDevice,
   vibrateDevicePattern,
   vibrateDeviceWaveform,
-} from './contract';
+} from './contract.ts';

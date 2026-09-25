@@ -1,6 +1,6 @@
-import type { Node, NodeTraits } from './Node';
-import type { ViewportAlign } from './ViewportAlign';
-import type { ViewportScaleMode } from './ViewportScaleMode';
+import type { Node, NodeTraits } from './Node.ts';
+import type { ViewportAlign } from './ViewportAlign.ts';
+import type { ViewportScaleMode } from './ViewportScaleMode.ts';
 
 export interface Scene2DFitContext<Traits extends object = NodeTraits> {
   align: ViewportAlign;

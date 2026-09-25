@@ -1,5 +1,5 @@
-import { webHost } from './webHost';
-import { initializeWebStorageBackend, webHostStorage, webHostStorageChange } from './webStorage';
+import { webHost } from './webHost.ts';
+import { initializeWebStorageBackend, webHostStorage, webHostStorageChange } from './webStorage.ts';
 
 function namedError(name: string): Error {
   const error = new Error(name);

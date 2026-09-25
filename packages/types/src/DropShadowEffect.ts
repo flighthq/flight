@@ -1,5 +1,5 @@
-import type { Effect } from './Effect';
-import type { EffectSourceMode } from './EffectSourceMode';
+import type { Effect } from './Effect.ts';
+import type { EffectSourceMode } from './EffectSourceMode.ts';
 
 // Drop-shadow composite effect: tint the scene silhouette, blur it, offset it by angle/distance, then apply sourceMode compositing.
 // Full-frame composite effect over the scene's alpha silhouette; the color is a packed RGBA integer

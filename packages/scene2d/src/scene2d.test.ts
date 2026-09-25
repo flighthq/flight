@@ -2,7 +2,7 @@ import { addNodeChild } from '@flighthq/node/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { Scene2D } from '@flighthq/types/contract';
 
-import { createDisplayObject } from './displayObject';
+import { createDisplayObject } from './displayObject.ts';
 import {
   createScene2D,
   createScene2DRuntime,
@@ -14,7 +14,7 @@ import {
   initializeScene2D,
   initializeScene2DSignals,
   setScene2DSize,
-} from './scene2d';
+} from './scene2d.ts';
 
 describe('createScene2D', () => {
   let scene2d: Scene2D;

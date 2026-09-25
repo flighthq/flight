@@ -2,7 +2,7 @@ import type { Texture } from '@flighthq/types/contract';
 import { DissolveModifierKind, ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createDissolveModifier, initializeDissolveModifier } from './createDissolveModifier';
+import { createDissolveModifier, initializeDissolveModifier } from './createDissolveModifier.ts';
 
 describe('createDissolveModifier', () => {
   it('sets the kind and Effect slot', () => {

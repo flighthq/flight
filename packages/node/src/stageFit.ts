@@ -9,7 +9,7 @@ import type {
   ViewportAlign,
 } from '@flighthq/types/contract';
 
-import { getNodeRuntime } from './node';
+import { getNodeRuntime } from './node.ts';
 
 // The structural fit context these functions read: a root node plus how it maps into the view. `Scene2D`
 // satisfies it (its `align`/`scaleMode`/`root` fields); kept structural and generic so the fit math stays in

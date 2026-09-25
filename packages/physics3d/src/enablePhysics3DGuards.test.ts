@@ -1,19 +1,19 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import type { LogEntry, Physics3DWorld } from '@flighthq/types/contract';
 
-import { synchronizePhysics3DBroadphase } from './broadphase';
-import { arePhysics3DGuardsEnabled, disablePhysics3DGuards, enablePhysics3DGuards } from './enablePhysics3DGuards';
-import { createPhysics3DHingeJoint } from './jointFactories';
-import { addPhysics3DJoint } from './jointRegistry';
-import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
-import { stepPhysics3D } from './step';
+import { synchronizePhysics3DBroadphase } from './broadphase.ts';
+import { arePhysics3DGuardsEnabled, disablePhysics3DGuards, enablePhysics3DGuards } from './enablePhysics3DGuards.ts';
+import { createPhysics3DHingeJoint } from './jointFactories.ts';
+import { addPhysics3DJoint } from './jointRegistry.ts';
+import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers.ts';
+import { stepPhysics3D } from './step.ts';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,
   createPhysics3DCollider,
   createPhysics3DWorld,
   createRigidBody3D,
-} from './world';
+} from './world.ts';
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);

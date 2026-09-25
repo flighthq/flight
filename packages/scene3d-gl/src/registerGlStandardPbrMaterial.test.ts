@@ -1,10 +1,10 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { StandardPbrMaterialKind } from '@flighthq/types/contract';
 
-import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { glStandardPbrMeshMaterialRenderer } from './glStandardPbrMeshMaterialRenderer';
-import { registerGlStandardPbrMaterial } from './registerGlStandardPbrMaterial';
+import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { glStandardPbrMeshMaterialRenderer } from './glStandardPbrMeshMaterialRenderer.ts';
+import { registerGlStandardPbrMaterial } from './registerGlStandardPbrMaterial.ts';
 
 describe('registerGlStandardPbrMaterial', () => {
   it('registers the StandardPbr renderer for StandardPbrMaterialKind', () => {

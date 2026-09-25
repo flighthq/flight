@@ -19,4 +19,4 @@ export {
   serializeStarlingSpritesheet,
   serializeTexturePackerSpritesheet,
   unregisterSpritesheetFormat,
-} from './contract';
+} from './contract.ts';

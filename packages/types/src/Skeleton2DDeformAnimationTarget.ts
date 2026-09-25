@@ -1,5 +1,5 @@
-import type { Attachment2D } from './Attachment2D';
-import type { Skeleton2DAnimationTargetKind } from './Skeleton2DAnimationTargetKind';
+import type { Attachment2D } from './Attachment2D.ts';
+import type { Skeleton2DAnimationTargetKind } from './Skeleton2DAnimationTargetKind.ts';
 
 /**
  * The binding target for a channel that animates an attachment's per-vertex offsets — a flag rippling, a

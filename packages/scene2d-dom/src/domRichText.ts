@@ -27,9 +27,9 @@ import type {
   TextLabelRuntime,
 } from '@flighthq/types/contract';
 
-import { getDomFontAscentCached, setDomFontAscentCached } from './domFontSource';
-import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle';
-import { escapeDomHtmlString } from './domTextHelpers';
+import { getDomFontAscentCached, setDomFontAscentCached } from './domFontSource.ts';
+import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle.ts';
+import { escapeDomHtmlString } from './domTextHelpers.ts';
 
 interface DomRichTextData extends RendererData {
   div: HTMLDivElement | null;

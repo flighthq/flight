@@ -2,7 +2,7 @@ import { createMatrix3, createVector2 } from '@flighthq/geometry/contract';
 import type { HostVideoCapability, ImageResource, VideoResource } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 
-import { getTextureSource } from './texture';
+import { getTextureSource } from './texture.ts';
 import {
   advanceVideoTexture,
   cloneVideoTexture,
@@ -17,7 +17,7 @@ import {
   isVideoTextureFrameReady,
   resetVideoTextureFrame,
   setVideoTextureSource,
-} from './videoTexture';
+} from './videoTexture.ts';
 
 const testVideoHost = {
   canPlayType: () => true,

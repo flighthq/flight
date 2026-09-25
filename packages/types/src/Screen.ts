@@ -3,10 +3,10 @@
 // (Electron/Tauri) reports every attached display. Enumeration writes into caller-owned `out` arrays
 // and objects so hot paths allocate nothing.
 
-import type { Entity } from './Entity';
-import type { ScreenChangeEvent } from './ScreenChangeEvent';
-import type { ScreenColorSpace } from './ScreenColorSpace';
-import type { ScreenOrientation } from './ScreenOrientation';
+import type { Entity } from './Entity.ts';
+import type { ScreenChangeEvent } from './ScreenChangeEvent.ts';
+import type { ScreenColorSpace } from './ScreenColorSpace.ts';
+import type { ScreenOrientation } from './ScreenOrientation.ts';
 
 // A single display's geometry in OS virtual-desktop coordinates. work* excludes OS chrome (taskbar,
 // menu bar); scaleFactor is the device-pixel ratio. The web reports one primary screen. Fields the

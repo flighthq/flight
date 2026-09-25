@@ -27,10 +27,10 @@ import {
   hasGlUvTransform,
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
-} from './glMeshProgram';
-import { registerGlMeshSkinning } from './glMeshSkinning';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
+} from './glMeshProgram.ts';
+import { registerGlMeshSkinning } from './glMeshSkinning.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

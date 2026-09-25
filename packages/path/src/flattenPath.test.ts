@@ -1,8 +1,8 @@
 import type { Path } from '@flighthq/types/contract';
 import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 
-import { flattenPath } from './flattenPath';
-import { appendPathClose, appendPathQuadraticCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from './path';
+import { flattenPath } from './flattenPath.ts';
+import { appendPathClose, appendPathQuadraticCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
 
 describe('flattenPath', () => {
   it('flattens a straight line to its two endpoints', () => {

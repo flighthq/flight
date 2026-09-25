@@ -3,14 +3,14 @@ import { initializeGlCubeRenderTarget } from '@flighthq/render-gl/contract';
 import type { Bitmap, CubeTexture, Environment, GlContext, GlCubeRenderTarget } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-import { ensureGlEnvironmentSourceCube } from './glEnvironmentCube';
+import { ensureGlEnvironmentSourceCube } from './glEnvironmentCube.ts';
 import {
   bakeGlEnvironmentCaptureIbl,
   bakeGlEnvironmentIbl,
   destroyGlEnvironmentIblBakePrograms,
-} from './glEnvironmentIblBake';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+} from './glEnvironmentIblBake.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 // The GPU bake (irradiance / prefiltered specular / BRDF LUT) is validated by the functional `env-ibl`
 // capture — software jsdom has no float-cube render path. This covers the guard: with no source cube

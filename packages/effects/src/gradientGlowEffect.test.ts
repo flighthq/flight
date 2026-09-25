@@ -5,7 +5,7 @@ import {
   getGradientGlowEffectPadding,
   initializeGradientGlowEffect,
   registerGradientGlowEffectPaddingResolver,
-} from './gradientGlowEffect';
+} from './gradientGlowEffect.ts';
 
 describe('createGradientGlowEffect', () => {
   it('tags the intent type', () => {

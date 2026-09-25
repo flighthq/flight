@@ -1,7 +1,7 @@
 import { createNode, getNodeRuntime } from '@flighthq/node/contract';
 import type { Node, NodeRuntime } from '@flighthq/types/contract';
 
-import { addNodeChild } from './hierarchy';
+import { addNodeChild } from './hierarchy.ts';
 import {
   computeNodeWorldTransformRevision,
   getNodeAppearanceRevision,
@@ -20,7 +20,7 @@ import {
   invalidateNodeParentReference,
   invalidateNodeRender,
   invalidateNodeWorldBounds,
-} from './revision';
+} from './revision.ts';
 
 function createTestNode(): TestNode {
   return createNode(TestKind) as TestNode;

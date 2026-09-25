@@ -1,4 +1,4 @@
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';
 
 // The per-vertex bone-weight binding of a weighted MeshAttachment2D — the 2D analog of skeleton3d's
 // joints0/weights0, in the Spine "weighted mesh" format. Each vertex is influenced by a VARIABLE number

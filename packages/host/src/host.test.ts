@@ -1,7 +1,7 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import * as contract from './contract';
-import { initializeHost } from './host';
+import * as contract from './contract.ts';
+import { initializeHost } from './host.ts';
 
 describe('createHost', () => {
   it('creates an Entity immediately while leaving its runtime allocation lazy', () => {
@@ -35,7 +35,7 @@ describe('createHost', () => {
   });
 
   it('is reachable on the contract lane only, because an app imports a built host rather than constructing one', async () => {
-    const publicLane = (await import('./index')) as Record<string, unknown>;
+    const publicLane = (await import('./index.ts')) as Record<string, unknown>;
 
     expect('createHost' in contract).toBe(true);
     expect('createHost' in publicLane).toBe(false);

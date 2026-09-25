@@ -15,8 +15,8 @@ import type {
   TextLabelRuntime,
 } from '@flighthq/types/contract';
 
-import { drawCanvasScene2D } from './canvasNode2D';
-import { setCanvasTransform } from './canvasTransform';
+import { drawCanvasScene2D } from './canvasNode2D.ts';
+import { setCanvasTransform } from './canvasTransform.ts';
 
 interface CanvasTextLabelData extends RendererData {
   lastContentId: number;

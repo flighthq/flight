@@ -7,7 +7,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 
-import { getTestTextureResource } from './scene3DFormatsTestHelper';
+import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 import {
   convertPositionsZUpToYUp,
   convertQuaternionsZUpToYUp,
@@ -18,7 +18,7 @@ import {
   packSkinInfluences,
   reverseTriangleWinding,
   reverseVertexTriangleWinding,
-} from './shared';
+} from './shared.ts';
 
 describe('convertPositionsZUpToYUp', () => {
   it('converts (x, y, z) to (x, z, -y) for packed vec3 data', () => {

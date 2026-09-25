@@ -21,7 +21,7 @@ import {
   setMediaSessionMetadata,
   setMediaSessionPlaybackState,
   setMediaSessionPositionState,
-} from './mediasession';
+} from './mediasession.ts';
 
 function commandBackend(overrides: Partial<HostMediaSessionCapability> = {}): HostMediaSessionCapability {
   const out = {} as HostMediaSessionCapability;

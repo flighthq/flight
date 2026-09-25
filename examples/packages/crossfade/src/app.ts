@@ -32,7 +32,7 @@ import {
   transitionAnimationStateMachine,
 } from '@flighthq/sdk/animation';
 
-import { canvas, render, scale } from './render';
+import { canvas, render, scale } from './render.ts';
 
 const bodyTarget = {};
 const leftLegTarget = {};

@@ -6,8 +6,8 @@ import {
   frameOrbitCameraControllerToSphere,
   getPerspectiveProjectionFrameDistanceToSphere,
   setOrthographicProjectionFrameToSphere,
-} from './framing';
-import { createOrbitCameraController } from './orbitCameraController';
+} from './framing.ts';
+import { createOrbitCameraController } from './orbitCameraController.ts';
 
 describe('frameOrbitCameraControllerToSphere', () => {
   it('targets the center and changes only goal distance for perspective', () => {

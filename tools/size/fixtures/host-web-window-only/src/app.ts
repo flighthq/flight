@@ -1,7 +1,7 @@
 import { createAppWindow, getWindowBounds, openWindow, setWindowTitle } from '@flighthq/app';
 import { webHostWindowAppearance, webHostWindowGeometry, webHostWindowLifecycle } from '@flighthq/host-web';
 
-import { renderHostWebWindowCard } from './render.canvas';
+import { renderHostWebWindowCard } from './render.canvas.ts';
 
 const applicationWindow = createAppWindow();
 const opened = openWindow(webHostWindowLifecycle, webHostWindowGeometry, applicationWindow, {

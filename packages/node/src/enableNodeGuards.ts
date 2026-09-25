@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { Node } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setReparentNodeGuard } from './hierarchy';
+import { setReparentNodeGuard } from './hierarchy.ts';
 
 export function areNodeGuardsEnabled(): boolean {
   return nodeGuardsEnabled;

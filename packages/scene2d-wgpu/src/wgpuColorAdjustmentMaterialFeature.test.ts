@@ -6,13 +6,13 @@ import { areColorAdjustmentsEnabled } from '@flighthq/render/contract';
 import type { ColorScaleBias } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
+import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature.ts';
 import {
   flushWgpuQuadBatchWriter,
   prepareWgpuQuadBatchWrite,
   recordWgpuQuadBatchColorScaleBias,
-} from './wgpuQuadBatchWriter';
-import { standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial';
+} from './wgpuQuadBatchWriter.ts';
+import { standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial.ts';
 
 beforeAll(() => {
   installWgpuMock();

@@ -1,7 +1,7 @@
 import type { GlPbrExtensionRegistration, GlRenderState, WrappedDiffusePbrExtension } from '@flighthq/types/contract';
 import { WrappedDiffusePbrExtensionKind } from '@flighthq/types/contract';
 
-import { registerGlPbrExtension } from './glPbrExtensionRegistry';
+import { registerGlPbrExtension } from './glPbrExtensionRegistry.ts';
 
 export const wrappedDiffusePbrGlExtension: GlPbrExtensionRegistration = {
   bind(context, value): void {

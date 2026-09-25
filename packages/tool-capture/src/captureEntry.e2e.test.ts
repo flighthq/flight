@@ -13,9 +13,9 @@ import { join } from 'node:path';
 import type { BrowserContext, JSHandle, Page } from '@playwright/test';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { launchBrowser } from './captureBrowser';
-import { captureEntry } from './captureEntry';
-import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol';
+import { launchBrowser } from './captureBrowser.ts';
+import { captureEntry } from './captureEntry.ts';
+import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.ts';
 
 // Both pages publish a terminal FAILED verification, exactly as runRenderVerification leaves the page
 // when it throws. They differ only in how far the verifier got: past the assert step with the scene's

@@ -1,20 +1,20 @@
-import type { Camera3D } from './Camera3D';
-import type { Entity, Kind } from './Entity';
-import type { FlightDocumentFields } from './FlightDocumentFieldSchema';
+import type { Camera3D } from './Camera3D.ts';
+import type { Entity, Kind } from './Entity.ts';
+import type { FlightDocumentFields } from './FlightDocumentFieldSchema.ts';
 import type {
   FlightDocumentInteractiveStateBinding,
   FlightDocumentInteractiveStates,
   FlightDocumentInteractiveStateTransitionDescriptor,
-} from './FlightDocumentInteractiveState';
-import type { FlightDocumentLayoutBinding, FlightDocumentLayoutDescriptor } from './FlightDocumentLayout';
-import type { FlightDocumentResourceDescriptor } from './FlightDocumentResource';
-import type { FlightDocumentToken } from './FlightDocumentToken';
-import type { Node2D } from './Node2D';
-import type { Node3D } from './Node3D';
-import type { Scene2D } from './Scene2D';
-import type { Scene3D } from './Scene3D';
-import type { Scene3DDocumentCamera, Scene3DDocumentLight } from './Scene3DDocument';
-import type { Scene3DLights } from './Scene3DLights';
+} from './FlightDocumentInteractiveState.ts';
+import type { FlightDocumentLayoutBinding, FlightDocumentLayoutDescriptor } from './FlightDocumentLayout.ts';
+import type { FlightDocumentResourceDescriptor } from './FlightDocumentResource.ts';
+import type { FlightDocumentToken } from './FlightDocumentToken.ts';
+import type { Node2D } from './Node2D.ts';
+import type { Node3D } from './Node3D.ts';
+import type { Scene2D } from './Scene2D.ts';
+import type { Scene3D } from './Scene3D.ts';
+import type { Scene3DDocumentCamera, Scene3DDocumentLight } from './Scene3DDocument.ts';
+import type { Scene3DLights } from './Scene3DLights.ts';
 
 export interface FlightDocumentNode {
   children: FlightDocumentNode[];

@@ -1,7 +1,7 @@
 import type { Requirement } from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
-import { collectScene2DRequirements, reportRequirement } from './requirementCollector';
+import { collectScene2DRequirements, reportRequirement } from './requirementCollector.ts';
 
 describe('collectScene2DRequirements', () => {
   it('returns deterministic distinct requirements and the facets inspected by the collector', () => {

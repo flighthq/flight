@@ -1,6 +1,6 @@
 import type { ImageResource } from '@flighthq/types/contract';
 
-import { tryCopyWgpuExternalImageToTexture } from './wgpuExternalImageSource';
+import { tryCopyWgpuExternalImageToTexture } from './wgpuExternalImageSource.ts';
 
 // Texel-upload primitives for one texture region. Each writes into `texture` at `origin` (the [x, y, z]
 // where z selects a cube-array layer / cube face). The wgpu mirror of render-gl's glTextureUpload; the

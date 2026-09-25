@@ -8,10 +8,10 @@ import {
   applyDisplacementEffectToGl,
   glDisplacementEffectRunner,
   registerGlDisplacementEffect,
-} from './glDisplacementEffect';
-import * as glEffectProgramCache from './glEffectProgramCache';
-import { getGlEffectRunner } from './glEffectRegistry';
-import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
+} from './glDisplacementEffect.ts';
+import * as glEffectProgramCache from './glEffectProgramCache.ts';
+import { getGlEffectRunner } from './glEffectRegistry.ts';
+import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper.ts';
 
 const programMock = {
   getGlEffectProgram: vi.fn((_state: unknown, _key: string, _source: string) => ({ program: {} })),

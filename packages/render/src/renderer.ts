@@ -1,7 +1,7 @@
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import type { Kind, NodeAny, NodeRenderer, RendererData, RenderState } from '@flighthq/types/contract';
 
-import { getRenderStateRuntime } from './renderState';
+import { getRenderStateRuntime } from './renderState.ts';
 
 // Mask renderers were retired (a mask is now a path ClipRegion realized by the backend clip hooks), so
 // there is no mask-renderer registry to copy — only the kind→renderer map and the clip hooks.

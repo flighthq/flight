@@ -1,7 +1,7 @@
 import type { Kind, MaterialAlphaMode, Material3D, Material3DOptions } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
-import { createMaterial } from './material';
+import { createMaterial } from './material.ts';
 
 // Builds a Material3D carrying `kind` and the shared trailer, taking each trailer field from
 // `opts` or falling back to its default: opaque, single-sided, Normal blend, and a 0.5

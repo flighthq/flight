@@ -11,4 +11,4 @@ export interface BitmapFingerprint extends Entity {
   /** Row-major averaged cells, three bytes (R, G, B) each: length gridSize × gridSize × 3. */
   readonly cells: Uint8Array;
 }
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';

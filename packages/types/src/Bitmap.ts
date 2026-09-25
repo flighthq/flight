@@ -1,6 +1,6 @@
-import type { PixelFormat } from './PixelFormat';
-import type { TextureSource } from './TextureSource';
-import type { BitmapTextureSourceKind } from './TextureSourceKind';
+import type { PixelFormat } from './PixelFormat.ts';
+import type { TextureSource } from './TextureSource.ts';
+import type { BitmapTextureSourceKind } from './TextureSourceKind.ts';
 
 /**
  * Mutable, CPU-readable pixel bytes. Bitmap is a sibling of Image rather than a subtype:

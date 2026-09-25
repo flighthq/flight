@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CollisionDistance3D, CollisionShape3D, EntityConstruction } from '@flighthq/types/contract';
 
-import { getCollisionSupport3D } from './collisionSupport3D';
+import { getCollisionSupport3D } from './collisionSupport3D.ts';
 
 // The DISTANCE between two convex shapes, the direction along which they are closest, and the pair of
 // surface points realizing it.

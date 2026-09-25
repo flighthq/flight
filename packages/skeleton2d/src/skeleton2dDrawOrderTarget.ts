@@ -16,8 +16,8 @@ import {
   findSkeleton2DStepKeyframe,
   registerSkeleton2DAnimationTargetBinder,
   unregisterSkeleton2DAnimationTargetBinder,
-} from './skeleton2dAnimationTarget';
-import { reportSkeleton2DCoercedInterpolation } from './skeleton2dGuards';
+} from './skeleton2dAnimationTarget.ts';
+import { reportSkeleton2DCoercedInterpolation } from './skeleton2dGuards.ts';
 
 export function createSkeleton2DDrawOrderAnimationTarget<Traits extends object = NodeTraits>(
   nodes: readonly (Node<Traits> | null)[],

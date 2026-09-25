@@ -1,4 +1,4 @@
-import { easeInElastic, easeInOutElastic, easeOutElastic } from './easeElastic';
+import { easeInElastic, easeInOutElastic, easeOutElastic } from './easeElastic.ts';
 
 describe('easeInElastic', () => {
   it('returns 0 at t=0 and 1 at t=1', () => {

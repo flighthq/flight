@@ -12,10 +12,10 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageMimeType';
-import { acquireSwfImageTexture } from './swfImageTexture';
-import { createSwfTexturedSprite } from './swfNode';
-import { resolveSwfDimensionBounds, readBigEndianUint16, readBigEndianUint32 } from './swfPrimitive';
+import { SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageMimeType.ts';
+import { acquireSwfImageTexture } from './swfImageTexture.ts';
+import { createSwfTexturedSprite } from './swfNode.ts';
+import { resolveSwfDimensionBounds, readBigEndianUint16, readBigEndianUint32 } from './swfPrimitive.ts';
 
 const TAG_DEFINE_BITS = 6;
 

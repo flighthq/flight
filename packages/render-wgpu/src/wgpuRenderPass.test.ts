@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 
-import { beginWgpuFrame, submitWgpuFrame } from './wgpuFrame';
+import { beginWgpuFrame, submitWgpuFrame } from './wgpuFrame.ts';
 import {
   beginWgpuRenderPass,
   endWgpuRenderPass,
@@ -8,15 +8,15 @@ import {
   getWgpuRenderPassViewport,
   resumeWgpuRenderPass,
   suspendWgpuRenderPass,
-} from './wgpuRenderPass';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+} from './wgpuRenderPass.ts';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import {
   beginWgpuScreenRenderPassForTest,
   createWgpuRenderStateForTest,
   createWgpuScreenRenderTargetForTest,
   installWgpuMock,
-} from './wgpuTestHelper';
-import { createWgpuTextureRenderTarget } from './wgpuTextureRenderTarget';
+} from './wgpuTestHelper.ts';
+import { createWgpuTextureRenderTarget } from './wgpuTextureRenderTarget.ts';
 
 beforeAll(() => {
   installWgpuMock();

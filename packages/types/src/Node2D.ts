@@ -1,11 +1,11 @@
-import type { HasAppearance } from './HasAppearance';
-import type { HasBlendMode } from './HasBlendMode';
-import type { HasBoundsRectangle, HasBoundsRectangleRuntime } from './HasBoundsRectangle';
-import type { HasClip } from './HasClip';
-import type { HasMaterial } from './HasMaterial';
-import type { HasTransform2D, HasTransform2DRuntime } from './HasTransform2D';
-import type { Node, NodeData, NodeDataFactory, NodeRuntime, NodeRuntimeFactory, NodeTraits } from './Node';
-import type { Scene2D } from './Scene2D';
+import type { HasAppearance } from './HasAppearance.ts';
+import type { HasBlendMode } from './HasBlendMode.ts';
+import type { HasBoundsRectangle, HasBoundsRectangleRuntime } from './HasBoundsRectangle.ts';
+import type { HasClip } from './HasClip.ts';
+import type { HasMaterial } from './HasMaterial.ts';
+import type { HasTransform2D, HasTransform2DRuntime } from './HasTransform2D.ts';
+import type { Node, NodeData, NodeDataFactory, NodeRuntime, NodeRuntimeFactory, NodeTraits } from './Node.ts';
+import type { Scene2D } from './Scene2D.ts';
 export type Node2D = Node<Node2DTraits> & Node2DTraits;
 // A display object no longer carries a color adjustment as an entity trait. Its color adjustments live on
 // the node runtime (`NodeRuntime.colorAdjustments`, a generic `readonly Adjustment[] | null`), set via

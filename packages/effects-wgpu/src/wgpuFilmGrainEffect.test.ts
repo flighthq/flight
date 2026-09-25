@@ -2,7 +2,7 @@ import {
   applyFilmGrainEffectToWgpu,
   wgpuFilmGrainEffectRunner,
   registerWgpuFilmGrainEffect,
-} from './wgpuFilmGrainEffect';
+} from './wgpuFilmGrainEffect.ts';
 
 describe('applyFilmGrainEffectToWgpu', () => {
   it('is a function', () => {

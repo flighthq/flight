@@ -10,8 +10,8 @@ import {
   spineBinarySkinsSectionReader,
   spineBinarySlotsSectionReader,
   spineBinaryTransformConstraintsSectionReader,
-} from './spineBinaryParse';
-import { registerSpineBinarySectionHandler } from './spineBinaryRegistry';
+} from './spineBinaryParse.ts';
+import { registerSpineBinarySectionHandler } from './spineBinaryRegistry.ts';
 
 /** Registers all eight top-level Spine 4.1 section handlers. */
 export function registerSpineBinarySectionHandlers(registry: SpineBinaryRegistry): void {

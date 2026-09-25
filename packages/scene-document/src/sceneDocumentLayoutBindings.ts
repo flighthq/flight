@@ -11,7 +11,7 @@ import type {
 } from '@flighthq/types/contract';
 import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
 
-import { createSceneRefusal } from './sceneDocumentRefusal';
+import { createSceneRefusal } from './sceneDocumentRefusal.ts';
 
 export function checkFlightDocumentLayoutTargets(
   layouts: readonly Readonly<FlightDocumentLayoutDescriptor>[],

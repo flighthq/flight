@@ -1,13 +1,13 @@
-import type { CursorBackend } from './Cursor';
-import type { Entity, EntityRuntimeKey } from './Entity';
-import type { FocusEventData } from './FocusEventData';
-import type { InputSignals } from './InputSignals';
-import type { InteractionSignals } from './InteractionSignals';
-import type { KeyboardEventData } from './KeyboardEventData';
-import type { Node, NodeAny, NodeTraits } from './Node';
-import type { NodeInteractionState } from './NodeInteractionState';
-import type { PointerEventData, PointerType } from './PointerEventData';
-import type { SpatialIndex2D } from './Spatial';
+import type { CursorBackend } from './Cursor.ts';
+import type { Entity, EntityRuntimeKey } from './Entity.ts';
+import type { FocusEventData } from './FocusEventData.ts';
+import type { InputSignals } from './InputSignals.ts';
+import type { InteractionSignals } from './InteractionSignals.ts';
+import type { KeyboardEventData } from './KeyboardEventData.ts';
+import type { Node, NodeAny, NodeTraits } from './Node.ts';
+import type { NodeInteractionState } from './NodeInteractionState.ts';
+import type { PointerEventData, PointerType } from './PointerEventData.ts';
+import type { SpatialIndex2D } from './Spatial.ts';
 
 // The signal names only. InteractionSignals is an Entity, so a bare `keyof` would also yield the
 // runtime slot's symbol — which is not a signal name, and widening this union to include it makes

@@ -1,7 +1,7 @@
-import { DissolveModifierKind } from './DissolveModifier';
-import type { DissolveModifier } from './DissolveModifier';
-import { EntityRuntimeKey } from './Entity';
-import type { Modifier } from './Modifier';
+import { DissolveModifierKind } from './DissolveModifier.ts';
+import type { DissolveModifier } from './DissolveModifier.ts';
+import { EntityRuntimeKey } from './Entity.ts';
+import type { Modifier } from './Modifier.ts';
 
 describe('DissolveModifier', () => {
   describe('DissolveModifierKind', () => {

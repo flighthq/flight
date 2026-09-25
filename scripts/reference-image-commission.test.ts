@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deflateSync } from 'node:zlib';
 
-import { hashOraclePixelBytes } from './reference-image-png';
+import { hashOraclePixelBytes } from './reference-image-png.ts';
 
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), 'reference-image-commission.ts');
 const WORKFLOW = join(

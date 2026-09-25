@@ -14,10 +14,10 @@ import type {
 } from '@flighthq/types/contract';
 import { MatcapMaterialKind } from '@flighthq/types/contract';
 
-import { bindGlMatcapSurface, ensureGlMatcapProgram } from './glMatcapPrelude';
-import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshViewProjection } from './glMeshProgram';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { bindGlMatcapSurface, ensureGlMatcapProgram } from './glMatcapPrelude.ts';
+import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshViewProjection } from './glMeshProgram.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // The built-in Matcap forward renderer (GlMeshMaterialRenderer for MatcapMaterialKind). Lighting-
 // independent material-capture shading: bind selects the matcap variant for the material's matcap

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyColorMatrixToColor } from './colorMatrixMath';
-import { createTintAdjustment, initializeTintAdjustment } from './tintAdjustment';
+import { applyColorMatrixToColor } from './colorMatrixMath.ts';
+import { createTintAdjustment, initializeTintAdjustment } from './tintAdjustment.ts';
 
 describe('createTintAdjustment', () => {
   it('carries the TintAdjustment kind and a 20-length diagonal matrix', () => {

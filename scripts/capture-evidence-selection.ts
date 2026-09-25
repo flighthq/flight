@@ -1,4 +1,4 @@
-import type { CaptureBaselineEvidenceKind } from '../packages/tool-capture/src/captureBaselineCoverageManifest.js';
+import type { CaptureBaselineEvidenceKind } from '../packages/tool-capture/src/captureBaselineCoverageManifest.ts';
 
 export interface CaptureEvidenceTargetSelection {
   covered: Record<string, CaptureBaselineEvidenceKind[]>;

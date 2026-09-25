@@ -1,5 +1,5 @@
-import { computeGaussianKernelWeights, getGaussianKernelSize } from './gaussianKernel';
-import { computeLinearSampledGaussian, getLinearSampledGaussianTapCount } from './linearSampledGaussian';
+import { computeGaussianKernelWeights, getGaussianKernelSize } from './gaussianKernel.ts';
+import { computeLinearSampledGaussian, getLinearSampledGaussianTapCount } from './linearSampledGaussian.ts';
 
 describe('computeLinearSampledGaussian', () => {
   const sumOf = (weights: ReadonlyArray<number>): number => weights.reduce((total, weight) => total + weight, 0);

@@ -1,6 +1,6 @@
-import type { NodeAny } from './Node';
-import type { RenderProxy2D } from './RenderProxy2D';
-import type { RenderState } from './RenderState';
+import type { NodeAny } from './Node.ts';
+import type { RenderProxy2D } from './RenderProxy2D.ts';
+import type { RenderState } from './RenderState.ts';
 
 // Per-node update callback for the render walks. Receives the source node and its render node plus
 // the parent's render node; composes the trait update* steps (appearance, transform, material, clip).

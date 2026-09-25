@@ -10,7 +10,7 @@ import {
   initializeWebImageResourceFromImageElement,
   registerWebImageDimensionResolver,
   webImageDimensionResolver,
-} from './webImageResource';
+} from './webImageResource.ts';
 
 // Every test here starts with no resolver installed: the slot is module state in @flighthq/image, and a
 // leaked registration would silently make a later test measure through a host it never asked for.

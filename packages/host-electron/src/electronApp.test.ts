@@ -30,7 +30,7 @@ import {
   populateElectronHostAppLinux,
   populateElectronHostAppMacos,
   populateElectronHostAppWindows,
-} from './electronApp';
+} from './electronApp.ts';
 
 function fakeElectron() {
   const calls: string[] = [];

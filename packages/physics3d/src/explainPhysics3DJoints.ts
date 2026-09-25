@@ -1,6 +1,6 @@
 import type { Physics3DJointExplanation, Physics3DWorld } from '@flighthq/types/contract';
 
-import { findPhysics3DBody } from './world';
+import { findPhysics3DBody } from './world.ts';
 
 // Which joints the step will actually solve, and why the others are skipped.
 //

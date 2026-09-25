@@ -3,12 +3,12 @@ import { connectSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import * as midi from './contract';
+import * as midi from './contract.ts';
 import {
   initializeMidiAccessStateSubscription,
   initializeMidiInputMessageSubscription,
   initializeMidiPortStateSubscription,
-} from './midiSubscription';
+} from './midiSubscription.ts';
 
 describe('attachMidiAccessStateSubscription', () => {
   it('pins the exact access origin and emits stable hotplug port entities', async () => {

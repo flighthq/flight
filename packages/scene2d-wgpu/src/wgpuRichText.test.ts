@@ -14,7 +14,7 @@ import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
 import type { CanvasSurface, HostCanvasCapability, HostImageCapability, ImageResource } from '@flighthq/types/contract';
 
-import { getWgpuRendererData } from './wgpuRendererData';
+import { getWgpuRendererData } from './wgpuRendererData.ts';
 import {
   createWgpuRichTextData,
   wgpuRichTextRenderer,
@@ -22,7 +22,7 @@ import {
   drawWgpuRichText,
   drawWgpuRichTextWithOverlay,
   registerWgpuTextInputOverlay,
-} from './wgpuRichText';
+} from './wgpuRichText.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

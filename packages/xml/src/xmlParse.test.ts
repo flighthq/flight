@@ -1,4 +1,4 @@
-import { parseXmlAttributes, parseXmlDocument } from './xmlParse';
+import { parseXmlAttributes, parseXmlDocument } from './xmlParse.ts';
 
 describe('parseXmlAttributes', () => {
   it('parses double-quoted attributes', () => {

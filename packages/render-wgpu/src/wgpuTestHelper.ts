@@ -7,13 +7,13 @@ import type {
   WgpuScreenRenderTargetOptions,
 } from '@flighthq/types/contract';
 
-import { testWgpuHost, createTestWgpuSurface } from './wgpuHost';
+import { testWgpuHost, createTestWgpuSurface } from './wgpuHost.ts';
 
 export { testWgpuHost, createTestWgpuSurface };
-import { beginWgpuRenderPass } from './wgpuRenderPass';
-import { createWgpuAcquisition, createWgpuRenderState } from './wgpuRenderState';
-import { enableWgpuScreenRenderTargetAntialias } from './wgpuScreenAntialias';
-import { createWgpuScreenRenderTarget } from './wgpuScreenRenderTarget';
+import { beginWgpuRenderPass } from './wgpuRenderPass.ts';
+import { createWgpuAcquisition, createWgpuRenderState } from './wgpuRenderState.ts';
+import { enableWgpuScreenRenderTargetAntialias } from './wgpuScreenAntialias.ts';
+import { createWgpuScreenRenderTarget } from './wgpuScreenRenderTarget.ts';
 
 // Wgpu flag constants are only type-level in @webgpu/types; install runtime values for JSDOM.
 function installWgpuConstants(): void {

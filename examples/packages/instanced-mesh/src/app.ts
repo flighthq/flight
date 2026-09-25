@@ -26,7 +26,7 @@ import {
 } from '@flighthq/sdk';
 import { createNode3D } from '@flighthq/sdk/scene3d';
 
-import { canvas, render, scale } from './render';
+import { canvas, render, scale } from './render.ts';
 
 const logicalWidth = 800 / scale;
 const logicalHeight = 600 / scale;

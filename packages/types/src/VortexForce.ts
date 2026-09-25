@@ -1,4 +1,4 @@
-import type { ForceFalloff } from './ForceFalloff';
+import type { ForceFalloff } from './ForceFalloff.ts';
 
 export interface VortexForce {
   kind: 'VortexForce';

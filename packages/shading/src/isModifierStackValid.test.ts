@@ -2,10 +2,10 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Modifier } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createEmissiveModifier } from './createEmissiveModifier';
-import { isModifierStackValid } from './isModifierStackValid';
-import { createModifierRegistry } from './modifierRegistry';
-import { registerBuiltInModifiers } from './registerBuiltInModifiers';
+import { createEmissiveModifier } from './createEmissiveModifier.ts';
+import { isModifierStackValid } from './isModifierStackValid.ts';
+import { createModifierRegistry } from './modifierRegistry.ts';
+import { registerBuiltInModifiers } from './registerBuiltInModifiers.ts';
 
 describe('isModifierStackValid', () => {
   it('is true when every kind is registered', () => {

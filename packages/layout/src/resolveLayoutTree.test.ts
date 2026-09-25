@@ -1,7 +1,7 @@
 import type { FlightDocumentLayoutBinding, LayoutNode, LayoutTree, NodeAny } from '@flighthq/types/contract';
 
-import { createLayoutState, registerLayoutResolver } from './layoutState';
-import { explainLayoutResolution, resolveLayoutTree } from './resolveLayoutTree';
+import { createLayoutState, registerLayoutResolver } from './layoutState.ts';
+import { explainLayoutResolution, resolveLayoutTree } from './resolveLayoutTree.ts';
 
 function tree(nodes: LayoutNode[]): LayoutTree {
   return { nodes };

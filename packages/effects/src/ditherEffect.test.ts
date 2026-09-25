@@ -1,4 +1,4 @@
-import { createDitherEffect, initializeDitherEffect } from './ditherEffect';
+import { createDitherEffect, initializeDitherEffect } from './ditherEffect.ts';
 
 describe('createDitherEffect', () => {
   it('tags the intent type', () => {

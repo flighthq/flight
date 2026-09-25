@@ -1,7 +1,7 @@
 import { getCanvasRenderTextureTarget, writeCanvasRenderTextureTarget } from '@flighthq/scene2d-canvas/contract';
 import type { CanvasRenderState, CanvasRenderTexturePool, Effect, RenderTexture } from '@flighthq/types/contract';
 
-import { getCanvasEffectRunner } from './canvasEffectRegistry';
+import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
 
 // Applies registered Canvas effect runners from one completed RenderTexture into another. The
 // caller supplies one distinct scratch lease; parity chooses the first destination so the final

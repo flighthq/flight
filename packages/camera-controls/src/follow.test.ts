@@ -3,7 +3,7 @@ import { getCamera2DVisibleBounds } from '@flighthq/camera/contract';
 import { createRectangle } from '@flighthq/geometry/contract';
 import { describe, expect, it } from 'vitest';
 
-import { updateCamera2DFollow } from './follow';
+import { updateCamera2DFollow } from './follow.ts';
 
 describe('updateCamera2DFollow', () => {
   it('does not move when the target is inside the deadzone', () => {

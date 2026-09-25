@@ -3,8 +3,8 @@ import { createPath, appendPathRectangle, flattenPath } from '@flighthq/path/con
 import type { PathBooleanKernel, Path, PathWinding } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { booleanPaths, differencePaths, intersectPaths, unionPaths, xorPaths } from './booleanPaths';
-import { martinezPathBooleanKernel } from './martinezKernel';
+import { booleanPaths, differencePaths, intersectPaths, unionPaths, xorPaths } from './booleanPaths.ts';
+import { martinezPathBooleanKernel } from './martinezKernel.ts';
 
 const kernel = martinezPathBooleanKernel;
 

@@ -15,8 +15,8 @@ import {
   applyGaussianBlurToGlRenderTextures,
   glBlurEffectRunner,
   registerGlBlurEffect,
-} from './glBlurEffect';
-import { getGlEffectRunner } from './glEffectRegistry';
+} from './glBlurEffect.ts';
+import { getGlEffectRunner } from './glEffectRegistry.ts';
 
 function createGlState() {
   return {

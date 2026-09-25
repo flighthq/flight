@@ -1,19 +1,19 @@
-import type { Kind } from './Entity';
-import type { RenderStateOptions } from './RenderStateOptions';
-import type { ShapeRasterizer } from './ShapeRasterizer';
-import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecoder';
-import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader';
-import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource';
-import type { WgpuEffectRegistration } from './WgpuEffectState';
-import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer';
-import type { WgpuModifierSnippet } from './WgpuModifierSnippet';
-import type { WgpuQuadMaterialRenderer } from './WgpuQuadMaterialRenderer';
-import type { WgpuRenderOptions } from './WgpuRenderOptions';
-import type { WgpuColorAdjustmentMaterialFeature, WgpuColorAdjustmentMaterialFeatureGuard } from './WgpuRenderState';
-import type { WgpuScene3DPass } from './WgpuScene3DRuntime';
-import type { WgpuSkinningAdapter } from './WgpuSkinningAdapter';
-import type { WgpuTextureResolver } from './WgpuTextureResolver';
-import type { WgpuVelocityWriter } from './WgpuVelocityWriter';
+import type { Kind } from './Entity.ts';
+import type { RenderStateOptions } from './RenderStateOptions.ts';
+import type { ShapeRasterizer } from './ShapeRasterizer.ts';
+import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecoder.ts';
+import type { WgpuCompressedTextureUploader } from './WgpuCompressedTextureUploader.ts';
+import type { WgpuCustomMaterialShaderSource } from './WgpuCustomMaterialShaderSource.ts';
+import type { WgpuEffectRegistration } from './WgpuEffectState.ts';
+import type { WgpuMeshMaterialRenderer } from './WgpuMeshMaterialRenderer.ts';
+import type { WgpuModifierSnippet } from './WgpuModifierSnippet.ts';
+import type { WgpuQuadMaterialRenderer } from './WgpuQuadMaterialRenderer.ts';
+import type { WgpuRenderOptions } from './WgpuRenderOptions.ts';
+import type { WgpuColorAdjustmentMaterialFeature, WgpuColorAdjustmentMaterialFeatureGuard } from './WgpuRenderState.ts';
+import type { WgpuScene3DPass } from './WgpuScene3DRuntime.ts';
+import type { WgpuSkinningAdapter } from './WgpuSkinningAdapter.ts';
+import type { WgpuTextureResolver } from './WgpuTextureResolver.ts';
+import type { WgpuVelocityWriter } from './WgpuVelocityWriter.ts';
 
 export interface WgpuRenderStateOptions extends RenderStateOptions, WgpuRenderOptions {
   colorAdjustmentFeature?: WgpuColorAdjustmentMaterialFeature | null;

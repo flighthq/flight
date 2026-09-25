@@ -23,8 +23,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, PathCommand } from '@flighthq/types/contract';
 
-import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
-import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry';
+import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
+import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
 
 /**
  * Draws a shape's paths with no paint at all — the shape a caller gets when it imports geometry

@@ -2,8 +2,8 @@ import {
   orderReviewItems,
   resolveReviewAttentionGroup,
   reviewItemByVisualDelta,
-} from '../tools/review/src/reviewOrder';
-import type { ReviewAttentionGroup, ReviewOrderAccessors } from '../tools/review/src/reviewOrder';
+} from '../tools/review/src/reviewOrder.ts';
+import type { ReviewAttentionGroup, ReviewOrderAccessors } from '../tools/review/src/reviewOrder.ts';
 
 interface Item {
   tool: string;

@@ -10,7 +10,7 @@ import {
 import type { Scene3DDocument } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createScene3DLightsFromDocument } from './sceneDocumentLights';
+import { createScene3DLightsFromDocument } from './sceneDocumentLights.ts';
 
 function emptyDocument(): Scene3DDocument {
   return {

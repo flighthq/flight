@@ -28,7 +28,7 @@ import type {
 } from '@flighthq/types/contract';
 import { EmissiveModifierFacing, FogModifierMode, VertexDisplaceModifierSource } from '@flighthq/types/contract';
 
-import { registerGlModifierSnippet } from './glShadedModifierSnippet';
+import { registerGlModifierSnippet } from './glShadedModifierSnippet.ts';
 
 // The built-in GL modifier snippets — the backend halves of @flighthq/shading's eight built-in
 // modifier descriptors, across all six slots: VertexDisplace (Vertex), AnimatedNormal (Normal),

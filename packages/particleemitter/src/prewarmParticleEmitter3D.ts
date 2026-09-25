@@ -1,7 +1,7 @@
 import type { ParticleEmitter3D } from '@flighthq/types/contract';
 import type { ParticleEmitterCallbacks, ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types/contract';
 
-import { updateParticleEmitter3D } from './updateParticleEmitter3D';
+import { updateParticleEmitter3D } from './updateParticleEmitter3D.ts';
 
 export function prewarmParticleEmitter3D(
   emitter: ParticleEmitter3D,

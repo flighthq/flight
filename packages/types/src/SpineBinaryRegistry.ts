@@ -1,11 +1,11 @@
-import type { AnimationChannel } from './AnimationChannel';
-import type { AttachmentSkin2D } from './AttachmentSkin2D';
-import type { Bone2D } from './Bone2D';
-import type { ByteReader } from './ByteReader';
-import type { ImportDiagnostic } from './ImportDiagnostic';
-import type { Skeleton2DDrawOrderTimeline } from './Skeleton2DDrawOrderTimeline';
-import type { Skeleton2DImportAnimation } from './Skeleton2DImport';
-import type { Slot2D } from './Slot2D';
+import type { AnimationChannel } from './AnimationChannel.ts';
+import type { AttachmentSkin2D } from './AttachmentSkin2D.ts';
+import type { Bone2D } from './Bone2D.ts';
+import type { ByteReader } from './ByteReader.ts';
+import type { ImportDiagnostic } from './ImportDiagnostic.ts';
+import type { Skeleton2DDrawOrderTimeline } from './Skeleton2DDrawOrderTimeline.ts';
+import type { Skeleton2DImportAnimation } from './Skeleton2DImport.ts';
+import type { Slot2D } from './Slot2D.ts';
 
 // The sections Spine writes after its header and shared string table. Their order on the wire is fixed,
 // but registration is keyed so an application can replace a built-in reader without editing the parser.

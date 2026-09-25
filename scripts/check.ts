@@ -3,15 +3,15 @@ import { availableParallelism } from 'node:os';
 
 import pc from 'picocolors';
 
-import { createGateRegistry } from './gateRegistry';
-import { formatGateFailure, runGates } from './gateRunner';
+import { createGateRegistry } from './gateRegistry.ts';
+import { formatGateFailure, runGates } from './gateRunner.ts';
 import {
   explainEmptyCheckSelection,
   getSelectors,
   isCheckSelectionEmpty,
   resolvePaths,
   selectPackages,
-} from './select';
+} from './select.ts';
 
 // The non-fixing quality sweep. Run bare (`npm run check`) it is the full whole-repo gate. Given a
 // selector (`npm run check scene-formats`, or a path/@scoped form) it runs only the
@@ -48,6 +48,7 @@ const { add, gates } = createGateRegistry();
 
 if (!scoped) {
   add('packages:check', 'tsx', ['scripts/packages.ts']);
+  add('module-specifiers:check', 'tsx', ['scripts/module-specifiers.ts']);
   add('license-provenance:check', 'tsx', ['scripts/check-license-provenance.ts']);
   add('package-dist-orphans:check', 'tsx', ['scripts/check-package-dist-orphans.ts']);
   add('sdk-subpaths:check', 'tsx', ['scripts/check-sdk-subpaths.ts']);

@@ -3,7 +3,7 @@ import type { ShapeCommandToken } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createShape } from './shape';
+import { createShape } from './shape.ts';
 import {
   appendShapeEllipticalArcTo,
   appendShapeLineStyle,
@@ -13,8 +13,8 @@ import {
   appendShapePolygon,
   appendShapeRectangle,
   appendShapeTangentArcTo,
-} from './shapeCommands';
-import { getShapeStrokeRegions, hasNonSolidShapeStroke } from './shapeStroke';
+} from './shapeCommands.ts';
+import { getShapeStrokeRegions, hasNonSolidShapeStroke } from './shapeStroke.ts';
 
 // A 90° corner stroked with the given join, as one span.
 function strokedCorner(join: 'bevel' | 'miter' | 'round', thickness = 20) {

@@ -1,6 +1,6 @@
 import type { Spritesheet, SpritesheetValidationDiagnostic } from '@flighthq/types/contract';
 
-import type { SpritesheetData } from './spritesheetData';
+import type { SpritesheetData } from './spritesheetData.ts';
 
 // Validates a runtime `Spritesheet` for structural integrity:
 // - Frames referencing atlas region IDs that do not exist in the atlas.

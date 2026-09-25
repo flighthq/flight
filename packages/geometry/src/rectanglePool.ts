@@ -1,8 +1,8 @@
 import type { Rectangle } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { geometryPoolReleaseGuard } from './geometryPoolGuards';
-import { createRectangle } from './rectangle';
+import { geometryPoolReleaseGuard } from './geometryPoolGuards.ts';
+import { createRectangle } from './rectangle.ts';
 
 export function acquireEmptyRectangle(): Rectangle {
   const r = acquireRectangle();

@@ -10,8 +10,8 @@ import type { MemoryLogSink } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { disableDebug, enableDebug, isDebugEnabled } from './debug';
-import { beginDebugSpan, endDebugSpan, markDebugFrame, measureDebugSpan } from './debugTiming';
+import { disableDebug, enableDebug, isDebugEnabled } from './debug.ts';
+import { beginDebugSpan, endDebugSpan, markDebugFrame, measureDebugSpan } from './debugTiming.ts';
 
 function entryData(sink: MemoryLogSink): Readonly<Record<string, unknown>>[] {
   return getMemoryLogSinkEntries(sink).map((entry) => (entry as { data: Record<string, unknown> }).data);

@@ -1,7 +1,7 @@
 import { getMeshGeometryVertexJoints0, getMeshGeometryVertexWeights0 } from '@flighthq/mesh/contract';
 import type { MeshGeometry, MeshSkinBindPose, Skeleton3D, VertexAttributeLayout } from '@flighthq/types/contract';
 
-import { skinTangents, skinVertices } from './skinVertices';
+import { skinTangents, skinVertices } from './skinVertices.ts';
 
 // Captures the de-interleaved CPU-skinning inputs for one skinned MeshGeometry: the bind-pose
 // positions/normals and the static joints0/weights0 influences, read out of the interleaved

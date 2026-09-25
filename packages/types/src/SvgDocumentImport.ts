@@ -1,4 +1,4 @@
-import type { ImageResource } from './ImageResource';
+import type { ImageResource } from './ImageResource.ts';
 
 /**
  * External-resource seams for static SVG document import. The importer performs no hidden I/O:

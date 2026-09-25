@@ -1,4 +1,4 @@
-import type { Entity, EntityWithoutRuntime } from './Entity';
+import type { Entity, EntityWithoutRuntime } from './Entity.ts';
 
 export interface Rectangle extends Entity {
   height: number;

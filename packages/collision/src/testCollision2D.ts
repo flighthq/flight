@@ -1,7 +1,7 @@
 import type { CollisionManifold2D, CollisionShape2D, CollisionTestGuard2D } from '@flighthq/types/contract';
 
-import { getCollisionPairTest2D } from './collisionSupport2D';
-import { testCollisionSupport2D } from './gjk2D';
+import { getCollisionPairTest2D } from './collisionSupport2D.ts';
+import { testCollisionSupport2D } from './gjk2D.ts';
 
 // Installs the optional diagnostics seam consulted before testCollision2D dispatches its shape pair.
 export function setCollisionTestGuard2D(guard: CollisionTestGuard2D | null): void {

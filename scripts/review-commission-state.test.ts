@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { reviewMissingReferenceMessage } from '../tools/review/src/commissionState';
+import { reviewMissingReferenceMessage } from '../tools/review/src/commissionState.ts';
 
 describe('reviewMissingReferenceMessage', () => {
   it('distinguishes a pending request from a cell that was never commissioned', () => {

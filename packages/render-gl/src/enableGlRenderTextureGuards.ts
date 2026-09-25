@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { GlContext, GlRenderState, GlRenderTextureExplanation, RenderTexture } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setGlRenderTextureGuard } from './glRenderTexture';
+import { setGlRenderTextureGuard } from './glRenderTexture.ts';
 
 export function areGlRenderTextureGuardsEnabled(state: GlRenderState): boolean {
   let enabled = false;

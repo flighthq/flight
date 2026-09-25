@@ -1,4 +1,4 @@
-import { escapeDomHtmlString } from './domTextHelpers';
+import { escapeDomHtmlString } from './domTextHelpers.ts';
 
 describe('escapeDomHtmlString', () => {
   it('escapes ampersands', () => {

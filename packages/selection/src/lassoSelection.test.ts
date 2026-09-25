@@ -9,8 +9,8 @@ import {
   endLassoSelection,
   findNodesInLassoSelection,
   getLassoSelectionPath,
-} from './index';
-import { initializeLassoSelection } from './lassoSelection';
+} from './index.ts';
+import { initializeLassoSelection } from './lassoSelection.ts';
 
 describe('addLassoSelectionPoint', () => {
   it('appends line points only during an active gesture', () => {

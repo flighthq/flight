@@ -17,4 +17,4 @@ export {
   parseTiledTilesetJson,
   parseTiledTmj,
   parseTiledTmx,
-} from './contract';
+} from './contract.ts';

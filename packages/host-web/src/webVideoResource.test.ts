@@ -1,6 +1,6 @@
 import type { HostImageSource, HostVideoCapability } from '@flighthq/types/contract';
 
-import { createWebVideoResourceFromMediaStream } from './webVideoResource';
+import { createWebVideoResourceFromMediaStream } from './webVideoResource.ts';
 
 describe('createWebVideoResourceFromMediaStream', () => {
   it('routes the stream through the provider and returns an owned resource', () => {

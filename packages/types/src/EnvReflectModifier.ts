@@ -1,4 +1,4 @@
-import type { Modifier } from './Modifier';
+import type { Modifier } from './Modifier.ts';
 
 // Adds an environment (skybox / IBL cubemap) reflection to the shaded output (slot: Effect): the
 // view vector is reflected about the surface normal, the scene's prefiltered environment cubemap is

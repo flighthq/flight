@@ -11,10 +11,10 @@ import type {
 } from '@flighthq/types/contract';
 import { NormalMaterialKind } from '@flighthq/types/contract';
 
-import { bindGlDebugNormalMap, ensureGlDebugProgram } from './glDebugPrelude';
-import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshViewProjection } from './glMeshProgram';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { bindGlDebugNormalMap, ensureGlDebugProgram } from './glDebugPrelude.ts';
+import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshViewProjection } from './glMeshProgram.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // The built-in Normal forward renderer (GlMeshMaterialRenderer for NormalMaterialKind). A lighting-
 // independent debug/utility pass material: bind selects the debug program in normal mode (with the

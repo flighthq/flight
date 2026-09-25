@@ -15,9 +15,9 @@ import {
   areScene3DResourceFailureGuardsEnabled,
   disableScene3DResourceFailureGuards,
   enableScene3DResourceFailureGuards,
-} from './enableScene3DResourceFailureGuards';
-import { createScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver';
-import { enableScene3DResourceSignals } from './sceneResourceSignals';
+} from './enableScene3DResourceFailureGuards.ts';
+import { createScene3DResourceResolver, disposeScene3DResourceResolver } from './sceneResourceResolver.ts';
+import { enableScene3DResourceSignals } from './sceneResourceSignals.ts';
 
 const host: { readonly graphics: { readonly image: HostImageCapability } } = {
   graphics: { image: { [EntityRuntimeKey]: undefined, loadImageFromUrl: vi.fn() } },

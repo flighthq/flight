@@ -7,8 +7,8 @@ import {
 import type { HitTestResult, QuadBatch, TextureAtlas, TextureAtlasRegion } from '@flighthq/types/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 
-import { describeGraphHit } from './hitTests';
-import { registerQuadBatchHitTest } from './registerQuadBatchHitTest';
+import { describeGraphHit } from './hitTests.ts';
+import { registerQuadBatchHitTest } from './registerQuadBatchHitTest.ts';
 
 function quadRegion(id: number, width: number, height: number, rotation = TextureAtlasRotation.None) {
   return { id, x: 0, y: 0, width, height, pivotX: null, pivotY: null, rotation } as TextureAtlasRegion;

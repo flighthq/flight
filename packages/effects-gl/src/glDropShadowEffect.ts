@@ -11,10 +11,10 @@ import type {
   GlTextureRenderTargetPool,
 } from '@flighthq/types/contract';
 
-import { applyGlEffectBlitOffsetPass, applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
-import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
-import { registerGlEffect } from './glEffectRegistry';
-import { applyGlEffectTintPass } from './glEffectTintShader';
+import { applyGlEffectBlitOffsetPass, applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader.ts';
+import { applyGlEffectBoxBlur } from './glEffectBoxBlur.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
+import { applyGlEffectTintPass } from './glEffectTintShader.ts';
 
 // Drop-shadow composite effect: tint the scene silhouette, blur it, offset it by angle/distance, then composite the source over the shadow.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the

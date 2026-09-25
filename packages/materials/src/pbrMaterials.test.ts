@@ -8,7 +8,7 @@ import {
   createStandardPbrMaterialProperties,
   reportMaterialConversionDrop,
   setMaterialConversionGuard,
-} from './pbrMaterials';
+} from './pbrMaterials.ts';
 
 describe('convertSpecularGlossinessToStandardPbr', () => {
   it('maps glossiness to roughness as 1 - glossiness', () => {

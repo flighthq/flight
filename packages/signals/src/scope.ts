@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, SignalScope } from '@flighthq/types/contract';
 
-import { disconnectSignalConnection } from './connection';
+import { disconnectSignalConnection } from './connection.ts';
 
 export function createSignalScope(): SignalScope {
   const out = allocateEntity<SignalScope>();

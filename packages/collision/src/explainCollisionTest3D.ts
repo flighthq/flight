@@ -1,9 +1,9 @@
 import type { CollisionShape3D, CollisionTestExplanation3D } from '@flighthq/types/contract';
 
-import { getCollisionShapeValidationStatus3D } from './collisionShapeValidation3D';
-import { getCollisionPairTest3D, getCollisionSupport3D } from './collisionSupport3D';
-import { createCollisionManifold3D } from './manifold3D';
-import { testCollision3D } from './testCollision3D';
+import { getCollisionShapeValidationStatus3D } from './collisionShapeValidation3D.ts';
+import { getCollisionPairTest3D, getCollisionSupport3D } from './collisionSupport3D.ts';
+import { createCollisionManifold3D } from './manifold3D.ts';
+import { testCollision3D } from './testCollision3D.ts';
 
 // Pure diagnostic twin of testCollision3D. It classifies invalid and unsupported inputs before running
 // the ordinary dispatcher, so a caller can tell the silent false sentinel apart from a genuinely

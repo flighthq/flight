@@ -22,7 +22,7 @@ import {
   particleColorCurveFromKeyframes,
 } from '@flighthq/sdk/particles';
 
-import { canvas, render, scale } from './render';
+import { canvas, render, scale } from './render.ts';
 
 const WIDTH = 800;
 const HEIGHT = 500;

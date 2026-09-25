@@ -2,8 +2,8 @@ import { updateCamera3DInverseViewProjection } from '@flighthq/camera/contract';
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import type { GlContext, Camera3D, Environment, GlRenderState } from '@flighthq/types/contract';
 
-import { ensureGlEnvironmentSourceCube } from './glEnvironmentCube';
-import { addGlScene3DResourceCleanup } from './glScene3DRuntime';
+import { ensureGlEnvironmentSourceCube } from './glEnvironmentCube.ts';
+import { addGlScene3DResourceCleanup } from './glScene3DRuntime.ts';
 
 // Frees the skybox program, VAO and vertex buffer cached for `state`. These are module-local (keyed by
 // state) rather than held on the scene runtime, so they cannot be reached from it; destroyGlScene3DRuntime

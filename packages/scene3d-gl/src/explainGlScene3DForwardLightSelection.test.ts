@@ -1,7 +1,7 @@
 import { createPointLight } from '@flighthq/lighting/contract';
 import type { GlScene3DForwardLightList, Scene3DLightsLike } from '@flighthq/types/contract';
 
-import { explainGlScene3DForwardLightSelection } from './explainGlScene3DForwardLightSelection';
+import { explainGlScene3DForwardLightSelection } from './explainGlScene3DForwardLightSelection.ts';
 
 function lights(count: number): Scene3DLightsLike {
   return {

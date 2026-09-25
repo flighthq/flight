@@ -5,7 +5,7 @@ import {
   CAPTURE_CLI_OPTION_GROUPS,
   resolveCaptureCliReportPath,
   validateCaptureCliOptions,
-} from './captureCliOptions';
+} from './captureCliOptions.ts';
 
 describe('resolveCaptureCliReportPath', () => {
   it('routes a report beneath the requested artifact root and subject', () => {

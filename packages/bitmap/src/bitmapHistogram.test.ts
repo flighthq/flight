@@ -1,6 +1,6 @@
-import { createBitmap } from './bitmap';
-import { equalizeBitmapHistogram, getBitmapHistogram } from './bitmapHistogram';
-import { setBitmapPixel } from './bitmapPixel';
+import { createBitmap } from './bitmap.ts';
+import { equalizeBitmapHistogram, getBitmapHistogram } from './bitmapHistogram.ts';
+import { setBitmapPixel } from './bitmapPixel.ts';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };

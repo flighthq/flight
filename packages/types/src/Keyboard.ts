@@ -1,4 +1,4 @@
-import type { Signal } from './Signal';
+import type { Signal } from './Signal.ts';
 
 export type SoftKeyboardResizeMode = string;
 export const SoftKeyboardResizeNoneKind = 'None';

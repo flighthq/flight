@@ -1,4 +1,4 @@
-import type { ParticleCurve } from './ParticleCurve';
+import type { ParticleCurve } from './ParticleCurve.ts';
 
 export type ParticleEmitterShape = 'box' | 'circle' | 'cone3d' | 'line' | 'point' | 'rect' | 'ring' | 'sphere';
 

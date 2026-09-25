@@ -2,7 +2,7 @@ import { createRectangle, setRectangle } from '@flighthq/geometry/contract';
 import { addNodeChild, getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
-import { hitTestAreaQuery, hitTestAreaQueryCircle } from './spatialQuery';
+import { hitTestAreaQuery, hitTestAreaQueryCircle } from './spatialQuery.ts';
 
 function makeAt(x: number, y: number, w: number, h: number) {
   const obj = createDisplayObject();

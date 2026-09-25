@@ -5,4 +5,4 @@ export {
   getXmlElementChildrenByName,
   parseXmlAttributes,
   parseXmlDocument,
-} from './contract';
+} from './contract.ts';

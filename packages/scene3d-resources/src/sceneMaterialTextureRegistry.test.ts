@@ -25,7 +25,7 @@ import {
   registerScene3DPbrExtensionTextures,
   registerStandardPbrScene3DMaterialTextures,
   registerUnlitScene3DMaterialTextures,
-} from './sceneMaterialTextureRegistry';
+} from './sceneMaterialTextureRegistry.ts';
 
 describe('createScene3DMaterialTextureRegistry', () => {
   it('creates an empty registry', () => {

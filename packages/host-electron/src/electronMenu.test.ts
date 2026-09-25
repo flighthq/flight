@@ -14,7 +14,7 @@ import {
   populateElectronHostAppMenu,
   populateElectronHostMenuPopup,
   populateElectronHostMenuSelect,
-} from './electronMenu';
+} from './electronMenu.ts';
 
 function fakeElectron(): {
   electron: ElectronApi;

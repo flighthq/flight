@@ -1,4 +1,4 @@
-import { createColorScaleBiasAdjustment, initializeColorScaleBiasAdjustment } from './colorScaleBiasAdjustment';
+import { createColorScaleBiasAdjustment, initializeColorScaleBiasAdjustment } from './colorScaleBiasAdjustment.ts';
 
 describe('createColorScaleBiasAdjustment', () => {
   it('keeps a legible bridge payload and contributes its diagonal matrix', () => {

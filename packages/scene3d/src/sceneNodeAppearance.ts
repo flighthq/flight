@@ -1,7 +1,7 @@
 import { getNodeAppearanceRevision, invalidateNodeAppearance } from '@flighthq/node/contract';
 import type { Node3D } from '@flighthq/types/contract';
 
-import { getNode3DRuntime } from './sceneNode';
+import { getNode3DRuntime } from './sceneNode.ts';
 
 // Ensures the node's resolved parent×self opacity (`worldAlpha`) is current, recomputing only when the
 // node's own appearance revision or an ancestor's resolved appearance changed. Mirrors

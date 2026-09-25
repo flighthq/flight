@@ -63,16 +63,16 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
-import { withTemporaryPublishArtifacts } from './package-publish-artifacts.js';
-import { classifyPublishError } from './publish-error-kind.js';
-import type { PublishExpectation, PublishProblem } from './publish-verification.js';
+import { withTemporaryPublishArtifacts } from './package-publish-artifacts.ts';
+import { classifyPublishError } from './publish-error-kind.ts';
+import type { PublishExpectation, PublishProblem } from './publish-verification.ts';
 import {
   countTrailingRoundsWithoutProgress,
   describePublishProblem,
   findPublishProblems,
   shouldKeepVerifying,
-} from './publish-verification.js';
-import { isSnapshotVersionSuperseded } from './snapshot-version-order.js';
+} from './publish-verification.ts';
+import { isSnapshotVersionSuperseded } from './snapshot-version-order.ts';
 
 const execFileAsync = promisify(execFile);
 

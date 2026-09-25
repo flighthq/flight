@@ -8,12 +8,12 @@ import type {
   WgpuRenderTargetPool,
 } from '@flighthq/types/contract';
 
-import { applyBevelEffectToWgpu, wgpuBevelEffectRunner, registerWgpuBevelEffect } from './wgpuBevelEffect';
-import * as wgpuEffectBlitShaderModule from './wgpuEffectBlitShader';
-import * as wgpuEffectBoxBlurModule from './wgpuEffectBoxBlur';
-import * as wgpuEffectPassModule from './wgpuEffectPass';
-import { getWgpuEffectRunner } from './wgpuEffectRegistry';
-import * as wgpuEffectTintShaderModule from './wgpuEffectTintShader';
+import { applyBevelEffectToWgpu, wgpuBevelEffectRunner, registerWgpuBevelEffect } from './wgpuBevelEffect.ts';
+import * as wgpuEffectBlitShaderModule from './wgpuEffectBlitShader.ts';
+import * as wgpuEffectBoxBlurModule from './wgpuEffectBoxBlur.ts';
+import * as wgpuEffectPassModule from './wgpuEffectPass.ts';
+import { getWgpuEffectRunner } from './wgpuEffectRegistry.ts';
+import * as wgpuEffectTintShaderModule from './wgpuEffectTintShader.ts';
 
 const recorded = {
   acquired: [] as unknown[],

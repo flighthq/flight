@@ -1,4 +1,4 @@
-import type { LightUnit } from './LightUnit';
+import type { LightUnit } from './LightUnit.ts';
 
 export interface HemisphereLightOptions {
   enabled?: boolean;

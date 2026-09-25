@@ -2,9 +2,9 @@ import { createPath, appendPathClose, appendPathLineTo, appendPathMoveTo, flatte
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { martinezPathBooleanKernel } from './martinezKernel';
-import { offsetPath } from './offsetPath';
-import { simplifyPath } from './simplifyPath';
+import { martinezPathBooleanKernel } from './martinezKernel.ts';
+import { offsetPath } from './offsetPath.ts';
+import { simplifyPath } from './simplifyPath.ts';
 
 const kernel = martinezPathBooleanKernel;
 

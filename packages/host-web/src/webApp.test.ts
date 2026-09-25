@@ -9,7 +9,7 @@ import {
   initializeWebAppQuitBackend,
   initializeWebAppReadyBackend,
   initializeWebAppRelaunchBackend,
-} from './webApp';
+} from './webApp.ts';
 
 describe('createWebAppCapabilities', () => {
   it('creates the exact genuine web app slots', () => {

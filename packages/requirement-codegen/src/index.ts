@@ -1,1 +1,1 @@
-export { createRequirementCodegenPlan } from './requirementCodegen';
+export { createRequirementCodegenPlan } from './requirementCodegen.ts';

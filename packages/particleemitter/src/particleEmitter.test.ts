@@ -26,7 +26,7 @@ import {
   setParticleEmitter2DParticleAlpha,
   setParticleEmitter2DParticleColor,
   setParticleEmitter2DParticleVelocity,
-} from './particleEmitter';
+} from './particleEmitter.ts';
 
 function makeAtlasRegion(id = 0, x = 0, y = 0, width = 32, height = 32): TextureAtlasRegion {
   return {

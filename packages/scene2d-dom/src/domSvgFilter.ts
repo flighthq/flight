@@ -1,6 +1,6 @@
 import type { ConvolutionEffect, DisplacementEffect, DomRenderState, Node2D } from '@flighthq/types/contract';
 
-import { setDomCssFilter } from './domCSSFilterBinding';
+import { setDomCssFilter } from './domCSSFilterBinding.ts';
 
 export function applyDomSvgFilterToNode(
   state: DomRenderState,

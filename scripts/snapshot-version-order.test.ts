@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isSnapshotVersionSuperseded } from './snapshot-version-order.js';
+import { isSnapshotVersionSuperseded } from './snapshot-version-order.ts';
 
 describe('isSnapshotVersionSuperseded', () => {
   it('supersedes an older snapshot by build count', () => {

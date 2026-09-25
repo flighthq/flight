@@ -19,14 +19,14 @@ import {
   setCamera3DViewMatrix4FromLookAt,
   setCamera3DViewMatrix4FromMatrix4,
   updateCamera3DInverseViewProjection,
-} from './camera';
+} from './camera.ts';
 import {
   createOrthographicProjection,
   createPerspectiveProjection,
   createRawProjection,
   setProjectionMatrix4,
-} from './projection';
-import { applyObliqueNearClipPlane } from './reflection';
+} from './projection.ts';
+import { applyObliqueNearClipPlane } from './reflection.ts';
 
 describe('createCamera3D', () => {
   it('stores projection, near, far and identity view/inverse with zero jitter', () => {

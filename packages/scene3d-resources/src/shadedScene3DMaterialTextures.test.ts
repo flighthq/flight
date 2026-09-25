@@ -2,8 +2,8 @@ import { createShadedMaterial } from '@flighthq/shading/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { Texture } from '@flighthq/types/contract';
 
-import { createScene3DMaterialTextureRegistry, getScene3DMaterialTextures } from './sceneMaterialTextureRegistry';
-import { registerShadedScene3DMaterialTextures } from './shadedScene3DMaterialTextures';
+import { createScene3DMaterialTextureRegistry, getScene3DMaterialTextures } from './sceneMaterialTextureRegistry.ts';
+import { registerShadedScene3DMaterialTextures } from './shadedScene3DMaterialTextures.ts';
 
 describe('registerShadedScene3DMaterialTextures', () => {
   it('lists the diffuse, normal and specular maps', () => {

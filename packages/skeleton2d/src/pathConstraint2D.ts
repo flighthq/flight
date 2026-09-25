@@ -17,10 +17,10 @@ import {
   Skeleton2DPathSpacingMode,
 } from '@flighthq/types/contract';
 
-import { deformSkeleton2DPathAttachment } from './deformPathAttachment2D';
-import { computeSkeleton2DBoneWorldTransform } from './skeleton2d';
-import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants';
-import { registerSkeleton2DConstraintSolver } from './skeleton2dConstraint';
+import { deformSkeleton2DPathAttachment } from './deformPathAttachment2D.ts';
+import { computeSkeleton2DBoneWorldTransform } from './skeleton2d.ts';
+import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants.ts';
+import { registerSkeleton2DConstraintSolver } from './skeleton2dConstraint.ts';
 
 function assignPathFields(
   out: EntityConstruction<Path>,

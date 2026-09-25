@@ -1,5 +1,5 @@
-import type { Attachment2D } from './Attachment2D';
-import type { Skin2D } from './Skin2D';
+import type { Attachment2D } from './Attachment2D.ts';
+import type { Skin2D } from './Skin2D.ts';
 
 // A deformable 2D triangle mesh attached to a slot — the Spine mesh attachment. Its deformed world
 // vertices are produced by deformSkeleton2DMeshAttachment into a flat interleaved [x0,y0,x1,y1,…]

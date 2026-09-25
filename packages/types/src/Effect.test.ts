@@ -1,5 +1,5 @@
-import type { Effect } from './Effect';
-import { EntityRuntimeKey } from './Entity';
+import type { Effect } from './Effect.ts';
+import { EntityRuntimeKey } from './Entity.ts';
 
 describe('Effect', () => {
   describe('open base contract', () => {

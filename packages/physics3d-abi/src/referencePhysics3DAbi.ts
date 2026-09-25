@@ -110,7 +110,7 @@ import {
   Physics3DAbiShapeHeaderByteLength,
   Physics3DAbiShapeKind,
   Physics3DAbiVersion,
-} from './physics3DAbiLayout';
+} from './physics3DAbiLayout.ts';
 
 export function createReferencePhysics3DAbi(): Physics3DAbi {
   const out = allocateEntity<Physics3DAbi>();

@@ -44,7 +44,7 @@ import {
   capacitorHostVideo,
   capacitorHostWgpu,
   capacitorHostWindow,
-} from './capacitorDefaultHostGroups';
+} from './capacitorDefaultHostGroups.ts';
 
 describe('capacitorHostAccessibility', () => {
   it('claims no accessibility slots', () => expect(capacitorHostAccessibility()).toEqual({}));

@@ -4,10 +4,10 @@ import type {
   GlPbrExtensionShaderContribution,
 } from '@flighthq/types/contract';
 
-import { registerGlPbrExtension } from './glPbrExtensionRegistry';
-import { compileGlPbrProgram, ensureGlPbrProgram } from './glPbrProgramCache';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
+import { registerGlPbrExtension } from './glPbrExtensionRegistry.ts';
+import { compileGlPbrProgram, ensureGlPbrProgram } from './glPbrProgramCache.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 function makeKey(overrides?: Partial<GlPbrDefineKey>): GlPbrDefineKey {
   return {

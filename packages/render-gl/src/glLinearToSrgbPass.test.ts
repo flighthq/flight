@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import { drawGlLinearToSrgbPass, LINEAR_TO_SRGB_FRAGMENT_SRC } from './glLinearToSrgbPass';
-import { createGlState } from './glTestHelper';
+import { drawGlLinearToSrgbPass, LINEAR_TO_SRGB_FRAGMENT_SRC } from './glLinearToSrgbPass.ts';
+import { createGlState } from './glTestHelper.ts';
 
 function makeTarget(
   framebuffer: WebGLFramebuffer,

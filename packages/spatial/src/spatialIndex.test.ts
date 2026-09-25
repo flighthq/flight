@@ -12,8 +12,8 @@ import {
   querySpatialRegion2D,
   removeSpatialObject2D,
   updateSpatialObject2D,
-} from './spatialIndex';
-import { createUniformGridSpatialBackend2D } from './uniformGrid';
+} from './spatialIndex.ts';
+import { createUniformGridSpatialBackend2D } from './uniformGrid.ts';
 
 function makeIndex(cellSize = 10): SpatialIndex2D {
   return createSpatialIndex2D(createUniformGridSpatialBackend2D(cellSize));

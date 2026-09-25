@@ -1,9 +1,9 @@
 import { createMatrix4 } from '@flighthq/geometry/contract';
 import { describe, expect, test } from 'vitest';
 
-import { createCamera3D, setCamera3DViewMatrix4FromLookAt, setCamera3DViewMatrix4FromMatrix4 } from './camera';
-import { explainCamera3DView } from './explainCamera3DView';
-import { createPerspectiveProjection } from './projection';
+import { createCamera3D, setCamera3DViewMatrix4FromLookAt, setCamera3DViewMatrix4FromMatrix4 } from './camera.ts';
+import { explainCamera3DView } from './explainCamera3DView.ts';
+import { createPerspectiveProjection } from './projection.ts';
 
 describe('explainCamera3DView', () => {
   test('accepts a rigid lookAt view', () => {

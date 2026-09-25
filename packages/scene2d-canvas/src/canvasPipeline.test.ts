@@ -1,4 +1,4 @@
-import { allocateEmptyCanvasRenderRegistries, initializeEmptyCanvasRenderRegistries } from './canvasPipeline';
+import { allocateEmptyCanvasRenderRegistries, initializeEmptyCanvasRenderRegistries } from './canvasPipeline.ts';
 
 describe('allocateEmptyCanvasRenderRegistries', () => {
   it('returns registries with empty tables', () => {

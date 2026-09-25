@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { captureSnapshot } from './captureSnapshot';
-import { restoreSnapshot } from './restoreSnapshot';
+import { captureSnapshot } from './captureSnapshot.ts';
+import { restoreSnapshot } from './restoreSnapshot.ts';
 
 describe('restoreSnapshot', () => {
   it('writes a snapshot back into a live target', () => {

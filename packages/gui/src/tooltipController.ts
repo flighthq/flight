@@ -8,7 +8,7 @@ import {
   getGuiControllerRuntime,
   setGuiVisible,
   setGuiVisualProperty,
-} from './guiController';
+} from './guiController.ts';
 
 interface TooltipControllerFields {
   content: Node2D | null;

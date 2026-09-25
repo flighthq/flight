@@ -21,9 +21,9 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { explainGlScene3DCoverage, hasGlScene3DCoverage } from './explainGlScene3DCoverage';
-import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+import { explainGlScene3DCoverage, hasGlScene3DCoverage } from './explainGlScene3DCoverage.ts';
+import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 const coverageCatalog: SceneCoverageCatalog = [
   {

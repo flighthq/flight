@@ -1,7 +1,7 @@
 import type { Scene3DMaterialTextureRegistry, WrappedDiffusePbrExtension } from '@flighthq/types/contract';
 import { WrappedDiffusePbrExtensionKind } from '@flighthq/types/contract';
 
-import { registerScene3DPbrExtensionTextures } from './sceneMaterialTextureRegistry';
+import { registerScene3DPbrExtensionTextures } from './sceneMaterialTextureRegistry.ts';
 
 export function registerWrappedDiffusePbrScene3DMaterialTextures(registry: Scene3DMaterialTextureRegistry): void {
   registerScene3DPbrExtensionTextures(registry, WrappedDiffusePbrExtensionKind, (extension, out): void => {

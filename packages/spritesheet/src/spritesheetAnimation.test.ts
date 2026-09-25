@@ -1,12 +1,12 @@
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
 
-import { createSpritesheet } from './spritesheet';
+import { createSpritesheet } from './spritesheet.ts';
 import {
   createSpritesheetAnimation,
   createSpritesheetAnimationFromFrameNames,
   initializeSpritesheetAnimation,
-} from './spritesheetAnimation';
-import { createSpritesheetFrame } from './spritesheetFrame';
+} from './spritesheetAnimation.ts';
+import { createSpritesheetFrame } from './spritesheetFrame.ts';
 
 describe('createSpritesheetAnimation', () => {
   it('defaults direction to forward and frameDurations to null', () => {

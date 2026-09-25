@@ -75,4 +75,4 @@ export interface HostGeolocationCapability {
   // permission API instead of emulating the web's acquire-and-discard workaround.
   promptForAccess(): Promise<GeolocationAccessOutcome>;
 }
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';

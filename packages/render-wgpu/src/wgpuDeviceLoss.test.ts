@@ -8,13 +8,13 @@ import {
   getWgpuDeviceLoss,
   isWgpuDeviceLost,
   observeWgpuDeviceLoss,
-} from './wgpuDeviceLoss';
+} from './wgpuDeviceLoss.ts';
 import {
   createWgpuDeviceState,
   createWgpuOffscreenRenderState,
   createWgpuRenderStateRuntime,
   getWgpuRenderStateRuntime,
-} from './wgpuRenderState';
+} from './wgpuRenderState.ts';
 
 // A device whose loss the test drives by hand. `lost` is the only member the observer reads, so the
 // rest of GPUDevice stays absent on purpose: a probe that needed a full device would be testing the

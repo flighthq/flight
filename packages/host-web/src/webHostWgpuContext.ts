@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { HostWgpuCapability, WgpuHostAcquisition, WgpuSurfaceAttachResult } from '@flighthq/types/contract';
 
-import { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle } from './webSurfaceHandle';
+import { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle } from './webSurfaceHandle.ts';
 
 function createWebHostWgpuContext(): HostWgpuCapability {
   const out = {} as HostWgpuCapability;

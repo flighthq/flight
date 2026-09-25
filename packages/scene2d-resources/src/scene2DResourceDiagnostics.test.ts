@@ -4,22 +4,22 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { Scene2DResourceFailureNotice } from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 
-import { loadScene2DAudioResources } from './loadScene2DAudioResources';
-import { loadScene2DImageResources } from './loadScene2DImageResources';
-import { resolveScene2DResources } from './resolveScene2DResources';
-import { createScene2DDocument, createScene2DSlotReference } from './scene2DDocument';
+import { loadScene2DAudioResources } from './loadScene2DAudioResources.ts';
+import { loadScene2DImageResources } from './loadScene2DImageResources.ts';
+import { resolveScene2DResources } from './resolveScene2DResources.ts';
+import { createScene2DDocument, createScene2DSlotReference } from './scene2DDocument.ts';
 import {
   createScene2DDocumentFromBytes,
   createScene2DDocumentImporterRegistry,
   registerScene2DDocumentImporter,
-} from './scene2DDocumentImporterRegistry';
-import { loadScene2DDocumentFromUrl } from './scene2DDocumentSource';
+} from './scene2DDocumentImporterRegistry.ts';
+import { loadScene2DDocumentFromUrl } from './scene2DDocumentSource.ts';
 import {
   explainScene2DResourceCoverage,
   reportScene2DResourceFailure,
   setScene2DResourceFailureGuard,
-} from './scene2DResourceDiagnostics';
-import { setScene2DSlotReferenceContent } from './scene2DSlotReference';
+} from './scene2DResourceDiagnostics.ts';
+import { setScene2DSlotReferenceContent } from './scene2DSlotReference.ts';
 
 function notice(reason: Scene2DResourceFailureNotice['reason']): Scene2DResourceFailureNotice {
   return { operation: 'resolveScene2DResources', reason, total: 2, unresolved: 1, url: null };

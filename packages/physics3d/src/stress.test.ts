@@ -8,10 +8,10 @@ import {
 import type { CollisionBuiltInShape3D, Physics3DMaterial, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { createPhysics3DBallAndSocketJoint } from './jointFactories';
-import { addPhysics3DJoint } from './jointRegistry';
-import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
-import { stepPhysics3D } from './step';
+import { createPhysics3DBallAndSocketJoint } from './jointFactories.ts';
+import { addPhysics3DJoint } from './jointRegistry.ts';
+import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers.ts';
+import { stepPhysics3D } from './step.ts';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,
@@ -19,7 +19,7 @@ import {
   createPhysics3DWorld,
   createRigidBody3D,
   setPhysics3DBodyFixedRotation,
-} from './world';
+} from './world.ts';
 
 // Long-horizon qualification. These do not test one function; they test that the ASSEMBLED step stays
 // finite, stays deterministic, and reuses its storage over thousands of solves — the failures that only

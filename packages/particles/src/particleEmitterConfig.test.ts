@@ -1,4 +1,4 @@
-import { createParticleEmitterConfig } from './particleEmitterConfig';
+import { createParticleEmitterConfig } from './particleEmitterConfig.ts';
 
 describe('createParticleEmitterConfig', () => {
   it('returns defaults when called with no arguments', () => {

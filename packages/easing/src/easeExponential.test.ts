@@ -1,4 +1,4 @@
-import { easeInExponential, easeInOutExponential, easeOutExponential } from './easeExponential';
+import { easeInExponential, easeInOutExponential, easeOutExponential } from './easeExponential.ts';
 
 describe('easeInExponential', () => {
   it('returns 0 at t=0 and 1 at t=1', () => {

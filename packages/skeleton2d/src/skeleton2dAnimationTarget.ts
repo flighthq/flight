@@ -21,7 +21,7 @@ import {
   Skeleton2DSlotAnimationPath as SlotPath,
 } from '@flighthq/types/contract';
 
-import { reportSkeleton2DCoercedInterpolation } from './skeleton2dGuards';
+import { reportSkeleton2DCoercedInterpolation } from './skeleton2dGuards.ts';
 
 export function createSkeleton2DBoneAnimationTarget(
   boneIndex: number,

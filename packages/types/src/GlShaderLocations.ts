@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { GlShader } from './GlShader';
+import type { Entity } from './Entity.ts';
+import type { GlShader } from './GlShader.ts';
 
 export interface GlShaderLocations {
   program: WebGLProgram;

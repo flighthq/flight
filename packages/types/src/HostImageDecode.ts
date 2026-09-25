@@ -1,5 +1,5 @@
-import type { DecodedImage } from './DecodedImage';
-import type { ImageDecodeOptions } from './ImageDecodeOptions';
+import type { DecodedImage } from './DecodedImage.ts';
+import type { ImageDecodeOptions } from './ImageDecodeOptions.ts';
 
 export interface HostImageDecodeFormatCapability {
   decode(bytes: Readonly<Uint8Array>, options?: Readonly<ImageDecodeOptions>): Promise<DecodedImage>;

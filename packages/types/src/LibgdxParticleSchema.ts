@@ -1,5 +1,5 @@
-import type { ImportDiagnostic } from './ImportDiagnostic';
-import type { ParticleEmitterConfig } from './ParticleEmitterConfig';
+import type { ImportDiagnostic } from './ImportDiagnostic.ts';
+import type { ParticleEmitterConfig } from './ParticleEmitterConfig.ts';
 
 // libGDX 2D Particle Editor (.p) format schema.
 // Targets the libGDX particle effect format as produced by the libGDX 2D Particle Editor

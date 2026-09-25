@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Entity } from './Entity';
-import type { SignalConnection } from './SignalConnection';
+import type { Entity } from './Entity.ts';
+import type { SignalConnection } from './SignalConnection.ts';
 /**
  * A collection of `SignalConnection` handles that can all be torn down in one
  * call to `disconnectSignalScope`. The canonical pattern for component teardown:

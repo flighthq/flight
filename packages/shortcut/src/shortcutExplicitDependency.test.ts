@@ -2,8 +2,8 @@ import { connectSignal } from '@flighthq/signals/contract';
 import type { AcceleratorParseError, Entity, Signal } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import * as shortcutExports from './shortcutExplicitDependency';
-import { initializeGlobalShortcut } from './shortcutExplicitDependency';
+import * as shortcutExports from './shortcutExplicitDependency.ts';
+import { initializeGlobalShortcut } from './shortcutExplicitDependency.ts';
 
 interface GlobalShortcutLike extends Entity {
   readonly accelerator: string;

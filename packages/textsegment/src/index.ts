@@ -13,4 +13,4 @@ export {
   segmentSentences,
   segmentWords,
   webTextSegmenterBackend,
-} from './contract';
+} from './contract.ts';

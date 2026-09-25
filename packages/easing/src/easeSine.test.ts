@@ -1,4 +1,4 @@
-import { easeInOutSine, easeInSine, easeOutSine } from './easeSine';
+import { easeInOutSine, easeInSine, easeOutSine } from './easeSine.ts';
 
 describe('easeInOutSine', () => {
   it('returns 0 at t=0 and 1 at t=1', () => {

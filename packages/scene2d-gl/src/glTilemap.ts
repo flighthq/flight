@@ -21,7 +21,7 @@ import {
   prepareGlQuadBatchWrite,
   recordGlQuadBatchColorScaleBias,
   writeGlQuadBatchAffineInstance,
-} from './glQuadBatchWriter';
+} from './glQuadBatchWriter.ts';
 
 function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void {
   const runtime = getGlRenderStateRuntime(state);

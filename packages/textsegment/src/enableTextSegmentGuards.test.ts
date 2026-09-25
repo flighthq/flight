@@ -2,9 +2,9 @@ import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
-import { disableTextSegmentGuards, enableTextSegmentGuards } from './enableTextSegmentGuards';
-import { segmentGraphemes } from './textSegment';
-import { webTextSegmenterBackend } from './textSegmenterBackend';
+import { disableTextSegmentGuards, enableTextSegmentGuards } from './enableTextSegmentGuards.ts';
+import { segmentGraphemes } from './textSegment.ts';
+import { webTextSegmenterBackend } from './textSegmenterBackend.ts';
 
 const backend = webTextSegmenterBackend;
 

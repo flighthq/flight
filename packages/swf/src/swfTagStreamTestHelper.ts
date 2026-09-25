@@ -1,7 +1,7 @@
 import type { SwfTagHandlerDispatch, SwfTagParseState } from '@flighthq/types/contract';
 
-import { expandSwfTagHandlerDispatch } from './expandSwfTagHandlerDispatch';
-import { swfAllTagHandlers } from './swfAllTagHandlers';
+import { expandSwfTagHandlerDispatch } from './expandSwfTagHandlerDispatch.ts';
+import { swfAllTagHandlers } from './swfAllTagHandlers.ts';
 
 // Builds the SWF containers and tag records the importer tests read. A test that asserts on what the
 // importer does with a document needs a document to hand it, and hand-writing the bit-packed RECT and

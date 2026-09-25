@@ -2,7 +2,7 @@ import {
   applyLensFlareEffectToWgpu,
   wgpuLensFlareEffectRunner,
   registerWgpuLensFlareEffect,
-} from './wgpuLensFlareEffect';
+} from './wgpuLensFlareEffect.ts';
 
 describe('applyLensFlareEffectToWgpu', () => {
   it('is a function', () => {

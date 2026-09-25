@@ -10,7 +10,7 @@ import {
   getClaimedTone,
   readSceneBackgroundClaims,
   readSceneDescriptors,
-} from './verify-expected-image-backgrounds';
+} from './verify-expected-image-backgrounds.ts';
 
 describe('getBackgroundTone', () => {
   // ★ BLACK AND NEAR-BLACK ARE DIFFERENT BUCKETS, WHICH IS THE ENTIRE POINT OF THE CHECK. The confirmed

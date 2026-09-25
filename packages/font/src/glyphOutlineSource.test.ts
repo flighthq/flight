@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   allocateGlyphRasterizerBackendFromGlyphOutlineSource,
   initializeGlyphRasterizerBackendFromGlyphOutlineSource,
-} from './glyphOutlineSource';
+} from './glyphOutlineSource.ts';
 
 describe('allocateGlyphRasterizerBackendFromGlyphOutlineSource', () => {
   it('maps codepoints to glyph indices and rasterizes design-unit outlines at the requested em size', () => {

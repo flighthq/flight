@@ -22,10 +22,10 @@ import type {
   Spatial2DNode,
 } from '@flighthq/types/contract';
 
-import { getNodeChildCount, getNodeParent } from './hierarchy';
-import { getNodeRuntime } from './node';
-import { ensureNodeWorldMatrix, getNodeLocalMatrix, getNodeWorldMatrix } from './nodeTransform2d';
-import { invalidateNodeLocalTransform } from './revision';
+import { getNodeChildCount, getNodeParent } from './hierarchy.ts';
+import { getNodeRuntime } from './node.ts';
+import { ensureNodeWorldMatrix, getNodeLocalMatrix, getNodeWorldMatrix } from './nodeTransform2d.ts';
+import { invalidateNodeLocalTransform } from './revision.ts';
 
 /**
  * Writes a rectangle which defines the area of the scene node

@@ -5,14 +5,14 @@ import { enableTextInput } from '@flighthq/textinput/contract';
 import { createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import { RichTextKind } from '@flighthq/types/contract';
 
-import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
+import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
 import {
   domRichTextRenderer,
   drawDomRichText,
   drawDomRichTextMask,
   initializeDomRichTextData,
   registerDomTextInputOverlay,
-} from './domRichText';
+} from './domRichText.ts';
 
 function makeState() {
   const container = document.createElement('div');

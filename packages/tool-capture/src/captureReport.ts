@@ -1,7 +1,7 @@
 import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
-import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
+import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.ts';
 
 export const CAPTURE_REPORT_VERSION = 1 as const;
 

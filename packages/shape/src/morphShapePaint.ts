@@ -17,7 +17,7 @@ import type {
   Texture,
 } from '@flighthq/types/contract';
 
-import { getMorphShapeGradientEndpointIssue } from './explainMorphShapeGradientEndpoints';
+import { getMorphShapeGradientEndpointIssue } from './explainMorphShapeGradientEndpoints.ts';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
@@ -25,7 +25,7 @@ import {
   appendShapeLineGradientStyle,
   appendShapeLineStyle,
   appendShapeLineTextureStyle,
-} from './shapeCommands';
+} from './shapeCommands.ts';
 
 // Appends an ordinary beginFill command backed by a stable start/end paint binding. Geometry and paint
 // share MorphShape.progress and are sampled atomically by setMorphShapeProgress.

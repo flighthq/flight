@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Node3D } from './Node3D';
+import type { Entity } from './Entity.ts';
+import type { Node3D } from './Node3D.ts';
 
 // A skin: an ordered set of joint (bone) Node3Ds plus their inverse-bind matrices, and the computed
 // skin palette the renderer (or a CPU skinner) consumes. The joints are ordinary Node3Ds in the scene

@@ -18,7 +18,7 @@ import {
 } from '@flighthq/geometry/contract';
 import type { Matrix4 } from '@flighthq/types/contract';
 
-import { initializeFrustum } from './frustum';
+import { initializeFrustum } from './frustum.ts';
 
 // View-projection for a camera at (0,0,5) looking toward the origin down -z.
 function createTestViewProjection(): Matrix4 {

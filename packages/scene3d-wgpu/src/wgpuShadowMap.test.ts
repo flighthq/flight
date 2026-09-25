@@ -26,16 +26,16 @@ import {
 import type { Camera3D, Scene3DLightsLike, Node3D, Skeleton3D } from '@flighthq/types/contract';
 import { DIRECTIONAL_SHADOW_MAP_SIZE } from '@flighthq/types/contract';
 
-import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMaterial';
-import { renderWgpuScene3D } from './renderWgpuScene3D';
-import { getWgpuClassicModuleSourceForKey } from './wgpuClassicPrelude';
-import { WGPU_DIRECTIONAL_SHADOW_WGSL } from './wgpuMeshPipeline';
-import { getWgpuPbrModuleSourceForKey } from './wgpuPbrPrelude';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
-import { destroyWgpuScene3DShadow, renderWgpuScene3DShadowMap } from './wgpuShadowMap';
-import { registerWgpuGpuSkinning } from './wgpuSkinPalette';
-import { buildWgpuPbrStandardDefineKey } from './wgpuStandardPbrMeshMaterialRenderer';
+import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMaterial.ts';
+import { renderWgpuScene3D } from './renderWgpuScene3D.ts';
+import { getWgpuClassicModuleSourceForKey } from './wgpuClassicPrelude.ts';
+import { WGPU_DIRECTIONAL_SHADOW_WGSL } from './wgpuMeshPipeline.ts';
+import { getWgpuPbrModuleSourceForKey } from './wgpuPbrPrelude.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
+import { destroyWgpuScene3DShadow, renderWgpuScene3DShadowMap } from './wgpuShadowMap.ts';
+import { registerWgpuGpuSkinning } from './wgpuSkinPalette.ts';
+import { buildWgpuPbrStandardDefineKey } from './wgpuStandardPbrMeshMaterialRenderer.ts';
 
 const LIGHTS: Scene3DLightsLike = {
   ambient: createAmbientLight({ color: 0xffffffff, intensity: 0.2 }),

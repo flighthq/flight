@@ -2,7 +2,7 @@ import {
   applyWhiteBalanceEffectToWgpu,
   wgpuWhiteBalanceEffectRunner,
   registerWgpuWhiteBalanceEffect,
-} from './wgpuWhiteBalanceEffect';
+} from './wgpuWhiteBalanceEffect.ts';
 
 describe('applyWhiteBalanceEffectToWgpu', () => {
   it('is a function', () => {

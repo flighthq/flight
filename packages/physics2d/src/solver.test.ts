@@ -9,9 +9,9 @@ import {
   solvePhysics2DContacts,
   warmStartPhysics2DContactIndices,
   warmStartPhysics2DContacts,
-} from './solver';
-import { stepPhysics2D } from './step';
-import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world';
+} from './solver.ts';
+import { stepPhysics2D } from './step.ts';
+import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
 

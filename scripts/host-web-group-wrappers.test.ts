@@ -3,8 +3,8 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import * as hostWebContract from '../packages/host-web/src/contract';
-import * as hostWebPublic from '../packages/host-web/src/index';
+import * as hostWebContract from '../packages/host-web/src/contract.ts';
+import * as hostWebPublic from '../packages/host-web/src/index.ts';
 
 const root = process.cwd();
 const GROUP_MODULES = [

@@ -1,4 +1,4 @@
-export * from './enableMovieClipGuards';
+export * from './enableMovieClipGuards.ts';
 export {
   addMovieClipFrameScript,
   createMovieClip,
@@ -19,5 +19,5 @@ export {
   setMovieClipSource,
   stopMovieClip,
   updateMovieClip,
-} from './movieClip';
-export { createSpritesheetTimelineSource, explainSpritesheetTimelineSource } from './spritesheetTimelineSource';
+} from './movieClip.ts';
+export { createSpritesheetTimelineSource, explainSpritesheetTimelineSource } from './spritesheetTimelineSource.ts';

@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import { presentGlRenderTarget } from './glPresentRenderTarget';
-import { createGlState } from './glTestHelper';
+import { presentGlRenderTarget } from './glPresentRenderTarget.ts';
+import { createGlState } from './glTestHelper.ts';
 
 function makeTarget(colorSpace: 'linear' | 'srgb', texture: WebGLTexture): GlTextureRenderTarget {
   const format = colorSpace === 'linear' ? 'rgba16f' : 'rgba8';

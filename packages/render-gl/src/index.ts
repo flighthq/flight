@@ -1,41 +1,41 @@
-export { enableGlRenderStateGuards } from './enableGlRenderStateGuards';
-export { enableGlRenderTextureGuards } from './enableGlRenderTextureGuards';
-export { enableGlTextureResolverGuards } from './enableGlTextureResolverGuards';
-export * from './explainGlTextureResolution';
-export { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
+export { enableGlRenderStateGuards } from './enableGlRenderStateGuards.ts';
+export { enableGlRenderTextureGuards } from './enableGlRenderTextureGuards.ts';
+export { enableGlTextureResolverGuards } from './enableGlTextureResolverGuards.ts';
+export * from './explainGlTextureResolution.ts';
+export { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture.ts';
 export {
   beginGlCubeRenderFace,
   createGlCubeRenderTarget,
   destroyGlCubeRenderTarget,
   endGlCubeRenderFace,
-} from './glCubeRenderTarget';
-export { enableGlBlendModeSupport, standardGlBlendRealizations } from './glDraw';
-export { createExternalGlTexture, disposeExternalGlTexture } from './glExternalTexture';
-export { clearGlRenderTarget, clearGlRenderTargetAttachments } from './glFullscreenPass';
-export * from './glPresentRenderTarget';
-export * from './glQuadMaterialRegistry';
-export { beginGlRenderPass, endGlRenderPass, getGlCurrentRenderPass } from './glRenderPass';
-export { buildGlRenderRegistries, createGlRenderState, destroyGlRenderState } from './glRenderState';
-export * from './glRenderStateBracket';
+} from './glCubeRenderTarget.ts';
+export { enableGlBlendModeSupport, standardGlBlendRealizations } from './glDraw.ts';
+export { createExternalGlTexture, disposeExternalGlTexture } from './glExternalTexture.ts';
+export { clearGlRenderTarget, clearGlRenderTargetAttachments } from './glFullscreenPass.ts';
+export * from './glPresentRenderTarget.ts';
+export * from './glQuadMaterialRegistry.ts';
+export { beginGlRenderPass, endGlRenderPass, getGlCurrentRenderPass } from './glRenderPass.ts';
+export { buildGlRenderRegistries, createGlRenderState, destroyGlRenderState } from './glRenderState.ts';
+export * from './glRenderStateBracket.ts';
 export {
   createGlScreenRenderTarget,
   createGlTextureRenderTarget,
   destroyGlTextureRenderTarget,
   explainGlTextureRenderTarget,
   isGlRenderTargetFormatSupported,
-} from './glRenderTarget';
+} from './glRenderTarget.ts';
 export {
   clearGlRenderTexture,
   destroyGlRenderTexture,
   explainGlRenderTexture,
   renderIntoGlRenderTexture,
-} from './glRenderTexture';
+} from './glRenderTexture.ts';
 export {
   acquireGlRenderTexture,
   createGlRenderTexturePool,
   destroyGlRenderTexturePool,
   releaseGlRenderTexture,
   withGlRenderTextures,
-} from './glRenderTexturePool';
-export * from './glRenderView';
-export * from './glTextureResolver';
+} from './glRenderTexturePool.ts';
+export * from './glRenderView.ts';
+export * from './glTextureResolver.ts';

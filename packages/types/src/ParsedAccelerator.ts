@@ -1,5 +1,5 @@
-import type { ShortcutKeyName } from './ShortcutKeyName';
-import type { ShortcutModifier } from './ShortcutModifier';
+import type { ShortcutKeyName } from './ShortcutKeyName.ts';
+import type { ShortcutModifier } from './ShortcutModifier.ts';
 
 // The decomposed form of an accelerator: its canonical key token plus its modifiers in canonical
 // order. Written into by parseAccelerator as an `out` argument (allocate with makeParsedAccelerator).

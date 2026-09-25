@@ -1,4 +1,4 @@
-import { swfPlaceObjectHandler } from './swfPlaceObjectHandler';
+import { swfPlaceObjectHandler } from './swfPlaceObjectHandler.ts';
 
 describe('swfPlaceObjectHandler', () => {
   it('claims the legacy and PlaceObject2 placement tags', () => {

@@ -15,9 +15,9 @@ import type {
 } from '@flighthq/types/contract';
 import { NormalMaterialKind } from '@flighthq/types/contract';
 
-import { bindWgpuDebugSurface, ensureWgpuDebugPipeline } from './wgpuDebugPrelude';
-import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline';
+import { bindWgpuDebugSurface, ensureWgpuDebugPipeline } from './wgpuDebugPrelude.ts';
+import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline.ts';
 
 // The built-in Normal forward renderer (WgpuMeshMaterialRenderer for NormalMaterialKind) — the WGSL
 // mirror of glNormalMeshMaterialRenderer. A lighting-independent debug/utility pass material: bind

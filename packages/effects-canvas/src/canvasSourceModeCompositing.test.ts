@@ -1,11 +1,11 @@
-import { createCanvasTextureRenderTarget } from './canvasEffectTestSupport';
+import { createCanvasTextureRenderTarget } from './canvasEffectTestSupport.ts';
 import {
   clearCanvasTarget,
   compositeCanvasImage,
   compositeCanvasSourceMode,
   drawCanvasInvertedTintedAlphaMask,
   drawCanvasTintedAlphaMask,
-} from './canvasSourceModeCompositing';
+} from './canvasSourceModeCompositing.ts';
 
 describe('clearCanvasTarget', () => {
   it('is a function', () => {

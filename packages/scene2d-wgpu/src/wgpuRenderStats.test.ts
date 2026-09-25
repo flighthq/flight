@@ -5,7 +5,7 @@ import {
   recordWgpuBatchFlush,
   recordWgpuTextureUpload,
   resetWgpuRenderStats,
-} from './wgpuRenderStats';
+} from './wgpuRenderStats.ts';
 
 beforeAll(() => {
   installWgpuMock();

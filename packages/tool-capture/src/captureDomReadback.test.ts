@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { provideCaptureDomRenderPixels } from './captureDomReadback';
+import { provideCaptureDomRenderPixels } from './captureDomReadback.ts';
 
 describe('provideCaptureDomRenderPixels', () => {
   it('screenshots the registered DOM target and supplies its encoded image to the page bridge', async () => {

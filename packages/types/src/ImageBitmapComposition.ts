@@ -1,7 +1,7 @@
-import type { Bitmap } from './Bitmap';
-import type { DecodedImage } from './DecodedImage';
-import type { HostImageDecodeCapabilities } from './HostImageDecode';
-import type { EmbeddedImageResourceReference } from './ImageResourceReference';
+import type { Bitmap } from './Bitmap.ts';
+import type { DecodedImage } from './DecodedImage.ts';
+import type { HostImageDecodeCapabilities } from './HostImageDecode.ts';
+import type { EmbeddedImageResourceReference } from './ImageResourceReference.ts';
 
 // Plain data selecting an explicitly registered pixel composer. `payload` belongs to the producer that
 // declared `kind`; the shared image lane only carries it to that composer after ordinary MIME decoding.

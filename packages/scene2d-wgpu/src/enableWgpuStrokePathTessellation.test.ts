@@ -5,7 +5,7 @@ import {
   installWgpuMock,
 } from '@flighthq/render-wgpu/contract';
 
-import { enableWgpuStrokePathTessellation } from './enableWgpuStrokePathTessellation';
+import { enableWgpuStrokePathTessellation } from './enableWgpuStrokePathTessellation.ts';
 
 beforeAll(() => {
   installWgpuMock();

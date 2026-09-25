@@ -15,9 +15,9 @@ import {
   createAnimationSampleAccumulator,
   finishAnimationSample,
   resetAnimationSampleAccumulator,
-} from './animationBlend';
-import { advanceAnimationPlayer } from './animationPlayer';
-import { sampleAnimationTrack } from './animationTrack';
+} from './animationBlend.ts';
+import { advanceAnimationPlayer } from './animationPlayer.ts';
+import { sampleAnimationTrack } from './animationTrack.ts';
 
 // Advances each distinct player referenced by the tree exactly once. Leaves sharing a player can weight
 // it differently without multiplying playhead speed.

@@ -1,3 +1,3 @@
-export * from './decodeImage';
-export * from './detectImageMimeType';
-export * from './encodeImage';
+export * from './decodeImage.ts';
+export * from './detectImageMimeType.ts';
+export * from './encodeImage.ts';

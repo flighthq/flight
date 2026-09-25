@@ -7,7 +7,7 @@ import type {
 } from '@flighthq/types/contract';
 import { TransmissionVolumePbrExtensionKind } from '@flighthq/types/contract';
 
-import { attachGltfPbrExtension, findGltfPbrExtension } from './gltfMaterialExtension';
+import { attachGltfPbrExtension, findGltfPbrExtension } from './gltfMaterialExtension.ts';
 
 // The three glTF extensions that share ONE Flight descriptor: refraction through a finite absorbing
 // volume is a single shading concept, so `TransmissionVolumePbrExtension` carries transmission, volume,

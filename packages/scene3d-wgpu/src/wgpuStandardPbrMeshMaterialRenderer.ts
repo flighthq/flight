@@ -26,8 +26,8 @@ import {
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
   writeWgpuFrameUniform,
-} from './wgpuMeshPipeline';
-import { ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache';
+} from './wgpuMeshPipeline.ts';
+import { ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache.ts';
 
 // The Material uniform float count (MaterialBlock = 48 floats / 192 bytes). Exported so the extension
 // renderers, which write extension factors into the shared scratch through the helpers here, agree on

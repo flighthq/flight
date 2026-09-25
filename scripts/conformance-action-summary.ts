@@ -2,8 +2,11 @@ import { appendFileSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { parseImportConformanceScore, type ImportConformanceScore } from '../conformance/core/import-conformance-score';
-import type { FixtureImportConformanceReport } from '../conformance/fixtures/import-fixture-conformance';
+import {
+  parseImportConformanceScore,
+  type ImportConformanceScore,
+} from '../conformance/core/import-conformance-score.ts';
+import type { FixtureImportConformanceReport } from '../conformance/fixtures/import-fixture-conformance.ts';
 
 const FIXTURE_REPORT_PATH = '.artifacts/conformance/fixture-imports.json';
 const SWF_REPORT_PATH = '.artifacts/import-conformance/score.json';

@@ -9,4 +9,4 @@ export {
   measureDebugSpan,
   registerDebugSubsystem,
   unregisterDebugSubsystem,
-} from './contract';
+} from './contract.ts';

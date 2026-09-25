@@ -1,11 +1,11 @@
 import type { VertexAttributeLayout } from '@flighthq/types/contract';
 
-import { createMeshGeometry } from './meshGeometry';
+import { createMeshGeometry } from './meshGeometry.ts';
 import {
   CANONICAL_MESH_GEOMETRY_LAYOUT,
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   convertMeshGeometryLayout,
-} from './meshGeometryLayout';
+} from './meshGeometryLayout.ts';
 
 // Minimal position-only layout: 3 floats / 12 bytes.
 const POSITION_ONLY_LAYOUT: VertexAttributeLayout = {

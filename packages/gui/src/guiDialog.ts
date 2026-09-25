@@ -17,7 +17,7 @@ import {
   disposeGuiController,
   getGuiControllerRuntime,
   setGuiVisible,
-} from './guiController';
+} from './guiController.ts';
 
 interface GuiDialogFields {
   backdrop: Node2D | null;

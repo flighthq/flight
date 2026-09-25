@@ -1,5 +1,5 @@
-import { createBitmap } from './bitmap';
-import { ImageChannel } from './bitmapImageChannel';
+import { createBitmap } from './bitmap.ts';
+import { ImageChannel } from './bitmapImageChannel.ts';
 import {
   getBitmapPixel,
   getBitmapPixelChannel,
@@ -7,7 +7,7 @@ import {
   getBitmapPixelRgb,
   setBitmapPixel,
   setBitmapPixelRgb,
-} from './bitmapPixel';
+} from './bitmapPixel.ts';
 
 describe('getBitmapPixel', () => {
   it('reads back a full 0xRRGGBBAA value written by setBitmapPixel', () => {

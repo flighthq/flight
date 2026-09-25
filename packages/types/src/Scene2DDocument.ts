@@ -1,7 +1,7 @@
-import type { AudioResourceReference } from './AudioResourceReference';
-import type { Entity } from './Entity';
-import type { ImageResourceReference } from './ImageResourceReference';
-import type { Node2D } from './Node2D';
+import type { AudioResourceReference } from './AudioResourceReference.ts';
+import type { Entity } from './Entity.ts';
+import type { ImageResourceReference } from './ImageResourceReference.ts';
+import type { Node2D } from './Node2D.ts';
 
 // A named place in the authored graph where the application supplies content the document does not carry.
 // The document knows the slot exists and where it goes; only the application knows what belongs in it, so

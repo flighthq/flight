@@ -1,6 +1,6 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 
 describe('makeWgpuScene3DState', () => {
   it('records aligned writeBuffer data using typed-array element units', () => {

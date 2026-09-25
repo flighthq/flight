@@ -17,11 +17,11 @@ import {
   getMorphShapeRuntime,
   initializeMorphShapeData,
   setMorphShapeProgress,
-} from './morphShape';
-import { getShapeBounds } from './shape';
-import { defaultShapeBoundsDrawPath } from './shapeBounds';
-import { registerShapeBoundsCommand } from './shapeBoundsRegistry';
-import { appendShapeBeginFill, appendShapeEndFill } from './shapeCommands';
+} from './morphShape.ts';
+import { getShapeBounds } from './shape.ts';
+import { defaultShapeBoundsDrawPath } from './shapeBounds.ts';
+import { registerShapeBoundsCommand } from './shapeBoundsRegistry.ts';
+import { appendShapeBeginFill, appendShapeEndFill } from './shapeCommands.ts';
 
 beforeAll(() => {
   registerShapeBoundsCommand({

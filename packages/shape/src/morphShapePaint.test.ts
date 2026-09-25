@@ -2,7 +2,7 @@ import { createMatrix } from '@flighthq/geometry/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { appendPathLineTo, appendPathMoveTo, createPath, createPathMorph } from '@flighthq/path/contract';
 
-import { createMorphShape, setMorphShapeProgress } from './morphShape';
+import { createMorphShape, setMorphShapeProgress } from './morphShape.ts';
 import {
   appendMorphShapeBeginFill,
   appendMorphShapeBeginGradientFill,
@@ -11,8 +11,8 @@ import {
   appendMorphShapeLineStyle,
   appendMorphShapeLineTextureStyle,
   sampleMorphShapePaintBindings,
-} from './morphShapePaint';
-import { clearShapeCommands } from './shape';
+} from './morphShapePaint.ts';
+import { clearShapeCommands } from './shape.ts';
 
 const fakeTexture = { id: 1 } as never;
 

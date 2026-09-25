@@ -44,7 +44,7 @@ import {
   writeClipboardImage,
   writeClipboardRTF,
   writeClipboardText,
-} from './clipboard';
+} from './clipboard.ts';
 
 describe('attachClipboardWatch', () => {
   it('is exported', () => expect(attachClipboardWatch).toBeTypeOf('function'));

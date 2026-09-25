@@ -15,10 +15,10 @@ import {
   TilemapKind,
 } from '@flighthq/types/contract';
 
-import { applyCanvasBlendMode } from './canvasMaterials';
-import {} from './canvasPipeline';
-import { canvasShapeCommandTable } from './canvasShapeCommandTable';
-import { canvasScene2DRenderPreset } from './scene2DCanvasPipeline';
+import { applyCanvasBlendMode } from './canvasMaterials.ts';
+import {} from './canvasPipeline.ts';
+import { canvasShapeCommandTable } from './canvasShapeCommandTable.ts';
+import { canvasScene2DRenderPreset } from './scene2DCanvasPipeline.ts';
 
 describe('canvasScene2DRenderPreset', () => {
   let registries: Readonly<CanvasRenderRegistries>;

@@ -1,7 +1,7 @@
-import type { Entity } from './Entity';
-import type { RenderCache } from './RenderCache';
-import type { RenderCacheAdapterSignals } from './RenderCacheAdapterSignals';
-import type { RenderProxyAdapter } from './RenderProxyAdapter';
+import type { Entity } from './Entity.ts';
+import type { RenderCache } from './RenderCache.ts';
+import type { RenderCacheAdapterSignals } from './RenderCacheAdapterSignals.ts';
+import type { RenderProxyAdapter } from './RenderProxyAdapter.ts';
 
 // An Entity like every other object a create* factory returns, so it can carry runtime state on the
 // standard slot instead of growing fields on the public shape. RenderProxyAdapter itself stays a bare

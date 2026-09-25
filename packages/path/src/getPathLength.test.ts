@@ -1,5 +1,5 @@
-import { getPathLength } from './getPathLength';
-import { appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path';
+import { getPathLength } from './getPathLength.ts';
+import { appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path.ts';
 
 describe('getPathLength', () => {
   it('returns 0 for an empty path', () => {

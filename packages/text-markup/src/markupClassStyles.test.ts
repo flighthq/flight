@@ -1,9 +1,9 @@
 import type { RichTextContent, TextFormat } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { registerMarkupClassStyles } from './markupClassStyles';
-import { createMarkupTagRegistry, registerStandardMarkupTags } from './markupTagRegistry';
-import { parseTextMarkup } from './textMarkup';
+import { registerMarkupClassStyles } from './markupClassStyles.ts';
+import { createMarkupTagRegistry, registerStandardMarkupTags } from './markupTagRegistry.ts';
+import { parseTextMarkup } from './textMarkup.ts';
 
 function formatAt(content: RichTextContent, index: number): TextFormat {
   for (const range of content.formatRanges) {

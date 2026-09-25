@@ -7,8 +7,8 @@ import type {
   UpdateScene3DResourceStreamingOptions,
 } from '@flighthq/types/contract';
 
-import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures';
-import { updateScene3DResourceStreaming } from './resolveScene3DResources';
+import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures.ts';
+import { updateScene3DResourceStreaming } from './resolveScene3DResources.ts';
 
 // Resets every selected failed identity once, then performs a streaming update under the same
 // selection/priority policy. The update remains authoritative for the working set, including cancellation

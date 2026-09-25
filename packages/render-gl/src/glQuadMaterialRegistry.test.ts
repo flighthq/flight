@@ -6,9 +6,9 @@ import {
   getGlQuadMaterialRenderer,
   registerGlQuadMaterialRenderer,
   resolveGlQuadMaterialRenderer,
-} from './glQuadMaterialRegistry';
-import { getGlRenderStateRuntime } from './glRenderState';
-import { createGlState } from './glTestHelper';
+} from './glQuadMaterialRegistry.ts';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
+import { createGlState } from './glTestHelper.ts';
 
 const TestKind = 'TestMaterial';
 const testRenderer: GlQuadMaterialRenderer = { instanceFloatCount: 0, bind() {} };

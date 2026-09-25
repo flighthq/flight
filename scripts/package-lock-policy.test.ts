@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { getPackageLockWorkspaceViolations, type PackageLockJson, type WorkspaceManifest } from './package-lock-policy';
+import {
+  getPackageLockWorkspaceViolations,
+  type PackageLockJson,
+  type WorkspaceManifest,
+} from './package-lock-policy.ts';
 
 const manifest: WorkspaceManifest = {
   path: 'packages/example',

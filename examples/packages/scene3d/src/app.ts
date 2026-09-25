@@ -26,7 +26,7 @@ import {
 } from '@flighthq/sdk';
 import { createNode3D } from '@flighthq/sdk/scene3d';
 
-import { canvas, render, scale } from './render';
+import { canvas, render, scale } from './render.ts';
 
 // The scene root is a bare Node3D (createScene3D now allocates a Scene3D *document* that owns a root).
 

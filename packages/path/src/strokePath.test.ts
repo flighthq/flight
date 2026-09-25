@@ -1,7 +1,7 @@
 import { PathCommand } from '@flighthq/types/contract';
 
-import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path';
-import { strokePath } from './strokePath';
+import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
+import { strokePath } from './strokePath.ts';
 
 describe('strokePath', () => {
   it('returns an empty path for an empty input', () => {

@@ -1,5 +1,5 @@
-import { parseAsepriteSpritesheet, parseAsepriteSpritesheetDocument } from './asepriteParse';
-import { serializeAsepriteSpritesheet } from './asepriteSerialize';
+import { parseAsepriteSpritesheet, parseAsepriteSpritesheetDocument } from './asepriteParse.ts';
+import { serializeAsepriteSpritesheet } from './asepriteSerialize.ts';
 
 const HASH_JSON = JSON.stringify({
   frames: {

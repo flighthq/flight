@@ -1,6 +1,6 @@
-import type { EffectPadding } from './EffectPadding';
-import type { MatrixLike } from './Matrix';
-import type { RectangleLike } from './Rectangle';
+import type { EffectPadding } from './EffectPadding.ts';
+import type { MatrixLike } from './Matrix.ts';
+import type { RectangleLike } from './Rectangle.ts';
 
 export interface EffectCaptureGeometry {
   readonly bounds: RectangleLike;

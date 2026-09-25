@@ -1,6 +1,6 @@
-import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
-import type { Rectangle } from './Rectangle';
-import type { TextureAtlas } from './TextureAtlas';
+import type { Node2D, Node2DData, Node2DRuntime } from './Node2D.ts';
+import type { Rectangle } from './Rectangle.ts';
+import type { TextureAtlas } from './TextureAtlas.ts';
 
 export interface ParticleEmitterData extends Node2DData {
   alphas: Float32Array;

@@ -5,7 +5,7 @@ import {
   getOrdinalTableEntry,
   withKindMapEntry,
   withoutKindMapEntry,
-} from './registryTable';
+} from './registryTable.ts';
 
 describe('concatKindMap', () => {
   it('lets an overlay entry win over the base', () => {

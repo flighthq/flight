@@ -1,4 +1,4 @@
-import type { NodeAny } from './Node';
+import type { NodeAny } from './Node.ts';
 
 export interface PointerEventData {
   altKey: boolean;

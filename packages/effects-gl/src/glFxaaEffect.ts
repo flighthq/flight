@@ -1,8 +1,8 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { FxaaEffect, GlEffectRunner, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // FXAA: luminance edge detection + directional blend along the detected edge. Single-pass reference
 // recipe. Reads u_texture0; u_resolution gives the texel size; u_edgeThreshold gates edge detection.

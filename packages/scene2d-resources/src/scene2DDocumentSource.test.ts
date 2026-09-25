@@ -1,11 +1,11 @@
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
-import { createScene2DDocument } from './scene2DDocument';
+import { createScene2DDocument } from './scene2DDocument.ts';
 import {
   createScene2DDocumentImporterRegistry,
   registerScene2DDocumentImporter,
-} from './scene2DDocumentImporterRegistry';
-import { loadScene2DDocumentFromUrl } from './scene2DDocumentSource';
+} from './scene2DDocumentImporterRegistry.ts';
+import { loadScene2DDocumentFromUrl } from './scene2DDocumentSource.ts';
 
 describe('loadScene2DDocumentFromUrl', () => {
   it('acquires bytes then stops at the renderer-neutral document', async () => {

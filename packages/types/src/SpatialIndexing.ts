@@ -1,4 +1,4 @@
-import type { SpatialObjectId } from './Spatial';
+import type { SpatialObjectId } from './Spatial.ts';
 
 // Plain-data answer to "how is this object held, and why is it not in my query results?" — the pull
 // half of the diagnostics convention for `@flighthq/spatial`. Recomputed on demand by

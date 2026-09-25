@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { writePhysics2DSoftRowParameters } from './jointRows';
+import { writePhysics2DSoftRowParameters } from './jointRows.ts';
 
 const TAU = 2 * Math.PI;
 

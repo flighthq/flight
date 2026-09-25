@@ -1,4 +1,4 @@
-import { ModifierSlot } from './ModifierSlot';
+import { ModifierSlot } from './ModifierSlot.ts';
 
 describe('ModifierSlot', () => {
   it('exposes the slot taxonomy as canonical PascalCase values', () => {

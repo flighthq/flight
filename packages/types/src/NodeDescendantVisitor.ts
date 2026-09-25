@@ -1,4 +1,4 @@
-import type { Node, NodeTraits } from './Node';
+import type { Node, NodeTraits } from './Node.ts';
 
 // Visitor invoked for each descendant during a depth-first walk. Returning `false` stops the walk
 // early (the current node's subtree and remaining siblings are skipped); returning `true` (or any

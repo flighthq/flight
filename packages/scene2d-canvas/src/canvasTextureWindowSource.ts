@@ -2,8 +2,8 @@ import { getSurfaceHandle } from '@flighthq/surface/contract';
 import { getTextureHeight, getTextureViewSize, getTextureWidth } from '@flighthq/texture/contract';
 import type { CanvasTextureResolvers, Texture } from '@flighthq/types/contract';
 
-import { acquireCanvasTextureResolverSurface, resolveCanvasTexture } from './canvasTextureResolver';
-import { drawCanvasTextureView } from './canvasTextureView';
+import { acquireCanvasTextureResolverSurface, resolveCanvasTexture } from './canvasTextureResolver.ts';
+import { drawCanvasTextureView } from './canvasTextureView.ts';
 
 // Resolves a Texture's uv window as a standalone drawable for Canvas patterns. Identity windows
 // return the source directly. Sub-rect/flip windows are materialized once per render state and

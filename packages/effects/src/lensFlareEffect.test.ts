@@ -1,4 +1,4 @@
-import { createLensFlareEffect, initializeLensFlareEffect } from './lensFlareEffect';
+import { createLensFlareEffect, initializeLensFlareEffect } from './lensFlareEffect.ts';
 
 describe('createLensFlareEffect', () => {
   it('tags the intent type', () => {

@@ -2,7 +2,7 @@ import {
   applyGradientBevelEffectToGl,
   glGradientBevelEffectRunner,
   registerGlGradientBevelEffect,
-} from './glGradientBevelEffect';
+} from './glGradientBevelEffect.ts';
 
 describe('applyGradientBevelEffectToGl', () => {
   it('is a function', () => {

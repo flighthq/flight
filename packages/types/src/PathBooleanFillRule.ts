@@ -1,4 +1,4 @@
-import type { PathWinding } from './ShapeCommand';
+import type { PathWinding } from './ShapeCommand.ts';
 
 // The fill rule the boolean kernel resolves a region under — a path-boolean-local superset of the core
 // `PathWinding`. `evenOdd` (parity) and `nonZero` (winding-number) are the two rules a public path or SVG

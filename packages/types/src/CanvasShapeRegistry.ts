@@ -1,6 +1,6 @@
-import type { CanvasShapeDrawState } from './CanvasShapeDrawState';
-import type { ShapeBoundsCommand } from './ShapeBounds';
-import type { ShapeCommandKey } from './ShapeCommand';
+import type { CanvasShapeDrawState } from './CanvasShapeDrawState.ts';
+import type { ShapeBoundsCommand } from './ShapeBounds.ts';
+import type { ShapeCommandKey } from './ShapeCommand.ts';
 
 // Handler for drawing a command. Reads args from the flat command buffer at position i.
 export type CanvasShapeHandler = (

@@ -1,4 +1,4 @@
-import { cloneBitmap, convertBitmapAlphaType, createBitmap, invalidateBitmap } from './bitmap';
+import { cloneBitmap, convertBitmapAlphaType, createBitmap, invalidateBitmap } from './bitmap.ts';
 
 describe('cloneBitmap', () => {
   it('produces identical values', () => {

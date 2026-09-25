@@ -1,9 +1,9 @@
-import type { ColorLutCache } from './ColorLutCache';
-import type { Effect } from './Effect';
-import type { GlColorLutTextureCache } from './GlColorLutTextureCache';
-import type { GlRenderState } from './GlRenderState';
-import type { GlTextureRenderTarget, GlTextureRenderTargetPool } from './GlRenderTarget';
-import type { RenderTargetDepth, RenderTargetFormat } from './RenderTarget';
+import type { ColorLutCache } from './ColorLutCache.ts';
+import type { Effect } from './Effect.ts';
+import type { GlColorLutTextureCache } from './GlColorLutTextureCache.ts';
+import type { GlRenderState } from './GlRenderState.ts';
+import type { GlTextureRenderTarget, GlTextureRenderTargetPool } from './GlRenderTarget.ts';
+import type { RenderTargetDepth, RenderTargetFormat } from './RenderTarget.ts';
 
 // What a Gl effect runner is handed: the state, the input it reads, the output it writes, the pool
 // it borrows intermediate targets from, and the scene G-buffer attachments. `source` and `dest` are

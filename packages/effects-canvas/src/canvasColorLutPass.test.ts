@@ -1,4 +1,4 @@
-import { applyColorLutPassToCanvas } from './canvasColorLutPass';
+import { applyColorLutPassToCanvas } from './canvasColorLutPass.ts';
 
 describe('applyColorLutPassToCanvas', () => {
   it('is a function', () => {

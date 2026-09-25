@@ -3,8 +3,8 @@ import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 import { createTilemap } from '@flighthq/tilemap/contract';
 
-import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
-import { wgpuTilemapRenderer } from './wgpuTilemap';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
+import { wgpuTilemapRenderer } from './wgpuTilemap.ts';
 
 beforeAll(() => {
   installWgpuMock();

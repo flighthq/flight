@@ -1,4 +1,4 @@
-import type { ShapeCommandKey } from './ShapeCommand';
+import type { ShapeCommandKey } from './ShapeCommand.ts';
 
 // Runtime counterpart to ShapeCommandRegistry's compile-time labeled tuples. Argument names are
 // authoring-format field names, while types and requiredArgumentCount are the positional validation

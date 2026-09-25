@@ -1,5 +1,5 @@
-import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from './Compression';
-import type { SwfTagHandler } from './SwfTagHandler';
+import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from './Compression.ts';
+import type { SwfTagHandler } from './SwfTagHandler.ts';
 
 /**
  * Everything a SWF import depends on, in one literal: the codecs it may need to reach the tag stream,

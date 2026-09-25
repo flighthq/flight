@@ -1,4 +1,4 @@
-import type { GlLitProgram } from './GlLitProgram';
+import type { GlLitProgram } from './GlLitProgram.ts';
 
 // The feature flags that select a Toon uber-shader variant. Each toggles an #ifdef in the prelude
 // and is hashed into the program-cache key (buildGlToonDefineKey), so distinct flag sets compile and

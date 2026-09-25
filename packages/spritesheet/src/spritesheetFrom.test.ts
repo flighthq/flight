@@ -1,7 +1,11 @@
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
 
-import { createSpritesheetAnimationData, createSpritesheetData, createSpritesheetFrameData } from './spritesheetData';
-import { createSpritesheetFromData, createSpritesheetFromGrid } from './spritesheetFrom';
+import {
+  createSpritesheetAnimationData,
+  createSpritesheetData,
+  createSpritesheetFrameData,
+} from './spritesheetData.ts';
+import { createSpritesheetFromData, createSpritesheetFromGrid } from './spritesheetFrom.ts';
 
 describe('createSpritesheetFromData', () => {
   it('builds one frame per SpritesheetFrameData entry', () => {

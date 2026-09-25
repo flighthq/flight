@@ -1,5 +1,5 @@
-import { applyColorMatrixToColor } from './colorMatrixMath';
-import { createExposureAdjustment, initializeExposureAdjustment } from './exposureAdjustment';
+import { applyColorMatrixToColor } from './colorMatrixMath.ts';
+import { createExposureAdjustment, initializeExposureAdjustment } from './exposureAdjustment.ts';
 
 describe('createExposureAdjustment', () => {
   it('defaults to the identity (exposure 0)', () => {

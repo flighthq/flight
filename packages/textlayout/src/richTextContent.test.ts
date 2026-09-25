@@ -7,8 +7,8 @@ import {
   createRichTextContent,
   getRichTextContent,
   initializeRichTextContent,
-} from './richTextContent';
-import { createTextFormatRange } from './textFormatRange';
+} from './richTextContent.ts';
+import { createTextFormatRange } from './textFormatRange.ts';
 
 function createData(data: Partial<RichTextData> = {}): RichTextData {
   return {

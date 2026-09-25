@@ -1,7 +1,7 @@
 import { addNodeChild, getNodeChildCount, getNodeParent } from '@flighthq/node/contract';
 
-import { createNode3D, enableNode3DSignals, getNode3DRuntime } from './sceneNode';
-import { disposeNode3D } from './sceneNodeDispose';
+import { createNode3D, enableNode3DSignals, getNode3DRuntime } from './sceneNode.ts';
+import { disposeNode3D } from './sceneNodeDispose.ts';
 
 describe('disposeNode3D', () => {
   it('clears signals after disposal', () => {

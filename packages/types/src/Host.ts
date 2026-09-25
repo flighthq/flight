@@ -1,4 +1,4 @@
-import type { HostAccessibilityCapability } from './Accessibility';
+import type { HostAccessibilityCapability } from './Accessibility.ts';
 import type {
   HostAppActivateCapability,
   HostAppActivationPolicyCapability,
@@ -23,7 +23,7 @@ import type {
   HostAppUserModelIdCapability,
   HostAppVersionCapability,
   HostAppShowCapability,
-} from './App';
+} from './App.ts';
 import type {
   HostWindowAppearanceCapability,
   HostWindowAttachCapability,
@@ -41,73 +41,73 @@ import type {
   HostWindowStateCapability,
   HostWindowVisibilityCapability,
   HostWindowZOrderCapability,
-} from './AppWindow';
+} from './AppWindow.ts';
 import type {
   HostClipboardBookmarkCapability,
   HostClipboardChangeCapability,
   HostClipboardFormatsCapability,
   HostClipboardImageCapability,
   HostClipboardTextCapability,
-} from './Clipboard';
+} from './Clipboard.ts';
 import type {
   HostCompressDeflateCapability,
   HostCompressLzmaCapability,
   HostDecompressBrotliCapability,
   HostDecompressDeflateCapability,
   HostDecompressLzmaCapability,
-} from './Compression';
+} from './Compression.ts';
 import type {
   HostConnectivityChangeCapability,
   HostConnectivityReachabilityCapability,
   HostConnectivityStatusCapability,
-} from './Connectivity';
-import type { HostDeviceCapability } from './Device';
-import type { Entity } from './Entity';
-import type { HostFileSystemCapability } from './FileSystem';
-import type { HostGeolocationCapability } from './Geolocation';
-import type { HostGlyphRasterizerCapability } from './GlyphSource';
-import type { HostHapticsCapability } from './Haptics';
-import type { HostAppExitCapability } from './HostAppExit';
-import type { HostAppLoopCapability } from './HostAppLoop';
-import type { HostAudioCodecCapability } from './HostAudioCodec';
-import type { HostAudioDecodeCapabilities } from './HostAudioDecode';
-import type { HostAudioDeviceCapability } from './HostAudioDevice';
-import type { HostAudioMixerCapability } from './HostAudioMixer';
-import type { HostBitmapEncodeCapability } from './HostBitmapEncode';
-import type { HostBitmapReadbackCapability } from './HostBitmapReadback';
-import type { HostCanvasCapability } from './HostCanvas';
+} from './Connectivity.ts';
+import type { HostDeviceCapability } from './Device.ts';
+import type { Entity } from './Entity.ts';
+import type { HostFileSystemCapability } from './FileSystem.ts';
+import type { HostGeolocationCapability } from './Geolocation.ts';
+import type { HostGlyphRasterizerCapability } from './GlyphSource.ts';
+import type { HostHapticsCapability } from './Haptics.ts';
+import type { HostAppExitCapability } from './HostAppExit.ts';
+import type { HostAppLoopCapability } from './HostAppLoop.ts';
+import type { HostAudioCodecCapability } from './HostAudioCodec.ts';
+import type { HostAudioDecodeCapabilities } from './HostAudioDecode.ts';
+import type { HostAudioDeviceCapability } from './HostAudioDevice.ts';
+import type { HostAudioMixerCapability } from './HostAudioMixer.ts';
+import type { HostBitmapEncodeCapability } from './HostBitmapEncode.ts';
+import type { HostBitmapReadbackCapability } from './HostBitmapReadback.ts';
+import type { HostCanvasCapability } from './HostCanvas.ts';
 import type {
   HostDirectoryOpenDialogCapability,
   HostFileOpenDialogCapability,
   HostFileSaveDialogCapability,
-} from './HostFileDialog';
-import type { HostFontLoadingCapability } from './HostFontLoading';
-import type { HostElementFullscreenCapability } from './HostFullscreen';
-import type { HostGlCapability } from './HostGl';
-import type { HostImageDecodeCapabilities } from './HostImageDecode';
-import type { HostImageEncodeCapabilities } from './HostImageEncode';
-import type { HostImageOpenDialogCapability } from './HostImageOpenDialog';
+} from './HostFileDialog.ts';
+import type { HostFontLoadingCapability } from './HostFontLoading.ts';
+import type { HostElementFullscreenCapability } from './HostFullscreen.ts';
+import type { HostGlCapability } from './HostGl.ts';
+import type { HostImageDecodeCapabilities } from './HostImageDecode.ts';
+import type { HostImageEncodeCapabilities } from './HostImageEncode.ts';
+import type { HostImageOpenDialogCapability } from './HostImageOpenDialog.ts';
 import type {
   HostInputDropFileCapability,
   HostInputFocusCapability,
   HostInputPointerLockCapability,
-} from './HostInput';
-import type { HostInputIngressCapability } from './HostInputIngress';
-import type { HostInputTargetCapability } from './HostInputTarget';
-import type { HostMessageDialogCapability } from './HostMessageDialog';
-import type { HostPhotoCaptureDialogCapability } from './HostPhotoCaptureDialog';
-import type { HostPromptDialogCapability } from './HostPromptDialog';
-import type { HostSurfaceDisplayCapability, HostSurfaceResizeCapability } from './HostSurface';
-import type { HostVideoCapability } from './HostVideo';
-import type { HostVideoCaptureDialogCapability } from './HostVideoCaptureDialog';
-import type { HostImageCapability } from './ImageResource';
+} from './HostInput.ts';
+import type { HostInputIngressCapability } from './HostInputIngress.ts';
+import type { HostInputTargetCapability } from './HostInputTarget.ts';
+import type { HostMessageDialogCapability } from './HostMessageDialog.ts';
+import type { HostPhotoCaptureDialogCapability } from './HostPhotoCaptureDialog.ts';
+import type { HostPromptDialogCapability } from './HostPromptDialog.ts';
+import type { HostSurfaceDisplayCapability, HostSurfaceResizeCapability } from './HostSurface.ts';
+import type { HostVideoCapability } from './HostVideo.ts';
+import type { HostVideoCaptureDialogCapability } from './HostVideoCaptureDialog.ts';
+import type { HostImageCapability } from './ImageResource.ts';
 import type {
   HostIpcHandleCapability,
   HostIpcInvokeCapability,
   HostIpcMessageCapability,
   HostIpcSendCapability,
   HostIpcTargetedSendCapability,
-} from './Ipc';
+} from './Ipc.ts';
 import type {
   HostSoftKeyboardAccessoryBarCapability,
   HostSoftKeyboardChangeCapability,
@@ -116,17 +116,17 @@ import type {
   HostSoftKeyboardScrollAssistCapability,
   HostSoftKeyboardStyleCapability,
   HostSoftKeyboardVisibilityCapability,
-} from './Keyboard';
-import type { HostLifecycleCapability } from './Lifecycle';
-import type { HostMediaSessionActionCapability, HostMediaSessionCapability } from './MediaSession';
+} from './Keyboard.ts';
+import type { HostLifecycleCapability } from './Lifecycle.ts';
+import type { HostMediaSessionActionCapability, HostMediaSessionCapability } from './MediaSession.ts';
 import type {
   HostAppMenuCapability,
   HostMenuHighlightCapability,
   HostMenuPopupCapability,
   HostMenuSelectCapability,
-} from './Menu';
-import type { HostMidiAccessCapability, HostMidiPermissionCapability } from './Midi';
-import type { HostNetCapability } from './Net';
+} from './Menu.ts';
+import type { HostMidiAccessCapability, HostMidiPermissionCapability } from './Midi.ts';
+import type { HostNetCapability } from './Net.ts';
 import type {
   HostNotificationActionCapability,
   HostNotificationActiveListCapability,
@@ -139,9 +139,9 @@ import type {
   HostNotificationReceivedCapability,
   HostNotificationReplyCapability,
   HostNotificationSchedulingCapability,
-} from './Notification';
-import type { HostPermissionsCapability } from './Permission';
-import type { HostPlatformCapability } from './Platform';
+} from './Notification.ts';
+import type { HostPermissionsCapability } from './Permission.ts';
+import type { HostPlatformCapability } from './Platform.ts';
 import type {
   HostPowerBatteryHealthCapability,
   HostPowerChangeCapability,
@@ -151,7 +151,7 @@ import type {
   HostPowerStatusCapability,
   HostPowerSuspensionCapability,
   HostPowerThermalCapability,
-} from './Power';
+} from './Power.ts';
 import type {
   HostProtocolDefaultCapability,
   HostProtocolLaunchCapability,
@@ -159,15 +159,15 @@ import type {
   HostProtocolRegistrationCapability,
   HostProtocolRegistrationQueryCapability,
   HostProtocolUnregistrationCapability,
-} from './Protocol';
+} from './Protocol.ts';
 import type {
   HostScreenChangeCapability,
   HostScreenDetailsCapability,
   HostScreenPermissionChangeCapability,
   HostScreenQueryCapability,
-} from './Screen';
-import type { HostSensorsCapability } from './Sensors';
-import type { HostShareContentCapability, HostShareFilesCapability } from './Share';
+} from './Screen.ts';
+import type { HostSensorsCapability } from './Sensors.ts';
+import type { HostShareContentCapability, HostShareFilesCapability } from './Share.ts';
 import type {
   HostShellBeepCapability,
   HostShellExternalCapability,
@@ -176,9 +176,9 @@ import type {
   HostShellProcessCapability,
   HostShellShortcutLinkCapability,
   HostShellTrashCapability,
-} from './Shell';
-import type { HostShortcutQueryCapability, HostShortcutTriggerCapability } from './Shortcut';
-import type { HostSocketCapability } from './Socket';
+} from './Shell.ts';
+import type { HostShortcutQueryCapability, HostShortcutTriggerCapability } from './Shortcut.ts';
+import type { HostSocketCapability } from './Socket.ts';
 import type {
   HostStatusBarChangeCapability,
   HostStatusBarColorCapability,
@@ -186,15 +186,15 @@ import type {
   HostStatusBarOverlaysCapability,
   HostStatusBarStyleCapability,
   HostStatusBarVisibilityCapability,
-} from './StatusBar';
+} from './StatusBar.ts';
 import type {
   HostPreferencesCapability,
   HostPreferencesChangeCapability,
   HostPreferencesPersistenceQueryCapability,
   HostPreferencesPersistenceRequestCapability,
-} from './Storage';
-import type { HostTextSegmenterCapability } from './TextSegment';
-import type { HostTextShaperCapability } from './TextShaper';
+} from './Storage.ts';
+import type { HostTextSegmenterCapability } from './TextSegment.ts';
+import type { HostTextShaperCapability } from './TextShaper.ts';
 import type {
   HostTrayBalloonCapability,
   HostTrayBalloonEventsCapability,
@@ -211,9 +211,9 @@ import type {
   HostTrayTemplateImageCapability,
   HostTrayTitleCapability,
   HostTrayTooltipCapability,
-} from './Tray';
-import type { HostUpdaterCommandCapability } from './Updater';
-import type { HostWgpuCapability } from './WgpuHost';
+} from './Tray.ts';
+import type { HostUpdaterCommandCapability } from './Updater.ts';
+import type { HostWgpuCapability } from './WgpuHost.ts';
 
 export interface Host extends Entity {
   readonly accessibility: HostAccessibilityCapabilities;

@@ -16,14 +16,14 @@ import { addNodeChild, getNodeWorldMatrix4, invalidateNodeLocalTransform } from 
 import type { Camera3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createBillboard } from './billboard';
+import { createBillboard } from './billboard.ts';
 import {
   orientBillboardToCamera,
   orientScene3DBillboardsToCamera,
   setBillboardCameraBasisGuard,
-} from './billboardCamera';
-import { createMesh } from './mesh';
-import { createNode3D } from './sceneNode';
+} from './billboardCamera.ts';
+import { createMesh } from './mesh.ts';
+import { createNode3D } from './sceneNode.ts';
 
 // A camera at (ex,ey,ez) looking at the world origin with world +Y up.
 function cameraLookingFrom(ex: number, ey: number, ez: number): Camera3D {

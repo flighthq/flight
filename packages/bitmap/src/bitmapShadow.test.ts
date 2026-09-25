@@ -1,6 +1,6 @@
-import { createBitmap } from './bitmap';
-import { compositeBitmapPixels, compositeBitmapRegion } from './bitmapComposite';
-import { dropShadowBitmap, glowBitmap, innerGlowBitmap, innerShadowBitmap } from './bitmapShadow';
+import { createBitmap } from './bitmap.ts';
+import { compositeBitmapPixels, compositeBitmapRegion } from './bitmapComposite.ts';
+import { dropShadowBitmap, glowBitmap, innerGlowBitmap, innerShadowBitmap } from './bitmapShadow.ts';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };

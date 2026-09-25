@@ -1,6 +1,6 @@
-import type { AnimationChannel } from './AnimationChannel';
-import type { AnimationClip } from './AnimationClip';
-import type { Entity } from './Entity';
+import type { AnimationChannel } from './AnimationChannel.ts';
+import type { AnimationClip } from './AnimationClip.ts';
+import type { Entity } from './Entity.ts';
 
 // Reusable target-free root-motion extraction state for one caller-selected clip channel. Vector
 // channels produce additive component deltas; quaternion channels produce a compositional rotation

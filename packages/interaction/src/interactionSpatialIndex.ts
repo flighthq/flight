@@ -2,8 +2,8 @@ import { getNodeRuntime, getNodeWorldBoundsRectangle } from '@flighthq/node/cont
 import { clearSpatialIndex2D, insertSpatialObject2D, querySpatialPoint2D } from '@flighthq/spatial/contract';
 import type { Node2D, InteractionManager, NodeAny, SpatialAabb2D, SpatialObjectId } from '@flighthq/types/contract';
 
-import { hitTestNodeRegion } from './hitTests';
-import { getNodeInteractionState } from './nodeInteractionState';
+import { hitTestNodeRegion } from './hitTests.ts';
+import { getNodeInteractionState } from './nodeInteractionState.ts';
 
 /**
  * Picks the topmost hit among the broadphase candidates at world-space (x, y), matching the tree walk's

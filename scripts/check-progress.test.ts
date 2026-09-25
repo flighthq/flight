@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createRegistrarProgressFrame, RegistrarProgressDecoder } from './check-progress';
+import { createRegistrarProgressFrame, RegistrarProgressDecoder } from './check-progress.ts';
 
 const TOKEN = '00000000-0000-4000-8000-000000000000';
 

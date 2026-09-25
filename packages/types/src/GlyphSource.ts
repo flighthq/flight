@@ -1,6 +1,6 @@
-import type { Bitmap } from './Bitmap';
-import type { Entity } from './Entity';
-import type { TextureSource } from './TextureSource';
+import type { Bitmap } from './Bitmap.ts';
+import type { Entity } from './Entity.ts';
+import type { TextureSource } from './TextureSource.ts';
 
 // The shared seam a text renderer consumes to draw glyphs, independent of how those glyphs are
 // produced. `@flighthq/glyphatlas` implements it dynamically (rasterize-on-miss into a growing

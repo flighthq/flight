@@ -25,7 +25,7 @@ import {
   setNativeTextStyle,
   setNativeTextVerticalAlign,
   setNativeTextWidth,
-} from './nativeText';
+} from './nativeText.ts';
 
 describe('computeNativeTextLocalBoundsRectangle', () => {
   it('sets out dimensions from data width and height when autoSize is none', () => {

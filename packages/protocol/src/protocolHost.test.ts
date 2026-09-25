@@ -3,8 +3,13 @@ import { connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import * as protocolContract from './contract';
-import { attachProtocolHandler, createProtocolHandler, getProtocolLaunchUrl, registerProtocolScheme } from './protocol';
+import * as protocolContract from './contract.ts';
+import {
+  attachProtocolHandler,
+  createProtocolHandler,
+  getProtocolLaunchUrl,
+  registerProtocolScheme,
+} from './protocol.ts';
 
 describe('protocol explicit Host ownership', () => {
   it('uses a promoted top-level protocol group for independent command and query slots', () => {

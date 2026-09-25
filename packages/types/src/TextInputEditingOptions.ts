@@ -1,4 +1,4 @@
-import type { TextLayoutResult } from './TextLayout';
+import type { TextLayoutResult } from './TextLayout.ts';
 
 export interface HandleTextInputKeyboardOptions {
   clipboardText?: string;

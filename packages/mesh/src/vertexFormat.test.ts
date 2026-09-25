@@ -5,7 +5,7 @@ import {
   getVertexFormatComponentCount,
   readVertexFormatComponent,
   writeVertexFormatComponent,
-} from './vertexFormat';
+} from './vertexFormat.ts';
 
 describe('getVertexFormatByteLength', () => {
   it('reports packed and float sizes', () => {

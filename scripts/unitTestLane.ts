@@ -4,7 +4,7 @@
 import { readdirSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 
-import { REGISTRY_ISOLATED_TEST_FILES } from './registryIsolatedTests';
+import { REGISTRY_ISOLATED_TEST_FILES } from './registryIsolatedTests.ts';
 
 export const UNIT_TEST_LANE_INCLUDE: readonly string[] = ['packages/**/src/**/*.test.ts'];
 

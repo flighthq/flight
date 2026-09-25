@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { ShareResult } from './Share';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { ShareResult } from './Share.ts';
+import type { Signal } from './Signal.ts';
 
 // Share result event entity. Enable delivery with attachShareSignals; the signals stay inert until
 // then. onShareResult carries the full ShareResult emitted by shareContentWithResult calls.

@@ -1,7 +1,7 @@
 import type { ChildProcess } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 
-import { selectPackages } from './select';
+import { selectPackages } from './select.ts';
 import {
   describeElapsed,
   explainOverbroadSelection,
@@ -9,7 +9,7 @@ import {
   getSiblingTestPath,
   readMutantVerdict,
   terminateMutantWorker,
-} from './unchecked';
+} from './unchecked.ts';
 
 describe('getEscalationWidth', () => {
   it('gives a small escalation set fewer workers than the machine offers', () => {

@@ -4,8 +4,8 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { writeFixtureTreeStamp } from '../../scripts/fixtures';
-import type { ConformanceFixtureAdapter, ConformanceFixtureTree } from './fixture-conformance';
+import { writeFixtureTreeStamp } from '../../scripts/fixtures.ts';
+import type { ConformanceFixtureAdapter, ConformanceFixtureTree } from './fixture-conformance.ts';
 import {
   createConformanceFixturePlan,
   discoverConformanceFixtureTrees,
@@ -13,7 +13,7 @@ import {
   runConformanceFixtureAdapters,
   runConformanceFixturePlan,
   scoreConformanceFixturePlan,
-} from './fixture-conformance';
+} from './fixture-conformance.ts';
 
 let workspace = '';
 

@@ -51,9 +51,9 @@ export {
   setTextureUvScale,
   setVideoTextureSource,
   transformTextureUv,
-} from './contract';
+} from './contract.ts';
 export {
   getTextureSampleColorSpace,
   shouldDecodeTextureOnSample,
   shouldPremultiplyTextureOnUpload,
-} from './textureColorSpace';
+} from './textureColorSpace.ts';

@@ -4,10 +4,10 @@ import { createGlRenderState } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget, ScanlinesEffect } from '@flighthq/types/contract';
 
-import * as glEffectProgramCache from './glEffectProgramCache';
-import { getGlEffectRunner } from './glEffectRegistry';
-import { applyScanlinesEffectToGl, glScanlinesEffectRunner, registerGlScanlinesEffect } from './glScanlinesEffect';
-import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
+import * as glEffectProgramCache from './glEffectProgramCache.ts';
+import { getGlEffectRunner } from './glEffectRegistry.ts';
+import { applyScanlinesEffectToGl, glScanlinesEffectRunner, registerGlScanlinesEffect } from './glScanlinesEffect.ts';
+import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper.ts';
 
 const glMock = {
   uniform1f: vi.fn((_location: unknown, _value: number) => {}),

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatRelativeTime } from './relativeTime';
+import { formatRelativeTime } from './relativeTime.ts';
 
 describe('formatRelativeTime', () => {
   it('phrases a future offset in en-US', () => {

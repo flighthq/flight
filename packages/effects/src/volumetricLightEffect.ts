@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, VolumetricLightEffect } from '@flighthq/types/contract';
 
-import { initializeEffect } from './effect';
+import { initializeEffect } from './effect.ts';
 
 export function createVolumetricLightEffect(
   options: Readonly<Omit<EntityWithoutRuntime<VolumetricLightEffect>, 'kind'>> = {},

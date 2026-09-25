@@ -1,11 +1,11 @@
 import { createHash } from 'node:crypto';
 
-import { isImportConformanceFixtureReference } from '../swf/swf-capability-index';
-import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from '../swf/swf-import-conformance-policy';
+import { isImportConformanceFixtureReference } from '../swf/swf-capability-index.ts';
+import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from '../swf/swf-import-conformance-policy.ts';
 import {
   createImportConformanceCaseIdentity,
   createImportConformanceSingleMemberCaseIdentity,
-} from './import-conformance-case';
+} from './import-conformance-case.ts';
 import {
   assertImportConformanceFrozenCapabilityPartition,
   applyImportConformanceOracleOutcomes,
@@ -15,15 +15,15 @@ import {
   createImportConformanceScore as createImportConformanceScoreCore,
   createImportConformanceShardPlan as createImportConformanceShardPlanCore,
   parseImportConformanceCapabilityDefinitions,
-} from './import-conformance-core';
+} from './import-conformance-core.ts';
 import type {
   ImportConformanceConfigurationLimits,
   ImportConformanceLossPath,
   ImportConformanceScoreDeclarations,
   ImportConformanceUnwiredLossObservation,
-} from './import-conformance-core';
-import { NO_IMPORT_CONFORMANCE_DIAGNOSTIC_DETAIL_POLICY } from './import-conformance-diagnostic-evidence';
-import { parseImportConformanceScore } from './import-conformance-score';
+} from './import-conformance-core.ts';
+import { NO_IMPORT_CONFORMANCE_DIAGNOSTIC_DETAIL_POLICY } from './import-conformance-diagnostic-evidence.ts';
+import { parseImportConformanceScore } from './import-conformance-score.ts';
 
 const DEFINITIONS = [
   { id: 'swf.fill.solid', label: 'fill: solid' },

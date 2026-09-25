@@ -1,4 +1,4 @@
-import { createPanniniProjectionEffect, initializePanniniProjectionEffect } from './panniniProjectionEffect';
+import { createPanniniProjectionEffect, initializePanniniProjectionEffect } from './panniniProjectionEffect.ts';
 
 describe('createPanniniProjectionEffect', () => {
   it('carries options', () => {

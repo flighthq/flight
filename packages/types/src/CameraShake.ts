@@ -1,4 +1,4 @@
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';
 
 // Trauma-based camera shake: accumulate `trauma` (0–1) from game events, and each `updateCameraShake`
 // call decays it and writes a deterministic offset into an output vector. Intensity is `trauma²`

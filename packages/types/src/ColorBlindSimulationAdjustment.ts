@@ -1,4 +1,4 @@
-import type { ColorMatrixAdjustment } from './ColorMatrixAdjustment';
+import type { ColorMatrixAdjustment } from './ColorMatrixAdjustment.ts';
 
 // The color-vision-deficiency variants a ColorBlindSimulationAdjustment can bake. The three dichromacies
 // (protan/deutan/tritan -opia) plus their anomalous-trichromacy (-omaly) partial forms and the two

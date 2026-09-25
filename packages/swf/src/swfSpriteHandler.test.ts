@@ -1,4 +1,4 @@
-import { swfSpriteHandler } from './swfSpriteHandler';
+import { swfSpriteHandler } from './swfSpriteHandler.ts';
 
 describe('swfSpriteHandler', () => {
   it('claims the sprite tag', () => {

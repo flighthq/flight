@@ -16,8 +16,8 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { explainGlScene2DCoverage, hasGlScene2DCoverage } from './explainGlScene2DCoverage';
-import { createGlState } from './glTestHelper';
+import { explainGlScene2DCoverage, hasGlScene2DCoverage } from './explainGlScene2DCoverage.ts';
+import { createGlState } from './glTestHelper.ts';
 
 const materialRenderer = {} as unknown as GlQuadMaterialRenderer;
 const nodeRenderer: NodeRenderer = { createData: () => null, submit: () => {} } as unknown as NodeRenderer;

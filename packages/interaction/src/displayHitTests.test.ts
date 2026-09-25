@@ -9,7 +9,7 @@ import {
   defaultRichTextHitTestHandler,
   defaultShapeHitTestHandler,
   defaultTextHitTestHandler,
-} from './displayHitTests';
+} from './displayHitTests.ts';
 
 function makeNode2D() {
   const obj = createDisplayObject();

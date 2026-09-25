@@ -6,9 +6,9 @@ import type {
   GlViewportRect,
 } from '@flighthq/types/contract';
 
-import { getGlRenderStateRuntime } from './glRenderState';
-import { popGlRenderState, pushGlRenderState, withGlRenderState } from './glRenderStateBracket';
-import { createGlState } from './glTestHelper';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
+import { popGlRenderState, pushGlRenderState, withGlRenderState } from './glRenderStateBracket.ts';
+import { createGlState } from './glTestHelper.ts';
 
 type TestGlState = {
   activeTexture: number;

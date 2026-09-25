@@ -1,7 +1,7 @@
 import type { Entity } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createEntityRuntime } from './runtime';
+import { createEntityRuntime } from './runtime.ts';
 
 export function attachEntityBinding(entity: Entity, binding: object): void {
   if (entity[EntityRuntimeKey] === undefined) {

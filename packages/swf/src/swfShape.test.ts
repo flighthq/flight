@@ -1,9 +1,9 @@
 import { createTexture } from '@flighthq/texture/contract';
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 
-import { SwfReader } from './swfReader';
-import { createSwfGlyphShape, createSwfShape, readSwfMorphShapePaths } from './swfShape';
-import { ShapeWriter } from './swfShapeTestHelper';
+import { SwfReader } from './swfReader.ts';
+import { createSwfGlyphShape, createSwfShape, readSwfMorphShapePaths } from './swfShape.ts';
+import { ShapeWriter } from './swfShapeTestHelper.ts';
 
 describe('createSwfGlyphShape', () => {
   it('decodes a bare SHAPE that carries no style array of its own', () => {

@@ -12,7 +12,7 @@ import type {
   Vector3Like,
 } from '@flighthq/types/contract';
 
-import { createPlane } from './plane';
+import { createPlane } from './plane.ts';
 
 /**
  * Creates a view frustum as six bounding planes, each with an inward-pointing normal. The

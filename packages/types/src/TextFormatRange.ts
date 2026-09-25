@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { TextFormat } from './TextFormat';
+import type { Entity } from './Entity.ts';
+import type { TextFormat } from './TextFormat.ts';
 
 export interface TextFormatRange extends Entity {
   end: number;

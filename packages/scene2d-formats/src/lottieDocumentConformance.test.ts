@@ -9,8 +9,8 @@ import type {
 } from '@flighthq/types/contract';
 import { PathCommand, SpriteKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
 
-import { applyAnimationClipToLottieDocument, createScene2DFromLottieDocument } from './lottieDocument';
-import { createReadyImageResourceForTest } from './testHelper';
+import { applyAnimationClipToLottieDocument, createScene2DFromLottieDocument } from './lottieDocument.ts';
+import { createReadyImageResourceForTest } from './testHelper.ts';
 
 // A units regression guard. Bodymovin states rotation and skew in degrees and Flight's authoring
 // transform is degrees, so the importer must not convert. It did once, writing radians into a

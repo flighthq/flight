@@ -2,8 +2,8 @@
 import { createTextLabel } from '@flighthq/text/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createCanvasRenderState } from './canvasTestSupport';
-import { canvasTextLabelRenderer, drawCanvasTextLabel, initializeCanvasTextLabelData } from './canvasTextLabel';
+import { createCanvasRenderState } from './canvasTestSupport.ts';
+import { canvasTextLabelRenderer, drawCanvasTextLabel, initializeCanvasTextLabelData } from './canvasTextLabel.ts';
 
 function makeState() {
   const canvas = document.createElement('canvas');

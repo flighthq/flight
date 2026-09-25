@@ -6,7 +6,7 @@ import {
   tauriHostNotificationDelivery,
   tauriHostNotificationLifecycle,
   tauriHostNotificationPermission,
-} from './tauriNotification';
+} from './tauriNotification.ts';
 
 function fakeTauri(granted = true, permission: TauriNotificationPermission = 'granted') {
   const sent: TauriNotificationOptions[] = [];

@@ -1,7 +1,7 @@
-import { createBevelEffect } from './bevelEffect';
-import { createBloomEffect } from './bloomEffect';
-import { canLerpEffects, lerpEffect } from './effectInterpolation';
-import { createVignetteEffect } from './vignetteEffect';
+import { createBevelEffect } from './bevelEffect.ts';
+import { createBloomEffect } from './bloomEffect.ts';
+import { canLerpEffects, lerpEffect } from './effectInterpolation.ts';
+import { createVignetteEffect } from './vignetteEffect.ts';
 
 describe('canLerpEffects', () => {
   it('returns true for same kind', () => {

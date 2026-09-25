@@ -1,4 +1,4 @@
-import { swfEditTextHandler } from './swfEditTextHandler';
+import { swfEditTextHandler } from './swfEditTextHandler.ts';
 
 describe('swfEditTextHandler', () => {
   it('claims the edit text tag', () => {

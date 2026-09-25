@@ -13,9 +13,9 @@ import {
   getGlRenderCacheTarget,
   refreshGlRenderCache,
   releaseGlRenderCache,
-} from './glCache';
-import * as glNode2D from './glNode2D';
-import * as glQuadBatchWriter from './glQuadBatchWriter';
+} from './glCache.ts';
+import * as glNode2D from './glNode2D.ts';
+import * as glQuadBatchWriter from './glQuadBatchWriter.ts';
 
 // The GL render-target lifecycle (@flighthq/render-gl) and the two local collaborators
 // ./glQuadBatchWriter and ./glNode2D are stubbed so cache orchestration can be unit-tested without a real

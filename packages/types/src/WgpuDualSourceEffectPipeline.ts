@@ -1,3 +1,3 @@
-import type { WgpuEffectPipeline } from './WgpuEffectPipeline';
+import type { WgpuEffectPipeline } from './WgpuEffectPipeline.ts';
 
 export type WgpuDualSourceEffectPipeline = WgpuEffectPipeline;

@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { Signal } from './Signal.ts';
 
 // A deep-link URL decomposed into its parts. query values are percent-decoded; an absent query
 // yields an empty record. Round-trips with createProtocolUrl/parseProtocolUrl for well-formed inputs.

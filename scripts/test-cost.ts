@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
-import { UNIT_TEST_COST_EXEMPTIONS } from './unitTestCost';
+import { UNIT_TEST_COST_EXEMPTIONS } from './unitTestCost.ts';
 
 interface FileCost {
   capability: string | null;

@@ -1,8 +1,8 @@
-﻿import type { Node2D } from './Node2D';
-import type { NodeRenderer } from './NodeRenderer';
-import type { RendererData } from './RendererData';
-import type { RenderProxy2D } from './RenderProxy2D';
-import type { RenderState } from './RenderState';
+﻿import type { Node2D } from './Node2D.ts';
+import type { NodeRenderer } from './NodeRenderer.ts';
+import type { RendererData } from './RendererData.ts';
+import type { RenderProxy2D } from './RenderProxy2D.ts';
+import type { RenderState } from './RenderState.ts';
 
 export interface Scene2DRenderer extends NodeRenderer {
   createData(state: RenderState, source: Node2D): RendererData | null;

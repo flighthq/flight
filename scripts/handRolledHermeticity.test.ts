@@ -2,7 +2,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { findHandRolledHermeticity, stripLineComments } from './handRolledHermeticity';
+import { findHandRolledHermeticity, stripLineComments } from './handRolledHermeticity.ts';
 
 describe('findHandRolledHermeticity', () => {
   // The case the hand-written grep got wrong three times in one day, and the whole reason this is a

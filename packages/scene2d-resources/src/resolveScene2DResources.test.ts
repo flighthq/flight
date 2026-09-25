@@ -1,8 +1,8 @@
 import { addNodeChild, getNodeParent } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
-import { resolveScene2DResources } from './resolveScene2DResources';
-import { createScene2DDocument, createScene2DSlotReference } from './scene2DDocument';
+import { resolveScene2DResources } from './resolveScene2DResources.ts';
+import { createScene2DDocument, createScene2DSlotReference } from './scene2DDocument.ts';
 
 describe('resolveScene2DResources', () => {
   it('reconciles application slot content synchronously', () => {

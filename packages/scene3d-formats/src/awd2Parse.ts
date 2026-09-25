@@ -15,7 +15,7 @@ import type {
 } from '@flighthq/types/contract';
 import { CompressionFraming, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { expandAwd2BlockDispatch, createAwd2ParseState } from './awd2BlockDispatch';
+import { expandAwd2BlockDispatch, createAwd2ParseState } from './awd2BlockDispatch.ts';
 import {
   AWD2_BLOCK_HEADER_BYTES,
   AWD2_COMPRESSION_DEFLATE,
@@ -28,7 +28,7 @@ import {
   AWD2_MAGIC_2,
   AWD2_NAMESPACE_CORE,
   AWD2_VERSION_MAJOR_OFFSET,
-} from './awd2Schema';
+} from './awd2Schema.ts';
 
 // Parses an Away3D AWD 2.x binary file into a Scene3D. Convenience over
 // `createScene3DFromDocument(parseAwd2(...))`. See parseAwd2 for the import model, and for why the block

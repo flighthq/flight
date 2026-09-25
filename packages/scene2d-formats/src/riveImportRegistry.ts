@@ -12,7 +12,7 @@ import type {
   RiveImportRegistry,
 } from '@flighthq/types/contract';
 
-import { getRiveCoreTypeParent } from './riveCoreTypes';
+import { getRiveCoreTypeParent } from './riveCoreTypes.ts';
 
 /**
  * Runs every registered artboard pass, once each, in registration order.

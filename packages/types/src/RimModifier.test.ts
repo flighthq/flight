@@ -1,7 +1,7 @@
-import { EntityRuntimeKey } from './Entity';
-import type { Modifier } from './Modifier';
-import type { RimModifier } from './RimModifier';
-import { RimModifierKind } from './RimModifier';
+import { EntityRuntimeKey } from './Entity.ts';
+import type { Modifier } from './Modifier.ts';
+import type { RimModifier } from './RimModifier.ts';
+import { RimModifierKind } from './RimModifier.ts';
 
 describe('RimModifier', () => {
   describe('RimModifierKind', () => {

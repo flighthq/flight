@@ -8,8 +8,8 @@ import type {
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeEffect } from './effect';
-import { getDirectionalEffectPadding, registerEffectPaddingResolver } from './effectPadding';
+import { initializeEffect } from './effect.ts';
+import { getDirectionalEffectPadding, registerEffectPaddingResolver } from './effectPadding.ts';
 
 // Drop-shadow composite effect: tint the scene silhouette, blur it, offset it by angle/distance, then apply sourceMode compositing.
 export function createDropShadowEffect(

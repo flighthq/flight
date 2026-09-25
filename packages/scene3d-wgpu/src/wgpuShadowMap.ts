@@ -28,9 +28,9 @@ import {
   INSTANCE_RECORD_FLOATS,
   SHADOW_DEPTH_FORMAT,
   writeWgpuDrawUniform,
-} from './wgpuMeshPipeline';
-import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
-import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
+} from './wgpuMeshPipeline.ts';
+import { ensureWgpuMeshUpload } from './wgpuMeshUpload.ts';
+import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime.ts';
 
 // Frees the directional shadow's non-GC GPU resources for `state`: the shadow depth map, the 1x1
 // no-shadow dummy depth texture, and the shadow-sample uniform buffer, then clears the derived slots

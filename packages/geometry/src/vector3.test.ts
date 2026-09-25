@@ -39,7 +39,7 @@ import {
 } from '@flighthq/geometry/contract';
 import type { Vector3 } from '@flighthq/types/contract';
 
-import { initializeVector3 } from './vector3';
+import { initializeVector3 } from './vector3.ts';
 
 describe('addVector3', () => {
   it('returns a new vector when no target is passed', () => {

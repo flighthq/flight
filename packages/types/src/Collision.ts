@@ -1,4 +1,4 @@
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';
 // Narrow-phase collision header. `@flighthq/collision` tests one collider pair for overlap and, when
 // they overlap, writes a manifold — the minimum-translation vector that separates the pair. It also
 // computes exact first contact under linear translation for continuous collision users. Shapes are

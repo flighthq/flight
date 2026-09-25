@@ -1,4 +1,4 @@
-import type { Entity, Kind } from './Entity';
+import type { Entity, Kind } from './Entity.ts';
 
 // Substrate-agnostic render-effect intents. Each is plain data carrying a `kind` discriminant; per-backend
 // recipes register a runner against that `kind` (registerGlEffect) and the effect pipeline

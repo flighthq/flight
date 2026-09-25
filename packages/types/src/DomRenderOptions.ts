@@ -1,10 +1,10 @@
-import type { CanvasShapeCommand } from './CanvasShapeRegistry';
-import type { DomTextureResolver } from './DomTextureResolver';
-import type { EffectPaddingResolver } from './EffectPadding';
-import type { Kind } from './Entity';
-import type { NodeRenderer } from './NodeRenderer';
-import type { Scene3DGraphSyncPolicy, StrokeTessellator } from './RenderState';
-import type { ShapeRasterizer } from './ShapeRasterizer';
+import type { CanvasShapeCommand } from './CanvasShapeRegistry.ts';
+import type { DomTextureResolver } from './DomTextureResolver.ts';
+import type { EffectPaddingResolver } from './EffectPadding.ts';
+import type { Kind } from './Entity.ts';
+import type { NodeRenderer } from './NodeRenderer.ts';
+import type { Scene3DGraphSyncPolicy, StrokeTessellator } from './RenderState.ts';
+import type { ShapeRasterizer } from './ShapeRasterizer.ts';
 export interface DomRenderOptions {
   /**
    * Shape commands this state replays, by kind. Seeded into the runtime registries at construction.

@@ -25,7 +25,7 @@ import type {
   Rectangle,
 } from '@flighthq/types/contract';
 
-import { getNodeInteractionState } from './nodeInteractionState';
+import { getNodeInteractionState } from './nodeInteractionState.ts';
 
 /**
  * Fills `out` with the sub-index and local coordinates of a hit at world-space (x, y) on a node you

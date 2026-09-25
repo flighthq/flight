@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Modifier } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createModifierRegistry, registerModifier, resolveModifier } from './modifierRegistry';
+import { createModifierRegistry, registerModifier, resolveModifier } from './modifierRegistry.ts';
 
 describe('createModifierRegistry', () => {
   it('allocates an empty registry', () => {

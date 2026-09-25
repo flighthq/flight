@@ -7,10 +7,10 @@ import {
   registerCollisionPairTest2D,
   registerCollisionSupport2D,
   supportCollisionCircle2D,
-} from './collisionSupport2D';
-import { clearCollisionManifold2D, createCollisionManifold2D } from './manifold2D';
-import { registerBuiltInCollisionPairTests2D } from './registerBuiltInCollisionPairTests2D';
-import { setCollisionTestGuard2D, testCollision2D } from './testCollision2D';
+} from './collisionSupport2D.ts';
+import { clearCollisionManifold2D, createCollisionManifold2D } from './manifold2D.ts';
+import { registerBuiltInCollisionPairTests2D } from './registerBuiltInCollisionPairTests2D.ts';
+import { setCollisionTestGuard2D, testCollision2D } from './testCollision2D.ts';
 
 // Both doors, because this dispatcher is the one place their precedence is observable. Nothing is
 // registered at module load, so a caller that opens neither gets `false` from every pair — which is what

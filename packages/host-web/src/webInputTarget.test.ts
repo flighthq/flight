@@ -2,7 +2,7 @@ import { exitAppInputPointerLock, lockAppInputPointer } from '@flighthq/app/cont
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityWithoutRuntime, HostInputPointerLockCapability, InputTargetHandle } from '@flighthq/types/contract';
 
-import { webHost } from './webHost';
+import { webHost } from './webHost.ts';
 import {
   createWebInputTargetHandle,
   initializeWebInputTargetHandle,
@@ -11,7 +11,7 @@ import {
   webHostInputFocus,
   webHostInputPointerLock,
   webHostInputTarget,
-} from './webInputTarget';
+} from './webInputTarget.ts';
 
 afterEach(() => {
   vi.unstubAllGlobals();

@@ -22,18 +22,18 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { getOracleAssetUrl, verifyOraclePackBytes, verifyOracleRelease } from './reference-image-pack';
+import { getOracleAssetUrl, verifyOraclePackBytes, verifyOracleRelease } from './reference-image-pack.ts';
 import {
   getOracleLockImages,
   getOracleRequestCells,
   readReferenceImageLock,
   readOracleRequest,
   readReferenceImageHolds,
-} from './reference-image-records';
-import { describeOracleComparison, joinOracleState, withRequiredIdentities } from './reference-image-state';
-import type { ReferenceImageCellInput, ReferenceImageRequestRecord } from './reference-image-state';
-import { readReferenceImageToleranceCatalog } from './reference-image-tolerance';
-import { readPackManifest, verifyOracleCaptures, verifyOracleLockImages } from './reference-image-verify';
+} from './reference-image-records.ts';
+import { describeOracleComparison, joinOracleState, withRequiredIdentities } from './reference-image-state.ts';
+import type { ReferenceImageCellInput, ReferenceImageRequestRecord } from './reference-image-state.ts';
+import { readReferenceImageToleranceCatalog } from './reference-image-tolerance.ts';
+import { readPackManifest, verifyOracleCaptures, verifyOracleLockImages } from './reference-image-verify.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 

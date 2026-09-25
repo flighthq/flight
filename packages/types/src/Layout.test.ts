@@ -1,4 +1,4 @@
-import { AnchorLayoutKind, FlexLayoutKind, GridLayoutKind, LayoutResolutionFailureKind } from './Layout';
+import { AnchorLayoutKind, FlexLayoutKind, GridLayoutKind, LayoutResolutionFailureKind } from './Layout.ts';
 
 describe('layout header', () => {
   it('publishes stable built-in registry keys', () => {

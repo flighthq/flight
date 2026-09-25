@@ -18,7 +18,7 @@ describe('review helpers imported by scripts tests', () => {
     const imported = new Set<string>();
     for (const file of readdirSync(scriptsDir).filter((name) => name.endsWith('.test.ts'))) {
       const source = readFileSync(join(scriptsDir, file), 'utf8');
-      for (const match of source.matchAll(/from '\.\.\/(tools\/review\/src\/[\w-]+)'/g)) {
+      for (const match of source.matchAll(/from '\.\.\/(tools\/review\/src\/[\w-]+)\.ts'/g)) {
         imported.add(`${match[1]!}.ts`);
       }
     }

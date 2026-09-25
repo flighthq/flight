@@ -1,7 +1,7 @@
 import { createSignal } from '@flighthq/signals/contract';
 import type { NetProgress, NetRequest } from '@flighthq/types/contract';
 
-import { webHostNet } from './webNet';
+import { webHostNet } from './webNet.ts';
 
 interface FakeResponseInit {
   status?: number;

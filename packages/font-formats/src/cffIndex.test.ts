@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { readCffIndex } from './cffIndex';
+import { readCffIndex } from './cffIndex.ts';
 
 // INDEXes are built here byte by byte, like every other fixture in this package: offsets are 1-based from
 // the byte before the data block, and that off-by-one is exactly the detail a stub would paper over.

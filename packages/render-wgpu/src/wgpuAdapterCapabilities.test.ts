@@ -1,4 +1,4 @@
-import { getWgpuAdapterCapabilities } from './wgpuAdapterCapabilities';
+import { getWgpuAdapterCapabilities } from './wgpuAdapterCapabilities.ts';
 
 function makeAdapter(features: ReadonlyArray<string> = [], limits: Record<string, number> = {}): GPUAdapter {
   return {

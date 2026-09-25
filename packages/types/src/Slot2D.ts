@@ -1,5 +1,5 @@
-import type { Attachment2D } from './Attachment2D';
-import type { Skeleton2DSlotDeform } from './Skeleton2DSlotDeform';
+import type { Attachment2D } from './Attachment2D.ts';
+import type { Skeleton2DSlotDeform } from './Skeleton2DSlotDeform.ts';
 
 // A draw slot in a Skeleton2D: it binds a bone to the attachment currently shown on it, and its position
 // in the skeleton's `slots` array IS its draw order (earlier = drawn first / behind). A slot follows its

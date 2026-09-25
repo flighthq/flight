@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { findCaptureFixtureBackground } from './captureFixtureBackground.js';
+import { findCaptureFixtureBackground } from './captureFixtureBackground.ts';
 
 export interface FunctionalParityConfound {
   scene: string;

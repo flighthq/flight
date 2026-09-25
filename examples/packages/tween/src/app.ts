@@ -32,7 +32,7 @@ import {
   updateTweens,
 } from '@flighthq/sdk';
 
-import { render, scale } from './render';
+import { render, scale } from './render.ts';
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;

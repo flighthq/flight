@@ -1,7 +1,7 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 import type { WgpuDeviceRuntime, WgpuDeviceSignals, WgpuRenderState } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
 // Releases the device tier's signal group. The terminal loss FACT survives — a lost device stays
 // lost whether or not anyone is listening — so getWgpuDeviceLoss keeps reporting after this call.

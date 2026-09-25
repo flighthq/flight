@@ -10,8 +10,8 @@ import type {
   Scene2DRenderer,
 } from '@flighthq/types/contract';
 
-import { resolveCanvasCssFilter } from './canvasCSSFilterBinding';
-import { getCanvasRenderStateRuntime } from './canvasRenderState';
+import { resolveCanvasCssFilter } from './canvasCSSFilterBinding.ts';
+import { getCanvasRenderStateRuntime } from './canvasRenderState.ts';
 
 export function drawCanvasScene2D(_state: CanvasRenderState, _renderProxy: RenderProxy2D): void {
   // Plain display objects have no visual geometry of their own.

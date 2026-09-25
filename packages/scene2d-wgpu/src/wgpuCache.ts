@@ -35,8 +35,8 @@ import type {
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { renderWgpuScene2D } from './wgpuNode2D';
-import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
+import { renderWgpuScene2D } from './wgpuNode2D.ts';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 
 /**
  * Creates an offscreen render state for baking render caches consumed by `screenState`.

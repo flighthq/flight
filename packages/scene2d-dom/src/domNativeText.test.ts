@@ -2,8 +2,8 @@ import { getOrCreateRenderProxy2D, registerNodeRenderer } from '@flighthq/render
 import { createNativeText, getNativeTextRuntime } from '@flighthq/text/contract';
 import { NativeTextKind } from '@flighthq/types/contract';
 
-import { domNativeTextRenderer, drawDomNativeText, drawDomNativeTextMask } from './domNativeText';
-import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
+import { domNativeTextRenderer, drawDomNativeText, drawDomNativeTextMask } from './domNativeText.ts';
+import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
 
 function makeState() {
   const container = document.createElement('div');

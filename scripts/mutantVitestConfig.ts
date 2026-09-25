@@ -5,7 +5,7 @@ import { loadConfigFromFile } from 'vite';
 import type { Plugin } from 'vitest/config';
 import { defineConfig, mergeConfig } from 'vitest/config';
 
-import { applyMutantText, APPLIED_MARKER, MUTANT_ENVIRONMENT } from './unchecked-core.js';
+import { applyMutantText, APPLIED_MARKER, MUTANT_ENVIRONMENT } from './unchecked-core.ts';
 
 // The vitest config for the runs `npm run unchecked` gives a process of their own: the unmutated baseline,
 // and any mutant a warm worker could not settle. The mutated source NEVER

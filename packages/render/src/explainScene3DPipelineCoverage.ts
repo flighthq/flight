@@ -9,7 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 import { StandardMaterialKind } from '@flighthq/types/contract';
 
-import { getRenderStateRuntime } from './renderState';
+import { getRenderStateRuntime } from './renderState.ts';
 
 // Material renderers live on backend-specific registries (GlRenderRegistries, WgpuRenderRegistries),
 // not on the base RenderRegistries, so the caller passes them explicitly.

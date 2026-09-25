@@ -8,8 +8,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ImageChannel, RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
-import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Samples the displacement map and source in one fullscreen pass. Map channels are centred around
 // 0.5, converted to pixel offsets by scaleX/scaleY, then normalized by the source resolution. Positive

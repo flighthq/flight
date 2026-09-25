@@ -17,7 +17,7 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseSpineSkeleton, parseSpineDrawOrderTimeline } from './spineParse';
+import { parseSpineSkeleton, parseSpineDrawOrderTimeline } from './spineParse.ts';
 
 // Hand-authored minimal Spine skeleton JSON (per the real-asset rule: committed fixtures are hand-written,
 // never transcribed from an external rig). Two bones: a root, and a child that sets every transform field.

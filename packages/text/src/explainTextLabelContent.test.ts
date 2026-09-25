@@ -1,8 +1,8 @@
 import { setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
 
-import { explainTextLabelContent } from './explainTextLabelContent';
-import { createTextLabel, setTextLabelString } from './textLabel';
-import { ensureTextLayout } from './textLabelLayout';
+import { explainTextLabelContent } from './explainTextLabelContent.ts';
+import { createTextLabel, setTextLabelString } from './textLabel.ts';
+import { ensureTextLayout } from './textLabelLayout.ts';
 
 const measure = (text: string) => text.length * 7;
 

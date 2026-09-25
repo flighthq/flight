@@ -1,8 +1,8 @@
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 
-import * as contractEffects from './contract';
-import * as publicEffects from './index';
-import { getWgpuEffectRunner } from './wgpuEffectRegistry';
+import * as contractEffects from './contract.ts';
+import * as publicEffects from './index.ts';
+import { getWgpuEffectRunner } from './wgpuEffectRegistry.ts';
 
 beforeAll(() => {
   installWgpuMock();

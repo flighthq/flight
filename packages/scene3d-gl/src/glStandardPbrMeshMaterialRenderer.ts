@@ -9,11 +9,16 @@ import type {
   StandardPbrMaterial,
 } from '@flighthq/types/contract';
 
-import { bindGlMeshLightBlock } from './glLitProgram';
-import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshCameraPosition, setGlMeshViewProjection } from './glMeshProgram';
-import { ensureGlPbrProgram } from './glPbrProgramCache';
-import { bindGlPbrStandardBlock, buildGlPbrStandardDefineKey } from './glPbrStandardBlock';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { bindGlMeshLightBlock } from './glLitProgram.ts';
+import {
+  beginGlMeshDraw,
+  drawGlMeshSubset,
+  setGlMeshCameraPosition,
+  setGlMeshViewProjection,
+} from './glMeshProgram.ts';
+import { ensureGlPbrProgram } from './glPbrProgramCache.ts';
+import { bindGlPbrStandardBlock, buildGlPbrStandardDefineKey } from './glPbrStandardBlock.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // The built-in StandardPbr forward-lit mesh-material renderer (GlMeshMaterialRenderer for
 // StandardPbrMaterialKind). bind selects the uber-shader variant for the material's maps/alpha mode,

@@ -10,7 +10,7 @@ import {
   getFunctionalAntialiasingExitCode,
   readFunctionalAntialiasingRatchet,
   sourceDrawsOnlyAxisAlignedFills,
-} from './check-functional-antialiasing';
+} from './check-functional-antialiasing.ts';
 
 let root: string;
 let scenes: string;

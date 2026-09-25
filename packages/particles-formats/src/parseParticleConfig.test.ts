@@ -8,8 +8,8 @@ import {
   UnityParticleFormatKind,
 } from '@flighthq/types/contract';
 
-import { parseParticleConfig, parseParticleConfigDocument } from './parseParticleConfig';
-import { registerBuiltInParticleFormats } from './registerBuiltInParticleFormats';
+import { parseParticleConfig, parseParticleConfigDocument } from './parseParticleConfig.ts';
+import { registerBuiltInParticleFormats } from './registerBuiltInParticleFormats.ts';
 
 beforeAll(() => registerBuiltInParticleFormats());
 

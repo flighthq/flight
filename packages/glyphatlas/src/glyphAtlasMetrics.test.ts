@@ -1,8 +1,8 @@
 import type { GlyphMetrics, HostGlyphRasterizerCapability } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createGlyphAtlas, deriveGlyphMetricsFromFontSize } from './glyphAtlas';
-import { getGlyphAtlasKerning, getGlyphAtlasMetrics } from './glyphAtlasMetrics';
+import { createGlyphAtlas, deriveGlyphMetricsFromFontSize } from './glyphAtlas.ts';
+import { getGlyphAtlasKerning, getGlyphAtlasMetrics } from './glyphAtlasMetrics.ts';
 
 const defaultBackend: HostGlyphRasterizerCapability = { rasterize: () => null };
 

@@ -21,9 +21,9 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { explainWgpuScene3DCoverage, hasWgpuScene3DCoverage } from './explainWgpuScene3DCoverage';
-import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+import { explainWgpuScene3DCoverage, hasWgpuScene3DCoverage } from './explainWgpuScene3DCoverage.ts';
+import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 
 const coverageCatalog: SceneCoverageCatalog = [
   {

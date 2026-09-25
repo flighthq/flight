@@ -1,6 +1,6 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 
-import { buildDomScale9Mapper } from './domScale9Mapper';
+import { buildDomScale9Mapper } from './domScale9Mapper.ts';
 
 describe('buildDomScale9Mapper', () => {
   it('returns null for invalid scale or bounds', () => {

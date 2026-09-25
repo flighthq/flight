@@ -1,20 +1,20 @@
 import type { GltfExtensionHandler } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { GltfAnisotropyExtensionHandler } from './gltfAnisotropy';
-import { GltfClearcoatExtensionHandler } from './gltfClearcoat';
-import { GltfEmissiveStrengthExtensionHandler } from './gltfEmissiveStrength';
-import { GltfIridescenceExtensionHandler } from './gltfIridescence';
-import { GltfSheenExtensionHandler } from './gltfSheen';
-import { GltfSpecularExtensionHandler } from './gltfSpecular';
-import { GltfSpecularGlossinessExtensionHandler } from './gltfSpecularGlossiness';
+import { GltfAnisotropyExtensionHandler } from './gltfAnisotropy.ts';
+import { GltfClearcoatExtensionHandler } from './gltfClearcoat.ts';
+import { GltfEmissiveStrengthExtensionHandler } from './gltfEmissiveStrength.ts';
+import { GltfIridescenceExtensionHandler } from './gltfIridescence.ts';
+import { GltfSheenExtensionHandler } from './gltfSheen.ts';
+import { GltfSpecularExtensionHandler } from './gltfSpecular.ts';
+import { GltfSpecularGlossinessExtensionHandler } from './gltfSpecularGlossiness.ts';
 import {
   GltfIorExtensionHandler,
   GltfTransmissionExtensionHandler,
   GltfVolumeExtensionHandler,
-} from './gltfTransmissionVolume';
-import { GltfUnlitExtensionHandler } from './gltfUnlit';
-import { registerGltfMaterialExtensionHandlers } from './registerGltfMaterialExtensionHandlers';
+} from './gltfTransmissionVolume.ts';
+import { GltfUnlitExtensionHandler } from './gltfUnlit.ts';
+import { registerGltfMaterialExtensionHandlers } from './registerGltfMaterialExtensionHandlers.ts';
 
 describe('registerGltfMaterialExtensionHandlers', () => {
   it('registers every built-in material extension and replaces existing kinds', () => {

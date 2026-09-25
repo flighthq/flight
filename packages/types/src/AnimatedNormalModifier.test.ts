@@ -1,7 +1,7 @@
-import type { AnimatedNormalModifier } from './AnimatedNormalModifier';
-import { AnimatedNormalModifierKind } from './AnimatedNormalModifier';
-import { EntityRuntimeKey } from './Entity';
-import type { Modifier } from './Modifier';
+import type { AnimatedNormalModifier } from './AnimatedNormalModifier.ts';
+import { AnimatedNormalModifierKind } from './AnimatedNormalModifier.ts';
+import { EntityRuntimeKey } from './Entity.ts';
+import type { Modifier } from './Modifier.ts';
 
 describe('AnimatedNormalModifier', () => {
   describe('AnimatedNormalModifierKind', () => {

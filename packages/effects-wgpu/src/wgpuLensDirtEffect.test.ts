@@ -1,10 +1,14 @@
 import { createLensDirtEffect } from '@flighthq/effects/contract';
 import * as renderWgpuContractModule from '@flighthq/render-wgpu/contract';
 
-import * as wgpuBlurEffectModule from './wgpuBlurEffect';
-import * as wgpuEffectPassModule from './wgpuEffectPass';
-import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache';
-import { applyLensDirtEffectToWgpu, wgpuLensDirtEffectRunner, registerWgpuLensDirtEffect } from './wgpuLensDirtEffect';
+import * as wgpuBlurEffectModule from './wgpuBlurEffect.ts';
+import * as wgpuEffectPassModule from './wgpuEffectPass.ts';
+import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache.ts';
+import {
+  applyLensDirtEffectToWgpu,
+  wgpuLensDirtEffectRunner,
+  registerWgpuLensDirtEffect,
+} from './wgpuLensDirtEffect.ts';
 
 let nextTargetId = 0;
 

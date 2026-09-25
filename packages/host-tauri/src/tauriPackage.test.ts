@@ -7,7 +7,7 @@ import type { OutputChunk } from 'rollup';
 import ts from 'typescript';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import * as publicApi from './index';
+import * as publicApi from './index.ts';
 
 const ROOT = resolve(__dirname, '../../..');
 const PACKAGE_ROOT = resolve(__dirname, '..');

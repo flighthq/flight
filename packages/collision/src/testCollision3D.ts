@@ -1,8 +1,8 @@
 import type { CollisionManifold3D, CollisionShape3D, CollisionTestGuard3D } from '@flighthq/types/contract';
 
-import { getCollisionPairTest3D } from './collisionSupport3D';
-import { testCollisionSupport3D } from './gjk3D';
-import { clearCollisionManifold3D } from './manifold3D';
+import { getCollisionPairTest3D } from './collisionSupport3D.ts';
+import { testCollisionSupport3D } from './gjk3D.ts';
+import { clearCollisionManifold3D } from './manifold3D.ts';
 
 // Installs the optional diagnostics seam consulted before testCollision3D dispatches its shape pair.
 export function setCollisionTestGuard3D(guard: CollisionTestGuard3D | null): void {

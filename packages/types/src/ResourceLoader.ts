@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { ResourceLoadReport } from './ResourceLoadReport';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { ResourceLoadReport } from './ResourceLoadReport.ts';
+import type { Signal } from './Signal.ts';
 
 export interface ResourceLoader extends Entity {
   onCancel: Signal<() => void>;

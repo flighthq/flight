@@ -1,61 +1,61 @@
-export { canvasBitmapTextRenderer } from './canvasBitmapText';
-export * from './canvasBitmapTextureResolver';
+export { canvasBitmapTextRenderer } from './canvasBitmapText.ts';
+export * from './canvasBitmapTextureResolver.ts';
 export {
   createCanvasCacheState,
   createCanvasOffscreenRenderState,
   enableCanvasRenderCache,
   refreshCanvasRenderCache,
   canvasRenderCacheRenderer,
-} from './canvasCache';
-export * from './canvasClip';
-export * from './canvasElement';
-export * from './canvasImageSource';
-export * from './canvasImageTextureResolver';
-export * from './canvasMaterials';
-export { canvasScene2DRenderer, renderCanvasScene2D } from './canvasNode2D';
-export { canvasParticleEmitter2DRenderer } from './canvasParticleEmitter2D';
-export { allocateEmptyCanvasRenderRegistries } from './canvasPipeline';
-export { canvasQuadBatchRenderer } from './canvasQuadBatch';
+} from './canvasCache.ts';
+export * from './canvasClip.ts';
+export * from './canvasElement.ts';
+export * from './canvasImageSource.ts';
+export * from './canvasImageTextureResolver.ts';
+export * from './canvasMaterials.ts';
+export { canvasScene2DRenderer, renderCanvasScene2D } from './canvasNode2D.ts';
+export { canvasParticleEmitter2DRenderer } from './canvasParticleEmitter2D.ts';
+export { allocateEmptyCanvasRenderRegistries } from './canvasPipeline.ts';
+export { canvasQuadBatchRenderer } from './canvasQuadBatch.ts';
 export {
   getCanvasQuadMaterialRenderer,
   registerCanvasQuadMaterialRenderer,
   resolveCanvasQuadMaterialRenderer,
-} from './canvasQuadMaterialRegistry';
-export * from './canvasRenderPass';
+} from './canvasQuadMaterialRegistry.ts';
+export * from './canvasRenderPass.ts';
 export {
   createCanvasRenderState,
   destroyCanvasRenderState,
   getCanvasRenderStateTextureResolvers,
-} from './canvasRenderState';
+} from './canvasRenderState.ts';
 export {
   acquireCanvasSurface,
   destroyCanvasSurfaceOwned,
   getCanvasHost,
   registerCanvasHost,
-} from './canvasRenderSurface';
+} from './canvasRenderSurface.ts';
 export {
   destroyCanvasRenderTexture,
   explainCanvasRenderTexture,
   renderIntoCanvasRenderTexture,
-} from './canvasRenderTexture';
+} from './canvasRenderTexture.ts';
 export {
   acquireCanvasRenderTexture,
   createCanvasRenderTexturePool,
   destroyCanvasRenderTexturePool,
   releaseCanvasRenderTexture,
   withCanvasRenderTextures,
-} from './canvasRenderTexturePool';
-export * from './canvasRenderTextureResolver';
-export { canvasRichTextRenderer } from './canvasRichText';
-export { canvasScale9ShapeRenderer } from './canvasScale9Shape';
-export { canvasScale9SpriteRenderer } from './canvasScale9Sprite';
+} from './canvasRenderTexturePool.ts';
+export * from './canvasRenderTextureResolver.ts';
+export { canvasRichTextRenderer } from './canvasRichText.ts';
+export { canvasScale9ShapeRenderer } from './canvasScale9Shape.ts';
+export { canvasScale9SpriteRenderer } from './canvasScale9Sprite.ts';
 export {
   createCanvasScreenRenderTarget,
   disposeCanvasScreenRenderTarget,
   isCanvasScreenRenderTarget,
-} from './canvasScreenRenderTarget';
-export { canvasShapeRenderer, canvasMorphShapeRenderer } from './canvasShape';
-export * from './canvasShapeCommandTable';
+} from './canvasScreenRenderTarget.ts';
+export { canvasShapeRenderer, canvasMorphShapeRenderer } from './canvasShape.ts';
+export * from './canvasShapeCommandTable.ts';
 export {
   canvasBeginFill,
   canvasBeginGradientFill,
@@ -75,25 +75,25 @@ export {
   canvasMoveTo,
   canvasShapeCommands,
   canvasTextureShapeCommands,
-} from './canvasShapeCommands';
-export * from './canvasShapeRasterizer';
-export { registerCanvasShapeCommands } from './canvasShapeRegistry';
-export { canvasSpriteRenderer } from './canvasSprite';
-export { enableCanvasTextInput } from './canvasTextInput';
-export { canvasTextLabelRenderer } from './canvasTextLabel';
+} from './canvasShapeCommands.ts';
+export * from './canvasShapeRasterizer.ts';
+export { registerCanvasShapeCommands } from './canvasShapeRegistry.ts';
+export { canvasSpriteRenderer } from './canvasSprite.ts';
+export { enableCanvasTextInput } from './canvasTextInput.ts';
+export { canvasTextLabelRenderer } from './canvasTextLabel.ts';
 export {
   createCanvasTextureRenderTarget,
   destroyCanvasTextureRenderTarget,
   resizeCanvasTextureRenderTarget,
-} from './canvasTextureRenderTarget';
+} from './canvasTextureRenderTarget.ts';
 export {
   connectCanvasTextureResolverMisses,
   createCanvasTextureResolvers,
   destroyCanvasTextureResolvers,
   registerCanvasTextureResolver,
-} from './canvasTextureResolver';
-export { canvasTilemapRenderer } from './canvasTilemap';
-export * from './enableCanvasTextureResolverGuards';
-export * from './explainCanvasScene2DCoverage';
-export * from './explainCanvasTextureResolution';
-export * from './scene2DCanvasPipeline';
+} from './canvasTextureResolver.ts';
+export { canvasTilemapRenderer } from './canvasTilemap.ts';
+export * from './enableCanvasTextureResolverGuards.ts';
+export * from './explainCanvasScene2DCoverage.ts';
+export * from './explainCanvasTextureResolution.ts';
+export * from './scene2DCanvasPipeline.ts';

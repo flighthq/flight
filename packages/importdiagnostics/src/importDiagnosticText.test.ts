@@ -1,7 +1,7 @@
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { formatImportDiagnostic } from './importDiagnosticText';
+import { formatImportDiagnostic } from './importDiagnosticText.ts';
 
 describe('formatImportDiagnostic', () => {
   it('renders severity, origin, and kind with detail keys sorted', () => {

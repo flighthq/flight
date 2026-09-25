@@ -2,7 +2,7 @@ import {
   applyConvolutionEffectToWgpu,
   wgpuConvolutionEffectRunner,
   registerWgpuConvolutionEffect,
-} from './wgpuConvolutionEffect';
+} from './wgpuConvolutionEffect.ts';
 
 describe('applyConvolutionEffectToWgpu', () => {
   it('is a function', () => {

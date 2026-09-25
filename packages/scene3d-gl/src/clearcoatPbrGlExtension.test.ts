@@ -2,9 +2,9 @@ import { createClearcoatPbrExtension } from '@flighthq/materials/contract';
 import type { Texture } from '@flighthq/types/contract';
 import { ClearcoatPbrExtensionKind } from '@flighthq/types/contract';
 
-import { clearcoatPbrGlExtension, registerGlClearcoatPbrExtension } from './clearcoatPbrGlExtension';
-import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+import { clearcoatPbrGlExtension, registerGlClearcoatPbrExtension } from './clearcoatPbrGlExtension.ts';
+import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 describe('clearcoatPbrGlExtension', () => {
   it('contributes energy-conserving punctual and IBL clearcoat source', () => {

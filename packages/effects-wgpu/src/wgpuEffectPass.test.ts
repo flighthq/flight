@@ -11,7 +11,7 @@ import {
   drawWgpuEffectPass,
   getWgpuEffectPassState,
   initializeWgpuDualSourceEffectPipeline,
-} from './wgpuEffectPass';
+} from './wgpuEffectPass.ts';
 
 beforeAll(() => renderWgpuContract.installWgpuMock());
 

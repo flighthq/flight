@@ -6,7 +6,7 @@ import {
   electronHostClipboardFormats,
   electronHostClipboardImage,
   electronHostClipboardText,
-} from './electronClipboard';
+} from './electronClipboard.ts';
 
 function clipboardProvider(electron: ElectronApi) {
   const clipboard = electronHostClipboard(electron);

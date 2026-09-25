@@ -10,7 +10,7 @@ import {
   registerGlBlendEffect,
   registerGlBlendEffectBackdrop,
   unregisterGlBlendEffectBackdrop,
-} from './glBlendEffect';
+} from './glBlendEffect.ts';
 
 // The backdrop registry is a plain WeakMap keyed by the render state, with no GL calls, so a bare object
 // stands in for a state. The compile/draw path is exercised pixel-for-pixel by the

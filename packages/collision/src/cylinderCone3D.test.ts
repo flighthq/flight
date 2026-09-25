@@ -1,14 +1,14 @@
 import type { CollisionBuiltInShape3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { getCollisionShapeValidationStatus3D } from './collisionShapeValidation3D';
+import { getCollisionShapeValidationStatus3D } from './collisionShapeValidation3D.ts';
 import {
   registerBuiltInCollisionSupports3D,
   supportCollisionCone3D,
   supportCollisionCylinder3D,
-} from './collisionSupport3D';
-import { getCollisionShapeContainsPoint3D } from './pointContainment3D';
-import { createCollisionRaycastHit3D, raycastCollisionShape3D } from './raycastCollisionShape3D';
+} from './collisionSupport3D.ts';
+import { getCollisionShapeContainsPoint3D } from './pointContainment3D.ts';
+import { createCollisionRaycastHit3D, raycastCollisionShape3D } from './raycastCollisionShape3D.ts';
 
 // The two round-sided kinds share every seam — support, containment, raycast, validation — so they are
 // exercised together rather than split by seam. A defect in one usually shows up as a disagreement

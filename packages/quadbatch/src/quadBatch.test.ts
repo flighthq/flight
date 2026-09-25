@@ -48,7 +48,7 @@ import {
   setQuadBatchInstanceTint,
   setQuadBatchLocalBoundsRectangle,
   setQuadBatchTransformType,
-} from './quadBatch';
+} from './quadBatch.ts';
 
 function makeQuadAtlas(...regions: TextureAtlasRegion[]): TextureAtlas {
   return { texture: null, regions } as TextureAtlas;

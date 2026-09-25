@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { Signal } from './Signal.ts';
 
 /**
  * Core context-menu dispatcher signals. These stay a package-level opt-in group rather than Host event

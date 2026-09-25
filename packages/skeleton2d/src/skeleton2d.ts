@@ -3,7 +3,7 @@ import { inverseMatrix, multiplyMatrix } from '@flighthq/geometry/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import type { AttachmentSkin2D, Bone2D, EntityConstruction, MatrixLike, Skeleton2D } from '@flighthq/types/contract';
 
-import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants';
+import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants.ts';
 
 // Deep-copies the bone array (each Bone2D cloned) and the transform buffers, producing an independently
 // posable skeleton. Slots and their attachments are SHARED (attachments are immutable setup data); use a

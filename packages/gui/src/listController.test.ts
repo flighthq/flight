@@ -1,6 +1,6 @@
 import { connectSignal } from '@flighthq/signals/contract';
 
-import { createGuiTestNode, emitGuiKeyboard, emitGuiPointer } from './guiTestHelper';
+import { createGuiTestNode, emitGuiKeyboard, emitGuiPointer } from './guiTestHelper.ts';
 import {
   createListController,
   disposeListController,
@@ -8,7 +8,7 @@ import {
   getListControllerSignals,
   setListControllerSelectedIndex,
   setListControllerVisible,
-} from './listController';
+} from './listController.ts';
 
 describe('createListController', () => {
   it('selects and activates item visuals', () => {

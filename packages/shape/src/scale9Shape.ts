@@ -10,7 +10,7 @@ import type {
 } from '@flighthq/types/contract';
 import { Scale9ShapeKind } from '@flighthq/types/contract';
 
-import { createShapeRuntime } from './shape';
+import { createShapeRuntime } from './shape.ts';
 
 export function createScale9Shape(
   scale9Grid: Readonly<RectangleLike>,

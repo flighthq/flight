@@ -1,6 +1,6 @@
-import { swfBitmapTagFamily } from './swfBitmapTagFamily';
-import { swfJpegBitmapHandler } from './swfJpegBitmapHandler';
-import { swfLosslessBitmapHandler } from './swfLosslessBitmapHandler';
+import { swfBitmapTagFamily } from './swfBitmapTagFamily.ts';
+import { swfJpegBitmapHandler } from './swfJpegBitmapHandler.ts';
+import { swfLosslessBitmapHandler } from './swfLosslessBitmapHandler.ts';
 
 describe('swfBitmapTagFamily', () => {
   it('is exactly its handlers, in the order a placed character is offered to them', () => {

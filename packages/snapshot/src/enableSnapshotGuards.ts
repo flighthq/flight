@@ -1,7 +1,7 @@
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setSnapshotCaptureGuard } from './captureSnapshot';
+import { setSnapshotCaptureGuard } from './captureSnapshot.ts';
 
 /** Uninstalls the guard installed by `enableSnapshotGuards`. */
 export function disableSnapshotGuards(): void {

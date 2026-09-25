@@ -1,4 +1,4 @@
-import type { FogModifierMode } from './FogModifier';
+import type { FogModifierMode } from './FogModifier.ts';
 
 export interface FogModifierOptions {
   // Packed sRGB RGBA (`0xRRGGBBAA`), seeding FogModifier.color.

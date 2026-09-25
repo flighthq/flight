@@ -2,9 +2,9 @@ import { createRandomSource } from '@flighthq/math/contract';
 import { createParticleEmitterConfig, createParticleEmitterState } from '@flighthq/particles/contract';
 import type { TextureAtlas } from '@flighthq/types/contract';
 
-import { emitParticleBurst2D } from './emitParticleBurst2D';
-import { createParticleEmitter2D } from './particleEmitter';
-import { updateParticleEmitter2D } from './updateParticleEmitter2D';
+import { emitParticleBurst2D } from './emitParticleBurst2D.ts';
+import { createParticleEmitter2D } from './particleEmitter.ts';
+import { updateParticleEmitter2D } from './updateParticleEmitter2D.ts';
 
 function makeAtlas(): TextureAtlas {
   return {

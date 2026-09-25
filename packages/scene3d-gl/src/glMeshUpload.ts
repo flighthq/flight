@@ -9,7 +9,7 @@ import type {
   GlMeshUpload,
 } from '@flighthq/types/contract';
 
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 export function bindGlVertexAttribute(gl: GlContext, attribute: Readonly<VertexAttribute>, stride: number): void {
   const location = ATTRIBUTE_LOCATION[attribute.semantic];

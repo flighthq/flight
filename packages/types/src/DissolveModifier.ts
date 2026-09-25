@@ -1,5 +1,5 @@
-import type { Modifier } from './Modifier';
-import type { Texture } from './Texture';
+import type { Modifier } from './Modifier.ts';
+import type { Texture } from './Texture.ts';
 
 // A clip/burn dissolve of the shaded output (slot: Effect): a per-fragment noise value (procedural
 // value noise over the UV, or a sampled `map`) is compared against `threshold`; fragments below it are

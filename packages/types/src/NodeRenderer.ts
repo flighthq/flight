@@ -1,8 +1,8 @@
-﻿import type { BatchFormat } from './BatchFormat';
-import type { NodeAny } from './Node';
-import type { RendererData } from './RendererData';
-import type { RenderProxy } from './RenderProxy';
-import type { RenderState } from './RenderState';
+﻿import type { BatchFormat } from './BatchFormat.ts';
+import type { NodeAny } from './Node.ts';
+import type { RendererData } from './RendererData.ts';
+import type { RenderProxy } from './RenderProxy.ts';
+import type { RenderState } from './RenderState.ts';
 
 export interface NodeRenderer {
   // Declares which geometry accumulation pipeline this renderer submits into. When set, the

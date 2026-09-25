@@ -2,8 +2,8 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { TransmissionVolumePbrExtension, EntityConstruction } from '@flighthq/types/contract';
 import { TransmissionVolumePbrExtensionKind } from '@flighthq/types/contract';
 
-import { isValidMaterialIor, isValidMaterialWeight } from './materialValidation';
-import { isValidPbrUvSet } from './pbrExtension';
+import { isValidMaterialIor, isValidMaterialWeight } from './materialValidation.ts';
+import { isValidPbrUvSet } from './pbrExtension.ts';
 
 export function createTransmissionVolumePbrExtension(
   opts?: Readonly<Partial<TransmissionVolumePbrExtension>>,

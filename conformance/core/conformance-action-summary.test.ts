@@ -3,9 +3,9 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { renderConformanceActionSummary } from '../../scripts/conformance-action-summary';
-import type { FixtureImportConformanceReport } from '../fixtures/import-fixture-conformance';
-import type { ImportConformanceScore } from './import-conformance-score';
+import { renderConformanceActionSummary } from '../../scripts/conformance-action-summary.ts';
+import type { FixtureImportConformanceReport } from '../fixtures/import-fixture-conformance.ts';
+import type { ImportConformanceScore } from './import-conformance-score.ts';
 
 describe('renderConformanceActionSummary', () => {
   it('renders fixture, capability, oracle, and audit measurements without turning them into verdicts', () => {

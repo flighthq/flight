@@ -5,9 +5,9 @@ import {
   applyContactShadowsEffectToWgpu,
   wgpuContactShadowsEffectRunner,
   registerWgpuContactShadowsEffect,
-} from './wgpuContactShadowsEffect';
-import { getWgpuEffectRunner } from './wgpuEffectRegistry';
-import * as wgpuSsaoEffectMod from './wgpuSsaoEffect';
+} from './wgpuContactShadowsEffect.ts';
+import { getWgpuEffectRunner } from './wgpuEffectRegistry.ts';
+import * as wgpuSsaoEffectMod from './wgpuSsaoEffect.ts';
 
 beforeAll(() => {
   installWgpuMock();

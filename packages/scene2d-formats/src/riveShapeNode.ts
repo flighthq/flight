@@ -12,9 +12,9 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { getRiveCoreObjectHandler, registerRiveCoreObjectHandler } from './riveImportRegistry';
-import { appendRiveShapeGeometry, appendRiveShapePaint } from './riveShapePaint';
-import { createRivePathRecord } from './riveShapePath';
+import { getRiveCoreObjectHandler, registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
+import { appendRiveShapeGeometry, appendRiveShapePaint } from './riveShapePaint.ts';
+import { createRivePathRecord } from './riveShapePath.ts';
 
 /**
  * A nine-sliced node scales a child with fixed corners; imported as a plain container it keeps the

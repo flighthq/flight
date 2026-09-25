@@ -1,14 +1,14 @@
 import type { SpatialObjectId } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { explainSpatialIndexing2D } from './explainSpatialIndexing2D';
+import { explainSpatialIndexing2D } from './explainSpatialIndexing2D.ts';
 import {
   createSpatialIndex2D,
   insertSpatialObject2D,
   removeSpatialObject2D,
   updateSpatialObject2D,
-} from './spatialIndex';
-import { MAX_INDEXED_CELLS_PER_OBJECT, createUniformGridSpatialBackend2D } from './uniformGrid';
+} from './spatialIndex.ts';
+import { MAX_INDEXED_CELLS_PER_OBJECT, createUniformGridSpatialBackend2D } from './uniformGrid.ts';
 
 describe('explainSpatialIndexing2D', () => {
   it('reports absent for an id that was never inserted', () => {

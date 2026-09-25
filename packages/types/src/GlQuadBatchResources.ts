@@ -1,4 +1,4 @@
-import type { GlQuadBatchShader } from './GlRenderState';
+import type { GlQuadBatchShader } from './GlRenderState.ts';
 
 export interface GlQuadBatchResources {
   cornerBuffer: WebGLBuffer;

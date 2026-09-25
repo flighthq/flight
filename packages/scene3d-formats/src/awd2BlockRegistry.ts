@@ -1,11 +1,15 @@
 import type { Awd2BlockHandler } from '@flighthq/types/contract';
 
-import { awd2CameraHandler } from './awd2CameraHandler';
-import { awd2TriangleGeometryHandler } from './awd2GeometryHandler';
-import { awd2LightHandler, awd2LightPickerHandler } from './awd2LightingHandler';
-import { awd2MaterialHandler, awd2TextureHandler } from './awd2MaterialHandler';
-import { awd2ContainerHandler, awd2MeshInstanceHandler } from './awd2SceneStructureHandler';
-import { awd2SkeletonAnimationHandler, awd2SkeletonBlockHandler, awd2SkeletonPoseHandler } from './awd2SkeletonHandler';
+import { awd2CameraHandler } from './awd2CameraHandler.ts';
+import { awd2TriangleGeometryHandler } from './awd2GeometryHandler.ts';
+import { awd2LightHandler, awd2LightPickerHandler } from './awd2LightingHandler.ts';
+import { awd2MaterialHandler, awd2TextureHandler } from './awd2MaterialHandler.ts';
+import { awd2ContainerHandler, awd2MeshInstanceHandler } from './awd2SceneStructureHandler.ts';
+import {
+  awd2SkeletonAnimationHandler,
+  awd2SkeletonBlockHandler,
+  awd2SkeletonPoseHandler,
+} from './awd2SkeletonHandler.ts';
 
 // The families a caller names blocks with, and the preset that names them all. Nothing in the importer
 // imports this file: the block walk takes the handler array it was handed and reaches handlers only

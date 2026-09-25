@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isCaptureVerificationTerminal } from './captureProtocol';
+import { isCaptureVerificationTerminal } from './captureProtocol.ts';
 
 describe('isCaptureVerificationTerminal', () => {
   it('distinguishes pending from completed verification states', () => {

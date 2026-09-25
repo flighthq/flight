@@ -3,8 +3,8 @@ import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
-import type { SizeResult } from './size-runner';
-import { collectSizeCases, didSizeChecksPass, getFlightDiagnosticsSizeDelta, runSizeChecks } from './size-runner';
+import type { SizeResult } from './size-runner.ts';
+import { collectSizeCases, didSizeChecksPass, getFlightDiagnosticsSizeDelta, runSizeChecks } from './size-runner.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -51,7 +51,7 @@ const passed = didSizeChecksPass(results);
 const flightDiagnosticsDelta = getFlightDiagnosticsSizeDelta(results);
 
 if (updateBaseline) {
-  const { writeBaseline } = await import('./size-runner');
+  const { writeBaseline } = await import('./size-runner.ts');
   writeBaseline(baselineFile, pendingBaseline);
 }
 

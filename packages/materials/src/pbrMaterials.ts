@@ -9,8 +9,8 @@ import type {
 } from '@flighthq/types/contract';
 import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
-import { explainSpecularGlossinessConversion } from './explainMaterialConversion';
-import { createMaterial3D } from './material3d';
+import { explainSpecularGlossinessConversion } from './explainMaterialConversion.ts';
+import { createMaterial3D } from './material3d.ts';
 
 // Converts a legacy specular-glossiness material to a metallic-roughness property block.
 // Writes `out` with the computed base-color, metallic, and roughness values. The conversion

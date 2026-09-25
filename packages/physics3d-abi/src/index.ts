@@ -1,4 +1,4 @@
-export * from './physics3DAbi';
+export * from './physics3DAbi.ts';
 export {
   clearPhysics3DAbiCommandBuffer,
   createPhysics3DAbiBodyBuffer,
@@ -8,8 +8,8 @@ export {
   createPhysics3DAbiJointBuffer,
   createPhysics3DAbiQueryBuffer,
   getPhysics3DAbiCommandBufferRemainingByteLength,
-} from './physics3DAbiBuffer';
-export * from './physics3DAbiCommand';
-export * from './physics3DAbiLayout';
-export * from './physics3DAbiQuery';
-export { createReferencePhysics3DAbi } from './referencePhysics3DAbi';
+} from './physics3DAbiBuffer.ts';
+export * from './physics3DAbiCommand.ts';
+export * from './physics3DAbiLayout.ts';
+export * from './physics3DAbiQuery.ts';
+export { createReferencePhysics3DAbi } from './referencePhysics3DAbi.ts';

@@ -5,7 +5,7 @@ import {
   getWgpuEffectLogicalResolution,
   getWgpuEffectLogicalWidth,
   getWgpuRenderTargetTexelScale,
-} from './wgpuEffectTexelScale';
+} from './wgpuEffectTexelScale.ts';
 
 describe('getWgpuEffectLogicalResolution', () => {
   // Logical pixels are the open pass's viewport: a scratch target twice that wide holds two texels per

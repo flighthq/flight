@@ -1,7 +1,7 @@
 import type { Path, StrokeStyle } from '@flighthq/types/contract';
 
-import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path';
-import { buildStrokePathGeometry } from './strokePathGeometry';
+import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
+import { buildStrokePathGeometry } from './strokePathGeometry.ts';
 
 export type { StrokeStyle } from '@flighthq/types/contract';
 

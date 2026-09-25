@@ -36,7 +36,7 @@ import {
   setClipRegionUseGuard,
   transformClipRegion,
   unionClipRegions,
-} from './clipRegion';
+} from './clipRegion.ts';
 
 describe('acquireClipRegion', () => {
   it('returns a valid empty rectangular clip region', () => {

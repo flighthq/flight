@@ -9,7 +9,7 @@ import {
   webHostPhotoCaptureDialog,
   webHostPromptDialog,
   webHostVideoCaptureDialog,
-} from './webDialog';
+} from './webDialog.ts';
 
 export const webHostDialog = {
   directoryOpen: webHostDirectoryOpenDialog,

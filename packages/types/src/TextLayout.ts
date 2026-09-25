@@ -1,10 +1,10 @@
-import type { Entity } from './Entity';
-import type { TextAutoSize } from './TextAutoSize';
-import type { TextDirection } from './TextDirection';
-import type { TextFormat } from './TextFormat';
-import type { TextFormatRange } from './TextFormatRange';
-import type { TextJustification } from './TextJustification';
-import type { TextVerticalAlign } from './TextVerticalAlign';
+import type { Entity } from './Entity.ts';
+import type { TextAutoSize } from './TextAutoSize.ts';
+import type { TextDirection } from './TextDirection.ts';
+import type { TextFormat } from './TextFormat.ts';
+import type { TextFormatRange } from './TextFormatRange.ts';
+import type { TextJustification } from './TextJustification.ts';
+import type { TextVerticalAlign } from './TextVerticalAlign.ts';
 
 export type TextMeasureFunction = (text: string, format: TextFormat) => number;
 

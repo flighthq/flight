@@ -1,4 +1,4 @@
-import type { ImageFormat } from './ImageFormat';
+import type { ImageFormat } from './ImageFormat.ts';
 
 export interface BitmapEncodeFailureExplanation {
   readonly format: ImageFormat;

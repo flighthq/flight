@@ -1,12 +1,12 @@
 import type { HostFontLoadingCapability } from '@flighthq/types/contract';
 
-import { createFontResource } from './fontResource';
+import { createFontResource } from './fontResource.ts';
 import {
   loadFontResourceFromBytes,
   loadFontResourceFromName,
   loadFontResourceFromUrl,
   loadFontResourceFromUrls,
-} from './fontResourceFrom';
+} from './fontResourceFrom.ts';
 
 interface FontFaceConstruction {
   family: string;

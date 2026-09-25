@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { webHostGlyphRasterizer } from './webGlyphRasterizer';
+import { webHostGlyphRasterizer } from './webGlyphRasterizer.ts';
 
 describe('webHostGlyphRasterizer', () => {
   it('constructs a backend with rasterize and measureMetrics', () => {

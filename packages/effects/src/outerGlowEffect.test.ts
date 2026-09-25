@@ -5,7 +5,7 @@ import {
   getOuterGlowEffectPadding,
   initializeOuterGlowEffect,
   registerOuterGlowEffectPaddingResolver,
-} from './outerGlowEffect';
+} from './outerGlowEffect.ts';
 
 describe('createOuterGlowEffect', () => {
   it('tags the intent type', () => {

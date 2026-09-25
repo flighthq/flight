@@ -1,8 +1,8 @@
 import { createVector3 } from '@flighthq/geometry/contract';
 import { getNodeLocalMatrix4 } from '@flighthq/node/contract';
 
-import { createNode3D } from './sceneNode';
-import { setNode3DLookAt } from './sceneNodeTransform';
+import { createNode3D } from './sceneNode.ts';
+import { setNode3DLookAt } from './sceneNodeTransform.ts';
 
 describe('setNode3DLookAt', () => {
   it('places the node at the eye position', () => {

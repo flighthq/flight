@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatTiledColor, parseTiledColor } from './tiledColor';
+import { formatTiledColor, parseTiledColor } from './tiledColor.ts';
 
 describe('formatTiledColor', () => {
   it('emits #AARRGGBB with alpha first', () => {

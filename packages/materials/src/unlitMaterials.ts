@@ -19,7 +19,7 @@ import {
   WireframeMaterialKind,
 } from '@flighthq/types/contract';
 
-import { createMaterial3D } from './material3d';
+import { createMaterial3D } from './material3d.ts';
 
 // Depth-output pass material. `near`/`far` default to a unit range; the depth pass overrides
 // them with the camera's range when used as pass infrastructure.

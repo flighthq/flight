@@ -8,9 +8,9 @@ import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 import {
   wgpuBlinnPhongMeshMaterialRenderer,
   registerWgpuBlinnPhongMaterial,
-} from './wgpuBlinnPhongMeshMaterialRenderer';
-import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+} from './wgpuBlinnPhongMeshMaterialRenderer.ts';
+import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { parseSync } from 'oxc-parser';
 import pc from 'picocolors';
 
-import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories';
-import { filterPaths, getSelectors } from './select';
+import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories.ts';
+import { filterPaths, getSelectors } from './select.ts';
 
 // Construction-model gate. Every `allocateEntity()` call must have a matching `finishEntity()` in the
 // same function scope. `createEntity()` is deprecated for new code — the gate blocks regression. See

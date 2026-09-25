@@ -1,5 +1,5 @@
-import type { Mesh } from './Mesh';
-import type { Node3D, Node3DRuntime } from './Node3D';
+import type { Mesh } from './Mesh.ts';
+import type { Node3D, Node3DRuntime } from './Node3D.ts';
 export interface LodLevel {
   mesh: Mesh;
   minDistance: number;

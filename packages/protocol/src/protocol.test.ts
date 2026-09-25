@@ -22,7 +22,7 @@ import {
   setProtocolSchemeAsDefault,
   unregisterProtocolScheme,
   unregisterProtocolSchemes,
-} from './protocol';
+} from './protocol.ts';
 
 function createFixture() {
   const calls: string[] = [];

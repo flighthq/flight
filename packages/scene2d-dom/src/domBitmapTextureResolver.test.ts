@@ -7,9 +7,9 @@ import {
 import { createTexture } from '@flighthq/texture/contract';
 import type { HostImageCapability } from '@flighthq/types/contract';
 
-import { registerDomBitmapTextureResolver } from './domBitmapTextureResolver';
-import { createDomRenderState } from './domRenderState';
-import { resolveDomTexture } from './domTextureResolver';
+import { registerDomBitmapTextureResolver } from './domBitmapTextureResolver.ts';
+import { createDomRenderState } from './domRenderState.ts';
+import { resolveDomTexture } from './domTextureResolver.ts';
 
 beforeEach(() => {
   registerTestImageDimensionResolver();

@@ -1,6 +1,6 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 
-import { buildWgpuScale9Mapper } from './wgpuScale9Mapper';
+import { buildWgpuScale9Mapper } from './wgpuScale9Mapper.ts';
 
 describe('buildWgpuScale9Mapper', () => {
   it('returns null for invalid scale or bounds', () => {

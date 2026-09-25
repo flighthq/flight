@@ -6,8 +6,8 @@ import { describe, expect, it } from 'vitest';
 import {
   computeSkeleton2DClippingAttachmentVertices,
   getSkeleton2DClippingAttachmentSlotRange,
-} from './clippingAttachment2D';
-import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
+} from './clippingAttachment2D.ts';
+import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d.ts';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
   return {

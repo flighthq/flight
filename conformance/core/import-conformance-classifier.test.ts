@@ -1,8 +1,8 @@
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { createImportConformanceSingleMemberCaseIdentity } from './import-conformance-case';
-import { classifyImportConformanceObservation } from './import-conformance-classifier';
+import { createImportConformanceSingleMemberCaseIdentity } from './import-conformance-case.ts';
+import { classifyImportConformanceObservation } from './import-conformance-classifier.ts';
 
 const FIXTURE = {
   capabilities: ['swf.video.video-frame'],

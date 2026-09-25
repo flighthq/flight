@@ -11,7 +11,7 @@ import type {
   WgpuShapeRendererData,
 } from '@flighthq/types/contract';
 
-import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
+import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData.ts';
 
 // Allocates the rasterization surface on first use, matching scene2d-gl. A shape whose fills all
 // tessellate never touches this, so a scene drawn entirely through the mesh path carries no raster

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { explainPhysics2DJoints } from './explainPhysics2DJoints';
-import { createPhysics2DDistanceJoint } from './jointFactories';
-import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry';
-import { addPhysics2DBody, createPhysics2DWorld, createRigidBody2D } from './world';
+import { explainPhysics2DJoints } from './explainPhysics2DJoints.ts';
+import { createPhysics2DDistanceJoint } from './jointFactories.ts';
+import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry.ts';
+import { addPhysics2DBody, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 const NOOP_SOLVER = { prepare: () => {}, solve: () => {} };
 

@@ -1,4 +1,4 @@
-import { easeInOutQuintic, easeInQuintic, easeOutQuintic } from './easeQuintic';
+import { easeInOutQuintic, easeInQuintic, easeOutQuintic } from './easeQuintic.ts';
 
 describe('easeInOutQuintic', () => {
   it('returns 0 at t=0 and 1 at t=1', () => {

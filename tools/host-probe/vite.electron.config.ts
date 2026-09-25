@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 
-import { workspacePackages } from '../../scripts/workspaces';
+import { workspacePackages } from '../../scripts/workspaces.ts';
 
 const alias = Object.fromEntries(workspacePackages.map((pkg) => [pkg.name, `${pkg.dir}/src`]));
 const flightPackages = workspacePackages.map((pkg) => pkg.name);

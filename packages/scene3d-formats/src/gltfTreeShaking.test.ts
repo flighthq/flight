@@ -3,7 +3,7 @@
 import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 
-import * as publicApi from './index';
+import * as publicApi from './index.ts';
 
 const resolveDir = getFileUrlDirectory(import.meta.url);
 

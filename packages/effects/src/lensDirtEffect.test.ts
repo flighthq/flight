@@ -1,4 +1,4 @@
-import { createLensDirtEffect, initializeLensDirtEffect } from './lensDirtEffect';
+import { createLensDirtEffect, initializeLensDirtEffect } from './lensDirtEffect.ts';
 
 describe('createLensDirtEffect', () => {
   it('tags the intent type', () => {

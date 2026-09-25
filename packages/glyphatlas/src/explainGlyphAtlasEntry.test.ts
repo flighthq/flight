@@ -1,9 +1,9 @@
 import type { HostGlyphRasterizerCapability } from '@flighthq/types/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import { explainGlyphAtlasEntry } from './explainGlyphAtlasEntry';
-import { createGlyphAtlas } from './glyphAtlas';
-import { getGlyphAtlasEntry } from './glyphAtlasEntry';
+import { explainGlyphAtlasEntry } from './explainGlyphAtlasEntry.ts';
+import { createGlyphAtlas } from './glyphAtlas.ts';
+import { getGlyphAtlasEntry } from './glyphAtlasEntry.ts';
 
 function backendProducing(width: number, height: number): HostGlyphRasterizerCapability {
   return {

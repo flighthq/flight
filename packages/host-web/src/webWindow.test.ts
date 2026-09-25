@@ -15,7 +15,7 @@ import {
   webHostWindowFullscreen,
   webHostWindowGeometry,
   webHostWindowLifecycle,
-} from './webWindow';
+} from './webWindow.ts';
 
 afterEach(() => {
   vi.restoreAllMocks();

@@ -1,12 +1,12 @@
 import { acquireWgpuTextureRenderTarget, releaseWgpuTextureRenderTarget } from '@flighthq/render-wgpu/contract';
 import type { BlurEffect, WgpuEffectRunner, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 
-import { drawWgpuEffectPass } from './wgpuEffectPass';
-import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
-import { getWgpuEffectLogicalWidth, getWgpuRenderTargetTexelScale } from './wgpuEffectTexelScale';
+import { drawWgpuEffectPass } from './wgpuEffectPass.ts';
+import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
+import { getWgpuEffectLogicalWidth, getWgpuRenderTargetTexelScale } from './wgpuEffectTexelScale.ts';
 
-export { getWgpuRenderTargetTexelScale } from './wgpuEffectTexelScale';
+export { getWgpuRenderTargetTexelScale } from './wgpuEffectTexelScale.ts';
 
 // Plain separable Gaussian blur: two axis passes (source → temp horizontally, temp → dest vertically),
 // each a single weighted fullscreen pass with radius ⌈3σ⌉. `blurX`/`blurY` are the Gaussian standard

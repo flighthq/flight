@@ -4,14 +4,14 @@ import { createGlRenderState } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget, ScreenSpaceFogEffect } from '@flighthq/types/contract';
 
-import * as glEffectProgramCache from './glEffectProgramCache';
-import { getGlEffectRunner } from './glEffectRegistry';
+import * as glEffectProgramCache from './glEffectProgramCache.ts';
+import { getGlEffectRunner } from './glEffectRegistry.ts';
 import {
   applyScreenSpaceFogEffectToGl,
   glScreenSpaceFogEffectRunner,
   registerGlScreenSpaceFogEffect,
-} from './glScreenSpaceFogEffect';
-import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
+} from './glScreenSpaceFogEffect.ts';
+import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper.ts';
 
 const glMock = {
   uniform1f: vi.fn((_location: unknown, _value: number) => {}),

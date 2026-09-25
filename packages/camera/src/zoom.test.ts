@@ -1,9 +1,9 @@
 import { createVector2 } from '@flighthq/geometry/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createCamera2D } from './camera2d';
-import { unprojectCamera2DPoint } from './projection2d';
-import { zoomCamera2DAtScreenPoint } from './zoom';
+import { createCamera2D } from './camera2d.ts';
+import { unprojectCamera2DPoint } from './projection2d.ts';
+import { zoomCamera2DAtScreenPoint } from './zoom.ts';
 
 describe('zoomCamera2DAtScreenPoint', () => {
   it('keeps the world point under a screen corner fixed while zooming', () => {

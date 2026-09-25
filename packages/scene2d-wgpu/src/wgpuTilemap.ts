@@ -19,7 +19,7 @@ import {
   recordWgpuQuadBatchColorScaleBias,
   writeWgpuQuadBatchAffineInstance,
   QUAD_BATCH_INSTANCE_FLOATS,
-} from './wgpuQuadBatchWriter';
+} from './wgpuQuadBatchWriter.ts';
 
 // Each tile writes the 13 base instance floats; any material packs its own per-instance data.
 const INSTANCE_STRIDE_FLOATS = QUAD_BATCH_INSTANCE_FLOATS;

@@ -2,8 +2,8 @@ import { packColor } from '@flighthq/color/contract';
 import type { ImportDiagnostic, RiveArtboardGraph, RiveCoreObject } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, RiveFieldType } from '@flighthq/types/contract';
 
-import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry';
-import { createRiveRichText, importRiveTextComponent, registerRiveTextHandlers } from './riveText';
+import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry.ts';
+import { createRiveRichText, importRiveTextComponent, registerRiveTextHandlers } from './riveText.ts';
 
 // A run's styleId indexes the artboard's component numbering — the same space parentId uses — rather
 // than styles in declaration order. Rive's TextAlign is left=0, right=1, center=2.

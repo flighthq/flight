@@ -5,8 +5,8 @@ import type {
   Scene2DDocumentLoadOptions,
 } from '@flighthq/types/contract';
 
-import { createScene2DDocumentFromBytes } from './scene2DDocumentImporterRegistry';
-import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics';
+import { createScene2DDocumentFromBytes } from './scene2DDocumentImporterRegistry.ts';
+import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
 
 export async function loadScene2DDocumentFromUrl(
   url: string,

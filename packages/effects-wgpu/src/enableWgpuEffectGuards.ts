@@ -2,8 +2,8 @@ import { logOnce } from '@flighthq/log/contract';
 import type { WgpuEffectApplicationExplanation, WgpuRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setWgpuEffectStateSampleCountGuard, setWgpuEffectStateSkipGuard } from './wgpuEffectState';
-import { setWgpuEffectApplicationGuard } from './wgpuRenderTextureEffect';
+import { setWgpuEffectStateSampleCountGuard, setWgpuEffectStateSkipGuard } from './wgpuEffectState.ts';
+import { setWgpuEffectApplicationGuard } from './wgpuRenderTextureEffect.ts';
 
 export function areWgpuEffectGuardsEnabled(state: WgpuRenderState): boolean {
   return _guardedStates.has(state);

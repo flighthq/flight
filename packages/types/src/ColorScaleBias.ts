@@ -1,4 +1,4 @@
-import type { Entity, EntityWithoutRuntime } from './Entity';
+import type { Entity, EntityWithoutRuntime } from './Entity.ts';
 
 /**
  * Per-channel affine color adjustment: `out = in * scale + bias`.

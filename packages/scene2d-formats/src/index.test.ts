@@ -4,14 +4,14 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { DisplayObject, Node2D } from '@flighthq/types/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 
-import * as scene2DFormatsContract from './contract';
+import * as scene2DFormatsContract from './contract.ts';
 import {
   createRiveDocumentImportResult,
   createRiveImportRegistry,
   registerAllRiveHandlers,
   registerRiveCoreObjectHandler,
-} from './index';
-import * as scene2DFormatsPublic from './index';
+} from './index.ts';
+import * as scene2DFormatsPublic from './index.ts';
 
 const kernel = martinezPathBooleanKernel;
 

@@ -2,7 +2,7 @@ import { createColorScaleBiasAdjustment } from '@flighthq/adjustments/contract';
 import type { Adjustment, Effect, SwfTagReader } from '@flighthq/types/contract';
 import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 
-import { FIXED_8_8_ONE } from './swfPrimitive';
+import { FIXED_8_8_ONE } from './swfPrimitive.ts';
 
 // How a SWF tints and blends what it places. The CXFORM record and the blend enumeration are shared by
 // the two families that carry appearance on a record: placement, on every PlaceObject, and control, on

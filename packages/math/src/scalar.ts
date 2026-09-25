@@ -1,4 +1,4 @@
-import { nextPowerOfTwo, previousPowerOfTwo } from './nextPowerOfTwo';
+import { nextPowerOfTwo, previousPowerOfTwo } from './nextPowerOfTwo.ts';
 
 /** Round `n` up to the next power of two.
  *

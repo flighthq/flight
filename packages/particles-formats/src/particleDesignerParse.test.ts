@@ -1,7 +1,7 @@
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { parseParticleDesignerPlist, parseParticleDesignerPlistDocument } from './particleDesignerParse';
-import { serializeParticleDesignerPlist } from './particleDesignerSerialize';
+import { parseParticleDesignerPlist, parseParticleDesignerPlistDocument } from './particleDesignerParse.ts';
+import { serializeParticleDesignerPlist } from './particleDesignerSerialize.ts';
 
 const FIRE_PLIST = `<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

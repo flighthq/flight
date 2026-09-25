@@ -1,7 +1,7 @@
 import type { HasAppearance, HasAppearanceRuntime, NodeRuntime } from '@flighthq/types/contract';
 
-import { initAppearanceRuntimeTrait, initAppearanceTrait } from './hasAppearance';
-import { createNode, createNodeRuntime } from './node';
+import { initAppearanceRuntimeTrait, initAppearanceTrait } from './hasAppearance.ts';
+import { createNode, createNodeRuntime } from './node.ts';
 
 const TestKind = 'Test';
 

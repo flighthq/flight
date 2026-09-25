@@ -3,9 +3,9 @@ import { createRichText } from '@flighthq/text/contract';
 import { enableTextInput, setTextInputSelection } from '@flighthq/textinput/contract';
 import type { RichText } from '@flighthq/types/contract';
 
-import { drawCanvasRichText } from './canvasRichText';
-import { createCanvasRenderState } from './canvasTestSupport';
-import { drawCanvasTextInputOverlay, enableCanvasTextInput } from './canvasTextInput';
+import { drawCanvasRichText } from './canvasRichText.ts';
+import { createCanvasRenderState } from './canvasTestSupport.ts';
+import { drawCanvasTextInputOverlay, enableCanvasTextInput } from './canvasTextInput.ts';
 
 function makeState() {
   const canvas = document.createElement('canvas');

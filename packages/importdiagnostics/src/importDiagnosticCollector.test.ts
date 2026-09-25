@@ -2,7 +2,7 @@ import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { collectImportDiagnostics, reportImportDiagnostic } from './importDiagnosticCollector';
+import { collectImportDiagnostics, reportImportDiagnostic } from './importDiagnosticCollector.ts';
 
 describe('collectImportDiagnostics', () => {
   it('returns the crumbs the run callback emits into its engaged collector', () => {

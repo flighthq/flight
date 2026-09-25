@@ -1,6 +1,6 @@
-import { easeInCubic, easeOutCubic } from './easeCubic';
-import { easeLinear } from './easeLinear';
-import { getEasingDerivative } from './getEasingDerivative';
+import { easeInCubic, easeOutCubic } from './easeCubic.ts';
+import { easeLinear } from './easeLinear.ts';
+import { getEasingDerivative } from './getEasingDerivative.ts';
 
 describe('getEasingDerivative', () => {
   it('returns ~1 everywhere for easeLinear (slope is constant 1)', () => {

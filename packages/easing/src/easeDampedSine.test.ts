@@ -1,5 +1,5 @@
-import { easeInDampedSine, easeInOutDampedSine, easeOutDampedSine } from './easeDampedSine';
-import { easeInElastic, easeInOutElastic, easeOutElastic } from './easeElastic';
+import { easeInDampedSine, easeInOutDampedSine, easeOutDampedSine } from './easeDampedSine.ts';
+import { easeInElastic, easeInOutElastic, easeOutElastic } from './easeElastic.ts';
 
 describe('easeInDampedSine', () => {
   it('returns 0 at t=0 and 1 at t=1', () => {

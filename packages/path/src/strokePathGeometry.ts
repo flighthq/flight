@@ -1,6 +1,6 @@
 import type { Path, StrokeStyle } from '@flighthq/types/contract';
 
-import { flattenPath } from './flattenPath';
+import { flattenPath } from './flattenPath.ts';
 
 export const StrokePathTessellationIssueNone = 0;
 export const StrokePathTessellationIssueInvalidStyle = 1;

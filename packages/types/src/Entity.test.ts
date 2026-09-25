@@ -1,5 +1,5 @@
-import type { Entity, EntityRuntime, EntityWithoutRuntime, Kind } from './Entity';
-import { EntityRuntimeKey } from './Entity';
+import type { Entity, EntityRuntime, EntityWithoutRuntime, Kind } from './Entity.ts';
+import { EntityRuntimeKey } from './Entity.ts';
 
 describe('Entity', () => {
   describe('EntityRuntimeKey', () => {

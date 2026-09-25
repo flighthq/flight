@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { StatechartSignals } from './StatechartSignals';
+import type { Entity } from './Entity.ts';
+import type { StatechartSignals } from './StatechartSignals.ts';
 
 // The finite input vocabulary interpreted by the statechart core. Values are numbers in an instance:
 // booleans use 0/1, numbers keep their authored value, and triggers use 0/1 as an edge latch.

@@ -7,7 +7,7 @@ import type {
   WebPageNotificationInstance,
 } from '@flighthq/types/contract';
 
-import { createWebPageNotificationCapabilities } from './webNotification';
+import { createWebPageNotificationCapabilities } from './webNotification.ts';
 
 interface FakeWebNotification extends WebPageNotificationInstance {
   options?: Readonly<WebNotificationOptions>;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createCamera2D, initializeCamera2D, setCamera2DLookAt } from './camera2d';
+import { createCamera2D, initializeCamera2D, setCamera2DLookAt } from './camera2d.ts';
 
 describe('createCamera2D', () => {
   it('uses identity defaults for an unconfigured camera', () => {

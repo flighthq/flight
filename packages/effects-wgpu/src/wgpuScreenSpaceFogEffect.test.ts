@@ -2,7 +2,7 @@ import {
   applyScreenSpaceFogEffectToWgpu,
   wgpuScreenSpaceFogEffectRunner,
   registerWgpuScreenSpaceFogEffect,
-} from './wgpuScreenSpaceFogEffect';
+} from './wgpuScreenSpaceFogEffect.ts';
 
 describe('applyScreenSpaceFogEffectToWgpu', () => {
   it('is a function', () => {

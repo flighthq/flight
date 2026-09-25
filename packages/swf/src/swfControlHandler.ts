@@ -10,10 +10,10 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { EMPTY_ADJUSTMENTS, EMPTY_EFFECTS, readSwfColorTransform } from './swfAppearance';
-import { readSwfMatrix, readSwfRectangle } from './swfPrimitive';
-import { SwfReader } from './swfReader';
-import { addSwfTimelineLabel } from './swfTimelineParse';
+import { EMPTY_ADJUSTMENTS, EMPTY_EFFECTS, readSwfColorTransform } from './swfAppearance.ts';
+import { readSwfMatrix, readSwfRectangle } from './swfPrimitive.ts';
+import { SwfReader } from './swfReader.ts';
+import { addSwfTimelineLabel } from './swfTimelineParse.ts';
 
 // The tags that describe the document rather than draw it: the stage colour, frame labels and scene
 // tables, the linkage names that publish a character to code, the nine-slice splitter, and buttons —

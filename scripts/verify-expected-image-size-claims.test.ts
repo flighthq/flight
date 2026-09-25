@@ -11,7 +11,7 @@ import {
   formatSizeClaimReport,
   hasSymbolicDerivation,
   readSceneSizeClaims,
-} from './verify-expected-image-size-claims';
+} from './verify-expected-image-size-claims.ts';
 
 describe('analyzeDescriptorSizeClaims', () => {
   it('reports a descriptor whose text could not be read rather than dropping it', () => {

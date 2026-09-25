@@ -1,4 +1,4 @@
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';
 
 export interface WgpuFullscreenPipeline extends Entity {
   readonly pipeline: GPURenderPipeline;

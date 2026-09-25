@@ -9,7 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { getMeshGeometryTriangleCount, getMeshGeometryTriangleVertexIndices } from './meshGeometryOperations';
+import { getMeshGeometryTriangleCount, getMeshGeometryTriangleVertexIndices } from './meshGeometryOperations.ts';
 
 // Per-vertex compute over the canonical interleaved PBR record: position(3) + normal(3) +
 // tangent(4) + uv0(2) = 12 floats / 48 bytes, stride read from geometry.layout. These functions

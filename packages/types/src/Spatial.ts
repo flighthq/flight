@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { SpatialIndexingExplanation } from './SpatialIndexing';
+import type { Entity } from './Entity.ts';
+import type { SpatialIndexingExplanation } from './SpatialIndexing.ts';
 
 // 2D broadphase header. `@flighthq/spatial` is the acceleration structure in front of
 // `@flighthq/collision`'s narrow-phase: a spatial index over many objects' axis-aligned bounds that

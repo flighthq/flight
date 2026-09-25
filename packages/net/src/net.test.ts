@@ -1,7 +1,7 @@
 import type { HostNetCapability, NetGuardNotice, NetRequest, NetResponse } from '@flighthq/types/contract';
 
-import * as netContract from './net';
-import { explainNetResponse, sendNetRequest, setNetGuard } from './net';
+import * as netContract from './net.ts';
+import { explainNetResponse, sendNetRequest, setNetGuard } from './net.ts';
 
 function fakeHost(backend?: Pick<HostNetCapability, 'sendNetRequest'>): {
   readonly net: { readonly http: HostNetCapability };

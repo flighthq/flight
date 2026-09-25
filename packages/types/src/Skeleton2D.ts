@@ -1,7 +1,7 @@
-import type { AttachmentSkin2D } from './AttachmentSkin2D';
-import type { Bone2D } from './Bone2D';
-import type { Entity } from './Entity';
-import type { Slot2D } from './Slot2D';
+import type { AttachmentSkin2D } from './AttachmentSkin2D.ts';
+import type { Bone2D } from './Bone2D.ts';
+import type { Entity } from './Entity.ts';
+import type { Slot2D } from './Slot2D.ts';
 
 // A 2D skeleton: a flat, parent-before-child ordered bone array plus the transform buffers the deformer
 // and attachment layers consume, and its draw slots. The 2D sibling of Skeleton3D — but self-contained:

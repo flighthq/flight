@@ -6,7 +6,7 @@ import {
 } from '@flighthq/compression';
 import { CompressionFraming } from '@flighthq/types/contract';
 
-import { sdkHost, sdkHostCompress, sdkHostDecompress } from './sdkHost';
+import { sdkHost, sdkHostCompress, sdkHostDecompress } from './sdkHost.ts';
 
 describe('sdkHost', () => {
   it('exposes compress.deflate as the portable encoder slot', () => {

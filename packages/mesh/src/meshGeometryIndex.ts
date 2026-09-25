@@ -1,6 +1,6 @@
 import type { MeshGeometry } from '@flighthq/types/contract';
 
-import { cloneMeshGeometry, cloneMeshGeometryMetadata, getMeshGeometryVertexCount } from './meshGeometry';
+import { cloneMeshGeometry, cloneMeshGeometryMetadata, getMeshGeometryVertexCount } from './meshGeometry.ts';
 
 // Index-buffer pipeline over a MeshGeometry: de-index a welded stream to a flat non-indexed one,
 // and derive a wireframe line-list from a triangle index buffer. These read the existing

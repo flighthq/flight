@@ -10,7 +10,7 @@ import type {
   AudioSourceHandle,
 } from '@flighthq/types/contract';
 
-import { getAudioChannelSignals } from './mediaChannelSignals';
+import { getAudioChannelSignals } from './mediaChannelSignals.ts';
 
 export function clearAudioChannelLoopRegion(channel: AudioChannel): void {
   channel.loopEnd = 0;

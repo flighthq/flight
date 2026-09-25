@@ -14,7 +14,7 @@ import type {
   RigidBody2D,
 } from '@flighthq/types/contract';
 
-import { findPhysics2DBody } from './world';
+import { findPhysics2DBody } from './world.ts';
 
 const DEFAULT_OPTIONS: Readonly<Physics2DDebugGeometryOptions> = {
   drawCentersOfMass: true,

@@ -1,6 +1,6 @@
-import type { Light } from './Light';
-import type { LightUnit } from './LightUnit';
-import type { Vector3 } from './Vector3';
+import type { Light } from './Light.ts';
+import type { LightUnit } from './LightUnit.ts';
+import type { Vector3 } from './Vector3.ts';
 
 // Omnidirectional point light. `position` is world-space; intensity falls off with distance up
 // to `range` (-1 = infinite).

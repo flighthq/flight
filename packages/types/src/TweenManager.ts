@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { EasingFunction } from './EasingFunction';
-import type { Entity } from './Entity';
-import type { Tween } from './Tween';
+import type { EasingFunction } from './EasingFunction.ts';
+import type { Entity } from './Entity.ts';
+import type { Tween } from './Tween.ts';
 
 export interface TweenManager extends Entity {
   readonly __brand: 'TweenManager';

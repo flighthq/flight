@@ -1,9 +1,9 @@
-import type { ImportDiagnostic } from './ImportDiagnostic';
-import type { LibgdxParseOptions } from './LibgdxParticleSchema';
-import type { ParticleDesignerParseOptions } from './ParticleDesignerSchema';
-import type { ParticleEmitterConfig } from './ParticleEmitterConfig';
-import type { StarlingPexParseOptions } from './StarlingPexSchema';
-import type { UnityParseOptions } from './UnitySchema';
+import type { ImportDiagnostic } from './ImportDiagnostic.ts';
+import type { LibgdxParseOptions } from './LibgdxParticleSchema.ts';
+import type { ParticleDesignerParseOptions } from './ParticleDesignerSchema.ts';
+import type { ParticleEmitterConfig } from './ParticleEmitterConfig.ts';
+import type { StarlingPexParseOptions } from './StarlingPexSchema.ts';
+import type { UnityParseOptions } from './UnitySchema.ts';
 
 export interface ParseParticleConfigOptions
   extends ParticleDesignerParseOptions, UnityParseOptions, LibgdxParseOptions, StarlingPexParseOptions {}

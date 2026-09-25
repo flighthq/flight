@@ -26,10 +26,10 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-import { glRasterShapeRenderer, drawGlRasterShape } from './glRasterShapeRenderer';
-import { registerGlShapeRasterizer } from './glShapeRasterizer';
-import { registerGlStandardMaterial } from './glStandardMaterial';
-import { createGlState } from './glTestHelper';
+import { glRasterShapeRenderer, drawGlRasterShape } from './glRasterShapeRenderer.ts';
+import { registerGlShapeRasterizer } from './glShapeRasterizer.ts';
+import { registerGlStandardMaterial } from './glStandardMaterial.ts';
+import { createGlState } from './glTestHelper.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

@@ -155,4 +155,4 @@ export {
   registerEffectPaddingResolver,
   registerTiltShiftEffectPaddingResolver,
   validateEffectList,
-} from './contract';
+} from './contract.ts';

@@ -10,4 +10,4 @@ export {
   hasConnectivityStatusChanged,
   isConnectivityMetered,
   isConnectivitySaveDataEnabled,
-} from './contract';
+} from './contract.ts';

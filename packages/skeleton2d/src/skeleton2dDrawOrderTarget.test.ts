@@ -8,15 +8,15 @@ import {
 } from '@flighthq/node/contract';
 import type { AnimationChannel, AnimationInterpolation, Node, NodeOrderList } from '@flighthq/types/contract';
 
-import { getSkeleton2DAnimationTargetBinder } from './skeleton2dAnimationTarget';
+import { getSkeleton2DAnimationTargetBinder } from './skeleton2dAnimationTarget.ts';
 import {
   createSkeleton2DDrawOrderAnimationTarget,
   createSkeleton2DDrawOrderChannel,
   initializeSkeleton2DDrawOrderAnimationTarget,
   registerSkeleton2DDrawOrderAnimationBinder,
   unregisterSkeleton2DDrawOrderAnimationBinder,
-} from './skeleton2dDrawOrderTarget';
-import { setSkeleton2DCoercedInterpolationGuard } from './skeleton2dGuards';
+} from './skeleton2dDrawOrderTarget.ts';
+import { setSkeleton2DCoercedInterpolationGuard } from './skeleton2dGuards.ts';
 
 afterEach(() => {
   unregisterSkeleton2DDrawOrderAnimationBinder();

@@ -1,9 +1,9 @@
 import { connectSignal } from '@flighthq/signals/contract';
 
-import { createTween } from './tween';
-import { createTweenManager } from './tweenManager';
-import { getTweenProgress, invalidateTween, restartTween, seekTween, setTweenProgress } from './tweenProgress';
-import { updateTweens } from './updateTweens';
+import { createTween } from './tween.ts';
+import { createTweenManager } from './tweenManager.ts';
+import { getTweenProgress, invalidateTween, restartTween, seekTween, setTweenProgress } from './tweenProgress.ts';
+import { updateTweens } from './updateTweens.ts';
 
 describe('getTweenProgress', () => {
   it('returns 0 before any update', () => {

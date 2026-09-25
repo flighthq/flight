@@ -1,4 +1,4 @@
-import { createCrtEffect, initializeCrtEffect } from './crtEffect';
+import { createCrtEffect, initializeCrtEffect } from './crtEffect.ts';
 
 describe('createCrtEffect', () => {
   it('tags the intent type', () => {

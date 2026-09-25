@@ -1,4 +1,4 @@
-import { swfLosslessBitmapHandler } from './swfLosslessBitmapHandler';
+import { swfLosslessBitmapHandler } from './swfLosslessBitmapHandler.ts';
 
 describe('swfLosslessBitmapHandler', () => {
   it('claims the two lossless bitmap tags', () => {

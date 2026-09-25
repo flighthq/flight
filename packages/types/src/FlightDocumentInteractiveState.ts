@@ -1,7 +1,7 @@
-import type { Kind } from './Entity';
-import type { FlightDocumentFields } from './FlightDocumentFieldSchema';
-import type { NodeAny } from './Node';
-import type { NodeInteractiveStateProperty } from './NodeInteractiveStateBinding';
+import type { Kind } from './Entity.ts';
+import type { FlightDocumentFields } from './FlightDocumentFieldSchema.ts';
+import type { NodeAny } from './Node.ts';
+import type { NodeInteractiveStateProperty } from './NodeInteractiveStateBinding.ts';
 
 export type FlightDocumentInteractiveStateProperty = NodeInteractiveStateProperty;
 

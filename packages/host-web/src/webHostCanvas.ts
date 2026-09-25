@@ -1,7 +1,7 @@
 import { createCanvasSurfaceFromNativeHandle, destroyCanvasSurface } from '@flighthq/surface/contract';
 import type { AppWindow, CanvasSurface, HostCanvasCapability, Surface } from '@flighthq/types/contract';
 
-import { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle } from './webSurfaceHandle';
+import { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle } from './webSurfaceHandle.ts';
 
 function createWebHostCanvas(): HostCanvasCapability {
   const out = {} as HostCanvasCapability;

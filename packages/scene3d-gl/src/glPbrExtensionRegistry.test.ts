@@ -14,9 +14,9 @@ import {
   getGlPbrExtensionRegistration,
   registerGlPbrExtension,
   resolveGlPbrExtensionContributions,
-} from './glPbrExtensionRegistry';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+} from './glPbrExtensionRegistry.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 const registration: GlPbrExtensionRegistration = {
   bind(): void {},

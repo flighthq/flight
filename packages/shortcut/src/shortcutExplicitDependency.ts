@@ -15,7 +15,7 @@ import type {
   ShortcutTriggerSubscription,
 } from '@flighthq/types/contract';
 
-import { makeParsedAccelerator, parseAcceleratorDetailed } from './shortcut';
+import { makeParsedAccelerator, parseAcceleratorDetailed } from './shortcut.ts';
 
 interface GlobalShortcutAttachment {
   readonly provider: HostShortcutTriggerCapability;

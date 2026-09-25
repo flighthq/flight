@@ -5,7 +5,7 @@ import {
   getTiltShiftEffectPadding,
   initializeTiltShiftEffect,
   registerTiltShiftEffectPaddingResolver,
-} from './tiltShiftEffect';
+} from './tiltShiftEffect.ts';
 
 describe('createTiltShiftEffect', () => {
   it('tags the intent type', () => {

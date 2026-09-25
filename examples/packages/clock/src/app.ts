@@ -27,7 +27,7 @@ import {
   setClockScale,
 } from '@flighthq/sdk/clock';
 
-import { render, scale } from './render';
+import { render, scale } from './render.ts';
 
 const root = createDisplayObject();
 root.scaleX = scale;

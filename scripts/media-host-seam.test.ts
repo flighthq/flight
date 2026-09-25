@@ -4,10 +4,10 @@ import { join, relative, resolve } from 'node:path';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
-import * as hostWebContract from '../packages/host-web/src/contract';
-import * as hostWebPublic from '../packages/host-web/src/index';
-import * as mediaContract from '../packages/media/src/contract';
-import * as mediaPublic from '../packages/media/src/index';
+import * as hostWebContract from '../packages/host-web/src/contract.ts';
+import * as hostWebPublic from '../packages/host-web/src/index.ts';
+import * as mediaContract from '../packages/media/src/contract.ts';
+import * as mediaPublic from '../packages/media/src/index.ts';
 
 const ROOT = process.cwd();
 const SELF = 'scripts/media-host-seam.test.ts';

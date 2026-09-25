@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { captureRenderTarget } from './captureRenderTarget';
+import { captureRenderTarget } from './captureRenderTarget.ts';
 
 describe('captureRenderTarget', () => {
   // The programmatic capture entry drives a real page through a Playwright BrowserContext, so it is

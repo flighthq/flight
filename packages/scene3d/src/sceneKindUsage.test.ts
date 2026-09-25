@@ -13,10 +13,10 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createMesh } from './mesh';
-import { createScene3D } from './scene';
-import { createScene3DKindUsage, getScene3DKindUsage, initializeScene3DKindUsage } from './sceneKindUsage';
-import { createNode3D } from './sceneNode';
+import { createMesh } from './mesh.ts';
+import { createScene3D } from './scene.ts';
+import { createScene3DKindUsage, getScene3DKindUsage, initializeScene3DKindUsage } from './sceneKindUsage.ts';
+import { createNode3D } from './sceneNode.ts';
 
 function embeddedRef(mimeType: string | null = 'image/png'): ImageResourceReference {
   return {

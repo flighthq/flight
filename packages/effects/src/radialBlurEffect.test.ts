@@ -1,4 +1,4 @@
-import { createRadialBlurEffect, initializeRadialBlurEffect } from './radialBlurEffect';
+import { createRadialBlurEffect, initializeRadialBlurEffect } from './radialBlurEffect.ts';
 
 describe('createRadialBlurEffect', () => {
   it('tags the intent type', () => {

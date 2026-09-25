@@ -46,10 +46,10 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { wgpuScene3DRenderPreset } from './scene3DWgpuPipeline';
-import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
-import { wgpuSkinningAdapter } from './wgpuSkinPalette';
+import { wgpuScene3DRenderPreset } from './scene3DWgpuPipeline.ts';
+import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
+import { wgpuSkinningAdapter } from './wgpuSkinPalette.ts';
 
 function registryKeys(table: ReadonlyMap<string, unknown>): string[] {
   const keys: string[] = [];

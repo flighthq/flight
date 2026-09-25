@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 
-import { getGlRenderStateRuntime } from './glRenderState';
-import { registerGlBitmapShader } from './glShaderRegistry';
-import { createGlState, makeShaderLoc } from './glTestHelper';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
+import { registerGlBitmapShader } from './glShaderRegistry.ts';
+import { createGlState, makeShaderLoc } from './glTestHelper.ts';
 
 describe('registerGlBitmapShader', () => {
   it('uses the provided shader as the state default shader', () => {

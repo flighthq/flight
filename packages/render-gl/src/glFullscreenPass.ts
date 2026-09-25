@@ -8,9 +8,9 @@ import type {
   RenderTargetClear,
 } from '@flighthq/types/contract';
 
-import { applyGlBlendMode } from './glDraw';
-import { createGlProgram } from './glProgram';
-import { getGlRenderStateRuntime } from './glRenderState';
+import { applyGlBlendMode } from './glDraw.ts';
+import { createGlProgram } from './glProgram.ts';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
 
 // The substrate-level fullscreen-pass primitive: draw a clip-space quad through a fragment shader,
 // reading N input textures and writing to a target (or the canvas). Filter and effect recipes draw

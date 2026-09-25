@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 
-import { getSelectors, resolvePaths } from './select';
+import { getSelectors, resolvePaths } from './select.ts';
 
 // The auto-fixer sweep: order, then lint, then format. Run bare (`npm run fix`) it rewrites the whole tree —
 // identical to the former `&&` chain. Given a selector (`npm run fix scene-formats`, or a path/@scoped form)
@@ -19,6 +19,7 @@ function run(label: string, command: string, args: readonly string[]): void {
   }
 }
 
+if (!scoped) run('module-specifiers:fix', 'tsx', ['scripts/module-specifiers.ts', '--fix']);
 run('order:fix', 'tsx', ['scripts/order.ts', '--fix', ...selectors]);
 run('lint:fix', 'oxlint', scoped ? ['--fix', ...paths] : ['--fix']);
 run('format', 'oxfmt', scoped ? ['--write', ...paths] : ['--write', '.']);

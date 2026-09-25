@@ -11,7 +11,7 @@ import {
   isPhysics3DSubstepsValid,
   isPhysics3DTimestepValid,
   isPhysics3DVelocityIterationsValid,
-} from './stepValidation';
+} from './stepValidation.ts';
 
 // Why `stepPhysics3D(world, dt)` would advance nothing, as plain data.
 //

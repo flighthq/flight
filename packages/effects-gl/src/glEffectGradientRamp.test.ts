@@ -1,4 +1,4 @@
-import { createGlEffectGradientRampTexture } from './glEffectGradientRamp';
+import { createGlEffectGradientRampTexture } from './glEffectGradientRamp.ts';
 
 // A context that records the ramp bytes rather than uploading them, plus every parameter set on the
 // texture — the sampler state is as much a part of a lookup table as its contents.

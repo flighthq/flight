@@ -1,6 +1,6 @@
 import type { HostMenuCapabilities } from '@flighthq/types/contract';
 
-import { webHostMenuHighlight, webHostMenuPopup } from './webMenu';
+import { webHostMenuHighlight, webHostMenuPopup } from './webMenu.ts';
 
 export const webHostMenu = {
   highlight: webHostMenuHighlight,

@@ -1,6 +1,6 @@
-import { cloneSpritesheet, createSpritesheet, getSpritesheetAnimation, initializeSpritesheet } from './spritesheet';
-import { createSpritesheetAnimation } from './spritesheetAnimation';
-import { createSpritesheetFrame } from './spritesheetFrame';
+import { cloneSpritesheet, createSpritesheet, getSpritesheetAnimation, initializeSpritesheet } from './spritesheet.ts';
+import { createSpritesheetAnimation } from './spritesheetAnimation.ts';
+import { createSpritesheetFrame } from './spritesheetFrame.ts';
 
 describe('cloneSpritesheet', () => {
   it('returns a distinct entity with copies of all frames', () => {

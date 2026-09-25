@@ -1,4 +1,4 @@
-import { createScreenSpaceFogEffect, initializeScreenSpaceFogEffect } from './screenSpaceFogEffect';
+import { createScreenSpaceFogEffect, initializeScreenSpaceFogEffect } from './screenSpaceFogEffect.ts';
 
 describe('createScreenSpaceFogEffect', () => {
   it('tags the intent type', () => {

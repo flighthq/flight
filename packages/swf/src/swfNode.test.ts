@@ -14,7 +14,7 @@ import {
   createSwfMorphShapeTarget,
   createSwfMovieClip,
   createSwfTexturedSprite,
-} from './swfNode';
+} from './swfNode.ts';
 
 describe('applySwfAuthoredBounds', () => {
   // A SWF sizes a character by the RECT the tool recorded — stroke width and authoring padding included —

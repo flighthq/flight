@@ -2,9 +2,9 @@ import { createBloomEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CanvasTextureRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
-import { applyBloomEffectToCanvas, canvasBloomEffectRunner, registerCanvasBloomEffect } from './canvasBloomEffect';
-import { getCanvasEffectRunner } from './canvasEffectRegistry';
-import { canvasTestHost, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport';
+import { applyBloomEffectToCanvas, canvasBloomEffectRunner, registerCanvasBloomEffect } from './canvasBloomEffect.ts';
+import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
+import { canvasTestHost, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport.ts';
 
 // A target whose ImageData is a real buffer, so the bright pass and the composite run their actual
 // arithmetic rather than being observed through a spy. `filter` is accepted and ignored: the only CSS

@@ -1,4 +1,4 @@
-import type { VideoCapabilityBrowserReport } from './videoCapabilityProbeCore';
+import type { VideoCapabilityBrowserReport } from './videoCapabilityProbeCore.ts';
 
 export const HostProbeProtocolVersion = 1;
 

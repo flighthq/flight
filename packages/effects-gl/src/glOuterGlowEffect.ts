@@ -11,10 +11,10 @@ import type {
   GlTextureRenderTargetPool,
 } from '@flighthq/types/contract';
 
-import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
-import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
-import { registerGlEffect } from './glEffectRegistry';
-import { applyGlEffectTintPass } from './glEffectTintShader';
+import { applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader.ts';
+import { applyGlEffectBoxBlur } from './glEffectBoxBlur.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
+import { applyGlEffectTintPass } from './glEffectTintShader.ts';
 
 // Outer-glow composite effect: tint the scene silhouette, blur it centered (no offset), then composite the source over the glow.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the

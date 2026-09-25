@@ -1,7 +1,7 @@
-import { createColorTween } from './colorTween';
-import { createTween, getTweensOf, hasTweensOf, killTweensOfProperty, stopTweens } from './tween';
-import { createTweenManager } from './tweenManager';
-import { updateTweens } from './updateTweens';
+import { createColorTween } from './colorTween.ts';
+import { createTween, getTweensOf, hasTweensOf, killTweensOfProperty, stopTweens } from './tween.ts';
+import { createTweenManager } from './tweenManager.ts';
+import { updateTweens } from './updateTweens.ts';
 
 describe('createColorTween', () => {
   it('reaches the target color after full duration', () => {

@@ -1,8 +1,8 @@
 import type { ImportDiagnostic, RiveCoreObject } from '@flighthq/types/contract';
 import { RiveFieldType } from '@flighthq/types/contract';
 
-import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry';
-import { createRiveStateMachines, registerRiveStateMachineHandlers } from './riveStateMachine';
+import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry.ts';
+import { createRiveStateMachines, registerRiveStateMachineHandlers } from './riveStateMachine.ts';
 
 // The charter puts Rive's state-machine RUNTIME in a separate cell, so this reports the machine and
 // interprets none of it. References keep the values the file states: Rive uses several distinct id

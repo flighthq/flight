@@ -12,8 +12,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
-import { ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+import { ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 import {
   buildWgpuPbrStandardDefineKey,
   ensureWgpuPbrMaterialBindGroup,
@@ -22,7 +22,7 @@ import {
   WGPU_PBR_MATERIAL_UNIFORM_FLOATS,
   writeWgpuPbrMaterialUniform,
   writeWgpuPbrStandardBlock,
-} from './wgpuStandardPbrMeshMaterialRenderer';
+} from './wgpuStandardPbrMeshMaterialRenderer.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

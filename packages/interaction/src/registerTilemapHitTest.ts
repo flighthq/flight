@@ -4,7 +4,7 @@ import { getTilemapColumnAtX, getTilemapRowAtY, getTilemapTile } from '@flighthq
 import type { Node2D, NodeAny, Tilemap } from '@flighthq/types/contract';
 import { TilemapKind } from '@flighthq/types/contract';
 
-import { registerHitTestPrecise } from './hitTests';
+import { registerHitTestPrecise } from './hitTests.ts';
 
 /**
  * Opt-in exact hit provider for tilemaps: the point resolves to the *cell* under it, so

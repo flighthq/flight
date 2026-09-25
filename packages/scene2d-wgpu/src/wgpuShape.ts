@@ -1,9 +1,9 @@
 import type { RenderProxy2D, Scene2DRenderer, WgpuRenderState } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 
-import { drawWgpuMeshShape } from './wgpuMeshShapeRenderer';
-import { drawWgpuRasterShape } from './wgpuRasterShapeRenderer';
-import { createWgpuShapeData, destroyWgpuShapeData } from './wgpuShapeData';
+import { drawWgpuMeshShape } from './wgpuMeshShapeRenderer.ts';
+import { drawWgpuRasterShape } from './wgpuRasterShapeRenderer.ts';
+import { createWgpuShapeData, destroyWgpuShapeData } from './wgpuShapeData.ts';
 
 // Tessellates what it can and rasterizes the rest: the GPU mesh path is tried first, and a shape with a
 // fill that has no tessellated form — a gradient, a texture fill, a closed stroke — falls through to the

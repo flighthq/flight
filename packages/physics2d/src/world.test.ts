@@ -2,8 +2,8 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Entity, Physics2DJoint } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry';
-import { stepPhysics2D } from './step';
+import { addPhysics2DJoint, registerPhysics2DJointSolver } from './jointRegistry.ts';
+import { stepPhysics2D } from './step.ts';
 import {
   Physics2DWorldVersion,
   addPhysics2DBody,
@@ -31,7 +31,7 @@ import {
   setPhysics2DBodySleepEnabled,
   setPhysics2DBodyTransform,
   setPhysics2DBodyType,
-} from './world';
+} from './world.ts';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
 

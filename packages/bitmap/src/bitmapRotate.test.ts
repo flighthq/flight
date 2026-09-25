@@ -1,6 +1,6 @@
-import { createBitmap } from './bitmap';
-import { getBitmapPixel } from './bitmapPixel';
-import { rotateBitmap, rotateBitmap180, rotateBitmapClockwise, rotateBitmapCounterClockwise } from './bitmapRotate';
+import { createBitmap } from './bitmap.ts';
+import { getBitmapPixel } from './bitmapPixel.ts';
+import { rotateBitmap, rotateBitmap180, rotateBitmapClockwise, rotateBitmapCounterClockwise } from './bitmapRotate.ts';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };

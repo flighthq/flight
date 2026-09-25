@@ -4,10 +4,10 @@ import { createGlRenderState } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlitchEffect, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import * as glEffectProgramCache from './glEffectProgramCache';
-import { getGlEffectRunner } from './glEffectRegistry';
-import { applyGlitchEffectToGl, glGlitchEffectRunner, registerGlGlitchEffect } from './glGlitchEffect';
-import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
+import * as glEffectProgramCache from './glEffectProgramCache.ts';
+import { getGlEffectRunner } from './glEffectRegistry.ts';
+import { applyGlitchEffectToGl, glGlitchEffectRunner, registerGlGlitchEffect } from './glGlitchEffect.ts';
+import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper.ts';
 
 // The shader is module-private, so it is read back from the argument the effect hands the program
 // cache — the exact text that would be compiled — rather than exported for the test's benefit.

@@ -3,8 +3,8 @@ import { getNodeRuntime } from '@flighthq/node/contract';
 import type { InteractionHitEligibility, InteractionSignalName, NodeAny } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setInteractionConnectGuard } from './interactionManager';
-import { isNodeFocusable, isNodeHitTestEnabled } from './nodeInteractionState';
+import { setInteractionConnectGuard } from './interactionManager.ts';
+import { isNodeFocusable, isNodeHitTestEnabled } from './nodeInteractionState.ts';
 
 /** Uninstalls the guard installed by `enableInteractionGuards`. */
 export function disableInteractionGuards(): void {

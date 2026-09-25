@@ -1,9 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { GlyphAtlas, GlyphSource, EntityConstruction } from '@flighthq/types/contract';
 
-import { getGlyphAtlasBitmap, getGlyphAtlasLayoutVersion } from './glyphAtlas';
-import { getGlyphAtlasEntry } from './glyphAtlasEntry';
-import { getGlyphAtlasKerning, getGlyphAtlasMetrics } from './glyphAtlasMetrics';
+import { getGlyphAtlasBitmap, getGlyphAtlasLayoutVersion } from './glyphAtlas.ts';
+import { getGlyphAtlasEntry } from './glyphAtlasEntry.ts';
+import { getGlyphAtlasKerning, getGlyphAtlasMetrics } from './glyphAtlasMetrics.ts';
 
 export function createGlyphSourceFromGlyphAtlas(atlas: Readonly<GlyphAtlas>): GlyphSource {
   const out = allocateEntity<GlyphSource>();

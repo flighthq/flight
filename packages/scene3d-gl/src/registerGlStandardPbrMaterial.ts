@@ -1,8 +1,8 @@
 import type { GlRenderState } from '@flighthq/types/contract';
 import { StandardPbrMaterialKind } from '@flighthq/types/contract';
 
-import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { glStandardPbrMeshMaterialRenderer } from './glStandardPbrMeshMaterialRenderer';
+import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { glStandardPbrMeshMaterialRenderer } from './glStandardPbrMeshMaterialRenderer.ts';
 
 // Registers the built-in StandardPbr forward-lit renderer for StandardPbrMaterialKind on this
 // state. Convenience over registerGlMeshMaterialRenderer(state, StandardPbrMaterialKind, …); call

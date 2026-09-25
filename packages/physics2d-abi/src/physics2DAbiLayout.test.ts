@@ -41,7 +41,7 @@ import {
   Physics2DAbiSolverConfigFlag,
   Physics2DAbiSolverConfigValue,
   Physics2DAbiVersion,
-} from './physics2DAbiLayout';
+} from './physics2DAbiLayout.ts';
 
 describe('Physics2DAbiBodyFlag', () => {
   it('reserves the low two bits for the type and one bit each above it', () => {

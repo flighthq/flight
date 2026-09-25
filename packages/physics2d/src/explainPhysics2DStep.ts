@@ -8,7 +8,7 @@ import {
   isPhysics2DPreviousTimestepValid,
   isPhysics2DSolverConfigValid,
   isPhysics2DTimestepValid,
-} from './stepValidation';
+} from './stepValidation.ts';
 
 // Pure diagnostic twin of stepPhysics2D's early return. Invalid input rejects the whole step rather than
 // integrating only the phases that happen to tolerate it: a partial step would be harder to recover from

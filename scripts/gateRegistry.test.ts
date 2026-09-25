@@ -1,4 +1,4 @@
-import { createGateRegistry } from './gateRegistry';
+import { createGateRegistry } from './gateRegistry.ts';
 
 describe('createGateRegistry', () => {
   it('registers distinct stages in call order', () => {

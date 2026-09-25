@@ -11,7 +11,7 @@ import {
   supportCollisionObb2D,
   supportCollisionPolygon2D,
   writeVertexListSupport2D,
-} from './collisionSupport2D';
+} from './collisionSupport2D.ts';
 
 registerBuiltInCollisionSupports2D();
 

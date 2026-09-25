@@ -2,9 +2,9 @@ import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import type { BidiClassKernel, LogEntry } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { compactBidiClassKernel } from './bidiClassKernel';
-import { disableTextBidiGuards, enableTextBidiGuards } from './enableTextBidiGuards';
-import { resolveBidiLevels } from './resolveBidiLevels';
+import { compactBidiClassKernel } from './bidiClassKernel.ts';
+import { disableTextBidiGuards, enableTextBidiGuards } from './enableTextBidiGuards.ts';
+import { resolveBidiLevels } from './resolveBidiLevels.ts';
 
 const kernel = compactBidiClassKernel;
 

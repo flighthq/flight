@@ -1,4 +1,4 @@
-import { createSketchEffect, initializeSketchEffect } from './sketchEffect';
+import { createSketchEffect, initializeSketchEffect } from './sketchEffect.ts';
 
 describe('createSketchEffect', () => {
   it('tags the intent type', () => {

@@ -5,7 +5,7 @@ import {
   diffRequirementSets,
   initializeRequirementSet,
   mergeRequirementSets,
-} from './requirementSet';
+} from './requirementSet.ts';
 
 describe('createRequirementSet', () => {
   it('copies, sorts, and deduplicates both dimensions', () => {

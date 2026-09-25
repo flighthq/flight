@@ -1,6 +1,6 @@
 import type { GlColorAdjustmentMaterialFeature, GlPbrDefineKey } from '@flighthq/types/contract';
 
-import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning';
+import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning.ts';
 import {
   buildGlPbrDefineKey,
   buildGlPbrDefineSource,
@@ -8,7 +8,7 @@ import {
   getGlPbrFragmentSourceForKey,
   getGlPbrVertexSource,
   getGlPbrVertexSourceForKey,
-} from './glPbrPrelude';
+} from './glPbrPrelude.ts';
 
 function makeKey(overrides?: Partial<GlPbrDefineKey>): GlPbrDefineKey {
   return {

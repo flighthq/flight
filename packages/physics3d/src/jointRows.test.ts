@@ -1,8 +1,8 @@
 import type { Physics3DFixedJoint, Physics3DJoint, RigidBody3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { refreshRigidBody3DWorldInertia } from './integrate';
-import { createPhysics3DFixedJoint } from './jointFactories';
+import { refreshRigidBody3DWorldInertia } from './integrate.ts';
+import { createPhysics3DFixedJoint } from './jointFactories.ts';
 import {
   applyRow,
   beginJointSolve,
@@ -35,9 +35,9 @@ import {
   writeJointImpulse,
   writeRow,
   writePhysics3DSoftRowParameters,
-} from './jointRows';
-import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties';
-import { createRigidBody3D } from './world';
+} from './jointRows.ts';
+import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties.ts';
+import { createRigidBody3D } from './world.ts';
 
 describe('applyRow', () => {
   it('drives a row toward rest when scaled by the row mass', () => {

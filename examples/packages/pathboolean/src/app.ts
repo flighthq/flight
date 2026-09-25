@@ -20,7 +20,7 @@ import {
   xorPaths,
 } from '@flighthq/sdk/path-boolean';
 
-import { canvas, render, scale } from './render';
+import { canvas, render, scale } from './render.ts';
 
 const CELL_W = 400;
 const CELL_H = 300;

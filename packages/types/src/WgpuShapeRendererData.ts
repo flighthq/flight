@@ -1,8 +1,8 @@
-import type { CanvasSurface } from './CanvasSurface';
-import type { ImageResource } from './ImageResource';
-import type { RendererData } from './RendererData';
-import type { WgpuShapeMeshBuffers } from './WgpuRenderState';
-import type { WgpuShapeMesh } from './WgpuShapeMesh';
+import type { CanvasSurface } from './CanvasSurface.ts';
+import type { ImageResource } from './ImageResource.ts';
+import type { RendererData } from './RendererData.ts';
+import type { WgpuShapeMeshBuffers } from './WgpuRenderState.ts';
+import type { WgpuShapeMesh } from './WgpuShapeMesh.ts';
 
 // NodeRenderer-private scratch for a Shape node on the WebGPU backend, held in the opaque RendererData slot.
 // It lives in the header layer because the three shape strategies — mesh-only, raster-only, and the

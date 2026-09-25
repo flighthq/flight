@@ -1,7 +1,7 @@
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 
-import { parseTextureAtlasLibgdxAtlas } from './textureAtlasLibgdxParse';
+import { parseTextureAtlasLibgdxAtlas } from './textureAtlasLibgdxParse.ts';
 
 const SIMPLE_ATLAS = `
 atlas.png

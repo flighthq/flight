@@ -1,6 +1,6 @@
-import { easeInCubic } from './easeCubic';
-import { easeLinear } from './easeLinear';
-import { easePiecewise } from './easePiecewise';
+import { easeInCubic } from './easeCubic.ts';
+import { easeLinear } from './easeLinear.ts';
+import { easePiecewise } from './easePiecewise.ts';
 
 describe('easePiecewise', () => {
   it('throws on an empty segments array', () => {

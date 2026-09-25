@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveReviewRequestSupersede } from '../tools/review/src/requestSupersede';
+import { resolveReviewRequestSupersede } from '../tools/review/src/requestSupersede.ts';
 
 const cells = (...pairs: string[]) =>
   pairs.map((pair) => {

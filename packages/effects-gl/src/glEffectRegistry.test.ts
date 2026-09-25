@@ -3,7 +3,7 @@ import { createGlRenderState } from '@flighthq/render-gl/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { GlRenderState, Effect } from '@flighthq/types/contract';
 
-import { getGlEffectRunner, hasGlEffectRunner, isGlEffectResolvable, registerGlEffect } from './glEffectRegistry';
+import { getGlEffectRunner, hasGlEffectRunner, isGlEffectResolvable, registerGlEffect } from './glEffectRegistry.ts';
 
 describe('getGlEffectRunner', () => {
   it('is a function', () => {

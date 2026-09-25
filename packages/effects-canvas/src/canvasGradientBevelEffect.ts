@@ -7,16 +7,16 @@ import type {
   GradientBevelEffect,
 } from '@flighthq/types/contract';
 
-import { clipCanvasBevelBand } from './canvasBevelEffect';
-import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { registerCanvasEffect } from './canvasEffectRegistry';
+import { clipCanvasBevelBand } from './canvasBevelEffect.ts';
+import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
+import { registerCanvasEffect } from './canvasEffectRegistry.ts';
 import {
   acquireCanvasRenderTarget,
   createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
-} from './canvasEffectState';
-import { applyCanvasGradientRampLookup, buildCanvasGradientRamp } from './canvasGradientRamp';
-import { clearCanvasTarget, compositeCanvasImage } from './canvasSourceModeCompositing';
+} from './canvasEffectState.ts';
+import { applyCanvasGradientRampLookup, buildCanvasGradientRamp } from './canvasGradientRamp.ts';
+import { clearCanvasTarget, compositeCanvasImage } from './canvasSourceModeCompositing.ts';
 
 // Gradient-bevel composite effect: the same lit/unlit edge band the plain bevel builds, coloured from a
 // colours/alphas/ratios ramp instead of from two flat colours.

@@ -2,7 +2,7 @@ import {
   applyPosterizeEffectToWgpu,
   wgpuPosterizeEffectRunner,
   registerWgpuPosterizeEffect,
-} from './wgpuPosterizeEffect';
+} from './wgpuPosterizeEffect.ts';
 
 describe('applyPosterizeEffectToWgpu', () => {
   it('is a function', () => {

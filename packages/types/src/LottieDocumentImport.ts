@@ -1,9 +1,9 @@
-import type { AdvancedBlendMode } from './AdvancedBlendMode';
-import type { AnimationClip } from './AnimationClip';
-import type { DisplayObject } from './DisplayObject';
-import type { Entity } from './Entity';
-import type { ImageResource } from './ImageResource';
-import type { LottieImageAsset } from './LottieDocument';
+import type { AdvancedBlendMode } from './AdvancedBlendMode.ts';
+import type { AnimationClip } from './AnimationClip.ts';
+import type { DisplayObject } from './DisplayObject.ts';
+import type { Entity } from './Entity.ts';
+import type { ImageResource } from './ImageResource.ts';
+import type { LottieImageAsset } from './LottieDocument.ts';
 
 /**
  * Explicit external-resource seams for Lottie import. The importer performs no hidden acquisition;

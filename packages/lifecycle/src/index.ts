@@ -11,4 +11,4 @@ export {
   isAppBackground,
   isAppInactive,
   requestAppBack,
-} from './lifecycle';
+} from './lifecycle.ts';

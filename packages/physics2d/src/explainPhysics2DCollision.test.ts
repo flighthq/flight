@@ -1,9 +1,9 @@
 import type { Physics2DWorld } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { updatePhysics2DColliderWorldShape } from './colliderTransform';
-import { explainPhysics2DCollision } from './explainPhysics2DCollision';
-import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world';
+import { updatePhysics2DColliderWorldShape } from './colliderTransform.ts';
+import { explainPhysics2DCollision } from './explainPhysics2DCollision.ts';
+import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
 

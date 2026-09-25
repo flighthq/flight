@@ -16,9 +16,9 @@ import type {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { initTransform3DRuntimeTrait, initTransform3DTrait } from './hasTransform3d';
-import { addNodeChild, removeNodeChild } from './hierarchy';
-import { createNode, getNodeRuntime } from './node';
+import { initTransform3DRuntimeTrait, initTransform3DTrait } from './hasTransform3d.ts';
+import { addNodeChild, removeNodeChild } from './hierarchy.ts';
+import { createNode, getNodeRuntime } from './node.ts';
 import {
   convertNodeVector3GlobalToLocal,
   convertNodeVector3LocalToGlobal,
@@ -31,8 +31,8 @@ import {
   setNodeLocalMatrix4,
   setNodeTransform3D,
   syncNodeTransform3DFromMatrix4,
-} from './nodeTransform3d';
-import { invalidateNodeLocalTransform } from './revision';
+} from './nodeTransform3d.ts';
+import { invalidateNodeLocalTransform } from './revision.ts';
 
 const TestNodeKind = 'TestNode';
 

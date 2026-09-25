@@ -5,7 +5,7 @@ import type {
   OpenDirectoryDialogOptions,
   OpenFileDialogOptions,
   SaveFileDialogOptions,
-} from './Dialog';
+} from './Dialog.ts';
 
 export interface HostDirectoryOpenDialogCapability {
   open(options?: Readonly<OpenDirectoryDialogOptions>): Promise<DirectoryOpenDialogResult>;

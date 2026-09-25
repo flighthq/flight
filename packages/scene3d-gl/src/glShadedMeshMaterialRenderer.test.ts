@@ -5,12 +5,12 @@ import { createEmissiveModifier, createRimModifier, createShadedMaterial } from 
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { ShadedMaterialKind } from '@flighthq/types/contract';
 
-import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { setGlScene3DTime } from './glScene3DTime';
-import { registerBuiltInGlModifierSnippets } from './glShadedBuiltInModifiers';
-import { registerGlShadedMaterial, glShadedMeshMaterialRenderer } from './glShadedMeshMaterialRenderer';
+import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { setGlScene3DTime } from './glScene3DTime.ts';
+import { registerBuiltInGlModifierSnippets } from './glShadedBuiltInModifiers.ts';
+import { registerGlShadedMaterial, glShadedMeshMaterialRenderer } from './glShadedMeshMaterialRenderer.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

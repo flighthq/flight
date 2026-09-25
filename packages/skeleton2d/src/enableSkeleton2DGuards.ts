@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { Skeleton2DCoercedInterpolation, Skeleton2DDeformLengthMismatch } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setSkeleton2DCoercedInterpolationGuard, setSkeleton2DDeformLengthGuard } from './skeleton2dGuards';
+import { setSkeleton2DCoercedInterpolationGuard, setSkeleton2DDeformLengthGuard } from './skeleton2dGuards.ts';
 
 // Uninstalls the guards installed by enableSkeleton2DGuards.
 export function disableSkeleton2DGuards(): void {

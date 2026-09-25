@@ -11,13 +11,13 @@ import {
 } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { registerSkeleton2DPathConstraintSolver, solveSkeleton2DPathConstraint } from './pathConstraint2D';
-import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
+import { registerSkeleton2DPathConstraintSolver, solveSkeleton2DPathConstraint } from './pathConstraint2D.ts';
+import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d.ts';
 import {
   getSkeleton2DConstraintSolver,
   registerSkeleton2DConstraintSolver,
   unregisterSkeleton2DConstraintSolver,
-} from './skeleton2dConstraint';
+} from './skeleton2dConstraint.ts';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
   return {

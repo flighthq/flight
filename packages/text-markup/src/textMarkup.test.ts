@@ -3,8 +3,8 @@ import type { RichTextContent, TextFormat } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createMarkupTagRegistry, registerMarkupTag } from './markupTagRegistry';
-import { explainTextMarkup, formatTextMarkup, parseTextMarkup } from './textMarkup';
+import { createMarkupTagRegistry, registerMarkupTag } from './markupTagRegistry.ts';
+import { explainTextMarkup, formatTextMarkup, parseTextMarkup } from './textMarkup.ts';
 
 function formatAt(content: RichTextContent, index: number): TextFormat {
   for (const range of content.formatRanges) {

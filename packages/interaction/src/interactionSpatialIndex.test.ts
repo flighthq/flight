@@ -4,10 +4,10 @@ import { createDisplayObject, createNode2D } from '@flighthq/scene2d/contract';
 import { createSpatialIndex2D, createUniformGridSpatialBackend2D } from '@flighthq/spatial/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 
-import { hitTestGraphLocalBounds, registerHitTest } from './hitTests';
-import { createInteractionManager } from './interactionManager';
-import { findSpatialInteractionTarget, refreshInteractionSpatialIndex } from './interactionSpatialIndex';
-import { setNodeHitArea, setNodeHitTestEnabled } from './nodeInteractionState';
+import { hitTestGraphLocalBounds, registerHitTest } from './hitTests.ts';
+import { createInteractionManager } from './interactionManager.ts';
+import { findSpatialInteractionTarget, refreshInteractionSpatialIndex } from './interactionSpatialIndex.ts';
+import { setNodeHitArea, setNodeHitTestEnabled } from './nodeInteractionState.ts';
 
 function candidate(x: number, y: number, w: number, h: number) {
   const obj = createNode2D(DisplayObjectKind);

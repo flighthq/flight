@@ -1,8 +1,8 @@
-import type { AnimationClip } from './AnimationClip';
-import type { Entity, EntityRuntime } from './Entity';
-import type { ImageResourceReference } from './ImageResourceReference';
-import type { Node3D } from './Node3D';
-import type { Scene3DMetadata } from './Scene3DMetadata';
+import type { AnimationClip } from './AnimationClip.ts';
+import type { Entity, EntityRuntime } from './Entity.ts';
+import type { ImageResourceReference } from './ImageResourceReference.ts';
+import type { Node3D } from './Node3D.ts';
+import type { Scene3DMetadata } from './Scene3DMetadata.ts';
 
 // A Scene3D is a 3D content document, not a node in the graph: it owns a `root` Node3D plus the sidecar data
 // a model file carries alongside geometry — `animations` and provenance `metadata`. Materials and cameras are

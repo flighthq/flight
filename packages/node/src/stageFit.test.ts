@@ -7,14 +7,14 @@ import type {
   ViewportScaleMode,
 } from '@flighthq/types/contract';
 
-import { createNode, getNodeRuntime } from './node';
+import { createNode, getNodeRuntime } from './node.ts';
 import {
   computeScene2DFitAlignX,
   computeScene2DFitAlignY,
   computeScene2DFitFillScale,
   computeScene2DFitScale,
   computeScene2DFitTransform,
-} from './stageFit';
+} from './stageFit.ts';
 
 const TestNodeKind = 'TestNode';
 

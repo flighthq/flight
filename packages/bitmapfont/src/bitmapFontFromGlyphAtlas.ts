@@ -2,7 +2,7 @@ import { createTexture } from '@flighthq/texture/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type { BitmapFont, BitmapFontGlyphData, GlyphAtlas } from '@flighthq/types/contract';
 
-import { createBitmapFont } from './bitmapFont';
+import { createBitmapFont } from './bitmapFont.ts';
 
 /** Freezes a live `GlyphAtlas` into a static `BitmapFont` — the dynamic cache's contents as a fixed
  *  font, so a build step can bake what a run actually rasterized and ship it instead of rasterizing

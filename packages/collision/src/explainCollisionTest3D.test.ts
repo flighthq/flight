@@ -1,8 +1,8 @@
 import type { CollisionShape3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { registerBuiltInCollisionSupports3D } from './collisionSupport3D';
-import { explainCollisionTest3D } from './explainCollisionTest3D';
+import { registerBuiltInCollisionSupports3D } from './collisionSupport3D.ts';
+import { explainCollisionTest3D } from './explainCollisionTest3D.ts';
 
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();
@@ -21,7 +21,7 @@ describe('explainCollisionTest3D', () => {
     // A fresh module registry rather than test ordering, so this cannot be silently broken by moving
     // tests around.
     vi.resetModules();
-    const { explainCollisionTest3D: explainUnregistered } = await import('./explainCollisionTest3D');
+    const { explainCollisionTest3D: explainUnregistered } = await import('./explainCollisionTest3D.ts');
 
     expect(explainUnregistered(sphere(0, 2), sphere(1, 2))).toMatchObject({
       kind: 'sphere',
@@ -63,7 +63,7 @@ describe('explainCollisionTest3D', () => {
 
   it('checks validity before registration, so a degenerate shape is not blamed on a missing support', async () => {
     vi.resetModules();
-    const { explainCollisionTest3D: explainUnregistered } = await import('./explainCollisionTest3D');
+    const { explainCollisionTest3D: explainUnregistered } = await import('./explainCollisionTest3D.ts');
 
     // Both faults are present at once. Validity is the more specific diagnosis and the one the caller can
     // act on directly, so it wins.

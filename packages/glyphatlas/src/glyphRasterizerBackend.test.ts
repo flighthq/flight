@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { allocateStubGlyphRasterizerBackend, initializeStubGlyphRasterizerBackend } from './glyphRasterizerBackend';
+import { allocateStubGlyphRasterizerBackend, initializeStubGlyphRasterizerBackend } from './glyphRasterizerBackend.ts';
 
 describe('allocateStubGlyphRasterizerBackend', () => {
   it('returns a backend with a rasterize method', () => {

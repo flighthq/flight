@@ -13,7 +13,7 @@ import {
   readSpineBinaryUnsignedShort,
   readSpineBinaryVarint,
   skipSpineBinaryBytes,
-} from './spineBinaryReader';
+} from './spineBinaryReader.ts';
 
 describe('createSpineBinaryReader', () => {
   it('starts at the beginning and is not overrun', () => {

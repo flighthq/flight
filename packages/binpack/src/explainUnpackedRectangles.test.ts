@@ -1,8 +1,8 @@
 import type { RectangleId } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { explainUnpackedRectangles } from './explainUnpackedRectangles';
-import { packRectangles } from './packRectangles';
+import { explainUnpackedRectangles } from './explainUnpackedRectangles.ts';
+import { packRectangles } from './packRectangles.ts';
 
 describe('explainUnpackedRectangles', () => {
   it('returns nothing when everything was placed', () => {

@@ -1,4 +1,4 @@
-import type { Modifier } from './Modifier';
+import type { Modifier } from './Modifier.ts';
 
 // Adds a view-dependent Fresnel rim to the shaded output (slot: Effect): an additive glow at
 // grazing angles where the surface normal turns away from the view direction. Generalizes the

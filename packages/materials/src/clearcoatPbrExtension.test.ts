@@ -4,7 +4,7 @@ import {
   createClearcoatPbrExtension,
   initializeClearcoatPbrExtension,
   isValidClearcoatPbrExtension,
-} from './clearcoatPbrExtension';
+} from './clearcoatPbrExtension.ts';
 
 describe('createClearcoatPbrExtension', () => {
   it('creates an Entity with an explicit normal scale and independent UV sets', () => {

@@ -22,7 +22,7 @@ import {
   updateFlowStack,
 } from '@flighthq/sdk/flow';
 
-import { render, scale } from './render';
+import { render, scale } from './render.ts';
 
 const WIDTH = 600;
 const HEIGHT = 400;

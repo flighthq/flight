@@ -1,9 +1,9 @@
 import type { WgpuModifierSnippet } from '@flighthq/types/contract';
 import { ModifierSlot } from '@flighthq/types/contract';
 
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
-import { registerWgpuModifierSnippet, resolveWgpuModifierSnippet } from './wgpuShadedModifierSnippet';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
+import { registerWgpuModifierSnippet, resolveWgpuModifierSnippet } from './wgpuShadedModifierSnippet.ts';
 
 function makeSnippet(overrides?: Partial<WgpuModifierSnippet>): WgpuModifierSnippet {
   return {

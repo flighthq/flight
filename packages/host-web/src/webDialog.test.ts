@@ -17,8 +17,8 @@ import {
   webHostPhotoCaptureDialog,
   webHostPromptDialog,
   webHostVideoCaptureDialog,
-} from './webDialog';
-import { webHost } from './webHost';
+} from './webDialog.ts';
+import { webHost } from './webHost.ts';
 
 afterEach(() => {
   vi.restoreAllMocks();

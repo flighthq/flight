@@ -49,7 +49,7 @@ import {
 import { createScene3DHit, pickScene3D } from '@flighthq/sdk/picking';
 import { createNode3D } from '@flighthq/sdk/scene3d';
 
-import { canvas, render, scale, supportsExtendedPbr, supportsVertexColor0 } from './render';
+import { canvas, render, scale, supportsExtendedPbr, supportsVertexColor0 } from './render.ts';
 
 interface MaterialControl {
   getValue: () => number;

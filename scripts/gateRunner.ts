@@ -24,9 +24,9 @@
 
 import { spawn } from 'node:child_process';
 
-import { CHECK_PROGRESS_TOKEN_ENV, RegistrarProgressDecoder } from './check-progress';
-import type { RegistrarProgressRecord } from './check-progress';
-import type { Gate } from './gateRegistry';
+import { CHECK_PROGRESS_TOKEN_ENV, RegistrarProgressDecoder } from './check-progress.ts';
+import type { RegistrarProgressRecord } from './check-progress.ts';
+import type { Gate } from './gateRegistry.ts';
 
 export interface GateResult extends Gate {
   /** The child's exit status, or null when a signal killed it or it never ran. */

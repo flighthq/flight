@@ -2,8 +2,8 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { WrappedDiffusePbrExtension, EntityConstruction } from '@flighthq/types/contract';
 import { WrappedDiffusePbrExtensionKind } from '@flighthq/types/contract';
 
-import { isValidMaterialWeight } from './materialValidation';
-import { isValidPbrUvSet } from './pbrExtension';
+import { isValidMaterialWeight } from './materialValidation.ts';
+import { isValidPbrUvSet } from './pbrExtension.ts';
 
 export function createWrappedDiffusePbrExtension(
   opts?: Readonly<Partial<WrappedDiffusePbrExtension>>,

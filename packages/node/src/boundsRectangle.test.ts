@@ -39,8 +39,8 @@ import {
   getNodeWorldBoundsRectangle,
   setNodeHeight,
   setNodeWidth,
-} from './boundsRectangle';
-import { initBoundsRectangleRuntimeTrait, initBoundsRectangleTrait } from './hasBoundsRectangle';
+} from './boundsRectangle.ts';
+import { initBoundsRectangleRuntimeTrait, initBoundsRectangleTrait } from './hasBoundsRectangle.ts';
 
 function getEntityRuntime(
   source: TestNode,

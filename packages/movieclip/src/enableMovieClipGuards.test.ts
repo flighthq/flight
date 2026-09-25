@@ -2,8 +2,8 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import { createSpritesheet, createSpritesheetAnimation } from '@flighthq/spritesheet/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 
-import { areMovieClipGuardsEnabled, disableMovieClipGuards, enableMovieClipGuards } from './enableMovieClipGuards';
-import { createSpritesheetTimelineSource } from './spritesheetTimelineSource';
+import { areMovieClipGuardsEnabled, disableMovieClipGuards, enableMovieClipGuards } from './enableMovieClipGuards.ts';
+import { createSpritesheetTimelineSource } from './spritesheetTimelineSource.ts';
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);

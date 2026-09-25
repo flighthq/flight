@@ -55,7 +55,7 @@ import {
   setTrayPressedIcon,
   startTrayIconAnimation,
   stopTrayIconAnimation,
-} from './tray';
+} from './tray.ts';
 
 type TestHost = { readonly tray: { readonly lifecycle: HostTrayLifecycleCapability } } & {
   readonly tray: { readonly image: HostTrayImageCapability };
