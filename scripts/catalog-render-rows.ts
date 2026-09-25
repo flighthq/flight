@@ -1,5 +1,6 @@
 import { canvasScene2DRenderPreset } from '@flighthq/scene2d-canvas';
 import * as canvas from '@flighthq/scene2d-canvas';
+import { domScene2DRenderPreset } from '@flighthq/scene2d-dom';
 import * as dom from '@flighthq/scene2d-dom';
 import { glScene2DRenderPreset } from '@flighthq/scene2d-gl';
 import * as gl from '@flighthq/scene2d-gl';
@@ -32,21 +33,6 @@ export function buildRenderCatalogRows(): readonly RequirementCatalogEntry[] {
       rows.push(renderRow(backend.name, backend.module, symbol, kind));
     }
   }
-  // ★ DOM SHIPS NO PRESET, SO ITS ROWS STOP AT WHAT ITS OWN TESTS PROVE. Its runtime seeds an EMPTY
-  // renderer table and a caller supplies the bindings, so unlike the three backends above there is no
-  // shipped object to read. The obvious shortcut — infer the kind from the renderer's name, since the
-  // naming convention is strict — is measurably unsafe: run the same inference against the CANVAS
-  // preset and it gets 2 of 13 wrong. `DisplayObject` is served by `canvasScene2DRenderer` (no
-  // `canvasDisplayObjectRenderer` exists at all), and `MorphShape` is served by `canvasShapeRenderer`
-  // even though `canvasMorphShapeRenderer` DOES exist and is not what the preset uses. So a DOM row for
-  // MorphShape guessed from the name would very likely bind the wrong renderer, and a wrong binding
-  // registers a renderer under a kind no node carries and silently draws nothing — worse than an honest
-  // gap the build reports. Completing DOM properly means adding a `domScene2DRenderPreset` alongside
-  // the other three, which is a deliberate API decision for the render packages rather than something
-  // a generator may infer.
-  for (const [kind, symbol] of DOM_TESTED_BINDINGS) {
-    rows.push(renderRow('dom', '@flighthq/scene2d-dom', symbol, kind));
-  }
   return rows.sort((a, b) => a.backend.localeCompare(b.backend) || a.kind.localeCompare(b.kind));
 }
 
@@ -67,17 +53,6 @@ export function buildRequirementTranslations(): readonly RequirementTranslation[
   });
   return translations.sort((a, b) => a.from.key.localeCompare(b.from.key));
 }
-
-/** The kind-to-renderer pairs `scene2d-dom`'s own tests exercise. */
-export const DOM_TESTED_BINDINGS: ReadonlyMap<Kind, string> = new Map([
-  ['HtmlView' as Kind, 'domHtmlViewRenderer'],
-  ['NativeText' as Kind, 'domNativeTextRenderer'],
-  ['RichText' as Kind, 'domRichTextRenderer'],
-  ['Scale9Sprite' as Kind, 'domScale9SpriteRenderer'],
-  ['Shape' as Kind, 'domShapeRenderer'],
-  ['Sprite' as Kind, 'domSpriteRenderer'],
-  ['TextLabel' as Kind, 'domTextLabelRenderer'],
-]);
 
 export const PRESET_BACKENDS: readonly {
   readonly module: string;
@@ -103,10 +78,18 @@ export const PRESET_BACKENDS: readonly {
     renderers: wgpuScene2DRenderPreset.nodeRenderers,
     symbols: symbolsOf(wgpu),
   },
+  // DOM had no preset until one was added: its runtime seeds an EMPTY table, so the only statement of
+  // which renderer serves which kind lived in examples and tests, unreadable to anything else. It now
+  // declares the same way the other three do, which is what lets this read all four uniformly instead
+  // of guessing DOM's bindings from renderer names — a guess the naming convention cannot settle,
+  // since `DisplayObject` is served by `domScene2DRenderer`.
+  {
+    module: '@flighthq/scene2d-dom',
+    name: 'dom',
+    renderers: domScene2DRenderPreset.nodeRenderers!,
+    symbols: symbolsOf(dom),
+  },
 ];
-
-/** The dom namespace is referenced so a renamed renderer fails the build rather than the generate. */
-export const DOM_MODULE: Readonly<Record<string, unknown>> = dom as unknown as Record<string, unknown>;
 
 function renderRow(backend: string, module: string, symbol: string, kind: Kind): RequirementCatalogEntry {
   return {
