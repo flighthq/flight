@@ -10,6 +10,16 @@ import {
 
 import { createManifestPlugin } from './manifestPlugin';
 
+describe('AWD2 content through the built-in catalog', () => {
+  it('resolves an AWD2 material block to non-empty render fragments', async () => {
+    const { source, diagnostics } = await loadAwd2(awd2WithMaterialBlock());
+    expect(diagnostics).toEqual([]);
+    expect(source).not.toContain('export const glOptions = {};');
+    expect(source).toContain('materialRenderers');
+    expect(source).toContain("'ShadedMaterial'");
+  });
+});
+
 // The built-in catalog's whole claim is that a build can point at real content and get the real
 // handlers back. A test that only counted rows would pass on 58 rows naming symbols that do not exist,
 // or naming tags no document contains. So this drives the SHIPPED catalog through the SHIPPED plugin
@@ -173,5 +183,39 @@ function swfFile(...tags: readonly Uint8Array[]): Uint8Array {
   file.set([0x46, 0x57, 0x53, 9], 0);
   new DataView(file.buffer).setUint32(4, file.length, true);
   file.set(body, 8);
+  return file;
+}
+
+async function loadAwd2(content: Uint8Array): Promise<{ diagnostics: string[]; source: string }> {
+  const dir = await mkdtemp(join(tmpdir(), 'builtin-catalog-'));
+  await writeFile(join(dir, 'a.awd'), Buffer.from(content));
+  const diagnostics: string[] = [];
+  const plugin = createManifestPlugin({
+    catalog: {
+      backends: BUILT_IN_REQUIREMENT_BACKENDS,
+      entries: [...BUILT_IN_REQUIREMENT_CATALOG_ENTRIES],
+      translations: BUILT_IN_REQUIREMENT_TRANSLATIONS,
+    },
+    onDiagnostic: (message) => diagnostics.push(message),
+  });
+  const id = plugin.resolveId('./a.awd?manifest', join(dir, 'entry.ts'))!;
+  const source = (await plugin.load(id))!;
+  return { diagnostics: diagnostics.map((message) => message.replace(join(dir, 'a.awd'), '<file>')), source };
+}
+
+const AWD2_BLOCK_MATERIAL = 81;
+
+function awd2WithMaterialBlock(): Uint8Array {
+  const blockBody = new Uint8Array(0);
+  const blockHeader = 11;
+  const file = new Uint8Array(12 + blockHeader + blockBody.length);
+  file.set([0x41, 0x57, 0x44, 2, 1, 0, 0, 0], 0);
+  const view = new DataView(file.buffer);
+  view.setUint32(8, blockHeader + blockBody.length, true);
+  view.setUint32(12, 1, true);
+  file[16] = 0;
+  file[17] = AWD2_BLOCK_MATERIAL;
+  file[18] = 0;
+  view.setUint32(19, blockBody.length, true);
   return file;
 }
