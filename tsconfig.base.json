@@ -8,6 +8,7 @@
     "useDefineForClassFields": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
+    "rewriteRelativeImportExtensions": true,
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
