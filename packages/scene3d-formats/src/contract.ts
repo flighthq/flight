@@ -46,6 +46,7 @@ export * from './registerGltfCameraHandlers';
 export * from './registerGltfLightingExtensionHandlers';
 export * from './registerGltfMaterialExtensionHandlers';
 export * from './registerGltfSkinHandlers';
+export * from './scene3dFormatRequirements';
 export * from './scene3DFormatsTestHelper';
 export * from './sceneSkeleton';
 export * from './shared';

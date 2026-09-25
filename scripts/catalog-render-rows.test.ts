@@ -68,8 +68,10 @@ describe('buildRequirementTranslations', () => {
   // SWF containing only SetBackgroundColor would resolve no renderer for its own root.
   it('carries a format-wide row keyed on the bare namespace', () => {
     const bare = buildRequirementTranslations().filter((t) => !t.from.key.includes('.'));
-    expect(bare.map((t) => t.from.key)).toEqual(['swf']);
-    expect(bare[0]!.to.length).toBeGreaterThan(0);
+    expect(bare.map((t) => t.from.key)).toEqual(['3ds', 'dae', 'md2', 'md5', 'obj', 'swf']);
+    for (const row of bare) {
+      expect(row.to.length).toBeGreaterThan(0);
+    }
   });
 
   it('translates awd2.Material into scene.material-kind requirements', () => {

@@ -1,10 +1,19 @@
+import { createRequirementSet } from '@flighthq/requirement/contract';
 import { collectAwd2BlockCounts, parseAwd2Requirements } from '@flighthq/scene3d-formats/contract';
+import {
+  COLLADA_REQUIREMENT_KEY_NAMESPACE,
+  MD2_REQUIREMENT_KEY_NAMESPACE,
+  MD5_REQUIREMENT_KEY_NAMESPACE,
+  OBJ_REQUIREMENT_KEY_NAMESPACE,
+  THREE_DS_REQUIREMENT_KEY_NAMESPACE,
+} from '@flighthq/scene3d-formats/contract';
 import { parseSwfHeader, parseSwfRequirements } from '@flighthq/swf/contract';
 import type {
   HostDecompressDeflateCapability,
   HostDecompressLzmaCapability,
   RequirementSet,
 } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/types/contract';
 
 /** The decompressors a build supplies so compressed content can be read. */
 export interface ContentDecompressors {
@@ -37,10 +46,20 @@ export interface ContentAnalyzer {
  * Away3D writes `.awd`; `.awd2` is accepted too because the format is AWD2 and projects name the file
  * either way. Both resolve to the same analyzer, so the choice of suffix never changes what a build
  * reads.
+ *
+ * The five uncompressed 3D formats (3DS, Collada, MD2, MD5, OBJ) carry no compression layer, so they
+ * are always readable regardless of which decompressors a build supplies. Each emits a single
+ * format-level requirement keyed on its namespace; translation rows expand it to the material kinds
+ * the format's importer produces.
  */
 export const DEFAULT_CONTENT_ANALYZERS: Readonly<Record<string, ContentAnalyzer>> = Object.freeze({
+  '.3ds': STATIC_3D_FORMAT_ANALYZER(THREE_DS_REQUIREMENT_KEY_NAMESPACE),
   '.awd': AWD2_ANALYZER(),
   '.awd2': AWD2_ANALYZER(),
+  '.dae': STATIC_3D_FORMAT_ANALYZER(COLLADA_REQUIREMENT_KEY_NAMESPACE),
+  '.md2': STATIC_3D_FORMAT_ANALYZER(MD2_REQUIREMENT_KEY_NAMESPACE),
+  '.md5mesh': STATIC_3D_FORMAT_ANALYZER(MD5_REQUIREMENT_KEY_NAMESPACE),
+  '.obj': STATIC_3D_FORMAT_ANALYZER(OBJ_REQUIREMENT_KEY_NAMESPACE),
   '.swf': {
     analyze: (source, { deflate, lzma }) => parseSwfRequirements(source, deflate, lzma),
     isReadable: (source, { deflate, lzma }) => parseSwfHeader(source, deflate, lzma) !== null,
@@ -60,5 +79,19 @@ function AWD2_ANALYZER(): ContentAnalyzer {
   return {
     analyze: (source, { deflate, lzma }) => parseAwd2Requirements(source, deflate, lzma),
     isReadable: (source, { deflate, lzma }) => collectAwd2BlockCounts(source, deflate, lzma) !== null,
+  };
+}
+
+// Uncompressed 3D formats have no decompression barrier — they are always readable. The analyzer
+// emits a single `document.format` requirement keyed on the format namespace; the corresponding
+// translation row expands it to the material kinds the importer produces.
+function STATIC_3D_FORMAT_ANALYZER(namespace: string): ContentAnalyzer {
+  const requirements = createRequirementSet(
+    [RequirementFacet.DocumentFormat],
+    [{ facet: RequirementFacet.DocumentFormat, key: namespace }],
+  );
+  return {
+    analyze: () => requirements,
+    isReadable: () => true,
   };
 }
