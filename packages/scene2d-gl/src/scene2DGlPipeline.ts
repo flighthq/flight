@@ -55,11 +55,24 @@ function buildScene2DGlRenderers(): ReadonlyMap<Kind, NodeRenderer> {
   return table;
 }
 
-export const glScene2DRenderPreset: Readonly<GlRenderRegistries> = Object.freeze({
+/**
+ * Everything this backend needs that the CONTENT does not choose — the preset with no node renderers.
+ *
+ * A per-file manifest replaces exactly one part of a render configuration: the node renderers, because
+ * those are what a document implies. The rest is backend machinery every build needs whatever the
+ * content is, and some of it cannot be expressed as a catalog row at all. Splitting the two is what
+ * lets a generated fragment compose into a COMPLETE configuration without dragging in the renderers
+ * the content never asked for. See `canvasRenderInfrastructure` for the failure this prevents.
+ */
+export const glRenderInfrastructure: Readonly<Omit<GlRenderRegistries, 'nodeRenderers'>> = Object.freeze({
   ...buildGlRenderRegistries({}),
   blendRealizations: standardGlBlendRealizations,
   materialRenderers: withKindMapEntry(new Map(), StandardMaterialKind, standardGlQuadMaterialRenderer),
-  nodeRenderers: buildScene2DGlRenderers(),
   strokeTessellator: tessellateStrokePath,
   textureResolvers: standardGlTextureResolvers,
+});
+
+export const glScene2DRenderPreset: Readonly<GlRenderRegistries> = Object.freeze({
+  ...glRenderInfrastructure,
+  nodeRenderers: buildScene2DGlRenderers(),
 });

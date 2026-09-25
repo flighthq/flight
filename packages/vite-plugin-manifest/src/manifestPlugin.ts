@@ -129,7 +129,7 @@ export function createManifestPlugin(
       report(`no catalog entry for ${requirement.facet} ${requirement.key}: ${path}`);
     }
 
-    const generated = generateManifestModuleSource(rows, extension);
+    const generated = generateManifestModuleSource(rows, extension, options.catalog.backends ?? []);
     for (const problem of generated.problems) report(`${problem}: ${path}`);
     return generated.source;
   }

@@ -42,9 +42,29 @@ export interface RequirementTranslation {
   readonly to: readonly Requirement[];
 }
 
+/**
+ * What one backend needs that the CONTENT does not choose, named so a generated module can import it.
+ *
+ * A manifest replaces exactly one part of a render configuration — the node renderers a document
+ * implies. The rest is backend machinery (a shape-command table, a blend-mode application) that no
+ * requirement can express, and some of it is not even kind-keyed. Naming it HERE rather than in the
+ * plugin keeps the plugin ignorant of which render packages exist: it emits whatever the catalog
+ * declares, so a caller with their own backend is served exactly like a built-in one.
+ */
+export interface RequirementBackend {
+  readonly infrastructureImport: string;
+  readonly infrastructureSymbol: string;
+  readonly name: string;
+}
+
 // A caller-owned, open inventory. The built-in content is generated separately.
 export interface RequirementCatalog {
   readonly entries: RequirementCatalogEntry[];
+  /**
+   * Per-backend machinery a complete configuration needs. Absent means the generated module offers
+   * only the content-derived fragment, which is correct but is NOT a working render configuration.
+   */
+  readonly backends?: readonly RequirementBackend[];
   /** Format-to-render implications. Absent means a catalog that resolves render backends not at all. */
   readonly translations?: readonly RequirementTranslation[];
 }

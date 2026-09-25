@@ -8,7 +8,13 @@ import { wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu';
 import * as wgpu from '@flighthq/scene2d-wgpu';
 import { SWF_DOCUMENT_NODE_KINDS, SWF_REQUIREMENT_KEY_NAMESPACE, SWF_TAG_NODE_KINDS } from '@flighthq/swf/contract';
 import { getSwfTagName } from '@flighthq/swf/contract';
-import type { Kind, NodeRenderer, RequirementCatalogEntry, RequirementTranslation } from '@flighthq/types/contract';
+import type {
+  Kind,
+  NodeRenderer,
+  RequirementBackend,
+  RequirementCatalogEntry,
+  RequirementTranslation,
+} from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
 /**
@@ -105,4 +111,24 @@ function renderRow(backend: string, module: string, symbol: string, kind: Kind):
 // a row name the symbol that actually holds the renderer serving that kind.
 function symbolsOf(module: object): ReadonlyMap<unknown, string> {
   return new Map(Object.entries(module).map(([name, value]) => [value, name]));
+}
+
+/**
+ * What each built-in backend needs beyond the renderers a document implies.
+ *
+ * Declared as catalog DATA rather than known by the plugin, so the plugin stays ignorant of which
+ * render packages exist and a caller's own backend is served the same way. The symbols are the public
+ * `*RenderInfrastructure` exports each backend package ships for exactly this purpose.
+ */
+export function buildRequirementBackends(): readonly RequirementBackend[] {
+  return [
+    {
+      infrastructureImport: '@flighthq/scene2d-canvas',
+      infrastructureSymbol: 'canvasRenderInfrastructure',
+      name: 'canvas',
+    },
+    { infrastructureImport: '@flighthq/scene2d-dom', infrastructureSymbol: 'domRenderInfrastructure', name: 'dom' },
+    { infrastructureImport: '@flighthq/scene2d-gl', infrastructureSymbol: 'glRenderInfrastructure', name: 'gl' },
+    { infrastructureImport: '@flighthq/scene2d-wgpu', infrastructureSymbol: 'wgpuRenderInfrastructure', name: 'wgpu' },
+  ];
 }
