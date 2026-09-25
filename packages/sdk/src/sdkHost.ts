@@ -1,5 +1,5 @@
 import { sdkHostCompressDeflate } from '@flighthq/compression';
-import { sdkHostDecompressDeflate } from '@flighthq/compression';
+import { sdkHostDecompressDeflate, sdkHostDecompressLzma } from '@flighthq/compression';
 import type { HostCompressCapabilities, HostDecompressCapabilities } from '@flighthq/types/contract';
 
 export const sdkHostCompress = {
@@ -8,6 +8,7 @@ export const sdkHostCompress = {
 
 export const sdkHostDecompress = {
   deflate: sdkHostDecompressDeflate,
+  lzma: sdkHostDecompressLzma,
 } as const satisfies HostDecompressCapabilities;
 
 export const sdkHost = {
