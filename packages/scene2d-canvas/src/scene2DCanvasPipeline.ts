@@ -50,9 +50,26 @@ function buildScene2dCanvasRenderers(): ReadonlyMap<Kind, NodeRenderer> {
   return table;
 }
 
-export const canvasScene2DRenderPreset: Readonly<CanvasRenderRegistries> = Object.freeze({
+/**
+ * Everything this backend needs that the CONTENT does not choose — the preset with no node renderers.
+ *
+ * ★ WHY THIS IS SEPARATE. A per-file manifest replaces exactly one part of a render configuration: the
+ * node renderers, because those are what a document implies. The rest — the shape-drawing command
+ * table, the blend-mode application — is backend machinery that every canvas build needs whatever the
+ * content is, and no catalog row can express `blendModeApplication` at all because it is a plain
+ * function with no kind to key on. Before this split there was nowhere to get one without the other,
+ * so a generated fragment spread in place of the preset typechecked, built, and rendered a BLACK FRAME:
+ * shapes had renderers but no commands to draw with. Composing this with a manifest fragment is the
+ * supported way to get a complete configuration without pulling in the twelve renderers the content
+ * never asked for.
+ */
+export const canvasRenderInfrastructure: Readonly<Omit<CanvasRenderRegistries, 'nodeRenderers'>> = Object.freeze({
   ...allocateEmptyCanvasRenderRegistries(),
   blendModeApplication: applyCanvasBlendMode,
   canvasShapeCommands: canvasShapeCommandTable(),
+});
+
+export const canvasScene2DRenderPreset: Readonly<CanvasRenderRegistries> = Object.freeze({
+  ...canvasRenderInfrastructure,
   nodeRenderers: buildScene2dCanvasRenderers(),
 });

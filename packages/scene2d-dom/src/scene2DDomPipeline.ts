@@ -61,6 +61,18 @@ function buildScene2dDomRenderers(): ReadonlyMap<Kind, NodeRenderer> {
  * `QuadBatch` or `Tilemap` renderer, so those kinds are absent rather than bound to a stand-in that
  * would draw nothing.
  */
+/**
+ * Everything this backend needs that the CONTENT does not choose — the DOM counterpart of
+ * `canvasRenderInfrastructure`, and deliberately EMPTY.
+ *
+ * DOM draws through elements rather than a drawing API, so it has no command table to stock and no
+ * blend-mode application to install; its `shapeRasterizer` and `textureResolvers` are caller-supplied
+ * and default to nothing. Declared anyway so a build-time manifest can compose the same way against
+ * every backend instead of special-casing the one whose infrastructure happens to be empty.
+ */
+export const domRenderInfrastructure: Readonly<Omit<DomRenderOptions, 'nodeRenderers'>> = Object.freeze({});
+
 export const domScene2DRenderPreset: Readonly<Pick<DomRenderOptions, 'nodeRenderers'>> = Object.freeze({
+  ...domRenderInfrastructure,
   nodeRenderers: buildScene2dDomRenderers(),
 });

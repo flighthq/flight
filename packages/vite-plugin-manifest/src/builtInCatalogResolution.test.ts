@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import {
+  BUILT_IN_REQUIREMENT_BACKENDS,
   BUILT_IN_REQUIREMENT_CATALOG_ENTRIES,
   BUILT_IN_REQUIREMENT_TRANSLATIONS,
 } from '@flighthq/requirement-catalog/contract';
@@ -65,15 +66,48 @@ describe('BUILT_IN_REQUIREMENT_CATALOG_ENTRIES through the plugin', () => {
     expect(source).not.toContain('register');
   });
 
+  // ★ THE EXPORT THAT IS SAFE TO USE AS IT STANDS. `canvasOptions` carries only what the content
+  // implies; handing it to `createCanvasRenderState` where a preset belonged typechecked, built, and
+  // rendered a BLACK FRAME, because a canvas also needs a shape-command table and a blend-mode
+  // application that no catalog row can express. The composed export exists so a caller never has to
+  // know which pieces a backend needs — the knowledge they lacked when the frame came out black.
+  it('exports a composed options object carrying the backend machinery, not just the content', async () => {
+    const { source } = await load(swfFile(tag(TAG_DEFINE_SHAPE)));
+    expect(source).toContain('export const canvasFullOptions = {');
+    expect(source).toContain('  ...canvasRenderInfrastructure,');
+    expect(source).toContain('  ...canvasOptions,');
+    // Imported, not merely referenced: a symbol used without an import fails at run time, and the
+    // import block is rendered before the fragments, so registering it late emits nothing.
+    expect(source).toContain('canvasRenderInfrastructure');
+    expect(source.indexOf('canvasRenderInfrastructure')).toBeLessThan(source.indexOf('export const canvasOptions'));
+  });
+
+  it('offers a composed export for every backend the catalog declares', async () => {
+    const { source } = await load(swfFile(tag(TAG_DEFINE_SHAPE)));
+    for (const backend of ['canvas', 'dom', 'gl', 'wgpu']) {
+      expect(source, backend).toContain(`export const ${backend}FullOptions = {`);
+    }
+  });
+
+  // A catalog that names no backend machinery must NOT imply a working configuration it cannot build.
+  it('omits the composed export when the catalog declares no backend machinery', async () => {
+    const { source } = await load(swfFile(tag(TAG_DEFINE_SHAPE)), { backends: undefined });
+    expect(source).toContain('export const canvasOptions = {');
+    expect(source).not.toContain('canvasFullOptions');
+    expect(source).not.toContain('canvasRenderInfrastructure');
+  });
+
   // ★ THE POINT OF THE TRANSLATION LAYER. Before it, a document resolved its parser handlers and every
   // render fragment came back `{}` — the manifest helped the parsing half and left the larger half to
   // be wired by hand. These assert the render fragments now carry the renderers the content's own tags
   // imply, reached from a TAG requirement through the node kinds it builds.
   it('fills the render fragments a document implies, not just the parser one', async () => {
     const { source } = await load(swfFile(tag(TAG_DEFINE_SHAPE)));
-    expect(source).toContain(
-      "import { canvasScale9ShapeRenderer, canvasScene2DRenderer, canvasShapeRenderer } from '@flighthq/scene2d-canvas';",
-    );
+    // Asserted by symbol rather than as one exact line: the same import also carries the backend
+    // infrastructure now, and pinning the whole line would break on any addition to it.
+    for (const symbol of ['canvasScene2DRenderer', 'canvasShapeRenderer', 'canvasScale9ShapeRenderer']) {
+      expect(source, symbol).toContain(symbol);
+    }
     expect(source).toContain("['Shape', canvasShapeRenderer]");
     expect(source).toContain("['Shape', glShapeRenderer]");
     expect(source).toContain("['Shape', wgpuShapeRenderer]");
@@ -105,12 +139,19 @@ const TAG_DEFINE_TEXT = 11;
 // 253 is inside the tag-code range and claimed by no family, so it stays a genuine unknown.
 const TAG_UNCLAIMED = 253;
 
-async function load(content: Uint8Array): Promise<{ diagnostics: string[]; source: string }> {
+async function load(
+  content: Uint8Array,
+  overrides: { backends?: typeof BUILT_IN_REQUIREMENT_BACKENDS } = {},
+): Promise<{ diagnostics: string[]; source: string }> {
   const dir = await mkdtemp(join(tmpdir(), 'builtin-catalog-'));
   await writeFile(join(dir, 'a.swf'), Buffer.from(content));
   const diagnostics: string[] = [];
   const plugin = createManifestPlugin({
-    catalog: { entries: [...BUILT_IN_REQUIREMENT_CATALOG_ENTRIES], translations: BUILT_IN_REQUIREMENT_TRANSLATIONS },
+    catalog: {
+      backends: 'backends' in overrides ? overrides.backends : BUILT_IN_REQUIREMENT_BACKENDS,
+      entries: [...BUILT_IN_REQUIREMENT_CATALOG_ENTRIES],
+      translations: BUILT_IN_REQUIREMENT_TRANSLATIONS,
+    },
     onDiagnostic: (message) => diagnostics.push(message),
   });
   const id = plugin.resolveId('./a.swf?manifest', join(dir, 'entry.ts'))!;
