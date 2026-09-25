@@ -38,7 +38,7 @@ export function findUnrunTestPackages(root: string, executedFiles: readonly stri
   const unrun: string[] = [];
   for (const name of readdirSync(packagesDir)) {
     if (ran.has(name)) continue;
-    if (name.startsWith('host-') || name.startsWith('tool-')) continue;
+    if (EXCLUDED_PACKAGE_PREFIXES.some((prefix) => name.startsWith(prefix))) continue;
     if (hasTestFile(join(packagesDir, name, 'src'))) unrun.push(name);
   }
   return unrun.sort();
@@ -58,13 +58,14 @@ export function findOmittedTestFiles(root: string, executedFiles: readonly strin
   if (!existsSync(packagesDir)) return [];
   const ran = new Set(executedFiles.map((file) => relative(root, file)));
   const omitted: string[] = [];
-  collectMatchingTestFiles(packagesDir, root, omitted);
+  collectMatchingTestFiles(packagesDir, root, omitted, EXCLUDED_PACKAGE_PREFIXES);
   return omitted.filter((file) => !ran.has(file)).sort();
 }
 
-function collectMatchingTestFiles(dir: string, root: string, out: string[]): void {
+function collectMatchingTestFiles(dir: string, root: string, out: string[], skipPrefixes?: readonly string[]): void {
   if (!existsSync(dir)) return;
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (skipPrefixes && skipPrefixes.some((prefix) => entry.name.startsWith(prefix))) continue;
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
       if (entry.name !== 'node_modules' && entry.name !== 'dist') collectMatchingTestFiles(full, root, out);
@@ -91,6 +92,7 @@ function hasTestFile(dir: string): boolean {
 // CI leg that installs it. Kept as a pattern rather than a file list so a NEW e2e file is announced the
 // day it is added instead of joining the silence.
 const DELIBERATELY_OMITTED_TEST_FILE = /\.e2e\.test\.ts$/;
+const EXCLUDED_PACKAGE_PREFIXES = ['host-', 'tool-'] as const;
 
 // A positional argument is a name or path filter, so the run is a subset BY REQUEST rather than by
 // omission. Flags are not, and neither is the `run` verb itself.

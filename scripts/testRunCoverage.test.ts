@@ -96,6 +96,16 @@ describe('findOmittedTestFiles', () => {
     expect(findOmittedTestFiles(root, [])).toEqual([]);
   });
 
+  it('excludes tool- and host- packages (they have their own lanes)', () => {
+    const root = mkdtempSync(join(tmpdir(), 'omitted-files-'));
+    mkdirSync(join(root, 'packages', 'tool-capture', 'src'), { recursive: true });
+    mkdirSync(join(root, 'packages', 'host-web', 'src'), { recursive: true });
+    writeFileSync(join(root, 'packages', 'tool-capture', 'src', 'a.e2e.test.ts'), '');
+    writeFileSync(join(root, 'packages', 'host-web', 'src', 'b.e2e.test.ts'), '');
+
+    expect(findOmittedTestFiles(root, [])).toEqual([]);
+  });
+
   it('stays silent once the contract actually ran', () => {
     const root = mkdtempSync(join(tmpdir(), 'omitted-files-'));
     mkdirSync(join(root, 'packages', 'tool', 'src'), { recursive: true });
