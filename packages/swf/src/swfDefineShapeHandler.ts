@@ -10,7 +10,7 @@ import type {
   SwfTagRectangle,
   SwfTimeline,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, Scale9ShapeKind, ShapeKind } from '@flighthq/types/contract';
 
 import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition';
 import { acquireSwfImageTexture } from './swfImageTexture';
@@ -29,6 +29,7 @@ const TAG_DEFINE_SHAPE_4 = 83;
 
 export const swfDefineShapeHandler: SwfTagHandler = {
   instantiate: {
+    producesKinds: [ShapeKind, Scale9ShapeKind],
     createPlacementNode(parsed, characterId, bounds, diagnostics) {
       const grid = parsed.scalingGrids.get(characterId);
       const sprite = parsed.sprites.get(characterId);

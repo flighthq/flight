@@ -6,7 +6,7 @@ import type {
   SwfTagParseState,
   SwfTagReader,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, MorphShapeKind } from '@flighthq/types/contract';
 
 import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition';
 import { acquireSwfImageTexture } from './swfImageTexture';
@@ -20,6 +20,7 @@ const TAG_DEFINE_MORPH_SHAPE_2 = 84;
 
 export const swfDefineMorphShapeHandler: SwfTagHandler = {
   instantiate: {
+    producesKinds: [MorphShapeKind],
     createPlacementNode(parsed, characterId, bounds) {
       const morphShape = parsed.morphShapes.get(characterId);
       if (morphShape === undefined) return null;

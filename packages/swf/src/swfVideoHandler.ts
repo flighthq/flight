@@ -6,6 +6,7 @@ import type {
   SwfTagReader,
   Texture2D,
 } from '@flighthq/types/contract';
+import { SpriteKind } from '@flighthq/types/contract';
 
 import { createSwfTexturedSprite } from './swfNode';
 
@@ -17,6 +18,7 @@ const TAG_DEFINE_VIDEO_STREAM = 60;
 
 export const swfVideoHandler: SwfTagHandler = {
   instantiate: {
+    producesKinds: [SpriteKind],
     createPlacementNode(parsed, characterId, bounds) {
       const video = parsed.videos.get(characterId);
       if (video === undefined) return null;
