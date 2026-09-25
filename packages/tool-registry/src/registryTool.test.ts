@@ -20,10 +20,19 @@ describe('runRegistryTool', () => {
     // Shape, not count: a row added to a format family must not fail an unrelated CLI test.
     expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) {
-      expect(row.backend).toBe('parser');
-      expect(row.facet).toBe('document.format');
-      expect(row.kind).toMatch(/^(swf|awd2)\./);
+      expect(row.backend.length).toBeGreaterThan(0);
+      expect(row.implementationImport.startsWith('@flighthq/')).toBe(true);
       expect(row.implementationSymbol.length).toBeGreaterThan(0);
+    }
+    // The catalog carries BOTH halves of the pipeline, and a CLI that relayed only one would hide the
+    // half a consumer needs: parser rows answer a document.format requirement, render rows answer the
+    // scene.node-kind requirements that format implies.
+    const facets = new Set(rows.map((row) => row.facet));
+    expect(facets.has('document.format')).toBe(true);
+    expect(facets.has('scene.node-kind')).toBe(true);
+    for (const row of rows.filter((candidate) => candidate.facet === 'document.format')) {
+      expect(row.backend).toBe('parser');
+      expect(row.kind).toMatch(/^(swf|awd2)\./);
     }
   });
 

@@ -1,2 +1,2 @@
-export * from './requirementCatalog';
 export * from './builtInRequirementCatalogEntries';
+export * from './requirementCatalog';

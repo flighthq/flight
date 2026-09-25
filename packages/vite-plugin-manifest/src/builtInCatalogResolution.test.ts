@@ -2,7 +2,10 @@ import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { BUILT_IN_REQUIREMENT_CATALOG_ENTRIES } from '@flighthq/requirement-catalog/contract';
+import {
+  BUILT_IN_REQUIREMENT_CATALOG_ENTRIES,
+  BUILT_IN_REQUIREMENT_TRANSLATIONS,
+} from '@flighthq/requirement-catalog/contract';
 
 import { createManifestPlugin } from './manifestPlugin';
 
@@ -61,9 +64,42 @@ describe('BUILT_IN_REQUIREMENT_CATALOG_ENTRIES through the plugin', () => {
     const { source } = await load(swfFile(tag(TAG_DEFINE_SHAPE)));
     expect(source).not.toContain('register');
   });
+
+  // ★ THE POINT OF THE TRANSLATION LAYER. Before it, a document resolved its parser handlers and every
+  // render fragment came back `{}` — the manifest helped the parsing half and left the larger half to
+  // be wired by hand. These assert the render fragments now carry the renderers the content's own tags
+  // imply, reached from a TAG requirement through the node kinds it builds.
+  it('fills the render fragments a document implies, not just the parser one', async () => {
+    const { source } = await load(swfFile(tag(TAG_DEFINE_SHAPE)));
+    expect(source).toContain(
+      "import { canvasScale9ShapeRenderer, canvasScene2DRenderer, canvasShapeRenderer } from '@flighthq/scene2d-canvas';",
+    );
+    expect(source).toContain("['Shape', canvasShapeRenderer]");
+    expect(source).toContain("['Shape', glShapeRenderer]");
+    expect(source).toContain("['Shape', wgpuShapeRenderer]");
+    expect(source).not.toContain('export const canvasOptions = {};');
+  });
+
+  it('gives a document whose tags build no node the container renderer its root still needs', async () => {
+    // SetBackgroundColor builds nothing, but the importer still makes a root. A purely per-tag table
+    // would leave that root unrendered; the namespace-keyed translation is what covers it.
+    const { source } = await load(swfFile(tag(TAG_SET_BACKGROUND_COLOR, new Uint8Array([0, 0, 0]))));
+    expect(source).toContain("['DisplayObject', canvasScene2DRenderer]");
+  });
+
+  it('keeps each backend to its own renderers, so importing one does not drag in another', async () => {
+    const { source } = await load(swfFile(tag(TAG_DEFINE_SHAPE)));
+    const canvasFragment = source.slice(
+      source.indexOf('export const canvasOptions'),
+      source.indexOf('export const domOptions'),
+    );
+    expect(canvasFragment).not.toContain('glShapeRenderer');
+    expect(canvasFragment).not.toContain('wgpuShapeRenderer');
+  });
 });
 
 const TAG_DEFINE_SHAPE = 2;
+const TAG_SET_BACKGROUND_COLOR = 9;
 const TAG_DEFINE_SPRITE = 39;
 const TAG_DEFINE_TEXT = 11;
 // 253 is inside the tag-code range and claimed by no family, so it stays a genuine unknown.
@@ -74,7 +110,7 @@ async function load(content: Uint8Array): Promise<{ diagnostics: string[]; sourc
   await writeFile(join(dir, 'a.swf'), Buffer.from(content));
   const diagnostics: string[] = [];
   const plugin = createManifestPlugin({
-    catalog: { entries: [...BUILT_IN_REQUIREMENT_CATALOG_ENTRIES] },
+    catalog: { entries: [...BUILT_IN_REQUIREMENT_CATALOG_ENTRIES], translations: BUILT_IN_REQUIREMENT_TRANSLATIONS },
     onDiagnostic: (message) => diagnostics.push(message),
   });
   const id = plugin.resolveId('./a.swf?manifest', join(dir, 'entry.ts'))!;

@@ -1,4 +1,5 @@
 import type { Kind } from './Entity';
+import type { Requirement } from './Requirement';
 import type { RequirementFacet } from './RequirementFacet';
 
 // One factual ownership row. It deliberately stops before argument/source expressions: those depend on
@@ -21,7 +22,29 @@ export interface RequirementCatalogEntry {
   readonly registrarSymbol?: string;
 }
 
-// A caller-owned, open inventory. The built-in content starts empty and is generated separately.
+/**
+ * One format-to-render implication: content that needs `from` also needs everything in `to`.
+ *
+ * A `document.format` requirement names a TAG (`swf.DefineShape`); a renderer is keyed by a NODE KIND
+ * (`Shape`). Without this the two halves never meet, and a build resolves its parser handlers while
+ * every render fragment comes back empty. Plain data rather than a function on purpose: a translator
+ * handed only the requirement set would see exactly what a row sees, so code would buy nothing, and
+ * data survives the JSON round trip the CLI lane depends on.
+ *
+ * MATCHING IS EXACT ON `from.key`, WITH ONE DELIBERATE EXCEPTION: a row whose key is a bare format
+ * namespace (`swf` rather than `swf.DefineShape`) applies to every requirement in that namespace. That
+ * is what carries the kinds a document produces REGARDLESS of its tags — the importer builds a
+ * `MovieClip` root for any SWF — which no per-tag row can express. A file containing only
+ * `SetBackgroundColor` still has that root, and a purely per-tag table would leave it unrendered.
+ */
+export interface RequirementTranslation {
+  readonly from: Requirement;
+  readonly to: readonly Requirement[];
+}
+
+// A caller-owned, open inventory. The built-in content is generated separately.
 export interface RequirementCatalog {
   readonly entries: RequirementCatalogEntry[];
+  /** Format-to-render implications. Absent means a catalog that resolves render backends not at all. */
+  readonly translations?: readonly RequirementTranslation[];
 }
