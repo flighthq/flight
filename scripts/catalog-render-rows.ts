@@ -11,6 +11,10 @@ import { glScene2DRenderPreset } from '@flighthq/scene2d-gl';
 import * as gl from '@flighthq/scene2d-gl';
 import { wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu';
 import * as wgpu from '@flighthq/scene2d-wgpu';
+import { glScene3DRenderPreset } from '@flighthq/scene3d-gl';
+import * as scene3dGl from '@flighthq/scene3d-gl';
+import { wgpuScene3DRenderPreset } from '@flighthq/scene3d-wgpu';
+import * as scene3dWgpu from '@flighthq/scene3d-wgpu';
 import { SWF_DOCUMENT_NODE_KINDS, SWF_REQUIREMENT_KEY_NAMESPACE, SWF_TAG_NODE_KINDS } from '@flighthq/swf/contract';
 import { getSwfTagName } from '@flighthq/swf/contract';
 import type {
@@ -47,6 +51,8 @@ export function buildRenderCatalogRows(): readonly RequirementCatalogEntry[] {
   }
   rows.push(...buildShapeCommandCatalogRows());
   rows.push(...buildBlendModeCatalogRows());
+  rows.push(...buildMaterialKindCatalogRows());
+  rows.push(...buildModifierKindCatalogRows());
   return rows.sort(
     (a, b) => a.backend.localeCompare(b.backend) || a.facet.localeCompare(b.facet) || a.kind.localeCompare(b.kind),
   );
@@ -159,6 +165,32 @@ export const PRESET_BACKENDS: readonly {
   },
 ];
 
+export const SCENE3D_PRESET_BACKENDS: readonly {
+  readonly materialRenderers: ReadonlyMap<Kind, unknown>;
+  readonly modifierSnippets: ReadonlyMap<Kind, unknown>;
+  readonly modules: ReadonlyArray<{ readonly importPath: string; readonly symbols: ReadonlyMap<unknown, string> }>;
+  readonly name: string;
+}[] = [
+  {
+    materialRenderers: glScene3DRenderPreset.materialRenderers,
+    modifierSnippets: glScene3DRenderPreset.modifierSnippets,
+    modules: [
+      { importPath: '@flighthq/scene3d-gl', symbols: symbolsOf(scene3dGl) },
+      { importPath: '@flighthq/scene2d-gl', symbols: symbolsOf(gl) },
+    ],
+    name: 'gl',
+  },
+  {
+    materialRenderers: wgpuScene3DRenderPreset.materialRenderers,
+    modifierSnippets: wgpuScene3DRenderPreset.modifierSnippets,
+    modules: [
+      { importPath: '@flighthq/scene3d-wgpu', symbols: symbolsOf(scene3dWgpu) },
+      { importPath: '@flighthq/scene2d-wgpu', symbols: symbolsOf(wgpu) },
+    ],
+    name: 'wgpu',
+  },
+];
+
 function renderRow(backend: string, module: string, symbol: string, kind: Kind): RequirementCatalogEntry {
   return {
     backend,
@@ -167,6 +199,53 @@ function renderRow(backend: string, module: string, symbol: string, kind: Kind):
     implementationSymbol: symbol,
     kind,
   };
+}
+
+function buildMaterialKindCatalogRows(): RequirementCatalogEntry[] {
+  const rows: RequirementCatalogEntry[] = [];
+  for (const backend of SCENE3D_PRESET_BACKENDS) {
+    for (const [kind, renderer] of backend.materialRenderers) {
+      const resolved = resolveMultiModuleSymbol(renderer, backend.modules);
+      if (resolved === undefined) continue;
+      rows.push({
+        backend: backend.name,
+        facet: RequirementFacet.SceneMaterialKind,
+        implementationImport: resolved.importPath,
+        implementationSymbol: resolved.symbol,
+        kind,
+      });
+    }
+  }
+  return rows;
+}
+
+function buildModifierKindCatalogRows(): RequirementCatalogEntry[] {
+  const rows: RequirementCatalogEntry[] = [];
+  for (const backend of SCENE3D_PRESET_BACKENDS) {
+    for (const [kind, snippet] of backend.modifierSnippets) {
+      const resolved = resolveMultiModuleSymbol(snippet, backend.modules);
+      if (resolved === undefined) continue;
+      rows.push({
+        backend: backend.name,
+        facet: RequirementFacet.SceneModifierKind,
+        implementationImport: resolved.importPath,
+        implementationSymbol: resolved.symbol,
+        kind,
+      });
+    }
+  }
+  return rows;
+}
+
+function resolveMultiModuleSymbol(
+  value: unknown,
+  modules: ReadonlyArray<{ readonly importPath: string; readonly symbols: ReadonlyMap<unknown, string> }>,
+): { importPath: string; symbol: string } | undefined {
+  for (const mod of modules) {
+    const symbol = mod.symbols.get(value);
+    if (symbol !== undefined) return { importPath: mod.importPath, symbol };
+  }
+  return undefined;
 }
 
 // Identity, not name: the preset holds renderer OBJECTS, and matching them back by value is what makes
