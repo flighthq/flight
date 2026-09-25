@@ -62,7 +62,16 @@ const NO_DECOMPRESSORS = { deflate: null, lzma: null };
 
 describe('DEFAULT_CONTENT_ANALYZERS', () => {
   it('covers the formats Flight analyzes, keyed by lowercase extension', () => {
-    expect(Object.keys(DEFAULT_CONTENT_ANALYZERS).sort()).toEqual(['.awd', '.awd2', '.swf']);
+    expect(Object.keys(DEFAULT_CONTENT_ANALYZERS).sort()).toEqual([
+      '.3ds',
+      '.awd',
+      '.awd2',
+      '.dae',
+      '.md2',
+      '.md5mesh',
+      '.obj',
+      '.swf',
+    ]);
   });
 
   it('is frozen, so one project cannot mutate the table another build reads', () => {
@@ -85,6 +94,17 @@ describe('DEFAULT_CONTENT_ANALYZERS', () => {
     const set = DEFAULT_CONTENT_ANALYZERS['.awd'].analyze(createAwd2WithCamera(), NO_DECOMPRESSORS);
     expect(set.covers).toEqual([RequirementFacet.DocumentFormat]);
     expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: 'awd2.Camera' }]);
+  });
+
+  it('emits a format-level requirement for each uncompressed 3D format', () => {
+    for (const ext of ['.3ds', '.dae', '.md2', '.md5mesh', '.obj'] as const) {
+      const analyzer = DEFAULT_CONTENT_ANALYZERS[ext];
+      expect(analyzer.isReadable(new Uint8Array(), NO_DECOMPRESSORS)).toBe(true);
+      const set = analyzer.analyze(new Uint8Array(), NO_DECOMPRESSORS);
+      expect(set.covers).toEqual([RequirementFacet.DocumentFormat]);
+      expect(set.requirements.length).toBe(1);
+      expect(set.requirements[0]!.facet).toBe(RequirementFacet.DocumentFormat);
+    }
   });
 
   it('reports an empty but covered set for content it cannot read', () => {

@@ -13,6 +13,18 @@ import { wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu';
 import * as wgpu from '@flighthq/scene2d-wgpu';
 import { AWD2_BLOCK_SCENE_REQUIREMENTS, AWD2_DOCUMENT_SCENE_REQUIREMENTS } from '@flighthq/scene3d-formats/contract';
 import { AWD2_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/scene3d-formats/contract';
+import {
+  COLLADA_DOCUMENT_SCENE_REQUIREMENTS,
+  COLLADA_REQUIREMENT_KEY_NAMESPACE,
+  MD2_DOCUMENT_SCENE_REQUIREMENTS,
+  MD2_REQUIREMENT_KEY_NAMESPACE,
+  MD5_DOCUMENT_SCENE_REQUIREMENTS,
+  MD5_REQUIREMENT_KEY_NAMESPACE,
+  OBJ_DOCUMENT_SCENE_REQUIREMENTS,
+  OBJ_REQUIREMENT_KEY_NAMESPACE,
+  THREE_DS_DOCUMENT_SCENE_REQUIREMENTS,
+  THREE_DS_REQUIREMENT_KEY_NAMESPACE,
+} from '@flighthq/scene3d-formats/contract';
 import { glScene3DRenderPreset } from '@flighthq/scene3d-gl';
 import * as scene3dGl from '@flighthq/scene3d-gl';
 import { wgpuScene3DRenderPreset } from '@flighthq/scene3d-wgpu';
@@ -23,6 +35,7 @@ import type {
   CanvasShapeCommand,
   Kind,
   NodeRenderer,
+  Requirement,
   RequirementBackend,
   RequirementCatalogEntry,
   RequirementTranslation,
@@ -137,6 +150,12 @@ export function buildRequirementTranslations(): readonly RequirementTranslation[
       to: AWD2_DOCUMENT_SCENE_REQUIREMENTS.map((r) => ({ facet: r.facet, key: r.key })),
     });
   }
+  for (const [namespace, requirements] of STATIC_FORMAT_TRANSLATIONS) {
+    translations.push({
+      from: { facet: RequirementFacet.DocumentFormat, key: namespace },
+      to: requirements.map((r) => ({ facet: r.facet, key: r.key })),
+    });
+  }
   return translations.sort((a, b) => a.from.key.localeCompare(b.from.key));
 }
 
@@ -201,6 +220,14 @@ export const SCENE3D_PRESET_BACKENDS: readonly {
     ],
     name: 'wgpu',
   },
+];
+
+const STATIC_FORMAT_TRANSLATIONS: ReadonlyArray<readonly [string, readonly Requirement[]]> = [
+  [COLLADA_REQUIREMENT_KEY_NAMESPACE, COLLADA_DOCUMENT_SCENE_REQUIREMENTS],
+  [MD2_REQUIREMENT_KEY_NAMESPACE, MD2_DOCUMENT_SCENE_REQUIREMENTS],
+  [MD5_REQUIREMENT_KEY_NAMESPACE, MD5_DOCUMENT_SCENE_REQUIREMENTS],
+  [OBJ_REQUIREMENT_KEY_NAMESPACE, OBJ_DOCUMENT_SCENE_REQUIREMENTS],
+  [THREE_DS_REQUIREMENT_KEY_NAMESPACE, THREE_DS_DOCUMENT_SCENE_REQUIREMENTS],
 ];
 
 function renderRow(backend: string, module: string, symbol: string, kind: Kind): RequirementCatalogEntry {
