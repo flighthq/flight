@@ -62,12 +62,10 @@ export const SWF_TAG_NODE_KINDS: ReadonlyMap<number, readonly Kind[]> = new Map(
  */
 export const SWF_DOCUMENT_NODE_KINDS: readonly Kind[] = [DisplayObjectKind];
 
-// ★ MovieClip IS DELIBERATELY ABSENT, AND THAT IS A FINDING RATHER THAN AN OVERSIGHT. The importer does
-// build MovieClip nodes — a SWF root is one, and `DefineSprite` becomes one — but NO 2D backend binds
-// `MovieClipKind` to a renderer: canvas, gl and wgpu each bind thirteen kinds and MovieClip is not among
-// them, and `@flighthq/interaction` binds only a hit test. Listing it here would put a requirement in
-// every SWF build that no catalog row could ever satisfy, warning on every build about a gap that is the
-// SDK's rather than the document's — the same unactionable-diagnostic pattern the SWF tag filter exists
-// to avoid. Whether MovieClip should render through the container renderer or has no draw of its own is
-// an open question for the render packages, not something a translation table may decide by guessing.
-// `swfNodeKinds.test.ts` fails if any kind named here or above stops being bound by every backend.
+// ★ MovieClip IS DELIBERATELY ABSENT, AND IT IS NOT A GAP. The importer does build MovieClip nodes — a
+// SWF root is one, and `DefineSprite` becomes one — but a MovieClip is a pure CONTAINER and needs no
+// renderer of its own: the render walk traverses the hierarchy regardless of whether a node's kind has
+// a renderer, and the children draw themselves. The `movieclip` example is the proof, registering only
+// `ShapeKind` and `TextLabelKind` renderers across all four backends and rendering correctly. Listing
+// MovieClip here would therefore demand a renderer that should not exist, putting a permanently
+// unsatisfiable requirement in every SWF build.
