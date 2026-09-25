@@ -51,6 +51,7 @@ import type {
 } from './Clipboard';
 import type {
   HostCompressDeflateCapability,
+  HostCompressLzmaCapability,
   HostDecompressBrotliCapability,
   HostDecompressDeflateCapability,
   HostDecompressLzmaCapability,
@@ -321,6 +322,7 @@ export interface HostClipboardCapabilities {
 
 export interface HostCompressCapabilities {
   readonly deflate?: HostCompressDeflateCapability;
+  readonly lzma?: HostCompressLzmaCapability;
 }
 
 export interface HostConnectivityCapabilities {
