@@ -1,3 +1,6 @@
+public:
+  - applyCanvasBlendMode
+
 exclude:
   - file: canvasTestSupport
 
@@ -6,7 +9,6 @@ protected:
   - setCanvasRenderTransform2D
   - CANVAS_SCALE9_SPRITE_SLICE_STRIDE
   - acquireCanvasTextureResolverSurface
-  - applyCanvasBlendMode
   - applyCanvasMaterial
   - buildScale9Mapper
   - createBitmapPattern

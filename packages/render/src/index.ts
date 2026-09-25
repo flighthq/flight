@@ -1,10 +1,10 @@
-export { mergeRenderOptions } from './mergeRenderOptions';
 export * from './enableColorAdjustments';
 export * from './enableSceneRenderGuards';
 export * from './explainScene2DPipelineCoverage';
 export * from './explainScene3DPipelineCoverage';
 export * from './imageSurface';
-export { createRenderCache, registerRenderCacheNodeRenderer, useRenderCache } from './renderCache';
+export * from './mergeRenderOptions';
+export { createRenderCache, registerRenderCacheNodeRenderer, useRenderCache, RenderCacheKind } from './renderCache';
 export { disposeScene2DRender, prepareScene2DRender } from './renderProxy';
 export { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from './renderRegistryGuards';
 export * from './renderRegistrySignals';

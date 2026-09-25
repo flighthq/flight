@@ -1,3 +1,6 @@
+public:
+  - standardWgpuTextureResolvers
+
 protected:
   - bindWgpuRenderTexture
   - resolveWgpuApplyBlendMode

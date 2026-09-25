@@ -11,17 +11,17 @@ export * from './canvasClip';
 export * from './canvasElement';
 export * from './canvasImageSource';
 export * from './canvasImageTextureResolver';
+export * from './canvasMaterials';
+export { canvasScene2DRenderer, renderCanvasScene2D } from './canvasNode2D';
+export { canvasParticleEmitter2DRenderer } from './canvasParticleEmitter2D';
+export { allocateEmptyCanvasRenderRegistries } from './canvasPipeline';
+export { canvasQuadBatchRenderer } from './canvasQuadBatch';
 export {
   getCanvasQuadMaterialRenderer,
   registerCanvasQuadMaterialRenderer,
   resolveCanvasQuadMaterialRenderer,
 } from './canvasQuadMaterialRegistry';
-export { enableCanvasBlendMode } from './canvasMaterials';
-export { canvasScene2DRenderer, renderCanvasScene2D } from './canvasNode2D';
-export { canvasParticleEmitter2DRenderer } from './canvasParticleEmitter2D';
-export { allocateEmptyCanvasRenderRegistries } from './canvasPipeline';
-export { canvasQuadBatchRenderer } from './canvasQuadBatch';
-export { beginCanvasRenderPass, endCanvasRenderPass, getCanvasActiveRenderPass } from './canvasRenderPass';
+export * from './canvasRenderPass';
 export {
   createCanvasRenderState,
   destroyCanvasRenderState,

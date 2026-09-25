@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
+import { getModulePublishedValueExports, getModuleValueExports } from './export-lane-source';
+
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES_DIR = join(ROOT, 'packages');
 const FIX = process.argv.includes('--fix');
@@ -301,43 +303,10 @@ function getSourceModules(srcDir: string): string[] {
     .sort();
 }
 
-// A module's value exports: what it DECLARES, plus what it RE-EXPORTS FROM ANOTHER PACKAGE.
-//
-// The second half is not a nicety. A kind identifier lives in `@flighthq/types` by the type-home rule,
-// so the package that owns the entity surfaces it with `export { Node3DKind } from
-// '@flighthq/types/contract'`. Reading declarations only, this scanner could not see that name, the
-// generator could not emit it, and the gate then reported a hand-written `Node3DKind` on scene3d's
-// public lane as "not in source exports" — an export the examples genuinely import and that nothing was
-// able to generate. Relative re-exports are deliberately NOT collected: `./sibling` is another module of
-// this same package, already scanned on its own, and counting it here would attribute one name to two
-// modules.
-function getModuleValueExports(filePath: string): string[] {
-  if (!existsSync(filePath)) return [];
-  const src = readFileSync(filePath, 'utf8');
-  const names: string[] = [];
-  const declared = /^export (?:async )?(?:function|const|let) (\w+)/gm;
-  let m: RegExpExecArray | null;
-  while ((m = declared.exec(src)) !== null) names.push(m[1]);
-
-  const reExported = /^export\s*\{([^}]*)\}\s*from\s*['"]([^'"]+)['"]/gm;
-  while ((m = reExported.exec(src)) !== null) {
-    if (m[2].startsWith('.')) continue;
-    for (const item of m[1].split(',')) {
-      const trimmed = item.trim();
-      if (trimmed === '' || trimmed.startsWith('type ')) continue;
-      const name = trimmed
-        .split(/\s+as\s+/)
-        .pop()
-        ?.trim();
-      if (name !== undefined && name !== '' && name !== 'type') names.push(name);
-    }
-  }
-  return [...new Set(names)];
-}
-
 interface ModuleExports {
   module: string;
   names: string[];
+  publishedNames: string[];
 }
 
 function getExportsByModule(srcDir: string): ModuleExports[] {
@@ -345,7 +314,12 @@ function getExportsByModule(srcDir: string): ModuleExports[] {
   const result: ModuleExports[] = [];
   for (const mod of modules) {
     const names = getModuleValueExports(join(srcDir, mod + '.ts'));
-    if (names.length > 0) result.push({ module: mod, names });
+    if (names.length > 0)
+      result.push({ module: mod, names, publishedNames: getModulePublishedValueExports(join(srcDir, mod + '.ts')) });
+  }
+  const ownedNames = new Set(result.flatMap(({ names }) => names));
+  for (const moduleExports of result) {
+    moduleExports.publishedNames = moduleExports.publishedNames.filter((name) => ownedNames.has(name));
   }
   return result;
 }
@@ -449,7 +423,7 @@ function getExportNamesFromFile(filePath: string, srcDir: string): Set<string> |
   for (const m of src.matchAll(/export \* from '\.\/([^']+)'/g)) {
     if (m[1] === 'contract') return 'all';
     const fp = join(srcDir, m[1] + '.ts');
-    for (const n of getModuleValueExports(fp)) names.add(n);
+    for (const n of getModulePublishedValueExports(fp)) names.add(n);
   }
 
   return names;
@@ -503,12 +477,15 @@ function getIndexDuplicateNames(filePath: string, srcDir: string): string[] {
 function generateContract(exportsByModule: ModuleExports[], classification: Map<string, Classification>): string {
   const lines: string[] = [];
 
-  for (const { module: mod, names } of exportsByModule) {
+  for (const { module: mod, names, publishedNames } of exportsByModule) {
     const owned = names.filter((n) => classification.get(n)?.module === mod);
     const laneNames = owned.filter((n) => classification.get(n)?.lane !== 'exclude');
     if (laneNames.length === 0) continue;
 
-    if (laneNames.length === owned.length) {
+    const wildcardPublishesOnlyContractNames = publishedNames.every(
+      (name) => classification.get(name)?.lane !== 'exclude',
+    );
+    if (laneNames.length === owned.length && wildcardPublishesOnlyContractNames) {
       lines.push(`export * from './${mod}';`);
       continue;
     }
@@ -523,7 +500,7 @@ function generateContract(exportsByModule: ModuleExports[], classification: Map<
 function generateIndex(exportsByModule: ModuleExports[], classification: Map<string, Classification>): string {
   const lines: string[] = [];
 
-  for (const { module: mod, names } of exportsByModule) {
+  for (const { module: mod, names, publishedNames } of exportsByModule) {
     const publicNames = names.filter((n) => {
       const c = classification.get(n);
       return c?.lane === 'public' && c.module === mod;
@@ -539,7 +516,15 @@ function generateIndex(exportsByModule: ModuleExports[], classification: Map<str
     // whose remainder is public after exclusions — and in the second case the wildcard republishes the
     // excluded names anyway. Measured: host-electron re-published all 84 `populateElectronHost*` helpers
     // on the public lane the moment they were excluded, because each module's survivors were all public.
-    if (allNonExcludedPublic && nonExcluded.length === publicNames.length && owned.length === nonExcluded.length) {
+    const wildcardPublishesOnlyPublicNames = publishedNames.every(
+      (name) => classification.get(name)?.lane === 'public',
+    );
+    if (
+      allNonExcludedPublic &&
+      nonExcluded.length === publicNames.length &&
+      owned.length === nonExcluded.length &&
+      wildcardPublishesOnlyPublicNames
+    ) {
       lines.push(`export * from './${mod}';`);
     } else {
       lines.push('export {');

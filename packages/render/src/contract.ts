@@ -1,4 +1,3 @@
-export * from './mergeRenderOptions';
 export * from './enableColorAdjustmentGuards';
 export * from './enableColorAdjustments';
 export * from './enableSceneRenderGuards';
@@ -7,6 +6,7 @@ export * from './explainScene2DPipelineCoverage';
 export * from './explainScene2DRender';
 export * from './explainScene3DPipelineCoverage';
 export * from './imageSurface';
+export * from './mergeRenderOptions';
 export * from './renderAppearance';
 export * from './renderCache';
 export * from './renderMaterial';
