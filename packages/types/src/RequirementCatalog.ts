@@ -57,6 +57,31 @@ export interface RequirementBackend {
   readonly name: string;
 }
 
+/**
+ * A requirement a backend deliberately does not implement, and why.
+ *
+ * ★ WHAT THIS IS FOR, AND WHAT IT IS NOT. Two situations look identical to a build that only knows
+ * "nothing resolved": nobody implemented this, and we chose not to. The first deserves a warning; the
+ * second is a decision, and warning about it forever teaches a reader to ignore the channel that
+ * reports the first. This records the second so the difference survives.
+ *
+ * It does NOT cover a requirement that never exists. A SWF `Metadata` tag produces no requirement at
+ * all — nothing can implement metadata, so there is nothing to dispose of — and that stays filtered at
+ * the producer. A disposition only ever applies to a requirement that genuinely reaches backend
+ * resolution and could have been satisfied.
+ *
+ * EXACT, AND REASONED. The triple is matched exactly: one backend, one facet, one kind. No pattern, no
+ * prefix, no wildcard — a broad matcher would silence requirements nobody considered, which is the
+ * failure this exists to prevent rather than cause. `reason` is required and must be non-empty,
+ * because a disposition with nothing to say is a suppression list.
+ */
+export interface RequirementDisposition {
+  readonly backend: string;
+  readonly facet: RequirementFacet;
+  readonly kind: Kind;
+  readonly reason: string;
+}
+
 // A caller-owned, open inventory. The built-in content is generated separately.
 export interface RequirementCatalog {
   readonly entries: RequirementCatalogEntry[];
@@ -65,6 +90,12 @@ export interface RequirementCatalog {
    * only the content-derived fragment, which is correct but is NOT a working render configuration.
    */
   readonly backends?: readonly RequirementBackend[];
+  /**
+   * Requirements a backend deliberately does not implement. Absent means every gap is reported, which
+   * is the safe default: a build that says nothing about a gap it chose is indistinguishable from one
+   * that overlooked it.
+   */
+  readonly dispositions?: readonly RequirementDisposition[];
   /** Format-to-render implications. Absent means a catalog that resolves render backends not at all. */
   readonly translations?: readonly RequirementTranslation[];
 }

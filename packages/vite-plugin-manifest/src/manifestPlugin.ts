@@ -118,6 +118,11 @@ export function createManifestPlugin(
         rows.push({ entry, kind: entry.kind });
         resolvedSomewhere.add(`${entry.facet}\u0000${entry.kind}`);
       }
+      // `plan.declined` is deliberately NOT collected. A requirement the catalog says this backend
+      // does not implement, with a reason, is a decision rather than a gap: it contributes no entry, so
+      // it emits no import and no registration, and it must not reach the report below. Note the
+      // suppression is per backend and exact — a decline on canvas leaves the same requirement in gl's
+      // `unresolved`, so a genuine gap there is still reported.
       for (const requirement of plan.unresolved) {
         unresolvedEverywhere.set(`${requirement.facet}\u0000${requirement.key}`, requirement);
       }

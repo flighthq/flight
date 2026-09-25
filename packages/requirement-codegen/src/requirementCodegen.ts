@@ -6,6 +6,7 @@ import type {
   RequirementCatalog,
   RequirementCatalogEntry,
   RequirementCodegenPlan,
+  RequirementDeclination,
   Requirement,
   RequirementSet,
 } from '@flighthq/types/contract';
@@ -29,6 +30,7 @@ export function initializeRequirementCodegenPlan(
   backend: string,
 ): void {
   const entries: RequirementCatalogEntry[] = [];
+  const declined: RequirementDeclination[] = [];
   const unresolved: Requirement[] = [];
   const seen = new Set<string>();
   for (const requirement of expandRequirements(catalog, requirements.requirements)) {
@@ -36,13 +38,28 @@ export function initializeRequirementCodegenPlan(
     if (seen.has(identity)) continue;
     seen.add(identity);
     const matches = findRequirementCatalogEntries(catalog, backend, requirement.facet, requirement.key);
-    if (matches.length === 0) {
+    if (matches.length > 0) {
+      entries.push(...matches);
+      continue;
+    }
+    // Nothing satisfies it HERE. A disposition says that is deliberate for this exact backend, facet
+    // and kind, so the gap is recorded with its reason instead of reported as an oversight. Matched
+    // exactly and per backend: a decision canvas made says nothing about gl, which still reports.
+    const disposition = catalog.dispositions?.find(
+      (candidate) =>
+        candidate.backend === backend && candidate.facet === requirement.facet && candidate.kind === requirement.key,
+    );
+    if (disposition === undefined) {
       unresolved.push({ facet: requirement.facet, key: requirement.key });
     } else {
-      entries.push(...matches);
+      declined.push({
+        reason: disposition.reason,
+        requirement: { facet: requirement.facet, key: requirement.key },
+      });
     }
   }
   out.backend = backend;
+  out.declined = declined;
   out.entries = entries;
   out.unresolved = unresolved;
 }
