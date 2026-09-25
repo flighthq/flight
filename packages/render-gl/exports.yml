@@ -1,5 +1,9 @@
 # render-gl: exports where the shared classifier gets it wrong.
 
+public:
+  - standardGlBlendRealizations
+  - standardGlTextureResolvers
+
 exclude:
   # Test support, and package-internal: every caller is a render-gl test importing it relatively from
   # './glTestHelper'. It reached the contract lane, where `createGlState` collides with the identically

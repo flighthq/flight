@@ -13,7 +13,7 @@ export * from './wgpuColorAdjustmentMaterialFeature';
 export { wgpuMeshShapeRenderer } from './wgpuMeshShapeRenderer';
 export { renderWgpuScene2D, wgpuScene2DRenderer } from './wgpuNode2D';
 export { wgpuParticleEmitter2DRenderer } from './wgpuParticleEmitter2D';
-export * from './wgpuQuadBatch';
+export { wgpuQuadBatchRenderer } from './wgpuQuadBatch';
 export { wgpuRasterShapeRenderer } from './wgpuRasterShapeRenderer';
 export { wgpuRichTextRenderer } from './wgpuRichText';
 export { wgpuScale9ShapeRenderer } from './wgpuScale9Shape';
@@ -27,8 +27,8 @@ export { wgpuTextLabelRenderer } from './wgpuTextLabel';
 export * from './wgpuTilemap';
 export {
   createWgpuVelocityTarget,
-  wgpuNode2DVelocityWriter,
-  wgpuParticleEmitter2DVelocityWriter,
   registerWgpuVelocityWriter,
   renderWgpuVelocity,
+  wgpuNode2DVelocityWriter,
+  wgpuParticleEmitter2DVelocityWriter,
 } from './wgpuVelocity';

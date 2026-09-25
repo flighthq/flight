@@ -23,6 +23,7 @@ export {
   setInstancedMeshInstanceCount,
   setInstancedMeshInstanceMatrix,
   setInstancedMeshInstanceMatrixRange,
+  InstancedMeshKind,
 } from './instancedMesh';
 export { cloneMesh, createMesh, enableMeshSignals, getMeshDeformer, getMeshSignals, isMesh, MeshKind } from './mesh';
 export * from './prepareScene3DMorph';

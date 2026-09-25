@@ -1,6 +1,17 @@
+import * as path from '@flighthq/path';
+import * as renderGl from '@flighthq/render-gl';
+import * as renderWgpu from '@flighthq/render-wgpu';
+import * as canvas from '@flighthq/scene2d-canvas';
 import { canvasScene2DRenderPreset } from '@flighthq/scene2d-canvas';
+import * as dom from '@flighthq/scene2d-dom';
+import * as scene2dGl from '@flighthq/scene2d-gl';
 import { glScene2DRenderPreset } from '@flighthq/scene2d-gl';
+import * as scene2dWgpu from '@flighthq/scene2d-wgpu';
 import { wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu';
+import * as scene3dGl from '@flighthq/scene3d-gl';
+import { glScene3DRenderPreset } from '@flighthq/scene3d-gl';
+import * as scene3dWgpu from '@flighthq/scene3d-wgpu';
+import { wgpuScene3DRenderPreset } from '@flighthq/scene3d-wgpu';
 import { RequirementFacet } from '@flighthq/types/contract';
 
 import { buildRenderCatalogRows, buildRequirementTranslations, PRESET_BACKENDS } from './catalog-render-rows';
@@ -61,3 +72,63 @@ describe('buildRenderCatalogRows', () => {
     expect(rows.length).toBe(new Set(rows).size);
   });
 });
+
+describe('render preset public composition tier', () => {
+  // This is intentionally a ONE-LEVEL identity check. The maps, slots, and aggregate standard tables
+  // used to compose a preset are public; methods inside a renderer, resolver callbacks inside a standard
+  // table, blend-realization fields, and skinning-adapter methods remain contract implementation.
+  it('publishes every Canvas and DOM preset component', () => {
+    expect(canvasScene2DRenderPreset.blendModeApplication).toBe(canvas.applyCanvasBlendMode);
+    expectMapEntriesToMatch(canvasScene2DRenderPreset.canvasShapeCommands!, canvas.canvasShapeCommandTable());
+    expectMapValuesToBePublic(canvasScene2DRenderPreset.nodeRenderers, 'canvas node renderer', canvas);
+    expectMapValuesToBePublic(dom.domScene2DRenderPreset.nodeRenderers!, 'dom node renderer', dom);
+    expect('applyCanvasMaterial' in canvas).toBe(false);
+    expect('applyDomBlendMode' in dom).toBe(false);
+  });
+
+  it('publishes every GL preset component', () => {
+    expect(glScene2DRenderPreset.blendRealizations).toBe(renderGl.standardGlBlendRealizations);
+    expect(glScene2DRenderPreset.strokeTessellator).toBe(path.tessellateStrokePath);
+    expect(glScene2DRenderPreset.textureResolvers).toBe(renderGl.standardGlTextureResolvers);
+    expectMapValuesToBePublic(glScene2DRenderPreset.materialRenderers, 'GL 2D material renderer', scene2dGl);
+    expectMapValuesToBePublic(glScene2DRenderPreset.nodeRenderers, 'GL 2D node renderer', scene2dGl);
+    expectMapValuesToBePublic(glScene3DRenderPreset.materialRenderers, 'GL 3D material renderer', scene2dGl, scene3dGl);
+    expectMapValuesToBePublic(glScene3DRenderPreset.modifierSnippets, 'GL modifier snippet', scene3dGl);
+    expectMapValuesToBePublic(glScene3DRenderPreset.pbrExtensions, 'GL PBR extension', scene3dGl);
+    expect('applyGlBlendMode' in renderGl).toBe(false);
+    expect('resolveGlBitmapTexture' in renderGl).toBe(false);
+    expect('bindGlPbrExtensions' in scene3dGl).toBe(false);
+  });
+
+  it('publishes every WebGPU preset component', () => {
+    expectMapValuesToBePublic(wgpuScene2DRenderPreset.materialRenderers, 'WebGPU 2D material renderer', scene2dWgpu);
+    expectMapValuesToBePublic(wgpuScene2DRenderPreset.nodeRenderers, 'WebGPU 2D node renderer', scene2dWgpu);
+    expect(wgpuScene3DRenderPreset.gpuSkinning).toBe(scene3dWgpu.wgpuSkinningAdapter);
+    expectMapValuesToBePublic(
+      wgpuScene3DRenderPreset.materialRenderers,
+      'WebGPU 3D material renderer',
+      scene2dWgpu,
+      scene3dWgpu,
+    );
+    expectMapValuesToBePublic(wgpuScene3DRenderPreset.modifierSnippets, 'WebGPU modifier snippet', scene3dWgpu);
+    expectMapEntriesToMatch(wgpuScene3DRenderPreset.textureResolvers, renderWgpu.standardWgpuTextureResolvers);
+    expect('bindWgpuClassicSurface' in scene3dWgpu).toBe(false);
+    expect('ensureWgpuSkinDrawLayout' in scene3dWgpu).toBe(false);
+    expect('uploadWgpuSkinPalette' in scene3dWgpu).toBe(false);
+    expect('bindWgpuTexture' in renderWgpu).toBe(false);
+    expect('resolveWgpuBitmapTexture' in renderWgpu).toBe(false);
+  });
+});
+
+function expectMapEntriesToMatch(actual: ReadonlyMap<unknown, unknown>, expected: ReadonlyMap<unknown, unknown>): void {
+  for (const [key, value] of expected) expect(actual.get(key), String(key)).toBe(value);
+}
+
+function expectMapValuesToBePublic(
+  table: ReadonlyMap<unknown, unknown>,
+  label: string,
+  ...modules: readonly object[]
+): void {
+  const publicValues = new Set(modules.flatMap((module) => Object.values(module)));
+  for (const [key, value] of table) expect(publicValues.has(value), `${label} ${String(key)}`).toBe(true);
+}

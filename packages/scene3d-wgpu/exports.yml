@@ -1,6 +1,7 @@
 public:
   - getWgpuScene3DTime
   - setWgpuScene3DTime
+  - wgpuSkinningAdapter
 
 protected:
   - INSTANCE_RECORD_FLOATS
@@ -38,7 +39,6 @@ protected:
   - compileWgpuUnlitPipeline
   - compileWgpuWireframePipeline
   - createWgpuMeshPipeline
-  - wgpuSkinningAdapter
   - destroyWgpuParticleEmitter3DResources
   - destroyWgpuScene3DIbl
   - destroyWgpuScene3DShadow

@@ -8,5 +8,5 @@ export {
   pushFlowState,
   replaceFlowState,
   updateFlowStack,
-} from './contract';
+} from './flow';
 export { disableFlowGuards, enableFlowGuards } from './flowGuards';

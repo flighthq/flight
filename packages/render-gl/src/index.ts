@@ -9,7 +9,7 @@ export {
   destroyGlCubeRenderTarget,
   endGlCubeRenderFace,
 } from './glCubeRenderTarget';
-export { enableGlBlendModeSupport } from './glDraw';
+export { enableGlBlendModeSupport, standardGlBlendRealizations } from './glDraw';
 export { createExternalGlTexture, disposeExternalGlTexture } from './glExternalTexture';
 export { clearGlRenderTarget, clearGlRenderTargetAttachments } from './glFullscreenPass';
 export * from './glPresentRenderTarget';
