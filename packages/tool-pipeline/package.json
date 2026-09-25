@@ -48,5 +48,8 @@
     "typescript": "^5.3.0"
   },
   "description": "Server and CI content-addressed pass-through asset publisher with canonical manifests",
+  "flight": {
+    "environment": "node"
+  },
   "sideEffects": false
 }

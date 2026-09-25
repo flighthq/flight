@@ -55,6 +55,9 @@
     "vite": "*"
   },
   "description": "Vite plugin serving generated Flight registration source from analyzed content",
+  "flight": {
+    "environment": "node"
+  },
   "sideEffects": false,
   "peerDependencies": {
     "vite": "^7.0.0"
