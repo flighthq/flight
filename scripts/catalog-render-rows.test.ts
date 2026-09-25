@@ -37,16 +37,30 @@ describe('buildRequirementTranslations', () => {
     for (const preset of [canvasScene2DRenderPreset, glScene2DRenderPreset, wgpuScene2DRenderPreset]) {
       for (const kind of preset.nodeRenderers.keys()) bound.add(String(kind));
     }
+    for (const preset of [glScene3DRenderPreset, wgpuScene3DRenderPreset]) {
+      for (const kind of preset.materialRenderers.keys()) bound.add(String(kind));
+      for (const kind of preset.modifierSnippets.keys()) bound.add(String(kind));
+    }
     const implied = new Set(buildRequirementTranslations().flatMap((t) => t.to.map((r) => String(r.key))));
     expect(implied.size).toBeGreaterThan(0);
     expect([...implied].filter((kind) => !bound.has(kind))).toEqual([]);
   });
 
-  it('translates format requirements into scene node kinds, not back into format keys', () => {
+  it('translates format requirements into scene-level facets, not back into format keys', () => {
+    const sceneFacets = new Set([
+      RequirementFacet.SceneBlendMode,
+      RequirementFacet.SceneMaterialKind,
+      RequirementFacet.SceneModifierKind,
+      RequirementFacet.SceneNodeKind,
+      RequirementFacet.SceneShapeCommand,
+      RequirementFacet.SceneTextureSourceKind,
+    ]);
     for (const translation of buildRequirementTranslations()) {
       expect(translation.from.facet).toBe(RequirementFacet.DocumentFormat);
       expect(translation.to.length).toBeGreaterThan(0);
-      for (const requirement of translation.to) expect(requirement.facet).toBe(RequirementFacet.SceneNodeKind);
+      for (const requirement of translation.to) {
+        expect(sceneFacets.has(requirement.facet), `unexpected facet ${requirement.facet}`).toBe(true);
+      }
     }
   });
 
@@ -56,6 +70,15 @@ describe('buildRequirementTranslations', () => {
     const bare = buildRequirementTranslations().filter((t) => !t.from.key.includes('.'));
     expect(bare.map((t) => t.from.key)).toEqual(['swf']);
     expect(bare[0]!.to.length).toBeGreaterThan(0);
+  });
+
+  it('translates awd2.Material into scene.material-kind requirements', () => {
+    const material = buildRequirementTranslations().find((t) => t.from.key === 'awd2.Material');
+    expect(material).toBeDefined();
+    expect(material!.to.length).toBeGreaterThan(0);
+    for (const requirement of material!.to) {
+      expect(requirement.facet).toBe(RequirementFacet.SceneMaterialKind);
+    }
   });
 });
 
