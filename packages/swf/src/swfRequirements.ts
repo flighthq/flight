@@ -7,12 +7,19 @@ import type {
 } from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
-import { collectSwfTagCounts, getSwfTagName } from './swfTagCensus';
+import { collectSwfContentCapabilities } from './swfContentCapabilities';
+import { getSwfTagName } from './swfTagCensus';
 import { SWF_NON_CONTENT_TAGS } from './swfTagVocabulary';
 
 /**
- * Build-time inventory of what one SWF file asks a build to support: one requirement per distinct tag
- * the file contains, under the `document.format` facet.
+ * Build-time inventory of what one SWF file asks a build to support.
+ *
+ * Emits requirements under multiple facets:
+ *
+ * - `document.format` — one per distinct tag the file contains (the parser handler each tag needs).
+ * - `scene.blend-mode` — when any PlaceObject3/4 declares a blend mode.
+ * - `scene.shape-command` — the shape drawing commands the content implies. Every SWF with DefineShape
+ *   tags needs the core shape commands; bitmap character tags add texture fill commands.
  *
  * It lives in this package because the tag vocabulary is SWF's own and this is where that vocabulary is
  * known. It depends on `@flighthq/requirement` — a two-dependency core package — so the direction stays
@@ -35,7 +42,7 @@ import { SWF_NON_CONTENT_TAGS } from './swfTagVocabulary';
  * format Flight reads, and a bare block/tag name is not unique across them: AWD2 alone contributes
  * `Camera`, `Material`, `Texture` and `Light`, names a second 3D format will certainly reuse. Without
  * the namespace a catalog row written for one format would silently satisfy another format's identical
- * key. The separator is the dot the kind convention already uses for namespacing (`acme.Bloom`), not a
+ * key. The separator is the dot the kind convention already does for namespacing (`acme.Bloom`), not a
  * second spelling invented here.
  *
  * TAGS THAT NOTHING CAN SATISFY ARE NOT REQUIREMENTS. A requirement names something a build can supply
@@ -51,20 +58,41 @@ export function parseSwfRequirements(
   deflate: Readonly<HostDecompressDeflateCapability> | null,
   lzma: Readonly<HostDecompressLzmaCapability> | null,
 ): RequirementSet {
-  const counts = collectSwfTagCounts(source, deflate, lzma);
+  const capabilities = collectSwfContentCapabilities(source, deflate, lzma);
   const requirements: Requirement[] = [];
-  if (counts !== null) {
-    // Order is not chosen here: RequirementSet canonicalizes by facet then key, so a set is equal to
-    // another with the same content regardless of the order a walk happened to observe it in.
-    for (const code of counts.keys()) {
+  const facets: RequirementFacet[] = [RequirementFacet.DocumentFormat];
+  if (capabilities !== null) {
+    for (const code of capabilities.tagCounts.keys()) {
       if (SWF_NON_CONTENT_TAGS.has(code) || SWF_STRUCTURAL_TAGS.has(code)) continue;
       requirements.push({
         facet: RequirementFacet.DocumentFormat,
         key: `${SWF_REQUIREMENT_KEY_NAMESPACE}.${getSwfTagName(code)}`,
       });
     }
+
+    const hasShapeTags = hasAnyTag(capabilities.tagCounts, SWF_SHAPE_TAGS);
+    if (hasShapeTags || capabilities.usesBlendMode || capabilities.usesBitmapFills) {
+      facets.push(RequirementFacet.SceneShapeCommand);
+    }
+
+    if (hasShapeTags) {
+      for (const key of SWF_CORE_SHAPE_COMMANDS) {
+        requirements.push({ facet: RequirementFacet.SceneShapeCommand, key });
+      }
+    }
+
+    if (capabilities.usesBitmapFills) {
+      for (const key of SWF_TEXTURE_SHAPE_COMMANDS) {
+        requirements.push({ facet: RequirementFacet.SceneShapeCommand, key });
+      }
+    }
+
+    if (capabilities.usesBlendMode) {
+      facets.push(RequirementFacet.SceneBlendMode);
+      requirements.push({ facet: RequirementFacet.SceneBlendMode, key: 'standard' });
+    }
   }
-  return createRequirementSet([RequirementFacet.DocumentFormat], requirements);
+  return createRequirementSet(facets, requirements);
 }
 
 /** The format namespace every SWF `document.format` requirement key carries. */
@@ -73,3 +101,38 @@ export const SWF_REQUIREMENT_KEY_NAMESPACE = 'swf';
 // Tags the document/timeline walk consumes itself. `End` never reaches here — the census stops at it —
 // and `ShowFrame` advances the frame cursor rather than defining content, so no handler claims either.
 const SWF_STRUCTURAL_TAGS: ReadonlySet<number> = new Set([0, 1]);
+
+const SWF_SHAPE_TAGS: ReadonlySet<number> = new Set([
+  2, // DefineShape
+  22, // DefineShape2
+  32, // DefineShape3
+  46, // DefineMorphShape
+  83, // DefineShape4
+  84, // DefineMorphShape2
+]);
+
+const SWF_CORE_SHAPE_COMMANDS: readonly string[] = [
+  'beginFill',
+  'beginGradientFill',
+  'cubicCurveTo',
+  'drawCircle',
+  'drawEllipse',
+  'drawPath',
+  'drawRectangle',
+  'drawRoundedRectangle',
+  'endFill',
+  'lineGradientStyle',
+  'lineStyle',
+  'lineTo',
+  'moveTo',
+  'quadraticCurveTo',
+];
+
+const SWF_TEXTURE_SHAPE_COMMANDS: readonly string[] = ['beginTextureFill', 'lineTextureStyle'];
+
+function hasAnyTag(tagCounts: ReadonlyMap<number, number>, tags: ReadonlySet<number>): boolean {
+  for (const code of tags) {
+    if (tagCounts.has(code)) return true;
+  }
+  return false;
+}

@@ -17,6 +17,7 @@ describe('parseSwfRequirements', () => {
     expect(set.requirements).toEqual([
       { facet: RequirementFacet.DocumentFormat, key: 'swf.DefineShape' },
       { facet: RequirementFacet.DocumentFormat, key: 'swf.SetBackgroundColor' },
+      ...CORE_SHAPE_COMMAND_REQUIREMENTS,
     ]);
   });
 
@@ -32,7 +33,10 @@ describe('parseSwfRequirements', () => {
       DECOMPRESS_DEFLATE,
       DECOMPRESS_LZMA,
     );
-    expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: 'swf.DefineShape' }]);
+    expect(set.requirements).toEqual([
+      { facet: RequirementFacet.DocumentFormat, key: 'swf.DefineShape' },
+      ...CORE_SHAPE_COMMAND_REQUIREMENTS,
+    ]);
   });
 
   it('keeps a tag this build does not name rather than shrinking the inventory', () => {
@@ -59,6 +63,7 @@ describe('parseSwfRequirements', () => {
     expect(set.requirements).toEqual([
       { facet: RequirementFacet.DocumentFormat, key: 'swf.DefineShape' },
       { facet: RequirementFacet.DocumentFormat, key: 'swf.SetBackgroundColor' },
+      ...CORE_SHAPE_COMMAND_REQUIREMENTS,
     ]);
   });
 
@@ -112,6 +117,31 @@ describe('parseSwfRequirements', () => {
       DECOMPRESS_LZMA,
     );
     expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: 'swf.SetBackgroundColor' }]);
+  });
+
+  it('emits blend mode requirements when PlaceObject3 declares a blend mode', () => {
+    const placeBody = new Uint8Array([0x00, 0x02, 0x01, 0x00]);
+    const set = parseSwfRequirements(
+      createSwf([createTag(TAG_PLACE_OBJECT_3, placeBody), createTag(TAG_END)]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+    );
+    expect(set.requirements).toContainEqual({ facet: RequirementFacet.SceneBlendMode, key: 'standard' });
+    expect(set.covers).toContain(RequirementFacet.SceneBlendMode);
+  });
+
+  it('emits texture shape commands when bitmap tags are present alongside shapes', () => {
+    const set = parseSwfRequirements(
+      createSwf([
+        createTag(TAG_DEFINE_SHAPE, createMinimalShapeBody()),
+        createTag(TAG_DEFINE_BITS_JPEG2, new Uint8Array([0x01, 0x00, 0xff, 0xd8])),
+        createTag(TAG_END),
+      ]),
+      DECOMPRESS_DEFLATE,
+      DECOMPRESS_LZMA,
+    );
+    expect(set.requirements).toContainEqual({ facet: RequirementFacet.SceneShapeCommand, key: 'beginTextureFill' });
+    expect(set.requirements).toContainEqual({ facet: RequirementFacet.SceneShapeCommand, key: 'lineTextureStyle' });
   });
 
   it('returns an empty set that still declares coverage when the source is unreadable', () => {
@@ -191,13 +221,31 @@ function uint32(value: number): Uint8Array {
 }
 
 const SWF_PREFIX_LENGTH = 8;
+const TAG_DEFINE_BITS_JPEG2 = 21;
 const TAG_DEFINE_SHAPE = 2;
 const TAG_END = 0;
+const TAG_PLACE_OBJECT_3 = 70;
 const TAG_PROTECT = 24;
 const TAG_SET_BACKGROUND_COLOR = 9;
 const TAG_SHOW_FRAME = 1;
 const TAG_UNKNOWN = 100;
 
+const CORE_SHAPE_COMMAND_REQUIREMENTS = [
+  { facet: RequirementFacet.SceneShapeCommand, key: 'beginFill' },
+  { facet: RequirementFacet.SceneShapeCommand, key: 'beginGradientFill' },
+  { facet: RequirementFacet.SceneShapeCommand, key: 'cubicCurveTo' },
+  { facet: RequirementFacet.SceneShapeCommand, key: 'drawCircle' },
+  { facet: RequirementFacet.SceneShapeCommand, key: 'drawEllipse' },
+  { facet: RequirementFacet.SceneShapeCommand, key: 'drawPath' },
+  { facet: RequirementFacet.SceneShapeCommand, key: 'drawRectangle' },
+  { facet: RequirementFacet.SceneShapeCommand, key: 'drawRoundedRectangle' },
+  { facet: RequirementFacet.SceneShapeCommand, key: 'endFill' },
+  { facet: RequirementFacet.SceneShapeCommand, key: 'lineGradientStyle' },
+  { facet: RequirementFacet.SceneShapeCommand, key: 'lineStyle' },
+  { facet: RequirementFacet.SceneShapeCommand, key: 'lineTo' },
+  { facet: RequirementFacet.SceneShapeCommand, key: 'moveTo' },
+  { facet: RequirementFacet.SceneShapeCommand, key: 'quadraticCurveTo' },
+];
+
 const DECOMPRESS_DEFLATE = sdkHostDecompressDeflate;
-// No LZMA implementation ships with Flight, so a ZWS/LZMA body reports an unread container.
 const DECOMPRESS_LZMA = null;
