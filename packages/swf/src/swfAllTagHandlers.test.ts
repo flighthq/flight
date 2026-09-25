@@ -2,6 +2,7 @@ import type { SwfTagHandler } from '@flighthq/types/contract';
 
 import * as swfContract from './contract';
 import { swfAllTagHandlers } from './swfAllTagHandlers';
+import { SWF_TAG_NODE_KINDS } from './swfNodeKinds';
 
 // The families this package actually exports, read off the barrel rather than hand-listed. A list
 // written here would have to be edited in lockstep with the package to keep meaning anything, and the
@@ -37,37 +38,37 @@ describe('swfAllTagHandlers', () => {
     for (const handler of swfAllTagHandlers) expect(owned).toContain(handler);
   });
 
-  // ★ THE TAG-TO-KIND FACT MUST NOT BE OPTIONAL IN PRACTICE. `producesKinds` is what lets a build-time
-  // inventory turn a TAG requirement into a RENDERER requirement, and a handler that builds nodes
-  // without declaring them is invisible to that translation: the document resolves its parser handler
-  // and silently gets no renderer, which surfaces as a blank screen rather than a build error. So the
-  // declaration is required exactly where it is knowable — a handler that constructs placement nodes.
-  it('declares producesKinds on every handler that builds a placement node', () => {
+  // ★ THE TAG-TO-KIND MAP IS CHECKED AGAINST THE HANDLERS, NOT TRUSTED. `SWF_TAG_NODE_KINDS` lives in
+  // its own module so it can be tree-shaken out of runtime builds, which also means nothing at run time
+  // would ever notice it going stale. A tag whose handler builds a node but which the map omits is
+  // invisible to the build-time translation: the document resolves its parser handler and silently gets
+  // no renderer, which shows up as a blank screen rather than a build error.
+  it('maps every tag whose handler builds a placement node', () => {
     for (const handler of swfAllTagHandlers) {
       if (handler.instantiate?.createPlacementNode === undefined) continue;
-      const kinds = handler.instantiate.producesKinds;
-      expect(
-        kinds,
-        `a placement-node handler claiming tags ${handler.tags.join(', ')} declares no kinds`,
-      ).toBeDefined();
-      expect(kinds!.length).toBeGreaterThan(0);
-      for (const kind of kinds!) expect(typeof kind === 'string' && kind.length > 0).toBe(true);
+      for (const code of handler.tags) {
+        const kinds = SWF_TAG_NODE_KINDS.get(code);
+        expect(kinds, `tag ${code} builds a node but declares no kind`).toBeDefined();
+        expect(kinds!.length).toBeGreaterThan(0);
+      }
     }
   });
 
-  // The converse: declaring kinds while building no node would put a renderer in a build that nothing
-  // ever draws with, which is the bundle cost this whole pipeline exists to remove.
-  it('declares producesKinds only where a placement node is actually built', () => {
-    for (const handler of swfAllTagHandlers) {
-      if (handler.instantiate?.createPlacementNode !== undefined) continue;
-      expect(handler.instantiate?.producesKinds, `tags ${handler.tags.join(', ')}`).toBeUndefined();
+  // The converse: a kind declared for a tag that builds nothing puts a renderer in a build that never
+  // draws with it, which is the bundle cost this pipeline exists to remove.
+  it('maps no tag whose handler builds nothing', () => {
+    const building = new Set(
+      swfAllTagHandlers.filter((h) => h.instantiate?.createPlacementNode !== undefined).flatMap((h) => h.tags),
+    );
+    for (const code of SWF_TAG_NODE_KINDS.keys()) {
+      expect(building.has(code), `tag ${code} declares kinds but builds no placement node`).toBe(true);
     }
   });
 
-  it('covers at least one handler in each direction, so neither check is vacuous', () => {
+  it('covers both directions with real handlers, so neither check is vacuous', () => {
     const builders = swfAllTagHandlers.filter((h) => h.instantiate?.createPlacementNode !== undefined);
-    const nonBuilders = swfAllTagHandlers.filter((h) => h.instantiate?.createPlacementNode === undefined);
     expect(builders.length).toBeGreaterThan(0);
-    expect(nonBuilders.length).toBeGreaterThan(0);
+    expect(swfAllTagHandlers.length).toBeGreaterThan(builders.length);
+    expect(SWF_TAG_NODE_KINDS.size).toBeGreaterThan(0);
   });
 });

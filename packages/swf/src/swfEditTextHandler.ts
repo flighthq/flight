@@ -7,7 +7,7 @@ import type {
   SwfTagParseResult,
   SwfTagRectangle,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, RichTextKind } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition';
 import { readSwfEditTextFactory } from './swfEditText';
@@ -18,7 +18,6 @@ const TAG_DEFINE_EDIT_TEXT = 37;
 
 export const swfEditTextHandler: SwfTagHandler = {
   instantiate: {
-    producesKinds: [RichTextKind],
     createPlacementNode(parsed, characterId, bounds, diagnostics) {
       const editText = parsed.editTexts.get(characterId);
       if (editText !== undefined) return createSwfEditTextTarget(editText, parsed, bounds, diagnostics);

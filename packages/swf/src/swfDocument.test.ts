@@ -67,7 +67,6 @@ import {
 } from '@flighthq/types/contract';
 
 import { swfAllTagHandlers } from './swfAllTagHandlers';
-import { swfDefineShapeHandler } from './swfDefineShapeHandler';
 import {
   createGlyphOutlineSourcesFromSwf,
   createScene2DFromSwf,
@@ -80,6 +79,7 @@ import {
 } from './swfDocument';
 import { buildFrameScriptAbc } from './swfFrameActionTestHelper';
 import { decodeSwfImage } from './swfImageDecoder';
+import { SWF_TAG_NODE_KINDS } from './swfNodeKinds';
 import { ShapeWriter } from './swfShapeTestHelper';
 import {
   SwfBitWriter,
@@ -255,7 +255,7 @@ describe('createScene2DFromSwf', () => {
     // a tag requirement into a renderer requirement at build time, and a declaration nothing checks
     // against real output is a comment: it would keep passing while the importer moved to another kind,
     // and the manifest would then resolve a renderer for a kind no node carries.
-    expect(swfDefineShapeHandler.instantiate?.producesKinds).toContain(drawn.kind);
+    expect(SWF_TAG_NODE_KINDS.get(TAG_DEFINE_SHAPE)).toContain(drawn.kind);
     expect(drawn.data.commands.slice(0, 8)).toEqual(['beginFill', 2, 0x3366ccff, 1, 'moveTo', 2, 0, 0]);
     expect(getNodeLocalMatrix(drawn)).toMatchObject({ tx: 3, ty: 4 });
     // The authored RECT still sizes the node, not the extent of its own commands.
