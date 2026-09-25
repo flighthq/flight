@@ -1562,6 +1562,10 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
 // Format-to-render implications: content needing the left requirement also needs those on the right.
 export const BUILT_IN_REQUIREMENT_TRANSLATIONS: readonly RequirementTranslation[] = [
   {
+    from: { facet: 'document.format', key: 'awd2.Material' },
+    to: [{ facet: 'scene.material-kind', key: 'ShadedMaterial' }],
+  },
+  {
     from: { facet: 'document.format', key: 'swf' },
     to: [{ facet: 'scene.node-kind', key: 'DisplayObject' }],
   },

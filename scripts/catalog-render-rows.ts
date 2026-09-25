@@ -11,6 +11,8 @@ import { glScene2DRenderPreset } from '@flighthq/scene2d-gl';
 import * as gl from '@flighthq/scene2d-gl';
 import { wgpuScene2DRenderPreset } from '@flighthq/scene2d-wgpu';
 import * as wgpu from '@flighthq/scene2d-wgpu';
+import { AWD2_BLOCK_SCENE_REQUIREMENTS, AWD2_DOCUMENT_SCENE_REQUIREMENTS } from '@flighthq/scene3d-formats/contract';
+import { AWD2_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/scene3d-formats/contract';
 import { glScene3DRenderPreset } from '@flighthq/scene3d-gl';
 import * as scene3dGl from '@flighthq/scene3d-gl';
 import { wgpuScene3DRenderPreset } from '@flighthq/scene3d-wgpu';
@@ -110,7 +112,7 @@ function buildBlendModeCatalogRows(): RequirementCatalogEntry[] {
   ];
 }
 
-/** Format-to-render implications, derived from the kinds each tag actually builds. */
+/** Format-to-render implications, derived from the kinds each tag/block actually builds. */
 export function buildRequirementTranslations(): readonly RequirementTranslation[] {
   const translations: RequirementTranslation[] = [];
   for (const [code, kinds] of SWF_TAG_NODE_KINDS) {
@@ -119,12 +121,22 @@ export function buildRequirementTranslations(): readonly RequirementTranslation[
       to: kinds.map((kind) => ({ facet: RequirementFacet.SceneNodeKind, key: kind })),
     });
   }
-  // The namespace-keyed row: every SWF document gets these regardless of which tags it carries. See
-  // RequirementTranslation for why a per-tag table cannot express it.
   translations.push({
     from: { facet: RequirementFacet.DocumentFormat, key: SWF_REQUIREMENT_KEY_NAMESPACE },
     to: SWF_DOCUMENT_NODE_KINDS.map((kind) => ({ facet: RequirementFacet.SceneNodeKind, key: kind })),
   });
+  for (const [blockName, requirements] of AWD2_BLOCK_SCENE_REQUIREMENTS) {
+    translations.push({
+      from: { facet: RequirementFacet.DocumentFormat, key: `${AWD2_REQUIREMENT_KEY_NAMESPACE}.${blockName}` },
+      to: requirements.map((r) => ({ facet: r.facet, key: r.key })),
+    });
+  }
+  if (AWD2_DOCUMENT_SCENE_REQUIREMENTS.length > 0) {
+    translations.push({
+      from: { facet: RequirementFacet.DocumentFormat, key: AWD2_REQUIREMENT_KEY_NAMESPACE },
+      to: AWD2_DOCUMENT_SCENE_REQUIREMENTS.map((r) => ({ facet: r.facet, key: r.key })),
+    });
+  }
   return translations.sort((a, b) => a.from.key.localeCompare(b.from.key));
 }
 
