@@ -44,6 +44,7 @@
     "@flighthq/requirement-catalog": "*"
   },
   "devDependencies": {
+    "@flighthq/tool-manifest": "*",
     "esbuild": "*",
     "typescript": "^5.3.0"
   },
