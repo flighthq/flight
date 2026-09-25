@@ -50,6 +50,14 @@ export const SWF_TAG_NODE_KINDS: ReadonlyMap<number, readonly Kind[]> = new Map(
   [60, [SpriteKind]],
   // DefineEditText
   [37, [RichTextKind]],
+  // ★ DefineText, DefineText2 — STATIC TEXT BECOMES SHAPES, NOT A TEXT NODE. The glyphs are converted
+  // to outlines and drawn as `Shape`, which `swfDocument.test.ts` asserts directly. These two were
+  // missing because the map was first built from handlers owning `createPlacementNode`, and the static
+  // text handler owns none: the document importer builds those nodes itself. That rule was too narrow,
+  // and the cost was silent — a text-only SWF resolved its parser handler and no renderer at all, so it
+  // parsed correctly and drew nothing.
+  [11, [ShapeKind]],
+  [33, [ShapeKind]],
 ]);
 
 /**
@@ -62,6 +70,9 @@ export const SWF_TAG_NODE_KINDS: ReadonlyMap<number, readonly Kind[]> = new Map(
  */
 export const SWF_DOCUMENT_NODE_KINDS: readonly Kind[] = [DisplayObjectKind];
 
+// `DefineSprite` is likewise absent from the tag table above: it becomes a MovieClip, and a MovieClip
+// needs no renderer for the reason below.
+//
 // ★ MovieClip IS DELIBERATELY ABSENT, AND IT IS NOT A GAP. The importer does build MovieClip nodes — a
 // SWF root is one, and `DefineSprite` becomes one — but a MovieClip is a pure CONTAINER and needs no
 // renderer of its own: the render walk traverses the hierarchy regardless of whether a node's kind has

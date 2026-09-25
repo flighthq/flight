@@ -4,12 +4,30 @@ import type {
   RequirementCatalog,
   RequirementCatalogEntry,
   RequirementFacet,
+  RequirementTranslation,
 } from '@flighthq/types/contract';
 
+/**
+ * Builds a catalog from ownership rows and the format-to-render implications that go with them.
+ *
+ * ★ TRANSLATIONS ARE A PARAMETER, NOT AN AFTERTHOUGHT. They used to be omitted here, so a caller doing
+ * the obvious `createRequirementCatalog(BUILT_IN_REQUIREMENT_CATALOG_ENTRIES)` got a catalog that
+ * resolved parser handlers and returned an EMPTY fragment for every render backend — no error, no
+ * warning, just nothing drawn. Anything that decides what a build omits has to fail loudly or not at
+ * all, and dropping a field the caller never mentioned fails the other way.
+ */
 export function createRequirementCatalog(
   entries: readonly Readonly<RequirementCatalogEntry>[] = [],
+  translations: readonly Readonly<RequirementTranslation>[] = [],
 ): NonEntityCreateResult<RequirementCatalog, 'descriptor'> {
-  return { entries: entries.map(copyCatalogEntry) };
+  return { entries: entries.map(copyCatalogEntry), translations: translations.map(copyCatalogTranslation) };
+}
+
+function copyCatalogTranslation(translation: Readonly<RequirementTranslation>): RequirementTranslation {
+  return {
+    from: { facet: translation.from.facet, key: translation.from.key },
+    to: translation.to.map((requirement) => ({ facet: requirement.facet, key: requirement.key })),
+  };
 }
 
 export function findRequirementCatalogEntries(
