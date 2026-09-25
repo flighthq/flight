@@ -19,7 +19,12 @@ import * as scene3dWgpu from '@flighthq/scene3d-wgpu';
 import { wgpuScene3DRenderPreset } from '@flighthq/scene3d-wgpu';
 import { RequirementFacet } from '@flighthq/types/contract';
 
-import { buildRenderCatalogRows, buildRequirementTranslations, PRESET_BACKENDS } from './catalog-render-rows';
+import {
+  buildRenderCatalogRows,
+  buildRequirementTranslations,
+  PRESET_BACKENDS,
+  SCENE3D_PRESET_BACKENDS,
+} from './catalog-render-rows';
 
 describe('buildRequirementTranslations', () => {
   // ★ THE GUARD AGAINST UNACTIONABLE DIAGNOSTICS. A translation naming a kind no backend can render
@@ -73,6 +78,20 @@ describe('buildRenderCatalogRows', () => {
     expect(facets).toContain(RequirementFacet.SceneNodeKind);
     expect(facets).toContain(RequirementFacet.SceneShapeCommand);
     expect(facets).toContain(RequirementFacet.SceneBlendMode);
+    expect(facets).toContain(RequirementFacet.SceneMaterialKind);
+    expect(facets).toContain(RequirementFacet.SceneModifierKind);
+  });
+
+  it('names only material renderers and modifier snippets the backend modules actually export', () => {
+    for (const backend of SCENE3D_PRESET_BACKENDS) {
+      const allSymbols = new Map(backend.modules.flatMap((mod) => [...mod.symbols]));
+      for (const renderer of backend.materialRenderers.values()) {
+        expect(allSymbols.get(renderer), `${backend.name} has an unexported material renderer`).toBeDefined();
+      }
+      for (const snippet of backend.modifierSnippets.values()) {
+        expect(allSymbols.get(snippet), `${backend.name} has an unexported modifier snippet`).toBeDefined();
+      }
+    }
   });
 
   it('gives each backend-and-kind pair exactly one row', () => {
