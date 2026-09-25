@@ -44,12 +44,50 @@ export function readRequirementCatalogFile(text: string): RequirementCatalogFile
       implementationImport: raw.implementationImport as string,
       implementationSymbol: raw.implementationSymbol as string,
       kind: raw.kind as string,
-      registrarImport: raw.registrarImport as string,
-      registrarSymbol: raw.registrarSymbol as string,
+      // Absent for an options-driven lane, which has no `register*` to name. Copied only when present
+      // so a row that never had one does not gain an empty string that reads like a lost value.
+      ...(typeof raw.registrarImport === 'string' ? { registrarImport: raw.registrarImport } : {}),
+      ...(typeof raw.registrarSymbol === 'string' ? { registrarSymbol: raw.registrarSymbol } : {}),
     });
   }
+
+  // Dispositions: requirements a backend deliberately does not implement. Read here so the CLI lane
+  // reaches the same verdict as the plugin — a build that reports a gap the catalog already settled,
+  // only because the gap was stated in a file the CLI could not read, is a parity bug rather than a
+  // finding. `reason` is REQUIRED and must be non-empty: a disposition with nothing to say is a
+  // suppression list, and a malformed one is reported by index rather than skipped, because silently
+  // dropping it would turn a typo into an unexplained warning much later.
+  const dispositions = [];
+  if (value.dispositions !== undefined) {
+    if (!Array.isArray(value.dispositions)) {
+      problems.push('catalog.dispositions must be an array');
+    } else {
+      for (const [index, raw] of value.dispositions.entries()) {
+        if (!isRecord(raw)) {
+          problems.push(`dispositions[${index}] must be an object`);
+          continue;
+        }
+        const missing = CATALOG_DISPOSITION_FIELDS.filter((field) => typeof raw[field] !== 'string');
+        if (missing.length > 0) {
+          problems.push(`dispositions[${index}] needs string ${missing.join(', ')}`);
+          continue;
+        }
+        if ((raw.reason as string).length === 0) {
+          problems.push(`dispositions[${index}] needs a non-empty reason`);
+          continue;
+        }
+        dispositions.push({
+          backend: raw.backend as string,
+          facet: raw.facet as RequirementFacet,
+          kind: raw.kind as string,
+          reason: raw.reason as string,
+        });
+      }
+    }
+  }
+
   if (problems.length > 0) return { catalog: null, problems };
-  return { catalog: { entries }, problems: [] };
+  return { catalog: { dispositions, entries }, problems: [] };
 }
 
 /**
@@ -108,15 +146,12 @@ export function writeRequirementSetFile(requirementSet: Readonly<RequirementSet>
   )}\n`;
 }
 
-const CATALOG_ENTRY_FIELDS = [
-  'backend',
-  'facet',
-  'kind',
-  'implementationImport',
-  'implementationSymbol',
-  'registrarImport',
-  'registrarSymbol',
-] as const;
+// The registrar pair is NOT required: a tag family is named in parse options and never registered, so
+// every built-in row omits it. Requiring it here rejected the catalog this repo itself ships — a
+// `tool-registry catalog --json` feeding `tool-manifest plan` failed on rows that were perfectly valid.
+const CATALOG_ENTRY_FIELDS = ['backend', 'facet', 'kind', 'implementationImport', 'implementationSymbol'] as const;
+
+const CATALOG_DISPOSITION_FIELDS = ['backend', 'facet', 'kind', 'reason'] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

@@ -1,8 +1,13 @@
 import * as path from '@flighthq/path';
 import * as renderGl from '@flighthq/render-gl';
+// `applyCanvasBlendMode` and `standardGlBlendRealizations` are declared PROTECTED in each package's
+// exports.yml, so they are reached on the contract lane. Asserting them through the public namespace
+// made this file fail lint at base: the names are simply not there, which is the policy working.
+import { standardGlBlendRealizations } from '@flighthq/render-gl/contract';
 import * as renderWgpu from '@flighthq/render-wgpu';
 import * as canvas from '@flighthq/scene2d-canvas';
 import { canvasScene2DRenderPreset } from '@flighthq/scene2d-canvas';
+import { applyCanvasBlendMode } from '@flighthq/scene2d-canvas/contract';
 import * as dom from '@flighthq/scene2d-dom';
 import * as scene2dGl from '@flighthq/scene2d-gl';
 import { glScene2DRenderPreset } from '@flighthq/scene2d-gl';
@@ -81,7 +86,7 @@ describe('render preset public composition tier', () => {
   // used to compose a preset are public; methods inside a renderer, resolver callbacks inside a standard
   // table, blend-realization fields, and skinning-adapter methods remain contract implementation.
   it('publishes every Canvas and DOM preset component', () => {
-    expect(canvasScene2DRenderPreset.blendModeApplication).toBe(canvas.applyCanvasBlendMode);
+    expect(canvasScene2DRenderPreset.blendModeApplication).toBe(applyCanvasBlendMode);
     expectMapEntriesToMatch(canvasScene2DRenderPreset.canvasShapeCommands!, canvas.canvasShapeCommandTable());
     expectMapValuesToBePublic(canvasScene2DRenderPreset.nodeRenderers, 'canvas node renderer', canvas);
     expectMapValuesToBePublic(dom.domScene2DRenderPreset.nodeRenderers!, 'dom node renderer', dom);
@@ -90,7 +95,7 @@ describe('render preset public composition tier', () => {
   });
 
   it('publishes every GL preset component', () => {
-    expect(glScene2DRenderPreset.blendRealizations).toBe(renderGl.standardGlBlendRealizations);
+    expect(glScene2DRenderPreset.blendRealizations).toBe(standardGlBlendRealizations);
     expect(glScene2DRenderPreset.strokeTessellator).toBe(path.tessellateStrokePath);
     expect(glScene2DRenderPreset.textureResolvers).toBe(renderGl.standardGlTextureResolvers);
     expectMapValuesToBePublic(glScene2DRenderPreset.materialRenderers, 'GL 2D material renderer', scene2dGl);

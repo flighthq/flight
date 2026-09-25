@@ -143,6 +143,52 @@ describe('createManifestPlugin', () => {
     expect(source).not.toContain('glDefineShape');
   });
 
+  // ★ A DISPOSITION SUPPRESSES ITS OWN WARNING AND NOTHING ELSE. The catalog states that this backend
+  // deliberately does not implement this exact requirement, so reporting it would train a reader to
+  // ignore the channel. Synthetic rows: no shipped backend has a gap whose INTENT can be verified here.
+  it('does not report a requirement the catalog disposes of on every backend', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'flight-vite-'));
+    await writeFile(join(dir, 'a.swf'), Buffer.from(createSwf(TAG_DEFINE_SHAPE)));
+    const diagnostics: string[] = [];
+    const plugin = createManifestPlugin({
+      catalog: {
+        dispositions: ['canvas', 'dom', 'gl', 'wgpu', 'parser'].map((backend) => ({
+          backend,
+          facet: RequirementFacet.DocumentFormat,
+          kind: 'swf.DefineShape',
+          reason: 'stipulated by this test',
+        })),
+        entries: [],
+      },
+      onDiagnostic: (message) => diagnostics.push(message),
+    });
+    await load(plugin, dir, 'a.swf');
+    // Asserted on the DISPOSED requirement specifically, not on silence overall: the same document also
+    // requires shape commands this bare catalog cannot satisfy, and those SHOULD still be reported.
+    // Demanding zero diagnostics would have made the test pass only for a catalog that disposed of
+    // everything, which is the opposite of what an exact marker is for.
+    expect(diagnostics.some((m) => m.includes('swf.DefineShape'))).toBe(false);
+    expect(diagnostics.some((m) => m.includes('scene.shape-command'))).toBe(true);
+  });
+
+  // The same requirement disposed on ONE backend is still a gap everywhere else, so it still reports.
+  it('still reports a requirement only one backend disposes of', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'flight-vite-'));
+    await writeFile(join(dir, 'a.swf'), Buffer.from(createSwf(TAG_DEFINE_SHAPE)));
+    const diagnostics: string[] = [];
+    const plugin = createManifestPlugin({
+      catalog: {
+        dispositions: [
+          { backend: 'canvas', facet: RequirementFacet.DocumentFormat, kind: 'swf.DefineShape', reason: 'stipulated' },
+        ],
+        entries: [],
+      },
+      onDiagnostic: (message) => diagnostics.push(message),
+    });
+    await load(plugin, dir, 'a.swf');
+    expect(diagnostics.some((m) => m.includes('no catalog entry for document.format swf.DefineShape'))).toBe(true);
+  });
+
   it('reports every requirement no backend in the external catalog can satisfy', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'flight-vite-'));
     await writeFile(join(dir, 'a.swf'), Buffer.from(createSwf(TAG_DEFINE_SHAPE)));
