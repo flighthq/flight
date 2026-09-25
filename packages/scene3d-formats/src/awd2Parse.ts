@@ -67,8 +67,7 @@ export function parseAwd2(
 
   const state = createAwd2ParseState(emptyAwdDocument(), rehydrated.source, rehydrated.view, diagnostics);
   walkAwd2Blocks(state, expandAwd2BlockDispatch(options.blocks));
-  // Build phases run in the caller's array order, which is the order they depend on each other in.
-  for (const handler of options.blocks) handler.build?.(state);
+  for (const handler of buildPhaseOrder(options.blocks)) handler.build!(state);
   return state.document;
 }
 
@@ -240,6 +239,19 @@ function resolveAwdDecompressor(
 ): Decompressor | null {
   if (compression === AWD2_COMPRESSION_DEFLATE) return deflate?.decompress ?? null;
   return compression === AWD2_COMPRESSION_LZMA ? (lzma?.decompress ?? null) : null;
+}
+
+// Collects the handlers that declare a build phase and returns them sorted by that phase. The caller's
+// array order is irrelevant — the phase number on each handler is the authority, so a manifest plugin
+// that emits handlers in alphabetical order produces the same document as one that emits them in the
+// declared family order.
+function buildPhaseOrder(blocks: readonly Awd2BlockHandler[]): Awd2BlockHandler[] {
+  const withBuild = blocks.filter(
+    (handler): handler is Awd2BlockHandler & { build: NonNullable<Awd2BlockHandler['build']> } =>
+      handler.build !== undefined,
+  );
+  withBuild.sort((a, b) => (a.buildPhase ?? 0) - (b.buildPhase ?? 0));
+  return withBuild;
 }
 
 // Records one unhandled block against its (namespace, blockType) bucket, keeping the first block id seen.

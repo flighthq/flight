@@ -39,7 +39,13 @@ import {
   hasNonUnitScale,
   skipAwdAttrList,
 } from './awd2Reader.ts';
-import { AWD2_BLOCK_SKELETON, AWD2_BLOCK_SKELETON_ANIMATION, AWD2_BLOCK_SKELETON_POSE } from './awd2Schema.ts';
+import {
+  AWD2_BLOCK_SKELETON,
+  AWD2_BLOCK_SKELETON_ANIMATION,
+  AWD2_BLOCK_SKELETON_POSE,
+  AWD2_BUILD_PHASE_SKELETON,
+  AWD2_BUILD_PHASE_SKELETON_ANIMATION,
+} from './awd2Schema.ts';
 
 // Skeletons, their poses, and the animations that sequence them. This handler owns the only reach into
 // @flighthq/animation, so a build that does not register it links no animation code at all.
@@ -52,6 +58,7 @@ import { AWD2_BLOCK_SKELETON, AWD2_BLOCK_SKELETON_ANIMATION, AWD2_BLOCK_SKELETON
 // The skeleton itself, read on the first pass because everything else here is written against it.
 export const awd2SkeletonBlockHandler: Awd2BlockHandler = {
   blockTypes: [AWD2_BLOCK_SKELETON],
+  buildPhase: AWD2_BUILD_PHASE_SKELETON,
   parse(state, block) {
     const skeleton = parseSkeletonBlock(
       block.view,
@@ -88,6 +95,7 @@ export const awd2SkeletonPoseHandler: Awd2BlockHandler = {
 // An animation sequences poses by block id, so it too waits for the first pass to finish.
 export const awd2SkeletonAnimationHandler: Awd2BlockHandler = {
   blockTypes: [AWD2_BLOCK_SKELETON_ANIMATION],
+  buildPhase: AWD2_BUILD_PHASE_SKELETON_ANIMATION,
   deferred: true,
   parse(state, block) {
     const animation = parseSkeletonAnimationBlock(

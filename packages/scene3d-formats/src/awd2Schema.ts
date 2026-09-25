@@ -111,6 +111,16 @@ export const AWD2_LIGHT_DEFAULT_SPECULAR = 1;
 export const AWD2_LIGHT_DEFAULT_DIFFUSE = 1;
 export const AWD2_LIGHT_DEFAULT_AMBIENT = 0;
 
+// Build phase constants: the order `parseAwd2` runs `build` in. Materials install the resolver scene
+// structure reads; skeleton builds the joint nodes mesh instances bind to; skeleton animation is
+// written against those joints; scene structure creates the nodes lighting and camera parent to.
+export const AWD2_BUILD_PHASE_MATERIALS = 0;
+export const AWD2_BUILD_PHASE_SKELETON = 1;
+export const AWD2_BUILD_PHASE_SKELETON_ANIMATION = 2;
+export const AWD2_BUILD_PHASE_SCENE_STRUCTURE = 3;
+export const AWD2_BUILD_PHASE_LIGHTING = 4;
+export const AWD2_BUILD_PHASE_CAMERA = 5;
+
 // Compression method constants from the AWD header.
 export const AWD2_COMPRESSION_NONE = 0;
 export const AWD2_COMPRESSION_DEFLATE = 1;

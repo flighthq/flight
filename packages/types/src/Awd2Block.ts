@@ -36,6 +36,14 @@ export interface Awd2BlockHandler {
   /** Every AWD2 block type id this handler claims. Expanded once into the walk's flat dispatch table. */
   readonly blockTypes: readonly number[];
   /**
+   * Numeric priority that determines the order `build` runs in relative to other handlers. Lower
+   * phases run first. The dependency chain is materials → skeleton → scene structure → lighting →
+   * camera; `parseAwd2` sorts by this value so the caller's array order is irrelevant.
+   *
+   * Required when `build` is present. Handlers without `build` ignore it.
+   */
+  readonly buildPhase?: number;
+  /**
    * True when this handler's blocks cannot be read on the first pass because they reference data an
    * earlier block type carries — a skeleton pose names the skeleton whose joint count it is written
    * against. Deferred blocks are located on the first pass and parsed on the second.
@@ -45,8 +53,7 @@ export interface Awd2BlockHandler {
   parse(state: Awd2ParseState, block: Readonly<Awd2Block>): void;
   /**
    * Turns what this handler parsed into document content, once, after every block has been read.
-   * Handlers run in a fixed order so one can consume what another produced; see the build order the
-   * importer declares.
+   * Handlers run in `buildPhase` order so one can consume what another produced.
    */
   build?(state: Awd2ParseState): void;
 }

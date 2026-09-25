@@ -12,7 +12,7 @@ import type {
 import { ImportDiagnosticSeverity, MeshKind, Node3DKind } from '@flighthq/types/contract';
 
 import { awdTransformToTransform3D, readAwdString, readAwdTransform, skipAwdAttrList } from './awd2Reader.ts';
-import { AWD2_BLOCK_CONTAINER, AWD2_BLOCK_MESH_INSTANCE } from './awd2Schema.ts';
+import { AWD2_BLOCK_CONTAINER, AWD2_BLOCK_MESH_INSTANCE, AWD2_BUILD_PHASE_SCENE_STRUCTURE } from './awd2Schema.ts';
 
 // Containers and mesh instances: the scene hierarchy itself. This is the handler that turns parsed blocks
 // into document nodes and wires their parenting.
@@ -25,6 +25,7 @@ import { AWD2_BLOCK_CONTAINER, AWD2_BLOCK_MESH_INSTANCE } from './awd2Schema.ts'
 // Containers: the file's group nodes. Built first, so a mesh instance parented to one finds its node.
 export const awd2ContainerHandler: Awd2BlockHandler = {
   blockTypes: [AWD2_BLOCK_CONTAINER],
+  buildPhase: AWD2_BUILD_PHASE_SCENE_STRUCTURE,
   parse(state, block) {
     const container = parseContainerBlock(
       block.view,
@@ -53,6 +54,7 @@ export const awd2ContainerHandler: Awd2BlockHandler = {
 // Mesh instances: the drawable placements, and the parenting pass that seats every node produced so far.
 export const awd2MeshInstanceHandler: Awd2BlockHandler = {
   blockTypes: [AWD2_BLOCK_MESH_INSTANCE],
+  buildPhase: AWD2_BUILD_PHASE_SCENE_STRUCTURE,
   parse(state, block) {
     const meshInstance = parseMeshInstanceBlock(
       block.view,

@@ -20,12 +20,9 @@ import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } fr
  */
 export interface Awd2ParseOptions {
   /**
-   * The handlers this import reads with. **Array order is the build order**, and AWD2's build phases
-   * genuinely depend on each other: materials install the resolver scene structure reads, the skeleton
-   * builds the joint nodes mesh instances bind to, and scene structure creates the nodes lighting and
-   * camera parent themselves to. Ordering handlers wrongly yields a document with unparented lights or
-   * unskinned meshes rather than an error, so prefer `awd2AllBlockHandlers` or the family arrays, which
-   * are already in that order.
+   * The handlers this import reads with. Array order is irrelevant — `parseAwd2` sorts build phases by
+   * each handler's `buildPhase` number, so any permutation of the same handlers produces the same
+   * document.
    */
   readonly blocks: readonly Awd2BlockHandler[];
   /**

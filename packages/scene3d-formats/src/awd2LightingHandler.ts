@@ -49,6 +49,7 @@ import {
   AWD2_LIGHT_PROP_SPECULAR,
   AWD2_LIGHT_TYPE_DIRECTIONAL,
   AWD2_LIGHT_TYPE_POINT,
+  AWD2_BUILD_PHASE_LIGHTING,
 } from './awd2Schema.ts';
 
 // Lights and light pickers. A light fills the document's PLACEMENT TABLE rather than the node graph — in
@@ -61,6 +62,7 @@ import {
 
 export const awd2LightHandler: Awd2BlockHandler = {
   blockTypes: [AWD2_BLOCK_LIGHT],
+  buildPhase: AWD2_BUILD_PHASE_LIGHTING,
   parse(state, block) {
     const light = parseLightBlock(
       block.view,
@@ -86,6 +88,7 @@ export const awd2LightHandler: Awd2BlockHandler = {
 // accurate: this build did not parse them.
 export const awd2LightPickerHandler: Awd2BlockHandler = {
   blockTypes: [AWD2_BLOCK_LIGHT_PICKER],
+  buildPhase: AWD2_BUILD_PHASE_LIGHTING,
   parse(state, block) {
     const picker = parseLightPickerBlock(block.view, block.source, block.dataStart, block.dataEnd, state.diagnostics);
     if (picker !== null) state.lightPickers.set(block.blockId, picker);

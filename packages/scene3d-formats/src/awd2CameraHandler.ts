@@ -27,6 +27,7 @@ import {
   AWD2_CAMERA_PROP_ORTHO_LEFT,
   AWD2_CAMERA_PROP_ORTHO_RIGHT,
   AWD2_CAMERA_PROP_ORTHO_TOP,
+  AWD2_BUILD_PHASE_CAMERA,
 } from './awd2Schema.ts';
 
 // Cameras. Like lights, a camera fills the document's PLACEMENT TABLE rather than the node graph — it is
@@ -35,6 +36,7 @@ import {
 
 export const awd2CameraHandler: Awd2BlockHandler = {
   blockTypes: [AWD2_BLOCK_CAMERA],
+  buildPhase: AWD2_BUILD_PHASE_CAMERA,
   parse(state, block) {
     const camera = parseCameraBlock(
       block.view,
