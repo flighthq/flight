@@ -7,8 +7,8 @@ import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { createRequirementSet } from '@flighthq/requirement/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
-import { MANIFEST_PARSER_BACKEND } from './manifestModuleSource';
-import { createManifestPlugin, MANIFEST_QUERY_SUFFIX } from './manifestPlugin';
+import { MANIFEST_PARSER_BACKEND } from './manifestModuleSource.ts';
+import { createManifestPlugin, MANIFEST_QUERY_SUFFIX } from './manifestPlugin.ts';
 
 describe('createManifestPlugin', () => {
   it('claims only ?manifest imports, resolving them against the importer directory', async () => {

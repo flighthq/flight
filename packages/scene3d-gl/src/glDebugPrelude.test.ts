@@ -8,10 +8,10 @@ import {
   ensureGlDebugProgram,
   getGlDebugFragmentSourceForKey,
   getGlDebugVertexSourceForKey,
-} from './glDebugPrelude';
-import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
+} from './glDebugPrelude.ts';
+import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 const DEPTH: GlDebugDefineKey = { hasNormalMap: false, mode: 'depth' };
 const NORMAL: GlDebugDefineKey = { hasNormalMap: false, mode: 'normal' };

@@ -1,5 +1,5 @@
-import { createRandomSource } from './random';
-import { randomBool, randomInt, randomRange, randomSign } from './randomRange';
+import { createRandomSource } from './random.ts';
+import { randomBool, randomInt, randomRange, randomSign } from './randomRange.ts';
 
 const rng = () => createRandomSource(0xabcdef);
 

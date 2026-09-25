@@ -10,8 +10,8 @@ import type {
   Texture,
 } from '@flighthq/types/contract';
 
-import { acquireCanvasTextureResolverSurface } from './canvasTextureResolver';
-import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource';
+import { acquireCanvasTextureResolverSurface } from './canvasTextureResolver.ts';
+import { resolveCanvasTextureWindowSource } from './canvasTextureWindowSource.ts';
 
 // Flash's gradient box is normalized to ±819.2 units.
 const GRADIENT_HALF = 819.2;

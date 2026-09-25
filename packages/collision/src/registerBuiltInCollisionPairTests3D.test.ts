@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { getCollisionPairTest3D, registerBuiltInCollisionSupports3D } from './collisionSupport3D';
-import { createCollisionManifold3D } from './manifold3D';
-import { registerBuiltInCollisionPairTests3D } from './registerBuiltInCollisionPairTests3D';
-import { testCollision3D } from './testCollision3D';
+import { getCollisionPairTest3D, registerBuiltInCollisionSupports3D } from './collisionSupport3D.ts';
+import { createCollisionManifold3D } from './manifold3D.ts';
+import { registerBuiltInCollisionPairTests3D } from './registerBuiltInCollisionPairTests3D.ts';
+import { testCollision3D } from './testCollision3D.ts';
 
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();

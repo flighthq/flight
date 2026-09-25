@@ -1,6 +1,6 @@
-import type { Effect } from './Effect';
-import type { ImageChannel } from './ImageChannel';
-import type { Texture2D } from './Texture';
+import type { Effect } from './Effect.ts';
+import type { ImageChannel } from './ImageChannel.ts';
+import type { Texture2D } from './Texture.ts';
 
 export type BitmapDisplacementEffectEdgeMode = 'clamp' | 'wrap';
 

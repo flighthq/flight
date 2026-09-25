@@ -7,11 +7,14 @@ import {
 import type { Camera3D, Scene3DLightBlock } from '@flighthq/types/contract';
 import { ExtendedPbrMaterialKind } from '@flighthq/types/contract';
 
-import { registerGlAnisotropyPbrExtension } from './anisotropyPbrGlExtension';
-import { registerGlClearcoatPbrExtension } from './clearcoatPbrGlExtension';
-import { glExtendedPbrMeshMaterialRenderer, registerGlExtendedPbrMaterial } from './glExtendedPbrMeshMaterialRenderer';
-import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+import { registerGlAnisotropyPbrExtension } from './anisotropyPbrGlExtension.ts';
+import { registerGlClearcoatPbrExtension } from './clearcoatPbrGlExtension.ts';
+import {
+  glExtendedPbrMeshMaterialRenderer,
+  registerGlExtendedPbrMaterial,
+} from './glExtendedPbrMeshMaterialRenderer.ts';
+import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

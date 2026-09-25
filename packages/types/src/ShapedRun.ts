@@ -1,5 +1,5 @@
-import type { FontResource } from './FontResource';
-import type { TextDirection } from './TextDirection';
+import type { FontResource } from './FontResource.ts';
+import type { TextDirection } from './TextDirection.ts';
 
 export interface ShapedGlyph {
   cluster: number;

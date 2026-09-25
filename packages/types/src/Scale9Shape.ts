@@ -1,5 +1,5 @@
-import type { RectangleLike } from './Rectangle';
-import type { Shape, ShapeData, ShapeRuntime } from './Shape';
+import type { RectangleLike } from './Rectangle.ts';
+import type { Shape, ShapeData, ShapeRuntime } from './Shape.ts';
 
 export interface Scale9ShapeData extends ShapeData {
   readonly scale9Grid: Readonly<RectangleLike>;

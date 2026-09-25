@@ -6,7 +6,7 @@ import type {
   TextSelectionRectangle,
 } from '@flighthq/types/contract';
 
-import { TEXT_LAYOUT_GUTTER } from './textLayout';
+import { TEXT_LAYOUT_GUTTER } from './textLayout.ts';
 
 export function computeRichTextCharIndexAtPoint(layout: Readonly<TextLayoutResult>, x: number, y: number): number {
   if (layout.groups.length === 0) return 0;

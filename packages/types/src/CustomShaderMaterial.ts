@@ -1,5 +1,5 @@
-import type { Material3D } from './Material3D';
-import type { Texture } from './Texture';
+import type { Material3D } from './Material3D.ts';
+import type { Texture } from './Texture.ts';
 
 // User-authored shader material: the caller registers backend-native shader source under
 // `shaderKey` (a GLSL vertex/fragment pair on GL or a complete fixed-ABI WGSL module on WGPU),

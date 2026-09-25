@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { Signal } from './Signal';
-import type { ToggleController } from './ToggleController';
+import type { Entity } from './Entity.ts';
+import type { Signal } from './Signal.ts';
+import type { ToggleController } from './ToggleController.ts';
 
 declare const RadioGroupControllerTypeKey: unique symbol;
 

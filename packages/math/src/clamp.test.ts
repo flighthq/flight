@@ -1,4 +1,4 @@
-import { clamp, inRange, saturate } from './clamp';
+import { clamp, inRange, saturate } from './clamp.ts';
 
 describe('clamp', () => {
   it('clamps below minimum', () => {

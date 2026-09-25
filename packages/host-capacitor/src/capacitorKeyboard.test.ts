@@ -9,7 +9,7 @@ import {
   capacitorHostSoftKeyboardScrollAssist,
   capacitorHostSoftKeyboardStyle,
   capacitorHostSoftKeyboardVisibility,
-} from './capacitorKeyboard';
+} from './capacitorKeyboard.ts';
 
 function fakeCapacitor() {
   const calls: Array<{ method: string; arg?: unknown }> = [];

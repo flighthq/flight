@@ -10,10 +10,10 @@ import type {
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { beginWgpuFrame, submitWgpuFrame } from './wgpuFrame';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
-import { getWgpuRenderTargetSupersampleScale } from './wgpuRenderTarget';
-import { bindWgpuScreenRenderTarget, isWgpuScreenRenderTarget } from './wgpuScreenRenderTarget';
+import { beginWgpuFrame, submitWgpuFrame } from './wgpuFrame.ts';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
+import { getWgpuRenderTargetSupersampleScale } from './wgpuRenderTarget.ts';
+import { bindWgpuScreenRenderTarget, isWgpuScreenRenderTarget } from './wgpuScreenRenderTarget.ts';
 
 // Opens a render pass into `target` and returns the handle to draw through. Aspects named in `clear` are
 // overwritten with the given values; omitted aspects are preserved (loadOp 'load'). Color values are

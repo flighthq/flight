@@ -18,19 +18,19 @@ import {
   TilemapKind,
 } from '@flighthq/types/contract';
 
-import { wgpuBitmapTextRenderer } from './wgpuBitmapText';
-import { wgpuRenderCacheRenderer } from './wgpuCache';
-import { wgpuScene2DRenderer } from './wgpuNode2D';
-import { wgpuParticleEmitter2DRenderer } from './wgpuParticleEmitter2D';
-import { wgpuQuadBatchRenderer } from './wgpuQuadBatch';
-import { wgpuRichTextRenderer } from './wgpuRichText';
-import { wgpuScale9ShapeRenderer } from './wgpuScale9Shape';
-import { wgpuScale9SpriteRenderer } from './wgpuScale9Sprite';
-import { wgpuMorphShapeRenderer, wgpuShapeRenderer } from './wgpuShape';
-import { wgpuSpriteRenderer } from './wgpuSprite';
-import { standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial';
-import { wgpuTextLabelRenderer } from './wgpuTextLabel';
-import { wgpuTilemapRenderer } from './wgpuTilemap';
+import { wgpuBitmapTextRenderer } from './wgpuBitmapText.ts';
+import { wgpuRenderCacheRenderer } from './wgpuCache.ts';
+import { wgpuScene2DRenderer } from './wgpuNode2D.ts';
+import { wgpuParticleEmitter2DRenderer } from './wgpuParticleEmitter2D.ts';
+import { wgpuQuadBatchRenderer } from './wgpuQuadBatch.ts';
+import { wgpuRichTextRenderer } from './wgpuRichText.ts';
+import { wgpuScale9ShapeRenderer } from './wgpuScale9Shape.ts';
+import { wgpuScale9SpriteRenderer } from './wgpuScale9Sprite.ts';
+import { wgpuMorphShapeRenderer, wgpuShapeRenderer } from './wgpuShape.ts';
+import { wgpuSpriteRenderer } from './wgpuSprite.ts';
+import { standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial.ts';
+import { wgpuTextLabelRenderer } from './wgpuTextLabel.ts';
+import { wgpuTilemapRenderer } from './wgpuTilemap.ts';
 
 function buildScene2dWgpuRenderers(): ReadonlyMap<Kind, NodeRenderer> {
   let table: ReadonlyMap<Kind, NodeRenderer> = new Map();

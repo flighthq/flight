@@ -1,6 +1,6 @@
 import { createDropShadowEffect, createOuterGlowEffect } from '@flighthq/effects/contract';
 
-import { computeDropShadowEffectCss, computeOuterGlowEffectCss } from './canvasEffectDropShadowCss';
+import { computeDropShadowEffectCss, computeOuterGlowEffectCss } from './canvasEffectDropShadowCss.ts';
 
 describe('computeDropShadowEffectCss', () => {
   it('is a function', () => {

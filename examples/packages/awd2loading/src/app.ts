@@ -22,8 +22,8 @@ import {
   updateOrbitCameraController,
 } from '@flighthq/sdk/camera-controls';
 
-import { createSyntheticAwd2 } from './createSyntheticAwd2';
-import { canvas, render, scale } from './render';
+import { createSyntheticAwd2 } from './createSyntheticAwd2.ts';
+import { canvas, render, scale } from './render.ts';
 
 // Parsing stops at the format-neutral Scene3DDocument, then the document is assembled into a live scene.
 // Lights are not scene members in Flight, so createScene3DLightsFromDocument separately turns the parsed

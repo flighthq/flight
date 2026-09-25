@@ -1,7 +1,7 @@
-import type { CompressedImageResource } from './CompressedImageResource';
-import type { TextureColorSpace } from './Texture';
-import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecoder';
-import type { WgpuRenderState, WgpuTextureEntry } from './WgpuRenderState';
+import type { CompressedImageResource } from './CompressedImageResource.ts';
+import type { TextureColorSpace } from './Texture.ts';
+import type { WgpuCompressedTextureDecoder } from './WgpuCompressedTextureDecoder.ts';
+import type { WgpuRenderState, WgpuTextureEntry } from './WgpuRenderState.ts';
 
 // Opt-in bridge from a CompressedImageResource to a sampleable WebGPU texture entry.
 export type WgpuCompressedTextureUploader = (

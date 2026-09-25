@@ -37,4 +37,4 @@ export {
   setStorageItems,
   setStorageJSON,
   setStorageNumber,
-} from './contract';
+} from './contract.ts';

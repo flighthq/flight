@@ -3,11 +3,11 @@ import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import type { Camera2D, LogEntry } from '@flighthq/types/contract';
 import { afterEach, describe, expect, test } from 'vitest';
 
-import { createCamera3D, setCamera3DViewMatrix4FromMatrix4 } from './camera';
-import { createCamera2D } from './camera2d';
-import { areCameraGuardsEnabled, disableCameraGuards, enableCameraGuards } from './enableCameraGuards';
-import { createPerspectiveProjection } from './projection';
-import { getCamera2DVisibleBounds } from './visibleBounds';
+import { createCamera3D, setCamera3DViewMatrix4FromMatrix4 } from './camera.ts';
+import { createCamera2D } from './camera2d.ts';
+import { areCameraGuardsEnabled, disableCameraGuards, enableCameraGuards } from './enableCameraGuards.ts';
+import { createPerspectiveProjection } from './projection.ts';
+import { getCamera2DVisibleBounds } from './visibleBounds.ts';
 
 beforeEach(() => clearLogOnceKeys());
 

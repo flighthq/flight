@@ -13,7 +13,7 @@ import type {
   WgpuShapeMeshPipeline,
 } from '@flighthq/types/contract';
 
-import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 
 // Wgpu tessellated solid-fill path for Shape — the counterpart to webglShapeMesh, replacing the
 // canvas-raster-to-texture shortcut (resolution-bound, so circles go jagged when scaled up). Each fill

@@ -1,9 +1,9 @@
 import type { RenderProxy2D } from '@flighthq/types/contract';
 
-import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
-import { registerGlStandardMaterial } from './glStandardMaterial';
-import { createGlState } from './glTestHelper';
-import { glTilemapRenderer } from './glTilemap';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
+import { registerGlStandardMaterial } from './glStandardMaterial.ts';
+import { createGlState } from './glTestHelper.ts';
+import { glTilemapRenderer } from './glTilemap.ts';
 
 function makeAtlas() {
   const img = document.createElement('img');

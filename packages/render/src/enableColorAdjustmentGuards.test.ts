@@ -5,10 +5,10 @@ import { setNodeColorAdjustments } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { Adjustment, NodeAny, RenderProxy, RenderState } from '@flighthq/types/contract';
 
-import { areColorAdjustmentGuardsEnabled, enableColorAdjustmentGuards } from './enableColorAdjustmentGuards';
-import { enableColorAdjustments } from './enableColorAdjustments';
-import { createRenderProxy } from './renderProxy';
-import { createRenderState, getRenderStateRuntime } from './renderState';
+import { areColorAdjustmentGuardsEnabled, enableColorAdjustmentGuards } from './enableColorAdjustmentGuards.ts';
+import { enableColorAdjustments } from './enableColorAdjustments.ts';
+import { createRenderProxy } from './renderProxy.ts';
+import { createRenderState, getRenderStateRuntime } from './renderState.ts';
 
 describe('areColorAdjustmentGuardsEnabled', () => {
   it('reports false until guards are installed, then true', () => {

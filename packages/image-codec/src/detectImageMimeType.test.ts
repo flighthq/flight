@@ -1,4 +1,4 @@
-import { detectImageMimeType } from './detectImageMimeType';
+import { detectImageMimeType } from './detectImageMimeType.ts';
 
 describe('detectImageMimeType', () => {
   it('returns null for a buffer that is too small', () => {

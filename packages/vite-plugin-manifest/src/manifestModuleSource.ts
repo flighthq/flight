@@ -6,7 +6,7 @@ import {
   PARSER_HANDLER_FIELDS,
   REQUIREMENT_OPTION_FIELDS,
   SCALAR_OPTION_FIELDS,
-} from './requirementOptionFields';
+} from './requirementOptionFields.ts';
 
 /** The backends a manifest module always exports a fragment for, and the export name each one uses. */
 export const MANIFEST_BACKEND_EXPORTS: Readonly<Record<string, string>> = Object.freeze({

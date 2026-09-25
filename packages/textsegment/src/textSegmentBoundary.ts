@@ -5,8 +5,8 @@ import type {
   TextSegmentRange,
 } from '@flighthq/types/contract';
 
-import { webTextSegmenterBackend } from './textSegmenterBackend';
-import { reportTextSegmenterUnavailable } from './textSegmentGuards';
+import { webTextSegmenterBackend } from './textSegmenterBackend.ts';
+import { reportTextSegmenterUnavailable } from './textSegmentGuards.ts';
 
 export function getNextGraphemeBoundary(
   textSegmenter: Readonly<HostTextSegmenterCapability>,

@@ -3,8 +3,8 @@ import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createGlyphOutlineSourceFromOpenTypeFont } from './openTypeGlyphOutlineSource';
-import { createSyntheticFont, emptySyntheticGlyph, ringSyntheticGlyph } from './openTypeTestHelper';
+import { createGlyphOutlineSourceFromOpenTypeFont } from './openTypeGlyphOutlineSource.ts';
+import { createSyntheticFont, emptySyntheticGlyph, ringSyntheticGlyph } from './openTypeTestHelper.ts';
 
 // Contour DIRECTION, which nothing else in this suite can see. A bounding box is min/max over a point
 // set and a contour count is a count — both are identical whichever way a contour is wound, so a

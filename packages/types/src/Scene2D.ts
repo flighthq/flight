@@ -1,8 +1,8 @@
-import type { Entity, EntityRuntime } from './Entity';
-import type { Node2D } from './Node2D';
-import type { Scene2DSignals } from './Scene2DSignals';
-import type { ViewportAlign } from './ViewportAlign';
-import type { ViewportScaleMode } from './ViewportScaleMode';
+import type { Entity, EntityRuntime } from './Entity.ts';
+import type { Node2D } from './Node2D.ts';
+import type { Scene2DSignals } from './Scene2DSignals.ts';
+import type { ViewportAlign } from './ViewportAlign.ts';
+import type { ViewportScaleMode } from './ViewportScaleMode.ts';
 
 // The Scene2D is the presentation context for a 2D display tree, not a node in it. It owns a display-object
 // `root`, the fit context that maps that root into the view (`align`, `scaleMode`), its logical view

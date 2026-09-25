@@ -20,10 +20,10 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { areGlRenderStateGuardsEnabled, enableGlRenderStateGuards } from './enableGlRenderStateGuards';
-import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture';
-import { isBlendModeSupported, registerGlBlendMode, useGlProgram } from './glDraw';
-import { registerGlQuadMaterialRenderer } from './glQuadMaterialRegistry';
+import { areGlRenderStateGuardsEnabled, enableGlRenderStateGuards } from './enableGlRenderStateGuards.ts';
+import { registerGlCompressedTextureDecoder, registerGlCompressedTextureUpload } from './glCompressedTexture.ts';
+import { isBlendModeSupported, registerGlBlendMode, useGlProgram } from './glDraw.ts';
+import { registerGlQuadMaterialRenderer } from './glQuadMaterialRegistry.ts';
 import {
   buildGlRenderRegistries,
   createGlContextState,
@@ -38,10 +38,10 @@ import {
   invalidateGlRenderStateCache,
   registerGlContextTeardown,
   registerGlRenderStateTeardown,
-} from './glRenderState';
-import { ensureDefaultGlBitmapShader } from './glShader';
-import { makeGL } from './glTestHelper';
-import { registerGlTextureResolver } from './glTextureResolver';
+} from './glRenderState.ts';
+import { ensureDefaultGlBitmapShader } from './glShader.ts';
+import { makeGL } from './glTestHelper.ts';
+import { registerGlTextureResolver } from './glTextureResolver.ts';
 
 function makeContext() {
   return { gl: makeGL() };

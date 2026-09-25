@@ -1,7 +1,7 @@
 import { connectSignal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createAnimationClip, createAnimationClipEvent } from './animationClip';
+import { createAnimationClip, createAnimationClipEvent } from './animationClip.ts';
 import {
   advanceAnimationPlayer,
   cloneAnimationPlayer,
@@ -12,7 +12,7 @@ import {
   playAnimationPlayer,
   seekAnimationPlayer,
   stopAnimationPlayer,
-} from './animationPlayer';
+} from './animationPlayer.ts';
 
 function player(duration: number, opts?: Parameters<typeof createAnimationPlayer>[1]) {
   return createAnimationPlayer(createAnimationClip([], duration), opts);

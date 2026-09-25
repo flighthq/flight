@@ -1,5 +1,5 @@
-import type { Material3D } from './Material3D';
-import type { Texture } from './Texture';
+import type { Material3D } from './Material3D.ts';
+import type { Texture } from './Texture.ts';
 
 // Lighting-independent flat color. `baseColor` is packed sRgb-albedo RGBA; `baseColorMap`
 // tints it from any registered backing: still image, live video host handle, or render target.

@@ -1,4 +1,4 @@
-import { initializeEffect } from './effect';
+import { initializeEffect } from './effect.ts';
 
 describe('initializeEffect', () => {
   it('is the construction initializer used by effect factories', () => {

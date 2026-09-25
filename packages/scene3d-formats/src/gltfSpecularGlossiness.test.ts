@@ -3,9 +3,9 @@ import type { GltfDocument, SpecularGlossinessPbrMaterial } from '@flighthq/type
 import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { GltfClearcoatExtensionHandler } from './gltfClearcoat';
-import { parseGltf } from './gltfParse';
-import { GltfSpecularGlossinessExtensionHandler } from './gltfSpecularGlossiness';
+import { GltfClearcoatExtensionHandler } from './gltfClearcoat.ts';
+import { parseGltf } from './gltfParse.ts';
+import { GltfSpecularGlossinessExtensionHandler } from './gltfSpecularGlossiness.ts';
 
 function makeGltf(material: unknown): GltfDocument {
   return {

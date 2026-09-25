@@ -1,7 +1,7 @@
-import type { Entity } from './Entity';
-import type { Node2D } from './Node2D';
-import type { TimelineCue } from './TimelineCue';
-import type { TimelineLabel } from './TimelineLabel';
+import type { Entity } from './Entity.ts';
+import type { Node2D } from './Node2D.ts';
+import type { TimelineCue } from './TimelineCue.ts';
+import type { TimelineLabel } from './TimelineLabel.ts';
 
 // What a Timeline plays. A `TimelineSource` is the output of a "format" — hand-authored keyframes
 // (`createTimelineSource`), a spritesheet animation (`createSpritesheetTimelineSource`), or a future

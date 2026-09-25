@@ -1,5 +1,5 @@
-import { areGlRenderTextureGuardsEnabled, enableGlRenderTextureGuards } from './enableGlRenderTextureGuards';
-import { createGlState } from './glTestHelper';
+import { areGlRenderTextureGuardsEnabled, enableGlRenderTextureGuards } from './enableGlRenderTextureGuards.ts';
+import { createGlState } from './glTestHelper.ts';
 
 describe('areGlRenderTextureGuardsEnabled', () => {
   it('reports whether diagnostics were installed for the context', () => {

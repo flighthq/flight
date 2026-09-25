@@ -1,5 +1,5 @@
-import type { HostMenuCapabilities } from './Host';
-import type { WellKnownMenuItemRoleValue } from './WellKnownMenuItemRole';
+import type { HostMenuCapabilities } from './Host.ts';
+import type { WellKnownMenuItemRoleValue } from './WellKnownMenuItemRole.ts';
 
 // Application and context menu seam. Free functions in @flighthq/menu take the operation-specific
 // provider directly. Web cannot install an application menu bar, but the Web popup provider renders

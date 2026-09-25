@@ -5,7 +5,7 @@ import {
   hasHostImageDimensionResolver,
   registerHostImageDimensionResolver,
   unregisterHostImageDimensionResolver,
-} from './imageSourceDimensions';
+} from './imageSourceDimensions.ts';
 
 // The slot is module state, so every test starts from an empty one rather than from whatever the
 // previous test installed.

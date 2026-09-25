@@ -1,6 +1,6 @@
 import type { LayoutResolver } from '@flighthq/types/contract';
 
-import { createLayoutState, initializeLayoutState, registerLayoutResolver } from './layoutState';
+import { createLayoutState, initializeLayoutState, registerLayoutResolver } from './layoutState.ts';
 
 const resolver: LayoutResolver = () => null;
 

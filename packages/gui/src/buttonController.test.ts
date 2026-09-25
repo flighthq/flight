@@ -8,8 +8,8 @@ import {
   getButtonControllerSignals,
   isButtonControllerDisabled,
   setButtonControllerDisabled,
-} from './buttonController';
-import { createGuiTestNode, emitGuiPointer } from './guiTestHelper';
+} from './buttonController.ts';
+import { createGuiTestNode, emitGuiPointer } from './guiTestHelper.ts';
 
 describe('createButtonController', () => {
   it('drives optional states and emits the complete pointer lifecycle', () => {

@@ -1,4 +1,4 @@
-import { detectFontFormat, inferFontFormatFromUrl } from './fontFormat';
+import { detectFontFormat, inferFontFormatFromUrl } from './fontFormat.ts';
 
 function bytesOf(...values: number[]): Uint8Array {
   return new Uint8Array(values);

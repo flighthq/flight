@@ -2,7 +2,7 @@ import { getWgpuRenderStateRuntime, registerWgpuQuadMaterialRenderer } from '@fl
 import type { WgpuQuadMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
 import { StandardMaterialKind } from '@flighthq/types/contract';
 
-import { getWgpuQuadBatchPreludeWGSL } from './wgpuQuadBatchWriter';
+import { getWgpuQuadBatchPreludeWGSL } from './wgpuQuadBatchWriter.ts';
 
 // Registers the bundled default material under StandardMaterialKind. It is a bundled material like any
 // other — no privileged status in the render path; a node with no material renders only if a renderer

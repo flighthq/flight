@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { captureSnapshot, setSnapshotCaptureGuard } from './captureSnapshot';
+import { captureSnapshot, setSnapshotCaptureGuard } from './captureSnapshot.ts';
 
 describe('captureSnapshot', () => {
   it('returns a deep-equal copy of the source', () => {

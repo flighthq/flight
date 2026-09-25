@@ -1,6 +1,6 @@
-import type { Mesh } from './Mesh';
-import type { MeshGeometry } from './MeshGeometry';
-import type { WgpuRenderState } from './WgpuRenderState';
+import type { Mesh } from './Mesh.ts';
+import type { MeshGeometry } from './MeshGeometry.ts';
+import type { WgpuRenderState } from './WgpuRenderState.ts';
 
 export interface WgpuSkinningAdapter {
   extendMeshPrelude(rigidPrelude: string): string;

@@ -28,8 +28,8 @@ import type {
 } from '@flighthq/types/contract';
 import { Node2DTraitsKey } from '@flighthq/types/contract';
 
-import { computeEffectCaptureGeometry } from './effectCaptureGeometry';
-import { computeEffectPadding, registerEffectPaddingResolver } from './effectPadding';
+import { computeEffectCaptureGeometry } from './effectCaptureGeometry.ts';
+import { computeEffectPadding, registerEffectPaddingResolver } from './effectPadding.ts';
 
 function createCaptureNode(bounds: Readonly<Rectangle>): Node2D {
   const node = createNode('CaptureGeometryTest') as Node2D;

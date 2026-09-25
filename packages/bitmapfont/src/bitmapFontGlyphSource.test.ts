@@ -2,8 +2,8 @@ import { createTextureAtlas, createTextureAtlasFromImageResource } from '@flight
 import type { BitmapFontData, ImageResource } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createBitmapFont, getBitmapFontGlyph } from './bitmapFont';
-import { createGlyphSourceFromBitmapFont, initializeGlyphSourceFromBitmapFont } from './bitmapFontGlyphSource';
+import { createBitmapFont, getBitmapFontGlyph } from './bitmapFont.ts';
+import { createGlyphSourceFromBitmapFont, initializeGlyphSourceFromBitmapFont } from './bitmapFontGlyphSource.ts';
 
 describe('createGlyphSourceFromBitmapFont', () => {
   it('exposes the font as a GlyphSource whose lookups match the font', () => {

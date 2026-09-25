@@ -7,7 +7,7 @@ import type {
   TweenStaggerOptions,
 } from '@flighthq/types/contract';
 
-import { createTween } from './tween';
+import { createTween } from './tween.ts';
 
 /**
  * Batch-tween an array of targets with staggered start delays.

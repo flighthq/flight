@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { disableFlowGuards, enableFlowGuards } from './flowGuards';
+import { disableFlowGuards, enableFlowGuards } from './flowGuards.ts';
 
 describe('disableFlowGuards', () => {
   it('is idempotent', () => {

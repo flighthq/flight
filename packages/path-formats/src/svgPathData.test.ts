@@ -3,7 +3,7 @@ import { PathCommand } from '@flighthq/types/contract';
 import type { Path, PathSegment } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { appendSvgPathData, explainSvgPathData, formatSvgPathData, parseSvgPathData } from './svgPathData';
+import { appendSvgPathData, explainSvgPathData, formatSvgPathData, parseSvgPathData } from './svgPathData.ts';
 
 function collectSegments(path: Readonly<Path>): PathSegment[] {
   const segments: PathSegment[] = [];

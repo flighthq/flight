@@ -14,7 +14,7 @@ import {
   isCaptureBaselineCoverageFailure,
   readCaptureBaselineCoverageManifest,
   writeCaptureBaselineCoverageManifest,
-} from './captureBaselineCoverageManifest';
+} from './captureBaselineCoverageManifest.ts';
 
 const ALL = ['fingerprint', 'sceneAssertion', 'screenshot'] as const;
 const manifest = createCaptureBaselineCoverageManifest({

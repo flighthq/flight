@@ -16,7 +16,7 @@ import type {
 } from '@flighthq/types/contract';
 import { CustomShaderMaterialKind } from '@flighthq/types/contract';
 
-import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
+import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
 import {
   beginGlMeshDraw,
   compileGlProgram,
@@ -24,8 +24,8 @@ import {
   ensureGlScene3DProgram,
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
-} from './glMeshProgram';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+} from './glMeshProgram.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // A compiled custom-shader program plus its resolved built-in uniform locations. The user's
 // custom uniform locations are resolved lazily (getUniformLocation on first use per name) and

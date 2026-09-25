@@ -7,7 +7,7 @@ import type {
   GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { getGlEffectProgram } from './glEffectProgramCache';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
 
 // Generic pointwise color-LUT pass — the single fold-in realization for the whole LUT-tier Adjustment
 // family on WebGL 2. A run of consecutive pointwise adjustments containing any nonlinear (LUT-tier)

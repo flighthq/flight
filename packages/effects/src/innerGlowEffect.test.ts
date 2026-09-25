@@ -5,7 +5,7 @@ import {
   getInnerGlowEffectPadding,
   initializeInnerGlowEffect,
   registerInnerGlowEffectPaddingResolver,
-} from './innerGlowEffect';
+} from './innerGlowEffect.ts';
 
 describe('createInnerGlowEffect', () => {
   it('tags the intent type', () => {

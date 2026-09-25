@@ -7,10 +7,10 @@ import {
   getMeshGeometrySkinBindPose,
   setMeshGeometryMorphBindPose,
   setMeshGeometrySkinBindPose,
-} from './meshGeometry';
-import { cloneMeshGeometryForDeformation } from './meshGeometryDeformationClone';
-import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT } from './meshGeometryLayout';
-import { blendMeshGeometryMorph, captureMeshMorphBindPose } from './morphMeshGeometry';
+} from './meshGeometry.ts';
+import { cloneMeshGeometryForDeformation } from './meshGeometryDeformationClone.ts';
+import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT } from './meshGeometryLayout.ts';
+import { blendMeshGeometryMorph, captureMeshMorphBindPose } from './morphMeshGeometry.ts';
 
 describe('cloneMeshGeometryForDeformation', () => {
   it('restores captured morph base after the source has already deformed', () => {

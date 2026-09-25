@@ -1,5 +1,5 @@
-import type { ImportDiagnostic } from './ImportDiagnostic';
-import type { ParticleEmitterConfig } from './ParticleEmitterConfig';
+import type { ImportDiagnostic } from './ImportDiagnostic.ts';
+import type { ParticleEmitterConfig } from './ParticleEmitterConfig.ts';
 
 // Particle Designer plist schema — field names as they appear in the XML file.
 // Reference: https://www.71squared.com/particledesigner (format documented in the tool's export)

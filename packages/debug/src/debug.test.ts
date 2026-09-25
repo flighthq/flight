@@ -25,7 +25,7 @@ import {
   isDebugEnabled,
   registerDebugSubsystem,
   unregisterDebugSubsystem,
-} from './debug';
+} from './debug.ts';
 
 // Subsystem names touched by the tests, unregistered between each so the module-global registry
 // never leaks state across cases.

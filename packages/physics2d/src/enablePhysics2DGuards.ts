@@ -6,10 +6,10 @@ import type {
 } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { explainPhysics2DCollision } from './explainPhysics2DCollision';
-import { explainPhysics2DJoints } from './explainPhysics2DJoints';
-import { explainPhysics2DStep } from './explainPhysics2DStep';
-import { setPhysics2DContactIntakeGuard, setPhysics2DJointResolutionGuard, setPhysics2DStepGuard } from './step';
+import { explainPhysics2DCollision } from './explainPhysics2DCollision.ts';
+import { explainPhysics2DJoints } from './explainPhysics2DJoints.ts';
+import { explainPhysics2DStep } from './explainPhysics2DStep.ts';
+import { setPhysics2DContactIntakeGuard, setPhysics2DJointResolutionGuard, setPhysics2DStepGuard } from './step.ts';
 
 export function arePhysics2DGuardsEnabled(): boolean {
   return physics2DGuardsEnabled;

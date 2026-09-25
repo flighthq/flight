@@ -8,8 +8,8 @@ import {
   applyConvolutionEffectToGl,
   glConvolutionEffectRunner,
   registerGlConvolutionEffect,
-} from './glConvolutionEffect';
-import * as glEffectProgramCache from './glEffectProgramCache';
+} from './glConvolutionEffect.ts';
+import * as glEffectProgramCache from './glEffectProgramCache.ts';
 
 const glMock = {
   getUniformLocation: vi.fn((_program: unknown, name: string) => name),

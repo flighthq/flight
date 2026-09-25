@@ -17,7 +17,7 @@ import {
   resetFlyCameraController,
   snapFlyCameraController,
   updateFlyCameraController,
-} from './flyCameraController';
+} from './flyCameraController.ts';
 
 function testCamera() {
   return createCamera3D({ far: 100, near: 0.1, projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }) });

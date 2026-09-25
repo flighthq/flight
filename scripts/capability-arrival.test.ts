@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import type { CapabilityArrivalFailure } from './capability-arrival';
-import { capabilityArrivalFailures } from './capability-arrival';
+import type { CapabilityArrivalFailure } from './capability-arrival.ts';
+import { capabilityArrivalFailures } from './capability-arrival.ts';
 
 describe('capability-arrival source gate', () => {
   let baseline: CapabilityArrivalFailure[];

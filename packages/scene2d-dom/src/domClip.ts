@@ -1,8 +1,8 @@
 import type { Node2D, Scene2DClipHooks, DomRenderState, RenderProxy2D, RenderState } from '@flighthq/types/contract';
 
-import { pushDomClipContours } from './domClipContours';
-import { pushDomClipRectangle, setDomClipHooks } from './domClipRectangle';
-import { getDomRenderStateRuntime } from './domRenderState';
+import { pushDomClipContours } from './domClipContours.ts';
+import { pushDomClipRectangle, setDomClipHooks } from './domClipRectangle.ts';
+import { getDomRenderStateRuntime } from './domRenderState.ts';
 
 // Masks RETIRED — a former mask is a path ClipRegion realized as a CSS clip-path. The DOM clip stack now
 // holds rect entries (DomScene2DRectangle) and contour entries (DomClipContourEntry); applyDomClipRectangles

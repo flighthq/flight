@@ -3,9 +3,9 @@ import type { Bone2D, BoundingBoxAttachment2D, Skin2D } from '@flighthq/types/co
 import { BoundingBoxAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { computeSkeleton2DBoundingBoxAttachmentVertices } from './boundingBoxAttachment2D';
-import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
-import { createSkin2D } from './skin2D';
+import { computeSkeleton2DBoundingBoxAttachmentVertices } from './boundingBoxAttachment2D.ts';
+import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d.ts';
+import { createSkin2D } from './skin2D.ts';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
   return {

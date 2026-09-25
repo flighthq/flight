@@ -1,7 +1,7 @@
 import { createVector3 } from '@flighthq/geometry/contract';
 import { CandelaLightUnit, PointLightKind, UnitlessLightUnit } from '@flighthq/types/contract';
 
-import { clonePointLight, createPointLight, initializePointLight } from './pointLight';
+import { clonePointLight, createPointLight, initializePointLight } from './pointLight.ts';
 
 describe('clonePointLight', () => {
   it('creates an independent copy with a fresh position vector', () => {

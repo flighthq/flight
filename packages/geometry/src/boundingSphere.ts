@@ -9,7 +9,7 @@ import type {
   Vector3Like,
 } from '@flighthq/types/contract';
 
-import { createVector3 } from './vector3';
+import { createVector3 } from './vector3.ts';
 
 export function cloneBoundingSphere(source: Readonly<BoundingSphereLike>): BoundingSphere {
   return createBoundingSphere(source.center.x, source.center.y, source.center.z, source.radius);

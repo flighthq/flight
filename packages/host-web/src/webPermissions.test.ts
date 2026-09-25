@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { webHostNotificationPermission, webHostPermissions } from './webPermissions';
+import { webHostNotificationPermission, webHostPermissions } from './webPermissions.ts';
 
 describe('webHostNotificationPermission', () => {
   it('is the shared Notification permission identity from the permissions provider', () => {

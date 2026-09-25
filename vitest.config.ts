@@ -1,7 +1,7 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
 
-import { UNIT_TEST_LANE_EXCLUDE, UNIT_TEST_LANE_INCLUDE } from './scripts/unitTestLane.js';
-import baseConfig from './vitest.config.base.js';
+import { UNIT_TEST_LANE_EXCLUDE, UNIT_TEST_LANE_INCLUDE } from './scripts/unitTestLane.ts';
+import baseConfig from './vitest.config.base.ts';
 
 export default mergeConfig(
   baseConfig,

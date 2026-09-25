@@ -11,7 +11,7 @@ import {
   TENSOR_YY,
   TENSOR_YZ,
   TENSOR_ZZ,
-} from './symmetricTensor';
+} from './symmetricTensor.ts';
 
 describe('applySymmetricTensor', () => {
   it('multiplies a diagonal tensor componentwise', () => {

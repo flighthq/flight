@@ -10,8 +10,8 @@ import type {
   GlViewportRect,
 } from '@flighthq/types/contract';
 
-import { acquireGlRenderPassHandle, releaseGlRenderPassHandle } from './glRenderPass';
-import { getGlRenderStateRuntime } from './glRenderState';
+import { acquireGlRenderPassHandle, releaseGlRenderPassHandle } from './glRenderPass.ts';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
 
 interface SavedGlCubeFaceState {
   clipForms: ('rect' | 'contour')[];

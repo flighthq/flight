@@ -8,5 +8,5 @@ export {
   pushFlowState,
   replaceFlowState,
   updateFlowStack,
-} from './flow';
-export { disableFlowGuards, enableFlowGuards } from './flowGuards';
+} from './flow.ts';
+export { disableFlowGuards, enableFlowGuards } from './flowGuards.ts';

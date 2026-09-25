@@ -15,8 +15,8 @@ import type {
   Spatial2DNode,
 } from '@flighthq/types/contract';
 
-import { getInteractionSignals } from './interactionManager';
-import { getNodeTabIndex, isNodeFocusable } from './nodeInteractionState';
+import { getInteractionSignals } from './interactionManager.ts';
+import { getNodeTabIndex, isNodeFocusable } from './nodeInteractionState.ts';
 
 /** Clears focus: the previously focused node (if any) receives `onFocusOut` and the manager holds none. */
 export function clearFocus<N extends NodeAny>(manager: FocusManager<N>): void {

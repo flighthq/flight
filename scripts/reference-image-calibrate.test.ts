@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { CalibrationRootIdentity } from './reference-image-calibrate';
+import type { CalibrationRootIdentity } from './reference-image-calibrate.ts';
 import {
   buildCalibrationRecord,
   compareCalibrationRuns,
@@ -10,7 +10,7 @@ import {
   findDuplicateCalibrationRoot,
   formatCalibrationReport,
   readCaptureRootIdentity,
-} from './reference-image-calibrate';
+} from './reference-image-calibrate.ts';
 
 describe('compareCalibrationRuns', () => {
   it('reports agreement when every run recorded the same pixel hash', () => {

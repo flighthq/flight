@@ -9,8 +9,8 @@ import {
   parseRegisteredParticleFormat,
   registerParticleFormat,
   unregisterParticleFormat,
-} from './formatRegistry';
-import { parseParticleConfig, parseParticleConfigDocument } from './parseParticleConfig';
+} from './formatRegistry.ts';
+import { parseParticleConfig, parseParticleConfigDocument } from './parseParticleConfig.ts';
 
 // A minimal test codec for use across all tests
 const TEST_KIND = 'test.MyFormat';

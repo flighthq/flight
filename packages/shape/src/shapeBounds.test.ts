@@ -1,8 +1,8 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
-import { registerDefaultShapeBoundsCommands } from './registerDefaultShapeBoundsCommands';
-import { createShape } from './shape';
+import { registerDefaultShapeBoundsCommands } from './registerDefaultShapeBoundsCommands.ts';
+import { createShape } from './shape.ts';
 import {
   computeShapeBoundsRectangle,
   defaultShapeBoundsCubicCurveTo,
@@ -21,8 +21,8 @@ import {
   normalizeShapeStrokeMiterLimit,
   normalizeShapeStrokeWidth,
   setShapeBoundsGuard,
-} from './shapeBounds';
-import { registerShapeBoundsCommand } from './shapeBoundsRegistry';
+} from './shapeBounds.ts';
+import { registerShapeBoundsCommand } from './shapeBoundsRegistry.ts';
 import {
   appendShapeBeginFill,
   appendShapeCubicCurveTo,
@@ -35,7 +35,7 @@ import {
   appendShapeRoundedRectangle,
   appendShapeRectangle,
   appendShapeTangentArcTo,
-} from './shapeCommands';
+} from './shapeCommands.ts';
 
 beforeAll(() => {
   registerDefaultShapeBoundsCommands();

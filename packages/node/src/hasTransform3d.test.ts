@@ -1,8 +1,8 @@
 import { createQuaternion, createVector3 } from '@flighthq/geometry/contract';
 import type { HasTransform3D, HasTransform3DRuntime, Node, NodeRuntime } from '@flighthq/types/contract';
 
-import { initTransform3DRuntimeTrait, initTransform3DTrait } from './hasTransform3d';
-import { createNode, createNodeRuntime } from './node';
+import { initTransform3DRuntimeTrait, initTransform3DTrait } from './hasTransform3d.ts';
+import { createNode, createNodeRuntime } from './node.ts';
 
 describe('initTransform3DRuntimeTrait', () => {
   let runtime: NodeRuntime<HasTransform3D> & HasTransform3DRuntime;

@@ -3,9 +3,9 @@ import { addNodeChild } from '@flighthq/node/contract';
 import type { MeshMorph, VertexAttributeLayout } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createMesh } from './mesh';
-import { prepareScene3DMorph } from './prepareScene3DMorph';
-import { createNode3D } from './sceneNode';
+import { createMesh } from './mesh.ts';
+import { prepareScene3DMorph } from './prepareScene3DMorph.ts';
+import { createNode3D } from './sceneNode.ts';
 
 const POSITION_LAYOUT: VertexAttributeLayout = {
   attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],

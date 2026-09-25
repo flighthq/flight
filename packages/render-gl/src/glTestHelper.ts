@@ -5,7 +5,7 @@ import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { GlShaderLocations } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
-import { createGlContextState, createGlRenderStateRuntime } from './glRenderState';
+import { createGlContextState, createGlRenderStateRuntime } from './glRenderState.ts';
 
 export function createGlState(options?: { allowSmoothing?: boolean }): {
   state: GlRenderState;

@@ -7,15 +7,15 @@ import type {
   WgpuSkinningAdapter,
 } from '@flighthq/types/contract';
 
-import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
+import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail.ts';
 import {
   createWgpuMeshPipeline,
   ensureWgpuPlaceholderTextureView,
   ensureWgpuScene3DPipeline,
   getWgpuMeshPreludeWgsl,
   stashWgpuUvTransform,
-} from './wgpuMeshPipeline';
-import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
+} from './wgpuMeshPipeline.ts';
+import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime.ts';
 // Ensures (and caches per material reference) the debug Material bind group — a uniform buffer + the
 // shared sampler + the placeholder texture — and rewrites its uniform with this surface's params. The
 // params vec4 packs near/far (depth mode) and normalScale (normal mode) into one buffer shared by both

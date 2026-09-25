@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
-import { getFunctionExports } from './completeness-core';
-import { getSelectors, selectPackages } from './select';
+import { getFunctionExports } from './completeness-core.ts';
+import { getSelectors, selectPackages } from './select.ts';
 
 // Gate: every exported function has a colocated describe block named after it.
 //

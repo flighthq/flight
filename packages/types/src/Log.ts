@@ -1,4 +1,4 @@
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';
 
 // Severity doubles as a verbosity threshold. Console output shows an entry when the configured
 // console level is at or above the entry's level (so Error surfaces first, Verbose only at the top);

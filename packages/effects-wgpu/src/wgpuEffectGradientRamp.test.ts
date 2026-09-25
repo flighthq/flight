@@ -1,7 +1,7 @@
 import { installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { WgpuRenderState } from '@flighthq/types/contract';
 
-import { getWgpuEffectGradientRampTexture } from './wgpuEffectGradientRamp';
+import { getWgpuEffectGradientRampTexture } from './wgpuEffectGradientRamp.ts';
 
 // The WebGPU flag enums are type-level only in @webgpu/types, so jsdom has no runtime values for the
 // usage bits this module ORs together. The device below is a fake, but the constants have to be real.

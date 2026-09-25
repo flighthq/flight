@@ -1,5 +1,5 @@
-import { createSignal } from './signal';
-import { connectSignalAtFrameRate, connectSignalDebounced, connectSignalThrottled } from './throttle';
+import { createSignal } from './signal.ts';
+import { connectSignalAtFrameRate, connectSignalDebounced, connectSignalThrottled } from './throttle.ts';
 
 describe('connectSignalAtFrameRate', () => {
   it('fires the slot only when accumulated delta reaches the period', () => {

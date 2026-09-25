@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { VoxelGrid } from '@flighthq/types/contract';
 import { VoxelGridTextureSourceKind } from '@flighthq/types/contract';
 
-import { invalidateVoxelGrid } from './voxelGrid';
+import { invalidateVoxelGrid } from './voxelGrid.ts';
 
 function voxelGrid(version: number): VoxelGrid {
   const out = allocateEntity<VoxelGrid>();

@@ -1,7 +1,7 @@
 import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 
-import { parseParticleDesignerPlist, parseParticleDesignerPlistDocument } from './particleDesignerParse';
-import { serializeParticleDesignerPlist, serializeParticleDesignerPlistDocument } from './particleDesignerSerialize';
+import { parseParticleDesignerPlist, parseParticleDesignerPlistDocument } from './particleDesignerParse.ts';
+import { serializeParticleDesignerPlist, serializeParticleDesignerPlistDocument } from './particleDesignerSerialize.ts';
 
 const FIRE_PLIST = `<?xml version="1.0" encoding="utf-8"?>
 <plist version="1.0">

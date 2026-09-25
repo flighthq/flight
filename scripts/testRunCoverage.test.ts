@@ -9,7 +9,7 @@ import {
   findUnrunTestPackages,
   isFilteredTestRun,
   isTestRunCoverageFailure,
-} from './testRunCoverage';
+} from './testRunCoverage.ts';
 
 const COVERED: Readonly<Parameters<typeof isTestRunCoverageFailure>[0]> = {
   interrupted: false,

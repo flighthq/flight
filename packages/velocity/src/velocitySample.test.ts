@@ -1,7 +1,7 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 
-import { contributeVelocity, createVelocityField, ensureVelocitySample, suppressVelocity } from './velocityField';
-import { getVelocitySampleAt } from './velocitySample';
+import { contributeVelocity, createVelocityField, ensureVelocitySample, suppressVelocity } from './velocityField.ts';
+import { getVelocitySampleAt } from './velocitySample.ts';
 
 describe('getVelocitySampleAt', () => {
   it('returns zero when the sample has no previousWorldTransform', () => {

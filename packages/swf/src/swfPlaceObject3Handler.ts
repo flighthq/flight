@@ -16,9 +16,9 @@ import {
   readSwfColorTransform,
   resolveSwfAdvancedBlendMode,
   resolveSwfBlendMode,
-} from './swfAppearance';
-import { readSwfFilterList } from './swfFilter';
-import { IDENTITY_MATRIX, readSwfMatrix } from './swfPrimitive';
+} from './swfAppearance.ts';
+import { readSwfFilterList } from './swfFilter.ts';
+import { IDENTITY_MATRIX, readSwfMatrix } from './swfPrimitive.ts';
 
 const TAG_PLACE_OBJECT_3 = 70;
 const TAG_PLACE_OBJECT_4 = 94;

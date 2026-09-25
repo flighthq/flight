@@ -6,8 +6,8 @@ import {
   applyDirectionalBlurEffectToGl,
   glDirectionalBlurEffectRunner,
   registerGlDirectionalBlurEffect,
-} from './glDirectionalBlurEffect';
-import * as glEffectProgramCache from './glEffectProgramCache';
+} from './glDirectionalBlurEffect.ts';
+import * as glEffectProgramCache from './glEffectProgramCache.ts';
 
 // ★ THE SHADER IS READ FROM THE ARGUMENT THE EFFECT HANDS THE PROGRAM CACHE, not from the source file on
 // disk. Both reach the same text, but the disk route needs `node:fs` in a RENDER package's tests, which

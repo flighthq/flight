@@ -1,7 +1,7 @@
 import type { HostBitmapCapabilities } from '@flighthq/types/contract';
 
-import { webHostBitmapEncode } from './webBitmapEncode';
-import { webHostBitmapReadback } from './webBitmapReadback';
+import { webHostBitmapEncode } from './webBitmapEncode.ts';
+import { webHostBitmapReadback } from './webBitmapReadback.ts';
 
 export const webHostBitmap = {
   encode: webHostBitmapEncode,

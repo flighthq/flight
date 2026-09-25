@@ -1,4 +1,4 @@
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';
 
 // Metadata Electron's built-in Squirrel updater can prove at the downloaded boundary. A null field is
 // unknown; providers must not fabricate a sentinel, default, or richer electron-updater-only fact.

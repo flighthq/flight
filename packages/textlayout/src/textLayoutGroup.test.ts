@@ -1,4 +1,4 @@
-import { createTextLayoutGroup, initializeTextLayoutGroup } from './textLayoutGroup';
+import { createTextLayoutGroup, initializeTextLayoutGroup } from './textLayoutGroup.ts';
 
 describe('createTextLayoutGroup', () => {
   it('initializes with zero metrics', () => {

@@ -1,6 +1,6 @@
 import type { BitmapEdgeMode, BitmapRegion, BitmapResizeMode, BitmapResizeOptions } from '@flighthq/types/contract';
 
-import { invalidateBitmap } from './bitmap';
+import { invalidateBitmap } from './bitmap.ts';
 
 /**
  * Resamples the `source` region into the `dest` region; `dest`'s dimensions

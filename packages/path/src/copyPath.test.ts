@@ -1,5 +1,5 @@
-import { clonePath, copyPath } from './copyPath';
-import { appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path';
+import { clonePath, copyPath } from './copyPath.ts';
+import { appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path.ts';
 
 describe('clonePath', () => {
   it('returns a new path with the same commands and data', () => {

@@ -5,8 +5,8 @@ import {
   areScene2DResourceFailureGuardsEnabled,
   disableScene2DResourceFailureGuards,
   enableScene2DResourceFailureGuards,
-} from './enableScene2DResourceFailureGuards';
-import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics';
+} from './enableScene2DResourceFailureGuards.ts';
+import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);

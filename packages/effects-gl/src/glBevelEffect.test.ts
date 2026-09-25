@@ -5,10 +5,10 @@
 import { createBevelEffect } from '@flighthq/effects/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 
-import { applyBevelEffectToGl, glBevelEffectRunner, registerGlBevelEffect } from './glBevelEffect';
-import * as glEffectBlitShaderMod from './glEffectBlitShader';
-import * as glEffectBoxBlurMod from './glEffectBoxBlur';
-import * as glEffectTintShaderMod from './glEffectTintShader';
+import { applyBevelEffectToGl, glBevelEffectRunner, registerGlBevelEffect } from './glBevelEffect.ts';
+import * as glEffectBlitShaderMod from './glEffectBlitShader.ts';
+import * as glEffectBoxBlurMod from './glEffectBoxBlur.ts';
+import * as glEffectTintShaderMod from './glEffectTintShader.ts';
 
 const glMock = {
   uniform1f: vi.fn(),

@@ -6,8 +6,8 @@ import {
 } from '@flighthq/render/contract';
 import { RenderRegistries } from '@flighthq/types/contract';
 
-import { getGlShapeRasterizer, registerGlShapeRasterizer } from './glShapeRasterizer';
-import { createGlState } from './glTestHelper';
+import { getGlShapeRasterizer, registerGlShapeRasterizer } from './glShapeRasterizer.ts';
+import { createGlState } from './glTestHelper.ts';
 
 describe('getGlShapeRasterizer', () => {
   it('reports none until one is registered', () => {

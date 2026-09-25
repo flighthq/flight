@@ -13,7 +13,7 @@ import type {
 import { ExtendedPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { attachGltfPbrExtension, findGltfPbrExtension } from './gltfMaterialExtension';
+import { attachGltfPbrExtension, findGltfPbrExtension } from './gltfMaterialExtension.ts';
 
 function makeDocument(material: MaterialLike): Scene3DDocument {
   return {

@@ -1,10 +1,10 @@
 import { createTexture } from '@flighthq/texture/contract';
 import type { TextureSource } from '@flighthq/types/contract';
 
-import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
-import { createCanvasRenderState } from './canvasTestSupport';
-import { registerCanvasTextureResolver } from './canvasTestSupport';
-import { explainCanvasTextureResolution } from './explainCanvasTextureResolution';
+import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport.ts';
+import { createCanvasRenderState } from './canvasTestSupport.ts';
+import { registerCanvasTextureResolver } from './canvasTestSupport.ts';
+import { explainCanvasTextureResolution } from './explainCanvasTextureResolution.ts';
 
 describe('explainCanvasTextureResolution', () => {
   it('distinguishes missing kinds, missing resolvers, and registered resolvers', () => {

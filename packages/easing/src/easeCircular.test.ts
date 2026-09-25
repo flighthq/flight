@@ -1,4 +1,4 @@
-import { easeInCircular, easeInOutCircular, easeOutCircular } from './easeCircular';
+import { easeInCircular, easeInOutCircular, easeOutCircular } from './easeCircular.ts';
 
 describe('easeInCircular', () => {
   it('returns 0 at t=0 and 1 at t=1', () => {

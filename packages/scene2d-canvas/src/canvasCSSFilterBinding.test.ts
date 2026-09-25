@@ -6,8 +6,8 @@ import {
   getCanvasCssFilter,
   resolveCanvasCssFilter,
   setCanvasCssFilter,
-} from './canvasCSSFilterBinding';
-import { createCanvasRenderState } from './canvasTestSupport';
+} from './canvasCSSFilterBinding.ts';
+import { createCanvasRenderState } from './canvasTestSupport.ts';
 
 function makeState() {
   const canvas = document.createElement('canvas');

@@ -1,4 +1,4 @@
-import type { ShellProcess, HostShellProcessCapability, ShellProcessExitStatus, ShellProcessOptions } from './Shell';
+import type { ShellProcess, HostShellProcessCapability, ShellProcessExitStatus, ShellProcessOptions } from './Shell.ts';
 
 describe('HostShellProcessCapability', () => {
   it('spawns one process from an argument vector and optional process options', () => {

@@ -7,9 +7,9 @@ import {
   UnityParticleFormatKind,
 } from '@flighthq/types/contract';
 
-import { detectParticleFormat } from './detect';
-import { unregisterParticleFormat } from './formatRegistry';
-import { registerBuiltInParticleFormats } from './registerBuiltInParticleFormats';
+import { detectParticleFormat } from './detect.ts';
+import { unregisterParticleFormat } from './formatRegistry.ts';
+import { registerBuiltInParticleFormats } from './registerBuiltInParticleFormats.ts';
 
 beforeEach(() => registerBuiltInParticleFormats());
 

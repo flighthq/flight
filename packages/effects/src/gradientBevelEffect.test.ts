@@ -5,7 +5,7 @@ import {
   getGradientBevelEffectPadding,
   initializeGradientBevelEffect,
   registerGradientBevelEffectPaddingResolver,
-} from './gradientBevelEffect';
+} from './gradientBevelEffect.ts';
 
 describe('createGradientBevelEffect', () => {
   it('tags the intent type', () => {

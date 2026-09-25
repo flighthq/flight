@@ -19,7 +19,7 @@ import {
   isPerspectiveProjection,
   isRawProjection,
   setProjectionMatrix4,
-} from './projection';
+} from './projection.ts';
 
 describe('createOrthographicProjection', () => {
   it('builds an orthographic descriptor from half-extents', () => {

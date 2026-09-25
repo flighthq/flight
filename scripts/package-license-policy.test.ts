@@ -1,4 +1,8 @@
-import { FLIGHT_PACKAGE_AUTHOR, FLIGHT_PACKAGE_LICENSE, getPackageLicenseViolations } from './package-license-policy';
+import {
+  FLIGHT_PACKAGE_AUTHOR,
+  FLIGHT_PACKAGE_LICENSE,
+  getPackageLicenseViolations,
+} from './package-license-policy.ts';
 
 describe('package license policy', () => {
   it('accepts the repository author and license declaration', () => {

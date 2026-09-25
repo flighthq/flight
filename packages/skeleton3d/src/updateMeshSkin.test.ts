@@ -9,8 +9,8 @@ import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createMesh, createNode3D } from '@flighthq/scene3d/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createSkeleton3D } from './skeleton3d';
-import { updateMeshSkin } from './updateMeshSkin';
+import { createSkeleton3D } from './skeleton3d.ts';
+import { updateMeshSkin } from './updateMeshSkin.ts';
 
 function createOneVertexSkinnedMesh() {
   const vertices = new Float32Array(20);

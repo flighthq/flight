@@ -15,7 +15,7 @@ import {
   populateElectronHostFileOpenDialog,
   populateElectronHostFileSaveDialog,
   populateElectronHostMessageDialog,
-} from './electronDialog';
+} from './electronDialog.ts';
 
 function fakeElectron(overrides: {
   open?: { canceled: boolean; filePaths: string[] } | Error;

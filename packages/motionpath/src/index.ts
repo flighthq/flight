@@ -8,4 +8,4 @@ export {
   setMotionPathProgress,
   setMotionPathDirection,
   updateMotionPath,
-} from './contract';
+} from './contract.ts';

@@ -4,9 +4,9 @@ import { createGlRenderState } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget, GodRaysEffect } from '@flighthq/types/contract';
 
-import * as glEffectProgramCache from './glEffectProgramCache';
-import { getGlEffectRunner } from './glEffectRegistry';
-import { applyGodRaysEffectToGl, glGodRaysEffectRunner, registerGlGodRaysEffect } from './glGodRaysEffect';
+import * as glEffectProgramCache from './glEffectProgramCache.ts';
+import { getGlEffectRunner } from './glEffectRegistry.ts';
+import { applyGodRaysEffectToGl, glGodRaysEffectRunner, registerGlGodRaysEffect } from './glGodRaysEffect.ts';
 
 const glMock = {
   uniform1f: vi.fn((_location: unknown, _value: number) => {}),

@@ -4,10 +4,10 @@ import { createGlRenderState } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget, TiltShiftEffect } from '@flighthq/types/contract';
 
-import * as glEffectProgramCache from './glEffectProgramCache';
-import { getGlEffectRunner } from './glEffectRegistry';
-import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
-import { applyTiltShiftEffectToGl, glTiltShiftEffectRunner, registerGlTiltShiftEffect } from './glTiltShiftEffect';
+import * as glEffectProgramCache from './glEffectProgramCache.ts';
+import { getGlEffectRunner } from './glEffectRegistry.ts';
+import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper.ts';
+import { applyTiltShiftEffectToGl, glTiltShiftEffectRunner, registerGlTiltShiftEffect } from './glTiltShiftEffect.ts';
 
 const glMock = {
   uniform1f: vi.fn((_location: unknown, _value: number) => {}),

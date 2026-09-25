@@ -9,7 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 import { MorphShapeKind } from '@flighthq/types/contract';
 
-import { setMorphShapeProgress } from './morphShape';
+import { setMorphShapeProgress } from './morphShape.ts';
 
 // Samples every channel at `time` and applies the channels carrying MorphShapeAnimationTarget refs.
 // Foreign targets are ignored, so one clip may compose MorphShape progress with other domain sinks.

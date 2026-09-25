@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, GodRaysEffect } from '@flighthq/types/contract';
 
-import { initializeEffect } from './effect';
+import { initializeEffect } from './effect.ts';
 
 export function createGodRaysEffect(
   options: Readonly<Omit<EntityWithoutRuntime<GodRaysEffect>, 'kind'>> = {},

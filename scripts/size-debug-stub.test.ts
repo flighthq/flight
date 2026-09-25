@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { createSizeDebugStub } from './size-debug-stub';
+import { createSizeDebugStub } from './size-debug-stub.ts';
 
 // The stub's whole job is a source transform, so it is assertable without building anything. It used
 // to be checked only from `tools/size`, whose config exists to buy a node environment and a 300s

@@ -1,4 +1,4 @@
-import { createViewport, getViewportAspect, initializeViewport } from './viewport';
+import { createViewport, getViewportAspect, initializeViewport } from './viewport.ts';
 
 describe('createViewport', () => {
   it('returns a zero rect at unit device-pixel ratio by default', () => {

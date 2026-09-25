@@ -12,9 +12,9 @@ import type {
   TextVerticalAlign,
 } from '@flighthq/types/contract';
 
-import { getTextFormatAscent, getTextFormatDescent, getTextFormatLeading, mergeTextFormat } from './textFormat';
-import { createTextLayoutGroup } from './textLayoutGroup';
-import { getTextLineBreaks } from './textLineBreaks';
+import { getTextFormatAscent, getTextFormatDescent, getTextFormatLeading, mergeTextFormat } from './textFormat.ts';
+import { createTextLayoutGroup } from './textLayoutGroup.ts';
+import { getTextLineBreaks } from './textLineBreaks.ts';
 
 /** Inner padding (px) between a text box edge and its content, applied on every side. */
 export const TEXT_LAYOUT_GUTTER = 2;

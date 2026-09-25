@@ -1,4 +1,4 @@
-import { getTextLineBreakIndex, getTextLineBreaks } from './textLineBreaks';
+import { getTextLineBreakIndex, getTextLineBreaks } from './textLineBreaks.ts';
 
 describe('getTextLineBreakIndex', () => {
   it('returns the first break at or after startIndex', () => {

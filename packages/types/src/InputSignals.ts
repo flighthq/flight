@@ -1,9 +1,9 @@
-import type { Entity } from './Entity';
-import type { InputGamepadAxisData, InputGamepadButtonData, InputGamepadConnectData } from './InputGamepadData';
-import type { InputKeyboardData } from './InputKeyboardData';
-import type { InputPointerData } from './InputPointerData';
-import type { InputTextData } from './InputTextData';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { InputGamepadAxisData, InputGamepadButtonData, InputGamepadConnectData } from './InputGamepadData.ts';
+import type { InputKeyboardData } from './InputKeyboardData.ts';
+import type { InputPointerData } from './InputPointerData.ts';
+import type { InputTextData } from './InputTextData.ts';
+import type { Signal } from './Signal.ts';
 
 export interface InputSignals extends Entity {
   onGamepadAxisMove: Signal<(data: Readonly<InputGamepadAxisData>) => void>;

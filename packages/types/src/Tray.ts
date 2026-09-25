@@ -1,8 +1,8 @@
-import type { Entity } from './Entity';
-import type { MenuItemTemplate } from './Menu';
-import type { RectangleLike } from './Rectangle';
-import type { Signal } from './Signal';
-import type { Vector2Like } from './Vector2';
+import type { Entity } from './Entity.ts';
+import type { MenuItemTemplate } from './Menu.ts';
+import type { RectangleLike } from './Rectangle.ts';
+import type { Signal } from './Signal.ts';
+import type { Vector2Like } from './Vector2.ts';
 
 // Host construction receives this target explicitly. A native host never reads process.platform or
 // probes the runtime to decide which Tray slots to claim.

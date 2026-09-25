@@ -11,7 +11,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { registerRiveCoreObjectHandler } from './riveImportRegistry';
+import { registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
 
 /**
  * Hides every child of a Solo but the one it names active.

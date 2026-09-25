@@ -1,6 +1,6 @@
 import type { Texture2D } from '@flighthq/types/contract';
 
-import { acquireSwfImageTexture } from './swfImageTexture';
+import { acquireSwfImageTexture } from './swfImageTexture.ts';
 
 describe('acquireSwfImageTexture', () => {
   it('returns the same texture for a second request with the same sampling', () => {

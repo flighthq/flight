@@ -18,9 +18,9 @@ import type {
 } from '@flighthq/types/contract';
 import { BatchFormat, Scale9SpriteKind } from '@flighthq/types/contract';
 
-import { glScale9SpriteRenderer, drawGlScale9Sprite } from './glScale9Sprite';
-import { registerGlStandardMaterial } from './glStandardMaterial';
-import { createGlState } from './glTestHelper';
+import { glScale9SpriteRenderer, drawGlScale9Sprite } from './glScale9Sprite.ts';
+import { registerGlStandardMaterial } from './glStandardMaterial.ts';
+import { createGlState } from './glTestHelper.ts';
 
 const INSTANCE_FLOATS = 13;
 

@@ -1,15 +1,15 @@
 import { createOuterGlowEffect } from '@flighthq/effects/contract';
 import * as renderWgpuContractModule from '@flighthq/render-wgpu/contract';
 
-import * as wgpuEffectBlitShaderModule from './wgpuEffectBlitShader';
-import * as wgpuEffectBoxBlurModule from './wgpuEffectBoxBlur';
-import * as wgpuEffectPassModule from './wgpuEffectPass';
-import * as wgpuEffectTintShaderModule from './wgpuEffectTintShader';
+import * as wgpuEffectBlitShaderModule from './wgpuEffectBlitShader.ts';
+import * as wgpuEffectBoxBlurModule from './wgpuEffectBoxBlur.ts';
+import * as wgpuEffectPassModule from './wgpuEffectPass.ts';
+import * as wgpuEffectTintShaderModule from './wgpuEffectTintShader.ts';
 import {
   applyOuterGlowEffectToWgpu,
   wgpuOuterGlowEffectRunner,
   registerWgpuOuterGlowEffect,
-} from './wgpuOuterGlowEffect';
+} from './wgpuOuterGlowEffect.ts';
 
 let nextTargetId = 0;
 

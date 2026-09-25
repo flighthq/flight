@@ -1,10 +1,10 @@
 import type { Entity } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { attachEntityBinding } from './binding';
-import { cloneEntity, stripEntityRuntime } from './clone';
-import { allocateEntity, finishEntity } from './entity';
-import { hasEntityRuntime } from './runtime';
+import { attachEntityBinding } from './binding.ts';
+import { cloneEntity, stripEntityRuntime } from './clone.ts';
+import { allocateEntity, finishEntity } from './entity.ts';
+import { hasEntityRuntime } from './runtime.ts';
 
 function createTestEntity(fields?: Record<string, unknown>): Entity & Record<string, unknown> {
   const out = allocateEntity<Entity>();

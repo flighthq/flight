@@ -8,7 +8,7 @@ import {
   createSelectionState,
   getSelectedNodes,
   selectAllNodes,
-} from './index';
+} from './index.ts';
 
 describe('applyPointerSelectionPolicy', () => {
   it('applies unmodified hit and empty-space behavior', () => {

@@ -1,8 +1,8 @@
 import type { Modifier } from '@flighthq/types/contract';
 import type { ModifierRegistry } from '@flighthq/types/contract';
 
-import { resolveModifier } from './modifierRegistry';
-import { orderModifierStack } from './orderModifierStack';
+import { resolveModifier } from './modifierRegistry.ts';
+import { orderModifierStack } from './orderModifierStack.ts';
 
 // Produces the stable define-key for a modifier stack — the string the compile path caches compiled
 // programs by, and the key that makes two materials with the same feature-set share one variant (and

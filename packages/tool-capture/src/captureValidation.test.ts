@@ -5,12 +5,12 @@ import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { getBaselineField, setBaselineField } from './baselineStore';
+import { getBaselineField, setBaselineField } from './baselineStore.ts';
 import {
   readCaptureBaselineCoverageManifest,
   writeCaptureBaselineCoverageManifest,
-} from './captureBaselineCoverageManifest';
-import { setCaptureTimeoutMs } from './captureTimeout';
+} from './captureBaselineCoverageManifest.ts';
+import { setCaptureTimeoutMs } from './captureTimeout.ts';
 import {
   explainCaptureParityUncovered,
   formatCaptureParityRanking,
@@ -19,7 +19,7 @@ import {
   explainCaptureVerificationStall,
   isCaptureParityCoverageFailure,
   runCaptureValidation,
-} from './captureValidation';
+} from './captureValidation.ts';
 
 const COVERED: Readonly<Parameters<typeof isCaptureParityCoverageFailure>[0]> = {
   gateParity: true,

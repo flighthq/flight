@@ -8,8 +8,8 @@ import {
   isSpring3DSettled,
   resetSpring3D,
   updateSpring3D,
-} from './spring3D';
-import { createSpringConfig } from './springConfig';
+} from './spring3D.ts';
+import { createSpringConfig } from './springConfig.ts';
 
 describe('addSpringImpulse3D', () => {
   it('adds each velocity component without changing any value', () => {

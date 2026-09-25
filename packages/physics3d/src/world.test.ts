@@ -7,13 +7,13 @@ import {
 import type { CollisionBuiltInShape3D, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { buildPhysics3DContacts } from './contactIntake';
-import { createPhysics3DContact } from './contacts';
-import { isPhysics3DPairJointSuppressed } from './jointCollisionSuppression';
-import { createPhysics3DBallAndSocketJoint } from './jointFactories';
-import { addPhysics3DJoint } from './jointRegistry';
-import { computePhysics3DSphereMassData, createPhysics3DMassData, setRigidBody3DMassData } from './massProperties';
-import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers';
+import { buildPhysics3DContacts } from './contactIntake.ts';
+import { createPhysics3DContact } from './contacts.ts';
+import { isPhysics3DPairJointSuppressed } from './jointCollisionSuppression.ts';
+import { createPhysics3DBallAndSocketJoint } from './jointFactories.ts';
+import { addPhysics3DJoint } from './jointRegistry.ts';
+import { computePhysics3DSphereMassData, createPhysics3DMassData, setRigidBody3DMassData } from './massProperties.ts';
+import { registerBuiltInPhysics3DJointSolvers } from './registerBuiltInPhysics3DJointSolvers.ts';
 import {
   Physics3DWorldVersion,
   addPhysics3DBody,
@@ -44,7 +44,7 @@ import {
   setPhysics3DBodyType,
   wakePhysics3DBody,
   writeRigidBody3DWorldCenter,
-} from './world';
+} from './world.ts';
 
 describe('addPhysics3DBody', () => {
   it('rejects static-surface geometry on a movable body', () => {

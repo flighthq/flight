@@ -1,5 +1,5 @@
-import { createBitmap } from './bitmap';
-import { pixelateBitmap } from './bitmapPixelate';
+import { createBitmap } from './bitmap.ts';
+import { pixelateBitmap } from './bitmapPixelate.ts';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };

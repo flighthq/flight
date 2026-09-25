@@ -32,8 +32,14 @@ import {
 } from '@flighthq/types/contract';
 import type { Awd2ParseState } from '@flighthq/types/contract';
 
-import { awdTransformToMatrix4, readAwdString, readAwdTransform, hasNonUnitScale, skipAwdAttrList } from './awd2Reader';
-import { AWD2_BLOCK_SKELETON, AWD2_BLOCK_SKELETON_ANIMATION, AWD2_BLOCK_SKELETON_POSE } from './awd2Schema';
+import {
+  awdTransformToMatrix4,
+  readAwdString,
+  readAwdTransform,
+  hasNonUnitScale,
+  skipAwdAttrList,
+} from './awd2Reader.ts';
+import { AWD2_BLOCK_SKELETON, AWD2_BLOCK_SKELETON_ANIMATION, AWD2_BLOCK_SKELETON_POSE } from './awd2Schema.ts';
 
 // Skeletons, their poses, and the animations that sequence them. This handler owns the only reach into
 // @flighthq/animation, so a build that does not register it links no animation code at all.

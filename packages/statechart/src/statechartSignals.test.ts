@@ -7,8 +7,8 @@ import {
   createStatechartInstance,
   fireStatechartTrigger,
   setStatechartRegionDuration,
-} from './statechart';
-import { enableStatechartSignals, getStatechartSignals, initializeStatechartSignals } from './statechartSignals';
+} from './statechart.ts';
+import { enableStatechartSignals, getStatechartSignals, initializeStatechartSignals } from './statechartSignals.ts';
 
 describe('enableStatechartSignals', () => {
   it('lazily attaches one standard signal group to the mutable instance', () => {

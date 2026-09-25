@@ -1,4 +1,4 @@
-import { easeInOutQuartic, easeInQuartic, easeOutQuartic } from './easeQuartic';
+import { easeInOutQuartic, easeInQuartic, easeOutQuartic } from './easeQuartic.ts';
 
 describe('easeInOutQuartic', () => {
   it('returns 0 at t=0 and 1 at t=1', () => {

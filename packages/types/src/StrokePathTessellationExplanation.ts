@@ -1,4 +1,4 @@
-import type { StrokePathTessellationReason } from './StrokePathTessellationReason';
+import type { StrokePathTessellationReason } from './StrokePathTessellationReason.ts';
 
 // Detached plain-data diagnostic for tessellateStrokePath. `subpath` is the zero-based flattened
 // contour that first made the direct stroke mesh unsupported, or null for a style-wide failure.

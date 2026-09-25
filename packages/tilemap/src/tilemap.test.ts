@@ -28,7 +28,7 @@ import {
   setTilemapTile,
   setTilemapTileTint,
   setTilemapTiles,
-} from './tilemap';
+} from './tilemap.ts';
 
 describe('clearTilemap', () => {
   it('fills all cells with -1', () => {

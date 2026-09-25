@@ -22,7 +22,7 @@ import {
   removeTimelineFrameScript,
   stopTimeline,
   updateTimeline,
-} from './timeline';
+} from './timeline.ts';
 
 interface MakeOptions {
   totalFrames?: number;

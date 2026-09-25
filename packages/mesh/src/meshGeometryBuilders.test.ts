@@ -1,6 +1,6 @@
 import type { MeshGeometry, MeshTriangleVertexIndices } from '@flighthq/types/contract';
 
-import { getMeshGeometryIndexCount, getMeshGeometryVertexCount } from './meshGeometry';
+import { getMeshGeometryIndexCount, getMeshGeometryVertexCount } from './meshGeometry.ts';
 import {
   createBoxMeshGeometry,
   createCapsuleMeshGeometry,
@@ -19,9 +19,9 @@ import {
   createTetrahedronMeshGeometry,
   createTorusKnotMeshGeometry,
   createTorusMeshGeometry,
-} from './meshGeometryBuilders';
-import { getMeshGeometryTriangleCount, getMeshGeometryTriangleVertexIndices } from './meshGeometryOperations';
-import { validateMeshGeometry } from './meshGeometryOperations';
+} from './meshGeometryBuilders.ts';
+import { getMeshGeometryTriangleCount, getMeshGeometryTriangleVertexIndices } from './meshGeometryOperations.ts';
+import { validateMeshGeometry } from './meshGeometryOperations.ts';
 
 function expectUnitNormals(geometry: Readonly<MeshGeometry>): void {
   const count = getMeshGeometryVertexCount(geometry);

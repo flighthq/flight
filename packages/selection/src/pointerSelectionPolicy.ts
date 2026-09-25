@@ -1,6 +1,12 @@
 import type { HierarchyNodeAny, SelectionModifierState, SelectionState } from '@flighthq/types/contract';
 
-import { addNodeToSelection, clearSelection, isNodeSelected, selectNode, toggleNodeSelection } from './selectionState';
+import {
+  addNodeToSelection,
+  clearSelection,
+  isNodeSelected,
+  selectNode,
+  toggleNodeSelection,
+} from './selectionState.ts';
 
 export function applyPointerSelectionPolicy<NodeType extends HierarchyNodeAny>(
   state: SelectionState<NodeType>,

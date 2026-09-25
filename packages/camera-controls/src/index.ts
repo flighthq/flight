@@ -26,4 +26,4 @@ export {
   updateCameraShake,
   updateFlyCameraController,
   updateOrbitCameraController,
-} from './contract';
+} from './contract.ts';

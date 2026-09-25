@@ -1,8 +1,8 @@
 import {
   createBrightnessContrastAdjustment,
   initializeBrightnessContrastAdjustment,
-} from './brightnessContrastAdjustment';
-import { applyColorMatrixToColor } from './colorMatrixMath';
+} from './brightnessContrastAdjustment.ts';
+import { applyColorMatrixToColor } from './colorMatrixMath.ts';
 
 describe('createBrightnessContrastAdjustment', () => {
   it('defaults to the identity (brightness 0, contrast 1)', () => {

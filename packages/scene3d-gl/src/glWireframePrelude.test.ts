@@ -1,12 +1,12 @@
-import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
+import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper.ts';
 import {
   compileGlWireframeProgram,
   ensureGlWireframeProgram,
   getGlWireframeFragmentSource,
   getGlWireframeVertexSource,
-} from './glWireframePrelude';
+} from './glWireframePrelude.ts';
 
 describe('compileGlWireframeProgram', () => {
   it('compiles, links, and resolves the color + transform locations with a null normal matrix', () => {

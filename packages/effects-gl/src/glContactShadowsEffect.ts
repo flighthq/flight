@@ -6,8 +6,8 @@ import type {
   GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { registerGlEffect } from './glEffectRegistry';
-import { applySsaoEffectToGl } from './glSsaoEffect';
+import { registerGlEffect } from './glEffectRegistry.ts';
+import { applySsaoEffectToGl } from './glSsaoEffect.ts';
 
 // Contact shadows share the local-occlusion realization used by SSAO until the effect pipeline
 // exposes a sampleable depth attachment. Keeping the mapping in its own leaf gives the public

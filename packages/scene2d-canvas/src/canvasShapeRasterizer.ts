@@ -1,6 +1,6 @@
 import type { CanvasTextureResolvers, NonEntityCreateResult, ShapeRasterizer } from '@flighthq/types/contract';
 
-import { renderCanvasShapeCommands } from './canvasShape';
+import { renderCanvasShapeCommands } from './canvasShape.ts';
 
 // Builds the rasterizer a GPU or DOM backend registers to draw the fills it has no tessellated form for.
 //

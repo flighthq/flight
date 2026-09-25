@@ -9,10 +9,10 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition';
-import { readSwfEditTextFactory } from './swfEditText';
-import { applySwfAuthoredBounds } from './swfNode';
-import { SwfReader } from './swfReader';
+import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition.ts';
+import { readSwfEditTextFactory } from './swfEditText.ts';
+import { applySwfAuthoredBounds } from './swfNode.ts';
+import { SwfReader } from './swfReader.ts';
 
 const TAG_DEFINE_EDIT_TEXT = 37;
 

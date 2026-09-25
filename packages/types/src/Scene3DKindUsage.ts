@@ -1,5 +1,5 @@
-import type { Entity, Kind } from './Entity';
-import type { TextureSourceKind } from './TextureSourceKind';
+import type { Entity, Kind } from './Entity.ts';
+import type { TextureSourceKind } from './TextureSourceKind.ts';
 
 // What a Scene3D actually uses, as plain kinds — the inventory half of "will this document draw?".
 // Produced by a walk over the scene (getScene3DKindUsage) and consumed by whoever holds a registry:

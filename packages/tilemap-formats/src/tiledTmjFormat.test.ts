@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseTiledTilesetJson, parseTiledTmj } from './tiledJsonParse';
-import { formatTiledTilesetJson, formatTiledTmj } from './tiledTmjFormat';
-import { formatTiledTileset } from './tiledTmxFormat';
-import { parseTiledTileset, parseTiledTmx } from './tiledXmlParse';
+import { parseTiledTilesetJson, parseTiledTmj } from './tiledJsonParse.ts';
+import { formatTiledTilesetJson, formatTiledTmj } from './tiledTmjFormat.ts';
+import { formatTiledTileset } from './tiledTmxFormat.ts';
+import { parseTiledTileset, parseTiledTmx } from './tiledXmlParse.ts';
 
 // Mirrors the TMX round-trip fixture: every modeled construct in one document, so a single re-parse
 // proves the set rather than each field alone.

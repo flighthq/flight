@@ -1,7 +1,7 @@
 import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/types/contract';
 
-import { parseAwd2Header } from './awd2Header';
-import { rehydrateAwd2Body } from './awd2Parse';
+import { parseAwd2Header } from './awd2Header.ts';
+import { rehydrateAwd2Body } from './awd2Parse.ts';
 import {
   AWD2_BLOCK_CAMERA,
   AWD2_BLOCK_CONTAINER,
@@ -17,7 +17,7 @@ import {
   AWD2_BLOCK_TRIANGLE_GEOMETRY,
   AWD2_HEADER_BYTES,
   AWD2_NAMESPACE_CORE,
-} from './awd2Schema';
+} from './awd2Schema.ts';
 
 /**
  * Walks the block stream and counts how many blocks of each core-namespace type appear, reading only

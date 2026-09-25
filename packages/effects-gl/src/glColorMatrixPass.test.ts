@@ -1,9 +1,9 @@
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import { applyColorMatrixPassToGl } from './glColorMatrixPass';
-import * as glEffectProgramCache from './glEffectProgramCache';
-import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
+import { applyColorMatrixPassToGl } from './glColorMatrixPass.ts';
+import * as glEffectProgramCache from './glEffectProgramCache.ts';
+import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper.ts';
 
 const programMock = {
   getGlEffectProgram: vi.fn((_state: unknown, _key: string, _source: string) => ({ program: {} })),

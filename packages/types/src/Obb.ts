@@ -1,4 +1,4 @@
-import type { Entity, EntityWithoutRuntime } from './Entity';
+import type { Entity, EntityWithoutRuntime } from './Entity.ts';
 
 // Oriented bounding box: a center point, half-extents along the three local axes, and an
 // orientation quaternion (x, y, z, w) mapping local axes to world space. A half-extent of

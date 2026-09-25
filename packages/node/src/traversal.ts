@@ -1,7 +1,7 @@
 import type { Node, NodeDescendantVisitor, NodeOf, NodeTraits } from '@flighthq/types/contract';
 
-import { getNodeParent } from './hierarchy';
-import { getNodeRuntime } from './node';
+import { getNodeParent } from './hierarchy.ts';
+import { getNodeRuntime } from './node.ts';
 
 /**
  * Finds the first descendant of `source` (depth-first pre-order) that satisfies `predicate`.

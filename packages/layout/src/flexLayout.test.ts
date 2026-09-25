@@ -1,9 +1,9 @@
 import type { FlexLayoutContainerStyle, FlexLayoutItemStyle, LayoutNode } from '@flighthq/types/contract';
 import { FlexLayoutKind } from '@flighthq/types/contract';
 
-import { registerFlexLayoutResolver } from './flexLayout';
-import { createLayoutState } from './layoutState';
-import { explainLayoutResolution, resolveLayoutTree } from './resolveLayoutTree';
+import { registerFlexLayoutResolver } from './flexLayout.ts';
+import { createLayoutState } from './layoutState.ts';
+import { explainLayoutResolution, resolveLayoutTree } from './resolveLayoutTree.ts';
 
 function root(containerStyle: FlexLayoutContainerStyle | null = null): LayoutNode {
   return { containerStyle, itemStyle: null, kind: FlexLayoutKind, parentIndex: -1 };

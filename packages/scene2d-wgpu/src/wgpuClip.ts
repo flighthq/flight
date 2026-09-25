@@ -1,8 +1,8 @@
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type { Node2D, Scene2DClipHooks, RenderProxy2D, WgpuRenderState } from '@flighthq/types/contract';
 
-import { popWgpuClipContours, pushWgpuClipContours } from './wgpuClipContours';
-import { popWgpuClipRectangle, pushWgpuClipRectangle } from './wgpuClipRectangle';
+import { popWgpuClipContours, pushWgpuClipContours } from './wgpuClipContours.ts';
+import { popWgpuClipRectangle, pushWgpuClipRectangle } from './wgpuClipRectangle.ts';
 
 // Masks RETIRED — a former mask is a path ClipRegion. Clip = scissor (rect) or stencil-then-cover
 // (contour); independent gates that AND when nested. `runtime.clipForms` records each clip's form for unwind.

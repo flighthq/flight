@@ -5,7 +5,7 @@ import {
   affectsTools,
   resolveChangedTestArguments,
   shouldRunPrepushTypecheck,
-} from './prepush';
+} from './prepush.ts';
 
 describe('shouldRunPrepushTypecheck', () => {
   it('skips typecheck for an explicit Markdown-only change', () => {

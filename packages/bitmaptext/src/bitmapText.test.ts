@@ -24,8 +24,8 @@ import {
   setBitmapTextMaxLines,
   setBitmapTextText,
   setBitmapTextWrapWidth,
-} from './bitmapText';
-import { updateBitmapText } from './updateBitmapText';
+} from './bitmapText.ts';
+import { updateBitmapText } from './updateBitmapText.ts';
 
 // A single-page glyph source: A/B are 6x8, a space advances 5, and page 0 is a stub `ImageResource`.
 function createTestGlyphSource(): GlyphSource {

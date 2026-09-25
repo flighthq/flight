@@ -1,9 +1,9 @@
 import type { CollisionShape2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { collideContactManifold2D } from './collideContactManifold2D';
-import { createCollisionContactManifold2D } from './contactManifold2D';
-import { collideAabbAabbContactManifold2D, collideCircleAabbContactManifold2D } from './shapeContact2D';
+import { collideContactManifold2D } from './collideContactManifold2D.ts';
+import { createCollisionContactManifold2D } from './contactManifold2D.ts';
+import { collideAabbAabbContactManifold2D, collideCircleAabbContactManifold2D } from './shapeContact2D.ts';
 
 describe('collideContactManifold2D', () => {
   it('dispatches a box-box pair to the same contact as the direct function', () => {

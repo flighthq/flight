@@ -43,7 +43,7 @@ import {
 } from '@flighthq/geometry/contract';
 import type { Matrix, Matrix3Like, Matrix4Like } from '@flighthq/types/contract';
 
-import { initializeMatrix } from './matrix';
+import { initializeMatrix } from './matrix.ts';
 
 describe('cloneMatrix', () => {
   it('should clone the matrix3x2 correctly', () => {

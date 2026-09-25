@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { findOpenTypeUnicodeSubtable, rankOpenTypeUnicodeEncoding, readOpenTypeCodepointMap } from './openTypeCmap';
-import { createSyntheticFont } from './openTypeTestHelper';
-import { readSfntTableDirectory } from './sfntTableDirectory';
+import { findOpenTypeUnicodeSubtable, rankOpenTypeUnicodeEncoding, readOpenTypeCodepointMap } from './openTypeCmap.ts';
+import { createSyntheticFont } from './openTypeTestHelper.ts';
+import { readSfntTableDirectory } from './sfntTableDirectory.ts';
 
 describe('findOpenTypeUnicodeSubtable', () => {
   it('finds the sub-table a font declares', () => {

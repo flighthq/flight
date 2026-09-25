@@ -1,5 +1,10 @@
-export { disposeMidiAccess, getMidiAccessInputPorts, getMidiAccessOutputPorts, requestMidiAccess } from './midiAccess';
-export * from './midiPermission';
+export {
+  disposeMidiAccess,
+  getMidiAccessInputPorts,
+  getMidiAccessOutputPorts,
+  requestMidiAccess,
+} from './midiAccess.ts';
+export * from './midiPermission.ts';
 export {
   closeMidiPort,
   disposeMidiPort,
@@ -7,7 +12,7 @@ export {
   getMidiPortState,
   openMidiPort,
   sendMidiMessage,
-} from './midiPort';
+} from './midiPort.ts';
 export {
   attachMidiAccessStateSubscription,
   attachMidiInputMessageSubscription,
@@ -21,4 +26,4 @@ export {
   disposeMidiAccessStateSubscription,
   disposeMidiInputMessageSubscription,
   disposeMidiPortStateSubscription,
-} from './midiSubscription';
+} from './midiSubscription.ts';

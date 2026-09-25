@@ -21,7 +21,7 @@ import {
   getWgpuVelocityWriter,
   registerWgpuVelocityWriter,
   renderWgpuVelocity,
-} from './wgpuVelocity';
+} from './wgpuVelocity.ts';
 
 beforeAll(() => {
   installWgpuMock();

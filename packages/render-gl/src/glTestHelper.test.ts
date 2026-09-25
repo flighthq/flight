@@ -1,4 +1,4 @@
-import { makeGL } from './glTestHelper';
+import { makeGL } from './glTestHelper.ts';
 
 describe('makeGL', () => {
   it('keeps draw validation outside a test-installed mock implementation', () => {

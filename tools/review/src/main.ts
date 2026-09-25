@@ -1,32 +1,32 @@
 import { tests } from 'virtual:review-manifest';
 
-import { parseReviewApprovals, serializeReviewApprovals } from './approvalState';
+import { parseReviewApprovals, serializeReviewApprovals } from './approvalState.ts';
 import {
   isReviewableCell,
   nextReviewableCell,
   referenceCells,
   reviewableCells,
   selectedReviewableCell,
-} from './cellRole';
+} from './cellRole.ts';
 import {
   isReviewCommissionEligible,
   reviewCommissionIneligibility,
   reviewCommissionIneligibilityMessage,
   selectReviewCommissionCells,
-} from './commissionEligibility';
-import { reviewMissingReferenceMessage } from './commissionState';
-import type { ReviewCommissionState as CommissionState } from './commissionState';
-import { createReviewCommissionPayloadCell, markReviewCommissionRequested } from './referenceImageCommission';
-import { filterReviewItems } from './reviewFilter';
-import { parseReviewManifest } from './reviewManifest';
-import type { ReviewCell, ReviewTest } from './reviewManifest';
+} from './commissionEligibility.ts';
+import { reviewMissingReferenceMessage } from './commissionState.ts';
+import type { ReviewCommissionState as CommissionState } from './commissionState.ts';
+import { createReviewCommissionPayloadCell, markReviewCommissionRequested } from './referenceImageCommission.ts';
+import { filterReviewItems } from './reviewFilter.ts';
+import { parseReviewManifest } from './reviewManifest.ts';
+import type { ReviewCell, ReviewTest } from './reviewManifest.ts';
 import {
   orderReviewItems,
   resolveReviewAttentionGroup,
   REVIEW_ATTENTION_GROUP_ORDER,
   reviewItemByVisualDelta,
-} from './reviewOrder';
-import type { ReviewAttentionGroup as AttentionGroup } from './reviewOrder';
+} from './reviewOrder.ts';
+import type { ReviewAttentionGroup as AttentionGroup } from './reviewOrder.ts';
 
 const STORAGE_KEY = 'review-selected';
 const APPROVALS_STORAGE_KEY = 'review-approvals';

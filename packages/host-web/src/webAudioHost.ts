@@ -1,8 +1,8 @@
 import type { HostAudioCapabilities } from '@flighthq/types/contract';
 
-import { webHostAudio } from './webAudio';
-import { webHostAudioDevice } from './webAudioDevice';
-import { webHostAudioMixer } from './webAudioMixer';
+import { webHostAudio } from './webAudio.ts';
+import { webHostAudioDevice } from './webAudioDevice.ts';
+import { webHostAudioMixer } from './webAudioMixer.ts';
 
 export const webHostAudioGroup = {
   codec: webHostAudio,

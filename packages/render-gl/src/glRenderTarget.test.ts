@@ -3,8 +3,8 @@ import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { beginGlRenderPass, endGlRenderPass } from './glRenderPass';
-import { getGlRenderStateRuntime } from './glRenderState';
+import { beginGlRenderPass, endGlRenderPass } from './glRenderPass.ts';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
 import {
   createGlScreenRenderTarget,
   createGlTextureRenderTarget,
@@ -17,8 +17,8 @@ import {
   resizeGlTextureRenderTarget,
   resolveGlTextureRenderTarget,
   resolveGlRenderTargetAxes,
-} from './glRenderTarget';
-import { createGlState, makeGL } from './glTestHelper';
+} from './glRenderTarget.ts';
+import { createGlState, makeGL } from './glTestHelper.ts';
 
 function makeState() {
   const { state: _state, gl: _gl } = createGlState();

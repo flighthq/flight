@@ -8,8 +8,8 @@ import type {
   LogEntry,
 } from '@flighthq/types/contract';
 
-import { addAudioBusToMixer, createAudioBus, createAudioMixer, setAudioBusGain } from './audioMixer';
-import { disableAudioMixerGuards, enableAudioMixerGuards } from './enableAudioMixerGuards';
+import { addAudioBusToMixer, createAudioBus, createAudioMixer, setAudioBusGain } from './audioMixer.ts';
+import { disableAudioMixerGuards, enableAudioMixerGuards } from './enableAudioMixerGuards.ts';
 
 const device = 1 as AudioDeviceHandle;
 const graph = 1 as AudioMixerGraphHandle;

@@ -3,13 +3,13 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { HostAudioDeviceCapability, AudioDeviceHandle, AudioSourceHandle } from '@flighthq/types/contract';
 
-import { pauseAudioChannel, playAudioResource, resumeAudioChannel, stopAudioChannel } from './audioChannel';
+import { pauseAudioChannel, playAudioResource, resumeAudioChannel, stopAudioChannel } from './audioChannel.ts';
 import {
   enableAudioChannelSignals,
   enableVideoChannelSignals,
   getAudioChannelSignals,
   getVideoChannelSignals,
-} from './mediaChannelSignals';
+} from './mediaChannelSignals.ts';
 
 const device = 1 as unknown as AudioDeviceHandle;
 let onEnded: Map<number, (() => void) | null>;

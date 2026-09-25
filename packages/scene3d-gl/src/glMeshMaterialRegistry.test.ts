@@ -11,9 +11,9 @@ import {
   getGlMeshMaterialRenderer,
   registerGlMeshMaterialRenderer,
   resolveGlMeshMaterialRenderer,
-} from './glMeshMaterialRegistry';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+} from './glMeshMaterialRegistry.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 const TestKind = 'TestMeshMaterial';
 const renderer: GlMeshMaterialRenderer = { bind() {}, draw() {} };

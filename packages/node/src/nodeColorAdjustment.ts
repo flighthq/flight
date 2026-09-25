@@ -7,8 +7,8 @@ import {
 import { createColorScaleBias } from '@flighthq/materials/contract';
 import type { Adjustment, ColorAdjustmentRuntime, Node, NodeRuntime } from '@flighthq/types/contract';
 
-import { getNodeRuntime } from './node';
-import { invalidateNodeAppearance } from './revision';
+import { getNodeRuntime } from './node.ts';
+import { invalidateNodeAppearance } from './revision.ts';
 
 /**
  * Appends one pointwise adjustment without replacing the existing stack.

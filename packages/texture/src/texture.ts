@@ -16,7 +16,7 @@ import type {
   Vector2Like,
 } from '@flighthq/types/contract';
 
-import { cloneSampler, copySampler, createSampler, equalsSampler } from './sampler';
+import { cloneSampler, copySampler, createSampler, equalsSampler } from './sampler.ts';
 
 const HALF_PI = Math.PI / 2;
 

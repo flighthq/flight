@@ -1,13 +1,13 @@
 import type { TextLayoutParams, TextLayoutResult } from '@flighthq/types/contract';
 
-import { createTextFormatRange } from './textFormatRange';
+import { createTextFormatRange } from './textFormatRange.ts';
 import {
   TEXT_LAYOUT_GUTTER,
   computeTextLayout,
   createTextLayoutResult,
   initializeTextLayoutResult,
   isTextLayoutTruncated,
-} from './textLayout';
+} from './textLayout.ts';
 
 // Fixed-width measure: every character is 10px regardless of font settings.
 const fixedMeasure = (text: string) => text.length * 10;

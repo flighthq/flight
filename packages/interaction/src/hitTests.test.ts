@@ -19,8 +19,8 @@ import {
   hitTestNodeRegion,
   registerHitTest,
   registerHitTestPrecise,
-} from './hitTests';
-import { setNodeChildrenHitTestEnabled, setNodeHitArea, setNodeHitTestEnabled } from './nodeInteractionState';
+} from './hitTests.ts';
+import { setNodeChildrenHitTestEnabled, setNodeHitArea, setNodeHitTestEnabled } from './nodeInteractionState.ts';
 
 // A precise provider over local bounds: 0 (hit) inside, -1 outside — the boolean-precise shape.
 function boundsPrecise(source: NodeAny, x: number, y: number): number {

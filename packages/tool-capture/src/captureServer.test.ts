@@ -11,13 +11,13 @@ import { dirname, join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { CAPTURE_BUILD_IDENTITY_FILE } from './captureBuildIdentity';
+import { CAPTURE_BUILD_IDENTITY_FILE } from './captureBuildIdentity.ts';
 import {
   explainCaptureDistStaleness,
   resolveCaptureDirectoryServer,
   resolveServer,
   resolveStaticServer,
-} from './captureServer';
+} from './captureServer.ts';
 
 describe('explainCaptureDistStaleness', () => {
   it('reports when the build predates the source it was built from', () => {

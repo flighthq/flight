@@ -1,5 +1,5 @@
-import type { PbrExtension, PbrUvSet } from './PbrExtension';
-import type { Texture } from './Texture';
+import type { PbrExtension, PbrUvSet } from './PbrExtension.ts';
+import type { Texture } from './Texture.ts';
 
 // KHR_materials_sheen: the grazing-angle retroreflective lobe used by cloth and fabric.
 export interface SheenPbrExtension extends PbrExtension {

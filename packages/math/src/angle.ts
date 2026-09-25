@@ -1,4 +1,4 @@
-import { DEG_TO_RAD, RAD_TO_DEG, TAU } from './constants';
+import { DEG_TO_RAD, RAD_TO_DEG, TAU } from './constants.ts';
 
 /** Convert `degrees` to radians. */
 export function degToRad(degrees: number): number {

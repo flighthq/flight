@@ -23,7 +23,7 @@ import {
   isAppBackground,
   isAppInactive,
   requestAppBack,
-} from './lifecycle';
+} from './lifecycle.ts';
 
 type FakeBackend = HostLifecycleCapability & {
   state: AppLifecycleState;

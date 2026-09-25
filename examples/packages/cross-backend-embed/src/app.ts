@@ -37,7 +37,7 @@ import {
   openWindow,
 } from '@flighthq/sdk';
 
-import { render } from './render';
+import { render } from './render.ts';
 
 const PRODUCER_WIDTH = 280;
 const PRODUCER_HEIGHT = 180;

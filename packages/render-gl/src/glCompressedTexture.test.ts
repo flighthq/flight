@@ -8,9 +8,9 @@ import {
   registerGlCompressedTextureDecoder,
   registerGlCompressedTextureUpload,
   uploadGlCompressedTextureContainer,
-} from './glCompressedTexture';
-import { getGlRenderStateRuntime } from './glRenderState';
-import { createGlState } from './glTestHelper';
+} from './glCompressedTexture.ts';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
+import { createGlState } from './glTestHelper.ts';
 
 // The subset of extension enum constants the tests exercise (BC3 via s3tc, ASTC 4x4).
 const S3TC_EXT = { COMPRESSED_RGBA_S3TC_DXT5_EXT: 0x83f3 };

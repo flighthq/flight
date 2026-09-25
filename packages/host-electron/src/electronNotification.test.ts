@@ -14,7 +14,7 @@ import {
   electronHostNotificationReply,
   populateElectronHostNotificationMacos,
   populateElectronHostNotificationCommon,
-} from './electronNotification';
+} from './electronNotification.ts';
 
 interface FakeNotification {
   close(): void;

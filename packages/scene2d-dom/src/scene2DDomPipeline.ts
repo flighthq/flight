@@ -14,16 +14,16 @@ import {
   TextLabelKind,
 } from '@flighthq/types/contract';
 
-import { domRenderCacheRenderer } from './domCache';
-import { domHtmlViewRenderer } from './domHtmlView';
-import { domNativeTextRenderer } from './domNativeText';
-import { domScene2DRenderer } from './domNode2D';
-import { domRichTextRenderer } from './domRichText';
-import { domScale9ShapeRenderer } from './domScale9Shape';
-import { domScale9SpriteRenderer } from './domScale9Sprite';
-import { domMorphShapeRenderer, domShapeRenderer } from './domShape';
-import { domSpriteRenderer } from './domSprite';
-import { domTextLabelRenderer } from './domTextLabel';
+import { domRenderCacheRenderer } from './domCache.ts';
+import { domHtmlViewRenderer } from './domHtmlView.ts';
+import { domNativeTextRenderer } from './domNativeText.ts';
+import { domScene2DRenderer } from './domNode2D.ts';
+import { domRichTextRenderer } from './domRichText.ts';
+import { domScale9ShapeRenderer } from './domScale9Shape.ts';
+import { domScale9SpriteRenderer } from './domScale9Sprite.ts';
+import { domMorphShapeRenderer, domShapeRenderer } from './domShape.ts';
+import { domSpriteRenderer } from './domSprite.ts';
+import { domTextLabelRenderer } from './domTextLabel.ts';
 
 function buildScene2dDomRenderers(): ReadonlyMap<Kind, NodeRenderer> {
   let table: ReadonlyMap<Kind, NodeRenderer> = new Map();

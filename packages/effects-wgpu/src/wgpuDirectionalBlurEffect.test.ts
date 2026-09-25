@@ -2,7 +2,7 @@ import {
   applyDirectionalBlurEffectToWgpu,
   wgpuDirectionalBlurEffectRunner,
   registerWgpuDirectionalBlurEffect,
-} from './wgpuDirectionalBlurEffect';
+} from './wgpuDirectionalBlurEffect.ts';
 
 describe('applyDirectionalBlurEffectToWgpu', () => {
   it('is a function', () => {

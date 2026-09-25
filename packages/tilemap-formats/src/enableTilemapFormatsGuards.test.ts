@@ -2,8 +2,8 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import type { LogEntry } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { disableTilemapFormatsGuards, enableTilemapFormatsGuards } from './enableTilemapFormatsGuards';
-import { decodeTiledBase64Layer } from './tiledLayerData';
+import { disableTilemapFormatsGuards, enableTilemapFormatsGuards } from './enableTilemapFormatsGuards.ts';
+import { decodeTiledBase64Layer } from './tiledLayerData.ts';
 
 afterEach(() => disableTilemapFormatsGuards());
 

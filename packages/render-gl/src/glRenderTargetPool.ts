@@ -10,8 +10,12 @@ import type {
   RenderTargetFormatPolicy,
 } from '@flighthq/types/contract';
 
-import { clearGlRenderTarget } from './glFullscreenPass';
-import { createGlTextureRenderTarget, destroyGlTextureRenderTarget, resolveGlRenderTargetAxes } from './glRenderTarget';
+import { clearGlRenderTarget } from './glFullscreenPass.ts';
+import {
+  createGlTextureRenderTarget,
+  destroyGlTextureRenderTarget,
+  resolveGlRenderTargetAxes,
+} from './glRenderTarget.ts';
 
 // Lends reusable intermediate targets to multi-pass effect recipes. acquire/release are paired
 // brackets: every acquireGlTextureRenderTarget must have a matching releaseGlTextureRenderTarget. A released

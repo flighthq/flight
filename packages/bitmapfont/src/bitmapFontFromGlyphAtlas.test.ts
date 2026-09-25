@@ -2,8 +2,8 @@ import { createGlyphAtlas, getGlyphAtlasEntry } from '@flighthq/glyphatlas/contr
 import type { HostGlyphRasterizerCapability } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { getBitmapFontGlyph, getBitmapFontMetrics } from './bitmapFont';
-import { createBitmapFontFromGlyphAtlas } from './bitmapFontFromGlyphAtlas';
+import { getBitmapFontGlyph, getBitmapFontMetrics } from './bitmapFont.ts';
+import { createBitmapFontFromGlyphAtlas } from './bitmapFontFromGlyphAtlas.ts';
 
 function backendProducing(width: number, height: number): HostGlyphRasterizerCapability {
   return {

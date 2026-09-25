@@ -14,16 +14,16 @@ import type {
 } from '@flighthq/types/contract';
 import { WireframeMaterialKind } from '@flighthq/types/contract';
 
-import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
+import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
 import {
   beginWgpuMeshDraw,
   ensureWgpuInstanceBuffer,
   writeWgpuDrawUniform,
   writeWgpuFrameUniform,
-} from './wgpuMeshPipeline';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { bindWgpuWireframeColor, ensureWgpuWireframePipeline } from './wgpuWireframePrelude';
-import { ensureWgpuWireframeUpload } from './wgpuWireframeUpload';
+} from './wgpuMeshPipeline.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { bindWgpuWireframeColor, ensureWgpuWireframePipeline } from './wgpuWireframePrelude.ts';
+import { ensureWgpuWireframeUpload } from './wgpuWireframeUpload.ts';
 
 // The built-in Wireframe forward renderer (WgpuMeshMaterialRenderer for WireframeMaterialKind) — the
 // WGSL mirror of glWireframeMeshMaterialRenderer. Draws the mesh's triangle edges as line-list

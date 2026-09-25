@@ -3,9 +3,9 @@ import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
 import type { HostBitmapReadbackCapability } from '@flighthq/types/contract';
 
-import { findGraphHitTargetPrecise } from './hitTests';
-import { setNodeHitTestEnabled } from './nodeInteractionState';
-import { registerSpriteHitTest } from './registerSpriteHitTest';
+import { findGraphHitTargetPrecise } from './hitTests.ts';
+import { setNodeHitTestEnabled } from './nodeInteractionState.ts';
+import { registerSpriteHitTest } from './registerSpriteHitTest.ts';
 
 const stubHost = {
   graphics: { bitmapReadback: { readBitmap: () => ({ bitmap: null, reason: 'ok' }) } },

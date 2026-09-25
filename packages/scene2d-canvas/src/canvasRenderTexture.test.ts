@@ -9,8 +9,8 @@ import {
   isCanvasRenderTextureReady,
   renderIntoCanvasRenderTexture,
   writeCanvasRenderTextureTarget,
-} from './canvasRenderTexture';
-import { createCanvasRenderState, destroyCanvasRenderState } from './canvasTestSupport';
+} from './canvasRenderTexture.ts';
+import { createCanvasRenderState, destroyCanvasRenderState } from './canvasTestSupport.ts';
 
 describe('bindCanvasRenderTexture', () => {
   it('returns null before the texture is populated and its canvas afterward', () => {

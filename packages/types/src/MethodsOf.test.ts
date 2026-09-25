@@ -1,4 +1,4 @@
-import type { MethodsOf } from './MethodsOf';
+import type { MethodsOf } from './MethodsOf.ts';
 
 describe('MethodsOf', () => {
   it('extracts only method properties from an object type', () => {

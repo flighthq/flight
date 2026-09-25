@@ -1,4 +1,4 @@
-import { computeColorTemperatureRgb, computeWhiteBalanceMultipliers } from './colorTemperatureMath';
+import { computeColorTemperatureRgb, computeWhiteBalanceMultipliers } from './colorTemperatureMath.ts';
 
 describe('computeColorTemperatureRgb', () => {
   it('returns values in [0, 1] range', () => {

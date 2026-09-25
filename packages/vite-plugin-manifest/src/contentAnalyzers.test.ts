@@ -3,7 +3,7 @@ import { deflateSync } from 'node:zlib';
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
-import { DEFAULT_CONTENT_ANALYZERS } from './contentAnalyzers';
+import { DEFAULT_CONTENT_ANALYZERS } from './contentAnalyzers.ts';
 
 // Regression for the downstream report: a CWS SWF and a deflate AWD analyzed to an EMPTY requirement
 // set with no diagnostic, which is a bundle missing every handler the content needed. isReadable is

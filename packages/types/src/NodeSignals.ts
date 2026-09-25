@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { NodeAny } from './Node';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { NodeAny } from './Node.ts';
+import type { Signal } from './Signal.ts';
 
 export interface NodeSignals extends Entity {
   onChildAdded: Signal<(child: NodeAny) => void>;

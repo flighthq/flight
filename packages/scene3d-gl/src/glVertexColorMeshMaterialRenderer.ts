@@ -13,10 +13,10 @@ import type {
 } from '@flighthq/types/contract';
 import { VertexColorMaterialKind } from '@flighthq/types/contract';
 
-import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshViewProjection } from './glMeshProgram';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { bindGlUnlitSurface, ensureGlUnlitProgram } from './glUnlitPrelude';
+import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshViewProjection } from './glMeshProgram.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { bindGlUnlitSurface, ensureGlUnlitProgram } from './glUnlitPrelude.ts';
 
 // The built-in VertexColor forward renderer (GlMeshMaterialRenderer for VertexColorMaterialKind).
 // Lighting-independent: the unlit shader's VERTEX_COLOR variant multiplies the mesh's interpolated

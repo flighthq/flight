@@ -6,4 +6,4 @@ export {
   isGeolocationAvailable,
   promptForGeolocationAccess,
   watchGeolocationPosition,
-} from './contract';
+} from './contract.ts';

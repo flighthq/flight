@@ -1,5 +1,5 @@
-import type { AnimationTrack } from './AnimationTrack';
-import type { Entity } from './Entity';
+import type { AnimationTrack } from './AnimationTrack.ts';
+import type { Entity } from './Entity.ts';
 
 // One channel of an AnimationClip: a track plus an opaque `targetRef`. The animation core never
 // interprets `targetRef` — binding a sampled value to a Node3D TRS, a bone, or a tween target is

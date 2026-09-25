@@ -2,7 +2,7 @@ import type { FlightDocument } from '@flighthq/types/contract';
 import { DisplayObjectKind, FlightDocumentRefusalReason, Node3DKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { selectFlightDocumentScene } from './sceneDocumentMaterializationSelection';
+import { selectFlightDocumentScene } from './sceneDocumentMaterializationSelection.ts';
 
 describe('selectFlightDocumentScene', () => {
   it('selects the default or requested scene when its dimension matches', () => {

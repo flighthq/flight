@@ -7,4 +7,4 @@ export {
   registerGridLayoutResolver,
   registerLayoutResolver,
   resolveLayoutTree,
-} from './contract';
+} from './contract.ts';

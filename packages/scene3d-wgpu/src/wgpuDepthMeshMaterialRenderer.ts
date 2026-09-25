@@ -11,9 +11,9 @@ import type {
 } from '@flighthq/types/contract';
 import { DepthMaterialKind } from '@flighthq/types/contract';
 
-import { bindWgpuDebugSurface, ensureWgpuDebugPipeline } from './wgpuDebugPrelude';
-import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline';
+import { bindWgpuDebugSurface, ensureWgpuDebugPipeline } from './wgpuDebugPrelude.ts';
+import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline.ts';
 
 // The built-in Depth forward renderer (WgpuMeshMaterialRenderer for DepthMaterialKind) — the WGSL mirror
 // of glDepthMeshMaterialRenderer. A lighting-independent debug/utility pass material: bind selects the

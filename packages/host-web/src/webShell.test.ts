@@ -1,4 +1,4 @@
-import { initializeWebShellExternalBackend, webHostShellExternal } from './webShell';
+import { initializeWebShellExternalBackend, webHostShellExternal } from './webShell.ts';
 
 afterEach(() => vi.unstubAllGlobals());
 

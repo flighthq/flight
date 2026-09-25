@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
-import { getSelectors, selectPackages } from './select';
+import { getSelectors, selectPackages } from './select.ts';
 
 // Lists the branch arms in one package that no test ever took. `npm run untested geometry`.
 //

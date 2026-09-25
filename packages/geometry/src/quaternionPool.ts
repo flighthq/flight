@@ -1,8 +1,8 @@
 import type { Quaternion } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { geometryPoolReleaseGuard } from './geometryPoolGuards';
-import { createQuaternion } from './quaternion';
+import { geometryPoolReleaseGuard } from './geometryPoolGuards.ts';
+import { createQuaternion } from './quaternion.ts';
 
 export function acquireIdentityQuaternion(): Quaternion {
   const q = acquireQuaternion();

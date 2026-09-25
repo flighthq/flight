@@ -2,8 +2,8 @@ import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/co
 import type { Camera3D, Environment, ImageResource, Texture } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
-import { renderWgpuEnvironmentSkybox } from './wgpuEnvironmentSkybox';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+import { renderWgpuEnvironmentSkybox } from './wgpuEnvironmentSkybox.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 
 // The skybox draw itself is validated by the functional `env-skybox` capture (jsdom cannot run WGSL). These
 // cover the CPU-side wiring: the no-complete-cube sentinel no-op, and the pipeline/bind/draw call shape of

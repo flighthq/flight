@@ -8,9 +8,9 @@ import type {
   Texture,
 } from '@flighthq/types/contract';
 
-import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
-import { compileGlProgram, ensureGlScene3DProgram, GL_INSTANCE_VERTEX_DECLARATIONS_GLSL } from './glMeshProgram';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail.ts';
+import { compileGlProgram, ensureGlScene3DProgram, GL_INSTANCE_VERTEX_DECLARATIONS_GLSL } from './glMeshProgram.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 // Uploads the resolved matcap surface uniforms: the linear tint (already sRgb-decoded on the CPU),
 // the optional matcap texture on texture unit 0, and the alpha-mask cutoff. The caller has already
 // selected the program (beginGlMeshDraw), set the view-projection, and uploaded u_view.

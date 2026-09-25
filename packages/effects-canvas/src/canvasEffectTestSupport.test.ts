@@ -6,7 +6,7 @@ import {
   createCanvasRenderState,
   createCanvasRenderStateWithoutPass,
   createCanvasTextureRenderTarget,
-} from './canvasEffectTestSupport';
+} from './canvasEffectTestSupport.ts';
 
 describe('acquireTestCanvasSurface', () => {
   it('returns an owned effect-test surface', () => {

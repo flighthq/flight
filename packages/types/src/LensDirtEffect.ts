@@ -1,4 +1,4 @@
-import type { Effect } from './Effect';
+import type { Effect } from './Effect.ts';
 
 // Lens dirt: smudges/dust on the lens that catch the light — procedural soft blobs brighten where the
 // scene is bright, a cheap bloom-dirt overlay. `seed` varies the smudge layout.

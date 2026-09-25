@@ -1,4 +1,4 @@
-import { FlightDocumentRefusalReason } from './FlightDocumentRefusalExplanation';
+import { FlightDocumentRefusalReason } from './FlightDocumentRefusalExplanation.ts';
 
 describe('FlightDocumentRefusalReason', () => {
   it('exposes every YAML syntax and scalar refusal identity', () => {

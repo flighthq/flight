@@ -21,7 +21,7 @@ import {
   recordWgpuQuadBatchColorScaleBias,
   writeWgpuQuadBatchAffineInstance,
   QUAD_BATCH_INSTANCE_FLOATS,
-} from './wgpuQuadBatchWriter';
+} from './wgpuQuadBatchWriter.ts';
 
 export { ensureWgpuQuadBatchResources, getWgpuQuadBatchPipeline };
 

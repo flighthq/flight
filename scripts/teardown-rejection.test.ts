@@ -6,8 +6,8 @@ import { join, resolve } from 'node:path';
 import type { Node } from 'oxc-parser';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-import { GATE_PROVENANCE_FIELDS } from './gate-provenance';
-import { getParsedOxcSource } from './oxc-source';
+import { GATE_PROVENANCE_FIELDS } from './gate-provenance.ts';
+import { getParsedOxcSource } from './oxc-source.ts';
 import {
   createEmptyTeardownRejectionReport,
   createTeardownRejectionReport,
@@ -15,8 +15,8 @@ import {
   hasValidAssertSyncVoidDeclaration,
   isTeardownFunctionName,
   scanTeardownRejections,
-} from './teardown-rejection-core';
-import type { TeardownRejectionReport } from './teardown-rejection-core';
+} from './teardown-rejection-core.ts';
+import type { TeardownRejectionReport } from './teardown-rejection-core.ts';
 
 // ★ THE CONTROL FIXTURE, and it is the reason this scanner is trustworthy. Both of its bugs were found
 // here rather than in review: object-literal methods were skipped entirely (oxc puts their body on

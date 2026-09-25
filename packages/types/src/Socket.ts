@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { Signal } from './Signal.ts';
 
 // Bidirectional persistent-connection transport seam — the Flight home for what OpenFL/Lime expose
 // as Socket/WebSocket/XMLSocket. The framed Socket entity is an event source (open/message/close/error

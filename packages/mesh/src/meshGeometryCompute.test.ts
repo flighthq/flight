@@ -1,7 +1,7 @@
 import { createAabb, createBoundingSphere } from '@flighthq/geometry/contract';
 import type { MeshGeometry, VertexAttributeLayout } from '@flighthq/types/contract';
 
-import { createMeshGeometry, invalidateMeshGeometry } from './meshGeometry';
+import { createMeshGeometry, invalidateMeshGeometry } from './meshGeometry.ts';
 import {
   computeMeshGeometryBoundingSphere,
   computeMeshGeometryBounds,
@@ -11,8 +11,8 @@ import {
   computeMeshGeometryTangents,
   ensureMeshGeometryBounds,
   refreshMeshGeometryBounds,
-} from './meshGeometryCompute';
-import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT } from './meshGeometryLayout';
+} from './meshGeometryCompute.ts';
+import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT } from './meshGeometryLayout.ts';
 
 const CANONICAL_LAYOUT: VertexAttributeLayout = {
   attributes: [

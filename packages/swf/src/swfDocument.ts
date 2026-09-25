@@ -55,11 +55,11 @@ import type {
 } from '@flighthq/types/contract';
 import { Compression, CompressionFraming, ImportDiagnosticSeverity, MorphShapeKind } from '@flighthq/types/contract';
 
-import { expandSwfTagHandlerDispatch } from './expandSwfTagHandlerDispatch';
-import { applySwfMorphBounds, createSwfDisplayObject, createSwfMovieClip } from './swfNode';
-import { FIXED_8_8_ONE, readSwfRectangle, transformSwfRectangle, mergeSwfRectangles } from './swfPrimitive';
-import { SwfReader } from './swfReader';
-import { MAX_TIMELINE_FRAME_ENTRIES, readSwfTimeline } from './swfTimelineParse';
+import { expandSwfTagHandlerDispatch } from './expandSwfTagHandlerDispatch.ts';
+import { applySwfMorphBounds, createSwfDisplayObject, createSwfMovieClip } from './swfNode.ts';
+import { FIXED_8_8_ONE, readSwfRectangle, transformSwfRectangle, mergeSwfRectangles } from './swfPrimitive.ts';
+import { SwfReader } from './swfReader.ts';
+import { MAX_TIMELINE_FRAME_ENTRIES, readSwfTimeline } from './swfTimelineParse.ts';
 
 // Recovers every embedded DefineFont/2/3 as the generic, glyph-index-keyed outline seam. The map key
 // is the SWF character id used by DefineText and DefineEditText. This is a separate parse entry from

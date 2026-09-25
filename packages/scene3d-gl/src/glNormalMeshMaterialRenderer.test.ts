@@ -5,9 +5,9 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { NormalMaterialKind } from '@flighthq/types/contract';
 
-import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { glNormalMeshMaterialRenderer, registerGlNormalMaterial } from './glNormalMeshMaterialRenderer';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { glNormalMeshMaterialRenderer, registerGlNormalMaterial } from './glNormalMeshMaterialRenderer.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

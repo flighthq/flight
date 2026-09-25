@@ -9,4 +9,4 @@ export {
   setMediaSessionMetadata,
   setMediaSessionPlaybackState,
   setMediaSessionPositionState,
-} from './contract';
+} from './contract.ts';

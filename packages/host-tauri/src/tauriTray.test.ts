@@ -28,7 +28,7 @@ import {
   tauriHostTrayTemplateImage,
   tauriHostTrayTitle,
   tauriHostTrayTooltip,
-} from './tauriTray';
+} from './tauriTray.ts';
 
 interface FakeIcon extends TauriTrayIcon {
   closeFailures: number;

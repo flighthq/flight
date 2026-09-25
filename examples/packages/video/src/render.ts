@@ -1,1 +1,1 @@
-export * from './render.canvas';
+export * from './render.canvas.ts';

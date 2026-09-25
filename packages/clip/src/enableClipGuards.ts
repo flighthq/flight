@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { ClipRegion, ClipRegionContoursExplanation } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setClipRegionContoursGuard, setClipRegionReleaseGuard, setClipRegionUseGuard } from './clipRegion';
+import { setClipRegionContoursGuard, setClipRegionReleaseGuard, setClipRegionUseGuard } from './clipRegion.ts';
 
 // Uninstalls the guard installed by enableClipGuards.
 export function disableClipGuards(): void {

@@ -1,6 +1,6 @@
-import type { BitmapDisplacementMapMode } from './BitmapDisplacementMapMode';
-import type { BitmapEdgeMode } from './BitmapEdgeMode';
-import type { BitmapRegion } from './BitmapRegion';
+import type { BitmapDisplacementMapMode } from './BitmapDisplacementMapMode.ts';
+import type { BitmapEdgeMode } from './BitmapEdgeMode.ts';
+import type { BitmapRegion } from './BitmapRegion.ts';
 
 export interface BitmapDisplacementMapOptions {
   /** Map bitmap whose channels drive the per-pixel displacement. */

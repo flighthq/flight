@@ -1,4 +1,4 @@
-import type { Mesh } from './Mesh';
+import type { Mesh } from './Mesh.ts';
 
 // Options for a scene pick raycast. `predicate` is an include/exclude test per mesh (it does not prune
 // the mesh's descendants); `maxDistance` rejects hits whose ray-parametric distance `t` exceeds it (in

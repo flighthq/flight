@@ -1,6 +1,6 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 
-import { setDomTransform, setDomTransformWithOffset } from './domTransform';
+import { setDomTransform, setDomTransformWithOffset } from './domTransform.ts';
 
 describe('setDomTransform', () => {
   it('sets the CSS transform to the matrix values', () => {

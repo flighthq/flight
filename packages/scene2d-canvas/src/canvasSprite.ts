@@ -2,16 +2,16 @@ import { createSpriteRendererData, isSpriteRendererDirty } from '@flighthq/scene
 import { getTextureViewSize } from '@flighthq/texture/contract';
 import type { CanvasRenderState, RenderProxy2D, Scene2DRenderer, Sprite } from '@flighthq/types/contract';
 
-import { drawCanvasScene2D } from './canvasNode2D';
+import { drawCanvasScene2D } from './canvasNode2D.ts';
 import {
   getCanvasRenderStateTextureResolvers,
   resolveCanvasTextureSmoothing,
   setCanvasGlobalAlpha,
   setCanvasImageSmoothing,
-} from './canvasRenderState';
-import { resolveCanvasTexture } from './canvasTextureResolver';
-import { drawCanvasTextureView } from './canvasTextureView';
-import { setCanvasTransform } from './canvasTransform';
+} from './canvasRenderState.ts';
+import { resolveCanvasTexture } from './canvasTextureResolver.ts';
+import { drawCanvasTextureView } from './canvasTextureView.ts';
+import { setCanvasTransform } from './canvasTransform.ts';
 
 export function drawCanvasSprite(state: CanvasRenderState, sprite: RenderProxy2D): void {
   drawCanvasScene2D(state, sprite);

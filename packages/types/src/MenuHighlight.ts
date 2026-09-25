@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { Signal } from './Signal.ts';
 
 // The highlight event entity: menu item hover/keyboard focus, delivered by a backend that renders the
 // menu itself (today only the web DOM overlay in host-web). Standard event-capability shape —

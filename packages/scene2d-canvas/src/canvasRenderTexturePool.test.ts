@@ -1,9 +1,9 @@
-import { createCanvasOffscreenRenderState } from './canvasCache';
+import { createCanvasOffscreenRenderState } from './canvasCache.ts';
 import {
   explainCanvasRenderTexture,
   getCanvasRenderTextureTarget,
   writeCanvasRenderTextureTarget,
-} from './canvasRenderTexture';
+} from './canvasRenderTexture.ts';
 import {
   acquireCanvasRenderTexture,
   createCanvasRenderTexturePool,
@@ -11,14 +11,14 @@ import {
   initializeCanvasRenderTexturePool,
   releaseCanvasRenderTexture,
   withCanvasRenderTextures,
-} from './canvasRenderTexturePool';
+} from './canvasRenderTexturePool.ts';
 import {
   acquireTestCanvasSurface,
   canvasTestHost,
   createCanvasRenderState,
   createCanvasTextureRenderTarget,
   createCanvasTextureResolvers,
-} from './canvasTestSupport';
+} from './canvasTestSupport.ts';
 
 describe('acquireCanvasRenderTexture', () => {
   it('reuses a released handle and applies current dimensions on every acquisition', () => {

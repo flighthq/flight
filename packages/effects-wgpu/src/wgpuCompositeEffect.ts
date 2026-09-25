@@ -8,9 +8,9 @@ import type {
 } from '@flighthq/types/contract';
 import { CompositeOperator as CompositeOperatorValues } from '@flighthq/types/contract';
 
-import { getWgpuBlendEffectBackdrop } from './wgpuBlendEffect';
-import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
+import { getWgpuBlendEffectBackdrop } from './wgpuBlendEffect.ts';
+import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
 
 // Porter-Duff coverage composite over the same named backdrop registry as BlendEffect. Both inputs are
 // premultiplied, so one Fa/Fb pair applies to RGB and alpha exactly as compositeOperatorMath specifies.

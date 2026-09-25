@@ -1,7 +1,7 @@
 import type { Path } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
-import { forEachPathSegment } from './forEachPathSegment';
+import { forEachPathSegment } from './forEachPathSegment.ts';
 
 // Reverses the winding direction of all contours in `source` and writes the result into `out`.
 // Each subpath (from MOVE_TO to MOVE_TO / end) is independently reversed: its anchor sequence is

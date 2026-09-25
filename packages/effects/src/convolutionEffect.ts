@@ -8,8 +8,8 @@ import type {
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeEffect } from './effect';
-import { registerEffectPaddingResolver } from './effectPadding';
+import { initializeEffect } from './effect.ts';
+import { registerEffectPaddingResolver } from './effectPadding.ts';
 
 export function createConvolutionEffect(
   options: Readonly<Omit<EntityWithoutRuntime<ConvolutionEffect>, 'kind'>>,

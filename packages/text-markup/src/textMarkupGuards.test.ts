@@ -1,6 +1,6 @@
 import type { TextMarkupIssue } from '@flighthq/types/contract';
 
-import { reportTextMarkupIssue, setTextMarkupGuard } from './textMarkupGuards';
+import { reportTextMarkupIssue, setTextMarkupGuard } from './textMarkupGuards.ts';
 
 const issue: TextMarkupIssue = { kind: 'unknown-tag', offset: 0, tag: 'widget', value: null };
 

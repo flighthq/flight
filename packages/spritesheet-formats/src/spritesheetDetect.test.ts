@@ -15,7 +15,7 @@ import {
   parseSpritesheet,
   registerSpritesheetFormat,
   unregisterSpritesheetFormat,
-} from './spritesheetDetect';
+} from './spritesheetDetect.ts';
 
 const TEXTURE_PACKER_JSON = JSON.stringify({
   frames: {},

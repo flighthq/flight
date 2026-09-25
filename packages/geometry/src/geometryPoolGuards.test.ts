@@ -1,4 +1,4 @@
-import { geometryPoolReleaseGuard, setGeometryPoolReleaseGuard } from './geometryPoolGuards';
+import { geometryPoolReleaseGuard, setGeometryPoolReleaseGuard } from './geometryPoolGuards.ts';
 
 afterEach(() => {
   setGeometryPoolReleaseGuard(null);

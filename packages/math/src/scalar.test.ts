@@ -1,4 +1,4 @@
-import { ceilPowerOfTwo, floorPowerOfTwo, quantize, sign } from './scalar';
+import { ceilPowerOfTwo, floorPowerOfTwo, quantize, sign } from './scalar.ts';
 
 describe('ceilPowerOfTwo', () => {
   it('rounds up to the next power of two', () => {

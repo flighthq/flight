@@ -17,8 +17,8 @@ import {
   prepareGlQuadBatchWrite,
   recordGlQuadBatchColorScaleBias,
   writeGlQuadBatchAffineInstance,
-} from './glQuadBatchWriter';
-import { buildGlScale9Mapper } from './glScale9Mapper';
+} from './glQuadBatchWriter.ts';
+import { buildGlScale9Mapper } from './glScale9Mapper.ts';
 
 const INSTANCE_FLOATS = 13;
 const SCALE9_QUAD_COUNT = 9;

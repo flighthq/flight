@@ -23,8 +23,8 @@ import type {
   Texture2D,
 } from '@flighthq/types/contract';
 
-import { SwfReader } from './swfReader';
-import { readSwfMorphShapePaths } from './swfShape';
+import { SwfReader } from './swfReader.ts';
+import { readSwfMorphShapePaths } from './swfShape.ts';
 
 // Decodes a DefineMorphShape/2 body into a MorphShape.
 //

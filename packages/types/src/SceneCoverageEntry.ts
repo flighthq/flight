@@ -1,6 +1,6 @@
-import type { Kind } from './Entity';
-import type { RenderRegistryTable } from './RenderRegistrySignals';
-import type { RequirementFacet } from './RequirementFacet';
+import type { Kind } from './Entity.ts';
+import type { RenderRegistryTable } from './RenderRegistrySignals.ts';
+import type { RequirementFacet } from './RequirementFacet.ts';
 
 // How well a kind the scene uses is served by the registry that would have to serve it. States are
 // distinguished by remedy, not by why the state arose: Unregistered and FallbackRemediable name a call

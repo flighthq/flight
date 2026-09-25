@@ -44,7 +44,7 @@ import {
   requestNotificationPermission,
   scheduleNotification,
   showNotification,
-} from './notification';
+} from './notification.ts';
 
 function host<const TCapabilities extends HostNotificationCapabilities>(notification: TCapabilities) {
   return { notification };

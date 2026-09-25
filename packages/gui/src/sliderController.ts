@@ -19,7 +19,7 @@ import {
   getGuiLength,
   setGuiPosition,
   snapGuiValue,
-} from './guiController';
+} from './guiController.ts';
 
 interface SliderControllerFields {
   dragPointer: number;

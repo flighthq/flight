@@ -10,4 +10,4 @@ export {
   pickScene3DAll,
   pickScene3DAllWithRay3D,
   pickScene3DWithRay3D,
-} from './contract';
+} from './contract.ts';

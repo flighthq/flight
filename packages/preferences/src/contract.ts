@@ -1,3 +1,3 @@
-export * from './storage';
-export * from './storagePersistence';
-export { initializeStorageSignals } from './storage';
+export * from './storage.ts';
+export * from './storagePersistence.ts';
+export { initializeStorageSignals } from './storage.ts';

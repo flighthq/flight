@@ -1,8 +1,8 @@
-import type { ColorAdjustmentRuntime } from './ColorAdjustmentRuntime';
-import type { Entity, EntityRuntime, EntityRuntimeKey, Kind } from './Entity';
-import type { InteractionSignals } from './InteractionSignals';
-import type { NodeInteractionState } from './NodeInteractionState';
-import type { NodeSignals } from './NodeSignals';
+import type { ColorAdjustmentRuntime } from './ColorAdjustmentRuntime.ts';
+import type { Entity, EntityRuntime, EntityRuntimeKey, Kind } from './Entity.ts';
+import type { InteractionSignals } from './InteractionSignals.ts';
+import type { NodeInteractionState } from './NodeInteractionState.ts';
+import type { NodeSignals } from './NodeSignals.ts';
 declare const NodeTraitsKey: unique symbol;
 export type NodeTraitsKey<T extends object> = symbol & {
   readonly [NodeTraitsKey]?: T;

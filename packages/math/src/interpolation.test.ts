@@ -1,4 +1,4 @@
-import { inverseLerp, lerp, remap, smoothStep, step } from './interpolation';
+import { inverseLerp, lerp, remap, smoothStep, step } from './interpolation.ts';
 
 describe('inverseLerp', () => {
   it('returns 0 when value equals a', () => {

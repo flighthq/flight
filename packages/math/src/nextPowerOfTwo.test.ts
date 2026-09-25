@@ -1,4 +1,4 @@
-import { isPowerOfTwo, nextMultipleOf, nextPowerOfTwo, previousPowerOfTwo } from './nextPowerOfTwo';
+import { isPowerOfTwo, nextMultipleOf, nextPowerOfTwo, previousPowerOfTwo } from './nextPowerOfTwo.ts';
 
 describe('isPowerOfTwo', () => {
   it('returns true for powers of two', () => {

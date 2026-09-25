@@ -1,6 +1,10 @@
 import type { ImageResource } from '@flighthq/types/contract';
 
-import { uploadWgpuTextureData, uploadWgpuTextureElement, uploadWgpuTextureImageResource } from './wgpuTextureUpload';
+import {
+  uploadWgpuTextureData,
+  uploadWgpuTextureElement,
+  uploadWgpuTextureImageResource,
+} from './wgpuTextureUpload.ts';
 
 // A device whose queue records the two upload calls so a test can assert which path ran and with what.
 function makeDevice(): GPUDevice {

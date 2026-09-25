@@ -5,7 +5,7 @@ export {
   createAnimationSampleAccumulator,
   finishAnimationSample,
   resetAnimationSampleAccumulator,
-} from './animationBlend';
+} from './animationBlend.ts';
 export {
   advanceAnimationBlendTree,
   createAnimationBlendTree,
@@ -13,7 +13,7 @@ export {
   sampleAnimationBlendTree,
   sampleAnimationBlendTreeChannel,
   setAnimationBlendTreeInputWeight,
-} from './animationBlendTree';
+} from './animationBlendTree.ts';
 export {
   cloneAnimationClip,
   createAnimationChannel,
@@ -21,13 +21,13 @@ export {
   createAnimationClipEvent,
   getAnimationClipDuration,
   sampleAnimationClip,
-} from './animationClip';
+} from './animationClip.ts';
 export {
   advanceAnimationCrossfade,
   createAnimationCrossfade,
   isAnimationCrossfadeComplete,
   sampleAnimationCrossfade,
-} from './animationCrossfade';
+} from './animationCrossfade.ts';
 export {
   advanceAnimationLayerStack,
   createAnimationBlendTreeLayer,
@@ -36,7 +36,7 @@ export {
   sampleAnimationLayerStack,
   sampleAnimationLayerStackChannel,
   setAnimationLayerWeight,
-} from './animationLayerStack';
+} from './animationLayerStack.ts';
 export {
   advanceAnimationPlayer,
   cloneAnimationPlayer,
@@ -46,8 +46,8 @@ export {
   playAnimationPlayer,
   seekAnimationPlayer,
   stopAnimationPlayer,
-} from './animationPlayer';
-export { createAnimationRootMotionExtractor, extractAnimationRootMotion } from './animationRootMotion';
+} from './animationPlayer.ts';
+export { createAnimationRootMotionExtractor, extractAnimationRootMotion } from './animationRootMotion.ts';
 export {
   advanceAnimationStateMachine,
   createAnimationStateMachine,
@@ -57,11 +57,11 @@ export {
   sampleAnimationStateMachine,
   sampleAnimationStateMachineChannel,
   transitionAnimationStateMachine,
-} from './animationStateMachine';
+} from './animationStateMachine.ts';
 export {
   cloneAnimationTrack,
   createAnimationTrack,
   sampleAnimationTrack,
   trimAnimationTrack,
   validateAnimationTrack,
-} from './animationTrack';
+} from './animationTrack.ts';

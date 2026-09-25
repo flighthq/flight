@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createAabb } from '@flighthq/geometry/contract';
 import type { MeshSkinBindPose, Skeleton3D } from '@flighthq/types/contract';
 
-import { getMeshSkinConservativeBounds, getMeshSkinExactBounds } from './getMeshSkinBounds';
+import { getMeshSkinConservativeBounds, getMeshSkinExactBounds } from './getMeshSkinBounds.ts';
 
 // A column-major 4x4 identity / translation, laid out as a 16-float palette entry.
 function identity(): number[] {

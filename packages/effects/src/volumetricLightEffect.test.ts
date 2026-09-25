@@ -1,4 +1,4 @@
-import { createVolumetricLightEffect, initializeVolumetricLightEffect } from './volumetricLightEffect';
+import { createVolumetricLightEffect, initializeVolumetricLightEffect } from './volumetricLightEffect.ts';
 
 describe('createVolumetricLightEffect', () => {
   it('carries options', () => {

@@ -4,8 +4,8 @@ import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { glStandardPbrMeshMaterialRenderer } from './glStandardPbrMeshMaterialRenderer';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { glStandardPbrMeshMaterialRenderer } from './glStandardPbrMeshMaterialRenderer.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

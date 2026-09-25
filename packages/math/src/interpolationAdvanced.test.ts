@@ -1,4 +1,4 @@
-import { damp, lerpAngle, moveTowards, pingPong, repeat, smootherStep } from './interpolationAdvanced';
+import { damp, lerpAngle, moveTowards, pingPong, repeat, smootherStep } from './interpolationAdvanced.ts';
 
 describe('damp', () => {
   it('moves current toward target over time', () => {

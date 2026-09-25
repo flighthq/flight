@@ -4,16 +4,16 @@ import type { Bone2D, MeshAttachment2D, Skin2D, Slot2D } from '@flighthq/types/c
 import { MeshAttachment2DKind, Skeleton2DAnimationTargetKind, TransformMode2D } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { applyAnimationClipToSkeleton2D } from './applyAnimationClipToSkeleton2D';
-import { registerSkeleton2DDeformAnimationTarget } from './deformAnimationTarget2D';
-import { cloneSkeleton2D, createSkeleton2D } from './skeleton2d';
+import { applyAnimationClipToSkeleton2D } from './applyAnimationClipToSkeleton2D.ts';
+import { registerSkeleton2DDeformAnimationTarget } from './deformAnimationTarget2D.ts';
+import { cloneSkeleton2D, createSkeleton2D } from './skeleton2d.ts';
 import {
   getSkeleton2DAnimationTargetBinder,
   registerSkeleton2DAnimationTargetBinder,
   unregisterSkeleton2DAnimationTargetBinder,
-} from './skeleton2dAnimationTarget';
-import { createSkin2D } from './skin2D';
-import { getSkeleton2DSlotDeformOffsets } from './slotDeform2D';
+} from './skeleton2dAnimationTarget.ts';
+import { createSkin2D } from './skin2D.ts';
+import { getSkeleton2DSlotDeformOffsets } from './slotDeform2D.ts';
 
 function makeBone(): Bone2D {
   return {

@@ -10,17 +10,17 @@ import type {
   Viewport,
 } from '@flighthq/types/contract';
 
-import { clearGlRenderTarget, clearGlRenderTargetAttachments, fillGlRect } from './glFullscreenPass';
+import { clearGlRenderTarget, clearGlRenderTargetAttachments, fillGlRect } from './glFullscreenPass.ts';
 import {
   acquireGlRenderPassHandle,
   beginGlRenderPass,
   endGlRenderPass,
   getGlCurrentRenderPass,
   releaseGlRenderPassHandle,
-} from './glRenderPass';
-import { createGlRenderState, getGlRenderStateRuntime } from './glRenderState';
-import { drawGlTextureRenderTargetResult } from './glRenderTarget';
-import { createGlState } from './glTestHelper';
+} from './glRenderPass.ts';
+import { createGlRenderState, getGlRenderStateRuntime } from './glRenderState.ts';
+import { drawGlTextureRenderTargetResult } from './glRenderTarget.ts';
+import { createGlState } from './glTestHelper.ts';
 
 function makeTarget(overrides?: Partial<GlTextureRenderTarget>): GlTextureRenderTarget {
   const texture = { id: 'c0' } as unknown as WebGLTexture;

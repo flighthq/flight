@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { TextureAtlas, TextureAtlasRegionTextureExplanation } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setTextureAtlasRegionTextureGuard } from './textureAtlasRegion';
+import { setTextureAtlasRegionTextureGuard } from './textureAtlasRegion.ts';
 
 export function areTextureAtlasGuardsEnabled(): boolean {
   return textureAtlasGuardsEnabled;

@@ -14,8 +14,8 @@ import {
   querySpatialSphere3D,
   removeSpatialObject3D,
   updateSpatialObject3D,
-} from './spatialIndex3D';
-import { createUniformGridSpatialBackend3D } from './uniformGrid3D';
+} from './spatialIndex3D.ts';
+import { createUniformGridSpatialBackend3D } from './uniformGrid3D.ts';
 
 function box(minX: number, minY: number, minZ: number, size: number): SpatialAabb3D {
   return { minX, minY, minZ, maxX: minX + size, maxY: minY + size, maxZ: minZ + size };

@@ -6,8 +6,8 @@ import {
   createScene3DMaterialTextureRegistry,
   getScene3DMaterialTextures,
   registerExtendedPbrScene3DMaterialTextures,
-} from './sceneMaterialTextureRegistry';
-import { registerWrappedDiffusePbrScene3DMaterialTextures } from './wrappedDiffusePbrScene3DMaterialTextures';
+} from './sceneMaterialTextureRegistry.ts';
+import { registerWrappedDiffusePbrScene3DMaterialTextures } from './wrappedDiffusePbrScene3DMaterialTextures.ts';
 
 describe('registerWrappedDiffusePbrScene3DMaterialTextures', () => {
   it('lists the wrapped-diffuse color and thickness maps', () => {

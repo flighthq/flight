@@ -16,7 +16,7 @@ export {
   setAabbFromPoints,
   transformAabbByMatrix4,
   unionAabb,
-} from './aabb';
+} from './aabb.ts';
 export {
   cloneBoundingSphere,
   containsBoundingSpherePoint,
@@ -28,7 +28,7 @@ export {
   setBoundingSphere,
   setBoundingSphereFromAabb,
   transformBoundingSphereByMatrix4,
-} from './boundingSphere';
+} from './boundingSphere.ts';
 export {
   createCapsule,
   getClosestPointOnCapsule,
@@ -37,8 +37,8 @@ export {
   isCapsuleIntersectingCapsule,
   isCapsuleIntersectingSphere,
   setCapsule,
-} from './capsule';
-export * from './enableGeometryPoolGuards';
+} from './capsule.ts';
+export * from './enableGeometryPoolGuards.ts';
 export {
   createFrustum,
   getFrustumCorners,
@@ -47,7 +47,7 @@ export {
   isFrustumIntersectingObb,
   isFrustumIntersectingSphere,
   setFrustumFromMatrix4,
-} from './frustum';
+} from './frustum.ts';
 export {
   cloneMatrix,
   copyMatrix,
@@ -85,7 +85,7 @@ export {
   translateMatrixByVector,
   translateMatrixByVectorXY,
   writeMatrixToFloat32Array,
-} from './matrix';
+} from './matrix.ts';
 export {
   cloneMatrix3,
   copyMatrix3,
@@ -112,8 +112,8 @@ export {
   translateMatrix3,
   transposeMatrix3,
   writeMatrix3ToFloat32Array,
-} from './matrix3';
-export * from './matrix3Pool';
+} from './matrix3.ts';
+export * from './matrix3Pool.ts';
 export {
   appendMatrix4,
   appendRotationMatrix4,
@@ -163,9 +163,9 @@ export {
   translateMatrix4,
   transposeMatrix4,
   writeMatrix4ToFloat32Array,
-} from './matrix4';
-export * from './matrix4Pool';
-export * from './matrixPool';
+} from './matrix4.ts';
+export * from './matrix4Pool.ts';
+export * from './matrixPool.ts';
 export {
   createObb,
   getClosestPointOnObb,
@@ -175,7 +175,7 @@ export {
   isObbIntersectingSphere,
   setObb,
   transformObbByMatrix4,
-} from './obb';
+} from './obb.ts';
 export {
   clonePlane,
   copyPlane,
@@ -188,7 +188,7 @@ export {
   setPlane,
   setPlaneFromNormalAndPoint,
   setPlaneFromPoints,
-} from './plane';
+} from './plane.ts';
 export {
   cloneQuaternion,
   conjugateQuaternion,
@@ -211,8 +211,8 @@ export {
   setQuaternionIdentity,
   setQuaternionLookRotation,
   slerpQuaternion,
-} from './quaternion';
-export * from './quaternionPool';
+} from './quaternion.ts';
+export * from './quaternionPool.ts';
 export {
   createRay3D,
   getClosestPointBetweenRay3Ds,
@@ -224,7 +224,7 @@ export {
   intersectRay3DTriangle,
   setRay3D,
   transformRay3DByMatrix4,
-} from './ray3d';
+} from './ray3d.ts';
 export {
   cloneRectangle,
   computeRectangleIntersection,
@@ -266,11 +266,11 @@ export {
   setRectangleSize,
   setRectangleTop,
   setRectangleTopLeft,
-} from './rectangle';
-export * from './rectanglePool';
-export { createTransform2D, decomposeMatrixToTransform2D } from './transform2d';
-export { composeMatrix4FromTransform3D, createTransform3D, decomposeMatrix4ToTransform3D } from './transform3d';
-export * from './typedarray';
+} from './rectangle.ts';
+export * from './rectanglePool.ts';
+export { createTransform2D, decomposeMatrixToTransform2D } from './transform2d.ts';
+export { composeMatrix4FromTransform3D, createTransform3D, decomposeMatrix4ToTransform3D } from './transform3d.ts';
+export * from './typedarray.ts';
 export {
   addVector2,
   clampVector2,
@@ -308,8 +308,8 @@ export {
   writeVector2ToFloat32Array,
   VECTOR2_X_AXIS,
   VECTOR2_Y_AXIS,
-} from './vector2';
-export * from './vector2Pool';
+} from './vector2.ts';
+export * from './vector2Pool.ts';
 export {
   addVector3,
   clampVector3,
@@ -348,8 +348,8 @@ export {
   VECTOR3_X_AXIS,
   VECTOR3_Y_AXIS,
   VECTOR3_Z_AXIS,
-} from './vector3';
-export * from './vector3Pool';
+} from './vector3.ts';
+export * from './vector3Pool.ts';
 export {
   addVector4,
   clampVector4,
@@ -384,5 +384,5 @@ export {
   VECTOR4_X_AXIS,
   VECTOR4_Y_AXIS,
   VECTOR4_Z_AXIS,
-} from './vector4';
-export * from './vector4Pool';
+} from './vector4.ts';
+export * from './vector4Pool.ts';

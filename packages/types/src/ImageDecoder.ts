@@ -1,5 +1,5 @@
-import type { DecodedImage } from './DecodedImage';
-import type { ImageDecodeOptions } from './ImageDecodeOptions';
+import type { DecodedImage } from './DecodedImage.ts';
+import type { ImageDecodeOptions } from './ImageDecodeOptions.ts';
 
 // A per-format image decoder: turns encoded bytes (Uint8Array) into raw RGBA pixels. DOM-free by
 // contract — the web/canvas implementation is one swappable backend.

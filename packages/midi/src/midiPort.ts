@@ -18,8 +18,8 @@ import {
   getMidiPortResourceState,
   retainMidiInputPortResourceState,
   retainMidiOutputPortResourceState,
-} from './midiResource';
-import { disposeMidiInputMessageSubscription, disposeMidiPortStateSubscription } from './midiSubscription';
+} from './midiResource.ts';
+import { disposeMidiInputMessageSubscription, disposeMidiPortStateSubscription } from './midiSubscription.ts';
 
 interface MidiPortMetadata {
   readonly id: string;

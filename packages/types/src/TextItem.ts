@@ -1,4 +1,4 @@
-import type { TextDirection } from './TextDirection';
+import type { TextDirection } from './TextDirection.ts';
 export interface TextItem {
   readonly direction: TextDirection;
   readonly end: number;

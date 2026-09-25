@@ -2,9 +2,9 @@ import type { GltfDocument, UnlitMaterial } from '@flighthq/types/contract';
 import { StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { GltfClearcoatExtensionHandler } from './gltfClearcoat';
-import { parseGltf } from './gltfParse';
-import { GltfUnlitExtensionHandler } from './gltfUnlit';
+import { GltfClearcoatExtensionHandler } from './gltfClearcoat.ts';
+import { parseGltf } from './gltfParse.ts';
+import { GltfUnlitExtensionHandler } from './gltfUnlit.ts';
 
 function makeGltf(material: unknown): GltfDocument {
   return {

@@ -5,7 +5,7 @@ import {
   electronHostShortcutQuery,
   electronHostShortcutTrigger,
   populateElectronHostShortcutQuery,
-} from './electronShortcut';
+} from './electronShortcut.ts';
 
 function fakeElectron() {
   const callbacks = new Map<string, () => void>();

@@ -1,6 +1,6 @@
 import type { Woff2GlyfStreams } from '@flighthq/types/contract';
 
-import { encodeSfntCompositeGlyph, encodeSfntLoca, encodeSfntSimpleGlyph } from './sfntAssembly';
+import { encodeSfntCompositeGlyph, encodeSfntLoca, encodeSfntSimpleGlyph } from './sfntAssembly.ts';
 
 // The transformed `glyf` table: seven parallel sub-streams instead of one array of glyphs.
 //

@@ -1,4 +1,4 @@
-import type { TextAutoSize } from './TextAutoSize';
+import type { TextAutoSize } from './TextAutoSize.ts';
 
 // The sizing policy that turns a computed layout into a text object's bounds box — the subset of
 // TextLabelData/RichTextData that affects box size. Decoupled from the entity data types so both

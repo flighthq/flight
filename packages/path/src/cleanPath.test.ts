@@ -1,7 +1,7 @@
 import { PathCommand } from '@flighthq/types/contract';
 
-import { cleanPath } from './cleanPath';
-import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path';
+import { cleanPath } from './cleanPath.ts';
+import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
 
 describe('cleanPath', () => {
   it('removes consecutive duplicate points', () => {

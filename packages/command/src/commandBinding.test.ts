@@ -10,7 +10,7 @@ import {
   createRemoveNodeChildCommand,
   createReorderNodeChildCommand,
   createSetNodePropertyCommand,
-} from './command';
+} from './command.ts';
 import {
   createCommandBindingTable,
   getCommandBinding,
@@ -18,8 +18,8 @@ import {
   initializeSetNodePropertyCommand,
   registerCommandBinding,
   registerDefaultCommandBindings,
-} from './commandBinding';
-import { createCommandHistory, executeCommand, undoCommand } from './commandHistory';
+} from './commandBinding.ts';
+import { createCommandHistory, executeCommand, undoCommand } from './commandHistory.ts';
 
 describe('createCommandBindingTable', () => {
   it('starts empty, so nothing dispatches until a caller registers it', () => {

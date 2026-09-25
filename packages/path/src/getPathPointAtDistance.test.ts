@@ -1,5 +1,9 @@
-import { getPathPointAtDistance, getPathPositionAtDistance, getPathTangentAtDistance } from './getPathPointAtDistance';
-import { appendPathLineTo, appendPathMoveTo, createPath } from './path';
+import {
+  getPathPointAtDistance,
+  getPathPositionAtDistance,
+  getPathTangentAtDistance,
+} from './getPathPointAtDistance.ts';
+import { appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
 
 describe('getPathPointAtDistance', () => {
   it('returns false for an empty path', () => {

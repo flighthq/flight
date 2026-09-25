@@ -5,7 +5,7 @@ import {
   initializeSpritesheetAnimationData,
   initializeSpritesheetData,
   initializeSpritesheetFrameData,
-} from './spritesheetData';
+} from './spritesheetData.ts';
 
 describe('createSpritesheetAnimationData', () => {
   it('creates with all defaults when no argument is passed', () => {

@@ -1,8 +1,8 @@
 import { createAabb } from '@flighthq/geometry/contract';
 import type { Matrix4Like, MeshGeometry } from '@flighthq/types/contract';
 
-import { getVertexAttributeFloatOffset } from './meshGeometryAttributes';
-import { computeMeshGeometryBounds } from './meshGeometryCompute';
+import { getVertexAttributeFloatOffset } from './meshGeometryAttributes.ts';
+import { computeMeshGeometryBounds } from './meshGeometryCompute.ts';
 
 // Geometry transform operations: apply a Matrix4 to positions, the inverse-transpose to normals,
 // and the plain upper 3x3 to tangent.xyz — a normal is a covector and a tangent is a true vector,

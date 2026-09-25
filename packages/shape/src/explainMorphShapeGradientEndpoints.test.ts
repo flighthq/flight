@@ -1,7 +1,7 @@
 import {
   explainMorphShapeGradientEndpoints,
   getMorphShapeGradientEndpointIssue,
-} from './explainMorphShapeGradientEndpoints';
+} from './explainMorphShapeGradientEndpoints.ts';
 
 describe('explainMorphShapeGradientEndpoints', () => {
   it('reports compatible equal-length gradient stops', () => {

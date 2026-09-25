@@ -12,9 +12,9 @@ import type {
   GlTextureRenderTargetPool,
 } from '@flighthq/types/contract';
 
-import { applyGaussianBlurToGl } from './glBlurEffect';
-import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { applyGaussianBlurToGl } from './glBlurEffect.ts';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Bloom: bright-pass → blur the bright branch (via the effects-owned separable gaussian blur) →
 // additively composite back. The multi-pass reference recipe — it acquires intermediate targets from

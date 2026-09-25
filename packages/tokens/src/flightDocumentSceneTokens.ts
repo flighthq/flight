@@ -18,7 +18,7 @@ import {
   isFlightDocumentTokenReference,
   readFlightDocumentTokenReferenceKey,
   substituteFlightDocumentTokenValue,
-} from './flightDocumentTokenReference';
+} from './flightDocumentTokenReference.ts';
 
 export function createFlightDocumentTokenResolverRegistry(): FlightDocumentTokenResolverRegistry {
   const out = allocateEntity<FlightDocumentTokenResolverRegistry>();

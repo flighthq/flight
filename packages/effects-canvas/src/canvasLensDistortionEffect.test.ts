@@ -2,13 +2,13 @@ import { createLensDistortionEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CanvasTextureRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
-import { getCanvasEffectRunner } from './canvasEffectRegistry';
-import { canvasTestHost, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport';
+import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
+import { canvasTestHost, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport.ts';
 import {
   applyLensDistortionEffectToCanvas,
   canvasLensDistortionEffectRunner,
   registerCanvasLensDistortionEffect,
-} from './canvasLensDistortionEffect';
+} from './canvasLensDistortionEffect.ts';
 
 // A width x height RGBA buffer whose red channel encodes the column and green the row, so a resample can
 // be read back as "which source pixel did this destination pixel come from".

@@ -6,7 +6,7 @@
 // step 4). filters-math keeps its copy until the filters* packages retire; the duplicate is
 // deliberate for the duration (mirrors the Phase 1 colorMatrixMath port).
 
-import { computeGaussianKernelWeights, getGaussianKernelSize } from './gaussianKernel';
+import { computeGaussianKernelWeights, getGaussianKernelSize } from './gaussianKernel.ts';
 
 /**
  * Produces the bilinear-tap ("linear sampling") form of a Gaussian blur for standard deviation

@@ -1,4 +1,4 @@
-import { RequirementFacet } from './RequirementFacet';
+import { RequirementFacet } from './RequirementFacet.ts';
 
 describe('RequirementFacet', () => {
   it('is a sorted, dot-namespaced declared vocabulary', () => {

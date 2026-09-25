@@ -20,4 +20,4 @@ export {
   updateSpring2D,
   updateSpring3D,
   updateSpringAngle,
-} from './contract';
+} from './contract.ts';

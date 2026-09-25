@@ -11,7 +11,7 @@ import {
   OBJ_REQUIREMENT_KEY_NAMESPACE,
   THREE_DS_DOCUMENT_SCENE_REQUIREMENTS,
   THREE_DS_REQUIREMENT_KEY_NAMESPACE,
-} from './scene3dFormatRequirements';
+} from './scene3dFormatRequirements.ts';
 
 describe('scene3dFormatRequirements', () => {
   it('maps 3DS to BlinnPhong', () => {

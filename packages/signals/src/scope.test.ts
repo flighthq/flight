@@ -3,11 +3,11 @@ import {
   disconnectSignalConnection,
   pauseSignalConnection,
   resumeSignalConnection,
-} from './connection';
-import { emitSignal } from './emitter';
-import { createSignalScope, disconnectSignalScope, initializeSignalScope } from './scope';
-import { createSignal } from './signal';
-import { connectSignal, hasSignalSlots, isSlotConnected } from './slot';
+} from './connection.ts';
+import { emitSignal } from './emitter.ts';
+import { createSignalScope, disconnectSignalScope, initializeSignalScope } from './scope.ts';
+import { createSignal } from './signal.ts';
+import { connectSignal, hasSignalSlots, isSlotConnected } from './slot.ts';
 
 describe('createSignalScope', () => {
   it('starts empty and collects only the connections that name it', () => {

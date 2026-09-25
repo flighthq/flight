@@ -1,2 +1,2 @@
-export * from './clipRegion';
-export * from './enableClipGuards';
+export * from './clipRegion.ts';
+export * from './enableClipGuards.ts';

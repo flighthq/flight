@@ -1,4 +1,4 @@
-import type { GlMeshProgram } from './GlMeshProgram';
+import type { GlMeshProgram } from './GlMeshProgram.ts';
 
 // The shared base for every lit mesh-material family (classic Lambert/Phong/BlinnPhong, Toon, and the
 // PBR family). Extends GlMeshProgram with the standard forward-light uniform locations every lit

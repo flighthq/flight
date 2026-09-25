@@ -1,15 +1,15 @@
 import { createMatrix4, setMatrix4, setMatrix4Identity } from '@flighthq/geometry/contract';
 import type { Aabb, VertexAttributeLayout } from '@flighthq/types/contract';
 
-import { createMeshGeometry } from './meshGeometry';
-import { computeMeshGeometryBounds } from './meshGeometryCompute';
+import { createMeshGeometry } from './meshGeometry.ts';
+import { computeMeshGeometryBounds } from './meshGeometryCompute.ts';
 import {
   centerMeshGeometry,
   scaleMeshGeometry,
   transformMeshGeometry,
   transformMeshGeometryInto,
   translateMeshGeometry,
-} from './meshGeometryTransforms';
+} from './meshGeometryTransforms.ts';
 
 const CANONICAL_LAYOUT: VertexAttributeLayout = {
   attributes: [

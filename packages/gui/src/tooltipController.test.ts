@@ -1,10 +1,10 @@
-import { createGuiTestNode, emitGuiPointer } from './guiTestHelper';
+import { createGuiTestNode, emitGuiPointer } from './guiTestHelper.ts';
 import {
   createTooltipController,
   disposeTooltipController,
   hideTooltipController,
   showTooltipController,
-} from './tooltipController';
+} from './tooltipController.ts';
 
 describe('createTooltipController', () => {
   it('shows after delay at the pointer offset and hides on exit', () => {

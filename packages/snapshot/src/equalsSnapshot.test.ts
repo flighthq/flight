@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { captureSnapshot } from './captureSnapshot';
-import { equalsSnapshot } from './equalsSnapshot';
+import { captureSnapshot } from './captureSnapshot.ts';
+import { equalsSnapshot } from './equalsSnapshot.ts';
 
 describe('equalsSnapshot', () => {
   it('is true for deep-equal snapshots', () => {

@@ -1,6 +1,6 @@
-import type { FlightDocumentFields } from './FlightDocumentFieldSchema';
-import type { LayoutNode, LayoutTree } from './Layout';
-import type { NodeAny } from './Node';
+import type { FlightDocumentFields } from './FlightDocumentFieldSchema.ts';
+import type { LayoutNode, LayoutTree } from './Layout.ts';
+import type { NodeAny } from './Node.ts';
 
 // The document specialization keeps layout styles inside the recursive values the text codec can
 // represent. It is otherwise the same container/item/kind/parentIndex vocabulary as LayoutNode.

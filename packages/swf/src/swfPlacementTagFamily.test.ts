@@ -1,6 +1,6 @@
-import { swfPlacementTagFamily } from './swfPlacementTagFamily';
-import { swfPlaceObject3Handler } from './swfPlaceObject3Handler';
-import { swfPlaceObjectHandler } from './swfPlaceObjectHandler';
+import { swfPlacementTagFamily } from './swfPlacementTagFamily.ts';
+import { swfPlaceObject3Handler } from './swfPlaceObject3Handler.ts';
+import { swfPlaceObjectHandler } from './swfPlaceObjectHandler.ts';
 
 describe('swfPlacementTagFamily', () => {
   it('is exactly its handlers, in the order a placed character is offered to them', () => {

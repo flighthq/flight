@@ -1,11 +1,11 @@
-import type { Bitmap } from './Bitmap';
-import type { CanvasSurface } from './CanvasSurface';
-import type { Kind } from './Entity';
-import type { Entity } from './Entity';
-import type { HostCanvasCapability } from './HostCanvas';
-import type { RenderRegistryTable } from './RenderRegistrySignals';
-import type { Texture } from './Texture';
-import type { TextureSourceKind } from './TextureSourceKind';
+import type { Bitmap } from './Bitmap.ts';
+import type { CanvasSurface } from './CanvasSurface.ts';
+import type { Kind } from './Entity.ts';
+import type { Entity } from './Entity.ts';
+import type { HostCanvasCapability } from './HostCanvas.ts';
+import type { RenderRegistryTable } from './RenderRegistrySignals.ts';
+import type { Texture } from './Texture.ts';
+import type { TextureSourceKind } from './TextureSourceKind.ts';
 
 export type CanvasTextureResolver = (
   resolvers: CanvasTextureResolvers,

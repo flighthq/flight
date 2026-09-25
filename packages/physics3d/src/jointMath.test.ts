@@ -1,8 +1,8 @@
 import type { Physics3DJoint, Physics3DJointFrames, RigidBody3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { refreshRigidBody3DWorldInertia } from './integrate';
-import { createPhysics3DBallAndSocketJoint } from './jointFactories';
+import { refreshRigidBody3DWorldInertia } from './integrate.ts';
+import { createPhysics3DBallAndSocketJoint } from './jointFactories.ts';
 import {
   applyPhysics3DJointAngularImpulse,
   applyPhysics3DJointImpulse,
@@ -19,9 +19,9 @@ import {
   writePhysics3DJointRelativeRotation,
   writePhysics3DJointRotationError,
   writePhysics3DJointSeparation,
-} from './jointMath';
-import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties';
-import { createRigidBody3D } from './world';
+} from './jointMath.ts';
+import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties.ts';
+import { createRigidBody3D } from './world.ts';
 
 describe('applyPhysics3DJointAngularImpulse', () => {
   it('spins B forward and A backward by the same amount', () => {

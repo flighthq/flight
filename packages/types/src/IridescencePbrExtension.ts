@@ -1,5 +1,5 @@
-import type { PbrExtension, PbrUvSet } from './PbrExtension';
-import type { Texture } from './Texture';
+import type { PbrExtension, PbrUvSet } from './PbrExtension.ts';
+import type { Texture } from './Texture.ts';
 
 // KHR_materials_iridescence: view-dependent thin-film interference over a thickness range in nm.
 export interface IridescencePbrExtension extends PbrExtension {

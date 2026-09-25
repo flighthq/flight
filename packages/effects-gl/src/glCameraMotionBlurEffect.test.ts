@@ -2,7 +2,7 @@ import {
   applyCameraMotionBlurEffectToGl,
   glCameraMotionBlurEffectRunner,
   registerGlCameraMotionBlurEffect,
-} from './glCameraMotionBlurEffect';
+} from './glCameraMotionBlurEffect.ts';
 
 describe('applyCameraMotionBlurEffectToGl', () => {
   it('is a function', () => {

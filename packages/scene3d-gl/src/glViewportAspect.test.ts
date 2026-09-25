@@ -1,7 +1,7 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { getGlScene3DViewportAspect } from './glViewportAspect';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { getGlScene3DViewportAspect } from './glViewportAspect.ts';
 
 describe('getGlScene3DViewportAspect', () => {
   it('uses the active render-pass dimensions', () => {

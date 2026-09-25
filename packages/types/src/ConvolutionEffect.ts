@@ -1,4 +1,4 @@
-import type { Effect } from './Effect';
+import type { Effect } from './Effect.ts';
 
 // Generic matrix-kernel convolution: each output pixel is the weighted sum of its
 // matrixX×matrixY neighborhood. A spatial Effect (it reads neighbors), so it is realized as an

@@ -4,11 +4,11 @@ import {
   applyDropShadowEffectToCanvas,
   canvasDropShadowEffectRunner,
   registerCanvasDropShadowEffect,
-} from './canvasDropShadowEffect';
-import * as canvasEffectCompositing from './canvasEffectCompositing';
-import * as canvasEffectState from './canvasEffectState';
-import { canvasTestHost } from './canvasEffectTestSupport';
-import * as canvasSourceModeCompositing from './canvasSourceModeCompositing';
+} from './canvasDropShadowEffect.ts';
+import * as canvasEffectCompositing from './canvasEffectCompositing.ts';
+import * as canvasEffectState from './canvasEffectState.ts';
+import { canvasTestHost } from './canvasEffectTestSupport.ts';
+import * as canvasSourceModeCompositing from './canvasSourceModeCompositing.ts';
 
 let nextTargetId = 0;
 

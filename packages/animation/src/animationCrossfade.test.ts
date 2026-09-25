@@ -1,15 +1,15 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createAnimationChannel, createAnimationClip } from './animationClip';
+import { createAnimationChannel, createAnimationClip } from './animationClip.ts';
 import {
   advanceAnimationCrossfade,
   createAnimationCrossfade,
   initializeAnimationCrossfade,
   isAnimationCrossfadeComplete,
   sampleAnimationCrossfade,
-} from './animationCrossfade';
-import { createAnimationPlayer } from './animationPlayer';
-import { createAnimationTrack } from './animationTrack';
+} from './animationCrossfade.ts';
+import { createAnimationPlayer } from './animationPlayer.ts';
+import { createAnimationTrack } from './animationTrack.ts';
 
 function player(targetRef: unknown, values: number[], opts?: Readonly<{ components?: number; quaternion?: boolean }>) {
   const track = createAnimationTrack({

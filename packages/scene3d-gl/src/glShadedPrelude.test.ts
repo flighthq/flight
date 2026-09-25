@@ -9,13 +9,13 @@ import {
 import type { GlColorAdjustmentMaterialFeature, Modifier, GlShadedDefineKey } from '@flighthq/types/contract';
 import { ModifierSlot, VertexDisplaceModifierSource } from '@flighthq/types/contract';
 
-import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
-import { emissiveGlModifierSnippet, envReflectGlModifierSnippet } from './glShadedBuiltInModifiers';
-import { registerBuiltInGlModifierSnippets, vertexDisplaceGlModifierSnippet } from './glShadedBuiltInModifiers';
-import { registerGlModifierSnippet } from './glShadedModifierSnippet';
-import { buildGlShadedCacheKey, compileGlShadedProgram, ensureGlShadedProgram } from './glShadedPrelude';
+import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { emissiveGlModifierSnippet, envReflectGlModifierSnippet } from './glShadedBuiltInModifiers.ts';
+import { registerBuiltInGlModifierSnippets, vertexDisplaceGlModifierSnippet } from './glShadedBuiltInModifiers.ts';
+import { registerGlModifierSnippet } from './glShadedModifierSnippet.ts';
+import { buildGlShadedCacheKey, compileGlShadedProgram, ensureGlShadedProgram } from './glShadedPrelude.ts';
 
 const BASE_KEY: GlShadedDefineKey = {
   alphaMaskEnabled: false,

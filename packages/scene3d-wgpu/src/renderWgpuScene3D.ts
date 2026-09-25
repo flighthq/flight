@@ -37,9 +37,9 @@ import type {
 import { BlendMode, StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
-import { resolveWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { INSTANCE_RECORD_FLOATS } from './wgpuMeshPipeline';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { resolveWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import { INSTANCE_RECORD_FLOATS } from './wgpuMeshPipeline.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 
 export function isWgpuMeshGpuSkinned(state: WgpuRenderState, mesh: Readonly<Mesh>): boolean {
   const skinning = getWgpuScene3DRuntime(state).skinningAdapter as WgpuSkinningAdapter | null;

@@ -8,8 +8,8 @@ import type {
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeEffect } from './effect';
-import { getGaussianEffectPadding, registerEffectPaddingResolver } from './effectPadding';
+import { initializeEffect } from './effect.ts';
+import { getGaussianEffectPadding, registerEffectPaddingResolver } from './effectPadding.ts';
 
 // Plain separable Gaussian blur intent. `blurX`/`blurY` are the per-axis Gaussian standard deviations
 // in pixels; the backends realize them as a two-pass separable blur bouncing through an offscreen

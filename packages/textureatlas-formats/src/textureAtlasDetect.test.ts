@@ -15,7 +15,7 @@ import {
   parseTextureAtlas,
   registerTextureAtlasFormat,
   unregisterTextureAtlasFormat,
-} from './textureAtlasDetect';
+} from './textureAtlasDetect.ts';
 
 const STARLING_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <TextureAtlas imagePath="atlas.png">

@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { Texture2D } from './Texture';
-import type { TextureAtlasRegion } from './TextureAtlasRegion';
+import type { Entity } from './Entity.ts';
+import type { Texture2D } from './Texture.ts';
+import type { TextureAtlasRegion } from './TextureAtlasRegion.ts';
 
 export interface TextureAtlas extends Entity {
   // Page metadata the descriptor formats carry and a consumer needs after parsing: the image file to

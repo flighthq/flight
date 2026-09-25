@@ -3,7 +3,7 @@ import { connectSignal } from '@flighthq/signals/contract';
 import type { InteractionSignals, Node, NodeData, NodeRuntime, PartialNode } from '@flighthq/types/contract';
 import { NodeKind } from '@flighthq/types/contract';
 
-import { addNodeChild, getNodeChildCount, getNodeParent } from './hierarchy';
+import { addNodeChild, getNodeChildCount, getNodeParent } from './hierarchy.ts';
 import {
   createNode,
   createNodeRuntime,
@@ -16,7 +16,7 @@ import {
   getNodeSignals,
   initializeNodeSignals,
   setNodeEnabled,
-} from './node';
+} from './node.ts';
 
 describe('createNode', () => {
   let node: Node;

@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { SpritesheetAnimationData } from './SpritesheetAnimationData';
-import type { SpritesheetFrameData } from './SpritesheetFrameData';
+import type { Entity } from './Entity.ts';
+import type { SpritesheetAnimationData } from './SpritesheetAnimationData.ts';
+import type { SpritesheetFrameData } from './SpritesheetFrameData.ts';
 
 export interface SpritesheetData extends Entity {
   animations: SpritesheetAnimationData[];

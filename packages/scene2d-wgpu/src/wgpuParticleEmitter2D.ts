@@ -19,7 +19,7 @@ import type {
   WgpuRenderState,
 } from '@flighthq/types/contract';
 
-import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 
 // Per-instance layout in the instance buffer (14 floats = 56 bytes):
 //   0: px, 1: py, 2: cosScale, 3: sinScale

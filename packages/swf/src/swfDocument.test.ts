@@ -66,7 +66,7 @@ import {
   SpriteKind,
 } from '@flighthq/types/contract';
 
-import { swfAllTagHandlers } from './swfAllTagHandlers';
+import { swfAllTagHandlers } from './swfAllTagHandlers.ts';
 import {
   createGlyphOutlineSourcesFromSwf,
   createScene2DFromSwf,
@@ -76,11 +76,11 @@ import {
   readSwfExportedSymbolNames,
   registerSwfScene2DDocumentImporter,
   uncompressSwfSource,
-} from './swfDocument';
-import { buildFrameScriptAbc } from './swfFrameActionTestHelper';
-import { decodeSwfImage } from './swfImageDecoder';
-import { SWF_TAG_NODE_KINDS } from './swfNodeKinds';
-import { ShapeWriter } from './swfShapeTestHelper';
+} from './swfDocument.ts';
+import { buildFrameScriptAbc } from './swfFrameActionTestHelper.ts';
+import { decodeSwfImage } from './swfImageDecoder.ts';
+import { SWF_TAG_NODE_KINDS } from './swfNodeKinds.ts';
+import { ShapeWriter } from './swfShapeTestHelper.ts';
 import {
   SwfBitWriter,
   createSwfMatrixRecord,
@@ -95,7 +95,7 @@ import {
   countSwfSignedBits,
   swfUint16Bytes,
   swfUint32Bytes,
-} from './swfTagStreamTestHelper';
+} from './swfTagStreamTestHelper.ts';
 
 describe('createGlyphOutlineSourcesFromSwf', () => {
   it('funnels a DefineFont2 outline and code table through the font adapter into glyphatlas', () => {

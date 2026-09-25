@@ -1,5 +1,5 @@
-import type { TiledObject } from './TiledObject';
-import type { TiledProperty } from './TiledProperty';
+import type { TiledObject } from './TiledObject.ts';
+import type { TiledProperty } from './TiledProperty.ts';
 
 // One frame of a tile's flip-book animation (`<frame tileid duration/>`). `tileId` is a local id
 // within the owning tileset; `duration` is in milliseconds.

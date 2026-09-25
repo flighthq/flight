@@ -1,4 +1,4 @@
-import { easeInCubic, easeInOutCubic, easeOutCubic } from './easeCubic';
+import { easeInCubic, easeInOutCubic, easeOutCubic } from './easeCubic.ts';
 
 describe('easeInCubic', () => {
   it('returns 0 at t=0 and 1 at t=1', () => {

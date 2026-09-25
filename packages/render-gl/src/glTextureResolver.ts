@@ -26,9 +26,9 @@ import {
   bindGlCompressedImageTexture,
   bindGlImageResourceTexture,
   bindGlTextureRealization,
-} from './glDraw';
-import { getGlRenderStateRuntime } from './glRenderState';
-import { bindGlRenderTexture } from './glRenderTexture';
+} from './glDraw.ts';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
+import { bindGlRenderTexture } from './glRenderTexture.ts';
 
 export function registerGlBitmapTextureResolver(state: GlRenderState): void {
   registerGlTextureResolver(state, BitmapTextureSourceKind, resolveGlBitmapTexture);

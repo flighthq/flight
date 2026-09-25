@@ -20,7 +20,7 @@ import {
 } from '@flighthq/geometry/contract';
 import type { Matrix4, Obb, Vector3 } from '@flighthq/types/contract';
 
-import { initializeObb } from './obb';
+import { initializeObb } from './obb.ts';
 
 describe('createObb', () => {
   it('stores center, half-extents, and orientation', () => {

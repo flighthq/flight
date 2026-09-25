@@ -19,7 +19,7 @@ import {
   createDocumentRefusal,
   createSceneRefusal,
   initializeDocumentRefusal,
-} from './sceneDocumentRefusal';
+} from './sceneDocumentRefusal.ts';
 
 describe('checkFlightDocumentFields', () => {
   it('uses registered validators and rejects unknown fields', () => {

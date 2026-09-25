@@ -3,14 +3,14 @@ import type { Physics2DJoint, Physics2DMouseJoint, Physics2DPulleyJoint } from '
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { updatePhysics2DColliderWorldShape } from './colliderTransform';
+import { updatePhysics2DColliderWorldShape } from './colliderTransform.ts';
 import {
   createPhysics2DDebugGeometry,
   initializePhysics2DDebugGeometry,
   writePhysics2DDebugGeometry,
-} from './debugGeometry';
-import { addPhysics2DJoint } from './jointRegistry';
-import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world';
+} from './debugGeometry.ts';
+import { addPhysics2DJoint } from './jointRegistry.ts';
+import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
 const ONLY_COLLIDERS = {

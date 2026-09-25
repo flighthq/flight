@@ -21,8 +21,8 @@ import {
   QUAD_BATCH_VS,
   setGlQuadBatchWorldAndTexture,
   useGlQuadBatchProgram,
-} from './glQuadBatchWriter';
-import { drawGlShapeMeshBatch, ensureGlShapeMeshProgram } from './glShapeMesh';
+} from './glQuadBatchWriter.ts';
+import { drawGlShapeMeshBatch, ensureGlShapeMeshProgram } from './glShapeMesh.ts';
 
 // Enables the opt-in color-adjustment accumulator and inline fold on a WebGL render state: the fused-color-matrix
 // scene2d the sprite/quad batch draws through so a color adjustment (and, later, other pointwise

@@ -8,8 +8,8 @@ import {
   isSpring2DSettled,
   resetSpring2D,
   updateSpring2D,
-} from './spring2D';
-import { createSpringConfig } from './springConfig';
+} from './spring2D.ts';
+import { createSpringConfig } from './springConfig.ts';
 
 describe('addSpringImpulse2D', () => {
   it('adds each velocity component without changing either value', () => {

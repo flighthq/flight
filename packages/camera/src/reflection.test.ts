@@ -2,10 +2,10 @@ import { createMatrix4, createPlane } from '@flighthq/geometry/contract';
 import type { Vector3Like } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { getCamera3DForward, getCamera3DPosition } from './basis';
-import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from './camera';
-import { createPerspectiveProjection, setProjectionMatrix4 } from './projection';
-import { applyObliqueNearClipPlane, reflectCamera3DByPlane } from './reflection';
+import { getCamera3DForward, getCamera3DPosition } from './basis.ts';
+import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from './camera.ts';
+import { createPerspectiveProjection, setProjectionMatrix4 } from './projection.ts';
+import { applyObliqueNearClipPlane, reflectCamera3DByPlane } from './reflection.ts';
 
 function near(a: number, b: number, eps = 1e-5): void {
   expect(a).toBeCloseTo(b, -Math.log10(eps));

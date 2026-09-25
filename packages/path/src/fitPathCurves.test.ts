@@ -1,7 +1,7 @@
 import { PathCommand } from '@flighthq/types/contract';
 
-import { fitPathCurves } from './fitPathCurves';
-import { appendPathLineTo, appendPathMoveTo, createPath } from './path';
+import { fitPathCurves } from './fitPathCurves.ts';
+import { appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
 
 describe('fitPathCurves', () => {
   it('keeps a straight line as a line', () => {

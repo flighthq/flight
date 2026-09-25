@@ -3,7 +3,7 @@ import { createMatrix3, createVector2, inverseMatrix3 } from '@flighthq/geometry
 import type { ImageResource, RenderTarget, Texture2D } from '@flighthq/types/contract';
 import { ImageTextureSourceKind, RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
-import { createSampler, equalsSampler } from './sampler';
+import { createSampler, equalsSampler } from './sampler.ts';
 import {
   cloneTexture,
   copyTexture,
@@ -29,7 +29,7 @@ import {
   setTextureUvRotation,
   setTextureUvScale,
   transformTextureUv,
-} from './texture';
+} from './texture.ts';
 
 const fakeImage = { height: 64, kind: ImageTextureSourceKind, width: 32 } as ImageResource;
 

@@ -1,4 +1,4 @@
-import { applyOutlineEffectToGl, glOutlineEffectRunner, registerGlOutlineEffect } from './glOutlineEffect';
+import { applyOutlineEffectToGl, glOutlineEffectRunner, registerGlOutlineEffect } from './glOutlineEffect.ts';
 
 describe('applyOutlineEffectToGl', () => {
   it('is a function', () => {

@@ -7,7 +7,7 @@ import {
   encodeSfntLoca,
   encodeSfntSimpleGlyph,
   packSfntTag,
-} from './sfntAssembly';
+} from './sfntAssembly.ts';
 
 describe('assembleSfntFont', () => {
   it('writes the directory in tag order whatever order it was given', () => {

@@ -1,4 +1,4 @@
-import { createSignal, initializeSignal } from './signal';
+import { createSignal, initializeSignal } from './signal.ts';
 
 describe('createSignal', () => {
   it('initializes with data=null', () => {

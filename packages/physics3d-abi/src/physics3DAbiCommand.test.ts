@@ -14,7 +14,7 @@ import {
 import type { CollisionColliderShape3D, Physics3DAbiCommandBuffer, Physics3DJoint } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { clearPhysics3DAbiCommandBuffer, createPhysics3DAbiCommandBuffer } from './physics3DAbiBuffer';
+import { clearPhysics3DAbiCommandBuffer, createPhysics3DAbiCommandBuffer } from './physics3DAbiBuffer.ts';
 import {
   getPhysics3DAbiSetColliderCommandByteLength,
   writePhysics3DAbiApplyForceAtPointCommand,
@@ -31,7 +31,7 @@ import {
   writePhysics3DAbiSetJointCommand,
   writePhysics3DAbiSetSolverConfigCommand,
   writePhysics3DAbiWakeBodyCommand,
-} from './physics3DAbiCommand';
+} from './physics3DAbiCommand.ts';
 import {
   Physics3DAbiBodyType,
   Physics3DAbiCommandByteLength,
@@ -41,7 +41,7 @@ import {
   Physics3DAbiJointKind,
   Physics3DAbiSetColliderPayloadOffset,
   Physics3DAbiShapeKind,
-} from './physics3DAbiLayout';
+} from './physics3DAbiLayout.ts';
 
 describe('getPhysics3DAbiSetColliderCommandByteLength', () => {
   it('matches exactly the number of bytes the collider writer publishes', () => {

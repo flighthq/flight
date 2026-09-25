@@ -1,5 +1,5 @@
-import type { Entity, EntityWithoutRuntime } from './Entity';
-import type { Vector3 } from './Vector3';
+import type { Entity, EntityWithoutRuntime } from './Entity.ts';
+import type { Vector3 } from './Vector3.ts';
 
 // A 3D ray: an origin point and a direction (conventionally unit-length). Points along the ray
 // are parameterized as origin + t * direction for t >= 0.

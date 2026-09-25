@@ -1,7 +1,7 @@
 import { Project } from 'ts-morph';
 import { describe, expect, it } from 'vitest';
 
-import { collectEntryPointInventory } from './export-inventory';
+import { collectEntryPointInventory } from './export-inventory.ts';
 
 describe('collectEntryPointInventory', () => {
   it('preserves aliases and runtime-value provenance through barrels', () => {

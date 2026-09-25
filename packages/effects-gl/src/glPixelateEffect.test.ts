@@ -1,4 +1,4 @@
-import { applyPixelateEffectToGl, glPixelateEffectRunner, registerGlPixelateEffect } from './glPixelateEffect';
+import { applyPixelateEffectToGl, glPixelateEffectRunner, registerGlPixelateEffect } from './glPixelateEffect.ts';
 
 describe('applyPixelateEffectToGl', () => {
   it('is a function', () => {

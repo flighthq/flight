@@ -9,9 +9,9 @@ import {
   Scene3DAnimationPathWeights,
 } from '@flighthq/types/contract';
 
-import { createMesh } from './mesh';
-import { applyAnimationClipToScene3D } from './sceneAnimation';
-import { createNode3D } from './sceneNode';
+import { createMesh } from './mesh.ts';
+import { applyAnimationClipToScene3D } from './sceneAnimation.ts';
+import { createNode3D } from './sceneNode.ts';
 
 describe('applyAnimationClipToScene3D', () => {
   it('drives a node translation from a Vector3 channel', () => {

@@ -3,8 +3,8 @@ import type { Attachment2D, MeshAttachment2D, Skin2D, Slot2D } from '@flighthq/t
 import { MeshAttachment2DKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createSkin2D } from './skin2D';
-import { getSkeleton2DSlotDeformOffsets, setSkeleton2DSlotDeform } from './slotDeform2D';
+import { createSkin2D } from './skin2D.ts';
+import { getSkeleton2DSlotDeformOffsets, setSkeleton2DSlotDeform } from './slotDeform2D.ts';
 
 function slot(attachment: Attachment2D | null): Slot2D {
   return { attachment, boneIndex: 0, color: 0xffffffff, name: 's' };

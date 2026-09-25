@@ -8,7 +8,7 @@ import {
   createPhysics3DCollider,
   createPhysics3DWorld,
   createRigidBody3D,
-} from './world';
+} from './world.ts';
 import {
   createPhysics3DQueryFilter,
   createPhysics3DQueryResult,
@@ -22,7 +22,7 @@ import {
   queryPhysics3DRayClosest,
   queryPhysics3DRegion,
   queryPhysics3DShapeCast,
-} from './worldQueries';
+} from './worldQueries.ts';
 
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();

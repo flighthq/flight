@@ -1,5 +1,5 @@
-import type { AdvancedBlendMode } from './AdvancedBlendMode';
-import type { Effect } from './Effect';
+import type { AdvancedBlendMode } from './AdvancedBlendMode.ts';
+import type { Effect } from './Effect.ts';
 
 // Advanced blend as an explicit composite effect: blend the incoming pipeline layer (the effect's
 // `source`, treated as the foreground) over a backdrop using a destination-reading / non-separable mode

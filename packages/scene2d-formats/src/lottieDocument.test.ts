@@ -13,8 +13,8 @@ import {
   applyAnimationClipToLottieDocument,
   createScene2DFromLottieDocument,
   initializeLottieDocumentImportResult,
-} from './lottieDocument';
-import { createReadyImageResourceForTest } from './testHelper';
+} from './lottieDocument.ts';
+import { createReadyImageResourceForTest } from './testHelper.ts';
 
 describe('applyAnimationClipToLottieDocument', () => {
   it('applies the imported target-bound clip', () => {

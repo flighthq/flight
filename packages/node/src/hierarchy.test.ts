@@ -4,7 +4,7 @@ import { connectSignal } from '@flighthq/signals/contract';
 import type { HasTransform2D, HasTransform2DRuntime, Node, NodeRuntime, NodeTraits } from '@flighthq/types/contract';
 import { NodeKind } from '@flighthq/types/contract';
 
-import { initTransform2DRuntimeTrait, initTransform2DTrait } from './hasTransform2d';
+import { initTransform2DRuntimeTrait, initTransform2DTrait } from './hasTransform2d.ts';
 import {
   addNodeChild,
   addNodeChildAt,
@@ -29,10 +29,10 @@ import {
   setNodeChildIndex,
   swapNodeChildren,
   swapNodeChildrenAt,
-} from './hierarchy';
-import { createNode, enableNodeSignals, getNodeRuntime } from './node';
-import { getNodeWorldMatrix } from './nodeTransform2d';
-import { getNodeChildrenRevision, getNodeParentReferenceRevision, invalidateNodeLocalTransform } from './revision';
+} from './hierarchy.ts';
+import { createNode, enableNodeSignals, getNodeRuntime } from './node.ts';
+import { getNodeWorldMatrix } from './nodeTransform2d.ts';
+import { getNodeChildrenRevision, getNodeParentReferenceRevision, invalidateNodeLocalTransform } from './revision.ts';
 
 let container: Node<NodeTraits>;
 let childA: Node<NodeTraits>;

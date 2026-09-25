@@ -1,6 +1,6 @@
-import { createBitmap } from './bitmap';
-import { fillBitmapRectangle } from './bitmapFill';
-import { getBitmapColorBoundsRectangle } from './bitmapQuery';
+import { createBitmap } from './bitmap.ts';
+import { fillBitmapRectangle } from './bitmapFill.ts';
+import { getBitmapColorBoundsRectangle } from './bitmapQuery.ts';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };

@@ -2,7 +2,7 @@ import { createRectangle, setRectangle } from '@flighthq/geometry/contract';
 import { getNodeLocalBoundsRectangle } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
-import { containsNode2D, getNode2DOverlapRectangle, hitTestNode2DsShape } from './displayObjectOverlap';
+import { containsNode2D, getNode2DOverlapRectangle, hitTestNode2DsShape } from './displayObjectOverlap.ts';
 
 function makeAt(x: number, y: number, w: number, h: number) {
   const obj = createDisplayObject();

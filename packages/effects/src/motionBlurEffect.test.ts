@@ -1,4 +1,4 @@
-import { createMotionBlurEffect, initializeMotionBlurEffect } from './motionBlurEffect';
+import { createMotionBlurEffect, initializeMotionBlurEffect } from './motionBlurEffect.ts';
 
 describe('createMotionBlurEffect', () => {
   it('tags the intent type', () => {

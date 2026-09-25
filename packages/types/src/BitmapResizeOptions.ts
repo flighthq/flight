@@ -1,5 +1,5 @@
-import type { BitmapEdgeMode } from './BitmapEdgeMode';
-import type { BitmapResizeMode } from './BitmapResizeMode';
+import type { BitmapEdgeMode } from './BitmapEdgeMode.ts';
+import type { BitmapResizeMode } from './BitmapResizeMode.ts';
 
 export interface BitmapResizeOptions {
   mode?: BitmapResizeMode;

@@ -11,7 +11,7 @@ import {
   AWD2_MAGIC_1,
   AWD2_MAGIC_2,
   AWD2_VERSION_MAJOR_OFFSET,
-} from './awd2Schema';
+} from './awd2Schema.ts';
 
 /**
  * Reads the fixed 12-byte AWD2 header: magic, version, flags, compression method and body length. It

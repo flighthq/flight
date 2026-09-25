@@ -1,4 +1,4 @@
-import type { ForceFalloff } from './ForceFalloff';
+import type { ForceFalloff } from './ForceFalloff.ts';
 /** Gravity well / attractor that pulls particles toward a point using a physically-based
  *  inverse-square or linear falloff, with a configurable well radius and a repulsor mode.
  *

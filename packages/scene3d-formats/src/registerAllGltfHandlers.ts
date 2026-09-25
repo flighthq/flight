@@ -1,10 +1,10 @@
 import type { GltfCoreFeatureHandler, GltfExtensionHandler } from '@flighthq/types/contract';
 
-import { registerGltfAnimationHandlers } from './registerGltfAnimationHandlers';
-import { registerGltfCameraHandlers } from './registerGltfCameraHandlers';
-import { registerGltfLightingExtensionHandlers } from './registerGltfLightingExtensionHandlers';
-import { registerGltfMaterialExtensionHandlers } from './registerGltfMaterialExtensionHandlers';
-import { registerGltfSkinHandlers } from './registerGltfSkinHandlers';
+import { registerGltfAnimationHandlers } from './registerGltfAnimationHandlers.ts';
+import { registerGltfCameraHandlers } from './registerGltfCameraHandlers.ts';
+import { registerGltfLightingExtensionHandlers } from './registerGltfLightingExtensionHandlers.ts';
+import { registerGltfMaterialExtensionHandlers } from './registerGltfMaterialExtensionHandlers.ts';
+import { registerGltfSkinHandlers } from './registerGltfSkinHandlers.ts';
 
 // Registers every optional glTF family shipped by Flight across the parser's two caller-owned lists.
 // Registering another handler with the same source-native kind afterward replaces the built-in.

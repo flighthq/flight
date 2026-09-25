@@ -10,9 +10,9 @@ import {
   runTypechecks,
   typecheckProjects,
   typeDeclarationsProject,
-} from './typecheck-core';
-import type { TypecheckProject, TypecheckResult } from './typecheck-core';
-import { workspacePackages } from './workspaces';
+} from './typecheck-core.ts';
+import type { TypecheckProject, TypecheckResult } from './typecheck-core.ts';
+import { workspacePackages } from './workspaces.ts';
 
 describe('runTypechecks', () => {
   it('finishes the types declaration prerequisite before tools or another consumer starts', async () => {

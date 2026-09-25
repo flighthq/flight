@@ -12,19 +12,19 @@ import {
   readPhysics2DAbiContacts,
   readPhysics2DAbiJoints,
   stepPhysics2DAbiWorld,
-} from './physics2DAbi';
+} from './physics2DAbi.ts';
 import {
   createPhysics2DAbiBodyBuffer,
   createPhysics2DAbiCommandBuffer,
   createPhysics2DAbiContactBuffer,
   createPhysics2DAbiExecutionResult,
   createPhysics2DAbiJointBuffer,
-} from './physics2DAbiBuffer';
+} from './physics2DAbiBuffer.ts';
 import {
   writePhysics2DAbiSetBodyCommand,
   writePhysics2DAbiSetColliderCommand,
   writePhysics2DAbiSetJointCommand,
-} from './physics2DAbiCommand';
+} from './physics2DAbiCommand.ts';
 import {
   Physics2DAbiBodyValue,
   Physics2DAbiCapability,
@@ -33,7 +33,7 @@ import {
   Physics2DAbiCommandRecordOffset,
   Physics2DAbiContactFlag,
   Physics2DAbiVersion,
-} from './physics2DAbiLayout';
+} from './physics2DAbiLayout.ts';
 
 const MATERIAL = { density: 1, friction: 0.3, restitution: 0 };
 

@@ -1,6 +1,6 @@
-import { swfEditTextHandler } from './swfEditTextHandler';
-import { swfStaticTextHandler } from './swfStaticTextHandler';
-import { swfTextTagFamily } from './swfTextTagFamily';
+import { swfEditTextHandler } from './swfEditTextHandler.ts';
+import { swfStaticTextHandler } from './swfStaticTextHandler.ts';
+import { swfTextTagFamily } from './swfTextTagFamily.ts';
 
 describe('swfTextTagFamily', () => {
   it('is exactly its handlers, in the order a placed character is offered to them', () => {

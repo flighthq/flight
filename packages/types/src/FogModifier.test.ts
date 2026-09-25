@@ -1,7 +1,7 @@
-import { EntityRuntimeKey } from './Entity';
-import { FogModifierKind, FogModifierMode } from './FogModifier';
-import type { FogModifier } from './FogModifier';
-import type { Modifier } from './Modifier';
+import { EntityRuntimeKey } from './Entity.ts';
+import { FogModifierKind, FogModifierMode } from './FogModifier.ts';
+import type { FogModifier } from './FogModifier.ts';
+import type { Modifier } from './Modifier.ts';
 
 describe('FogModifier', () => {
   describe('FogModifierKind', () => {

@@ -12,9 +12,9 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { isKnownSwfTag } from './swfKnownTags';
-import { SwfReader } from './swfReader';
-import { SWF_NON_CONTENT_TAGS } from './swfTagVocabulary';
+import { isKnownSwfTag } from './swfKnownTags.ts';
+import { SwfReader } from './swfReader.ts';
+import { SWF_NON_CONTENT_TAGS } from './swfTagVocabulary.ts';
 
 // The tag walk itself: one flat lookup per tag, and a length-prefixed skip for every tag no registered
 // family claims. It is deliberately the only module that knows how a tag stream is framed, so the root

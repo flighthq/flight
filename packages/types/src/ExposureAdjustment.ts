@@ -1,4 +1,4 @@
-import type { ColorMatrixAdjustment } from './ColorMatrixAdjustment';
+import type { ColorMatrixAdjustment } from './ColorMatrixAdjustment.ts';
 
 // Linear exposure as a matrix-tier adjustment: a `2^exposure` scalar multiply on RGB. The baked matrix
 // runs through the default rgba8 pipeline, which clamps to [0,1] — correct SDR exposure. An unclamped

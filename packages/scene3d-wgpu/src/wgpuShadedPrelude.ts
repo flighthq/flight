@@ -45,7 +45,7 @@ import {
 } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
-import { getWgpuClassicSharedSamplerModuleSourceForKey } from './wgpuClassicPrelude';
+import { getWgpuClassicSharedSamplerModuleSourceForKey } from './wgpuClassicPrelude.ts';
 import {
   createWgpuMeshPipeline,
   ensureWgpuPbrSampleLayout,
@@ -54,11 +54,11 @@ import {
   resolveWgpuMaterialTextureView,
   spliceWgpuColorAdjustmentPrelude,
   stashWgpuUvTransform,
-} from './wgpuMeshPipeline';
-import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
-import { getWgpuScene3DTime } from './wgpuScene3DTime';
-import { getWgpuShadedBaseFlags } from './wgpuShadedMeshMaterialRenderer';
-import { registerWgpuModifierSnippet } from './wgpuShadedModifierSnippet';
+} from './wgpuMeshPipeline.ts';
+import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime.ts';
+import { getWgpuScene3DTime } from './wgpuScene3DTime.ts';
+import { getWgpuShadedBaseFlags } from './wgpuShadedMeshMaterialRenderer.ts';
+import { registerWgpuModifierSnippet } from './wgpuShadedModifierSnippet.ts';
 
 interface ShadedModifierPlan {
   diffuse: string;

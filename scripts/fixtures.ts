@@ -89,7 +89,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { fileURLToPath } from 'node:url';
 
-import type { FixturePackEntry, FixturePlan } from './fixtures-core';
+import type { FixturePackEntry, FixturePlan } from './fixtures-core.ts';
 import {
   crossCheckFixtureChecksums,
   crossCheckFixtureTag,
@@ -97,7 +97,7 @@ import {
   parseFixtureChecksums,
   parseFixtureManifest,
   planFixtureFetch,
-} from './fixtures-core';
+} from './fixtures-core.ts';
 
 // The one place the release is pinned. NEVER `latest`: a fixture set that moves under the tests makes
 // every future conformance number irreproducible, and the failure is silent — the score just changes.

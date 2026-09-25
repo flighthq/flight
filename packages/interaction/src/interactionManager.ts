@@ -29,9 +29,9 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-import { findGraphHitTarget, findGraphHitTargetPrecise } from './hitTests';
-import { findSpatialInteractionTarget } from './interactionSpatialIndex';
-import { getNodeCursor, getNodeInteractionState } from './nodeInteractionState';
+import { findGraphHitTarget, findGraphHitTargetPrecise } from './hitTests.ts';
+import { findSpatialInteractionTarget } from './interactionSpatialIndex.ts';
+import { getNodeCursor, getNodeInteractionState } from './nodeInteractionState.ts';
 
 export function captureInteractionPointer<N extends NodeAny>(
   manager: InteractionManager<N>,

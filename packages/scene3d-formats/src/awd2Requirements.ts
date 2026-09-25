@@ -7,7 +7,7 @@ import type {
 } from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
-import { collectAwd2BlockCounts } from './awd2BlockCensus';
+import { collectAwd2BlockCounts } from './awd2BlockCensus.ts';
 
 /**
  * Build-time inventory of what one AWD2 file asks a build to support: one requirement per distinct

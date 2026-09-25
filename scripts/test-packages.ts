@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
-import { allPackageNames } from './select.js';
-import { parseTestShard, selectTestShardTargets } from './test-shard.js';
+import { allPackageNames } from './select.ts';
+import { parseTestShard, selectTestShardTargets } from './test-shard.ts';
 
 // Resolved before the top-level flow below rather than with the other module constants at the bottom:
 // the package scan runs at import time and would hit the temporal dead zone.

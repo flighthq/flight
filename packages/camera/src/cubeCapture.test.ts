@@ -9,10 +9,10 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { getCamera3DPosition } from './basis';
-import { createCamera3D } from './camera';
-import { getCubeCaptureFaceCamera3D } from './cubeCapture';
-import { createPerspectiveProjection } from './projection';
+import { getCamera3DPosition } from './basis.ts';
+import { createCamera3D } from './camera.ts';
+import { getCubeCaptureFaceCamera3D } from './cubeCapture.ts';
+import { createPerspectiveProjection } from './projection.ts';
 
 function near(a: number, b: number, eps = 1e-5): void {
   expect(a).toBeCloseTo(b, -Math.log10(eps));

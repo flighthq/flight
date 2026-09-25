@@ -17,8 +17,8 @@ import {
   ResourceResolutionState,
 } from '@flighthq/types/contract';
 
-import { createAudioResource } from './audioResource';
-import { decodeAudioResourceBytes } from './decodeAudioResourceBytes';
+import { createAudioResource } from './audioResource.ts';
+import { decodeAudioResourceBytes } from './decodeAudioResourceBytes.ts';
 
 // Reduces a thrown value to the serialization-safe categories a reference retains. Raw Error objects and
 // arbitrary thrown values stay inside the resolving operation; diagnostics get category, name, and message.

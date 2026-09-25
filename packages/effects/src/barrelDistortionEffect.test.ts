@@ -1,4 +1,4 @@
-import { createBarrelDistortionEffect, initializeBarrelDistortionEffect } from './barrelDistortionEffect';
+import { createBarrelDistortionEffect, initializeBarrelDistortionEffect } from './barrelDistortionEffect.ts';
 
 describe('createBarrelDistortionEffect', () => {
   it('carries options', () => {

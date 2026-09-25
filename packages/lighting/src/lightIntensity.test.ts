@@ -7,7 +7,7 @@ import {
   getLightLinearIntensity,
   getLightPhotometricIntensity,
   setLightPhotometricIntensity,
-} from './lightIntensity';
+} from './lightIntensity.ts';
 
 describe('applyLightExposure', () => {
   it('returns the intensity unchanged at 0 EV', () => {

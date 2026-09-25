@@ -8,10 +8,10 @@ import type {
 } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { getCollisionShapeValidationStatus2D } from './collisionShapeValidation2D';
-import { getCollisionShapeValidationStatus3D } from './collisionShapeValidation3D';
-import { setCollisionTestGuard2D } from './testCollision2D';
-import { setCollisionTestGuard3D } from './testCollision3D';
+import { getCollisionShapeValidationStatus2D } from './collisionShapeValidation2D.ts';
+import { getCollisionShapeValidationStatus3D } from './collisionShapeValidation3D.ts';
+import { setCollisionTestGuard2D } from './testCollision2D.ts';
+import { setCollisionTestGuard3D } from './testCollision3D.ts';
 
 export function areCollisionGuardsEnabled(): boolean {
   return collisionGuardsEnabled;

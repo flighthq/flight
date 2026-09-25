@@ -1,14 +1,14 @@
-export { disableTilemapFormatsGuards, enableTilemapFormatsGuards } from './enableTilemapFormatsGuards';
-export { formatTiledColor, parseTiledColor } from './tiledColor';
-export { decodeTiledGid, getTiledTilesetRefForGid } from './tiledGid';
-export { parseTiledTilesetJson, parseTiledTmj } from './tiledJsonParse';
+export { disableTilemapFormatsGuards, enableTilemapFormatsGuards } from './enableTilemapFormatsGuards.ts';
+export { formatTiledColor, parseTiledColor } from './tiledColor.ts';
+export { decodeTiledGid, getTiledTilesetRefForGid } from './tiledGid.ts';
+export { parseTiledTilesetJson, parseTiledTmj } from './tiledJsonParse.ts';
 export {
   decodeTiledBase64Layer,
   decodeTiledCsvLayer,
   explainTiledLayerData,
   setTiledLayerDataGuard,
-} from './tiledLayerData';
-export { buildTilemapLayersFromTiled } from './tiledProject';
-export { formatTiledTilesetJson, formatTiledTmj } from './tiledTmjFormat';
-export { formatTiledTileset, formatTiledTmx } from './tiledTmxFormat';
-export { parseTiledTileset, parseTiledTmx } from './tiledXmlParse';
+} from './tiledLayerData.ts';
+export { buildTilemapLayersFromTiled } from './tiledProject.ts';
+export { formatTiledTilesetJson, formatTiledTmj } from './tiledTmjFormat.ts';
+export { formatTiledTileset, formatTiledTmx } from './tiledTmxFormat.ts';
+export { parseTiledTileset, parseTiledTmx } from './tiledXmlParse.ts';

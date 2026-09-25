@@ -1,4 +1,4 @@
-import { createFilmEmulationEffect, initializeFilmEmulationEffect } from './filmEmulationEffect';
+import { createFilmEmulationEffect, initializeFilmEmulationEffect } from './filmEmulationEffect.ts';
 
 describe('createFilmEmulationEffect', () => {
   it('carries options', () => {

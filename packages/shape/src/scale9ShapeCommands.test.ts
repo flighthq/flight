@@ -1,8 +1,8 @@
 import type { ShapeCommandToken } from '@flighthq/types/contract';
 
-import { createScale9Shape } from './scale9Shape';
-import { mapScale9ShapeCommands } from './scale9ShapeCommands';
-import { appendShapeBeginFill, appendShapeRectangle } from './shapeCommands';
+import { createScale9Shape } from './scale9Shape.ts';
+import { mapScale9ShapeCommands } from './scale9ShapeCommands.ts';
+import { appendShapeBeginFill, appendShapeRectangle } from './shapeCommands.ts';
 
 const grid = { x: 10, y: 10, width: 80, height: 80 };
 

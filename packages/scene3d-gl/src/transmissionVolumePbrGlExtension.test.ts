@@ -1,12 +1,12 @@
 import { createTransmissionVolumePbrExtension } from '@flighthq/materials/contract';
 import { TransmissionVolumePbrExtensionKind } from '@flighthq/types/contract';
 
-import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 import {
   registerGlTransmissionVolumePbrExtension,
   transmissionVolumePbrGlExtension,
-} from './transmissionVolumePbrGlExtension';
+} from './transmissionVolumePbrGlExtension.ts';
 
 describe('registerGlTransmissionVolumePbrExtension', () => {
   it('registers only the transmission-volume kind', () => {

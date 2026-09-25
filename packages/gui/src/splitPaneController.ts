@@ -19,7 +19,7 @@ import {
   getGuiPosition,
   setGuiPosition,
   setGuiScale,
-} from './guiController';
+} from './guiController.ts';
 
 interface SplitPaneControllerFields {
   divider: Node2D | null;

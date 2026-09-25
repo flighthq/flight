@@ -1,6 +1,6 @@
 import { AbcOpcode } from '@flighthq/types/contract';
 
-import { readAbcInstructions } from './abcInstruction';
+import { readAbcInstructions } from './abcInstruction.ts';
 
 describe('readAbcInstructions', () => {
   it('decodes the constructor prologue every compiled method opens with', () => {

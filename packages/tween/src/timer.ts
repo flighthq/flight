@@ -1,6 +1,6 @@
 import type { Tween, TweenManager, TweenOptions } from '@flighthq/types/contract';
 
-import { createTween } from './tween';
+import { createTween } from './tween.ts';
 
 export function createTweenTimer(
   manager: TweenManager,

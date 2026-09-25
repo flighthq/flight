@@ -3,7 +3,7 @@ import { createEmbeddedImageResourceReference } from '@flighthq/image/contract';
 import type { DecodedImage, HostDecompressDeflateCapability, SwfJpegAlphaPayload } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, Compression, CompressionFraming } from '@flighthq/types/contract';
 
-import { createSwfJpegAlphaBitmap, createSwfLosslessBitmap } from './swfBitmap';
+import { createSwfJpegAlphaBitmap, createSwfLosslessBitmap } from './swfBitmap.ts';
 
 describe('createSwfJpegAlphaBitmap', () => {
   it('replaces the decoded alpha plane with real deflate output while preserving straight RGB', () => {

@@ -1,7 +1,7 @@
 import type { WgpuRenderState, WgpuScreenRenderTarget } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
-import { syncWgpuScreenRenderTargetExtent } from './wgpuScreenRenderTarget';
+import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
+import { syncWgpuScreenRenderTargetExtent } from './wgpuScreenRenderTarget.ts';
 
 // Turns on 2x-per-axis supersampling for a screen target: the frame draws into a 2x texture and one
 // fullscreen linear-sampling pass resolves it into the swap chain immediately before submit. Each

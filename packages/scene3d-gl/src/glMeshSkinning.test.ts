@@ -4,16 +4,16 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { GlMeshProgram } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { SKIN_PALETTE_TEXTURE_UNIT } from './glMeshProgram';
+import { SKIN_PALETTE_TEXTURE_UNIT } from './glMeshProgram.ts';
 import {
   bindGlMeshSkinPalette,
   bindGlShadowSkinPalette,
   getGlMeshSkinFeature,
   registerGlMeshSkinning,
   GL_SKIN_VERTEX_DECLARATIONS_GLSL,
-} from './glMeshSkinning';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+} from './glMeshSkinning.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 function makeProgram(): GlMeshProgram {
   return {

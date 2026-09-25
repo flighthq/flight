@@ -7,19 +7,19 @@ import type {
 } from '@flighthq/types/contract';
 import { RiveFieldType } from '@flighthq/types/contract';
 
-import { getRiveNestedArtboardIndex } from './riveAssetBinding';
+import { getRiveNestedArtboardIndex } from './riveAssetBinding.ts';
 import {
   createRiveFileAssets,
   importRiveImageComponent,
   importRiveNestedArtboardComponent,
   registerRiveAssetHandlers,
-} from './riveAssets';
+} from './riveAssets.ts';
 import {
   createRiveArtboardImportContext,
   createRiveDocumentImportContext,
   createRiveImportRegistry,
   getRiveCoreObjectHandler,
-} from './riveImportRegistry';
+} from './riveImportRegistry.ts';
 
 // Assets are addressed by their POSITION in this list, not by the id they state — reading the
 // corpus's 61 image references as positions resolves all of them, and as stated ids resolves none.

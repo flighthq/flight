@@ -1,4 +1,4 @@
-import { createWebGlContext, getWebGlContext } from './webGlContext';
+import { createWebGlContext, getWebGlContext } from './webGlContext.ts';
 
 function makeGL(): WebGL2RenderingContext {
   return document.createElement('canvas').getContext('webgl2')!;

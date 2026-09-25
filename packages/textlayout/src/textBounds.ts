@@ -1,6 +1,6 @@
 import type { RectangleLike, TextBoundsSpec, TextLayoutResult } from '@flighthq/types/contract';
 
-import { TEXT_LAYOUT_GUTTER } from './textLayout';
+import { TEXT_LAYOUT_GUTTER } from './textLayout.ts';
 
 // Inner padding (px) between the box edge and its text, applied on every side. Exported for the scroll
 // metrics in richTextMetrics, which subtract it to derive the visible content area.

@@ -4,11 +4,11 @@ import { describe, expect, it } from 'vitest';
 import {
   isPhysics3DPairJointSuppressed,
   rebuildPhysics3DJointCollisionSuppressions,
-} from './jointCollisionSuppression';
-import { createPhysics3DBallAndSocketJoint } from './jointFactories';
-import { addPhysics3DJoint, registerPhysics3DJointSolver, removePhysics3DJoint } from './jointRegistry';
-import { physics3DBallAndSocketJointSolver, Physics3DBallAndSocketJointKind } from './joints';
-import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world';
+} from './jointCollisionSuppression.ts';
+import { createPhysics3DBallAndSocketJoint } from './jointFactories.ts';
+import { addPhysics3DJoint, registerPhysics3DJointSolver, removePhysics3DJoint } from './jointRegistry.ts';
+import { physics3DBallAndSocketJointSolver, Physics3DBallAndSocketJointKind } from './joints.ts';
+import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world.ts';
 
 describe('isPhysics3DPairJointSuppressed', () => {
   it('reports a pair held by a joint that does not collide', () => {

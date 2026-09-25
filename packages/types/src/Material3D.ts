@@ -1,5 +1,5 @@
-import type { BlendMode } from './BlendMode';
-import type { Material, MaterialDimensionKey } from './Material';
+import type { BlendMode } from './BlendMode.ts';
+import type { Material, MaterialDimensionKey } from './Material.ts';
 
 // How a material resolves coverage. Mirrors glTF: 'opaque' ignores baseColor alpha, 'mask'
 // hard-cuts at `alphaCutoff` (no blending), 'blend' alpha-blends. Distinct from BlendMode, the blend

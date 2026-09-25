@@ -1,4 +1,4 @@
-import { initializeWebAudioBackend, webHostAudio } from './webAudio';
+import { initializeWebAudioBackend, webHostAudio } from './webAudio.ts';
 
 describe('initializeWebAudioBackend', () => {
   it('is the construction initializer of createWebAudioBackend', () => {

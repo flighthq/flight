@@ -1,4 +1,4 @@
-import type { PartialNode } from './PartialNode';
+import type { PartialNode } from './PartialNode.ts';
 
 describe('PartialNode', () => {
   it('makes data fields partial within the data object', () => {

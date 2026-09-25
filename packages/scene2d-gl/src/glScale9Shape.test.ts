@@ -19,8 +19,8 @@ import {
   drawGlScale9ShapeMask,
   getGlScale9ShapeData,
   initializeGlScale9ShapeData,
-} from './glScale9Shape';
-import { createGlState } from './glTestHelper';
+} from './glScale9Shape.ts';
+import { createGlState } from './glTestHelper.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

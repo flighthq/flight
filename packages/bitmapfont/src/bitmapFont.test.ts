@@ -14,7 +14,7 @@ import {
   packBitmapFontKerningKey,
   setBitmapFontGuard,
   unpackBitmapFontKerningKey,
-} from './bitmapFont';
+} from './bitmapFont.ts';
 
 describe('createBitmapFont', () => {
   it('builds glyph and kerning lookups from plain data', () => {

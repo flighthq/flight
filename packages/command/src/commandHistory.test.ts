@@ -4,8 +4,8 @@ import { connectSignal } from '@flighthq/signals/contract';
 import type { Command, CommandHistory, NodeAny } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createAddNodeChildCommand, createSetNodePropertyCommand } from './command';
-import { registerCommandBinding, registerDefaultCommandBindings } from './commandBinding';
+import { createAddNodeChildCommand, createSetNodePropertyCommand } from './command.ts';
+import { registerCommandBinding, registerDefaultCommandBindings } from './commandBinding.ts';
 import {
   canRedoCommand,
   canUndoCommand,
@@ -20,8 +20,8 @@ import {
   notifyCommandHistoryChanged,
   redoCommand,
   undoCommand,
-} from './commandHistory';
-import { enableCommandHistorySignals } from './commandHistorySignals';
+} from './commandHistory.ts';
+import { enableCommandHistorySignals } from './commandHistorySignals.ts';
 
 describe('canRedoCommand', () => {
   it('is false until something has been undone', () => {

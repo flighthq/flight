@@ -8,7 +8,7 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import type { Effect } from '@flighthq/types/contract';
 
-import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
 import {
   beginWgpuEffectPass,
   createWgpuEffectState,
@@ -17,7 +17,7 @@ import {
   setWgpuEffectStateSampleCountGuard,
   setWgpuEffectStateSkipGuard,
   setWgpuEffectVelocityTexture,
-} from './wgpuEffectState';
+} from './wgpuEffectState.ts';
 
 beforeAll(() => installWgpuMock());
 

@@ -5,9 +5,12 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { VertexColorMaterialKind } from '@flighthq/types/contract';
 
-import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerGlVertexColorMaterial, glVertexColorMeshMaterialRenderer } from './glVertexColorMeshMaterialRenderer';
+import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import {
+  registerGlVertexColorMaterial,
+  glVertexColorMeshMaterialRenderer,
+} from './glVertexColorMeshMaterialRenderer.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

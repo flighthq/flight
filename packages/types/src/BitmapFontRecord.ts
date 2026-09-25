@@ -1,4 +1,4 @@
-import type { BitmapFontEncoding } from './BitmapFont';
+import type { BitmapFontEncoding } from './BitmapFont.ts';
 
 // One parsed AngelCode/BMFont `char` record — the raw format fields, before the shared mapping onto a
 // `GlyphEntry`. `x`/`y`/`width`/`height` are the glyph's rectangle in the atlas page; `xoffset`/

@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { RandomSource } from './RandomSource';
+import type { Entity } from './Entity.ts';
+import type { RandomSource } from './RandomSource.ts';
 
 export interface ParticleObjectsState extends Entity {
   burstTimer: number;

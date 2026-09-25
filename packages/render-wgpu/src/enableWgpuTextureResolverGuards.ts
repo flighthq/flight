@@ -3,7 +3,7 @@ import { areRenderRegistriesGuardsEnabled, enableRenderRegistriesGuards } from '
 import type { WgpuRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
 export function areWgpuTextureResolverGuardsEnabled(state: WgpuRenderState): boolean {
   return areRenderRegistriesGuardsEnabled(state);

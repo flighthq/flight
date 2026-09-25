@@ -39,7 +39,7 @@ import {
   easeOutQuartic,
   easeOutQuintic,
   easeOutSine,
-} from './contract';
+} from './contract.ts';
 
 interface Family {
   easeIn: EasingFunction;

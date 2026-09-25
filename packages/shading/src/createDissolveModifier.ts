@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { DissolveModifier, DissolveModifierOptions, EntityConstruction } from '@flighthq/types/contract';
 import { DissolveModifierKind, ModifierSlot } from '@flighthq/types/contract';
 
-import { initializeModifier } from './modifier';
+import { initializeModifier } from './modifier.ts';
 
 // The options for `createDissolveModifier`. Only `threshold` is required; the rest carry documented
 // defaults. `map` presence is compile-time structural (sampled mask vs procedural noise, driving the

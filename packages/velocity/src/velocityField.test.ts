@@ -19,7 +19,7 @@ import {
   subtractVelocity,
   suppressVelocity,
   zeroVelocity,
-} from './velocityField';
+} from './velocityField.ts';
 
 describe('addVelocity', () => {
   it('adds two velocity vectors', () => {

@@ -2,7 +2,7 @@
 
 import type { Signal, SignalConnection, SignalTrackedConnectOptions } from '@flighthq/types/contract';
 
-import { connectSignal, disconnectSignal } from './slot';
+import { connectSignal, disconnectSignal } from './slot.ts';
 
 // Connects through a wrapper so pause state costs only consumers that request a tracked handle. Tracked
 // once connections remove themselves immediately before their real invocation: a paused wrapper can then

@@ -8,8 +8,8 @@ import {
   initializeCompressedImageResource,
   invalidateImageResource,
   isImageResourceEmpty,
-} from './imageResource';
-import { registerTestImageDimensionResolver, unregisterTestImageDimensionResolver } from './imageTestHelper';
+} from './imageResource.ts';
+import { registerTestImageDimensionResolver, unregisterTestImageDimensionResolver } from './imageTestHelper.ts';
 
 // Measuring a borrowed handle is the host's job, so these tests install the portable stand-in. Without
 // one a resource keeps whatever size it was constructed with, which is the behavior

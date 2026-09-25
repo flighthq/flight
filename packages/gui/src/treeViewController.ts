@@ -14,7 +14,7 @@ import {
   disposeGuiController,
   getGuiControllerRuntime,
   setGuiVisible,
-} from './guiController';
+} from './guiController.ts';
 
 interface TreeViewControllerFields {
   expanded: Set<Readonly<TreeViewControllerItem>>;

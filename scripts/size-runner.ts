@@ -6,8 +6,8 @@ import { basename, relative, resolve } from 'path';
 import { build, mergeConfig } from 'vite';
 import { gzipSync } from 'zlib';
 
-import { createSizeDebugStub } from './size-debug-stub';
-import { createBaseConfig } from './vite-base';
+import { createSizeDebugStub } from './size-debug-stub.ts';
+import { createBaseConfig } from './vite-base.ts';
 
 export const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
 export type Render = (typeof RENDERERS)[number];
@@ -128,10 +128,10 @@ export async function buildSample(
   const preserveConsole = diagnosticsEnabled || sampleName === 'log-console';
   const plugins = [
     createSizeDebugStub(!diagnosticsEnabled),
-    ...(pruneSdkImports ? [(await import('./size-import-pruner')).createSizeImportPruner()] : []),
+    ...(pruneSdkImports ? [(await import('./size-import-pruner.ts')).createSizeImportPruner()] : []),
   ];
   const result = await build(
-    mergeConfig(createBaseConfig('production', render), {
+    mergeConfig(createBaseConfig('production'), {
       root,
       configFile: false,
       plugins,

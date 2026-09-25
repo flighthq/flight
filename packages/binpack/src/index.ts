@@ -1,1 +1,1 @@
-export { explainUnpackedRectangles, getPackResultOccupancy, packRectangles } from './contract';
+export { explainUnpackedRectangles, getPackResultOccupancy, packRectangles } from './contract.ts';

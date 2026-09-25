@@ -21,7 +21,7 @@ import {
   initializeConnectivity,
   isConnectivityMetered,
   isConnectivitySaveDataEnabled,
-} from './connectivity';
+} from './connectivity.ts';
 
 interface FakeConnectivityProvider extends HostConnectivityStatusCapability, HostConnectivityChangeCapability {
   readonly activeSubscriptions: () => number;

@@ -6,8 +6,8 @@ import type { TauriApi } from '@flighthq/types/contract';
 import { spawnSync } from 'child_process';
 import { resolve } from 'path';
 
-import * as contractApi from './contract';
-import * as publicApi from './index';
+import * as contractApi from './contract.ts';
+import * as publicApi from './index.ts';
 
 const GROUPS = [
   ['accessibility', 'tauriHostAccessibility'],

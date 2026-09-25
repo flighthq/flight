@@ -1,4 +1,4 @@
-import type { WgpuMeshPipeline } from './WgpuMeshPipeline';
+import type { WgpuMeshPipeline } from './WgpuMeshPipeline.ts';
 
 // The feature flags that select a matcap variant. `hasMatcap` enables the sampled matcap texture (not
 // yet used on wgpu — see prelude note; when false the shader outputs the tint alone); `alphaMaskEnabled`

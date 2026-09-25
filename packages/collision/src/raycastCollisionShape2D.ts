@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CollisionBuiltInShape2D, CollisionRaycastHit2D, EntityConstruction } from '@flighthq/types/contract';
 
-import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation2D';
-import { getCollisionShapeContainsPoint2D } from './pointContainment2D';
+import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation2D.ts';
+import { getCollisionShapeContainsPoint2D } from './pointContainment2D.ts';
 
 const RELATIVE_EPSILON = 1e-9;
 

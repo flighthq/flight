@@ -23,9 +23,9 @@ import { createSkeleton3D, prepareScene3DSkinning } from '@flighthq/skeleton3d/c
 import type { Camera3D, GlRenderPass, GlRenderTarget, MeshMorph, Scene3DLightsLike } from '@flighthq/types/contract';
 import { beforeEach } from 'vitest';
 
-import { areGlScene3DDeformGuardsEnabled, enableGlScene3DDeformGuards } from './enableGlScene3DDeformGuards';
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { renderGlScene3D } from './renderGlScene3D';
+import { areGlScene3DDeformGuardsEnabled, enableGlScene3DDeformGuards } from './enableGlScene3DDeformGuards.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { renderGlScene3D } from './renderGlScene3D.ts';
 
 beforeEach(() => {
   clearLogOnceKeys();

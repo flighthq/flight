@@ -20,7 +20,7 @@ import {
   initializePhysics2DRopeJoint,
   initializePhysics2DWeldJoint,
   initializePhysics2DWheelJoint,
-} from './jointFactories';
+} from './jointFactories.ts';
 
 describe('createPhysics2DDistanceJoint', () => {
   it('owns common defaults and solver scratch', () => {

@@ -6,9 +6,9 @@ import {
   readSwfMatrix,
   readSwfRectangle,
   transformSwfRectangle,
-} from './swfPrimitive';
-import { SwfReader } from './swfReader';
-import { SwfBitWriter, createSwfRectangleRecord } from './swfTagStreamTestHelper';
+} from './swfPrimitive.ts';
+import { SwfReader } from './swfReader.ts';
+import { SwfBitWriter, createSwfRectangleRecord } from './swfTagStreamTestHelper.ts';
 
 describe('mergeSwfRectangles', () => {
   it('produces the union of two disjoint boxes', () => {

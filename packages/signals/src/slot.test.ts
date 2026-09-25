@@ -1,6 +1,6 @@
-import { emitSignal } from './emitter';
-import { createSignal } from './signal';
-import { clearSignal, connectSignal, disconnectSignal, hasSignalSlots, isSlotConnected } from './slot';
+import { emitSignal } from './emitter.ts';
+import { createSignal } from './signal.ts';
+import { clearSignal, connectSignal, disconnectSignal, hasSignalSlots, isSlotConnected } from './slot.ts';
 
 describe('clearSignal', () => {
   it('removes all slots', () => {

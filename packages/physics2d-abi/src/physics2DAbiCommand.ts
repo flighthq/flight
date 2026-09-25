@@ -45,7 +45,7 @@ import {
   Physics2DAbiShapeKind,
   Physics2DAbiSolverConfigFlag,
   Physics2DAbiVersion,
-} from './physics2DAbiLayout';
+} from './physics2DAbiLayout.ts';
 
 export function getPhysics2DAbiSetColliderCommandByteLength(collider: Readonly<Physics2DCollider>): number {
   const shapeByteLength = getShapeByteLength(collider.local);

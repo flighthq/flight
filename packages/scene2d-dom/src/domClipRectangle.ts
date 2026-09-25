@@ -12,8 +12,8 @@ import type {
   RenderProxy2D,
 } from '@flighthq/types/contract';
 
-import { buildDomContourClipPath } from './domClipContours';
-import { getDomRenderStateRuntime } from './domRenderState';
+import { buildDomContourClipPath } from './domClipContours.ts';
+import { getDomRenderStateRuntime } from './domRenderState.ts';
 
 interface DomClipStyle extends CSSStyleDeclaration {
   webkitClipPath: string;

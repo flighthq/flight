@@ -3,12 +3,12 @@ import type { ExtendedPbrMaterial, GltfDocument, TransmissionVolumePbrExtension 
 import { TransmissionVolumePbrExtensionKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseGltf } from './gltfParse';
+import { parseGltf } from './gltfParse.ts';
 import {
   GltfIorExtensionHandler,
   GltfTransmissionExtensionHandler,
   GltfVolumeExtensionHandler,
-} from './gltfTransmissionVolume';
+} from './gltfTransmissionVolume.ts';
 
 function makeGltf(material: unknown): GltfDocument {
   return {

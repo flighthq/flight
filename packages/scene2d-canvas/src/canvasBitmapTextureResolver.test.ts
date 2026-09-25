@@ -7,12 +7,12 @@ import {
 import { createTexture } from '@flighthq/texture/contract';
 import type { HostImageCapability } from '@flighthq/types/contract';
 
-import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
+import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver.ts';
 import {
   createCanvasRenderState,
   getCanvasRenderStateTextureResolvers,
   resolveCanvasTexture,
-} from './canvasTestSupport';
+} from './canvasTestSupport.ts';
 
 beforeEach(() => {
   registerTestImageDimensionResolver();

@@ -1,7 +1,7 @@
-import type { AnimationChannel } from './AnimationChannel';
-import type { AnimationPlayer } from './AnimationPlayer';
-import type { EasingFunction } from './EasingFunction';
-import type { Entity } from './Entity';
+import type { AnimationChannel } from './AnimationChannel.ts';
+import type { AnimationPlayer } from './AnimationPlayer.ts';
+import type { EasingFunction } from './EasingFunction.ts';
+import type { Entity } from './Entity.ts';
 
 // One precomputed target correspondence in a crossfade. A null side means that target exists in only
 // one clip and its sampled value passes through unchanged.

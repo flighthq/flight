@@ -11,9 +11,9 @@ import { getOrCreateRenderProxy2D, prepareScene2DRender } from '@flighthq/render
 import { createSprite } from '@flighthq/scene2d/contract';
 import { createRenderTexture, setTextureUvFromPixelRect } from '@flighthq/texture/contract';
 
-import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
-import { wgpuSpriteRenderer, drawWgpuSprite } from './wgpuSprite';
-import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
+import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature.ts';
+import { wgpuSpriteRenderer, drawWgpuSprite } from './wgpuSprite.ts';
+import { registerWgpuStandardMaterial } from './wgpuStandardMaterial.ts';
 
 const CT_MODE_UNIFORM = 1;
 

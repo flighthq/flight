@@ -1,8 +1,8 @@
-import type { Entity } from './Entity';
-import type { FocusEventData } from './FocusEventData';
-import type { KeyboardEventData } from './KeyboardEventData';
-import type { PointerEventData } from './PointerEventData';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { FocusEventData } from './FocusEventData.ts';
+import type { KeyboardEventData } from './KeyboardEventData.ts';
+import type { PointerEventData } from './PointerEventData.ts';
+import type { Signal } from './Signal.ts';
 
 export interface InteractionSignals extends Entity {
   onClick: Signal<(data: Readonly<PointerEventData>) => void>;

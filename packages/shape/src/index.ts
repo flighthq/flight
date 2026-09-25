@@ -1,17 +1,17 @@
-export * from './compactStrokePath';
-export * from './enableShapeBoundsGuards';
-export * from './explainMorphShapeGradientEndpoints';
-export * from './explainShapeTessellation';
-export { appendMorphShapePath, createMorphShape, createMorphShapeData, setMorphShapeProgress } from './morphShape';
+export * from './compactStrokePath.ts';
+export * from './enableShapeBoundsGuards.ts';
+export * from './explainMorphShapeGradientEndpoints.ts';
+export * from './explainShapeTessellation.ts';
+export { appendMorphShapePath, createMorphShape, createMorphShapeData, setMorphShapeProgress } from './morphShape.ts';
 export {
   applyAnimationClipToMorphShape,
   applyMorphShapeAnimationSample,
   createMorphShapeAnimationTarget,
-} from './morphShapeAnimation';
-export * from './morphShapePaint';
-export * from './registerDefaultShapeBoundsCommands';
-export { createScale9Shape, createScale9ShapeData } from './scale9Shape';
-export * from './scale9ShapeCommands';
+} from './morphShapeAnimation.ts';
+export * from './morphShapePaint.ts';
+export * from './registerDefaultShapeBoundsCommands.ts';
+export { createScale9Shape, createScale9ShapeData } from './scale9Shape.ts';
+export * from './scale9ShapeCommands.ts';
 export {
   clearShapeCommands,
   computeShapeLocalBoundsRectangle,
@@ -21,7 +21,7 @@ export {
   getShapeBounds,
   getShapeCommandCount,
   isShapeEmpty,
-} from './shape';
+} from './shape.ts';
 export {
   computeShapeBoundsRectangle,
   defaultShapeBoundsCubicCurveTo,
@@ -39,10 +39,10 @@ export {
   explainShapeBounds,
   normalizeShapeStrokeMiterLimit,
   normalizeShapeStrokeWidth,
-} from './shapeBounds';
-export * from './shapeBoundsRegistry';
-export * from './shapeCommandGeometry';
-export * from './shapeCommands';
-export * from './shapeFill';
-export * from './shapeStroke';
-export * from './shapeStrokeOutline';
+} from './shapeBounds.ts';
+export * from './shapeBoundsRegistry.ts';
+export * from './shapeCommandGeometry.ts';
+export * from './shapeCommands.ts';
+export * from './shapeFill.ts';
+export * from './shapeStroke.ts';
+export * from './shapeStrokeOutline.ts';

@@ -1,4 +1,4 @@
-import { createWebBitmapFromCanvas, initializeWebBitmapFromCanvas } from './webBitmapFrom';
+import { createWebBitmapFromCanvas, initializeWebBitmapFromCanvas } from './webBitmapFrom.ts';
 
 describe('createWebBitmapFromCanvas', () => {
   it('returns Bitmap matching the canvas size', () => {

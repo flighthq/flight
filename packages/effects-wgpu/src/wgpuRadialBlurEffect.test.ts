@@ -2,8 +2,8 @@ import { createRadialBlurEffect } from '@flighthq/effects/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { RadialBlurEffect, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 
-import * as wgpuEffectPassModule from './wgpuEffectPass';
-import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache';
+import * as wgpuEffectPassModule from './wgpuEffectPass.ts';
+import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache.ts';
 
 let recorded = {
   pipelines: [] as { blend: string; key: string }[],
@@ -41,12 +41,12 @@ beforeEach(() => {
 
 afterEach(() => vi.restoreAllMocks());
 
-import { getWgpuEffectRunner } from './wgpuEffectRegistry';
+import { getWgpuEffectRunner } from './wgpuEffectRegistry.ts';
 import {
   applyRadialBlurEffectToWgpu,
   wgpuRadialBlurEffectRunner,
   registerWgpuRadialBlurEffect,
-} from './wgpuRadialBlurEffect';
+} from './wgpuRadialBlurEffect.ts';
 
 beforeAll(() => installWgpuMock());
 

@@ -1,4 +1,4 @@
-import { applyHalftoneEffectToGl, glHalftoneEffectRunner, registerGlHalftoneEffect } from './glHalftoneEffect';
+import { applyHalftoneEffectToGl, glHalftoneEffectRunner, registerGlHalftoneEffect } from './glHalftoneEffect.ts';
 
 describe('applyHalftoneEffectToGl', () => {
   it('is a function', () => {

@@ -82,4 +82,4 @@ export {
   setColorScaleBiasBiasRgb,
   setColorScaleBiasBiasRgba,
   setColorScaleBiasIdentity,
-} from './contract';
+} from './contract.ts';

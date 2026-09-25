@@ -25,30 +25,30 @@ import {
   deriveCalibrationIdentityVerdict,
   findDuplicateCalibrationRoot,
   readCaptureRootIdentity,
-} from './reference-image-calibrate';
-import { readBoundOracleRequestTarget } from './reference-image-candidate';
+} from './reference-image-calibrate.ts';
+import { readBoundOracleRequestTarget } from './reference-image-candidate.ts';
 import type {
   ReferenceImageDeterminismScope,
   ReferenceImageCaptureFact,
   ReferenceImageDeterminismVerdict,
   ReferenceImageParityCheck,
   ReferenceImageParityWithholding,
-} from './reference-image-eligibility';
+} from './reference-image-eligibility.ts';
 import {
   addReferenceImageCoverage,
   findParityWithholdings,
   findStaleCaptures,
   selectCommissionableCells,
   summarizeOracleBlocks,
-} from './reference-image-eligibility';
-import type { ReferenceImageRequestCaptureIdentity, ReferenceImageRequestTarget } from './reference-image-records';
+} from './reference-image-eligibility.ts';
+import type { ReferenceImageRequestCaptureIdentity, ReferenceImageRequestTarget } from './reference-image-records.ts';
 import {
   getOracleRequestBuild,
   getOracleRequestCells,
   readReferenceImageLockPins,
   readOracleRequest,
   readReferenceImageHolds,
-} from './reference-image-records';
+} from './reference-image-records.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');

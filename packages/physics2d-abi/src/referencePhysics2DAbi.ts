@@ -101,7 +101,7 @@ import {
   Physics2DAbiShapeHeaderByteLength,
   Physics2DAbiShapeKind,
   Physics2DAbiVersion,
-} from './physics2DAbiLayout';
+} from './physics2DAbiLayout.ts';
 
 export function createReferencePhysics2DAbi(): Physics2DAbi {
   const out = allocateEntity<Physics2DAbi>();

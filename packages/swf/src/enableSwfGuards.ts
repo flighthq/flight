@@ -1,7 +1,7 @@
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setSwfFilterListGuard } from './swfFilter';
+import { setSwfFilterListGuard } from './swfFilter.ts';
 
 export function areSwfGuardsEnabled(): boolean {
   return swfGuardsEnabled;

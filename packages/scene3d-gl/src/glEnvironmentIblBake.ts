@@ -1,8 +1,8 @@
 import { createGlProgram } from '@flighthq/render-gl/contract';
 import type { GlContext, Environment, GlCubeRenderTarget, GlRenderState } from '@flighthq/types/contract';
 
-import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget } from './glEnvironmentCube';
-import { addGlScene3DResourceCleanup, getGlScene3DRuntime } from './glScene3DRuntime';
+import { ensureGlEnvironmentSourceCube, getGlCubeFaceTarget } from './glEnvironmentCube.ts';
+import { addGlScene3DResourceCleanup, getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // Bakes a backend-native environment capture into the same split-sum IBL resources used by
 // bakeGlEnvironmentIbl. A GlCubeRenderTarget cannot honestly be wrapped as Flight's cross-backend

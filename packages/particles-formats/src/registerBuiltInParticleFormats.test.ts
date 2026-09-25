@@ -7,8 +7,8 @@ import {
   UnityParticleFormatKind,
 } from '@flighthq/types/contract';
 
-import { getParticleFormatCodec, getRegisteredParticleFormats, unregisterParticleFormat } from './formatRegistry';
-import { registerBuiltInParticleFormats } from './registerBuiltInParticleFormats';
+import { getParticleFormatCodec, getRegisteredParticleFormats, unregisterParticleFormat } from './formatRegistry.ts';
+import { registerBuiltInParticleFormats } from './registerBuiltInParticleFormats.ts';
 
 const BUILT_IN_KINDS = [
   LibgdxParticleFormatKind,

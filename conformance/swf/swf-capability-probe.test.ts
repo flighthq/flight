@@ -1,4 +1,4 @@
-import { probeSwfCapabilities } from './swf-capability-probe';
+import { probeSwfCapabilities } from './swf-capability-probe.ts';
 
 describe('probeSwfCapabilities', () => {
   it('reads direct tag capabilities and nested sprite timelines', () => {

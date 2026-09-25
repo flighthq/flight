@@ -1,5 +1,5 @@
-import type { PbrExtension, PbrUvSet } from './PbrExtension';
-import type { Texture } from './Texture';
+import type { PbrExtension, PbrUvSet } from './PbrExtension.ts';
+import type { Texture } from './Texture.ts';
 
 // KHR_materials_specular: independent dielectric F0 strength and color.
 export interface SpecularPbrExtension extends PbrExtension {

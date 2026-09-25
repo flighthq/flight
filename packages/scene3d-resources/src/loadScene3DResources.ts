@@ -8,7 +8,7 @@ import type {
 import { ResourceResolutionState } from '@flighthq/types/contract';
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 
-import { updateScene3DResourceStreaming } from './resolveScene3DResources';
+import { updateScene3DResourceStreaming } from './resolveScene3DResources.ts';
 
 // Eager/deterministic asynchronous load: reconciles the selected working set, starts its acquisitions,
 // then awaits every in-flight load it started so each reference has settled to Resolved or Failed on

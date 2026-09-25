@@ -13,9 +13,9 @@ import {
   ensureWgpuClassicPipeline,
   getWgpuClassicModuleSourceForKey,
   getWgpuClassicSharedSamplerModuleSourceForKey,
-} from './wgpuClassicPrelude';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
+} from './wgpuClassicPrelude.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper.ts';
 
 function makeKey(lightingModel: WgpuClassicLightingModel): WgpuClassicDefineKey {
   return {

@@ -2,7 +2,7 @@ import {
   applyLensDistortionEffectToGl,
   glLensDistortionEffectRunner,
   registerGlLensDistortionEffect,
-} from './glLensDistortionEffect';
+} from './glLensDistortionEffect.ts';
 
 describe('applyLensDistortionEffectToGl', () => {
   it('is a function', () => {

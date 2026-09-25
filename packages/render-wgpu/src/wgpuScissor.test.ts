@@ -1,13 +1,13 @@
-import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass.ts';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import {
   applyWgpuScissorRect,
   popWgpuScissorRect,
   pushWgpuScissorRect,
   setWgpuRenderPassScissorRect,
-} from './wgpuScissor';
-import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
-import { createWgpuTextureRenderTarget } from './wgpuTextureRenderTarget';
+} from './wgpuScissor.ts';
+import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';
+import { createWgpuTextureRenderTarget } from './wgpuTextureRenderTarget.ts';
 
 beforeAll(() => {
   installWgpuMock();

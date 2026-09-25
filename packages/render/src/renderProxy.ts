@@ -21,10 +21,10 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode, RenderRegistryTable } from '@flighthq/types/contract';
 
-import { updateRenderProxyAppearance } from './renderAppearance';
-import { updateRenderProxyMaterial } from './renderMaterial';
-import { getRenderStateRuntime } from './renderState';
-import { updateRenderProxy2DTransform } from './renderTransform2d';
+import { updateRenderProxyAppearance } from './renderAppearance.ts';
+import { updateRenderProxyMaterial } from './renderMaterial.ts';
+import { getRenderStateRuntime } from './renderState.ts';
+import { updateRenderProxy2DTransform } from './renderTransform2d.ts';
 
 type AdaptHook = (state: RenderState, source: NodeAny, data: RenderProxy2D) => void;
 

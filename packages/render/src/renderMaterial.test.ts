@@ -1,9 +1,9 @@
 import { createMaterial } from '@flighthq/materials/contract';
 import type { NodeAny } from '@flighthq/types/contract';
 
-import { updateRenderProxyMaterial } from './renderMaterial';
-import { createRenderProxy } from './renderProxy';
-import { createRenderState } from './renderState';
+import { updateRenderProxyMaterial } from './renderMaterial.ts';
+import { createRenderProxy } from './renderProxy.ts';
+import { createRenderState } from './renderState.ts';
 
 const TestKind = 'Test';
 

@@ -1,7 +1,7 @@
 import type { Scene3DMaterialTextureRegistry, SheenPbrExtension } from '@flighthq/types/contract';
 import { SheenPbrExtensionKind } from '@flighthq/types/contract';
 
-import { registerScene3DPbrExtensionTextures } from './sceneMaterialTextureRegistry';
+import { registerScene3DPbrExtensionTextures } from './sceneMaterialTextureRegistry.ts';
 
 export function registerSheenPbrScene3DMaterialTextures(registry: Scene3DMaterialTextureRegistry): void {
   registerScene3DPbrExtensionTextures(registry, SheenPbrExtensionKind, (extension, out): void => {

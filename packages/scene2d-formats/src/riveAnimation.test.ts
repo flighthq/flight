@@ -13,9 +13,9 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, RiveFieldType, ShapeKind } from '@flighthq/types/contract';
 
-import { applyAnimationClipToRiveDocument, createRiveAnimationClips } from './riveAnimation';
-import { createScene2DFromRiveDocument } from './riveScene2D';
-import { createRiveSkeleton2D } from './riveSkeleton';
+import { applyAnimationClipToRiveDocument, createRiveAnimationClips } from './riveAnimation.ts';
+import { createScene2DFromRiveDocument } from './riveScene2D.ts';
+import { createRiveSkeleton2D } from './riveSkeleton.ts';
 
 const kernel = martinezPathBooleanKernel;
 

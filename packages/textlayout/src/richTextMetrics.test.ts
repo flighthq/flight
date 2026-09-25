@@ -9,7 +9,7 @@ import {
   computeRichTextTextHeight,
   computeRichTextTextWidth,
   getRichTextScrollYOffset,
-} from './richTextMetrics';
+} from './richTextMetrics.ts';
 
 function createData(data: Partial<RichTextData> = {}): RichTextData {
   return {

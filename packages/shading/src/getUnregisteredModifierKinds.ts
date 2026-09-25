@@ -1,7 +1,7 @@
 import type { Modifier, ModifierKind } from '@flighthq/types/contract';
 import type { ModifierRegistry } from '@flighthq/types/contract';
 
-import { resolveModifier } from './modifierRegistry';
+import { resolveModifier } from './modifierRegistry.ts';
 
 // Returns the kinds in `stack` that have no definition in `registry` — the modifiers the compile
 // path cannot assemble. An empty array is the all-clear sentinel (no throw for the expected case of

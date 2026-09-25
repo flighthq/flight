@@ -1,4 +1,4 @@
-import { applyMedianEffectToGl, glMedianEffectRunner, registerGlMedianEffect } from './glMedianEffect';
+import { applyMedianEffectToGl, glMedianEffectRunner, registerGlMedianEffect } from './glMedianEffect.ts';
 
 describe('applyMedianEffectToGl', () => {
   it('is a function', () => {

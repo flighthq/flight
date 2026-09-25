@@ -4,7 +4,7 @@ import {
   parseSpineSkeletonBinaryVersioned,
   registerSpineSkeletonBinaryParser,
   toSpineBinaryLayoutKey,
-} from './spineBinaryVersioned';
+} from './spineBinaryVersioned.ts';
 
 function varint(value: number): number[] {
   const out: number[] = [];

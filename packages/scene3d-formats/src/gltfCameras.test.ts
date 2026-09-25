@@ -1,8 +1,8 @@
 import type { GltfDocument } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { GltfCamerasCoreFeatureHandler } from './gltfCameras';
-import { parseGltfWithCoreFeatureHandlers } from './gltfParse';
+import { GltfCamerasCoreFeatureHandler } from './gltfCameras.ts';
+import { parseGltfWithCoreFeatureHandlers } from './gltfParse.ts';
 
 describe('GltfCamerasCoreFeatureHandler', () => {
   it('imports placed cameras when explicitly selected', () => {

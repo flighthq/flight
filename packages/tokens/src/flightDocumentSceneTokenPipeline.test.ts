@@ -16,8 +16,8 @@ import { DisplayObjectKind, SpriteKind } from '@flighthq/types/contract';
 import {
   createFlightDocumentTokenResolverRegistry,
   resolveFlightDocumentSceneTokens,
-} from './flightDocumentSceneTokens';
-import { substituteFlightDocumentSceneTokens } from './substituteFlightDocumentSceneTokens';
+} from './flightDocumentSceneTokens.ts';
+import { substituteFlightDocumentSceneTokens } from './substituteFlightDocumentSceneTokens.ts';
 
 // The one flow no single package can cover: authored text, through resolution and substitution, into
 // a materialized scene. It is the serialization round-trip carve-out in the testing conventions, not a

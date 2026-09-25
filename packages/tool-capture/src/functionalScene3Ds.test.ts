@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { discoverFunctionalScene3Ds, functionalScene3DFile, resolveFunctionalTestRoute } from './functionalScene3Ds';
+import { discoverFunctionalScene3Ds, functionalScene3DFile, resolveFunctionalTestRoute } from './functionalScene3Ds.ts';
 
 let dir: string;
 

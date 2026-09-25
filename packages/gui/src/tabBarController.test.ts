@@ -1,11 +1,11 @@
-import { createGuiTestNode, emitGuiPointer } from './guiTestHelper';
+import { createGuiTestNode, emitGuiPointer } from './guiTestHelper.ts';
 import {
   createTabBarController,
   disposeTabBarController,
   getTabBarControllerSelectedIndex,
   getTabBarControllerSignals,
   setTabBarControllerSelectedIndex,
-} from './tabBarController';
+} from './tabBarController.ts';
 
 describe('createTabBarController', () => {
   it('swaps selected and unselected visuals from clicks', () => {

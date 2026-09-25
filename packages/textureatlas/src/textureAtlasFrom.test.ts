@@ -12,7 +12,7 @@ import {
   loadTextureAtlasFromBlob,
   loadTextureAtlasFromBytes,
   loadTextureAtlasFromUrl,
-} from './textureAtlasFrom';
+} from './textureAtlasFrom.ts';
 
 beforeEach(() => {
   registerTestImageDimensionResolver();

@@ -13,13 +13,13 @@ import {
   createRiveArtboardImportContext,
   createRiveImportRegistry,
   getRiveCoreObjectHandler,
-} from './riveImportRegistry';
+} from './riveImportRegistry.ts';
 import {
   createRivePath,
   createRivePathRecord,
   importRivePathComponent,
   registerRivePathHandlers,
-} from './riveShapePath';
+} from './riveShapePath.ts';
 
 // Rive stores a cubic vertex's handles in polar form and the three cubic kinds disagree on sign: a
 // mirrored or asymmetric vertex SUBTRACTS its incoming vector, a detached vertex ADDS its own. The

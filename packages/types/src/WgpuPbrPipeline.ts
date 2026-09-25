@@ -1,4 +1,4 @@
-import type { WgpuMeshPipeline } from './WgpuMeshPipeline';
+import type { WgpuMeshPipeline } from './WgpuMeshPipeline.ts';
 
 // A compiled PBR uber-shader variant plus the material bind-group layout its group(2) targets — the
 // WGSL mirror of GlPbrProgram. One exists per distinct (define key + color-attachment format) pair: a

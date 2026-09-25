@@ -11,7 +11,7 @@ import type {
   GlPbrProgram,
 } from '@flighthq/types/contract';
 
-import { bindGlUvTransform } from './glMeshProgram';
+import { bindGlUvTransform } from './glMeshProgram.ts';
 
 // The texture-unit assignment for the StandardPbrMaterialProperties block. Units 0–5 are reserved
 // for the standard maps so every PBR program (StandardPbr and every extension) binds them at the

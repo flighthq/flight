@@ -1,5 +1,5 @@
-import type { RenderState } from './RenderState';
-import type { ShapeCommandToken } from './ShapeCommand';
+import type { RenderState } from './RenderState.ts';
+import type { ShapeCommandToken } from './ShapeCommand.ts';
 
 // Replays a shape's command stream into a 2D context, for a backend that cannot express every fill as
 // GPU geometry. A gradient or a texture fill has no tessellated form in the leaf renderers, so those

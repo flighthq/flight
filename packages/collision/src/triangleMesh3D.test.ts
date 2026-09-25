@@ -1,11 +1,11 @@
 import type { CollisionShape3D } from '@flighthq/types/contract';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { registerBuiltInCollisionFaceQueries3D } from './collisionFace3D';
-import { registerBuiltInCollisionSupports3D } from './collisionSupport3D';
-import { createCollisionContactManifold3D } from './contactManifold3D';
-import { createCollisionRaycastHit3D } from './raycastCollisionShape3D';
-import { createCollisionTimeOfImpact3D } from './sweepCollisionShape3D';
+import { registerBuiltInCollisionFaceQueries3D } from './collisionFace3D.ts';
+import { registerBuiltInCollisionSupports3D } from './collisionSupport3D.ts';
+import { createCollisionContactManifold3D } from './contactManifold3D.ts';
+import { createCollisionRaycastHit3D } from './raycastCollisionShape3D.ts';
+import { createCollisionTimeOfImpact3D } from './sweepCollisionShape3D.ts';
 import {
   collideCollisionHeightfield3D,
   collideCollisionTriangleMesh3D,
@@ -23,7 +23,7 @@ import {
   sweepCollisionTriangleMesh3D,
   writeCollisionHeightfieldBounds3D,
   writeCollisionTriangleMeshBounds3D,
-} from './triangleMesh3D';
+} from './triangleMesh3D.ts';
 
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();

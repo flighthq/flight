@@ -20,7 +20,7 @@ import {
   prepareGlQuadBatchWrite,
   recordGlQuadBatchColorScaleBias,
   writeGlQuadBatchAffineInstance,
-} from './glQuadBatchWriter';
+} from './glQuadBatchWriter.ts';
 
 // Per-instance stride, matching the QuadBatch/Tilemap sprite path (13 floats: world transform + region +
 // uv + alpha). See glQuadBatch.

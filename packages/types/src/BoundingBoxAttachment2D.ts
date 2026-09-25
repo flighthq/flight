@@ -1,5 +1,5 @@
-import type { Attachment2D } from './Attachment2D';
-import type { Skin2D } from './Skin2D';
+import type { Attachment2D } from './Attachment2D.ts';
+import type { Skin2D } from './Skin2D.ts';
 
 // A closed polygon attached to a slot, used for hit testing and region queries rather than drawing —
 // a hurt box, a pickup trigger, a footfall zone. It follows the rig exactly as a mesh does, so a limb's

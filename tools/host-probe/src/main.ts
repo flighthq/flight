@@ -1,8 +1,8 @@
-import { captureHostProbeBackends } from './capabilityBackends';
-import { createHostProbeProviderResults } from './expectations';
-import { installHostProbe, resolveHostProbeHost } from './host';
-import { runHostProbeRender } from './renderProbe';
-import { createHostProbeReport } from './report';
+import { captureHostProbeBackends } from './capabilityBackends.ts';
+import { createHostProbeProviderResults } from './expectations.ts';
+import { installHostProbe, resolveHostProbeHost } from './host.ts';
+import { runHostProbeRender } from './renderProbe.ts';
+import { createHostProbeReport } from './report.ts';
 import './style.css';
 
 const app = document.getElementById('app');

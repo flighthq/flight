@@ -11,16 +11,16 @@ import type {
   TextureColorSpace,
 } from '@flighthq/types/contract';
 
-import { applyGlSamplerState, bindGlTextureRealization } from './glDraw';
-import { clearGlRenderTarget } from './glFullscreenPass';
-import { beginGlRenderPass, endGlRenderPass } from './glRenderPass';
-import { getGlRenderStateRuntime } from './glRenderState';
-import { popGlRenderState, pushGlRenderState } from './glRenderStateBracket';
+import { applyGlSamplerState, bindGlTextureRealization } from './glDraw.ts';
+import { clearGlRenderTarget } from './glFullscreenPass.ts';
+import { beginGlRenderPass, endGlRenderPass } from './glRenderPass.ts';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
+import { popGlRenderState, pushGlRenderState } from './glRenderStateBracket.ts';
 import {
   createGlTextureRenderTarget,
   destroyGlTextureRenderTarget,
   resizeGlTextureRenderTarget,
-} from './glRenderTarget';
+} from './glRenderTarget.ts';
 
 // Binds a populated render texture's resolved color attachment directly. No pixels cross the CPU and
 // no upload occurs. An unrendered or currently-written texture binds the null sentinel and returns

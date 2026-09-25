@@ -1,6 +1,6 @@
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 
-import { decodeSwfImage, SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageDecoder';
+import { decodeSwfImage, SWF_LOSSLESS_ALPHA_MIME_TYPE, SWF_LOSSLESS_MIME_TYPE } from './swfImageDecoder.ts';
 
 describe('decodeSwfImage', () => {
   it('decodes both container-native lossless MIME types', async () => {

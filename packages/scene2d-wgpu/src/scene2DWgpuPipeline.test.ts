@@ -17,7 +17,7 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { wgpuScene2DRenderPreset } from './scene2DWgpuPipeline';
+import { wgpuScene2DRenderPreset } from './scene2DWgpuPipeline.ts';
 
 describe('wgpuScene2DRenderPreset', () => {
   it('carries every standard 2D WGPU renderer bound', () => {

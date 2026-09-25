@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { GlRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // Returns whether the scene color-space guard is installed on `state` (enableGlScene3DColorSpaceGuards).
 export function areGlScene3DColorSpaceGuardsEnabled(state: GlRenderState): boolean {

@@ -7,7 +7,7 @@ import {
   getWgpuShadedBaseFlags,
   registerWgpuShadedMaterial,
   wgpuShadedMeshMaterialRenderer,
-} from './wgpuShadedMeshMaterialRenderer';
+} from './wgpuShadedMeshMaterialRenderer.ts';
 
 describe('getWgpuShadedBaseFlags', () => {
   it('resolves the base pipeline flags from a material', () => {
@@ -23,8 +23,8 @@ describe('getWgpuShadedBaseFlags', () => {
     });
   });
 });
-import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 
 describe('registerWgpuShadedMaterial', () => {
   it('installs the renderer for ShadedMaterialKind', () => {

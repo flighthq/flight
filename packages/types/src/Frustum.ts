@@ -1,5 +1,5 @@
-import type { Entity, EntityWithoutRuntime } from './Entity';
-import type { Plane } from './Plane';
+import type { Entity, EntityWithoutRuntime } from './Entity.ts';
+import type { Plane } from './Plane.ts';
 
 // A view frustum as its six bounding planes, each oriented with its normal pointing inward
 // (toward the contained volume) so a point is inside the frustum when its signed distance to

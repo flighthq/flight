@@ -8,8 +8,8 @@ import type {
   TiltShiftEffect,
 } from '@flighthq/types/contract';
 
-import { initializeEffect } from './effect';
-import { registerEffectPaddingResolver } from './effectPadding';
+import { initializeEffect } from './effect.ts';
+import { registerEffectPaddingResolver } from './effectPadding.ts';
 
 export function createTiltShiftEffect(
   options: Readonly<Omit<EntityWithoutRuntime<TiltShiftEffect>, 'kind'>> = {},

@@ -4,8 +4,8 @@ import {
   webHostConnectivityChange,
   webHostConnectivityReachability,
   webHostConnectivityStatus,
-} from './webConnectivity';
-import { webHost } from './webHost';
+} from './webConnectivity.ts';
+import { webHost } from './webHost.ts';
 
 afterEach(() => {
   vi.restoreAllMocks();

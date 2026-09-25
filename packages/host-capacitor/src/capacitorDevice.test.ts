@@ -6,7 +6,7 @@ import type {
   CapacitorApi,
 } from '@flighthq/types/contract';
 
-import { capacitorHostDevice } from './capacitorDevice';
+import { capacitorHostDevice } from './capacitorDevice.ts';
 
 const flush = async () => {
   await Promise.resolve();

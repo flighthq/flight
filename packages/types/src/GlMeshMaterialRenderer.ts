@@ -1,9 +1,9 @@
-import type { Camera3D } from './Camera3D';
-import type { GlRenderState } from './GlRenderState';
-import type { Material } from './Material';
-import type { MeshGeometry } from './MeshGeometry';
-import type { Scene3DLightBlock } from './Scene3DLightBlock';
-import type { Scene3DRenderProxy } from './Scene3DRenderProxy';
+import type { Camera3D } from './Camera3D.ts';
+import type { GlRenderState } from './GlRenderState.ts';
+import type { Material } from './Material.ts';
+import type { MeshGeometry } from './MeshGeometry.ts';
+import type { Scene3DLightBlock } from './Scene3DLightBlock.ts';
+import type { Scene3DRenderProxy } from './Scene3DRenderProxy.ts';
 
 // Per-backend 3D draw behavior for a material kind on Gl, registered against the kind via
 // registerGlMeshMaterialRenderer. This is the scene (3D) analog of GlQuadMaterialRenderer (the 2D

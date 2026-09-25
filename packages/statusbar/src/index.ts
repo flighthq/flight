@@ -13,4 +13,4 @@ export {
   setStatusBarOverlaysContent,
   setStatusBarStyle,
   setStatusBarVisible,
-} from './contract';
+} from './contract.ts';

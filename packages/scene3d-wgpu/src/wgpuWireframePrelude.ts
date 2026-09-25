@@ -6,14 +6,14 @@ import type {
   WgpuWireframePipeline,
 } from '@flighthq/types/contract';
 
-import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
+import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail.ts';
 import {
   createWgpuMeshPipeline,
   ensureWgpuScene3DPipeline,
   getWgpuMeshPreludeWgsl,
   stashWgpuUvTransform,
-} from './wgpuMeshPipeline';
-import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
+} from './wgpuMeshPipeline.ts';
+import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime.ts';
 
 // The Wgpu wireframe prelude — the WGSL mirror of scene-gl's glWireframePrelude. A minimal module that
 // reuses the shared vs_main (position → clip) and outputs a single flat LINE color; the wireframe

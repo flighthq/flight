@@ -5,8 +5,8 @@ import type {
   Scene2DSlotReference,
 } from '@flighthq/types/contract';
 
-import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics';
-import { setScene2DSlotReferenceContent } from './scene2DSlotReference';
+import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
+import { setScene2DSlotReferenceContent } from './scene2DSlotReference.ts';
 
 // Reconciles one caller-selected working set of application slots entirely synchronously. Slot content is
 // code the application already holds, so there is nothing to fetch, decode, or schedule here — a document's

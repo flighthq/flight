@@ -1,4 +1,4 @@
-import type { TexturePackerAtlasParseOptions } from './TexturePackerAtlasParseOptions';
+import type { TexturePackerAtlasParseOptions } from './TexturePackerAtlasParseOptions.ts';
 
 // The options a format-agnostic parseTextureAtlas call may carry. Every field is optional and every
 // format reads only the ones it understands — a Starling document ignores stripPathPrefix — so one

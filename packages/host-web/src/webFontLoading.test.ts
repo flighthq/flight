@@ -1,4 +1,4 @@
-import { webHostFontLoading } from './webFontLoading';
+import { webHostFontLoading } from './webFontLoading.ts';
 
 describe('webHostFontLoading', () => {
   it('returns a backend with all four operations', () => {

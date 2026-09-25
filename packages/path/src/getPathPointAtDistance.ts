@@ -1,6 +1,6 @@
 import type { Path, Vector2Like } from '@flighthq/types/contract';
 
-import { flattenPath } from './flattenPath';
+import { flattenPath } from './flattenPath.ts';
 
 // Evaluates the point on the path at `distance` arc-length units from the start, writing it into
 // `out`. Returns `true` if the distance is within the path's total length; `false` if the path is

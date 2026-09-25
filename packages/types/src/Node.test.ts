@@ -1,8 +1,8 @@
-import type { Entity, EntityRuntime } from './Entity';
-import type { EntityRuntimeKey } from './Entity';
-import type { Transform2DNode } from './HasTransform2D';
-import type { Node, NodeAny, NodeData, NodeRuntime, NodeTraits } from './Node';
-import { NodeKind } from './Node';
+import type { Entity, EntityRuntime } from './Entity.ts';
+import type { EntityRuntimeKey } from './Entity.ts';
+import type { Transform2DNode } from './HasTransform2D.ts';
+import type { Node, NodeAny, NodeData, NodeRuntime, NodeTraits } from './Node.ts';
+import { NodeKind } from './Node.ts';
 
 describe('Node', () => {
   describe('NodeKind', () => {

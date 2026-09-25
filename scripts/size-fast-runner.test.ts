@@ -18,8 +18,8 @@ import {
   stubFlightDiagnostics,
   writeFastSizeBaseline,
   writeFastSizeCache,
-} from './size-fast-runner';
-import type { SizeCase } from './size-runner';
+} from './size-fast-runner.ts';
+import type { SizeCase } from './size-runner.ts';
 
 function createCase(overrides: Partial<SizeCase> = {}): SizeCase {
   return { name: 'sample', render: 'canvas', root: '/repo/tools/size/fixtures/sample', variant: null, ...overrides };

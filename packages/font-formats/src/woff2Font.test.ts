@@ -2,9 +2,9 @@ import type { Decompressor } from '@flighthq/types/contract';
 import { Compression, CompressionFraming } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createSyntheticFont, encodeSyntheticWoff2 } from './openTypeTestHelper';
-import { readSfntTableDirectory } from './sfntTableDirectory';
-import { readWoff2Font, readWoff2TableDirectory, WOFF2_COMPRESSION } from './woff2Font';
+import { createSyntheticFont, encodeSyntheticWoff2 } from './openTypeTestHelper.ts';
+import { readSfntTableDirectory } from './sfntTableDirectory.ts';
+import { readWoff2Font, readWoff2TableDirectory, WOFF2_COMPRESSION } from './woff2Font.ts';
 
 // The synthetic container stores its stream uncompressed, so the whole container path is reachable with
 // an identity decompressor and no Brotli implementation anywhere near the suite.

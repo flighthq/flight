@@ -3,7 +3,7 @@ import {
   createHostProbeProviderResults,
   getRequiredHostProbeCapabilities,
   HostProbeCapabilities,
-} from './expectations';
+} from './expectations.ts';
 
 describe('createHostProbeProviderResults', () => {
   it('passes required changes and marks unclaimed providers unsupported', () => {

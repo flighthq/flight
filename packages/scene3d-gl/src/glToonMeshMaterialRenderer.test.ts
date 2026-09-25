@@ -5,9 +5,9 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Matrix3, Matrix4, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { ToonMaterialKind } from '@flighthq/types/contract';
 
-import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerGlToonMaterial, glToonMeshMaterialRenderer } from './glToonMeshMaterialRenderer';
+import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { registerGlToonMaterial, glToonMeshMaterialRenderer } from './glToonMeshMaterialRenderer.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

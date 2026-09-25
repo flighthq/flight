@@ -23,4 +23,4 @@ export {
   stepParticleObjects,
   updateParticleObjects,
   validateParticleEmitterConfig,
-} from './contract';
+} from './contract.ts';

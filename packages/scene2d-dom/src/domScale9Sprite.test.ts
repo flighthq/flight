@@ -8,14 +8,14 @@ import { createScale9Sprite } from '@flighthq/scene2d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import { Scale9SpriteKind } from '@flighthq/types/contract';
 
-import { registerDomImageTextureResolver } from './domImageTextureResolver';
-import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
+import { registerDomImageTextureResolver } from './domImageTextureResolver.ts';
+import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
 import {
   createDomScale9SpriteData,
   domScale9SpriteRenderer,
   drawDomScale9Sprite,
   initializeDomScale9SpriteData,
-} from './domScale9Sprite';
+} from './domScale9Sprite.ts';
 
 beforeEach(() => {
   registerTestImageDimensionResolver();

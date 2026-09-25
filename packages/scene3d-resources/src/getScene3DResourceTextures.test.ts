@@ -7,7 +7,7 @@ import type { ImageResourceReference, Texture } from '@flighthq/types/contract';
 import { EntityRuntimeKey, ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures';
+import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures.ts';
 
 function embeddedRef(state: ResourceResolutionState = ResourceResolutionState.Unresolved): ImageResourceReference {
   return {

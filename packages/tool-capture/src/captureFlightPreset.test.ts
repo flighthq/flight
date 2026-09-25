@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getFlightCaptureValidationPreset } from './captureFlightPreset';
+import { getFlightCaptureValidationPreset } from './captureFlightPreset.ts';
 
 describe('getFlightCaptureValidationPreset', () => {
   it('keeps built-in functional parity topology outside the CLI', () => {

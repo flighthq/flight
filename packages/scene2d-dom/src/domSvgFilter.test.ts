@@ -3,8 +3,8 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { ConvolutionEffect, DisplacementEffect } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { enableDomCssFilterSupport, getDomCssFilter } from './domCSSFilterBinding';
-import { createDomRenderState } from './domRenderState';
+import { enableDomCssFilterSupport, getDomCssFilter } from './domCSSFilterBinding.ts';
+import { createDomRenderState } from './domRenderState.ts';
 import {
   applyDomSvgFilterToNode,
   createDomSvgConvolutionFilter,
@@ -12,7 +12,7 @@ import {
   enableDomRasterFilterSupport,
   getDomSvgFilter,
   removeDomSvgFilterFromNode,
-} from './domSvgFilter';
+} from './domSvgFilter.ts';
 
 describe('applyDomSvgFilterToNode', () => {
   it('injects an SVG filter and binds a url(#id) CSS filter to the node', () => {

@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, Path, PathMorph } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
-import { forEachPathSegment } from './forEachPathSegment';
+import { forEachPathSegment } from './forEachPathSegment.ts';
 
 export const PathMorphIssueNone = 0;
 export const PathMorphIssueWindingMismatch = 1;

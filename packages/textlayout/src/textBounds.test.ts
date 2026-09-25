@@ -8,8 +8,8 @@ import {
   computeTextBoundsRectangle,
   computeTextBoundsWidth,
   TEXT_BOUNDS_GUTTER,
-} from './textBounds';
-import { TEXT_LAYOUT_GUTTER } from './textLayout';
+} from './textBounds.ts';
+import { TEXT_LAYOUT_GUTTER } from './textLayout.ts';
 
 function createSpec(spec: Partial<TextBoundsSpec> = {}): TextBoundsSpec {
   return {

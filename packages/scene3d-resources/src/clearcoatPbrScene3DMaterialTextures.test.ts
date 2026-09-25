@@ -2,12 +2,12 @@ import { createClearcoatPbrExtension, createExtendedPbrMaterial } from '@flighth
 import { createTexture } from '@flighthq/texture/contract';
 import type { Texture } from '@flighthq/types/contract';
 
-import { registerClearcoatPbrScene3DMaterialTextures } from './clearcoatPbrScene3DMaterialTextures';
+import { registerClearcoatPbrScene3DMaterialTextures } from './clearcoatPbrScene3DMaterialTextures.ts';
 import {
   createScene3DMaterialTextureRegistry,
   getScene3DMaterialTextures,
   registerExtendedPbrScene3DMaterialTextures,
-} from './sceneMaterialTextureRegistry';
+} from './sceneMaterialTextureRegistry.ts';
 
 describe('registerClearcoatPbrScene3DMaterialTextures', () => {
   it('lists all clearcoat maps in descriptor order', () => {

@@ -12,10 +12,10 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-import { collideContactManifold3D } from './collideContactManifold3D';
-import { getCollisionSupport3D } from './collisionSupport3D';
-import { clearCollisionContactManifold3D, createCollisionContactManifold3D } from './contactManifold3D';
-import { createCollisionTimeOfImpact3D, sweepCollisionShape3D } from './sweepCollisionShape3D';
+import { collideContactManifold3D } from './collideContactManifold3D.ts';
+import { getCollisionSupport3D } from './collisionSupport3D.ts';
+import { clearCollisionContactManifold3D, createCollisionContactManifold3D } from './contactManifold3D.ts';
+import { createCollisionTimeOfImpact3D, sweepCollisionShape3D } from './sweepCollisionShape3D.ts';
 
 // Tests one convex shape against a static heightfield through the heightfield's retained triangle-mesh
 // acceleration. The normal always pushes the convex first argument out of the surface.

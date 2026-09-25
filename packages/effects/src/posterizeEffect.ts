@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, PosterizeEffect } from '@flighthq/types/contract';
 
-import { initializeEffect } from './effect';
+import { initializeEffect } from './effect.ts';
 
 export function createPosterizeEffect(
   options: Readonly<Omit<EntityWithoutRuntime<PosterizeEffect>, 'kind'>> = {},

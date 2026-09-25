@@ -1,6 +1,6 @@
-import { getPathContourLengths } from './getPathContourLengths';
-import { getPathLength } from './getPathLength';
-import { appendPathClose, appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path';
+import { getPathContourLengths } from './getPathContourLengths.ts';
+import { getPathLength } from './getPathLength.ts';
+import { appendPathClose, appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path.ts';
 
 describe('getPathContourLengths', () => {
   it('returns an empty array for an empty path', () => {

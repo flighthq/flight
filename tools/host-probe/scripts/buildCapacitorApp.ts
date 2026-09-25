@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { createCapacitorNativeBuildInvocation } from '../src/nativeApplicationBuild';
+import { createCapacitorNativeBuildInvocation } from '../src/nativeApplicationBuild.ts';
 
 const platform = process.argv[2];
 if (platform !== 'android' && platform !== 'ios') {

@@ -12,9 +12,9 @@ import {
 } from '@flighthq/shape/contract';
 import { ShapeKind } from '@flighthq/types/contract';
 
-import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
-import { domMorphShapeRenderer, domShapeRenderer, drawDomShape, initializeDomShapeData } from './domShape';
-import { registerDomShapeRasterizer } from './domShapeRasterizer';
+import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
+import { domMorphShapeRenderer, domShapeRenderer, drawDomShape, initializeDomShapeData } from './domShape.ts';
+import { registerDomShapeRasterizer } from './domShapeRasterizer.ts';
 
 const noopRasterizer = (): void => {};
 

@@ -18,8 +18,8 @@ import type {
 } from '@flighthq/types/contract';
 import { CustomShaderMaterialKind } from '@flighthq/types/contract';
 
-import { WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY, WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY } from './wgpuCustomMaterialAbi';
-import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
+import { WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY, WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY } from './wgpuCustomMaterialAbi.ts';
+import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
 import {
   beginWgpuMeshDraw,
   createWgpuMeshPipeline,
@@ -31,10 +31,10 @@ import {
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
   writeWgpuFrameUniform,
-} from './wgpuMeshPipeline';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+} from './wgpuMeshPipeline.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 
-export { WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY, WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY } from './wgpuCustomMaterialAbi';
+export { WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY, WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY } from './wgpuCustomMaterialAbi.ts';
 
 interface CustomMaterialBinding {
   textureBindGroup: GPUBindGroup | null;

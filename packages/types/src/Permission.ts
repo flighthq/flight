@@ -1,4 +1,4 @@
-import type { HostNotificationPermissionCapability } from './Notification';
+import type { HostNotificationPermissionCapability } from './Notification.ts';
 
 // Shared vocabulary projected by @flighthq/permissions from explicit Host capability providers.
 

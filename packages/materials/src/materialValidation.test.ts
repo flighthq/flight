@@ -4,8 +4,8 @@ import {
   isValidMaterialIor,
   isValidMaterialIridescenceThickness,
   isValidMaterialWeight,
-} from './materialValidation';
-import { createStandardPbrMaterialProperties } from './pbrMaterials';
+} from './materialValidation.ts';
+import { createStandardPbrMaterialProperties } from './pbrMaterials.ts';
 
 describe('clampStandardPbrMaterialProperties', () => {
   it('returns the out instance', () => {

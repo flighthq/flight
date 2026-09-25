@@ -7,14 +7,14 @@ import {
   integrateRigidBody3DPose,
   integrateRigidBody3DVelocity,
   refreshRigidBody3DWorldInertia,
-} from './integrate';
+} from './integrate.ts';
 import {
   computePhysics3DBoxMassData,
   computePhysics3DSphereMassData,
   createPhysics3DMassData,
   setRigidBody3DMassData,
-} from './massProperties';
-import { createRigidBody3D } from './world';
+} from './massProperties.ts';
+import { createRigidBody3D } from './world.ts';
 
 describe('clearRigidBody3DForces', () => {
   it('zeroes both accumulators', () => {

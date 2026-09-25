@@ -1,4 +1,4 @@
-import { swfFontHandler } from './swfFontHandler';
+import { swfFontHandler } from './swfFontHandler.ts';
 
 describe('swfFontHandler', () => {
   it('claims the font tags', () => {

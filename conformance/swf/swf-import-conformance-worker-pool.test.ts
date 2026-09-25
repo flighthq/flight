@@ -2,7 +2,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { runSwfImportConformanceWorkerPool } from './swf-import-conformance-worker-pool';
+import { runSwfImportConformanceWorkerPool } from './swf-import-conformance-worker-pool.ts';
 
 describe('runSwfImportConformanceWorkerPool', () => {
   it(

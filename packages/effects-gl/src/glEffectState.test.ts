@@ -10,7 +10,7 @@ import {
   endGlEffectPass,
   setGlEffectStateSkipGuard,
   setGlEffectVelocityTexture,
-} from './glEffectState';
+} from './glEffectState.ts';
 
 describe('beginGlEffectPass', () => {
   it('is a function', () => {

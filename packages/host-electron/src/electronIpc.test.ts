@@ -12,7 +12,7 @@ import {
   populateElectronHostIpcMessage,
   populateElectronHostIpcSend,
   populateElectronHostIpcTargetedSend,
-} from './electronIpc';
+} from './electronIpc.ts';
 
 function fakeElectron(): {
   channels: Map<string, Set<(event: unknown, ...args: unknown[]) => void>>;

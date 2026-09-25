@@ -1,5 +1,5 @@
-import type { Light } from './Light';
-import type { Texture } from './Texture';
+import type { Light } from './Light.ts';
+import type { Texture } from './Texture.ts';
 
 // Image-based environment lighting + skybox source. `environment` is the radiance cubemap used
 // for the skybox and as the IBL specular/irradiance source; `intensity` scales its contribution.

@@ -9,8 +9,8 @@ import {
   installCaptureTarget,
   registerCaptureBenchmarkTarget,
   verifyCaptureTarget,
-} from './capturePage';
-import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol';
+} from './capturePage.ts';
+import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.ts';
 
 function resetCapturePageWindow(): void {
   const flags = window as typeof window & {

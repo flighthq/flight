@@ -7,7 +7,7 @@ import {
   ensureGlQuadBatchShader,
   setGlQuadBatchWorldAndTexture,
   useGlQuadBatchProgram,
-} from './glQuadBatchWriter';
+} from './glQuadBatchWriter.ts';
 
 // Registers the bundled default material (the plain textured-quad pipeline) under StandardMaterialKind.
 // It is a bundled material like any other — it has no privileged status in the render path; a node

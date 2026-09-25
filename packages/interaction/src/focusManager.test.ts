@@ -16,9 +16,9 @@ import {
   initializeFocusManager,
   isNodeFocused,
   setFocusedNode,
-} from './focusManager';
-import { enableInteractionSignals } from './interactionManager';
-import { setNodeFocusable, setNodeTabIndex } from './nodeInteractionState';
+} from './focusManager.ts';
+import { enableInteractionSignals } from './interactionManager.ts';
+import { setNodeFocusable, setNodeTabIndex } from './nodeInteractionState.ts';
 
 function focusable(tabIndex: number = -1): Node2D {
   const node = createDisplayObject();

@@ -1,6 +1,6 @@
-import type { Matrix } from './Matrix';
-import type { Texture } from './Texture';
-import type { TriangleCulling } from './TriangleCulling';
+import type { Matrix } from './Matrix.ts';
+import type { Texture } from './Texture.ts';
+import type { TriangleCulling } from './TriangleCulling.ts';
 
 export type CapsStyle = 'none' | 'round' | 'square';
 

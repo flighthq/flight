@@ -1,7 +1,7 @@
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
-import { parseSwfRequirements } from './swfRequirements';
+import { parseSwfRequirements } from './swfRequirements.ts';
 
 describe('parseSwfRequirements', () => {
   it('reports one requirement per distinct tag, keyed by the SWF tag name', () => {

@@ -21,7 +21,7 @@ function reviewModulesReachableFromScripts(): readonly string[] {
     .filter((file) => file.endsWith('.ts'))
     .flatMap((file) => [
       ...readFileSync(resolve(SCRIPTS_DIRECTORY, file), 'utf8').matchAll(
-        /['"]\.\.\/tools\/review\/src\/([A-Za-z0-9_]+)['"]/gu,
+        /['"]\.\.\/tools\/review\/src\/([A-Za-z0-9_]+)\.ts['"]/gu,
       ),
     ])
     .map((match) => match[1]);
@@ -32,7 +32,7 @@ function reviewModulesReachableFromScripts(): readonly string[] {
     if (name === undefined || seen.has(name)) continue;
     seen.add(name);
     const source = readFileSync(resolve(REVIEW_SOURCE_DIRECTORY, `${name}.ts`), 'utf8');
-    for (const match of source.matchAll(/from\s+['"]\.\/([A-Za-z0-9_]+)['"]/gu)) pending.push(match[1]);
+    for (const match of source.matchAll(/from\s+['"]\.\/([A-Za-z0-9_]+)\.ts['"]/gu)) pending.push(match[1]);
   }
   return [...seen].sort();
 }

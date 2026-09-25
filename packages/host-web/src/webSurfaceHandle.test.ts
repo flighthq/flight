@@ -7,8 +7,8 @@ import {
   createWebSurfaceFromElement,
   getWebSurfaceCanvasHandle,
   getWebSurfaceElementHandle,
-} from './webSurfaceHandle';
-import { resetWebWindowBackendForTest, webHostWindowGeometry, webHostWindowLifecycle } from './webWindow';
+} from './webSurfaceHandle.ts';
+import { resetWebWindowBackendForTest, webHostWindowGeometry, webHostWindowLifecycle } from './webWindow.ts';
 
 let pageWindow: AppWindow | undefined;
 

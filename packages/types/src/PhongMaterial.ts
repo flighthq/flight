@@ -1,5 +1,5 @@
-import type { Material3D } from './Material3D';
-import type { Texture } from './Texture';
+import type { Material3D } from './Material3D.ts';
+import type { Texture } from './Texture.ts';
 
 // Classic Phong shading: diffuse plus a reflection-vector specular lobe. `diffuse`/`specular`
 // are packed sRgb-albedo RGBA (with their maps); `shininess` is the specular exponent;

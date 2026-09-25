@@ -1,5 +1,5 @@
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { getGlScene3DTime, setGlScene3DTime } from './glScene3DTime';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { getGlScene3DTime, setGlScene3DTime } from './glScene3DTime.ts';
 
 describe('getGlScene3DTime', () => {
   it('defaults to 0 before any setGlScene3DTime', () => {

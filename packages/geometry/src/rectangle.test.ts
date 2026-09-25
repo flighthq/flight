@@ -43,7 +43,7 @@ import {
 } from '@flighthq/geometry/contract';
 import type { Rectangle } from '@flighthq/types/contract';
 
-import { initializeRectangle } from './rectangle';
+import { initializeRectangle } from './rectangle.ts';
 
 let r: Rectangle;
 let r2: Rectangle;

@@ -2,10 +2,10 @@ import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 
-import { areGlRenderStateGuardsEnabled, enableGlRenderStateGuards } from './enableGlRenderStateGuards';
-import { useGlProgram } from './glDraw';
-import { createGlRenderState, getGlRenderStateRuntime } from './glRenderState';
-import { makeGL } from './glTestHelper';
+import { areGlRenderStateGuardsEnabled, enableGlRenderStateGuards } from './enableGlRenderStateGuards.ts';
+import { useGlProgram } from './glDraw.ts';
+import { createGlRenderState, getGlRenderStateRuntime } from './glRenderState.ts';
+import { makeGL } from './glTestHelper.ts';
 
 function createState() {
   const canvas = document.createElement('canvas');

@@ -1,4 +1,4 @@
-import type { Path } from './Path';
+import type { Path } from './Path.ts';
 
 // One solid-color filled region resolved from a Shape's drawing commands: the fill outline as a `Path`
 // (curves intact, flattened/tessellated by the renderer) plus its packed color and alpha. Produced by

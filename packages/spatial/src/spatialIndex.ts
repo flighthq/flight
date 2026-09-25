@@ -8,7 +8,7 @@ import type {
   SpatialPair,
 } from '@flighthq/types/contract';
 
-import { createUniformGridSpatialBackend2D } from './uniformGrid';
+import { createUniformGridSpatialBackend2D } from './uniformGrid.ts';
 
 // Empties the index of all objects while keeping it (and its backend) reusable.
 export function clearSpatialIndex2D(index: Readonly<SpatialIndex2D>): void {

@@ -1,4 +1,4 @@
-import type { InputSignals } from './InputSignals';
+import type { InputSignals } from './InputSignals.ts';
 
 export interface AttachInputOptions {
   preventDefault?: boolean;

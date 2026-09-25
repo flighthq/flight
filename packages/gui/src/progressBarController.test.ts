@@ -1,10 +1,10 @@
-import { createGuiTestNode } from './guiTestHelper';
+import { createGuiTestNode } from './guiTestHelper.ts';
 import {
   createProgressBarController,
   disposeProgressBarController,
   getProgressBarControllerValue,
   setProgressBarControllerValue,
-} from './progressBarController';
+} from './progressBarController.ts';
 
 describe('createProgressBarController', () => {
   it('scales the caller fill without changing the track', () => {

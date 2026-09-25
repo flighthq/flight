@@ -25,4 +25,4 @@ export {
   setQuadBatchInstanceTint,
   setQuadBatchLocalBoundsRectangle,
   setQuadBatchTransformType,
-} from './contract';
+} from './contract.ts';

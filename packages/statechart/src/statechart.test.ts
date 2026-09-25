@@ -19,7 +19,7 @@ import {
   setStatechartBooleanInput,
   setStatechartNumberInput,
   setStatechartRegionDuration,
-} from './statechart';
+} from './statechart.ts';
 
 describe('advanceStatechartInstance', () => {
   it('advances every concurrent region before clearing a shared trigger', () => {

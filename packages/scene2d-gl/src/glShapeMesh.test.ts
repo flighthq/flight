@@ -1,9 +1,9 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { ColorScaleBias, RenderProxy2D } from '@flighthq/types/contract';
 
-import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
-import { drawGlShapeMeshBatch, drawGlShapeMeshes, ensureGlShapeMeshProgram } from './glShapeMesh';
-import { createGlState } from './glTestHelper';
+import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature.ts';
+import { drawGlShapeMeshBatch, drawGlShapeMeshes, ensureGlShapeMeshProgram } from './glShapeMesh.ts';
+import { createGlState } from './glTestHelper.ts';
 
 function makeProxy(overrides?: Partial<RenderProxy2D>): RenderProxy2D {
   return {

@@ -6,9 +6,9 @@ import {
   applyContactShadowsEffectToGl,
   glContactShadowsEffectRunner,
   registerGlContactShadowsEffect,
-} from './glContactShadowsEffect';
-import { getGlEffectRunner } from './glEffectRegistry';
-import * as glSsaoEffect from './glSsaoEffect';
+} from './glContactShadowsEffect.ts';
+import { getGlEffectRunner } from './glEffectRegistry.ts';
+import * as glSsaoEffect from './glSsaoEffect.ts';
 
 beforeEach(() => {
   vi.spyOn(glSsaoEffect, 'applySsaoEffectToGl').mockImplementation((() => {}) as never);

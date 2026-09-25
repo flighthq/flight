@@ -3,7 +3,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, Signal } from '@flighthq/types/contract';
 
-import { nullSignalEmit } from './internal';
+import { nullSignalEmit } from './internal.ts';
 
 export function createSignal<T extends (...args: any[]) => void>(): Signal<T> {
   const out = allocateEntity<Signal<T>>();

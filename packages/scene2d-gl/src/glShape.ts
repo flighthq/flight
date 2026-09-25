@@ -1,9 +1,9 @@
 import type { GlRenderState, RenderProxy2D, Scene2DRenderer } from '@flighthq/types/contract';
 import { BatchFormat } from '@flighthq/types/contract';
 
-import { drawGlMeshShape } from './glMeshShapeRenderer';
-import { drawGlRasterShape } from './glRasterShapeRenderer';
-import { createGlShapeData, destroyGlShapeData } from './glShapeData';
+import { drawGlMeshShape } from './glMeshShapeRenderer.ts';
+import { drawGlRasterShape } from './glRasterShapeRenderer.ts';
+import { createGlShapeData, destroyGlShapeData } from './glShapeData.ts';
 
 // Tessellates what it can and rasterizes the rest: the GPU mesh path is tried first, and a shape with a
 // fill that has no tessellated form — a gradient, a texture fill, a closed stroke — falls through to the

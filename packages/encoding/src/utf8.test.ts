@@ -1,4 +1,4 @@
-import { decodeUTF8, encodeUTF8 } from './utf8';
+import { decodeUTF8, encodeUTF8 } from './utf8.ts';
 
 describe('decodeUTF8', () => {
   it('decodes empty and ASCII input', () => {

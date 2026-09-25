@@ -18,9 +18,9 @@ import type {
 } from '@flighthq/types/contract';
 import { MatcapMaterialKind } from '@flighthq/types/contract';
 
-import { bindWgpuMatcapSurface, ensureWgpuMatcapPipeline } from './wgpuMatcapPrelude';
-import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline';
+import { bindWgpuMatcapSurface, ensureWgpuMatcapPipeline } from './wgpuMatcapPrelude.ts';
+import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline.ts';
 
 // The built-in Matcap forward renderer (WgpuMeshMaterialRenderer for MatcapMaterialKind) — the WGSL
 // mirror of glMatcapMeshMaterialRenderer. Lighting-independent material-capture shading: bind selects

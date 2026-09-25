@@ -16,8 +16,8 @@ import type {
 } from '@flighthq/types/contract';
 import { MorphShapeKind, ShapeKind } from '@flighthq/types/contract';
 
-import { computeShapeBoundsRectangle } from './shapeBounds';
-import { getShapeBoundsCommandRegistryRevision } from './shapeBoundsRegistry';
+import { computeShapeBoundsRectangle } from './shapeBounds.ts';
+import { getShapeBoundsCommandRegistryRevision } from './shapeBoundsRegistry.ts';
 
 export function clearShapeCommands(shape: Shape): void {
   shape.data.commands.length = 0;

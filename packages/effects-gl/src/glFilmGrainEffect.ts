@@ -1,8 +1,8 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { FilmGrainEffect, GlEffectRunner, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Film grain: add per-pixel hash noise scaled by intensity, with grain cell size and a seed so the
 // noise can be animated frame to frame.

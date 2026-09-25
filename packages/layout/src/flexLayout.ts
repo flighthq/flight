@@ -12,7 +12,7 @@ import type {
 } from '@flighthq/types/contract';
 import { FlexLayoutKind, LayoutResolutionFailureKind } from '@flighthq/types/contract';
 
-import { registerLayoutResolver } from './layoutState';
+import { registerLayoutResolver } from './layoutState.ts';
 
 export function registerFlexLayoutResolver(state: Readonly<LayoutState>): void {
   registerLayoutResolver(state, FlexLayoutKind, flexLayoutResolver);

@@ -1,6 +1,6 @@
-import { createBitmap } from './bitmap';
-import { getBitmapCoverage } from './bitmapCoverage';
-import { setBitmapPixel } from './bitmapPixel';
+import { createBitmap } from './bitmap.ts';
+import { getBitmapCoverage } from './bitmapCoverage.ts';
+import { setBitmapPixel } from './bitmapPixel.ts';
 
 describe('getBitmapCoverage', () => {
   it('returns 0 for a bitmap still entirely the background colour', () => {

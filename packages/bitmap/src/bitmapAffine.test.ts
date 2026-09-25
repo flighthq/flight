@@ -1,7 +1,7 @@
-import { createBitmap } from './bitmap';
-import { transformBitmap } from './bitmapAffine';
-import { getBitmapPixel, setBitmapPixel } from './bitmapPixel';
-import { createBitmapRegion } from './bitmapRegion';
+import { createBitmap } from './bitmap.ts';
+import { transformBitmap } from './bitmapAffine.ts';
+import { getBitmapPixel, setBitmapPixel } from './bitmapPixel.ts';
+import { createBitmapRegion } from './bitmapRegion.ts';
 
 describe('transformBitmap', () => {
   it('identity matrix copies source to dest', () => {

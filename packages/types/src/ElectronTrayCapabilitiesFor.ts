@@ -1,5 +1,5 @@
-import type { HostTrayCapabilities } from './Host';
-import type { DesktopOsProfile } from './Tray';
+import type { HostTrayCapabilities } from './Host.ts';
+import type { DesktopOsProfile } from './Tray.ts';
 
 type ElectronCommonTrayCapabilities = Required<
   Pick<

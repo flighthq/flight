@@ -17,7 +17,7 @@ import type {
 } from '@flighthq/types/contract';
 import { AbcOpcode, AbcTraitKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import type { SwfReader } from './swfReader';
+import type { SwfReader } from './swfReader.ts';
 
 // Recovers the timeline commands an AVM2 script declares, keyed by the class name that `SymbolClass` binds
 // to a character. AVM2 has no playback opcodes: a compiler turns frame scripts into an `addFrameScript`

@@ -14,8 +14,8 @@ import {
   initializePhysics3DMassData,
   setRigidBody3DMassData,
   updateRigidBody3DMassData,
-} from './massProperties';
-import { addPhysics3DBody, createPhysics3DCollider, createPhysics3DWorld, createRigidBody3D } from './world';
+} from './massProperties.ts';
+import { addPhysics3DBody, createPhysics3DCollider, createPhysics3DWorld, createRigidBody3D } from './world.ts';
 
 describe('combinePhysics3DMassData', () => {
   it('starts from the zero identity, adopting the addend outright', () => {

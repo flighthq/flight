@@ -1,6 +1,6 @@
 import type { BitmapRegion } from '@flighthq/types/contract';
 
-import { invalidateBitmap } from './bitmap';
+import { invalidateBitmap } from './bitmap.ts';
 
 /**
  * Transitions `dest` toward `source` one batch of pixels at a time, in a

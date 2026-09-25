@@ -24,7 +24,7 @@ import {
   buildRequirementTranslations,
   PRESET_BACKENDS,
   SCENE3D_PRESET_BACKENDS,
-} from './catalog-render-rows';
+} from './catalog-render-rows.ts';
 
 describe('buildRequirementTranslations', () => {
   // ★ THE GUARD AGAINST UNACTIONABLE DIAGNOSTICS. A translation naming a kind no backend can render

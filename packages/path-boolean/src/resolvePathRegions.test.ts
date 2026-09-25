@@ -2,8 +2,8 @@ import { flattenPath } from '@flighthq/path/contract';
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { martinezPathBooleanKernel } from './martinezKernel';
-import { resolvePathRegions } from './resolvePathRegions';
+import { martinezPathBooleanKernel } from './martinezKernel.ts';
+import { resolvePathRegions } from './resolvePathRegions.ts';
 
 const kernel = martinezPathBooleanKernel;
 

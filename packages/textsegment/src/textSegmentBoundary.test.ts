@@ -10,8 +10,8 @@ import {
   getPreviousSentenceBoundary,
   getPreviousWordBoundary,
   getWordRangeAt,
-} from './textSegmentBoundary';
-import { webTextSegmenterBackend } from './textSegmenterBackend';
+} from './textSegmentBoundary.ts';
+import { webTextSegmenterBackend } from './textSegmenterBackend.ts';
 
 const backend = webTextSegmenterBackend;
 

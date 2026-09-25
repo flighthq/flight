@@ -2,7 +2,7 @@ import { attachEntityBinding, getEntityBinding } from '@flighthq/entity/contract
 import { getMatrix4Element } from '@flighthq/geometry/contract';
 import type { Matrix4 } from '@flighthq/types/contract';
 
-import { acquireIdentityMatrix4, acquireMatrix4, clearMatrix4Pool, releaseMatrix4 } from './matrix4Pool';
+import { acquireIdentityMatrix4, acquireMatrix4, clearMatrix4Pool, releaseMatrix4 } from './matrix4Pool.ts';
 
 beforeEach(() => {
   clearMatrix4Pool();

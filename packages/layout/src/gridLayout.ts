@@ -8,7 +8,7 @@ import type {
 } from '@flighthq/types/contract';
 import { GridLayoutKind, LayoutResolutionFailureKind } from '@flighthq/types/contract';
 
-import { registerLayoutResolver } from './layoutState';
+import { registerLayoutResolver } from './layoutState.ts';
 
 export function registerGridLayoutResolver(state: Readonly<LayoutState>): void {
   registerLayoutResolver(state, GridLayoutKind, gridLayoutResolver);

@@ -8,18 +8,18 @@ import {
   UnityParticleFormatKind,
 } from '@flighthq/types/contract';
 
-import { registerParticleFormat } from './formatRegistry';
-import { parseLibgdxParticle, parseLibgdxParticleDocument } from './libgdxParse';
-import { serializeLibgdxParticleDocument } from './libgdxSerialize';
-import { parseParticleDesignerPlist, parseParticleDesignerPlistDocument } from './particleDesignerParse';
-import { serializeParticleDesignerPlistDocument } from './particleDesignerSerialize';
-import { parsePixiParticle, parsePixiParticleDocument } from './pixiParse';
-import { parseSpineParticle, parseSpineParticleDocument } from './spineParse';
-import { serializeSpineParticleDocument } from './spineSerialize';
-import { parseStarlingPex, parseStarlingPexDocument } from './starlingPexParse';
-import { serializeStarlingPexDocument } from './starlingPexSerialize';
-import { parseUnityParticle, parseUnityParticleDocument } from './unityParse';
-import { serializeUnityParticleDocument } from './unitySerialize';
+import { registerParticleFormat } from './formatRegistry.ts';
+import { parseLibgdxParticle, parseLibgdxParticleDocument } from './libgdxParse.ts';
+import { serializeLibgdxParticleDocument } from './libgdxSerialize.ts';
+import { parseParticleDesignerPlist, parseParticleDesignerPlistDocument } from './particleDesignerParse.ts';
+import { serializeParticleDesignerPlistDocument } from './particleDesignerSerialize.ts';
+import { parsePixiParticle, parsePixiParticleDocument } from './pixiParse.ts';
+import { parseSpineParticle, parseSpineParticleDocument } from './spineParse.ts';
+import { serializeSpineParticleDocument } from './spineSerialize.ts';
+import { parseStarlingPex, parseStarlingPexDocument } from './starlingPexParse.ts';
+import { serializeStarlingPexDocument } from './starlingPexSerialize.ts';
+import { parseUnityParticle, parseUnityParticleDocument } from './unityParse.ts';
+import { serializeUnityParticleDocument } from './unitySerialize.ts';
 
 /** Explicitly install the built-in particle format codecs.
  *

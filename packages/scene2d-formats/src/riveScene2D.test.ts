@@ -3,18 +3,18 @@ import { martinezPathBooleanKernel } from '@flighthq/path-boolean/contract';
 import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 
-import { getRiveCoreTypeName, isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
+import { getRiveCoreTypeName, isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
 import {
   createRiveImportRegistry,
   getRiveCoreObjectHandler,
   registerRiveCoreObjectHandler,
-} from './riveImportRegistry';
+} from './riveImportRegistry.ts';
 import {
   createRiveDocumentImportResult,
   createScene2DFromRiveDocument,
   initializeRiveDocumentImportResult,
-} from './riveScene2D';
-import { registerRiveShapeHandlers } from './riveShapeNode';
+} from './riveScene2D.ts';
+import { registerRiveShapeHandlers } from './riveShapeNode.ts';
 
 const kernel = martinezPathBooleanKernel;
 

@@ -9,8 +9,8 @@ import type {
   WgpuRenderTexturePool,
 } from '@flighthq/types/contract';
 
-import { createWgpuRenderTargetPool, destroyWgpuRenderTargetPool } from './wgpuRenderTargetPool';
-import { destroyWgpuRenderTexture, invalidateWgpuRenderTexture } from './wgpuRenderTexture';
+import { createWgpuRenderTargetPool, destroyWgpuRenderTargetPool } from './wgpuRenderTargetPool.ts';
+import { destroyWgpuRenderTexture, invalidateWgpuRenderTexture } from './wgpuRenderTexture.ts';
 
 export function acquireWgpuRenderTexture(
   state: WgpuRenderState,

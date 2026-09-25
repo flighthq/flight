@@ -1,4 +1,4 @@
-import { findWedgedBackendSegment } from './backendPrefix';
+import { findWedgedBackendSegment } from './backendPrefix.ts';
 
 // ★ EVERY NEGATIVE CONTROL FOR A PROOF PATH LIVES HERE, PERMANENTLY, AND THE STANDING RULE IS:
 // A NEW PROOF PATH MUST LEAVE EVERY PRE-EXISTING NEGATIVE CONTROL STILL FAILING.

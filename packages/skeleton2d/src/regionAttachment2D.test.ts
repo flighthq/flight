@@ -3,8 +3,8 @@ import type { Bone2D, RegionAttachment2D } from '@flighthq/types/contract';
 import { RegionAttachment2DKind, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { computeSkeleton2DRegionAttachmentVertices } from './regionAttachment2D';
-import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
+import { computeSkeleton2DRegionAttachmentVertices } from './regionAttachment2D.ts';
+import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d.ts';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
   return {

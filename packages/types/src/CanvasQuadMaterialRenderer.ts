@@ -1,5 +1,5 @@
-import type { CanvasMaterialState } from './CanvasMaterialState';
-import type { Material } from './Material';
+import type { CanvasMaterialState } from './CanvasMaterialState.ts';
+import type { Material } from './Material.ts';
 
 // Per-backend behavior for a material kind on Canvas, registered against the kind on the
 // render state via registerCanvasQuadMaterialRenderer. Unlike the Gl renderer, this is

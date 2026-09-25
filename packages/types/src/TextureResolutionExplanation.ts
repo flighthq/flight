@@ -1,4 +1,4 @@
-import type { TextureSourceKind } from './TextureSourceKind';
+import type { TextureSourceKind } from './TextureSourceKind.ts';
 
 export type TextureResolutionStatus = 'missing-kind' | 'missing-resolver' | 'registered';
 

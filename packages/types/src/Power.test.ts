@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { HostPowerCapabilities } from './Host';
+import type { Entity } from './Entity.ts';
+import type { HostPowerCapabilities } from './Host.ts';
 import type {
   ElectronPowerCapabilities,
   HostPowerBatteryHealthCapability,
@@ -12,7 +12,7 @@ import type {
   HostPowerThermalCapability,
   WebPowerCapabilities,
   WebPowerReadingCapabilities,
-} from './Power';
+} from './Power.ts';
 
 type PowerCapabilitiesAreStructural = [
   HostPowerBatteryHealthCapability extends Entity ? true : false,

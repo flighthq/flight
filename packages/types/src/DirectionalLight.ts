@@ -1,6 +1,6 @@
-import type { Light } from './Light';
-import type { LightUnit } from './LightUnit';
-import type { Vector3 } from './Vector3';
+import type { Light } from './Light.ts';
+import type { LightUnit } from './LightUnit.ts';
+import type { Vector3 } from './Vector3.ts';
 
 // Infinitely distant directional light (sun). `direction` is the world-space travel direction
 // of the light (normalized); surfaces are lit from -direction.

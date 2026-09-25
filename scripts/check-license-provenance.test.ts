@@ -1,4 +1,4 @@
-import { checkLicenseProvenance, formatLicenseProvenanceReport } from './check-license-provenance';
+import { checkLicenseProvenance, formatLicenseProvenanceReport } from './check-license-provenance.ts';
 
 describe('license and provenance declaration gate', () => {
   it('rejects every identifier with case-sensitive word boundaries', () => {

@@ -1,4 +1,4 @@
-import { applyDitherEffectToWgpu, wgpuDitherEffectRunner, registerWgpuDitherEffect } from './wgpuDitherEffect';
+import { applyDitherEffectToWgpu, wgpuDitherEffectRunner, registerWgpuDitherEffect } from './wgpuDitherEffect.ts';
 
 describe('applyDitherEffectToWgpu', () => {
   it('is a function', () => {

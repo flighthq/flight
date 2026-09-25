@@ -1,6 +1,6 @@
 import { StandardMaterialKind } from '@flighthq/types/contract';
 
-import { createStandardMaterial, initializeStandardMaterial } from './standardMaterial';
+import { createStandardMaterial, initializeStandardMaterial } from './standardMaterial.ts';
 
 describe('createStandardMaterial', () => {
   it('creates the authorable unlit textured material used by the default 2D pipeline', () => {

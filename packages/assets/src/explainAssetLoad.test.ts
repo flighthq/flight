@@ -6,8 +6,8 @@ import {
   registerAssetDescriptor,
   registerAssetLoader,
   releaseAsset,
-} from './assetLibrary';
-import { explainAssetLoad } from './explainAssetLoad';
+} from './assetLibrary.ts';
+import { explainAssetLoad } from './explainAssetLoad.ts';
 
 describe('explainAssetLoad', () => {
   it('distinguishes catalog, adapter, loading, resident, and freed states', async () => {

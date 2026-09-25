@@ -2,11 +2,11 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ParticleEmitter2D, ParticleEmitterData } from '@flighthq/types/contract';
 import type { ParticleObject } from '@flighthq/types/contract';
 
-import { applyParticleForces, applyParticleObjectForces } from './applyParticleForces';
-import { createParticleEmitterConfig } from './particleEmitterConfig';
-import { createParticleEmitterState, ensureParticleEmitterStateCapacity } from './particleEmitterState';
-import { createParticleObjectsState } from './particleObjectsState';
-import { updateParticleObjects } from './updateParticleObjects';
+import { applyParticleForces, applyParticleObjectForces } from './applyParticleForces.ts';
+import { createParticleEmitterConfig } from './particleEmitterConfig.ts';
+import { createParticleEmitterState, ensureParticleEmitterStateCapacity } from './particleEmitterState.ts';
+import { createParticleObjectsState } from './particleObjectsState.ts';
+import { updateParticleObjects } from './updateParticleObjects.ts';
 
 // Node-free SoA emitter fixture: applyParticleForces reads only `emitter.data`, so the display
 // node from @flighthq/particleemitter is not needed to unit-test the force pass. Keeping this

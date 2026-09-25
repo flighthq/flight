@@ -1,10 +1,14 @@
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
 
-import { createSpritesheet } from './spritesheet';
-import { createSpritesheetAnimation } from './spritesheetAnimation';
-import { createSpritesheetAnimationData, createSpritesheetData, createSpritesheetFrameData } from './spritesheetData';
-import { createSpritesheetFrame } from './spritesheetFrame';
-import { validateSpritesheet, validateSpritesheetData } from './spritesheetValidation';
+import { createSpritesheet } from './spritesheet.ts';
+import { createSpritesheetAnimation } from './spritesheetAnimation.ts';
+import {
+  createSpritesheetAnimationData,
+  createSpritesheetData,
+  createSpritesheetFrameData,
+} from './spritesheetData.ts';
+import { createSpritesheetFrame } from './spritesheetFrame.ts';
+import { validateSpritesheet, validateSpritesheetData } from './spritesheetValidation.ts';
 
 function makeAtlas(regionCount: number) {
   const atlas = createTextureAtlas();

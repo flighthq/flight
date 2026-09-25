@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { ViewportAlign } from './ViewportAlign';
+import type { Entity } from './Entity.ts';
+import type { ViewportAlign } from './ViewportAlign.ts';
 
 export const AnchorLayoutKind = 'AnchorLayout';
 export const FlexLayoutKind = 'FlexLayout';

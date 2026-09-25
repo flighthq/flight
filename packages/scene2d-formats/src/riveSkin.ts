@@ -11,7 +11,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, RiveWeightedPointKind } from '@flighthq/types/contract';
 
-import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
+import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
 
 /**
  * Reads a skinned path's `Weight`/`CubicWeight` records into a `Skin2D`.

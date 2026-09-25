@@ -7,8 +7,8 @@ import {
   createPhysics2DJointReaction,
   initializePhysics2DJointReaction,
   writePhysics2DJointReaction,
-} from './jointReactions';
-import { addPhysics2DJoint } from './jointRegistry';
+} from './jointReactions.ts';
+import { addPhysics2DJoint } from './jointRegistry.ts';
 import {
   Physics2DDistanceJointKind,
   Physics2DGearJointKind,
@@ -19,10 +19,10 @@ import {
   Physics2DRopeJointKind,
   Physics2DWeldJointKind,
   Physics2DWheelJointKind,
-} from './joints';
-import { registerBuiltInPhysics2DJointSolvers } from './registerBuiltInPhysics2DJointSolvers';
-import { stepPhysics2D } from './step';
-import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world';
+} from './joints.ts';
+import { registerBuiltInPhysics2DJointSolvers } from './registerBuiltInPhysics2DJointSolvers.ts';
+import { stepPhysics2D } from './step.ts';
+import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 // Every assertion in this file is a STATICS check, not a comparison against the formula under test. A
 // joint holding a weight still must push up with exactly that weight, and a joint holding an off-centre

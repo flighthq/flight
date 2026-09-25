@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { Signal } from './Signal.ts';
 
 // The select event entity: application menu-bar selections, delivered by a backend (Electron/Tauri).
 // Standard event-capability shape — createMenuSelect / attachMenuSelect / detachMenuSelect /

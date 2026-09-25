@@ -1,4 +1,4 @@
-import type { ReviewCommissionState } from './commissionState';
+import type { ReviewCommissionState } from './commissionState.ts';
 
 export interface ReviewReferenceHashCell {
   /** Capture-baseline identity from status.json. */

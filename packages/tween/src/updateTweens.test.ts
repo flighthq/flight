@@ -1,8 +1,8 @@
 import { connectSignal } from '@flighthq/signals/contract';
 
-import { createTween, pauseTween, resumeTween } from './tween';
-import { createTweenManager } from './tweenManager';
-import { completeTween, updateTweens } from './updateTweens';
+import { createTween, pauseTween, resumeTween } from './tween.ts';
+import { createTweenManager } from './tweenManager.ts';
+import { completeTween, updateTweens } from './updateTweens.ts';
 
 describe('completeTween', () => {
   it('jumps target to end value and marks tween complete', () => {

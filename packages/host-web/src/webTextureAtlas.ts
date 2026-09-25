@@ -6,7 +6,7 @@ import {
   createWebImageResourceFromCanvas,
   createWebImageResourceFromImageBitmap,
   createWebImageResourceFromImageElement,
-} from './webImageResource';
+} from './webImageResource.ts';
 
 // One-step atlases over the three web drawables. The portable half —
 // createTextureAtlasFromImageResource and the loaders — stays in @flighthq/textureatlas; only these,

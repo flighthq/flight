@@ -2,14 +2,14 @@ import { allocateEntity } from '@flighthq/entity/contract';
 import type { WgpuHostAcquisition } from '@flighthq/types/contract';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { createTestWgpuSurface, testWgpuHost } from './wgpuHost';
+import { createTestWgpuSurface, testWgpuHost } from './wgpuHost.ts';
 import {
   createWgpuAcquisition,
   createWgpuRenderState,
   destroyWgpuRenderState,
   releaseWgpuAcquisition,
-} from './wgpuRenderState';
-import { installWgpuMock } from './wgpuTestHelper';
+} from './wgpuRenderState.ts';
+import { installWgpuMock } from './wgpuTestHelper.ts';
 
 beforeAll(installWgpuMock);
 

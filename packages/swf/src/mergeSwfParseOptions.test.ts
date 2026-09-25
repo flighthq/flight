@@ -1,6 +1,6 @@
 import type { SwfParseOptions } from '@flighthq/types/contract';
 
-import { mergeSwfParseOptions } from './mergeSwfParseOptions';
+import { mergeSwfParseOptions } from './mergeSwfParseOptions.ts';
 
 // Every field SwfParseOptions declares. Adding one fails the exhaustiveness test until someone decides
 // how it composes, which is the drift alarm a generic merge would have hidden.

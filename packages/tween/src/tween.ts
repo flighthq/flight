@@ -3,8 +3,8 @@
 import { emitSignal } from '@flighthq/signals/contract';
 import type { NumericProps, StopTweenOptions, Tween, TweenManager, TweenOptions } from '@flighthq/types/contract';
 
-import { addTweenToManager, hasTweenProperty, initializeTween, makeTween } from './internal';
-import { defaultManager } from './tweenManager';
+import { addTweenToManager, hasTweenProperty, initializeTween, makeTween } from './internal.ts';
+import { defaultManager } from './tweenManager.ts';
 
 export function applyTween<T extends object>(
   manager: TweenManager,

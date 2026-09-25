@@ -3,7 +3,7 @@ import { parseTextMarkup } from '@flighthq/text-markup/contract';
 import { createRichText } from '@flighthq/text/contract';
 import type { RichText, TextFormat, TextFormatAlign } from '@flighthq/types/contract';
 
-import type { SwfReader } from './swfReader';
+import type { SwfReader } from './swfReader.ts';
 
 // Reads a DefineEditText field into the data a RichText needs.
 //

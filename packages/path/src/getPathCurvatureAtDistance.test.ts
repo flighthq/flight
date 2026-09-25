@@ -1,6 +1,12 @@
-import { getPathCurvatureAtDistance } from './getPathCurvatureAtDistance';
-import { getPathLength } from './getPathLength';
-import { appendPathCircle, appendPathQuadraticCurveTo, appendPathLineTo, appendPathMoveTo, createPath } from './path';
+import { getPathCurvatureAtDistance } from './getPathCurvatureAtDistance.ts';
+import { getPathLength } from './getPathLength.ts';
+import {
+  appendPathCircle,
+  appendPathQuadraticCurveTo,
+  appendPathLineTo,
+  appendPathMoveTo,
+  createPath,
+} from './path.ts';
 
 describe('getPathCurvatureAtDistance', () => {
   it('returns zero for an empty path', () => {

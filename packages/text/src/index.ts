@@ -77,4 +77,4 @@ export {
   setTextLabelString,
   setTextLabelVerticalAlign,
   setTextLabelWidth,
-} from './contract';
+} from './contract.ts';

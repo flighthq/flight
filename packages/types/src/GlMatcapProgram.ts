@@ -1,4 +1,4 @@
-import type { GlMeshProgram } from './GlMeshProgram';
+import type { GlMeshProgram } from './GlMeshProgram.ts';
 
 // The feature flags that select a matcap variant. `hasMatcap` enables the sampled matcap texture
 // (when absent the shader outputs the tint alone); `alphaMaskEnabled` enables the alpha-cutoff

@@ -1,6 +1,6 @@
-import type { Entity, EntityWithoutRuntime } from './Entity';
-import type { Quaternion } from './Quaternion';
-import type { Vector3 } from './Vector3';
+import type { Entity, EntityWithoutRuntime } from './Entity.ts';
+import type { Quaternion } from './Quaternion.ts';
+import type { Vector3 } from './Vector3.ts';
 
 // Decomposed 3D transform carrier — the passable, one-operation-assignable form of a scene node's
 // local transform. Same fields the `HasTransform3D` node trait exposes; a node is `Transform3DLike`.

@@ -13,8 +13,8 @@ import {
   noopRendererData,
   registerNodeRenderer,
   registerNodeRenderers,
-} from './renderer';
-import { createRenderState, getRenderStateRuntime } from './renderState';
+} from './renderer.ts';
+import { createRenderState, getRenderStateRuntime } from './renderState.ts';
 
 describe('copyAllRenderersFromRenderState', () => {
   it('copies all registrations and the clip hooks from source to target', () => {

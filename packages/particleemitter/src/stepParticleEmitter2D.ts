@@ -8,7 +8,7 @@ import type {
   ParticleForce,
 } from '@flighthq/types/contract';
 
-import { updateParticleEmitter2D } from './updateParticleEmitter2D';
+import { updateParticleEmitter2D } from './updateParticleEmitter2D.ts';
 
 /**
  * Convenience wrapper for the SoA typed-array emitter that folds the canonical three-step update

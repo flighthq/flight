@@ -1,6 +1,6 @@
 import type { CapacitorApi, HostHapticsCapabilities, HostSoftKeyboardCapabilities } from '@flighthq/types/contract';
 
-import { capacitorHostHaptics } from './capacitorHaptics';
+import { capacitorHostHaptics } from './capacitorHaptics.ts';
 import {
   capacitorHostSoftKeyboardAccessoryBar,
   capacitorHostSoftKeyboardChange,
@@ -9,7 +9,7 @@ import {
   capacitorHostSoftKeyboardScrollAssist,
   capacitorHostSoftKeyboardStyle,
   capacitorHostSoftKeyboardVisibility,
-} from './capacitorKeyboard';
+} from './capacitorKeyboard.ts';
 
 // The input-domain groups Capacitor covers. `host.input` itself is empty on mobile — a Capacitor app
 // has no ingress, focus, pointer-lock or drop-file surface — while haptics and the soft keyboard are

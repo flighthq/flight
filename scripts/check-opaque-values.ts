@@ -4,7 +4,7 @@ import { join, relative, resolve } from 'node:path';
 import pc from 'picocolors';
 import ts from 'typescript';
 
-import { formatGateProvenance, readGateTreeState } from './gate-provenance';
+import { formatGateProvenance, readGateTreeState } from './gate-provenance.ts';
 
 export interface OpaqueValueSite {
   readonly column: number;

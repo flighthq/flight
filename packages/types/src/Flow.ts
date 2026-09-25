@@ -29,4 +29,4 @@ export interface FlowState {
 export interface FlowStack extends Entity {
   states: FlowState[];
 }
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';

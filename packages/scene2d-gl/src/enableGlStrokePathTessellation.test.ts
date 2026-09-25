@@ -1,8 +1,8 @@
 import { tessellateStrokePath } from '@flighthq/path/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 
-import { enableGlStrokePathTessellation } from './enableGlStrokePathTessellation';
-import { createGlState } from './glTestHelper';
+import { enableGlStrokePathTessellation } from './enableGlStrokePathTessellation.ts';
+import { createGlState } from './glTestHelper.ts';
 
 describe('enableGlStrokePathTessellation', () => {
   it('replaces the full stroke-tessellator policy slot', () => {

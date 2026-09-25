@@ -1,4 +1,4 @@
-import type { ColorMatrixAdjustment } from './ColorMatrixAdjustment';
+import type { ColorMatrixAdjustment } from './ColorMatrixAdjustment.ts';
 
 export interface SepiaAdjustment extends ColorMatrixAdjustment {
   kind: 'SepiaAdjustment';

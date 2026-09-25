@@ -1,5 +1,5 @@
-import { parseCocosPlistSpritesheet } from './cocosPlistParse';
-import { serializeCocosPlistSpritesheet } from './cocosPlistSerialize';
+import { parseCocosPlistSpritesheet } from './cocosPlistParse.ts';
+import { serializeCocosPlistSpritesheet } from './cocosPlistSerialize.ts';
 
 const MINIMAL_PLIST = `<?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0">

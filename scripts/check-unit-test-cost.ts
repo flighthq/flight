@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
-import { checkUnitTestCost, formatUnitTestCostReport, readUnitTestSources } from './unitTestCost';
-import { readUnitTestLaneFiles } from './unitTestLane';
+import { checkUnitTestCost, formatUnitTestCostReport, readUnitTestSources } from './unitTestCost.ts';
+import { readUnitTestLaneFiles } from './unitTestLane.ts';
 
 function main(): void {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');

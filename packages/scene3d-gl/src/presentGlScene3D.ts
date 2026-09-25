@@ -7,7 +7,7 @@ import type {
   Node3D,
 } from '@flighthq/types/contract';
 
-import { renderGlScene3D } from './renderGlScene3D';
+import { renderGlScene3D } from './renderGlScene3D.ts';
 
 // The no-effects 3D path, now a thin composition of the generic pass + present primitives: begin a pass
 // (clears color + depth from the target's policy by default), draw the scene, end the pass (restore +

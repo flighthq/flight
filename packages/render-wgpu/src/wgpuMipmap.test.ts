@@ -1,8 +1,8 @@
 import type { WgpuRenderState } from '@flighthq/types/contract';
 
-import { generateWgpuMipmaps, getWgpuMipLevelCount, registerWgpuMipmapGeneration } from './wgpuMipmap';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
-import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+import { generateWgpuMipmaps, getWgpuMipLevelCount, registerWgpuMipmapGeneration } from './wgpuMipmap.ts';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
+import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';
 
 beforeAll(() => {
   installWgpuMock();

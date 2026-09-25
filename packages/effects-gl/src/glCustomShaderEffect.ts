@@ -9,8 +9,8 @@ import type {
   Effect,
 } from '@flighthq/types/contract';
 
-import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Runs a user-authored fragment shader as a fullscreen post-process pass. The descriptor carries a
 // `shaderKey` — a reference into the per-state custom-shader registry populated by

@@ -26,7 +26,7 @@ import type {
   ShapeJsonParseOptions,
 } from '@flighthq/types/contract';
 
-import { defaultShapeCommandSchemas } from './shapeCommandSchemas';
+import { defaultShapeCommandSchemas } from './shapeCommandSchemas.ts';
 
 // Serializes a shape's full drawing-command stream to a native JSON string that `parseShapeJson`
 // restores. Every stored command is checked against the same positional and finiteness predicates the

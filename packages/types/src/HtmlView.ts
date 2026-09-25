@@ -1,4 +1,4 @@
-import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
+import type { Node2D, Node2DData, Node2DRuntime } from './Node2D.ts';
 
 export interface HtmlViewData extends Node2DData {
   element: HTMLElement | null;

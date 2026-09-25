@@ -23,7 +23,7 @@ import {
   testPolygonPolygonCollision2D,
 } from '@flighthq/sdk/collision';
 
-import { canvas, render, scale } from './render';
+import { canvas, render, scale } from './render.ts';
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;

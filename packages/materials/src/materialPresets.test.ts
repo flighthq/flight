@@ -16,7 +16,7 @@ import {
   createSilverStandardPbrMaterial,
   createSkinStandardPbrMaterial,
   createWoodStandardPbrMaterial,
-} from './materialPresets';
+} from './materialPresets.ts';
 
 describe('createAluminumStandardPbrMaterial', () => {
   it('creates a fully metallic, moderately rough material', () => {

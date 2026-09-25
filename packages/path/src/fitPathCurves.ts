@@ -1,7 +1,7 @@
 import type { Path } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
-import { flattenPath } from './flattenPath';
+import { flattenPath } from './flattenPath.ts';
 
 // Re-curves a polyline (or any flattened path) into smooth cubic bezier segments using
 // Schneider's algorithm. The input path is first flattened, then partitioned at corners

@@ -7,7 +7,7 @@ import type {
   Scene2DDocumentImporterRegistry,
 } from '@flighthq/types/contract';
 
-import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics';
+import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
 
 export function createScene2DDocumentFromBytes(
   source: Uint8Array,

@@ -1,7 +1,7 @@
 import type { HostInputIngressCapability } from '@flighthq/types/contract';
 
-import * as inputContract from './contract';
-import * as inputPublic from './index';
+import * as inputContract from './contract.ts';
+import * as inputPublic from './index.ts';
 
 type LegacyInputPointerLockBackendMember = 'exitPointerLock' | 'hasPointerLock';
 type LegacyInputPointerLockIngressOperation = Extract<

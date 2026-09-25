@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ChromaticAberrationEffect, EntityConstruction, EntityWithoutRuntime } from '@flighthq/types/contract';
 
-import { initializeEffect } from './effect';
+import { initializeEffect } from './effect.ts';
 
 export function createChromaticAberrationEffect(
   options: Readonly<Omit<EntityWithoutRuntime<ChromaticAberrationEffect>, 'kind'>> = {},

@@ -1,2 +1,2 @@
-export * from './explainUnpackedRectangles';
-export * from './packRectangles';
+export * from './explainUnpackedRectangles.ts';
+export * from './packRectangles.ts';

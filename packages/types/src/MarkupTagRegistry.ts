@@ -1,6 +1,6 @@
-import type { MarkupClassResolver } from './MarkupClassResolver';
-import type { MarkupColorResolver } from './MarkupColorResolver';
-import type { MarkupTagHandler } from './MarkupTagHandler';
+import type { MarkupClassResolver } from './MarkupClassResolver.ts';
+import type { MarkupColorResolver } from './MarkupColorResolver.ts';
+import type { MarkupTagHandler } from './MarkupTagHandler.ts';
 
 // The open tag-name → handler registry that gives markup its meaning. Parsing (structure) and meaning
 // (tag → format) are separate layers: the parser tokenizes and composes the format stack, while this

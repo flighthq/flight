@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { AudioBus, AudioBusMixerOperation } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setAudioBusMixerGuard } from './audioMixer';
+import { setAudioBusMixerGuard } from './audioMixer.ts';
 
 // Uninstalls the guard installed by enableAudioMixerGuards.
 export function disableAudioMixerGuards(): void {

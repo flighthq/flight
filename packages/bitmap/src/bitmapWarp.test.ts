@@ -1,8 +1,8 @@
 import type { Bitmap, BitmapRegion } from '@flighthq/types/contract';
 
-import { createBitmap } from './bitmap';
-import { getBitmapPixel, setBitmapPixel } from './bitmapPixel';
-import { warpBitmap, warpBitmapQuad } from './bitmapWarp';
+import { createBitmap } from './bitmap.ts';
+import { getBitmapPixel, setBitmapPixel } from './bitmapPixel.ts';
+import { warpBitmap, warpBitmapQuad } from './bitmapWarp.ts';
 
 function region(bitmap: Readonly<Bitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height): BitmapRegion {
   return { bitmap, x, y, width, height };

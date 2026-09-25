@@ -1,5 +1,5 @@
-import type { PbrExtension, PbrUvSet } from './PbrExtension';
-import type { Texture } from './Texture';
+import type { PbrExtension, PbrUvSet } from './PbrExtension.ts';
+import type { Texture } from './Texture.ts';
 
 // KHR_materials_clearcoat: a second dielectric specular layer over the standard PBR surface.
 export interface ClearcoatPbrExtension extends PbrExtension {

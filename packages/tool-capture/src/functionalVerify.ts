@@ -22,8 +22,8 @@ import type {
   WgpuScreenRenderTarget,
 } from '@flighthq/types/contract';
 
-import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
-import type { CaptureBenchmarkTarget, CaptureVerification } from './captureProtocol.js';
+import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.ts';
+import type { CaptureBenchmarkTarget, CaptureVerification } from './captureProtocol.ts';
 
 export const FUNCTIONAL_VERIFICATION_IMAGE_KEY = '__ftRenderImage';
 

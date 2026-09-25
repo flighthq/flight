@@ -1,4 +1,4 @@
-import type { Rectangle } from './Rectangle';
+import type { Rectangle } from './Rectangle.ts';
 
 // Assistive-technology bridge seam — the Flight home for exposing a canvas/game UI's semantics
 // (roles, labels, states, focus) to screen readers, which otherwise see only an opaque surface. The

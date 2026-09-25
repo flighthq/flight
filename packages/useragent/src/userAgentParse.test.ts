@@ -8,7 +8,7 @@ import {
   DeviceFormFactorWatch,
 } from '@flighthq/types/contract';
 
-import { parseUserAgentFormFactor, parseUserAgentOsName, parseUserAgentOsVersion } from './userAgentParse';
+import { parseUserAgentFormFactor, parseUserAgentOsName, parseUserAgentOsVersion } from './userAgentParse.ts';
 
 describe('parseUserAgentFormFactor', () => {
   it('returns Automotive for Android Auto UA', () => {

@@ -1,7 +1,7 @@
 import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 
-import { drawWgpuEffectPass } from './wgpuEffectPass';
-import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
+import { drawWgpuEffectPass } from './wgpuEffectPass.ts';
+import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
 
 // Generic pointwise color-matrix pass — the single fold-in realization for the whole matrix-tier
 // Adjustment family on WebGPU. A run of consecutive matrix-tier adjustments fuses to ONE 4×5 matrix (in

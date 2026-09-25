@@ -1,4 +1,4 @@
-import { easeInBack, easeInOutBack, easeOutBack } from './easeBack';
+import { easeInBack, easeInOutBack, easeOutBack } from './easeBack.ts';
 
 describe('easeInBack', () => {
   it('returns 0 at t=0 and 1 at t=1', () => {

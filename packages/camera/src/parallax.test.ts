@@ -1,8 +1,8 @@
 import { createVector2 } from '@flighthq/geometry/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createCamera2D } from './camera2d';
-import { getCamera2DParallaxPoint } from './parallax';
+import { createCamera2D } from './camera2d.ts';
+import { getCamera2DParallaxPoint } from './parallax.ts';
 
 describe('getCamera2DParallaxPoint', () => {
   it('returns no offset at factor 0 (screen-locked layer)', () => {

@@ -1,4 +1,4 @@
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';
 
 // Unicode bidirectional-text itemize seam (UAX #9). Free functions in @flighthq/textbidi resolve the
 // embedding levels of a mixed LTR/RTL string and reorder its runs from logical (storage) to visual

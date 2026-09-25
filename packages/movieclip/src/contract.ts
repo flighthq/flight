@@ -1,3 +1,3 @@
-export * from './enableMovieClipGuards';
-export * from './movieClip';
-export * from './spritesheetTimelineSource';
+export * from './enableMovieClipGuards.ts';
+export * from './movieClip.ts';
+export * from './spritesheetTimelineSource.ts';

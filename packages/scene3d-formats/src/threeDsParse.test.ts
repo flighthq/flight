@@ -72,9 +72,9 @@ import {
   THREE_DS_VERTICES,
 } from '@flighthq/types/contract';
 
-import { getTestTextureResource } from './scene3DFormatsTestHelper';
-import { convertPositionsZUpToYUp } from './shared';
-import { createScene3DFrom3ds, parse3ds } from './threeDsParse';
+import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
+import { convertPositionsZUpToYUp } from './shared.ts';
+import { createScene3DFrom3ds, parse3ds } from './threeDsParse.ts';
 
 // Builds a minimal valid 3DS binary from helper functions. The 3DS format is a recursive chunk tree:
 // each chunk has a uint16 ID + uint32 length (including the 6-byte header) + payload.

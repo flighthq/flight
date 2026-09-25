@@ -56,9 +56,9 @@ import {
   readSpineBinaryUnsignedShort,
   readSpineBinaryVarint,
   skipSpineBinaryBytes,
-} from './spineBinaryReader';
-import { getSpineBinarySectionHandler, getSpineBinaryTimelineHandler } from './spineBinaryRegistry';
-import { resolveSpineDrawOrdering } from './spineDrawOrder';
+} from './spineBinaryReader.ts';
+import { getSpineBinarySectionHandler, getSpineBinaryTimelineHandler } from './spineBinaryRegistry.ts';
+import { resolveSpineDrawOrdering } from './spineDrawOrder.ts';
 
 function initializeMeshAttachment2D(
   out: EntityConstruction<MeshAttachment2D>,

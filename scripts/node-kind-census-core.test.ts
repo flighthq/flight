@@ -13,8 +13,8 @@ import {
   formatNodeKindCensusReport,
   hasNodeKindCensusFailure,
   isKindPreservingConstructor,
-} from './node-kind-census-core';
-import type { NodeKindProbeOutcome } from './node-kind-census-core';
+} from './node-kind-census-core.ts';
+import type { NodeKindProbeOutcome } from './node-kind-census-core.ts';
 
 describe('collectNodeConstructorCandidates', () => {
   it('reaches a constructor that only wraps another constructor, which a hand-listed set would miss', () => {

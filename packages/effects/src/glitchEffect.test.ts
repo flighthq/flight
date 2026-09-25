@@ -5,7 +5,7 @@ import {
   getGlitchEffectPadding,
   initializeGlitchEffect,
   registerGlitchEffectPaddingResolver,
-} from './glitchEffect';
+} from './glitchEffect.ts';
 
 describe('createGlitchEffect', () => {
   it('tags the intent type', () => {

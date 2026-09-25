@@ -1,7 +1,7 @@
-import { createBitmap } from './bitmap';
-import { copyBitmapChannel, copyBitmapPixels } from './bitmapCopy';
-import { ImageChannel } from './bitmapImageChannel';
-import { getBitmapPixel, setBitmapPixel } from './bitmapPixel';
+import { createBitmap } from './bitmap.ts';
+import { copyBitmapChannel, copyBitmapPixels } from './bitmapCopy.ts';
+import { ImageChannel } from './bitmapImageChannel.ts';
+import { getBitmapPixel, setBitmapPixel } from './bitmapPixel.ts';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };

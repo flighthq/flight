@@ -8,8 +8,8 @@ import {
 import type { EntityWithoutRuntime, Host, LogEntry } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { enableHostGuards } from './enableHostGuards';
-import { createHost } from './host';
+import { enableHostGuards } from './enableHostGuards.ts';
+import { createHost } from './host.ts';
 
 beforeEach(() => {
   clearLogOnceKeys();

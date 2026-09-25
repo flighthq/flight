@@ -12,12 +12,12 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition';
-import { acquireSwfImageTexture } from './swfImageTexture';
-import { applySwfAuthoredBounds } from './swfNode';
-import { readSwfRectangle } from './swfPrimitive';
-import { SwfReader } from './swfReader';
-import { createSwfShape } from './swfShape';
+import { readSwfBoundedDefinitionHeader } from './swfBoundedDefinition.ts';
+import { acquireSwfImageTexture } from './swfImageTexture.ts';
+import { applySwfAuthoredBounds } from './swfNode.ts';
+import { readSwfRectangle } from './swfPrimitive.ts';
+import { SwfReader } from './swfReader.ts';
+import { createSwfShape } from './swfShape.ts';
 
 const TAG_DEFINE_SHAPE = 2;
 

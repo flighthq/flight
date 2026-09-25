@@ -6,7 +6,7 @@ import {
   getWgpuCompositeEffectOperatorIndex,
   WGPU_COMPOSITE_FRAGMENT_WGSL,
   registerWgpuCompositeEffect,
-} from './wgpuCompositeEffect';
+} from './wgpuCompositeEffect.ts';
 
 describe('applyCompositeEffectToWgpu', () => {
   it('is the public WebGPU composite entry point', () => {

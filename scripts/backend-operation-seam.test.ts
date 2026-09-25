@@ -13,9 +13,9 @@ import {
   formatBackendOperationSeamReport,
   hasBackendOperationSeamFailure,
   isAggregatorContractLane,
-} from './backend-operation-seam-core';
-import type { BackendOperationSeamReport } from './backend-operation-seam-core';
-import { GATE_STRUCTURAL_LIMIT } from './gate-provenance';
+} from './backend-operation-seam-core.ts';
+import type { BackendOperationSeamReport } from './backend-operation-seam-core.ts';
+import { GATE_STRUCTURAL_LIMIT } from './gate-provenance.ts';
 
 // The ratchet. Membership in the enforced set is DERIVED — a package is migrated because it exports
 // `explain<Name>Operation`, or because its exact Readonly Host provider has equal method coverage in

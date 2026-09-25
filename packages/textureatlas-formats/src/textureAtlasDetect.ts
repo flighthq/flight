@@ -7,10 +7,10 @@ import {
   TextureAtlasFormatKindTexturePacker,
 } from '@flighthq/types/contract';
 
-import { parseTextureAtlasAsepriteJson } from './textureAtlasAsepriteParse';
-import { parseTextureAtlasLibgdxAtlas } from './textureAtlasLibgdxParse';
-import { parseTextureAtlasStarlingXml } from './textureAtlasStarlingParse';
-import { parseTexturePackerAtlasJson } from './texturePackerAtlasParse';
+import { parseTextureAtlasAsepriteJson } from './textureAtlasAsepriteParse.ts';
+import { parseTextureAtlasLibgdxAtlas } from './textureAtlasLibgdxParse.ts';
+import { parseTextureAtlasStarlingXml } from './textureAtlasStarlingParse.ts';
+import { parseTexturePackerAtlasJson } from './texturePackerAtlasParse.ts';
 
 // One entry per texture-atlas format: how to recognise it, and how to read it into an atlas.
 interface FormatEntry {

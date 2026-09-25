@@ -5,7 +5,7 @@ import {
   createPhysics3DContactPoint,
   initializePhysics3DContact,
   initializePhysics3DContactPoint,
-} from './contacts';
+} from './contacts.ts';
 
 describe('createPhysics3DContact', () => {
   it('orders the pair by index whichever way round it is given', () => {

@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EnvReflectModifier, EnvReflectModifierOptions, EntityConstruction } from '@flighthq/types/contract';
 import { EnvReflectModifierKind, ModifierSlot } from '@flighthq/types/contract';
 
-import { initializeModifier } from './modifier';
+import { initializeModifier } from './modifier.ts';
 
 // The options for `createEnvReflectModifier`. Every field is optional and carries a documented
 // default so the returned descriptor is fully populated (all four are uniform-fed scalars, so an

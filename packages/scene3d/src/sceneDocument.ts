@@ -19,9 +19,9 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createMesh } from './mesh';
-import { createScene3D } from './scene';
-import { createNode3D } from './sceneNode';
+import { createMesh } from './mesh.ts';
+import { createScene3D } from './scene.ts';
+import { createNode3D } from './sceneNode.ts';
 
 // Assembles a Scene3DDocument's scene into a live Scene3D — the inverse of the scene-format parsers, which STOP
 // at the format-neutral Scene3DDocument decomposition rather than building entities inline. This is the single

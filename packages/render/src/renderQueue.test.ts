@@ -3,8 +3,8 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { createSprite } from '@flighthq/scene2d/contract';
 import type { NodeRenderer, RenderProxy, RenderQueueEntry } from '@flighthq/types/contract';
 
-import { registerNodeRenderer } from './renderer';
-import { prepareScene2DRender } from './renderProxy';
+import { registerNodeRenderer } from './renderer.ts';
+import { prepareScene2DRender } from './renderProxy.ts';
 import {
   buildRenderQueue,
   clearRenderQueue,
@@ -14,8 +14,8 @@ import {
   packRenderSortKey,
   pushRenderQueueEntry,
   sortRenderQueue,
-} from './renderQueue';
-import { createRenderState } from './renderState';
+} from './renderQueue.ts';
+import { createRenderState } from './renderState.ts';
 
 function makeRenderer(): NodeRenderer {
   return { createData: () => null, submit: vi.fn() };

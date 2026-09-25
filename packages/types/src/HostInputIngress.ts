@@ -1,8 +1,8 @@
-import type { InputGamepadAxisData, InputGamepadButtonData, InputGamepadConnectData } from './InputGamepadData';
-import type { InputKeyboardData } from './InputKeyboardData';
-import type { AttachInputOptions } from './InputManager';
-import type { InputPointerData } from './InputPointerData';
-import type { InputTextData } from './InputTextData';
+import type { InputGamepadAxisData, InputGamepadButtonData, InputGamepadConnectData } from './InputGamepadData.ts';
+import type { InputKeyboardData } from './InputKeyboardData.ts';
+import type { AttachInputOptions } from './InputManager.ts';
+import type { InputPointerData } from './InputPointerData.ts';
+import type { InputTextData } from './InputTextData.ts';
 
 /**
  * Host-neutral identity for one input source. The installed ingress backend interprets the exact

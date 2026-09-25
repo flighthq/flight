@@ -8,7 +8,7 @@ import {
   TEST_RUN_COMPLETENESS_ENV,
   TEST_RUN_COMPLETENESS_VERSION,
   type TestRunCompletenessReport,
-} from './testRunCompleteness';
+} from './testRunCompleteness.ts';
 
 export interface TestRunAssessment {
   diagnostic?: string;

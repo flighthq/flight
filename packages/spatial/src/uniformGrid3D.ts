@@ -13,8 +13,8 @@ import type {
   SpatialPair,
 } from '@flighthq/types/contract';
 
-import { reportSpatialIndexing } from './spatialIndexingGuard';
-import { MAX_INDEXED_CELLS_PER_OBJECT } from './uniformGrid';
+import { reportSpatialIndexing } from './spatialIndexingGuard.ts';
+import { MAX_INDEXED_CELLS_PER_OBJECT } from './uniformGrid.ts';
 
 export function createUniformGridSpatialBackend3D(cellSize: number): SpatialIndexBackend3D & Entity {
   const out = allocateEntity<SpatialIndexBackend3D & Entity>();

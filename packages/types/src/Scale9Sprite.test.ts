@@ -1,6 +1,6 @@
-import type { Scale9Sprite, Scale9SpriteData, Scale9SpriteRuntime } from './Scale9Sprite';
-import { Scale9SpriteKind } from './Scale9Sprite';
-import type { Sprite, SpriteData, SpriteRuntime } from './Sprite';
+import type { Scale9Sprite, Scale9SpriteData, Scale9SpriteRuntime } from './Scale9Sprite.ts';
+import { Scale9SpriteKind } from './Scale9Sprite.ts';
+import type { Sprite, SpriteData, SpriteRuntime } from './Sprite.ts';
 
 describe('Scale9Sprite', () => {
   describe('Scale9SpriteKind', () => {

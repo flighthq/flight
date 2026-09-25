@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseConventionalCommit } from './conventional-commits';
-import { getStableTargetVersion, renderGeneratedChanges, renderReleaseNote } from './release-notes';
+import { parseConventionalCommit } from './conventional-commits.ts';
+import { getStableTargetVersion, renderGeneratedChanges, renderReleaseNote } from './release-notes.ts';
 
 const commits = [
   parseConventionalCommit('1111111111111111111111111111111111111111', 'feat(scene3d): add fog'),

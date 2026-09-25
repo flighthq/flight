@@ -1,5 +1,5 @@
-import type { PbrUvSet } from './PbrExtension';
-import type { Texture } from './Texture';
+import type { PbrUvSet } from './PbrExtension.ts';
+import type { Texture } from './Texture.ts';
 
 // Backend-safe operations exposed to a PBR extension binder. Extensions name their own uniforms but
 // never receive the private GlPbrProgram record or raw uniform locations.

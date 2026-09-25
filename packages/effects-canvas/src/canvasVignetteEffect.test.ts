@@ -2,7 +2,7 @@ import {
   applyVignetteEffectToCanvas,
   canvasVignetteEffectRunner,
   registerCanvasVignetteEffect,
-} from './canvasVignetteEffect';
+} from './canvasVignetteEffect.ts';
 
 describe('applyVignetteEffectToCanvas', () => {
   it('is a function', () => {

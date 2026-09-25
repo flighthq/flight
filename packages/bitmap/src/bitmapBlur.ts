@@ -1,6 +1,6 @@
 import type { BitmapBoxBlurOptions, BitmapRegion } from '@flighthq/types/contract';
 
-import { extractBitmapPixels } from './bitmapComposite';
+import { extractBitmapPixels } from './bitmapComposite.ts';
 
 /**
  * Single horizontal box blur pass using a sliding-window accumulator — O(n)

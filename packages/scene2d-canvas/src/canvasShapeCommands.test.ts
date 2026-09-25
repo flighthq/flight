@@ -31,12 +31,12 @@ import { createSampler, createTexture } from '@flighthq/texture/contract';
 import type { HostImageCapability, RenderState } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
-import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
-import { renderCanvasShapeCommands } from './canvasShape';
-import { canvasShapeCommands, canvasTextureShapeCommands } from './canvasShapeCommands';
-import { registerCanvasShapeCommands } from './canvasShapeRegistry';
-import { createCanvasTextureResolvers } from './canvasTestSupport';
+import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver.ts';
+import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver.ts';
+import { renderCanvasShapeCommands } from './canvasShape.ts';
+import { canvasShapeCommands, canvasTextureShapeCommands } from './canvasShapeCommands.ts';
+import { registerCanvasShapeCommands } from './canvasShapeRegistry.ts';
+import { createCanvasTextureResolvers } from './canvasTestSupport.ts';
 
 // Commands are registered per render state, so each target carries its own set — there is no global
 // to fall back on, and a bare state replays nothing.

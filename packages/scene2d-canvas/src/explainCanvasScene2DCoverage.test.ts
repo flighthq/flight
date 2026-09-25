@@ -9,9 +9,9 @@ import type {
 import { BlendMode, RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { registerCanvasQuadMaterialRenderer } from './canvasQuadMaterialRegistry';
-import { createCanvasRenderState } from './canvasTestSupport';
-import { explainCanvasScene2DCoverage, hasCanvasScene2DCoverage } from './explainCanvasScene2DCoverage';
+import { registerCanvasQuadMaterialRenderer } from './canvasQuadMaterialRegistry.ts';
+import { createCanvasRenderState } from './canvasTestSupport.ts';
+import { explainCanvasScene2DCoverage, hasCanvasScene2DCoverage } from './explainCanvasScene2DCoverage.ts';
 
 const materialRenderer = { getState: () => ({}) } as unknown as CanvasQuadMaterialRenderer;
 const nodeRenderer: NodeRenderer = { createData: () => null, submit: () => {} } as unknown as NodeRenderer;

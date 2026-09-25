@@ -6,9 +6,9 @@ import {
   areShapeBoundsGuardsEnabled,
   disableShapeBoundsGuards,
   enableShapeBoundsGuards,
-} from './enableShapeBoundsGuards';
-import { createShape } from './shape';
-import { computeShapeBoundsRectangle } from './shapeBounds';
+} from './enableShapeBoundsGuards.ts';
+import { createShape } from './shape.ts';
+import { computeShapeBoundsRectangle } from './shapeBounds.ts';
 
 afterEach(() => {
   disableShapeBoundsGuards();

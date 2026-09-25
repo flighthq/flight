@@ -9,9 +9,9 @@ import {
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { Node2DRuntime } from '@flighthq/types/contract';
 
-import { createRenderProxy2D, prepareScene2DRender } from './renderProxy';
-import { createRenderState } from './renderState';
-import { computeRenderProxyWorldBounds, isRenderProxyInViewport, isRenderableInViewport } from './renderViewport';
+import { createRenderProxy2D, prepareScene2DRender } from './renderProxy.ts';
+import { createRenderState } from './renderState.ts';
+import { computeRenderProxyWorldBounds, isRenderProxyInViewport, isRenderableInViewport } from './renderViewport.ts';
 
 function makeObjectWithBounds(x: number, y: number, width: number, height: number) {
   const obj = createDisplayObject();

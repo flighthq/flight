@@ -1,4 +1,4 @@
-import type { GlLitProgram } from './GlLitProgram';
+import type { GlLitProgram } from './GlLitProgram.ts';
 
 // The base-material feature flags that select a ShadedMaterial uber-shader variant, independent of
 // the modifier stack. Mirrors the classic BlinnPhong flags: which optional maps are present and

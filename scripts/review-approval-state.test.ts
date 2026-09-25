@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseReviewApprovals, serializeReviewApprovals } from '../tools/review/src/approvalState';
+import { parseReviewApprovals, serializeReviewApprovals } from '../tools/review/src/approvalState.ts';
 
 describe('parseReviewApprovals', () => {
   // ★ THE BUG THIS EXISTS FOR: the dev server sends a `full-reload` on every screenshot.png,

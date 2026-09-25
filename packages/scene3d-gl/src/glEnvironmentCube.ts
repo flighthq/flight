@@ -11,7 +11,7 @@ import type {
 } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // Frees the cached source radiance cubemap for `state` and clears its identity/version stamps, so the
 // next ensureGlEnvironmentSourceCube uploads again. Automatic invalidation handles ordinary source

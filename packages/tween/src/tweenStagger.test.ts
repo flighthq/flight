@@ -1,6 +1,6 @@
-import { createTweenManager } from './tweenManager';
-import { createTweenStagger } from './tweenStagger';
-import { updateTweens } from './updateTweens';
+import { createTweenManager } from './tweenManager.ts';
+import { createTweenStagger } from './tweenStagger.ts';
+import { updateTweens } from './updateTweens.ts';
 
 describe('createTweenStagger', () => {
   it('returns an empty array for empty targets', () => {

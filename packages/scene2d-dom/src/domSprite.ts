@@ -12,8 +12,8 @@ import type {
   Texture2D,
 } from '@flighthq/types/contract';
 
-import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle';
-import { resolveDomTexture } from './domTextureResolver';
+import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle.ts';
+import { resolveDomTexture } from './domTextureResolver.ts';
 
 interface DomSpriteData extends SpriteIdentityRendererData {
   canvas: HTMLCanvasElement | null;

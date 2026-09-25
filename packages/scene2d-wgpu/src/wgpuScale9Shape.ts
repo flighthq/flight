@@ -20,11 +20,11 @@ import type {
 } from '@flighthq/types/contract';
 import { RenderRegistryTable, Scale9ShapeKind } from '@flighthq/types/contract';
 
-import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
-import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
-import { buildWgpuScale9Mapper } from './wgpuScale9Mapper';
-import { drawWgpuShape } from './wgpuShape';
-import { getWgpuShapeRasterizer } from './wgpuShapeRasterizer';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
+import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData.ts';
+import { buildWgpuScale9Mapper } from './wgpuScale9Mapper.ts';
+import { drawWgpuShape } from './wgpuShape.ts';
+import { getWgpuShapeRasterizer } from './wgpuShapeRasterizer.ts';
 
 // Scale9 rasterizes its remapped shape commands into a per-node 2D surface at the scaled size, uploads
 // that surface's stable Image through the shared texture cache, and draws a quad with the scale stripped

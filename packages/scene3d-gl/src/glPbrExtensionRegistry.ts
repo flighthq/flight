@@ -17,8 +17,8 @@ import type {
   PbrExtension,
 } from '@flighthq/types/contract';
 
-import { isGlTextureReady } from './glPbrStandardBlock';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { isGlTextureReady } from './glPbrStandardBlock.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 export function bindGlPbrExtensions(
   state: GlRenderState,

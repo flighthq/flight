@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { HostShareContentCapability, ShareContent } from '@flighthq/types/contract';
 
-import { shareText } from './share';
+import { shareText } from './share.ts';
 
 function createRecordingHost(
   label: string,

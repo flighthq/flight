@@ -8,7 +8,7 @@ import type {
 } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
-import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail';
+import { WGPU_MESH_FRAGMENT_TAIL } from './wgpuMeshFragmentTail.ts';
 import {
   createWgpuMeshPipeline,
   ensureWgpuScene3DPipeline,
@@ -16,8 +16,8 @@ import {
   getWgpuMaterialSampler,
   resolveWgpuMaterialTextureView,
   stashWgpuUvTransform,
-} from './wgpuMeshPipeline';
-import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
+} from './wgpuMeshPipeline.ts';
+import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime.ts';
 // Ensures (and caches per material reference) the unlit Material bind group — a uniform buffer + the
 // shared sampler + the placeholder color texture — and rewrites its uniform with this surface's linear
 // color, intensity, and alpha cutoff. Mirrors scene-gl's bindGlUnlitSurface. Returns the bind group for

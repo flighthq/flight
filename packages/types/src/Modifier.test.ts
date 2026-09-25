@@ -1,6 +1,6 @@
-import { EntityRuntimeKey } from './Entity';
-import type { Modifier } from './Modifier';
-import { ModifierSlot } from './ModifierSlot';
+import { EntityRuntimeKey } from './Entity.ts';
+import type { Modifier } from './Modifier.ts';
+import { ModifierSlot } from './ModifierSlot.ts';
 
 describe('Modifier', () => {
   describe('open base contract', () => {

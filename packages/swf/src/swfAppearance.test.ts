@@ -9,9 +9,9 @@ import {
   readSwfColorTransform,
   resolveSwfAdvancedBlendMode,
   resolveSwfBlendMode,
-} from './swfAppearance';
-import { SwfReader } from './swfReader';
-import { SwfBitWriter } from './swfTagStreamTestHelper';
+} from './swfAppearance.ts';
+import { SwfReader } from './swfReader.ts';
+import { SwfBitWriter } from './swfTagStreamTestHelper.ts';
 
 describe('EMPTY_ADJUSTMENTS', () => {
   it('is the one empty array every untinted placement shares', () => {

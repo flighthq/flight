@@ -20,8 +20,8 @@ import {
   getMeshSignals,
   isMesh,
   MeshKind,
-} from './mesh';
-import { createNode3D } from './sceneNode';
+} from './mesh.ts';
+import { createNode3D } from './sceneNode.ts';
 
 describe('cloneMesh', () => {
   it('shares the geometry by reference', () => {

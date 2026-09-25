@@ -4,8 +4,8 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { ClipRegion, Node2D, RenderProxy2D } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { enableGlClipSupport } from './glClip';
-import { createGlState } from './glTestHelper';
+import { enableGlClipSupport } from './glClip.ts';
+import { createGlState } from './glTestHelper.ts';
 
 function makeRectClip(): ClipRegion {
   return {

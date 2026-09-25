@@ -6,8 +6,8 @@ import { join, relative, resolve } from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
 
-import { decodeOraclePng, hashOraclePixelBytes } from '../../scripts/reference-image-png';
-import { getOracleRequestCells, readOracleRequest } from '../../scripts/reference-image-records';
+import { decodeOraclePng, hashOraclePixelBytes } from '../../scripts/reference-image-png.ts';
+import { getOracleRequestCells, readOracleRequest } from '../../scripts/reference-image-records.ts';
 import {
   compareReferenceImage,
   LEGACY_EXACT_COMPARISON_POLICY_ID,
@@ -16,19 +16,19 @@ import {
   writeReferenceImageSceneTolerance,
   type ReferenceImageSceneTolerance,
   type ReferenceImageToleranceCatalog,
-} from '../../scripts/reference-image-tolerance';
-import { workspacePackages } from '../../scripts/workspaces';
-import { isReviewableCell, reviewableCells, reviewCellRole } from './src/cellRole';
-import type { ReviewCommissionState as CommissionState } from './src/commissionState';
-import { recordReviewHoldReleases, recordReviewHolds } from './src/holdLedger';
-import type { ReviewHoldLedger } from './src/holdLedger';
+} from '../../scripts/reference-image-tolerance.ts';
+import { workspacePackages } from '../../scripts/workspaces.ts';
+import { isReviewableCell, reviewableCells, reviewCellRole } from './src/cellRole.ts';
+import type { ReviewCommissionState as CommissionState } from './src/commissionState.ts';
+import { recordReviewHoldReleases, recordReviewHolds } from './src/holdLedger.ts';
+import type { ReviewHoldLedger } from './src/holdLedger.ts';
 import {
   createReferenceImageRequestTarget,
   isReviewRequestStillPending,
   resolveReferenceImageCommissionState,
-} from './src/referenceImageCommission';
-import { readRequiredReferenceImageCells } from './src/requiredReferenceImageCells';
-import type { ReviewCoverageManifest } from './src/requiredReferenceImageCells';
+} from './src/referenceImageCommission.ts';
+import { readRequiredReferenceImageCells } from './src/requiredReferenceImageCells.ts';
+import type { ReviewCoverageManifest } from './src/requiredReferenceImageCells.ts';
 import type {
   ReviewBuildProvenance,
   ReviewCell,
@@ -36,13 +36,13 @@ import type {
   ReviewParityStatus,
   ReviewReferenceImageComparison,
   ReviewTest,
-} from './src/reviewManifest';
-import { createReviewManifestPlugin, REVIEW_MANIFEST_RESOLVED_ID } from './src/reviewManifestPlugin';
+} from './src/reviewManifest.ts';
+import { createReviewManifestPlugin, REVIEW_MANIFEST_RESOLVED_ID } from './src/reviewManifestPlugin.ts';
 import {
   sourceContainsExpectedDescription,
   sourceDeclaresFunctionalBackendControl,
   sourceWithheldExpectedDescription,
-} from './src/sourceExpectedDescription';
+} from './src/sourceExpectedDescription.ts';
 
 const projectRoot = resolve(__dirname, '../..');
 const artifactsDir = resolve(projectRoot, '.artifacts');

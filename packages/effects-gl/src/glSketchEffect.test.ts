@@ -1,4 +1,4 @@
-import { applySketchEffectToGl, glSketchEffectRunner, registerGlSketchEffect } from './glSketchEffect';
+import { applySketchEffectToGl, glSketchEffectRunner, registerGlSketchEffect } from './glSketchEffect.ts';
 
 describe('applySketchEffectToGl', () => {
   it('is a function', () => {

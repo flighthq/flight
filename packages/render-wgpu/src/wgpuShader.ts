@@ -8,8 +8,8 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
-import { getWgpuRenderPassViewport } from './wgpuRenderPass';
-import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderPassViewport } from './wgpuRenderPass.ts';
+import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
 // ---- WGSL source ----
 

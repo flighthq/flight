@@ -6,8 +6,8 @@ import {
   getPhysics3DBroadphaseBodyIndices,
   publishPhysics3DBroadphaseBody,
   withdrawPhysics3DBroadphaseBody,
-} from './physics3DBroadphasePublication';
-import { createPhysics3DWorld } from './world';
+} from './physics3DBroadphasePublication.ts';
+import { createPhysics3DWorld } from './world.ts';
 
 afterEach(() => {
   setSpatialIndexingGuard(null);

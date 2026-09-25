@@ -1,8 +1,8 @@
 import type { GltfDocument } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseGltfWithCoreFeatureHandlers } from './gltfParse';
-import { GltfSkinsCoreFeatureHandler } from './gltfSkins';
+import { parseGltfWithCoreFeatureHandlers } from './gltfParse.ts';
+import { GltfSkinsCoreFeatureHandler } from './gltfSkins.ts';
 
 describe('GltfSkinsCoreFeatureHandler', () => {
   it('imports skeleton topology when explicitly selected', () => {

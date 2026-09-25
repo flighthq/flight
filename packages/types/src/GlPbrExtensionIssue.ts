@@ -1,4 +1,4 @@
-import type { Kind } from './Entity';
+import type { Kind } from './Entity.ts';
 
 export type GlPbrExtensionIssueCode =
   | 'duplicate-kind'

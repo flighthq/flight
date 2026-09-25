@@ -5,7 +5,7 @@ import {
   measureMd5AnimationBounds,
   parseMd5DeclaredAnimationBounds,
   runMd5AnimationBoundsOracle,
-} from './md5-animation-bounds-oracle';
+} from './md5-animation-bounds-oracle.ts';
 
 describe('parseMd5DeclaredAnimationBounds', () => {
   it('reads per-frame boxes and derives each edge precision through the Z-up to Y-up conversion', () => {

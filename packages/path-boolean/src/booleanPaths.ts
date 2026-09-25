@@ -1,7 +1,7 @@
 import { flattenPath } from '@flighthq/path/contract';
 import type { PathBooleanKernel, Path, PathBooleanOperation, PathBooleanOptions } from '@flighthq/types/contract';
 
-import { writePathBooleanContours } from './writePathBooleanContours';
+import { writePathBooleanContours } from './writePathBooleanContours.ts';
 
 export function booleanPaths(
   pathBooleanKernel: Readonly<PathBooleanKernel>,

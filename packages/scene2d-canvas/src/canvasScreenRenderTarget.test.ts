@@ -1,18 +1,18 @@
 import { createCanvasSurfaceFromNativeHandle, getSurfaceHandle } from '@flighthq/surface/contract';
 import type { CanvasSurface } from '@flighthq/types/contract';
 
-import { beginCanvasRenderPass, endCanvasRenderPass } from './canvasRenderPass';
+import { beginCanvasRenderPass, endCanvasRenderPass } from './canvasRenderPass.ts';
 import {
   createCanvasScreenRenderTarget,
   disposeCanvasScreenRenderTarget,
   initializeCanvasScreenRenderTarget,
   isCanvasScreenRenderTarget,
-} from './canvasScreenRenderTarget';
+} from './canvasScreenRenderTarget.ts';
 import {
   canvasTestHost,
   createCanvasRenderStateWithoutPass,
   createCanvasTextureRenderTarget,
-} from './canvasTestSupport';
+} from './canvasTestSupport.ts';
 
 function makeSurface(width = 320, height = 240): CanvasSurface {
   const canvas = document.createElement('canvas');

@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 
-import type { CaptureScreenshotHashPage } from './captureScreenshotHash';
-import { hashCaptureScreenshotPixels, hashCaptureScreenshotPixelsOrNull } from './captureScreenshotHash';
+import type { CaptureScreenshotHashPage } from './captureScreenshotHash.ts';
+import { hashCaptureScreenshotPixels, hashCaptureScreenshotPixelsOrNull } from './captureScreenshotHash.ts';
 
 // WHAT THESE TESTS COVER, AND WHAT THEY DO NOT.
 //

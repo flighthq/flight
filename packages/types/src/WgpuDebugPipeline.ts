@@ -1,4 +1,4 @@
-import type { WgpuMeshPipeline } from './WgpuMeshPipeline';
+import type { WgpuMeshPipeline } from './WgpuMeshPipeline.ts';
 
 // The feature flags that select a debug variant. `mode` picks the depth vs normal fragment branch;
 // `hasNormalMap` enables the sampled tangent-space normal-map perturbation (normal mode only — depth

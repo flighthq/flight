@@ -8,7 +8,7 @@ import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseBitmapFontXml } from './bitmapFontXml';
+import { parseBitmapFontXml } from './bitmapFontXml.ts';
 
 const FNT_XML = [
   '<?xml version="1.0"?>',

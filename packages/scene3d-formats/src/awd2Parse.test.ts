@@ -44,8 +44,8 @@ import {
   ShadedMaterialKind,
 } from '@flighthq/types/contract';
 
-import { awd2AllBlockHandlers, awd2SkeletonFamily } from './awd2BlockRegistry';
-import { createScene3DFromAwd2, parseAwd2 } from './awd2Parse';
+import { awd2AllBlockHandlers, awd2SkeletonFamily } from './awd2BlockRegistry.ts';
+import { createScene3DFromAwd2, parseAwd2 } from './awd2Parse.ts';
 import {
   AWD2_BLOCK_CONTAINER,
   AWD2_BLOCK_CAMERA,
@@ -104,8 +104,8 @@ import {
   AWD2_STREAM_UVS,
   AWD2_TEXTURE_TYPE_EMBEDDED,
   AWD2_TEXTURE_TYPE_EXTERNAL,
-} from './awd2Schema';
-import { getTestTextureResource } from './scene3DFormatsTestHelper';
+} from './awd2Schema.ts';
+import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 
 function buildAwdHeader(bodyLength: number, compression = 0, flags = 0, versionMajor = 2): Uint8Array {
   const header = new Uint8Array(12);

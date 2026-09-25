@@ -1,7 +1,7 @@
 import type { Path, PathMesh, PathMeshTyped } from '@flighthq/types/contract';
 
-import { tessellatePathInto } from './tessellatePath';
-import { tessellatePathTypedInto } from './tessellatePathTyped';
+import { tessellatePathInto } from './tessellatePath.ts';
+import { tessellatePathTypedInto } from './tessellatePathTyped.ts';
 
 // Pool-backed flatten+tessellate for hot-loop usage. Each `acquirePathMesh` retrieves a `PathMesh`
 // from a shared pool, tessellates the given path into it (replacing its contents), and returns it.

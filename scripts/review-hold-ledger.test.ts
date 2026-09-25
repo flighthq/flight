@@ -1,5 +1,5 @@
-import { recordReviewHoldReleases, recordReviewHolds } from '../tools/review/src/holdLedger';
-import type { ReviewHoldLedger } from '../tools/review/src/holdLedger';
+import { recordReviewHoldReleases, recordReviewHolds } from '../tools/review/src/holdLedger.ts';
+import type { ReviewHoldLedger } from '../tools/review/src/holdLedger.ts';
 
 describe('review hold ledger', () => {
   it('attributes both hold and release actions while removing only the active hold', () => {

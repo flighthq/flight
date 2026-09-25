@@ -1,6 +1,6 @@
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
 
-import { collectSwfContentCapabilities } from './swfContentCapabilities';
+import { collectSwfContentCapabilities } from './swfContentCapabilities.ts';
 
 describe('collectSwfContentCapabilities', () => {
   it('counts each distinct tag code', () => {

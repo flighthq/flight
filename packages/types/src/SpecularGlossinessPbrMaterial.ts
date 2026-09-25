@@ -1,5 +1,5 @@
-import type { Material3D } from './Material3D';
-import type { Texture } from './Texture';
+import type { Material3D } from './Material3D.ts';
+import type { Texture } from './Texture.ts';
 
 // Legacy specular-glossiness PBR workflow (converted to metallic-roughness at bind). `diffuse`
 // and `specular` are packed sRgb-albedo RGBA; `glossiness` is the inverse of roughness.

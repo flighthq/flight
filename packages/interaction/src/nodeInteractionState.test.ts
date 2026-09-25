@@ -20,7 +20,7 @@ import {
   setNodeHitTestEnabled,
   setNodePointerDoubleClickEnabled,
   setNodeTabIndex,
-} from './nodeInteractionState';
+} from './nodeInteractionState.ts';
 
 describe('areNodeChildrenHitTestEnabled', () => {
   it('defaults to true with no cell, and reads the cell once one exists', () => {

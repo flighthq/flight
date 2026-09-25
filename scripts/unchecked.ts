@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
-import { filterPaths, getSelectors, selectPackages } from './select';
+import { filterPaths, getSelectors, selectPackages } from './select.ts';
 import type {
   Mutant,
   MutantOutcome,
@@ -15,7 +15,7 @@ import type {
   MutantResponse,
   TestCoverageProfile,
   UncheckedFile,
-} from './unchecked-core';
+} from './unchecked-core.ts';
 import {
   APPLIED_MARKER,
   collectExecutedLines,
@@ -26,7 +26,7 @@ import {
   rankUncheckedFiles,
   selectReachableMutants,
   WORKER_PROTOCOL_PREFIX,
-} from './unchecked-core';
+} from './unchecked-core.ts';
 
 // Lists the single-token edits to one package's source that every one of its tests still passes with in
 // place. `npm run unchecked geometry` — or `npm run unchecked geometry/src/matrix.ts` for one file.

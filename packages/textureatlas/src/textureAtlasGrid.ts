@@ -1,7 +1,7 @@
 import type { GridSliceOptions, Texture2D, TextureAtlas } from '@flighthq/types/contract';
 
-import { createTextureAtlas } from './textureAtlas';
-import { createTextureAtlasRegion } from './textureAtlasRegion';
+import { createTextureAtlas } from './textureAtlas.ts';
+import { createTextureAtlasRegion } from './textureAtlasRegion.ts';
 
 // Builds row-major atlas regions for a regular grid. Per-axis margins and spacing stay explicit so
 // non-square authoring layouts retain their exact pixel arithmetic. The optional Texture2D attaches

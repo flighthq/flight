@@ -1,6 +1,6 @@
-import type { FontVariation } from './FontVariation';
-import type { TextDirection } from './TextDirection';
-import type { TextFeature } from './TextFeature';
+import type { FontVariation } from './FontVariation.ts';
+import type { TextDirection } from './TextDirection.ts';
+import type { TextFeature } from './TextFeature.ts';
 export interface TextShaperOptions {
   readonly direction?: TextDirection;
   readonly features?: readonly TextFeature[];

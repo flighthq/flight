@@ -12,8 +12,8 @@ import {
   TextLabelKind,
 } from '@flighthq/types/contract';
 
-import { createScene2DFromSvgDocument } from './svgDocument';
-import { createReadyImageResourceForTest } from './testHelper';
+import { createScene2DFromSvgDocument } from './svgDocument.ts';
+import { createReadyImageResourceForTest } from './testHelper.ts';
 
 describe('createScene2DFromSvgDocument', () => {
   it('explicitly registers neutral bounds for shapes imported without a renderer', () => {

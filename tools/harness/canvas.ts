@@ -42,7 +42,7 @@ import {
 } from '@flighthq/sdk';
 import { registerFunctionalTarget } from '@ft/verify';
 
-import type { FunctionalCanvasTarget, FunctionalTargetOptions } from './target';
+import type { FunctionalCanvasTarget, FunctionalTargetOptions } from './target.ts';
 
 export function createCanvasTarget(options: Readonly<FunctionalTargetOptions>): FunctionalCanvasTarget {
   const { width, height } = options;

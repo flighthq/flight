@@ -1,4 +1,4 @@
-import type { ParticleEmitterConfig } from './ParticleEmitterConfig';
+import type { ParticleEmitterConfig } from './ParticleEmitterConfig.ts';
 
 export interface ParticleConfigIssue {
   field: keyof ParticleEmitterConfig;

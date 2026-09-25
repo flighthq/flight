@@ -1,4 +1,4 @@
-import { registerDefaultShapeBoundsCommands } from './registerDefaultShapeBoundsCommands';
+import { registerDefaultShapeBoundsCommands } from './registerDefaultShapeBoundsCommands.ts';
 import {
   defaultShapeBoundsCubicCurveTo,
   defaultShapeBoundsDrawCircle,
@@ -11,8 +11,8 @@ import {
   defaultShapeBoundsLineTo,
   defaultShapeBoundsMoveTo,
   defaultShapeBoundsQuadraticCurveTo,
-} from './shapeBounds';
-import { getShapeBoundsCommand, getShapeBoundsCommandRegistryRevision } from './shapeBoundsRegistry';
+} from './shapeBounds.ts';
+import { getShapeBoundsCommand, getShapeBoundsCommandRegistryRevision } from './shapeBoundsRegistry.ts';
 
 // ★ THIS FILE RUNS ISOLATED — scripts/registryIsolatedTests.ts lists it with reason
 // `process-global-registry`, and that routing is LOAD-BEARING. Do not demote it to the shared tier.

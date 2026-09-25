@@ -6,8 +6,8 @@ import type {
   GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Bokeh depth-of-field: a disc-shaped blur. When the scene supplied a sampleable depth texture
 // (ctx.sceneDepthTexture), it computes a per-pixel circle of confusion from focusDistance/focusRange and

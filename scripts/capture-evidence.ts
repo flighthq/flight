@@ -18,14 +18,14 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { CaptureBaselineEvidenceKind } from '../packages/tool-capture/src/captureBaselineCoverageManifest.js';
+import type { CaptureBaselineEvidenceKind } from '../packages/tool-capture/src/captureBaselineCoverageManifest.ts';
 import {
   diffCaptureBaselineCoverage,
   isCaptureBaselineCoverageFailure,
   readCaptureBaselineCoverageManifest,
   writeCaptureBaselineCoverageManifest,
-} from '../packages/tool-capture/src/captureBaselineCoverageManifest.js';
-import { readRepeatedCliOption, selectCaptureEvidenceTargets } from './capture-evidence-selection.js';
+} from '../packages/tool-capture/src/captureBaselineCoverageManifest.ts';
+import { readRepeatedCliOption, selectCaptureEvidenceTargets } from './capture-evidence-selection.ts';
 
 const FUNCTIONAL_BACKENDS = ['dom', 'canvas', 'webgl', 'webgpu'];
 const ORACLE_EXPORT = /export\s+(?:async\s+)?function\s+assertRender\s*\(|export\s+const\s+assertRender\s*[:=]/;

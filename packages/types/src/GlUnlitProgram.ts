@@ -1,4 +1,4 @@
-import type { GlMeshProgram } from './GlMeshProgram';
+import type { GlMeshProgram } from './GlMeshProgram.ts';
 
 // The feature flags that select an unlit variant. `vertexColor` reads the mesh's color0 attribute and
 // multiplies it in (the VertexColor material); `hasColorMap` enables the sampled base/emissive map;

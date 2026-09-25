@@ -1,9 +1,9 @@
 import { createAppWindow, openWindow } from '@flighthq/app/contract';
 import type { AppWindow } from '@flighthq/types/contract';
 
-import { webHostGl } from './webHostGl';
-import { createWebSurfaceFromElement } from './webSurfaceHandle';
-import { resetWebWindowBackendForTest, webHostWindowGeometry, webHostWindowLifecycle } from './webWindow';
+import { webHostGl } from './webHostGl.ts';
+import { createWebSurfaceFromElement } from './webSurfaceHandle.ts';
+import { resetWebWindowBackendForTest, webHostWindowGeometry, webHostWindowLifecycle } from './webWindow.ts';
 
 let pageWindow: AppWindow | undefined;
 

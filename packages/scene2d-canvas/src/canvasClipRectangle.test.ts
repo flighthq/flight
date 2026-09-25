@@ -4,8 +4,8 @@ import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { CanvasRenderState, Node2D, Matrix, Rectangle, RenderProxy2D } from '@flighthq/types/contract';
 
-import { popCanvasClipRectangle, pushCanvasClipContours, pushCanvasClipRectangle } from './canvasClipRectangle';
-import { createCanvasRenderState } from './canvasTestSupport';
+import { popCanvasClipRectangle, pushCanvasClipContours, pushCanvasClipRectangle } from './canvasClipRectangle.ts';
+import { createCanvasRenderState } from './canvasTestSupport.ts';
 
 describe('Clip Rectangle Functions', () => {
   let canvas: HTMLCanvasElement;

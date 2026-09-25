@@ -5,9 +5,9 @@ import type {
   ParticleObjectsUpdateOptions,
 } from '@flighthq/types/contract';
 
-import { sampleParticleCurve } from './curve';
-import { ensureParticleObjectsStateCapacity } from './particleObjectsState';
-import { writeParticleSpawnOffset } from './particleSpawnOffset';
+import { sampleParticleCurve } from './curve.ts';
+import { ensureParticleObjectsStateCapacity } from './particleObjectsState.ts';
+import { writeParticleSpawnOffset } from './particleSpawnOffset.ts';
 
 const PARTICLE_SPAWN_OFFSET = [0, 0];
 

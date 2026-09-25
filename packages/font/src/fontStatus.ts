@@ -1,6 +1,6 @@
 import type { HostFontLoadingCapability } from '@flighthq/types/contract';
 
-import { getFontShorthand } from './fontShorthand';
+import { getFontShorthand } from './fontShorthand.ts';
 
 export function isFontLoaded(backend: Readonly<HostFontLoadingCapability>, family: string, style?: string): boolean {
   return backend.checkFontFace(getFontShorthand(family, style));

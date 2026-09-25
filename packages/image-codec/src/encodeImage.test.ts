@@ -5,7 +5,7 @@ import type {
 } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
-import { encodeImage } from './encodeImage';
+import { encodeImage } from './encodeImage.ts';
 
 function fakeImage(): DecodedImage {
   return { data: new Uint8ClampedArray([1, 2, 3, 4]), width: 1, height: 1 };

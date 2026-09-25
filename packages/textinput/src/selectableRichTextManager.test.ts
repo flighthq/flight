@@ -12,7 +12,7 @@ import {
   focusSelectableRichText,
   getSelectableRichTextSelectionText,
   initializeSelectableRichTextManager,
-} from './selectableRichTextManager';
+} from './selectableRichTextManager.ts';
 
 function makeKeyData(data: Partial<InputKeyboardData> = {}): InputKeyboardData {
   return {

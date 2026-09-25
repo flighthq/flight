@@ -9,14 +9,14 @@ import { dirname, join, resolve } from 'node:path';
 import type { BrowserContext } from '@playwright/test';
 import pc from 'picocolors';
 
-import { launchBrowser } from './captureBrowser.js';
-import type { CaptureBrowserSession } from './captureBrowser.js';
-import type { Entry } from './captureEntries.js';
-import { getCaptureEntryRoute, rendererMatchesFilter } from './captureEntries.js';
-import { installAbortHandler } from './captureInterrupt.js';
-import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
-import { writeCaptureReport } from './captureReport.js';
-import type { Server } from './captureServer.js';
+import { launchBrowser } from './captureBrowser.ts';
+import type { CaptureBrowserSession } from './captureBrowser.ts';
+import type { Entry } from './captureEntries.ts';
+import { getCaptureEntryRoute, rendererMatchesFilter } from './captureEntries.ts';
+import { installAbortHandler } from './captureInterrupt.ts';
+import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.ts';
+import { writeCaptureReport } from './captureReport.ts';
+import type { Server } from './captureServer.ts';
 
 export const CAPTURE_BENCHMARK_VERSION = 1 as const;
 

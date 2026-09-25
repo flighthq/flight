@@ -24,7 +24,7 @@ import {
 } from '@flighthq/sdk';
 import { createSpring2D, createSpringConfig, updateSpring2D } from '@flighthq/sdk/spring';
 
-import { canvas, render, scale } from './render';
+import { canvas, render, scale } from './render.ts';
 
 const WIDTH = 800;
 const HEIGHT = 600;

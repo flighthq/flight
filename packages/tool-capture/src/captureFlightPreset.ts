@@ -1,4 +1,4 @@
-import type { CaptureParityGroup } from './captureManifest.js';
+import type { CaptureParityGroup } from './captureManifest.ts';
 
 export interface FlightCaptureValidationPreset {
   fingerprintSkip: Readonly<string[]>;

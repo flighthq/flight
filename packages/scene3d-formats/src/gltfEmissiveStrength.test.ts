@@ -7,9 +7,9 @@ import type {
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { GltfClearcoatExtensionHandler } from './gltfClearcoat';
-import { GltfEmissiveStrengthExtensionHandler } from './gltfEmissiveStrength';
-import { parseGltf } from './gltfParse';
+import { GltfClearcoatExtensionHandler } from './gltfClearcoat.ts';
+import { GltfEmissiveStrengthExtensionHandler } from './gltfEmissiveStrength.ts';
+import { parseGltf } from './gltfParse.ts';
 
 function makeGltf(material: unknown): GltfDocument {
   return { asset: { version: '2.0' }, materials: [material], scenes: [{ nodes: [] }] } as GltfDocument;

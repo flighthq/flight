@@ -1,4 +1,4 @@
-import type { Modifier } from './Modifier';
+import type { Modifier } from './Modifier.ts';
 
 // Quantizes the shaded radiance into flat cel bands (slot: Effect): the luminance of the shaded
 // output is snapped to one of `steps` discrete levels and the radiance is rescaled to that quantized

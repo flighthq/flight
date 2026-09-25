@@ -1,7 +1,7 @@
-export * from './enableTextureAtlasGuards';
-export * from './textureAtlas';
-export * from './textureAtlasFrom';
-export * from './textureAtlasGrid';
-export * from './textureAtlasRegion';
-export { initializeTextureAtlas } from './textureAtlas';
-export { initializeTextureAtlasRegion } from './textureAtlasRegion';
+export * from './enableTextureAtlasGuards.ts';
+export * from './textureAtlas.ts';
+export * from './textureAtlasFrom.ts';
+export * from './textureAtlasGrid.ts';
+export * from './textureAtlasRegion.ts';
+export { initializeTextureAtlas } from './textureAtlas.ts';
+export { initializeTextureAtlasRegion } from './textureAtlasRegion.ts';

@@ -3,9 +3,9 @@ import { getMeshGeometrySkinBindPose, setMeshGeometrySkinBindPose } from '@fligh
 import { getNodeRuntime } from '@flighthq/node/contract';
 import type { Mesh, MeshRuntime, NodeAny } from '@flighthq/types/contract';
 
-import { getMeshSkinConservativeBounds } from './getMeshSkinBounds';
-import { computeSkeleton3DJointMatrices } from './skeleton3d';
-import { captureMeshSkinBindPose } from './skinMeshGeometry';
+import { getMeshSkinConservativeBounds } from './getMeshSkinBounds.ts';
+import { computeSkeleton3DJointMatrices } from './skeleton3d.ts';
+import { captureMeshSkinBindPose } from './skinMeshGeometry.ts';
 
 // Readies one skinned mesh for a GPU-skinned frame WITHOUT CPU-posing its vertices. It recomputes the
 // skeleton's joint palette from the joints' current world transforms (what the HAS_SKIN shader variant

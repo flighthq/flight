@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { getPackageLayerCoverageViolations, getPackageLayerDependencyViolation } from './package-layers';
+import { getPackageLayerCoverageViolations, getPackageLayerDependencyViolation } from './package-layers.ts';
 
 describe('package dependency layers', () => {
   it('rejects application packages depending on renderer backends', () => {

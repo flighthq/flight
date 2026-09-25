@@ -1,9 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { ExtendedPbrMaterialKind } from '@flighthq/types/contract';
 
-import { createClearcoatPbrExtension } from './clearcoatPbrExtension';
-import { createExtendedPbrMaterial } from './extendedPbrMaterial';
-import { createStandardPbrMaterialProperties } from './pbrMaterials';
+import { createClearcoatPbrExtension } from './clearcoatPbrExtension.ts';
+import { createExtendedPbrMaterial } from './extendedPbrMaterial.ts';
+import { createStandardPbrMaterialProperties } from './pbrMaterials.ts';
 
 describe('createExtendedPbrMaterial', () => {
   it('composes a standard property block with an ordered extension list', () => {

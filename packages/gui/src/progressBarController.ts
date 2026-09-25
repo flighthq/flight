@@ -12,7 +12,7 @@ import {
   disposeGuiController,
   getGuiControllerRuntime,
   setGuiScale,
-} from './guiController';
+} from './guiController.ts';
 
 interface ProgressBarControllerFields {
   baseScale: number;

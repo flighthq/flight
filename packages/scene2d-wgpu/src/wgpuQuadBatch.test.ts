@@ -12,9 +12,9 @@ import { createRenderTexture } from '@flighthq/texture/contract';
 import { createTextureAtlas, createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 
-import { wgpuQuadBatchRenderer, ensureWgpuQuadBatchResources, getWgpuQuadBatchPipeline } from './wgpuQuadBatch';
-import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
-import { registerWgpuStandardMaterial } from './wgpuStandardMaterial';
+import { wgpuQuadBatchRenderer, ensureWgpuQuadBatchResources, getWgpuQuadBatchPipeline } from './wgpuQuadBatch.ts';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
+import { registerWgpuStandardMaterial } from './wgpuStandardMaterial.ts';
 
 beforeAll(() => {
   installWgpuMock();

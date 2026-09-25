@@ -1,5 +1,5 @@
-import { parseTexturePackerSpritesheet, parseTexturePackerSpritesheetDocument } from './texturePackerParse';
-import { serializeTexturePackerSpritesheet } from './texturePackerSerialize';
+import { parseTexturePackerSpritesheet, parseTexturePackerSpritesheetDocument } from './texturePackerParse.ts';
+import { serializeTexturePackerSpritesheet } from './texturePackerSerialize.ts';
 
 const HASH_JSON = JSON.stringify({
   frames: {

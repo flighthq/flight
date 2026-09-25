@@ -21,8 +21,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { parseTiledColor } from './tiledColor';
-import { decodeTiledBase64Layer, decodeTiledCsvLayer } from './tiledLayerData';
+import { parseTiledColor } from './tiledColor.ts';
+import { decodeTiledBase64Layer, decodeTiledCsvLayer } from './tiledLayerData.ts';
 
 // JSON front-end of the Tiled codec: TMJ maps and standalone TSJ tilesets. The same DTO builders as
 // the XML front-end, walking a parsed JSON tree instead of an XML one.

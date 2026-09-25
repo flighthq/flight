@@ -1,6 +1,6 @@
 import type { HostProtocolCapabilities } from '@flighthq/types/contract';
 
-import { webHostProtocolLaunch, webHostProtocolRegistration } from './webProtocol';
+import { webHostProtocolLaunch, webHostProtocolRegistration } from './webProtocol.ts';
 
 export const webHostProtocol = {
   launch: webHostProtocolLaunch,

@@ -25,4 +25,4 @@ export {
   writeClipboardImage,
   writeClipboardRTF,
   writeClipboardText,
-} from './contract';
+} from './contract.ts';

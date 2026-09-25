@@ -1,7 +1,7 @@
-import type { GlyphSource } from './GlyphSource';
-import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
-import type { Rectangle } from './Rectangle';
-import type { TextureAtlas } from './TextureAtlas';
+import type { GlyphSource } from './GlyphSource.ts';
+import type { Node2D, Node2DData, Node2DRuntime } from './Node2D.ts';
+import type { Rectangle } from './Rectangle.ts';
+import type { TextureAtlas } from './TextureAtlas.ts';
 
 // Horizontal alignment of each laid-out line within the text block. `justify` stretches inter-word
 // gaps to fill the wrap width (the last line of a paragraph stays left-aligned); it degrades to

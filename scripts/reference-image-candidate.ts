@@ -21,13 +21,13 @@ import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { getOraclePngPixelSha256 } from './reference-image-png';
+import { getOraclePngPixelSha256 } from './reference-image-png.ts';
 import type {
   ReferenceImageRequest,
   ReferenceImageRequestCaptureIdentity,
   ReferenceImageRequestTarget,
-} from './reference-image-records';
-import { getOracleRequestCells } from './reference-image-records';
+} from './reference-image-records.ts';
+import { getOracleRequestCells } from './reference-image-records.ts';
 
 export interface ReferenceImageCandidateBundle {
   schemaVersion: 1;

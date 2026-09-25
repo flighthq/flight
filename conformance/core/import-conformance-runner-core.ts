@@ -2,14 +2,14 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 
-import { parseImportConformanceOracleOutcomes } from './import-conformance-case';
+import { parseImportConformanceOracleOutcomes } from './import-conformance-case.ts';
 import type {
   ImportConformanceIndexedCase,
   ImportConformanceResult,
   ImportConformanceShardPlan,
-} from './import-conformance-core';
-import { applyImportConformanceOracleOutcomes, createImportConformanceCacheKey } from './import-conformance-core';
-import { parseImportConformanceRetainedDiagnostic } from './import-conformance-diagnostic-evidence';
+} from './import-conformance-core.ts';
+import { applyImportConformanceOracleOutcomes, createImportConformanceCacheKey } from './import-conformance-core.ts';
+import { parseImportConformanceRetainedDiagnostic } from './import-conformance-diagnostic-evidence.ts';
 
 export interface ImportConformanceShardResults {
   completedShardIds: Set<number>;

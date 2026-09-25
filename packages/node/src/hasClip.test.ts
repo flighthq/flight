@@ -1,7 +1,7 @@
 import type { ClipRegion, HasClip } from '@flighthq/types/contract';
 
-import { initClipTrait } from './hasClip';
-import { createNode } from './node';
+import { initClipTrait } from './hasClip.ts';
+import { createNode } from './node.ts';
 
 const TestKind = 'Test';
 

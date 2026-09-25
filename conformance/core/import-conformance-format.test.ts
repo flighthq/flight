@@ -2,17 +2,17 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { createSwfImportConformanceDenominators } from '../swf/swf-capability-index';
-import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from '../swf/swf-import-conformance-policy';
-import { createImportConformanceSingleMemberCaseIdentity } from './import-conformance-case';
+import { createSwfImportConformanceDenominators } from '../swf/swf-capability-index.ts';
+import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from '../swf/swf-import-conformance-policy.ts';
+import { createImportConformanceSingleMemberCaseIdentity } from './import-conformance-case.ts';
 import {
   buildImportConformanceCapabilityIndex,
   createImportConformanceNotRunScore,
   createImportConformanceScore,
   createImportConformanceShardPlan,
-} from './import-conformance-core';
-import type { ImportConformanceLossPath } from './import-conformance-core';
-import { formatImportConformanceScore } from './import-conformance-format';
+} from './import-conformance-core.ts';
+import type { ImportConformanceLossPath } from './import-conformance-core.ts';
+import { formatImportConformanceScore } from './import-conformance-format.ts';
 
 const DEFINITIONS = [
   { id: 'swf.fill.solid', label: 'fill: solid' },

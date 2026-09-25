@@ -17,7 +17,7 @@
 // in a unit test with no network. The CLI owns the downloads.
 import { createHash } from 'node:crypto';
 
-import type { ReferenceImageLock } from './reference-image-records';
+import type { ReferenceImageLock } from './reference-image-records.ts';
 
 export interface ReferenceImageReleasePack {
   id: string;

@@ -1,4 +1,4 @@
-import { applyMedianEffectToWgpu, wgpuMedianEffectRunner, registerWgpuMedianEffect } from './wgpuMedianEffect';
+import { applyMedianEffectToWgpu, wgpuMedianEffectRunner, registerWgpuMedianEffect } from './wgpuMedianEffect.ts';
 
 describe('applyMedianEffectToWgpu', () => {
   it('is a function', () => {

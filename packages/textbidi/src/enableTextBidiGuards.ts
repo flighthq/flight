@@ -1,7 +1,7 @@
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setTextBidiGuard } from './textBidiGuards';
+import { setTextBidiGuard } from './textBidiGuards.ts';
 
 /** Uninstalls the guard installed by enableTextBidiGuards. */
 export function disableTextBidiGuards(): void {

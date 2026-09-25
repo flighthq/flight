@@ -1,5 +1,5 @@
-import { isWgpuExternalImageSourceReady, tryCopyWgpuExternalImageToTexture } from './wgpuExternalImageSource';
-import { createReadyImageElementForTest } from './wgpuTestHelper';
+import { isWgpuExternalImageSourceReady, tryCopyWgpuExternalImageToTexture } from './wgpuExternalImageSource.ts';
+import { createReadyImageElementForTest } from './wgpuTestHelper.ts';
 
 describe('isWgpuExternalImageSourceReady', () => {
   it('accepts a dimension-valid canvas without probing or binding its context', () => {

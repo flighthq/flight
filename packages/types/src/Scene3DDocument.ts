@@ -1,15 +1,15 @@
-import type { AnimationTrack } from './AnimationTrack';
-import type { Projection } from './Camera3D';
-import type { Kind } from './Entity';
-import type { ImageResourceReference } from './ImageResourceReference';
-import type { Light } from './Light';
-import type { MaterialLike } from './Material';
-import type { Matrix4Like } from './Matrix4';
-import type { MeshGeometry } from './MeshGeometry';
-import type { MeshMorph } from './MorphTarget';
-import type { Scene3DAnimationPath } from './Scene3DAnimationPath';
-import type { Scene3DMetadata } from './Scene3DMetadata';
-import type { Transform3D } from './Transform3D';
+import type { AnimationTrack } from './AnimationTrack.ts';
+import type { Projection } from './Camera3D.ts';
+import type { Kind } from './Entity.ts';
+import type { ImageResourceReference } from './ImageResourceReference.ts';
+import type { Light } from './Light.ts';
+import type { MaterialLike } from './Material.ts';
+import type { Matrix4Like } from './Matrix4.ts';
+import type { MeshGeometry } from './MeshGeometry.ts';
+import type { MeshMorph } from './MorphTarget.ts';
+import type { Scene3DAnimationPath } from './Scene3DAnimationPath.ts';
+import type { Scene3DMetadata } from './Scene3DMetadata.ts';
+import type { Transform3D } from './Transform3D.ts';
 
 // A Scene3DDocument is Flight's format-neutral, plain-data intermediate representation of a 3D scene: the
 // decomposed set of top-level tables (`nodes`, `meshes`, `materials`, `skins`, `animations`, `cameras`,

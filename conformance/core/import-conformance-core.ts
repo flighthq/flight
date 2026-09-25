@@ -1,23 +1,26 @@
 import { createHash } from 'node:crypto';
 
-import { assertImportConformanceOracleOutcomes, createImportConformanceCaseIdentity } from './import-conformance-case';
+import {
+  assertImportConformanceOracleOutcomes,
+  createImportConformanceCaseIdentity,
+} from './import-conformance-case.ts';
 import type {
   ImportConformanceCaseIdentity,
   ImportConformanceCaseMember,
   ImportConformanceOracleOutcome,
-} from './import-conformance-case';
-import { assertImportConformanceDenominators } from './import-conformance-denominator';
-import type { ImportConformanceDenominators } from './import-conformance-denominator';
+} from './import-conformance-case.ts';
+import { assertImportConformanceDenominators } from './import-conformance-denominator.ts';
+import type { ImportConformanceDenominators } from './import-conformance-denominator.ts';
 import {
   assertImportConformanceDiagnosticEvidencePolicy,
   cloneImportConformanceDiagnosticEvidencePolicy,
   parseImportConformanceRetainedDiagnostic,
-} from './import-conformance-diagnostic-evidence';
-import type { ImportConformanceDiagnosticEvidencePolicy } from './import-conformance-diagnostic-evidence';
+} from './import-conformance-diagnostic-evidence.ts';
+import type { ImportConformanceDiagnosticEvidencePolicy } from './import-conformance-diagnostic-evidence.ts';
 import {
   deriveImportConformanceCapabilityScopedUnknownEvidence,
   IMPORT_CONFORMANCE_FIXTURE_OUTCOME_DEFINITIONS,
-} from './import-conformance-score';
+} from './import-conformance-score.ts';
 import type {
   ImportConformanceCapability,
   ImportConformanceCapabilityScopedUnknownMappings,
@@ -47,7 +50,7 @@ import type {
   ImportConformanceUnknownObservation,
   ImportConformanceUnmeasuredCapability,
   ImportConformanceUnwiredLossObservation,
-} from './import-conformance-score';
+} from './import-conformance-score.ts';
 
 export type {
   ImportConformanceConfigurationLimit,
@@ -63,7 +66,7 @@ export type {
   ImportConformanceScore,
   ImportConformanceUnknownObservation,
   ImportConformanceUnwiredLossObservation,
-} from './import-conformance-score';
+} from './import-conformance-score.ts';
 
 export type ImportConformanceScoreCapability = ImportConformanceCapability;
 export type ImportConformanceScoreCapabilityExercised = ImportConformanceExercisedCapability;

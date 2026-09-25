@@ -8,15 +8,15 @@ import type {
 } from '@flighthq/types/contract';
 import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
-import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
-import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
+import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram.ts';
+import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail.ts';
 import {
   GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
   GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
   ensureGlScene3DProgram,
-} from './glMeshProgram';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+} from './glMeshProgram.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 // A short, stable, order-independent string identity for a classic define key, used as the program-
 // cache key. The lighting model is encoded first (l/p/b) so the three models never collide, followed
 // by the feature flags. Two keys with the same model + flags produce the same string and so share a

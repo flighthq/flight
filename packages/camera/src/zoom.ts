@@ -1,7 +1,7 @@
 import { createVector2 } from '@flighthq/geometry/contract';
 import type { Camera2D } from '@flighthq/types/contract';
 
-import { unprojectCamera2DPoint } from './projection2d';
+import { unprojectCamera2DPoint } from './projection2d.ts';
 
 // Sets the camera's `zoom` while keeping the world point currently under `(screenX, screenY)` fixed
 // on screen (zoom-to-cursor). Because the view's linear part depends only on zoom and rotation (not

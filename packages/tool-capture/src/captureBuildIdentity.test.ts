@@ -12,7 +12,7 @@ import {
   isCaptureBuildDirtyExempt,
   parseGitStatusPaths,
   readCaptureBuildIdentity,
-} from './captureBuildIdentity';
+} from './captureBuildIdentity.ts';
 
 describe('createCaptureBuildIdentity', () => {
   it('states how many paths a bounded stamp omits instead of silently truncating evidence', () => {

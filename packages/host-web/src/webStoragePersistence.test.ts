@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createWebWindowStoragePersistenceCapabilities,
   createWebWorkerStoragePersistenceCapabilities,
-} from './webStoragePersistence';
+} from './webStoragePersistence.ts';
 
 describe('createWebWindowStoragePersistenceCapabilities', () => {
   afterEach(() => vi.unstubAllGlobals());

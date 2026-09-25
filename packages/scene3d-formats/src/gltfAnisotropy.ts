@@ -1,7 +1,7 @@
 import { createAnisotropyPbrExtension } from '@flighthq/materials/contract';
 import type { GltfExtensionHandler } from '@flighthq/types/contract';
 
-import { attachGltfPbrExtension } from './gltfMaterialExtension';
+import { attachGltfPbrExtension } from './gltfMaterialExtension.ts';
 
 // KHR_materials_anisotropy — stretches the microfacet response along the mesh tangents, which is what
 // gives brushed metal and hair their directional highlight. The texture packs a tangent-space direction

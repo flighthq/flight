@@ -19,7 +19,7 @@ import { ImageResourceFailureKind, ResourceResolutionState } from '@flighthq/typ
 import { Scene3DResourceResolverRuntimeKey } from '@flighthq/types/contract';
 import type { Scene3DResourceInFlight, Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 
-import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures';
+import { getScene3DResourceTextures, getScene3DTextureResourceReference } from './getScene3DResourceTextures.ts';
 
 export function initializeImageResourceFailure(
   out: EntityConstruction<ImageResourceFailure>,

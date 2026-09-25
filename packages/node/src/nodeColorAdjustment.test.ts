@@ -1,13 +1,13 @@
 import { createColorMatrixAdjustment, createTintAdjustment } from '@flighthq/adjustments/contract';
 import { NodeKind } from '@flighthq/types/contract';
 
-import { createNode, getNodeRuntime } from './node';
+import { createNode, getNodeRuntime } from './node.ts';
 import {
   addNodeColorAdjustment,
   getNodeColorAdjustments,
   setNodeColorAdjustments,
   setNodeColorAdjustmentsTint,
-} from './nodeColorAdjustment';
+} from './nodeColorAdjustment.ts';
 
 describe('addNodeColorAdjustment', () => {
   it('lazily creates the stack and resolves its material-feature data', () => {

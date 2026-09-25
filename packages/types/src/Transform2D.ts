@@ -1,4 +1,4 @@
-import type { Entity, EntityWithoutRuntime } from './Entity';
+import type { Entity, EntityWithoutRuntime } from './Entity.ts';
 
 // Decomposed 2D affine transform carrier — the passable, one-operation-assignable form of a
 // display object's local transform. Same fields the `HasTransform2D` node trait exposes; a node is

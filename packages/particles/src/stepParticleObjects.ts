@@ -7,9 +7,9 @@ import type {
   ParticleObjectsUpdateOptions,
 } from '@flighthq/types/contract';
 
-import { applyParticleObjectCollisions } from './applyParticleCollisions';
-import { applyParticleObjectForces } from './applyParticleForces';
-import { updateParticleObjects } from './updateParticleObjects';
+import { applyParticleObjectCollisions } from './applyParticleCollisions.ts';
+import { applyParticleObjectForces } from './applyParticleForces.ts';
+import { updateParticleObjects } from './updateParticleObjects.ts';
 
 /**
  * Convenience wrapper for the object-pool path that folds the canonical three-step update sequence

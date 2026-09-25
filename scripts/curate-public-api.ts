@@ -17,7 +17,7 @@ import readline from 'node:readline';
 
 import { Project } from 'ts-morph';
 
-import { collectEntryPointInventory } from './export-inventory';
+import { collectEntryPointInventory } from './export-inventory.ts';
 
 const root = process.cwd();
 const targets = readdirSync(join(root, 'packages'))

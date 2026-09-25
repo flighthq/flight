@@ -1,5 +1,5 @@
-import type { TextureSource } from './TextureSource';
-import type { RenderTargetTextureSourceKind } from './TextureSourceKind';
+import type { TextureSource } from './TextureSource.ts';
+import type { RenderTargetTextureSourceKind } from './TextureSourceKind.ts';
 
 // Substrate-agnostic render-target description. A target carries axes, not booleans: `format`/
 // `colorFormats` unlock HDR and the G-buffer, `colorAttachments` is MRT/deferred, `sampleCount` is

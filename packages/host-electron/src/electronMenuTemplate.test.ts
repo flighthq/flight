@@ -1,4 +1,4 @@
-import { toElectronTemplate } from './electronMenuTemplate';
+import { toElectronTemplate } from './electronMenuTemplate.ts';
 
 describe('toElectronTemplate', () => {
   it('maps Flight roles and omits unsupported custom roles', () => {

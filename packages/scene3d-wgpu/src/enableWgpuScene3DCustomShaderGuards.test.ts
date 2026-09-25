@@ -5,8 +5,8 @@ import {
   areWgpuScene3DCustomShaderGuardsEnabled,
   enableWgpuScene3DCustomShaderGuards,
   runWgpuCustomShaderGuards,
-} from './enableWgpuScene3DCustomShaderGuards';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+} from './enableWgpuScene3DCustomShaderGuards.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 
 describe('areWgpuScene3DCustomShaderGuardsEnabled', () => {
   it('reports installation state', () => {

@@ -1,6 +1,6 @@
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 
-import { enableWgpuClipSupport } from './wgpuClip';
+import { enableWgpuClipSupport } from './wgpuClip.ts';
 
 beforeAll(() => {
   installWgpuMock();

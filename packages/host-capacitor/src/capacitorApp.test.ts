@@ -8,7 +8,7 @@ import {
   capacitorHostAppName,
   capacitorHostAppQuit,
   capacitorHostAppVersion,
-} from './capacitorApp';
+} from './capacitorApp.ts';
 
 const flush = async () => {
   await Promise.resolve();

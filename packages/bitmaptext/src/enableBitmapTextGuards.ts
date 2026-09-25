@@ -1,7 +1,7 @@
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setBitmapTextLayoutGuard, setBitmapTextMissingGlyphGuard } from './updateBitmapText';
+import { setBitmapTextLayoutGuard, setBitmapTextMissingGlyphGuard } from './updateBitmapText.ts';
 
 /** Uninstalls the guard installed by `enableBitmapTextGuards`. */
 export function disableBitmapTextGuards(): void {

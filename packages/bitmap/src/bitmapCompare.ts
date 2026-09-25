@@ -1,6 +1,6 @@
 import type { Bitmap, BitmapMismatch } from '@flighthq/types/contract';
 
-import { createBitmap } from './bitmap';
+import { createBitmap } from './bitmap.ts';
 
 /** The pixel facts used by mismatch measurement; accepts both decoded bytes and mutable Bitmap storage. */
 interface BitmapComparisonSource {

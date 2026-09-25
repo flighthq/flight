@@ -1,4 +1,4 @@
-import { easeCubicBezier } from './easeCubicBezier';
+import { easeCubicBezier } from './easeCubicBezier.ts';
 
 describe('easeCubicBezier', () => {
   it('returns exact endpoints regardless of control points', () => {

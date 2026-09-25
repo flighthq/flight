@@ -54,4 +54,4 @@ export {
   selectWordAtTextInputIndex,
   setTextInputSelection,
   undoTextInput,
-} from './contract';
+} from './contract.ts';

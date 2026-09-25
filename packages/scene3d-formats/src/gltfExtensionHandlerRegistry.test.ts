@@ -1,7 +1,7 @@
 import type { GltfExtensionHandler } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { registerGltfExtensionHandler } from './gltfExtensionHandlerRegistry';
+import { registerGltfExtensionHandler } from './gltfExtensionHandlerRegistry.ts';
 
 describe('registerGltfExtensionHandler', () => {
   it('adds distinct source kinds and replaces duplicate kinds in place', () => {

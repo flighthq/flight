@@ -5,8 +5,8 @@ import type {
   VignetteEffect,
 } from '@flighthq/types/contract';
 
-import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { registerCanvasEffect } from './canvasEffectRegistry';
+import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
+import { registerCanvasEffect } from './canvasEffectRegistry.ts';
 
 // Vignette (REAL): draw the scene, then overlay a radial gradient with the 'multiply' composite op so
 // the edges darken toward the vignette color. `intensity` and the color's alpha scale the darkening.

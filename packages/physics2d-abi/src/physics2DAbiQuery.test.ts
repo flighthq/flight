@@ -2,21 +2,21 @@ import { createPhysics2DCollider, createRigidBody2D } from '@flighthq/physics2d/
 import type { Physics2DAbi } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createPhysics2DAbi, createPhysics2DAbiWorld, executePhysics2DAbiCommands } from './physics2DAbi';
+import { createPhysics2DAbi, createPhysics2DAbiWorld, executePhysics2DAbiCommands } from './physics2DAbi.ts';
 import {
   createPhysics2DAbiCommandBuffer,
   createPhysics2DAbiExecutionResult,
   createPhysics2DAbiQueryBuffer,
-} from './physics2DAbiBuffer';
-import { writePhysics2DAbiSetBodyCommand, writePhysics2DAbiSetColliderCommand } from './physics2DAbiCommand';
-import { Physics2DAbiQueryValue } from './physics2DAbiLayout';
+} from './physics2DAbiBuffer.ts';
+import { writePhysics2DAbiSetBodyCommand, writePhysics2DAbiSetColliderCommand } from './physics2DAbiCommand.ts';
+import { Physics2DAbiQueryValue } from './physics2DAbiLayout.ts';
 import {
   queryPhysics2DAbiPoint,
   queryPhysics2DAbiRay,
   queryPhysics2DAbiRayClosest,
   queryPhysics2DAbiRegion,
   queryPhysics2DAbiShapeCast,
-} from './physics2DAbiQuery';
+} from './physics2DAbiQuery.ts';
 
 const MATERIAL = { density: 1, friction: 0.3, restitution: 0 };
 

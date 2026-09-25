@@ -1,3 +1,3 @@
-export * from './clock';
-export * from './clockSignals';
-export { initializeClock } from './clock';
+export * from './clock.ts';
+export * from './clockSignals.ts';
+export { initializeClock } from './clock.ts';

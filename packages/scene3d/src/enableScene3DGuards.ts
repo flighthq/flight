@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { Camera3D } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setBillboardCameraBasisGuard } from './billboardCamera';
+import { setBillboardCameraBasisGuard } from './billboardCamera.ts';
 
 export function areScene3DGuardsEnabled(): boolean {
   return scene3DGuardsEnabled;

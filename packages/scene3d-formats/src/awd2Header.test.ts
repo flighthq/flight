@@ -1,4 +1,4 @@
-import { parseAwd2Header } from './awd2Header';
+import { parseAwd2Header } from './awd2Header.ts';
 
 describe('parseAwd2Header', () => {
   it('returns null for input shorter than the fixed header', () => {

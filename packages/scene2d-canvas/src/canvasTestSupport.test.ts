@@ -10,7 +10,7 @@ import {
   createCanvasTextureResolvers,
   endCanvasRenderPass,
   getCanvasActiveRenderPass,
-} from './canvasTestSupport';
+} from './canvasTestSupport.ts';
 
 describe('acquireTestCanvasSurface', () => {
   it('returns an owned test surface', () => {

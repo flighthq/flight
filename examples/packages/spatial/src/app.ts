@@ -26,7 +26,7 @@ import {
   updateSpatialObject2D,
 } from '@flighthq/sdk/spatial';
 
-import { canvas, render, scale } from './render';
+import { canvas, render, scale } from './render.ts';
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 500;

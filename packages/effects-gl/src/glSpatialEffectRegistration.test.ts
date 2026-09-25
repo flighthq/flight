@@ -1,9 +1,9 @@
 import { createWebGlContext } from '@flighthq/host-web/contract';
 import { createGlRenderState } from '@flighthq/render-gl/contract';
 
-import * as contractEffects from './contract';
-import { getGlEffectRunner } from './glEffectRegistry';
-import * as publicEffects from './index';
+import * as contractEffects from './contract.ts';
+import { getGlEffectRunner } from './glEffectRegistry.ts';
+import * as publicEffects from './index.ts';
 
 describe('GL effect registration', () => {
   it.each([

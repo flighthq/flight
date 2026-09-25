@@ -1,4 +1,4 @@
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';
 
 // Caller-visible weighted animation-sample accumulation state. `values` is the weighted component
 // sum, `weight` its total, and `quaternion` selects hemisphere-aware quaternion finalization for a

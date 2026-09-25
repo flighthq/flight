@@ -3,7 +3,7 @@ import {
   createParticleEmitterState,
   ensureParticleEmitterStateCapacity,
   initializeParticleEmitterState,
-} from './particleEmitterState';
+} from './particleEmitterState.ts';
 
 describe('createParticleEmitterState', () => {
   it('returns empty arrays, zero accumulator, burstTimer=0, and NaN prev position', () => {

@@ -1,4 +1,4 @@
-import { createSmaaEffect, initializeSmaaEffect } from './smaaEffect';
+import { createSmaaEffect, initializeSmaaEffect } from './smaaEffect.ts';
 
 describe('createSmaaEffect', () => {
   it('tags the intent type', () => {

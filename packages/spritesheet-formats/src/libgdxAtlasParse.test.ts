@@ -1,6 +1,6 @@
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 
-import { parseLibgdxAtlasSpritesheet } from './libgdxAtlasParse';
+import { parseLibgdxAtlasSpritesheet } from './libgdxAtlasParse.ts';
 
 const MINIMAL_ATLAS = `
 atlas.png

@@ -1,4 +1,4 @@
-import type { ParticleEmitterCallbacks } from './ParticleEmitterCallbacks';
+import type { ParticleEmitterCallbacks } from './ParticleEmitterCallbacks.ts';
 
 export interface ParticleObjectsUpdateOptions {
   callbacks?: ParticleEmitterCallbacks;

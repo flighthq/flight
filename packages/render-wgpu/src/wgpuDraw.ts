@@ -19,10 +19,10 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
-import { isWgpuExternalImageSourceReady, tryCopyWgpuExternalImageToTexture } from './wgpuExternalImageSource';
-import { retireWgpuTexture } from './wgpuFrame';
-import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime, getWgpuSampler } from './wgpuRenderState';
-import { getActiveWgpuPipeline, getWgpuPipeline, writeWgpuQuadUniforms } from './wgpuShader';
+import { isWgpuExternalImageSourceReady, tryCopyWgpuExternalImageToTexture } from './wgpuExternalImageSource.ts';
+import { retireWgpuTexture } from './wgpuFrame.ts';
+import { getWgpuRenderStateDeviceResources, getWgpuRenderStateRuntime, getWgpuSampler } from './wgpuRenderState.ts';
+import { getActiveWgpuPipeline, getWgpuPipeline, writeWgpuQuadUniforms } from './wgpuShader.ts';
 
 export function applyWgpuBlendMode(state: WgpuRenderState, blendMode: BlendMode | null): void {
   getWgpuRenderStateRuntime(state).currentBlendMode = blendMode;

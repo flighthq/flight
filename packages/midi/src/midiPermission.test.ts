@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import * as midi from './contract';
+import * as midi from './contract.ts';
 
 describe('getMidiPermission', () => {
   it('queries only the explicit MIDI permission owner and preserves shared query outcomes', async () => {

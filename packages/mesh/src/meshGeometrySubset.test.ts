@@ -1,12 +1,12 @@
 import type { VertexAttributeLayout } from '@flighthq/types/contract';
 
-import { createMeshGeometry } from './meshGeometry';
+import { createMeshGeometry } from './meshGeometry.ts';
 import {
   addMeshGeometrySubset,
   getMeshGeometrySubsetTriangleCount,
   getMeshGeometryTriangleSubsetIndex,
   setMeshGeometrySubsets,
-} from './meshGeometrySubset';
+} from './meshGeometrySubset.ts';
 
 const CANONICAL_LAYOUT: VertexAttributeLayout = {
   attributes: [

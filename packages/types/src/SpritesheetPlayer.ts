@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { Signal } from './Signal';
-import type { SpritesheetAnimation } from './SpritesheetAnimation';
+import type { Entity } from './Entity.ts';
+import type { Signal } from './Signal.ts';
+import type { SpritesheetAnimation } from './SpritesheetAnimation.ts';
 
 export interface SpritesheetPlayer extends Entity {
   animation: SpritesheetAnimation | null;

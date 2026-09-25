@@ -1,4 +1,4 @@
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';
 
 // A Viewport is the bedrock drawable rectangle: the pixel region a scene is rendered into. It is passive
 // plain data — `x`/`y` and `width`/`height` are the rect in device pixels and `devicePixelRatio` the

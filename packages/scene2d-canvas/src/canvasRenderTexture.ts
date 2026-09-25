@@ -7,14 +7,14 @@ import type {
   RenderTexture,
 } from '@flighthq/types/contract';
 
-import { beginCanvasRenderPass, endCanvasRenderPass } from './canvasRenderPass';
-import { registerCanvasRenderStateTeardown } from './canvasRenderState';
-import { getCanvasHost } from './canvasRenderSurface';
+import { beginCanvasRenderPass, endCanvasRenderPass } from './canvasRenderPass.ts';
+import { registerCanvasRenderStateTeardown } from './canvasRenderState.ts';
+import { getCanvasHost } from './canvasRenderSurface.ts';
 import {
   createCanvasTextureRenderTarget,
   destroyCanvasTextureRenderTarget,
   resizeCanvasTextureRenderTarget,
-} from './canvasTextureRenderTarget';
+} from './canvasTextureRenderTarget.ts';
 
 // Returns a populated render texture's state-owned canvas without copying pixels.
 export function bindCanvasRenderTexture(

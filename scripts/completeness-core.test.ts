@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getFunctionExports } from './completeness-core';
+import { getFunctionExports } from './completeness-core.ts';
 
 describe('getFunctionExports', () => {
   it('collects exported declarations initialized with functions', () => {

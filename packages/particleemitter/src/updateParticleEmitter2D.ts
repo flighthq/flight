@@ -15,7 +15,7 @@ import type {
   ParticleEmitterState,
 } from '@flighthq/types/contract';
 
-import { reserveParticleEmitter2D } from './particleEmitter';
+import { reserveParticleEmitter2D } from './particleEmitter.ts';
 
 export type { ParticleEmitterCallbacks };
 

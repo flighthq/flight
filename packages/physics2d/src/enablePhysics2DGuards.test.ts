@@ -9,12 +9,12 @@ import {
 import type { Entity, LogEntry, Physics2DDistanceJoint, Physics2DWorld, RigidBody2D } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { arePhysics2DGuardsEnabled, disablePhysics2DGuards, enablePhysics2DGuards } from './enablePhysics2DGuards';
-import { addPhysics2DJoint } from './jointRegistry';
-import { Physics2DDistanceJointKind } from './joints';
-import { registerBuiltInPhysics2DJointSolvers } from './registerBuiltInPhysics2DJointSolvers';
-import { stepPhysics2D } from './step';
-import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world';
+import { arePhysics2DGuardsEnabled, disablePhysics2DGuards, enablePhysics2DGuards } from './enablePhysics2DGuards.ts';
+import { addPhysics2DJoint } from './jointRegistry.ts';
+import { Physics2DDistanceJointKind } from './joints.ts';
+import { registerBuiltInPhysics2DJointSolvers } from './registerBuiltInPhysics2DJointSolvers.ts';
+import { stepPhysics2D } from './step.ts';
+import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
 

@@ -5,7 +5,7 @@ import {
   getBevelEffectPadding,
   initializeBevelEffect,
   registerBevelEffectPaddingResolver,
-} from './bevelEffect';
+} from './bevelEffect.ts';
 
 describe('createBevelEffect', () => {
   it('tags the intent type', () => {

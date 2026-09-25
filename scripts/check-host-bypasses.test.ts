@@ -48,7 +48,7 @@ import {
   videoCapabilityProgressFailures,
   scanHostBypasses,
   scanHostBypassSource,
-} from './check-host-bypasses';
+} from './check-host-bypasses.ts';
 
 const ROOT = resolve(import.meta.dirname, '..');
 

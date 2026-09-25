@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { cleanPackageBuildOutputs } from './clean-package-dist';
+import { cleanPackageBuildOutputs } from './clean-package-dist.ts';
 
 describe('cleanPackageBuildOutputs', () => {
   const roots: string[] = [];

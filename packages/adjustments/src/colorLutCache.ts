@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ColorLut, ColorLutCache, ColorTransformFunction, EntityConstruction } from '@flighthq/types/contract';
 
-import { bakeColorLut, COLOR_LUT_DEFAULT_SIZE } from './colorLut';
-import { getAdjustmentColorTransform } from './colorLutAdjustment';
+import { bakeColorLut, COLOR_LUT_DEFAULT_SIZE } from './colorLut.ts';
+import { getAdjustmentColorTransform } from './colorLutAdjustment.ts';
 
 // Bake memo for the LUT-tier fuse: a run of pointwise adjustments is rebuilt with fresh objects every
 // frame, so reference identity cannot detect an unchanged grade. Keying by the run's *content* — its

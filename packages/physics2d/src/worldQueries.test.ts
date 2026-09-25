@@ -1,7 +1,7 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world';
+import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 import {
   createPhysics2DQueryFilter,
   createPhysics2DQueryResult,
@@ -15,7 +15,7 @@ import {
   queryPhysics2DRayClosest,
   queryPhysics2DRegion,
   queryPhysics2DShapeCast,
-} from './worldQueries';
+} from './worldQueries.ts';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
 

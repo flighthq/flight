@@ -12,8 +12,8 @@ import type {
 } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ResourceResolutionState } from '@flighthq/types/contract';
 
-import { loadScene2DImageResources } from './loadScene2DImageResources';
-import { createScene2DDocument } from './scene2DDocument';
+import { loadScene2DImageResources } from './loadScene2DImageResources.ts';
+import { createScene2DDocument } from './scene2DDocument.ts';
 
 const fetchedImage = { height: 4, width: 4 } as ImageResource;
 

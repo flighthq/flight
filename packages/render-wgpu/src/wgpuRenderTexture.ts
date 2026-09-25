@@ -11,13 +11,13 @@ import type {
   WgpuTextureEntry,
 } from '@flighthq/types/contract';
 
-import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass.ts';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import {
   createWgpuTextureRenderTarget,
   destroyWgpuTextureRenderTarget,
   resizeWgpuTextureRenderTarget,
-} from './wgpuTextureRenderTarget';
+} from './wgpuTextureRenderTarget.ts';
 
 // Returns a populated render texture's state-owned allocation without copying pixels through the
 // CPU. An unrendered or currently-written Texture returns null.

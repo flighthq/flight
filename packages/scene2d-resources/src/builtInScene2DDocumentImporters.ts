@@ -12,8 +12,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { createScene2DDocument } from './scene2DDocument';
-import { registerScene2DDocumentImporter } from './scene2DDocumentImporterRegistry';
+import { createScene2DDocument } from './scene2DDocument.ts';
+import { registerScene2DDocumentImporter } from './scene2DDocumentImporterRegistry.ts';
 
 export function registerLottieScene2DDocumentImporter(registry: Scene2DDocumentImporterRegistry): void {
   registerScene2DDocumentImporter(registry, 'lottie', matchesLottieDocument, importLottieDocument);

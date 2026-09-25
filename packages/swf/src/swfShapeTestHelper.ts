@@ -1,4 +1,4 @@
-import { SwfReader } from './swfReader';
+import { SwfReader } from './swfReader.ts';
 
 // Writes the bit-level SHAPEWITHSTYLE encoding the decoder reads. Byte-oriented fields flush the pending
 // bits first, mirroring the format's own alignment rule.

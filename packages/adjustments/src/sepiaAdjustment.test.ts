@@ -1,5 +1,5 @@
-import { applyColorMatrixToColor } from './colorMatrixMath';
-import { createSepiaAdjustment, initializeSepiaAdjustment } from './sepiaAdjustment';
+import { applyColorMatrixToColor } from './colorMatrixMath.ts';
+import { createSepiaAdjustment, initializeSepiaAdjustment } from './sepiaAdjustment.ts';
 
 describe('createSepiaAdjustment', () => {
   it('defaults to a full sepia tone', () => {

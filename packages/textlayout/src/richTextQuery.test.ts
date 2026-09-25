@@ -14,7 +14,7 @@ import {
   getRichTextLinkAtPoint,
   getRichTextParagraphLength,
   getRichTextSelectionRectangles,
-} from './richTextQuery';
+} from './richTextQuery.ts';
 
 // Two-line layout: 'abc' on line 0 (indices 0-3), 'defg' on line 1 (indices 3-7).
 function createLayout(): TextLayoutResult {

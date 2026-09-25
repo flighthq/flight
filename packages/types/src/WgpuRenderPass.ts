@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { WgpuRenderState, WgpuScissorRect } from './WgpuRenderState';
-import type { WgpuRenderTarget } from './WgpuRenderTarget';
+import type { Entity } from './Entity.ts';
+import type { WgpuRenderState, WgpuScissorRect } from './WgpuRenderState.ts';
+import type { WgpuRenderTarget } from './WgpuRenderTarget.ts';
 
 // The drawing bracket. beginWgpuRenderPass acquires one from a pool and endWgpuRenderPass returns it,
 // so a render loop allocates no pass per frame; using a handle after its end is a bug, exactly as with

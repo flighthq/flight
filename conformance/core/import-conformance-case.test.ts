@@ -5,7 +5,7 @@ import {
   createImportConformanceCaseIdentity,
   createImportConformanceSingleMemberCaseIdentity,
   isImportConformancePackFileReference,
-} from './import-conformance-case';
+} from './import-conformance-case.ts';
 
 describe('import conformance case identity', () => {
   it('hashes a case as an order-independent set of exact member identities', () => {

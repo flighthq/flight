@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { webHostAudioDecode } from './webAudioDecodeHost';
+import { webHostAudioDecode } from './webAudioDecodeHost.ts';
 
 describe('webHostAudioDecode', () => {
   beforeEach(() => {

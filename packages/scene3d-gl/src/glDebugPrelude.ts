@@ -1,9 +1,9 @@
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type { GlContext, GlDebugProgram, GlDebugDefineKey, GlRenderState, Texture } from '@flighthq/types/contract';
 
-import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
-import { compileGlProgram, ensureGlScene3DProgram, GL_INSTANCE_VERTEX_DECLARATIONS_GLSL } from './glMeshProgram';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail.ts';
+import { compileGlProgram, ensureGlScene3DProgram, GL_INSTANCE_VERTEX_DECLARATIONS_GLSL } from './glMeshProgram.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 // Binds the optional tangent-space normal map (on texture unit 0) and its scale for the normal-mode
 // debug material. The caller has already selected the program (beginGlMeshDraw) and set the
 // view-projection. A no-op when no map is bound; depth mode never calls this.

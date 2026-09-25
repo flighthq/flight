@@ -1,4 +1,4 @@
-import { srgbChannelToLinear } from './srgbTransfer';
+import { srgbChannelToLinear } from './srgbTransfer.ts';
 
 // WCAG 2.x contrast ratio between two packed sRGB `0xRRGGBBAA` colors (alpha ignored).
 // Returns the ratio in [1, 21]; 1 = no contrast, 21 = black on white. The formula is

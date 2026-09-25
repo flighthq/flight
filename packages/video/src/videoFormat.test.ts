@@ -1,6 +1,6 @@
 import type { HostVideoCapability, VideoResourceUrl } from '@flighthq/types/contract';
 
-import { canPlayVideoType, detectVideoMimeType, inferVideoMimeType, selectVideoResourceUrl } from './videoFormat';
+import { canPlayVideoType, detectVideoMimeType, inferVideoMimeType, selectVideoResourceUrl } from './videoFormat.ts';
 
 const falseBackend: HostVideoCapability = { canPlayType: () => false };
 const trueBackend: HostVideoCapability = { canPlayType: () => true };

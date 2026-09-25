@@ -1,5 +1,8 @@
-import { bakeColorLut } from './colorLut';
-import { createLookupTableGradeAdjustment, initializeLookupTableGradeAdjustment } from './lookupTableGradeAdjustment';
+import { bakeColorLut } from './colorLut.ts';
+import {
+  createLookupTableGradeAdjustment,
+  initializeLookupTableGradeAdjustment,
+} from './lookupTableGradeAdjustment.ts';
 
 describe('createLookupTableGradeAdjustment', () => {
   it('is a neutral passthrough with no supplied LUT', () => {

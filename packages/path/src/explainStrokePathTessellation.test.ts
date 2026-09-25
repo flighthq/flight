@@ -1,5 +1,5 @@
-import { explainStrokePathTessellation } from './explainStrokePathTessellation';
-import { appendPathClose, appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path';
+import { explainStrokePathTessellation } from './explainStrokePathTessellation.ts';
+import { appendPathClose, appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path.ts';
 
 describe('explainStrokePathTessellation', () => {
   it('reports a supported simple closed ring', () => {

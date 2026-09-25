@@ -1,4 +1,4 @@
-import { applyBloomEffectToGl, glBloomEffectRunner, registerGlBloomEffect } from './glBloomEffect';
+import { applyBloomEffectToGl, glBloomEffectRunner, registerGlBloomEffect } from './glBloomEffect.ts';
 
 describe('applyBloomEffectToGl', () => {
   it('is a function', () => {

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { registerAllSpineBinaryHandlers } from './spineBinaryHandlers';
-import { createSpineBinaryRegistry } from './spineBinaryRegistry';
-import { registerSpineBinarySectionHandlers } from './spineBinarySectionHandlers';
-import { registerSpineBinaryTimelineHandlers } from './spineBinaryTimelineHandlers';
+import { registerAllSpineBinaryHandlers } from './spineBinaryHandlers.ts';
+import { createSpineBinaryRegistry } from './spineBinaryRegistry.ts';
+import { registerSpineBinarySectionHandlers } from './spineBinarySectionHandlers.ts';
+import { registerSpineBinaryTimelineHandlers } from './spineBinaryTimelineHandlers.ts';
 
 describe('registerAllSpineBinaryHandlers', () => {
   it('registers both handler families', () => {

@@ -1,13 +1,13 @@
 import { createAabb, createBoundingSphere, createFrustum, createVector3 } from '@flighthq/geometry/contract';
 
-import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from './camera';
+import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from './camera.ts';
 import {
   getCamera3DFrustum,
   isBoxInCamera3DFrustum,
   isPointInCamera3DFrustum,
   isSphereInCamera3DFrustum,
-} from './culling';
-import { createPerspectiveProjection } from './projection';
+} from './culling.ts';
+import { createPerspectiveProjection } from './projection.ts';
 
 function makeCamera() {
   const camera = createCamera3D({

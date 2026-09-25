@@ -47,7 +47,7 @@ import {
   tauriHostUpdater,
   tauriHostVideo,
   tauriHostWgpu,
-} from './tauriUnsupportedHostGroups';
+} from './tauriUnsupportedHostGroups.ts';
 
 function returnsEmptyGroup(constructor: () => object): () => void {
   return () => {

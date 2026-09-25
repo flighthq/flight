@@ -1,7 +1,7 @@
 import { martinezPathBooleanKernel } from '@flighthq/path-boolean/contract';
 
-import { registerAllRiveHandlers } from './riveHandlers';
-import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry';
+import { registerAllRiveHandlers } from './riveHandlers.ts';
+import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry.ts';
 
 const kernel = martinezPathBooleanKernel;
 

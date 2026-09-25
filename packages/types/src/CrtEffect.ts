@@ -1,4 +1,4 @@
-import type { Effect } from './Effect';
+import type { Effect } from './Effect.ts';
 
 export interface CrtEffect extends Effect {
   kind: 'CrtEffect';

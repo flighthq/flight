@@ -1,7 +1,7 @@
-import type { AnimationChannel } from './AnimationChannel';
-import type { AnimationPlayer } from './AnimationPlayer';
-import type { AnimationSampleAccumulator } from './AnimationSampleAccumulator';
-import type { Entity } from './Entity';
+import type { AnimationChannel } from './AnimationChannel.ts';
+import type { AnimationPlayer } from './AnimationPlayer.ts';
+import type { AnimationSampleAccumulator } from './AnimationSampleAccumulator.ts';
+import type { Entity } from './Entity.ts';
 
 // One weighted leaf in an AnimationBlendTree. Override leaves contribute to a normalized N-way pose;
 // additive leaves are applied afterward as weighted deltas. The player remains caller-visible and may

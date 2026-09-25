@@ -1,4 +1,4 @@
-import { getPathBounds } from './getPathBounds';
+import { getPathBounds } from './getPathBounds.ts';
 import {
   appendPathCubicCurveTo,
   appendPathQuadraticCurveTo,
@@ -6,7 +6,7 @@ import {
   appendPathMoveTo,
   appendPathRectangle,
   createPath,
-} from './path';
+} from './path.ts';
 
 describe('getPathBounds', () => {
   it('returns false and a zero rect for an empty path', () => {

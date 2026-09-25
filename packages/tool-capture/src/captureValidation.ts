@@ -37,36 +37,36 @@ import {
   getBaselineLegacyFingerprintSourceHash,
   getBaselineProvenance,
   setBaselineField,
-} from './baselineStore.js';
+} from './baselineStore.ts';
 import {
   diffCaptureBaselineCoverage,
   formatCaptureBaselineCoverageIdentity,
   isCaptureBaselineCoverageFailure,
   readCaptureBaselineCoverageManifest,
   writeCaptureBaselineCoverageManifest,
-} from './captureBaselineCoverageManifest.js';
-import { isUniformCaptureFingerprint } from './captureBaselineSanity.js';
-import { launchBrowser } from './captureBrowser.js';
-import type { CaptureBrowserSession } from './captureBrowser.js';
-import { getCaptureFingerprintContrast } from './captureContrast.js';
-import { provideCaptureDomRenderPixels } from './captureDomReadback.js';
-import type { Entry } from './captureEntries.js';
-import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter } from './captureEntries.js';
-import { isTransientCaptureError } from './captureEntry.js';
-import { assertCaptureSelectionNotEmpty, selectCaptureEntriesByName } from './captureEntryFilter.js';
-import { compareCaptureFixtureBackgrounds } from './captureFixtureBackground.js';
-import type { DetailTone } from './captureFormat.js';
-import { formatDetailLine, formatStatusLine, formatSummaryCount, formatSummaryLine } from './captureFormat.js';
-import { installAbortHandler, isBrowserClosedError } from './captureInterrupt.js';
-import type { CaptureParityGroup } from './captureManifest.js';
-import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
-import { writeCaptureReport } from './captureReport.js';
-import { formatCaptureConsoleMessage, listenForCaptureResourceFailures } from './captureResourceFailure.js';
-import type { Server } from './captureServer.js';
-import { getCaptureSceneSourceHash } from './captureSourceHash.js';
-import type { CaptureFingerprintMap, CaptureFingerprintProvenanceMap } from './captureSuite.js';
-import { getCaptureTimeoutMs } from './captureTimeout.js';
-import { functionalScene3DFile } from './functionalScene3Ds.js';
+} from './captureBaselineCoverageManifest.ts';
+import { isUniformCaptureFingerprint } from './captureBaselineSanity.ts';
+import { launchBrowser } from './captureBrowser.ts';
+import type { CaptureBrowserSession } from './captureBrowser.ts';
+import { getCaptureFingerprintContrast } from './captureContrast.ts';
+import { provideCaptureDomRenderPixels } from './captureDomReadback.ts';
+import type { Entry } from './captureEntries.ts';
+import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter } from './captureEntries.ts';
+import { isTransientCaptureError } from './captureEntry.ts';
+import { assertCaptureSelectionNotEmpty, selectCaptureEntriesByName } from './captureEntryFilter.ts';
+import { compareCaptureFixtureBackgrounds } from './captureFixtureBackground.ts';
+import type { DetailTone } from './captureFormat.ts';
+import { formatDetailLine, formatStatusLine, formatSummaryCount, formatSummaryLine } from './captureFormat.ts';
+import { installAbortHandler, isBrowserClosedError } from './captureInterrupt.ts';
+import type { CaptureParityGroup } from './captureManifest.ts';
+import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.ts';
+import { writeCaptureReport } from './captureReport.ts';
+import { formatCaptureConsoleMessage, listenForCaptureResourceFailures } from './captureResourceFailure.ts';
+import type { Server } from './captureServer.ts';
+import { getCaptureSceneSourceHash } from './captureSourceHash.ts';
+import type { CaptureFingerprintMap, CaptureFingerprintProvenanceMap } from './captureSuite.ts';
+import { getCaptureTimeoutMs } from './captureTimeout.ts';
+import { functionalScene3DFile } from './functionalScene3Ds.ts';
 
 export interface CaptureValidationOptions {
   subject: string;
@@ -1141,7 +1141,7 @@ async function processEntry(
 
 // Loads a single test/renderer page and returns its render fingerprint, or null with a reason and a
 // flag marking whether the cause is a genuinely-unavailable backend (skippable) versus a real error.
-export { isUniformCaptureFingerprint } from './captureBaselineSanity.js';
+export { isUniformCaptureFingerprint } from './captureBaselineSanity.ts';
 
 function classifyCaptureBaselineFreshness(
   recordedSourceHash: string | null,

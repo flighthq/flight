@@ -10,9 +10,9 @@ import type {
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { createBitmapText } from './bitmapText';
-import { disableBitmapTextGuards, enableBitmapTextGuards } from './enableBitmapTextGuards';
-import { updateBitmapText } from './updateBitmapText';
+import { createBitmapText } from './bitmapText.ts';
+import { disableBitmapTextGuards, enableBitmapTextGuards } from './enableBitmapTextGuards.ts';
+import { updateBitmapText } from './updateBitmapText.ts';
 
 let entries: LogEntry[];
 

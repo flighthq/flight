@@ -6,8 +6,8 @@ import { join } from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { getCaptureBenchmarkBaselinePath, runCaptureBenchmark } from './captureBenchmark';
-import { runCaptureValidation } from './captureValidation';
+import { getCaptureBenchmarkBaselinePath, runCaptureBenchmark } from './captureBenchmark.ts';
+import { runCaptureValidation } from './captureValidation.ts';
 
 const domPage = `<!doctype html><div id="target" style="width:320px;height:180px;background:#123;position:relative"><div style="position:absolute;left:60px;top:40px;width:200px;height:100px;background:#f40"></div></div><script>
   const element = document.querySelector('#target');

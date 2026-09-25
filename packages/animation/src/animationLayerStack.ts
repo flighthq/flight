@@ -11,11 +11,11 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-import { advanceAnimationPlayers } from './animationAdvance';
-import { addAnimationSample, blendAnimationSamples } from './animationBlend';
-import { sampleAnimationBlendTreeChannel } from './animationBlendTree';
-import { sampleAnimationStateMachineChannel } from './animationStateMachine';
-import { advanceAnimationStateMachineWithScratch } from './animationStateMachineAdvance';
+import { advanceAnimationPlayers } from './animationAdvance.ts';
+import { addAnimationSample, blendAnimationSamples } from './animationBlend.ts';
+import { sampleAnimationBlendTreeChannel } from './animationBlendTree.ts';
+import { sampleAnimationStateMachineChannel } from './animationStateMachine.ts';
+import { advanceAnimationStateMachineWithScratch } from './animationStateMachineAdvance.ts';
 
 // Advances every layer source while de-duplicating shared player identity across the complete stack.
 export function advanceAnimationLayerStack(stack: AnimationLayerStack, dt: number): void {

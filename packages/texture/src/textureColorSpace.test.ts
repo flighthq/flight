@@ -4,7 +4,7 @@ import {
   getTextureSampleColorSpace,
   shouldDecodeTextureOnSample,
   shouldPremultiplyTextureOnUpload,
-} from './textureColorSpace';
+} from './textureColorSpace.ts';
 
 describe('getTextureSampleColorSpace', () => {
   it('selects the decoding format only for sRGB content in a linear working space', () => {

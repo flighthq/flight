@@ -24,7 +24,7 @@ import {
   shellBeep,
   spawnShellProcess,
   writeShellShortcutLink,
-} from './shell';
+} from './shell.ts';
 
 describe('isShellUrlAllowed', () => {
   it('matches schemes case-insensitively from an explicit policy', () => {

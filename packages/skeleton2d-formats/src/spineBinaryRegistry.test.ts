@@ -9,7 +9,7 @@ import {
   registerSpineBinaryTimelineHandler,
   unregisterSpineBinarySectionHandler,
   unregisterSpineBinaryTimelineHandler,
-} from './spineBinaryRegistry';
+} from './spineBinaryRegistry.ts';
 
 describe('createSpineBinaryRegistry', () => {
   it('creates independent empty registries', () => {

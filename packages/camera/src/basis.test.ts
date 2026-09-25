@@ -1,8 +1,8 @@
 import { createVector3 } from '@flighthq/geometry/contract';
 
-import { getCamera3DForward, getCamera3DPosition, getCamera3DRight, getCamera3DUp } from './basis';
-import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from './camera';
-import { createPerspectiveProjection } from './projection';
+import { getCamera3DForward, getCamera3DPosition, getCamera3DRight, getCamera3DUp } from './basis.ts';
+import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from './camera.ts';
+import { createPerspectiveProjection } from './projection.ts';
 
 function makeCamera() {
   return createCamera3D({

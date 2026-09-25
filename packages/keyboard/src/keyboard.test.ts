@@ -29,7 +29,7 @@ import {
   setSoftKeyboardScrollAssistEnabled,
   setSoftKeyboardStyle,
   showSoftKeyboard,
-} from './keyboard';
+} from './keyboard.ts';
 
 type OmitRuntime<T> = Omit<T, typeof EntityRuntimeKey>;
 

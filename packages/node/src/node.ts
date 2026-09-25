@@ -15,8 +15,8 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { removeNodeChild } from './hierarchy';
-import { invalidateNode } from './revision';
+import { removeNodeChild } from './hierarchy.ts';
+import { invalidateNode } from './revision.ts';
 
 export function createNode<
   Traits extends object = NodeTraits,

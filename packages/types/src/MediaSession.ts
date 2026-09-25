@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { Signal } from './Signal.ts';
 
 // A single now-playing artwork image. `src` is the image URL; `sizes` (e.g. '96x96 128x128') and
 // `type` (MIME, e.g. 'image/png') are optional hints the OS uses to pick the best resolution.

@@ -6,7 +6,7 @@ import {
 import type { WgpuRenderState } from '@flighthq/types/contract';
 import { EntityRuntimeKey, StandardMaterialKind } from '@flighthq/types/contract';
 
-import { registerWgpuStandardMaterial, standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial';
+import { registerWgpuStandardMaterial, standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial.ts';
 
 describe('registerWgpuStandardMaterial', () => {
   it('registers the default renderer under StandardMaterialKind', () => {

@@ -1,7 +1,7 @@
 import { PathCommand } from '@flighthq/types/contract';
 
-import { dashPath } from './dashPath';
-import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path';
+import { dashPath } from './dashPath.ts';
+import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
 
 describe('dashPath', () => {
   it('produces dashed segments from a simple line', () => {

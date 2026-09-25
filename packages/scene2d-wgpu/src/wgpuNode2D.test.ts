@@ -2,7 +2,7 @@ import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/ren
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
-import { wgpuScene2DRenderer, drawWgpuScene2D, renderWgpuScene2D } from './wgpuNode2D';
+import { wgpuScene2DRenderer, drawWgpuScene2D, renderWgpuScene2D } from './wgpuNode2D.ts';
 
 beforeAll(() => {
   installWgpuMock();

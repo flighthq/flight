@@ -13,8 +13,8 @@ import type {
   TextMarkupIssue,
 } from '@flighthq/types/contract';
 
-import { createMarkupTagRegistry, registerStandardMarkupTags } from './markupTagRegistry';
-import { reportTextMarkupIssue } from './textMarkupGuards';
+import { createMarkupTagRegistry, registerStandardMarkupTags } from './markupTagRegistry.ts';
+import { reportTextMarkupIssue } from './textMarkupGuards.ts';
 
 /**
  * Serializes a `RichTextContent` back into `htmlText`-subset markup — the inverse of

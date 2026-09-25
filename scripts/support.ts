@@ -25,8 +25,8 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { discoverFunctionalScene3Ds, functionalScene3DFile } from '../packages/tool-capture/src/functionalScene3Ds';
-import type { FunctionalBackend } from '../packages/tool-capture/src/functionalScene3Ds';
+import { discoverFunctionalScene3Ds, functionalScene3DFile } from '../packages/tool-capture/src/functionalScene3Ds.ts';
+import type { FunctionalBackend } from '../packages/tool-capture/src/functionalScene3Ds.ts';
 
 const REPO_ROOT = join(import.meta.dirname, '..');
 const BASELINES_DIR = join(REPO_ROOT, 'functional', 'baselines');

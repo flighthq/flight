@@ -1,7 +1,7 @@
 import { updateMeshMorph } from '@flighthq/mesh/contract';
 import type { Mesh } from '@flighthq/types/contract';
 
-import { updateMeshSkin } from './updateMeshSkin';
+import { updateMeshSkin } from './updateMeshSkin.ts';
 
 // Applies a mesh's CPU deformation in the one valid composition order: morph first, then skin. Each
 // deformer remains a standalone primitive and is a no-op when absent; this small composition prevents

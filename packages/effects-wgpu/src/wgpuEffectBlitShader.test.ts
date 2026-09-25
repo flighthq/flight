@@ -4,8 +4,8 @@ import {
   applyWgpuEffectBlitOffsetPass,
   applyWgpuEffectBlitPass,
   applyWgpuEffectErasePass,
-} from './wgpuEffectBlitShader';
-import * as wgpuEffectPassMod from './wgpuEffectPass';
+} from './wgpuEffectBlitShader.ts';
+import * as wgpuEffectPassMod from './wgpuEffectPass.ts';
 
 const recorded = {
   draws: [] as { dest: unknown; pipeline: unknown; source: unknown; uniforms: number[] }[],

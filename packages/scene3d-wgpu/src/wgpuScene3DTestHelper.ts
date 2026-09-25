@@ -11,8 +11,8 @@ import type {
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
-import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
-import { registerWgpuGpuSkinning } from './wgpuSkinPalette';
+import { getWgpuSkinningAdapter } from './wgpuScene3DRuntime.ts';
+import { registerWgpuGpuSkinning } from './wgpuSkinPalette.ts';
 
 // A recording WgpuRenderState for scene-wgpu unit tests. The render-wgpu JSDOM mock device is no-op
 // (records nothing), so 3D tests that exercise the pipeline cache / upload / draw path drive this

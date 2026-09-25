@@ -16,10 +16,10 @@ import type {
   GlTextureRenderTargetPool,
 } from '@flighthq/types/contract';
 
-import { applyGlEffectBlitPass } from './glEffectBlitShader';
-import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
-import { registerGlEffect } from './glEffectRegistry';
-import { applyGlEffectInvertTintPass } from './glEffectTintShader';
+import { applyGlEffectBlitPass } from './glEffectBlitShader.ts';
+import { applyGlEffectBoxBlur } from './glEffectBoxBlur.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
+import { applyGlEffectInvertTintPass } from './glEffectTintShader.ts';
 
 // Why: all filter passes use ONE/ONE_MINUS_SRC_ALPHA premultiplied blending — they never
 // implicitly clear their destination. Reusing a scratch target without clearing first means

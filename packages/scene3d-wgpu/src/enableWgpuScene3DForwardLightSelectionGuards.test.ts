@@ -4,9 +4,9 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import {
   areWgpuScene3DForwardLightSelectionGuardsEnabled,
   enableWgpuScene3DForwardLightSelectionGuards,
-} from './enableWgpuScene3DForwardLightSelectionGuards';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+} from './enableWgpuScene3DForwardLightSelectionGuards.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 
 describe('areWgpuScene3DForwardLightSelectionGuardsEnabled', () => {
   it('reports false before installation and true afterward', () => {

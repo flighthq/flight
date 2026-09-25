@@ -2,8 +2,8 @@ import { registerWgpuBitmapTextureResolver, registerWgpuImageTextureResolver } f
 import type { WgpuRenderState } from '@flighthq/types/contract';
 import { StandardPbrMaterialKind } from '@flighthq/types/contract';
 
-import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { wgpuStandardPbrMeshMaterialRenderer } from './wgpuStandardPbrMeshMaterialRenderer';
+import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import { wgpuStandardPbrMeshMaterialRenderer } from './wgpuStandardPbrMeshMaterialRenderer.ts';
 
 // Registers the built-in StandardPbr forward-lit renderer for StandardPbrMaterialKind on this state.
 // Convenience over registerWgpuMeshMaterialRenderer(state, StandardPbrMaterialKind, …); call it once

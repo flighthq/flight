@@ -5,7 +5,7 @@ import { computeRichTextCharIndexAtPoint } from '@flighthq/textlayout/contract';
 import type { Node2D, NodeAny, TextLabel } from '@flighthq/types/contract';
 import { RichTextKind, TextLabelKind } from '@flighthq/types/contract';
 
-import { hitTestGraphLocalBounds, registerHitTestPrecise } from './hitTests';
+import { hitTestGraphLocalBounds, registerHitTestPrecise } from './hitTests.ts';
 
 /**
  * Opt-in exact hit provider for text: a text field still hits across its whole box (like coarse), but the

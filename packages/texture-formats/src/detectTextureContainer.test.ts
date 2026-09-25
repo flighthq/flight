@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { detectTextureContainer } from './detectTextureContainer';
+import { detectTextureContainer } from './detectTextureContainer.ts';
 
 const ktx2Magic = [0xab, 0x4b, 0x54, 0x58, 0x20, 0x32, 0x30, 0xbb, 0x0d, 0x0a, 0x1a, 0x0a];
 

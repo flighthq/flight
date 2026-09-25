@@ -18,7 +18,7 @@ import {
   setResourceLoadPriority,
   setResourceLoaderConcurrency,
   startResourceLoad,
-} from './resourceLoader';
+} from './resourceLoader.ts';
 
 // Helper: wait for onComplete signal
 function waitForComplete(loader: ReturnType<typeof createResourceLoader>): Promise<readonly ResourceLoadReport[]> {

@@ -1,7 +1,7 @@
 import type { Node, VariableDeclarator } from 'oxc-parser';
 
-import { collectFastEntryPointInventory } from './fast-export-inventory';
-import { getParsedOxcSource } from './oxc-source';
+import { collectFastEntryPointInventory } from './fast-export-inventory.ts';
+import { getParsedOxcSource } from './oxc-source.ts';
 
 export type EffectBackend = 'canvas' | 'gl' | 'wgpu';
 export type ReachabilityRule = 'missing-registration' | 'missing-runner' | 'registration-mapping';

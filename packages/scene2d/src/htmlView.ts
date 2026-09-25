@@ -13,7 +13,7 @@ import type {
 } from '@flighthq/types/contract';
 import { HtmlViewKind } from '@flighthq/types/contract';
 
-import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject.ts';
 
 export function computeHtmlViewLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
   const data = (source as HtmlView).data;

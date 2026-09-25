@@ -5,8 +5,8 @@ import {
   buildWgpuPbrDefineSource,
   getWgpuPbrModuleBody,
   getWgpuPbrModuleSourceForKey,
-} from './wgpuPbrPrelude';
-import { makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
+} from './wgpuPbrPrelude.ts';
+import { makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper.ts';
 
 function key(overrides?: Partial<WgpuPbrDefineKey>): WgpuPbrDefineKey {
   return {

@@ -13,10 +13,10 @@ import type {
   WgpuScreenRenderTarget,
 } from '@flighthq/types/contract';
 
-import type { CaptureBenchmarkTarget, CaptureVerification } from './captureProtocol.js';
-import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
-import type { FunctionalRenderOracle, FunctionalTarget } from './functionalVerify.js';
-import { registerFunctionalTarget, registerWgpuFunctionalTarget, runRenderVerification } from './functionalVerify.js';
+import type { CaptureBenchmarkTarget, CaptureVerification } from './captureProtocol.ts';
+import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.ts';
+import type { FunctionalRenderOracle, FunctionalTarget } from './functionalVerify.ts';
+import { registerFunctionalTarget, registerWgpuFunctionalTarget, runRenderVerification } from './functionalVerify.ts';
 
 export interface CapturePageTargetOptions {
   renderer: 'canvas' | 'dom' | 'webgl' | 'webgpu';

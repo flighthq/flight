@@ -1,9 +1,9 @@
-import type { ButtonController } from './ButtonController';
-import type { Entity } from './Entity';
-import type { GuiControllerOptions } from './GuiController';
-import type { ListController } from './ListController';
-import type { Node2D } from './Node2D';
-import type { Signal } from './Signal';
+import type { ButtonController } from './ButtonController.ts';
+import type { Entity } from './Entity.ts';
+import type { GuiControllerOptions } from './GuiController.ts';
+import type { ListController } from './ListController.ts';
+import type { Node2D } from './Node2D.ts';
+import type { Signal } from './Signal.ts';
 
 declare const ComboBoxControllerTypeKey: unique symbol;
 

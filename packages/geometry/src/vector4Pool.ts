@@ -1,8 +1,8 @@
 import type { Vector4 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { geometryPoolReleaseGuard } from './geometryPoolGuards';
-import { createVector4 } from './vector4';
+import { geometryPoolReleaseGuard } from './geometryPoolGuards.ts';
+import { createVector4 } from './vector4.ts';
 
 export function acquireEmptyVector4(): Vector4 {
   const v = acquireVector4();

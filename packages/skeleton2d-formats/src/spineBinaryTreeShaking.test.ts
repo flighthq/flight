@@ -3,8 +3,8 @@
 import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 
-import * as contractApi from './contract';
-import * as publicApi from './index';
+import * as contractApi from './contract.ts';
+import * as publicApi from './index.ts';
 
 const resolveDir = getFileUrlDirectory(import.meta.url);
 

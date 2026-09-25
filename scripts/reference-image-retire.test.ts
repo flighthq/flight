@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveReferenceImageRetirement } from './reference-image-retire';
+import { resolveReferenceImageRetirement } from './reference-image-retire.ts';
 
 const target = (entry: string, renderer: string, pixelSha256 = 'a'.repeat(64)) => ({ entry, renderer, pixelSha256 });
 

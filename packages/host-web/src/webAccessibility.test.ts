@@ -1,8 +1,8 @@
 import type { AccessibilityNode } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { webHostAccessibility } from './webAccessibility';
-import { webHost } from './webHost';
+import { webHostAccessibility } from './webAccessibility.ts';
+import { webHost } from './webHost.ts';
 
 afterEach(() => {
   vi.restoreAllMocks();

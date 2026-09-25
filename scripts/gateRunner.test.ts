@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { createRegistrarProgressFrame } from './check-progress';
-import { formatGateFailure, runGate, runGates } from './gateRunner';
+import { createRegistrarProgressFrame } from './check-progress.ts';
+import { formatGateFailure, runGate, runGates } from './gateRunner.ts';
 
 // The grace fallback is the subject of half these cases, so they drive it with a short window rather
 // than the two-second production floor. Still comfortably longer than the shells below take to fork.

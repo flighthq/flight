@@ -21,7 +21,7 @@ import {
   invalidateMeshGeometry,
   setMeshGeometryMorphBindPose,
   setMeshGeometrySkinBindPose,
-} from './meshGeometry';
+} from './meshGeometry.ts';
 
 describe('cloneMeshGeometry', () => {
   it('deep-copies vertices and indices independently', () => {

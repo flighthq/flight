@@ -1,4 +1,4 @@
-import { explainTextureContainerParse } from './explainTextureContainerParse';
+import { explainTextureContainerParse } from './explainTextureContainerParse.ts';
 
 describe('explainTextureContainerParse', () => {
   it('reports an unrecognized container', () => {

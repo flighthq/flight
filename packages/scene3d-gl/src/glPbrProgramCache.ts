@@ -8,10 +8,10 @@ import type {
   GlPbrDefineKey,
 } from '@flighthq/types/contract';
 
-import { resolveGlLitLocations } from './glLitProgram';
-import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram';
-import { buildGlPbrDefineKey, getGlPbrFragmentSourceForKey, getGlPbrVertexSourceForKey } from './glPbrPrelude';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { resolveGlLitLocations } from './glLitProgram.ts';
+import { compileGlProgram, ensureGlScene3DProgram } from './glMeshProgram.ts';
+import { buildGlPbrDefineKey, getGlPbrFragmentSourceForKey, getGlPbrVertexSourceForKey } from './glPbrPrelude.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 // Compiles the StandardPbr uber-shader for a define key, links it, and resolves its uniform
 // locations. Pure GL work — no caching — used by ensureGlPbrProgram. Throws on a compile/link
 // failure, which is a programmer error (a malformed prelude), not an expected runtime condition.

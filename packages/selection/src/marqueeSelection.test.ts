@@ -8,7 +8,7 @@ import {
   findNodesInMarqueeSelection,
   getMarqueeRectangle,
   updateMarqueeSelection,
-} from './index';
+} from './index.ts';
 
 describe('beginMarqueeSelection', () => {
   it('starts a new zero-area rectangle at the pointer location', () => {

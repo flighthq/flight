@@ -1,4 +1,4 @@
-import { applySketchEffectToWgpu, wgpuSketchEffectRunner, registerWgpuSketchEffect } from './wgpuSketchEffect';
+import { applySketchEffectToWgpu, wgpuSketchEffectRunner, registerWgpuSketchEffect } from './wgpuSketchEffect.ts';
 
 describe('applySketchEffectToWgpu', () => {
   it('is a function', () => {

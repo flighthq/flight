@@ -1,6 +1,6 @@
-import type { Node3D, Node3DRuntime } from './Node3D';
-import type { ParticleEmitterData } from './ParticleEmitter2D';
-import type { ParticleBlendMode } from './ParticleEmitterConfig';
+import type { Node3D, Node3DRuntime } from './Node3D.ts';
+import type { ParticleEmitterData } from './ParticleEmitter2D.ts';
+import type { ParticleBlendMode } from './ParticleEmitterConfig.ts';
 
 export interface ParticleEmitter3D extends Node3D {
   // How each particle composites against what is already in the target. 'add' is the canonical

@@ -6,8 +6,8 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-import { sampleColorLut } from './colorLut';
-import { initializeColorLutAdjustment } from './colorLutAdjustment';
+import { sampleColorLut } from './colorLut.ts';
+import { initializeColorLutAdjustment } from './colorLutAdjustment.ts';
 
 export function createLookupTableGradeAdjustment(
   options: Readonly<Omit<LookupTableGradeAdjustment, typeof EntityRuntimeKey | 'kind' | 'transform'>> = {},

@@ -18,16 +18,16 @@ import type {
 } from '@flighthq/types/contract';
 import { SpecularGlossinessPbrMaterialKind } from '@flighthq/types/contract';
 
-import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline';
-import { ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache';
+import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import { beginWgpuMeshDraw, drawWgpuMeshSubset, writeWgpuFrameUniform } from './wgpuMeshPipeline.ts';
+import { ensureWgpuPbrPipeline } from './wgpuPbrPipelineCache.ts';
 import {
   buildWgpuPbrStandardDefineKey,
   ensureWgpuPbrMaterialBindGroup,
   getWgpuPbrMaterialScratch,
   writeWgpuPbrMaterialUniform,
   writeWgpuPbrStandardBlock,
-} from './wgpuStandardPbrMeshMaterialRenderer';
+} from './wgpuStandardPbrMeshMaterialRenderer.ts';
 
 // The built-in SpecularGlossiness forward-lit mesh-material renderer (legacy KHR_materials_
 // pbrSpecularGlossiness workflow) — the WGSL mirror of glSpecularGlossinessPbrMeshMaterialRenderer.

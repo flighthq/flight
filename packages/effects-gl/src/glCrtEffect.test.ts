@@ -4,10 +4,10 @@ import { createGlRenderState } from '@flighthq/render-gl/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import { applyCrtEffectToGl, glCrtEffectRunner, registerGlCrtEffect } from './glCrtEffect';
-import * as glEffectProgramCache from './glEffectProgramCache';
-import { getGlEffectRunner } from './glEffectRegistry';
-import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
+import { applyCrtEffectToGl, glCrtEffectRunner, registerGlCrtEffect } from './glCrtEffect.ts';
+import * as glEffectProgramCache from './glEffectProgramCache.ts';
+import { getGlEffectRunner } from './glEffectRegistry.ts';
+import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper.ts';
 
 // The shader is a module-private string, so it is read back from the argument the effect hands the
 // program cache — the exact text that would be compiled — rather than exported for the test's benefit.

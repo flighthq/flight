@@ -1,5 +1,5 @@
-import { easeClamp, easeClampOutput, easeInvert, easeMirror, easeReverse, easeScaleOutput } from './easeCombinators';
-import { easeInCubic, easeOutCubic } from './easeCubic';
+import { easeClamp, easeClampOutput, easeInvert, easeMirror, easeReverse, easeScaleOutput } from './easeCombinators.ts';
+import { easeInCubic, easeOutCubic } from './easeCubic.ts';
 
 describe('easeClamp', () => {
   it('passes through values already in [0,1]', () => {

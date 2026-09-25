@@ -2,7 +2,7 @@ import { copyMatrix, createMatrix } from '@flighthq/geometry/contract';
 import { ensureNodeWorldMatrix, getNodeChildAt, getNodeChildCount, getNodeWorldMatrix } from '@flighthq/node/contract';
 import type { Transform2DNode, VelocityField } from '@flighthq/types/contract';
 
-import { ensureVelocitySample } from './velocityField';
+import { ensureVelocitySample } from './velocityField.ts';
 
 // The default velocity contributor. Walks `root`'s subtree top-down, deriving each node's screen-space
 // velocity from the delta of its world transform since the previous frame, then commits the current world

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { downloadAssets } from './download-assets';
+import { downloadAssets } from './download-assets.ts';
 
 describe('downloadAssets', () => {
   let targetDir: string;

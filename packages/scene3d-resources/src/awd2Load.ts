@@ -6,7 +6,7 @@ import type {
   Scene3DDocumentLoadOptions,
 } from '@flighthq/types/contract';
 
-import { loadScene3DDocumentBytesFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource';
+import { loadScene3DDocumentBytesFromUrl, setScene3DDocumentResourceBasePathFromUrl } from './sceneDocumentSource.ts';
 
 // Fetches an Away3D AWD file from a URL and parses it into a format-neutral Scene3DDocument (geometry, skins,
 // and its skeleton animation). Fetches only the FILE — the document's texture refs stay unresolved; assemble

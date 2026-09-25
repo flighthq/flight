@@ -1,5 +1,5 @@
-import type { Light } from './Light';
-import type { LightUnit } from './LightUnit';
+import type { Light } from './Light.ts';
+import type { LightUnit } from './LightUnit.ts';
 
 // Uniform omnidirectional fill. No position or direction; lights every surface equally. Does
 // not cast shadows.

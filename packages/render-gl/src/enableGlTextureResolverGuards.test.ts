@@ -2,9 +2,9 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import { createTexture } from '@flighthq/texture/contract';
 import type { ImageResource } from '@flighthq/types/contract';
 
-import { areGlTextureResolverGuardsEnabled, enableGlTextureResolverGuards } from './enableGlTextureResolverGuards';
-import { createGlState } from './glTestHelper';
-import { registerGlTextureResolver, resolveGlTexture } from './glTextureResolver';
+import { areGlTextureResolverGuardsEnabled, enableGlTextureResolverGuards } from './enableGlTextureResolverGuards.ts';
+import { createGlState } from './glTestHelper.ts';
+import { registerGlTextureResolver, resolveGlTexture } from './glTextureResolver.ts';
 
 describe('areGlTextureResolverGuardsEnabled', () => {
   it('reports whether diagnostics were installed for the state', () => {

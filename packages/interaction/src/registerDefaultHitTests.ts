@@ -20,13 +20,13 @@ import {
   defaultRichTextHitTestHandler,
   defaultShapeHitTestHandler,
   defaultTextHitTestHandler,
-} from './displayHitTests';
-import { registerHitTest } from './hitTests';
+} from './displayHitTests.ts';
+import { registerHitTest } from './hitTests.ts';
 import {
   defaultQuadBatchHitTestHandler,
   defaultSpriteHitTestHandler,
   defaultTilemapHitTestHandler,
-} from './spriteHitTests';
+} from './spriteHitTests.ts';
 
 export function registerDefaultHitTests(): void {
   registerHitTest(DisplayObjectKind, defaultNode2DHitTestHandler);

@@ -2,7 +2,7 @@ import {
   checkTransportBypasses,
   createEmptyTransportBypassReport,
   formatTransportBypassReport,
-} from './check-transport-bypasses';
+} from './check-transport-bypasses.ts';
 
 describe('checkTransportBypasses', () => {
   it('rejects every direct global transport primitive outside a web backend', () => {

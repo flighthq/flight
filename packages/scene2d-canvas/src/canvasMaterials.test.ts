@@ -1,16 +1,16 @@
 import type { CanvasRenderState } from '@flighthq/types/contract';
 import { AdvancedBlendMode, BlendMode } from '@flighthq/types/contract';
 
-import { applyCanvasBlendMode, enableCanvasBlendMode } from './canvasMaterials';
-import { allocateEmptyCanvasRenderRegistries } from './canvasPipeline';
-import { createCanvasRenderState as createExplicitCanvasRenderState } from './canvasRenderState';
+import { applyCanvasBlendMode, enableCanvasBlendMode } from './canvasMaterials.ts';
+import { allocateEmptyCanvasRenderRegistries } from './canvasPipeline.ts';
+import { createCanvasRenderState as createExplicitCanvasRenderState } from './canvasRenderState.ts';
 import {
   beginCanvasRenderPass,
   createCanvasRenderState,
   createCanvasScreenRenderTargetForTest,
   createCanvasTextureResolvers,
   getCanvasRenderStateRuntime,
-} from './canvasTestSupport';
+} from './canvasTestSupport.ts';
 
 function createBlendlessState(canvas: HTMLCanvasElement): CanvasRenderState {
   const state = createExplicitCanvasRenderState({

@@ -1,8 +1,8 @@
 import { createMatrix, createVector2, matrixTransformPointXY } from '@flighthq/geometry/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createCamera2D } from './camera2d';
-import { getCamera2DViewMatrix } from './viewMatrix';
+import { createCamera2D } from './camera2d.ts';
+import { getCamera2DViewMatrix } from './viewMatrix.ts';
 
 describe('getCamera2DViewMatrix', () => {
   it('maps the camera center world point to the viewport center', () => {

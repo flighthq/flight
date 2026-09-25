@@ -1,10 +1,10 @@
 import type { SpatialAabb3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { explainSpatialIndexing3D } from './explainSpatialIndexing3D';
-import { createSpatialIndex3D, insertSpatialObject3D, removeSpatialObject3D } from './spatialIndex3D';
-import { MAX_INDEXED_CELLS_PER_OBJECT } from './uniformGrid';
-import { createUniformGridSpatialBackend3D } from './uniformGrid3D';
+import { explainSpatialIndexing3D } from './explainSpatialIndexing3D.ts';
+import { createSpatialIndex3D, insertSpatialObject3D, removeSpatialObject3D } from './spatialIndex3D.ts';
+import { MAX_INDEXED_CELLS_PER_OBJECT } from './uniformGrid.ts';
+import { createUniformGridSpatialBackend3D } from './uniformGrid3D.ts';
 
 function box(minX: number, minY: number, minZ: number, size: number): SpatialAabb3D {
   return { minX, minY, minZ, maxX: minX + size, maxY: minY + size, maxZ: minZ + size };

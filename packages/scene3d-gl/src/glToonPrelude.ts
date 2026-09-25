@@ -1,15 +1,15 @@
 import type { GlContext, GlToonDefineKey, GlToonProgram, GlRenderState } from '@flighthq/types/contract';
 import { MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
-import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
-import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
+import { GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram.ts';
+import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail.ts';
 import {
   GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
   GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
   ensureGlScene3DProgram,
-} from './glMeshProgram';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+} from './glMeshProgram.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 // A short, stable, order-independent string identity for a Toon define key, used as the program-
 // cache key. Two keys with the same flags produce the same string and so share a compiled program.
 export function buildGlToonDefineKey(key: Readonly<GlToonDefineKey>): string {

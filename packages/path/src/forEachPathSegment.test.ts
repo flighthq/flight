@@ -1,7 +1,7 @@
 import type { PathSegment } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
-import { forEachPathSegment } from './forEachPathSegment';
+import { forEachPathSegment } from './forEachPathSegment.ts';
 import {
   appendPathClose,
   appendPathCubicCurveTo,
@@ -9,7 +9,7 @@ import {
   appendPathLineTo,
   appendPathMoveTo,
   createPath,
-} from './path';
+} from './path.ts';
 
 describe('forEachPathSegment', () => {
   it('visits nothing for an empty path', () => {

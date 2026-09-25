@@ -8,7 +8,7 @@ import type {
   Vector3Like,
 } from '@flighthq/types/contract';
 
-import { acquireMatrix3, releaseMatrix3 } from './matrix3Pool';
+import { acquireMatrix3, releaseMatrix3 } from './matrix3Pool.ts';
 
 export function cloneMatrix3(source: Readonly<Matrix3Like>): Matrix3 {
   const m = createMatrix3();

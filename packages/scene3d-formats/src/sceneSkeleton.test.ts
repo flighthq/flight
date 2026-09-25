@@ -4,8 +4,8 @@ import { createMesh, createScene3D, createNode3D } from '@flighthq/scene3d/contr
 import { createSkeleton3D } from '@flighthq/skeleton3d/contract';
 import type { Node3D } from '@flighthq/types/contract';
 
-import { findScene3DSkeletonJoints } from './sceneSkeleton';
-import { CANONICAL_LAYOUT } from './shared';
+import { findScene3DSkeletonJoints } from './sceneSkeleton.ts';
+import { CANONICAL_LAYOUT } from './shared.ts';
 
 describe('findScene3DSkeletonJoints', () => {
   it('returns the joints of the first skinned mesh found in the scene', () => {

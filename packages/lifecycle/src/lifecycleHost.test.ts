@@ -1,6 +1,6 @@
 import type { AppLifecycleState, HostLifecycleCapability } from '@flighthq/types/contract';
 
-import { getAppLaunchKind, getAppLifecycleState, isAppActive, isAppBackground, isAppInactive } from './lifecycle';
+import { getAppLaunchKind, getAppLifecycleState, isAppActive, isAppBackground, isAppInactive } from './lifecycle.ts';
 
 function hostWith(backend: Partial<HostLifecycleCapability>): {
   readonly system: { readonly lifecycle: HostLifecycleCapability };

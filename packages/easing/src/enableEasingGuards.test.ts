@@ -2,8 +2,8 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import type { LogEntry } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { easeSteps } from './easeSteps';
-import { disableEasingGuards, enableEasingGuards } from './enableEasingGuards';
+import { easeSteps } from './easeSteps.ts';
+import { disableEasingGuards, enableEasingGuards } from './enableEasingGuards.ts';
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);

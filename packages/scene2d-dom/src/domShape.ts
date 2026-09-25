@@ -12,10 +12,10 @@ import type {
 } from '@flighthq/types/contract';
 import { RenderRegistryTable, ShapeKind } from '@flighthq/types/contract';
 
-import { getDomRenderStateRuntime } from './domRenderState';
-import { getDomShapeRasterizer } from './domShapeRasterizer';
-import { prepareDomElement, setDomRendererElement } from './domStyle';
-import { setDomTransformWithOffset } from './domTransform';
+import { getDomRenderStateRuntime } from './domRenderState.ts';
+import { getDomShapeRasterizer } from './domShapeRasterizer.ts';
+import { prepareDomElement, setDomRendererElement } from './domStyle.ts';
+import { setDomTransformWithOffset } from './domTransform.ts';
 
 interface DomShapeData extends RendererData {
   canvas: HTMLCanvasElement | null;

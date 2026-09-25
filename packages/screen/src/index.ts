@@ -26,4 +26,4 @@ export {
   requestScreenDetails,
   screenToDipPoint,
   screenToDipRect,
-} from './contract';
+} from './contract.ts';

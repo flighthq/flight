@@ -1,6 +1,6 @@
 import type { Path, PathMesh } from '@flighthq/types/contract';
 
-import { flattenPath } from './flattenPath';
+import { flattenPath } from './flattenPath.ts';
 
 // Triangulates a path's fill into a PathMesh by flattening its curves, then ear-clipping each contour.
 // This is the direct-fill route (draw the mesh, MSAA the edges) — the parallel to flatten + stencil

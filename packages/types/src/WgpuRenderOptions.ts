@@ -1,6 +1,6 @@
-import type { HostCanvasCapability } from './HostCanvas';
-import type { HostImageCapability } from './ImageResource';
-import type { Scene3DGraphSyncPolicy } from './RenderState';
+import type { HostCanvasCapability } from './HostCanvas.ts';
+import type { HostImageCapability } from './ImageResource.ts';
+import type { Scene3DGraphSyncPolicy } from './RenderState.ts';
 
 export interface WgpuRenderOptions {
   canvasHost?: Readonly<HostCanvasCapability>;

@@ -9,11 +9,11 @@ import { registerGlImageTextureResolver } from '@flighthq/render-gl/contract';
 import type { BitmapText, GlyphEntry, GlyphSource, RenderProxy2D } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { glBitmapTextRenderer } from './glBitmapText';
-import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
-import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
-import { registerGlStandardMaterial } from './glStandardMaterial';
-import { createGlState } from './glTestHelper';
+import { glBitmapTextRenderer } from './glBitmapText.ts';
+import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature.ts';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
+import { registerGlStandardMaterial } from './glStandardMaterial.ts';
+import { createGlState } from './glTestHelper.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

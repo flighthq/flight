@@ -1,7 +1,7 @@
 import type { RenderTargetColorSpace, WgpuRenderState, WgpuRenderTarget } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
-import { isWgpuScreenRenderTarget } from './wgpuScreenRenderTarget';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
+import { isWgpuScreenRenderTarget } from './wgpuScreenRenderTarget.ts';
 
 // Stamps the color space produced into the target the innermost open pass is bound to. False means no
 // pass is open, so there is nothing to stamp and no present step will read the declaration.

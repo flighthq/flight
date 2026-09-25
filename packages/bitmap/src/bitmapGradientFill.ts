@@ -1,6 +1,6 @@
 import type { GradientSpread, BitmapRegion } from '@flighthq/types/contract';
 
-import { invalidateBitmap } from './bitmap';
+import { invalidateBitmap } from './bitmap.ts';
 
 /**
  * Fills the `dest` region with a linear gradient defined by two points `(x0, y0)`

@@ -5,7 +5,7 @@ import type {
 } from '@flighthq/types/contract';
 import { TransmissionVolumePbrExtensionKind } from '@flighthq/types/contract';
 
-import { registerGlPbrExtension } from './glPbrExtensionRegistry';
+import { registerGlPbrExtension } from './glPbrExtensionRegistry.ts';
 
 export const transmissionVolumePbrGlExtension: GlPbrExtensionRegistration = {
   bind(context, value): void {

@@ -2,9 +2,9 @@ import type { ImportDiagnostic, TiledParseOptions } from '@flighthq/types/contra
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { decodeTiledGid } from './tiledGid';
-import { parseTiledTilesetJson, parseTiledTmj } from './tiledJsonParse';
-import { parseTiledTileset, parseTiledTmx } from './tiledXmlParse';
+import { decodeTiledGid } from './tiledGid.ts';
+import { parseTiledTilesetJson, parseTiledTmj } from './tiledJsonParse.ts';
+import { parseTiledTileset, parseTiledTmx } from './tiledXmlParse.ts';
 
 // A 2x2 orthogonal map with a CSV tile layer drawing from two tilesets (firstgid 1 and 5), one
 // embedded tileset and one external `source="ext.tsx"` ref, an object group with a point and a

@@ -1,4 +1,4 @@
-import { compareCaptureFixtureBackgrounds, findCaptureFixtureBackground } from './captureFixtureBackground';
+import { compareCaptureFixtureBackgrounds, findCaptureFixtureBackground } from './captureFixtureBackground.ts';
 
 describe('compareCaptureFixtureBackgrounds', () => {
   it('reports a mismatch when the two fixtures declare different colours', () => {

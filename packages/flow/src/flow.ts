@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { FlowStack, FlowState, EntityConstruction } from '@flighthq/types/contract';
 
-import { reportFlowGuard } from './flowGuards';
+import { reportFlowGuard } from './flowGuards.ts';
 
 // Empty the stack, exiting every state top-to-bottom (`onExit` on the active top first, down to the
 // bottom) so each unwinds in reverse of the order it entered. No `onPause`/`onResume` fire — the

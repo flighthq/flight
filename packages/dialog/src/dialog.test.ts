@@ -9,7 +9,7 @@ import {
   showMessageDialog,
   showPromptDialog,
   showWarningDialog,
-} from './dialog';
+} from './dialog.ts';
 
 function fakeHost() {
   return {

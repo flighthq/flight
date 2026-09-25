@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CollisionBuiltInShape3D, CollisionRaycastHit3D, EntityConstruction } from '@flighthq/types/contract';
 
-import { writeCollisionConvexHullFaces3D } from './convexHull3D';
-import { getCollisionShapeContainsPoint3D } from './pointContainment3D';
+import { writeCollisionConvexHullFaces3D } from './convexHull3D.ts';
+import { getCollisionShapeContainsPoint3D } from './pointContainment3D.ts';
 
 export function createCollisionRaycastHit3D(): CollisionRaycastHit3D {
   const out = allocateEntity<CollisionRaycastHit3D>();

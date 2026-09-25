@@ -17,10 +17,10 @@ import type {
 } from '@flighthq/types/contract';
 import { BatchFormat, EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
-import { registerGlStandardMaterial } from './glStandardMaterial';
-import { createGlState } from './glTestHelper';
-import { glTextLabelRenderer, drawGlTextLabel, initializeGlTextLabelData } from './glTextLabel';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
+import { registerGlStandardMaterial } from './glStandardMaterial.ts';
+import { createGlState } from './glTestHelper.ts';
+import { glTextLabelRenderer, drawGlTextLabel, initializeGlTextLabelData } from './glTextLabel.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

@@ -35,7 +35,7 @@ import type {
   MenuItemTemplate,
 } from '@flighthq/types/contract';
 
-import { toElectronTemplate } from './electronMenuTemplate';
+import { toElectronTemplate } from './electronMenuTemplate.ts';
 
 type AppSubscribe = (event: string, listener: (...args: unknown[]) => void) => () => void;
 

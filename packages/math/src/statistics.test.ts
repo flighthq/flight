@@ -1,4 +1,4 @@
-import { mean, median, standardDeviation, variance, weightedAverage } from './statistics';
+import { mean, median, standardDeviation, variance, weightedAverage } from './statistics.ts';
 
 describe('mean', () => {
   it('returns the arithmetic mean', () => {

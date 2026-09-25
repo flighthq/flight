@@ -1,4 +1,4 @@
-import type { Effect } from './Effect';
+import type { Effect } from './Effect.ts';
 export interface CustomShaderEffect extends Effect {
   kind: 'CustomShaderEffect';
   shaderKey: string;

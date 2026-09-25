@@ -1,4 +1,4 @@
-import type { CollisionResponse } from './CollisionResponse';
+import type { CollisionResponse } from './CollisionResponse.ts';
 
 export interface RectangleCollider extends CollisionResponse {
   kind: 'RectangleCollider';

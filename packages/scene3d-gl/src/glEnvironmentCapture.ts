@@ -10,8 +10,8 @@ import type {
   Vector3Like,
 } from '@flighthq/types/contract';
 
-import { renderGlEnvironmentSkybox } from './glEnvironmentSkybox';
-import { renderGlScene3D } from './renderGlScene3D';
+import { renderGlEnvironmentSkybox } from './glEnvironmentSkybox.ts';
+import { renderGlScene3D } from './renderGlScene3D.ts';
 
 // Returns the backend-native cubemap produced by renderGlEnvironmentCapture. The handle can be bound
 // directly for GL-only sampling; bakeGlEnvironmentCaptureIbl is the higher-level bridge into Flight's

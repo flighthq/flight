@@ -18,9 +18,14 @@ import type {
 } from '@flighthq/types/contract';
 import { LambertMaterialKind } from '@flighthq/types/contract';
 
-import { bindWgpuClassicSurface, ensureWgpuClassicPipeline } from './wgpuClassicPrelude';
-import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { beginWgpuMeshDraw, drawWgpuMeshSubset, isWgpuTextureReady, writeWgpuFrameUniform } from './wgpuMeshPipeline';
+import { bindWgpuClassicSurface, ensureWgpuClassicPipeline } from './wgpuClassicPrelude.ts';
+import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import {
+  beginWgpuMeshDraw,
+  drawWgpuMeshSubset,
+  isWgpuTextureReady,
+  writeWgpuFrameUniform,
+} from './wgpuMeshPipeline.ts';
 
 // The built-in classic Lambert forward-lit mesh-material renderer (WgpuMeshMaterialRenderer for
 // LambertMaterialKind) — the WGSL mirror of glLambertMeshMaterialRenderer. Diffuse-only Lambertian

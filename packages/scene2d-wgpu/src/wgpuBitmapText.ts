@@ -22,7 +22,7 @@ import {
   recordWgpuQuadBatchColorScaleBias,
   writeWgpuQuadBatchAffineInstance,
   QUAD_BATCH_INSTANCE_FLOATS,
-} from './wgpuQuadBatchWriter';
+} from './wgpuQuadBatchWriter.ts';
 
 const INSTANCE_STRIDE_FLOATS = QUAD_BATCH_INSTANCE_FLOATS;
 

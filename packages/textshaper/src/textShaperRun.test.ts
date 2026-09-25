@@ -15,7 +15,7 @@ import {
   initializeShapedRun,
   shapeTextRun,
   shapeTextRunInto,
-} from './textShaperRun';
+} from './textShaperRun.ts';
 
 const _testGlyphs = [
   { cluster: 0, glyphId: 10, xAdvance: 8, xOffset: 0, yAdvance: 0, yOffset: 0 },

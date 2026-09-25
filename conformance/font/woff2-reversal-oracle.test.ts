@@ -11,7 +11,7 @@ import {
   readSfntGlyphOutline,
   readWoff2RawTables,
   runWoff2ReversalOracle,
-} from './woff2-reversal-oracle';
+} from './woff2-reversal-oracle.ts';
 
 describe('encoderPreservedOutline', () => {
   const outline = { endPtsOfContours: [2], onCurve: [true, false, true], xs: [0, 5, 10], ys: [0, 5, 0] };

@@ -1,4 +1,4 @@
-import { createPixelateEffect, initializePixelateEffect } from './pixelateEffect';
+import { createPixelateEffect, initializePixelateEffect } from './pixelateEffect.ts';
 
 describe('createPixelateEffect', () => {
   it('tags the intent type', () => {

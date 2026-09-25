@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { Signal } from './Signal.ts';
 
 export interface ResourceLoaderItemSignals extends Entity {
   onItemComplete: Signal<(key: string, value: unknown) => void>;

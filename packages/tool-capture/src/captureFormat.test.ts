@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatDetailLine, formatStatusLine, formatSummaryCount, formatSummaryLine } from './captureFormat';
+import { formatDetailLine, formatStatusLine, formatSummaryCount, formatSummaryLine } from './captureFormat.ts';
 
 // picocolors emits ANSI codes only on a color-capable TTY; strip them so assertions hold regardless of
 // the environment's color support.

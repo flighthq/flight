@@ -1,4 +1,4 @@
-import { initializeModifier } from './modifier';
+import { initializeModifier } from './modifier.ts';
 
 describe('initializeModifier', () => {
   it('is the construction initializer of createModifier', () => {

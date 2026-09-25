@@ -1,10 +1,10 @@
 import { createRenderTexture } from '@flighthq/texture/contract';
 
-import { renderIntoCanvasRenderTexture } from './canvasRenderTexture';
-import { registerCanvasRenderTextureResolver } from './canvasRenderTextureResolver';
-import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
-import { createCanvasRenderState } from './canvasTestSupport';
-import { resolveCanvasTexture } from './canvasTestSupport';
+import { renderIntoCanvasRenderTexture } from './canvasRenderTexture.ts';
+import { registerCanvasRenderTextureResolver } from './canvasRenderTextureResolver.ts';
+import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport.ts';
+import { createCanvasRenderState } from './canvasTestSupport.ts';
+import { resolveCanvasTexture } from './canvasTestSupport.ts';
 
 describe('registerCanvasRenderTextureResolver', () => {
   it('resolves a populated render texture', () => {

@@ -7,9 +7,9 @@ import {
   CFF_OPERATOR_PRIVATE,
   CFF_OPERATOR_SUBRS,
   readCffDict,
-} from './cffDict';
-import { readCffFdSelect } from './cffFdSelect';
-import { readCffIndex } from './cffIndex';
+} from './cffDict.ts';
+import { readCffFdSelect } from './cffFdSelect.ts';
+import { readCffIndex } from './cffIndex.ts';
 
 // Assembles the parts of a `CFF ` table an outline reader needs: the charstrings, and the two subroutine
 // pools they call into.

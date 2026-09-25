@@ -1,6 +1,6 @@
 import * as renderGlContract from '@flighthq/render-gl/contract';
 
-import { applyGlEffectBoxBlur } from './glEffectBoxBlur';
+import { applyGlEffectBoxBlur } from './glEffectBoxBlur.ts';
 
 const glMock = {
   ONE: 1,

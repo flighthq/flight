@@ -1,5 +1,5 @@
-import type { Material3D } from './Material3D';
-import type { Texture } from './Texture';
+import type { Material3D } from './Material3D.ts';
+import type { Texture } from './Texture.ts';
 
 // Material-capture shading: a prebaked lit sphere sampled by the view-space normal, giving full
 // stylized "lighting" with no scene lights. `matcap` is the capture texture; `tint` is a packed

@@ -1,7 +1,7 @@
-import type { CanvasSurface } from './CanvasSurface';
-import type { GlShapeMesh } from './GlShapeMesh';
-import type { ImageResource } from './ImageResource';
-import type { RendererData } from './RendererData';
+import type { CanvasSurface } from './CanvasSurface.ts';
+import type { GlShapeMesh } from './GlShapeMesh.ts';
+import type { ImageResource } from './ImageResource.ts';
+import type { RendererData } from './RendererData.ts';
 
 // NodeRenderer-private scratch for a Shape node on the WebGL backend, held in the opaque RendererData slot.
 // It lives in the header layer because the three shape strategies — mesh-only, raster-only, and the

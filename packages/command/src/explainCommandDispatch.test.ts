@@ -1,10 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createCompositeCommand } from './command';
-import { registerCommandBinding } from './commandBinding';
-import { createCommandHistory } from './commandHistory';
-import { explainCommandDispatch } from './explainCommandDispatch';
+import { createCompositeCommand } from './command.ts';
+import { registerCommandBinding } from './commandBinding.ts';
+import { createCommandHistory } from './commandHistory.ts';
+import { explainCommandDispatch } from './explainCommandDispatch.ts';
 
 describe('explainCommandDispatch', () => {
   it('names the unregistered kind behind a refusal', () => {

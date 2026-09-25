@@ -5,8 +5,8 @@ import type {
   EntityConstruction,
 } from '@flighthq/types/contract';
 
-import { initializeAdjustment } from './adjustment';
-import { getAdjustmentColorMatrix } from './colorMatrixAdjustment';
+import { initializeAdjustment } from './adjustment.ts';
+import { getAdjustmentColorMatrix } from './colorMatrixAdjustment.ts';
 
 // Returns the rgb→rgb transform a pointwise adjustment contributes to a baked LUT, or null if it is not
 // pointwise (a spatial/composite Effect). A LUT-tier adjustment returns its own `transform`; a

@@ -7,7 +7,7 @@ import {
   getRequirementCatalogEntries,
   registerRequirementCatalogEntry,
   unregisterRequirementCatalogEntry,
-} from './requirementCatalog';
+} from './requirementCatalog.ts';
 
 const first: RequirementCatalogEntry = {
   backend: 'webgl',

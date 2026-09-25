@@ -5,18 +5,22 @@ import { fileURLToPath } from 'node:url';
 import type { Expression } from 'oxc-parser';
 import pc from 'picocolors';
 
-import { getInvalidExampleFlightDependencies, getInvalidExampleFlightImportSpecifiers } from './example-sdk-policy';
-import { collectFastEntryPointInventory } from './fast-export-inventory';
-import { getParsedOxcSource } from './oxc-source';
+import { getInvalidExampleFlightDependencies, getInvalidExampleFlightImportSpecifiers } from './example-sdk-policy.ts';
+import { collectFastEntryPointInventory } from './fast-export-inventory.ts';
+import { getParsedOxcSource } from './oxc-source.ts';
 import {
   getCoreGuardImportViolations,
   getCoreGuardRuntimeImportViolations,
   getPackageLayerCoverageViolations,
   getPackageLayerDependencyViolation,
-} from './package-layers';
-import { getPackageLicenseViolations } from './package-license-policy';
-import { getPackageLockWorkspaceViolations, type PackageLockJson, type WorkspaceManifest } from './package-lock-policy';
-import { isSdkBarrelExcludedPackage } from './sdk-policy';
+} from './package-layers.ts';
+import { getPackageLicenseViolations } from './package-license-policy.ts';
+import {
+  getPackageLockWorkspaceViolations,
+  type PackageLockJson,
+  type WorkspaceManifest,
+} from './package-lock-policy.ts';
+import { isSdkBarrelExcludedPackage } from './sdk-policy.ts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, '..');

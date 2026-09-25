@@ -1,7 +1,7 @@
-import type { Material2D } from './Material2D';
-import type { Matrix } from './Matrix';
-import type { Node2D } from './Node2D';
-import type { RenderProxy } from './RenderProxy';
+import type { Material2D } from './Material2D.ts';
+import type { Matrix } from './Matrix.ts';
+import type { Node2D } from './Node2D.ts';
+import type { RenderProxy } from './RenderProxy.ts';
 
 // The unified 2D render node. Sprites and display objects share one render node type; the clip field is
 // inert for nodes that do not use it. Keeping a single type frees the render walk from per-graph

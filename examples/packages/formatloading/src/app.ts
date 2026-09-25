@@ -16,7 +16,7 @@ import { parseGltf } from '@flighthq/sdk/scene3d-formats';
 import { parseTexturePackerSpritesheet } from '@flighthq/sdk/spritesheet-formats';
 import { parseTiledTmj } from '@flighthq/sdk/tilemap-formats';
 
-import { render, scale } from './render';
+import { render, scale } from './render.ts';
 
 const root = createDisplayObject();
 root.scaleX = scale;

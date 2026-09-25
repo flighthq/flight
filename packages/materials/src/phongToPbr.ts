@@ -1,8 +1,8 @@
 import { getColorLuminance } from '@flighthq/color/contract';
 import type { PhongMaterial, StandardPbrMaterial, StandardPbrMaterialProperties } from '@flighthq/types/contract';
 
-import { explainPhongConversion } from './explainMaterialConversion';
-import { createStandardPbrMaterial, reportMaterialConversionDrop } from './pbrMaterials';
+import { explainPhongConversion } from './explainMaterialConversion.ts';
+import { createStandardPbrMaterial, reportMaterialConversionDrop } from './pbrMaterials.ts';
 
 // Migrates a classic `PhongMaterial` to a metallic-roughness `StandardPbrMaterial` whose surface
 // reads equivalently. A reference (not exact) mapping: the Phong reflection-vector lobe and the

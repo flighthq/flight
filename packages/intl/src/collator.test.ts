@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { compareStrings, sortStrings } from './collator';
+import { compareStrings, sortStrings } from './collator.ts';
 
 describe('compareStrings', () => {
   it('orders a before b in en-US', () => {

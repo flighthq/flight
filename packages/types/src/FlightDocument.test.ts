@@ -1,5 +1,5 @@
-import type { Camera3D, Projection } from './Camera3D';
-import type { Entity } from './Entity';
+import type { Camera3D, Projection } from './Camera3D.ts';
+import type { Entity } from './Entity.ts';
 import type {
   FlightDocument,
   FlightDocumentScene,
@@ -7,18 +7,18 @@ import type {
   FlightDocumentScene2DMaterialization,
   FlightDocumentScene3D,
   FlightDocumentScene3DMaterialization,
-} from './FlightDocument';
-import type { FlightDocumentInteractiveStateBinding } from './FlightDocumentInteractiveState';
-import type { FlightDocumentLayoutBinding, FlightDocumentLayoutDescriptor } from './FlightDocumentLayout';
-import type { FlightDocumentResourceDescriptor } from './FlightDocumentResource';
-import type { Light } from './Light';
-import type { Node2D } from './Node2D';
-import type { Node3D } from './Node3D';
-import type { Scene2D } from './Scene2D';
-import type { Scene3D } from './Scene3D';
-import type { Scene3DDocumentCamera, Scene3DDocumentLight } from './Scene3DDocument';
-import type { Scene3DLights } from './Scene3DLights';
-import type { Transform3D } from './Transform3D';
+} from './FlightDocument.ts';
+import type { FlightDocumentInteractiveStateBinding } from './FlightDocumentInteractiveState.ts';
+import type { FlightDocumentLayoutBinding, FlightDocumentLayoutDescriptor } from './FlightDocumentLayout.ts';
+import type { FlightDocumentResourceDescriptor } from './FlightDocumentResource.ts';
+import type { Light } from './Light.ts';
+import type { Node2D } from './Node2D.ts';
+import type { Node3D } from './Node3D.ts';
+import type { Scene2D } from './Scene2D.ts';
+import type { Scene3D } from './Scene3D.ts';
+import type { Scene3DDocumentCamera, Scene3DDocumentLight } from './Scene3DDocument.ts';
+import type { Scene3DLights } from './Scene3DLights.ts';
+import type { Transform3D } from './Transform3D.ts';
 
 describe('FlightDocument', () => {
   it('groups mixed-dimension scenes over one shared resource table', () => {

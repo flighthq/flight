@@ -1,4 +1,4 @@
-import { webHostSensors } from './webSensors';
+import { webHostSensors } from './webSensors.ts';
 
 describe('webHostSensors', () => {
   it('subscribes to all streams without throwing', () => {

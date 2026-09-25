@@ -1,4 +1,4 @@
-import type { LightUnit } from './LightUnit';
+import type { LightUnit } from './LightUnit.ts';
 
 export interface AmbientLightOptions {
   // Packed sRGB RGBA (`0xRRGGBBAA`), seeding AmbientLight.color. Default 0xffffffff.

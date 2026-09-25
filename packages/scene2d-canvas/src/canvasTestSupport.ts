@@ -18,18 +18,18 @@ import type {
   Surface,
 } from '@flighthq/types/contract';
 
-import { beginCanvasRenderPass } from './canvasRenderPass';
-import { createCanvasRenderState as createExplicitCanvasRenderState } from './canvasRenderState';
-import { createCanvasScreenRenderTarget as createExplicitCanvasScreenRenderTarget } from './canvasScreenRenderTarget';
-import { createCanvasTextureRenderTarget as createExplicitCanvasRenderTarget } from './canvasTextureRenderTarget';
-import { createCanvasTextureResolvers as createExplicitCanvasTextureResolvers } from './canvasTextureResolver';
-import { canvasScene2DRenderPreset } from './scene2DCanvasPipeline';
+import { beginCanvasRenderPass } from './canvasRenderPass.ts';
+import { createCanvasRenderState as createExplicitCanvasRenderState } from './canvasRenderState.ts';
+import { createCanvasScreenRenderTarget as createExplicitCanvasScreenRenderTarget } from './canvasScreenRenderTarget.ts';
+import { createCanvasTextureRenderTarget as createExplicitCanvasRenderTarget } from './canvasTextureRenderTarget.ts';
+import { createCanvasTextureResolvers as createExplicitCanvasTextureResolvers } from './canvasTextureResolver.ts';
+import { canvasScene2DRenderPreset } from './scene2DCanvasPipeline.ts';
 
-export * from './canvasRenderState';
-export * from './canvasRenderPass';
-export * from './canvasScreenRenderTarget';
-export * from './canvasTextureRenderTarget';
-export * from './canvasTextureResolver';
+export * from './canvasRenderState.ts';
+export * from './canvasRenderPass.ts';
+export * from './canvasScreenRenderTarget.ts';
+export * from './canvasTextureRenderTarget.ts';
+export * from './canvasTextureResolver.ts';
 
 export const canvasTestHost: HostCanvasCapability = Object.freeze({
   acquire(

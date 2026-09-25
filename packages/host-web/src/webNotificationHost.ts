@@ -1,6 +1,6 @@
 import type { HostNotificationCapabilities } from '@flighthq/types/contract';
 
-import { webHostNotificationPermission } from './webPermissions';
+import { webHostNotificationPermission } from './webPermissions.ts';
 
 export const webHostNotification = {
   permission: webHostNotificationPermission,

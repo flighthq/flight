@@ -5,7 +5,7 @@ import {
   getPhysics3DJointReactionForce,
   getPhysics3DJointReactionTorque,
   writePhysics3DJointReaction,
-} from './jointReaction';
+} from './jointReaction.ts';
 
 // Breaking a joint under load. A rope that parts, a hinge torn off its frame, a weld that fails.
 //

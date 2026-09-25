@@ -8,7 +8,7 @@ import {
   computeScene2DRenderTargetTransform,
   explainRenderTargetAxes,
   resolveRenderTargetDescriptor,
-} from './renderTarget';
+} from './renderTarget.ts';
 
 describe('computeRenderCacheTransform', () => {
   it('produces a pure translation from bounds origin', () => {

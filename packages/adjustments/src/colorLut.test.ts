@@ -1,6 +1,6 @@
 import type { ColorTransformFunction } from '@flighthq/types/contract';
 
-import { bakeColorLut, COLOR_LUT_DEFAULT_SIZE, sampleColorLut } from './colorLut';
+import { bakeColorLut, COLOR_LUT_DEFAULT_SIZE, sampleColorLut } from './colorLut.ts';
 
 describe('bakeColorLut', () => {
   it('bakes an empty stack into an identity LUT', () => {

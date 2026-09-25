@@ -1,8 +1,8 @@
-import type { AnimationBlendTree } from './AnimationBlendTree';
-import type { AnimationChannel } from './AnimationChannel';
-import type { AnimationPlayer } from './AnimationPlayer';
-import type { AnimationStateMachine } from './AnimationStateMachine';
-import type { Entity } from './Entity';
+import type { AnimationBlendTree } from './AnimationBlendTree.ts';
+import type { AnimationChannel } from './AnimationChannel.ts';
+import type { AnimationPlayer } from './AnimationPlayer.ts';
+import type { AnimationStateMachine } from './AnimationStateMachine.ts';
+import type { Entity } from './Entity.ts';
 
 export interface AnimationLayerOptions {
   additive?: boolean;

@@ -1,1 +1,1 @@
-import './render';
+import './render.webgpu.ts';

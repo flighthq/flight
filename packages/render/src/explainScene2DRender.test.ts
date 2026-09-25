@@ -1,10 +1,10 @@
 import { addNodeChild } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
-import { explainScene2DRender } from './explainScene2DRender';
-import { registerNodeRenderer } from './renderer';
-import { getRenderProxy2D, prepareScene2DRender } from './renderProxy';
-import { createRenderState, getRenderStateRuntime } from './renderState';
+import { explainScene2DRender } from './explainScene2DRender.ts';
+import { registerNodeRenderer } from './renderer.ts';
+import { getRenderProxy2D, prepareScene2DRender } from './renderProxy.ts';
+import { createRenderState, getRenderStateRuntime } from './renderState.ts';
 
 function makeRenderer() {
   return { createData: () => ({ tag: 'data' }), submit: vi.fn() } as any;

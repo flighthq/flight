@@ -1,4 +1,4 @@
-export * from './transformVelocity';
+export * from './transformVelocity.ts';
 export {
   addVelocity,
   beginVelocityFrame,
@@ -18,5 +18,5 @@ export {
   subtractVelocity,
   suppressVelocity,
   zeroVelocity,
-} from './velocityField';
-export * from './velocitySample';
+} from './velocityField.ts';
+export * from './velocitySample.ts';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { readCffFdSelect } from './cffFdSelect';
+import { readCffFdSelect } from './cffFdSelect.ts';
 
 // Format 0 is one byte per glyph; format 3 is ranges with a trailing sentinel giving the final end.
 function format0(...perGlyph: number[]): Uint8Array {

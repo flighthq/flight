@@ -4,9 +4,9 @@ import type {
   ImportConformanceScoreCapabilityExercised,
   ImportConformanceScorePackMeasured,
   ImportConformanceUnknownObservation,
-} from './import-conformance-core';
-import { formatImportConformanceDenominators } from './import-conformance-denominator';
-import { IMPORT_CONFORMANCE_THROW_OUTCOME_LABEL } from './import-conformance-score';
+} from './import-conformance-core.ts';
+import { formatImportConformanceDenominators } from './import-conformance-denominator.ts';
+import { IMPORT_CONFORMANCE_THROW_OUTCOME_LABEL } from './import-conformance-score.ts';
 
 export function formatImportConformanceScore(score: Readonly<ImportConformanceScore>): string {
   const assurance = score.instrumentAssurance;

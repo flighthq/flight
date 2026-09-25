@@ -1,6 +1,6 @@
-import type { SamplerLike } from './Sampler';
-import type { TextureColorSpace } from './Texture';
-import type { Vector2Like } from './Vector2';
+import type { SamplerLike } from './Sampler.ts';
+import type { TextureColorSpace } from './Texture.ts';
+import type { Vector2Like } from './Vector2.ts';
 
 // Construction options for a render-target 2D Texture. Target allocation stays lazy and backend-owned;
 // sampling and UV fields remain ordinary Texture state.
@@ -20,4 +20,4 @@ export interface CreateRenderTextureOptions {
   readonly uvScale?: Readonly<Vector2Like>;
   readonly width: number;
 }
-import type { RenderTargetDepth, RenderTargetFormat } from './RenderTarget';
+import type { RenderTargetDepth, RenderTargetFormat } from './RenderTarget.ts';

@@ -11,7 +11,7 @@ import {
   TENSOR_YY,
   TENSOR_YZ,
   TENSOR_ZZ,
-} from './symmetricTensor';
+} from './symmetricTensor.ts';
 
 // Mass properties for 3D primitives, and the combination of several into one body's.
 //

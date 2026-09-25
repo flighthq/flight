@@ -1,4 +1,4 @@
-import { easeInOutQuadratic, easeInQuadratic, easeOutQuadratic } from './easeQuadratic';
+import { easeInOutQuadratic, easeInQuadratic, easeOutQuadratic } from './easeQuadratic.ts';
 
 describe('easeInOutQuadratic', () => {
   it('returns 0 at t=0 and 1 at t=1', () => {

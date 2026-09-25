@@ -12,8 +12,8 @@ import {
   getGuiDialogEntries,
   getGuiDialogSignals,
   removeGuiDialogEntry,
-} from './guiDialog';
-import { createGuiTestNode, emitGuiPointer } from './guiTestHelper';
+} from './guiDialog.ts';
+import { createGuiTestNode, emitGuiPointer } from './guiTestHelper.ts';
 
 describe('closeGuiDialog', () => {
   it('closes the active entry and promotes the FIFO head without reparenting caller visuals', () => {

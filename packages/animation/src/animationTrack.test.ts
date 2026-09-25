@@ -12,7 +12,7 @@ import {
   sampleAnimationTrack,
   trimAnimationTrack,
   validateAnimationTrack,
-} from './animationTrack';
+} from './animationTrack.ts';
 
 describe('cloneAnimationTrack', () => {
   it('deep-copies times and values so the clone shares no buffers', () => {

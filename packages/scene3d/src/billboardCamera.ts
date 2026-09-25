@@ -10,8 +10,8 @@ import {
 import { getNodeParent, getNodeWorldMatrix4, setNodeLocalMatrix4 } from '@flighthq/node/contract';
 import type { Billboard, BillboardMode, Camera3D, Matrix4, Node3D } from '@flighthq/types/contract';
 
-import { isBillboard } from './billboard';
-import { getNode3DRuntime } from './sceneNode';
+import { isBillboard } from './billboard.ts';
+import { getNode3DRuntime } from './sceneNode.ts';
 
 // Orients a single Billboard to face `camera`, rewriting its localMatrix so that after the scene's
 // world transforms resolve, the billboard's world axes face the camera per its `mode`. The

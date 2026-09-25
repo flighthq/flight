@@ -1,4 +1,4 @@
-import type { MeshSubset, PrimitiveTopology, VertexAttributeLayout } from './MeshGeometry';
+import type { MeshSubset, PrimitiveTopology, VertexAttributeLayout } from './MeshGeometry.ts';
 
 // Inputs to createMeshGeometry. `vertices` is the raw interleaved record stream read through
 // `layout`; with no `layout` the canonical PBR vertex record is assumed (see

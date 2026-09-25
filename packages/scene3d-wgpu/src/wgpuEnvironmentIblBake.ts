@@ -1,7 +1,7 @@
 import type { Environment, WgpuRenderState, WgpuScene3DIbl } from '@flighthq/types/contract';
 
-import { ensureWgpuEnvironmentSourceCube } from './wgpuEnvironmentCube';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { ensureWgpuEnvironmentSourceCube } from './wgpuEnvironmentCube.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 
 // Bakes an Environment's source radiance cubemap into the split-sum image-based-lighting set — a diffuse
 // irradiance cubemap, a roughness-mipped prefiltered specular cubemap, and the 2D BRDF integration LUT —

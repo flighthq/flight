@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { findDataCastColourViolations, findDataCastTargets } from './data-cast-colour';
+import { findDataCastColourViolations, findDataCastTargets } from './data-cast-colour.ts';
 
 describe('findDataCastColourViolations', () => {
   // The repo-wide invariant that used to live here is now `npm run check:data-cast-colour`. It scanned

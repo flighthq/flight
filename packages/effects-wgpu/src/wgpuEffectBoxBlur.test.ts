@@ -1,5 +1,5 @@
-import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
-import * as wgpuEffectPassMod from './wgpuEffectPass';
+import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur.ts';
+import * as wgpuEffectPassMod from './wgpuEffectPass.ts';
 
 const uniformSnapshots: number[][] = [];
 

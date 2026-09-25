@@ -1,5 +1,5 @@
-import type { Material3D } from './Material3D';
-import type { Texture } from './Texture';
+import type { Material3D } from './Material3D.ts';
+import type { Texture } from './Texture.ts';
 
 // Cel shading: diffuse N·L is quantized through a 1D `ramp` texture into stepped bands.
 // `baseColor` is packed sRgb-albedo RGBA, `baseColorMap` tints it, and `steps` is the band

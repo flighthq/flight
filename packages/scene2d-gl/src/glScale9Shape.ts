@@ -24,10 +24,10 @@ import type {
 } from '@flighthq/types/contract';
 import { RenderRegistryTable, Scale9ShapeKind } from '@flighthq/types/contract';
 
-import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
-import { buildGlScale9Mapper } from './glScale9Mapper';
-import { drawGlShape } from './glShape';
-import { getGlShapeRasterizer } from './glShapeRasterizer';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
+import { buildGlScale9Mapper } from './glScale9Mapper.ts';
+import { drawGlShape } from './glShape.ts';
+import { getGlShapeRasterizer } from './glShapeRasterizer.ts';
 
 interface GlScale9ShapeData extends RendererData {
   image: ImageResource | null;

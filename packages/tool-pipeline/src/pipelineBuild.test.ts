@@ -3,7 +3,7 @@ import { access, mkdir, mkdtemp, readFile, rm, utimes, writeFile } from 'node:fs
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { buildToolPipeline } from './pipelineBuild';
+import { buildToolPipeline } from './pipelineBuild.ts';
 
 const roots: string[] = [];
 

@@ -8,7 +8,7 @@ import {
   initializeCameraShakeOffset,
   resetCameraShake,
   updateCameraShake,
-} from './cameraShake';
+} from './cameraShake.ts';
 
 describe('addCameraShakeTrauma', () => {
   it('accumulates trauma clamped to 1', () => {

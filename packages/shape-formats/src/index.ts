@@ -1,1 +1,1 @@
-export { defaultShapeCommandSchemas, formatShapeJson, parseShapeJson } from './contract';
+export { defaultShapeCommandSchemas, formatShapeJson, parseShapeJson } from './contract.ts';

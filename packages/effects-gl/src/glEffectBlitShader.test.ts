@@ -1,7 +1,7 @@
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import { applyGlEffectBlitOffsetPass, applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader';
+import { applyGlEffectBlitOffsetPass, applyGlEffectBlitPass, applyGlEffectErasePass } from './glEffectBlitShader.ts';
 
 const SOURCE_WIDTH = 64;
 const SOURCE_HEIGHT = 32;

@@ -15,11 +15,11 @@ import type { Camera3D, GlRenderPass, GlRenderTarget, Scene3DLightsLike } from '
 import {
   areGlScene3DForwardLightSelectionGuardsEnabled,
   enableGlScene3DForwardLightSelectionGuards,
-} from './enableGlScene3DForwardLightSelectionGuards';
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { prepareGlScene3DForwardLights } from './prepareGlScene3DForwardLights';
-import { registerGlStandardPbrMaterial } from './registerGlStandardPbrMaterial';
-import { renderGlScene3D } from './renderGlScene3D';
+} from './enableGlScene3DForwardLightSelectionGuards.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { prepareGlScene3DForwardLights } from './prepareGlScene3DForwardLights.ts';
+import { registerGlStandardPbrMaterial } from './registerGlStandardPbrMaterial.ts';
+import { renderGlScene3D } from './renderGlScene3D.ts';
 
 function camera(): Camera3D {
   const result = createCamera3D({

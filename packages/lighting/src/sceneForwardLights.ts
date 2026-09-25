@@ -7,7 +7,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ALL_LIGHT_LAYERS, MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
-import { getLightContributionAtBoundingSphere } from './lightAnalysis';
+import { getLightContributionAtBoundingSphere } from './lightAnalysis.ts';
 
 // Selects the strongest point and spot contributors for one object's forward-light budget. Each
 // family has its own MAX_FORWARD_LIGHTS budget, matching the shader's separate fixed arrays and

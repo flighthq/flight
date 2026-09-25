@@ -1,6 +1,6 @@
-import type { Material3DOptions } from './Material3DOptions';
-import type { Modifier } from './Modifier';
-import type { ShadedMaterial } from './ShadedMaterial';
+import type { Material3DOptions } from './Material3DOptions.ts';
+import type { Modifier } from './Modifier.ts';
+import type { ShadedMaterial } from './ShadedMaterial.ts';
 
 // Extends the shared Material3DOptions so the trailer (alphaMode/alphaCutoff/blendMode/
 // doubleSided) is settable at construction, exactly as it is for BlinnPhong/PBR — no post-construction

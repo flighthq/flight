@@ -15,10 +15,10 @@ import type { Camera3D, GlRenderPass, GlRenderTarget, Scene3DLightsLike } from '
 import {
   areGlScene3DColorSpaceGuardsEnabled,
   enableGlScene3DColorSpaceGuards,
-} from './enableGlScene3DColorSpaceGuards';
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerGlStandardPbrMaterial } from './registerGlStandardPbrMaterial';
-import { renderGlScene3D } from './renderGlScene3D';
+} from './enableGlScene3DColorSpaceGuards.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { registerGlStandardPbrMaterial } from './registerGlStandardPbrMaterial.ts';
+import { renderGlScene3D } from './renderGlScene3D.ts';
 
 function makeCamera(): Camera3D {
   const camera = createCamera3D({

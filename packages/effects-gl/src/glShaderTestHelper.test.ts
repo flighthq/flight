@@ -1,4 +1,4 @@
-import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper';
+import { evaluateGlslScalarExpression, extractGlslExpression } from './glShaderTestHelper.ts';
 
 describe('evaluateGlslScalarExpression', () => {
   it('substitutes every binding and evaluates the arithmetic', () => {

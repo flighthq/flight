@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatList } from './list';
+import { formatList } from './list.ts';
 
 describe('formatList', () => {
   it('joins items as an en-US conjunction list', () => {

@@ -1,4 +1,4 @@
-import { getCaptureTimeoutMs, resolveCaptureTimeoutMs, setCaptureTimeoutMs } from './captureTimeout';
+import { getCaptureTimeoutMs, resolveCaptureTimeoutMs, setCaptureTimeoutMs } from './captureTimeout.ts';
 
 describe('getCaptureTimeoutMs', () => {
   let originalEnvironmentTimeout: string | undefined;

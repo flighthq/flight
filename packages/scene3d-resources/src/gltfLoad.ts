@@ -11,7 +11,7 @@ import {
   getScene3DDocumentBasePathFromUrl,
   loadScene3DDocumentBytesFromUrl,
   loadScene3DDocumentTextFromUrl,
-} from './sceneDocumentSource';
+} from './sceneDocumentSource.ts';
 
 // Fetches a binary glTF (`.glb`) from a URL and parses it into a format-neutral Scene3DDocument. Fetches only
 // the FILE — the document's texture refs stay unresolved; assemble with createScene3DFromDocument and load

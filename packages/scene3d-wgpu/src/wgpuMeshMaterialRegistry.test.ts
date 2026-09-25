@@ -11,9 +11,9 @@ import {
   getWgpuMeshMaterialRenderer,
   registerWgpuMeshMaterialRenderer,
   resolveWgpuMeshMaterialRenderer,
-} from './wgpuMeshMaterialRegistry';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+} from './wgpuMeshMaterialRegistry.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 
 function makeRenderer(): WgpuMeshMaterialRenderer {
   return { bind: () => {}, draw: () => {} };

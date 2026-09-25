@@ -1,4 +1,4 @@
-import { applyGlitchEffectToWgpu, wgpuGlitchEffectRunner, registerWgpuGlitchEffect } from './wgpuGlitchEffect';
+import { applyGlitchEffectToWgpu, wgpuGlitchEffectRunner, registerWgpuGlitchEffect } from './wgpuGlitchEffect.ts';
 
 describe('applyGlitchEffectToWgpu', () => {
   it('is a function', () => {

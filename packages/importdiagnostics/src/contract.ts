@@ -1,2 +1,2 @@
-export * from './importDiagnosticCollector';
-export * from './importDiagnosticText';
+export * from './importDiagnosticCollector.ts';
+export * from './importDiagnosticText.ts';

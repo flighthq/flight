@@ -17,8 +17,8 @@ import type {
 } from '@flighthq/types/contract';
 import { DisplayObjectKind, EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { hitTestGraphLocalBounds } from './hitTests';
-import { registerHitTest } from './hitTests';
+import { hitTestGraphLocalBounds } from './hitTests.ts';
+import { registerHitTest } from './hitTests.ts';
 import {
   captureInteractionPointer,
   connectInputToInteraction,
@@ -42,8 +42,8 @@ import {
   invalidateInteractionCursor,
   releaseInteractionPointer,
   setInteractionConnectGuard,
-} from './interactionManager';
-import { setNodeCursor, setNodeHitTestEnabled, setNodePointerDoubleClickEnabled } from './nodeInteractionState';
+} from './interactionManager.ts';
+import { setNodeCursor, setNodeHitTestEnabled, setNodePointerDoubleClickEnabled } from './nodeInteractionState.ts';
 
 beforeAll(() => {
   registerHitTest(DisplayObjectKind, hitTestGraphLocalBounds);

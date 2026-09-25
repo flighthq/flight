@@ -1,5 +1,5 @@
-import { EntityRuntimeKey } from './Entity';
-import type { Signal, SignalData } from './Signal';
+import { EntityRuntimeKey } from './Entity.ts';
+import type { Signal, SignalData } from './Signal.ts';
 
 describe('Signal', () => {
   describe('Signal', () => {

@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { PathWinding } from './ShapeCommand';
+import type { Entity } from './Entity.ts';
+import type { PathWinding } from './ShapeCommand.ts';
 
 /**
  * Verb codes for a `Path` command stream. Each verb consumes a fixed number of

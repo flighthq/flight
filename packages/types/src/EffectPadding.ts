@@ -1,5 +1,5 @@
-import type { Effect } from './Effect';
-import type { Kind } from './Entity';
+import type { Effect } from './Effect.ts';
+import type { Kind } from './Entity.ts';
 
 export interface EffectPadding {
   bottom: number;

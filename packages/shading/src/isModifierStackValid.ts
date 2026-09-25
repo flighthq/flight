@@ -1,7 +1,7 @@
 import type { Modifier } from '@flighthq/types/contract';
 import type { ModifierRegistry } from '@flighthq/types/contract';
 
-import { getUnregisteredModifierKinds } from './getUnregisteredModifierKinds';
+import { getUnregisteredModifierKinds } from './getUnregisteredModifierKinds.ts';
 
 // Returns true when every modifier in `stack` has a definition in `registry` — the boolean the
 // compile path checks before assembling a program. An empty stack is valid (it compiles to the bare

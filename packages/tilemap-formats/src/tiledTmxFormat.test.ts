@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatTiledTileset, formatTiledTmx } from './tiledTmxFormat';
-import { parseTiledTileset, parseTiledTmx } from './tiledXmlParse';
+import { formatTiledTileset, formatTiledTmx } from './tiledTmxFormat.ts';
+import { parseTiledTileset, parseTiledTmx } from './tiledXmlParse.ts';
 
 // A map exercising every modeled TMX construct: background + typed properties, an embedded tileset
 // with an animated tile, an external tileset ref, a CSV tile layer (with a flipped GID), an object

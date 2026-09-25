@@ -10,9 +10,9 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { createRiveImageSprite, markRiveNestedArtboard } from './riveAssetBinding';
-import { getRiveCoreTypeName, isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
-import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry';
+import { createRiveImageSprite, markRiveNestedArtboard } from './riveAssetBinding.ts';
+import { getRiveCoreTypeName, isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
+import { importRiveCoreObjectAsData, registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
 
 /**
  * Collects the file's assets in the order it declares them, which is also how they are addressed:

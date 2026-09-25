@@ -1,5 +1,5 @@
-import type { Material3D } from './Material3D';
-import type { Texture } from './Texture';
+import type { Material3D } from './Material3D.ts';
+import type { Texture } from './Texture.ts';
 
 // Pass-infrastructure material: outputs the world- (or view-) space surface normal as color,
 // used by normal-buffer-driven passes. `normalMap` perturbs the geometric normal; `normalScale`

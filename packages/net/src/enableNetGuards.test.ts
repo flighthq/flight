@@ -2,8 +2,8 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import type { HostNetCapability, LogEntry, NetResponse } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { areNetGuardsEnabled, disableNetGuards, enableNetGuards } from './enableNetGuards';
-import { sendNetRequest } from './net';
+import { areNetGuardsEnabled, disableNetGuards, enableNetGuards } from './enableNetGuards.ts';
+import { sendNetRequest } from './net.ts';
 
 function captureLog(run: () => Promise<void>): Promise<readonly LogEntry[]> {
   const sink = createMemoryLogSink(8);

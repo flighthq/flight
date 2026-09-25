@@ -4,7 +4,7 @@ import {
   createIridescencePbrExtension,
   initializeIridescencePbrExtension,
   isValidIridescencePbrExtension,
-} from './iridescencePbrExtension';
+} from './iridescencePbrExtension.ts';
 
 describe('createIridescencePbrExtension', () => {
   it('creates an Entity with glTF thickness defaults and independent UV sets', () => {

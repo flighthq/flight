@@ -1,8 +1,8 @@
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { classifyImportConformanceDiagnosticObservation } from './import-conformance-classification';
-import type { ImportConformanceDiagnosticEvidencePolicy } from './import-conformance-diagnostic-evidence';
+import { classifyImportConformanceDiagnosticObservation } from './import-conformance-classification.ts';
+import type { ImportConformanceDiagnosticEvidencePolicy } from './import-conformance-diagnostic-evidence.ts';
 
 const MD5_POLICY = {
   detail: [],

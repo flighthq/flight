@@ -3,7 +3,7 @@ import { beginWgpuRenderPass, endWgpuRenderPass } from '@flighthq/render-wgpu';
 import { renderWgpuScene2D } from '@flighthq/scene2d-wgpu';
 import { installCaptureTarget } from '@flighthq/tool-capture/browser';
 
-import { root, screen, screenClear, state } from './render.webgpu';
+import { root, screen, screenClear, state } from './render.webgpu.ts';
 
 await installCaptureTarget({
   renderer: 'webgpu',

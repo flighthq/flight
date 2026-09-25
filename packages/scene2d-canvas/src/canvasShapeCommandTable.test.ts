@@ -1,5 +1,5 @@
-import { canvasShapeCommands, canvasTextureShapeCommands } from './canvasShapeCommands';
-import { canvasShapeCommandTable } from './canvasShapeCommandTable';
+import { canvasShapeCommands, canvasTextureShapeCommands } from './canvasShapeCommands.ts';
+import { canvasShapeCommandTable } from './canvasShapeCommandTable.ts';
 
 describe('canvasShapeCommandTable', () => {
   it('holds exactly the default and texture shape commands, one entry per key', () => {

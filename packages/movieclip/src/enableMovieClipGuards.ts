@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { SpritesheetAnimation, SpritesheetTimelineSourceExplanation } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setSpritesheetTimelineSourceGuard } from './spritesheetTimelineSource';
+import { setSpritesheetTimelineSourceGuard } from './spritesheetTimelineSource.ts';
 
 export function areMovieClipGuardsEnabled(): boolean {
   return movieClipGuardsEnabled;

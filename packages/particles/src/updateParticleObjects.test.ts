@@ -1,9 +1,9 @@
 import { createRandomSource } from '@flighthq/math/contract';
 import type { ParticleObject } from '@flighthq/types/contract';
 
-import { createParticleEmitterConfig } from './particleEmitterConfig';
-import { createParticleObjectsState } from './particleObjectsState';
-import { isParticleObjectsComplete, updateParticleObjects } from './updateParticleObjects';
+import { createParticleEmitterConfig } from './particleEmitterConfig.ts';
+import { createParticleObjectsState } from './particleObjectsState.ts';
+import { isParticleObjectsComplete, updateParticleObjects } from './updateParticleObjects.ts';
 
 function makeObject(): ParticleObject {
   return {

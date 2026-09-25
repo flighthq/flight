@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Path } from './Path';
+import type { Entity } from './Entity.ts';
+import type { Path } from './Path.ts';
 
 // Path-following animation header. `@flighthq/motionpath` advances a marker along `path` by ARC
 // LENGTH (constant real speed along the curve, not the speed-distorting raw bezier parameter) and

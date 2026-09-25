@@ -35,7 +35,7 @@ import {
   getGuiControllerRuntime,
   setGuiVisible,
   setGuiVisualProperty,
-} from './guiController';
+} from './guiController.ts';
 
 interface TextInputControllerFields {
   background: Node2D | null;

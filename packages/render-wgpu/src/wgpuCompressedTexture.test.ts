@@ -8,10 +8,10 @@ import {
   registerWgpuCompressedTextureDecoder,
   registerWgpuCompressedTextureUpload,
   uploadWgpuCompressedTextureContainer,
-} from './wgpuCompressedTexture';
-import { bindWgpuCompressedImageTexture } from './wgpuDraw';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
-import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+} from './wgpuCompressedTexture.ts';
+import { bindWgpuCompressedImageTexture } from './wgpuDraw.ts';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
+import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';
 
 beforeAll(() => installWgpuMock());
 

@@ -1,5 +1,5 @@
-import type { ImportDiagnostic } from './ImportDiagnostic';
-import type { Skeleton2DImport } from './Skeleton2DImport';
+import type { ImportDiagnostic } from './ImportDiagnostic.ts';
+import type { Skeleton2DImport } from './Skeleton2DImport.ts';
 
 /**
  * A complete parser for ONE Spine binary wire layout, keyed into the version registry by its

@@ -1,6 +1,6 @@
 import type { Path, PathMeshTyped } from '@flighthq/types/contract';
 
-import { tessellatePath } from './tessellatePath';
+import { tessellatePath } from './tessellatePath.ts';
 
 // Triangulates a path's fill into a `PathMeshTyped` using `Float32Array` vertices and `Uint32Array`
 // indices, ready for zero-copy GPU buffer upload. Internally delegates to `tessellatePath` and

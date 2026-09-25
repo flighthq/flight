@@ -1,7 +1,7 @@
 import type { ImportDiagnostic, RiveArtboardGraph, RiveCoreObject, RiveWeightedPoint } from '@flighthq/types/contract';
 import { RiveFieldType, RiveWeightedPointKind } from '@flighthq/types/contract';
 
-import { createRiveSkin2D } from './riveSkin';
+import { createRiveSkin2D } from './riveSkin.ts';
 
 // Rive packs FOUR influences into one uint apiece — a weight byte 0-255 and a tendon byte — read low
 // byte first. A weight index names a TENDON, not a bone, and numbering starts at 1 because the

@@ -8,7 +8,7 @@ import {
 import type { ParticleEmitter3D } from '@flighthq/types/contract';
 import type { ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/types/contract';
 
-import { reserveParticleEmitter3D } from './particleEmitter3D';
+import { reserveParticleEmitter3D } from './particleEmitter3D.ts';
 
 const PARTICLE_TRANSFORM_STRIDE = 4;
 const PARTICLE_SPAWN_OFFSET = [0, 0];

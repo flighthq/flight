@@ -1,4 +1,4 @@
-import type { NodeAny } from './Node';
+import type { NodeAny } from './Node.ts';
 
 /**
  * Coarse (bounding) hit function registered per node kind via `registerHitTest`. Returns whether the

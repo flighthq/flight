@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { Node3D, Scene3D, EntityConstruction } from '@flighthq/types/contract';
 import { Node3DKind } from '@flighthq/types/contract';
 
-import { createNode3D } from './sceneNode';
+import { createNode3D } from './sceneNode.ts';
 
 // Re-export the Scene3D document type so `@flighthq/scene3d` stays its import site.
 

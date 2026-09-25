@@ -5,7 +5,7 @@ import {
   getDirectionalBlurEffectPadding,
   initializeDirectionalBlurEffect,
   registerDirectionalBlurEffectPaddingResolver,
-} from './directionalBlurEffect';
+} from './directionalBlurEffect.ts';
 
 describe('createDirectionalBlurEffect', () => {
   it('tags the intent type', () => {

@@ -4,8 +4,8 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol';
-import { CAPTURE_REPORT_VERSION, writeCaptureReport } from './captureReport';
+import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.ts';
+import { CAPTURE_REPORT_VERSION, writeCaptureReport } from './captureReport.ts';
 
 describe('writeCaptureReport', () => {
   it('writes a versioned machine envelope and returns the absolute path', () => {

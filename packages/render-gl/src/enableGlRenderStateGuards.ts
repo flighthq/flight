@@ -3,7 +3,7 @@ import { getRenderStateRuntime } from '@flighthq/render/contract';
 import type { GlRenderState, NodeAny, RenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { getGlRenderStateRuntime } from './glRenderState';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
 
 export function areGlRenderStateGuardsEnabled(state: GlRenderState): boolean {
   const guard = getRenderStateRuntime(state).registries.renderRootGuard;

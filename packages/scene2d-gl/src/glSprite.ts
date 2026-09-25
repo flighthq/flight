@@ -19,7 +19,7 @@ import {
   prepareGlQuadBatchWrite,
   recordGlQuadBatchColorScaleBias,
   writeGlQuadBatchAffineInstance,
-} from './glQuadBatchWriter';
+} from './glQuadBatchWriter.ts';
 
 export function drawGlSprite(state: GlRenderState, renderProxy: RenderProxy2D): void {
   const runtime = getGlRenderStateRuntime(state);

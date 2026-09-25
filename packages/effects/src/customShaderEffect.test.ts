@@ -1,4 +1,4 @@
-import { createCustomShaderEffect, initializeCustomShaderEffect } from './customShaderEffect';
+import { createCustomShaderEffect, initializeCustomShaderEffect } from './customShaderEffect.ts';
 
 describe('createCustomShaderEffect', () => {
   it('carries options', () => {

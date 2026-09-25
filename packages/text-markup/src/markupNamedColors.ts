@@ -1,7 +1,7 @@
 import { packOpaqueColor } from '@flighthq/color/contract';
 import type { MarkupTagRegistry } from '@flighthq/types/contract';
 
-import { resolveMarkupHexColor } from './markupTagRegistry';
+import { resolveMarkupHexColor } from './markupTagRegistry.ts';
 
 /**
  * Opts a registry's `<font color>` into the CSS named-color keywords — the separately-importable half

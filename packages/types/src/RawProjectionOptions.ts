@@ -1,4 +1,4 @@
-import type { Matrix4Like } from './Matrix4';
+import type { Matrix4Like } from './Matrix4.ts';
 
 // Structural inputs for createRawProjection. The matrix is copied, not referenced.
 export interface RawProjectionOptions {

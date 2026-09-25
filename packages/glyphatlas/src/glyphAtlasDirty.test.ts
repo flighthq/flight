@@ -1,9 +1,9 @@
 import type { HostGlyphRasterizerCapability } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createGlyphAtlas } from './glyphAtlas';
-import { clearGlyphAtlasDirty, getGlyphAtlasDirtyRegion } from './glyphAtlasDirty';
-import { getGlyphAtlasEntry } from './glyphAtlasEntry';
+import { createGlyphAtlas } from './glyphAtlas.ts';
+import { clearGlyphAtlasDirty, getGlyphAtlasDirtyRegion } from './glyphAtlasDirty.ts';
+import { getGlyphAtlasEntry } from './glyphAtlasEntry.ts';
 
 const defaultBackend: HostGlyphRasterizerCapability = { rasterize: () => null };
 

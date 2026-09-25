@@ -22,7 +22,7 @@ import {
   verifyFixtureArchive,
   verifyFixtureExtraction,
   writeFixtureTreeStamp,
-} from './fixtures';
+} from './fixtures.ts';
 
 // NOTHING IN THIS FILE REACHES THE NETWORK. The verify and extract paths are exercised against tarballs
 // this file builds in a temp directory, which is what makes them testable at all — the live fetch is a

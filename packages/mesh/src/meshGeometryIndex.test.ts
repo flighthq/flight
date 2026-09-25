@@ -1,14 +1,14 @@
 import { createAabb } from '@flighthq/geometry/contract';
 import type { VertexAttributeLayout } from '@flighthq/types/contract';
 
-import { createMeshGeometry } from './meshGeometry';
+import { createMeshGeometry } from './meshGeometry.ts';
 import {
   compactMeshGeometryVertices,
   computeMeshGeometryWireframeIndices,
   expandMeshGeometryIndices,
   indexMeshGeometryVertices,
   weldMeshGeometryVertices,
-} from './meshGeometryIndex';
+} from './meshGeometryIndex.ts';
 
 const CANONICAL_LAYOUT: VertexAttributeLayout = {
   attributes: [

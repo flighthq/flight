@@ -1,8 +1,8 @@
-import type { Entity, EntityWithoutRuntime } from './Entity';
-import type { Sampler } from './Sampler';
-import type { TextureSource } from './TextureSource';
-import type { TextureUvTransform } from './TextureUvTransform';
-import type { VoxelGrid } from './VoxelGrid';
+import type { Entity, EntityWithoutRuntime } from './Entity.ts';
+import type { Sampler } from './Sampler.ts';
+import type { TextureSource } from './TextureSource.ts';
+import type { TextureUvTransform } from './TextureUvTransform.ts';
+import type { VoxelGrid } from './VoxelGrid.ts';
 
 // How the texture's pixels are interpreted at sample time. baseColor/emissive maps are 'srgb'
 // (decoded to linear on read); data maps — normal, metallic-roughness, occlusion — are

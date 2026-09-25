@@ -8,8 +8,8 @@ import {
   getGlyphAtlasBitmap,
   getGlyphAtlasLayoutVersion,
   initializeGlyphAtlas,
-} from './glyphAtlas';
-import { getGlyphAtlasEntry } from './glyphAtlasEntry';
+} from './glyphAtlas.ts';
+import { getGlyphAtlasEntry } from './glyphAtlasEntry.ts';
 
 const defaultBackend: HostGlyphRasterizerCapability = { rasterize: () => null };
 

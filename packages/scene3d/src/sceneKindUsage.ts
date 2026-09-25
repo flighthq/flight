@@ -10,7 +10,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ImageTextureSourceKind } from '@flighthq/types/contract';
 
-import { isMesh } from './mesh';
+import { isMesh } from './mesh.ts';
 
 export function createScene3DKindUsage(): Scene3DKindUsage {
   const out = allocateEntity<Scene3DKindUsage>();

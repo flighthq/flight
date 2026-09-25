@@ -1,7 +1,7 @@
-import { RenderRegistryTable } from './RenderRegistrySignals';
-import { RequirementFacet } from './RequirementFacet';
-import type { SceneCoverageEntry } from './SceneCoverageEntry';
-import { SceneCoverage } from './SceneCoverageEntry';
+import { RenderRegistryTable } from './RenderRegistrySignals.ts';
+import { RequirementFacet } from './RequirementFacet.ts';
+import type { SceneCoverageEntry } from './SceneCoverageEntry.ts';
+import { SceneCoverage } from './SceneCoverageEntry.ts';
 
 function assertNever(value: never): never {
   throw new Error(`Unhandled coverage entry: ${JSON.stringify(value)}`);

@@ -3,9 +3,9 @@ import { martinezPathBooleanKernel } from '@flighthq/path-boolean/contract';
 import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { registerRiveDrawOrderHandlers } from './riveDrawOrder';
-import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry';
-import { createScene2DFromRiveDocument } from './riveScene2D';
+import { registerRiveDrawOrderHandlers } from './riveDrawOrder.ts';
+import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry.ts';
+import { createScene2DFromRiveDocument } from './riveScene2D.ts';
 
 const kernel = martinezPathBooleanKernel;
 

@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { Signal } from './Signal.ts';
 
 // The @flighthq/assets header. An id-keyed asset library layered over @flighthq/loader (scheduling)
 // and the per-resource decoders. The library owns keying, dedup, reference counting, manifests, and

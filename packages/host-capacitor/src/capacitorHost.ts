@@ -1,9 +1,9 @@
 import { createHost } from '@flighthq/host/contract';
 import type { CapacitorApi, CapacitorHost, EntityRuntimeKey, MobileOsProfile } from '@flighthq/types/contract';
 
-import { capacitorHostApp } from './capacitorApp';
-import { capacitorHostClipboard } from './capacitorClipboard';
-import { capacitorHostConnectivity } from './capacitorConnectivity';
+import { capacitorHostApp } from './capacitorApp.ts';
+import { capacitorHostClipboard } from './capacitorClipboard.ts';
+import { capacitorHostConnectivity } from './capacitorConnectivity.ts';
 import {
   capacitorHostAccessibility,
   capacitorHostAudio,
@@ -43,15 +43,15 @@ import {
   capacitorHostVideo,
   capacitorHostWgpu,
   capacitorHostWindow,
-} from './capacitorDefaultHostGroups';
-import { capacitorHostDialog } from './capacitorDialog';
-import { capacitorHostHapticsGroup, capacitorHostSoftKeyboardGroup } from './capacitorInputHost';
-import { capacitorHostNotification } from './capacitorNotification';
-import { capacitorHostProtocol } from './capacitorProtocol';
-import { capacitorHostShare } from './capacitorShare';
-import { capacitorHostStatusBarGroup } from './capacitorStatusBar';
-import { capacitorHostFileSystemGroup } from './capacitorStorageHost';
-import { capacitorHostDeviceGroup, capacitorHostGeolocationGroup } from './capacitorSystemHost';
+} from './capacitorDefaultHostGroups.ts';
+import { capacitorHostDialog } from './capacitorDialog.ts';
+import { capacitorHostHapticsGroup, capacitorHostSoftKeyboardGroup } from './capacitorInputHost.ts';
+import { capacitorHostNotification } from './capacitorNotification.ts';
+import { capacitorHostProtocol } from './capacitorProtocol.ts';
+import { capacitorHostShare } from './capacitorShare.ts';
+import { capacitorHostStatusBarGroup } from './capacitorStatusBar.ts';
+import { capacitorHostFileSystemGroup } from './capacitorStorageHost.ts';
+import { capacitorHostDeviceGroup, capacitorHostGeolocationGroup } from './capacitorSystemHost.ts';
 
 // The explicit Capacitor host. Every populated slot below is backed by a real plugin operation; empty
 // groups make unsupported or not-yet-migrated coverage explicit.

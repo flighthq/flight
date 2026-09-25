@@ -9,9 +9,9 @@ import {
 import { createRenderCache } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
-import { createGlCacheState, ensureGlRenderCacheTarget, refreshGlRenderCache } from './glCache';
-import { popGlClipContours, pushGlClipContours } from './glClipContours';
-import { createGlState } from './glTestHelper';
+import { createGlCacheState, ensureGlRenderCacheTarget, refreshGlRenderCache } from './glCache.ts';
+import { popGlClipContours, pushGlClipContours } from './glClipContours.ts';
+import { createGlState } from './glTestHelper.ts';
 
 const SQUARE = [[0, 0, 50, 0, 50, 50, 0, 50]];
 

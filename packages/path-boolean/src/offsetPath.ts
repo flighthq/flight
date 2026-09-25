@@ -7,7 +7,7 @@ import type {
   PathOffsetOptions,
 } from '@flighthq/types/contract';
 
-import { resolvePathRegions } from './resolvePathRegions';
+import { resolvePathRegions } from './resolvePathRegions.ts';
 
 // Offsets a path outward (positive `delta`, inflate) or inward (negative `delta`, deflate) by a signed
 // distance, returning a fresh polygon-outline `Path`. The input is flattened to polygon contours at the

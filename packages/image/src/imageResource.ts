@@ -9,7 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 import { CompressedImageTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
-import { getHostImageSourceDimensions } from './imageSourceDimensions';
+import { getHostImageSourceDimensions } from './imageSourceDimensions.ts';
 
 // Allocates a new resource identity over the same borrowed host image. The host handle is shared by
 // reference; the clone owns an independent version counter for renderer cache invalidation.

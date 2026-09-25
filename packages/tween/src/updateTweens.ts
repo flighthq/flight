@@ -1,7 +1,7 @@
 import { emitSignal } from '@flighthq/signals/contract';
 import type { Tween, TweenManager } from '@flighthq/types/contract';
 
-import { initializeTween } from './internal';
+import { initializeTween } from './internal.ts';
 
 export function completeTween<T extends object>(tween: Tween<T>): void {
   if (tween.complete) return;

@@ -15,7 +15,7 @@ import {
   transformBoundingSphereByMatrix4,
 } from '@flighthq/geometry/contract';
 
-import { initializeBoundingSphere } from './boundingSphere';
+import { initializeBoundingSphere } from './boundingSphere.ts';
 
 describe('cloneBoundingSphere', () => {
   it('creates an independent copy with an independent center', () => {

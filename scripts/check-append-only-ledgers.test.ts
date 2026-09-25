@@ -5,8 +5,8 @@ import {
   formatAppendOnlyLedgerReport,
   getLedgerCellName,
   selectLedgerBaseline,
-} from './check-append-only-ledgers';
-import type { LedgerSection } from './check-append-only-ledgers';
+} from './check-append-only-ledgers.ts';
+import type { LedgerSection } from './check-append-only-ledgers.ts';
 
 // The real Approved line from `agents/packages/particles/assessment.md`, and the one the end-to-end
 // probe edited to produce the MUST-FAIL half of the pair.

@@ -2,8 +2,8 @@ import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import type { Node2D, GlRenderState, Kind, RenderProxy2D } from '@flighthq/types/contract';
 import type { GlBitmapShader } from '@flighthq/types/contract';
 
-import { getGlRenderStateRuntime } from './glRenderState';
-import { ensureDefaultGlBitmapShader } from './glShader';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
+import { ensureDefaultGlBitmapShader } from './glShader.ts';
 
 // Per-state shader bindings, keyed by the render node. Because render nodes are
 // per-state (state.renderProxyMap), a module-level map keyed by render node is

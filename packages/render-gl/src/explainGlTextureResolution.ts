@@ -1,7 +1,7 @@
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type { GlRenderState, TextureLike, TextureResolutionExplanation } from '@flighthq/types/contract';
 
-import { getGlRenderStateRuntime } from './glRenderState';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
 
 export function explainGlTextureResolution(
   state: GlRenderState,

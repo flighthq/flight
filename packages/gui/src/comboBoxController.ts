@@ -8,15 +8,15 @@ import type {
   Node2D,
 } from '@flighthq/types/contract';
 
-import { getButtonControllerSignals } from './buttonController';
+import { getButtonControllerSignals } from './buttonController.ts';
 import {
   connectGuiSignal,
   createGuiController,
   createGuiControllerRuntime,
   disposeGuiController,
   getGuiControllerRuntime,
-} from './guiController';
-import { getListControllerSignals, setListControllerVisible } from './listController';
+} from './guiController.ts';
+import { getListControllerSignals, setListControllerVisible } from './listController.ts';
 
 interface ComboBoxControllerFields {
   button: ButtonController | null;

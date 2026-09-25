@@ -14,9 +14,9 @@ import type {
   RigidBody2D,
 } from '@flighthq/types/contract';
 
-import { writePhysics2DSoftRowParameters } from './jointRows';
-import { applyPhysics2DImpulse } from './solver';
-import { findPhysics2DBody } from './world';
+import { writePhysics2DSoftRowParameters } from './jointRows.ts';
+import { applyPhysics2DImpulse } from './solver.ts';
+import { findPhysics2DBody } from './world.ts';
 
 // The built-in joint kinds. Bare names are reserved for these; a user's own joint takes a vendor prefix.
 export const Physics2DDistanceJointKind = 'Distance';

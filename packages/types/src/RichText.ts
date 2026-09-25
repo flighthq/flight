@@ -1,10 +1,10 @@
-import type { RichTextContent } from './RichTextContent';
-import type { TextAutoSize } from './TextAutoSize';
-import type { TextFieldSignals } from './TextFieldSignals';
-import type { TextFormat } from './TextFormat';
-import type { TextFormatRange } from './TextFormatRange';
-import type { TextInputState } from './TextInputState';
-import type { TextLabel, TextLabelData, TextLabelRuntime } from './TextLabel';
+import type { RichTextContent } from './RichTextContent.ts';
+import type { TextAutoSize } from './TextAutoSize.ts';
+import type { TextFieldSignals } from './TextFieldSignals.ts';
+import type { TextFormat } from './TextFormat.ts';
+import type { TextFormatRange } from './TextFormatRange.ts';
+import type { TextInputState } from './TextInputState.ts';
+import type { TextLabel, TextLabelData, TextLabelRuntime } from './TextLabel.ts';
 
 export interface RichTextData extends TextLabelData {
   autoSize: TextAutoSize;

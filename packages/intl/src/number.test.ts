@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { formatCompactNumber, formatCurrency, formatNumber, formatPercent, formatUnit } from './number';
+import { formatCompactNumber, formatCurrency, formatNumber, formatPercent, formatUnit } from './number.ts';
 
 afterEach(() => {
   vi.restoreAllMocks();

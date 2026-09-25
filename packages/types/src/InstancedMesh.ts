@@ -1,9 +1,9 @@
-import type { Aabb } from './Aabb';
-import type { InstancedMeshSignals } from './InstancedMeshSignals';
-import type { Material3D } from './Material3D';
-import type { Matrix4 } from './Matrix4';
-import type { MeshGeometry } from './MeshGeometry';
-import type { Node3D, Node3DRuntime } from './Node3D';
+import type { Aabb } from './Aabb.ts';
+import type { InstancedMeshSignals } from './InstancedMeshSignals.ts';
+import type { Material3D } from './Material3D.ts';
+import type { Matrix4 } from './Matrix4.ts';
+import type { MeshGeometry } from './MeshGeometry.ts';
+import type { Node3D, Node3DRuntime } from './Node3D.ts';
 export interface InstancedMesh extends Node3D {
   geometry: MeshGeometry;
   instanceColors: Uint32Array<ArrayBuffer> | null;

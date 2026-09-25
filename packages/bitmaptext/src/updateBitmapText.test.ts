@@ -23,13 +23,13 @@ import {
   getBitmapTextPages,
   isBitmapTextGlyphLayoutStale,
   isBitmapTextTruncated,
-} from './bitmapText';
+} from './bitmapText.ts';
 import {
   refreshBitmapTextGlyphLayout,
   setBitmapTextLayoutGuard,
   setBitmapTextMissingGlyphGuard,
   updateBitmapText,
-} from './updateBitmapText';
+} from './updateBitmapText.ts';
 
 // A deterministic single-page glyph source: every visible glyph is 6x8 with advance 10 and bearingY 8
 // (so line tops sit at y=0), a space advances 5 with no pixels, and the pair (A, B) kerns by -2. All

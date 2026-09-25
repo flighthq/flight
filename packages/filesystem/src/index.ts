@@ -39,4 +39,4 @@ export {
   writeDialogHandleTextFile,
   writeFileAtomic,
   writeTextFile,
-} from './contract';
+} from './contract.ts';

@@ -1,7 +1,7 @@
 import type { CapacitorApi } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { capacitorHostProtocol, capacitorHostProtocolOpen } from './capacitorProtocol';
+import { capacitorHostProtocol, capacitorHostProtocolOpen } from './capacitorProtocol.ts';
 
 const flush = async () => {
   await Promise.resolve();

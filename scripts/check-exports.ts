@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
-import { getModulePublishedValueExports, getModuleValueExports } from './export-lane-source';
+import { getModulePublishedValueExports, getModuleValueExports } from './export-lane-source.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES_DIR = join(ROOT, 'packages');
@@ -398,9 +398,15 @@ function getModulesFromFile(filePath: string): Set<string> | null {
   if (!existsSync(filePath)) return null;
   const src = readFileSync(filePath, 'utf8');
   const modules = new Set<string>();
-  for (const m of src.matchAll(/export \* from '\.\/([^']+)'/g)) modules.add(m[1]);
-  for (const m of src.matchAll(/export\s*\{[^}]*\}\s*from\s*'\.\/([^']+)'/g)) modules.add(m[1]);
+  for (const m of src.matchAll(/export \* from '\.\/([^']+)'/g)) modules.add(withoutTypeScriptExtension(m[1]));
+  for (const m of src.matchAll(/export\s*\{[^}]*\}\s*from\s*'\.\/([^']+)'/g)) {
+    modules.add(withoutTypeScriptExtension(m[1]));
+  }
   return modules;
+}
+
+function withoutTypeScriptExtension(moduleSpecifier: string): string {
+  return moduleSpecifier.replace(/\.ts$/, '');
 }
 
 function getExportNamesFromFile(filePath: string, srcDir: string): Set<string> | 'all' | null {
@@ -421,8 +427,9 @@ function getExportNamesFromFile(filePath: string, srcDir: string): Set<string> |
   }
 
   for (const m of src.matchAll(/export \* from '\.\/([^']+)'/g)) {
-    if (m[1] === 'contract') return 'all';
-    const fp = join(srcDir, m[1] + '.ts');
+    const moduleName = withoutTypeScriptExtension(m[1]);
+    if (moduleName === 'contract') return 'all';
+    const fp = join(srcDir, moduleName + '.ts');
     for (const n of getModulePublishedValueExports(fp)) names.add(n);
   }
 
@@ -450,7 +457,7 @@ function getIndexDuplicateNames(filePath: string, srcDir: string): string[] {
   }
 
   for (const m of src.matchAll(/export \* from '\.\/([^']+)'/g)) {
-    const fp = join(srcDir, m[1] + '.ts');
+    const fp = join(srcDir, withoutTypeScriptExtension(m[1]) + '.ts');
     for (const n of getModuleValueExports(fp)) {
       if (seen.has(n)) duplicates.add(n);
       seen.add(n);
@@ -486,12 +493,12 @@ function generateContract(exportsByModule: ModuleExports[], classification: Map<
       (name) => classification.get(name)?.lane !== 'exclude',
     );
     if (laneNames.length === owned.length && wildcardPublishesOnlyContractNames) {
-      lines.push(`export * from './${mod}';`);
+      lines.push(`export * from './${mod}.ts';`);
       continue;
     }
     lines.push('export {');
     for (const n of laneNames) lines.push(`  ${n},`);
-    lines.push(`} from './${mod}';`);
+    lines.push(`} from './${mod}.ts';`);
   }
 
   return lines.join('\n') + '\n';
@@ -525,11 +532,11 @@ function generateIndex(exportsByModule: ModuleExports[], classification: Map<str
       owned.length === nonExcluded.length &&
       wildcardPublishesOnlyPublicNames
     ) {
-      lines.push(`export * from './${mod}';`);
+      lines.push(`export * from './${mod}.ts';`);
     } else {
       lines.push('export {');
       for (const n of publicNames) lines.push(`  ${n},`);
-      lines.push(`} from './${mod}';`);
+      lines.push(`} from './${mod}.ts';`);
     }
   }
 

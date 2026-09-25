@@ -19,7 +19,7 @@ import {
   Physics3DAbiJointValueStride,
   Physics3DAbiQueryValueStride,
   Physics3DAbiVersion,
-} from './physics3DAbiLayout';
+} from './physics3DAbiLayout.ts';
 
 export function clearPhysics3DAbiCommandBuffer(out: Physics3DAbiCommandBuffer): void {
   out.byteLength = Physics3DAbiCommandHeaderByteLength;

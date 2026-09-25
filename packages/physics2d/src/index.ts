@@ -1,16 +1,16 @@
-export * from './broadphase';
+export * from './broadphase.ts';
 export {
   createPhysics2DColliderWorldShape,
   updatePhysics2DColliderWorldShape,
   writePhysics2DColliderBounds,
-} from './colliderTransform';
-export { createPhysics2DDebugGeometry, writePhysics2DDebugGeometry } from './debugGeometry';
-export * from './enablePhysics2DGuards';
-export * from './explainPhysics2DCollision';
-export * from './explainPhysics2DJoints';
-export * from './explainPhysics2DStep';
-export * from './islands';
-export * from './jointCollisionSuppression';
+} from './colliderTransform.ts';
+export { createPhysics2DDebugGeometry, writePhysics2DDebugGeometry } from './debugGeometry.ts';
+export * from './enablePhysics2DGuards.ts';
+export * from './explainPhysics2DCollision.ts';
+export * from './explainPhysics2DJoints.ts';
+export * from './explainPhysics2DStep.ts';
+export * from './islands.ts';
+export * from './jointCollisionSuppression.ts';
 export {
   createPhysics2DDistanceJoint,
   createPhysics2DGearJoint,
@@ -21,19 +21,19 @@ export {
   createPhysics2DRopeJoint,
   createPhysics2DWeldJoint,
   createPhysics2DWheelJoint,
-} from './jointFactories';
-export { createPhysics2DJointReaction, writePhysics2DJointReaction } from './jointReactions';
-export * from './jointRegistry';
-export * from './jointRows';
-export * from './joints';
-export * from './massProperties';
-export * from './material';
-export * from './nodeSync';
-export * from './ownership';
-export * from './registerBuiltInPhysics2DJointSolvers';
-export * from './solver';
-export { stepPhysics2D } from './step';
-export * from './stepValidation';
+} from './jointFactories.ts';
+export { createPhysics2DJointReaction, writePhysics2DJointReaction } from './jointReactions.ts';
+export * from './jointRegistry.ts';
+export * from './jointRows.ts';
+export * from './joints.ts';
+export * from './massProperties.ts';
+export * from './material.ts';
+export * from './nodeSync.ts';
+export * from './ownership.ts';
+export * from './registerBuiltInPhysics2DJointSolvers.ts';
+export * from './solver.ts';
+export { stepPhysics2D } from './step.ts';
+export * from './stepValidation.ts';
 export {
   addPhysics2DBody,
   addPhysics2DCollider,
@@ -58,7 +58,7 @@ export {
   setPhysics2DBodyTransform,
   setPhysics2DBodyType,
   Physics2DWorldVersion,
-} from './world';
+} from './world.ts';
 export {
   createPhysics2DQueryFilter,
   createPhysics2DQueryResult,
@@ -69,4 +69,4 @@ export {
   queryPhysics2DRayClosest,
   queryPhysics2DRegion,
   queryPhysics2DShapeCast,
-} from './worldQueries';
+} from './worldQueries.ts';

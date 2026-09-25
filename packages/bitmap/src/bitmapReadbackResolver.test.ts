@@ -1,7 +1,7 @@
 import type { HostBitmapReadbackCapability, HostImageSource } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
-import { resolveBitmapReadback } from './bitmapReadbackResolver';
+import { resolveBitmapReadback } from './bitmapReadbackResolver.ts';
 
 function hostWith(
   readBitmap: {

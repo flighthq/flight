@@ -1,6 +1,6 @@
 import type { SpatialIndexingNotice } from '@flighthq/types/contract';
 
-import { MAX_INDEXED_CELLS_PER_OBJECT } from './uniformGrid';
+import { MAX_INDEXED_CELLS_PER_OBJECT } from './uniformGrid.ts';
 
 // Renders an indexing notice as a caller-facing sentence, and is the only place in this package that
 // holds one. Import it to turn the structured record a SpatialIndexingGuard receives into something a

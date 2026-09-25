@@ -1,9 +1,9 @@
 import { createAabb } from '@flighthq/geometry/contract';
 import type { OrthographicProjection } from '@flighthq/types/contract';
 
-import { createCamera3D } from './camera';
-import { createPerspectiveProjection } from './projection';
-import { configureDirectionalShadowCamera3D, configureDirectionalShadowCamera3DTightFit } from './shadowCamera';
+import { createCamera3D } from './camera.ts';
+import { createPerspectiveProjection } from './projection.ts';
+import { configureDirectionalShadowCamera3D, configureDirectionalShadowCamera3DTightFit } from './shadowCamera.ts';
 
 function bounds() {
   return createAabb(-1, -1, -1, 1, 1, 1);

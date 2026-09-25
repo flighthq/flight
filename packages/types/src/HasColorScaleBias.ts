@@ -1,5 +1,5 @@
-import type { ColorScaleBias } from './ColorScaleBias';
-import type { NodeOf, NodeTraits } from './Node';
+import type { ColorScaleBias } from './ColorScaleBias.ts';
+import type { NodeOf, NodeTraits } from './Node.ts';
 
 // Node trait carrying a node-level color scale/bias — the Adjustment tier's pointwise value remap
 // (`color = color * scale + bias`) folded into the draw, not a material. A node owns this trait

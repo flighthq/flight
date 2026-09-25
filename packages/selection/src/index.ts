@@ -26,4 +26,4 @@ export {
   selectNode,
   toggleNodeSelection,
   updateMarqueeSelection,
-} from './contract';
+} from './contract.ts';

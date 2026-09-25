@@ -2,7 +2,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { downloadConsumerAssets } from './asset-cache';
+import { downloadConsumerAssets } from './asset-cache.ts';
 
 // Warm the whole shared asset cache in one shot: download every consumer's manifest (all example
 // packages plus the functional suite) into .cache/assets/<consumer>. This is the

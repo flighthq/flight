@@ -1,20 +1,20 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createBoundingSphere } from '@flighthq/geometry/contract';
 
-import { createAmbientLight } from './ambientLight';
-import { createAreaLight } from './areaLight';
-import { createDirectionalLight } from './directionalLight';
-import { createEnvironment } from './environment';
-import { createHemisphereLight } from './hemisphereLight';
+import { createAmbientLight } from './ambientLight.ts';
+import { createAreaLight } from './areaLight.ts';
+import { createDirectionalLight } from './directionalLight.ts';
+import { createEnvironment } from './environment.ts';
+import { createHemisphereLight } from './hemisphereLight.ts';
 import {
   getLightContributionAtBoundingSphere,
   getLightInfluenceBounds,
   getLightLuminance,
   hasLightInfluenceOnBounds,
   isLightCastingShadow,
-} from './lightAnalysis';
-import { createPointLight } from './pointLight';
-import { createSpotLight } from './spotLight';
+} from './lightAnalysis.ts';
+import { createPointLight } from './pointLight.ts';
+import { createSpotLight } from './spotLight.ts';
 
 describe('getLightContributionAtBoundingSphere', () => {
   it('matches inverse-square attenuation for an infinite-range point light', () => {

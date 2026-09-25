@@ -1,4 +1,4 @@
-import type { Material, MaterialDimensionKey } from './Material';
+import type { Material, MaterialDimensionKey } from './Material.ts';
 
 // The 2D branch of the material hierarchy, parallel to Node2D on the node side. It adds no fields
 // beyond Material today: its job is to make dimensionality part of the TYPE, so an attachment point

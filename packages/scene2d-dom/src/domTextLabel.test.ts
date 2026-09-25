@@ -3,8 +3,8 @@ import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createTextLabel } from '@flighthq/text/contract';
 import { TextLabelKind } from '@flighthq/types/contract';
 
-import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
-import { domTextLabelRenderer, drawDomTextLabel, initializeDomTextData } from './domTextLabel';
+import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
+import { domTextLabelRenderer, drawDomTextLabel, initializeDomTextData } from './domTextLabel.ts';
 
 function makeState() {
   const container = document.createElement('div');

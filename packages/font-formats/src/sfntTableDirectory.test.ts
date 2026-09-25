@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { createSyntheticFont } from './openTypeTestHelper';
-import { readSfntTableDirectory, readSfntTag } from './sfntTableDirectory';
+import { createSyntheticFont } from './openTypeTestHelper.ts';
+import { readSfntTableDirectory, readSfntTag } from './sfntTableDirectory.ts';
 
 describe('readSfntTableDirectory', () => {
   it('reads every table a well-formed font declares', () => {

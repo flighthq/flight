@@ -1,7 +1,7 @@
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type { TextureLike, TextureResolutionExplanation, WgpuRenderState } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
 export function explainWgpuTextureResolution(
   state: WgpuRenderState,

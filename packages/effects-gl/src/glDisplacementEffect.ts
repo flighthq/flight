@@ -6,8 +6,8 @@ import type {
   GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Displacement / heat-haze: warp the sample uv by an animated sine field for a refractive wobble.
 export function applyDisplacementEffectToGl(

@@ -1,5 +1,5 @@
-import { formatLibgdxAtlas } from './libgdxAtlasFormat';
-import { parseLibgdxAtlasSpritesheet } from './libgdxAtlasParse';
+import { formatLibgdxAtlas } from './libgdxAtlasFormat.ts';
+import { parseLibgdxAtlasSpritesheet } from './libgdxAtlasParse.ts';
 
 const ROUND_TRIP_ATLAS = `atlas.png
   size: 256, 128

@@ -1,5 +1,5 @@
-import { createBitmap } from './bitmap';
-import { createBitmapRegion, setBitmapRegion } from './bitmapRegion';
+import { createBitmap } from './bitmap.ts';
+import { createBitmapRegion, setBitmapRegion } from './bitmapRegion.ts';
 
 describe('createBitmapRegion', () => {
   it('covers the whole bitmap when no bounds are given', () => {

@@ -1,5 +1,5 @@
-import type { Environment } from './Environment';
-import type { Node3D } from './Node3D';
+import type { Environment } from './Environment.ts';
+import type { Node3D } from './Node3D.ts';
 
 export interface GlEnvironmentCaptureOptions {
   environment?: Environment;

@@ -1,7 +1,7 @@
 import type { CapacitorApi, CapacitorPosition } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { capacitorHostGeolocation } from './capacitorGeolocation';
+import { capacitorHostGeolocation } from './capacitorGeolocation.ts';
 
 const flush = async () => {
   await Promise.resolve();

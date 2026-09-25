@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import { normalizePath } from 'vite';
 import type { Plugin } from 'vite';
 
-import { workspacePackages } from './workspaces';
+import { workspacePackages } from './workspaces.ts';
 
 interface ExportTarget {
   importedName: string;

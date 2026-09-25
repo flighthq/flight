@@ -1,5 +1,5 @@
-import type { SamplerLike } from './Sampler';
-import type { TextureColorSpace } from './Texture';
+import type { SamplerLike } from './Sampler.ts';
+import type { TextureColorSpace } from './Texture.ts';
 
 export interface CreateExternalTextureOptions {
   // Declares the borrowed handle's existing sample interpretation; the backend cannot reinterpret

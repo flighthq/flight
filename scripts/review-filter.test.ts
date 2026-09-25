@@ -1,6 +1,6 @@
-import { reviewableCells } from '../tools/review/src/cellRole';
-import type { ReviewCellRole } from '../tools/review/src/cellRole';
-import { filterReviewItems } from '../tools/review/src/reviewFilter';
+import { reviewableCells } from '../tools/review/src/cellRole.ts';
+import type { ReviewCellRole } from '../tools/review/src/cellRole.ts';
+import { filterReviewItems } from '../tools/review/src/reviewFilter.ts';
 
 interface Item {
   cells: { renderer: string; role: ReviewCellRole }[];

@@ -1,4 +1,4 @@
-import type { Surface } from './Surface';
+import type { Surface } from './Surface.ts';
 
 // Sets the size a surface is presented at, in logical pixels. Its own slot rather than a member of the
 // resize capability because the two are independently absent: an offscreen or headless host resizes its

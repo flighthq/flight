@@ -1,7 +1,7 @@
 import type { AnchorLayoutItemStyle, LayoutResolver, LayoutState, ViewportAlign } from '@flighthq/types/contract';
 import { AnchorLayoutKind, LayoutResolutionFailureKind } from '@flighthq/types/contract';
 
-import { registerLayoutResolver } from './layoutState';
+import { registerLayoutResolver } from './layoutState.ts';
 
 export function registerAnchorLayoutResolver(state: Readonly<LayoutState>): void {
   registerLayoutResolver(state, AnchorLayoutKind, anchorLayoutResolver);

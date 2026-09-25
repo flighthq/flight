@@ -7,7 +7,7 @@ import type {
 } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { getPermissionState } from './permission';
+import { getPermissionState } from './permission.ts';
 
 describe('getPermissionState', () => {
   afterEach(() => vi.unstubAllGlobals());

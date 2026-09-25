@@ -1,4 +1,4 @@
-import type { BitmapShadowBlurOptions } from './BitmapShadowBlurOptions';
+import type { BitmapShadowBlurOptions } from './BitmapShadowBlurOptions.ts';
 
 export interface BitmapGlowOptions extends BitmapShadowBlurOptions {
   /** Packed 0xRRGGBBAA glow color. Default 0xff0000ff (opaque red). */

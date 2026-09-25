@@ -1,8 +1,8 @@
-import type { GltfDocument, GltfTextureInfo } from './GltfSchema';
-import type { ImportDiagnostic, ImportDiagnosticSeverity } from './ImportDiagnostic';
-import type { Scene3DDocument } from './Scene3DDocument';
-import type { Texture, TextureColorSpace } from './Texture';
-import type { Transform3D } from './Transform3D';
+import type { GltfDocument, GltfTextureInfo } from './GltfSchema.ts';
+import type { ImportDiagnostic, ImportDiagnosticSeverity } from './ImportDiagnostic.ts';
+import type { Scene3DDocument } from './Scene3DDocument.ts';
+import type { Texture, TextureColorSpace } from './Texture.ts';
+import type { Transform3D } from './Transform3D.ts';
 
 // One accessor result exposed to an optional core-feature handler. The parser retains ownership of byte
 // decoding and diagnostic aggregation; a handler receives only the flat values, authored element count,

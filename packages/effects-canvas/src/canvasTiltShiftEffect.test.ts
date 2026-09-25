@@ -2,13 +2,13 @@ import { createTiltShiftEffect } from '@flighthq/effects/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { CanvasTextureRenderTarget, CanvasRenderTargetPool } from '@flighthq/types/contract';
 
-import { getCanvasEffectRunner } from './canvasEffectRegistry';
-import { canvasTestHost, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport';
+import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
+import { canvasTestHost, createCanvasRenderStateWithoutPass } from './canvasEffectTestSupport.ts';
 import {
   applyTiltShiftEffectToCanvas,
   canvasTiltShiftEffectRunner,
   registerCanvasTiltShiftEffect,
-} from './canvasTiltShiftEffect';
+} from './canvasTiltShiftEffect.ts';
 
 // A black field with a single white ROW at each named index — an impulse, whose response is the blur
 // kernel itself. It is deliberately NOT a stripe pattern: the runner takes seven taps at an integer

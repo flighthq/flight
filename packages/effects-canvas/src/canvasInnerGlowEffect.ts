@@ -7,18 +7,18 @@ import type {
   InnerGlowEffect,
 } from '@flighthq/types/contract';
 
-import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { registerCanvasEffect } from './canvasEffectRegistry';
+import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
+import { registerCanvasEffect } from './canvasEffectRegistry.ts';
 import {
   acquireCanvasRenderTarget,
   createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
-} from './canvasEffectState';
+} from './canvasEffectState.ts';
 import {
   clearCanvasTarget,
   compositeCanvasImage,
   drawCanvasInvertedTintedAlphaMask,
-} from './canvasSourceModeCompositing';
+} from './canvasSourceModeCompositing.ts';
 
 // Inner-glow composite effect: tint the INVERTED silhouette, blur it inward across the boundary, clip it
 // back to the source alpha, then draw it over the source.

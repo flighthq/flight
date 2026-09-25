@@ -1,6 +1,6 @@
 import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import { getGlRenderStateRuntime } from './glRenderState';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
 
 // Reads pixel data from a render target's resolve texture into `out`. Binds the resolve
 // framebuffer (or the draw framebuffer for single-sample targets) for reading, then calls

@@ -2,7 +2,7 @@
 
 import type { Signal, SignalConnectOptions, SignalData } from '@flighthq/types/contract';
 
-import { nullSignalEmit } from './internal';
+import { nullSignalEmit } from './internal.ts';
 
 export function clearSignal<T extends (...args: any[]) => void>(signal: Signal<T>): void {
   signal.emit = nullSignalEmit as unknown as T;

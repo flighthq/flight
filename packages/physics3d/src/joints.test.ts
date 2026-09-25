@@ -10,7 +10,7 @@ import type {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { integrateRigidBody3DPose, refreshRigidBody3DWorldInertia } from './integrate';
+import { integrateRigidBody3DPose, refreshRigidBody3DWorldInertia } from './integrate.ts';
 import {
   createPhysics3DConeTwistJoint,
   createPhysics3DDistanceJoint,
@@ -18,8 +18,8 @@ import {
   createPhysics3DGeneric6DofJoint,
   createPhysics3DHingeJoint,
   createPhysics3DSliderJoint,
-} from './jointFactories';
-import { writePhysics3DJointAnchorVelocity, writePhysics3DJointAnchors } from './jointMath';
+} from './jointFactories.ts';
+import { writePhysics3DJointAnchorVelocity, writePhysics3DJointAnchors } from './jointMath.ts';
 import {
   physics3DBallAndSocketJointSolver,
   physics3DConeTwistJointSolver,
@@ -35,9 +35,9 @@ import {
   Physics3DGeneric6DofJointKind,
   Physics3DHingeJointKind,
   Physics3DSliderJointKind,
-} from './joints';
-import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties';
-import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D, setPhysics3DBodyType } from './world';
+} from './joints.ts';
+import { createPhysics3DMassData, setRigidBody3DMassData } from './massProperties.ts';
+import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D, setPhysics3DBodyType } from './world.ts';
 
 describe('Physics3DBallAndSocketJointKind', () => {
   it('names every built-in kind uniquely and without a vendor prefix', () => {

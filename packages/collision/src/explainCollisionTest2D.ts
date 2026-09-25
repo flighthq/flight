@@ -1,9 +1,9 @@
 import type { CollisionShape2D, CollisionTestExplanation2D } from '@flighthq/types/contract';
 
-import { getCollisionShapeValidationStatus2D } from './collisionShapeValidation2D';
-import { getCollisionPairTest2D, getCollisionSupport2D } from './collisionSupport2D';
-import { createCollisionManifold2D } from './manifold2D';
-import { testCollision2D } from './testCollision2D';
+import { getCollisionShapeValidationStatus2D } from './collisionShapeValidation2D.ts';
+import { getCollisionPairTest2D, getCollisionSupport2D } from './collisionSupport2D.ts';
+import { createCollisionManifold2D } from './manifold2D.ts';
+import { testCollision2D } from './testCollision2D.ts';
 
 // Pure diagnostic twin of testCollision2D. It classifies invalid and unsupported inputs before
 // running the ordinary dispatcher, so callers can distinguish its silent false sentinel from a

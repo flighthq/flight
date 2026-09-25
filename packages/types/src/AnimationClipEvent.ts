@@ -1,4 +1,4 @@
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';
 
 // One clip-owned marker. Payload remains opaque to the animation core; gameplay/audio/VFX consumers
 // interpret it when an AnimationPlayer reports the crossing through its opt-in onEvent signal.

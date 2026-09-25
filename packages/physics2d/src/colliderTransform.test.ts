@@ -12,8 +12,8 @@ import {
   initializeCollisionSegment2D,
   updatePhysics2DColliderWorldShape,
   writePhysics2DColliderBounds,
-} from './colliderTransform';
-import { createPhysics2DCollider, createRigidBody2D } from './world';
+} from './colliderTransform.ts';
+import { createPhysics2DCollider, createRigidBody2D } from './world.ts';
 
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
 

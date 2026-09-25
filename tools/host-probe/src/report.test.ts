@@ -1,5 +1,5 @@
-import type { HostProbeResult } from './contract';
-import { createHostProbeReport } from './report';
+import type { HostProbeResult } from './contract.ts';
+import { createHostProbeReport } from './report.ts';
 
 describe('createHostProbeReport', () => {
   it('passes unsupported and manual results', () => {

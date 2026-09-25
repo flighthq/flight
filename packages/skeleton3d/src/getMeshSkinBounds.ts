@@ -1,6 +1,6 @@
 import type { AabbLike, MeshSkinBindPose, Skeleton3D } from '@flighthq/types/contract';
 
-import { skinVertices } from './skinVertices';
+import { skinVertices } from './skinVertices.ts';
 
 // Skinned-mesh local-space bounds. Two functions, same signature, trading tightness for cost:
 // getMeshSkinConservativeBounds is the cheap culling default (no per-vertex skinning — expands the

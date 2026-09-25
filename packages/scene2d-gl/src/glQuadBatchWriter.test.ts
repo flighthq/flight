@@ -7,7 +7,7 @@ import type {
   Material,
 } from '@flighthq/types/contract';
 
-import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
+import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature.ts';
 import {
   bindGlQuadBatchBaseAttributes,
   ensureGlQuadBatchShader,
@@ -19,9 +19,9 @@ import {
   useGlQuadBatchProgram,
   writeGlQuadBatchAffineInstance,
   writeGlQuadBatchInstance,
-} from './glQuadBatchWriter';
-import { standardGlQuadMaterialRenderer } from './glStandardMaterial';
-import { createGlState } from './glTestHelper';
+} from './glQuadBatchWriter.ts';
+import { standardGlQuadMaterialRenderer } from './glStandardMaterial.ts';
+import { createGlState } from './glTestHelper.ts';
 
 function makeTexture(): WebGLTexture {
   return {} as WebGLTexture;

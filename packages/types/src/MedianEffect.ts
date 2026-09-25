@@ -1,4 +1,4 @@
-import type { Effect } from './Effect';
+import type { Effect } from './Effect.ts';
 
 // Per-channel median denoise: each output pixel is the median of its (2·radius+1)² neighborhood,
 // removing salt-and-pepper noise while preserving edges. A spatial Effect (it reads neighbors), so

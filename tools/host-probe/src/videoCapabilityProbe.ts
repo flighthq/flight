@@ -1,6 +1,6 @@
 import './style.css';
-import type { VideoCapabilityBrowserReport, VideoCapabilityBrowserResult } from './videoCapabilityProbeCore';
-import { runVideoCapabilityBrowserProbe } from './videoCapabilityProbeCore';
+import type { VideoCapabilityBrowserReport, VideoCapabilityBrowserResult } from './videoCapabilityProbeCore.ts';
+import { runVideoCapabilityBrowserProbe } from './videoCapabilityProbeCore.ts';
 
 const app = document.getElementById('app');
 if (app === null) throw new Error('Video capability probe root is missing');

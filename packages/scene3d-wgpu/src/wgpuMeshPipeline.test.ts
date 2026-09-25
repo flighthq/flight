@@ -52,9 +52,9 @@ import {
   wgpuPerMapMaterialBindGroupNeedsRebuild,
   writeWgpuDrawUniform,
   writeWgpuFrameUniform,
-} from './wgpuMeshPipeline';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
+} from './wgpuMeshPipeline.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

@@ -1,4 +1,4 @@
-import { getFontShorthand } from './fontShorthand';
+import { getFontShorthand } from './fontShorthand.ts';
 
 describe('getFontShorthand', () => {
   it('quotes a plain family name at 1em', () => {

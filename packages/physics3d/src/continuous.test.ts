@@ -10,15 +10,15 @@ import {
   hasActivePhysics3DBullet,
   integratePhysics3DContinuous,
   writePhysics3DRotationalCcdEnvelope,
-} from './continuous';
-import { stepPhysics3D } from './step';
+} from './continuous.ts';
+import { stepPhysics3D } from './step.ts';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,
   createPhysics3DCollider,
   createPhysics3DWorld,
   createRigidBody3D,
-} from './world';
+} from './world.ts';
 
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();

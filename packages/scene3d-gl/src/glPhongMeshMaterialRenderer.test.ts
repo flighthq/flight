@@ -5,10 +5,10 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { PhongMaterialKind } from '@flighthq/types/contract';
 
-import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { glPhongMeshMaterialRenderer, registerGlPhongMaterial } from './glPhongMeshMaterialRenderer';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { glPhongMeshMaterialRenderer, registerGlPhongMaterial } from './glPhongMeshMaterialRenderer.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

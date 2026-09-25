@@ -17,8 +17,8 @@ import {
   writePhysics3DJointRelativeRotation,
   writePhysics3DJointRotationError,
   writePhysics3DJointSeparation,
-} from './jointMath';
-import { accumulatePhysics3DJointRowReaction, clearPhysics3DJointReaction } from './jointReaction';
+} from './jointMath.ts';
+import { accumulatePhysics3DJointRowReaction, clearPhysics3DJointReaction } from './jointReaction.ts';
 import {
   applyRow,
   beginJointSolve,
@@ -48,8 +48,8 @@ import {
   warmStartPointBlock,
   writeAngularRow,
   writeRow,
-} from './jointRows';
-import { findPhysics3DBody } from './world';
+} from './jointRows.ts';
+import { findPhysics3DBody } from './world.ts';
 
 // The built-in joint kinds. Bare names are reserved for these; a user's own joint takes a vendor prefix, and
 // that convention rather than a registration guard is what keeps the two from colliding.

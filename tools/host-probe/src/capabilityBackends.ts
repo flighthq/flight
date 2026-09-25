@@ -1,6 +1,6 @@
 import type { Host } from '@flighthq/types/contract';
 
-import type { HostProbeCapability } from './expectations';
+import type { HostProbeCapability } from './expectations.ts';
 
 export type HostProbeBackendSnapshot = Readonly<Record<HostProbeCapability, unknown>>;
 

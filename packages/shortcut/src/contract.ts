@@ -1,2 +1,2 @@
-export * from './shortcut';
-export * from './shortcutExplicitDependency';
+export * from './shortcut.ts';
+export * from './shortcutExplicitDependency.ts';

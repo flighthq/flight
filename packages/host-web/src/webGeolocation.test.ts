@@ -1,4 +1,4 @@
-import { webHostGeolocation } from './webGeolocation';
+import { webHostGeolocation } from './webGeolocation.ts';
 
 describe('webHostGeolocation', () => {
   it('resolves null and does not throw when geolocation is absent', async () => {

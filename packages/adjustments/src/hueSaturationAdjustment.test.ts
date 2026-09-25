@@ -1,4 +1,4 @@
-import { createHueSaturationAdjustment, initializeHueSaturationAdjustment } from './hueSaturationAdjustment';
+import { createHueSaturationAdjustment, initializeHueSaturationAdjustment } from './hueSaturationAdjustment.ts';
 
 describe('createHueSaturationAdjustment', () => {
   it('defaults to the identity and carries a fusable transform', () => {

@@ -1,6 +1,6 @@
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 
-import { parseStarlingSpritesheet, parseStarlingSpritesheetDocument } from './starlingParse';
+import { parseStarlingSpritesheet, parseStarlingSpritesheetDocument } from './starlingParse.ts';
 
 const ATLAS_XML = `<?xml version="1.0" encoding="UTF-8"?>
 <TextureAtlas imagePath="atlas.png">

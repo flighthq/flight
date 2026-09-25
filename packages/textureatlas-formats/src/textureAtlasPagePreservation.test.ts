@@ -1,10 +1,10 @@
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 
-import * as contract from './contract';
-import { parseTextureAtlasAsepriteJson } from './textureAtlasAsepriteParse';
-import { parseTextureAtlasLibgdxAtlas } from './textureAtlasLibgdxParse';
-import { parseTextureAtlasStarlingXml } from './textureAtlasStarlingParse';
-import { parseTexturePackerAtlasJson } from './texturePackerAtlasParse';
+import * as contract from './contract.ts';
+import { parseTextureAtlasAsepriteJson } from './textureAtlasAsepriteParse.ts';
+import { parseTextureAtlasLibgdxAtlas } from './textureAtlasLibgdxParse.ts';
+import { parseTextureAtlasStarlingXml } from './textureAtlasStarlingParse.ts';
+import { parseTexturePackerAtlasJson } from './texturePackerAtlasParse.ts';
 
 describe('texture atlas format naming', () => {
   it('spells TexturePacker in full on every export, so a reader searching the product name finds them', () => {

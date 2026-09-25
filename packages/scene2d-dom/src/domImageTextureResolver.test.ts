@@ -5,9 +5,9 @@ import {
 } from '@flighthq/image/contract';
 import { createTexture } from '@flighthq/texture/contract';
 
-import { registerDomImageTextureResolver } from './domImageTextureResolver';
-import { createDomRenderState } from './domRenderState';
-import { resolveDomTexture } from './domTextureResolver';
+import { registerDomImageTextureResolver } from './domImageTextureResolver.ts';
+import { createDomRenderState } from './domRenderState.ts';
+import { resolveDomTexture } from './domTextureResolver.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

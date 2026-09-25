@@ -16,4 +16,4 @@ export {
   registerAssetManifest,
   releaseAsset,
   releaseAssetGroup,
-} from './contract';
+} from './contract.ts';

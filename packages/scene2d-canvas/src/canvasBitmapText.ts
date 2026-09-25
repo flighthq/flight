@@ -9,14 +9,14 @@ import type {
   SpriteRenderer,
 } from '@flighthq/types/contract';
 
-import { drawCanvasAtlasRegion } from './canvasAtlasRegion';
-import { applyCanvasMaterial } from './canvasQuadMaterialRegistry';
+import { drawCanvasAtlasRegion } from './canvasAtlasRegion.ts';
+import { applyCanvasMaterial } from './canvasQuadMaterialRegistry.ts';
 import {
   getCanvasRenderStateTextureResolvers,
   setCanvasGlobalAlpha,
   setCanvasImageSmoothing,
-} from './canvasRenderState';
-import { resolveCanvasTexture } from './canvasTextureResolver';
+} from './canvasRenderState.ts';
+import { resolveCanvasTexture } from './canvasTextureResolver.ts';
 
 // Draws a BitmapText leaf on Canvas 2D: one `drawImage` per glyph, per glyph-atlas page. Canvas realizes
 // no color-adjustment fold, so a node tint is not applied here (honest — the missing

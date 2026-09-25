@@ -10,7 +10,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
+import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
 
 export function createRiveObjectGraph(
   document: Readonly<RiveDocument>,

@@ -1,7 +1,7 @@
 import type { DisplayObject } from '@flighthq/types/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 
-import { createDisplayObject, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayContainer';
+import { createDisplayObject, createDisplayObjectRuntime, getDisplayObjectRuntime } from './displayContainer.ts';
 
 describe('createDisplayObject', () => {
   let displayContainer: DisplayObject;

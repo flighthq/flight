@@ -9,10 +9,10 @@ import {
   readPngDimensions,
   stageOracleCandidateImages,
   verifyOracleRequestedPixels,
-} from './reference-image-candidate';
-import type { ReferenceImageCandidateInput } from './reference-image-candidate';
-import { hashOraclePixelBytes } from './reference-image-png';
-import type { ReferenceImageRequest } from './reference-image-records';
+} from './reference-image-candidate.ts';
+import type { ReferenceImageCandidateInput } from './reference-image-candidate.ts';
+import { hashOraclePixelBytes } from './reference-image-png.ts';
+import type { ReferenceImageRequest } from './reference-image-records.ts';
 
 const PIXEL_HASH = 'c'.repeat(64);
 const REQUEST_PIXEL_HASH = hashOraclePixelBytes(new Uint8Array(24));

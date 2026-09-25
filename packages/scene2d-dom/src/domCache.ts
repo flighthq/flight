@@ -14,8 +14,8 @@ import type {
   RenderState,
 } from '@flighthq/types/contract';
 
-import { prepareDomElement, setDomRendererElement } from './domStyle';
-import { setDomTransformWithOffset } from './domTransform';
+import { prepareDomElement, setDomRendererElement } from './domStyle.ts';
+import { setDomTransformWithOffset } from './domTransform.ts';
 
 export function enableDomRenderCache(state: RenderState): void {
   registerRenderCacheNodeRenderer(state, domRenderCacheRenderer);

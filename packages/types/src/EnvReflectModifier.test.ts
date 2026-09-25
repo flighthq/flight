@@ -1,7 +1,7 @@
-import { EntityRuntimeKey } from './Entity';
-import { EnvReflectModifierKind } from './EnvReflectModifier';
-import type { EnvReflectModifier } from './EnvReflectModifier';
-import type { Modifier } from './Modifier';
+import { EntityRuntimeKey } from './Entity.ts';
+import { EnvReflectModifierKind } from './EnvReflectModifier.ts';
+import type { EnvReflectModifier } from './EnvReflectModifier.ts';
+import type { Modifier } from './Modifier.ts';
 
 describe('EnvReflectModifier', () => {
   describe('EnvReflectModifierKind', () => {

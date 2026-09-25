@@ -1,4 +1,4 @@
-import type { BitmapShadowBlurOptions } from './BitmapShadowBlurOptions';
+import type { BitmapShadowBlurOptions } from './BitmapShadowBlurOptions.ts';
 
 export interface BitmapDropShadowOptions extends BitmapShadowBlurOptions {
   /** Packed 0xRRGGBBAA shadow color. Default 0x000000ff (opaque black). */

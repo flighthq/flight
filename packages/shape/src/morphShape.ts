@@ -13,9 +13,9 @@ import type {
 } from '@flighthq/types/contract';
 import { MorphShapeKind } from '@flighthq/types/contract';
 
-import { sampleMorphShapePaintBindings } from './morphShapePaint';
-import { createShapeRuntime } from './shape';
-import { appendShapePath } from './shapeCommands';
+import { sampleMorphShapePaintBindings } from './morphShapePaint.ts';
+import { createShapeRuntime } from './shape.ts';
+import { appendShapePath } from './shapeCommands.ts';
 
 // Adds a stable sampled path at the current point in the retained command stream. Omitting `morph` uses
 // the primary compatibility binding; passing another prepared morph creates or reuses an independent

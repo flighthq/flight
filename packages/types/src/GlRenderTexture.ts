@@ -1,8 +1,8 @@
-import type { Entity } from './Entity';
-import type { GlContext } from './GlContext';
-import type { GlRenderState } from './GlRenderState';
-import type { GlTextureRenderTarget, GlTextureRenderTargetPool } from './GlRenderTarget';
-import type { RenderTexture } from './RenderTexture';
+import type { Entity } from './Entity.ts';
+import type { GlContext } from './GlContext.ts';
+import type { GlRenderState } from './GlRenderState.ts';
+import type { GlTextureRenderTarget, GlTextureRenderTargetPool } from './GlRenderTarget.ts';
+import type { RenderTexture } from './RenderTexture.ts';
 
 export type GlRenderTextureStatus = 'ready' | 'released' | 'unrendered' | 'writing';
 

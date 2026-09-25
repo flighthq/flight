@@ -1,4 +1,4 @@
-import type { MaterialData } from './Material';
+import type { MaterialData } from './Material.ts';
 
 // Compact per-item color-adjustment datum used by QuadBatch and Tilemap. The packed value follows the
 // SDK's 0xRRGGBBAA convention and realizes as a normalized four-byte multiplier attribute/storage

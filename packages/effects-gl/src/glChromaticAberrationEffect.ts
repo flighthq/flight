@@ -6,8 +6,8 @@ import type {
   GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Chromatic aberration: sample the R/G/B channels at progressively larger offsets so colors fringe
 // apart. When radial, the offset scales with distance from the optical center (true lens behavior);

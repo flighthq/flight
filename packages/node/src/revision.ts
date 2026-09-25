@@ -1,6 +1,6 @@
 import type { Node, NodeRuntime } from '@flighthq/types/contract';
 
-import { getNodeRuntime } from './node';
+import { getNodeRuntime } from './node.ts';
 
 // Records that the node's world transform was just recomputed. `worldTransformId` must change on every
 // recompute so descendants gated on it re-resolve: a child stores its parent's `worldTransformId` and

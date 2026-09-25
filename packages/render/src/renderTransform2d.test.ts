@@ -1,8 +1,8 @@
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
-import { createRenderProxy2D } from './renderProxy';
-import { createRenderState, getRenderStateRuntime } from './renderState';
-import { updateRenderProxy2DTransform } from './renderTransform2d';
+import { createRenderProxy2D } from './renderProxy.ts';
+import { createRenderState, getRenderStateRuntime } from './renderState.ts';
+import { updateRenderProxy2DTransform } from './renderTransform2d.ts';
 
 describe('updateRenderProxy2DTransform', () => {
   it('returns true and updates transform on first call', () => {

@@ -1,7 +1,7 @@
 import type { BitmapRegion } from '@flighthq/types/contract';
 
-import { invalidateBitmap } from './bitmap';
-import type { ImageChannel } from './bitmapImageChannel';
+import { invalidateBitmap } from './bitmap.ts';
+import type { ImageChannel } from './bitmapImageChannel.ts';
 
 /**
  * Copies one channel of `source` into a channel of `dest`. The copied size is

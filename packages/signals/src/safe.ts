@@ -2,7 +2,7 @@
 
 import type { Signal, SignalData } from '@flighthq/types/contract';
 
-import { nullSignalEmit } from './internal';
+import { nullSignalEmit } from './internal.ts';
 
 /**
  * Emits to the priority-ordered listener set captured at emission start.

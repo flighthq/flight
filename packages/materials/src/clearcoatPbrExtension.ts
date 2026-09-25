@@ -2,8 +2,8 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ClearcoatPbrExtension, EntityConstruction } from '@flighthq/types/contract';
 import { ClearcoatPbrExtensionKind } from '@flighthq/types/contract';
 
-import { isValidMaterialWeight } from './materialValidation';
-import { isValidPbrUvSet } from './pbrExtension';
+import { isValidMaterialWeight } from './materialValidation.ts';
+import { isValidPbrUvSet } from './pbrExtension.ts';
 
 export function createClearcoatPbrExtension(opts?: Readonly<Partial<ClearcoatPbrExtension>>): ClearcoatPbrExtension {
   const out = allocateEntity<ClearcoatPbrExtension>();

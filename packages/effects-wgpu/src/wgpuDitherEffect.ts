@@ -5,10 +5,10 @@ import type {
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { drawWgpuEffectPass } from './wgpuEffectPass';
-import { getWgpuEffectPipeline } from './wgpuEffectProgramCache';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
-import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale';
+import { drawWgpuEffectPass } from './wgpuEffectPass.ts';
+import { getWgpuEffectPipeline } from './wgpuEffectProgramCache.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
+import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale.ts';
 
 // Dither: quantize each channel to `levels` steps with a 4x4 ordered Bayer threshold for a retro
 // banded-but-textured look.

@@ -7,7 +7,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ModifierSlot, VertexDisplaceModifierKind } from '@flighthq/types/contract';
 
-import { initializeModifier } from './modifier';
+import { initializeModifier } from './modifier.ts';
 
 // The options for `createVertexDisplaceModifier`. `source` and `amplitude` are required; the rest
 // carry documented defaults. `source`, `axis` presence, and (for HeightMap) `map` presence are

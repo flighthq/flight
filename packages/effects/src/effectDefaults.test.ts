@@ -1,10 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { BloomEffect, Effect, ToneMapEffect, VignetteEffect } from '@flighthq/types/contract';
 
-import { createBloomEffect } from './bloomEffect';
-import { getEffectDefaults, normalizeEffect } from './effectDefaults';
-import { createToneMapEffect } from './toneMapEffect';
-import { createVignetteEffect } from './vignetteEffect';
+import { createBloomEffect } from './bloomEffect.ts';
+import { getEffectDefaults, normalizeEffect } from './effectDefaults.ts';
+import { createToneMapEffect } from './toneMapEffect.ts';
+import { createVignetteEffect } from './vignetteEffect.ts';
 
 describe('getEffectDefaults', () => {
   it('returns documented defaults for BloomEffect', () => {

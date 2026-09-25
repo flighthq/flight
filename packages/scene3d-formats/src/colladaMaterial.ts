@@ -13,7 +13,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { createExternalTextureRef } from './shared';
+import { createExternalTextureRef } from './shared.ts';
 
 /**
  * Appends COLLADA profile_COMMON materials to format-neutral document tables. `materialIndices`

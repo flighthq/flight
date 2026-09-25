@@ -9,15 +9,15 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, RiveFieldType } from '@flighthq/types/contract';
 
-import { createRiveArtboardImportContext, createRiveImportRegistry } from './riveImportRegistry';
+import { createRiveArtboardImportContext, createRiveImportRegistry } from './riveImportRegistry.ts';
 import {
   importRiveNSlicedNodeComponent,
   importRiveShapeComponent,
   rebuildRiveShapes,
   registerRiveShapeHandlers,
-} from './riveShapeNode';
-import { registerRivePaintHandlers } from './riveShapePaint';
-import { registerRivePathHandlers } from './riveShapePath';
+} from './riveShapeNode.ts';
+import { registerRivePaintHandlers } from './riveShapePaint.ts';
+import { registerRivePathHandlers } from './riveShapePath.ts';
 
 const ARTBOARD = 1;
 const SHAPE = 3;

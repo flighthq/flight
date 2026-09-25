@@ -15,8 +15,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ToonMaterialKind } from '@flighthq/types/contract';
 
-import { bindGlMeshLightBlock } from './glLitProgram';
-import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
+import { bindGlMeshLightBlock } from './glLitProgram.ts';
+import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
 import {
   beginGlMeshDraw,
   bindGlUvTransform,
@@ -24,9 +24,9 @@ import {
   hasGlUvTransform,
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
-} from './glMeshProgram';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { ensureGlToonProgram } from './glToonPrelude';
+} from './glMeshProgram.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { ensureGlToonProgram } from './glToonPrelude.ts';
 
 // The built-in Toon (cel-shading) forward-lit mesh-material renderer (GlMeshMaterialRenderer for
 // ToonMaterialKind). bind selects the uber-shader variant for the material's base-color map / ramp /

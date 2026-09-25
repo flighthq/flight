@@ -9,9 +9,9 @@ import { createPlaneMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, LogEntry } from '@flighthq/types/contract';
 import { afterEach, describe, expect, test } from 'vitest';
 
-import { createBillboard } from './billboard';
-import { orientBillboardToCamera } from './billboardCamera';
-import { areScene3DGuardsEnabled, disableScene3DGuards, enableScene3DGuards } from './enableScene3DGuards';
+import { createBillboard } from './billboard.ts';
+import { orientBillboardToCamera } from './billboardCamera.ts';
+import { areScene3DGuardsEnabled, disableScene3DGuards, enableScene3DGuards } from './enableScene3DGuards.ts';
 
 beforeEach(() => clearLogOnceKeys());
 

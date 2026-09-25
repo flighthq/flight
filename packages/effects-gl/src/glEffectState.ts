@@ -33,9 +33,9 @@ import type {
   RenderTargetColorSpace,
 } from '@flighthq/types/contract';
 
-import { applyColorLutPassToGl } from './glColorLutPass';
-import { applyColorMatrixPassToGl } from './glColorMatrixPass';
-import { getGlEffectRunner } from './glEffectRegistry';
+import { applyColorLutPassToGl } from './glColorLutPass.ts';
+import { applyColorMatrixPassToGl } from './glColorMatrixPass.ts';
+import { getGlEffectRunner } from './glEffectRegistry.ts';
 
 // Opt-in post-process pipeline. The scene renders into the pipeline's (optionally MSAA / HDR) target
 // between begin/end; end resolves MSAA, runs the agnostic effect list through the per-state registry

@@ -7,10 +7,10 @@ import {
   destroyGlCubeRenderTarget,
   endGlCubeRenderFace,
   initializeGlCubeRenderTarget,
-} from './glCubeRenderTarget';
-import { getGlRenderStateRuntime } from './glRenderState';
-import { declareGlRenderTargetColorSpace } from './glRenderTarget';
-import { createGlState } from './glTestHelper';
+} from './glCubeRenderTarget.ts';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
+import { declareGlRenderTargetColorSpace } from './glRenderTarget.ts';
+import { createGlState } from './glTestHelper.ts';
 
 function makeState() {
   const { state, gl: base } = createGlState();

@@ -16,7 +16,7 @@ import {
   vibrateDevice,
   vibrateDevicePattern,
   vibrateDeviceWaveform,
-} from './haptics';
+} from './haptics.ts';
 
 interface RecordedCall {
   readonly args: readonly unknown[];

@@ -1,7 +1,7 @@
 import type { Path } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
-import { flattenPath } from './flattenPath';
+import { flattenPath } from './flattenPath.ts';
 
 // Splits `source` into dashed sub-paths according to the given dash pattern and offset. Each
 // dash-on segment becomes an open sub-path (MOVE_TO + LINE_TOs) in `out`. The dash pattern is

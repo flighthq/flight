@@ -1,4 +1,4 @@
-import type { AudioDeviceHandle, AudioSourceHandle } from './AudioDeviceHandle';
+import type { AudioDeviceHandle, AudioSourceHandle } from './AudioDeviceHandle.ts';
 
 export type AudioBusNodeHandle = number & { readonly __brand: 'AudioBusNodeHandle' };
 

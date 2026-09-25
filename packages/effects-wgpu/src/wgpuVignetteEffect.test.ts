@@ -1,4 +1,8 @@
-import { applyVignetteEffectToWgpu, wgpuVignetteEffectRunner, registerWgpuVignetteEffect } from './wgpuVignetteEffect';
+import {
+  applyVignetteEffectToWgpu,
+  wgpuVignetteEffectRunner,
+  registerWgpuVignetteEffect,
+} from './wgpuVignetteEffect.ts';
 
 describe('applyVignetteEffectToWgpu', () => {
   it('is a function', () => {

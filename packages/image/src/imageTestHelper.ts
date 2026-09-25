@@ -1,6 +1,6 @@
 import type { HostImageDimensionResolver } from '@flighthq/types/contract';
 
-import { registerHostImageDimensionResolver, unregisterHostImageDimensionResolver } from './imageSourceDimensions';
+import { registerHostImageDimensionResolver, unregisterHostImageDimensionResolver } from './imageSourceDimensions.ts';
 
 // Measuring a borrowed handle belongs to the host, which leaves every portable package's tests needing a
 // host they must not depend on: pulling @flighthq/host-web into a renderer package's tests would invert

@@ -1,9 +1,9 @@
 import { createSheenPbrExtension } from '@flighthq/materials/contract';
 import { SheenPbrExtensionKind } from '@flighthq/types/contract';
 
-import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry';
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerGlSheenPbrExtension, sheenPbrGlExtension } from './sheenPbrGlExtension';
+import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { registerGlSheenPbrExtension, sheenPbrGlExtension } from './sheenPbrGlExtension.ts';
 
 describe('registerGlSheenPbrExtension', () => {
   it('registers only the sheen extension kind', () => {

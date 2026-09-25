@@ -1,4 +1,4 @@
-import { initializeWebHapticsBackend, webHostHaptics } from './webHaptics';
+import { initializeWebHapticsBackend, webHostHaptics } from './webHaptics.ts';
 
 describe('initializeWebHapticsBackend', () => {
   it('is the construction initializer of createWebHapticsBackend', () => {

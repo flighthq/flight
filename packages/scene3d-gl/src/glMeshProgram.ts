@@ -14,9 +14,9 @@ import type {
   TextureLike,
 } from '@flighthq/types/contract';
 
-import { ensureGlMeshUpload } from './glMeshUpload';
-import { ensureGlInstanceColorPalette, ensureGlInstancePalette, getGlScene3DRuntime } from './glScene3DRuntime';
-import { getGlScene3DViewportAspect } from './glViewportAspect';
+import { ensureGlMeshUpload } from './glMeshUpload.ts';
+import { ensureGlInstanceColorPalette, ensureGlInstancePalette, getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { getGlScene3DViewportAspect } from './glViewportAspect.ts';
 // The shared per-bind head for every mesh-material family: stores the family's program as the active
 // bind→draw handoff, selects it, and sets the depth + face-cull state a forward 3D draw needs (depth
 // test LESS; depth write off for blended runs and on otherwise; back-face cull unless the material is

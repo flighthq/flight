@@ -8,8 +8,8 @@ import type {
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeEffect } from './effect';
-import { getDirectionalEffectPadding, registerEffectPaddingResolver } from './effectPadding';
+import { initializeEffect } from './effect.ts';
+import { getDirectionalEffectPadding, registerEffectPaddingResolver } from './effectPadding.ts';
 
 // Inner-shadow composite effect: tint the inverted silhouette, blur, offset by angle/distance, clip to the source alpha, then draw or hide the source.
 export function createInnerShadowEffect(

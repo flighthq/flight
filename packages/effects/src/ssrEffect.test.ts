@@ -1,4 +1,4 @@
-import { createSsrEffect, initializeSsrEffect } from './ssrEffect';
+import { createSsrEffect, initializeSsrEffect } from './ssrEffect.ts';
 
 describe('createSsrEffect', () => {
   it('tags the intent type', () => {

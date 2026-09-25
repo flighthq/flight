@@ -1,4 +1,4 @@
-import type { Attachment2D } from './Attachment2D';
+import type { Attachment2D } from './Attachment2D.ts';
 
 // A single positioned, oriented point on a bone — a muzzle flash origin, a footstep emitter, a hand grip.
 // It draws nothing and has no extent; what a caller wants from it is a world position and a world

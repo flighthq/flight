@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EmissiveModifier, EmissiveModifierOptions, EntityConstruction } from '@flighthq/types/contract';
 import { EmissiveModifierFacing, EmissiveModifierKind, ModifierSlot } from '@flighthq/types/contract';
 
-import { initializeModifier } from './modifier';
+import { initializeModifier } from './modifier.ts';
 
 // The options for `createEmissiveModifier`. Only `color` is required; every other field carries a
 // documented default so the returned descriptor is fully populated (the define-key signature reads

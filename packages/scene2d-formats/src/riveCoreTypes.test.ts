@@ -1,4 +1,4 @@
-import { getRiveCoreTypeName, getRiveCoreTypeParent, isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
+import { getRiveCoreTypeName, getRiveCoreTypeParent, isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
 
 describe('getRiveCoreTypeName', () => {
   it('names the types a reader meets first', () => {

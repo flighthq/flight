@@ -1,4 +1,4 @@
-import { readRepeatedCliOption, selectCaptureEvidenceTargets } from './capture-evidence-selection';
+import { readRepeatedCliOption, selectCaptureEvidenceTargets } from './capture-evidence-selection.ts';
 
 describe('readRepeatedCliOption', () => {
   it('reads repeated split and equals forms', () => {

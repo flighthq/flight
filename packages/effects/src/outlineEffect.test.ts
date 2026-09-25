@@ -5,7 +5,7 @@ import {
   getOutlineEffectPadding,
   initializeOutlineEffect,
   registerOutlineEffectPaddingResolver,
-} from './outlineEffect';
+} from './outlineEffect.ts';
 
 describe('createOutlineEffect', () => {
   it('tags the intent type', () => {

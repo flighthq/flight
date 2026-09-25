@@ -1,5 +1,5 @@
-import { swfVideoHandler } from './swfVideoHandler';
-import { swfVideoTagFamily } from './swfVideoTagFamily';
+import { swfVideoHandler } from './swfVideoHandler.ts';
+import { swfVideoTagFamily } from './swfVideoTagFamily.ts';
 
 describe('swfVideoTagFamily', () => {
   it('is exactly its handlers, in the order a placed character is offered to them', () => {

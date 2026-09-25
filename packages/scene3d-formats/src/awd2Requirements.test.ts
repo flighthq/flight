@@ -1,6 +1,6 @@
 import { RequirementFacet } from '@flighthq/types/contract';
 
-import { parseAwd2Requirements } from './awd2Requirements';
+import { parseAwd2Requirements } from './awd2Requirements.ts';
 
 describe('parseAwd2Requirements', () => {
   it('reports one requirement per distinct block type, keyed by the AWD2 block name', () => {

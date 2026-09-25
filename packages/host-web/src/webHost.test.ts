@@ -1,8 +1,8 @@
 import { createHost } from '@flighthq/host/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import * as contractApi from './contract';
-import * as publicApi from './index';
+import * as contractApi from './contract.ts';
+import * as publicApi from './index.ts';
 
 // Every top-level group of the ratified flat Host. A group is a plain struct of independently-coverable
 // capability slots, so it is composed here from separately importable consts rather than from the

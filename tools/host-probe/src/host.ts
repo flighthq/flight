@@ -1,5 +1,5 @@
-import type { HostProbeBackendSnapshot } from './capabilityBackends';
-import type { HostProbeHost, HostProbeInstallResult } from './contract';
+import type { HostProbeBackendSnapshot } from './capabilityBackends.ts';
+import type { HostProbeHost, HostProbeInstallResult } from './contract.ts';
 
 export function resolveHostProbeHost(): HostProbeHost {
   const queryHost = new URLSearchParams(globalThis.location?.search ?? '').get('host');
@@ -12,8 +12,8 @@ export async function installHostProbe(
   host: HostProbeHost,
   before: HostProbeBackendSnapshot,
 ): Promise<HostProbeInstallResult> {
-  if (host === 'capacitor') return (await import('./hosts/capacitor')).installCapacitorHostProbe(before);
-  if (host === 'electron') return (await import('./hosts/electron')).installElectronHostProbe();
-  if (host === 'tauri') return (await import('./hosts/tauri')).installTauriHostProbe(before);
-  return (await import('./hosts/web')).installWebHostProbe(before);
+  if (host === 'capacitor') return (await import('./hosts/capacitor.ts')).installCapacitorHostProbe(before);
+  if (host === 'electron') return (await import('./hosts/electron.ts')).installElectronHostProbe();
+  if (host === 'tauri') return (await import('./hosts/tauri.ts')).installTauriHostProbe(before);
+  return (await import('./hosts/web.ts')).installWebHostProbe(before);
 }

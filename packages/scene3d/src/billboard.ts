@@ -11,7 +11,7 @@ import type {
 } from '@flighthq/types/contract';
 import { BillboardKind } from '@flighthq/types/contract';
 
-import { createNode3D, getNode3DRuntime } from './sceneNode';
+import { createNode3D, getNode3DRuntime } from './sceneNode.ts';
 
 export { BillboardKind } from '@flighthq/types/contract';
 

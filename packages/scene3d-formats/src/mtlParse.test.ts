@@ -1,6 +1,6 @@
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 
-import { parseObjMaterialLibrary } from './mtlParse';
+import { parseObjMaterialLibrary } from './mtlParse.ts';
 
 // Asserts EXACTLY ONE crumb of `kind` was recorded (guards the count) and returns it so a test can lock
 // the full contract — severity, true origin, and detail — for that emitted diagnostic.

@@ -1,6 +1,6 @@
 import type { Path } from '@flighthq/types/contract';
 
-import { flattenPath } from './flattenPath';
+import { flattenPath } from './flattenPath.ts';
 
 // Returns the signed curvature of the path at `distance` arc-length units from the start.
 // Positive curvature is a left turn in screen space (y-down). Returns 0 for empty paths, straight

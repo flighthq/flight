@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { getCacheKey, getCached } from './cache';
+import { getCacheKey, getCached } from './cache.ts';
 
 describe('getCached', () => {
   it('builds once per key and reuses the stored value', () => {

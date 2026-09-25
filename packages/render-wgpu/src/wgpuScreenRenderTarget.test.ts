@@ -1,9 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, Surface } from '@flighthq/types/contract';
 
-import { createTestWgpuSurface, testWgpuHost } from './wgpuHost';
-import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { createTestWgpuSurface, testWgpuHost } from './wgpuHost.ts';
+import { beginWgpuRenderPass, endWgpuRenderPass } from './wgpuRenderPass.ts';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import {
   bindWgpuScreenRenderTarget,
   createWgpuScreenRenderTarget,
@@ -12,9 +12,13 @@ import {
   initializeWgpuScreenRenderTarget,
   isWgpuScreenRenderTarget,
   syncWgpuScreenRenderTargetExtent,
-} from './wgpuScreenRenderTarget';
-import { createWgpuRenderStateForTest, createWgpuScreenRenderTargetForTest, installWgpuMock } from './wgpuTestHelper';
-import { createWgpuTextureRenderTarget } from './wgpuTextureRenderTarget';
+} from './wgpuScreenRenderTarget.ts';
+import {
+  createWgpuRenderStateForTest,
+  createWgpuScreenRenderTargetForTest,
+  installWgpuMock,
+} from './wgpuTestHelper.ts';
+import { createWgpuTextureRenderTarget } from './wgpuTextureRenderTarget.ts';
 
 beforeAll(() => {
   installWgpuMock();

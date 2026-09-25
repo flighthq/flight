@@ -2,8 +2,8 @@ import type { BidiClassKernel } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { compactBidiClassKernel } from './bidiClassKernel';
-import { resolveBidiLevels } from './resolveBidiLevels';
+import { compactBidiClassKernel } from './bidiClassKernel.ts';
+import { resolveBidiLevels } from './resolveBidiLevels.ts';
 
 const kernel = compactBidiClassKernel;
 

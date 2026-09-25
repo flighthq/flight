@@ -1,8 +1,8 @@
-import { createColorGradeAdjustment } from './colorGradeAdjustment';
-import { bakeColorLut } from './colorLut';
-import { getAdjustmentColorTransform } from './colorLutAdjustment';
-import { bakeColorLutForRun, createColorLutCache, initializeColorLutCache } from './colorLutCache';
-import { createHueSaturationAdjustment } from './hueSaturationAdjustment';
+import { createColorGradeAdjustment } from './colorGradeAdjustment.ts';
+import { bakeColorLut } from './colorLut.ts';
+import { getAdjustmentColorTransform } from './colorLutAdjustment.ts';
+import { bakeColorLutForRun, createColorLutCache, initializeColorLutCache } from './colorLutCache.ts';
+import { createHueSaturationAdjustment } from './hueSaturationAdjustment.ts';
 
 describe('bakeColorLutForRun', () => {
   it('reuses the same ColorLut reference for a content-identical run rebuilt with fresh objects', () => {

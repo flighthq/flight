@@ -1,7 +1,7 @@
 import type { Entity, EntityRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { createEntityRuntime } from './runtime';
+import { createEntityRuntime } from './runtime.ts';
 
 export function getEntityUid(source: Entity): string {
   const runtime = ensureEntityRuntime(source);

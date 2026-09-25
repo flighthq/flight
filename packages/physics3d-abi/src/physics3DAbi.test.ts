@@ -37,7 +37,7 @@ import {
   readPhysics3DAbiContacts,
   readPhysics3DAbiJoints,
   stepPhysics3DAbiWorld,
-} from './physics3DAbi';
+} from './physics3DAbi.ts';
 import {
   clearPhysics3DAbiCommandBuffer,
   createPhysics3DAbiBodyBuffer,
@@ -46,7 +46,7 @@ import {
   createPhysics3DAbiExecutionResult,
   createPhysics3DAbiJointBuffer,
   createPhysics3DAbiQueryBuffer,
-} from './physics3DAbiBuffer';
+} from './physics3DAbiBuffer.ts';
 import {
   writePhysics3DAbiApplyForceAtPointCommand,
   writePhysics3DAbiApplyForceCommand,
@@ -62,7 +62,7 @@ import {
   writePhysics3DAbiSetJointCommand,
   writePhysics3DAbiSetSolverConfigCommand,
   writePhysics3DAbiWakeBodyCommand,
-} from './physics3DAbiCommand';
+} from './physics3DAbiCommand.ts';
 import {
   Physics3DAbiBodyValue,
   Physics3DAbiBodyValueStride,
@@ -70,8 +70,8 @@ import {
   Physics3DAbiCommandHeaderByteLength,
   Physics3DAbiMaxContactPoints,
   Physics3DAbiVersion,
-} from './physics3DAbiLayout';
-import { queryPhysics3DAbiPoint } from './physics3DAbiQuery';
+} from './physics3DAbiLayout.ts';
+import { queryPhysics3DAbiPoint } from './physics3DAbiQuery.ts';
 
 describe('createPhysics3DAbi', () => {
   it('publishes the reference version and required baseline capabilities', () => {

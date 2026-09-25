@@ -1,4 +1,4 @@
-import { explainEmptyCheckSelection, isCheckSelectionEmpty } from './select';
+import { explainEmptyCheckSelection, isCheckSelectionEmpty } from './select.ts';
 
 // The fourth instance of the repo's evidence invariant — a gate must fail when its required evidence is
 // zero. The parity tier, the regression tier, and test selection each carry a test asserting the gate

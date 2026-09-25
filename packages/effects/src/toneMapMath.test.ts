@@ -8,7 +8,7 @@ import {
   computeUncharted2ToneMap,
   getAcesInputMatrix,
   getAcesOutputMatrix,
-} from './toneMapMath';
+} from './toneMapMath.ts';
 
 describe('computeAcesToneMap', () => {
   it('maps 0 to approximately 0', () => {

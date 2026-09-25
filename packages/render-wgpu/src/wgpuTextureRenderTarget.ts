@@ -9,8 +9,8 @@ import type {
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { drawWgpuQuadWithTransform } from './wgpuDraw';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { drawWgpuQuadWithTransform } from './wgpuDraw.ts';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
 export function createWgpuTextureRenderTarget(
   state: WgpuRenderState,

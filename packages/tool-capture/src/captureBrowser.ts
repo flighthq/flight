@@ -8,8 +8,8 @@
 
 import type { Browser, BrowserContext } from '@playwright/test';
 
-import { CAPTURE_FRAME_DURATION_MS } from './captureFrameClock.js';
-import { getCaptureTimeoutMs } from './captureTimeout.js';
+import { CAPTURE_FRAME_DURATION_MS } from './captureFrameClock.ts';
+import { getCaptureTimeoutMs } from './captureTimeout.ts';
 
 export interface CaptureBrowserSession {
   browser: Browser;

@@ -21,9 +21,9 @@ import {
   RenderTargetTextureSourceKind,
 } from '@flighthq/types/contract';
 
-import { bindWgpuBitmapTexture, bindWgpuCompressedImageTexture, bindWgpuImageResourceTexture } from './wgpuDraw';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
-import { bindWgpuRenderTexture } from './wgpuRenderTexture';
+import { bindWgpuBitmapTexture, bindWgpuCompressedImageTexture, bindWgpuImageResourceTexture } from './wgpuDraw.ts';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
+import { bindWgpuRenderTexture } from './wgpuRenderTexture.ts';
 
 export function registerStandardWgpuTextureResolvers(state: WgpuRenderState): void {
   registerWgpuBitmapTextureResolver(state);

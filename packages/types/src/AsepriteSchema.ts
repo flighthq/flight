@@ -1,4 +1,4 @@
-import type { SpritesheetData } from './SpritesheetData';
+import type { SpritesheetData } from './SpritesheetData.ts';
 
 // Aseprite JSON export schema — field names as they appear in the exported file.
 // Reference: https://www.aseprite.org/docs/cli/#sheet-json

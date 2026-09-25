@@ -9,8 +9,8 @@ import type {
   Host,
 } from '@flighthq/types/contract';
 
-import { electronHostApp } from './electronApp';
-import { electronHostClipboard } from './electronClipboard';
+import { electronHostApp } from './electronApp.ts';
+import { electronHostClipboard } from './electronClipboard.ts';
 import {
   electronHostAccessibilityGroup,
   electronHostAudioDecodeGroup,
@@ -47,21 +47,21 @@ import {
   electronHostTextShaperGroup,
   electronHostVideoGroup,
   electronHostWgpuGroup,
-} from './electronDefaultHostGroups';
-import { electronHostDialog } from './electronDialog';
-import { electronHostIpc } from './electronIpc';
-import { electronHostMenu } from './electronMenu';
-import { electronHostNotification } from './electronNotification';
-import { electronHostPlatformGroup } from './electronPlatform';
-import { electronHostPower } from './electronPower';
-import { electronHostProtocol } from './electronProtocol';
-import { electronHostScreen } from './electronScreen';
-import { electronHostShell } from './electronShell';
-import { electronHostShortcut } from './electronShortcut';
-import { electronHostStorageGroup } from './electronStorage';
-import { electronHostTray } from './electronTray';
-import { electronHostUpdater } from './electronUpdater';
-import { electronHostWindow } from './electronWindow';
+} from './electronDefaultHostGroups.ts';
+import { electronHostDialog } from './electronDialog.ts';
+import { electronHostIpc } from './electronIpc.ts';
+import { electronHostMenu } from './electronMenu.ts';
+import { electronHostNotification } from './electronNotification.ts';
+import { electronHostPlatformGroup } from './electronPlatform.ts';
+import { electronHostPower } from './electronPower.ts';
+import { electronHostProtocol } from './electronProtocol.ts';
+import { electronHostScreen } from './electronScreen.ts';
+import { electronHostShell } from './electronShell.ts';
+import { electronHostShortcut } from './electronShortcut.ts';
+import { electronHostStorageGroup } from './electronStorage.ts';
+import { electronHostTray } from './electronTray.ts';
+import { electronHostUpdater } from './electronUpdater.ts';
+import { electronHostWindow } from './electronWindow.ts';
 
 // Constructs the explicit Electron host from an injected Electron API and platform profile. Every
 // group is built through its separately exported constructor, including exact empty groups for

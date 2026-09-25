@@ -5,8 +5,8 @@ import { createMesh, createNode3D } from '@flighthq/scene3d/contract';
 import type { MeshMorph } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createSkeleton3D } from './skeleton3d';
-import { updateMeshDeformation } from './updateMeshDeformation';
+import { createSkeleton3D } from './skeleton3d.ts';
+import { updateMeshDeformation } from './updateMeshDeformation.ts';
 
 describe('updateMeshDeformation', () => {
   it('recomposes changed morph weights before CPU skinning on every frame', () => {

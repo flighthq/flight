@@ -2,7 +2,7 @@ import { packLinearToColor } from '@flighthq/color/contract';
 import { createSheenPbrExtension } from '@flighthq/materials/contract';
 import type { GltfExtensionHandler } from '@flighthq/types/contract';
 
-import { attachGltfPbrExtension } from './gltfMaterialExtension';
+import { attachGltfPbrExtension } from './gltfMaterialExtension.ts';
 
 // KHR_materials_sheen — the grazing-angle retroreflective lobe cloth and fabric need. `sheenColorFactor`
 // is LINEAR RGB in the file while Flight's packed colors are sRGB-encoded, so it takes the same

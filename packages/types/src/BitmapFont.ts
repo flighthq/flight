@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { GlyphEntry, GlyphMetrics } from './GlyphSource';
-import type { TextureAtlas } from './TextureAtlas';
+import type { Entity } from './Entity.ts';
+import type { GlyphEntry, GlyphMetrics } from './GlyphSource.ts';
+import type { TextureAtlas } from './TextureAtlas.ts';
 
 // How a bitmap font's glyphs are encoded in its atlas pixels. `raster` is a plain pre-rendered
 // bitmap (the games-standard textured-quad path); `sdf`/`msdf` are signed-distance-field encodings a

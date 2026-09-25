@@ -7,9 +7,9 @@ import {
   getEntityBinding,
   getEntityBindingAs,
   hasEntityBinding,
-} from './binding';
-import { allocateEntity, finishEntity } from './entity';
-import { createEntityRuntime, getEntityRuntime } from './runtime';
+} from './binding.ts';
+import { allocateEntity, finishEntity } from './entity.ts';
+import { createEntityRuntime, getEntityRuntime } from './runtime.ts';
 
 function createTestEntity(): Entity {
   return finishEntity(allocateEntity<Entity>());

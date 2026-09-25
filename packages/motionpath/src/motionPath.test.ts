@@ -13,7 +13,7 @@ import {
   setMotionPathProgress,
   setMotionPathDirection,
   updateMotionPath,
-} from './motionPath';
+} from './motionPath.ts';
 
 describe('createMotionPath', () => {
   it('caches the path arc length measured from the path', () => {

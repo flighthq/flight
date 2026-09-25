@@ -23,14 +23,14 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { decodeOraclePng } from './reference-image-png';
-import type { ReferenceImageLockImage } from './reference-image-records';
-import type { ReferenceImageCellInput } from './reference-image-state';
+import { decodeOraclePng } from './reference-image-png.ts';
+import type { ReferenceImageLockImage } from './reference-image-records.ts';
+import type { ReferenceImageCellInput } from './reference-image-state.ts';
 import {
   compareReferenceImage,
   resolveReferenceImageTolerance,
   type ReferenceImageToleranceCatalog,
-} from './reference-image-tolerance';
+} from './reference-image-tolerance.ts';
 
 export interface PackManifestImage {
   path: string;

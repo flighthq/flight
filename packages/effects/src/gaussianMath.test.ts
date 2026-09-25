@@ -3,7 +3,7 @@ import {
   computeGaussianSigmaFromRadius,
   computeSeparableBlurPassCount,
   createGaussianKernelWeights,
-} from './gaussianMath';
+} from './gaussianMath.ts';
 
 describe('computeGaussianRadiusFromSigma', () => {
   it('returns 0 for zero sigma', () => {

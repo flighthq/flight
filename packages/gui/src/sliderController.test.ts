@@ -1,13 +1,13 @@
 import { connectSignal } from '@flighthq/signals/contract';
 
-import { createGuiTestNode, emitGuiKeyboard, emitGuiPointer } from './guiTestHelper';
+import { createGuiTestNode, emitGuiKeyboard, emitGuiPointer } from './guiTestHelper.ts';
 import {
   createSliderController,
   disposeSliderController,
   getSliderControllerSignals,
   getSliderControllerValue,
   setSliderControllerValue,
-} from './sliderController';
+} from './sliderController.ts';
 
 describe('createSliderController', () => {
   it('maps track positions and thumb drags to values', () => {

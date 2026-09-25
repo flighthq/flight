@@ -9,7 +9,7 @@ import type {
   RenderProxy2D,
 } from '@flighthq/types/contract';
 
-import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
 
 // GPU tessellated solid-fill path for Shape — the replacement for the canvas-raster-to-texture shortcut
 // (which is resolution-bound, so circles go jagged when scaled up). Each fill region is tessellated to a

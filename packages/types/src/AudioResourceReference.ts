@@ -1,6 +1,6 @@
-import type { AudioResource } from './AudioResource';
-import type { Entity } from './Entity';
-import type { ResourceResolutionState } from './ResourceResolutionState';
+import type { AudioResource } from './AudioResource.ts';
+import type { Entity } from './Entity.ts';
+import type { ResourceResolutionState } from './ResourceResolutionState.ts';
 
 // A lightweight, plain-data reference to encoded audio a document parser emits synchronously instead of
 // decoding inline. The exact counterpart of ImageResourceReference: a document owns these as sidecar

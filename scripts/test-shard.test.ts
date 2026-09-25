@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseTestShard, selectTestShardTargets } from './test-shard.js';
+import { parseTestShard, selectTestShardTargets } from './test-shard.ts';
 
 // Defaults to the cheap environment so a case that is not about environment reads as pure weight.
 function targets(...spec: readonly (readonly [string, number] | readonly [string, number, string])[]) {

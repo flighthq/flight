@@ -1,4 +1,4 @@
-import type { Modifier } from './Modifier';
+import type { Modifier } from './Modifier.ts';
 
 // How a FogModifier maps camera distance to fog density. `Linear` ramps from 0 at `near` to full at
 // `far`; `Exponential` follows `1 - exp(-density * d)`; `Exponential2` follows `1 - exp(-(density *

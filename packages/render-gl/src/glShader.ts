@@ -2,8 +2,8 @@
 import type { GlBitmapShader, GlShaderLocations, EntityConstruction } from '@flighthq/types/contract';
 import type { GlContext, GlRenderState, RenderProxy, RenderProxy2D } from '@flighthq/types/contract';
 
-import { createGlProgram } from './glProgram';
-import { getGlRenderStateRuntime } from './glRenderState';
+import { createGlProgram } from './glProgram.ts';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
 
 const VERTEX_SRC = `#version 300 es
 in vec2 a_position;

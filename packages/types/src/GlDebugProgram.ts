@@ -1,4 +1,4 @@
-import type { GlMeshProgram } from './GlMeshProgram';
+import type { GlMeshProgram } from './GlMeshProgram.ts';
 
 // A compiled debug variant plus its resolved uniform locations. Extends GlMeshProgram (it carries the
 // model + normal matrix + view-projection the vertex scene2d needs) with the debug fragment uniforms.

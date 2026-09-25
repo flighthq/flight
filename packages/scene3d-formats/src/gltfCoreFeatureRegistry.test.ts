@@ -1,7 +1,7 @@
 import type { GltfCoreFeatureHandler } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { registerGltfCoreFeatureHandler } from './gltfCoreFeatureRegistry';
+import { registerGltfCoreFeatureHandler } from './gltfCoreFeatureRegistry.ts';
 
 describe('registerGltfCoreFeatureHandler', () => {
   it('adds distinct source kinds and replaces duplicate kinds in place', () => {

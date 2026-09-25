@@ -7,9 +7,9 @@ import type {
   CollisionPolygon2D,
 } from '@flighthq/types/contract';
 
-import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation2D';
-import { writeAabbVertices, writeObbVertices } from './convexVertices2D';
-import { clearCollisionManifold2D } from './manifold2D';
+import { getCollisionPolygonValidationStatus2D } from './collisionShapeValidation2D.ts';
+import { writeAabbVertices, writeObbVertices } from './convexVertices2D.ts';
+import { clearCollisionManifold2D } from './manifold2D.ts';
 
 // The 2D narrow-phase pair tests. Each writes an `out` CollisionManifold2D and returns whether the
 // pair overlaps. On overlap the manifold normal is the unit minimum-translation axis oriented to

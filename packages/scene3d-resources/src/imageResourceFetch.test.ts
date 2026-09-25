@@ -3,7 +3,7 @@ import type { ExternalImageResourceReference, HostImageCapability, ImageResource
 import { EntityRuntimeKey, ImageResourceReferenceKind, ResourceResolutionState } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createWebImageResourceFetch, resolveImageResourceUri } from './imageResourceFetch';
+import { createWebImageResourceFetch, resolveImageResourceUri } from './imageResourceFetch.ts';
 
 const fakeImage = { height: 1, width: 1 } as unknown as ImageResource;
 const hostImage: HostImageCapability = { loadImageFromUrl: vi.fn() };

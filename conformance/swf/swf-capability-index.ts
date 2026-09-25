@@ -5,22 +5,22 @@ import { availableParallelism } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { FixtureTreeStampPack } from '../../scripts/fixtures';
+import type { FixtureTreeStampPack } from '../../scripts/fixtures.ts';
 import {
   FIXTURE_RELEASE_TAG,
   getFixtureTreePath,
   readFixtureTreeStamp,
   resolveFixtureCacheDirectory,
-} from '../../scripts/fixtures';
-import { isImportConformancePackFileReference } from '../core/import-conformance-case';
+} from '../../scripts/fixtures.ts';
+import { isImportConformancePackFileReference } from '../core/import-conformance-case.ts';
 import {
   buildImportConformanceCapabilityIndex,
   parseImportConformanceCapabilityDefinitions,
-} from '../core/import-conformance-core';
-import type { ImportConformanceCapabilityIndex } from '../core/import-conformance-core';
-import type { ImportConformanceScoreDeclarations } from '../core/import-conformance-core';
-import type { ImportConformanceDenominators } from '../core/import-conformance-denominator';
-import { probeSwfCapabilities } from './swf-capability-probe';
+} from '../core/import-conformance-core.ts';
+import type { ImportConformanceCapabilityIndex } from '../core/import-conformance-core.ts';
+import type { ImportConformanceScoreDeclarations } from '../core/import-conformance-core.ts';
+import type { ImportConformanceDenominators } from '../core/import-conformance-denominator.ts';
+import { probeSwfCapabilities } from './swf-capability-probe.ts';
 
 export const SWF_CAPABILITY_CONVENTION_REVISION = 'unresolved-individuation-v1';
 export const SWF_IMPORTER_DECLARED_CENSUS = {

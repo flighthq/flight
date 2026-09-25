@@ -5,9 +5,13 @@ import { join } from 'node:path';
 
 import type { RequirementCatalogEntry } from '@flighthq/types/contract';
 
-import { formatBuiltInRequirementCatalogSource, verifyRequirementCatalogEntries } from './catalog-core';
-import { buildRenderCatalogRows, buildRequirementBackends, buildRequirementTranslations } from './catalog-render-rows';
-import { buildRequirementCatalogRows } from './catalog-rows';
+import { formatBuiltInRequirementCatalogSource, verifyRequirementCatalogEntries } from './catalog-core.ts';
+import {
+  buildRenderCatalogRows,
+  buildRequirementBackends,
+  buildRequirementTranslations,
+} from './catalog-render-rows.ts';
+import { buildRequirementCatalogRows } from './catalog-rows.ts';
 
 const ENTRIES: readonly RequirementCatalogEntry[] = [...buildRequirementCatalogRows(), ...buildRenderCatalogRows()];
 const TRANSLATIONS = buildRequirementTranslations();

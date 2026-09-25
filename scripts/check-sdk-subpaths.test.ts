@@ -7,7 +7,7 @@ import {
   createEmptySdkSubpathReport,
   formatSdkSubpathReport,
   readSdkPackageNames,
-} from './check-sdk-subpaths';
+} from './check-sdk-subpaths.ts';
 
 describe('checkSdkSubpaths', () => {
   it('accepts a package that has both a one-line barrel and a matching exports entry', () => {

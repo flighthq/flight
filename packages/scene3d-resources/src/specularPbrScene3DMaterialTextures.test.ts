@@ -6,8 +6,8 @@ import {
   createScene3DMaterialTextureRegistry,
   getScene3DMaterialTextures,
   registerExtendedPbrScene3DMaterialTextures,
-} from './sceneMaterialTextureRegistry';
-import { registerSpecularPbrScene3DMaterialTextures } from './specularPbrScene3DMaterialTextures';
+} from './sceneMaterialTextureRegistry.ts';
+import { registerSpecularPbrScene3DMaterialTextures } from './specularPbrScene3DMaterialTextures.ts';
 
 describe('registerSpecularPbrScene3DMaterialTextures', () => {
   it('lists the specular factor and color maps', () => {

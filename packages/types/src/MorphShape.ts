@@ -1,7 +1,7 @@
-import type { Matrix } from './Matrix';
-import type { Path } from './Path';
-import type { PathMorph } from './PathMorph';
-import type { Shape, ShapeData, ShapeRuntime } from './Shape';
+import type { Matrix } from './Matrix.ts';
+import type { Path } from './Path.ts';
+import type { PathMorph } from './PathMorph.ts';
+import type { Shape, ShapeData, ShapeRuntime } from './Shape.ts';
 
 export interface MorphShapePathBinding {
   readonly morph: Readonly<PathMorph>;

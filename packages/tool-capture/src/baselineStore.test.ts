@@ -12,7 +12,7 @@ import {
   setBaselineCaptureEvidence,
   setBaselineField,
   setBaselineProvenance,
-} from './baselineStore';
+} from './baselineStore.ts';
 
 let root: string;
 

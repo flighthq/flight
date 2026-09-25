@@ -2,9 +2,9 @@ import { createMatrix4 } from '@flighthq/geometry/contract';
 import type { GlLitProgram } from '@flighthq/types/contract';
 import { SCENE_LIGHT_BLOCK_FLOATS } from '@flighthq/types/contract';
 
-import { bindGlMeshLightBlock, GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper';
+import { bindGlMeshLightBlock, GL_MESH_LIGHT_BLOCK_GLSL, resolveGlLitLocations } from './glLitProgram.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 function makeLitProgram(): GlLitProgram {
   const loc = (name: string): WebGLUniformLocation => ({ name }) as WebGLUniformLocation;

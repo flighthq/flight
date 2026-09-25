@@ -5,8 +5,8 @@ import {
   defaultComputeLocalBoundsRectangle,
   initBoundsRectangleRuntimeTrait,
   initBoundsRectangleTrait,
-} from './hasBoundsRectangle';
-import { createNode, createNodeRuntime } from './node';
+} from './hasBoundsRectangle.ts';
+import { createNode, createNodeRuntime } from './node.ts';
 
 describe('defaultComputeLocalBoundsRectangle', () => {
   it('is a no-op that does not modify out', () => {

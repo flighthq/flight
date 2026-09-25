@@ -93,10 +93,10 @@ describe('Scene3D size fixture isolation', () => {
       const capture = readFileSync(resolve(root, 'src', 'capture.ts'), 'utf8');
       const html = readFileSync(resolve(root, 'index.html'), 'utf8');
 
-      expect(app.trim()).toBe("import './render';");
+      expect(app.trim()).toBe(`import './render.${spec.renderer}.ts';`);
       expect(app).not.toContain('@flighthq/tool-capture');
       expect(capture).toContain("from '@flighthq/tool-capture/browser'");
-      expect(capture).toContain("from './render.webgpu'");
+      expect(capture).toContain("from './render.webgpu.ts'");
       expect(html).toContain('src="/src/app.ts"');
       expect(html).toContain('src="/src/capture.ts"');
     },

@@ -2,10 +2,10 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type { RenderProxy2D } from '@flighthq/types/contract';
 
-import { glQuadBatchRenderer } from './glQuadBatch';
-import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
-import { registerGlStandardMaterial } from './glStandardMaterial';
-import { createGlState } from './glTestHelper';
+import { glQuadBatchRenderer } from './glQuadBatch.ts';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
+import { registerGlStandardMaterial } from './glStandardMaterial.ts';
+import { createGlState } from './glTestHelper.ts';
 
 function makeAtlas() {
   const img = document.createElement('img');

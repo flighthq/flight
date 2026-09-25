@@ -1,6 +1,6 @@
-import { createBitmap } from '../packages/bitmap/src/bitmap.js';
-import { setBitmapPixel } from '../packages/bitmap/src/bitmapPixel.js';
-import { compareOracleReference } from './reference-image-compare';
+import { createBitmap } from '../packages/bitmap/src/bitmap.ts';
+import { setBitmapPixel } from '../packages/bitmap/src/bitmapPixel.ts';
+import { compareOracleReference } from './reference-image-compare.ts';
 
 describe('compareOracleReference', () => {
   it('reports a clean comparison for identical surfaces', () => {
@@ -20,7 +20,7 @@ describe('compareOracleReference', () => {
   // The control for the test above: the primitive really does throw, so the adapter is load-bearing and
   // not guarding against a case that cannot happen.
   it('is guarding a real throw — the primitive rejects mismatched sizes', async () => {
-    const { getBitmapMismatch } = await import('../packages/bitmap/src/bitmapCompare.js');
+    const { getBitmapMismatch } = await import('../packages/bitmap/src/bitmapCompare.ts');
 
     expect(() => getBitmapMismatch(createBitmap(4, 4), createBitmap(8, 4), 0)).toThrow();
   });

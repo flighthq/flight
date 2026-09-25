@@ -1,4 +1,4 @@
-import type { Attachment2D } from './Attachment2D';
+import type { Attachment2D } from './Attachment2D.ts';
 
 // One entry of a skin: the attachment a slot shows while that skin is worn, filed under the name the skin
 // keys it by. `slotIndex` indexes the skeleton's flat slot array, and `name` is the attachment's key WITHIN

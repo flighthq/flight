@@ -1,7 +1,7 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
-import { getCanvasRenderStateRuntime } from './canvasRenderState';
+import { getCanvasRenderStateRuntime } from './canvasRenderState.ts';
 import {
   beginCanvasRenderPass,
   beginCanvasScreenRenderPassForTest,
@@ -9,7 +9,7 @@ import {
   createCanvasTextureRenderTarget,
   endCanvasRenderPass,
   getCanvasActiveRenderPass,
-} from './canvasTestSupport';
+} from './canvasTestSupport.ts';
 
 function makeScreenPass() {
   const state = createCanvasRenderStateWithoutPass();

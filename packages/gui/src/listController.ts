@@ -17,8 +17,8 @@ import {
   getGuiControllerRuntime,
   setGuiVisible,
   setGuiVisualProperty,
-} from './guiController';
-import { getScrollBarControllerSignals } from './scrollBarController';
+} from './guiController.ts';
+import { getScrollBarControllerSignals } from './scrollBarController.ts';
 
 interface ListControllerFields {
   baseContentY: number;

@@ -8,7 +8,7 @@ import type {
 } from '@flighthq/types/contract';
 import { LogLevel, RenderRegistryTable } from '@flighthq/types/contract';
 
-import { enableRenderRegistrySignals } from './renderRegistrySignals';
+import { enableRenderRegistrySignals } from './renderRegistrySignals.ts';
 
 export function areRenderRegistriesGuardsEnabled(state: RenderState): boolean {
   return _stateIds.has(state);

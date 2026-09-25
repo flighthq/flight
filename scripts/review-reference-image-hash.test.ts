@@ -8,8 +8,8 @@ import {
   createReviewCommissionPayloadCell,
   markReviewCommissionRequested,
   resolveReferenceImageCommissionState,
-} from '../tools/review/src/referenceImageCommission';
-import { decodeOraclePng, getOraclePngPixelSha256 } from './reference-image-png';
+} from '../tools/review/src/referenceImageCommission.ts';
+import { decodeOraclePng, getOraclePngPixelSha256 } from './reference-image-png.ts';
 
 describe('review reference-image pixel identity', () => {
   it('uses the raw reference hash for both lock inclusion and the written request', () => {

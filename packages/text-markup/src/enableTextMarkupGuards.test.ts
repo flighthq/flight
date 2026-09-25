@@ -1,8 +1,8 @@
 import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 
-import { disableTextMarkupGuards, enableTextMarkupGuards } from './enableTextMarkupGuards';
-import { parseTextMarkup } from './textMarkup';
+import { disableTextMarkupGuards, enableTextMarkupGuards } from './enableTextMarkupGuards.ts';
+import { parseTextMarkup } from './textMarkup.ts';
 
 let entries: LogEntry[];
 

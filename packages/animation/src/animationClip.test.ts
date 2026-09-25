@@ -8,8 +8,8 @@ import {
   initializeAnimationClip,
   initializeAnimationClipEvent,
   sampleAnimationClip,
-} from './animationClip';
-import { createAnimationTrack } from './animationTrack';
+} from './animationClip.ts';
+import { createAnimationTrack } from './animationTrack.ts';
 
 function track(times: number[]) {
   return createAnimationTrack({ times, values: times.map(() => 0) });

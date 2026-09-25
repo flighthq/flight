@@ -1,7 +1,7 @@
 import type { Kind, Requirement, RequirementFacet, RequirementSet } from '@flighthq/types/contract';
 import { RequirementFacet as Facet } from '@flighthq/types/contract';
 
-import { createRequirementSet } from './requirementSet';
+import { createRequirementSet } from './requirementSet.ts';
 
 // Engages requirement recording for one Scene2D import. Parsers receive the same optional-array sink
 // shape as import diagnostics; an unengaged parse receives `undefined` and allocates no requirement.

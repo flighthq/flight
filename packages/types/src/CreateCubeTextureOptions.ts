@@ -1,5 +1,5 @@
-import type { SamplerLike } from './Sampler';
-import type { TextureColorSpace, TextureSourceCubeFaces } from './Texture';
+import type { SamplerLike } from './Sampler.ts';
+import type { TextureColorSpace, TextureSourceCubeFaces } from './Texture.ts';
 
 export interface CreateCubeTextureOptions {
   colorSpace?: TextureColorSpace;

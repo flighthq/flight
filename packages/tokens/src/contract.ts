@@ -1,3 +1,3 @@
-export * from './flightDocumentSceneTokens';
-export * from './flightDocumentTokenReference';
-export * from './substituteFlightDocumentSceneTokens';
+export * from './flightDocumentSceneTokens.ts';
+export * from './flightDocumentTokenReference.ts';
+export * from './substituteFlightDocumentSceneTokens.ts';

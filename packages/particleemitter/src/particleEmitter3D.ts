@@ -12,7 +12,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ParticleEmitter3DKind } from '@flighthq/types/contract';
 
-import { createParticleEmitterData } from './particleEmitter';
+import { createParticleEmitterData } from './particleEmitter.ts';
 
 const PARTICLE_TRANSFORM_STRIDE = 4;
 const PARTICLE_COLOR_STRIDE = 3;

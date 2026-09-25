@@ -7,7 +7,7 @@ import {
   createVitestTypeScriptConfig,
   resolveVitestTsconfigPathOptions,
   VITEST_ESBUILD_TSCONFIG_RAW,
-} from './vitestTypeScriptConfig';
+} from './vitestTypeScriptConfig.ts';
 
 describe('base Vitest TypeScript configuration', () => {
   it('keeps aliases on the single root tsconfig project', () => {

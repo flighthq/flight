@@ -7,18 +7,18 @@ import type {
   InnerShadowEffect,
 } from '@flighthq/types/contract';
 
-import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { registerCanvasEffect } from './canvasEffectRegistry';
+import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
+import { registerCanvasEffect } from './canvasEffectRegistry.ts';
 import {
   acquireCanvasRenderTarget,
   createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
-} from './canvasEffectState';
+} from './canvasEffectState.ts';
 import {
   clearCanvasTarget,
   compositeCanvasImage,
   drawCanvasInvertedTintedAlphaMask,
-} from './canvasSourceModeCompositing';
+} from './canvasSourceModeCompositing.ts';
 
 // Inner-shadow composite effect: tint the inverted silhouette, blur it, shift it by angle and distance,
 // clip it back to the source alpha, then draw it over the source.

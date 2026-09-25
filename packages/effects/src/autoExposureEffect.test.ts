@@ -1,4 +1,4 @@
-import { createAutoExposureEffect, initializeAutoExposureEffect } from './autoExposureEffect';
+import { createAutoExposureEffect, initializeAutoExposureEffect } from './autoExposureEffect.ts';
 
 describe('createAutoExposureEffect', () => {
   it('carries options', () => {

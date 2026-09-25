@@ -12,14 +12,14 @@ import { appendPathLineTo, appendPathMoveTo, createPath, createPathMorph } from 
 import type { MorphShape, MorphShapeAnimationTarget } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { appendMorphShapePath, createMorphShape } from './morphShape';
+import { appendMorphShapePath, createMorphShape } from './morphShape.ts';
 import {
   applyAnimationClipToMorphShape,
   applyMorphShapeAnimationSample,
   createMorphShapeAnimationTarget,
   initializeMorphShapeAnimationTarget,
-} from './morphShapeAnimation';
-import { appendMorphShapeBeginFill } from './morphShapePaint';
+} from './morphShapeAnimation.ts';
+import { appendMorphShapeBeginFill } from './morphShapePaint.ts';
 
 describe('applyAnimationClipToMorphShape', () => {
   it('samples scalar progress while preserving easing overshoot', () => {

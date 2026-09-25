@@ -1,2 +1,2 @@
-export { collectScene2DRequirements, reportRequirement } from './requirementCollector';
-export { createRequirementSet, diffRequirementSets, mergeRequirementSets } from './requirementSet';
+export { collectScene2DRequirements, reportRequirement } from './requirementCollector.ts';
+export { createRequirementSet, diffRequirementSets, mergeRequirementSets } from './requirementSet.ts';

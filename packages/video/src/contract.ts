@@ -1,4 +1,4 @@
-export * from './videoFormat';
-export * from './videoResource';
-export * from './videoResourceFrom';
-export { initializeVideoResource } from './videoResource';
+export * from './videoFormat.ts';
+export * from './videoResource.ts';
+export * from './videoResourceFrom.ts';
+export { initializeVideoResource } from './videoResource.ts';

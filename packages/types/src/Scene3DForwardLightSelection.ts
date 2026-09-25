@@ -1,5 +1,5 @@
-import type { PointLight } from './PointLight';
-import type { SpotLight } from './SpotLight';
+import type { PointLight } from './PointLight.ts';
+import type { SpotLight } from './SpotLight.ts';
 
 // The punctual lights selected for one object's forward-light budget. `point` and `spot` are mutable
 // output arrays owned by the caller; selectScene3DForwardLights overwrites their live lengths without

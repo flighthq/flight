@@ -1,7 +1,7 @@
-import { createBitmap } from './bitmap';
-import { copyBitmapAlpha, multiplyBitmapAlpha, setBitmapAlpha } from './bitmapAlpha';
-import { getBitmapPixel, setBitmapPixel } from './bitmapPixel';
-import { createBitmapRegion } from './bitmapRegion';
+import { createBitmap } from './bitmap.ts';
+import { copyBitmapAlpha, multiplyBitmapAlpha, setBitmapAlpha } from './bitmapAlpha.ts';
+import { getBitmapPixel, setBitmapPixel } from './bitmapPixel.ts';
+import { createBitmapRegion } from './bitmapRegion.ts';
 
 describe('copyBitmapAlpha', () => {
   it('copies alpha from source to dest, leaving RGB unchanged', () => {

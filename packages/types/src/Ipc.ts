@@ -1,4 +1,4 @@
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';
 
 // Independent IPC capabilities. Provider coverage varies by process side: an Electron renderer can
 // send and invoke, while Electron main can receive messages, handle invokes, and send to a supplied

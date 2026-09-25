@@ -1,7 +1,7 @@
 import type { GlPbrExtensionRegistration, GlRenderState, SpecularPbrExtension } from '@flighthq/types/contract';
 import { SpecularPbrExtensionKind } from '@flighthq/types/contract';
 
-import { registerGlPbrExtension } from './glPbrExtensionRegistry';
+import { registerGlPbrExtension } from './glPbrExtensionRegistry.ts';
 
 export const specularPbrGlExtension: GlPbrExtensionRegistration = {
   bind(context, value): void {

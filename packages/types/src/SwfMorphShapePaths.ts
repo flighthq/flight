@@ -1,4 +1,4 @@
-import type { Path } from './Path';
+import type { Path } from './Path.ts';
 
 // One morph shape's decoded geometry, keyed by the one-based style index its edges referenced. Both
 // endpoints of a style come out together and with identical structure, because they were walked in step

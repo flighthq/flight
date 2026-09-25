@@ -1,8 +1,8 @@
 import type { Node, NodeRuntime, NodeTraits } from '@flighthq/types/contract';
 import { NodeKind } from '@flighthq/types/contract';
 
-import { addNodeChild } from './hierarchy';
-import { createNode, getNodeRuntime } from './node';
+import { addNodeChild } from './hierarchy.ts';
+import { createNode, getNodeRuntime } from './node.ts';
 import {
   findNode,
   findNodeByName,
@@ -13,7 +13,7 @@ import {
   getNodeNextSibling,
   getNodePreviousSibling,
   walkNodeDescendants,
-} from './traversal';
+} from './traversal.ts';
 
 let root: Node<NodeTraits>;
 let childA: Node<NodeTraits>;

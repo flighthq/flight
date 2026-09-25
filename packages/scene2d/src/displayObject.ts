@@ -74,4 +74,4 @@ export function setNode2DClip(source: Node2D, value: ClipRegion | null): void {
   invalidateNodeAppearance(source);
 }
 
-export { createDisplayObject } from './displayContainer';
+export { createDisplayObject } from './displayContainer.ts';

@@ -7,7 +7,7 @@ import {
   getRiveImageTexture,
   getRiveNestedArtboardIndex,
   markRiveNestedArtboard,
-} from './riveAssetBinding';
+} from './riveAssetBinding.ts';
 
 // Both marks are side data. A display object gains no field for either, which is what keeps the tree
 // ignorant of the format that produced it.

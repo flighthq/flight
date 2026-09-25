@@ -11,7 +11,7 @@ import type {
   WgpuRenderState,
 } from '@flighthq/types/contract';
 
-import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 
 export function drawWgpuScene2D(_state: WgpuRenderState, _renderProxy: RenderProxy2D): void {
   // Plain display objects have no visual geometry of their own.

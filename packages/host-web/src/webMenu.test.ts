@@ -3,7 +3,7 @@ import {
   initializeWebMenuPopupBackend,
   webHostMenuHighlight,
   webHostMenuPopup,
-} from './webMenu';
+} from './webMenu.ts';
 
 describe('initializeWebMenuHighlightBackend', () => {
   it('is the construction initializer of createWebMenuHighlightBackend', () => {

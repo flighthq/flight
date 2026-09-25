@@ -1,4 +1,4 @@
-import { buildExamplesWebEntryHtml } from './examples-web-entry-html';
+import { buildExamplesWebEntryHtml } from './examples-web-entry-html.ts';
 
 describe('buildExamplesWebEntryHtml', () => {
   it('surfaces thrown and rejected module startup failures in both build and dev pages', () => {

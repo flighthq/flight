@@ -10,8 +10,8 @@ import {
   defaultShapeBoundsLineTo,
   defaultShapeBoundsMoveTo,
   defaultShapeBoundsQuadraticCurveTo,
-} from './shapeBounds';
-import { registerShapeBoundsCommand } from './shapeBoundsRegistry';
+} from './shapeBounds.ts';
+import { registerShapeBoundsCommand } from './shapeBoundsRegistry.ts';
 
 // Standard Shape geometry is useful before a renderer exists (for example while an SVG importer is
 // resolving objectBoundingBox units). Keep installing it explicit: importing @flighthq/shape must not

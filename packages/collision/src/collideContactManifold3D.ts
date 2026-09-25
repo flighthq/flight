@@ -1,11 +1,11 @@
 import type { CollisionContactManifold3D, CollisionShape3D } from '@flighthq/types/contract';
 import { MAX_COLLISION_CONTACT_POINTS_3D } from '@flighthq/types/contract';
 
-import { getCollisionFaceQuery3D } from './collisionFace3D';
-import { getCollisionSupport3D } from './collisionSupport3D';
-import { clearCollisionContactManifold3D } from './contactManifold3D';
-import { createCollisionManifold3D } from './manifold3D';
-import { testCollision3D } from './testCollision3D';
+import { getCollisionFaceQuery3D } from './collisionFace3D.ts';
+import { getCollisionSupport3D } from './collisionSupport3D.ts';
+import { clearCollisionContactManifold3D } from './contactManifold3D.ts';
+import { createCollisionManifold3D } from './manifold3D.ts';
+import { testCollision3D } from './testCollision3D.ts';
 
 // The 3D contact lane: `testCollision3D`'s manifold-producing twin. Returns whether the pair overlaps
 // and, when it does, writes the shared normal pushing **A out of B** plus the world-space points the

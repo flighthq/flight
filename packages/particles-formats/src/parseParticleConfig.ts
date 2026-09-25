@@ -8,8 +8,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { detectParticleFormat } from './detect';
-import { getParticleFormatCodec } from './formatRegistry';
+import { detectParticleFormat } from './detect.ts';
+import { getParticleFormatCodec } from './formatRegistry.ts';
 /** Parse any supported particle format string to a ParticleEmitterConfig.
  *
  *  Calls `detectParticleFormat` internally and routes to the format-specific

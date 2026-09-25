@@ -2,7 +2,7 @@
 
 import type { Signal, SignalThrottleOptions } from '@flighthq/types/contract';
 
-import { connectSignal, disconnectSignal } from './slot';
+import { connectSignal, disconnectSignal } from './slot.ts';
 
 /**
  * Options for `connectSignalThrottled` and `connectSignalDebounced`.

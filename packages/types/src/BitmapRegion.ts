@@ -1,4 +1,4 @@
-import type { Bitmap } from './Bitmap';
+import type { Bitmap } from './Bitmap.ts';
 
 export interface BitmapRegion {
   height: number;

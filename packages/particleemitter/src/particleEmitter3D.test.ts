@@ -24,7 +24,7 @@ import {
   setParticleEmitter3DParticleColor,
   setParticleEmitter3DParticleVelocity,
   sortParticleEmitter3DIndicesByViewDepth,
-} from './particleEmitter3D';
+} from './particleEmitter3D.ts';
 
 describe('appendParticleEmitter3DParticle', () => {
   it('appends a particle with z coordinate', () => {

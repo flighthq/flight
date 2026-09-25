@@ -2,13 +2,13 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import { createTexture } from '@flighthq/texture/contract';
 import type { ImageResource } from '@flighthq/types/contract';
 
-import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport';
-import { createCanvasRenderState } from './canvasTestSupport';
-import { registerCanvasTextureResolver, resolveCanvasTexture } from './canvasTestSupport';
+import { getCanvasRenderStateTextureResolvers } from './canvasTestSupport.ts';
+import { createCanvasRenderState } from './canvasTestSupport.ts';
+import { registerCanvasTextureResolver, resolveCanvasTexture } from './canvasTestSupport.ts';
 import {
   areCanvasTextureResolverGuardsEnabled,
   enableCanvasTextureResolverGuards,
-} from './enableCanvasTextureResolverGuards';
+} from './enableCanvasTextureResolverGuards.ts';
 
 describe('areCanvasTextureResolverGuardsEnabled', () => {
   it('reports whether diagnostics were installed for the state', () => {

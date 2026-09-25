@@ -1,4 +1,4 @@
-import { ResourceResolutionState } from './ResourceResolutionState';
+import { ResourceResolutionState } from './ResourceResolutionState.ts';
 
 describe('ResourceResolutionState', () => {
   it('names the four lifecycle states as canonical PascalCase values', () => {

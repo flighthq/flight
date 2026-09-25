@@ -30,18 +30,18 @@ import { createTexture } from '@flighthq/texture/contract';
 import type { CanvasRenderState, HostImageCapability } from '@flighthq/types/contract';
 import { EntityRuntimeKey, MorphShapeKind, RenderRegistryTable, ShapeKind } from '@flighthq/types/contract';
 
-import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
-import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
+import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver.ts';
+import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver.ts';
 import {
   canvasMorphShapeRenderer,
   canvasShapeRenderer,
   drawCanvasShape,
   renderCanvasShapeCommands,
-} from './canvasShape';
-import { canvasShapeCommands, canvasTextureShapeCommands } from './canvasShapeCommands';
-import { registerCanvasShapeCommands } from './canvasShapeRegistry';
-import { createCanvasRenderState } from './canvasTestSupport';
-import { createCanvasTextureResolvers } from './canvasTestSupport';
+} from './canvasShape.ts';
+import { canvasShapeCommands, canvasTextureShapeCommands } from './canvasShapeCommands.ts';
+import { registerCanvasShapeCommands } from './canvasShapeRegistry.ts';
+import { createCanvasRenderState } from './canvasTestSupport.ts';
+import { createCanvasTextureResolvers } from './canvasTestSupport.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

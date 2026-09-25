@@ -1,5 +1,5 @@
-import type { Material3D } from './Material3D';
-import type { Texture } from './Texture';
+import type { Material3D } from './Material3D.ts';
+import type { Texture } from './Texture.ts';
 
 // The metallic-roughness PBR field-block shared by StandardPbrMaterial and composed (not
 // inherited) by every PBR-extension material as their `standard` block (D4). Pure descriptor

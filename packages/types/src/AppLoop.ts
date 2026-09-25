@@ -1,6 +1,6 @@
-import type { AppWindow } from './AppWindow';
-import type { Entity } from './Entity';
-import type { Signal } from './Signal';
+import type { AppWindow } from './AppWindow.ts';
+import type { Entity } from './Entity.ts';
+import type { Signal } from './Signal.ts';
 
 export interface AppLoop extends Entity {
   // Milliseconds elapsed since the previous frame, clamped to the loop's maxDeltaTime.

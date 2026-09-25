@@ -14,8 +14,8 @@ import type {
   RenderTexture,
 } from '@flighthq/types/contract';
 
-import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Plain separable Gaussian blur: two axis passes (source → temp horizontally, temp → dest vertically),
 // each a single weighted fullscreen pass with radius ⌈3σ⌉. `blurX`/`blurY` are the Gaussian standard

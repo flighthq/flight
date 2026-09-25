@@ -15,7 +15,7 @@ import {
   registerGlCustomShaderSource,
   registerGlCustomShaderEffect,
   setGlCustomShaderSourceGuard,
-} from './glCustomShaderEffect';
+} from './glCustomShaderEffect.ts';
 
 function makeState(options: Readonly<GlRenderStateOptions> = {}): GlRenderState {
   const gl = document.createElement('canvas').getContext('webgl2')!;

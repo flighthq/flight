@@ -14,7 +14,7 @@ import {
   readAwdString,
   readAwdTransform,
   skipAwdAttrList,
-} from './awd2Reader';
+} from './awd2Reader.ts';
 import {
   AWD2_DATA_FLOAT32,
   AWD2_DATA_FLOAT64,
@@ -24,7 +24,7 @@ import {
   AWD2_DATA_UINT16,
   AWD2_DATA_UINT32,
   AWD2_DATA_UINT8,
-} from './awd2Schema';
+} from './awd2Schema.ts';
 
 describe('awdDataTypeByteSize', () => {
   it('sizes each AWD numeric type', () => {

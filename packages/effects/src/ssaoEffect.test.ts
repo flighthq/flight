@@ -1,4 +1,4 @@
-import { createSsaoEffect, initializeSsaoEffect } from './ssaoEffect';
+import { createSsaoEffect, initializeSsaoEffect } from './ssaoEffect.ts';
 
 describe('createSsaoEffect', () => {
   it('tags the intent type', () => {

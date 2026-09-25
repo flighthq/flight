@@ -1,6 +1,6 @@
 import { connectSignal } from '@flighthq/signals/contract';
 
-import { createGuiTestNode, emitGuiPointer } from './guiTestHelper';
+import { createGuiTestNode, emitGuiPointer } from './guiTestHelper.ts';
 import {
   createScrollViewController,
   disposeScrollViewController,
@@ -8,7 +8,7 @@ import {
   getScrollViewControllerX,
   getScrollViewControllerY,
   setScrollViewControllerPosition,
-} from './scrollViewController';
+} from './scrollViewController.ts';
 
 describe('createScrollViewController', () => {
   it('pans content by drag and wheel within viewport bounds', () => {

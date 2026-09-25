@@ -17,4 +17,4 @@ export {
   makePowerStatus,
   releasePowerKeepAwake,
   setPowerIdlePollingIntervalMs,
-} from './contract';
+} from './contract.ts';

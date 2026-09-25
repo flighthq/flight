@@ -11,7 +11,7 @@ import type {
   GlyphEntry,
 } from '@flighthq/types/contract';
 
-import { buildBitmapFontFromRecord, reportDroppedBitmapFontRecords } from './bitmapFontRecord';
+import { buildBitmapFontFromRecord, reportDroppedBitmapFontRecords } from './bitmapFontRecord.ts';
 
 // Re-emits a `BitmapFont` as the classic AngelCode/BMFont text `.fnt` (`info`/`common`/`page`/`char`/
 // `kerning` lines of `key=value` pairs). Lossless for the fields the model carries — the glyph table

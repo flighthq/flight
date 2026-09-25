@@ -1,6 +1,6 @@
-import type { CollisionColliderShape3D } from './Collision';
-import type { Entity } from './Entity';
-import type { SpatialIndexBackend3D } from './Spatial';
+import type { CollisionColliderShape3D } from './Collision.ts';
+import type { Entity } from './Entity.ts';
+import type { SpatialIndexBackend3D } from './Spatial.ts';
 
 // 3D rigid-body dynamics header. `@flighthq/physics3d` owns integration and constraint resolution in
 // three dimensions and owns no detection of its own. Everything here is plain data advanced by an

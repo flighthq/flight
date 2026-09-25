@@ -1,4 +1,4 @@
-import { applySsaoEffectToWgpu, wgpuSsaoEffectRunner, registerWgpuSsaoEffect } from './wgpuSsaoEffect';
+import { applySsaoEffectToWgpu, wgpuSsaoEffectRunner, registerWgpuSsaoEffect } from './wgpuSsaoEffect.ts';
 
 describe('applySsaoEffectToWgpu', () => {
   it('is a function', () => {

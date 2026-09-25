@@ -1,12 +1,12 @@
-import type { FlightDocumentFields } from './FlightDocumentFieldSchema';
+import type { FlightDocumentFields } from './FlightDocumentFieldSchema.ts';
 import type {
   FlightDocumentLayoutBinding,
   FlightDocumentLayoutDescriptor,
   FlightDocumentLayoutNode,
   FlightDocumentLayoutTree,
-} from './FlightDocumentLayout';
-import type { LayoutNode, LayoutTree } from './Layout';
-import type { NodeAny } from './Node';
+} from './FlightDocumentLayout.ts';
+import type { LayoutNode, LayoutTree } from './Layout.ts';
+import type { NodeAny } from './Node.ts';
 
 describe('FlightDocumentLayout', () => {
   it('specializes the existing LayoutTree vocabulary to document-safe fields', () => {

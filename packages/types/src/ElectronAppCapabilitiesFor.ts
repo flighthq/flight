@@ -1,5 +1,5 @@
-import type { HostAppCapabilities } from './Host';
-import type { DesktopOsProfile } from './Tray';
+import type { HostAppCapabilities } from './Host.ts';
+import type { DesktopOsProfile } from './Tray.ts';
 
 export type ElectronCommonAppCapabilities = Required<
   Pick<

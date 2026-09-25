@@ -1,1 +1,1 @@
-import './render';
+import './render.webgl.ts';

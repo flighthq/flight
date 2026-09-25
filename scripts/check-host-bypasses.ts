@@ -5,7 +5,7 @@ import { pathToFileURL } from 'node:url';
 
 import ts from 'typescript';
 
-import { formatGateProvenance, readGateTreeState } from './gate-provenance';
+import { formatGateProvenance, readGateTreeState } from './gate-provenance.ts';
 
 type HostBypassKindV1 = 'direct-dom' | 'input-ingress' | 'scratch-surface' | 'webgpu-acquisition';
 

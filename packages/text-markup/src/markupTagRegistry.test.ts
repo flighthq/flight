@@ -6,8 +6,8 @@ import {
   registerMarkupTag,
   registerStandardMarkupTags,
   resolveMarkupHexColor,
-} from './markupTagRegistry';
-import { parseTextMarkup } from './textMarkup';
+} from './markupTagRegistry.ts';
+import { parseTextMarkup } from './textMarkup.ts';
 
 function formatAt(content: RichTextContent, index: number): TextFormat {
   for (const range of content.formatRanges) {

@@ -3,9 +3,9 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import * as filesystem from '../packages/filesystem/src/contract';
-import * as hostWeb from '../packages/host-web/src/contract';
-import * as statusbar from '../packages/statusbar/src/contract';
+import * as filesystem from '../packages/filesystem/src/contract.ts';
+import * as hostWeb from '../packages/host-web/src/contract.ts';
+import * as statusbar from '../packages/statusbar/src/contract.ts';
 
 const root = process.cwd();
 const filesystemSource = readFileSync(resolve(root, 'packages/filesystem/src/filesystem.ts'), 'utf8');

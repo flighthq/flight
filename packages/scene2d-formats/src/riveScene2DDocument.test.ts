@@ -8,7 +8,7 @@ import {
   SpriteKind,
 } from '@flighthq/types/contract';
 
-import { createScene2DDocumentFromRiveDocument, initializeRiveScene2DDocumentResult } from './riveScene2DDocument';
+import { createScene2DDocumentFromRiveDocument, initializeRiveScene2DDocumentResult } from './riveScene2DDocument.ts';
 
 const kernel = martinezPathBooleanKernel;
 

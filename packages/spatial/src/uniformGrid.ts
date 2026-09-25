@@ -13,7 +13,7 @@ import type {
   SpatialPair,
 } from '@flighthq/types/contract';
 
-import { reportSpatialIndexing } from './spatialIndexingGuard';
+import { reportSpatialIndexing } from './spatialIndexingGuard.ts';
 
 // The per-object cell budget. An object whose AABB covers more cells than this is held in the flat
 // overflow list instead of being written into every cell it spans.

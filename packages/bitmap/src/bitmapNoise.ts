@@ -1,6 +1,6 @@
 import type { BitmapRegion } from '@flighthq/types/contract';
 
-import { invalidateBitmap } from './bitmap';
+import { invalidateBitmap } from './bitmap.ts';
 
 /**
  * Fills the `dest` region with uniform random noise in `[low, high]`, derived

@@ -1,8 +1,8 @@
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { Node2D, Scene2DClipHooks, GlRenderState, RenderProxy2D } from '@flighthq/types/contract';
 
-import { popGlClipContours, pushGlClipContours } from './glClipContours';
-import { popGlClipRectangle, pushGlClipRectangle } from './glClipRectangle';
+import { popGlClipContours, pushGlClipContours } from './glClipContours.ts';
+import { popGlClipRectangle, pushGlClipRectangle } from './glClipRectangle.ts';
 
 // Clip support installs the unified clip hooks. Masks are RETIRED — a former mask is now a path
 // ClipRegion (createClipRegionFromPath + setNode2DClip), realized by the contour stencil below.

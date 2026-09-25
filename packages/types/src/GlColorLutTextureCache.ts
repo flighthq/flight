@@ -1,4 +1,4 @@
-import type { ColorLut } from './ColorLut';
+import type { ColorLut } from './ColorLut.ts';
 
 // GPU-upload memo for the fused color LUT on WebGL 2: the uploaded `size³` 3D texture and the ColorLut
 // reference last written into it (both null before the first upload). applyColorLutPassToGl re-uploads

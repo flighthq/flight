@@ -1,14 +1,14 @@
-import type { EntityRuntime } from './Entity';
-import type { ExternalTexture } from './ExternalTexture';
-import type { ImageResource } from './ImageResource';
-import type { RenderTexture } from './RenderTexture';
-import type { TextureSource } from './TextureSource';
-import type { WgpuDeviceSignals } from './WgpuDeviceSignals';
-import type { WgpuParticleResources } from './WgpuParticleResources';
-import type { WgpuQuadBatchResources } from './WgpuQuadBatchResources';
-import type { WgpuShapeMeshPipeline } from './WgpuRenderState';
-import type { WgpuTextureEntry, WgpuTextureSourceTextureEntry, WgpuVideoTextureEntry } from './WgpuRenderState';
-import type { WgpuRenderTextureEntry } from './WgpuRenderTexture';
+import type { EntityRuntime } from './Entity.ts';
+import type { ExternalTexture } from './ExternalTexture.ts';
+import type { ImageResource } from './ImageResource.ts';
+import type { RenderTexture } from './RenderTexture.ts';
+import type { TextureSource } from './TextureSource.ts';
+import type { WgpuDeviceSignals } from './WgpuDeviceSignals.ts';
+import type { WgpuParticleResources } from './WgpuParticleResources.ts';
+import type { WgpuQuadBatchResources } from './WgpuQuadBatchResources.ts';
+import type { WgpuShapeMeshPipeline } from './WgpuRenderState.ts';
+import type { WgpuTextureEntry, WgpuTextureSourceTextureEntry, WgpuVideoTextureEntry } from './WgpuRenderState.ts';
+import type { WgpuRenderTextureEntry } from './WgpuRenderTexture.ts';
 
 export interface WgpuDeviceRuntime extends EntityRuntime {
   readonly device: GPUDevice;

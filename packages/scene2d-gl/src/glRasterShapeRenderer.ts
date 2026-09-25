@@ -13,9 +13,9 @@ import {
   prepareGlQuadBatchWrite,
   recordGlQuadBatchColorScaleBias,
   writeGlQuadBatchInstance,
-} from './glQuadBatchWriter';
-import { acquireGlShapeRasterSurface, createGlShapeData, destroyGlShapeData, getGlShapeData } from './glShapeData';
-import { getGlShapeRasterizer } from './glShapeRasterizer';
+} from './glQuadBatchWriter.ts';
+import { acquireGlShapeRasterSurface, createGlShapeData, destroyGlShapeData, getGlShapeData } from './glShapeData.ts';
+import { getGlShapeRasterizer } from './glShapeRasterizer.ts';
 
 // Replays the shape's whole command stream into an offscreen 2D canvas and draws the result as one
 // textured quad. Every command in the stream is replayed, not just the ones the mesh path could not

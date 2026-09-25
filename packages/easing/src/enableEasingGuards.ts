@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { StepPosition } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setEasingStepsGuard } from './easeSteps';
+import { setEasingStepsGuard } from './easeSteps.ts';
 
 // Uninstalls the guard installed by enableEasingGuards.
 export function disableEasingGuards(): void {

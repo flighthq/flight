@@ -26,7 +26,7 @@ import {
   readAwdPropertyUint8,
   readAwdString,
   readAwdTransform,
-} from './awd2Reader';
+} from './awd2Reader.ts';
 import {
   AWD2_BLOCK_LIGHT,
   AWD2_BLOCK_LIGHT_PICKER,
@@ -49,7 +49,7 @@ import {
   AWD2_LIGHT_PROP_SPECULAR,
   AWD2_LIGHT_TYPE_DIRECTIONAL,
   AWD2_LIGHT_TYPE_POINT,
-} from './awd2Schema';
+} from './awd2Schema.ts';
 
 // Lights and light pickers. A light fills the document's PLACEMENT TABLE rather than the node graph — in
 // Flight a light is a per-draw argument the caller reads off the document, not a scene member — so this

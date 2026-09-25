@@ -1,6 +1,6 @@
 import type { NodeAny } from '@flighthq/types/contract';
 
-import { hitTestGraphLocalBounds } from './hitTests';
+import { hitTestGraphLocalBounds } from './hitTests.ts';
 
 export function defaultHtmlViewHitTestHandler(_source: NodeAny, _x: number, _y: number): boolean {
   // HtmlView elements handle pointer events through the browser — not the canvas interaction system.

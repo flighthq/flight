@@ -1,6 +1,6 @@
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { parsePixiParticle, parsePixiParticleDocument } from './pixiParse';
+import { parsePixiParticle, parsePixiParticleDocument } from './pixiParse.ts';
 
 const FIRE_PIXI = JSON.stringify({
   alpha: { start: 1, end: 0 },

@@ -6,7 +6,7 @@ import {
   compareCaptureFingerprints,
   evaluateCaptureParity,
   evaluateCaptureRegression,
-} from './captureComparison';
+} from './captureComparison.ts';
 
 // Short 1x1 fingerprints: `1:<rr><gg><bb>`, three RGB bytes as six hex chars. The per-channel mean
 // distance is (|dR| + |dG| + |dB|) / 3, so a single channel offset of N produces a distance of N / 3.

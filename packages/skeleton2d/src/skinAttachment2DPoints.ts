@@ -1,7 +1,7 @@
 import type { Skeleton2D, Skin2D } from '@flighthq/types/contract';
 
-import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants';
-import { reportSkeleton2DDeformLengthMismatch } from './skeleton2dGuards';
+import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants.ts';
+import { reportSkeleton2DDeformLengthMismatch } from './skeleton2dGuards.ts';
 
 // Transforms an attachment's points into world space, writing flat interleaved `[x0, y0, x1, y1, …]`.
 // This is the skinning primitive every deformable attachment shares — meshes, paths, bounding boxes and

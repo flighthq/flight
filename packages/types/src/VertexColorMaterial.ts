@@ -1,4 +1,4 @@
-import type { Material3D } from './Material3D';
+import type { Material3D } from './Material3D.ts';
 
 // Uses the mesh's reserved `color0` vertex attribute directly as unlit surface color. `tint` is
 // a packed sRgb-albedo RGBA multiplier over the interpolated vertex color. No maps. Full

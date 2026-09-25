@@ -1,6 +1,6 @@
-import type { Modifier } from './Modifier';
-import type { ModifierDefinition } from './ModifierDefinition';
-import type { Texture } from './Texture';
+import type { Modifier } from './Modifier.ts';
+import type { ModifierDefinition } from './ModifierDefinition.ts';
+import type { Texture } from './Texture.ts';
 
 export interface WgpuModifierCompileContext {
   acquireTexture(texture: Readonly<Texture>): number;

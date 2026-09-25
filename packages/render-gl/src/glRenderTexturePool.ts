@@ -9,8 +9,8 @@ import type {
   RenderTexture,
 } from '@flighthq/types/contract';
 
-import { createGlTextureRenderTargetPool, destroyGlTextureRenderTargetPool } from './glRenderTargetPool';
-import { destroyGlRenderTexture, invalidateGlRenderTexture } from './glRenderTexture';
+import { createGlTextureRenderTargetPool, destroyGlTextureRenderTargetPool } from './glRenderTargetPool.ts';
+import { destroyGlRenderTexture, invalidateGlRenderTexture } from './glRenderTexture.ts';
 
 export function acquireGlRenderTexture(
   state: GlRenderState,

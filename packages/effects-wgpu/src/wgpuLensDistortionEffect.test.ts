@@ -2,7 +2,7 @@ import {
   applyLensDistortionEffectToWgpu,
   wgpuLensDistortionEffectRunner,
   registerWgpuLensDistortionEffect,
-} from './wgpuLensDistortionEffect';
+} from './wgpuLensDistortionEffect.ts';
 
 describe('applyLensDistortionEffectToWgpu', () => {
   it('is a function', () => {

@@ -1,4 +1,4 @@
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';
 
 // Measured size of a text field's rendered content — the glyph extent — independent of the field
 // box. Distinct from the node's local bounds rectangle: bounds is the field box (the user-set

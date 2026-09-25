@@ -1,2 +1,2 @@
-export * from './enableTrayGuards';
-export * from './tray';
+export * from './enableTrayGuards.ts';
+export * from './tray.ts';

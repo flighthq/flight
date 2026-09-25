@@ -5,9 +5,9 @@ import { createDisplayObject, setNode2DClip } from '@flighthq/scene2d/contract';
 import type { ClipRegion, Rectangle } from '@flighthq/types/contract';
 import { DisplayObjectKind, EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { enableDomClipSupport } from './domClip';
-import { domScene2DRenderer, drawDomScene2D, renderDomScene2D } from './domNode2D';
-import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
+import { enableDomClipSupport } from './domClip.ts';
+import { domScene2DRenderer, drawDomScene2D, renderDomScene2D } from './domNode2D.ts';
+import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
 
 function makeRectangleClip(rect: Rectangle): ClipRegion {
   return { [EntityRuntimeKey]: undefined, contours: null, rect, version: 0, winding: 'nonZero' };

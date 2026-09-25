@@ -6,7 +6,7 @@ import {
   packageNamedBeforeClaim,
   parseDocLineClaims,
   resolveDocLineClaimPath,
-} from './doc-line-claims';
+} from './doc-line-claims.ts';
 
 const claim = { claimedLine: 60, docLine: 1, docPath: 'agents/packages/texture/status.md', rawPath: 'cubeTexture.ts' };
 

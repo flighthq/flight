@@ -1,7 +1,7 @@
 import { BUILT_IN_REQUIREMENT_CATALOG_ENTRIES } from '@flighthq/requirement-catalog/contract';
 import { readRequirementCatalogFile } from '@flighthq/tool-manifest/contract';
 
-import { runRegistryTool } from './registryTool';
+import { runRegistryTool } from './registryTool.ts';
 
 function run(args: readonly string[]): { errors: string[]; exitCode: number; output: string[] } {
   const errors: string[] = [];

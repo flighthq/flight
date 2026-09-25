@@ -9,8 +9,8 @@ import {
   getCubeTextureFaceSize,
   isCubeTextureComplete,
   setCubeTextureFace,
-} from './cubeTexture';
-import { createSampler, equalsSampler } from './sampler';
+} from './cubeTexture.ts';
+import { createSampler, equalsSampler } from './sampler.ts';
 
 const fakeFace = { width: 64, height: 64 } as ImageResource;
 const fakeFace2 = { width: 128, height: 128 } as ImageResource;

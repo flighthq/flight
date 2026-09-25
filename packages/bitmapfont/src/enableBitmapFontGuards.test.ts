@@ -2,8 +2,8 @@ import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type { BitmapFontData, LogEntry } from '@flighthq/types/contract';
 
-import { createBitmapFont } from './bitmapFont';
-import { disableBitmapFontGuards, enableBitmapFontGuards } from './enableBitmapFontGuards';
+import { createBitmapFont } from './bitmapFont.ts';
+import { disableBitmapFontGuards, enableBitmapFontGuards } from './enableBitmapFontGuards.ts';
 
 let entries: LogEntry[];
 

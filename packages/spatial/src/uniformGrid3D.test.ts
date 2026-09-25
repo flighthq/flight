@@ -2,9 +2,9 @@ import type { SpatialAabb3D, SpatialIndexingNotice, SpatialObjectId, SpatialPair
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { setSpatialIndexingGuard } from './spatialIndexingGuard';
-import { MAX_INDEXED_CELLS_PER_OBJECT } from './uniformGrid';
-import { createUniformGridSpatialBackend3D, initializeUniformGridSpatialBackend3D } from './uniformGrid3D';
+import { setSpatialIndexingGuard } from './spatialIndexingGuard.ts';
+import { MAX_INDEXED_CELLS_PER_OBJECT } from './uniformGrid.ts';
+import { createUniformGridSpatialBackend3D, initializeUniformGridSpatialBackend3D } from './uniformGrid3D.ts';
 
 afterEach(() => {
   setSpatialIndexingGuard(null);

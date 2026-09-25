@@ -8,11 +8,11 @@ import { createRenderTexture, createTexture, setTextureUvFromPixelRect } from '@
 import type { Bitmap, ColorScaleBias, RenderProxy2D, Sprite } from '@flighthq/types/contract';
 import { BatchFormat, BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
-import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
-import { glSpriteRenderer, drawGlSprite } from './glSprite';
-import { registerGlStandardMaterial } from './glStandardMaterial';
-import { createGlState } from './glTestHelper';
+import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature.ts';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
+import { glSpriteRenderer, drawGlSprite } from './glSprite.ts';
+import { registerGlStandardMaterial } from './glStandardMaterial.ts';
+import { createGlState } from './glTestHelper.ts';
 
 function makeSprite(width = 64, height = 48): Sprite {
   const image = {

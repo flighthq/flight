@@ -9,7 +9,7 @@ import {
   findExpectedImageDescriptionCellScope,
   findScenesWithoutExpectedImageDescription,
   findScenesWithWithheldExpectedImageDescription,
-} from './check-expected-image-descriptions';
+} from './check-expected-image-descriptions.ts';
 
 let root: string;
 

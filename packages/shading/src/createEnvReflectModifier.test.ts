@@ -1,7 +1,7 @@
 import { EnvReflectModifierKind, ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createEnvReflectModifier, initializeEnvReflectModifier } from './createEnvReflectModifier';
+import { createEnvReflectModifier, initializeEnvReflectModifier } from './createEnvReflectModifier.ts';
 
 describe('createEnvReflectModifier', () => {
   it('sets the kind and Effect slot', () => {

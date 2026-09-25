@@ -2,9 +2,9 @@ import { RAD_TO_DEG } from '@flighthq/math/contract';
 import type { Skeleton2D, Skeleton2DConstraint, Skeleton2DIkConstraint } from '@flighthq/types/contract';
 import { Skeleton2DConstraintKind } from '@flighthq/types/contract';
 
-import { computeSkeleton2DBoneWorldTransform } from './skeleton2d';
-import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants';
-import { registerSkeleton2DConstraintSolver } from './skeleton2dConstraint';
+import { computeSkeleton2DBoneWorldTransform } from './skeleton2d.ts';
+import { SKELETON_2D_MATRIX_STRIDE as MATRIX_STRIDE } from './skeleton2dConstants.ts';
+import { registerSkeleton2DConstraintSolver } from './skeleton2dConstraint.ts';
 
 // Opts a bundle into IK. Nothing registers itself, so a rig that never solves IK sheds this whole module —
 // which is the reason constraints are a registry rather than a switch.

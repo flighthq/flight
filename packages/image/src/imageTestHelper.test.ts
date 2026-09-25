@@ -1,11 +1,11 @@
 import type { HostImageSource } from '@flighthq/types/contract';
 
-import { getHostImageSourceDimensions, hasHostImageDimensionResolver } from './imageSourceDimensions';
+import { getHostImageSourceDimensions, hasHostImageDimensionResolver } from './imageSourceDimensions.ts';
 import {
   registerTestImageDimensionResolver,
   testImageDimensionResolver,
   unregisterTestImageDimensionResolver,
-} from './imageTestHelper';
+} from './imageTestHelper.ts';
 
 afterEach(() => {
   unregisterTestImageDimensionResolver();

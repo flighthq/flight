@@ -24,20 +24,20 @@ import type {
   RenderState,
 } from '@flighthq/types/contract';
 
-import { renderCanvasScene2D } from './canvasNode2D';
-import { beginCanvasRenderPass, endCanvasRenderPass } from './canvasRenderPass';
+import { renderCanvasScene2D } from './canvasNode2D.ts';
+import { beginCanvasRenderPass, endCanvasRenderPass } from './canvasRenderPass.ts';
 import {
   createCanvasRenderState,
   destroyCanvasRenderState,
   registerCanvasRenderStateTeardown,
-} from './canvasRenderState';
-import { getCanvasHost } from './canvasRenderSurface';
+} from './canvasRenderState.ts';
+import { getCanvasHost } from './canvasRenderSurface.ts';
 import {
   createCanvasTextureRenderTarget,
   destroyCanvasTextureRenderTarget,
   resizeCanvasTextureRenderTarget,
-} from './canvasTextureRenderTarget';
-import { setCanvasTransform } from './canvasTransform';
+} from './canvasTextureRenderTarget.ts';
+import { setCanvasTransform } from './canvasTransform.ts';
 
 /**
  * Creates a dedicated offscreen render state for baking render caches consumed by

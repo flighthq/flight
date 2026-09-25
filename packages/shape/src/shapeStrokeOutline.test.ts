@@ -1,14 +1,14 @@
 import type { ShapeCommandToken } from '@flighthq/types/contract';
 
-import { createShape } from './shape';
+import { createShape } from './shape.ts';
 import {
   appendShapeEllipticalArcTo,
   appendShapeLineStyle,
   appendShapeLineTo,
   appendShapeMoveTo,
   appendShapeRectangle,
-} from './shapeCommands';
-import { getShapeStrokeOutlineRegions } from './shapeStrokeOutline';
+} from './shapeCommands.ts';
+import { getShapeStrokeOutlineRegions } from './shapeStrokeOutline.ts';
 
 describe('getShapeStrokeOutlineRegions', () => {
   it('converts a solid open stroke into a fill region with matching color and alpha', () => {

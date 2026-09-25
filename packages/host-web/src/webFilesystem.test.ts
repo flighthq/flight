@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { webHostFileSystem } from './webFilesystem';
+import { webHostFileSystem } from './webFilesystem.ts';
 
 describe('webHostFileSystem', () => {
   afterEach(() => vi.unstubAllGlobals());

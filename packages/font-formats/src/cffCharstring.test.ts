@@ -2,7 +2,7 @@ import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
 import type { Path } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { cffSubroutineBias, runCffCharstring } from './cffCharstring';
+import { cffSubroutineBias, runCffCharstring } from './cffCharstring.ts';
 
 function createPath(): Path {
   return { [EntityRuntimeKey]: undefined, commands: [], data: [], winding: 'evenOdd' };

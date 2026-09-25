@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
-import { findDataCastColourViolations } from './data-cast-colour';
+import { findDataCastColourViolations } from './data-cast-colour.ts';
 
 // Gate: no cast target in the scanned trees carries a colour-bearing field.
 //

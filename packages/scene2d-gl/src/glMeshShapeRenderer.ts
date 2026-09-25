@@ -14,8 +14,8 @@ import type {
 } from '@flighthq/types/contract';
 import { BatchFormat, RenderRegistryTable, ShapeKind } from '@flighthq/types/contract';
 
-import { createGlShapeData, destroyGlShapeData, getGlShapeData } from './glShapeData';
-import { drawGlShapeMeshes } from './glShapeMesh';
+import { createGlShapeData, destroyGlShapeData, getGlShapeData } from './glShapeData.ts';
+import { drawGlShapeMeshes } from './glShapeMesh.ts';
 
 // Draws the shape through the GPU mesh path alone, and reports whether it did. Returns false when any
 // fill or stroke has no tessellated form — a gradient, a texture fill, or a closed stroke the active

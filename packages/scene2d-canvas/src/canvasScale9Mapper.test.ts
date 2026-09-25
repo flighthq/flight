@@ -1,6 +1,6 @@
 import { appendShapeRectangle, createShape } from '@flighthq/shape/contract';
 
-import { buildScale9Mapper } from './canvasScale9Mapper';
+import { buildScale9Mapper } from './canvasScale9Mapper.ts';
 
 function makeGrid(x: number, y: number, width: number, height: number) {
   return { x, y, width, height } as never;

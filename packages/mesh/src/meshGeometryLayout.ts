@@ -1,12 +1,12 @@
 import type { MeshGeometry, VertexAttributeLayout } from '@flighthq/types/contract';
 
-import { createMeshGeometry } from './meshGeometry';
+import { createMeshGeometry } from './meshGeometry.ts';
 import {
   getVertexFormatByteLength,
   getVertexFormatComponentCount,
   readVertexFormatComponent,
   writeVertexFormatComponent,
-} from './vertexFormat';
+} from './vertexFormat.ts';
 
 // Re-packs a geometry's interleaved vertex stream into a new layout. Attributes present in both
 // the source layout and `targetLayout` are copied by semantic into the corresponding slot of the

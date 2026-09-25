@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { cleanFunctionalArtifacts } from './clean-functional-artifacts';
+import { cleanFunctionalArtifacts } from './clean-functional-artifacts.ts';
 
 describe('cleanFunctionalArtifacts', () => {
   const roots: string[] = [];

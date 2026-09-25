@@ -1,4 +1,4 @@
-import type { Material3D } from './Material3D';
+import type { Material3D } from './Material3D.ts';
 
 // Edge-only debug shading via barycentric/fwidth line rendering. `color` is the packed
 // sRgb-albedo RGBA line color; `thickness` is the line width in pixels. No maps.

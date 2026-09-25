@@ -15,8 +15,8 @@ import type {
 import type { WgpuShapeMesh } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
-import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
-import { drawWgpuShapeMeshBatch, drawWgpuShapeMeshes } from './wgpuShapeMesh';
+import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature.ts';
+import { drawWgpuShapeMeshBatch, drawWgpuShapeMeshes } from './wgpuShapeMesh.ts';
 
 beforeAll(() => {
   installWgpuMock();

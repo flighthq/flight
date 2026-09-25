@@ -41,7 +41,7 @@ import {
   requestScreenDetails,
   screenToDipPoint,
   screenToDipRect,
-} from './screen';
+} from './screen.ts';
 
 describe('attachScreenPermissionChange', () => {
   it('forwards permission states from the supplied host', () => {

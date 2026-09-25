@@ -1,8 +1,8 @@
 import type { GltfCoreFeatureHandler } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { GltfAnimationsCoreFeatureHandler } from './gltfAnimations';
-import { registerGltfAnimationHandlers } from './registerGltfAnimationHandlers';
+import { GltfAnimationsCoreFeatureHandler } from './gltfAnimations.ts';
+import { registerGltfAnimationHandlers } from './registerGltfAnimationHandlers.ts';
 
 describe('registerGltfAnimationHandlers', () => {
   it('registers the built-in animation handler and replaces an existing animation kind', () => {

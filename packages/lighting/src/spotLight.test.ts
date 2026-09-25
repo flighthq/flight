@@ -10,7 +10,7 @@ import {
   setSpotLightCone,
   setSpotLightDirection,
   setSpotLightTarget,
-} from './spotLight';
+} from './spotLight.ts';
 
 describe('cloneSpotLight', () => {
   it('creates an independent copy with fresh position and direction vectors', () => {

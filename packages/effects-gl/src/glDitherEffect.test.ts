@@ -1,4 +1,4 @@
-import { applyDitherEffectToGl, glDitherEffectRunner, registerGlDitherEffect } from './glDitherEffect';
+import { applyDitherEffectToGl, glDitherEffectRunner, registerGlDitherEffect } from './glDitherEffect.ts';
 
 describe('applyDitherEffectToGl', () => {
   it('is a function', () => {

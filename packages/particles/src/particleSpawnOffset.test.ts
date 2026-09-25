@@ -1,5 +1,5 @@
-import { createParticleEmitterConfig } from './particleEmitterConfig';
-import { writeParticleSpawnOffset } from './particleSpawnOffset';
+import { createParticleEmitterConfig } from './particleEmitterConfig.ts';
+import { writeParticleSpawnOffset } from './particleSpawnOffset.ts';
 
 describe('writeParticleSpawnOffset', () => {
   it('samples circle area and rectangle bounds with their existing draw order', () => {

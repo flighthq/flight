@@ -6,9 +6,9 @@ import type { ColorScaleBias } from '@flighthq/types/contract';
 import {
   areWgpuColorAdjustmentGuardsEnabled,
   enableWgpuColorAdjustmentGuards,
-} from './enableWgpuColorAdjustmentGuards';
-import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
-import { recordWgpuQuadBatchColorScaleBias } from './wgpuQuadBatchWriter';
+} from './enableWgpuColorAdjustmentGuards.ts';
+import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature.ts';
+import { recordWgpuQuadBatchColorScaleBias } from './wgpuQuadBatchWriter.ts';
 
 beforeAll(() => {
   installWgpuMock();

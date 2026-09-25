@@ -1,7 +1,7 @@
 import type { AnisotropyPbrExtension, GlPbrExtensionRegistration, GlRenderState } from '@flighthq/types/contract';
 import { AnisotropyPbrExtensionKind } from '@flighthq/types/contract';
 
-import { registerGlPbrExtension } from './glPbrExtensionRegistry';
+import { registerGlPbrExtension } from './glPbrExtensionRegistry.ts';
 
 export const anisotropyPbrGlExtension: GlPbrExtensionRegistration = {
   bind(context, value): void {

@@ -1,6 +1,6 @@
 import type { Path } from '@flighthq/types/contract';
 
-import { flattenPath } from './flattenPath';
+import { flattenPath } from './flattenPath.ts';
 
 // Returns the total arc length of `path` by summing the Euclidean lengths of all flattened segments.
 // Curves are adaptively approximated to `tolerance` path units before measurement.

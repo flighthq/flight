@@ -1,4 +1,4 @@
-import type { Effect } from './Effect';
+import type { Effect } from './Effect.ts';
 
 // Heat-haze / shimmer: warp the sample position by an animated sine field for a refractive-air or
 // underwater wobble. `seed` animates it frame to frame.

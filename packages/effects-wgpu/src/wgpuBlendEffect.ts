@@ -8,8 +8,8 @@ import type {
 } from '@flighthq/types/contract';
 import { AdvancedBlendMode as AdvancedBlendModeValues } from '@flighthq/types/contract';
 
-import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
+import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
 
 // Advanced-blend composite pass: reads the incoming layer and an explicitly registered backdrop,
 // applies the same W3C straight-color blend math as glBlendEffect, then writes premultiplied

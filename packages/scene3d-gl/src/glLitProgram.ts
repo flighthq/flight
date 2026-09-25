@@ -16,7 +16,7 @@ import {
   SCENE_LIGHT_SPOT_STRIDE,
 } from '@flighthq/types/contract';
 
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 // The texture unit the directional shadow map binds to — above the material texture units (a material
 // uses at most baseColor/normal/metallicRoughness/occlusion/emissive ⇒ units 0–4). The IBL set sits
 // above the shadow map: irradiance/prefiltered cubemaps + the BRDF LUT on units 9/10/11.

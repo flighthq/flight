@@ -1,7 +1,10 @@
 import { createAnimationChannel, createAnimationTrack } from '@flighthq/animation/contract';
 import type { AnimationChannel, AnimationInterpolation } from '@flighthq/types/contract';
 
-import { explainSkeleton2DChannelInterpolation, isSkeleton2DSteppedChannelSubject } from './explainSkeleton2DChannel';
+import {
+  explainSkeleton2DChannelInterpolation,
+  isSkeleton2DSteppedChannelSubject,
+} from './explainSkeleton2DChannel.ts';
 
 describe('explainSkeleton2DChannelInterpolation', () => {
   it('reports the override a non-step attachment channel will receive', () => {

@@ -1,4 +1,4 @@
-import { createKuwaharaEffect, initializeKuwaharaEffect } from './kuwaharaEffect';
+import { createKuwaharaEffect, initializeKuwaharaEffect } from './kuwaharaEffect.ts';
 
 describe('createKuwaharaEffect', () => {
   it('tags the intent type', () => {

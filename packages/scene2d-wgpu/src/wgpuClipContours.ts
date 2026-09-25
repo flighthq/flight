@@ -1,7 +1,7 @@
 import { getWgpuRenderStateRuntime, getWgpuRenderPassViewport, retireWgpuBuffer } from '@flighthq/render-wgpu/contract';
 import type { Matrix, PathWinding, WgpuClipContourPipelines, WgpuRenderState } from '@flighthq/types/contract';
 
-import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 
 // Wgpu contour clip via stencil nesting — the Wgpu counterpart to webglClipContours. A path
 // ClipRegion is realized by stamping its covered pixels into the stencil buffer, then content draws in

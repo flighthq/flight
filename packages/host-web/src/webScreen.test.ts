@@ -1,7 +1,7 @@
 import { createScreenInfo } from '@flighthq/screen/contract';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { createWebScreenCapabilities } from './webScreen';
+import { createWebScreenCapabilities } from './webScreen.ts';
 
 afterEach(() => vi.restoreAllMocks());
 

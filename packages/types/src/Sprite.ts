@@ -1,5 +1,5 @@
-import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
-import type { Texture } from './Texture';
+import type { Node2D, Node2DData, Node2DRuntime } from './Node2D.ts';
+import type { Texture } from './Texture.ts';
 
 export interface SpriteData extends Node2DData {
   texture: Texture | null;

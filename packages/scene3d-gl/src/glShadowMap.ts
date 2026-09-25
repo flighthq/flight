@@ -22,9 +22,9 @@ import {
   ensureGlScene3DProgram,
   GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
   SKIN_PALETTE_TEXTURE_UNIT,
-} from './glMeshProgram';
-import { ensureGlMeshUpload } from './glMeshUpload';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+} from './glMeshProgram.ts';
+import { ensureGlMeshUpload } from './glMeshUpload.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // The directional shadow recipe's first pass: render scene depth from the light's point of view into a
 // sampleable depth render target (the shadow map), and record it + the light view-projection on the

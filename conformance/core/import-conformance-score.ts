@@ -1,14 +1,14 @@
-import { parseImportConformanceOracleOutcomes } from './import-conformance-case';
-import type { ImportConformanceOracleEvidence } from './import-conformance-case';
-import { assertImportConformanceDenominators } from './import-conformance-denominator';
-import type { ImportConformanceDenominators } from './import-conformance-denominator';
+import { parseImportConformanceOracleOutcomes } from './import-conformance-case.ts';
+import type { ImportConformanceOracleEvidence } from './import-conformance-case.ts';
+import { assertImportConformanceDenominators } from './import-conformance-denominator.ts';
+import type { ImportConformanceDenominators } from './import-conformance-denominator.ts';
 import {
   parseImportConformanceDiagnosticEvidencePolicy,
   parseImportConformanceRetainedDiagnostic,
-} from './import-conformance-diagnostic-evidence';
-import type { ImportConformanceDiagnosticEvidencePolicy } from './import-conformance-diagnostic-evidence';
+} from './import-conformance-diagnostic-evidence.ts';
+import type { ImportConformanceDiagnosticEvidencePolicy } from './import-conformance-diagnostic-evidence.ts';
 
-export type { ImportConformanceDenominators } from './import-conformance-denominator';
+export type { ImportConformanceDenominators } from './import-conformance-denominator.ts';
 
 export interface ImportConformanceOutcomeCounts {
   importedWrong: number;

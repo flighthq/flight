@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { clearCollisionManifold3D, createCollisionManifold3D, initializeCollisionManifold3D } from './manifold3D';
+import { clearCollisionManifold3D, createCollisionManifold3D, initializeCollisionManifold3D } from './manifold3D.ts';
 
 describe('clearCollisionManifold3D', () => {
   it('resets every field so a reused out never carries a stale normal into a miss', () => {

@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { findOrphanedPackageDistDirectories, formatOrphanedPackageDistError } from './check-package-dist-orphans';
+import { findOrphanedPackageDistDirectories, formatOrphanedPackageDistError } from './check-package-dist-orphans.ts';
 
 describe('package dist orphan detection', () => {
   const roots: string[] = [];

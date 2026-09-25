@@ -18,8 +18,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ShadedMaterialKind } from '@flighthq/types/contract';
 
-import { bindGlMeshLightBlock } from './glLitProgram';
-import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
+import { bindGlMeshLightBlock } from './glLitProgram.ts';
+import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
 import {
   beginGlMeshDraw,
   bindGlUvTransform,
@@ -27,10 +27,10 @@ import {
   hasGlUvTransform,
   setGlMeshCameraPosition,
   setGlMeshViewProjection,
-} from './glMeshProgram';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { getGlScene3DTime } from './glScene3DTime';
-import { ensureGlShadedProgram } from './glShadedPrelude';
+} from './glMeshProgram.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { getGlScene3DTime } from './glScene3DTime.ts';
+import { ensureGlShadedProgram } from './glShadedPrelude.ts';
 
 // The built-in ShadedMaterial forward-lit mesh-material renderer — @flighthq/shading's composable
 // base material on Gl. bind assembles ONE program from the base blinn-phong lit shader plus the

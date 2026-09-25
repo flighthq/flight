@@ -1,8 +1,8 @@
-import type { Bitmap } from './Bitmap';
-import type { HostImageSource } from './HostImageSource';
-import type { Surface } from './Surface';
-import type { TextureSource } from './TextureSource';
-import type { ImageTextureSourceKind } from './TextureSourceKind';
+import type { Bitmap } from './Bitmap.ts';
+import type { HostImageSource } from './HostImageSource.ts';
+import type { Surface } from './Surface.ts';
+import type { TextureSource } from './TextureSource.ts';
+import type { ImageTextureSourceKind } from './TextureSourceKind.ts';
 
 /**
  * A flat host-drawable image asset. ImageResource, Bitmap, and CompressedImageResource are sibling

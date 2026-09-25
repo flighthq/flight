@@ -9,7 +9,7 @@ import type {
   CollisionSupport2D,
 } from '@flighthq/types/contract';
 
-import { writeObbVertices } from './convexVertices2D';
+import { writeObbVertices } from './convexVertices2D.ts';
 
 // The two registries the narrow phase dispatches through.
 //

@@ -1,4 +1,4 @@
-import { runVideoCapabilityBrowserProbe } from './videoCapabilityProbeCore';
+import { runVideoCapabilityBrowserProbe } from './videoCapabilityProbeCore.ts';
 
 afterEach(() => {
   vi.restoreAllMocks();

@@ -18,7 +18,7 @@ import {
   getCanvasRenderCacheTarget,
   refreshCanvasRenderCache,
   releaseCanvasRenderCache,
-} from './canvasCache';
+} from './canvasCache.ts';
 import {
   acquireTestCanvasSurface,
   beginCanvasRenderPass,
@@ -28,7 +28,7 @@ import {
   destroyCanvasRenderState,
   endCanvasRenderPass,
   getCanvasRenderStateRuntime,
-} from './canvasTestSupport';
+} from './canvasTestSupport.ts';
 
 function makeCanvasState(options = {}) {
   const canvas = document.createElement('canvas');

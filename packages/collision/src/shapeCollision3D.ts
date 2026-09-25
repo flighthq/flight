@@ -6,7 +6,7 @@ import type {
   CollisionSphere3D,
 } from '@flighthq/types/contract';
 
-import { clearCollisionManifold3D } from './manifold3D';
+import { clearCollisionManifold3D } from './manifold3D.ts';
 
 // Closed-form 3D narrow-phase pairs, each an exact alternative to the iterative GJK/EPA floor.
 //

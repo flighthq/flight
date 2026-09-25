@@ -1,8 +1,8 @@
 import { EntityRuntimeKey, ShadedMaterialKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createEmissiveModifier } from './createEmissiveModifier';
-import { createShadedMaterial, initializeShadedMaterial } from './createShadedMaterial';
+import { createEmissiveModifier } from './createEmissiveModifier.ts';
+import { createShadedMaterial, initializeShadedMaterial } from './createShadedMaterial.ts';
 
 describe('createShadedMaterial', () => {
   it('builds an entity with the ShadedMaterial kind', () => {

@@ -1,22 +1,22 @@
-export * from './broadphase';
-export * from './colliderCollision';
+export * from './broadphase.ts';
+export * from './colliderCollision.ts';
 export {
   createPhysics3DColliderWorldShape,
   updatePhysics3DColliderWorldShape,
   writePhysics3DColliderBounds,
-} from './colliderTransform';
-export { buildPhysics3DContacts, refreshPhysics3DContacts } from './contactIntake';
-export { createPhysics3DContact, createPhysics3DContactPoint } from './contacts';
-export * from './continuous';
-export { createPhysics3DDebugGeometry, writePhysics3DDebugGeometry } from './debugGeometry';
-export * from './enablePhysics3DGuards';
-export * from './explainPhysics3DCollision';
-export * from './explainPhysics3DJoints';
-export * from './explainPhysics3DStep';
-export * from './integrate';
-export { buildPhysics3DSolveIslands, isRigidBody3DPairAwake, updatePhysics3DSleep } from './islands';
-export * from './jointBreakage';
-export * from './jointCollisionSuppression';
+} from './colliderTransform.ts';
+export { buildPhysics3DContacts, refreshPhysics3DContacts } from './contactIntake.ts';
+export { createPhysics3DContact, createPhysics3DContactPoint } from './contacts.ts';
+export * from './continuous.ts';
+export { createPhysics3DDebugGeometry, writePhysics3DDebugGeometry } from './debugGeometry.ts';
+export * from './enablePhysics3DGuards.ts';
+export * from './explainPhysics3DCollision.ts';
+export * from './explainPhysics3DJoints.ts';
+export * from './explainPhysics3DStep.ts';
+export * from './integrate.ts';
+export { buildPhysics3DSolveIslands, isRigidBody3DPairAwake, updatePhysics3DSleep } from './islands.ts';
+export * from './jointBreakage.ts';
+export * from './jointCollisionSuppression.ts';
 export {
   createPhysics3DBallAndSocketJoint,
   createPhysics3DConeTwistJoint,
@@ -25,8 +25,8 @@ export {
   createPhysics3DGeneric6DofJoint,
   createPhysics3DHingeJoint,
   createPhysics3DSliderJoint,
-} from './jointFactories';
-export * from './jointMath';
+} from './jointFactories.ts';
+export * from './jointMath.ts';
 export {
   accumulatePhysics3DJointRowReaction,
   clearPhysics3DJointReaction,
@@ -34,10 +34,10 @@ export {
   getPhysics3DJointReactionForce,
   getPhysics3DJointReactionTorque,
   writePhysics3DJointReaction,
-} from './jointReaction';
-export * from './jointRegistry';
-export * from './jointRows';
-export * from './joints';
+} from './jointReaction.ts';
+export * from './jointRegistry.ts';
+export * from './jointRows.ts';
+export * from './joints.ts';
 export {
   combinePhysics3DMassData,
   computePhysics3DBoxMassData,
@@ -50,12 +50,12 @@ export {
   createPhysics3DMassData,
   setRigidBody3DMassData,
   updateRigidBody3DMassData,
-} from './massProperties';
-export * from './material';
-export * from './nodeSync';
-export * from './ownership';
-export * from './physics3DBroadphasePublication';
-export * from './registerBuiltInPhysics3DJointSolvers';
+} from './massProperties.ts';
+export * from './material.ts';
+export * from './nodeSync.ts';
+export * from './ownership.ts';
+export * from './physics3DBroadphasePublication.ts';
+export * from './registerBuiltInPhysics3DJointSolvers.ts';
 export {
   createPhysics3DContactConstraint,
   createPhysics3DContactConstraintPoint,
@@ -63,10 +63,10 @@ export {
   solvePhysics3DContactPositions,
   solvePhysics3DContactVelocities,
   warmStartPhysics3DContacts,
-} from './solver';
-export { stepPhysics3D, stepPhysics3DInterval } from './step';
-export * from './stepValidation';
-export * from './symmetricTensor';
+} from './solver.ts';
+export { stepPhysics3D, stepPhysics3DInterval } from './step.ts';
+export * from './stepValidation.ts';
+export * from './symmetricTensor.ts';
 export {
   addPhysics3DBody,
   addPhysics3DCollider,
@@ -94,7 +94,7 @@ export {
   wakePhysics3DBody,
   writeRigidBody3DWorldCenter,
   Physics3DWorldVersion,
-} from './world';
+} from './world.ts';
 export {
   createPhysics3DQueryFilter,
   createPhysics3DQueryResult,
@@ -105,4 +105,4 @@ export {
   queryPhysics3DRayClosest,
   queryPhysics3DRegion,
   queryPhysics3DShapeCast,
-} from './worldQueries';
+} from './worldQueries.ts';

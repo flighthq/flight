@@ -1,5 +1,5 @@
-import type { Texture } from './Texture';
-import type { Vector2Like } from './Vector2';
+import type { Texture } from './Texture.ts';
+import type { Vector2Like } from './Vector2.ts';
 
 export interface AnimatedNormalModifierOptions {
   map: Texture | null;

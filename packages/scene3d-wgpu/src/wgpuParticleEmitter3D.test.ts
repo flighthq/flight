@@ -28,8 +28,8 @@ import {
   destroyWgpuParticleEmitter3DResources,
   drawWgpuScene3DParticleEmitter3Ds,
   registerWgpuParticleEmitter3DPass,
-} from './wgpuParticleEmitter3D';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+} from './wgpuParticleEmitter3D.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

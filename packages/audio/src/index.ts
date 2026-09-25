@@ -1,5 +1,5 @@
-export * from './audioDecodeSlot';
-export * from './audioFormat';
+export * from './audioDecodeSlot.ts';
+export * from './audioFormat.ts';
 export {
   cloneAudioResource,
   createAudioResource,
@@ -11,8 +11,8 @@ export {
   getAudioResourceSampleRate,
   hasAudioResourceBuffer,
   isAudioResourceEmpty,
-} from './audioResource';
-export * from './audioResourceFrom';
+} from './audioResource.ts';
+export * from './audioResourceFrom.ts';
 export {
   createAudioResourceFailure,
   createEmbeddedAudioResourceReference,
@@ -21,4 +21,4 @@ export {
   findAudioResourceReferenceByName,
   resetFailedAudioResourceReference,
   resolveAudioResourceReference,
-} from './audioResourceReference';
+} from './audioResourceReference.ts';

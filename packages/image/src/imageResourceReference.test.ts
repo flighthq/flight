@@ -22,7 +22,7 @@ import {
   registerImageBitmapCompositionResolver,
   resetFailedImageResourceReference,
   resolveImageResourceReference,
-} from './imageResourceReference';
+} from './imageResourceReference.ts';
 
 const fakeSlot: HostImageDecodeFormatCapability = {
   decode: vi.fn().mockResolvedValue({

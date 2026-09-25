@@ -1,6 +1,6 @@
 import type { Surface } from '@flighthq/types/contract';
 
-import { getWebSurfaceCanvasHandle, getWebSurfaceElementHandle } from './webSurfaceHandle';
+import { getWebSurfaceCanvasHandle, getWebSurfaceElementHandle } from './webSurfaceHandle.ts';
 
 // Anchors a surface's drawable in the document. A web drawable is invisible until it is in the DOM, and
 // nothing in surface creation puts it there — allocation and presentation are separate acts, which is why

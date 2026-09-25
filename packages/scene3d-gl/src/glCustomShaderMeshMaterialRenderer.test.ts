@@ -11,10 +11,10 @@ import {
   getGlCustomMaterialShaderSource,
   registerGlCustomShaderMaterial,
   registerGlCustomMaterialShader,
-} from './glCustomShaderMeshMaterialRenderer';
-import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+} from './glCustomShaderMeshMaterialRenderer.ts';
+import { getGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

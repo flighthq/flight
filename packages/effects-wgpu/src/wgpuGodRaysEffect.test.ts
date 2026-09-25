@@ -2,10 +2,10 @@ import { createGodRaysEffect } from '@flighthq/effects/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import type { GodRaysEffect, WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 
-import * as wgpuEffectPassModule from './wgpuEffectPass';
-import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache';
-import { getWgpuEffectRunner } from './wgpuEffectRegistry';
-import { applyGodRaysEffectToWgpu, wgpuGodRaysEffectRunner, registerWgpuGodRaysEffect } from './wgpuGodRaysEffect';
+import * as wgpuEffectPassModule from './wgpuEffectPass.ts';
+import * as wgpuEffectProgramCacheModule from './wgpuEffectProgramCache.ts';
+import { getWgpuEffectRunner } from './wgpuEffectRegistry.ts';
+import { applyGodRaysEffectToWgpu, wgpuGodRaysEffectRunner, registerWgpuGodRaysEffect } from './wgpuGodRaysEffect.ts';
 
 const recorded = {
   pipelines: [] as { blend: string; key: string; wgsl: string }[],

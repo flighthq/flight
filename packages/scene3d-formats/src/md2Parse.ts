@@ -29,13 +29,13 @@ import {
   MD2_TEXCOORD_SIZE,
   MD2_TRIANGLE_SIZE,
   MD2_VERSION,
-} from './md2Schema';
+} from './md2Schema.ts';
 import {
   CANONICAL_FLOATS_PER_VERTEX,
   CANONICAL_LAYOUT,
   createExternalTextureRef,
   reverseTriangleWinding,
-} from './shared';
+} from './shared.ts';
 
 // Parses an id Software MD2 (Quake 2) binary model into a Scene3D. Frame 0 is the base pose of a single
 // Mesh node; every subsequent frame becomes a morph target (position/normal deltas from frame 0), so

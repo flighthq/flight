@@ -6,7 +6,7 @@ import {
   reviewableCells,
   reviewCellRole,
   selectedReviewableCell,
-} from '../tools/review/src/cellRole';
+} from '../tools/review/src/cellRole.ts';
 
 interface Cell {
   renderer: string;

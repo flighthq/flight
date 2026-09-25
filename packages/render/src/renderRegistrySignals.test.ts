@@ -1,5 +1,5 @@
-import { enableRenderRegistrySignals } from './renderRegistrySignals';
-import { createRenderState, getRenderStateRuntime } from './renderState';
+import { enableRenderRegistrySignals } from './renderRegistrySignals.ts';
+import { createRenderState, getRenderStateRuntime } from './renderState.ts';
 
 describe('enableRenderRegistrySignals', () => {
   it('allocates one state-local registry-miss seam and reuses it', () => {

@@ -8,8 +8,8 @@ import {
   equalsMaterial,
   getMaterialOfKind,
   initializeMaterial,
-} from './material';
-import { createStandardPbrMaterial } from './pbrMaterials';
+} from './material.ts';
+import { createStandardPbrMaterial } from './pbrMaterials.ts';
 
 const TestMaterialKind = 'TestMaterial';
 const OtherMaterialKind = 'OtherMaterial';

@@ -1,4 +1,4 @@
-import type { WgpuMeshPipeline } from './WgpuMeshPipeline';
+import type { WgpuMeshPipeline } from './WgpuMeshPipeline.ts';
 
 // The feature flags that select a Toon uber-shader variant. Each toggles a `const … : bool` in the
 // prelude and is hashed into the pipeline-cache key (buildWgpuToonDefineKey), so distinct flag sets

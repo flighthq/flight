@@ -21,8 +21,8 @@ import {
   buildOracleCandidateBundle,
   stageOracleCandidateImages,
   verifyOracleRequestedPixels,
-} from './reference-image-candidate';
-import { getOracleRequestBuild, getOracleRequestCells, readOracleRequest } from './reference-image-records';
+} from './reference-image-candidate.ts';
+import { getOracleRequestBuild, getOracleRequestCells, readOracleRequest } from './reference-image-records.ts';
 
 const [subcommand, requestPath, ...rest] = process.argv.slice(2);
 

@@ -9,7 +9,7 @@ import type {
   TextureColorSpace,
 } from '@flighthq/types/contract';
 
-import { getGlRenderStateRuntime } from './glRenderState';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
 
 // GPU-native block-compressed texture upload for WebGL2: hand a parsed TextureContainer (KTX2 / DDS /
 // ATF) plus its byte payload and this pushes every mip level straight to the GPU with

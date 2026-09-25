@@ -11,7 +11,7 @@ import {
   runMd5TangentFrameOracles,
   runMd5TangentFrameOracleCorpus,
   runProceduralMirroredUvTangentControl,
-} from './md5-tangent-frame-oracle';
+} from './md5-tangent-frame-oracle.ts';
 
 describe('MD5 tangent orthogonality measurement', () => {
   it('measures tangent-normal residuals against Float32 rounding cells', () => {

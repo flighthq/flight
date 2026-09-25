@@ -9,8 +9,8 @@ import type {
   RigidBody3D,
 } from '@flighthq/types/contract';
 
-import { collidePhysics3DColliderShapes } from './colliderCollision';
-import { updatePhysics3DColliderWorldShape } from './colliderTransform';
+import { collidePhysics3DColliderShapes } from './colliderCollision.ts';
+import { updatePhysics3DColliderWorldShape } from './colliderTransform.ts';
 import {
   applySymmetricTensor,
   TENSOR_XX,
@@ -19,8 +19,8 @@ import {
   TENSOR_YY,
   TENSOR_YZ,
   TENSOR_ZZ,
-} from './symmetricTensor';
-import { writeRigidBody3DWorldCenter } from './world';
+} from './symmetricTensor.ts';
+import { writeRigidBody3DWorldCenter } from './world.ts';
 
 export function createPhysics3DContactConstraint(): Physics3DContactConstraint {
   const out = allocateEntity<Physics3DContactConstraint>();

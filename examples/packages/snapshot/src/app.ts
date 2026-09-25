@@ -17,7 +17,7 @@ import {
 } from '@flighthq/sdk';
 import { captureSnapshot, equalsSnapshot, interpolateSnapshots, restoreSnapshot } from '@flighthq/sdk/snapshot';
 
-import { render, scale } from './render';
+import { render, scale } from './render.ts';
 
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 500;

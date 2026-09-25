@@ -1,4 +1,4 @@
-import type { TextureContainer } from './TextureContainer';
+import type { TextureContainer } from './TextureContainer.ts';
 
 // Container metadata and encoded bytes owned by a CompressedImage. A parser fills the container
 // descriptor and hands back the raw payload indexed by its per-level byte ranges; GPU backends upload

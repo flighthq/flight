@@ -1,7 +1,7 @@
 import type { MeshMorph, VertexAttributeLayout } from '@flighthq/types/contract';
 
-import { createMeshGeometry } from './meshGeometry';
-import { blendMeshGeometryMorph, captureMeshMorphBindPose } from './morphMeshGeometry';
+import { createMeshGeometry } from './meshGeometry.ts';
+import { blendMeshGeometryMorph, captureMeshMorphBindPose } from './morphMeshGeometry.ts';
 
 // A canonical PBR record (position + normal + tangent(w) + uv0), stride 48 bytes.
 const CANONICAL_LAYOUT: VertexAttributeLayout = {

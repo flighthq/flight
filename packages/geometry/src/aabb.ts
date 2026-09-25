@@ -9,7 +9,7 @@ import type {
   Vector3Like,
 } from '@flighthq/types/contract';
 
-import { createVector3 } from './vector3';
+import { createVector3 } from './vector3.ts';
 
 export function cloneAabb(source: Readonly<AabbLike>): Aabb {
   return createAabb(source.min.x, source.min.y, source.min.z, source.max.x, source.max.y, source.max.z);

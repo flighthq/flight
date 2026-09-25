@@ -7,31 +7,31 @@ import {
   getFixtureTreePath,
   readFixtureTreeStamp,
   resolveFixtureCacheDirectory,
-} from '../../scripts/fixtures';
+} from '../../scripts/fixtures.ts';
 import {
   buildSwfCapabilityIndex,
   createSwfImportConformanceDenominators,
   SWF_CAPABILITY_SCOPED_UNKNOWN_MAPPINGS,
   SWF_CAPABILITY_CONVENTION_REVISION,
-} from '../swf/swf-capability-index';
-import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from '../swf/swf-import-conformance-policy';
-import { runSwfImportConformanceWorkerPool } from '../swf/swf-import-conformance-worker-pool';
-import { classifyImportConformanceObservation } from './import-conformance-classifier';
+} from '../swf/swf-capability-index.ts';
+import { SWF_IMPORT_CONFORMANCE_DIAGNOSTIC_EVIDENCE_POLICY } from '../swf/swf-import-conformance-policy.ts';
+import { runSwfImportConformanceWorkerPool } from '../swf/swf-import-conformance-worker-pool.ts';
+import { classifyImportConformanceObservation } from './import-conformance-classifier.ts';
 import {
   assertImportConformanceFrozenCapabilityPartition,
   createImportConformanceNotRunScore,
   createImportConformanceScore,
   createImportConformanceShardPlan,
   parseImportConformanceCapabilityDefinitions,
-} from './import-conformance-core';
+} from './import-conformance-core.ts';
 import type {
   ImportConformanceCapabilityDefinition,
   ImportConformanceCapabilityIndex,
   ImportConformanceIndexedFixture,
   ImportConformanceResult,
-} from './import-conformance-core';
-import { formatImportConformanceScore } from './import-conformance-format';
-import { parseImportConformanceInstrumentationMapping } from './import-conformance-instrumentation';
+} from './import-conformance-core.ts';
+import { formatImportConformanceScore } from './import-conformance-format.ts';
+import { parseImportConformanceInstrumentationMapping } from './import-conformance-instrumentation.ts';
 import {
   IMPORT_CONFORMANCE_FAILURE_EXIT_CODE,
   IMPORT_CONFORMANCE_NOT_RUN_EXIT_CODE,
@@ -40,16 +40,16 @@ import {
   parseImportConformanceShardSelection,
   prepareImportConformanceScoreTarget,
   writeImportConformanceScoreAtomically,
-} from './import-conformance-process';
-import type { ImportConformanceArguments } from './import-conformance-process';
+} from './import-conformance-process.ts';
+import type { ImportConformanceArguments } from './import-conformance-process.ts';
 import {
   hashImportConformanceImporterSource,
   readImportConformanceCachedResult,
   readImportConformanceShardResults,
   writeImportConformanceCachedResult,
   writeImportConformanceShardResult,
-} from './import-conformance-runner-core';
-import { formatImportConformanceSubset } from './import-conformance-subset';
+} from './import-conformance-runner-core.ts';
+import { formatImportConformanceSubset } from './import-conformance-subset.ts';
 
 export async function runImportConformanceProcess(
   args: Readonly<ImportConformanceArguments>,

@@ -2,12 +2,12 @@ import { createExtendedPbrMaterial, createIridescencePbrExtension } from '@fligh
 import { createTexture } from '@flighthq/texture/contract';
 import type { Texture } from '@flighthq/types/contract';
 
-import { registerIridescencePbrScene3DMaterialTextures } from './iridescencePbrScene3DMaterialTextures';
+import { registerIridescencePbrScene3DMaterialTextures } from './iridescencePbrScene3DMaterialTextures.ts';
 import {
   createScene3DMaterialTextureRegistry,
   getScene3DMaterialTextures,
   registerExtendedPbrScene3DMaterialTextures,
-} from './sceneMaterialTextureRegistry';
+} from './sceneMaterialTextureRegistry.ts';
 
 describe('registerIridescencePbrScene3DMaterialTextures', () => {
   it('lists the iridescence factor and thickness maps', () => {

@@ -2,7 +2,7 @@ import { createTextureAtlasRegion } from '@flighthq/textureatlas/contract';
 import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type { TextureAtlas } from '@flighthq/types/contract';
 
-import { resetTextureAtlasPageMeta } from './textureAtlasPageMeta';
+import { resetTextureAtlasPageMeta } from './textureAtlasPageMeta.ts';
 
 // Parses a libGDX / Spine text-format atlas string and populates `atlas.regions`.
 // Handles single and multi-page atlases; regions from all pages are concatenated.

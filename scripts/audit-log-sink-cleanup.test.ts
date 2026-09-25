@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   areLogSinkCleanupAuditReportsSemanticallyEqual,
   collectLogSinkCleanupAuditEnforcementErrors,
-} from './audit-log-sink-cleanup';
+} from './audit-log-sink-cleanup.ts';
 
 describe('areLogSinkCleanupAuditReportsSemanticallyEqual', () => {
   it('ignores only line-number movement in every-registration rows', () => {

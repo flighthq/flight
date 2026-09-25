@@ -1,4 +1,4 @@
-import type { HostProbeResult } from './contract';
+import type { HostProbeResult } from './contract.ts';
 
 export function runHostProbeRender(): HostProbeResult {
   const canvas = document.createElement('canvas');

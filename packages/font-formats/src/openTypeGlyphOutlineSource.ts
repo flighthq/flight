@@ -13,18 +13,18 @@ import type {
   SfntTableDirectory,
 } from '@flighthq/types/contract';
 
-import { runCffCharstring } from './cffCharstring';
-import { readCffTable } from './cffTable';
-import { readOpenTypeCodepointMap } from './openTypeCmap';
-import { readOpenTypeGlyphOutline, readOpenTypeGlyphRanges } from './openTypeGlyf';
+import { runCffCharstring } from './cffCharstring.ts';
+import { readCffTable } from './cffTable.ts';
+import { readOpenTypeCodepointMap } from './openTypeCmap.ts';
+import { readOpenTypeGlyphOutline, readOpenTypeGlyphRanges } from './openTypeGlyf.ts';
 import {
   readOpenTypeAdvances,
   readOpenTypeGlyphCount,
   readOpenTypeLocaFormat,
   readOpenTypeMetrics,
-} from './openTypeMetrics';
-import { readSfntTableDirectory } from './sfntTableDirectory';
-import { readWoffFont } from './woffFont';
+} from './openTypeMetrics.ts';
+import { readSfntTableDirectory } from './sfntTableDirectory.ts';
+import { readWoffFont } from './woffFont.ts';
 
 /**
  * OPENTYPE/TRUETYPE BYTES → THE EXISTING `GlyphOutlineSource` SEAM.

@@ -10,16 +10,16 @@ import type {
   SpatialPair,
 } from '@flighthq/types/contract';
 
-import { synchronizePhysics3DBroadphase, synchronizePhysics3DSweptBroadphase } from './broadphase';
-import { collidePhysics3DColliderShapes, sweepPhysics3DColliderShapes } from './colliderCollision';
-import { updatePhysics3DColliderWorldShape } from './colliderTransform';
-import { createPhysics3DContact, createPhysics3DContactPoint } from './contacts';
-import { integrateRigidBody3DPose, refreshRigidBody3DWorldInertia } from './integrate';
-import { isPhysics3DPairJointSuppressed } from './jointCollisionSuppression';
-import { isPhysics3DPairOrdered } from './jointRegistry';
-import { mixPhysics3DFriction, mixPhysics3DRestitution } from './material';
-import { steppingPhysics3DWorlds } from './ownership';
-import { isPhysics3DContactValid } from './stepValidation';
+import { synchronizePhysics3DBroadphase, synchronizePhysics3DSweptBroadphase } from './broadphase.ts';
+import { collidePhysics3DColliderShapes, sweepPhysics3DColliderShapes } from './colliderCollision.ts';
+import { updatePhysics3DColliderWorldShape } from './colliderTransform.ts';
+import { createPhysics3DContact, createPhysics3DContactPoint } from './contacts.ts';
+import { integrateRigidBody3DPose, refreshRigidBody3DWorldInertia } from './integrate.ts';
+import { isPhysics3DPairJointSuppressed } from './jointCollisionSuppression.ts';
+import { isPhysics3DPairOrdered } from './jointRegistry.ts';
+import { mixPhysics3DFriction, mixPhysics3DRestitution } from './material.ts';
+import { steppingPhysics3DWorlds } from './ownership.ts';
+import { isPhysics3DContactValid } from './stepValidation.ts';
 import {
   applySymmetricTensor,
   TENSOR_XX,
@@ -28,8 +28,8 @@ import {
   TENSOR_YY,
   TENSOR_YZ,
   TENSOR_ZZ,
-} from './symmetricTensor';
-import { writeRigidBody3DWorldCenter } from './world';
+} from './symmetricTensor.ts';
+import { writeRigidBody3DWorldCenter } from './world.ts';
 
 // Continuous collision: advancing poses in chronological order of impact rather than in one jump.
 //

@@ -14,7 +14,7 @@ import {
   initializePhysics3DAbiExecutionResult,
   initializePhysics3DAbiJointBuffer,
   initializePhysics3DAbiQueryBuffer,
-} from './physics3DAbiBuffer';
+} from './physics3DAbiBuffer.ts';
 import {
   Physics3DAbiBodyValueStride,
   Physics3DAbiCommandHeaderByteLength,
@@ -25,7 +25,7 @@ import {
   Physics3DAbiJointValueStride,
   Physics3DAbiQueryValueStride,
   Physics3DAbiVersion,
-} from './physics3DAbiLayout';
+} from './physics3DAbiLayout.ts';
 
 describe('clearPhysics3DAbiCommandBuffer', () => {
   it('rewrites the canonical little-endian header and resets the published stream', () => {

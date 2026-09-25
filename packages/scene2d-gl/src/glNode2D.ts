@@ -11,7 +11,7 @@ import type {
   Scene2DRenderer,
 } from '@flighthq/types/contract';
 
-import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
 
 export function drawGlScene2D(_state: GlRenderState, _renderProxy: RenderProxy2D): void {
   // Plain display objects have no visual geometry of their own.

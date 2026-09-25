@@ -8,14 +8,14 @@ import type {
   Texture,
 } from '@flighthq/types/contract';
 
-import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail';
+import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail.ts';
 import {
   GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
   GL_UV_TRANSFORM_VERTEX_GLSL,
   compileGlProgram,
   ensureGlScene3DProgram,
-} from './glMeshProgram';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+} from './glMeshProgram.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // Uploads the resolved unlit surface uniforms: the linear color
 // (already sRgb-decoded on the CPU), the intensity scale (1 for Unlit/VertexColor, emissiveStrength

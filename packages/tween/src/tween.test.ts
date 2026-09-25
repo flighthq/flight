@@ -17,9 +17,9 @@ import {
   stopAllTweens,
   stopTween,
   stopTweens,
-} from './tween';
-import { createTweenManager } from './tweenManager';
-import { updateTweens } from './updateTweens';
+} from './tween.ts';
+import { createTweenManager } from './tweenManager.ts';
+import { updateTweens } from './updateTweens.ts';
 
 describe('applyTween', () => {
   it('immediately sets properties on target', () => {

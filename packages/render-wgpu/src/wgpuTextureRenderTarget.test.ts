@@ -1,16 +1,16 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 
-import { resolveWgpuSmoothingBindGroup } from './wgpuDraw';
-import { submitWgpuFrame } from './wgpuFrame';
-import { getWgpuRenderStateDeviceResources } from './wgpuRenderState';
-import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+import { resolveWgpuSmoothingBindGroup } from './wgpuDraw.ts';
+import { submitWgpuFrame } from './wgpuFrame.ts';
+import { getWgpuRenderStateDeviceResources } from './wgpuRenderState.ts';
+import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';
 import {
   createWgpuTextureRenderTarget,
   destroyWgpuTextureRenderTarget,
   drawWgpuTextureRenderTargetResult,
   initializeWgpuTextureRenderTarget,
   resizeWgpuTextureRenderTarget,
-} from './wgpuTextureRenderTarget';
+} from './wgpuTextureRenderTarget.ts';
 
 beforeAll(() => {
   installWgpuMock();

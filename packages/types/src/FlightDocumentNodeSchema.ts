@@ -1,7 +1,7 @@
-import type { Kind } from './Entity';
-import type { FlightDocumentFields } from './FlightDocumentFieldSchema';
-import type { FlightDocumentFieldSchema } from './FlightDocumentFieldSchema';
-import type { NodeAny } from './Node';
+import type { Kind } from './Entity.ts';
+import type { FlightDocumentFields } from './FlightDocumentFieldSchema.ts';
+import type { FlightDocumentFieldSchema } from './FlightDocumentFieldSchema.ts';
+import type { NodeAny } from './Node.ts';
 
 // Resolved live resources keyed by the names authored in one document. It is deliberately open-ended:
 // a vendor resource kind may resolve to its own value without widening a closed SDK union.

@@ -5,9 +5,9 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { CanvasRenderOptions, HostImageCapability } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
-import { allocateEmptyCanvasRenderRegistries } from './canvasPipeline';
-import { createCanvasRenderState as createExplicitCanvasRenderState } from './canvasRenderState';
+import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver.ts';
+import { allocateEmptyCanvasRenderRegistries } from './canvasPipeline.ts';
+import { createCanvasRenderState as createExplicitCanvasRenderState } from './canvasRenderState.ts';
 import {
   createCanvasRenderState,
   createCanvasRenderStateRuntime,
@@ -20,8 +20,8 @@ import {
   resolveCanvasTextureSmoothing,
   setCanvasGlobalAlpha,
   setCanvasImageSmoothing,
-} from './canvasTestSupport';
-import { canvasScene2DRenderPreset } from './scene2DCanvasPipeline';
+} from './canvasTestSupport.ts';
+import { canvasScene2DRenderPreset } from './scene2DCanvasPipeline.ts';
 
 describe('createCanvasRenderState', () => {
   it('creates state with a valid context and canvas', () => {

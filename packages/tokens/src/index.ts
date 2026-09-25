@@ -2,8 +2,8 @@ export {
   createFlightDocumentTokenResolverRegistry,
   explainFlightDocumentSceneTokenResolution,
   resolveFlightDocumentSceneTokens,
-} from './flightDocumentSceneTokens';
+} from './flightDocumentSceneTokens.ts';
 export {
   explainFlightDocumentSceneTokenSubstitution,
   substituteFlightDocumentSceneTokens,
-} from './substituteFlightDocumentSceneTokens';
+} from './substituteFlightDocumentSceneTokens.ts';

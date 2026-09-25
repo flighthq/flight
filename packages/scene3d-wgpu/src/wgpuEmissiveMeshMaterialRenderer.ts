@@ -18,9 +18,14 @@ import type {
 } from '@flighthq/types/contract';
 import { EmissiveMaterialKind } from '@flighthq/types/contract';
 
-import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { beginWgpuMeshDraw, drawWgpuMeshSubset, isWgpuTextureReady, writeWgpuFrameUniform } from './wgpuMeshPipeline';
-import { bindWgpuUnlitSurface, ensureWgpuUnlitPipeline } from './wgpuUnlitPrelude';
+import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import {
+  beginWgpuMeshDraw,
+  drawWgpuMeshSubset,
+  isWgpuTextureReady,
+  writeWgpuFrameUniform,
+} from './wgpuMeshPipeline.ts';
+import { bindWgpuUnlitSurface, ensureWgpuUnlitPipeline } from './wgpuUnlitPrelude.ts';
 
 // The built-in Emissive forward renderer (WgpuMeshMaterialRenderer for EmissiveMaterialKind) — the WGSL
 // mirror of glEmissiveMeshMaterialRenderer. Self-illuminating, lighting-independent: binds the linear

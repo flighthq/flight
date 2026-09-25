@@ -8,7 +8,7 @@ import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 import type { BitmapFontRecord, ImportDiagnostic } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { buildBitmapFontFromRecord, reportDroppedBitmapFontRecords } from './bitmapFontRecord';
+import { buildBitmapFontFromRecord, reportDroppedBitmapFontRecords } from './bitmapFontRecord.ts';
 
 describe('buildBitmapFontFromRecord', () => {
   it('maps chars, kernings, and common metrics onto a BitmapFont', () => {

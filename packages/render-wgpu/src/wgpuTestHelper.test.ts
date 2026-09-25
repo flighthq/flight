@@ -1,4 +1,4 @@
-import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';
 
 beforeAll(() => {
   installWgpuMock();

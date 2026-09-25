@@ -8,9 +8,12 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { applyAnimationClipToSkeleton2D } from './applyAnimationClipToSkeleton2D';
-import { cloneSkeleton2D, createSkeleton2D } from './skeleton2d';
-import { createSkeleton2DBoneAnimationTarget, createSkeleton2DSlotAnimationTarget } from './skeleton2dAnimationTarget';
+import { applyAnimationClipToSkeleton2D } from './applyAnimationClipToSkeleton2D.ts';
+import { cloneSkeleton2D, createSkeleton2D } from './skeleton2d.ts';
+import {
+  createSkeleton2DBoneAnimationTarget,
+  createSkeleton2DSlotAnimationTarget,
+} from './skeleton2dAnimationTarget.ts';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
   return {

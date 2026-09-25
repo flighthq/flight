@@ -1,6 +1,6 @@
 import type { Physics3DJointResolutionGuard, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 
-import { findPhysics3DBody } from './world';
+import { findPhysics3DBody } from './world.ts';
 
 // Rebuilds deterministic contiguous lists for the awake solve islands.
 //

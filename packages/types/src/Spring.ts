@@ -42,4 +42,4 @@ export interface Spring3D extends Entity {
   y: Spring;
   z: Spring;
 }
-import type { Entity } from './Entity';
+import type { Entity } from './Entity.ts';

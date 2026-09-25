@@ -1,6 +1,6 @@
-export * from './fontFormat';
-export { createFontResource } from './fontResource';
-export * from './fontResourceFrom';
-export * from './fontShorthand';
-export * from './fontStatus';
-export { allocateGlyphRasterizerBackendFromGlyphOutlineSource } from './glyphOutlineSource';
+export * from './fontFormat.ts';
+export { createFontResource } from './fontResource.ts';
+export * from './fontResourceFrom.ts';
+export * from './fontShorthand.ts';
+export * from './fontStatus.ts';
+export { allocateGlyphRasterizerBackendFromGlyphOutlineSource } from './glyphOutlineSource.ts';

@@ -8,8 +8,8 @@ import {
 } from '@flighthq/node/contract';
 import type { Material3D, Node3D } from '@flighthq/types/contract';
 
-import { cloneMesh, isMesh } from './mesh';
-import { createNode3D } from './sceneNode';
+import { cloneMesh, isMesh } from './mesh.ts';
+import { createNode3D } from './sceneNode.ts';
 
 export function cloneNode3DSubtree(
   source: Readonly<Node3D>,

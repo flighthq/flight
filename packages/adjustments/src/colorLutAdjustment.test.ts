@@ -1,6 +1,10 @@
-import { getAdjustmentColorTransform, initializeColorLutAdjustment, isColorLutAdjustment } from './colorLutAdjustment';
-import { createHueSaturationAdjustment } from './hueSaturationAdjustment';
-import { createInvertAdjustment } from './invertAdjustment';
+import {
+  getAdjustmentColorTransform,
+  initializeColorLutAdjustment,
+  isColorLutAdjustment,
+} from './colorLutAdjustment.ts';
+import { createHueSaturationAdjustment } from './hueSaturationAdjustment.ts';
+import { createInvertAdjustment } from './invertAdjustment.ts';
 
 describe('getAdjustmentColorTransform', () => {
   it('returns a LUT-tier adjustment its own transform', () => {

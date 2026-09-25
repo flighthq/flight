@@ -1,5 +1,5 @@
-import { webHostWgpuContext } from './webHostWgpuContext';
-import { createWebSurfaceFromElement } from './webSurfaceHandle';
+import { webHostWgpuContext } from './webHostWgpuContext.ts';
+import { createWebSurfaceFromElement } from './webSurfaceHandle.ts';
 
 function installMinimalWgpuMock(): void {
   if (globalThis.navigator == null) {

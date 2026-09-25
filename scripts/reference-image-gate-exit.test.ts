@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveGateExitStatus } from './reference-image-gate-exit';
+import { resolveGateExitStatus } from './reference-image-gate-exit.ts';
 
 describe('resolveGateExitStatus', () => {
   it('exits zero only when the comparison passed and every capture target ran', () => {

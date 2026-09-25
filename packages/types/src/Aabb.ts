@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Vector3, Vector3Like } from './Vector3';
+import type { Entity } from './Entity.ts';
+import type { Vector3, Vector3Like } from './Vector3.ts';
 
 // Axis-aligned bounding box in a single coordinate space. `min`/`max` are the per-axis
 // component-wise extremes; an empty/uninitialized box conventionally carries min > max

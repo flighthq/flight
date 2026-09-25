@@ -3,8 +3,8 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { ConventionalCommit } from './conventional-commits.js';
-import { parseConventionalCommit } from './conventional-commits.js';
+import type { ConventionalCommit } from './conventional-commits.ts';
+import { parseConventionalCommit } from './conventional-commits.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const STABLE_VERSION_PATTERN = /^\d+\.\d+\.\d+$/;

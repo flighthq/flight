@@ -27,15 +27,15 @@ import {
   WireframeMaterialKind,
 } from '@flighthq/types/contract';
 
-import { wgpuBlinnPhongMeshMaterialRenderer } from './wgpuBlinnPhongMeshMaterialRenderer';
-import { wgpuCustomShaderMeshMaterialRenderer } from './wgpuCustomShaderMeshMaterialRenderer';
-import { wgpuDepthMeshMaterialRenderer } from './wgpuDepthMeshMaterialRenderer';
-import { wgpuEmissiveMeshMaterialRenderer } from './wgpuEmissiveMeshMaterialRenderer';
-import { wgpuLambertMeshMaterialRenderer } from './wgpuLambertMeshMaterialRenderer';
-import { wgpuMatcapMeshMaterialRenderer } from './wgpuMatcapMeshMaterialRenderer';
-import { wgpuNormalMeshMaterialRenderer } from './wgpuNormalMeshMaterialRenderer';
-import { wgpuPhongMeshMaterialRenderer } from './wgpuPhongMeshMaterialRenderer';
-import { wgpuShadedMeshMaterialRenderer } from './wgpuShadedMeshMaterialRenderer';
+import { wgpuBlinnPhongMeshMaterialRenderer } from './wgpuBlinnPhongMeshMaterialRenderer.ts';
+import { wgpuCustomShaderMeshMaterialRenderer } from './wgpuCustomShaderMeshMaterialRenderer.ts';
+import { wgpuDepthMeshMaterialRenderer } from './wgpuDepthMeshMaterialRenderer.ts';
+import { wgpuEmissiveMeshMaterialRenderer } from './wgpuEmissiveMeshMaterialRenderer.ts';
+import { wgpuLambertMeshMaterialRenderer } from './wgpuLambertMeshMaterialRenderer.ts';
+import { wgpuMatcapMeshMaterialRenderer } from './wgpuMatcapMeshMaterialRenderer.ts';
+import { wgpuNormalMeshMaterialRenderer } from './wgpuNormalMeshMaterialRenderer.ts';
+import { wgpuPhongMeshMaterialRenderer } from './wgpuPhongMeshMaterialRenderer.ts';
+import { wgpuShadedMeshMaterialRenderer } from './wgpuShadedMeshMaterialRenderer.ts';
 import {
   animatedNormalWgpuModifierSnippet,
   dissolveWgpuModifierSnippet,
@@ -45,14 +45,14 @@ import {
   rimWgpuModifierSnippet,
   toonWgpuModifierSnippet,
   vertexDisplaceWgpuModifierSnippet,
-} from './wgpuShadedPrelude';
-import { wgpuSkinningAdapter } from './wgpuSkinPalette';
-import { wgpuSpecularGlossinessPbrMeshMaterialRenderer } from './wgpuSpecularGlossinessPbrMeshMaterialRenderer';
-import { wgpuStandardPbrMeshMaterialRenderer } from './wgpuStandardPbrMeshMaterialRenderer';
-import { wgpuToonMeshMaterialRenderer } from './wgpuToonMeshMaterialRenderer';
-import { wgpuUnlitMeshMaterialRenderer } from './wgpuUnlitMeshMaterialRenderer';
-import { wgpuVertexColorMeshMaterialRenderer } from './wgpuVertexColorMeshMaterialRenderer';
-import { wgpuWireframeMeshMaterialRenderer } from './wgpuWireframeMeshMaterialRenderer';
+} from './wgpuShadedPrelude.ts';
+import { wgpuSkinningAdapter } from './wgpuSkinPalette.ts';
+import { wgpuSpecularGlossinessPbrMeshMaterialRenderer } from './wgpuSpecularGlossinessPbrMeshMaterialRenderer.ts';
+import { wgpuStandardPbrMeshMaterialRenderer } from './wgpuStandardPbrMeshMaterialRenderer.ts';
+import { wgpuToonMeshMaterialRenderer } from './wgpuToonMeshMaterialRenderer.ts';
+import { wgpuUnlitMeshMaterialRenderer } from './wgpuUnlitMeshMaterialRenderer.ts';
+import { wgpuVertexColorMeshMaterialRenderer } from './wgpuVertexColorMeshMaterialRenderer.ts';
+import { wgpuWireframeMeshMaterialRenderer } from './wgpuWireframeMeshMaterialRenderer.ts';
 
 function buildScene3DWgpuMeshMaterialRenderers(
   base: Readonly<ReadonlyMap<Kind, WgpuMeshMaterialRenderer | WgpuQuadMaterialRenderer>>,

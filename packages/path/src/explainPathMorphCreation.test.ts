@@ -1,5 +1,5 @@
-import { explainPathMorphCreation } from './explainPathMorphCreation';
-import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path';
+import { explainPathMorphCreation } from './explainPathMorphCreation.ts';
+import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
 
 describe('explainPathMorphCreation', () => {
   it('reports a compatible pair', () => {

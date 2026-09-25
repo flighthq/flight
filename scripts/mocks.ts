@@ -22,8 +22,8 @@ import { join, relative } from 'node:path';
 
 import pc from 'picocolors';
 
-import { REGISTRY_ISOLATED_TESTS } from './registryIsolatedTests';
-import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories';
+import { REGISTRY_ISOLATED_TESTS } from './registryIsolatedTests.ts';
+import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories.ts';
 
 type Rule = 'hoisted-mock' | 'orphan-unmock' | 'stale-tier' | 'untiered-mock';
 

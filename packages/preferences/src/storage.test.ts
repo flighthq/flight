@@ -50,7 +50,7 @@ import {
   setStorageItems,
   setStorageJSON,
   setStorageNumber,
-} from './storage';
+} from './storage.ts';
 
 interface MemoryStorageBackend extends HostPreferencesCapability {
   data: Record<string, string>;

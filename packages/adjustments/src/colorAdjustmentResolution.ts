@@ -1,7 +1,7 @@
 import type { Adjustment, ColorScaleBias } from '@flighthq/types/contract';
 
-import { getAdjustmentColorMatrix } from './colorMatrixAdjustment';
-import { fuseColorMatrices } from './colorMatrixMath';
+import { getAdjustmentColorMatrix } from './colorMatrixAdjustment.ts';
+import { fuseColorMatrices } from './colorMatrixMath.ts';
 
 // Resolution status of a node's color-adjustment stack against the affine inline fold.
 export const COLOR_ADJUSTMENT_NONE = 0; // empty stack — no tint (leave `out` untouched, use null)

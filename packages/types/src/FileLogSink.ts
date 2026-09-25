@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { LogSink, LogTransportDestroyOutcome, LogTransportFlushOutcome } from './Log';
+import type { Entity } from './Entity.ts';
+import type { LogSink, LogTransportDestroyOutcome, LogTransportFlushOutcome } from './Log.ts';
 
 /**
  * Owned file-sink entity returned by createFileLogSink. Install `sink` with addLogSink and await

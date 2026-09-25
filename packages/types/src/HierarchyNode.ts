@@ -1,4 +1,4 @@
-import type { Node, NodeAny, NodeTraits } from './Node';
+import type { Node, NodeAny, NodeTraits } from './Node.ts';
 
 /**
  * A scene-graph entity whose only required feature is hierarchy membership. APIs typed on this

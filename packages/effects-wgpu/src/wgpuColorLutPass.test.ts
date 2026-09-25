@@ -6,8 +6,8 @@ import type {
   WgpuTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { applyColorLutPassToWgpu } from './wgpuColorLutPass';
-import * as wgpuEffectPassModule from './wgpuEffectPass';
+import { applyColorLutPassToWgpu } from './wgpuColorLutPass.ts';
+import * as wgpuEffectPassModule from './wgpuEffectPass.ts';
 
 const passState = {
   acquireSlot: vi.fn(() => 256),

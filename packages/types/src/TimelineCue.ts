@@ -1,6 +1,6 @@
-import type { AudioResource } from './AudioResource';
-import type { Entity } from './Entity';
-import type { Timeline } from './Timeline';
+import type { AudioResource } from './AudioResource.ts';
+import type { Entity } from './Entity.ts';
+import type { Timeline } from './Timeline.ts';
 
 // An edge-triggered cue authored onto a timeline frame: a sound to start, a playhead command, anything a
 // format attached to a frame that is not frame *content*.

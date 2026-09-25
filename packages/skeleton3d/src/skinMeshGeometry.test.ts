@@ -5,8 +5,8 @@ import { createNode3D } from '@flighthq/scene3d/contract';
 import type { MeshGeometry, VertexAttributeLayout } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { computeSkeleton3DJointMatrices, createSkeleton3D } from './skeleton3d';
-import { captureMeshSkinBindPose, skinMeshGeometry, updateMeshSkinBindPoseDeformInput } from './skinMeshGeometry';
+import { computeSkeleton3DJointMatrices, createSkeleton3D } from './skeleton3d.ts';
+import { captureMeshSkinBindPose, skinMeshGeometry, updateMeshSkinBindPoseDeformInput } from './skinMeshGeometry.ts';
 
 // Builds a single-vertex geometry in the canonical skinned layout (20 floats): position, normal,
 // tangent(0), uv0(0), joints0, weights0.

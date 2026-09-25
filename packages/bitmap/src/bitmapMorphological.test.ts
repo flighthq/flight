@@ -1,5 +1,5 @@
-import { createBitmap } from './bitmap';
-import { dilateBitmap, erodeBitmap } from './bitmapMorphological';
+import { createBitmap } from './bitmap.ts';
+import { dilateBitmap, erodeBitmap } from './bitmapMorphological.ts';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };

@@ -27,7 +27,7 @@ import type {
   VariableDeclaration,
 } from 'ts-morph';
 
-import { formatGateProvenance, readGateTreeState } from './gate-provenance';
+import { formatGateProvenance, readGateTreeState } from './gate-provenance.ts';
 
 // Required/readonly weakening and exact duplicate members are unsound in every named-base refinement,
 // so they fail the gate. Exported production create* object results outside Entity and EntityRuntime are

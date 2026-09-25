@@ -27,27 +27,30 @@ import { createCanvasSurfaceFromNativeHandle } from '@flighthq/surface/contract'
 import { createMarkupTagRegistry } from '@flighthq/text-markup/contract';
 import { JSDOM } from 'jsdom';
 
-import { createGlRenderState } from '../packages/render-gl/src/glRenderState';
-import { createGlState } from '../packages/render-gl/src/glTestHelper';
-import { createWgpuOffscreenRenderState, getWgpuRenderStateRuntime } from '../packages/render-wgpu/src/wgpuRenderState';
-import { createWgpuRenderStateForTest, installWgpuMock } from '../packages/render-wgpu/src/wgpuTestHelper';
-import { createRegistrarProgressFrame } from './check-progress';
+import { createGlRenderState } from '../packages/render-gl/src/glRenderState.ts';
+import { createGlState } from '../packages/render-gl/src/glTestHelper.ts';
+import {
+  createWgpuOffscreenRenderState,
+  getWgpuRenderStateRuntime,
+} from '../packages/render-wgpu/src/wgpuRenderState.ts';
+import { createWgpuRenderStateForTest, installWgpuMock } from '../packages/render-wgpu/src/wgpuTestHelper.ts';
+import { createRegistrarProgressFrame } from './check-progress.ts';
 import {
   collectRegistrarKindConstants,
   collectRegistrarOwnership,
   collectRegistrarRuntimeDeclarations,
-} from './reachability-core';
+} from './reachability-core.ts';
 import type {
   RegistrarOwnershipEntry,
   RegistrarRuntimeDeclaration,
   RegistrarRuntimeParameter,
-} from './reachability-core';
+} from './reachability-core.ts';
 import {
   diagnoseRegistrarChildProcess,
   formatRegistrarChildFailure,
   summarizeRegistrarProbeDurations,
-} from './registrar-child-process';
-import type { RegistrarChildProcessDiagnostic, RegistrarProbeDuration } from './registrar-child-process';
+} from './registrar-child-process.ts';
+import type { RegistrarChildProcessDiagnostic, RegistrarProbeDuration } from './registrar-child-process.ts';
 import {
   captureRegistrarPairs,
   classifyPairDerivation,
@@ -55,8 +58,8 @@ import {
   describeRuntimeValue,
   explainPairDerivationScope,
   findRegistrarPairCollisions,
-} from './registrar-runtime-core';
-import type { RegistrarProbeRoot } from './registrar-runtime-core';
+} from './registrar-runtime-core.ts';
+import type { RegistrarProbeRoot } from './registrar-runtime-core.ts';
 
 interface PreparedArgument {
   derive: (() => unknown | Promise<unknown>) | null;

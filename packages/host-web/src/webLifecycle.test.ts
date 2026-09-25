@@ -1,6 +1,6 @@
 import type { AppLifecycleState, AppMemoryPressure } from '@flighthq/types/contract';
 
-import { webHostLifecycle } from './webLifecycle';
+import { webHostLifecycle } from './webLifecycle.ts';
 
 describe('webHostLifecycle', () => {
   it("getLaunchKind returns 'cold' when no performance navigation entries", () => {
@@ -75,7 +75,7 @@ describe('webHostLifecycle', () => {
   });
 
   it('is a stable provider value rather than an installed singleton', async () => {
-    const again = (await import('./webLifecycle')).webHostLifecycle;
+    const again = (await import('./webLifecycle.ts')).webHostLifecycle;
     expect(again).toBe(webHostLifecycle);
   });
 

@@ -1,8 +1,8 @@
 import type { SwfTagHandler } from '@flighthq/types/contract';
 
-import * as swfContract from './contract';
-import { swfAllTagHandlers } from './swfAllTagHandlers';
-import { SWF_TAG_NODE_KINDS } from './swfNodeKinds';
+import * as swfContract from './contract.ts';
+import { swfAllTagHandlers } from './swfAllTagHandlers.ts';
+import { SWF_TAG_NODE_KINDS } from './swfNodeKinds.ts';
 
 // The families this package actually exports, read off the barrel rather than hand-listed. A list
 // written here would have to be edited in lockstep with the package to keep meaning anything, and the

@@ -15,8 +15,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { readSwfFilterList, setSwfFilterListGuard } from './swfFilter';
-import { SwfReader } from './swfReader';
+import { readSwfFilterList, setSwfFilterListGuard } from './swfFilter.ts';
+import { SwfReader } from './swfReader.ts';
 
 describe('readSwfFilterList', () => {
   it('reads a drop shadow into a drop-shadow effect with degrees, packed colour and separate alpha', () => {

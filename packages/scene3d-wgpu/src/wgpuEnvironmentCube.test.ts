@@ -1,9 +1,9 @@
 import type { Bitmap, Environment, ImageResource, Texture } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind, ImageTextureSourceKind } from '@flighthq/types/contract';
 
-import { ensureWgpuEnvironmentSourceCube, updateWgpuEnvironmentCubeFace } from './wgpuEnvironmentCube';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+import { ensureWgpuEnvironmentSourceCube, updateWgpuEnvironmentCubeFace } from './wgpuEnvironmentCube.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 
 // The GPU upload + sampling is validated by the functional `env-skybox` / `env-ibl` captures (jsdom has no
 // real WebGPU cube texture). These cover the CPU-side wiring: the six-face upload, the caching identity,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { segmentGraphemes } from './textSegment';
-import { webTextSegmenterBackend } from './textSegmenterBackend';
+import { segmentGraphemes } from './textSegment.ts';
+import { webTextSegmenterBackend } from './textSegmenterBackend.ts';
 
 const backend = webTextSegmenterBackend;
 

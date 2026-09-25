@@ -1,9 +1,9 @@
 import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } from '@flighthq/types/contract';
 
-import { uncompressSwfSource } from './swfDocument';
-import { parseSwfHeader } from './swfHeader';
-import { readSwfHeaderRectangle, readSwfHeaderUint32, SWF_HEADER_PREFIX_LENGTH } from './swfHeaderReader';
-import { SWF_TAG_NAMES } from './swfTagVocabulary';
+import { uncompressSwfSource } from './swfDocument.ts';
+import { parseSwfHeader } from './swfHeader.ts';
+import { readSwfHeaderRectangle, readSwfHeaderUint32, SWF_HEADER_PREFIX_LENGTH } from './swfHeaderReader.ts';
+import { SWF_TAG_NAMES } from './swfTagVocabulary.ts';
 
 /**
  * Walks the tag stream and counts how many times each tag code appears, without interpreting any tag

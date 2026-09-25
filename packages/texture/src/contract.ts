@@ -1,12 +1,12 @@
-export * from './cubeTexture';
-export * from './renderTexture';
-export * from './sampler';
-export * from './texture';
-export * from './videoTexture';
-export * from './voxelGrid';
+export * from './cubeTexture.ts';
+export * from './renderTexture.ts';
+export * from './sampler.ts';
+export * from './texture.ts';
+export * from './videoTexture.ts';
+export * from './voxelGrid.ts';
 export {
   getTextureSampleColorSpace,
   shouldDecodeTextureOnSample,
   shouldPremultiplyTextureOnUpload,
-} from './textureColorSpace';
-export { initializeSampler } from './sampler';
+} from './textureColorSpace.ts';
+export { initializeSampler } from './sampler.ts';

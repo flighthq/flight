@@ -1,4 +1,4 @@
-import type { ParticleFormatKind } from './ParticleFormatKind';
+import type { ParticleFormatKind } from './ParticleFormatKind.ts';
 /** A warning emitted during a particle-format parse or serialize pass, naming a
  *  feature that could not be represented in the target model and was dropped or
  *  approximated. Surface these in your asset pipeline to audit import/export fidelity. */

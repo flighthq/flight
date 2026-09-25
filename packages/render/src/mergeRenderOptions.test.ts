@@ -1,6 +1,6 @@
 import type { RenderStateOptions } from '@flighthq/types/contract';
 
-import { mergeRenderOptions } from './mergeRenderOptions';
+import { mergeRenderOptions } from './mergeRenderOptions.ts';
 
 // Every field of RenderStateOptions, listed once. The exhaustiveness test below compares this against
 // what the type actually declares, so ADDING A FIELD TO RenderStateOptions FAILS HERE until someone

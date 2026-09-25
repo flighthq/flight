@@ -1,12 +1,12 @@
-import type { AdvancedBlendMode } from './AdvancedBlendMode';
-import type { AnimationClip } from './AnimationClip';
-import type { DisplayObject } from './DisplayObject';
-import type { Entity } from './Entity';
-import type { ImageResourceReference } from './ImageResourceReference';
-import type { LayoutTree } from './Layout';
-import type { Scene2DSlotReference } from './Scene2DDocument';
-import type { PathWinding } from './ShapeCommand';
-import type { Skeleton2D } from './Skeleton2D';
+import type { AdvancedBlendMode } from './AdvancedBlendMode.ts';
+import type { AnimationClip } from './AnimationClip.ts';
+import type { DisplayObject } from './DisplayObject.ts';
+import type { Entity } from './Entity.ts';
+import type { ImageResourceReference } from './ImageResourceReference.ts';
+import type { LayoutTree } from './Layout.ts';
+import type { Scene2DSlotReference } from './Scene2DDocument.ts';
+import type { PathWinding } from './ShapeCommand.ts';
+import type { Skeleton2D } from './Skeleton2D.ts';
 
 /**
  * Rive `.riv` container types used by `@flighthq/scene2d-formats`.

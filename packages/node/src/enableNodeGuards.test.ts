@@ -3,11 +3,11 @@ import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import type { HasTransform2D, HasTransform2DRuntime, LogEntry, Node } from '@flighthq/types/contract';
 import { afterEach, describe, expect, test } from 'vitest';
 
-import { areNodeGuardsEnabled, disableNodeGuards, enableNodeGuards } from './enableNodeGuards';
-import { initTransform2DRuntimeTrait, initTransform2DTrait } from './hasTransform2d';
-import { reparentNode } from './hierarchy';
-import { createNode } from './node';
-import { invalidateNodeLocalTransform } from './revision';
+import { areNodeGuardsEnabled, disableNodeGuards, enableNodeGuards } from './enableNodeGuards.ts';
+import { initTransform2DRuntimeTrait, initTransform2DTrait } from './hasTransform2d.ts';
+import { reparentNode } from './hierarchy.ts';
+import { createNode } from './node.ts';
+import { invalidateNodeLocalTransform } from './revision.ts';
 
 beforeEach(() => clearLogOnceKeys());
 

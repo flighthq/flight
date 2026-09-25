@@ -1,6 +1,6 @@
 import type { BitmapRegion } from '@flighthq/types/contract';
 
-import { invalidateBitmap } from './bitmap';
+import { invalidateBitmap } from './bitmap.ts';
 
 /**
  * Copies only the alpha channel from the `source` region into the `dest`

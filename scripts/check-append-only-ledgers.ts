@@ -59,7 +59,7 @@ import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
-import { readSection } from './markdownSection';
+import { readSection } from './markdownSection.ts';
 
 export interface LedgerBaseCandidate {
   distance: number;

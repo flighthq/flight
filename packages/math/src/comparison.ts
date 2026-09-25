@@ -1,4 +1,4 @@
-import { EPSILON } from './constants';
+import { EPSILON } from './constants.ts';
 
 /** Return `true` if `|a - b| <= epsilon`.
  *

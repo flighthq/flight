@@ -3,8 +3,8 @@ import { getRenderProxy2D, isRenderProxyVisible, noopRendererData } from '@fligh
 import { getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type { DomRenderState, Matrix, Node2D, RenderProxy2D, Scene2DRenderer } from '@flighthq/types/contract';
 
-import { hasDomStructureChanged, processDomNode, reconcileDomContainer, swapDomOrderLists } from './domReconcile';
-import { getDomRenderStateRuntime } from './domRenderState';
+import { hasDomStructureChanged, processDomNode, reconcileDomContainer, swapDomOrderLists } from './domReconcile.ts';
+import { getDomRenderStateRuntime } from './domRenderState.ts';
 
 export function drawDomScene2D(_state: DomRenderState, _renderProxy: RenderProxy2D): void {
   // No-op: containers are rendered implicitly by the traversal in renderDomScene2D.

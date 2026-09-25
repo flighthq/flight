@@ -8,9 +8,9 @@ import {
   isAffineColorMatrix,
   resolveColorAdjustmentsColorMatrix,
   resolveColorAdjustmentsColorScaleBias,
-} from './colorAdjustmentResolution';
-import { createColorMatrixAdjustment } from './colorMatrixAdjustment';
-import { createIdentityColorMatrix, createSaturationColorMatrix } from './colorMatrixMath';
+} from './colorAdjustmentResolution.ts';
+import { createColorMatrixAdjustment } from './colorMatrixAdjustment.ts';
+import { createIdentityColorMatrix, createSaturationColorMatrix } from './colorMatrixMath.ts';
 
 function makeColorScaleBias(fields: Partial<ColorScaleBias> = {}): ColorScaleBias {
   const out = allocateEntity<any>();

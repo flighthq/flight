@@ -1,6 +1,6 @@
 import type { EntityWithoutRuntime, Host } from '@flighthq/types/contract';
 
-import { createHost } from './host';
+import { createHost } from './host.ts';
 import {
   explainHost,
   explainHostAudioDevice,
@@ -10,8 +10,8 @@ import {
   explainHostTextSegmenter,
   explainHostTextShaper,
   explainHostVideo,
-} from './hostExplain';
-import * as hostQuery from './hostQuery';
+} from './hostExplain.ts';
+import * as hostQuery from './hostQuery.ts';
 
 describe('explainHost', () => {
   it('enumerates every capability group the host object carries', () => {

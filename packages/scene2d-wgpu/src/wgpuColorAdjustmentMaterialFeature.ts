@@ -13,8 +13,8 @@ import type {
   TintMaterialData,
 } from '@flighthq/types/contract';
 
-import { getWgpuQuadBatchPreludeWGSL } from './wgpuQuadBatchWriter';
-import { drawWgpuShapeMeshBatch } from './wgpuShapeMesh';
+import { getWgpuQuadBatchPreludeWGSL } from './wgpuQuadBatchWriter.ts';
+import { drawWgpuShapeMeshBatch } from './wgpuShapeMesh.ts';
 
 // Enables the opt-in color-adjustment accumulator and inline fold on a WebGPU render state: the fused-color-matrix
 // scene2d the sprite/quad batch draws through so a color adjustment (and, later, other pointwise

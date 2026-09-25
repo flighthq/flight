@@ -5,9 +5,9 @@ import { gzipSync } from 'node:zlib';
 
 import * as esbuild from 'esbuild';
 
-import type { SizeCase } from './size-runner';
-import { getSizeCaseKey } from './size-runner';
-import { workspacePackages } from './workspaces';
+import type { SizeCase } from './size-runner.ts';
+import { getSizeCaseKey } from './size-runner.ts';
+import { workspacePackages } from './workspaces.ts';
 
 export interface FastSize {
   /** Bytes of the tree-shaken, unminified bundle as emitted. */

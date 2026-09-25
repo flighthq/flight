@@ -3,7 +3,7 @@ import {
   computeHalftoneCellParams,
   computeScanlineParams,
   createBayerMatrix,
-} from './stylizeMath';
+} from './stylizeMath.ts';
 
 describe('computeCrtMaskParams', () => {
   it('writes two values', () => {

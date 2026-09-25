@@ -24,7 +24,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
-import { GltfCamerasCoreFeatureHandler } from './gltfCameras';
+import { GltfCamerasCoreFeatureHandler } from './gltfCameras.ts';
 import {
   createScene3DFromGlb,
   createScene3DFromGltf,
@@ -34,8 +34,8 @@ import {
   parseGlbWithCoreFeatureHandlers,
   parseGltf,
   parseGltfWithCoreFeatureHandlers,
-} from './gltfParse';
-import { getTestTextureResource } from './scene3DFormatsTestHelper';
+} from './gltfParse.ts';
+import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 
 function findGltfDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic | undefined {
   return diagnostics.find((diagnostic) => diagnostic.kind === kind);

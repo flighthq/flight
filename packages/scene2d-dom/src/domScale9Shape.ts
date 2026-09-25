@@ -15,11 +15,11 @@ import type {
 } from '@flighthq/types/contract';
 import { RenderRegistryTable, Scale9ShapeKind } from '@flighthq/types/contract';
 
-import { getDomRenderStateRuntime } from './domRenderState';
-import { buildDomScale9Mapper } from './domScale9Mapper';
-import { drawDomShape } from './domShape';
-import { getDomShapeRasterizer } from './domShapeRasterizer';
-import { prepareDomElement, setDomRendererElement } from './domStyle';
+import { getDomRenderStateRuntime } from './domRenderState.ts';
+import { buildDomScale9Mapper } from './domScale9Mapper.ts';
+import { drawDomShape } from './domShape.ts';
+import { getDomShapeRasterizer } from './domShapeRasterizer.ts';
+import { prepareDomElement, setDomRendererElement } from './domStyle.ts';
 
 interface DomScale9ShapeData extends RendererData {
   canvas: HTMLCanvasElement | null;

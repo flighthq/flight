@@ -1,7 +1,7 @@
 import type { HostFontLoadingCapability, FontUrl } from '@flighthq/types/contract';
 
-import { inferFontFormatFromUrl } from './fontFormat';
-import { getFontShorthand } from './fontShorthand';
+import { inferFontFormatFromUrl } from './fontFormat.ts';
+import { getFontShorthand } from './fontShorthand.ts';
 
 export async function _loadFontFaceFromBytes(
   backend: Readonly<HostFontLoadingCapability>,

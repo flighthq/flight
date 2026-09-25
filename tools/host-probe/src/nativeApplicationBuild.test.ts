@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { createCapacitorNativeBuildInvocation } from './nativeApplicationBuild';
+import { createCapacitorNativeBuildInvocation } from './nativeApplicationBuild.ts';
 
 const toolRoot = resolve(import.meta.dirname, '..');
 

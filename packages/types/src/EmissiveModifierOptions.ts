@@ -1,5 +1,5 @@
-import type { EmissiveModifierFacing } from './EmissiveModifier';
-import type { Texture } from './Texture';
+import type { EmissiveModifierFacing } from './EmissiveModifier.ts';
+import type { Texture } from './Texture.ts';
 
 export interface EmissiveModifierOptions {
   // Packed sRGB RGBA (`0xRRGGBBAA`), seeding EmissiveModifier.color.

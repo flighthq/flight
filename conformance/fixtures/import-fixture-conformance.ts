@@ -3,20 +3,20 @@ import { availableParallelism } from 'node:os';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { FIXTURE_RELEASE_TAG, resolveFixtureCacheDirectory } from '../../scripts/fixtures';
+import { FIXTURE_RELEASE_TAG, resolveFixtureCacheDirectory } from '../../scripts/fixtures.ts';
 import type {
   ConformanceFixtureFractionScore,
   ConformanceFixtureResult,
   ConformanceFixtureScore,
-} from '../core/fixture-conformance';
+} from '../core/fixture-conformance.ts';
 import {
   createConformanceFixturePlan,
   discoverConformanceFixtureTrees,
   getConformanceFixtureTreeLabel,
   runConformanceFixturePlan,
   scoreConformanceFixturePlan,
-} from '../core/fixture-conformance';
-import { createImportFixtureAdapters } from './import-fixture-adapters';
+} from '../core/fixture-conformance.ts';
+import { createImportFixtureAdapters } from './import-fixture-adapters.ts';
 
 export interface ImportFixtureConformanceArguments {
   adapters: readonly string[];

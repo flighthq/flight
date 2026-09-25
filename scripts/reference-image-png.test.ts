@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { deflateSync } from 'node:zlib';
 
-import { decodeOraclePng, getOraclePngPixelSha256, hashOraclePixelBytes } from './reference-image-png';
+import { decodeOraclePng, getOraclePngPixelSha256, hashOraclePixelBytes } from './reference-image-png.ts';
 
 // ★ GROUND TRUTH IS THE PIXELS THE TEST ENCODED, NOT ANOTHER DECODER'S OPINION OF THEM. Each case builds
 // a PNG from known bytes under a chosen filter, so a passing decode means the original pixels came back —

@@ -1,7 +1,7 @@
 import { setMatrix4LookAt } from '@flighthq/geometry/contract';
 import type { Camera3D, Vector3Like } from '@flighthq/types/contract';
 
-import { createPerspectiveProjection } from './projection';
+import { createPerspectiveProjection } from './projection.ts';
 
 // Sets `out` to the view and projection for one face of a cube-map capture from `position`.
 // `face` is 0–5 corresponding to +X, −X, +Y, −Y, +Z, −Z (matching CubeFacePositiveX through

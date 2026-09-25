@@ -4,7 +4,7 @@ import {
   createSpecularPbrExtension,
   initializeSpecularPbrExtension,
   isValidSpecularPbrExtension,
-} from './specularPbrExtension';
+} from './specularPbrExtension.ts';
 
 describe('createSpecularPbrExtension', () => {
   it('creates an Entity with independent strength and color UV sets', () => {

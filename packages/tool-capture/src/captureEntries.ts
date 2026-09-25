@@ -4,7 +4,7 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { discoverFunctionalScene3Ds } from './functionalScene3Ds.js';
+import { discoverFunctionalScene3Ds } from './functionalScene3Ds.ts';
 
 export const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
 export type Tool = 'examples' | 'functional';

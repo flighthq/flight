@@ -17,7 +17,7 @@ import type {
 } from '@flighthq/types/contract';
 import { SpriteKind } from '@flighthq/types/contract';
 
-import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject';
+import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject.ts';
 
 export function cloneSprite(source: Readonly<Sprite>): Sprite {
   return createSprite({ data: { texture: source.data.texture } });

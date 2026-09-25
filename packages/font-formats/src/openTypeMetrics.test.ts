@@ -5,9 +5,9 @@ import {
   readOpenTypeGlyphCount,
   readOpenTypeLocaFormat,
   readOpenTypeMetrics,
-} from './openTypeMetrics';
-import { createSyntheticFont, emptySyntheticGlyph, squareSyntheticGlyph } from './openTypeTestHelper';
-import { readSfntTableDirectory } from './sfntTableDirectory';
+} from './openTypeMetrics.ts';
+import { createSyntheticFont, emptySyntheticGlyph, squareSyntheticGlyph } from './openTypeTestHelper.ts';
+import { readSfntTableDirectory } from './sfntTableDirectory.ts';
 
 describe('readOpenTypeAdvances', () => {
   it('reads one advance per glyph', () => {

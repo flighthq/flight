@@ -1,7 +1,7 @@
-import type { Entity, EntityRuntime } from './Entity';
-import type { HasTransform2D } from './HasTransform2D';
-import type { NodeAny, NodeOf, NodeTraits } from './Node';
-import type { Rectangle } from './Rectangle';
+import type { Entity, EntityRuntime } from './Entity.ts';
+import type { HasTransform2D } from './HasTransform2D.ts';
+import type { NodeAny, NodeOf, NodeTraits } from './Node.ts';
+import type { Rectangle } from './Rectangle.ts';
 
 export interface HasBoundsRectangle extends Entity {}
 

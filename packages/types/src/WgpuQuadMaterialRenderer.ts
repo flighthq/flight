@@ -1,5 +1,5 @@
-import type { Material, MaterialData } from './Material';
-import type { WgpuRenderState } from './WgpuRenderState';
+import type { Material, MaterialData } from './Material.ts';
+import type { WgpuRenderState } from './WgpuRenderState.ts';
 
 // Per-backend behavior for a material kind on Wgpu, registered against the kind on the render
 // state via registerWgpuQuadMaterialRenderer. The renderer owns its shader module; the quad-batch writer

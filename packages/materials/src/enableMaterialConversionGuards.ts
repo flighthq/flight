@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { MaterialConversionExplanation } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setMaterialConversionGuard } from './pbrMaterials';
+import { setMaterialConversionGuard } from './pbrMaterials.ts';
 
 // Uninstalls the guard, restoring the silent conversion.
 export function disableMaterialConversionGuards(): void {

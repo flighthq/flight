@@ -1,6 +1,6 @@
 import type { ParticleConfigIssue, ParticleEmitterConfig } from '@flighthq/types/contract';
 
-import { createParticleEmitterConfig } from './particleEmitterConfig';
+import { createParticleEmitterConfig } from './particleEmitterConfig.ts';
 
 // Every numeric field of ParticleEmitterConfig. Kept as a typed tuple so the
 // validate/sanitize passes can iterate without missing a field as the config grows.

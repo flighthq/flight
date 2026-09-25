@@ -4,14 +4,14 @@ import { createBitmap, createBitmapFingerprint, formatBitmapFingerprint } from '
 import type { DomRenderState } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { FunctionalTarget } from './functionalVerify';
+import type { FunctionalTarget } from './functionalVerify.ts';
 import {
   publishFunctionalRenderSync,
   registerFunctionalTarget,
   registerWgpuFunctionalTarget,
   runRenderVerification,
   snapshotFunctionalRender,
-} from './functionalVerify';
+} from './functionalVerify.ts';
 
 // The verifier communicates through window globals; clear them between cases so state doesn't leak.
 interface VerificationWindowLike {

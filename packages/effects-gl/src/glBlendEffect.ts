@@ -8,8 +8,8 @@ import type {
 } from '@flighthq/types/contract';
 import { AdvancedBlendMode as AdvancedBlendModeValues } from '@flighthq/types/contract';
 
-import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Advanced-blend composite pass: sample the incoming layer (`u_texture0`, the effect's `source`) and a
 // registered backdrop (`u_texture1`), compute the destination-reading / non-separable blend named by the

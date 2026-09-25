@@ -25,4 +25,4 @@ export {
   rimModifierDefinition,
   toonModifierDefinition,
   vertexDisplaceModifierDefinition,
-} from './contract';
+} from './contract.ts';

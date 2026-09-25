@@ -1,4 +1,4 @@
-import type { WgpuMeshPipeline } from './WgpuMeshPipeline';
+import type { WgpuMeshPipeline } from './WgpuMeshPipeline.ts';
 
 // The feature flags that select an unlit variant. `hasColorMap` enables the sampled color map (not yet
 // used on wgpu — see note); `alphaMaskEnabled` enables the alpha-cutoff discard for 'mask' materials;

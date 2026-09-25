@@ -17,8 +17,8 @@ import {
   supportCollisionConvex3D,
   supportCollisionSphere3D,
   writeVertexListSupport3D,
-} from './collisionSupport3D';
-import { getCollisionShapeContainsPoint3D } from './pointContainment3D';
+} from './collisionSupport3D.ts';
+import { getCollisionShapeContainsPoint3D } from './pointContainment3D.ts';
 
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();

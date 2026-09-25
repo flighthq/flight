@@ -1,5 +1,5 @@
-import { applyColorMatrixToColor } from './colorMatrixMath';
-import { createInvertAdjustment, initializeInvertAdjustment } from './invertAdjustment';
+import { applyColorMatrixToColor } from './colorMatrixMath.ts';
+import { createInvertAdjustment, initializeInvertAdjustment } from './invertAdjustment.ts';
 
 describe('createInvertAdjustment', () => {
   it('defaults to a full invert and carries the fusable kind', () => {

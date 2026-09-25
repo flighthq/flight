@@ -7,10 +7,10 @@ import {
   getBitmapDisplacementEffectPadding,
   initializeBitmapDisplacementEffect,
   registerBitmapDisplacementEffectPaddingResolver,
-} from './bitmapDisplacementEffect';
-import { createDisplacementEffect } from './displacementEffect';
-import { getEffectDefaults } from './effectDefaults';
-import { getEffectKinds } from './effectInputs';
+} from './bitmapDisplacementEffect.ts';
+import { createDisplacementEffect } from './displacementEffect.ts';
+import { getEffectDefaults } from './effectDefaults.ts';
+import { getEffectKinds } from './effectInputs.ts';
 
 const map = {} as Texture2D;
 

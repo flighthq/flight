@@ -6,8 +6,8 @@ import {
   createScene3DMaterialTextureRegistry,
   getScene3DMaterialTextures,
   registerExtendedPbrScene3DMaterialTextures,
-} from './sceneMaterialTextureRegistry';
-import { registerTransmissionVolumePbrScene3DMaterialTextures } from './transmissionVolumePbrScene3DMaterialTextures';
+} from './sceneMaterialTextureRegistry.ts';
+import { registerTransmissionVolumePbrScene3DMaterialTextures } from './transmissionVolumePbrScene3DMaterialTextures.ts';
 
 describe('registerTransmissionVolumePbrScene3DMaterialTextures', () => {
   it('lists the transmission factor and thickness maps', () => {

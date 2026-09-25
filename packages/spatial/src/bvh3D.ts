@@ -12,7 +12,7 @@ import type {
   SpatialPair,
 } from '@flighthq/types/contract';
 
-import { reportSpatialIndexing } from './spatialIndexingGuard';
+import { reportSpatialIndexing } from './spatialIndexingGuard.ts';
 
 // A dynamic bounding-volume hierarchy: the second 3D backend, beside the uniform grid.
 //

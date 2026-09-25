@@ -1,7 +1,7 @@
 import { connectSignal } from '@flighthq/signals/contract';
 import type { TreeViewControllerItem } from '@flighthq/types/contract';
 
-import { createGuiTestNode, emitGuiKeyboard, emitGuiPointer } from './guiTestHelper';
+import { createGuiTestNode, emitGuiKeyboard, emitGuiPointer } from './guiTestHelper.ts';
 import {
   createTreeViewController,
   disposeTreeViewController,
@@ -11,7 +11,7 @@ import {
   setTreeViewControllerItemExpanded,
   setTreeViewControllerSelectedItem,
   toggleTreeViewControllerItem,
-} from './treeViewController';
+} from './treeViewController.ts';
 
 function tree() {
   const child: TreeViewControllerItem = { visual: createGuiTestNode() };

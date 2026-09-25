@@ -10,7 +10,7 @@ import type {
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { shapeTextRun } from './textShaperRun';
+import { shapeTextRun } from './textShaperRun.ts';
 
 // Clears all cached ShapedRuns from `cache`, releasing their references. The cache remains valid
 // for continued use after clearing. Does not release the cache object itself (use

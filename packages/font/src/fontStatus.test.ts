@@ -1,6 +1,6 @@
 import type { HostFontLoadingCapability } from '@flighthq/types/contract';
 
-import { isFontLoaded, whenFontsReady } from './fontStatus';
+import { isFontLoaded, whenFontsReady } from './fontStatus.ts';
 
 function createMockBackend(overrides: Partial<HostFontLoadingCapability> = {}): HostFontLoadingCapability {
   return {

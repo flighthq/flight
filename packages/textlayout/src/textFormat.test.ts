@@ -4,7 +4,7 @@ import {
   getTextFormatHeight,
   getTextFormatLeading,
   mergeTextFormat,
-} from './textFormat';
+} from './textFormat.ts';
 
 describe('getTextFormatAscent', () => {
   it('returns size when specified', () => {

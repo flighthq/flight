@@ -1,4 +1,4 @@
-import { findDegreeConstantRedefinitions, formatDegreeConstantReport } from './check-degree-constants';
+import { findDegreeConstantRedefinitions, formatDegreeConstantReport } from './check-degree-constants.ts';
 
 const sources = (entries: Record<string, string>): Map<string, string> => new Map(Object.entries(entries));
 

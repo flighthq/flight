@@ -5,14 +5,14 @@ import {
 } from '@flighthq/collision/contract';
 import { describe, expect, it } from 'vitest';
 
-import { explainPhysics3DCollision } from './explainPhysics3DCollision';
+import { explainPhysics3DCollision } from './explainPhysics3DCollision.ts';
 import {
   addPhysics3DBody,
   addPhysics3DCollider,
   createPhysics3DCollider,
   createPhysics3DWorld,
   createRigidBody3D,
-} from './world';
+} from './world.ts';
 
 beforeEach(() => {
   clearCollisionSupports3D();

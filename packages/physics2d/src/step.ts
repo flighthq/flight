@@ -26,20 +26,20 @@ import type {
   SpatialPair,
 } from '@flighthq/types/contract';
 
-import { synchronizePhysics2DBroadphase, synchronizePhysics2DSweptBroadphase } from './broadphase';
-import { updatePhysics2DColliderWorldShape } from './colliderTransform';
-import { buildPhysics2DSolveIslands, isRigidBody2DPairAwake, updatePhysics2DSleep } from './islands';
-import { isPhysics2DPairJointSuppressed } from './jointCollisionSuppression';
-import { createPhysics2DJointReaction, writePhysics2DJointReaction } from './jointReactions';
-import { removePhysics2DJoint } from './jointRegistry';
-import { mixPhysics2DFriction, mixPhysics2DRestitution } from './material';
-import { steppingPhysics2DWorlds } from './ownership';
+import { synchronizePhysics2DBroadphase, synchronizePhysics2DSweptBroadphase } from './broadphase.ts';
+import { updatePhysics2DColliderWorldShape } from './colliderTransform.ts';
+import { buildPhysics2DSolveIslands, isRigidBody2DPairAwake, updatePhysics2DSleep } from './islands.ts';
+import { isPhysics2DPairJointSuppressed } from './jointCollisionSuppression.ts';
+import { createPhysics2DJointReaction, writePhysics2DJointReaction } from './jointReactions.ts';
+import { removePhysics2DJoint } from './jointRegistry.ts';
+import { mixPhysics2DFriction, mixPhysics2DRestitution } from './material.ts';
+import { steppingPhysics2DWorlds } from './ownership.ts';
 import {
   applyPhysics2DImpulse,
   relativeNormalVelocity,
   solvePhysics2DContactIndicesOnce,
   warmStartPhysics2DContactIndices,
-} from './solver';
+} from './solver.ts';
 import {
   isPhysics2DBodyStateValid,
   isPhysics2DContactValid,
@@ -49,8 +49,8 @@ import {
   isPhysics2DPreviousTimestepValid,
   isPhysics2DSolverConfigValid,
   isPhysics2DTimestepValid,
-} from './stepValidation';
-import { findPhysics2DBody, isPhysics2DPairOrdered } from './world';
+} from './stepValidation.ts';
+import { findPhysics2DBody, isPhysics2DPairOrdered } from './world.ts';
 
 // Builds this step's contact set from the broadphase pairs, preserving each surviving contact's cached
 // impulses.

@@ -1,5 +1,5 @@
-import type { EntityRuntime } from './Entity';
-import type { Rectangle } from './Rectangle';
+import type { EntityRuntime } from './Entity.ts';
+import type { Rectangle } from './Rectangle.ts';
 
 export interface MarqueeSelectionRuntime extends EntityRuntime {
   active: boolean;

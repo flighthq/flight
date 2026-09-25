@@ -1,6 +1,6 @@
 import type { BoundingBoxAttachment2D, Skeleton2D } from '@flighthq/types/contract';
 
-import { skinSkeleton2DAttachmentPoints } from './skinAttachment2DPoints';
+import { skinSkeleton2DAttachmentPoints } from './skinAttachment2DPoints.ts';
 
 // Produces a bounding box's world polygon as flat interleaved `[x0, y0, x1, y1, …]` in `out` (length
 // ≥ 2 × attachment.pointCount), for hit testing and region queries. Requires

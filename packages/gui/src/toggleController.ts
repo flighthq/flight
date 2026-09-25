@@ -13,7 +13,7 @@ import {
   disposeGuiController,
   getGuiControllerRuntime,
   setGuiVisible,
-} from './guiController';
+} from './guiController.ts';
 
 interface ToggleControllerFields {
   checked: boolean;

@@ -1,5 +1,5 @@
-import { createBitmap } from './bitmap';
-import { applyBitmapPaletteMap } from './bitmapPaletteMap';
+import { createBitmap } from './bitmap.ts';
+import { applyBitmapPaletteMap } from './bitmapPaletteMap.ts';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };

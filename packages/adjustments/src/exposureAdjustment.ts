@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityRuntimeKey, ExposureAdjustment, EntityConstruction } from '@flighthq/types/contract';
 
-import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment';
+import { initializeColorMatrixAdjustment } from './colorMatrixAdjustment.ts';
 
 export function createExposureAdjustment(
   options: Readonly<Omit<ExposureAdjustment, typeof EntityRuntimeKey | 'kind' | 'colorMatrix'>> = {},

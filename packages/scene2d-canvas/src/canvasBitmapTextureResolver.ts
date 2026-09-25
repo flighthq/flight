@@ -3,7 +3,7 @@ import { getTextureSource } from '@flighthq/texture/contract';
 import type { Bitmap, CanvasTextureResolvers, HostImageCapability, Texture } from '@flighthq/types/contract';
 import { BitmapTextureSourceKind } from '@flighthq/types/contract';
 
-import { registerCanvasTextureResolver } from './canvasTextureResolver';
+import { registerCanvasTextureResolver } from './canvasTextureResolver.ts';
 
 export function registerCanvasBitmapTextureResolver(
   hostImage: Readonly<HostImageCapability>,

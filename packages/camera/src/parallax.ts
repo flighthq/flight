@@ -1,7 +1,7 @@
 import { createMatrix } from '@flighthq/geometry/contract';
 import type { Camera2D, Vector2Like } from '@flighthq/types/contract';
 
-import { getCamera2DViewMatrix } from './viewMatrix';
+import { getCamera2DViewMatrix } from './viewMatrix.ts';
 
 // Writes the screen-space scroll offset for a parallax layer at depth `factor` into `out`.
 //

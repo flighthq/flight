@@ -2,7 +2,7 @@ import { logOnce } from '@flighthq/log/contract';
 import type { Scene3DLightsLike, WgpuRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 
 export function areWgpuScene3DForwardLightSelectionGuardsEnabled(state: WgpuRenderState): boolean {
   return getWgpuScene3DRuntime(state).forwardLightSelectionGuard != null;

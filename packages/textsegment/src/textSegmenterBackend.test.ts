@@ -3,7 +3,7 @@ import type { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { HostTextSegmenterCapability, TextSegment, TextSegmentGranularity } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
-import { explainTextSegmenterBackend, webTextSegmenterBackend } from './textSegmenterBackend';
+import { explainTextSegmenterBackend, webTextSegmenterBackend } from './textSegmenterBackend.ts';
 
 interface RecordingBackend extends HostTextSegmenterCapability {
   calls: Array<{ text: string; granularity: TextSegmentGranularity; locale: string | undefined }>;

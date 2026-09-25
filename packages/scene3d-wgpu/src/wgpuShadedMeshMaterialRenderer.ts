@@ -17,9 +17,14 @@ import type {
 } from '@flighthq/types/contract';
 import { ShadedMaterialKind } from '@flighthq/types/contract';
 
-import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { beginWgpuMeshDraw, drawWgpuMeshSubset, isWgpuTextureReady, writeWgpuFrameUniform } from './wgpuMeshPipeline';
-import { bindWgpuShadedSurface, ensureWgpuShadedPipeline } from './wgpuShadedPrelude';
+import { registerWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import {
+  beginWgpuMeshDraw,
+  drawWgpuMeshSubset,
+  isWgpuTextureReady,
+  writeWgpuFrameUniform,
+} from './wgpuMeshPipeline.ts';
+import { bindWgpuShadedSurface, ensureWgpuShadedPipeline } from './wgpuShadedPrelude.ts';
 
 // The WebGPU ShadedMaterial renderer: selects one composed `shaded:` pipeline from the material's
 // ordered modifier feature set, writes the shared frame/light block, then binds the base surface and

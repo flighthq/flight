@@ -14,7 +14,7 @@ import {
   populateElectronHostProtocolRegistration,
   populateElectronHostProtocolRegistrationQuery,
   populateElectronHostProtocolUnregistration,
-} from './electronProtocol';
+} from './electronProtocol.ts';
 
 function fakeElectron() {
   const listeners = new Map<string, ((...args: unknown[]) => void)[]>();

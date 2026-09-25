@@ -6,8 +6,8 @@ import {
   getCanvasQuadMaterialRenderer,
   registerCanvasQuadMaterialRenderer,
   resolveCanvasQuadMaterialRenderer,
-} from './canvasQuadMaterialRegistry';
-import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasTestSupport';
+} from './canvasQuadMaterialRegistry.ts';
+import { createCanvasRenderState, getCanvasRenderStateRuntime } from './canvasTestSupport.ts';
 
 const TestKind = 'TestMaterial';
 const testRenderer: CanvasQuadMaterialRenderer = { getState: () => ({ composite: 'lighter' }) };

@@ -3,15 +3,15 @@ import {
   collectSetterBodies,
   packageNames,
   packageSourceFiles,
-} from './backend-lifecycle-collect';
+} from './backend-lifecycle-collect.ts';
 import {
   collectExplicitHostDestroyOwners,
   createBackendLifecycleReport,
   collectWholeBackendTeardowns,
   formatBackendLifecycleReport,
   hasBackendLifecycleFailure,
-} from './backend-lifecycle-core';
-import { collectBackendInterfaceNames, collectExplicitHostLifecycleSlots } from './backend-operation-seam-core';
+} from './backend-lifecycle-core.ts';
+import { collectBackendInterfaceNames, collectExplicitHostLifecycleSlots } from './backend-operation-seam-core.ts';
 
 // The backend replacement-lifetime census, as a gate.
 //

@@ -1,23 +1,23 @@
-import type { Kind } from './Entity';
-import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder';
-import type { GlCompressedTextureUploader } from './GlCompressedTextureUploader';
-import type { GlCustomMaterialShaderSource } from './GlCustomMaterialShaderSource';
-import type { GlEffectRegistration } from './GlEffectState';
-import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer';
-import type { GlModifierSnippet } from './GlModifierSnippet';
-import type { GlPbrExtensionRegistration } from './GlPbrExtensionRegistration';
-import type { GlQuadMaterialRenderer } from './GlQuadMaterialRenderer';
-import type { GlRenderOptions } from './GlRenderOptions';
+import type { Kind } from './Entity.ts';
+import type { GlCompressedTextureDecoder } from './GlCompressedTextureDecoder.ts';
+import type { GlCompressedTextureUploader } from './GlCompressedTextureUploader.ts';
+import type { GlCustomMaterialShaderSource } from './GlCustomMaterialShaderSource.ts';
+import type { GlEffectRegistration } from './GlEffectState.ts';
+import type { GlMeshMaterialRenderer } from './GlMeshMaterialRenderer.ts';
+import type { GlModifierSnippet } from './GlModifierSnippet.ts';
+import type { GlPbrExtensionRegistration } from './GlPbrExtensionRegistration.ts';
+import type { GlQuadMaterialRenderer } from './GlQuadMaterialRenderer.ts';
+import type { GlRenderOptions } from './GlRenderOptions.ts';
 import type {
   GlBlendRealization,
   GlColorAdjustmentMaterialFeature,
   GlColorAdjustmentMaterialFeatureGuard,
-} from './GlRenderState';
-import type { GlScene3DPass } from './GlScene3DRuntime';
-import type { GlTextureResolver } from './GlTextureResolver';
-import type { GlVelocityWriter } from './GlVelocityWriter';
-import type { RenderStateOptions } from './RenderStateOptions';
-import type { ShapeRasterizer } from './ShapeRasterizer';
+} from './GlRenderState.ts';
+import type { GlScene3DPass } from './GlScene3DRuntime.ts';
+import type { GlTextureResolver } from './GlTextureResolver.ts';
+import type { GlVelocityWriter } from './GlVelocityWriter.ts';
+import type { RenderStateOptions } from './RenderStateOptions.ts';
+import type { ShapeRasterizer } from './ShapeRasterizer.ts';
 
 export interface GlRenderStateOptions extends RenderStateOptions, GlRenderOptions {
   blendRealizations?: ReadonlyMap<Kind, GlBlendRealization>;

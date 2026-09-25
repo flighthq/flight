@@ -8,29 +8,29 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { readCaptureBatchManifest } from './captureBatchManifest.js';
-import type { CaptureBenchmarkOptions } from './captureBenchmark.js';
-import { runCaptureBenchmark } from './captureBenchmark.js';
-import { CAPTURE_CLI_COMMANDS, resolveCaptureCliReportPath, validateCaptureCliOptions } from './captureCliOptions.js';
-import type { CaptureCliCommand } from './captureCliOptions.js';
-import { discoverEntries } from './captureEntries.js';
-import type { Entry } from './captureEntries.js';
-import { captureUrl } from './captureEntry.js';
-import { getFlightCaptureValidationPreset } from './captureFlightPreset.js';
-import { isBrowserClosedError } from './captureInterrupt.js';
-import type { CaptureManifest } from './captureManifest.js';
-import { readCaptureManifest } from './captureManifest.js';
-import { resolveCaptureDirectoryServer, resolveServer, resolveStaticServer } from './captureServer.js';
-import { runCaptureSuite } from './captureSuite.js';
-import { resolveCaptureTimeoutMs, setCaptureTimeoutMs } from './captureTimeout.js';
-import { runCaptureValidation } from './captureValidation.js';
-import { resolveCaptureWorkerCount } from './captureWorkerCount.js';
+import { readCaptureBatchManifest } from './captureBatchManifest.ts';
+import type { CaptureBenchmarkOptions } from './captureBenchmark.ts';
+import { runCaptureBenchmark } from './captureBenchmark.ts';
+import { CAPTURE_CLI_COMMANDS, resolveCaptureCliReportPath, validateCaptureCliOptions } from './captureCliOptions.ts';
+import type { CaptureCliCommand } from './captureCliOptions.ts';
+import { discoverEntries } from './captureEntries.ts';
+import type { Entry } from './captureEntries.ts';
+import { captureUrl } from './captureEntry.ts';
+import { getFlightCaptureValidationPreset } from './captureFlightPreset.ts';
+import { isBrowserClosedError } from './captureInterrupt.ts';
+import type { CaptureManifest } from './captureManifest.ts';
+import { readCaptureManifest } from './captureManifest.ts';
+import { resolveCaptureDirectoryServer, resolveServer, resolveStaticServer } from './captureServer.ts';
+import { runCaptureSuite } from './captureSuite.ts';
+import { resolveCaptureTimeoutMs, setCaptureTimeoutMs } from './captureTimeout.ts';
+import { runCaptureValidation } from './captureValidation.ts';
+import { resolveCaptureWorkerCount } from './captureWorkerCount.ts';
 import type {
   CaptureWorkflowCaptureOptions,
   CaptureWorkflowOptions,
   CaptureWorkflowValidationOptions,
-} from './captureWorkflow.js';
-import { runCaptureBatch, runCaptureWorkflow } from './captureWorkflow.js';
+} from './captureWorkflow.ts';
+import { runCaptureBatch, runCaptureWorkflow } from './captureWorkflow.ts';
 
 const USAGE = `usage:
   tool-capture observe <url> [--out <dir>] [--wait <ms>] [--frames <n>] [--retries <n>]

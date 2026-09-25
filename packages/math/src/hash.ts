@@ -1,6 +1,6 @@
 import type { RandomSource } from '@flighthq/types/contract';
 
-import { createRandomSource } from './random';
+import { createRandomSource } from './random.ts';
 
 /** Create a `RandomSource` seeded from a deterministic hash of `x` and `y`.
  *

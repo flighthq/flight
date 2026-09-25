@@ -1,4 +1,4 @@
-import { createPosterizeEffect, initializePosterizeEffect } from './posterizeEffect';
+import { createPosterizeEffect, initializePosterizeEffect } from './posterizeEffect.ts';
 
 describe('createPosterizeEffect', () => {
   it('tags the intent type', () => {

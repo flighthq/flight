@@ -9,9 +9,9 @@ import {
 import type { MovieClip, Node2D } from '@flighthq/types/contract';
 import { EntityRuntimeKey, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { readSwfAbcFrameScripts, readSwfFrameActions } from './swfFrameAction';
-import { buildFrameScriptAbc } from './swfFrameActionTestHelper';
-import { SwfReader } from './swfReader';
+import { readSwfAbcFrameScripts, readSwfFrameActions } from './swfFrameAction.ts';
+import { buildFrameScriptAbc } from './swfFrameActionTestHelper.ts';
+import { SwfReader } from './swfReader.ts';
 
 describe('readSwfAbcFrameScripts', () => {
   it('follows a compiler-shaped addFrameScript call to the method it names', () => {

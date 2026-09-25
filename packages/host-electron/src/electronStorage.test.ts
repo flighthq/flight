@@ -1,6 +1,6 @@
 import type { ElectronApi } from '@flighthq/types/contract';
 
-import { electronHostStorage, electronHostStorageGroup, populateElectronHostStorage } from './electronStorage';
+import { electronHostStorage, electronHostStorageGroup, populateElectronHostStorage } from './electronStorage.ts';
 
 const STORAGE_PATH = '/userData/storage.json';
 

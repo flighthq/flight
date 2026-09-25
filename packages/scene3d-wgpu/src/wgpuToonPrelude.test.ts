@@ -1,14 +1,14 @@
 import type { LinearColor, WgpuToonDefineKey } from '@flighthq/types/contract';
 
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper.ts';
 import {
   bindWgpuToonSurface,
   buildWgpuToonDefineKey,
   compileWgpuToonPipeline,
   ensureWgpuToonPipeline,
   getWgpuToonModuleSourceForKey,
-} from './wgpuToonPrelude';
+} from './wgpuToonPrelude.ts';
 
 const FLAT: WgpuToonDefineKey = { alphaMaskEnabled: false, doubleSided: false, hasBaseColorMap: false, hasRamp: false };
 const COLOR: LinearColor = [0.5, 0.25, 0.1, 1];

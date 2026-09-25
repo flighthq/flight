@@ -5,7 +5,7 @@ import {
   evaluateCaptureBenchmarkRegression,
   getCaptureBenchmarkBaselinePath,
   runCaptureBenchmark,
-} from './captureBenchmark';
+} from './captureBenchmark.ts';
 
 describe('calculateCaptureBenchmarkStatistics', () => {
   it('returns robust median, p95, and MAD values', () => {

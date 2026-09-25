@@ -3,10 +3,14 @@ import { getGlColorAdjustmentMaterialFeature, getGlRenderStateRuntime } from '@f
 import { areColorAdjustmentsEnabled } from '@flighthq/render/contract';
 import type { ColorScaleBias } from '@flighthq/types/contract';
 
-import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
-import { flushGlQuadBatchWriter, prepareGlQuadBatchWrite, recordGlQuadBatchColorScaleBias } from './glQuadBatchWriter';
-import { standardGlQuadMaterialRenderer } from './glStandardMaterial';
-import { createGlState } from './glTestHelper';
+import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature.ts';
+import {
+  flushGlQuadBatchWriter,
+  prepareGlQuadBatchWrite,
+  recordGlQuadBatchColorScaleBias,
+} from './glQuadBatchWriter.ts';
+import { standardGlQuadMaterialRenderer } from './glStandardMaterial.ts';
+import { createGlState } from './glTestHelper.ts';
 
 function makeTexture(): WebGLTexture {
   return {} as WebGLTexture;

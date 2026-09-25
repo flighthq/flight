@@ -3,7 +3,7 @@ import {
   isFlightDocumentTokenReference,
   readFlightDocumentTokenReferenceKey,
   substituteFlightDocumentTokenValue,
-} from './flightDocumentTokenReference';
+} from './flightDocumentTokenReference.ts';
 
 describe('INVALID_FLIGHT_DOCUMENT_TOKEN_VALUE', () => {
   it('is distinct from null, which a document may legitimately hold', () => {

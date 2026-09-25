@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { PathWinding } from './ShapeCommand';
+import type { Entity } from './Entity.ts';
+import type { PathWinding } from './ShapeCommand.ts';
 
 // A prepared interpolation between two topology-compatible Paths. Both endpoints have already been
 // normalized to the shared command stream: drawing verbs are exact cubic-bezier equivalents and

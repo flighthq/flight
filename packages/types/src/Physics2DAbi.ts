@@ -1,7 +1,7 @@
-import type { CollisionBuiltInShape2D } from './Collision';
-import type { Entity } from './Entity';
-import type { Physics2DQueryFilter } from './Physics2D';
-import type { SpatialAabb2D } from './Spatial';
+import type { CollisionBuiltInShape2D } from './Collision.ts';
+import type { Entity } from './Entity.ts';
+import type { Physics2DQueryFilter } from './Physics2D.ts';
+import type { SpatialAabb2D } from './Spatial.ts';
 
 // The target-neutral execution boundary beneath a native or otherwise separately-owned Physics2D
 // world. `@flighthq/physics2d-abi` supplies the executable TypeScript reference; another package may

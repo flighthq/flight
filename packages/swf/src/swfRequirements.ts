@@ -7,9 +7,9 @@ import type {
 } from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
-import { collectSwfContentCapabilities } from './swfContentCapabilities';
-import { getSwfTagName } from './swfTagCensus';
-import { SWF_NON_CONTENT_TAGS } from './swfTagVocabulary';
+import { collectSwfContentCapabilities } from './swfContentCapabilities.ts';
+import { getSwfTagName } from './swfTagCensus.ts';
+import { SWF_NON_CONTENT_TAGS } from './swfTagVocabulary.ts';
 
 /**
  * Build-time inventory of what one SWF file asks a build to support.

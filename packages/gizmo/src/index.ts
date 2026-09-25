@@ -1,4 +1,4 @@
-export { computeGizmoAlignmentDeltas, findGizmoSmartGuides } from './gizmoAlignment';
+export { computeGizmoAlignmentDeltas, findGizmoSmartGuides } from './gizmoAlignment.ts';
 export {
   createGizmoState,
   disposeGizmoState,
@@ -15,5 +15,5 @@ export {
   setGizmoSnapTranslate,
   setGizmoSpace,
   updateGizmo,
-} from './gizmoState';
-export { createNode2DGizmoFeatures } from './node2dGizmoFeatures';
+} from './gizmoState.ts';
+export { createNode2DGizmoFeatures } from './node2dGizmoFeatures.ts';

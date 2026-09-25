@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, ScreenSpaceFogEffect } from '@flighthq/types/contract';
 
-import { initializeEffect } from './effect';
+import { initializeEffect } from './effect.ts';
 
 export function createScreenSpaceFogEffect(
   options: Readonly<Omit<EntityWithoutRuntime<ScreenSpaceFogEffect>, 'kind'>> = {},

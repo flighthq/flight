@@ -1,10 +1,10 @@
-import type { BlendMode } from './BlendMode';
-import type { ColorScaleBias } from './ColorScaleBias';
-import type { Entity, Kind } from './Entity';
-import type { Material, MaterialData } from './Material';
-import type { NodeAny } from './Node';
-import type { NodeRenderer } from './NodeRenderer';
-import type { RendererData } from './RendererData';
+import type { BlendMode } from './BlendMode.ts';
+import type { ColorScaleBias } from './ColorScaleBias.ts';
+import type { Entity, Kind } from './Entity.ts';
+import type { Material, MaterialData } from './Material.ts';
+import type { NodeAny } from './Node.ts';
+import type { NodeRenderer } from './NodeRenderer.ts';
+import type { RendererData } from './RendererData.ts';
 
 export interface RenderProxy extends Entity {
   source: NodeAny;

@@ -1,5 +1,5 @@
-import { getPathContourOrientation, getPathSignedArea } from './getPathSignedArea';
-import { appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path';
+import { getPathContourOrientation, getPathSignedArea } from './getPathSignedArea.ts';
+import { appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path.ts';
 
 describe('getPathContourOrientation', () => {
   it('returns degenerate for an empty path', () => {

@@ -1,4 +1,7 @@
-import { findImportDiagnosticOriginMismatches, formatImportDiagnosticOriginReport } from './import-diagnostic-origins';
+import {
+  findImportDiagnosticOriginMismatches,
+  formatImportDiagnosticOriginReport,
+} from './import-diagnostic-origins.ts';
 
 // Built from synthetic sources rather than the real importers, so the check keeps meaning when a
 // package corrects its own origins.

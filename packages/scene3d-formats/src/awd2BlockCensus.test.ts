@@ -1,4 +1,4 @@
-import { collectAwd2BlockCounts, getAwd2BlockName } from './awd2BlockCensus';
+import { collectAwd2BlockCounts, getAwd2BlockName } from './awd2BlockCensus.ts';
 
 describe('collectAwd2BlockCounts', () => {
   it('returns null for input that is not a readable AWD2 file', () => {

@@ -9,7 +9,7 @@ import type {
   SpatialPair,
 } from '@flighthq/types/contract';
 
-import { createUniformGridSpatialBackend3D } from './uniformGrid3D';
+import { createUniformGridSpatialBackend3D } from './uniformGrid3D.ts';
 
 // Empties the index of all objects while keeping it (and its backend) reusable.
 export function clearSpatialIndex3D(index: Readonly<SpatialIndex3D>): void {

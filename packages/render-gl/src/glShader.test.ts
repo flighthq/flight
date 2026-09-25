@@ -1,6 +1,6 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { getGlRenderStateRuntime } from './glRenderState';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
 import {
   compileDefaultGlProgram,
   compileGlBitmapProgram,
@@ -13,8 +13,8 @@ import {
   setGlBaseUniforms,
   setGlMatrixFromTransform,
   setGlMatrixFromValues,
-} from './glShader';
-import { createGlState, makeGL, makeShaderLoc } from './glTestHelper';
+} from './glShader.ts';
+import { createGlState, makeGL, makeShaderLoc } from './glTestHelper.ts';
 
 describe('compileDefaultGlProgram', () => {
   it('returns shader locations with all required fields', () => {

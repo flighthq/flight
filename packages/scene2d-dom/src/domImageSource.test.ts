@@ -7,11 +7,11 @@ import {
 import { createTexture } from '@flighthq/texture/contract';
 import type { HostImageCapability } from '@flighthq/types/contract';
 
-import { registerDomBitmapTextureResolver } from './domBitmapTextureResolver';
-import { explainDomImageSource } from './domImageSource';
-import { registerDomImageTextureResolver } from './domImageTextureResolver';
-import { createDomRenderState } from './domRenderState';
-import { resolveDomTexture } from './domTextureResolver';
+import { registerDomBitmapTextureResolver } from './domBitmapTextureResolver.ts';
+import { explainDomImageSource } from './domImageSource.ts';
+import { registerDomImageTextureResolver } from './domImageTextureResolver.ts';
+import { createDomRenderState } from './domRenderState.ts';
+import { resolveDomTexture } from './domTextureResolver.ts';
 
 beforeEach(() => {
   registerTestImageDimensionResolver();

@@ -39,7 +39,7 @@ import {
   WrappedDiffusePbrExtensionKind,
 } from '@flighthq/types/contract';
 
-import { glScene3DRenderPreset } from './scene3DGlPipeline';
+import { glScene3DRenderPreset } from './scene3DGlPipeline.ts';
 
 function expectExactKeys(table: Readonly<ReadonlyMap<Kind, unknown>>, expected: readonly Kind[]): void {
   const actual: Kind[] = [];

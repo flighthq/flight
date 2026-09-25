@@ -1,7 +1,7 @@
 import type { WgpuRenderState, WgpuTextureRenderTarget } from '@flighthq/types/contract';
 import type { WgpuEffectPipeline } from '@flighthq/types/contract';
 
-import { createWgpuEffectPipeline, drawWgpuEffectPass } from './wgpuEffectPass';
+import { createWgpuEffectPipeline, drawWgpuEffectPass } from './wgpuEffectPass.ts';
 
 // Blits a texture at a UV offset. Out-of-bounds samples produce transparent output.
 const BLIT_OFFSET_WGSL = /* wgsl */ `

@@ -29,7 +29,7 @@ import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
-import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories';
+import { SCAN_SKIP_DIRECTORIES } from './scanSkipDirectories.ts';
 
 // The render-backend token vocabulary. Closed on purpose: this scan validates a token against types
 // exported by @flighthq/types, so a token whose types are not here would govern nothing — an inert

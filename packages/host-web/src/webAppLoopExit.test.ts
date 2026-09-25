@@ -1,5 +1,5 @@
-import { webHostAppLoopExit } from './webAppLoopExit';
-import { webHost } from './webHost';
+import { webHostAppLoopExit } from './webAppLoopExit.ts';
+import { webHost } from './webHost.ts';
 
 describe('webHostAppLoopExit', () => {
   it('owns the browser beforeunload subscription and removes the exact listener', () => {

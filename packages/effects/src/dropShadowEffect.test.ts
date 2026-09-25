@@ -5,7 +5,7 @@ import {
   getDropShadowEffectPadding,
   initializeDropShadowEffect,
   registerDropShadowEffectPaddingResolver,
-} from './dropShadowEffect';
+} from './dropShadowEffect.ts';
 
 describe('createDropShadowEffect', () => {
   it('tags the intent type', () => {

@@ -1,4 +1,4 @@
-import type { NodeAny } from './Node';
+import type { NodeAny } from './Node.ts';
 /**
  * Detail of a hit resolved by `describeGraphHit` on a node you already have. Carries the node, the
  * sub-index within it (text char / tile / quad; -1 when the kind has no exact provider), and the hit

@@ -8,8 +8,8 @@ import type {
   RenderState,
 } from '@flighthq/types/contract';
 
-import { initializeEffect } from './effect';
-import { getGaussianEffectPadding, registerEffectPaddingResolver } from './effectPadding';
+import { initializeEffect } from './effect.ts';
+import { getGaussianEffectPadding, registerEffectPaddingResolver } from './effectPadding.ts';
 
 // Outer-glow composite effect: tint the scene silhouette, blur it centered (no offset), then apply sourceMode compositing.
 export function createOuterGlowEffect(

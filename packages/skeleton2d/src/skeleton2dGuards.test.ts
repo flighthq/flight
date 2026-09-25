@@ -5,7 +5,7 @@ import {
   reportSkeleton2DDeformLengthMismatch,
   setSkeleton2DCoercedInterpolationGuard,
   setSkeleton2DDeformLengthGuard,
-} from './skeleton2dGuards';
+} from './skeleton2dGuards.ts';
 
 afterEach(() => {
   setSkeleton2DCoercedInterpolationGuard(null);

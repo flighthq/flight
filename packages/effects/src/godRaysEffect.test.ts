@@ -1,4 +1,4 @@
-import { createGodRaysEffect, initializeGodRaysEffect } from './godRaysEffect';
+import { createGodRaysEffect, initializeGodRaysEffect } from './godRaysEffect.ts';
 
 describe('createGodRaysEffect', () => {
   it('tags the intent type', () => {

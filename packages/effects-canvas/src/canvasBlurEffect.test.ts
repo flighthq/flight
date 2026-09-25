@@ -1,6 +1,6 @@
-import { applyBlurEffectToCanvas, canvasBlurEffectRunner, registerCanvasBlurEffect } from './canvasBlurEffect';
-import { getCanvasEffectRunner } from './canvasEffectRegistry';
-import { createCanvasRenderState } from './canvasEffectTestSupport';
+import { applyBlurEffectToCanvas, canvasBlurEffectRunner, registerCanvasBlurEffect } from './canvasBlurEffect.ts';
+import { getCanvasEffectRunner } from './canvasEffectRegistry.ts';
+import { createCanvasRenderState } from './canvasEffectTestSupport.ts';
 
 describe('applyBlurEffectToCanvas', () => {
   it('is a function', () => {

@@ -1,7 +1,7 @@
 import type { CollisionAabb2D, CollisionCircle2D, CollisionObb2D, CollisionPolygon2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createCollisionManifold2D } from './manifold2D';
+import { createCollisionManifold2D } from './manifold2D.ts';
 import {
   testAabbAabbCollision2D,
   testAabbObbCollision2D,
@@ -13,7 +13,7 @@ import {
   testObbObbCollision2D,
   testObbPolygonCollision2D,
   testPolygonPolygonCollision2D,
-} from './shapeCollision2D';
+} from './shapeCollision2D.ts';
 
 // A square collider as a flat convex polygon, corners CCW from the min corner.
 function square(minX: number, minY: number, size: number): CollisionPolygon2D {

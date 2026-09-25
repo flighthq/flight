@@ -2,7 +2,7 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type { RigidBody2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { syncPhysics2DBodyToNode2D } from './nodeSync';
+import { syncPhysics2DBodyToNode2D } from './nodeSync.ts';
 
 function stubBody(x: number, y: number, angle: number): RigidBody2D {
   return { x, y, angle } as RigidBody2D;

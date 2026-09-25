@@ -8,7 +8,7 @@ import {
   removeAccessibilityNode,
   setAccessibilityFocus,
   setAccessibilityNode,
-} from './accessibility';
+} from './accessibility.ts';
 
 describe('announceAccessibility', () => {
   it('returns the selected Host provider outcome and supplies the default liveness', () => {

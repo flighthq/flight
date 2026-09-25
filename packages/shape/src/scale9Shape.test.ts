@@ -7,7 +7,7 @@ import {
   createScale9ShapeRuntime,
   getScale9ShapeRuntime,
   initializeScale9ShapeData,
-} from './scale9Shape';
+} from './scale9Shape.ts';
 
 const grid = { x: 10, y: 10, width: 80, height: 80 };
 

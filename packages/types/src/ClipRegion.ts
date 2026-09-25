@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { Rectangle } from './Rectangle';
-import type { PathWinding } from './ShapeCommand';
+import type { Entity } from './Entity.ts';
+import type { Rectangle } from './Rectangle.ts';
+import type { PathWinding } from './ShapeCommand.ts';
 
 /**
  * A hard, geometric clip — the masking primitive. Transform-exact: it re-rasterizes crisp at the

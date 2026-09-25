@@ -29,4 +29,4 @@ export {
   requestNotificationPermission,
   scheduleNotification,
   showNotification,
-} from './contract';
+} from './contract.ts';

@@ -1,2 +1,2 @@
-export * from './motionPath';
-export { initializeMotionPath } from './motionPath';
+export * from './motionPath.ts';
+export { initializeMotionPath } from './motionPath.ts';

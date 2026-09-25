@@ -1,14 +1,14 @@
 import type { VertexAttributeLayout } from '@flighthq/types/contract';
 
-import { createMeshGeometry, getMeshGeometryIndexCount, getMeshGeometryVertexCount } from './meshGeometry';
-import { createBoxMeshGeometry, createQuadMeshGeometry } from './meshGeometryBuilders';
+import { createMeshGeometry, getMeshGeometryIndexCount, getMeshGeometryVertexCount } from './meshGeometry.ts';
+import { createBoxMeshGeometry, createQuadMeshGeometry } from './meshGeometryBuilders.ts';
 import {
   createMeshGeometryFromAttributes,
   getMeshGeometryTriangleCount,
   getMeshGeometryTriangleVertexIndices,
   mergeMeshGeometries,
   validateMeshGeometry,
-} from './meshGeometryOperations';
+} from './meshGeometryOperations.ts';
 
 const CANONICAL_LAYOUT: VertexAttributeLayout = {
   attributes: [

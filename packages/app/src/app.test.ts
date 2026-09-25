@@ -46,7 +46,7 @@ import {
   setAppName,
   setAppUserModelId,
   showApp,
-} from './app';
+} from './app.ts';
 
 function createFixture() {
   const calls: string[] = [];

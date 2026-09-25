@@ -7,7 +7,7 @@ import {
   getAudioMimeTypeEssence,
   getAudioMimeTypeParameter,
   inferAudioMimeType,
-} from './audioFormat';
+} from './audioFormat.ts';
 
 function hostWith(canPlay: (type: string) => boolean): {
   readonly media: { readonly audioCodec: HostAudioCodecCapability };

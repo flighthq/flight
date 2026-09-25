@@ -2,9 +2,9 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { TextureSource } from '@flighthq/types/contract';
 
-import { createDomRenderState } from './domRenderState';
-import { registerDomTextureResolver } from './domTextureResolver';
-import { explainDomTextureResolution } from './explainDomTextureResolution';
+import { createDomRenderState } from './domRenderState.ts';
+import { registerDomTextureResolver } from './domTextureResolver.ts';
+import { explainDomTextureResolution } from './explainDomTextureResolution.ts';
 
 describe('explainDomTextureResolution', () => {
   it('distinguishes missing kinds, missing resolvers, and registered resolvers', () => {

@@ -1,4 +1,4 @@
-import type { Entity, Kind } from './Entity';
+import type { Entity, Kind } from './Entity.ts';
 
 // Mesh UV channel selected independently by each PBR texture input. The canonical mesh layout
 // currently exposes uv0 and uv1; extending the vertex contract grows this union deliberately.

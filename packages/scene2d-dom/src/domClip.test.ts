@@ -1,5 +1,5 @@
-import { enableDomClipSupport } from './domClip';
-import { createDomRenderState } from './domRenderState';
+import { enableDomClipSupport } from './domClip.ts';
+import { createDomRenderState } from './domRenderState.ts';
 
 describe('enableDomClipSupport', () => {
   it('sets DOM clip hooks on the render state', () => {

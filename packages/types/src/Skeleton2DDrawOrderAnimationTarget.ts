@@ -1,7 +1,7 @@
-import type { Entity } from './Entity';
-import type { Node, NodeTraits } from './Node';
-import type { NodeOrderList } from './NodeOrderList';
-import type { Skeleton2DAnimationTargetKind } from './Skeleton2DAnimationTargetKind';
+import type { Entity } from './Entity.ts';
+import type { Node, NodeTraits } from './Node.ts';
+import type { NodeOrderList } from './NodeOrderList.ts';
+import type { Skeleton2DAnimationTargetKind } from './Skeleton2DAnimationTargetKind.ts';
 
 /**
  * The binding target an `AnimationChannel` carries when it reorders a rig's drawing rather than moving

@@ -19,7 +19,7 @@ import type {
 } from '@flighthq/types/contract';
 import { KeyCode } from '@flighthq/types/contract';
 
-import { getTextInputState } from './textInput';
+import { getTextInputState } from './textInput.ts';
 
 // Horizontal navigation resets the desired-x column so the next vertical motion anchors to the new
 // caret position. Vertical navigation reads (and on first use, sets) desiredCaretX.

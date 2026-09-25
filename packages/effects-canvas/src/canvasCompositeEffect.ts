@@ -7,8 +7,8 @@ import type {
 } from '@flighthq/types/contract';
 import { CompositeOperator as CompositeOperatorValues } from '@flighthq/types/contract';
 
-import { getCanvasBlendEffectBackdrop } from './canvasBlendEffect';
-import { registerCanvasEffect } from './canvasEffectRegistry';
+import { getCanvasBlendEffectBackdrop } from './canvasBlendEffect.ts';
+import { registerCanvasEffect } from './canvasEffectRegistry.ts';
 
 // Porter-Duff composite pass: lay down a registered backdrop, then draw the incoming layer over it under
 // the Canvas 2D operation named by the effect's `operator`. This is the Canvas realization of the

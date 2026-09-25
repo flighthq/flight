@@ -2,8 +2,8 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type { SwfTagHandler, SwfTagParseState, SwfTagReader } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { SwfReader } from './swfReader';
-import { readSwfFontGlyphOutlineSource } from './swfText';
+import { SwfReader } from './swfReader.ts';
+import { readSwfFontGlyphOutlineSource } from './swfText.ts';
 
 // Embedded font definitions: the glyph outlines a static text or a field draws through, and the code
 // point table that maps a character to one of them. The table arrives in a separate DefineFontInfo tag

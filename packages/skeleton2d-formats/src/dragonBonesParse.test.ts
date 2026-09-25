@@ -22,7 +22,7 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseDragonBonesSkeleton } from './dragonBonesParse';
+import { parseDragonBonesSkeleton } from './dragonBonesParse.ts';
 
 // Hand-authored minimal DragonBones JSON (per the real-asset rule: committed fixtures are hand-written,
 // never transcribed from a rig). Bones are listed CHILD-FIRST to exercise the topological sort.

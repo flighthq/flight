@@ -1,6 +1,6 @@
-import { createBitmap } from './bitmap';
-import { cropBitmap, extendBitmap, trimBitmap } from './bitmapCrop';
-import { getBitmapPixel, setBitmapPixel } from './bitmapPixel';
+import { createBitmap } from './bitmap.ts';
+import { cropBitmap, extendBitmap, trimBitmap } from './bitmapCrop.ts';
+import { getBitmapPixel, setBitmapPixel } from './bitmapPixel.ts';
 
 describe('cropBitmap', () => {
   it('returns a bitmap with the requested dimensions', () => {

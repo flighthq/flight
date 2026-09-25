@@ -11,9 +11,9 @@ import type {
   LensDirtEffect,
 } from '@flighthq/types/contract';
 
-import { applyGaussianBlurToGl } from './glBlurEffect';
-import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { applyGaussianBlurToGl } from './glBlurEffect.ts';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Lens dirt: isolate bright energy, spread it spatially, then admit it through a procedural smudge mask.
 // The bright branch must blur before the mask: masking only the source pixel cannot carry any energy

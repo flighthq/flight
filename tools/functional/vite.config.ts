@@ -6,18 +6,18 @@ import { defineConfig } from 'vite';
 import {
   CAPTURE_BUILD_IDENTITY_FILE,
   getCaptureBuildIdentity,
-} from '../../packages/tool-capture/src/captureBuildIdentity';
+} from '../../packages/tool-capture/src/captureBuildIdentity.ts';
 // Imported from the package source (not the built barrel) so `vite --config` resolves it before
 // @flighthq/tool-capture is built; it is the same single source the capture scripts consume.
 import {
   discoverFunctionalScene3Ds,
   functionalScene3DFile,
   resolveFunctionalTestRoute,
-} from '../../packages/tool-capture/src/functionalScene3Ds';
-import type { FunctionalScene3D } from '../../packages/tool-capture/src/functionalScene3Ds';
-import { resolveAssetTarget } from '../../scripts/asset-cache';
-import { copyDirectoryContents } from '../../scripts/copy-dir';
-import { workspacePackages } from '../../scripts/workspaces';
+} from '../../packages/tool-capture/src/functionalScene3Ds.ts';
+import type { FunctionalScene3D } from '../../packages/tool-capture/src/functionalScene3Ds.ts';
+import { resolveAssetTarget } from '../../scripts/asset-cache.ts';
+import { copyDirectoryContents } from '../../scripts/copy-dir.ts';
+import { workspacePackages } from '../../scripts/workspaces.ts';
 
 const projectRoot = resolve(__dirname, '../..');
 const testsDir = join(projectRoot, 'functional');

@@ -7,7 +7,7 @@ import {
   tauriHostFileOpenDialog,
   tauriHostFileSaveDialog,
   tauriHostMessageDialog,
-} from './tauriDialog';
+} from './tauriDialog.ts';
 
 interface DialogCalls {
   open: TauriDialogOpenOptions[];

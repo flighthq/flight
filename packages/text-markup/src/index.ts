@@ -10,4 +10,4 @@ export {
   registerMarkupTag,
   registerStandardMarkupTags,
   resolveMarkupHexColor,
-} from './contract';
+} from './contract.ts';

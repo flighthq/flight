@@ -1,6 +1,6 @@
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 
-import { parseTexturePackerSpritesheet, parseTexturePackerSpritesheetDocument } from './texturePackerParse';
+import { parseTexturePackerSpritesheet, parseTexturePackerSpritesheetDocument } from './texturePackerParse.ts';
 
 const HASH_JSON = JSON.stringify({
   frames: {

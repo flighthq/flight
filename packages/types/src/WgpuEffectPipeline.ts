@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { WgpuEffectBlendMode } from './WgpuEffectBlendMode';
+import type { Entity } from './Entity.ts';
+import type { WgpuEffectBlendMode } from './WgpuEffectBlendMode.ts';
 
 export type WgpuEffectPipeline = Entity & {
   // The default variant, compiled for the canvas format (state.format).

@@ -18,8 +18,8 @@ import {
 import type { CanvasSurface, HostCanvasCapability, HostImageCapability, RenderProxy2D } from '@flighthq/types/contract';
 import { BatchFormat, PathCommand } from '@flighthq/types/contract';
 
-import { enableGlStrokePathTessellation } from './enableGlStrokePathTessellation';
-import { flushGlQuadBatchWriter } from './glQuadBatchWriter';
+import { enableGlStrokePathTessellation } from './enableGlStrokePathTessellation.ts';
+import { flushGlQuadBatchWriter } from './glQuadBatchWriter.ts';
 
 // @flighthq/node's bounds/revision queries expect a real BoundsNode; these tests drive drawGlShape with
 // lightweight fake proxies, so the two queries are stubbed.
@@ -39,10 +39,10 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-import { glMorphShapeRenderer, glShapeRenderer, drawGlShape } from './glShape';
-import { registerGlShapeRasterizer } from './glShapeRasterizer';
-import { registerGlStandardMaterial } from './glStandardMaterial';
-import { createGlState } from './glTestHelper';
+import { glMorphShapeRenderer, glShapeRenderer, drawGlShape } from './glShape.ts';
+import { registerGlShapeRasterizer } from './glShapeRasterizer.ts';
+import { registerGlStandardMaterial } from './glStandardMaterial.ts';
+import { createGlState } from './glTestHelper.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

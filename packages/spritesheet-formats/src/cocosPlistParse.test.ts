@@ -1,6 +1,6 @@
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 
-import { parseCocosPlistSpritesheet, parseCocosPlistSpritesheetDocument } from './cocosPlistParse';
+import { parseCocosPlistSpritesheet, parseCocosPlistSpritesheetDocument } from './cocosPlistParse.ts';
 
 const MINIMAL_PLIST = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">

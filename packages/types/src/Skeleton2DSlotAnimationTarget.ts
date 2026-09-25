@@ -1,6 +1,6 @@
-import type { Attachment2D } from './Attachment2D';
-import type { Entity } from './Entity';
-import type { Skeleton2DAnimationTargetKind } from './Skeleton2DAnimationTargetKind';
+import type { Attachment2D } from './Attachment2D.ts';
+import type { Entity } from './Entity.ts';
+import type { Skeleton2DAnimationTargetKind } from './Skeleton2DAnimationTargetKind.ts';
 
 // Which part of a `Slot2D`'s appearance an AnimationChannel drives — the slot-side counterpart of
 // `Skeleton2DAnimationPath`, which covers only bone transforms.

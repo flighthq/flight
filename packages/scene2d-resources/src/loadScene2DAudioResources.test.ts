@@ -12,8 +12,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ResourceResolutionState } from '@flighthq/types/contract';
 
-import { loadScene2DAudioResources } from './loadScene2DAudioResources';
-import { createScene2DDocument } from './scene2DDocument';
+import { loadScene2DAudioResources } from './loadScene2DAudioResources.ts';
+import { createScene2DDocument } from './scene2DDocument.ts';
 
 const decodedBuffer = { duration: 1 } as AudioBuffer;
 

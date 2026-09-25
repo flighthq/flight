@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { HostMenuCapabilities } from './Host';
+import type { Entity } from './Entity.ts';
+import type { HostMenuCapabilities } from './Host.ts';
 import type {
   ElectronMenuCapabilities,
   HostAppMenuCapability,
@@ -7,7 +7,7 @@ import type {
   HostMenuPopupCapability,
   HostMenuSelectCapability,
   TauriMenuCapabilities,
-} from './Menu';
+} from './Menu.ts';
 
 type MenuCapabilitiesAreStructural = [
   HostAppMenuCapability extends Entity ? true : false,

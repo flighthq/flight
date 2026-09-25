@@ -1,7 +1,7 @@
-import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
-import type { TextAutoSize } from './TextAutoSize';
-import type { TextFormatAlign } from './TextFormat';
-import type { TextVerticalAlign } from './TextVerticalAlign';
+import type { Node2D, Node2DData, Node2DRuntime } from './Node2D.ts';
+import type { TextAutoSize } from './TextAutoSize.ts';
+import type { TextFormatAlign } from './TextFormat.ts';
+import type { TextVerticalAlign } from './TextVerticalAlign.ts';
 
 // NativeText is the platform/DOM-backed text type. It opts OUT of the TextLayout spine entirely (no
 // textLayout slot, no buildTextLayoutParams), so it is a sibling of TextLabel/RichText, NOT an extension

@@ -1,7 +1,7 @@
 import type { StrokeStyle } from '@flighthq/types/contract';
 
-import { appendPathClose, appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path';
-import { tessellateStrokePath } from './tessellateStrokePath';
+import { appendPathClose, appendPathLineTo, appendPathMoveTo, appendPathRectangle, createPath } from './path.ts';
+import { tessellateStrokePath } from './tessellateStrokePath.ts';
 
 describe('tessellateStrokePath', () => {
   it('tessellates an open butt-capped line without overlapping triangles', () => {

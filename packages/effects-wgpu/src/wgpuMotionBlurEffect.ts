@@ -6,9 +6,9 @@ import type {
 } from '@flighthq/types/contract';
 import type { WgpuDualSourceEffectPipeline } from '@flighthq/types/contract';
 
-import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
-import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale';
+import { createWgpuDualSourceEffectPipeline, drawWgpuDualSourceEffectPass } from './wgpuEffectPass.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
+import { getWgpuEffectLogicalResolution } from './wgpuEffectTexelScale.ts';
 
 // Motion blur (per-object): the velocity-driven analog of the depth consumers (fog/DoF), the Wgpu
 // mirror of effects-gl's applyMotionBlurEffectToGl. When the scene produced a per-pixel velocity

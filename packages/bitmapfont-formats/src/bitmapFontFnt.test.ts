@@ -9,7 +9,7 @@ import { createTextureAtlas, createTextureAtlasFromImageResource } from '@flight
 import type { BitmapFontParseOptions, ImageResource, ImportDiagnostic, TextureAtlas } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { formatBitmapFontFnt, parseBitmapFontFnt } from './bitmapFontFnt';
+import { formatBitmapFontFnt, parseBitmapFontFnt } from './bitmapFontFnt.ts';
 
 const FNT_MULTIPAGE = [
   'info face="Test" size=32 unicode=1',

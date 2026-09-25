@@ -4,10 +4,10 @@ import { join, relative, resolve } from 'node:path';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
-import * as hostWebContract from '../packages/host-web/src/contract';
-import * as hostWebPublic from '../packages/host-web/src/index';
-import * as videoContract from '../packages/video/src/contract';
-import * as videoPublic from '../packages/video/src/index';
+import * as hostWebContract from '../packages/host-web/src/contract.ts';
+import * as hostWebPublic from '../packages/host-web/src/index.ts';
+import * as videoContract from '../packages/video/src/contract.ts';
+import * as videoPublic from '../packages/video/src/index.ts';
 
 const ROOT = process.cwd();
 const PORTABLE_VIDEO_ROOT = resolve(ROOT, 'packages/video/src');

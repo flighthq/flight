@@ -18,7 +18,7 @@ import {
   getGuiLength,
   getGuiPosition,
   setGuiPosition,
-} from './guiController';
+} from './guiController.ts';
 
 interface ScrollBarControllerFields {
   downButton: Node2D | null;

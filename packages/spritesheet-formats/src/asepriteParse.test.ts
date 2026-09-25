@@ -1,6 +1,6 @@
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 
-import { parseAsepriteSpritesheet, parseAsepriteSpritesheetDocument } from './asepriteParse';
+import { parseAsepriteSpritesheet, parseAsepriteSpritesheetDocument } from './asepriteParse.ts';
 
 const HASH_JSON = JSON.stringify({
   frames: {

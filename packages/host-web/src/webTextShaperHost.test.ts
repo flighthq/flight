@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { webHostTextShaper } from './webTextShaper';
-import { webHostTextShaperGroup } from './webTextShaperHost';
+import { webHostTextShaper } from './webTextShaper.ts';
+import { webHostTextShaperGroup } from './webTextShaperHost.ts';
 
 describe('webHostTextShaper', () => {
   it('exposes the shaper surface without constructing a canvas at import time', () => {

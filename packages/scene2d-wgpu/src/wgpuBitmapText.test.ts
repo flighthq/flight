@@ -3,8 +3,8 @@ import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/ren
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getRenderProxy2D, prepareScene2DRender } from '@flighthq/render/contract';
 
-import { wgpuBitmapTextRenderer } from './wgpuBitmapText';
-import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter';
+import { wgpuBitmapTextRenderer } from './wgpuBitmapText.ts';
+import { flushWgpuQuadBatchWriter } from './wgpuQuadBatchWriter.ts';
 
 beforeAll(() => {
   installWgpuMock();

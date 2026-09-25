@@ -1,7 +1,7 @@
 import { createParticleEmitterConfig } from '@flighthq/particles/contract';
 
-import { parseUnityParticle, parseUnityParticleDocument } from './unityParse';
-import { serializeUnityParticle, serializeUnityParticleDocument } from './unitySerialize';
+import { parseUnityParticle, parseUnityParticleDocument } from './unityParse.ts';
+import { serializeUnityParticle, serializeUnityParticleDocument } from './unitySerialize.ts';
 
 const SMOKE_JSON = JSON.stringify({
   name: 'smoke',

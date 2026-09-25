@@ -6,9 +6,9 @@ import {
   disposeExternalWgpuTexture,
   initializeExternalWgpuTextureEntry,
   initializeExternalWgpuTextureSource,
-} from './wgpuExternalTexture';
-import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
-import { resolveWgpuTexture } from './wgpuTextureResolver';
+} from './wgpuExternalTexture.ts';
+import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';
+import { resolveWgpuTexture } from './wgpuTextureResolver.ts';
 
 beforeAll(() => {
   installWgpuMock();

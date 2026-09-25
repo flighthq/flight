@@ -13,7 +13,7 @@ import {
   collidePhysics3DColliderShapes,
   raycastPhysics3DColliderShape,
   sweepPhysics3DColliderShapes,
-} from './colliderCollision';
+} from './colliderCollision.ts';
 
 beforeEach(() => {
   registerBuiltInCollisionSupports3D();

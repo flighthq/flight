@@ -26,7 +26,7 @@ import type {
   CaptureColumnBaseline,
 } from '@flighthq/types/contract';
 
-import { isRejectedCaptureBaselineHash, isUniformCaptureFingerprint } from './captureBaselineSanity.js';
+import { isRejectedCaptureBaselineHash, isUniformCaptureFingerprint } from './captureBaselineSanity.ts';
 
 export type BaselineField = 'fingerprint' | 'sha256';
 export type CaptureBaselineEvidence = Readonly<Omit<CaptureColumnBaseline, 'sourceHash'>> &

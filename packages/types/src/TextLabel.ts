@@ -1,8 +1,8 @@
-import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
-import type { TextAutoSize } from './TextAutoSize';
-import type { TextFormat } from './TextFormat';
-import type { TextLayoutParams, TextLayoutResult, TextMeasureFunction } from './TextLayout';
-import type { TextVerticalAlign } from './TextVerticalAlign';
+import type { Node2D, Node2DData, Node2DRuntime } from './Node2D.ts';
+import type { TextAutoSize } from './TextAutoSize.ts';
+import type { TextFormat } from './TextFormat.ts';
+import type { TextLayoutParams, TextLayoutResult, TextMeasureFunction } from './TextLayout.ts';
+import type { TextVerticalAlign } from './TextVerticalAlign.ts';
 
 export interface TextLabelData extends Node2DData {
   autoSize: TextAutoSize;

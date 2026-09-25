@@ -9,7 +9,7 @@ import type {
   WindowControllerSignals,
 } from '@flighthq/types/contract';
 
-import { getButtonControllerSignals } from './buttonController';
+import { getButtonControllerSignals } from './buttonController.ts';
 import {
   connectGuiInteraction,
   connectGuiSignal,
@@ -18,7 +18,7 @@ import {
   disposeGuiController,
   getGuiControllerRuntime,
   setGuiVisualProperty,
-} from './guiController';
+} from './guiController.ts';
 
 interface WindowControllerFields {
   closeButton: ButtonController | null;

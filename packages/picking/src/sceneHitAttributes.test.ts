@@ -6,7 +6,7 @@ import { createMesh } from '@flighthq/scene3d/contract';
 import type { Material3D, Mesh, Scene3DHit, VertexAttributeLayout } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createScene3DHit } from './pickScene3D';
+import { createScene3DHit } from './pickScene3D.ts';
 import {
   getScene3DHitMaterial,
   getScene3DHitSubsetIndex,
@@ -14,7 +14,7 @@ import {
   getScene3DHitVertexNormal,
   getScene3DHitVertexTangent,
   isScene3DHitFrontFacing,
-} from './sceneHitAttributes';
+} from './sceneHitAttributes.ts';
 
 function attributedHit(): Scene3DHit & { node: Mesh } {
   const geometry = createMeshGeometryFromAttributes({

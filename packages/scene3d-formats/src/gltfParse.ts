@@ -64,9 +64,9 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, MeshKind, Node3DKind } from '@flighthq/types/contract';
 
-import { registerGltfAnimationHandlers } from './registerGltfAnimationHandlers';
-import { registerGltfCameraHandlers } from './registerGltfCameraHandlers';
-import { registerGltfSkinHandlers } from './registerGltfSkinHandlers';
+import { registerGltfAnimationHandlers } from './registerGltfAnimationHandlers.ts';
+import { registerGltfCameraHandlers } from './registerGltfCameraHandlers.ts';
+import { registerGltfSkinHandlers } from './registerGltfSkinHandlers.ts';
 
 // Parses a binary glTF (`.glb`) container into a Scene3D — the file's default scene (`doc.scene`).
 // Convenience over `createScene3DFromDocument(parseGlb(bytes), defaultScene3D)`; malformed containers return an
@@ -1842,8 +1842,8 @@ const GLB_CHUNK_HEADER_BYTES = 8;
 
 // The canonical interleaved PBR vertex layout the mesh builders and scene-{gl,wgpu} renderers share,
 // plus the skinned record's floats-per-vertex — the same constants every scene-formats importer emits.
-import { getGltfDracoDecoder, hasGltfDracoDecoder } from './gltfDraco';
-import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, SKINNED_FLOATS_PER_VERTEX } from './shared';
+import { getGltfDracoDecoder, hasGltfDracoDecoder } from './gltfDraco.ts';
+import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, SKINNED_FLOATS_PER_VERTEX } from './shared.ts';
 
 // One accumulated glTF document-build drop: a total occurrence `count` plus the first offender's `detail`,
 // keyed by kind + discriminator. No origin is stored — buildGltfDocument flushes (physically reports) every

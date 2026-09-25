@@ -7,8 +7,8 @@ import {
   clipRegionContainsPoint,
   createClipRegionFromContours,
   releaseClipRegion,
-} from './clipRegion';
-import { disableClipGuards, enableClipGuards } from './enableClipGuards';
+} from './clipRegion.ts';
+import { disableClipGuards, enableClipGuards } from './enableClipGuards.ts';
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);

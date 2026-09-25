@@ -12,8 +12,8 @@ import type {
 } from '@flighthq/types/contract';
 import { RenderCacheKind } from '@flighthq/types/contract';
 
-import { registerNodeRenderer } from './renderer';
-import { getRenderProxyAdapter, setRenderProxyAdapter } from './renderProxyAdapter';
+import { registerNodeRenderer } from './renderer.ts';
+import { getRenderProxyAdapter, setRenderProxyAdapter } from './renderProxyAdapter.ts';
 
 export { RenderCacheKind };
 

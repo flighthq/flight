@@ -34,7 +34,7 @@ import type {
   Vector2Like,
 } from '@flighthq/types/contract';
 
-import { toElectronTemplate } from './electronMenuTemplate';
+import { toElectronTemplate } from './electronMenuTemplate.ts';
 
 interface NativeListener {
   event: string;

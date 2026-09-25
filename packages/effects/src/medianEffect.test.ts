@@ -5,7 +5,7 @@ import {
   getMedianEffectPadding,
   initializeMedianEffect,
   registerMedianEffectPaddingResolver,
-} from './medianEffect';
+} from './medianEffect.ts';
 
 describe('createMedianEffect', () => {
   it('tags the intent type', () => {

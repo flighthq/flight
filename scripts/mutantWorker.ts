@@ -4,8 +4,8 @@ import { resolve } from 'node:path';
 import type { Plugin } from 'vitest/config';
 import { createVitest } from 'vitest/node';
 
-import { applyMutantText, readMutantRunResult, WORKER_PROTOCOL_PREFIX } from './unchecked-core';
-import type { MutantRequest, MutantResponse } from './unchecked-core';
+import { applyMutantText, readMutantRunResult, WORKER_PROTOCOL_PREFIX } from './unchecked-core.ts';
+import type { MutantRequest, MutantResponse } from './unchecked-core.ts';
 
 // A long-lived vitest server that runs mutants for a whole package, replacing the spawn-per-mutant loop.
 //

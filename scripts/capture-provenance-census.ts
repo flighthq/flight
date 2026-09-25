@@ -22,11 +22,11 @@ import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
-import { discoverEntries } from '../packages/tool-capture/src/captureEntries';
-import type { Entry } from '../packages/tool-capture/src/captureEntries';
-import { CAPTURE_PROTOCOL_VERSION } from '../packages/tool-capture/src/captureProtocol';
-import { CAPTURE_REPORT_VERSION } from '../packages/tool-capture/src/captureReport';
-import { getCaptureSceneSourceHash } from '../packages/tool-capture/src/captureSourceHash';
+import { discoverEntries } from '../packages/tool-capture/src/captureEntries.ts';
+import type { Entry } from '../packages/tool-capture/src/captureEntries.ts';
+import { CAPTURE_PROTOCOL_VERSION } from '../packages/tool-capture/src/captureProtocol.ts';
+import { CAPTURE_REPORT_VERSION } from '../packages/tool-capture/src/captureReport.ts';
+import { getCaptureSceneSourceHash } from '../packages/tool-capture/src/captureSourceHash.ts';
 
 export type CaptureProvenanceSubject = 'examples' | 'functional';
 

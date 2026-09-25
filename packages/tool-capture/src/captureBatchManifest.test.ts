@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { parseCaptureBatchManifest, readCaptureBatchManifest } from './captureBatchManifest';
+import { parseCaptureBatchManifest, readCaptureBatchManifest } from './captureBatchManifest.ts';
 
 describe('parseCaptureBatchManifest', () => {
   it('parses subject arguments and optional operations', () => {

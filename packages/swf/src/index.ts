@@ -1,12 +1,12 @@
-export * from './enableSwfGuards';
-export * from './mergeSwfParseOptions';
-export * from './swfAllTagHandlers';
-export * from './swfBitmap';
-export * from './swfBitmapTagFamily';
-export * from './swfControlHandler';
-export * from './swfControlTagFamily';
-export * from './swfDefineMorphShapeHandler';
-export * from './swfDefineShapeHandler';
+export * from './enableSwfGuards.ts';
+export * from './mergeSwfParseOptions.ts';
+export * from './swfAllTagHandlers.ts';
+export * from './swfBitmap.ts';
+export * from './swfBitmapTagFamily.ts';
+export * from './swfControlHandler.ts';
+export * from './swfControlTagFamily.ts';
+export * from './swfDefineMorphShapeHandler.ts';
+export * from './swfDefineShapeHandler.ts';
 export {
   createGlyphOutlineSourcesFromSwf,
   createScene2DFromSwf,
@@ -15,34 +15,34 @@ export {
   readSwfExportedSymbolNames,
   registerSwfScene2DDocumentImporter,
   uncompressSwfSource,
-} from './swfDocument';
-export * from './swfEditText';
-export * from './swfEditTextHandler';
-export { readSwfFilterList } from './swfFilter';
-export * from './swfFontHandler';
-export * from './swfFontTagFamily';
-export * from './swfFrameAction';
-export * from './swfHeader';
-export * from './swfImageDecoder';
-export * from './swfImageMimeType';
-export * from './swfJpegBitmapHandler';
-export * from './swfKnownTags';
-export * from './swfLosslessBitmapHandler';
-export * from './swfMorphShape';
-export * from './swfPlaceObject3Handler';
-export * from './swfPlaceObjectHandler';
-export * from './swfPlacementTagFamily';
-export * from './swfScriptHandler';
-export * from './swfScriptTagFamily';
-export * from './swfShape';
-export * from './swfShapeTagFamily';
-export { swfSoundHandler } from './swfSoundHandler';
-export * from './swfSoundTagFamily';
-export * from './swfSpriteHandler';
-export * from './swfSpriteTagFamily';
-export * from './swfStaticTextHandler';
-export * from './swfTagVocabulary';
-export * from './swfText';
-export * from './swfTextTagFamily';
-export * from './swfVideoHandler';
-export * from './swfVideoTagFamily';
+} from './swfDocument.ts';
+export * from './swfEditText.ts';
+export * from './swfEditTextHandler.ts';
+export { readSwfFilterList } from './swfFilter.ts';
+export * from './swfFontHandler.ts';
+export * from './swfFontTagFamily.ts';
+export * from './swfFrameAction.ts';
+export * from './swfHeader.ts';
+export * from './swfImageDecoder.ts';
+export * from './swfImageMimeType.ts';
+export * from './swfJpegBitmapHandler.ts';
+export * from './swfKnownTags.ts';
+export * from './swfLosslessBitmapHandler.ts';
+export * from './swfMorphShape.ts';
+export * from './swfPlaceObject3Handler.ts';
+export * from './swfPlaceObjectHandler.ts';
+export * from './swfPlacementTagFamily.ts';
+export * from './swfScriptHandler.ts';
+export * from './swfScriptTagFamily.ts';
+export * from './swfShape.ts';
+export * from './swfShapeTagFamily.ts';
+export { swfSoundHandler } from './swfSoundHandler.ts';
+export * from './swfSoundTagFamily.ts';
+export * from './swfSpriteHandler.ts';
+export * from './swfSpriteTagFamily.ts';
+export * from './swfStaticTextHandler.ts';
+export * from './swfTagVocabulary.ts';
+export * from './swfText.ts';
+export * from './swfTextTagFamily.ts';
+export * from './swfVideoHandler.ts';
+export * from './swfVideoTagFamily.ts';

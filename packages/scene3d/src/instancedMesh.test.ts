@@ -27,7 +27,7 @@ import {
   setInstancedMeshInstanceCount,
   setInstancedMeshInstanceMatrix,
   setInstancedMeshInstanceMatrixRange,
-} from './instancedMesh';
+} from './instancedMesh.ts';
 
 function translation(x: number, y = 0, z = 0): Matrix4 {
   const matrix = createMatrix4();

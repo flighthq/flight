@@ -3,10 +3,10 @@ import type { Bone2D, Path, PathAttachment2D, Skeleton2DDeformLengthMismatch, Sk
 import { EntityRuntimeKey, PathAttachment2DKind, PathCommand, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { deformSkeleton2DPathAttachment } from './deformPathAttachment2D';
-import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d';
-import { setSkeleton2DDeformLengthGuard } from './skeleton2dGuards';
-import { createSkin2D } from './skin2D';
+import { deformSkeleton2DPathAttachment } from './deformPathAttachment2D.ts';
+import { computeSkeleton2DWorldTransforms, createSkeleton2D } from './skeleton2d.ts';
+import { setSkeleton2DDeformLengthGuard } from './skeleton2dGuards.ts';
+import { createSkin2D } from './skin2D.ts';
 
 function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
   return {

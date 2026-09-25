@@ -1,5 +1,5 @@
-import { swfControlHandler } from './swfControlHandler';
-import { swfControlTagFamily } from './swfControlTagFamily';
+import { swfControlHandler } from './swfControlHandler.ts';
+import { swfControlTagFamily } from './swfControlTagFamily.ts';
 
 describe('swfControlTagFamily', () => {
   it('is exactly its handlers, in the order a placed character is offered to them', () => {

@@ -20,10 +20,10 @@ import {
 import type { Skin, VertexAttributeLayout } from '@flighthq/types/contract';
 import { DIRECTIONAL_SHADOW_MAP_SIZE, EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { registerGlMeshSkinning } from './glMeshSkinning';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { renderGlScene3DShadowMap } from './glShadowMap';
+import { registerGlMeshSkinning } from './glMeshSkinning.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { renderGlScene3DShadowMap } from './glShadowMap.ts';
 
 const POSITION_LAYOUT: VertexAttributeLayout = {
   attributes: [{ byteOffset: 0, format: 'float32x3', semantic: 'position' }],

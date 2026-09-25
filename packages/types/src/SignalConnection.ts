@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Signal } from './Signal';
+import type { Signal } from './Signal.ts';
 /**
  * A handle returned by `connectSignalTracked` that identifies one specific slot
  * registration on a signal. Use it to disconnect, inspect, or pause/resume the

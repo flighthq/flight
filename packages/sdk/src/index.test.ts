@@ -1,4 +1,4 @@
-import * as sdk from './index';
+import * as sdk from './index.ts';
 
 describe('package exports', () => {
   describe('adjustments domain', () => {

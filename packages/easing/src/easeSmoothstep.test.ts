@@ -1,4 +1,4 @@
-import { easeSmootherstep, easeSmoothstep, easeSmoothstepRange } from './easeSmoothstep';
+import { easeSmootherstep, easeSmoothstep, easeSmoothstepRange } from './easeSmoothstep.ts';
 
 describe('easeSmootherstep', () => {
   it('returns 0 at t=0 and 1 at t=1', () => {

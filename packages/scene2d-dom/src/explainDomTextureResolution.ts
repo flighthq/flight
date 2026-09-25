@@ -1,7 +1,7 @@
 import { getTextureSourceKind } from '@flighthq/texture/contract';
 import type { DomRenderState, Texture, TextureResolutionExplanation } from '@flighthq/types/contract';
 
-import { getDomRenderStateRuntime } from './domRenderState';
+import { getDomRenderStateRuntime } from './domRenderState.ts';
 
 export function explainDomTextureResolution(
   state: DomRenderState,

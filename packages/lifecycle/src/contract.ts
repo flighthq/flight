@@ -1,1 +1,1 @@
-export * from './lifecycle';
+export * from './lifecycle.ts';

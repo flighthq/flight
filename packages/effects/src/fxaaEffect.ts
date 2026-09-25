@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, FxaaEffect } from '@flighthq/types/contract';
 
-import { initializeEffect } from './effect';
+import { initializeEffect } from './effect.ts';
 
 export function createFxaaEffect(options: Readonly<Omit<EntityWithoutRuntime<FxaaEffect>, 'kind'>> = {}): FxaaEffect {
   const out = allocateEntity<FxaaEffect>();

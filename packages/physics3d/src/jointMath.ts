@@ -8,7 +8,7 @@ import {
   TENSOR_YY,
   TENSOR_YZ,
   TENSOR_ZZ,
-} from './symmetricTensor';
+} from './symmetricTensor.ts';
 
 // The constraint arithmetic every 3D joint kind is assembled from: lever arms, effective-mass blocks,
 // frame extraction, and the two impulse appliers.

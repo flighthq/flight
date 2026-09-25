@@ -1,7 +1,7 @@
 import type { MatrixLike, Path } from '@flighthq/types/contract';
 import { PathCommand } from '@flighthq/types/contract';
 
-import { copyPath } from './copyPath';
+import { copyPath } from './copyPath.ts';
 
 // Applies a 2D affine matrix to all anchor and control-point coordinate pairs in `source`, writing
 // the result into `out`. `out` may be the same object as `source` (alias-safe: inputs are read into

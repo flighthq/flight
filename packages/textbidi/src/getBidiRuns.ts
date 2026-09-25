@@ -1,6 +1,6 @@
 import type { BidiClassKernel, BidiDirection, BidiRun } from '@flighthq/types/contract';
 
-import { resolveBidiLevels } from './resolveBidiLevels';
+import { resolveBidiLevels } from './resolveBidiLevels.ts';
 
 export function getBidiRuns(
   bidiClassKernel: Readonly<BidiClassKernel>,

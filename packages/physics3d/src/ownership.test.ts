@@ -6,8 +6,8 @@ import {
   physics3DBodyOwners,
   physics3DJointOwners,
   steppingPhysics3DWorlds,
-} from './ownership';
-import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world';
+} from './ownership.ts';
+import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world.ts';
 
 describe('assertPhysics3DBodyNotStepping', () => {
   it('resolves the owning world and refuses mutation during its step', () => {

@@ -4,8 +4,8 @@ import {
   appendPathLineTo,
   appendPathMoveTo,
   createPath,
-} from './path';
-import { transformPath, translatePath } from './transformPath';
+} from './path.ts';
+import { transformPath, translatePath } from './transformPath.ts';
 
 const IDENTITY = { a: 1, b: 0, c: 0, d: 1, tx: 0, ty: 0 };
 

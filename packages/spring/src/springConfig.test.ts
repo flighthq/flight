@@ -7,7 +7,7 @@ import {
   SpringPresetStiff,
   createSpringConfig,
   createSpringConfigFromPhysical,
-} from './springConfig';
+} from './springConfig.ts';
 
 describe('createSpringConfig', () => {
   it('stores frequency and dampingRatio verbatim', () => {

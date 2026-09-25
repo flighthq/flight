@@ -1,4 +1,8 @@
-export { areStatechartGuardsEnabled, disableStatechartGuards, enableStatechartGuards } from './enableStatechartGuards';
+export {
+  areStatechartGuardsEnabled,
+  disableStatechartGuards,
+  enableStatechartGuards,
+} from './enableStatechartGuards.ts';
 export {
   advanceStatechartInstance,
   createStatechartInstance,
@@ -10,5 +14,5 @@ export {
   setStatechartBooleanInput,
   setStatechartNumberInput,
   setStatechartRegionDuration,
-} from './statechart';
-export { enableStatechartSignals, getStatechartSignals } from './statechartSignals';
+} from './statechart.ts';
+export { enableStatechartSignals, getStatechartSignals } from './statechartSignals.ts';

@@ -5,11 +5,11 @@ import {
   applyDropShadowEffectToWgpu,
   wgpuDropShadowEffectRunner,
   registerWgpuDropShadowEffect,
-} from './wgpuDropShadowEffect';
-import * as wgpuEffectBlitShaderMod from './wgpuEffectBlitShader';
-import * as wgpuEffectBoxBlurMod from './wgpuEffectBoxBlur';
-import * as wgpuEffectPassMod from './wgpuEffectPass';
-import * as wgpuEffectTintShaderMod from './wgpuEffectTintShader';
+} from './wgpuDropShadowEffect.ts';
+import * as wgpuEffectBlitShaderMod from './wgpuEffectBlitShader.ts';
+import * as wgpuEffectBoxBlurMod from './wgpuEffectBoxBlur.ts';
+import * as wgpuEffectPassMod from './wgpuEffectPass.ts';
+import * as wgpuEffectTintShaderMod from './wgpuEffectTintShader.ts';
 
 let nextTargetId = 0;
 

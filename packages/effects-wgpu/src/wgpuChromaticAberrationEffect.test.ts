@@ -2,7 +2,7 @@ import {
   applyChromaticAberrationEffectToWgpu,
   wgpuChromaticAberrationEffectRunner,
   registerWgpuChromaticAberrationEffect,
-} from './wgpuChromaticAberrationEffect';
+} from './wgpuChromaticAberrationEffect.ts';
 
 describe('applyChromaticAberrationEffectToWgpu', () => {
   it('is a function', () => {

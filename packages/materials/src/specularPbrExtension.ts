@@ -2,8 +2,8 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { SpecularPbrExtension, EntityConstruction } from '@flighthq/types/contract';
 import { SpecularPbrExtensionKind } from '@flighthq/types/contract';
 
-import { isValidMaterialWeight } from './materialValidation';
-import { isValidPbrUvSet } from './pbrExtension';
+import { isValidMaterialWeight } from './materialValidation.ts';
+import { isValidPbrUvSet } from './pbrExtension.ts';
 
 export function createSpecularPbrExtension(opts?: Readonly<Partial<SpecularPbrExtension>>): SpecularPbrExtension {
   const out = allocateEntity<SpecularPbrExtension>();

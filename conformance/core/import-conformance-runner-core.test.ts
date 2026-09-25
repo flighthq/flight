@@ -3,16 +3,16 @@ import { mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { createImportConformanceSingleMemberCaseIdentity } from './import-conformance-case';
-import type { ImportConformanceIndexedFixture, ImportConformanceResult } from './import-conformance-core';
-import { createImportConformanceShardPlan } from './import-conformance-core';
+import { createImportConformanceSingleMemberCaseIdentity } from './import-conformance-case.ts';
+import type { ImportConformanceIndexedFixture, ImportConformanceResult } from './import-conformance-core.ts';
+import { createImportConformanceShardPlan } from './import-conformance-core.ts';
 import {
   hashImportConformanceImporterSource,
   readImportConformanceCachedResult,
   readImportConformanceShardResults,
   writeImportConformanceCachedResult,
   writeImportConformanceShardResult,
-} from './import-conformance-runner-core';
+} from './import-conformance-runner-core.ts';
 
 describe('hashImportConformanceImporterSource', () => {
   it('hashes production SWF source while excluding tests', () => {

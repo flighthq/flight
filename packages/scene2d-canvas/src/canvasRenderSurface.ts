@@ -1,6 +1,6 @@
 import type { CanvasRenderState, CanvasSurface, HostCanvasCapability } from '@flighthq/types/contract';
 
-import { getCanvasRenderStateRuntime } from './canvasRenderState';
+import { getCanvasRenderStateRuntime } from './canvasRenderState.ts';
 
 export function acquireCanvasSurface(
   canvasHost: Readonly<HostCanvasCapability>,

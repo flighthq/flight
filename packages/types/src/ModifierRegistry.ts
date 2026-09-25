@@ -1,5 +1,5 @@
-import type { ModifierDefinition } from './ModifierDefinition';
-import type { ModifierKind } from './ModifierKind';
+import type { ModifierDefinition } from './ModifierDefinition.ts';
+import type { ModifierKind } from './ModifierKind.ts';
 
 // An open, last-write-wins registry mapping a `ModifierKind` to its substrate-agnostic definition.
 // Not a module global: callers allocate one with `createModifierRegistry`, register built-ins via

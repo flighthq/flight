@@ -12,8 +12,8 @@ import { fileURLToPath } from 'node:url';
 import pc from 'picocolors';
 import ts from 'typescript';
 
-import { discoverEntries } from '../packages/tool-capture/src/captureEntries';
-import { functionalScene3DFile } from '../packages/tool-capture/src/functionalScene3Ds';
+import { discoverEntries } from '../packages/tool-capture/src/captureEntries.ts';
+import { functionalScene3DFile } from '../packages/tool-capture/src/functionalScene3Ds.ts';
 
 const scriptPath = fileURLToPath(import.meta.url);
 const POLICY_CALL = 'declareAntialiasingPolicy';

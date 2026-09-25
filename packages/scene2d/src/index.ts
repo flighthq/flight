@@ -18,4 +18,4 @@ export {
   setHtmlViewSize,
   setNode2DClip,
   setScene2DSize,
-} from './contract';
+} from './contract.ts';

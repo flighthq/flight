@@ -1,10 +1,10 @@
 import type { CollisionShape2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { getCollisionPairTest2D } from './collisionSupport2D';
-import { createCollisionManifold2D } from './manifold2D';
-import { registerBuiltInCollisionPairTests2D } from './registerBuiltInCollisionPairTests2D';
-import { testCircleAabbCollision2D } from './shapeCollision2D';
+import { getCollisionPairTest2D } from './collisionSupport2D.ts';
+import { createCollisionManifold2D } from './manifold2D.ts';
+import { registerBuiltInCollisionPairTests2D } from './registerBuiltInCollisionPairTests2D.ts';
+import { testCircleAabbCollision2D } from './shapeCollision2D.ts';
 
 registerBuiltInCollisionPairTests2D();
 

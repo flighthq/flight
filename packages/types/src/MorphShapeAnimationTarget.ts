@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { MorphShape } from './MorphShape';
+import type { Entity } from './Entity.ts';
+import type { MorphShape } from './MorphShape.ts';
 
 // The opaque targetRef carried by a scalar AnimationChannel that drives one MorphShape's progress.
 // Reuse one descriptor identity across clips that must correspond in crossfades, blend trees, state

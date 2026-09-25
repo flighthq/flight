@@ -1,8 +1,8 @@
 import type { RenderTargetClear, RenderTexture } from '@flighthq/types/contract';
 import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
-import { submitWgpuFrame } from './wgpuFrame';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
+import { submitWgpuFrame } from './wgpuFrame.ts';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 import {
   bindWgpuRenderTexture,
   destroyWgpuRenderTexture,
@@ -13,8 +13,8 @@ import {
   renderIntoWgpuRenderTexture,
   setWgpuRenderTextureGuard,
   writeWgpuRenderTextureTarget,
-} from './wgpuRenderTexture';
-import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+} from './wgpuRenderTexture.ts';
+import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';
 
 beforeAll(() => {
   installWgpuMock();

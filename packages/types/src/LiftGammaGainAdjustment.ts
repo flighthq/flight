@@ -1,4 +1,4 @@
-import type { ColorLutAdjustment } from './ColorLutAdjustment';
+import type { ColorLutAdjustment } from './ColorLutAdjustment.ts';
 
 export interface LiftGammaGainAdjustment extends ColorLutAdjustment {
   kind: 'LiftGammaGainAdjustment';

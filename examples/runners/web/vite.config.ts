@@ -6,11 +6,11 @@ import { defineConfig } from 'vite';
 import {
   CAPTURE_BUILD_IDENTITY_FILE,
   getCaptureBuildIdentity,
-} from '../../../packages/tool-capture/src/captureBuildIdentity';
-import { resolveAssetTarget } from '../../../scripts/asset-cache';
-import { copyDirectoryContents } from '../../../scripts/copy-dir';
-import { buildExamplesWebEntryHtml } from '../../../scripts/examples-web-entry-html';
-import { workspacePackages } from '../../../scripts/workspaces';
+} from '../../../packages/tool-capture/src/captureBuildIdentity.ts';
+import { resolveAssetTarget } from '../../../scripts/asset-cache.ts';
+import { copyDirectoryContents } from '../../../scripts/copy-dir.ts';
+import { buildExamplesWebEntryHtml } from '../../../scripts/examples-web-entry-html.ts';
+import { workspacePackages } from '../../../scripts/workspaces.ts';
 
 const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
 type NodeRenderer = (typeof RENDERERS)[number];

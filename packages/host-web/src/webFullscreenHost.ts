@@ -1,6 +1,6 @@
 import type { HostFullscreenCapabilities } from '@flighthq/types/contract';
 
-import { webHostFullscreen } from './webWindow';
+import { webHostFullscreen } from './webWindow.ts';
 
 export const webHostFullscreenGroup = {
   element: webHostFullscreen,

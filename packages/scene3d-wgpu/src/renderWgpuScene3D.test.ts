@@ -27,12 +27,12 @@ import {
 import type { Camera3D, ParticleEmitter3D, Scene3DLightsLike, Skeleton3D } from '@flighthq/types/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
-import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMaterial';
-import { renderWgpuScene3D, isWgpuMeshGpuSkinned } from './renderWgpuScene3D';
-import { registerWgpuParticleEmitter3DPass } from './wgpuParticleEmitter3D';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
-import { registerWgpuGpuSkinning } from './wgpuSkinPalette';
+import { registerWgpuStandardPbrMaterial } from './registerWgpuStandardPbrMaterial.ts';
+import { renderWgpuScene3D, isWgpuMeshGpuSkinned } from './renderWgpuScene3D.ts';
+import { registerWgpuParticleEmitter3DPass } from './wgpuParticleEmitter3D.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
+import { registerWgpuGpuSkinning } from './wgpuSkinPalette.ts';
 
 function makeCamera(): Camera3D {
   const camera = createCamera3D({

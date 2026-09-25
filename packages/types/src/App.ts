@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { MenuItemTemplate } from './Menu';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { MenuItemTemplate } from './Menu.ts';
+import type { Signal } from './Signal.ts';
 
 // macOS activation policy controlling dock presence and Command-Tab visibility. 'regular' shows in
 // the dock and switcher; 'accessory' hides from both (menu-bar/agent apps); 'prohibited' is fully

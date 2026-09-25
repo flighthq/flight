@@ -23,16 +23,16 @@ export {
   electronHostAppSingleInstance,
   electronHostAppUserModelId,
   electronHostAppVersion,
-} from './electronApp';
-export * from './electronClipboard';
-export * from './electronDefaultHostGroups';
+} from './electronApp.ts';
+export * from './electronClipboard.ts';
+export * from './electronDefaultHostGroups.ts';
 export {
   electronHostDialog,
   electronHostDirectoryOpenDialog,
   electronHostFileOpenDialog,
   electronHostFileSaveDialog,
   electronHostMessageDialog,
-} from './electronDialog';
+} from './electronDialog.ts';
 export {
   electronHostIpc,
   electronHostIpcHandle,
@@ -40,8 +40,13 @@ export {
   electronHostIpcMessage,
   electronHostIpcSend,
   electronHostIpcTargetedSend,
-} from './electronIpc';
-export { electronHostAppMenu, electronHostMenu, electronHostMenuPopup, electronHostMenuSelect } from './electronMenu';
+} from './electronIpc.ts';
+export {
+  electronHostAppMenu,
+  electronHostMenu,
+  electronHostMenuPopup,
+  electronHostMenuSelect,
+} from './electronMenu.ts';
 export {
   electronHostNotification,
   electronHostNotificationAction,
@@ -52,8 +57,8 @@ export {
   electronHostNotificationLifecycle,
   electronHostNotificationReceived,
   electronHostNotificationReply,
-} from './electronNotification';
-export { electronHostPlatform, electronHostPlatformGroup } from './electronPlatform';
+} from './electronNotification.ts';
+export { electronHostPlatform, electronHostPlatformGroup } from './electronPlatform.ts';
 export {
   electronHostPower,
   electronHostPowerBatteryHealth,
@@ -64,7 +69,7 @@ export {
   electronHostPowerStatus,
   electronHostPowerSuspension,
   electronHostPowerThermal,
-} from './electronPower';
+} from './electronPower.ts';
 export {
   electronHostProtocol,
   electronHostProtocolDefault,
@@ -72,9 +77,9 @@ export {
   electronHostProtocolRegistration,
   electronHostProtocolRegistrationQuery,
   electronHostProtocolUnregistration,
-} from './electronProtocol';
-export * from './electronRegister';
-export { electronHostScreen, electronHostScreenChange, electronHostScreenQuery } from './electronScreen';
+} from './electronProtocol.ts';
+export * from './electronRegister.ts';
+export { electronHostScreen, electronHostScreenChange, electronHostScreenQuery } from './electronScreen.ts';
 export {
   electronHostShell,
   electronHostShellBeep,
@@ -83,9 +88,9 @@ export {
   electronHostShellPathReveal,
   electronHostShellShortcutLink,
   electronHostShellTrash,
-} from './electronShell';
-export { electronHostShortcut, electronHostShortcutQuery, electronHostShortcutTrigger } from './electronShortcut';
-export { electronHostStorage, electronHostStorageGroup } from './electronStorage';
+} from './electronShell.ts';
+export { electronHostShortcut, electronHostShortcutQuery, electronHostShortcutTrigger } from './electronShortcut.ts';
+export { electronHostStorage, electronHostStorageGroup } from './electronStorage.ts';
 export {
   electronHostTray,
   electronHostTrayBalloon,
@@ -103,8 +108,8 @@ export {
   electronHostTrayTemplateImage,
   electronHostTrayTitle,
   electronHostTrayTooltip,
-} from './electronTray';
-export { electronHostUpdater, electronHostUpdaterCommand } from './electronUpdater';
+} from './electronTray.ts';
+export { electronHostUpdater, electronHostUpdaterCommand } from './electronUpdater.ts';
 export {
   electronHostWindow,
   electronHostWindowAppearance,
@@ -126,4 +131,4 @@ export {
   getAppWindowForElectronId,
   getElectronBrowserWindow,
   getElectronWindowId,
-} from './electronWindow';
+} from './electronWindow.ts';

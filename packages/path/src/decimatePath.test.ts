@@ -1,7 +1,7 @@
 import { PathCommand } from '@flighthq/types/contract';
 
-import { decimatePath } from './decimatePath';
-import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path';
+import { decimatePath } from './decimatePath.ts';
+import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath } from './path.ts';
 
 describe('decimatePath', () => {
   it('keeps a straight line unchanged', () => {

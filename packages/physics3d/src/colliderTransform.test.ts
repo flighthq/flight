@@ -12,8 +12,8 @@ import {
   initializeCollisionSphere3D,
   updatePhysics3DColliderWorldShape,
   writePhysics3DColliderBounds,
-} from './colliderTransform';
-import { createPhysics3DCollider, createRigidBody3D } from './world';
+} from './colliderTransform.ts';
+import { createPhysics3DCollider, createRigidBody3D } from './world.ts';
 
 function bounds(): SpatialAabb3D {
   return { minX: 0, minY: 0, minZ: 0, maxX: 0, maxY: 0, maxZ: 0 };

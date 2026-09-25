@@ -1,4 +1,4 @@
-import type { Kind } from './Entity';
+import type { Kind } from './Entity.ts';
 
 export interface Scene3DPipelineCoverageExplanation {
   registeredKinds: readonly Kind[];

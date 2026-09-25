@@ -11,7 +11,7 @@ import {
   initializeVideoResource,
   isVideoResourceEmpty,
   isVideoResourceReady,
-} from './videoResource';
+} from './videoResource.ts';
 
 // vi.spyOn hands back the *existing* spy when a method is already spied, so without this the URL
 // spies below share one call history and every count assertion reads the previous test's calls too.

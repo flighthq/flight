@@ -21,7 +21,7 @@ import type {
   Vector3Like,
 } from '@flighthq/types/contract';
 
-import { computeNodeWorldTransformRevision, invalidateNodeLocalTransform } from './revision';
+import { computeNodeWorldTransformRevision, invalidateNodeLocalTransform } from './revision.ts';
 
 export function convertNodeVector3GlobalToLocal<Traits extends object>(
   out: Vector3Like,

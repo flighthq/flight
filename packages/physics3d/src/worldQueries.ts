@@ -21,9 +21,9 @@ import type {
   SpatialAabb3D,
 } from '@flighthq/types/contract';
 
-import { synchronizePhysics3DBroadphase } from './broadphase';
-import { raycastPhysics3DColliderShape, sweepPhysics3DColliderShapes } from './colliderCollision';
-import { writePhysics3DColliderBounds } from './colliderTransform';
+import { synchronizePhysics3DBroadphase } from './broadphase.ts';
+import { raycastPhysics3DColliderShape, sweepPhysics3DColliderShapes } from './colliderCollision.ts';
+import { writePhysics3DColliderBounds } from './colliderTransform.ts';
 
 // Queries against the world's CURRENT pose. Every one of them synchronizes the broadphase first, so a
 // query made between steps — or before the first step — observes where the caller just put a body

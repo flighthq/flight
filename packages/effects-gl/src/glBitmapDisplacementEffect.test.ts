@@ -15,10 +15,10 @@ import {
   glBitmapDisplacementEffectRunner,
   isGlBitmapDisplacementEffectResolvable,
   registerGlBitmapDisplacementEffect,
-} from './glBitmapDisplacementEffect';
-import * as glEffectProgramCache from './glEffectProgramCache';
-import { getGlEffectRunner, isGlEffectResolvable } from './glEffectRegistry';
-import { explainGlEffectApplication } from './glRenderTextureEffect';
+} from './glBitmapDisplacementEffect.ts';
+import * as glEffectProgramCache from './glEffectProgramCache.ts';
+import { getGlEffectRunner, isGlEffectResolvable } from './glEffectRegistry.ts';
+import { explainGlEffectApplication } from './glRenderTextureEffect.ts';
 
 const sourceTexture = {} as WebGLTexture;
 const mapTexture = {} as WebGLTexture;

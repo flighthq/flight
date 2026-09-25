@@ -1,7 +1,7 @@
 import type { CustomShaderMaterial } from '@flighthq/types/contract';
 import { CustomShaderMaterialKind } from '@flighthq/types/contract';
 
-import { createMaterial3D } from './material3d';
+import { createMaterial3D } from './material3d.ts';
 
 // User-authored shader material. `shaderKey` references backend-native source registered on the
 // render state (registerGlCustomMaterialShader or registerWgpuCustomMaterialShader); `uniforms`

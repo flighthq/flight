@@ -1,6 +1,6 @@
-import type { CompressedImageData } from './CompressedImageData';
-import type { TextureSource } from './TextureSource';
-import type { CompressedImageTextureSourceKind } from './TextureSourceKind';
+import type { CompressedImageData } from './CompressedImageData.ts';
+import type { TextureSource } from './TextureSource.ts';
+import type { CompressedImageTextureSourceKind } from './TextureSourceKind.ts';
 
 /**
  * GPU-only block-compressed image source. The payload remains in its container-native format; it is

@@ -29,7 +29,7 @@ import {
 } from '@flighthq/sdk';
 import { updateCamera2DFollow } from '@flighthq/sdk/camera-controls';
 
-import { canvas, CANVAS_HEIGHT, CANVAS_WIDTH, render, scale } from './render';
+import { canvas, CANVAS_HEIGHT, CANVAS_WIDTH, render, scale } from './render.ts';
 
 const WORLD_WIDTH = 2400;
 const WORLD_HEIGHT = 1800;

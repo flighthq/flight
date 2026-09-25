@@ -1,7 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { EntityConstruction, EntityWithoutRuntime, TaaEffect } from '@flighthq/types/contract';
 
-import { initializeEffect } from './effect';
+import { initializeEffect } from './effect.ts';
 
 export function createTaaEffect(options: Readonly<Omit<EntityWithoutRuntime<TaaEffect>, 'kind'>> = {}): TaaEffect {
   const out = allocateEntity<TaaEffect>();

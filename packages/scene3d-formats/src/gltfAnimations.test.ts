@@ -1,8 +1,8 @@
 import type { GltfDocument } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { GltfAnimationsCoreFeatureHandler } from './gltfAnimations';
-import { parseGltfWithCoreFeatureHandlers } from './gltfParse';
+import { GltfAnimationsCoreFeatureHandler } from './gltfAnimations.ts';
+import { parseGltfWithCoreFeatureHandlers } from './gltfParse.ts';
 
 describe('GltfAnimationsCoreFeatureHandler', () => {
   it('imports an authored translation channel when explicitly selected', () => {

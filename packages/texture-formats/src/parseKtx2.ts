@@ -10,7 +10,7 @@ import {
   readByteReaderU32,
   readByteReaderU64,
   skipByteReader,
-} from './byteReader';
+} from './byteReader.ts';
 
 export function getKtx2ParseFailureReason(bytes: Readonly<Uint8Array>): TextureContainerParseFailureReason | null {
   const failure: ParseFailure = { reason: null };

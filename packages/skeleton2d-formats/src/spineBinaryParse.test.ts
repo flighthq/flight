@@ -11,17 +11,17 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseSpineSkeletonBinary } from './spineBinaryFull';
-import { registerAllSpineBinaryHandlers } from './spineBinaryHandlers';
-import { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse';
+import { parseSpineSkeletonBinary } from './spineBinaryFull.ts';
+import { registerAllSpineBinaryHandlers } from './spineBinaryHandlers.ts';
+import { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse.ts';
 import {
   createSpineBinaryRegistry,
   registerSpineBinarySectionHandler,
   unregisterSpineBinarySectionHandler,
   unregisterSpineBinaryTimelineHandler,
-} from './spineBinaryRegistry';
-import { registerSpineBinarySectionHandlers } from './spineBinarySectionHandlers';
-import { registerSpineBinaryTimelineHandlers } from './spineBinaryTimelineHandlers';
+} from './spineBinaryRegistry.ts';
+import { registerSpineBinarySectionHandlers } from './spineBinarySectionHandlers.ts';
+import { registerSpineBinaryTimelineHandlers } from './spineBinaryTimelineHandlers.ts';
 
 describe('parseSpineSkeletonBinary', () => {
   // ★ PER-RECORD, AND THAT IS THE WHOLE POINT. The all-five fixture below backs a PER-RECORD claim with a

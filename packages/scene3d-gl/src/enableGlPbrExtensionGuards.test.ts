@@ -7,10 +7,10 @@ import {
 } from '@flighthq/materials/contract';
 import type { Camera3D, Scene3DLightBlock } from '@flighthq/types/contract';
 
-import { areGlPbrExtensionGuardsEnabled, enableGlPbrExtensionGuards } from './enableGlPbrExtensionGuards';
-import { glExtendedPbrMeshMaterialRenderer } from './glExtendedPbrMeshMaterialRenderer';
-import { registerGlPbrExtension } from './glPbrExtensionRegistry';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+import { areGlPbrExtensionGuardsEnabled, enableGlPbrExtensionGuards } from './enableGlPbrExtensionGuards.ts';
+import { glExtendedPbrMeshMaterialRenderer } from './glExtendedPbrMeshMaterialRenderer.ts';
+import { registerGlPbrExtension } from './glPbrExtensionRegistry.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 const NO_LIGHTS: Scene3DLightBlock = {
   ambientCount: 0,

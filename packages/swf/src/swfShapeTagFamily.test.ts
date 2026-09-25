@@ -1,6 +1,6 @@
-import { swfDefineMorphShapeHandler } from './swfDefineMorphShapeHandler';
-import { swfDefineShapeHandler } from './swfDefineShapeHandler';
-import { swfShapeTagFamily } from './swfShapeTagFamily';
+import { swfDefineMorphShapeHandler } from './swfDefineMorphShapeHandler.ts';
+import { swfDefineShapeHandler } from './swfDefineShapeHandler.ts';
+import { swfShapeTagFamily } from './swfShapeTagFamily.ts';
 
 describe('swfShapeTagFamily', () => {
   it('is exactly its handlers, in the order a placed character is offered to them', () => {

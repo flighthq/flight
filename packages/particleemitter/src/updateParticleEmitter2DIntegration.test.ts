@@ -9,8 +9,8 @@ import {
 } from '@flighthq/particles/contract';
 import type { TextureAtlas } from '@flighthq/types/contract';
 
-import { createParticleEmitter2D } from './particleEmitter';
-import { updateParticleEmitter2D } from './updateParticleEmitter2D';
+import { createParticleEmitter2D } from './particleEmitter.ts';
+import { updateParticleEmitter2D } from './updateParticleEmitter2D.ts';
 
 // Integration coverage for the node-driven sim: the pure primitives (forces, collisions, curves,
 // config validation, state, signals) live in @flighthq/particles and are unit-tested there against

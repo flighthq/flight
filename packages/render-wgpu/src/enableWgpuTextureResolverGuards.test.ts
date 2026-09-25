@@ -5,11 +5,11 @@ import type { ImageResource } from '@flighthq/types/contract';
 import {
   areWgpuTextureResolverGuardsEnabled,
   enableWgpuTextureResolverGuards,
-} from './enableWgpuTextureResolverGuards';
-import { bindWgpuTexture } from './wgpuDraw';
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
-import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
-import { registerWgpuTextureResolver, resolveWgpuTexture } from './wgpuTextureResolver';
+} from './enableWgpuTextureResolverGuards.ts';
+import { bindWgpuTexture } from './wgpuDraw.ts';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
+import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';
+import { registerWgpuTextureResolver, resolveWgpuTexture } from './wgpuTextureResolver.ts';
 
 beforeAll(() => {
   installWgpuMock();

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { getCaptureHostProvenance } from './captureHostProvenance';
+import { getCaptureHostProvenance } from './captureHostProvenance.ts';
 
 const REPOSITORY_ROOT = join(dirname(fileURLToPath(import.meta.url)), '../../..');
 

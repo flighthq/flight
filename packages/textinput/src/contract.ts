@@ -8,8 +8,8 @@ export {
   focusSelectableRichText,
   getSelectableRichTextSelectionText,
   initializeSelectableRichTextManager,
-} from './selectableRichTextManager';
-export { disableTextInput, enableTextInput, getTextInputState, hasTextInput } from './textInput';
+} from './selectableRichTextManager.ts';
+export { disableTextInput, enableTextInput, getTextInputState, hasTextInput } from './textInput.ts';
 export {
   appendTextInput,
   applyTextInputRestriction,
@@ -45,7 +45,7 @@ export {
   selectWordAtTextInputIndex,
   setTextInputSelection,
   undoTextInput,
-} from './textInputEditing';
+} from './textInputEditing.ts';
 export {
   blurTextInput,
   connectInputToTextInput,
@@ -57,4 +57,4 @@ export {
   dispatchTextInputWheel,
   focusTextInput,
   initializeTextInputManager,
-} from './textInputManager';
+} from './textInputManager.ts';

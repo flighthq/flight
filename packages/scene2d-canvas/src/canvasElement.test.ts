@@ -1,7 +1,7 @@
 import { getSurfaceHandle } from '@flighthq/surface/contract';
 
-import { createCanvasElement } from './canvasElement';
-import { canvasTestHost } from './canvasTestSupport';
+import { createCanvasElement } from './canvasElement.ts';
+import { canvasTestHost } from './canvasTestSupport.ts';
 
 describe('createCanvasElement', () => {
   it('sets pixel dimensions equal to logical size with default pixelRatio', () => {

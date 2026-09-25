@@ -18,7 +18,7 @@ import {
   hasWebImageBitmapComposer,
   registerWebImageBitmapComposer,
   unregisterWebImageBitmapComposer,
-} from './webImageBitmapComposition';
+} from './webImageBitmapComposition.ts';
 
 const composer: ImageBitmapComposer = () => null;
 const unusedFetch = (): Promise<null> => Promise.resolve(null);

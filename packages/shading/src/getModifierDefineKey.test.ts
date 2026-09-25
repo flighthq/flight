@@ -2,12 +2,12 @@ import type { Texture } from '@flighthq/types/contract';
 import { EmissiveModifierFacing } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createAnimatedNormalModifier } from './createAnimatedNormalModifier';
-import { createEmissiveModifier } from './createEmissiveModifier';
-import { createRimModifier } from './createRimModifier';
-import { getModifierDefineKey } from './getModifierDefineKey';
-import { createModifierRegistry } from './modifierRegistry';
-import { registerBuiltInModifiers } from './registerBuiltInModifiers';
+import { createAnimatedNormalModifier } from './createAnimatedNormalModifier.ts';
+import { createEmissiveModifier } from './createEmissiveModifier.ts';
+import { createRimModifier } from './createRimModifier.ts';
+import { getModifierDefineKey } from './getModifierDefineKey.ts';
+import { createModifierRegistry } from './modifierRegistry.ts';
+import { registerBuiltInModifiers } from './registerBuiltInModifiers.ts';
 
 describe('getModifierDefineKey', () => {
   const registry = createModifierRegistry();

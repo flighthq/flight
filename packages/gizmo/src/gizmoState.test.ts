@@ -40,7 +40,7 @@ import {
   setGizmoSnapTranslate,
   setGizmoSpace,
   updateGizmo,
-} from './gizmoState';
+} from './gizmoState.ts';
 
 interface TestNodeFeatures {
   bounds: Rectangle;

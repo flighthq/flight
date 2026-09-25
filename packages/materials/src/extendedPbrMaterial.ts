@@ -1,8 +1,8 @@
 import type { ExtendedPbrMaterial } from '@flighthq/types/contract';
 import { ExtendedPbrMaterialKind } from '@flighthq/types/contract';
 
-import { createMaterial3D } from './material3d';
-import { createStandardPbrMaterialProperties } from './pbrMaterials';
+import { createMaterial3D } from './material3d.ts';
+import { createStandardPbrMaterialProperties } from './pbrMaterials.ts';
 
 // Builds the composable PBR material lane. The ordered extension list is retained by reference so its
 // identity and ordering remain an explicit batching/program-selection fact.

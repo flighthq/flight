@@ -8,9 +8,9 @@ import {
   RenderTargetTextureSourceKind,
 } from '@flighthq/types/contract';
 
-import { getGlRenderStateRuntime } from './glRenderState';
-import { renderIntoGlRenderTexture } from './glRenderTexture';
-import { createGlState } from './glTestHelper';
+import { getGlRenderStateRuntime } from './glRenderState.ts';
+import { renderIntoGlRenderTexture } from './glRenderTexture.ts';
+import { createGlState } from './glTestHelper.ts';
 import {
   registerGlImageTextureResolver,
   registerGlBitmapTextureResolver,
@@ -20,7 +20,7 @@ import {
   registerGlTextureResolver,
   resolveGlTexture,
   standardGlTextureResolvers,
-} from './glTextureResolver';
+} from './glTextureResolver.ts';
 
 function textureWithImage(image: TextureSource | null): TextureLike {
   return {

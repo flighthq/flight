@@ -1,5 +1,5 @@
-import type { BlendMode } from './BlendMode';
-import type { Kind } from './Entity';
+import type { BlendMode } from './BlendMode.ts';
+import type { Kind } from './Entity.ts';
 
 // Everything a Scene2D document contains that some consumer has to be registered for. The question half
 // of the scene↔consumer seam: a scene knows WHAT is in it, and only the holder of a registry knows

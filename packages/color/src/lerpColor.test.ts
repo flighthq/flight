@@ -1,5 +1,5 @@
-import { lerpColor, lerpLinearColor } from './lerpColor';
-import { allocateLinearColor } from './packColor';
+import { lerpColor, lerpLinearColor } from './lerpColor.ts';
+import { allocateLinearColor } from './packColor.ts';
 
 describe('lerpColor', () => {
   it('returns start at t=0', () => {

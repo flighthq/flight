@@ -1,8 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { HostTextSegmenterCapability, TextSegment, TextSegmentGranularity } from '@flighthq/types/contract';
 
-import { segmentGraphemes, segmentSentences, segmentWords } from './textSegment';
-import { webTextSegmenterBackend } from './textSegmenterBackend';
+import { segmentGraphemes, segmentSentences, segmentWords } from './textSegment.ts';
+import { webTextSegmenterBackend } from './textSegmenterBackend.ts';
 
 const backend = webTextSegmenterBackend;
 

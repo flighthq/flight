@@ -2,9 +2,9 @@ import { createLensDirtEffect } from '@flighthq/effects/contract';
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import * as glBlurEffect from './glBlurEffect';
-import * as glEffectProgramCache from './glEffectProgramCache';
-import { applyLensDirtEffectToGl, glLensDirtEffectRunner, registerGlLensDirtEffect } from './glLensDirtEffect';
+import * as glBlurEffect from './glBlurEffect.ts';
+import * as glEffectProgramCache from './glEffectProgramCache.ts';
+import { applyLensDirtEffectToGl, glLensDirtEffectRunner, registerGlLensDirtEffect } from './glLensDirtEffect.ts';
 
 let nextTargetId = 0;
 

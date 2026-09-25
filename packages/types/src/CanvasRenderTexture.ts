@@ -1,8 +1,8 @@
-import type { CanvasRenderTargetPool } from './CanvasEffectState';
-import type { CanvasRenderState } from './CanvasRenderState';
-import type { CanvasTextureRenderTarget } from './CanvasRenderTarget';
-import type { Entity } from './Entity';
-import type { RenderTexture } from './RenderTexture';
+import type { CanvasRenderTargetPool } from './CanvasEffectState.ts';
+import type { CanvasRenderState } from './CanvasRenderState.ts';
+import type { CanvasTextureRenderTarget } from './CanvasRenderTarget.ts';
+import type { Entity } from './Entity.ts';
+import type { RenderTexture } from './RenderTexture.ts';
 
 export type CanvasRenderTextureStatus = 'ready' | 'released' | 'unrendered' | 'writing';
 

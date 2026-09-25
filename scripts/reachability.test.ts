@@ -12,7 +12,7 @@ import {
   collectReachabilityLanes,
   defaultCompositionSymbols,
   effectReachabilitySymbols,
-} from './reachability-core';
+} from './reachability-core.ts';
 
 const temporaryDirectories: string[] = [];
 

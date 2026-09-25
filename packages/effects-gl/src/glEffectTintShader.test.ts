@@ -3,7 +3,7 @@
 // channel order and the alpha fold are asserted once, here, instead of at each of five call sites.
 import * as renderGlContract from '@flighthq/render-gl/contract';
 
-import { applyGlEffectInvertTintPass, applyGlEffectTintPass } from './glEffectTintShader';
+import { applyGlEffectInvertTintPass, applyGlEffectTintPass } from './glEffectTintShader.ts';
 
 const glMock = {
   ONE: 1,

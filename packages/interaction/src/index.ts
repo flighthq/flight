@@ -1,6 +1,6 @@
-export * from './displayHitTests';
-export * from './displayObjectOverlap';
-export * from './enableInteractionGuards';
+export * from './displayHitTests.ts';
+export * from './displayObjectOverlap.ts';
+export * from './enableInteractionGuards.ts';
 export {
   clearFocus,
   connectFocusNavigation,
@@ -12,8 +12,8 @@ export {
   getFocusOrder,
   isNodeFocused,
   setFocusedNode,
-} from './focusManager';
-export * from './hitTests';
+} from './focusManager.ts';
+export * from './hitTests.ts';
 export {
   captureInteractionPointer,
   connectInputToInteraction,
@@ -34,8 +34,8 @@ export {
   invalidateInteractionCursor,
   releaseInteractionPointer,
   setInteractionConnectGuard,
-} from './interactionManager';
-export * from './interactionSpatialIndex';
+} from './interactionManager.ts';
+export * from './interactionSpatialIndex.ts';
 export {
   areNodeChildrenHitTestEnabled,
   createNodeInteractionState,
@@ -54,13 +54,13 @@ export {
   setNodeHitTestEnabled,
   setNodePointerDoubleClickEnabled,
   setNodeTabIndex,
-} from './nodeInteractionState';
-export * from './nodeInteractiveStateBinding';
-export * from './registerDefaultHitTests';
-export * from './registerQuadBatchHitTest';
-export * from './registerShapeHitTest';
-export * from './registerSpriteHitTest';
-export * from './registerTextHitTest';
-export * from './registerTilemapHitTest';
-export * from './spatialQuery';
-export * from './spriteHitTests';
+} from './nodeInteractionState.ts';
+export * from './nodeInteractiveStateBinding.ts';
+export * from './registerDefaultHitTests.ts';
+export * from './registerQuadBatchHitTest.ts';
+export * from './registerShapeHitTest.ts';
+export * from './registerSpriteHitTest.ts';
+export * from './registerTextHitTest.ts';
+export * from './registerTilemapHitTest.ts';
+export * from './spatialQuery.ts';
+export * from './spriteHitTests.ts';

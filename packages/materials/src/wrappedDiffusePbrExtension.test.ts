@@ -4,7 +4,7 @@ import {
   createWrappedDiffusePbrExtension,
   initializeWrappedDiffusePbrExtension,
   isValidWrappedDiffusePbrExtension,
-} from './wrappedDiffusePbrExtension';
+} from './wrappedDiffusePbrExtension.ts';
 
 describe('createWrappedDiffusePbrExtension', () => {
   it('names the approximation honestly and creates an Entity with independent UV sets', () => {

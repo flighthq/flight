@@ -19,4 +19,4 @@ export {
   parseAccelerator,
   parseAcceleratorDetailed,
   resolveCommandOrControlModifier,
-} from './contract';
+} from './contract.ts';

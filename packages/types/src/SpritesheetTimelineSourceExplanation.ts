@@ -1,4 +1,4 @@
-import type { SpritesheetAnimation } from './SpritesheetAnimation';
+import type { SpritesheetAnimation } from './SpritesheetAnimation.ts';
 
 // Authored SpritesheetAnimation fields that a TimelineSource cannot carry. Direction is absent because
 // createSpritesheetTimelineSource materializes it into the source's frame sequence without loss.

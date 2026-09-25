@@ -7,7 +7,7 @@ import type {
 } from '@flighthq/types/contract';
 import { DisplayObjectKind } from '@flighthq/types/contract';
 
-import { getFlightDocumentResourceDependencies } from './flightDocumentResourceDependencies';
+import { getFlightDocumentResourceDependencies } from './flightDocumentResourceDependencies.ts';
 
 describe('getFlightDocumentResourceDependencies', () => {
   it('returns every directly declared resource in document order', () => {

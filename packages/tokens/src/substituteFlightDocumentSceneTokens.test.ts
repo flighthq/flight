@@ -11,11 +11,11 @@ import { FlightDocumentRefusalReason } from '@flighthq/types/contract';
 import {
   createFlightDocumentTokenResolverRegistry,
   resolveFlightDocumentSceneTokens,
-} from './flightDocumentSceneTokens';
+} from './flightDocumentSceneTokens.ts';
 import {
   explainFlightDocumentSceneTokenSubstitution,
   substituteFlightDocumentSceneTokens,
-} from './substituteFlightDocumentSceneTokens';
+} from './substituteFlightDocumentSceneTokens.ts';
 
 describe('explainFlightDocumentSceneTokenSubstitution', () => {
   it('names a reference no resolved token covers, with the field that carries it', () => {

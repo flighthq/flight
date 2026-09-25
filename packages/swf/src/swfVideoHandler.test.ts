@@ -1,4 +1,4 @@
-import { swfVideoHandler } from './swfVideoHandler';
+import { swfVideoHandler } from './swfVideoHandler.ts';
 
 describe('swfVideoHandler', () => {
   it('claims the video tag', () => {

@@ -1,5 +1,5 @@
-import { createWebSurfaceFromElement } from './webSurfaceHandle';
-import { appendWebSurface, getWebSurfaceCanvas, getWebSurfaceElement } from './webSurfacePresentation';
+import { createWebSurfaceFromElement } from './webSurfaceHandle.ts';
+import { appendWebSurface, getWebSurfaceCanvas, getWebSurfaceElement } from './webSurfacePresentation.ts';
 
 afterEach(() => document.body.replaceChildren());
 

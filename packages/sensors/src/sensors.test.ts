@@ -51,7 +51,7 @@ import {
   initializeSensors,
   isSensorsSupported,
   requestSensorsPermission,
-} from './sensors';
+} from './sensors.ts';
 
 function fakeBackend(): HostSensorsCapability & {
   fireMotion: (acceleration: MotionReading, rotationRate: RotationRateReading) => void;

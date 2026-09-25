@@ -22,7 +22,7 @@ import {
   createWhiteBalanceColorMatrix,
   fuseColorMatrices,
   multiplyColorMatrix,
-} from './colorMatrixMath';
+} from './colorMatrixMath.ts';
 
 const WHITE = 0xffffffff;
 const BLACK = 0x000000ff;

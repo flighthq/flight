@@ -15,7 +15,7 @@ import {
   initializePhysics3DGeneric6DofJoint,
   initializePhysics3DHingeJoint,
   initializePhysics3DSliderJoint,
-} from './jointFactories';
+} from './jointFactories.ts';
 import {
   Physics3DBallAndSocketJointKind,
   Physics3DConeTwistJointKind,
@@ -24,7 +24,7 @@ import {
   Physics3DGeneric6DofJointKind,
   Physics3DHingeJointKind,
   Physics3DSliderJointKind,
-} from './joints';
+} from './joints.ts';
 
 describe('createPhysics3DBallAndSocketJoint', () => {
   it('stamps its kind and zeroes every accumulator', () => {

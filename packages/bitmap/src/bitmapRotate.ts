@@ -1,7 +1,7 @@
 import type { BitmapEdgeMode, BitmapRegion, BitmapResizeMode } from '@flighthq/types/contract';
 
-import { invalidateBitmap } from './bitmap';
-import { transformBitmap } from './bitmapAffine';
+import { invalidateBitmap } from './bitmap.ts';
+import { transformBitmap } from './bitmapAffine.ts';
 
 /**
  * Rotates the `source` region by `angle` radians into the `dest` region, around

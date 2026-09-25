@@ -1,6 +1,6 @@
 import type { StepPosition } from '@flighthq/types/contract';
 
-import { easeSteps, setEasingStepsGuard } from './easeSteps';
+import { easeSteps, setEasingStepsGuard } from './easeSteps.ts';
 
 describe('easeSteps', () => {
   it('jumpEnd holds at 0 first and reaches 1 only at t=1', () => {

@@ -3,10 +3,10 @@ import { getOrCreateRenderProxy2D } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import { BlendMode } from '@flighthq/types/contract';
 
-import { enableDomCssFilterSupport, setDomCssFilter } from './domCSSFilterBinding';
-import { enableDomBlendModeSupport } from './domMaterials';
-import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState';
-import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle';
+import { enableDomCssFilterSupport, setDomCssFilter } from './domCSSFilterBinding.ts';
+import { enableDomBlendModeSupport } from './domMaterials.ts';
+import { createDomRenderState, getDomRenderStateRuntime } from './domRenderState.ts';
+import { applyDomStyle, prepareDomElement, setDomRendererElement } from './domStyle.ts';
 
 function makeState() {
   const container = document.createElement('div');

@@ -1,4 +1,4 @@
-import { explainSpineBinaryVersionFailure, getSpineBinaryVersion } from './spineBinaryVersion';
+import { explainSpineBinaryVersionFailure, getSpineBinaryVersion } from './spineBinaryVersion.ts';
 
 // ★ THE 4.x FIXTURES BELOW ARE HAND-BUILT, AND THE 3.8 ONE IS THE REASON TO SAY SO.
 // The v4 layout here was checked against two real 4.1.17 `.skel` exports fetched outside the repo (never

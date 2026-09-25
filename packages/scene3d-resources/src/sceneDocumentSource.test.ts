@@ -13,7 +13,7 @@ import {
   loadScene3DDocumentBytesFromUrl,
   loadScene3DDocumentTextFromUrl,
   setScene3DDocumentResourceBasePathFromUrl,
-} from './sceneDocumentSource';
+} from './sceneDocumentSource.ts';
 
 function fakeNetHost(backend: HostNetCapability): {
   readonly net: { readonly http: HostNetCapability };

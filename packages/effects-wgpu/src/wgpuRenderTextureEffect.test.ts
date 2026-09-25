@@ -14,13 +14,13 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import type { Effect, WgpuEffectRunner } from '@flighthq/types/contract';
 
-import { wgpuBlurEffectRunner } from './wgpuBlurEffect';
-import { getWgpuEffectRunner, registerWgpuEffect } from './wgpuEffectRegistry';
+import { wgpuBlurEffectRunner } from './wgpuBlurEffect.ts';
+import { getWgpuEffectRunner, registerWgpuEffect } from './wgpuEffectRegistry.ts';
 import {
   applyWgpuEffectsToRenderTexture,
   explainWgpuEffectApplication,
   setWgpuEffectApplicationGuard,
-} from './wgpuRenderTextureEffect';
+} from './wgpuRenderTextureEffect.ts';
 
 beforeAll(() => installWgpuMock());
 

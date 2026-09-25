@@ -9,7 +9,7 @@ import type {
   WgpuRenderTexturePool,
 } from '@flighthq/types/contract';
 
-import { getWgpuEffectRunner, isWgpuEffectResolvable } from './wgpuEffectRegistry';
+import { getWgpuEffectRunner, isWgpuEffectResolvable } from './wgpuEffectRegistry.ts';
 
 // Encodes the registered members of a chain from one completed RenderTexture into another. The
 // caller owns an active command encoder and supplies one distinct scratch lease. Parity chooses the

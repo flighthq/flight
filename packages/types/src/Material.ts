@@ -1,4 +1,4 @@
-import type { Entity, EntityWithoutRuntime, Kind } from './Entity';
+import type { Entity, EntityWithoutRuntime, Kind } from './Entity.ts';
 
 // Serializable per-node rendering intent. Plain data only — named fields, no GPU
 // handles and no function references — so a material round-trips through scene

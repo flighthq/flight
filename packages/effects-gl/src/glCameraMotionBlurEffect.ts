@@ -6,8 +6,8 @@ import type {
   GlTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Camera3D motion blur: a real single-pass radial/zoom blur scaled by intensity — smears each sample
 // toward the screen center. A legitimate 2D effect on its own. Two richer variants are 2D-native

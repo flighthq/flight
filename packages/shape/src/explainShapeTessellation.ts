@@ -1,8 +1,8 @@
 import type { ShapeCommandToken, ShapeTessellationExplanation } from '@flighthq/types/contract';
 
-import { hasNonSolidShapeFill } from './shapeFill';
-import { hasNonSolidShapeStroke } from './shapeStroke';
-import { getShapeStrokeOutlineRegions } from './shapeStrokeOutline';
+import { hasNonSolidShapeFill } from './shapeFill.ts';
+import { hasNonSolidShapeStroke } from './shapeStroke.ts';
+import { getShapeStrokeOutlineRegions } from './shapeStrokeOutline.ts';
 
 // Reports whether a command stream can be drawn as mesh regions, and what stops it when it cannot.
 //

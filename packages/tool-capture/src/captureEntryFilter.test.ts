@@ -1,4 +1,4 @@
-import { assertCaptureSelectionNotEmpty, selectCaptureEntriesByName } from './captureEntryFilter';
+import { assertCaptureSelectionNotEmpty, selectCaptureEntriesByName } from './captureEntryFilter.ts';
 
 const entries = [
   { name: 'material-depth' },

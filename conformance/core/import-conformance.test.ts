@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { FIXTURE_RELEASE_TAG } from '../../scripts/fixtures';
+import { FIXTURE_RELEASE_TAG } from '../../scripts/fixtures.ts';
 
 describe('import-conformance CLI', () => {
   it(

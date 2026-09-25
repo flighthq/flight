@@ -8,7 +8,7 @@ import {
   findFunctionalSceneClearColor,
   formatFunctionalParityConfoundReport,
   readFunctionalSceneSources,
-} from './functionalParityConfounds';
+} from './functionalParityConfounds.ts';
 
 describe('describeFunctionalParityFixtureState', () => {
   it('distinguishes shared, aligned, different, and undeclared fixtures', () => {

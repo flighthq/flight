@@ -7,7 +7,7 @@ import type {
   TextureAtlasAsepriteDocument,
 } from '@flighthq/types/contract';
 
-import { readTextureAtlasScale, resetTextureAtlasPageMeta } from './textureAtlasPageMeta';
+import { readTextureAtlasScale, resetTextureAtlasPageMeta } from './textureAtlasPageMeta.ts';
 
 // Convenience variant that accepts an already-parsed Aseprite document object.
 export function parseTextureAtlasAsepriteDocument(

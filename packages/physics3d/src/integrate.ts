@@ -9,7 +9,7 @@ import {
   TENSOR_YY,
   TENSOR_YZ,
   TENSOR_ZZ,
-} from './symmetricTensor';
+} from './symmetricTensor.ts';
 
 // Integration: turning forces into velocities and velocities into poses.
 //

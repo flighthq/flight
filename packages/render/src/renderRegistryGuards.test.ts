@@ -2,15 +2,15 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import { emitSignal } from '@flighthq/signals/contract';
 import { RenderRegistryTable } from '@flighthq/types/contract';
 
-import { registerNodeRenderer } from './renderer';
-import { createRenderProxy } from './renderProxy';
+import { registerNodeRenderer } from './renderer.ts';
+import { createRenderProxy } from './renderProxy.ts';
 import {
   areRenderRegistriesGuardsEnabled,
   enableRenderRegistriesGuards,
   explainRenderRegistriesMisses,
-} from './renderRegistryGuards';
-import { enableRenderRegistrySignals } from './renderRegistrySignals';
-import { createRenderState } from './renderState';
+} from './renderRegistryGuards.ts';
+import { enableRenderRegistrySignals } from './renderRegistrySignals.ts';
+import { createRenderState } from './renderState.ts';
 
 describe('areRenderRegistriesGuardsEnabled', () => {
   it('reports whether the state-local registry guard is enabled', () => {

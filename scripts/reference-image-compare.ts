@@ -19,7 +19,7 @@
 // distribution, so copying either number across "would look principled and mean nothing". The caller
 // passes a calibrated `channelTolerance` from a published comparison policy, and the calibration run that
 // chooses it is part of the work, not a default anyone can inherit by accident.
-import { getBitmapMismatch } from '../packages/bitmap/src/bitmapCompare.js';
+import { getBitmapMismatch } from '../packages/bitmap/src/bitmapCompare.ts';
 
 export interface ReferenceImageCellComparison {
   /** From getBitmapMismatch. Do NOT inherit the fingerprint-space tolerances (§2). */

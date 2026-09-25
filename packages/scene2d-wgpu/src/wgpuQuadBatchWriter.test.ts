@@ -4,7 +4,7 @@ import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-
 import type { ColorScaleBias, Material, WgpuTextureEntry } from '@flighthq/types/contract';
 import { BlendMode, EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature';
+import { registerWgpuColorAdjustmentMaterialFeature } from './wgpuColorAdjustmentMaterialFeature.ts';
 import {
   ensureWgpuQuadBatchResources,
   flushWgpuQuadBatchWriter,
@@ -16,9 +16,9 @@ import {
   resetWgpuQuadBatchWriterBufferPool,
   writeWgpuQuadBatchAffineInstance,
   writeWgpuQuadBatchInstance,
-} from './wgpuQuadBatchWriter';
-import { getWgpuRenderStats, resetWgpuRenderStats } from './wgpuRenderStats';
-import { standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial';
+} from './wgpuQuadBatchWriter.ts';
+import { getWgpuRenderStats, resetWgpuRenderStats } from './wgpuRenderStats.ts';
+import { standardWgpuQuadMaterialRenderer } from './wgpuStandardMaterial.ts';
 
 beforeAll(() => {
   installWgpuMock();

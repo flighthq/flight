@@ -1,4 +1,8 @@
-import { applyPixelateEffectToWgpu, wgpuPixelateEffectRunner, registerWgpuPixelateEffect } from './wgpuPixelateEffect';
+import {
+  applyPixelateEffectToWgpu,
+  wgpuPixelateEffectRunner,
+  registerWgpuPixelateEffect,
+} from './wgpuPixelateEffect.ts';
 
 describe('applyPixelateEffectToWgpu', () => {
   it('is a function', () => {

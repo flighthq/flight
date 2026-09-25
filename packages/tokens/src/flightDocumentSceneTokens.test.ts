@@ -12,7 +12,7 @@ import {
   explainFlightDocumentSceneTokenResolution,
   initializeFlightDocumentTokenResolverRegistry,
   resolveFlightDocumentSceneTokens,
-} from './flightDocumentSceneTokens';
+} from './flightDocumentSceneTokens.ts';
 
 describe('createFlightDocumentTokenResolverRegistry', () => {
   it('admits each built-in kind only for the values that kind describes', () => {

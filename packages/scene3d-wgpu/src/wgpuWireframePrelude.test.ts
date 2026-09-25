@@ -1,13 +1,13 @@
 import type { LinearColor } from '@flighthq/types/contract';
 
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper.ts';
 import {
   bindWgpuWireframeColor,
   compileWgpuWireframePipeline,
   ensureWgpuWireframePipeline,
   getWgpuWireframeModuleSource,
-} from './wgpuWireframePrelude';
+} from './wgpuWireframePrelude.ts';
 
 const COLOR: LinearColor = [1, 0, 0, 1];
 

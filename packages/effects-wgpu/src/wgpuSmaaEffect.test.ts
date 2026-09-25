@@ -1,4 +1,4 @@
-import { applySmaaEffectToWgpu, wgpuSmaaEffectRunner, registerWgpuSmaaEffect } from './wgpuSmaaEffect';
+import { applySmaaEffectToWgpu, wgpuSmaaEffectRunner, registerWgpuSmaaEffect } from './wgpuSmaaEffect.ts';
 
 describe('applySmaaEffectToWgpu', () => {
   it('is a function', () => {

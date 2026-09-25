@@ -1,8 +1,8 @@
 import type { Matrix3 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { geometryPoolReleaseGuard } from './geometryPoolGuards';
-import { createMatrix3, setMatrix3Identity } from './matrix3';
+import { geometryPoolReleaseGuard } from './geometryPoolGuards.ts';
+import { createMatrix3, setMatrix3Identity } from './matrix3.ts';
 
 export function acquireIdentityMatrix3(): Matrix3 {
   const m = acquireMatrix3();

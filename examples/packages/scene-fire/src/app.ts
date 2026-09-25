@@ -47,7 +47,7 @@ import {
 } from '@flighthq/sdk/camera-controls';
 import { createNode3D } from '@flighthq/sdk/scene3d';
 
-import { render, scale } from './render';
+import { render, scale } from './render.ts';
 
 interface ParticleLayer {
   config: ParticleEmitterConfig;

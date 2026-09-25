@@ -16,7 +16,7 @@ import {
   parseXmlDocument,
 } from '@flighthq/xml/contract';
 
-import { buildBitmapFontFromRecord, reportDroppedBitmapFontRecords } from './bitmapFontRecord';
+import { buildBitmapFontFromRecord, reportDroppedBitmapFontRecords } from './bitmapFontRecord.ts';
 
 // Parses the XML AngelCode/BMFont `.fnt` variant into a `BitmapFont`. The document is
 // `<font><info/><common/><pages><page/></pages><chars><char/></chars><kernings><kerning/></kernings></font>`

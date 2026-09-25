@@ -1,5 +1,5 @@
-import type { TiledProperty } from './TiledProperty';
-import type { Vector2Like } from './Vector2';
+import type { TiledProperty } from './TiledProperty.ts';
+import type { Vector2Like } from './Vector2.ts';
 
 // One object from a Tiled object group (`<object>` in TMX, an `objects[]` entry in TMJ). The shape
 // is a faithful union of Tiled's mutually-exclusive object geometries expressed as optional markers:

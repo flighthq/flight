@@ -8,7 +8,7 @@ import {
   createScene2DSlotReference,
   initializeScene2DDocument,
   initializeScene2DSlotReference,
-} from './scene2DDocument';
+} from './scene2DDocument.ts';
 
 describe('createScene2DDocument', () => {
   it('retains the unattached root and all three enumerable contracts', () => {

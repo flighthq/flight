@@ -16,4 +16,4 @@ export {
   setProtocolSchemeAsDefault,
   unregisterProtocolScheme,
   unregisterProtocolSchemes,
-} from './contract';
+} from './contract.ts';

@@ -7,8 +7,8 @@ import type {
   PathOffsetOptions,
 } from '@flighthq/types/contract';
 
-import { offsetPath } from './offsetPath';
-import { simplifyPath } from './simplifyPath';
+import { offsetPath } from './offsetPath.ts';
+import { simplifyPath } from './simplifyPath.ts';
 
 export function explainOffsetPath(
   pathBooleanKernel: Readonly<PathBooleanKernel>,

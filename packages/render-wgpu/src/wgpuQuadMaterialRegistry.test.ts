@@ -7,8 +7,8 @@ import {
   getWgpuQuadMaterialRenderer,
   registerWgpuQuadMaterialRenderer,
   resolveWgpuQuadMaterialRenderer,
-} from './wgpuQuadMaterialRegistry';
-import { createWgpuDeviceState, createWgpuRenderStateRuntime, getWgpuRenderStateRuntime } from './wgpuRenderState';
+} from './wgpuQuadMaterialRegistry.ts';
+import { createWgpuDeviceState, createWgpuRenderStateRuntime, getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
 
 const TestKind = 'TestMaterial';
 const testRenderer: WgpuQuadMaterialRenderer = {

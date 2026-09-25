@@ -6,8 +6,8 @@ import type {
   RenderState,
 } from '@flighthq/types/contract';
 
-import { getRenderProxy2D } from './renderProxy';
-import { getRenderStateRuntime } from './renderState';
+import { getRenderProxy2D } from './renderProxy.ts';
+import { getRenderStateRuntime } from './renderState.ts';
 
 // Recomputes why `source` would or would not draw against `state`, and returns it as plain data. Pure:
 // reads only, allocates only the returned record, never mutates state (in particular never creates a

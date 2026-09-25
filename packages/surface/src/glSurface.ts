@@ -8,7 +8,7 @@ import type {
   NativeSurfaceHandle,
 } from '@flighthq/types/contract';
 
-import { allocateSurface } from './surface';
+import { allocateSurface } from './surface.ts';
 
 // Allocates a drawable in the given window, sized in device pixels, and acquires a GL context on it. The
 // window is what the host needs to make a drawable at all — the document on web, the SDL_Window on SDL —

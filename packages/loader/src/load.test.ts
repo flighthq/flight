@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { loadBytes, loadText } from './load';
+import { loadBytes, loadText } from './load.ts';
 
 const host = (response: any) => ({ net: { http: { sendNetRequest: async () => response } } }) as any;
 describe('loadBytes', () => {

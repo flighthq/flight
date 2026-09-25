@@ -2,7 +2,7 @@ import {
   applyGradientGlowEffectToGl,
   glGradientGlowEffectRunner,
   registerGlGradientGlowEffect,
-} from './glGradientGlowEffect';
+} from './glGradientGlowEffect.ts';
 
 describe('applyGradientGlowEffectToGl', () => {
   it('is a function', () => {

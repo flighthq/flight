@@ -1,7 +1,7 @@
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { geometryPoolReleaseGuard, setGeometryPoolReleaseGuard } from './geometryPoolGuards';
+import { geometryPoolReleaseGuard, setGeometryPoolReleaseGuard } from './geometryPoolGuards.ts';
 
 type GeometryPoolReleaseFunction = Parameters<NonNullable<typeof geometryPoolReleaseGuard>>[0];
 

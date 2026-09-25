@@ -35,7 +35,7 @@ import {
   setNodeHitTestEnabled,
 } from '@flighthq/sdk';
 
-import { canvas, render, scale } from './render';
+import { canvas, render, scale } from './render.ts';
 
 const SAMPLE_RATE = 44100;
 

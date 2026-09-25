@@ -1,4 +1,4 @@
-import type { Effect } from './Effect';
+import type { Effect } from './Effect.ts';
 
 // Digital glitch: horizontal block tears (rows displaced by a per-block hash), RGB channel separation,
 // and occasional bright scanline corruption. `seed` animates it frame to frame (data-moshing look).

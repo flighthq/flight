@@ -1,4 +1,4 @@
-import { createFilmGrainEffect, initializeFilmGrainEffect } from './filmGrainEffect';
+import { createFilmGrainEffect, initializeFilmGrainEffect } from './filmGrainEffect.ts';
 
 describe('createFilmGrainEffect', () => {
   it('tags the intent type', () => {

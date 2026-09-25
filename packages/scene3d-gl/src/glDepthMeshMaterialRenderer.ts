@@ -10,10 +10,10 @@ import type {
 } from '@flighthq/types/contract';
 import { DepthMaterialKind } from '@flighthq/types/contract';
 
-import { bindGlDebugRange, ensureGlDebugProgram } from './glDebugPrelude';
-import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshViewProjection } from './glMeshProgram';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
+import { bindGlDebugRange, ensureGlDebugProgram } from './glDebugPrelude.ts';
+import { registerGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { beginGlMeshDraw, drawGlMeshSubset, setGlMeshViewProjection } from './glMeshProgram.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // The built-in Depth forward renderer (GlMeshMaterialRenderer for DepthMaterialKind). A lighting-
 // independent debug/utility pass material: bind selects the debug program in depth mode, uploads the

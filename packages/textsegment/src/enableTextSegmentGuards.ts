@@ -1,7 +1,7 @@
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setTextSegmentGuard } from './textSegmentGuards';
+import { setTextSegmentGuard } from './textSegmentGuards.ts';
 
 /** Uninstalls the guard installed by enableTextSegmentGuards. */
 export function disableTextSegmentGuards(): void {

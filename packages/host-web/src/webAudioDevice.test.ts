@@ -7,7 +7,7 @@ import {
   getAudioSourceGainNode,
   hasAudioDeviceWebNodeAccess,
   webHostAudioDevice,
-} from './webAudioDevice';
+} from './webAudioDevice.ts';
 
 describe('getAudioDeviceContext', () => {
   it('resolves the context behind a device handle for a web-bound caller', () => {

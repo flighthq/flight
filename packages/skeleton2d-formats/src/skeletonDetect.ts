@@ -1,8 +1,8 @@
 import { getKindMapKeys, withKindMapEntry, withoutKindMapEntry } from '@flighthq/registry/contract';
 import type { ImportDiagnostic, Kind, Skeleton2DImport } from '@flighthq/types/contract';
 
-import { parseDragonBonesSkeleton } from './dragonBonesParse';
-import { parseSpineSkeleton } from './spineParse';
+import { parseDragonBonesSkeleton } from './dragonBonesParse.ts';
+import { parseSpineSkeleton } from './spineParse.ts';
 
 // The open skeleton-format registry: `kind → { detect, parse }`, last-write-wins, so a caller can register
 // a custom (vendor-prefixed) format and importing one parser excludes the rest. Built lazily on first use

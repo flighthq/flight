@@ -34,9 +34,9 @@ import type {
 } from '@flighthq/types/contract';
 import { BlendMode, StandardMaterialKind, MAX_FORWARD_LIGHTS } from '@flighthq/types/contract';
 
-import { resolveGlMeshMaterialRenderer } from './glMeshMaterialRegistry';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { getGlScene3DViewportAspect } from './glViewportAspect';
+import { resolveGlMeshMaterialRenderer } from './glMeshMaterialRegistry.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { getGlScene3DViewportAspect } from './glViewportAspect.ts';
 
 // True when a mesh should be GPU-skinned this draw: it carries a skin and its geometry has the joints0/
 // weights0 channels. The bone palette is an RGBA32F data texture read via texelFetch, so the joint count

@@ -1,12 +1,12 @@
 import { StandardPbrMaterialKind } from '@flighthq/types/contract';
 
-import { createPhongMaterial } from './classicMaterials';
+import { createPhongMaterial } from './classicMaterials.ts';
 import {
   convertPhongToStandardPbrMaterial,
   getPbrMetallicFromPhongSpecular,
   getPbrRoughnessFromPhongShininess,
   getPhongToPbrLightExposure,
-} from './phongToPbr';
+} from './phongToPbr.ts';
 
 describe('convertPhongToStandardPbrMaterial', () => {
   it('maps a neutral Phong material to a plausible PBR material', () => {

@@ -1,4 +1,4 @@
-import { convertBitmapPixelOrder, premultiplyBitmapPixels, unpremultiplyBitmapPixels } from './bitmapFormat';
+import { convertBitmapPixelOrder, premultiplyBitmapPixels, unpremultiplyBitmapPixels } from './bitmapFormat.ts';
 
 describe('convertBitmapPixelOrder', () => {
   it('is a no-op when from === to and out !== source', () => {

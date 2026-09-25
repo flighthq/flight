@@ -3,8 +3,8 @@ import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture/contr
 import type { HostVideoCapability, LinearColor, WgpuUnlitDefineKey } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper.ts';
 import {
   bindWgpuUnlitSurface,
   bindWgpuUnlitVideoSurface,
@@ -12,7 +12,7 @@ import {
   compileWgpuUnlitPipeline,
   ensureWgpuUnlitPipeline,
   getWgpuUnlitModuleSourceForKey,
-} from './wgpuUnlitPrelude';
+} from './wgpuUnlitPrelude.ts';
 
 const FLAT: WgpuUnlitDefineKey = { alphaMaskEnabled: false, doubleSided: false, hasColorMap: false };
 const COLOR: LinearColor = [0.5, 0.25, 0.1, 1];

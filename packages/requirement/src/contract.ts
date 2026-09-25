@@ -1,3 +1,3 @@
-export * from './requirementCollector';
-export * from './requirementSet';
-export { initializeRequirementSet } from './requirementSet';
+export * from './requirementCollector.ts';
+export * from './requirementSet.ts';
+export { initializeRequirementSet } from './requirementSet.ts';

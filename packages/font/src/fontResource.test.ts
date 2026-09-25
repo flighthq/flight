@@ -1,4 +1,4 @@
-import { createFontResource, initializeFontResource } from './fontResource';
+import { createFontResource, initializeFontResource } from './fontResource.ts';
 
 describe('createFontResource', () => {
   it('creates a FontResource with the given family name', () => {

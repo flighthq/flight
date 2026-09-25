@@ -5,7 +5,7 @@ import {
   decodeTiledCsvLayer,
   explainTiledLayerData,
   setTiledLayerDataGuard,
-} from './tiledLayerData';
+} from './tiledLayerData.ts';
 
 // GIDs [1, 5, 0x80000001, 6] as little-endian 32-bit ints.
 const gids = [1, 5, 0x80000001, 6];

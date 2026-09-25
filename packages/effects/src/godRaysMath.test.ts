@@ -1,10 +1,10 @@
-import { createGodRaysEffect } from './godRaysEffect';
+import { createGodRaysEffect } from './godRaysEffect.ts';
 import {
   computeGodRaysAccumulationScale,
   computeGodRaysLightCenter,
   computeGodRaysSampleWeight,
   computeGodRaysStepSize,
-} from './godRaysMath';
+} from './godRaysMath.ts';
 
 describe('computeGodRaysAccumulationScale', () => {
   it('is finite and positive for default parameters', () => {

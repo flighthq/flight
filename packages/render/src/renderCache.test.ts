@@ -14,10 +14,10 @@ import {
   isRenderCacheAdapter,
   registerRenderCacheNodeRenderer,
   useRenderCache,
-} from './renderCache';
-import { createRenderProxy2D } from './renderProxy';
-import { getRenderProxyAdapter } from './renderProxyAdapter';
-import { createRenderState, getRenderStateRuntime } from './renderState';
+} from './renderCache.ts';
+import { createRenderProxy2D } from './renderProxy.ts';
+import { getRenderProxyAdapter } from './renderProxyAdapter.ts';
+import { createRenderState, getRenderStateRuntime } from './renderState.ts';
 
 describe('createRenderCache', () => {
   it('creates a handle with the render cache kind and a transform', () => {

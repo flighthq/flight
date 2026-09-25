@@ -4,9 +4,9 @@ import { createScale9Sprite, createSprite, createScene2D } from '@flighthq/scene
 import { createMorphShape, createShape } from '@flighthq/shape/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { findGraphHitTarget } from './hitTests';
-import { setNodeHitTestEnabled } from './nodeInteractionState';
-import { registerDefaultHitTests } from './registerDefaultHitTests';
+import { findGraphHitTarget } from './hitTests.ts';
+import { setNodeHitTestEnabled } from './nodeInteractionState.ts';
+import { registerDefaultHitTests } from './registerDefaultHitTests.ts';
 
 describe('registerDefaultHitTests', () => {
   it('registers all built-in kinds so findGraphHitTarget resolves them', () => {

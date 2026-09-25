@@ -2,9 +2,9 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { TextureSource } from '@flighthq/types/contract';
 
-import { explainGlTextureResolution } from './explainGlTextureResolution';
-import { createGlState } from './glTestHelper';
-import { registerGlTextureResolver } from './glTextureResolver';
+import { explainGlTextureResolution } from './explainGlTextureResolution.ts';
+import { createGlState } from './glTestHelper.ts';
+import { registerGlTextureResolver } from './glTextureResolver.ts';
 
 describe('explainGlTextureResolution', () => {
   it('distinguishes missing kinds, missing resolvers, and registered resolvers', () => {

@@ -1,4 +1,4 @@
-import { ceilTo, euclideanMod, floorTo, fract, roundTo } from './rounding';
+import { ceilTo, euclideanMod, floorTo, fract, roundTo } from './rounding.ts';
 
 describe('ceilTo', () => {
   it('rounds up to the nearest step', () => {

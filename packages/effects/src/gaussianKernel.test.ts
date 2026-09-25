@@ -1,4 +1,4 @@
-import { computeGaussianKernelWeights, getGaussianKernelSize } from './gaussianKernel';
+import { computeGaussianKernelWeights, getGaussianKernelSize } from './gaussianKernel.ts';
 
 describe('computeGaussianKernelWeights', () => {
   const sumOf = (weights: ReadonlyArray<number>): number => weights.reduce((total, weight) => total + weight, 0);

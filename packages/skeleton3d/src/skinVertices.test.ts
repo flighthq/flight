@@ -1,6 +1,6 @@
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry/contract';
 
-import { skinTangents, skinVertices } from './skinVertices';
+import { skinTangents, skinVertices } from './skinVertices.ts';
 
 // The normal palette a real pose would carry: the inverse-transpose of each joint's upper 3x3. Derived
 // here rather than hand-written so a test cannot accidentally assert against a palette that no pose

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getPermissionState, getPermissionStates, requestPermission } from './permission';
+import { getPermissionState, getPermissionStates, requestPermission } from './permission.ts';
 
 describe('getPermissionState', () => {
   it('remains a named export with its permanent behavior suite colocated', () => {

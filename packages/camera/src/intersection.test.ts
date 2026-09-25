@@ -1,8 +1,8 @@
 import { createBoundingSphere, createPlane, createRay3D, createVector3 } from '@flighthq/geometry/contract';
 
-import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from './camera';
-import { getCamera3DRayThroughBoundingSphere, intersectCamera3DRayWithPlane } from './intersection';
-import { createPerspectiveProjection } from './projection';
+import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from './camera.ts';
+import { getCamera3DRayThroughBoundingSphere, intersectCamera3DRayWithPlane } from './intersection.ts';
+import { createPerspectiveProjection } from './projection.ts';
 
 function makeCamera() {
   const camera = createCamera3D({

@@ -1,4 +1,4 @@
-import type { GlMeshProgram } from './GlMeshProgram';
+import type { GlMeshProgram } from './GlMeshProgram.ts';
 
 // A compiled wireframe program. Extends GlMeshProgram (model + view-projection; locNormalMatrix is
 // null — wireframe has no normals) with line-color and optional alpha-cutoff uniforms.

@@ -1,13 +1,13 @@
 import { PathCommand } from '@flighthq/types/contract';
 
-import { containsPathPoint } from './containsPathPoint';
+import { containsPathPoint } from './containsPathPoint.ts';
 import {
   appendPathCubicCurveTo,
   appendPathQuadraticCurveTo,
   appendPathLineTo,
   appendPathMoveTo,
   createPath,
-} from './path';
+} from './path.ts';
 
 describe('containsPathPoint', () => {
   it('returns true for a point inside a convex polygon (nonZero)', () => {

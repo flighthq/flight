@@ -7,12 +7,12 @@ import type {
   GlRenderViewResources,
 } from '@flighthq/types/contract';
 
-import { createGlRenderState, destroyGlRenderState, invalidateGlRenderStateCache } from './glRenderState';
+import { createGlRenderState, destroyGlRenderState, invalidateGlRenderStateCache } from './glRenderState.ts';
 import {
   createGlTextureRenderTarget,
   destroyGlTextureRenderTarget,
   resizeGlTextureRenderTarget,
-} from './glRenderTarget';
+} from './glRenderTarget.ts';
 
 // The render-layer half of a GL application view. A caller acquires a context (host.gl for a
 // provider-bound target) and passes it here; the window half and the resize reconciliation belong to

@@ -1,7 +1,7 @@
 import { connectSignal } from '@flighthq/signals/contract';
 import type { Tween, TweenManager, TweenOptions } from '@flighthq/types/contract';
 
-import { addTweenToManager, makeTween } from './internal';
+import { addTweenToManager, makeTween } from './internal.ts';
 
 type ColorComponents = { b: number; g: number; r: number };
 

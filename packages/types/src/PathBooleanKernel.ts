@@ -1,7 +1,7 @@
-import type { Entity } from './Entity';
-import type { PathBooleanContour } from './PathBooleanContour';
-import type { PathBooleanFillRule } from './PathBooleanFillRule';
-import type { PathBooleanOperation } from './PathBooleanOperation';
+import type { Entity } from './Entity.ts';
+import type { PathBooleanContour } from './PathBooleanContour.ts';
+import type { PathBooleanFillRule } from './PathBooleanFillRule.ts';
+import type { PathBooleanOperation } from './PathBooleanOperation.ts';
 
 // The swappable engine behind the boolean path operations. A kernel takes two sets of polygon contours
 // (subject and clip), a `PathBooleanOperation`, and a `PathBooleanFillRule`, and returns the combined

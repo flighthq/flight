@@ -29,8 +29,8 @@ import {
   prepareWgpuQuadBatchWrite,
   recordWgpuQuadBatchColorScaleBias,
   writeWgpuQuadBatchInstance,
-} from './wgpuQuadBatchWriter';
-import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData';
+} from './wgpuQuadBatchWriter.ts';
+import { createWgpuRendererData, getWgpuRendererData } from './wgpuRendererData.ts';
 
 interface WgpuTextLabelData extends RendererData {
   allocH: number;

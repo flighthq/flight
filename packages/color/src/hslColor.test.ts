@@ -1,4 +1,4 @@
-import { allocateHslColor, hslToRgb, rgbToHsl } from './hslColor';
+import { allocateHslColor, hslToRgb, rgbToHsl } from './hslColor.ts';
 
 describe('allocateHslColor', () => {
   it('allocates a zeroed three-component HSL color', () => {

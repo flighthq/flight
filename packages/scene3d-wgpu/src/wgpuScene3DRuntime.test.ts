@@ -1,9 +1,9 @@
 import type { WgpuRenderStateRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
-import { registerWgpuGpuSkinning } from './wgpuSkinPalette';
+import { getWgpuScene3DRuntime, getWgpuSkinningAdapter } from './wgpuScene3DRuntime.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
+import { registerWgpuGpuSkinning } from './wgpuSkinPalette.ts';
 
 describe('getWgpuScene3DRuntime', () => {
   it('lazily creates one runtime per state and returns the same instance', () => {

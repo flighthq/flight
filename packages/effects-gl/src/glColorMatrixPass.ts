@@ -1,7 +1,7 @@
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import { getGlEffectProgram } from './glEffectProgramCache';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
 
 // Generic pointwise color-matrix pass — the single fold-in realization for the whole matrix-tier
 // Adjustment family. A run of consecutive matrix-tier adjustments fuses to ONE 4×5 matrix (in the

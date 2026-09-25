@@ -9,7 +9,7 @@ import {
   particleCurveToKeyframes,
   sampleParticleColorCurve,
   sampleParticleCurve,
-} from './curve';
+} from './curve.ts';
 
 describe('buildParticleColorCurve', () => {
   it('bakes an RGB function into an interleaved LUT', () => {

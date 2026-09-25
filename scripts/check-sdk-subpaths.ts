@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
-import { formatGateProvenance, readGateTreeState } from './gate-provenance';
+import { formatGateProvenance, readGateTreeState } from './gate-provenance.ts';
 
 export type SdkSubpathDefectKind = 'barrel-content' | 'barrel-missing' | 'exports-entry' | 'exports-orphan';
 

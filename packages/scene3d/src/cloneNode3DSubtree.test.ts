@@ -4,9 +4,9 @@ import { addNodeChild, getNodeChildCount, getNodeChildren } from '@flighthq/node
 import type { Material } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { cloneNode3DSubtree } from './cloneNode3DSubtree';
-import { createMesh, isMesh } from './mesh';
-import { createNode3D } from './sceneNode';
+import { cloneNode3DSubtree } from './cloneNode3DSubtree.ts';
+import { createMesh, isMesh } from './mesh.ts';
+import { createNode3D } from './sceneNode.ts';
 
 describe('cloneNode3DSubtree', () => {
   it('clones a plain Node3D', () => {

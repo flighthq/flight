@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { compactBidiClassKernel } from './bidiClassKernel';
-import { reorderBidiLine } from './reorderBidiLine';
-import { resolveBidiLevels } from './resolveBidiLevels';
+import { compactBidiClassKernel } from './bidiClassKernel.ts';
+import { reorderBidiLine } from './reorderBidiLine.ts';
+import { resolveBidiLevels } from './resolveBidiLevels.ts';
 
 const kernel = compactBidiClassKernel;
 

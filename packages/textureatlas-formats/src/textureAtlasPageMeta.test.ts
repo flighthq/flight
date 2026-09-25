@@ -1,6 +1,6 @@
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
 
-import { readTextureAtlasScale, resetTextureAtlasPageMeta } from './textureAtlasPageMeta';
+import { readTextureAtlasScale, resetTextureAtlasPageMeta } from './textureAtlasPageMeta.ts';
 
 describe('readTextureAtlasScale', () => {
   it('reads the string TexturePacker writes and the number a hand-built document may carry', () => {

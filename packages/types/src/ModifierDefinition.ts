@@ -1,6 +1,6 @@
-import type { Modifier } from './Modifier';
-import type { ModifierKind } from './ModifierKind';
-import type { ModifierSlot } from './ModifierSlot';
+import type { Modifier } from './Modifier.ts';
+import type { ModifierKind } from './ModifierKind.ts';
+import type { ModifierSlot } from './ModifierSlot.ts';
 
 // The substrate-agnostic registration record for one modifier kind: where it injects (`slot`) and
 // how its descriptor's compile-time structure contributes to the define-key (`getDefineSignature`).

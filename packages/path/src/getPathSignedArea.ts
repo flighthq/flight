@@ -1,6 +1,6 @@
 import type { Path } from '@flighthq/types/contract';
 
-import { flattenPath } from './flattenPath';
+import { flattenPath } from './flattenPath.ts';
 
 // Returns the orientation of the path's primary (first) contour: 'ccw', 'cw', or 'degenerate'
 // (for zero-area paths such as a point or a straight line).

@@ -1,6 +1,6 @@
-import { setGlPbrTransmissionSceneColor } from './glPbrTransmissionSceneColor';
-import { getGlScene3DRuntime } from './glScene3DRuntime';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+import { setGlPbrTransmissionSceneColor } from './glPbrTransmissionSceneColor.ts';
+import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 describe('setGlPbrTransmissionSceneColor', () => {
   it('stores and clears the caller-owned transmission input', () => {

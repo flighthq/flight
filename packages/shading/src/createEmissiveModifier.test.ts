@@ -2,7 +2,7 @@ import type { Texture } from '@flighthq/types/contract';
 import { EmissiveModifierFacing, EmissiveModifierKind, ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createEmissiveModifier, initializeEmissiveModifier } from './createEmissiveModifier';
+import { createEmissiveModifier, initializeEmissiveModifier } from './createEmissiveModifier.ts';
 
 describe('createEmissiveModifier', () => {
   it('sets the kind and Emissive slot', () => {

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import type { BindingPattern, Declaration, ModuleExportName, VariableDeclarator } from 'oxc-parser';
 
-import { getParsedOxcSource } from './oxc-source';
+import { getParsedOxcSource } from './oxc-source.ts';
 
 export interface FastEntryPointInventory {
   functions: ReadonlyMap<string, readonly FastFunctionInfo[]>;

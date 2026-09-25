@@ -4,7 +4,7 @@ import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { Scene3DResourceEvent, Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { enableScene3DResourceSignals } from './sceneResourceSignals';
+import { enableScene3DResourceSignals } from './sceneResourceSignals.ts';
 
 // Returns whether the failure guard is installed on `resolver`.
 export function areScene3DResourceFailureGuardsEnabled(

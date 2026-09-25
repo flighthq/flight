@@ -1,5 +1,5 @@
-import type { ReviewCellRole } from './cellRole';
-import type { ReviewCommissionState } from './commissionState';
+import type { ReviewCellRole } from './cellRole.ts';
+import type { ReviewCommissionState } from './commissionState.ts';
 
 export interface ReviewCellProvenance {
   hostInstanceId: string | null;

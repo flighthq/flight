@@ -42,7 +42,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { parseBitmapFingerprint } from '../packages/bitmap/src/bitmapFingerprint.js';
+import { parseBitmapFingerprint } from '../packages/bitmap/src/bitmapFingerprint.ts';
 
 // The gate's own pass mark, from captureValidation's regression tolerance. A displacement score is only
 // meaningful against it: the number that matters is whether it clears the bar, not its magnitude.

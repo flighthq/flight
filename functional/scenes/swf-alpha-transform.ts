@@ -9,7 +9,7 @@ import type { Bitmap, Shape } from '@flighthq/sdk';
 import { getBitmapPixelRgb, getNodeChildren, logInfo, ShapeKind } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
-import { createSwfAlphaTransformMovieClip } from '../helpers/swfTransformFixture';
+import { createSwfAlphaTransformMovieClip } from '../helpers/swfTransformFixture.ts';
 
 const WIDTH = 490;
 const HEIGHT = 220;

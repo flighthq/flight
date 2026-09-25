@@ -11,7 +11,7 @@ import type {
   Vector3Like,
 } from '@flighthq/types/contract';
 
-import { createVector3 } from './vector3';
+import { createVector3 } from './vector3.ts';
 
 // Creates a Ray3D with an explicit origin and normalized direction. Both vectors are allocated
 // fresh. With no arguments the ray sits at the origin pointing in +Z.

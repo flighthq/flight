@@ -4,8 +4,8 @@ import type {
   SwfHeader,
 } from '@flighthq/types/contract';
 
-import { uncompressSwfSource } from './swfDocument';
-import { readSwfHeaderRectangle, readSwfHeaderUint32, SWF_HEADER_PREFIX_LENGTH } from './swfHeaderReader';
+import { uncompressSwfSource } from './swfDocument.ts';
+import { readSwfHeaderRectangle, readSwfHeaderUint32, SWF_HEADER_PREFIX_LENGTH } from './swfHeaderReader.ts';
 
 /**
  * Reads the fixed header of a SWF file: container decompression, then the 8-byte prefix, stage

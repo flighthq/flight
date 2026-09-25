@@ -14,7 +14,7 @@ import {
   parseAccelerator,
   parseAcceleratorDetailed,
   resolveCommandOrControlModifier,
-} from './shortcut';
+} from './shortcut.ts';
 
 describe('equalsAccelerator', () => {
   it('compares normalized chord identity and rejects malformed input', () => {

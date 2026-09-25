@@ -1,4 +1,4 @@
-import { CompositeOperator } from './CompositeOperator';
+import { CompositeOperator } from './CompositeOperator.ts';
 
 describe('CompositeOperator', () => {
   it('carries canonical PascalCase values equal to their keys', () => {

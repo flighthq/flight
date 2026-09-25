@@ -1,6 +1,6 @@
-import { createBitmap } from './bitmap';
-import { getBitmapPixel, setBitmapPixel } from './bitmapPixel';
-import { applyBitmapColorScaleBias, applyBitmapThreshold, mergeBitmap, scrollBitmap } from './bitmapTransform';
+import { createBitmap } from './bitmap.ts';
+import { getBitmapPixel, setBitmapPixel } from './bitmapPixel.ts';
+import { applyBitmapColorScaleBias, applyBitmapThreshold, mergeBitmap, scrollBitmap } from './bitmapTransform.ts';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };

@@ -4,8 +4,8 @@ export {
   createImageResource,
   invalidateImageResource,
   isImageResourceEmpty,
-} from './imageResource';
-export * from './imageResourceFrom';
+} from './imageResource.ts';
+export * from './imageResourceFrom.ts';
 export {
   createEmbeddedImageResourceReference,
   createExternalImageResourceReference,
@@ -13,4 +13,4 @@ export {
   explainImageResourceReferenceResolution,
   resetFailedImageResourceReference,
   resolveImageResourceReference,
-} from './imageResourceReference';
+} from './imageResourceReference.ts';

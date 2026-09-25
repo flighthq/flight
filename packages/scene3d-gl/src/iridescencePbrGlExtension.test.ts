@@ -1,9 +1,9 @@
 import { createIridescencePbrExtension } from '@flighthq/materials/contract';
 import { IridescencePbrExtensionKind } from '@flighthq/types/contract';
 
-import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry';
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { iridescencePbrGlExtension, registerGlIridescencePbrExtension } from './iridescencePbrGlExtension';
+import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { iridescencePbrGlExtension, registerGlIridescencePbrExtension } from './iridescencePbrGlExtension.ts';
 
 describe('iridescencePbrGlExtension', () => {
   it('contributes thin-film surface source', () => {

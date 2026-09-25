@@ -4,10 +4,10 @@ import type { Node2D, Node2DData, ShapeCommandToken } from '@flighthq/types/cont
 import { BlendMode, DisplayObjectKind, HtmlViewKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createDisplayObject } from './displayObject';
-import { createHtmlView } from './htmlView';
-import { createScene2D } from './scene2d';
-import { createScene2DKindUsage, getScene2DKindUsage, initializeScene2DKindUsage } from './sceneKindUsage';
+import { createDisplayObject } from './displayObject.ts';
+import { createHtmlView } from './htmlView.ts';
+import { createScene2D } from './scene2d.ts';
+import { createScene2DKindUsage, getScene2DKindUsage, initializeScene2DKindUsage } from './sceneKindUsage.ts';
 
 // The walk detects a command stream structurally — any node whose `data` carries `commands` — rather
 // than by node kind, so the tests record streams directly. That also keeps @flighthq/shape out of this

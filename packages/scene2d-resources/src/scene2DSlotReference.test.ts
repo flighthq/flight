@@ -1,8 +1,8 @@
 import { addNodeChild, getNodeChildAt, getNodeParent } from '@flighthq/node/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 
-import { createScene2DSlotReference } from './scene2DDocument';
-import { setScene2DSlotReferenceContent } from './scene2DSlotReference';
+import { createScene2DSlotReference } from './scene2DDocument.ts';
+import { setScene2DSlotReferenceContent } from './scene2DSlotReference.ts';
 
 describe('setScene2DSlotReferenceContent', () => {
   it('keeps child order stable when a resolve pass retains the same content', () => {

@@ -28,8 +28,8 @@ import {
   stepAppLoop,
   stopAppLoop,
   unregisterAppLoopWindow,
-} from './appLoop';
-import { createAppWindow } from './appWindow';
+} from './appLoop.ts';
+import { createAppWindow } from './appWindow.ts';
 
 function makeManualLoopBackend(): HostAppLoopCapability & { tick: (time: number) => void; cancelCount: number } {
   let callback: ((time: number) => void) | null = null;

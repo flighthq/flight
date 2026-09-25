@@ -1,4 +1,4 @@
-import type { Entity, EntityWithoutRuntime } from './Entity';
+import type { Entity, EntityWithoutRuntime } from './Entity.ts';
 
 // A plane in the form a·x + b·y + c·z + d = 0. (a, b, c) is the plane normal — unit-length
 // when normalized — and `d` is the signed distance from the origin along that normal. The

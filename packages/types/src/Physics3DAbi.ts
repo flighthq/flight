@@ -1,7 +1,7 @@
-import type { CollisionBuiltInShape3D } from './Collision';
-import type { Entity } from './Entity';
-import type { Physics3DQueryFilter } from './Physics3D';
-import type { SpatialAabb3D } from './Spatial';
+import type { CollisionBuiltInShape3D } from './Collision.ts';
+import type { Entity } from './Entity.ts';
+import type { Physics3DQueryFilter } from './Physics3D.ts';
+import type { SpatialAabb3D } from './Spatial.ts';
 
 // The target-neutral execution boundary beneath a native or otherwise separately-owned Physics3D
 // world. `@flighthq/physics3d-abi` supplies the executable TypeScript reference; another package may

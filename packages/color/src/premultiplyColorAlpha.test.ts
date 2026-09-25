@@ -1,4 +1,4 @@
-import { premultiplyColorAlpha, unpremultiplyColorAlpha } from './premultiplyColorAlpha';
+import { premultiplyColorAlpha, unpremultiplyColorAlpha } from './premultiplyColorAlpha.ts';
 
 describe('premultiplyColorAlpha', () => {
   it('returns fully-opaque color unchanged (alpha=1)', () => {

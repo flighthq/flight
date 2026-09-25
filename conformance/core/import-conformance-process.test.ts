@@ -10,7 +10,7 @@ import {
   parseImportConformanceShardSelection,
   prepareImportConformanceScoreTarget,
   writeImportConformanceScoreAtomically,
-} from './import-conformance-process';
+} from './import-conformance-process.ts';
 
 describe('import conformance process contract', () => {
   it('uses zero for measured, one for no artifact, and two for a valid NOT RUN artifact', () => {

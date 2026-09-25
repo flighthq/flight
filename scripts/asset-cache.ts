@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 import type { Plugin } from 'vite';
 
-import { copyDirectoryContents } from './copy-dir';
-import { type Asset, downloadAssets } from './download-assets';
+import { copyDirectoryContents } from './copy-dir.ts';
+import { type Asset, downloadAssets } from './download-assets.ts';
 
 // scripts/ sits directly under the repo root, and this module exists only inside the monorepo, so
 // its own location is a reliable repo-root anchor. A copied-out standalone example has no

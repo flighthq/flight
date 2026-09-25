@@ -1,4 +1,4 @@
-import { createVignetteEffect, initializeVignetteEffect } from './vignetteEffect';
+import { createVignetteEffect, initializeVignetteEffect } from './vignetteEffect.ts';
 
 describe('createVignetteEffect', () => {
   it('tags the intent type', () => {

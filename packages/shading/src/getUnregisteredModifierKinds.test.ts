@@ -3,10 +3,10 @@ import type { Modifier } from '@flighthq/types/contract';
 import { EmissiveModifierKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createEmissiveModifier } from './createEmissiveModifier';
-import { getUnregisteredModifierKinds } from './getUnregisteredModifierKinds';
-import { createModifierRegistry } from './modifierRegistry';
-import { registerBuiltInModifiers } from './registerBuiltInModifiers';
+import { createEmissiveModifier } from './createEmissiveModifier.ts';
+import { getUnregisteredModifierKinds } from './getUnregisteredModifierKinds.ts';
+import { createModifierRegistry } from './modifierRegistry.ts';
+import { registerBuiltInModifiers } from './registerBuiltInModifiers.ts';
 
 describe('getUnregisteredModifierKinds', () => {
   it('returns an empty array when every kind is registered', () => {

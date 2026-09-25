@@ -7,14 +7,14 @@ import {
   createGlyphOutlineSourceFromOpenTypeFont,
   explainOpenTypeFont,
   initializeGlyphOutlineSourceFromOpenTypeFont,
-} from './openTypeGlyphOutlineSource';
+} from './openTypeGlyphOutlineSource.ts';
 import {
   createSyntheticFont,
   emptySyntheticGlyph,
   encodeSyntheticWoff,
   squareSyntheticGlyph,
-} from './openTypeTestHelper';
-import { readSfntTableDirectory } from './sfntTableDirectory';
+} from './openTypeTestHelper.ts';
+import { readSfntTableDirectory } from './sfntTableDirectory.ts';
 
 // Every font here is assembled byte by byte by the helper. Nothing third-party is read, fetched, or
 // committed, and each test states the table contents its assertion depends on.

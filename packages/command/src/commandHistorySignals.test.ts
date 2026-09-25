@@ -2,9 +2,9 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import { describe, expect, it } from 'vitest';
 
-import { registerCommandBinding } from './commandBinding';
-import { createCommandHistory, executeCommand, undoCommand } from './commandHistory';
-import { enableCommandHistorySignals, getCommandHistorySignals } from './commandHistorySignals';
+import { registerCommandBinding } from './commandBinding.ts';
+import { createCommandHistory, executeCommand, undoCommand } from './commandHistory.ts';
+import { enableCommandHistorySignals, getCommandHistorySignals } from './commandHistorySignals.ts';
 
 describe('enableCommandHistorySignals', () => {
   it('allocates once and returns the same signal on a second call', () => {

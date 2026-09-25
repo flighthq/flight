@@ -9,7 +9,7 @@ import type {
   TcpSocketOptions,
 } from '@flighthq/types/contract';
 
-import { openTcpSocket } from './index';
+import { openTcpSocket } from './index.ts';
 import {
   attachSocket,
   closeSocket,
@@ -20,7 +20,7 @@ import {
   getSocketReadyState,
   sendSocketMessage,
   setSocketGuard,
-} from './socket';
+} from './socket.ts';
 
 interface FakeSocket {
   backend: HostSocketCapability;

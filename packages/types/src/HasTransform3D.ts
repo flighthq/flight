@@ -1,8 +1,8 @@
-import type { EntityRuntime } from './Entity';
-import type { Matrix4 } from './Matrix4';
-import type { NodeOf, NodeTraits } from './Node';
-import type { Quaternion } from './Quaternion';
-import type { Vector3 } from './Vector3';
+import type { EntityRuntime } from './Entity.ts';
+import type { Matrix4 } from './Matrix4.ts';
+import type { NodeOf, NodeTraits } from './Node.ts';
+import type { Quaternion } from './Quaternion.ts';
+import type { Vector3 } from './Vector3.ts';
 
 // The scene node's authored local transform is decomposed position/rotation/scale. The local matrix
 // is a runtime cache composed from these (see `localMatrix4`), or set directly as an escape hatch

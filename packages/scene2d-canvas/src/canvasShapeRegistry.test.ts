@@ -2,7 +2,11 @@ import { copyRenderStateRegistrations, createRenderState, getRenderStateRuntime 
 import { getShapeBoundsCommand } from '@flighthq/shape/contract';
 import type { CanvasShapeCommand } from '@flighthq/types/contract';
 
-import { getCanvasShapeCommand, registerCanvasShapeCommand, registerCanvasShapeCommands } from './canvasShapeRegistry';
+import {
+  getCanvasShapeCommand,
+  registerCanvasShapeCommand,
+  registerCanvasShapeCommands,
+} from './canvasShapeRegistry.ts';
 
 describe('getCanvasShapeCommand', () => {
   it('returns null for an unregistered key', () => {

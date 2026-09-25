@@ -7,7 +7,7 @@ import {
   createWgpuEffectPipeline,
   drawWgpuDualSourceEffectPass,
   drawWgpuEffectPass,
-} from './wgpuEffectPass';
+} from './wgpuEffectPass.ts';
 
 // Extracts the source alpha, tints it with a solid color, outputs premultiplied RGBA.
 const TINT_WGSL = /* wgsl */ `

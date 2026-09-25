@@ -1,9 +1,9 @@
-import type { Camera3D } from './Camera3D';
-import type { Material } from './Material';
-import type { MeshGeometry } from './MeshGeometry';
-import type { Scene3DLightBlock } from './Scene3DLightBlock';
-import type { Scene3DRenderProxy } from './Scene3DRenderProxy';
-import type { WgpuRenderState } from './WgpuRenderState';
+import type { Camera3D } from './Camera3D.ts';
+import type { Material } from './Material.ts';
+import type { MeshGeometry } from './MeshGeometry.ts';
+import type { Scene3DLightBlock } from './Scene3DLightBlock.ts';
+import type { Scene3DRenderProxy } from './Scene3DRenderProxy.ts';
+import type { WgpuRenderState } from './WgpuRenderState.ts';
 
 // Per-backend 3D draw behavior for a material kind on Wgpu, registered against the kind via
 // registerWgpuMeshMaterialRenderer. This is the scene (3D) analog of WgpuQuadMaterialRenderer (the 2D

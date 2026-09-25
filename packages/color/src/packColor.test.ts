@@ -10,7 +10,7 @@ import {
   setColorAlpha,
   unpackColorRgba,
   unpackColorToLinear,
-} from './packColor';
+} from './packColor.ts';
 
 describe('allocateLinearColor', () => {
   it('allocates a zeroed four-component color', () => {

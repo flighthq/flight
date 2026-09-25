@@ -2,9 +2,9 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ParticleEmitter2D, ParticleEmitterData } from '@flighthq/types/contract';
 import type { ParticleObject } from '@flighthq/types/contract';
 
-import { applyParticleCollisions, applyParticleObjectCollisions } from './applyParticleCollisions';
-import { createParticleEmitterState, ensureParticleEmitterStateCapacity } from './particleEmitterState';
-import { createParticleObjectsState } from './particleObjectsState';
+import { applyParticleCollisions, applyParticleObjectCollisions } from './applyParticleCollisions.ts';
+import { createParticleEmitterState, ensureParticleEmitterStateCapacity } from './particleEmitterState.ts';
+import { createParticleObjectsState } from './particleObjectsState.ts';
 
 // Node-free SoA emitter fixture: applyParticleCollisions reads only `emitter.data`, so the display
 // node from @flighthq/particleemitter is not needed to unit-test the collision pass.

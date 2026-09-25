@@ -1,6 +1,6 @@
-import type { CanvasSurface } from './CanvasSurface';
-import type { Entity } from './Entity';
-import type { RenderTargetDimensions } from './RenderTarget';
+import type { CanvasSurface } from './CanvasSurface.ts';
+import type { Entity } from './Entity.ts';
+import type { RenderTargetDimensions } from './RenderTarget.ts';
 
 // What a Canvas 2D pass needs to bind and clear. Canvas differs structurally from GL and WGPU: each
 // canvas element carries its own context, so binding a target physically swaps the context the state

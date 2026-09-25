@@ -2,7 +2,7 @@ import {
   applyTiltShiftEffectToWgpu,
   wgpuTiltShiftEffectRunner,
   registerWgpuTiltShiftEffect,
-} from './wgpuTiltShiftEffect';
+} from './wgpuTiltShiftEffect.ts';
 
 describe('applyTiltShiftEffectToWgpu', () => {
   it('is a function', () => {

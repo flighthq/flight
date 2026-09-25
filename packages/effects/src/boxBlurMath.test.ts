@@ -1,4 +1,4 @@
-import { computeBoxBlurPassRadius, computeBoxBlurRadius, computeGaussianSigmaForBlurRadius } from './boxBlurMath';
+import { computeBoxBlurPassRadius, computeBoxBlurRadius, computeGaussianSigmaForBlurRadius } from './boxBlurMath.ts';
 
 describe('computeBoxBlurPassRadius', () => {
   // Combined variance of n box passes of radius rᵢ is Σ (rᵢ² + rᵢ) / 3; the effective σ is its

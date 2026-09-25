@@ -1,6 +1,6 @@
 import type { ImageResource } from '@flighthq/types/contract';
 
-import { uploadGlTextureVideoFrame } from './glTextureVideoUpload';
+import { uploadGlTextureVideoFrame } from './glTextureVideoUpload.ts';
 
 function makeGl(): WebGL2RenderingContext {
   return {

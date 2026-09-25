@@ -2,8 +2,8 @@ import { availableParallelism } from 'node:os';
 
 import pc from 'picocolors';
 
-import { createGateRegistry } from './gateRegistry';
-import { formatGateFailure, runGates } from './gateRunner';
+import { createGateRegistry } from './gateRegistry.ts';
+import { formatGateFailure, runGates } from './gateRunner.ts';
 
 // The doc-lane quality sweep. Answers "are committed doc artifacts current" — a different lane from
 // `npm run check` (SDK code correctness). Every check here has a fix command; the error message names it.

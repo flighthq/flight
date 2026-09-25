@@ -1,6 +1,6 @@
 import { createRichText } from '@flighthq/text/contract';
 
-import { disableTextInput, enableTextInput, getTextInputState, hasTextInput } from './textInput';
+import { disableTextInput, enableTextInput, getTextInputState, hasTextInput } from './textInput.ts';
 
 describe('disableTextInput', () => {
   it('detaches the input slot', () => {

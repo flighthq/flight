@@ -2,8 +2,8 @@ import type { ClearcoatPbrExtension, ExtendedPbrMaterial, GltfDocument } from '@
 import { ExtendedPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { GltfClearcoatExtensionHandler } from './gltfClearcoat';
-import { parseGltf } from './gltfParse';
+import { GltfClearcoatExtensionHandler } from './gltfClearcoat.ts';
+import { parseGltf } from './gltfParse.ts';
 
 function makeGltf(material: unknown): GltfDocument {
   return {

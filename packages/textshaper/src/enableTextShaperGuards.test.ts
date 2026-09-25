@@ -2,8 +2,8 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import type { LogEntry } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { disableTextShaperGuards, enableTextShaperGuards } from './enableTextShaperGuards';
-import { acquireShapedRun, releaseShapedRun } from './textShaperPool';
+import { disableTextShaperGuards, enableTextShaperGuards } from './enableTextShaperGuards.ts';
+import { acquireShapedRun, releaseShapedRun } from './textShaperPool.ts';
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);

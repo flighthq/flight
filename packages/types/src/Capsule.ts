@@ -1,4 +1,4 @@
-import type { Entity, EntityWithoutRuntime } from './Entity';
+import type { Entity, EntityWithoutRuntime } from './Entity.ts';
 
 // A capsule: the set of all points within `radius` of the line segment from (startX, startY,
 // startZ) to (endX, endY, endZ). A negative radius conventionally marks an empty capsule.

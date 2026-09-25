@@ -29,7 +29,7 @@ import {
   Physics3DGeneric6DofJointKind,
   Physics3DHingeJointKind,
   Physics3DSliderJointKind,
-} from './joints';
+} from './joints.ts';
 
 export function createPhysics3DBallAndSocketJoint(
   options: Readonly<Physics3DBallAndSocketJointOptions>,

@@ -10,9 +10,9 @@ import {
 } from '@flighthq/scene2d-canvas/contract';
 import type { CanvasEffectRunner } from '@flighthq/types/contract';
 
-import { getCanvasEffectRunner, registerCanvasEffect } from './canvasEffectRegistry';
-import { canvasTestHost, createCanvasRenderState } from './canvasEffectTestSupport';
-import { applyCanvasEffectsToRenderTexture } from './canvasRenderTextureEffect';
+import { getCanvasEffectRunner, registerCanvasEffect } from './canvasEffectRegistry.ts';
+import { canvasTestHost, createCanvasRenderState } from './canvasEffectTestSupport.ts';
+import { applyCanvasEffectsToRenderTexture } from './canvasRenderTextureEffect.ts';
 
 describe('applyCanvasEffectsToRenderTexture', () => {
   it('ping-pongs an even registered chain so the last operation publishes destination', () => {

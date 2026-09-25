@@ -1,5 +1,5 @@
-import type { ImportDiagnostic } from './ImportDiagnostic';
-import type { ParticleEmitterConfig } from './ParticleEmitterConfig';
+import type { ImportDiagnostic } from './ImportDiagnostic.ts';
+import type { ParticleEmitterConfig } from './ParticleEmitterConfig.ts';
 
 // Starling / Sparrow PEX particle format schema.
 // The PEX format is an XML particle descriptor popularised by the Sparrow framework

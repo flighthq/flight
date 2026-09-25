@@ -1,8 +1,8 @@
-export * from './cameraShake';
-export * from './flyCameraController';
-export * from './follow';
-export * from './framing';
-export * from './orbitCameraController';
-export { initializeFlyCameraController } from './flyCameraController';
-export { initializeCameraShake, initializeCameraShakeOffset } from './cameraShake';
-export { initializeOrbitCameraController } from './orbitCameraController';
+export * from './cameraShake.ts';
+export * from './flyCameraController.ts';
+export * from './follow.ts';
+export * from './framing.ts';
+export * from './orbitCameraController.ts';
+export { initializeFlyCameraController } from './flyCameraController.ts';
+export { initializeCameraShake, initializeCameraShakeOffset } from './cameraShake.ts';
+export { initializeOrbitCameraController } from './orbitCameraController.ts';

@@ -9,7 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 import { RenderRegistryTable, RequirementFacet, SceneCoverage } from '@flighthq/types/contract';
 
-import { getCanvasQuadMaterialRenderer } from './canvasQuadMaterialRegistry';
+import { getCanvasQuadMaterialRenderer } from './canvasQuadMaterialRegistry.ts';
 
 // Clears `out`, then reports every requirement in `usage` with how well this Canvas state is wired for
 // it — satisfied entries included, so one call is a complete manifest.

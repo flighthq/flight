@@ -1,6 +1,12 @@
-import { beginWgpuFrame, retireWgpuBuffer, retireWgpuTexture, submitWgpuFrame, withWgpuFrameBorrow } from './wgpuFrame';
-import { createWgpuOffscreenRenderState, getWgpuRenderStateRuntime } from './wgpuRenderState';
-import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+import {
+  beginWgpuFrame,
+  retireWgpuBuffer,
+  retireWgpuTexture,
+  submitWgpuFrame,
+  withWgpuFrameBorrow,
+} from './wgpuFrame.ts';
+import { createWgpuOffscreenRenderState, getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
+import { beginWgpuScreenRenderPassForTest, createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';
 
 beforeAll(() => installWgpuMock());
 

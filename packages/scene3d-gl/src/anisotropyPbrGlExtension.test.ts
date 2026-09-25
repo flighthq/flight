@@ -1,9 +1,9 @@
 import { createAnisotropyPbrExtension } from '@flighthq/materials/contract';
 import { AnisotropyPbrExtensionKind } from '@flighthq/types/contract';
 
-import { anisotropyPbrGlExtension, registerGlAnisotropyPbrExtension } from './anisotropyPbrGlExtension';
-import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry';
-import { makeGlScene3DState } from './glScene3DTestHelper';
+import { anisotropyPbrGlExtension, registerGlAnisotropyPbrExtension } from './anisotropyPbrGlExtension.ts';
+import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 describe('anisotropyPbrGlExtension', () => {
   it('contributes independent punctual and IBL anisotropy source', () => {

@@ -3,9 +3,9 @@
 // must not acquire subtly different "convenient" implementations on either side of the review loop.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
-import { compareOracleReference } from './reference-image-compare';
-import type { ReferenceImageBitmap, ReferenceImageCellComparison } from './reference-image-compare';
-import { hashOraclePixelBytes } from './reference-image-png';
+import { compareOracleReference } from './reference-image-compare.ts';
+import type { ReferenceImageBitmap, ReferenceImageCellComparison } from './reference-image-compare.ts';
+import { hashOraclePixelBytes } from './reference-image-png.ts';
 
 export const LEGACY_EXACT_COMPARISON_POLICY_ID = 'pixel-exact-swiftshader-pw-1-61-v1';
 

@@ -5,7 +5,7 @@ import {
   webHostClipboardFormats,
   webHostClipboardImage,
   webHostClipboardText,
-} from './webClipboard';
+} from './webClipboard.ts';
 
 export const webHostClipboard = {
   change: webHostClipboardChange,

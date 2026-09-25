@@ -6,9 +6,9 @@ import { join } from 'node:path';
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-import { launchBrowser } from './captureBrowser';
-import { captureEntry, captureUrl } from './captureEntry';
-import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol';
+import { launchBrowser } from './captureBrowser.ts';
+import { captureEntry, captureUrl } from './captureEntry.ts';
+import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.ts';
 
 const pages: Record<string, string> = {
   '/delayed': `<!doctype html><canvas width="320" height="180"></canvas><script>

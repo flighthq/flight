@@ -1,6 +1,6 @@
 import type { WgpuWireframeUpload, MeshGeometry, WgpuRenderState } from '@flighthq/types/contract';
 
-import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
+import { ensureWgpuMeshUpload } from './wgpuMeshUpload.ts';
 // Lazily derives + uploads the wireframe line-index buffer for a geometry on this state, caching it
 // keyed by the geometry entity. Reuses the geometry's vertex buffer (ensuring the triangle upload
 // first) and builds a line-list index buffer from the triangle indices. A subset's triangle range

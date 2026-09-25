@@ -3,7 +3,7 @@ import {
   getWgpuRenderTextureTarget,
   isWgpuRenderTextureReady,
   writeWgpuRenderTextureTarget,
-} from './wgpuRenderTexture';
+} from './wgpuRenderTexture.ts';
 import {
   acquireWgpuRenderTexture,
   createWgpuRenderTexturePool,
@@ -11,8 +11,8 @@ import {
   initializeWgpuRenderTexturePool,
   releaseWgpuRenderTexture,
   withWgpuRenderTextures,
-} from './wgpuRenderTexturePool';
-import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+} from './wgpuRenderTexturePool.ts';
+import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';
 
 beforeAll(() => installWgpuMock());
 

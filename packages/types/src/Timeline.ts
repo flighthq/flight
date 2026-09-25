@@ -1,10 +1,10 @@
-import type { Entity } from './Entity';
-import type { FrameScript } from './FrameScript';
-import type { Node2D } from './Node2D';
-import type { TimelineCueRegistry } from './TimelineCue';
-import type { TimelinePlayMode } from './TimelinePlayMode';
-import type { TimelineSignals } from './TimelineSignals';
-import type { TimelineSource } from './TimelineSource';
+import type { Entity } from './Entity.ts';
+import type { FrameScript } from './FrameScript.ts';
+import type { Node2D } from './Node2D.ts';
+import type { TimelineCueRegistry } from './TimelineCue.ts';
+import type { TimelinePlayMode } from './TimelinePlayMode.ts';
+import type { TimelineSignals } from './TimelineSignals.ts';
+import type { TimelineSource } from './TimelineSource.ts';
 
 // Playback state for a MovieClip's timeline: a playhead bound to a `source` (the per-frame content) and
 // a `target` (the display node the source constructs onto). The source is shareable across MovieClips;

@@ -1,4 +1,4 @@
-import { probeMd5Sections } from './md5-section-probe';
+import { probeMd5Sections } from './md5-section-probe.ts';
 
 describe('probeMd5Sections', () => {
   it('independently reconciles a mesh file and its indexed body records', () => {

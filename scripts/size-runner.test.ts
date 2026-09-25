@@ -5,9 +5,9 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { describe, expect, test } from 'vitest';
 
-import { getCaptureEntryRoute } from '../packages/tool-capture/src/captureEntries';
-import { readCaptureManifest } from '../packages/tool-capture/src/captureManifest';
-import type { SizeResult } from './size-runner';
+import { getCaptureEntryRoute } from '../packages/tool-capture/src/captureEntries.ts';
+import { readCaptureManifest } from '../packages/tool-capture/src/captureManifest.ts';
+import type { SizeResult } from './size-runner.ts';
 import {
   collectSizeCases,
   didSizeChecksPass,
@@ -16,7 +16,7 @@ import {
   getSizeCaseKey,
   parseSizeBaselineOrigins,
   readBaseline,
-} from './size-runner';
+} from './size-runner.ts';
 
 // These read the size-case declarations off disk and assert nothing that requires a bundle, so they
 // belong in the ordinary suite rather than in `tools/size`, whose config exists to buy a node

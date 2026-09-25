@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
-import { formatImportConformanceDenominators } from './import-conformance-denominator';
-import { parseImportConformanceScore } from './import-conformance-score';
+import { formatImportConformanceDenominators } from './import-conformance-denominator.ts';
+import { parseImportConformanceScore } from './import-conformance-score.ts';
 import type {
   ImportConformanceAuditedLossPath,
   ImportConformanceCapability,
@@ -16,7 +16,7 @@ import type {
   ImportConformanceOracleAssurance,
   ImportConformanceScore,
   ImportConformanceUnknownObservation,
-} from './import-conformance-score';
+} from './import-conformance-score.ts';
 
 export type ImportConformanceRatchetState = 'incomparable' | 'not-run' | 'pass' | 'regression';
 

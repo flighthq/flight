@@ -7,10 +7,10 @@ import { createSampler, createTexture } from '@flighthq/texture/contract';
 import type { HostImageCapability } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
-import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver';
-import { createBitmapPattern, createGradientPattern } from './canvasFillPattern';
-import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver';
-import { createCanvasTextureResolvers } from './canvasTestSupport';
+import { registerCanvasBitmapTextureResolver } from './canvasBitmapTextureResolver.ts';
+import { createBitmapPattern, createGradientPattern } from './canvasFillPattern.ts';
+import { registerCanvasImageTextureResolver } from './canvasImageTextureResolver.ts';
+import { createCanvasTextureResolvers } from './canvasTestSupport.ts';
 
 // A test that wraps a host handle supplies the host: the resource measures through the registered
 // resolver, and clearing after each test keeps this file from covering for another's missing one.

@@ -40,8 +40,8 @@ import {
 } from '@flighthq/types/contract';
 import type { WgpuSkinningAdapter } from '@flighthq/types/contract';
 
-import { ensureWgpuMeshUpload } from './wgpuMeshUpload';
-import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime';
+import { ensureWgpuMeshUpload } from './wgpuMeshUpload.ts';
+import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 // Sets the family's pipeline active for the bind→draw handoff, binds it, and binds the shared Frame
 // bind group at group(0). A family's bind() calls this after selecting its pipeline + writing the
 // Frame uniform; draw() reads scene.activeMeshPipeline back. Mirrors scene-gl's beginGlMeshDraw.

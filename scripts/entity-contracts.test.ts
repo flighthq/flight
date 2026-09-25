@@ -5,7 +5,7 @@ import {
   checkEntityContracts,
   createExportedCreateRemediationReport,
   formatEntityContractReport,
-} from './entity-contracts';
+} from './entity-contracts.ts';
 
 describe('checkEntityContracts', () => {
   it('accepts intentional Entity intersections and closed discriminated refinements', () => {

@@ -1,5 +1,5 @@
-import { swfSoundHandler } from './swfSoundHandler';
-import { swfSoundTagFamily } from './swfSoundTagFamily';
+import { swfSoundHandler } from './swfSoundHandler.ts';
+import { swfSoundTagFamily } from './swfSoundTagFamily.ts';
 
 describe('swfSoundTagFamily', () => {
   it('is exactly its handlers, in the order a placed character is offered to them', () => {

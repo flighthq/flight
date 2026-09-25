@@ -13,7 +13,7 @@ import {
   setPlaneFromPoints,
 } from '@flighthq/geometry/contract';
 
-import { initializePlane } from './plane';
+import { initializePlane } from './plane.ts';
 
 describe('clonePlane', () => {
   it('creates an independent copy', () => {

@@ -1,5 +1,5 @@
-import type { HostImageSource } from './HostImageSource';
-import type { VideoResourceLoadOptions } from './VideoResource';
+import type { HostImageSource } from './HostImageSource.ts';
+import type { VideoResourceLoadOptions } from './VideoResource.ts';
 
 export interface HostVideoCapability {
   addEndedListener?(element: HostImageSource, listener: () => void): void;

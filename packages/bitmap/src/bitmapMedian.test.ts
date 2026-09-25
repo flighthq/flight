@@ -1,5 +1,5 @@
-import { createBitmap } from './bitmap';
-import { medianBitmap } from './bitmapMedian';
+import { createBitmap } from './bitmap.ts';
+import { medianBitmap } from './bitmapMedian.ts';
 
 function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = bitmap.width, height = bitmap.height) {
   return { bitmap, x, y, width, height };

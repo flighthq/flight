@@ -1,7 +1,7 @@
 import { canPlayVideoType } from '@flighthq/video/contract';
 import { describe, expect, it, vi } from 'vitest';
 
-import { webHostVideo } from './webVideoCapability';
+import { webHostVideo } from './webVideoCapability.ts';
 
 afterEach(() => {
   vi.restoreAllMocks();

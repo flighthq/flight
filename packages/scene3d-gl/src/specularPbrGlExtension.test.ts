@@ -1,9 +1,9 @@
 import { createSpecularPbrExtension } from '@flighthq/materials/contract';
 import { SpecularPbrExtensionKind } from '@flighthq/types/contract';
 
-import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry';
-import { makeGlScene3DState } from './glScene3DTestHelper';
-import { registerGlSpecularPbrExtension, specularPbrGlExtension } from './specularPbrGlExtension';
+import { getGlPbrExtensionRegistration } from './glPbrExtensionRegistry.ts';
+import { makeGlScene3DState } from './glScene3DTestHelper.ts';
+import { registerGlSpecularPbrExtension, specularPbrGlExtension } from './specularPbrGlExtension.ts';
 
 describe('registerGlSpecularPbrExtension', () => {
   it('registers only the specular extension kind', () => {

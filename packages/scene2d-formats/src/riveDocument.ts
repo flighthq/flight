@@ -10,7 +10,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, RiveFieldType } from '@flighthq/types/contract';
 
-import { getRiveCorePropertyFieldType, isRiveCoreBytesProperty } from './riveCoreProperties';
+import { getRiveCorePropertyFieldType, isRiveCoreBytesProperty } from './riveCoreProperties.ts';
 
 /**
  * Decodes the `.riv` container into its header and flat core-object stream. This is the format's

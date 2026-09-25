@@ -5,8 +5,8 @@ import type {
   CanvasTextureRenderTarget,
 } from '@flighthq/types/contract';
 
-import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { registerCanvasEffect } from './canvasEffectRegistry';
+import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
+import { registerCanvasEffect } from './canvasEffectRegistry.ts';
 
 // Plain Gaussian blur via the Canvas 2D `blur()` CSS filter — the same primitive the canvas bloom
 // branch uses. Canvas `blur()` is isotropic (a single radius), so the per-axis `blurX`/`blurY` sigmas

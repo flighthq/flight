@@ -1,9 +1,9 @@
-import type { Aabb } from './Aabb';
-import type { Material3D } from './Material3D';
-import type { MeshGeometry } from './MeshGeometry';
-import type { MeshMorph } from './MorphTarget';
-import type { Node3D, Node3DRuntime } from './Node3D';
-import type { Skin } from './Skin';
+import type { Aabb } from './Aabb.ts';
+import type { Material3D } from './Material3D.ts';
+import type { MeshGeometry } from './MeshGeometry.ts';
+import type { MeshMorph } from './MorphTarget.ts';
+import type { Node3D, Node3DRuntime } from './Node3D.ts';
+import type { Skin } from './Skin.ts';
 
 // A renderable 3D leaf node. A Mesh shares the Node3D trait family (so it lives in the same
 // hierarchy as group Node3Ds and other Meshes — addNodeChild accepts both) and adds the two

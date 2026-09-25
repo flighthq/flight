@@ -1,11 +1,11 @@
-import type { ReferenceImageRequest } from './reference-image-records';
+import type { ReferenceImageRequest } from './reference-image-records.ts';
 import type {
   ReferenceImageCellComparison,
   ReferenceImageCellInput,
   ReferenceImageJoinFailureKind,
   ReferenceImageRequestRecord,
-} from './reference-image-state';
-import { describeOracleComparison, joinOracleState, withRequiredIdentities } from './reference-image-state';
+} from './reference-image-state.ts';
+import { describeOracleComparison, joinOracleState, withRequiredIdentities } from './reference-image-state.ts';
 
 // ★ EVERY GATE IN §9 HAS A FIRING TEST HERE, per the capture-verification-tiers rule that a gate row and
 // its defeating test are added together. A gate nobody has watched fail is a gate nobody knows fires —

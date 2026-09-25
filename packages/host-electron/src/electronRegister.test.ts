@@ -4,9 +4,9 @@ import { createHost } from '@flighthq/host/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { ElectronApi, Entity } from '@flighthq/types/contract';
 
-import * as contractApi from './contract';
-import { electronHost } from './electronRegister';
-import * as publicApi from './index';
+import * as contractApi from './contract.ts';
+import { electronHost } from './electronRegister.ts';
+import * as publicApi from './index.ts';
 
 const GROUPS = [
   ['accessibility', 'electronHostAccessibilityGroup'],

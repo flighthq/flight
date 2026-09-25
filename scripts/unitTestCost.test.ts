@@ -10,7 +10,7 @@ import {
   formatUnitTestCostReport,
   getUnitTestCapability,
   readUnitTestSources,
-} from './unitTestCost';
+} from './unitTestCost.ts';
 
 // ★ EVERY FIXTURE SPECIFIER IS ASSEMBLED AT RUNTIME, AND THAT IS NOT STYLE. This file's subject is a
 // pattern in source text, so a fixture written as a literal would put that pattern in THIS file — and

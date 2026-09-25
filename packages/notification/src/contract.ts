@@ -1,2 +1,2 @@
-export * from './notification';
-export { initializeNotificationResource, initializeScheduledNotificationResource } from './notification';
+export * from './notification.ts';
+export { initializeNotificationResource, initializeScheduledNotificationResource } from './notification.ts';

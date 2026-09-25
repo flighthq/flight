@@ -2,9 +2,9 @@ import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import type { HostGlyphRasterizerCapability, LogEntry } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { disableGlyphAtlasGuards, enableGlyphAtlasGuards } from './enableGlyphAtlasGuards';
-import { createGlyphAtlas } from './glyphAtlas';
-import { getGlyphAtlasEntry } from './glyphAtlasEntry';
+import { disableGlyphAtlasGuards, enableGlyphAtlasGuards } from './enableGlyphAtlasGuards.ts';
+import { createGlyphAtlas } from './glyphAtlas.ts';
+import { getGlyphAtlasEntry } from './glyphAtlasEntry.ts';
 
 let entries: LogEntry[];
 

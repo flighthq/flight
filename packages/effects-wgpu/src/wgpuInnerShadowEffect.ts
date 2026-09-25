@@ -8,11 +8,11 @@ import type {
   WgpuRenderTargetPool,
 } from '@flighthq/types/contract';
 
-import { applyWgpuEffectBlitOffsetPass, applyWgpuEffectBlitPass } from './wgpuEffectBlitShader';
-import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur';
-import { clearWgpuEffectTarget } from './wgpuEffectPass';
-import { registerWgpuEffect } from './wgpuEffectRegistry';
-import { applyWgpuEffectInnerClipPass, applyWgpuEffectInvertTintPass } from './wgpuEffectTintShader';
+import { applyWgpuEffectBlitOffsetPass, applyWgpuEffectBlitPass } from './wgpuEffectBlitShader.ts';
+import { applyWgpuEffectBoxBlur } from './wgpuEffectBoxBlur.ts';
+import { clearWgpuEffectTarget } from './wgpuEffectPass.ts';
+import { registerWgpuEffect } from './wgpuEffectRegistry.ts';
+import { applyWgpuEffectInnerClipPass, applyWgpuEffectInvertTintPass } from './wgpuEffectTintShader.ts';
 
 // Inner-shadow composite effect: tint the inverted silhouette, blur, offset by angle/distance, clip to the source alpha, then apply draw/hide source compositing.
 // Full-frame realization: acquires the recipe's three scratch targets from the effect pool, runs the

@@ -12,7 +12,7 @@ import {
   setCapsule,
 } from '@flighthq/geometry/contract';
 
-import { initializeCapsule } from './capsule';
+import { initializeCapsule } from './capsule.ts';
 
 describe('createCapsule', () => {
   it('stores all fields', () => {

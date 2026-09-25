@@ -1,8 +1,8 @@
-import type { MaterialData } from './Material';
-import type { Node2D, Node2DData, Node2DRuntime } from './Node2D';
-import type { QuadTransformType } from './QuadTransformType';
-import type { Rectangle } from './Rectangle';
-import type { TextureAtlas } from './TextureAtlas';
+import type { MaterialData } from './Material.ts';
+import type { Node2D, Node2DData, Node2DRuntime } from './Node2D.ts';
+import type { QuadTransformType } from './QuadTransformType.ts';
+import type { Rectangle } from './Rectangle.ts';
+import type { TextureAtlas } from './TextureAtlas.ts';
 
 export interface QuadBatchData extends Node2DData {
   atlas: TextureAtlas | null;

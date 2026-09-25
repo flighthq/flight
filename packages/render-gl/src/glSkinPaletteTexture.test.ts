@@ -5,7 +5,7 @@ import {
   destroyGlSkinPaletteTexture,
   initializeGlSkinPaletteTexture,
   uploadGlSkinPaletteTexture,
-} from './glSkinPaletteTexture';
+} from './glSkinPaletteTexture.ts';
 
 interface Call {
   name: string;

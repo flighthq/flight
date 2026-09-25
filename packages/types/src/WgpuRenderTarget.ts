@@ -1,7 +1,7 @@
-import type { Entity } from './Entity';
-import type { RenderTargetColorSpace, RenderTargetDimensions } from './RenderTarget';
-import type { WgpuPresentationSurface } from './WgpuHost';
-import type { WgpuRenderState, WgpuTextureBindings } from './WgpuRenderState';
+import type { Entity } from './Entity.ts';
+import type { RenderTargetColorSpace, RenderTargetDimensions } from './RenderTarget.ts';
+import type { WgpuPresentationSurface } from './WgpuHost.ts';
+import type { WgpuRenderState, WgpuTextureBindings } from './WgpuRenderState.ts';
 
 // What a Wgpu render pass needs in order to bind and clear a target, and nothing more. The two
 // realizations differ in where the color pixels live: a screen target presents into a swap-chain

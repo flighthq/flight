@@ -6,7 +6,7 @@ import {
   diagnoseRegistrarChildProcess,
   formatRegistrarChildFailure,
   summarizeRegistrarProbeDurations,
-} from './registrar-child-process';
+} from './registrar-child-process.ts';
 
 const IDENTITY = { packageName: 'fixture', registrar: 'registerFixture' };
 

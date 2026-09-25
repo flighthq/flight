@@ -1,7 +1,7 @@
 import type { BitmapRegion } from '@flighthq/types/contract';
 import { BitmapCompositeMode } from '@flighthq/types/contract';
 
-import { invalidateBitmap } from './bitmap';
+import { invalidateBitmap } from './bitmap.ts';
 
 /**
  * Alpha-composites `pixels` over `dest`. `pixels` must be at least

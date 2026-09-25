@@ -1,6 +1,6 @@
-import type { Entity, EntityRuntime } from './Entity';
-import type { FlightDocumentFields } from './FlightDocumentFieldSchema';
-import type { NodeAny } from './Node';
+import type { Entity, EntityRuntime } from './Entity.ts';
+import type { FlightDocumentFields } from './FlightDocumentFieldSchema.ts';
+import type { NodeAny } from './Node.ts';
 
 declare const NodeInteractiveStateBindingBrand: unique symbol;
 

@@ -16,27 +16,27 @@ import { BITMAP_FINGERPRINT_COMPUTATION_ID } from '@flighthq/bitmap/contract';
 import type { CaptureBaselineProvenance } from '@flighthq/types/contract';
 import type { BrowserContext, Page } from '@playwright/test';
 
-import { getBaselineField, setBaselineCaptureEvidence, setBaselineField } from './baselineStore.js';
-import { isRejectedCaptureBaselineHash } from './captureBaselineSanity.js';
-import { launchBrowser } from './captureBrowser.js';
-import type { CaptureBuildIdentity } from './captureBuildIdentity.js';
-import { UNSTAMPED_CAPTURE_BUILD } from './captureBuildIdentity.js';
-import { provideCaptureDomRenderPixels } from './captureDomReadback.js';
-import type { Entry } from './captureEntries.js';
-import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter, routeSegment } from './captureEntries.js';
-import type { DetailTone } from './captureFormat.js';
-import { formatStatusLine } from './captureFormat.js';
-import type { CaptureHostProvenance } from './captureHostProvenance.js';
-import { getCaptureHostProvenance } from './captureHostProvenance.js';
-import { isBrowserClosedError } from './captureInterrupt.js';
-import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.js';
-import { findUndrawnRegistryMisses, formatUndrawnRegistryMisses } from './captureRegistryMiss.js';
-import { writeCaptureReport } from './captureReport.js';
-import { formatCaptureConsoleMessage, listenForCaptureResourceFailures } from './captureResourceFailure.js';
-import { hashCaptureScreenshotPixels } from './captureScreenshotHash.js';
-import { getCaptureSceneSourceHash } from './captureSourceHash.js';
-import { getCaptureTimeoutMs } from './captureTimeout.js';
-import type { FunctionalVerification } from './functionalVerify.js';
+import { getBaselineField, setBaselineCaptureEvidence, setBaselineField } from './baselineStore.ts';
+import { isRejectedCaptureBaselineHash } from './captureBaselineSanity.ts';
+import { launchBrowser } from './captureBrowser.ts';
+import type { CaptureBuildIdentity } from './captureBuildIdentity.ts';
+import { UNSTAMPED_CAPTURE_BUILD } from './captureBuildIdentity.ts';
+import { provideCaptureDomRenderPixels } from './captureDomReadback.ts';
+import type { Entry } from './captureEntries.ts';
+import { BACKEND_UNAVAILABLE, getCaptureEntryRoute, rendererMatchesFilter, routeSegment } from './captureEntries.ts';
+import type { DetailTone } from './captureFormat.ts';
+import { formatStatusLine } from './captureFormat.ts';
+import type { CaptureHostProvenance } from './captureHostProvenance.ts';
+import { getCaptureHostProvenance } from './captureHostProvenance.ts';
+import { isBrowserClosedError } from './captureInterrupt.ts';
+import { CAPTURE_PROTOCOL_VERSION } from './captureProtocol.ts';
+import { findUndrawnRegistryMisses, formatUndrawnRegistryMisses } from './captureRegistryMiss.ts';
+import { writeCaptureReport } from './captureReport.ts';
+import { formatCaptureConsoleMessage, listenForCaptureResourceFailures } from './captureResourceFailure.ts';
+import { hashCaptureScreenshotPixels } from './captureScreenshotHash.ts';
+import { getCaptureSceneSourceHash } from './captureSourceHash.ts';
+import { getCaptureTimeoutMs } from './captureTimeout.ts';
+import type { FunctionalVerification } from './functionalVerify.ts';
 
 export type CaptureStatusProvenance = Partial<CaptureBaselineProvenance> & CaptureHostProvenance;
 
@@ -1434,7 +1434,7 @@ export interface CaptureUrlOptions {
 // Screenshot hashes that must never become a baseline, whatever produced them. This is a denylist of
 // frames observed to be content-free, kept as an explicit constant so the refusal survives a rewrite of
 // the surrounding logic and cannot be argued with at the call site.
-export { isRejectedCaptureBaselineHash } from './captureBaselineSanity.js';
+export { isRejectedCaptureBaselineHash } from './captureBaselineSanity.ts';
 
 export function isTransientCaptureError(message: string): boolean {
   return /timeout|net::ERR_|page crashed|execution context was destroyed|target page|navigation failed|protocol error|render verifier did not reach/i.test(

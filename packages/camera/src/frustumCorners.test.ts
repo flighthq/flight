@@ -1,9 +1,9 @@
 import { createVector3 } from '@flighthq/geometry/contract';
 import type { Vector3Like } from '@flighthq/types/contract';
 
-import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from './camera';
-import { getCamera3DFrustumCorners } from './frustumCorners';
-import { createPerspectiveProjection } from './projection';
+import { createCamera3D, setCamera3DViewMatrix4FromLookAt } from './camera.ts';
+import { getCamera3DFrustumCorners } from './frustumCorners.ts';
+import { createPerspectiveProjection } from './projection.ts';
 
 type FrustumCorners = [
   Vector3Like,

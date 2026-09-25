@@ -1,10 +1,10 @@
-import { createKuwaharaEffect } from './kuwaharaEffect';
+import { createKuwaharaEffect } from './kuwaharaEffect.ts';
 import {
   computeKuwaharaGaussianWeights,
   computeKuwaharaSectorOffsets,
   computeKuwaharaSectorPixelCount,
   computeKuwaharaSectorSize,
-} from './kuwaharaMath';
+} from './kuwaharaMath.ts';
 
 describe('computeKuwaharaGaussianWeights', () => {
   it('returns normalized weights summing to ~1', () => {

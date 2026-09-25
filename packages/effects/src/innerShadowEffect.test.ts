@@ -5,7 +5,7 @@ import {
   getInnerShadowEffectPadding,
   initializeInnerShadowEffect,
   registerInnerShadowEffectPaddingResolver,
-} from './innerShadowEffect';
+} from './innerShadowEffect.ts';
 
 describe('createInnerShadowEffect', () => {
   it('tags the intent type', () => {

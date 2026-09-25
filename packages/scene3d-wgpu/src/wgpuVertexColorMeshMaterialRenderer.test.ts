@@ -5,12 +5,12 @@ import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import type { Camera3D, Scene3DLightBlock, Scene3DRenderProxy } from '@flighthq/types/contract';
 import { VertexColorMaterialKind } from '@flighthq/types/contract';
 
-import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry';
-import { makeWgpuScene3DState } from './wgpuScene3DTestHelper';
+import { getWgpuMeshMaterialRenderer } from './wgpuMeshMaterialRegistry.ts';
+import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 import {
   registerWgpuVertexColorMaterial,
   wgpuVertexColorMeshMaterialRenderer,
-} from './wgpuVertexColorMeshMaterialRenderer';
+} from './wgpuVertexColorMeshMaterialRenderer.ts';
 
 function makeCamera(): Camera3D {
   return createCamera3D({

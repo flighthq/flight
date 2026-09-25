@@ -1,7 +1,7 @@
 import type { RenderTexture } from '@flighthq/types/contract';
 
-import { createRenderTexture, initializeRenderTextureTarget } from './renderTexture';
-import { createSampler } from './sampler';
+import { createRenderTexture, initializeRenderTextureTarget } from './renderTexture.ts';
+import { createSampler } from './sampler.ts';
 
 describe('createRenderTexture', () => {
   it('creates a linear render target with identity UVs and no depth by default', () => {

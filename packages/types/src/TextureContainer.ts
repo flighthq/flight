@@ -1,6 +1,6 @@
-import type { TextureContainerFormat } from './TextureContainerFormat';
-import type { TextureContainerLevel } from './TextureContainerLevel';
-import type { TextureContainerSupercompression } from './TextureContainerSupercompression';
+import type { TextureContainerFormat } from './TextureContainerFormat.ts';
+import type { TextureContainerLevel } from './TextureContainerLevel.ts';
+import type { TextureContainerSupercompression } from './TextureContainerSupercompression.ts';
 
 // A parsed GPU texture container (KTX2 / DDS / Basis): what format it holds, its full dimensions, and
 // where every sub-image lives — without decoding the compressed payload. The common descriptor all

@@ -1,7 +1,7 @@
-import type { Entity } from './Entity';
-import type { ImportDiagnostic } from './ImportDiagnostic';
-import type { MeshGeometry } from './MeshGeometry';
-import type { Scene3DDocument } from './Scene3DDocument';
+import type { Entity } from './Entity.ts';
+import type { ImportDiagnostic } from './ImportDiagnostic.ts';
+import type { MeshGeometry } from './MeshGeometry.ts';
+import type { Scene3DDocument } from './Scene3DDocument.ts';
 
 /**
  * One AWD2 block, located but not interpreted.

@@ -1,4 +1,4 @@
-import type { Entity, EntityWithoutRuntime } from './Entity';
+import type { Entity, EntityWithoutRuntime } from './Entity.ts';
 
 // Unit quaternion (x, y, z, w) for 3D rotation. Handedness is pinned across the 3D suite:
 // right-handed coordinates, CCW front-face. setMatrix4FromQuaternion and the mesh tangent

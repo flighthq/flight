@@ -5,7 +5,7 @@ import {
   getBokehDepthOfFieldEffectPadding,
   initializeBokehDepthOfFieldEffect,
   registerBokehDepthOfFieldEffectPaddingResolver,
-} from './bokehDepthOfFieldEffect';
+} from './bokehDepthOfFieldEffect.ts';
 
 describe('createBokehDepthOfFieldEffect', () => {
   it('tags the intent type', () => {

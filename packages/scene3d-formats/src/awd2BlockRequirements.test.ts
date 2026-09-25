@@ -1,6 +1,6 @@
 import { RequirementFacet, ShadedMaterialKind } from '@flighthq/types/contract';
 
-import { AWD2_BLOCK_SCENE_REQUIREMENTS } from './awd2BlockRequirements';
+import { AWD2_BLOCK_SCENE_REQUIREMENTS } from './awd2BlockRequirements.ts';
 
 describe('AWD2_BLOCK_SCENE_REQUIREMENTS', () => {
   it('maps Material to ShadedMaterial', () => {

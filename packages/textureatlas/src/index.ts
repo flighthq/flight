@@ -32,4 +32,4 @@ export {
   loadTextureAtlasFromUrl,
   removeTextureAtlasRegion,
   setTextureAtlasRegion,
-} from './contract';
+} from './contract.ts';

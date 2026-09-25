@@ -51,8 +51,8 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createRenderState } from './renderState';
-import { packScene3DLightBlock, prepareScene3DRender, setSkinnedMeshBoundsGuard } from './sceneRender';
+import { createRenderState } from './renderState.ts';
+import { packScene3DLightBlock, prepareScene3DRender, setSkinnedMeshBoundsGuard } from './sceneRender.ts';
 
 function boundedBox(): MeshGeometry {
   const geometry = createBoxMeshGeometry(2, 2, 2);

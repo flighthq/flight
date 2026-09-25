@@ -25,8 +25,8 @@ import {
   TilemapKind,
 } from '@flighthq/types/contract';
 
-import { glSpriteRenderer } from './glSprite';
-import { glScene2DRenderPreset } from './scene2DGlPipeline';
+import { glSpriteRenderer } from './glSprite.ts';
+import { glScene2DRenderPreset } from './scene2DGlPipeline.ts';
 
 describe('glScene2DRenderPreset', () => {
   it('carries every standard 2D GL renderer bound', () => {

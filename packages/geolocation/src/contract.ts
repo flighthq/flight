@@ -1,3 +1,3 @@
-export * from './geolocation';
-export * from './geolocationAccess';
-export { initializeGeolocationPosition } from './geolocation';
+export * from './geolocation.ts';
+export * from './geolocationAccess.ts';
+export { initializeGeolocationPosition } from './geolocation.ts';

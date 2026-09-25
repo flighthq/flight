@@ -1,5 +1,5 @@
-import { createParticleEmitterConfig } from './particleEmitterConfig';
-import { normalizeParticleEmitterConfig, validateParticleEmitterConfig } from './validateParticleEmitterConfig';
+import { createParticleEmitterConfig } from './particleEmitterConfig.ts';
+import { normalizeParticleEmitterConfig, validateParticleEmitterConfig } from './validateParticleEmitterConfig.ts';
 
 describe('normalizeParticleEmitterConfig', () => {
   it('leaves a valid config materially unchanged', () => {

@@ -1,5 +1,5 @@
-import type { Kind } from './Entity';
-import type { FlightDocumentFields } from './FlightDocumentFieldSchema';
+import type { Kind } from './Entity.ts';
+import type { FlightDocumentFields } from './FlightDocumentFieldSchema.ts';
 
 // The logical model has exactly one resource shape. Grouped YAML sections and bare-path shorthand are
 // text-codec forms normalized into this kind-tagged row before schemas or resolvers see them.

@@ -3,7 +3,7 @@ import {
   findShaderVerticalOriginMismatches,
   formatShaderVerticalOriginReport,
   readsAbsoluteVerticalCoordinate,
-} from './shader-vertical-origin';
+} from './shader-vertical-origin.ts';
 
 // Synthetic shader text rather than the real effects, so the check keeps its meaning once every
 // effect is correct and there is nothing left in the tree for it to find.

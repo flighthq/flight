@@ -1,6 +1,6 @@
 import type { PlatformInfo, ElectronApi } from '@flighthq/types/contract';
 
-import { electronHostPlatform, electronHostPlatformGroup, populateElectronHostPlatform } from './electronPlatform';
+import { electronHostPlatform, electronHostPlatformGroup, populateElectronHostPlatform } from './electronPlatform.ts';
 
 function fakeElectron(): ElectronApi {
   return {

@@ -1,5 +1,5 @@
-import type { Entity } from './Entity';
-import type { Matrix } from './Matrix';
+import type { Entity } from './Entity.ts';
+import type { Matrix } from './Matrix.ts';
 
 // Generic per-node motion. Velocity is not a camera feature: any transform that changed between frames
 // has velocity, so a physics system, a tween, a camera, or a manual transform edit all contribute the

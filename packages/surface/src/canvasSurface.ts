@@ -7,7 +7,7 @@ import type {
   NativeSurfaceHandle,
 } from '@flighthq/types/contract';
 
-import { allocateSurface } from './surface';
+import { allocateSurface } from './surface.ts';
 
 // Allocates a drawable in the given window, sized in device pixels, and acquires a 2D context on it.
 // Returns null when the host cannot rasterize 2D on it.

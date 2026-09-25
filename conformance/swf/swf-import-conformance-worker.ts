@@ -9,7 +9,7 @@ import type { ImportDiagnostic } from '@flighthq/types/contract';
 import type {
   SwfImportConformanceWorkerRequest,
   SwfImportConformanceWorkerResponse,
-} from './swf-import-conformance-worker-protocol';
+} from './swf-import-conformance-worker-protocol.ts';
 
 if (parentPort === null) throw new Error('SWF import conformance worker requires a parent port');
 

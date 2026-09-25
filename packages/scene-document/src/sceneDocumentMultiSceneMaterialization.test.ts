@@ -16,18 +16,18 @@ import type {
 import { DisplayObjectKind, FlightDocumentRefusalReason, Node3DKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { formatFlightDocumentText } from './flightDocumentText';
+import { formatFlightDocumentText } from './flightDocumentText.ts';
 import {
   createFlightDocumentScene2DMaterialization,
   createFlightDocumentScene2DMaterializationFromText,
   explainFlightDocumentRefusal,
   explainFlightDocumentRefusalFromText,
-} from './sceneDocumentScene2DMaterialization';
+} from './sceneDocumentScene2DMaterialization.ts';
 import {
   createFlightDocumentScene3DMaterialization,
   createFlightDocumentScene3DMaterializationFromText,
   explainFlightDocumentScene3DRefusal,
-} from './sceneDocumentScene3DMaterialization';
+} from './sceneDocumentScene3DMaterialization.ts';
 
 const TestScene2DNodeKind = 'TestScene2DNode';
 const TestScene3DNodeKind = 'TestScene3DNode';

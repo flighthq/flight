@@ -1,1 +1,1 @@
-export * from './utf8';
+export * from './utf8.ts';

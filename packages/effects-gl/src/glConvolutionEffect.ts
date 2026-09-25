@@ -2,8 +2,8 @@ import { unpackColorRgba } from '@flighthq/color/contract';
 import { drawGlFullscreenPass } from '@flighthq/render-gl/contract';
 import type { ConvolutionEffect, GlEffectRunner, GlRenderState, GlTextureRenderTarget } from '@flighthq/types/contract';
 
-import { getGlEffectProgram } from './glEffectProgramCache';
-import { registerGlEffect } from './glEffectRegistry';
+import { getGlEffectProgram } from './glEffectProgramCache.ts';
+import { registerGlEffect } from './glEffectRegistry.ts';
 
 // Largest kernel the WebGL path supports (a 7×7). The cap is the fixed uniform-array size in the
 // fragment shader; larger kernels are unsupported on this backend.

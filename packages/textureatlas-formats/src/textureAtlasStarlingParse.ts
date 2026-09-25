@@ -3,7 +3,7 @@ import { TextureAtlasRotation } from '@flighthq/types/contract';
 import type { TextureAtlas } from '@flighthq/types/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
-import { resetTextureAtlasPageMeta } from './textureAtlasPageMeta';
+import { resetTextureAtlasPageMeta } from './textureAtlasPageMeta.ts';
 
 // Populates `atlas.regions` from a Starling / Sparrow XML string.
 // Existing regions are cleared before parsing. Returns `atlas` for convenience.

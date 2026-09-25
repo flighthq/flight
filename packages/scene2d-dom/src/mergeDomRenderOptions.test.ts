@@ -1,6 +1,6 @@
 import type { DomRenderOptions } from '@flighthq/types/contract';
 
-import { mergeDomRenderOptions } from './mergeDomRenderOptions';
+import { mergeDomRenderOptions } from './mergeDomRenderOptions.ts';
 
 // Every field DomRenderOptions declares. Adding one fails the exhaustiveness test until someone
 // decides how it composes — the drift alarm a generic deep merge would have hidden.

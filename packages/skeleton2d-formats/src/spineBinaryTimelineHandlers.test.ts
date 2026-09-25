@@ -2,7 +2,7 @@ import type { SpineBinaryTimelineHandler, SpineBinaryTimelineKind } from '@fligh
 import { SpineBinaryTimelineKind as TimelineKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createSpineBinaryRegistry, getSpineBinaryTimelineHandler } from './spineBinaryRegistry';
+import { createSpineBinaryRegistry, getSpineBinaryTimelineHandler } from './spineBinaryRegistry.ts';
 import {
   registerSpineBinaryTimelineHandlers,
   spineBinaryBoneTimelineHandler,
@@ -13,7 +13,7 @@ import {
   spineBinaryPathTimelineHandler,
   spineBinarySlotTimelineHandler,
   spineBinaryTransformTimelineHandler,
-} from './spineBinaryTimelineHandlers';
+} from './spineBinaryTimelineHandlers.ts';
 
 function expectRegisteredTimeline(kind: SpineBinaryTimelineKind, handler: SpineBinaryTimelineHandler): void {
   const registry = createSpineBinaryRegistry();

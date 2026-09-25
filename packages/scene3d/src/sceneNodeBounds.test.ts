@@ -2,9 +2,9 @@ import { createAabb, setVector3 } from '@flighthq/geometry/contract';
 import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 
-import { createMesh } from './mesh';
-import { createNode3D } from './sceneNode';
-import { getNode3DWorldBounds } from './sceneNodeBounds';
+import { createMesh } from './mesh.ts';
+import { createNode3D } from './sceneNode.ts';
+import { getNode3DWorldBounds } from './sceneNodeBounds.ts';
 
 describe('getNode3DWorldBounds', () => {
   it('sets an empty box when the node has no Mesh geometry', () => {

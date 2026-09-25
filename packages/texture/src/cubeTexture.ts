@@ -5,8 +5,8 @@ import type {
   TextureSourceCubeFaces,
 } from '@flighthq/types/contract';
 
-import { cloneSampler } from './sampler';
-import { cloneTexture, copyTexture, createTexture, equalsTexture } from './texture';
+import { cloneSampler } from './sampler.ts';
+import { cloneTexture, copyTexture, createTexture, equalsTexture } from './texture.ts';
 
 function getCubeSources(texture: Readonly<CubeTexture>): TextureSourceCubeFaces {
   return texture.sources;

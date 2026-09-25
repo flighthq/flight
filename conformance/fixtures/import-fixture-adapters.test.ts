@@ -4,9 +4,9 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { ConformanceFixtureInput, ConformanceFixtureTree } from '../core/fixture-conformance';
-import { runConformanceFixtureAdapters } from '../core/fixture-conformance';
-import { createImportFixtureAdapters } from './import-fixture-adapters';
+import type { ConformanceFixtureInput, ConformanceFixtureTree } from '../core/fixture-conformance.ts';
+import { runConformanceFixtureAdapters } from '../core/fixture-conformance.ts';
+import { createImportFixtureAdapters } from './import-fixture-adapters.ts';
 
 let workspace = '';
 

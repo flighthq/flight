@@ -1,5 +1,5 @@
-import type { ImportDiagnostic } from './ImportDiagnostic';
-import type { ParticleEmitterConfig } from './ParticleEmitterConfig';
+import type { ImportDiagnostic } from './ImportDiagnostic.ts';
+import type { ParticleEmitterConfig } from './ParticleEmitterConfig.ts';
 
 // Spine particle effect JSON schema.
 // Targets the Spine 4.x particle effect format (`.p` JSON variant) as documented by

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getCaptureFingerprintContrast } from './captureContrast';
+import { getCaptureFingerprintContrast } from './captureContrast.ts';
 
 describe('getCaptureFingerprintContrast', () => {
   it('measures a fingerprint against a uniform frame of its corner colour', () => {

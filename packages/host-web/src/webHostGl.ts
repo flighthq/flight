@@ -1,7 +1,7 @@
 import type { AppWindow, GlContextOptions, HostGlCapability, Surface } from '@flighthq/types/contract';
 
-import { getWebGlContext } from './webGlContext';
-import { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle } from './webSurfaceHandle';
+import { getWebGlContext } from './webGlContext.ts';
+import { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle } from './webSurfaceHandle.ts';
 
 function createWebHostGl(): HostGlCapability {
   const out = {} as HostGlCapability;

@@ -1,8 +1,8 @@
 import type { WgpuBitmapShader } from '@flighthq/types/contract';
 
-import { getWgpuRenderStateRuntime } from './wgpuRenderState';
-import { registerWgpuBitmapShader } from './wgpuShaderRegistry';
-import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper';
+import { getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
+import { registerWgpuBitmapShader } from './wgpuShaderRegistry.ts';
+import { createWgpuRenderStateForTest, installWgpuMock } from './wgpuTestHelper.ts';
 
 beforeAll(() => {
   installWgpuMock();

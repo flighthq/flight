@@ -1,5 +1,5 @@
-import type { ImportDiagnostic } from './ImportDiagnostic';
-import type { ParticleEmitterConfig } from './ParticleEmitterConfig';
+import type { ImportDiagnostic } from './ImportDiagnostic.ts';
+import type { ParticleEmitterConfig } from './ParticleEmitterConfig.ts';
 
 // Unity Shuriken particle system JSON schema.
 // Based on the Unity Particle System component's serialized field names as exported

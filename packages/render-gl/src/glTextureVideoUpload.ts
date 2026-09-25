@@ -1,6 +1,6 @@
 import type { GlContext, ImageResource } from '@flighthq/types/contract';
 
-import { uploadGlTextureElement } from './glTextureUpload';
+import { uploadGlTextureElement } from './glTextureUpload.ts';
 
 // The per-frame video-to-GPU upload path. An ImageResource's borrowed HTMLVideoElement decodes new pixels
 // continuously, so a driver re-uploads the currently-bound GL texture whenever the element's frame

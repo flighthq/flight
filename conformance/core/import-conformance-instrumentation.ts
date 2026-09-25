@@ -2,7 +2,7 @@ import type {
   ImportConformanceCapabilityDefinition,
   ImportConformanceInstrumentationProofs,
   ImportConformanceLossPath,
-} from './import-conformance-core';
+} from './import-conformance-core.ts';
 
 export interface ImportConformanceInstrumentationMapping {
   blockingProblems: string[];

@@ -1,16 +1,16 @@
 import type { Physics3DContact, Physics3DWorld, RigidBody3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createPhysics3DContact as createPhysics3DContactRecord, createPhysics3DContactPoint } from './contacts';
-import { refreshRigidBody3DWorldInertia } from './integrate';
+import { createPhysics3DContact as createPhysics3DContactRecord, createPhysics3DContactPoint } from './contacts.ts';
+import { refreshRigidBody3DWorldInertia } from './integrate.ts';
 import {
   buildPhysics3DSolveIslands,
   isRigidBody3DPairAwake,
   setPhysics3DJointResolutionGuard,
   updatePhysics3DSleep,
-} from './islands';
-import { computePhysics3DBoxMassData, createPhysics3DMassData, setRigidBody3DMassData } from './massProperties';
-import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D, setPhysics3DBodyType } from './world';
+} from './islands.ts';
+import { computePhysics3DBoxMassData, createPhysics3DMassData, setRigidBody3DMassData } from './massProperties.ts';
+import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D, setPhysics3DBodyType } from './world.ts';
 
 describe('buildPhysics3DSolveIslands', () => {
   it('admits every awake dynamic body', () => {

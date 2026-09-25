@@ -2,10 +2,10 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import type { ColorScaleBias } from '@flighthq/types/contract';
 
-import { areGlColorAdjustmentGuardsEnabled, enableGlColorAdjustmentGuards } from './enableGlColorAdjustmentGuards';
-import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature';
-import { recordGlQuadBatchColorScaleBias } from './glQuadBatchWriter';
-import { createGlState } from './glTestHelper';
+import { areGlColorAdjustmentGuardsEnabled, enableGlColorAdjustmentGuards } from './enableGlColorAdjustmentGuards.ts';
+import { registerGlColorAdjustmentMaterialFeature } from './glColorAdjustmentMaterialFeature.ts';
+import { recordGlQuadBatchColorScaleBias } from './glQuadBatchWriter.ts';
+import { createGlState } from './glTestHelper.ts';
 
 function ct(): ColorScaleBias {
   return {

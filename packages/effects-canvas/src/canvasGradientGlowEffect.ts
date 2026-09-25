@@ -7,15 +7,15 @@ import type {
   GradientGlowEffect,
 } from '@flighthq/types/contract';
 
-import { drawCanvasEffectPass } from './canvasEffectCompositing';
-import { registerCanvasEffect } from './canvasEffectRegistry';
+import { drawCanvasEffectPass } from './canvasEffectCompositing.ts';
+import { registerCanvasEffect } from './canvasEffectRegistry.ts';
 import {
   acquireCanvasRenderTarget,
   createCanvasTextureRenderTargetPool,
   releaseCanvasRenderTarget,
-} from './canvasEffectState';
-import { applyCanvasGradientRampLookup, buildCanvasGradientRamp } from './canvasGradientRamp';
-import { clearCanvasTarget, compositeCanvasImage } from './canvasSourceModeCompositing';
+} from './canvasEffectState.ts';
+import { applyCanvasGradientRampLookup, buildCanvasGradientRamp } from './canvasGradientRamp.ts';
+import { clearCanvasTarget, compositeCanvasImage } from './canvasSourceModeCompositing.ts';
 
 // Gradient-glow composite effect: blur the silhouette, then colour every pixel by looking its blurred
 // alpha up in a colours/alphas/ratios ramp, and composite the result under the source.

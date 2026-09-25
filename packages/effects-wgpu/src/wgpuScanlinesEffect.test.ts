@@ -2,7 +2,7 @@ import {
   applyScanlinesEffectToWgpu,
   wgpuScanlinesEffectRunner,
   registerWgpuScanlinesEffect,
-} from './wgpuScanlinesEffect';
+} from './wgpuScanlinesEffect.ts';
 
 describe('applyScanlinesEffectToWgpu', () => {
   it('is a function', () => {

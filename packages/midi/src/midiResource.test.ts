@@ -8,7 +8,7 @@ import {
   retainMidiAccessResourceState,
   retainMidiInputPortResourceState,
   retainMidiOutputPortResourceState,
-} from './midiResource';
+} from './midiResource.ts';
 
 describe('getMidiAccessResourceState', () => {
   it('returns only state retained for the exact access identity', () => {

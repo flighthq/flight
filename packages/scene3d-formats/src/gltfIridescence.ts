@@ -1,7 +1,7 @@
 import { createIridescencePbrExtension } from '@flighthq/materials/contract';
 import type { GltfExtensionHandler } from '@flighthq/types/contract';
 
-import { attachGltfPbrExtension } from './gltfMaterialExtension';
+import { attachGltfPbrExtension } from './gltfMaterialExtension.ts';
 
 // KHR_materials_iridescence — view-dependent thin-film interference (soap bubbles, oil films, beetle
 // shells). The two thickness bounds are in NANOMETRES, and the thickness texture's green channel

@@ -1,8 +1,12 @@
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { GlRenderViewResources } from '@flighthq/types/contract';
 
-import { createGlRenderViewResources, destroyGlRenderViewResources, resizeGlRenderViewResources } from './glRenderView';
-import { makeGL } from './glTestHelper';
+import {
+  createGlRenderViewResources,
+  destroyGlRenderViewResources,
+  resizeGlRenderViewResources,
+} from './glRenderView.ts';
+import { makeGL } from './glTestHelper.ts';
 
 function makeResources(width = 640, height = 480, devicePixelRatio = 1): GlRenderViewResources {
   return createGlRenderViewResources(makeGL(), width, height, devicePixelRatio);

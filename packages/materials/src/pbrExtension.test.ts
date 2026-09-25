@@ -1,4 +1,4 @@
-import { isValidPbrUvSet } from './pbrExtension';
+import { isValidPbrUvSet } from './pbrExtension.ts';
 
 describe('isValidPbrUvSet', () => {
   it('accepts the two canonical mesh UV channels only', () => {

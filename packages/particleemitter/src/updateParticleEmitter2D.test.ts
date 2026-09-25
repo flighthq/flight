@@ -9,9 +9,9 @@ import {
 } from '@flighthq/particles/contract';
 import type { ParticleObject, TextureAtlas } from '@flighthq/types/contract';
 
-import { createParticleEmitter2D, reserveParticleEmitter2D } from './particleEmitter';
-import { prewarmParticleEmitter2D } from './prewarmParticleEmitter2D';
-import { isParticleEmitter2DComplete, updateParticleEmitter2D } from './updateParticleEmitter2D';
+import { createParticleEmitter2D, reserveParticleEmitter2D } from './particleEmitter.ts';
+import { prewarmParticleEmitter2D } from './prewarmParticleEmitter2D.ts';
+import { isParticleEmitter2DComplete, updateParticleEmitter2D } from './updateParticleEmitter2D.ts';
 
 function makeAtlas(): TextureAtlas {
   return {

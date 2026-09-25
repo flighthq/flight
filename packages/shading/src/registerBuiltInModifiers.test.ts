@@ -15,13 +15,13 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createAnimatedNormalModifier } from './createAnimatedNormalModifier';
-import { createDissolveModifier } from './createDissolveModifier';
-import { createEmissiveModifier } from './createEmissiveModifier';
-import { createFogModifier } from './createFogModifier';
-import { createVertexDisplaceModifier } from './createVertexDisplaceModifier';
-import { createModifierRegistry, resolveModifier } from './modifierRegistry';
-import { registerBuiltInModifiers } from './registerBuiltInModifiers';
+import { createAnimatedNormalModifier } from './createAnimatedNormalModifier.ts';
+import { createDissolveModifier } from './createDissolveModifier.ts';
+import { createEmissiveModifier } from './createEmissiveModifier.ts';
+import { createFogModifier } from './createFogModifier.ts';
+import { createVertexDisplaceModifier } from './createVertexDisplaceModifier.ts';
+import { createModifierRegistry, resolveModifier } from './modifierRegistry.ts';
+import { registerBuiltInModifiers } from './registerBuiltInModifiers.ts';
 
 describe('registerBuiltInModifiers', () => {
   it('registers all eight built-in kinds against their slots', () => {

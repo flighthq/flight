@@ -1,4 +1,4 @@
-import { applyOutlineEffectToWgpu, wgpuOutlineEffectRunner, registerWgpuOutlineEffect } from './wgpuOutlineEffect';
+import { applyOutlineEffectToWgpu, wgpuOutlineEffectRunner, registerWgpuOutlineEffect } from './wgpuOutlineEffect.ts';
 
 describe('applyOutlineEffectToWgpu', () => {
   it('is a function', () => {

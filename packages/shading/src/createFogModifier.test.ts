@@ -1,7 +1,7 @@
 import { FogModifierKind, FogModifierMode, ModifierSlot } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createFogModifier, initializeFogModifier } from './createFogModifier';
+import { createFogModifier, initializeFogModifier } from './createFogModifier.ts';
 
 describe('createFogModifier', () => {
   it('sets the kind and Effect slot', () => {

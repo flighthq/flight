@@ -1,4 +1,4 @@
-import type { Skeleton2DConstraint } from './Skeleton2DConstraint';
+import type { Skeleton2DConstraint } from './Skeleton2DConstraint.ts';
 
 /**
  * Copies a target bone's world transform onto other bones, channel by channel — the constraint behind a

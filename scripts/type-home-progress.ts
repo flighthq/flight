@@ -8,8 +8,8 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { getParsedOxcSource } from './oxc-source';
-import { getSelectors, selectPackages } from './select';
+import { getParsedOxcSource } from './oxc-source.ts';
+import { getSelectors, selectPackages } from './select.ts';
 
 const root = process.cwd();
 const packagesDir = join(root, 'packages');

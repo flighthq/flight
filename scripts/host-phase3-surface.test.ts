@@ -3,12 +3,12 @@ import { join, relative, resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import * as dialogContract from '../packages/dialog/src/contract';
-import * as dialogPublic from '../packages/dialog/src/index';
-import * as hostCapacitorContract from '../packages/host-capacitor/src/contract';
-import * as hostCapacitorPublic from '../packages/host-capacitor/src/index';
-import * as hostWebContract from '../packages/host-web/src/contract';
-import * as hostWebPublic from '../packages/host-web/src/index';
+import * as dialogContract from '../packages/dialog/src/contract.ts';
+import * as dialogPublic from '../packages/dialog/src/index.ts';
+import * as hostCapacitorContract from '../packages/host-capacitor/src/contract.ts';
+import * as hostCapacitorPublic from '../packages/host-capacitor/src/index.ts';
+import * as hostWebContract from '../packages/host-web/src/contract.ts';
+import * as hostWebPublic from '../packages/host-web/src/index.ts';
 
 const ROOT = resolve(__dirname, '..');
 const THIS_FILE = resolve(__dirname, 'host-phase3-surface.test.ts');

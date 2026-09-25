@@ -1,6 +1,6 @@
-import type { Entity } from './Entity';
-import type { PermissionQueryOutcome } from './Permission';
-import type { Signal } from './Signal';
+import type { Entity } from './Entity.ts';
+import type { PermissionQueryOutcome } from './Permission.ts';
+import type { Signal } from './Signal.ts';
 
 // MIDI handles are origin-pinned Entities. IDs are immutable diagnostic metadata only; providers keep
 // native handles and all mutable state out of band, keyed by the exact Entity object.

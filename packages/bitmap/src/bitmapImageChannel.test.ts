@@ -1,4 +1,4 @@
-import { ImageChannel } from './bitmapImageChannel';
+import { ImageChannel } from './bitmapImageChannel.ts';
 
 describe('ImageChannel', () => {
   it('has Red = 0', () => {

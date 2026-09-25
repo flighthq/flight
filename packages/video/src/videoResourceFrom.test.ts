@@ -1,6 +1,6 @@
 import type { HostImageSource, HostVideoCapability } from '@flighthq/types/contract';
 
-import { loadVideoResourceFromBlob, loadVideoResourceFromUrl, loadVideoResourceFromUrls } from './videoResourceFrom';
+import { loadVideoResourceFromBlob, loadVideoResourceFromUrl, loadVideoResourceFromUrls } from './videoResourceFrom.ts';
 
 const element = {} as HostImageSource;
 

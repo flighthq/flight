@@ -49,7 +49,7 @@ import {
   populateElectronHostTrayTemplateImage,
   populateElectronHostTrayTitle,
   populateElectronHostTrayTooltip,
-} from './electronTray';
+} from './electronTray.ts';
 
 interface FakeImage extends ElectronNativeImage {
   source: string;

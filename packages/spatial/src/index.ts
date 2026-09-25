@@ -1,7 +1,7 @@
-export { createBvhSpatialBackend3D } from './bvh3D';
-export * from './explainSpatialIndexing2D';
-export * from './explainSpatialIndexing3D';
-export * from './formatSpatialIndexingNotice';
+export { createBvhSpatialBackend3D } from './bvh3D.ts';
+export * from './explainSpatialIndexing2D.ts';
+export * from './explainSpatialIndexing3D.ts';
+export * from './formatSpatialIndexingNotice.ts';
 export {
   clearSpatialIndex2D,
   createSpatialIndex2D,
@@ -12,7 +12,7 @@ export {
   querySpatialRegion2D,
   removeSpatialObject2D,
   updateSpatialObject2D,
-} from './spatialIndex';
+} from './spatialIndex.ts';
 export {
   clearSpatialIndex3D,
   createSpatialIndex3D,
@@ -25,7 +25,7 @@ export {
   querySpatialSphere3D,
   removeSpatialObject3D,
   updateSpatialObject3D,
-} from './spatialIndex3D';
-export * from './spatialIndexingGuard';
-export { MAX_INDEXED_CELLS_PER_OBJECT, createUniformGridSpatialBackend2D } from './uniformGrid';
-export { createUniformGridSpatialBackend3D } from './uniformGrid3D';
+} from './spatialIndex3D.ts';
+export * from './spatialIndexingGuard.ts';
+export { MAX_INDEXED_CELLS_PER_OBJECT, createUniformGridSpatialBackend2D } from './uniformGrid.ts';
+export { createUniformGridSpatialBackend3D } from './uniformGrid3D.ts';

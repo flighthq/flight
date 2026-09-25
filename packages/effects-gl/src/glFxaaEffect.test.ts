@@ -1,4 +1,4 @@
-import { applyFxaaEffectToGl, glFxaaEffectRunner, registerGlFxaaEffect } from './glFxaaEffect';
+import { applyFxaaEffectToGl, glFxaaEffectRunner, registerGlFxaaEffect } from './glFxaaEffect.ts';
 
 describe('applyFxaaEffectToGl', () => {
   it('is a function', () => {

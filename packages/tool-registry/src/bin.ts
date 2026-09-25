@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { runRegistryTool } from './registryTool';
+import { runRegistryTool } from './registryTool.ts';
 
 process.exitCode = runRegistryTool(process.argv.slice(2), {
   writeError: (message) => process.stderr.write(message),

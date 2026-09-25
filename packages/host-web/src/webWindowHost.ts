@@ -7,7 +7,7 @@ import {
   webHostWindowFullscreen,
   webHostWindowGeometry,
   webHostWindowLifecycle,
-} from './webWindow';
+} from './webWindow.ts';
 
 export const webHostWindow = {
   appearance: webHostWindowAppearance,

@@ -31,7 +31,7 @@ import type {
   RiveCoreObject,
 } from '@flighthq/types/contract';
 
-import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes';
+import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
 
 /**
  * Samples a Rive clip, applying both the shared display-object channels and the format-owned ones

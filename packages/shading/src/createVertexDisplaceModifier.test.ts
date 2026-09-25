@@ -2,7 +2,7 @@ import type { Texture, Vector3Like } from '@flighthq/types/contract';
 import { ModifierSlot, VertexDisplaceModifierKind, VertexDisplaceModifierSource } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { createVertexDisplaceModifier, initializeVertexDisplaceModifier } from './createVertexDisplaceModifier';
+import { createVertexDisplaceModifier, initializeVertexDisplaceModifier } from './createVertexDisplaceModifier.ts';
 
 describe('createVertexDisplaceModifier', () => {
   it('sets the kind and the Vertex slot', () => {

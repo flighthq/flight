@@ -3,7 +3,7 @@ import {
   computeWorstAxisDisplacement,
   formatDisplacementReport,
   readDisplacementRows,
-} from './capture-displacement';
+} from './capture-displacement.ts';
 
 // A 2x2 fingerprint in the committed format: `gridSize:` then RGB hex per cell, row-major.
 function fingerprint(cells: readonly (readonly [number, number, number])[]): string {

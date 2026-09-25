@@ -10,7 +10,7 @@ import type {
   Scene2DDocument,
 } from '@flighthq/types/contract';
 
-import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics';
+import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
 
 // Operation-scoped asynchronous boundary for a document's sounds, the twin of loadScene2DImageResources.
 // Each selected reference decodes once into the resource it already handed out, so a trigger bound before

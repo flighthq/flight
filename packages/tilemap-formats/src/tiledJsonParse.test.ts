@@ -2,7 +2,7 @@ import type { ImportDiagnostic, TiledParseOptions } from '@flighthq/types/contra
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseTiledTilesetJson, parseTiledTmj } from './tiledJsonParse';
+import { parseTiledTilesetJson, parseTiledTmj } from './tiledJsonParse.ts';
 
 function base64Layer(gids: readonly number[]): string {
   const bytes = new Uint8Array(gids.length * 4);

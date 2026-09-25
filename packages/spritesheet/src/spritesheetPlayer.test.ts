@@ -1,8 +1,8 @@
 import { connectSignal } from '@flighthq/signals/contract';
 
-import { createSpritesheet } from './spritesheet';
-import { createSpritesheetAnimation } from './spritesheetAnimation';
-import { createSpritesheetFrame } from './spritesheetFrame';
+import { createSpritesheet } from './spritesheet.ts';
+import { createSpritesheetAnimation } from './spritesheetAnimation.ts';
+import { createSpritesheetFrame } from './spritesheetFrame.ts';
 import {
   acquireSpritesheetPlayer,
   cloneSpritesheetPlayer,
@@ -20,7 +20,7 @@ import {
   seekSpritesheetPlayerToTime,
   stopSpritesheetPlayer,
   updateSpritesheetPlayer,
-} from './spritesheetPlayer';
+} from './spritesheetPlayer.ts';
 
 function makeAnimation(frameIndices: number[], frameDuration: number, repeatCount = -1) {
   return createSpritesheetAnimation({ frames: frameIndices, frameDuration, repeatCount });

@@ -1,4 +1,4 @@
-import { easeInBounce, easeInOutBounce, easeOutBounce } from './easeBounce';
+import { easeInBounce, easeInOutBounce, easeOutBounce } from './easeBounce.ts';
 
 describe('easeInBounce', () => {
   it('returns 0 at t=0 and 1 at t=1', () => {

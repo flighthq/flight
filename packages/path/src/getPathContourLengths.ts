@@ -1,6 +1,6 @@
 import type { Path } from '@flighthq/types/contract';
 
-import { flattenPath } from './flattenPath';
+import { flattenPath } from './flattenPath.ts';
 
 // Returns an array of arc lengths, one per contour in the path. Curves are adaptively flattened
 // to `tolerance` path units before measurement. An empty path returns an empty array.

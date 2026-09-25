@@ -1,7 +1,7 @@
 import { attachEntityBinding, getEntityBinding } from '@flighthq/entity/contract';
 import type { Vector2 } from '@flighthq/types/contract';
 
-import { acquireEmptyVector2, acquireVector2, clearVector2Pool, releaseVector2 } from './vector2Pool';
+import { acquireEmptyVector2, acquireVector2, clearVector2Pool, releaseVector2 } from './vector2Pool.ts';
 
 beforeEach(() => {
   clearVector2Pool();

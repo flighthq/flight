@@ -1,7 +1,7 @@
 import * as renderGlContract from '@flighthq/render-gl/contract';
 import type { GlFullscreenProgram, GlRenderState } from '@flighthq/types/contract';
 
-import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache';
+import { getGlEffectProgram, getGlEffectUniformLocation } from './glEffectProgramCache.ts';
 
 beforeEach(() => {
   // The cache's whole job is deciding when NOT to call this, so it has to be observable.

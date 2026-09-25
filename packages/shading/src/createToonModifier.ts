@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { ToonModifier, ToonModifierOptions, EntityConstruction } from '@flighthq/types/contract';
 import { ModifierSlot, ToonModifierKind } from '@flighthq/types/contract';
 
-import { initializeModifier } from './modifier';
+import { initializeModifier } from './modifier.ts';
 
 // The options for `createToonModifier`. Only `steps` is required; `smoothness` carries a documented
 // default. Both are uniform-fed scalars — they do not change the emitted program, so a toon modifier

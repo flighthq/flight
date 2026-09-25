@@ -10,7 +10,7 @@ import {
   registerWgpuBlendEffectBackdrop,
   unregisterWgpuBlendEffectBackdrop,
   WGPU_BLEND_FRAGMENT_WGSL,
-} from './wgpuBlendEffect';
+} from './wgpuBlendEffect.ts';
 
 function makeState(): WgpuRenderState {
   return {} as WgpuRenderState;

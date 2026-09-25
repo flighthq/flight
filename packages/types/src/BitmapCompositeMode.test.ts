@@ -1,4 +1,4 @@
-import { BitmapCompositeMode } from './BitmapCompositeMode';
+import { BitmapCompositeMode } from './BitmapCompositeMode.ts';
 
 describe('BitmapCompositeMode', () => {
   it('carries canonical PascalCase values equal to their keys', () => {

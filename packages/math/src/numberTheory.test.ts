@@ -1,4 +1,4 @@
-import { factorial, gcd, hypot2, isEven, isOdd, lcm } from './numberTheory';
+import { factorial, gcd, hypot2, isEven, isOdd, lcm } from './numberTheory.ts';
 
 describe('factorial', () => {
   it('returns 1 for 0', () => {

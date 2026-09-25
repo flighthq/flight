@@ -1,9 +1,9 @@
 import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 
-import { areSwfGuardsEnabled, disableSwfGuards, enableSwfGuards } from './enableSwfGuards';
-import { readSwfFilterList } from './swfFilter';
-import { SwfReader } from './swfReader';
+import { areSwfGuardsEnabled, disableSwfGuards, enableSwfGuards } from './enableSwfGuards.ts';
+import { readSwfFilterList } from './swfFilter.ts';
+import { SwfReader } from './swfReader.ts';
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);

@@ -1,4 +1,4 @@
-import { parseToolPipelineConfig } from './pipelineConfig';
+import { parseToolPipelineConfig } from './pipelineConfig.ts';
 
 describe('parseToolPipelineConfig', () => {
   it('accepts the strict version-1 shape and normalizes groups without reordering assets', () => {

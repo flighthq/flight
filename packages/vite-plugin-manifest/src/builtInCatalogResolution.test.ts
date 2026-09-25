@@ -8,7 +8,7 @@ import {
   BUILT_IN_REQUIREMENT_TRANSLATIONS,
 } from '@flighthq/requirement-catalog/contract';
 
-import { createManifestPlugin } from './manifestPlugin';
+import { createManifestPlugin } from './manifestPlugin.ts';
 
 describe('AWD2 content through the built-in catalog', () => {
   it('resolves an AWD2 material block to non-empty render fragments', async () => {

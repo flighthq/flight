@@ -8,7 +8,7 @@ import {
   createTilingSampler,
   equalsSampler,
   initializeSampler,
-} from './sampler';
+} from './sampler.ts';
 
 describe('cloneSampler', () => {
   it('copies every field into an independent entity', () => {

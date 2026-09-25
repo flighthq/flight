@@ -10,8 +10,8 @@
 import { uploadGlSkinPaletteTexture } from '@flighthq/render-gl/contract';
 import type { GlMeshProgram, GlMeshSkinFeature, GlRenderState, Scene3DRenderProxy } from '@flighthq/types/contract';
 
-import { SKIN_NORMAL_PALETTE_TEXTURE_UNIT, SKIN_PALETTE_TEXTURE_UNIT } from './glMeshProgram';
-import { ensureGlSkinNormalPalette, ensureGlSkinPalette, getGlScene3DRuntime } from './glScene3DRuntime';
+import { SKIN_NORMAL_PALETTE_TEXTURE_UNIT, SKIN_PALETTE_TEXTURE_UNIT } from './glMeshProgram.ts';
+import { ensureGlSkinNormalPalette, ensureGlSkinPalette, getGlScene3DRuntime } from './glScene3DRuntime.ts';
 
 // Uploads and binds the pose + normal palettes consumed by a HAS_SKIN mesh program. Returns true only
 // when both the selected program and the draw proxy carry the pose data, which is also the signal that

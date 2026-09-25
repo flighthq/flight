@@ -1,4 +1,4 @@
-export * from './basis';
+export * from './basis.ts';
 export {
   createCamera3D,
   getCamera3DInverseViewProjectionMatrix4,
@@ -8,17 +8,17 @@ export {
   setCamera3DViewMatrix4FromLookAt,
   setCamera3DViewMatrix4FromMatrix4,
   updateCamera3DInverseViewProjection,
-} from './camera';
-export { createCamera2D, setCamera2DLookAt } from './camera2d';
-export * from './cubeCapture';
-export * from './culling';
-export * from './depth';
-export * from './enableCameraGuards';
-export * from './explainCamera3DView';
-export * from './frustumCorners';
-export * from './intersection';
-export * from './parallax';
-export * from './picking';
+} from './camera.ts';
+export { createCamera2D, setCamera2DLookAt } from './camera2d.ts';
+export * from './cubeCapture.ts';
+export * from './culling.ts';
+export * from './depth.ts';
+export * from './enableCameraGuards.ts';
+export * from './explainCamera3DView.ts';
+export * from './frustumCorners.ts';
+export * from './intersection.ts';
+export * from './parallax.ts';
+export * from './picking.ts';
 export {
   createOrthographicProjection,
   createPerspectiveProjection,
@@ -28,10 +28,10 @@ export {
   isPerspectiveProjection,
   isRawProjection,
   setProjectionMatrix4,
-} from './projection';
-export * from './projection2d';
-export * from './reflection';
-export * from './shadowCamera';
-export * from './viewMatrix';
-export { getCamera2DVisibleBounds } from './visibleBounds';
-export * from './zoom';
+} from './projection.ts';
+export * from './projection2d.ts';
+export * from './reflection.ts';
+export * from './shadowCamera.ts';
+export * from './viewMatrix.ts';
+export { getCamera2DVisibleBounds } from './visibleBounds.ts';
+export * from './zoom.ts';

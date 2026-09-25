@@ -2,7 +2,7 @@ import { beginWgpuScreenRenderPassForTest, submitWgpuFrame } from '@flighthq/ren
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 
-import { popWgpuClipRectangle, pushWgpuClipRectangle } from './wgpuClipRectangle';
+import { popWgpuClipRectangle, pushWgpuClipRectangle } from './wgpuClipRectangle.ts';
 
 beforeAll(() => {
   installWgpuMock();

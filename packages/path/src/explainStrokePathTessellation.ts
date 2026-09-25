@@ -15,7 +15,7 @@ import {
   StrokePathTessellationIssueReversingJoin,
   StrokePathTessellationIssueSelfIntersectingCenterline,
   StrokePathTessellationIssueSelfIntersectingOutline,
-} from './strokePathGeometry';
+} from './strokePathGeometry.ts';
 
 // Pure diagnostic twin of tessellateStrokePath: re-runs the shared validation, retains and mutates
 // nothing, never throws, and returns detached plain data explaining a null mesh. Kept in its own module

@@ -36,7 +36,7 @@ import {
   Physics3DAbiShapeHeaderByteLength,
   Physics3DAbiShapeKind,
   Physics3DAbiVersion,
-} from './physics3DAbiLayout';
+} from './physics3DAbiLayout.ts';
 
 export function getPhysics3DAbiSetColliderCommandByteLength(collider: Readonly<Physics3DCollider>): number {
   const shapeByteLength = getShapeByteLength(collider.local);

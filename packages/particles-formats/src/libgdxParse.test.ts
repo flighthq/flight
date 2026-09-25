@@ -1,6 +1,6 @@
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { parseLibgdxParticle, parseLibgdxParticleDocument } from './libgdxParse';
+import { parseLibgdxParticle, parseLibgdxParticleDocument } from './libgdxParse.ts';
 
 const SPARK_P = `Particle Effect
 - Spark -

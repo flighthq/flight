@@ -1,5 +1,5 @@
-import type { Material3D } from './Material3D';
-import type { Texture } from './Texture';
+import type { Material3D } from './Material3D.ts';
+import type { Texture } from './Texture.ts';
 
 // Self-illuminating, lighting-independent. `emissive` is packed sRgb-albedo RGBA, `emissiveMap`
 // modulates it, and `emissiveStrength` scales linear radiance — values > 1 drive bloom on GPU

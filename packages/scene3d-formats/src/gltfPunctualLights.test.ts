@@ -7,8 +7,8 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseGltf } from './gltfParse';
-import { GltfPunctualLightsExtensionHandler } from './gltfPunctualLights';
+import { parseGltf } from './gltfParse.ts';
+import { GltfPunctualLightsExtensionHandler } from './gltfPunctualLights.ts';
 
 function findLightDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic | undefined {
   return diagnostics.find((diagnostic) => diagnostic.kind === kind);

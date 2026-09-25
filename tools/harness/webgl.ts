@@ -62,7 +62,7 @@ import {
 } from '@flighthq/sdk';
 import { registerFunctionalTarget } from '@ft/verify';
 
-import type { FunctionalGlTarget, FunctionalTargetOptions } from './target';
+import type { FunctionalGlTarget, FunctionalTargetOptions } from './target.ts';
 
 export function createGlTarget(options: Readonly<FunctionalTargetOptions>): FunctionalGlTarget {
   const { width, height } = options;

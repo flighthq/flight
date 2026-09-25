@@ -1,7 +1,7 @@
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
-import { setTextLabelGuard } from './textLabelLayout';
+import { setTextLabelGuard } from './textLabelLayout.ts';
 
 export function disableTextLabelGuards(): void {
   setTextLabelGuard(null);

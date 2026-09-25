@@ -2,8 +2,8 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { SheenPbrExtension, EntityConstruction } from '@flighthq/types/contract';
 import { SheenPbrExtensionKind } from '@flighthq/types/contract';
 
-import { isValidMaterialWeight } from './materialValidation';
-import { isValidPbrUvSet } from './pbrExtension';
+import { isValidMaterialWeight } from './materialValidation.ts';
+import { isValidPbrUvSet } from './pbrExtension.ts';
 
 export function createSheenPbrExtension(opts?: Readonly<Partial<SheenPbrExtension>>): SheenPbrExtension {
   const out = allocateEntity<SheenPbrExtension>();

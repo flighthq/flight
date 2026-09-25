@@ -1,7 +1,7 @@
-import { AdvancedBlendMode } from './AdvancedBlendMode';
-import type { BlendEffect } from './BlendEffect';
-import type { Effect } from './Effect';
-import { EntityRuntimeKey } from './Entity';
+import { AdvancedBlendMode } from './AdvancedBlendMode.ts';
+import type { BlendEffect } from './BlendEffect.ts';
+import type { Effect } from './Effect.ts';
+import { EntityRuntimeKey } from './Entity.ts';
 
 describe('BlendEffect', () => {
   it('is assignable to the open Effect base with a BlendEffect kind', () => {

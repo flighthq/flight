@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { readCffTable } from './cffTable';
-import { createSyntheticFont } from './openTypeTestHelper';
-import { readSfntTableDirectory } from './sfntTableDirectory';
+import { readCffTable } from './cffTable.ts';
+import { createSyntheticFont } from './openTypeTestHelper.ts';
+import { readSfntTableDirectory } from './sfntTableDirectory.ts';
 
 function cffOf(options: Parameters<typeof createSyntheticFont>[0] = {}) {
   const font = createSyntheticFont({ flavor: 'opentype', ...options });

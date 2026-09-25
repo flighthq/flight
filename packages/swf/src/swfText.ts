@@ -12,8 +12,8 @@ import {
 import type { GlyphOutlineSource, ImportDiagnostic, Path, RectangleLike, Shape } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, PathCommand } from '@flighthq/types/contract';
 
-import { SwfReader } from './swfReader';
-import { createSwfGlyphShape } from './swfShape';
+import { SwfReader } from './swfReader.ts';
+import { createSwfGlyphShape } from './swfShape.ts';
 
 // Composes a static text definition into one Shape. A text record carries glyph indices and advances
 // rather than characters, so this is placement, not layout: each glyph's outline is emitted at the pen

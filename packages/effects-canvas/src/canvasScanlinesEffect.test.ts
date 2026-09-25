@@ -2,7 +2,7 @@ import {
   applyScanlinesEffectToCanvas,
   canvasScanlinesEffectRunner,
   registerCanvasScanlinesEffect,
-} from './canvasScanlinesEffect';
+} from './canvasScanlinesEffect.ts';
 
 describe('applyScanlinesEffectToCanvas', () => {
   it('is a function', () => {

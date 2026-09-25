@@ -24,8 +24,8 @@ import type {
   TextLabelRuntime,
 } from '@flighthq/types/contract';
 
-import { drawCanvasScene2D } from './canvasNode2D';
-import { setCanvasTransform } from './canvasTransform';
+import { drawCanvasScene2D } from './canvasNode2D.ts';
+import { setCanvasTransform } from './canvasTransform.ts';
 
 export function drawCanvasRichText(state: CanvasRenderState, renderProxy: RenderProxy2D): void {
   drawCanvasRichTextField(state, renderProxy);

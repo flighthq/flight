@@ -1,5 +1,5 @@
-import type { Effect } from './Effect';
-import type { EffectSourceMode } from './EffectSourceMode';
+import type { Effect } from './Effect.ts';
+import type { EffectSourceMode } from './EffectSourceMode.ts';
 
 // Outer-glow composite effect: tint the scene silhouette, blur it centered (no offset), then apply sourceMode compositing.
 // Full-frame composite effect over the scene's alpha silhouette; the color is a packed RGBA integer

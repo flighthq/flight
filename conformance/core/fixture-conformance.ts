@@ -9,7 +9,7 @@ import {
   isFixturePackMetadataEntry,
   readFixturePackManifestPaths,
   readFixtureTreeStamp,
-} from '../../scripts/fixtures';
+} from '../../scripts/fixtures.ts';
 
 export interface ConformanceFixturePack {
   id: string;

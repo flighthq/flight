@@ -6,8 +6,8 @@ import type {
   Surface,
 } from '@flighthq/types/contract';
 
-import { allocateSurface } from './surface';
-import { resizeSurface, setSurfaceDisplaySize } from './surfaceDisplay';
+import { allocateSurface } from './surface.ts';
+import { resizeSurface, setSurfaceDisplaySize } from './surfaceDisplay.ts';
 
 function capabilityOf<T>(fields: Omit<T, keyof Entity>): T {
   return finishEntity(Object.assign(allocateSurface<Surface>(null), fields) as never) as T;

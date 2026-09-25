@@ -1,4 +1,4 @@
-export * from './physics2DAbi';
+export * from './physics2DAbi.ts';
 export {
   clearPhysics2DAbiCommandBuffer,
   createPhysics2DAbiBodyBuffer,
@@ -8,8 +8,8 @@ export {
   createPhysics2DAbiJointBuffer,
   createPhysics2DAbiQueryBuffer,
   getPhysics2DAbiCommandBufferRemainingByteLength,
-} from './physics2DAbiBuffer';
-export * from './physics2DAbiCommand';
-export * from './physics2DAbiLayout';
-export * from './physics2DAbiQuery';
-export { createReferencePhysics2DAbi } from './referencePhysics2DAbi';
+} from './physics2DAbiBuffer.ts';
+export * from './physics2DAbiCommand.ts';
+export * from './physics2DAbiLayout.ts';
+export * from './physics2DAbiQuery.ts';
+export { createReferencePhysics2DAbi } from './referencePhysics2DAbi.ts';
