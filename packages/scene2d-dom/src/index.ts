@@ -1,4 +1,3 @@
-export { mergeDomRenderOptions } from './mergeDomRenderOptions';
 export * from './domBitmapTextureResolver';
 export { enableDomCssFilterSupport, setDomCssFilter } from './domCSSFilterBinding';
 export { enableDomRenderCache, domRenderCacheRenderer } from './domCache';
@@ -22,3 +21,5 @@ export { domTextLabelRenderer } from './domTextLabel';
 export { registerDomTextureResolver } from './domTextureResolver';
 export * from './enableDomTextureResolverGuards';
 export * from './explainDomTextureResolution';
+export * from './mergeDomRenderOptions';
+export * from './scene2DDomPipeline';

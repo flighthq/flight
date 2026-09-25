@@ -1,4 +1,3 @@
-export * from './mergeDomRenderOptions';
 export * from './domBitmapTextureResolver';
 export * from './domCSSFilterBinding';
 export * from './domCache';
@@ -30,3 +29,5 @@ export * from './domTextureResolver';
 export * from './domTransform';
 export * from './enableDomTextureResolverGuards';
 export * from './explainDomTextureResolution';
+export * from './mergeDomRenderOptions';
+export * from './scene2DDomPipeline';
