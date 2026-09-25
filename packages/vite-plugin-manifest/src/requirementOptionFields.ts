@@ -21,6 +21,28 @@ export const REQUIREMENT_OPTION_FIELDS: Readonly<Record<string, string>> = Objec
 });
 
 /**
+ * Per-backend field name overrides for facets whose implementation shape differs across backends.
+ *
+ * Canvas blend mode application is a single function (`blendModeApplication`), not a per-mode Map
+ * (`blendRealizations`). The global `REQUIREMENT_OPTION_FIELDS` names the GL/WGPU field; this table
+ * redirects the facet to the correct field on backends where the shape differs.
+ */
+export const BACKEND_OPTION_FIELD_OVERRIDES: Readonly<Record<string, Readonly<Record<string, string>>>> = Object.freeze(
+  {
+    canvas: Object.freeze({ [RequirementFacet.SceneBlendMode]: 'blendModeApplication' }),
+  },
+);
+
+/**
+ * Fields that carry a single implementation value rather than a kind-keyed Map.
+ *
+ * The codegen emits `field: symbol` instead of `field: new Map([...])`. If multiple catalog rows
+ * land on the same scalar field for one backend, only the first is emitted and the rest are reported
+ * as conflicts — a scalar cannot hold two implementations.
+ */
+export const SCALAR_OPTION_FIELDS: ReadonlySet<string> = new Set(['blendModeApplication']);
+
+/**
  * The kind-keyed fields each backend's options type ACTUALLY declares, taken from the types package.
  *
  * Backend sets are not interchangeable and the differences are real: `GlRenderStateOptions` has
@@ -40,7 +62,14 @@ export const REQUIREMENT_OPTION_FIELDS: Readonly<Record<string, string>> = Objec
 export const BACKEND_OPTION_FIELDS: Readonly<Record<string, ReadonlySet<string>>> = Object.freeze({
   // Derived from the landed CanvasRenderStateOptions: it extends RenderStateOptions and
   // CanvasRenderOptions and adds effects and materialRenderers, so these are its kind-keyed fields.
-  canvas: new Set(['canvasShapeCommands', 'effectPaddingResolvers', 'effects', 'materialRenderers', 'nodeRenderers']),
+  canvas: new Set([
+    'blendModeApplication',
+    'canvasShapeCommands',
+    'effectPaddingResolvers',
+    'effects',
+    'materialRenderers',
+    'nodeRenderers',
+  ]),
   // D3: DomRenderOptions declares registry fields, seeded into the runtime at construction.
   dom: new Set(['canvasShapeCommands', 'effectPaddingResolvers', 'nodeRenderers', 'textureResolvers']),
   gl: new Set([
