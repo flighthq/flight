@@ -1,4 +1,4 @@
-import { sdkHostCompressDeflate, sdkHostDecompressDeflate } from '@flighthq/compression';
+import { sdkHostCompressDeflate, sdkHostDecompressDeflate, sdkHostDecompressLzma } from '@flighthq/compression';
 import { CompressionFraming } from '@flighthq/types/contract';
 
 import { sdkHost, sdkHostCompress, sdkHostDecompress } from './sdkHost';
@@ -10,6 +10,10 @@ describe('sdkHost', () => {
 
   it('exposes decompress.deflate as the portable decoder slot', () => {
     expect(sdkHost.decompress.deflate).toBe(sdkHostDecompressDeflate);
+  });
+
+  it('exposes decompress.lzma as the portable decoder slot', () => {
+    expect(sdkHost.decompress.lzma).toBe(sdkHostDecompressLzma);
   });
 
   it('round-trips bytes through the aggregate compress and decompress slots', () => {
@@ -27,8 +31,9 @@ describe('sdkHostCompress', () => {
 });
 
 describe('sdkHostDecompress', () => {
-  it('carries only the deflate slot', () => {
-    expect(Object.keys(sdkHostDecompress)).toEqual(['deflate']);
+  it('carries the deflate and lzma slots', () => {
+    expect(Object.keys(sdkHostDecompress)).toEqual(['deflate', 'lzma']);
     expect(sdkHostDecompress.deflate).toBe(sdkHostDecompressDeflate);
+    expect(sdkHostDecompress.lzma).toBe(sdkHostDecompressLzma);
   });
 });
