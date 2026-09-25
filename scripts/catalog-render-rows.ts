@@ -32,11 +32,18 @@ export function buildRenderCatalogRows(): readonly RequirementCatalogEntry[] {
       rows.push(renderRow(backend.name, backend.module, symbol, kind));
     }
   }
-  // DOM ships no preset: its runtime seeds an EMPTY renderer table and a caller supplies the bindings.
-  // So its rows come from the pairs the package's OWN tests exercise — evidence from inside the package
-  // rather than a guess from matching names. The renderers with no such evidence are deliberately
-  // absent: a wrong binding registers a renderer under a kind no node carries and silently draws
-  // nothing, which is strictly worse than an honest gap the build reports.
+  // ★ DOM SHIPS NO PRESET, SO ITS ROWS STOP AT WHAT ITS OWN TESTS PROVE. Its runtime seeds an EMPTY
+  // renderer table and a caller supplies the bindings, so unlike the three backends above there is no
+  // shipped object to read. The obvious shortcut — infer the kind from the renderer's name, since the
+  // naming convention is strict — is measurably unsafe: run the same inference against the CANVAS
+  // preset and it gets 2 of 13 wrong. `DisplayObject` is served by `canvasScene2DRenderer` (no
+  // `canvasDisplayObjectRenderer` exists at all), and `MorphShape` is served by `canvasShapeRenderer`
+  // even though `canvasMorphShapeRenderer` DOES exist and is not what the preset uses. So a DOM row for
+  // MorphShape guessed from the name would very likely bind the wrong renderer, and a wrong binding
+  // registers a renderer under a kind no node carries and silently draws nothing — worse than an honest
+  // gap the build reports. Completing DOM properly means adding a `domScene2DRenderPreset` alongside
+  // the other three, which is a deliberate API decision for the render packages rather than something
+  // a generator may infer.
   for (const [kind, symbol] of DOM_TESTED_BINDINGS) {
     rows.push(renderRow('dom', '@flighthq/scene2d-dom', symbol, kind));
   }
