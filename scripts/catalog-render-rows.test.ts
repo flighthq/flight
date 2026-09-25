@@ -47,7 +47,7 @@ describe('buildRequirementTranslations', () => {
   });
 
   it('translates format requirements into scene-level facets, not back into format keys', () => {
-    const sceneFacets = new Set([
+    const sceneFacets: ReadonlySet<RequirementFacet> = new Set([
       RequirementFacet.SceneBlendMode,
       RequirementFacet.SceneMaterialKind,
       RequirementFacet.SceneModifierKind,
