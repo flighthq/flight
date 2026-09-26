@@ -4,8 +4,8 @@ import { Scene3DAnimationPathWeights } from '@flighthq/types/contract';
 import { md2AnimationHandler } from './md2AnimationHandler.ts';
 
 describe('md2AnimationHandler', () => {
-  it('reads the Frame section', () => {
-    expect(md2AnimationHandler.section).toBe('Frame');
+  it('satisfies the Animation feature, which is what the analyzer emits for a multi-frame model', () => {
+    expect(md2AnimationHandler.feature).toBe('Animation');
   });
 
   // MD2 packs several sub-animations into ONE contiguous frame list, distinguished only by a frame-name

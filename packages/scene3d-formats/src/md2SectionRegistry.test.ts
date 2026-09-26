@@ -13,24 +13,24 @@ describe('md2AllSectionHandlers', () => {
   // assembled. The parse runs handlers in the order the family gives them, which makes that order part of
   // the contract rather than an accident of how the array was written.
   it('orders the skin handler before the animation handler', () => {
-    const sections = md2AllSectionHandlers.map((handler) => handler.section);
-    expect(sections.indexOf('Skin')).toBeLessThan(sections.indexOf('Frame'));
+    const features = md2AllSectionHandlers.map((handler) => handler.feature);
+    expect(features.indexOf('Material')).toBeLessThan(features.indexOf('Animation'));
   });
 
-  it('names each section once, so two handlers cannot claim the same one', () => {
-    const sections = md2AllSectionHandlers.map((handler) => handler.section);
-    expect(sections.length).toBe(new Set(sections).size);
+  it('claims each feature once, so two handlers cannot claim the same one', () => {
+    const features = md2AllSectionHandlers.map((handler) => handler.feature);
+    expect(features.length).toBe(new Set(features).size);
   });
 });
 
 describe('md2AnimationFamily', () => {
-  it('covers the Frame section', () => {
-    expect(md2AnimationFamily.map((handler) => handler.section)).toEqual(['Frame']);
+  it('covers the Animation feature', () => {
+    expect(md2AnimationFamily.map((handler) => handler.feature)).toEqual(['Animation']);
   });
 });
 
 describe('md2SkinFamily', () => {
-  it('covers the Skin section', () => {
-    expect(md2SkinFamily.map((handler) => handler.section)).toEqual(['Skin']);
+  it('covers the Material feature', () => {
+    expect(md2SkinFamily.map((handler) => handler.feature)).toEqual(['Material']);
   });
 });

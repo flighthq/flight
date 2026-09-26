@@ -20,7 +20,7 @@ export const md2AnimationHandler: Readonly<Md2SectionHandler> = {
   collect(context) {
     context.document.animations.push(...buildMd2MorphAnimations(context.frames, context.morph));
   },
-  section: 'Frame',
+  feature: 'Animation',
 };
 
 // Segments MD2's frames into named vertex-morph clips, one per contiguous run of same-action frames.

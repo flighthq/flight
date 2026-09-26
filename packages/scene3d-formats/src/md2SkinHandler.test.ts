@@ -5,8 +5,8 @@ import { MD2_SKIN_SIZE } from './md2Schema.ts';
 import { md2SkinHandler } from './md2SkinHandler.ts';
 
 describe('md2SkinHandler', () => {
-  it('reads the Skin section', () => {
-    expect(md2SkinHandler.section).toBe('Skin');
+  it('satisfies the Material feature, which is what the analyzer emits for a skinned model', () => {
+    expect(md2SkinHandler.feature).toBe('Material');
   });
 
   it('emits one BlinnPhong material per named skin, binding only the first to the mesh', () => {

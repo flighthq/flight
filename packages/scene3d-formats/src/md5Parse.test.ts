@@ -18,12 +18,20 @@ import type {
   ImportDiagnostic,
   Mesh,
   Scene3DAnimationTarget,
+  Scene3DDocument,
   Node3D,
 } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { parseMd5Anim } from './md5AnimParse.ts';
-import { canonicalizeMd5TangentHandedness, createScene3DFromMd5Mesh, importMd5Mesh, parseMd5Mesh } from './md5Parse.ts';
+// parseMd5Mesh, createScene3DFromMd5Mesh and importMd5Mesh live in md5Document.ts, which owns the
+// default section-handler family; md5Parse.ts holds the parse itself.
+import { createScene3DFromMd5Mesh, importMd5Mesh, parseMd5Mesh } from './md5Document.ts';
+import {
+  buildMd5SkeletonDocument,
+  canonicalizeMd5TangentHandedness,
+  parseMd5MeshWithSectionHandlers,
+} from './md5Parse.ts';
 import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 import { findScene3DSkeletonJoints } from './sceneSkeleton.ts';
 
@@ -328,6 +336,48 @@ const OVER_INFLUENCED_VERTEX = [
   '  weight 6 0 1.0 ( 0 5 0 )',
   '}',
 ].join('\n');
+
+describe('buildMd5SkeletonDocument', () => {
+  // Exported so `md5SkeletonHandler` can wrap it without moving a hundred lines of quaternion work — and its
+  // two private rotation helpers — out of this module. The handler is a thin adapter; this is the emitter.
+  it('emits a skeleton group plus one node per joint, returning the skin those nodes form', () => {
+    const document = emptyTestDocument();
+    const skin = buildMd5SkeletonDocument(
+      [
+        {
+          name: 'root',
+          orientationW: 1,
+          orientationX: 0,
+          orientationY: 0,
+          orientationZ: 0,
+          parentIndex: -1,
+          positionX: 0,
+          positionY: 0,
+          positionZ: 0,
+        },
+        {
+          name: 'spine',
+          orientationW: 1,
+          orientationX: 0,
+          orientationY: 0,
+          orientationZ: 0,
+          parentIndex: 0,
+          positionX: 0,
+          positionY: 1,
+          positionZ: 0,
+        },
+      ],
+      document,
+      null,
+    );
+    expect(document.nodes[0].name).toBe('skeleton');
+    expect(document.nodes).toHaveLength(3);
+    expect(skin.joints).toHaveLength(2);
+    // Each joint is wired under its parent, so the group holds only the root joint as a child.
+    expect(document.nodes[0].children).toEqual([1]);
+    expect(document.nodes[1].children).toEqual([2]);
+  });
+});
 
 describe('canonicalizeMd5TangentHandedness', () => {
   // The contradiction branch is unreachable through a normal MD5 import: the mirrored-UV split runs
@@ -1288,6 +1338,41 @@ describe('createScene3DFromMd5Mesh', () => {
   });
 });
 
+function emptyTestDocument(): Scene3DDocument {
+  return {
+    animations: [],
+    cameras: [],
+    lights: [],
+    materials: [],
+    meshes: [],
+    metadata: null,
+    nodes: [],
+    resources: [],
+    scenes: [{ rootNodes: [] }],
+    skins: [],
+  };
+}
+
+describe('createScene3DFromMd5Mesh animations', () => {
+  it('returns the mesh scene with an empty animations map (the .md5anim is a separate file)', () => {
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    expect(Object.keys(scene.animations)).toHaveLength(0);
+  });
+
+  it('composes a paired .md5anim into a named clip bound to the scene’s own skeleton joints', () => {
+    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
+    const joints = findScene3DSkeletonJoints(scene.root)!;
+    scene.animations.walk = parseMd5Anim(SINGLE_JOINT_ANIM, joints)!;
+    expect(Object.keys(scene.animations)).toEqual(['walk']);
+
+    const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as Node3D)) as unknown as Mesh;
+    const meshJoints = mesh.skin!.skeleton.joints;
+    const channel = scene.animations.walk.channels[0];
+    // The clip binds the SAME joint node the imported mesh skins from — no caller threading.
+    expect((channel.targetRef as Scene3DAnimationTarget).node).toBe(meshJoints[0]);
+  });
+});
+
 // A degenerate MD5 mesh with no skeleton (numJoints 0, weightless verts): importMd5Mesh has no joints to
 // bind an animation to.
 const JOINTLESS_MESH = [
@@ -1314,26 +1399,6 @@ const JOINTLESS_MESH = [
   '  numweights 0',
   '}',
 ].join('\n');
-
-describe('createScene3DFromMd5Mesh animations', () => {
-  it('returns the mesh scene with an empty animations map (the .md5anim is a separate file)', () => {
-    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
-    expect(Object.keys(scene.animations)).toHaveLength(0);
-  });
-
-  it('composes a paired .md5anim into a named clip bound to the scene’s own skeleton joints', () => {
-    const scene = createScene3DFromMd5Mesh(SINGLE_TRIANGLE);
-    const joints = findScene3DSkeletonJoints(scene.root)!;
-    scene.animations.walk = parseMd5Anim(SINGLE_JOINT_ANIM, joints)!;
-    expect(Object.keys(scene.animations)).toEqual(['walk']);
-
-    const mesh = getNodeChildren(scene.root).find((c) => isMesh(c as Node3D)) as unknown as Mesh;
-    const meshJoints = mesh.skin!.skeleton.joints;
-    const channel = scene.animations.walk.channels[0];
-    // The clip binds the SAME joint node the imported mesh skins from — no caller threading.
-    expect((channel.targetRef as Scene3DAnimationTarget).node).toBe(meshJoints[0]);
-  });
-});
 
 describe('importMd5Mesh', () => {
   it('imports the mesh only when no animation source is given', () => {
@@ -1554,5 +1619,22 @@ describe('parseMd5Mesh read integrity', () => {
     const diagnostics: ImportDiagnostic[] = [];
     parseMd5Mesh(withLine('  "root" -1 ( 0 0 0 ) ( 0 0 0 )', '  "root" -1 ( 0 0 0 ) ( 2 0 0 )'), diagnostics);
     expect(findDiagnostic(diagnostics, 'md5mesh.joint-orientation-not-unit')).toBeDefined();
+  });
+});
+
+describe('parseMd5MeshWithSectionHandlers', () => {
+  // This is the parse over a family it is GIVEN; it resolves no default, which is what keeps this module free
+  // of `@flighthq/materials` (see md5Document.ts). An empty family is a real parse of the geometry alone.
+  it('uses the family it is given and has no default of its own', () => {
+    const bare = parseMd5MeshWithSectionHandlers(SINGLE_TRIANGLE, undefined, []);
+    expect(bare.materials).toEqual([]);
+    expect(bare.skins).toEqual([]);
+    expect(bare.meshes).toHaveLength(1);
+  });
+
+  it('still rejects a file with nothing recognisable through the diagnostics it was handed', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseMd5MeshWithSectionHandlers('not an md5 file', diagnostics, []);
+    expect(diagnostics.map((entry) => entry.kind)).toContain('md5mesh.no-data');
   });
 });
