@@ -16,12 +16,20 @@ import type {
   MaterialLike,
   Mesh,
   Node3D,
+  ObjMaterial,
+  Scene3DDocument,
   StandardPbrMaterial,
 } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind, ImportDiagnosticSeverity, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import { parseObjMaterialLibrary } from './mtlParse.ts';
-import { createScene3DFromObj, parseObj } from './objParse.ts';
+import {
+  createScene3DFromObj,
+  hasObjPbrDirectives,
+  objMaterialToBlinnPhong,
+  objMaterialToStandardPbr,
+  parseObj,
+} from './objParse.ts';
 import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 
 // Asserts EXACTLY ONE crumb of `kind` was recorded (guards the count) and returns it so a test can lock
@@ -483,6 +491,32 @@ describe('createScene3DFromObj animations', () => {
   });
 });
 
+describe('hasObjPbrDirectives', () => {
+  it('returns false for a classic MTL material with no PBR fields', () => {
+    expect(hasObjPbrDirectives(classicObjMaterial())).toBe(false);
+  });
+
+  it('returns true when roughness is present', () => {
+    expect(hasObjPbrDirectives({ ...classicObjMaterial(), roughness: 0.5 })).toBe(true);
+  });
+
+  it('returns true when metallic is present', () => {
+    expect(hasObjPbrDirectives({ ...classicObjMaterial(), metallic: 1.0 })).toBe(true);
+  });
+
+  it('returns true when sheen is present', () => {
+    expect(hasObjPbrDirectives({ ...classicObjMaterial(), sheen: 0.3 })).toBe(true);
+  });
+
+  it('returns true when mapRoughness is present', () => {
+    expect(hasObjPbrDirectives({ ...classicObjMaterial(), mapRoughness: 'roughness.png' })).toBe(true);
+  });
+
+  it('ignores emissive because it is not a shading model indicator', () => {
+    expect(hasObjPbrDirectives({ ...classicObjMaterial(), emissive: [1, 1, 1] })).toBe(false);
+  });
+});
+
 describe('obj diagnostic crumb coverage', () => {
   it.each(OBJ_MALFORMED_CASES)(
     'records $kind (reason $reason) as a Drop from parseObj',
@@ -653,6 +687,22 @@ describe('obj diagnostic crumb coverage', () => {
     const diagnostics: ImportDiagnostic[] = [];
     createScene3DFromObj('v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n', undefined, diagnostics);
     expect(diagnostics).toHaveLength(0);
+  });
+});
+
+describe('objMaterialToBlinnPhong', () => {
+  it('converts a classic MTL material to BlinnPhongMaterial', () => {
+    const document = emptyDocument();
+    const result = objMaterialToBlinnPhong(classicObjMaterial(), document, undefined);
+    expect(result.kind).toBe(BlinnPhongMaterialKind);
+  });
+});
+
+describe('objMaterialToStandardPbr', () => {
+  it('converts a PBR MTL material to StandardPbrMaterial', () => {
+    const document = emptyDocument();
+    const result = objMaterialToStandardPbr({ ...classicObjMaterial(), roughness: 0.5 }, document, undefined);
+    expect(result.kind).toBe(StandardPbrMaterialKind);
   });
 });
 
@@ -1064,3 +1114,47 @@ describe('parseObj smoothing groups', () => {
     expect(getMeshGeometryVertexCount(document.meshes[0].geometry)).toBe(4);
   });
 });
+
+function classicObjMaterial(): ObjMaterial {
+  return {
+    ambient: [0, 0, 0],
+    anisotropy: null,
+    anisotropyRotation: null,
+    clearcoat: null,
+    clearcoatRoughness: null,
+    diffuse: [0.8, 0.8, 0.8],
+    dissolve: 1,
+    emissive: null,
+    illumination: 2,
+    mapAmbient: null,
+    mapBump: null,
+    mapDiffuse: null,
+    mapDissolve: null,
+    mapEmissive: null,
+    mapMetallic: null,
+    mapNormal: null,
+    mapRoughness: null,
+    mapSpecular: null,
+    metallic: null,
+    name: 'classic',
+    roughness: null,
+    sheen: null,
+    specular: [0, 0, 0],
+    specularExponent: 0,
+  };
+}
+
+function emptyDocument(): Scene3DDocument {
+  return {
+    animations: [],
+    cameras: [],
+    lights: [],
+    materials: [],
+    meshes: [],
+    metadata: null,
+    nodes: [],
+    resources: [],
+    scenes: [{ rootNodes: [] }],
+    skins: [],
+  };
+}

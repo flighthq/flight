@@ -485,6 +485,7 @@ export * from './NonEntityCreateResult.ts';
 export * from './NormalMaterial.ts';
 export * from './Notification.ts';
 export * from './Obb.ts';
+export * from './ObjMaterialHandler.ts';
 export * from './ObjSchema.ts';
 export * from './OuterGlowEffect.ts';
 export * from './OutlineEffect.ts';
