@@ -25,6 +25,9 @@
       "path": "../registry"
     },
     {
+      "path": "../requirement"
+    },
+    {
       "path": "../skeleton2d"
     },
     {
