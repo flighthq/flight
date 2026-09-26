@@ -74,11 +74,11 @@ import {
 
 import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 import { convertPositionsZUpToYUp } from './shared.ts';
+import { createScene3DFrom3ds, parse3ds } from './threeDsDocument.ts';
 import {
   collectThreeDsPivots,
-  createScene3DFrom3ds,
-  parse3ds,
   parseThreeDsCamera,
+  parseThreeDsDocumentWithDispatch,
   parseThreeDsLight,
   parseThreeDsMaterial,
   parseThreeDsTrimesh,
@@ -2093,6 +2093,28 @@ describe('parseThreeDsCamera', () => {
     const chunk = writeChunk(THREE_DS_CAMERA, new Uint8Array(8));
     const view = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
     expect(parseThreeDsCamera(view, 0, chunk.byteLength, 'Bad', null)).toBeNull();
+  });
+});
+
+describe('parseThreeDsDocumentWithDispatch', () => {
+  // The dispatch is the ONLY thing this function knows about handlers: it never resolves a default, which
+  // is what keeps this module clear of the handler graph (see threeDsDocument.ts for why that cycle
+  // matters). Handing it an empty dispatch is therefore a real parse that collects nothing, not a
+  // misconfiguration that quietly falls back to the standard family.
+  it('walks the chunk tree with the dispatch it is given and no default of its own', () => {
+    const bytes = writeChunk(
+      THREE_DS_MAIN,
+      writeChunk(THREE_DS_EDITOR, writeChunk(THREE_DS_OBJECT, new Uint8Array(0))),
+    );
+    const document = parseThreeDsDocumentWithDispatch(bytes, undefined, new Map());
+    expect(document.meshes).toEqual([]);
+    expect(document.materials).toEqual([]);
+  });
+
+  it('still reports a malformed file through the diagnostics it was handed', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseThreeDsDocumentWithDispatch(new Uint8Array([1, 2, 3]), diagnostics, new Map());
+    expect(diagnostics.length).toBeGreaterThan(0);
   });
 });
 

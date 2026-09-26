@@ -1,5 +1,6 @@
 import type { ImportDiagnostic } from './ImportDiagnostic.ts';
 import type { Scene3DDocument } from './Scene3DDocument.ts';
+import type { ThreeDsDropTally } from './ThreeDsSchema.ts';
 import type { ThreeDsCamera, ThreeDsLight, ThreeDsMaterial, ThreeDsMesh } from './ThreeDsSchema.ts';
 
 /**
@@ -31,6 +32,16 @@ export interface ThreeDsChunkHandler {
 export interface ThreeDsParseState {
   readonly cameras: ThreeDsCamera[];
   readonly diagnostics: ImportDiagnostic[] | undefined;
+  /**
+   * The aggregation table per-chunk faults are tallied into, or null when nothing collects diagnostics.
+   *
+   * ★ HANDLERS MUST THREAD THIS, NOT PASS NULL. A 3DS file with fifty malformed faces produces one crumb
+   * with a count, not fifty — `parse3ds` is the single physical emitter and flushes the tallies once at
+   * the end. A handler that passed `null` to the parser it wraps would silently discard every per-chunk
+   * fault it saw, so the handler-driven path would report FEWER diagnostics than the monolithic one on
+   * the same bytes. That is exactly the observable difference a refactor is supposed not to introduce.
+   */
+  readonly drops: Map<string, ThreeDsDropTally> | null;
   readonly document: Scene3DDocument;
   readonly lights: ThreeDsLight[];
   readonly materials: Map<string, ThreeDsMaterial>;
@@ -39,3 +50,18 @@ export interface ThreeDsParseState {
 }
 
 export type ThreeDsChunkDispatch = ReadonlyMap<number, Readonly<ThreeDsChunkHandler>>;
+
+/**
+ * What `parse3ds` accepts beyond the bytes.
+ *
+ * ★ THE HANDLER FAMILY IS THE TREE-SHAKING BOUNDARY. Naming a subset is what keeps the code behind a
+ * feature out of a build that does not use it: a file read only for its meshes should not pay for camera,
+ * light or keyframe parsing. Leaving `handlers` undefined runs the full standard family, which reproduces
+ * the parse this function performed when the dispatch was hard-coded.
+ *
+ * ORDER IS PRESERVED as given. The standard family is ordered to match the chunk tree's own sequence, and
+ * a caller reordering it is describing a different parse rather than the same one rearranged.
+ */
+export interface ThreeDsImportOptions {
+  readonly handlers?: readonly Readonly<ThreeDsChunkHandler>[];
+}

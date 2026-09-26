@@ -6,7 +6,7 @@ import { parseThreeDsLight } from './threeDsParse.ts';
 export const threeDsLightHandler: Readonly<ThreeDsChunkHandler> = {
   chunkIds: [THREE_DS_LIGHT],
   collect(state: ThreeDsParseState, view: Readonly<DataView>, offset: number, end: number, name: string): void {
-    const light = parseThreeDsLight(view, offset, end, name, null);
+    const light = parseThreeDsLight(view, offset, end, name, state.drops);
     if (light !== null) state.lights.push(light);
   },
 };
