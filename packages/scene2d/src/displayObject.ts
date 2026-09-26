@@ -15,6 +15,8 @@ import {
 } from '@flighthq/node/contract';
 import type {
   ClipRegion,
+  DisplayObject,
+  DisplayObjectRuntime,
   Node2D,
   Node2DDataFactory,
   Node2DRuntime,
@@ -25,7 +27,15 @@ import type {
   NodeRuntimeFactory,
   PartialNode,
 } from '@flighthq/types/contract';
-import { Node2DTraitsKey } from '@flighthq/types/contract';
+import { DisplayObjectKind, Node2DTraitsKey } from '@flighthq/types/contract';
+
+export function createDisplayObject(obj?: Readonly<PartialNode<DisplayObject>>): DisplayObject {
+  return createNode2D(DisplayObjectKind, obj, undefined, createDisplayObjectRuntime) as DisplayObject;
+}
+
+export function createDisplayObjectRuntime(): DisplayObjectRuntime {
+  return createNode2DRuntime() as DisplayObjectRuntime;
+}
 
 export function createNode2D<R extends Node2DRuntime>(
   kind: Kind,
@@ -61,6 +71,10 @@ export function createNode2DRuntime(
   return out;
 }
 
+export function getDisplayObjectRuntime(source: Readonly<DisplayObject>): Readonly<DisplayObjectRuntime> {
+  return getNode2DRuntime(source) as DisplayObjectRuntime;
+}
+
 export function getNode2DRuntime(source: Readonly<Node2D>): Readonly<Node2DRuntime> {
   return getNodeRuntime(source) as Node2DRuntime;
 }
@@ -73,5 +87,3 @@ export function setNode2DClip(source: Node2D, value: ClipRegion | null): void {
   source.clip = value;
   invalidateNodeAppearance(source);
 }
-
-export { createDisplayObject } from './displayContainer.ts';
