@@ -20,7 +20,15 @@ import { DEG_TO_RAD } from '@flighthq/math/contract';
 import { createMeshGeometry } from '@flighthq/mesh/contract';
 import type {
   AnimationInterpolation,
+  ColladaCameraDefinition,
+  ColladaDecodedAnimationChannel,
+  ColladaDecodedMorph,
+  ColladaDecodedSkin,
+  ColladaLightKind,
+  ColladaElementDecoder,
   ColladaImportOptions,
+  ColladaLightDefinition,
+  ColladaParseContext,
   ColladaParseResult,
   ColladaUpAxis,
   ImportDiagnostic,
@@ -92,59 +100,6 @@ function idOf(element: XmlElement): string | null {
 function numbers(element: XmlElement | undefined): number[] {
   return element?.text.trim().split(/\s+/).filter(Boolean).map(Number).filter(Number.isFinite) ?? [];
 }
-interface ColladaDecodedSkin {
-  bindShapeMatrix: number[];
-  controllerId: string;
-  geometryRef: string;
-  influences: Array<Array<{ joint: string; weight: number }>>;
-  inverseBindMatrices: number[][];
-  jointNames: string[];
-  jointSids: string[];
-}
-interface ColladaDecodedAnimationChannel {
-  target: string;
-  times: number[];
-  values: number[];
-  interpolation: string[];
-  inTangents: number[];
-  outTangents: number[];
-}
-interface ColladaPerspectiveCameraDefinition {
-  aspect: number;
-  far: number;
-  fovY: number;
-  kind: 'perspective';
-  name?: string;
-  near: number;
-}
-interface ColladaOrthographicCameraDefinition {
-  far: number;
-  halfHeight: number;
-  halfWidth: number;
-  kind: 'orthographic';
-  name?: string;
-  near: number;
-}
-type ColladaCameraDefinition = ColladaOrthographicCameraDefinition | ColladaPerspectiveCameraDefinition;
-interface ColladaDecodedMorph {
-  controllerId: string;
-  baseGeometry: string;
-  method: 'RELATIVE' | 'NORMALIZED';
-  targets: string[];
-  weights: number[];
-}
-type ColladaLightKind = 'ambient' | 'directional' | 'point' | 'spot';
-interface ColladaLightDefinition {
-  color: number;
-  decay: number;
-  innerConeDegrees: number;
-  intensity: number;
-  kind: ColladaLightKind;
-  name?: string;
-  outerConeDegrees: number;
-  spotBlend: number;
-}
-
 function decodeColladaCameraDefinitions(
   root: XmlElement,
   diagnostics: ImportDiagnostic[],
@@ -666,181 +621,25 @@ export function parseCollada(xml: string, options?: Readonly<ColladaImportOption
         { element: element.name },
       );
   });
-  const materialIndices = new Map<string, number>();
-  appendColladaMaterials(
-    root,
-    document.materials,
-    document.resources,
-    materialIndices,
-    options?.baseUrl ?? null,
+  const context: ColladaParseContext = {
+    animationChannels: [],
+    baseUrl: options?.baseUrl ?? null,
+    cameraDefinitions: new Map(),
     diagnostics,
-  );
-  const cameraDefinitions = decodeColladaCameraDefinitions(root, diagnostics);
-  const geometryIdToMeshIndex = new Map<string, number>();
-  const geometryPositions = new Map<string, number[]>();
-  const geometryPrimitiveSymbols = new Map<string, string[]>();
-  const sources = new Map<string, number[]>();
-  for (const source of descendants(root, 'source')) {
-    const id = idOf(source);
-    const array = child(source, 'float_array');
-    if (id && array) sources.set(id, numbers(array));
-  }
-  for (const geometry of descendants(root, 'geometry')) {
-    const mesh = child(geometry, 'mesh') ?? descendants(geometry, 'mesh')[0];
-    if (!mesh) continue;
-    const verticesMap = new Map<string, string>();
-    const verticesNormalMap = new Map<string, string>();
-    for (const vertices of mesh.children.filter((e) => e.name === 'vertices'))
-      for (const input of vertices.children.filter((e) => e.name === 'input')) {
-        const semantic = input.attributes.semantic;
-        const source = input.attributes.source?.replace(/^#/, '');
-        if (idOf(vertices) && source) {
-          if (semantic === 'POSITION') verticesMap.set(idOf(vertices)!, source);
-          if (semantic === 'NORMAL') verticesNormalMap.set(idOf(vertices)!, source);
-        }
-      }
-    const primitives = mesh.children.filter((e) => ['triangles', 'polylist', 'lines'].includes(e.name));
-    if (primitives.length === 0) continue;
-    const vertexMap = new Map<string, number>();
-    const vertexData: number[][] = [];
-    const allIndices: number[] = [];
-    const primitiveSymbols: string[] = [];
-    const subsets: MeshSubset[] = [];
-    let hasLines = false;
-    for (const primitive of primitives) {
-      const inputs = primitive.children.filter((e) => e.name === 'input');
-      const stride = Math.max(1, ...inputs.map((e) => Number(e.attributes.offset ?? 0) + 1));
-      const semanticSources = new Map<string, string>();
-      const offsets = new Map<string, number>();
-      for (const input of inputs) {
-        let source = input.attributes.source?.replace(/^#/, '') ?? '';
-        const semantic = input.attributes.semantic;
-        if (semantic === 'VERTEX') {
-          const posSource = verticesMap.get(source);
-          if (posSource) {
-            semanticSources.set('POSITION', posSource);
-            offsets.set('POSITION', Number(input.attributes.offset ?? 0));
-          }
-          const nrmSource = verticesNormalMap.get(source);
-          if (nrmSource) {
-            semanticSources.set('NORMAL', nrmSource);
-            offsets.set('NORMAL', Number(input.attributes.offset ?? 0));
-          }
-        } else if (source) {
-          semanticSources.set(semantic, source);
-          offsets.set(semantic, Number(input.attributes.offset ?? 0));
-        }
-      }
-      const pos = sources.get(semanticSources.get('POSITION') ?? '');
-      if (!pos) {
-        reportImportDiagnostic(
-          diagnostics,
-          ImportDiagnosticSeverity.Drop,
-          'collada.missing-reference',
-          'parseCollada',
-          {
-            element: 'POSITION',
-          },
-        );
-        continue;
-      }
-      const nrm = sources.get(semanticSources.get('NORMAL') ?? '');
-      const uv = sources.get(semanticSources.get('TEXCOORD') ?? '');
-      const posOffset = offsets.get('POSITION') ?? 0;
-      const nrmOffset = offsets.get('NORMAL');
-      const uvOffset = offsets.get('TEXCOORD');
-      const raw = numbers(child(primitive, 'p'));
-      const tuples: number[][] = [];
-      if (primitive.name === 'polylist') {
-        const counts = numbers(child(primitive, 'vcount'));
-        let cursor = 0;
-        for (const count of counts) {
-          for (let i = 1; i + 1 < count; i++) {
-            tuples.push(raw.slice(cursor, cursor + stride));
-            tuples.push(raw.slice(cursor + i * stride, cursor + i * stride + stride));
-            tuples.push(raw.slice(cursor + (i + 1) * stride, cursor + (i + 1) * stride + stride));
-          }
-          cursor += count * stride;
-        }
-      } else {
-        for (let i = 0; i + stride - 1 < raw.length; i += stride) tuples.push(raw.slice(i, i + stride));
-      }
-      const subsetIndexOffset = allIndices.length;
-      for (const tuple of tuples) {
-        const key = tuple.join(',');
-        let vertexIndex = vertexMap.get(key);
-        if (vertexIndex === undefined) {
-          vertexIndex = vertexData.length;
-          vertexMap.set(key, vertexIndex);
-          const pi = tuple[posOffset];
-          const px = pos[pi * 3] ?? 0;
-          const py = pos[pi * 3 + 1] ?? 0;
-          const pz = pos[pi * 3 + 2] ?? 0;
-          let nx = 0,
-            ny = 1,
-            nz = 0;
-          if (nrm && nrmOffset !== undefined) {
-            const ni = tuple[nrmOffset];
-            nx = nrm[ni * 3] ?? 0;
-            ny = nrm[ni * 3 + 1] ?? 1;
-            nz = nrm[ni * 3 + 2] ?? 0;
-          }
-          let u = 0,
-            v = 0;
-          if (uv && uvOffset !== undefined) {
-            const ui = tuple[uvOffset];
-            u = uv[ui * 2] ?? 0;
-            v = uv[ui * 2 + 1] ?? 0;
-          }
-          vertexData.push([px, py, pz, nx, ny, nz, 0, 0, 0, 1, u, v]);
-        }
-        allIndices.push(vertexIndex);
-      }
-      const subsetIndexCount = allIndices.length - subsetIndexOffset;
-      if (subsetIndexCount > 0) subsets.push({ indexCount: subsetIndexCount, indexOffset: subsetIndexOffset });
-      if (primitive.name === 'lines') hasLines = true;
-      const primitiveSymbol = primitive.attributes.material;
-      if (primitiveSymbol) primitiveSymbols.push(primitiveSymbol);
-    }
-    if (vertexData.length === 0) continue;
-    const vertices = new Float32Array(vertexData.length * CANONICAL_FLOATS_PER_VERTEX);
-    for (let i = 0; i < vertexData.length; i++) {
-      const d = vertexData[i];
-      const base = i * CANONICAL_FLOATS_PER_VERTEX;
-      for (let j = 0; j < CANONICAL_FLOATS_PER_VERTEX; j++) vertices[base + j] = d[j];
-    }
-    const pos = sources.get(verticesMap.values().next().value ?? '');
-    const topology = hasLines ? 'line-list' : 'triangle-list';
-    const geoId = idOf(geometry);
-    if (geoId) {
-      geometryIdToMeshIndex.set(geoId, document.meshes.length);
-      if (pos) geometryPositions.set(geoId, pos);
-      if (primitiveSymbols.length > 0) geometryPrimitiveSymbols.set(geoId, primitiveSymbols);
-    }
-    document.meshes.push({
-      geometry: createMeshGeometry({
-        indices: Uint32Array.from(allIndices),
-        layout: CANONICAL_LAYOUT,
-        subsets,
-        topology,
-        vertices,
-      }),
-      materials: [],
-      name: geometry.attributes.name,
-    });
-  }
-
-  const decodedSkins = decodeColladaControllersFromRoot(root, diagnostics);
-  const controllerMap = new Map<string, ColladaDecodedSkin>();
-  for (const skin of decodedSkins) controllerMap.set(skin.controllerId, skin);
-
-  const decodedMorphs = decodeColladaMorphsFromRoot(root, diagnostics);
-  const morphMap = new Map<string, ColladaDecodedMorph>();
-  for (const morph of decodedMorphs) morphMap.set(morph.controllerId, morph);
-
-  const decodedAnimChannels = decodeColladaAnimationsFromRoot(root, diagnostics);
-  const lightDefinitions = parseColladaLightDefinitions(root, diagnostics);
-
+    document,
+    geometryIdToMeshIndex: new Map(),
+    geometryPositions: new Map(),
+    geometryPrimitiveSymbols: new Map(),
+    lightDefinitions: new Map(),
+    materialIndices: new Map(),
+    morphs: new Map(),
+    root,
+    skins: new Map(),
+  };
+  // The default family reproduces the phases this function used to run inline, in the same order. A
+  // caller passing its own family omits features, and the decoders it leaves out are absent from the
+  // module graph rather than merely unreferenced in it.
+  for (const decoder of options?.decoders ?? colladaAllElementDecoders) decoder.decode(context);
   const nodeLibrary = buildColladaIdMap(child(root, 'library_nodes'), 'node');
   const visualSceneLibrary = buildColladaIdMap(child(root, 'library_visual_scenes'), 'visual_scene');
   buildColladaSceneHierarchy(
@@ -849,15 +648,15 @@ export function parseCollada(xml: string, options?: Readonly<ColladaImportOption
     visualSceneLibrary,
     nodeLibrary,
     rootTransform,
-    geometryIdToMeshIndex,
-    cameraDefinitions,
-    geometryPositions,
-    geometryPrimitiveSymbols,
-    materialIndices,
-    controllerMap,
-    morphMap,
-    decodedAnimChannels,
-    lightDefinitions,
+    context.geometryIdToMeshIndex,
+    context.cameraDefinitions,
+    context.geometryPositions,
+    context.geometryPrimitiveSymbols,
+    context.materialIndices,
+    context.skins,
+    context.morphs,
+    context.animationChannels,
+    context.lightDefinitions,
     diagnostics,
   );
 
@@ -1827,3 +1626,255 @@ const COLLADA_CAMERA_DEFAULT_FOV_DEGREES = 60;
 const COLLADA_CAMERA_DEFAULT_NEAR = 0.1;
 const COLLADA_CAMERA_DEFAULT_ORTHO_HALF_EXTENT = 1;
 const __scratch = createMatrix4();
+
+/**
+ * The decoder for each COLLADA feature, as values a caller composes.
+ *
+ * ★ EACH ONE WRAPS THE PATH THAT ALREADY EXISTED. The material, camera, controller, animation and light
+ * decoders call exactly the functions `parseCollada` called inline, in the order it called them; the
+ * geometry decoder holds the block that used to sit in the middle of that function, moved without edits.
+ * Nothing about how a COLLADA file is read changed — only who gets to choose what is read.
+ *
+ * ★ THE ORDER IN `colladaAllElementDecoders` IS LOAD-BEARING. Materials run before geometry because a
+ * primitive names a material symbol the material pass has to have indexed first, and every decoder runs
+ * before the scene builder because a node instantiates a mesh by the index geometry assigned it. The
+ * array preserves the sequence the single function used; a family in another order is a different parse,
+ * not a reordering of the same one.
+ *
+ * Omitting a decoder leaves its map empty, and the scene builder treats an absent id exactly as it
+ * already treats one the document never declared — which is why a partial family yields a smaller scene
+ * rather than a broken one.
+ *
+ * Nothing here registers itself. A decoder is a plain value; importing one starts nothing.
+ */
+export const colladaMaterialDecoder: ColladaElementDecoder = {
+  decode(context) {
+    appendColladaMaterials(
+      context.root,
+      context.document.materials,
+      context.document.resources,
+      context.materialIndices,
+      context.baseUrl,
+      context.diagnostics,
+    );
+  },
+  elements: ['material', 'effect'],
+  feature: 'Material',
+};
+
+export const colladaCameraDecoder: ColladaElementDecoder = {
+  decode(context) {
+    for (const [id, definition] of decodeColladaCameraDefinitions(context.root, context.diagnostics)) {
+      context.cameraDefinitions.set(id, definition);
+    }
+  },
+  elements: ['camera'],
+  feature: 'Camera',
+};
+
+export const colladaGeometryDecoder: ColladaElementDecoder = {
+  decode(context) {
+    // Aliased rather than rewritten. The body below is the block `parseCollada` ran inline, and binding
+    // its three maps from the context leaves every line of it byte-identical. Substituting `context.`
+    // through 150 lines of index arithmetic would have been the far riskier edit.
+    const { diagnostics, document, root } = context;
+    const geometryIdToMeshIndex = context.geometryIdToMeshIndex;
+    const geometryPositions = context.geometryPositions;
+    const geometryPrimitiveSymbols = context.geometryPrimitiveSymbols;
+    const sources = new Map<string, number[]>();
+    for (const source of descendants(root, 'source')) {
+      const id = idOf(source);
+      const array = child(source, 'float_array');
+      if (id && array) sources.set(id, numbers(array));
+    }
+    for (const geometry of descendants(root, 'geometry')) {
+      const mesh = child(geometry, 'mesh') ?? descendants(geometry, 'mesh')[0];
+      if (!mesh) continue;
+      const verticesMap = new Map<string, string>();
+      const verticesNormalMap = new Map<string, string>();
+      for (const vertices of mesh.children.filter((e) => e.name === 'vertices'))
+        for (const input of vertices.children.filter((e) => e.name === 'input')) {
+          const semantic = input.attributes.semantic;
+          const source = input.attributes.source?.replace(/^#/, '');
+          if (idOf(vertices) && source) {
+            if (semantic === 'POSITION') verticesMap.set(idOf(vertices)!, source);
+            if (semantic === 'NORMAL') verticesNormalMap.set(idOf(vertices)!, source);
+          }
+        }
+      const primitives = mesh.children.filter((e) => ['triangles', 'polylist', 'lines'].includes(e.name));
+      if (primitives.length === 0) continue;
+      const vertexMap = new Map<string, number>();
+      const vertexData: number[][] = [];
+      const allIndices: number[] = [];
+      const primitiveSymbols: string[] = [];
+      const subsets: MeshSubset[] = [];
+      let hasLines = false;
+      for (const primitive of primitives) {
+        const inputs = primitive.children.filter((e) => e.name === 'input');
+        const stride = Math.max(1, ...inputs.map((e) => Number(e.attributes.offset ?? 0) + 1));
+        const semanticSources = new Map<string, string>();
+        const offsets = new Map<string, number>();
+        for (const input of inputs) {
+          let source = input.attributes.source?.replace(/^#/, '') ?? '';
+          const semantic = input.attributes.semantic;
+          if (semantic === 'VERTEX') {
+            const posSource = verticesMap.get(source);
+            if (posSource) {
+              semanticSources.set('POSITION', posSource);
+              offsets.set('POSITION', Number(input.attributes.offset ?? 0));
+            }
+            const nrmSource = verticesNormalMap.get(source);
+            if (nrmSource) {
+              semanticSources.set('NORMAL', nrmSource);
+              offsets.set('NORMAL', Number(input.attributes.offset ?? 0));
+            }
+          } else if (source) {
+            semanticSources.set(semantic, source);
+            offsets.set(semantic, Number(input.attributes.offset ?? 0));
+          }
+        }
+        const pos = sources.get(semanticSources.get('POSITION') ?? '');
+        if (!pos) {
+          reportImportDiagnostic(
+            diagnostics,
+            ImportDiagnosticSeverity.Drop,
+            'collada.missing-reference',
+            'parseCollada',
+            {
+              element: 'POSITION',
+            },
+          );
+          continue;
+        }
+        const nrm = sources.get(semanticSources.get('NORMAL') ?? '');
+        const uv = sources.get(semanticSources.get('TEXCOORD') ?? '');
+        const posOffset = offsets.get('POSITION') ?? 0;
+        const nrmOffset = offsets.get('NORMAL');
+        const uvOffset = offsets.get('TEXCOORD');
+        const raw = numbers(child(primitive, 'p'));
+        const tuples: number[][] = [];
+        if (primitive.name === 'polylist') {
+          const counts = numbers(child(primitive, 'vcount'));
+          let cursor = 0;
+          for (const count of counts) {
+            for (let i = 1; i + 1 < count; i++) {
+              tuples.push(raw.slice(cursor, cursor + stride));
+              tuples.push(raw.slice(cursor + i * stride, cursor + i * stride + stride));
+              tuples.push(raw.slice(cursor + (i + 1) * stride, cursor + (i + 1) * stride + stride));
+            }
+            cursor += count * stride;
+          }
+        } else {
+          for (let i = 0; i + stride - 1 < raw.length; i += stride) tuples.push(raw.slice(i, i + stride));
+        }
+        const subsetIndexOffset = allIndices.length;
+        for (const tuple of tuples) {
+          const key = tuple.join(',');
+          let vertexIndex = vertexMap.get(key);
+          if (vertexIndex === undefined) {
+            vertexIndex = vertexData.length;
+            vertexMap.set(key, vertexIndex);
+            const pi = tuple[posOffset];
+            const px = pos[pi * 3] ?? 0;
+            const py = pos[pi * 3 + 1] ?? 0;
+            const pz = pos[pi * 3 + 2] ?? 0;
+            let nx = 0,
+              ny = 1,
+              nz = 0;
+            if (nrm && nrmOffset !== undefined) {
+              const ni = tuple[nrmOffset];
+              nx = nrm[ni * 3] ?? 0;
+              ny = nrm[ni * 3 + 1] ?? 1;
+              nz = nrm[ni * 3 + 2] ?? 0;
+            }
+            let u = 0,
+              v = 0;
+            if (uv && uvOffset !== undefined) {
+              const ui = tuple[uvOffset];
+              u = uv[ui * 2] ?? 0;
+              v = uv[ui * 2 + 1] ?? 0;
+            }
+            vertexData.push([px, py, pz, nx, ny, nz, 0, 0, 0, 1, u, v]);
+          }
+          allIndices.push(vertexIndex);
+        }
+        const subsetIndexCount = allIndices.length - subsetIndexOffset;
+        if (subsetIndexCount > 0) subsets.push({ indexCount: subsetIndexCount, indexOffset: subsetIndexOffset });
+        if (primitive.name === 'lines') hasLines = true;
+        const primitiveSymbol = primitive.attributes.material;
+        if (primitiveSymbol) primitiveSymbols.push(primitiveSymbol);
+      }
+      if (vertexData.length === 0) continue;
+      const vertices = new Float32Array(vertexData.length * CANONICAL_FLOATS_PER_VERTEX);
+      for (let i = 0; i < vertexData.length; i++) {
+        const d = vertexData[i];
+        const base = i * CANONICAL_FLOATS_PER_VERTEX;
+        for (let j = 0; j < CANONICAL_FLOATS_PER_VERTEX; j++) vertices[base + j] = d[j];
+      }
+      const pos = sources.get(verticesMap.values().next().value ?? '');
+      const topology = hasLines ? 'line-list' : 'triangle-list';
+      const geoId = idOf(geometry);
+      if (geoId) {
+        geometryIdToMeshIndex.set(geoId, document.meshes.length);
+        if (pos) geometryPositions.set(geoId, pos);
+        if (primitiveSymbols.length > 0) geometryPrimitiveSymbols.set(geoId, primitiveSymbols);
+      }
+      document.meshes.push({
+        geometry: createMeshGeometry({
+          indices: Uint32Array.from(allIndices),
+          layout: CANONICAL_LAYOUT,
+          subsets,
+          topology,
+          vertices,
+        }),
+        materials: [],
+        name: geometry.attributes.name,
+      });
+    }
+  },
+  elements: ['geometry'],
+  feature: 'Geometry',
+};
+
+export const colladaControllerDecoder: ColladaElementDecoder = {
+  decode(context) {
+    for (const skin of decodeColladaControllersFromRoot(context.root, context.diagnostics)) {
+      context.skins.set(skin.controllerId, skin);
+    }
+    for (const morph of decodeColladaMorphsFromRoot(context.root, context.diagnostics)) {
+      context.morphs.set(morph.controllerId, morph);
+    }
+  },
+  // Skins and morphs are two decodes over one element, so the feature is the controller rather than
+  // either of them — the same granularity the analyzer keys on.
+  elements: ['controller'],
+  feature: 'Controller',
+};
+
+export const colladaAnimationDecoder: ColladaElementDecoder = {
+  decode(context) {
+    context.animationChannels.push(...decodeColladaAnimationsFromRoot(context.root, context.diagnostics));
+  },
+  elements: ['animation'],
+  feature: 'Animation',
+};
+
+export const colladaLightDecoder: ColladaElementDecoder = {
+  decode(context) {
+    for (const [id, definition] of parseColladaLightDefinitions(context.root, context.diagnostics)) {
+      context.lightDefinitions.set(id, definition);
+    }
+  },
+  elements: ['light'],
+  feature: 'Light',
+};
+
+/** Every decoder, in the order the single-function parser ran them. The default composition. */
+export const colladaAllElementDecoders: readonly ColladaElementDecoder[] = [
+  colladaMaterialDecoder,
+  colladaCameraDecoder,
+  colladaGeometryDecoder,
+  colladaControllerDecoder,
+  colladaAnimationDecoder,
+  colladaLightDecoder,
+];
