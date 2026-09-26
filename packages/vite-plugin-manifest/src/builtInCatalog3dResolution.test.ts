@@ -1,0 +1,270 @@
+import { mkdtemp, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { encodeUTF8 } from '@flighthq/encoding/contract';
+import {
+  BUILT_IN_REQUIREMENT_BACKENDS,
+  BUILT_IN_REQUIREMENT_CATALOG_ENTRIES,
+  BUILT_IN_REQUIREMENT_TRANSLATIONS,
+} from '@flighthq/requirement-catalog/contract';
+import { MD2_HEADER_SIZE, MD2_MAGIC, MD2_VERSION } from '@flighthq/scene3d-formats/contract';
+
+import { createManifestPlugin } from './manifestPlugin.ts';
+
+// 3D format features produce `document.format` requirements that the translation layer EXPANDS
+// into `scene.material-kind` requirements, which DO resolve to catalog entries. The original
+// format requirements stay (expansion is additive) and produce diagnostics when no parser backend
+// entry exists for them — that is correct: the catalog has no parser handler rows for 3D format
+// features yet, because 3D parsers are standalone functions the user calls directly.
+//
+// The material renderers still appear in the generated source because the TRANSLATED requirements
+// resolve on gl and wgpu backends. This test verifies that pipeline end to end.
+
+describe('3D format content through the built-in catalog', () => {
+  describe('.3ds', () => {
+    it('resolves a material-bearing 3DS to BlinnPhong material renderers on gl and wgpu', async () => {
+      const { source } = await load3d('.3ds', threeDsWithMaterial());
+      expect(source).toContain('materialRenderers');
+      expect(source).toContain("'BlinnPhongMaterial'");
+      expect(source).toContain('glBlinnPhongMeshMaterialRenderer');
+      expect(source).toContain('wgpuBlinnPhongMeshMaterialRenderer');
+    });
+
+    it('omits material renderers for a mesh-only 3DS', async () => {
+      const { source } = await load3d('.3ds', threeDsWithMeshOnly());
+      expect(source).not.toContain('materialRenderers');
+      expect(source).not.toContain('BlinnPhongMaterial');
+      expect(source).not.toContain('glBlinnPhongMeshMaterialRenderer');
+    });
+
+    it('produces material renderers only via per-feature translation, not coarse namespace', async () => {
+      const { source } = await load3d('.3ds', threeDsWithMaterial());
+      expect(source).toContain('BlinnPhongMaterial');
+      const coarseTranslation = BUILT_IN_REQUIREMENT_TRANSLATIONS.find(
+        (t) => t.from.facet === 'document.format' && t.from.key === '3ds',
+      );
+      expect(coarseTranslation).toBeUndefined();
+    });
+
+    it('reports unreadable diagnostic for corrupt bytes', async () => {
+      const { diagnostics } = await load3d('.3ds', new Uint8Array([0x00]));
+      expect(diagnostics.some((d) => d.includes('unreadable'))).toBe(true);
+    });
+  });
+
+  describe('.dae', () => {
+    it('resolves a material-bearing COLLADA to StandardPbr material renderers', async () => {
+      const { source } = await load3d('.dae', encodeUTF8(FULL_COLLADA));
+      expect(source).toContain('materialRenderers');
+      expect(source).toContain("'StandardPbrMaterial'");
+      expect(source).toContain('glStandardPbrMeshMaterialRenderer');
+      expect(source).toContain('wgpuStandardPbrMeshMaterialRenderer');
+    });
+
+    it('omits material renderers for a geometry-only COLLADA', async () => {
+      const { source } = await load3d('.dae', encodeUTF8(GEOMETRY_ONLY_COLLADA));
+      expect(source).not.toContain('materialRenderers');
+      expect(source).not.toContain('StandardPbrMaterial');
+    });
+
+    it('reports unreadable diagnostic for non-COLLADA XML', async () => {
+      const { diagnostics } = await load3d('.dae', encodeUTF8('<root/>'));
+      expect(diagnostics.some((d) => d.includes('unreadable'))).toBe(true);
+    });
+  });
+
+  describe('.md2', () => {
+    it('resolves a skin-bearing MD2 to BlinnPhong material renderers', async () => {
+      const { source } = await load3d('.md2', md2WithSkins());
+      expect(source).toContain('materialRenderers');
+      expect(source).toContain("'BlinnPhongMaterial'");
+      expect(source).toContain('glBlinnPhongMeshMaterialRenderer');
+    });
+
+    it('omits material renderers for a mesh-only MD2', async () => {
+      const { source } = await load3d('.md2', md2MeshOnly());
+      expect(source).not.toContain('materialRenderers');
+      expect(source).not.toContain('BlinnPhongMaterial');
+    });
+
+    it('reports unreadable diagnostic for truncated bytes', async () => {
+      const { diagnostics } = await load3d('.md2', new Uint8Array(10));
+      expect(diagnostics.some((d) => d.includes('unreadable'))).toBe(true);
+    });
+  });
+
+  describe('.md5anim', () => {
+    it('is registered and produces a valid module', async () => {
+      const { source } = await load3d('.md5anim', encodeUTF8(FULL_MD5_ANIM));
+      expect(source).toBeDefined();
+      expect(source.length).toBeGreaterThan(0);
+    });
+
+    it('does not emit material renderers — animations carry no material', async () => {
+      const { source } = await load3d('.md5anim', encodeUTF8(FULL_MD5_ANIM));
+      expect(source).not.toContain('materialRenderers');
+      expect(source).not.toContain('BlinnPhongMaterial');
+      expect(source).not.toContain('StandardPbrMaterial');
+    });
+
+    it('diagnoses format features with no parser catalog entry', async () => {
+      const { diagnostics } = await load3d('.md5anim', encodeUTF8(FULL_MD5_ANIM));
+      expect(diagnostics.some((d) => d.includes('md5.Hierarchy'))).toBe(true);
+      expect(diagnostics.some((d) => d.includes('md5.Animation'))).toBe(true);
+    });
+  });
+
+  describe('.md5mesh', () => {
+    it('resolves a mesh with shaders to BlinnPhong material renderers', async () => {
+      const { source } = await load3d('.md5mesh', encodeUTF8(FULL_MD5_MESH));
+      expect(source).toContain('materialRenderers');
+      expect(source).toContain("'BlinnPhongMaterial'");
+      expect(source).toContain('glBlinnPhongMeshMaterialRenderer');
+    });
+
+    it('omits material renderers for a skeleton-only MD5 mesh', async () => {
+      const { source } = await load3d('.md5mesh', encodeUTF8(MINIMAL_MD5_MESH));
+      expect(source).not.toContain('materialRenderers');
+      expect(source).not.toContain('BlinnPhongMaterial');
+    });
+  });
+
+  describe('.obj', () => {
+    it('resolves a material-bearing OBJ to both BlinnPhong and StandardPbr renderers', async () => {
+      const { source } = await load3d('.obj', encodeUTF8(FULL_OBJ));
+      expect(source).toContain('materialRenderers');
+      expect(source).toContain("'BlinnPhongMaterial'");
+      expect(source).toContain("'StandardPbrMaterial'");
+      expect(source).toContain('glBlinnPhongMeshMaterialRenderer');
+      expect(source).toContain('glStandardPbrMeshMaterialRenderer');
+    });
+
+    it('omits material renderers for a geometry-only OBJ', async () => {
+      const { source } = await load3d('.obj', encodeUTF8(MINIMAL_OBJ));
+      expect(source).not.toContain('materialRenderers');
+      expect(source).not.toContain('BlinnPhongMaterial');
+      expect(source).not.toContain('StandardPbrMaterial');
+    });
+  });
+
+  describe('cross-format', () => {
+    it('no format uses a coarse namespace key in translations — all are per-feature', () => {
+      const coarseKeys = BUILT_IN_REQUIREMENT_TRANSLATIONS.filter(
+        (t) => t.from.facet === 'document.format' && ['3ds', 'dae', 'md2', 'md5', 'obj'].includes(t.from.key),
+      );
+      expect(coarseKeys).toEqual([]);
+    });
+
+    it('every per-feature 3D translation key contains a dot separator', () => {
+      const scene3dTranslations = BUILT_IN_REQUIREMENT_TRANSLATIONS.filter((t) =>
+        t.from.key.match(/^(3ds|dae|md2|md5|obj)\./),
+      );
+      expect(scene3dTranslations.length).toBeGreaterThan(0);
+      for (const t of scene3dTranslations) {
+        expect(t.from.key).toContain('.');
+      }
+    });
+
+    it('minimal content produces fewer material renderers than feature-rich content', async () => {
+      const minimalMd2 = await load3d('.md2', md2MeshOnly());
+      const fullMd2 = await load3d('.md2', md2WithSkins());
+      const minimalHasRenderers = minimalMd2.source.includes('materialRenderers');
+      const fullHasRenderers = fullMd2.source.includes('materialRenderers');
+      expect(minimalHasRenderers).toBe(false);
+      expect(fullHasRenderers).toBe(true);
+    });
+  });
+});
+
+async function load3d(ext: string, content: Uint8Array): Promise<{ diagnostics: string[]; source: string }> {
+  const dir = await mkdtemp(join(tmpdir(), 'builtin-catalog-3d-'));
+  const filename = `a${ext}`;
+  await writeFile(join(dir, filename), Buffer.from(content));
+  const diagnostics: string[] = [];
+  const plugin = createManifestPlugin({
+    catalog: {
+      backends: BUILT_IN_REQUIREMENT_BACKENDS,
+      entries: [...BUILT_IN_REQUIREMENT_CATALOG_ENTRIES],
+      translations: BUILT_IN_REQUIREMENT_TRANSLATIONS,
+    },
+    onDiagnostic: (message) => diagnostics.push(message),
+  });
+  const id = plugin.resolveId(`./${filename}?manifest`, join(dir, 'entry.ts'))!;
+  const source = (await plugin.load(id))!;
+  return { diagnostics: diagnostics.map((message) => message.replace(join(dir, filename), '<file>')), source };
+}
+
+function threeDsWithMaterial(): Uint8Array {
+  const materialChunk = threeDsChunk(0xafff, new Uint8Array(0));
+  const editorChunk = threeDsChunk(0x3d3d, materialChunk);
+  return threeDsChunk(0x4d4d, editorChunk);
+}
+
+function threeDsWithMeshOnly(): Uint8Array {
+  const trimeshChunk = threeDsChunk(0x4100, new Uint8Array(0));
+  const objectName = new Uint8Array([0x4d, 0x00]); // "M\0"
+  const objectBody = new Uint8Array(objectName.length + trimeshChunk.length);
+  objectBody.set(objectName, 0);
+  objectBody.set(trimeshChunk, objectName.length);
+  const objectChunk = threeDsChunk(0x4000, objectBody);
+  const editorChunk = threeDsChunk(0x3d3d, objectChunk);
+  return threeDsChunk(0x4d4d, editorChunk);
+}
+
+function threeDsChunk(id: number, body: Uint8Array): Uint8Array {
+  const chunk = new Uint8Array(6 + body.length);
+  const view = new DataView(chunk.buffer);
+  view.setUint16(0, id, true);
+  view.setUint32(2, 6 + body.length, true);
+  chunk.set(body, 6);
+  return chunk;
+}
+
+function md2WithSkins(): Uint8Array {
+  const buf = new ArrayBuffer(MD2_HEADER_SIZE);
+  const view = new DataView(buf);
+  view.setInt32(0, MD2_MAGIC, true);
+  view.setInt32(4, MD2_VERSION, true);
+  view.setInt32(20, 1, true); // numSkins
+  view.setInt32(32, 10, true); // numTriangles
+  view.setInt32(40, 1, true); // numFrames
+  return new Uint8Array(buf);
+}
+
+function md2MeshOnly(): Uint8Array {
+  const buf = new ArrayBuffer(MD2_HEADER_SIZE);
+  const view = new DataView(buf);
+  view.setInt32(0, MD2_MAGIC, true);
+  view.setInt32(4, MD2_VERSION, true);
+  view.setInt32(20, 0, true); // numSkins = 0
+  view.setInt32(32, 10, true); // numTriangles
+  view.setInt32(40, 1, true); // numFrames
+  return new Uint8Array(buf);
+}
+
+const FULL_COLLADA = [
+  '<?xml version="1.0"?>',
+  '<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">',
+  '<library_geometries><geometry id="g"><mesh></mesh></geometry></library_geometries>',
+  '<library_materials><material id="m"><instance_effect url="#e"/></material></library_materials>',
+  '<library_effects><effect id="e"><profile_COMMON></profile_COMMON></effect></library_effects>',
+  '</COLLADA>',
+].join('\n');
+
+const GEOMETRY_ONLY_COLLADA = [
+  '<?xml version="1.0"?>',
+  '<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">',
+  '<library_geometries><geometry id="g"><mesh></mesh></geometry></library_geometries>',
+  '</COLLADA>',
+].join('\n');
+
+const MINIMAL_OBJ = 'v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n';
+
+const FULL_OBJ = 'v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\nmtllib foo.mtl\nusemtl bar\n';
+
+const MINIMAL_MD5_MESH = 'joints {\n}\n';
+
+const FULL_MD5_MESH = 'joints {\n}\nmesh {\nshader "body"\n}\n';
+
+const FULL_MD5_ANIM = 'hierarchy {\n}\nframe 0 {\n}\n';
