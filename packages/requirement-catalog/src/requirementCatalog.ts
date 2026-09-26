@@ -29,19 +29,19 @@ export function createRequirementCatalog(
   };
 }
 
+// Flat plain data like an entry, so it is copied the same way and for the same reason — it named all four
+// of its fields, which is exactly the state the entry copier was in before a fifth field arrived.
 function copyCatalogDisposition(disposition: Readonly<RequirementDisposition>): RequirementDisposition {
-  return {
-    backend: disposition.backend,
-    facet: disposition.facet,
-    kind: disposition.kind,
-    reason: disposition.reason,
-  };
+  return { ...disposition };
 }
 
+// A translation is the one NESTED shape here, so a single spread would copy the outer object and alias
+// `from` and every element of `to`. It spreads at each level instead: structural like the two above, and
+// still a real detach rather than a shared reference the caller could mutate afterwards.
 function copyCatalogTranslation(translation: Readonly<RequirementTranslation>): RequirementTranslation {
   return {
-    from: { facet: translation.from.facet, key: translation.from.key },
-    to: translation.to.map((requirement) => ({ facet: requirement.facet, key: requirement.key })),
+    from: { ...translation.from },
+    to: translation.to.map((requirement) => ({ ...requirement })),
   };
 }
 
@@ -87,21 +87,25 @@ export function unregisterRequirementCatalogEntry(
   return true;
 }
 
-// Every field is named, so a field ADDED to RequirementCatalogEntry is dropped here until it is added
-// too — the row still copies, and the loss shows up much later as a generated module that is subtly
-// wrong rather than as an error. `familyOrder` was lost exactly this way: the parser fragment kept
-// emitting alphabetical order because the position never survived the copy.
+/**
+ * Detaches one row from the caller's object, so the catalog owns its data rather than aliasing theirs.
+ *
+ * ★ STRUCTURAL, NOT FIELD BY FIELD, AND THAT IS THE WHOLE POINT. This was a hand-written field list, and
+ * a list silently drops whatever it was never told about: when `familyOrder` joined the contract the row
+ * still copied, the generated modules still looked well-formed, and the only symptom was parser options
+ * emitted in alphabetical instead of family order. Nothing failed, because nothing was asked. A spread
+ * cannot have that bug — it copies what the object HAS rather than what this function remembers.
+ *
+ * Value semantics are unaffected: every field of RequirementCatalogEntry is a primitive, so one level of
+ * copying is a complete copy and the result shares nothing with the input. If a nested field is ever
+ * added, this must copy that level too — `copyCatalogTranslation` below shows the shape for that.
+ *
+ * The trade is that a key outside the contract now rides along instead of being stripped. That is the
+ * better failure: carrying a caller's stray field is visible in the row, while dropping a real one was
+ * invisible for as long as nobody compared the emitted order.
+ */
 function copyCatalogEntry(entry: Readonly<RequirementCatalogEntry>): RequirementCatalogEntry {
-  return {
-    backend: entry.backend,
-    facet: entry.facet,
-    familyOrder: entry.familyOrder,
-    implementationImport: entry.implementationImport,
-    implementationSymbol: entry.implementationSymbol,
-    kind: entry.kind,
-    registrarImport: entry.registrarImport,
-    registrarSymbol: entry.registrarSymbol,
-  };
+  return { ...entry };
 }
 
 function requirementCatalogEntryIdentity(entry: Readonly<RequirementCatalogEntry>): string {
