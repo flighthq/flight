@@ -75,23 +75,6 @@ describe('3DS content through the built-in catalog', () => {
   });
 });
 
-// Bedrock formats have no decomposable parser family: one function reads the whole file, so there is no
-// subset to name and an empty `parserOptions` is the honest answer. Inventing a handler row for them
-// would emit an import of a symbol that does not exist.
-describe('bedrock formats through the built-in catalog', () => {
-  it.each([
-    ['a.obj', 'v 0 0 0\nf 1 1 1\n'],
-    ['a.md2', ''],
-    ['a.md5mesh', 'MD5Version 10\nnumJoints 1\n'],
-    ['a.md5anim', 'MD5Version 10\nnumFrames 1\n'],
-  ])('emits an empty parserOptions for %s', async (name, text) => {
-    const { source } = await load(name, new TextEncoder().encode(text));
-    expect(source).toContain('export const parserOptions = {};');
-    expect(source).not.toContain('handlers:');
-    expect(source).not.toContain('decoders:');
-  });
-});
-
 describe('COLLADA content through the built-in catalog', () => {
   it('emits the decoder list into ColladaImportOptions.decoders, the field that format declares', async () => {
     const { diagnostics, source } = await load(
@@ -142,6 +125,24 @@ describe('COLLADA content through the built-in catalog', () => {
       expect(source, `${absent} rode in on a geometry-only document`).not.toContain(absent);
     }
     expect(source).not.toContain('colladaAllElementDecoders');
+  });
+});
+
+// These two still emit an empty `parserOptions`, and for reasons that are NOT "the parser is monolithic".
+describe('formats with no parser rows through the built-in catalog', () => {
+  // OBJ's parser IS decomposed — objAllMaterialHandlers ships two handlers — but both satisfy the single
+  // `obj.Material` key, and the catalog gives one implementation per backend/facet/kind. So there is no row
+  // to resolve yet. Pinned as the current behaviour rather than presented as the intended end state.
+  it('emits an empty parserOptions for .obj, whose two handlers share one requirement key', async () => {
+    const { source } = await load('a.obj', new TextEncoder().encode('mtllib a.mtl\nusemtl Red\nv 0 0 0\nf 1 1 1\n'));
+    expect(source).toContain('export const parserOptions = {};');
+  });
+
+  // .md5anim genuinely has no handler family: parseMd5Anim reads one clip and has nothing separable.
+  it('emits an empty parserOptions for .md5anim, which has no handler family at all', async () => {
+    const { source } = await load('a.md5anim', new TextEncoder().encode('MD5Version 10\nnumFrames 1\n'));
+    expect(source).toContain('export const parserOptions = {};');
+    expect(source).not.toContain('sectionHandlers:');
   });
 });
 
@@ -200,6 +201,67 @@ describe('generated rich-format modules imported by Node', () => {
     },
     NODE_IMPORT_TIMEOUT_MS,
   );
+});
+
+// Bedrock formats have no decomposable parser family: one function reads the whole file, so there is no
+// subset to name and an empty `parserOptions` is the honest answer. Inventing a handler row for them
+// would emit an import of a symbol that does not exist.
+// MD2 and MD5 were "bedrock" only while their parsers were monolithic. They now expose section-handler
+// families, so a document's optional features resolve to the handlers that satisfy them — and the earlier
+// assertion that these formats always emit an empty `parserOptions` no longer describes the build.
+//
+// ★ THE OLD ASSERTIONS WOULD STILL HAVE PASSED, which is why they are rewritten rather than deleted. Their
+// fixtures carried no optional features — an empty MD2, an MD5 with no `joints {` block — so an empty
+// `parserOptions` was the right answer for the wrong reason, and the change these tests exist to catch would
+// have gone unnoticed. Each case below now states which feature it puts in the file.
+describe('MD2 content through the built-in catalog', () => {
+  it('resolves a skinned, animated model to both section handlers', async () => {
+    const { source } = await load('a.md2', md2File({ frames: 2, skins: 1 }));
+    expect(source).toContain('  sectionHandlers: [');
+    expect(parserList(source, 'sectionHandlers')).toEqual(['md2SkinHandler', 'md2AnimationHandler']);
+  });
+
+  // ★ THE ALWAYS-READ FEATURE IS REPORTED AS A GAP, AND TODAY THAT IS CORRECT-BUT-NOISY. `md2.Mesh` has no
+  // handler on purpose — the header, triangles, texcoords and frame 0 are what make the file a model, so
+  // there is nothing for a caller to opt out of and nothing for a row to name. The plugin cannot tell that
+  // from an oversight, so it reports it.
+  //
+  // The catalog already has the vocabulary for the difference: a RequirementDisposition records a
+  // requirement a backend deliberately does not implement, kept apart from `unresolved` precisely so a
+  // decision is not read as a gap. Nothing generates dispositions into the built-in catalog yet, so this
+  // pins what the build actually says rather than the quieter thing it should eventually say.
+  it('reports the always-read geometry feature as unresolved, since nothing claims it yet', async () => {
+    const { diagnostics } = await load('a.md2', md2File({ frames: 2, skins: 1 }));
+    expect(diagnostics).toEqual(['no catalog entry for document.format md2.Mesh: <file>']);
+  });
+
+  it('resolves a single-frame skinned model to the skin handler alone', async () => {
+    const { source } = await load('a.md2', md2File({ frames: 1, skins: 1 }));
+    expect(parserList(source, 'sectionHandlers')).toEqual(['md2SkinHandler']);
+    expect(source).not.toContain('md2AnimationHandler');
+  });
+
+  it('resolves an unskinned animated model to the animation handler alone', async () => {
+    const { source } = await load('a.md2', md2File({ frames: 2, skins: 0 }));
+    expect(parserList(source, 'sectionHandlers')).toEqual(['md2AnimationHandler']);
+    expect(source).not.toContain('md2SkinHandler');
+  });
+});
+
+describe('MD5 content through the built-in catalog', () => {
+  it('resolves a jointed, shaded mesh to both section handlers', async () => {
+    const { source } = await load('a.md5mesh', new TextEncoder().encode(MD5_JOINTED_SHADED));
+    expect(parserList(source, 'sectionHandlers')).toEqual(['md5SkeletonHandler', 'md5MaterialHandler']);
+  });
+
+  it('resolves a jointed mesh with no shader to the skeleton handler alone', async () => {
+    const { source } = await load(
+      'a.md5mesh',
+      new TextEncoder().encode(MD5_JOINTED_SHADED.replace(/ *shader.*\n/, '')),
+    );
+    expect(parserList(source, 'sectionHandlers')).toEqual(['md5SkeletonHandler']);
+    expect(source).not.toContain('md5MaterialHandler');
+  });
 });
 
 // Importing the format package's whole source lane through Node is a real module graph, not a stub, and
@@ -371,4 +433,65 @@ function threeDsFile(features: {
   const keyframeParts = (features.keyframes ?? []).map(() => chunk(THREE_DS_KEYFRAME_OBJECT_NODE, new Uint8Array(0)));
   if (keyframeParts.length > 0) parts.push(chunk(THREE_DS_KEYFRAME, bytes(...keyframeParts)));
   return chunk(THREE_DS_MAIN, bytes(...parts));
+}
+
+const MD5_JOINTED_SHADED = [
+  'MD5Version 10',
+  'numJoints 1',
+  'numMeshes 1',
+  'joints {',
+  '  "root" -1 ( 0 0 0 ) ( 0 0 0 )',
+  '}',
+  'mesh {',
+  '  shader "textures/default"',
+  '  numverts 1',
+  '  vert 0 ( 0 0 ) 0 1',
+  '  numtris 1',
+  '  tri 0 0 0 0',
+  '  numweights 1',
+  '  weight 0 0 1.0 ( 0 0 0 )',
+  '}',
+].join('\n');
+
+// The analyzer reads only the MD2 header, so the fixture needs the counts and offsets to be consistent —
+// `skins` drives the Material feature and a frame count above one drives Animation.
+function md2File(content: { frames: number; skins: number }): Uint8Array {
+  const MD2_HEADER_SIZE = 68;
+  const MD2_SKIN_SIZE = 64;
+  const MD2_FRAME_HEADER_SIZE = 40;
+  const numVertices = 1;
+  const frameStride = MD2_FRAME_HEADER_SIZE + numVertices * 4;
+
+  const offSkins = MD2_HEADER_SIZE;
+  const offTexCoords = offSkins + content.skins * MD2_SKIN_SIZE;
+  const offTriangles = offTexCoords + 4;
+  const offFrames = offTriangles + 12;
+  const total = offFrames + content.frames * frameStride;
+
+  const bytes = new Uint8Array(total);
+  const view = new DataView(bytes.buffer);
+  view.setInt32(0, 0x32504449, true);
+  view.setInt32(4, 8, true);
+  view.setInt32(8, 64, true);
+  view.setInt32(12, 64, true);
+  view.setInt32(16, frameStride, true);
+  view.setInt32(20, content.skins, true);
+  view.setInt32(24, numVertices, true);
+  view.setInt32(28, 1, true);
+  view.setInt32(32, 1, true);
+  view.setInt32(40, content.frames, true);
+  view.setInt32(44, offSkins, true);
+  view.setInt32(48, offTexCoords, true);
+  view.setInt32(52, offTriangles, true);
+  view.setInt32(56, offFrames, true);
+  view.setInt32(64, total, true);
+  for (let s = 0; s < content.skins; s++) {
+    const path = `skin${s}.pcx`;
+    for (let i = 0; i < path.length; i++) bytes[offSkins + s * MD2_SKIN_SIZE + i] = path.charCodeAt(i);
+  }
+  for (let f = 0; f < content.frames; f++) {
+    const base = offFrames + f * frameStride;
+    for (let axis = 0; axis < 3; axis++) view.setFloat32(base + axis * 4, 1, true);
+  }
+  return bytes;
 }
