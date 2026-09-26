@@ -56,7 +56,7 @@ export const md2SkinHandler: Readonly<Md2SectionHandler> = {
       });
     }
   },
-  section: 'Skin',
+  feature: 'Material',
 };
 
 // Reads one MD2 skin record's NUL-terminated texture path out of its fixed 64-byte field.

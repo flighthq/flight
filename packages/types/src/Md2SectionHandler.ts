@@ -47,12 +47,20 @@ export interface Md2ParseContext {
 /**
  * One MD2 section handler — the unit of opt-in for the MD2 importer.
  *
- * MD2's header describes its content as sections at known offsets, so `section` names which one a handler
- * reads and is the same name `collectMd2Features` reports and `parseMd2Requirements` emits under
- * `document.format`. A handler is a plain value; importing one starts nothing.
+ * MD2's header describes its content as sections at known offsets, and a handler reads one of them. What it
+ * DECLARES, though, is the `feature` it satisfies — `Material`, `Animation` — which is the vocabulary
+ * `collectMd2Features` reports and `parseMd2Requirements` emits under `document.format`.
+ *
+ * ★ THE FEATURE NAME, NOT THE SECTION NAME. The two differ: the skin records are the section, and the
+ * material is the feature they produce. Declaring the feature is what lets a catalog row be DERIVED from
+ * the shipped family by identity — a row for `md2.Material` resolves to the handler that says it satisfies
+ * `Material`, with nothing hand-written in between to fall out of step. Naming the section here instead
+ * would leave that mapping to be transcribed, which is exactly the drift the derivation exists to prevent.
+ *
+ * A handler is a plain value; importing one starts nothing.
  */
 export interface Md2SectionHandler {
-  readonly section: string;
+  readonly feature: string;
   collect(context: Md2ParseContext): void;
 }
 
