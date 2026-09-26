@@ -63,6 +63,25 @@ import {
   SPINE_BINARY_REQUIREMENT_KEY_NAMESPACE,
   spineBinaryTransformConstraintsSectionHandler,
   spineBinaryTransformTimelineHandler,
+  spineJsonAllSectionHandlers,
+  spineJsonAllTimelineHandlers,
+  spineJsonAnimationsSectionHandler,
+  spineJsonBonesSectionHandler,
+  spineJsonBoneTimelineHandler,
+  spineJsonDeformTimelineHandler,
+  spineJsonDrawOrderTimelineHandler,
+  spineJsonEventsSectionHandler,
+  spineJsonEventTimelineHandler,
+  spineJsonIkConstraintsSectionHandler,
+  spineJsonIkTimelineHandler,
+  SPINE_JSON_REQUIREMENT_KEY_NAMESPACE,
+  spineJsonPathConstraintsSectionHandler,
+  spineJsonPathTimelineHandler,
+  spineJsonSkinsSectionHandler,
+  spineJsonSlotsSectionHandler,
+  spineJsonSlotTimelineHandler,
+  spineJsonTransformConstraintsSectionHandler,
+  spineJsonTransformTimelineHandler,
 } from '@flighthq/skeleton2d-formats/contract';
 import {
   swfControlHandler,
@@ -90,10 +109,18 @@ import type {
   RequirementCatalogEntry,
   SpineBinarySectionHandler,
   SpineBinaryTimelineHandler,
+  SpineJsonSectionHandler,
+  SpineJsonTimelineHandler,
   SwfTagHandler,
   ThreeDsChunkHandler,
 } from '@flighthq/types/contract';
-import { RequirementFacet, SpineBinarySectionKind, SpineBinaryTimelineKind } from '@flighthq/types/contract';
+import {
+  RequirementFacet,
+  SpineBinarySectionKind,
+  SpineBinaryTimelineKind,
+  SpineJsonSectionKind,
+  SpineJsonTimelineKind,
+} from '@flighthq/types/contract';
 
 /**
  * The built-in ownership rows, DERIVED from the handlers themselves rather than transcribed.
@@ -274,6 +301,36 @@ export const SPINE_BINARY_TIMELINE_HANDLERS: readonly (readonly [string, SpineBi
   ['spineBinaryTransformTimelineHandler', spineBinaryTransformTimelineHandler, SpineBinaryTimelineKind.Transform],
 ];
 
+export const SPINE_JSON_SECTION_HANDLERS: readonly (readonly [string, SpineJsonSectionHandler, string])[] = [
+  ['spineJsonAnimationsSectionHandler', spineJsonAnimationsSectionHandler, SpineJsonSectionKind.Animations],
+  ['spineJsonBonesSectionHandler', spineJsonBonesSectionHandler, SpineJsonSectionKind.Bones],
+  ['spineJsonEventsSectionHandler', spineJsonEventsSectionHandler, SpineJsonSectionKind.Events],
+  ['spineJsonIkConstraintsSectionHandler', spineJsonIkConstraintsSectionHandler, SpineJsonSectionKind.IkConstraints],
+  [
+    'spineJsonPathConstraintsSectionHandler',
+    spineJsonPathConstraintsSectionHandler,
+    SpineJsonSectionKind.PathConstraints,
+  ],
+  ['spineJsonSkinsSectionHandler', spineJsonSkinsSectionHandler, SpineJsonSectionKind.Skins],
+  ['spineJsonSlotsSectionHandler', spineJsonSlotsSectionHandler, SpineJsonSectionKind.Slots],
+  [
+    'spineJsonTransformConstraintsSectionHandler',
+    spineJsonTransformConstraintsSectionHandler,
+    SpineJsonSectionKind.TransformConstraints,
+  ],
+];
+
+export const SPINE_JSON_TIMELINE_HANDLERS: readonly (readonly [string, SpineJsonTimelineHandler, string])[] = [
+  ['spineJsonBoneTimelineHandler', spineJsonBoneTimelineHandler, SpineJsonTimelineKind.Bone],
+  ['spineJsonDeformTimelineHandler', spineJsonDeformTimelineHandler, SpineJsonTimelineKind.Deform],
+  ['spineJsonDrawOrderTimelineHandler', spineJsonDrawOrderTimelineHandler, SpineJsonTimelineKind.DrawOrder],
+  ['spineJsonEventTimelineHandler', spineJsonEventTimelineHandler, SpineJsonTimelineKind.Event],
+  ['spineJsonIkTimelineHandler', spineJsonIkTimelineHandler, SpineJsonTimelineKind.Ik],
+  ['spineJsonPathTimelineHandler', spineJsonPathTimelineHandler, SpineJsonTimelineKind.Path],
+  ['spineJsonSlotTimelineHandler', spineJsonSlotTimelineHandler, SpineJsonTimelineKind.Slot],
+  ['spineJsonTransformTimelineHandler', spineJsonTransformTimelineHandler, SpineJsonTimelineKind.Transform],
+];
+
 /** The backend whose rows become `parserOptions` rather than a render-state fragment. */
 export const CATALOG_PARSER_BACKEND = 'parser';
 
@@ -368,6 +425,28 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
         symbol,
         `${SPINE_BINARY_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
         familyOrderOf(spineBinaryAllTimelineHandlers, handler),
+        'timelineHandlers',
+      ),
+    );
+  }
+  for (const [symbol, handler, kind] of SPINE_JSON_SECTION_HANDLERS) {
+    rows.push(
+      row(
+        '@flighthq/skeleton2d-formats/contract',
+        symbol,
+        `${SPINE_JSON_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
+        familyOrderOf(spineJsonAllSectionHandlers, handler),
+        'sectionHandlers',
+      ),
+    );
+  }
+  for (const [symbol, handler, kind] of SPINE_JSON_TIMELINE_HANDLERS) {
+    rows.push(
+      row(
+        '@flighthq/skeleton2d-formats/contract',
+        symbol,
+        `${SPINE_JSON_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
+        familyOrderOf(spineJsonAllTimelineHandlers, handler),
         'timelineHandlers',
       ),
     );

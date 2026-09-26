@@ -722,10 +722,6 @@
       "registrar": "registerProtocolSchemes"
     },
     {
-      "packageName": "requirement-catalog",
-      "registrar": "registerRequirementCatalogEntry"
-    },
-    {
       "packageName": "render",
       "registrar": "registerNodeRenderer"
     },
@@ -848,6 +844,10 @@
     {
       "packageName": "render-wgpu",
       "registrar": "registerWgpuTextureResolver"
+    },
+    {
+      "packageName": "requirement-catalog",
+      "registrar": "registerRequirementCatalogEntry"
     },
     {
       "packageName": "scene2d-canvas",
@@ -1359,6 +1359,10 @@
     },
     {
       "packageName": "skeleton2d-formats",
+      "registrar": "registerAllSpineJsonHandlers"
+    },
+    {
+      "packageName": "skeleton2d-formats",
       "registrar": "registerSkeleton2DFormat"
     },
     {
@@ -1376,6 +1380,22 @@
     {
       "packageName": "skeleton2d-formats",
       "registrar": "registerSpineBinaryTimelineHandlers"
+    },
+    {
+      "packageName": "skeleton2d-formats",
+      "registrar": "registerSpineJsonSectionHandler"
+    },
+    {
+      "packageName": "skeleton2d-formats",
+      "registrar": "registerSpineJsonSectionHandlers"
+    },
+    {
+      "packageName": "skeleton2d-formats",
+      "registrar": "registerSpineJsonTimelineHandler"
+    },
+    {
+      "packageName": "skeleton2d-formats",
+      "registrar": "registerSpineJsonTimelineHandlers"
     },
     {
       "packageName": "skeleton2d-formats",

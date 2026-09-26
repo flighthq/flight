@@ -9,8 +9,10 @@ export {
   registerSpineBinarySectionHandler,
   registerSpineBinaryTimelineHandler,
 } from './spineBinaryRegistry.ts';
+export { collectSpineBinarySectionCounts } from './spineBinarySectionCounts.ts';
 export { registerSpineBinarySectionHandlers } from './spineBinarySectionHandlers.ts';
 export { registerSpineBinaryTimelineHandlers } from './spineBinaryTimelineHandlers.ts';
+export { isReadableSpineBinary, parseSpineBinaryRequirements } from './spineBinaryRequirements.ts';
 export * from './spineBinaryVersion.ts';
 export * from './spineBinaryVersioned.ts';
 export * from './spineDrawOrder.ts';
@@ -20,6 +22,8 @@ export {
   registerSpineJsonSectionHandler,
   registerSpineJsonTimelineHandler,
 } from './spineJsonRegistry.ts';
+export { isReadableSpineJson, parseSpineJsonRequirements } from './spineJsonRequirements.ts';
+export { collectSpineJsonSectionCounts } from './spineJsonSectionCounts.ts';
 export { registerSpineJsonSectionHandlers } from './spineJsonSectionHandlers.ts';
 export { registerSpineJsonTimelineHandlers } from './spineJsonTimelineHandlers.ts';
 export * from './spineParse.ts';
