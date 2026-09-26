@@ -1,8 +1,9 @@
 import { createRequirementSet } from '@flighthq/requirement/contract';
 import type { Requirement, RequirementSet, XmlElement } from '@flighthq/types/contract';
-import { RequirementFacet, StandardPbrMaterialKind } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/types/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
+import { COLLADA_FEATURE_SCENE_REQUIREMENTS } from './colladaFeatureRequirements.ts';
 import { COLLADA_REQUIREMENT_KEY_NAMESPACE } from './scene3dFormatRequirements.ts';
 
 /**
@@ -98,9 +99,10 @@ export function parseColladaRequirements(xml: string): RequirementSet {
       facet: RequirementFacet.DocumentFormat,
       key: `${COLLADA_REQUIREMENT_KEY_NAMESPACE}.${feature}`,
     });
-  }
-  if (features.has('Material')) {
-    requirements.push({ facet: RequirementFacet.SceneMaterialKind, key: StandardPbrMaterialKind });
+    const sceneRequirements = COLLADA_FEATURE_SCENE_REQUIREMENTS.get(feature);
+    if (sceneRequirements !== undefined) {
+      for (const req of sceneRequirements) requirements.push(req);
+    }
   }
   return createRequirementSet([RequirementFacet.DocumentFormat, RequirementFacet.SceneMaterialKind], requirements);
 }

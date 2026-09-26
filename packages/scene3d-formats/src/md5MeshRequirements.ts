@@ -1,7 +1,8 @@
 import { createRequirementSet } from '@flighthq/requirement/contract';
 import type { Requirement, RequirementSet } from '@flighthq/types/contract';
-import { BlinnPhongMaterialKind, RequirementFacet } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/types/contract';
 
+import { MD5_MESH_FEATURE_SCENE_REQUIREMENTS } from './md5MeshFeatureRequirements.ts';
 import { collectMd5MeshFeatures } from './md5MeshFeatures.ts';
 import { MD5_REQUIREMENT_KEY_NAMESPACE } from './scene3dFormatRequirements.ts';
 
@@ -29,12 +30,10 @@ export function parseMd5MeshRequirements(source: string): RequirementSet {
       facet: RequirementFacet.DocumentFormat,
       key: `${MD5_REQUIREMENT_KEY_NAMESPACE}.${feature}`,
     });
-  }
-  if (features.has('Material')) {
-    requirements.push({
-      facet: RequirementFacet.SceneMaterialKind,
-      key: BlinnPhongMaterialKind,
-    });
+    const sceneRequirements = MD5_MESH_FEATURE_SCENE_REQUIREMENTS.get(feature);
+    if (sceneRequirements !== undefined) {
+      for (const req of sceneRequirements) requirements.push(req);
+    }
   }
   return createRequirementSet([RequirementFacet.DocumentFormat, RequirementFacet.SceneMaterialKind], requirements);
 }

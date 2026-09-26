@@ -14,15 +14,15 @@ import * as wgpu from '@flighthq/scene2d-wgpu';
 import { AWD2_BLOCK_SCENE_REQUIREMENTS, AWD2_DOCUMENT_SCENE_REQUIREMENTS } from '@flighthq/scene3d-formats/contract';
 import { AWD2_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/scene3d-formats/contract';
 import {
-  COLLADA_DOCUMENT_SCENE_REQUIREMENTS,
+  COLLADA_FEATURE_SCENE_REQUIREMENTS,
   COLLADA_REQUIREMENT_KEY_NAMESPACE,
-  MD2_DOCUMENT_SCENE_REQUIREMENTS,
+  MD2_FEATURE_SCENE_REQUIREMENTS,
   MD2_REQUIREMENT_KEY_NAMESPACE,
-  MD5_DOCUMENT_SCENE_REQUIREMENTS,
+  MD5_MESH_FEATURE_SCENE_REQUIREMENTS,
   MD5_REQUIREMENT_KEY_NAMESPACE,
-  OBJ_DOCUMENT_SCENE_REQUIREMENTS,
+  OBJ_FEATURE_SCENE_REQUIREMENTS,
   OBJ_REQUIREMENT_KEY_NAMESPACE,
-  THREE_DS_DOCUMENT_SCENE_REQUIREMENTS,
+  THREE_DS_CHUNK_SCENE_REQUIREMENTS,
   THREE_DS_REQUIREMENT_KEY_NAMESPACE,
 } from '@flighthq/scene3d-formats/contract';
 import { glScene3DRenderPreset } from '@flighthq/scene3d-gl';
@@ -150,11 +150,13 @@ export function buildRequirementTranslations(): readonly RequirementTranslation[
       to: AWD2_DOCUMENT_SCENE_REQUIREMENTS.map((r) => ({ facet: r.facet, key: r.key })),
     });
   }
-  for (const [namespace, requirements] of STATIC_FORMAT_TRANSLATIONS) {
-    translations.push({
-      from: { facet: RequirementFacet.DocumentFormat, key: namespace },
-      to: requirements.map((r) => ({ facet: r.facet, key: r.key })),
-    });
+  for (const [namespace, featureMap] of PER_FEATURE_FORMAT_TRANSLATIONS) {
+    for (const [featureName, requirements] of featureMap) {
+      translations.push({
+        from: { facet: RequirementFacet.DocumentFormat, key: `${namespace}.${featureName}` },
+        to: requirements.map((r) => ({ facet: r.facet, key: r.key })),
+      });
+    }
   }
   return translations.sort((a, b) => a.from.key.localeCompare(b.from.key));
 }
@@ -222,12 +224,12 @@ export const SCENE3D_PRESET_BACKENDS: readonly {
   },
 ];
 
-const STATIC_FORMAT_TRANSLATIONS: ReadonlyArray<readonly [string, readonly Requirement[]]> = [
-  [COLLADA_REQUIREMENT_KEY_NAMESPACE, COLLADA_DOCUMENT_SCENE_REQUIREMENTS],
-  [MD2_REQUIREMENT_KEY_NAMESPACE, MD2_DOCUMENT_SCENE_REQUIREMENTS],
-  [MD5_REQUIREMENT_KEY_NAMESPACE, MD5_DOCUMENT_SCENE_REQUIREMENTS],
-  [OBJ_REQUIREMENT_KEY_NAMESPACE, OBJ_DOCUMENT_SCENE_REQUIREMENTS],
-  [THREE_DS_REQUIREMENT_KEY_NAMESPACE, THREE_DS_DOCUMENT_SCENE_REQUIREMENTS],
+const PER_FEATURE_FORMAT_TRANSLATIONS: ReadonlyArray<readonly [string, ReadonlyMap<string, readonly Requirement[]>]> = [
+  [COLLADA_REQUIREMENT_KEY_NAMESPACE, COLLADA_FEATURE_SCENE_REQUIREMENTS],
+  [MD2_REQUIREMENT_KEY_NAMESPACE, MD2_FEATURE_SCENE_REQUIREMENTS],
+  [MD5_REQUIREMENT_KEY_NAMESPACE, MD5_MESH_FEATURE_SCENE_REQUIREMENTS],
+  [OBJ_REQUIREMENT_KEY_NAMESPACE, OBJ_FEATURE_SCENE_REQUIREMENTS],
+  [THREE_DS_REQUIREMENT_KEY_NAMESPACE, THREE_DS_CHUNK_SCENE_REQUIREMENTS],
 ];
 
 function renderRow(backend: string, module: string, symbol: string, kind: Kind): RequirementCatalogEntry {
