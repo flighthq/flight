@@ -1,6 +1,8 @@
 import { deflateSync } from 'node:zlib';
 
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
+import { encodeUTF8 } from '@flighthq/encoding/contract';
+import { MD2_HEADER_SIZE, MD2_MAGIC, MD2_VERSION } from '@flighthq/scene3d-formats/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
 import { DEFAULT_CONTENT_ANALYZERS } from './contentAnalyzers.ts';
@@ -36,6 +38,129 @@ describe('compressed content readability', () => {
   });
 });
 
+describe('content-aware 3D analyzers', () => {
+  describe('.3ds', () => {
+    it('reports unreadable for truncated bytes', () => {
+      expect(DEFAULT_CONTENT_ANALYZERS['.3ds'].isReadable(new Uint8Array([0x4d]), NO_DECOMPRESSORS)).toBe(false);
+    });
+
+    it('emits content-aware requirements for a valid file', () => {
+      const set = DEFAULT_CONTENT_ANALYZERS['.3ds'].analyze(createMinimal3ds(), NO_DECOMPRESSORS);
+      expect(set.covers).toContain(RequirementFacet.DocumentFormat);
+    });
+  });
+
+  describe('.dae', () => {
+    it('reports readable for a valid COLLADA document', () => {
+      expect(DEFAULT_CONTENT_ANALYZERS['.dae'].isReadable(encodeUTF8(MINIMAL_COLLADA), NO_DECOMPRESSORS)).toBe(true);
+    });
+
+    it('reports unreadable for non-COLLADA XML', () => {
+      expect(DEFAULT_CONTENT_ANALYZERS['.dae'].isReadable(encodeUTF8('<root/>'), NO_DECOMPRESSORS)).toBe(false);
+    });
+
+    it('emits geometry requirement for a COLLADA with geometry', () => {
+      const set = DEFAULT_CONTENT_ANALYZERS['.dae'].analyze(encodeUTF8(FULL_COLLADA), NO_DECOMPRESSORS);
+      expect(set.requirements).toContainEqual({ facet: RequirementFacet.DocumentFormat, key: 'dae.Geometry' });
+    });
+
+    it('emits fewer requirements for minimal content than for full content', () => {
+      const minimal = DEFAULT_CONTENT_ANALYZERS['.dae'].analyze(encodeUTF8(MINIMAL_COLLADA), NO_DECOMPRESSORS);
+      const full = DEFAULT_CONTENT_ANALYZERS['.dae'].analyze(encodeUTF8(FULL_COLLADA), NO_DECOMPRESSORS);
+      expect(minimal.requirements.length).toBeLessThan(full.requirements.length);
+    });
+  });
+
+  describe('.md2', () => {
+    it('reports readable for a valid MD2 header', () => {
+      expect(DEFAULT_CONTENT_ANALYZERS['.md2'].isReadable(buildMd2Header(1, 10, 0), NO_DECOMPRESSORS)).toBe(true);
+    });
+
+    it('reports unreadable for truncated bytes', () => {
+      expect(DEFAULT_CONTENT_ANALYZERS['.md2'].isReadable(new Uint8Array(10), NO_DECOMPRESSORS)).toBe(false);
+    });
+
+    it('emits content-aware requirements for a mesh-only model', () => {
+      const set = DEFAULT_CONTENT_ANALYZERS['.md2'].analyze(buildMd2Header(1, 10, 0), NO_DECOMPRESSORS);
+      expect(set.requirements).toContainEqual({ facet: RequirementFacet.DocumentFormat, key: 'md2.Mesh' });
+      expect(set.requirements.some((r) => r.key === 'md2.Material')).toBe(false);
+    });
+
+    it('emits more requirements for a full model than a minimal one', () => {
+      const minimal = DEFAULT_CONTENT_ANALYZERS['.md2'].analyze(buildMd2Header(1, 1, 0), NO_DECOMPRESSORS);
+      const full = DEFAULT_CONTENT_ANALYZERS['.md2'].analyze(buildMd2Header(10, 50, 1), NO_DECOMPRESSORS);
+      expect(minimal.requirements.length).toBeLessThan(full.requirements.length);
+    });
+  });
+
+  describe('.md5anim', () => {
+    it('is registered in DEFAULT_CONTENT_ANALYZERS', () => {
+      expect(DEFAULT_CONTENT_ANALYZERS['.md5anim']).toBeDefined();
+    });
+
+    it('reports readable for any text', () => {
+      expect(DEFAULT_CONTENT_ANALYZERS['.md5anim'].isReadable(encodeUTF8(''), NO_DECOMPRESSORS)).toBe(true);
+    });
+
+    it('emits hierarchy requirement for md5anim with hierarchy', () => {
+      const source = 'hierarchy {\n}\n';
+      const set = DEFAULT_CONTENT_ANALYZERS['.md5anim'].analyze(encodeUTF8(source), NO_DECOMPRESSORS);
+      expect(set.requirements).toContainEqual({ facet: RequirementFacet.DocumentFormat, key: 'md5.Hierarchy' });
+    });
+
+    it('emits more requirements for full anim than minimal', () => {
+      const minimal = DEFAULT_CONTENT_ANALYZERS['.md5anim'].analyze(encodeUTF8('hierarchy {\n}\n'), NO_DECOMPRESSORS);
+      const full = DEFAULT_CONTENT_ANALYZERS['.md5anim'].analyze(
+        encodeUTF8('hierarchy {\n}\nframe 0 {\n}\n'),
+        NO_DECOMPRESSORS,
+      );
+      expect(minimal.requirements.length).toBeLessThan(full.requirements.length);
+    });
+  });
+
+  describe('.md5mesh', () => {
+    it('reports readable for any text', () => {
+      expect(DEFAULT_CONTENT_ANALYZERS['.md5mesh'].isReadable(encodeUTF8(''), NO_DECOMPRESSORS)).toBe(true);
+    });
+
+    it('emits skeleton requirement for md5mesh with joints', () => {
+      const source = 'joints {\n}\n';
+      const set = DEFAULT_CONTENT_ANALYZERS['.md5mesh'].analyze(encodeUTF8(source), NO_DECOMPRESSORS);
+      expect(set.requirements).toContainEqual({ facet: RequirementFacet.DocumentFormat, key: 'md5.Skeleton' });
+    });
+
+    it('emits more requirements for full mesh than minimal', () => {
+      const minimal = DEFAULT_CONTENT_ANALYZERS['.md5mesh'].analyze(encodeUTF8('joints {\n}\n'), NO_DECOMPRESSORS);
+      const full = DEFAULT_CONTENT_ANALYZERS['.md5mesh'].analyze(
+        encodeUTF8('joints {\n}\nmesh {\nshader "body"\n}\n'),
+        NO_DECOMPRESSORS,
+      );
+      expect(minimal.requirements.length).toBeLessThan(full.requirements.length);
+    });
+  });
+
+  describe('.obj', () => {
+    it('reports readable for any text', () => {
+      expect(DEFAULT_CONTENT_ANALYZERS['.obj'].isReadable(encodeUTF8(''), NO_DECOMPRESSORS)).toBe(true);
+    });
+
+    it('emits geometry requirement for OBJ with vertices and faces', () => {
+      const source = 'v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n';
+      const set = DEFAULT_CONTENT_ANALYZERS['.obj'].analyze(encodeUTF8(source), NO_DECOMPRESSORS);
+      expect(set.requirements).toContainEqual({ facet: RequirementFacet.DocumentFormat, key: 'obj.Face' });
+    });
+
+    it('emits fewer requirements for empty content than a full model', () => {
+      const empty = DEFAULT_CONTENT_ANALYZERS['.obj'].analyze(encodeUTF8(''), NO_DECOMPRESSORS);
+      const full = DEFAULT_CONTENT_ANALYZERS['.obj'].analyze(
+        encodeUTF8('v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\nmtllib foo.mtl\nusemtl bar\n'),
+        NO_DECOMPRESSORS,
+      );
+      expect(empty.requirements.length).toBeLessThan(full.requirements.length);
+    });
+  });
+});
+
 function createSwfWithDefineShape(): Uint8Array {
   const body = new Uint8Array([0x00, 0x00, 0x18, 0x01, 0x00, 0x80, 0x00, 0x00, 0x00]);
   const file = new Uint8Array(8 + body.length);
@@ -68,6 +193,7 @@ describe('DEFAULT_CONTENT_ANALYZERS', () => {
       '.awd2',
       '.dae',
       '.md2',
+      '.md5anim',
       '.md5mesh',
       '.obj',
       '.swf',
@@ -96,17 +222,6 @@ describe('DEFAULT_CONTENT_ANALYZERS', () => {
     expect(set.requirements).toEqual([{ facet: RequirementFacet.DocumentFormat, key: 'awd2.Camera' }]);
   });
 
-  it('emits a format-level requirement for each uncompressed 3D format', () => {
-    for (const ext of ['.3ds', '.dae', '.md2', '.md5mesh', '.obj'] as const) {
-      const analyzer = DEFAULT_CONTENT_ANALYZERS[ext];
-      expect(analyzer.isReadable(new Uint8Array(), NO_DECOMPRESSORS)).toBe(true);
-      const set = analyzer.analyze(new Uint8Array(), NO_DECOMPRESSORS);
-      expect(set.covers).toEqual([RequirementFacet.DocumentFormat]);
-      expect(set.requirements.length).toBe(1);
-      expect(set.requirements[0]!.facet).toBe(RequirementFacet.DocumentFormat);
-    }
-  });
-
   it('reports an empty but covered set for content it cannot read', () => {
     const set = DEFAULT_CONTENT_ANALYZERS['.swf'].analyze(new Uint8Array(), NO_DECOMPRESSORS);
     expect(set.requirements).toEqual([]);
@@ -124,3 +239,38 @@ function compressedSwf(): Uint8Array {
   file.set(body, 8);
   return file;
 }
+
+function buildMd2Header(numFrames: number, numTriangles: number, numSkins: number): Uint8Array {
+  const buf = new ArrayBuffer(MD2_HEADER_SIZE);
+  const view = new DataView(buf);
+  view.setInt32(0, MD2_MAGIC, true);
+  view.setInt32(4, MD2_VERSION, true);
+  view.setInt32(20, numSkins, true);
+  view.setInt32(32, numTriangles, true);
+  view.setInt32(40, numFrames, true);
+  return new Uint8Array(buf);
+}
+
+function createMinimal3ds(): Uint8Array {
+  const file = new Uint8Array(12);
+  const view = new DataView(file.buffer);
+  view.setUint16(0, 0x4d4d, true);
+  view.setUint32(2, 12, true);
+  view.setUint16(6, 0x0002, true);
+  view.setUint32(8, 10, true);
+  return file;
+}
+
+const MINIMAL_COLLADA = [
+  '<?xml version="1.0"?>',
+  '<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">',
+  '</COLLADA>',
+].join('\n');
+
+const FULL_COLLADA = [
+  '<?xml version="1.0"?>',
+  '<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">',
+  '<library_geometries><geometry id="g"><mesh></mesh></geometry></library_geometries>',
+  '<library_cameras><camera id="c"></camera></library_cameras>',
+  '</COLLADA>',
+].join('\n');
