@@ -283,7 +283,7 @@ function skipCensusAnimations(
   return animationCount;
 }
 
-function tallyTimeline(counts: Map<string, number>, kind: SpineBinaryTimelineKind): void {
+function tallyTimeline(counts: Map<string, number>, kind: string): void {
   counts.set(kind, (counts.get(kind) ?? 0) + 1);
 }
 
