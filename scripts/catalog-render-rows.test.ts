@@ -64,11 +64,12 @@ describe('buildRequirementTranslations', () => {
     }
   });
 
-  // The namespace-keyed row is what covers a document whose tags build no nodes at all. Without it a
-  // SWF containing only SetBackgroundColor would resolve no renderer for its own root.
-  it('carries a format-wide row keyed on the bare namespace', () => {
+  // The SWF namespace-keyed row covers a document whose tags build no nodes at all. The content-aware
+  // 3D analyzers instead emit per-feature keys, so restoring their old bare rows would reintroduce the
+  // coarse renderer requirements these translations replace.
+  it('keeps only the format-wide row whose root has a render implication', () => {
     const bare = buildRequirementTranslations().filter((t) => !t.from.key.includes('.'));
-    expect(bare.map((t) => t.from.key)).toEqual(['3ds', 'dae', 'md2', 'md5', 'obj', 'swf']);
+    expect(bare.map((t) => t.from.key)).toEqual(['swf']);
     for (const row of bare) {
       expect(row.to.length).toBeGreaterThan(0);
     }
