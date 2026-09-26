@@ -105,6 +105,19 @@ export function collectThreeDsPivots(
 ): Map<string, readonly [number, number, number]> {
   const pivots = new Map<string, readonly [number, number, number]>();
   const end = Math.min(offset + readChunkLength(view, offset), view.byteLength);
+  const rootId = view.getUint16(offset, true);
+
+  // The handler-driven parser dispatches one feature chunk at a time, while the legacy parser starts
+  // at MAIN. Support both entry points so the shared collector has identical behavior in either path.
+  if (rootId === THREE_DS_KEYFRAME_OBJECT_NODE) {
+    collectThreeDsObjectNodePivot(view, offset, end, pivots);
+    return pivots;
+  }
+  if (rootId === THREE_DS_KEYFRAME) {
+    collectThreeDsNodePivots(view, offset, end, pivots);
+    return pivots;
+  }
+
   let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
 
   while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
@@ -1050,37 +1063,47 @@ function collectThreeDsNodePivots(
     if (chunkEnd < 0) return;
 
     if (chunkId === THREE_DS_KEYFRAME_OBJECT_NODE) {
-      let name: string | null = null;
-      let pivot: readonly [number, number, number] | null = null;
-      let inner = cursor + THREE_DS_CHUNK_HEADER_BYTES;
-      while (inner + THREE_DS_CHUNK_HEADER_BYTES <= chunkEnd) {
-        const innerId = view.getUint16(inner, true);
-        const innerEnd = readChunkEnd(view, inner, chunkEnd);
-        if (innerEnd < 0) break;
-        const dataStart = inner + THREE_DS_CHUNK_HEADER_BYTES;
-
-        if (innerId === THREE_DS_KEYFRAME_NODE_HEADER) {
-          // The header is a NUL-terminated name followed by two flag uint16s and the hierarchy value.
-          // Only the name is read — see collectThreeDsPivots for why the hierarchy is not.
-          name = readNullTerminatedString(view, dataStart, innerEnd);
-        } else if (innerId === THREE_DS_KEYFRAME_PIVOT && dataStart + 12 <= innerEnd) {
-          pivot = [
-            view.getFloat32(dataStart, true),
-            view.getFloat32(dataStart + 4, true),
-            view.getFloat32(dataStart + 8, true),
-          ];
-        }
-
-        inner = innerEnd;
-      }
-      // A zero pivot is the format's default and means the node origin already is the object origin, so
-      // recording it would only cost a needless translate compose downstream.
-      if (name !== null && name.length > 0 && pivot !== null && (pivot[0] !== 0 || pivot[1] !== 0 || pivot[2] !== 0)) {
-        pivots.set(name, pivot);
-      }
+      collectThreeDsObjectNodePivot(view, cursor, chunkEnd, pivots);
     }
 
     cursor = chunkEnd;
+  }
+}
+
+function collectThreeDsObjectNodePivot(
+  view: Readonly<DataView>,
+  offset: number,
+  end: number,
+  pivots: Map<string, readonly [number, number, number]>,
+): void {
+  let name: string | null = null;
+  let pivot: readonly [number, number, number] | null = null;
+  let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
+  while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
+    const chunkId = view.getUint16(cursor, true);
+    const chunkEnd = readChunkEnd(view, cursor, end);
+    if (chunkEnd < 0) break;
+    const dataStart = cursor + THREE_DS_CHUNK_HEADER_BYTES;
+
+    if (chunkId === THREE_DS_KEYFRAME_NODE_HEADER) {
+      // The header is a NUL-terminated name followed by two flag uint16s and the hierarchy value.
+      // Only the name is read — see collectThreeDsPivots for why the hierarchy is not.
+      name = readNullTerminatedString(view, dataStart, chunkEnd);
+    } else if (chunkId === THREE_DS_KEYFRAME_PIVOT && dataStart + 12 <= chunkEnd) {
+      pivot = [
+        view.getFloat32(dataStart, true),
+        view.getFloat32(dataStart + 4, true),
+        view.getFloat32(dataStart + 8, true),
+      ];
+    }
+
+    cursor = chunkEnd;
+  }
+
+  // A zero pivot is the format's default and means the node origin already is the object origin, so
+  // recording it would only cost a needless translate compose downstream.
+  if (name !== null && name.length > 0 && pivot !== null && (pivot[0] !== 0 || pivot[1] !== 0 || pivot[2] !== 0)) {
+    pivots.set(name, pivot);
   }
 }
 

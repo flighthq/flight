@@ -610,6 +610,23 @@ describe('collectThreeDsPivots', () => {
     const view = new DataView(main.buffer, main.byteOffset, main.byteLength);
     expect(collectThreeDsPivots(view, 0).size).toBe(0);
   });
+
+  it('extracts a pivot when invoked directly on an object node', () => {
+    const pivot = new Uint8Array(12);
+    const pivotView = new DataView(pivot.buffer);
+    pivotView.setFloat32(0, 4.0, true);
+    pivotView.setFloat32(4, 5.0, true);
+    pivotView.setFloat32(8, 6.0, true);
+
+    const header = writeChunk(THREE_DS_KEYFRAME_NODE_HEADER, new Uint8Array([0x42, 0x6f, 0x78, 0x00, 0x00, 0x00]));
+    const objectNode = writeChunk(
+      THREE_DS_KEYFRAME_OBJECT_NODE,
+      concatBytes(header, writeChunk(THREE_DS_KEYFRAME_PIVOT, pivot)),
+    );
+    const view = new DataView(objectNode.buffer, objectNode.byteOffset, objectNode.byteLength);
+
+    expect(collectThreeDsPivots(view, 0).get('Box')).toEqual([4.0, 5.0, 6.0]);
+  });
 });
 
 describe('createScene3DFrom3ds', () => {

@@ -35,7 +35,7 @@ export interface ThreeDsParseState {
   readonly lights: ThreeDsLight[];
   readonly materials: Map<string, ThreeDsMaterial>;
   readonly meshes: ThreeDsMesh[];
-  readonly pivots: Map<string, Float32Array>;
+  readonly pivots: Map<string, readonly [number, number, number]>;
 }
 
 export type ThreeDsChunkDispatch = ReadonlyMap<number, Readonly<ThreeDsChunkHandler>>;
