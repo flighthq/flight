@@ -1,6 +1,5 @@
 export * from './scale9Sprite.ts';
 export * from './sprite.ts';
-export * from './displayContainer.ts';
 export * from './displayObject.ts';
 export * from './displayObjectAnimation.ts';
 export * from './htmlView.ts';
