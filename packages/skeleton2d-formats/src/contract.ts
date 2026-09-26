@@ -5,6 +5,8 @@ export * from './spineBinaryHandlers.ts';
 export { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse.ts';
 export * from './spineBinaryReader.ts';
 export * from './spineBinaryRegistry.ts';
+export * from './spineBinaryRequirements.ts';
+export { collectSpineBinarySectionCounts } from './spineBinarySectionCounts.ts';
 export * from './spineBinarySectionHandlers.ts';
 export * from './spineBinaryTimelineHandlers.ts';
 export * from './spineBinaryVersion.ts';

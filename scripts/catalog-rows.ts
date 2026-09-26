@@ -44,6 +44,27 @@ import {
   THREE_DS_REQUIREMENT_KEY_NAMESPACE,
 } from '@flighthq/scene3d-formats/contract';
 import {
+  spineBinaryAllSectionHandlers,
+  spineBinaryAllTimelineHandlers,
+  spineBinaryAnimationsSectionHandler,
+  spineBinaryBonesSectionHandler,
+  spineBinaryBoneTimelineHandler,
+  spineBinaryDeformTimelineHandler,
+  spineBinaryDrawOrderTimelineHandler,
+  spineBinaryEventsSectionHandler,
+  spineBinaryEventTimelineHandler,
+  spineBinaryIkConstraintsSectionHandler,
+  spineBinaryIkTimelineHandler,
+  spineBinaryPathConstraintsSectionHandler,
+  spineBinaryPathTimelineHandler,
+  spineBinarySkinsSectionHandler,
+  spineBinarySlotsSectionHandler,
+  spineBinarySlotTimelineHandler,
+  SPINE_BINARY_REQUIREMENT_KEY_NAMESPACE,
+  spineBinaryTransformConstraintsSectionHandler,
+  spineBinaryTransformTimelineHandler,
+} from '@flighthq/skeleton2d-formats/contract';
+import {
   swfControlHandler,
   swfDefineMorphShapeHandler,
   swfDefineShapeHandler,
@@ -67,10 +88,12 @@ import type {
   Md5SectionHandler,
   ObjMaterialHandler,
   RequirementCatalogEntry,
+  SpineBinarySectionHandler,
+  SpineBinaryTimelineHandler,
   SwfTagHandler,
   ThreeDsChunkHandler,
 } from '@flighthq/types/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import { RequirementFacet, SpineBinarySectionKind, SpineBinaryTimelineKind } from '@flighthq/types/contract';
 
 /**
  * The built-in ownership rows, DERIVED from the handlers themselves rather than transcribed.
@@ -208,6 +231,49 @@ export const OBJ_MATERIAL_HANDLERS: ReadonlyMap<string, Readonly<ObjMaterialHand
   ['objStandardPbrMaterialHandler', objStandardPbrMaterialHandler],
 ]);
 
+/**
+ * The Spine binary section handlers, keyed by symbol and paired with the section kind each handles.
+ *
+ * Spine handlers are plain functions registered by kind rather than objects that declare their own
+ * metadata, so the kind is an explicit pairing rather than a derivation from handler properties.
+ */
+export const SPINE_BINARY_SECTION_HANDLERS: readonly (readonly [string, SpineBinarySectionHandler, string])[] = [
+  ['spineBinaryAnimationsSectionHandler', spineBinaryAnimationsSectionHandler, SpineBinarySectionKind.Animations],
+  ['spineBinaryBonesSectionHandler', spineBinaryBonesSectionHandler, SpineBinarySectionKind.Bones],
+  ['spineBinaryEventsSectionHandler', spineBinaryEventsSectionHandler, SpineBinarySectionKind.Events],
+  [
+    'spineBinaryIkConstraintsSectionHandler',
+    spineBinaryIkConstraintsSectionHandler,
+    SpineBinarySectionKind.IkConstraints,
+  ],
+  [
+    'spineBinaryPathConstraintsSectionHandler',
+    spineBinaryPathConstraintsSectionHandler,
+    SpineBinarySectionKind.PathConstraints,
+  ],
+  ['spineBinarySkinsSectionHandler', spineBinarySkinsSectionHandler, SpineBinarySectionKind.Skins],
+  ['spineBinarySlotsSectionHandler', spineBinarySlotsSectionHandler, SpineBinarySectionKind.Slots],
+  [
+    'spineBinaryTransformConstraintsSectionHandler',
+    spineBinaryTransformConstraintsSectionHandler,
+    SpineBinarySectionKind.TransformConstraints,
+  ],
+];
+
+/**
+ * The Spine binary timeline handlers, keyed by symbol and paired with the timeline kind each handles.
+ */
+export const SPINE_BINARY_TIMELINE_HANDLERS: readonly (readonly [string, SpineBinaryTimelineHandler, string])[] = [
+  ['spineBinaryBoneTimelineHandler', spineBinaryBoneTimelineHandler, SpineBinaryTimelineKind.Bone],
+  ['spineBinaryDeformTimelineHandler', spineBinaryDeformTimelineHandler, SpineBinaryTimelineKind.Deform],
+  ['spineBinaryDrawOrderTimelineHandler', spineBinaryDrawOrderTimelineHandler, SpineBinaryTimelineKind.DrawOrder],
+  ['spineBinaryEventTimelineHandler', spineBinaryEventTimelineHandler, SpineBinaryTimelineKind.Event],
+  ['spineBinaryIkTimelineHandler', spineBinaryIkTimelineHandler, SpineBinaryTimelineKind.Ik],
+  ['spineBinaryPathTimelineHandler', spineBinaryPathTimelineHandler, SpineBinaryTimelineKind.Path],
+  ['spineBinarySlotTimelineHandler', spineBinarySlotTimelineHandler, SpineBinaryTimelineKind.Slot],
+  ['spineBinaryTransformTimelineHandler', spineBinaryTransformTimelineHandler, SpineBinaryTimelineKind.Transform],
+];
+
 /** The backend whose rows become `parserOptions` rather than a render-state fragment. */
 export const CATALOG_PARSER_BACKEND = 'parser';
 
@@ -284,14 +350,40 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
       );
     }
   }
+  for (const [symbol, handler, kind] of SPINE_BINARY_SECTION_HANDLERS) {
+    rows.push(
+      row(
+        '@flighthq/skeleton2d-formats/contract',
+        symbol,
+        `${SPINE_BINARY_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
+        familyOrderOf(spineBinaryAllSectionHandlers, handler),
+        'sectionHandlers',
+      ),
+    );
+  }
+  for (const [symbol, handler, kind] of SPINE_BINARY_TIMELINE_HANDLERS) {
+    rows.push(
+      row(
+        '@flighthq/skeleton2d-formats/contract',
+        symbol,
+        `${SPINE_BINARY_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
+        familyOrderOf(spineBinaryAllTimelineHandlers, handler),
+        'timelineHandlers',
+      ),
+    );
+  }
   return rows.sort(
     (a, b) => a.kind.localeCompare(b.kind) || a.implementationSymbol.localeCompare(b.implementationSymbol),
   );
 }
 
-// The PUBLIC lane, not `/contract`: these rows are emitted into a module an APPLICATION imports, and
-// naming a tag handler is exactly the app-level decision the public lane exists for.
-function row(module: string, symbol: string, kind: string, familyOrder?: number): RequirementCatalogEntry {
+function row(
+  module: string,
+  symbol: string,
+  kind: string,
+  familyOrder?: number,
+  parserField?: string,
+): RequirementCatalogEntry {
   return {
     backend: CATALOG_PARSER_BACKEND,
     facet: RequirementFacet.DocumentFormat,
@@ -299,6 +391,7 @@ function row(module: string, symbol: string, kind: string, familyOrder?: number)
     implementationImport: module,
     implementationSymbol: symbol,
     kind,
+    parserField,
   };
 }
 

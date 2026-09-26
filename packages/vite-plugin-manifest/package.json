@@ -42,6 +42,7 @@
     "@flighthq/log": "*",
     "@flighthq/requirement-codegen": "*",
     "@flighthq/scene3d-formats": "*",
+    "@flighthq/skeleton2d-formats": "*",
     "@flighthq/swf": "*",
     "@flighthq/types": "*"
   },

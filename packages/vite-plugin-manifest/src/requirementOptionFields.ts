@@ -127,5 +127,6 @@ export const PARSER_HANDLER_FIELDS: Readonly<Record<string, string>> = Object.fr
   '.md2': 'sectionHandlers',
   '.md5mesh': 'sectionHandlers',
   '.obj': 'materialHandlers',
+  '.skel': 'sectionHandlers',
   '.swf': 'tags',
 });

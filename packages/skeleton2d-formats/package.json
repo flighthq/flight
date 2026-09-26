@@ -43,6 +43,7 @@
     "@flighthq/entity": "*",
     "@flighthq/importdiagnostics": "*",
     "@flighthq/registry": "*",
+    "@flighthq/requirement": "*",
     "@flighthq/skeleton2d": "*",
     "@flighthq/types": "*"
   },

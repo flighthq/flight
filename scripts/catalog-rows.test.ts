@@ -7,6 +7,8 @@ import {
 } from '@flighthq/scene3d-formats';
 import * as scene3dFormats from '@flighthq/scene3d-formats';
 import { getThreeDsChunkName } from '@flighthq/scene3d-formats/contract';
+import { spineBinaryAllSectionHandlers, spineBinaryAllTimelineHandlers } from '@flighthq/skeleton2d-formats/contract';
+import * as skeleton2dFormatsContract from '@flighthq/skeleton2d-formats/contract';
 import * as swf from '@flighthq/swf';
 import { getSwfTagName } from '@flighthq/swf/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
@@ -19,12 +21,15 @@ import {
   MD2_SECTION_HANDLERS,
   MD5_SECTION_HANDLERS,
   OBJ_MATERIAL_HANDLERS,
+  SPINE_BINARY_SECTION_HANDLERS,
+  SPINE_BINARY_TIMELINE_HANDLERS,
   SWF_TAG_HANDLERS,
   THREE_DS_CHUNK_HANDLERS,
 } from './catalog-rows.ts';
 
 const MODULES: Readonly<Record<string, Record<string, unknown>>> = {
   '@flighthq/scene3d-formats': scene3dFormats as unknown as Record<string, unknown>,
+  '@flighthq/skeleton2d-formats/contract': skeleton2dFormatsContract as unknown as Record<string, unknown>,
   '@flighthq/swf': swf as unknown as Record<string, unknown>,
 };
 
@@ -49,7 +54,7 @@ describe('buildRequirementCatalogRows', () => {
   });
 
   it('namespaces every kind by format, so two formats cannot claim one key', () => {
-    const namespaces = ['3ds.', 'awd2.', 'dae.', 'md2.', 'md5.', 'obj.', 'swf.'];
+    const namespaces = ['3ds.', 'awd2.', 'dae.', 'md2.', 'md5.', 'obj.', 'spine-binary.', 'swf.'];
     const kinds = buildRequirementCatalogRows().map((row) => row.kind);
     expect(kinds.every((kind) => namespaces.some((namespace) => kind.startsWith(namespace)))).toBe(true);
     // Every namespace must actually be present, or the clause above passes vacuously for the formats
@@ -137,7 +142,8 @@ describe('buildRequirementCatalogRows', () => {
           isChunkHandler(value) ||
           isElementDecoder(value) ||
           isSectionHandler(value) ||
-          isMaterialHandler(value),
+          isMaterialHandler(value) ||
+          isSpineBinaryHandler(value),
         `${row.implementationSymbol}`,
       ).toBe(true);
     }
@@ -311,6 +317,74 @@ describe('buildRequirementCatalogRows', () => {
       }
     }
   });
+
+  it('lists every Spine binary section handler the skeleton2d-formats contract exports', () => {
+    const exported = Object.keys(skeleton2dFormatsContract)
+      .filter(
+        (name) =>
+          name.endsWith('SectionHandler') &&
+          !name.startsWith('register') &&
+          typeof (skeleton2dFormatsContract as unknown as Record<string, unknown>)[name] === 'function',
+      )
+      .sort();
+    expect(SPINE_BINARY_SECTION_HANDLERS.map(([symbol]) => symbol).sort()).toEqual(exported);
+  });
+
+  it('lists every Spine binary timeline handler the skeleton2d-formats contract exports', () => {
+    const exported = Object.keys(skeleton2dFormatsContract)
+      .filter(
+        (name) =>
+          name.endsWith('TimelineHandler') &&
+          !name.startsWith('register') &&
+          typeof (skeleton2dFormatsContract as unknown as Record<string, unknown>)[name] === 'function',
+      )
+      .sort();
+    expect(SPINE_BINARY_TIMELINE_HANDLERS.map(([symbol]) => symbol).sort()).toEqual(exported);
+  });
+
+  it('emits one row per Spine binary handler, each routed to its declared kind', () => {
+    const rows = buildRequirementCatalogRows();
+    for (const [symbol, , kind] of SPINE_BINARY_SECTION_HANDLERS) {
+      const matching = rows.filter((candidate) => candidate.implementationSymbol === symbol);
+      expect(matching, symbol).toHaveLength(1);
+      expect(matching[0].kind, symbol).toBe(`spine-binary.${kind}`);
+    }
+    for (const [symbol, , kind] of SPINE_BINARY_TIMELINE_HANDLERS) {
+      const matching = rows.filter((candidate) => candidate.implementationSymbol === symbol);
+      expect(matching, symbol).toHaveLength(1);
+      expect(matching[0].kind, symbol).toBe(`spine-binary.${kind}`);
+    }
+  });
+
+  it('numbers each Spine binary row by its position in the family the format ships', () => {
+    const rows = buildRequirementCatalogRows();
+    for (const [symbol, handler] of SPINE_BINARY_SECTION_HANDLERS) {
+      const expected = spineBinaryAllSectionHandlers.indexOf(handler);
+      for (const row of rows.filter((candidate) => candidate.implementationSymbol === symbol)) {
+        expect(row.familyOrder, symbol).toBe(expected);
+      }
+    }
+    for (const [symbol, handler] of SPINE_BINARY_TIMELINE_HANDLERS) {
+      const expected = spineBinaryAllTimelineHandlers.indexOf(handler);
+      for (const row of rows.filter((candidate) => candidate.implementationSymbol === symbol)) {
+        expect(row.familyOrder, symbol).toBe(expected);
+      }
+    }
+  });
+
+  it('sets parserField on Spine binary rows to split section and timeline handlers', () => {
+    const rows = buildRequirementCatalogRows();
+    for (const row of rows.filter((candidate) => candidate.kind.startsWith('spine-binary.'))) {
+      const isSectionKind = SPINE_BINARY_SECTION_HANDLERS.some(([, , kind]) => row.kind === `spine-binary.${kind}`);
+      expect(row.parserField, row.kind).toBe(isSectionKind ? 'sectionHandlers' : 'timelineHandlers');
+    }
+  });
+
+  it('imports Spine binary handlers from the contract lane', () => {
+    for (const row of buildRequirementCatalogRows().filter((r) => r.kind.startsWith('spine-binary.'))) {
+      expect(row.implementationImport).toBe('@flighthq/skeleton2d-formats/contract');
+    }
+  });
 });
 
 function isTagHandler(value: unknown): boolean {
@@ -344,4 +418,8 @@ function isElementDecoder(value: unknown): boolean {
   return (
     typeof value === 'object' && value !== null && !Array.isArray(value) && 'features' in value && 'decode' in value
   );
+}
+
+function isSpineBinaryHandler(value: unknown): boolean {
+  return typeof value === 'function';
 }

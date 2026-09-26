@@ -212,6 +212,19 @@ function parserFragment(rows: readonly ManifestModuleEntry[], field: string): st
   const ordered = [...rows].sort(
     (a, b) => (a.entry.familyOrder ?? Number.MAX_SAFE_INTEGER) - (b.entry.familyOrder ?? Number.MAX_SAFE_INTEGER),
   );
-  const handlers = ordered.map((row) => `    ${row.entry.implementationSymbol},`);
-  return [`export const parserOptions = {`, `  ${field}: [`, ...handlers, '  ],', '};'];
+  const byField = new Map<string, ManifestModuleEntry[]>();
+  for (const row of ordered) {
+    const f = row.entry.parserField ?? field;
+    let list = byField.get(f);
+    if (list === undefined) {
+      list = [];
+      byField.set(f, list);
+    }
+    list.push(row);
+  }
+  const fields = [...byField.keys()].sort().flatMap((f) => {
+    const handlers = byField.get(f)!.map((row) => `    ${row.entry.implementationSymbol},`);
+    return [`  ${f}: [`, ...handlers, '  ],'];
+  });
+  return [`export const parserOptions = {`, ...fields, '};'];
 }
