@@ -6,20 +6,23 @@ import { encodeUTF8 } from '@flighthq/encoding/contract';
 import {
   BUILT_IN_REQUIREMENT_BACKENDS,
   BUILT_IN_REQUIREMENT_CATALOG_ENTRIES,
+  BUILT_IN_REQUIREMENT_DISPOSITIONS,
   BUILT_IN_REQUIREMENT_TRANSLATIONS,
 } from '@flighthq/requirement-catalog/contract';
 import { MD2_HEADER_SIZE, MD2_MAGIC, MD2_VERSION } from '@flighthq/scene3d-formats/contract';
 
 import { createManifestPlugin } from './manifestPlugin.ts';
 
-// 3D format features produce `document.format` requirements that the translation layer EXPANDS
-// into `scene.material-kind` requirements, which DO resolve to catalog entries. The original
-// format requirements stay (expansion is additive) and produce diagnostics when no parser backend
-// entry exists for them — that is correct: the catalog has no parser handler rows for 3D format
-// features yet, because 3D parsers are standalone functions the user calls directly.
+// 3D format features produce `document.format` requirements that the translation layer EXPANDS into
+// `scene.material-kind` requirements, and both halves resolve: the expansion reaches the material
+// renderers, and the format requirement itself reaches the parser handler that reads it. The material
+// renderers appear in the generated source because the TRANSLATED requirements resolve on gl and wgpu.
+// This test verifies that pipeline end to end.
 //
-// The material renderers still appear in the generated source because the TRANSLATED requirements
-// resolve on gl and wgpu backends. This test verifies that pipeline end to end.
+// The note that used to sit here — that the catalog has no parser rows for 3D formats because their parsers
+// are standalone functions — is no longer true. 3DS, COLLADA, MD2, MD5 and OBJ all expose handler families
+// now and all have derived parser rows; what remains without a row is the set of always-read features, and
+// those are DECLINED with a reason rather than unresolved.
 
 describe('3D format content through the built-in catalog', () => {
   describe('.3ds', () => {
@@ -108,10 +111,16 @@ describe('3D format content through the built-in catalog', () => {
       expect(source).not.toContain('StandardPbrMaterial');
     });
 
-    it('diagnoses format features with no parser catalog entry', async () => {
+    // ★ THESE TWO ARE DECLINED NOW, NOT UNRESOLVED, AND THAT IS THE POINT. This case used to assert they
+    // WERE diagnosed, which was true and useless: the .md5anim parser reads one clip and has no separable
+    // family, so no handler exists for a row to name and no build could have acted on the report. The catalog
+    // records that decision with its reason (BUILT_IN_REQUIREMENT_DISPOSITIONS), so the plan routes them to
+    // `declined` and the channel stays trustworthy. A requirement nobody decided about still reports — see
+    // the unknown-chunk case in richFormatParserResolution.test.ts.
+    it('does not diagnose a format feature the catalog deliberately declines', async () => {
       const { diagnostics } = await load3d('.md5anim', encodeUTF8(FULL_MD5_ANIM));
-      expect(diagnostics.some((d) => d.includes('md5.Hierarchy'))).toBe(true);
-      expect(diagnostics.some((d) => d.includes('md5.Animation'))).toBe(true);
+      expect(diagnostics.filter((d) => d.includes('md5.Hierarchy'))).toEqual([]);
+      expect(diagnostics.filter((d) => d.includes('md5.Animation'))).toEqual([]);
     });
   });
 
@@ -185,6 +194,7 @@ async function load3d(ext: string, content: Uint8Array): Promise<{ diagnostics: 
   const plugin = createManifestPlugin({
     catalog: {
       backends: BUILT_IN_REQUIREMENT_BACKENDS,
+      dispositions: BUILT_IN_REQUIREMENT_DISPOSITIONS,
       entries: [...BUILT_IN_REQUIREMENT_CATALOG_ENTRIES],
       translations: BUILT_IN_REQUIREMENT_TRANSLATIONS,
     },

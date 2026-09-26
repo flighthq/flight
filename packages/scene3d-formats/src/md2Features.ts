@@ -17,6 +17,19 @@ import { MD2_HEADER_SIZE, MD2_MAGIC, MD2_VERSION } from './md2Schema.ts';
  *
  * Contract lane only: build-time analysis input, not something a running app asks for.
  */
+const MD2_FEATURE_MESH = 'Mesh';
+const MD2_FEATURE_MATERIAL = 'Material';
+const MD2_FEATURE_ANIMATION = 'Animation';
+
+/**
+ * Every feature name this analyzer can report — the vocabulary it emits under `document.format`.
+ *
+ * Stated as one list, and the scan below uses these same names, so the vocabulary cannot drift from what
+ * the scan actually emits. A build tool needs the whole list to tell a feature nothing claims from a
+ * feature the analyzer never considered.
+ */
+export const MD2_FEATURE_NAMES: readonly string[] = [MD2_FEATURE_MESH, MD2_FEATURE_MATERIAL, MD2_FEATURE_ANIMATION];
+
 export function collectMd2Features(source: Readonly<Uint8Array>): ReadonlySet<string> | null {
   if (source.byteLength < MD2_HEADER_SIZE) return null;
   const view = new DataView(source.buffer, source.byteOffset, source.byteLength);
@@ -34,8 +47,8 @@ export function collectMd2Features(source: Readonly<Uint8Array>): ReadonlySet<st
   if (numSkins < 0 || numTriangles < 0 || numFrames < 0) return null;
 
   const found = new Set<string>();
-  if (numTriangles > 0 && numFrames > 0) found.add('Mesh');
-  if (numSkins > 0) found.add('Material');
-  if (numFrames > 1) found.add('Animation');
+  if (numTriangles > 0 && numFrames > 0) found.add(MD2_FEATURE_MESH);
+  if (numSkins > 0) found.add(MD2_FEATURE_MATERIAL);
+  if (numFrames > 1) found.add(MD2_FEATURE_ANIMATION);
   return found;
 }

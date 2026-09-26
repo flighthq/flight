@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 import {
   BUILT_IN_REQUIREMENT_BACKENDS,
   BUILT_IN_REQUIREMENT_CATALOG_ENTRIES,
+  BUILT_IN_REQUIREMENT_DISPOSITIONS,
   BUILT_IN_REQUIREMENT_TRANSLATIONS,
 } from '@flighthq/requirement-catalog/contract';
 
@@ -215,18 +216,22 @@ describe('MD2 content through the built-in catalog', () => {
     expect(parserList(source, 'sectionHandlers')).toEqual(['md2SkinHandler', 'md2AnimationHandler']);
   });
 
-  // ★ THE ALWAYS-READ FEATURE IS REPORTED AS A GAP, AND TODAY THAT IS CORRECT-BUT-NOISY. `md2.Mesh` has no
-  // handler on purpose — the header, triangles, texcoords and frame 0 are what make the file a model, so
-  // there is nothing for a caller to opt out of and nothing for a row to name. The plugin cannot tell that
-  // from an oversight, so it reports it.
+  // ★ SUPPRESSION IS NARROW, AND THAT IS PROVEN ELSEWHERE — deliberately, because it cannot be shown here.
+  // A 3DS chunk nothing claims would be the natural counter-case in this file, but the census counts only the
+  // chunk ids it knows, so an unrecognised chunk emits no requirement at all and there is nothing to report.
+  // The counter-property lives in two places instead: builtInCatalogResolution.test.ts asserts an unclaimed
+  // SWF tag IS still reported end to end, and requirementCodegen.test.ts asserts the routing exactly — a
+  // requirement with no disposition goes to `unresolved`, and a disposition matches on backend, facet and
+  // kind one axis at a time.
   //
-  // The catalog already has the vocabulary for the difference: a RequirementDisposition records a
-  // requirement a backend deliberately does not implement, kept apart from `unresolved` precisely so a
-  // decision is not read as a gap. Nothing generates dispositions into the built-in catalog yet, so this
-  // pins what the build actually says rather than the quieter thing it should eventually say.
-  it('reports the always-read geometry feature as unresolved, since nothing claims it yet', async () => {
+  // ★ THE ALWAYS-READ FEATURE IS A RECORDED DECISION NOW, NOT A REPORTED GAP. `md2.Mesh` has no handler on
+  // purpose — the header, triangles, texcoords and frame 0 are what make the file a model, so there is
+  // nothing to opt out of and nothing for a row to name. The catalog records that with a reason, the plan
+  // routes it to `declined`, and the plugin does not report it. This case previously asserted the opposite
+  // and said so: it pinned the noise deliberately, until the decision could be expressed.
+  it('does not report the always-read geometry feature, which the catalog declines with a reason', async () => {
     const { diagnostics } = await load('a.md2', md2File({ frames: 2, skins: 1 }));
-    expect(diagnostics).toEqual(['no catalog entry for document.format md2.Mesh: <file>']);
+    expect(diagnostics).toEqual([]);
   });
 
   it('resolves a single-frame skinned model to the skin handler alone', async () => {
@@ -327,6 +332,7 @@ async function load(name: string, content: Uint8Array): Promise<{ diagnostics: s
   const plugin = createManifestPlugin({
     catalog: {
       backends: BUILT_IN_REQUIREMENT_BACKENDS,
+      dispositions: BUILT_IN_REQUIREMENT_DISPOSITIONS,
       entries: [...BUILT_IN_REQUIREMENT_CATALOG_ENTRIES],
       translations: BUILT_IN_REQUIREMENT_TRANSLATIONS,
     },
@@ -356,6 +362,7 @@ async function loadWithSibling(
   const plugin = createManifestPlugin({
     catalog: {
       backends: BUILT_IN_REQUIREMENT_BACKENDS,
+      dispositions: BUILT_IN_REQUIREMENT_DISPOSITIONS,
       entries: [...BUILT_IN_REQUIREMENT_CATALOG_ENTRIES],
       translations: BUILT_IN_REQUIREMENT_TRANSLATIONS,
     },

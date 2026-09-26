@@ -13,7 +13,7 @@ import {
   THREE_DS_TRIMESH,
 } from '@flighthq/types/contract';
 
-import { collectThreeDsChunkCounts, getThreeDsChunkName } from './threeDsChunkCensus.ts';
+import { collectThreeDsChunkCounts, getThreeDsChunkName, getThreeDsFeatureNames } from './threeDsChunkCensus.ts';
 
 describe('collectThreeDsChunkCounts', () => {
   it('counts trimesh, material, light, and camera chunks', () => {
@@ -131,6 +131,27 @@ describe('getThreeDsChunkName', () => {
 
   it('returns a hex label for unknown chunk IDs', () => {
     expect(getThreeDsChunkName(0xbeef)).toBe('Unknown(0xbeef)');
+  });
+});
+
+describe('getThreeDsFeatureNames', () => {
+  // ★ THE POPULATION AN INVENTORY IS PARTITIONED AGAINST. The catalog's disposition gate subtracts the
+  // features parser rows claim from this list, so a hole here would shrink that population silently and the
+  // gate would pass by examining less. Derived from the same name table the census reports through, so a chunk
+  // added to the census appears here on the same edit.
+  it('reports every name the census can report, and nothing else', () => {
+    const names = getThreeDsFeatureNames();
+    expect(names.length).toBeGreaterThan(0);
+    for (const name of names) expect(name).not.toMatch(/^Unknown\(/);
+    // Each name round-trips through the public lookup, which is what ties the list to the census vocabulary
+    // rather than to a hand-written copy of it.
+    expect(names).toContain(getThreeDsChunkName(0x4100));
+    expect(names).toContain(getThreeDsChunkName(0xafff));
+  });
+
+  it('names each feature once', () => {
+    const names = getThreeDsFeatureNames();
+    expect(names.length).toBe(new Set(names).size);
   });
 });
 

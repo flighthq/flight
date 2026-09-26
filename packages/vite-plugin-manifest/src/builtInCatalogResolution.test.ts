@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import {
   BUILT_IN_REQUIREMENT_BACKENDS,
   BUILT_IN_REQUIREMENT_CATALOG_ENTRIES,
+  BUILT_IN_REQUIREMENT_DISPOSITIONS,
   BUILT_IN_REQUIREMENT_TRANSLATIONS,
 } from '@flighthq/requirement-catalog/contract';
 
@@ -159,6 +160,7 @@ async function load(
   const plugin = createManifestPlugin({
     catalog: {
       backends: 'backends' in overrides ? overrides.backends : BUILT_IN_REQUIREMENT_BACKENDS,
+      dispositions: BUILT_IN_REQUIREMENT_DISPOSITIONS,
       entries: [...BUILT_IN_REQUIREMENT_CATALOG_ENTRIES],
       translations: BUILT_IN_REQUIREMENT_TRANSLATIONS,
     },
@@ -193,6 +195,7 @@ async function loadAwd2(content: Uint8Array): Promise<{ diagnostics: string[]; s
   const plugin = createManifestPlugin({
     catalog: {
       backends: BUILT_IN_REQUIREMENT_BACKENDS,
+      dispositions: BUILT_IN_REQUIREMENT_DISPOSITIONS,
       entries: [...BUILT_IN_REQUIREMENT_CATALOG_ENTRIES],
       translations: BUILT_IN_REQUIREMENT_TRANSLATIONS,
     },
