@@ -147,4 +147,4 @@ describe('typed consumer fixtures', () => {
 const RENDERER = { createData: () => null, submit: () => {} } as NodeRenderer;
 const TAG_HANDLER = { code: 1, read: () => {} } as unknown as SwfTagHandler;
 const CHUNK_HANDLER = { chunkIds: [0x4100], collect: () => {} } as ThreeDsChunkHandler;
-const ELEMENT_DECODER = { decode: () => {}, elements: ['geometry'], feature: 'Geometry' } as ColladaElementDecoder;
+const ELEMENT_DECODER = { decode: () => {}, elements: ['geometry'], features: ['Geometry'] } as ColladaElementDecoder;

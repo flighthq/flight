@@ -16,6 +16,15 @@ import type { Scene3DDocument } from './Scene3DDocument.ts';
  * StandardMaterialKind at draw time).
  */
 export interface ObjMaterialHandler {
+  /**
+   * The shading model this handler reads, as the feature name the analyzer emits under `document.format`.
+   *
+   * ★ THE FEATURE NAME IS WHAT MAKES A CATALOG ROW DERIVABLE. Both handlers used to answer one coarse
+   * `obj.Material` key, and two rows for one key collide under the catalog's own row identity — so OBJ got no
+   * parser row at all. Declaring the model each handler reads splits that key in two, and a row can then be
+   * derived from the shipped family by identity rather than transcribed beside it.
+   */
+  readonly feature: string;
   matches(material: Readonly<ObjMaterial>): boolean;
   resolve(
     material: Readonly<ObjMaterial>,
@@ -39,3 +48,9 @@ export interface ObjMaterialHandler {
 export interface ObjImportOptions {
   readonly materialHandlers?: readonly Readonly<ObjMaterialHandler>[];
 }
+
+/** The feature name for MTL's classic Ka/Kd/Ks/Ns shading model. */
+export const OBJ_MATERIAL_BLINN_PHONG_FEATURE = 'MaterialBlinnPhong';
+
+/** The feature name for MTL's metallic-roughness PBR extensions (Pr/Pm and the sheen/clearcoat family). */
+export const OBJ_MATERIAL_STANDARD_PBR_FEATURE = 'MaterialStandardPbr';

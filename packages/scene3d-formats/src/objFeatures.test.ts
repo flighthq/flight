@@ -1,4 +1,4 @@
-import { collectObjFeatures, OBJ_FEATURE_DIRECTIVES } from './objFeatures.ts';
+import { OBJ_FEATURE_DIRECTIVES, collectObjFeatures, collectObjMaterialLibraryReferences } from './objFeatures.ts';
 
 describe('collectObjFeatures', () => {
   it('reports only the features a MINIMAL document contains', () => {
@@ -77,6 +77,35 @@ describe('collectObjFeatures', () => {
 
   it('detects a bare directive without arguments as the feature', () => {
     expect([...collectObjFeatures('f')]).toEqual(['Face']);
+  });
+});
+
+describe('collectObjMaterialLibraryReferences', () => {
+  it('reports the mtllib paths a file states, in the order first seen', () => {
+    expect(collectObjMaterialLibraryReferences('mtllib a.mtl\nv 0 0 0\nmtllib b.mtl\n')).toEqual(['a.mtl', 'b.mtl']);
+  });
+
+  // One directive may name several libraries; MTL allows it and exporters do it.
+  it('reports every library named on one directive', () => {
+    expect(collectObjMaterialLibraryReferences('mtllib a.mtl b.mtl\n')).toEqual(['a.mtl', 'b.mtl']);
+  });
+
+  it('reports a repeated path once, so the build reads each library exactly once', () => {
+    expect(collectObjMaterialLibraryReferences('mtllib a.mtl\nmtllib a.mtl\n')).toEqual(['a.mtl']);
+  });
+
+  it('reports nothing for a file that references no library', () => {
+    expect(collectObjMaterialLibraryReferences('v 0 0 0\nf 1 1 1\n')).toEqual([]);
+  });
+
+  it('ignores a commented-out directive', () => {
+    expect(collectObjMaterialLibraryReferences('# mtllib a.mtl\n')).toEqual([]);
+  });
+
+  // `usemtl` names a material WITHIN a library, not a file to read. Confusing the two would have the build
+  // try to open a material name as a path.
+  it('does not treat usemtl as a library reference', () => {
+    expect(collectObjMaterialLibraryReferences('usemtl Red\n')).toEqual([]);
   });
 });
 

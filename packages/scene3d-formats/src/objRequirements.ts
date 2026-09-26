@@ -1,9 +1,14 @@
 import { createRequirementSet } from '@flighthq/requirement/contract';
 import type { Requirement, RequirementSet } from '@flighthq/types/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import {
+  OBJ_MATERIAL_BLINN_PHONG_FEATURE,
+  OBJ_MATERIAL_STANDARD_PBR_FEATURE,
+  RequirementFacet,
+} from '@flighthq/types/contract';
 
 import { OBJ_FEATURE_SCENE_REQUIREMENTS } from './objFeatureRequirements.ts';
-import { collectObjFeatures } from './objFeatures.ts';
+import { collectObjFeatures, OBJ_MATERIAL_FEATURE } from './objFeatures.ts';
+import { collectObjMaterialModels } from './objMaterialModel.ts';
 import { OBJ_REQUIREMENT_KEY_NAMESPACE } from './scene3dFormatRequirements.ts';
 
 /**
@@ -26,8 +31,26 @@ import { OBJ_REQUIREMENT_KEY_NAMESPACE } from './scene3dFormatRequirements.ts';
  *
  * Contract lane only: build-time analysis input, not something a running app asks for.
  */
-export function parseObjRequirements(source: string): RequirementSet {
-  const features = collectObjFeatures(source);
+export function parseObjRequirements(source: string, materialLibraries: readonly string[] = []): RequirementSet {
+  const features = new Set(collectObjFeatures(source));
+  // ★ THE COARSE `Material` FEATURE IS REPLACED, NEVER KEPT ALONGSIDE. It states only that the file
+  // references materials; the shading models state which handlers and renderers those materials need, and
+  // emitting both would put an unresolvable key next to the precise ones.
+  //
+  // With no library text supplied — none referenced, or the build could not read one — the models cannot be
+  // determined, so BOTH are claimed. That is the safe superset: it keeps the build working at the cost of the
+  // precision this function exists for, and it is strictly better than claiming a model the file may not use.
+  if (features.delete(OBJ_MATERIAL_FEATURE)) {
+    const models = new Set<string>();
+    for (const library of materialLibraries) {
+      for (const model of collectObjMaterialModels(library)) models.add(model);
+    }
+    if (models.size === 0) {
+      models.add(OBJ_MATERIAL_BLINN_PHONG_FEATURE);
+      models.add(OBJ_MATERIAL_STANDARD_PBR_FEATURE);
+    }
+    for (const model of models) features.add(model);
+  }
   const requirements: Requirement[] = [];
   for (const feature of [...features].sort()) {
     requirements.push({

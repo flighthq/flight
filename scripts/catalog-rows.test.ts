@@ -2,6 +2,7 @@ import {
   colladaAllElementDecoders,
   md2AllSectionHandlers,
   md5AllSectionHandlers,
+  objAllMaterialHandlers,
   threeDsAllChunkHandlers,
 } from '@flighthq/scene3d-formats';
 import * as scene3dFormats from '@flighthq/scene3d-formats';
@@ -17,6 +18,7 @@ import {
   COLLADA_ELEMENT_DECODERS,
   MD2_SECTION_HANDLERS,
   MD5_SECTION_HANDLERS,
+  OBJ_MATERIAL_HANDLERS,
   SWF_TAG_HANDLERS,
   THREE_DS_CHUNK_HANDLERS,
 } from './catalog-rows.ts';
@@ -47,7 +49,7 @@ describe('buildRequirementCatalogRows', () => {
   });
 
   it('namespaces every kind by format, so two formats cannot claim one key', () => {
-    const namespaces = ['3ds.', 'awd2.', 'dae.', 'md2.', 'md5.', 'swf.'];
+    const namespaces = ['3ds.', 'awd2.', 'dae.', 'md2.', 'md5.', 'obj.', 'swf.'];
     const kinds = buildRequirementCatalogRows().map((row) => row.kind);
     expect(kinds.every((kind) => namespaces.some((namespace) => kind.startsWith(namespace)))).toBe(true);
     // Every namespace must actually be present, or the clause above passes vacuously for the formats
@@ -134,7 +136,8 @@ describe('buildRequirementCatalogRows', () => {
           isBlockHandler(value) ||
           isChunkHandler(value) ||
           isElementDecoder(value) ||
-          isSectionHandler(value),
+          isSectionHandler(value) ||
+          isMaterialHandler(value),
         `${row.implementationSymbol}`,
       ).toBe(true);
     }
@@ -273,6 +276,32 @@ describe('buildRequirementCatalogRows', () => {
     expect(kinds.has('md5.Mesh')).toBe(false);
   });
 
+  it('lists every OBJ material handler the scene3d-formats package exports', () => {
+    const exported = Object.keys(scene3dFormats)
+      .filter((name) => isMaterialHandler((scene3dFormats as unknown as Record<string, unknown>)[name]))
+      .sort();
+    expect([...OBJ_MATERIAL_HANDLERS.keys()].sort()).toEqual(exported);
+  });
+
+  // ★ THE ROW THAT COULD NOT EXIST BEFORE. Both handlers answered one coarse `obj.Material` key, and two
+  // rows for one key collide under the catalog's own identity, so OBJ had no parser row at all. Each handler
+  // declares the shading model it reads now, which is what splits the key and makes the rows derivable.
+  it('routes each OBJ shading model to the handler that reads it, one row each', () => {
+    const rows = buildRequirementCatalogRows();
+    for (const [symbol, handler] of OBJ_MATERIAL_HANDLERS) {
+      const matching = rows.filter((candidate) => candidate.implementationSymbol === symbol);
+      expect(matching, symbol).toHaveLength(1);
+      expect(matching[0].kind, symbol).toBe(`obj.${handler.feature}`);
+      expect(matching[0].familyOrder, symbol).toBe(objAllMaterialHandlers.indexOf(handler));
+    }
+  });
+
+  // The coarse key is what the OBJ text alone can report, and it answers neither "which renderer" nor
+  // "which handler". Asserted absent so nobody reintroduces a row nothing can resolve precisely.
+  it('emits no row for the coarse obj.Material key', () => {
+    expect(buildRequirementCatalogRows().some((row) => row.kind === 'obj.Material')).toBe(false);
+  });
+
   it('routes each tag to the handler that actually claims it', () => {
     const rows = buildRequirementCatalogRows();
     for (const [symbol, handler] of SWF_TAG_HANDLERS) {
@@ -301,6 +330,13 @@ function isChunkHandler(value: unknown): boolean {
 function isSectionHandler(value: unknown): boolean {
   return (
     typeof value === 'object' && value !== null && !Array.isArray(value) && 'feature' in value && 'collect' in value
+  );
+}
+
+// An OBJ material handler: the `feature` it reads plus the matches/resolve pair that reads it.
+function isMaterialHandler(value: unknown): boolean {
+  return (
+    typeof value === 'object' && value !== null && !Array.isArray(value) && 'matches' in value && 'resolve' in value
   );
 }
 
