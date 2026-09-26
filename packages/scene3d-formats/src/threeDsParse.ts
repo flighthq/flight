@@ -19,23 +19,23 @@ import { createPointLight, createSpotLight } from '@flighthq/lighting/contract';
 import { createBlinnPhongMaterial } from '@flighthq/materials/contract';
 import { DEG_TO_RAD } from '@flighthq/math/contract';
 import { createMeshGeometry } from '@flighthq/mesh/contract';
-import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import type {
   ImportDiagnostic,
   Light,
   Material,
   MaterialLike,
   MeshSubset,
-  Scene3D,
   Scene3DDocument,
   Scene3DDocumentMesh,
   Scene3DDocumentNode,
   ThreeDsCamera,
+  ThreeDsChunkDispatch,
   ThreeDsDropTally,
   ThreeDsLight,
   ThreeDsMaterial,
   ThreeDsMaterialGroup,
   ThreeDsMesh,
+  ThreeDsParseState,
   Transform3D,
   Vector3,
 } from '@flighthq/types/contract';
@@ -47,17 +47,14 @@ import {
   THREE_DS_EDITOR,
   THREE_DS_FACE_MATERIAL,
   THREE_DS_FACES,
-  THREE_DS_CAMERA,
   THREE_DS_CAMERA_APERTURE_MM,
   THREE_DS_CAMERA_RANGES,
-  THREE_DS_LIGHT,
   THREE_DS_LIGHT_INNER_RANGE,
   THREE_DS_LIGHT_MULTIPLIER,
   THREE_DS_LIGHT_OFF,
   THREE_DS_LIGHT_OUTER_RANGE,
   THREE_DS_LIGHT_SPOT,
   THREE_DS_MAIN,
-  THREE_DS_MATERIAL,
   THREE_DS_MATERIAL_AMBIENT,
   THREE_DS_MATERIAL_BUMP_MAP,
   THREE_DS_MATERIAL_DIFFUSE,
@@ -77,7 +74,6 @@ import {
   THREE_DS_PERCENT_INT,
   THREE_DS_SMOOTH_GROUP,
   THREE_DS_TRANSFORM_MATRIX,
-  THREE_DS_TRIMESH,
   THREE_DS_UV_COORDS,
   THREE_DS_VERTICES,
 } from '@flighthq/types/contract';
@@ -169,23 +165,30 @@ export function collectThreeDsPivots(
 //
 // Malformed or truncated input records a diagnostic and returns an empty or partial scene; the function
 // never throws on bad input. Convenience over `createScene3DFromDocument(parse3ds(bytes))`.
-export function createScene3DFrom3ds(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): Scene3D {
-  return createScene3DFromDocument(parse3ds(bytes, diagnostics));
-}
 
 // Recursively walks the chunk tree starting at `offset`, appending every named object it finds to the
 // collector matching that object's kind — trimesh, light, or camera — and populating `materials` with
 // every material block (0xAFFF) found alongside them under the editor chunk. All four collectors are
 // out-parameters because one walk feeds all of them; a 3DS object chunk does not say which kind it is
 // until its sub-chunk is read.
-function collectThreeDsObjects(
+/**
+ * Walks a container chunk, handing each chunk it recognizes to the family's handler.
+ *
+ * ★ THE GUARDS LIVE HERE, ONCE. Every bound — the parent's end, a child claiming more bytes than its
+ * parent holds, the header that must fit before a chunk can be read at all — is checked in this loop and
+ * in `walkThreeDsObject`, never inside a handler. A handler that had to re-derive its own end would be a
+ * second place for an off-by-one to live, and a caller's own handler would have to get it right too.
+ * Handlers receive an offset and an end they can trust.
+ *
+ * Containers recurse; a named object defers to `walkThreeDsObject` because its children are read relative
+ * to a name the object itself carries. The keyframer is a container like the others now: its pivots reach
+ * the state through the keyframe handler rather than through a second walk from the root.
+ */
+function walkThreeDsChunks(
   view: Readonly<DataView>,
   offset: number,
-  materials: Map<string, ThreeDsMaterial>,
-  meshes: ThreeDsMesh[],
-  lights: ThreeDsLight[],
-  cameras: ThreeDsCamera[],
-  threeDsDrops: Map<string, ThreeDsDropTally> | null,
+  state: ThreeDsParseState,
+  dispatch: ThreeDsChunkDispatch,
 ): void {
   const end = Math.min(offset + readChunkLength(view, offset), view.byteLength);
   let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
@@ -196,7 +199,7 @@ function collectThreeDsObjects(
     const chunkEnd = readChunkEnd(view, cursor, end);
 
     if (chunkEnd < 0) {
-      tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.chunk-exceeds-parent', '', {
+      tallyThreeDsDrop(state.drops, ImportDiagnosticSeverity.Recover, '3ds.chunk-exceeds-parent', '', {
         firstChunkId: chunkId,
         firstLength: chunkLength,
         firstOffset: cursor,
@@ -204,31 +207,39 @@ function collectThreeDsObjects(
       break;
     }
 
-    if (chunkId === THREE_DS_EDITOR || chunkId === THREE_DS_MAIN) {
-      collectThreeDsObjects(view, cursor, materials, meshes, lights, cameras, threeDsDrops);
+    const handler = dispatch.get(chunkId);
+    if (handler !== undefined) {
+      // Container-level handlers (the material table, the keyframe node) take no object name.
+      handler.collect(state, view, cursor, chunkEnd, '');
+    } else if (chunkId === THREE_DS_EDITOR || chunkId === THREE_DS_MAIN || chunkId === THREE_DS_KEYFRAME) {
+      walkThreeDsChunks(view, cursor, state, dispatch);
     } else if (chunkId === THREE_DS_OBJECT) {
-      parseThreeDsObject(view, cursor, chunkEnd, meshes, lights, cameras, threeDsDrops);
-    } else if (chunkId === THREE_DS_MATERIAL) {
-      const material = parseThreeDsMaterial(view, cursor, chunkEnd);
-      if (material.name.length > 0) materials.set(material.name, material);
+      walkThreeDsObject(view, cursor, chunkEnd, state, dispatch);
     }
 
     cursor = chunkEnd;
   }
 }
 
-// Parses a named object chunk (0x4000). The payload starts with a null-terminated ASCII name string,
-// followed by sub-chunks. The object's kind is whichever of the three entity sub-chunks it carries — a
-// trimesh (0x4100), a light (0x4600), or a camera (0x4700) — so the first one found decides, and the
-// parsed descriptor is appended to that kind's collector.
-function parseThreeDsObject(
+/**
+ * Walks a named object chunk (0x4000): a null-terminated name, then the sub-chunks that decide what the
+ * object IS.
+ *
+ * The first recognized entity sub-chunk decides and the walk stops, which is the behaviour the hard-coded
+ * version had — a 3DS object carries exactly one of trimesh, light or camera, and scanning past the one
+ * it found would at best waste work and at worst let a malformed sibling overwrite it.
+ *
+ * An object carrying no recognized sub-chunk is a dummy or helper — a pivot, a target point, a group —
+ * which Flight models as nothing and reports as recognized-and-skipped. Note this also fires when a
+ * caller OMITS the handler for the entity the object actually carries: from the walk's point of view an
+ * unclaimed chunk id and an unmodelled one are the same thing, and the diagnostic says what happened.
+ */
+function walkThreeDsObject(
   view: Readonly<DataView>,
   offset: number,
   end: number,
-  meshes: ThreeDsMesh[],
-  lights: ThreeDsLight[],
-  cameras: ThreeDsCamera[],
-  threeDsDrops: Map<string, ThreeDsDropTally> | null,
+  state: ThreeDsParseState,
+  dispatch: ThreeDsChunkDispatch,
 ): void {
   let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
   const name = readNullTerminatedString(view, cursor, end);
@@ -239,105 +250,22 @@ function parseThreeDsObject(
     const chunkEnd = readChunkEnd(view, cursor, end);
 
     if (chunkEnd < 0) {
-      tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.subchunk-exceeds-object', '', {
+      tallyThreeDsDrop(state.drops, ImportDiagnosticSeverity.Recover, '3ds.subchunk-exceeds-object', '', {
         firstOffset: cursor,
       });
       return;
     }
 
-    if (chunkId === THREE_DS_TRIMESH) {
-      const mesh = parseThreeDsTrimesh(view, cursor, chunkEnd, name, threeDsDrops);
-      if (mesh !== null) meshes.push(mesh);
-      return;
-    }
-    if (chunkId === THREE_DS_LIGHT) {
-      const light = parseThreeDsLight(view, cursor, chunkEnd, name, threeDsDrops);
-      if (light !== null) lights.push(light);
-      return;
-    }
-    if (chunkId === THREE_DS_CAMERA) {
-      const camera = parseThreeDsCamera(view, cursor, chunkEnd, name, threeDsDrops);
-      if (camera !== null) cameras.push(camera);
+    const handler = dispatch.get(chunkId);
+    if (handler !== undefined) {
+      handler.collect(state, view, cursor, chunkEnd, name);
       return;
     }
 
     cursor = chunkEnd;
   }
 
-  // A named object carrying none of the three entity sub-chunks — a dummy/helper object (a pivot, a
-  // target point, a group node). Flight models no such entity, so the object is recognized and skipped.
-  tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Skip, '3ds.non-entity-object', '', { firstName: name });
-}
-
-// Parses an Autodesk 3DS binary file into a format-neutral Scene3DDocument. Each named-object trimesh
-// becomes one document Mesh node (inline geometry, canonical PBR layout, RH Z-up → Y-up). Referenced
-// materials are registered into the document's materials table (deduped by name) and named per mesh by
-// index. Assemble into a live Scene3D with `createScene3DFromDocument`. Malformed input returns an empty or
-// partial document with a diagnostic.
-export function parse3ds(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): Scene3DDocument {
-  const document: Scene3DDocument = {
-    animations: [],
-    cameras: [],
-    lights: [],
-    materials: [],
-    meshes: [],
-    metadata: null,
-    nodes: [],
-    resources: [],
-    scenes: [{ rootNodes: [] }],
-    skins: [],
-  };
-
-  if (bytes.byteLength < THREE_DS_CHUNK_HEADER_BYTES) {
-    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, '3ds.input-too-small', 'parse3ds');
-    return document;
-  }
-
-  const source = bytes as Uint8Array;
-  const view = new DataView(source.buffer, source.byteOffset, source.byteLength);
-
-  const mainId = view.getUint16(0, true);
-  if (mainId !== THREE_DS_MAIN) {
-    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, '3ds.wrong-main-chunk', 'parse3ds', {
-      foundId: mainId,
-    });
-    return document;
-  }
-
-  // The material table (0xAFFF chunks) and the meshes are siblings under the editor chunk, and a mesh
-  // references its materials by name via FACE_MATERIAL — so collect the whole table first, then
-  // resolve each mesh's referenced names against it.
-  const threeDsDrops = diagnostics ? new Map<string, ThreeDsDropTally>() : null;
-  const materials = new Map<string, ThreeDsMaterial>();
-  const meshes: ThreeDsMesh[] = [];
-  const lights: ThreeDsLight[] = [];
-  const cameras: ThreeDsCamera[] = [];
-  collectThreeDsObjects(view, 0, materials, meshes, lights, cameras, threeDsDrops);
-  // The keyframer is walked for PIVOTS ONLY (see collectThreeDsPivots). It is a sibling of the editor
-  // chunk, so it is collected separately rather than during the object walk.
-  const pivots = collectThreeDsPivots(view, 0);
-  const materialIndexByName = new Map<string, number>();
-  for (let i = 0; i < meshes.length; i++) {
-    appendMeshDocument(meshes[i], materials, materialIndexByName, pivots, document, threeDsDrops);
-  }
-  // Lights and cameras fill the document's PLACEMENT TABLES, not the node graph — neither is a scene
-  // member in Flight (see Scene3DDocumentLight). They are appended after the meshes so the tables read in
-  // file order regardless of how the objects were interleaved in the chunk tree.
-  for (let i = 0; i < lights.length; i++) appendThreeDsLightDocument(lights[i], document, threeDsDrops);
-  for (let i = 0; i < cameras.length; i++) appendThreeDsCameraDocument(cameras[i], document);
-
-  // parse3ds is the single physical emitter for every aggregated crumb (hence the origin); the tallies
-  // store no origin. Flush once so per-chunk faults collapse to one crumb per kind/discriminator + count.
-  if (threeDsDrops !== null) {
-    for (const tally of threeDsDrops.values()) {
-      reportImportDiagnostic(diagnostics, tally.severity, tally.kind, 'parse3ds', {
-        ...tally.detail,
-        count: tally.count,
-      });
-    }
-  }
-
-  return document;
+  tallyThreeDsDrop(state.drops, ImportDiagnosticSeverity.Skip, '3ds.non-entity-object', '', { firstName: name });
 }
 
 // Parses a camera chunk (0x4700). The payload is a fixed 32-byte record — position (3 float32), aim
@@ -394,6 +322,100 @@ export function parseThreeDsCamera(
   }
 
   return { far, focalLength, name, near, position, roll, target };
+}
+
+// Parses an Autodesk 3DS binary file into a format-neutral Scene3DDocument. Each named-object trimesh
+// becomes one document Mesh node (inline geometry, canonical PBR layout, RH Z-up → Y-up). Referenced
+// materials are registered into the document's materials table (deduped by name) and named per mesh by
+// index. Assemble into a live Scene3D with `createScene3DFromDocument`. Malformed input returns an empty or
+// partial document with a diagnostic.
+/**
+ * Parses a 3DS file with an explicit chunk dispatch — the seam `parse3ds` supplies a default for.
+ *
+ * ★ WHY THE DEFAULT LIVES SOMEWHERE ELSE. The handlers import the chunk parsers in this file, so a
+ * default family resolved here would close a cycle: parser to registry to handlers and back. Vitest
+ * tolerates that cycle and Node does not — it throws "Cannot access 'threeDsCameraHandler' before
+ * initialization" — so the tests would have kept passing while every Node consumer broke. Taking the
+ * dispatch as a parameter keeps this module free of the handler graph entirely, and `threeDsDocument.ts`
+ * owns the one edge that needs the registry.
+ */
+export function parseThreeDsDocumentWithDispatch(
+  bytes: Readonly<Uint8Array>,
+  diagnostics: ImportDiagnostic[] | undefined,
+  dispatch: ThreeDsChunkDispatch,
+): Scene3DDocument {
+  const document: Scene3DDocument = {
+    animations: [],
+    cameras: [],
+    lights: [],
+    materials: [],
+    meshes: [],
+    metadata: null,
+    nodes: [],
+    resources: [],
+    scenes: [{ rootNodes: [] }],
+    skins: [],
+  };
+
+  if (bytes.byteLength < THREE_DS_CHUNK_HEADER_BYTES) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, '3ds.input-too-small', 'parse3ds');
+    return document;
+  }
+
+  const source = bytes as Uint8Array;
+  const view = new DataView(source.buffer, source.byteOffset, source.byteLength);
+
+  const mainId = view.getUint16(0, true);
+  if (mainId !== THREE_DS_MAIN) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, '3ds.wrong-main-chunk', 'parse3ds', {
+      foundId: mainId,
+    });
+    return document;
+  }
+
+  // The material table (0xAFFF chunks) and the meshes are siblings under the editor chunk, and a mesh
+  // references its materials by name via FACE_MATERIAL — so collect the whole table first, then
+  // resolve each mesh's referenced names against it.
+  const threeDsDrops = diagnostics ? new Map<string, ThreeDsDropTally>() : null;
+  const state: ThreeDsParseState = {
+    cameras: [],
+    diagnostics,
+    document,
+    drops: threeDsDrops,
+    lights: [],
+    materials: new Map(),
+    meshes: [],
+    pivots: new Map(),
+  };
+  // ★ ONE WALK, ONE DISPATCH. The feature branches used to be hard-coded at two levels — materials under
+  // the editor chunk, mesh/light/camera inside a named object — with the keyframer walked separately for
+  // pivots. A handler now claims each of those chunk ids, so the walk consults one map and a family that
+  // omits a handler genuinely never reaches that parser: the code behind the feature is unreferenced
+  // rather than merely unused.
+  walkThreeDsChunks(view, 0, state, dispatch);
+  const { cameras, lights, materials, meshes, pivots } = state;
+  const materialIndexByName = new Map<string, number>();
+  for (let i = 0; i < meshes.length; i++) {
+    appendMeshDocument(meshes[i], materials, materialIndexByName, pivots, document, threeDsDrops);
+  }
+  // Lights and cameras fill the document's PLACEMENT TABLES, not the node graph — neither is a scene
+  // member in Flight (see Scene3DDocumentLight). They are appended after the meshes so the tables read in
+  // file order regardless of how the objects were interleaved in the chunk tree.
+  for (let i = 0; i < lights.length; i++) appendThreeDsLightDocument(lights[i], document, threeDsDrops);
+  for (let i = 0; i < cameras.length; i++) appendThreeDsCameraDocument(cameras[i], document);
+
+  // parse3ds is the single physical emitter for every aggregated crumb (hence the origin); the tallies
+  // store no origin. Flush once so per-chunk faults collapse to one crumb per kind/discriminator + count.
+  if (threeDsDrops !== null) {
+    for (const tally of threeDsDrops.values()) {
+      reportImportDiagnostic(diagnostics, tally.severity, tally.kind, 'parse3ds', {
+        ...tally.detail,
+        count: tally.count,
+      });
+    }
+  }
+
+  return document;
 }
 
 // Parses a light chunk (0x4600). The payload is the light's position (3 float32) followed by sub-chunks

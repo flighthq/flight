@@ -41,6 +41,7 @@ export * from './sceneSkeleton.ts';
 export * from './shared.ts';
 export * from './threeDsCameraHandler.ts';
 export * from './threeDsChunkRegistry.ts';
+export * from './threeDsDocument.ts';
 export * from './threeDsKeyframeHandler.ts';
 export * from './threeDsLightHandler.ts';
 export * from './threeDsMaterialHandler.ts';

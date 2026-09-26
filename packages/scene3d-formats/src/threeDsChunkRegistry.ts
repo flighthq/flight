@@ -1,4 +1,4 @@
-import type { ThreeDsChunkHandler } from '@flighthq/types/contract';
+import type { ThreeDsChunkDispatch, ThreeDsChunkHandler } from '@flighthq/types/contract';
 
 import { threeDsCameraHandler } from './threeDsCameraHandler.ts';
 import { threeDsKeyframeHandler } from './threeDsKeyframeHandler.ts';
@@ -29,3 +29,22 @@ export const threeDsAllChunkHandlers: readonly ThreeDsChunkHandler[] = [
   ...threeDsMaterialFamily,
   ...threeDsMeshFamily,
 ];
+
+/**
+ * Expands a handler family into the flat chunk-id lookup the tree walk uses.
+ *
+ * One map built once per parse, rather than a scan over the family at every chunk: a 3DS tree has
+ * thousands of chunks and a handful of handlers, so the per-chunk cost should be a lookup regardless of
+ * how many handlers a caller named.
+ *
+ * A later handler claiming an id an earlier one already claimed WINS, which makes overriding a built-in
+ * a matter of appending rather than filtering. That mirrors how kind registration behaves elsewhere in
+ * the SDK, where re-registering is a feature and not an error.
+ */
+export function buildThreeDsChunkDispatch(handlers: readonly Readonly<ThreeDsChunkHandler>[]): ThreeDsChunkDispatch {
+  const dispatch = new Map<number, Readonly<ThreeDsChunkHandler>>();
+  for (const handler of handlers) {
+    for (const chunkId of handler.chunkIds) dispatch.set(chunkId, handler);
+  }
+  return dispatch;
+}

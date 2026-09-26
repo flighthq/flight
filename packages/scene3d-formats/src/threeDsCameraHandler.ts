@@ -6,7 +6,7 @@ import { parseThreeDsCamera } from './threeDsParse.ts';
 export const threeDsCameraHandler: Readonly<ThreeDsChunkHandler> = {
   chunkIds: [THREE_DS_CAMERA],
   collect(state: ThreeDsParseState, view: Readonly<DataView>, offset: number, end: number, name: string): void {
-    const camera = parseThreeDsCamera(view, offset, end, name, null);
+    const camera = parseThreeDsCamera(view, offset, end, name, state.drops);
     if (camera !== null) state.cameras.push(camera);
   },
 };
