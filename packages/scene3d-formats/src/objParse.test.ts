@@ -23,12 +23,15 @@ import type {
 import { BlinnPhongMaterialKind, ImportDiagnosticSeverity, StandardPbrMaterialKind } from '@flighthq/types/contract';
 
 import { parseObjMaterialLibrary } from './mtlParse.ts';
+import { objBlinnPhongMaterialHandler } from './objBlinnPhongMaterialHandler.ts';
+// parseObj and createScene3DFromObj live in objDocument.ts, which owns the default material-handler
+// family; objParse.ts holds the parse itself and never sees the handler graph.
+import { createScene3DFromObj, parseObj } from './objDocument.ts';
 import {
-  createScene3DFromObj,
   hasObjPbrDirectives,
   objMaterialToBlinnPhong,
   objMaterialToStandardPbr,
-  parseObj,
+  parseObjWithMaterialHandlers,
 } from './objParse.ts';
 import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 
@@ -808,10 +811,6 @@ describe('parseObj generated normals', () => {
   });
 });
 
-function findDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic | undefined {
-  return diagnostics.find((diagnostic) => diagnostic.kind === kind);
-}
-
 describe('parseObj line and point primitives', () => {
   it('imports a polyline as a line-list mesh of connected segments', () => {
     // Three references describe TWO connected segments, not three independent ones.
@@ -879,6 +878,10 @@ describe('parseObj line and point primitives', () => {
     expect(document.meshes).toHaveLength(0);
   });
 });
+
+function findDiagnostic(diagnostics: readonly ImportDiagnostic[], kind: string): ImportDiagnostic | undefined {
+  return diagnostics.find((diagnostic) => diagnostic.kind === kind);
+}
 
 describe('parseObj material model selection', () => {
   const OBJ = 'v 0 0 0\nv 1 0 0\nv 0 1 0\nusemtl M\nf 1 2 3\n';
@@ -1112,6 +1115,31 @@ describe('parseObj smoothing groups', () => {
 
     // Both faces reference the same authored normal, so all shared corners still merge: 4, not 6.
     expect(getMeshGeometryVertexCount(document.meshes[0].geometry)).toBe(4);
+  });
+});
+
+describe('parseObjWithMaterialHandlers', () => {
+  // This is the parse over a family it is GIVEN; it resolves no default, which is what keeps this module
+  // clear of the handler graph (see objDocument.ts). Handing it an empty family is therefore a real parse
+  // that resolves no material, not a misconfiguration that quietly falls back to the standard family.
+  it('uses the family it is given and has no default of its own', () => {
+    const library = parseObjMaterialLibrary('newmtl Red\nKd 1 0 0\n');
+    const source = 'usemtl Red\nv 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n';
+    expect(parseObjWithMaterialHandlers(source, library, undefined, []).materials).toEqual([]);
+    expect(
+      parseObjWithMaterialHandlers(source, library, undefined, [objBlinnPhongMaterialHandler]).materials,
+    ).toHaveLength(1);
+  });
+
+  it('still records a diagnostic for a material the library never declared', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    parseObjWithMaterialHandlers(
+      'usemtl Missing\nv 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n',
+      parseObjMaterialLibrary('newmtl Red\nKd 1 0 0\n'),
+      diagnostics,
+      [],
+    );
+    expect(diagnostics.map((entry) => entry.kind)).toContain('obj.material-missing');
   });
 });
 
