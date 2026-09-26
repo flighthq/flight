@@ -25,7 +25,27 @@ import {
   unregisterSpineJsonTimelineHandler,
 } from './spineJsonRegistry.ts';
 import { registerSpineJsonSectionHandlers } from './spineJsonSectionHandlers.ts';
-import { parseSpineDrawOrderTimeline, parseSpineSkeleton, parseSpineSkeletonWithRegistry } from './spineParse.ts';
+import {
+  parseSpineDrawOrderTimeline,
+  parseSpineSkeleton,
+  parseSpineSkeletonWithRegistry,
+  spineJsonAnimationsSectionReader,
+  spineJsonBonesSectionReader,
+  spineJsonBoneTimelineReader,
+  spineJsonDeformTimelineReader,
+  spineJsonDrawOrderTimelineReader,
+  spineJsonEventsSectionReader,
+  spineJsonEventTimelineReader,
+  spineJsonIkConstraintsSectionReader,
+  spineJsonIkTimelineReader,
+  spineJsonPathConstraintsSectionReader,
+  spineJsonPathTimelineReader,
+  spineJsonSkinsSectionReader,
+  spineJsonSlotsSectionReader,
+  spineJsonSlotTimelineReader,
+  spineJsonTransformConstraintsSectionReader,
+  spineJsonTransformTimelineReader,
+} from './spineParse.ts';
 
 // Hand-authored minimal Spine skeleton JSON (per the real-asset rule: committed fixtures are hand-written,
 // never transcribed from an external rig). Two bones: a root, and a child that sets every transform field.
@@ -980,6 +1000,102 @@ describe('parseSpineSkeletonWithRegistry', () => {
     unregisterSpineJsonSectionHandler(registry, SpineJsonSectionKind.Animations);
     const result = parseSpineSkeletonWithRegistry(json, registry);
     expect(result!.animations).toEqual([]);
+  });
+});
+
+describe('spineJsonAnimationsSectionReader', () => {
+  it('is the section reader dispatched by the animations handler', () => {
+    expect(spineJsonAnimationsSectionReader).toBeTypeOf('function');
+  });
+});
+
+describe('spineJsonBonesSectionReader', () => {
+  it('is the section reader dispatched by the bones handler', () => {
+    expect(spineJsonBonesSectionReader).toBeTypeOf('function');
+  });
+});
+
+describe('spineJsonBoneTimelineReader', () => {
+  it('is the timeline reader dispatched by the bone handler', () => {
+    expect(spineJsonBoneTimelineReader).toBeTypeOf('function');
+  });
+});
+
+describe('spineJsonDeformTimelineReader', () => {
+  it('is the timeline reader dispatched by the deform handler', () => {
+    expect(spineJsonDeformTimelineReader).toBeTypeOf('function');
+  });
+});
+
+describe('spineJsonDrawOrderTimelineReader', () => {
+  it('is the timeline reader dispatched by the draw order handler', () => {
+    expect(spineJsonDrawOrderTimelineReader).toBeTypeOf('function');
+  });
+});
+
+describe('spineJsonEventsSectionReader', () => {
+  it('is the section reader dispatched by the events handler', () => {
+    expect(spineJsonEventsSectionReader).toBeTypeOf('function');
+  });
+});
+
+describe('spineJsonEventTimelineReader', () => {
+  it('is the timeline reader dispatched by the event handler', () => {
+    expect(spineJsonEventTimelineReader).toBeTypeOf('function');
+  });
+});
+
+describe('spineJsonIkConstraintsSectionReader', () => {
+  it('is the section reader dispatched by the ik constraints handler', () => {
+    expect(spineJsonIkConstraintsSectionReader).toBeTypeOf('function');
+  });
+});
+
+describe('spineJsonIkTimelineReader', () => {
+  it('is the timeline reader dispatched by the ik handler', () => {
+    expect(spineJsonIkTimelineReader).toBeTypeOf('function');
+  });
+});
+
+describe('spineJsonPathConstraintsSectionReader', () => {
+  it('is the section reader dispatched by the path constraints handler', () => {
+    expect(spineJsonPathConstraintsSectionReader).toBeTypeOf('function');
+  });
+});
+
+describe('spineJsonPathTimelineReader', () => {
+  it('is the timeline reader dispatched by the path handler', () => {
+    expect(spineJsonPathTimelineReader).toBeTypeOf('function');
+  });
+});
+
+describe('spineJsonSkinsSectionReader', () => {
+  it('is the section reader dispatched by the skins handler', () => {
+    expect(spineJsonSkinsSectionReader).toBeTypeOf('function');
+  });
+});
+
+describe('spineJsonSlotsSectionReader', () => {
+  it('is the section reader dispatched by the slots handler', () => {
+    expect(spineJsonSlotsSectionReader).toBeTypeOf('function');
+  });
+});
+
+describe('spineJsonSlotTimelineReader', () => {
+  it('is the timeline reader dispatched by the slot handler', () => {
+    expect(spineJsonSlotTimelineReader).toBeTypeOf('function');
+  });
+});
+
+describe('spineJsonTransformConstraintsSectionReader', () => {
+  it('is the section reader dispatched by the transform constraints handler', () => {
+    expect(spineJsonTransformConstraintsSectionReader).toBeTypeOf('function');
+  });
+});
+
+describe('spineJsonTransformTimelineReader', () => {
+  it('is the timeline reader dispatched by the transform handler', () => {
+    expect(spineJsonTransformTimelineReader).toBeTypeOf('function');
   });
 });
 

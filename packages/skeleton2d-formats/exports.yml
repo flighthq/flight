@@ -19,8 +19,14 @@ exclude:
   - spineBinaryTransformTimelineReader
 
 protected:
+  - SPINE_BINARY_REQUIREMENT_KEY_NAMESPACE
+  - SPINE_JSON_REQUIREMENT_KEY_NAMESPACE
   - getSpineBinarySectionHandler
   - getSpineBinaryTimelineHandler
+  - getSpineJsonSectionHandler
+  - getSpineJsonTimelineHandler
+  - spineBinaryAllSectionHandlers
+  - spineBinaryAllTimelineHandlers
   - spineBinaryAnimationsSectionHandler
   - spineBinaryBoneTimelineHandler
   - spineBinaryBonesSectionHandler
@@ -37,5 +43,25 @@ protected:
   - spineBinarySlotsSectionHandler
   - spineBinaryTransformConstraintsSectionHandler
   - spineBinaryTransformTimelineHandler
+  - spineJsonAllSectionHandlers
+  - spineJsonAllTimelineHandlers
+  - spineJsonAnimationsSectionHandler
+  - spineJsonBoneTimelineHandler
+  - spineJsonBonesSectionHandler
+  - spineJsonDeformTimelineHandler
+  - spineJsonDrawOrderTimelineHandler
+  - spineJsonEventTimelineHandler
+  - spineJsonEventsSectionHandler
+  - spineJsonIkConstraintsSectionHandler
+  - spineJsonIkTimelineHandler
+  - spineJsonPathConstraintsSectionHandler
+  - spineJsonPathTimelineHandler
+  - spineJsonSkinsSectionHandler
+  - spineJsonSlotTimelineHandler
+  - spineJsonSlotsSectionHandler
+  - spineJsonTransformConstraintsSectionHandler
+  - spineJsonTransformTimelineHandler
   - unregisterSpineBinarySectionHandler
   - unregisterSpineBinaryTimelineHandler
+  - unregisterSpineJsonSectionHandler
+  - unregisterSpineJsonTimelineHandler
