@@ -454,6 +454,7 @@ export * from './MaterialConversionExplanation.ts';
 export * from './Matrix.ts';
 export * from './Matrix3.ts';
 export * from './Matrix4.ts';
+export * from './Md2SectionHandler.ts';
 export * from './Md5Schema.ts';
 export * from './MediaChannelSignals.ts';
 export * from './MedianEffect.ts';
