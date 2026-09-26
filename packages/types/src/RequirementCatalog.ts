@@ -12,6 +12,21 @@ export interface RequirementCatalogEntry {
   readonly implementationSymbol: string;
   readonly kind: Kind;
   /**
+   * Where this row's implementation sits in its format's shipped handler family, or absent for a family
+   * whose order carries no meaning.
+   *
+   * ★ THIS EXISTS BECAUSE A GENERATED SUBSET MUST NOT BE REORDERED. `createRequirementSet` canonicalizes
+   * requirements by facet then key, so a codegen plan walks them alphabetically and a parser fragment
+   * built from that arrives sorted by kind. For COLLADA that is a different parse, not a rearrangement of
+   * the same one: `parseCollada` runs `options.decoders` in the order given, and materials must be indexed
+   * before geometry reads the symbols naming them. Alphabetically, Geometry precedes Material.
+   *
+   * The number is derived from the family array at generate time, never written by hand, so it cannot
+   * drift from the order the format package actually ships. A format whose importer re-sorts internally
+   * (AWD2 sorts by build phase) has nothing to preserve and carries no value here.
+   */
+  readonly familyOrder?: number;
+  /**
    * The `register*` that binds the implementation, for a backend that HAS one. Absent for an
    * options-driven lane: a SWF tag family is named in `SwfParseOptions.tags` and an AWD2 handler in
    * `Awd2ParseOptions.blocks`, so there is no registrar to name and a row that invented one would be

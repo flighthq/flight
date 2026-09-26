@@ -10,8 +10,27 @@ import {
   awd2SkeletonPoseHandler,
   awd2TextureHandler,
   awd2TriangleGeometryHandler,
+  colladaAllElementDecoders,
+  colladaAnimationDecoder,
+  colladaCameraDecoder,
+  colladaControllerDecoder,
+  colladaGeometryDecoder,
+  colladaLightDecoder,
+  colladaMaterialDecoder,
+  threeDsAllChunkHandlers,
+  threeDsCameraHandler,
+  threeDsKeyframeHandler,
+  threeDsLightHandler,
+  threeDsMaterialHandler,
+  threeDsMeshHandler,
 } from '@flighthq/scene3d-formats';
-import { AWD2_REQUIREMENT_KEY_NAMESPACE, getAwd2BlockName } from '@flighthq/scene3d-formats/contract';
+import {
+  AWD2_REQUIREMENT_KEY_NAMESPACE,
+  COLLADA_REQUIREMENT_KEY_NAMESPACE,
+  getAwd2BlockName,
+  getThreeDsChunkName,
+  THREE_DS_REQUIREMENT_KEY_NAMESPACE,
+} from '@flighthq/scene3d-formats/contract';
 import {
   swfControlHandler,
   swfDefineMorphShapeHandler,
@@ -29,7 +48,13 @@ import {
   swfVideoHandler,
 } from '@flighthq/swf';
 import { getSwfTagName, SWF_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/swf/contract';
-import type { Awd2BlockHandler, RequirementCatalogEntry, SwfTagHandler } from '@flighthq/types/contract';
+import type {
+  Awd2BlockHandler,
+  ColladaElementDecoder,
+  RequirementCatalogEntry,
+  SwfTagHandler,
+  ThreeDsChunkHandler,
+} from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
 /**
@@ -93,6 +118,37 @@ export const AWD2_BLOCK_HANDLERS: ReadonlyMap<string, Readonly<Awd2BlockHandler>
   ['awd2TriangleGeometryHandler', awd2TriangleGeometryHandler],
 ]);
 
+/**
+ * The 3DS chunk handlers, keyed by the symbol a generated module imports.
+ *
+ * Each handler declares the chunk IDs it claims, and `getThreeDsChunkName` turns an ID into the same
+ * feature name `parseThreeDsRequirements` emits under `document.format` — so a `3ds.Trimesh` row is
+ * derived from the handler's own claim rather than asserted alongside it.
+ */
+export const THREE_DS_CHUNK_HANDLERS: ReadonlyMap<string, Readonly<ThreeDsChunkHandler>> = new Map([
+  ['threeDsCameraHandler', threeDsCameraHandler],
+  ['threeDsKeyframeHandler', threeDsKeyframeHandler],
+  ['threeDsLightHandler', threeDsLightHandler],
+  ['threeDsMaterialHandler', threeDsMaterialHandler],
+  ['threeDsMeshHandler', threeDsMeshHandler],
+]);
+
+/**
+ * The COLLADA element decoders, keyed by the symbol a generated module imports.
+ *
+ * A decoder states the feature it decodes in its own `feature` field, and that string is the feature
+ * name `parseColladaRequirements` emits under `document.format` — so `dae.Geometry` resolves to the
+ * decoder that says it handles Geometry, with nothing in between to get out of step.
+ */
+export const COLLADA_ELEMENT_DECODERS: ReadonlyMap<string, Readonly<ColladaElementDecoder>> = new Map([
+  ['colladaAnimationDecoder', colladaAnimationDecoder],
+  ['colladaCameraDecoder', colladaCameraDecoder],
+  ['colladaControllerDecoder', colladaControllerDecoder],
+  ['colladaGeometryDecoder', colladaGeometryDecoder],
+  ['colladaLightDecoder', colladaLightDecoder],
+  ['colladaMaterialDecoder', colladaMaterialDecoder],
+]);
+
 /** The backend whose rows become `parserOptions` rather than a render-state fragment. */
 export const CATALOG_PARSER_BACKEND = 'parser';
 
@@ -111,6 +167,32 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
       );
     }
   }
+  // ★ THE FAMILY ARRAY IS THE ORDER, AND IT IS READ HERE RATHER THAN RESTATED. `indexOf` against the
+  // shipped array is what makes `familyOrder` a fact about the family: reordering
+  // `colladaAllElementDecoders` moves the numbers on the next generate, and a decoder absent from the
+  // family gets no position rather than a plausible wrong one.
+  for (const [symbol, handler] of THREE_DS_CHUNK_HANDLERS) {
+    for (const chunkId of handler.chunkIds) {
+      rows.push(
+        row(
+          '@flighthq/scene3d-formats',
+          symbol,
+          `${THREE_DS_REQUIREMENT_KEY_NAMESPACE}.${getThreeDsChunkName(chunkId)}`,
+          familyOrderOf(threeDsAllChunkHandlers, handler),
+        ),
+      );
+    }
+  }
+  for (const [symbol, decoder] of COLLADA_ELEMENT_DECODERS) {
+    rows.push(
+      row(
+        '@flighthq/scene3d-formats',
+        symbol,
+        `${COLLADA_REQUIREMENT_KEY_NAMESPACE}.${decoder.feature}`,
+        familyOrderOf(colladaAllElementDecoders, decoder),
+      ),
+    );
+  }
   return rows.sort(
     (a, b) => a.kind.localeCompare(b.kind) || a.implementationSymbol.localeCompare(b.implementationSymbol),
   );
@@ -118,12 +200,20 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
 
 // The PUBLIC lane, not `/contract`: these rows are emitted into a module an APPLICATION imports, and
 // naming a tag handler is exactly the app-level decision the public lane exists for.
-function row(module: string, symbol: string, kind: string): RequirementCatalogEntry {
+function row(module: string, symbol: string, kind: string, familyOrder?: number): RequirementCatalogEntry {
   return {
     backend: CATALOG_PARSER_BACKEND,
     facet: RequirementFacet.DocumentFormat,
+    familyOrder,
     implementationImport: module,
     implementationSymbol: symbol,
     kind,
   };
+}
+
+// Membership by IDENTITY, not by name or feature: the family holds the very values the maps above do, so
+// a decoder that is not the same object is not in the family regardless of what it claims to decode.
+function familyOrderOf<T>(family: readonly T[], member: T): number | undefined {
+  const index = family.indexOf(member);
+  return index === -1 ? undefined : index;
 }

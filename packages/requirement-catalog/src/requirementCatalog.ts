@@ -87,10 +87,15 @@ export function unregisterRequirementCatalogEntry(
   return true;
 }
 
+// Every field is named, so a field ADDED to RequirementCatalogEntry is dropped here until it is added
+// too — the row still copies, and the loss shows up much later as a generated module that is subtly
+// wrong rather than as an error. `familyOrder` was lost exactly this way: the parser fragment kept
+// emitting alphabetical order because the position never survived the copy.
 function copyCatalogEntry(entry: Readonly<RequirementCatalogEntry>): RequirementCatalogEntry {
   return {
     backend: entry.backend,
     facet: entry.facet,
+    familyOrder: entry.familyOrder,
     implementationImport: entry.implementationImport,
     implementationSymbol: entry.implementationSymbol,
     kind: entry.kind,

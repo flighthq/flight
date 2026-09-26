@@ -35,9 +35,18 @@ describe('runRegistryTool', () => {
     const facets = new Set(rows.map((row) => row.facet));
     expect(facets.has('document.format')).toBe(true);
     expect(facets.has('scene.node-kind')).toBe(true);
-    for (const row of rows.filter((candidate) => candidate.facet === 'document.format')) {
+    const formatRows = rows.filter((candidate) => candidate.facet === 'document.format');
+    for (const row of formatRows) {
       expect(row.backend).toBe('parser');
-      expect(row.kind).toMatch(/^(swf|awd2)\./);
+      expect(row.kind).toMatch(/^(3ds|awd2|dae|swf)\./);
+    }
+    // Every format namespace must actually appear. The pattern above is satisfied by a catalog missing
+    // three of the four, which is how a format silently stops being relayed.
+    for (const namespace of ['3ds.', 'awd2.', 'dae.', 'swf.']) {
+      expect(
+        formatRows.some((row) => row.kind.startsWith(namespace)),
+        `no ${namespace} rows reached the CLI`,
+      ).toBe(true);
     }
   });
 

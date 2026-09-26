@@ -99,9 +99,23 @@ export const BACKEND_OPTION_FIELDS: Readonly<Record<string, ReadonlySet<string>>
   ]),
 });
 
-/** The parser options field each content format spreads its ordered handler list into. */
+/**
+ * The parser options field each content format spreads its ordered handler list into.
+ *
+ * The field name is the format's own, not a shared one: `SwfParseOptions` takes `tags`,
+ * `Awd2ParseOptions` takes `blocks`, `ThreeDsImportOptions` takes `handlers` and `ColladaImportOptions`
+ * takes `decoders`. Emitting into a field a format does not declare produces a `parserOptions` that
+ * spreads into nothing and parses with the full default family — a silently larger bundle, with the
+ * generated module looking correct.
+ *
+ * `.3ds` is listed although `handlers` is also the fallback: a format that happens to agree with the
+ * default is not the same as one the map has no answer for, and the fallback is what a format nobody has
+ * wired yet gets.
+ */
 export const PARSER_HANDLER_FIELDS: Readonly<Record<string, string>> = Object.freeze({
+  '.3ds': 'handlers',
   '.awd': 'blocks',
   '.awd2': 'blocks',
+  '.dae': 'decoders',
   '.swf': 'tags',
 });

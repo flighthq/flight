@@ -198,10 +198,20 @@ function backendFragment(backend: string, exportName: string, rows: readonly Man
 
 function parserFragment(rows: readonly ManifestModuleEntry[], field: string): string[] {
   if (rows.length === 0) return ['export const parserOptions = {};'];
-  // Emitted in the order the rows arrive, which is NOT catalog order: `createRequirementSet`
-  // canonicalizes by facet then key, and the codegen plan walks that, so handlers come out sorted by
-  // kind. AWD2's `parseAwd2` sorts build phases by each handler's `buildPhase` number, so this
-  // alphabetical output order is safe — the importer enforces its own dependency order internally.
-  const handlers = rows.map((row) => `    ${row.entry.implementationSymbol},`);
+  // ★ ORDERED BY THE SHIPPED FAMILY, NOT BY THE ROWS' ARRIVAL ORDER. Rows arrive sorted by kind, because
+  // `createRequirementSet` canonicalizes by facet then key and the codegen plan walks that. For an
+  // importer that re-sorts internally — AWD2 orders build phases by each handler's `buildPhase` — that is
+  // harmless, and those rows carry no `familyOrder` and keep arriving order.
+  //
+  // COLLADA does not re-sort. `parseCollada` runs `options.decoders` in the order given, and the material
+  // pass must index the symbols a primitive names before geometry reads them. Alphabetically Geometry
+  // comes before Material, so emitting arrival order would hand a mixed document a family that decodes
+  // geometry against an empty material index — a smaller scene, not an error. `familyOrder` is each
+  // implementation's position in its format's own family array, so sorting by it reproduces the order the
+  // format package ships regardless of how the requirements were canonicalized.
+  const ordered = [...rows].sort(
+    (a, b) => (a.entry.familyOrder ?? Number.MAX_SAFE_INTEGER) - (b.entry.familyOrder ?? Number.MAX_SAFE_INTEGER),
+  );
+  const handlers = ordered.map((row) => `    ${row.entry.implementationSymbol},`);
   return [`export const parserOptions = {`, `  ${field}: [`, ...handlers, '  ],', '};'];
 }

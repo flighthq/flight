@@ -58,6 +58,58 @@ describe('generateManifestModuleSource', () => {
     expect(result.source).toContain('blendModeApplication: canvasstandardImpl,');
   });
 
+  // ★ THE FIELD NAME IS PER FORMAT. A `.dae` fragment emitted as `handlers` spreads into nothing, and
+  // `parseCollada` then silently runs its full default family — a bigger bundle that behaves correctly,
+  // which is the failure nobody notices.
+  it('routes a 3DS row to handlers and a COLLADA row to decoders', () => {
+    expect(
+      generateManifestModuleSource([row(MANIFEST_PARSER_BACKEND, 'document.format', '3ds.Trimesh')], '.3ds').source,
+    ).toContain('export const parserOptions = {\n  handlers: [');
+    expect(
+      generateManifestModuleSource([row(MANIFEST_PARSER_BACKEND, 'document.format', 'dae.Geometry')], '.dae').source,
+    ).toContain('export const parserOptions = {\n  decoders: [');
+  });
+
+  // Rows arrive sorted by kind; `familyOrder` is what restores the order the format package ships. Stated
+  // with the alphabetically LATER symbol given the earlier position, so a passing result cannot be the
+  // arrival order agreeing by accident.
+  it('orders parser rows by their family position rather than by the order they arrive', () => {
+    const source = generateManifestModuleSource(
+      [
+        ordered(MANIFEST_PARSER_BACKEND, 'document.format', 'daeGeometry', 2),
+        ordered(MANIFEST_PARSER_BACKEND, 'document.format', 'daeMaterial', 0),
+      ],
+      '.dae',
+    ).source;
+    expect(source).toContain(
+      'export const parserOptions = {\n  decoders: [\n    parserdaeMaterialImpl,\n    parserdaeGeometryImpl,',
+    );
+  });
+
+  // A format whose importer re-sorts internally carries no position, and those rows must not be shuffled
+  // into some arbitrary order just because the sort runs.
+  it('leaves rows carrying no family position in the order they arrived', () => {
+    const source = generateManifestModuleSource(
+      [
+        row(MANIFEST_PARSER_BACKEND, 'document.format', 'Zeta'),
+        row(MANIFEST_PARSER_BACKEND, 'document.format', 'Alpha'),
+      ],
+      '.awd2',
+    ).source;
+    expect(source).toContain('  blocks: [\n    parserZetaImpl,\n    parserAlphaImpl,');
+  });
+
+  it('keeps rows sharing one family position in arrival order, so output stays deterministic', () => {
+    const source = generateManifestModuleSource(
+      [
+        ordered(MANIFEST_PARSER_BACKEND, 'document.format', 'daeSecond', 1),
+        ordered(MANIFEST_PARSER_BACKEND, 'document.format', 'daeFirst', 1),
+      ],
+      '.dae',
+    ).source;
+    expect(source).toContain('  decoders: [\n    parserdaeSecondImpl,\n    parserdaeFirstImpl,');
+  });
+
   it('keeps each backend in its own fragment', () => {
     const source = generateManifestModuleSource(
       [row('gl', 'scene.node-kind', 'Shape'), row('wgpu', 'scene.node-kind', 'Shape')],
@@ -160,6 +212,11 @@ describe('MANIFEST_BACKEND_EXPORTS', () => {
     });
   });
 });
+
+function ordered(backend: string, facet: string, kind: string, familyOrder: number) {
+  const base = row(backend, facet, kind);
+  return { ...base, entry: { ...base.entry, familyOrder } };
+}
 
 function row(backend: string, facet: string, kind: string) {
   const symbol = `${backend}${kind}Impl`;

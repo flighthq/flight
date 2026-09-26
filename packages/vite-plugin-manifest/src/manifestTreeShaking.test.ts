@@ -2,6 +2,11 @@ import { mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import {
+  BUILT_IN_REQUIREMENT_BACKENDS,
+  BUILT_IN_REQUIREMENT_CATALOG_ENTRIES,
+  BUILT_IN_REQUIREMENT_TRANSLATIONS,
+} from '@flighthq/requirement-catalog/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 import { build } from 'vite';
 
@@ -175,4 +180,180 @@ function createSwfWithDefineShape(): Uint8Array {
   new DataView(file.buffer).setUint32(4, file.length, true);
   file.set(body, 8);
   return file;
+}
+
+// ★ A REAL VITE BUILD, WITH THE @flighthq PACKAGES LEFT EXTERNAL. Rollup resolves every static import
+// before it shakes anything, and these packages resolve through their `dist`, which is gitignored and
+// which the unit lane does not build — so a non-external build here would fail on a missing bundle rather
+// than on anything this test is about. External keeps the import statements verbatim in the output, which
+// is what makes the assertions below possible: they read the specifier and the ordered array a consumer's
+// build actually emits.
+describe('vite build of a rich-format manifest', () => {
+  it(
+    'emits the COLLADA decoders in family order, through a real build',
+    async () => {
+      const dir = await richProject('asset.dae', colladaFile(EVERY_COLLADA_FEATURE));
+      await writeFile(
+        join(dir, 'src', 'main.js'),
+        `import { parserOptions } from './asset.dae${MANIFEST_QUERY_SUFFIX}';\nglobalThis.out = parserOptions;\n`,
+      );
+      const bundle = await richBundleOf(dir);
+      expect(bundle).toContain('from "@flighthq/scene3d-formats"');
+      expect(bundle.indexOf('colladaMaterialDecoder')).toBeLessThan(bundle.indexOf('colladaGeometryDecoder'));
+      expect(bundle).toContain('decoders');
+    },
+    BUILD_TIMEOUT_MS,
+  );
+
+  it(
+    'drops the render fragments when the entry imported only the parser one',
+    async () => {
+      const dir = await richProject('asset.dae', colladaFile('<library_geometries><geometry/></library_geometries>'));
+      await writeFile(
+        join(dir, 'src', 'main.js'),
+        `import { parserOptions } from './asset.dae${MANIFEST_QUERY_SUFFIX}';\nglobalThis.out = parserOptions;\n`,
+      );
+      const bundle = await richBundleOf(dir);
+      expect(bundle).toContain('colladaGeometryDecoder');
+      // A geometry-only document needs no other decoder, and rollup drops the five it never named.
+      //
+      // The four backend infrastructure imports DO survive, and that is a property of `external` rather
+      // than of the manifest: rollup cannot prove an external module is side-effect-free, so it keeps the
+      // import even where the value is unused. Shaking the render fragments out is asserted in
+      // manifestTreeShaking.test.ts, which resolves its implementations for real.
+      expect(bundle).not.toContain('colladaMaterialDecoder');
+      expect(bundle).not.toContain('colladaControllerDecoder');
+    },
+    BUILD_TIMEOUT_MS,
+  );
+
+  it(
+    'emits the 3DS handlers a document needs, through a real build',
+    async () => {
+      const dir = await richProject('asset.3ds', threeDsFile({ materials: 1, meshes: ['Box'] }));
+      await writeFile(
+        join(dir, 'src', 'main.js'),
+        `import { parserOptions } from './asset.3ds${MANIFEST_QUERY_SUFFIX}';\nglobalThis.out = parserOptions;\n`,
+      );
+      const bundle = await richBundleOf(dir);
+      expect(bundle).toContain('threeDsMaterialHandler');
+      expect(bundle).toContain('threeDsMeshHandler');
+      expect(bundle).not.toContain('threeDsCameraHandler');
+      expect(bundle).toContain('handlers');
+    },
+    BUILD_TIMEOUT_MS,
+  );
+});
+
+const EVERY_COLLADA_FEATURE =
+  '<library_materials><material/></library_materials>' +
+  '<library_effects><effect/></library_effects>' +
+  '<library_cameras><camera/></library_cameras>' +
+  '<library_geometries><geometry/></library_geometries>' +
+  '<library_controllers><controller/></library_controllers>' +
+  '<library_animations><animation/></library_animations>' +
+  '<library_lights><light/></library_lights>';
+
+async function richProject(name: string, content: Uint8Array): Promise<string> {
+  const dir = await mkdtemp(join(tmpdir(), 'rich-format-build-'));
+  await mkdir(join(dir, 'src'), { recursive: true });
+  await writeFile(join(dir, 'src', name), Buffer.from(content));
+  return dir;
+}
+
+async function richBundleOf(dir: string): Promise<string> {
+  await build({
+    build: {
+      minify: false,
+      outDir: join(dir, 'dist'),
+      rollupOptions: {
+        external: (id: string) => id.startsWith('@flighthq/'),
+        input: join(dir, 'src', 'main.js'),
+      },
+      write: true,
+    },
+    configFile: false,
+    logLevel: 'silent',
+    plugins: [
+      createManifestPlugin({
+        catalog: {
+          backends: BUILT_IN_REQUIREMENT_BACKENDS,
+          entries: [...BUILT_IN_REQUIREMENT_CATALOG_ENTRIES],
+          translations: BUILT_IN_REQUIREMENT_TRANSLATIONS,
+        },
+        onDiagnostic: () => {},
+      }),
+    ],
+    root: dir,
+  });
+  const outDir = join(dir, 'dist');
+  const files = (await readdir(outDir, { recursive: true, withFileTypes: true }))
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.js'))
+    .map((entry) => join(entry.parentPath ?? outDir, entry.name));
+  return (await Promise.all(files.map((file) => readFile(file, 'utf8')))).join('\n');
+}
+
+function colladaFile(libraries: string): Uint8Array {
+  return new TextEncoder().encode(
+    `<?xml version="1.0"?>\n<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">${libraries}</COLLADA>`,
+  );
+}
+
+function chunk(id: number, payload: Uint8Array): Uint8Array {
+  const out = new Uint8Array(6 + payload.length);
+  const view = new DataView(out.buffer);
+  view.setUint16(0, id, true);
+  view.setUint32(2, out.length, true);
+  out.set(payload, 6);
+  return out;
+}
+
+function bytes(...parts: readonly Uint8Array[]): Uint8Array {
+  const out = new Uint8Array(parts.reduce((total, part) => total + part.length, 0));
+  let offset = 0;
+  for (const part of parts) {
+    out.set(part, offset);
+    offset += part.length;
+  }
+  return out;
+}
+
+function name(text: string): Uint8Array {
+  return new TextEncoder().encode(`${text}\0`);
+}
+
+function threeDsFile(features: {
+  cameras?: readonly string[];
+  keyframes?: readonly string[];
+  lights?: readonly string[];
+  materials?: number;
+  meshes?: readonly string[];
+}): Uint8Array {
+  const THREE_DS_MAIN = 0x4d4d;
+  const THREE_DS_EDITOR = 0x3d3d;
+  const THREE_DS_KEYFRAME = 0xb000;
+  const THREE_DS_KEYFRAME_OBJECT_NODE = 0xb002;
+  const THREE_DS_OBJECT = 0x4000;
+  const THREE_DS_TRIMESH = 0x4100;
+  const THREE_DS_LIGHT = 0x4600;
+  const THREE_DS_CAMERA = 0x4700;
+  const THREE_DS_MATERIAL = 0xafff;
+
+  const editorParts: Uint8Array[] = [];
+  for (let index = 0; index < (features.materials ?? 0); index++) {
+    editorParts.push(chunk(THREE_DS_MATERIAL, new Uint8Array(0)));
+  }
+  for (const mesh of features.meshes ?? []) {
+    editorParts.push(chunk(THREE_DS_OBJECT, bytes(name(mesh), chunk(THREE_DS_TRIMESH, new Uint8Array(0)))));
+  }
+  for (const light of features.lights ?? []) {
+    editorParts.push(chunk(THREE_DS_OBJECT, bytes(name(light), chunk(THREE_DS_LIGHT, new Uint8Array(12)))));
+  }
+  for (const camera of features.cameras ?? []) {
+    editorParts.push(chunk(THREE_DS_OBJECT, bytes(name(camera), chunk(THREE_DS_CAMERA, new Uint8Array(32)))));
+  }
+  const parts: Uint8Array[] = [chunk(THREE_DS_EDITOR, bytes(...editorParts))];
+  const keyframeParts = (features.keyframes ?? []).map(() => chunk(THREE_DS_KEYFRAME_OBJECT_NODE, new Uint8Array(0)));
+  if (keyframeParts.length > 0) parts.push(chunk(THREE_DS_KEYFRAME, bytes(...keyframeParts)));
+  return chunk(THREE_DS_MAIN, bytes(...parts));
 }
