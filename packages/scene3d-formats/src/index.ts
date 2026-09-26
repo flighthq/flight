@@ -34,6 +34,7 @@ export * from './md5MeshRequirements.ts';
 export * from './md5Parse.ts';
 export * from './mergeAwd2ParseOptions.ts';
 export * from './mtlParse.ts';
+export * from './objDocument.ts';
 export * from './objFeatureRequirements.ts';
 export * from './objFeatures.ts';
 export * from './objRequirements.ts';

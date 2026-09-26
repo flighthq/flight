@@ -23,3 +23,19 @@ export interface ObjMaterialHandler {
     diagnostics: ImportDiagnostic[] | undefined,
   ): MaterialLike;
 }
+
+/**
+ * What `parseObj` accepts beyond the source text and its material library.
+ *
+ * ★ THE HANDLER FAMILY IS THE TREE-SHAKING BOUNDARY. OBJ/MTL carries two shading models, and a build that
+ * knows its files never state metallic-roughness should not link the StandardPbr path — nor the material
+ * package code behind it. Naming a subset is what drops it. Leaving `materialHandlers` undefined runs the
+ * full standard family, which reproduces the dispatch this function performed when it was a hardcoded
+ * `hasObjPbrDirectives` ternary.
+ *
+ * ORDER IS PRESERVED as given: handlers are tried in sequence and the FIRST match resolves the material, so
+ * a caller reordering the family is describing a different dispatch rather than the same one rearranged.
+ */
+export interface ObjImportOptions {
+  readonly materialHandlers?: readonly Readonly<ObjMaterialHandler>[];
+}

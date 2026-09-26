@@ -2,8 +2,6 @@ import { createTransform3D } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createBlinnPhongMaterial, createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { computeMeshGeometryNormals, computeMeshGeometryTangents, createMeshGeometry } from '@flighthq/mesh/contract';
-import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
-import type { Scene3D } from '@flighthq/types/contract';
 import type {
   BlinnPhongMaterial,
   ImportDiagnostic,
@@ -18,21 +16,12 @@ import type {
   Texture,
   TextureColorSpace,
   ObjMaterial,
+  ObjMaterialHandler,
   ObjMaterialLibrary,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, MeshKind } from '@flighthq/types/contract';
 
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef } from './shared.ts';
-
-// Parses a Wavefront OBJ text source into a Scene3D. Convenience over `createScene3DFromDocument(parseObj
-// (source, materials))`. See parseObj for the import model.
-export function createScene3DFromObj(
-  source: string,
-  materials?: Readonly<ObjMaterialLibrary>,
-  diagnostics?: ImportDiagnostic[],
-): Scene3D {
-  return createScene3DFromDocument(parseObj(source, materials, diagnostics));
-}
 
 // Whether the file stated any metallic-roughness PBR value for this material — the test that picks the
 // shading model. Only directives describing the SHADING MODEL count: Ke/map_Ke name a channel both models
@@ -190,6 +179,7 @@ function flushGroup(
   name: string | undefined,
   document: Scene3DDocument,
   library: Readonly<ObjMaterialLibrary> | undefined,
+  materialHandlers: readonly Readonly<ObjMaterialHandler>[],
   resolvedMaterials: Map<string, number>,
   sourceHasNormals: boolean,
   sourceHasUvs: boolean,
@@ -211,7 +201,9 @@ function flushGroup(
     for (let k = 0; k < bucket.vertices.length; k++) vertices.push(bucket.vertices[k]);
 
     subsets.push({ indexCount: bucket.indices.length, indexOffset });
-    materials.push(resolveObjMaterial(materialName, library, resolvedMaterials, document, diagnostics));
+    materials.push(
+      resolveObjMaterial(materialName, library, materialHandlers, resolvedMaterials, document, diagnostics),
+    );
   }
 
   // Lines and points are emitted as sibling meshes of the face mesh, before the early return, so a group
@@ -456,10 +448,19 @@ export function objMaterialToStandardPbr(
 // position/uv/normal indices (`v/vt/vn`, `v//vn`, `v/vt`) and negative (relative) indices.
 //
 // Malformed lines record a diagnostic and are skipped; the function never throws on bad input.
-export function parseObj(
+/**
+ * The OBJ parse, over a material-handler family it is GIVEN rather than one it resolves.
+ *
+ * ★ THIS MODULE MUST NOT KNOW THE DEFAULT FAMILY. The standard handlers import `hasObjPbrDirectives` and
+ * the two `objMaterialTo*` functions from this file, so resolving the family here would close a cycle —
+ * parser to registry to handlers and back. `parseObj` in `objDocument.ts` owns that edge and is the entry
+ * point callers use; see the note there for what that cycle does and does not currently break.
+ */
+export function parseObjWithMaterialHandlers(
   source: string,
-  materials?: Readonly<ObjMaterialLibrary>,
-  diagnostics?: ImportDiagnostic[],
+  materials: Readonly<ObjMaterialLibrary> | undefined,
+  diagnostics: ImportDiagnostic[] | undefined,
+  materialHandlers: readonly Readonly<ObjMaterialHandler>[],
 ): Scene3DDocument {
   const positions: number[] = [];
   const normals: number[] = [];
@@ -557,6 +558,7 @@ export function parseObj(
           currentGroupName,
           document,
           materials,
+          materialHandlers,
           resolvedMaterials,
           normals.length > 0,
           uvs.length > 0,
@@ -697,6 +699,7 @@ export function parseObj(
           currentGroupName,
           document,
           materials,
+          materialHandlers,
           resolvedMaterials,
           normals.length > 0,
           uvs.length > 0,
@@ -749,6 +752,7 @@ export function parseObj(
     currentGroupName,
     document,
     materials,
+    materialHandlers,
     resolvedMaterials,
     normals.length > 0,
     uvs.length > 0,
@@ -806,6 +810,7 @@ function clampChannel(value: number): number {
 function resolveObjMaterial(
   name: string,
   library: Readonly<ObjMaterialLibrary> | undefined,
+  materialHandlers: readonly Readonly<ObjMaterialHandler>[],
   cache: Map<string, number>,
   document: Scene3DDocument,
   diagnostics: ImportDiagnostic[] | undefined,
@@ -824,11 +829,19 @@ function resolveObjMaterial(
     cache.set(name, -1);
     return -1;
   }
-  // The file decides the shading model. See hasObjPbrDirectives — a file that STATED metallic-roughness
-  // values is read as PBR; one that did not is read as the Blinn-Phong it actually is.
-  const material = (hasObjPbrDirectives(parsed)
-    ? objMaterialToStandardPbr(parsed, document, diagnostics)
-    : objMaterialToBlinnPhong(parsed, document, diagnostics)) as unknown as Material;
+  // The file decides the shading model, and the FAMILY decides who reads it. Each handler answers
+  // `matches` for itself — the Blinn-Phong one by negating `hasObjPbrDirectives`, the StandardPbr one by
+  // asserting it — so the standard family reproduces the ternary this replaced while a caller who named
+  // only one of them never links the other.
+  //
+  // A material no handler claims resolves to index -1, exactly as an unresolvable name already did, which
+  // is how naming a subset yields a smaller document rather than a broken one.
+  const handler = materialHandlers.find((candidate) => candidate.matches(parsed));
+  if (handler === undefined) {
+    cache.set(name, -1);
+    return -1;
+  }
+  const material = handler.resolve(parsed, document, diagnostics) as unknown as Material;
   // Preserve the MTL `newmtl` handle as the material's authored name (findScene3DMaterialByName).
   material.name = name;
   const index = document.materials.length;
