@@ -36,14 +36,14 @@ export function collectObjFeatures(source: string): ReadonlySet<string> {
     for (const directive of directives) directiveToFeature.set(directive, feature);
   }
 
-  const remaining = directiveToFeature.size;
+  const remaining = OBJ_FEATURE_DIRECTIVES.size;
   const lines = source.split('\n');
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i].trimStart();
     if (raw.length === 0 || raw.charCodeAt(0) === 35) continue;
 
-    const spaceIndex = raw.indexOf(' ');
-    const directive = spaceIndex < 0 ? raw.trimEnd() : raw.slice(0, spaceIndex);
+    const whitespaceIndex = raw.search(/\s/);
+    const directive = whitespaceIndex < 0 ? raw : raw.slice(0, whitespaceIndex);
 
     const feature = directiveToFeature.get(directive);
     if (feature !== undefined && !found.has(feature)) {

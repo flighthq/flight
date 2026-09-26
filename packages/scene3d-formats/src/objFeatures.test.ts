@@ -63,6 +63,10 @@ describe('collectObjFeatures', () => {
     expect([...collectObjFeatures('  f 1 2 3')]).toEqual(['Face']);
   });
 
+  it('handles tabs between directives and arguments', () => {
+    expect([...collectObjFeatures('f\t1\t2\t3\nusemtl\tstone')].sort()).toEqual(['Face', 'Material']);
+  });
+
   it('does not treat a bare directive word inside a comment as a feature', () => {
     expect([...collectObjFeatures('# f 1 2 3\n# usemtl stone')]).toEqual([]);
   });
