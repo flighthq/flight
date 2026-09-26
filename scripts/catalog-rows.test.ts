@@ -1,4 +1,9 @@
-import { colladaAllElementDecoders, threeDsAllChunkHandlers } from '@flighthq/scene3d-formats';
+import {
+  colladaAllElementDecoders,
+  md2AllSectionHandlers,
+  md5AllSectionHandlers,
+  threeDsAllChunkHandlers,
+} from '@flighthq/scene3d-formats';
 import * as scene3dFormats from '@flighthq/scene3d-formats';
 import { getThreeDsChunkName } from '@flighthq/scene3d-formats/contract';
 import * as swf from '@flighthq/swf';
@@ -10,6 +15,8 @@ import {
   buildRequirementCatalogRows,
   CATALOG_PARSER_BACKEND,
   COLLADA_ELEMENT_DECODERS,
+  MD2_SECTION_HANDLERS,
+  MD5_SECTION_HANDLERS,
   SWF_TAG_HANDLERS,
   THREE_DS_CHUNK_HANDLERS,
 } from './catalog-rows.ts';
@@ -40,7 +47,7 @@ describe('buildRequirementCatalogRows', () => {
   });
 
   it('namespaces every kind by format, so two formats cannot claim one key', () => {
-    const namespaces = ['3ds.', 'awd2.', 'dae.', 'swf.'];
+    const namespaces = ['3ds.', 'awd2.', 'dae.', 'md2.', 'md5.', 'swf.'];
     const kinds = buildRequirementCatalogRows().map((row) => row.kind);
     expect(kinds.every((kind) => namespaces.some((namespace) => kind.startsWith(namespace)))).toBe(true);
     // Every namespace must actually be present, or the clause above passes vacuously for the formats
@@ -123,7 +130,11 @@ describe('buildRequirementCatalogRows', () => {
       const value = MODULES[row.implementationImport][row.implementationSymbol];
       expect(Array.isArray(value), `${row.implementationSymbol} is a family, not one handler`).toBe(false);
       expect(
-        isTagHandler(value) || isBlockHandler(value) || isChunkHandler(value) || isElementDecoder(value),
+        isTagHandler(value) ||
+          isBlockHandler(value) ||
+          isChunkHandler(value) ||
+          isElementDecoder(value) ||
+          isSectionHandler(value),
         `${row.implementationSymbol}`,
       ).toBe(true);
     }
@@ -203,6 +214,64 @@ describe('buildRequirementCatalogRows', () => {
     }
   });
 
+  it('lists every MD2 section handler the scene3d-formats package exports', () => {
+    const exported = Object.keys(scene3dFormats)
+      .filter((name) => isSectionHandler((scene3dFormats as unknown as Record<string, unknown>)[name]))
+      .filter((name) => name.startsWith('md2'))
+      .sort();
+    expect([...MD2_SECTION_HANDLERS.keys()].sort()).toEqual(exported);
+  });
+
+  it('lists every MD5 section handler the scene3d-formats package exports', () => {
+    const exported = Object.keys(scene3dFormats)
+      .filter((name) => isSectionHandler((scene3dFormats as unknown as Record<string, unknown>)[name]))
+      .filter((name) => name.startsWith('md5'))
+      .sort();
+    expect([...MD5_SECTION_HANDLERS.keys()].sort()).toEqual(exported);
+  });
+
+  it('routes each MD2 and MD5 feature to the handler that says it satisfies it', () => {
+    const rows = buildRequirementCatalogRows();
+    for (const [namespace, handlers] of [
+      ['md2', MD2_SECTION_HANDLERS],
+      ['md5', MD5_SECTION_HANDLERS],
+    ] as const) {
+      for (const [symbol, handler] of handlers) {
+        for (const row of rows.filter((candidate) => candidate.implementationSymbol === symbol)) {
+          expect(row.kind, symbol).toBe(`${namespace}.${handler.feature}`);
+        }
+      }
+    }
+  });
+
+  // Written as two loops rather than one over a pair of families: pairing them unions the two handler
+  // types, and `indexOf` then demands their intersection — a type error the scripts test run cannot see,
+  // since vitest does not typecheck.
+  it('numbers each MD2 and MD5 row by its position in the family the format ships', () => {
+    const rows = buildRequirementCatalogRows();
+    for (const [symbol, handler] of MD2_SECTION_HANDLERS) {
+      const expected = md2AllSectionHandlers.indexOf(handler);
+      for (const row of rows.filter((candidate) => candidate.implementationSymbol === symbol)) {
+        expect(row.familyOrder, symbol).toBe(expected);
+      }
+    }
+    for (const [symbol, handler] of MD5_SECTION_HANDLERS) {
+      const expected = md5AllSectionHandlers.indexOf(handler);
+      for (const row of rows.filter((candidate) => candidate.implementationSymbol === symbol)) {
+        expect(row.familyOrder, symbol).toBe(expected);
+      }
+    }
+  });
+
+  // ★ THE ALWAYS-READ FEATURES GET NO ROW, DELIBERATELY. `Mesh` is what makes an MD2 or MD5 file a model —
+  // there is nothing to opt out of and no handler to name — so a row for it could only name something that
+  // does not exist. Asserted so a later sweep does not "fix" the apparent gap by inventing one.
+  it('emits no row for the geometry features that are always read', () => {
+    const kinds = new Set(buildRequirementCatalogRows().map((row) => row.kind));
+    expect(kinds.has('md2.Mesh')).toBe(false);
+    expect(kinds.has('md5.Mesh')).toBe(false);
+  });
+
   it('routes each tag to the handler that actually claims it', () => {
     const rows = buildRequirementCatalogRows();
     for (const [symbol, handler] of SWF_TAG_HANDLERS) {
@@ -224,6 +293,14 @@ function isBlockHandler(value: unknown): boolean {
 
 function isChunkHandler(value: unknown): boolean {
   return typeof value === 'object' && value !== null && !Array.isArray(value) && 'chunkIds' in value;
+}
+
+// MD2 and MD5 section handlers: a `feature` they satisfy plus the `collect` that reads it. Distinguished
+// from a COLLADA decoder by `collect` rather than `decode`.
+function isSectionHandler(value: unknown): boolean {
+  return (
+    typeof value === 'object' && value !== null && !Array.isArray(value) && 'feature' in value && 'collect' in value
+  );
 }
 
 function isElementDecoder(value: unknown): boolean {

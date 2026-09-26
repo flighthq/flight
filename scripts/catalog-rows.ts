@@ -17,6 +17,12 @@ import {
   colladaGeometryDecoder,
   colladaLightDecoder,
   colladaMaterialDecoder,
+  md2AllSectionHandlers,
+  md2AnimationHandler,
+  md2SkinHandler,
+  md5AllSectionHandlers,
+  md5MaterialHandler,
+  md5SkeletonHandler,
   threeDsAllChunkHandlers,
   threeDsCameraHandler,
   threeDsKeyframeHandler,
@@ -29,6 +35,8 @@ import {
   COLLADA_REQUIREMENT_KEY_NAMESPACE,
   getAwd2BlockName,
   getThreeDsChunkName,
+  MD2_REQUIREMENT_KEY_NAMESPACE,
+  MD5_REQUIREMENT_KEY_NAMESPACE,
   THREE_DS_REQUIREMENT_KEY_NAMESPACE,
 } from '@flighthq/scene3d-formats/contract';
 import {
@@ -51,6 +59,8 @@ import { getSwfTagName, SWF_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/swf/cont
 import type {
   Awd2BlockHandler,
   ColladaElementDecoder,
+  Md2SectionHandler,
+  Md5SectionHandler,
   RequirementCatalogEntry,
   SwfTagHandler,
   ThreeDsChunkHandler,
@@ -151,6 +161,34 @@ export const COLLADA_ELEMENT_DECODERS: ReadonlyMap<string, Readonly<ColladaEleme
   ['colladaMaterialDecoder', colladaMaterialDecoder],
 ]);
 
+/**
+ * The MD2 section handlers, keyed by the symbol a generated module imports.
+ *
+ * Each handler declares the `feature` it satisfies, and that string is the same feature
+ * `collectMd2Features` reports and `parseMd2Requirements` emits under `document.format` — so an
+ * `md2.Material` row resolves to the handler that says it satisfies `Material`, derived rather than
+ * asserted alongside it.
+ *
+ * MD2's `Mesh` feature intentionally has NO handler and therefore no row: the header, triangles, texcoords
+ * and frame 0 are read unconditionally, because without them there is no model. Only the two features a
+ * build can genuinely do without are named here.
+ */
+export const MD2_SECTION_HANDLERS: ReadonlyMap<string, Readonly<Md2SectionHandler>> = new Map([
+  ['md2AnimationHandler', md2AnimationHandler],
+  ['md2SkinHandler', md2SkinHandler],
+]);
+
+/**
+ * The MD5 mesh section handlers, keyed by the symbol a generated module imports.
+ *
+ * As with MD2, each declares the feature it satisfies and the row is derived from that. MD5's `Mesh`
+ * feature has no handler and no row for the same reason: the geometry is what makes the file a model.
+ */
+export const MD5_SECTION_HANDLERS: ReadonlyMap<string, Readonly<Md5SectionHandler>> = new Map([
+  ['md5MaterialHandler', md5MaterialHandler],
+  ['md5SkeletonHandler', md5SkeletonHandler],
+]);
+
 /** The backend whose rows become `parserOptions` rather than a render-state fragment. */
 export const CATALOG_PARSER_BACKEND = 'parser';
 
@@ -184,6 +222,26 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
         ),
       );
     }
+  }
+  for (const [symbol, handler] of MD2_SECTION_HANDLERS) {
+    rows.push(
+      row(
+        '@flighthq/scene3d-formats',
+        symbol,
+        `${MD2_REQUIREMENT_KEY_NAMESPACE}.${handler.feature}`,
+        familyOrderOf(md2AllSectionHandlers, handler),
+      ),
+    );
+  }
+  for (const [symbol, handler] of MD5_SECTION_HANDLERS) {
+    rows.push(
+      row(
+        '@flighthq/scene3d-formats',
+        symbol,
+        `${MD5_REQUIREMENT_KEY_NAMESPACE}.${handler.feature}`,
+        familyOrderOf(md5AllSectionHandlers, handler),
+      ),
+    );
   }
   for (const [symbol, decoder] of COLLADA_ELEMENT_DECODERS) {
     for (const feature of decoder.features) {
