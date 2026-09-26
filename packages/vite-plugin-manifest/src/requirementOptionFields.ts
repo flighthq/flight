@@ -9,6 +9,13 @@ import { RequirementFacet } from '@flighthq/types/contract';
  *
  * `document.format` maps to `nodeRenderers` for a render backend: a document's content kinds are the
  * nodes the importer produces, so that is the field a renderer needs them in.
+ *
+ * `scene.texture-source-kind` is mapped but has NO catalog rows by design. A document's textures
+ * carry unresolved `ImageResourceReference`s; the `TextureSourceKind` that dispatches to a resolver
+ * is decided at resolution time by the host, not at parse time by the format. The standard resolver
+ * aggregates (`standardGlTextureResolvers`, `standardWgpuTextureResolvers`) cover every host's
+ * resolution path and are carried by `*RenderInfrastructure`, so the `*FullOptions` spread includes
+ * them without catalog rows.
  */
 export const REQUIREMENT_OPTION_FIELDS: Readonly<Record<string, string>> = Object.freeze({
   [RequirementFacet.DocumentFormat]: 'nodeRenderers',
