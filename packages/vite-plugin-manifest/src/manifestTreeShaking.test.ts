@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import {
   BUILT_IN_REQUIREMENT_BACKENDS,
   BUILT_IN_REQUIREMENT_CATALOG_ENTRIES,
+  BUILT_IN_REQUIREMENT_DISPOSITIONS,
   BUILT_IN_REQUIREMENT_TRANSLATIONS,
 } from '@flighthq/requirement-catalog/contract';
 import { MD2_HEADER_SIZE, MD2_MAGIC, MD2_VERSION } from '@flighthq/scene3d-formats/contract';
@@ -454,6 +455,7 @@ async function richBundleOf(dir: string): Promise<string> {
       createManifestPlugin({
         catalog: {
           backends: BUILT_IN_REQUIREMENT_BACKENDS,
+          dispositions: BUILT_IN_REQUIREMENT_DISPOSITIONS,
           entries: [...BUILT_IN_REQUIREMENT_CATALOG_ENTRIES],
           translations: BUILT_IN_REQUIREMENT_TRANSLATIONS,
         },

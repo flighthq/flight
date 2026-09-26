@@ -46,6 +46,19 @@ export function getThreeDsChunkName(chunkId: number): string {
   return THREE_DS_CHUNK_NAMES.get(chunkId) ?? `Unknown(0x${chunkId.toString(16).padStart(4, '0')})`;
 }
 
+/**
+ * Every feature name a 3DS census can report, which is the vocabulary `parseThreeDsRequirements` emits under
+ * `document.format`.
+ *
+ * Derived from the name table rather than restated beside it, so adding a chunk to the census adds it here on
+ * the same edit. An inventory has to be able to say what its whole vocabulary IS — otherwise a gap in it
+ * returns a smaller answer that looks like a complete one, and nothing downstream can tell which features
+ * were considered.
+ */
+export function getThreeDsFeatureNames(): readonly string[] {
+  return [...THREE_DS_CHUNK_NAMES.values()];
+}
+
 function walkThreeDsChunkCensus(view: Readonly<DataView>, offset: number, counts: Map<number, number>): void {
   const chunkLength = view.getUint32(offset + 2, true);
   if (chunkLength < THREE_DS_CHUNK_HEADER_BYTES) return;

@@ -17,6 +17,23 @@
  *
  * Contract lane only: build-time analysis input, not something a running app asks for.
  */
+const MD5_MESH_FEATURE_SKELETON = 'Skeleton';
+const MD5_MESH_FEATURE_MESH = 'Mesh';
+const MD5_MESH_FEATURE_MATERIAL = 'Material';
+
+/**
+ * Every feature name this analyzer can report — the vocabulary it emits under `document.format`.
+ *
+ * Stated as one list, and the scan below uses these same names, so the vocabulary cannot drift from what
+ * the scan actually emits. A build tool needs the whole list to tell a feature nothing claims from a
+ * feature the analyzer never considered.
+ */
+export const MD5_MESH_FEATURE_NAMES: readonly string[] = [
+  MD5_MESH_FEATURE_SKELETON,
+  MD5_MESH_FEATURE_MESH,
+  MD5_MESH_FEATURE_MATERIAL,
+];
+
 export function collectMd5MeshFeatures(source: string): ReadonlySet<string> {
   const found = new Set<string>();
   let inMesh = false;
@@ -26,12 +43,12 @@ export function collectMd5MeshFeatures(source: string): ReadonlySet<string> {
     if (line.length === 0 || line.startsWith('//')) continue;
 
     if (line === 'joints {') {
-      found.add('Skeleton');
+      found.add(MD5_MESH_FEATURE_SKELETON);
       continue;
     }
 
     if (line === 'mesh {') {
-      found.add('Mesh');
+      found.add(MD5_MESH_FEATURE_MESH);
       inMesh = true;
       continue;
     }
@@ -45,7 +62,7 @@ export function collectMd5MeshFeatures(source: string): ReadonlySet<string> {
         const nameStart = line.indexOf('"');
         const nameEnd = line.indexOf('"', nameStart + 1);
         if (nameStart >= 0 && nameEnd > nameStart + 1) {
-          found.add('Material');
+          found.add(MD5_MESH_FEATURE_MATERIAL);
         }
       }
     }

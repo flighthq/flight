@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import type { RequirementCatalogEntry } from '@flighthq/types/contract';
 
 import { formatBuiltInRequirementCatalogSource, verifyRequirementCatalogEntries } from './catalog-core.ts';
+import { buildRequirementDispositions } from './catalog-dispositions.ts';
 import {
   buildRenderCatalogRows,
   buildRequirementBackends,
@@ -16,6 +17,7 @@ import { buildRequirementCatalogRows } from './catalog-rows.ts';
 const ENTRIES: readonly RequirementCatalogEntry[] = [...buildRequirementCatalogRows(), ...buildRenderCatalogRows()];
 const TRANSLATIONS = buildRequirementTranslations();
 const BACKENDS = buildRequirementBackends();
+const DISPOSITIONS = buildRequirementDispositions();
 const REPO_ROOT = join(import.meta.dirname, '..');
 const OUTPUT_PATH = join(REPO_ROOT, 'packages', 'requirement-catalog', 'src', 'builtInRequirementCatalogEntries.ts');
 
@@ -24,7 +26,7 @@ if (problems.length > 0) {
   console.error(`✗ registry catalog is malformed:\n  ${problems.join('\n  ')}`);
   process.exitCode = 1;
 } else {
-  const source = formatBuiltInRequirementCatalogSource(ENTRIES, TRANSLATIONS, BACKENDS);
+  const source = formatBuiltInRequirementCatalogSource(ENTRIES, TRANSLATIONS, BACKENDS, DISPOSITIONS);
   if (process.argv.includes('--check')) {
     if (readIfPresent(OUTPUT_PATH) !== source) {
       console.error(
@@ -33,12 +35,14 @@ if (problems.length > 0) {
       process.exitCode = 1;
     } else {
       console.log(
-        `OK ${ENTRIES.length} built-in registry catalog entries and ${TRANSLATIONS.length} translations, generated source current`,
+        `OK ${ENTRIES.length} built-in registry catalog entries, ${TRANSLATIONS.length} translations and ${DISPOSITIONS.length} dispositions, generated source current`,
       );
     }
   } else {
     writeFileSync(OUTPUT_PATH, source);
-    console.log(`✓ wrote ${ENTRIES.length} built-in registry catalog entries and ${TRANSLATIONS.length} translations`);
+    console.log(
+      `✓ wrote ${ENTRIES.length} built-in registry catalog entries, ${TRANSLATIONS.length} translations and ${DISPOSITIONS.length} dispositions`,
+    );
   }
 }
 

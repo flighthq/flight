@@ -18,6 +18,18 @@
  *
  * Contract lane only: build-time analysis input, not something a running app asks for.
  */
+const MD5_ANIM_FEATURE_HIERARCHY = 'Hierarchy';
+const MD5_ANIM_FEATURE_ANIMATION = 'Animation';
+
+/**
+ * Every feature name this analyzer can report — the vocabulary it emits under `document.format`.
+ *
+ * Stated as one list, and the scan below uses these same names, so the vocabulary cannot drift from what
+ * the scan actually emits. A build tool needs the whole list to tell a feature nothing claims from a
+ * feature the analyzer never considered.
+ */
+export const MD5_ANIM_FEATURE_NAMES: readonly string[] = [MD5_ANIM_FEATURE_HIERARCHY, MD5_ANIM_FEATURE_ANIMATION];
+
 export function collectMd5AnimFeatures(source: string): ReadonlySet<string> {
   const found = new Set<string>();
   const lines = source.split('\n');
@@ -26,12 +38,12 @@ export function collectMd5AnimFeatures(source: string): ReadonlySet<string> {
     if (line.length === 0 || line.startsWith('//')) continue;
 
     if (line === 'hierarchy {') {
-      found.add('Hierarchy');
+      found.add(MD5_ANIM_FEATURE_HIERARCHY);
       continue;
     }
 
     if (line.startsWith('frame ') && line.endsWith('{')) {
-      found.add('Animation');
+      found.add(MD5_ANIM_FEATURE_ANIMATION);
       if (found.size === 2) break;
     }
   }
