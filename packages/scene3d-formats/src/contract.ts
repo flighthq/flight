@@ -13,7 +13,6 @@ export * from './awd2Requirements.ts';
 export * from './awd2SceneStructureHandler.ts';
 export * from './awd2Schema.ts';
 export * from './awd2SkeletonHandler.ts';
-export * from './colladaElementDecoders.ts';
 export * from './colladaFeatures.ts';
 export * from './colladaMaterial.ts';
 export * from './colladaParse.ts';
