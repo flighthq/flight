@@ -1,11 +1,15 @@
-import { createRequirementSet } from '@flighthq/requirement/contract';
+import { decodeUTF8 } from '@flighthq/encoding/contract';
 import { collectAwd2BlockCounts, parseAwd2Requirements } from '@flighthq/scene3d-formats/contract';
 import {
-  COLLADA_REQUIREMENT_KEY_NAMESPACE,
-  MD2_REQUIREMENT_KEY_NAMESPACE,
-  MD5_REQUIREMENT_KEY_NAMESPACE,
-  OBJ_REQUIREMENT_KEY_NAMESPACE,
-  THREE_DS_REQUIREMENT_KEY_NAMESPACE,
+  collectMd2Features,
+  collectThreeDsChunkCounts,
+  isReadableCollada,
+  parseColladaRequirements,
+  parseMd2Requirements,
+  parseMd5AnimRequirements,
+  parseMd5MeshRequirements,
+  parseObjRequirements,
+  parseThreeDsRequirements,
 } from '@flighthq/scene3d-formats/contract';
 import { parseSwfHeader, parseSwfRequirements } from '@flighthq/swf/contract';
 import type {
@@ -13,7 +17,6 @@ import type {
   HostDecompressLzmaCapability,
   RequirementSet,
 } from '@flighthq/types/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
 
 /** The decompressors a build supplies so compressed content can be read. */
 export interface ContentDecompressors {
@@ -47,19 +50,40 @@ export interface ContentAnalyzer {
  * either way. Both resolve to the same analyzer, so the choice of suffix never changes what a build
  * reads.
  *
- * The five uncompressed 3D formats (3DS, Collada, MD2, MD5, OBJ) carry no compression layer, so they
- * are always readable regardless of which decompressors a build supplies. Each emits a single
- * format-level requirement keyed on its namespace; translation rows expand it to the material kinds
- * the format's importer produces.
+ * Binary formats (3DS, MD2) probe their headers for readability — a corrupted or truncated file
+ * reports unreadable rather than silently producing an empty requirement set.
+ *
+ * Text formats (Collada, OBJ, MD5 mesh, MD5 anim) are decoded from UTF-8 via the portable encoding
+ * contract. Collada additionally validates XML structure through `isReadableCollada`; the others are
+ * always readable once decoded, since their line-oriented parsers handle any text gracefully.
  */
 export const DEFAULT_CONTENT_ANALYZERS: Readonly<Record<string, ContentAnalyzer>> = Object.freeze({
-  '.3ds': STATIC_3D_FORMAT_ANALYZER(THREE_DS_REQUIREMENT_KEY_NAMESPACE),
+  '.3ds': {
+    analyze: (source) => parseThreeDsRequirements(source),
+    isReadable: (source) => collectThreeDsChunkCounts(source) !== null,
+  },
   '.awd': AWD2_ANALYZER(),
   '.awd2': AWD2_ANALYZER(),
-  '.dae': STATIC_3D_FORMAT_ANALYZER(COLLADA_REQUIREMENT_KEY_NAMESPACE),
-  '.md2': STATIC_3D_FORMAT_ANALYZER(MD2_REQUIREMENT_KEY_NAMESPACE),
-  '.md5mesh': STATIC_3D_FORMAT_ANALYZER(MD5_REQUIREMENT_KEY_NAMESPACE),
-  '.obj': STATIC_3D_FORMAT_ANALYZER(OBJ_REQUIREMENT_KEY_NAMESPACE),
+  '.dae': {
+    analyze: (source) => parseColladaRequirements(decodeUTF8(source)),
+    isReadable: (source) => isReadableCollada(decodeUTF8(source)),
+  },
+  '.md2': {
+    analyze: (source) => parseMd2Requirements(source),
+    isReadable: (source) => collectMd2Features(source) !== null,
+  },
+  '.md5anim': {
+    analyze: (source) => parseMd5AnimRequirements(decodeUTF8(source)),
+    isReadable: () => true,
+  },
+  '.md5mesh': {
+    analyze: (source) => parseMd5MeshRequirements(decodeUTF8(source)),
+    isReadable: () => true,
+  },
+  '.obj': {
+    analyze: (source) => parseObjRequirements(decodeUTF8(source)),
+    isReadable: () => true,
+  },
   '.swf': {
     analyze: (source, { deflate, lzma }) => parseSwfRequirements(source, deflate, lzma),
     isReadable: (source, { deflate, lzma }) => parseSwfHeader(source, deflate, lzma) !== null,
@@ -79,19 +103,5 @@ function AWD2_ANALYZER(): ContentAnalyzer {
   return {
     analyze: (source, { deflate, lzma }) => parseAwd2Requirements(source, deflate, lzma),
     isReadable: (source, { deflate, lzma }) => collectAwd2BlockCounts(source, deflate, lzma) !== null,
-  };
-}
-
-// Uncompressed 3D formats have no decompression barrier — they are always readable. The analyzer
-// emits a single `document.format` requirement keyed on the format namespace; the corresponding
-// translation row expands it to the material kinds the importer produces.
-function STATIC_3D_FORMAT_ANALYZER(namespace: string): ContentAnalyzer {
-  const requirements = createRequirementSet(
-    [RequirementFacet.DocumentFormat],
-    [{ facet: RequirementFacet.DocumentFormat, key: namespace }],
-  );
-  return {
-    analyze: () => requirements,
-    isReadable: () => true,
   };
 }

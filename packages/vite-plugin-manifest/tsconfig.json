@@ -13,6 +13,9 @@
       "path": "../compression"
     },
     {
+      "path": "../encoding"
+    },
+    {
       "path": "../log"
     },
     {
