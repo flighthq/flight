@@ -8,16 +8,27 @@ import {
 } from './colladaFeatures.ts';
 
 describe('COLLADA_FEATURE_ELEMENTS', () => {
-  it('covers the six features the decoders read, each keyed on a content element', () => {
-    expect([...COLLADA_FEATURE_ELEMENTS.keys()].sort()).toEqual([
-      'Animation',
-      'Camera',
-      'Controller',
-      'Geometry',
-      'Light',
-      'Material',
-    ]);
+  it('covers the coarse features the decoders read, each keyed on a content element', () => {
+    const coarse = [...COLLADA_FEATURE_ELEMENTS.keys()].filter((k) => !k.includes('.'));
+    expect(coarse.sort()).toEqual(['Animation', 'Camera', 'Controller', 'Geometry', 'Image', 'Light', 'Material']);
     for (const elements of COLLADA_FEATURE_ELEMENTS.values()) expect(elements.length).toBeGreaterThan(0);
+  });
+
+  it('carries sub-element features for cameras, controllers, effects, images, and lights', () => {
+    const sub = [...COLLADA_FEATURE_ELEMENTS.keys()].filter((k) => k.includes('.'));
+    expect(sub.sort()).toEqual([
+      'Camera.Orthographic',
+      'Camera.Perspective',
+      'Controller.Morph',
+      'Controller.Skin',
+      'Effect.Blinn',
+      'Effect.Lambert',
+      'Effect.Phong',
+      'Light.Ambient',
+      'Light.Directional',
+      'Light.Point',
+      'Light.Spot',
+    ]);
   });
 
   // ★ NOT THE LIBRARY WRAPPERS. Keying on `library_geometries` would report geometry for the many files
@@ -45,13 +56,18 @@ describe('collectColladaFeatures', () => {
     expect([...collectColladaFeatures(empty)]).toEqual([]);
   });
 
-  it('reports every feature a FULL document contains', () => {
+  it('reports every feature a FULL document contains, coarse and sub-element', () => {
     expect([...collectColladaFeatures(fullDocument())].sort()).toEqual([
       'Animation',
       'Camera',
+      'Camera.Perspective',
       'Controller',
+      'Controller.Skin',
+      'Effect.Lambert',
       'Geometry',
+      'Image',
       'Light',
+      'Light.Point',
       'Material',
     ]);
   });
@@ -61,6 +77,64 @@ describe('collectColladaFeatures', () => {
       'Material',
     ]);
     expect([...collectColladaFeatures(collada('<library_effects><effect/></library_effects>'))]).toEqual(['Material']);
+  });
+
+  it('reports camera sub-types: Perspective and Orthographic', () => {
+    const perspective = collada(
+      '<library_cameras><camera><optics><technique_common><perspective/></technique_common></optics></camera></library_cameras>',
+    );
+    expect([...collectColladaFeatures(perspective)].sort()).toEqual(['Camera', 'Camera.Perspective']);
+    const orthographic = collada(
+      '<library_cameras><camera><optics><technique_common><orthographic/></technique_common></optics></camera></library_cameras>',
+    );
+    expect([...collectColladaFeatures(orthographic)].sort()).toEqual(['Camera', 'Camera.Orthographic']);
+  });
+
+  it('reports light sub-types: Point, Directional, Spot, and Ambient', () => {
+    for (const [element, feature] of [
+      ['point', 'Light.Point'],
+      ['directional', 'Light.Directional'],
+      ['spot', 'Light.Spot'],
+      ['ambient', 'Light.Ambient'],
+    ] as const) {
+      const xml = collada(
+        `<library_lights><light><technique_common><${element}/></technique_common></light></library_lights>`,
+      );
+      expect([...collectColladaFeatures(xml)].sort(), element).toEqual(['Light', feature]);
+    }
+  });
+
+  it('does not report Light.Ambient for a material ambient color property', () => {
+    const xml = collada(
+      '<library_effects><effect><profile_COMMON><technique><phong><ambient><color>0 0 0 1</color></ambient></phong></technique></profile_COMMON></effect></library_effects>',
+    );
+    const features = [...collectColladaFeatures(xml)].sort();
+    expect(features).toContain('Effect.Phong');
+    expect(features).toContain('Material');
+    expect(features).not.toContain('Light.Ambient');
+  });
+
+  it('reports effect shading models: Phong, Blinn, and Lambert', () => {
+    for (const [element, feature] of [
+      ['phong', 'Effect.Phong'],
+      ['blinn', 'Effect.Blinn'],
+      ['lambert', 'Effect.Lambert'],
+    ] as const) {
+      const xml = collada(
+        `<library_effects><effect><profile_COMMON><technique><${element}/></technique></profile_COMMON></effect></library_effects>`,
+      );
+      expect([...collectColladaFeatures(xml)].sort(), element).toEqual([feature, 'Material']);
+    }
+  });
+
+  it('reports Controller.Skin for skinned controllers', () => {
+    const xml = collada('<library_controllers><controller><skin source="#geo"/></controller></library_controllers>');
+    expect([...collectColladaFeatures(xml)].sort()).toEqual(['Controller', 'Controller.Skin']);
+  });
+
+  it('reports Image for texture references', () => {
+    const xml = collada('<library_images><image><init_from>texture.png</init_from></image></library_images>');
+    expect([...collectColladaFeatures(xml)]).toContain('Image');
   });
 
   // Real exporter output is namespace-prefixed, and a walk that matched on the raw element name would
@@ -147,6 +221,15 @@ describe('parseColladaRequirements', () => {
     expect(set.covers.length).toBeGreaterThan(0);
   });
 
+  it('emits sub-element requirement keys alongside the coarse feature', () => {
+    const xml = collada(
+      '<library_cameras><camera><optics><technique_common><perspective/></technique_common></optics></camera></library_cameras>',
+    );
+    const set = parseColladaRequirements(xml);
+    expect(set.requirements).toContainEqual({ facet: RequirementFacet.DocumentFormat, key: 'dae.Camera' });
+    expect(set.requirements).toContainEqual({ facet: RequirementFacet.DocumentFormat, key: 'dae.Camera.Perspective' });
+  });
+
   it('is deterministic regardless of the order features appear in the document', () => {
     const forward = collada(
       '<library_cameras><camera/></library_cameras><library_geometries><geometry/></library_geometries>',
@@ -166,9 +249,10 @@ function fullDocument(): string {
   return collada(
     '<library_geometries><geometry/></library_geometries>' +
       '<library_materials><material/></library_materials>' +
-      '<library_effects><effect/></library_effects>' +
-      '<library_cameras><camera/></library_cameras>' +
-      '<library_lights><light/></library_lights>' +
+      '<library_effects><effect><profile_COMMON><technique><lambert/></technique></profile_COMMON></effect></library_effects>' +
+      '<library_cameras><camera><optics><technique_common><perspective/></technique_common></optics></camera></library_cameras>' +
+      '<library_lights><light><technique_common><point/></technique_common></light></library_lights>' +
+      '<library_images><image/></library_images>' +
       '<library_controllers><controller><skin/></controller></library_controllers>' +
       '<library_animations><animation/></library_animations>',
   );
