@@ -116,9 +116,9 @@ describe('buildRequirementCatalogRows', () => {
     for (const [symbol, handler] of THREE_DS_CHUNK_HANDLERS) {
       expect(rows.filter((row) => row.implementationSymbol === symbol).length, symbol).toBe(handler.chunkIds.length);
     }
-    // A decoder claims one feature, so it earns exactly one row — no more, and never zero.
-    for (const symbol of COLLADA_ELEMENT_DECODERS.keys()) {
-      expect(rows.filter((row) => row.implementationSymbol === symbol).length, symbol).toBe(1);
+    // A decoder earns one row for every coarse or sub-element feature it claims.
+    for (const [symbol, decoder] of COLLADA_ELEMENT_DECODERS) {
+      expect(rows.filter((row) => row.implementationSymbol === symbol).length, symbol).toBe(decoder.features.length);
     }
   });
 
@@ -167,8 +167,9 @@ describe('buildRequirementCatalogRows', () => {
   it('routes each COLLADA feature to the decoder that says it decodes it', () => {
     const rows = buildRequirementCatalogRows();
     for (const [symbol, decoder] of COLLADA_ELEMENT_DECODERS) {
+      const claimed = new Set(decoder.features.map((feature) => `dae.${feature}`));
       for (const row of rows.filter((candidate) => candidate.implementationSymbol === symbol)) {
-        expect(row.kind, symbol).toBe(`dae.${decoder.feature}`);
+        expect(claimed.has(row.kind), `${symbol} does not claim ${row.kind}`).toBe(true);
       }
     }
   });
@@ -305,6 +306,6 @@ function isSectionHandler(value: unknown): boolean {
 
 function isElementDecoder(value: unknown): boolean {
   return (
-    typeof value === 'object' && value !== null && !Array.isArray(value) && 'feature' in value && 'decode' in value
+    typeof value === 'object' && value !== null && !Array.isArray(value) && 'features' in value && 'decode' in value
   );
 }
