@@ -1005,5 +1005,6 @@ export * from './SvgPathDataFormatOptions.ts';
 export * from './Skeleton2DImport.ts';
 export * from './SpineBinaryVersion.ts';
 export * from './SpineBinaryRegistry.ts';
+export * from './SpineJsonRegistry.ts';
 export * from './Scene2DDocument.ts';
 export * from './Scene2DResources.ts';

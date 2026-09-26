@@ -14,4 +14,12 @@ export { registerSpineBinaryTimelineHandlers } from './spineBinaryTimelineHandle
 export * from './spineBinaryVersion.ts';
 export * from './spineBinaryVersioned.ts';
 export * from './spineDrawOrder.ts';
+export * from './spineJsonHandlers.ts';
+export {
+  createSpineJsonRegistry,
+  registerSpineJsonSectionHandler,
+  registerSpineJsonTimelineHandler,
+} from './spineJsonRegistry.ts';
+export { registerSpineJsonSectionHandlers } from './spineJsonSectionHandlers.ts';
+export { registerSpineJsonTimelineHandlers } from './spineJsonTimelineHandlers.ts';
 export * from './spineParse.ts';

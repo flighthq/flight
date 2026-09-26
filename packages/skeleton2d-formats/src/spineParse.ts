@@ -23,6 +23,9 @@ import type {
   Skin2D,
   SkinAttachment2D,
   Slot2D,
+  SpineJsonRegistry,
+  SpineJsonSectionContext,
+  SpineJsonTimelineContext,
   TransformInherit2D,
 } from '@flighthq/types/contract';
 import {
@@ -33,10 +36,12 @@ import {
   RegionAttachment2DKind,
   Skeleton2DAnimationPath,
   Skeleton2DSlotAnimationPath,
+  SpineJsonTimelineKind,
   TransformMode2D,
 } from '@flighthq/types/contract';
 
 import { resolveSpineDrawOrdering } from './spineDrawOrder.ts';
+import { getSpineJsonTimelineHandler } from './spineJsonRegistry.ts';
 
 function initializeMeshAttachment2D(
   out: EntityConstruction<MeshAttachment2D>,
@@ -862,15 +867,6 @@ function spineTransformMode(value: unknown): TransformInherit2D {
   }
 }
 
-// Parses a Spine skeleton `.json` document (text) into a Skeleton2DImport — the setup-pose Skeleton2D
-// plus its named animations. Tolerant and best-effort: a malformed / non-Spine document returns the
-// sentinel `null` (the expected "unrecognized format" failure); a recognized document with missing or
-// unmodeled pieces yields best-effort data and reports `ImportDiagnostic`s through the optional
-// `diagnostics` sink. Names mirror Spine's vocabulary (bone/slot/skin/attachment/timeline).
-//
-// This first landing parses the bone hierarchy; slots, attachments, skins, and animation timelines are
-// layered on in the same tolerant shape, and Spine features Flight does not model (IK/transform/path
-// constraints, clipping/path/point attachments, events) emit `ImportDiagnosticSeverity.Skip` crumbs.
 export function parseSpineSkeleton(json: string, diagnostics?: ImportDiagnostic[]): Skeleton2DImport | null {
   let doc: unknown;
   try {
@@ -890,6 +886,38 @@ export function parseSpineSkeleton(json: string, diagnostics?: ImportDiagnostic[
   return { animations, skeleton };
 }
 
+export function parseSpineSkeletonWithRegistry(
+  json: string,
+  registry: Readonly<SpineJsonRegistry>,
+  diagnostics?: ImportDiagnostic[],
+): Skeleton2DImport | null {
+  let doc: unknown;
+  try {
+    doc = JSON.parse(json);
+  } catch {
+    return null;
+  }
+  if (doc === null || typeof doc !== 'object') return null;
+  const record = doc as Record<string, unknown>;
+  const context: SpineJsonSectionContext = {
+    animations: [],
+    attachmentNames: [],
+    bones: [],
+    diagnostics,
+    doc: record,
+    registry,
+    skins: [],
+    slots: [],
+  };
+  for (const entry of registry.sectionHandlers) {
+    entry.handle(context);
+  }
+  resolveSpineSetupAttachments(context.slots, context.attachmentNames, context.skins);
+  const skeleton = createSkeleton2D(context.bones, context.slots);
+  if (context.skins.length > 0) skeleton.skins = context.skins;
+  return { animations: context.animations, skeleton };
+}
+
 // Turns the JSON form's slot NAMES into indices and hands the moves to the shared resolver, so this and
 // the binary reader cannot disagree about what an offset list means.
 function resolveSpineDrawOrder(raw: unknown, slots: readonly Slot2D[]): number[] | null {
@@ -905,3 +933,216 @@ function resolveSpineDrawOrder(raw: unknown, slots: readonly Slot2D[]): number[]
   }
   return resolveSpineDrawOrdering(moves, slots.length);
 }
+
+export function spineJsonAnimationsSectionReader(context: SpineJsonSectionContext): void {
+  const raw = context.doc.animations;
+  if (raw === null || typeof raw !== 'object') return;
+  for (const [name, animEntry] of Object.entries(raw as Record<string, unknown>)) {
+    if (animEntry === null || typeof animEntry !== 'object') continue;
+    const anim = animEntry as Record<string, unknown>;
+    const timelineContext: SpineJsonTimelineContext = {
+      channels: [],
+      drawOrder: null,
+      section: context,
+      unregisteredTimelineCounts: new Map(),
+      unmodeledTimelineCounts: new Map(),
+    };
+    for (const [jsonKey, timelineKind] of SPINE_JSON_TIMELINE_KEY_MAP) {
+      if (anim[jsonKey] === undefined) continue;
+      const handler = getSpineJsonTimelineHandler(context.registry, timelineKind);
+      if (handler !== null) {
+        handler(timelineContext, name, anim);
+      } else {
+        const prev = timelineContext.unregisteredTimelineCounts.get(timelineKind) ?? 0;
+        timelineContext.unregisteredTimelineCounts.set(timelineKind, prev + 1);
+      }
+    }
+    for (const [kind, count] of timelineContext.unregisteredTimelineCounts) {
+      reportImportDiagnostic(
+        context.diagnostics,
+        ImportDiagnosticSeverity.Skip,
+        `spine.${kind}-timeline-unregistered`,
+        'spineJsonAnimationsSectionReader',
+        { count },
+      );
+    }
+    context.animations.push({
+      clip: createAnimationClip(timelineContext.channels),
+      drawOrder: timelineContext.drawOrder,
+      name,
+    });
+  }
+}
+
+export function spineJsonBonesSectionReader(context: SpineJsonSectionContext): void {
+  for (const bone of parseSpineBones(context.doc.bones, context.diagnostics)) {
+    context.bones.push(bone);
+  }
+}
+
+export function spineJsonBoneTimelineReader(
+  context: SpineJsonTimelineContext,
+  _animName: string,
+  animEntry: Readonly<Record<string, unknown>>,
+): void {
+  if (animEntry.bones === null || typeof animEntry.bones !== 'object') return;
+  const bones = context.section.bones;
+  for (const [boneName, timelinesEntry] of Object.entries(animEntry.bones as Record<string, unknown>)) {
+    const boneIndex = indexOfBone(bones, boneName);
+    if (boneIndex < 0 || timelinesEntry === null || typeof timelinesEntry !== 'object') continue;
+    const timelines = timelinesEntry as Record<string, unknown>;
+    addSpineBoneChannel(
+      context.channels,
+      timelines.rotate,
+      boneIndex,
+      Skeleton2DAnimationPath.Rotation,
+      1,
+      (k) => [numberOr(k.value, 0)],
+      context.section.diagnostics,
+    );
+    addSpineBoneChannel(
+      context.channels,
+      timelines.translate,
+      boneIndex,
+      Skeleton2DAnimationPath.Translation,
+      2,
+      (k) => [numberOr(k.x, 0), numberOr(k.y, 0)],
+      context.section.diagnostics,
+    );
+    addSpineBoneChannel(
+      context.channels,
+      timelines.scale,
+      boneIndex,
+      Skeleton2DAnimationPath.Scale,
+      2,
+      (k) => [numberOr(k.x, 1), numberOr(k.y, 1)],
+      context.section.diagnostics,
+    );
+    addSpineBoneChannel(
+      context.channels,
+      timelines.shear,
+      boneIndex,
+      Skeleton2DAnimationPath.Shear,
+      2,
+      (k) => [numberOr(k.x, 0), numberOr(k.y, 0)],
+      context.section.diagnostics,
+    );
+    for (const axis of SPINE_BONE_AXIS_TIMELINES) {
+      addSpineBoneChannel(
+        context.channels,
+        timelines[axis.key],
+        boneIndex,
+        axis.path,
+        1,
+        (k) => [numberOr(k.value, axis.identity)],
+        context.section.diagnostics,
+      );
+    }
+  }
+}
+
+export function spineJsonDeformTimelineReader(
+  context: SpineJsonTimelineContext,
+  _animName: string,
+  animEntry: Readonly<Record<string, unknown>>,
+): void {
+  skipCrumbSpineTimelineGroup(context.section.diagnostics, animEntry.deform, 'spine.deform-timeline-unsupported');
+}
+
+export function spineJsonDrawOrderTimelineReader(
+  context: SpineJsonTimelineContext,
+  _animName: string,
+  animEntry: Readonly<Record<string, unknown>>,
+): void {
+  context.drawOrder = parseSpineDrawOrderTimeline(
+    animEntry.drawOrder ?? animEntry.draworder,
+    context.section.slots,
+    context.section.diagnostics,
+  );
+}
+
+export function spineJsonEventsSectionReader(_context: SpineJsonSectionContext): void {
+  // Event definitions are recognized for census but not modeled as parse output.
+}
+
+export function spineJsonEventTimelineReader(
+  context: SpineJsonTimelineContext,
+  _animName: string,
+  animEntry: Readonly<Record<string, unknown>>,
+): void {
+  skipCrumbSpineTimelineGroup(context.section.diagnostics, animEntry.events, 'spine.event-timeline-unsupported');
+}
+
+export function spineJsonIkConstraintsSectionReader(_context: SpineJsonSectionContext): void {
+  // IK constraint definitions are recognized for census but not modeled as parse output.
+}
+
+export function spineJsonIkTimelineReader(
+  context: SpineJsonTimelineContext,
+  _animName: string,
+  animEntry: Readonly<Record<string, unknown>>,
+): void {
+  skipCrumbSpineTimelineGroup(context.section.diagnostics, animEntry.ik, 'spine.ik-timeline-unsupported');
+}
+
+export function spineJsonPathConstraintsSectionReader(_context: SpineJsonSectionContext): void {
+  // Path constraint definitions are recognized for census but not modeled as parse output.
+}
+
+export function spineJsonPathTimelineReader(
+  context: SpineJsonTimelineContext,
+  _animName: string,
+  animEntry: Readonly<Record<string, unknown>>,
+): void {
+  skipCrumbSpineTimelineGroup(context.section.diagnostics, animEntry.path, 'spine.path-timeline-unsupported');
+}
+
+export function spineJsonSkinsSectionReader(context: SpineJsonSectionContext): void {
+  for (const skin of parseSpineSkins(context.doc.skins, context.slots, context.diagnostics)) {
+    context.skins.push(skin);
+  }
+}
+
+export function spineJsonSlotsSectionReader(context: SpineJsonSectionContext): void {
+  const { attachmentNames, slots } = parseSpineSlots(context.doc.slots, context.bones);
+  for (const slot of slots) context.slots.push(slot);
+  for (const name of attachmentNames) context.attachmentNames.push(name);
+}
+
+export function spineJsonSlotTimelineReader(
+  context: SpineJsonTimelineContext,
+  _animName: string,
+  animEntry: Readonly<Record<string, unknown>>,
+): void {
+  parseSpineSlotTimelines(
+    context.channels,
+    animEntry.slots,
+    context.section.slots,
+    context.section.skins,
+    context.section.diagnostics,
+  );
+}
+
+export function spineJsonTransformConstraintsSectionReader(_context: SpineJsonSectionContext): void {
+  // Transform constraint definitions are recognized for census but not modeled as parse output.
+}
+
+export function spineJsonTransformTimelineReader(
+  context: SpineJsonTimelineContext,
+  _animName: string,
+  animEntry: Readonly<Record<string, unknown>>,
+): void {
+  skipCrumbSpineTimelineGroup(context.section.diagnostics, animEntry.transform, 'spine.transform-timeline-unsupported');
+}
+
+const SPINE_JSON_TIMELINE_KEY_MAP: readonly (readonly [string, string])[] = [
+  ['bones', SpineJsonTimelineKind.Bone],
+  ['slots', SpineJsonTimelineKind.Slot],
+  ['deform', SpineJsonTimelineKind.Deform],
+  ['drawOrder', SpineJsonTimelineKind.DrawOrder],
+  ['draworder', SpineJsonTimelineKind.DrawOrder],
+  ['events', SpineJsonTimelineKind.Event],
+  ['ik', SpineJsonTimelineKind.Ik],
+  ['path', SpineJsonTimelineKind.Path],
+  ['transform', SpineJsonTimelineKind.Transform],
+];
