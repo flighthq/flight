@@ -32,18 +32,24 @@ describe('colladaAllElementDecoders', () => {
     expect(features.indexOf('Material')).toBeLessThan(features.indexOf('Geometry'));
   });
 
-  // ★ THE JOIN BETWEEN ANALYSIS AND DECODING, checked in both directions. The analyzer says what a
-  // document needs; this family says what the package can read. A feature analyzed with no decoder is an
-  // inventory entry nothing can satisfy; a decoder for a feature nothing analyzes is weight no document
-  // asks for. This guard used to live on a separate descriptor inventory, which duplicated `feature` and
-  // `elements` and could disagree with the real decoders — one source of truth now, so it cannot.
-  it('covers exactly the features the analyzer reports, in both directions', () => {
-    expect(colladaAllElementDecoders.map((decoder) => decoder.feature).sort()).toEqual(
-      [...COLLADA_FEATURE_ELEMENTS.keys()].sort(),
-    );
+  // ★ THE JOIN BETWEEN ANALYSIS AND DECODING. The feature map has two tiers: coarse features that
+  // match decoder families (Camera, Light, Material, …) and sub-element features (Camera.Perspective,
+  // Light.Point, Effect.Phong, …) that refine the census without adding decoder families. Census-only
+  // coarse features (Image) are in the map for the build inventory but have no decoder because the
+  // parser does not process them — they are evidence only.
+  it('joins every decoder feature to the feature map, with census-only coarse features explicit', () => {
+    const decoderFeatures = new Set(colladaAllElementDecoders.map((d) => d.feature));
+    const coarseFeatures = [...COLLADA_FEATURE_ELEMENTS.keys()].filter((k) => !k.includes('.'));
+
+    for (const f of decoderFeatures) {
+      expect(COLLADA_FEATURE_ELEMENTS.has(f), `decoder feature '${f}' missing from feature map`).toBe(true);
+    }
+
+    const censusOnly = coarseFeatures.filter((f) => !decoderFeatures.has(f));
+    expect(censusOnly).toEqual(['Image']);
   });
 
-  it('claims exactly the elements the analyzer keys each feature on', () => {
+  it('claims exactly the elements the analyzer keys each decoder feature on', () => {
     for (const decoder of colladaAllElementDecoders) {
       expect([...decoder.elements].sort(), decoder.feature).toEqual(
         [...(COLLADA_FEATURE_ELEMENTS.get(decoder.feature) ?? [])].sort(),
