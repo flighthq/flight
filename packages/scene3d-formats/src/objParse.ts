@@ -34,6 +34,413 @@ export function createScene3DFromObj(
   return createScene3DFromDocument(parseObj(source, materials, diagnostics));
 }
 
+// Whether the file stated any metallic-roughness PBR value for this material — the test that picks the
+// shading model. Only directives describing the SHADING MODEL count: Ke/map_Ke name a channel both models
+// could carry, so an otherwise-classic material with an emissive does not get reinterpreted as PBR.
+export function hasObjPbrDirectives(material: Readonly<ObjMaterial>): boolean {
+  return (
+    material.roughness !== null ||
+    material.metallic !== null ||
+    material.sheen !== null ||
+    material.clearcoat !== null ||
+    material.clearcoatRoughness !== null ||
+    material.anisotropy !== null ||
+    material.anisotropyRotation !== null ||
+    material.mapRoughness !== null ||
+    material.mapMetallic !== null
+  );
+}
+
+// The OBJ smoothing-group id meaning "no smoothing" — both `s off` and `s 0` select it. UNSTATED is the
+// separate pre-`s` state: one shared group, so a file that never mentions smoothing imports exactly as it
+// did before smoothing groups were read.
+const OBJ_SMOOTHING_OFF = 0;
+const OBJ_SMOOTHING_UNSTATED = -1;
+
+// Accumulates interleaved vertex data and triangle indices for one material within a group.
+interface MaterialBucket {
+  // Dedup map: "posIdx/uvIdx/normalIdx", or "posIdx/uvIdx/s<group>" for a corner whose normal will be
+  // generated → emitted vertex index.
+  dedup: Map<string, number>;
+  indices: number[];
+  // Interleaved floats: position(3) + normal(3) + tangent(4) + uv(2) = 12 floats per vertex.
+  vertices: number[];
+}
+
+function getOrCreateBucket(buckets: Map<string, MaterialBucket>, material: string): MaterialBucket {
+  let bucket = buckets.get(material);
+  if (bucket === undefined) {
+    bucket = { dedup: new Map(), indices: [], vertices: [] };
+    buckets.set(material, bucket);
+  }
+  return bucket;
+}
+
+// Parses one face vertex token (e.g. "1/2/3", "1//3", "1/2", "1") and emits the vertex into the
+// bucket, returning the emitted vertex index. Returns -1 on malformed input.
+function parseFaceVertex(
+  token: string,
+  positions: readonly number[],
+  uvs: readonly number[],
+  normals: readonly number[],
+  bucket: MaterialBucket,
+  smoothingGroup: number,
+  objDrops: Map<string, ObjDropTally> | null,
+  lineIndex: number,
+): number {
+  const parts = token.split('/');
+  const posCount = positions.length / 3;
+  const uvCount = uvs.length / 2;
+  const normalCount = normals.length / 3;
+
+  // Position index (1-based, may be negative). Every drop is tallied — parseFaceVertex runs once per face
+  // vertex, so a per-token report would violate the collector's aggregate-once contract; the parseObj-level
+  // flush emits every tallied crumb (its origin).
+  const rawPosIdx = parseInt(parts[0], 10);
+  if (!Number.isFinite(rawPosIdx) || rawPosIdx === 0) {
+    tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.face-vertex-invalid', '', {
+      firstLine: lineIndex + 1,
+      firstToken: token,
+    });
+    return -1;
+  }
+  const posIdx = rawPosIdx > 0 ? rawPosIdx - 1 : posCount + rawPosIdx;
+  if (posIdx < 0 || posIdx >= posCount) {
+    tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.position-index-out-of-range', '', {
+      firstIndex: rawPosIdx,
+      firstLine: lineIndex + 1,
+    });
+    return -1;
+  }
+
+  // Optional uv/normal refs: a present-but-invalid token (non-numeric, zero, OR out of range) drops that
+  // attribute and keeps the vertex (Recover). The raw token in `firstToken` describes every case uniformly.
+  let uvIdx = -1;
+  if (parts.length >= 2 && parts[1].length > 0) {
+    uvIdx = resolveFaceAttrIndex(parts[1], uvCount);
+    if (uvIdx < 0) {
+      tallyObjDrop(objDrops, ImportDiagnosticSeverity.Recover, 'obj.uv-index-invalid', '', {
+        firstLine: lineIndex + 1,
+        firstToken: parts[1],
+      });
+    }
+  }
+
+  let normalIdx = -1;
+  if (parts.length >= 3 && parts[2].length > 0) {
+    normalIdx = resolveFaceAttrIndex(parts[2], normalCount);
+    if (normalIdx < 0) {
+      tallyObjDrop(objDrops, ImportDiagnosticSeverity.Recover, 'obj.normal-index-invalid', '', {
+        firstLine: lineIndex + 1,
+        firstToken: parts[2],
+      });
+    }
+  }
+
+  // Dedup key: unique combination of resolved indices.
+  // The smoothing group joins the dedup key ONLY for a corner with no authored normal. Splitting the
+  // vertex at a smoothing boundary is what makes the generated normals hard there: computeMeshGeometryNormals
+  // averages across shared vertices, so two faces that no longer share a vertex cannot average together.
+  // That reuses the existing generation pass instead of adding a second, smoothing-aware one. A corner
+  // that DOES carry a normal is already authoritative, and keying it by group would only split vertices
+  // that should have stayed merged.
+  const key = normalIdx >= 0 ? `${posIdx}/${uvIdx}/${normalIdx}` : `${posIdx}/${uvIdx}/s${smoothingGroup}`;
+  const existing = bucket.dedup.get(key);
+  if (existing !== undefined) return existing;
+
+  const vertexIndex = bucket.vertices.length / CANONICAL_FLOATS_PER_VERTEX;
+
+  // Position (3 floats).
+  bucket.vertices.push(positions[posIdx * 3], positions[posIdx * 3 + 1], positions[posIdx * 3 + 2]);
+
+  // Normal (3 floats).
+  if (normalIdx >= 0) {
+    bucket.vertices.push(normals[normalIdx * 3], normals[normalIdx * 3 + 1], normals[normalIdx * 3 + 2]);
+  } else {
+    bucket.vertices.push(0, 0, 0);
+  }
+
+  // Tangent (4 floats) — OBJ does not carry tangents; zero-filled.
+  bucket.vertices.push(0, 0, 0, 0);
+
+  // UV (2 floats).
+  if (uvIdx >= 0) {
+    bucket.vertices.push(uvs[uvIdx * 2], uvs[uvIdx * 2 + 1]);
+  } else {
+    bucket.vertices.push(0, 0);
+  }
+
+  bucket.dedup.set(key, vertexIndex);
+  return vertexIndex;
+}
+
+// Flushes a group's accumulated material buckets as ONE Mesh: the buckets' vertex records are
+// concatenated into a single interleaved buffer and their triangles into a single index buffer,
+// with one MeshSubset per non-empty bucket addressing that material's contiguous index range. The
+// Mesh's positional `materials` array carries one entry per subset — the Flight material the
+// bucket's `usemtl` name resolves to, or null when the name is unknown or no library was supplied
+// (a null slot resolves to StandardMaterialKind at draw time). A single-material group is one Mesh
+// with one subset spanning the whole buffer; a multi-material group is one Mesh with several
+// subsets, never a wrapper over per-material child meshes. A group with no faces adds nothing.
+function flushGroup(
+  buckets: Readonly<Map<string, MaterialBucket>>,
+  lineElements: readonly (readonly number[])[],
+  pointElements: readonly number[],
+  sourcePositions: readonly number[],
+  name: string | undefined,
+  document: Scene3DDocument,
+  library: Readonly<ObjMaterialLibrary> | undefined,
+  resolvedMaterials: Map<string, number>,
+  sourceHasNormals: boolean,
+  sourceHasUvs: boolean,
+  diagnostics: ImportDiagnostic[] | undefined,
+): void {
+  const vertices: number[] = [];
+  const indices: number[] = [];
+  const subsets: MeshSubset[] = [];
+  const materials: number[] = [];
+
+  for (const [materialName, bucket] of buckets) {
+    if (bucket.indices.length === 0) continue;
+
+    // Rebase this bucket's local indices onto the combined vertex buffer (its vertices are appended
+    // after everything already collected), then record its contiguous index range as one subset.
+    const vertexBase = vertices.length / CANONICAL_FLOATS_PER_VERTEX;
+    const indexOffset = indices.length;
+    for (let k = 0; k < bucket.indices.length; k++) indices.push(bucket.indices[k] + vertexBase);
+    for (let k = 0; k < bucket.vertices.length; k++) vertices.push(bucket.vertices[k]);
+
+    subsets.push({ indexCount: bucket.indices.length, indexOffset });
+    materials.push(resolveObjMaterial(materialName, library, resolvedMaterials, document, diagnostics));
+  }
+
+  // Lines and points are emitted as sibling meshes of the face mesh, before the early return, so a group
+  // consisting ONLY of lines still produces geometry.
+  appendObjTopologyMesh(lineElements.flatMap(toObjLineSegments), sourcePositions, 'line-list', name, document);
+  appendObjTopologyMesh(pointElements, sourcePositions, 'point-list', name, document);
+
+  if (subsets.length === 0) return;
+
+  const geometry = createMeshGeometry({
+    indices: Uint32Array.from(indices),
+    layout: CANONICAL_LAYOUT,
+    subsets,
+    vertices: new Float32Array(vertices),
+  });
+  // An OBJ carrying no `vn` at all leaves every normal slot zeroed, and a zero normal shades black under
+  // any lit material — so the geometry is generated from the faces instead, matching what AWD and MD5
+  // already do when their own files omit normals. Smooth (area-weighted across shared vertices) rather
+  // than flat: it is the same choice the 3DS path makes for a mesh with no smoothing chunk, and OBJ's
+  // own smoothing-group directive is not modeled, so there is no authored hard edge to honor.
+  if (!sourceHasNormals) computeMeshGeometryNormals(geometry, geometry);
+  // OBJ carries no tangent directive at all, so every tangent slot is left zeroed — and a zero
+  // tangent collapses the TBN basis a normal-mapped material reconstructs (B = w * cross(N, T)),
+  // which is precisely the frame the `norm` map above needs. Derive one from the UV gradient, the
+  // same obligation AWD and MD5 already meet when their own files omit the stream. Only when the
+  // file has UVs: the gradient is what the tangent is derived FROM, and without it there is nothing
+  // to derive. Normals must already be present or generated above, since the basis is built
+  // relative to them.
+  if (sourceHasUvs) computeMeshGeometryTangents(geometry, geometry);
+  const meshIndex = document.meshes.length;
+  const mesh: Scene3DDocumentMesh = { geometry, materials };
+  document.meshes.push(mesh);
+  const nodeIndex = document.nodes.length;
+  const node: Scene3DDocumentNode = { children: [], kind: MeshKind, mesh: meshIndex, transform: createTransform3D() };
+  if (name !== undefined) node.name = name;
+  document.nodes.push(node);
+  document.scenes[0].rootNodes.push(nodeIndex);
+}
+
+// Resolves the whitespace-separated vertex references of an `l` or `p` element to zero-based position
+// indices, dropping any that do not resolve. Only the position component is read — a `l` reference may
+// carry a uv, and neither line nor point topology has anywhere to sample one.
+function resolveObjElementIndices(
+  args: string,
+  positionCount: number,
+  objDrops: Map<string, ObjDropTally> | null,
+  lineIndex: number,
+): number[] {
+  const resolved: number[] = [];
+  const tokens = args.split(/\s+/);
+  for (let i = 0; i < tokens.length; i++) {
+    if (tokens[i].length === 0) continue;
+    const index = resolveFaceAttrIndex(tokens[i].split('/')[0], positionCount);
+    if (index < 0) {
+      tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.element-index-out-of-range', '', {
+        firstLine: lineIndex + 1,
+        firstToken: tokens[i],
+      });
+      continue;
+    }
+    resolved.push(index);
+  }
+  return resolved;
+}
+
+// Expands one polyline's vertex chain into the vertex PAIRS a line-list wants: N references describe
+// N-1 connected segments, not N independent ones.
+function toObjLineSegments(chain: readonly number[]): number[] {
+  const segments: number[] = [];
+  for (let i = 0; i + 1 < chain.length; i++) segments.push(chain[i], chain[i + 1]);
+  return segments;
+}
+
+// Appends one line-list or point-list mesh built from `elements` (position indices into the file's
+// vertex table) as a sibling node of the group's face mesh. Only positions are written: the canonical
+// layout still reserves normal/tangent/uv slots, but neither topology shades or samples, so they stay
+// zero rather than carrying invented values. No material is bound — OBJ states none for these elements.
+function appendObjTopologyMesh(
+  elements: readonly number[],
+  sourcePositions: readonly number[],
+  topology: PrimitiveTopology,
+  name: string | undefined,
+  document: Scene3DDocument,
+): void {
+  if (elements.length === 0) return;
+
+  const vertices: number[] = [];
+  const indices: number[] = [];
+  const dedup = new Map<number, number>();
+  for (let i = 0; i < elements.length; i++) {
+    const source = elements[i];
+    let emitted = dedup.get(source);
+    if (emitted === undefined) {
+      emitted = vertices.length / CANONICAL_FLOATS_PER_VERTEX;
+      vertices.push(sourcePositions[source * 3], sourcePositions[source * 3 + 1], sourcePositions[source * 3 + 2]);
+      for (let pad = 0; pad < CANONICAL_FLOATS_PER_VERTEX - 3; pad++) vertices.push(0);
+      dedup.set(source, emitted);
+    }
+    indices.push(emitted);
+  }
+
+  const geometry = createMeshGeometry({
+    indices: Uint32Array.from(indices),
+    layout: CANONICAL_LAYOUT,
+    subsets: [{ indexCount: indices.length, indexOffset: 0 }],
+    topology,
+    vertices: new Float32Array(vertices),
+  });
+  const meshIndex = document.meshes.length;
+  document.meshes.push({ geometry, materials: [-1] });
+  const node: Scene3DDocumentNode = { children: [], kind: MeshKind, mesh: meshIndex, transform: createTransform3D() };
+  if (name !== undefined) node.name = name;
+  document.nodes.push(node);
+  document.scenes[0].rootNodes.push(document.nodes.length - 1);
+}
+
+// Converts a parsed MTL material to Flight's BlinnPhongMaterial — OBJ/MTL's own shading model.
+// Kd → diffuse, Ks → specular, Ns → shininess, d (dissolve) → diffuse alpha plus blend mode, and the
+// map_Kd/map_Ks/bump filenames → Unresolved External texture refs (the parser references, it does not
+// load). Ka/map_Ka and the illum model have no Blinn-Phong equivalent — ambient is a scene light in
+// Flight, not a material property — so they are dropped; a caller wanting metallic-roughness PBR
+// converts explicitly downstream.
+export function objMaterialToBlinnPhong(
+  material: Readonly<ObjMaterial>,
+  document: Scene3DDocument,
+  diagnostics: ImportDiagnostic[] | undefined,
+): BlinnPhongMaterial {
+  const result = createBlinnPhongMaterial({
+    // map_d is a dedicated coverage image, separate from the diffuse map's own alpha channel.
+    alphaMap: externalObjTexture(material.mapDissolve, document, 'linear'),
+    diffuse: packObjColor(material.diffuse, material.dissolve),
+    diffuseMap: externalObjTexture(material.mapDiffuse, document, 'srgb'),
+    // ONLY `norm` binds. `map_Bump`/`bump` is a grayscale HEIGHT field, not a tangent-space normal
+    // map: a shader decoding its RGB as 2*c-1 direction vectors reads elevation as orientation and
+    // lights the surface from nonsense normals. It is parsed and reported, never bound, until a real
+    // height-map feature exists to consume it — the same call 3DS already makes for MAT_BUMPMAP.
+    normalMap: externalObjTexture(material.mapNormal, document, 'linear'),
+    shininess: material.specularExponent,
+    specular: packObjColor(material.specular, 1),
+    specularMap: externalObjTexture(material.mapSpecular, document, 'srgb'),
+  });
+  // A dissolve below 1 is a translucent material; carry it as the diffuse alpha (above) plus a blend
+  // alphaMode so the renderer actually blends rather than treating the alpha as coverage-only. A map_d
+  // does the same: an alphaMap is INERT while alphaMode is 'opaque', so an authored coverage image would
+  // silently do nothing. The scalar and the map multiply, so a material stating both keeps both.
+  if (material.dissolve < 1 || material.mapDissolve !== null) result.alphaMode = 'blend';
+  // Blinn-Phong has no emissive channel in Flight, so a file that stated one WITHOUT also stating any
+  // metallic-roughness value loses it. Reinterpreting the whole material as PBR to keep it would trade a
+  // stated Ns for a guessed roughness plus an uncompensable π brightness shift — a worse loss than this.
+  if (material.emissive !== null || material.mapEmissive !== null) {
+    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, 'mtl.emissive-dropped', 'resolveObjMaterial', {
+      name: material.name,
+    });
+  }
+  // A `map_Bump`/`bump` entry is carried into ObjMaterial but never bound: it is a height field and
+  // there is no height-map feature to consume it yet. Reported so a consumer can see their authored
+  // map was understood and deliberately not used, rather than silently ignored.
+  if (material.mapBump !== null) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'mtl.bump-height-map-unbound',
+      'objMaterialToBlinnPhong',
+      { name: material.name },
+    );
+  }
+
+  return result;
+}
+
+// Converts a parsed MTL material to Flight's StandardPbrMaterial — the reading for a file that states
+// metallic-roughness values of its own. Kd → baseColor, Pr → roughness, Pm → metallic, Ke → emissive, and
+// the map_Kd/map_Ke/norm filenames → Unresolved External refs. Nothing is inferred here: an absent Pr or
+// Pm takes the constructor's own default rather than a value derived from Ns or Ks, because the point of
+// this branch is that the file said what it wanted.
+export function objMaterialToStandardPbr(
+  material: Readonly<ObjMaterial>,
+  document: Scene3DDocument,
+  diagnostics: ImportDiagnostic[] | undefined,
+): StandardPbrMaterial {
+  const result = createStandardPbrMaterial({
+    alphaMap: externalObjTexture(material.mapDissolve, document, 'linear'),
+    baseColor: packObjColor(material.diffuse, material.dissolve),
+    baseColorMap: externalObjTexture(material.mapDiffuse, document, 'srgb'),
+    emissiveMap: externalObjTexture(material.mapEmissive, document, 'srgb'),
+    // Only `norm` binds; `map_Bump` is a height field, not a normal map. See objMaterialToBlinnPhong.
+    normalMap: externalObjTexture(material.mapNormal, document, 'linear'),
+    ...(material.emissive !== null ? { emissive: packObjColor(material.emissive, 1) } : {}),
+    ...(material.metallic !== null ? { metallic: material.metallic } : {}),
+    ...(material.roughness !== null ? { roughness: material.roughness } : {}),
+  });
+  if (material.dissolve < 1 || material.mapDissolve !== null) result.alphaMode = 'blend';
+
+  // MTL states roughness and metallic as SEPARATE grayscale images; glTF — and so StandardPbrMaterial —
+  // carries one packed texture sampling roughness from G and metallic from B. Binding a lone grayscale
+  // map to that slot would feed the same channel to both terms, so the filenames are parsed and left
+  // unbound. Merging them is an image operation over decoded pixels, which a parser must not do:
+  // resources are referenced here and resolved later, by an explicit pass.
+  if (material.mapRoughness !== null || material.mapMetallic !== null) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'mtl.metallic-roughness-map-unpacked',
+      'resolveObjMaterial',
+      { name: material.name },
+    );
+  }
+
+  // Sheen, clearcoat, and anisotropy are read into ObjMaterial but not composed onto an
+  // ExtendedPbrMaterial here. That gap is a property of THIS PARSER, not of the caller's file, so it is
+  // recorded in agents/scene3d-format-coverage.md rather than crumbed — a diagnostic whose cause is our
+  // own unfinished wiring tells a consumer nothing they can act on. See the import-diagnostics rule in
+  // agents/conventions/diagnostics.md.
+  // A `map_Bump`/`bump` entry is carried into ObjMaterial but never bound: it is a height field and
+  // there is no height-map feature to consume it yet. Reported so a consumer can see their authored
+  // map was understood and deliberately not used, rather than silently ignored.
+  if (material.mapBump !== null) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'mtl.bump-height-map-unbound',
+      'objMaterialToStandardPbr',
+      { name: material.name },
+    );
+  }
+
+  return result;
+}
+
 // Parses a Wavefront OBJ text source into a format-neutral Scene3DDocument. Each group (`g`) or object
 // (`o`) — and any top-level faces before the first group — becomes one document Mesh (inline geometry),
 // using the canonical vertex layout. A group that spans several `usemtl` materials becomes a single Mesh
@@ -360,413 +767,6 @@ export function parseObj(
   }
 
   return document;
-}
-
-// The OBJ smoothing-group id meaning "no smoothing" — both `s off` and `s 0` select it. UNSTATED is the
-// separate pre-`s` state: one shared group, so a file that never mentions smoothing imports exactly as it
-// did before smoothing groups were read.
-const OBJ_SMOOTHING_OFF = 0;
-const OBJ_SMOOTHING_UNSTATED = -1;
-
-// Accumulates interleaved vertex data and triangle indices for one material within a group.
-interface MaterialBucket {
-  // Dedup map: "posIdx/uvIdx/normalIdx", or "posIdx/uvIdx/s<group>" for a corner whose normal will be
-  // generated → emitted vertex index.
-  dedup: Map<string, number>;
-  indices: number[];
-  // Interleaved floats: position(3) + normal(3) + tangent(4) + uv(2) = 12 floats per vertex.
-  vertices: number[];
-}
-
-function getOrCreateBucket(buckets: Map<string, MaterialBucket>, material: string): MaterialBucket {
-  let bucket = buckets.get(material);
-  if (bucket === undefined) {
-    bucket = { dedup: new Map(), indices: [], vertices: [] };
-    buckets.set(material, bucket);
-  }
-  return bucket;
-}
-
-// Parses one face vertex token (e.g. "1/2/3", "1//3", "1/2", "1") and emits the vertex into the
-// bucket, returning the emitted vertex index. Returns -1 on malformed input.
-function parseFaceVertex(
-  token: string,
-  positions: readonly number[],
-  uvs: readonly number[],
-  normals: readonly number[],
-  bucket: MaterialBucket,
-  smoothingGroup: number,
-  objDrops: Map<string, ObjDropTally> | null,
-  lineIndex: number,
-): number {
-  const parts = token.split('/');
-  const posCount = positions.length / 3;
-  const uvCount = uvs.length / 2;
-  const normalCount = normals.length / 3;
-
-  // Position index (1-based, may be negative). Every drop is tallied — parseFaceVertex runs once per face
-  // vertex, so a per-token report would violate the collector's aggregate-once contract; the parseObj-level
-  // flush emits every tallied crumb (its origin).
-  const rawPosIdx = parseInt(parts[0], 10);
-  if (!Number.isFinite(rawPosIdx) || rawPosIdx === 0) {
-    tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.face-vertex-invalid', '', {
-      firstLine: lineIndex + 1,
-      firstToken: token,
-    });
-    return -1;
-  }
-  const posIdx = rawPosIdx > 0 ? rawPosIdx - 1 : posCount + rawPosIdx;
-  if (posIdx < 0 || posIdx >= posCount) {
-    tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.position-index-out-of-range', '', {
-      firstIndex: rawPosIdx,
-      firstLine: lineIndex + 1,
-    });
-    return -1;
-  }
-
-  // Optional uv/normal refs: a present-but-invalid token (non-numeric, zero, OR out of range) drops that
-  // attribute and keeps the vertex (Recover). The raw token in `firstToken` describes every case uniformly.
-  let uvIdx = -1;
-  if (parts.length >= 2 && parts[1].length > 0) {
-    uvIdx = resolveFaceAttrIndex(parts[1], uvCount);
-    if (uvIdx < 0) {
-      tallyObjDrop(objDrops, ImportDiagnosticSeverity.Recover, 'obj.uv-index-invalid', '', {
-        firstLine: lineIndex + 1,
-        firstToken: parts[1],
-      });
-    }
-  }
-
-  let normalIdx = -1;
-  if (parts.length >= 3 && parts[2].length > 0) {
-    normalIdx = resolveFaceAttrIndex(parts[2], normalCount);
-    if (normalIdx < 0) {
-      tallyObjDrop(objDrops, ImportDiagnosticSeverity.Recover, 'obj.normal-index-invalid', '', {
-        firstLine: lineIndex + 1,
-        firstToken: parts[2],
-      });
-    }
-  }
-
-  // Dedup key: unique combination of resolved indices.
-  // The smoothing group joins the dedup key ONLY for a corner with no authored normal. Splitting the
-  // vertex at a smoothing boundary is what makes the generated normals hard there: computeMeshGeometryNormals
-  // averages across shared vertices, so two faces that no longer share a vertex cannot average together.
-  // That reuses the existing generation pass instead of adding a second, smoothing-aware one. A corner
-  // that DOES carry a normal is already authoritative, and keying it by group would only split vertices
-  // that should have stayed merged.
-  const key = normalIdx >= 0 ? `${posIdx}/${uvIdx}/${normalIdx}` : `${posIdx}/${uvIdx}/s${smoothingGroup}`;
-  const existing = bucket.dedup.get(key);
-  if (existing !== undefined) return existing;
-
-  const vertexIndex = bucket.vertices.length / CANONICAL_FLOATS_PER_VERTEX;
-
-  // Position (3 floats).
-  bucket.vertices.push(positions[posIdx * 3], positions[posIdx * 3 + 1], positions[posIdx * 3 + 2]);
-
-  // Normal (3 floats).
-  if (normalIdx >= 0) {
-    bucket.vertices.push(normals[normalIdx * 3], normals[normalIdx * 3 + 1], normals[normalIdx * 3 + 2]);
-  } else {
-    bucket.vertices.push(0, 0, 0);
-  }
-
-  // Tangent (4 floats) — OBJ does not carry tangents; zero-filled.
-  bucket.vertices.push(0, 0, 0, 0);
-
-  // UV (2 floats).
-  if (uvIdx >= 0) {
-    bucket.vertices.push(uvs[uvIdx * 2], uvs[uvIdx * 2 + 1]);
-  } else {
-    bucket.vertices.push(0, 0);
-  }
-
-  bucket.dedup.set(key, vertexIndex);
-  return vertexIndex;
-}
-
-// Flushes a group's accumulated material buckets as ONE Mesh: the buckets' vertex records are
-// concatenated into a single interleaved buffer and their triangles into a single index buffer,
-// with one MeshSubset per non-empty bucket addressing that material's contiguous index range. The
-// Mesh's positional `materials` array carries one entry per subset — the Flight material the
-// bucket's `usemtl` name resolves to, or null when the name is unknown or no library was supplied
-// (a null slot resolves to StandardMaterialKind at draw time). A single-material group is one Mesh
-// with one subset spanning the whole buffer; a multi-material group is one Mesh with several
-// subsets, never a wrapper over per-material child meshes. A group with no faces adds nothing.
-function flushGroup(
-  buckets: Readonly<Map<string, MaterialBucket>>,
-  lineElements: readonly (readonly number[])[],
-  pointElements: readonly number[],
-  sourcePositions: readonly number[],
-  name: string | undefined,
-  document: Scene3DDocument,
-  library: Readonly<ObjMaterialLibrary> | undefined,
-  resolvedMaterials: Map<string, number>,
-  sourceHasNormals: boolean,
-  sourceHasUvs: boolean,
-  diagnostics: ImportDiagnostic[] | undefined,
-): void {
-  const vertices: number[] = [];
-  const indices: number[] = [];
-  const subsets: MeshSubset[] = [];
-  const materials: number[] = [];
-
-  for (const [materialName, bucket] of buckets) {
-    if (bucket.indices.length === 0) continue;
-
-    // Rebase this bucket's local indices onto the combined vertex buffer (its vertices are appended
-    // after everything already collected), then record its contiguous index range as one subset.
-    const vertexBase = vertices.length / CANONICAL_FLOATS_PER_VERTEX;
-    const indexOffset = indices.length;
-    for (let k = 0; k < bucket.indices.length; k++) indices.push(bucket.indices[k] + vertexBase);
-    for (let k = 0; k < bucket.vertices.length; k++) vertices.push(bucket.vertices[k]);
-
-    subsets.push({ indexCount: bucket.indices.length, indexOffset });
-    materials.push(resolveObjMaterial(materialName, library, resolvedMaterials, document, diagnostics));
-  }
-
-  // Lines and points are emitted as sibling meshes of the face mesh, before the early return, so a group
-  // consisting ONLY of lines still produces geometry.
-  appendObjTopologyMesh(lineElements.flatMap(toObjLineSegments), sourcePositions, 'line-list', name, document);
-  appendObjTopologyMesh(pointElements, sourcePositions, 'point-list', name, document);
-
-  if (subsets.length === 0) return;
-
-  const geometry = createMeshGeometry({
-    indices: Uint32Array.from(indices),
-    layout: CANONICAL_LAYOUT,
-    subsets,
-    vertices: new Float32Array(vertices),
-  });
-  // An OBJ carrying no `vn` at all leaves every normal slot zeroed, and a zero normal shades black under
-  // any lit material — so the geometry is generated from the faces instead, matching what AWD and MD5
-  // already do when their own files omit normals. Smooth (area-weighted across shared vertices) rather
-  // than flat: it is the same choice the 3DS path makes for a mesh with no smoothing chunk, and OBJ's
-  // own smoothing-group directive is not modeled, so there is no authored hard edge to honor.
-  if (!sourceHasNormals) computeMeshGeometryNormals(geometry, geometry);
-  // OBJ carries no tangent directive at all, so every tangent slot is left zeroed — and a zero
-  // tangent collapses the TBN basis a normal-mapped material reconstructs (B = w * cross(N, T)),
-  // which is precisely the frame the `norm` map above needs. Derive one from the UV gradient, the
-  // same obligation AWD and MD5 already meet when their own files omit the stream. Only when the
-  // file has UVs: the gradient is what the tangent is derived FROM, and without it there is nothing
-  // to derive. Normals must already be present or generated above, since the basis is built
-  // relative to them.
-  if (sourceHasUvs) computeMeshGeometryTangents(geometry, geometry);
-  const meshIndex = document.meshes.length;
-  const mesh: Scene3DDocumentMesh = { geometry, materials };
-  document.meshes.push(mesh);
-  const nodeIndex = document.nodes.length;
-  const node: Scene3DDocumentNode = { children: [], kind: MeshKind, mesh: meshIndex, transform: createTransform3D() };
-  if (name !== undefined) node.name = name;
-  document.nodes.push(node);
-  document.scenes[0].rootNodes.push(nodeIndex);
-}
-
-// Resolves the whitespace-separated vertex references of an `l` or `p` element to zero-based position
-// indices, dropping any that do not resolve. Only the position component is read — a `l` reference may
-// carry a uv, and neither line nor point topology has anywhere to sample one.
-function resolveObjElementIndices(
-  args: string,
-  positionCount: number,
-  objDrops: Map<string, ObjDropTally> | null,
-  lineIndex: number,
-): number[] {
-  const resolved: number[] = [];
-  const tokens = args.split(/\s+/);
-  for (let i = 0; i < tokens.length; i++) {
-    if (tokens[i].length === 0) continue;
-    const index = resolveFaceAttrIndex(tokens[i].split('/')[0], positionCount);
-    if (index < 0) {
-      tallyObjDrop(objDrops, ImportDiagnosticSeverity.Drop, 'obj.element-index-out-of-range', '', {
-        firstLine: lineIndex + 1,
-        firstToken: tokens[i],
-      });
-      continue;
-    }
-    resolved.push(index);
-  }
-  return resolved;
-}
-
-// Expands one polyline's vertex chain into the vertex PAIRS a line-list wants: N references describe
-// N-1 connected segments, not N independent ones.
-function toObjLineSegments(chain: readonly number[]): number[] {
-  const segments: number[] = [];
-  for (let i = 0; i + 1 < chain.length; i++) segments.push(chain[i], chain[i + 1]);
-  return segments;
-}
-
-// Appends one line-list or point-list mesh built from `elements` (position indices into the file's
-// vertex table) as a sibling node of the group's face mesh. Only positions are written: the canonical
-// layout still reserves normal/tangent/uv slots, but neither topology shades or samples, so they stay
-// zero rather than carrying invented values. No material is bound — OBJ states none for these elements.
-function appendObjTopologyMesh(
-  elements: readonly number[],
-  sourcePositions: readonly number[],
-  topology: PrimitiveTopology,
-  name: string | undefined,
-  document: Scene3DDocument,
-): void {
-  if (elements.length === 0) return;
-
-  const vertices: number[] = [];
-  const indices: number[] = [];
-  const dedup = new Map<number, number>();
-  for (let i = 0; i < elements.length; i++) {
-    const source = elements[i];
-    let emitted = dedup.get(source);
-    if (emitted === undefined) {
-      emitted = vertices.length / CANONICAL_FLOATS_PER_VERTEX;
-      vertices.push(sourcePositions[source * 3], sourcePositions[source * 3 + 1], sourcePositions[source * 3 + 2]);
-      for (let pad = 0; pad < CANONICAL_FLOATS_PER_VERTEX - 3; pad++) vertices.push(0);
-      dedup.set(source, emitted);
-    }
-    indices.push(emitted);
-  }
-
-  const geometry = createMeshGeometry({
-    indices: Uint32Array.from(indices),
-    layout: CANONICAL_LAYOUT,
-    subsets: [{ indexCount: indices.length, indexOffset: 0 }],
-    topology,
-    vertices: new Float32Array(vertices),
-  });
-  const meshIndex = document.meshes.length;
-  document.meshes.push({ geometry, materials: [-1] });
-  const node: Scene3DDocumentNode = { children: [], kind: MeshKind, mesh: meshIndex, transform: createTransform3D() };
-  if (name !== undefined) node.name = name;
-  document.nodes.push(node);
-  document.scenes[0].rootNodes.push(document.nodes.length - 1);
-}
-
-// Converts a parsed MTL material to Flight's BlinnPhongMaterial — OBJ/MTL's own shading model.
-// Kd → diffuse, Ks → specular, Ns → shininess, d (dissolve) → diffuse alpha plus blend mode, and the
-// map_Kd/map_Ks/bump filenames → Unresolved External texture refs (the parser references, it does not
-// load). Ka/map_Ka and the illum model have no Blinn-Phong equivalent — ambient is a scene light in
-// Flight, not a material property — so they are dropped; a caller wanting metallic-roughness PBR
-// converts explicitly downstream.
-function objMaterialToBlinnPhong(
-  material: Readonly<ObjMaterial>,
-  document: Scene3DDocument,
-  diagnostics: ImportDiagnostic[] | undefined,
-): BlinnPhongMaterial {
-  const result = createBlinnPhongMaterial({
-    // map_d is a dedicated coverage image, separate from the diffuse map's own alpha channel.
-    alphaMap: externalObjTexture(material.mapDissolve, document, 'linear'),
-    diffuse: packObjColor(material.diffuse, material.dissolve),
-    diffuseMap: externalObjTexture(material.mapDiffuse, document, 'srgb'),
-    // ONLY `norm` binds. `map_Bump`/`bump` is a grayscale HEIGHT field, not a tangent-space normal
-    // map: a shader decoding its RGB as 2*c-1 direction vectors reads elevation as orientation and
-    // lights the surface from nonsense normals. It is parsed and reported, never bound, until a real
-    // height-map feature exists to consume it — the same call 3DS already makes for MAT_BUMPMAP.
-    normalMap: externalObjTexture(material.mapNormal, document, 'linear'),
-    shininess: material.specularExponent,
-    specular: packObjColor(material.specular, 1),
-    specularMap: externalObjTexture(material.mapSpecular, document, 'srgb'),
-  });
-  // A dissolve below 1 is a translucent material; carry it as the diffuse alpha (above) plus a blend
-  // alphaMode so the renderer actually blends rather than treating the alpha as coverage-only. A map_d
-  // does the same: an alphaMap is INERT while alphaMode is 'opaque', so an authored coverage image would
-  // silently do nothing. The scalar and the map multiply, so a material stating both keeps both.
-  if (material.dissolve < 1 || material.mapDissolve !== null) result.alphaMode = 'blend';
-  // Blinn-Phong has no emissive channel in Flight, so a file that stated one WITHOUT also stating any
-  // metallic-roughness value loses it. Reinterpreting the whole material as PBR to keep it would trade a
-  // stated Ns for a guessed roughness plus an uncompensable π brightness shift — a worse loss than this.
-  if (material.emissive !== null || material.mapEmissive !== null) {
-    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, 'mtl.emissive-dropped', 'resolveObjMaterial', {
-      name: material.name,
-    });
-  }
-  // A `map_Bump`/`bump` entry is carried into ObjMaterial but never bound: it is a height field and
-  // there is no height-map feature to consume it yet. Reported so a consumer can see their authored
-  // map was understood and deliberately not used, rather than silently ignored.
-  if (material.mapBump !== null) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Skip,
-      'mtl.bump-height-map-unbound',
-      'objMaterialToBlinnPhong',
-      { name: material.name },
-    );
-  }
-
-  return result;
-}
-
-// Converts a parsed MTL material to Flight's StandardPbrMaterial — the reading for a file that states
-// metallic-roughness values of its own. Kd → baseColor, Pr → roughness, Pm → metallic, Ke → emissive, and
-// the map_Kd/map_Ke/norm filenames → Unresolved External refs. Nothing is inferred here: an absent Pr or
-// Pm takes the constructor's own default rather than a value derived from Ns or Ks, because the point of
-// this branch is that the file said what it wanted.
-function objMaterialToStandardPbr(
-  material: Readonly<ObjMaterial>,
-  document: Scene3DDocument,
-  diagnostics: ImportDiagnostic[] | undefined,
-): StandardPbrMaterial {
-  const result = createStandardPbrMaterial({
-    alphaMap: externalObjTexture(material.mapDissolve, document, 'linear'),
-    baseColor: packObjColor(material.diffuse, material.dissolve),
-    baseColorMap: externalObjTexture(material.mapDiffuse, document, 'srgb'),
-    emissiveMap: externalObjTexture(material.mapEmissive, document, 'srgb'),
-    // Only `norm` binds; `map_Bump` is a height field, not a normal map. See objMaterialToBlinnPhong.
-    normalMap: externalObjTexture(material.mapNormal, document, 'linear'),
-    ...(material.emissive !== null ? { emissive: packObjColor(material.emissive, 1) } : {}),
-    ...(material.metallic !== null ? { metallic: material.metallic } : {}),
-    ...(material.roughness !== null ? { roughness: material.roughness } : {}),
-  });
-  if (material.dissolve < 1 || material.mapDissolve !== null) result.alphaMode = 'blend';
-
-  // MTL states roughness and metallic as SEPARATE grayscale images; glTF — and so StandardPbrMaterial —
-  // carries one packed texture sampling roughness from G and metallic from B. Binding a lone grayscale
-  // map to that slot would feed the same channel to both terms, so the filenames are parsed and left
-  // unbound. Merging them is an image operation over decoded pixels, which a parser must not do:
-  // resources are referenced here and resolved later, by an explicit pass.
-  if (material.mapRoughness !== null || material.mapMetallic !== null) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Skip,
-      'mtl.metallic-roughness-map-unpacked',
-      'resolveObjMaterial',
-      { name: material.name },
-    );
-  }
-
-  // Sheen, clearcoat, and anisotropy are read into ObjMaterial but not composed onto an
-  // ExtendedPbrMaterial here. That gap is a property of THIS PARSER, not of the caller's file, so it is
-  // recorded in agents/scene3d-format-coverage.md rather than crumbed — a diagnostic whose cause is our
-  // own unfinished wiring tells a consumer nothing they can act on. See the import-diagnostics rule in
-  // agents/conventions/diagnostics.md.
-  // A `map_Bump`/`bump` entry is carried into ObjMaterial but never bound: it is a height field and
-  // there is no height-map feature to consume it yet. Reported so a consumer can see their authored
-  // map was understood and deliberately not used, rather than silently ignored.
-  if (material.mapBump !== null) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Skip,
-      'mtl.bump-height-map-unbound',
-      'objMaterialToStandardPbr',
-      { name: material.name },
-    );
-  }
-
-  return result;
-}
-
-// Whether the file stated any metallic-roughness PBR value for this material — the test that picks the
-// shading model. Only directives describing the SHADING MODEL count: Ke/map_Ke name a channel both models
-// could carry, so an otherwise-classic material with an emissive does not get reinterpreted as PBR.
-function hasObjPbrDirectives(material: Readonly<ObjMaterial>): boolean {
-  return (
-    material.roughness !== null ||
-    material.metallic !== null ||
-    material.sheen !== null ||
-    material.clearcoat !== null ||
-    material.clearcoatRoughness !== null ||
-    material.anisotropy !== null ||
-    material.anisotropyRotation !== null ||
-    material.mapRoughness !== null ||
-    material.mapMetallic !== null
-  );
 }
 
 // Wraps an MTL texture filename as an Unresolved External resource ref; null filename → no map.
