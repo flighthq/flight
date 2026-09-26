@@ -103,6 +103,7 @@ export * from './BarrelDistortionEffect.ts';
 export * from './BatchBarrier.ts';
 export * from './Awd2Header.ts';
 export * from './Awd2Block.ts';
+export * from './ColladaElementDecoder.ts';
 export * from './Awd2ParseOptions.ts';
 export * from './BatchFormat.ts';
 export * from './BevelEffect.ts';
