@@ -125,7 +125,7 @@ export interface ColladaParseContext {
 export interface ColladaElementDecoder {
   /** The COLLADA elements this decoder reads, by local name. */
   readonly elements: readonly string[];
-  /** The feature it provides, matching the analyzer's feature vocabulary. */
-  readonly feature: string;
+  /** The features it provides, matching the analyzer's feature vocabulary. */
+  readonly features: readonly string[];
   decode(context: Readonly<ColladaParseContext>): void;
 }

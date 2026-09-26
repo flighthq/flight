@@ -136,9 +136,11 @@ export const THREE_DS_CHUNK_HANDLERS: ReadonlyMap<string, Readonly<ThreeDsChunkH
 /**
  * The COLLADA element decoders, keyed by the symbol a generated module imports.
  *
- * A decoder states the feature it decodes in its own `feature` field, and that string is the feature
- * name `parseColladaRequirements` emits under `document.format` — so `dae.Geometry` resolves to the
- * decoder that says it handles Geometry, with nothing in between to get out of step.
+ * A decoder states the features it decodes in its own `features` array — both the coarse feature
+ * (`Camera`) and the sub-element features (`Camera.Perspective`, `Camera.Orthographic`) — and those
+ * strings are the feature names `parseColladaRequirements` emits under `document.format`. So
+ * `dae.Camera.Perspective` resolves to the decoder that says it handles Camera, with nothing in
+ * between to get out of step.
  */
 export const COLLADA_ELEMENT_DECODERS: ReadonlyMap<string, Readonly<ColladaElementDecoder>> = new Map([
   ['colladaAnimationDecoder', colladaAnimationDecoder],
@@ -184,14 +186,16 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
     }
   }
   for (const [symbol, decoder] of COLLADA_ELEMENT_DECODERS) {
-    rows.push(
-      row(
-        '@flighthq/scene3d-formats',
-        symbol,
-        `${COLLADA_REQUIREMENT_KEY_NAMESPACE}.${decoder.feature}`,
-        familyOrderOf(colladaAllElementDecoders, decoder),
-      ),
-    );
+    for (const feature of decoder.features) {
+      rows.push(
+        row(
+          '@flighthq/scene3d-formats',
+          symbol,
+          `${COLLADA_REQUIREMENT_KEY_NAMESPACE}.${feature}`,
+          familyOrderOf(colladaAllElementDecoders, decoder),
+        ),
+      );
+    }
   }
   return rows.sort(
     (a, b) => a.kind.localeCompare(b.kind) || a.implementationSymbol.localeCompare(b.implementationSymbol),
