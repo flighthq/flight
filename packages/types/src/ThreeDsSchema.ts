@@ -1,3 +1,5 @@
+import type { ImportDiagnosticSeverity } from './ImportDiagnostic.ts';
+
 // Autodesk 3DS binary chunked format — chunk ID constants and descriptor interfaces for the subset
 // @flighthq/scene3d-formats imports. The 3DS format is a recursive chunk tree: each chunk has a
 // uint16 ID, a uint32 total length (including the 6-byte header), and a payload of sub-chunks
@@ -89,6 +91,16 @@ export interface ThreeDsMaterial {
   shininess: number | null;
   specular: readonly [number, number, number];
   textureFilename: string | null;
+}
+
+// One accumulated 3DS chunk-level drop: a total occurrence `count` plus the first offender's `detail`,
+// keyed by kind + discriminator. Flushed (physically reported) once at the end of a parse pass so
+// per-chunk faults collapse to one diagnostic per kind/discriminator + count.
+export interface ThreeDsDropTally {
+  count: number;
+  detail: Record<string, boolean | number | string>;
+  kind: string;
+  severity: ImportDiagnosticSeverity;
 }
 
 // A parsed 3DS light descriptor (one per named object carrying an N_DIRECT_LIGHT sub-chunk). Positions

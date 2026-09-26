@@ -31,6 +31,7 @@ import type {
   Scene3DDocumentMesh,
   Scene3DDocumentNode,
   ThreeDsCamera,
+  ThreeDsDropTally,
   ThreeDsLight,
   ThreeDsMaterial,
   ThreeDsMaterialGroup,
@@ -88,6 +89,41 @@ import {
   createExternalTextureRef,
 } from './shared.ts';
 
+// Walks the keyframer chunk (0xB000) for object-node PIVOTS ONLY, keyed by node name, and returns them in
+// the file's own Z-up space. Empty when the file carries no keyframer.
+//
+// The keyframer also encodes the node hierarchy and TCB animation tracks, and this deliberately reads
+// NEITHER. The hierarchy value in a node header has two documented readings that disagree on edge cases,
+// and no file in the reference corpus carries a keyframer to disambiguate them; rotation tracks are
+// incremental axis-angle with variable-length per-key spline parameters. A wrong hierarchy would visibly
+// misplace geometry that currently renders correctly, so the ambiguous parts stay unread and are recorded
+// in agents/scene3d-format-coverage.md. The pivot has neither problem: three float32, unambiguous, and
+// applying it is render-neutral by construction (see localizeThreeDsPositions).
+export function collectThreeDsPivots(
+  view: Readonly<DataView>,
+  offset: number,
+): Map<string, readonly [number, number, number]> {
+  const pivots = new Map<string, readonly [number, number, number]>();
+  const end = Math.min(offset + readChunkLength(view, offset), view.byteLength);
+  let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
+
+  while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
+    const chunkId = view.getUint16(cursor, true);
+    const chunkEnd = readChunkEnd(view, cursor, end);
+    if (chunkEnd < 0) break;
+
+    if (chunkId === THREE_DS_MAIN) {
+      for (const [name, pivot] of collectThreeDsPivots(view, cursor)) pivots.set(name, pivot);
+    } else if (chunkId === THREE_DS_KEYFRAME) {
+      collectThreeDsNodePivots(view, cursor, chunkEnd, pivots);
+    }
+
+    cursor = chunkEnd;
+  }
+
+  return pivots;
+}
+
 // Parses an Autodesk 3DS binary file into a Scene3D. The 3DS format is a recursive chunk tree
 // (little-endian): each chunk has a uint16 ID, a uint32 total length (including the 6-byte header),
 // and a payload of sub-chunks and/or inline data. The editor chunk (0x3D3D) contains named objects
@@ -122,6 +158,102 @@ import {
 // never throws on bad input. Convenience over `createScene3DFromDocument(parse3ds(bytes))`.
 export function createScene3DFrom3ds(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagnostic[]): Scene3D {
   return createScene3DFromDocument(parse3ds(bytes, diagnostics));
+}
+
+// Recursively walks the chunk tree starting at `offset`, appending every named object it finds to the
+// collector matching that object's kind — trimesh, light, or camera — and populating `materials` with
+// every material block (0xAFFF) found alongside them under the editor chunk. All four collectors are
+// out-parameters because one walk feeds all of them; a 3DS object chunk does not say which kind it is
+// until its sub-chunk is read.
+function collectThreeDsObjects(
+  view: Readonly<DataView>,
+  offset: number,
+  materials: Map<string, ThreeDsMaterial>,
+  meshes: ThreeDsMesh[],
+  lights: ThreeDsLight[],
+  cameras: ThreeDsCamera[],
+  threeDsDrops: Map<string, ThreeDsDropTally> | null,
+): void {
+  const end = Math.min(offset + readChunkLength(view, offset), view.byteLength);
+  let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
+
+  while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
+    const chunkId = view.getUint16(cursor, true);
+    const chunkLength = readChunkLength(view, cursor);
+    const chunkEnd = readChunkEnd(view, cursor, end);
+
+    if (chunkEnd < 0) {
+      tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.chunk-exceeds-parent', '', {
+        firstChunkId: chunkId,
+        firstLength: chunkLength,
+        firstOffset: cursor,
+      });
+      break;
+    }
+
+    if (chunkId === THREE_DS_EDITOR || chunkId === THREE_DS_MAIN) {
+      collectThreeDsObjects(view, cursor, materials, meshes, lights, cameras, threeDsDrops);
+    } else if (chunkId === THREE_DS_OBJECT) {
+      parseThreeDsObject(view, cursor, chunkEnd, meshes, lights, cameras, threeDsDrops);
+    } else if (chunkId === THREE_DS_MATERIAL) {
+      const material = parseThreeDsMaterial(view, cursor, chunkEnd);
+      if (material.name.length > 0) materials.set(material.name, material);
+    }
+
+    cursor = chunkEnd;
+  }
+}
+
+// Parses a named object chunk (0x4000). The payload starts with a null-terminated ASCII name string,
+// followed by sub-chunks. The object's kind is whichever of the three entity sub-chunks it carries — a
+// trimesh (0x4100), a light (0x4600), or a camera (0x4700) — so the first one found decides, and the
+// parsed descriptor is appended to that kind's collector.
+function parseThreeDsObject(
+  view: Readonly<DataView>,
+  offset: number,
+  end: number,
+  meshes: ThreeDsMesh[],
+  lights: ThreeDsLight[],
+  cameras: ThreeDsCamera[],
+  threeDsDrops: Map<string, ThreeDsDropTally> | null,
+): void {
+  let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
+  const name = readNullTerminatedString(view, cursor, end);
+  cursor += name.length + 1; // advance past the name and null terminator
+
+  while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
+    const chunkId = view.getUint16(cursor, true);
+    const chunkEnd = readChunkEnd(view, cursor, end);
+
+    if (chunkEnd < 0) {
+      tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.subchunk-exceeds-object', '', {
+        firstOffset: cursor,
+      });
+      return;
+    }
+
+    if (chunkId === THREE_DS_TRIMESH) {
+      const mesh = parseThreeDsTrimesh(view, cursor, chunkEnd, name, threeDsDrops);
+      if (mesh !== null) meshes.push(mesh);
+      return;
+    }
+    if (chunkId === THREE_DS_LIGHT) {
+      const light = parseThreeDsLight(view, cursor, chunkEnd, name, threeDsDrops);
+      if (light !== null) lights.push(light);
+      return;
+    }
+    if (chunkId === THREE_DS_CAMERA) {
+      const camera = parseThreeDsCamera(view, cursor, chunkEnd, name, threeDsDrops);
+      if (camera !== null) cameras.push(camera);
+      return;
+    }
+
+    cursor = chunkEnd;
+  }
+
+  // A named object carrying none of the three entity sub-chunks — a dummy/helper object (a pivot, a
+  // target point, a group node). Flight models no such entity, so the object is recognized and skipped.
+  tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Skip, '3ds.non-entity-object', '', { firstName: name });
 }
 
 // Parses an Autodesk 3DS binary file into a format-neutral Scene3DDocument. Each named-object trimesh
@@ -195,106 +327,66 @@ export function parse3ds(bytes: Readonly<Uint8Array>, diagnostics?: ImportDiagno
   return document;
 }
 
-// Recursively walks the chunk tree starting at `offset`, appending every named object it finds to the
-// collector matching that object's kind — trimesh, light, or camera — and populating `materials` with
-// every material block (0xAFFF) found alongside them under the editor chunk. All four collectors are
-// out-parameters because one walk feeds all of them; a 3DS object chunk does not say which kind it is
-// until its sub-chunk is read.
-function collectThreeDsObjects(
-  view: Readonly<DataView>,
-  offset: number,
-  materials: Map<string, ThreeDsMaterial>,
-  meshes: ThreeDsMesh[],
-  lights: ThreeDsLight[],
-  cameras: ThreeDsCamera[],
-  threeDsDrops: Map<string, ThreeDsDropTally> | null,
-): void {
-  const end = Math.min(offset + readChunkLength(view, offset), view.byteLength);
-  let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
-
-  while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
-    const chunkId = view.getUint16(cursor, true);
-    const chunkLength = readChunkLength(view, cursor);
-    const chunkEnd = readChunkEnd(view, cursor, end);
-
-    if (chunkEnd < 0) {
-      tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.chunk-exceeds-parent', '', {
-        firstChunkId: chunkId,
-        firstLength: chunkLength,
-        firstOffset: cursor,
-      });
-      break;
-    }
-
-    if (chunkId === THREE_DS_EDITOR || chunkId === THREE_DS_MAIN) {
-      collectThreeDsObjects(view, cursor, materials, meshes, lights, cameras, threeDsDrops);
-    } else if (chunkId === THREE_DS_OBJECT) {
-      parseThreeDsObject(view, cursor, chunkEnd, meshes, lights, cameras, threeDsDrops);
-    } else if (chunkId === THREE_DS_MATERIAL) {
-      const material = parseMaterial(view, cursor, chunkEnd);
-      if (material.name.length > 0) materials.set(material.name, material);
-    }
-
-    cursor = chunkEnd;
-  }
-}
-
-// Parses a named object chunk (0x4000). The payload starts with a null-terminated ASCII name string,
-// followed by sub-chunks. The object's kind is whichever of the three entity sub-chunks it carries — a
-// trimesh (0x4100), a light (0x4600), or a camera (0x4700) — so the first one found decides, and the
-// parsed descriptor is appended to that kind's collector.
-function parseThreeDsObject(
+// Parses a camera chunk (0x4700). The payload is a fixed 32-byte record — position (3 float32), aim
+// target (3 float32), bank/roll angle in degrees, and lens focal length in millimetres — followed by
+// sub-chunks, of which only CAM_RANGES carries data Flight models. Returns null when the payload is too
+// short to hold the fixed record.
+export function parseThreeDsCamera(
   view: Readonly<DataView>,
   offset: number,
   end: number,
-  meshes: ThreeDsMesh[],
-  lights: ThreeDsLight[],
-  cameras: ThreeDsCamera[],
+  name: string,
   threeDsDrops: Map<string, ThreeDsDropTally> | null,
-): void {
+): ThreeDsCamera | null {
   let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
-  const name = readNullTerminatedString(view, cursor, end);
-  cursor += name.length + 1; // advance past the name and null terminator
+  if (cursor + 32 > end) {
+    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Drop, '3ds.camera-truncated', '', { firstName: name });
+    return null;
+  }
+
+  const position: readonly [number, number, number] = [
+    view.getFloat32(cursor, true),
+    view.getFloat32(cursor + 4, true),
+    view.getFloat32(cursor + 8, true),
+  ];
+  const target: readonly [number, number, number] = [
+    view.getFloat32(cursor + 12, true),
+    view.getFloat32(cursor + 16, true),
+    view.getFloat32(cursor + 20, true),
+  ];
+  const roll = view.getFloat32(cursor + 24, true);
+  const focalLength = view.getFloat32(cursor + 28, true);
+  cursor += 32;
+
+  let far: number | null = null;
+  let near: number | null = null;
 
   while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
     const chunkId = view.getUint16(cursor, true);
     const chunkEnd = readChunkEnd(view, cursor, end);
-
     if (chunkEnd < 0) {
-      tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.subchunk-exceeds-object', '', {
-        firstOffset: cursor,
+      tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.subchunk-exceeds-camera', '', {
+        firstName: name,
       });
-      return;
+      break;
     }
+    const dataStart = cursor + THREE_DS_CHUNK_HEADER_BYTES;
 
-    if (chunkId === THREE_DS_TRIMESH) {
-      const mesh = parseTrimesh(view, cursor, chunkEnd, name, threeDsDrops);
-      if (mesh !== null) meshes.push(mesh);
-      return;
-    }
-    if (chunkId === THREE_DS_LIGHT) {
-      const light = parseThreeDsLight(view, cursor, chunkEnd, name, threeDsDrops);
-      if (light !== null) lights.push(light);
-      return;
-    }
-    if (chunkId === THREE_DS_CAMERA) {
-      const camera = parseThreeDsCamera(view, cursor, chunkEnd, name, threeDsDrops);
-      if (camera !== null) cameras.push(camera);
-      return;
+    if (chunkId === THREE_DS_CAMERA_RANGES && dataStart + 8 <= chunkEnd) {
+      near = view.getFloat32(dataStart, true);
+      far = view.getFloat32(dataStart + 4, true);
     }
 
     cursor = chunkEnd;
   }
 
-  // A named object carrying none of the three entity sub-chunks — a dummy/helper object (a pivot, a
-  // target point, a group node). Flight models no such entity, so the object is recognized and skipped.
-  tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Skip, '3ds.non-entity-object', '', { firstName: name });
+  return { far, focalLength, name, near, position, roll, target };
 }
 
 // Parses a light chunk (0x4600). The payload is the light's position (3 float32) followed by sub-chunks
 // carrying its color, intensity multiplier, ranges, and — if the light is a spot — its aim and cone.
 // Returns null when the payload is too short to hold the position.
-function parseThreeDsLight(
+export function parseThreeDsLight(
   view: Readonly<DataView>,
   offset: number,
   end: number,
@@ -371,126 +463,6 @@ function parseThreeDsLight(
   }
 
   return { color, enabled, falloff, hotspot, innerRange, multiplier, name, outerRange, position, target };
-}
-
-// Parses a camera chunk (0x4700). The payload is a fixed 32-byte record — position (3 float32), aim
-// target (3 float32), bank/roll angle in degrees, and lens focal length in millimetres — followed by
-// sub-chunks, of which only CAM_RANGES carries data Flight models. Returns null when the payload is too
-// short to hold the fixed record.
-function parseThreeDsCamera(
-  view: Readonly<DataView>,
-  offset: number,
-  end: number,
-  name: string,
-  threeDsDrops: Map<string, ThreeDsDropTally> | null,
-): ThreeDsCamera | null {
-  let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
-  if (cursor + 32 > end) {
-    tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Drop, '3ds.camera-truncated', '', { firstName: name });
-    return null;
-  }
-
-  const position: readonly [number, number, number] = [
-    view.getFloat32(cursor, true),
-    view.getFloat32(cursor + 4, true),
-    view.getFloat32(cursor + 8, true),
-  ];
-  const target: readonly [number, number, number] = [
-    view.getFloat32(cursor + 12, true),
-    view.getFloat32(cursor + 16, true),
-    view.getFloat32(cursor + 20, true),
-  ];
-  const roll = view.getFloat32(cursor + 24, true);
-  const focalLength = view.getFloat32(cursor + 28, true);
-  cursor += 32;
-
-  let far: number | null = null;
-  let near: number | null = null;
-
-  while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
-    const chunkId = view.getUint16(cursor, true);
-    const chunkEnd = readChunkEnd(view, cursor, end);
-    if (chunkEnd < 0) {
-      tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.subchunk-exceeds-camera', '', {
-        firstName: name,
-      });
-      break;
-    }
-    const dataStart = cursor + THREE_DS_CHUNK_HEADER_BYTES;
-
-    if (chunkId === THREE_DS_CAMERA_RANGES && dataStart + 8 <= chunkEnd) {
-      near = view.getFloat32(dataStart, true);
-      far = view.getFloat32(dataStart + 4, true);
-    }
-
-    cursor = chunkEnd;
-  }
-
-  return { far, focalLength, name, near, position, roll, target };
-}
-
-// Parses a trimesh chunk (0x4100) and its sub-chunks (vertices, faces, UVs) into a ThreeDsMesh
-// descriptor.
-function parseTrimesh(
-  view: Readonly<DataView>,
-  offset: number,
-  end: number,
-  name: string,
-  threeDsDrops: Map<string, ThreeDsDropTally> | null,
-): ThreeDsMesh | null {
-  let vertices: Float32Array | null = null;
-  let faces: Uint16Array | null = null;
-  let uvs: Float32Array | null = null;
-  let localMatrix: Float32Array | null = null;
-  let materialGroups: readonly ThreeDsMaterialGroup[] = [];
-  let smoothingGroups: Uint32Array | null = null;
-
-  let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
-
-  while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
-    const chunkId = view.getUint16(cursor, true);
-    const chunkEnd = readChunkEnd(view, cursor, end);
-
-    if (chunkEnd < 0) {
-      tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.subchunk-exceeds-trimesh', '', {
-        firstChunkId: chunkId,
-        firstName: name,
-      });
-      break;
-    }
-
-    const dataStart = cursor + THREE_DS_CHUNK_HEADER_BYTES;
-
-    if (chunkId === THREE_DS_VERTICES) {
-      vertices = parseVertices(view, dataStart, chunkEnd, threeDsDrops);
-    } else if (chunkId === THREE_DS_FACES) {
-      const parsed = parseFaces(view, dataStart, chunkEnd, threeDsDrops);
-      if (parsed !== null) {
-        faces = parsed.faces;
-        materialGroups = parsed.materialGroups;
-        smoothingGroups = parsed.smoothingGroups;
-      }
-    } else if (chunkId === THREE_DS_UV_COORDS) {
-      uvs = parseUvCoords(view, dataStart, chunkEnd, threeDsDrops);
-    } else if (chunkId === THREE_DS_TRANSFORM_MATRIX) {
-      localMatrix = parseLocalMatrix(view, dataStart, chunkEnd, name, threeDsDrops);
-    }
-
-    cursor = chunkEnd;
-  }
-
-  if (vertices === null || faces === null) {
-    tallyThreeDsDrop(
-      threeDsDrops,
-      ImportDiagnosticSeverity.Drop,
-      '3ds.mesh-missing-geometry',
-      vertices === null ? 'vertices' : 'faces',
-      { firstName: name, missing: vertices === null ? 'vertices' : 'faces' },
-    );
-    return null;
-  }
-
-  return { faces, localMatrix, materialGroups, name, smoothingGroups, uvs, vertices };
 }
 
 // Reads a TRI_LOCAL chunk (0x4160): 12 float32 forming the object's placement as four contiguous
@@ -1012,39 +984,56 @@ function appendThreeDsLightDocument(
   });
 }
 
-// Walks the keyframer chunk (0xB000) for object-node PIVOTS ONLY, keyed by node name, and returns them in
-// the file's own Z-up space. Empty when the file carries no keyframer.
-//
-// The keyframer also encodes the node hierarchy and TCB animation tracks, and this deliberately reads
-// NEITHER. The hierarchy value in a node header has two documented readings that disagree on edge cases,
-// and no file in the reference corpus carries a keyframer to disambiguate them; rotation tracks are
-// incremental axis-angle with variable-length per-key spline parameters. A wrong hierarchy would visibly
-// misplace geometry that currently renders correctly, so the ambiguous parts stay unread and are recorded
-// in agents/scene3d-format-coverage.md. The pivot has neither problem: three float32, unambiguous, and
-// applying it is render-neutral by construction (see localizeThreeDsPositions).
-function collectThreeDsPivots(
-  view: Readonly<DataView>,
-  offset: number,
-): Map<string, readonly [number, number, number]> {
-  const pivots = new Map<string, readonly [number, number, number]>();
-  const end = Math.min(offset + readChunkLength(view, offset), view.byteLength);
-  let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
+// Parses a material block (0xAFFF): walks sub-chunks for the name, the diffuse/specular/ambient color
+// blocks, the shininess and transparency percentages, and the diffuse and bump texture-map filenames.
+export function parseThreeDsMaterial(view: Readonly<DataView>, offset: number, end: number): ThreeDsMaterial {
+  let name = '';
+  let ambient: readonly [number, number, number] = [0, 0, 0];
+  let bumpFilename: string | null = null;
+  let diffuse: readonly [number, number, number] = [1, 1, 1];
+  let opacity = 1;
+  let opacityFilename: string | null = null;
+  // null = absent (use the material default); a parsed value (including an explicit 0) is passed through.
+  let shininess: number | null = null;
+  let specular: readonly [number, number, number] = [1, 1, 1];
+  let textureFilename: string | null = null;
 
+  let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
   while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
     const chunkId = view.getUint16(cursor, true);
     const chunkEnd = readChunkEnd(view, cursor, end);
     if (chunkEnd < 0) break;
+    const dataStart = cursor + THREE_DS_CHUNK_HEADER_BYTES;
 
-    if (chunkId === THREE_DS_MAIN) {
-      for (const [name, pivot] of collectThreeDsPivots(view, cursor)) pivots.set(name, pivot);
-    } else if (chunkId === THREE_DS_KEYFRAME) {
-      collectThreeDsNodePivots(view, cursor, chunkEnd, pivots);
+    if (chunkId === THREE_DS_MATERIAL_NAME) {
+      name = readNullTerminatedString(view, dataStart, chunkEnd);
+    } else if (chunkId === THREE_DS_MATERIAL_AMBIENT) {
+      ambient = parseColorChunk(view, dataStart, chunkEnd) ?? ambient;
+    } else if (chunkId === THREE_DS_MATERIAL_DIFFUSE) {
+      diffuse = parseColorChunk(view, dataStart, chunkEnd) ?? diffuse;
+    } else if (chunkId === THREE_DS_MATERIAL_SPECULAR) {
+      specular = parseColorChunk(view, dataStart, chunkEnd) ?? specular;
+    } else if (chunkId === THREE_DS_MATERIAL_SHININESS) {
+      // The MAT_SHININESS percentage (0..1) maps to a Blinn-Phong specular exponent; 100% → 128, a
+      // conventional maximum. 3DS's shininess slider has no exact Phong-exponent equivalent.
+      const fraction = parsePercentageChunk(view, dataStart, chunkEnd);
+      if (fraction !== null) shininess = fraction * 128;
+    } else if (chunkId === THREE_DS_MATERIAL_TRANSPARENCY) {
+      // MAT_TRANSPARENCY is the transparent fraction (0 = opaque); opacity is its complement.
+      const fraction = parsePercentageChunk(view, dataStart, chunkEnd);
+      if (fraction !== null) opacity = 1 - fraction;
+    } else if (chunkId === THREE_DS_MATERIAL_TEXTURE_MAP) {
+      textureFilename = parseTextureFilename(view, dataStart, chunkEnd);
+    } else if (chunkId === THREE_DS_MATERIAL_BUMP_MAP) {
+      bumpFilename = parseTextureFilename(view, dataStart, chunkEnd);
+    } else if (chunkId === THREE_DS_MATERIAL_OPACITY_MAP) {
+      opacityFilename = parseTextureFilename(view, dataStart, chunkEnd);
     }
 
     cursor = chunkEnd;
   }
 
-  return pivots;
+  return { ambient, bumpFilename, diffuse, name, opacity, opacityFilename, shininess, specular, textureFilename };
 }
 
 // Walks the node tags inside a keyframer chunk, pairing each node's header name with its pivot.
@@ -1280,56 +1269,68 @@ function threeDsMaterialToBlinnPhong(material: Readonly<ThreeDsMaterial>, docume
   return result as unknown as Material;
 }
 
-// Parses a material block (0xAFFF): walks sub-chunks for the name, the diffuse/specular/ambient color
-// blocks, the shininess and transparency percentages, and the diffuse and bump texture-map filenames.
-function parseMaterial(view: Readonly<DataView>, offset: number, end: number): ThreeDsMaterial {
-  let name = '';
-  let ambient: readonly [number, number, number] = [0, 0, 0];
-  let bumpFilename: string | null = null;
-  let diffuse: readonly [number, number, number] = [1, 1, 1];
-  let opacity = 1;
-  let opacityFilename: string | null = null;
-  // null = absent (use the material default); a parsed value (including an explicit 0) is passed through.
-  let shininess: number | null = null;
-  let specular: readonly [number, number, number] = [1, 1, 1];
-  let textureFilename: string | null = null;
+// Parses a trimesh chunk (0x4100) and its sub-chunks (vertices, faces, UVs) into a ThreeDsMesh
+// descriptor.
+export function parseThreeDsTrimesh(
+  view: Readonly<DataView>,
+  offset: number,
+  end: number,
+  name: string,
+  threeDsDrops: Map<string, ThreeDsDropTally> | null,
+): ThreeDsMesh | null {
+  let vertices: Float32Array | null = null;
+  let faces: Uint16Array | null = null;
+  let uvs: Float32Array | null = null;
+  let localMatrix: Float32Array | null = null;
+  let materialGroups: readonly ThreeDsMaterialGroup[] = [];
+  let smoothingGroups: Uint32Array | null = null;
 
   let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
+
   while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
     const chunkId = view.getUint16(cursor, true);
     const chunkEnd = readChunkEnd(view, cursor, end);
-    if (chunkEnd < 0) break;
+
+    if (chunkEnd < 0) {
+      tallyThreeDsDrop(threeDsDrops, ImportDiagnosticSeverity.Recover, '3ds.subchunk-exceeds-trimesh', '', {
+        firstChunkId: chunkId,
+        firstName: name,
+      });
+      break;
+    }
+
     const dataStart = cursor + THREE_DS_CHUNK_HEADER_BYTES;
 
-    if (chunkId === THREE_DS_MATERIAL_NAME) {
-      name = readNullTerminatedString(view, dataStart, chunkEnd);
-    } else if (chunkId === THREE_DS_MATERIAL_AMBIENT) {
-      ambient = parseColorChunk(view, dataStart, chunkEnd) ?? ambient;
-    } else if (chunkId === THREE_DS_MATERIAL_DIFFUSE) {
-      diffuse = parseColorChunk(view, dataStart, chunkEnd) ?? diffuse;
-    } else if (chunkId === THREE_DS_MATERIAL_SPECULAR) {
-      specular = parseColorChunk(view, dataStart, chunkEnd) ?? specular;
-    } else if (chunkId === THREE_DS_MATERIAL_SHININESS) {
-      // The MAT_SHININESS percentage (0..1) maps to a Blinn-Phong specular exponent; 100% → 128, a
-      // conventional maximum. 3DS's shininess slider has no exact Phong-exponent equivalent.
-      const fraction = parsePercentageChunk(view, dataStart, chunkEnd);
-      if (fraction !== null) shininess = fraction * 128;
-    } else if (chunkId === THREE_DS_MATERIAL_TRANSPARENCY) {
-      // MAT_TRANSPARENCY is the transparent fraction (0 = opaque); opacity is its complement.
-      const fraction = parsePercentageChunk(view, dataStart, chunkEnd);
-      if (fraction !== null) opacity = 1 - fraction;
-    } else if (chunkId === THREE_DS_MATERIAL_TEXTURE_MAP) {
-      textureFilename = parseTextureFilename(view, dataStart, chunkEnd);
-    } else if (chunkId === THREE_DS_MATERIAL_BUMP_MAP) {
-      bumpFilename = parseTextureFilename(view, dataStart, chunkEnd);
-    } else if (chunkId === THREE_DS_MATERIAL_OPACITY_MAP) {
-      opacityFilename = parseTextureFilename(view, dataStart, chunkEnd);
+    if (chunkId === THREE_DS_VERTICES) {
+      vertices = parseVertices(view, dataStart, chunkEnd, threeDsDrops);
+    } else if (chunkId === THREE_DS_FACES) {
+      const parsed = parseFaces(view, dataStart, chunkEnd, threeDsDrops);
+      if (parsed !== null) {
+        faces = parsed.faces;
+        materialGroups = parsed.materialGroups;
+        smoothingGroups = parsed.smoothingGroups;
+      }
+    } else if (chunkId === THREE_DS_UV_COORDS) {
+      uvs = parseUvCoords(view, dataStart, chunkEnd, threeDsDrops);
+    } else if (chunkId === THREE_DS_TRANSFORM_MATRIX) {
+      localMatrix = parseLocalMatrix(view, dataStart, chunkEnd, name, threeDsDrops);
     }
 
     cursor = chunkEnd;
   }
 
-  return { ambient, bumpFilename, diffuse, name, opacity, opacityFilename, shininess, specular, textureFilename };
+  if (vertices === null || faces === null) {
+    tallyThreeDsDrop(
+      threeDsDrops,
+      ImportDiagnosticSeverity.Drop,
+      '3ds.mesh-missing-geometry',
+      vertices === null ? 'vertices' : 'faces',
+      { firstName: name, missing: vertices === null ? 'vertices' : 'faces' },
+    );
+    return null;
+  }
+
+  return { faces, localMatrix, materialGroups, name, smoothingGroups, uvs, vertices };
 }
 
 // Reads the nested color sub-chunk of a material color block: COLOR_FLOAT (0x0010, 3 float32 in [0,1])
@@ -1444,17 +1445,6 @@ function readChunkEnd(view: Readonly<DataView>, cursor: number, end: number): nu
 
 function readChunkLength(view: Readonly<DataView>, offset: number): number {
   return view.getUint32(offset + 2, true);
-}
-
-// One accumulated 3DS chunk-level drop: a total occurrence `count` plus the first offender's `detail`,
-// keyed by kind + discriminator. No origin is stored — the tallies are flushed (physically reported) by
-// parse3ds, so it is every aggregated crumb's origin per the collector's emitting-function contract;
-// `kind` carries the drop-site granularity.
-interface ThreeDsDropTally {
-  count: number;
-  detail: Record<string, boolean | number | string>;
-  kind: string;
-  severity: ImportDiagnosticSeverity;
 }
 
 // The canonical local forward axis every placed document light and camera is authored against: -Z, with

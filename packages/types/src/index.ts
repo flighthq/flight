@@ -800,6 +800,7 @@ export * from './TextureSourceKind.ts';
 export * from './TextureCubeFace.ts';
 export * from './TextureUvTransform.ts';
 export * from './VoxelGrid.ts';
+export * from './ThreeDsChunkHandler.ts';
 export * from './ThreeDsSchema.ts';
 export * from './ThresholdOperation.ts';
 export * from './TiledGid.ts';
