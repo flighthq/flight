@@ -8,7 +8,15 @@ import { COLLADA_FEATURE_ELEMENTS } from './colladaFeatures.ts';
 import { appendColladaMaterials } from './colladaMaterial.ts';
 import { decodeColladaAnimations, decodeColladaControllers } from './colladaParse.ts';
 
-describe('COLLADA_ELEMENT_DECODERS', () => {
+describe('findColladaElementDecoders', () => {
+  it('finds the decoder claiming an element, and none for an element nothing claims', () => {
+    expect(findColladaElementDecoders('geometry').map((d) => d.feature)).toEqual(['Geometry']);
+    expect(findColladaElementDecoders('effect').map((d) => d.feature)).toEqual(['Material']);
+    expect(findColladaElementDecoders('library_geometries')).toEqual([]);
+  });
+});
+
+describe('getColladaDecoderFeatures', () => {
   // ★ THE JOIN THAT MUST NOT DRIFT. The analyzer says what a document needs; this family says what the
   // package can decode. A feature analyzed with no decoder is an inventory entry nothing can ever
   // satisfy — a warning on every build of that content — and a decoder for a feature nothing analyzes is
@@ -30,12 +38,6 @@ describe('COLLADA_ELEMENT_DECODERS', () => {
   it('gives each feature exactly one descriptor', () => {
     const features = COLLADA_ELEMENT_DECODERS.map((decoder) => decoder.feature);
     expect(features.length).toBe(new Set(features).size);
-  });
-
-  it('finds the decoder claiming an element, and none for an element nothing claims', () => {
-    expect(findColladaElementDecoders('geometry').map((d) => d.feature)).toEqual(['Geometry']);
-    expect(findColladaElementDecoders('effect').map((d) => d.feature)).toEqual(['Material']);
-    expect(findColladaElementDecoders('library_geometries')).toEqual([]);
   });
 
   // `entryPoint: null` is a claim about the package's surface, so it has to be true. A descriptor naming
