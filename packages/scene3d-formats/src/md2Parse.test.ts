@@ -18,8 +18,12 @@ import type {
 } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 
-import { createScene3DFromMd2, parseMd2 } from './md2Parse.ts';
+// parseMd2 and createScene3DFromMd2 live in md2Document.ts, which owns the default section-handler
+// family; md2Parse.ts holds the parse itself and never sees the handler graph.
+import { createScene3DFromMd2, parseMd2 } from './md2Document.ts';
+import { parseMd2WithSectionHandlers } from './md2Parse.ts';
 import { MD2_ANORMS } from './md2Schema.ts';
+import { md2SkinHandler } from './md2SkinHandler.ts';
 import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 
 // Builds a minimal valid MD2 binary buffer with one frame and the given triangles, vertices, and
@@ -1213,5 +1217,35 @@ describe('parseMd2 read integrity', () => {
     const diagnostics: ImportDiagnostic[] = [];
     parseMd2(validMd2(), diagnostics);
     expect(diagnostics).toHaveLength(0);
+  });
+});
+
+describe('parseMd2WithSectionHandlers', () => {
+  // This is the parse over a family it is GIVEN; it resolves no default, which is what keeps this module
+  // free of the material and animation packages (see md2Document.ts). An empty family is therefore a real
+  // parse that reads only the geometry, not a misconfiguration that quietly falls back to the full family.
+  it('uses the family it is given and has no default of its own', () => {
+    const md2 = buildMd2({
+      compressedVertices: [
+        { normalIndex: 0, x: 0, y: 0, z: 0 },
+        { normalIndex: 0, x: 10, y: 0, z: 0 },
+        { normalIndex: 0, x: 0, y: 10, z: 0 },
+      ],
+      scale: [1, 1, 1],
+      skin: 'body.pcx',
+      texCoords: [{ s: 0, t: 0 }],
+      translate: [0, 0, 0],
+      triangles: [{ texIndices: [0, 0, 0], vertIndices: [0, 1, 2] }],
+    });
+    const bare = parseMd2WithSectionHandlers(md2, undefined, []);
+    expect(bare.materials).toEqual([]);
+    expect(bare.meshes).toHaveLength(1);
+    expect(parseMd2WithSectionHandlers(md2, undefined, [md2SkinHandler]).materials).toHaveLength(1);
+  });
+
+  it('still rejects a malformed file through the diagnostics it was handed', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    expect(parseMd2WithSectionHandlers(new Uint8Array([1, 2, 3]), diagnostics, []).meshes).toEqual([]);
+    expect(diagnostics.map((entry) => entry.kind)).toContain('md2.header-too-short');
   });
 });
