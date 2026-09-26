@@ -324,6 +324,8 @@ describe('buildRequirementCatalogRows', () => {
         (name) =>
           name.endsWith('SectionHandler') &&
           !name.startsWith('register') &&
+          !name.startsWith('get') &&
+          !name.startsWith('unregister') &&
           typeof (skeleton2dFormatsContract as unknown as Record<string, unknown>)[name] === 'function',
       )
       .sort();
@@ -336,6 +338,8 @@ describe('buildRequirementCatalogRows', () => {
         (name) =>
           name.endsWith('TimelineHandler') &&
           !name.startsWith('register') &&
+          !name.startsWith('get') &&
+          !name.startsWith('unregister') &&
           typeof (skeleton2dFormatsContract as unknown as Record<string, unknown>)[name] === 'function',
       )
       .sort();
