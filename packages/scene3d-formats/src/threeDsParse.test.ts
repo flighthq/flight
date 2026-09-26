@@ -74,7 +74,15 @@ import {
 
 import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 import { convertPositionsZUpToYUp } from './shared.ts';
-import { createScene3DFrom3ds, parse3ds } from './threeDsParse.ts';
+import {
+  collectThreeDsPivots,
+  createScene3DFrom3ds,
+  parse3ds,
+  parseThreeDsCamera,
+  parseThreeDsLight,
+  parseThreeDsMaterial,
+  parseThreeDsTrimesh,
+} from './threeDsParse.ts';
 
 // Builds a minimal valid 3DS binary from helper functions. The 3DS format is a recursive chunk tree:
 // each chunk has a uint16 ID + uint32 length (including the 6-byte header) + payload.
@@ -573,6 +581,34 @@ describe('3ds triangle winding', () => {
     const geometry = (getNodeChildren(scene.root)[0] as Mesh).geometry;
 
     expect(signedVolumeOfClosedGeometry(geometry)).toBeNull();
+  });
+});
+
+describe('collectThreeDsPivots', () => {
+  it('extracts pivots from a keyframer with a named object node', () => {
+    const pivot = new Uint8Array(12);
+    const pivotView = new DataView(pivot.buffer);
+    pivotView.setFloat32(0, 1.0, true);
+    pivotView.setFloat32(4, 2.0, true);
+    pivotView.setFloat32(8, 3.0, true);
+
+    const nodeName = new Uint8Array([0x42, 0x6f, 0x78, 0x00, 0x00, 0x00]);
+    const header = writeChunk(THREE_DS_KEYFRAME_NODE_HEADER, nodeName);
+    const pivotChunk = writeChunk(THREE_DS_KEYFRAME_PIVOT, pivot);
+    const objectNode = writeChunk(THREE_DS_KEYFRAME_OBJECT_NODE, concatBytes(header, pivotChunk));
+    const keyframe = writeChunk(THREE_DS_KEYFRAME, objectNode);
+    const main = writeChunk(THREE_DS_MAIN, keyframe);
+
+    const view = new DataView(main.buffer, main.byteOffset, main.byteLength);
+    const pivots = collectThreeDsPivots(view, 0);
+    expect(pivots.get('Box')).toEqual([1.0, 2.0, 3.0]);
+  });
+
+  it('returns empty map when no keyframer is present', () => {
+    const editor = writeChunk(THREE_DS_EDITOR, new Uint8Array(0));
+    const main = writeChunk(THREE_DS_MAIN, editor);
+    const view = new DataView(main.buffer, main.byteOffset, main.byteLength);
+    expect(collectThreeDsPivots(view, 0).size).toBe(0);
   });
 });
 
@@ -2011,5 +2047,97 @@ describe('parse3ds opacity map', () => {
     const parsed = document.materials[0] as BlinnPhongMaterial;
     expect(parsed.alphaMap).toBeNull();
     expect(parsed.alphaMode).toBe('opaque');
+  });
+});
+
+describe('parseThreeDsCamera', () => {
+  it('returns a camera with position, target, roll, and focal length', () => {
+    const record = new Uint8Array(32);
+    const rv = new DataView(record.buffer);
+    rv.setFloat32(0, 10, true);
+    rv.setFloat32(4, 20, true);
+    rv.setFloat32(8, 30, true);
+    rv.setFloat32(12, 0, true);
+    rv.setFloat32(16, 0, true);
+    rv.setFloat32(20, 0, true);
+    rv.setFloat32(24, 15, true);
+    rv.setFloat32(28, 35, true);
+    const chunk = writeChunk(THREE_DS_CAMERA, record);
+    const view = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+    const cam = parseThreeDsCamera(view, 0, chunk.byteLength, 'Cam1', null);
+    expect(cam).not.toBeNull();
+    expect(cam!.position).toEqual([10, 20, 30]);
+    expect(cam!.focalLength).toBe(35);
+    expect(cam!.roll).toBe(15);
+    expect(cam!.name).toBe('Cam1');
+  });
+
+  it('returns null when the chunk is truncated', () => {
+    const chunk = writeChunk(THREE_DS_CAMERA, new Uint8Array(8));
+    const view = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+    expect(parseThreeDsCamera(view, 0, chunk.byteLength, 'Bad', null)).toBeNull();
+  });
+});
+
+describe('parseThreeDsLight', () => {
+  it('returns a point light with position and color', () => {
+    const position = new Uint8Array(12);
+    const pv = new DataView(position.buffer);
+    pv.setFloat32(0, 5, true);
+    pv.setFloat32(4, 10, true);
+    pv.setFloat32(8, 15, true);
+    const colorPayload = new Uint8Array(12);
+    const cv = new DataView(colorPayload.buffer);
+    cv.setFloat32(0, 1.0, true);
+    cv.setFloat32(4, 0.5, true);
+    cv.setFloat32(8, 0.0, true);
+    const colorChunk = writeChunk(THREE_DS_COLOR_FLOAT, colorPayload);
+    const chunk = writeChunk(THREE_DS_LIGHT, concatBytes(position, colorChunk));
+    const view = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+    const light = parseThreeDsLight(view, 0, chunk.byteLength, 'Lamp', null);
+    expect(light).not.toBeNull();
+    expect(light!.position).toEqual([5, 10, 15]);
+    expect(light!.color[0]).toBeCloseTo(1.0);
+    expect(light!.name).toBe('Lamp');
+    expect(light!.target).toBeNull();
+  });
+
+  it('returns null when the chunk is truncated', () => {
+    const chunk = writeChunk(THREE_DS_LIGHT, new Uint8Array(4));
+    const view = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+    expect(parseThreeDsLight(view, 0, chunk.byteLength, 'Bad', null)).toBeNull();
+  });
+});
+
+describe('parseThreeDsMaterial', () => {
+  it('returns a material with the parsed name and diffuse color', () => {
+    const nameChunk = writeChunk(THREE_DS_MATERIAL_NAME, writeNullTerminatedString('Skin'));
+    const diffuseChunk = writeChunk(THREE_DS_MATERIAL_DIFFUSE, writeColorByte(204, 102, 51));
+    const chunk = writeChunk(THREE_DS_MATERIAL, concatBytes(nameChunk, diffuseChunk));
+    const view = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+    const mat = parseThreeDsMaterial(view, 0, chunk.byteLength);
+    expect(mat.name).toBe('Skin');
+    expect(mat.diffuse[0]).toBeCloseTo(204 / 255, 2);
+    expect(mat.diffuse[1]).toBeCloseTo(102 / 255, 2);
+  });
+});
+
+describe('parseThreeDsTrimesh', () => {
+  it('returns a mesh with vertices and faces', () => {
+    const verts = writeVertices([0, 0, 0, 1, 0, 0, 0, 1, 0]);
+    const faces = writeFaces([0, 1, 2]);
+    const chunk = writeChunk(THREE_DS_TRIMESH, concatBytes(verts, faces));
+    const view = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+    const mesh = parseThreeDsTrimesh(view, 0, chunk.byteLength, 'Box', null);
+    expect(mesh).not.toBeNull();
+    expect(mesh!.name).toBe('Box');
+    expect(mesh!.vertices).toHaveLength(9);
+    expect(mesh!.faces).toHaveLength(3);
+  });
+
+  it('returns null when vertex data is missing', () => {
+    const chunk = writeChunk(THREE_DS_TRIMESH, new Uint8Array(0));
+    const view = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
+    expect(parseThreeDsTrimesh(view, 0, chunk.byteLength, 'Empty', null)).toBeNull();
   });
 });
