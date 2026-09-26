@@ -5,8 +5,12 @@ import {
   THREE_DS_KEYFRAME,
   THREE_DS_KEYFRAME_OBJECT_NODE,
   THREE_DS_LIGHT,
+  THREE_DS_LIGHT_SPOT,
   THREE_DS_MAIN,
   THREE_DS_MATERIAL,
+  THREE_DS_MATERIAL_BUMP_MAP,
+  THREE_DS_MATERIAL_OPACITY_MAP,
+  THREE_DS_MATERIAL_TEXTURE_MAP,
   THREE_DS_OBJECT,
   THREE_DS_TRIMESH,
 } from '@flighthq/types/contract';
@@ -61,6 +65,7 @@ function walkThreeDsChunkCensus(view: Readonly<DataView>, offset: number, counts
       walkThreeDsObjectCensus(view, cursor, end, counts);
     } else if (chunkId === THREE_DS_MATERIAL) {
       counts.set(THREE_DS_MATERIAL, (counts.get(THREE_DS_MATERIAL) ?? 0) + 1);
+      walkThreeDsMaterialCensus(view, cursor, chunkEnd, counts);
     } else if (chunkId === THREE_DS_KEYFRAME_OBJECT_NODE) {
       counts.set(THREE_DS_KEYFRAME_OBJECT_NODE, (counts.get(THREE_DS_KEYFRAME_OBJECT_NODE) ?? 0) + 1);
     }
@@ -91,9 +96,66 @@ function walkThreeDsObjectCensus(
     const chunkEnd = cursor + childLength;
     if (chunkEnd > end) break;
 
-    if (chunkId === THREE_DS_TRIMESH || chunkId === THREE_DS_LIGHT || chunkId === THREE_DS_CAMERA) {
+    if (chunkId === THREE_DS_TRIMESH || chunkId === THREE_DS_CAMERA) {
       counts.set(chunkId, (counts.get(chunkId) ?? 0) + 1);
       return;
+    }
+
+    if (chunkId === THREE_DS_LIGHT) {
+      counts.set(THREE_DS_LIGHT, (counts.get(THREE_DS_LIGHT) ?? 0) + 1);
+      walkThreeDsLightCensus(view, cursor, chunkEnd, counts);
+      return;
+    }
+
+    cursor = chunkEnd;
+  }
+}
+
+function walkThreeDsLightCensus(
+  view: Readonly<DataView>,
+  offset: number,
+  parentEnd: number,
+  counts: Map<number, number>,
+): void {
+  const end = Math.min(offset + (view.getUint32(offset + 2, true) || 0), parentEnd);
+  let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES + 12;
+  while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
+    const chunkId = view.getUint16(cursor, true);
+    const childLength = view.getUint32(cursor + 2, true);
+    if (childLength < THREE_DS_CHUNK_HEADER_BYTES) break;
+    const chunkEnd = cursor + childLength;
+    if (chunkEnd > end) break;
+
+    if (chunkId === THREE_DS_LIGHT_SPOT) {
+      counts.set(THREE_DS_LIGHT_SPOT, (counts.get(THREE_DS_LIGHT_SPOT) ?? 0) + 1);
+      return;
+    }
+
+    cursor = chunkEnd;
+  }
+}
+
+function walkThreeDsMaterialCensus(
+  view: Readonly<DataView>,
+  offset: number,
+  parentEnd: number,
+  counts: Map<number, number>,
+): void {
+  const end = Math.min(offset + (view.getUint32(offset + 2, true) || 0), parentEnd);
+  let cursor = offset + THREE_DS_CHUNK_HEADER_BYTES;
+  while (cursor + THREE_DS_CHUNK_HEADER_BYTES <= end) {
+    const chunkId = view.getUint16(cursor, true);
+    const childLength = view.getUint32(cursor + 2, true);
+    if (childLength < THREE_DS_CHUNK_HEADER_BYTES) break;
+    const chunkEnd = cursor + childLength;
+    if (chunkEnd > end) break;
+
+    if (
+      chunkId === THREE_DS_MATERIAL_TEXTURE_MAP ||
+      chunkId === THREE_DS_MATERIAL_BUMP_MAP ||
+      chunkId === THREE_DS_MATERIAL_OPACITY_MAP
+    ) {
+      counts.set(chunkId, (counts.get(chunkId) ?? 0) + 1);
     }
 
     cursor = chunkEnd;
@@ -103,7 +165,11 @@ function walkThreeDsObjectCensus(
 const THREE_DS_CHUNK_NAMES = new Map<number, string>([
   [THREE_DS_TRIMESH, 'Trimesh'],
   [THREE_DS_MATERIAL, 'Material'],
+  [THREE_DS_MATERIAL_TEXTURE_MAP, 'MaterialTextureMap'],
+  [THREE_DS_MATERIAL_OPACITY_MAP, 'MaterialOpacityMap'],
+  [THREE_DS_MATERIAL_BUMP_MAP, 'MaterialBumpMap'],
   [THREE_DS_LIGHT, 'Light'],
+  [THREE_DS_LIGHT_SPOT, 'LightSpot'],
   [THREE_DS_CAMERA, 'Camera'],
   [THREE_DS_KEYFRAME_OBJECT_NODE, 'KeyframeObjectNode'],
 ]);

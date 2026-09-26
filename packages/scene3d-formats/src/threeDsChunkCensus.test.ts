@@ -3,8 +3,12 @@ import {
   THREE_DS_CHUNK_HEADER_BYTES,
   THREE_DS_EDITOR,
   THREE_DS_LIGHT,
+  THREE_DS_LIGHT_SPOT,
   THREE_DS_MAIN,
   THREE_DS_MATERIAL,
+  THREE_DS_MATERIAL_BUMP_MAP,
+  THREE_DS_MATERIAL_OPACITY_MAP,
+  THREE_DS_MATERIAL_TEXTURE_MAP,
   THREE_DS_OBJECT,
   THREE_DS_TRIMESH,
 } from '@flighthq/types/contract';
@@ -55,6 +59,52 @@ describe('collectThreeDsChunkCounts', () => {
     expect(collectThreeDsChunkCounts(bad)).toBeNull();
   });
 
+  it('detects spot light sub-chunk within a light', () => {
+    const spotBody = new Uint8Array(24);
+    const spotChunk = writeChunk(THREE_DS_LIGHT_SPOT, spotBody);
+    const lightBody = new Uint8Array(12 + spotChunk.length);
+    lightBody.set(spotChunk, 12);
+    const file = buildMinimal3ds([writeObjectChunk('Spot', THREE_DS_LIGHT, lightBody)]);
+    const counts = collectThreeDsChunkCounts(file);
+    expect(counts).not.toBeNull();
+    expect(counts!.get(THREE_DS_LIGHT)).toBe(1);
+    expect(counts!.get(THREE_DS_LIGHT_SPOT)).toBe(1);
+  });
+
+  it('omits spot count for a point light', () => {
+    const lightBody = new Uint8Array(12);
+    const file = buildMinimal3ds([writeObjectChunk('Point', THREE_DS_LIGHT, lightBody)]);
+    const counts = collectThreeDsChunkCounts(file);
+    expect(counts).not.toBeNull();
+    expect(counts!.get(THREE_DS_LIGHT)).toBe(1);
+    expect(counts!.has(THREE_DS_LIGHT_SPOT)).toBe(false);
+  });
+
+  it('detects material texture map sub-chunks', () => {
+    const texMap = writeChunk(THREE_DS_MATERIAL_TEXTURE_MAP, new Uint8Array(4));
+    const bumpMap = writeChunk(THREE_DS_MATERIAL_BUMP_MAP, new Uint8Array(4));
+    const opacMap = writeChunk(THREE_DS_MATERIAL_OPACITY_MAP, new Uint8Array(4));
+    const matBody = new Uint8Array(texMap.length + bumpMap.length + opacMap.length);
+    matBody.set(texMap, 0);
+    matBody.set(bumpMap, texMap.length);
+    matBody.set(opacMap, texMap.length + bumpMap.length);
+    const file = buildMinimal3ds([writeChunk(THREE_DS_MATERIAL, matBody)]);
+    const counts = collectThreeDsChunkCounts(file);
+    expect(counts).not.toBeNull();
+    expect(counts!.get(THREE_DS_MATERIAL)).toBe(1);
+    expect(counts!.get(THREE_DS_MATERIAL_TEXTURE_MAP)).toBe(1);
+    expect(counts!.get(THREE_DS_MATERIAL_BUMP_MAP)).toBe(1);
+    expect(counts!.get(THREE_DS_MATERIAL_OPACITY_MAP)).toBe(1);
+  });
+
+  it('omits texture sub-chunks for a material with no maps', () => {
+    const file = buildMinimal3ds([writeChunk(THREE_DS_MATERIAL, new Uint8Array(4))]);
+    const counts = collectThreeDsChunkCounts(file);
+    expect(counts).not.toBeNull();
+    expect(counts!.get(THREE_DS_MATERIAL)).toBe(1);
+    expect(counts!.has(THREE_DS_MATERIAL_TEXTURE_MAP)).toBe(false);
+  });
+
   it('stops on a malformed child with zero length', () => {
     const editorBody = new Uint8Array(THREE_DS_CHUNK_HEADER_BYTES);
     const view = new DataView(editorBody.buffer);
@@ -71,7 +121,11 @@ describe('getThreeDsChunkName', () => {
   it('returns known names for recognized chunk IDs', () => {
     expect(getThreeDsChunkName(THREE_DS_TRIMESH)).toBe('Trimesh');
     expect(getThreeDsChunkName(THREE_DS_MATERIAL)).toBe('Material');
+    expect(getThreeDsChunkName(THREE_DS_MATERIAL_TEXTURE_MAP)).toBe('MaterialTextureMap');
+    expect(getThreeDsChunkName(THREE_DS_MATERIAL_BUMP_MAP)).toBe('MaterialBumpMap');
+    expect(getThreeDsChunkName(THREE_DS_MATERIAL_OPACITY_MAP)).toBe('MaterialOpacityMap');
     expect(getThreeDsChunkName(THREE_DS_LIGHT)).toBe('Light');
+    expect(getThreeDsChunkName(THREE_DS_LIGHT_SPOT)).toBe('LightSpot');
     expect(getThreeDsChunkName(THREE_DS_CAMERA)).toBe('Camera');
   });
 
