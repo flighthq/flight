@@ -128,7 +128,9 @@ describe('COLLADA content through the built-in catalog', () => {
   });
 });
 
-// These two still emit an empty `parserOptions`, and for reasons that are NOT "the parser is monolithic".
+// What is left here emits an empty `parserOptions` for a reason that is NOT "the parser is monolithic".
+// OBJ used to belong in this group and no longer does: reading its MTL split the requirement per shading
+// model, so it resolves to real rows and has its own describe above.
 describe('formats with no parser rows through the built-in catalog', () => {
   // .md5anim genuinely has no handler family: parseMd5Anim reads one clip and has nothing separable.
   it('emits an empty parserOptions for .md5anim, which has no handler family at all', async () => {
