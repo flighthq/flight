@@ -9,6 +9,13 @@ import { COLLADA_REQUIREMENT_KEY_NAMESPACE } from './scene3dFormatRequirements.t
 /**
  * The COLLADA features a build can be asked to support, and the element that EVIDENCES each one.
  *
+ * ★ TWO TIERS OF GRANULARITY. The coarse tier (`Camera`, `Light`, `Material`, etc.) matches the
+ * decoder families and the catalog entries — it is the level at which the parser opts into features.
+ * The fine tier (`Camera.Perspective`, `Light.Point`, `Effect.Phong`, etc.) is the level at which
+ * the census reports what a file actually contains — it is the native unit of content the format
+ * defines, and it is what enables a build to resolve the narrowest set of implementations the
+ * content needs.
+ *
  * ★ CONTENT ELEMENTS, NOT LIBRARY WRAPPERS. A `.dae` written by any exporter carries the library
  * elements it has no content for — `<library_geometries/>` sitting empty is ordinary — so keying on the
  * wrapper would report every feature for every file and make the inventory worthless. Each entry below
@@ -26,9 +33,21 @@ import { COLLADA_REQUIREMENT_KEY_NAMESPACE } from './scene3dFormatRequirements.t
 export const COLLADA_FEATURE_ELEMENTS: ReadonlyMap<string, readonly string[]> = new Map([
   ['Animation', ['animation']],
   ['Camera', ['camera']],
+  ['Camera.Orthographic', ['orthographic']],
+  ['Camera.Perspective', ['perspective']],
   ['Controller', ['controller']],
+  ['Controller.Morph', ['morph']],
+  ['Controller.Skin', ['skin']],
+  ['Effect.Blinn', ['blinn']],
+  ['Effect.Lambert', ['lambert']],
+  ['Effect.Phong', ['phong']],
   ['Geometry', ['geometry']],
+  ['Image', ['image']],
   ['Light', ['light']],
+  ['Light.Ambient', ['ambient']],
+  ['Light.Directional', ['directional']],
+  ['Light.Point', ['point']],
+  ['Light.Spot', ['spot']],
   ['Material', ['material', 'effect']],
 ]);
 
@@ -48,15 +67,19 @@ export function collectColladaFeatures(xml: string): ReadonlySet<string> {
   const root = parseXmlDocument(xml);
   if (root === null || !isColladaRoot(root)) return found;
 
-  // One walk, checked against every feature, rather than a descendant search per feature: a document
-  // with no controllers should not cost six traversals to discover that.
-  const byElement = new Map<string, string>();
-  for (const [feature, elements] of COLLADA_FEATURE_ELEMENTS) {
-    for (const element of elements) byElement.set(element, feature);
-  }
   visit(root, (element) => {
-    const feature = byElement.get(localName(element));
-    if (feature !== undefined) found.add(feature);
+    const name = localName(element);
+    const coarseFeature = COLLADA_COARSE_ELEMENT_FEATURES.get(name);
+    if (coarseFeature !== undefined) {
+      found.add(coarseFeature);
+      const subFeatures = COLLADA_SUB_ELEMENT_FEATURES.get(name);
+      if (subFeatures !== undefined) {
+        visit(element, (descendant) => {
+          const sub = subFeatures.get(localName(descendant));
+          if (sub !== undefined) found.add(sub);
+        });
+      }
+    }
   });
   return found;
 }
@@ -121,3 +144,48 @@ function visit(element: Readonly<XmlElement>, seen: (entry: Readonly<XmlElement>
   seen(element);
   for (const child of element.children) visit(child, seen);
 }
+
+const COLLADA_COARSE_ELEMENT_FEATURES: ReadonlyMap<string, string> = new Map([
+  ['animation', 'Animation'],
+  ['camera', 'Camera'],
+  ['controller', 'Controller'],
+  ['effect', 'Material'],
+  ['geometry', 'Geometry'],
+  ['image', 'Image'],
+  ['light', 'Light'],
+  ['material', 'Material'],
+]);
+
+const COLLADA_SUB_ELEMENT_FEATURES: ReadonlyMap<string, ReadonlyMap<string, string>> = new Map([
+  [
+    'camera',
+    new Map([
+      ['orthographic', 'Camera.Orthographic'],
+      ['perspective', 'Camera.Perspective'],
+    ]),
+  ],
+  [
+    'controller',
+    new Map([
+      ['morph', 'Controller.Morph'],
+      ['skin', 'Controller.Skin'],
+    ]),
+  ],
+  [
+    'effect',
+    new Map([
+      ['blinn', 'Effect.Blinn'],
+      ['lambert', 'Effect.Lambert'],
+      ['phong', 'Effect.Phong'],
+    ]),
+  ],
+  [
+    'light',
+    new Map([
+      ['ambient', 'Light.Ambient'],
+      ['directional', 'Light.Directional'],
+      ['point', 'Light.Point'],
+      ['spot', 'Light.Spot'],
+    ]),
+  ],
+]);
