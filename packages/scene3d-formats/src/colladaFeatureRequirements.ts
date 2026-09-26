@@ -13,5 +13,8 @@ import { RequirementFacet, StandardPbrMaterialKind } from '@flighthq/types/contr
  * common/phong/blinn profiles to PBR values.
  */
 export const COLLADA_FEATURE_SCENE_REQUIREMENTS: ReadonlyMap<string, readonly Requirement[]> = new Map([
+  ['Effect.Blinn', [{ facet: RequirementFacet.SceneMaterialKind, key: StandardPbrMaterialKind }]],
+  ['Effect.Lambert', [{ facet: RequirementFacet.SceneMaterialKind, key: StandardPbrMaterialKind }]],
+  ['Effect.Phong', [{ facet: RequirementFacet.SceneMaterialKind, key: StandardPbrMaterialKind }]],
   ['Material', [{ facet: RequirementFacet.SceneMaterialKind, key: StandardPbrMaterialKind }]],
 ]);

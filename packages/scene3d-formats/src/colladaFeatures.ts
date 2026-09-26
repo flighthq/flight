@@ -52,6 +52,36 @@ export const COLLADA_FEATURE_ELEMENTS: ReadonlyMap<string, readonly string[]> = 
 ]);
 
 /**
+ * How many of each COLLADA element type a document contains.
+ *
+ * The count-based census, analogous to `collectThreeDsChunkCounts` and `collectAwd2BlockCounts`.
+ * Returns `null` when the input is not a readable COLLADA document, and a map of feature name to
+ * instance count when it is — both coarse features (`Camera`, `Light`) and sub-element features
+ * (`Camera.Perspective`, `Light.Point`).
+ */
+export function collectColladaElementCounts(xml: string): ReadonlyMap<string, number> | null {
+  const root = parseXmlDocument(xml);
+  if (root === null || !isColladaRoot(root)) return null;
+
+  const counts = new Map<string, number>();
+  visit(root, (element) => {
+    const name = localName(element);
+    const coarseFeature = COLLADA_COARSE_ELEMENT_FEATURES.get(name);
+    if (coarseFeature !== undefined) {
+      counts.set(coarseFeature, (counts.get(coarseFeature) ?? 0) + 1);
+      const subFeatures = COLLADA_SUB_ELEMENT_FEATURES.get(name);
+      if (subFeatures !== undefined) {
+        visit(element, (descendant) => {
+          const sub = subFeatures.get(localName(descendant));
+          if (sub !== undefined) counts.set(sub, (counts.get(sub) ?? 0) + 1);
+        });
+      }
+    }
+  });
+  return counts;
+}
+
+/**
  * Which features one COLLADA document actually contains.
  *
  * Build-time only, and deliberately NOT a parse: it reads the element vocabulary and stops, so an

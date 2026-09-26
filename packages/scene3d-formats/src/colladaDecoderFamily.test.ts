@@ -13,8 +13,8 @@ import {
 } from './colladaParse.ts';
 
 describe('colladaAllElementDecoders', () => {
-  it('is the six features, in the order the single-function parser ran them', () => {
-    expect(colladaAllElementDecoders.map((decoder) => decoder.feature)).toEqual([
+  it('is the six decoders, in the order the single-function parser ran them', () => {
+    expect(colladaAllElementDecoders.map((decoder) => decoder.features[0])).toEqual([
       'Material',
       'Camera',
       'Geometry',
@@ -24,48 +24,39 @@ describe('colladaAllElementDecoders', () => {
     ]);
   });
 
-  // ★ ORDER IS SEMANTICS HERE, NOT STYLE. Materials must be indexed before geometry reads the material
-  // symbols its primitives name. Asserted as a relation rather than a list position so it still means
-  // something if a seventh decoder is added between them.
   it('runs materials before geometry, which is what makes primitive symbols resolvable', () => {
-    const features = colladaAllElementDecoders.map((decoder) => decoder.feature);
-    expect(features.indexOf('Material')).toBeLessThan(features.indexOf('Geometry'));
+    const coarseFeatures = colladaAllElementDecoders.map((decoder) => decoder.features[0]);
+    expect(coarseFeatures.indexOf('Material')).toBeLessThan(coarseFeatures.indexOf('Geometry'));
   });
 
-  // ★ THE JOIN BETWEEN ANALYSIS AND DECODING. The feature map has two tiers: coarse features that
-  // match decoder families (Camera, Light, Material, …) and sub-element features (Camera.Perspective,
-  // Light.Point, Effect.Phong, …) that refine the census without adding decoder families. Census-only
-  // coarse features (Image) are in the map for the build inventory but have no decoder because the
-  // parser does not process them — they are evidence only.
   it('joins every decoder feature to the feature map, with census-only coarse features explicit', () => {
-    const decoderFeatures = new Set(colladaAllElementDecoders.map((d) => d.feature));
-    const coarseFeatures = [...COLLADA_FEATURE_ELEMENTS.keys()].filter((k) => !k.includes('.'));
+    const decoderFeatures = new Set(colladaAllElementDecoders.flatMap((d) => d.features));
+    const allFeatures = [...COLLADA_FEATURE_ELEMENTS.keys()];
 
     for (const f of decoderFeatures) {
       expect(COLLADA_FEATURE_ELEMENTS.has(f), `decoder feature '${f}' missing from feature map`).toBe(true);
     }
 
-    const censusOnly = coarseFeatures.filter((f) => !decoderFeatures.has(f));
+    const censusOnly = allFeatures.filter((f) => !decoderFeatures.has(f));
     expect(censusOnly).toEqual(['Image']);
   });
 
-  it('claims exactly the elements the analyzer keys each decoder feature on', () => {
+  it('claims exactly the elements the analyzer keys the coarse decoder feature on', () => {
     for (const decoder of colladaAllElementDecoders) {
-      expect([...decoder.elements].sort(), decoder.feature).toEqual(
-        [...(COLLADA_FEATURE_ELEMENTS.get(decoder.feature) ?? [])].sort(),
-      );
+      const coarse = decoder.features[0];
+      expect([...decoder.elements].sort(), coarse).toEqual([...(COLLADA_FEATURE_ELEMENTS.get(coarse) ?? [])].sort());
     }
   });
 
   it('gives each feature exactly one decoder', () => {
-    const features = colladaAllElementDecoders.map((decoder) => decoder.feature);
-    expect(features.length).toBe(new Set(features).size);
+    const allFeatures = colladaAllElementDecoders.flatMap((decoder) => decoder.features);
+    expect(allFeatures.length).toBe(new Set(allFeatures).size);
   });
 
   it('exposes a callable decode on every member, which is what a descriptor inventory could not', () => {
     for (const decoder of colladaAllElementDecoders) {
-      expect(typeof decoder.decode, decoder.feature).toBe('function');
-      expect(decoder.elements.length, decoder.feature).toBeGreaterThan(0);
+      expect(typeof decoder.decode, decoder.features[0]).toBe('function');
+      expect(decoder.elements.length, decoder.features[0]).toBeGreaterThan(0);
     }
   });
 });

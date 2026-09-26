@@ -1659,7 +1659,7 @@ export const colladaMaterialDecoder: ColladaElementDecoder = {
     );
   },
   elements: ['material', 'effect'],
-  feature: 'Material',
+  features: ['Material', 'Effect.Blinn', 'Effect.Lambert', 'Effect.Phong'],
 };
 
 export const colladaCameraDecoder: ColladaElementDecoder = {
@@ -1669,7 +1669,7 @@ export const colladaCameraDecoder: ColladaElementDecoder = {
     }
   },
   elements: ['camera'],
-  feature: 'Camera',
+  features: ['Camera', 'Camera.Orthographic', 'Camera.Perspective'],
 };
 
 export const colladaGeometryDecoder: ColladaElementDecoder = {
@@ -1833,7 +1833,7 @@ export const colladaGeometryDecoder: ColladaElementDecoder = {
     }
   },
   elements: ['geometry'],
-  feature: 'Geometry',
+  features: ['Geometry'],
 };
 
 export const colladaControllerDecoder: ColladaElementDecoder = {
@@ -1845,10 +1845,8 @@ export const colladaControllerDecoder: ColladaElementDecoder = {
       context.morphs.set(morph.controllerId, morph);
     }
   },
-  // Skins and morphs are two decodes over one element, so the feature is the controller rather than
-  // either of them — the same granularity the analyzer keys on.
   elements: ['controller'],
-  feature: 'Controller',
+  features: ['Controller', 'Controller.Morph', 'Controller.Skin'],
 };
 
 export const colladaAnimationDecoder: ColladaElementDecoder = {
@@ -1856,7 +1854,7 @@ export const colladaAnimationDecoder: ColladaElementDecoder = {
     context.animationChannels.push(...decodeColladaAnimationsFromRoot(context.root, context.diagnostics));
   },
   elements: ['animation'],
-  feature: 'Animation',
+  features: ['Animation'],
 };
 
 export const colladaLightDecoder: ColladaElementDecoder = {
@@ -1866,7 +1864,7 @@ export const colladaLightDecoder: ColladaElementDecoder = {
     }
   },
   elements: ['light'],
-  feature: 'Light',
+  features: ['Light', 'Light.Ambient', 'Light.Directional', 'Light.Point', 'Light.Spot'],
 };
 
 /** Every decoder, in the order the single-function parser ran them. The default composition. */

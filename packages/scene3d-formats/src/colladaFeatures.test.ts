@@ -2,6 +2,7 @@ import { RequirementFacet, StandardPbrMaterialKind } from '@flighthq/types/contr
 
 import {
   COLLADA_FEATURE_ELEMENTS,
+  collectColladaElementCounts,
   collectColladaFeatures,
   isReadableCollada,
   parseColladaRequirements,
@@ -37,6 +38,39 @@ describe('COLLADA_FEATURE_ELEMENTS', () => {
     for (const elements of COLLADA_FEATURE_ELEMENTS.values()) {
       for (const element of elements) expect(element.startsWith('library_')).toBe(false);
     }
+  });
+});
+
+describe('collectColladaElementCounts', () => {
+  it('returns null for non-COLLADA input', () => {
+    expect(collectColladaElementCounts('not xml')).toBeNull();
+    expect(collectColladaElementCounts('<?xml version="1.0"?><scene/>')).toBeNull();
+  });
+
+  it('returns an empty map for a COLLADA document with no content elements', () => {
+    const counts = collectColladaElementCounts(collada(''));
+    expect(counts).not.toBeNull();
+    expect(counts!.size).toBe(0);
+  });
+
+  it('counts coarse and sub-element features', () => {
+    const counts = collectColladaElementCounts(fullDocument())!;
+    expect(counts.get('Geometry')).toBe(1);
+    expect(counts.get('Camera')).toBe(1);
+    expect(counts.get('Camera.Perspective')).toBe(1);
+    expect(counts.get('Light')).toBe(1);
+    expect(counts.get('Light.Point')).toBe(1);
+    expect(counts.get('Material')).toBe(2);
+    expect(counts.get('Effect.Lambert')).toBe(1);
+    expect(counts.get('Image')).toBe(1);
+    expect(counts.get('Controller')).toBe(1);
+    expect(counts.get('Controller.Skin')).toBe(1);
+    expect(counts.get('Animation')).toBe(1);
+  });
+
+  it('counts multiple elements of the same type', () => {
+    const xml = collada('<library_geometries><geometry/><geometry/><geometry/></library_geometries>');
+    expect(collectColladaElementCounts(xml)!.get('Geometry')).toBe(3);
   });
 });
 
