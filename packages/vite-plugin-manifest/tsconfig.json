@@ -37,6 +37,9 @@
       "path": "../scene3d-formats"
     },
     {
+      "path": "../skeleton2d-formats"
+    },
+    {
       "path": "../swf"
     },
     {
