@@ -1,9 +1,10 @@
 import { createRequirementSet } from '@flighthq/requirement/contract';
 import type { Requirement, RequirementSet } from '@flighthq/types/contract';
-import { BlinnPhongMaterialKind, RequirementFacet, THREE_DS_MATERIAL } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/types/contract';
 
 import { THREE_DS_REQUIREMENT_KEY_NAMESPACE } from './scene3dFormatRequirements.ts';
 import { collectThreeDsChunkCounts, getThreeDsChunkName } from './threeDsChunkCensus.ts';
+import { THREE_DS_CHUNK_SCENE_REQUIREMENTS } from './threeDsChunkRequirements.ts';
 
 /**
  * Build-time inventory of what one 3DS file asks a build to support: one `document.format`
@@ -26,16 +27,15 @@ export function parseThreeDsRequirements(source: Readonly<Uint8Array>): Requirem
   const requirements: Requirement[] = [];
   if (counts !== null) {
     for (const chunkId of counts.keys()) {
+      const chunkName = getThreeDsChunkName(chunkId);
       requirements.push({
         facet: RequirementFacet.DocumentFormat,
-        key: `${THREE_DS_REQUIREMENT_KEY_NAMESPACE}.${getThreeDsChunkName(chunkId)}`,
+        key: `${THREE_DS_REQUIREMENT_KEY_NAMESPACE}.${chunkName}`,
       });
-    }
-    if (counts.has(THREE_DS_MATERIAL)) {
-      requirements.push({
-        facet: RequirementFacet.SceneMaterialKind,
-        key: BlinnPhongMaterialKind,
-      });
+      const sceneRequirements = THREE_DS_CHUNK_SCENE_REQUIREMENTS.get(chunkName);
+      if (sceneRequirements !== undefined) {
+        for (const req of sceneRequirements) requirements.push(req);
+      }
     }
   }
   return createRequirementSet([RequirementFacet.DocumentFormat, RequirementFacet.SceneMaterialKind], requirements);

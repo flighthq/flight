@@ -1,7 +1,8 @@
 import { createRequirementSet } from '@flighthq/requirement/contract';
 import type { Requirement, RequirementSet } from '@flighthq/types/contract';
-import { BlinnPhongMaterialKind, RequirementFacet } from '@flighthq/types/contract';
+import { RequirementFacet } from '@flighthq/types/contract';
 
+import { MD2_FEATURE_SCENE_REQUIREMENTS } from './md2FeatureRequirements.ts';
 import { collectMd2Features } from './md2Features.ts';
 import { MD2_REQUIREMENT_KEY_NAMESPACE } from './scene3dFormatRequirements.ts';
 
@@ -30,12 +31,10 @@ export function parseMd2Requirements(source: Readonly<Uint8Array>): RequirementS
         facet: RequirementFacet.DocumentFormat,
         key: `${MD2_REQUIREMENT_KEY_NAMESPACE}.${feature}`,
       });
-    }
-    if (features.has('Material')) {
-      requirements.push({
-        facet: RequirementFacet.SceneMaterialKind,
-        key: BlinnPhongMaterialKind,
-      });
+      const sceneRequirements = MD2_FEATURE_SCENE_REQUIREMENTS.get(feature);
+      if (sceneRequirements !== undefined) {
+        for (const req of sceneRequirements) requirements.push(req);
+      }
     }
   }
   return createRequirementSet([RequirementFacet.DocumentFormat, RequirementFacet.SceneMaterialKind], requirements);

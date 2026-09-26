@@ -1562,7 +1562,7 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
 // Format-to-render implications: content needing the left requirement also needs those on the right.
 export const BUILT_IN_REQUIREMENT_TRANSLATIONS: readonly RequirementTranslation[] = [
   {
-    from: { facet: 'document.format', key: '3ds' },
+    from: { facet: 'document.format', key: '3ds.Material' },
     to: [{ facet: 'scene.material-kind', key: 'BlinnPhongMaterial' }],
   },
   {
@@ -1570,19 +1570,19 @@ export const BUILT_IN_REQUIREMENT_TRANSLATIONS: readonly RequirementTranslation[
     to: [{ facet: 'scene.material-kind', key: 'ShadedMaterial' }],
   },
   {
-    from: { facet: 'document.format', key: 'dae' },
+    from: { facet: 'document.format', key: 'dae.Material' },
     to: [{ facet: 'scene.material-kind', key: 'StandardPbrMaterial' }],
   },
   {
-    from: { facet: 'document.format', key: 'md2' },
+    from: { facet: 'document.format', key: 'md2.Material' },
     to: [{ facet: 'scene.material-kind', key: 'BlinnPhongMaterial' }],
   },
   {
-    from: { facet: 'document.format', key: 'md5' },
+    from: { facet: 'document.format', key: 'md5.Material' },
     to: [{ facet: 'scene.material-kind', key: 'BlinnPhongMaterial' }],
   },
   {
-    from: { facet: 'document.format', key: 'obj' },
+    from: { facet: 'document.format', key: 'obj.Material' },
     to: [
       { facet: 'scene.material-kind', key: 'BlinnPhongMaterial' },
       { facet: 'scene.material-kind', key: 'StandardPbrMaterial' },
