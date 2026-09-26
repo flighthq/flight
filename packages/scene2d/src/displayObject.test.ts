@@ -19,8 +19,10 @@ import { BlendMode, DisplayObjectKind, Node2DTraitsKey } from '@flighthq/types/c
 
 import {
   createDisplayObject,
+  createDisplayObjectRuntime,
   createNode2D,
   createNode2DRuntime,
+  getDisplayObjectRuntime,
   getNode2DRuntime,
   isNode2D,
   setNode2DClip,
@@ -101,6 +103,12 @@ describe('createDisplayObject', () => {
   });
 });
 
+describe('createDisplayObjectRuntime', () => {
+  it('returns a non-null runtime', () => {
+    expect(createDisplayObjectRuntime()).not.toBeNull();
+  });
+});
+
 describe('createNode2D', () => {
   it('allows creation of a type without a data field', () => {
     const displayObject = createNode2D(DisplayObjectKind);
@@ -143,6 +151,12 @@ describe('createNode2DRuntime', () => {
     const func = (_out: Rectangle, _source: Readonly<BoundsNode<any>>) => {};
     const runtime = createNode2DRuntime({ computeLocalBoundsRectangle: func });
     expect(runtime.computeLocalBoundsRectangle).toStrictEqual(func);
+  });
+});
+
+describe('getDisplayObjectRuntime', () => {
+  it('returns the runtime for a DisplayObject', () => {
+    expect(getDisplayObjectRuntime(createDisplayObject())).not.toBeNull();
   });
 });
 
