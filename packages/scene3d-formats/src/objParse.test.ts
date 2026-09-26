@@ -27,12 +27,10 @@ import { objBlinnPhongMaterialHandler } from './objBlinnPhongMaterialHandler.ts'
 // parseObj and createScene3DFromObj live in objDocument.ts, which owns the default material-handler
 // family; objParse.ts holds the parse itself and never sees the handler graph.
 import { createScene3DFromObj, parseObj } from './objDocument.ts';
-import {
-  hasObjPbrDirectives,
-  objMaterialToBlinnPhong,
-  objMaterialToStandardPbr,
-  parseObjWithMaterialHandlers,
-} from './objParse.ts';
+// hasObjPbrDirectives moved to objMaterialModel.ts: it is a pure predicate over plain MTL data, and the
+// analyzer needs it without linking geometry decoding.
+import { hasObjPbrDirectives } from './objMaterialModel.ts';
+import { objMaterialToBlinnPhong, objMaterialToStandardPbr, parseObjWithMaterialHandlers } from './objParse.ts';
 import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 
 // Asserts EXACTLY ONE crumb of `kind` was recorded (guards the count) and returns it so a test can lock

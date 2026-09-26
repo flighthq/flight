@@ -1,6 +1,10 @@
 import { getNodeChildren } from '@flighthq/node/contract';
 import type { ImportDiagnostic, ObjMaterialHandler } from '@flighthq/types/contract';
-import { BlinnPhongMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
+import {
+  BlinnPhongMaterialKind,
+  OBJ_MATERIAL_BLINN_PHONG_FEATURE,
+  StandardPbrMaterialKind,
+} from '@flighthq/types/contract';
 
 import { parseObjMaterialLibrary } from './mtlParse.ts';
 import { objBlinnPhongMaterialHandler } from './objBlinnPhongMaterialHandler.ts';
@@ -87,6 +91,9 @@ describe('parseObj', () => {
 
   it('lets a caller override the standard dispatch by putting their own handler first', () => {
     const everything: Readonly<ObjMaterialHandler> = {
+      // Claims the Blinn-Phong feature because that is what it resolves to; a handler's `feature` states
+      // which model it reads, and this one reads every material as classic.
+      feature: OBJ_MATERIAL_BLINN_PHONG_FEATURE,
       matches: () => true,
       resolve: (material, document, diagnostics) =>
         objBlinnPhongMaterialHandler.resolve(material, document, diagnostics),

@@ -291,6 +291,22 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
   {
     backend: 'parser',
     facet: 'document.format',
+    familyOrder: 0,
+    implementationImport: '@flighthq/scene3d-formats',
+    implementationSymbol: 'objBlinnPhongMaterialHandler',
+    kind: 'obj.MaterialBlinnPhong',
+  },
+  {
+    backend: 'parser',
+    facet: 'document.format',
+    familyOrder: 1,
+    implementationImport: '@flighthq/scene3d-formats',
+    implementationSymbol: 'objStandardPbrMaterialHandler',
+    kind: 'obj.MaterialStandardPbr',
+  },
+  {
+    backend: 'parser',
+    facet: 'document.format',
     implementationImport: '@flighthq/swf',
     implementationSymbol: 'swfJpegBitmapHandler',
     kind: 'swf.DefineBits',
@@ -1802,11 +1818,12 @@ export const BUILT_IN_REQUIREMENT_TRANSLATIONS: readonly RequirementTranslation[
     to: [{ facet: 'scene.material-kind', key: 'BlinnPhongMaterial' }],
   },
   {
-    from: { facet: 'document.format', key: 'obj.Material' },
-    to: [
-      { facet: 'scene.material-kind', key: 'BlinnPhongMaterial' },
-      { facet: 'scene.material-kind', key: 'StandardPbrMaterial' },
-    ],
+    from: { facet: 'document.format', key: 'obj.MaterialBlinnPhong' },
+    to: [{ facet: 'scene.material-kind', key: 'BlinnPhongMaterial' }],
+  },
+  {
+    from: { facet: 'document.format', key: 'obj.MaterialStandardPbr' },
+    to: [{ facet: 'scene.material-kind', key: 'StandardPbrMaterial' }],
   },
   {
     from: { facet: 'document.format', key: 'swf' },

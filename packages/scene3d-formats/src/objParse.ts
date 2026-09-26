@@ -23,23 +23,6 @@ import { ImportDiagnosticSeverity, MeshKind } from '@flighthq/types/contract';
 
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef } from './shared.ts';
 
-// Whether the file stated any metallic-roughness PBR value for this material — the test that picks the
-// shading model. Only directives describing the SHADING MODEL count: Ke/map_Ke name a channel both models
-// could carry, so an otherwise-classic material with an emissive does not get reinterpreted as PBR.
-export function hasObjPbrDirectives(material: Readonly<ObjMaterial>): boolean {
-  return (
-    material.roughness !== null ||
-    material.metallic !== null ||
-    material.sheen !== null ||
-    material.clearcoat !== null ||
-    material.clearcoatRoughness !== null ||
-    material.anisotropy !== null ||
-    material.anisotropyRotation !== null ||
-    material.mapRoughness !== null ||
-    material.mapMetallic !== null
-  );
-}
-
 // The OBJ smoothing-group id meaning "no smoothing" — both `s off` and `s 0` select it. UNSTATED is the
 // separate pre-`s` state: one shared group, so a file that never mentions smoothing imports exactly as it
 // did before smoothing groups were read.

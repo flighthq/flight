@@ -99,7 +99,19 @@ export function createManifestPlugin(
         );
         return generateManifestModuleSource([], extension).source;
       }
-      requirements = analyzer.analyze(source, decompressors);
+      // Sibling files the analyzer declared it needs, read relative to the content file. A reference the
+      // build cannot read is SKIPPED with a report rather than failing the manifest: the analyzer's contract
+      // is to stay usable on fewer texts than it asked for (OBJ falls back to claiming both shading models),
+      // so a missing MTL costs precision, not the build.
+      const references: string[] = [];
+      for (const reference of analyzer.collectReferences?.(source) ?? []) {
+        try {
+          references.push(await readFile(resolve(dirname(path), reference), 'utf8'));
+        } catch {
+          report(`referenced file could not be read, analyzing without it: ${reference} (from ${path})`);
+        }
+      }
+      requirements = analyzer.analyze(source, decompressors, references);
     } catch (error) {
       report(`analyzer failed for ${path}: ${(error as Error).message}`);
       return generateManifestModuleSource([], extension).source;

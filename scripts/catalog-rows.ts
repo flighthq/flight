@@ -23,6 +23,9 @@ import {
   md5AllSectionHandlers,
   md5MaterialHandler,
   md5SkeletonHandler,
+  objAllMaterialHandlers,
+  objBlinnPhongMaterialHandler,
+  objStandardPbrMaterialHandler,
   threeDsAllChunkHandlers,
   threeDsCameraHandler,
   threeDsKeyframeHandler,
@@ -37,6 +40,7 @@ import {
   getThreeDsChunkName,
   MD2_REQUIREMENT_KEY_NAMESPACE,
   MD5_REQUIREMENT_KEY_NAMESPACE,
+  OBJ_REQUIREMENT_KEY_NAMESPACE,
   THREE_DS_REQUIREMENT_KEY_NAMESPACE,
 } from '@flighthq/scene3d-formats/contract';
 import {
@@ -61,6 +65,7 @@ import type {
   ColladaElementDecoder,
   Md2SectionHandler,
   Md5SectionHandler,
+  ObjMaterialHandler,
   RequirementCatalogEntry,
   SwfTagHandler,
   ThreeDsChunkHandler,
@@ -189,6 +194,20 @@ export const MD5_SECTION_HANDLERS: ReadonlyMap<string, Readonly<Md5SectionHandle
   ['md5SkeletonHandler', md5SkeletonHandler],
 ]);
 
+/**
+ * The OBJ material handlers, keyed by the symbol a generated module imports.
+ *
+ * ★ THESE ROWS ONLY BECAME POSSIBLE WHEN THE KEY SPLIT. Both handlers used to answer one coarse
+ * `obj.Material` requirement, and the catalog gives one implementation per backend/facet/kind — so two rows
+ * for that key collided and OBJ got none at all. The analyzer reads the referenced MTL now and emits
+ * `obj.MaterialBlinnPhong` / `obj.MaterialStandardPbr`, each handler declares which model it reads, and the
+ * rows derive from that.
+ */
+export const OBJ_MATERIAL_HANDLERS: ReadonlyMap<string, Readonly<ObjMaterialHandler>> = new Map([
+  ['objBlinnPhongMaterialHandler', objBlinnPhongMaterialHandler],
+  ['objStandardPbrMaterialHandler', objStandardPbrMaterialHandler],
+]);
+
 /** The backend whose rows become `parserOptions` rather than a render-state fragment. */
 export const CATALOG_PARSER_BACKEND = 'parser';
 
@@ -240,6 +259,16 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
         symbol,
         `${MD5_REQUIREMENT_KEY_NAMESPACE}.${handler.feature}`,
         familyOrderOf(md5AllSectionHandlers, handler),
+      ),
+    );
+  }
+  for (const [symbol, handler] of OBJ_MATERIAL_HANDLERS) {
+    rows.push(
+      row(
+        '@flighthq/scene3d-formats',
+        symbol,
+        `${OBJ_REQUIREMENT_KEY_NAMESPACE}.${handler.feature}`,
+        familyOrderOf(objAllMaterialHandlers, handler),
       ),
     );
   }

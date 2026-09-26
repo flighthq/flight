@@ -130,14 +130,6 @@ describe('COLLADA content through the built-in catalog', () => {
 
 // These two still emit an empty `parserOptions`, and for reasons that are NOT "the parser is monolithic".
 describe('formats with no parser rows through the built-in catalog', () => {
-  // OBJ's parser IS decomposed — objAllMaterialHandlers ships two handlers — but both satisfy the single
-  // `obj.Material` key, and the catalog gives one implementation per backend/facet/kind. So there is no row
-  // to resolve yet. Pinned as the current behaviour rather than presented as the intended end state.
-  it('emits an empty parserOptions for .obj, whose two handlers share one requirement key', async () => {
-    const { source } = await load('a.obj', new TextEncoder().encode('mtllib a.mtl\nusemtl Red\nv 0 0 0\nf 1 1 1\n'));
-    expect(source).toContain('export const parserOptions = {};');
-  });
-
   // .md5anim genuinely has no handler family: parseMd5Anim reads one clip and has nothing separable.
   it('emits an empty parserOptions for .md5anim, which has no handler family at all', async () => {
     const { source } = await load('a.md5anim', new TextEncoder().encode('MD5Version 10\nnumFrames 1\n'));
@@ -264,6 +256,55 @@ describe('MD5 content through the built-in catalog', () => {
   });
 });
 
+// ★ THE MTL IS READ AT ANALYSIS TIME, WHICH IS WHAT MAKES THESE ROWS POSSIBLE. Both OBJ material handlers
+// used to answer one coarse `obj.Material` key, and two rows for one key collide under the catalog's row
+// identity — so OBJ resolved to nothing. The analyzer declares the `mtllib` it needs, the plugin reads it
+// from beside the .obj, and the requirement splits per shading model.
+describe('OBJ content through the built-in catalog', () => {
+  it('resolves a classic MTL to the Blinn-Phong handler alone', async () => {
+    const { source } = await loadWithSibling('a.obj', OBJ_WITH_MTL, 'a.mtl', 'newmtl Red\nKd 1 0 0\n');
+    expect(parserList(source, 'materialHandlers')).toEqual(['objBlinnPhongMaterialHandler']);
+    expect(source).not.toContain('objStandardPbrMaterialHandler');
+  });
+
+  it('resolves a PBR MTL to the StandardPbr handler alone', async () => {
+    const { source } = await loadWithSibling('a.obj', OBJ_WITH_MTL, 'a.mtl', 'newmtl Red\nPr 0.3\nPm 1\n');
+    expect(parserList(source, 'materialHandlers')).toEqual(['objStandardPbrMaterialHandler']);
+    expect(source).not.toContain('objBlinnPhongMaterialHandler');
+  });
+
+  it('resolves a mixed MTL to both handlers, in family order', async () => {
+    const { source } = await loadWithSibling('a.obj', OBJ_WITH_MTL, 'a.mtl', 'newmtl A\nKd 1 0 0\nnewmtl B\nPr 0.3\n');
+    expect(parserList(source, 'materialHandlers')).toEqual([
+      'objBlinnPhongMaterialHandler',
+      'objStandardPbrMaterialHandler',
+    ]);
+  });
+
+  // ★ THE RENDER HALF NARROWS TOO. A classic library no longer drags the StandardPbr renderer in, which was
+  // the bundle cost the coarse key imposed on every material-bearing OBJ.
+  it('lands only the material renderer the MTL actually implies', async () => {
+    const { source } = await loadWithSibling('a.obj', OBJ_WITH_MTL, 'a.mtl', 'newmtl Red\nKd 1 0 0\n');
+    expect(source).toContain('BlinnPhongMaterial');
+    expect(source).not.toContain('StandardPbrMaterial');
+  });
+
+  // A missing library costs PRECISION, not the build: both models are claimed and the plugin says why.
+  it('claims both models and reports the gap when the MTL cannot be read', async () => {
+    const { diagnostics, source } = await load('a.obj', new TextEncoder().encode(OBJ_WITH_MTL));
+    expect(parserList(source, 'materialHandlers')).toEqual([
+      'objBlinnPhongMaterialHandler',
+      'objStandardPbrMaterialHandler',
+    ]);
+    expect(diagnostics.some((message) => message.includes('referenced file could not be read'))).toBe(true);
+  });
+
+  it('claims no material handler for a geometry-only file', async () => {
+    const { source } = await load('a.obj', new TextEncoder().encode('v 0 0 0\nf 1 1 1\n'));
+    expect(source).toContain('export const parserOptions = {};');
+  });
+});
+
 // Importing the format package's whole source lane through Node is a real module graph, not a stub, and
 // it does not fit the 5s default.
 const NODE_IMPORT_TIMEOUT_MS = 120_000;
@@ -294,6 +335,33 @@ async function load(name: string, content: Uint8Array): Promise<{ diagnostics: s
   // here unable to fail.
   const source = (await plugin.load(id))!;
   return { diagnostics: diagnostics.map((message) => message.replace(join(dir, name), '<file>')), source };
+}
+
+const OBJ_WITH_MTL = 'mtllib a.mtl\nusemtl Red\nv 0 0 0\nf 1 1 1\n';
+
+// Writes a sibling file next to the content file, which is what exercises the plugin's reference resolution:
+// the analyzer names 'a.mtl' and the plugin has to find it relative to the .obj rather than the cwd.
+async function loadWithSibling(
+  name: string,
+  content: string,
+  siblingName: string,
+  siblingContent: string,
+): Promise<{ diagnostics: string[]; source: string }> {
+  const dir = await mkdtemp(join(tmpdir(), 'rich-format-sibling-'));
+  await writeFile(join(dir, siblingName), siblingContent);
+  await writeFile(join(dir, name), content);
+  const diagnostics: string[] = [];
+  const plugin = createManifestPlugin({
+    catalog: {
+      backends: BUILT_IN_REQUIREMENT_BACKENDS,
+      entries: [...BUILT_IN_REQUIREMENT_CATALOG_ENTRIES],
+      translations: BUILT_IN_REQUIREMENT_TRANSLATIONS,
+    },
+    onDiagnostic: (message) => diagnostics.push(message),
+  });
+  const id = plugin.resolveId(`./${name}?manifest`, join(dir, 'entry.ts'))!;
+  const source = (await plugin.load(id))!;
+  return { diagnostics, source };
 }
 
 // Reads the emitted array back as a list of symbol names, so an ordering assertion states the order

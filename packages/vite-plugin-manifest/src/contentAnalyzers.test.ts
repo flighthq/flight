@@ -274,3 +274,40 @@ const FULL_COLLADA = [
   '<library_cameras><camera id="c"></camera></library_cameras>',
   '</COLLADA>',
 ].join('\n');
+
+describe('OBJ material library references', () => {
+  const analyzer = DEFAULT_CONTENT_ANALYZERS['.obj'];
+  const obj = new TextEncoder().encode('mtllib a.mtl\nusemtl Red\nv 0 0 0\nf 1 1 1\n');
+
+  it('declares the libraries it needs rather than reading them', () => {
+    expect(analyzer.collectReferences?.(obj)).toEqual(['a.mtl']);
+  });
+
+  // ★ THE SAME OBJ, THREE ANSWERS, DECIDED ENTIRELY BY THE LIBRARY TEXT. That is the whole point of widening
+  // the seam: the analyzer is still a pure function of text, and the precision comes from being handed one
+  // more text rather than from it acquiring a filesystem.
+  it('narrows the material model from the library text it is handed', () => {
+    const classic = keysOf(analyzer.analyze(obj, NO_DECOMPRESSORS, ['newmtl Red\nKd 1 0 0\n']));
+    expect(classic).toContain('obj.MaterialBlinnPhong');
+    expect(classic).not.toContain('obj.MaterialStandardPbr');
+
+    const pbr = keysOf(analyzer.analyze(obj, NO_DECOMPRESSORS, ['newmtl Red\nPr 0.3\n']));
+    expect(pbr).toContain('obj.MaterialStandardPbr');
+    expect(pbr).not.toContain('obj.MaterialBlinnPhong');
+
+    const unknown = keysOf(analyzer.analyze(obj, NO_DECOMPRESSORS, []));
+    expect(unknown).toContain('obj.MaterialBlinnPhong');
+    expect(unknown).toContain('obj.MaterialStandardPbr');
+  });
+
+  it('is the only analyzer that needs a sibling file, so the rest stay pure two-argument reads', () => {
+    for (const [extension, candidate] of Object.entries(DEFAULT_CONTENT_ANALYZERS)) {
+      if (extension === '.obj') continue;
+      expect(candidate.collectReferences, extension).toBeUndefined();
+    }
+  });
+});
+
+function keysOf(set: { requirements: readonly { key: string }[] }): readonly string[] {
+  return set.requirements.map((requirement) => requirement.key);
+}

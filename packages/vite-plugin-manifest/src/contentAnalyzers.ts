@@ -2,6 +2,7 @@ import { decodeUTF8 } from '@flighthq/encoding/contract';
 import { collectAwd2BlockCounts, parseAwd2Requirements } from '@flighthq/scene3d-formats/contract';
 import {
   collectMd2Features,
+  collectObjMaterialLibraryReferences,
   collectThreeDsChunkCounts,
   isReadableCollada,
   parseColladaRequirements,
@@ -35,8 +36,28 @@ export interface ContentDecompressors {
  * parsers answer it for a bounded prefix, which is exactly what they are for.
  */
 export interface ContentAnalyzer {
-  readonly analyze: (source: Uint8Array, decompressors: Readonly<ContentDecompressors>) => RequirementSet;
+  readonly analyze: (
+    source: Uint8Array,
+    decompressors: Readonly<ContentDecompressors>,
+    // Optional so the analyzers that need no sibling file stay two-argument functions, and so a caller
+    // driving an analyzer directly need not pass an empty array.
+    references?: readonly string[],
+  ) => RequirementSet;
   readonly isReadable: (source: Uint8Array, decompressors: Readonly<ContentDecompressors>) => boolean;
+  /**
+   * Sibling files this analyzer needs, as paths RELATIVE to the content file, or absent when it needs none.
+   *
+   * ★ THE ANALYZER NAMES THE FILES; THE PLUGIN READS THEM. OBJ is the case that forced this: the shading
+   * model lives in the MTL, a separate file, so without it the inventory had to claim both models for every
+   * material-bearing OBJ and every classic model dragged the PBR path into the bundle. Doing the I/O here
+   * would give the analysis layer a filesystem and make it untestable without one; declaring the paths keeps
+   * it a pure function of text and leaves resolution to the caller that already owns a path.
+   *
+   * The texts come back in `analyze`'s `references`, in the order returned here. A path the build could not
+   * read is simply absent, so an analyzer must still produce a usable answer from fewer texts than it asked
+   * for.
+   */
+  readonly collectReferences?: (source: Uint8Array) => readonly string[];
 }
 
 /**
@@ -81,7 +102,8 @@ export const DEFAULT_CONTENT_ANALYZERS: Readonly<Record<string, ContentAnalyzer>
     isReadable: () => true,
   },
   '.obj': {
-    analyze: (source) => parseObjRequirements(decodeUTF8(source)),
+    analyze: (source, _decompressors, references) => parseObjRequirements(decodeUTF8(source), references),
+    collectReferences: (source) => collectObjMaterialLibraryReferences(decodeUTF8(source)),
     isReadable: () => true,
   },
   '.swf': {
