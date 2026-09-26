@@ -1,4 +1,8 @@
-import type { SpineBinaryRegistry, SpineBinaryTimelineContext } from '@flighthq/types/contract';
+import type {
+  SpineBinaryRegistry,
+  SpineBinaryTimelineContext,
+  SpineBinaryTimelineHandler,
+} from '@flighthq/types/contract';
 import { SpineBinaryTimelineKind } from '@flighthq/types/contract';
 
 import {
@@ -56,3 +60,14 @@ export function spineBinarySlotTimelineHandler(context: SpineBinaryTimelineConte
 export function spineBinaryTransformTimelineHandler(context: SpineBinaryTimelineContext): void {
   spineBinaryTransformTimelineReader(context);
 }
+
+export const spineBinaryAllTimelineHandlers: readonly SpineBinaryTimelineHandler[] = [
+  spineBinaryBoneTimelineHandler,
+  spineBinaryDeformTimelineHandler,
+  spineBinaryDrawOrderTimelineHandler,
+  spineBinaryEventTimelineHandler,
+  spineBinaryIkTimelineHandler,
+  spineBinaryPathTimelineHandler,
+  spineBinarySlotTimelineHandler,
+  spineBinaryTransformTimelineHandler,
+];

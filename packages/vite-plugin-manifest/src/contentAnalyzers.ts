@@ -12,6 +12,7 @@ import {
   parseObjRequirements,
   parseThreeDsRequirements,
 } from '@flighthq/scene3d-formats/contract';
+import { collectSpineBinarySectionCounts, parseSpineBinaryRequirements } from '@flighthq/skeleton2d-formats/contract';
 import { parseSwfHeader, parseSwfRequirements } from '@flighthq/swf/contract';
 import type {
   HostDecompressDeflateCapability,
@@ -105,6 +106,10 @@ export const DEFAULT_CONTENT_ANALYZERS: Readonly<Record<string, ContentAnalyzer>
     analyze: (source, _decompressors, references) => parseObjRequirements(decodeUTF8(source), references),
     collectReferences: (source) => collectObjMaterialLibraryReferences(decodeUTF8(source)),
     isReadable: () => true,
+  },
+  '.skel': {
+    analyze: (source) => parseSpineBinaryRequirements(source),
+    isReadable: (source) => collectSpineBinarySectionCounts(source) !== null,
   },
   '.swf': {
     analyze: (source, { deflate, lzma }) => parseSwfRequirements(source, deflate, lzma),

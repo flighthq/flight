@@ -27,6 +27,13 @@ export interface RequirementCatalogEntry {
    */
   readonly familyOrder?: number;
   /**
+   * The parser options field this row's handler belongs to, when a format owns more than one handler
+   * family. A Spine binary registry has both `sectionHandlers` and `timelineHandlers`; without this a
+   * codegen that sees one field name per extension cannot split the rows. Absent means the format's
+   * default field applies, which is the single-family case every other format uses today.
+   */
+  readonly parserField?: string;
+  /**
    * The `register*` that binds the implementation, for a backend that HAS one. Absent for an
    * options-driven lane: a SWF tag family is named in `SwfParseOptions.tags` and an AWD2 handler in
    * `Awd2ParseOptions.blocks`, so there is no registrar to name and a row that invented one would be

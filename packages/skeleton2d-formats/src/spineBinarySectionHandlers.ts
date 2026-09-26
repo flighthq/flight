@@ -1,4 +1,8 @@
-import type { SpineBinaryRegistry, SpineBinarySectionContext } from '@flighthq/types/contract';
+import type {
+  SpineBinaryRegistry,
+  SpineBinarySectionContext,
+  SpineBinarySectionHandler,
+} from '@flighthq/types/contract';
 import { SpineBinarySectionKind } from '@flighthq/types/contract';
 
 import {
@@ -68,3 +72,14 @@ export function spineBinarySlotsSectionHandler(context: SpineBinarySectionContex
 export function spineBinaryTransformConstraintsSectionHandler(context: SpineBinarySectionContext): void {
   spineBinaryTransformConstraintsSectionReader(context);
 }
+
+export const spineBinaryAllSectionHandlers: readonly SpineBinarySectionHandler[] = [
+  spineBinaryAnimationsSectionHandler,
+  spineBinaryBonesSectionHandler,
+  spineBinaryEventsSectionHandler,
+  spineBinaryIkConstraintsSectionHandler,
+  spineBinaryPathConstraintsSectionHandler,
+  spineBinarySkinsSectionHandler,
+  spineBinarySlotsSectionHandler,
+  spineBinaryTransformConstraintsSectionHandler,
+];
