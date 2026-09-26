@@ -3,12 +3,16 @@ import { mergeSwfParseOptions } from '@flighthq/swf/contract';
 import type {
   Awd2ParseOptions,
   CanvasRenderStateOptions,
+  ColladaElementDecoder,
+  ColladaImportOptions,
   DomRenderOptions,
   GlRenderStateOptions,
   Kind,
   NodeRenderer,
   SwfParseOptions,
   SwfTagHandler,
+  ThreeDsChunkHandler,
+  ThreeDsImportOptions,
   WgpuRenderStateOptions,
 } from '@flighthq/types/contract';
 
@@ -49,6 +53,36 @@ describe('typed consumer fixtures', () => {
     const second: Partial<SwfParseOptions> = { tags: [TAG_HANDLER] };
     const options: SwfParseOptions = mergeSwfParseOptions(first, second);
     expect(options.tags).toHaveLength(2);
+  });
+
+  // The two rich 3D formats spread into DIFFERENT field names — `handlers` and `decoders` — because each
+  // options type declares its own. A fragment emitted into the wrong one spreads into nothing and the
+  // importer silently runs its full default family, so the field name is part of what must typecheck.
+  it('spreads parserOptions into ThreeDsImportOptions', () => {
+    const parserOptions = { handlers: [CHUNK_HANDLER] };
+    const fits: Spreads<typeof parserOptions, ThreeDsImportOptions> = true;
+    const options: ThreeDsImportOptions = { ...parserOptions };
+    expect(fits).toBe(true);
+    expect(options.handlers).toEqual([CHUNK_HANDLER]);
+  });
+
+  it('spreads parserOptions into ColladaImportOptions', () => {
+    const parserOptions = { decoders: [ELEMENT_DECODER] };
+    const fits: Spreads<typeof parserOptions, ColladaImportOptions> = true;
+    const options: ColladaImportOptions = { ...parserOptions };
+    expect(fits).toBe(true);
+    expect(options.decoders).toEqual([ELEMENT_DECODER]);
+  });
+
+  it('rejects a 3DS fragment emitted into the COLLADA field name, and the reverse', () => {
+    const handlersIntoCollada: Spreads<{ handlers: readonly unknown[] }, ColladaImportOptions> extends never
+      ? true
+      : false = true;
+    const decodersInto3ds: Spreads<{ decoders: readonly unknown[] }, ThreeDsImportOptions> extends never
+      ? true
+      : false = true;
+    expect(handlersIntoCollada).toBe(true);
+    expect(decodersInto3ds).toBe(true);
   });
 
   it('spreads parserOptions into Awd2ParseOptions', () => {
@@ -112,3 +146,5 @@ describe('typed consumer fixtures', () => {
 
 const RENDERER = { createData: () => null, submit: () => {} } as NodeRenderer;
 const TAG_HANDLER = { code: 1, read: () => {} } as unknown as SwfTagHandler;
+const CHUNK_HANDLER = { chunkIds: [0x4100], collect: () => {} } as ThreeDsChunkHandler;
+const ELEMENT_DECODER = { decode: () => {}, elements: ['geometry'], feature: 'Geometry' } as ColladaElementDecoder;

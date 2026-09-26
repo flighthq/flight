@@ -53,11 +53,16 @@ function formatEntry(entry: Readonly<RequirementCatalogEntry>): string {
   const fields = Object.keys(entry)
     .sort()
     .filter((field) => (entry as unknown as Record<string, unknown>)[field] !== undefined)
-    .map(
-      (field) =>
-        `    ${field}: '${String((entry as unknown as Record<string, unknown>)[field]).replaceAll("'", "\\'")}',`,
-    );
+    .map((field) => `    ${field}: ${formatFieldValue((entry as unknown as Record<string, unknown>)[field])},`);
   return `  {\n${fields.join('\n')}\n  },`;
+}
+
+// A number is emitted BARE. Quoting it produced `familyOrder: '3'`, which is a string where the type
+// says number — the emitter had been string-only since every field was one, so the first numeric field
+// would have been silently mistyped in generated source rather than rejected here.
+function formatFieldValue(value: unknown): string {
+  if (typeof value === 'number') return String(value);
+  return `'${String(value).replaceAll("'", "\\'")}'`;
 }
 
 export function verifyRequirementCatalogEntries(entries: readonly Readonly<RequirementCatalogEntry>[]): string[] {
@@ -67,7 +72,7 @@ export function verifyRequirementCatalogEntries(entries: readonly Readonly<Requi
     // An ABSENT registrar is legitimate — an options-driven lane has none — but an EMPTY string is a
     // row that meant to name one and lost it, which is the typo this check exists to catch.
     for (const [field, value] of Object.entries(entry)) {
-      if (value !== undefined && value.length === 0) {
+      if (typeof value === 'string' && value.length === 0) {
         problems.push(`empty ${field}: ${requirementCatalogEntryIdentity(entry)}`);
       }
     }
