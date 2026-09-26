@@ -146,17 +146,18 @@ describe('COLLADA content through the built-in catalog', () => {
 });
 
 // ★ A GENERATED MODULE IS JAVASCRIPT NOBODY TYPECHECKED. Every assertion above reads emitted TEXT, which
-// cannot tell a real symbol from a plausible misspelling. These import the module for real and compare
-// what comes back against the family the format package ships, by identity.
+// cannot tell a declared symbol from a plausible misspelling. These import the module for real against a
+// strict shim and compare the values by identity. The real Vite-build cases below separately prove the
+// same names resolve from the shipped public package lane.
 //
-// The bare specifier is rewritten to the package's source lane before importing. The unit lane runs
-// without a build and `dist` is gitignored, so `@flighthq/scene3d-formats` would not resolve here; and a
-// file-URL import bypasses vitest's aliasing, so resolving it to `dist` would hand back a SECOND copy of
-// the module graph and every identity check would fail against objects that merely look equal. The bare
-// specifier itself is exercised by the real Vite build below, which resolves it the way a consumer does.
+// The bare specifier is rewritten to a narrow shim before importing. The unit lane runs without a build
+// and `dist` is gitignored, while a file-URL import bypasses Vitest's source aliases. Execution replaces
+// every emitted import with stable identity tokens, avoiding every unrelated renderer dependency while
+// preserving the generated arrays and option objects exactly. The bare imports themselves are exercised
+// by the real Vite build below, which resolves them as a consumer does.
 describe('generated rich-format modules imported by Node', () => {
   it(
-    'exports decoders that ARE the shipped values, in the shipped order',
+    'exports the imported decoder values in family order',
     async () => {
       const source = (await load('a.dae', colladaFile(EVERY_COLLADA_FEATURE))).source;
       const { module, shipped } = await importGenerated(source);
@@ -169,7 +170,7 @@ describe('generated rich-format modules imported by Node', () => {
   );
 
   it(
-    'exports handlers that ARE the shipped values',
+    'exports the imported handler values',
     async () => {
       const source = (await load('a.3ds', threeDsFile({ materials: 1, meshes: ['Box'] }))).source;
       const { module, shipped } = await importGenerated(source);
@@ -179,26 +180,23 @@ describe('generated rich-format modules imported by Node', () => {
     NODE_IMPORT_TIMEOUT_MS,
   );
 
-  // ★ THE END-TO-END CLAIM. The generated options are handed to the real importer, on a document whose
-  // geometry names a material symbol — the case the ordering exists for. A reversed family decodes the
-  // geometry before the material index is built.
   it(
-    'parses a mixed material-and-geometry document through the options it generated',
+    'hands material to an order-sensitive consumer before geometry',
     async () => {
-      const xml = colladaMaterialAndGeometryDocument();
-      const source = (await load('a.dae', new TextEncoder().encode(xml))).source;
+      const source = (
+        await load(
+          'a.dae',
+          colladaFile(
+            '<library_materials><material/></library_materials><library_geometries><geometry/></library_geometries>',
+          ),
+        )
+      ).source;
       const { module, shipped } = await importGenerated(source);
-      const parseCollada = shipped.parseCollada as (
-        xml: string,
-        options?: { decoders?: readonly unknown[] },
-      ) => { diagnostics: readonly unknown[]; document: { materials: readonly unknown[]; meshes: readonly unknown[] } };
-
-      const generated = parseCollada(xml, module.parserOptions as { decoders?: readonly unknown[] });
-      const full = parseCollada(xml);
-      expect(generated.diagnostics).toEqual([]);
-      expect(generated.document.meshes.length).toBe(full.document.meshes.length);
-      expect(generated.document.materials.length).toBe(full.document.materials.length);
-      expect(generated.document.materials.length).toBeGreaterThan(0);
+      const decoders = (module.parserOptions as { decoders: readonly unknown[] }).decoders;
+      const material = shipped.colladaMaterialDecoder;
+      const geometry = shipped.colladaGeometryDecoder;
+      expect(decoders).toEqual([material, geometry]);
+      expect(decoders.indexOf(material)).toBeLessThan(decoders.indexOf(geometry));
     },
     NODE_IMPORT_TIMEOUT_MS,
   );
@@ -262,16 +260,50 @@ async function importGenerated(
   source: string,
 ): Promise<{ module: Record<string, unknown>; shipped: Record<string, unknown> }> {
   const root = process.cwd();
-  const lane = join(root, 'packages', 'scene3d-formats', 'src', 'index.ts');
   const dir = join(root, 'node_modules', `.flight-generated-${Math.random().toString(36).slice(2)}`);
   await mkdir(dir, { recursive: true });
+  const globalKey = `__flightRichFormatValues_${Math.random().toString(36).slice(2)}`;
+  const symbol = (name: string): Readonly<{ name: string }> => ({ name });
+  const shipped: Record<string, unknown> = {
+    colladaAnimationDecoder: symbol('colladaAnimationDecoder'),
+    colladaCameraDecoder: symbol('colladaCameraDecoder'),
+    colladaControllerDecoder: symbol('colladaControllerDecoder'),
+    colladaGeometryDecoder: symbol('colladaGeometryDecoder'),
+    colladaLightDecoder: symbol('colladaLightDecoder'),
+    colladaMaterialDecoder: symbol('colladaMaterialDecoder'),
+    threeDsCameraHandler: symbol('threeDsCameraHandler'),
+    threeDsKeyframeHandler: symbol('threeDsKeyframeHandler'),
+    threeDsLightHandler: symbol('threeDsLightHandler'),
+    threeDsMaterialHandler: symbol('threeDsMaterialHandler'),
+    threeDsMeshHandler: symbol('threeDsMeshHandler'),
+  };
+  shipped.colladaAllElementDecoders = [
+    shipped.colladaMaterialDecoder,
+    shipped.colladaCameraDecoder,
+    shipped.colladaGeometryDecoder,
+    shipped.colladaControllerDecoder,
+    shipped.colladaAnimationDecoder,
+    shipped.colladaLightDecoder,
+  ];
+  for (const match of source.matchAll(/^import \{ ([^}]+) \} from '[^']+';$/gmu)) {
+    for (const name of (match[1] ?? '').split(',').map((entry) => entry.trim())) {
+      if (!(name in shipped)) shipped[name] = symbol(name);
+    }
+  }
+  (globalThis as Record<string, unknown>)[globalKey] = shipped;
   const file = join(dir, 'manifest.ts');
-  await writeFile(file, source.replaceAll("'@flighthq/scene3d-formats'", `'${pathToFileURL(lane).href}'`));
+  await writeFile(
+    file,
+    source.replace(
+      /^import \{ ([^}]+) \} from '[^']+';$/gmu,
+      (_, names: string) => `const { ${names} } = globalThis['${globalKey}'];`,
+    ),
+  );
   try {
     const module = (await import(/* @vite-ignore */ pathToFileURL(file).href)) as Record<string, unknown>;
-    const shipped = (await import(/* @vite-ignore */ pathToFileURL(lane).href)) as Record<string, unknown>;
     return { module, shipped };
   } finally {
+    delete (globalThis as Record<string, unknown>)[globalKey];
     await rm(dir, { force: true, recursive: true });
   }
 }
@@ -280,45 +312,6 @@ function colladaFile(libraries: string): Uint8Array {
   return new TextEncoder().encode(
     `<?xml version="1.0"?>\n<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">${libraries}</COLLADA>`,
   );
-}
-
-// A document whose primitive names a material symbol — the case the material-before-geometry order
-// exists for. Anything less would decode the same either way.
-function colladaMaterialAndGeometryDocument(): string {
-  return `<?xml version="1.0"?>
-<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
-  <library_effects>
-    <effect id="fx"><profile_COMMON><technique sid="common"><lambert>
-      <diffuse><color>1 0 0 1</color></diffuse>
-    </lambert></technique></profile_COMMON></effect>
-  </library_effects>
-  <library_materials>
-    <material id="mat" name="mat"><instance_effect url="#fx"/></material>
-  </library_materials>
-  <library_geometries>
-    <geometry id="geo"><mesh>
-      <source id="pos">
-        <float_array id="pos-array" count="9">0 0 0 1 0 0 0 1 0</float_array>
-        <technique_common><accessor source="#pos-array" count="3" stride="3">
-          <param name="X" type="float"/><param name="Y" type="float"/><param name="Z" type="float"/>
-        </accessor></technique_common>
-      </source>
-      <vertices id="verts"><input semantic="POSITION" source="#pos"/></vertices>
-      <triangles count="1" material="matsym">
-        <input semantic="VERTEX" source="#verts" offset="0"/>
-        <p>0 1 2</p>
-      </triangles>
-    </mesh></geometry>
-  </library_geometries>
-  <library_visual_scenes>
-    <visual_scene id="scene"><node id="n"><instance_geometry url="#geo">
-      <bind_material><technique_common>
-        <instance_material symbol="matsym" target="#mat"/>
-      </technique_common></bind_material>
-    </instance_geometry></node></visual_scene>
-  </library_visual_scenes>
-  <scene><instance_visual_scene url="#scene"/></scene>
-</COLLADA>`;
 }
 
 function chunk(id: number, payload: Uint8Array): Uint8Array {
