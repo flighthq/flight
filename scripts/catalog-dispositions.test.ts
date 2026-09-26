@@ -7,7 +7,12 @@ import {
   OBJ_FEATURE_DIRECTIVES,
   OBJ_MATERIAL_FEATURE,
 } from '@flighthq/scene3d-formats/contract';
-import { OBJ_MATERIAL_BLINN_PHONG_FEATURE, OBJ_MATERIAL_STANDARD_PBR_FEATURE } from '@flighthq/types/contract';
+import {
+  OBJ_MATERIAL_BLINN_PHONG_FEATURE,
+  OBJ_MATERIAL_STANDARD_PBR_FEATURE,
+  SpineBinarySectionKind,
+  SpineBinaryTimelineKind,
+} from '@flighthq/types/contract';
 
 import { ALWAYS_READ_FORMAT_FEATURES, buildRequirementDispositions } from './catalog-dispositions.ts';
 import { buildRequirementCatalogRows, CATALOG_PARSER_BACKEND } from './catalog-rows.ts';
@@ -29,6 +34,7 @@ const ANALYZER_FEATURES: ReadonlyMap<string, readonly string[]> = new Map([
       OBJ_MATERIAL_STANDARD_PBR_FEATURE,
     ],
   ],
+  ['spine-binary', [...Object.values(SpineBinarySectionKind), ...Object.values(SpineBinaryTimelineKind)]],
 ]);
 
 describe('ALWAYS_READ_FORMAT_FEATURES', () => {
