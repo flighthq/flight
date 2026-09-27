@@ -1,24 +1,14 @@
 import { addNodeChild } from '@flighthq/node/contract';
 import { createPath, dashPath, getPathLength } from '@flighthq/path/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
-import {
-  appendShapeBeginFill,
-  appendShapeBeginGradientFill,
-  appendShapeEndFill,
-  appendShapeLineGradientStyle,
-  appendShapeLineStyle,
-  appendShapePath,
-  clearShapeCommands,
-  createShape,
-} from '@flighthq/shape/contract';
+import { clearShapeCommands, createShape } from '@flighthq/shape/contract';
 import type {
   DisplayObject,
-  LottieGradientPaint,
   LottieImportContext,
   LottieLayerContext,
-  LottiePaint,
   LottieShapeGroup,
   LottieShapeItem,
+  LottieShapePainter,
   LottieTransform,
   LottieTrimPathShapeItem,
   Path,
@@ -30,21 +20,19 @@ import {
   initialLottieValue,
   isAnimatedLottieProperty,
   lottieNumericValue,
-  lottieRgba,
   reportLottieExpression,
   reportLottieSkip,
 } from './lottieDocument.ts';
-import { createLottieGradientMatrix, parseLottieGradient } from './lottieGradientPaint.ts';
 import { getLottieShapeItemHandler } from './lottieRegistry.ts';
+import { appendLottieShapePaths } from './lottieShapePaint.ts';
 
 /**
  * The shape layer: the group walk, and the paint/path render stack every shape item feeds.
  *
- * ★ THE RENDER STACK BELONGS TO THIS LAYER, NOT TO THE DOCUMENT CORE. Shape items produce paints and paths; turning
- * those into shape commands is one interpretation, owned here, so a document of null, solid, image or text layers
- * links none of `@flighthq/shape`'s fill, stroke and gradient builders. `renderLottieShapeState` dispatches on the
- * paint's own kind rather than through the registry, so a build that registers only the fill item still links the
- * gradient builders — the remaining coupling, and the one that would need a paint-renderer seam to break.
+ * ★ THE GROUP WALK BELONGS TO THIS LAYER; THE PAINTS DO NOT. Shape items produce paths and PAINTERS — closures that
+ * draw their own paint — so this module names no fill, stroke or gradient builder at all. That is what makes the cost
+ * follow the registration: a build with only the fill item links the fill builders, and a document of null, solid,
+ * image or text layers links none of them.
  */
 export function lottieShapeLayerHandler(context: LottieLayerContext): void {
   appendLottieShapeItems(context.container, context.layer.shapes ?? [], context.import);
@@ -60,9 +48,9 @@ function appendLottieShapeItems(
   const transform = items.find((item) => item.ty === 'tr');
   if (transform?.ty === 'tr') applyLottieTransform(group, transform as Readonly<LottieTransform>, context);
   const shape = createShape();
-  const paints: LottiePaint[] = [];
+  const painters: LottieShapePainter[] = [];
   const paths: Path[] = [];
-  const rerender = (): void => renderLottieShapeState(paints, paths, shape);
+  const rerender = (): void => renderLottieShapeState(painters, paths, shape);
 
   for (const item of items) {
     if (item.hd === true) continue;
@@ -77,14 +65,14 @@ function appendLottieShapeItems(
     }
     const handler = getLottieShapeItemHandler(context.registry, item.ty);
     if (handler !== null) {
-      handler({ import: context, item, paints, paths, rerender, shape });
+      handler({ import: context, item, painters, paths, rerender, shape });
     } else {
       reportLottieSkip(context, 'lottie.unsupported-shape-item', 'appendLottieShapeItems', { shapeType: item.ty });
     }
     reportLottieExpression(item, context);
   }
   applyStaticLottieTrim(items, paths);
-  renderLottieShapeState(paints, paths, shape);
+  renderLottieShapeState(painters, paths, shape);
   if (paths.length > 0) addNodeChild(group, shape);
   addNodeChild(parent, group);
 }
@@ -111,84 +99,25 @@ function applyStaticLottieTrim(items: readonly Readonly<LottieShapeItem>[], path
   }
 }
 
-// The current representation restates every local path for every local paint. This preserves
-// multiple paints when all paths precede all styles, but it does not yet implement Lottie's general
-// render stack: styles scope only over preceding shapes (including shapes in nested groups), and
-// repeated styles render in reverse order. That needs a scoped stack rather than another field here.
-function renderLottieShapeState(paints: LottiePaint[], paths: Path[], shape: Shape): void {
+/**
+ * Draws the group's current paints over its current paths.
+ *
+ * ★ THE LAYER NAMES NO PAINT. It used to `switch` over `paint.kind` — solid fill, solid stroke, gradient fill, gradient
+ * stroke — which put every one of `@flighthq/shape`'s builders into any build that read a shape layer, however few items
+ * it registered. Each item now supplies the closure that draws its own paint; this function owns only the ORDER they
+ * run in and the unpainted case, which are the two things no single item can decide.
+ *
+ * The representation still restates every local path for every local paint. That preserves multiple paints when all
+ * paths precede all styles, but it is not Lottie's general render stack: styles scope only over preceding shapes
+ * (including shapes in nested groups), and repeated styles render in reverse order. That needs a scoped stack rather
+ * than another field here.
+ */
+function renderLottieShapeState(painters: readonly LottieShapePainter[], paths: Path[], shape: Shape): void {
   clearShapeCommands(shape);
   if (paths.length === 0) return;
-  if (paints.length === 0) {
+  if (painters.length === 0) {
     appendLottieShapePaths(paths, shape, null);
     return;
   }
-  for (const paint of paints) {
-    if (paint.kind === 'fill') {
-      appendShapeBeginFill(shape, lottieRgba(paint.color), paint.opacity);
-      appendLottieShapePaths(paths, shape, paint.winding);
-      appendShapeEndFill(shape);
-    } else if (paint.kind === 'stroke') {
-      appendShapeLineStyle(
-        shape,
-        paint.width,
-        lottieRgba(paint.color),
-        paint.opacity,
-        false,
-        'normal',
-        paint.caps,
-        paint.joints,
-        paint.miterLimit,
-      );
-      appendLottieShapePaths(paths, shape, null, paint.dash, paint.dashOffset);
-    } else if (paint.type === 'gf') {
-      appendLottieGradientFill(shape, paint);
-      appendLottieShapePaths(paths, shape, paint.winding);
-      appendShapeEndFill(shape);
-    } else {
-      appendLottieGradientStroke(shape, paint);
-      appendLottieShapePaths(paths, shape, null, paint.dash, paint.dashOffset);
-    }
-  }
-}
-
-function appendLottieShapePaths(
-  paths: Path[],
-  shape: Shape,
-  winding: 'evenOdd' | 'nonZero' | null,
-  dash: readonly number[] = [],
-  dashOffset = 0,
-): void {
-  for (const path of paths) {
-    let output = path;
-    if (dash.length > 0) {
-      output = createPath(path.winding);
-      dashPath(path, dash.length % 2 === 0 ? dash : [...dash, ...dash], dashOffset, output);
-    }
-    appendShapePath(shape, output.commands.slice(), output.data.slice(), winding ?? output.winding);
-  }
-}
-
-function appendLottieGradientFill(shape: Shape, paint: LottieGradientPaint): void {
-  const gradient = parseLottieGradient(paint.values, paint.count, paint.opacity);
-  appendShapeBeginGradientFill(
-    shape,
-    paint.shape === 2 ? 'radial' : 'linear',
-    gradient.colors,
-    gradient.alphas,
-    gradient.ratios,
-    createLottieGradientMatrix(paint.start, paint.end),
-  );
-}
-
-function appendLottieGradientStroke(shape: Shape, paint: LottieGradientPaint): void {
-  const gradient = parseLottieGradient(paint.values, paint.count, paint.opacity);
-  appendShapeLineStyle(shape, paint.width, 0x000000ff, 1, false, 'normal', paint.caps, paint.joints, paint.miterLimit);
-  appendShapeLineGradientStyle(
-    shape,
-    paint.shape === 2 ? 'radial' : 'linear',
-    gradient.colors,
-    gradient.alphas,
-    gradient.ratios,
-    createLottieGradientMatrix(paint.start, paint.end),
-  );
+  for (const painter of painters) painter(shape, paths);
 }

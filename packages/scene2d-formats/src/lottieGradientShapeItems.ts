@@ -1,4 +1,15 @@
-import type { LottieGradientPaint, LottieGradientShapeItem, LottieShapeItemContext } from '@flighthq/types/contract';
+import {
+  appendShapeBeginGradientFill,
+  appendShapeEndFill,
+  appendShapeLineGradientStyle,
+  appendShapeLineStyle,
+} from '@flighthq/shape/contract';
+import type {
+  LottieGradientPaint,
+  LottieGradientShapeItem,
+  LottieShapeItemContext,
+  LottieShapePainter,
+} from '@flighthq/types/contract';
 
 import {
   bindMutableLottieNumericProperty,
@@ -7,8 +18,13 @@ import {
   lottieNumericValue,
   reportLottieSkip,
 } from './lottieDocument.ts';
+import { createLottieGradientMatrix, parseLottieGradient } from './lottieGradientPaint.ts';
+import { appendLottieDashedShapePaths, appendLottieShapePaths } from './lottieShapePaint.ts';
 import { mapLottieLineCap, mapLottieLineJoin } from './lottieStrokeShapeItem.ts';
-function handleLottieGradientItem(context: LottieShapeItemContext): void {
+function handleLottieGradientItem(
+  context: LottieShapeItemContext,
+  paint: (gradient: Readonly<LottieGradientPaint>) => LottieShapePainter,
+): void {
   const gradient = context.item as Readonly<LottieGradientShapeItem>;
   const initialGradient = initialLottieValue(gradient.g.k);
   const values = lottieNumericValue(
@@ -38,7 +54,7 @@ function handleLottieGradientItem(context: LottieShapeItemContext): void {
     reportLottieSkip(context.import, 'lottie.unsupported-shape-modifier', 'handleLottieGradientItem', {
       modifier: 'dash',
     });
-  const paint: LottieGradientPaint = {
+  const gradientPaint: LottieGradientPaint = {
     caps: mapLottieLineCap(gradient.lc),
     count: gradient.g.p,
     dash: dash.some((value) => value > 0) ? dash : [],
@@ -55,7 +71,7 @@ function handleLottieGradientItem(context: LottieShapeItemContext): void {
     width: width[0],
     winding: gradient.r === 2 ? 'evenOdd' : 'nonZero',
   };
-  context.paints.push(paint);
+  context.painters.push(paint(gradientPaint));
   bindMutableLottieNumericProperty(gradient.g.k, values, (value) => value, context.rerender, context.import);
   bindMutableLottieNumericProperty(gradient.s, start, (value) => value, context.rerender, context.import);
   bindMutableLottieNumericProperty(gradient.e, end, (value) => value, context.rerender, context.import);
@@ -65,7 +81,7 @@ function handleLottieGradientItem(context: LottieShapeItemContext): void {
       opacity,
       (value) => value,
       () => {
-        paint.opacity = opacity[0] / 100;
+        gradientPaint.opacity = opacity[0] / 100;
         context.rerender();
       },
       context.import,
@@ -77,7 +93,7 @@ function handleLottieGradientItem(context: LottieShapeItemContext): void {
       width,
       (value) => value,
       () => {
-        paint.width = width[0];
+        gradientPaint.width = width[0];
         context.rerender();
       },
       context.import,
@@ -89,7 +105,7 @@ function handleLottieGradientItem(context: LottieShapeItemContext): void {
       miterLimit,
       (value) => value,
       () => {
-        paint.miterLimit = miterLimit[0];
+        gradientPaint.miterLimit = miterLimit[0];
         context.rerender();
       },
       context.import,
@@ -98,13 +114,62 @@ function handleLottieGradientItem(context: LottieShapeItemContext): void {
 }
 
 /**
- * The two gradient shape items. Both read the same stop encoding and differ only in the paint they push, which is why
- * they share a module rather than each having one.
+ * The two gradient shape items. Both read the same stop encoding, which is why they share a module, and each supplies
+ * the painter for its own half of it.
+ *
+ * ★ EACH PAINTER IS A SEPARATE TOP-LEVEL FUNCTION SO THE OTHER CAN GO. Registering the gradient FILL alone links
+ * `gradientFillPainter` and leaves `gradientStrokePainter` — with `appendShapeLineGradientStyle` and the dashed path
+ * appender behind it — unreferenced and shakeable. Passing the painter in, rather than branching on `paint.type` inside
+ * the shared reader, is what keeps that true.
  */
 export function lottieGradientFillShapeItemHandler(context: LottieShapeItemContext): void {
-  handleLottieGradientItem(context);
+  handleLottieGradientItem(context, gradientFillPainter);
 }
 
 export function lottieGradientStrokeShapeItemHandler(context: LottieShapeItemContext): void {
-  handleLottieGradientItem(context);
+  handleLottieGradientItem(context, gradientStrokePainter);
+}
+
+function gradientFillPainter(paint: Readonly<LottieGradientPaint>): LottieShapePainter {
+  return (shape, paths) => {
+    const gradient = parseLottieGradient(paint.values, paint.count, paint.opacity);
+    appendShapeBeginGradientFill(
+      shape,
+      paint.shape === 2 ? 'radial' : 'linear',
+      gradient.colors,
+      gradient.alphas,
+      gradient.ratios,
+      createLottieGradientMatrix(paint.start, paint.end),
+    );
+    appendLottieShapePaths(paths, shape, paint.winding);
+    appendShapeEndFill(shape);
+  };
+}
+
+function gradientStrokePainter(paint: Readonly<LottieGradientPaint>): LottieShapePainter {
+  return (shape, paths) => {
+    const gradient = parseLottieGradient(paint.values, paint.count, paint.opacity);
+    // The solid line style comes first and is immediately overridden by the gradient one: `appendShapeLineStyle` is
+    // what sets the width, caps, joints and miter limit, and the gradient call carries only the ramp.
+    appendShapeLineStyle(
+      shape,
+      paint.width,
+      0x000000ff,
+      1,
+      false,
+      'normal',
+      paint.caps,
+      paint.joints,
+      paint.miterLimit,
+    );
+    appendShapeLineGradientStyle(
+      shape,
+      paint.shape === 2 ? 'radial' : 'linear',
+      gradient.colors,
+      gradient.alphas,
+      gradient.ratios,
+      createLottieGradientMatrix(paint.start, paint.end),
+    );
+    appendLottieDashedShapePaths(paths, shape, null, paint.dash, paint.dashOffset);
+  };
 }

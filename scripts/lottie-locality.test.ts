@@ -48,6 +48,32 @@ const ABSENT_FROM_SUBSET: readonly (readonly [string, readonly string[]])[] = [
     'lottie-import-text',
     ['createClipRegionFromPath', 'createLottieBezierPath', 'createTexture', 'appendShapeBeginFill'],
   ],
+  // ★ THE SOLID-FILL-ONLY SHAPE BUILD. It registers the shape layer with the ellipse, fill and rectangle items, so it
+  // draws — and must contain no gradient builder, no gradient matrix, no stop decoder and not even the solid LINE style,
+  // because it registered no stroke. Every one of these was in this bundle while the shape layer switched on
+  // `paint.kind`, since the switch named all four branches whatever the caller registered.
+  [
+    'lottie-import-geometry',
+    [
+      'appendShapeBeginGradientFill',
+      'appendShapeLineGradientStyle',
+      'appendShapeLineStyle',
+      'createLottieGradientMatrix',
+      'parseLottieGradient',
+    ],
+  ],
+];
+
+// Each paint family, priced against the solid-fill-only build that differs from it by exactly that one family, and the
+// minimum each must cost. A handler shim moves tens of bytes; these move hundreds, which is the difference between
+// registering a family and merely naming it.
+//
+// Measured against geometry (10174 minified / 18312 unminified): stroke 10586 / 18875, gradient fill 11090 / 19802,
+// gradient stroke 11207 / 20019 — so declining one saves 412-1033 B minified and 563-1707 B unminified.
+const PAINT_FAMILY_COST: readonly (readonly [string, number])[] = [
+  ['lottie-import-stroke', 250],
+  ['lottie-import-gradient-fill', 600],
+  ['lottie-import-gradient-stroke', 700],
 ];
 
 // The three family modules that own a full preset, and the arrays they own. A module on the selective path naming one of
@@ -75,22 +101,27 @@ const FEATURE_MODULE_IMPORTERS: readonly (readonly [string, readonly string[]])[
 // shim moves tens of bytes, and the COLLADA fixtures measured an 18-byte spread across four subsets while they still
 // routed through a preset-resolving entry.
 //
-// Measured, minified / unminified: full 14412 / 30504, geometry 10867 / 19540, null-solid 7735 / 13909,
-// image 6458 / 11282, text 6140 / 15512. Making masks a family of their own moved every subset by more than a
-// kilobyte — image -1199 / -2106, text -1206 / -2161, null-solid -1139 / -1985, geometry -584 / -1004 — while the full
-// import grew 99 / 253 for the third registry field and its dispatch. That is the shape a real extraction has: the
-// callers who decline a feature stop paying for it, and the caller who wants everything pays a little more for being
-// asked.
+// Measured, minified / unminified: full 14456 / 30672, geometry 10174 / 18312, null-solid 7735 / 13918,
+// image 6458 / 11282, text 6140 / 15512.
+//
+// Two extractions moved these. Making masks a family of their own took more than a kilobyte off every subset — image
+// -1199 / -2106, text -1206 / -2161, null-solid -1139 / -1985 — and giving each paint its own painter took a further
+// 693 / 1228 off the solid-fill-only build. The full import grew both times, 99 / 253 then 44 / 168, for the extra
+// registry field and the indirection. That is the shape a real extraction has: the callers who decline a feature stop
+// paying for it, and the caller who wants everything pays a little more for being asked.
 const FIXTURES = [
   'lottie-import',
   'lottie-import-geometry',
+  'lottie-import-gradient-fill',
+  'lottie-import-gradient-stroke',
   'lottie-import-image',
   'lottie-import-null-solid',
+  'lottie-import-stroke',
   'lottie-import-text',
 ] as const;
 
 const SAVINGS: readonly (readonly [string, number])[] = [
-  ['lottie-import-geometry', 0.18],
+  ['lottie-import-geometry', 0.22],
   ['lottie-import-null-solid', 0.35],
   ['lottie-import-text', 0.4],
   ['lottie-import-image', 0.45],
@@ -190,6 +221,20 @@ describe('lottie locality', () => {
       expect(subsetBytes, `${subset} missing from ${baseline}`).toBeGreaterThan(0);
       expect(fullBytes, `lottie-import missing from ${baseline}`).toBeGreaterThan(0);
       expect(subsetBytes, `${subset} vs lottie-import in ${baseline}`).toBeLessThan(fullBytes * (1 - fraction));
+    }
+  });
+
+  // ★ AND EACH PAINT FAMILY MUST COST SOMETHING TO REGISTER. The pair differs by one item handler, so the byte
+  // difference IS that family's drawing code. This is the assertion the old `switch (paint.kind)` would have failed:
+  // with every builder already linked by the layer, adding a handler moved only the handler.
+  it.each(PAINT_FAMILY_COST)('charges materially more than solid fill alone for %s', (fixture, minimum) => {
+    for (const baseline of ['size.baseline.json', 'size.unminified.baseline.json']) {
+      const sizes = readBaseline(baseline);
+      const withFamily = sizes[`${fixture}:canvas`];
+      const solidFillOnly = sizes['lottie-import-geometry:canvas'];
+      expect(withFamily, `${fixture} missing from ${baseline}`).toBeGreaterThan(0);
+      expect(withFamily - solidFillOnly, `${fixture} over geometry in ${baseline}`).toBeGreaterThan(minimum);
+      expect(withFamily, `${fixture} vs the full import in ${baseline}`).toBeLessThan(sizes['lottie-import:canvas']);
     }
   });
 

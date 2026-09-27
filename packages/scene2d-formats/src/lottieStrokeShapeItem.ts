@@ -1,3 +1,4 @@
+import { appendShapeLineStyle } from '@flighthq/shape/contract';
 import type { LottieShapeItemContext, LottieStrokePaint, LottieStrokeShapeItem } from '@flighthq/types/contract';
 
 import {
@@ -5,8 +6,17 @@ import {
   initialLottieValue,
   isAnimatedLottieProperty,
   lottieNumericValue,
+  lottieRgba,
   reportLottieSkip,
 } from './lottieDocument.ts';
+import { appendLottieDashedShapePaths } from './lottieShapePaint.ts';
+
+/**
+ * The solid stroke item, and the painter that draws it.
+ *
+ * ★ THE DASH IS WHY THE STROKE TAKES THE OTHER APPENDER. Strokes are the only Lottie paints that dash, so
+ * `appendLottieDashedShapePaths` — and the `dashPath` behind it — is linked by the stroke items and by nothing else.
+ */
 export function lottieStrokeShapeItemHandler(context: LottieShapeItemContext): void {
   const stroke = context.item as Readonly<LottieStrokeShapeItem>;
   const color = lottieNumericValue(initialLottieValue(stroke.c), 3);
@@ -42,7 +52,20 @@ export function lottieStrokeShapeItemHandler(context: LottieShapeItemContext): v
     opacity: opacity[0],
     width: width[0],
   };
-  context.paints.push(paint);
+  context.painters.push((shape, paths) => {
+    appendShapeLineStyle(
+      shape,
+      paint.width,
+      lottieRgba(paint.color),
+      paint.opacity,
+      false,
+      'normal',
+      paint.caps,
+      paint.joints,
+      paint.miterLimit,
+    );
+    appendLottieDashedShapePaths(paths, shape, null, paint.dash, paint.dashOffset);
+  });
   bindMutableLottieNumericProperty(stroke.c, color, (value) => value, context.rerender, context.import);
   bindMutableLottieNumericProperty(
     stroke.o,
