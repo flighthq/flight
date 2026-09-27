@@ -38,11 +38,23 @@ describe('runRegistryTool', () => {
     const formatRows = rows.filter((candidate) => candidate.facet === 'document.format');
     for (const row of formatRows) {
       expect(row.backend).toBe('parser');
-      expect(row.kind).toMatch(/^(3ds|awd2|dae|md2|md5|obj|swf)\./);
+      expect(row.kind).toMatch(/^(3ds|awd2|dae|dragonbones|md2|md5|obj|riv|spine-binary|spine-json|swf)\./);
     }
     // Every format namespace must actually appear. The pattern above is satisfied by a catalog missing
     // three of the four, which is how a format silently stops being relayed.
-    for (const namespace of ['3ds.', 'awd2.', 'dae.', 'md2.', 'md5.', 'obj.', 'swf.']) {
+    for (const namespace of [
+      '3ds.',
+      'awd2.',
+      'dae.',
+      'dragonbones.',
+      'md2.',
+      'md5.',
+      'obj.',
+      'riv.',
+      'spine-binary.',
+      'spine-json.',
+      'swf.',
+    ]) {
       expect(
         formatRows.some((row) => row.kind.startsWith(namespace)),
         `no ${namespace} rows reached the CLI`,

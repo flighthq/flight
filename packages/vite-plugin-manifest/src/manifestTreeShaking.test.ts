@@ -247,176 +247,39 @@ describe('vite build of a rich-format manifest', () => {
   );
 });
 
-describe('vite build with 3D material renderers', () => {
+// ★ THE BUNDLE PROOF FOR RIVE'S DEPENDENCY SPLIT. Reading the emitted text shows which registrars were OFFERED;
+// this runs a real Vite build and reads what survived. The claim under test is that a document with no clipping
+// produces a bundle naming no clipping registrar — which is what keeps a path-boolean implementation out of a
+// build that never needed one.
+describe('vite build of a Rive manifest', () => {
   it(
-    'bundles only the gl material renderer for a material-bearing 3DS, dropping wgpu',
+    'keeps only the registrars the content named, dropping the clipping family',
     async () => {
-      const dir = await project3d('.3ds', threeDsFile({ materials: 1 }));
-      await writeEntry3d(dir, '.3ds', 'glOptions');
-      const bundle = await materialBundleOf(dir);
-
-      expect(bundle).toContain('GL_BLINNPHONG_MARKER');
-      expect(bundle).not.toContain('WGPU_BLINNPHONG_MARKER');
-      expect(bundle).not.toContain('GL_STANDARDPBR_MARKER');
+      const dir = await richProject('asset.riv', riveFile([RIVE_PATH, RIVE_TEXT]));
+      await writeFile(
+        join(dir, 'src', 'main.js'),
+        `import { parserOptions } from './asset.riv${MANIFEST_QUERY_SUFFIX}';\nglobalThis.out = parserOptions;\n`,
+      );
+      const bundle = await richBundleOf(dir);
+      expect(bundle).toContain('registerRivePathHandlers');
+      expect(bundle).toContain('registerRiveTextHandlers');
+      expect(bundle).not.toContain('registerRiveClippingHandlers');
+      expect(bundle).not.toContain('pathBooleanRegistrars');
     },
     BUILD_TIMEOUT_MS,
   );
 
   it(
-    'bundles no material renderer for a mesh-only 3DS',
+    'emits the clipping registrar into its own field when the content does use clipping',
     async () => {
-      const dir = await project3d('.3ds', threeDsFile({ meshes: ['M'] }));
-      await writeEntry3d(dir, '.3ds', 'glOptions');
-      const bundle = await materialBundleOf(dir);
-
-      expect(bundle).not.toContain('GL_BLINNPHONG_MARKER');
-      expect(bundle).not.toContain('WGPU_BLINNPHONG_MARKER');
-    },
-    BUILD_TIMEOUT_MS,
-  );
-
-  it(
-    'bundles StandardPbr for a material-bearing COLLADA on gl, drops BlinnPhong',
-    async () => {
-      const dir = await project3d('.dae', colladaFile(COLLADA_MATERIAL_LIBRARIES));
-      await writeEntry3d(dir, '.dae', 'glOptions');
-      const bundle = await materialBundleOf(dir);
-
-      expect(bundle).toContain('GL_STANDARDPBR_MARKER');
-      expect(bundle).not.toContain('GL_BLINNPHONG_MARKER');
-      expect(bundle).not.toContain('WGPU_STANDARDPBR_MARKER');
-    },
-    BUILD_TIMEOUT_MS,
-  );
-
-  it(
-    'bundles no material renderer for a geometry-only COLLADA',
-    async () => {
-      const dir = await project3d('.dae', colladaFile(COLLADA_GEOMETRY_LIBRARY));
-      await writeEntry3d(dir, '.dae', 'glOptions');
-      const bundle = await materialBundleOf(dir);
-
-      expect(bundle).not.toContain('GL_STANDARDPBR_MARKER');
-      expect(bundle).not.toContain('GL_BLINNPHONG_MARKER');
-    },
-    BUILD_TIMEOUT_MS,
-  );
-
-  it(
-    'bundles BlinnPhong for a skin-bearing MD2 on wgpu',
-    async () => {
-      const dir = await project3d('.md2', md2WithSkins());
-      await writeEntry3d(dir, '.md2', 'wgpuOptions');
-      const bundle = await materialBundleOf(dir);
-
-      expect(bundle).toContain('WGPU_BLINNPHONG_MARKER');
-      expect(bundle).not.toContain('GL_BLINNPHONG_MARKER');
-    },
-    BUILD_TIMEOUT_MS,
-  );
-
-  it(
-    'bundles no material renderer for a mesh-only MD2',
-    async () => {
-      const dir = await project3d('.md2', md2MeshOnly());
-      await writeEntry3d(dir, '.md2', 'glOptions');
-      const bundle = await materialBundleOf(dir);
-
-      expect(bundle).not.toContain('GL_BLINNPHONG_MARKER');
-      expect(bundle).not.toContain('WGPU_BLINNPHONG_MARKER');
-    },
-    BUILD_TIMEOUT_MS,
-  );
-
-  it(
-    'bundles BlinnPhong for a full MD5 mesh',
-    async () => {
-      const dir = await project3d('.md5mesh', textBytes(FULL_MD5_MESH));
-      await writeEntry3d(dir, '.md5mesh', 'glOptions');
-      const bundle = await materialBundleOf(dir);
-
-      expect(bundle).toContain('GL_BLINNPHONG_MARKER');
-    },
-    BUILD_TIMEOUT_MS,
-  );
-
-  it(
-    'bundles no material renderer for MD5 anim — animations carry no material',
-    async () => {
-      const dir = await project3d('.md5anim', textBytes(FULL_MD5_ANIM));
-      await writeEntry3d(dir, '.md5anim', 'glOptions');
-      const bundle = await materialBundleOf(dir);
-
-      expect(bundle).not.toContain('GL_BLINNPHONG_MARKER');
-      expect(bundle).not.toContain('GL_STANDARDPBR_MARKER');
-      expect(bundle).not.toContain('WGPU_BLINNPHONG_MARKER');
-    },
-    BUILD_TIMEOUT_MS,
-  );
-
-  it(
-    'bundles both BlinnPhong and StandardPbr for a material-bearing OBJ',
-    async () => {
-      const dir = await project3d('.obj', textBytes(FULL_OBJ));
-      await writeEntry3d(dir, '.obj', 'glOptions');
-      const bundle = await materialBundleOf(dir);
-
-      expect(bundle).toContain('GL_BLINNPHONG_MARKER');
-      expect(bundle).toContain('GL_STANDARDPBR_MARKER');
-      expect(bundle).not.toContain('WGPU_BLINNPHONG_MARKER');
-    },
-    BUILD_TIMEOUT_MS,
-  );
-
-  it(
-    'bundles no material renderer for a geometry-only OBJ',
-    async () => {
-      const dir = await project3d('.obj', textBytes(MINIMAL_OBJ));
-      await writeEntry3d(dir, '.obj', 'glOptions');
-      const bundle = await materialBundleOf(dir);
-
-      expect(bundle).not.toContain('GL_BLINNPHONG_MARKER');
-      expect(bundle).not.toContain('GL_STANDARDPBR_MARKER');
-    },
-    BUILD_TIMEOUT_MS,
-  );
-
-  it(
-    'feature-rich bundle is larger than minimal bundle for the same format',
-    async () => {
-      const minDir = await project3d('.md2', md2MeshOnly());
-      await writeEntry3d(minDir, '.md2', 'glOptions');
-      const minBundle = await materialBundleOf(minDir);
-
-      const fullDir = await project3d('.md2', md2WithSkins());
-      await writeEntry3d(fullDir, '.md2', 'glOptions');
-      const fullBundle = await materialBundleOf(fullDir);
-
-      expect(fullBundle.length).toBeGreaterThan(minBundle.length);
-    },
-    BUILD_TIMEOUT_MS,
-  );
-
-  it(
-    'reports unreadable diagnostic through the plugin path for corrupt 3DS',
-    async () => {
-      const dir = await project3d('.3ds', new Uint8Array([0x00]));
-      await writeEntry3d(dir, '.3ds', 'glOptions');
-      const diagnostics: string[] = [];
-      await materialBundleOf(dir, diagnostics);
-      expect(diagnostics.some((d) => d.includes('unreadable'))).toBe(true);
-    },
-    BUILD_TIMEOUT_MS,
-  );
-
-  it(
-    'reports unreadable diagnostic through the plugin path for non-COLLADA XML',
-    async () => {
-      const dir = await project3d('.dae', textBytes('<root/>'));
-      await writeEntry3d(dir, '.dae', 'glOptions');
-      const diagnostics: string[] = [];
-      await materialBundleOf(dir, diagnostics);
-      expect(diagnostics.some((d) => d.includes('unreadable'))).toBe(true);
+      const dir = await richProject('asset.riv', riveFile([RIVE_PATH, RIVE_CLIPPING_SHAPE]));
+      await writeFile(
+        join(dir, 'src', 'main.js'),
+        `import { parserOptions } from './asset.riv${MANIFEST_QUERY_SUFFIX}';\nglobalThis.out = parserOptions;\n`,
+      );
+      const bundle = await richBundleOf(dir);
+      expect(bundle).toContain('registerRiveClippingHandlers');
+      expect(bundle).toContain('pathBooleanRegistrars');
     },
     BUILD_TIMEOUT_MS,
   );
@@ -648,3 +511,203 @@ const FULL_MD5_MESH = 'joints {\n}\nmesh {\nshader "body"\n}\n';
 const FULL_OBJ = 'v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\nmtllib foo.mtl\nusemtl bar\n';
 
 const MINIMAL_OBJ = 'v 0 0 0\nv 1 0 0\nv 0 1 0\nf 1 2 3\n';
+
+describe('vite build with 3D material renderers', () => {
+  it(
+    'bundles only the gl material renderer for a material-bearing 3DS, dropping wgpu',
+    async () => {
+      const dir = await project3d('.3ds', threeDsFile({ materials: 1 }));
+      await writeEntry3d(dir, '.3ds', 'glOptions');
+      const bundle = await materialBundleOf(dir);
+
+      expect(bundle).toContain('GL_BLINNPHONG_MARKER');
+      expect(bundle).not.toContain('WGPU_BLINNPHONG_MARKER');
+      expect(bundle).not.toContain('GL_STANDARDPBR_MARKER');
+    },
+    BUILD_TIMEOUT_MS,
+  );
+
+  it(
+    'bundles no material renderer for a mesh-only 3DS',
+    async () => {
+      const dir = await project3d('.3ds', threeDsFile({ meshes: ['M'] }));
+      await writeEntry3d(dir, '.3ds', 'glOptions');
+      const bundle = await materialBundleOf(dir);
+
+      expect(bundle).not.toContain('GL_BLINNPHONG_MARKER');
+      expect(bundle).not.toContain('WGPU_BLINNPHONG_MARKER');
+    },
+    BUILD_TIMEOUT_MS,
+  );
+
+  it(
+    'bundles StandardPbr for a material-bearing COLLADA on gl, drops BlinnPhong',
+    async () => {
+      const dir = await project3d('.dae', colladaFile(COLLADA_MATERIAL_LIBRARIES));
+      await writeEntry3d(dir, '.dae', 'glOptions');
+      const bundle = await materialBundleOf(dir);
+
+      expect(bundle).toContain('GL_STANDARDPBR_MARKER');
+      expect(bundle).not.toContain('GL_BLINNPHONG_MARKER');
+      expect(bundle).not.toContain('WGPU_STANDARDPBR_MARKER');
+    },
+    BUILD_TIMEOUT_MS,
+  );
+
+  it(
+    'bundles no material renderer for a geometry-only COLLADA',
+    async () => {
+      const dir = await project3d('.dae', colladaFile(COLLADA_GEOMETRY_LIBRARY));
+      await writeEntry3d(dir, '.dae', 'glOptions');
+      const bundle = await materialBundleOf(dir);
+
+      expect(bundle).not.toContain('GL_STANDARDPBR_MARKER');
+      expect(bundle).not.toContain('GL_BLINNPHONG_MARKER');
+    },
+    BUILD_TIMEOUT_MS,
+  );
+
+  it(
+    'bundles BlinnPhong for a skin-bearing MD2 on wgpu',
+    async () => {
+      const dir = await project3d('.md2', md2WithSkins());
+      await writeEntry3d(dir, '.md2', 'wgpuOptions');
+      const bundle = await materialBundleOf(dir);
+
+      expect(bundle).toContain('WGPU_BLINNPHONG_MARKER');
+      expect(bundle).not.toContain('GL_BLINNPHONG_MARKER');
+    },
+    BUILD_TIMEOUT_MS,
+  );
+
+  it(
+    'bundles no material renderer for a mesh-only MD2',
+    async () => {
+      const dir = await project3d('.md2', md2MeshOnly());
+      await writeEntry3d(dir, '.md2', 'glOptions');
+      const bundle = await materialBundleOf(dir);
+
+      expect(bundle).not.toContain('GL_BLINNPHONG_MARKER');
+      expect(bundle).not.toContain('WGPU_BLINNPHONG_MARKER');
+    },
+    BUILD_TIMEOUT_MS,
+  );
+
+  it(
+    'bundles BlinnPhong for a full MD5 mesh',
+    async () => {
+      const dir = await project3d('.md5mesh', textBytes(FULL_MD5_MESH));
+      await writeEntry3d(dir, '.md5mesh', 'glOptions');
+      const bundle = await materialBundleOf(dir);
+
+      expect(bundle).toContain('GL_BLINNPHONG_MARKER');
+    },
+    BUILD_TIMEOUT_MS,
+  );
+
+  it(
+    'bundles no material renderer for MD5 anim — animations carry no material',
+    async () => {
+      const dir = await project3d('.md5anim', textBytes(FULL_MD5_ANIM));
+      await writeEntry3d(dir, '.md5anim', 'glOptions');
+      const bundle = await materialBundleOf(dir);
+
+      expect(bundle).not.toContain('GL_BLINNPHONG_MARKER');
+      expect(bundle).not.toContain('GL_STANDARDPBR_MARKER');
+      expect(bundle).not.toContain('WGPU_BLINNPHONG_MARKER');
+    },
+    BUILD_TIMEOUT_MS,
+  );
+
+  it(
+    'bundles both BlinnPhong and StandardPbr for a material-bearing OBJ',
+    async () => {
+      const dir = await project3d('.obj', textBytes(FULL_OBJ));
+      await writeEntry3d(dir, '.obj', 'glOptions');
+      const bundle = await materialBundleOf(dir);
+
+      expect(bundle).toContain('GL_BLINNPHONG_MARKER');
+      expect(bundle).toContain('GL_STANDARDPBR_MARKER');
+      expect(bundle).not.toContain('WGPU_BLINNPHONG_MARKER');
+    },
+    BUILD_TIMEOUT_MS,
+  );
+
+  it(
+    'bundles no material renderer for a geometry-only OBJ',
+    async () => {
+      const dir = await project3d('.obj', textBytes(MINIMAL_OBJ));
+      await writeEntry3d(dir, '.obj', 'glOptions');
+      const bundle = await materialBundleOf(dir);
+
+      expect(bundle).not.toContain('GL_BLINNPHONG_MARKER');
+      expect(bundle).not.toContain('GL_STANDARDPBR_MARKER');
+    },
+    BUILD_TIMEOUT_MS,
+  );
+
+  it(
+    'feature-rich bundle is larger than minimal bundle for the same format',
+    async () => {
+      const minDir = await project3d('.md2', md2MeshOnly());
+      await writeEntry3d(minDir, '.md2', 'glOptions');
+      const minBundle = await materialBundleOf(minDir);
+
+      const fullDir = await project3d('.md2', md2WithSkins());
+      await writeEntry3d(fullDir, '.md2', 'glOptions');
+      const fullBundle = await materialBundleOf(fullDir);
+
+      expect(fullBundle.length).toBeGreaterThan(minBundle.length);
+    },
+    BUILD_TIMEOUT_MS,
+  );
+
+  it(
+    'reports unreadable diagnostic through the plugin path for corrupt 3DS',
+    async () => {
+      const dir = await project3d('.3ds', new Uint8Array([0x00]));
+      await writeEntry3d(dir, '.3ds', 'glOptions');
+      const diagnostics: string[] = [];
+      await materialBundleOf(dir, diagnostics);
+      expect(diagnostics.some((d) => d.includes('unreadable'))).toBe(true);
+    },
+    BUILD_TIMEOUT_MS,
+  );
+
+  it(
+    'reports unreadable diagnostic through the plugin path for non-COLLADA XML',
+    async () => {
+      const dir = await project3d('.dae', textBytes('<root/>'));
+      await writeEntry3d(dir, '.dae', 'glOptions');
+      const diagnostics: string[] = [];
+      await materialBundleOf(dir, diagnostics);
+      expect(diagnostics.some((d) => d.includes('unreadable'))).toBe(true);
+    },
+    BUILD_TIMEOUT_MS,
+  );
+});
+
+const RIVE_PATH = 12;
+const RIVE_TEXT = 134;
+const RIVE_CLIPPING_SHAPE = 42;
+
+// A `.riv` container: 'RIVE', varuint major/minor/fileId, a terminated (here empty) property table of contents,
+// then one varuint type key per object each terminated by a zero property key.
+function riveFile(typeKeys: readonly number[]): Uint8Array {
+  const bytes: number[] = [0x52, 0x49, 0x56, 0x45];
+  bytes.push(...riveVarUint(7), ...riveVarUint(0), ...riveVarUint(0));
+  bytes.push(0);
+  for (const typeKey of typeKeys) bytes.push(...riveVarUint(typeKey), 0);
+  return new Uint8Array(bytes);
+}
+
+function riveVarUint(value: number): number[] {
+  const out: number[] = [];
+  let remaining = value;
+  while (remaining > 0x7f) {
+    out.push((remaining & 0x7f) | 0x80);
+    remaining >>>= 7;
+  }
+  out.push(remaining);
+  return out;
+}

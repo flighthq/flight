@@ -33,6 +33,7 @@
     {
       "path": "../scene2d-dom"
     },
+    { "path": "../scene2d-formats" },
     {
       "path": "../scene3d-formats"
     },

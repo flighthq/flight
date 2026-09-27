@@ -12,6 +12,7 @@ export * from './riveHandlers.ts';
 export { createRiveImportRegistry, registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
 export { registerRiveLayoutHandlers } from './riveLayout.ts';
 export { createRiveObjectGraph } from './riveObjectGraph.ts';
+export * from './riveRegistrars.ts';
 export * from './riveRequirements.ts';
 export { createRiveDocumentImportResult, createScene2DFromRiveDocument } from './riveScene2D.ts';
 export { createScene2DDocumentFromRiveDocument } from './riveScene2DDocument.ts';

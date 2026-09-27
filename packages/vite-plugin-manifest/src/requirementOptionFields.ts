@@ -127,6 +127,9 @@ export const PARSER_HANDLER_FIELDS: Readonly<Record<string, string>> = Object.fr
   '.md2': 'sectionHandlers',
   '.md5mesh': 'sectionHandlers',
   '.obj': 'materialHandlers',
+  // Rive's rows carry their own `parserField`, so this is only the default for a row that names none. The
+  // kernel-dependent clipping registrar routes to `pathBooleanRegistrars` per row.
+  '.riv': 'registrars',
   '.skel': 'sectionHandlers',
   '.swf': 'tags',
 });

@@ -14,6 +14,7 @@ export * from './riveLayout.ts';
 export * from './riveObjectGraph.ts';
 export * from './riveScene2D.ts';
 export * from './riveScene2DDocument.ts';
+export * from './riveRegistrars.ts';
 export * from './riveRequirements.ts';
 export * from './riveShapeNode.ts';
 export * from './riveShapePaint.ts';

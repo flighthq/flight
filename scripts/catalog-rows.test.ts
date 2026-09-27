@@ -1,3 +1,5 @@
+import { createRiveImportRegistry, riveAllPathBooleanRegistrars, riveAllRegistrars } from '@flighthq/scene2d-formats';
+import * as scene2dFormats from '@flighthq/scene2d-formats';
 import {
   colladaAllElementDecoders,
   md2AllSectionHandlers,
@@ -39,6 +41,7 @@ import {
 } from './catalog-rows.ts';
 
 const MODULES: Readonly<Record<string, Record<string, unknown>>> = {
+  '@flighthq/scene2d-formats': scene2dFormats as unknown as Record<string, unknown>,
   '@flighthq/scene3d-formats': scene3dFormats as unknown as Record<string, unknown>,
   '@flighthq/skeleton2d-formats/contract': skeleton2dFormatsContract as unknown as Record<string, unknown>,
   '@flighthq/swf': swf as unknown as Record<string, unknown>,
@@ -73,6 +76,7 @@ describe('buildRequirementCatalogRows', () => {
       'md2.',
       'md5.',
       'obj.',
+      'riv.',
       'spine-binary.',
       'spine-json.',
       'swf.',
@@ -240,7 +244,10 @@ describe('buildRequirementCatalogRows', () => {
   // constraint the format does not actually have.
   it('leaves familyOrder absent for the formats whose importers re-sort internally', () => {
     for (const row of buildRequirementCatalogRows()) {
-      if (row.kind.startsWith('awd2.') || row.kind.startsWith('swf.')) {
+      // Rive joins AWD2 and SWF here for a different reason: its application order is fixed by
+      // `applyRiveImportOptions` (kernel-dependent registrars first), not by the order rows are emitted in, so
+      // a position on the row would assert a constraint the format does not have.
+      if (row.kind.startsWith('awd2.') || row.kind.startsWith('riv.') || row.kind.startsWith('swf.')) {
         expect(row.familyOrder, row.kind).toBeUndefined();
       } else {
         expect(row.familyOrder, row.kind).toBeTypeOf('number');
@@ -330,6 +337,49 @@ describe('buildRequirementCatalogRows', () => {
   // "which handler". Asserted absent so nobody reintroduces a row nothing can resolve precisely.
   it('emits no row for the coarse obj.Material key', () => {
     expect(buildRequirementCatalogRows().some((row) => row.kind === 'obj.Material')).toBe(false);
+  });
+
+  // ★ RIVE'S ROWS NAME A REGISTRAR, WHICH IS WHY THEY ARE DERIVED BY RUNNING ONE. Every other format's row
+  // names a handler VALUE that declares what it claims; a Rive family is installed by calling a function, so
+  // the only honest source for "which core types does this claim" is to apply it to a throwaway registry and
+  // read the keys back. These guards check that derivation against the shipped registrars directly.
+  it('derives one Rive row per core type each shipped registrar installs', () => {
+    const rows = buildRequirementCatalogRows().filter((row) => row.kind.startsWith('riv.'));
+    let expected = 0;
+    for (const registrar of riveAllRegistrars) {
+      const registry = createRiveImportRegistry();
+      registrar(registry);
+      expected += registry.handlers.size;
+    }
+    for (const registrar of riveAllPathBooleanRegistrars) {
+      const registry = createRiveImportRegistry();
+      registrar({} as never, registry);
+      expected += registry.handlers.size;
+    }
+    expect(rows).toHaveLength(expected);
+  });
+
+  it('names the shipped registrar identity for every Rive row', () => {
+    const shipped = new Set([...riveAllRegistrars, ...riveAllPathBooleanRegistrars].map((fn) => fn.name));
+    for (const row of buildRequirementCatalogRows().filter((candidate) => candidate.kind.startsWith('riv.'))) {
+      expect(shipped.has(row.implementationSymbol), row.implementationSymbol).toBe(true);
+      expect((scene2dFormats as unknown as Record<string, unknown>)[row.implementationSymbol]).toBeTypeOf('function');
+    }
+  });
+
+  // ★ THE DEPENDENCY SPLIT IS WHAT THE TWO FIELDS ARE FOR. A build that omits the clipping family must never
+  // link a path-boolean implementation, and that only holds if the kernel-dependent registrar lands in its own
+  // options field instead of the general one.
+  it('routes the kernel-dependent Rive registrar to its own parser field', () => {
+    const rows = buildRequirementCatalogRows().filter((row) => row.kind.startsWith('riv.'));
+    const kernelNames = new Set(riveAllPathBooleanRegistrars.map((fn) => fn.name));
+    for (const row of rows) {
+      const expected = kernelNames.has(row.implementationSymbol) ? 'pathBooleanRegistrars' : 'registrars';
+      expect(row.parserField, row.implementationSymbol).toBe(expected);
+    }
+    // Both fields must actually occur, or the split is asserted vacuously.
+    expect(rows.some((row) => row.parserField === 'pathBooleanRegistrars')).toBe(true);
+    expect(rows.some((row) => row.parserField === 'registrars')).toBe(true);
   });
 
   it('routes each tag to the handler that actually claims it', () => {
@@ -583,6 +633,12 @@ function isSectionHandler(value: unknown): boolean {
   return (
     typeof value === 'object' && value !== null && !Array.isArray(value) && 'feature' in value && 'collect' in value
   );
+}
+
+// A Rive family registrar: a FUNCTION that installs handlers, not a handler value. Rive is the one format whose
+// rows name something to call, which is why its options seam exists.
+function isRiveRegistrar(value: unknown): boolean {
+  return typeof value === 'function';
 }
 
 // An OBJ material handler: the `feature` it reads plus the matches/resolve pair that reads it.

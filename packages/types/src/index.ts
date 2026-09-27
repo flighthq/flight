@@ -562,6 +562,7 @@ export * from './Ray3D.ts';
 export * from './Rectangle.ts';
 export * from './RectangleCollider.ts';
 export * from './RiveDocument.ts';
+export * from './RiveImportOptions.ts';
 export * from './RiveImportRegistry.ts';
 export * from './Node.ts';
 export * from './RenderBlendStateEntry.ts';
