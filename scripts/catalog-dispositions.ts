@@ -47,6 +47,12 @@ export const ALWAYS_READ_FORMAT_FEATURES: readonly { feature: string; namespace:
     reason: 'read by colladaMaterialDecoder, which indexes the image library to resolve a texture reference',
   },
   {
+    feature: 'Mesh',
+    namespace: 'gltf',
+    reason:
+      'the core parse always reads it: meshes, their accessors, and materials are what make the file a model, so there is nothing to opt out of',
+  },
+  {
     feature: 'Animation',
     namespace: 'md5',
     reason: 'the .md5anim parser reads one clip and has no separable family, so no subset of it can be named',
