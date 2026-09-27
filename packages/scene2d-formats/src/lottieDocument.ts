@@ -39,7 +39,6 @@ import {
 import { createTextLabel } from '@flighthq/text/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type {
-  AnimationChannel,
   AnimationClip,
   AnimationTrack,
   DisplayObject,
@@ -53,20 +52,29 @@ import type {
   LottieDocumentImportOptions,
   LottieDocumentImportResult,
   LottieEllipseShapeItem,
+  LottieFillPaint,
   LottieFillShapeItem,
+  LottieGradientPaint,
   LottieGradientShapeItem,
   LottieImageAsset,
+  LottieImportContext,
   LottieKeyframe,
   LottieLayer,
+  LottieLayerContext,
+  LottieLayerHandlerEntry,
   LottieMask,
+  LottiePaint,
   LottiePolystarShapeItem,
   LottiePositionProperty,
   LottiePrecompositionAsset,
   LottieRectangleShapeItem,
   LottieShapeGroup,
   LottieShapeItem,
+  LottieShapeItemContext,
+  LottieShapeItemHandlerEntry,
   LottieShapePath,
   LottieShapePathItem,
+  LottieStrokePaint,
   LottieStrokeShapeItem,
   LottieTextDocument,
   LottieTransform,
@@ -78,7 +86,15 @@ import type {
   Shape,
   EntityConstruction,
 } from '@flighthq/types/contract';
-import { AdvancedBlendMode, BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
+import {
+  AdvancedBlendMode,
+  BlendMode,
+  ImportDiagnosticSeverity,
+  LottieLayerKind,
+  LottieShapeItemKind,
+} from '@flighthq/types/contract';
+
+import { getLottieLayerHandler, getLottieShapeItemHandler } from './lottieRegistry.ts';
 
 // Applies both the shared Node2DAnimationTarget channels and the format-owned mutable-content
 // targets used by animated shape/paint/mask records.
@@ -123,7 +139,11 @@ export function createScene2DFromLottieDocument(
     document,
     frameOffset: 0,
     frameScale: 1,
-    options,
+    registry: {
+      layerHandlers: options?.layerHandlers ?? _defaultLayerHandlers(),
+      shapeItemHandlers: options?.shapeItemHandlers ?? _defaultShapeItemHandlers(),
+    },
+    resolveImageResource: options?.resolveImageResource,
     resolvingPrecompositions: new Set(),
   };
   appendLottieLayers(root, document.layers, context);
@@ -160,62 +180,8 @@ export function initializeLottieDocumentImportResult(
   out.root = root;
 }
 
-interface LottieImportContext {
-  advancedBlends: LottieAdvancedBlend[];
-  assets: Map<string, LottieAsset>;
-  channels: AnimationChannel[];
-  diagnostics: ImportDiagnostic[] | undefined;
-  document: Readonly<LottieDocument>;
-  frameOffset: number;
-  frameScale: number;
-  options: Readonly<LottieDocumentImportOptions> | undefined;
-  resolvingPrecompositions: Set<string>;
-}
-
 interface LottieMutableAnimationTarget {
   lottieApply(sample: Readonly<number[] | Float32Array>, time: number): void;
-}
-
-// A Bodymovin group carries a LIST of paints, not one of each: two fills are legal and each paints
-// every path in the group. Keeping them ordered is what lets a second fill, or a gradient beside a
-// solid one, survive instead of overwriting its predecessor.
-type LottiePaint =
-  | { color: number[]; kind: 'fill'; opacity: number; winding: 'evenOdd' | 'nonZero' }
-  | {
-      caps: 'none' | 'round' | 'square';
-      color: number[];
-      dash: number[];
-      dashOffset: number;
-      joints: 'bevel' | 'miter' | 'round';
-      kind: 'stroke';
-      miterLimit: number;
-      opacity: number;
-      width: number;
-    }
-  | {
-      caps: 'none' | 'round' | 'square';
-      count: number;
-      dash: number[];
-      dashOffset: number;
-      end: number[];
-      joints: 'bevel' | 'miter' | 'round';
-      kind: 'gradient';
-      miterLimit: number;
-      opacity: number;
-      shape: 1 | 2;
-      start: number[];
-      type: 'gf' | 'gs';
-      values: number[];
-      width: number;
-      winding: 'evenOdd' | 'nonZero';
-    };
-
-type LottieGradientPaint = Extract<LottiePaint, { kind: 'gradient' }>;
-
-interface LottieShapeState {
-  paints: LottiePaint[];
-  paths: Path[];
-  shape: Shape;
 }
 
 function appendLottieLayers(
@@ -251,16 +217,10 @@ function createLottieLayerNode(layer: Readonly<LottieLayer>, context: LottieImpo
   applyLottieLayerVisibility(container, layer, context);
   applyLottieBlendMode(container, layer, context);
 
-  if (layer.ty === 0) appendLottiePrecomposition(container, layer, context);
-  else if (layer.ty === 1) appendLottieSolid(container, layer);
-  else if (layer.ty === 2) appendLottieImage(container, layer, context);
-  else if (layer.ty === 3) {
-    // Null layers intentionally contain only their transform and children.
-  } else if (layer.ty === 4) appendLottieShapeItems(container, layer.shapes ?? [], context);
-  else if (layer.ty === 5) appendLottieText(container, layer, context);
-  else if (layer.ty !== 6 && layer.ty !== 13) {
-    // Audio (6) and camera (13) layers are uncarried by design and stay silent; a type outside the
-    // Bodymovin set is an asset fact the caller can act on. See agents/scene2d-format-coverage.md.
+  const layerHandler = getLottieLayerHandler(context.registry, layer.ty);
+  if (layerHandler !== null) {
+    layerHandler({ container, import: context, layer });
+  } else if (layer.ty !== 6 && layer.ty !== 13) {
     reportLottieSkip(context, 'lottie.unsupported-layer', 'createLottieLayerNode', { layerType: layer.ty });
   }
 
@@ -684,6 +644,247 @@ function createLottieSegmentEasing(
   );
 }
 
+export function lottieEllipseShapeItemReader(context: LottieShapeItemContext): void {
+  handleLottieGeometryItem(context);
+}
+
+export function lottieFillShapeItemReader(context: LottieShapeItemContext): void {
+  const fill = context.item as Readonly<LottieFillShapeItem>;
+  const color = numericValue(initialLottieValue(fill.c), 3);
+  const opacity = [numericValue(initialLottieValue(fill.o), 1)[0] / 100];
+  const paint: LottieFillPaint = {
+    color,
+    kind: 'fill',
+    opacity: opacity[0],
+    winding: fill.r === 2 ? 'evenOdd' : 'nonZero',
+  };
+  context.paints.push(paint);
+  bindMutableNumericProperty(fill.c, color, (value) => value, context.rerender, context.import);
+  bindMutableNumericProperty(
+    fill.o,
+    opacity,
+    (value) => value / 100,
+    () => {
+      paint.opacity = opacity[0];
+      context.rerender();
+    },
+    context.import,
+  );
+}
+
+export function lottieGradientFillShapeItemReader(context: LottieShapeItemContext): void {
+  handleLottieGradientItem(context);
+}
+
+export function lottieGradientStrokeShapeItemReader(context: LottieShapeItemContext): void {
+  handleLottieGradientItem(context);
+}
+
+export function lottieImageLayerReader(context: LottieLayerContext): void {
+  appendLottieImage(context.container, context.layer, context.import);
+}
+
+export function lottieNullLayerReader(_context: LottieLayerContext): void {}
+
+export function lottiePathShapeItemReader(context: LottieShapeItemContext): void {
+  handleLottieGeometryItem(context);
+}
+
+export function lottiePolystarShapeItemReader(context: LottieShapeItemContext): void {
+  handleLottieGeometryItem(context);
+}
+
+export function lottiePrecompositionLayerReader(context: LottieLayerContext): void {
+  appendLottiePrecomposition(context.container, context.layer, context.import);
+}
+
+export function lottieRectangleShapeItemReader(context: LottieShapeItemContext): void {
+  handleLottieGeometryItem(context);
+}
+
+export function lottieShapeLayerReader(context: LottieLayerContext): void {
+  appendLottieShapeItems(context.container, context.layer.shapes ?? [], context.import);
+}
+
+export function lottieSolidLayerReader(context: LottieLayerContext): void {
+  appendLottieSolid(context.container, context.layer);
+}
+
+export function lottieStrokeShapeItemReader(context: LottieShapeItemContext): void {
+  const stroke = context.item as Readonly<LottieStrokeShapeItem>;
+  const color = numericValue(initialLottieValue(stroke.c), 3);
+  const opacity = [numericValue(initialLottieValue(stroke.o), 1)[0] / 100];
+  const width = [numericValue(initialLottieValue(stroke.w), 1)[0]];
+  const miterLimit = [stroke.ml2 === undefined ? (stroke.ml ?? 4) : numericValue(initialLottieValue(stroke.ml2), 1)[0]];
+  const dashEntries = stroke.d ?? [];
+  const hasAnimatedDash = dashEntries.some((entry) => isAnimatedProperty(entry.v));
+  const dash = hasAnimatedDash
+    ? []
+    : dashEntries
+        .filter((entry) => entry.n !== 'o')
+        .map((entry) => Math.max(0, numericValue(initialLottieValue(entry.v), 1)[0]));
+  const dashOffsetEntry = dashEntries.find((entry) => entry.n === 'o');
+  const dashOffset =
+    hasAnimatedDash || dashOffsetEntry === undefined ? 0 : numericValue(initialLottieValue(dashOffsetEntry.v), 1)[0];
+  if (hasAnimatedDash)
+    reportLottieSkip(context.import, 'lottie.unsupported-shape-modifier', 'lottieStrokeShapeItemReader', {
+      modifier: 'dash',
+    });
+  const paint: LottieStrokePaint = {
+    caps: mapLottieLineCap(stroke.lc),
+    color,
+    dash: dash.some((value) => value > 0) ? dash : [],
+    dashOffset,
+    joints: mapLottieLineJoin(stroke.lj),
+    kind: 'stroke',
+    miterLimit: miterLimit[0],
+    opacity: opacity[0],
+    width: width[0],
+  };
+  context.paints.push(paint);
+  bindMutableNumericProperty(stroke.c, color, (value) => value, context.rerender, context.import);
+  bindMutableNumericProperty(
+    stroke.o,
+    opacity,
+    (value) => value / 100,
+    () => {
+      paint.opacity = opacity[0];
+      context.rerender();
+    },
+    context.import,
+  );
+  bindMutableNumericProperty(
+    stroke.w,
+    width,
+    (value) => value,
+    () => {
+      paint.width = width[0];
+      context.rerender();
+    },
+    context.import,
+  );
+  if (stroke.ml2 !== undefined) {
+    bindMutableNumericProperty(
+      stroke.ml2,
+      miterLimit,
+      (value) => value,
+      () => {
+        paint.miterLimit = miterLimit[0];
+        context.rerender();
+      },
+      context.import,
+    );
+  }
+}
+
+export function lottieTextLayerReader(context: LottieLayerContext): void {
+  appendLottieText(context.container, context.layer, context.import);
+}
+
+export function lottieTrimPathShapeItemReader(context: LottieShapeItemContext): void {
+  const trim = context.item as Readonly<LottieTrimPathShapeItem>;
+  if (isAnimatedProperty(trim.s) || isAnimatedProperty(trim.e) || isAnimatedProperty(trim.o)) {
+    reportLottieSkip(context.import, 'lottie.unsupported-shape-modifier', 'lottieTrimPathShapeItemReader', {
+      modifier: context.item.ty,
+    });
+  }
+}
+
+function handleLottieGeometryItem(context: LottieShapeItemContext): void {
+  const path = createLottieShapeItemPath(context.item);
+  if (path === null) return;
+  const pathIndex = context.paths.length;
+  context.paths.push(path);
+  bindLottieGeometryItem(context.item, context.paths, pathIndex, context.rerender, context.import);
+}
+
+function handleLottieGradientItem(context: LottieShapeItemContext): void {
+  const gradient = context.item as Readonly<LottieGradientShapeItem>;
+  const initialGradient = initialLottieValue(gradient.g.k);
+  const values = numericValue(
+    initialGradient,
+    Math.max(gradient.g.p * 4, Array.isArray(initialGradient) ? initialGradient.length : 0),
+  );
+  const start = numericValue(initialLottieValue(gradient.s), 2);
+  const end = numericValue(initialLottieValue(gradient.e), 2);
+  const opacity = [gradient.o === undefined ? 100 : numericValue(initialLottieValue(gradient.o), 1)[0]];
+  const width = [gradient.w === undefined ? 1 : numericValue(initialLottieValue(gradient.w), 1)[0]];
+  const miterLimit = [
+    gradient.ml2 === undefined ? (gradient.ml ?? 4) : numericValue(initialLottieValue(gradient.ml2), 1)[0],
+  ];
+  const dashEntries = gradient.d ?? [];
+  const hasAnimatedDash = dashEntries.some((entry) => isAnimatedProperty(entry.v));
+  const dash = hasAnimatedDash
+    ? []
+    : dashEntries
+        .filter((entry) => entry.n !== 'o')
+        .map((entry) => Math.max(0, numericValue(initialLottieValue(entry.v), 1)[0]));
+  const dashOffsetEntry = dashEntries.find((entry) => entry.n === 'o');
+  const dashOffset =
+    hasAnimatedDash || dashOffsetEntry === undefined ? 0 : numericValue(initialLottieValue(dashOffsetEntry.v), 1)[0];
+  if (hasAnimatedDash)
+    reportLottieSkip(context.import, 'lottie.unsupported-shape-modifier', 'handleLottieGradientItem', {
+      modifier: 'dash',
+    });
+  const paint: LottieGradientPaint = {
+    caps: mapLottieLineCap(gradient.lc),
+    count: gradient.g.p,
+    dash: dash.some((value) => value > 0) ? dash : [],
+    dashOffset,
+    end,
+    joints: mapLottieLineJoin(gradient.lj),
+    kind: 'gradient',
+    miterLimit: miterLimit[0],
+    opacity: opacity[0] / 100,
+    shape: gradient.t,
+    start,
+    type: gradient.ty,
+    values,
+    width: width[0],
+    winding: gradient.r === 2 ? 'evenOdd' : 'nonZero',
+  };
+  context.paints.push(paint);
+  bindMutableNumericProperty(gradient.g.k, values, (value) => value, context.rerender, context.import);
+  bindMutableNumericProperty(gradient.s, start, (value) => value, context.rerender, context.import);
+  bindMutableNumericProperty(gradient.e, end, (value) => value, context.rerender, context.import);
+  if (gradient.o !== undefined) {
+    bindMutableNumericProperty(
+      gradient.o,
+      opacity,
+      (value) => value,
+      () => {
+        paint.opacity = opacity[0] / 100;
+        context.rerender();
+      },
+      context.import,
+    );
+  }
+  if (gradient.w !== undefined) {
+    bindMutableNumericProperty(
+      gradient.w,
+      width,
+      (value) => value,
+      () => {
+        paint.width = width[0];
+        context.rerender();
+      },
+      context.import,
+    );
+  }
+  if (gradient.ml2 !== undefined) {
+    bindMutableNumericProperty(
+      gradient.ml2,
+      miterLimit,
+      (value) => value,
+      () => {
+        paint.miterLimit = miterLimit[0];
+        context.rerender();
+      },
+      context.import,
+    );
+  }
+}
+
 function appendLottieSolid(parent: DisplayObject, layer: Readonly<LottieLayer>): void {
   const shape = createShape();
   const color = parseHexColor(layer.sc ?? '#000000');
@@ -701,7 +902,7 @@ function appendLottieImage(parent: DisplayObject, layer: Readonly<LottieLayer>, 
     reportLottieDrop(context, 'lottie.unresolved-asset', 'appendLottieImage', { id: layer.refId ?? '' });
     return;
   }
-  const image = context.options?.resolveImageResource?.(asset) ?? null;
+  const image = context.resolveImageResource?.(asset) ?? null;
   if (image === null) {
     reportLottieSkip(context, 'lottie.unresolved-image', 'appendLottieImage', { id: asset.id });
     return;
@@ -761,12 +962,10 @@ function appendLottieShapeItems(
   const group = createDisplayObject({ name });
   const transform = items.find((item) => item.ty === 'tr');
   if (transform?.ty === 'tr') applyLottieTransform(group, transform as Readonly<LottieTransform>, context);
-  const state: LottieShapeState = {
-    paints: [],
-    paths: [],
-    shape: createShape(),
-  };
-  const rerender = (): void => renderLottieShapeState(state);
+  const shape = createShape();
+  const paints: LottiePaint[] = [];
+  const paths: Path[] = [];
+  const rerender = (): void => renderLottieShapeState(paints, paths, shape);
 
   for (const item of items) {
     if (item.hd === true) continue;
@@ -775,201 +974,21 @@ function appendLottieShapeItems(
       appendLottieShapeItems(group, shapeGroup.it, context, shapeGroup.nm ?? null);
       continue;
     }
-    const path = createLottieShapeItemPath(item);
-    if (path !== null) {
-      const pathIndex = state.paths.length;
-      state.paths.push(path);
-      bindLottieGeometryItem(item, state, pathIndex, rerender, context);
+    if (item.ty === 'tr') {
+      reportLottieExpression(item, context);
+      continue;
     }
-    if (item.ty === 'fl') {
-      const fill = item as Readonly<LottieFillShapeItem>;
-      const color = numericValue(initialLottieValue(fill.c), 3);
-      const opacity = [numericValue(initialLottieValue(fill.o), 1)[0] / 100];
-      const paint = {
-        color,
-        kind: 'fill' as const,
-        opacity: opacity[0],
-        winding: (fill.r === 2 ? 'evenOdd' : 'nonZero') as 'evenOdd' | 'nonZero',
-      };
-      state.paints.push(paint);
-      bindMutableNumericProperty(fill.c, color, (value) => value, rerender, context);
-      bindMutableNumericProperty(
-        fill.o,
-        opacity,
-        (value) => value / 100,
-        () => {
-          paint.opacity = opacity[0];
-          rerender();
-        },
-        context,
-      );
-    } else if (item.ty === 'st') {
-      const stroke = item as Readonly<LottieStrokeShapeItem>;
-      const color = numericValue(initialLottieValue(stroke.c), 3);
-      const opacity = [numericValue(initialLottieValue(stroke.o), 1)[0] / 100];
-      const width = [numericValue(initialLottieValue(stroke.w), 1)[0]];
-      const miterLimit = [
-        stroke.ml2 === undefined ? (stroke.ml ?? 4) : numericValue(initialLottieValue(stroke.ml2), 1)[0],
-      ];
-      const dashEntries = stroke.d ?? [];
-      const hasAnimatedDash = dashEntries.some((entry) => isAnimatedProperty(entry.v));
-      const dash = hasAnimatedDash
-        ? []
-        : dashEntries
-            .filter((entry) => entry.n !== 'o')
-            .map((entry) => Math.max(0, numericValue(initialLottieValue(entry.v), 1)[0]));
-      const dashOffsetEntry = dashEntries.find((entry) => entry.n === 'o');
-      const dashOffset =
-        hasAnimatedDash || dashOffsetEntry === undefined
-          ? 0
-          : numericValue(initialLottieValue(dashOffsetEntry.v), 1)[0];
-      if (hasAnimatedDash)
-        reportLottieSkip(context, 'lottie.unsupported-shape-modifier', 'appendLottieShapeItems', { modifier: 'dash' });
-      const paint = {
-        caps: mapLottieLineCap(stroke.lc),
-        color,
-        dash: dash.some((value) => value > 0) ? dash : [],
-        dashOffset,
-        joints: mapLottieLineJoin(stroke.lj),
-        kind: 'stroke' as const,
-        miterLimit: miterLimit[0],
-        opacity: opacity[0],
-        width: width[0],
-      };
-      state.paints.push(paint);
-      bindMutableNumericProperty(stroke.c, color, (value) => value, rerender, context);
-      bindMutableNumericProperty(
-        stroke.o,
-        opacity,
-        (value) => value / 100,
-        () => {
-          paint.opacity = opacity[0];
-          rerender();
-        },
-        context,
-      );
-      bindMutableNumericProperty(
-        stroke.w,
-        width,
-        (value) => value,
-        () => {
-          paint.width = width[0];
-          rerender();
-        },
-        context,
-      );
-      if (stroke.ml2 !== undefined) {
-        bindMutableNumericProperty(
-          stroke.ml2,
-          miterLimit,
-          (value) => value,
-          () => {
-            paint.miterLimit = miterLimit[0];
-            rerender();
-          },
-          context,
-        );
-      }
-    } else if (item.ty === 'gf' || item.ty === 'gs') {
-      const gradient = item as Readonly<LottieGradientShapeItem>;
-      const initialGradient = initialLottieValue(gradient.g.k);
-      const values = numericValue(
-        initialGradient,
-        Math.max(gradient.g.p * 4, Array.isArray(initialGradient) ? initialGradient.length : 0),
-      );
-      const start = numericValue(initialLottieValue(gradient.s), 2);
-      const end = numericValue(initialLottieValue(gradient.e), 2);
-      const opacity = [gradient.o === undefined ? 100 : numericValue(initialLottieValue(gradient.o), 1)[0]];
-      const width = [gradient.w === undefined ? 1 : numericValue(initialLottieValue(gradient.w), 1)[0]];
-      const miterLimit = [
-        gradient.ml2 === undefined ? (gradient.ml ?? 4) : numericValue(initialLottieValue(gradient.ml2), 1)[0],
-      ];
-      const dashEntries = gradient.d ?? [];
-      const hasAnimatedDash = dashEntries.some((entry) => isAnimatedProperty(entry.v));
-      const dash = hasAnimatedDash
-        ? []
-        : dashEntries
-            .filter((entry) => entry.n !== 'o')
-            .map((entry) => Math.max(0, numericValue(initialLottieValue(entry.v), 1)[0]));
-      const dashOffsetEntry = dashEntries.find((entry) => entry.n === 'o');
-      const dashOffset =
-        hasAnimatedDash || dashOffsetEntry === undefined
-          ? 0
-          : numericValue(initialLottieValue(dashOffsetEntry.v), 1)[0];
-      if (hasAnimatedDash)
-        reportLottieSkip(context, 'lottie.unsupported-shape-modifier', 'appendLottieShapeItems', { modifier: 'dash' });
-      const paint = {
-        caps: mapLottieLineCap(gradient.lc),
-        count: gradient.g.p,
-        dash: dash.some((value) => value > 0) ? dash : [],
-        dashOffset,
-        end,
-        joints: mapLottieLineJoin(gradient.lj),
-        kind: 'gradient' as const,
-        miterLimit: miterLimit[0],
-        opacity: opacity[0] / 100,
-        shape: gradient.t,
-        start,
-        type: gradient.ty,
-        values,
-        width: width[0],
-        winding: gradient.r === 2 ? ('evenOdd' as const) : ('nonZero' as const),
-      };
-      state.paints.push(paint);
-      bindMutableNumericProperty(gradient.g.k, values, (value) => value, rerender, context);
-      bindMutableNumericProperty(gradient.s, start, (value) => value, rerender, context);
-      bindMutableNumericProperty(gradient.e, end, (value) => value, rerender, context);
-      if (gradient.o !== undefined) {
-        bindMutableNumericProperty(
-          gradient.o,
-          opacity,
-          (value) => value,
-          () => {
-            paint.opacity = opacity[0] / 100;
-            rerender();
-          },
-          context,
-        );
-      }
-      if (gradient.w !== undefined) {
-        bindMutableNumericProperty(
-          gradient.w,
-          width,
-          (value) => value,
-          () => {
-            paint.width = width[0];
-            rerender();
-          },
-          context,
-        );
-      }
-      if (gradient.ml2 !== undefined) {
-        bindMutableNumericProperty(
-          gradient.ml2,
-          miterLimit,
-          (value) => value,
-          () => {
-            paint.miterLimit = miterLimit[0];
-            rerender();
-          },
-          context,
-        );
-      }
-    } else if (item.ty === 'tm') {
-      const trim = item as Readonly<LottieTrimPathShapeItem>;
-      if (isAnimatedProperty(trim.s) || isAnimatedProperty(trim.e) || isAnimatedProperty(trim.o)) {
-        reportLottieSkip(context, 'lottie.unsupported-shape-modifier', 'appendLottieShapeItems', { modifier: item.ty });
-      }
-    } else if (item.ty === 'rp' || item.ty === 'mm' || item.ty === 'rd') {
-      reportLottieSkip(context, 'lottie.unsupported-shape-modifier', 'appendLottieShapeItems', { modifier: item.ty });
-    } else if (item.ty !== 'sh' && item.ty !== 'rc' && item.ty !== 'el' && item.ty !== 'sr' && item.ty !== 'tr') {
+    const handler = getLottieShapeItemHandler(context.registry, item.ty);
+    if (handler !== null) {
+      handler({ import: context, item, paints, paths, rerender, shape });
+    } else {
       reportLottieSkip(context, 'lottie.unsupported-shape-item', 'appendLottieShapeItems', { shapeType: item.ty });
     }
     reportLottieExpression(item, context);
   }
-  applyStaticLottieTrim(items, state);
-  renderLottieShapeState(state);
-  if (state.paths.length > 0) addNodeChild(group, state.shape);
+  applyStaticLottieTrim(items, paths);
+  renderLottieShapeState(paints, paths, shape);
+  if (paths.length > 0) addNodeChild(group, shape);
   addNodeChild(parent, group);
 }
 
@@ -1080,13 +1099,13 @@ function createLottiePolystarPath(
 
 function bindLottieGeometryItem(
   item: Readonly<LottieShapeItem>,
-  state: LottieShapeState,
+  paths: Path[],
   pathIndex: number,
   rerender: () => void,
   context: LottieImportContext,
 ): void {
   const rebuild = (path: Path): void => {
-    state.paths[pathIndex] = applyLottieShapeDirection(path, (item as Readonly<{ d?: 1 | 3 }>).d);
+    paths[pathIndex] = applyLottieShapeDirection(path, (item as Readonly<{ d?: 1 | 3 }>).d);
     rerender();
   };
   if (item.ty === 'sh') {
@@ -1262,7 +1281,7 @@ function unflattenLottieShapePath(template: Readonly<LottieShapePath>, values: r
   };
 }
 
-function applyStaticLottieTrim(items: readonly Readonly<LottieShapeItem>[], state: LottieShapeState): void {
+function applyStaticLottieTrim(items: readonly Readonly<LottieShapeItem>[], paths: Path[]): void {
   const raw = items.find((item) => item.ty === 'tm');
   if (raw === undefined) return;
   const trim = raw as Readonly<LottieTrimPathShapeItem>;
@@ -1272,14 +1291,16 @@ function applyStaticLottieTrim(items: readonly Readonly<LottieShapeItem>[], stat
   const offset = numericValue(initialLottieValue(trim.o), 1)[0] / 360;
   let visible = (((end - start) % 1) + 1) % 1;
   if (Math.abs(end - start) >= 1) visible = 1;
-  state.paths = state.paths.map((path) => {
-    if (visible >= 1) return path;
+  for (let i = 0; i < paths.length; i++) {
+    if (visible >= 1) continue;
+    const path = paths[i];
     const length = getPathLength(path);
     const trimmed = createPath(path.winding);
-    if (length <= 0 || visible <= 0) return trimmed;
-    dashPath(path, [visible * length, (1 - visible) * length], (start + offset) * length, trimmed);
-    return trimmed;
-  });
+    if (length > 0 && visible > 0) {
+      dashPath(path, [visible * length, (1 - visible) * length], (start + offset) * length, trimmed);
+    }
+    paths[i] = trimmed;
+  }
 }
 
 /**
@@ -1329,21 +1350,21 @@ function createLottieBezierPath(value: Readonly<LottieShapePath>): Path {
 // multiple paints when all paths precede all styles, but it does not yet implement Lottie's general
 // render stack: styles scope only over preceding shapes (including shapes in nested groups), and
 // repeated styles render in reverse order. That needs a scoped stack rather than another field here.
-function renderLottieShapeState(state: LottieShapeState): void {
-  clearShapeCommands(state.shape);
-  if (state.paths.length === 0) return;
-  if (state.paints.length === 0) {
-    appendLottieShapePaths(state, null);
+function renderLottieShapeState(paints: LottiePaint[], paths: Path[], shape: Shape): void {
+  clearShapeCommands(shape);
+  if (paths.length === 0) return;
+  if (paints.length === 0) {
+    appendLottieShapePaths(paths, shape, null);
     return;
   }
-  for (const paint of state.paints) {
+  for (const paint of paints) {
     if (paint.kind === 'fill') {
-      appendShapeBeginFill(state.shape, lottieRgba(paint.color), paint.opacity);
-      appendLottieShapePaths(state, paint.winding);
-      appendShapeEndFill(state.shape);
+      appendShapeBeginFill(shape, lottieRgba(paint.color), paint.opacity);
+      appendLottieShapePaths(paths, shape, paint.winding);
+      appendShapeEndFill(shape);
     } else if (paint.kind === 'stroke') {
       appendShapeLineStyle(
-        state.shape,
+        shape,
         paint.width,
         lottieRgba(paint.color),
         paint.opacity,
@@ -1353,31 +1374,32 @@ function renderLottieShapeState(state: LottieShapeState): void {
         paint.joints,
         paint.miterLimit,
       );
-      appendLottieShapePaths(state, null, paint.dash, paint.dashOffset);
+      appendLottieShapePaths(paths, shape, null, paint.dash, paint.dashOffset);
     } else if (paint.type === 'gf') {
-      appendLottieGradientFill(state.shape, paint);
-      appendLottieShapePaths(state, paint.winding);
-      appendShapeEndFill(state.shape);
+      appendLottieGradientFill(shape, paint);
+      appendLottieShapePaths(paths, shape, paint.winding);
+      appendShapeEndFill(shape);
     } else {
-      appendLottieGradientStroke(state.shape, paint);
-      appendLottieShapePaths(state, null, paint.dash, paint.dashOffset);
+      appendLottieGradientStroke(shape, paint);
+      appendLottieShapePaths(paths, shape, null, paint.dash, paint.dashOffset);
     }
   }
 }
 
 function appendLottieShapePaths(
-  state: LottieShapeState,
+  paths: Path[],
+  shape: Shape,
   winding: 'evenOdd' | 'nonZero' | null,
   dash: readonly number[] = [],
   dashOffset = 0,
 ): void {
-  for (const path of state.paths) {
+  for (const path of paths) {
     let output = path;
     if (dash.length > 0) {
       output = createPath(path.winding);
       dashPath(path, dash.length % 2 === 0 ? dash : [...dash, ...dash], dashOffset, output);
     }
-    appendShapePath(state.shape, output.commands.slice(), output.data.slice(), winding ?? output.winding);
+    appendShapePath(shape, output.commands.slice(), output.data.slice(), winding ?? output.winding);
   }
 }
 
@@ -1725,6 +1747,31 @@ function reportLottieDrop(
   detail?: Record<string, string | number>,
 ): void {
   reportImportDiagnostic(context.diagnostics, ImportDiagnosticSeverity.Drop, kind, origin, detail);
+}
+
+function _defaultLayerHandlers(): LottieLayerHandlerEntry[] {
+  return [
+    { handle: lottiePrecompositionLayerReader, kind: LottieLayerKind.Precomposition },
+    { handle: lottieSolidLayerReader, kind: LottieLayerKind.Solid },
+    { handle: lottieImageLayerReader, kind: LottieLayerKind.Image },
+    { handle: lottieNullLayerReader, kind: LottieLayerKind.Null },
+    { handle: lottieShapeLayerReader, kind: LottieLayerKind.Shape },
+    { handle: lottieTextLayerReader, kind: LottieLayerKind.Text },
+  ];
+}
+
+function _defaultShapeItemHandlers(): LottieShapeItemHandlerEntry[] {
+  return [
+    { handle: lottieEllipseShapeItemReader, kind: LottieShapeItemKind.Ellipse },
+    { handle: lottieFillShapeItemReader, kind: LottieShapeItemKind.Fill },
+    { handle: lottieGradientFillShapeItemReader, kind: LottieShapeItemKind.GradientFill },
+    { handle: lottieGradientStrokeShapeItemReader, kind: LottieShapeItemKind.GradientStroke },
+    { handle: lottiePathShapeItemReader, kind: LottieShapeItemKind.Path },
+    { handle: lottiePolystarShapeItemReader, kind: LottieShapeItemKind.Polystar },
+    { handle: lottieRectangleShapeItemReader, kind: LottieShapeItemKind.Rectangle },
+    { handle: lottieStrokeShapeItemReader, kind: LottieShapeItemKind.Stroke },
+    { handle: lottieTrimPathShapeItemReader, kind: LottieShapeItemKind.TrimPath },
+  ];
 }
 
 const _sampleScratch = new Array<number>(256).fill(0);
