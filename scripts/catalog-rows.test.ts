@@ -1,3 +1,5 @@
+import { bitmapFontAllFormats } from '@flighthq/bitmapfont-formats';
+import * as bitmapFontFormats from '@flighthq/bitmapfont-formats';
 import { particleAllFormats } from '@flighthq/particles-formats';
 import * as particlesFormats from '@flighthq/particles-formats';
 import {
@@ -42,6 +44,7 @@ import { RequirementFacet } from '@flighthq/types/contract';
 
 import {
   AWD2_BLOCK_HANDLERS,
+  BITMAP_FONT_FORMAT_DESCRIPTORS,
   buildRequirementCatalogRows,
   CATALOG_PARSER_BACKEND,
   COLLADA_ELEMENT_DECODERS,
@@ -67,6 +70,7 @@ import {
 } from './catalog-rows.ts';
 
 const MODULES: Readonly<Record<string, Record<string, unknown>>> = {
+  '@flighthq/bitmapfont-formats': bitmapFontFormats as unknown as Record<string, unknown>,
   '@flighthq/particles-formats': particlesFormats as unknown as Record<string, unknown>,
   '@flighthq/scene2d-formats': scene2dFormats as unknown as Record<string, unknown>,
   '@flighthq/scene3d-formats': scene3dFormats as unknown as Record<string, unknown>,
@@ -87,6 +91,7 @@ const DESCRIPTOR_FAMILIES: readonly (readonly [
   readonly { readonly kind: string }[],
   string,
 ])[] = [
+  ['bitmapfont', '@flighthq/bitmapfont-formats', BITMAP_FONT_FORMAT_DESCRIPTORS, bitmapFontAllFormats, 'formats'],
   ['particles', '@flighthq/particles-formats', PARTICLE_FORMAT_DESCRIPTORS, particleAllFormats, 'formats'],
   ['spritesheet', '@flighthq/spritesheet-formats', SPRITESHEET_FORMAT_DESCRIPTORS, spritesheetAllFormats, 'formats'],
   [
@@ -112,6 +117,7 @@ const DESCRIPTOR_FAMILIES: readonly (readonly [
 // Every lane that OWNS a requirement-key namespace constant. The format package names its own namespace; this
 // list is which modules to ask, not what the answer is.
 const NAMESPACE_MODULES: readonly (readonly [string, Record<string, unknown>])[] = [
+  ['@flighthq/bitmapfont-formats', bitmapFontFormats as unknown as Record<string, unknown>],
   ['@flighthq/particles-formats', particlesFormats as unknown as Record<string, unknown>],
   ['@flighthq/scene2d-formats/contract', scene2dFormatsContract as unknown as Record<string, unknown>],
   ['@flighthq/scene3d-formats/contract', scene3dFormatsContract as unknown as Record<string, unknown>],

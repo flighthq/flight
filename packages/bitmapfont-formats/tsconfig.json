@@ -10,7 +10,10 @@
   },
   "references": [
     { "path": "../bitmapfont" },
+    { "path": "../encoding" },
     { "path": "../importdiagnostics" },
+    { "path": "../registry" },
+    { "path": "../requirement" },
     { "path": "../textureatlas" },
     { "path": "../types" },
     { "path": "../xml" }

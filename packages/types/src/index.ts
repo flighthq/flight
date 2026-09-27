@@ -108,6 +108,8 @@ export * from './Billboard.ts';
 export * from './BinPack.ts';
 export * from './BitmapDisplacementEffect.ts';
 export * from './BitmapFont.ts';
+export * from './BitmapFontFormatKind.ts';
+export * from './BitmapFontImportOptions.ts';
 export * from './BitmapFontSummary.ts';
 export * from './BitmapFontGlyphExplanation.ts';
 export * from './BitmapFontParseExplanation.ts';
