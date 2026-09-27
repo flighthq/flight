@@ -38,19 +38,14 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/bitmapfont-formats": "*",
     "@flighthq/encoding": "*",
     "@flighthq/log": "*",
-    "@flighthq/particles-formats": "*",
     "@flighthq/requirement": "*",
     "@flighthq/requirement-codegen": "*",
     "@flighthq/scene2d-formats": "*",
     "@flighthq/scene3d-formats": "*",
     "@flighthq/skeleton2d-formats": "*",
-    "@flighthq/spritesheet-formats": "*",
     "@flighthq/swf": "*",
-    "@flighthq/textureatlas-formats": "*",
-    "@flighthq/tilemap-formats": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {
