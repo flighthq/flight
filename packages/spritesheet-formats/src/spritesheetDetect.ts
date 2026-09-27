@@ -1,5 +1,12 @@
 import { getKindMapKeys, withKindMapEntry, withoutKindMapEntry } from '@flighthq/registry/contract';
-import type { Kind, SpritesheetData, SpritesheetFormatKind, SpritesheetParseOptions } from '@flighthq/types/contract';
+import type {
+  SpritesheetFormatDescriptor,
+  SpritesheetImportOptions,
+  Kind,
+  SpritesheetData,
+  SpritesheetFormatKind,
+  SpritesheetParseOptions,
+} from '@flighthq/types/contract';
 import {
   SpritesheetFormatKindAseprite as ASEPRITE,
   SpritesheetFormatKindCocosPlist as COCOS_PLIST,
@@ -67,32 +74,22 @@ function detectLibgdxAtlas(text: string): boolean {
 function getRegistry(): ReadonlyMap<Kind, RegisteredFormatEntry> {
   if (_registry !== null) return _registry;
   _registry = new Map();
-  bindSpritesheetFormat(ASEPRITE, {
-    detect: detectAseprite,
-    parse: (text) => parseAsepriteSpritesheet(text),
-  });
-  bindSpritesheetFormat(COCOS_PLIST, {
-    detect: detectCocosPlist,
-    parse: (text) => parseCocosPlistSpritesheet(text),
-  });
-  bindSpritesheetFormat(TEXTURE_PACKER, {
-    detect: detectTexturePacker,
-    parse: (text) => parseTexturePackerSpritesheet(text),
-  });
-  bindSpritesheetFormat(STARLING, {
-    detect: detectStarling,
-    parse: (text, opts) =>
-      parseStarlingSpritesheet(text, {
-        frameDuration: opts.frameDuration,
-        imageHeight: opts.imageHeight,
-        imageWidth: opts.imageWidth,
-      }),
-  });
-  bindSpritesheetFormat(LIBGDX_ATLAS, {
-    detect: detectLibgdxAtlas,
-    parse: (text, opts) => parseLibgdxAtlasSpritesheet(text, { frameDuration: opts.frameDuration }),
-  });
+  // Seeded from the full preset, so the built-in registration order lives in exactly one place instead of being
+  // stated here and restated by anyone assembling the same set.
+  applySpritesheetImportOptions({ formats: spritesheetAllFormats });
   return _registry;
+}
+
+/**
+ * Installs the formats named in `options` into the registry, in list order.
+ *
+ * ★ THE SEAM IS EXPLICIT AND NOTHING REGISTERS ON IMPORT. This package declares `"sideEffects": false`, so the
+ * built-ins are seeded by the registry's own initializer rather than by parser modules registering themselves —
+ * and options stay inert data that a caller applies when they choose. List order becomes registration order,
+ * which is detection order.
+ */
+export function applySpritesheetImportOptions(options: Readonly<SpritesheetImportOptions>): void {
+  for (const format of options.formats ?? []) bindSpritesheetFormat(format.kind, format.entry);
 }
 
 /** Detect the format kind of a spritesheet text document.
@@ -158,6 +155,57 @@ export function registerSpritesheetFormat(
 ): void {
   bindSpritesheetFormat(kind, entry);
 }
+
+export const asepriteSpritesheetFormat: Readonly<SpritesheetFormatDescriptor> = {
+  entry: { detect: detectAseprite, parse: (text) => parseAsepriteSpritesheet(text) },
+  kind: ASEPRITE,
+};
+
+export const cocosPlistSpritesheetFormat: Readonly<SpritesheetFormatDescriptor> = {
+  entry: { detect: detectCocosPlist, parse: (text) => parseCocosPlistSpritesheet(text) },
+  kind: COCOS_PLIST,
+};
+
+export const texturePackerSpritesheetFormat: Readonly<SpritesheetFormatDescriptor> = {
+  entry: { detect: detectTexturePacker, parse: (text) => parseTexturePackerSpritesheet(text) },
+  kind: TEXTURE_PACKER,
+};
+
+export const starlingSpritesheetFormat: Readonly<SpritesheetFormatDescriptor> = {
+  entry: {
+    detect: detectStarling,
+    parse: (text, opts) =>
+      parseStarlingSpritesheet(text, {
+        frameDuration: opts.frameDuration,
+        imageHeight: opts.imageHeight,
+        imageWidth: opts.imageWidth,
+      }),
+  },
+  kind: STARLING,
+};
+
+export const libgdxAtlasSpritesheetFormat: Readonly<SpritesheetFormatDescriptor> = {
+  entry: {
+    detect: detectLibgdxAtlas,
+    parse: (text, opts) => parseLibgdxAtlasSpritesheet(text, { frameDuration: opts.frameDuration }),
+  },
+  kind: LIBGDX_ATLAS,
+};
+
+/**
+ * Every built-in spritesheet format, in the order the registry consults them.
+ *
+ * ★ ASEPRITE MUST PRECEDE TEXTUREPACKER. An Aseprite export satisfies the TexturePacker detector too, so
+ * alphabetising this list would route every Aseprite file to the wrong parser without erroring. That is the one
+ * ordering constraint among the built-ins, and `describe('spritesheetAllFormats')` pins it.
+ */
+export const spritesheetAllFormats: readonly Readonly<SpritesheetFormatDescriptor>[] = [
+  asepriteSpritesheetFormat,
+  cocosPlistSpritesheetFormat,
+  texturePackerSpritesheetFormat,
+  starlingSpritesheetFormat,
+  libgdxAtlasSpritesheetFormat,
+];
 
 /** Remove a format binding, including a caller override of a built-in kind. */
 export function unregisterSpritesheetFormat(kind: SpritesheetFormatKind): void {
