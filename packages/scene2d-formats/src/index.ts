@@ -1,14 +1,25 @@
 export { collectLottieCounts } from './lottieCounts.ts';
 export { applyAnimationClipToLottieDocument } from './lottieDocument.ts';
 export { createScene2DFromLottieDocument } from './lottieImport.ts';
+export { lottieEllipseShapeItemHandler } from './lottieEllipseShapeItem.ts';
+export { lottieFillShapeItemHandler } from './lottieFillShapeItem.ts';
+export {
+  lottieGradientFillShapeItemHandler,
+  lottieGradientStrokeShapeItemHandler,
+} from './lottieGradientShapeItems.ts';
 export { registerAllLottieHandlers } from './lottieHandlers.ts';
 export { lottieImageLayerHandler } from './lottieImageLayer.ts';
 export { lottieAllLayerHandlers, registerLottieLayerHandlers } from './lottieLayerHandlers.ts';
 export { lottieNullLayerHandler } from './lottieNullLayer.ts';
+export { lottiePathShapeItemHandler } from './lottiePathShapeItem.ts';
+export { lottiePolystarShapeItemHandler } from './lottiePolystarShapeItem.ts';
 export { lottiePrecompositionLayerHandler } from './lottiePrecompositionLayer.ts';
+export { lottieRectangleShapeItemHandler } from './lottieRectangleShapeItem.ts';
 export { lottieShapeLayerHandler } from './lottieShapeLayer.ts';
 export { lottieSolidLayerHandler } from './lottieSolidLayer.ts';
+export { lottieStrokeShapeItemHandler } from './lottieStrokeShapeItem.ts';
 export { lottieTextLayerHandler } from './lottieTextLayer.ts';
+export { lottieTrimPathShapeItemHandler } from './lottieTrimPathShapeItem.ts';
 export {
   createLottieRegistry,
   getLottieLayerHandler,
