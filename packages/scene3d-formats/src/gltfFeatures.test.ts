@@ -46,11 +46,16 @@ describe('collectGlbFeatures', () => {
     expect(collectGlbFeatures(bytes)).toBeNull();
   });
 
-  it('handles GLB with empty JSON chunk', () => {
-    const bytes = buildGlb('{}');
+  it('handles GLB with minimal valid JSON chunk', () => {
+    const bytes = buildGlb(JSON.stringify({ asset: { version: '2.0' } }));
     const features = collectGlbFeatures(bytes)!;
     expect(features).not.toBeNull();
     expect(features.size).toBe(0);
+  });
+
+  it('returns null for a GLB whose JSON chunk is not a glTF document', () => {
+    const bytes = buildGlb('{}');
+    expect(collectGlbFeatures(bytes)).toBeNull();
   });
 });
 
@@ -72,6 +77,11 @@ describe('collectGltfFeatures', () => {
 
   it('returns null for a JSON string that parses to a non-object', () => {
     expect(collectGltfFeatures('"hello"')).toBeNull();
+  });
+
+  it('returns null for a JSON object without asset.version', () => {
+    expect(collectGltfFeatures('{}')).toBeNull();
+    expect(collectGltfFeatures('{ "meshes": [{}] }')).toBeNull();
   });
 
   it('reports Mesh when meshes array is non-empty', () => {

@@ -30,6 +30,7 @@ export function collectGltfFeatures(source: GltfDocument | string): ReadonlySet<
     doc = source;
   }
   if (doc === null || typeof doc !== 'object') return null;
+  if (typeof doc.asset?.version !== 'string') return null;
 
   const found = new Set<string>();
   if ((doc.meshes?.length ?? 0) > 0) found.add(GLTF_FEATURE_MESH);
