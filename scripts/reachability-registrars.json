@@ -919,6 +919,10 @@
     },
     {
       "packageName": "scene2d-formats",
+      "registrar": "registerAllSvgHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
       "registrar": "registerLottieLayerHandler"
     },
     {
@@ -980,6 +984,14 @@
     {
       "packageName": "scene2d-formats",
       "registrar": "registerRiveTextHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerSvgElementHandler"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerSvgElementHandlers"
     },
     {
       "packageName": "scene2d-gl",
