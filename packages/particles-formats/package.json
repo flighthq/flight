@@ -41,6 +41,7 @@
     "@flighthq/importdiagnostics": "*",
     "@flighthq/math": "*",
     "@flighthq/particles": "*",
+    "@flighthq/requirement": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

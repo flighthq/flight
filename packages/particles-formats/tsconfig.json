@@ -12,6 +12,7 @@
     { "path": "../importdiagnostics" },
     { "path": "../math" },
     { "path": "../particles" },
+    { "path": "../requirement" },
     { "path": "../types" }
   ],
   "include": ["src"]
