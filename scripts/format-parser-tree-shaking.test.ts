@@ -505,6 +505,16 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
         symbols: ['lottieImageLayerHandler'],
       },
       {
+        // ★ ONE MEMBER, AND IT IS STILL A FAMILY. Masks belong to no layer kind, so the document core used to read them
+        // for every layer — which put `@flighthq/clip` and the bezier path reader in a null-layer-only bundle with no
+        // configuration able to decline them.
+        isolationSymbols: ['lottieAdditiveMaskHandler'],
+        modules: ['lottieMask.ts'],
+        name: 'masks',
+        registrar: 'registerLottieMaskHandlers',
+        symbols: ['lottieAdditiveMaskHandler'],
+      },
+      {
         isolationSymbols: ['lottieEllipseShapeItemHandler'],
         modules: LOTTIE_SHAPE_ITEM_MODULES,
         name: 'shape items',
@@ -515,7 +525,7 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
     fullAssemblies: [
       {
         exports: ['createScene2DFromLottieDocument'],
-        families: ['layers', 'shape items'],
+        families: ['layers', 'masks', 'shape items'],
         name: 'zero-config importer',
       },
     ],

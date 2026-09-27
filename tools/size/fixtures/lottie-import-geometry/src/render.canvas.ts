@@ -12,6 +12,9 @@ import { LottieLayerKind, LottieShapeItemKind } from '@flighthq/types';
 
 export const result = createScene2DFromLottieDocumentWithRegistry('{}', {
   layerHandlers: [{ handle: lottieShapeLayerHandler, kind: LottieLayerKind.Shape }],
+  // No mask family: nothing in these subsets is masked, and declining it is what keeps `@flighthq/clip` and the
+  // bezier path reader out of the bundle.
+  maskHandlers: [],
   shapeItemHandlers: [
     { handle: lottieEllipseShapeItemHandler, kind: LottieShapeItemKind.Ellipse },
     { handle: lottieFillShapeItemHandler, kind: LottieShapeItemKind.Fill },

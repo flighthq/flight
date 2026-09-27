@@ -3,7 +3,15 @@ import type { AnimationChannel } from './AnimationChannel.ts';
 import type { DisplayObject } from './DisplayObject.ts';
 import type { ImageResource } from './ImageResource.ts';
 import type { ImportDiagnostic } from './ImportDiagnostic.ts';
-import type { LottieAsset, LottieDocument, LottieImageAsset, LottieLayer, LottieShapeItem } from './LottieDocument.ts';
+import type {
+  LottieAsset,
+  LottieDocument,
+  LottieImageAsset,
+  LottieLayer,
+  LottieMask,
+  LottieShapeItem,
+} from './LottieDocument.ts';
+import type { Node2D } from './Node2D.ts';
 import type { Path } from './Path.ts';
 import type { Shape } from './Shape.ts';
 
@@ -31,6 +39,25 @@ export const LottieShapeItemKind = {
 } as const;
 
 export type LottieShapeItemKind = string;
+
+/**
+ * The mask composition modes the format declares.
+ *
+ * ★ A MASK BELONGS TO NO LAYER KIND, which is why it is a family of its own rather than part of one. A null, solid,
+ * image, text or shape layer may all carry masks, so the walk has to ask every layer — and while the reading lived in
+ * the document core, every build paid for the clip region and the bezier path reader even when nothing was masked.
+ */
+export const LottieMaskKind = {
+  Additive: 'a',
+  Darken: 'd',
+  Difference: 'f',
+  Intersect: 'i',
+  Lighten: 'l',
+  None: 'n',
+  Subtract: 's',
+} as const;
+
+export type LottieMaskKind = string;
 
 export interface LottieAdvancedBlend {
   mode: AdvancedBlendMode;
@@ -102,6 +129,25 @@ export interface LottieLayerHandlerEntry {
   kind: LottieLayerKind;
 }
 
+export interface LottieMaskContext {
+  import: LottieImportContext;
+  /** The layer's masks with the disabled ones already dropped, in document order. */
+  masks: readonly Readonly<LottieMask>[];
+  target: Node2D;
+}
+
+export type LottieMaskHandler = (context: LottieMaskContext) => void;
+
+export interface LottieMaskHandlerEntry {
+  handle: LottieMaskHandler;
+  kind: LottieMaskKind;
+}
+
+/** The seam a feature module binds a keyframed value through; the sample is owned by the track, never retained. */
+export interface LottieMutableAnimationTarget {
+  lottieApply(sample: Readonly<number[] | Float32Array>, time: number): void;
+}
+
 export interface LottieShapeItemContext {
   import: LottieImportContext;
   item: Readonly<LottieShapeItem>;
@@ -120,5 +166,6 @@ export interface LottieShapeItemHandlerEntry {
 
 export interface LottieRegistry {
   layerHandlers: LottieLayerHandlerEntry[];
+  maskHandlers: LottieMaskHandlerEntry[];
   shapeItemHandlers: LottieShapeItemHandlerEntry[];
 }

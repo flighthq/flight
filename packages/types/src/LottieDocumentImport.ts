@@ -3,10 +3,16 @@ import type { DisplayObject } from './DisplayObject.ts';
 import type { Entity } from './Entity.ts';
 import type { ImageResource } from './ImageResource.ts';
 import type { LottieImageAsset } from './LottieDocument.ts';
-import type { LottieAdvancedBlend, LottieLayerHandlerEntry, LottieShapeItemHandlerEntry } from './LottieRegistry.ts';
+import type {
+  LottieAdvancedBlend,
+  LottieLayerHandlerEntry,
+  LottieMaskHandlerEntry,
+  LottieShapeItemHandlerEntry,
+} from './LottieRegistry.ts';
 
 export interface LottieDocumentImportOptions {
   layerHandlers?: LottieLayerHandlerEntry[];
+  maskHandlers?: LottieMaskHandlerEntry[];
   resolveImageResource?: (asset: Readonly<LottieImageAsset>) => ImageResource | null;
   shapeItemHandlers?: LottieShapeItemHandlerEntry[];
 }

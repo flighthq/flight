@@ -4,9 +4,10 @@ import type {
   LottieDocumentImportOptions,
   LottieDocumentImportResult,
   LottieLayerHandlerEntry,
+  LottieMaskHandlerEntry,
   LottieShapeItemHandlerEntry,
 } from '@flighthq/types/contract';
-import { LottieLayerKind, LottieShapeItemKind } from '@flighthq/types/contract';
+import { LottieLayerKind, LottieMaskKind, LottieShapeItemKind } from '@flighthq/types/contract';
 
 import { createScene2DFromLottieDocumentWithRegistry } from './lottieDocument.ts';
 import { lottieEllipseShapeItemHandler } from './lottieEllipseShapeItem.ts';
@@ -16,6 +17,7 @@ import {
   lottieGradientStrokeShapeItemHandler,
 } from './lottieGradientShapeItems.ts';
 import { lottieImageLayerHandler } from './lottieImageLayer.ts';
+import { lottieAdditiveMaskHandler } from './lottieMask.ts';
 import { lottieNullLayerHandler } from './lottieNullLayer.ts';
 import { lottiePathShapeItemHandler } from './lottiePathShapeItem.ts';
 import { lottiePolystarShapeItemHandler } from './lottiePolystarShapeItem.ts';
@@ -49,6 +51,7 @@ export function createScene2DFromLottieDocument(
     source,
     {
       layerHandlers: options?.layerHandlers ?? defaultLottieLayerHandlers(),
+      maskHandlers: options?.maskHandlers ?? defaultLottieMaskHandlers(),
       shapeItemHandlers: options?.shapeItemHandlers ?? defaultLottieShapeItemHandlers(),
     },
     diagnostics,
@@ -66,6 +69,11 @@ function defaultLottieLayerHandlers(): LottieLayerHandlerEntry[] {
     { handle: lottieShapeLayerHandler, kind: LottieLayerKind.Shape },
     { handle: lottieTextLayerHandler, kind: LottieLayerKind.Text },
   ];
+}
+
+// The zero-config mask family, likewise.
+function defaultLottieMaskHandlers(): LottieMaskHandlerEntry[] {
+  return [{ handle: lottieAdditiveMaskHandler, kind: LottieMaskKind.Additive }];
 }
 
 // The zero-config shape-item family, likewise.

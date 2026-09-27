@@ -1,6 +1,14 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
+import {
+  createScene2DFromLottieDocumentWithRegistry,
+  lottieAdditiveMaskHandler,
+  lottieShapeLayerHandler,
+} from '@flighthq/scene2d-formats';
+import type { LottieDocument, LottieRegistry } from '@flighthq/types';
+import { LottieLayerKind, LottieMaskKind } from '@flighthq/types';
+import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '..');
@@ -10,12 +18,14 @@ const srcDir = join(root, 'packages', 'scene2d-formats', 'src');
 // FEATURE module — a layer, a shape item, or a paint — and the point of the decomposition is that the core cannot
 // reach one.
 const CORE = 'lottieDocument.ts';
-const ALLOWED_LOCAL = new Set(['lottieBezierPath.ts', 'lottieRegistry.ts']);
+const ALLOWED_LOCAL = new Set(['lottieRegistry.ts']);
 
 // Packages only a feature needs. A document of null layers has no business linking `@flighthq/text`, and the core
-// naming any of these is the coupling this file exists to prevent. `@flighthq/clip` is absent from the list on
-// purpose: masks belong to no layer kind, so the core reads them for every layer and pays for the clip region.
+// naming any of these is the coupling this file exists to prevent. `@flighthq/clip` joined the list when masks became a
+// family of their own: the core used to read `masksProperties` for every layer, so a null-layer-only import paid for
+// the clip region and the bezier path reader behind it.
 const FEATURE_PACKAGES = [
+  '@flighthq/clip',
   '@flighthq/color',
   '@flighthq/path',
   '@flighthq/shape',
@@ -23,30 +33,54 @@ const FEATURE_PACKAGES = [
   '@flighthq/texture',
 ];
 
-// The two family modules that own a full preset, and the arrays they own. A module on the selective path naming one of
+// What each subset must NOT contain, by the symbol that would appear if it did. Read out of a real bundle rather than
+// out of an import list, because an import the bundler shakes is not a cost and an import it keeps is.
+const ABSENT_FROM_SUBSET: readonly (readonly [string, readonly string[]])[] = [
+  [
+    'lottie-import-null-solid',
+    ['createClipRegionFromPath', 'createLottieBezierPath', 'createTextLabel', 'createTexture'],
+  ],
+  [
+    'lottie-import-image',
+    ['createClipRegionFromPath', 'createLottieBezierPath', 'createTextLabel', 'appendShapeBeginFill'],
+  ],
+  [
+    'lottie-import-text',
+    ['createClipRegionFromPath', 'createLottieBezierPath', 'createTexture', 'appendShapeBeginFill'],
+  ],
+];
+
+// The three family modules that own a full preset, and the arrays they own. A module on the selective path naming one of
 // these would drag its whole family in.
 const PRESETS: readonly (readonly [string, string])[] = [
   ['lottieAllLayerHandlers', 'lottieLayerHandlers.ts'],
+  ['lottieAllMaskHandlers', 'lottieMaskHandlers.ts'],
   ['lottieAllShapeItemHandlers', 'lottieShapeItemHandlers.ts'],
 ];
 
 // Each layer module, and the only two modules allowed to name it: the preset that installs the family, and the
 // zero-config wrapper that owns the default. Anything else would make omitting a layer fail to omit its code.
-const LAYER_MODULES = [
-  'lottieImageLayer.ts',
-  'lottieNullLayer.ts',
-  'lottiePrecompositionLayer.ts',
-  'lottieShapeLayer.ts',
-  'lottieSolidLayer.ts',
-  'lottieTextLayer.ts',
+const FEATURE_MODULE_IMPORTERS: readonly (readonly [string, readonly string[]])[] = [
+  ['lottieImageLayer.ts', ['lottieImport.ts', 'lottieLayerHandlers.ts']],
+  ['lottieMask.ts', ['lottieImport.ts', 'lottieMaskHandlers.ts']],
+  ['lottieNullLayer.ts', ['lottieImport.ts', 'lottieLayerHandlers.ts']],
+  ['lottiePrecompositionLayer.ts', ['lottieImport.ts', 'lottieLayerHandlers.ts']],
+  ['lottieShapeLayer.ts', ['lottieImport.ts', 'lottieLayerHandlers.ts']],
+  ['lottieSolidLayer.ts', ['lottieImport.ts', 'lottieLayerHandlers.ts']],
+  ['lottieTextLayer.ts', ['lottieImport.ts', 'lottieLayerHandlers.ts']],
 ];
-const LAYER_IMPORTERS = ['lottieImport.ts', 'lottieLayerHandlers.ts'];
 
 // The fixture pairs that price the boundary, and the minimum saving each must show against the zero-config import.
 // Each threshold is set below the WEAKER of the two baselines and far above anything a handler shim could produce — a
 // shim moves tens of bytes, and the COLLADA fixtures measured an 18-byte spread across four subsets while they still
-// routed through a preset-resolving entry. Measured here: geometry 11477/14330 minified and 20410/30309 unminified,
-// null-solid 8886 and 15864, text 7345 and 17630, image 7654 and 13390.
+// routed through a preset-resolving entry.
+//
+// Measured, minified / unminified: full 14412 / 30504, geometry 10867 / 19540, null-solid 7735 / 13909,
+// image 6458 / 11282, text 6140 / 15512. Making masks a family of their own moved every subset by more than a
+// kilobyte — image -1199 / -2106, text -1206 / -2161, null-solid -1139 / -1985, geometry -584 / -1004 — while the full
+// import grew 99 / 253 for the third registry field and its dispatch. That is the shape a real extraction has: the
+// callers who decline a feature stop paying for it, and the caller who wants everything pays a little more for being
+// asked.
 const FIXTURES = [
   'lottie-import',
   'lottie-import-geometry',
@@ -56,10 +90,10 @@ const FIXTURES = [
 ] as const;
 
 const SAVINGS: readonly (readonly [string, number])[] = [
-  ['lottie-import-geometry', 0.12],
-  ['lottie-import-null-solid', 0.25],
-  ['lottie-import-text', 0.3],
-  ['lottie-import-image', 0.35],
+  ['lottie-import-geometry', 0.18],
+  ['lottie-import-null-solid', 0.35],
+  ['lottie-import-text', 0.4],
+  ['lottie-import-image', 0.45],
 ];
 
 describe('lottie locality', () => {
@@ -84,14 +118,19 @@ describe('lottie locality', () => {
     expect(owners).toEqual([owner]);
   });
 
-  // Each layer module must be reachable from the preset and the zero-config wrapper and nothing else, which is what
-  // makes omitting a layer omit its code. Asserted as "no other module in the package imports it".
-  it.each(LAYER_MODULES)('gives %s only the preset and the zero-config wrapper as importers', (module) => {
-    const importers = lottieSources().filter(
-      (file) => file !== module && codeOf(join(srcDir, file)).includes(`from './${module.slice(0, -3)}.ts'`),
-    );
-    expect(importers.sort()).toEqual(LAYER_IMPORTERS);
-  });
+  // Each feature module must be reachable from its own preset and the zero-config wrapper and nothing else, which is
+  // what makes omitting a family omit its code. Asserted as "no other module in the package imports it". The mask
+  // module is in this table for the same reason the layers are: while the core called its reading directly, there was
+  // no configuration in which a caller could leave it out.
+  it.each(FEATURE_MODULE_IMPORTERS)(
+    'gives %s only its preset and the zero-config wrapper as importers',
+    (module, expected) => {
+      const importers = lottieSources().filter(
+        (file) => file !== module && codeOf(join(srcDir, file)).includes(`from './${module.slice(0, -3)}.ts'`),
+      );
+      expect(importers.sort()).toEqual([...expected]);
+    },
+  );
 
   // ★ THE SELECTIVE API HAS TO BE NAMEABLE, NOT JUST PRESENT. `LottieRegistry.ts` holds the registry, both handler
   // entry types and both `*Kind` tables; while `types` published it on `./contract` only, `layerHandlers` was a public
@@ -109,6 +148,35 @@ describe('lottie locality', () => {
     for (const fixture of FIXTURES) {
       const source = readFileSync(join(root, 'tools', 'size', 'fixtures', fixture, 'src', 'render.canvas.ts'), 'utf8');
       expect(codeOfText(source), `${fixture} imports a contract lane`).not.toContain("/contract'");
+    }
+  });
+
+  // ★ AND THE TYPES HAVE TO BE SATISFIABLE, NOT ONLY THE NAMES. The fixtures are bundled, never typechecked, so they
+  // prove every name resolves on `.` and nothing more. This is the other half: a `LottieRegistry` written the way a
+  // caller has to write one, out of `@flighthq/types`' public lane, under tsc. It lives in `scripts/` because a package
+  // may not import a public lane — intra-SDK imports resolve to `/contract` — so no test inside `scene2d-formats` can
+  // make this claim at all.
+  it('lets an application drive the selective entry from the public lanes alone', () => {
+    const registry: LottieRegistry = {
+      layerHandlers: [{ handle: lottieShapeLayerHandler, kind: LottieLayerKind.Shape }],
+      maskHandlers: [{ handle: lottieAdditiveMaskHandler, kind: LottieMaskKind.Additive }],
+      shapeItemHandlers: [],
+    };
+    const document: LottieDocument = { fr: 30, h: 100, ip: 0, layers: [PUBLIC_LANE_LAYER], op: 60, w: 100 };
+    const result = createScene2DFromLottieDocumentWithRegistry(document, registry);
+    expect(result.duration).toBe(2);
+    expect(result.root).not.toBeNull();
+  });
+
+  // ★ ABSENCE READ OUT OF A REAL BUNDLE, WHICH IS THE ONLY PLACE IT IS TRUE OR FALSE. A structural import check says
+  // what a module names; this says what survives. Masks are the reason it exists: while the walk read
+  // `masksProperties` for every layer, `@flighthq/clip` and the bezier path reader were in a null-layer-only build, and
+  // no import list would have called that a defect because the core legitimately named them.
+  it.each(ABSENT_FROM_SUBSET)('leaves %s free of the code it does not register', async (fixture, symbols) => {
+    const code = await bundleFixture(fixture);
+    expect(code.length).toBeGreaterThan(1000);
+    for (const symbol of symbols) {
+      expect(code.includes(symbol), `${fixture} contains ${symbol}`).toBe(false);
     }
   });
 
@@ -167,6 +235,45 @@ function lottieSources(): string[] {
       !file.endsWith('.test.ts') &&
       !file.startsWith('lottieTestFixtures'),
   );
+}
+
+// One masked shape layer: enough to exercise both families the registry above names.
+const PUBLIC_LANE_LAYER = {
+  ind: 1,
+  ip: 0,
+  masksProperties: [
+    {
+      mode: 'a' as const,
+      o: { k: 100 },
+      pt: {
+        k: {
+          c: true,
+          i: [[0, 0]],
+          o: [[0, 0]],
+          v: [[0, 0]],
+        },
+      },
+    },
+  ],
+  nm: 'public',
+  op: 60,
+  shapes: [
+    { p: { k: [5, 5] }, r: { k: 0 }, s: { k: [10, 10] }, ty: 'rc' as const },
+    { c: { k: [1, 0, 0] }, o: { k: 100 }, ty: 'fl' as const },
+  ],
+  ty: 4,
+};
+
+async function bundleFixture(fixture: string): Promise<string> {
+  const result = await build({
+    bundle: true,
+    entryPoints: [join(root, 'tools', 'size', 'fixtures', fixture, 'src', 'render.canvas.ts')],
+    format: 'esm',
+    keepNames: true,
+    logLevel: 'error',
+    write: false,
+  });
+  return result.outputFiles[0].text;
 }
 
 function readBaseline(name: string): Record<string, number> {

@@ -1,4 +1,4 @@
-import { LottieLayerKind, LottieShapeItemKind } from '@flighthq/types/contract';
+import { LottieLayerKind, LottieMaskKind, LottieShapeItemKind } from '@flighthq/types/contract';
 
 export function collectLottieCounts(json: string): Map<string, number> | null {
   let doc: unknown;
@@ -22,8 +22,27 @@ export function collectLottieCounts(json: string): Map<string, number> | null {
     if (ty === LottieLayerKind.Shape) {
       tallyShapeItems(counts, entry.shapes);
     }
+    tallyMasks(counts, entry.masksProperties);
   }
   return counts;
+}
+
+/**
+ * Tallies the masks Flight has a family for.
+ *
+ * ★ ONLY THE ADDITIVE MODE IS COUNTED, and that is a reporting limit rather than a claim about the document. Lottie
+ * declares seven modes and Flight carries one, so a subtract or intersect mask requires something no catalog row can
+ * satisfy; emitting a key for it would produce a requirement nothing resolves. A document carrying one is imported
+ * unmasked and silently, exactly as before masks became a family — the gap is recorded in
+ * agents/scene2d-format-coverage.md, not papered over with a key.
+ */
+function tallyMasks(counts: Map<string, number>, raw: unknown): void {
+  if (!Array.isArray(raw)) return;
+  for (const entry of raw) {
+    if (entry === null || typeof entry !== 'object') continue;
+    if ((entry as Record<string, unknown>).mode !== LottieMaskKind.Additive) continue;
+    counts.set('mask.additive', (counts.get('mask.additive') ?? 0) + 1);
+  }
 }
 
 function isLottieDocument(record: Readonly<Record<string, unknown>>): boolean {

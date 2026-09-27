@@ -5,7 +5,6 @@ import {
   createAnimationTrack,
   sampleAnimationTrack,
 } from '@flighthq/animation/contract';
-import { createClipRegionFromPath } from '@flighthq/clip/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
@@ -28,9 +27,9 @@ import type {
   LottieKeyframe,
   LottieLayer,
   LottieMask,
+  LottieMutableAnimationTarget,
   LottiePositionProperty,
   LottieRegistry,
-  LottieShapePath,
   LottieTransform,
   Node2D,
   Node2DAnimationPath,
@@ -38,13 +37,7 @@ import type {
 } from '@flighthq/types/contract';
 import { AdvancedBlendMode, BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import {
-  createLottieBezierPath,
-  flattenLottieShapePath,
-  toLottieShapePath,
-  unflattenLottieShapePath,
-} from './lottieBezierPath.ts';
-import { getLottieLayerHandler } from './lottieRegistry.ts';
+import { getLottieLayerHandler, getLottieMaskHandler } from './lottieRegistry.ts';
 
 /**
  * The document core: JSON validation, import context, the ordered layer walk, and the animation plumbing every
@@ -77,74 +70,6 @@ export function appendLottieLayers(
   }
 }
 
-/**
- * Builds the animation channel a bezier path's keyframes drive.
- *
- * ★ THIS ONE STAYED IN THE CORE WHILE THE REST OF THE PATH ITEM MOVED OUT. It is animation plumbing: it reaches the
- * core's private track machinery and its private mutable-target interface, which is the boundary the core is meant
- * to own. The path item's own interpretation — the vertex reading, the flatten/unflatten pair and the bezier build —
- * lives in `lottiePathShapeItem.ts`, so a build without path items still skips all of that.
- */
-export function appendLottieShapePathChannels(
-  keyframes: readonly Readonly<LottieKeyframe<LottieShapePath>>[],
-  current: number[],
-  apply: () => void,
-  context: LottieImportContext,
-): void {
-  if (keyframes.length === 0) return;
-  if (
-    keyframes.some((keyframe) => {
-      const value = toLottieShapePath(keyframe.s ?? keyframe.e);
-      return value !== undefined && flattenLottieShapePath(value).length !== current.length;
-    })
-  ) {
-    reportLottieDrop(context, 'lottie.incompatible-animated-shape-path', 'appendLottieShapePathChannels');
-    return;
-  }
-  const componentSpecific = hasComponentSpecificEasing(keyframes, current.length);
-  if (componentSpecific) {
-    for (let component = 0; component < current.length; component++) {
-      context.channels.push(
-        createAnimationChannel(
-          createLottieTrack(
-            keyframes,
-            1,
-            context,
-            (value) => [
-              flattenLottieShapePath(toLottieShapePath(value ?? keyframes[0].s)!)[component] ?? current[component],
-            ],
-            component,
-          ),
-          {
-            lottieApply(sample) {
-              current[component] = sample[0];
-              apply();
-            },
-          } satisfies LottieMutableAnimationTarget,
-        ),
-      );
-    }
-    return;
-  }
-  context.channels.push(
-    createAnimationChannel(
-      createLottieTrack(
-        keyframes,
-        current.length,
-        context,
-        (value) => flattenLottieShapePath(toLottieShapePath(value ?? keyframes[0].s)!),
-        0,
-      ),
-      {
-        lottieApply(sample) {
-          for (let index = 0; index < current.length; index++) current[index] = sample[index];
-          apply();
-        },
-      } satisfies LottieMutableAnimationTarget,
-    ),
-  );
-}
-
 // Applies both the shared Node2DAnimationTarget channels and the format-owned mutable-content
 // targets used by animated shape/paint/mask records.
 export function applyAnimationClipToLottieDocument(clip: Readonly<AnimationClip>, time: number): void {
@@ -157,8 +82,23 @@ export function applyAnimationClipToLottieDocument(clip: Readonly<AnimationClip>
   }
 }
 
-interface LottieMutableAnimationTarget {
-  lottieApply(sample: Readonly<number[] | Float32Array>, time: number): void;
+/**
+ * Dispatches a layer's masks to the registered mask family.
+ *
+ * ★ THE CORE PICKS THE KEY AND NOTHING ELSE. Disabled masks are dropped here because `mode: 'n'` is the format saying
+ * "not a mask", so it cannot be the dispatch key; everything else — which compositions can be carried, what happens to
+ * an inverted one — belongs to the handler. An unregistered mode is silently unmasked, exactly as an uncarried
+ * composition was before masks became a family, so no document gains or loses a diagnostic.
+ */
+export function applyLottieMaskFamily(
+  target: Node2D,
+  masks: readonly Readonly<LottieMask>[],
+  context: LottieImportContext,
+): void {
+  const active = masks.filter((mask) => mask.mode !== 'n');
+  if (active.length === 0) return;
+  const handler = getLottieMaskHandler(context.registry, active[0].mode);
+  if (handler !== null) handler({ import: context, masks: active, target });
 }
 
 export function applyLottieTransform(
@@ -207,7 +147,7 @@ function createLottieLayerNode(layer: Readonly<LottieLayer>, context: LottieImpo
     reportLottieSkip(context, 'lottie.unsupported-layer', 'createLottieLayerNode', { layerType: layer.ty });
   }
 
-  applyLottieMasks(container, layer.masksProperties ?? [], context);
+  applyLottieMaskFamily(container, layer.masksProperties ?? [], context);
   return container;
 }
 
@@ -296,7 +236,7 @@ function appendNumericPropertyChannels<T>(
   const keyframes = property.k;
   if (keyframes.length === 0) return;
   const spatial = spatialTangents && hasSpatialTangents(keyframes);
-  const componentSpecific = !spatial && hasComponentSpecificEasing(keyframes, components);
+  const componentSpecific = !spatial && hasComponentSpecificLottieEasing(keyframes, components);
   if (componentSpecific && components > 1) {
     for (let component = 0; component < components; component++) {
       context.channels.push(
@@ -443,7 +383,7 @@ function createLottiePositionSampler(
   };
 }
 
-function createLottieTrack<T>(
+export function createLottieTrack<T>(
   keyframes: readonly Readonly<LottieKeyframe<T>>[],
   components: number,
   context: LottieImportContext,
@@ -666,6 +606,21 @@ export function createScene2DFromLottieDocumentWithRegistry(
   return finishEntity(out);
 }
 
+export function hasComponentSpecificLottieEasing<T>(
+  keyframes: readonly Readonly<LottieKeyframe<T>>[],
+  components: number,
+): boolean {
+  if (components < 2) return false;
+  for (let index = 0; index < keyframes.length - 1; index++) {
+    const current = keyframes[index];
+    for (const handle of [current.o, current.i]) {
+      if (handle === undefined) continue;
+      if (handleVaries(handle.x, components) || handleVaries(handle.y, components)) return true;
+    }
+  }
+  return false;
+}
+
 export function initializeLottieDocumentImportResult(
   out: EntityConstruction<LottieDocumentImportResult>,
   root: DisplayObject,
@@ -710,41 +665,6 @@ export function lottieClamp(value: number, minimum: number, maximum: number): nu
   return Math.min(maximum, Math.max(minimum, value));
 }
 
-export function lottieDegreesToRadians(value: number): number {
-  return (value * Math.PI) / 180;
-}
-
-/**
- * Lowers a layer's masks onto Flight's hard clip region.
- *
- * ★ THE ONE FEATURE STILL READ FOR EVERY LAYER, and therefore the one that keeps bezier-path reading in every bundle.
- * Masks belong to no layer kind — a null, image, text or shape layer may carry them — so the core's walk has to ask,
- * and asking links `lottieBezierPath`. Breaking that would need masks to become a registered family of their own
- * rather than a step in the walk; until then a null-layer-only build still pays for the mask reader.
- */
-function applyLottieMasks(target: Node2D, masks: readonly Readonly<LottieMask>[], context: LottieImportContext): void {
-  const active = masks.filter((mask) => mask.mode !== 'n');
-  if (active.length === 0) return;
-  const first = active[0];
-  // Only a lone additive, non-inverted mask lowers onto Flight's hard ClipRegion. Composed modes,
-  // inversion, and feather are uncarried; see agents/scene2d-format-coverage.md.
-  if (first.mode !== 'a' || first.inv === true || active.length > 1) return;
-  const initial = toLottieShapePath(initialLottieValue(first.pt));
-  if (initial === undefined) return;
-  target.clip = createClipRegionFromPath(createLottieBezierPath(initial));
-  if (isAnimatedLottieProperty(first.pt)) {
-    const current = flattenLottieShapePath(initial);
-    appendLottieShapePathChannels(
-      first.pt.k,
-      current,
-      () => {
-        target.clip = createClipRegionFromPath(createLottieBezierPath(unflattenLottieShapePath(initial, current)));
-      },
-      context,
-    );
-  }
-}
-
 function applyLottieLayerVisibility(target: Node2D, layer: Readonly<LottieLayer>, context: LottieImportContext): void {
   const start = frameToSeconds(layer.ip ?? context.document.ip, context);
   const end = frameToSeconds(layer.op ?? context.document.op, context);
@@ -784,14 +704,8 @@ function applyLottieBlendMode(target: Node2D, layer: Readonly<LottieLayer>, cont
   if (advanced !== undefined) context.advancedBlends.push({ mode: advanced, node: target });
 }
 
-export function lottieNumericValue(value: unknown, components: number): number[] {
-  const source = Array.isArray(value) ? value : [value];
-  const out = new Array<number>(components);
-  for (let index = 0; index < components; index++) {
-    const candidate = Number(source[index] ?? source[0] ?? 0);
-    out[index] = Number.isFinite(candidate) ? candidate : 0;
-  }
-  return out;
+export function lottieDegreesToRadians(value: number): number {
+  return (value * Math.PI) / 180;
 }
 
 function applyDisplaySample(target: Node2D, path: Node2DAnimationPath, sample: readonly number[]): void {
@@ -837,14 +751,14 @@ function isValidLottieDocument(document: Readonly<LottieDocument>): boolean {
   );
 }
 
-export function lottieRgba(color: readonly number[]): number {
-  return (
-    ((Math.round(lottieClamp(color[0] ?? 0, 0, 1) * 255) << 24) |
-      (Math.round(lottieClamp(color[1] ?? 0, 0, 1) * 255) << 16) |
-      (Math.round(lottieClamp(color[2] ?? 0, 0, 1) * 255) << 8) |
-      0xff) >>>
-    0
-  );
+export function lottieNumericValue(value: unknown, components: number): number[] {
+  const source = Array.isArray(value) ? value : [value];
+  const out = new Array<number>(components);
+  for (let index = 0; index < components; index++) {
+    const candidate = Number(source[index] ?? source[0] ?? 0);
+    out[index] = Number.isFinite(candidate) ? candidate : 0;
+  }
+  return out;
 }
 
 function isSeparatedPosition(property: Readonly<LottiePositionProperty> | undefined): property is Readonly<{
@@ -856,16 +770,14 @@ function isSeparatedPosition(property: Readonly<LottiePositionProperty> | undefi
   return property !== undefined && 's' in property && property.s === true && 'x' in property && 'y' in property;
 }
 
-function hasComponentSpecificEasing<T>(keyframes: readonly Readonly<LottieKeyframe<T>>[], components: number): boolean {
-  if (components < 2) return false;
-  for (let index = 0; index < keyframes.length - 1; index++) {
-    const current = keyframes[index];
-    for (const handle of [current.o, current.i]) {
-      if (handle === undefined) continue;
-      if (handleVaries(handle.x, components) || handleVaries(handle.y, components)) return true;
-    }
-  }
-  return false;
+export function lottieRgba(color: readonly number[]): number {
+  return (
+    ((Math.round(lottieClamp(color[0] ?? 0, 0, 1) * 255) << 24) |
+      (Math.round(lottieClamp(color[1] ?? 0, 0, 1) * 255) << 16) |
+      (Math.round(lottieClamp(color[2] ?? 0, 0, 1) * 255) << 8) |
+      0xff) >>>
+    0
+  );
 }
 
 function hasSpatialTangents<T>(keyframes: readonly Readonly<LottieKeyframe<T>>[]): boolean {

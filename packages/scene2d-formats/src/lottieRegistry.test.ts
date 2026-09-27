@@ -1,13 +1,16 @@
 import type { LottieLayerHandler, LottieShapeItemHandler } from '@flighthq/types/contract';
-import { LottieLayerKind, LottieShapeItemKind } from '@flighthq/types/contract';
+import { LottieLayerKind, LottieMaskKind, LottieShapeItemKind } from '@flighthq/types/contract';
 
 import {
   createLottieRegistry,
   getLottieLayerHandler,
+  getLottieMaskHandler,
   getLottieShapeItemHandler,
   registerLottieLayerHandler,
+  registerLottieMaskHandler,
   registerLottieShapeItemHandler,
   unregisterLottieLayerHandler,
+  unregisterLottieMaskHandler,
   unregisterLottieShapeItemHandler,
 } from './lottieRegistry.ts';
 
@@ -16,6 +19,7 @@ describe('createLottieRegistry', () => {
     const first = createLottieRegistry();
     const second = createLottieRegistry();
     expect(first.layerHandlers).toEqual([]);
+    expect(first.maskHandlers).toEqual([]);
     expect(first.shapeItemHandlers).toEqual([]);
     registerLottieLayerHandler(first, LottieLayerKind.Shape, () => {});
     expect(first.layerHandlers).toHaveLength(1);
@@ -26,6 +30,12 @@ describe('createLottieRegistry', () => {
 describe('getLottieLayerHandler', () => {
   it('returns null for an unregistered layer kind', () => {
     expect(getLottieLayerHandler(createLottieRegistry(), LottieLayerKind.Shape)).toBeNull();
+  });
+});
+
+describe('getLottieMaskHandler', () => {
+  it('returns null for an unregistered mask mode', () => {
+    expect(getLottieMaskHandler(createLottieRegistry(), LottieMaskKind.Additive)).toBeNull();
   });
 });
 
@@ -54,6 +64,20 @@ describe('registerLottieLayerHandler', () => {
   });
 });
 
+describe('registerLottieMaskHandler', () => {
+  it('is last-write-wins on the mask family too, and touches no other family', () => {
+    const registry = createLottieRegistry();
+    const first = (): void => {};
+    const second = (): void => {};
+    registerLottieMaskHandler(registry, LottieMaskKind.Additive, first);
+    registerLottieMaskHandler(registry, LottieMaskKind.Additive, second);
+    expect(registry.maskHandlers).toHaveLength(1);
+    expect(getLottieMaskHandler(registry, LottieMaskKind.Additive)).toBe(second);
+    expect(registry.layerHandlers).toEqual([]);
+    expect(registry.shapeItemHandlers).toEqual([]);
+  });
+});
+
 describe('registerLottieShapeItemHandler', () => {
   it('is last-write-wins without moving the registered key', () => {
     const registry = createLottieRegistry();
@@ -79,6 +103,16 @@ describe('unregisterLottieLayerHandler', () => {
     registerLottieLayerHandler(registry, LottieLayerKind.Shape, () => {});
     expect(unregisterLottieLayerHandler(registry, LottieLayerKind.Shape)).toBe(true);
     expect(unregisterLottieLayerHandler(registry, LottieLayerKind.Shape)).toBe(false);
+  });
+});
+
+describe('unregisterLottieMaskHandler', () => {
+  it('reports whether a mask mode was registered', () => {
+    const registry = createLottieRegistry();
+    expect(unregisterLottieMaskHandler(registry, LottieMaskKind.Additive)).toBe(false);
+    registerLottieMaskHandler(registry, LottieMaskKind.Additive, () => {});
+    expect(unregisterLottieMaskHandler(registry, LottieMaskKind.Additive)).toBe(true);
+    expect(registry.maskHandlers).toEqual([]);
   });
 });
 

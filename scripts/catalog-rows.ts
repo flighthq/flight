@@ -1,7 +1,9 @@
 import {
   createRiveImportRegistry,
   getRiveCoreTypeName,
+  lottieAdditiveMaskHandler,
   lottieAllLayerHandlers,
+  lottieAllMaskHandlers,
   lottieAllShapeItemHandlers,
   lottieEllipseShapeItemHandler,
   lottieFillShapeItemHandler,
@@ -170,6 +172,7 @@ import type {
   GltfCoreFeatureHandler,
   GltfExtensionHandler,
   LottieLayerHandler,
+  LottieMaskHandler,
   LottieShapeItemHandler,
   Md2SectionHandler,
   SvgElementHandler,
@@ -452,6 +455,13 @@ export const LOTTIE_LAYER_HANDLERS: readonly (readonly [string, LottieLayerHandl
   ['lottieTextLayerHandler', lottieTextLayerHandler, 'layer.text'],
 ];
 
+// ★ ONE MEMBER, AND IT STILL EARNS A TABLE. Masks are a family of their own because they belong to no layer kind; the
+// row is what lets a manifest resolve `lottie.mask.additive` to a handler instead of to the core parse, which is what
+// it resolved to while the reading was a step in the layer walk.
+export const LOTTIE_MASK_HANDLERS: readonly (readonly [string, LottieMaskHandler, string])[] = [
+  ['lottieAdditiveMaskHandler', lottieAdditiveMaskHandler, 'mask.additive'],
+];
+
 export const LOTTIE_SHAPE_ITEM_HANDLERS: readonly (readonly [string, LottieShapeItemHandler, string])[] = [
   ['lottieEllipseShapeItemHandler', lottieEllipseShapeItemHandler, 'shape.ellipse'],
   ['lottieFillShapeItemHandler', lottieFillShapeItemHandler, 'shape.fill'],
@@ -664,6 +674,17 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
         `${LOTTIE_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
         familyOrderOf(lottieAllLayerHandlers, handler),
         'layerHandlers',
+      ),
+    );
+  }
+  for (const [symbol, handler, kind] of LOTTIE_MASK_HANDLERS) {
+    rows.push(
+      row(
+        '@flighthq/scene2d-formats',
+        symbol,
+        `${LOTTIE_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
+        familyOrderOf(lottieAllMaskHandlers, handler),
+        'maskHandlers',
       ),
     );
   }

@@ -1,6 +1,4 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
-import { LottieLayerKind as PublicLottieLayerKind } from '@flighthq/types';
-import type { LottieRegistry } from '@flighthq/types';
 import type {
   ImportDiagnostic,
   LottieAnimatable,
@@ -9,14 +7,9 @@ import type {
   LottieShapePath,
   Node2D,
 } from '@flighthq/types/contract';
-import { SpriteKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
+import { LottieLayerKind, ShapeKind, SpriteKind, TextLabelKind } from '@flighthq/types/contract';
 
 import {
-  createScene2DFromLottieDocumentWithRegistry as publicCreateScene2DFromLottieDocumentWithRegistry,
-  lottieShapeLayerHandler as publicLottieShapeLayerHandler,
-} from './index.ts';
-import {
-  appendLottieShapePathChannels,
   applyAnimationClipToLottieDocument,
   bindMutableLottieNumericProperty,
   createScene2DFromLottieDocumentWithRegistry,
@@ -30,6 +23,7 @@ import {
 } from './lottieDocument.ts';
 import { registerAllLottieHandlers } from './lottieHandlers.ts';
 import { createScene2DFromLottieDocument } from './lottieImport.ts';
+import { lottieNullLayerHandler } from './lottieNullLayer.ts';
 import { createLottieRegistry } from './lottieRegistry.ts';
 import {
   animatedLottieTestVector,
@@ -65,31 +59,6 @@ describe('appendLottieLayers', () => {
   });
 });
 
-describe('appendLottieShapePathChannels', () => {
-  // ★ THE ONE PIECE OF THE PATH ITEM THAT STAYED IN THE CORE, because it reaches the core's private track machinery.
-  // What it must do is produce a channel per animated path, driving the caller's rebuild — asserted through the
-  // importer rather than by calling it bare, since its inputs are the core's own keyframe shapes.
-  it('produces a channel for an animated path so the clip drives the rebuild', () => {
-    const document = createLottieTestDocument([
-      {
-        ind: 1,
-        ip: 0,
-        ks: {},
-        nm: 'animated',
-        op: 60,
-        shapes: [
-          { d: 1, ks: { a: 1, k: animatedPathKeyframes() }, nm: 'p', ty: 'sh' },
-          { c: { a: 0, k: [1, 0, 0] }, nm: 'f', o: { a: 0, k: 100 }, ty: 'fl' },
-        ],
-        st: 0,
-        ty: 4,
-      } as unknown as LottieLayer,
-    ]);
-    const result = createScene2DFromLottieDocument(document);
-    expect(result.clip.channels.length).toBeGreaterThan(0);
-  });
-});
-
 describe('applyAnimationClipToLottieDocument', () => {
   it('applies the imported target-bound clip', () => {
     const result = createScene2DFromLottieDocument(
@@ -99,6 +68,40 @@ describe('applyAnimationClipToLottieDocument', () => {
     );
     applyAnimationClipToLottieDocument(result.clip, 0.5);
     expect(findLottieTestNodeByName(result.root, 'node')).toMatchObject({ x: 5, y: 10 });
+  });
+});
+
+describe('applyLottieMaskFamily', () => {
+  // ★ THE WALK ONLY PICKS THE KEY. With the additive handler registered a masked layer gets a clip region; with an
+  // empty mask family the SAME document produces no clip and no diagnostic — which is what makes masks omittable
+  // rather than broken, and is exactly how an uncarried composition behaved before masks were a family.
+  it('clips through the registered family and leaves the layer unmasked with none', () => {
+    const document = createLottieTestDocument([maskedNullLayer()]);
+    const withFamily = createScene2DFromLottieDocument(document);
+    expect(findLottieTestNodeByName(withFamily.root, 'masked')?.clip).not.toBeNull();
+
+    // The null layer handler stays registered so masks are the ONLY difference between the two runs — an empty
+    // `layerHandlers` would also report `lottie.unsupported-layer`, and the silence asserted below would be measuring
+    // the wrong thing.
+    const diagnostics: ImportDiagnostic[] = [];
+    const withoutFamily = createScene2DFromLottieDocumentWithRegistry(
+      document,
+      {
+        layerHandlers: [{ handle: lottieNullLayerHandler, kind: LottieLayerKind.Null }],
+        maskHandlers: [],
+        shapeItemHandlers: [],
+      },
+      diagnostics,
+    );
+    expect(findLottieTestNodeByName(withoutFamily.root, 'masked')?.clip).toBeNull();
+    expect(diagnostics).toEqual([]);
+  });
+
+  it('ignores disabled masks, since mode n is the format saying this is not a mask', () => {
+    const layer = maskedNullLayer();
+    layer.masksProperties = [{ mode: 'n', o: { k: 100 }, pt: { k: lottieTestSquarePath(0, 0, 10) } }];
+    const result = createScene2DFromLottieDocument(createLottieTestDocument([layer]));
+    expect(findLottieTestNodeByName(result.root, 'masked')?.clip).toBeNull();
   });
 });
 
@@ -134,6 +137,21 @@ describe('bindMutableLottieNumericProperty', () => {
   });
 });
 
+describe('createLottieTrack', () => {
+  // ★ SHARED PLUMBING THE FEATURE MODULES READ. It is exported because the path-channel builder lives outside the core
+  // now; what it owns is the frame-to-second mapping and the per-segment easing, so the check is that a two-keyframe
+  // property samples to its midpoint at the midpoint of the document — which no feature module could assert alone.
+  it('maps document frames to seconds so a linear property samples at its midpoint', () => {
+    const result = createScene2DFromLottieDocument(
+      createLottieTestDocument([
+        { ind: 1, ip: 0, ks: { p: animatedLottieTestVector([0, 0], [10, 20]) }, nm: 'node', op: 60, ty: 3 },
+      ]),
+    );
+    applyAnimationClipToLottieDocument(result.clip, 0.5);
+    expect(findLottieTestNodeByName(result.root, 'node')).toMatchObject({ x: 5, y: 10 });
+  });
+});
+
 describe('createScene2DFromLottieDocumentWithRegistry', () => {
   // ★ THE SELECTIVE ENTRY READS WHAT IT IS GIVEN AND NOTHING MORE. An empty registry still parses the document, walks
   // its layers and builds the clip — it simply produces empty layer containers, which is what makes a partial family
@@ -141,39 +159,43 @@ describe('createScene2DFromLottieDocumentWithRegistry', () => {
   it('parses the document with an empty registry, producing empty layer containers', () => {
     const result = createScene2DFromLottieDocumentWithRegistry(
       createLottieTestDocument([lottieTestShapeLayer(1, 'shape')]),
-      { layerHandlers: [], shapeItemHandlers: [] },
+      { layerHandlers: [], maskHandlers: [], shapeItemHandlers: [] },
     );
     expect(result.duration).toBe(2);
     expect(findLottieTestNodeByName(result.root, 'shape')).not.toBeNull();
     expect(findLottieTestNodeByKind(result.root, 'Shape')).toBeNull();
   });
 
-  // ★ THE PUBLIC LANE HAS TO BE ENOUGH TO CALL IT. This drives the whole selective path through the package barrel and
-  // `@flighthq/types`' public lane — the entry, one handler, and the kind table naming it — because the entry spent its
-  // first life contract-only while `LottieDocumentImportOptions.layerHandlers` was already public. A lane test that
-  // only read the barrel's text would pass on a re-export whose element type no caller can name; this one builds a
-  // registry of the shape a caller has to write.
-  it('is callable with nothing but the public lanes', () => {
-    const registry: LottieRegistry = {
-      layerHandlers: [{ handle: publicLottieShapeLayerHandler, kind: PublicLottieLayerKind.Shape }],
-      shapeItemHandlers: [],
-    };
-    const result = publicCreateScene2DFromLottieDocumentWithRegistry(
-      createLottieTestDocument([lottieTestShapeLayer(1, 'shape')]),
-      registry,
-    );
-    expect(findLottieTestNodeByName(result.root, 'shape')).not.toBeNull();
-  });
-
   it('rejects an invalid document exactly as the zero-config entry does', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const result = createScene2DFromLottieDocumentWithRegistry(
       'not json',
-      { layerHandlers: [], shapeItemHandlers: [] },
+      { layerHandlers: [], maskHandlers: [], shapeItemHandlers: [] },
       diagnostics,
     );
     expect(diagnostics.map((entry) => entry.kind)).toEqual(['lottie.invalid-document']);
     expect(result.duration).toBe(0);
+  });
+});
+
+// ★ THESE WERE PRIVATE TO A 1,800-LINE FILE AND ARE NOW THE SHARED PLUMBING FIFTEEN FEATURE MODULES READ. Each one
+// encodes a Lottie convention — a property may be static or keyframed, a colour is 0..1 floats, a rotation is degrees
+// — and until they crossed a module boundary there was nowhere to state those conventions as assertions.
+describe('hasComponentSpecificLottieEasing', () => {
+  // A Lottie keyframe may carry PER-COMPONENT easing handles — `o.x` as an array rather than one number — and a single
+  // track cannot express that, so the track machinery splits into one channel per component. The two documents below
+  // differ only in whether the handles are per-component, and the channel count is how that decision shows.
+  it('splits an unevenly eased vector into one channel per component', () => {
+    const shared = createScene2DFromLottieDocument(
+      createLottieTestDocument([positionLayer(animatedLottieTestVector([0, 0], [10, 20]))]),
+    );
+    const perComponent = createScene2DFromLottieDocument(
+      createLottieTestDocument([
+        positionLayer(animatedLottieTestVector([0, 0], [10, 20], [0.1, 0.9], [0, 0], [0.9, 0.1], [1, 1])),
+      ]),
+    );
+    expect(shared.clip.channels).toHaveLength(2);
+    expect(perComponent.clip.channels).toHaveLength(3);
   });
 });
 
@@ -183,9 +205,6 @@ describe('initializeLottieDocumentImportResult', () => {
   });
 });
 
-// ★ THESE WERE PRIVATE TO A 1,800-LINE FILE AND ARE NOW THE SHARED PLUMBING FIFTEEN FEATURE MODULES READ. Each one
-// encodes a Lottie convention — a property may be static or keyframed, a colour is 0..1 floats, a rotation is degrees
-// — and until they crossed a module boundary there was nowhere to state those conventions as assertions.
 describe('initialLottieValue', () => {
   it('reads a static value directly and a keyframed one from its first keyframe', () => {
     expect(initialLottieValue({ a: 0, k: 5 })).toBe(5);
@@ -307,13 +326,6 @@ describe('reportLottieSkip', () => {
   });
 });
 
-function animatedPathKeyframes() {
-  return [
-    { s: [lottieTestSquarePath(0, 0, 10)], t: 0 },
-    { s: [lottieTestSquarePath(0, 0, 20)], t: 30 },
-  ];
-}
-
 function rectangleLayerWithSize(s: LottieAnimatable<number[]>): LottieLayer {
   return {
     ind: 1,
@@ -334,4 +346,19 @@ function childNames(node: Node2D): string[] {
     names.push((getNodeChildAt(node, index) as Node2D).name ?? '');
   }
   return names;
+}
+
+function maskedNullLayer(): LottieLayer {
+  return {
+    ind: 1,
+    ip: 0,
+    masksProperties: [{ mode: 'a', o: { k: 100 }, pt: { k: lottieTestSquarePath(0, 0, 10) } }],
+    nm: 'masked',
+    op: 60,
+    ty: 3,
+  };
+}
+
+function positionLayer(p: LottieAnimatable<number[]>): LottieLayer {
+  return { ind: 1, ip: 0, ks: { p }, nm: 'eased', op: 60, ty: 3 };
 }

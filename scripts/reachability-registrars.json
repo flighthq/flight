@@ -935,6 +935,14 @@
     },
     {
       "packageName": "scene2d-formats",
+      "registrar": "registerLottieMaskHandler"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerLottieMaskHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
       "registrar": "registerLottieShapeItemHandler"
     },
     {

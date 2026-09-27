@@ -41,6 +41,7 @@ import {
   DRAGONBONES_SECTION_HANDLERS,
   DRAGONBONES_TIMELINE_HANDLERS,
   LOTTIE_LAYER_HANDLERS,
+  LOTTIE_MASK_HANDLERS,
   LOTTIE_SHAPE_ITEM_HANDLERS,
   MD2_SECTION_HANDLERS,
   MD5_SECTION_HANDLERS,
@@ -723,12 +724,33 @@ describe('buildRequirementCatalogRows', () => {
     }
   });
 
-  it('sets parserField on Lottie rows to split layer and shape item handlers', () => {
-    const rows = buildRequirementCatalogRows();
-    for (const row of rows.filter((candidate) => candidate.kind.startsWith('lottie.'))) {
-      const isLayerKind = LOTTIE_LAYER_HANDLERS.some(([, , kind]) => row.kind === `lottie.${kind}`);
-      expect(row.parserField, row.kind).toBe(isLayerKind ? 'layerHandlers' : 'shapeItemHandlers');
-    }
+  // ★ THREE FAMILIES, NOT TWO. Masks became a family of their own because they belong to no layer kind, so a Lottie row
+  // now routes to one of three registry fields. Deriving the field from the tables rather than from the kind's spelling
+  // is what makes a row that drifts into the wrong family fail here.
+  it('sets parserField on Lottie rows to route each handler to its own registry field', () => {
+    const field = new Map<string, string>();
+    for (const [, , kind] of LOTTIE_LAYER_HANDLERS) field.set(`lottie.${kind}`, 'layerHandlers');
+    for (const [, , kind] of LOTTIE_MASK_HANDLERS) field.set(`lottie.${kind}`, 'maskHandlers');
+    for (const [, , kind] of LOTTIE_SHAPE_ITEM_HANDLERS) field.set(`lottie.${kind}`, 'shapeItemHandlers');
+
+    const rows = buildRequirementCatalogRows().filter((candidate) => candidate.kind.startsWith('lottie.'));
+    expect(rows.length).toBe(field.size);
+    for (const row of rows) expect(row.parserField, row.kind).toBe(field.get(row.kind));
+  });
+
+  it('lists every Lottie mask handler the scene2d-formats package exports', () => {
+    const exported = Object.keys(scene2dFormats)
+      .filter(
+        (name) =>
+          name.startsWith('lottie') &&
+          name.endsWith('MaskHandler') &&
+          !name.startsWith('register') &&
+          !name.startsWith('get') &&
+          !name.startsWith('unregister') &&
+          typeof (scene2dFormats as unknown as Record<string, unknown>)[name] === 'function',
+      )
+      .sort();
+    expect(LOTTIE_MASK_HANDLERS.map(([symbol]) => symbol).sort()).toEqual(exported);
   });
 
   it('imports Lottie handlers from the public lane', () => {

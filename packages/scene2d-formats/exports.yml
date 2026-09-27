@@ -5,6 +5,7 @@ protected:
   - animatedLottieTestVector
   - appendLottieLayers
   - appendLottieShapePathChannels
+  - applyLottieMaskFamily
   - applyLottieShapeDirection
   - applyLottieTransform
   - applyRiveArtboardHandlers
@@ -16,6 +17,7 @@ protected:
   - createLottieBezierPath
   - createLottieGradientMatrix
   - createLottieTestDocument
+  - createLottieTrack
   - createRiveArtboardImportContext
   - createRiveDocumentImportContext
   - createRiveFileAssets
@@ -26,6 +28,7 @@ protected:
   - findLottieTestNodeByName
   - flattenLottieShapePath
   - getRiveCoreObjectHandler
+  - hasComponentSpecificLottieEasing
   - importRiveCoreObjectAsData
   - importRiveImageComponent
   - importRiveLayoutComponent
