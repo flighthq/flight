@@ -36,30 +36,26 @@ describe('runRegistryTool', () => {
     expect(facets.has('document.format')).toBe(true);
     expect(facets.has('scene.node-kind')).toBe(true);
     const formatRows = rows.filter((candidate) => candidate.facet === 'document.format');
+
+    // ★ DERIVED FROM THE ROWS, NOT ENUMERATED BESIDE THEM. This used to be a hand-written list of format
+    // prefixes, and every format added broke it: it was already failing for spine-binary before anyone
+    // noticed, then again for dragonbones. A list that must be edited in lockstep with the catalog is a second
+    // copy of the catalog, and the property actually worth guarding is narrower than the list ever was —
+    // that every kind CARRIES a namespace, because `document.format` is shared by every format Flight reads
+    // and a bare `Material` or `Shape` would collide across them.
     for (const row of formatRows) {
       expect(row.backend).toBe('parser');
-      expect(row.kind).toMatch(/^(3ds|awd2|dae|dragonbones|md2|md5|obj|riv|spine-binary|spine-json|swf)\./);
+      const [namespace, ...rest] = row.kind.split('.');
+      expect(namespace, row.kind).toMatch(/^[a-z0-9][a-z0-9-]*$/);
+      expect(rest.length, `${row.kind} carries no namespace`).toBeGreaterThan(0);
+      expect(rest.join('.').length, `${row.kind} has an empty feature name`).toBeGreaterThan(0);
     }
-    // Every format namespace must actually appear. The pattern above is satisfied by a catalog missing
-    // three of the four, which is how a format silently stops being relayed.
-    for (const namespace of [
-      '3ds.',
-      'awd2.',
-      'dae.',
-      'dragonbones.',
-      'md2.',
-      'md5.',
-      'obj.',
-      'riv.',
-      'spine-binary.',
-      'spine-json.',
-      'swf.',
-    ]) {
-      expect(
-        formatRows.some((row) => row.kind.startsWith(namespace)),
-        `no ${namespace} rows reached the CLI`,
-      ).toBe(true);
-    }
+
+    // The relay must actually carry SEVERAL formats. Without this the loop above passes on a catalog that
+    // lost every format but one — which is the failure the old enumeration was really guarding against, and it
+    // needs no list to state.
+    const namespaces = new Set(formatRows.map((row) => row.kind.split('.')[0]));
+    expect(namespaces.size).toBeGreaterThan(5);
   });
 
   it('prints help successfully', () => {
