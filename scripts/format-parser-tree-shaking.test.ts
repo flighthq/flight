@@ -84,6 +84,44 @@ const SPINE_TIMELINE_READER_SYMBOLS = [
   'readSpineBinaryTransformTimelines',
 ] as const;
 
+const DRAGONBONES_SECTION_HANDLER_SYMBOLS = [
+  'dragonBonesAnimationsSectionHandler',
+  'dragonBonesBonesSectionHandler',
+  'dragonBonesIkConstraintsSectionHandler',
+  'dragonBonesSkinsSectionHandler',
+  'dragonBonesSlotsSectionHandler',
+] as const;
+
+const DRAGONBONES_TIMELINE_HANDLER_SYMBOLS = [
+  'dragonBonesBoneTimelineHandler',
+  'dragonBonesDeformTimelineHandler',
+  'dragonBonesIkTimelineHandler',
+  'dragonBonesSlotTimelineHandler',
+  'dragonBonesZOrderTimelineHandler',
+] as const;
+
+const SPINE_JSON_SECTION_HANDLER_SYMBOLS = [
+  'spineJsonAnimationsSectionHandler',
+  'spineJsonBonesSectionHandler',
+  'spineJsonEventsSectionHandler',
+  'spineJsonIkConstraintsSectionHandler',
+  'spineJsonPathConstraintsSectionHandler',
+  'spineJsonSkinsSectionHandler',
+  'spineJsonSlotsSectionHandler',
+  'spineJsonTransformConstraintsSectionHandler',
+] as const;
+
+const SPINE_JSON_TIMELINE_HANDLER_SYMBOLS = [
+  'spineJsonBoneTimelineHandler',
+  'spineJsonDeformTimelineHandler',
+  'spineJsonDrawOrderTimelineHandler',
+  'spineJsonEventTimelineHandler',
+  'spineJsonIkTimelineHandler',
+  'spineJsonPathTimelineHandler',
+  'spineJsonSlotTimelineHandler',
+  'spineJsonTransformTimelineHandler',
+] as const;
+
 // SWF is not here. Its families are registry VALUES rather than `register*Handlers` functions, and its
 // boundaries are asserted at package reachability rather than at exported-symbol presence, so it has a
 // harness of its own in swf-tag-family-tree-shaking.test.ts.
@@ -198,6 +236,114 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
       'createSpineBinaryRegistry',
       'registerSpineBinarySectionHandler',
       'registerSpineBinaryTimelineHandler',
+    ],
+  },
+  {
+    allRegistrar: 'registerAllDragonBonesHandlers',
+    contractOnlyExports: [
+      'dragonBonesAllSectionHandlers',
+      'dragonBonesAllTimelineHandlers',
+      'dragonBonesAnimationsSectionHandler',
+      'dragonBonesBoneTimelineHandler',
+      'dragonBonesBonesSectionHandler',
+      'dragonBonesDeformTimelineHandler',
+      'dragonBonesIkConstraintsSectionHandler',
+      'dragonBonesIkTimelineHandler',
+      'dragonBonesSkinsSectionHandler',
+      'dragonBonesSlotTimelineHandler',
+      'dragonBonesSlotsSectionHandler',
+      'dragonBonesZOrderTimelineHandler',
+      'getDragonBonesSectionHandler',
+      'getDragonBonesTimelineHandler',
+      'unregisterDragonBonesSectionHandler',
+      'unregisterDragonBonesTimelineHandler',
+      'DRAGONBONES_REQUIREMENT_KEY_NAMESPACE',
+    ],
+    excludedExports: [
+      'dragonBonesAnimationsSectionReader',
+      'dragonBonesBonesSectionReader',
+      'dragonBonesBoneTimelineReader',
+      'dragonBonesDeformTimelineReader',
+      'dragonBonesIkConstraintsSectionReader',
+      'dragonBonesIkTimelineReader',
+      'dragonBonesSkinsSectionReader',
+      'dragonBonesSlotTimelineReader',
+      'dragonBonesSlotsSectionReader',
+      'dragonBonesZOrderTimelineReader',
+    ],
+    families: [
+      {
+        modules: ['dragonBonesSectionHandlers.ts'],
+        name: 'sections',
+        registrar: 'registerDragonBonesSectionHandlers',
+        symbols: DRAGONBONES_SECTION_HANDLER_SYMBOLS,
+      },
+      {
+        modules: ['dragonBonesTimelineHandlers.ts'],
+        name: 'timelines',
+        registrar: 'registerDragonBonesTimelineHandlers',
+        symbols: DRAGONBONES_TIMELINE_HANDLER_SYMBOLS,
+      },
+    ],
+    fullAssemblies: [],
+    leanExports: ['parseDragonBonesSkeletonWithRegistry'],
+    name: 'DragonBones',
+    packageDirectory: 'skeleton2d-formats',
+    publicInfrastructureExports: [
+      'createDragonBonesRegistry',
+      'registerDragonBonesSectionHandler',
+      'registerDragonBonesTimelineHandler',
+    ],
+  },
+  {
+    allRegistrar: 'registerAllSpineJsonHandlers',
+    contractOnlyExports: [
+      'getSpineJsonSectionHandler',
+      'getSpineJsonTimelineHandler',
+      'spineJsonAllSectionHandlers',
+      'spineJsonAllTimelineHandlers',
+      'spineJsonAnimationsSectionHandler',
+      'spineJsonBoneTimelineHandler',
+      'spineJsonBonesSectionHandler',
+      'spineJsonDeformTimelineHandler',
+      'spineJsonDrawOrderTimelineHandler',
+      'spineJsonEventTimelineHandler',
+      'spineJsonEventsSectionHandler',
+      'spineJsonIkConstraintsSectionHandler',
+      'spineJsonIkTimelineHandler',
+      'spineJsonPathConstraintsSectionHandler',
+      'spineJsonPathTimelineHandler',
+      'spineJsonSkinsSectionHandler',
+      'spineJsonSlotTimelineHandler',
+      'spineJsonSlotsSectionHandler',
+      'spineJsonTransformConstraintsSectionHandler',
+      'spineJsonTransformTimelineHandler',
+      'unregisterSpineJsonSectionHandler',
+      'unregisterSpineJsonTimelineHandler',
+      'SPINE_JSON_REQUIREMENT_KEY_NAMESPACE',
+    ],
+    families: [
+      {
+        modules: ['spineJsonSectionHandlers.ts'],
+        name: 'sections',
+        registrar: 'registerSpineJsonSectionHandlers',
+        symbols: SPINE_JSON_SECTION_HANDLER_SYMBOLS,
+      },
+      {
+        modules: ['spineJsonTimelineHandlers.ts'],
+        name: 'timelines',
+        registrar: 'registerSpineJsonTimelineHandlers',
+        symbols: SPINE_JSON_TIMELINE_HANDLER_SYMBOLS,
+      },
+    ],
+    fullAssemblies: [],
+    leanExports: ['parseSpineSkeletonWithRegistry'],
+    name: 'Spine JSON',
+    packageDirectory: 'skeleton2d-formats',
+    publicInfrastructureExports: [
+      'createSpineJsonRegistry',
+      'registerSpineJsonSectionHandler',
+      'registerSpineJsonTimelineHandler',
     ],
   },
   {
