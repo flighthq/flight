@@ -88,6 +88,22 @@ import {
   COLLADA_REQUIREMENT_KEY_NAMESPACE,
   getAwd2BlockName,
   getThreeDsChunkName,
+  GltfAnimationsCoreFeatureHandler,
+  GltfAnisotropyExtensionHandler,
+  GltfCamerasCoreFeatureHandler,
+  GltfClearcoatExtensionHandler,
+  GltfEmissiveStrengthExtensionHandler,
+  GltfIorExtensionHandler,
+  GltfIridescenceExtensionHandler,
+  GltfPunctualLightsExtensionHandler,
+  GltfSheenExtensionHandler,
+  GltfSkinsCoreFeatureHandler,
+  GltfSpecularExtensionHandler,
+  GltfSpecularGlossinessExtensionHandler,
+  GltfTransmissionExtensionHandler,
+  GltfUnlitExtensionHandler,
+  GltfVolumeExtensionHandler,
+  GLTF_REQUIREMENT_KEY_NAMESPACE,
   MD2_REQUIREMENT_KEY_NAMESPACE,
   MD5_REQUIREMENT_KEY_NAMESPACE,
   OBJ_REQUIREMENT_KEY_NAMESPACE,
@@ -196,6 +212,8 @@ import type {
   ColladaElementDecoder,
   DragonBonesSectionHandler,
   DragonBonesTimelineHandler,
+  GltfCoreFeatureHandler,
+  GltfExtensionHandler,
   LottieLayerHandler,
   LottieShapeItemHandler,
   Md2SectionHandler,
@@ -359,6 +377,27 @@ export const MD5_SECTION_HANDLERS: ReadonlyMap<string, Readonly<Md5SectionHandle
 export const OBJ_MATERIAL_HANDLERS: ReadonlyMap<string, Readonly<ObjMaterialHandler>> = new Map([
   ['objBlinnPhongMaterialHandler', objBlinnPhongMaterialHandler],
   ['objStandardPbrMaterialHandler', objStandardPbrMaterialHandler],
+]);
+
+export const GLTF_CORE_FEATURE_HANDLERS: readonly (readonly [string, Readonly<GltfCoreFeatureHandler>, string])[] = [
+  ['GltfAnimationsCoreFeatureHandler', GltfAnimationsCoreFeatureHandler, 'Animation'],
+  ['GltfCamerasCoreFeatureHandler', GltfCamerasCoreFeatureHandler, 'Camera'],
+  ['GltfSkinsCoreFeatureHandler', GltfSkinsCoreFeatureHandler, 'Skin'],
+];
+
+export const GLTF_EXTENSION_HANDLERS: ReadonlyMap<string, Readonly<GltfExtensionHandler>> = new Map([
+  ['GltfAnisotropyExtensionHandler', GltfAnisotropyExtensionHandler],
+  ['GltfClearcoatExtensionHandler', GltfClearcoatExtensionHandler],
+  ['GltfEmissiveStrengthExtensionHandler', GltfEmissiveStrengthExtensionHandler],
+  ['GltfIorExtensionHandler', GltfIorExtensionHandler],
+  ['GltfIridescenceExtensionHandler', GltfIridescenceExtensionHandler],
+  ['GltfPunctualLightsExtensionHandler', GltfPunctualLightsExtensionHandler],
+  ['GltfSheenExtensionHandler', GltfSheenExtensionHandler],
+  ['GltfSpecularExtensionHandler', GltfSpecularExtensionHandler],
+  ['GltfSpecularGlossinessExtensionHandler', GltfSpecularGlossinessExtensionHandler],
+  ['GltfTransmissionExtensionHandler', GltfTransmissionExtensionHandler],
+  ['GltfUnlitExtensionHandler', GltfUnlitExtensionHandler],
+  ['GltfVolumeExtensionHandler', GltfVolumeExtensionHandler],
 ]);
 
 /**
@@ -662,6 +701,28 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
         ),
       );
     }
+  }
+  for (const [symbol, , feature] of GLTF_CORE_FEATURE_HANDLERS) {
+    rows.push(
+      row(
+        '@flighthq/scene3d-formats/contract',
+        symbol,
+        `${GLTF_REQUIREMENT_KEY_NAMESPACE}.${feature}`,
+        undefined,
+        'coreFeatureHandlers',
+      ),
+    );
+  }
+  for (const [symbol, handler] of GLTF_EXTENSION_HANDLERS) {
+    rows.push(
+      row(
+        '@flighthq/scene3d-formats/contract',
+        symbol,
+        `${GLTF_REQUIREMENT_KEY_NAMESPACE}.${handler.kind}`,
+        undefined,
+        'extensionHandlers',
+      ),
+    );
   }
   for (const [symbol, handler, kind] of SPINE_BINARY_SECTION_HANDLERS) {
     rows.push(

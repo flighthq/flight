@@ -11,11 +11,15 @@ import {
 } from '@flighthq/scene2d-formats/contract';
 import { collectAwd2BlockCounts, parseAwd2Requirements } from '@flighthq/scene3d-formats/contract';
 import {
+  collectGlbFeatures,
+  collectGltfFeatures,
   collectMd2Features,
   collectObjMaterialLibraryReferences,
   collectThreeDsChunkCounts,
   isReadableCollada,
   parseColladaRequirements,
+  parseGlbRequirements,
+  parseGltfRequirements,
   parseMd2Requirements,
   parseMd5AnimRequirements,
   parseMd5MeshRequirements,
@@ -128,6 +132,14 @@ export const DEFAULT_CONTENT_ANALYZERS: Readonly<Record<string, ContentAnalyzer>
     isReadable: (source) => isReadableCollada(decodeUTF8(source)),
   },
   '.fnt': BITMAP_FONT_ANALYZER(),
+  '.glb': {
+    analyze: (source) => parseGlbRequirements(source),
+    isReadable: (source) => collectGlbFeatures(source) !== null,
+  },
+  '.gltf': {
+    analyze: (source) => parseGltfRequirements(decodeUTF8(source)),
+    isReadable: (source) => collectGltfFeatures(decodeUTF8(source)) !== null,
+  },
   '.json': composeContentAnalyzers([
     BITMAP_FONT_ANALYZER(),
     DRAGONBONES_ANALYZER(),
