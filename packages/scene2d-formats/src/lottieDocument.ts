@@ -9,23 +9,10 @@ import { createClipRegionFromPath } from '@flighthq/clip/contract';
 import { packColor } from '@flighthq/color/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { createGradientTransformMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
-import {
-  appendPathCubicCurveTo,
-  appendPathEllipse,
-  appendPathLineTo,
-  appendPathMoveTo,
-  appendPathPolygon,
-  appendPathRectangle,
-  appendPathRoundedRectangle,
-  createPath,
-  dashPath,
-  getPathLength,
-  reversePath,
-} from '@flighthq/path/contract';
-import { applyAnimationClipToNode2D, createSprite, createDisplayObject } from '@flighthq/scene2d/contract';
+import { appendPathRectangle, createPath, dashPath, getPathLength } from '@flighthq/path/contract';
+import { applyAnimationClipToNode2D, createDisplayObject, createSprite } from '@flighthq/scene2d/contract';
 import {
   appendShapeBeginFill,
   appendShapeBeginGradientFill,
@@ -43,6 +30,7 @@ import type {
   AnimationTrack,
   DisplayObject,
   EasingFunction,
+  EntityConstruction,
   ImportDiagnostic,
   LottieAdvancedBlend,
   LottieAnimatable,
@@ -51,31 +39,20 @@ import type {
   LottieDocument,
   LottieDocumentImportOptions,
   LottieDocumentImportResult,
-  LottieEllipseShapeItem,
-  LottieFillPaint,
-  LottieFillShapeItem,
   LottieGradientPaint,
-  LottieGradientShapeItem,
   LottieImageAsset,
   LottieImportContext,
   LottieKeyframe,
   LottieLayer,
   LottieLayerContext,
-  LottieLayerHandlerEntry,
   LottieMask,
   LottiePaint,
-  LottiePolystarShapeItem,
   LottiePositionProperty,
   LottiePrecompositionAsset,
-  LottieRectangleShapeItem,
+  LottieRegistry,
   LottieShapeGroup,
   LottieShapeItem,
-  LottieShapeItemContext,
-  LottieShapeItemHandlerEntry,
   LottieShapePath,
-  LottieShapePathItem,
-  LottieStrokePaint,
-  LottieStrokeShapeItem,
   LottieTextDocument,
   LottieTransform,
   LottieTrimPathShapeItem,
@@ -84,17 +61,84 @@ import type {
   Node2DAnimationTarget,
   Path,
   Shape,
-  EntityConstruction,
 } from '@flighthq/types/contract';
-import {
-  AdvancedBlendMode,
-  BlendMode,
-  ImportDiagnosticSeverity,
-  LottieLayerKind,
-  LottieShapeItemKind,
-} from '@flighthq/types/contract';
+import { AdvancedBlendMode, BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import {
+  createLottieBezierPath,
+  flattenLottieShapePath,
+  toLottieShapePath,
+  unflattenLottieShapePath,
+} from './lottieBezierPath.ts';
+import { createLottieGradientMatrix, parseLottieGradient } from './lottieGradientPaint.ts';
 import { getLottieLayerHandler, getLottieShapeItemHandler } from './lottieRegistry.ts';
+/**
+ * Builds the animation channel a bezier path's keyframes drive.
+ *
+ * ★ THIS ONE STAYED IN THE CORE WHILE THE REST OF THE PATH ITEM MOVED OUT. It is animation plumbing: it reaches the
+ * core's private track machinery and its private mutable-target interface, which is the boundary the core is meant
+ * to own. The path item's own interpretation — the vertex reading, the flatten/unflatten pair and the bezier build —
+ * lives in `lottiePathShapeItem.ts`, so a build without path items still skips all of that.
+ */
+export function appendLottieShapePathChannels(
+  keyframes: readonly Readonly<LottieKeyframe<LottieShapePath>>[],
+  current: number[],
+  apply: () => void,
+  context: LottieImportContext,
+): void {
+  if (keyframes.length === 0) return;
+  if (
+    keyframes.some((keyframe) => {
+      const value = toLottieShapePath(keyframe.s ?? keyframe.e);
+      return value !== undefined && flattenLottieShapePath(value).length !== current.length;
+    })
+  ) {
+    reportLottieDrop(context, 'lottie.incompatible-animated-shape-path', 'appendLottieShapePathChannels');
+    return;
+  }
+  const componentSpecific = hasComponentSpecificEasing(keyframes, current.length);
+  if (componentSpecific) {
+    for (let component = 0; component < current.length; component++) {
+      context.channels.push(
+        createAnimationChannel(
+          createLottieTrack(
+            keyframes,
+            1,
+            context,
+            (value) => [
+              flattenLottieShapePath(toLottieShapePath(value ?? keyframes[0].s)!)[component] ?? current[component],
+            ],
+            component,
+          ),
+          {
+            lottieApply(sample) {
+              current[component] = sample[0];
+              apply();
+            },
+          } satisfies LottieMutableAnimationTarget,
+        ),
+      );
+    }
+    return;
+  }
+  context.channels.push(
+    createAnimationChannel(
+      createLottieTrack(
+        keyframes,
+        current.length,
+        context,
+        (value) => flattenLottieShapePath(toLottieShapePath(value ?? keyframes[0].s)!),
+        0,
+      ),
+      {
+        lottieApply(sample) {
+          for (let index = 0; index < current.length; index++) current[index] = sample[index];
+          apply();
+        },
+      } satisfies LottieMutableAnimationTarget,
+    ),
+  );
+}
 
 // Applies both the shared Node2DAnimationTarget channels and the format-owned mutable-content
 // targets used by animated shape/paint/mask records.
@@ -108,76 +152,31 @@ export function applyAnimationClipToLottieDocument(clip: Readonly<AnimationClip>
   }
 }
 
-/**
- * Imports a Bodymovin/Lottie document into a display subtree and target-bound AnimationClip.
- * Playback remains explicit: call applyAnimationClipToLottieDocument with the returned clip.
- */
-export function createScene2DFromLottieDocument(
-  source: string | Readonly<LottieDocument>,
-  diagnostics?: ImportDiagnostic[],
-  options?: Readonly<LottieDocumentImportOptions>,
-): LottieDocumentImportResult {
-  const document = parseLottieDocument(source);
-  const root = createDisplayObject();
-  if (document === null || !isValidLottieDocument(document)) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Reject,
-      'lottie.invalid-document',
-      'createScene2DFromLottieDocument',
-    );
-    const out = allocateEntity<LottieDocumentImportResult>();
-    initializeLottieDocumentImportResult(out, root, [], createAnimationClip([]), 0, 0);
-    return finishEntity(out);
-  }
-
-  const context: LottieImportContext = {
-    advancedBlends: [],
-    assets: new Map((document.assets ?? []).map((asset) => [asset.id, asset])),
-    channels: [],
-    diagnostics,
-    document,
-    frameOffset: 0,
-    frameScale: 1,
-    registry: {
-      layerHandlers: options?.layerHandlers ?? _defaultLayerHandlers(),
-      shapeItemHandlers: options?.shapeItemHandlers ?? _defaultShapeItemHandlers(),
-    },
-    resolveImageResource: options?.resolveImageResource,
-    resolvingPrecompositions: new Set(),
-  };
-  appendLottieLayers(root, document.layers, context);
-  const duration = Math.max(0, (document.op - document.ip) / document.fr);
-  const events = (document.markers ?? []).map((marker) =>
-    createAnimationClipEvent(clamp((marker.tm - document.ip) / document.fr, 0, duration), marker.cm, {
-      duration: marker.dr / document.fr,
-    }),
-  );
-  const out = allocateEntity<LottieDocumentImportResult>();
-  initializeLottieDocumentImportResult(
-    out,
-    root,
-    context.advancedBlends,
-    createAnimationClip(context.channels, duration, events),
-    duration,
-    document.fr,
-  );
-  return finishEntity(out);
-}
-
-export function initializeLottieDocumentImportResult(
-  out: EntityConstruction<LottieDocumentImportResult>,
-  root: DisplayObject,
-  advancedBlends: LottieAdvancedBlend[],
-  clip: AnimationClip,
-  duration: number,
-  frameRate: number,
+export function bindMutableLottieNumericProperty<T>(
+  property: Readonly<LottieAnimatable<T>>,
+  current: number[],
+  convert: (value: number, component: number) => number,
+  onChange: () => void,
+  context: LottieImportContext,
 ): void {
-  out.advancedBlends = advancedBlends;
-  out.clip = clip;
-  out.duration = duration;
-  out.frameRate = frameRate;
-  out.root = root;
+  if (!isAnimatedLottieProperty(property)) return;
+  appendNumericPropertyChannels(
+    property,
+    current.length,
+    (component) =>
+      ({
+        lottieApply(sample) {
+          if (component === null) {
+            for (let index = 0; index < current.length; index++) current[index] = sample[index];
+          } else {
+            current[component] = sample[0];
+          }
+          onChange();
+        },
+      }) satisfies LottieMutableAnimationTarget,
+    convert,
+    context,
+  );
 }
 
 interface LottieMutableAnimationTarget {
@@ -265,9 +264,9 @@ function applyVectorProperty(
   context: LottieImportContext,
 ): void {
   if (property === undefined) return;
-  const initial = numericValue(initialLottieValue(property), components).map(convert);
+  const initial = lottieNumericValue(initialLottieValue(property), components).map(convert);
   applyDisplaySample(target, vectorPath, initial);
-  if (!isAnimatedProperty(property)) return;
+  if (!isAnimatedLottieProperty(property)) return;
   appendNumericPropertyChannels(
     property,
     components,
@@ -290,8 +289,8 @@ function applyScalarProperty(
   context: LottieImportContext,
 ): void {
   if (property === undefined) return;
-  applyDisplaySample(target, path, [convert(numericValue(initialLottieValue(property), 1)[0])]);
-  if (!isAnimatedProperty(property)) return;
+  applyDisplaySample(target, path, [convert(lottieNumericValue(initialLottieValue(property), 1)[0])]);
+  if (!isAnimatedLottieProperty(property)) return;
   appendNumericPropertyChannels(
     property,
     1,
@@ -309,7 +308,7 @@ function appendNumericPropertyChannels<T>(
   context: LottieImportContext,
   spatialTangents = false,
 ): void {
-  if (!isAnimatedProperty(property)) return;
+  if (!isAnimatedLottieProperty(property)) return;
   const keyframes = property.k;
   if (keyframes.length === 0) return;
   const spatial = spatialTangents && hasSpatialTangents(keyframes);
@@ -322,7 +321,7 @@ function appendNumericPropertyChannels<T>(
             keyframes,
             1,
             context,
-            (value) => [convert(numericValue(value, components)[component], component)],
+            (value) => [convert(lottieNumericValue(value, components)[component], component)],
             component,
           ),
           target(component),
@@ -337,7 +336,7 @@ function appendNumericPropertyChannels<T>(
         keyframes,
         components,
         context,
-        (value) => numericValue(value, components).map(convert),
+        (value) => lottieNumericValue(value, components).map(convert),
         0,
         spatial,
         (value, component) => convert(value, component) - convert(0, component),
@@ -357,8 +356,8 @@ function appendLottieAutoOrientation(
   if (sampler === null) return;
   const baseRotation = target.rotation;
   const rotationTrack =
-    rotation !== undefined && isAnimatedProperty(rotation)
-      ? createLottieTrack(rotation.k, 1, context, (value) => numericValue(value, 1), 0)
+    rotation !== undefined && isAnimatedLottieProperty(rotation)
+      ? createLottieTrack(rotation.k, 1, context, (value) => lottieNumericValue(value, 1), 0)
       : null;
   const previous = [0, 0];
   const current = [0, 0];
@@ -409,16 +408,16 @@ function createLottiePositionSampler(
 ): LottiePositionSampler | null {
   if (property === undefined) return null;
   if (isSeparatedPosition(property)) {
-    const xTrack = isAnimatedProperty(property.x)
-      ? createLottieTrack(property.x.k, 1, context, (value) => numericValue(value, 1), 0)
+    const xTrack = isAnimatedLottieProperty(property.x)
+      ? createLottieTrack(property.x.k, 1, context, (value) => lottieNumericValue(value, 1), 0)
       : null;
-    const yTrack = isAnimatedProperty(property.y)
-      ? createLottieTrack(property.y.k, 1, context, (value) => numericValue(value, 1), 0)
+    const yTrack = isAnimatedLottieProperty(property.y)
+      ? createLottieTrack(property.y.k, 1, context, (value) => lottieNumericValue(value, 1), 0)
       : null;
     const carrier = xTrack ?? yTrack;
     if (carrier === null) return null;
-    const x = numericValue(initialLottieValue(property.x), 1)[0];
-    const y = numericValue(initialLottieValue(property.y), 1)[0];
+    const x = lottieNumericValue(initialLottieValue(property.x), 1)[0];
+    const y = lottieNumericValue(initialLottieValue(property.y), 1)[0];
     const tracks = [xTrack, yTrack].filter(
       (track): track is AnimationTrack => track !== null && track.times.length > 0,
     );
@@ -439,12 +438,12 @@ function createLottiePositionSampler(
       separated: true,
     };
   }
-  if (!isAnimatedProperty(property)) return null;
+  if (!isAnimatedLottieProperty(property)) return null;
   const track = createLottieTrack(
     property.k,
     2,
     context,
-    (value) => numericValue(value, 2),
+    (value) => lottieNumericValue(value, 2),
     0,
     hasSpatialTangents(property.k),
   );
@@ -458,33 +457,6 @@ function createLottiePositionSampler(
     },
     separated: false,
   };
-}
-
-function bindMutableNumericProperty<T>(
-  property: Readonly<LottieAnimatable<T>>,
-  current: number[],
-  convert: (value: number, component: number) => number,
-  onChange: () => void,
-  context: LottieImportContext,
-): void {
-  if (!isAnimatedProperty(property)) return;
-  appendNumericPropertyChannels(
-    property,
-    current.length,
-    (component) =>
-      ({
-        lottieApply(sample) {
-          if (component === null) {
-            for (let index = 0; index < current.length; index++) current[index] = sample[index];
-          } else {
-            current[component] = sample[0];
-          }
-          onChange();
-        },
-      }) satisfies LottieMutableAnimationTarget,
-    convert,
-    context,
-  );
 }
 
 function createLottieTrack<T>(
@@ -571,7 +543,7 @@ function spatialTangent(
   tangentOf: (value: number, component: number) => number,
 ): number[] | null {
   if (!Array.isArray(value)) return null;
-  return numericValue(value, components).map(tangentOf);
+  return lottieNumericValue(value, components).map(tangentOf);
 }
 
 const LOTTIE_SPATIAL_CURVE_SAMPLES = 150;
@@ -644,40 +616,118 @@ function createLottieSegmentEasing(
   );
 }
 
-export function lottieEllipseShapeItemReader(context: LottieShapeItemContext): void {
-  handleLottieGeometryItem(context);
-}
+/**
+ * The Lottie import, over a handler registry it is GIVEN rather than one it resolves.
+ *
+ * ★ THIS MODULE MUST NOT KNOW THE DEFAULT FAMILY. `createScene2DFromLottieDocument` in `lottieImport.ts` owns that
+ * edge, which is what keeps this module free of the fifteen feature modules and of the path, text and image code
+ * behind them. A `?? _defaultLayerHandlers()` here would name every handler from the orchestrator, and a caller
+ * asking for null and solid layers alone would link all of it anyway — the property the registry exists to provide.
+ *
+ * Everything else is unchanged: JSON validation and its reject diagnostic, the context, the layer walk, the marker
+ * events, and the clip the result carries.
+ */
+/**
+ * Imports a Bodymovin/Lottie document into a display subtree and target-bound AnimationClip.
+ * Playback remains explicit: call applyAnimationClipToLottieDocument with the returned clip.
+ */
+export function createScene2DFromLottieDocumentWithRegistry(
+  source: string | Readonly<LottieDocument>,
+  registry: Readonly<LottieRegistry>,
+  diagnostics?: ImportDiagnostic[],
+  options?: Readonly<LottieDocumentImportOptions>,
+): LottieDocumentImportResult {
+  const document = parseLottieDocument(source);
+  const root = createDisplayObject();
+  if (document === null || !isValidLottieDocument(document)) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Reject,
+      'lottie.invalid-document',
+      'createScene2DFromLottieDocument',
+    );
+    const out = allocateEntity<LottieDocumentImportResult>();
+    initializeLottieDocumentImportResult(out, root, [], createAnimationClip([]), 0, 0);
+    return finishEntity(out);
+  }
 
-export function lottieFillShapeItemReader(context: LottieShapeItemContext): void {
-  const fill = context.item as Readonly<LottieFillShapeItem>;
-  const color = numericValue(initialLottieValue(fill.c), 3);
-  const opacity = [numericValue(initialLottieValue(fill.o), 1)[0] / 100];
-  const paint: LottieFillPaint = {
-    color,
-    kind: 'fill',
-    opacity: opacity[0],
-    winding: fill.r === 2 ? 'evenOdd' : 'nonZero',
+  const context: LottieImportContext = {
+    advancedBlends: [],
+    assets: new Map((document.assets ?? []).map((asset) => [asset.id, asset])),
+    channels: [],
+    diagnostics,
+    document,
+    frameOffset: 0,
+    frameScale: 1,
+    registry,
+    resolveImageResource: options?.resolveImageResource,
+    resolvingPrecompositions: new Set(),
   };
-  context.paints.push(paint);
-  bindMutableNumericProperty(fill.c, color, (value) => value, context.rerender, context.import);
-  bindMutableNumericProperty(
-    fill.o,
-    opacity,
-    (value) => value / 100,
-    () => {
-      paint.opacity = opacity[0];
-      context.rerender();
-    },
-    context.import,
+  appendLottieLayers(root, document.layers, context);
+  const duration = Math.max(0, (document.op - document.ip) / document.fr);
+  const events = (document.markers ?? []).map((marker) =>
+    createAnimationClipEvent(lottieClamp((marker.tm - document.ip) / document.fr, 0, duration), marker.cm, {
+      duration: marker.dr / document.fr,
+    }),
   );
+  const out = allocateEntity<LottieDocumentImportResult>();
+  initializeLottieDocumentImportResult(
+    out,
+    root,
+    context.advancedBlends,
+    createAnimationClip(context.channels, duration, events),
+    duration,
+    document.fr,
+  );
+  return finishEntity(out);
 }
 
-export function lottieGradientFillShapeItemReader(context: LottieShapeItemContext): void {
-  handleLottieGradientItem(context);
+export function initializeLottieDocumentImportResult(
+  out: EntityConstruction<LottieDocumentImportResult>,
+  root: DisplayObject,
+  advancedBlends: LottieAdvancedBlend[],
+  clip: AnimationClip,
+  duration: number,
+  frameRate: number,
+): void {
+  out.advancedBlends = advancedBlends;
+  out.clip = clip;
+  out.duration = duration;
+  out.frameRate = frameRate;
+  out.root = root;
 }
 
-export function lottieGradientStrokeShapeItemReader(context: LottieShapeItemContext): void {
-  handleLottieGradientItem(context);
+export function initialLottieValue<T>(property: Readonly<LottieAnimatable<T>> | undefined): T | undefined {
+  if (property === undefined) return undefined;
+  if (!isAnimatedLottieProperty(property)) return property.k;
+  return property.k[0]?.s ?? property.k[0]?.e;
+}
+
+/**
+ * Whether a property carries keyframes, decided by its **structure** rather than its `a` flag.
+ *
+ * Real Bodymovin exports routinely omit `a` on animated properties — across a corpus of eighteen,
+ * 2,714 keyframed properties state no flag against 730 that do. Trusting the flag reads those as
+ * static and hands the caller the raw keyframe array as if it were a value, which yields nonsense
+ * for a number and no `v` at all for a shape path.
+ *
+ * The structure is unambiguous: a keyframe list holds objects that state a frame `t`, where a static
+ * value is a number, an array of numbers, or a bare path object.
+ */
+export function isAnimatedLottieProperty<T>(
+  property: Readonly<LottieAnimatable<T>>,
+): property is Readonly<{ a: 1; k: LottieKeyframe<T>[]; x?: string }> {
+  if (!Array.isArray(property.k) || property.k.length === 0) return false;
+  const first: unknown = property.k[0];
+  return typeof first === 'object' && first !== null && 't' in (first as Record<string, unknown>);
+}
+
+export function lottieClamp(value: number, minimum: number, maximum: number): number {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
+export function lottieDegreesToRadians(value: number): number {
+  return (value * Math.PI) / 180;
 }
 
 export function lottieImageLayerReader(context: LottieLayerContext): void {
@@ -685,205 +735,6 @@ export function lottieImageLayerReader(context: LottieLayerContext): void {
 }
 
 export function lottieNullLayerReader(_context: LottieLayerContext): void {}
-
-export function lottiePathShapeItemReader(context: LottieShapeItemContext): void {
-  handleLottieGeometryItem(context);
-}
-
-export function lottiePolystarShapeItemReader(context: LottieShapeItemContext): void {
-  handleLottieGeometryItem(context);
-}
-
-export function lottiePrecompositionLayerReader(context: LottieLayerContext): void {
-  appendLottiePrecomposition(context.container, context.layer, context.import);
-}
-
-export function lottieRectangleShapeItemReader(context: LottieShapeItemContext): void {
-  handleLottieGeometryItem(context);
-}
-
-export function lottieShapeLayerReader(context: LottieLayerContext): void {
-  appendLottieShapeItems(context.container, context.layer.shapes ?? [], context.import);
-}
-
-export function lottieSolidLayerReader(context: LottieLayerContext): void {
-  appendLottieSolid(context.container, context.layer);
-}
-
-export function lottieStrokeShapeItemReader(context: LottieShapeItemContext): void {
-  const stroke = context.item as Readonly<LottieStrokeShapeItem>;
-  const color = numericValue(initialLottieValue(stroke.c), 3);
-  const opacity = [numericValue(initialLottieValue(stroke.o), 1)[0] / 100];
-  const width = [numericValue(initialLottieValue(stroke.w), 1)[0]];
-  const miterLimit = [stroke.ml2 === undefined ? (stroke.ml ?? 4) : numericValue(initialLottieValue(stroke.ml2), 1)[0]];
-  const dashEntries = stroke.d ?? [];
-  const hasAnimatedDash = dashEntries.some((entry) => isAnimatedProperty(entry.v));
-  const dash = hasAnimatedDash
-    ? []
-    : dashEntries
-        .filter((entry) => entry.n !== 'o')
-        .map((entry) => Math.max(0, numericValue(initialLottieValue(entry.v), 1)[0]));
-  const dashOffsetEntry = dashEntries.find((entry) => entry.n === 'o');
-  const dashOffset =
-    hasAnimatedDash || dashOffsetEntry === undefined ? 0 : numericValue(initialLottieValue(dashOffsetEntry.v), 1)[0];
-  if (hasAnimatedDash)
-    reportLottieSkip(context.import, 'lottie.unsupported-shape-modifier', 'lottieStrokeShapeItemReader', {
-      modifier: 'dash',
-    });
-  const paint: LottieStrokePaint = {
-    caps: mapLottieLineCap(stroke.lc),
-    color,
-    dash: dash.some((value) => value > 0) ? dash : [],
-    dashOffset,
-    joints: mapLottieLineJoin(stroke.lj),
-    kind: 'stroke',
-    miterLimit: miterLimit[0],
-    opacity: opacity[0],
-    width: width[0],
-  };
-  context.paints.push(paint);
-  bindMutableNumericProperty(stroke.c, color, (value) => value, context.rerender, context.import);
-  bindMutableNumericProperty(
-    stroke.o,
-    opacity,
-    (value) => value / 100,
-    () => {
-      paint.opacity = opacity[0];
-      context.rerender();
-    },
-    context.import,
-  );
-  bindMutableNumericProperty(
-    stroke.w,
-    width,
-    (value) => value,
-    () => {
-      paint.width = width[0];
-      context.rerender();
-    },
-    context.import,
-  );
-  if (stroke.ml2 !== undefined) {
-    bindMutableNumericProperty(
-      stroke.ml2,
-      miterLimit,
-      (value) => value,
-      () => {
-        paint.miterLimit = miterLimit[0];
-        context.rerender();
-      },
-      context.import,
-    );
-  }
-}
-
-export function lottieTextLayerReader(context: LottieLayerContext): void {
-  appendLottieText(context.container, context.layer, context.import);
-}
-
-export function lottieTrimPathShapeItemReader(context: LottieShapeItemContext): void {
-  const trim = context.item as Readonly<LottieTrimPathShapeItem>;
-  if (isAnimatedProperty(trim.s) || isAnimatedProperty(trim.e) || isAnimatedProperty(trim.o)) {
-    reportLottieSkip(context.import, 'lottie.unsupported-shape-modifier', 'lottieTrimPathShapeItemReader', {
-      modifier: context.item.ty,
-    });
-  }
-}
-
-function handleLottieGeometryItem(context: LottieShapeItemContext): void {
-  const path = createLottieShapeItemPath(context.item);
-  if (path === null) return;
-  const pathIndex = context.paths.length;
-  context.paths.push(path);
-  bindLottieGeometryItem(context.item, context.paths, pathIndex, context.rerender, context.import);
-}
-
-function handleLottieGradientItem(context: LottieShapeItemContext): void {
-  const gradient = context.item as Readonly<LottieGradientShapeItem>;
-  const initialGradient = initialLottieValue(gradient.g.k);
-  const values = numericValue(
-    initialGradient,
-    Math.max(gradient.g.p * 4, Array.isArray(initialGradient) ? initialGradient.length : 0),
-  );
-  const start = numericValue(initialLottieValue(gradient.s), 2);
-  const end = numericValue(initialLottieValue(gradient.e), 2);
-  const opacity = [gradient.o === undefined ? 100 : numericValue(initialLottieValue(gradient.o), 1)[0]];
-  const width = [gradient.w === undefined ? 1 : numericValue(initialLottieValue(gradient.w), 1)[0]];
-  const miterLimit = [
-    gradient.ml2 === undefined ? (gradient.ml ?? 4) : numericValue(initialLottieValue(gradient.ml2), 1)[0],
-  ];
-  const dashEntries = gradient.d ?? [];
-  const hasAnimatedDash = dashEntries.some((entry) => isAnimatedProperty(entry.v));
-  const dash = hasAnimatedDash
-    ? []
-    : dashEntries
-        .filter((entry) => entry.n !== 'o')
-        .map((entry) => Math.max(0, numericValue(initialLottieValue(entry.v), 1)[0]));
-  const dashOffsetEntry = dashEntries.find((entry) => entry.n === 'o');
-  const dashOffset =
-    hasAnimatedDash || dashOffsetEntry === undefined ? 0 : numericValue(initialLottieValue(dashOffsetEntry.v), 1)[0];
-  if (hasAnimatedDash)
-    reportLottieSkip(context.import, 'lottie.unsupported-shape-modifier', 'handleLottieGradientItem', {
-      modifier: 'dash',
-    });
-  const paint: LottieGradientPaint = {
-    caps: mapLottieLineCap(gradient.lc),
-    count: gradient.g.p,
-    dash: dash.some((value) => value > 0) ? dash : [],
-    dashOffset,
-    end,
-    joints: mapLottieLineJoin(gradient.lj),
-    kind: 'gradient',
-    miterLimit: miterLimit[0],
-    opacity: opacity[0] / 100,
-    shape: gradient.t,
-    start,
-    type: gradient.ty,
-    values,
-    width: width[0],
-    winding: gradient.r === 2 ? 'evenOdd' : 'nonZero',
-  };
-  context.paints.push(paint);
-  bindMutableNumericProperty(gradient.g.k, values, (value) => value, context.rerender, context.import);
-  bindMutableNumericProperty(gradient.s, start, (value) => value, context.rerender, context.import);
-  bindMutableNumericProperty(gradient.e, end, (value) => value, context.rerender, context.import);
-  if (gradient.o !== undefined) {
-    bindMutableNumericProperty(
-      gradient.o,
-      opacity,
-      (value) => value,
-      () => {
-        paint.opacity = opacity[0] / 100;
-        context.rerender();
-      },
-      context.import,
-    );
-  }
-  if (gradient.w !== undefined) {
-    bindMutableNumericProperty(
-      gradient.w,
-      width,
-      (value) => value,
-      () => {
-        paint.width = width[0];
-        context.rerender();
-      },
-      context.import,
-    );
-  }
-  if (gradient.ml2 !== undefined) {
-    bindMutableNumericProperty(
-      gradient.ml2,
-      miterLimit,
-      (value) => value,
-      () => {
-        paint.miterLimit = miterLimit[0];
-        context.rerender();
-      },
-      context.import,
-    );
-  }
-}
 
 function appendLottieSolid(parent: DisplayObject, layer: Readonly<LottieLayer>): void {
   const shape = createShape();
@@ -992,303 +843,14 @@ function appendLottieShapeItems(
   addNodeChild(parent, group);
 }
 
-function createLottieShapeItemPath(item: Readonly<LottieShapeItem>): Path | null {
-  if (item.ty === 'sh') {
-    const shapePath = item as Readonly<LottieShapePathItem>;
-    const value = toLottieShapePath(initialLottieValue(shapePath.ks));
-    if (value === undefined) return null;
-    return applyLottieShapeDirection(createLottieBezierPath(value), shapePath.d);
-  }
-  const path = createPath();
-  if (item.ty === 'rc') {
-    const rectangle = item as Readonly<LottieRectangleShapeItem>;
-    const position = numericValue(initialLottieValue(rectangle.p), 2);
-    const size = numericValue(initialLottieValue(rectangle.s), 2);
-    const radius = numericValue(initialLottieValue(rectangle.r), 1)[0];
-    if (radius > 0) {
-      appendPathRoundedRectangle(path, position[0] - size[0] / 2, position[1] - size[1] / 2, size[0], size[1], radius);
-    } else {
-      appendPathRectangle(path, position[0] - size[0] / 2, position[1] - size[1] / 2, size[0], size[1]);
-    }
-    return applyLottieShapeDirection(path, rectangle.d);
-  }
-  if (item.ty === 'el') {
-    const ellipse = item as Readonly<LottieEllipseShapeItem>;
-    const position = numericValue(initialLottieValue(ellipse.p), 2);
-    const size = numericValue(initialLottieValue(ellipse.s), 2);
-    appendPathEllipse(path, position[0], position[1], size[0] / 2, size[1] / 2);
-    return applyLottieShapeDirection(path, ellipse.d);
-  }
-  if (item.ty === 'sr') {
-    const polystar = item as Readonly<LottiePolystarShapeItem>;
-    const center = numericValue(initialLottieValue(polystar.p), 2);
-    const points = Math.max(2, Math.round(numericValue(initialLottieValue(polystar.pt), 1)[0]));
-    const outer = numericValue(initialLottieValue(polystar.or), 1)[0];
-    const inner = polystar.sy === 1 ? numericValue(initialLottieValue(polystar.ir), 1)[0] : outer;
-    const rotation = numericValue(initialLottieValue(polystar.r), 1)[0];
-    const outerRoundness = polystar.os === undefined ? 0 : numericValue(initialLottieValue(polystar.os), 1)[0];
-    const innerRoundness =
-      polystar.sy === 1 && polystar.is !== undefined ? numericValue(initialLottieValue(polystar.is), 1)[0] : 0;
-    return applyLottieShapeDirection(
-      createLottiePolystarPath(polystar.sy, center, points, outer, inner, rotation, outerRoundness, innerRoundness),
-      polystar.d,
-    );
-  }
-  return null;
-}
-
-// Roundness bows each edge outward while the vertices stay on their radius, so the tangent handle is
-// perpendicular to the radius. Its length comes from the relation the format itself fixes: a polygon
-// at 100% roundness is the circumscribed circle, and the cubic that matches a circular arc spanning
-// angle t has handles of r * (4/3) * tan(t / 4). Roundness scales that length linearly.
-function createLottiePolystarPath(
-  kind: 1 | 2,
-  center: readonly number[],
-  pointCount: number,
-  outer: number,
-  inner: number,
-  rotationDegrees: number,
-  outerRoundness = 0,
-  innerRoundness = 0,
-): Path {
-  const path = createPath();
-  const points = Math.max(2, Math.round(pointCount));
-  const rotation = degreesToRadians(rotationDegrees - 90);
-  const count = kind === 1 ? points * 2 : points;
-  const step = (Math.PI * 2) / count;
-  const handleScale = (4 / 3) * Math.tan(step / 4);
-  const angles: number[] = [];
-  const radii: number[] = [];
-  const handles: number[] = [];
-  const vertices: number[] = [];
-  for (let index = 0; index < count; index++) {
-    const isInner = kind === 1 && index % 2 === 1;
-    const radius = isInner ? inner : outer;
-    const roundness = isInner ? innerRoundness : outerRoundness;
-    const angle = rotation + index * step;
-    angles.push(angle);
-    radii.push(radius);
-    handles.push((radius * handleScale * roundness) / 100);
-    vertices.push(center[0] + Math.cos(angle) * radius, center[1] + Math.sin(angle) * radius);
-  }
-  if (handles.every((handle) => handle === 0)) {
-    appendPathPolygon(path, vertices);
-    return path;
-  }
-  appendPathMoveTo(path, vertices[0], vertices[1]);
-  for (let index = 0; index < count; index++) {
-    const next = (index + 1) % count;
-    // Tangent of increasing angle at each end; the incoming handle points back along the next
-    // vertex's tangent, which is why it is subtracted rather than added.
-    const outgoingX = vertices[index * 2] - Math.sin(angles[index]) * handles[index];
-    const outgoingY = vertices[index * 2 + 1] + Math.cos(angles[index]) * handles[index];
-    const incomingX = vertices[next * 2] + Math.sin(angles[next]) * handles[next];
-    const incomingY = vertices[next * 2 + 1] - Math.cos(angles[next]) * handles[next];
-    appendPathCubicCurveTo(
-      path,
-      outgoingX,
-      outgoingY,
-      incomingX,
-      incomingY,
-      vertices[next * 2],
-      vertices[next * 2 + 1],
-    );
-  }
-  return path;
-}
-
-function bindLottieGeometryItem(
-  item: Readonly<LottieShapeItem>,
-  paths: Path[],
-  pathIndex: number,
-  rerender: () => void,
-  context: LottieImportContext,
-): void {
-  const rebuild = (path: Path): void => {
-    paths[pathIndex] = applyLottieShapeDirection(path, (item as Readonly<{ d?: 1 | 3 }>).d);
-    rerender();
-  };
-  if (item.ty === 'sh') {
-    const shape = item as Readonly<LottieShapePathItem>;
-    if (!isAnimatedProperty(shape.ks)) return;
-    const template = toLottieShapePath(initialLottieValue(shape.ks));
-    if (template === undefined) return;
-    const current = flattenLottieShapePath(template);
-    const apply = (): void => rebuild(createLottieBezierPath(unflattenLottieShapePath(template, current)));
-    appendLottieShapePathChannels(shape.ks.k, current, apply, context);
-    return;
-  }
-  if (item.ty === 'rc') {
-    const rectangle = item as Readonly<LottieRectangleShapeItem>;
-    const position = numericValue(initialLottieValue(rectangle.p), 2);
-    const size = numericValue(initialLottieValue(rectangle.s), 2);
-    const radius = [numericValue(initialLottieValue(rectangle.r), 1)[0]];
-    const apply = (): void => {
-      const path = createPath();
-      if (radius[0] > 0) {
-        appendPathRoundedRectangle(
-          path,
-          position[0] - size[0] / 2,
-          position[1] - size[1] / 2,
-          size[0],
-          size[1],
-          radius[0],
-        );
-      } else {
-        appendPathRectangle(path, position[0] - size[0] / 2, position[1] - size[1] / 2, size[0], size[1]);
-      }
-      rebuild(path);
-    };
-    bindMutableNumericProperty(rectangle.p, position, (value) => value, apply, context);
-    bindMutableNumericProperty(rectangle.s, size, (value) => value, apply, context);
-    bindMutableNumericProperty(rectangle.r, radius, (value) => value, apply, context);
-    return;
-  }
-  if (item.ty === 'el') {
-    const ellipse = item as Readonly<LottieEllipseShapeItem>;
-    const position = numericValue(initialLottieValue(ellipse.p), 2);
-    const size = numericValue(initialLottieValue(ellipse.s), 2);
-    const apply = (): void => {
-      const path = createPath();
-      appendPathEllipse(path, position[0], position[1], size[0] / 2, size[1] / 2);
-      rebuild(path);
-    };
-    bindMutableNumericProperty(ellipse.p, position, (value) => value, apply, context);
-    bindMutableNumericProperty(ellipse.s, size, (value) => value, apply, context);
-    return;
-  }
-  if (item.ty === 'sr') {
-    const polystar = item as Readonly<LottiePolystarShapeItem>;
-    const center = numericValue(initialLottieValue(polystar.p), 2);
-    const points = [numericValue(initialLottieValue(polystar.pt), 1)[0]];
-    const outer = [numericValue(initialLottieValue(polystar.or), 1)[0]];
-    const inner = [polystar.sy === 1 ? numericValue(initialLottieValue(polystar.ir), 1)[0] : outer[0]];
-    const rotation = [numericValue(initialLottieValue(polystar.r), 1)[0]];
-    const outerRoundness = [polystar.os === undefined ? 0 : numericValue(initialLottieValue(polystar.os), 1)[0]];
-    const innerRoundness = [
-      polystar.sy === 1 && polystar.is !== undefined ? numericValue(initialLottieValue(polystar.is), 1)[0] : 0,
-    ];
-    const apply = (): void => {
-      rebuild(
-        createLottiePolystarPath(
-          polystar.sy,
-          center,
-          points[0],
-          outer[0],
-          inner[0],
-          rotation[0],
-          outerRoundness[0],
-          innerRoundness[0],
-        ),
-      );
-    };
-    bindMutableNumericProperty(polystar.p, center, (value) => value, apply, context);
-    bindMutableNumericProperty(polystar.pt, points, (value) => value, apply, context);
-    bindMutableNumericProperty(polystar.or, outer, (value) => value, apply, context);
-    if (polystar.ir !== undefined) bindMutableNumericProperty(polystar.ir, inner, (value) => value, apply, context);
-    bindMutableNumericProperty(polystar.r, rotation, (value) => value, apply, context);
-    if (polystar.os !== undefined) {
-      bindMutableNumericProperty(polystar.os, outerRoundness, (value) => value, apply, context);
-    }
-    if (polystar.is !== undefined) {
-      bindMutableNumericProperty(polystar.is, innerRoundness, (value) => value, apply, context);
-    }
-  }
-}
-
-function appendLottieShapePathChannels(
-  keyframes: readonly Readonly<LottieKeyframe<LottieShapePath>>[],
-  current: number[],
-  apply: () => void,
-  context: LottieImportContext,
-): void {
-  if (keyframes.length === 0) return;
-  if (
-    keyframes.some((keyframe) => {
-      const value = toLottieShapePath(keyframe.s ?? keyframe.e);
-      return value !== undefined && flattenLottieShapePath(value).length !== current.length;
-    })
-  ) {
-    reportLottieDrop(context, 'lottie.incompatible-animated-shape-path', 'appendLottieShapePathChannels');
-    return;
-  }
-  const componentSpecific = hasComponentSpecificEasing(keyframes, current.length);
-  if (componentSpecific) {
-    for (let component = 0; component < current.length; component++) {
-      context.channels.push(
-        createAnimationChannel(
-          createLottieTrack(
-            keyframes,
-            1,
-            context,
-            (value) => [
-              flattenLottieShapePath(toLottieShapePath(value ?? keyframes[0].s)!)[component] ?? current[component],
-            ],
-            component,
-          ),
-          {
-            lottieApply(sample) {
-              current[component] = sample[0];
-              apply();
-            },
-          } satisfies LottieMutableAnimationTarget,
-        ),
-      );
-    }
-    return;
-  }
-  context.channels.push(
-    createAnimationChannel(
-      createLottieTrack(
-        keyframes,
-        current.length,
-        context,
-        (value) => flattenLottieShapePath(toLottieShapePath(value ?? keyframes[0].s)!),
-        0,
-      ),
-      {
-        lottieApply(sample) {
-          for (let index = 0; index < current.length; index++) current[index] = sample[index];
-          apply();
-        },
-      } satisfies LottieMutableAnimationTarget,
-    ),
-  );
-}
-
-function flattenLottieShapePath(path: Readonly<LottieShapePath>): number[] {
-  const out: number[] = [];
-  for (const points of [path.v, path.i, path.o]) {
-    for (const point of points) out.push(point[0] ?? 0, point[1] ?? 0);
-  }
-  return out;
-}
-
-function unflattenLottieShapePath(template: Readonly<LottieShapePath>, values: readonly number[]): LottieShapePath {
-  const count = template.v.length;
-  const readPoints = (offset: number): number[][] => {
-    const out: number[][] = [];
-    for (let index = 0; index < count; index++) {
-      out.push([values[offset + index * 2] ?? 0, values[offset + index * 2 + 1] ?? 0]);
-    }
-    return out;
-  };
-  return {
-    c: template.c,
-    i: readPoints(count * 2),
-    o: readPoints(count * 4),
-    v: readPoints(0),
-  };
-}
-
 function applyStaticLottieTrim(items: readonly Readonly<LottieShapeItem>[], paths: Path[]): void {
   const raw = items.find((item) => item.ty === 'tm');
   if (raw === undefined) return;
   const trim = raw as Readonly<LottieTrimPathShapeItem>;
-  if (isAnimatedProperty(trim.s) || isAnimatedProperty(trim.e) || isAnimatedProperty(trim.o)) return;
-  const start = numericValue(initialLottieValue(trim.s), 1)[0] / 100;
-  const end = numericValue(initialLottieValue(trim.e), 1)[0] / 100;
-  const offset = numericValue(initialLottieValue(trim.o), 1)[0] / 360;
+  if (isAnimatedLottieProperty(trim.s) || isAnimatedLottieProperty(trim.e) || isAnimatedLottieProperty(trim.o)) return;
+  const start = lottieNumericValue(initialLottieValue(trim.s), 1)[0] / 100;
+  const end = lottieNumericValue(initialLottieValue(trim.e), 1)[0] / 100;
+  const offset = lottieNumericValue(initialLottieValue(trim.o), 1)[0] / 360;
   let visible = (((end - start) % 1) + 1) % 1;
   if (Math.abs(end - start) >= 1) visible = 1;
   for (let i = 0; i < paths.length; i++) {
@@ -1301,49 +863,6 @@ function applyStaticLottieTrim(items: readonly Readonly<LottieShapeItem>[], path
     }
     paths[i] = trimmed;
   }
-}
-
-/**
- * A shape path as the file states it, whichever way it states it.
- *
- * A static path is the object itself; an **animated** one wraps that object in a single-element
- * array inside each keyframe. Across a corpus of eighteen real exports the wrapper is the majority
- * form — 896 keyframed paths against 627 bare — so reading only the bare form crashes on most files.
- */
-function toLottieShapePath(value: unknown): Readonly<LottieShapePath> | undefined {
-  const path = Array.isArray(value) ? value[0] : value;
-  if (path === null || typeof path !== 'object' || !('v' in path)) return undefined;
-  return path as Readonly<LottieShapePath>;
-}
-
-function createLottieBezierPath(value: Readonly<LottieShapePath>): Path {
-  const path = createPath();
-  const count = value.v.length;
-  if (count === 0) return path;
-  appendPathMoveTo(path, value.v[0][0], value.v[0][1]);
-  const limit = value.c ? count + 1 : count;
-  for (let index = 1; index < limit; index++) {
-    const previous = (index - 1) % count;
-    const current = index % count;
-    const start = value.v[previous];
-    const end = value.v[current];
-    const outgoing = value.o[previous] ?? [0, 0];
-    const incoming = value.i[current] ?? [0, 0];
-    if (outgoing[0] === 0 && outgoing[1] === 0 && incoming[0] === 0 && incoming[1] === 0) {
-      appendPathLineTo(path, end[0], end[1]);
-    } else {
-      appendPathCubicCurveTo(
-        path,
-        start[0] + outgoing[0],
-        start[1] + outgoing[1],
-        end[0] + incoming[0],
-        end[1] + incoming[1],
-        end[0],
-        end[1],
-      );
-    }
-  }
-  return path;
 }
 
 // The current representation restates every local path for every local paint. This preserves
@@ -1403,38 +922,6 @@ function appendLottieShapePaths(
   }
 }
 
-function appendLottieGradientFill(shape: Shape, paint: LottieGradientPaint): void {
-  const gradient = parseLottieGradient(paint.values, paint.count, paint.opacity);
-  appendShapeBeginGradientFill(
-    shape,
-    paint.shape === 2 ? 'radial' : 'linear',
-    gradient.colors,
-    gradient.alphas,
-    gradient.ratios,
-    createLottieGradientMatrix(paint.start, paint.end),
-  );
-}
-
-function appendLottieGradientStroke(shape: Shape, paint: LottieGradientPaint): void {
-  const gradient = parseLottieGradient(paint.values, paint.count, paint.opacity);
-  appendShapeLineStyle(shape, paint.width, 0x000000ff, 1, false, 'normal', paint.caps, paint.joints, paint.miterLimit);
-  appendShapeLineGradientStyle(
-    shape,
-    paint.shape === 2 ? 'radial' : 'linear',
-    gradient.colors,
-    gradient.alphas,
-    gradient.ratios,
-    createLottieGradientMatrix(paint.start, paint.end),
-  );
-}
-
-function applyLottieShapeDirection(path: Path, direction: 1 | 3 | undefined): Path {
-  if (direction !== 3) return path;
-  const reversed = createPath(path.winding);
-  reversePath(path, reversed);
-  return reversed;
-}
-
 function applyLottieMasks(target: Node2D, masks: readonly Readonly<LottieMask>[], context: LottieImportContext): void {
   const active = masks.filter((mask) => mask.mode !== 'n');
   if (active.length === 0) return;
@@ -1445,7 +932,7 @@ function applyLottieMasks(target: Node2D, masks: readonly Readonly<LottieMask>[]
   const initial = toLottieShapePath(initialLottieValue(first.pt));
   if (initial === undefined) return;
   target.clip = createClipRegionFromPath(createLottieBezierPath(initial));
-  if (isAnimatedProperty(first.pt)) {
+  if (isAnimatedLottieProperty(first.pt)) {
     const current = flattenLottieShapePath(initial);
     appendLottieShapePathChannels(
       first.pt.k,
@@ -1463,7 +950,7 @@ function applyLottieLayerVisibility(target: Node2D, layer: Readonly<LottieLayer>
   const end = frameToSeconds(layer.op ?? context.document.op, context);
   target.visible = start <= 0 && end > 0;
   const duration = Math.max(0, (context.document.op - context.document.ip) / context.document.fr);
-  const times = [0, clamp(start, 0, duration), clamp(end, 0, duration), duration].filter(
+  const times = [0, lottieClamp(start, 0, duration), lottieClamp(end, 0, duration), duration].filter(
     (time, index, all) => index === 0 || time > all[index - 1],
   );
   if (times.length < 2) return;
@@ -1550,29 +1037,18 @@ function isValidLottieDocument(document: Readonly<LottieDocument>): boolean {
   );
 }
 
-/**
- * Whether a property carries keyframes, decided by its **structure** rather than its `a` flag.
- *
- * Real Bodymovin exports routinely omit `a` on animated properties — across a corpus of eighteen,
- * 2,714 keyframed properties state no flag against 730 that do. Trusting the flag reads those as
- * static and hands the caller the raw keyframe array as if it were a value, which yields nonsense
- * for a number and no `v` at all for a shape path.
- *
- * The structure is unambiguous: a keyframe list holds objects that state a frame `t`, where a static
- * value is a number, an array of numbers, or a bare path object.
- */
-function isAnimatedProperty<T>(
-  property: Readonly<LottieAnimatable<T>>,
-): property is Readonly<{ a: 1; k: LottieKeyframe<T>[]; x?: string }> {
-  if (!Array.isArray(property.k) || property.k.length === 0) return false;
-  const first: unknown = property.k[0];
-  return typeof first === 'object' && first !== null && 't' in (first as Record<string, unknown>);
+export function lottieNumericValue(value: unknown, components: number): number[] {
+  const source = Array.isArray(value) ? value : [value];
+  const out = new Array<number>(components);
+  for (let index = 0; index < components; index++) {
+    const candidate = Number(source[index] ?? source[0] ?? 0);
+    out[index] = Number.isFinite(candidate) ? candidate : 0;
+  }
+  return out;
 }
 
-function initialLottieValue<T>(property: Readonly<LottieAnimatable<T>> | undefined): T | undefined {
-  if (property === undefined) return undefined;
-  if (!isAnimatedProperty(property)) return property.k;
-  return property.k[0]?.s ?? property.k[0]?.e;
+export function lottiePrecompositionLayerReader(context: LottieLayerContext): void {
+  appendLottiePrecomposition(context.container, context.layer, context.import);
 }
 
 function isSeparatedPosition(property: Readonly<LottiePositionProperty> | undefined): property is Readonly<{
@@ -1582,16 +1058,6 @@ function isSeparatedPosition(property: Readonly<LottiePositionProperty> | undefi
   z?: LottieAnimatable<number>;
 }> {
   return property !== undefined && 's' in property && property.s === true && 'x' in property && 'y' in property;
-}
-
-function numericValue(value: unknown, components: number): number[] {
-  const source = Array.isArray(value) ? value : [value];
-  const out = new Array<number>(components);
-  for (let index = 0; index < components; index++) {
-    const candidate = Number(source[index] ?? source[0] ?? 0);
-    out[index] = Number.isFinite(candidate) ? candidate : 0;
-  }
-  return out;
 }
 
 function hasComponentSpecificEasing<T>(keyframes: readonly Readonly<LottieKeyframe<T>>[], components: number): boolean {
@@ -1648,74 +1114,14 @@ function createLottieTextFormat(document: Readonly<LottieTextDocument>) {
   };
 }
 
-function parseLottieGradient(values: readonly number[], count: number, opacity: number) {
-  const colors: number[] = [];
-  const ratios: number[] = [];
-  const opacityStops: Array<Readonly<{ alpha: number; offset: number }>> = [];
-  for (let index = count * 4; index + 1 < values.length; index += 2) {
-    opacityStops.push({
-      alpha: clamp(values[index + 1], 0, 1),
-      offset: clamp(values[index], 0, 1),
-    });
-  }
-  opacityStops.sort((left, right) => left.offset - right.offset);
-  const alphas: number[] = [];
-  for (let index = 0; index < count; index++) {
-    const offset = index * 4;
-    const ratio = clamp(values[offset] ?? 0, 0, 1);
-    ratios.push(Math.round(ratio * 255));
-    colors.push(lottieRgba(values.slice(offset + 1, offset + 4)));
-    alphas.push(opacity * interpolateLottieGradientOpacity(opacityStops, ratio));
-  }
-  return { alphas, colors, ratios };
-}
-
-function interpolateLottieGradientOpacity(
-  stops: readonly Readonly<{ alpha: number; offset: number }>[],
-  offset: number,
-): number {
-  if (stops.length === 0) return 1;
-  if (offset <= stops[0].offset) return stops[0].alpha;
-  for (let index = 1; index < stops.length; index++) {
-    const previous = stops[index - 1];
-    const next = stops[index];
-    if (offset > next.offset) continue;
-    const distance = next.offset - previous.offset;
-    if (distance === 0) return next.alpha;
-    const progress = (offset - previous.offset) / distance;
-    return previous.alpha + (next.alpha - previous.alpha) * progress;
-  }
-  return stops[stops.length - 1].alpha;
-}
-
-function createLottieGradientMatrix(start: readonly number[], end: readonly number[]) {
-  const dx = end[0] - start[0];
-  const dy = end[1] - start[1];
-  return createGradientTransformMatrix(
-    Math.hypot(dx, dy) * 2,
-    Math.hypot(dx, dy) * 2,
-    Math.atan2(dy, dx),
-    start[0],
-    start[1],
-  );
-}
-
-function lottieRgba(color: readonly number[]): number {
+export function lottieRgba(color: readonly number[]): number {
   return (
-    ((Math.round(clamp(color[0] ?? 0, 0, 1) * 255) << 24) |
-      (Math.round(clamp(color[1] ?? 0, 0, 1) * 255) << 16) |
-      (Math.round(clamp(color[2] ?? 0, 0, 1) * 255) << 8) |
+    ((Math.round(lottieClamp(color[0] ?? 0, 0, 1) * 255) << 24) |
+      (Math.round(lottieClamp(color[1] ?? 0, 0, 1) * 255) << 16) |
+      (Math.round(lottieClamp(color[2] ?? 0, 0, 1) * 255) << 8) |
       0xff) >>>
     0
   );
-}
-
-function mapLottieLineCap(value: 1 | 2 | 3 | undefined): 'none' | 'round' | 'square' {
-  return value === 2 ? 'round' : value === 3 ? 'square' : 'none';
-}
-
-function mapLottieLineJoin(value: 1 | 2 | 3 | undefined): 'bevel' | 'miter' | 'round' {
-  return value === 2 ? 'round' : value === 3 ? 'bevel' : 'miter';
 }
 
 function parseHexColor(value: string): number {
@@ -1723,55 +1129,16 @@ function parseHexColor(value: string): number {
   return Number.isFinite(parsed) ? (((parsed & 0xffffff) << 8) | 0xff) >>> 0 : 0x000000ff;
 }
 
-function degreesToRadians(value: number): number {
-  return (value * Math.PI) / 180;
+export function lottieShapeLayerReader(context: LottieLayerContext): void {
+  appendLottieShapeItems(context.container, context.layer.shapes ?? [], context.import);
 }
 
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(maximum, Math.max(minimum, value));
+export function lottieSolidLayerReader(context: LottieLayerContext): void {
+  appendLottieSolid(context.container, context.layer);
 }
 
-function reportLottieSkip(
-  context: Readonly<LottieImportContext>,
-  kind: string,
-  origin: string,
-  detail?: Record<string, string | number>,
-): void {
-  reportImportDiagnostic(context.diagnostics, ImportDiagnosticSeverity.Skip, kind, origin, detail);
-}
-
-function reportLottieDrop(
-  context: Readonly<LottieImportContext>,
-  kind: string,
-  origin: string,
-  detail?: Record<string, string | number>,
-): void {
-  reportImportDiagnostic(context.diagnostics, ImportDiagnosticSeverity.Drop, kind, origin, detail);
-}
-
-function _defaultLayerHandlers(): LottieLayerHandlerEntry[] {
-  return [
-    { handle: lottiePrecompositionLayerReader, kind: LottieLayerKind.Precomposition },
-    { handle: lottieSolidLayerReader, kind: LottieLayerKind.Solid },
-    { handle: lottieImageLayerReader, kind: LottieLayerKind.Image },
-    { handle: lottieNullLayerReader, kind: LottieLayerKind.Null },
-    { handle: lottieShapeLayerReader, kind: LottieLayerKind.Shape },
-    { handle: lottieTextLayerReader, kind: LottieLayerKind.Text },
-  ];
-}
-
-function _defaultShapeItemHandlers(): LottieShapeItemHandlerEntry[] {
-  return [
-    { handle: lottieEllipseShapeItemReader, kind: LottieShapeItemKind.Ellipse },
-    { handle: lottieFillShapeItemReader, kind: LottieShapeItemKind.Fill },
-    { handle: lottieGradientFillShapeItemReader, kind: LottieShapeItemKind.GradientFill },
-    { handle: lottieGradientStrokeShapeItemReader, kind: LottieShapeItemKind.GradientStroke },
-    { handle: lottiePathShapeItemReader, kind: LottieShapeItemKind.Path },
-    { handle: lottiePolystarShapeItemReader, kind: LottieShapeItemKind.Polystar },
-    { handle: lottieRectangleShapeItemReader, kind: LottieShapeItemKind.Rectangle },
-    { handle: lottieStrokeShapeItemReader, kind: LottieShapeItemKind.Stroke },
-    { handle: lottieTrimPathShapeItemReader, kind: LottieShapeItemKind.TrimPath },
-  ];
+export function lottieTextLayerReader(context: LottieLayerContext): void {
+  appendLottieText(context.container, context.layer, context.import);
 }
 
 const _sampleScratch = new Array<number>(256).fill(0);
@@ -1802,3 +1169,52 @@ const _lottieAdvancedBlendModes = new Map<number, string>([
   [14, AdvancedBlendMode.Color],
   [15, AdvancedBlendMode.Luminosity],
 ]);
+
+export function reportLottieDrop(
+  context: Readonly<LottieImportContext>,
+  kind: string,
+  origin: string,
+  detail?: Record<string, string | number>,
+): void {
+  reportImportDiagnostic(context.diagnostics, ImportDiagnosticSeverity.Drop, kind, origin, detail);
+}
+
+// ★ THESE TWO STAYED WITH THE SHAPE RENDERER, NOT WITH THE GRADIENT ITEM THAT PRODUCES THE PAINT.
+// `renderLottieShapeState` switches on `paint.kind`, so it names the gradient renderers whether or not a gradient
+// item was ever read — the same config-gated-branch shape the geometry switches had, one level up. Closing it needs
+// the paint to carry its own renderer or the renderer to dispatch through a registry, which changes the LottiePaint
+// contract; reported rather than taken here. The consequence is honest: omitting the gradient ITEMS saves their
+// colour-stop reading and their matrix maths, but not these two calls into the shape.
+function appendLottieGradientFill(shape: Shape, paint: LottieGradientPaint): void {
+  const gradient = parseLottieGradient(paint.values, paint.count, paint.opacity);
+  appendShapeBeginGradientFill(
+    shape,
+    paint.shape === 2 ? 'radial' : 'linear',
+    gradient.colors,
+    gradient.alphas,
+    gradient.ratios,
+    createLottieGradientMatrix(paint.start, paint.end),
+  );
+}
+
+function appendLottieGradientStroke(shape: Shape, paint: LottieGradientPaint): void {
+  const gradient = parseLottieGradient(paint.values, paint.count, paint.opacity);
+  appendShapeLineStyle(shape, paint.width, 0x000000ff, 1, false, 'normal', paint.caps, paint.joints, paint.miterLimit);
+  appendShapeLineGradientStyle(
+    shape,
+    paint.shape === 2 ? 'radial' : 'linear',
+    gradient.colors,
+    gradient.alphas,
+    gradient.ratios,
+    createLottieGradientMatrix(paint.start, paint.end),
+  );
+}
+
+export function reportLottieSkip(
+  context: Readonly<LottieImportContext>,
+  kind: string,
+  origin: string,
+  detail?: Record<string, string | number>,
+): void {
+  reportImportDiagnostic(context.diagnostics, ImportDiagnosticSeverity.Skip, kind, origin, detail);
+}
