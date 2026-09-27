@@ -942,6 +942,7 @@ export * from './ColorGradeAdjustment.ts';
 export * from './LookupTableGradeAdjustment.ts';
 export * from './LottieDocument.ts';
 export * from './LottieDocumentImport.ts';
+export * from './LottieRegistry.ts';
 export * from './AmbientLightOptions.ts';
 export * from './AreaLightOptions.ts';
 export * from './DirectionalLightOptions.ts';
