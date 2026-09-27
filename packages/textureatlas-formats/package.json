@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/registry": "*",
+    "@flighthq/requirement": "*",
     "@flighthq/textureatlas": "*",
     "@flighthq/types": "*",
     "@flighthq/xml": "*"

@@ -9,3 +9,4 @@ export * from './starlingParse.ts';
 export * from './starlingSerialize.ts';
 export * from './texturePackerParse.ts';
 export * from './texturePackerSerialize.ts';
+export * from './spritesheetRequirements.ts';

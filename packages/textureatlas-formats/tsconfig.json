@@ -11,6 +11,7 @@
   "references": [
     { "path": "../registry" },
     { "path": "../textureatlas" },
+    { "path": "../requirement" },
     { "path": "../types" },
     { "path": "../xml" }
   ],
