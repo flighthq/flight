@@ -62,17 +62,29 @@ describe('composeContentAnalyzers', () => {
     ]);
   });
 
-  // `.plist` and `.atlas` are the other two shared extensions, and both behave the same way.
+  // `.plist` and `.atlas` are the other two shared extensions.
   //
-  // The libGDX atlas is a true two-family document, like TexturePacker. The Cocos plist is NOT, quite: the
-  // spritesheet family recognises it correctly, and the particle family also claims it because its
-  // ParticleDesigner detector tests for a plist rather than for a particle config. That is an imprecision in a
-  // shipped detector, not in this composition — the union faithfully reports what the detectors say — so this
-  // asserts the fact that matters with `toContain` rather than pinning the extra claim as required behaviour.
+  // ★ THE UNION REPORTS WHAT THE DETECTORS SAY, SO A DETECTOR THAT OVER-CLAIMS BECOMES EVERY FAMILY'S PROBLEM.
+  // This composition first reported `particles.ParticleDesigner` for the Cocos sheet below, because the
+  // ParticleDesigner detector tested for the plist CONTAINER rather than for an emitter key — and that container
+  // is shared with Cocos spritesheets. The detector now asks for a key the emitter itself declares, so the answer
+  // is exact and is asserted as exact: `toContain` would pass again if that regressed.
   it('unions across the plist and atlas families', () => {
     const cocos = encodeUTF8('<?xml version="1.0"?><plist version="1.0"><dict><key>frames</key><dict/></dict></plist>');
-    expect(keysOf(DEFAULT_CONTENT_ANALYZERS['.plist'].analyze(cocos, NO_DECOMPRESSORS))).toContain(
+    expect(keysOf(DEFAULT_CONTENT_ANALYZERS['.plist'].analyze(cocos, NO_DECOMPRESSORS))).toEqual([
       'spritesheet.CocosPlist',
+    ]);
+
+    // The other side of the same extension. `detectCocosPlist` in `@flighthq/spritesheet-formats` is the MIRROR of
+    // the detector just tightened — it also tests for the plist container — so a ParticleDesigner export is still
+    // claimed by the spritesheet family too. Reported rather than changed here: the fix belongs in that package,
+    // and its own parser supplies the invariant (a Cocos sheet declares a `frames` key). Asserted with
+    // `toContain` so this states what is true today without pinning the extra claim as required.
+    const emitter = encodeUTF8(
+      '<?xml version="1.0"?><plist version="1.0"><dict><key>maxParticles</key><integer>200</integer></dict></plist>',
+    );
+    expect(keysOf(DEFAULT_CONTENT_ANALYZERS['.plist'].analyze(emitter, NO_DECOMPRESSORS))).toContain(
+      'particles.ParticleDesigner',
     );
 
     const libgdx = encodeUTF8(
