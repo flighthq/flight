@@ -1,0 +1,50 @@
+import type { XmlElement } from '@flighthq/types/contract';
+import { SvgElementKind } from '@flighthq/types/contract';
+import { parseXmlDocument } from '@flighthq/xml/contract';
+
+export function collectSvgCounts(source: string): Map<string, number> | null {
+  const document = parseXmlDocument(source);
+  if (document === null || localName(document.name) !== 'svg') return null;
+  const counts = new Map<string, number>();
+  tallyElements(counts, document);
+  return counts;
+}
+
+function elementKindName(name: string): string | null {
+  switch (name) {
+    case 'a':
+    case 'g':
+    case 'svg':
+    case 'switch':
+      return SvgElementKind.Container;
+    case 'circle':
+    case 'ellipse':
+    case 'line':
+    case 'path':
+    case 'polygon':
+    case 'polyline':
+    case 'rect':
+      return SvgElementKind.Geometry;
+    case 'image':
+      return SvgElementKind.Image;
+    case 'text':
+      return SvgElementKind.Text;
+    case 'use':
+      return SvgElementKind.Use;
+    default:
+      return null;
+  }
+}
+
+function localName(name: string): string {
+  const colon = name.indexOf(':');
+  return colon === -1 ? name : name.slice(colon + 1);
+}
+
+function tallyElements(counts: Map<string, number>, element: Readonly<XmlElement>): void {
+  const kind = elementKindName(localName(element.name));
+  if (kind !== null) counts.set(kind, (counts.get(kind) ?? 0) + 1);
+  for (const child of element.children) {
+    tallyElements(counts, child);
+  }
+}
