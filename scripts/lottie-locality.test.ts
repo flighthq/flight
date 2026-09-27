@@ -47,6 +47,14 @@ const LAYER_IMPORTERS = ['lottieImport.ts', 'lottieLayerHandlers.ts'];
 // shim moves tens of bytes, and the COLLADA fixtures measured an 18-byte spread across four subsets while they still
 // routed through a preset-resolving entry. Measured here: geometry 11477/14330 minified and 20410/30309 unminified,
 // null-solid 8886 and 15864, text 7345 and 17630, image 7654 and 13390.
+const FIXTURES = [
+  'lottie-import',
+  'lottie-import-geometry',
+  'lottie-import-image',
+  'lottie-import-null-solid',
+  'lottie-import-text',
+] as const;
+
 const SAVINGS: readonly (readonly [string, number])[] = [
   ['lottie-import-geometry', 0.12],
   ['lottie-import-null-solid', 0.25],
@@ -85,6 +93,25 @@ describe('lottie locality', () => {
     expect(importers.sort()).toEqual(LAYER_IMPORTERS);
   });
 
+  // ★ THE SELECTIVE API HAS TO BE NAMEABLE, NOT JUST PRESENT. `LottieRegistry.ts` holds the registry, both handler
+  // entry types and both `*Kind` tables; while `types` published it on `./contract` only, `layerHandlers` was a public
+  // option with a private element type and no application could call the selective entry at all. The fixtures are the
+  // end-to-end proof — they name the entry, the handlers and a kind table from `.` alone — so the assertion that they
+  // reach for no contract lane is the assertion that the public lane is complete.
+  it('publishes the registry types and the selective entry on both lanes, and prices them through the public one', () => {
+    const typesIndex = readFileSync(join(root, 'packages', 'types', 'src', 'index.ts'), 'utf8');
+    const typesContract = readFileSync(join(root, 'packages', 'types', 'src', 'contract.ts'), 'utf8');
+    for (const lane of [typesIndex, typesContract]) expect(lane).toContain("export * from './LottieRegistry.ts';");
+
+    const formatsIndex = readFileSync(join(srcDir, 'index.ts'), 'utf8');
+    expect(formatsIndex).toContain('createScene2DFromLottieDocumentWithRegistry');
+
+    for (const fixture of FIXTURES) {
+      const source = readFileSync(join(root, 'tools', 'size', 'fixtures', fixture, 'src', 'render.canvas.ts'), 'utf8');
+      expect(codeOfText(source), `${fixture} imports a contract lane`).not.toContain("/contract'");
+    }
+  });
+
   // ★ THE BUNDLE HALF, READ FROM THE HARNESS'S OWN BASELINES. Both are checked: the minified figure is the shipping
   // claim and the unminified one is the tree-shaking signal, and a real saving shows in both.
   it.each(SAVINGS)('saves at least the stated fraction for %s against the full import', (subset, fraction) => {
@@ -119,7 +146,11 @@ describe('lottie locality', () => {
 // prose, to record why they do not reach them — and a scan that read the comments would report the very coupling
 // those comments exist to rule out.
 function codeOf(path: string): string {
-  return readFileSync(path, 'utf8')
+  return codeOfText(readFileSync(path, 'utf8'));
+}
+
+function codeOfText(source: string): string {
+  return source
     .split('\n')
     .filter((line) => {
       const trimmed = line.trimStart();

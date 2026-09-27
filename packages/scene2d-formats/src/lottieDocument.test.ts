@@ -1,4 +1,6 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
+import { LottieLayerKind as PublicLottieLayerKind } from '@flighthq/types';
+import type { LottieRegistry } from '@flighthq/types';
 import type {
   ImportDiagnostic,
   LottieAnimatable,
@@ -9,6 +11,10 @@ import type {
 } from '@flighthq/types/contract';
 import { SpriteKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
 
+import {
+  createScene2DFromLottieDocumentWithRegistry as publicCreateScene2DFromLottieDocumentWithRegistry,
+  lottieShapeLayerHandler as publicLottieShapeLayerHandler,
+} from './index.ts';
 import {
   appendLottieShapePathChannels,
   applyAnimationClipToLottieDocument,
@@ -140,6 +146,23 @@ describe('createScene2DFromLottieDocumentWithRegistry', () => {
     expect(result.duration).toBe(2);
     expect(findLottieTestNodeByName(result.root, 'shape')).not.toBeNull();
     expect(findLottieTestNodeByKind(result.root, 'Shape')).toBeNull();
+  });
+
+  // ★ THE PUBLIC LANE HAS TO BE ENOUGH TO CALL IT. This drives the whole selective path through the package barrel and
+  // `@flighthq/types`' public lane — the entry, one handler, and the kind table naming it — because the entry spent its
+  // first life contract-only while `LottieDocumentImportOptions.layerHandlers` was already public. A lane test that
+  // only read the barrel's text would pass on a re-export whose element type no caller can name; this one builds a
+  // registry of the shape a caller has to write.
+  it('is callable with nothing but the public lanes', () => {
+    const registry: LottieRegistry = {
+      layerHandlers: [{ handle: publicLottieShapeLayerHandler, kind: PublicLottieLayerKind.Shape }],
+      shapeItemHandlers: [],
+    };
+    const result = publicCreateScene2DFromLottieDocumentWithRegistry(
+      createLottieTestDocument([lottieTestShapeLayer(1, 'shape')]),
+      registry,
+    );
+    expect(findLottieTestNodeByName(result.root, 'shape')).not.toBeNull();
   });
 
   it('rejects an invalid document exactly as the zero-config entry does', () => {
