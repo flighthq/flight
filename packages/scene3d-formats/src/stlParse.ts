@@ -16,8 +16,12 @@ import {
  * ★ WHAT THIS DELIBERATELY DOES NOT DO. STL is a list of triangles and nothing else: no materials, no texture
  * coordinates, no node hierarchy, no animation, no skins, no cameras, no lights, no units, no colours in the
  * standard format. So this returns GEOMETRY, not a document, and imports no material, animation, skeleton or
- * scene module. A caller who wants a scene node builds one; a bedrock parser that reached for the scene stack
- * would make every STL import pay for a graph the format cannot describe.
+ * scene module. A bedrock parser that reached for the scene stack would make every STL import pay for a graph the
+ * format cannot describe.
+ *
+ * That costs the caller one line rather than a missing seam: `createMesh(geometry, [null])` in `@flighthq/scene3d`
+ * takes exactly this return value, and a null material slot resolves to the standard material at draw time. The
+ * asymmetry with the richer importers — which return a `Scene3DDocument` — is the format's, not the API's.
  *
  * ★ PER-FACET GEOMETRY IS PRESERVED, WHICH MEANS NO WELDING AND NO INDEX BUFFER. Every facet contributes its own
  * three vertices, even where facets share a corner position exactly. That is the file's own structure: STL has no
