@@ -1,4 +1,18 @@
+export { collectLottieCounts } from './lottieCounts.ts';
 export { applyAnimationClipToLottieDocument, createScene2DFromLottieDocument } from './lottieDocument.ts';
+export { registerAllLottieHandlers } from './lottieHandlers.ts';
+export * from './lottieLayerHandlers.ts';
+export {
+  createLottieRegistry,
+  getLottieLayerHandler,
+  getLottieShapeItemHandler,
+  registerLottieLayerHandler,
+  registerLottieShapeItemHandler,
+  unregisterLottieLayerHandler,
+  unregisterLottieShapeItemHandler,
+} from './lottieRegistry.ts';
+export { isReadableLottie, LOTTIE_REQUIREMENT_KEY_NAMESPACE, parseLottieRequirements } from './lottieRequirements.ts';
+export * from './lottieShapeItemHandlers.ts';
 export * from './riveAnimation.ts';
 export * from './riveAssetBinding.ts';
 export { registerRiveAssetHandlers } from './riveAssets.ts';
