@@ -25,3 +25,8 @@ protected:
   - expandAwd2BlockDispatch
   # Construction initializers. The paired create* is the app-facing half of each.
   - initializeAwd2ParseState
+  # STL fixture writers. Test-only: they build the two encodings of one model so the parity assertions cannot
+  # drift apart, which is contract-lane business and nothing an application imports.
+  - buildAsciiStl
+  - buildBinaryStl
+  - STL_SQUARE_FACETS
