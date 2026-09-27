@@ -1,0 +1,9 @@
+{
+  "name": "bitmapfont-codec-one",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "bitmapfont-codec-one"
+  }
+}

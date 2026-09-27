@@ -1,0 +1,9 @@
+{
+  "name": "spritesheet-codec-one",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "spritesheet-codec-one"
+  }
+}
