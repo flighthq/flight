@@ -14,20 +14,20 @@ import type {
 } from '@flighthq/types/contract';
 
 import { buildColladaNodeWorldMatrices } from './colladaSceneShared.ts';
-import { child, children, descendants, idOf, text } from './colladaXml.ts';
+import { colladaChild, colladaChildren, colladaDescendants, colladaIdOf, colladaText } from './colladaXml.ts';
 
 function decodeColladaCameraDefinitions(
   root: XmlElement,
   diagnostics: ImportDiagnostic[],
 ): Map<string, ColladaCameraDefinition | null> {
   const definitions = new Map<string, ColladaCameraDefinition | null>();
-  for (const library of descendants(root, 'library_cameras')) {
-    for (const camera of children(library, 'camera')) {
-      const id = idOf(camera);
+  for (const library of colladaDescendants(root, 'library_cameras')) {
+    for (const camera of colladaChildren(library, 'camera')) {
+      const id = colladaIdOf(camera);
       if (id === null) continue;
-      const technique = child(child(camera, 'optics'), 'technique_common');
-      const perspective = child(technique, 'perspective');
-      const orthographic = child(technique, 'orthographic');
+      const technique = colladaChild(colladaChild(camera, 'optics'), 'technique_common');
+      const perspective = colladaChild(technique, 'perspective');
+      const orthographic = colladaChild(technique, 'orthographic');
       const name = camera.attributes.name;
 
       if (perspective !== undefined) {
@@ -126,7 +126,7 @@ function colladaCameraNumber(
   fallback: number,
   missing: string[] | undefined,
 ): number {
-  const source = text(descriptor, field);
+  const source = colladaText(descriptor, field);
   if (source === null) {
     missing?.push(field);
     return fallback;

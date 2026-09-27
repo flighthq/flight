@@ -1,36 +1,40 @@
 import type { XmlElement } from '@flighthq/types/contract';
 
-export function child(element: XmlElement | undefined, name: string): XmlElement | undefined {
+export function colladaChild(element: XmlElement | undefined, name: string): XmlElement | undefined {
   return element?.children.find((entry) => entry.name === name || entry.name.endsWith(`:${name}`));
 }
 
-export function children(element: XmlElement | undefined, name: string): XmlElement[] {
+export function colladaChildren(element: XmlElement | undefined, name: string): XmlElement[] {
   if (element === undefined) return [];
   return element.children.filter((entry) => entry.name === name || entry.name.endsWith(`:${name}`));
 }
 
-export function descendants(element: XmlElement, name: string): XmlElement[] {
+export function colladaDescendants(element: XmlElement, name: string): XmlElement[] {
   const out: XmlElement[] = [];
-  walk(element, (e) => {
+  walkColladaElement(element, (e) => {
     if (e.name === name || e.name.endsWith(`:${name}`)) out.push(e);
   });
   return out;
 }
 
-export function idOf(element: XmlElement): string | null {
+export function colladaIdOf(element: XmlElement): string | null {
   return element.attributes.id ?? null;
 }
 
-export function localName(element: XmlElement): string {
+export function colladaLocalName(element: XmlElement): string {
   const colon = element.name.indexOf(':');
   return colon >= 0 ? element.name.slice(colon + 1) : element.name;
 }
 
-export function numbers(element: XmlElement | undefined): number[] {
+export function colladaNumbers(element: XmlElement | undefined): number[] {
   return element?.text.trim().split(/\s+/).filter(Boolean).map(Number).filter(Number.isFinite) ?? [];
 }
 
-export function parseFloats(text: string): number[] {
+export function colladaText(element: XmlElement | undefined, name: string): string | null {
+  return colladaChild(element, name)?.text.trim() || null;
+}
+
+export function parseColladaFloats(text: string): number[] {
   const parts = text.trim().split(/\s+/);
   const result: number[] = [];
   for (let i = 0; i < parts.length; i++) {
@@ -41,11 +45,7 @@ export function parseFloats(text: string): number[] {
   return result;
 }
 
-export function text(element: XmlElement | undefined, name: string): string | null {
-  return child(element, name)?.text.trim() || null;
-}
-
-export function walk(element: XmlElement, visit: (entry: XmlElement) => void): void {
+export function walkColladaElement(element: XmlElement, visit: (entry: XmlElement) => void): void {
   visit(element);
-  for (const entry of element.children) walk(entry, visit);
+  for (const entry of element.children) walkColladaElement(entry, visit);
 }

@@ -20,7 +20,7 @@ import type {
 } from '@flighthq/types/contract';
 
 import { buildColladaNodeWorldMatrices } from './colladaSceneShared.ts';
-import { child, children, idOf, localName } from './colladaXml.ts';
+import { colladaChild, colladaChildren, colladaIdOf, colladaLocalName } from './colladaXml.ts';
 
 // Decodes the reusable light definitions without adding uninstantiated library entries to the document.
 // A null value records an ID whose definition was present but malformed, so an instance of it is skipped
@@ -30,8 +30,8 @@ function parseColladaLightDefinitions(
   diagnostics: ImportDiagnostic[],
 ): Map<string, ColladaLightDefinition | null> {
   const definitions = new Map<string, ColladaLightDefinition | null>();
-  for (const lightElement of children(child(root, 'library_lights'), 'light')) {
-    const id = idOf(lightElement);
+  for (const lightElement of colladaChildren(colladaChild(root, 'library_lights'), 'light')) {
+    const id = colladaIdOf(lightElement);
     if (id === null || id.length === 0) {
       reportMalformedColladaLight(diagnostics, '(missing)', 'id');
       continue;
@@ -46,13 +46,13 @@ function parseColladaLightDefinition(
   id: string,
   diagnostics: ImportDiagnostic[],
 ): ColladaLightDefinition | null {
-  const techniqueCommon = child(lightElement, 'technique_common');
+  const techniqueCommon = colladaChild(lightElement, 'technique_common');
   if (techniqueCommon === undefined) {
     reportMalformedColladaLight(diagnostics, id, 'technique_common');
     return null;
   }
   const techniques = techniqueCommon.children.filter((entry) => {
-    const name = localName(entry);
+    const name = colladaLocalName(entry);
     return name === 'ambient' || name === 'directional' || name === 'point' || name === 'spot';
   });
   if (techniques.length !== 1) {
@@ -61,8 +61,8 @@ function parseColladaLightDefinition(
   }
 
   const technique = techniques[0];
-  const kind = localName(technique) as ColladaLightKind;
-  const colorValues = parseFiniteNumberList(child(technique, 'color'));
+  const kind = colladaLocalName(technique) as ColladaLightKind;
+  const colorValues = parseFiniteNumberList(colladaChild(technique, 'color'));
   if (colorValues === null || colorValues.length !== 3 || colorValues.some((value) => value < 0)) {
     reportMalformedColladaLight(diagnostics, id, 'color');
     return null;
@@ -139,7 +139,7 @@ function parseNonnegativeColladaLightScalar(
   id: string,
   diagnostics: ImportDiagnostic[],
 ): number | null {
-  const element = child(parent, name);
+  const element = colladaChild(parent, name);
   if (element === undefined) return defaultValue;
   const values = parseFiniteNumberList(element);
   if (values === null || values.length !== 1 || values[0] < 0) {

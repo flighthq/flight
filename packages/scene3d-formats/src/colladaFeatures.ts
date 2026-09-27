@@ -65,14 +65,14 @@ export function collectColladaElementCounts(xml: string): ReadonlyMap<string, nu
 
   const counts = new Map<string, number>();
   visit(root, (element) => {
-    const name = localName(element);
+    const name = colladaLocalName(element);
     const coarseFeature = COLLADA_COARSE_ELEMENT_FEATURES.get(name);
     if (coarseFeature !== undefined) {
       counts.set(coarseFeature, (counts.get(coarseFeature) ?? 0) + 1);
       const subFeatures = COLLADA_SUB_ELEMENT_FEATURES.get(name);
       if (subFeatures !== undefined) {
         visit(element, (descendant) => {
-          const sub = subFeatures.get(localName(descendant));
+          const sub = subFeatures.get(colladaLocalName(descendant));
           if (sub !== undefined) counts.set(sub, (counts.get(sub) ?? 0) + 1);
         });
       }
@@ -98,14 +98,14 @@ export function collectColladaFeatures(xml: string): ReadonlySet<string> {
   if (root === null || !isColladaRoot(root)) return found;
 
   visit(root, (element) => {
-    const name = localName(element);
+    const name = colladaLocalName(element);
     const coarseFeature = COLLADA_COARSE_ELEMENT_FEATURES.get(name);
     if (coarseFeature !== undefined) {
       found.add(coarseFeature);
       const subFeatures = COLLADA_SUB_ELEMENT_FEATURES.get(name);
       if (subFeatures !== undefined) {
         visit(element, (descendant) => {
-          const sub = subFeatures.get(localName(descendant));
+          const sub = subFeatures.get(colladaLocalName(descendant));
           if (sub !== undefined) found.add(sub);
         });
       }
@@ -162,17 +162,17 @@ export function parseColladaRequirements(xml: string): RequirementSet {
 
 // Accepts a namespace-prefixed root (`<c:COLLADA>`), which real exporter output carries.
 function isColladaRoot(root: Readonly<XmlElement>): boolean {
-  return localName(root) === 'COLLADA';
+  return colladaLocalName(root) === 'COLLADA';
 }
 
-function localName(element: Readonly<XmlElement>): string {
+function colladaLocalName(element: Readonly<XmlElement>): string {
   const separator = element.name.indexOf(':');
   return separator === -1 ? element.name : element.name.slice(separator + 1);
 }
 
 function visit(element: Readonly<XmlElement>, seen: (entry: Readonly<XmlElement>) => void): void {
   seen(element);
-  for (const child of element.children) visit(child, seen);
+  for (const colladaChild of element.children) visit(colladaChild, seen);
 }
 
 const COLLADA_COARSE_ELEMENT_FEATURES: ReadonlyMap<string, string> = new Map([

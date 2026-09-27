@@ -1,7 +1,17 @@
 import { parseXmlDocument } from '@flighthq/xml/contract';
 import { describe, expect, it } from 'vitest';
 
-import { child, children, descendants, idOf, localName, numbers, parseFloats, text, walk } from './colladaXml.ts';
+import {
+  colladaChild,
+  colladaChildren,
+  colladaDescendants,
+  colladaIdOf,
+  colladaLocalName,
+  colladaNumbers,
+  parseColladaFloats,
+  colladaText,
+  walkColladaElement,
+} from './colladaXml.ts';
 
 // ★ THESE PRIMITIVES WERE PRIVATE AND UNTESTED, and they carry the one COLLADA rule every reader depends on:
 // a namespaced document writes `<c:geometry>`, so every lookup matches on the LOCAL name. Nine functions, one
@@ -15,70 +25,85 @@ const NAMESPACED = parseXmlDocument(
 
 const PLAIN = parseXmlDocument('<COLLADA><asset><up_axis>Y_UP</up_axis></asset><node id="n"/><node/></COLLADA>')!;
 
-describe('child', () => {
+describe('colladaChild', () => {
   it('matches a plain name and a namespace-prefixed one', () => {
-    expect(child(PLAIN, 'asset')).toBeDefined();
-    expect(child(NAMESPACED, 'asset')).toBeDefined();
+    expect(colladaChild(PLAIN, 'asset')).toBeDefined();
+    expect(colladaChild(NAMESPACED, 'asset')).toBeDefined();
   });
 
   it('answers undefined for a missing child and for no element at all', () => {
-    expect(child(PLAIN, 'library_geometries')).toBeUndefined();
-    expect(child(undefined, 'asset')).toBeUndefined();
+    expect(colladaChild(PLAIN, 'library_geometries')).toBeUndefined();
+    expect(colladaChild(undefined, 'asset')).toBeUndefined();
   });
 
   // The suffix match is on `:name`, so a longer name ending in the same letters is NOT a match.
   it('does not match a name that merely ends with the same letters', () => {
     const document = parseXmlDocument('<COLLADA><subasset/></COLLADA>')!;
-    expect(child(document, 'asset')).toBeUndefined();
+    expect(colladaChild(document, 'asset')).toBeUndefined();
   });
 });
 
-describe('children', () => {
+describe('colladaChildren', () => {
   it('returns every match in document order, and an empty list for none', () => {
-    expect(children(PLAIN, 'node')).toHaveLength(2);
-    expect(children(child(NAMESPACED, 'library_geometries'), 'geometry')).toHaveLength(2);
-    expect(children(PLAIN, 'geometry')).toEqual([]);
-    expect(children(undefined, 'node')).toEqual([]);
+    expect(colladaChildren(PLAIN, 'node')).toHaveLength(2);
+    expect(colladaChildren(colladaChild(NAMESPACED, 'library_geometries'), 'geometry')).toHaveLength(2);
+    expect(colladaChildren(PLAIN, 'geometry')).toEqual([]);
+    expect(colladaChildren(undefined, 'node')).toEqual([]);
   });
 });
 
-describe('descendants', () => {
+describe('colladaDescendants', () => {
   it('finds matches at any depth, where children only looks one level down', () => {
-    expect(descendants(NAMESPACED, 'geometry')).toHaveLength(2);
-    expect(children(NAMESPACED, 'geometry')).toEqual([]);
-    expect(descendants(NAMESPACED, 'mesh')).toHaveLength(1);
+    expect(colladaDescendants(NAMESPACED, 'geometry')).toHaveLength(2);
+    expect(colladaChildren(NAMESPACED, 'geometry')).toEqual([]);
+    expect(colladaDescendants(NAMESPACED, 'mesh')).toHaveLength(1);
   });
 });
 
-describe('idOf', () => {
+describe('colladaIdOf', () => {
   it('reads the id attribute and answers null when there is none', () => {
-    expect(idOf(descendants(NAMESPACED, 'geometry')[0])).toBe('g1');
-    expect(idOf(child(PLAIN, 'asset')!)).toBeNull();
+    expect(colladaIdOf(colladaDescendants(NAMESPACED, 'geometry')[0])).toBe('g1');
+    expect(colladaIdOf(colladaChild(PLAIN, 'asset')!)).toBeNull();
   });
 });
 
-describe('localName', () => {
+describe('colladaLocalName', () => {
   it('strips a namespace prefix and leaves an unprefixed name alone', () => {
-    expect(localName(NAMESPACED)).toBe('COLLADA');
-    expect(localName(PLAIN)).toBe('COLLADA');
+    expect(colladaLocalName(NAMESPACED)).toBe('COLLADA');
+    expect(colladaLocalName(PLAIN)).toBe('COLLADA');
   });
 });
 
-describe('numbers', () => {
+describe('colladaNumbers', () => {
   it('reads whitespace-separated numbers from an element, and nothing from none', () => {
     const document = parseXmlDocument('<root><float_array>1 2.5  -3\n4</float_array></root>')!;
-    expect(numbers(child(document, 'float_array'))).toEqual([1, 2.5, -3, 4]);
-    expect(numbers(undefined)).toEqual([]);
+    expect(colladaNumbers(colladaChild(document, 'float_array'))).toEqual([1, 2.5, -3, 4]);
+    expect(colladaNumbers(undefined)).toEqual([]);
   });
 });
 
-describe('parseFloats', () => {
+describe('colladaText', () => {
+  it('trims the child text and answers null when the child or its text is absent', () => {
+    expect(colladaText(colladaChild(NAMESPACED, 'asset'), 'up_axis')).toBe('Z_UP');
+    expect(colladaText(colladaChild(PLAIN, 'asset'), 'up_axis')).toBe('Y_UP');
+    expect(colladaText(colladaChild(PLAIN, 'asset'), 'copyright')).toBeNull();
+  });
+
+  // Empty text reads as null rather than as the empty string: a `<copyright/>` element says nothing, and a
+  // caller checking for absence should not have to check for both.
+  it('reads empty text as null', () => {
+    const document = parseXmlDocument('<asset><copyright>   </copyright></asset>')!;
+    expect(colladaText(document, 'copyright')).toBeNull();
+  });
+});
+
+describe('parseColladaFloats', () => {
   it('splits on any whitespace run and keeps sign, fraction and exponent', () => {
-    expect(parseFloats(' 1  -2.5\t3e2\n')).toEqual([1, -2.5, 300]);
+    expect(parseColladaFloats(' 1  -2.5\t3e2\n')).toEqual([1, -2.5, 300]);
   });
 
   it('drops a non-numeric token rather than yielding NaN', () => {
-    expect(parseFloats('1 x 2')).toEqual([1, 2]);
+    expect(parseColladaFloats('1 x 2')).toEqual([1, 2]);
   });
 
   // ★ MEASURED, NOT ASSUMED, AND NOT CHANGED. Whitespace-only input yields `[0]`, not `[]`: the trim leaves an
@@ -87,29 +112,14 @@ describe('parseFloats', () => {
   // the importer and a decomposition is the wrong place to change what a document parses to — recorded here so the
   // next reader knows the behaviour is known rather than merely undocumented.
   it('yields a single zero for whitespace-only input, which is the shipped behaviour', () => {
-    expect(parseFloats('   ')).toEqual([0]);
+    expect(parseColladaFloats('   ')).toEqual([0]);
   });
 });
 
-describe('text', () => {
-  it('trims the child text and answers null when the child or its text is absent', () => {
-    expect(text(child(NAMESPACED, 'asset'), 'up_axis')).toBe('Z_UP');
-    expect(text(child(PLAIN, 'asset'), 'up_axis')).toBe('Y_UP');
-    expect(text(child(PLAIN, 'asset'), 'copyright')).toBeNull();
-  });
-
-  // Empty text reads as null rather than as the empty string: a `<copyright/>` element says nothing, and a
-  // caller checking for absence should not have to check for both.
-  it('reads empty text as null', () => {
-    const document = parseXmlDocument('<asset><copyright>   </copyright></asset>')!;
-    expect(text(document, 'copyright')).toBeNull();
-  });
-});
-
-describe('walk', () => {
+describe('walkColladaElement', () => {
   it('visits the element itself and every descendant, parents before children', () => {
     const seen: string[] = [];
-    walk(PLAIN, (element) => seen.push(localName(element)));
+    walkColladaElement(PLAIN, (element) => seen.push(colladaLocalName(element)));
     expect(seen[0]).toBe('COLLADA');
     expect(seen).toContain('up_axis');
     expect(seen.indexOf('asset')).toBeLessThan(seen.indexOf('up_axis'));

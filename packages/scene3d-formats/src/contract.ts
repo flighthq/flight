@@ -25,6 +25,8 @@ export * from './colladaGeometryDecoder.ts';
 export * from './colladaLightDecoder.ts';
 export * from './colladaMaterialDecoder.ts';
 export * from './colladaParse.ts';
+export * from './colladaSceneShared.ts';
+export * from './colladaXml.ts';
 export * from './gltfAnimations.ts';
 export * from './gltfAnisotropy.ts';
 export * from './gltfCameras.ts';
