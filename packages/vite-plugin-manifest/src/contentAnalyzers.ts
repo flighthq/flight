@@ -1,4 +1,5 @@
 import { decodeUTF8 } from '@flighthq/encoding/contract';
+import { isReadableRive, parseRiveRequirements } from '@flighthq/scene2d-formats/contract';
 import { collectAwd2BlockCounts, parseAwd2Requirements } from '@flighthq/scene3d-formats/contract';
 import {
   collectMd2Features,
@@ -110,6 +111,10 @@ export const DEFAULT_CONTENT_ANALYZERS: Readonly<Record<string, ContentAnalyzer>
   '.skel': {
     analyze: (source) => parseSpineBinaryRequirements(source),
     isReadable: (source) => collectSpineBinarySectionCounts(source) !== null,
+  },
+  '.riv': {
+    analyze: (source) => parseRiveRequirements(source),
+    isReadable: (source) => isReadableRive(source),
   },
   '.swf': {
     analyze: (source, { deflate, lzma }) => parseSwfRequirements(source, deflate, lzma),

@@ -196,6 +196,7 @@ describe('DEFAULT_CONTENT_ANALYZERS', () => {
       '.md5anim',
       '.md5mesh',
       '.obj',
+      '.riv',
       '.skel',
       '.swf',
     ]);

@@ -9,6 +9,9 @@ import type {
   GlRenderStateOptions,
   Kind,
   NodeRenderer,
+  RiveImportOptions,
+  RivePathBooleanRegistrar,
+  RiveRegistrar,
   SwfParseOptions,
   SwfTagHandler,
   ThreeDsChunkHandler,
@@ -85,6 +88,32 @@ describe('typed consumer fixtures', () => {
     expect(decodersInto3ds).toBe(true);
   });
 
+  // ★ RIVE SPREADS INTO TWO FIELDS, and the split is the point: a build whose content has no clipping never
+  // names `pathBooleanRegistrars`, so it never has to supply a path-boolean kernel either. Both fields are
+  // checked because emitting the kernel-dependent registrar into the general list would typecheck as a function
+  // and then be applied without a kernel.
+  it('spreads parserOptions into RiveImportOptions, both fields', () => {
+    const parserOptions = { pathBooleanRegistrars: [RIVE_KERNEL_REGISTRAR], registrars: [RIVE_REGISTRAR] };
+    const fits: Spreads<typeof parserOptions, RiveImportOptions> = true;
+    const options: RiveImportOptions = { ...parserOptions };
+    expect(fits).toBe(true);
+    expect(options.registrars).toEqual([RIVE_REGISTRAR]);
+    expect(options.pathBooleanRegistrars).toEqual([RIVE_KERNEL_REGISTRAR]);
+  });
+
+  it('spreads a Rive fragment carrying only the general field, for content with no clipping', () => {
+    const parserOptions = { registrars: [RIVE_REGISTRAR] };
+    const fits: Spreads<typeof parserOptions, RiveImportOptions> = true;
+    const options: RiveImportOptions = { ...parserOptions };
+    expect(fits).toBe(true);
+    expect(options.pathBooleanRegistrars).toBeUndefined();
+  });
+
+  it('rejects a Rive fragment naming a field RiveImportOptions does not declare', () => {
+    const rejected: Spreads<{ handlers: readonly unknown[] }, RiveImportOptions> extends never ? true : false = true;
+    expect(rejected).toBe(true);
+  });
+
   it('spreads parserOptions into Awd2ParseOptions', () => {
     const parserOptions = { blocks: [] as Awd2ParseOptions['blocks'][number][] };
     const fits: Spreads<typeof parserOptions, Awd2ParseOptions> = true;
@@ -146,5 +175,7 @@ describe('typed consumer fixtures', () => {
 
 const RENDERER = { createData: () => null, submit: () => {} } as NodeRenderer;
 const TAG_HANDLER = { code: 1, read: () => {} } as unknown as SwfTagHandler;
+const RIVE_REGISTRAR: RiveRegistrar = () => {};
+const RIVE_KERNEL_REGISTRAR: RivePathBooleanRegistrar = () => {};
 const CHUNK_HANDLER = { chunkIds: [0x4100], collect: () => {} } as ThreeDsChunkHandler;
 const ELEMENT_DECODER = { decode: () => {}, elements: ['geometry'], features: ['Geometry'] } as ColladaElementDecoder;

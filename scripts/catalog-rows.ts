@@ -1,4 +1,11 @@
 import {
+  createRiveImportRegistry,
+  getRiveCoreTypeName,
+  riveAllPathBooleanRegistrars,
+  riveAllRegistrars,
+  RIVE_REQUIREMENT_KEY_NAMESPACE,
+} from '@flighthq/scene2d-formats/contract';
+import {
   awd2CameraHandler,
   awd2ContainerHandler,
   awd2LightHandler,
@@ -113,6 +120,7 @@ import {
   swfVideoHandler,
 } from '@flighthq/swf';
 import { getSwfTagName, SWF_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/swf/contract';
+import type { PathBooleanKernel, RiveImportRegistry } from '@flighthq/types/contract';
 import type {
   Awd2BlockHandler,
   ColladaElementDecoder,
@@ -368,6 +376,17 @@ export const DRAGONBONES_TIMELINE_HANDLERS: readonly (readonly [string, DragonBo
   ['dragonBonesZOrderTimelineHandler', dragonBonesZOrderTimelineHandler, DragonBonesTimelineKind.ZOrder],
 ];
 
+/**
+ * The two `parserOptions` fields a Rive row lands in, matching `RiveImportOptions`.
+ *
+ * Rive is the one format whose families split by DEPENDENCY rather than by kind: ten registrars need only the
+ * registry, one also needs a path-boolean kernel, and a build that omits the second never links a path-boolean
+ * implementation. Each row carries the field it belongs in, so the emitter writes two arrays and a consumer
+ * spreads the result straight into `RiveImportOptions`.
+ */
+export const RIVE_REGISTRAR_PARSER_FIELD = 'registrars';
+export const RIVE_PATH_BOOLEAN_PARSER_FIELD = 'pathBooleanRegistrars';
+
 /** The backend whose rows become `parserOptions` rather than a render-state fragment. */
 export const CATALOG_PARSER_BACKEND = 'parser';
 
@@ -400,6 +419,24 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
           familyOrderOf(threeDsAllChunkHandlers, handler),
         ),
       );
+    }
+  }
+  // ★ ROWS DERIVED BY RUNNING THE SHIPPED REGISTRARS, NEVER BY TRANSCRIBING THE OBJECT MODEL. Rive identifies
+  // objects by number across 368 core types; a hand-written key table would be the single largest thing in this
+  // file and the first to fall out of date. Each registrar is applied to a throwaway registry and the keys it
+  // installs are read back, so a family that gains or loses a core type changes these rows on the same edit.
+  //
+  // The two lists are declared separately by the format package, so nothing here inspects a function to decide
+  // how to call it — the arity comes from which list a registrar is in. `Function.name` supplies the symbol,
+  // which is the same identity a generated module imports.
+  for (const registrar of riveAllRegistrars) {
+    for (const kind of riveRegistrarKinds((registry) => registrar(registry))) {
+      rows.push(riveRow(registrar.name, kind, RIVE_REGISTRAR_PARSER_FIELD));
+    }
+  }
+  for (const registrar of riveAllPathBooleanRegistrars) {
+    for (const kind of riveRegistrarKinds((registry) => registrar(RIVE_PROBE_KERNEL, registry))) {
+      rows.push(riveRow(registrar.name, kind, RIVE_PATH_BOOLEAN_PARSER_FIELD));
     }
   }
   for (const [symbol, handler] of MD2_SECTION_HANDLERS) {
@@ -532,6 +569,24 @@ function row(
     parserField,
   };
 }
+
+// Runs one registrar against a FRESH registry and reports the requirement kinds its keys correspond to. The
+// registry is created here and handed to the caller's callback, so each registrar is measured alone and cannot
+// see another's keys.
+function riveRegistrarKinds(apply: (registry: RiveImportRegistry) => void): readonly string[] {
+  const registry: RiveImportRegistry = createRiveImportRegistry();
+  apply(registry);
+  return [...registry.handlers.keys()]
+    .map((key) => `${RIVE_REQUIREMENT_KEY_NAMESPACE}.${getRiveCoreTypeName(key) ?? `Unknown(${key})`}`)
+    .sort();
+}
+
+function riveRow(symbol: string, kind: string, parserField: string): RequirementCatalogEntry {
+  return { ...row('@flighthq/scene2d-formats', symbol, kind), parserField };
+}
+
+// Only stored by the clipping registrar, never invoked while collecting registrations.
+const RIVE_PROBE_KERNEL = {} as Readonly<PathBooleanKernel>;
 
 // Membership by IDENTITY, not by name or feature: the family holds the very values the maps above do, so
 // a decoder that is not the same object is not in the family regardless of what it claims to decode.
