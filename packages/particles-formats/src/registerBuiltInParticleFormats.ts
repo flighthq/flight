@@ -67,7 +67,7 @@ export const starlingPexParticleFormat: Readonly<ParticleFormatDescriptor> = {
 
 export const particleDesignerParticleFormat: Readonly<ParticleFormatDescriptor> = {
   codec: {
-    detect: (text) => isXml(text) && text.includes('<plist'),
+    detect: (text) => isXml(text) && text.includes('<plist') && hasParticleDesignerKey(text),
     parseToConfig: parseParticleDesignerPlist,
     parseToDocument: parseParticleDesignerPlistDocument,
     serialize: serializeParticleDesignerPlistDocument,
@@ -155,6 +155,28 @@ function isRangeObject(value: unknown): boolean {
   return typeof range.low === 'number' && typeof range.high === 'number';
 }
 
+/**
+ * Whether a plist declares a key only a ParticleDesigner emitter carries.
+ *
+ * ★ "IS A PLIST" WAS NOT "IS A PARTICLE CONFIG", AND THE DIFFERENCE IS PAID IN SOMEONE ELSE'S BUNDLE. The plist
+ * container is shared: Cocos writes spritesheets as plists too, and `@flighthq/spritesheet-formats` reads them.
+ * With only the `<plist` check, every Cocos sheet in a build also claimed this codec, so the ParticleDesigner
+ * parser linked into any project whose only plist was a spritesheet. That surfaced when the manifest plugin began
+ * analysing shared extensions by unioning every family that recognises an asset — a union reports each family's
+ * answer faithfully, so an over-broad detector stops being local to its own family.
+ *
+ * The three keys are the emitter's own required parameters and appear in every ParticleDesigner export; a Cocos
+ * sheet (`frames`, `metadata`) carries none of them. Matched as EXACT key elements rather than as substrings:
+ * `particleLifespan` is a prefix of `particleLifespanVariance`, and a sheet is free to name a frame anything at
+ * all, so a bare `text.includes` would reintroduce the same class of false positive it is here to remove.
+ *
+ * This is a detector, not a schema: the parser still reads every field with a default and accepts a plist that
+ * declares only one of these. The check says "this document is addressed to us", nothing more.
+ */
+function hasParticleDesignerKey(text: string): boolean {
+  return PARTICLE_DESIGNER_KEY_PATTERN.test(text);
+}
+
 function isXml(text: string): boolean {
   const trimmed = text.trimStart();
   return trimmed.startsWith('<') || trimmed.startsWith('<?xml');
@@ -170,3 +192,6 @@ function parseJsonObject(text: string): Record<string, unknown> | null {
     return null;
   }
 }
+
+// Anchored on both tags so the name is an exact key element, never a substring of a longer one.
+const PARTICLE_DESIGNER_KEY_PATTERN = /<key>\s*(?:maxParticles|particleLifespan|emitterType)\s*<\/key>/;
