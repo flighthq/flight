@@ -1,9 +1,7 @@
 import type { ImageResource } from './ImageResource.ts';
+import type { SvgElementHandlerEntry } from './SvgRegistry.ts';
 
-/**
- * External-resource seams for static SVG document import. The importer performs no hidden I/O:
- * callers that want `<image>` nodes resolve each URL or data URI to an already-owned ImageResource.
- */
 export interface SvgDocumentImportOptions {
+  elementHandlers?: SvgElementHandlerEntry[];
   resolveImageResource?: (href: string) => ImageResource | null;
 }
