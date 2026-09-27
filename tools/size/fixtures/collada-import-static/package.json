@@ -1,0 +1,9 @@
+{
+  "name": "collada-import-static",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "collada-import-static"
+  }
+}
