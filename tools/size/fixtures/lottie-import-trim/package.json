@@ -1,0 +1,9 @@
+{
+  "name": "lottie-import-trim",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "lottie-import-trim"
+  }
+}
