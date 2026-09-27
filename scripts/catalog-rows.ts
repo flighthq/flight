@@ -747,17 +747,6 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
       ),
     );
   }
-  for (const [symbol, handler, kind] of SVG_ELEMENT_HANDLERS) {
-    rows.push(
-      row(
-        '@flighthq/scene2d-formats',
-        symbol,
-        `${SVG_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
-        familyOrderOf(svgAllElementHandlers, handler),
-        'elementHandlers',
-      ),
-    );
-  }
   return rows.sort(
     (a, b) => a.kind.localeCompare(b.kind) || a.implementationSymbol.localeCompare(b.implementationSymbol),
   );
