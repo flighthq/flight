@@ -74,6 +74,7 @@ const MODULES: Readonly<Record<string, Record<string, unknown>>> = {
   '@flighthq/particles-formats': particlesFormats as unknown as Record<string, unknown>,
   '@flighthq/scene2d-formats': scene2dFormats as unknown as Record<string, unknown>,
   '@flighthq/scene3d-formats': scene3dFormats as unknown as Record<string, unknown>,
+  '@flighthq/scene3d-formats/contract': scene3dFormatsContract as unknown as Record<string, unknown>,
   '@flighthq/skeleton2d-formats/contract': skeleton2dFormatsContract as unknown as Record<string, unknown>,
   '@flighthq/spritesheet-formats': spritesheetFormats as unknown as Record<string, unknown>,
   '@flighthq/swf': swf as unknown as Record<string, unknown>,
@@ -265,6 +266,7 @@ describe('buildRequirementCatalogRows', () => {
           isSpineJsonHandler(value) ||
           isDragonBonesHandler(value) ||
           isLottieHandler(value) ||
+          isGltfHandler(value) ||
           isFormatDescriptor(value) ||
           isSvgHandler(value),
         `${row.implementationSymbol}`,
@@ -335,14 +337,19 @@ describe('buildRequirementCatalogRows', () => {
     expect(material.familyOrder!).toBeLessThan(geometry.familyOrder!);
   });
 
-  // AWD2 and SWF carry no position: their importers re-sort internally, so a number here would assert a
+  // AWD2, glTF and SWF carry no position: their importers re-sort internally, so a number here would assert a
   // constraint the format does not actually have.
   it('leaves familyOrder absent for the formats whose importers re-sort internally', () => {
     for (const row of buildRequirementCatalogRows()) {
       // Rive joins AWD2 and SWF here for a different reason: its application order is fixed by
       // `applyRiveImportOptions` (kernel-dependent registrars first), not by the order rows are emitted in, so
       // a position on the row would assert a constraint the format does not have.
-      if (row.kind.startsWith('awd2.') || row.kind.startsWith('riv.') || row.kind.startsWith('swf.')) {
+      if (
+        row.kind.startsWith('awd2.') ||
+        row.kind.startsWith('gltf.') ||
+        row.kind.startsWith('riv.') ||
+        row.kind.startsWith('swf.')
+      ) {
         expect(row.familyOrder, row.kind).toBeUndefined();
       } else {
         expect(row.familyOrder, row.kind).toBeTypeOf('number');
@@ -952,6 +959,18 @@ function isDragonBonesHandler(value: unknown): boolean {
 
 function isLottieHandler(value: unknown): boolean {
   return typeof value === 'function';
+}
+
+function isGltfHandler(value: unknown): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    'apply' in value &&
+    typeof value.apply === 'function' &&
+    'kind' in value &&
+    typeof value.kind === 'string'
+  );
 }
 
 function isFormatDescriptor(value: unknown): boolean {
