@@ -20,6 +20,19 @@ describe('parseGlbRequirements', () => {
     const set = parseGlbRequirements(bytes);
     expect(set.requirements).toContainEqual({ facet: RequirementFacet.DocumentFormat, key: 'gltf.Mesh' });
   });
+
+  it('produces the same requirements as the equivalent JSON document', () => {
+    const doc = {
+      asset: { version: '2.0' },
+      meshes: [{}],
+      animations: [{}],
+      extensionsUsed: ['KHR_materials_unlit'],
+    };
+    const fromGlb = parseGlbRequirements(buildGlb(JSON.stringify(doc)));
+    const fromJson = parseGltfRequirements(doc as GltfDocument);
+    expect(fromGlb.requirements).toEqual(fromJson.requirements);
+    expect(fromGlb.covers).toEqual(fromJson.covers);
+  });
 });
 
 describe('parseGltfRequirements', () => {
