@@ -6,25 +6,11 @@ import {
   sampleAnimationTrack,
 } from '@flighthq/animation/contract';
 import { createClipRegionFromPath } from '@flighthq/clip/contract';
-import { packColor } from '@flighthq/color/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
-import { appendPathRectangle, createPath, dashPath, getPathLength } from '@flighthq/path/contract';
-import { applyAnimationClipToNode2D, createDisplayObject, createSprite } from '@flighthq/scene2d/contract';
-import {
-  appendShapeBeginFill,
-  appendShapeBeginGradientFill,
-  appendShapeEndFill,
-  appendShapeLineGradientStyle,
-  appendShapeLineStyle,
-  appendShapePath,
-  clearShapeCommands,
-  createShape,
-} from '@flighthq/shape/contract';
-import { createTextLabel } from '@flighthq/text/contract';
-import { createTexture } from '@flighthq/texture/contract';
+import { applyAnimationClipToNode2D, createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   AnimationClip,
   AnimationTrack,
@@ -34,33 +20,21 @@ import type {
   ImportDiagnostic,
   LottieAdvancedBlend,
   LottieAnimatable,
-  LottieAsset,
   LottieBezierHandle,
   LottieDocument,
   LottieDocumentImportOptions,
   LottieDocumentImportResult,
-  LottieGradientPaint,
-  LottieImageAsset,
   LottieImportContext,
   LottieKeyframe,
   LottieLayer,
-  LottieLayerContext,
   LottieMask,
-  LottiePaint,
   LottiePositionProperty,
-  LottiePrecompositionAsset,
   LottieRegistry,
-  LottieShapeGroup,
-  LottieShapeItem,
   LottieShapePath,
-  LottieTextDocument,
   LottieTransform,
-  LottieTrimPathShapeItem,
   Node2D,
   Node2DAnimationPath,
   Node2DAnimationTarget,
-  Path,
-  Shape,
 } from '@flighthq/types/contract';
 import { AdvancedBlendMode, BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
@@ -70,8 +44,39 @@ import {
   toLottieShapePath,
   unflattenLottieShapePath,
 } from './lottieBezierPath.ts';
-import { createLottieGradientMatrix, parseLottieGradient } from './lottieGradientPaint.ts';
-import { getLottieLayerHandler, getLottieShapeItemHandler } from './lottieRegistry.ts';
+import { getLottieLayerHandler } from './lottieRegistry.ts';
+
+/**
+ * The document core: JSON validation, import context, the ordered layer walk, and the animation plumbing every
+ * feature shares.
+ *
+ * ★ WHAT IS NOT HERE IS THE POINT. Six layer interpretations and nine shape-item interpretations used to live in this
+ * file; each now lives in the module that owns it, and this one keeps only what more than one of them needs — the
+ * transform reader, the keyframe/track machinery, the numeric and colour conversions, and the diagnostic reports.
+ * `createScene2DFromLottieDocumentWithRegistry` takes its handlers as an argument and names no default, so nothing
+ * here reaches a preset.
+ */
+export function appendLottieLayers(
+  root: DisplayObject,
+  layers: readonly Readonly<LottieLayer>[],
+  context: LottieImportContext,
+): void {
+  const nodes = new Map<number, DisplayObject>();
+  const ordered: Array<{ layer: Readonly<LottieLayer>; node: DisplayObject }> = [];
+  for (const layer of layers) {
+    const node = createLottieLayerNode(layer, context);
+    ordered.push({ layer, node });
+    if (layer.ind !== undefined) nodes.set(layer.ind, node);
+  }
+  // Bodymovin stores the topmost layer first. Reverse insertion preserves that visual stacking in
+  // Flight's back-to-front child order.
+  for (let index = ordered.length - 1; index >= 0; index--) {
+    const { layer, node } = ordered[index];
+    const parent = layer.parent === undefined ? undefined : nodes.get(layer.parent);
+    addNodeChild(parent ?? root, node);
+  }
+}
+
 /**
  * Builds the animation channel a bezier path's keyframes drive.
  *
@@ -152,56 +157,35 @@ export function applyAnimationClipToLottieDocument(clip: Readonly<AnimationClip>
   }
 }
 
-export function bindMutableLottieNumericProperty<T>(
-  property: Readonly<LottieAnimatable<T>>,
-  current: number[],
-  convert: (value: number, component: number) => number,
-  onChange: () => void,
-  context: LottieImportContext,
-): void {
-  if (!isAnimatedLottieProperty(property)) return;
-  appendNumericPropertyChannels(
-    property,
-    current.length,
-    (component) =>
-      ({
-        lottieApply(sample) {
-          if (component === null) {
-            for (let index = 0; index < current.length; index++) current[index] = sample[index];
-          } else {
-            current[component] = sample[0];
-          }
-          onChange();
-        },
-      }) satisfies LottieMutableAnimationTarget,
-    convert,
-    context,
-  );
-}
-
 interface LottieMutableAnimationTarget {
   lottieApply(sample: Readonly<number[] | Float32Array>, time: number): void;
 }
 
-function appendLottieLayers(
-  root: DisplayObject,
-  layers: readonly Readonly<LottieLayer>[],
+export function applyLottieTransform(
+  target: Node2D,
+  transform: Readonly<LottieTransform> | undefined,
   context: LottieImportContext,
+  includeOpacity = true,
+  autoOrient = false,
 ): void {
-  const nodes = new Map<number, DisplayObject>();
-  const ordered: Array<{ layer: Readonly<LottieLayer>; node: DisplayObject }> = [];
-  for (const layer of layers) {
-    const node = createLottieLayerNode(layer, context);
-    ordered.push({ layer, node });
-    if (layer.ind !== undefined) nodes.set(layer.ind, node);
+  if (transform === undefined) return;
+  if (isSeparatedPosition(transform.p)) {
+    applyScalarProperty(target, transform.p.x, 'X', (value) => value, context);
+    applyScalarProperty(target, transform.p.y, 'Y', (value) => value, context);
+  } else {
+    applyVectorProperty(target, transform.p, 'Position', ['X', 'Y'], 2, (value) => value, context);
   }
-  // Bodymovin stores the topmost layer first. Reverse insertion preserves that visual stacking in
-  // Flight's back-to-front child order.
-  for (let index = ordered.length - 1; index >= 0; index--) {
-    const { layer, node } = ordered[index];
-    const parent = layer.parent === undefined ? undefined : nodes.get(layer.parent);
-    addNodeChild(parent ?? root, node);
+  applyVectorProperty(target, transform.a, 'Pivot', ['PivotX', 'PivotY'], 2, (value) => value, context);
+  applyVectorProperty(target, transform.s, 'Scale', ['ScaleX', 'ScaleY'], 2, (value) => value / 100, context);
+  // Bodymovin states rotation and skew in degrees, and so does Flight's authoring transform, so both
+  // pass through unconverted. The radians live below the seam, where nodeTransform2d applies
+  // DEG_TO_RAD.
+  applyScalarProperty(target, transform.r ?? transform.rz, 'Rotation', (value) => value, context);
+  if (includeOpacity) applyScalarProperty(target, transform.o, 'Alpha', (value) => value / 100, context);
+  if (transform.sk !== undefined) {
+    applyScalarProperty(target, transform.sk, 'SkewX', (value) => value, context);
   }
+  if (autoOrient) appendLottieAutoOrientation(target, transform.p, transform.r ?? transform.rz, context);
 }
 
 function createLottieLayerNode(layer: Readonly<LottieLayer>, context: LottieImportContext): DisplayObject {
@@ -227,31 +211,31 @@ function createLottieLayerNode(layer: Readonly<LottieLayer>, context: LottieImpo
   return container;
 }
 
-function applyLottieTransform(
-  target: Node2D,
-  transform: Readonly<LottieTransform> | undefined,
+export function bindMutableLottieNumericProperty<T>(
+  property: Readonly<LottieAnimatable<T>>,
+  current: number[],
+  convert: (value: number, component: number) => number,
+  onChange: () => void,
   context: LottieImportContext,
-  includeOpacity = true,
-  autoOrient = false,
 ): void {
-  if (transform === undefined) return;
-  if (isSeparatedPosition(transform.p)) {
-    applyScalarProperty(target, transform.p.x, 'X', (value) => value, context);
-    applyScalarProperty(target, transform.p.y, 'Y', (value) => value, context);
-  } else {
-    applyVectorProperty(target, transform.p, 'Position', ['X', 'Y'], 2, (value) => value, context);
-  }
-  applyVectorProperty(target, transform.a, 'Pivot', ['PivotX', 'PivotY'], 2, (value) => value, context);
-  applyVectorProperty(target, transform.s, 'Scale', ['ScaleX', 'ScaleY'], 2, (value) => value / 100, context);
-  // Bodymovin states rotation and skew in degrees, and so does Flight's authoring transform, so both
-  // pass through unconverted. The radians live below the seam, where nodeTransform2d applies
-  // DEG_TO_RAD.
-  applyScalarProperty(target, transform.r ?? transform.rz, 'Rotation', (value) => value, context);
-  if (includeOpacity) applyScalarProperty(target, transform.o, 'Alpha', (value) => value / 100, context);
-  if (transform.sk !== undefined) {
-    applyScalarProperty(target, transform.sk, 'SkewX', (value) => value, context);
-  }
-  if (autoOrient) appendLottieAutoOrientation(target, transform.p, transform.r ?? transform.rz, context);
+  if (!isAnimatedLottieProperty(property)) return;
+  appendNumericPropertyChannels(
+    property,
+    current.length,
+    (component) =>
+      ({
+        lottieApply(sample) {
+          if (component === null) {
+            for (let index = 0; index < current.length; index++) current[index] = sample[index];
+          } else {
+            current[component] = sample[0];
+          }
+          onChange();
+        },
+      }) satisfies LottieMutableAnimationTarget,
+    convert,
+    context,
+  );
 }
 
 function applyVectorProperty(
@@ -730,198 +714,14 @@ export function lottieDegreesToRadians(value: number): number {
   return (value * Math.PI) / 180;
 }
 
-export function lottieImageLayerReader(context: LottieLayerContext): void {
-  appendLottieImage(context.container, context.layer, context.import);
-}
-
-export function lottieNullLayerReader(_context: LottieLayerContext): void {}
-
-function appendLottieSolid(parent: DisplayObject, layer: Readonly<LottieLayer>): void {
-  const shape = createShape();
-  const color = parseHexColor(layer.sc ?? '#000000');
-  appendShapeBeginFill(shape, color, 1);
-  const path = createPath();
-  appendPathRectangle(path, 0, 0, layer.sw ?? 0, layer.sh ?? 0);
-  appendShapePath(shape, path.commands.slice(), path.data.slice(), path.winding);
-  appendShapeEndFill(shape);
-  addNodeChild(parent, shape);
-}
-
-function appendLottieImage(parent: DisplayObject, layer: Readonly<LottieLayer>, context: LottieImportContext): void {
-  const asset = layer.refId === undefined ? undefined : context.assets.get(layer.refId);
-  if (asset === undefined || !isImageAsset(asset)) {
-    reportLottieDrop(context, 'lottie.unresolved-asset', 'appendLottieImage', { id: layer.refId ?? '' });
-    return;
-  }
-  const image = context.resolveImageResource?.(asset) ?? null;
-  if (image === null) {
-    reportLottieSkip(context, 'lottie.unresolved-image', 'appendLottieImage', { id: asset.id });
-    return;
-  }
-  addNodeChild(parent, createSprite({ data: { texture: createTexture({ dimension: '2d', source: image }) } }));
-}
-
-function appendLottieText(parent: DisplayObject, layer: Readonly<LottieLayer>, context: LottieImportContext): void {
-  const textData = layer.t;
-  const first = textData?.d.k[0]?.s;
-  if (first === undefined) {
-    reportLottieDrop(context, 'lottie.text-missing-document', 'appendLottieText', { layer: layer.nm ?? '' });
-    return;
-  }
-  const label = createTextLabel({
-    data: {
-      autoSize: 'left',
-      height: (first.s ?? 16) * 1.25,
-      text: first.t,
-      textFormat: createLottieTextFormat(first),
-      width: context.document.w,
-    },
-  });
-  addNodeChild(parent, label);
-}
-
-function appendLottiePrecomposition(
-  parent: DisplayObject,
-  layer: Readonly<LottieLayer>,
-  context: LottieImportContext,
-): void {
-  const id = layer.refId;
-  const asset = id === undefined ? undefined : context.assets.get(id);
-  if (id === undefined || asset === undefined || !isPrecompositionAsset(asset)) {
-    reportLottieDrop(context, 'lottie.unresolved-asset', 'appendLottiePrecomposition', { id: id ?? '' });
-    return;
-  }
-  if (context.resolvingPrecompositions.has(id)) {
-    reportLottieDrop(context, 'lottie.recursive-precomposition', 'appendLottiePrecomposition', { id });
-    return;
-  }
-  context.resolvingPrecompositions.add(id);
-  appendLottieLayers(parent, asset.layers, {
-    ...context,
-    frameOffset: context.frameOffset + (layer.st ?? 0) * context.frameScale,
-    frameScale: context.frameScale * (layer.sr ?? 1),
-  });
-  context.resolvingPrecompositions.delete(id);
-}
-
-function appendLottieShapeItems(
-  parent: DisplayObject,
-  items: readonly Readonly<LottieShapeItem>[],
-  context: LottieImportContext,
-  name: string | null = null,
-): void {
-  const group = createDisplayObject({ name });
-  const transform = items.find((item) => item.ty === 'tr');
-  if (transform?.ty === 'tr') applyLottieTransform(group, transform as Readonly<LottieTransform>, context);
-  const shape = createShape();
-  const paints: LottiePaint[] = [];
-  const paths: Path[] = [];
-  const rerender = (): void => renderLottieShapeState(paints, paths, shape);
-
-  for (const item of items) {
-    if (item.hd === true) continue;
-    if (item.ty === 'gr') {
-      const shapeGroup = item as Readonly<LottieShapeGroup>;
-      appendLottieShapeItems(group, shapeGroup.it, context, shapeGroup.nm ?? null);
-      continue;
-    }
-    if (item.ty === 'tr') {
-      reportLottieExpression(item, context);
-      continue;
-    }
-    const handler = getLottieShapeItemHandler(context.registry, item.ty);
-    if (handler !== null) {
-      handler({ import: context, item, paints, paths, rerender, shape });
-    } else {
-      reportLottieSkip(context, 'lottie.unsupported-shape-item', 'appendLottieShapeItems', { shapeType: item.ty });
-    }
-    reportLottieExpression(item, context);
-  }
-  applyStaticLottieTrim(items, paths);
-  renderLottieShapeState(paints, paths, shape);
-  if (paths.length > 0) addNodeChild(group, shape);
-  addNodeChild(parent, group);
-}
-
-function applyStaticLottieTrim(items: readonly Readonly<LottieShapeItem>[], paths: Path[]): void {
-  const raw = items.find((item) => item.ty === 'tm');
-  if (raw === undefined) return;
-  const trim = raw as Readonly<LottieTrimPathShapeItem>;
-  if (isAnimatedLottieProperty(trim.s) || isAnimatedLottieProperty(trim.e) || isAnimatedLottieProperty(trim.o)) return;
-  const start = lottieNumericValue(initialLottieValue(trim.s), 1)[0] / 100;
-  const end = lottieNumericValue(initialLottieValue(trim.e), 1)[0] / 100;
-  const offset = lottieNumericValue(initialLottieValue(trim.o), 1)[0] / 360;
-  let visible = (((end - start) % 1) + 1) % 1;
-  if (Math.abs(end - start) >= 1) visible = 1;
-  for (let i = 0; i < paths.length; i++) {
-    if (visible >= 1) continue;
-    const path = paths[i];
-    const length = getPathLength(path);
-    const trimmed = createPath(path.winding);
-    if (length > 0 && visible > 0) {
-      dashPath(path, [visible * length, (1 - visible) * length], (start + offset) * length, trimmed);
-    }
-    paths[i] = trimmed;
-  }
-}
-
-// The current representation restates every local path for every local paint. This preserves
-// multiple paints when all paths precede all styles, but it does not yet implement Lottie's general
-// render stack: styles scope only over preceding shapes (including shapes in nested groups), and
-// repeated styles render in reverse order. That needs a scoped stack rather than another field here.
-function renderLottieShapeState(paints: LottiePaint[], paths: Path[], shape: Shape): void {
-  clearShapeCommands(shape);
-  if (paths.length === 0) return;
-  if (paints.length === 0) {
-    appendLottieShapePaths(paths, shape, null);
-    return;
-  }
-  for (const paint of paints) {
-    if (paint.kind === 'fill') {
-      appendShapeBeginFill(shape, lottieRgba(paint.color), paint.opacity);
-      appendLottieShapePaths(paths, shape, paint.winding);
-      appendShapeEndFill(shape);
-    } else if (paint.kind === 'stroke') {
-      appendShapeLineStyle(
-        shape,
-        paint.width,
-        lottieRgba(paint.color),
-        paint.opacity,
-        false,
-        'normal',
-        paint.caps,
-        paint.joints,
-        paint.miterLimit,
-      );
-      appendLottieShapePaths(paths, shape, null, paint.dash, paint.dashOffset);
-    } else if (paint.type === 'gf') {
-      appendLottieGradientFill(shape, paint);
-      appendLottieShapePaths(paths, shape, paint.winding);
-      appendShapeEndFill(shape);
-    } else {
-      appendLottieGradientStroke(shape, paint);
-      appendLottieShapePaths(paths, shape, null, paint.dash, paint.dashOffset);
-    }
-  }
-}
-
-function appendLottieShapePaths(
-  paths: Path[],
-  shape: Shape,
-  winding: 'evenOdd' | 'nonZero' | null,
-  dash: readonly number[] = [],
-  dashOffset = 0,
-): void {
-  for (const path of paths) {
-    let output = path;
-    if (dash.length > 0) {
-      output = createPath(path.winding);
-      dashPath(path, dash.length % 2 === 0 ? dash : [...dash, ...dash], dashOffset, output);
-    }
-    appendShapePath(shape, output.commands.slice(), output.data.slice(), winding ?? output.winding);
-  }
-}
-
+/**
+ * Lowers a layer's masks onto Flight's hard clip region.
+ *
+ * ★ THE ONE FEATURE STILL READ FOR EVERY LAYER, and therefore the one that keeps bezier-path reading in every bundle.
+ * Masks belong to no layer kind — a null, image, text or shape layer may carry them — so the core's walk has to ask,
+ * and asking links `lottieBezierPath`. Breaking that would need masks to become a registered family of their own
+ * rather than a step in the walk; until then a null-layer-only build still pays for the mask reader.
+ */
 function applyLottieMasks(target: Node2D, masks: readonly Readonly<LottieMask>[], context: LottieImportContext): void {
   const active = masks.filter((mask) => mask.mode !== 'n');
   if (active.length === 0) return;
@@ -984,14 +784,14 @@ function applyLottieBlendMode(target: Node2D, layer: Readonly<LottieLayer>, cont
   if (advanced !== undefined) context.advancedBlends.push({ mode: advanced, node: target });
 }
 
-function reportLottieExpression(value: unknown, context: LottieImportContext): void {
-  if (value === null || typeof value !== 'object') return;
-  if ('x' in value && typeof value.x === 'string') {
-    reportLottieSkip(context, 'lottie.unsupported-expression', 'reportLottieExpression');
+export function lottieNumericValue(value: unknown, components: number): number[] {
+  const source = Array.isArray(value) ? value : [value];
+  const out = new Array<number>(components);
+  for (let index = 0; index < components; index++) {
+    const candidate = Number(source[index] ?? source[0] ?? 0);
+    out[index] = Number.isFinite(candidate) ? candidate : 0;
   }
-  for (const child of Object.values(value)) {
-    if (child !== value) reportLottieExpression(child, context);
-  }
+  return out;
 }
 
 function applyDisplaySample(target: Node2D, path: Node2DAnimationPath, sample: readonly number[]): void {
@@ -1037,18 +837,14 @@ function isValidLottieDocument(document: Readonly<LottieDocument>): boolean {
   );
 }
 
-export function lottieNumericValue(value: unknown, components: number): number[] {
-  const source = Array.isArray(value) ? value : [value];
-  const out = new Array<number>(components);
-  for (let index = 0; index < components; index++) {
-    const candidate = Number(source[index] ?? source[0] ?? 0);
-    out[index] = Number.isFinite(candidate) ? candidate : 0;
-  }
-  return out;
-}
-
-export function lottiePrecompositionLayerReader(context: LottieLayerContext): void {
-  appendLottiePrecomposition(context.container, context.layer, context.import);
+export function lottieRgba(color: readonly number[]): number {
+  return (
+    ((Math.round(lottieClamp(color[0] ?? 0, 0, 1) * 255) << 24) |
+      (Math.round(lottieClamp(color[1] ?? 0, 0, 1) * 255) << 16) |
+      (Math.round(lottieClamp(color[2] ?? 0, 0, 1) * 255) << 8) |
+      0xff) >>>
+    0
+  );
 }
 
 function isSeparatedPosition(property: Readonly<LottiePositionProperty> | undefined): property is Readonly<{
@@ -1094,51 +890,13 @@ function frameToSeconds(frame: number, context: Readonly<LottieImportContext>): 
   return (context.frameOffset + frame * context.frameScale - context.document.ip) / context.document.fr;
 }
 
-function isImageAsset(asset: Readonly<LottieAsset>): asset is Readonly<LottieImageAsset> {
-  return 'p' in asset;
-}
-
-function isPrecompositionAsset(asset: Readonly<LottieAsset>): asset is Readonly<LottiePrecompositionAsset> {
-  return 'layers' in asset;
-}
-
-function createLottieTextFormat(document: Readonly<LottieTextDocument>) {
-  const color = document.fc ?? [0, 0, 0];
-  return {
-    align: document.j === 1 ? ('right' as const) : document.j === 2 ? ('center' as const) : ('left' as const),
-    color: packColor(color[0] ?? 0, color[1] ?? 0, color[2] ?? 0, 1),
-    font: document.f,
-    leading: document.lh,
-    letterSpacing: document.tr,
-    size: document.s,
-  };
-}
-
-export function lottieRgba(color: readonly number[]): number {
-  return (
-    ((Math.round(lottieClamp(color[0] ?? 0, 0, 1) * 255) << 24) |
-      (Math.round(lottieClamp(color[1] ?? 0, 0, 1) * 255) << 16) |
-      (Math.round(lottieClamp(color[2] ?? 0, 0, 1) * 255) << 8) |
-      0xff) >>>
-    0
-  );
-}
-
-function parseHexColor(value: string): number {
-  const parsed = Number.parseInt(value.replace(/^#/, ''), 16);
-  return Number.isFinite(parsed) ? (((parsed & 0xffffff) << 8) | 0xff) >>> 0 : 0x000000ff;
-}
-
-export function lottieShapeLayerReader(context: LottieLayerContext): void {
-  appendLottieShapeItems(context.container, context.layer.shapes ?? [], context.import);
-}
-
-export function lottieSolidLayerReader(context: LottieLayerContext): void {
-  appendLottieSolid(context.container, context.layer);
-}
-
-export function lottieTextLayerReader(context: LottieLayerContext): void {
-  appendLottieText(context.container, context.layer, context.import);
+export function reportLottieDrop(
+  context: Readonly<LottieImportContext>,
+  kind: string,
+  origin: string,
+  detail?: Record<string, string | number>,
+): void {
+  reportImportDiagnostic(context.diagnostics, ImportDiagnosticSeverity.Drop, kind, origin, detail);
 }
 
 const _sampleScratch = new Array<number>(256).fill(0);
@@ -1170,44 +928,14 @@ const _lottieAdvancedBlendModes = new Map<number, string>([
   [15, AdvancedBlendMode.Luminosity],
 ]);
 
-export function reportLottieDrop(
-  context: Readonly<LottieImportContext>,
-  kind: string,
-  origin: string,
-  detail?: Record<string, string | number>,
-): void {
-  reportImportDiagnostic(context.diagnostics, ImportDiagnosticSeverity.Drop, kind, origin, detail);
-}
-
-// ★ THESE TWO STAYED WITH THE SHAPE RENDERER, NOT WITH THE GRADIENT ITEM THAT PRODUCES THE PAINT.
-// `renderLottieShapeState` switches on `paint.kind`, so it names the gradient renderers whether or not a gradient
-// item was ever read — the same config-gated-branch shape the geometry switches had, one level up. Closing it needs
-// the paint to carry its own renderer or the renderer to dispatch through a registry, which changes the LottiePaint
-// contract; reported rather than taken here. The consequence is honest: omitting the gradient ITEMS saves their
-// colour-stop reading and their matrix maths, but not these two calls into the shape.
-function appendLottieGradientFill(shape: Shape, paint: LottieGradientPaint): void {
-  const gradient = parseLottieGradient(paint.values, paint.count, paint.opacity);
-  appendShapeBeginGradientFill(
-    shape,
-    paint.shape === 2 ? 'radial' : 'linear',
-    gradient.colors,
-    gradient.alphas,
-    gradient.ratios,
-    createLottieGradientMatrix(paint.start, paint.end),
-  );
-}
-
-function appendLottieGradientStroke(shape: Shape, paint: LottieGradientPaint): void {
-  const gradient = parseLottieGradient(paint.values, paint.count, paint.opacity);
-  appendShapeLineStyle(shape, paint.width, 0x000000ff, 1, false, 'normal', paint.caps, paint.joints, paint.miterLimit);
-  appendShapeLineGradientStyle(
-    shape,
-    paint.shape === 2 ? 'radial' : 'linear',
-    gradient.colors,
-    gradient.alphas,
-    gradient.ratios,
-    createLottieGradientMatrix(paint.start, paint.end),
-  );
+export function reportLottieExpression(value: unknown, context: LottieImportContext): void {
+  if (value === null || typeof value !== 'object') return;
+  if ('x' in value && typeof value.x === 'string') {
+    reportLottieSkip(context, 'lottie.unsupported-expression', 'reportLottieExpression');
+  }
+  for (const child of Object.values(value)) {
+    if (child !== value) reportLottieExpression(child, context);
+  }
 }
 
 export function reportLottieSkip(

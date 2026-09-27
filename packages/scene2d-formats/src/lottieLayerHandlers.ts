@@ -1,40 +1,24 @@
-import type { LottieLayerContext, LottieLayerHandler, LottieRegistry } from '@flighthq/types/contract';
+import type { LottieLayerHandler, LottieRegistry } from '@flighthq/types/contract';
 import { LottieLayerKind } from '@flighthq/types/contract';
 
-import {
-  lottieImageLayerReader,
-  lottieNullLayerReader,
-  lottiePrecompositionLayerReader,
-  lottieShapeLayerReader,
-  lottieSolidLayerReader,
-  lottieTextLayerReader,
-} from './lottieDocument.ts';
+import { lottieImageLayerHandler } from './lottieImageLayer.ts';
+import { lottieNullLayerHandler } from './lottieNullLayer.ts';
+import { lottiePrecompositionLayerHandler } from './lottiePrecompositionLayer.ts';
 import { registerLottieLayerHandler } from './lottieRegistry.ts';
+import { lottieShapeLayerHandler } from './lottieShapeLayer.ts';
+import { lottieSolidLayerHandler } from './lottieSolidLayer.ts';
+import { lottieTextLayerHandler } from './lottieTextLayer.ts';
 
-export function lottieImageLayerHandler(context: LottieLayerContext): void {
-  lottieImageLayerReader(context);
-}
-
-export function lottieNullLayerHandler(context: LottieLayerContext): void {
-  lottieNullLayerReader(context);
-}
-
-export function lottiePrecompositionLayerHandler(context: LottieLayerContext): void {
-  lottiePrecompositionLayerReader(context);
-}
-
-export function lottieShapeLayerHandler(context: LottieLayerContext): void {
-  lottieShapeLayerReader(context);
-}
-
-export function lottieSolidLayerHandler(context: LottieLayerContext): void {
-  lottieSolidLayerReader(context);
-}
-
-export function lottieTextLayerHandler(context: LottieLayerContext): void {
-  lottieTextLayerReader(context);
-}
-
+/**
+ * The layer family: every handler Flight reads a Lottie layer with, and the registrar that installs them all.
+ *
+ * ★ THIS FILE IS THE PRESET AND NOTHING ELSE. Each handler now lives in the module that owns its interpretation, so
+ * naming one handler links one layer kind while importing THIS module links all six — the sprite and texture code for
+ * images, the text label for text, and the whole shape render stack. It used to hold six one-line shims into readers
+ * retained in the document core, which meant a caller who wanted null layers alone still linked every one of them.
+ *
+ * Nothing here registers itself. `registerLottieLayerHandlers` is the explicit step a zero-config caller takes.
+ */
 export function registerLottieLayerHandlers(registry: LottieRegistry): void {
   registerLottieLayerHandler(registry, LottieLayerKind.Precomposition, lottiePrecompositionLayerHandler);
   registerLottieLayerHandler(registry, LottieLayerKind.Solid, lottieSolidLayerHandler);

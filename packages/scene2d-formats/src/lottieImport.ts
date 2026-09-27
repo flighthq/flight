@@ -15,18 +15,16 @@ import {
   lottieGradientFillShapeItemHandler,
   lottieGradientStrokeShapeItemHandler,
 } from './lottieGradientShapeItems.ts';
-import {
-  lottieImageLayerHandler,
-  lottieNullLayerHandler,
-  lottiePrecompositionLayerHandler,
-  lottieShapeLayerHandler,
-  lottieSolidLayerHandler,
-  lottieTextLayerHandler,
-} from './lottieLayerHandlers.ts';
+import { lottieImageLayerHandler } from './lottieImageLayer.ts';
+import { lottieNullLayerHandler } from './lottieNullLayer.ts';
 import { lottiePathShapeItemHandler } from './lottiePathShapeItem.ts';
 import { lottiePolystarShapeItemHandler } from './lottiePolystarShapeItem.ts';
+import { lottiePrecompositionLayerHandler } from './lottiePrecompositionLayer.ts';
 import { lottieRectangleShapeItemHandler } from './lottieRectangleShapeItem.ts';
+import { lottieShapeLayerHandler } from './lottieShapeLayer.ts';
+import { lottieSolidLayerHandler } from './lottieSolidLayer.ts';
 import { lottieStrokeShapeItemHandler } from './lottieStrokeShapeItem.ts';
+import { lottieTextLayerHandler } from './lottieTextLayer.ts';
 import { lottieTrimPathShapeItemHandler } from './lottieTrimPathShapeItem.ts';
 
 /**

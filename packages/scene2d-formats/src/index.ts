@@ -2,7 +2,13 @@ export { collectLottieCounts } from './lottieCounts.ts';
 export { applyAnimationClipToLottieDocument } from './lottieDocument.ts';
 export { createScene2DFromLottieDocument } from './lottieImport.ts';
 export { registerAllLottieHandlers } from './lottieHandlers.ts';
-export * from './lottieLayerHandlers.ts';
+export { lottieImageLayerHandler } from './lottieImageLayer.ts';
+export { lottieAllLayerHandlers, registerLottieLayerHandlers } from './lottieLayerHandlers.ts';
+export { lottieNullLayerHandler } from './lottieNullLayer.ts';
+export { lottiePrecompositionLayerHandler } from './lottiePrecompositionLayer.ts';
+export { lottieShapeLayerHandler } from './lottieShapeLayer.ts';
+export { lottieSolidLayerHandler } from './lottieSolidLayer.ts';
+export { lottieTextLayerHandler } from './lottieTextLayer.ts';
 export {
   createLottieRegistry,
   getLottieLayerHandler,
@@ -50,4 +56,3 @@ export {
   unregisterSvgElementHandler,
 } from './svgRegistry.ts';
 export { isReadableSvg, parseSvgRequirements, SVG_REQUIREMENT_KEY_NAMESPACE } from './svgRequirements.ts';
-export * from './lottieImport.ts';

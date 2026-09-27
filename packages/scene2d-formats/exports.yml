@@ -1,37 +1,31 @@
 # scene2d-formats: exports where the shared classifier gets it wrong.
 
 protected:
+  - animatedLottieTestScalar
+  - animatedLottieTestVector
+  - appendLottieLayers
+  - appendLottieShapePathChannels
+  - applyLottieShapeDirection
+  - applyLottieTransform
   - applyRiveArtboardHandlers
-  - lottieEllipseShapeItemReader
-  - lottieFillShapeItemReader
-  - lottieGradientFillShapeItemReader
-  - lottieGradientStrokeShapeItemReader
-  - lottieImageLayerReader
-  - lottieNullLayerReader
-  - lottiePathShapeItemReader
-  - lottiePolystarShapeItemReader
-  - lottiePrecompositionLayerReader
-  - lottieRectangleShapeItemReader
-  - lottieShapeLayerReader
-  - lottieSolidLayerReader
-  - lottieStrokeShapeItemReader
-  - lottieTextLayerReader
-  - lottieTrimPathShapeItemReader
-  - svgContainerElementReader
-  - svgGeometryElementReader
-  - svgImageElementReader
-  - svgTextElementReader
-  - svgUseElementReader
   - applyRiveClipping
   - applyRiveDocumentHandlers
   - applyRiveDrawOrder
   - applyRiveSolo
+  - bindMutableLottieNumericProperty
+  - createLottieBezierPath
+  - createLottieGradientMatrix
+  - createLottieTestDocument
   - createRiveArtboardImportContext
   - createRiveDocumentImportContext
   - createRiveFileAssets
   - createRiveLayoutImports
   - createRiveSkeleton2D
   - createRiveStateMachines
+  - createScene2DFromLottieDocumentWithRegistry
+  - findLottieTestNodeByKind
+  - findLottieTestNodeByName
+  - flattenLottieShapePath
   - getRiveCoreObjectHandler
   - importRiveCoreObjectAsData
   - importRiveImageComponent
@@ -42,9 +36,35 @@ protected:
   - importRiveShapeComponent
   - importRiveSoloComponent
   - importRiveTextComponent
+  - initialLottieValue
+  - interpolateLottieGradientOpacity
+  - isAnimatedLottieProperty
+  - lottieClamp
+  - lottieDegreesToRadians
+  - lottieEllipseShapeItemHandler
+  - lottieFillShapeItemHandler
+  - lottieGradientFillShapeItemHandler
+  - lottieGradientStrokeShapeItemHandler
+  - lottieNumericValue
+  - lottiePathShapeItemHandler
+  - lottiePolystarShapeItemHandler
+  - lottieRectangleShapeItemHandler
+  - lottieRgba
+  - lottieStrokeShapeItemHandler
+  - lottieTestShapeLayer
+  - lottieTestSquarePath
+  - lottieTrimPathShapeItemHandler
+  - mapLottieLineCap
+  - mapLottieLineJoin
+  - parseLottieGradient
   - rebuildRiveShapes
+  - reportLottieDrop
+  - reportLottieExpression
+  - reportLottieSkip
   - svgContainerElementReader
   - svgGeometryElementReader
   - svgImageElementReader
   - svgTextElementReader
   - svgUseElementReader
+  - toLottieShapePath
+  - unflattenLottieShapePath

@@ -1,25 +1,17 @@
-import type { LottieLayerHandler, LottieLayerKind } from '@flighthq/types/contract';
 import { LottieLayerKind as Kind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import {
-  lottieAllLayerHandlers,
-  lottieImageLayerHandler,
-  lottieNullLayerHandler,
-  lottiePrecompositionLayerHandler,
-  lottieShapeLayerHandler,
-  lottieSolidLayerHandler,
-  lottieTextLayerHandler,
-  registerLottieLayerHandlers,
-} from './lottieLayerHandlers.ts';
-import { createLottieRegistry, getLottieLayerHandler } from './lottieRegistry.ts';
+import { lottieImageLayerHandler } from './lottieImageLayer.ts';
+import { lottieAllLayerHandlers, registerLottieLayerHandlers } from './lottieLayerHandlers.ts';
+import { lottieNullLayerHandler } from './lottieNullLayer.ts';
+import { lottiePrecompositionLayerHandler } from './lottiePrecompositionLayer.ts';
+import { createLottieRegistry } from './lottieRegistry.ts';
+import { lottieShapeLayerHandler } from './lottieShapeLayer.ts';
+import { lottieSolidLayerHandler } from './lottieSolidLayer.ts';
+import { lottieTextLayerHandler } from './lottieTextLayer.ts';
 
-function expectRegisteredLayer(kind: LottieLayerKind, handler: LottieLayerHandler): void {
-  const registry = createLottieRegistry();
-  registerLottieLayerHandlers(registry);
-  expect(getLottieLayerHandler(registry, kind)).toBe(handler);
-}
-
+// Each handler's own test asserts that the preset installs it for its kind. What is left here is what only the family
+// can answer: that the family is exactly these six and that installing it touches no other registry.
 describe('lottieAllLayerHandlers', () => {
   it('contains every built-in layer handler', () => {
     expect(lottieAllLayerHandlers).toContain(lottieImageLayerHandler);
@@ -29,42 +21,6 @@ describe('lottieAllLayerHandlers', () => {
     expect(lottieAllLayerHandlers).toContain(lottieSolidLayerHandler);
     expect(lottieAllLayerHandlers).toContain(lottieTextLayerHandler);
     expect(lottieAllLayerHandlers).toHaveLength(6);
-  });
-});
-
-describe('lottieImageLayerHandler', () => {
-  it('is the built-in Image layer handler', () => {
-    expectRegisteredLayer(Kind.Image, lottieImageLayerHandler);
-  });
-});
-
-describe('lottieNullLayerHandler', () => {
-  it('is the built-in Null layer handler', () => {
-    expectRegisteredLayer(Kind.Null, lottieNullLayerHandler);
-  });
-});
-
-describe('lottiePrecompositionLayerHandler', () => {
-  it('is the built-in Precomposition layer handler', () => {
-    expectRegisteredLayer(Kind.Precomposition, lottiePrecompositionLayerHandler);
-  });
-});
-
-describe('lottieShapeLayerHandler', () => {
-  it('is the built-in Shape layer handler', () => {
-    expectRegisteredLayer(Kind.Shape, lottieShapeLayerHandler);
-  });
-});
-
-describe('lottieSolidLayerHandler', () => {
-  it('is the built-in Solid layer handler', () => {
-    expectRegisteredLayer(Kind.Solid, lottieSolidLayerHandler);
-  });
-});
-
-describe('lottieTextLayerHandler', () => {
-  it('is the built-in Text layer handler', () => {
-    expectRegisteredLayer(Kind.Text, lottieTextLayerHandler);
   });
 });
 
