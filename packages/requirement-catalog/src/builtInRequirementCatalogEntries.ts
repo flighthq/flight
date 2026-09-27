@@ -3180,6 +3180,41 @@ export const BUILT_IN_REQUIREMENT_DISPOSITIONS: readonly RequirementDisposition[
   {
     backend: 'canvas',
     facet: 'document.format',
+    kind: 'gltf.Mesh',
+    reason:
+      'the core parse always reads it: meshes, their accessors, and materials are what make the file a model, so there is nothing to opt out of',
+  },
+  {
+    backend: 'dom',
+    facet: 'document.format',
+    kind: 'gltf.Mesh',
+    reason:
+      'the core parse always reads it: meshes, their accessors, and materials are what make the file a model, so there is nothing to opt out of',
+  },
+  {
+    backend: 'gl',
+    facet: 'document.format',
+    kind: 'gltf.Mesh',
+    reason:
+      'the core parse always reads it: meshes, their accessors, and materials are what make the file a model, so there is nothing to opt out of',
+  },
+  {
+    backend: 'parser',
+    facet: 'document.format',
+    kind: 'gltf.Mesh',
+    reason:
+      'the core parse always reads it: meshes, their accessors, and materials are what make the file a model, so there is nothing to opt out of',
+  },
+  {
+    backend: 'wgpu',
+    facet: 'document.format',
+    kind: 'gltf.Mesh',
+    reason:
+      'the core parse always reads it: meshes, their accessors, and materials are what make the file a model, so there is nothing to opt out of',
+  },
+  {
+    backend: 'canvas',
+    facet: 'document.format',
     kind: 'md2.Mesh',
     reason:
       'the core parse always reads it: the header, triangles, texcoords and frame 0 are what make the file a model, so there is nothing to opt out of',

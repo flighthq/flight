@@ -1,5 +1,6 @@
 import {
   COLLADA_FEATURE_ELEMENTS,
+  GLTF_FEATURE_NAMES,
   getThreeDsFeatureNames,
   MD2_FEATURE_NAMES,
   MD5_ANIM_FEATURE_NAMES,
@@ -15,7 +16,7 @@ import {
 } from '@flighthq/types/contract';
 
 import { ALWAYS_READ_FORMAT_FEATURES, buildRequirementDispositions } from './catalog-dispositions.ts';
-import { buildRequirementCatalogRows, CATALOG_PARSER_BACKEND } from './catalog-rows.ts';
+import { buildRequirementCatalogRows, CATALOG_PARSER_BACKEND, GLTF_EXTENSION_HANDLERS } from './catalog-rows.ts';
 
 // Every `document.format` feature each analyzer can emit, per namespace. This is the POPULATION the gate below
 // partitions, and it comes from each format package's own vocabulary rather than from a fixture: a fixture
@@ -23,6 +24,7 @@ import { buildRequirementCatalogRows, CATALOG_PARSER_BACKEND } from './catalog-r
 const ANALYZER_FEATURES: ReadonlyMap<string, readonly string[]> = new Map([
   ['3ds', getThreeDsFeatureNames()],
   ['dae', [...COLLADA_FEATURE_ELEMENTS.keys()]],
+  ['gltf', [...GLTF_FEATURE_NAMES, ...[...GLTF_EXTENSION_HANDLERS.values()].map((handler) => handler.kind)]],
   ['md2', MD2_FEATURE_NAMES],
   // Both MD5 files share one requirement namespace, so their vocabularies combine.
   ['md5', [...MD5_MESH_FEATURE_NAMES, ...MD5_ANIM_FEATURE_NAMES]],
