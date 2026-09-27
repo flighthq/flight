@@ -1,0 +1,9 @@
+{
+  "name": "lottie-import-gradient-stroke",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "lottie-import-gradient-stroke"
+  }
+}

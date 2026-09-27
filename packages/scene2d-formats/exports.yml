@@ -3,8 +3,10 @@
 protected:
   - animatedLottieTestScalar
   - animatedLottieTestVector
+  - appendLottieDashedShapePaths
   - appendLottieLayers
   - appendLottieShapePathChannels
+  - appendLottieShapePaths
   - applyLottieMaskFamily
   - applyLottieShapeDirection
   - applyLottieTransform

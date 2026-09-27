@@ -103,6 +103,17 @@ export interface LottieGradientPaint {
 
 export type LottiePaint = LottieFillPaint | LottieGradientPaint | LottieStrokePaint;
 
+/**
+ * How one paint draws the group's paths.
+ *
+ * ★ THE PAINTER IS THE ITEM'S, NOT THE SHAPE LAYER'S. The layer used to hold a `switch` over `paint.kind` with a branch
+ * per paint — solid fill, solid stroke, gradient fill, gradient stroke — which meant registering the fill item alone
+ * still linked the gradient builders, because the switch named them. Each item now pushes the closure that draws its
+ * own paint, so the layer calls painters in order and names none of them, and a paint nobody registered is a painter
+ * nobody wrote. `LottiePaint` stays the plain serializable description of what is drawn; this is the doing of it.
+ */
+export type LottieShapePainter = (shape: Shape, paths: readonly Path[]) => void;
+
 export interface LottieImportContext {
   advancedBlends: LottieAdvancedBlend[];
   assets: Map<string, LottieAsset>;
@@ -151,7 +162,7 @@ export interface LottieMutableAnimationTarget {
 export interface LottieShapeItemContext {
   import: LottieImportContext;
   item: Readonly<LottieShapeItem>;
-  paints: LottiePaint[];
+  painters: LottieShapePainter[];
   paths: Path[];
   rerender: () => void;
   shape: Shape;

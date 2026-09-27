@@ -21,6 +21,7 @@ export * from './lottieRequirements.ts';
 export * from './lottieShapeGeometry.ts';
 export * from './lottieShapeItemHandlers.ts';
 export * from './lottieShapeLayer.ts';
+export * from './lottieShapePaint.ts';
 export * from './lottieShapePathChannels.ts';
 export * from './lottieSolidLayer.ts';
 export * from './lottieStrokeShapeItem.ts';
