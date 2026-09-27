@@ -194,6 +194,8 @@ describe('DEFAULT_CONTENT_ANALYZERS', () => {
       '.awd2',
       '.dae',
       '.fnt',
+      '.glb',
+      '.gltf',
       '.json',
       '.md2',
       '.md5anim',
