@@ -9,10 +9,18 @@ import {
   ImportDiagnosticSeverity,
   RichTextKind,
   ShapeKind,
+  SvgElementKind,
   TextLabelKind,
 } from '@flighthq/types/contract';
 
 import { createScene2DFromSvgDocument } from './svgDocument.ts';
+import {
+  svgContainerElementHandler,
+  svgGeometryElementHandler,
+  svgImageElementHandler,
+  svgTextElementHandler,
+  svgUseElementHandler,
+} from './svgElementHandlers.ts';
 import { createReadyImageResourceForTest } from './testHelper.ts';
 
 describe('createScene2DFromSvgDocument', () => {
@@ -720,6 +728,37 @@ describe('createScene2DFromSvgDocument', () => {
       origin: 'reportRemainingUnsupportedSvgElements',
       severity: 'Skip',
     });
+  });
+
+  it('produces identical output with handler wrappers and zero-config reader defaults', () => {
+    const svg = `
+      <svg>
+        <defs><rect id="r" width="5" height="5" fill="#0f0"/></defs>
+        <rect x="1" y="2" width="30" height="40" fill="#ff0000" />
+        <g transform="translate(5,6)">
+          <circle cx="10" cy="10" r="4" fill="#00ff00" />
+        </g>
+        <text font-size="12">Hello</text>
+        <use href="#r" x="50"/>
+      </svg>
+    `;
+    const defaultResult = createScene2DFromSvgDocument(svg);
+    const handlerResult = createScene2DFromSvgDocument(svg, undefined, {
+      elementHandlers: [
+        { handle: svgContainerElementHandler, kind: SvgElementKind.Container },
+        { handle: svgGeometryElementHandler, kind: SvgElementKind.Geometry },
+        { handle: svgImageElementHandler, kind: SvgElementKind.Image },
+        { handle: svgTextElementHandler, kind: SvgElementKind.Text },
+        { handle: svgUseElementHandler, kind: SvgElementKind.Use },
+      ],
+    });
+    expect(JSON.parse(JSON.stringify(handlerResult))).toEqual(JSON.parse(JSON.stringify(defaultResult)));
+  });
+
+  it('omits elements when their handler is not registered', () => {
+    const svg = '<svg><rect width="10" height="10" fill="#f00"/><text font-size="10">Hi</text></svg>';
+    const result = createScene2DFromSvgDocument(svg, undefined, { elementHandlers: [] });
+    expect(getNodeChildCount(result)).toBe(0);
   });
 });
 
