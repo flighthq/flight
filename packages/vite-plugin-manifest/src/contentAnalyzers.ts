@@ -14,6 +14,7 @@ import {
   collectGlbFeatures,
   collectGltfFeatures,
   collectMd2Features,
+  collectStlFeatures,
   collectObjMaterialLibraryReferences,
   collectThreeDsChunkCounts,
   isReadableCollada,
@@ -24,6 +25,7 @@ import {
   parseMd5AnimRequirements,
   parseMd5MeshRequirements,
   parseObjRequirements,
+  parseStlRequirements,
   parseThreeDsRequirements,
 } from '@flighthq/scene3d-formats/contract';
 import {
@@ -176,6 +178,13 @@ export const DEFAULT_CONTENT_ANALYZERS: Readonly<Record<string, ContentAnalyzer>
   '.riv': {
     analyze: (source) => parseRiveRequirements(source),
     isReadable: (source) => isReadableRive(source),
+  },
+  // ★ THE READABILITY PROBE IS THE CENSUS, WHICH IS WHERE THE BOUNDS CHECK LIVES. A truncated binary STL and a
+  // text file that merely contains the word `solid` both answer null there, so neither reaches the plugin as a
+  // document that requires nothing.
+  '.stl': {
+    analyze: (source) => parseStlRequirements(source),
+    isReadable: (source) => collectStlFeatures(source) !== null,
   },
   '.svg': {
     analyze: (source) => parseSvgRequirements(decodeUTF8(source)),

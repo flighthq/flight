@@ -89,6 +89,12 @@ export const ALWAYS_READ_FORMAT_FEATURES: readonly { feature: string; namespace:
     namespace: 'obj',
     reason: 'read by the core parse as a sibling mesh topology, with no separable handler',
   },
+  {
+    feature: 'Mesh',
+    namespace: 'stl',
+    reason:
+      'STL is a list of triangles and nothing else, so its parser has no separable family: there is no subset of the format a caller could decline and still be reading STL',
+  },
 ];
 
 /**

@@ -42,6 +42,7 @@ import { tilemapAllMapFormats, tilemapAllTilesetFormats } from '@flighthq/tilema
 import * as tilemapFormats from '@flighthq/tilemap-formats';
 import { RequirementFacet } from '@flighthq/types/contract';
 
+import { ALWAYS_READ_FORMAT_FEATURES } from './catalog-dispositions.ts';
 import {
   AWD2_BLOCK_HANDLERS,
   BITMAP_FONT_FORMAT_DESCRIPTORS,
@@ -171,12 +172,18 @@ describe('buildRequirementCatalogRows', () => {
         `${kind} is in no format's namespace`,
       ).toBe(true);
     }
-    // Every namespace must actually be present, or the clause above passes vacuously for the formats
-    // that are missing — which is precisely how a format silently drops out of the catalog.
+    // Every namespace must be ACCOUNTED FOR, or the clause above passes vacuously for the formats that are
+    // missing — which is precisely how a format silently drops out of the catalog. Accounted for means rows OR a
+    // recorded decline: STL is a list of triangles with no separable family, so it has no rows by design and its
+    // one feature is declared always-read in the dispositions instead. Demanding rows would make the honest
+    // answer fail the gate, and demanding nothing would let a real drop through, so the disjunction is the
+    // invariant — and `catalog-dispositions.test.ts` separately proves each declined feature is genuinely
+    // unclaimed and carries a reason.
+    const declinedNamespaces = new Set(ALWAYS_READ_FORMAT_FEATURES.map(({ namespace }) => `${namespace}.`));
     for (const namespace of namespaces) {
       expect(
-        kinds.some((kind) => kind.startsWith(namespace)),
-        `no ${namespace} rows`,
+        kinds.some((kind) => kind.startsWith(namespace)) || declinedNamespaces.has(namespace),
+        `${namespace} has neither catalog rows nor a recorded decline`,
       ).toBe(true);
     }
     // And the sweep itself must have found something in every module, or BOTH loops above pass on an empty list —

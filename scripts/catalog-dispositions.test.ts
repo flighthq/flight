@@ -7,6 +7,7 @@ import {
   MD5_MESH_FEATURE_NAMES,
   OBJ_FEATURE_DIRECTIVES,
   OBJ_MATERIAL_FEATURE,
+  STL_MESH_FEATURE,
 } from '@flighthq/scene3d-formats/contract';
 import {
   OBJ_MATERIAL_BLINN_PHONG_FEATURE,
@@ -37,6 +38,9 @@ const ANALYZER_FEATURES: ReadonlyMap<string, readonly string[]> = new Map([
     ],
   ],
   ['spine-binary', [...Object.values(SpineBinarySectionKind), ...Object.values(SpineBinaryTimelineKind)]],
+  // STL's whole vocabulary is one feature, read off the format package rather than written here so the gate
+  // cannot disagree with the analyzer about what STL can require.
+  ['stl', [STL_MESH_FEATURE]],
 ]);
 
 describe('ALWAYS_READ_FORMAT_FEATURES', () => {

@@ -42,6 +42,7 @@
     "@flighthq/camera": "*",
     "@flighthq/color": "*",
     "@flighthq/compression": "*",
+    "@flighthq/encoding": "*",
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/image": "*",

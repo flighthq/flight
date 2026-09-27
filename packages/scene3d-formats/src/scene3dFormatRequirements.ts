@@ -8,4 +8,6 @@ export const MD5_REQUIREMENT_KEY_NAMESPACE = 'md5';
 
 export const OBJ_REQUIREMENT_KEY_NAMESPACE = 'obj';
 
+export const STL_REQUIREMENT_KEY_NAMESPACE = 'stl';
+
 export const THREE_DS_REQUIREMENT_KEY_NAMESPACE = '3ds';
