@@ -43,3 +43,8 @@ protected:
   - importRiveSoloComponent
   - importRiveTextComponent
   - rebuildRiveShapes
+  - svgContainerElementReader
+  - svgGeometryElementReader
+  - svgImageElementReader
+  - svgTextElementReader
+  - svgUseElementReader
