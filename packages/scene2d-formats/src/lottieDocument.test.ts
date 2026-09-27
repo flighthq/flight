@@ -35,6 +35,30 @@ import {
 } from './lottieTestFixtures.ts';
 import { createReadyImageResourceForTest } from './testHelper.ts';
 
+describe('appendLottieLayers', () => {
+  // ★ THE WALK IS WHERE THE FORMAT'S ORDER MEETS FLIGHT'S. Bodymovin writes the topmost layer first; Flight draws
+  // children back to front, so the first layer in the document has to become the LAST child. Both assertions read the
+  // built tree rather than the walk's internals, because the order is the whole observable contract.
+  it('reverses document order so the first layer draws on top, and reparents by layer index', () => {
+    const stacked = createScene2DFromLottieDocument(
+      createLottieTestDocument([
+        { ind: 1, ip: 0, nm: 'top', op: 60, ty: 3 },
+        { ind: 2, ip: 0, nm: 'bottom', op: 60, ty: 3 },
+      ]),
+    );
+    expect(childNames(stacked.root)).toEqual(['bottom', 'top']);
+
+    const parented = createScene2DFromLottieDocument(
+      createLottieTestDocument([
+        { ind: 1, ip: 0, nm: 'child', op: 60, parent: 2, ty: 3 },
+        { ind: 2, ip: 0, nm: 'parent', op: 60, ty: 3 },
+      ]),
+    );
+    expect(childNames(parented.root)).toEqual(['parent']);
+    expect(childNames(getNodeChildAt(parented.root, 0) as Node2D)).toEqual(['child']);
+  });
+});
+
 describe('appendLottieShapePathChannels', () => {
   // ★ THE ONE PIECE OF THE PATH ITEM THAT STAYED IN THE CORE, because it reaches the core's private track machinery.
   // What it must do is produce a channel per animated path, driving the caller's rebuild — asserted through the
@@ -69,6 +93,20 @@ describe('applyAnimationClipToLottieDocument', () => {
     );
     applyAnimationClipToLottieDocument(result.clip, 0.5);
     expect(findLottieTestNodeByName(result.root, 'node')).toMatchObject({ x: 5, y: 10 });
+  });
+});
+
+describe('applyLottieTransform', () => {
+  // Shared by layers and by a shape group's own `tr` item, which is why it is the core's and not a layer's. Rotation
+  // stays in DEGREES here: Lottie authors degrees and `node.rotation` is the authoring layer, so no conversion is
+  // correct at this seam — `lottieDegreesToRadians` exists for the places that do need radians.
+  it('writes position and rotation onto the node, rotation still in degrees', () => {
+    const result = createScene2DFromLottieDocument(
+      createLottieTestDocument([
+        { ind: 1, ip: 0, ks: { p: { a: 0, k: [12, 34] }, r: { a: 0, k: 90 } }, nm: 'placed', op: 60, ty: 3 },
+      ]),
+    );
+    expect(findLottieTestNodeByName(result.root, 'placed')).toMatchObject({ rotation: 90, x: 12, y: 34 });
   });
 });
 
@@ -164,35 +202,6 @@ describe('lottieDegreesToRadians', () => {
   });
 });
 
-describe('lottieImageLayerReader', () => {
-  it('creates a sprite for an image layer', () => {
-    const image = createReadyImageResourceForTest();
-    const result = createScene2DFromLottieDocument(
-      {
-        assets: [{ h: 10, id: 'img_0', p: 'test.png', u: '', w: 10 }],
-        fr: 30,
-        h: 100,
-        ip: 0,
-        layers: [{ ind: 1, ip: 0, nm: 'img', op: 60, refId: 'img_0', ty: 2 }],
-        op: 60,
-        w: 100,
-      },
-      undefined,
-      { resolveImageResource: () => image },
-    );
-    expect(findLottieTestNodeByKind(result.root, SpriteKind)).not.toBeNull();
-  });
-});
-
-describe('lottieNullLayerReader', () => {
-  it('produces an empty container', () => {
-    const result = createScene2DFromLottieDocument(
-      createLottieTestDocument([{ ind: 1, ip: 0, nm: 'null', op: 60, ty: 3 }]),
-    );
-    expect(findLottieTestNodeByName(result.root, 'null')).not.toBeNull();
-  });
-});
-
 describe('lottieNumericValue', () => {
   // ★ THE COMPONENT COUNT IS THE POINT. Lottie writes a scalar as a number OR a one-element array, and a vector as an
   // array that may be shorter than the components a reader needs. Every handler depends on getting exactly `components`
@@ -217,21 +226,6 @@ describe('lottieNumericValue', () => {
   });
 });
 
-describe('lottiePrecompositionLayerReader', () => {
-  it('resolves a precomposition asset', () => {
-    const result = createScene2DFromLottieDocument({
-      assets: [{ id: 'comp_0', layers: [{ ind: 1, ip: 0, nm: 'inner', op: 60, ty: 3 }] }],
-      fr: 30,
-      h: 100,
-      ip: 0,
-      layers: [{ ind: 1, ip: 0, nm: 'precomp', op: 60, refId: 'comp_0', ty: 0 }],
-      op: 60,
-      w: 100,
-    });
-    expect(findLottieTestNodeByName(result.root, 'inner')).not.toBeNull();
-  });
-});
-
 describe('lottieRgba', () => {
   // Lottie colours are 0..1 floats; the SDK packs RGBA into one integer with alpha in the low byte.
   it('packs unit floats into an opaque packed colour', () => {
@@ -241,46 +235,28 @@ describe('lottieRgba', () => {
   });
 });
 
-describe('lottieShapeLayerReader', () => {
-  it('creates shape items from a shape layer', () => {
-    const result = createScene2DFromLottieDocument(createLottieTestDocument([lottieTestShapeLayer(1, 'shapes')]));
-    expect(findLottieTestNodeByKind(result.root, ShapeKind)).not.toBeNull();
-  });
-});
-
-describe('lottieSolidLayerReader', () => {
-  it('creates a solid color shape', () => {
-    const result = createScene2DFromLottieDocument(
-      createLottieTestDocument([{ ind: 1, ip: 0, nm: 'solid', op: 60, sc: '#ff0000', sh: 50, sw: 50, ty: 1 }]),
-    );
-    expect(findLottieTestNodeByKind(result.root, ShapeKind)).not.toBeNull();
-  });
-});
-
-describe('lottieTextLayerReader', () => {
-  it('creates a text label', () => {
-    const result = createScene2DFromLottieDocument(
-      createLottieTestDocument([
-        {
-          ind: 1,
-          ip: 0,
-          nm: 'text',
-          op: 60,
-          t: { d: { k: [{ s: { f: 'Arial', fc: [0, 0, 0], s: 12, t: 'Hello' }, t: 0 }] } },
-          ty: 5,
-        },
-      ]),
-    );
-    expect(findLottieTestNodeByKind(result.root, TextLabelKind)).not.toBeNull();
-  });
-});
-
 describe('reportLottieDrop', () => {
   it('records a drop diagnostic a caller can read back', () => {
     const diagnostics: ImportDiagnostic[] = [];
     const result = createScene2DFromLottieDocument('{"broken":true}', diagnostics);
     expect(diagnostics.length).toBeGreaterThan(0);
     expect(result.duration).toBe(0);
+  });
+});
+
+describe('reportLottieExpression', () => {
+  // Expressions are code, not data, and Flight evaluates none of them. The walk reaches every nested object of a
+  // property, so an `x` on a transform sub-property is found — reporting it is what stops a file from appearing to
+  // import cleanly while a driven value silently holds still.
+  it('reports an expression found anywhere inside a property tree', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createScene2DFromLottieDocument(
+      createLottieTestDocument([
+        { ind: 1, ip: 0, ks: { o: { a: 0, k: 100, x: 'value*2' } }, nm: 'driven', op: 60, ty: 3 },
+      ] as unknown as LottieLayer[]),
+      diagnostics,
+    );
+    expect(diagnostics.map((entry) => entry.kind)).toContain('lottie.unsupported-expression');
   });
 });
 
@@ -327,4 +303,12 @@ function rectangleLayerWithSize(s: LottieAnimatable<number[]>): LottieLayer {
     ],
     ty: 4,
   };
+}
+
+function childNames(node: Node2D): string[] {
+  const names: string[] = [];
+  for (let index = 0; index < getNodeChildCount(node); index++) {
+    names.push((getNodeChildAt(node, index) as Node2D).name ?? '');
+  }
+  return names;
 }
