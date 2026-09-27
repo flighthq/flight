@@ -3432,4 +3432,39 @@ export const BUILT_IN_REQUIREMENT_DISPOSITIONS: readonly RequirementDisposition[
     kind: 'obj.Point',
     reason: 'read by the core parse as a sibling mesh topology, with no separable handler',
   },
+  {
+    backend: 'canvas',
+    facet: 'document.format',
+    kind: 'stl.Mesh',
+    reason:
+      'STL is a list of triangles and nothing else, so its parser has no separable family: there is no subset of the format a caller could decline and still be reading STL',
+  },
+  {
+    backend: 'dom',
+    facet: 'document.format',
+    kind: 'stl.Mesh',
+    reason:
+      'STL is a list of triangles and nothing else, so its parser has no separable family: there is no subset of the format a caller could decline and still be reading STL',
+  },
+  {
+    backend: 'gl',
+    facet: 'document.format',
+    kind: 'stl.Mesh',
+    reason:
+      'STL is a list of triangles and nothing else, so its parser has no separable family: there is no subset of the format a caller could decline and still be reading STL',
+  },
+  {
+    backend: 'parser',
+    facet: 'document.format',
+    kind: 'stl.Mesh',
+    reason:
+      'STL is a list of triangles and nothing else, so its parser has no separable family: there is no subset of the format a caller could decline and still be reading STL',
+  },
+  {
+    backend: 'wgpu',
+    facet: 'document.format',
+    kind: 'stl.Mesh',
+    reason:
+      'STL is a list of triangles and nothing else, so its parser has no separable family: there is no subset of the format a caller could decline and still be reading STL',
+  },
 ];

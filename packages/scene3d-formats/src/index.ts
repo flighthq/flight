@@ -75,3 +75,6 @@ export * from './threeDsMaterialHandler.ts';
 export * from './threeDsMeshHandler.ts';
 export * from './threeDsParse.ts';
 export * from './threeDsRequirements.ts';
+export * from './stlFeatures.ts';
+export * from './stlParse.ts';
+export * from './stlRequirements.ts';

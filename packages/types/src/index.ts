@@ -694,6 +694,8 @@ export * from './SpecularGlossinessPbrMaterial.ts';
 export * from './SpineParticleSchema.ts';
 export * from './SpotLight.ts';
 export * from './Spring.ts';
+export * from './StlFeatures.ts';
+export * from './StlImportOptions.ts';
 export * from './Statechart.ts';
 export * from './StatechartSignals.ts';
 export * from './SwfDocumentImport.ts';

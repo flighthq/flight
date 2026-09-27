@@ -205,6 +205,7 @@ describe('DEFAULT_CONTENT_ANALYZERS', () => {
       '.plist',
       '.riv',
       '.skel',
+      '.stl',
       '.svg',
       '.swf',
       '.tmj',
