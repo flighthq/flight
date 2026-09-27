@@ -1,4 +1,14 @@
 import {
+  libgdxParticleFormat,
+  particleAllFormats,
+  particleDesignerParticleFormat,
+  PARTICLE_REQUIREMENT_KEY_NAMESPACE,
+  pixiParticleFormat,
+  spineParticleFormat,
+  starlingPexParticleFormat,
+  unityParticleFormat,
+} from '@flighthq/particles-formats';
+import {
   createRiveImportRegistry,
   getRiveCoreTypeName,
   lottieAllLayerHandlers,
@@ -122,6 +132,15 @@ import {
   spineJsonTransformTimelineHandler,
 } from '@flighthq/skeleton2d-formats/contract';
 import {
+  asepriteSpritesheetFormat,
+  cocosPlistSpritesheetFormat,
+  libgdxAtlasSpritesheetFormat,
+  spritesheetAllFormats,
+  SPRITESHEET_REQUIREMENT_KEY_NAMESPACE,
+  starlingSpritesheetFormat,
+  texturePackerSpritesheetFormat,
+} from '@flighthq/spritesheet-formats';
+import {
   swfControlHandler,
   swfDefineMorphShapeHandler,
   swfDefineShapeHandler,
@@ -138,6 +157,14 @@ import {
   swfVideoHandler,
 } from '@flighthq/swf';
 import { getSwfTagName, SWF_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/swf/contract';
+import {
+  asepriteTextureAtlasFormat,
+  libgdxAtlasTextureAtlasFormat,
+  starlingTextureAtlasFormat,
+  textureAtlasAllFormats,
+  TEXTURE_ATLAS_REQUIREMENT_KEY_NAMESPACE,
+  texturePackerTextureAtlasFormat,
+} from '@flighthq/textureatlas-formats';
 import type { PathBooleanKernel, RiveImportRegistry } from '@flighthq/types/contract';
 import type {
   Awd2BlockHandler,
@@ -149,12 +176,15 @@ import type {
   Md2SectionHandler,
   Md5SectionHandler,
   ObjMaterialHandler,
+  ParticleFormatDescriptor,
   RequirementCatalogEntry,
   SpineBinarySectionHandler,
   SpineBinaryTimelineHandler,
   SpineJsonSectionHandler,
   SpineJsonTimelineHandler,
+  SpritesheetFormatDescriptor,
   SwfTagHandler,
+  TextureAtlasFormatDescriptor,
   ThreeDsChunkHandler,
 } from '@flighthq/types/contract';
 import {
@@ -425,6 +455,53 @@ export const LOTTIE_SHAPE_ITEM_HANDLERS: readonly (readonly [string, LottieShape
  * implementation. Each row carries the field it belongs in, so the emitter writes two arrays and a consumer
  * spreads the result straight into `RiveImportOptions`.
  */
+/**
+ * The three detector-bearing format families, each as `[exported symbol, descriptor]`.
+ *
+ * ★ ONLY THE SYMBOL NAME IS WRITTEN HERE. The kind and the family position are READ off the descriptor and the
+ * shipped preset, so a format whose kind string changes, or whose position in the preset moves, changes these
+ * rows on that same edit. A transcribed kind would be a second copy of the format's identity, and the copy is
+ * what goes stale.
+ *
+ * These families answer `document.format` with a WHOLE FORMAT rather than a handler inside one: a spritesheet
+ * document is read by one codec end to end, where a `.dae` needs a decoder per element. That is why one row per
+ * descriptor is the complete statement for these three.
+ */
+export const PARTICLE_FORMAT_DESCRIPTORS: readonly (readonly [string, Readonly<ParticleFormatDescriptor>])[] = [
+  ['libgdxParticleFormat', libgdxParticleFormat],
+  ['particleDesignerParticleFormat', particleDesignerParticleFormat],
+  ['pixiParticleFormat', pixiParticleFormat],
+  ['spineParticleFormat', spineParticleFormat],
+  ['starlingPexParticleFormat', starlingPexParticleFormat],
+  ['unityParticleFormat', unityParticleFormat],
+];
+
+export const SPRITESHEET_FORMAT_DESCRIPTORS: readonly (readonly [string, Readonly<SpritesheetFormatDescriptor>])[] = [
+  ['asepriteSpritesheetFormat', asepriteSpritesheetFormat],
+  ['cocosPlistSpritesheetFormat', cocosPlistSpritesheetFormat],
+  ['libgdxAtlasSpritesheetFormat', libgdxAtlasSpritesheetFormat],
+  ['starlingSpritesheetFormat', starlingSpritesheetFormat],
+  ['texturePackerSpritesheetFormat', texturePackerSpritesheetFormat],
+];
+
+export const TEXTURE_ATLAS_FORMAT_DESCRIPTORS: readonly (readonly [string, Readonly<TextureAtlasFormatDescriptor>])[] =
+  [
+    ['asepriteTextureAtlasFormat', asepriteTextureAtlasFormat],
+    ['libgdxAtlasTextureAtlasFormat', libgdxAtlasTextureAtlasFormat],
+    ['starlingTextureAtlasFormat', starlingTextureAtlasFormat],
+    ['texturePackerTextureAtlasFormat', texturePackerTextureAtlasFormat],
+  ];
+
+/**
+ * The options field all three descriptor families spread into.
+ *
+ * ★ CARRIED PER ROW RATHER THAN LOOKED UP BY EXTENSION, because these three families SHARE extensions —
+ * `.json`, `.xml` and `.atlas` each belong to more than one of them, so an extension cannot name one family's
+ * field. It happens to be the same word for all three, which is exactly why relying on the extension map would
+ * look correct while being unable to express a disagreement.
+ */
+export const FORMAT_DESCRIPTOR_PARSER_FIELD = 'formats';
+
 export const RIVE_REGISTRAR_PARSER_FIELD = 'registrars';
 export const RIVE_PATH_BOOLEAN_PARSER_FIELD = 'pathBooleanRegistrars';
 
@@ -607,6 +684,42 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
         `${LOTTIE_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
         familyOrderOf(lottieAllShapeItemHandlers, handler),
         'shapeItemHandlers',
+      ),
+    );
+  }
+  // ★ THE KIND AND THE POSITION COME OFF THE DESCRIPTOR, so these loops state nothing a format could contradict.
+  // `familyOrderOf` is membership by identity: a descriptor missing from the shipped preset gets no position
+  // rather than a plausible wrong one, which is what would happen if the index were written down here.
+  for (const [symbol, descriptor] of PARTICLE_FORMAT_DESCRIPTORS) {
+    rows.push(
+      row(
+        '@flighthq/particles-formats',
+        symbol,
+        `${PARTICLE_REQUIREMENT_KEY_NAMESPACE}.${descriptor.kind}`,
+        familyOrderOf(particleAllFormats, descriptor),
+        FORMAT_DESCRIPTOR_PARSER_FIELD,
+      ),
+    );
+  }
+  for (const [symbol, descriptor] of SPRITESHEET_FORMAT_DESCRIPTORS) {
+    rows.push(
+      row(
+        '@flighthq/spritesheet-formats',
+        symbol,
+        `${SPRITESHEET_REQUIREMENT_KEY_NAMESPACE}.${descriptor.kind}`,
+        familyOrderOf(spritesheetAllFormats, descriptor),
+        FORMAT_DESCRIPTOR_PARSER_FIELD,
+      ),
+    );
+  }
+  for (const [symbol, descriptor] of TEXTURE_ATLAS_FORMAT_DESCRIPTORS) {
+    rows.push(
+      row(
+        '@flighthq/textureatlas-formats',
+        symbol,
+        `${TEXTURE_ATLAS_REQUIREMENT_KEY_NAMESPACE}.${descriptor.kind}`,
+        familyOrderOf(textureAtlasAllFormats, descriptor),
+        FORMAT_DESCRIPTOR_PARSER_FIELD,
       ),
     );
   }
