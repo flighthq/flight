@@ -9,7 +9,13 @@ import {
   BUILT_IN_REQUIREMENT_DISPOSITIONS,
   BUILT_IN_REQUIREMENT_TRANSLATIONS,
 } from '@flighthq/requirement-catalog/contract';
-import { MD2_HEADER_SIZE, MD2_MAGIC, MD2_VERSION } from '@flighthq/scene3d-formats/contract';
+import {
+  MD2_HEADER_SIZE,
+  MD2_MAGIC,
+  MD2_VERSION,
+  buildBinaryStl,
+  STL_SQUARE_FACETS,
+} from '@flighthq/scene3d-formats/contract';
 
 import { createManifestPlugin } from './manifestPlugin.ts';
 
@@ -216,10 +222,39 @@ describe('3D format content through the built-in catalog', () => {
     });
   });
 
+  describe('.stl', () => {
+    it('produces no material renderers — STL has no materials', async () => {
+      const { source } = await load3d('.stl', buildBinaryStl(STL_SQUARE_FACETS));
+      expect(source).not.toContain('materialRenderers');
+      expect(source).not.toContain('StandardPbrMaterial');
+      expect(source).not.toContain('BlinnPhongMaterial');
+      expect(source).not.toContain('UnlitMaterial');
+    });
+
+    it('does not pull animation, skeleton, or scene imports', async () => {
+      const { source } = await load3d('.stl', buildBinaryStl(STL_SQUARE_FACETS));
+      expect(source).not.toContain('animation');
+      expect(source).not.toContain('skeleton');
+      expect(source).not.toContain('scene3d-gl');
+      expect(source).not.toContain('scene3d-wgpu');
+    });
+
+    it('does not diagnose stl.Mesh — the catalog deliberately declines it', async () => {
+      const { diagnostics } = await load3d('.stl', buildBinaryStl(STL_SQUARE_FACETS));
+      expect(diagnostics.filter((d) => d.includes('stl.Mesh'))).toEqual([]);
+    });
+
+    it('reports unreadable diagnostic for bytes that are not an STL', async () => {
+      const { diagnostics } = await load3d('.stl', new Uint8Array(10));
+      expect(diagnostics.some((d) => d.includes('unreadable'))).toBe(true);
+    });
+  });
+
   describe('cross-format', () => {
     it('no format uses a coarse namespace key in translations — all are per-feature', () => {
       const coarseKeys = BUILT_IN_REQUIREMENT_TRANSLATIONS.filter(
-        (t) => t.from.facet === 'document.format' && ['3ds', 'dae', 'gltf', 'md2', 'md5', 'obj'].includes(t.from.key),
+        (t) =>
+          t.from.facet === 'document.format' && ['3ds', 'dae', 'gltf', 'md2', 'md5', 'obj', 'stl'].includes(t.from.key),
       );
       expect(coarseKeys).toEqual([]);
     });
