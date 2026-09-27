@@ -1,5 +1,13 @@
 import { getKindMapKeys, withKindMapEntry, withoutKindMapEntry } from '@flighthq/registry/contract';
-import type { Kind, TextureAtlas, TextureAtlasFormatKind, TextureAtlasParseOptions } from '@flighthq/types/contract';
+import type {
+  Kind,
+  TextureAtlas,
+  TextureAtlasFormatDescriptor,
+  TextureAtlasFormatEntry,
+  TextureAtlasFormatKind,
+  TextureAtlasImportOptions,
+  TextureAtlasParseOptions,
+} from '@flighthq/types/contract';
 import {
   TextureAtlasFormatKindAseprite,
   TextureAtlasFormatKindLibgdxAtlas,
@@ -12,26 +20,21 @@ import { parseTextureAtlasLibgdxAtlas } from './textureAtlasLibgdxParse.ts';
 import { parseTextureAtlasStarlingXml } from './textureAtlasStarlingParse.ts';
 import { parseTexturePackerAtlasJson } from './texturePackerAtlasParse.ts';
 
-// One entry per texture-atlas format: how to recognise it, and how to read it into an atlas.
-interface FormatEntry {
-  detect: (content: string) => boolean;
-  parse: (content: string, atlas: TextureAtlas, options: TextureAtlasParseOptions) => TextureAtlas;
-}
-
 interface RegisteredFormatEntry {
-  entry: FormatEntry;
+  entry: TextureAtlasFormatEntry;
   order: number;
 }
 
-// Seeds the built-in formats.
+// Seeds the built-in formats, from the full preset, so the built-in set lives in exactly one place instead of
+// being stated here and restated by anyone assembling the same set.
 //
 // Unlike the sibling registry in `@flighthq/spritesheet-formats`, insertion order here is NOT
 // load-bearing: the four detectors are mutually exclusive by construction, and
-// `describe('registry')` asserts that directly over a corpus rather than relying on a first-match
-// ordering nobody can see. The Aseprite/TexturePacker pair is the one that could overlap — both are
-// `{frames, meta}` JSON — so each detector carries the full disambiguation (the `meta.app` string,
-// falling back to Aseprite's per-frame `duration`) rather than one of them being a broad net the
-// other has to be registered ahead of.
+// `describe('textureAtlasAllFormats')` asserts that directly over a corpus rather than relying on a
+// first-match ordering nobody can see. The Aseprite/TexturePacker pair is the one that could overlap
+// — both are `{frames, meta}` JSON — so each detector carries the full disambiguation (the `meta.app`
+// string, falling back to Aseprite's per-frame `duration`) rather than one of them being a broad net
+// the other has to be registered ahead of.
 //
 // Built-ins are seeded here rather than self-registering from their own modules on import: this
 // package declares `"sideEffects": false`, so a top-level `registerTextureAtlasFormat` call in each
@@ -40,22 +43,7 @@ interface RegisteredFormatEntry {
 function getRegistry(): ReadonlyMap<Kind, RegisteredFormatEntry> {
   if (_registry !== null) return _registry;
   _registry = new Map();
-  bindTextureAtlasFormat(TextureAtlasFormatKindAseprite, {
-    detect: detectAseprite,
-    parse: (content, atlas) => parseTextureAtlasAsepriteJson(content, atlas),
-  });
-  bindTextureAtlasFormat(TextureAtlasFormatKindLibgdxAtlas, {
-    detect: detectLibgdxAtlas,
-    parse: (content, atlas) => parseTextureAtlasLibgdxAtlas(content, atlas),
-  });
-  bindTextureAtlasFormat(TextureAtlasFormatKindStarling, {
-    detect: detectStarling,
-    parse: (content, atlas) => parseTextureAtlasStarlingXml(content, atlas),
-  });
-  bindTextureAtlasFormat(TextureAtlasFormatKindTexturePacker, {
-    detect: detectTexturePacker,
-    parse: (content, atlas, options) => parseTexturePackerAtlasJson(content, atlas, options),
-  });
+  applyTextureAtlasImportOptions({ formats: textureAtlasAllFormats });
   return _registry;
 }
 
@@ -102,6 +90,21 @@ function readJsonAtlasKind(content: string): TextureAtlasFormatKind | null {
   return hasFrameDuration(obj.frames) ? TextureAtlasFormatKindAseprite : TextureAtlasFormatKindTexturePacker;
 }
 
+/**
+ * Installs the formats named in `options` into the registry.
+ *
+ * ★ THE SEAM IS EXPLICIT AND NOTHING REGISTERS ON IMPORT. This package declares `"sideEffects": false`, so the
+ * built-ins are seeded by the registry's own initializer rather than by parser modules registering themselves —
+ * and options stay inert data that a caller applies when they choose.
+ *
+ * Re-registering a kind is last-write-wins and keeps that kind's original detection position, so applying a
+ * subset never reorders what was already installed. Detection does not depend on that order anyway: the built-in
+ * detectors are mutually exclusive.
+ */
+export function applyTextureAtlasImportOptions(options: Readonly<TextureAtlasImportOptions>): void {
+  for (const format of options.formats ?? []) bindTextureAtlasFormat(format.kind, format.entry);
+}
+
 /** Sniff the text content of a texture-atlas descriptor and return its format kind, or
  *  `null` when no supported format is recognisable.
  *
@@ -128,10 +131,7 @@ export function detectTextureAtlasFormat(content: string): TextureAtlasFormatKin
  *
  *  Useful for introspecting which formats are available, or for calling one format's detector or
  *  parser directly without going through detection. */
-export function getTextureAtlasFormat(kind: TextureAtlasFormatKind): Readonly<{
-  detect: (content: string) => boolean;
-  parse: (content: string, atlas: TextureAtlas, options: TextureAtlasParseOptions) => TextureAtlas;
-}> | null {
+export function getTextureAtlasFormat(kind: TextureAtlasFormatKind): Readonly<TextureAtlasFormatEntry> | null {
   return getRegistry().get(kind)?.entry ?? null;
 }
 
@@ -169,22 +169,56 @@ export function parseTextureAtlas(
  *  A custom detector should be as narrow as the built-ins are — they are mutually exclusive, so
  *  detection does not depend on registration order today, and a broad custom detector is the one way
  *  to reintroduce that dependence. */
-export function registerTextureAtlasFormat(
-  kind: TextureAtlasFormatKind,
-  entry: {
-    detect: (content: string) => boolean;
-    parse: (content: string, atlas: TextureAtlas, options: TextureAtlasParseOptions) => TextureAtlas;
-  },
-): void {
+export function registerTextureAtlasFormat(kind: TextureAtlasFormatKind, entry: TextureAtlasFormatEntry): void {
   bindTextureAtlasFormat(kind, entry);
 }
+
+export const asepriteTextureAtlasFormat: Readonly<TextureAtlasFormatDescriptor> = {
+  entry: { detect: detectAseprite, parse: (content, atlas) => parseTextureAtlasAsepriteJson(content, atlas) },
+  kind: TextureAtlasFormatKindAseprite,
+};
+
+export const libgdxAtlasTextureAtlasFormat: Readonly<TextureAtlasFormatDescriptor> = {
+  entry: { detect: detectLibgdxAtlas, parse: (content, atlas) => parseTextureAtlasLibgdxAtlas(content, atlas) },
+  kind: TextureAtlasFormatKindLibgdxAtlas,
+};
+
+export const starlingTextureAtlasFormat: Readonly<TextureAtlasFormatDescriptor> = {
+  entry: { detect: detectStarling, parse: (content, atlas) => parseTextureAtlasStarlingXml(content, atlas) },
+  kind: TextureAtlasFormatKindStarling,
+};
+
+export const texturePackerTextureAtlasFormat: Readonly<TextureAtlasFormatDescriptor> = {
+  entry: {
+    detect: detectTexturePacker,
+    parse: (content, atlas, options) => parseTexturePackerAtlasJson(content, atlas, options),
+  },
+  kind: TextureAtlasFormatKindTexturePacker,
+};
+
+/**
+ * Every built-in texture-atlas format.
+ *
+ * Naming this is equivalent to what the registry seeds itself with, and it is what a caller passes when they want
+ * every format. A caller wanting a subset names the descriptors they want, and the parsers they leave out never
+ * link.
+ *
+ * The list is alphabetical by kind because nothing depends on its order — each built-in detector answers only for
+ * itself, which `describe('textureAtlasAllFormats')` measures over the corpus.
+ */
+export const textureAtlasAllFormats: readonly Readonly<TextureAtlasFormatDescriptor>[] = [
+  asepriteTextureAtlasFormat,
+  libgdxAtlasTextureAtlasFormat,
+  starlingTextureAtlasFormat,
+  texturePackerTextureAtlasFormat,
+];
 
 /** Remove a format binding, including a caller override of a built-in kind. */
 export function unregisterTextureAtlasFormat(kind: TextureAtlasFormatKind): void {
   _registry = withoutKindMapEntry(getRegistry(), kind);
 }
 
-function bindTextureAtlasFormat(kind: TextureAtlasFormatKind, entry: FormatEntry): void {
+function bindTextureAtlasFormat(kind: TextureAtlasFormatKind, entry: TextureAtlasFormatEntry): void {
   const registry = getRegistry();
   const current = registry.get(kind) ?? null;
   _registry = withKindMapEntry(registry, kind, {

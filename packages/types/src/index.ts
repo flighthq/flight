@@ -785,6 +785,7 @@ export * from './TextVerticalAlign.ts';
 export * from './Texture.ts';
 export * from './TextureAtlas.ts';
 export * from './TextureAtlasAsepriteSchema.ts';
+export * from './TextureAtlasFormatDescriptor.ts';
 export * from './TextureAtlasFormatKind.ts';
 export * from './TexturePackerAtlasParseOptions.ts';
 export * from './TextureAtlasParseOptions.ts';

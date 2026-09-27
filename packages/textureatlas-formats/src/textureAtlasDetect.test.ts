@@ -9,11 +9,14 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import {
+  applyTextureAtlasImportOptions,
   detectTextureAtlasFormat,
   getTextureAtlasFormat,
   getTextureAtlasFormatKinds,
   parseTextureAtlas,
   registerTextureAtlasFormat,
+  starlingTextureAtlasFormat,
+  textureAtlasAllFormats,
   unregisterTextureAtlasFormat,
 } from './textureAtlasDetect.ts';
 
@@ -61,6 +64,52 @@ const TEXTUREPACKER_JSON = JSON.stringify({
     },
   },
   meta: { app: 'https://www.codeandweb.com/texturepacker', image: 'atlas.png', size: { w: 64, h: 64 }, scale: 1 },
+});
+
+// One document per format, shared by the exclusivity proof and the reverse-order proof: both are statements
+// about the same corpus, and a second copy of it could drift from the first without failing either.
+const CORPUS: readonly (readonly [TextureAtlasFormatKind, string])[] = [
+  [
+    TextureAtlasFormatKindAseprite,
+    JSON.stringify({ frames: { 'a.png': { duration: 100 } }, meta: { app: 'http://www.aseprite.org/' } }),
+  ],
+  [
+    TextureAtlasFormatKindTexturePacker,
+    JSON.stringify({ frames: { 'a.png': {} }, meta: { app: 'https://www.codeandweb.com/texturepacker' } }),
+  ],
+  [
+    TextureAtlasFormatKindStarling,
+    '<TextureAtlas imagePath="a.png"><SubTexture name="x" x="0" y="0" width="1" height="1"/></TextureAtlas>',
+  ],
+  [TextureAtlasFormatKindLibgdxAtlas, 'a.png\nsize: 64,64\nformat: RGBA8888\nx\n  xy: 0, 0\n  orig: 1, 1\n'],
+];
+
+describe('applyTextureAtlasImportOptions', () => {
+  // ★ THE BUILT-INS ARE ALREADY SEEDED BY THE TIME ANY TEST RUNS, because the registry seeds itself on first
+  // access. So "installs only what you name" cannot be shown on a built-in kind — re-registering one keeps its
+  // original position by design. A custom kind is the honest vehicle.
+  it('installs a named format and nothing else', () => {
+    const kind = 'acme.SeamTest' as TextureAtlasFormatKind;
+    expect(getTextureAtlasFormat(kind)).toBeNull();
+    applyTextureAtlasImportOptions({
+      formats: [{ entry: { detect: () => false, parse: (_c, atlas) => atlas }, kind }],
+    });
+    expect(getTextureAtlasFormat(kind)).not.toBeNull();
+    unregisterTextureAtlasFormat(kind);
+    expect(getTextureAtlasFormat(kind)).toBeNull();
+  });
+
+  // ★ MEASURED AGAINST A KIND THAT IS ABSENT, because a before/after comparison of the kind set cannot see this
+  // bug. Empty options falling back to the full preset would re-register kinds that are ALREADY installed, which
+  // leaves the set identical — the comparison passes while the fallback is live. Removing one built-in first is
+  // what makes the two behaviours distinguishable.
+  it('installs nothing for empty options, rather than falling back to the built-ins', () => {
+    unregisterTextureAtlasFormat(TextureAtlasFormatKindStarling);
+    applyTextureAtlasImportOptions({});
+    expect(getTextureAtlasFormat(TextureAtlasFormatKindStarling)).toBeNull();
+    applyTextureAtlasImportOptions({ formats: [starlingTextureAtlasFormat] });
+    expect(getTextureAtlasFormat(TextureAtlasFormatKindStarling)).toBe(starlingTextureAtlasFormat.entry);
+  });
 });
 
 describe('detectTextureAtlasFormat', () => {
@@ -309,23 +358,6 @@ describe('registerTextureAtlasFormat', () => {
 });
 
 describe('registry', () => {
-  // A corpus of one document per format, reused by the exclusivity proof below.
-  const CORPUS: readonly (readonly [TextureAtlasFormatKind, string])[] = [
-    [
-      TextureAtlasFormatKindAseprite,
-      JSON.stringify({ frames: { 'a.png': { duration: 100 } }, meta: { app: 'http://www.aseprite.org/' } }),
-    ],
-    [
-      TextureAtlasFormatKindTexturePacker,
-      JSON.stringify({ frames: { 'a.png': {} }, meta: { app: 'https://www.codeandweb.com/texturepacker' } }),
-    ],
-    [
-      TextureAtlasFormatKindStarling,
-      '<TextureAtlas imagePath="a.png"><SubTexture name="x" x="0" y="0" width="1" height="1"/></TextureAtlas>',
-    ],
-    [TextureAtlasFormatKindLibgdxAtlas, 'a.png\nsize: 64,64\nformat: RGBA8888\nx\n  xy: 0, 0\n  orig: 1, 1\n'],
-  ];
-
   it('exactly one detector matches each document — order is not load-bearing', () => {
     // The property the sibling spritesheet-formats registry cannot claim: there, an Aseprite export
     // also satisfies the TexturePacker detector and only insertion order picks the winner. Here each
@@ -340,6 +372,46 @@ describe('registry', () => {
     for (const [expected, content] of CORPUS) {
       expect(detectTextureAtlasFormat(content)).toBe(expected);
     }
+  });
+});
+
+describe('textureAtlasAllFormats', () => {
+  it('covers exactly the built-in kinds the registry holds', () => {
+    expect([...textureAtlasAllFormats.map((format) => format.kind)].sort()).toEqual(
+      [...getTextureAtlasFormatKinds()].sort(),
+    );
+  });
+
+  // A descriptor has to carry the SAME entry the registry resolved, or a catalog row naming a descriptor would
+  // name an implementation the importer does not use.
+  it('carries the entry identity the registry holds for each kind', () => {
+    for (const format of textureAtlasAllFormats) {
+      expect(getTextureAtlasFormat(format.kind)).toBe(format.entry);
+    }
+  });
+
+  it('names each kind once', () => {
+    const kinds = textureAtlasAllFormats.map((format) => format.kind);
+    expect(kinds.length).toBe(new Set(kinds).size);
+  });
+
+  // ★ PRECEDENCE IS NOT LOAD-BEARING, PROVEN BY REVERSING IT RATHER THAN BY READING THE DETECTORS. The
+  // exclusivity proof in `describe('registry')` measures that no document satisfies two detectors; this measures
+  // the consequence a caller actually cares about — that installing the preset backwards answers identically.
+  // Re-registering a kind keeps its original position, so the four have to be REMOVED first or the reversed
+  // apply would be a no-op and this test would pass without reordering anything.
+  it('detects every corpus document identically when installed in reverse order', () => {
+    const forward = CORPUS.map(([, content]) => detectTextureAtlasFormat(content));
+    expect(forward).toEqual(CORPUS.map(([kind]) => kind));
+
+    for (const format of textureAtlasAllFormats) unregisterTextureAtlasFormat(format.kind);
+    expect(getTextureAtlasFormatKinds()).toEqual([]);
+    applyTextureAtlasImportOptions({ formats: [...textureAtlasAllFormats].reverse() });
+    expect(CORPUS.map(([, content]) => detectTextureAtlasFormat(content))).toEqual(forward);
+
+    for (const format of textureAtlasAllFormats) unregisterTextureAtlasFormat(format.kind);
+    applyTextureAtlasImportOptions({ formats: textureAtlasAllFormats });
+    expect(CORPUS.map(([, content]) => detectTextureAtlasFormat(content))).toEqual(forward);
   });
 });
 
