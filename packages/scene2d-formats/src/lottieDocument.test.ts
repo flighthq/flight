@@ -7,6 +7,8 @@ import {
   createScene2DFromLottieDocument,
   initializeLottieDocumentImportResult,
 } from './lottieDocument.ts';
+import { registerAllLottieHandlers } from './lottieHandlers.ts';
+import { createLottieRegistry } from './lottieRegistry.ts';
 import { createReadyImageResourceForTest } from './testHelper.ts';
 
 describe('applyAnimationClipToLottieDocument', () => {
@@ -24,6 +26,34 @@ describe('createScene2DFromLottieDocument', () => {
     const result = createScene2DFromLottieDocument(createDocument([shapeLayer(1, 'shape')]));
     expect(findByName(result.root, 'shape')).not.toBeNull();
     expect(result.clip.duration).toBe(2);
+  });
+
+  it('produces identical output with registry-populated handlers and zero-config defaults', () => {
+    const doc = createDocument([
+      shapeLayer(1, 'shape'),
+      { ind: 2, ip: 0, nm: 'null', op: 60, ty: 3 },
+      { ind: 3, ip: 0, nm: 'solid', op: 60, sc: '#ff0000', sh: 50, sw: 50, ty: 1 },
+    ]);
+    const defaultResult = createScene2DFromLottieDocument(doc);
+    const registry = createLottieRegistry();
+    registerAllLottieHandlers(registry);
+    const registryResult = createScene2DFromLottieDocument(doc, undefined, {
+      layerHandlers: registry.layerHandlers,
+      shapeItemHandlers: registry.shapeItemHandlers,
+    });
+    expect(JSON.parse(JSON.stringify(registryResult))).toEqual(JSON.parse(JSON.stringify(defaultResult)));
+  });
+
+  it('produces empty layer containers when no handlers are registered', () => {
+    const doc = createDocument([shapeLayer(1, 'shape')]);
+    const defaultResult = createScene2DFromLottieDocument(doc);
+    const emptyResult = createScene2DFromLottieDocument(doc, undefined, {
+      layerHandlers: [],
+      shapeItemHandlers: [],
+    });
+    expect(getNodeChildCount(emptyResult.root)).toBe(1);
+    expect(getNodeChildCount(getNodeChildAt(emptyResult.root, 0)!)).toBe(0);
+    expect(getNodeChildCount(getNodeChildAt(defaultResult.root, 0)!)).toBeGreaterThan(0);
   });
 });
 
