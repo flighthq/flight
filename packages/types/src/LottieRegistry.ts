@@ -114,6 +114,18 @@ export type LottiePaint = LottieFillPaint | LottieGradientPaint | LottieStrokePa
  */
 export type LottieShapePainter = (shape: Shape, paths: readonly Path[]) => void;
 
+/**
+ * How one item reshapes the group's paths once the whole group has been walked.
+ *
+ * ★ A MODIFIER CANNOT RUN WHEN ITS ITEM IS READ. Lottie's trim path reshapes every path in its group, including the ones
+ * declared after it, so the work has to happen after the walk — which is why it lived in the shape core and put
+ * `dashPath` into every build that read a shape layer, trim item registered or not. The item now pushes the closure and
+ * the core only runs them, in the order they were pushed.
+ *
+ * Modifiers mutate `paths` in place, because the paint painters and the animation rebindings already hold that array.
+ */
+export type LottieShapeModifier = (paths: Path[]) => void;
+
 export interface LottieImportContext {
   advancedBlends: LottieAdvancedBlend[];
   assets: Map<string, LottieAsset>;
@@ -162,6 +174,7 @@ export interface LottieMutableAnimationTarget {
 export interface LottieShapeItemContext {
   import: LottieImportContext;
   item: Readonly<LottieShapeItem>;
+  modifiers: LottieShapeModifier[];
   painters: LottieShapePainter[];
   paths: Path[];
   rerender: () => void;

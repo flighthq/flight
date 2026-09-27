@@ -60,20 +60,28 @@ const ABSENT_FROM_SUBSET: readonly (readonly [string, readonly string[]])[] = [
       'appendShapeLineStyle',
       'createLottieGradientMatrix',
       'parseLottieGradient',
+      // The trim path is a post-walk modifier now, so its dashing and measuring go with it. These two were in every
+      // shape-layer build while the trimming ran off the item list inside the layer — and a caller who declined the
+      // trim item was trimmed anyway, which is the behaviour half of the same defect.
+      'dashPath',
+      'getPathLength',
     ],
   ],
 ];
 
-// Each paint family, priced against the solid-fill-only build that differs from it by exactly that one family, and the
-// minimum each must cost. A handler shim moves tens of bytes; these move hundreds, which is the difference between
-// registering a family and merely naming it.
+// Each paint and modifier family, priced against the solid-fill-only build that differs from it by exactly that one
+// family, and the minimum each must cost. A handler shim moves tens of bytes; these move more than a kilobyte, which is
+// the difference between registering a family and merely naming it.
 //
-// Measured against geometry (10174 minified / 18312 unminified): stroke 10586 / 18875, gradient fill 11090 / 19802,
-// gradient stroke 11207 / 20019 — so declining one saves 412-1033 B minified and 563-1707 B unminified.
-const PAINT_FAMILY_COST: readonly (readonly [string, number])[] = [
-  ['lottie-import-stroke', 250],
-  ['lottie-import-gradient-fill', 600],
-  ['lottie-import-gradient-stroke', 700],
+// Measured against geometry (9115 minified / 16493 unminified): stroke 10381 / 18551, gradient fill 10032 / 18002,
+// gradient stroke 11003 / 19703, trim 10223 / 18262 — so declining one saves 917-1888 B minified and 1509-3210 B
+// unminified. The stroke's figure grew when the trim moved out: geometry no longer carries `dashPath`, so the stroke
+// now pays for its own dashing rather than inheriting it.
+const ITEM_FAMILY_COST: readonly (readonly [string, number])[] = [
+  ['lottie-import-stroke', 900],
+  ['lottie-import-gradient-fill', 700],
+  ['lottie-import-gradient-stroke', 1400],
+  ['lottie-import-trim', 800],
 ];
 
 // The three family modules that own a full preset, and the arrays they own. A module on the selective path naming one of
@@ -101,14 +109,15 @@ const FEATURE_MODULE_IMPORTERS: readonly (readonly [string, readonly string[]])[
 // shim moves tens of bytes, and the COLLADA fixtures measured an 18-byte spread across four subsets while they still
 // routed through a preset-resolving entry.
 //
-// Measured, minified / unminified: full 14456 / 30672, geometry 10174 / 18312, null-solid 7735 / 13918,
+// Measured, minified / unminified: full 14445 / 30693, geometry 9115 / 16493, null-solid 7735 / 13918,
 // image 6458 / 11282, text 6140 / 15512.
 //
-// Two extractions moved these. Making masks a family of their own took more than a kilobyte off every subset — image
-// -1199 / -2106, text -1206 / -2161, null-solid -1139 / -1985 — and giving each paint its own painter took a further
-// 693 / 1228 off the solid-fill-only build. The full import grew both times, 99 / 253 then 44 / 168, for the extra
-// registry field and the indirection. That is the shape a real extraction has: the callers who decline a feature stop
-// paying for it, and the caller who wants everything pays a little more for being asked.
+// Three extractions moved these. Making masks a family took more than a kilobyte off every subset — image -1199 /
+// -2106, text -1206 / -2161, null-solid -1139 / -1985. Giving each paint its own painter took a further 693 / 1228 off
+// the solid-fill-only build, and moving the trim into a post-walk modifier took 1059 / 1819 more. The full import moved
+// by tens of bytes each time, for the extra registry field and the indirection. That is the shape a real extraction
+// has: the callers who decline a feature stop paying for it, and the caller who wants everything pays a little for
+// being asked.
 const FIXTURES = [
   'lottie-import',
   'lottie-import-geometry',
@@ -118,10 +127,11 @@ const FIXTURES = [
   'lottie-import-null-solid',
   'lottie-import-stroke',
   'lottie-import-text',
+  'lottie-import-trim',
 ] as const;
 
 const SAVINGS: readonly (readonly [string, number])[] = [
-  ['lottie-import-geometry', 0.22],
+  ['lottie-import-geometry', 0.28],
   ['lottie-import-null-solid', 0.35],
   ['lottie-import-text', 0.4],
   ['lottie-import-image', 0.45],
@@ -227,7 +237,7 @@ describe('lottie locality', () => {
   // ★ AND EACH PAINT FAMILY MUST COST SOMETHING TO REGISTER. The pair differs by one item handler, so the byte
   // difference IS that family's drawing code. This is the assertion the old `switch (paint.kind)` would have failed:
   // with every builder already linked by the layer, adding a handler moved only the handler.
-  it.each(PAINT_FAMILY_COST)('charges materially more than solid fill alone for %s', (fixture, minimum) => {
+  it.each(ITEM_FAMILY_COST)('charges materially more than solid fill alone for %s', (fixture, minimum) => {
     for (const baseline of ['size.baseline.json', 'size.unminified.baseline.json']) {
       const sizes = readBaseline(baseline);
       const withFamily = sizes[`${fixture}:canvas`];
