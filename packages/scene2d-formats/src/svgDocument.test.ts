@@ -722,3 +722,55 @@ describe('createScene2DFromSvgDocument', () => {
     });
   });
 });
+
+describe('svgContainerElementReader', () => {
+  it('is exercised through createScene2DFromSvgDocument for g elements', () => {
+    const root = createScene2DFromSvgDocument('<svg><g><rect width="10" height="10"/></g></svg>');
+    const group = getNodeChildAt(root, 0);
+    expect(group).not.toBeNull();
+    expect(group!.kind).toBe(DisplayObjectKind);
+    expect(getNodeChildCount(group!)).toBe(1);
+  });
+});
+
+describe('svgGeometryElementReader', () => {
+  it('is exercised through createScene2DFromSvgDocument for rect elements', () => {
+    const root = createScene2DFromSvgDocument('<svg><rect width="10" height="10"/></svg>');
+    const shape = getNodeChildAt(root, 0);
+    expect(shape).not.toBeNull();
+    expect(shape!.kind).toBe(ShapeKind);
+  });
+});
+
+describe('svgImageElementReader', () => {
+  it('is exercised through createScene2DFromSvgDocument for image elements', () => {
+    const image = createReadyImageResourceForTest();
+    const root = createScene2DFromSvgDocument('<svg><image href="test.png" width="10" height="10"/></svg>', undefined, {
+      resolveImageResource: () => image,
+    });
+    const bitmap = getNodeChildAt(root, 0);
+    expect(bitmap).not.toBeNull();
+    expect(bitmap!.kind).toBe(SpriteKind);
+  });
+});
+
+describe('svgTextElementReader', () => {
+  it('is exercised through createScene2DFromSvgDocument for text elements', () => {
+    const root = createScene2DFromSvgDocument('<svg><text x="0" y="20">Hello</text></svg>');
+    const text = getNodeChildAt(root, 0);
+    expect(text).not.toBeNull();
+    expect(text!.kind).toBe(TextLabelKind);
+  });
+});
+
+describe('svgUseElementReader', () => {
+  it('is exercised through createScene2DFromSvgDocument for use elements', () => {
+    const root = createScene2DFromSvgDocument(
+      '<svg><defs><rect id="r" width="10" height="10"/></defs><use href="#r"/></svg>',
+    );
+    const used = getNodeChildAt(root, 0);
+    expect(used).not.toBeNull();
+    expect(used!.kind).toBe(DisplayObjectKind);
+    expect(getNodeChildAt(used!, 0)!.kind).toBe(ShapeKind);
+  });
+});

@@ -64,14 +64,30 @@ import type {
   Rectangle,
   Shape,
   SpreadMethod,
+  SvgColor,
+  SvgCssRule,
   SvgDocumentImportOptions,
+  SvgElementContext,
+  SvgElementHandlerEntry,
+  SvgGradient,
+  SvgGradientStop,
+  SvgImportContext,
+  SvgStyle,
   TextFormat,
   TextFormatRange,
   Transform2D,
   XmlElement,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, RichTextKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
+import {
+  ImportDiagnosticSeverity,
+  RichTextKind,
+  ShapeKind,
+  SvgElementKind,
+  TextLabelKind,
+} from '@flighthq/types/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
+
+import { createSvgRegistry, getSvgElementHandler, registerSvgElementHandler } from './svgRegistry.ts';
 
 /**
  * Imports a static SVG document into a Flight display-object subtree. The returned container is
@@ -103,20 +119,25 @@ export function createScene2DFromSvgDocument(
 
   registerDefaultShapeBoundsCommands();
 
+  const registry = createSvgRegistry();
+  const elementHandlers = options?.elementHandlers ?? _defaultElementHandlers();
+  for (const entry of elementHandlers) registerSvgElementHandler(registry, entry.kind, entry.handle);
+
   const context: SvgImportContext = {
     cssRules: collectCssRules(document),
     diagnostics,
     elementsById: new Map(),
     gradientsById: new Map(),
+    objectBoundingBoxes: new Map(),
     options,
     parentByElement: new Map(),
+    registry,
     reportedUnsupportedElements: new Set(),
+    resolvedDefinitionStyles: new Map(),
     resolvingClipUses: new Set(),
-    objectBoundingBoxes: new Map(),
     resolvingClips: new Set(),
     resolvingGradients: new Set(),
     resolvingUses: new Set(),
-    resolvedDefinitionStyles: new Map(),
   };
   indexSvgDefinitions(document, context);
 
@@ -128,88 +149,10 @@ export function createScene2DFromSvgDocument(
   return out;
 }
 
-interface SvgColor {
-  alpha: number;
-  rgb: number;
-}
-
 interface SvgClipGeometry {
   path: Path | null;
   region: ClipRegion | null;
   winding: PathWinding;
-}
-
-interface SvgCssRule {
-  declarations: Record<string, string>;
-  order: number;
-  selector: string;
-  specificity: number;
-}
-
-interface SvgGradient {
-  cx: number;
-  cy: number;
-  fx: number;
-  fy: number;
-  kind: 'linear' | 'radial';
-  units: 'objectBoundingBox' | 'userSpaceOnUse';
-  spreadMethod: SpreadMethod;
-  stops: SvgGradientStop[];
-  transform: Matrix | null;
-  x1: number;
-  x2: number;
-  y1: number;
-  y2: number;
-  radius: number;
-}
-
-interface SvgGradientStop {
-  color: SvgColor;
-  offset: number;
-}
-
-interface SvgImportContext {
-  cssRules: SvgCssRule[];
-  diagnostics: ImportDiagnostic[] | undefined;
-  elementsById: Map<string, XmlElement>;
-  gradientsById: Map<string, SvgGradient>;
-  options: Readonly<SvgDocumentImportOptions> | undefined;
-  parentByElement: Map<XmlElement, XmlElement | null>;
-  // Geometry-only bounds for every shape this importer creates, recorded at creation because it is the
-  // only point where the source PATH is still in hand. See `createSvgNode2DBounds` for why the node's own
-  // bounds cannot be used instead.
-  objectBoundingBoxes: Map<Node2D, Rectangle>;
-  reportedUnsupportedElements: Set<XmlElement>;
-  resolvingClipUses: Set<string>;
-  resolvingClips: Set<string>;
-  resolvingGradients: Set<string>;
-  resolvingUses: Set<string>;
-  resolvedDefinitionStyles: Map<XmlElement, SvgStyle>;
-}
-
-interface SvgStyle {
-  clipRule: PathWinding;
-  color: string;
-  display: string;
-  fill: string;
-  fillOpacity: number;
-  fillRule: PathWinding;
-  filter: string;
-  fontFamily: string;
-  fontSize: number;
-  fontStyle: string;
-  fontWeight: string;
-  opacity: number;
-  stroke: string;
-  strokeDasharray: string;
-  strokeDashoffset: number;
-  strokeLinecap: string;
-  strokeLinejoin: string;
-  strokeMiterlimit: number;
-  strokeOpacity: number;
-  strokeWidth: number;
-  textAnchor: string;
-  visibility: string;
 }
 
 interface SvgTextRun {
@@ -242,6 +185,82 @@ const defaultSvgStyle: SvgStyle = {
   textAnchor: 'start',
   visibility: 'visible',
 };
+
+export function svgContainerElementReader(context: SvgElementContext): Node2D | null {
+  const { element, parentStyle } = context;
+  const importContext = context.import;
+  const container = createDisplayObject();
+  const name = localName(element.name);
+  const viewport = name === 'svg' ? createSvgViewportMatrix(element) : null;
+  const style = applySvgElementAppearance(container, element, parentStyle, importContext, viewport, true);
+  appendSvgChildren(container, element, style, importContext);
+  applySvgElementClip(container, element, importContext, createSvgNode2DBounds(container, importContext));
+  return container;
+}
+
+export function svgGeometryElementReader(context: SvgElementContext): Node2D | null {
+  const { element, parentStyle } = context;
+  const importContext = context.import;
+  const style = resolveSvgStyle(element, parentStyle, importContext);
+  const path = createSvgGeometryPath(element, style.fillRule);
+  if (path === null) return null;
+  const shape = createShape();
+  applySvgElementAppearance(shape, element, parentStyle, importContext);
+  appendSvgShapePaint(shape, path, style, element, importContext);
+  const bounds = createRectangle();
+  getPathBounds(path, bounds);
+  importContext.objectBoundingBoxes.set(shape, bounds);
+  applySvgElementClip(shape, element, importContext, bounds);
+  return shape;
+}
+
+export function svgImageElementReader(context: SvgElementContext): Node2D | null {
+  return createSvgImageNode(context.element, context.parentStyle, context.import);
+}
+
+export function svgTextElementReader(context: SvgElementContext): Node2D | null {
+  return createSvgTextNode(context.element, context.parentStyle, context.import);
+}
+
+export function svgUseElementReader(context: SvgElementContext): Node2D | null {
+  return createSvgUseNode(context.element, context.parentStyle, context.import);
+}
+
+function _defaultElementHandlers(): SvgElementHandlerEntry[] {
+  return [
+    { handle: svgContainerElementReader, kind: SvgElementKind.Container },
+    { handle: svgGeometryElementReader, kind: SvgElementKind.Geometry },
+    { handle: svgImageElementReader, kind: SvgElementKind.Image },
+    { handle: svgTextElementReader, kind: SvgElementKind.Text },
+    { handle: svgUseElementReader, kind: SvgElementKind.Use },
+  ];
+}
+
+function svgElementKindForName(name: string): SvgElementKind | null {
+  switch (name) {
+    case 'a':
+    case 'g':
+    case 'svg':
+    case 'switch':
+      return SvgElementKind.Container;
+    case 'circle':
+    case 'ellipse':
+    case 'line':
+    case 'path':
+    case 'polygon':
+    case 'polyline':
+    case 'rect':
+      return SvgElementKind.Geometry;
+    case 'image':
+      return SvgElementKind.Image;
+    case 'text':
+      return SvgElementKind.Text;
+    case 'use':
+      return SvgElementKind.Use;
+    default:
+      return null;
+  }
+}
 
 function appendSvgChildren(
   parent: DisplayObject,
@@ -700,30 +719,10 @@ function createSvgElementNode(
     return null;
   }
 
-  if (name === 'g' || name === 'a' || name === 'switch' || name === 'svg') {
-    const container = createDisplayObject();
-    const viewport = name === 'svg' ? createSvgViewportMatrix(element) : null;
-    const style = applySvgElementAppearance(container, element, parentStyle, context, viewport, true);
-    appendSvgChildren(container, element, style, context);
-    applySvgElementClip(container, element, context, createSvgNode2DBounds(container, context));
-    return container;
-  }
-
-  if (name === 'use') return createSvgUseNode(element, parentStyle, context);
-  if (name === 'text') return createSvgTextNode(element, parentStyle, context);
-  if (name === 'image') return createSvgImageNode(element, parentStyle, context);
-
-  const style = resolveSvgStyle(element, parentStyle, context);
-  const path = createSvgGeometryPath(element, style.fillRule);
-  if (path !== null) {
-    const shape = createShape();
-    applySvgElementAppearance(shape, element, parentStyle, context);
-    appendSvgShapePaint(shape, path, style, element, context);
-    const bounds = createRectangle();
-    getPathBounds(path, bounds);
-    context.objectBoundingBoxes.set(shape, bounds);
-    applySvgElementClip(shape, element, context, bounds);
-    return shape;
+  const kind = svgElementKindForName(name);
+  if (kind !== null) {
+    const handler = getSvgElementHandler(context.registry, kind);
+    if (handler !== null) return handler({ element, import: context, parentStyle });
   }
 
   if (isUnsupportedSvgElementName(name)) reportUnsupportedSvgElement(element, context, 'createSvgElementNode');
