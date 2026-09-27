@@ -753,14 +753,8 @@ describe('buildRequirementCatalogRows', () => {
     }
   });
 
-  // ★ THE TABLE IS COMPARED TO THE SHIPPED PRESET, NOT TO A COUNT. A format added to one of these packages and
-  // added to its preset — the edit that makes it real — is absent from the catalog until this table names it, and
-  // a build for a document in that format would then resolve nothing while every other test stayed green.
   it('names every descriptor the three format families ship, by identity', () => {
     for (const [namespace, , table, preset] of DESCRIPTOR_FAMILIES) {
-      // Both directions, by identity. The table is alphabetical by symbol and the preset is in detection order,
-      // so comparing the sequences would fail on a difference that is not a defect — but a descriptor in one and
-      // not the other is exactly the defect, in whichever direction it happens.
       const named = new Set(table.map(([, descriptor]) => descriptor));
       for (const descriptor of preset) expect(named.has(descriptor), `${namespace}: preset entry not named`).toBe(true);
       for (const descriptor of named) {
@@ -830,18 +824,12 @@ describe('buildRequirementCatalogRows', () => {
     }
   });
 
-  // ★ THE ONE ORDERING THE GENERATED MODULE MUST REPRODUCE. Aseprite spritesheet exports also satisfy the
-  // TexturePacker detector, so the emitted `formats` list — which `parserFragment` sorts by `familyOrder` — has
-  // to put Aseprite first or a build routes every Aseprite sheet to the wrong parser. Asserting it on the ROWS
-  // is what ties the format package's own precedence to what a user's bundle will do.
   it('orders the spritesheet rows so Aseprite precedes the broader TexturePacker', () => {
     const rows = buildRequirementCatalogRows();
     const orderOf = (kind: string): number =>
       rows.find((candidate) => candidate.kind === kind)!.familyOrder ?? Number.MAX_SAFE_INTEGER;
     expect(orderOf('spritesheet.Aseprite')).toBeLessThan(orderOf('spritesheet.TexturePacker'));
   });
-
-  // The field is the format's own, and all three happen to agree on `formats` — which is exactly why it is
   // carried per row: these families share `.json`, `.xml` and `.atlas`, so the extension-keyed default in
   // `PARSER_HANDLER_FIELDS` could never name one family's field without guessing at the others.
   it('routes every format descriptor row into the formats option field', () => {
@@ -926,9 +914,6 @@ function isLottieHandler(value: unknown): boolean {
   return typeof value === 'function';
 }
 
-// A whole-format descriptor: the kind it registers under paired with the codec (particles) or entry
-// (spritesheet, texture atlas) that reads it. Distinguished from every handler above by carrying its own kind —
-// a handler is named by the map that holds it, a descriptor names itself.
 function isFormatDescriptor(value: unknown): boolean {
   return (
     typeof value === 'object' &&
