@@ -1,5 +1,7 @@
 export const COLLADA_REQUIREMENT_KEY_NAMESPACE = 'dae';
 
+export const GLTF_REQUIREMENT_KEY_NAMESPACE = 'gltf';
+
 export const MD2_REQUIREMENT_KEY_NAMESPACE = 'md2';
 
 export const MD5_REQUIREMENT_KEY_NAMESPACE = 'md5';
