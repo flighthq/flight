@@ -1,6 +1,24 @@
 import {
   createRiveImportRegistry,
   getRiveCoreTypeName,
+  lottieAllLayerHandlers,
+  lottieAllShapeItemHandlers,
+  lottieEllipseShapeItemHandler,
+  lottieFillShapeItemHandler,
+  lottieGradientFillShapeItemHandler,
+  lottieGradientStrokeShapeItemHandler,
+  lottieImageLayerHandler,
+  lottieNullLayerHandler,
+  lottiePathShapeItemHandler,
+  lottiePolystarShapeItemHandler,
+  lottiePrecompositionLayerHandler,
+  lottieRectangleShapeItemHandler,
+  lottieShapeLayerHandler,
+  lottieSolidLayerHandler,
+  lottieStrokeShapeItemHandler,
+  lottieTextLayerHandler,
+  lottieTrimPathShapeItemHandler,
+  LOTTIE_REQUIREMENT_KEY_NAMESPACE,
   riveAllPathBooleanRegistrars,
   riveAllRegistrars,
   RIVE_REQUIREMENT_KEY_NAMESPACE,
@@ -126,6 +144,8 @@ import type {
   ColladaElementDecoder,
   DragonBonesSectionHandler,
   DragonBonesTimelineHandler,
+  LottieLayerHandler,
+  LottieShapeItemHandler,
   Md2SectionHandler,
   Md5SectionHandler,
   ObjMaterialHandler,
@@ -376,6 +396,27 @@ export const DRAGONBONES_TIMELINE_HANDLERS: readonly (readonly [string, DragonBo
   ['dragonBonesZOrderTimelineHandler', dragonBonesZOrderTimelineHandler, DragonBonesTimelineKind.ZOrder],
 ];
 
+export const LOTTIE_LAYER_HANDLERS: readonly (readonly [string, LottieLayerHandler, string])[] = [
+  ['lottieImageLayerHandler', lottieImageLayerHandler, 'layer.image'],
+  ['lottieNullLayerHandler', lottieNullLayerHandler, 'layer.null'],
+  ['lottiePrecompositionLayerHandler', lottiePrecompositionLayerHandler, 'layer.precomposition'],
+  ['lottieShapeLayerHandler', lottieShapeLayerHandler, 'layer.shape'],
+  ['lottieSolidLayerHandler', lottieSolidLayerHandler, 'layer.solid'],
+  ['lottieTextLayerHandler', lottieTextLayerHandler, 'layer.text'],
+];
+
+export const LOTTIE_SHAPE_ITEM_HANDLERS: readonly (readonly [string, LottieShapeItemHandler, string])[] = [
+  ['lottieEllipseShapeItemHandler', lottieEllipseShapeItemHandler, 'shape.ellipse'],
+  ['lottieFillShapeItemHandler', lottieFillShapeItemHandler, 'shape.fill'],
+  ['lottieGradientFillShapeItemHandler', lottieGradientFillShapeItemHandler, 'shape.gradientFill'],
+  ['lottieGradientStrokeShapeItemHandler', lottieGradientStrokeShapeItemHandler, 'shape.gradientStroke'],
+  ['lottiePathShapeItemHandler', lottiePathShapeItemHandler, 'shape.path'],
+  ['lottiePolystarShapeItemHandler', lottiePolystarShapeItemHandler, 'shape.polystar'],
+  ['lottieRectangleShapeItemHandler', lottieRectangleShapeItemHandler, 'shape.rectangle'],
+  ['lottieStrokeShapeItemHandler', lottieStrokeShapeItemHandler, 'shape.stroke'],
+  ['lottieTrimPathShapeItemHandler', lottieTrimPathShapeItemHandler, 'shape.trimPath'],
+];
+
 /**
  * The two `parserOptions` fields a Rive row lands in, matching `RiveImportOptions`.
  *
@@ -544,6 +585,28 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
         `${DRAGONBONES_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
         familyOrderOf(dragonBonesAllTimelineHandlers, handler),
         'timelineHandlers',
+      ),
+    );
+  }
+  for (const [symbol, handler, kind] of LOTTIE_LAYER_HANDLERS) {
+    rows.push(
+      row(
+        '@flighthq/scene2d-formats',
+        symbol,
+        `${LOTTIE_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
+        familyOrderOf(lottieAllLayerHandlers, handler),
+        'layerHandlers',
+      ),
+    );
+  }
+  for (const [symbol, handler, kind] of LOTTIE_SHAPE_ITEM_HANDLERS) {
+    rows.push(
+      row(
+        '@flighthq/scene2d-formats',
+        symbol,
+        `${LOTTIE_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
+        familyOrderOf(lottieAllShapeItemHandlers, handler),
+        'shapeItemHandlers',
       ),
     );
   }

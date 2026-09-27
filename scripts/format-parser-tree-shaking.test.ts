@@ -320,6 +320,62 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
     packageDirectory: 'scene2d-formats',
     publicInfrastructureExports: ['createRiveImportRegistry', 'registerRiveCoreObjectHandler'],
   },
+  {
+    allRegistrar: 'registerAllLottieHandlers',
+    contractOnlyExports: [
+      'initializeLottieDocumentImportResult',
+      'lottieEllipseShapeItemReader',
+      'lottieFillShapeItemReader',
+      'lottieGradientFillShapeItemReader',
+      'lottieGradientStrokeShapeItemReader',
+      'lottieImageLayerReader',
+      'lottieNullLayerReader',
+      'lottiePathShapeItemReader',
+      'lottiePolystarShapeItemReader',
+      'lottiePrecompositionLayerReader',
+      'lottieRectangleShapeItemReader',
+      'lottieShapeLayerReader',
+      'lottieSolidLayerReader',
+      'lottieStrokeShapeItemReader',
+      'lottieTextLayerReader',
+      'lottieTrimPathShapeItemReader',
+    ],
+    families: [
+      {
+        isolationSymbols: ['lottieImageLayerHandler'],
+        modules: [],
+        name: 'layers',
+        registrar: 'registerLottieLayerHandlers',
+        symbols: ['lottieImageLayerReader'],
+      },
+      {
+        isolationSymbols: ['lottieEllipseShapeItemHandler'],
+        modules: [],
+        name: 'shape items',
+        registrar: 'registerLottieShapeItemHandlers',
+        symbols: ['lottieEllipseShapeItemReader'],
+      },
+    ],
+    fullAssemblies: [
+      {
+        exports: ['createScene2DFromLottieDocument'],
+        families: ['layers', 'shape items'],
+        name: 'zero-config importer',
+      },
+    ],
+    leanExports: ['applyAnimationClipToLottieDocument'],
+    name: 'Lottie',
+    packageDirectory: 'scene2d-formats',
+    publicInfrastructureExports: [
+      'createLottieRegistry',
+      'getLottieLayerHandler',
+      'getLottieShapeItemHandler',
+      'registerLottieLayerHandler',
+      'registerLottieShapeItemHandler',
+      'unregisterLottieLayerHandler',
+      'unregisterLottieShapeItemHandler',
+    ],
+  },
 ];
 
 describe('format parser handler export lanes', () => {

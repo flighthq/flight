@@ -1,4 +1,10 @@
-import { createRiveImportRegistry, riveAllPathBooleanRegistrars, riveAllRegistrars } from '@flighthq/scene2d-formats';
+import {
+  createRiveImportRegistry,
+  lottieAllLayerHandlers,
+  lottieAllShapeItemHandlers,
+  riveAllPathBooleanRegistrars,
+  riveAllRegistrars,
+} from '@flighthq/scene2d-formats';
 import * as scene2dFormats from '@flighthq/scene2d-formats';
 import {
   colladaAllElementDecoders,
@@ -29,6 +35,8 @@ import {
   COLLADA_ELEMENT_DECODERS,
   DRAGONBONES_SECTION_HANDLERS,
   DRAGONBONES_TIMELINE_HANDLERS,
+  LOTTIE_LAYER_HANDLERS,
+  LOTTIE_SHAPE_ITEM_HANDLERS,
   MD2_SECTION_HANDLERS,
   MD5_SECTION_HANDLERS,
   OBJ_MATERIAL_HANDLERS,
@@ -73,6 +81,7 @@ describe('buildRequirementCatalogRows', () => {
       'awd2.',
       'dae.',
       'dragonbones.',
+      'lottie.',
       'md2.',
       'md5.',
       'obj.',
@@ -171,7 +180,8 @@ describe('buildRequirementCatalogRows', () => {
           isMaterialHandler(value) ||
           isSpineBinaryHandler(value) ||
           isSpineJsonHandler(value) ||
-          isDragonBonesHandler(value),
+          isDragonBonesHandler(value) ||
+          isLottieHandler(value),
         `${row.implementationSymbol}`,
       ).toBe(true);
     }
@@ -613,6 +623,80 @@ describe('buildRequirementCatalogRows', () => {
       expect(row.implementationImport).toBe('@flighthq/skeleton2d-formats/contract');
     }
   });
+
+  it('lists every Lottie layer handler the scene2d-formats package exports', () => {
+    const exported = Object.keys(scene2dFormats)
+      .filter(
+        (name) =>
+          name.startsWith('lottie') &&
+          name.endsWith('LayerHandler') &&
+          !name.startsWith('register') &&
+          !name.startsWith('get') &&
+          !name.startsWith('unregister') &&
+          typeof (scene2dFormats as unknown as Record<string, unknown>)[name] === 'function',
+      )
+      .sort();
+    expect(LOTTIE_LAYER_HANDLERS.map(([symbol]) => symbol).sort()).toEqual(exported);
+  });
+
+  it('lists every Lottie shape item handler the scene2d-formats package exports', () => {
+    const exported = Object.keys(scene2dFormats)
+      .filter(
+        (name) =>
+          name.startsWith('lottie') &&
+          name.endsWith('ShapeItemHandler') &&
+          !name.startsWith('register') &&
+          !name.startsWith('get') &&
+          !name.startsWith('unregister') &&
+          typeof (scene2dFormats as unknown as Record<string, unknown>)[name] === 'function',
+      )
+      .sort();
+    expect(LOTTIE_SHAPE_ITEM_HANDLERS.map(([symbol]) => symbol).sort()).toEqual(exported);
+  });
+
+  it('emits one row per Lottie handler, each routed to its declared kind', () => {
+    const rows = buildRequirementCatalogRows();
+    for (const [symbol, , kind] of LOTTIE_LAYER_HANDLERS) {
+      const matching = rows.filter((candidate) => candidate.implementationSymbol === symbol);
+      expect(matching, symbol).toHaveLength(1);
+      expect(matching[0].kind, symbol).toBe(`lottie.${kind}`);
+    }
+    for (const [symbol, , kind] of LOTTIE_SHAPE_ITEM_HANDLERS) {
+      const matching = rows.filter((candidate) => candidate.implementationSymbol === symbol);
+      expect(matching, symbol).toHaveLength(1);
+      expect(matching[0].kind, symbol).toBe(`lottie.${kind}`);
+    }
+  });
+
+  it('numbers each Lottie row by its position in the family the format ships', () => {
+    const rows = buildRequirementCatalogRows();
+    for (const [symbol, handler] of LOTTIE_LAYER_HANDLERS) {
+      const expected = lottieAllLayerHandlers.indexOf(handler);
+      for (const row of rows.filter((candidate) => candidate.implementationSymbol === symbol)) {
+        expect(row.familyOrder, symbol).toBe(expected);
+      }
+    }
+    for (const [symbol, handler] of LOTTIE_SHAPE_ITEM_HANDLERS) {
+      const expected = lottieAllShapeItemHandlers.indexOf(handler);
+      for (const row of rows.filter((candidate) => candidate.implementationSymbol === symbol)) {
+        expect(row.familyOrder, symbol).toBe(expected);
+      }
+    }
+  });
+
+  it('sets parserField on Lottie rows to split layer and shape item handlers', () => {
+    const rows = buildRequirementCatalogRows();
+    for (const row of rows.filter((candidate) => candidate.kind.startsWith('lottie.'))) {
+      const isLayerKind = LOTTIE_LAYER_HANDLERS.some(([, , kind]) => row.kind === `lottie.${kind}`);
+      expect(row.parserField, row.kind).toBe(isLayerKind ? 'layerHandlers' : 'shapeItemHandlers');
+    }
+  });
+
+  it('imports Lottie handlers from the public lane', () => {
+    for (const row of buildRequirementCatalogRows().filter((r) => r.kind.startsWith('lottie.'))) {
+      expect(row.implementationImport).toBe('@flighthq/scene2d-formats');
+    }
+  });
 });
 
 function isTagHandler(value: unknown): boolean {
@@ -663,5 +747,9 @@ function isSpineJsonHandler(value: unknown): boolean {
 }
 
 function isDragonBonesHandler(value: unknown): boolean {
+  return typeof value === 'function';
+}
+
+function isLottieHandler(value: unknown): boolean {
   return typeof value === 'function';
 }
