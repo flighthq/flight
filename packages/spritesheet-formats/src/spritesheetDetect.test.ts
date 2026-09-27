@@ -6,14 +6,16 @@ import {
   SpritesheetFormatKindStarling,
   SpritesheetFormatKindTexturePacker,
 } from '@flighthq/types/contract';
-import type { SpritesheetParseOptions } from '@flighthq/types/contract';
+import type { SpritesheetData, SpritesheetFormatKind, SpritesheetParseOptions } from '@flighthq/types/contract';
 
 import {
+  applySpritesheetImportOptions,
   detectSpritesheetFormat,
   getSpritesheetFormat,
   getSpritesheetFormatKinds,
   parseSpritesheet,
   registerSpritesheetFormat,
+  spritesheetAllFormats,
   unregisterSpritesheetFormat,
 } from './spritesheetDetect.ts';
 
@@ -81,6 +83,29 @@ const COCOS_PLIST = `<?xml version="1.0" encoding="UTF-8"?>
   </dict>
 </dict>
 </plist>`;
+
+describe('applySpritesheetImportOptions', () => {
+  // ★ THE BUILT-INS ARE ALREADY SEEDED BY THE TIME ANY TEST RUNS, because the registry seeds itself on first
+  // access. So "installs only what you name" cannot be shown on a built-in kind — re-registering one keeps its
+  // original position by design. A custom kind is the honest vehicle, and it is how the surrounding tests
+  // exercise registration too.
+  it('installs a named format and nothing else', () => {
+    const kind = 'acme.SeamTest' as SpritesheetFormatKind;
+    expect(getSpritesheetFormat(kind)).toBeNull();
+    applySpritesheetImportOptions({
+      formats: [{ entry: { detect: () => false, parse: () => emptySpritesheetData() }, kind }],
+    });
+    expect(getSpritesheetFormat(kind)).not.toBeNull();
+    unregisterSpritesheetFormat(kind);
+    expect(getSpritesheetFormat(kind)).toBeNull();
+  });
+
+  it('installs nothing for empty options, rather than falling back to the built-ins', () => {
+    const before = getSpritesheetFormatKinds();
+    applySpritesheetImportOptions({});
+    expect(getSpritesheetFormatKinds()).toEqual(before);
+  });
+});
 
 describe('detectSpritesheetFormat', () => {
   it('detects TexturePacker JSON', () => {
@@ -304,6 +329,38 @@ describe('registry ordering', () => {
   });
 });
 
+describe('spritesheetAllFormats', () => {
+  // ★ THE ORDERING CONSTRAINT, AS DATA. An Aseprite export also satisfies the TexturePacker detector, so the
+  // narrower format must come first or every Aseprite file is routed to the wrong parser without erroring.
+  // `describe('registry ordering')` pins the behaviour; this pins the list a caller is handed, which is the
+  // thing someone could reasonably alphabetise.
+  it('places Aseprite before the broader TexturePacker', () => {
+    const kinds = spritesheetAllFormats.map((format) => format.kind);
+    expect(kinds.indexOf(SpritesheetFormatKindAseprite)).toBeLessThan(
+      kinds.indexOf(SpritesheetFormatKindTexturePacker),
+    );
+  });
+
+  it('covers exactly the built-in kinds the registry holds', () => {
+    expect([...spritesheetAllFormats.map((format) => format.kind)].sort()).toEqual(
+      [...getSpritesheetFormatKinds()].sort(),
+    );
+  });
+
+  // A descriptor has to carry the SAME entry the registry resolved, or a catalog row naming a descriptor would
+  // name an implementation the importer does not use.
+  it('carries the entry identity the registry holds for each kind', () => {
+    for (const format of spritesheetAllFormats) {
+      expect(getSpritesheetFormat(format.kind)).toBe(format.entry);
+    }
+  });
+
+  it('names each kind once', () => {
+    const kinds = spritesheetAllFormats.map((format) => format.kind);
+    expect(kinds.length).toBe(new Set(kinds).size);
+  });
+});
+
 describe('unregisterSpritesheetFormat', () => {
   it('removes a format from detection and direct resolution', () => {
     const kind = 'test.RemovedFormat';
@@ -328,3 +385,16 @@ describe('unregisterSpritesheetFormat', () => {
     expect(getSpritesheetFormat(kind)).toBeNull();
   });
 });
+
+// The smallest valid SpritesheetData, built the way the surrounding tests build one: allocate, fill every field
+// the type declares, finish. A literal would not carry the entity identity the type requires.
+function emptySpritesheetData(): SpritesheetData {
+  const out = allocateEntity<SpritesheetData>();
+  out.animations = [];
+  out.frames = [];
+  out.imageFile = '';
+  out.imageHeight = 0;
+  out.imageWidth = 0;
+  out.scale = 1;
+  return finishEntity(out);
+}

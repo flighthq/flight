@@ -711,6 +711,7 @@ export * from './SpritesheetAnimationDirection.ts';
 export * from './SpritesheetTimelineSourceExplanation.ts';
 export * from './SpritesheetData.ts';
 export * from './SpritesheetFormat.ts';
+export * from './SpritesheetFormatDescriptor.ts';
 export * from './SpritesheetFrame.ts';
 export * from './SpritesheetFrameData.ts';
 export * from './SpritesheetParseDiagnostic.ts';
