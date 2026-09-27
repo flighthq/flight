@@ -20,6 +20,9 @@ import type {
   SwfTagHandler,
   TextureAtlasFormatDescriptor,
   TextureAtlasImportOptions,
+  TilemapFormatDescriptor,
+  TilemapImportOptions,
+  TilesetFormatDescriptor,
   ThreeDsChunkHandler,
   ThreeDsImportOptions,
   WgpuRenderStateOptions,
@@ -151,6 +154,47 @@ describe('typed consumer fixtures', () => {
     expect(options.formats).toEqual([TEXTURE_ATLAS_FORMAT]);
   });
 
+  // ★ THE TILEMAP DOMAIN SPREADS INTO TWO FIELDS, one per role, and the split is the point: a build whose content
+  // is all standalone tilesets never names `mapFormats` and never links a map parser. Both are checked, because
+  // a map descriptor emitted into the tileset field would typecheck as "an object with a kind and an entry" if
+  // the two entry types were interchangeable — they are not, and the rejection below is what proves it.
+  it('spreads parserOptions into TilemapImportOptions, both fields', () => {
+    const parserOptions = { mapFormats: [TILEMAP_FORMAT], tilesetFormats: [TILESET_FORMAT] };
+    const assigns: Assigns<typeof parserOptions, TilemapImportOptions> = true;
+    const options: TilemapImportOptions = { ...parserOptions };
+    expect(assigns).toBe(true);
+    expect(options.mapFormats).toEqual([TILEMAP_FORMAT]);
+    expect(options.tilesetFormats).toEqual([TILESET_FORMAT]);
+  });
+
+  it('spreads a tilemap fragment carrying only the tileset field, for content with no maps', () => {
+    const parserOptions = { tilesetFormats: [TILESET_FORMAT] };
+    const assigns: Assigns<typeof parserOptions, TilemapImportOptions> = true;
+    const options: TilemapImportOptions = { ...parserOptions };
+    expect(assigns).toBe(true);
+    expect(options.mapFormats).toBeUndefined();
+  });
+
+  it('rejects tilemap descriptors emitted into the other role field, and a field the options never declare', () => {
+    const mapIntoTilesetField: Assigns<
+      { tilesetFormats: readonly TilemapFormatDescriptor[] },
+      TilemapImportOptions
+    > extends never
+      ? true
+      : false = true;
+    const tilesetIntoMapField: Assigns<
+      { mapFormats: readonly TilesetFormatDescriptor[] },
+      TilemapImportOptions
+    > extends never
+      ? true
+      : false = true;
+    const unknownField: Spreads<{ formats: readonly unknown[] }, TilemapImportOptions> extends never ? true : false =
+      true;
+    expect(mapIntoTilesetField).toBe(true);
+    expect(tilesetIntoMapField).toBe(true);
+    expect(unknownField).toBe(true);
+  });
+
   it('rejects a descriptor fragment spread into another family that shares the formats field', () => {
     const spritesheetIntoAtlas: Assigns<
       { formats: readonly SpritesheetFormatDescriptor[] },
@@ -245,6 +289,14 @@ const SPRITESHEET_FORMAT = {
   entry: { detect: () => false, parse: () => undefined },
   kind: 'Aseprite',
 } as unknown as SpritesheetFormatDescriptor;
+const TILEMAP_FORMAT = {
+  entry: { detect: () => false, parse: () => null },
+  kind: 'TiledTmx',
+} as unknown as TilemapFormatDescriptor;
+const TILESET_FORMAT = {
+  entry: { detect: () => false, parse: () => null },
+  kind: 'TiledTsx',
+} as unknown as TilesetFormatDescriptor;
 const TEXTURE_ATLAS_FORMAT = {
   entry: { detect: () => false, parse: (_content: string, atlas: unknown) => atlas },
   kind: 'aseprite',

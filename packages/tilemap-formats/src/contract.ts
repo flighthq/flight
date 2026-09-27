@@ -12,3 +12,5 @@ export { buildTilemapLayersFromTiled } from './tiledProject.ts';
 export { formatTiledTilesetJson, formatTiledTmj } from './tiledTmjFormat.ts';
 export { formatTiledTileset, formatTiledTmx } from './tiledTmxFormat.ts';
 export { parseTiledTileset, parseTiledTmx } from './tiledXmlParse.ts';
+export * from './tilemapDetect.ts';
+export * from './tilemapRequirements.ts';

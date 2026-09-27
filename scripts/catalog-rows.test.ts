@@ -36,6 +36,8 @@ import { getSwfTagName } from '@flighthq/swf/contract';
 import * as swfContract from '@flighthq/swf/contract';
 import { textureAtlasAllFormats } from '@flighthq/textureatlas-formats';
 import * as textureAtlasFormats from '@flighthq/textureatlas-formats';
+import { tilemapAllMapFormats, tilemapAllTilesetFormats } from '@flighthq/tilemap-formats';
+import * as tilemapFormats from '@flighthq/tilemap-formats';
 import { RequirementFacet } from '@flighthq/types/contract';
 
 import {
@@ -60,6 +62,8 @@ import {
   SWF_TAG_HANDLERS,
   TEXTURE_ATLAS_FORMAT_DESCRIPTORS,
   THREE_DS_CHUNK_HANDLERS,
+  TILEMAP_MAP_FORMAT_DESCRIPTORS,
+  TILEMAP_TILESET_FORMAT_DESCRIPTORS,
 } from './catalog-rows.ts';
 
 const MODULES: Readonly<Record<string, Record<string, unknown>>> = {
@@ -70,6 +74,7 @@ const MODULES: Readonly<Record<string, Record<string, unknown>>> = {
   '@flighthq/spritesheet-formats': spritesheetFormats as unknown as Record<string, unknown>,
   '@flighthq/swf': swf as unknown as Record<string, unknown>,
   '@flighthq/textureatlas-formats': textureAtlasFormats as unknown as Record<string, unknown>,
+  '@flighthq/tilemap-formats': tilemapFormats as unknown as Record<string, unknown>,
 };
 
 // The three families whose `document.format` rows name a WHOLE FORMAT — a descriptor pairing a detector with a
@@ -80,10 +85,28 @@ const DESCRIPTOR_FAMILIES: readonly (readonly [
   string,
   readonly (readonly [string, { readonly kind: string }])[],
   readonly { readonly kind: string }[],
+  string,
 ])[] = [
-  ['particles', '@flighthq/particles-formats', PARTICLE_FORMAT_DESCRIPTORS, particleAllFormats],
-  ['spritesheet', '@flighthq/spritesheet-formats', SPRITESHEET_FORMAT_DESCRIPTORS, spritesheetAllFormats],
-  ['textureatlas', '@flighthq/textureatlas-formats', TEXTURE_ATLAS_FORMAT_DESCRIPTORS, textureAtlasAllFormats],
+  ['particles', '@flighthq/particles-formats', PARTICLE_FORMAT_DESCRIPTORS, particleAllFormats, 'formats'],
+  ['spritesheet', '@flighthq/spritesheet-formats', SPRITESHEET_FORMAT_DESCRIPTORS, spritesheetAllFormats, 'formats'],
+  [
+    'textureatlas',
+    '@flighthq/textureatlas-formats',
+    TEXTURE_ATLAS_FORMAT_DESCRIPTORS,
+    textureAtlasAllFormats,
+    'formats',
+  ],
+  // The tilemap domain contributes TWO rows-families under one namespace, because a map and a tileset parse to
+  // different types and so spread into different fields. Both are listed here so every property the other
+  // families are held to is measured for them too.
+  ['tilemap', '@flighthq/tilemap-formats', TILEMAP_MAP_FORMAT_DESCRIPTORS, tilemapAllMapFormats, 'mapFormats'],
+  [
+    'tilemap',
+    '@flighthq/tilemap-formats',
+    TILEMAP_TILESET_FORMAT_DESCRIPTORS,
+    tilemapAllTilesetFormats,
+    'tilesetFormats',
+  ],
 ];
 
 // Every lane that OWNS a requirement-key namespace constant. The format package names its own namespace; this
@@ -96,6 +119,7 @@ const NAMESPACE_MODULES: readonly (readonly [string, Record<string, unknown>])[]
   ['@flighthq/spritesheet-formats', spritesheetFormats as unknown as Record<string, unknown>],
   ['@flighthq/swf/contract', swfContract as unknown as Record<string, unknown>],
   ['@flighthq/textureatlas-formats', textureAtlasFormats as unknown as Record<string, unknown>],
+  ['@flighthq/tilemap-formats', tilemapFormats as unknown as Record<string, unknown>],
 ];
 
 // Reads the namespaces one module declares. A format's namespace is a string constant it exports, so asking the
@@ -832,16 +856,15 @@ describe('buildRequirementCatalogRows', () => {
   });
   // carried per row: these families share `.json`, `.xml` and `.atlas`, so the extension-keyed default in
   // `PARSER_HANDLER_FIELDS` could never name one family's field without guessing at the others.
-  it('routes every format descriptor row into the formats option field', () => {
+  it('routes every format descriptor row into the option field its own family declares', () => {
     const rows = buildRequirementCatalogRows();
-    for (const [namespace, module, table] of DESCRIPTOR_FAMILIES) {
-      for (const row of rows.filter((candidate) => candidate.kind.startsWith(`${namespace}.`))) {
-        expect(row.parserField, row.kind).toBe('formats');
-        expect(row.implementationImport, row.kind).toBe(module);
-        expect(
-          table.some(([symbol]) => symbol === row.implementationSymbol),
-          row.kind,
-        ).toBe(true);
+    for (const [namespace, module, table, , field] of DESCRIPTOR_FAMILIES) {
+      for (const [symbol] of table) {
+        const matching = rows.filter((candidate) => candidate.implementationSymbol === symbol);
+        expect(matching, symbol).toHaveLength(1);
+        expect(matching[0].parserField, symbol).toBe(field);
+        expect(matching[0].implementationImport, symbol).toBe(module);
+        expect(matching[0].kind.startsWith(`${namespace}.`), matching[0].kind).toBe(true);
       }
     }
   });
@@ -855,6 +878,17 @@ describe('buildRequirementCatalogRows', () => {
   it('imports SVG handlers from the public lane', () => {
     for (const row of buildRequirementCatalogRows().filter((r) => r.kind.startsWith('svg.'))) {
       expect(row.implementationImport).toBe('@flighthq/scene2d-formats');
+    }
+  });
+
+  // ★ EVERY ROW IN THESE NAMESPACES MUST BE ACCOUNTED FOR, not just every descriptor the tables name. The loop
+  // above walks the tables, so a row emitted for a symbol no table lists would pass it. This walks the rows.
+  it('emits no row in a descriptor namespace that no family table names', () => {
+    const named = new Set(DESCRIPTOR_FAMILIES.flatMap(([, , table]) => table.map(([symbol]) => symbol)));
+    const namespaces = new Set(DESCRIPTOR_FAMILIES.map(([namespace]) => namespace));
+    for (const row of buildRequirementCatalogRows()) {
+      if (!namespaces.has(row.kind.split('.')[0])) continue;
+      expect(named.has(row.implementationSymbol), row.kind).toBe(true);
     }
   });
 });

@@ -11,6 +11,8 @@
   "references": [
     { "path": "../importdiagnostics" },
     { "path": "../log" },
+    { "path": "../registry" },
+    { "path": "../requirement" },
     { "path": "../tilemap" },
     { "path": "../types" },
     { "path": "../xml" }
