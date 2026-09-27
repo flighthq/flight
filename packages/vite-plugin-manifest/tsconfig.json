@@ -10,9 +10,6 @@
   },
   "references": [
     {
-      "path": "../bitmapfont-formats"
-    },
-    {
       "path": "../compression"
     },
     {
@@ -20,9 +17,6 @@
     },
     {
       "path": "../log"
-    },
-    {
-      "path": "../particles-formats"
     },
     {
       "path": "../render"
@@ -49,16 +43,7 @@
       "path": "../skeleton2d-formats"
     },
     {
-      "path": "../spritesheet-formats"
-    },
-    {
       "path": "../swf"
-    },
-    {
-      "path": "../textureatlas-formats"
-    },
-    {
-      "path": "../tilemap-formats"
     },
     {
       "path": "../types"
