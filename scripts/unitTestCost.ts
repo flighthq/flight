@@ -152,6 +152,7 @@ export const UNIT_TEST_COST_EXEMPTIONS: readonly UnitTestCostExemption[] = [
   { capability: 'builds-bundle', path: 'packages/render-gl/src/glContext.test.ts' },
   { capability: 'builds-bundle', path: 'packages/scene3d-formats/src/gltfTreeShaking.test.ts' },
   { capability: 'builds-bundle', path: 'packages/scene3d-resources/src/sceneResourceResolverTreeShaking.test.ts' },
+  { capability: 'builds-bundle', path: 'packages/skeleton2d-formats/src/dragonBonesTreeShaking.test.ts' },
   { capability: 'builds-bundle', path: 'packages/skeleton2d-formats/src/spineBinaryTreeShaking.test.ts' },
   { capability: 'builds-bundle', path: 'packages/skeleton2d-formats/src/spineJsonTreeShaking.test.ts' },
   { capability: 'builds-bundle', path: 'packages/vite-plugin-manifest/src/manifestTreeShaking.test.ts' },

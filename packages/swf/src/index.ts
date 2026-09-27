@@ -3,6 +3,7 @@ export * from './mergeSwfParseOptions.ts';
 export * from './swfAllTagHandlers.ts';
 export * from './swfBitmap.ts';
 export * from './swfBitmapTagFamily.ts';
+export * from './swfContentCapabilities.ts';
 export * from './swfControlHandler.ts';
 export * from './swfControlTagFamily.ts';
 export * from './swfDefineMorphShapeHandler.ts';

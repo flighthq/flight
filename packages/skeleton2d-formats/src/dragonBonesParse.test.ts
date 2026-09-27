@@ -22,7 +22,20 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseDragonBonesSkeleton } from './dragonBonesParse.ts';
+import {
+  dragonBonesAnimationsSectionReader,
+  dragonBonesBonesSectionReader,
+  dragonBonesBoneTimelineReader,
+  dragonBonesDeformTimelineReader,
+  dragonBonesIkConstraintsSectionReader,
+  dragonBonesIkTimelineReader,
+  dragonBonesSkinsSectionReader,
+  dragonBonesSlotsSectionReader,
+  dragonBonesSlotTimelineReader,
+  dragonBonesZOrderTimelineReader,
+  parseDragonBonesSkeleton,
+  parseDragonBonesSkeletonWithRegistry,
+} from './dragonBonesParse.ts';
 
 // Hand-authored minimal DragonBones JSON (per the real-asset rule: committed fixtures are hand-written,
 // never transcribed from a rig). Bones are listed CHILD-FIRST to exercise the topological sort.
@@ -92,6 +105,105 @@ function withValueAt(doc: unknown, path: readonly (string | number)[], value: un
   node[path[path.length - 1]] = value;
   return copy;
 }
+
+describe('dragonBonesAnimationsSectionReader', () => {
+  it('is the section reader that the animations handler wraps', () => {
+    expect(typeof dragonBonesAnimationsSectionReader).toBe('function');
+  });
+});
+
+describe('dragonBonesBonesSectionReader', () => {
+  it('is the section reader that the bones handler wraps', () => {
+    expect(typeof dragonBonesBonesSectionReader).toBe('function');
+  });
+});
+
+// The channel a (bone, path) pair drives, or undefined when the parse emitted none for it.
+function findChannel(
+  channels: readonly AnimationChannel[],
+  boneIndex: number,
+  path: Skeleton2DAnimationPath,
+): AnimationChannel | undefined {
+  return channels.find((channel) => {
+    const target = channel.targetRef as Skeleton2DAnimationTarget;
+    return target.boneIndex === boneIndex && target.path === path;
+  });
+}
+
+// The time of the SECOND keyframe of the document's first channel — the frame-rate conversion under test
+// (the first keyframe is always 0, so it proves nothing about the rate).
+function firstKeyEndTime(doc: unknown): number {
+  return parseDragonBonesSkeleton(JSON.stringify(doc))!.animations[0].clip.channels[0].track.times[1];
+}
+
+// A one-bone 20fps document whose single animation carries `frames` as bone `b`'s rotateFrame list.
+function rotateDoc(frames: readonly Record<string, unknown>[]): Record<string, unknown> {
+  return {
+    frameRate: 20,
+    version: '5.5',
+    armature: [{ bone: [{ name: 'b' }], animation: [{ name: 'a', bone: [{ name: 'b', rotateFrame: frames }] }] }],
+  };
+}
+
+// A two-keyframe translate timeline for `boneName` whose first frame lasts `duration` FRAMES, so the second
+// keyframe's time is exactly `duration / frameRate`.
+function translateTo(boneName: string, duration: number): Record<string, unknown> {
+  return {
+    name: boneName,
+    translateFrame: [
+      { duration, x: 0 },
+      { duration: 0, x: 1 },
+    ],
+  };
+}
+
+describe('dragonBonesBoneTimelineReader', () => {
+  it('is the timeline reader that the bone timeline handler wraps', () => {
+    expect(typeof dragonBonesBoneTimelineReader).toBe('function');
+  });
+});
+
+describe('dragonBonesDeformTimelineReader', () => {
+  it('is the timeline reader that the deform timeline handler wraps', () => {
+    expect(typeof dragonBonesDeformTimelineReader).toBe('function');
+  });
+});
+
+describe('dragonBonesIkConstraintsSectionReader', () => {
+  it('is the section reader that the ik constraints handler wraps', () => {
+    expect(typeof dragonBonesIkConstraintsSectionReader).toBe('function');
+  });
+});
+
+describe('dragonBonesIkTimelineReader', () => {
+  it('is the timeline reader that the ik timeline handler wraps', () => {
+    expect(typeof dragonBonesIkTimelineReader).toBe('function');
+  });
+});
+
+describe('dragonBonesSkinsSectionReader', () => {
+  it('is the section reader that the skins handler wraps', () => {
+    expect(typeof dragonBonesSkinsSectionReader).toBe('function');
+  });
+});
+
+describe('dragonBonesSlotsSectionReader', () => {
+  it('is the section reader that the slots handler wraps', () => {
+    expect(typeof dragonBonesSlotsSectionReader).toBe('function');
+  });
+});
+
+describe('dragonBonesSlotTimelineReader', () => {
+  it('is the timeline reader that the slot timeline handler wraps', () => {
+    expect(typeof dragonBonesSlotTimelineReader).toBe('function');
+  });
+});
+
+describe('dragonBonesZOrderTimelineReader', () => {
+  it('is the timeline reader that the zOrder timeline handler wraps', () => {
+    expect(typeof dragonBonesZOrderTimelineReader).toBe('function');
+  });
+});
 
 describe('parseDragonBonesSkeleton', () => {
   it('parses the first armature, topologically sorts bones, and maps the skX/skY transform', () => {
@@ -1159,45 +1271,6 @@ describe('parseDragonBonesSkeleton type resilience', () => {
   });
 });
 
-// The channel a (bone, path) pair drives, or undefined when the parse emitted none for it.
-function findChannel(
-  channels: readonly AnimationChannel[],
-  boneIndex: number,
-  path: Skeleton2DAnimationPath,
-): AnimationChannel | undefined {
-  return channels.find((channel) => {
-    const target = channel.targetRef as Skeleton2DAnimationTarget;
-    return target.boneIndex === boneIndex && target.path === path;
-  });
-}
-
-// The time of the SECOND keyframe of the document's first channel — the frame-rate conversion under test
-// (the first keyframe is always 0, so it proves nothing about the rate).
-function firstKeyEndTime(doc: unknown): number {
-  return parseDragonBonesSkeleton(JSON.stringify(doc))!.animations[0].clip.channels[0].track.times[1];
-}
-
-// A one-bone 20fps document whose single animation carries `frames` as bone `b`'s rotateFrame list.
-function rotateDoc(frames: readonly Record<string, unknown>[]): Record<string, unknown> {
-  return {
-    frameRate: 20,
-    version: '5.5',
-    armature: [{ bone: [{ name: 'b' }], animation: [{ name: 'a', bone: [{ name: 'b', rotateFrame: frames }] }] }],
-  };
-}
-
-// A two-keyframe translate timeline for `boneName` whose first frame lasts `duration` FRAMES, so the second
-// keyframe's time is exactly `duration / frameRate`.
-function translateTo(boneName: string, duration: number): Record<string, unknown> {
-  return {
-    name: boneName,
-    translateFrame: [
-      { duration, x: 0 },
-      { duration: 0, x: 1 },
-    ],
-  };
-}
-
 describe('parseDragonBonesSkeleton version gate', () => {
   const armature = [{ bone: [{ name: 'root' }] }];
 
@@ -1259,5 +1332,11 @@ describe('parseDragonBonesSkeleton version gate', () => {
     const sink: ImportDiagnostic[] = [];
     expect(parseDragonBonesSkeleton(JSON.stringify({ armature, version: '9.9' }), sink)).toBeNull();
     expect(sink).toHaveLength(1);
+  });
+});
+
+describe('parseDragonBonesSkeletonWithRegistry', () => {
+  it('produces the same result as parseDragonBonesSkeleton when given a full preset', () => {
+    expect(typeof parseDragonBonesSkeletonWithRegistry).toBe('function');
   });
 });

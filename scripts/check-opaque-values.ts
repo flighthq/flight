@@ -31,14 +31,16 @@ const ERROR_PROPERTY_ALLOWLISTED = true;
 
 // Intentional uses: generic constraints, opaque handle types, platform boundary types.
 const ALLOWLIST: ReadonlySet<string> = new Set([
+  'DragonBonesSectionContext.armature',
+  'DragonBonesSectionContext.doc',
+  'NativeSurfaceHandle',
+  'NativeWindowHandle',
   'NodeAny',
   'Signal',
   'SignalConnection',
   'SignalScope.connections',
-  'TweenManager.tweens',
-  'NativeSurfaceHandle',
-  'NativeWindowHandle',
   'SpineJsonSectionContext.doc',
+  'TweenManager.tweens',
 ]);
 
 function collectTypeSourceFiles(root: string): string[] {
@@ -242,7 +244,7 @@ if (report.allowlisted.length > 0) {
   );
 }
 
-const BASELINE = 24;
+const BASELINE = 23;
 
 process.stdout.write(
   `\nbaseline: ${BASELINE}  current: ${report.violations.length}  allowlisted: ${report.allowlisted.length}\n`,

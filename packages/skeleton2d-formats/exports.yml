@@ -1,6 +1,16 @@
 # skeleton2d-formats: exports where the shared classifier gets it wrong.
 
 exclude:
+  - dragonBonesAnimationsSectionReader
+  - dragonBonesBoneTimelineReader
+  - dragonBonesBonesSectionReader
+  - dragonBonesDeformTimelineReader
+  - dragonBonesIkConstraintsSectionReader
+  - dragonBonesIkTimelineReader
+  - dragonBonesSkinsSectionReader
+  - dragonBonesSlotTimelineReader
+  - dragonBonesSlotsSectionReader
+  - dragonBonesZOrderTimelineReader
   - spineBinaryAnimationsSectionReader
   - spineBinaryBoneTimelineReader
   - spineBinaryBonesSectionReader
@@ -19,8 +29,23 @@ exclude:
   - spineBinaryTransformTimelineReader
 
 protected:
+  - DRAGONBONES_REQUIREMENT_KEY_NAMESPACE
   - SPINE_BINARY_REQUIREMENT_KEY_NAMESPACE
   - SPINE_JSON_REQUIREMENT_KEY_NAMESPACE
+  - dragonBonesAllSectionHandlers
+  - dragonBonesAllTimelineHandlers
+  - dragonBonesAnimationsSectionHandler
+  - dragonBonesBoneTimelineHandler
+  - dragonBonesBonesSectionHandler
+  - dragonBonesDeformTimelineHandler
+  - dragonBonesIkConstraintsSectionHandler
+  - dragonBonesIkTimelineHandler
+  - dragonBonesSkinsSectionHandler
+  - dragonBonesSlotTimelineHandler
+  - dragonBonesSlotsSectionHandler
+  - dragonBonesZOrderTimelineHandler
+  - getDragonBonesSectionHandler
+  - getDragonBonesTimelineHandler
   - getSpineBinarySectionHandler
   - getSpineBinaryTimelineHandler
   - getSpineJsonSectionHandler
@@ -61,6 +86,8 @@ protected:
   - spineJsonSlotsSectionHandler
   - spineJsonTransformConstraintsSectionHandler
   - spineJsonTransformTimelineHandler
+  - unregisterDragonBonesSectionHandler
+  - unregisterDragonBonesTimelineHandler
   - unregisterSpineBinarySectionHandler
   - unregisterSpineBinaryTimelineHandler
   - unregisterSpineJsonSectionHandler
