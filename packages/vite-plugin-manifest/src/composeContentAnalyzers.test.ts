@@ -74,18 +74,26 @@ describe('composeContentAnalyzers', () => {
     expect(keysOf(DEFAULT_CONTENT_ANALYZERS['.plist'].analyze(cocos, NO_DECOMPRESSORS))).toEqual([
       'spritesheet.CocosPlist',
     ]);
-
-    // The other side of the same extension. `detectCocosPlist` in `@flighthq/spritesheet-formats` is the MIRROR of
-    // the detector just tightened — it also tests for the plist container — so a ParticleDesigner export is still
-    // claimed by the spritesheet family too. Reported rather than changed here: the fix belongs in that package,
-    // and its own parser supplies the invariant (a Cocos sheet declares a `frames` key). Asserted with
-    // `toContain` so this states what is true today without pinning the extra claim as required.
+    // ★ AND THE MIRROR, WHICH IS WHAT MAKES THE PAIR EXACT IN BOTH DIRECTIONS. `detectCocosPlist` used to test for
+    // the plist container too, so a ParticleDesigner export was claimed by the spritesheet family as well. Each
+    // detector now asks for the key its own parser requires — an emitter key, or the `frames` dict — so both
+    // answers are exact and both are asserted as exact. A `toContain` on either side would pass again if one
+    // regressed to claiming the container.
     const emitter = encodeUTF8(
-      '<?xml version="1.0"?><plist version="1.0"><dict><key>maxParticles</key><integer>200</integer></dict></plist>',
+      '<?xml version="1.0"?><plist version="1.0"><dict><key>maxParticles</key><integer>200</integer>' +
+        '<key>textureFileName</key><string>spark.png</string></dict></plist>',
     );
-    expect(keysOf(DEFAULT_CONTENT_ANALYZERS['.plist'].analyze(emitter, NO_DECOMPRESSORS))).toContain(
+    expect(keysOf(DEFAULT_CONTENT_ANALYZERS['.plist'].analyze(emitter, NO_DECOMPRESSORS))).toEqual([
       'particles.ParticleDesigner',
+    ]);
+
+    // A plist that is neither answers nothing, and reports unreadable — so a build is told, rather than handed an
+    // empty manifest that looks like a document needing no implementations.
+    const neither = encodeUTF8(
+      '<?xml version="1.0"?><plist version="1.0"><dict><key>note</key><string>x</string></dict></plist>',
     );
+    expect(keysOf(DEFAULT_CONTENT_ANALYZERS['.plist'].analyze(neither, NO_DECOMPRESSORS))).toEqual([]);
+    expect(DEFAULT_CONTENT_ANALYZERS['.plist'].isReadable(neither, NO_DECOMPRESSORS)).toBe(false);
 
     const libgdx = encodeUTF8(
       'a.png\nsize: 2,2\nformat: RGBA8888\nregion\n  rotate: false\n  xy: 0, 0\n  orig: 2, 2\n',
