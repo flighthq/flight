@@ -56,6 +56,65 @@ describe('3D format content through the built-in catalog', () => {
     });
   });
 
+  describe('.glb', () => {
+    it('resolves a mesh-bearing GLB to StandardPbr material renderers', async () => {
+      const { source } = await load3d('.glb', buildGlb(JSON.stringify({ asset: { version: '2.0' }, meshes: [{}] })));
+      expect(source).toContain('materialRenderers');
+      expect(source).toContain("'StandardPbrMaterial'");
+      expect(source).toContain('glStandardPbrMeshMaterialRenderer');
+      expect(source).toContain('wgpuStandardPbrMeshMaterialRenderer');
+    });
+
+    it('omits unused extension handlers', async () => {
+      const { source } = await load3d('.glb', buildGlb(JSON.stringify({ asset: { version: '2.0' }, meshes: [{}] })));
+      expect(source).not.toContain('GltfUnlitExtensionHandler');
+      expect(source).not.toContain('GltfClearcoatExtensionHandler');
+    });
+
+    it('reports unreadable diagnostic for truncated bytes', async () => {
+      const { diagnostics } = await load3d('.glb', new Uint8Array(4));
+      expect(diagnostics.some((d) => d.includes('unreadable'))).toBe(true);
+    });
+  });
+
+  describe('.gltf', () => {
+    it('resolves a mesh-bearing document to StandardPbr material renderers', async () => {
+      const { source } = await load3d('.gltf', encodeUTF8(GLTF_WITH_MESHES));
+      expect(source).toContain('materialRenderers');
+      expect(source).toContain("'StandardPbrMaterial'");
+      expect(source).toContain('glStandardPbrMeshMaterialRenderer');
+      expect(source).toContain('wgpuStandardPbrMeshMaterialRenderer');
+    });
+
+    it('includes Unlit material renderers when KHR_materials_unlit is used', async () => {
+      const { source } = await load3d('.gltf', encodeUTF8(GLTF_WITH_UNLIT));
+      expect(source).toContain("'UnlitMaterial'");
+    });
+
+    it('includes the extension handler only when the extension is used', async () => {
+      const withUnlit = await load3d('.gltf', encodeUTF8(GLTF_WITH_UNLIT));
+      const withoutUnlit = await load3d('.gltf', encodeUTF8(GLTF_WITH_MESHES));
+      expect(withUnlit.source).toContain('GltfUnlitExtensionHandler');
+      expect(withoutUnlit.source).not.toContain('GltfUnlitExtensionHandler');
+    });
+
+    it('omits material renderers for a camera-only document', async () => {
+      const { source } = await load3d('.gltf', encodeUTF8(GLTF_CAMERAS_ONLY));
+      expect(source).not.toContain('materialRenderers');
+      expect(source).not.toContain('StandardPbrMaterial');
+    });
+
+    it('does not diagnose gltf.Mesh — the catalog deliberately declines it', async () => {
+      const { diagnostics } = await load3d('.gltf', encodeUTF8(GLTF_WITH_MESHES));
+      expect(diagnostics.filter((d) => d.includes('gltf.Mesh'))).toEqual([]);
+    });
+
+    it('reports unreadable diagnostic for non-glTF JSON', async () => {
+      const { diagnostics } = await load3d('.gltf', encodeUTF8('{ "not": "gltf" }'));
+      expect(diagnostics.some((d) => d.includes('unreadable'))).toBe(true);
+    });
+  });
+
   describe('.dae', () => {
     it('resolves a material-bearing COLLADA to StandardPbr material renderers', async () => {
       const { source } = await load3d('.dae', encodeUTF8(FULL_COLLADA));
@@ -160,7 +219,7 @@ describe('3D format content through the built-in catalog', () => {
   describe('cross-format', () => {
     it('no format uses a coarse namespace key in translations — all are per-feature', () => {
       const coarseKeys = BUILT_IN_REQUIREMENT_TRANSLATIONS.filter(
-        (t) => t.from.facet === 'document.format' && ['3ds', 'dae', 'md2', 'md5', 'obj'].includes(t.from.key),
+        (t) => t.from.facet === 'document.format' && ['3ds', 'dae', 'gltf', 'md2', 'md5', 'obj'].includes(t.from.key),
       );
       expect(coarseKeys).toEqual([]);
     });
@@ -278,3 +337,36 @@ const MINIMAL_MD5_MESH = 'joints {\n}\n';
 const FULL_MD5_MESH = 'joints {\n}\nmesh {\nshader "body"\n}\n';
 
 const FULL_MD5_ANIM = 'hierarchy {\n}\nframe 0 {\n}\n';
+
+const GLTF_WITH_MESHES = JSON.stringify({ asset: { version: '2.0' }, meshes: [{}] });
+
+const GLTF_WITH_UNLIT = JSON.stringify({
+  asset: { version: '2.0' },
+  meshes: [{}],
+  extensionsUsed: ['KHR_materials_unlit'],
+});
+
+const GLTF_CAMERAS_ONLY = JSON.stringify({ asset: { version: '2.0' }, cameras: [{}] });
+
+const GLB_MAGIC = 0x46546c67;
+const GLB_JSON_CHUNK_TYPE = 0x4e4f534a;
+
+function buildGlb(json: string): Uint8Array {
+  const encoder = new TextEncoder();
+  const jsonBytes = encoder.encode(json);
+  const paddedLength = (jsonBytes.byteLength + 3) & ~3;
+  const totalLength = 12 + 8 + paddedLength;
+  const buffer = new ArrayBuffer(totalLength);
+  const view = new DataView(buffer);
+  const bytes = new Uint8Array(buffer);
+  view.setUint32(0, GLB_MAGIC, true);
+  view.setUint32(4, 2, true);
+  view.setUint32(8, totalLength, true);
+  view.setUint32(12, paddedLength, true);
+  view.setUint32(16, GLB_JSON_CHUNK_TYPE, true);
+  bytes.set(jsonBytes, 20);
+  for (let i = jsonBytes.byteLength; i < paddedLength; i++) {
+    bytes[20 + i] = 0x20;
+  }
+  return bytes;
+}
