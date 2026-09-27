@@ -35,6 +35,27 @@ interface FormatParserTreeShakingCase {
   publicInfrastructureExports: readonly string[];
 }
 
+// Every Lottie feature module the decomposition created. Before it, both lists were empty: there was nothing to name
+// because every layer and shape item lived in `lottieDocument.ts`.
+const LOTTIE_LAYER_MODULES = [
+  'lottieImageLayer.ts',
+  'lottiePrecompositionLayer.ts',
+  'lottieShapeLayer.ts',
+  'lottieSolidLayer.ts',
+  'lottieTextLayer.ts',
+] as const;
+
+const LOTTIE_SHAPE_ITEM_MODULES = [
+  'lottieEllipseShapeItem.ts',
+  'lottieFillShapeItem.ts',
+  'lottieGradientShapeItems.ts',
+  'lottiePathShapeItem.ts',
+  'lottiePolystarShapeItem.ts',
+  'lottieRectangleShapeItem.ts',
+  'lottieStrokeShapeItem.ts',
+  'lottieTrimPathShapeItem.ts',
+] as const;
+
 const GLTF_MATERIAL_MODULES = [
   'gltfAnisotropy.ts',
   'gltfClearcoat.ts',
@@ -468,38 +489,28 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
   },
   {
     allRegistrar: 'registerAllLottieHandlers',
-    contractOnlyExports: [
-      'initializeLottieDocumentImportResult',
-      'lottieEllipseShapeItemReader',
-      'lottieFillShapeItemReader',
-      'lottieGradientFillShapeItemReader',
-      'lottieGradientStrokeShapeItemReader',
-      'lottieImageLayerReader',
-      'lottieNullLayerReader',
-      'lottiePathShapeItemReader',
-      'lottiePolystarShapeItemReader',
-      'lottiePrecompositionLayerReader',
-      'lottieRectangleShapeItemReader',
-      'lottieShapeLayerReader',
-      'lottieSolidLayerReader',
-      'lottieStrokeShapeItemReader',
-      'lottieTextLayerReader',
-      'lottieTrimPathShapeItemReader',
-    ],
+    // ★ THE FIFTEEN `lottie*Reader` NAMES ARE GONE, AND THAT IS THE POINT. Each was the core's half of a one-line
+    // shim: `lottieImageLayerHandler` called `lottieImageLayerReader`, which lived in the 1,800-line document core
+    // alongside every other layer and shape item. The handler is now the real function, in the module that owns its
+    // interpretation, so there is one identity per feature instead of two. What remains contract-only is the selective
+    // entry — it takes a `LottieRegistry`, and `types` publishes that on its contract lane only.
+    contractOnlyExports: ['createScene2DFromLottieDocumentWithRegistry', 'initializeLottieDocumentImportResult'],
     families: [
       {
         isolationSymbols: ['lottieImageLayerHandler'],
-        modules: [],
+        // `lottieNullLayer.ts` is deliberately absent: a null layer's handler body is empty, so the module
+        // contributes no bytes even when it is reachable, and a > 0 assertion on it would be false.
+        modules: LOTTIE_LAYER_MODULES,
         name: 'layers',
         registrar: 'registerLottieLayerHandlers',
-        symbols: ['lottieImageLayerReader'],
+        symbols: ['lottieImageLayerHandler'],
       },
       {
         isolationSymbols: ['lottieEllipseShapeItemHandler'],
-        modules: [],
+        modules: LOTTIE_SHAPE_ITEM_MODULES,
         name: 'shape items',
         registrar: 'registerLottieShapeItemHandlers',
-        symbols: ['lottieEllipseShapeItemReader'],
+        symbols: ['lottieEllipseShapeItemHandler'],
       },
     ],
     fullAssemblies: [

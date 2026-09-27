@@ -1,5 +1,11 @@
 import { getNodeChildAt, getNodeChildCount } from '@flighthq/node/contract';
-import type { LottieDocument, LottieLayer, LottieShapePath, Node2D } from '@flighthq/types/contract';
+import type {
+  LottieDocument,
+  LottieLayer,
+  LottieShapePath,
+  NonEntityCreateResult,
+  Node2D,
+} from '@flighthq/types/contract';
 
 export function animatedLottieTestScalar(start: number, end: number) {
   return {
@@ -36,7 +42,7 @@ export function animatedLottieTestVector(
  * module, the builders have many owners — and a copy per test file is how two fixtures drift apart and make a real
  * disagreement look like a parser bug.
  */
-export function createLottieTestDocument(layers: LottieLayer[]): LottieDocument {
+export function createLottieTestDocument(layers: LottieLayer[]): NonEntityCreateResult<LottieDocument, 'descriptor'> {
   return { fr: 30, h: 100, ip: 0, layers, op: 60, w: 100 };
 }
 
