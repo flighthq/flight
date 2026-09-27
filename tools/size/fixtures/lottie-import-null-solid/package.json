@@ -1,0 +1,9 @@
+{
+  "name": "lottie-import-null-solid",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "lottie-import-null-solid"
+  }
+}
