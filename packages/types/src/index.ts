@@ -508,6 +508,7 @@ export * from './ParticleEmitterSignals.ts';
 export * from './ParticleEmitterState.ts';
 export * from './ParticleForce.ts';
 export * from './ParticleFormatCodec.ts';
+export * from './ParticleFormatDescriptor.ts';
 export * from './ParticleFormatKind.ts';
 export * from './ParticleFormatWarning.ts';
 export * from './ParticleObject.ts';
