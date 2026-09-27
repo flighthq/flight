@@ -38,4 +38,14 @@ export * from './riveSkin.ts';
 export { registerRiveSoloHandlers } from './riveSolo.ts';
 export { registerRiveStateMachineHandlers } from './riveStateMachine.ts';
 export { createRiveRichText, registerRiveTextHandlers } from './riveText.ts';
-export * from './svgDocument.ts';
+export { collectSvgCounts } from './svgCounts.ts';
+export { createScene2DFromSvgDocument } from './svgDocument.ts';
+export * from './svgElementHandlers.ts';
+export { registerAllSvgHandlers } from './svgHandlers.ts';
+export {
+  createSvgRegistry,
+  getSvgElementHandler,
+  registerSvgElementHandler,
+  unregisterSvgElementHandler,
+} from './svgRegistry.ts';
+export { isReadableSvg, parseSvgRequirements, SVG_REQUIREMENT_KEY_NAMESPACE } from './svgRequirements.ts';
