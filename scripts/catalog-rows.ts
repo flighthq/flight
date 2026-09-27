@@ -44,6 +44,19 @@ import {
   THREE_DS_REQUIREMENT_KEY_NAMESPACE,
 } from '@flighthq/scene3d-formats/contract';
 import {
+  dragonBonesAllSectionHandlers,
+  dragonBonesAllTimelineHandlers,
+  dragonBonesAnimationsSectionHandler,
+  dragonBonesBonesSectionHandler,
+  dragonBonesBoneTimelineHandler,
+  dragonBonesDeformTimelineHandler,
+  dragonBonesIkConstraintsSectionHandler,
+  dragonBonesIkTimelineHandler,
+  DRAGONBONES_REQUIREMENT_KEY_NAMESPACE,
+  dragonBonesSkinsSectionHandler,
+  dragonBonesSlotsSectionHandler,
+  dragonBonesSlotTimelineHandler,
+  dragonBonesZOrderTimelineHandler,
   spineBinaryAllSectionHandlers,
   spineBinaryAllTimelineHandlers,
   spineBinaryAnimationsSectionHandler,
@@ -103,6 +116,8 @@ import { getSwfTagName, SWF_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/swf/cont
 import type {
   Awd2BlockHandler,
   ColladaElementDecoder,
+  DragonBonesSectionHandler,
+  DragonBonesTimelineHandler,
   Md2SectionHandler,
   Md5SectionHandler,
   ObjMaterialHandler,
@@ -115,6 +130,8 @@ import type {
   ThreeDsChunkHandler,
 } from '@flighthq/types/contract';
 import {
+  DragonBonesSectionKind,
+  DragonBonesTimelineKind,
   RequirementFacet,
   SpineBinarySectionKind,
   SpineBinaryTimelineKind,
@@ -331,6 +348,26 @@ export const SPINE_JSON_TIMELINE_HANDLERS: readonly (readonly [string, SpineJson
   ['spineJsonTransformTimelineHandler', spineJsonTransformTimelineHandler, SpineJsonTimelineKind.Transform],
 ];
 
+export const DRAGONBONES_SECTION_HANDLERS: readonly (readonly [string, DragonBonesSectionHandler, string])[] = [
+  ['dragonBonesAnimationsSectionHandler', dragonBonesAnimationsSectionHandler, DragonBonesSectionKind.Animations],
+  ['dragonBonesBonesSectionHandler', dragonBonesBonesSectionHandler, DragonBonesSectionKind.Bones],
+  [
+    'dragonBonesIkConstraintsSectionHandler',
+    dragonBonesIkConstraintsSectionHandler,
+    DragonBonesSectionKind.IkConstraints,
+  ],
+  ['dragonBonesSkinsSectionHandler', dragonBonesSkinsSectionHandler, DragonBonesSectionKind.Skins],
+  ['dragonBonesSlotsSectionHandler', dragonBonesSlotsSectionHandler, DragonBonesSectionKind.Slots],
+];
+
+export const DRAGONBONES_TIMELINE_HANDLERS: readonly (readonly [string, DragonBonesTimelineHandler, string])[] = [
+  ['dragonBonesBoneTimelineHandler', dragonBonesBoneTimelineHandler, DragonBonesTimelineKind.Bone],
+  ['dragonBonesDeformTimelineHandler', dragonBonesDeformTimelineHandler, DragonBonesTimelineKind.Deform],
+  ['dragonBonesIkTimelineHandler', dragonBonesIkTimelineHandler, DragonBonesTimelineKind.Ik],
+  ['dragonBonesSlotTimelineHandler', dragonBonesSlotTimelineHandler, DragonBonesTimelineKind.Slot],
+  ['dragonBonesZOrderTimelineHandler', dragonBonesZOrderTimelineHandler, DragonBonesTimelineKind.ZOrder],
+];
+
 /** The backend whose rows become `parserOptions` rather than a render-state fragment. */
 export const CATALOG_PARSER_BACKEND = 'parser';
 
@@ -447,6 +484,28 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
         symbol,
         `${SPINE_JSON_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
         familyOrderOf(spineJsonAllTimelineHandlers, handler),
+        'timelineHandlers',
+      ),
+    );
+  }
+  for (const [symbol, handler, kind] of DRAGONBONES_SECTION_HANDLERS) {
+    rows.push(
+      row(
+        '@flighthq/skeleton2d-formats/contract',
+        symbol,
+        `${DRAGONBONES_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
+        familyOrderOf(dragonBonesAllSectionHandlers, handler),
+        'sectionHandlers',
+      ),
+    );
+  }
+  for (const [symbol, handler, kind] of DRAGONBONES_TIMELINE_HANDLERS) {
+    rows.push(
+      row(
+        '@flighthq/skeleton2d-formats/contract',
+        symbol,
+        `${DRAGONBONES_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
+        familyOrderOf(dragonBonesAllTimelineHandlers, handler),
         'timelineHandlers',
       ),
     );

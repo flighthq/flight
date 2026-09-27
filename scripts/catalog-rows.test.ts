@@ -8,6 +8,8 @@ import {
 import * as scene3dFormats from '@flighthq/scene3d-formats';
 import { getThreeDsChunkName } from '@flighthq/scene3d-formats/contract';
 import {
+  dragonBonesAllSectionHandlers,
+  dragonBonesAllTimelineHandlers,
   spineBinaryAllSectionHandlers,
   spineBinaryAllTimelineHandlers,
   spineJsonAllSectionHandlers,
@@ -23,6 +25,8 @@ import {
   buildRequirementCatalogRows,
   CATALOG_PARSER_BACKEND,
   COLLADA_ELEMENT_DECODERS,
+  DRAGONBONES_SECTION_HANDLERS,
+  DRAGONBONES_TIMELINE_HANDLERS,
   MD2_SECTION_HANDLERS,
   MD5_SECTION_HANDLERS,
   OBJ_MATERIAL_HANDLERS,
@@ -61,7 +65,18 @@ describe('buildRequirementCatalogRows', () => {
   });
 
   it('namespaces every kind by format, so two formats cannot claim one key', () => {
-    const namespaces = ['3ds.', 'awd2.', 'dae.', 'md2.', 'md5.', 'obj.', 'spine-binary.', 'spine-json.', 'swf.'];
+    const namespaces = [
+      '3ds.',
+      'awd2.',
+      'dae.',
+      'dragonbones.',
+      'md2.',
+      'md5.',
+      'obj.',
+      'spine-binary.',
+      'spine-json.',
+      'swf.',
+    ];
     const kinds = buildRequirementCatalogRows().map((row) => row.kind);
     expect(kinds.every((kind) => namespaces.some((namespace) => kind.startsWith(namespace)))).toBe(true);
     // Every namespace must actually be present, or the clause above passes vacuously for the formats
@@ -151,7 +166,8 @@ describe('buildRequirementCatalogRows', () => {
           isSectionHandler(value) ||
           isMaterialHandler(value) ||
           isSpineBinaryHandler(value) ||
-          isSpineJsonHandler(value),
+          isSpineJsonHandler(value) ||
+          isDragonBonesHandler(value),
         `${row.implementationSymbol}`,
       ).toBe(true);
     }
@@ -473,6 +489,80 @@ describe('buildRequirementCatalogRows', () => {
       expect(row.implementationImport).toBe('@flighthq/skeleton2d-formats/contract');
     }
   });
+
+  it('lists every DragonBones section handler the skeleton2d-formats contract exports', () => {
+    const exported = Object.keys(skeleton2dFormatsContract)
+      .filter(
+        (name) =>
+          name.startsWith('dragonBones') &&
+          name.endsWith('SectionHandler') &&
+          !name.startsWith('register') &&
+          !name.startsWith('get') &&
+          !name.startsWith('unregister') &&
+          typeof (skeleton2dFormatsContract as unknown as Record<string, unknown>)[name] === 'function',
+      )
+      .sort();
+    expect(DRAGONBONES_SECTION_HANDLERS.map(([symbol]) => symbol).sort()).toEqual(exported);
+  });
+
+  it('lists every DragonBones timeline handler the skeleton2d-formats contract exports', () => {
+    const exported = Object.keys(skeleton2dFormatsContract)
+      .filter(
+        (name) =>
+          name.startsWith('dragonBones') &&
+          name.endsWith('TimelineHandler') &&
+          !name.startsWith('register') &&
+          !name.startsWith('get') &&
+          !name.startsWith('unregister') &&
+          typeof (skeleton2dFormatsContract as unknown as Record<string, unknown>)[name] === 'function',
+      )
+      .sort();
+    expect(DRAGONBONES_TIMELINE_HANDLERS.map(([symbol]) => symbol).sort()).toEqual(exported);
+  });
+
+  it('emits one row per DragonBones handler, each routed to its declared kind', () => {
+    const rows = buildRequirementCatalogRows();
+    for (const [symbol, , kind] of DRAGONBONES_SECTION_HANDLERS) {
+      const matching = rows.filter((candidate) => candidate.implementationSymbol === symbol);
+      expect(matching, symbol).toHaveLength(1);
+      expect(matching[0].kind, symbol).toBe(`dragonbones.${kind}`);
+    }
+    for (const [symbol, , kind] of DRAGONBONES_TIMELINE_HANDLERS) {
+      const matching = rows.filter((candidate) => candidate.implementationSymbol === symbol);
+      expect(matching, symbol).toHaveLength(1);
+      expect(matching[0].kind, symbol).toBe(`dragonbones.${kind}`);
+    }
+  });
+
+  it('numbers each DragonBones row by its position in the family the format ships', () => {
+    const rows = buildRequirementCatalogRows();
+    for (const [symbol, handler] of DRAGONBONES_SECTION_HANDLERS) {
+      const expected = dragonBonesAllSectionHandlers.indexOf(handler);
+      for (const row of rows.filter((candidate) => candidate.implementationSymbol === symbol)) {
+        expect(row.familyOrder, symbol).toBe(expected);
+      }
+    }
+    for (const [symbol, handler] of DRAGONBONES_TIMELINE_HANDLERS) {
+      const expected = dragonBonesAllTimelineHandlers.indexOf(handler);
+      for (const row of rows.filter((candidate) => candidate.implementationSymbol === symbol)) {
+        expect(row.familyOrder, symbol).toBe(expected);
+      }
+    }
+  });
+
+  it('sets parserField on DragonBones rows to split section and timeline handlers', () => {
+    const rows = buildRequirementCatalogRows();
+    for (const row of rows.filter((candidate) => candidate.kind.startsWith('dragonbones.'))) {
+      const isSectionKind = DRAGONBONES_SECTION_HANDLERS.some(([, , kind]) => row.kind === `dragonbones.${kind}`);
+      expect(row.parserField, row.kind).toBe(isSectionKind ? 'sectionHandlers' : 'timelineHandlers');
+    }
+  });
+
+  it('imports DragonBones handlers from the contract lane', () => {
+    for (const row of buildRequirementCatalogRows().filter((r) => r.kind.startsWith('dragonbones.'))) {
+      expect(row.implementationImport).toBe('@flighthq/skeleton2d-formats/contract');
+    }
+  });
 });
 
 function isTagHandler(value: unknown): boolean {
@@ -513,5 +603,9 @@ function isSpineBinaryHandler(value: unknown): boolean {
 }
 
 function isSpineJsonHandler(value: unknown): boolean {
+  return typeof value === 'function';
+}
+
+function isDragonBonesHandler(value: unknown): boolean {
   return typeof value === 'function';
 }

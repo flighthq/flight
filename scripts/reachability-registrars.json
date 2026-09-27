@@ -1355,6 +1355,10 @@
     },
     {
       "packageName": "skeleton2d-formats",
+      "registrar": "registerAllDragonBonesHandlers"
+    },
+    {
+      "packageName": "skeleton2d-formats",
       "registrar": "registerAllSpineBinaryHandlers"
     },
     {
@@ -1363,7 +1367,27 @@
     },
     {
       "packageName": "skeleton2d-formats",
+      "registrar": "registerDragonBonesSectionHandler"
+    },
+    {
+      "packageName": "skeleton2d-formats",
+      "registrar": "registerDragonBonesSectionHandlers"
+    },
+    {
+      "packageName": "skeleton2d-formats",
+      "registrar": "registerDragonBonesTimelineHandler"
+    },
+    {
+      "packageName": "skeleton2d-formats",
+      "registrar": "registerDragonBonesTimelineHandlers"
+    },
+    {
+      "packageName": "skeleton2d-formats",
       "registrar": "registerSkeleton2DFormat"
+    },
+    {
+      "packageName": "skeleton2d-formats",
+      "registrar": "registerSkeleton2DJsonAnalyzer"
     },
     {
       "packageName": "skeleton2d-formats",

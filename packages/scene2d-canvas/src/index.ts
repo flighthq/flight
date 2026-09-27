@@ -59,7 +59,6 @@ export * from './canvasShapeCommandTable.ts';
 export {
   canvasBeginFill,
   canvasBeginGradientFill,
-  canvasBeginTextureFill,
   canvasCubicCurveTo,
   canvasQuadraticCurveTo,
   canvasDrawCircle,
@@ -70,7 +69,6 @@ export {
   canvasEndFill,
   canvasLineGradientStyle,
   canvasLineStyle,
-  canvasLineTextureStyle,
   canvasLineTo,
   canvasMoveTo,
   canvasShapeCommands,

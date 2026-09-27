@@ -1003,6 +1003,8 @@ export * from './Skeleton2DSlotAnimationTarget.ts';
 export * from './SvgDocumentImport.ts';
 export * from './SvgPathDataFormatOptions.ts';
 export * from './Skeleton2DImport.ts';
+export * from './DragonBonesRegistry.ts';
+export * from './Skeleton2DJsonAnalysis.ts';
 export * from './SpineBinaryVersion.ts';
 export * from './SpineBinaryRegistry.ts';
 export * from './SpineJsonRegistry.ts';

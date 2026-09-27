@@ -14,6 +14,9 @@ import type {
   Attachment2D,
   AttachmentSkin2D,
   Bone2D,
+  DragonBonesRegistry,
+  DragonBonesSectionContext,
+  DragonBonesTimelineContext,
   EasingFunction,
   EntityConstruction,
   ImportDiagnostic,
@@ -28,12 +31,15 @@ import type {
 import {
   AnimationInterpolationLinear,
   AnimationInterpolationStep,
-  Skeleton2DSlotAnimationPath,
+  DragonBonesTimelineKind,
   ImportDiagnosticSeverity,
   MeshAttachment2DKind,
   RegionAttachment2DKind,
   Skeleton2DAnimationPath,
+  Skeleton2DSlotAnimationPath,
 } from '@flighthq/types/contract';
+
+import { getDragonBonesTimelineHandler } from './dragonBonesRegistry.ts';
 
 // Resolves a DragonBones armature-file-order bone index to the topo-sorted output index (the axis-12 remap).
 // Local to this file — a value, not an exported API type.
@@ -79,6 +85,183 @@ function initializeRegionAttachment2D(
   out.width = width;
   out.x = x;
   out.y = y;
+}
+
+export function dragonBonesAnimationsSectionReader(context: DragonBonesSectionContext): void {
+  const raw = context.armature.animation;
+  if (!Array.isArray(raw)) return;
+  let blendTrees = 0;
+  let totalUnresolvedBones = 0;
+  const totalUnmodeledTimelines = new Map<string, number>();
+  for (const entry of raw) {
+    if (entry === null || typeof entry !== 'object') continue;
+    const animation = entry as Record<string, unknown>;
+    if (animation.type === DRAGONBONES_BLEND_TREE_TYPE) blendTrees++;
+    const name = typeof animation.name === 'string' ? animation.name : DEFAULT_DRAGONBONES_ANIMATION_NAME;
+    const timelineContext: DragonBonesTimelineContext = {
+      channels: [],
+      section: context,
+      unmodeledTimelineCounts: new Map(),
+      unresolvedBoneCount: 0,
+      unregisteredTimelineCounts: new Map(),
+    };
+    for (const [jsonKey, timelineKind] of DRAGONBONES_TIMELINE_KEY_MAP) {
+      if (animation[jsonKey] === undefined) continue;
+      const handler = getDragonBonesTimelineHandler(context.registry, timelineKind);
+      if (handler !== null) {
+        handler(timelineContext, name, animation);
+      } else {
+        const prev = timelineContext.unregisteredTimelineCounts.get(timelineKind) ?? 0;
+        timelineContext.unregisteredTimelineCounts.set(timelineKind, prev + 1);
+      }
+    }
+    for (const [kind, count] of timelineContext.unregisteredTimelineCounts) {
+      reportImportDiagnostic(
+        context.diagnostics,
+        ImportDiagnosticSeverity.Skip,
+        `dragonbones.${kind}-timeline-unregistered`,
+        'dragonBonesAnimationsSectionReader',
+        { count },
+      );
+    }
+    totalUnresolvedBones += timelineContext.unresolvedBoneCount;
+    for (const [kind, count] of timelineContext.unmodeledTimelineCounts) {
+      totalUnmodeledTimelines.set(kind, (totalUnmodeledTimelines.get(kind) ?? 0) + count);
+    }
+    const duration = numberOr(animation.duration, 0) / context.frameRate;
+    context.animations.push({
+      clip: createAnimationClip(
+        timelineContext.channels,
+        Number.isFinite(duration) && duration > 0 ? duration : undefined,
+      ),
+      name,
+    });
+  }
+  if (blendTrees > 0) {
+    reportImportDiagnostic(
+      context.diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'dragonbones.blend-tree-animation-unsupported',
+      'parseDragonBonesSkeleton',
+      { animations: blendTrees },
+    );
+  }
+  for (const [kind, count] of totalUnmodeledTimelines) {
+    reportImportDiagnostic(
+      context.diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      `dragonbones.${kind}-timeline-unsupported`,
+      'parseDragonBonesSkeleton',
+      { timelines: count },
+    );
+  }
+  if (totalUnresolvedBones > 0) {
+    reportImportDiagnostic(
+      context.diagnostics,
+      ImportDiagnosticSeverity.Recover,
+      'dragonbones.animation-bone-unresolved',
+      'parseDragonBonesSkeleton',
+      { bones: totalUnresolvedBones },
+    );
+  }
+}
+
+export function dragonBonesBonesSectionReader(context: DragonBonesSectionContext): void {
+  const { bones, rawIndexToOutput } = parseDragonBonesBones(context.armature.bone, context.diagnostics);
+  for (const bone of bones) context.bones.push(bone);
+  for (let i = 0; i < rawIndexToOutput.length; i++) context.rawIndexToOutput[i] = rawIndexToOutput[i];
+  const byName = buildBoneIndexByName(bones);
+  for (const [name, index] of byName) context.boneIndexByName.set(name, index);
+}
+
+export function dragonBonesBoneTimelineReader(
+  context: DragonBonesTimelineContext,
+  _animName: string,
+  animEntry: Readonly<Record<string, unknown>>,
+): void {
+  if (!Array.isArray(animEntry.bone)) return;
+  for (const rawTimeline of animEntry.bone) {
+    if (rawTimeline === null || typeof rawTimeline !== 'object') continue;
+    const timeline = rawTimeline as Record<string, unknown>;
+    const boneIndex =
+      typeof timeline.name === 'string' ? (context.section.boneIndexByName.get(timeline.name) ?? -1) : -1;
+    if (boneIndex < 0) {
+      context.unresolvedBoneCount++;
+      continue;
+    }
+    parseDragonBonesBoneTimeline(
+      context.channels,
+      timeline,
+      boneIndex,
+      context.section.frameRate,
+      context.section.diagnostics,
+    );
+  }
+}
+
+export function dragonBonesDeformTimelineReader(
+  context: DragonBonesTimelineContext,
+  _animName: string,
+  animEntry: Readonly<Record<string, unknown>>,
+): void {
+  skipCrumbDragonBonesGroup(context.section.diagnostics, animEntry.ffd, 'dragonbones.deform-timeline-unsupported');
+}
+
+export function dragonBonesIkConstraintsSectionReader(context: DragonBonesSectionContext): void {
+  skipCrumbDragonBonesGroup(context.diagnostics, context.armature.ik, 'dragonbones.ik-constraint-unsupported');
+}
+
+export function dragonBonesIkTimelineReader(
+  context: DragonBonesTimelineContext,
+  _animName: string,
+  animEntry: Readonly<Record<string, unknown>>,
+): void {
+  skipCrumbDragonBonesGroup(context.section.diagnostics, animEntry.ik, 'dragonbones.ik-timeline-unsupported');
+}
+
+export function dragonBonesSkinsSectionReader(context: DragonBonesSectionContext): void {
+  const remapBoneIndex = buildDragonBonesBoneRemap(context.rawIndexToOutput);
+  const { skins, table } = parseDragonBonesSkins(
+    context.armature.skin,
+    context.slotOrder,
+    remapBoneIndex,
+    context.diagnostics,
+  );
+  for (const skin of skins) context.skins.push(skin);
+  for (const [key, value] of table) context.displayTable.set(key, value);
+}
+
+export function dragonBonesSlotsSectionReader(context: DragonBonesSectionContext): void {
+  const slots = parseDragonBonesSlots(
+    context.armature.slot,
+    context.boneIndexByName,
+    context.displayTable,
+    context.diagnostics,
+  );
+  for (const slot of slots) context.slots.push(slot);
+}
+
+export function dragonBonesSlotTimelineReader(
+  context: DragonBonesTimelineContext,
+  _animName: string,
+  animEntry: Readonly<Record<string, unknown>>,
+): void {
+  parseDragonBonesSlotTimelines(
+    context.channels,
+    animEntry.slot,
+    context.section.slotOrder,
+    context.section.displayTable,
+    context.section.frameRate,
+    context.unmodeledTimelineCounts,
+  );
+}
+
+export function dragonBonesZOrderTimelineReader(
+  context: DragonBonesTimelineContext,
+  _animName: string,
+  animEntry: Readonly<Record<string, unknown>>,
+): void {
+  skipCrumbDragonBonesGroup(context.section.diagnostics, animEntry.zOrder, 'dragonbones.zorder-timeline-unsupported');
 }
 
 // Parses a DragonBones `.json` skeleton document (text) into a Skeleton2DImport. Tolerant and best-effort,
@@ -142,6 +325,56 @@ export function parseDragonBonesSkeleton(json: string, diagnostics?: ImportDiagn
   const skeleton = createSkeleton2D(bones, slots);
   if (skins.length > 0) skeleton.skins = skins;
   return { animations, skeleton };
+}
+
+export function parseDragonBonesSkeletonWithRegistry(
+  json: string,
+  registry: Readonly<DragonBonesRegistry>,
+  diagnostics?: ImportDiagnostic[],
+): Skeleton2DImport | null {
+  let doc: unknown;
+  try {
+    doc = JSON.parse(json);
+  } catch {
+    return null;
+  }
+  if (doc === null || typeof doc !== 'object') return null;
+  const armatures = (doc as Record<string, unknown>).armature;
+  if (!Array.isArray(armatures) || armatures.length === 0) return null;
+  if (!checkDragonBonesVersion(doc as Record<string, unknown>, diagnostics)) return null;
+  if (armatures.length > 1) {
+    reportImportDiagnostic(
+      diagnostics,
+      ImportDiagnosticSeverity.Skip,
+      'dragonbones.multi-armature-unsupported',
+      'parseDragonBonesSkeleton',
+      { armatures: armatures.length - 1 },
+    );
+  }
+  const first = armatures[0];
+  if (first === null || typeof first !== 'object') return null;
+  const armature = first as Record<string, unknown>;
+  const context: DragonBonesSectionContext = {
+    animations: [],
+    armature,
+    boneIndexByName: new Map(),
+    bones: [],
+    diagnostics,
+    displayTable: new Map(),
+    doc: doc as Record<string, unknown>,
+    frameRate: dragonBonesFrameRate(armature, doc as Record<string, unknown>),
+    rawIndexToOutput: [],
+    registry,
+    skins: [],
+    slotOrder: buildDragonBonesSlotOrder(armature.slot),
+    slots: [],
+  };
+  for (const entry of registry.sectionHandlers) {
+    entry.handle(context);
+  }
+  const skeleton = createSkeleton2D(context.bones, context.slots);
+  if (context.skins.length > 0) skeleton.skins = context.skins;
+  return { animations: context.animations, skeleton };
 }
 
 // Rebuilds the bone-name → output-index lookup from the (already topologically sorted) bone array, so slot
@@ -1142,6 +1375,14 @@ function skipCrumbDragonBonesGroup(diagnostics: ImportDiagnostic[] | undefined, 
 // runs at 24fps.
 const DEFAULT_DRAGONBONES_ANIMATION_NAME = 'default';
 const DEFAULT_DRAGONBONES_FRAME_RATE = 24;
+
+const DRAGONBONES_TIMELINE_KEY_MAP: readonly (readonly [string, string])[] = [
+  ['bone', DragonBonesTimelineKind.Bone],
+  ['slot', DragonBonesTimelineKind.Slot],
+  ['ffd', DragonBonesTimelineKind.Deform],
+  ['ik', DragonBonesTimelineKind.Ik],
+  ['zOrder', DragonBonesTimelineKind.ZOrder],
+];
 
 // DragonBones' name for the base skin; an unnamed skin is that one.
 const DEFAULT_DRAGONBONES_SKIN_NAME = 'default';
