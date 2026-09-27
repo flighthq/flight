@@ -27,6 +27,13 @@ export const STL_MESH_FEATURE = 'Mesh';
  *
  * ASCII is then checked against the facet grammar itself rather than against its opening keyword, for the mirror
  * reason: `solid` is the cheap half of the format and the facet block is the half that means something.
+ *
+ * ★ THE ORDER IS NOT LOAD-BEARING, AND THAT IS MEASURED RATHER THAN HOPED FOR. Binary is tried first because the
+ * format's own advice is to size-check before reading text, but the two readings are DISJOINT: a file that
+ * satisfies the bounds equation carries its triangle count as four raw bytes at offset 80, and for any count
+ * small enough to describe a real file those bytes are unprintable — so the same file cannot also satisfy a
+ * grammar built from whitespace-separated keywords. `countAsciiStlFacets` is asserted to reject the trap fixture
+ * directly, which is the property that makes the order safe; reversing these two branches changes no answer.
  */
 export function collectStlFeatures(bytes: Readonly<Uint8Array>): StlFeatures | null {
   const binaryCount = readBinaryStlTriangleCount(bytes);

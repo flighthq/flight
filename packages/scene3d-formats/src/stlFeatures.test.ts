@@ -1,4 +1,4 @@
-import { encodeUTF8 } from '@flighthq/encoding/contract';
+import { decodeUTF8, encodeUTF8 } from '@flighthq/encoding/contract';
 
 import {
   BINARY_STL_COUNT_OFFSET,
@@ -43,9 +43,18 @@ describe('collectStlFeatures', () => {
   // ★ THE TRAP THE FORMAT IS FAMOUS FOR. A binary STL's 80-byte header is free text, and exporters have written
   // `solid` into it for decades. A reader that keyed on the opening word would parse the whole binary payload as
   // ASCII text, find no facets, and report an empty model — a wrong answer that looks like an empty file.
-  it('reads a binary file whose header begins with the word solid as binary', () => {
-    const bytes = buildBinaryStl(STL_SQUARE_FACETS, 'solid part made by an exporter that writes this');
+  it.each([
+    ['the bare keyword', 'solid part made by an exporter that writes this'],
+    ['the keyword and a line break, which is where a solid line would end', 'solid part\n'],
+    ['a header that goes on to imitate a facet line', 'solid part\nfacet normal 0 0 1\n'],
+  ])('reads a binary file whose header begins with %s as binary', (_label, header) => {
+    const bytes = buildBinaryStl(STL_SQUARE_FACETS, header);
     expect(collectStlFeatures(bytes)).toEqual({ triangleCount: 2, variant: 'Binary' });
+    // ★ AND THE TEXT GRAMMAR REJECTS IT OUTRIGHT, which is the property that makes the trap harmless rather than
+    // merely survivable. Because the two readings are disjoint, trying binary first is belt-and-braces: reversing
+    // the two branches would change no answer. Asserting only the verdict above would pass under either order and
+    // would leave the word "first" in the comment unbacked by anything.
+    expect(countAsciiStlFacets(decodeUTF8(bytes))).toBeNull();
   });
 
   // ★ TRUNCATION IS NOT A SECOND CHANCE AT ASCII. A binary file short by one byte fails the bounds equation; if
