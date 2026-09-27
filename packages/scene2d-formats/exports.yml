@@ -2,6 +2,21 @@
 
 protected:
   - applyRiveArtboardHandlers
+  - lottieEllipseShapeItemReader
+  - lottieFillShapeItemReader
+  - lottieGradientFillShapeItemReader
+  - lottieGradientStrokeShapeItemReader
+  - lottieImageLayerReader
+  - lottieNullLayerReader
+  - lottiePathShapeItemReader
+  - lottiePolystarShapeItemReader
+  - lottiePrecompositionLayerReader
+  - lottieRectangleShapeItemReader
+  - lottieShapeLayerReader
+  - lottieSolidLayerReader
+  - lottieStrokeShapeItemReader
+  - lottieTextLayerReader
+  - lottieTrimPathShapeItemReader
   - applyRiveClipping
   - applyRiveDocumentHandlers
   - applyRiveDrawOrder
