@@ -13,7 +13,11 @@ describe('texture atlas format naming', () => {
     expect(exported).toContain('parseTexturePackerAtlasDocument');
     // The abbreviation is gone outright rather than kept beside the full name: a parallel deprecated
     // spelling would leave the grep that misses these functions still missing them.
-    expect(exported.filter((name) => /Packer/.test(name) && !/TexturePacker/.test(name))).toEqual([]);
+    //
+    // The leading letter is either case because an export may START with the product name — a const such as
+    // `texturePackerTextureAtlasFormat` spells it in full in the only casing camelCase allows there, and a
+    // case-sensitive `TexturePacker` would read that correct name as the abbreviation this bans.
+    expect(exported.filter((name) => /Packer/.test(name) && !/[Tt]exturePacker/.test(name))).toEqual([]);
   });
 
   it('keeps every other atlas export naming the type it operates on', () => {
