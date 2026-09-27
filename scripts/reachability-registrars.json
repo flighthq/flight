@@ -911,7 +911,27 @@
     },
     {
       "packageName": "scene2d-formats",
+      "registrar": "registerAllLottieHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
       "registrar": "registerAllRiveHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerLottieLayerHandler"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerLottieLayerHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerLottieShapeItemHandler"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerLottieShapeItemHandlers"
     },
     {
       "packageName": "scene2d-formats",
