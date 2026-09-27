@@ -9,7 +9,8 @@ import type {
 } from '@flighthq/types/contract';
 import { PathCommand, SpriteKind, ShapeKind, TextLabelKind } from '@flighthq/types/contract';
 
-import { applyAnimationClipToLottieDocument, createScene2DFromLottieDocument } from './lottieDocument.ts';
+import { applyAnimationClipToLottieDocument } from './lottieDocument.ts';
+import { createScene2DFromLottieDocument } from './lottieImport.ts';
 import { createReadyImageResourceForTest } from './testHelper.ts';
 
 // A units regression guard. Bodymovin states rotation and skew in degrees and Flight's authoring
@@ -19,11 +20,11 @@ import { createReadyImageResourceForTest } from './testHelper.ts';
 describe('Lottie authoring units', () => {
   it('writes rotation and skew in the degrees Node2D expects', () => {
     const result = createScene2DFromLottieDocument(
-      createDocument([
+      createLottieTestDocument([
         { ind: 1, ip: 0, ks: { r: { k: 90 }, sk: { k: 30 } }, nm: 'turned', op: 60, ty: 3 },
       ] as LottieLayer[]),
     );
-    const node = findByName(result.root, 'turned')!;
+    const node = findLottieTestNodeByName(result.root, 'turned')!;
 
     expect(node.rotation).toBe(90);
     expect(node.skewX).toBe(30);
@@ -45,10 +46,10 @@ describe('Lottie blend modes', () => {
       [5, 'Lighten'],
     ] as const) {
       const result = createScene2DFromLottieDocument(
-        createDocument([{ bm: value, ind: 1, ip: 0, nm: 'layer', op: 60, ty: 3 }] as LottieLayer[]),
+        createLottieTestDocument([{ bm: value, ind: 1, ip: 0, nm: 'layer', op: 60, ty: 3 }] as LottieLayer[]),
       );
 
-      expect(findByName(result.root, 'layer')!.blendMode).toBe(expected);
+      expect(findLottieTestNodeByName(result.root, 'layer')!.blendMode).toBe(expected);
       expect(result.advancedBlends).toEqual([]);
     }
   });
@@ -69,12 +70,12 @@ describe('Lottie blend modes', () => {
     ] as const;
     for (const [value, expected] of advanced) {
       const result = createScene2DFromLottieDocument(
-        createDocument([{ bm: value, ind: 1, ip: 0, nm: 'layer', op: 60, ty: 3 }] as LottieLayer[]),
+        createLottieTestDocument([{ bm: value, ind: 1, ip: 0, nm: 'layer', op: 60, ty: 3 }] as LottieLayer[]),
       );
 
       expect(result.advancedBlends.map((entry) => entry.mode)).toEqual([expected]);
       // The node stays normal, because the mode is not blend state.
-      expect(findByName(result.root, 'layer')!.blendMode).toBe('Normal');
+      expect(findLottieTestNodeByName(result.root, 'layer')!.blendMode).toBe('Normal');
     }
   });
 });
@@ -91,8 +92,8 @@ describe('Lottie document conformance census', () => {
 
   it('imports the common layer families and resolves explicit images', () => {
     const image = createReadyImageResourceForTest(12, 8);
-    const document = createDocument([
-      shapeLayer(1, 'shape'),
+    const document = createLottieTestDocument([
+      lottieTestShapeLayer(1, 'shape'),
       { ind: 2, ip: 0, nm: 'solid', op: 60, sc: '#ff0000', sh: 20, sw: 30, ty: 1 },
       { ind: 3, ip: 0, nm: 'image', op: 60, refId: 'imageAsset', ty: 2 },
       { ind: 4, ip: 0, nm: 'null', op: 60, ty: 3 },
@@ -108,20 +109,20 @@ describe('Lottie document conformance census', () => {
     ]);
     document.assets = [
       { h: 8, id: 'imageAsset', p: 'pixel.png', w: 12 },
-      { id: 'precompAsset', layers: [shapeLayer(7, 'nested')] },
+      { id: 'precompAsset', layers: [lottieTestShapeLayer(7, 'nested')] },
     ];
 
     const result = createScene2DFromLottieDocument(document, undefined, {
       resolveImageResource: () => image,
     });
 
-    expect(findByName(result.root, 'shape')).not.toBeNull();
-    expect(findFirstKind(findByName(result.root, 'shape')!, ShapeKind)).not.toBeNull();
-    expect(findFirstKind(findByName(result.root, 'solid')!, ShapeKind)).not.toBeNull();
-    expect(findFirstKind(findByName(result.root, 'image')!, SpriteKind)).not.toBeNull();
-    expect(findByName(result.root, 'null')).not.toBeNull();
-    expect(findFirstKind(findByName(result.root, 'text')!, TextLabelKind)).not.toBeNull();
-    expect(findByName(result.root, 'nested')).not.toBeNull();
+    expect(findLottieTestNodeByName(result.root, 'shape')).not.toBeNull();
+    expect(findLottieTestNodeByKind(findLottieTestNodeByName(result.root, 'shape')!, ShapeKind)).not.toBeNull();
+    expect(findLottieTestNodeByKind(findLottieTestNodeByName(result.root, 'solid')!, ShapeKind)).not.toBeNull();
+    expect(findLottieTestNodeByKind(findLottieTestNodeByName(result.root, 'image')!, SpriteKind)).not.toBeNull();
+    expect(findLottieTestNodeByName(result.root, 'null')).not.toBeNull();
+    expect(findLottieTestNodeByKind(findLottieTestNodeByName(result.root, 'text')!, TextLabelKind)).not.toBeNull();
+    expect(findLottieTestNodeByName(result.root, 'nested')).not.toBeNull();
   });
 
   it('builds parent hierarchy and applies static transform and opacity values', () => {
@@ -140,9 +141,9 @@ describe('Lottie document conformance census', () => {
       ty: 3,
     };
     const child: LottieLayer = { ind: 2, ip: 0, nm: 'child', op: 60, parent: 1, ty: 3 };
-    const result = createScene2DFromLottieDocument(createDocument([parent, child]));
-    const parentNode = findByName(result.root, 'parent')!;
-    const childNode = findByName(result.root, 'child')!;
+    const result = createScene2DFromLottieDocument(createLottieTestDocument([parent, child]));
+    const parentNode = findLottieTestNodeByName(result.root, 'parent')!;
+    const childNode = findLottieTestNodeByName(result.root, 'child')!;
 
     expect(parentNode).toMatchObject({
       alpha: 0.5,
@@ -158,26 +159,26 @@ describe('Lottie document conformance census', () => {
   });
 
   it('hides a layer own content without hiding a child that references its transform', () => {
-    const parent = shapeLayer(1, 'hidden-parent');
+    const parent = lottieTestShapeLayer(1, 'hidden-parent');
     parent.hd = true;
     parent.ks = { o: { k: 0 }, p: { k: [10, 20] } };
-    const child = shapeLayer(2, 'visible-child');
+    const child = lottieTestShapeLayer(2, 'visible-child');
     child.parent = 1;
-    const result = createScene2DFromLottieDocument(createDocument([parent, child]));
-    const parentNode = findByName(result.root, 'hidden-parent')!;
-    const childNode = findByName(result.root, 'visible-child')!;
+    const result = createScene2DFromLottieDocument(createLottieTestDocument([parent, child]));
+    const parentNode = findLottieTestNodeByName(result.root, 'hidden-parent')!;
+    const childNode = findLottieTestNodeByName(result.root, 'visible-child')!;
 
     expect(parentNode).toMatchObject({ alpha: 1, visible: true, x: 10, y: 20 });
     expect(getNodeChildCount(parentNode)).toBe(1);
     expect(getNodeChildAt(parentNode, 0)).toBe(childNode);
-    expect(findFirstKind(childNode, ShapeKind)).not.toBeNull();
+    expect(findLottieTestNodeByKind(childNode, ShapeKind)).not.toBeNull();
   });
 
   it('maps uniform vector easing to one channel and component-specific easing to scalar channels', () => {
-    const uniform = animatedVector([0, 0], [10, 20], [0.42], [0], [1], [1]);
-    const split = animatedVector([0, 0], [10, 20], [0.42, 0], [0, 0], [1, 1], [1, 1]);
+    const uniform = animatedLottieTestVector([0, 0], [10, 20], [0.42], [0], [1], [1]);
+    const split = animatedLottieTestVector([0, 0], [10, 20], [0.42, 0], [0, 0], [1, 1], [1, 1]);
     const result = createScene2DFromLottieDocument(
-      createDocument([
+      createLottieTestDocument([
         { ind: 1, ip: 0, ks: { p: uniform }, nm: 'uniform', op: 60, ty: 3 },
         { ind: 2, ip: 0, ks: { p: split }, nm: 'split', op: 60, ty: 3 },
       ]),
@@ -188,13 +189,13 @@ describe('Lottie document conformance census', () => {
 
     expect(positionPaths).toEqual(expect.arrayContaining(['Position', 'X', 'Y']));
     applyAnimationClipToLottieDocument(result.clip, 0.5);
-    expect(findByName(result.root, 'uniform')!.x).toBeLessThan(5);
-    expect(findByName(result.root, 'split')!.x).toBeLessThan(5);
-    expect(findByName(result.root, 'split')!.y).toBeCloseTo(10);
+    expect(findLottieTestNodeByName(result.root, 'uniform')!.x).toBeLessThan(5);
+    expect(findLottieTestNodeByName(result.root, 'split')!.x).toBeLessThan(5);
+    expect(findLottieTestNodeByName(result.root, 'split')!.y).toBeCloseTo(10);
   });
 
   it('imports JSON strings, separated position, hold segments, and layer in/out visibility', () => {
-    const document = createDocument([
+    const document = createLottieTestDocument([
       {
         ind: 1,
         ip: 15,
@@ -208,7 +209,7 @@ describe('Lottie document conformance census', () => {
                 { s: 20, t: 30 },
               ],
             },
-            y: animatedScalar(0, 10),
+            y: animatedLottieTestScalar(0, 10),
           },
         },
         nm: 'timed',
@@ -217,7 +218,7 @@ describe('Lottie document conformance census', () => {
       },
     ]);
     const result = createScene2DFromLottieDocument(JSON.stringify(document));
-    const node = findByName(result.root, 'timed')!;
+    const node = findLottieTestNodeByName(result.root, 'timed')!;
 
     applyAnimationClipToLottieDocument(result.clip, 0.25);
     expect(node.visible).toBe(false);
@@ -230,7 +231,7 @@ describe('Lottie document conformance census', () => {
 
   it('imports bezier, rectangle, ellipse, and polystar geometry with fill, stroke, and gradient paint', () => {
     const items = [
-      { ks: { k: squarePath(0, 0, 10) }, ty: 'sh' },
+      { ks: { k: lottieTestSquarePath(0, 0, 10) }, ty: 'sh' },
       { p: { k: [20, 20] }, r: { k: 0 }, s: { k: [10, 12] }, ty: 'rc' },
       { p: { k: [40, 20] }, s: { k: [10, 12] }, ty: 'el' },
       { ir: { k: 4 }, or: { k: 8 }, os: { k: 0 }, p: { k: [60, 20] }, pt: { k: 5 }, r: { k: 0 }, sy: 1, ty: 'sr' },
@@ -249,13 +250,13 @@ describe('Lottie document conformance census', () => {
       },
     ] as LottieLayer['shapes'];
     const result = createScene2DFromLottieDocument(
-      createDocument([
+      createLottieTestDocument([
         { ind: 1, ip: 0, nm: 'paint', op: 60, shapes: items, ty: 4 },
         { ind: 2, ip: 0, nm: 'gradient', op: 60, shapes: gradientItems, ty: 4 },
       ]),
     );
-    const paint = findFirstKind(findByName(result.root, 'paint')!, ShapeKind) as Shape;
-    const gradient = findFirstKind(findByName(result.root, 'gradient')!, ShapeKind) as Shape;
+    const paint = findLottieTestNodeByKind(findLottieTestNodeByName(result.root, 'paint')!, ShapeKind) as Shape;
+    const gradient = findLottieTestNodeByKind(findLottieTestNodeByName(result.root, 'gradient')!, ShapeKind) as Shape;
 
     // Four paths under two paints (a fill and a stroke): every paint restates the group's whole path
     // set, so the drawPath count is paths x paints.
@@ -267,7 +268,7 @@ describe('Lottie document conformance census', () => {
 
   it('preserves packed gradient opacity stops and combines them with paint opacity', () => {
     const result = createScene2DFromLottieDocument(
-      createDocument([
+      createLottieTestDocument([
         {
           ind: 1,
           ip: 0,
@@ -291,7 +292,10 @@ describe('Lottie document conformance census', () => {
         },
       ] as LottieLayer[]),
     );
-    const shape = findFirstKind(findByName(result.root, 'gradient-opacity')!, ShapeKind) as Shape;
+    const shape = findLottieTestNodeByKind(
+      findLottieTestNodeByName(result.root, 'gradient-opacity')!,
+      ShapeKind,
+    ) as Shape;
     const gradientIndex = shape.data.commands.indexOf('beginGradientFill');
 
     expect(shape.data.commands[gradientIndex + 3]).toEqual([0xff0000ff, 0x00ff00ff, 0x0000ffff]);
@@ -303,8 +307,8 @@ describe('Lottie document conformance census', () => {
     const animatedPath = {
       a: 1 as const,
       k: [
-        { s: squarePath(0, 0, 10), t: 0 },
-        { s: squarePath(20, 0, 10), t: 30 },
+        { s: lottieTestSquarePath(0, 0, 10), t: 0 },
+        { s: lottieTestSquarePath(20, 0, 10), t: 30 },
       ],
     };
     const animatedColor = {
@@ -323,7 +327,7 @@ describe('Lottie document conformance census', () => {
       shapes: [
         { ks: animatedPath, ty: 'sh' },
         { c: animatedColor, o: { k: 100 }, ty: 'fl' },
-        { c: animatedColor, o: { k: 100 }, ty: 'st', w: animatedScalar(1, 5) },
+        { c: animatedColor, o: { k: 100 }, ty: 'st', w: animatedLottieTestScalar(1, 5) },
       ],
       ty: 4,
     };
@@ -354,10 +358,13 @@ describe('Lottie document conformance census', () => {
       ],
       ty: 4,
     };
-    const result = createScene2DFromLottieDocument(createDocument([layer, gradientLayer]));
-    const node = findByName(result.root, 'animated-paint')!;
-    const shape = findFirstKind(node, ShapeKind) as Shape;
-    const gradientShape = findFirstKind(findByName(result.root, 'animated-gradient')!, ShapeKind) as Shape;
+    const result = createScene2DFromLottieDocument(createLottieTestDocument([layer, gradientLayer]));
+    const node = findLottieTestNodeByName(result.root, 'animated-paint')!;
+    const shape = findLottieTestNodeByKind(node, ShapeKind) as Shape;
+    const gradientShape = findLottieTestNodeByKind(
+      findLottieTestNodeByName(result.root, 'animated-gradient')!,
+      ShapeKind,
+    ) as Shape;
     const before = JSON.stringify(shape.data.commands);
     const gradientBefore = JSON.stringify(gradientShape.data.commands);
     const gradientBeforeIndex = gradientShape.data.commands.indexOf('beginGradientFill');
@@ -380,12 +387,14 @@ describe('Lottie document conformance census', () => {
     const child: LottieLayer = {
       ind: 2,
       ip: 0,
-      ks: { p: animatedVector([0, 0], [20, 0]) },
+      ks: { p: animatedLottieTestVector([0, 0], [20, 0]) },
       nm: 'timed-child',
       op: 30,
       ty: 3,
     };
-    const document = createDocument([{ ind: 1, ip: 0, nm: 'precomp', op: 60, refId: 'pc', sr: 2, st: 10, ty: 0 }]);
+    const document = createLottieTestDocument([
+      { ind: 1, ip: 0, nm: 'precomp', op: 60, refId: 'pc', sr: 2, st: 10, ty: 0 },
+    ]);
     document.assets = [{ id: 'pc', layers: [child] }];
     document.markers = [{ cm: 'beat', dr: 5, tm: 15 }];
     const result = createScene2DFromLottieDocument(document);
@@ -397,22 +406,22 @@ describe('Lottie document conformance census', () => {
     expect(Array.from(position.track.times)[1]).toBeCloseTo(7 / 3);
     expect(result.clip.events[0]).toMatchObject({ name: 'beat', time: 0.5 });
     applyAnimationClipToLottieDocument(result.clip, 4 / 3);
-    expect(findByName(result.root, 'timed-child')!.x).toBeCloseTo(10);
+    expect(findLottieTestNodeByName(result.root, 'timed-child')!.x).toBeCloseTo(10);
   });
 
   it('applies static trim paths and diagnoses the predeclared exotic set', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const layer = shapeLayer(1, 'trimmed');
+    const layer = lottieTestShapeLayer(1, 'trimmed');
     layer.ddd = 1;
     layer.bm = 7;
     layer.ef = [{ nm: 'blur' }];
-    layer.tm = animatedScalar(0, 1);
+    layer.tm = animatedLottieTestScalar(0, 1);
     layer.tt = 1;
     layer.shapes!.push({ e: { k: 50 }, m: 1, o: { k: 0 }, s: { k: 0 }, ty: 'tm' });
     layer.ks = { p: { k: [0, 0], x: 'wiggle(1, 2)' } };
-    const result = createScene2DFromLottieDocument(createDocument([layer]), diagnostics);
+    const result = createScene2DFromLottieDocument(createLottieTestDocument([layer]), diagnostics);
     const kinds = diagnostics.map((diagnostic) => diagnostic.kind);
-    const shape = findFirstKind(result.root, ShapeKind) as Shape;
+    const shape = findLottieTestNodeByKind(result.root, ShapeKind) as Shape;
 
     // 3D layers, effect layers, mattes, and time remapping are uncarried coverage gaps, so they are
     // project facts recorded in agents/scene2d-format-coverage.md and must NOT crumb. The expression
@@ -429,13 +438,13 @@ describe('Lottie document conformance census', () => {
 
   it('crumbs an unresolved asset while staying silent about uncarried layer kinds and masks', () => {
     const diagnostics: ImportDiagnostic[] = [];
-    const masked = shapeLayer(1, 'masked');
+    const masked = lottieTestShapeLayer(1, 'masked');
     masked.masksProperties = [
-      { f: { k: [2, 2] }, mode: 'a', o: { k: 100 }, pt: { k: squarePath(0, 0, 10) } },
-      { mode: 's', o: { k: 100 }, pt: { k: squarePath(2, 2, 4) } },
+      { f: { k: [2, 2] }, mode: 'a', o: { k: 100 }, pt: { k: lottieTestSquarePath(0, 0, 10) } },
+      { mode: 's', o: { k: 100 }, pt: { k: lottieTestSquarePath(2, 2, 4) } },
     ];
     createScene2DFromLottieDocument(
-      createDocument([
+      createLottieTestDocument([
         masked,
         { ind: 2, ip: 0, nm: 'missing', op: 60, refId: 'absent', ty: 2 },
         { ind: 3, ip: 0, nm: 'audio', op: 60, ty: 6 },
@@ -507,11 +516,11 @@ describe('Lottie keyframe time/value fidelity', () => {
 
   it.each(CASES)('reproduces every stated keyframe value for $name', ({ keyframes, property, read, convert }) => {
     const result = createScene2DFromLottieDocument(
-      createDocument([
+      createLottieTestDocument([
         { ind: 1, ip: 0, ks: { [property]: { a: 1, k: keyframes } }, nm: 'sampled', op: 60, ty: 3 },
       ] as LottieLayer[]),
     );
-    const node = findByName(result.root, 'sampled')!;
+    const node = findLottieTestNodeByName(result.root, 'sampled')!;
 
     for (const keyframe of keyframes) {
       applyAnimationClipToLottieDocument(result.clip, (keyframe.t - IN_POINT) / FRAME_RATE);
@@ -530,7 +539,7 @@ describe('Lottie keyframe time/value fidelity', () => {
       { o: { x: [0.3], y: [0] }, i: { x: [0.7], y: [1] }, s: 20, t: 24 },
     ];
     const result = createScene2DFromLottieDocument(
-      createDocument([
+      createLottieTestDocument([
         {
           ind: 1,
           ip: 0,
@@ -541,7 +550,7 @@ describe('Lottie keyframe time/value fidelity', () => {
         },
       ] as LottieLayer[]),
     );
-    const node = findByName(result.root, 'sampled')!;
+    const node = findLottieTestNodeByName(result.root, 'sampled')!;
 
     for (const keyframe of rotationKeys) {
       applyAnimationClipToLottieDocument(result.clip, (keyframe.t - IN_POINT) / FRAME_RATE);
@@ -560,11 +569,11 @@ describe('Lottie keyframe time/value fidelity', () => {
       { s: [99, 88], t: 30 },
     ];
     const result = createScene2DFromLottieDocument(
-      createDocument([
+      createLottieTestDocument([
         { ind: 1, ip: 0, ks: { p: { a: 1, k: keyframes } }, nm: 'held', op: 60, ty: 3 },
       ] as LottieLayer[]),
     );
-    const node = findByName(result.root, 'held')!;
+    const node = findLottieTestNodeByName(result.root, 'held')!;
 
     // A hold keyframe steps: every time strictly inside the segment still reads the segment's start.
     for (const frame of [1, 7, 15, 29]) {
@@ -583,9 +592,9 @@ describe('Lottie keyframe time/value fidelity', () => {
       ],
     };
     const result = createScene2DFromLottieDocument(
-      createDocument([{ ind: 1, ip: 0, ks: { p: position }, nm: 'curved', op: 60, ty: 3 }] as LottieLayer[]),
+      createLottieTestDocument([{ ind: 1, ip: 0, ks: { p: position }, nm: 'curved', op: 60, ty: 3 }] as LottieLayer[]),
     );
-    const node = findByName(result.root, 'curved')!;
+    const node = findLottieTestNodeByName(result.root, 'curved')!;
     const positionTrack = result.clip.channels.find(
       (channel) => (channel.targetRef as { path?: string }).path === 'Position',
     )!.track;
@@ -619,12 +628,12 @@ describe('Lottie keyframe time/value fidelity', () => {
       ],
     };
     const result = createScene2DFromLottieDocument(
-      createDocument([
+      createLottieTestDocument([
         {
           ao: 1,
           ind: 1,
           ip: 0,
-          ks: { p: curvedPosition, r: animatedScalar(15, 45) },
+          ks: { p: curvedPosition, r: animatedLottieTestScalar(15, 45) },
           nm: 'oriented',
           op: 60,
           ty: 3,
@@ -633,15 +642,18 @@ describe('Lottie keyframe time/value fidelity', () => {
           ao: 1,
           ind: 2,
           ip: 0,
-          ks: { p: { s: true, x: animatedScalar(0, 100), y: animatedScalar(0, 100) }, r: { k: 10 } },
+          ks: {
+            p: { s: true, x: animatedLottieTestScalar(0, 100), y: animatedLottieTestScalar(0, 100) },
+            r: { k: 10 },
+          },
           nm: 'separated',
           op: 60,
           ty: 3,
         },
       ] as LottieLayer[]),
     );
-    const oriented = findByName(result.root, 'oriented')!;
-    const separated = findByName(result.root, 'separated')!;
+    const oriented = findLottieTestNodeByName(result.root, 'oriented')!;
+    const separated = findLottieTestNodeByName(result.root, 'separated')!;
 
     // The first spatial control leaves straight down, so its 90-degree direction is added to the
     // authored 15 degrees. The last control enters horizontally, leaving the animated authored 45°.
@@ -750,11 +762,11 @@ function shapeOutlineArea(shape: Shape): number {
   return Math.abs(area) / 2;
 }
 
-function createDocument(layers: LottieLayer[]): LottieDocument {
+function createLottieTestDocument(layers: LottieLayer[]): LottieDocument {
   return { fr: 30, h: 100, ip: 0, layers, op: 60, w: 100 };
 }
 
-function shapeLayer(ind: number, name: string): LottieLayer {
+function lottieTestShapeLayer(ind: number, name: string): LottieLayer {
   return {
     ind,
     ip: 0,
@@ -768,7 +780,7 @@ function shapeLayer(ind: number, name: string): LottieLayer {
   };
 }
 
-function animatedVector(
+function animatedLottieTestVector(
   start: number[],
   end: number[],
   ox: number[] = [0.333],
@@ -785,7 +797,7 @@ function animatedVector(
   };
 }
 
-function animatedScalar(start: number, end: number) {
+function animatedLottieTestScalar(start: number, end: number) {
   return {
     a: 1 as const,
     k: [
@@ -795,7 +807,7 @@ function animatedScalar(start: number, end: number) {
   };
 }
 
-function squarePath(x: number, y: number, size: number): LottieShapePath {
+function lottieTestSquarePath(x: number, y: number, size: number): LottieShapePath {
   return {
     c: true,
     i: [
@@ -819,19 +831,19 @@ function squarePath(x: number, y: number, size: number): LottieShapePath {
   };
 }
 
-function findByName(root: Node2D, name: string): Node2D | null {
+function findLottieTestNodeByName(root: Node2D, name: string): Node2D | null {
   if (root.name === name) return root;
   for (let index = 0; index < getNodeChildCount(root); index++) {
-    const found = findByName(getNodeChildAt(root, index) as Node2D, name);
+    const found = findLottieTestNodeByName(getNodeChildAt(root, index) as Node2D, name);
     if (found !== null) return found;
   }
   return null;
 }
 
-function findFirstKind(root: Node2D, kind: string): Node2D | null {
+function findLottieTestNodeByKind(root: Node2D, kind: string): Node2D | null {
   if (root.kind === kind) return root;
   for (let index = 0; index < getNodeChildCount(root); index++) {
-    const found = findFirstKind(getNodeChildAt(root, index) as Node2D, kind);
+    const found = findLottieTestNodeByKind(getNodeChildAt(root, index) as Node2D, kind);
     if (found !== null) return found;
   }
   return null;
@@ -901,7 +913,7 @@ describe('Lottie polystar roundness', () => {
 
   function importPolystar(overrides: Record<string, unknown>): Shape {
     const result = createScene2DFromLottieDocument(
-      createDocument([
+      createLottieTestDocument([
         {
           ind: 1,
           ip: 0,
@@ -915,7 +927,7 @@ describe('Lottie polystar roundness', () => {
         },
       ] as unknown as LottieLayer[]),
     );
-    return findFirstKind(result.root, ShapeKind) as Shape;
+    return findLottieTestNodeByKind(result.root, ShapeKind) as Shape;
   }
 });
 
@@ -927,7 +939,7 @@ describe('Lottie real-export shapes', () => {
   // Trusting the flag reads those as static and hands back the raw keyframe array as a value.
   it('treats a keyframed property as animated even when it states no a flag', () => {
     const result = createScene2DFromLottieDocument(
-      createDocument([
+      createLottieTestDocument([
         {
           ind: 1,
           ip: 0,
@@ -946,7 +958,7 @@ describe('Lottie real-export shapes', () => {
         },
       ] as unknown as LottieLayer[]),
     );
-    const node = findByName(result.root, 'drifting')!;
+    const node = findLottieTestNodeByName(result.root, 'drifting')!;
 
     expect(result.clip.channels.length).toBeGreaterThan(0);
     applyAnimationClipToLottieDocument(result.clip, 0.5);
@@ -955,10 +967,12 @@ describe('Lottie real-export shapes', () => {
 
   it('keeps a static array value static, since its entries are numbers rather than keyframes', () => {
     const result = createScene2DFromLottieDocument(
-      createDocument([{ ind: 1, ip: 0, ks: { p: { k: [12, 34] } }, nm: 'fixed', op: 60, ty: 3 }] as LottieLayer[]),
+      createLottieTestDocument([
+        { ind: 1, ip: 0, ks: { p: { k: [12, 34] } }, nm: 'fixed', op: 60, ty: 3 },
+      ] as LottieLayer[]),
     );
 
-    expect(findByName(result.root, 'fixed')).toMatchObject({ x: 12, y: 34 });
+    expect(findLottieTestNodeByName(result.root, 'fixed')).toMatchObject({ x: 12, y: 34 });
     // Every layer carries a visibility channel; what matters is that position produced none.
     const paths = result.clip.channels.map((channel) => (channel.targetRef as { path?: string }).path);
     expect(paths).not.toContain('Position');
@@ -969,16 +983,16 @@ describe('Lottie real-export shapes', () => {
   it('reads an animated shape path whose keyframe wraps the path in an array', () => {
     const wrapped = {
       k: [
-        { s: [squarePath(0, 0, 10)], t: 0 },
-        { s: [squarePath(20, 0, 10)], t: 30 },
+        { s: [lottieTestSquarePath(0, 0, 10)], t: 0 },
+        { s: [lottieTestSquarePath(20, 0, 10)], t: 30 },
       ],
     };
     const result = createScene2DFromLottieDocument(
-      createDocument([
+      createLottieTestDocument([
         { ind: 1, ip: 0, nm: 'wrapped', op: 60, shapes: [{ ks: wrapped, ty: 'sh' }], ty: 4 },
       ] as unknown as LottieLayer[]),
     );
-    const shape = findFirstKind(findByName(result.root, 'wrapped')!, ShapeKind) as Shape;
+    const shape = findLottieTestNodeByKind(findLottieTestNodeByName(result.root, 'wrapped')!, ShapeKind) as Shape;
 
     expect(shape.data.commands).toContain('drawPath');
     const before = JSON.stringify(shape.data.commands);
@@ -988,12 +1002,14 @@ describe('Lottie real-export shapes', () => {
 
   it('still reads a static shape path stated as a bare object', () => {
     const result = createScene2DFromLottieDocument(
-      createDocument([
-        { ind: 1, ip: 0, nm: 'bare', op: 60, shapes: [{ ks: { k: squarePath(0, 0, 10) }, ty: 'sh' }], ty: 4 },
+      createLottieTestDocument([
+        { ind: 1, ip: 0, nm: 'bare', op: 60, shapes: [{ ks: { k: lottieTestSquarePath(0, 0, 10) }, ty: 'sh' }], ty: 4 },
       ] as unknown as LottieLayer[]),
     );
 
-    expect((findFirstKind(findByName(result.root, 'bare')!, ShapeKind) as Shape).data.commands).toContain('drawPath');
+    expect(
+      (findLottieTestNodeByKind(findLottieTestNodeByName(result.root, 'bare')!, ShapeKind) as Shape).data.commands,
+    ).toContain('drawPath');
   });
 });
 
@@ -1003,7 +1019,7 @@ describe('Lottie real-export shapes', () => {
 describe('Lottie shape group paint', () => {
   it('retains the name of a nested shape group', () => {
     const result = createScene2DFromLottieDocument(
-      createDocument([
+      createLottieTestDocument([
         {
           ind: 1,
           ip: 0,
@@ -1015,7 +1031,7 @@ describe('Lottie shape group paint', () => {
       ] as unknown as LottieLayer[]),
     );
 
-    expect(findByName(result.root, 'named-group')).not.toBeNull();
+    expect(findLottieTestNodeByName(result.root, 'named-group')).not.toBeNull();
   });
 
   it('keeps both fills when a group states two', () => {
@@ -1101,7 +1117,7 @@ describe('Lottie shape group paint', () => {
         {
           c: { k: [0, 1, 0] },
           d: [
-            { n: 'd', v: animatedScalar(4, 8) },
+            { n: 'd', v: animatedLottieTestScalar(4, 8) },
             { n: 'g', v: { k: 2 } },
           ],
           o: { k: 100 },
@@ -1121,7 +1137,7 @@ describe('Lottie shape group paint', () => {
 
   it('prefers and animates the ml2 miter-limit property', () => {
     const result = createScene2DFromLottieDocument(
-      createDocument([
+      createLottieTestDocument([
         {
           ind: 1,
           ip: 0,
@@ -1132,7 +1148,7 @@ describe('Lottie shape group paint', () => {
             {
               c: { k: [0, 1, 0] },
               ml: 3,
-              ml2: animatedScalar(5, 13),
+              ml2: animatedLottieTestScalar(5, 13),
               o: { k: 100 },
               ty: 'st',
               w: { k: 2 },
@@ -1142,7 +1158,10 @@ describe('Lottie shape group paint', () => {
         },
       ] as unknown as LottieLayer[]),
     );
-    const shape = findFirstKind(findByName(result.root, 'animated-miter')!, ShapeKind) as Shape;
+    const shape = findLottieTestNodeByKind(
+      findLottieTestNodeByName(result.root, 'animated-miter')!,
+      ShapeKind,
+    ) as Shape;
     const miterLimit = (): unknown => shape.data.commands[shape.data.commands.indexOf('lineStyle') + 9];
 
     expect(miterLimit()).toBe(5);
@@ -1176,7 +1195,7 @@ describe('Lottie shape group paint', () => {
       ],
     };
     const result = createScene2DFromLottieDocument(
-      createDocument([
+      createLottieTestDocument([
         {
           ind: 1,
           ip: 0,
@@ -1199,7 +1218,10 @@ describe('Lottie shape group paint', () => {
         },
       ] as unknown as LottieLayer[]),
     );
-    const shape = findFirstKind(findByName(result.root, 'animated-direction')!, ShapeKind) as Shape;
+    const shape = findLottieTestNodeByKind(
+      findLottieTestNodeByName(result.root, 'animated-direction')!,
+      ShapeKind,
+    ) as Shape;
 
     expect(pathAnchorsOf(shape)).toEqual([
       [12, 0],
@@ -1277,9 +1299,11 @@ describe('Lottie shape group paint', () => {
 
   function importPaints(items: unknown[], diagnostics?: ImportDiagnostic[]): Shape {
     const result = createScene2DFromLottieDocument(
-      createDocument([{ ind: 1, ip: 0, nm: 'painted', op: 60, shapes: items, ty: 4 }] as unknown as LottieLayer[]),
+      createLottieTestDocument([
+        { ind: 1, ip: 0, nm: 'painted', op: 60, shapes: items, ty: 4 },
+      ] as unknown as LottieLayer[]),
       diagnostics,
     );
-    return findFirstKind(result.root, ShapeKind) as Shape;
+    return findLottieTestNodeByKind(result.root, ShapeKind) as Shape;
   }
 });

@@ -1,55 +1,31 @@
-import type { LottieRegistry, LottieShapeItemContext, LottieShapeItemHandler } from '@flighthq/types/contract';
+import type { LottieRegistry, LottieShapeItemHandler } from '@flighthq/types/contract';
 import { LottieShapeItemKind } from '@flighthq/types/contract';
 
+import { lottieEllipseShapeItemHandler } from './lottieEllipseShapeItem.ts';
+import { lottieFillShapeItemHandler } from './lottieFillShapeItem.ts';
 import {
-  lottieEllipseShapeItemReader,
-  lottieFillShapeItemReader,
-  lottieGradientFillShapeItemReader,
-  lottieGradientStrokeShapeItemReader,
-  lottiePathShapeItemReader,
-  lottiePolystarShapeItemReader,
-  lottieRectangleShapeItemReader,
-  lottieStrokeShapeItemReader,
-  lottieTrimPathShapeItemReader,
-} from './lottieDocument.ts';
+  lottieGradientFillShapeItemHandler,
+  lottieGradientStrokeShapeItemHandler,
+} from './lottieGradientShapeItems.ts';
+import { lottiePathShapeItemHandler } from './lottiePathShapeItem.ts';
+import { lottiePolystarShapeItemHandler } from './lottiePolystarShapeItem.ts';
+import { lottieRectangleShapeItemHandler } from './lottieRectangleShapeItem.ts';
 import { registerLottieShapeItemHandler } from './lottieRegistry.ts';
+import { lottieStrokeShapeItemHandler } from './lottieStrokeShapeItem.ts';
+import { lottieTrimPathShapeItemHandler } from './lottieTrimPathShapeItem.ts';
 
-export function lottieEllipseShapeItemHandler(context: LottieShapeItemContext): void {
-  lottieEllipseShapeItemReader(context);
-}
-
-export function lottieFillShapeItemHandler(context: LottieShapeItemContext): void {
-  lottieFillShapeItemReader(context);
-}
-
-export function lottieGradientFillShapeItemHandler(context: LottieShapeItemContext): void {
-  lottieGradientFillShapeItemReader(context);
-}
-
-export function lottieGradientStrokeShapeItemHandler(context: LottieShapeItemContext): void {
-  lottieGradientStrokeShapeItemReader(context);
-}
-
-export function lottiePathShapeItemHandler(context: LottieShapeItemContext): void {
-  lottiePathShapeItemReader(context);
-}
-
-export function lottiePolystarShapeItemHandler(context: LottieShapeItemContext): void {
-  lottiePolystarShapeItemReader(context);
-}
-
-export function lottieRectangleShapeItemHandler(context: LottieShapeItemContext): void {
-  lottieRectangleShapeItemReader(context);
-}
-
-export function lottieStrokeShapeItemHandler(context: LottieShapeItemContext): void {
-  lottieStrokeShapeItemReader(context);
-}
-
-export function lottieTrimPathShapeItemHandler(context: LottieShapeItemContext): void {
-  lottieTrimPathShapeItemReader(context);
-}
-
+/**
+ * The shape-item family: every handler Flight reads a Lottie shape with, and the registrar that installs them all.
+ *
+ * ★ THIS FILE IS THE PRESET AND NOTHING ELSE. Each handler now lives in the module that owns its interpretation, and
+ * this one only names them — so a caller who imports one handler links one handler, while importing THIS module
+ * links all nine. That split is the whole reason the handlers moved out: this file used to hold nine one-line shims
+ * into readers retained in the 1,800-line document core, which meant naming any handler linked every one of them
+ * plus the core's private path, gradient and stroke code.
+ *
+ * Nothing here registers itself. A handler is a plain function; importing one starts nothing, and
+ * `registerLottieShapeItemHandlers` is the explicit step a zero-config caller takes.
+ */
 export function registerLottieShapeItemHandlers(registry: LottieRegistry): void {
   registerLottieShapeItemHandler(registry, LottieShapeItemKind.Ellipse, lottieEllipseShapeItemHandler);
   registerLottieShapeItemHandler(registry, LottieShapeItemKind.Fill, lottieFillShapeItemHandler);
