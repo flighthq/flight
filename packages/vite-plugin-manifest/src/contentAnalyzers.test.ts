@@ -189,11 +189,9 @@ describe('DEFAULT_CONTENT_ANALYZERS', () => {
   it('covers the formats Flight analyzes, keyed by lowercase extension', () => {
     expect(Object.keys(DEFAULT_CONTENT_ANALYZERS).sort()).toEqual([
       '.3ds',
-      '.atlas',
       '.awd',
       '.awd2',
       '.dae',
-      '.fnt',
       '.glb',
       '.gltf',
       '.json',
@@ -201,18 +199,11 @@ describe('DEFAULT_CONTENT_ANALYZERS', () => {
       '.md5anim',
       '.md5mesh',
       '.obj',
-      '.pex',
-      '.plist',
       '.riv',
       '.skel',
       '.stl',
       '.svg',
       '.swf',
-      '.tmj',
-      '.tmx',
-      '.tsj',
-      '.tsx',
-      '.xml',
     ]);
     // The keying itself, stated as a property rather than left implicit in the list: a build looks the analyzer
     // up by `extname(path).toLowerCase()`, so an entry written with a capital or without its dot is unreachable

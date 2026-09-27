@@ -2,8 +2,6 @@ import { mergeDomRenderOptions } from '@flighthq/scene2d-dom/contract';
 import { mergeSwfParseOptions } from '@flighthq/swf/contract';
 import type {
   Awd2ParseOptions,
-  BitmapFontFormatDescriptor,
-  BitmapFontImportOptions,
   CanvasRenderStateOptions,
   ColladaElementDecoder,
   ColladaImportOptions,
@@ -11,20 +9,11 @@ import type {
   GlRenderStateOptions,
   Kind,
   NodeRenderer,
-  ParticleFormatDescriptor,
-  ParticleImportOptions,
   RiveImportOptions,
   RivePathBooleanRegistrar,
   RiveRegistrar,
-  SpritesheetFormatDescriptor,
-  SpritesheetImportOptions,
   SwfParseOptions,
   SwfTagHandler,
-  TextureAtlasFormatDescriptor,
-  TextureAtlasImportOptions,
-  TilemapFormatDescriptor,
-  TilemapImportOptions,
-  TilesetFormatDescriptor,
   ThreeDsChunkHandler,
   ThreeDsImportOptions,
   WgpuRenderStateOptions,
@@ -41,13 +30,6 @@ import type {
 // constraint below is what actually closes it: a fragment naming an unknown field resolves to `never`
 // and fails to compile.
 type Spreads<Fragment, Target> = keyof Fragment extends keyof Target ? true : never;
-
-// ★ THE KEY-SUBSET CHECK IS NOT ENOUGH FOR THE THREE DESCRIPTOR FAMILIES. Particles, spritesheets and texture
-// atlases each spread into a field named `formats`, so by NAME a spritesheet fragment fits a texture-atlas
-// options object exactly and `Spreads<>` says yes. What differs is the descriptor VALUE type, so these three
-// need whole-fragment assignability — and the cross-family cases have to be asserted as rejected, or the
-// emitter could route one family's rows into another family's importer with nothing here noticing.
-type Assigns<Fragment, Target> = Fragment extends Target ? true : never;
 describe('typed consumer fixtures', () => {
   it('spreads glOptions into GlRenderStateOptions', () => {
     const glOptions = {
@@ -131,121 +113,6 @@ describe('typed consumer fixtures', () => {
     const rejected: Spreads<{ handlers: readonly unknown[] }, RiveImportOptions> extends never ? true : false = true;
     expect(rejected).toBe(true);
   });
-
-  it('spreads parserOptions into BitmapFontImportOptions', () => {
-    const parserOptions = { formats: [BITMAP_FONT_FORMAT] };
-    const assigns: Assigns<typeof parserOptions, BitmapFontImportOptions> = true;
-    const options: BitmapFontImportOptions = { ...parserOptions };
-    expect(assigns).toBe(true);
-    expect(options.formats).toEqual([BITMAP_FONT_FORMAT]);
-  });
-
-  it('spreads parserOptions into ParticleImportOptions', () => {
-    const parserOptions = { formats: [PARTICLE_FORMAT] };
-    const assigns: Assigns<typeof parserOptions, ParticleImportOptions> = true;
-    const options: ParticleImportOptions = { ...parserOptions };
-    expect(assigns).toBe(true);
-    expect(options.formats).toEqual([PARTICLE_FORMAT]);
-  });
-
-  it('spreads parserOptions into SpritesheetImportOptions', () => {
-    const parserOptions = { formats: [SPRITESHEET_FORMAT] };
-    const assigns: Assigns<typeof parserOptions, SpritesheetImportOptions> = true;
-    const options: SpritesheetImportOptions = { ...parserOptions };
-    expect(assigns).toBe(true);
-    expect(options.formats).toEqual([SPRITESHEET_FORMAT]);
-  });
-
-  it('spreads parserOptions into TextureAtlasImportOptions', () => {
-    const parserOptions = { formats: [TEXTURE_ATLAS_FORMAT] };
-    const assigns: Assigns<typeof parserOptions, TextureAtlasImportOptions> = true;
-    const options: TextureAtlasImportOptions = { ...parserOptions };
-    expect(assigns).toBe(true);
-    expect(options.formats).toEqual([TEXTURE_ATLAS_FORMAT]);
-  });
-
-  // ★ THE TILEMAP DOMAIN SPREADS INTO TWO FIELDS, one per role, and the split is the point: a build whose content
-  // is all standalone tilesets never names `mapFormats` and never links a map parser. Both are checked, because
-  // a map descriptor emitted into the tileset field would typecheck as "an object with a kind and an entry" if
-  // the two entry types were interchangeable — they are not, and the rejection below is what proves it.
-  it('spreads parserOptions into TilemapImportOptions, both fields', () => {
-    const parserOptions = { mapFormats: [TILEMAP_FORMAT], tilesetFormats: [TILESET_FORMAT] };
-    const assigns: Assigns<typeof parserOptions, TilemapImportOptions> = true;
-    const options: TilemapImportOptions = { ...parserOptions };
-    expect(assigns).toBe(true);
-    expect(options.mapFormats).toEqual([TILEMAP_FORMAT]);
-    expect(options.tilesetFormats).toEqual([TILESET_FORMAT]);
-  });
-
-  it('spreads a tilemap fragment carrying only the tileset field, for content with no maps', () => {
-    const parserOptions = { tilesetFormats: [TILESET_FORMAT] };
-    const assigns: Assigns<typeof parserOptions, TilemapImportOptions> = true;
-    const options: TilemapImportOptions = { ...parserOptions };
-    expect(assigns).toBe(true);
-    expect(options.mapFormats).toBeUndefined();
-  });
-
-  it('rejects tilemap descriptors emitted into the other role field, and a field the options never declare', () => {
-    const mapIntoTilesetField: Assigns<
-      { tilesetFormats: readonly TilemapFormatDescriptor[] },
-      TilemapImportOptions
-    > extends never
-      ? true
-      : false = true;
-    const tilesetIntoMapField: Assigns<
-      { mapFormats: readonly TilesetFormatDescriptor[] },
-      TilemapImportOptions
-    > extends never
-      ? true
-      : false = true;
-    const unknownField: Spreads<{ formats: readonly unknown[] }, TilemapImportOptions> extends never ? true : false =
-      true;
-    expect(mapIntoTilesetField).toBe(true);
-    expect(tilesetIntoMapField).toBe(true);
-    expect(unknownField).toBe(true);
-  });
-
-  it('rejects a descriptor fragment spread into another family that shares the formats field', () => {
-    const spritesheetIntoAtlas: Assigns<
-      { formats: readonly SpritesheetFormatDescriptor[] },
-      TextureAtlasImportOptions
-    > extends never
-      ? true
-      : false = true;
-    const atlasIntoSpritesheet: Assigns<
-      { formats: readonly TextureAtlasFormatDescriptor[] },
-      SpritesheetImportOptions
-    > extends never
-      ? true
-      : false = true;
-    const particleIntoSpritesheet: Assigns<
-      { formats: readonly ParticleFormatDescriptor[] },
-      SpritesheetImportOptions
-    > extends never
-      ? true
-      : false = true;
-    // The bitmap font family takes BYTES where the others take text, so this pair differs in the parameter type
-    // rather than the return type — and a fragment routed the wrong way would be applied to a detector that
-    // reads a Uint8Array as a string.
-    const bitmapFontIntoSpritesheet: Assigns<
-      { formats: readonly BitmapFontFormatDescriptor[] },
-      SpritesheetImportOptions
-    > extends never
-      ? true
-      : false = true;
-    const spritesheetIntoBitmapFont: Assigns<
-      { formats: readonly SpritesheetFormatDescriptor[] },
-      BitmapFontImportOptions
-    > extends never
-      ? true
-      : false = true;
-    expect(spritesheetIntoAtlas).toBe(true);
-    expect(atlasIntoSpritesheet).toBe(true);
-    expect(particleIntoSpritesheet).toBe(true);
-    expect(bitmapFontIntoSpritesheet).toBe(true);
-    expect(spritesheetIntoBitmapFont).toBe(true);
-  });
-
   it('spreads parserOptions into Awd2ParseOptions', () => {
     const parserOptions = { blocks: [] as Awd2ParseOptions['blocks'][number][] };
     const fits: Spreads<typeof parserOptions, Awd2ParseOptions> = true;
@@ -311,24 +178,3 @@ const RIVE_REGISTRAR: RiveRegistrar = () => {};
 const RIVE_KERNEL_REGISTRAR: RivePathBooleanRegistrar = () => {};
 const CHUNK_HANDLER = { chunkIds: [0x4100], collect: () => {} } as ThreeDsChunkHandler;
 const ELEMENT_DECODER = { decode: () => {}, elements: ['geometry'], features: ['Geometry'] } as ColladaElementDecoder;
-const PARTICLE_FORMAT = { codec: { detect: () => false }, kind: 'Libgdx' } as unknown as ParticleFormatDescriptor;
-const SPRITESHEET_FORMAT = {
-  entry: { detect: () => false, parse: () => undefined },
-  kind: 'Aseprite',
-} as unknown as SpritesheetFormatDescriptor;
-const BITMAP_FONT_FORMAT = {
-  entry: { detect: () => false, parse: () => null },
-  kind: 'BmFontXml',
-} as unknown as BitmapFontFormatDescriptor;
-const TILEMAP_FORMAT = {
-  entry: { detect: () => false, parse: () => null },
-  kind: 'TiledTmx',
-} as unknown as TilemapFormatDescriptor;
-const TILESET_FORMAT = {
-  entry: { detect: () => false, parse: () => null },
-  kind: 'TiledTsx',
-} as unknown as TilesetFormatDescriptor;
-const TEXTURE_ATLAS_FORMAT = {
-  entry: { detect: () => false, parse: (_content: string, atlas: unknown) => atlas },
-  kind: 'aseprite',
-} as unknown as TextureAtlasFormatDescriptor;

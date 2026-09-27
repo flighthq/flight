@@ -1,22 +1,4 @@
 import {
-  bitmapFontAllFormats,
-  bmFontBinaryFormat,
-  bmFontJsonFormat,
-  bmFontTextFormat,
-  bmFontXmlFormat,
-  BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE,
-} from '@flighthq/bitmapfont-formats';
-import {
-  libgdxParticleFormat,
-  particleAllFormats,
-  particleDesignerParticleFormat,
-  PARTICLE_REQUIREMENT_KEY_NAMESPACE,
-  pixiParticleFormat,
-  spineParticleFormat,
-  starlingPexParticleFormat,
-  unityParticleFormat,
-} from '@flighthq/particles-formats';
-import {
   createRiveImportRegistry,
   getRiveCoreTypeName,
   lottieAllLayerHandlers,
@@ -163,15 +145,6 @@ import {
   spineJsonTransformTimelineHandler,
 } from '@flighthq/skeleton2d-formats/contract';
 import {
-  asepriteSpritesheetFormat,
-  cocosPlistSpritesheetFormat,
-  libgdxAtlasSpritesheetFormat,
-  spritesheetAllFormats,
-  SPRITESHEET_REQUIREMENT_KEY_NAMESPACE,
-  starlingSpritesheetFormat,
-  texturePackerSpritesheetFormat,
-} from '@flighthq/spritesheet-formats';
-import {
   swfControlHandler,
   swfDefineMorphShapeHandler,
   swfDefineShapeHandler,
@@ -188,27 +161,9 @@ import {
   swfVideoHandler,
 } from '@flighthq/swf';
 import { getSwfTagName, SWF_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/swf/contract';
-import {
-  asepriteTextureAtlasFormat,
-  libgdxAtlasTextureAtlasFormat,
-  starlingTextureAtlasFormat,
-  textureAtlasAllFormats,
-  TEXTURE_ATLAS_REQUIREMENT_KEY_NAMESPACE,
-  texturePackerTextureAtlasFormat,
-} from '@flighthq/textureatlas-formats';
-import {
-  tiledTmjTilemapFormat,
-  tiledTmxTilemapFormat,
-  tiledTsjTilesetFormat,
-  tiledTsxTilesetFormat,
-  tilemapAllMapFormats,
-  tilemapAllTilesetFormats,
-  TILEMAP_REQUIREMENT_KEY_NAMESPACE,
-} from '@flighthq/tilemap-formats';
 import type { PathBooleanKernel, RiveImportRegistry } from '@flighthq/types/contract';
 import type {
   Awd2BlockHandler,
-  BitmapFontFormatDescriptor,
   ColladaElementDecoder,
   DragonBonesSectionHandler,
   DragonBonesTimelineHandler,
@@ -220,17 +175,12 @@ import type {
   SvgElementHandler,
   Md5SectionHandler,
   ObjMaterialHandler,
-  ParticleFormatDescriptor,
   RequirementCatalogEntry,
   SpineBinarySectionHandler,
   SpineBinaryTimelineHandler,
   SpineJsonSectionHandler,
   SpineJsonTimelineHandler,
-  SpritesheetFormatDescriptor,
   SwfTagHandler,
-  TilemapFormatDescriptor,
-  TilesetFormatDescriptor,
-  TextureAtlasFormatDescriptor,
   ThreeDsChunkHandler,
 } from '@flighthq/types/contract';
 import {
@@ -521,90 +471,6 @@ export const SVG_ELEMENT_HANDLERS: readonly (readonly [string, SvgElementHandler
   ['svgTextElementHandler', svgTextElementHandler, 'text'],
   ['svgUseElementHandler', svgUseElementHandler, 'use'],
 ];
-
-/**
- * The two `parserOptions` fields a Rive row lands in, matching `RiveImportOptions`.
- *
- * Rive is the one format whose families split by DEPENDENCY rather than by kind: ten registrars need only the
- * registry, one also needs a path-boolean kernel, and a build that omits the second never links a path-boolean
- * implementation. Each row carries the field it belongs in, so the emitter writes two arrays and a consumer
- * spreads the result straight into `RiveImportOptions`.
- */
-/**
- * The three detector-bearing format families, each as `[exported symbol, descriptor]`.
- *
- * ★ ONLY THE SYMBOL NAME IS WRITTEN HERE. The kind and the family position are READ off the descriptor and the
- * shipped preset, so a format whose kind string changes, or whose position in the preset moves, changes these
- * rows on that same edit. A transcribed kind would be a second copy of the format's identity, and the copy is
- * what goes stale.
- *
- * These families answer `document.format` with a WHOLE FORMAT rather than a handler inside one: a spritesheet
- * document is read by one codec end to end, where a `.dae` needs a decoder per element. That is why one row per
- * descriptor is the complete statement for these three.
- */
-export const PARTICLE_FORMAT_DESCRIPTORS: readonly (readonly [string, Readonly<ParticleFormatDescriptor>])[] = [
-  ['libgdxParticleFormat', libgdxParticleFormat],
-  ['particleDesignerParticleFormat', particleDesignerParticleFormat],
-  ['pixiParticleFormat', pixiParticleFormat],
-  ['spineParticleFormat', spineParticleFormat],
-  ['starlingPexParticleFormat', starlingPexParticleFormat],
-  ['unityParticleFormat', unityParticleFormat],
-];
-
-export const SPRITESHEET_FORMAT_DESCRIPTORS: readonly (readonly [string, Readonly<SpritesheetFormatDescriptor>])[] = [
-  ['asepriteSpritesheetFormat', asepriteSpritesheetFormat],
-  ['cocosPlistSpritesheetFormat', cocosPlistSpritesheetFormat],
-  ['libgdxAtlasSpritesheetFormat', libgdxAtlasSpritesheetFormat],
-  ['starlingSpritesheetFormat', starlingSpritesheetFormat],
-  ['texturePackerSpritesheetFormat', texturePackerSpritesheetFormat],
-];
-
-export const TEXTURE_ATLAS_FORMAT_DESCRIPTORS: readonly (readonly [string, Readonly<TextureAtlasFormatDescriptor>])[] =
-  [
-    ['asepriteTextureAtlasFormat', asepriteTextureAtlasFormat],
-    ['libgdxAtlasTextureAtlasFormat', libgdxAtlasTextureAtlasFormat],
-    ['starlingTextureAtlasFormat', starlingTextureAtlasFormat],
-    ['texturePackerTextureAtlasFormat', texturePackerTextureAtlasFormat],
-  ];
-
-export const BITMAP_FONT_FORMAT_DESCRIPTORS: readonly (readonly [string, Readonly<BitmapFontFormatDescriptor>])[] = [
-  ['bmFontBinaryFormat', bmFontBinaryFormat],
-  ['bmFontJsonFormat', bmFontJsonFormat],
-  ['bmFontTextFormat', bmFontTextFormat],
-  ['bmFontXmlFormat', bmFontXmlFormat],
-];
-
-export const TILEMAP_MAP_FORMAT_DESCRIPTORS: readonly (readonly [string, Readonly<TilemapFormatDescriptor>])[] = [
-  ['tiledTmjTilemapFormat', tiledTmjTilemapFormat],
-  ['tiledTmxTilemapFormat', tiledTmxTilemapFormat],
-];
-
-export const TILEMAP_TILESET_FORMAT_DESCRIPTORS: readonly (readonly [string, Readonly<TilesetFormatDescriptor>])[] = [
-  ['tiledTsjTilesetFormat', tiledTsjTilesetFormat],
-  ['tiledTsxTilesetFormat', tiledTsxTilesetFormat],
-];
-
-/**
- * The two fields the tilemap domain spreads into, one per role.
- *
- * A map document parses to a `TiledMap` and a tileset document to a `TiledTileset`, so the two are separate
- * registries behind separate options fields — the same split, for the same reason, as Rive's two registrar
- * lists. A generated module for content that is all standalone tilesets names only `tilesetFormats` and never
- * links a map parser.
- */
-export const TILEMAP_MAP_PARSER_FIELD = 'mapFormats';
-export const TILEMAP_TILESET_PARSER_FIELD = 'tilesetFormats';
-
-/**
- * The options field all three descriptor families spread into.
- *
- * ★ CARRIED PER ROW RATHER THAN LOOKED UP BY EXTENSION, because these three families SHARE extensions —
- * `.json`, `.xml` and `.atlas` each belong to more than one of them, so an extension cannot name one family's
- * field. It happens to be the same word for all three, which is exactly why relying on the extension map would
- * look correct while being unable to express a disagreement.
- */
-export const FORMAT_DESCRIPTOR_PARSER_FIELD = 'formats';
-
 export const RIVE_REGISTRAR_PARSER_FIELD = 'registrars';
 export const RIVE_PATH_BOOLEAN_PARSER_FIELD = 'pathBooleanRegistrars';
 
@@ -812,28 +678,6 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
       ),
     );
   }
-  for (const [symbol, descriptor] of PARTICLE_FORMAT_DESCRIPTORS) {
-    rows.push(
-      row(
-        '@flighthq/particles-formats',
-        symbol,
-        `${PARTICLE_REQUIREMENT_KEY_NAMESPACE}.${descriptor.kind}`,
-        familyOrderOf(particleAllFormats, descriptor),
-        FORMAT_DESCRIPTOR_PARSER_FIELD,
-      ),
-    );
-  }
-  for (const [symbol, descriptor] of SPRITESHEET_FORMAT_DESCRIPTORS) {
-    rows.push(
-      row(
-        '@flighthq/spritesheet-formats',
-        symbol,
-        `${SPRITESHEET_REQUIREMENT_KEY_NAMESPACE}.${descriptor.kind}`,
-        familyOrderOf(spritesheetAllFormats, descriptor),
-        FORMAT_DESCRIPTOR_PARSER_FIELD,
-      ),
-    );
-  }
   for (const [symbol, handler, kind] of SVG_ELEMENT_HANDLERS) {
     rows.push(
       row(
@@ -842,50 +686,6 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
         `${SVG_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
         familyOrderOf(svgAllElementHandlers, handler),
         'elementHandlers',
-      ),
-    );
-  }
-  for (const [symbol, descriptor] of TEXTURE_ATLAS_FORMAT_DESCRIPTORS) {
-    rows.push(
-      row(
-        '@flighthq/textureatlas-formats',
-        symbol,
-        `${TEXTURE_ATLAS_REQUIREMENT_KEY_NAMESPACE}.${descriptor.kind}`,
-        familyOrderOf(textureAtlasAllFormats, descriptor),
-        FORMAT_DESCRIPTOR_PARSER_FIELD,
-      ),
-    );
-  }
-  for (const [symbol, descriptor] of TILEMAP_MAP_FORMAT_DESCRIPTORS) {
-    rows.push(
-      row(
-        '@flighthq/tilemap-formats',
-        symbol,
-        `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${descriptor.kind}`,
-        familyOrderOf(tilemapAllMapFormats, descriptor),
-        TILEMAP_MAP_PARSER_FIELD,
-      ),
-    );
-  }
-  for (const [symbol, descriptor] of TILEMAP_TILESET_FORMAT_DESCRIPTORS) {
-    rows.push(
-      row(
-        '@flighthq/tilemap-formats',
-        symbol,
-        `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${descriptor.kind}`,
-        familyOrderOf(tilemapAllTilesetFormats, descriptor),
-        TILEMAP_TILESET_PARSER_FIELD,
-      ),
-    );
-  }
-  for (const [symbol, descriptor] of BITMAP_FONT_FORMAT_DESCRIPTORS) {
-    rows.push(
-      row(
-        '@flighthq/bitmapfont-formats',
-        symbol,
-        `${BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE}.${descriptor.kind}`,
-        familyOrderOf(bitmapFontAllFormats, descriptor),
-        FORMAT_DESCRIPTOR_PARSER_FIELD,
       ),
     );
   }
