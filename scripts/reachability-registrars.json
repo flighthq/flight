@@ -1486,6 +1486,14 @@
       "registrar": "registerTextureAtlasFormat"
     },
     {
+      "packageName": "tilemap-formats",
+      "registrar": "registerTilemapFormat"
+    },
+    {
+      "packageName": "tilemap-formats",
+      "registrar": "registerTilesetFormat"
+    },
+    {
       "packageName": "tool-capture",
       "registrar": "registerCaptureBenchmarkTarget"
     },

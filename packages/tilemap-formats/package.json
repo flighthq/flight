@@ -40,6 +40,8 @@
   "dependencies": {
     "@flighthq/importdiagnostics": "*",
     "@flighthq/log": "*",
+    "@flighthq/registry": "*",
+    "@flighthq/requirement": "*",
     "@flighthq/tilemap": "*",
     "@flighthq/types": "*",
     "@flighthq/xml": "*"

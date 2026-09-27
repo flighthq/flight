@@ -172,6 +172,15 @@ import {
   TEXTURE_ATLAS_REQUIREMENT_KEY_NAMESPACE,
   texturePackerTextureAtlasFormat,
 } from '@flighthq/textureatlas-formats';
+import {
+  tiledTmjTilemapFormat,
+  tiledTmxTilemapFormat,
+  tiledTsjTilesetFormat,
+  tiledTsxTilesetFormat,
+  tilemapAllMapFormats,
+  tilemapAllTilesetFormats,
+  TILEMAP_REQUIREMENT_KEY_NAMESPACE,
+} from '@flighthq/tilemap-formats';
 import type { PathBooleanKernel, RiveImportRegistry } from '@flighthq/types/contract';
 import type {
   Awd2BlockHandler,
@@ -192,6 +201,8 @@ import type {
   SpineJsonTimelineHandler,
   SpritesheetFormatDescriptor,
   SwfTagHandler,
+  TilemapFormatDescriptor,
+  TilesetFormatDescriptor,
   TextureAtlasFormatDescriptor,
   ThreeDsChunkHandler,
 } from '@flighthq/types/contract';
@@ -508,6 +519,27 @@ export const TEXTURE_ATLAS_FORMAT_DESCRIPTORS: readonly (readonly [string, Reado
     ['texturePackerTextureAtlasFormat', texturePackerTextureAtlasFormat],
   ];
 
+export const TILEMAP_MAP_FORMAT_DESCRIPTORS: readonly (readonly [string, Readonly<TilemapFormatDescriptor>])[] = [
+  ['tiledTmjTilemapFormat', tiledTmjTilemapFormat],
+  ['tiledTmxTilemapFormat', tiledTmxTilemapFormat],
+];
+
+export const TILEMAP_TILESET_FORMAT_DESCRIPTORS: readonly (readonly [string, Readonly<TilesetFormatDescriptor>])[] = [
+  ['tiledTsjTilesetFormat', tiledTsjTilesetFormat],
+  ['tiledTsxTilesetFormat', tiledTsxTilesetFormat],
+];
+
+/**
+ * The two fields the tilemap domain spreads into, one per role.
+ *
+ * A map document parses to a `TiledMap` and a tileset document to a `TiledTileset`, so the two are separate
+ * registries behind separate options fields — the same split, for the same reason, as Rive's two registrar
+ * lists. A generated module for content that is all standalone tilesets names only `tilesetFormats` and never
+ * links a map parser.
+ */
+export const TILEMAP_MAP_PARSER_FIELD = 'mapFormats';
+export const TILEMAP_TILESET_PARSER_FIELD = 'tilesetFormats';
+
 /**
  * The options field all three descriptor families spread into.
  *
@@ -744,6 +776,28 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
         `${TEXTURE_ATLAS_REQUIREMENT_KEY_NAMESPACE}.${descriptor.kind}`,
         familyOrderOf(textureAtlasAllFormats, descriptor),
         FORMAT_DESCRIPTOR_PARSER_FIELD,
+      ),
+    );
+  }
+  for (const [symbol, descriptor] of TILEMAP_MAP_FORMAT_DESCRIPTORS) {
+    rows.push(
+      row(
+        '@flighthq/tilemap-formats',
+        symbol,
+        `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${descriptor.kind}`,
+        familyOrderOf(tilemapAllMapFormats, descriptor),
+        TILEMAP_MAP_PARSER_FIELD,
+      ),
+    );
+  }
+  for (const [symbol, descriptor] of TILEMAP_TILESET_FORMAT_DESCRIPTORS) {
+    rows.push(
+      row(
+        '@flighthq/tilemap-formats',
+        symbol,
+        `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${descriptor.kind}`,
+        familyOrderOf(tilemapAllTilesetFormats, descriptor),
+        TILEMAP_TILESET_PARSER_FIELD,
       ),
     );
   }

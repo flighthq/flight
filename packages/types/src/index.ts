@@ -815,6 +815,8 @@ export * from './TiledGid.ts';
 export * from './TiledLayer.ts';
 export * from './TiledLayerDataExplanation.ts';
 export * from './TiledMap.ts';
+export * from './TilemapFormatKind.ts';
+export * from './TilemapImportOptions.ts';
 export * from './TiledObject.ts';
 export * from './TiledParseOptions.ts';
 export * from './TiledProperty.ts';
