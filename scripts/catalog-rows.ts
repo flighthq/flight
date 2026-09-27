@@ -703,9 +703,6 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
       ),
     );
   }
-  // ★ THE KIND AND THE POSITION COME OFF THE DESCRIPTOR, so these loops state nothing a format could contradict.
-  // `familyOrderOf` is membership by identity: a descriptor missing from the shipped preset gets no position
-  // rather than a plausible wrong one, which is what would happen if the index were written down here.
   for (const [symbol, descriptor] of PARTICLE_FORMAT_DESCRIPTORS) {
     rows.push(
       row(
@@ -725,6 +722,17 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
         `${SPRITESHEET_REQUIREMENT_KEY_NAMESPACE}.${descriptor.kind}`,
         familyOrderOf(spritesheetAllFormats, descriptor),
         FORMAT_DESCRIPTOR_PARSER_FIELD,
+      ),
+    );
+  }
+  for (const [symbol, handler, kind] of SVG_ELEMENT_HANDLERS) {
+    rows.push(
+      row(
+        '@flighthq/scene2d-formats',
+        symbol,
+        `${SVG_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
+        familyOrderOf(svgAllElementHandlers, handler),
+        'elementHandlers',
       ),
     );
   }
