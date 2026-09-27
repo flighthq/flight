@@ -17,6 +17,11 @@ protected:
   - lottieStrokeShapeItemReader
   - lottieTextLayerReader
   - lottieTrimPathShapeItemReader
+  - svgContainerElementReader
+  - svgGeometryElementReader
+  - svgImageElementReader
+  - svgTextElementReader
+  - svgUseElementReader
   - applyRiveClipping
   - applyRiveDocumentHandlers
   - applyRiveDrawOrder
