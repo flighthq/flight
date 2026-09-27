@@ -492,9 +492,8 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
     // ★ THE FIFTEEN `lottie*Reader` NAMES ARE GONE, AND THAT IS THE POINT. Each was the core's half of a one-line
     // shim: `lottieImageLayerHandler` called `lottieImageLayerReader`, which lived in the 1,800-line document core
     // alongside every other layer and shape item. The handler is now the real function, in the module that owns its
-    // interpretation, so there is one identity per feature instead of two. What remains contract-only is the selective
-    // entry — it takes a `LottieRegistry`, and `types` publishes that on its contract lane only.
-    contractOnlyExports: ['createScene2DFromLottieDocumentWithRegistry', 'initializeLottieDocumentImportResult'],
+    // interpretation, so there is one identity per feature instead of two.
+    contractOnlyExports: ['initializeLottieDocumentImportResult'],
     families: [
       {
         isolationSymbols: ['lottieImageLayerHandler'],
@@ -524,7 +523,12 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
     name: 'Lottie',
     packageDirectory: 'scene2d-formats',
     publicInfrastructureExports: [
+      // ★ THE SELECTIVE ENTRY IS PUBLIC. It was contract-only while `types` published `LottieRegistry.ts` on its
+      // contract lane alone, which made `LottieDocumentImportOptions.layerHandlers` a public option whose element
+      // type no application could name. Both lanes now carry the registry, so the selective path is reachable from
+      // `@flighthq/sdk` and the size fixtures prove it by naming nothing but `.`.
       'createLottieRegistry',
+      'createScene2DFromLottieDocumentWithRegistry',
       'getLottieLayerHandler',
       'getLottieShapeItemHandler',
       'registerLottieLayerHandler',

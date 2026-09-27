@@ -22,7 +22,6 @@ protected:
   - createRiveLayoutImports
   - createRiveSkeleton2D
   - createRiveStateMachines
-  - createScene2DFromLottieDocumentWithRegistry
   - findLottieTestNodeByKind
   - findLottieTestNodeByName
   - flattenLottieShapePath
