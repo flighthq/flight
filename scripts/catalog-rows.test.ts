@@ -1,7 +1,3 @@
-import { bitmapFontAllFormats } from '@flighthq/bitmapfont-formats';
-import * as bitmapFontFormats from '@flighthq/bitmapfont-formats';
-import { particleAllFormats } from '@flighthq/particles-formats';
-import * as particlesFormats from '@flighthq/particles-formats';
 import {
   createRiveImportRegistry,
   lottieAllLayerHandlers,
@@ -31,21 +27,14 @@ import {
   spineJsonAllTimelineHandlers,
 } from '@flighthq/skeleton2d-formats/contract';
 import * as skeleton2dFormatsContract from '@flighthq/skeleton2d-formats/contract';
-import { spritesheetAllFormats } from '@flighthq/spritesheet-formats';
-import * as spritesheetFormats from '@flighthq/spritesheet-formats';
 import * as swf from '@flighthq/swf';
 import { getSwfTagName } from '@flighthq/swf/contract';
 import * as swfContract from '@flighthq/swf/contract';
-import { textureAtlasAllFormats } from '@flighthq/textureatlas-formats';
-import * as textureAtlasFormats from '@flighthq/textureatlas-formats';
-import { tilemapAllMapFormats, tilemapAllTilesetFormats } from '@flighthq/tilemap-formats';
-import * as tilemapFormats from '@flighthq/tilemap-formats';
 import { RequirementFacet } from '@flighthq/types/contract';
 
 import { ALWAYS_READ_FORMAT_FEATURES } from './catalog-dispositions.ts';
 import {
   AWD2_BLOCK_HANDLERS,
-  BITMAP_FONT_FORMAT_DESCRIPTORS,
   buildRequirementCatalogRows,
   CATALOG_PARSER_BACKEND,
   COLLADA_ELEMENT_DECODERS,
@@ -56,78 +45,29 @@ import {
   MD2_SECTION_HANDLERS,
   MD5_SECTION_HANDLERS,
   OBJ_MATERIAL_HANDLERS,
-  PARTICLE_FORMAT_DESCRIPTORS,
   SPINE_BINARY_SECTION_HANDLERS,
   SPINE_BINARY_TIMELINE_HANDLERS,
   SPINE_JSON_SECTION_HANDLERS,
   SPINE_JSON_TIMELINE_HANDLERS,
-  SPRITESHEET_FORMAT_DESCRIPTORS,
   SVG_ELEMENT_HANDLERS,
   SWF_TAG_HANDLERS,
-  TEXTURE_ATLAS_FORMAT_DESCRIPTORS,
   THREE_DS_CHUNK_HANDLERS,
-  TILEMAP_MAP_FORMAT_DESCRIPTORS,
-  TILEMAP_TILESET_FORMAT_DESCRIPTORS,
 } from './catalog-rows.ts';
 
 const MODULES: Readonly<Record<string, Record<string, unknown>>> = {
-  '@flighthq/bitmapfont-formats': bitmapFontFormats as unknown as Record<string, unknown>,
-  '@flighthq/particles-formats': particlesFormats as unknown as Record<string, unknown>,
   '@flighthq/scene2d-formats': scene2dFormats as unknown as Record<string, unknown>,
   '@flighthq/scene3d-formats': scene3dFormats as unknown as Record<string, unknown>,
   '@flighthq/scene3d-formats/contract': scene3dFormatsContract as unknown as Record<string, unknown>,
   '@flighthq/skeleton2d-formats/contract': skeleton2dFormatsContract as unknown as Record<string, unknown>,
-  '@flighthq/spritesheet-formats': spritesheetFormats as unknown as Record<string, unknown>,
   '@flighthq/swf': swf as unknown as Record<string, unknown>,
-  '@flighthq/textureatlas-formats': textureAtlasFormats as unknown as Record<string, unknown>,
-  '@flighthq/tilemap-formats': tilemapFormats as unknown as Record<string, unknown>,
 };
-
-// The three families whose `document.format` rows name a WHOLE FORMAT — a descriptor pairing a detector with a
-// parser — rather than a handler inside one format. They are checked together because the property worth
-// asserting is the same for all three, and because a family added to one of these packages should fail here.
-const DESCRIPTOR_FAMILIES: readonly (readonly [
-  string,
-  string,
-  readonly (readonly [string, { readonly kind: string }])[],
-  readonly { readonly kind: string }[],
-  string,
-])[] = [
-  ['bitmapfont', '@flighthq/bitmapfont-formats', BITMAP_FONT_FORMAT_DESCRIPTORS, bitmapFontAllFormats, 'formats'],
-  ['particles', '@flighthq/particles-formats', PARTICLE_FORMAT_DESCRIPTORS, particleAllFormats, 'formats'],
-  ['spritesheet', '@flighthq/spritesheet-formats', SPRITESHEET_FORMAT_DESCRIPTORS, spritesheetAllFormats, 'formats'],
-  [
-    'textureatlas',
-    '@flighthq/textureatlas-formats',
-    TEXTURE_ATLAS_FORMAT_DESCRIPTORS,
-    textureAtlasAllFormats,
-    'formats',
-  ],
-  // The tilemap domain contributes TWO rows-families under one namespace, because a map and a tileset parse to
-  // different types and so spread into different fields. Both are listed here so every property the other
-  // families are held to is measured for them too.
-  ['tilemap', '@flighthq/tilemap-formats', TILEMAP_MAP_FORMAT_DESCRIPTORS, tilemapAllMapFormats, 'mapFormats'],
-  [
-    'tilemap',
-    '@flighthq/tilemap-formats',
-    TILEMAP_TILESET_FORMAT_DESCRIPTORS,
-    tilemapAllTilesetFormats,
-    'tilesetFormats',
-  ],
-];
-
 // Every lane that OWNS a requirement-key namespace constant. The format package names its own namespace; this
 // list is which modules to ask, not what the answer is.
 const NAMESPACE_MODULES: readonly (readonly [string, Record<string, unknown>])[] = [
-  ['@flighthq/bitmapfont-formats', bitmapFontFormats as unknown as Record<string, unknown>],
-  ['@flighthq/particles-formats', particlesFormats as unknown as Record<string, unknown>],
   ['@flighthq/scene2d-formats/contract', scene2dFormatsContract as unknown as Record<string, unknown>],
   ['@flighthq/scene3d-formats/contract', scene3dFormatsContract as unknown as Record<string, unknown>],
   ['@flighthq/skeleton2d-formats/contract', skeleton2dFormatsContract as unknown as Record<string, unknown>],
-  ['@flighthq/spritesheet-formats', spritesheetFormats as unknown as Record<string, unknown>],
   ['@flighthq/swf/contract', swfContract as unknown as Record<string, unknown>],
-  ['@flighthq/textureatlas-formats', textureAtlasFormats as unknown as Record<string, unknown>],
-  ['@flighthq/tilemap-formats', tilemapFormats as unknown as Record<string, unknown>],
 ];
 
 // Reads the namespaces one module declares. A format's namespace is a string constant it exports, so asking the
@@ -796,31 +736,6 @@ describe('buildRequirementCatalogRows', () => {
       expect(row.implementationImport).toBe('@flighthq/scene2d-formats');
     }
   });
-
-  it('names every descriptor the three format families ship, by identity', () => {
-    for (const [namespace, , table, preset] of DESCRIPTOR_FAMILIES) {
-      const named = new Set(table.map(([, descriptor]) => descriptor));
-      for (const descriptor of preset) expect(named.has(descriptor), `${namespace}: preset entry not named`).toBe(true);
-      for (const descriptor of named) {
-        expect(preset.includes(descriptor), `${namespace}: named entry is not in the preset`).toBe(true);
-      }
-      expect(named.size, namespace).toBe(preset.length);
-    }
-  });
-
-  it('emits one row per format descriptor, keyed by the kind the descriptor itself carries', () => {
-    const rows = buildRequirementCatalogRows();
-    for (const [namespace, , table] of DESCRIPTOR_FAMILIES) {
-      for (const [symbol, descriptor] of table) {
-        const matching = rows.filter((candidate) => candidate.implementationSymbol === symbol);
-        expect(matching, symbol).toHaveLength(1);
-        expect(matching[0].kind, symbol).toBe(`${namespace}.${descriptor.kind}`);
-        expect(matching[0].facet, symbol).toBe(RequirementFacet.DocumentFormat);
-        expect(matching[0].backend, symbol).toBe(CATALOG_PARSER_BACKEND);
-      }
-    }
-  });
-
   it('lists every SVG element handler the scene2d-formats package exports', () => {
     const exported = Object.keys(scene2dFormats)
       .filter(
@@ -854,41 +769,6 @@ describe('buildRequirementCatalogRows', () => {
       }
     }
   });
-
-  it('numbers each format row by its position in the preset the package ships', () => {
-    const rows = buildRequirementCatalogRows();
-    for (const [, , table, preset] of DESCRIPTOR_FAMILIES) {
-      for (const [symbol, descriptor] of table) {
-        const expected = preset.indexOf(descriptor);
-        expect(expected, symbol).toBeGreaterThanOrEqual(0);
-        for (const row of rows.filter((candidate) => candidate.implementationSymbol === symbol)) {
-          expect(row.familyOrder, symbol).toBe(expected);
-        }
-      }
-    }
-  });
-
-  it('orders the spritesheet rows so Aseprite precedes the broader TexturePacker', () => {
-    const rows = buildRequirementCatalogRows();
-    const orderOf = (kind: string): number =>
-      rows.find((candidate) => candidate.kind === kind)!.familyOrder ?? Number.MAX_SAFE_INTEGER;
-    expect(orderOf('spritesheet.Aseprite')).toBeLessThan(orderOf('spritesheet.TexturePacker'));
-  });
-  // carried per row: these families share `.json`, `.xml` and `.atlas`, so the extension-keyed default in
-  // `PARSER_HANDLER_FIELDS` could never name one family's field without guessing at the others.
-  it('routes every format descriptor row into the option field its own family declares', () => {
-    const rows = buildRequirementCatalogRows();
-    for (const [namespace, module, table, , field] of DESCRIPTOR_FAMILIES) {
-      for (const [symbol] of table) {
-        const matching = rows.filter((candidate) => candidate.implementationSymbol === symbol);
-        expect(matching, symbol).toHaveLength(1);
-        expect(matching[0].parserField, symbol).toBe(field);
-        expect(matching[0].implementationImport, symbol).toBe(module);
-        expect(matching[0].kind.startsWith(`${namespace}.`), matching[0].kind).toBe(true);
-      }
-    }
-  });
-
   it('sets parserField on SVG rows to elementHandlers', () => {
     for (const row of buildRequirementCatalogRows().filter((candidate) => candidate.kind.startsWith('svg.'))) {
       expect(row.parserField, row.kind).toBe('elementHandlers');
@@ -898,17 +778,6 @@ describe('buildRequirementCatalogRows', () => {
   it('imports SVG handlers from the public lane', () => {
     for (const row of buildRequirementCatalogRows().filter((r) => r.kind.startsWith('svg.'))) {
       expect(row.implementationImport).toBe('@flighthq/scene2d-formats');
-    }
-  });
-
-  // ★ EVERY ROW IN THESE NAMESPACES MUST BE ACCOUNTED FOR, not just every descriptor the tables name. The loop
-  // above walks the tables, so a row emitted for a symbol no table lists would pass it. This walks the rows.
-  it('emits no row in a descriptor namespace that no family table names', () => {
-    const named = new Set(DESCRIPTOR_FAMILIES.flatMap(([, , table]) => table.map(([symbol]) => symbol)));
-    const namespaces = new Set(DESCRIPTOR_FAMILIES.map(([namespace]) => namespace));
-    for (const row of buildRequirementCatalogRows()) {
-      if (!namespaces.has(row.kind.split('.')[0])) continue;
-      expect(named.has(row.implementationSymbol), row.kind).toBe(true);
     }
   });
 });

@@ -1,5 +1,4 @@
 export * from './detect.ts';
-export * from './particleRequirements.ts';
 export * from './formatRegistry.ts';
 export * from './libgdxParse.ts';
 export * from './libgdxSerialize.ts';

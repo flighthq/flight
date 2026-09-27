@@ -1,6 +1,4 @@
-import { isReadableBitmapFont, parseBitmapFontRequirements } from '@flighthq/bitmapfont-formats/contract';
 import { decodeUTF8 } from '@flighthq/encoding/contract';
-import { isReadableParticleConfig, parseParticleRequirements } from '@flighthq/particles-formats/contract';
 import {
   isReadableLottie,
   isReadableRive,
@@ -36,10 +34,7 @@ import {
   parseSpineBinaryRequirements,
   parseSpineJsonRequirements,
 } from '@flighthq/skeleton2d-formats/contract';
-import { isReadableSpritesheet, parseSpritesheetRequirements } from '@flighthq/spritesheet-formats/contract';
 import { parseSwfHeader, parseSwfRequirements } from '@flighthq/swf/contract';
-import { isReadableTextureAtlas, parseTextureAtlasRequirements } from '@flighthq/textureatlas-formats/contract';
-import { isReadableTilemapDocument, parseTilemapRequirements } from '@flighthq/tilemap-formats/contract';
 import type {
   HostDecompressDeflateCapability,
   HostDecompressLzmaCapability,
@@ -107,33 +102,39 @@ export interface ContentAnalyzer {
  * contract. Collada additionally validates XML structure through `isReadableCollada`; the others are
  * always readable once decoded, since their line-oriented parsers handle any text gracefully.
  *
- * ★ SOME EXTENSIONS BELONG TO SEVERAL FAMILIES AT ONCE, and those entries are composed rather than assigned.
- * `.json` alone is claimed by eight families and `.xml` by four, so there is no one analyzer for them — and the
- * answer is the UNION of every family whose detector recognises the file, never a precedence among them. See
+ * Some extensions belong to several families at once, and those entries are composed rather than assigned: the
+ * answer is the UNION of every family whose analyzer recognises the file, never a precedence among them. See
  * `composeContentAnalyzers` for why picking a winner would be a guess that drops an implementation the app needs.
  *
- * `.fnt` is listed although only one family claims it, because that family is itself three formats under one
- * extension: BMFont writes binary, text and XML all as `.fnt`, which is discriminated inside
- * `parseBitmapFontRequirements` rather than here.
+ * ★ WHAT IS DELIBERATELY ABSENT, AND WHY IT WAS REMOVED. There is no analyzer for the bitmap-font, particle,
+ * spritesheet, tilemap or texture-atlas families, and so no `.atlas`, `.fnt`, `.pex`, `.plist`, `.tmj`, `.tmx`,
+ * `.tsj`, `.tsx` or `.xml` entry. Those five families answer "which variant is this?" by asking a DETECTION
+ * REGISTRY, and their registries seed themselves from the full preset — so the act of installing the one format a
+ * manifest chose linked every sibling codec. Measured on a real production bundle, naming one spritesheet format
+ * through `applySpritesheetImportOptions` cost 40,377 bytes and carried all five codecs, where naming the codec
+ * directly cost 7,935 and carried one. An analyzer that promises a build only what its content needs, and delivers
+ * the whole family, is worse than no analyzer: it moves the cost somewhere nobody looks for it.
  *
- * `.tsx` is a Tiled tileset. It collides with the TypeScript-React suffix, which is harmless here for two
- * reasons: this table is consulted only for a content file a build explicitly imports through the plugin, and a
- * TSX component's text is recognised by no tilemap detector, so it reports unreadable rather than parsing as a
- * tileset.
+ * A single-extension-to-single-codec route cannot rescue them either, because every route ends at the same
+ * applier: a catalog row naming one descriptor is installed through `apply*ImportOptions`, which reaches the
+ * registry initializer and seeds the full preset again. The fix for those families is to select a codec directly
+ * or to accept the registry's cost knowingly — both of which their own APIs already support.
+ *
+ * The families that REMAIN are the ones whose analyzers answer a question inside one parser: which handlers,
+ * decoders or tags a document needs, out of a family the caller passes as data. Naming a subset there links a
+ * subset, which is the property that makes the manifest worth generating at all.
  */
 export const DEFAULT_CONTENT_ANALYZERS: Readonly<Record<string, ContentAnalyzer>> = Object.freeze({
   '.3ds': {
     analyze: (source) => parseThreeDsRequirements(source),
     isReadable: (source) => collectThreeDsChunkCounts(source) !== null,
   },
-  '.atlas': composeContentAnalyzers([SPRITESHEET_ANALYZER(), TEXTURE_ATLAS_ANALYZER()]),
   '.awd': AWD2_ANALYZER(),
   '.awd2': AWD2_ANALYZER(),
   '.dae': {
     analyze: (source) => parseColladaRequirements(decodeUTF8(source)),
     isReadable: (source) => isReadableCollada(decodeUTF8(source)),
   },
-  '.fnt': BITMAP_FONT_ANALYZER(),
   '.glb': {
     analyze: (source) => parseGlbRequirements(source),
     isReadable: (source) => collectGlbFeatures(source) !== null,
@@ -142,16 +143,7 @@ export const DEFAULT_CONTENT_ANALYZERS: Readonly<Record<string, ContentAnalyzer>
     analyze: (source) => parseGltfRequirements(decodeUTF8(source)),
     isReadable: (source) => collectGltfFeatures(decodeUTF8(source)) !== null,
   },
-  '.json': composeContentAnalyzers([
-    BITMAP_FONT_ANALYZER(),
-    DRAGONBONES_ANALYZER(),
-    LOTTIE_ANALYZER(),
-    PARTICLE_ANALYZER(),
-    SPINE_JSON_ANALYZER(),
-    SPRITESHEET_ANALYZER(),
-    TEXTURE_ATLAS_ANALYZER(),
-    TILEMAP_ANALYZER(),
-  ]),
+  '.json': composeContentAnalyzers([DRAGONBONES_ANALYZER(), LOTTIE_ANALYZER(), SPINE_JSON_ANALYZER()]),
   '.md2': {
     analyze: (source) => parseMd2Requirements(source),
     isReadable: (source) => collectMd2Features(source) !== null,
@@ -169,8 +161,6 @@ export const DEFAULT_CONTENT_ANALYZERS: Readonly<Record<string, ContentAnalyzer>
     collectReferences: (source) => collectObjMaterialLibraryReferences(decodeUTF8(source)),
     isReadable: () => true,
   },
-  '.pex': PARTICLE_ANALYZER(),
-  '.plist': composeContentAnalyzers([PARTICLE_ANALYZER(), SPRITESHEET_ANALYZER()]),
   '.skel': {
     analyze: (source) => parseSpineBinaryRequirements(source),
     isReadable: (source) => collectSpineBinarySectionCounts(source) !== null,
@@ -194,16 +184,6 @@ export const DEFAULT_CONTENT_ANALYZERS: Readonly<Record<string, ContentAnalyzer>
     analyze: (source, { deflate, lzma }) => parseSwfRequirements(source, deflate, lzma),
     isReadable: (source, { deflate, lzma }) => parseSwfHeader(source, deflate, lzma) !== null,
   },
-  '.tmj': TILEMAP_ANALYZER(),
-  '.tmx': TILEMAP_ANALYZER(),
-  '.tsj': TILEMAP_ANALYZER(),
-  '.tsx': TILEMAP_ANALYZER(),
-  '.xml': composeContentAnalyzers([
-    BITMAP_FONT_ANALYZER(),
-    SPRITESHEET_ANALYZER(),
-    TEXTURE_ATLAS_ANALYZER(),
-    TILEMAP_ANALYZER(),
-  ]),
 });
 
 // The two formats need DIFFERENT readability probes, because they compress different things.
@@ -228,15 +208,6 @@ function AWD2_ANALYZER(): ContentAnalyzer {
 // that loose module values live at the bottom of the file, and turns a reordering into a temporal-dead-zone crash
 // rather than a lint complaint.
 
-// Bytes, not text: three of the four BMFont forms are text and one is binary, so the family's own entry point
-// takes the bytes and decodes what it needs.
-function BITMAP_FONT_ANALYZER(): ContentAnalyzer {
-  return {
-    analyze: (source) => parseBitmapFontRequirements(source),
-    isReadable: (source) => isReadableBitmapFont(source),
-  };
-}
-
 function DRAGONBONES_ANALYZER(): ContentAnalyzer {
   return {
     analyze: (source) => parseDragonBonesRequirements(decodeUTF8(source)),
@@ -251,37 +222,9 @@ function LOTTIE_ANALYZER(): ContentAnalyzer {
   };
 }
 
-function PARTICLE_ANALYZER(): ContentAnalyzer {
-  return {
-    analyze: (source) => parseParticleRequirements(decodeUTF8(source)),
-    isReadable: (source) => isReadableParticleConfig(decodeUTF8(source)),
-  };
-}
-
 function SPINE_JSON_ANALYZER(): ContentAnalyzer {
   return {
     analyze: (source) => parseSpineJsonRequirements(decodeUTF8(source)),
     isReadable: (source) => isReadableSpineJson(decodeUTF8(source)),
-  };
-}
-
-function SPRITESHEET_ANALYZER(): ContentAnalyzer {
-  return {
-    analyze: (source) => parseSpritesheetRequirements(decodeUTF8(source)),
-    isReadable: (source) => isReadableSpritesheet(decodeUTF8(source)),
-  };
-}
-
-function TEXTURE_ATLAS_ANALYZER(): ContentAnalyzer {
-  return {
-    analyze: (source) => parseTextureAtlasRequirements(decodeUTF8(source)),
-    isReadable: (source) => isReadableTextureAtlas(decodeUTF8(source)),
-  };
-}
-
-function TILEMAP_ANALYZER(): ContentAnalyzer {
-  return {
-    analyze: (source) => parseTilemapRequirements(decodeUTF8(source)),
-    isReadable: (source) => isReadableTilemapDocument(decodeUTF8(source)),
   };
 }

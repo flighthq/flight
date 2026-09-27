@@ -6,7 +6,6 @@ export {
   formatLibgdxAtlas,
   getSpritesheetFormat,
   getSpritesheetFormatKinds,
-  isReadableSpritesheet,
   libgdxAtlasSpritesheetFormat,
   parseAsepriteSpritesheet,
   parseAsepriteSpritesheetDocument,
@@ -14,7 +13,6 @@ export {
   parseCocosPlistSpritesheetDocument,
   parseLibgdxAtlasSpritesheet,
   parseSpritesheet,
-  parseSpritesheetRequirements,
   parseStarlingSpritesheet,
   parseStarlingSpritesheetDocument,
   parseTexturePackerSpritesheet,
@@ -27,6 +25,5 @@ export {
   spritesheetAllFormats,
   starlingSpritesheetFormat,
   texturePackerSpritesheetFormat,
-  SPRITESHEET_REQUIREMENT_KEY_NAMESPACE,
   unregisterSpritesheetFormat,
 } from './contract.ts';

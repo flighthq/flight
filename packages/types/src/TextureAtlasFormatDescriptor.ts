@@ -35,7 +35,12 @@ export interface TextureAtlasFormatDescriptor {
  * directions. A caller may reorder or subset this list freely. That is the opposite of the sibling
  * `SpritesheetImportOptions`, where Aseprite must precede TexturePacker.
  *
- * Plain data: a list of descriptors and nothing else, so a generated manifest module can state it as a literal.
+ * ★ PLAIN DATA A CALLER STATES, NOT SOMETHING A BUILD GENERATES. An earlier version of this comment promised a
+ * generated manifest module would name the one format a document needs. It cannot: installing any subset goes
+ * through the applier, the applier reaches the registry initializer, and the initializer seeds the FULL preset — so
+ * a build that named one format linked every sibling codec anyway. Measured on a real production bundle, the
+ * one-format route cost the same as the all-formats route. A caller who wants one codec imports that codec
+ * directly; this list is for a caller who wants the registry and accepts its cost knowingly.
  * Applying it is a separate explicit step — nothing is registered by importing anything.
  *
  * Omitting `formats` installs nothing. The full preset is `textureAtlasAllFormats`, which reproduces the built-in
