@@ -173,7 +173,9 @@ function getRegistry(): ReadonlyMap<Kind, BitmapFontFormatEntry> {
  *    requires, so a detector and its parser cannot disagree.
  *  - XML: the first non-space character is `<` and the root element is `<font>`, which is the root the XML front
  *    end requires.
- *  - JSON: the first non-space character is `{`.
+ *  - JSON: the first non-space character is `{` AND the object carries the `common` and `chars` blocks the JSON
+ *    front end requires. The extra condition is not decoration: `.json` is shared with seven other families, so
+ *    a detector that claimed every JSON object would link this front end into any build with a config file.
  *  - text: neither of the above, and a line whose first token is one of the grammar's own block names.
  *
  * Only the first bytes are decoded for the text discrimination — a font descriptor carries thousands of char
@@ -190,8 +192,34 @@ function readBitmapFontFormatKind(bytes: Readonly<Uint8Array>): BitmapFontFormat
   if (trimmed.startsWith('<')) {
     return readXmlRootElementName(trimmed) === 'font' ? BitmapFontFormatKindBmFontXml : null;
   }
-  if (trimmed.startsWith('{')) return BitmapFontFormatKindBmFontJson;
+  if (trimmed.startsWith('{')) return isBmFontJsonObject(bytes) ? BitmapFontFormatKindBmFontJson : null;
   return hasBmFontTextBlock(trimmed) ? BitmapFontFormatKindBmFontText : null;
+}
+
+/**
+ * Whether the bytes are a JSON object carrying the two blocks the JSON front end requires.
+ *
+ * ★ THE OPENING BRACE IS NOT ENOUGH, AND THE COMPOSITE ANALYZER IS WHAT PROVED IT. `.json` is shared with seven
+ * other format families, so claiming every JSON object put the BMFont JSON front end into the bundle of any build
+ * with an app config or a Tiled map beside its assets — the exact bundle inflation content-aware analysis exists
+ * to prevent. Requiring `common` and `chars` asks the same question `parseBitmapFontJson` asks (it returns null
+ * without either), so the detector still cannot disagree with its parser.
+ *
+ * This is the one branch that decodes and parses the WHOLE document rather than the detection window: a `chars`
+ * array carries thousands of entries and can push `common` past any fixed prefix, so a windowed answer here would
+ * be wrong for exactly the large fonts it was meant to make cheap. The sibling JSON families pay the same cost.
+ */
+function isBmFontJsonObject(bytes: Readonly<Uint8Array>): boolean {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(decodeUTF8(bytes));
+  } catch {
+    return false;
+  }
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return false;
+  const obj = raw as { chars?: unknown; common?: unknown };
+  const hasChars = Array.isArray(obj.chars) || (obj.chars !== null && typeof obj.chars === 'object');
+  return hasChars && obj.common !== null && typeof obj.common === 'object';
 }
 
 // Whether the head of a text document opens with one of the BMFont text grammar's own block names. `info` and

@@ -10,6 +10,9 @@
   },
   "references": [
     {
+      "path": "../bitmapfont-formats"
+    },
+    {
       "path": "../compression"
     },
     {
@@ -17,6 +20,9 @@
     },
     {
       "path": "../log"
+    },
+    {
+      "path": "../particles-formats"
     },
     {
       "path": "../render"
@@ -33,7 +39,9 @@
     {
       "path": "../scene2d-dom"
     },
-    { "path": "../scene2d-formats" },
+    {
+      "path": "../scene2d-formats"
+    },
     {
       "path": "../scene3d-formats"
     },
@@ -41,7 +49,16 @@
       "path": "../skeleton2d-formats"
     },
     {
+      "path": "../spritesheet-formats"
+    },
+    {
       "path": "../swf"
+    },
+    {
+      "path": "../textureatlas-formats"
+    },
+    {
+      "path": "../tilemap-formats"
     },
     {
       "path": "../types"

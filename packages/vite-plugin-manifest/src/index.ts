@@ -1,3 +1,4 @@
+export * from './composeContentAnalyzers.ts';
 export * from './contentAnalyzers.ts';
 export * from './manifestPlugin.ts';
 export * from './manifestModuleSource.ts';

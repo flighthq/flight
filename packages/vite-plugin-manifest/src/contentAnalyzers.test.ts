@@ -189,17 +189,36 @@ describe('DEFAULT_CONTENT_ANALYZERS', () => {
   it('covers the formats Flight analyzes, keyed by lowercase extension', () => {
     expect(Object.keys(DEFAULT_CONTENT_ANALYZERS).sort()).toEqual([
       '.3ds',
+      '.atlas',
       '.awd',
       '.awd2',
       '.dae',
+      '.fnt',
+      '.json',
       '.md2',
       '.md5anim',
       '.md5mesh',
       '.obj',
+      '.pex',
+      '.plist',
       '.riv',
       '.skel',
+      '.svg',
       '.swf',
+      '.tmj',
+      '.tmx',
+      '.tsj',
+      '.tsx',
+      '.xml',
     ]);
+    // The keying itself, stated as a property rather than left implicit in the list: a build looks the analyzer
+    // up by `extname(path).toLowerCase()`, so an entry written with a capital or without its dot is unreachable
+    // and the format silently has no analyzer.
+    for (const extension of Object.keys(DEFAULT_CONTENT_ANALYZERS)) {
+      expect(extension, extension).toBe(extension.toLowerCase());
+      expect(extension.startsWith('.'), extension).toBe(true);
+      expect(extension.length, extension).toBeGreaterThan(1);
+    }
   });
 
   it('is frozen, so one project cannot mutate the table another build reads', () => {
@@ -302,10 +321,16 @@ describe('OBJ material library references', () => {
     expect(unknown).toContain('obj.MaterialStandardPbr');
   });
 
-  it('is the only analyzer that needs a sibling file, so the rest stay pure two-argument reads', () => {
+  // ★ ASKS WHETHER ANY SIBLING IS ACTUALLY REQUESTED, not whether the member is absent. A composed analyzer
+  // always DEFINES `collectReferences`, because it has to forward whatever its members declare — so presence of
+  // the member stopped being the question the moment shared extensions arrived. What must stay true is that no
+  // other format asks the build to read a second file.
+  it('is the only analyzer that asks for a sibling file, so the rest stay pure reads', () => {
     for (const [extension, candidate] of Object.entries(DEFAULT_CONTENT_ANALYZERS)) {
       if (extension === '.obj') continue;
-      expect(candidate.collectReferences, extension).toBeUndefined();
+      for (const probe of [obj, new Uint8Array(0), new TextEncoder().encode('{"a":1}')]) {
+        expect(candidate.collectReferences?.(probe) ?? [], extension).toEqual([]);
+      }
     }
   });
 });

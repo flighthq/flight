@@ -197,13 +197,19 @@ describe('detectBitmapFontFormat', () => {
     expect(detectBitmapFontFormat(new Uint8Array([0, 1, 2]))).toBeNull();
   });
 
-  // JSON is discriminated by its opening brace alone, which is deliberate: the shipped JSON front end is the
-  // thing that decides whether the object carries `common` and `chars`, and duplicating that here would be a
-  // second copy of its contract. An object that is not a font is reported by the PARSER as null.
-  it('claims JSON on the opening brace and lets the front end reject a non-font object', () => {
-    const notAFont = encodeUTF8(JSON.stringify({ frames: {}, meta: { app: 'texturepacker' } }));
-    expect(detectBitmapFontFormat(notAFont)).toBe(BitmapFontFormatKindBmFontJson);
-    expect(parseBitmapFont(notAFont)).toBeNull();
+  // ★ THE OPENING BRACE IS NOT ENOUGH, and the cost of pretending otherwise is paid in someone else's bundle.
+  // `.json` is shared with seven other format families, so a detector that claimed every JSON object would link
+  // this front end into any build carrying an app config or a Tiled map beside its assets. The discriminant is
+  // the `common` and `chars` blocks the JSON front end itself requires, so detector and parser still agree.
+  it('requires the common and chars blocks the JSON front end requires', () => {
+    expect(
+      detectBitmapFontFormat(encodeUTF8(JSON.stringify({ frames: {}, meta: { app: 'texturepacker' } }))),
+    ).toBeNull();
+    expect(detectBitmapFontFormat(encodeUTF8(JSON.stringify({ apiBase: 'https://example.invalid' })))).toBeNull();
+    expect(detectBitmapFontFormat(encodeUTF8(JSON.stringify({ layers: [], type: 'map' })))).toBeNull();
+    // `common` alone is not a font either: the front end rejects a document with no chars.
+    expect(detectBitmapFontFormat(encodeUTF8(JSON.stringify({ common: { base: 26, lineHeight: 32 } })))).toBeNull();
+    expect(detectBitmapFontFormat(JSON_TEXT)).toBe(BitmapFontFormatKindBmFontJson);
   });
 });
 
