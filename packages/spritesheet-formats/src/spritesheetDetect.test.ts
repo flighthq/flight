@@ -8,6 +8,8 @@ import {
 } from '@flighthq/types/contract';
 import type { SpritesheetData, SpritesheetFormatKind, SpritesheetParseOptions } from '@flighthq/types/contract';
 
+import { parseCocosPlistSpritesheet } from './cocosPlistParse.ts';
+import { serializeCocosPlistSpritesheet } from './cocosPlistSerialize.ts';
 import {
   applySpritesheetImportOptions,
   detectSpritesheetFormat,
@@ -85,6 +87,35 @@ const COCOS_PLIST = `<?xml version="1.0" encoding="UTF-8"?>
 </dict>
 </plist>`;
 
+// A ParticleDesigner emitter config: a well-formed plist that is NOT a spritesheet. Note `textureFileName`, which
+// a Cocos sheet also carries — so keying detection on that would have separated nothing.
+const PARTICLE_DESIGNER_PLIST = `<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+  <key>maxParticles</key><integer>200</integer>
+  <key>emitterType</key><integer>0</integer>
+  <key>particleLifespan</key><real>1.0</real>
+  <key>textureFileName</key><string>spark.png</string>
+</dict>
+</plist>`;
+
+// The OLD Cocos key vocabulary (format 0/1: `frame`, `offset`, `sourceSize`), which the parser still reads. Kept as
+// its own fixture so tightening the detector cannot quietly drop a variant that is still in the corpus.
+const COCOS_PLIST_FORMAT_0 = `<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+  <key>frames</key>
+  <dict>
+    <key>hero.png</key>
+    <dict>
+      <key>frame</key><string>{{0,0},{64,64}}</string>
+      <key>offset</key><string>{0,0}</string>
+      <key>sourceSize</key><string>{64,64}</string>
+    </dict>
+  </dict>
+</dict>
+</plist>`;
+
 describe('applySpritesheetImportOptions', () => {
   // ★ THE BUILT-INS ARE ALREADY SEEDED BY THE TIME ANY TEST RUNS, because the registry seeds itself on first
   // access. So "installs only what you name" cannot be shown on a built-in kind — re-registering one keeps its
@@ -129,6 +160,60 @@ describe('detectSpritesheetFormat', () => {
 
   it('detects Cocos plist XML', () => {
     expect(detectSpritesheetFormat(COCOS_PLIST)).toBe(SpritesheetFormatKindCocosPlist);
+  });
+
+  // ★ THE PLIST CONTAINER IS SHARED, SO THE CONTAINER IS NOT THE ANSWER. ParticleDesigner writes emitter configs as
+  // plists and `@flighthq/particles-formats` reads them; claiming every plist put this family's parser into any
+  // build whose only plist was a particle config. The discriminant is the `frames` dict `parseCocosPlistXml`
+  // requires to find any sprite at all.
+  it('does not claim a ParticleDesigner emitter plist', () => {
+    expect(detectSpritesheetFormat(PARTICLE_DESIGNER_PLIST)).toBeNull();
+  });
+
+  it.each([
+    ['a bare plist', '<?xml version="1.0"?><plist version="1.0"><dict></dict></plist>'],
+    [
+      'a plist with no frames key',
+      '<?xml version="1.0"?><plist version="1.0"><dict><key>metadata</key><dict/></dict></plist>',
+    ],
+    // The parser reads `frames` only when its value is a dict, so a frames key holding anything else describes no
+    // sheet — and this is the case a bare `frames` substring test would have accepted.
+    [
+      'a frames key whose value is not a dict',
+      '<?xml version="1.0"?><plist version="1.0"><dict><key>frames</key><array/></dict></plist>',
+    ],
+    [
+      'a plist that merely mentions frames in a value',
+      '<?xml version="1.0"?><plist version="1.0"><dict><key>note</key><string>frames</string></dict></plist>',
+    ],
+  ])('does not claim %s', (_label, text) => {
+    expect(detectSpritesheetFormat(text)).toBeNull();
+  });
+
+  // Both Cocos key vocabularies stay detected: the tightening is about the frames DICT, which every format version
+  // writes, not about the per-frame keys that differ between them.
+  it('detects both the old and new Cocos frame vocabularies', () => {
+    expect(detectSpritesheetFormat(COCOS_PLIST_FORMAT_0)).toBe(SpritesheetFormatKindCocosPlist);
+    expect(detectSpritesheetFormat(COCOS_PLIST)).toBe(SpritesheetFormatKindCocosPlist);
+  });
+
+  // ★ AN ORACLE NEITHER SIDE OF THIS CHANGE WROTE: Flight's own Cocos writer. If the detector and the serializer
+  // disagreed, Flight would emit sheets it cannot recognise — and a fixture I authored could not reveal that,
+  // because I would have written it to match whichever one I was looking at.
+  it('detects what Flight own Cocos serializer writes, including an empty sheet', () => {
+    const sheet = parseCocosPlistSpritesheet(COCOS_PLIST);
+    expect(detectSpritesheetFormat(serializeCocosPlistSpritesheet(sheet))).toBe(SpritesheetFormatKindCocosPlist);
+    const empty = parseCocosPlistSpritesheet(
+      '<?xml version="1.0"?><plist version="1.0"><dict><key>frames</key><dict/></dict></plist>',
+    );
+    expect(detectSpritesheetFormat(serializeCocosPlistSpritesheet(empty))).toBe(SpritesheetFormatKindCocosPlist);
+  });
+
+  // A frame may legitimately be NAMED `frames`, which is why the key match is anchored on the element rather than
+  // being a substring hunt: the sheet must still be recognised by its own root key.
+  it('detects a sheet containing a frame named frames', () => {
+    const nested = COCOS_PLIST.replace('<key>hero.png</key>', '<key>frames</key>');
+    expect(detectSpritesheetFormat(nested)).toBe(SpritesheetFormatKindCocosPlist);
   });
 
   it('detects libGDX atlas', () => {

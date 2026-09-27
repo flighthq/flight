@@ -18,6 +18,11 @@ const TEXTURE_PACKER = JSON.stringify({
   meta: { app: 'http://www.codeandweb.com/texturepacker' },
 });
 const COCOS_PLIST = '<?xml version="1.0"?><plist version="1.0"><dict><key>frames</key><dict/></dict></plist>';
+// A ParticleDesigner emitter config: the same container, a different format. It carries `textureFileName` too,
+// which is why the discriminant had to be the `frames` dict the Cocos parser requires.
+const PARTICLE_DESIGNER_PLIST =
+  '<?xml version="1.0"?><plist version="1.0"><dict><key>maxParticles</key><integer>200</integer>' +
+  '<key>textureFileName</key><string>spark.png</string></dict></plist>';
 const STARLING = '<?xml version="1.0"?><TextureAtlas imagePath="a.png"><SubTexture name="a"/></TextureAtlas>';
 const LIBGDX_ATLAS = 'a.png\nsize: 2,2\nformat: RGBA8888\nregion\n  rotate: false\n  xy: 0, 0\n';
 
@@ -40,6 +45,10 @@ describe('isReadableSpritesheet', () => {
     ['unrelated XML', '<?xml version="1.0"?><root/>'],
     ['malformed JSON', '{ not json'],
     ['prose', 'this is not a spritesheet'],
+    // ★ A PLIST IS A CONTAINER, NOT A FORMAT. ParticleDesigner writes emitter configs as plists, so claiming every
+    // plist linked this family's parser into any build whose only plist was a particle config.
+    ['a ParticleDesigner emitter plist', PARTICLE_DESIGNER_PLIST],
+    ['a bare plist', '<?xml version="1.0"?><plist version="1.0"><dict></dict></plist>'],
   ])('reports %s unreadable', (_label, text) => {
     expect(isReadableSpritesheet(text)).toBe(false);
   });
@@ -68,6 +77,13 @@ describe('parseSpritesheetRequirements', () => {
   it('separates the two JSON formats the way the registry does', () => {
     expect(keyOf(ASEPRITE)).toBe('spritesheet.Aseprite');
     expect(keyOf(TEXTURE_PACKER)).toBe('spritesheet.TexturePacker');
+  });
+
+  // Both halves of the plist pair, in one place so they cannot drift: the container is shared, and each family
+  // answers only for the document addressed to it.
+  it('claims a plist only when it carries the frames dict the Cocos parser reads', () => {
+    expect(keyOf(COCOS_PLIST)).toBe('spritesheet.CocosPlist');
+    expect(parseSpritesheetRequirements(PARTICLE_DESIGNER_PLIST).requirements).toEqual([]);
   });
 
   // Starling and CocosPlist are both XML; only the root element separates them, and Starling's detector looks

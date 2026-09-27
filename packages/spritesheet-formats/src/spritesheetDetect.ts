@@ -41,9 +41,35 @@ function detectAseprite(text: string): boolean {
   return /"meta"\s*:/.test(text) && /aseprite\.org/i.test(text);
 }
 
+/**
+ * Whether a plist is a Cocos SPRITESHEET, rather than some other document in the same container.
+ *
+ * ★ "IS A PLIST" WAS NOT "IS A SPRITESHEET", AND THE COST WAS PAID IN SOMEONE ELSE'S BUNDLE. The plist container
+ * is shared: ParticleDesigner writes emitter configs as plists and `@flighthq/particles-formats` reads them. With
+ * only the `<plist` check, every ParticleDesigner export in a build also claimed this format, so the Cocos parser
+ * linked into any project whose only plist was a particle config. The manifest plugin's shared-extension analyzer
+ * made that visible by unioning every family that recognises an asset — a union reports each family's answer
+ * faithfully, so an over-broad detector stops being local to its own family. This is the mirror of the same fix in
+ * the ParticleDesigner detector.
+ *
+ * ★ THE DISCRIMINANT IS WHAT THE PARSER ITSELF REQUIRES, NOT A PRODUCT NAME. `parseCocosPlistXml` reads exactly
+ * one thing to find sprites: a `frames` key at the root dict whose value is a `<dict>`. Without it the parse
+ * yields zero frames — there is no sheet — so that key IS the format, and every other key the parser touches
+ * (`metadata`, `textureFileName`, the per-frame rect keys) is optional or nested. Keying on the product name or on
+ * `textureFileName` would have been wrong twice over: ParticleDesigner plists carry `textureFileName` too.
+ *
+ * Matched as an exact `<key>frames</key>` element followed by the opening of its `<dict>` value, which is the
+ * textual form of that structural requirement and is what Flight's own `serializeCocosPlistSpritesheet` writes.
+ * A bare substring would accept a frame NAMED `frames`, and a plist that merely mentions the word.
+ *
+ * The limit, stated: whitespace between the key and its value is tolerated, an XML comment between them is not.
+ * No writer emits one there, and the alternative — building an XML tree inside a detector that runs over every
+ * candidate asset in a build — costs more than that case is worth.
+ */
 function detectCocosPlist(text: string): boolean {
   const trimmed = text.trimStart();
-  return (trimmed[0] === '<' || trimmed.startsWith('<?xml')) && /<plist\b/i.test(text);
+  if (trimmed[0] !== '<' && !trimmed.startsWith('<?xml')) return false;
+  return /<plist\b/i.test(text) && COCOS_FRAMES_DICT_PATTERN.test(text);
 }
 
 function detectStarling(text: string): boolean {
@@ -233,3 +259,7 @@ function getSpritesheetFormatsInDetectionOrder(): Array<readonly [SpritesheetFor
 
 let _registry: ReadonlyMap<Kind, RegisteredFormatEntry> | null = null;
 let _nextFormatOrder = 0;
+
+// An exact `frames` key element whose value opens a dict — self-closing `<dict/>` included, which is what an empty
+// sheet serializes to. Anchored on both tags so the name cannot be a substring of a longer key.
+const COCOS_FRAMES_DICT_PATTERN = /<key>\s*frames\s*<\/key>\s*<dict\b/i;
