@@ -9,11 +9,17 @@ import type {
   GlRenderStateOptions,
   Kind,
   NodeRenderer,
+  ParticleFormatDescriptor,
+  ParticleImportOptions,
   RiveImportOptions,
   RivePathBooleanRegistrar,
   RiveRegistrar,
+  SpritesheetFormatDescriptor,
+  SpritesheetImportOptions,
   SwfParseOptions,
   SwfTagHandler,
+  TextureAtlasFormatDescriptor,
+  TextureAtlasImportOptions,
   ThreeDsChunkHandler,
   ThreeDsImportOptions,
   WgpuRenderStateOptions,
@@ -30,6 +36,13 @@ import type {
 // constraint below is what actually closes it: a fragment naming an unknown field resolves to `never`
 // and fails to compile.
 type Spreads<Fragment, Target> = keyof Fragment extends keyof Target ? true : never;
+
+// ★ THE KEY-SUBSET CHECK IS NOT ENOUGH FOR THE THREE DESCRIPTOR FAMILIES. Particles, spritesheets and texture
+// atlases each spread into a field named `formats`, so by NAME a spritesheet fragment fits a texture-atlas
+// options object exactly and `Spreads<>` says yes. What differs is the descriptor VALUE type, so these three
+// need whole-fragment assignability — and the cross-family cases have to be asserted as rejected, or the
+// emitter could route one family's rows into another family's importer with nothing here noticing.
+type Assigns<Fragment, Target> = Fragment extends Target ? true : never;
 describe('typed consumer fixtures', () => {
   it('spreads glOptions into GlRenderStateOptions', () => {
     const glOptions = {
@@ -114,6 +127,54 @@ describe('typed consumer fixtures', () => {
     expect(rejected).toBe(true);
   });
 
+  it('spreads parserOptions into ParticleImportOptions', () => {
+    const parserOptions = { formats: [PARTICLE_FORMAT] };
+    const assigns: Assigns<typeof parserOptions, ParticleImportOptions> = true;
+    const options: ParticleImportOptions = { ...parserOptions };
+    expect(assigns).toBe(true);
+    expect(options.formats).toEqual([PARTICLE_FORMAT]);
+  });
+
+  it('spreads parserOptions into SpritesheetImportOptions', () => {
+    const parserOptions = { formats: [SPRITESHEET_FORMAT] };
+    const assigns: Assigns<typeof parserOptions, SpritesheetImportOptions> = true;
+    const options: SpritesheetImportOptions = { ...parserOptions };
+    expect(assigns).toBe(true);
+    expect(options.formats).toEqual([SPRITESHEET_FORMAT]);
+  });
+
+  it('spreads parserOptions into TextureAtlasImportOptions', () => {
+    const parserOptions = { formats: [TEXTURE_ATLAS_FORMAT] };
+    const assigns: Assigns<typeof parserOptions, TextureAtlasImportOptions> = true;
+    const options: TextureAtlasImportOptions = { ...parserOptions };
+    expect(assigns).toBe(true);
+    expect(options.formats).toEqual([TEXTURE_ATLAS_FORMAT]);
+  });
+
+  it('rejects a descriptor fragment spread into another family that shares the formats field', () => {
+    const spritesheetIntoAtlas: Assigns<
+      { formats: readonly SpritesheetFormatDescriptor[] },
+      TextureAtlasImportOptions
+    > extends never
+      ? true
+      : false = true;
+    const atlasIntoSpritesheet: Assigns<
+      { formats: readonly TextureAtlasFormatDescriptor[] },
+      SpritesheetImportOptions
+    > extends never
+      ? true
+      : false = true;
+    const particleIntoSpritesheet: Assigns<
+      { formats: readonly ParticleFormatDescriptor[] },
+      SpritesheetImportOptions
+    > extends never
+      ? true
+      : false = true;
+    expect(spritesheetIntoAtlas).toBe(true);
+    expect(atlasIntoSpritesheet).toBe(true);
+    expect(particleIntoSpritesheet).toBe(true);
+  });
+
   it('spreads parserOptions into Awd2ParseOptions', () => {
     const parserOptions = { blocks: [] as Awd2ParseOptions['blocks'][number][] };
     const fits: Spreads<typeof parserOptions, Awd2ParseOptions> = true;
@@ -179,3 +240,12 @@ const RIVE_REGISTRAR: RiveRegistrar = () => {};
 const RIVE_KERNEL_REGISTRAR: RivePathBooleanRegistrar = () => {};
 const CHUNK_HANDLER = { chunkIds: [0x4100], collect: () => {} } as ThreeDsChunkHandler;
 const ELEMENT_DECODER = { decode: () => {}, elements: ['geometry'], features: ['Geometry'] } as ColladaElementDecoder;
+const PARTICLE_FORMAT = { codec: { detect: () => false }, kind: 'Libgdx' } as unknown as ParticleFormatDescriptor;
+const SPRITESHEET_FORMAT = {
+  entry: { detect: () => false, parse: () => undefined },
+  kind: 'Aseprite',
+} as unknown as SpritesheetFormatDescriptor;
+const TEXTURE_ATLAS_FORMAT = {
+  entry: { detect: () => false, parse: (_content: string, atlas: unknown) => atlas },
+  kind: 'aseprite',
+} as unknown as TextureAtlasFormatDescriptor;

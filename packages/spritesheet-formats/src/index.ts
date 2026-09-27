@@ -1,9 +1,13 @@
 export {
+  applySpritesheetImportOptions,
+  asepriteSpritesheetFormat,
+  cocosPlistSpritesheetFormat,
   detectSpritesheetFormat,
   formatLibgdxAtlas,
   getSpritesheetFormat,
   getSpritesheetFormatKinds,
   isReadableSpritesheet,
+  libgdxAtlasSpritesheetFormat,
   parseAsepriteSpritesheet,
   parseAsepriteSpritesheetDocument,
   parseCocosPlistSpritesheet,
@@ -20,6 +24,9 @@ export {
   serializeCocosPlistSpritesheet,
   serializeStarlingSpritesheet,
   serializeTexturePackerSpritesheet,
+  spritesheetAllFormats,
+  starlingSpritesheetFormat,
+  texturePackerSpritesheetFormat,
   SPRITESHEET_REQUIREMENT_KEY_NAMESPACE,
   unregisterSpritesheetFormat,
 } from './contract.ts';

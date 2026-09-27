@@ -1,3 +1,5 @@
+import { particleAllFormats } from '@flighthq/particles-formats';
+import * as particlesFormats from '@flighthq/particles-formats';
 import {
   createRiveImportRegistry,
   lottieAllLayerHandlers,
@@ -6,6 +8,7 @@ import {
   riveAllRegistrars,
 } from '@flighthq/scene2d-formats';
 import * as scene2dFormats from '@flighthq/scene2d-formats';
+import * as scene2dFormatsContract from '@flighthq/scene2d-formats/contract';
 import {
   colladaAllElementDecoders,
   md2AllSectionHandlers,
@@ -15,6 +18,7 @@ import {
 } from '@flighthq/scene3d-formats';
 import * as scene3dFormats from '@flighthq/scene3d-formats';
 import { getThreeDsChunkName } from '@flighthq/scene3d-formats/contract';
+import * as scene3dFormatsContract from '@flighthq/scene3d-formats/contract';
 import {
   dragonBonesAllSectionHandlers,
   dragonBonesAllTimelineHandlers,
@@ -24,8 +28,13 @@ import {
   spineJsonAllTimelineHandlers,
 } from '@flighthq/skeleton2d-formats/contract';
 import * as skeleton2dFormatsContract from '@flighthq/skeleton2d-formats/contract';
+import { spritesheetAllFormats } from '@flighthq/spritesheet-formats';
+import * as spritesheetFormats from '@flighthq/spritesheet-formats';
 import * as swf from '@flighthq/swf';
 import { getSwfTagName } from '@flighthq/swf/contract';
+import * as swfContract from '@flighthq/swf/contract';
+import { textureAtlasAllFormats } from '@flighthq/textureatlas-formats';
+import * as textureAtlasFormats from '@flighthq/textureatlas-formats';
 import { RequirementFacet } from '@flighthq/types/contract';
 
 import {
@@ -40,20 +49,60 @@ import {
   MD2_SECTION_HANDLERS,
   MD5_SECTION_HANDLERS,
   OBJ_MATERIAL_HANDLERS,
+  PARTICLE_FORMAT_DESCRIPTORS,
   SPINE_BINARY_SECTION_HANDLERS,
   SPINE_BINARY_TIMELINE_HANDLERS,
   SPINE_JSON_SECTION_HANDLERS,
   SPINE_JSON_TIMELINE_HANDLERS,
+  SPRITESHEET_FORMAT_DESCRIPTORS,
   SWF_TAG_HANDLERS,
+  TEXTURE_ATLAS_FORMAT_DESCRIPTORS,
   THREE_DS_CHUNK_HANDLERS,
 } from './catalog-rows.ts';
 
 const MODULES: Readonly<Record<string, Record<string, unknown>>> = {
+  '@flighthq/particles-formats': particlesFormats as unknown as Record<string, unknown>,
   '@flighthq/scene2d-formats': scene2dFormats as unknown as Record<string, unknown>,
   '@flighthq/scene3d-formats': scene3dFormats as unknown as Record<string, unknown>,
   '@flighthq/skeleton2d-formats/contract': skeleton2dFormatsContract as unknown as Record<string, unknown>,
+  '@flighthq/spritesheet-formats': spritesheetFormats as unknown as Record<string, unknown>,
   '@flighthq/swf': swf as unknown as Record<string, unknown>,
+  '@flighthq/textureatlas-formats': textureAtlasFormats as unknown as Record<string, unknown>,
 };
+
+// The three families whose `document.format` rows name a WHOLE FORMAT — a descriptor pairing a detector with a
+// parser — rather than a handler inside one format. They are checked together because the property worth
+// asserting is the same for all three, and because a family added to one of these packages should fail here.
+const DESCRIPTOR_FAMILIES: readonly (readonly [
+  string,
+  string,
+  readonly (readonly [string, { readonly kind: string }])[],
+  readonly { readonly kind: string }[],
+])[] = [
+  ['particles', '@flighthq/particles-formats', PARTICLE_FORMAT_DESCRIPTORS, particleAllFormats],
+  ['spritesheet', '@flighthq/spritesheet-formats', SPRITESHEET_FORMAT_DESCRIPTORS, spritesheetAllFormats],
+  ['textureatlas', '@flighthq/textureatlas-formats', TEXTURE_ATLAS_FORMAT_DESCRIPTORS, textureAtlasAllFormats],
+];
+
+// Every lane that OWNS a requirement-key namespace constant. The format package names its own namespace; this
+// list is which modules to ask, not what the answer is.
+const NAMESPACE_MODULES: readonly (readonly [string, Record<string, unknown>])[] = [
+  ['@flighthq/particles-formats', particlesFormats as unknown as Record<string, unknown>],
+  ['@flighthq/scene2d-formats/contract', scene2dFormatsContract as unknown as Record<string, unknown>],
+  ['@flighthq/scene3d-formats/contract', scene3dFormatsContract as unknown as Record<string, unknown>],
+  ['@flighthq/skeleton2d-formats/contract', skeleton2dFormatsContract as unknown as Record<string, unknown>],
+  ['@flighthq/spritesheet-formats', spritesheetFormats as unknown as Record<string, unknown>],
+  ['@flighthq/swf/contract', swfContract as unknown as Record<string, unknown>],
+  ['@flighthq/textureatlas-formats', textureAtlasFormats as unknown as Record<string, unknown>],
+];
+
+// Reads the namespaces one module declares. A format's namespace is a string constant it exports, so asking the
+// module is the same identity the analyzer and the catalog both build keys from.
+function namespacePrefixesOf(module: Record<string, unknown>): readonly string[] {
+  return Object.entries(module)
+    .filter(([name, value]) => name.endsWith('REQUIREMENT_KEY_NAMESPACE') && typeof value === 'string')
+    .map(([, value]) => `${value as string}.`);
+}
 
 describe('buildRequirementCatalogRows', () => {
   it('produces a non-empty catalog, because an empty one resolves nothing for anybody', () => {
@@ -75,23 +124,20 @@ describe('buildRequirementCatalogRows', () => {
     }
   });
 
+  // ★ THE NAMESPACE LIST IS READ OFF THE FORMAT PACKAGES, NOT ENUMERATED HERE. It used to be twelve literal
+  // prefixes, and every format added broke it — a list that must be edited in lockstep with the catalog is a
+  // second copy of the catalog. Each format package exports its own namespace constant, which is the identity
+  // both its analyzer and its catalog rows build keys from, so sweeping those exports states the same fact
+  // without keeping a copy of it.
   it('namespaces every kind by format, so two formats cannot claim one key', () => {
-    const namespaces = [
-      '3ds.',
-      'awd2.',
-      'dae.',
-      'dragonbones.',
-      'lottie.',
-      'md2.',
-      'md5.',
-      'obj.',
-      'riv.',
-      'spine-binary.',
-      'spine-json.',
-      'swf.',
-    ];
+    const namespaces = [...new Set(NAMESPACE_MODULES.flatMap(([, module]) => namespacePrefixesOf(module)))].sort();
     const kinds = buildRequirementCatalogRows().map((row) => row.kind);
-    expect(kinds.every((kind) => namespaces.some((namespace) => kind.startsWith(namespace)))).toBe(true);
+    for (const kind of kinds) {
+      expect(
+        namespaces.some((namespace) => kind.startsWith(namespace)),
+        `${kind} is in no format's namespace`,
+      ).toBe(true);
+    }
     // Every namespace must actually be present, or the clause above passes vacuously for the formats
     // that are missing — which is precisely how a format silently drops out of the catalog.
     for (const namespace of namespaces) {
@@ -99,6 +145,11 @@ describe('buildRequirementCatalogRows', () => {
         kinds.some((kind) => kind.startsWith(namespace)),
         `no ${namespace} rows`,
       ).toBe(true);
+    }
+    // And the sweep itself must have found something in every module, or BOTH loops above pass on an empty list —
+    // which is what a namespace constant moving off the lane named here would look like.
+    for (const [name, module] of NAMESPACE_MODULES) {
+      expect(namespacePrefixesOf(module).length, name).toBeGreaterThan(0);
     }
   });
 
@@ -181,7 +232,8 @@ describe('buildRequirementCatalogRows', () => {
           isSpineBinaryHandler(value) ||
           isSpineJsonHandler(value) ||
           isDragonBonesHandler(value) ||
-          isLottieHandler(value),
+          isLottieHandler(value) ||
+          isFormatDescriptor(value),
         `${row.implementationSymbol}`,
       ).toBe(true);
     }
@@ -697,6 +749,77 @@ describe('buildRequirementCatalogRows', () => {
       expect(row.implementationImport).toBe('@flighthq/scene2d-formats');
     }
   });
+
+  // ★ THE TABLE IS COMPARED TO THE SHIPPED PRESET, NOT TO A COUNT. A format added to one of these packages and
+  // added to its preset — the edit that makes it real — is absent from the catalog until this table names it, and
+  // a build for a document in that format would then resolve nothing while every other test stayed green.
+  it('names every descriptor the three format families ship, by identity', () => {
+    for (const [namespace, , table, preset] of DESCRIPTOR_FAMILIES) {
+      // Both directions, by identity. The table is alphabetical by symbol and the preset is in detection order,
+      // so comparing the sequences would fail on a difference that is not a defect — but a descriptor in one and
+      // not the other is exactly the defect, in whichever direction it happens.
+      const named = new Set(table.map(([, descriptor]) => descriptor));
+      for (const descriptor of preset) expect(named.has(descriptor), `${namespace}: preset entry not named`).toBe(true);
+      for (const descriptor of named) {
+        expect(preset.includes(descriptor), `${namespace}: named entry is not in the preset`).toBe(true);
+      }
+      expect(named.size, namespace).toBe(preset.length);
+    }
+  });
+
+  it('emits one row per format descriptor, keyed by the kind the descriptor itself carries', () => {
+    const rows = buildRequirementCatalogRows();
+    for (const [namespace, , table] of DESCRIPTOR_FAMILIES) {
+      for (const [symbol, descriptor] of table) {
+        const matching = rows.filter((candidate) => candidate.implementationSymbol === symbol);
+        expect(matching, symbol).toHaveLength(1);
+        expect(matching[0].kind, symbol).toBe(`${namespace}.${descriptor.kind}`);
+        expect(matching[0].facet, symbol).toBe(RequirementFacet.DocumentFormat);
+        expect(matching[0].backend, symbol).toBe(CATALOG_PARSER_BACKEND);
+      }
+    }
+  });
+
+  it('numbers each format row by its position in the preset the package ships', () => {
+    const rows = buildRequirementCatalogRows();
+    for (const [, , table, preset] of DESCRIPTOR_FAMILIES) {
+      for (const [symbol, descriptor] of table) {
+        const expected = preset.indexOf(descriptor);
+        expect(expected, symbol).toBeGreaterThanOrEqual(0);
+        for (const row of rows.filter((candidate) => candidate.implementationSymbol === symbol)) {
+          expect(row.familyOrder, symbol).toBe(expected);
+        }
+      }
+    }
+  });
+
+  // ★ THE ONE ORDERING THE GENERATED MODULE MUST REPRODUCE. Aseprite spritesheet exports also satisfy the
+  // TexturePacker detector, so the emitted `formats` list — which `parserFragment` sorts by `familyOrder` — has
+  // to put Aseprite first or a build routes every Aseprite sheet to the wrong parser. Asserting it on the ROWS
+  // is what ties the format package's own precedence to what a user's bundle will do.
+  it('orders the spritesheet rows so Aseprite precedes the broader TexturePacker', () => {
+    const rows = buildRequirementCatalogRows();
+    const orderOf = (kind: string): number =>
+      rows.find((candidate) => candidate.kind === kind)!.familyOrder ?? Number.MAX_SAFE_INTEGER;
+    expect(orderOf('spritesheet.Aseprite')).toBeLessThan(orderOf('spritesheet.TexturePacker'));
+  });
+
+  // The field is the format's own, and all three happen to agree on `formats` — which is exactly why it is
+  // carried per row: these families share `.json`, `.xml` and `.atlas`, so the extension-keyed default in
+  // `PARSER_HANDLER_FIELDS` could never name one family's field without guessing at the others.
+  it('routes every format descriptor row into the formats option field', () => {
+    const rows = buildRequirementCatalogRows();
+    for (const [namespace, module, table] of DESCRIPTOR_FAMILIES) {
+      for (const row of rows.filter((candidate) => candidate.kind.startsWith(`${namespace}.`))) {
+        expect(row.parserField, row.kind).toBe('formats');
+        expect(row.implementationImport, row.kind).toBe(module);
+        expect(
+          table.some(([symbol]) => symbol === row.implementationSymbol),
+          row.kind,
+        ).toBe(true);
+      }
+    }
+  });
 });
 
 function isTagHandler(value: unknown): boolean {
@@ -752,4 +875,17 @@ function isDragonBonesHandler(value: unknown): boolean {
 
 function isLottieHandler(value: unknown): boolean {
   return typeof value === 'function';
+}
+
+// A whole-format descriptor: the kind it registers under paired with the codec (particles) or entry
+// (spritesheet, texture atlas) that reads it. Distinguished from every handler above by carrying its own kind —
+// a handler is named by the map that holds it, a descriptor names itself.
+function isFormatDescriptor(value: unknown): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    'kind' in value &&
+    ('codec' in value || 'entry' in value)
+  );
 }
