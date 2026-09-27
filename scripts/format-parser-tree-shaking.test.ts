@@ -376,6 +376,41 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
       'unregisterLottieShapeItemHandler',
     ],
   },
+  {
+    allRegistrar: 'registerAllSvgHandlers',
+    contractOnlyExports: [
+      'svgContainerElementReader',
+      'svgGeometryElementReader',
+      'svgImageElementReader',
+      'svgTextElementReader',
+      'svgUseElementReader',
+    ],
+    families: [
+      {
+        isolationSymbols: ['svgContainerElementHandler'],
+        modules: [],
+        name: 'elements',
+        registrar: 'registerSvgElementHandlers',
+        symbols: ['svgContainerElementReader'],
+      },
+    ],
+    fullAssemblies: [
+      {
+        exports: ['createScene2DFromSvgDocument'],
+        families: ['elements'],
+        name: 'zero-config importer',
+      },
+    ],
+    leanExports: ['collectSvgCounts'],
+    name: 'SVG',
+    packageDirectory: 'scene2d-formats',
+    publicInfrastructureExports: [
+      'createSvgRegistry',
+      'getSvgElementHandler',
+      'registerSvgElementHandler',
+      'unregisterSvgElementHandler',
+    ],
+  },
 ];
 
 describe('format parser handler export lanes', () => {

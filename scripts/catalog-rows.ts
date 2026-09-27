@@ -32,6 +32,13 @@ import {
   riveAllPathBooleanRegistrars,
   riveAllRegistrars,
   RIVE_REQUIREMENT_KEY_NAMESPACE,
+  svgAllElementHandlers,
+  svgContainerElementHandler,
+  svgGeometryElementHandler,
+  svgImageElementHandler,
+  svgTextElementHandler,
+  svgUseElementHandler,
+  SVG_REQUIREMENT_KEY_NAMESPACE,
 } from '@flighthq/scene2d-formats/contract';
 import {
   awd2CameraHandler,
@@ -174,6 +181,7 @@ import type {
   LottieLayerHandler,
   LottieShapeItemHandler,
   Md2SectionHandler,
+  SvgElementHandler,
   Md5SectionHandler,
   ObjMaterialHandler,
   ParticleFormatDescriptor,
@@ -445,6 +453,14 @@ export const LOTTIE_SHAPE_ITEM_HANDLERS: readonly (readonly [string, LottieShape
   ['lottieRectangleShapeItemHandler', lottieRectangleShapeItemHandler, 'shape.rectangle'],
   ['lottieStrokeShapeItemHandler', lottieStrokeShapeItemHandler, 'shape.stroke'],
   ['lottieTrimPathShapeItemHandler', lottieTrimPathShapeItemHandler, 'shape.trimPath'],
+];
+
+export const SVG_ELEMENT_HANDLERS: readonly (readonly [string, SvgElementHandler, string])[] = [
+  ['svgContainerElementHandler', svgContainerElementHandler, 'container'],
+  ['svgGeometryElementHandler', svgGeometryElementHandler, 'geometry'],
+  ['svgImageElementHandler', svgImageElementHandler, 'image'],
+  ['svgTextElementHandler', svgTextElementHandler, 'text'],
+  ['svgUseElementHandler', svgUseElementHandler, 'use'],
 ];
 
 /**
@@ -720,6 +736,17 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
         `${TEXTURE_ATLAS_REQUIREMENT_KEY_NAMESPACE}.${descriptor.kind}`,
         familyOrderOf(textureAtlasAllFormats, descriptor),
         FORMAT_DESCRIPTOR_PARSER_FIELD,
+      ),
+    );
+  }
+  for (const [symbol, handler, kind] of SVG_ELEMENT_HANDLERS) {
+    rows.push(
+      row(
+        '@flighthq/scene2d-formats',
+        symbol,
+        `${SVG_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
+        familyOrderOf(svgAllElementHandlers, handler),
+        'elementHandlers',
       ),
     );
   }

@@ -6,6 +6,7 @@ import {
   lottieAllShapeItemHandlers,
   riveAllPathBooleanRegistrars,
   riveAllRegistrars,
+  svgAllElementHandlers,
 } from '@flighthq/scene2d-formats';
 import * as scene2dFormats from '@flighthq/scene2d-formats';
 import * as scene2dFormatsContract from '@flighthq/scene2d-formats/contract';
@@ -55,6 +56,7 @@ import {
   SPINE_JSON_SECTION_HANDLERS,
   SPINE_JSON_TIMELINE_HANDLERS,
   SPRITESHEET_FORMAT_DESCRIPTORS,
+  SVG_ELEMENT_HANDLERS,
   SWF_TAG_HANDLERS,
   TEXTURE_ATLAS_FORMAT_DESCRIPTORS,
   THREE_DS_CHUNK_HANDLERS,
@@ -233,7 +235,8 @@ describe('buildRequirementCatalogRows', () => {
           isSpineJsonHandler(value) ||
           isDragonBonesHandler(value) ||
           isLottieHandler(value) ||
-          isFormatDescriptor(value),
+          isFormatDescriptor(value) ||
+          isSvgHandler(value),
         `${row.implementationSymbol}`,
       ).toBe(true);
     }
@@ -780,6 +783,40 @@ describe('buildRequirementCatalogRows', () => {
     }
   });
 
+  it('lists every SVG element handler the scene2d-formats package exports', () => {
+    const exported = Object.keys(scene2dFormats)
+      .filter(
+        (name) =>
+          name.startsWith('svg') &&
+          name.endsWith('ElementHandler') &&
+          !name.startsWith('register') &&
+          !name.startsWith('get') &&
+          !name.startsWith('unregister') &&
+          typeof (scene2dFormats as unknown as Record<string, unknown>)[name] === 'function',
+      )
+      .sort();
+    expect(SVG_ELEMENT_HANDLERS.map(([symbol]) => symbol).sort()).toEqual(exported);
+  });
+
+  it('emits one row per SVG handler, each routed to its declared kind', () => {
+    const rows = buildRequirementCatalogRows();
+    for (const [symbol, , kind] of SVG_ELEMENT_HANDLERS) {
+      const matching = rows.filter((candidate) => candidate.implementationSymbol === symbol);
+      expect(matching, symbol).toHaveLength(1);
+      expect(matching[0].kind, symbol).toBe(`svg.${kind}`);
+    }
+  });
+
+  it('numbers each SVG row by its position in the family the format ships', () => {
+    const rows = buildRequirementCatalogRows();
+    for (const [symbol, handler] of SVG_ELEMENT_HANDLERS) {
+      const expected = svgAllElementHandlers.indexOf(handler);
+      for (const row of rows.filter((candidate) => candidate.implementationSymbol === symbol)) {
+        expect(row.familyOrder, symbol).toBe(expected);
+      }
+    }
+  });
+
   it('numbers each format row by its position in the preset the package ships', () => {
     const rows = buildRequirementCatalogRows();
     for (const [, , table, preset] of DESCRIPTOR_FAMILIES) {
@@ -818,6 +855,18 @@ describe('buildRequirementCatalogRows', () => {
           row.kind,
         ).toBe(true);
       }
+    }
+  });
+
+  it('sets parserField on SVG rows to elementHandlers', () => {
+    for (const row of buildRequirementCatalogRows().filter((candidate) => candidate.kind.startsWith('svg.'))) {
+      expect(row.parserField, row.kind).toBe('elementHandlers');
+    }
+  });
+
+  it('imports SVG handlers from the public lane', () => {
+    for (const row of buildRequirementCatalogRows().filter((r) => r.kind.startsWith('svg.'))) {
+      expect(row.implementationImport).toBe('@flighthq/scene2d-formats');
     }
   });
 });
@@ -888,4 +937,8 @@ function isFormatDescriptor(value: unknown): boolean {
     'kind' in value &&
     ('codec' in value || 'entry' in value)
   );
+}
+
+function isSvgHandler(value: unknown): boolean {
+  return typeof value === 'function';
 }
