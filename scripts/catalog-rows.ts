@@ -1,4 +1,12 @@
 import {
+  bitmapFontAllFormats,
+  bmFontBinaryFormat,
+  bmFontJsonFormat,
+  bmFontTextFormat,
+  bmFontXmlFormat,
+  BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE,
+} from '@flighthq/bitmapfont-formats';
+import {
   libgdxParticleFormat,
   particleAllFormats,
   particleDesignerParticleFormat,
@@ -184,6 +192,7 @@ import {
 import type { PathBooleanKernel, RiveImportRegistry } from '@flighthq/types/contract';
 import type {
   Awd2BlockHandler,
+  BitmapFontFormatDescriptor,
   ColladaElementDecoder,
   DragonBonesSectionHandler,
   DragonBonesTimelineHandler,
@@ -519,6 +528,13 @@ export const TEXTURE_ATLAS_FORMAT_DESCRIPTORS: readonly (readonly [string, Reado
     ['texturePackerTextureAtlasFormat', texturePackerTextureAtlasFormat],
   ];
 
+export const BITMAP_FONT_FORMAT_DESCRIPTORS: readonly (readonly [string, Readonly<BitmapFontFormatDescriptor>])[] = [
+  ['bmFontBinaryFormat', bmFontBinaryFormat],
+  ['bmFontJsonFormat', bmFontJsonFormat],
+  ['bmFontTextFormat', bmFontTextFormat],
+  ['bmFontXmlFormat', bmFontXmlFormat],
+];
+
 export const TILEMAP_MAP_FORMAT_DESCRIPTORS: readonly (readonly [string, Readonly<TilemapFormatDescriptor>])[] = [
   ['tiledTmjTilemapFormat', tiledTmjTilemapFormat],
   ['tiledTmxTilemapFormat', tiledTmxTilemapFormat],
@@ -798,6 +814,17 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
         `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${descriptor.kind}`,
         familyOrderOf(tilemapAllTilesetFormats, descriptor),
         TILEMAP_TILESET_PARSER_FIELD,
+      ),
+    );
+  }
+  for (const [symbol, descriptor] of BITMAP_FONT_FORMAT_DESCRIPTORS) {
+    rows.push(
+      row(
+        '@flighthq/bitmapfont-formats',
+        symbol,
+        `${BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE}.${descriptor.kind}`,
+        familyOrderOf(bitmapFontAllFormats, descriptor),
+        FORMAT_DESCRIPTOR_PARSER_FIELD,
       ),
     );
   }

@@ -2,6 +2,8 @@ import { mergeDomRenderOptions } from '@flighthq/scene2d-dom/contract';
 import { mergeSwfParseOptions } from '@flighthq/swf/contract';
 import type {
   Awd2ParseOptions,
+  BitmapFontFormatDescriptor,
+  BitmapFontImportOptions,
   CanvasRenderStateOptions,
   ColladaElementDecoder,
   ColladaImportOptions,
@@ -130,6 +132,14 @@ describe('typed consumer fixtures', () => {
     expect(rejected).toBe(true);
   });
 
+  it('spreads parserOptions into BitmapFontImportOptions', () => {
+    const parserOptions = { formats: [BITMAP_FONT_FORMAT] };
+    const assigns: Assigns<typeof parserOptions, BitmapFontImportOptions> = true;
+    const options: BitmapFontImportOptions = { ...parserOptions };
+    expect(assigns).toBe(true);
+    expect(options.formats).toEqual([BITMAP_FONT_FORMAT]);
+  });
+
   it('spreads parserOptions into ParticleImportOptions', () => {
     const parserOptions = { formats: [PARTICLE_FORMAT] };
     const assigns: Assigns<typeof parserOptions, ParticleImportOptions> = true;
@@ -214,9 +224,26 @@ describe('typed consumer fixtures', () => {
     > extends never
       ? true
       : false = true;
+    // The bitmap font family takes BYTES where the others take text, so this pair differs in the parameter type
+    // rather than the return type — and a fragment routed the wrong way would be applied to a detector that
+    // reads a Uint8Array as a string.
+    const bitmapFontIntoSpritesheet: Assigns<
+      { formats: readonly BitmapFontFormatDescriptor[] },
+      SpritesheetImportOptions
+    > extends never
+      ? true
+      : false = true;
+    const spritesheetIntoBitmapFont: Assigns<
+      { formats: readonly SpritesheetFormatDescriptor[] },
+      BitmapFontImportOptions
+    > extends never
+      ? true
+      : false = true;
     expect(spritesheetIntoAtlas).toBe(true);
     expect(atlasIntoSpritesheet).toBe(true);
     expect(particleIntoSpritesheet).toBe(true);
+    expect(bitmapFontIntoSpritesheet).toBe(true);
+    expect(spritesheetIntoBitmapFont).toBe(true);
   });
 
   it('spreads parserOptions into Awd2ParseOptions', () => {
@@ -289,6 +316,10 @@ const SPRITESHEET_FORMAT = {
   entry: { detect: () => false, parse: () => undefined },
   kind: 'Aseprite',
 } as unknown as SpritesheetFormatDescriptor;
+const BITMAP_FONT_FORMAT = {
+  entry: { detect: () => false, parse: () => null },
+  kind: 'BmFontXml',
+} as unknown as BitmapFontFormatDescriptor;
 const TILEMAP_FORMAT = {
   entry: { detect: () => false, parse: () => null },
   kind: 'TiledTmx',

@@ -18,6 +18,10 @@
       "registrar": "registerAssetManifest"
     },
     {
+      "packageName": "bitmapfont-formats",
+      "registrar": "registerBitmapFontFormat"
+    },
+    {
       "packageName": "collision",
       "registrar": "registerBuiltInCollisionFaceQueries3D"
     },
