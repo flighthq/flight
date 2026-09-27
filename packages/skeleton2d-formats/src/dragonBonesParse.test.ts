@@ -22,6 +22,7 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { registerAllDragonBonesHandlers } from './dragonBonesHandlers.ts';
 import {
   dragonBonesAnimationsSectionReader,
   dragonBonesBonesSectionReader,
@@ -36,6 +37,7 @@ import {
   parseDragonBonesSkeleton,
   parseDragonBonesSkeletonWithRegistry,
 } from './dragonBonesParse.ts';
+import { createDragonBonesRegistry } from './dragonBonesRegistry.ts';
 
 // Hand-authored minimal DragonBones JSON (per the real-asset rule: committed fixtures are hand-written,
 // never transcribed from a rig). Bones are listed CHILD-FIRST to exercise the topological sort.
@@ -1336,7 +1338,34 @@ describe('parseDragonBonesSkeleton version gate', () => {
 });
 
 describe('parseDragonBonesSkeletonWithRegistry', () => {
-  it('produces the same result as parseDragonBonesSkeleton when given a full preset', () => {
-    expect(typeof parseDragonBonesSkeletonWithRegistry).toBe('function');
+  function fullRegistry() {
+    const registry = createDragonBonesRegistry();
+    registerAllDragonBonesHandlers(registry);
+    return registry;
+  }
+
+  it('returns null for malformed JSON', () => {
+    expect(parseDragonBonesSkeletonWithRegistry('{ nope', fullRegistry())).toBeNull();
+    expect(parseDragonBonesSkeletonWithRegistry('null', fullRegistry())).toBeNull();
+  });
+
+  it('produces byte-for-value identical output to parseDragonBonesSkeleton on the rich fixture', () => {
+    const json = JSON.stringify(DB_RICH);
+    const original = parseDragonBonesSkeleton(json)!;
+    const registry = parseDragonBonesSkeletonWithRegistry(json, fullRegistry())!;
+    expect(JSON.parse(JSON.stringify(registry))).toEqual(JSON.parse(JSON.stringify(original)));
+  });
+
+  it('produces identical output for a minimal two-bone document', () => {
+    const original = parseDragonBonesSkeleton(DB_TWO_BONES)!;
+    const registry = parseDragonBonesSkeletonWithRegistry(DB_TWO_BONES, fullRegistry())!;
+    expect(JSON.parse(JSON.stringify(registry))).toEqual(JSON.parse(JSON.stringify(original)));
+  });
+
+  it('omits bones when their handler is not registered', () => {
+    const registry = createDragonBonesRegistry();
+    const result = parseDragonBonesSkeletonWithRegistry(DB_TWO_BONES, registry);
+    expect(result).not.toBeNull();
+    expect(result!.skeleton.bones).toEqual([]);
   });
 });
