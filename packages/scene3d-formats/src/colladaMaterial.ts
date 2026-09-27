@@ -36,7 +36,7 @@ export function appendColladaMaterials(
 
   for (const source of findDescendants(root, 'material')) {
     const materialId = source.attributes.id?.trim() ?? '';
-    const instanceEffect = child(source, 'instance_effect');
+    const instanceEffect = colladaChild(source, 'instance_effect');
     const effectId = referenceId(instanceEffect?.attributes.url);
     const effect = effectId === null ? null : (effects.get(effectId) ?? null);
     let material: StandardPbrMaterial;
@@ -65,9 +65,9 @@ export function appendColladaMaterials(
   }
 }
 
-function child(element: Readonly<XmlElement> | null | undefined, name: string): XmlElement | null {
+function colladaChild(element: Readonly<XmlElement> | null | undefined, name: string): XmlElement | null {
   if (element === null || element === undefined) return null;
-  return element.children.find((entry) => localName(entry.name) === name) ?? null;
+  return element.children.find((entry) => colladaLocalName(entry.name) === name) ?? null;
 }
 
 function collectParameters(
@@ -89,7 +89,7 @@ function appendParameters(
   attributeName: string,
 ): void {
   for (const parameter of parent.children) {
-    if (localName(parameter.name) !== elementName) continue;
+    if (colladaLocalName(parameter.name) !== elementName) continue;
     const id = parameter.attributes[attributeName]?.trim();
     if (id !== undefined && id !== '') parameters.set(id, parameter);
   }
@@ -104,34 +104,35 @@ function convertColladaEffectToStandardPbrMaterial(
   diagnostics: ImportDiagnostic[] | undefined,
   missingReferences: Set<string>,
 ): StandardPbrMaterial {
-  const profile = child(effect, 'profile_COMMON');
-  const technique = child(profile, 'technique');
-  const shading = technique?.children.find((entry) => SUPPORTED_SHADING_MODELS.has(localName(entry.name))) ?? null;
+  const profile = colladaChild(effect, 'profile_COMMON');
+  const technique = colladaChild(profile, 'technique');
+  const shading =
+    technique?.children.find((entry) => SUPPORTED_SHADING_MODELS.has(colladaLocalName(entry.name))) ?? null;
   if (profile === null || technique === null || shading === null) {
-    const declaredShading = technique?.children.find((entry) => SHADING_MODELS.has(localName(entry.name)));
+    const declaredShading = technique?.children.find((entry) => SHADING_MODELS.has(colladaLocalName(entry.name)));
     if (declaredShading !== undefined) {
       reportImportDiagnostic(
         diagnostics,
         ImportDiagnosticSeverity.Skip,
         'collada.unsupported-shading-model',
         'appendColladaMaterials',
-        { effect: effect.attributes.id ?? '', shadingModel: localName(declaredShading.name) },
+        { effect: effect.attributes.id ?? '', shadingModel: colladaLocalName(declaredShading.name) },
       );
     }
     return createStandardPbrMaterial();
   }
 
   const parameters = collectParameters(profile, technique, instanceEffect);
-  const diffuse = resolveColorProperty(child(shading, 'diffuse'), parameters, DEFAULT_DIFFUSE);
-  const emission = resolveColorProperty(child(shading, 'emission'), parameters, DEFAULT_EMISSION);
+  const diffuse = resolveColorProperty(colladaChild(shading, 'diffuse'), parameters, DEFAULT_DIFFUSE);
+  const emission = resolveColorProperty(colladaChild(shading, 'emission'), parameters, DEFAULT_EMISSION);
   const opacity = resolveColladaOpacity(shading, parameters);
   diffuse[3] *= opacity;
-  const shadingModel = localName(shading.name);
-  const shininess = resolveFloatProperty(child(shading, 'shininess'), parameters, 0);
+  const shadingModel = colladaLocalName(shading.name);
+  const shininess = resolveFloatProperty(colladaChild(shading, 'shininess'), parameters, 0);
   const material = createStandardPbrMaterial({
     baseColor: packLinearToColor(diffuse),
     baseColorMap: resolveTextureProperty(
-      child(shading, 'diffuse'),
+      colladaChild(shading, 'diffuse'),
       effect,
       parameters,
       images,
@@ -143,7 +144,7 @@ function convertColladaEffectToStandardPbrMaterial(
     ),
     emissive: packLinearToColor(emission),
     emissiveMap: resolveTextureProperty(
-      child(shading, 'emission'),
+      colladaChild(shading, 'emission'),
       effect,
       parameters,
       images,
@@ -174,7 +175,7 @@ function convertColladaEffectToStandardPbrMaterial(
 function findDescendants(element: Readonly<XmlElement>, name: string): XmlElement[] {
   const matches: XmlElement[] = [];
   for (const descendant of element.children) {
-    if (localName(descendant.name) === name) matches.push(descendant);
+    if (colladaLocalName(descendant.name) === name) matches.push(descendant);
     matches.push(...findDescendants(descendant, name));
   }
   return matches;
@@ -182,7 +183,7 @@ function findDescendants(element: Readonly<XmlElement>, name: string): XmlElemen
 
 function findFirstDescendant(element: Readonly<XmlElement>, names: ReadonlySet<string>): XmlElement | null {
   for (const descendant of element.children) {
-    if (names.has(localName(descendant.name))) return descendant;
+    if (names.has(colladaLocalName(descendant.name))) return descendant;
     const nested = findFirstDescendant(descendant, names);
     if (nested !== null) return nested;
   }
@@ -190,7 +191,7 @@ function findFirstDescendant(element: Readonly<XmlElement>, names: ReadonlySet<s
 }
 
 function hasTransparency(shading: Readonly<XmlElement>): boolean {
-  return child(shading, 'transparent') !== null || child(shading, 'transparency') !== null;
+  return colladaChild(shading, 'transparent') !== null || colladaChild(shading, 'transparency') !== null;
 }
 
 function indexElementsById(root: Readonly<XmlElement>, name: string): Map<string, XmlElement> {
@@ -202,13 +203,13 @@ function indexElementsById(root: Readonly<XmlElement>, name: string): Map<string
   return indexed;
 }
 
-function localName(name: string): string {
+function colladaLocalName(name: string): string {
   const separator = name.lastIndexOf(':');
   return separator < 0 ? name : name.slice(separator + 1);
 }
 
-function parseNumbers(text: string): number[] {
-  return text.trim().split(/\s+/).map(Number).filter(Number.isFinite);
+function parseNumbers(colladaText: string): number[] {
+  return colladaText.trim().split(/\s+/).map(Number).filter(Number.isFinite);
 }
 
 function referenceId(value: string | undefined): string | null {
@@ -242,7 +243,7 @@ function reportUnsupportedEffectProfiles(
   diagnostics: ImportDiagnostic[] | undefined,
 ): void {
   for (const profile of effect.children) {
-    const name = localName(profile.name);
+    const name = colladaLocalName(profile.name);
     if (!name.startsWith('profile_') || name === 'profile_COMMON') continue;
     reportImportDiagnostic(
       diagnostics,
@@ -255,8 +256,8 @@ function reportUnsupportedEffectProfiles(
 }
 
 function resolveColladaOpacity(shading: Readonly<XmlElement>, parameters: ReadonlyMap<string, XmlElement>): number {
-  const transparent = child(shading, 'transparent');
-  const transparency = resolveFloatProperty(child(shading, 'transparency'), parameters, 1);
+  const transparent = colladaChild(shading, 'transparent');
+  const transparency = resolveFloatProperty(colladaChild(shading, 'transparency'), parameters, 1);
   const color = resolveColorProperty(transparent, parameters, DEFAULT_TRANSPARENT);
   if (transparent?.attributes.opaque === 'RGB_ZERO') {
     const luminance = color[0] * 0.212671 + color[1] * 0.71516 + color[2] * 0.072169;
@@ -272,9 +273,9 @@ function resolveColorProperty(
 ): LinearColor {
   const value = resolvePropertyValue(property, parameters, COLOR_VALUE_NAMES);
   if (value === null) return [...fallback];
-  const numbers = parseNumbers(value.text);
-  if (numbers.length < 3) return [...fallback];
-  return [numbers[0], numbers[1], numbers[2], numbers[3] ?? 1];
+  const colladaNumbers = parseNumbers(value.text);
+  if (colladaNumbers.length < 3) return [...fallback];
+  return [colladaNumbers[0], colladaNumbers[1], colladaNumbers[2], colladaNumbers[3] ?? 1];
 }
 
 function resolveFloatProperty(
@@ -318,13 +319,13 @@ function resolvePropertyValue(
   valueNames: ReadonlySet<string>,
 ): XmlElement | null {
   if (property === null) return null;
-  const direct = property.children.find((entry) => valueNames.has(localName(entry.name)));
+  const direct = property.children.find((entry) => valueNames.has(colladaLocalName(entry.name)));
   if (direct !== undefined) return direct;
-  const parameter = child(property, 'param');
+  const parameter = colladaChild(property, 'param');
   const ref = parameter?.attributes.ref?.trim();
   if (ref === undefined || ref === '') return null;
   const definition = parameters.get(ref);
-  return definition?.children.find((entry) => valueNames.has(localName(entry.name))) ?? null;
+  return definition?.children.find((entry) => valueNames.has(colladaLocalName(entry.name))) ?? null;
 }
 
 function resolveTextureProperty(
@@ -346,7 +347,7 @@ function resolveTextureProperty(
     reportMissingReference(diagnostics, missingReferences, 'sampler2D', samplerId, effect.attributes.id ?? '');
     return null;
   }
-  const surfaceId = child(child(sampler, 'sampler2D'), 'source')?.text.trim() ?? '';
+  const surfaceId = colladaChild(colladaChild(sampler, 'sampler2D'), 'source')?.text.trim() ?? '';
   const surface = parameters.get(surfaceId);
   if (surface === undefined) {
     reportMissingReference(
@@ -358,13 +359,16 @@ function resolveTextureProperty(
     );
     return null;
   }
-  const imageId = referenceId(child(child(surface, 'surface'), 'init_from')?.text);
+  const imageId = referenceId(colladaChild(colladaChild(surface, 'surface'), 'init_from')?.text);
   const image = imageId === null ? null : (images.get(imageId) ?? null);
   if (image === null) {
     reportMissingReference(diagnostics, missingReferences, 'image', imageId ?? surfaceId, effect.attributes.id ?? '');
     return null;
   }
-  const uri = child(image, 'init_from')?.text.trim() || child(child(image, 'init_from'), 'ref')?.text.trim() || '';
+  const uri =
+    colladaChild(image, 'init_from')?.text.trim() ||
+    colladaChild(colladaChild(image, 'init_from'), 'ref')?.text.trim() ||
+    '';
   if (uri === '') {
     reportMissingReference(diagnostics, missingReferences, 'image', imageId ?? '', effect.attributes.id ?? '');
     return null;

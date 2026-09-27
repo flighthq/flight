@@ -29,7 +29,14 @@ import { ImportDiagnosticSeverity, Node3DKind } from '@flighthq/types/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
 import { applyColladaBindMaterial, parseColladaBindMaterial } from './colladaSceneShared.ts';
-import { child, children, localName, parseFloats, text, walk } from './colladaXml.ts';
+import {
+  colladaChild,
+  colladaChildren,
+  colladaLocalName,
+  parseColladaFloats,
+  colladaText,
+  walkColladaElement,
+} from './colladaXml.ts';
 const Y_UP_ROOT = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] as const;
 const Z_UP_ROOT = [1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1] as const;
 const X_UP_ROOT = [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1] as const;
@@ -73,13 +80,13 @@ export function parseColladaWithDecoders(
     reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Reject, 'collada.invalid-document', 'parseCollada');
     return { document, diagnostics, upAxis: 'Y_UP', rootTransform: Y_UP_ROOT };
   }
-  const asset = child(root, 'asset');
-  const axis = text(asset, 'up_axis');
+  const asset = colladaChild(root, 'asset');
+  const axis = colladaText(asset, 'up_axis');
   const upAxis: ColladaUpAxis = axis === 'Z_UP' || axis === 'X_UP' ? axis : 'Y_UP';
   const rootTransform = upAxis === 'Z_UP' ? Z_UP_ROOT : upAxis === 'X_UP' ? X_UP_ROOT : Y_UP_ROOT;
   document.metadata = {
-    copyright: text(asset, 'copyright'),
-    generator: text(child(asset, 'contributor'), 'authoring_tool'),
+    copyright: colladaText(asset, 'copyright'),
+    generator: colladaText(colladaChild(asset, 'contributor'), 'authoring_tool'),
     version: root.attributes.version ?? null,
   };
   if (upAxis !== 'Y_UP')
@@ -90,8 +97,8 @@ export function parseColladaWithDecoders(
       'parseCollada',
       { from: upAxis, to: 'Y_UP' },
     );
-  walk(root, (element) => {
-    const ln = localName(element);
+  walkColladaElement(root, (element) => {
+    const ln = colladaLocalName(element);
     if (
       ln.startsWith('instance_') &&
       ln !== 'instance_visual_scene' &&
@@ -123,8 +130,8 @@ export function parseColladaWithDecoders(
     skins: new Map(),
   };
   for (const decoder of decoders) decoder.decode(context);
-  const nodeLibrary = buildColladaIdMap(child(root, 'library_nodes'), 'node');
-  const visualSceneLibrary = buildColladaIdMap(child(root, 'library_visual_scenes'), 'visual_scene');
+  const nodeLibrary = buildColladaIdMap(colladaChild(root, 'library_nodes'), 'node');
+  const visualSceneLibrary = buildColladaIdMap(colladaChild(root, 'library_visual_scenes'), 'visual_scene');
   buildColladaSceneHierarchy(context, root, visualSceneLibrary, nodeLibrary, rootTransform, decoders);
 
   return { document, diagnostics, upAxis, rootTransform };
@@ -133,7 +140,7 @@ export function parseColladaWithDecoders(
 function buildColladaIdMap(library: XmlElement | undefined, elementName: string): Map<string, XmlElement> {
   const map = new Map<string, XmlElement>();
   if (library === undefined) return map;
-  for (const element of children(library, elementName)) {
+  for (const element of colladaChildren(library, elementName)) {
     const id = element.attributes.id;
     if (id !== undefined) map.set(id, element);
   }
@@ -149,9 +156,9 @@ function buildColladaSceneHierarchy(
   decoders: readonly ColladaElementDecoder[],
 ): void {
   const { diagnostics, document } = parse;
-  const sceneElement = child(root, 'scene');
+  const sceneElement = colladaChild(root, 'scene');
   if (sceneElement === undefined) return;
-  const instanceVisualScene = child(sceneElement, 'instance_visual_scene');
+  const instanceVisualScene = colladaChild(sceneElement, 'instance_visual_scene');
   if (instanceVisualScene === undefined) return;
   const url = instanceVisualScene.attributes.url;
   if (url === undefined || !url.startsWith('#')) {
@@ -197,7 +204,7 @@ function buildColladaSceneHierarchy(
   const deferredLights: ColladaDeferredLightBinding[] = [];
   const instanceStack = new Set<string>();
   const rootNodeIndices: number[] = [];
-  for (const nodeElement of children(visualScene, 'node')) {
+  for (const nodeElement of colladaChildren(visualScene, 'node')) {
     rootNodeIndices.push(
       buildColladaNode(
         document,
@@ -285,7 +292,7 @@ function buildColladaNode(
   if (nodeSid !== undefined) nodeIdMap.set(nodeSid, nodeIndex);
 
   for (const childElement of nodeElement.children) {
-    const name = localName(childElement);
+    const name = colladaLocalName(childElement);
     if (name === 'node') {
       node.children.push(
         buildColladaNode(
@@ -384,7 +391,7 @@ function buildColladaNode(
     } else if (name === 'instance_controller') {
       const url = childElement.attributes.url;
       if (url?.startsWith('#')) {
-        const skeletonEl = child(childElement, 'skeleton');
+        const skeletonEl = colladaChild(childElement, 'skeleton');
         const skeletonRoot = skeletonEl?.text.trim().replace(/^#/, '') ?? null;
         const materialOverrides = parseColladaBindMaterial(childElement, materialIndices);
         deferredControllers.push({
@@ -409,7 +416,7 @@ function buildColladaNode(
 function composeColladaTransformElements(nodeElement: XmlElement): Transform3D {
   const transform = createTransform3D();
   const transformElements = nodeElement.children.filter((c) => {
-    const n = localName(c);
+    const n = colladaLocalName(c);
     return n === 'matrix' || n === 'translate' || n === 'rotate' || n === 'scale' || n === 'lookat';
   });
   if (transformElements.length === 0) return transform;
@@ -418,8 +425,8 @@ function composeColladaTransformElements(nodeElement: XmlElement): Transform3D {
   setMatrix4(composed, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 
   for (const element of transformElements) {
-    const name = localName(element);
-    const values = parseFloats(element.text);
+    const name = colladaLocalName(element);
+    const values = parseColladaFloats(element.text);
     if (name === 'matrix' && values.length >= 16) {
       applyColladaMatrix(composed, values);
     } else if (name === 'translate' && values.length >= 3) {

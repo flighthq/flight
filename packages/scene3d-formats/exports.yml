@@ -30,3 +30,20 @@ protected:
   - buildAsciiStl
   - buildBinaryStl
   - STL_SQUARE_FACETS
+  # COLLADA's shared XML and scene primitives. Contract-lane only: they are the plumbing the orchestrator and the
+  # feature decoders both read, not something an application calls — and names this generic have no business in the
+  # public SDK vocabulary even scoped to the format.
+  - colladaChild
+  - colladaChildren
+  - colladaDescendants
+  - colladaIdOf
+  - colladaLocalName
+  - colladaNumbers
+  - colladaText
+  - parseColladaFloats
+  - walkColladaElement
+  - applyColladaBindMaterial
+  - applyColladaMaterialOverrides
+  - buildColladaNodeWorldMatrices
+  - parseColladaBindMaterial
+  - resolveColladaPrimitiveSymbols

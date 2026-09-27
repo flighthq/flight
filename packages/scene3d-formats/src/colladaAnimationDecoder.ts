@@ -19,7 +19,7 @@ import type {
 } from '@flighthq/types/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
-import { child, descendants, idOf, numbers } from './colladaXml.ts';
+import { colladaChild, colladaDescendants, colladaIdOf, colladaNumbers } from './colladaXml.ts';
 
 /** Internal Arc 6a seam; channel targets remain authored ID/SID paths for later hierarchy binding. */
 export function decodeColladaAnimations(
@@ -36,16 +36,16 @@ function decodeColladaAnimationsFromRoot(
   diagnostics: ImportDiagnostic[],
 ): ColladaDecodedAnimationChannel[] {
   const out: ColladaDecodedAnimationChannel[] = [];
-  for (const animation of descendants(root, 'animation')) {
+  for (const animation of colladaDescendants(root, 'animation')) {
     const values = new Map<string, string[] | number[]>();
     for (const source of animation.children.filter((e) => e.name === 'source')) {
-      const id = idOf(source);
-      const arr = child(source, 'float_array') ?? child(source, 'Name_array');
+      const id = colladaIdOf(source);
+      const arr = colladaChild(source, 'float_array') ?? colladaChild(source, 'Name_array');
       if (id && arr)
-        values.set(id, arr.name === 'float_array' ? numbers(arr) : arr.text.trim().split(/\s+/).filter(Boolean));
+        values.set(id, arr.name === 'float_array' ? colladaNumbers(arr) : arr.text.trim().split(/\s+/).filter(Boolean));
     }
-    const sampler = child(animation, 'sampler');
-    const channel = child(animation, 'channel');
+    const sampler = colladaChild(animation, 'sampler');
+    const channel = colladaChild(animation, 'channel');
     if (!sampler || !channel) {
       reportImportDiagnostic(
         diagnostics,

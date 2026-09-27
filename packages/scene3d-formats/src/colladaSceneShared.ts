@@ -1,7 +1,7 @@
 import { composeMatrix4FromTransform3D, createMatrix4, multiplyMatrix4 } from '@flighthq/geometry/contract';
 import type { Matrix4Like, Scene3DDocument, Scene3DDocumentNode, XmlElement } from '@flighthq/types/contract';
 
-import { child, children } from './colladaXml.ts';
+import { colladaChild, colladaChildren } from './colladaXml.ts';
 
 export function applyColladaBindMaterial(
   document: Scene3DDocument,
@@ -64,11 +64,11 @@ export function parseColladaBindMaterial(
   materialIndices: ReadonlyMap<string, number>,
 ): Map<string, number> {
   const symbolToIndex = new Map<string, number>();
-  const bindMaterial = child(instanceElement, 'bind_material');
+  const bindMaterial = colladaChild(instanceElement, 'bind_material');
   if (!bindMaterial) return symbolToIndex;
-  const technique = child(bindMaterial, 'technique_common');
+  const technique = colladaChild(bindMaterial, 'technique_common');
   if (!technique) return symbolToIndex;
-  for (const inst of children(technique, 'instance_material')) {
+  for (const inst of colladaChildren(technique, 'instance_material')) {
     const symbol = inst.attributes.symbol;
     const target = inst.attributes.target?.replace(/^#/, '');
     if (symbol && target) {

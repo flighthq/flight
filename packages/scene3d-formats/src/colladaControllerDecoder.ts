@@ -15,7 +15,7 @@ import type {
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
 import { applyColladaMaterialOverrides } from './colladaSceneShared.ts';
-import { child, descendants, idOf, numbers } from './colladaXml.ts';
+import { colladaChild, colladaDescendants, colladaIdOf, colladaNumbers } from './colladaXml.ts';
 
 /** Internal Arc 5a seam; intentionally not re-exported from the package contract. */
 export function decodeColladaControllers(xml: string, diagnostics: ImportDiagnostic[] = []): ColladaDecodedSkin[] {
@@ -33,9 +33,9 @@ export function decodeColladaMorphs(xml: string, diagnostics: ImportDiagnostic[]
 
 function decodeColladaMorphsFromRoot(root: XmlElement, diagnostics: ImportDiagnostic[]): ColladaDecodedMorph[] {
   const out: ColladaDecodedMorph[] = [];
-  for (const controller of descendants(root, 'controller')) {
-    const morph = child(controller, 'morph');
-    if (!morph || !idOf(controller)) continue;
+  for (const controller of colladaDescendants(root, 'controller')) {
+    const morph = colladaChild(controller, 'morph');
+    if (!morph || !colladaIdOf(controller)) continue;
     const method = morph.attributes.method === 'NORMALIZED' ? 'NORMALIZED' : 'RELATIVE';
     if (morph.attributes.method && morph.attributes.method !== 'RELATIVE' && morph.attributes.method !== 'NORMALIZED')
       reportImportDiagnostic(
@@ -45,12 +45,12 @@ function decodeColladaMorphsFromRoot(root: XmlElement, diagnostics: ImportDiagno
         'decodeColladaMorphs',
         { method: morph.attributes.method },
       );
-    const targets = child(morph, 'targets');
+    const targets = colladaChild(morph, 'targets');
     const targetInput = targets?.children.find((e) => e.name === 'input' && e.attributes.semantic === 'MORPH_TARGET');
     const weightInput = targets?.children.find((e) => e.name === 'input' && e.attributes.semantic === 'MORPH_WEIGHT');
     const source = (ref: string | undefined, name: string) =>
-      descendants(morph, 'source')
-        .find((e) => idOf(e) === ref?.replace(/^#/, ''))
+      colladaDescendants(morph, 'source')
+        .find((e) => colladaIdOf(e) === ref?.replace(/^#/, ''))
         ?.children.find((e) => e.name === name)
         ?.text.trim()
         .split(/\s+/)
@@ -63,12 +63,12 @@ function decodeColladaMorphsFromRoot(root: XmlElement, diagnostics: ImportDiagno
         ImportDiagnosticSeverity.Recover,
         'collada.missing-reference',
         'decodeColladaMorphs',
-        { controller: idOf(controller)! },
+        { controller: colladaIdOf(controller)! },
       );
       continue;
     }
     out.push({
-      controllerId: idOf(controller)!,
+      controllerId: colladaIdOf(controller)!,
       baseGeometry: morph.attributes.source?.replace(/^#/, '') ?? '',
       method,
       targets: targetIds,
@@ -80,19 +80,25 @@ function decodeColladaMorphsFromRoot(root: XmlElement, diagnostics: ImportDiagno
 
 function decodeColladaControllersFromRoot(root: XmlElement, diagnostics: ImportDiagnostic[]): ColladaDecodedSkin[] {
   const out: ColladaDecodedSkin[] = [];
-  for (const controller of descendants(root, 'controller')) {
-    const skin = child(controller, 'skin');
-    if (!skin || !idOf(controller)) continue;
+  for (const controller of colladaDescendants(root, 'controller')) {
+    const skin = colladaChild(controller, 'skin');
+    if (!skin || !colladaIdOf(controller)) continue;
     const geometryRef = skin.attributes.source?.replace(/^#/, '') ?? '';
     const sourceValues = new Map<string, string[] | number[]>();
     for (const source of skin.children.filter((e) => e.name === 'source')) {
-      const id = idOf(source);
+      const id = colladaIdOf(source);
       if (!id) continue;
-      const arr = child(source, 'Name_array') ?? child(source, 'IDREF_array') ?? child(source, 'float_array');
+      const arr =
+        colladaChild(source, 'Name_array') ??
+        colladaChild(source, 'IDREF_array') ??
+        colladaChild(source, 'float_array');
       if (arr)
-        sourceValues.set(id, arr.name === 'float_array' ? numbers(arr) : arr.text.trim().split(/\s+/).filter(Boolean));
+        sourceValues.set(
+          id,
+          arr.name === 'float_array' ? colladaNumbers(arr) : arr.text.trim().split(/\s+/).filter(Boolean),
+        );
     }
-    const joints = child(skin, 'joints');
+    const joints = colladaChild(skin, 'joints');
     const jointInput = joints?.children.find((e) => e.name === 'input' && e.attributes.semantic === 'JOINT');
     const matrixInput = joints?.children.find((e) => e.name === 'input' && e.attributes.semantic === 'INV_BIND_MATRIX');
     const jointNames =
@@ -101,9 +107,9 @@ function decodeColladaControllersFromRoot(root: XmlElement, diagnostics: ImportD
       (sourceValues.get(matrixInput?.attributes.source?.replace(/^#/, '') ?? '') as number[] | undefined) ?? [];
     const inverseBindMatrices: number[][] = [];
     for (let i = 0; i + 15 < matrixValues.length; i += 16) inverseBindMatrices.push(matrixValues.slice(i, i + 16));
-    const weights = child(skin, 'vertex_weights');
-    const vcount = numbers(child(weights, 'vcount'));
-    const v = numbers(child(weights, 'v'));
+    const weights = colladaChild(skin, 'vertex_weights');
+    const vcount = colladaNumbers(colladaChild(weights, 'vcount'));
+    const v = colladaNumbers(colladaChild(weights, 'v'));
     const weightInputs = weights?.children.filter((e) => e.name === 'input') ?? [];
     const jointOffset = Number(weightInputs.find((e) => e.attributes.semantic === 'JOINT')?.attributes.offset ?? 0);
     const weightOffset = Number(weightInputs.find((e) => e.attributes.semantic === 'WEIGHT')?.attributes.offset ?? 1);
@@ -132,11 +138,11 @@ function decodeColladaControllersFromRoot(root: XmlElement, diagnostics: ImportD
         ImportDiagnosticSeverity.Recover,
         'collada.vertex-weight-count-mismatch',
         'decodeColladaControllers',
-        { controller: idOf(controller)! },
+        { controller: colladaIdOf(controller)! },
       );
     out.push({
-      bindShapeMatrix: numbers(child(skin, 'bind_shape_matrix')),
-      controllerId: idOf(controller)!,
+      bindShapeMatrix: colladaNumbers(colladaChild(skin, 'bind_shape_matrix')),
+      controllerId: colladaIdOf(controller)!,
       geometryRef,
       influences,
       inverseBindMatrices,

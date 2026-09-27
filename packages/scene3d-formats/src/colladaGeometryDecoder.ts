@@ -3,7 +3,7 @@ import { createMeshGeometry } from '@flighthq/mesh/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { ColladaElementDecoder, MeshSubset } from '@flighthq/types/contract';
 
-import { child, descendants, idOf, numbers } from './colladaXml.ts';
+import { colladaChild, colladaDescendants, colladaIdOf, colladaNumbers } from './colladaXml.ts';
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared.ts';
 
 export const colladaGeometryDecoder: ColladaElementDecoder = {
@@ -16,13 +16,13 @@ export const colladaGeometryDecoder: ColladaElementDecoder = {
     const geometryPositions = context.geometryPositions;
     const geometryPrimitiveSymbols = context.geometryPrimitiveSymbols;
     const sources = new Map<string, number[]>();
-    for (const source of descendants(root, 'source')) {
-      const id = idOf(source);
-      const array = child(source, 'float_array');
-      if (id && array) sources.set(id, numbers(array));
+    for (const source of colladaDescendants(root, 'source')) {
+      const id = colladaIdOf(source);
+      const array = colladaChild(source, 'float_array');
+      if (id && array) sources.set(id, colladaNumbers(array));
     }
-    for (const geometry of descendants(root, 'geometry')) {
-      const mesh = child(geometry, 'mesh') ?? descendants(geometry, 'mesh')[0];
+    for (const geometry of colladaDescendants(root, 'geometry')) {
+      const mesh = colladaChild(geometry, 'mesh') ?? colladaDescendants(geometry, 'mesh')[0];
       if (!mesh) continue;
       const verticesMap = new Map<string, string>();
       const verticesNormalMap = new Map<string, string>();
@@ -30,9 +30,9 @@ export const colladaGeometryDecoder: ColladaElementDecoder = {
         for (const input of vertices.children.filter((e) => e.name === 'input')) {
           const semantic = input.attributes.semantic;
           const source = input.attributes.source?.replace(/^#/, '');
-          if (idOf(vertices) && source) {
-            if (semantic === 'POSITION') verticesMap.set(idOf(vertices)!, source);
-            if (semantic === 'NORMAL') verticesNormalMap.set(idOf(vertices)!, source);
+          if (colladaIdOf(vertices) && source) {
+            if (semantic === 'POSITION') verticesMap.set(colladaIdOf(vertices)!, source);
+            if (semantic === 'NORMAL') verticesNormalMap.set(colladaIdOf(vertices)!, source);
           }
         }
       const primitives = mesh.children.filter((e) => ['triangles', 'polylist', 'lines'].includes(e.name));
@@ -85,10 +85,10 @@ export const colladaGeometryDecoder: ColladaElementDecoder = {
         const posOffset = offsets.get('POSITION') ?? 0;
         const nrmOffset = offsets.get('NORMAL');
         const uvOffset = offsets.get('TEXCOORD');
-        const raw = numbers(child(primitive, 'p'));
+        const raw = colladaNumbers(colladaChild(primitive, 'p'));
         const tuples: number[][] = [];
         if (primitive.name === 'polylist') {
-          const counts = numbers(child(primitive, 'vcount'));
+          const counts = colladaNumbers(colladaChild(primitive, 'vcount'));
           let cursor = 0;
           for (const count of counts) {
             for (let i = 1; i + 1 < count; i++) {
@@ -147,7 +147,7 @@ export const colladaGeometryDecoder: ColladaElementDecoder = {
       }
       const pos = sources.get(verticesMap.values().next().value ?? '');
       const topology = hasLines ? 'line-list' : 'triangle-list';
-      const geoId = idOf(geometry);
+      const geoId = colladaIdOf(geometry);
       if (geoId) {
         geometryIdToMeshIndex.set(geoId, document.meshes.length);
         if (pos) geometryPositions.set(geoId, pos);
