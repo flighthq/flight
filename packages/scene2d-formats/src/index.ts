@@ -10,6 +10,8 @@ export {
 export { registerAllLottieHandlers } from './lottieHandlers.ts';
 export { lottieImageLayerHandler } from './lottieImageLayer.ts';
 export { lottieAllLayerHandlers, registerLottieLayerHandlers } from './lottieLayerHandlers.ts';
+export { lottieAdditiveMaskHandler } from './lottieMask.ts';
+export { lottieAllMaskHandlers, registerLottieMaskHandlers } from './lottieMaskHandlers.ts';
 export { lottieNullLayerHandler } from './lottieNullLayer.ts';
 export { lottiePathShapeItemHandler } from './lottiePathShapeItem.ts';
 export { lottiePolystarShapeItemHandler } from './lottiePolystarShapeItem.ts';
@@ -24,9 +26,12 @@ export {
   createLottieRegistry,
   getLottieLayerHandler,
   getLottieShapeItemHandler,
+  getLottieMaskHandler,
   registerLottieLayerHandler,
+  registerLottieMaskHandler,
   registerLottieShapeItemHandler,
   unregisterLottieLayerHandler,
+  unregisterLottieMaskHandler,
   unregisterLottieShapeItemHandler,
 } from './lottieRegistry.ts';
 export { isReadableLottie, LOTTIE_REQUIREMENT_KEY_NAMESPACE, parseLottieRequirements } from './lottieRequirements.ts';

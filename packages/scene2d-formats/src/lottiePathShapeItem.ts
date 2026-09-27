@@ -6,8 +6,9 @@ import {
   toLottieShapePath,
   unflattenLottieShapePath,
 } from './lottieBezierPath.ts';
-import { appendLottieShapePathChannels, initialLottieValue, isAnimatedLottieProperty } from './lottieDocument.ts';
+import { initialLottieValue, isAnimatedLottieProperty } from './lottieDocument.ts';
 import { applyLottieShapeDirection } from './lottieShapeGeometry.ts';
+import { appendLottieShapePathChannels } from './lottieShapePathChannels.ts';
 /**
  * Reads a Lottie bezier path item: the vertex list the file states, and the per-vertex channels that animate it.
  *

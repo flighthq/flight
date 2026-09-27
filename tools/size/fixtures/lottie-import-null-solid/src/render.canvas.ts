@@ -9,10 +9,12 @@ import {
 // The zero-config entry resolves `layerHandlers` from its own defaults, so it names all fifteen handlers whatever a
 // caller passes in options — the same trap the COLLADA fixtures hit when they routed through `parseCollada`. Keeping
 // that default is deliberate: asking for everything should cost everything.
-// ★ AND THIS FIXTURE IS THE PROOF THE PUBLIC LANE IS ENOUGH. It names the selective entry, two handlers and a kind
-// table, all from `.` — no `/contract` anywhere — so if any of them left the public lane the build would fail here
-// rather than in a reviewer's head. `packages/types/src/LottieRegistry.ts` used to be contract-only, which made
-// `LottieDocumentImportOptions.layerHandlers` a public option with a private element type.
+// ★ AND THIS FIXTURE NAMES ONLY PUBLIC LANES. The selective entry, two handlers and a kind table all come from `.`, so
+// a name that left the public lane fails the build here. It proves the NAMES resolve, not the types: these fixtures are
+// bundled, never typechecked. The typed half is `createScene2DFromLottieDocumentWithRegistry`'s own test, which builds a
+// `LottieRegistry` out of `@flighthq/types` under tsc. Both halves are needed, because
+// `packages/types/src/LottieRegistry.ts` was contract-only while `LottieDocumentImportOptions.layerHandlers` was
+// already public — a public option whose element type no application could name.
 import { LottieLayerKind } from '@flighthq/types';
 
 export const result = createScene2DFromLottieDocumentWithRegistry('{}', {
@@ -20,5 +22,8 @@ export const result = createScene2DFromLottieDocumentWithRegistry('{}', {
     { handle: lottieNullLayerHandler, kind: LottieLayerKind.Null },
     { handle: lottieSolidLayerHandler, kind: LottieLayerKind.Solid },
   ],
+  // No mask family: nothing in these subsets is masked, and declining it is what keeps `@flighthq/clip` and the
+  // bezier path reader out of the bundle.
+  maskHandlers: [],
   shapeItemHandlers: [],
 });
