@@ -1,5 +1,14 @@
+import { isReadableBitmapFont, parseBitmapFontRequirements } from '@flighthq/bitmapfont-formats/contract';
 import { decodeUTF8 } from '@flighthq/encoding/contract';
-import { isReadableRive, parseRiveRequirements } from '@flighthq/scene2d-formats/contract';
+import { isReadableParticleConfig, parseParticleRequirements } from '@flighthq/particles-formats/contract';
+import {
+  isReadableLottie,
+  isReadableRive,
+  isReadableSvg,
+  parseLottieRequirements,
+  parseRiveRequirements,
+  parseSvgRequirements,
+} from '@flighthq/scene2d-formats/contract';
 import { collectAwd2BlockCounts, parseAwd2Requirements } from '@flighthq/scene3d-formats/contract';
 import {
   collectMd2Features,
@@ -13,13 +22,25 @@ import {
   parseObjRequirements,
   parseThreeDsRequirements,
 } from '@flighthq/scene3d-formats/contract';
-import { collectSpineBinarySectionCounts, parseSpineBinaryRequirements } from '@flighthq/skeleton2d-formats/contract';
+import {
+  collectSpineBinarySectionCounts,
+  isReadableDragonBones,
+  isReadableSpineJson,
+  parseDragonBonesRequirements,
+  parseSpineBinaryRequirements,
+  parseSpineJsonRequirements,
+} from '@flighthq/skeleton2d-formats/contract';
+import { isReadableSpritesheet, parseSpritesheetRequirements } from '@flighthq/spritesheet-formats/contract';
 import { parseSwfHeader, parseSwfRequirements } from '@flighthq/swf/contract';
+import { isReadableTextureAtlas, parseTextureAtlasRequirements } from '@flighthq/textureatlas-formats/contract';
+import { isReadableTilemapDocument, parseTilemapRequirements } from '@flighthq/tilemap-formats/contract';
 import type {
   HostDecompressDeflateCapability,
   HostDecompressLzmaCapability,
   RequirementSet,
 } from '@flighthq/types/contract';
+
+import { composeContentAnalyzers } from './composeContentAnalyzers.ts';
 
 /** The decompressors a build supplies so compressed content can be read. */
 export interface ContentDecompressors {
@@ -79,18 +100,44 @@ export interface ContentAnalyzer {
  * Text formats (Collada, OBJ, MD5 mesh, MD5 anim) are decoded from UTF-8 via the portable encoding
  * contract. Collada additionally validates XML structure through `isReadableCollada`; the others are
  * always readable once decoded, since their line-oriented parsers handle any text gracefully.
+ *
+ * ★ SOME EXTENSIONS BELONG TO SEVERAL FAMILIES AT ONCE, and those entries are composed rather than assigned.
+ * `.json` alone is claimed by eight families and `.xml` by four, so there is no one analyzer for them — and the
+ * answer is the UNION of every family whose detector recognises the file, never a precedence among them. See
+ * `composeContentAnalyzers` for why picking a winner would be a guess that drops an implementation the app needs.
+ *
+ * `.fnt` is listed although only one family claims it, because that family is itself three formats under one
+ * extension: BMFont writes binary, text and XML all as `.fnt`, which is discriminated inside
+ * `parseBitmapFontRequirements` rather than here.
+ *
+ * `.tsx` is a Tiled tileset. It collides with the TypeScript-React suffix, which is harmless here for two
+ * reasons: this table is consulted only for a content file a build explicitly imports through the plugin, and a
+ * TSX component's text is recognised by no tilemap detector, so it reports unreadable rather than parsing as a
+ * tileset.
  */
 export const DEFAULT_CONTENT_ANALYZERS: Readonly<Record<string, ContentAnalyzer>> = Object.freeze({
   '.3ds': {
     analyze: (source) => parseThreeDsRequirements(source),
     isReadable: (source) => collectThreeDsChunkCounts(source) !== null,
   },
+  '.atlas': composeContentAnalyzers([SPRITESHEET_ANALYZER(), TEXTURE_ATLAS_ANALYZER()]),
   '.awd': AWD2_ANALYZER(),
   '.awd2': AWD2_ANALYZER(),
   '.dae': {
     analyze: (source) => parseColladaRequirements(decodeUTF8(source)),
     isReadable: (source) => isReadableCollada(decodeUTF8(source)),
   },
+  '.fnt': BITMAP_FONT_ANALYZER(),
+  '.json': composeContentAnalyzers([
+    BITMAP_FONT_ANALYZER(),
+    DRAGONBONES_ANALYZER(),
+    LOTTIE_ANALYZER(),
+    PARTICLE_ANALYZER(),
+    SPINE_JSON_ANALYZER(),
+    SPRITESHEET_ANALYZER(),
+    TEXTURE_ATLAS_ANALYZER(),
+    TILEMAP_ANALYZER(),
+  ]),
   '.md2': {
     analyze: (source) => parseMd2Requirements(source),
     isReadable: (source) => collectMd2Features(source) !== null,
@@ -108,6 +155,8 @@ export const DEFAULT_CONTENT_ANALYZERS: Readonly<Record<string, ContentAnalyzer>
     collectReferences: (source) => collectObjMaterialLibraryReferences(decodeUTF8(source)),
     isReadable: () => true,
   },
+  '.pex': PARTICLE_ANALYZER(),
+  '.plist': composeContentAnalyzers([PARTICLE_ANALYZER(), SPRITESHEET_ANALYZER()]),
   '.skel': {
     analyze: (source) => parseSpineBinaryRequirements(source),
     isReadable: (source) => collectSpineBinarySectionCounts(source) !== null,
@@ -116,10 +165,24 @@ export const DEFAULT_CONTENT_ANALYZERS: Readonly<Record<string, ContentAnalyzer>
     analyze: (source) => parseRiveRequirements(source),
     isReadable: (source) => isReadableRive(source),
   },
+  '.svg': {
+    analyze: (source) => parseSvgRequirements(decodeUTF8(source)),
+    isReadable: (source) => isReadableSvg(decodeUTF8(source)),
+  },
   '.swf': {
     analyze: (source, { deflate, lzma }) => parseSwfRequirements(source, deflate, lzma),
     isReadable: (source, { deflate, lzma }) => parseSwfHeader(source, deflate, lzma) !== null,
   },
+  '.tmj': TILEMAP_ANALYZER(),
+  '.tmx': TILEMAP_ANALYZER(),
+  '.tsj': TILEMAP_ANALYZER(),
+  '.tsx': TILEMAP_ANALYZER(),
+  '.xml': composeContentAnalyzers([
+    BITMAP_FONT_ANALYZER(),
+    SPRITESHEET_ANALYZER(),
+    TEXTURE_ATLAS_ANALYZER(),
+    TILEMAP_ANALYZER(),
+  ]),
 });
 
 // The two formats need DIFFERENT readability probes, because they compress different things.
@@ -135,5 +198,69 @@ function AWD2_ANALYZER(): ContentAnalyzer {
   return {
     analyze: (source, { deflate, lzma }) => parseAwd2Requirements(source, deflate, lzma),
     isReadable: (source, { deflate, lzma }) => collectAwd2BlockCounts(source, deflate, lzma) !== null,
+  };
+}
+
+// Each family that shares an extension gets one analyzer, reused wherever that family's formats appear. These are
+// FUNCTIONS rather than module constants for the same reason `AWD2_ANALYZER` is: the table above is built at module
+// initialization, and a `const` it referenced would have to be declared before it — which fights the convention
+// that loose module values live at the bottom of the file, and turns a reordering into a temporal-dead-zone crash
+// rather than a lint complaint.
+
+// Bytes, not text: three of the four BMFont forms are text and one is binary, so the family's own entry point
+// takes the bytes and decodes what it needs.
+function BITMAP_FONT_ANALYZER(): ContentAnalyzer {
+  return {
+    analyze: (source) => parseBitmapFontRequirements(source),
+    isReadable: (source) => isReadableBitmapFont(source),
+  };
+}
+
+function DRAGONBONES_ANALYZER(): ContentAnalyzer {
+  return {
+    analyze: (source) => parseDragonBonesRequirements(decodeUTF8(source)),
+    isReadable: (source) => isReadableDragonBones(decodeUTF8(source)),
+  };
+}
+
+function LOTTIE_ANALYZER(): ContentAnalyzer {
+  return {
+    analyze: (source) => parseLottieRequirements(decodeUTF8(source)),
+    isReadable: (source) => isReadableLottie(decodeUTF8(source)),
+  };
+}
+
+function PARTICLE_ANALYZER(): ContentAnalyzer {
+  return {
+    analyze: (source) => parseParticleRequirements(decodeUTF8(source)),
+    isReadable: (source) => isReadableParticleConfig(decodeUTF8(source)),
+  };
+}
+
+function SPINE_JSON_ANALYZER(): ContentAnalyzer {
+  return {
+    analyze: (source) => parseSpineJsonRequirements(decodeUTF8(source)),
+    isReadable: (source) => isReadableSpineJson(decodeUTF8(source)),
+  };
+}
+
+function SPRITESHEET_ANALYZER(): ContentAnalyzer {
+  return {
+    analyze: (source) => parseSpritesheetRequirements(decodeUTF8(source)),
+    isReadable: (source) => isReadableSpritesheet(decodeUTF8(source)),
+  };
+}
+
+function TEXTURE_ATLAS_ANALYZER(): ContentAnalyzer {
+  return {
+    analyze: (source) => parseTextureAtlasRequirements(decodeUTF8(source)),
+    isReadable: (source) => isReadableTextureAtlas(decodeUTF8(source)),
+  };
+}
+
+function TILEMAP_ANALYZER(): ContentAnalyzer {
+  return {
+    analyze: (source) => parseTilemapRequirements(decodeUTF8(source)),
+    isReadable: (source) => isReadableTilemapDocument(decodeUTF8(source)),
   };
 }
