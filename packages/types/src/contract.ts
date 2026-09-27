@@ -724,6 +724,7 @@ export * from './SwfDocumentImport.ts';
 export * from './SwfFilterListGuard.ts';
 export * from './SwfParseOptions.ts';
 export * from './SwfTagHandler.ts';
+export * from './SwfContentCapabilities.ts';
 export * from './SwfHeader.ts';
 export * from './SwfTagParseState.ts';
 export * from './Sprite.ts';
