@@ -16,6 +16,7 @@ import {
   parseSpritesheet,
   registerSpritesheetFormat,
   spritesheetAllFormats,
+  starlingSpritesheetFormat,
   unregisterSpritesheetFormat,
 } from './spritesheetDetect.ts';
 
@@ -100,10 +101,16 @@ describe('applySpritesheetImportOptions', () => {
     expect(getSpritesheetFormat(kind)).toBeNull();
   });
 
+  // ★ MEASURED AGAINST A KIND THAT IS ABSENT, because a before/after comparison of the kind set cannot see this
+  // bug. Empty options falling back to the full preset would re-register kinds that are ALREADY installed, which
+  // leaves the set identical — the comparison passes while the fallback is live. Removing one built-in first is
+  // what makes the two behaviours distinguishable.
   it('installs nothing for empty options, rather than falling back to the built-ins', () => {
-    const before = getSpritesheetFormatKinds();
+    unregisterSpritesheetFormat(SpritesheetFormatKindStarling);
     applySpritesheetImportOptions({});
-    expect(getSpritesheetFormatKinds()).toEqual(before);
+    expect(getSpritesheetFormat(SpritesheetFormatKindStarling)).toBeNull();
+    applySpritesheetImportOptions({ formats: [starlingSpritesheetFormat] });
+    expect(getSpritesheetFormat(SpritesheetFormatKindStarling)).toBe(starlingSpritesheetFormat.entry);
   });
 });
 
