@@ -1,6 +1,7 @@
 import { getLottieFeatureNames } from '@flighthq/scene2d-formats/contract';
 import {
   COLLADA_FEATURE_ELEMENTS,
+  getAwd2FeatureNames,
   GLTF_FEATURE_NAMES,
   getThreeDsFeatureNames,
   MD2_FEATURE_NAMES,
@@ -29,6 +30,7 @@ import { buildRequirementCatalogRows, CATALOG_PARSER_BACKEND, GLTF_EXTENSION_HAN
 // missing a feature would shrink the population silently and the gate would pass by looking at less.
 const ANALYZER_FEATURES: ReadonlyMap<string, readonly string[]> = new Map([
   ['3ds', getThreeDsFeatureNames()],
+  ['awd2', [...getAwd2FeatureNames(), 'Unknown(254)', 'Unknown(255)']],
   // Lottie's vocabulary joined this population when the census started reporting mask modes it cannot carry. Like STL's,
   // it is read off the format package so the gate cannot disagree with the analyzer about what a document can require.
   ['lottie', getLottieFeatureNames()],

@@ -43,6 +43,14 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
   {
     backend: 'parser',
     facet: 'document.format',
+    familyOrder: 3,
+    implementationImport: '@flighthq/scene3d-formats',
+    implementationSymbol: 'threeDsMaterialHandler',
+    kind: '3ds.MaterialTextureMap',
+  },
+  {
+    backend: 'parser',
+    facet: 'document.format',
     familyOrder: 4,
     implementationImport: '@flighthq/scene3d-formats',
     implementationSymbol: 'threeDsMeshHandler',
@@ -212,6 +220,14 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
     implementationImport: '@flighthq/scene3d-formats',
     implementationSymbol: 'colladaGeometryDecoder',
     kind: 'dae.Geometry',
+  },
+  {
+    backend: 'parser',
+    facet: 'document.format',
+    familyOrder: 0,
+    implementationImport: '@flighthq/scene3d-formats',
+    implementationSymbol: 'colladaMaterialDecoder',
+    kind: 'dae.Image',
   },
   {
     backend: 'parser',
@@ -2939,62 +2955,72 @@ export const BUILT_IN_REQUIREMENT_DISPOSITIONS: readonly RequirementDisposition[
   {
     backend: 'canvas',
     facet: 'document.format',
-    kind: '3ds.MaterialTextureMap',
-    reason: 'read by threeDsMaterialHandler as part of the MATERIAL chunk',
+    kind: 'awd2.Unknown(254)',
+    reason:
+      'AWD2 core block type 254 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
   },
   {
     backend: 'dom',
     facet: 'document.format',
-    kind: '3ds.MaterialTextureMap',
-    reason: 'read by threeDsMaterialHandler as part of the MATERIAL chunk',
+    kind: 'awd2.Unknown(254)',
+    reason:
+      'AWD2 core block type 254 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
   },
   {
     backend: 'gl',
     facet: 'document.format',
-    kind: '3ds.MaterialTextureMap',
-    reason: 'read by threeDsMaterialHandler as part of the MATERIAL chunk',
+    kind: 'awd2.Unknown(254)',
+    reason:
+      'AWD2 core block type 254 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
   },
   {
     backend: 'parser',
     facet: 'document.format',
-    kind: '3ds.MaterialTextureMap',
-    reason: 'read by threeDsMaterialHandler as part of the MATERIAL chunk',
+    kind: 'awd2.Unknown(254)',
+    reason:
+      'AWD2 core block type 254 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
   },
   {
     backend: 'wgpu',
     facet: 'document.format',
-    kind: '3ds.MaterialTextureMap',
-    reason: 'read by threeDsMaterialHandler as part of the MATERIAL chunk',
+    kind: 'awd2.Unknown(254)',
+    reason:
+      'AWD2 core block type 254 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
   },
   {
     backend: 'canvas',
     facet: 'document.format',
-    kind: 'dae.Image',
-    reason: 'read by colladaMaterialDecoder, which indexes the image library to resolve a texture reference',
+    kind: 'awd2.Unknown(255)',
+    reason:
+      'AWD2 core block type 255 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
   },
   {
     backend: 'dom',
     facet: 'document.format',
-    kind: 'dae.Image',
-    reason: 'read by colladaMaterialDecoder, which indexes the image library to resolve a texture reference',
+    kind: 'awd2.Unknown(255)',
+    reason:
+      'AWD2 core block type 255 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
   },
   {
     backend: 'gl',
     facet: 'document.format',
-    kind: 'dae.Image',
-    reason: 'read by colladaMaterialDecoder, which indexes the image library to resolve a texture reference',
+    kind: 'awd2.Unknown(255)',
+    reason:
+      'AWD2 core block type 255 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
   },
   {
     backend: 'parser',
     facet: 'document.format',
-    kind: 'dae.Image',
-    reason: 'read by colladaMaterialDecoder, which indexes the image library to resolve a texture reference',
+    kind: 'awd2.Unknown(255)',
+    reason:
+      'AWD2 core block type 255 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
   },
   {
     backend: 'wgpu',
     facet: 'document.format',
-    kind: 'dae.Image',
-    reason: 'read by colladaMaterialDecoder, which indexes the image library to resolve a texture reference',
+    kind: 'awd2.Unknown(255)',
+    reason:
+      'AWD2 core block type 255 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
   },
   {
     backend: 'canvas',
