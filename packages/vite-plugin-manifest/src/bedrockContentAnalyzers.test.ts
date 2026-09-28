@@ -88,6 +88,20 @@ describe('bedrock content analyzers', () => {
     expect(imported).toEqual([parser]);
   });
 
+  // ★ THE GENERATED MODULE IS APPLICATION CODE, SO ITS IMPORTS MUST BE ON THE APP LANE. `.` is the app boundary
+  // and `/contract` is the intra-SDK lane; a manifest a user's app imports must not reach across it. Two rows
+  // shipped naming `@flighthq/particles-formats/contract` and `@flighthq/tilemap-formats/contract`, which is
+  // what this reads back out of the emitted source rather than out of the row.
+  it.each(BEDROCK)('imports %s on the public lane, never a contract path', (extension, sample) => {
+    const source = generate(extension, encodeUTF8(sample));
+    const modules = [...source.matchAll(/^import \{[^}]+\} from '([^']+)';$/gm)].map((match) => match[1]);
+    expect(modules.length, `${extension} imported nothing`).toBeGreaterThan(0);
+    for (const module of modules) {
+      expect(module.endsWith('/contract'), `${extension} imports ${module}`).toBe(false);
+      expect(module.includes('/contract/'), `${extension} imports ${module}`).toBe(false);
+    }
+  });
+
   it.each(FNT_VARIANTS)('selects the %s parser for a .fnt carrying that form', (_label, bytes, kind, parser) => {
     expect(analyze('.fnt', bytes).requirements.map((requirement) => requirement.key)).toEqual([kind]);
     expect(generate('.fnt', bytes)).toContain(`export const contentParser = ${parser};`);

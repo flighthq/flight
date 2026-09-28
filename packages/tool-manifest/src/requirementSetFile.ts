@@ -38,12 +38,26 @@ export function readRequirementCatalogFile(text: string): RequirementCatalogFile
       problems.push(`entries[${index}] needs string ${missing.join(', ')}`);
       continue;
     }
+    // ★ `parserExport` IS VALIDATED, NOT TOLERATED, UNLIKE THE OPTIONAL FIELDS BELOW. The registrar fields are
+    // copied only when they are strings and otherwise ignored, which is safe because nothing emits them. This one
+    // is emitted: it is the whole of a direct-parser row, the flat `export const contentParser = parseX;` a
+    // bedrock format is selected by. Dropping a malformed one silently would hand the build a catalog that still
+    // parses, still has the right entry count, and has quietly lost every direct-parser binding — the format
+    // would fall back to no selection at all, which is the failure this field exists to prevent. So a present
+    // non-string is reported by index and the row is dropped, in the same shape as a missing required field.
+    if (raw.parserExport !== undefined && typeof raw.parserExport !== 'string') {
+      problems.push(`entries[${index}] parserExport must be a string when present`);
+      continue;
+    }
     entries.push({
       backend: raw.backend as string,
       facet: raw.facet as RequirementFacet,
       implementationImport: raw.implementationImport as string,
       implementationSymbol: raw.implementationSymbol as string,
       kind: raw.kind as string,
+      // Absent for a format with a handler family to subset, present for a bedrock format whose row names one
+      // parse function. Validated above, so reaching here means it is either absent or a string.
+      ...(raw.parserExport === undefined ? {} : { parserExport: raw.parserExport }),
       // Absent for an options-driven lane, which has no `register*` to name. Copied only when present
       // so a row that never had one does not gain an empty string that reads like a lost value.
       ...(typeof raw.registrarImport === 'string' ? { registrarImport: raw.registrarImport } : {}),

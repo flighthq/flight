@@ -29,6 +29,73 @@ describe('readRequirementCatalogFile', () => {
     ]);
   });
 
+  // ★ `parserExport` IS THE WHOLE OF A DIRECT-PARSER ROW, so the CLI lane has to carry it or it reaches the same
+  // catalog with every bedrock selection quietly missing. A reader that dropped it would still produce a catalog
+  // that parses, with the right entry count, and no diagnostic — the shape of failure this preserves against.
+  it('preserves parserExport through a round trip', () => {
+    const entry = {
+      backend: 'parser',
+      facet: 'document.format',
+      implementationImport: '@flighthq/tilemap-formats',
+      implementationSymbol: 'parseTiledTmx',
+      kind: 'tilemap.TiledTmx',
+      parserExport: 'contentParser',
+    };
+
+    const result = readRequirementCatalogFile(JSON.stringify({ entries: [entry] }));
+
+    expect(result.problems).toEqual([]);
+    expect(result.catalog!.entries[0].parserExport).toBe('contentParser');
+    // The round trip in full: re-serializing what was read reproduces the row it was read from.
+    expect(JSON.parse(JSON.stringify(result.catalog!.entries[0]))).toEqual(entry);
+  });
+
+  // A handler row has no parserExport, and must not gain one — an empty string here would read as a binding
+  // named '' rather than as the absence of a direct-parser selection.
+  it('leaves parserExport absent on a row that never had one', () => {
+    const result = readRequirementCatalogFile(
+      JSON.stringify({
+        entries: [
+          {
+            backend: 'parser',
+            facet: 'document.format',
+            implementationImport: '@flighthq/swf',
+            implementationSymbol: 'swfDefineShapeHandler',
+            kind: 'swf.DefineShape',
+          },
+        ],
+      }),
+    );
+
+    expect(result.problems).toEqual([]);
+    expect('parserExport' in result.catalog!.entries[0]).toBe(false);
+  });
+
+  it.each([
+    ['a number', 7],
+    ['a null', null],
+    ['an object', { name: 'contentParser' }],
+    ['an array', ['contentParser']],
+  ])('rejects %s parserExport by index rather than dropping it', (_label, value) => {
+    const result = readRequirementCatalogFile(
+      JSON.stringify({
+        entries: [
+          {
+            backend: 'parser',
+            facet: 'document.format',
+            implementationImport: '@flighthq/tilemap-formats',
+            implementationSymbol: 'parseTiledTmx',
+            kind: 'tilemap.TiledTmx',
+            parserExport: value,
+          },
+        ],
+      }),
+    );
+
+    expect(result.catalog).toBeNull();
+    expect(result.problems).toEqual(['entries[0] parserExport must be a string when present']);
+  });
+
   it('rejects text that is not a catalog', () => {
     expect(readRequirementCatalogFile('{').catalog).toBeNull();
     expect(readRequirementCatalogFile('[]').problems).toEqual(['catalog must be an object']);
