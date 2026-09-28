@@ -4,11 +4,23 @@ import { StandardPbrMaterialKind } from '@flighthq/types/contract';
 import { objMaterialToStandardPbr, objStandardPbrMaterialHandler } from './objStandardPbrMaterialHandler.ts';
 
 function emptyDocument(): Scene3DDocument {
-  return { materials: [], meshes: [], nodes: [], resources: [], scenes: [{ rootNodes: [] }] };
+  return {
+    animations: [],
+    cameras: [],
+    lights: [],
+    materials: [],
+    meshes: [],
+    metadata: null,
+    nodes: [],
+    resources: [],
+    scenes: [{ rootNodes: [] }],
+    skins: [],
+  };
 }
 
 function pbrObjMaterial(): ObjMaterial {
   return {
+    ambient: [0, 0, 0],
     anisotropy: null,
     anisotropyRotation: null,
     clearcoat: null,
@@ -16,6 +28,8 @@ function pbrObjMaterial(): ObjMaterial {
     diffuse: [0.8, 0.2, 0.1],
     dissolve: 1,
     emissive: null,
+    illumination: 2,
+    mapAmbient: null,
     mapBump: null,
     mapDiffuse: null,
     mapDissolve: null,
@@ -23,7 +37,6 @@ function pbrObjMaterial(): ObjMaterial {
     mapMetallic: null,
     mapNormal: null,
     mapRoughness: null,
-    mapSheen: null,
     mapSpecular: null,
     metallic: null,
     name: 'pbr',
