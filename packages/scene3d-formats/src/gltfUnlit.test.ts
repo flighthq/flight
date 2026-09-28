@@ -3,7 +3,7 @@ import { StandardPbrMaterialKind, UnlitMaterialKind } from '@flighthq/types/cont
 import { describe, expect, it } from 'vitest';
 
 import { GltfClearcoatExtensionHandler } from './gltfClearcoat.ts';
-import { parseGltf } from './gltfParse.ts';
+import { parseGltf } from './gltfImport.ts';
 import { GltfUnlitExtensionHandler } from './gltfUnlit.ts';
 
 function makeGltf(material: unknown): GltfDocument {

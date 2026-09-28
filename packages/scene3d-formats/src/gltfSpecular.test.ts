@@ -2,7 +2,7 @@ import { packLinearToColor } from '@flighthq/color/contract';
 import type { ExtendedPbrMaterial, GltfDocument, SpecularPbrExtension } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseGltf } from './gltfParse.ts';
+import { parseGltf } from './gltfImport.ts';
 import { GltfSpecularExtensionHandler } from './gltfSpecular.ts';
 
 function makeGltf(material: unknown): GltfDocument {

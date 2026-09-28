@@ -3,7 +3,7 @@ import type { ExtendedPbrMaterial, GltfDocument, TransmissionVolumePbrExtension 
 import { TransmissionVolumePbrExtensionKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseGltf } from './gltfParse.ts';
+import { parseGltf } from './gltfImport.ts';
 import {
   GltfIorExtensionHandler,
   GltfTransmissionExtensionHandler,

@@ -1,0 +1,9 @@
+{
+  "name": "gltf-import-cameras",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "gltf-import-cameras"
+  }
+}

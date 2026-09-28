@@ -2,7 +2,7 @@ import type { AnisotropyPbrExtension, ExtendedPbrMaterial, GltfDocument } from '
 import { describe, expect, it } from 'vitest';
 
 import { GltfAnisotropyExtensionHandler } from './gltfAnisotropy.ts';
-import { parseGltf } from './gltfParse.ts';
+import { parseGltf } from './gltfImport.ts';
 
 function makeGltf(material: unknown): GltfDocument {
   return {

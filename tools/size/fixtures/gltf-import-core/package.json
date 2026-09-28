@@ -1,0 +1,9 @@
+{
+  "name": "gltf-import-core",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "gltf-import-core"
+  }
+}

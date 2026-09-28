@@ -4,7 +4,7 @@ import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from '@fli
 import { describe, expect, it } from 'vitest';
 
 import { GltfClearcoatExtensionHandler } from './gltfClearcoat.ts';
-import { parseGltf } from './gltfParse.ts';
+import { parseGltf } from './gltfImport.ts';
 import { GltfSpecularGlossinessExtensionHandler } from './gltfSpecularGlossiness.ts';
 
 function makeGltf(material: unknown): GltfDocument {
