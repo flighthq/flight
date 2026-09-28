@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
-import { dirname, extname, join, relative, resolve } from 'path';
+import { extname, join, relative, resolve } from 'path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
 
@@ -10,6 +10,7 @@ import {
 import { resolveAssetTarget } from '../../../scripts/asset-cache.ts';
 import { copyDirectoryContents } from '../../../scripts/copy-dir.ts';
 import { buildExamplesWebEntryHtml } from '../../../scripts/examples-web-entry-html.ts';
+import { resolveExampleRenderModule } from '../../../scripts/examples-web-render-module.ts';
 import { workspacePackages } from '../../../scripts/workspaces.ts';
 
 const RENDERERS = ['dom', 'canvas', 'webgl', 'webgpu'] as const;
@@ -40,8 +41,9 @@ function entryWithLogCapture(name: string, render: string): string {
   // get the same not-blank / error / fingerprint checks with no per-example code. It is dynamically
   // imported and run ONLY under capture mode (window.__flightCapture, set by the verify harness), so
   // it never executes — and its chunk never loads — in the deployed gallery a visitor browses.
-  // Path-singleton of the example's render module: app.ts imports './render', which resolveId rewrites
-  // to this same absolute file, so importing it here yields the identical exported render state.
+  // Path-singleton of the example's render module: app.ts imports './render.ts', which resolveId
+  // rewrites for its query-tagged runner instance to this same absolute file. Importing it here
+  // therefore yields the identical exported render state.
   const renderPath = join(examplesDir, name, 'src', `render.${render}.ts`);
   const lines = [
     `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
@@ -196,14 +198,9 @@ function examplesPlugin(examples: Example[]): Plugin[] {
           return appPath + '?render=' + render;
         }
 
-        // Redirect './render' when the importer carries ?render= context.
-        if (source === './render' && importer) {
-          const match = importer.match(/\?render=([^&]+)/);
-          if (match) {
-            const render = match[1];
-            return resolve(dirname(importer.split('?')[0]), `render.${render}.ts`);
-          }
-        }
+        // The source import remains the real default module outside this runner. Only the app module
+        // deliberately tagged above gets a backend-specific realization.
+        return resolveExampleRenderModule(source, importer);
       },
 
       load(id) {
