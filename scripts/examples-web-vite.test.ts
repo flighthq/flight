@@ -1,4 +1,23 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import { buildExamplesWebEntryHtml } from './examples-web-entry-html.ts';
+import { resolveExampleRenderModule } from './examples-web-render-module.ts';
+
+describe('examples backend resolution', () => {
+  it('maps the explicit default source import only for a query-tagged runner entry', () => {
+    const root = resolve(import.meta.dirname, '..');
+    const appPath = resolve(root, 'examples/packages/clock/src/app.ts');
+    const source = readFileSync(appPath, 'utf8');
+    const specifier = source.match(/from '(\.\/render[^']+)'/)?.[1];
+
+    expect(specifier).toBe('./render.ts');
+    expect(resolveExampleRenderModule(specifier!, `${appPath}?render=dom`)).toBe(
+      resolve(root, 'examples/packages/clock/src/render.dom.ts'),
+    );
+    expect(resolveExampleRenderModule(specifier!, appPath)).toBeUndefined();
+  });
+});
 
 describe('buildExamplesWebEntryHtml', () => {
   it('surfaces thrown and rejected module startup failures in both build and dev pages', () => {
