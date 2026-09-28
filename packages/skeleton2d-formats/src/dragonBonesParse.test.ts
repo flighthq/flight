@@ -22,22 +22,21 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { dragonBonesAnimationsSectionReader } from './dragonBonesAnimationsHandler.ts';
+import { dragonBonesBonesSectionReader } from './dragonBonesBonesHandler.ts';
+import { dragonBonesBoneTimelineReader } from './dragonBonesBoneTimelineHandler.ts';
 import { registerAllDragonBonesHandlers } from './dragonBonesHandlers.ts';
+import { parseDragonBonesSkeleton, parseDragonBonesSkeletonWithRegistry } from './dragonBonesParse.ts';
+import { createDragonBonesRegistry } from './dragonBonesRegistry.ts';
+import { dragonBonesSkinsSectionReader } from './dragonBonesSkinsHandler.ts';
+import { dragonBonesSlotsSectionReader } from './dragonBonesSlotsHandler.ts';
+import { dragonBonesSlotTimelineReader } from './dragonBonesSlotTimelineHandler.ts';
 import {
-  dragonBonesAnimationsSectionReader,
-  dragonBonesBonesSectionReader,
-  dragonBonesBoneTimelineReader,
   dragonBonesDeformTimelineReader,
   dragonBonesIkConstraintsSectionReader,
   dragonBonesIkTimelineReader,
-  dragonBonesSkinsSectionReader,
-  dragonBonesSlotsSectionReader,
-  dragonBonesSlotTimelineReader,
   dragonBonesZOrderTimelineReader,
-  parseDragonBonesSkeleton,
-  parseDragonBonesSkeletonWithRegistry,
-} from './dragonBonesParse.ts';
-import { createDragonBonesRegistry } from './dragonBonesRegistry.ts';
+} from './dragonBonesStubHandlers.ts';
 
 // Hand-authored minimal DragonBones JSON (per the real-asset rule: committed fixtures are hand-written,
 // never transcribed from a rig). Bones are listed CHILD-FIRST to exercise the topological sort.

@@ -1,38 +1,12 @@
-import type {
-  DragonBonesRegistry,
-  DragonBonesSectionContext,
-  DragonBonesSectionHandler,
-} from '@flighthq/types/contract';
+import type { DragonBonesRegistry, DragonBonesSectionHandler } from '@flighthq/types/contract';
 import { DragonBonesSectionKind } from '@flighthq/types/contract';
 
-import {
-  dragonBonesAnimationsSectionReader,
-  dragonBonesBonesSectionReader,
-  dragonBonesIkConstraintsSectionReader,
-  dragonBonesSkinsSectionReader,
-  dragonBonesSlotsSectionReader,
-} from './dragonBonesParse.ts';
+import { dragonBonesAnimationsSectionHandler } from './dragonBonesAnimationsHandler.ts';
+import { dragonBonesBonesSectionHandler } from './dragonBonesBonesHandler.ts';
 import { registerDragonBonesSectionHandler } from './dragonBonesRegistry.ts';
-
-export function dragonBonesAnimationsSectionHandler(context: DragonBonesSectionContext): void {
-  dragonBonesAnimationsSectionReader(context);
-}
-
-export function dragonBonesBonesSectionHandler(context: DragonBonesSectionContext): void {
-  dragonBonesBonesSectionReader(context);
-}
-
-export function dragonBonesIkConstraintsSectionHandler(context: DragonBonesSectionContext): void {
-  dragonBonesIkConstraintsSectionReader(context);
-}
-
-export function dragonBonesSkinsSectionHandler(context: DragonBonesSectionContext): void {
-  dragonBonesSkinsSectionReader(context);
-}
-
-export function dragonBonesSlotsSectionHandler(context: DragonBonesSectionContext): void {
-  dragonBonesSlotsSectionReader(context);
-}
+import { dragonBonesSkinsSectionHandler } from './dragonBonesSkinsHandler.ts';
+import { dragonBonesSlotsSectionHandler } from './dragonBonesSlotsHandler.ts';
+import { dragonBonesIkConstraintsSectionHandler } from './dragonBonesStubHandlers.ts';
 
 export function registerDragonBonesSectionHandlers(registry: DragonBonesRegistry): void {
   registerDragonBonesSectionHandler(registry, DragonBonesSectionKind.Bones, dragonBonesBonesSectionHandler);

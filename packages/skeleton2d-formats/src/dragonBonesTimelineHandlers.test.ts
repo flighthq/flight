@@ -2,16 +2,15 @@ import type { DragonBonesTimelineHandler, DragonBonesTimelineKind } from '@fligh
 import { DragonBonesTimelineKind as TimelineKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { dragonBonesBoneTimelineHandler } from './dragonBonesBoneTimelineHandler.ts';
 import { createDragonBonesRegistry, getDragonBonesTimelineHandler } from './dragonBonesRegistry.ts';
+import { dragonBonesSlotTimelineHandler } from './dragonBonesSlotTimelineHandler.ts';
 import {
-  dragonBonesAllTimelineHandlers,
-  dragonBonesBoneTimelineHandler,
   dragonBonesDeformTimelineHandler,
   dragonBonesIkTimelineHandler,
-  dragonBonesSlotTimelineHandler,
   dragonBonesZOrderTimelineHandler,
-  registerDragonBonesTimelineHandlers,
-} from './dragonBonesTimelineHandlers.ts';
+} from './dragonBonesStubHandlers.ts';
+import { dragonBonesAllTimelineHandlers, registerDragonBonesTimelineHandlers } from './dragonBonesTimelineHandlers.ts';
 
 function expectRegisteredTimeline(kind: DragonBonesTimelineKind, handler: DragonBonesTimelineHandler): void {
   const registry = createDragonBonesRegistry();

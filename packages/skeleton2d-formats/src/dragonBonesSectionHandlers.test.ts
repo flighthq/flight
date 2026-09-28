@@ -2,16 +2,13 @@ import type { DragonBonesSectionHandler, DragonBonesSectionKind } from '@flighth
 import { DragonBonesSectionKind as SectionKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { dragonBonesAnimationsSectionHandler } from './dragonBonesAnimationsHandler.ts';
+import { dragonBonesBonesSectionHandler } from './dragonBonesBonesHandler.ts';
 import { createDragonBonesRegistry, getDragonBonesSectionHandler } from './dragonBonesRegistry.ts';
-import {
-  dragonBonesAllSectionHandlers,
-  dragonBonesAnimationsSectionHandler,
-  dragonBonesBonesSectionHandler,
-  dragonBonesIkConstraintsSectionHandler,
-  dragonBonesSkinsSectionHandler,
-  dragonBonesSlotsSectionHandler,
-  registerDragonBonesSectionHandlers,
-} from './dragonBonesSectionHandlers.ts';
+import { dragonBonesAllSectionHandlers, registerDragonBonesSectionHandlers } from './dragonBonesSectionHandlers.ts';
+import { dragonBonesSkinsSectionHandler } from './dragonBonesSkinsHandler.ts';
+import { dragonBonesSlotsSectionHandler } from './dragonBonesSlotsHandler.ts';
+import { dragonBonesIkConstraintsSectionHandler } from './dragonBonesStubHandlers.ts';
 
 function expectRegisteredSection(kind: DragonBonesSectionKind, handler: DragonBonesSectionHandler): void {
   const registry = createDragonBonesRegistry();
