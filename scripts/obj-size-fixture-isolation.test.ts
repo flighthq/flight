@@ -6,11 +6,6 @@ import { resolve } from 'node:path';
 import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 
-// The OBJ size fixtures: full (both material handlers) and selective (Blinn-Phong only).
-// These tests verify the fixture SOURCE exercises the material resolution path (a material library
-// is present so `resolveObjMaterial` reaches the handler dispatch), and that the resulting bundles
-// include or exclude the expected handler modules.
-
 const FIXTURES_DIR = resolve(import.meta.dirname, '..', 'tools', 'size', 'fixtures');
 
 function fixtureSource(name: string): string {
@@ -48,35 +43,37 @@ function keptFunctionName(symbol: string): string {
   return `,"${symbol}")`;
 }
 
-describe('OBJ full fixture (obj-import)', () => {
+describe('OBJ material-path full fixture (obj-import-material)', () => {
   it('declares size-only-control metadata', () => {
-    const metadata = fixtureMetadata('obj-import');
-    expect(metadata).toMatchObject({ flightSize: { kind: 'size-only-control', name: 'obj-import' } });
+    const metadata = fixtureMetadata('obj-import-material');
+    expect(metadata).toMatchObject({ flightSize: { kind: 'size-only-control', name: 'obj-import-material' } });
   });
 
   it('provides a material library so handler dispatch is reachable', () => {
-    const source = fixtureSource('obj-import');
+    const source = fixtureSource('obj-import-material');
     expect(source).toContain('parseObj');
     expect(source).toContain('materials');
     expect(source).toContain('usemtl');
   });
 
   it('reaches both handler modules', async () => {
-    const bundle = await bundleFixture('obj-import');
+    const bundle = await bundleFixture('obj-import-material');
     expect(bundle.modules.get('objBlinnPhongMaterialHandler.ts')).toBeGreaterThan(0);
     expect(bundle.modules.get('objStandardPbrMaterialHandler.ts')).toBeGreaterThan(0);
     expect(bundle.modules.get('objMaterialRegistry.ts')).toBeGreaterThan(0);
   });
 });
 
-describe('OBJ selective fixture (obj-import-selective)', () => {
+describe('OBJ material-path selective fixture (obj-import-material-selective)', () => {
   it('declares size-only-control metadata', () => {
-    const metadata = fixtureMetadata('obj-import-selective');
-    expect(metadata).toMatchObject({ flightSize: { kind: 'size-only-control', name: 'obj-import-selective' } });
+    const metadata = fixtureMetadata('obj-import-material-selective');
+    expect(metadata).toMatchObject({
+      flightSize: { kind: 'size-only-control', name: 'obj-import-material-selective' },
+    });
   });
 
   it('imports only the Blinn-Phong handler', () => {
-    const source = fixtureSource('obj-import-selective');
+    const source = fixtureSource('obj-import-material-selective');
     const code = source.replace(/\/\/.*$/gm, '');
     expect(code).toContain('objBlinnPhongMaterialHandler');
     expect(code).toContain('parseObjWithMaterialHandlers');
@@ -86,17 +83,17 @@ describe('OBJ selective fixture (obj-import-selective)', () => {
   });
 
   it('excludes the StandardPbr handler module', async () => {
-    const bundle = await bundleFixture('obj-import-selective');
+    const bundle = await bundleFixture('obj-import-material-selective');
     expect(bundle.modules.get('objBlinnPhongMaterialHandler.ts')).toBeGreaterThan(0);
     expect(bundle.modules.get('objStandardPbrMaterialHandler.ts') ?? 0).toBe(0);
     expect(bundle.modules.get('objMaterialRegistry.ts') ?? 0).toBe(0);
   });
 });
 
-describe('OBJ fixture differentiation', () => {
+describe('OBJ material-path fixture differentiation', () => {
   it('full bundle is larger than selective by the omitted PBR handler', async () => {
-    const full = await bundleFixture('obj-import');
-    const selective = await bundleFixture('obj-import-selective');
+    const full = await bundleFixture('obj-import-material');
+    const selective = await bundleFixture('obj-import-material-selective');
     expect(full.code.length).toBeGreaterThan(selective.code.length);
     expect(full.code.includes(keptFunctionName('objMaterialToStandardPbr'))).toBe(true);
     expect(selective.code.includes(keptFunctionName('objMaterialToStandardPbr'))).toBe(false);
