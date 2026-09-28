@@ -66,6 +66,10 @@ export function getAwd2BlockName(namespace: number, blockType: number): string {
   return AWD2_BLOCK_NAMES.get(blockType) ?? `Unknown(${blockType})`;
 }
 
+export function getAwd2FeatureNames(): readonly string[] {
+  return [...AWD2_BLOCK_NAMES.values()];
+}
+
 const AWD2_BLOCK_NAMES = new Map<number, string>([
   [AWD2_BLOCK_TRIANGLE_GEOMETRY, 'TriangleGeometry'],
   [AWD2_BLOCK_CONTAINER, 'Container'],

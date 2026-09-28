@@ -34,5 +34,5 @@ export const colladaMaterialDecoder: ColladaElementDecoder = {
     );
   },
   elements: ['material', 'effect'],
-  features: ['Material', 'Effect.Blinn', 'Effect.Lambert', 'Effect.Phong'],
+  features: ['Material', 'Effect.Blinn', 'Effect.Lambert', 'Effect.Phong', 'Image'],
 };

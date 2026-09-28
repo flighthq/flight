@@ -36,7 +36,7 @@ describe('colladaAllElementDecoders', () => {
     }
 
     const censusOnly = allFeatures.filter((f) => !decoderFeatures.has(f));
-    expect(censusOnly).toEqual(['Image']);
+    expect(censusOnly).toEqual([]);
   });
 
   it('claims exactly the elements the analyzer keys the coarse decoder feature on', () => {

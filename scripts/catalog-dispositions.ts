@@ -40,16 +40,6 @@ export const ALWAYS_READ_FORMAT_FEATURES: readonly { feature: string; namespace:
     reason: 'read by threeDsMaterialHandler as part of the MATERIAL chunk',
   },
   {
-    feature: 'MaterialTextureMap',
-    namespace: '3ds',
-    reason: 'read by threeDsMaterialHandler as part of the MATERIAL chunk',
-  },
-  {
-    feature: 'Image',
-    namespace: 'dae',
-    reason: 'read by colladaMaterialDecoder, which indexes the image library to resolve a texture reference',
-  },
-  {
     feature: 'Mesh',
     namespace: 'gltf',
     reason:
@@ -125,6 +115,18 @@ const DISPOSITION_BACKENDS = ['canvas', 'dom', 'gl', 'wgpu', CATALOG_PARSER_BACK
  * fails, because a real row must never be shadowed by a decline, and the two lists must stay disjoint.
  */
 export const UNSUPPORTED_FORMAT_FEATURES: readonly { feature: string; namespace: string; reason: string }[] = [
+  {
+    feature: 'Unknown(254)',
+    namespace: 'awd2',
+    reason:
+      'AWD2 core block type 254 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
+  },
+  {
+    feature: 'Unknown(255)',
+    namespace: 'awd2',
+    reason:
+      'AWD2 core block type 255 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
+  },
   {
     feature: 'mask.darken',
     namespace: 'lottie',
