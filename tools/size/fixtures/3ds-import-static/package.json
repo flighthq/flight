@@ -1,0 +1,9 @@
+{
+  "name": "3ds-import-static",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "3ds-import-static"
+  }
+}
