@@ -1,3 +1,5 @@
+import { BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/bitmapfont-formats/contract';
+import { PARTICLES_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/particles-formats/contract';
 import {
   createRiveImportRegistry,
   getRiveCoreTypeName,
@@ -165,6 +167,7 @@ import {
   swfVideoHandler,
 } from '@flighthq/swf';
 import { getSwfTagName, SWF_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/swf/contract';
+import { TILEMAP_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/tilemap-formats/contract';
 import type { PathBooleanKernel, RiveImportRegistry } from '@flighthq/types/contract';
 import type {
   Awd2BlockHandler,
@@ -540,15 +543,51 @@ export const CATALOG_DIRECT_PARSER_EXPORT = 'contentParser';
  * union a composite analyzer would produce is not a bedrock selection.
  */
 const DIRECT_PARSER_ROWS: readonly (readonly [module: string, symbol: string, kind: string])[] = [
-  ['@flighthq/bitmapfont-formats', 'parseBitmapFontBinary', `bitmapfont.${BitmapFontFormatKindBmFontBinary}`],
-  ['@flighthq/bitmapfont-formats', 'parseBitmapFontJson', `bitmapfont.${BitmapFontFormatKindBmFontJson}`],
-  ['@flighthq/bitmapfont-formats', 'parseBitmapFontFnt', `bitmapfont.${BitmapFontFormatKindBmFontText}`],
-  ['@flighthq/bitmapfont-formats', 'parseBitmapFontXml', `bitmapfont.${BitmapFontFormatKindBmFontXml}`],
-  ['@flighthq/particles-formats/contract', 'parseStarlingPex', `particles.${StarlingPexFormatKind}`],
-  ['@flighthq/tilemap-formats/contract', 'parseTiledTmj', `tilemap.${TilemapFormatKindTiledTmj}`],
-  ['@flighthq/tilemap-formats/contract', 'parseTiledTmx', `tilemap.${TilemapFormatKindTiledTmx}`],
-  ['@flighthq/tilemap-formats/contract', 'parseTiledTilesetJson', `tilemap.${TilemapFormatKindTiledTsj}`],
-  ['@flighthq/tilemap-formats/contract', 'parseTiledTileset', `tilemap.${TilemapFormatKindTiledTsx}`],
+  [
+    '@flighthq/bitmapfont-formats',
+    'parseBitmapFontBinary',
+    `${BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE}.${BitmapFontFormatKindBmFontBinary}`,
+  ],
+  [
+    '@flighthq/bitmapfont-formats',
+    'parseBitmapFontJson',
+    `${BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE}.${BitmapFontFormatKindBmFontJson}`,
+  ],
+  [
+    '@flighthq/bitmapfont-formats',
+    'parseBitmapFontFnt',
+    `${BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE}.${BitmapFontFormatKindBmFontText}`,
+  ],
+  [
+    '@flighthq/bitmapfont-formats',
+    'parseBitmapFontXml',
+    `${BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE}.${BitmapFontFormatKindBmFontXml}`,
+  ],
+  [
+    '@flighthq/particles-formats/contract',
+    'parseStarlingPex',
+    `${PARTICLES_REQUIREMENT_KEY_NAMESPACE}.${StarlingPexFormatKind}`,
+  ],
+  [
+    '@flighthq/tilemap-formats/contract',
+    'parseTiledTmj',
+    `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTmj}`,
+  ],
+  [
+    '@flighthq/tilemap-formats/contract',
+    'parseTiledTmx',
+    `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTmx}`,
+  ],
+  [
+    '@flighthq/tilemap-formats/contract',
+    'parseTiledTilesetJson',
+    `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTsj}`,
+  ],
+  [
+    '@flighthq/tilemap-formats/contract',
+    'parseTiledTileset',
+    `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTsx}`,
+  ],
 ];
 
 /** Builds every built-in row, sorted so the generated source is byte-stable across runs. */

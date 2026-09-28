@@ -1,3 +1,4 @@
+export * from './tilemapFormatRequirements.ts';
 export { disableTilemapFormatsGuards, enableTilemapFormatsGuards } from './enableTilemapFormatsGuards.ts';
 export { formatTiledColor, parseTiledColor } from './tiledColor.ts';
 export { decodeTiledGid, getTiledTilesetRefForGid } from './tiledGid.ts';

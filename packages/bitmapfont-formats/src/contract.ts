@@ -1,3 +1,4 @@
+export * from './bitmapfontFormatRequirements.ts';
 export * from './bitmapFontDetect.ts';
 export * from './bitmapFontBinary.ts';
 export * from './bitmapFontFnt.ts';

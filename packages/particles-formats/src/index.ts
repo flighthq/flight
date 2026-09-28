@@ -1,3 +1,4 @@
+export * from './particlesFormatRequirements.ts';
 export {
   applyParticleImportOptions,
   detectParticleFormat,

@@ -1,5 +1,6 @@
-import { readBitmapFontFormatKind } from '@flighthq/bitmapfont-formats/contract';
+import { BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE, readBitmapFontFormatKind } from '@flighthq/bitmapfont-formats/contract';
 import { decodeUTF8 } from '@flighthq/encoding/contract';
+import { PARTICLES_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/particles-formats/contract';
 import { createRequirementSet } from '@flighthq/requirement/contract';
 import {
   isReadableLottie,
@@ -37,6 +38,7 @@ import {
   parseSpineJsonRequirements,
 } from '@flighthq/skeleton2d-formats/contract';
 import { parseSwfHeader, parseSwfRequirements } from '@flighthq/swf/contract';
+import { TILEMAP_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/tilemap-formats/contract';
 import type {
   HostDecompressDeflateCapability,
   HostDecompressLzmaCapability,
@@ -196,11 +198,11 @@ export const DEFAULT_CONTENT_ANALYZERS: Readonly<Record<string, ContentAnalyzer>
     isReadable: (source, { deflate, lzma }) => parseSwfHeader(source, deflate, lzma) !== null,
   },
   '.fnt': BITMAP_FONT_ANALYZER(),
-  '.pex': xmlRootAnalyzer('particleEmitterConfig', `particles.${StarlingPexFormatKind}`),
-  '.tmj': jsonObjectAnalyzer(`tilemap.${TilemapFormatKindTiledTmj}`),
-  '.tmx': xmlRootAnalyzer('map', `tilemap.${TilemapFormatKindTiledTmx}`),
-  '.tsj': jsonObjectAnalyzer(`tilemap.${TilemapFormatKindTiledTsj}`),
-  '.tsx': xmlRootAnalyzer('tileset', `tilemap.${TilemapFormatKindTiledTsx}`),
+  '.pex': xmlRootAnalyzer('particleEmitterConfig', `${PARTICLES_REQUIREMENT_KEY_NAMESPACE}.${StarlingPexFormatKind}`),
+  '.tmj': jsonObjectAnalyzer(`${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTmj}`),
+  '.tmx': xmlRootAnalyzer('map', `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTmx}`),
+  '.tsj': jsonObjectAnalyzer(`${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTsj}`),
+  '.tsx': xmlRootAnalyzer('tileset', `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTsx}`),
 });
 
 /**
@@ -219,7 +221,7 @@ function BITMAP_FONT_ANALYZER(): ContentAnalyzer {
   return {
     analyze: (source) => {
       const kind = readBitmapFontFormatKind(source);
-      return bedrockRequirementSet(kind === null ? null : `bitmapfont.${kind}`);
+      return bedrockRequirementSet(kind === null ? null : `${BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE}.${kind}`);
     },
     isReadable: (source) => readBitmapFontFormatKind(source) !== null,
   };

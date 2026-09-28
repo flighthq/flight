@@ -1,3 +1,5 @@
+import * as bitmapfontFormatsContract from '@flighthq/bitmapfont-formats/contract';
+import * as particlesFormatsContract from '@flighthq/particles-formats/contract';
 import {
   createRiveImportRegistry,
   lottieAllLayerHandlers,
@@ -30,6 +32,7 @@ import * as skeleton2dFormatsContract from '@flighthq/skeleton2d-formats/contrac
 import * as swf from '@flighthq/swf';
 import { getSwfTagName } from '@flighthq/swf/contract';
 import * as swfContract from '@flighthq/swf/contract';
+import * as tilemapFormatsContract from '@flighthq/tilemap-formats/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
 import { ALWAYS_READ_FORMAT_FEATURES } from './catalog-dispositions.ts';
@@ -57,19 +60,25 @@ import {
 } from './catalog-rows.ts';
 
 const MODULES: Readonly<Record<string, Record<string, unknown>>> = {
+  '@flighthq/bitmapfont-formats': bitmapfontFormatsContract as unknown as Record<string, unknown>,
+  '@flighthq/particles-formats/contract': particlesFormatsContract as unknown as Record<string, unknown>,
   '@flighthq/scene2d-formats': scene2dFormats as unknown as Record<string, unknown>,
   '@flighthq/scene3d-formats': scene3dFormats as unknown as Record<string, unknown>,
   '@flighthq/scene3d-formats/contract': scene3dFormatsContract as unknown as Record<string, unknown>,
   '@flighthq/skeleton2d-formats/contract': skeleton2dFormatsContract as unknown as Record<string, unknown>,
   '@flighthq/swf': swf as unknown as Record<string, unknown>,
+  '@flighthq/tilemap-formats/contract': tilemapFormatsContract as unknown as Record<string, unknown>,
 };
 // Every lane that OWNS a requirement-key namespace constant. The format package names its own namespace; this
 // list is which modules to ask, not what the answer is.
 const NAMESPACE_MODULES: readonly (readonly [string, Record<string, unknown>])[] = [
+  ['@flighthq/bitmapfont-formats/contract', bitmapfontFormatsContract as unknown as Record<string, unknown>],
+  ['@flighthq/particles-formats/contract', particlesFormatsContract as unknown as Record<string, unknown>],
   ['@flighthq/scene2d-formats/contract', scene2dFormatsContract as unknown as Record<string, unknown>],
   ['@flighthq/scene3d-formats/contract', scene3dFormatsContract as unknown as Record<string, unknown>],
   ['@flighthq/skeleton2d-formats/contract', skeleton2dFormatsContract as unknown as Record<string, unknown>],
   ['@flighthq/swf/contract', swfContract as unknown as Record<string, unknown>],
+  ['@flighthq/tilemap-formats/contract', tilemapFormatsContract as unknown as Record<string, unknown>],
 ];
 
 // Reads the namespaces one module declares. A format's namespace is a string constant it exports, so asking the
@@ -204,6 +213,14 @@ describe('buildRequirementCatalogRows', () => {
     for (const row of buildRequirementCatalogRows()) {
       const value = MODULES[row.implementationImport][row.implementationSymbol];
       expect(Array.isArray(value), `${row.implementationSymbol} is a family, not one handler`).toBe(false);
+      // ★ A DIRECT-PARSER ROW NAMES A FUNCTION, AND THAT SATISFIES THE SAME INVARIANT. The property being
+      // protected is that a row resolves to ONE implementation rather than a family — a bedrock format has no
+      // handler family to be confused with, so its row names the parse function itself. Requiring a handler
+      // SHAPE here would reject the one row kind that cannot possibly re-inflate a bundle.
+      if (row.parserExport !== undefined) {
+        expect(typeof value, `${row.implementationSymbol} is not a parse function`).toBe('function');
+        continue;
+      }
       expect(
         isTagHandler(value) ||
           isBlockHandler(value) ||
@@ -293,7 +310,10 @@ describe('buildRequirementCatalogRows', () => {
       // Rive joins AWD2 and SWF here for a different reason: its application order is fixed by
       // `applyRiveImportOptions` (kernel-dependent registrars first), not by the order rows are emitted in, so
       // a position on the row would assert a constraint the format does not have.
+      // A direct-parser row joins them for the plainest reason of all: it names the only parser its format has,
+      // so there is no family for a position to be a position IN.
       if (
+        row.parserExport !== undefined ||
         row.kind.startsWith('awd2.') ||
         row.kind.startsWith('gltf.') ||
         row.kind.startsWith('riv.') ||
