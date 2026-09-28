@@ -14,6 +14,8 @@
   "flight-diagnostics:canvas": 13595,
   "flight-diagnostics:canvas:diagnostics": 15786,
   "gltf-import-all:canvas": 13253,
+  "gltf-load-import-core:canvas": 10993,
+  "gltf-load-import:canvas": 12391,
   "gltf-import-animations:canvas": 10078,
   "gltf-import-cameras:canvas": 9653,
   "gltf-import-core:canvas": 9258,
