@@ -74,6 +74,7 @@ export * from './objBlinnPhongMaterialHandler.ts';
 export * from './objDocument.ts';
 export * from './objFeatureRequirements.ts';
 export * from './objFeatures.ts';
+export * from './objMaterialHelpers.ts';
 export * from './objMaterialModel.ts';
 export * from './objMaterialRegistry.ts';
 export * from './objParse.ts';
