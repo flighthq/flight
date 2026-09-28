@@ -18,6 +18,10 @@ import {
 import { SpineJsonSectionKind, SpineJsonTimelineKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { spineJsonAnimationsSectionReader } from './spineJsonAnimationsHandler.ts';
+import { spineJsonBonesSectionReader } from './spineJsonBonesHandler.ts';
+import { spineJsonBoneTimelineReader } from './spineJsonBoneTimelineHandler.ts';
+import { spineJsonDrawOrderTimelineReader } from './spineJsonDrawOrderTimelineHandler.ts';
 import { registerAllSpineJsonHandlers } from './spineJsonHandlers.ts';
 import {
   createSpineJsonRegistry,
@@ -25,27 +29,21 @@ import {
   unregisterSpineJsonTimelineHandler,
 } from './spineJsonRegistry.ts';
 import { registerSpineJsonSectionHandlers } from './spineJsonSectionHandlers.ts';
+import { spineJsonSkinsSectionReader } from './spineJsonSkinsHandler.ts';
+import { spineJsonSlotsSectionReader } from './spineJsonSlotsHandler.ts';
+import { spineJsonSlotTimelineReader } from './spineJsonSlotTimelineHandler.ts';
 import {
-  parseSpineDrawOrderTimeline,
-  parseSpineSkeleton,
-  parseSpineSkeletonWithRegistry,
-  spineJsonAnimationsSectionReader,
-  spineJsonBonesSectionReader,
-  spineJsonBoneTimelineReader,
   spineJsonDeformTimelineReader,
-  spineJsonDrawOrderTimelineReader,
   spineJsonEventsSectionReader,
   spineJsonEventTimelineReader,
   spineJsonIkConstraintsSectionReader,
   spineJsonIkTimelineReader,
   spineJsonPathConstraintsSectionReader,
   spineJsonPathTimelineReader,
-  spineJsonSkinsSectionReader,
-  spineJsonSlotsSectionReader,
-  spineJsonSlotTimelineReader,
   spineJsonTransformConstraintsSectionReader,
   spineJsonTransformTimelineReader,
-} from './spineParse.ts';
+} from './spineJsonStubHandlers.ts';
+import { parseSpineDrawOrderTimeline, parseSpineSkeleton, parseSpineSkeletonWithRegistry } from './spineParse.ts';
 
 // Hand-authored minimal Spine skeleton JSON (per the real-asset rule: committed fixtures are hand-written,
 // never transcribed from an external rig). Two bones: a root, and a child that sets every transform field.

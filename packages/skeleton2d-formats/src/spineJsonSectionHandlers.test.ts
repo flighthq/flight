@@ -2,18 +2,18 @@ import type { SpineJsonSectionHandler, SpineJsonSectionKind } from '@flighthq/ty
 import { SpineJsonSectionKind as SectionKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { spineJsonAnimationsSectionHandler } from './spineJsonAnimationsHandler.ts';
+import { spineJsonBonesSectionHandler } from './spineJsonBonesHandler.ts';
 import { createSpineJsonRegistry, getSpineJsonSectionHandler } from './spineJsonRegistry.ts';
+import { registerSpineJsonSectionHandlers } from './spineJsonSectionHandlers.ts';
+import { spineJsonSkinsSectionHandler } from './spineJsonSkinsHandler.ts';
+import { spineJsonSlotsSectionHandler } from './spineJsonSlotsHandler.ts';
 import {
-  registerSpineJsonSectionHandlers,
-  spineJsonAnimationsSectionHandler,
-  spineJsonBonesSectionHandler,
   spineJsonEventsSectionHandler,
   spineJsonIkConstraintsSectionHandler,
   spineJsonPathConstraintsSectionHandler,
-  spineJsonSkinsSectionHandler,
-  spineJsonSlotsSectionHandler,
   spineJsonTransformConstraintsSectionHandler,
-} from './spineJsonSectionHandlers.ts';
+} from './spineJsonStubHandlers.ts';
 
 function expectRegisteredSection(kind: SpineJsonSectionKind, handler: SpineJsonSectionHandler): void {
   const registry = createSpineJsonRegistry();

@@ -8,51 +8,51 @@ import * as publicApi from './index.ts';
 
 const resolveDir = getFileUrlDirectory(import.meta.url);
 
-const SECTION_ATOMS: readonly (readonly [handler: string, reader: string, hasBody: boolean])[] = [
-  ['spineJsonAnimationsSectionHandler', 'spineJsonAnimationsSectionReader', true],
-  ['spineJsonBonesSectionHandler', 'spineJsonBonesSectionReader', true],
-  ['spineJsonEventsSectionHandler', 'spineJsonEventsSectionReader', false],
-  ['spineJsonIkConstraintsSectionHandler', 'spineJsonIkConstraintsSectionReader', false],
-  ['spineJsonPathConstraintsSectionHandler', 'spineJsonPathConstraintsSectionReader', false],
-  ['spineJsonSkinsSectionHandler', 'spineJsonSkinsSectionReader', true],
-  ['spineJsonSlotsSectionHandler', 'spineJsonSlotsSectionReader', true],
-  ['spineJsonTransformConstraintsSectionHandler', 'spineJsonTransformConstraintsSectionReader', false],
+const SECTION_ATOMS: readonly (readonly [handler: string, hasBody: boolean])[] = [
+  ['spineJsonAnimationsSectionHandler', true],
+  ['spineJsonBonesSectionHandler', true],
+  ['spineJsonEventsSectionHandler', false],
+  ['spineJsonIkConstraintsSectionHandler', false],
+  ['spineJsonPathConstraintsSectionHandler', false],
+  ['spineJsonSkinsSectionHandler', true],
+  ['spineJsonSlotsSectionHandler', true],
+  ['spineJsonTransformConstraintsSectionHandler', false],
 ];
 
-const NON_TRIVIAL_SECTION_READERS = SECTION_ATOMS.filter(([, , hasBody]) => hasBody).map(([, reader]) => reader);
+const NON_TRIVIAL_SECTION_HANDLERS = SECTION_ATOMS.filter(([, hasBody]) => hasBody).map(([handler]) => handler);
 
-const TIMELINE_ATOMS: readonly (readonly [handler: string, reader: string])[] = [
-  ['spineJsonBoneTimelineHandler', 'spineJsonBoneTimelineReader'],
-  ['spineJsonDeformTimelineHandler', 'spineJsonDeformTimelineReader'],
-  ['spineJsonDrawOrderTimelineHandler', 'spineJsonDrawOrderTimelineReader'],
-  ['spineJsonEventTimelineHandler', 'spineJsonEventTimelineReader'],
-  ['spineJsonIkTimelineHandler', 'spineJsonIkTimelineReader'],
-  ['spineJsonPathTimelineHandler', 'spineJsonPathTimelineReader'],
-  ['spineJsonSlotTimelineHandler', 'spineJsonSlotTimelineReader'],
-  ['spineJsonTransformTimelineHandler', 'spineJsonTransformTimelineReader'],
+const TIMELINE_ATOMS: readonly string[] = [
+  'spineJsonBoneTimelineHandler',
+  'spineJsonDeformTimelineHandler',
+  'spineJsonDrawOrderTimelineHandler',
+  'spineJsonEventTimelineHandler',
+  'spineJsonIkTimelineHandler',
+  'spineJsonPathTimelineHandler',
+  'spineJsonSlotTimelineHandler',
+  'spineJsonTransformTimelineHandler',
 ];
 
 describe('Spine JSON handler atom tree shaking', () => {
-  it.each(SECTION_ATOMS)('keeps %s independent of its section siblings', async (atom, readerName, hasBody) => {
+  it.each(SECTION_ATOMS)('keeps %s independent of its section siblings', async (atom, hasBody) => {
     const output = await bundleContractExport(atom);
 
     if (hasBody) {
-      expect(output).toContain(getKeptFunctionNameMarker(readerName));
+      expect(output).toContain(getKeptFunctionNameMarker(atom));
     }
-    for (const siblingReader of NON_TRIVIAL_SECTION_READERS) {
-      if (siblingReader !== readerName) {
-        expect(output).not.toContain(getKeptFunctionNameMarker(siblingReader));
+    for (const siblingHandler of NON_TRIVIAL_SECTION_HANDLERS) {
+      if (siblingHandler !== atom) {
+        expect(output).not.toContain(getKeptFunctionNameMarker(siblingHandler));
       }
     }
   });
 
-  it.each(TIMELINE_ATOMS)('keeps %s independent of its timeline siblings', async (atom, readerName) => {
+  it.each(TIMELINE_ATOMS)('keeps %s independent of its timeline siblings', async (atom) => {
     const output = await bundleContractExport(atom);
 
-    expect(output).toContain(getKeptFunctionNameMarker(readerName));
-    for (const [, siblingReaderName] of TIMELINE_ATOMS) {
-      if (siblingReaderName !== readerName) {
-        expect(output).not.toContain(getKeptFunctionNameMarker(siblingReaderName));
+    expect(output).toContain(getKeptFunctionNameMarker(atom));
+    for (const sibling of TIMELINE_ATOMS) {
+      if (sibling !== atom) {
+        expect(output).not.toContain(getKeptFunctionNameMarker(sibling));
       }
     }
   });
@@ -63,7 +63,11 @@ describe('Spine JSON handler export lanes', () => {
     expect(publicApi.registerSpineJsonSectionHandler).toBe(contractApi.registerSpineJsonSectionHandler);
     expect(publicApi.registerSpineJsonTimelineHandler).toBe(contractApi.registerSpineJsonTimelineHandler);
 
-    for (const [atom] of [...SECTION_ATOMS, ...TIMELINE_ATOMS]) {
+    for (const [atom] of SECTION_ATOMS) {
+      expect(atom in contractApi, `${atom} contract`).toBe(true);
+      expect(atom in publicApi, `${atom} public`).toBe(false);
+    }
+    for (const atom of TIMELINE_ATOMS) {
       expect(atom in contractApi, `${atom} contract`).toBe(true);
       expect(atom in publicApi, `${atom} public`).toBe(false);
     }
