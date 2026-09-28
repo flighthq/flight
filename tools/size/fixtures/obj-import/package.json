@@ -1,0 +1,9 @@
+{
+  "name": "obj-import",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "obj-import"
+  }
+}

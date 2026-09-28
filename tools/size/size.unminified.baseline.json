@@ -27,6 +27,8 @@
   "lottie-import-text:canvas": 15512,
   "lottie-import-trim:canvas": 18327,
   "lottie-import:canvas": 30754,
+  "obj-import-selective:canvas": 10077,
+  "obj-import:canvas": 10555,
   "rive-import-assets:canvas": 14800,
   "rive-import-clipping:canvas": 20314,
   "rive-import-core:canvas": 12528,
