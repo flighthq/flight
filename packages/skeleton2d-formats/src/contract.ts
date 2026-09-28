@@ -27,10 +27,20 @@ export {
 export * from './dragonBonesTimelineHandlers.ts';
 export * from './skeleton2dJsonAnalyzer.ts';
 export * from './skeletonDetect.ts';
-export { skipSpineBinaryAnimationsSection } from './spineBinaryAnimationsHandler.ts';
-export { buildSpineBinarySegmentEasings, skipSpineBinaryBoneTimelines } from './spineBinaryBoneTimelineHandler.ts';
-export { skipSpineBinaryBonesSection } from './spineBinaryBonesHandler.ts';
-export { skipSpineBinaryDrawOrderTimeline } from './spineBinaryDrawOrderTimelineHandler.ts';
+export {
+  skipSpineBinaryAnimationsSection,
+  spineBinaryAnimationsSectionReader,
+} from './spineBinaryAnimationsHandler.ts';
+export {
+  buildSpineBinarySegmentEasings,
+  skipSpineBinaryBoneTimelines,
+  spineBinaryBoneTimelineReader,
+} from './spineBinaryBoneTimelineHandler.ts';
+export { skipSpineBinaryBonesSection, spineBinaryBonesSectionReader } from './spineBinaryBonesHandler.ts';
+export {
+  skipSpineBinaryDrawOrderTimeline,
+  spineBinaryDrawOrderTimelineReader,
+} from './spineBinaryDrawOrderTimelineHandler.ts';
 export * from './spineBinaryFull.ts';
 export * from './spineBinaryHandlers.ts';
 export { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse.ts';
@@ -40,14 +50,18 @@ export * from './spineBinaryRegistry.ts';
 export * from './spineBinaryRequirements.ts';
 export * from './spineBinarySectionCounts.ts';
 export * from './spineBinarySectionHandlers.ts';
-export { skipSpineBinarySkinsSection } from './spineBinarySkinsHandler.ts';
-export { skipSpineBinarySlotTimelines } from './spineBinarySlotTimelineHandler.ts';
-export { skipSpineBinarySlotsSection } from './spineBinarySlotsHandler.ts';
+export { skipSpineBinarySkinsSection, spineBinarySkinsSectionReader } from './spineBinarySkinsHandler.ts';
+export { skipSpineBinarySlotTimelines, spineBinarySlotTimelineReader } from './spineBinarySlotTimelineHandler.ts';
+export { skipSpineBinarySlotsSection, spineBinarySlotsSectionReader } from './spineBinarySlotsHandler.ts';
 export {
   skipSpineBinaryEventsSection,
   skipSpineBinaryIkConstraintsSection,
   skipSpineBinaryPathConstraintsSection,
   skipSpineBinaryTransformConstraintsSection,
+  spineBinaryEventsSectionReader,
+  spineBinaryIkConstraintsSectionReader,
+  spineBinaryPathConstraintsSectionReader,
+  spineBinaryTransformConstraintsSectionReader,
 } from './spineBinaryStubHandlers.ts';
 export {
   skipSpineBinaryDeformTimelines,
@@ -55,6 +69,11 @@ export {
   skipSpineBinaryIkTimelines,
   skipSpineBinaryPathTimelines,
   skipSpineBinaryTransformTimelines,
+  spineBinaryDeformTimelineReader,
+  spineBinaryEventTimelineReader,
+  spineBinaryIkTimelineReader,
+  spineBinaryPathTimelineReader,
+  spineBinaryTransformTimelineReader,
 } from './spineBinaryStubTimelineHandlers.ts';
 export * from './spineBinaryTimelineHandlers.ts';
 export * from './spineBinaryVersion.ts';
