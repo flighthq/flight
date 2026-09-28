@@ -223,7 +223,13 @@ function parserFragment(rows: readonly ManifestModuleEntry[], field: string): st
     list.push(row);
   }
   const fields = [...byField.keys()].sort().flatMap((f) => {
-    const handlers = byField.get(f)!.map((row) => `    ${row.entry.implementationSymbol},`);
+    const seen = new Set<string>();
+    const handlers: string[] = [];
+    for (const row of byField.get(f)!) {
+      if (seen.has(row.entry.implementationSymbol)) continue;
+      seen.add(row.entry.implementationSymbol);
+      handlers.push(`    ${row.entry.implementationSymbol},`);
+    }
     return [`  ${f}: [`, ...handlers, '  ],'];
   });
   return [`export const parserOptions = {`, ...fields, '};'];

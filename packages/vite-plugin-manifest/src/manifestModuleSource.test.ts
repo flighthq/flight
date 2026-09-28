@@ -200,6 +200,61 @@ describe('generateManifestModuleSource', () => {
     expect(source).not.toContain('import ');
     expect(source).toContain('export const parserOptions = {};');
   });
+
+  it('deduplicates parser rows sharing one implementationSymbol within a field group', () => {
+    const source = generateManifestModuleSource(
+      [
+        rowWithSymbol(MANIFEST_PARSER_BACKEND, 'document.format', 'KindA', 'sharedImpl'),
+        rowWithSymbol(MANIFEST_PARSER_BACKEND, 'document.format', 'KindB', 'sharedImpl'),
+      ],
+      '.swf',
+    ).source;
+    const fragment = source.slice(source.indexOf('export const parserOptions'));
+    const occurrences = fragment.split('sharedImpl').length - 1;
+    expect(occurrences).toBe(1);
+  });
+
+  it('keeps the first family-order position when deduplicating parser symbols', () => {
+    const source = generateManifestModuleSource(
+      [
+        orderedWithSymbol(MANIFEST_PARSER_BACKEND, 'document.format', 'KindLate', 'sharedImpl', 5),
+        orderedWithSymbol(MANIFEST_PARSER_BACKEND, 'document.format', 'KindEarly', 'sharedImpl', 1),
+        orderedWithSymbol(MANIFEST_PARSER_BACKEND, 'document.format', 'KindMiddle', 'otherImpl', 3),
+      ],
+      '.dae',
+    ).source;
+    const fragment = source.slice(source.indexOf('export const parserOptions'));
+    expect(fragment).toContain('sharedImpl');
+    expect(fragment).toContain('otherImpl');
+    expect(fragment.indexOf('sharedImpl')).toBeLessThan(fragment.indexOf('otherImpl'));
+  });
+
+  it('retains order of distinct implementations after deduplication', () => {
+    const source = generateManifestModuleSource(
+      [
+        orderedWithSymbol(MANIFEST_PARSER_BACKEND, 'document.format', 'A', 'alphaImpl', 0),
+        orderedWithSymbol(MANIFEST_PARSER_BACKEND, 'document.format', 'B', 'betaImpl', 1),
+        orderedWithSymbol(MANIFEST_PARSER_BACKEND, 'document.format', 'C', 'alphaImpl', 2),
+      ],
+      '.dae',
+    ).source;
+    const fragment = source.slice(source.indexOf('export const parserOptions'));
+    expect(fragment.indexOf('alphaImpl')).toBeLessThan(fragment.indexOf('betaImpl'));
+    expect(fragment.split('alphaImpl').length - 1).toBe(1);
+  });
+
+  it('does not deduplicate across different parser fields', () => {
+    const source = generateManifestModuleSource(
+      [
+        rowWithSymbolAndField(MANIFEST_PARSER_BACKEND, 'document.format', 'KindA', 'sharedImpl', 'decoders'),
+        rowWithSymbolAndField(MANIFEST_PARSER_BACKEND, 'document.format', 'KindB', 'sharedImpl', 'handlers'),
+      ],
+      '.swf',
+    ).source;
+    const fragment = source.slice(source.indexOf('export const parserOptions'));
+    const occurrences = fragment.split('sharedImpl').length - 1;
+    expect(occurrences).toBe(2);
+  });
 });
 
 describe('MANIFEST_BACKEND_EXPORTS', () => {
@@ -232,4 +287,19 @@ function row(backend: string, facet: string, kind: string) {
     },
     kind,
   };
+}
+
+function rowWithSymbol(backend: string, facet: string, kind: string, symbol: string) {
+  const base = row(backend, facet, kind);
+  return { ...base, entry: { ...base.entry, implementationSymbol: symbol } };
+}
+
+function orderedWithSymbol(backend: string, facet: string, kind: string, symbol: string, familyOrder: number) {
+  const base = rowWithSymbol(backend, facet, kind, symbol);
+  return { ...base, entry: { ...base.entry, familyOrder } };
+}
+
+function rowWithSymbolAndField(backend: string, facet: string, kind: string, symbol: string, parserField: string) {
+  const base = rowWithSymbol(backend, facet, kind, symbol);
+  return { ...base, entry: { ...base.entry, parserField } };
 }
