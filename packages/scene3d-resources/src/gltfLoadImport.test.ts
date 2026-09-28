@@ -1,7 +1,6 @@
 import * as netContract from '@flighthq/net/contract';
 import * as scene3dFormatsContract from '@flighthq/scene3d-formats/contract';
 import type {
-  GltfCoreFeatureHandler,
   GltfExtensionHandler,
   HostNetCapability,
   ImportDiagnostic,
@@ -10,10 +9,7 @@ import type {
 } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  loadScene3DDocumentFromGlbUrlWithCoreFeatureHandlers,
-  loadScene3DDocumentFromGltfUrlWithCoreFeatureHandlers,
-} from './gltfLoad.ts';
+import { loadScene3DDocumentFromGlbUrl, loadScene3DDocumentFromGltfUrl } from './gltfLoadImport.ts';
 
 function emptyDocument(): Scene3DDocument {
   return {
@@ -55,42 +51,30 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('loadScene3DDocumentFromGlbUrlWithCoreFeatureHandlers', () => {
-  it('passes the caller-owned core feature handlers to the selective parser', async () => {
+describe('loadScene3DDocumentFromGlbUrl', () => {
+  it('fetches bytes, carries the source base path, and returns a CPU document', async () => {
     const document = emptyDocument();
     const diagnostics: ImportDiagnostic[] = [];
-    const handlers: GltfCoreFeatureHandler[] = [{ apply() {}, kind: 'animations' }];
     const extensionHandlers: GltfExtensionHandler[] = [{ apply() {}, kind: 'KHR_lights_punctual' }];
     vi.mocked(scene3dFormatsContract.parseGlbWithCoreFeatureHandlers).mockReturnValue(document);
-    vi.mocked(netContract.sendNetRequest).mockResolvedValue(response(new Uint8Array([1, 2]).buffer));
+    vi.mocked(netContract.sendNetRequest).mockResolvedValue(response(new Uint8Array([1, 2, 3]).buffer));
 
-    const loaded = await loadScene3DDocumentFromGlbUrlWithCoreFeatureHandlers(
-      fakeHost().net.http,
-      'models/ship.glb',
-      handlers,
-      { diagnostics, extensionHandlers },
-    );
+    const loaded = await loadScene3DDocumentFromGlbUrl(fakeHost().net.http, 'models/ship.glb', {
+      diagnostics,
+      extensionHandlers,
+    });
 
     const call = vi.mocked(scene3dFormatsContract.parseGlbWithCoreFeatureHandlers).mock.calls[0];
-    expect(Array.from(call[0])).toEqual([1, 2]);
-    expect(call[1]).toBe(handlers);
+    expect(Array.from(call[0])).toEqual([1, 2, 3]);
+    expect(call[1]).toBeInstanceOf(Array);
+    expect(call[1].length).toBe(3);
     expect(call[2]).toBe(diagnostics);
     expect(call[3]).toEqual({ basePath: 'models', extensionHandlers });
+    expect(call[3]?.extensionHandlers).toBe(extensionHandlers);
     expect(loaded).toBe(document);
   });
 
-  it('accepts an empty handler list for a minimal parse', async () => {
-    const document = emptyDocument();
-    vi.mocked(scene3dFormatsContract.parseGlbWithCoreFeatureHandlers).mockReturnValue(document);
-    vi.mocked(netContract.sendNetRequest).mockResolvedValue(response(new Uint8Array([5]).buffer));
-
-    await loadScene3DDocumentFromGlbUrlWithCoreFeatureHandlers(fakeHost().net.http, 'a.glb', []);
-
-    const call = vi.mocked(scene3dFormatsContract.parseGlbWithCoreFeatureHandlers).mock.calls[0];
-    expect(call[1]).toEqual([]);
-  });
-
-  it('returns null on transport failure without calling the parser', async () => {
+  it('returns null rather than an empty document on transport failure', async () => {
     vi.mocked(netContract.sendNetRequest).mockResolvedValue({
       body: null,
       headers: {},
@@ -100,47 +84,54 @@ describe('loadScene3DDocumentFromGlbUrlWithCoreFeatureHandlers', () => {
       url: 'u',
     });
 
-    await expect(
-      loadScene3DDocumentFromGlbUrlWithCoreFeatureHandlers(fakeHost().net.http, 'missing.glb', []),
-    ).resolves.toBeNull();
+    await expect(loadScene3DDocumentFromGlbUrl(fakeHost().net.http, 'missing.glb')).resolves.toBeNull();
     expect(scene3dFormatsContract.parseGlbWithCoreFeatureHandlers).not.toHaveBeenCalled();
   });
 });
 
-describe('loadScene3DDocumentFromGltfUrlWithCoreFeatureHandlers', () => {
-  it('passes caller-owned core feature handlers through the glTF text path', async () => {
+describe('loadScene3DDocumentFromGltfUrl', () => {
+  it('fetches external geometry buffers and supplies the image base path to parsing', async () => {
     const document = emptyDocument();
     const diagnostics: ImportDiagnostic[] = [];
-    const handlers: GltfCoreFeatureHandler[] = [{ apply() {}, kind: 'cameras' }];
+    const extensionHandlers: GltfExtensionHandler[] = [{ apply() {}, kind: 'KHR_lights_punctual' }];
     vi.mocked(scene3dFormatsContract.parseGltfWithCoreFeatureHandlers).mockReturnValue(document);
+    const requested: string[] = [];
     vi.mocked(netContract.sendNetRequest).mockImplementation(async (_host, request) => {
+      requested.push(request.url);
       return request.url.endsWith('.gltf')
-        ? response('{"asset":{"version":"2.0"},"buffers":[{"byteLength":2,"uri":"data.bin"}]}')
-        : response(new Uint8Array([3, 4]).buffer);
+        ? response('{"asset":{"version":"2.0"},"buffers":[{"byteLength":2,"uri":"mesh.bin"}]}')
+        : response(new Uint8Array([8, 9]).buffer);
     });
 
-    const loaded = await loadScene3DDocumentFromGltfUrlWithCoreFeatureHandlers(
-      fakeHost().net.http,
-      'models/ship.gltf',
-      handlers,
-      { diagnostics },
-    );
+    const loaded = await loadScene3DDocumentFromGltfUrl(fakeHost().net.http, 'models/ship.gltf', {
+      diagnostics,
+      extensionHandlers,
+    });
 
+    expect(requested).toEqual(['models/ship.gltf', 'models/mesh.bin']);
     const call = vi.mocked(scene3dFormatsContract.parseGltfWithCoreFeatureHandlers).mock.calls[0];
-    expect(call[1]).toBe(handlers);
+    expect(call[1]).toBeInstanceOf(Array);
+    expect(call[1].length).toBe(3);
     expect(call[2]).toBe(diagnostics);
     expect(call[3]).toEqual({
       basePath: 'models',
-      externalBuffers: { 'data.bin': new Uint8Array([3, 4]) },
+      extensionHandlers,
+      externalBuffers: { 'mesh.bin': new Uint8Array([8, 9]) },
     });
+    expect(call[3]?.extensionHandlers).toBe(extensionHandlers);
     expect(loaded).toBe(document);
   });
 
-  it('returns null on invalid JSON without calling the parser', async () => {
+  it('returns null when JSON or a required external buffer cannot load', async () => {
     vi.mocked(netContract.sendNetRequest).mockResolvedValue(response('{'));
-    await expect(
-      loadScene3DDocumentFromGltfUrlWithCoreFeatureHandlers(fakeHost().net.http, 'broken.gltf', []),
-    ).resolves.toBeNull();
+    await expect(loadScene3DDocumentFromGltfUrl(fakeHost().net.http, 'broken.gltf')).resolves.toBeNull();
+
+    vi.mocked(netContract.sendNetRequest).mockImplementation(async (_host, request) =>
+      request.url.endsWith('.gltf')
+        ? response('{"asset":{"version":"2.0"},"buffers":[{"byteLength":2,"uri":"missing.bin"}]}')
+        : { body: null, headers: {}, ok: false, status: 404, statusText: 'x', url: request.url },
+    );
+    await expect(loadScene3DDocumentFromGltfUrl(fakeHost().net.http, 'models/ship.gltf')).resolves.toBeNull();
     expect(scene3dFormatsContract.parseGltfWithCoreFeatureHandlers).not.toHaveBeenCalled();
   });
 });

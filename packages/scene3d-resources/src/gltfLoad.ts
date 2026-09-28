@@ -1,5 +1,6 @@
-import { parseGlb, parseGltf } from '@flighthq/scene3d-formats/contract';
+import { parseGlbWithCoreFeatureHandlers, parseGltfWithCoreFeatureHandlers } from '@flighthq/scene3d-formats/contract';
 import type {
+  GltfCoreFeatureHandler,
   GltfDocument,
   GltfScene3DDocumentLoadOptions,
   HostNetCapability,
@@ -13,29 +14,24 @@ import {
   loadScene3DDocumentTextFromUrl,
 } from './sceneDocumentSource.ts';
 
-// Fetches a binary glTF (`.glb`) from a URL and parses it into a format-neutral Scene3DDocument. Fetches only
-// the FILE — the document's texture refs stay unresolved; assemble with createScene3DFromDocument and load
-// resources on your own schedule. Returns null on transport failure and never touches rendering/GPU state.
-export async function loadScene3DDocumentFromGlbUrl(
+export async function loadScene3DDocumentFromGlbUrlWithCoreFeatureHandlers(
   hostNet: Readonly<HostNetCapability>,
   url: string,
+  coreFeatureHandlers: readonly GltfCoreFeatureHandler[],
   options?: Readonly<GltfScene3DDocumentLoadOptions>,
 ): Promise<Scene3DDocument | null> {
   const bytes = await loadScene3DDocumentBytesFromUrl(hostNet, url, options);
   if (bytes === null) return null;
-  return parseGlb(bytes, options?.diagnostics, {
+  return parseGlbWithCoreFeatureHandlers(bytes, coreFeatureHandlers, options?.diagnostics, {
     basePath: getScene3DDocumentBasePathFromUrl(url),
     extensionHandlers: options?.extensionHandlers,
   });
 }
 
-// Fetches a glTF file from a URL and parses it into a format-neutral Scene3DDocument. The JSON `.gltf` form is
-// fetched as text; every external `.bin` required to build inline geometry is fetched too, while image URIs
-// remain unresolved resource refs carrying the model's base path. Assemble with createScene3DFromDocument and
-// load images explicitly. Returns null if the main source or required geometry closure cannot be acquired.
-export async function loadScene3DDocumentFromGltfUrl(
+export async function loadScene3DDocumentFromGltfUrlWithCoreFeatureHandlers(
   hostNet: Readonly<HostNetCapability>,
   url: string,
+  coreFeatureHandlers: readonly GltfCoreFeatureHandler[],
   options?: Readonly<GltfScene3DDocumentLoadOptions>,
 ): Promise<Scene3DDocument | null> {
   const source = await loadScene3DDocumentTextFromUrl(hostNet, url, options);
@@ -52,7 +48,7 @@ export async function loadScene3DDocumentFromGltfUrl(
   const basePath = getScene3DDocumentBasePathFromUrl(url);
   const externalBuffers = await loadGltfExternalBuffers(hostNet, gltf, basePath, options);
   if (externalBuffers === null) return null;
-  return parseGltf(gltf, options?.diagnostics, {
+  return parseGltfWithCoreFeatureHandlers(gltf, coreFeatureHandlers, options?.diagnostics, {
     basePath,
     extensionHandlers: options?.extensionHandlers,
     externalBuffers,

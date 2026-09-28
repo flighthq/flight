@@ -2,6 +2,7 @@ export * from './explainScene3DResourceCoverage.ts';
 export * from './getScene3DResourceTextures.ts';
 export * from './threeDsLoad.ts';
 export * from './gltfLoad.ts';
+export * from './gltfLoadImport.ts';
 export * from './md2Load.ts';
 export * from './md5Load.ts';
 export * from './objLoad.ts';

@@ -1,6 +1,6 @@
 import type { EasingFunction } from './EasingFunction.ts';
 import type { Entity, Kind } from './Entity.ts';
-import type { GltfExtensionHandler } from './GltfExtension.ts';
+import type { GltfCoreFeatureHandler, GltfExtensionHandler } from './GltfExtension.ts';
 import type { HostImageDecodeCapabilities } from './HostImageDecode.ts';
 import type { ImageResourceFetch, ImageResourceReference } from './ImageResourceReference.ts';
 import type { ImportDiagnostic } from './ImportDiagnostic.ts';
@@ -86,6 +86,7 @@ export interface Scene3DDocumentLoadOptions {
 // glTF URL acquisition plus the caller-owned synchronous parser opt-ins. Diagnostics report unsupported
 // required extensions, while an unhandled extension named only in `extensionsUsed` remains silent.
 export interface GltfScene3DDocumentLoadOptions extends Scene3DDocumentLoadOptions {
+  coreFeatureHandlers?: readonly GltfCoreFeatureHandler[];
   diagnostics?: ImportDiagnostic[];
   extensionHandlers?: readonly GltfExtensionHandler[];
 }
