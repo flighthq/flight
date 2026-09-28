@@ -1,0 +1,9 @@
+{
+  "name": "obj-import-material-selective",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "obj-import-material-selective"
+  }
+}
