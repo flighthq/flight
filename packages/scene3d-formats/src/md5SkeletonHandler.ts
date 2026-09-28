@@ -56,7 +56,8 @@ export const md5SkeletonHandler: Readonly<Md5SectionHandler> = {
  *
  * ★ IT LIVES BESIDE ITS HANDLER BECAUSE OF WHERE IT USED TO LIVE. Both family constants sat in
  * `md5SectionRegistry.ts` next to `md5AllSectionHandlers`, so naming EITHER family imported that module and linked BOTH
- * handlers — 8,387 measured bytes, including `@flighthq/materials`, for a caller who asked for the skeleton alone.
+ * handlers — 8,392 measured bytes (65,336 → 56,944), including `@flighthq/materials`, for a caller who asked for the
+ * skeleton alone.
  * A family constant is one element long; keeping it here is what makes naming it cost one handler.
  */
 export const md5SkeletonFamily: readonly Md5SectionHandler[] = [md5SkeletonHandler];
