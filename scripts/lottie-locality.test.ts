@@ -73,8 +73,8 @@ const ABSENT_FROM_SUBSET: readonly (readonly [string, readonly string[]])[] = [
 // family, and the minimum each must cost. A handler shim moves tens of bytes; these move more than a kilobyte, which is
 // the difference between registering a family and merely naming it.
 //
-// Measured against geometry (9115 minified / 16493 unminified): stroke 10381 / 18551, gradient fill 10032 / 18002,
-// gradient stroke 11003 / 19703, trim 10223 / 18262 — so declining one saves 917-1888 B minified and 1509-3210 B
+// Measured against geometry (9125 minified / 16508 unminified): stroke 10386 / 18567, gradient fill 10042 / 18018,
+// gradient stroke 11014 / 19719, trim 10260 / 18327 — so declining one saves 917-1889 B minified and 1510-3211 B
 // unminified. The stroke's figure grew when the trim moved out: geometry no longer carries `dashPath`, so the stroke
 // now pays for its own dashing rather than inheriting it.
 const ITEM_FAMILY_COST: readonly (readonly [string, number])[] = [
@@ -109,7 +109,7 @@ const FEATURE_MODULE_IMPORTERS: readonly (readonly [string, readonly string[]])[
 // shim moves tens of bytes, and the COLLADA fixtures measured an 18-byte spread across four subsets while they still
 // routed through a preset-resolving entry.
 //
-// Measured, minified / unminified: full 14445 / 30693, geometry 9115 / 16493, null-solid 7735 / 13918,
+// Measured, minified / unminified: full 14485 / 30754, geometry 9125 / 16508, null-solid 7735 / 13918,
 // image 6458 / 11282, text 6140 / 15512.
 //
 // Three extractions moved these. Making masks a family took more than a kilobyte off every subset — image -1199 /
@@ -117,7 +117,8 @@ const FEATURE_MODULE_IMPORTERS: readonly (readonly [string, readonly string[]])[
 // the solid-fill-only build, and moving the trim into a post-walk modifier took 1059 / 1819 more. The full import moved
 // by tens of bytes each time, for the extra registry field and the indirection. That is the shape a real extraction
 // has: the callers who decline a feature stop paying for it, and the caller who wants everything pays a little for
-// being asked.
+// being asked. The per-group claim set that restored first-trim-wins is the smallest of those charges: 10-16 B on every
+// shape-layer subset for the set itself, and 37 / 65 more on the trim subset for the check.
 const FIXTURES = [
   'lottie-import',
   'lottie-import-geometry',
@@ -207,6 +208,15 @@ describe('lottie locality', () => {
     const result = createScene2DFromLottieDocumentWithRegistry(document, registry);
     expect(result.duration).toBe(2);
     expect(result.root).not.toBeNull();
+  });
+
+  // ★ THE CENSUS CANNOT MOVE RUNTIME OUTPUT OR DIAGNOSTICS, AND THAT IS STRUCTURAL RATHER THAN CAREFUL. It exists to
+  // answer "what does this file need" for the build, and surfacing a feature Flight declines — a subtract mask, an
+  // inverted one, a layer with several — must not change what the importer does with that file. The only way to know
+  // that is which modules can reach `lottieCounts.ts`: the requirement reader, and nothing on the import path.
+  it('keeps the census off the import path entirely', () => {
+    const importers = lottieSources().filter((file) => codeOf(join(srcDir, file)).includes("from './lottieCounts.ts'"));
+    expect(importers.sort()).toEqual(['lottieRequirements.ts']);
   });
 
   // ★ ABSENCE READ OUT OF A REAL BUNDLE, WHICH IS THE ONLY PLACE IT IS TRUE OR FALSE. A structural import check says

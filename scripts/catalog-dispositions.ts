@@ -138,6 +138,12 @@ export const UNSUPPORTED_FORMAT_FEATURES: readonly { feature: string; namespace:
       'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a difference mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
   },
   {
+    feature: 'mask.inverted',
+    namespace: 'lottie',
+    reason:
+      'a ClipRegion keeps what its path covers and has no inverse, so an inverted mask would need the complement of its outline; the additive handler declines one and the layer imports unmasked, whatever its mode',
+  },
+  {
     feature: 'mask.intersect',
     namespace: 'lottie',
     reason:
@@ -148,6 +154,12 @@ export const UNSUPPORTED_FORMAT_FEATURES: readonly { feature: string; namespace:
     namespace: 'lottie',
     reason:
       'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a lighten mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    feature: 'mask.multiple',
+    namespace: 'lottie',
+    reason:
+      'a ClipRegion carries one path, so a layer with several active masks would need them composed by path booleans first; the additive handler declines the layer rather than honouring one mask and dropping the rest',
   },
   {
     feature: 'mask.subtract',

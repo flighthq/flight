@@ -3122,6 +3122,41 @@ export const BUILT_IN_REQUIREMENT_DISPOSITIONS: readonly RequirementDisposition[
   {
     backend: 'canvas',
     facet: 'document.format',
+    kind: 'lottie.mask.inverted',
+    reason:
+      'a ClipRegion keeps what its path covers and has no inverse, so an inverted mask would need the complement of its outline; the additive handler declines one and the layer imports unmasked, whatever its mode',
+  },
+  {
+    backend: 'dom',
+    facet: 'document.format',
+    kind: 'lottie.mask.inverted',
+    reason:
+      'a ClipRegion keeps what its path covers and has no inverse, so an inverted mask would need the complement of its outline; the additive handler declines one and the layer imports unmasked, whatever its mode',
+  },
+  {
+    backend: 'gl',
+    facet: 'document.format',
+    kind: 'lottie.mask.inverted',
+    reason:
+      'a ClipRegion keeps what its path covers and has no inverse, so an inverted mask would need the complement of its outline; the additive handler declines one and the layer imports unmasked, whatever its mode',
+  },
+  {
+    backend: 'parser',
+    facet: 'document.format',
+    kind: 'lottie.mask.inverted',
+    reason:
+      'a ClipRegion keeps what its path covers and has no inverse, so an inverted mask would need the complement of its outline; the additive handler declines one and the layer imports unmasked, whatever its mode',
+  },
+  {
+    backend: 'wgpu',
+    facet: 'document.format',
+    kind: 'lottie.mask.inverted',
+    reason:
+      'a ClipRegion keeps what its path covers and has no inverse, so an inverted mask would need the complement of its outline; the additive handler declines one and the layer imports unmasked, whatever its mode',
+  },
+  {
+    backend: 'canvas',
+    facet: 'document.format',
     kind: 'lottie.mask.lighten',
     reason:
       'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a lighten mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
@@ -3153,6 +3188,41 @@ export const BUILT_IN_REQUIREMENT_DISPOSITIONS: readonly RequirementDisposition[
     kind: 'lottie.mask.lighten',
     reason:
       'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a lighten mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    backend: 'canvas',
+    facet: 'document.format',
+    kind: 'lottie.mask.multiple',
+    reason:
+      'a ClipRegion carries one path, so a layer with several active masks would need them composed by path booleans first; the additive handler declines the layer rather than honouring one mask and dropping the rest',
+  },
+  {
+    backend: 'dom',
+    facet: 'document.format',
+    kind: 'lottie.mask.multiple',
+    reason:
+      'a ClipRegion carries one path, so a layer with several active masks would need them composed by path booleans first; the additive handler declines the layer rather than honouring one mask and dropping the rest',
+  },
+  {
+    backend: 'gl',
+    facet: 'document.format',
+    kind: 'lottie.mask.multiple',
+    reason:
+      'a ClipRegion carries one path, so a layer with several active masks would need them composed by path booleans first; the additive handler declines the layer rather than honouring one mask and dropping the rest',
+  },
+  {
+    backend: 'parser',
+    facet: 'document.format',
+    kind: 'lottie.mask.multiple',
+    reason:
+      'a ClipRegion carries one path, so a layer with several active masks would need them composed by path booleans first; the additive handler declines the layer rather than honouring one mask and dropping the rest',
+  },
+  {
+    backend: 'wgpu',
+    facet: 'document.format',
+    kind: 'lottie.mask.multiple',
+    reason:
+      'a ClipRegion carries one path, so a layer with several active masks would need them composed by path booleans first; the additive handler declines the layer rather than honouring one mask and dropping the rest',
   },
   {
     backend: 'canvas',

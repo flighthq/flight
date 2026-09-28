@@ -40,6 +40,9 @@ function appendLottieShapeItems(
   const transform = items.find((item) => item.ty === 'tr');
   if (transform?.ty === 'tr') applyLottieTransform(group, transform as Readonly<LottieTransform>, context);
   const shape = createShape();
+  // One claim set per group, so an item that applies once per group can say so without the layer knowing which
+  // items those are or what they claim.
+  const claims = new Set<string>();
   const modifiers: LottieShapeModifier[] = [];
   const painters: LottieShapePainter[] = [];
   const paths: Path[] = [];
@@ -58,7 +61,7 @@ function appendLottieShapeItems(
     }
     const handler = getLottieShapeItemHandler(context.registry, item.ty);
     if (handler !== null) {
-      handler({ import: context, item, modifiers, painters, paths, rerender, shape });
+      handler({ claims, import: context, item, modifiers, painters, paths, rerender, shape });
     } else {
       reportLottieSkip(context, 'lottie.unsupported-shape-item', 'appendLottieShapeItems', { shapeType: item.ty });
     }

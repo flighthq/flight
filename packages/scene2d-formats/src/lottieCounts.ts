@@ -43,6 +43,7 @@ export function getLottieFeatureNames(): readonly string[] {
   return [
     ...LOTTIE_LAYER_FEATURES.values(),
     ...LOTTIE_MASK_FEATURES.values(),
+    ...LOTTIE_MASK_CONDITION_FEATURES,
     ...LOTTIE_SHAPE_ITEM_FEATURES.values(),
   ].sort();
 }
@@ -58,22 +59,37 @@ function isLottieDocument(record: Readonly<Record<string, unknown>>): boolean {
 }
 
 /**
- * Tallies a layer's masks by composition mode.
+ * Tallies a layer's masks by composition mode, and the two CONDITIONS on a mask that Flight cannot carry either.
  *
  * ★ EVERY MODE BUT `None` IS A FEATURE; `None` IS THE ABSENCE OF ONE. Lottie writes `mode: 'n'` for a mask entry that is
  * switched off, so counting it would report a requirement for something the document is not asking for. The other five
  * are reported even though Flight carries only the additive one: the catalog declines them by disposition, which is how
  * a reader learns the document needs something rather than learning nothing.
+ *
+ * ★ AND A MODE FLIGHT CARRIES CAN STILL ARRIVE IN A SHAPE IT CANNOT. `mask.additive` resolves to a real handler, but that
+ * handler declines an INVERTED mask and declines a layer carrying MORE THAN ONE active mask — so a document using either
+ * imports unmasked while its only requirement resolves cleanly. These two keys are what make that visible. They are
+ * conditions rather than modes, which is why they are not in the mode table: `inv: true` can appear on any mode, and
+ * "more than one" is a property of the list.
+ *
+ * "Active" here has to mean what the importer means by it — mode other than `None` — or the census would report a
+ * condition the parser never reaches.
  */
 function tallyMasks(counts: Map<string, number>, raw: unknown): void {
   if (!Array.isArray(raw)) return;
+  let active = 0;
   for (const entry of raw) {
     if (entry === null || typeof entry !== 'object') continue;
-    const mode = (entry as Record<string, unknown>).mode;
-    if (typeof mode !== 'string') continue;
+    const mask = entry as Record<string, unknown>;
+    const mode = mask.mode;
+    if (typeof mode !== 'string' || mode === LottieMaskKind.None) continue;
+    active++;
     const kind = LOTTIE_MASK_FEATURES.get(mode);
     if (kind !== undefined) counts.set(kind, (counts.get(kind) ?? 0) + 1);
+    if (mask.inv === true) counts.set(LOTTIE_MASK_INVERTED, (counts.get(LOTTIE_MASK_INVERTED) ?? 0) + 1);
   }
+  // Counted once per layer, because the condition is the layer having several — not each mask being one of several.
+  if (active > 1) counts.set(LOTTIE_MASK_MULTIPLE, (counts.get(LOTTIE_MASK_MULTIPLE) ?? 0) + 1);
 }
 
 function tallyShapeItems(counts: Map<string, number>, raw: unknown): void {
@@ -100,6 +116,12 @@ const LOTTIE_LAYER_FEATURES = new Map<number, string>([
   [LottieLayerKind.Solid, 'layer.solid'],
   [LottieLayerKind.Text, 'layer.text'],
 ]);
+
+const LOTTIE_MASK_INVERTED = 'mask.inverted';
+
+const LOTTIE_MASK_MULTIPLE = 'mask.multiple';
+
+const LOTTIE_MASK_CONDITION_FEATURES: readonly string[] = [LOTTIE_MASK_INVERTED, LOTTIE_MASK_MULTIPLE];
 
 const LOTTIE_MASK_FEATURES = new Map<string, string>([
   [LottieMaskKind.Additive, 'mask.additive'],

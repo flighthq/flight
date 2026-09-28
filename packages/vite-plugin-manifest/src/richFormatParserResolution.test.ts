@@ -216,6 +216,22 @@ describe('Lottie content through the built-in catalog', () => {
     expect(source).not.toContain('lottieAdditiveMaskHandler');
   });
 
+  // ★ A CONDITION ON A SUPPORTED MODE IS DECLINED THE SAME WAY A MODE IS. Both documents below resolve `mask.additive` to
+  // its real handler AND carry a condition that handler refuses — an inverted mask, or a layer with two active ones — so
+  // the emitted option is right for the part Flight carries while the part it does not is dispositioned into silence.
+  // Before these two keys existed the same files reported one cleanly-resolved requirement and imported unmasked.
+  it('declines an inverted mask by disposition while still resolving its mode', async () => {
+    const { diagnostics, source } = await load('a.json', lottieFile({ inv: true, mode: 'a' }));
+    expect(source).toContain('  maskHandlers: [\n    lottieAdditiveMaskHandler,\n  ],');
+    expect(diagnostics).toEqual([]);
+  });
+
+  it('declines a layer carrying several active masks by disposition', async () => {
+    const { diagnostics, source } = await load('a.json', lottieFile({ mode: 'a' }, { mode: 'a' }));
+    expect(source).toContain('  maskHandlers: [\n    lottieAdditiveMaskHandler,\n  ],');
+    expect(diagnostics).toEqual([]);
+  });
+
   it('resolves the additive mask of a document that also carries an unsupported one', async () => {
     const { diagnostics, source } = await load('a.json', lottieFile('a', 's'));
     expect(source).toContain('  maskHandlers: [\n    lottieAdditiveMaskHandler,\n  ],');
@@ -372,7 +388,7 @@ async function load(name: string, content: Uint8Array): Promise<{ diagnostics: s
 
 // One null layer carrying one mask per requested mode: the smallest document that asks for a mask family and nothing
 // else, so the emitted `maskHandlers` is attributable to the mode alone.
-function lottieFile(...modes: readonly string[]): Uint8Array {
+function lottieFile(...masks: readonly (string | Readonly<Record<string, unknown>>)[]): Uint8Array {
   return new TextEncoder().encode(
     JSON.stringify({
       fr: 30,
@@ -382,7 +398,11 @@ function lottieFile(...modes: readonly string[]): Uint8Array {
         {
           ind: 1,
           ip: 0,
-          masksProperties: modes.map((mode) => ({ mode, o: { k: 100 }, pt: { k: {} } })),
+          masksProperties: masks.map((mask) => ({
+            o: { k: 100 },
+            pt: { k: {} },
+            ...(typeof mask === 'string' ? { mode: mask } : mask),
+          })),
           nm: 'masked',
           op: 60,
           ty: 3,
