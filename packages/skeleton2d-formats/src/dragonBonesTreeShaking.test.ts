@@ -8,45 +8,45 @@ import * as publicApi from './index.ts';
 
 const resolveDir = getFileUrlDirectory(import.meta.url);
 
-const SECTION_ATOMS: readonly (readonly [handler: string, reader: string, hasBody: boolean])[] = [
-  ['dragonBonesAnimationsSectionHandler', 'dragonBonesAnimationsSectionReader', true],
-  ['dragonBonesBonesSectionHandler', 'dragonBonesBonesSectionReader', true],
-  ['dragonBonesIkConstraintsSectionHandler', 'dragonBonesIkConstraintsSectionReader', false],
-  ['dragonBonesSkinsSectionHandler', 'dragonBonesSkinsSectionReader', true],
-  ['dragonBonesSlotsSectionHandler', 'dragonBonesSlotsSectionReader', true],
+const SECTION_ATOMS: readonly (readonly [handler: string, hasBody: boolean])[] = [
+  ['dragonBonesAnimationsSectionHandler', true],
+  ['dragonBonesBonesSectionHandler', true],
+  ['dragonBonesIkConstraintsSectionHandler', false],
+  ['dragonBonesSkinsSectionHandler', true],
+  ['dragonBonesSlotsSectionHandler', true],
 ];
 
-const NON_TRIVIAL_SECTION_READERS = SECTION_ATOMS.filter(([, , hasBody]) => hasBody).map(([, reader]) => reader);
+const NON_TRIVIAL_SECTION_HANDLERS = SECTION_ATOMS.filter(([, hasBody]) => hasBody).map(([handler]) => handler);
 
-const TIMELINE_ATOMS: readonly (readonly [handler: string, reader: string])[] = [
-  ['dragonBonesBoneTimelineHandler', 'dragonBonesBoneTimelineReader'],
-  ['dragonBonesDeformTimelineHandler', 'dragonBonesDeformTimelineReader'],
-  ['dragonBonesIkTimelineHandler', 'dragonBonesIkTimelineReader'],
-  ['dragonBonesSlotTimelineHandler', 'dragonBonesSlotTimelineReader'],
-  ['dragonBonesZOrderTimelineHandler', 'dragonBonesZOrderTimelineReader'],
+const TIMELINE_ATOMS: readonly string[] = [
+  'dragonBonesBoneTimelineHandler',
+  'dragonBonesDeformTimelineHandler',
+  'dragonBonesIkTimelineHandler',
+  'dragonBonesSlotTimelineHandler',
+  'dragonBonesZOrderTimelineHandler',
 ];
 
 describe('DragonBones handler atom tree shaking', () => {
-  it.each(SECTION_ATOMS)('keeps %s independent of its section siblings', async (atom, readerName, hasBody) => {
+  it.each(SECTION_ATOMS)('keeps %s independent of its section siblings', async (atom, hasBody) => {
     const output = await bundleContractExport(atom);
 
     if (hasBody) {
-      expect(output).toContain(getKeptFunctionNameMarker(readerName));
+      expect(output).toContain(getKeptFunctionNameMarker(atom));
     }
-    for (const siblingReader of NON_TRIVIAL_SECTION_READERS) {
-      if (siblingReader !== readerName) {
-        expect(output).not.toContain(getKeptFunctionNameMarker(siblingReader));
+    for (const siblingHandler of NON_TRIVIAL_SECTION_HANDLERS) {
+      if (siblingHandler !== atom) {
+        expect(output).not.toContain(getKeptFunctionNameMarker(siblingHandler));
       }
     }
   });
 
-  it.each(TIMELINE_ATOMS)('keeps %s independent of its timeline siblings', async (atom, readerName) => {
+  it.each(TIMELINE_ATOMS.map((h) => [h]))('keeps %s independent of its timeline siblings', async (atom) => {
     const output = await bundleContractExport(atom);
 
-    expect(output).toContain(getKeptFunctionNameMarker(readerName));
-    for (const [, siblingReaderName] of TIMELINE_ATOMS) {
-      if (siblingReaderName !== readerName) {
-        expect(output).not.toContain(getKeptFunctionNameMarker(siblingReaderName));
+    expect(output).toContain(getKeptFunctionNameMarker(atom));
+    for (const siblingHandler of TIMELINE_ATOMS) {
+      if (siblingHandler !== atom) {
+        expect(output).not.toContain(getKeptFunctionNameMarker(siblingHandler));
       }
     }
   });
@@ -57,7 +57,7 @@ describe('DragonBones handler export lanes', () => {
     expect(publicApi.registerDragonBonesSectionHandler).toBe(contractApi.registerDragonBonesSectionHandler);
     expect(publicApi.registerDragonBonesTimelineHandler).toBe(contractApi.registerDragonBonesTimelineHandler);
 
-    for (const [atom] of [...SECTION_ATOMS, ...TIMELINE_ATOMS]) {
+    for (const atom of [...SECTION_ATOMS.map(([h]) => h), ...TIMELINE_ATOMS]) {
       expect(atom in contractApi, `${atom} contract`).toBe(true);
       expect(atom in publicApi, `${atom} public`).toBe(false);
     }
