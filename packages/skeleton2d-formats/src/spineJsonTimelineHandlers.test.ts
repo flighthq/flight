@@ -2,18 +2,18 @@ import type { SpineJsonTimelineHandler, SpineJsonTimelineKind } from '@flighthq/
 import { SpineJsonTimelineKind as TimelineKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { spineJsonBoneTimelineHandler } from './spineJsonBoneTimelineHandler.ts';
+import { spineJsonDrawOrderTimelineHandler } from './spineJsonDrawOrderTimelineHandler.ts';
 import { createSpineJsonRegistry, getSpineJsonTimelineHandler } from './spineJsonRegistry.ts';
+import { spineJsonSlotTimelineHandler } from './spineJsonSlotTimelineHandler.ts';
 import {
-  registerSpineJsonTimelineHandlers,
-  spineJsonBoneTimelineHandler,
   spineJsonDeformTimelineHandler,
-  spineJsonDrawOrderTimelineHandler,
   spineJsonEventTimelineHandler,
   spineJsonIkTimelineHandler,
   spineJsonPathTimelineHandler,
-  spineJsonSlotTimelineHandler,
   spineJsonTransformTimelineHandler,
-} from './spineJsonTimelineHandlers.ts';
+} from './spineJsonStubHandlers.ts';
+import { registerSpineJsonTimelineHandlers } from './spineJsonTimelineHandlers.ts';
 
 function expectRegisteredTimeline(kind: SpineJsonTimelineKind, handler: SpineJsonTimelineHandler): void {
   const registry = createSpineJsonRegistry();

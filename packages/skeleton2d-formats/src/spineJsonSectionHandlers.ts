@@ -1,17 +1,17 @@
-import type { SpineJsonRegistry, SpineJsonSectionContext, SpineJsonSectionHandler } from '@flighthq/types/contract';
+import type { SpineJsonRegistry, SpineJsonSectionHandler } from '@flighthq/types/contract';
 import { SpineJsonSectionKind } from '@flighthq/types/contract';
 
+import { spineJsonAnimationsSectionHandler } from './spineJsonAnimationsHandler.ts';
+import { spineJsonBonesSectionHandler } from './spineJsonBonesHandler.ts';
 import { registerSpineJsonSectionHandler } from './spineJsonRegistry.ts';
+import { spineJsonSkinsSectionHandler } from './spineJsonSkinsHandler.ts';
+import { spineJsonSlotsSectionHandler } from './spineJsonSlotsHandler.ts';
 import {
-  spineJsonAnimationsSectionReader,
-  spineJsonBonesSectionReader,
-  spineJsonEventsSectionReader,
-  spineJsonIkConstraintsSectionReader,
-  spineJsonPathConstraintsSectionReader,
-  spineJsonSkinsSectionReader,
-  spineJsonSlotsSectionReader,
-  spineJsonTransformConstraintsSectionReader,
-} from './spineParse.ts';
+  spineJsonEventsSectionHandler,
+  spineJsonIkConstraintsSectionHandler,
+  spineJsonPathConstraintsSectionHandler,
+  spineJsonTransformConstraintsSectionHandler,
+} from './spineJsonStubHandlers.ts';
 
 export function registerSpineJsonSectionHandlers(registry: SpineJsonRegistry): void {
   registerSpineJsonSectionHandler(registry, SpineJsonSectionKind.Bones, spineJsonBonesSectionHandler);
@@ -30,38 +30,6 @@ export function registerSpineJsonSectionHandlers(registry: SpineJsonRegistry): v
     spineJsonTransformConstraintsSectionHandler,
   );
   registerSpineJsonSectionHandler(registry, SpineJsonSectionKind.Animations, spineJsonAnimationsSectionHandler);
-}
-
-export function spineJsonAnimationsSectionHandler(context: SpineJsonSectionContext): void {
-  spineJsonAnimationsSectionReader(context);
-}
-
-export function spineJsonBonesSectionHandler(context: SpineJsonSectionContext): void {
-  spineJsonBonesSectionReader(context);
-}
-
-export function spineJsonEventsSectionHandler(context: SpineJsonSectionContext): void {
-  spineJsonEventsSectionReader(context);
-}
-
-export function spineJsonIkConstraintsSectionHandler(context: SpineJsonSectionContext): void {
-  spineJsonIkConstraintsSectionReader(context);
-}
-
-export function spineJsonPathConstraintsSectionHandler(context: SpineJsonSectionContext): void {
-  spineJsonPathConstraintsSectionReader(context);
-}
-
-export function spineJsonSkinsSectionHandler(context: SpineJsonSectionContext): void {
-  spineJsonSkinsSectionReader(context);
-}
-
-export function spineJsonSlotsSectionHandler(context: SpineJsonSectionContext): void {
-  spineJsonSlotsSectionReader(context);
-}
-
-export function spineJsonTransformConstraintsSectionHandler(context: SpineJsonSectionContext): void {
-  spineJsonTransformConstraintsSectionReader(context);
 }
 
 export const spineJsonAllSectionHandlers: readonly SpineJsonSectionHandler[] = [
