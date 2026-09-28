@@ -4,17 +4,6 @@ import type { DragonBonesRegistry, DragonBonesSectionContext, ImportDiagnostic }
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import type { Skeleton2DImport } from '@flighthq/types/contract';
 
-import { createDragonBonesRegistry } from './dragonBonesRegistry.ts';
-import { registerDragonBonesSectionHandlers } from './dragonBonesSectionHandlers.ts';
-import { registerDragonBonesTimelineHandlers } from './dragonBonesTimelineHandlers.ts';
-
-export function parseDragonBonesSkeleton(json: string, diagnostics?: ImportDiagnostic[]): Skeleton2DImport | null {
-  const registry = createDragonBonesRegistry();
-  registerDragonBonesSectionHandlers(registry);
-  registerDragonBonesTimelineHandlers(registry);
-  return parseDragonBonesSkeletonWithRegistry(json, registry, diagnostics);
-}
-
 export function parseDragonBonesSkeletonWithRegistry(
   json: string,
   registry: Readonly<DragonBonesRegistry>,

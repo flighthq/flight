@@ -12,8 +12,6 @@ import type {
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { resolveSpineDrawOrdering } from './spineDrawOrder.ts';
-import { registerAllSpineJsonHandlers } from './spineJsonHandlers.ts';
-import { createSpineJsonRegistry } from './spineJsonRegistry.ts';
 import { indexOfSpineSlot, numberOr, SPINE_DEFAULT_SKIN_NAME } from './spineParseHelpers.ts';
 
 /**
@@ -55,12 +53,6 @@ export function parseSpineDrawOrderTimeline(
     orderings.push(...ordering);
   }
   return times.length === 0 ? null : { orderings, times };
-}
-
-export function parseSpineSkeleton(json: string, diagnostics?: ImportDiagnostic[]): Skeleton2DImport | null {
-  const registry = createSpineJsonRegistry();
-  registerAllSpineJsonHandlers(registry);
-  return parseSpineSkeletonWithRegistry(json, registry, diagnostics);
 }
 
 export function parseSpineSkeletonWithRegistry(

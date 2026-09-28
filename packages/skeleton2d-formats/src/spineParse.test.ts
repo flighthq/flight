@@ -22,6 +22,7 @@ import { spineJsonAnimationsSectionReader } from './spineJsonAnimationsHandler.t
 import { spineJsonBonesSectionReader } from './spineJsonBonesHandler.ts';
 import { spineJsonBoneTimelineReader } from './spineJsonBoneTimelineHandler.ts';
 import { spineJsonDrawOrderTimelineReader } from './spineJsonDrawOrderTimelineHandler.ts';
+import { parseSpineSkeleton } from './spineJsonFull.ts';
 import { registerAllSpineJsonHandlers } from './spineJsonHandlers.ts';
 import {
   createSpineJsonRegistry,
@@ -43,7 +44,7 @@ import {
   spineJsonTransformConstraintsSectionReader,
   spineJsonTransformTimelineReader,
 } from './spineJsonStubHandlers.ts';
-import { parseSpineDrawOrderTimeline, parseSpineSkeleton, parseSpineSkeletonWithRegistry } from './spineParse.ts';
+import { parseSpineDrawOrderTimeline, parseSpineSkeletonWithRegistry } from './spineParse.ts';
 
 // Hand-authored minimal Spine skeleton JSON (per the real-asset rule: committed fixtures are hand-written,
 // never transcribed from an external rig). Two bones: a root, and a child that sets every transform field.
@@ -199,7 +200,66 @@ describe('parseSpineDrawOrderTimeline', () => {
   });
 });
 
-describe('parseSpineSkeleton', () => {
+describe('parseSpineSkeletonWithRegistry', () => {
+  it('returns null for malformed JSON', () => {
+    expect(parseSpineSkeletonWithRegistry('{ nope', fullRegistry())).toBeNull();
+    expect(parseSpineSkeletonWithRegistry('null', fullRegistry())).toBeNull();
+  });
+
+  it('produces byte-for-value identical output to parseSpineSkeleton on the rich fixture', () => {
+    const json = JSON.stringify(SPINE_RICH);
+    const original = parseSpineSkeleton(json)!;
+    const registry = parseSpineSkeletonWithRegistry(json, fullRegistry())!;
+    expect(JSON.parse(JSON.stringify(registry))).toEqual(JSON.parse(JSON.stringify(original)));
+  });
+
+  it('produces identical output for a minimal bones-only document', () => {
+    const json = JSON.stringify({ bones: [{ name: 'root' }, { name: 'arm', parent: 'root', x: 10, rotation: 45 }] });
+    const original = parseSpineSkeleton(json)!;
+    const registry = parseSpineSkeletonWithRegistry(json, fullRegistry())!;
+    expect(JSON.parse(JSON.stringify(registry))).toEqual(JSON.parse(JSON.stringify(original)));
+  });
+
+  it('omits bones when their handler is not registered', () => {
+    const json = JSON.stringify({ bones: [{ name: 'root' }], slots: [{ bone: 'root', name: 's' }] });
+    const registry = createSpineJsonRegistry();
+    const result = parseSpineSkeletonWithRegistry(json, registry);
+    expect(result).not.toBeNull();
+    expect(result!.skeleton.bones).toEqual([]);
+  });
+
+  it('emits skip crumbs for unregistered timeline kinds', () => {
+    const json = JSON.stringify({
+      bones: [{ name: 'root' }],
+      animations: { walk: { bones: { root: { rotate: [{ time: 0, value: 0 }] } } } },
+    });
+    const registry = createSpineJsonRegistry();
+    registerAllSpineJsonHandlers(registry);
+    unregisterSpineJsonTimelineHandler(registry, SpineJsonTimelineKind.Bone);
+    const diagnostics: ImportDiagnostic[] = [];
+    parseSpineSkeletonWithRegistry(json, registry, diagnostics);
+    expect(diagnostics.map((d) => d.kind)).toContain('spine.bone-timeline-unregistered');
+  });
+
+  it('omits animations when their section handler is not registered', () => {
+    const json = JSON.stringify({
+      bones: [{ name: 'root' }],
+      animations: { walk: { bones: { root: { rotate: [{ time: 0, value: 0 }] } } } },
+    });
+    const registry = createSpineJsonRegistry();
+    registerSpineJsonSectionHandlers(registry);
+    unregisterSpineJsonSectionHandler(registry, SpineJsonSectionKind.Animations);
+    const result = parseSpineSkeletonWithRegistry(json, registry);
+    expect(result!.animations).toEqual([]);
+  });
+});
+
+// A one-bone document whose single animation carries `keys` as bone `b`'s timeline of the given kind.
+function curveDoc(keys: readonly Record<string, unknown>[], kind = 'rotate'): Record<string, unknown> {
+  return { bones: [{ name: 'b' }], animations: { a: { bones: { b: { [kind]: keys } } } } };
+}
+
+describe('spine json document parse', () => {
   it('keeps BOTH axes when a bone carries the per-axis translatex and translatey timelines', () => {
     // Spine 4 writes these lowercased with their own keyframe times. Merged onto the paired path they
     // would overwrite each other back to setup, which is the defect the per-axis paths fixed.
@@ -902,9 +962,10 @@ describe('parseSpineSkeleton', () => {
   });
 });
 
-// A one-bone document whose single animation carries `keys` as bone `b`'s timeline of the given kind.
-function curveDoc(keys: readonly Record<string, unknown>[], kind = 'rotate'): Record<string, unknown> {
-  return { bones: [{ name: 'b' }], animations: { a: { bones: { b: { [kind]: keys } } } } };
+function fullRegistry() {
+  const registry = createSpineJsonRegistry();
+  registerAllSpineJsonHandlers(registry);
+  return registry;
 }
 
 // ONE test for a family of ~23 guards, not one test each. The idea behind them is a single policy — THE
@@ -916,7 +977,7 @@ function curveDoc(keys: readonly Record<string, unknown>[], kind = 'rotate'): Re
 // The assertion is deliberately weak on CONTENT and strict on SURVIVAL. A wrongly-typed field has no
 // correct interpretation, so there is nothing to assert about what comes back — only that something did,
 // and that what came back is internally coherent rather than half-built.
-describe('parseSpineSkeleton type resilience', () => {
+describe('spine json document parse type resilience', () => {
   it('never trusts a field type: any value replaced by a wrong-typed one still imports coherently', () => {
     const paths = everyJsonPath(SPINE_RICH);
     expect(paths.length, 'the rich document walked no paths').toBeGreaterThan(40);
@@ -938,66 +999,6 @@ describe('parseSpineSkeleton type resilience', () => {
         }
       }
     }
-  });
-});
-
-function fullRegistry() {
-  const registry = createSpineJsonRegistry();
-  registerAllSpineJsonHandlers(registry);
-  return registry;
-}
-
-describe('parseSpineSkeletonWithRegistry', () => {
-  it('returns null for malformed JSON', () => {
-    expect(parseSpineSkeletonWithRegistry('{ nope', fullRegistry())).toBeNull();
-    expect(parseSpineSkeletonWithRegistry('null', fullRegistry())).toBeNull();
-  });
-
-  it('produces byte-for-value identical output to parseSpineSkeleton on the rich fixture', () => {
-    const json = JSON.stringify(SPINE_RICH);
-    const original = parseSpineSkeleton(json)!;
-    const registry = parseSpineSkeletonWithRegistry(json, fullRegistry())!;
-    expect(JSON.parse(JSON.stringify(registry))).toEqual(JSON.parse(JSON.stringify(original)));
-  });
-
-  it('produces identical output for a minimal bones-only document', () => {
-    const json = JSON.stringify({ bones: [{ name: 'root' }, { name: 'arm', parent: 'root', x: 10, rotation: 45 }] });
-    const original = parseSpineSkeleton(json)!;
-    const registry = parseSpineSkeletonWithRegistry(json, fullRegistry())!;
-    expect(JSON.parse(JSON.stringify(registry))).toEqual(JSON.parse(JSON.stringify(original)));
-  });
-
-  it('omits bones when their handler is not registered', () => {
-    const json = JSON.stringify({ bones: [{ name: 'root' }], slots: [{ bone: 'root', name: 's' }] });
-    const registry = createSpineJsonRegistry();
-    const result = parseSpineSkeletonWithRegistry(json, registry);
-    expect(result).not.toBeNull();
-    expect(result!.skeleton.bones).toEqual([]);
-  });
-
-  it('emits skip crumbs for unregistered timeline kinds', () => {
-    const json = JSON.stringify({
-      bones: [{ name: 'root' }],
-      animations: { walk: { bones: { root: { rotate: [{ time: 0, value: 0 }] } } } },
-    });
-    const registry = createSpineJsonRegistry();
-    registerAllSpineJsonHandlers(registry);
-    unregisterSpineJsonTimelineHandler(registry, SpineJsonTimelineKind.Bone);
-    const diagnostics: ImportDiagnostic[] = [];
-    parseSpineSkeletonWithRegistry(json, registry, diagnostics);
-    expect(diagnostics.map((d) => d.kind)).toContain('spine.bone-timeline-unregistered');
-  });
-
-  it('omits animations when their section handler is not registered', () => {
-    const json = JSON.stringify({
-      bones: [{ name: 'root' }],
-      animations: { walk: { bones: { root: { rotate: [{ time: 0, value: 0 }] } } } },
-    });
-    const registry = createSpineJsonRegistry();
-    registerSpineJsonSectionHandlers(registry);
-    unregisterSpineJsonSectionHandler(registry, SpineJsonSectionKind.Animations);
-    const result = parseSpineSkeletonWithRegistry(json, registry);
-    expect(result!.animations).toEqual([]);
   });
 });
 

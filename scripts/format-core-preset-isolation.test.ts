@@ -56,75 +56,42 @@ const FORMAT_CORES: readonly FormatCore[] = [
     format: 'Spine Binary',
     package: 'skeleton2d-formats',
   },
-];
-
-// ★ TWO FORMATS DO NOT HOLD THE INVARIANT YET, AND THIS RECORDS THEM AS THEY ARE RATHER THAN EXCUSING THEM.
-// Both declare their zero-config wrapper in the SAME module as their selective entry point, so that module
-// resolves the families for the caller — `spineParse.ts` through the preset, `dragonBonesParse.ts` through the
-// two family registrars. Measured, both tree-shake clean today: `spine-json-import-selective` is 9,098 raw
-// bytes against 43,027 for the full import and carries neither the preset nor any section handler, and
-// `dragonbones-import-selective` is 13,060 against 47,266 with no registrar and no timeline handler. So this
-// is latent, exactly as glTF and MD5 were, and it costs nothing until someone makes the reference reachable.
-//
-// The fix already exists in the same package as a template: `spineBinaryFull.ts` is a fifteen-line module
-// holding nothing but `parseSpineSkeletonBinary`, leaving `spineBinaryParse.ts` free of the preset. Lifting
-// `parseSpineSkeleton` and `parseDragonBonesSkeleton` into siblings of that shape closes both.
-//
-// These entries are a RATCHET, not an allow-list: each asserts the coupling is still exactly what was
-// measured, so this test fails both if a third format regresses AND when either of these is fixed — at which
-// point the entry moves up into FORMAT_CORES.
-const KNOWN_COUPLED: readonly FormatCore[] = [
   {
     core: 'spineParse.ts',
-    families: ['registerAllSpineJsonHandlers'],
+    families: ['registerAllSpineJsonHandlers', 'spineJsonAllSectionHandlers', 'spineJsonAllTimelineHandlers'],
     format: 'Spine JSON',
     package: 'skeleton2d-formats',
   },
   {
     core: 'dragonBonesParse.ts',
-    families: ['registerDragonBonesSectionHandlers', 'registerDragonBonesTimelineHandlers'],
+    families: [
+      'registerAllDragonBonesHandlers',
+      'registerDragonBonesSectionHandlers',
+      'registerDragonBonesTimelineHandlers',
+      'dragonBonesAllSectionHandlers',
+      'dragonBonesAllTimelineHandlers',
+    ],
     format: 'DragonBones',
     package: 'skeleton2d-formats',
   },
 ];
 
-// The remaining presets each format declares, which its core is ALSO required to stay clear of. They sit apart
-// from the rows above only because those rows name the symbol whose coupling the format is judged on — the
-// `registerAll*` door, or for the two coupled formats the family registrars they actually reach. Keeping these
-// in a flat list is what lets `covers every preset` be total without inventing a second notion of "the" preset
-// per format.
-const ALSO_FORBIDDEN: readonly FormatCore[] = [
-  {
-    core: 'spineParse.ts',
-    families: ['spineJsonAllSectionHandlers', 'spineJsonAllTimelineHandlers'],
-    format: 'Spine JSON',
-    package: 'skeleton2d-formats',
-  },
-  {
-    core: 'dragonBonesParse.ts',
-    families: ['registerAllDragonBonesHandlers', 'dragonBonesAllSectionHandlers', 'dragonBonesAllTimelineHandlers'],
-    format: 'DragonBones',
-    package: 'skeleton2d-formats',
-  },
-];
+// ★ THE RATCHET THIS FILE SHIPPED WITH IS GONE BECAUSE BOTH OF ITS ENTRIES WERE CLOSED. Spine JSON and
+// DragonBones used to declare their zero-config wrapper in the SAME module as their selective entry point, so
+// `spineParse.ts` named its preset and `dragonBonesParse.ts` reached the two family registrars directly. Both
+// are now split into `spineJsonFull.ts` and `dragonBonesFull.ts` beside the `spineBinaryFull.ts` that has
+// always had that shape, and both have moved into the table above. Every decomposed format holds the invariant,
+// so there is no exception list — if a future format needs one, it belongs here with its measurement rather
+// than hidden behind a widened regex.
 
 describe('format core preset isolation', () => {
-  it.each([...FORMAT_CORES, ...ALSO_FORBIDDEN].map((entry) => [entry.format, entry] as const))(
+  it.each(FORMAT_CORES.map((entry) => [entry.format, entry] as const))(
     'keeps the %s selective core free of its preset',
     (_format, entry) => {
       const source = codeOf(entry);
       for (const family of entry.families) {
         expect(new RegExp(`\\b${family}\\b`).test(source), `${entry.core} names ${family}`).toBe(false);
       }
-    },
-  );
-
-  it.each(KNOWN_COUPLED.map((entry) => [entry.format, entry] as const))(
-    'still records the known %s coupling, so fixing it retires this entry',
-    (_format, entry) => {
-      const source = codeOf(entry);
-      const named = entry.families.filter((family) => new RegExp(`\\b${family}\\b`).test(source));
-      expect(named, `${entry.core} no longer names these — move it into FORMAT_CORES`).toEqual([...entry.families]);
     },
   );
 
@@ -143,13 +110,13 @@ describe('format core preset isolation', () => {
         }
       }
     }
-    const covered = new Set([...FORMAT_CORES, ...KNOWN_COUPLED, ...ALSO_FORBIDDEN].flatMap((entry) => entry.families));
+    const covered = new Set(FORMAT_CORES.flatMap((entry) => entry.families));
     const uncovered = [...declared].filter((name) => !covered.has(name)).sort();
     expect(uncovered, 'a preset no row claims — add the format, do not widen the regex').toEqual([]);
   });
 
   // Each named core must exist, so a rename turns into a failure here rather than into a silently vacuous scan.
-  it.each([...FORMAT_CORES, ...KNOWN_COUPLED].map((entry) => [entry.format, entry] as const))(
+  it.each(FORMAT_CORES.map((entry) => [entry.format, entry] as const))(
     'resolves the %s core module',
     (_format, entry) => {
       expect(codeOf(entry).length).toBeGreaterThan(200);
