@@ -110,6 +110,7 @@ export function initializeRiveArtboardImportContext(
   diagnostics?: ImportDiagnostic[],
 ): void {
   out.advancedBlends = [];
+  out.animations = [];
   out.artboard = artboard;
   out.diagnostics = diagnostics;
   out.fontNames = fontNames;

@@ -1,5 +1,6 @@
 import type { PathBooleanKernel, RiveImportRegistry } from '@flighthq/types/contract';
 
+import { registerRiveAnimationHandlers } from './riveAnimation.ts';
 import { registerRiveAssetHandlers } from './riveAssets.ts';
 import { registerRiveClippingHandlers } from './riveClipping.ts';
 import { registerRiveDrawOrderHandlers } from './riveDrawOrder.ts';
@@ -41,4 +42,7 @@ export function registerAllRiveHandlers(
   registerRiveSkeletonHandlers(registry);
   registerRiveLayoutHandlers(registry);
   registerRiveStateMachineHandlers(registry);
+  // Last, and that is the order the unconditional call had: a keyframe composes a delta from the skeleton's setup pose
+  // and the clip reader reads the shape rebuilds, so both must already be in the context.
+  registerRiveAnimationHandlers(registry);
 }

@@ -3,6 +3,7 @@ import type { Entity } from './Entity.ts';
 import type { ImportDiagnostic } from './ImportDiagnostic.ts';
 import type {
   RiveAdvancedBlend,
+  RiveAnimationClip,
   RiveArtboardGraph,
   RiveCoreObject,
   RiveFileAsset,
@@ -56,6 +57,14 @@ export interface RiveCoreObjectHandler {
 export interface RiveArtboardImportContext extends Entity {
   /** Nodes whose blend mode must be realized through a `BlendEffect` rather than blend state. */
   advancedBlends: RiveAdvancedBlend[];
+  /**
+   * The artboard's animation clips.
+   *
+   * ★ A FIELD BECAUSE ANIMATION IS A FAMILY, which it was not until it became one. The clip reader used to be called
+   * unconditionally by the artboard import, so every Rive build linked the whole keyframe and interpolation reader
+   * however few families it registered — measured at 24,926 unminified bytes, 30% of an otherwise empty import.
+   */
+  animations: RiveAnimationClip[];
   artboard: RiveArtboardGraph;
   diagnostics: ImportDiagnostic[] | undefined;
   /** The file's asset names, positionally addressed — a text style names its typeface by position. */

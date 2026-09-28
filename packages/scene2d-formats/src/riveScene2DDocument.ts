@@ -19,7 +19,7 @@ import type {
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { getRiveImageAssetIndex, getRiveImageTexture, getRiveNestedArtboardIndex } from './riveAssetBinding.ts';
-import { createScene2DFromRiveDocument } from './riveScene2D.ts';
+import { createScene2DFromRiveDocument } from './riveImport.ts';
 
 /**
  * A nested artboard is a named place the document does not fill itself, which is what a slot is. The
