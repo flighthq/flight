@@ -66,17 +66,24 @@ describe('composeContentAnalyzers', () => {
     expect(keysOf(DEFAULT_CONTENT_ANALYZERS['.json'].analyze(DRAGONBONES, NO_DECOMPRESSORS))).toEqual([]);
   });
 
-  // ★ THE REGRESSION GUARD FOR WHY FIVE FAMILIES LEFT THIS TABLE. Their analyzers answered "which variant?" by
-  // asking a detection registry, and those registries seed themselves from the full preset — so installing the one
-  // format a manifest chose linked every sibling codec. Measured on a real production bundle: one spritesheet
-  // format installed through `applySpritesheetImportOptions` cost 40,377 bytes and carried all five codecs, where
-  // naming the codec directly cost 7,935 and carried one. If an analyzer for any of them comes back, this fails.
+  // ★ THE REGRESSION GUARD FOR WHY FIVE FAMILIES LEFT THIS TABLE, NARROWED TO WHAT IS STILL TRUE. Their analyzers
+  // answered "which variant?" by asking a detection registry, and those registries seed themselves from the full
+  // preset — so installing the one format a manifest chose linked every sibling codec. Measured on a real
+  // production bundle: one spritesheet format installed through `applySpritesheetImportOptions` cost 40,377 bytes
+  // and carried all five codecs, where naming the codec directly cost 7,935 and carried one.
+  //
+  // `.fnt`, `.pex` and the four Tiled extensions came back as BEDROCK analyzers, which is a different route and
+  // not the one this guards: they emit one requirement whose catalog row names a parse function directly, so the
+  // generated module binds one parser and never reaches an applier. `bedrockContentAnalyzers.test.ts` asserts
+  // that, including the absence of every registry symbol. What remains here is the shared `.json` lane — which
+  // must still recognise neither a TexturePacker sheet nor a Tiled map — and the three extensions that name two
+  // or more parsers across different families, for which no single direct binding is true.
   it('no longer claims the families whose analyzer would have linked every sibling codec', () => {
     for (const bytes of [TEXTURE_PACKER, TILED_MAP]) {
       expect(keysOf(DEFAULT_CONTENT_ANALYZERS['.json'].analyze(bytes, NO_DECOMPRESSORS))).toEqual([]);
       expect(DEFAULT_CONTENT_ANALYZERS['.json'].isReadable(bytes, NO_DECOMPRESSORS)).toBe(false);
     }
-    for (const extension of ['.atlas', '.fnt', '.pex', '.plist', '.tmj', '.tmx', '.tsj', '.tsx', '.xml']) {
+    for (const extension of ['.atlas', '.plist', '.xml']) {
       expect(DEFAULT_CONTENT_ANALYZERS[extension], extension).toBeUndefined();
     }
   });

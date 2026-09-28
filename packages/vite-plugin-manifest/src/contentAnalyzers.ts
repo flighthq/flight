@@ -1,4 +1,6 @@
+import { readBitmapFontFormatKind } from '@flighthq/bitmapfont-formats/contract';
 import { decodeUTF8 } from '@flighthq/encoding/contract';
+import { createRequirementSet } from '@flighthq/requirement/contract';
 import {
   isReadableLottie,
   isReadableRive,
@@ -40,6 +42,15 @@ import type {
   HostDecompressLzmaCapability,
   RequirementSet,
 } from '@flighthq/types/contract';
+import {
+  RequirementFacet,
+  StarlingPexFormatKind,
+  TilemapFormatKindTiledTmj,
+  TilemapFormatKindTiledTmx,
+  TilemapFormatKindTiledTsj,
+  TilemapFormatKindTiledTsx,
+} from '@flighthq/types/contract';
+import { parseXmlDocument } from '@flighthq/xml/contract';
 
 import { composeContentAnalyzers } from './composeContentAnalyzers.ts';
 
@@ -184,7 +195,82 @@ export const DEFAULT_CONTENT_ANALYZERS: Readonly<Record<string, ContentAnalyzer>
     analyze: (source, { deflate, lzma }) => parseSwfRequirements(source, deflate, lzma),
     isReadable: (source, { deflate, lzma }) => parseSwfHeader(source, deflate, lzma) !== null,
   },
+  '.fnt': BITMAP_FONT_ANALYZER(),
+  '.pex': xmlRootAnalyzer('particleEmitterConfig', `particles.${StarlingPexFormatKind}`),
+  '.tmj': jsonObjectAnalyzer(`tilemap.${TilemapFormatKindTiledTmj}`),
+  '.tmx': xmlRootAnalyzer('map', `tilemap.${TilemapFormatKindTiledTmx}`),
+  '.tsj': jsonObjectAnalyzer(`tilemap.${TilemapFormatKindTiledTsj}`),
+  '.tsx': xmlRootAnalyzer('tileset', `tilemap.${TilemapFormatKindTiledTsx}`),
 });
+
+/**
+ * The `.fnt` analyzer: the ONE format the bytes actually are, never the one the extension suggests.
+ *
+ * ★ THE EXTENSION CANNOT NAME THIS FORMAT, WHICH IS WHY THIS ONE READS CONTENT. BMFont writes binary, text and
+ * XML all under `.fnt`. A coarse `.fnt` → text mapping would hand an XML font to `parseBitmapFontFnt`, which
+ * returns null on it — an empty font with no error, the failure content-aware analysis exists to prevent. The
+ * discriminator is the same function the four detectors ask, imported from the registry-free module that owns it,
+ * so this analyzer and `parseBitmapFont` cannot disagree about what a file is.
+ *
+ * Exactly one requirement, and no feature census: which glyphs or pages a descriptor carries changes nothing
+ * about which code reads it.
+ */
+function BITMAP_FONT_ANALYZER(): ContentAnalyzer {
+  return {
+    analyze: (source) => {
+      const kind = readBitmapFontFormatKind(source);
+      return bedrockRequirementSet(kind === null ? null : `bitmapfont.${kind}`);
+    },
+    isReadable: (source) => readBitmapFontFormatKind(source) !== null,
+  };
+}
+
+/**
+ * A bedrock analyzer for a format whose XML ROOT ELEMENT names it, asking the same question its parser asks.
+ *
+ * `parseTiledTmx` rejects anything whose root is not `map` and `parseTiledTileset` anything but `tileset`, so
+ * probing the root here cannot accept a file the parser would then refuse. Starling PEX is the same shape at
+ * `particleEmitterConfig`.
+ *
+ * ★ `.tsx` IS A TILED TILESET HERE, NOT TYPESCRIPT JSX, AND THAT IS SAFE BECAUSE ANALYSIS IS OPT-IN. The plugin
+ * resolves a manifest only for an explicit `?manifest` import of a named file — `import { contentParser } from
+ * './terrain.tsx?manifest'` — and never walks the project, so no React component is ever analyzed. A `.tsx`
+ * source file that reached this would fail the root probe and contribute nothing anyway.
+ */
+function xmlRootAnalyzer(root: string, kind: string): ContentAnalyzer {
+  const isRoot = (source: Readonly<Uint8Array>): boolean => parseXmlDocument(decodeUTF8(source))?.name === root;
+  return {
+    analyze: (source) => bedrockRequirementSet(isRoot(source) ? kind : null),
+    isReadable: isRoot,
+  };
+}
+
+/** A bedrock analyzer for a JSON format, readable exactly when its text is the JSON object its parser needs. */
+function jsonObjectAnalyzer(kind: string): ContentAnalyzer {
+  const isObject = (source: Readonly<Uint8Array>): boolean => {
+    let raw: unknown;
+    try {
+      raw = JSON.parse(decodeUTF8(source));
+    } catch {
+      return false;
+    }
+    return raw !== null && typeof raw === 'object' && !Array.isArray(raw);
+  };
+  return {
+    analyze: (source) => bedrockRequirementSet(isObject(source) ? kind : null),
+    isReadable: isObject,
+  };
+}
+
+// One document-format requirement, or none when the content is not the format its extension claimed. A bedrock
+// format has nothing else to say: it names one parser, and a census of what is inside the document would not
+// change which code reads it.
+function bedrockRequirementSet(kind: string | null): RequirementSet {
+  return createRequirementSet(
+    [RequirementFacet.DocumentFormat],
+    kind === null ? [] : [{ facet: RequirementFacet.DocumentFormat, key: kind }],
+  );
+}
 
 // The two formats need DIFFERENT readability probes, because they compress different things.
 //

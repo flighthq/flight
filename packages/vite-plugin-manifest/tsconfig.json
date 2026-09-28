@@ -10,6 +10,9 @@
   },
   "references": [
     {
+      "path": "../bitmapfont-formats"
+    },
+    {
       "path": "../compression"
     },
     {
@@ -17,6 +20,9 @@
     },
     {
       "path": "../log"
+    },
+    {
+      "path": "../particles-formats"
     },
     {
       "path": "../render"
@@ -46,7 +52,13 @@
       "path": "../swf"
     },
     {
+      "path": "../tilemap-formats"
+    },
+    {
       "path": "../types"
+    },
+    {
+      "path": "../xml"
     }
   ],
   "include": ["src"]

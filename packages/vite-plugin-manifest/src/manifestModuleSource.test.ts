@@ -257,6 +257,63 @@ describe('generateManifestModuleSource', () => {
   });
 });
 
+describe('generateManifestModuleSource direct parser rows', () => {
+  // ★ A DIRECT-PARSER ROW NAMES A PARSE FUNCTION, NOT A HANDLER TO SPREAD. It becomes a flat binding and must
+  // stay out of `parserOptions`: the formats that carry these rows declare no handler field, so a field would
+  // either install their detection registry or spread into nothing and parse with the full default family.
+  it('emits a flat binding and leaves parserOptions empty', () => {
+    const result = generateManifestModuleSource([directRow('tilemap.TiledTmx', 'parseTiledTmx')], '.tmx');
+
+    expect(result.source).toContain('export const contentParser = parseTiledTmx;');
+    expect(result.source).toContain('export const parserOptions = {};');
+    expect(result.problems).toEqual([]);
+  });
+
+  // Two requirements resolving to the SAME parser is ordinary, and emitting the binding twice would not compile.
+  it('deduplicates identical bindings rather than emitting the name twice', () => {
+    const result = generateManifestModuleSource(
+      [directRow('tilemap.TiledTmx', 'parseTiledTmx'), directRow('tilemap.TiledTmxAgain', 'parseTiledTmx')],
+      '.tmx',
+    );
+
+    expect(result.source.match(/export const contentParser =/g)).toHaveLength(1);
+    expect(result.problems).toEqual([]);
+  });
+
+  // ★ TWO DIFFERENT SYMBOLS UNDER ONE NAME IS A REPORTED PROBLEM, NOT A LAST-WRITE-WINS. It means analysis
+  // decided the file is two formats at once; picking either would be a guess the build could not see.
+  it('reports a deterministic problem when one export name resolves to two symbols', () => {
+    const result = generateManifestModuleSource(
+      [
+        directRow('bitmapfont.BmFontText', 'parseBitmapFontFnt'),
+        directRow('bitmapfont.BmFontXml', 'parseBitmapFontXml'),
+      ],
+      '.fnt',
+    );
+
+    expect(result.source.match(/export const contentParser =/g)).toHaveLength(1);
+    expect(result.source).toContain('export const contentParser = parseBitmapFontFnt;');
+    expect(result.problems).toEqual([
+      'direct parser export contentParser already bound to parseBitmapFontFnt: dropped bitmapfont.BmFontXml (parseBitmapFontXml)',
+    ]);
+  });
+
+  // An ordinary handler row alongside a direct row keeps its field; the two lanes do not contaminate each other.
+  it('leaves ordinary handler rows in parserOptions unchanged', () => {
+    const result = generateManifestModuleSource(
+      [
+        directRow('tilemap.TiledTmx', 'parseTiledTmx'),
+        rowWithSymbol('parser', 'document.format', 'dae.Geometry', 'colladaGeometryDecoder'),
+      ],
+      '.dae',
+    );
+
+    expect(result.source).toContain('export const contentParser = parseTiledTmx;');
+    expect(result.source).toContain('colladaGeometryDecoder,');
+    expect(result.source).not.toContain('parserOptions = {};');
+  });
+});
+
 describe('MANIFEST_BACKEND_EXPORTS', () => {
   it('names one flat export per backend', () => {
     expect(MANIFEST_BACKEND_EXPORTS).toEqual({
@@ -302,4 +359,9 @@ function orderedWithSymbol(backend: string, facet: string, kind: string, symbol:
 function rowWithSymbolAndField(backend: string, facet: string, kind: string, symbol: string, parserField: string) {
   const base = rowWithSymbol(backend, facet, kind, symbol);
   return { ...base, entry: { ...base.entry, parserField } };
+}
+
+function directRow(kind: string, symbol: string) {
+  const base = rowWithSymbol('parser', 'document.format', kind, symbol);
+  return { ...base, entry: { ...base.entry, parserExport: 'contentParser' } };
 }

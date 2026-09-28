@@ -88,10 +88,31 @@ export function generateManifestModuleSource(
   const parserRows: ManifestModuleEntry[] = [];
 
   const problems: string[] = [];
+  // Export name -> the one symbol bound to it. A direct-parser row names a PARSE FUNCTION rather than a handler
+  // to spread, so it becomes a flat binding and never reaches `parserOptions`; see `parserExport` on
+  // RequirementCatalogEntry for why these formats have no options field to spread into.
+  const directParsers = new Map<string, string>();
   for (const row of rows) {
     if (row.entry.backend === MANIFEST_PARSER_BACKEND) {
       addImport(importsByModule, row.entry.implementationImport, row.entry.implementationSymbol);
-      parserRows.push(row);
+      const exportName = row.entry.parserExport;
+      if (exportName === undefined) {
+        parserRows.push(row);
+        continue;
+      }
+      const bound = directParsers.get(exportName);
+      // ★ IDENTICAL BINDINGS DEDUPLICATE, CONFLICTING ONES ARE REPORTED. Two requirements resolving to the same
+      // parser is ordinary — a document can satisfy one kind twice — and emitting the binding twice would not
+      // compile. Two DIFFERENT symbols under one name is a analysis that decided the file is two formats at
+      // once, and picking either would be a guess; the row is dropped with the conflict named, so the build
+      // sees what it lost instead of getting a last-write-wins answer.
+      if (bound === undefined) {
+        directParsers.set(exportName, row.entry.implementationSymbol);
+      } else if (bound !== row.entry.implementationSymbol) {
+        problems.push(
+          `direct parser export ${exportName} already bound to ${bound}: dropped ${row.kind} (${row.entry.implementationSymbol})`,
+        );
+      }
       continue;
     }
     // Two ways a render-backend row cannot be placed, and NEITHER is a silent skip. A facet with no
@@ -155,6 +176,10 @@ export function generateManifestModuleSource(
         '};',
       );
     }
+  }
+  // Sorted by export name so the same inputs always produce byte-identical source, like every other fragment.
+  for (const exportName of [...directParsers.keys()].sort()) {
+    lines.push('', `export const ${exportName} = ${directParsers.get(exportName)!};`);
   }
   lines.push('', ...parserFragment(parserRows, PARSER_HANDLER_FIELDS[extension] ?? 'handlers'));
   return { problems, source: `${lines.join('\n')}\n` };
