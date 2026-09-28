@@ -11,22 +11,6 @@ exclude:
   - dragonBonesSlotTimelineReader
   - dragonBonesSlotsSectionReader
   - dragonBonesZOrderTimelineReader
-  - spineBinaryAnimationsSectionReader
-  - spineBinaryBoneTimelineReader
-  - spineBinaryBonesSectionReader
-  - spineBinaryDeformTimelineReader
-  - spineBinaryDrawOrderTimelineReader
-  - spineBinaryEventTimelineReader
-  - spineBinaryEventsSectionReader
-  - spineBinaryIkConstraintsSectionReader
-  - spineBinaryIkTimelineReader
-  - spineBinaryPathConstraintsSectionReader
-  - spineBinaryPathTimelineReader
-  - spineBinarySkinsSectionReader
-  - spineBinarySlotTimelineReader
-  - spineBinarySlotsSectionReader
-  - spineBinaryTransformConstraintsSectionReader
-  - spineBinaryTransformTimelineReader
 
 protected:
   - DRAGONBONES_REQUIREMENT_KEY_NAMESPACE
