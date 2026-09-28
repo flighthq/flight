@@ -65,8 +65,8 @@ export const md2SkinHandler: Readonly<Md2SectionHandler> = {
  * ★ IT LIVES BESIDE ITS HANDLER BECAUSE OF WHERE IT USED TO LIVE. Both MD2 family constants sat in
  * `md2SectionRegistry.ts` next to `md2AllSectionHandlers`, so naming EITHER family imported that module and linked BOTH
  * handlers — which is why a build asking for skins alone still carried the animation reader, and one asking for
- * animation alone still carried this reader and `@flighthq/materials` — 9,473 measured bytes for a family it had
- * declined. A family constant is one element long; keeping it here is what
+ * animation alone still carried this reader and `@flighthq/materials` — 9,480 measured bytes (35,761 → 26,281) for a
+ * family it had declined, against 3,057 the other way (35,751 → 32,694). A family constant is one element long; keeping it here is what
  * makes naming it cost one handler.
  */
 export const md2SkinFamily: readonly Md2SectionHandler[] = [md2SkinHandler];

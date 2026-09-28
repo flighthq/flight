@@ -55,8 +55,12 @@ const SAVINGS: readonly (readonly [string, string, number])[] = [
 describe('md locality', () => {
   // ★ THE SKELETON BUILDER LIVES WITH ITS HANDLER, NOT IN THE PARSER. `buildMd5SkeletonDocument` and the cycle check it
   // needs were retained in `md5Parse.ts` while `md5SkeletonHandler` was a one-line call into them, which made the handler
-  // a shim over 170 lines of skeleton interpretation held by the module every MD5 caller parses through: declining the
-  // skeleton family removed the registration and none of the work.
+  // a shim over 170 lines of skeleton interpretation held by the module every MD5 caller parses through.
+  //
+  // ★ THIS ONE IS OWNERSHIP, NOT BYTES, AND SAYING SO IS THE POINT. `md5-import-geometry` measured 45,483 raw bytes both
+  // before and after the move and carried no skeleton marker either way: esbuild shook the unreferenced builder out of
+  // the parser on its own. So omission already removed the code — by the bundler's grace, not because the module that
+  // owned the feature was the module that held it. The gate is structural because that is the property that was false.
   it('keeps skeleton interpretation out of the MD5 parser', () => {
     const parser = codeOf(join(srcDir, 'md5Parse.ts'));
     expect(parser).not.toContain('buildMd5SkeletonDocument');
@@ -75,9 +79,9 @@ describe('md locality', () => {
 
   // ★ EACH FAMILY CONSTANT IS DECLARED BESIDE THE HANDLER IT NAMES. All four sat in the two registry modules next to the
   // presets, so naming ONE family imported the registry and linked the OTHER family's handler with it. What that cost is
-  // now the gap between a subset and its preset: an MD5 caller naming the skeleton family avoids 8,387 raw bytes of
-  // material reader and `@flighthq/materials` (65,331 → 56,944), and an MD2 caller naming the animation family avoids
-  // 9,473 (35,754 → 26,281). A family constant is one element long; where it is declared is the whole of what naming it
+  // measured, same fixtures, against the commit before the move: skeleton 65,336 → 56,944 (−8,392, `@flighthq/materials`
+  // and the material reader), material 65,336 → 53,761 (−11,575), skin 35,751 → 32,694 (−3,057), animation
+  // 35,761 → 26,281 (−9,480). A family constant is one element long; where it is declared is the whole of what naming it
   // costs.
   it.each([
     ['md5SkeletonFamily', 'md5SkeletonHandler.ts'],

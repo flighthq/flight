@@ -8,8 +8,9 @@ import { md5SkeletonFamily } from './md5SkeletonHandler.ts';
  * importer's complete behavior.
  *
  * ★ THIS FILE IS THE PRESET AND NOTHING ELSE. Each family constant now lives beside the handler it names, because while
- * both sat here a caller naming `md5SkeletonFamily` imported this module and linked the material handler too — 8,387
- * measured bytes, including `@flighthq/materials`, for a family they had declined. Importing THIS module still costs
+ * both sat here a caller naming `md5SkeletonFamily` imported this module and linked the material handler too — 8,392
+ * measured bytes (65,336 → 56,944), including `@flighthq/materials`, for a family they had declined. The material
+ * family alone paid the larger half of it back: 65,336 → 53,761. Importing THIS module still costs
  * both, which is what asking for everything means.
  *
  * The two run at DIFFERENT dispatch points (skeleton once per file, material once per `mesh { }` block), so
