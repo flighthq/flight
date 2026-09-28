@@ -29,7 +29,6 @@ export { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse.ts';
 export {
   clampSpineBinaryUnit,
   readSpineBinaryStringReference,
-  reportSpineBinaryCrumb,
   skipSpineBinaryCurveFrames,
   skipSpineBinaryCurveTag,
 } from './spineBinaryParseHelpers.ts';
