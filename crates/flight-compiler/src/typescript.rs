@@ -29,15 +29,12 @@ const IDENTITY_ALIAS_MARKER: &str = "@identity-alias:";
 const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
 const NULLABLE_OPTION_FIELD_MARKER: &str = "@nullable-option-field:";
 const NULLABLE_OPTIONS_MARKER: &str = "@nullable-options";
-<<<<<<< HEAD
 const PROVENANCE_SEPARATOR: char = '\u{1f}';
-=======
 // Struct fields, locals and parameters, and function returns declared as Rust `Option<T>`, each with
 // the named payload type (empty when unnamed). They make Option `.and_then()` / `.map()` type-directed.
 const OPTION_FIELD_MARKER: &str = "@option-field:";
 const OPTION_LOCAL_MARKER: &str = "@option-local:";
 const OPTION_RETURN_MARKER: &str = "@option-return:";
->>>>>>> 9232abe27 (feat(compiler): lower type-directed Option and_then and map)
 // Locals and parameters known to hold a Rust integer or string, the operand types `.cmp()` lowers
 // to a JavaScript relational comparison.
 const ORDERED_PRIMITIVE_MARKER: &str = "@ordered-primitive:";
@@ -1520,7 +1517,6 @@ pub(crate) fn function_expression_context(
     return context;
 }
 
-<<<<<<< HEAD
 pub(crate) fn insert_vitest_rebound_struct_context(
     statements: &[Stmt],
     context: &mut HashSet<String>,
@@ -1582,7 +1578,8 @@ pub(crate) fn update_vitest_struct_local_context(
             "{VITEST_STRUCT_LOCAL_MARKER}{local_name}{PROVENANCE_SEPARATOR}{identity}"
         ));
     }
-=======
+}
+
 // The Option and named-type markers for a local or parameter declared with `rust_type`.
 fn declared_type_markers(name: &str, rust_type: &Type) -> Vec<String> {
     if let Some(inner) = option_inner_type(rust_type) {
@@ -1595,7 +1592,6 @@ fn declared_type_markers(name: &str, rust_type: &Type) -> Vec<String> {
         .map(|structure| format!("{STRUCT_LOCAL_MARKER}{name}:{structure}"))
         .into_iter()
         .collect();
->>>>>>> 9232abe27 (feat(compiler): lower type-directed Option and_then and map)
 }
 
 fn documentation(attributes: &[Attribute]) -> Vec<String> {
