@@ -1,0 +1,9 @@
+{
+  "name": "dragonbones-import",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "dragonbones-import"
+  }
+}
