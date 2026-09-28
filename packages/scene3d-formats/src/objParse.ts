@@ -1,9 +1,7 @@
 import { createTransform3D } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import { createBlinnPhongMaterial, createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { computeMeshGeometryNormals, computeMeshGeometryTangents, createMeshGeometry } from '@flighthq/mesh/contract';
 import type {
-  BlinnPhongMaterial,
   ImportDiagnostic,
   Material,
   MaterialLike,
@@ -12,16 +10,12 @@ import type {
   Scene3DDocument,
   Scene3DDocumentMesh,
   Scene3DDocumentNode,
-  StandardPbrMaterial,
-  Texture,
-  TextureColorSpace,
-  ObjMaterial,
   ObjMaterialHandler,
   ObjMaterialLibrary,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, MeshKind } from '@flighthq/types/contract';
 
-import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT, createExternalTextureRef } from './shared.ts';
+import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared.ts';
 
 // The OBJ smoothing-group id meaning "no smoothing" — both `s off` and `s 0` select it. UNSTATED is the
 // separate pre-`s` state: one shared group, so a file that never mentions smoothing imports exactly as it
@@ -301,119 +295,6 @@ function appendObjTopologyMesh(
   if (name !== undefined) node.name = name;
   document.nodes.push(node);
   document.scenes[0].rootNodes.push(document.nodes.length - 1);
-}
-
-// Converts a parsed MTL material to Flight's BlinnPhongMaterial — OBJ/MTL's own shading model.
-// Kd → diffuse, Ks → specular, Ns → shininess, d (dissolve) → diffuse alpha plus blend mode, and the
-// map_Kd/map_Ks/bump filenames → Unresolved External texture refs (the parser references, it does not
-// load). Ka/map_Ka and the illum model have no Blinn-Phong equivalent — ambient is a scene light in
-// Flight, not a material property — so they are dropped; a caller wanting metallic-roughness PBR
-// converts explicitly downstream.
-export function objMaterialToBlinnPhong(
-  material: Readonly<ObjMaterial>,
-  document: Scene3DDocument,
-  diagnostics: ImportDiagnostic[] | undefined,
-): BlinnPhongMaterial {
-  const result = createBlinnPhongMaterial({
-    // map_d is a dedicated coverage image, separate from the diffuse map's own alpha channel.
-    alphaMap: externalObjTexture(material.mapDissolve, document, 'linear'),
-    diffuse: packObjColor(material.diffuse, material.dissolve),
-    diffuseMap: externalObjTexture(material.mapDiffuse, document, 'srgb'),
-    // ONLY `norm` binds. `map_Bump`/`bump` is a grayscale HEIGHT field, not a tangent-space normal
-    // map: a shader decoding its RGB as 2*c-1 direction vectors reads elevation as orientation and
-    // lights the surface from nonsense normals. It is parsed and reported, never bound, until a real
-    // height-map feature exists to consume it — the same call 3DS already makes for MAT_BUMPMAP.
-    normalMap: externalObjTexture(material.mapNormal, document, 'linear'),
-    shininess: material.specularExponent,
-    specular: packObjColor(material.specular, 1),
-    specularMap: externalObjTexture(material.mapSpecular, document, 'srgb'),
-  });
-  // A dissolve below 1 is a translucent material; carry it as the diffuse alpha (above) plus a blend
-  // alphaMode so the renderer actually blends rather than treating the alpha as coverage-only. A map_d
-  // does the same: an alphaMap is INERT while alphaMode is 'opaque', so an authored coverage image would
-  // silently do nothing. The scalar and the map multiply, so a material stating both keeps both.
-  if (material.dissolve < 1 || material.mapDissolve !== null) result.alphaMode = 'blend';
-  // Blinn-Phong has no emissive channel in Flight, so a file that stated one WITHOUT also stating any
-  // metallic-roughness value loses it. Reinterpreting the whole material as PBR to keep it would trade a
-  // stated Ns for a guessed roughness plus an uncompensable π brightness shift — a worse loss than this.
-  if (material.emissive !== null || material.mapEmissive !== null) {
-    reportImportDiagnostic(diagnostics, ImportDiagnosticSeverity.Skip, 'mtl.emissive-dropped', 'resolveObjMaterial', {
-      name: material.name,
-    });
-  }
-  // A `map_Bump`/`bump` entry is carried into ObjMaterial but never bound: it is a height field and
-  // there is no height-map feature to consume it yet. Reported so a consumer can see their authored
-  // map was understood and deliberately not used, rather than silently ignored.
-  if (material.mapBump !== null) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Skip,
-      'mtl.bump-height-map-unbound',
-      'objMaterialToBlinnPhong',
-      { name: material.name },
-    );
-  }
-
-  return result;
-}
-
-// Converts a parsed MTL material to Flight's StandardPbrMaterial — the reading for a file that states
-// metallic-roughness values of its own. Kd → baseColor, Pr → roughness, Pm → metallic, Ke → emissive, and
-// the map_Kd/map_Ke/norm filenames → Unresolved External refs. Nothing is inferred here: an absent Pr or
-// Pm takes the constructor's own default rather than a value derived from Ns or Ks, because the point of
-// this branch is that the file said what it wanted.
-export function objMaterialToStandardPbr(
-  material: Readonly<ObjMaterial>,
-  document: Scene3DDocument,
-  diagnostics: ImportDiagnostic[] | undefined,
-): StandardPbrMaterial {
-  const result = createStandardPbrMaterial({
-    alphaMap: externalObjTexture(material.mapDissolve, document, 'linear'),
-    baseColor: packObjColor(material.diffuse, material.dissolve),
-    baseColorMap: externalObjTexture(material.mapDiffuse, document, 'srgb'),
-    emissiveMap: externalObjTexture(material.mapEmissive, document, 'srgb'),
-    // Only `norm` binds; `map_Bump` is a height field, not a normal map. See objMaterialToBlinnPhong.
-    normalMap: externalObjTexture(material.mapNormal, document, 'linear'),
-    ...(material.emissive !== null ? { emissive: packObjColor(material.emissive, 1) } : {}),
-    ...(material.metallic !== null ? { metallic: material.metallic } : {}),
-    ...(material.roughness !== null ? { roughness: material.roughness } : {}),
-  });
-  if (material.dissolve < 1 || material.mapDissolve !== null) result.alphaMode = 'blend';
-
-  // MTL states roughness and metallic as SEPARATE grayscale images; glTF — and so StandardPbrMaterial —
-  // carries one packed texture sampling roughness from G and metallic from B. Binding a lone grayscale
-  // map to that slot would feed the same channel to both terms, so the filenames are parsed and left
-  // unbound. Merging them is an image operation over decoded pixels, which a parser must not do:
-  // resources are referenced here and resolved later, by an explicit pass.
-  if (material.mapRoughness !== null || material.mapMetallic !== null) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Skip,
-      'mtl.metallic-roughness-map-unpacked',
-      'resolveObjMaterial',
-      { name: material.name },
-    );
-  }
-
-  // Sheen, clearcoat, and anisotropy are read into ObjMaterial but not composed onto an
-  // ExtendedPbrMaterial here. That gap is a property of THIS PARSER, not of the caller's file, so it is
-  // recorded in agents/scene3d-format-coverage.md rather than crumbed — a diagnostic whose cause is our
-  // own unfinished wiring tells a consumer nothing they can act on. See the import-diagnostics rule in
-  // agents/conventions/diagnostics.md.
-  // A `map_Bump`/`bump` entry is carried into ObjMaterial but never bound: it is a height field and
-  // there is no height-map feature to consume it yet. Reported so a consumer can see their authored
-  // map was understood and deliberately not used, rather than silently ignored.
-  if (material.mapBump !== null) {
-    reportImportDiagnostic(
-      diagnostics,
-      ImportDiagnosticSeverity.Skip,
-      'mtl.bump-height-map-unbound',
-      'objMaterialToStandardPbr',
-      { name: material.name },
-    );
-  }
-
-  return result;
 }
 
 // Parses a Wavefront OBJ text source into a format-neutral Scene3DDocument. Each group (`g`) or object
@@ -754,31 +635,6 @@ export function parseObjWithMaterialHandlers(
   }
 
   return document;
-}
-
-// Wraps an MTL texture filename as an Unresolved External resource ref; null filename → no map.
-function externalObjTexture(
-  uri: string | null,
-  document: Scene3DDocument,
-  colorSpace: TextureColorSpace,
-): Texture | null {
-  if (uri === null) return null;
-  const texture = createExternalTextureRef(uri, null, document.resources);
-  texture.colorSpace = colorSpace;
-  return texture;
-}
-
-// Packs an MTL sRGB-space [r,g,b] triple (each in [0,1]) plus an alpha into a 0xRRGGBBAA integer.
-function packObjColor(rgb: readonly [number, number, number], alpha: number): number {
-  const r = clampChannel(rgb[0]);
-  const g = clampChannel(rgb[1]);
-  const b = clampChannel(rgb[2]);
-  const a = clampChannel(alpha);
-  return ((r << 24) | (g << 16) | (b << 8) | a) >>> 0;
-}
-
-function clampChannel(value: number): number {
-  return Math.round(Math.min(1, Math.max(0, value)) * 0xff);
 }
 
 // Resolves an MTL material name to a document material INDEX, memoizing so a name shared across meshes
