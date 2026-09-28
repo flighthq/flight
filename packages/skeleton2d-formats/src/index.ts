@@ -1,6 +1,13 @@
 export * from './dragonBonesHandlers.ts';
 export * from './dragonBonesParse.ts';
-export * from './dragonBonesParseHelpers.ts';
+export {
+  buildDragonBonesSegmentEasings,
+  dragonBonesFrames,
+  dragonBonesFrameTimes,
+  dragonBonesInterpolation,
+  parseDragonBonesBoneTransform,
+  skipCrumbDragonBonesGroup,
+} from './dragonBonesParseHelpers.ts';
 export {
   createDragonBonesRegistry,
   registerDragonBonesSectionHandler,
