@@ -1,23 +1,18 @@
-import type {
-  SpineBinaryRegistry,
-  SpineBinaryTimelineContext,
-  SpineBinaryTimelineHandler,
-} from '@flighthq/types/contract';
+import type { SpineBinaryRegistry, SpineBinaryTimelineHandler } from '@flighthq/types/contract';
 import { SpineBinaryTimelineKind } from '@flighthq/types/contract';
 
-import {
-  spineBinaryBoneTimelineReader,
-  spineBinaryDeformTimelineReader,
-  spineBinaryDrawOrderTimelineReader,
-  spineBinaryEventTimelineReader,
-  spineBinaryIkTimelineReader,
-  spineBinaryPathTimelineReader,
-  spineBinarySlotTimelineReader,
-  spineBinaryTransformTimelineReader,
-} from './spineBinaryParse.ts';
+import { spineBinaryBoneTimelineHandler } from './spineBinaryBoneTimelineHandler.ts';
+import { spineBinaryDrawOrderTimelineHandler } from './spineBinaryDrawOrderTimelineHandler.ts';
 import { registerSpineBinaryTimelineHandler } from './spineBinaryRegistry.ts';
+import { spineBinarySlotTimelineHandler } from './spineBinarySlotTimelineHandler.ts';
+import {
+  spineBinaryDeformTimelineHandler,
+  spineBinaryEventTimelineHandler,
+  spineBinaryIkTimelineHandler,
+  spineBinaryPathTimelineHandler,
+  spineBinaryTransformTimelineHandler,
+} from './spineBinaryStubTimelineHandlers.ts';
 
-/** Registers all eight animation timeline-family handlers. */
 export function registerSpineBinaryTimelineHandlers(registry: SpineBinaryRegistry): void {
   registerSpineBinaryTimelineHandler(registry, SpineBinaryTimelineKind.Bone, spineBinaryBoneTimelineHandler);
   registerSpineBinaryTimelineHandler(registry, SpineBinaryTimelineKind.Deform, spineBinaryDeformTimelineHandler);
@@ -29,37 +24,16 @@ export function registerSpineBinaryTimelineHandlers(registry: SpineBinaryRegistr
   registerSpineBinaryTimelineHandler(registry, SpineBinaryTimelineKind.Transform, spineBinaryTransformTimelineHandler);
 }
 
-export function spineBinaryBoneTimelineHandler(context: SpineBinaryTimelineContext): void {
-  spineBinaryBoneTimelineReader(context);
-}
-
-export function spineBinaryDeformTimelineHandler(context: SpineBinaryTimelineContext): void {
-  spineBinaryDeformTimelineReader(context);
-}
-
-export function spineBinaryDrawOrderTimelineHandler(context: SpineBinaryTimelineContext): void {
-  spineBinaryDrawOrderTimelineReader(context);
-}
-
-export function spineBinaryEventTimelineHandler(context: SpineBinaryTimelineContext): void {
-  spineBinaryEventTimelineReader(context);
-}
-
-export function spineBinaryIkTimelineHandler(context: SpineBinaryTimelineContext): void {
-  spineBinaryIkTimelineReader(context);
-}
-
-export function spineBinaryPathTimelineHandler(context: SpineBinaryTimelineContext): void {
-  spineBinaryPathTimelineReader(context);
-}
-
-export function spineBinarySlotTimelineHandler(context: SpineBinaryTimelineContext): void {
-  spineBinarySlotTimelineReader(context);
-}
-
-export function spineBinaryTransformTimelineHandler(context: SpineBinaryTimelineContext): void {
-  spineBinaryTransformTimelineReader(context);
-}
+export {
+  spineBinaryBoneTimelineHandler,
+  spineBinaryDeformTimelineHandler,
+  spineBinaryDrawOrderTimelineHandler,
+  spineBinaryEventTimelineHandler,
+  spineBinaryIkTimelineHandler,
+  spineBinaryPathTimelineHandler,
+  spineBinarySlotTimelineHandler,
+  spineBinaryTransformTimelineHandler,
+};
 
 export const spineBinaryAllTimelineHandlers: readonly SpineBinaryTimelineHandler[] = [
   spineBinaryBoneTimelineHandler,
