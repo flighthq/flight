@@ -7,6 +7,17 @@ import * as publicApi from './index.ts';
 
 const resolveDir = getFileUrlDirectory(import.meta.url);
 
+// ★ WHAT THIS FILE PROVES, AND WHAT IT DOES NOT. Every case here bundles ONE EXPORT NAME off a lane with
+// `packages: 'external'`, so dependencies are never linked: these are assertions about the SOURCE GRAPH reachable
+// from a name, and the `@flighthq/lighting` check below reads an import specifier rather than linked code. That is
+// the right instrument for the two questions only this file asks — whether the public lane promotes a built-in
+// handler atom, and whether each registrar is bundleable without its siblings.
+//
+// It is NOT evidence about what a caller ships. `scripts/gltf-locality.test.ts` answers that with the production
+// size fixtures bundled with dependencies inlined, plus the pinned per-family cost in both size baselines, and it
+// carries the structural guard that the selective core names no registrar. Neither file subsumes the other; read
+// a claim about bytes there and a claim about the lane here.
+
 async function bundleExport(name: string, lane: 'contract' | 'index' = 'contract'): Promise<string> {
   const result = await build({
     bundle: true,
