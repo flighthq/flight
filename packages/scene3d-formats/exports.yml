@@ -3,6 +3,7 @@
 protected:
   - collectAwd2BlockCounts
   - getAwd2BlockName
+  - getAwd2FeatureNames
   - parseAwd2Requirements
   - AWD2_REQUIREMENT_KEY_NAMESPACE
   - GltfAnimationsCoreFeatureHandler

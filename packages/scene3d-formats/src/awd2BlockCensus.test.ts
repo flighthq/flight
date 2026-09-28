@@ -1,4 +1,4 @@
-import { collectAwd2BlockCounts, getAwd2BlockName } from './awd2BlockCensus.ts';
+import { collectAwd2BlockCounts, getAwd2BlockName, getAwd2FeatureNames } from './awd2BlockCensus.ts';
 
 describe('collectAwd2BlockCounts', () => {
   it('returns null for input that is not a readable AWD2 file', () => {
@@ -46,6 +46,17 @@ describe('getAwd2BlockName', () => {
   it('keeps a non-core namespace distinct from the core type of the same number', () => {
     expect(getAwd2BlockName(1, BLOCK_MATERIAL)).toBe(`Namespace1Block(${BLOCK_MATERIAL})`);
     expect(getAwd2BlockName(1, BLOCK_MATERIAL)).not.toBe(getAwd2BlockName(0, BLOCK_MATERIAL));
+  });
+});
+
+describe('getAwd2FeatureNames', () => {
+  it('returns every named block type and nothing else', () => {
+    const names = getAwd2FeatureNames();
+    expect(names.length).toBeGreaterThan(0);
+    expect(names).toContain('Material');
+    expect(names).toContain('Camera');
+    expect(names).toContain('TriangleGeometry');
+    for (const name of names) expect(name).not.toMatch(/Unknown/);
   });
 });
 
