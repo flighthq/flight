@@ -7,6 +7,7 @@ import type {
   RiveRegistrar,
 } from '@flighthq/types/contract';
 
+import { registerRiveAnimationHandlers } from './riveAnimation.ts';
 import { registerRiveAssetHandlers } from './riveAssets.ts';
 import { registerRiveClippingHandlers } from './riveClipping.ts';
 import { registerRiveDrawOrderHandlers } from './riveDrawOrder.ts';
@@ -40,6 +41,9 @@ export const riveAllRegistrars: readonly RiveRegistrar[] = [
   registerRiveSkeletonHandlers,
   registerRiveLayoutHandlers,
   registerRiveStateMachineHandlers,
+  // Last, matching `registerAllRiveHandlers`: a keyframe composes a delta from the skeleton's setup pose and the clip
+  // reader reads the shape rebuilds, so both must already be in the context when this pass runs.
+  registerRiveAnimationHandlers,
 ];
 
 /**

@@ -3,8 +3,8 @@ import { martinezPathBooleanKernel } from '@flighthq/path-boolean/contract';
 import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
+import { createScene2DFromRiveDocument } from './riveImport.ts';
 import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry.ts';
-import { createScene2DFromRiveDocument } from './riveScene2D.ts';
 import { importRiveSoloComponent, registerRiveSoloHandlers } from './riveSolo.ts';
 
 const kernel = martinezPathBooleanKernel;

@@ -4,8 +4,8 @@ import type { ImportDiagnostic, Node2D } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { registerRiveDrawOrderHandlers } from './riveDrawOrder.ts';
+import { createScene2DFromRiveDocument } from './riveImport.ts';
 import { createRiveImportRegistry, getRiveCoreObjectHandler } from './riveImportRegistry.ts';
-import { createScene2DFromRiveDocument } from './riveScene2D.ts';
 
 const kernel = martinezPathBooleanKernel;
 

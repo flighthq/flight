@@ -29,9 +29,11 @@ import type {
   Node2DAnimationPath,
   Node2DAnimationTarget,
   RiveCoreObject,
+  RiveImportRegistry,
 } from '@flighthq/types/contract';
 
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
+import { registerRiveCoreObjectHandler } from './riveImportRegistry.ts';
 
 /**
  * Samples a Rive clip, applying both the shared display-object channels and the format-owned ones
@@ -51,14 +53,6 @@ export function applyAnimationClipToRiveDocument(clip: Readonly<AnimationClip>, 
   _pendingRebuilds.clear();
 }
 
-/**
- * Builds one `AnimationClip` per Rive linear animation.
- *
- * Animations are not components: they follow their artboard in the stream but sit outside the
- * artboard's numbering, so they are read from the raw object list while their `objectId` references
- * point back into that numbering. Time comes from the animation's own frame rate rather than the
- * document's, since each animation states its own.
- */
 export function createRiveAnimationClips(
   objects: readonly Readonly<RiveCoreObject>[],
   range: Readonly<{ end: number; start: number }>,
@@ -87,6 +81,46 @@ export function createRiveAnimationClips(
     );
   }
   return clips;
+}
+
+/**
+ * Builds one `AnimationClip` per Rive linear animation.
+ *
+ * Animations are not components: they follow their artboard in the stream but sit outside the
+ * artboard's numbering, so they are read from the raw object list while their `objectId` references
+ * point back into that numbering. Time comes from the animation's own frame rate rather than the
+ * document's, since each animation states its own.
+ */
+/**
+ * Registers the artboard's animation clips.
+ *
+ * ★ A FAMILY SINCE THE AUDIT, AND THE LARGEST THING THAT WAS NOT ONE. The clip reader used to be called unconditionally
+ * by the artboard import, so every Rive build carried the whole keyframe, interpolation and binding reader whatever it
+ * registered — measured at 24,926 unminified bytes, 30% of an import that registered no family at all. A clip is not a
+ * component: it shares the artboard's stream span but sits outside its numbering, which is why this is a pass over that
+ * span rather than a component handler, the same shape the state machine family already had.
+ *
+ * ★ REGISTERED LAST IN THE BUILT-IN PRESET, AND THAT ORDER IS LOAD-BEARING. A Rive keyframe states an absolute value and
+ * the binder composes a delta from the skeleton's setup pose, so the skeleton has to exist first; the clip reader also
+ * reads `context.rebuilds`, which the shape pass fills. Running last preserves exactly the position the unconditional
+ * call had — after every other artboard pass.
+ */
+export function registerRiveAnimationHandlers(registry: RiveImportRegistry): void {
+  registerRiveCoreObjectHandler(registry, RIVE_LINEAR_ANIMATION, {
+    applyArtboard: (context) => {
+      context.animations.push(
+        ...createRiveAnimationClips(
+          context.objects,
+          { end: context.artboard.streamEnd, start: context.artboard.streamStart },
+          context.nodes,
+          context.artboard,
+          context.rebuilds,
+          context.skeleton,
+          context.diagnostics,
+        ),
+      );
+    },
+  });
 }
 
 interface RiveMutableTarget {

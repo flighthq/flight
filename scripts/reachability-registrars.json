@@ -951,6 +951,10 @@
     },
     {
       "packageName": "scene2d-formats",
+      "registrar": "registerRiveAnimationHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
       "registrar": "registerRiveAssetHandlers"
     },
     {

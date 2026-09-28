@@ -38,6 +38,7 @@ export * from './riveCoreTypes.ts';
 export * from './riveDocument.ts';
 export * from './riveDrawOrder.ts';
 export * from './riveHandlers.ts';
+export * from './riveImport.ts';
 export * from './riveImportRegistry.ts';
 export * from './riveLayout.ts';
 export * from './riveObjectGraph.ts';

@@ -6,7 +6,6 @@ import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
   DisplayObject,
   EntityConstruction,
-  PathBooleanKernel,
   ImportDiagnostic,
   RiveAdvancedBlend,
   RiveArtboardGraph,
@@ -18,16 +17,13 @@ import type {
 } from '@flighthq/types/contract';
 import { AdvancedBlendMode, BlendMode, ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { createRiveAnimationClips } from './riveAnimation.ts';
 import { isRiveCoreTypeDerivedFrom } from './riveCoreTypes.ts';
 import { parseRiveDocument } from './riveDocument.ts';
-import { registerAllRiveHandlers } from './riveHandlers.ts';
 import {
   applyRiveArtboardHandlers,
   applyRiveDocumentHandlers,
   createRiveArtboardImportContext,
   createRiveDocumentImportContext,
-  createRiveImportRegistry,
   getRiveCoreObjectHandler,
 } from './riveImportRegistry.ts';
 import { createRiveObjectGraph } from './riveObjectGraph.ts';
@@ -70,23 +66,6 @@ export function createRiveDocumentImportResult(
   return finishEntity(out);
 }
 
-/**
- * Imports a `.riv` with every family this package reads — the whole format, in one call.
- *
- * This is the zero-configuration path and it costs the whole importer by construction. Building the
- * registry directly and registering only the families you need is the same import with the rest shaken
- * out; see `registerAllRiveHandlers` for what this installs and in what order.
- */
-export function createScene2DFromRiveDocument(
-  pathBooleanKernel: Readonly<PathBooleanKernel>,
-  source: Readonly<Uint8Array>,
-  diagnostics?: ImportDiagnostic[],
-): RiveDocumentImportResult {
-  const registry = createRiveImportRegistry();
-  registerAllRiveHandlers(pathBooleanKernel, registry);
-  return createRiveDocumentImportResult(registry, source, diagnostics);
-}
-
 export function initializeRiveDocumentImportResult(
   out: EntityConstruction<RiveDocumentImportResult>,
   artboards: RiveDocumentImportResult['artboards'],
@@ -119,18 +98,11 @@ function createRiveArtboardImport(
   for (let index = 1; index < artboard.objects.length; index++) context.nodes.push(importRiveComponent(context, index));
   applyRiveArtboardHandlers(context);
 
-  const span = { end: artboard.streamEnd, start: artboard.streamStart };
-  const animations = createRiveAnimationClips(
-    objects,
-    span,
-    context.nodes,
-    artboard,
-    context.rebuilds,
-    context.skeleton,
-  );
   return {
     advancedBlends: context.advancedBlends,
-    animations,
+    // Written by the animation family's artboard pass, which runs last in the built-in preset because a keyframe
+    // composes against the skeleton's setup pose and reads the shape rebuilds.
+    animations: context.animations,
     height,
     layouts: context.layouts,
     name,

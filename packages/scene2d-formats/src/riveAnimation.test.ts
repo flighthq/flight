@@ -13,8 +13,15 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, RiveFieldType, ShapeKind } from '@flighthq/types/contract';
 
-import { applyAnimationClipToRiveDocument, createRiveAnimationClips } from './riveAnimation.ts';
-import { createScene2DFromRiveDocument } from './riveScene2D.ts';
+import {
+  applyAnimationClipToRiveDocument,
+  createRiveAnimationClips,
+  registerRiveAnimationHandlers,
+} from './riveAnimation.ts';
+import { registerAllRiveHandlers } from './riveHandlers.ts';
+import { createScene2DFromRiveDocument } from './riveImport.ts';
+import { createRiveImportRegistry } from './riveImportRegistry.ts';
+import { createRiveDocumentImportResult } from './riveScene2D.ts';
 import { createRiveSkeleton2D } from './riveSkeleton.ts';
 
 const kernel = martinezPathBooleanKernel;
@@ -798,6 +805,47 @@ describe('createRiveAnimationClips', () => {
     // unsupported one. The clip is still produced, which is what keeps this silence non-vacuous.
     expect(clips).toHaveLength(1);
     expect(diagnostics).toEqual([]);
+  });
+});
+
+describe('registerRiveAnimationHandlers', () => {
+  // ★ THE FAMILY IS WHAT MAKES THE CLIP READER OPTIONAL. It used to be called unconditionally by the artboard import, so
+  // every Rive build carried the whole keyframe, interpolation and binding reader whatever it registered — measured at
+  // 24,926 raw bytes, 30% of an import that registered no family at all. Both halves are asserted: registering it yields
+  // the clips, and a registry without it yields none from the SAME document, silently, because a caller who registered no
+  // reader was not asking to be told what it would have read.
+  it('produces the artboard clips when registered, and none when it is not', () => {
+    const source = riveWithComposedAnimation(13, 0, 10);
+
+    const withAnimation = createRiveImportRegistry();
+    registerRiveAnimationHandlers(withAnimation);
+    const animated = createRiveDocumentImportResult(withAnimation, source);
+    expect(animated.artboards[0].animations.length).toBeGreaterThan(0);
+
+    // ★ THE DIAGNOSTICS ARE DIFFED, NOT REQUIRED TO BE EMPTY. A registry holding one family reports every component the
+    // others would have read, so "no diagnostics" is not what declining animation looks like. What must be true is that
+    // the only diagnostics that come and go with the family are the family's OWN: measured, registering it adds exactly
+    // two `rive.keyed-object-unbound` — the clip reader saying it found keys with no node to bind, which is true here
+    // because no shape family is registered to make one — and declining it removes exactly those.
+    const withDiagnostics: ImportDiagnostic[] = [];
+    createRiveDocumentImportResult(withAnimation, source, withDiagnostics);
+    const withoutDiagnostics: ImportDiagnostic[] = [];
+    const without = createRiveDocumentImportResult(createRiveImportRegistry(), source, withoutDiagnostics);
+    expect(without.artboards[0].animations).toEqual([]);
+    expect(withDiagnostics.map((entry) => entry.kind).filter((kind) => kind !== 'rive.keyed-object-unbound')).toEqual(
+      withoutDiagnostics.map((entry) => entry.kind),
+    );
+    expect(withDiagnostics.filter((entry) => entry.kind === 'rive.keyed-object-unbound')).toHaveLength(2);
+  });
+
+  // ★ AND IT RUNS LAST, WHICH IS WHERE THE UNCONDITIONAL CALL RAN. A keyframe states an absolute value and the binder
+  // composes a delta from the skeleton's setup pose, so the skeleton pass has to have run; the clip reader also reads the
+  // shape rebuilds. Registering the whole preset and reading the clips back is what shows the order survived the move.
+  it('binds against the skeleton and the rebuilds the earlier passes filled', () => {
+    const registry = createRiveImportRegistry();
+    registerAllRiveHandlers(martinezPathBooleanKernel, registry);
+    const result = createRiveDocumentImportResult(registry, riveWithAnimatedVertex(24, 0, 60));
+    expect(result.artboards[0].animations.length).toBeGreaterThan(0);
   });
 });
 
