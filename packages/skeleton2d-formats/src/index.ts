@@ -19,7 +19,10 @@ export { registerDragonBonesSectionHandlers } from './dragonBonesSectionHandlers
 export { registerDragonBonesTimelineHandlers } from './dragonBonesTimelineHandlers.ts';
 export * from './skeleton2dJsonAnalyzer.ts';
 export * from './skeletonDetect.ts';
-export { buildSpineBinarySegmentEasings } from './spineBinaryBoneTimelineHandler.ts';
+export { spineBinaryAnimationsSectionReader } from './spineBinaryAnimationsHandler.ts';
+export { buildSpineBinarySegmentEasings, spineBinaryBoneTimelineReader } from './spineBinaryBoneTimelineHandler.ts';
+export { spineBinaryBonesSectionReader } from './spineBinaryBonesHandler.ts';
+export { spineBinaryDrawOrderTimelineReader } from './spineBinaryDrawOrderTimelineHandler.ts';
 export * from './spineBinaryFull.ts';
 export * from './spineBinaryHandlers.ts';
 export { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse.ts';
@@ -39,6 +42,22 @@ export {
 export { isReadableSpineBinary, parseSpineBinaryRequirements } from './spineBinaryRequirements.ts';
 export * from './spineBinarySectionCounts.ts';
 export { registerSpineBinarySectionHandlers } from './spineBinarySectionHandlers.ts';
+export { spineBinarySkinsSectionReader } from './spineBinarySkinsHandler.ts';
+export { spineBinarySlotTimelineReader } from './spineBinarySlotTimelineHandler.ts';
+export { spineBinarySlotsSectionReader } from './spineBinarySlotsHandler.ts';
+export {
+  spineBinaryEventsSectionReader,
+  spineBinaryIkConstraintsSectionReader,
+  spineBinaryPathConstraintsSectionReader,
+  spineBinaryTransformConstraintsSectionReader,
+} from './spineBinaryStubHandlers.ts';
+export {
+  spineBinaryDeformTimelineReader,
+  spineBinaryEventTimelineReader,
+  spineBinaryIkTimelineReader,
+  spineBinaryPathTimelineReader,
+  spineBinaryTransformTimelineReader,
+} from './spineBinaryStubTimelineHandlers.ts';
 export { registerSpineBinaryTimelineHandlers } from './spineBinaryTimelineHandlers.ts';
 export * from './spineBinaryVersion.ts';
 export * from './spineBinaryVersioned.ts';
