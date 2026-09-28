@@ -543,6 +543,11 @@ export const CATALOG_DIRECT_PARSER_EXPORT = 'contentParser';
  * Each names two or more parsers across different families, so no single direct binding is true for them and the
  * union a composite analyzer would produce is not a bedrock selection.
  */
+// ★ THE MODULE IS THE PUBLIC ROOT, NEVER `/contract`, BECAUSE THIS STRING BECOMES APPLICATION CODE. A row's
+// module is emitted verbatim as `import { <symbol> } from '<module>'` into a generated manifest a user's app
+// imports, and `.` is the app boundary while `/contract` is the intra-SDK lane. This file may read CONSTANTS
+// from `/contract` — it is build tooling — but what it WRITES has to resolve on the lane an application uses.
+// `format-parser-import-lanes` in `catalog-rows.test.ts` asserts it for every row, not only these.
 const DIRECT_PARSER_ROWS: readonly (readonly [module: string, symbol: string, kind: string])[] = [
   [
     '@flighthq/bitmapfont-formats',
@@ -565,27 +570,19 @@ const DIRECT_PARSER_ROWS: readonly (readonly [module: string, symbol: string, ki
     `${BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE}.${BitmapFontFormatKindBmFontXml}`,
   ],
   [
-    '@flighthq/particles-formats/contract',
+    '@flighthq/particles-formats',
     'parseStarlingPex',
     `${PARTICLES_REQUIREMENT_KEY_NAMESPACE}.${StarlingPexFormatKind}`,
   ],
+  ['@flighthq/tilemap-formats', 'parseTiledTmj', `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTmj}`],
+  ['@flighthq/tilemap-formats', 'parseTiledTmx', `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTmx}`],
   [
-    '@flighthq/tilemap-formats/contract',
-    'parseTiledTmj',
-    `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTmj}`,
-  ],
-  [
-    '@flighthq/tilemap-formats/contract',
-    'parseTiledTmx',
-    `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTmx}`,
-  ],
-  [
-    '@flighthq/tilemap-formats/contract',
+    '@flighthq/tilemap-formats',
     'parseTiledTilesetJson',
     `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTsj}`,
   ],
   [
-    '@flighthq/tilemap-formats/contract',
+    '@flighthq/tilemap-formats',
     'parseTiledTileset',
     `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTsx}`,
   ],

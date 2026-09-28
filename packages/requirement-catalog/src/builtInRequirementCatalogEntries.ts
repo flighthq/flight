@@ -714,7 +714,7 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
   {
     backend: 'parser',
     facet: 'document.format',
-    implementationImport: '@flighthq/particles-formats/contract',
+    implementationImport: '@flighthq/particles-formats',
     implementationSymbol: 'parseStarlingPex',
     kind: 'particles.StarlingPex',
     parserExport: 'contentParser',
@@ -1657,7 +1657,7 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
   {
     backend: 'parser',
     facet: 'document.format',
-    implementationImport: '@flighthq/tilemap-formats/contract',
+    implementationImport: '@flighthq/tilemap-formats',
     implementationSymbol: 'parseTiledTmj',
     kind: 'tilemap.TiledTmj',
     parserExport: 'contentParser',
@@ -1665,7 +1665,7 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
   {
     backend: 'parser',
     facet: 'document.format',
-    implementationImport: '@flighthq/tilemap-formats/contract',
+    implementationImport: '@flighthq/tilemap-formats',
     implementationSymbol: 'parseTiledTmx',
     kind: 'tilemap.TiledTmx',
     parserExport: 'contentParser',
@@ -1673,7 +1673,7 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
   {
     backend: 'parser',
     facet: 'document.format',
-    implementationImport: '@flighthq/tilemap-formats/contract',
+    implementationImport: '@flighthq/tilemap-formats',
     implementationSymbol: 'parseTiledTilesetJson',
     kind: 'tilemap.TiledTsj',
     parserExport: 'contentParser',
@@ -1681,7 +1681,7 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
   {
     backend: 'parser',
     facet: 'document.format',
-    implementationImport: '@flighthq/tilemap-formats/contract',
+    implementationImport: '@flighthq/tilemap-formats',
     implementationSymbol: 'parseTiledTileset',
     kind: 'tilemap.TiledTsx',
     parserExport: 'contentParser',

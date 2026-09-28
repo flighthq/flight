@@ -1,4 +1,5 @@
 import * as bitmapfontFormatsContract from '@flighthq/bitmapfont-formats/contract';
+import * as particlesFormats from '@flighthq/particles-formats';
 import * as particlesFormatsContract from '@flighthq/particles-formats/contract';
 import {
   createRiveImportRegistry,
@@ -32,6 +33,7 @@ import * as skeleton2dFormatsContract from '@flighthq/skeleton2d-formats/contrac
 import * as swf from '@flighthq/swf';
 import { getSwfTagName } from '@flighthq/swf/contract';
 import * as swfContract from '@flighthq/swf/contract';
+import * as tilemapFormats from '@flighthq/tilemap-formats';
 import * as tilemapFormatsContract from '@flighthq/tilemap-formats/contract';
 import { RequirementFacet, THREE_DS_MATERIAL_TEXTURE_MAP } from '@flighthq/types/contract';
 
@@ -61,13 +63,13 @@ import {
 
 const MODULES: Readonly<Record<string, Record<string, unknown>>> = {
   '@flighthq/bitmapfont-formats': bitmapfontFormatsContract as unknown as Record<string, unknown>,
-  '@flighthq/particles-formats/contract': particlesFormatsContract as unknown as Record<string, unknown>,
+  '@flighthq/particles-formats': particlesFormats as unknown as Record<string, unknown>,
   '@flighthq/scene2d-formats': scene2dFormats as unknown as Record<string, unknown>,
   '@flighthq/scene3d-formats': scene3dFormats as unknown as Record<string, unknown>,
   '@flighthq/scene3d-formats/contract': scene3dFormatsContract as unknown as Record<string, unknown>,
   '@flighthq/skeleton2d-formats/contract': skeleton2dFormatsContract as unknown as Record<string, unknown>,
   '@flighthq/swf': swf as unknown as Record<string, unknown>,
-  '@flighthq/tilemap-formats/contract': tilemapFormatsContract as unknown as Record<string, unknown>,
+  '@flighthq/tilemap-formats': tilemapFormats as unknown as Record<string, unknown>,
 };
 // Every lane that OWNS a requirement-key namespace constant. The format package names its own namespace; this
 // list is which modules to ask, not what the answer is.
@@ -141,6 +143,21 @@ describe('buildRequirementCatalogRows', () => {
     // which is what a namespace constant moving off the lane named here would look like.
     for (const [name, module] of NAMESPACE_MODULES) {
       expect(namespacePrefixesOf(module).length, name).toBeGreaterThan(0);
+    }
+  });
+
+  // ★ A DIRECT-PARSER ROW'S MODULE BECOMES AN APPLICATION IMPORT, SO IT MUST NAME THE PUBLIC ROOT. The string is
+  // emitted verbatim as `import { <symbol> } from '<module>'` into a generated manifest a user's app imports,
+  // and `.` is the app boundary while `/contract` is the intra-SDK lane. `catalog-rows.ts` may READ constants
+  // from `/contract` — it is build tooling — but what it WRITES has to resolve on the lane an application uses.
+  // Two rows shipped with `@flighthq/particles-formats/contract` and `@flighthq/tilemap-formats/contract`; this
+  // is the assertion that would have caught them.
+  it('names a public package root for every direct-parser row, never a contract lane', () => {
+    const direct = buildRequirementCatalogRows().filter((row) => row.parserExport !== undefined);
+    expect(direct.length, 'no direct-parser rows to check').toBeGreaterThan(0);
+    for (const row of direct) {
+      expect(row.implementationImport.endsWith('/contract'), `${row.kind} imports a contract lane`).toBe(false);
+      expect(row.implementationImport.includes('/contract/'), `${row.kind} imports a contract lane`).toBe(false);
     }
   });
 

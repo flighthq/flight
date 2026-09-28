@@ -294,8 +294,61 @@ describe('generateManifestModuleSource direct parser rows', () => {
     expect(result.source.match(/export const contentParser =/g)).toHaveLength(1);
     expect(result.source).toContain('export const contentParser = parseBitmapFontFnt;');
     expect(result.problems).toEqual([
-      'direct parser export contentParser already bound to parseBitmapFontFnt: dropped bitmapfont.BmFontXml (parseBitmapFontXml)',
+      'direct parser export contentParser already bound to parseBitmapFontFnt from @acme/parser: dropped bitmapfont.BmFontXml (parseBitmapFontXml from @acme/parser)',
     ]);
+  });
+
+  // ★ THE DROPPED PARSER MUST NOT LEAVE ITS IMPORT BEHIND. Importing every parser row before resolving the
+  // conflict put the loser's import in the module anyway — an unused binding pulling a codec the build never
+  // calls, which is the opposite of what selecting one parser is for.
+  it('imports only the accepted binding, never the dropped one', () => {
+    const result = generateManifestModuleSource(
+      [
+        directRow('bitmapfont.BmFontText', 'parseBitmapFontFnt'),
+        directRow('bitmapfont.BmFontXml', 'parseBitmapFontXml'),
+      ],
+      '.fnt',
+    );
+
+    expect(result.source).toContain('parseBitmapFontFnt');
+    expect(result.source.includes('parseBitmapFontXml'), 'dropped parser is still imported').toBe(false);
+  });
+
+  // ★ THE SAME SYMBOL NAME FROM TWO MODULES IS NOT THE SAME PARSER. Keying the identity on the symbol alone
+  // called these identical, deduplicated them to one binding, and still imported both modules — so the
+  // generated module declared one local name twice and did not compile. The identity is the module/symbol PAIR.
+  it('treats one symbol name from two modules as a conflict, not a duplicate', () => {
+    const result = generateManifestModuleSource(
+      [
+        directRowFrom('tilemap.TiledTmx', 'parseTiled', '@flighthq/tilemap-formats'),
+        directRowFrom('particles.StarlingPex', 'parseTiled', '@flighthq/particles-formats'),
+      ],
+      '.tmx',
+    );
+
+    expect(result.source.match(/export const contentParser =/g)).toHaveLength(1);
+    expect(result.problems).toEqual([
+      'direct parser export contentParser already bound to parseTiled from @flighthq/tilemap-formats: dropped particles.StarlingPex (parseTiled from @flighthq/particles-formats)',
+    ]);
+    // One import line, from the accepted module only — the defect emitted both and declared the name twice.
+    expect(result.source.match(/^import \{ parseTiled \} from/gm)).toHaveLength(1);
+    expect(result.source).toContain("import { parseTiled } from '@flighthq/tilemap-formats';");
+    expect(result.source.includes('@flighthq/particles-formats'), 'dropped module is still imported').toBe(false);
+  });
+
+  // And the same pair twice is still an ordinary duplicate: one binding, one import, no problem.
+  it('deduplicates an identical module and symbol pair without reporting', () => {
+    const result = generateManifestModuleSource(
+      [
+        directRowFrom('tilemap.TiledTmx', 'parseTiledTmx', '@flighthq/tilemap-formats'),
+        directRowFrom('tilemap.TiledTmxAgain', 'parseTiledTmx', '@flighthq/tilemap-formats'),
+      ],
+      '.tmx',
+    );
+
+    expect(result.source.match(/export const contentParser =/g)).toHaveLength(1);
+    expect(result.source.match(/^import \{ parseTiledTmx \} from/gm)).toHaveLength(1);
+    expect(result.problems).toEqual([]);
   });
 
   // An ordinary handler row alongside a direct row keeps its field; the two lanes do not contaminate each other.
@@ -364,4 +417,9 @@ function rowWithSymbolAndField(backend: string, facet: string, kind: string, sym
 function directRow(kind: string, symbol: string) {
   const base = rowWithSymbol('parser', 'document.format', kind, symbol);
   return { ...base, entry: { ...base.entry, parserExport: 'contentParser' } };
+}
+
+function directRowFrom(kind: string, symbol: string, module: string) {
+  const base = directRow(kind, symbol);
+  return { ...base, entry: { ...base.entry, implementationImport: module } };
 }

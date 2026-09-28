@@ -88,29 +88,39 @@ export function generateManifestModuleSource(
   const parserRows: ManifestModuleEntry[] = [];
 
   const problems: string[] = [];
-  // Export name -> the one symbol bound to it. A direct-parser row names a PARSE FUNCTION rather than a handler
-  // to spread, so it becomes a flat binding and never reaches `parserOptions`; see `parserExport` on
+  // Export name -> the one MODULE AND SYMBOL bound to it. A direct-parser row names a PARSE FUNCTION rather than
+  // a handler to spread, so it becomes a flat binding and never reaches `parserOptions`; see `parserExport` on
   // RequirementCatalogEntry for why these formats have no options field to spread into.
-  const directParsers = new Map<string, string>();
+  //
+  // ★ THE IDENTITY IS THE PAIR, NOT THE SYMBOL. Two packages may export the same parser NAME, and keying on the
+  // name alone called those identical — deduplicating them to one binding while both modules still contributed
+  // an import, so the module declared `parseFoo` twice from two places and did not compile. The pair is what
+  // "the same parser" means.
+  const directParsers = new Map<string, { module: string; symbol: string }>();
   for (const row of rows) {
     if (row.entry.backend === MANIFEST_PARSER_BACKEND) {
-      addImport(importsByModule, row.entry.implementationImport, row.entry.implementationSymbol);
       const exportName = row.entry.parserExport;
       if (exportName === undefined) {
+        addImport(importsByModule, row.entry.implementationImport, row.entry.implementationSymbol);
         parserRows.push(row);
         continue;
       }
       const bound = directParsers.get(exportName);
-      // ★ IDENTICAL BINDINGS DEDUPLICATE, CONFLICTING ONES ARE REPORTED. Two requirements resolving to the same
-      // parser is ordinary — a document can satisfy one kind twice — and emitting the binding twice would not
-      // compile. Two DIFFERENT symbols under one name is a analysis that decided the file is two formats at
-      // once, and picking either would be a guess; the row is dropped with the conflict named, so the build
-      // sees what it lost instead of getting a last-write-wins answer.
+      // ★ IDENTICAL BINDINGS DEDUPLICATE, CONFLICTING ONES ARE REPORTED — AND ONLY THE ACCEPTED ONE IS IMPORTED.
+      // Two requirements resolving to the same parser is ordinary: a document can satisfy one kind twice, and
+      // emitting the binding twice would not compile. A DIFFERENT pair under one name is an analysis that decided
+      // the file is two formats at once; picking either would be a guess, so the row is dropped with the conflict
+      // named. The import moved below the decision because importing first left the dropped parser's import
+      // behind — an unused binding in a generated module, pulling a codec the build then never calls.
       if (bound === undefined) {
-        directParsers.set(exportName, row.entry.implementationSymbol);
-      } else if (bound !== row.entry.implementationSymbol) {
+        directParsers.set(exportName, {
+          module: row.entry.implementationImport,
+          symbol: row.entry.implementationSymbol,
+        });
+        addImport(importsByModule, row.entry.implementationImport, row.entry.implementationSymbol);
+      } else if (bound.symbol !== row.entry.implementationSymbol || bound.module !== row.entry.implementationImport) {
         problems.push(
-          `direct parser export ${exportName} already bound to ${bound}: dropped ${row.kind} (${row.entry.implementationSymbol})`,
+          `direct parser export ${exportName} already bound to ${bound.symbol} from ${bound.module}: dropped ${row.kind} (${row.entry.implementationSymbol} from ${row.entry.implementationImport})`,
         );
       }
       continue;
@@ -179,7 +189,7 @@ export function generateManifestModuleSource(
   }
   // Sorted by export name so the same inputs always produce byte-identical source, like every other fragment.
   for (const exportName of [...directParsers.keys()].sort()) {
-    lines.push('', `export const ${exportName} = ${directParsers.get(exportName)!};`);
+    lines.push('', `export const ${exportName} = ${directParsers.get(exportName)!.symbol};`);
   }
   lines.push('', ...parserFragment(parserRows, PARSER_HANDLER_FIELDS[extension] ?? 'handlers'));
   return { problems, source: `${lines.join('\n')}\n` };
