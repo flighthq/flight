@@ -19,9 +19,34 @@ export { registerDragonBonesSectionHandlers } from './dragonBonesSectionHandlers
 export { registerDragonBonesTimelineHandlers } from './dragonBonesTimelineHandlers.ts';
 export * from './skeleton2dJsonAnalyzer.ts';
 export * from './skeletonDetect.ts';
+export { spineBinaryAnimationsSectionReader } from './spineBinaryAnimationsHandler.ts';
+export { buildSpineBinarySegmentEasings, spineBinaryBoneTimelineReader } from './spineBinaryBoneTimelineHandler.ts';
+export { spineBinaryBonesSectionReader } from './spineBinaryBonesHandler.ts';
+export { spineBinaryDrawOrderTimelineReader } from './spineBinaryDrawOrderTimelineHandler.ts';
 export * from './spineBinaryFull.ts';
 export * from './spineBinaryHandlers.ts';
 export { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse.ts';
+export {
+  clampSpineBinaryUnit,
+  readSpineBinaryStringReference,
+  reportSpineBinaryCrumb,
+  skipSpineBinaryCurveFrames,
+  skipSpineBinaryCurveTag,
+  SPINE_BINARY_ATTACHMENT_SEQUENCE,
+  SPINE_BINARY_ATTACHMENT_TYPES,
+  SPINE_BINARY_BOUNDS_BYTES,
+  SPINE_BINARY_COLOR_BYTES,
+  SPINE_BINARY_CURVE_BEZIER,
+  SPINE_BINARY_CURVE_EPSILON,
+  SPINE_BINARY_DEFAULT_SKIN_NAME,
+  SPINE_BINARY_FPS_BYTES,
+  SPINE_BINARY_HASH_BYTES,
+  SPINE_BINARY_MESH_UV_BYTES,
+  SPINE_BINARY_NO_ATTACHMENT_INDEX,
+  SPINE_BINARY_NO_DARK_COLOR,
+  SPINE_BINARY_PATH_MIX,
+  SPINE_BINARY_SKIN_REQUIREMENT_LISTS,
+} from './spineBinaryParseHelpers.ts';
 export * from './spineBinaryReader.ts';
 export {
   createSpineBinaryRegistry,
@@ -31,6 +56,22 @@ export {
 export { isReadableSpineBinary, parseSpineBinaryRequirements } from './spineBinaryRequirements.ts';
 export * from './spineBinarySectionCounts.ts';
 export { registerSpineBinarySectionHandlers } from './spineBinarySectionHandlers.ts';
+export { spineBinarySkinsSectionReader } from './spineBinarySkinsHandler.ts';
+export { spineBinarySlotTimelineReader } from './spineBinarySlotTimelineHandler.ts';
+export { spineBinarySlotsSectionReader } from './spineBinarySlotsHandler.ts';
+export {
+  spineBinaryEventsSectionReader,
+  spineBinaryIkConstraintsSectionReader,
+  spineBinaryPathConstraintsSectionReader,
+  spineBinaryTransformConstraintsSectionReader,
+} from './spineBinaryStubHandlers.ts';
+export {
+  spineBinaryDeformTimelineReader,
+  spineBinaryEventTimelineReader,
+  spineBinaryIkTimelineReader,
+  spineBinaryPathTimelineReader,
+  spineBinaryTransformTimelineReader,
+} from './spineBinaryStubTimelineHandlers.ts';
 export { registerSpineBinaryTimelineHandlers } from './spineBinaryTimelineHandlers.ts';
 export * from './spineBinaryVersion.ts';
 export * from './spineBinaryVersioned.ts';
