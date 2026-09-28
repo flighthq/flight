@@ -37,6 +37,16 @@ interface FormatParserTreeShakingCase {
 
 // Every Lottie feature module the decomposition created. Before it, both lists were empty: there was nothing to name
 // because every layer and shape item lived in `lottieDocument.ts`.
+// Every SVG element module the decomposition created. This list was empty before it: there was nothing to name because
+// all five interpretations lived in `svgDocument.ts`.
+const SVG_ELEMENT_MODULES = [
+  'svgContainerElement.ts',
+  'svgGeometryElement.ts',
+  'svgImageElement.ts',
+  'svgTextElement.ts',
+  'svgUseElement.ts',
+] as const;
+
 const LOTTIE_LAYER_MODULES = [
   'lottieImageLayer.ts',
   'lottiePrecompositionLayer.ts',
@@ -549,20 +559,21 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
   },
   {
     allRegistrar: 'registerAllSvgHandlers',
-    contractOnlyExports: [
-      'svgContainerElementReader',
-      'svgGeometryElementReader',
-      'svgImageElementReader',
-      'svgTextElementReader',
-      'svgUseElementReader',
-    ],
+    // ★ THE FIVE `svg*ElementReader` NAMES ARE GONE, AND THAT IS THE POINT. Each was the core's half of a one-line shim:
+    // `svgContainerElementHandler` called `svgContainerElementReader`, which lived in the 1,780-line document core
+    // alongside every other element. The handler is now the real function, in the module that owns its interpretation,
+    // so there is one identity per family instead of two — and it is public, because it is what a caller names.
+    // The selective entry is PUBLIC here, unlike Lottie's was: `types` already publishes `SvgRegistry.ts` on both lanes,
+    // so an application can name the registry it has to pass. What stays contract-only is the shared plumbing the
+    // families read — the attribute primitives, the style cascade, the clip lowering — which no application calls.
+    contractOnlyExports: ['applySvgElementClip', 'resolveSvgStyle', 'svgAttribute'],
     families: [
       {
         isolationSymbols: ['svgContainerElementHandler'],
-        modules: [],
+        modules: SVG_ELEMENT_MODULES,
         name: 'elements',
         registrar: 'registerSvgElementHandlers',
-        symbols: ['svgContainerElementReader'],
+        symbols: ['svgContainerElementHandler'],
       },
     ],
     fullAssemblies: [
@@ -576,6 +587,7 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
     name: 'SVG',
     packageDirectory: 'scene2d-formats',
     publicInfrastructureExports: [
+      'createScene2DFromSvgDocumentWithRegistry',
       'createSvgRegistry',
       'getSvgElementHandler',
       'registerSvgElementHandler',

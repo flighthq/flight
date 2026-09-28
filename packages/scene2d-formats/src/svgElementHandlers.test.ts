@@ -1,24 +1,16 @@
-import type { SvgElementHandler, SvgElementKind } from '@flighthq/types/contract';
 import { SvgElementKind as Kind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import {
-  svgAllElementHandlers,
-  svgContainerElementHandler,
-  svgGeometryElementHandler,
-  svgImageElementHandler,
-  svgTextElementHandler,
-  svgUseElementHandler,
-  registerSvgElementHandlers,
-} from './svgElementHandlers.ts';
-import { createSvgRegistry, getSvgElementHandler } from './svgRegistry.ts';
+import { svgContainerElementHandler } from './svgContainerElement.ts';
+import { svgAllElementHandlers, registerSvgElementHandlers } from './svgElementHandlers.ts';
+import { svgGeometryElementHandler } from './svgGeometryElement.ts';
+import { svgImageElementHandler } from './svgImageElement.ts';
+import { createSvgRegistry } from './svgRegistry.ts';
+import { svgTextElementHandler } from './svgTextElement.ts';
+import { svgUseElementHandler } from './svgUseElement.ts';
 
-function expectRegisteredElement(kind: SvgElementKind, handler: SvgElementHandler): void {
-  const registry = createSvgRegistry();
-  registerSvgElementHandlers(registry);
-  expect(getSvgElementHandler(registry, kind)).toBe(handler);
-}
-
+// Each handler's own test asserts that the preset installs it for its kind. What is left here is what only the family
+// can answer: that the family is exactly these five, and that installing it covers every kind the dispatch can produce.
 describe('registerSvgElementHandlers', () => {
   it('registers exactly one handler for every element kind', () => {
     const registry = createSvgRegistry();
@@ -35,35 +27,5 @@ describe('svgAllElementHandlers', () => {
     expect(svgAllElementHandlers).toContain(svgTextElementHandler);
     expect(svgAllElementHandlers).toContain(svgUseElementHandler);
     expect(svgAllElementHandlers).toHaveLength(5);
-  });
-});
-
-describe('svgContainerElementHandler', () => {
-  it('is the built-in Container element handler', () => {
-    expectRegisteredElement(Kind.Container, svgContainerElementHandler);
-  });
-});
-
-describe('svgGeometryElementHandler', () => {
-  it('is the built-in Geometry element handler', () => {
-    expectRegisteredElement(Kind.Geometry, svgGeometryElementHandler);
-  });
-});
-
-describe('svgImageElementHandler', () => {
-  it('is the built-in Image element handler', () => {
-    expectRegisteredElement(Kind.Image, svgImageElementHandler);
-  });
-});
-
-describe('svgTextElementHandler', () => {
-  it('is the built-in Text element handler', () => {
-    expectRegisteredElement(Kind.Text, svgTextElementHandler);
-  });
-});
-
-describe('svgUseElementHandler', () => {
-  it('is the built-in Use element handler', () => {
-    expectRegisteredElement(Kind.Use, svgUseElementHandler);
   });
 });

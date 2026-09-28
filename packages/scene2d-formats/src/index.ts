@@ -62,7 +62,13 @@ export { registerRiveSoloHandlers } from './riveSolo.ts';
 export { registerRiveStateMachineHandlers } from './riveStateMachine.ts';
 export { createRiveRichText, registerRiveTextHandlers } from './riveText.ts';
 export { collectSvgCounts } from './svgCounts.ts';
-export { createScene2DFromSvgDocument } from './svgDocument.ts';
+export { svgContainerElementHandler } from './svgContainerElement.ts';
+export { createScene2DFromSvgDocumentWithRegistry } from './svgDocument.ts';
+export { svgGeometryElementHandler } from './svgGeometryElement.ts';
+export { svgImageElementHandler } from './svgImageElement.ts';
+export { createScene2DFromSvgDocument } from './svgImport.ts';
+export { svgTextElementHandler } from './svgTextElement.ts';
+export { svgUseElementHandler } from './svgUseElement.ts';
 export * from './svgElementHandlers.ts';
 export { registerAllSvgHandlers } from './svgHandlers.ts';
 export {
