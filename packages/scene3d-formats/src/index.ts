@@ -74,6 +74,7 @@ export * from './sceneSkeleton.ts';
 export * from './shared.ts';
 export * from './threeDsCameraHandler.ts';
 export * from './threeDsChunkCensus.ts';
+export * from './threeDsChunkDispatch.ts';
 export * from './threeDsChunkRegistry.ts';
 export * from './threeDsChunkRequirements.ts';
 export * from './threeDsDocument.ts';

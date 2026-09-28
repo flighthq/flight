@@ -1,7 +1,7 @@
 import { THREE_DS_CAMERA, THREE_DS_CHUNK_HEADER_BYTES } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseThreeDsCamera } from './threeDsCameraHandler.ts';
+import { parseThreeDsCamera, threeDsCameraFamily, threeDsCameraHandler } from './threeDsCameraHandler.ts';
 
 function writeChunk(id: number, payload: Uint8Array): Uint8Array {
   const total = THREE_DS_CHUNK_HEADER_BYTES + payload.byteLength;
@@ -39,5 +39,17 @@ describe('parseThreeDsCamera', () => {
     const chunk = writeChunk(THREE_DS_CAMERA, new Uint8Array(8));
     const view = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
     expect(parseThreeDsCamera(view, 0, chunk.byteLength, 'Bad', null)).toBeNull();
+  });
+});
+
+describe('threeDsCameraFamily', () => {
+  it('claims THREE_DS_CAMERA', () => {
+    expect(threeDsCameraFamily.flatMap((h) => [...h.chunkIds])).toContain(THREE_DS_CAMERA);
+  });
+});
+
+describe('threeDsCameraHandler', () => {
+  it('is the sole member of its family', () => {
+    expect(threeDsCameraFamily).toEqual([threeDsCameraHandler]);
   });
 });

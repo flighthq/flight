@@ -26,6 +26,8 @@ export const threeDsMaterialHandler: Readonly<ThreeDsChunkHandler> = {
   },
 };
 
+export const threeDsMaterialFamily: readonly ThreeDsChunkHandler[] = [threeDsMaterialHandler];
+
 // Parses a material block (0xAFFF): walks sub-chunks for the name, the diffuse/specular/ambient color
 // blocks, the shininess and transparency percentages, and the diffuse and bump texture-map filenames.
 export function parseThreeDsMaterial(view: Readonly<DataView>, offset: number, end: number): ThreeDsMaterial {

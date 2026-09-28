@@ -9,7 +9,7 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { collectThreeDsPivots } from './threeDsKeyframeHandler.ts';
+import { collectThreeDsPivots, threeDsKeyframeFamily, threeDsKeyframeHandler } from './threeDsKeyframeHandler.ts';
 
 function writeChunk(id: number, payload: Uint8Array): Uint8Array {
   const total = THREE_DS_CHUNK_HEADER_BYTES + payload.byteLength;
@@ -58,5 +58,17 @@ describe('collectThreeDsPivots', () => {
     const main = writeChunk(THREE_DS_MAIN, editor);
     const view = new DataView(main.buffer, main.byteOffset, main.byteLength);
     expect(collectThreeDsPivots(view, 0).size).toBe(0);
+  });
+});
+
+describe('threeDsKeyframeFamily', () => {
+  it('claims THREE_DS_KEYFRAME_OBJECT_NODE', () => {
+    expect(threeDsKeyframeFamily.flatMap((h) => [...h.chunkIds])).toContain(THREE_DS_KEYFRAME_OBJECT_NODE);
+  });
+});
+
+describe('threeDsKeyframeHandler', () => {
+  it('is the sole member of its family', () => {
+    expect(threeDsKeyframeFamily).toEqual([threeDsKeyframeHandler]);
   });
 });

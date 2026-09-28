@@ -7,7 +7,7 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseThreeDsMaterial } from './threeDsMaterialHandler.ts';
+import { parseThreeDsMaterial, threeDsMaterialFamily, threeDsMaterialHandler } from './threeDsMaterialHandler.ts';
 
 function writeChunk(id: number, payload: Uint8Array): Uint8Array {
   const total = THREE_DS_CHUNK_HEADER_BYTES + payload.byteLength;
@@ -52,5 +52,17 @@ describe('parseThreeDsMaterial', () => {
     expect(mat.name).toBe('Skin');
     expect(mat.diffuse[0]).toBeCloseTo(204 / 255, 2);
     expect(mat.diffuse[1]).toBeCloseTo(102 / 255, 2);
+  });
+});
+
+describe('threeDsMaterialFamily', () => {
+  it('claims THREE_DS_MATERIAL', () => {
+    expect(threeDsMaterialFamily.flatMap((h) => [...h.chunkIds])).toContain(THREE_DS_MATERIAL);
+  });
+});
+
+describe('threeDsMaterialHandler', () => {
+  it('is the sole member of its family', () => {
+    expect(threeDsMaterialFamily).toEqual([threeDsMaterialHandler]);
   });
 });

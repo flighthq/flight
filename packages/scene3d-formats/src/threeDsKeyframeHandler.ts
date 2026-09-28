@@ -17,6 +17,8 @@ export const threeDsKeyframeHandler: Readonly<ThreeDsChunkHandler> = {
   },
 };
 
+export const threeDsKeyframeFamily: readonly ThreeDsChunkHandler[] = [threeDsKeyframeHandler];
+
 // Walks the keyframer chunk (0xB000) for object-node PIVOTS ONLY, keyed by node name, and returns them in
 // the file's own Z-up space. Empty when the file carries no keyframer.
 //
