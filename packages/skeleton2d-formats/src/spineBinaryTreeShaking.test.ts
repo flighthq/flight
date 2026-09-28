@@ -67,15 +67,15 @@ describe('Spine binary handler atom tree shaking', () => {
 });
 
 describe('Spine binary handler export lanes', () => {
-  it('publishes generic registration without publishing built-in atoms or internal reader edges', () => {
+  it('publishes readers in both lanes and handler atoms only in contract', () => {
     expect(publicApi.registerSpineBinarySectionHandler).toBe(contractApi.registerSpineBinarySectionHandler);
     expect(publicApi.registerSpineBinaryTimelineHandler).toBe(contractApi.registerSpineBinaryTimelineHandler);
 
     for (const [atom, readerExport] of [...SECTION_ATOMS, ...TIMELINE_ATOMS]) {
       expect(atom in contractApi, `${atom} contract`).toBe(true);
       expect(atom in publicApi, `${atom} public`).toBe(false);
-      expect(readerExport in contractApi, `${readerExport} contract`).toBe(false);
-      expect(readerExport in publicApi, `${readerExport} public`).toBe(false);
+      expect(readerExport in contractApi, `${readerExport} contract`).toBe(true);
+      expect(readerExport in publicApi, `${readerExport} public`).toBe(true);
     }
   });
 });
