@@ -2,6 +2,7 @@ export { dragonBonesAnimationsSectionHandler } from './dragonBonesAnimationsHand
 export { dragonBonesBoneTimelineHandler } from './dragonBonesBoneTimelineHandler.ts';
 export { dragonBonesBonesSectionHandler } from './dragonBonesBonesHandler.ts';
 export * from './dragonBonesHandlers.ts';
+export * from './dragonBonesFull.ts';
 export * from './dragonBonesParse.ts';
 export {
   buildDragonBonesSegmentEasings,
@@ -63,5 +64,6 @@ export * from './spineJsonSlotTimelineHandler.ts';
 export * from './spineJsonSlotsHandler.ts';
 export * from './spineJsonStubHandlers.ts';
 export * from './spineJsonTimelineHandlers.ts';
+export * from './spineJsonFull.ts';
 export * from './spineParse.ts';
 export * from './spineParseHelpers.ts';

@@ -1,4 +1,5 @@
 export * from './dragonBonesHandlers.ts';
+export * from './dragonBonesFull.ts';
 export * from './dragonBonesParse.ts';
 export {
   buildDragonBonesSegmentEasings,
@@ -126,5 +127,6 @@ export {
   spineJsonTransformTimelineReader,
 } from './spineJsonStubHandlers.ts';
 export { registerSpineJsonTimelineHandlers } from './spineJsonTimelineHandlers.ts';
+export * from './spineJsonFull.ts';
 export * from './spineParse.ts';
 export * from './spineParseHelpers.ts';
