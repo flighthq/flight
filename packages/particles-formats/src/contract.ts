@@ -1,3 +1,4 @@
+export * from './particlesFormatRequirements.ts';
 export * from './detect.ts';
 export * from './formatRegistry.ts';
 export * from './libgdxParse.ts';
