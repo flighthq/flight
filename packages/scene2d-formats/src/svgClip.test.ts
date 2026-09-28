@@ -1,12 +1,21 @@
 import { getNodeChildAt } from '@flighthq/node/contract';
 import type { ImportDiagnostic, Node2D, XmlElement } from '@flighthq/types/contract';
+import { SvgClipKind } from '@flighthq/types/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 import { describe, expect, it } from 'vitest';
 
-import { usesSvgObjectBoundingBoxUnits } from './svgClip.ts';
+import { svgPathClipHandler, usesSvgObjectBoundingBoxUnits } from './svgClip.ts';
+import { registerSvgClipHandlers } from './svgClipHandlers.ts';
 import { createScene2DFromSvgDocument } from './svgImport.ts';
+import { createSvgRegistry, getSvgClipHandler } from './svgRegistry.ts';
 
-describe('applySvgElementClip', () => {
+describe('svgPathClipHandler', () => {
+  it('is the built-in clip-path handler', () => {
+    const registry = createSvgRegistry();
+    registerSvgClipHandlers(registry);
+    expect(getSvgClipHandler(registry, SvgClipKind.Path)).toBe(svgPathClipHandler);
+  });
+
   it('lowers a clip-path reference onto the node clip', () => {
     expect(
       clipped('<clipPath id="c"><rect width="2" height="2"/></clipPath>', 'clip-path="url(#c)"').clip,

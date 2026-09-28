@@ -24,8 +24,10 @@ import {
   riveAllPathBooleanRegistrars,
   riveAllRegistrars,
   RIVE_REQUIREMENT_KEY_NAMESPACE,
+  svgAllClipHandlers,
   svgAllElementHandlers,
   svgContainerElementHandler,
+  svgPathClipHandler,
   svgGeometryElementHandler,
   svgImageElementHandler,
   svgTextElementHandler,
@@ -175,6 +177,7 @@ import type {
   LottieMaskHandler,
   LottieShapeItemHandler,
   Md2SectionHandler,
+  SvgClipHandler,
   SvgElementHandler,
   Md5SectionHandler,
   ObjMaterialHandler,
@@ -474,6 +477,13 @@ export const LOTTIE_SHAPE_ITEM_HANDLERS: readonly (readonly [string, LottieShape
   ['lottieTrimPathShapeItemHandler', lottieTrimPathShapeItemHandler, 'shape.trimPath'],
 ];
 
+// ★ ONE MEMBER, AND IT STILL EARNS A TABLE. Clipping is a family of its own because every element may carry
+// `clip-path`, so the row is what lets a manifest resolve `svg.clip-path` to a handler instead of to the core parse,
+// which is what it resolved to while the reading was a step in the element walk.
+export const SVG_CLIP_HANDLERS: readonly (readonly [string, SvgClipHandler, string])[] = [
+  ['svgPathClipHandler', svgPathClipHandler, 'clip-path'],
+];
+
 export const SVG_ELEMENT_HANDLERS: readonly (readonly [string, SvgElementHandler, string])[] = [
   ['svgContainerElementHandler', svgContainerElementHandler, 'container'],
   ['svgGeometryElementHandler', svgGeometryElementHandler, 'geometry'],
@@ -696,6 +706,17 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
         `${LOTTIE_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
         familyOrderOf(lottieAllShapeItemHandlers, handler),
         'shapeItemHandlers',
+      ),
+    );
+  }
+  for (const [symbol, handler, kind] of SVG_CLIP_HANDLERS) {
+    rows.push(
+      row(
+        '@flighthq/scene2d-formats',
+        symbol,
+        `${SVG_REQUIREMENT_KEY_NAMESPACE}.${kind}`,
+        familyOrderOf(svgAllClipHandlers, handler),
+        'clipHandlers',
       ),
     );
   }

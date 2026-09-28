@@ -999,6 +999,14 @@
     },
     {
       "packageName": "scene2d-formats",
+      "registrar": "registerSvgClipHandler"
+    },
+    {
+      "packageName": "scene2d-formats",
+      "registrar": "registerSvgClipHandlers"
+    },
+    {
+      "packageName": "scene2d-formats",
       "registrar": "registerSvgElementHandler"
     },
     {

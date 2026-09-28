@@ -86,6 +86,10 @@
   "spine-json-import-selective:canvas": 2279,
   "spritesheet-codec-all:canvas": 9100,
   "spritesheet-codec-one:canvas": 2232,
+  "svg-import-clip:canvas": 28051,
+  "svg-import-geometry:canvas": 23521,
+  "svg-import-text:canvas": 20639,
+  "svg-import:canvas": 38455,
   "swf-import-artwork:canvas": 39078,
   "swf-import:canvas": 68313
 }

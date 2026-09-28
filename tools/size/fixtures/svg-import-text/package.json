@@ -1,0 +1,9 @@
+{
+  "name": "svg-import-text",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "svg-import-text"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "svg-import-geometry",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "svg-import-geometry"
+  }
+}

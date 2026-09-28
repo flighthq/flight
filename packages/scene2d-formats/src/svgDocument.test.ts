@@ -31,6 +31,33 @@ describe('applySvgElementAppearance', () => {
   });
 });
 
+describe('applySvgElementClipFamily', () => {
+  // ★ DECLINING THE CLIP FAMILY MEANS NO CLIPPING, WHICH IS THE POINT OF MAKING IT ONE. The same document clips under the
+  // zero-config entry and is unclipped through a registry with an empty clip family — and it says nothing while doing so,
+  // because a caller who did not register a reader was not asking to be warned about what it would have read.
+  it('clips when the family is registered and does not when it is absent', () => {
+    const svg =
+      '<svg><clipPath id="c"><rect width="2" height="2"/></clipPath><g clip-path="url(#c)"><rect width="4" height="4"/></g></svg>';
+    expect((getNodeChildAt(createScene2DFromSvgDocument(svg), 0) as Node2D).clip).not.toBeNull();
+
+    const diagnostics: ImportDiagnostic[] = [];
+    const root = createScene2DFromSvgDocumentWithRegistry(svg, containerAndGeometry(), diagnostics);
+    expect((getNodeChildAt(root, 0) as Node2D).clip).toBeNull();
+    expect(diagnostics).toEqual([]);
+  });
+
+  // And an unresolvable reference is likewise silent without the family: there is nothing to resolve it against.
+  it('reports nothing for an unresolved clip reference when the family is absent', () => {
+    const diagnostics: ImportDiagnostic[] = [];
+    createScene2DFromSvgDocumentWithRegistry(
+      '<svg><g clip-path="url(#missing)"><rect width="4" height="4"/></g></svg>',
+      containerAndGeometry(),
+      diagnostics,
+    );
+    expect(diagnostics).toEqual([]);
+  });
+});
+
 describe('createScene2DFromSvgDocumentWithRegistry', () => {
   // ★ THE SELECTIVE ENTRY READS WHAT IT IS GIVEN AND NOTHING MORE. An empty registry still parses and validates the
   // document — it simply produces no children, and reports each element it could not claim — which is what makes a
