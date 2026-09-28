@@ -17,8 +17,8 @@ export function collectLottieCounts(json: string): Map<string, number> | null {
     const entry = layer as Record<string, unknown>;
     const ty = entry.ty;
     if (typeof ty !== 'number') continue;
-    const kind = layerKindName(ty);
-    if (kind !== null) counts.set(kind, (counts.get(kind) ?? 0) + 1);
+    const kind = LOTTIE_LAYER_FEATURES.get(ty);
+    if (kind !== undefined) counts.set(kind, (counts.get(kind) ?? 0) + 1);
     if (ty === LottieLayerKind.Shape) {
       tallyShapeItems(counts, entry.shapes);
     }
@@ -28,21 +28,23 @@ export function collectLottieCounts(json: string): Map<string, number> | null {
 }
 
 /**
- * Tallies the masks Flight has a family for.
+ * Every `document.format` feature this analyzer can report, which is the population the catalog's disposition gate
+ * partitions.
  *
- * ★ ONLY THE ADDITIVE MODE IS COUNTED, and that is a reporting limit rather than a claim about the document. Lottie
- * declares seven modes and Flight carries one, so a subtract or intersect mask requires something no catalog row can
- * satisfy; emitting a key for it would produce a requirement nothing resolves. A document carrying one is imported
- * unmasked and silently, exactly as before masks became a family — the gap is recorded in
- * agents/scene2d-format-coverage.md, not papered over with a key.
+ * ★ DERIVED FROM THE SAME TABLES THE CENSUS READS, never written out beside them. A hand-written list would shrink
+ * silently when a feature was added — and the gate that asserts "every analyzed feature is either claimed by a handler
+ * or declined with a reason" would then pass by looking at less.
+ *
+ * A FUNCTION, NOT A CONST, because the tables it reads live at the bottom of the file where loose module variables
+ * belong — a top-level const initializer would run before them and see `undefined`. `getThreeDsFeatureNames` exists for
+ * the same reason.
  */
-function tallyMasks(counts: Map<string, number>, raw: unknown): void {
-  if (!Array.isArray(raw)) return;
-  for (const entry of raw) {
-    if (entry === null || typeof entry !== 'object') continue;
-    if ((entry as Record<string, unknown>).mode !== LottieMaskKind.Additive) continue;
-    counts.set('mask.additive', (counts.get('mask.additive') ?? 0) + 1);
-  }
+export function getLottieFeatureNames(): readonly string[] {
+  return [
+    ...LOTTIE_LAYER_FEATURES.values(),
+    ...LOTTIE_MASK_FEATURES.values(),
+    ...LOTTIE_SHAPE_ITEM_FEATURES.values(),
+  ].sort();
 }
 
 function isLottieDocument(record: Readonly<Record<string, unknown>>): boolean {
@@ -55,47 +57,22 @@ function isLottieDocument(record: Readonly<Record<string, unknown>>): boolean {
   );
 }
 
-function layerKindName(ty: number): string | null {
-  switch (ty) {
-    case LottieLayerKind.Precomposition:
-      return 'layer.precomposition';
-    case LottieLayerKind.Solid:
-      return 'layer.solid';
-    case LottieLayerKind.Image:
-      return 'layer.image';
-    case LottieLayerKind.Null:
-      return 'layer.null';
-    case LottieLayerKind.Shape:
-      return 'layer.shape';
-    case LottieLayerKind.Text:
-      return 'layer.text';
-    default:
-      return null;
-  }
-}
-
-function shapeItemKindName(ty: string): string | null {
-  switch (ty) {
-    case LottieShapeItemKind.Ellipse:
-      return 'shape.ellipse';
-    case LottieShapeItemKind.Fill:
-      return 'shape.fill';
-    case LottieShapeItemKind.GradientFill:
-      return 'shape.gradientFill';
-    case LottieShapeItemKind.GradientStroke:
-      return 'shape.gradientStroke';
-    case LottieShapeItemKind.Path:
-      return 'shape.path';
-    case LottieShapeItemKind.Polystar:
-      return 'shape.polystar';
-    case LottieShapeItemKind.Rectangle:
-      return 'shape.rectangle';
-    case LottieShapeItemKind.Stroke:
-      return 'shape.stroke';
-    case LottieShapeItemKind.TrimPath:
-      return 'shape.trimPath';
-    default:
-      return null;
+/**
+ * Tallies a layer's masks by composition mode.
+ *
+ * ★ EVERY MODE BUT `None` IS A FEATURE; `None` IS THE ABSENCE OF ONE. Lottie writes `mode: 'n'` for a mask entry that is
+ * switched off, so counting it would report a requirement for something the document is not asking for. The other five
+ * are reported even though Flight carries only the additive one: the catalog declines them by disposition, which is how
+ * a reader learns the document needs something rather than learning nothing.
+ */
+function tallyMasks(counts: Map<string, number>, raw: unknown): void {
+  if (!Array.isArray(raw)) return;
+  for (const entry of raw) {
+    if (entry === null || typeof entry !== 'object') continue;
+    const mode = (entry as Record<string, unknown>).mode;
+    if (typeof mode !== 'string') continue;
+    const kind = LOTTIE_MASK_FEATURES.get(mode);
+    if (kind !== undefined) counts.set(kind, (counts.get(kind) ?? 0) + 1);
   }
 }
 
@@ -106,11 +83,41 @@ function tallyShapeItems(counts: Map<string, number>, raw: unknown): void {
     const item = entry as Record<string, unknown>;
     const ty = item.ty;
     if (typeof ty === 'string') {
-      const kind = shapeItemKindName(ty);
-      if (kind !== null) counts.set(kind, (counts.get(kind) ?? 0) + 1);
+      const kind = LOTTIE_SHAPE_ITEM_FEATURES.get(ty);
+      if (kind !== undefined) counts.set(kind, (counts.get(kind) ?? 0) + 1);
     }
     if (ty === 'gr') {
       tallyShapeItems(counts, item.it);
     }
   }
 }
+
+const LOTTIE_LAYER_FEATURES = new Map<number, string>([
+  [LottieLayerKind.Image, 'layer.image'],
+  [LottieLayerKind.Null, 'layer.null'],
+  [LottieLayerKind.Precomposition, 'layer.precomposition'],
+  [LottieLayerKind.Shape, 'layer.shape'],
+  [LottieLayerKind.Solid, 'layer.solid'],
+  [LottieLayerKind.Text, 'layer.text'],
+]);
+
+const LOTTIE_MASK_FEATURES = new Map<string, string>([
+  [LottieMaskKind.Additive, 'mask.additive'],
+  [LottieMaskKind.Darken, 'mask.darken'],
+  [LottieMaskKind.Difference, 'mask.difference'],
+  [LottieMaskKind.Intersect, 'mask.intersect'],
+  [LottieMaskKind.Lighten, 'mask.lighten'],
+  [LottieMaskKind.Subtract, 'mask.subtract'],
+]);
+
+const LOTTIE_SHAPE_ITEM_FEATURES = new Map<string, string>([
+  [LottieShapeItemKind.Ellipse, 'shape.ellipse'],
+  [LottieShapeItemKind.Fill, 'shape.fill'],
+  [LottieShapeItemKind.GradientFill, 'shape.gradientFill'],
+  [LottieShapeItemKind.GradientStroke, 'shape.gradientStroke'],
+  [LottieShapeItemKind.Path, 'shape.path'],
+  [LottieShapeItemKind.Polystar, 'shape.polystar'],
+  [LottieShapeItemKind.Rectangle, 'shape.rectangle'],
+  [LottieShapeItemKind.Stroke, 'shape.stroke'],
+  [LottieShapeItemKind.TrimPath, 'shape.trimPath'],
+]);

@@ -129,9 +129,6 @@ describe('COLLADA content through the built-in catalog', () => {
   });
 });
 
-// What is left here emits an empty `parserOptions` for a reason that is NOT "the parser is monolithic".
-// OBJ used to belong in this group and no longer does: reading its MTL split the requirement per shading
-// model, so it resolves to real rows and has its own describe above.
 describe('formats with no parser rows through the built-in catalog', () => {
   // .md5anim genuinely has no handler family: parseMd5Anim reads one clip and has nothing separable.
   it('emits an empty parserOptions for .md5anim, which has no handler family at all', async () => {
@@ -196,6 +193,34 @@ describe('generated rich-format modules imported by Node', () => {
     },
     NODE_IMPORT_TIMEOUT_MS,
   );
+});
+
+// What is left here emits an empty `parserOptions` for a reason that is NOT "the parser is monolithic".
+// OBJ used to belong in this group and no longer does: reading its MTL split the requirement per shading
+// model, so it resolves to real rows and has its own describe above.
+describe('Lottie content through the built-in catalog', () => {
+  it('resolves an additive mask to the one handler that reads it', async () => {
+    const { diagnostics, source } = await load('a.json', lottieFile('a'));
+    expect(source).toContain('  maskHandlers: [\n    lottieAdditiveMaskHandler,\n  ],');
+    expect(diagnostics).toEqual([]);
+  });
+
+  // ★ A MODE FLIGHT DOES NOT IMPLEMENT IS SURFACED AND THEN DECLINED, WHICH IS NOT THE SAME AS UNSEEN. The census reports
+  // `lottie.mask.subtract`, no catalog row claims it, and `UNSUPPORTED_FORMAT_FEATURES` resolves it — so the build emits
+  // no mask option and says nothing. Removing that one disposition entry makes this exact file report "no catalog entry
+  // for document.format lottie.mask.subtract", which is what the reason is standing in for.
+  it('declines an unsupported mask mode by disposition, with no option and no warning', async () => {
+    const { diagnostics, source } = await load('a.json', lottieFile('s'));
+    expect(diagnostics).toEqual([]);
+    expect(source).not.toContain('maskHandlers:');
+    expect(source).not.toContain('lottieAdditiveMaskHandler');
+  });
+
+  it('resolves the additive mask of a document that also carries an unsupported one', async () => {
+    const { diagnostics, source } = await load('a.json', lottieFile('a', 's'));
+    expect(source).toContain('  maskHandlers: [\n    lottieAdditiveMaskHandler,\n  ],');
+    expect(diagnostics).toEqual([]);
+  });
 });
 
 // Bedrock formats have no decomposable parser family: one function reads the whole file, so there is no
@@ -343,6 +368,30 @@ async function load(name: string, content: Uint8Array): Promise<{ diagnostics: s
   // here unable to fail.
   const source = (await plugin.load(id))!;
   return { diagnostics: diagnostics.map((message) => message.replace(join(dir, name), '<file>')), source };
+}
+
+// One null layer carrying one mask per requested mode: the smallest document that asks for a mask family and nothing
+// else, so the emitted `maskHandlers` is attributable to the mode alone.
+function lottieFile(...modes: readonly string[]): Uint8Array {
+  return new TextEncoder().encode(
+    JSON.stringify({
+      fr: 30,
+      h: 100,
+      ip: 0,
+      layers: [
+        {
+          ind: 1,
+          ip: 0,
+          masksProperties: modes.map((mode) => ({ mode, o: { k: 100 }, pt: { k: {} } })),
+          nm: 'masked',
+          op: 60,
+          ty: 3,
+        },
+      ],
+      op: 60,
+      w: 100,
+    }),
+  );
 }
 
 const OBJ_WITH_MTL = 'mtllib a.mtl\nusemtl Red\nv 0 0 0\nf 1 1 1\n';

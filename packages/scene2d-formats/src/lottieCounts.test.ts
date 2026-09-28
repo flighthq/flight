@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { collectLottieCounts } from './lottieCounts.ts';
+import { collectLottieCounts, getLottieFeatureNames } from './lottieCounts.ts';
 
 describe('collectLottieCounts', () => {
   it('returns null for invalid JSON', () => {
@@ -17,20 +17,33 @@ describe('collectLottieCounts', () => {
     expect(collectLottieCounts(JSON.stringify({ ip: 0, layers: [], op: 1 }))).toBeNull();
   });
 
-  // ★ THE CENSUS COUNTS THE MASKS FLIGHT HAS A FAMILY FOR, AND SAYS SO BY COUNTING NOTHING ELSE. Lottie declares seven
-  // mask modes and Flight carries the additive one; emitting a key for a subtract mask would manufacture a requirement
-  // no catalog row can satisfy. The second assertion is the one that pins the limit rather than the feature.
-  it('tallies additive masks and stays silent about the modes no family carries', () => {
+  // ★ THE CENSUS REPORTS THE MASK MODE THE DOCUMENT ASKS FOR, WHETHER OR NOT FLIGHT CARRIES IT. Only the additive mode
+  // has a handler; the other five are declined by catalog disposition, which is how a reader learns the document needs
+  // something. Reporting nothing for them — which is what this did first — reads as "no mask here".
+  //
+  // `mode: 'n'` is the exception and not an omission: Lottie writes it for a mask entry that is switched OFF, so it is
+  // the absence of a feature rather than an unsupported one, and a requirement for it would be a requirement for nothing.
+  it('reports every mask mode the document asks for, and nothing for a disabled one', () => {
     const masked = (mode: string) => ({
       fr: 30,
       ip: 0,
       layers: [{ ind: 1, ip: 0, masksProperties: [{ mode, o: { k: 100 }, pt: { k: {} } }], op: 60, ty: 3 }],
       op: 60,
     });
-    expect(collectLottieCounts(JSON.stringify(masked('a')))!.get('mask.additive')).toBe(1);
-    for (const mode of ['d', 'f', 'i', 'l', 'n', 's']) {
-      expect([...collectLottieCounts(JSON.stringify(masked(mode)))!.keys()], mode).toEqual(['layer.null']);
+    const expected = new Map([
+      ['a', 'mask.additive'],
+      ['d', 'mask.darken'],
+      ['f', 'mask.difference'],
+      ['i', 'mask.intersect'],
+      ['l', 'mask.lighten'],
+      ['s', 'mask.subtract'],
+    ]);
+    for (const [mode, key] of expected) {
+      expect([...collectLottieCounts(JSON.stringify(masked(mode)))!.keys()].sort(), mode).toEqual(
+        ['layer.null', key].sort(),
+      );
     }
+    expect([...collectLottieCounts(JSON.stringify(masked('n')))!.keys()]).toEqual(['layer.null']);
   });
 
   it('returns empty counts for a valid document with no layers', () => {
@@ -70,5 +83,36 @@ describe('collectLottieCounts', () => {
     expect(counts.get('shape.fill')).toBe(1);
     expect(counts.get('shape.rectangle')).toBe(1);
     expect(counts.get('shape.stroke')).toBe(1);
+  });
+});
+
+// ★ THE VOCABULARY AND THE CENSUS MUST NOT BE ABLE TO DISAGREE. The catalog's disposition gate partitions this list
+// against the handler rows, so a feature the census can emit but the list omits would be a requirement nothing accounts
+// for — and the gate would pass by looking at less. Asserting the count and a sample of each family is what pins the
+// derivation rather than restating it.
+describe('getLottieFeatureNames', () => {
+  it('names every feature the census can emit, across all three families', () => {
+    const names = getLottieFeatureNames();
+    expect(names).toHaveLength(21);
+    expect(names).toEqual([...names].sort());
+    expect(names.filter((name) => name.startsWith('layer.'))).toHaveLength(6);
+    expect(names.filter((name) => name.startsWith('mask.'))).toHaveLength(6);
+    expect(names.filter((name) => name.startsWith('shape.'))).toHaveLength(9);
+  });
+
+  it('contains every key a document can actually produce', () => {
+    const document = {
+      fr: 30,
+      ip: 0,
+      layers: [
+        { ind: 1, ip: 0, masksProperties: [{ mode: 's', o: { k: 100 }, pt: { k: {} } }], op: 60, ty: 3 },
+        { ind: 2, ip: 0, op: 60, shapes: [{ ty: 'rc' }, { ty: 'fl' }, { ty: 'tm' }], ty: 4 },
+      ],
+      op: 60,
+    };
+    const names = new Set(getLottieFeatureNames());
+    for (const key of collectLottieCounts(JSON.stringify(document))!.keys()) {
+      expect(names.has(key), key).toBe(true);
+    }
   });
 });

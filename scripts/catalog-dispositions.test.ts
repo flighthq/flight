@@ -1,3 +1,4 @@
+import { getLottieFeatureNames } from '@flighthq/scene2d-formats/contract';
 import {
   COLLADA_FEATURE_ELEMENTS,
   GLTF_FEATURE_NAMES,
@@ -16,7 +17,11 @@ import {
   SpineBinaryTimelineKind,
 } from '@flighthq/types/contract';
 
-import { ALWAYS_READ_FORMAT_FEATURES, buildRequirementDispositions } from './catalog-dispositions.ts';
+import {
+  ALWAYS_READ_FORMAT_FEATURES,
+  buildRequirementDispositions,
+  UNSUPPORTED_FORMAT_FEATURES,
+} from './catalog-dispositions.ts';
 import { buildRequirementCatalogRows, CATALOG_PARSER_BACKEND, GLTF_EXTENSION_HANDLERS } from './catalog-rows.ts';
 
 // Every `document.format` feature each analyzer can emit, per namespace. This is the POPULATION the gate below
@@ -24,6 +29,9 @@ import { buildRequirementCatalogRows, CATALOG_PARSER_BACKEND, GLTF_EXTENSION_HAN
 // missing a feature would shrink the population silently and the gate would pass by looking at less.
 const ANALYZER_FEATURES: ReadonlyMap<string, readonly string[]> = new Map([
   ['3ds', getThreeDsFeatureNames()],
+  // Lottie's vocabulary joined this population when the census started reporting mask modes it cannot carry. Like STL's,
+  // it is read off the format package so the gate cannot disagree with the analyzer about what a document can require.
+  ['lottie', getLottieFeatureNames()],
   ['dae', [...COLLADA_FEATURE_ELEMENTS.keys()]],
   ['gltf', [...GLTF_FEATURE_NAMES, ...[...GLTF_EXTENSION_HANDLERS.values()].map((handler) => handler.kind)]],
   ['md2', MD2_FEATURE_NAMES],
@@ -65,26 +73,49 @@ describe('ALWAYS_READ_FORMAT_FEATURES', () => {
         if (!claimed.has(kind)) unclaimed.push(kind);
       }
     }
-    const declined = ALWAYS_READ_FORMAT_FEATURES.map(({ feature, namespace }) => `${namespace}.${feature}`);
-    expect([...declined].sort()).toEqual([...unclaimed].sort());
+    expect([...declinedKinds()].sort()).toEqual([...unclaimed].sort());
+  });
+
+  // ★ THE TWO LISTS SAY DIFFERENT THINGS, SO NOTHING MAY BE IN BOTH. "Something else already reads it" and "nothing
+  // reads it" cannot both be true of one feature, and a duplicate would also double its dispositions.
+  it('keeps the always-read and unsupported lists disjoint', () => {
+    const alwaysRead = new Set(ALWAYS_READ_FORMAT_FEATURES.map(({ feature, namespace }) => `${namespace}.${feature}`));
+    for (const { feature, namespace } of UNSUPPORTED_FORMAT_FEATURES) {
+      expect(alwaysRead.has(`${namespace}.${feature}`), `${namespace}.${feature}`).toBe(false);
+    }
+  });
+
+  // ★ AND "NOT IMPLEMENTED" MAY NEVER BE SAID OF SOMETHING THAT IS. The both-directions assertion above already fails in
+  // this case, but it fails as an unexplained set difference; this one names the mistake, because it is the one this
+  // reason invites — a handler gets written and the decline that shadows it is left behind.
+  it('never declines a feature as unsupported while a parser row claims it', () => {
+    const claimed = new Set(
+      buildRequirementCatalogRows()
+        .filter((row) => row.backend === CATALOG_PARSER_BACKEND && row.facet === 'document.format')
+        .map((row) => row.kind),
+    );
+    for (const { feature, namespace } of UNSUPPORTED_FORMAT_FEATURES) {
+      expect(claimed.has(`${namespace}.${feature}`), `${namespace}.${feature}`).toBe(false);
+    }
   });
 
   // A population of zero would make the assertion above pass vacuously, and a claimed set of zero would make
   // it pass by declaring everything. Both are stated so the gate cannot be satisfied by emptiness.
   it('partitions a non-empty population against a non-empty claimed set', () => {
     const total = [...ANALYZER_FEATURES.values()].reduce((sum, features) => sum + features.length, 0);
-    expect(total).toBeGreaterThan(ALWAYS_READ_FORMAT_FEATURES.length);
+    expect(total).toBeGreaterThan(declinedKinds().length);
     expect(ALWAYS_READ_FORMAT_FEATURES.length).toBeGreaterThan(0);
+    expect(UNSUPPORTED_FORMAT_FEATURES.length).toBeGreaterThan(0);
   });
 
   it('gives every declined feature a reason, since a decline with no reason is just a silent gap', () => {
-    for (const { feature, namespace, reason } of ALWAYS_READ_FORMAT_FEATURES) {
+    for (const { feature, namespace, reason } of allDeclines()) {
       expect(reason.length, `${namespace}.${feature}`).toBeGreaterThan(20);
     }
   });
 
   it('names each feature once', () => {
-    const kinds = ALWAYS_READ_FORMAT_FEATURES.map(({ feature, namespace }) => `${namespace}.${feature}`);
+    const kinds = declinedKinds();
     expect(kinds.length).toBe(new Set(kinds).size);
   });
 });
@@ -96,13 +127,11 @@ describe('buildRequirementDispositions', () => {
     const dispositions = buildRequirementDispositions();
     const backends = new Set(dispositions.map((disposition) => disposition.backend));
     expect([...backends].sort()).toEqual(['canvas', 'dom', 'gl', CATALOG_PARSER_BACKEND, 'wgpu'].sort());
-    expect(dispositions.length).toBe(ALWAYS_READ_FORMAT_FEATURES.length * backends.size);
+    expect(dispositions.length).toBe(declinedKinds().length * backends.size);
   });
 
   it('files every disposition under document.format, carrying the reason from the list', () => {
-    const reasons = new Map(
-      ALWAYS_READ_FORMAT_FEATURES.map(({ feature, namespace, reason }) => [`${namespace}.${feature}`, reason]),
-    );
+    const reasons = new Map(allDeclines().map(({ feature, namespace, reason }) => [`${namespace}.${feature}`, reason]));
     for (const disposition of buildRequirementDispositions()) {
       expect(disposition.facet).toBe('document.format');
       expect(disposition.reason, disposition.kind).toBe(reasons.get(disposition.kind));
@@ -113,3 +142,11 @@ describe('buildRequirementDispositions', () => {
     expect(buildRequirementDispositions()).toEqual(buildRequirementDispositions());
   });
 });
+
+function allDeclines(): readonly { feature: string; namespace: string; reason: string }[] {
+  return [...ALWAYS_READ_FORMAT_FEATURES, ...UNSUPPORTED_FORMAT_FEATURES];
+}
+
+function declinedKinds(): readonly string[] {
+  return allDeclines().map(({ feature, namespace }) => `${namespace}.${feature}`);
+}

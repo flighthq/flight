@@ -1,4 +1,4 @@
-export { collectLottieCounts } from './lottieCounts.ts';
+export { collectLottieCounts, getLottieFeatureNames } from './lottieCounts.ts';
 export { applyAnimationClipToLottieDocument, createScene2DFromLottieDocumentWithRegistry } from './lottieDocument.ts';
 export { createScene2DFromLottieDocument } from './lottieImport.ts';
 export { lottieEllipseShapeItemHandler } from './lottieEllipseShapeItem.ts';
