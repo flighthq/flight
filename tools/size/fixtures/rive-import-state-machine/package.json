@@ -1,0 +1,9 @@
+{
+  "name": "rive-import-state-machine",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "rive-import-state-machine"
+  }
+}
