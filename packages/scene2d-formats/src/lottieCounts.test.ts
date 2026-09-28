@@ -46,6 +46,27 @@ describe('collectLottieCounts', () => {
     expect([...collectLottieCounts(JSON.stringify(masked('n')))!.keys()]).toEqual(['layer.null']);
   });
 
+  // ★ A MODE FLIGHT CARRIES CAN ARRIVE IN A SHAPE IT CANNOT. `mask.additive` resolves to a real handler, and that handler
+  // still declines an inverted mask and still declines a layer carrying more than one active mask — so without these two
+  // keys a document using either reports one cleanly-resolved requirement and imports unmasked. They are conditions, not
+  // modes: `inv` can sit on any mode, and "more than one" is a property of the list.
+  it('reports an inverted mask and a layer carrying several active masks as their own conditions', () => {
+    expect(maskCounts([{ inv: true, mode: 'a' }])).toEqual({ 'mask.additive': 1, 'mask.inverted': 1 });
+    expect(maskCounts([{ mode: 'a' }, { mode: 'a' }])).toEqual({ 'mask.additive': 2, 'mask.multiple': 1 });
+    // The condition rides on whatever mode carries it, including one that is itself declined.
+    expect(maskCounts([{ inv: true, mode: 's' }])).toEqual({ 'mask.inverted': 1, 'mask.subtract': 1 });
+  });
+
+  // ★ `None` IS ABSENCE HERE TOO, WHICH IS WHAT KEEPS THE CONDITIONS HONEST. The importer counts a mask as active only
+  // when its mode is something other than `n`, so a disabled mask beside a real one is not "several", and a disabled
+  // mask's own `inv` flag is not an inversion Flight was asked for. A census that disagreed would report a condition the
+  // parser never reaches.
+  it('treats a disabled mask as absent when deciding both conditions', () => {
+    expect(maskCounts([{ mode: 'a' }, { mode: 'n' }])).toEqual({ 'mask.additive': 1 });
+    expect(maskCounts([{ mode: 'n' }, { mode: 'n' }])).toEqual({});
+    expect(maskCounts([{ inv: true, mode: 'n' }])).toEqual({});
+  });
+
   it('returns empty counts for a valid document with no layers', () => {
     const doc = { fr: 30, ip: 0, layers: [], op: 60 };
     const counts = collectLottieCounts(JSON.stringify(doc));
@@ -93,10 +114,11 @@ describe('collectLottieCounts', () => {
 describe('getLottieFeatureNames', () => {
   it('names every feature the census can emit, across all three families', () => {
     const names = getLottieFeatureNames();
-    expect(names).toHaveLength(21);
+    expect(names).toHaveLength(23);
     expect(names).toEqual([...names].sort());
     expect(names.filter((name) => name.startsWith('layer.'))).toHaveLength(6);
-    expect(names.filter((name) => name.startsWith('mask.'))).toHaveLength(6);
+    // Six modes plus the two conditions.
+    expect(names.filter((name) => name.startsWith('mask.'))).toHaveLength(8);
     expect(names.filter((name) => name.startsWith('shape.'))).toHaveLength(9);
   });
 
@@ -116,3 +138,24 @@ describe('getLottieFeatureNames', () => {
     }
   });
 });
+
+// The mask keys of a one-null-layer document, with the layer's own key dropped so each expectation is only about masks.
+function maskCounts(masks: readonly Readonly<Record<string, unknown>>[]): Record<string, number> {
+  const document = {
+    fr: 30,
+    ip: 0,
+    layers: [
+      {
+        ind: 1,
+        ip: 0,
+        masksProperties: masks.map((mask) => ({ o: { k: 100 }, pt: { k: {} }, ...mask })),
+        op: 60,
+        ty: 3,
+      },
+    ],
+    op: 60,
+  };
+  const counts = collectLottieCounts(JSON.stringify(document));
+  expect(counts).not.toBeNull();
+  return Object.fromEntries([...counts!.entries()].filter(([key]) => key.startsWith('mask.')));
+}

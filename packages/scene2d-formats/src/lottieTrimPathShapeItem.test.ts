@@ -1,16 +1,21 @@
 import type {
   ImportDiagnostic,
   LottieLayer,
+  LottieRegistry,
   LottieShapeItemHandler,
   LottieShapeItemKind,
   Shape,
 } from '@flighthq/types/contract';
-import { LottieShapeItemKind as Kind, ShapeKind } from '@flighthq/types/contract';
+import { LottieLayerKind, LottieShapeItemKind as Kind, ShapeKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
+import { createScene2DFromLottieDocumentWithRegistry } from './lottieDocument.ts';
+import { lottieFillShapeItemHandler } from './lottieFillShapeItem.ts';
 import { createScene2DFromLottieDocument } from './lottieImport.ts';
+import { lottiePathShapeItemHandler } from './lottiePathShapeItem.ts';
 import { createLottieRegistry, getLottieShapeItemHandler } from './lottieRegistry.ts';
 import { registerLottieShapeItemHandlers } from './lottieShapeItemHandlers.ts';
+import { lottieShapeLayerHandler } from './lottieShapeLayer.ts';
 import { createLottieTestDocument, findLottieTestNodeByKind, lottieTestSquarePath } from './lottieTestFixtures.ts';
 import { lottieTrimPathShapeItemHandler } from './lottieTrimPathShapeItem.ts';
 
@@ -35,15 +40,32 @@ describe('lottieTrimPathShapeItemHandler', () => {
     expect(pathCommandsOf([halfTrim()]).length).toBeLessThan(pathCommandsOf([]).length);
   });
 
-  // ★ MODIFIERS RUN AFTER THE WALK, IN PUSH ORDER, AND ALL OF THEM RUN. Two trims in one group therefore COMPOSE. This
-  // is the one behaviour this move changed: while the trimming lived in the shape layer it took `items.find`, so the
-  // first trim won and the second was silently ignored. Measured on a square: one trim leaves 4 path commands, two
-  // leave 3, and no trim leaves 5.
-  it('composes with a second trim in the same group rather than letting the first win', () => {
+  // ★ ONE TRIM PER GROUP, ON BOTH PATHS. Lottie applies a group's trim once: a second trim item is IGNORED, not composed
+  // with the first. The rule used to live in the shape layer, which took `items.find`; it now lives in this handler,
+  // which claims the group before doing anything. Both entries are pinned because they reach the handler differently —
+  // the zero-config wrapper resolves the family for you, the selective entry takes the registry you built — and a claim
+  // that leaked into module scope would pass one and fail the other, or pass both and fail across two documents.
+  it('ignores a second trim in the same group rather than composing with it', () => {
     const once = pathCommandsOf([halfTrim()]);
-    const twice = pathCommandsOf([halfTrim(), halfTrim()]);
-    expect(twice).not.toEqual(once);
-    expect(twice.length).toBeLessThan(once.length);
+    expect(pathCommandsOf([halfTrim(), halfTrim()])).toEqual(once);
+    expect(pathCommandsOf([halfTrim(), halfTrim(), halfTrim()])).toEqual(once);
+  });
+
+  it('ignores a second trim on the selective entry too, and does not carry the claim between documents', () => {
+    const registry: LottieRegistry = {
+      layerHandlers: [{ handle: lottieShapeLayerHandler, kind: LottieLayerKind.Shape }],
+      maskHandlers: [],
+      shapeItemHandlers: [
+        { handle: lottieFillShapeItemHandler, kind: Kind.Fill },
+        { handle: lottiePathShapeItemHandler, kind: Kind.Path },
+        { handle: lottieTrimPathShapeItemHandler, kind: Kind.TrimPath },
+      ],
+    };
+    const once = selectivePathCommands(registry, [halfTrim()]);
+    expect(selectivePathCommands(registry, [halfTrim(), halfTrim()])).toEqual(once);
+    // A second document through the SAME registry must trim again: the claim belongs to the group, not to the handler.
+    expect(selectivePathCommands(registry, [halfTrim()])).toEqual(once);
+    expect(once).not.toEqual(selectivePathCommands(registry, []));
   });
 
   // A trim spanning the whole path keeps the whole path, so the handler pushes no modifier at all — which is why the
@@ -83,8 +105,13 @@ function halfTrim() {
   return { e: { k: 50 }, o: { k: 0 }, s: { k: 0 }, ty: 'tm' };
 }
 
-function pathCommandsOf(trims: readonly unknown[], diagnostics?: ImportDiagnostic[]): readonly number[] {
-  const layer = {
+function selectivePathCommands(registry: Readonly<LottieRegistry>, trims: readonly unknown[]): readonly number[] {
+  const result = createScene2DFromLottieDocumentWithRegistry(createLottieTestDocument([trimmedLayer(trims)]), registry);
+  return drawnPathCommands(result.root);
+}
+
+function trimmedLayer(trims: readonly unknown[]): LottieLayer {
+  return {
     ind: 1,
     ip: 0,
     nm: 'trim',
@@ -96,11 +123,18 @@ function pathCommandsOf(trims: readonly unknown[], diagnostics?: ImportDiagnosti
     ],
     ty: 4,
   } as unknown as LottieLayer;
-  const result = createScene2DFromLottieDocument(createLottieTestDocument([layer]), diagnostics);
-  const shape = findLottieTestNodeByKind(result.root, ShapeKind) as Shape | null;
+}
+
+function drawnPathCommands(root: Parameters<typeof findLottieTestNodeByKind>[0]): readonly number[] {
+  const shape = findLottieTestNodeByKind(root, ShapeKind) as Shape | null;
   expect(shape).not.toBeNull();
   const commands = shape!.data.commands as unknown[];
   const at = commands.indexOf('drawPath');
   expect(at).toBeGreaterThanOrEqual(0);
   return commands[at + 2] as readonly number[];
+}
+
+function pathCommandsOf(trims: readonly unknown[], diagnostics?: ImportDiagnostic[]): readonly number[] {
+  const result = createScene2DFromLottieDocument(createLottieTestDocument([trimmedLayer(trims)]), diagnostics);
+  return drawnPathCommands(result.root);
 }

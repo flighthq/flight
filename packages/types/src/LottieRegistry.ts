@@ -172,6 +172,15 @@ export interface LottieMutableAnimationTarget {
 }
 
 export interface LottieShapeItemContext {
+  /**
+   * The keys item handlers have claimed for this group, so a handler can make itself once-per-group.
+   *
+   * ★ THE SET IS THE LAYER'S, THE KEYS ARE THE HANDLERS'. Lottie's trim path applies once per group — a second trim item
+   * is ignored rather than composed — and the shape layer must not be the thing that knows that, or the trim's rule
+   * moves back into the core the handler was extracted from. So the layer hands every item the same per-group set and
+   * reads none of it. Same shape as `LottieImportContext.resolvingPrecompositions`, one scope down.
+   */
+  claims: Set<string>;
   import: LottieImportContext;
   item: Readonly<LottieShapeItem>;
   modifiers: LottieShapeModifier[];
