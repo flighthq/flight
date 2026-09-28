@@ -27,6 +27,10 @@ export { registerSpineBinaryTimelineHandlers } from './spineBinaryTimelineHandle
 export * from './spineBinaryVersion.ts';
 export * from './spineBinaryVersioned.ts';
 export * from './spineDrawOrder.ts';
+export { spineJsonAnimationsSectionReader } from './spineJsonAnimationsHandler.ts';
+export { spineJsonBoneTimelineReader } from './spineJsonBoneTimelineHandler.ts';
+export { spineJsonBonesSectionReader } from './spineJsonBonesHandler.ts';
+export { spineJsonDrawOrderTimelineReader } from './spineJsonDrawOrderTimelineHandler.ts';
 export * from './spineJsonHandlers.ts';
 export {
   createSpineJsonRegistry,
@@ -36,5 +40,20 @@ export {
 export { isReadableSpineJson, parseSpineJsonRequirements } from './spineJsonRequirements.ts';
 export * from './spineJsonSectionCounts.ts';
 export { registerSpineJsonSectionHandlers } from './spineJsonSectionHandlers.ts';
+export { spineJsonSkinsSectionReader } from './spineJsonSkinsHandler.ts';
+export { spineJsonSlotTimelineReader } from './spineJsonSlotTimelineHandler.ts';
+export { spineJsonSlotsSectionReader } from './spineJsonSlotsHandler.ts';
+export {
+  spineJsonDeformTimelineReader,
+  spineJsonEventsSectionReader,
+  spineJsonEventTimelineReader,
+  spineJsonIkConstraintsSectionReader,
+  spineJsonIkTimelineReader,
+  spineJsonPathConstraintsSectionReader,
+  spineJsonPathTimelineReader,
+  spineJsonTransformConstraintsSectionReader,
+  spineJsonTransformTimelineReader,
+} from './spineJsonStubHandlers.ts';
 export { registerSpineJsonTimelineHandlers } from './spineJsonTimelineHandlers.ts';
 export * from './spineParse.ts';
+export * from './spineParseHelpers.ts';

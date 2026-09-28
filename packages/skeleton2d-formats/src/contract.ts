@@ -34,3 +34,4 @@ export * from './spineJsonSlotsHandler.ts';
 export * from './spineJsonStubHandlers.ts';
 export * from './spineJsonTimelineHandlers.ts';
 export * from './spineParse.ts';
+export * from './spineParseHelpers.ts';
