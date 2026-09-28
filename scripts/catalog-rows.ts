@@ -190,6 +190,10 @@ import type {
   ThreeDsChunkHandler,
 } from '@flighthq/types/contract';
 import {
+  BitmapFontFormatKindBmFontBinary,
+  BitmapFontFormatKindBmFontJson,
+  BitmapFontFormatKindBmFontText,
+  BitmapFontFormatKindBmFontXml,
   DragonBonesSectionKind,
   DragonBonesTimelineKind,
   RequirementFacet,
@@ -197,6 +201,11 @@ import {
   SpineBinaryTimelineKind,
   SpineJsonSectionKind,
   SpineJsonTimelineKind,
+  StarlingPexFormatKind,
+  TilemapFormatKindTiledTmj,
+  TilemapFormatKindTiledTmx,
+  TilemapFormatKindTiledTsj,
+  TilemapFormatKindTiledTsx,
 } from '@flighthq/types/contract';
 
 /**
@@ -497,9 +506,64 @@ export const RIVE_PATH_BOOLEAN_PARSER_FIELD = 'pathBooleanRegistrars';
 /** The backend whose rows become `parserOptions` rather than a render-state fragment. */
 export const CATALOG_PARSER_BACKEND = 'parser';
 
+/**
+ * The flat named binding every direct-parser row is emitted as.
+ *
+ * One name for all of them on purpose: an application writes `import { contentParser } from './map.tmx?manifest'`
+ * without knowing which format the file turned out to be, which is the whole point of asking the build. The
+ * emitter refuses to bind one name to two different symbols, so a file that somehow resolved to two parsers is a
+ * reported generation problem rather than a silent last-write-wins.
+ */
+export const CATALOG_DIRECT_PARSER_EXPORT = 'contentParser';
+
+/**
+ * The bedrock formats: one extension, one parser, no handler family to subset.
+ *
+ * ★ THESE ROWS NAME A PARSE FUNCTION, WHICH NO OTHER ROW DOES. Every other parser row spreads a handler into a
+ * field its format's options type declares. These formats have no such field — `TilemapImportOptions` declares
+ * only `mapFormats` and `tilesetFormats`, which are descriptor lists for the DETECTION REGISTRY, and
+ * `BitmapFontParseOptions` declares nothing at all. Routing through either would seed the full preset, measured
+ * at 40,377 bytes carrying five codecs against 7,935 for one codec named directly. So the row names the parser
+ * and the module binds it; see `parserExport` on RequirementCatalogEntry.
+ *
+ * The kinds are DERIVED from each family's own format-kind constant rather than spelled again here, so renaming a
+ * kind moves these rows on the next generate instead of leaving them pointing at a name nobody uses.
+ *
+ * ★ `.fnt` IS FOUR ROWS, NOT ONE, BECAUSE THE EXTENSION CANNOT NAME THE FORMAT. BMFont writes binary, text and
+ * XML all under `.fnt`; the analyzer reads the content, learns which one it is, and emits that single kind. A
+ * coarse `.fnt` → text mapping would hand an XML font to a parser that returns null on it — an empty font with no
+ * error, which is the failure this whole correction exists to remove.
+ *
+ * Deliberately ABSENT: `.plist` (Particle Designer particles AND Cocos plist spritesheets), `.atlas` (libGDX
+ * spritesheet AND libGDX texture atlas) and `.xml` (Starling spritesheet, Starling texture atlas, BMFont XML).
+ * Each names two or more parsers across different families, so no single direct binding is true for them and the
+ * union a composite analyzer would produce is not a bedrock selection.
+ */
+const DIRECT_PARSER_ROWS: readonly (readonly [module: string, symbol: string, kind: string])[] = [
+  ['@flighthq/bitmapfont-formats', 'parseBitmapFontBinary', `bitmapfont.${BitmapFontFormatKindBmFontBinary}`],
+  ['@flighthq/bitmapfont-formats', 'parseBitmapFontJson', `bitmapfont.${BitmapFontFormatKindBmFontJson}`],
+  ['@flighthq/bitmapfont-formats', 'parseBitmapFontFnt', `bitmapfont.${BitmapFontFormatKindBmFontText}`],
+  ['@flighthq/bitmapfont-formats', 'parseBitmapFontXml', `bitmapfont.${BitmapFontFormatKindBmFontXml}`],
+  ['@flighthq/particles-formats/contract', 'parseStarlingPex', `particles.${StarlingPexFormatKind}`],
+  ['@flighthq/tilemap-formats/contract', 'parseTiledTmj', `tilemap.${TilemapFormatKindTiledTmj}`],
+  ['@flighthq/tilemap-formats/contract', 'parseTiledTmx', `tilemap.${TilemapFormatKindTiledTmx}`],
+  ['@flighthq/tilemap-formats/contract', 'parseTiledTilesetJson', `tilemap.${TilemapFormatKindTiledTsj}`],
+  ['@flighthq/tilemap-formats/contract', 'parseTiledTileset', `tilemap.${TilemapFormatKindTiledTsx}`],
+];
+
 /** Builds every built-in row, sorted so the generated source is byte-stable across runs. */
 export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[] {
   const rows: RequirementCatalogEntry[] = [];
+  for (const [module, symbol, kind] of DIRECT_PARSER_ROWS) {
+    rows.push({
+      backend: CATALOG_PARSER_BACKEND,
+      facet: RequirementFacet.DocumentFormat,
+      implementationImport: module,
+      implementationSymbol: symbol,
+      kind,
+      parserExport: CATALOG_DIRECT_PARSER_EXPORT,
+    });
+  }
   for (const [symbol, handler] of SWF_TAG_HANDLERS) {
     for (const code of handler.tags) {
       rows.push(row('@flighthq/swf', symbol, `${SWF_REQUIREMENT_KEY_NAMESPACE}.${getSwfTagName(code)}`));

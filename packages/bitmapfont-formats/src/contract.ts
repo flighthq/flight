@@ -1,6 +1,7 @@
 export * from './bitmapFontDetect.ts';
 export * from './bitmapFontBinary.ts';
 export * from './bitmapFontFnt.ts';
+export * from './bitmapFontFormatKind.ts';
 export * from './bitmapFontJson.ts';
 export * from './bitmapFontRecord.ts';
 export * from './bitmapFontXml.ts';

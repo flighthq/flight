@@ -34,6 +34,23 @@ export interface RequirementCatalogEntry {
    */
   readonly parserField?: string;
   /**
+   * The flat named binding a DIRECT-PARSER row is emitted as, instead of a `parserOptions` field.
+   *
+   * ★ THIS EXISTS BECAUSE SOME FORMATS HAVE NO HANDLER FAMILY TO SUBSET. Every other parser row spreads its
+   * symbol into a field the format's own options type declares — `.dae` into `decoders`, `.swf` into `tags`.
+   * A bedrock format has one parser and no family: `TilemapImportOptions` declares only `mapFormats` and
+   * `tilesetFormats`, which are DESCRIPTOR LISTS FOR THE DETECTION REGISTRY, and `BitmapFontParseOptions`
+   * declares nothing at all. Emitting into either would either install the registry — whose initializer seeds
+   * the full preset, measured at 40,377 bytes carrying five codecs against 7,935 for one — or spread into a
+   * field the format does not declare, which parses with the full default family while the generated module
+   * looks correct.
+   *
+   * So the row names the parser itself, and the module emits `export const <parserExport> = <symbol>;`. It
+   * selects IDENTITY and nothing more: the parser keeps its own signature, and no adapter or registry is
+   * invented to make several of them interchangeable. A row carrying this never enters `parserOptions`.
+   */
+  readonly parserExport?: string;
+  /**
    * The `register*` that binds the implementation, for a backend that HAS one. Absent for an
    * options-driven lane: a SWF tag family is named in `SwfParseOptions.tags` and an AWD2 handler in
    * `Awd2ParseOptions.blocks`, so there is no registrar to name and a row that invented one would be

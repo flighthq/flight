@@ -192,6 +192,7 @@ describe('DEFAULT_CONTENT_ANALYZERS', () => {
       '.awd',
       '.awd2',
       '.dae',
+      '.fnt',
       '.glb',
       '.gltf',
       '.json',
@@ -199,11 +200,16 @@ describe('DEFAULT_CONTENT_ANALYZERS', () => {
       '.md5anim',
       '.md5mesh',
       '.obj',
+      '.pex',
       '.riv',
       '.skel',
       '.stl',
       '.svg',
       '.swf',
+      '.tmj',
+      '.tmx',
+      '.tsj',
+      '.tsx',
     ]);
     // The keying itself, stated as a property rather than left implicit in the list: a build looks the analyzer
     // up by `extname(path).toLowerCase()`, so an entry written with a capital or without its dot is unreachable
