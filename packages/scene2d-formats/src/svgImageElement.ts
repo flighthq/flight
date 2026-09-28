@@ -5,7 +5,7 @@ import { createTexture } from '@flighthq/texture/contract';
 import type { Node2D, SvgElementContext, SvgImportContext, SvgStyle, XmlElement } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { applySvgElementClip } from './svgClip.ts';
+import { applySvgElementClipFamily } from './svgDocument.ts';
 import { applySvgElementAppearance } from './svgDocument.ts';
 import { createSvgViewBoxMatrix } from './svgTransform.ts';
 import { svgAttribute, svgNumberAttribute } from './svgXml.ts';
@@ -67,7 +67,11 @@ function createSvgImageNode(
         )
       : createMatrix(1, 0, 0, 1, x, y);
   applySvgElementAppearance(bitmap, element, parentStyle, context, geometry);
-  const bounds = createRectangle(0, 0, image.width, image.height);
-  applySvgElementClip(bitmap, element, context, bounds);
+  // ★ RECORDED RATHER THAN PASSED. The clip family measures its own target now, and for a sprite it would otherwise read
+  // the node's laid-out box; SVG defines `objectBoundingBox` units over the image's INTRINSIC size, which only this
+  // handler knows. Recording it in the context — the same channel the geometry family uses for its fill-only box — keeps
+  // the clip identical to the one the walk used to pass in.
+  context.objectBoundingBoxes.set(bitmap, createRectangle(0, 0, image.width, image.height));
+  applySvgElementClipFamily(bitmap, element, context);
   return bitmap;
 }

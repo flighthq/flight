@@ -13,13 +13,11 @@ import type {
   SvgStyle,
   XmlElement,
 } from '@flighthq/types/contract';
-import { ImportDiagnosticSeverity, SvgElementKind } from '@flighthq/types/contract';
+import { ImportDiagnosticSeverity, SvgClipKind, SvgElementKind } from '@flighthq/types/contract';
 import { parseXmlDocument } from '@flighthq/xml/contract';
 
-import { createSvgNode2DBounds } from './svgBounds.ts';
-import { applySvgElementClip } from './svgClip.ts';
 import { parseSvgGradient } from './svgGradient.ts';
-import { getSvgElementHandler } from './svgRegistry.ts';
+import { getSvgClipHandler, getSvgElementHandler } from './svgRegistry.ts';
 import { collectCssRules, defaultSvgStyle, resolveSvgStyle } from './svgStyle.ts';
 import { applySvgTransform, createSvgViewportMatrix, multiplySvgMatrices, parseSvgTransform } from './svgTransform.ts';
 import { svgAttribute, svgLocalName, visitSvgElements } from './svgXml.ts';
@@ -33,32 +31,6 @@ export function appendSvgChildren(
   for (const child of element.children) {
     const node = createSvgElementNode(child, parentStyle, context);
     if (node !== null) addNodeChild(parent, node);
-  }
-}
-
-function svgElementKindForName(name: string): SvgElementKind | null {
-  switch (name) {
-    case 'a':
-    case 'g':
-    case 'svg':
-    case 'switch':
-      return SvgElementKind.Container;
-    case 'circle':
-    case 'ellipse':
-    case 'line':
-    case 'path':
-    case 'polygon':
-    case 'polyline':
-    case 'rect':
-      return SvgElementKind.Geometry;
-    case 'image':
-      return SvgElementKind.Image;
-    case 'text':
-      return SvgElementKind.Text;
-    case 'use':
-      return SvgElementKind.Use;
-    default:
-      return null;
   }
 }
 
@@ -95,6 +67,49 @@ export function applySvgElementAppearance(
         : multiplySvgMatrices(authorTransform, geometryTransform);
   applySvgTransform(target, transform);
   return style;
+}
+
+function svgElementKindForName(name: string): SvgElementKind | null {
+  switch (name) {
+    case 'a':
+    case 'g':
+    case 'svg':
+    case 'switch':
+      return SvgElementKind.Container;
+    case 'circle':
+    case 'ellipse':
+    case 'line':
+    case 'path':
+    case 'polygon':
+    case 'polyline':
+    case 'rect':
+      return SvgElementKind.Geometry;
+    case 'image':
+      return SvgElementKind.Image;
+    case 'text':
+      return SvgElementKind.Text;
+    case 'use':
+      return SvgElementKind.Use;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Dispatches an element's clipping to the registered clip family.
+ *
+ * ★ THE CORE LOOKS UP AND NOTHING ELSE. It does not read `clip-path`, does not measure the target and does not touch
+ * `@flighthq/clip` — the handler does all of that — so a caller who registers no clip family links none of it, and an
+ * element that would have been clipped is simply not. Every element is offered, because in SVG every element may carry
+ * a clip.
+ */
+export function applySvgElementClipFamily(
+  target: Node2D,
+  element: Readonly<XmlElement>,
+  context: SvgImportContext,
+): void {
+  const handler = getSvgClipHandler(context.registry, SvgClipKind.Path);
+  if (handler !== null) handler({ element, import: context, target });
 }
 
 /**
@@ -147,7 +162,7 @@ export function createScene2DFromSvgDocumentWithRegistry(
   const viewport = createSvgViewportMatrix(document);
   const rootStyle = applySvgElementAppearance(out, document, defaultSvgStyle, context, viewport, true);
   appendSvgChildren(out, document, rootStyle, context);
-  applySvgElementClip(out, document, context, createSvgNode2DBounds(out, context));
+  applySvgElementClipFamily(out, document, context);
   reportRemainingUnsupportedSvgElements(document, context);
   return out;
 }

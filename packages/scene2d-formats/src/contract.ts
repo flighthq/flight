@@ -56,6 +56,7 @@ export * from './riveText.ts';
 export * from './svgCounts.ts';
 export * from './svgBounds.ts';
 export * from './svgClip.ts';
+export * from './svgClipHandlers.ts';
 export * from './svgColor.ts';
 export * from './svgContainerElement.ts';
 export * from './svgGeometryElement.ts';

@@ -1,16 +1,18 @@
 import type {
   DisplayObject,
   ImportDiagnostic,
+  SvgClipHandlerEntry,
   SvgDocumentImportOptions,
   SvgElementHandlerEntry,
 } from '@flighthq/types/contract';
-import { SvgElementKind } from '@flighthq/types/contract';
+import { SvgClipKind, SvgElementKind } from '@flighthq/types/contract';
 
+import { svgPathClipHandler } from './svgClip.ts';
 import { svgContainerElementHandler } from './svgContainerElement.ts';
 import { createScene2DFromSvgDocumentWithRegistry } from './svgDocument.ts';
 import { svgGeometryElementHandler } from './svgGeometryElement.ts';
 import { svgImageElementHandler } from './svgImageElement.ts';
-import { createSvgRegistry, registerSvgElementHandler } from './svgRegistry.ts';
+import { createSvgRegistry, registerSvgClipHandler, registerSvgElementHandler } from './svgRegistry.ts';
 import { svgTextElementHandler } from './svgTextElement.ts';
 import { svgUseElementHandler } from './svgUseElement.ts';
 
@@ -42,10 +44,18 @@ export function createScene2DFromSvgDocument(
   options?: Readonly<SvgDocumentImportOptions>,
 ): DisplayObject {
   const registry = createSvgRegistry();
+  for (const entry of options?.clipHandlers ?? defaultSvgClipHandlers()) {
+    registerSvgClipHandler(registry, entry.kind, entry.handle);
+  }
   for (const entry of options?.elementHandlers ?? defaultSvgElementHandlers()) {
     registerSvgElementHandler(registry, entry.kind, entry.handle);
   }
   return createScene2DFromSvgDocumentWithRegistry(source, registry, diagnostics, options);
+}
+
+// The zero-config clip family: one member, and declining it means no clipping.
+function defaultSvgClipHandlers(): SvgClipHandlerEntry[] {
+  return [{ handle: svgPathClipHandler, kind: SvgClipKind.Path }];
 }
 
 // The zero-config element family, in the order the single function registered it.

@@ -566,8 +566,18 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
     // The selective entry is PUBLIC here, unlike Lottie's was: `types` already publishes `SvgRegistry.ts` on both lanes,
     // so an application can name the registry it has to pass. What stays contract-only is the shared plumbing the
     // families read — the attribute primitives, the style cascade, the clip lowering — which no application calls.
-    contractOnlyExports: ['applySvgElementClip', 'resolveSvgStyle', 'svgAttribute'],
+    contractOnlyExports: ['applySvgElementClipFamily', 'resolveSvgStyle', 'svgAttribute'],
     families: [
+      {
+        // ★ CLIPPING IS A FAMILY, RULED SO RATHER THAN DISCOVERED. Every element may carry `clip-path`, so while the
+        // element walk read it there was no configuration that could decline `@flighthq/clip`, the bounding-box
+        // measurement, or the clip's own second reading of the geometry elements and of `use`.
+        isolationSymbols: ['svgPathClipHandler'],
+        modules: ['svgClip.ts'],
+        name: 'clips',
+        registrar: 'registerSvgClipHandlers',
+        symbols: ['svgPathClipHandler'],
+      },
       {
         isolationSymbols: ['svgContainerElementHandler'],
         modules: SVG_ELEMENT_MODULES,
@@ -579,7 +589,7 @@ const CASES: readonly FormatParserTreeShakingCase[] = [
     fullAssemblies: [
       {
         exports: ['createScene2DFromSvgDocument'],
-        families: ['elements'],
+        families: ['clips', 'elements'],
         name: 'zero-config importer',
       },
     ],

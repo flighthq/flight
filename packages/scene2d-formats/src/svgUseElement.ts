@@ -12,8 +12,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { createSvgNode2DBounds } from './svgBounds.ts';
-import { applySvgElementClip } from './svgClip.ts';
+import { applySvgElementClipFamily } from './svgDocument.ts';
 import {
   appendSvgChildren,
   applySvgElementAppearance,
@@ -75,7 +74,7 @@ function createSvgUseNode(
       ? createSvgSymbolNode(referenced, element, style, context)
       : createSvgElementNode(referenced, style, context);
   if (referencedNode !== null) addNodeChild(container, referencedNode);
-  applySvgElementClip(container, element, context, createSvgNode2DBounds(container, context));
+  applySvgElementClipFamily(container, element, context);
   context.resolvingUses.delete(id);
   return container;
 }
@@ -97,6 +96,6 @@ function createSvgSymbolNode(
   });
   const style = applySvgElementAppearance(container, element, parentStyle, context, viewport, true);
   appendSvgChildren(container, element, style, context);
-  applySvgElementClip(container, element, context, createSvgNode2DBounds(container, context));
+  applySvgElementClipFamily(container, element, context);
   return container;
 }

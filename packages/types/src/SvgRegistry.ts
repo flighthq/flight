@@ -16,6 +16,35 @@ export const SvgElementKind = {
 
 export type SvgElementKind = string;
 
+/**
+ * The clipping features SVG defines, of which Flight carries `clip-path`.
+ *
+ * ★ CLIPPING IS A FAMILY BECAUSE IT IS NOT A LAYER OR AN ELEMENT. Every element may carry `clip-path`, so while the walk
+ * read it directly there was no configuration in which a caller could leave clipping out — and the clip reader brings
+ * `@flighthq/clip`, the bounding-box measurement, a second reading of the geometry elements and a second resolution of
+ * `use`. Declining the family means no clipping, which is the honest meaning of not registering a reader.
+ *
+ * `mask` lands here too, lowered onto the same hard region and reported as a recovery; `filter` has no reader at all.
+ */
+export const SvgClipKind = {
+  Path: 'clip-path',
+} as const;
+
+export type SvgClipKind = string;
+
+export interface SvgClipContext {
+  element: Readonly<XmlElement>;
+  import: SvgImportContext;
+  target: Node2D;
+}
+
+export type SvgClipHandler = (context: SvgClipContext) => void;
+
+export interface SvgClipHandlerEntry {
+  handle: SvgClipHandler;
+  kind: SvgClipKind;
+}
+
 export interface SvgColor {
   alpha: number;
   rgb: number;
@@ -81,6 +110,7 @@ export interface SvgImportContext {
 }
 
 export interface SvgRegistry {
+  clipHandlers: SvgClipHandlerEntry[];
   elementHandlers: SvgElementHandlerEntry[];
 }
 

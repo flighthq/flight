@@ -195,9 +195,6 @@ describe('generated rich-format modules imported by Node', () => {
   );
 });
 
-// What is left here emits an empty `parserOptions` for a reason that is NOT "the parser is monolithic".
-// OBJ used to belong in this group and no longer does: reading its MTL split the requirement per shading
-// model, so it resolves to real rows and has its own describe above.
 describe('Lottie content through the built-in catalog', () => {
   it('resolves an additive mask to the one handler that reads it', async () => {
     const { diagnostics, source } = await load('a.json', lottieFile('a'));
@@ -353,6 +350,40 @@ describe('OBJ content through the built-in catalog', () => {
   });
 });
 
+// What is left here emits an empty `parserOptions` for a reason that is NOT "the parser is monolithic".
+// OBJ used to belong in this group and no longer does: reading its MTL split the requirement per shading
+// model, so it resolves to real rows and has its own describe above.
+describe('SVG content through the built-in catalog', () => {
+  it('resolves each element to the one handler that claims it, and emits no clip family', async () => {
+    const { diagnostics, source } = await load('a.svg', svgFile('<rect width="1" height="1"/>'));
+    expect(source).toContain(
+      '  elementHandlers: [\n    svgContainerElementHandler,\n    svgGeometryElementHandler,\n  ],',
+    );
+    expect(source).not.toContain('clipHandlers:');
+    expect(diagnostics).toEqual([]);
+  });
+
+  // ★ CLIPPING IS ITS OWN FAMILY AND ITS OWN OPTION FIELD. A document that clips resolves `svg.clip-path` to the clip
+  // handler and emits it into `clipHandlers`, which is what lets a document that does NOT clip leave the clip region, the
+  // bounding-box measurement and the clip's own `use` resolution out of the build entirely.
+  it('resolves clip-path to the clip family, in its own options field', async () => {
+    const { diagnostics, source } = await load(
+      'a.svg',
+      svgFile(
+        '<clipPath id="c"><rect width="1" height="1"/></clipPath><g clip-path="url(#c)"><rect width="1" height="1"/></g>',
+      ),
+    );
+    expect(source).toContain('  clipHandlers: [\n    svgPathClipHandler,\n  ],');
+    expect(diagnostics).toEqual([]);
+  });
+
+  // `mask` needs the same reader — Flight lowers it onto the same hard region — so it asks for the same family.
+  it('resolves a mask reference to the clip family too', async () => {
+    const { source } = await load('a.svg', svgFile('<g mask="url(#m)"><rect width="1" height="1"/></g>'));
+    expect(source).toContain('  clipHandlers: [\n    svgPathClipHandler,\n  ],');
+  });
+});
+
 // Importing the format package's whole source lane through Node is a real module graph, not a stub, and
 // it does not fit the 5s default.
 const NODE_IMPORT_TIMEOUT_MS = 120_000;
@@ -412,6 +443,10 @@ function lottieFile(...masks: readonly (string | Readonly<Record<string, unknown
       w: 100,
     }),
   );
+}
+
+function svgFile(body: string): Uint8Array {
+  return new TextEncoder().encode(`<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10">${body}</svg>`);
 }
 
 const OBJ_WITH_MTL = 'mtllib a.mtl\nusemtl Red\nv 0 0 0\nf 1 1 1\n';

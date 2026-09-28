@@ -9,6 +9,7 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createPath, transformPath } from '@flighthq/path/contract';
 import type {
   ClipRegion,
+  SvgClipContext,
   Matrix,
   Node2D,
   Path,
@@ -20,7 +21,7 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { hasUnmeasurableSvgText } from './svgBounds.ts';
+import { createSvgNode2DBounds, hasUnmeasurableSvgText } from './svgBounds.ts';
 import { createSvgGeometryPath } from './svgGeometryPath.ts';
 import { resolveSvgDefinitionStyle, resolveSvgStyle } from './svgStyle.ts';
 import { createSvgViewportMatrix, multiplySvgMatrices, parseSvgTransform } from './svgTransform.ts';
@@ -49,7 +50,21 @@ interface SvgClipGeometry {
   winding: PathWinding;
 }
 
-export function applySvgElementClip(
+/**
+ * The `clip-path` (and `mask`) handler: the whole of Flight's clipping, reachable only by registering it.
+ *
+ * ★ IT MEASURES ITS OWN TARGET. The bounding box `clipPathUnits="objectBoundingBox"` is defined against used to be
+ * computed by every caller and passed in, which put `svgBounds` — and `@flighthq/shape`'s `getShapeBounds` behind it —
+ * into a build that registered no clipping at all. The geometry family records its fill-only box in the context as it
+ * draws, so the box is available here without the walk having to compute one for a clip that may never be asked for.
+ */
+export function svgPathClipHandler(context: SvgClipContext): void {
+  const { element, target } = context;
+  const importContext = context.import;
+  applySvgElementClip(target, element, importContext, createSvgNode2DBounds(target, importContext));
+}
+
+function applySvgElementClip(
   target: Node2D,
   element: Readonly<XmlElement>,
   context: SvgImportContext,

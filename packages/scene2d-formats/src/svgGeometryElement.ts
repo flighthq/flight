@@ -21,8 +21,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { applySvgElementClip } from './svgClip.ts';
 import { resolveSvgColor } from './svgColor.ts';
+import { applySvgElementClipFamily } from './svgDocument.ts';
 import { applySvgElementAppearance } from './svgDocument.ts';
 import { createSvgGeometryPath } from './svgGeometryPath.ts';
 import { createSvgGradientMatrix, hasZeroAreaSvgGradientBox, resolveSvgGradient } from './svgGradient.ts';
@@ -50,7 +50,7 @@ export function svgGeometryElementHandler(context: SvgElementContext): Node2D | 
   const bounds = createRectangle();
   getPathBounds(path, bounds);
   importContext.objectBoundingBoxes.set(shape, bounds);
-  applySvgElementClip(shape, element, importContext, bounds);
+  applySvgElementClipFamily(shape, element, importContext);
   return shape;
 }
 

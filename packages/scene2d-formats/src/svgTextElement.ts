@@ -14,8 +14,8 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
-import { applySvgElementClip } from './svgClip.ts';
 import { resolveSvgColor } from './svgColor.ts';
+import { applySvgElementClipFamily } from './svgDocument.ts';
 import { applySvgElementAppearance } from './svgDocument.ts';
 import { resolveSvgStyle } from './svgStyle.ts';
 import { svgAttribute, svgFirstNumber, svgLocalName } from './svgXml.ts';
@@ -109,7 +109,7 @@ function createSvgTextNode(
     );
   }
   applySvgElementAppearance(label, element, parentStyle, context, createMatrix(1, 0, 0, 1, x, y));
-  applySvgElementClip(label, element, context, null);
+  applySvgElementClipFamily(label, element, context);
   return label;
 }
 

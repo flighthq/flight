@@ -50,6 +50,7 @@ import {
   SPINE_BINARY_TIMELINE_HANDLERS,
   SPINE_JSON_SECTION_HANDLERS,
   SPINE_JSON_TIMELINE_HANDLERS,
+  SVG_CLIP_HANDLERS,
   SVG_ELEMENT_HANDLERS,
   SWF_TAG_HANDLERS,
   THREE_DS_CHUNK_HANDLERS,
@@ -791,10 +792,32 @@ describe('buildRequirementCatalogRows', () => {
       }
     }
   });
-  it('sets parserField on SVG rows to elementHandlers', () => {
-    for (const row of buildRequirementCatalogRows().filter((candidate) => candidate.kind.startsWith('svg.'))) {
-      expect(row.parserField, row.kind).toBe('elementHandlers');
-    }
+  // ★ TWO FAMILIES NOW, NOT ONE. Clipping became a family of its own because every element may carry `clip-path`, so an
+  // SVG row routes to one of two registry fields. Deriving the field from the tables rather than from the kind's spelling
+  // is what makes a row that drifts into the wrong family fail here.
+  it('sets parserField on SVG rows to route each handler to its own registry field', () => {
+    const field = new Map<string, string>();
+    for (const [, , kind] of SVG_CLIP_HANDLERS) field.set(`svg.${kind}`, 'clipHandlers');
+    for (const [, , kind] of SVG_ELEMENT_HANDLERS) field.set(`svg.${kind}`, 'elementHandlers');
+
+    const rows = buildRequirementCatalogRows().filter((candidate) => candidate.kind.startsWith('svg.'));
+    expect(rows.length).toBe(field.size);
+    for (const row of rows) expect(row.parserField, row.kind).toBe(field.get(row.kind));
+  });
+
+  it('lists every SVG clip handler the scene2d-formats package exports', () => {
+    const exported = Object.keys(scene2dFormats)
+      .filter(
+        (name) =>
+          name.startsWith('svg') &&
+          name.endsWith('ClipHandler') &&
+          !name.startsWith('register') &&
+          !name.startsWith('get') &&
+          !name.startsWith('unregister') &&
+          typeof (scene2dFormats as unknown as Record<string, unknown>)[name] === 'function',
+      )
+      .sort();
+    expect(SVG_CLIP_HANDLERS.map(([symbol]) => symbol).sort()).toEqual(exported);
   });
 
   it('imports SVG handlers from the public lane', () => {
