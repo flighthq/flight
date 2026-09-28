@@ -18,7 +18,7 @@ import {
   threeDsAllChunkHandlers,
 } from '@flighthq/scene3d-formats';
 import * as scene3dFormats from '@flighthq/scene3d-formats';
-import { getThreeDsChunkName } from '@flighthq/scene3d-formats/contract';
+import { getThreeDsChunkName, THREE_DS_REQUIREMENT_KEY_NAMESPACE } from '@flighthq/scene3d-formats/contract';
 import * as scene3dFormatsContract from '@flighthq/scene3d-formats/contract';
 import {
   dragonBonesAllSectionHandlers,
@@ -33,7 +33,7 @@ import * as swf from '@flighthq/swf';
 import { getSwfTagName } from '@flighthq/swf/contract';
 import * as swfContract from '@flighthq/swf/contract';
 import * as tilemapFormatsContract from '@flighthq/tilemap-formats/contract';
-import { RequirementFacet } from '@flighthq/types/contract';
+import { RequirementFacet, THREE_DS_MATERIAL_TEXTURE_MAP } from '@flighthq/types/contract';
 
 import { ALWAYS_READ_FORMAT_FEATURES } from './catalog-dispositions.ts';
 import {
@@ -198,7 +198,10 @@ describe('buildRequirementCatalogRows', () => {
       expect(rows.filter((row) => row.implementationSymbol === symbol).length, symbol).toBe(handler.blockTypes.length);
     }
     for (const [symbol, handler] of THREE_DS_CHUNK_HANDLERS) {
-      expect(rows.filter((row) => row.implementationSymbol === symbol).length, symbol).toBe(handler.chunkIds.length);
+      const aliasCount = symbol === 'threeDsMaterialHandler' ? 1 : 0;
+      expect(rows.filter((row) => row.implementationSymbol === symbol).length, symbol).toBe(
+        handler.chunkIds.length + aliasCount,
+      );
     }
     // A decoder earns one row for every coarse or sub-element feature it claims.
     for (const [symbol, decoder] of COLLADA_ELEMENT_DECODERS) {
@@ -256,12 +259,24 @@ describe('buildRequirementCatalogRows', () => {
 
   it('routes each 3DS chunk to the handler that actually claims it', () => {
     const rows = buildRequirementCatalogRows();
+    const aliasKind = `${THREE_DS_REQUIREMENT_KEY_NAMESPACE}.${getThreeDsChunkName(THREE_DS_MATERIAL_TEXTURE_MAP)}`;
     for (const [symbol, handler] of THREE_DS_CHUNK_HANDLERS) {
       const claimed = new Set(handler.chunkIds.map((chunkId) => `3ds.${getThreeDsChunkName(chunkId)}`));
       for (const row of rows.filter((candidate) => candidate.implementationSymbol === symbol)) {
+        if (row.kind === aliasKind) continue;
         expect(claimed.has(row.kind), `${symbol} does not claim ${row.kind}`).toBe(true);
       }
     }
+  });
+
+  it('keeps MaterialTextureMap out of dispatch IDs while resolving it to threeDsMaterialHandler', () => {
+    const handler = THREE_DS_CHUNK_HANDLERS.get('threeDsMaterialHandler')!;
+    expect(handler.chunkIds).not.toContain(THREE_DS_MATERIAL_TEXTURE_MAP);
+    const aliasKind = `${THREE_DS_REQUIREMENT_KEY_NAMESPACE}.${getThreeDsChunkName(THREE_DS_MATERIAL_TEXTURE_MAP)}`;
+    const rows = buildRequirementCatalogRows();
+    const aliasRow = rows.find((row) => row.kind === aliasKind);
+    expect(aliasRow, 'catalog row for MaterialTextureMap must exist').toBeDefined();
+    expect(aliasRow!.implementationSymbol).toBe('threeDsMaterialHandler');
   });
 
   it('routes each COLLADA feature to the decoder that says it decodes it', () => {

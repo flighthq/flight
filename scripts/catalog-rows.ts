@@ -205,6 +205,7 @@ import {
   SpineJsonSectionKind,
   SpineJsonTimelineKind,
   StarlingPexFormatKind,
+  THREE_DS_MATERIAL_TEXTURE_MAP,
   TilemapFormatKindTiledTmj,
   TilemapFormatKindTiledTmx,
   TilemapFormatKindTiledTsj,
@@ -631,6 +632,18 @@ export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[
       );
     }
   }
+  // ★ NESTED-FEATURE ALIAS. MaterialTextureMap (0xA200) is a sub-chunk of Material (0xAFFF), consumed
+  // internally by threeDsMaterialHandler's own parse loop — it is never dispatched at the top level, so
+  // it must NOT appear in chunkIds (which governs walker dispatch). The catalog row is explicit because
+  // the derivation loop above only sees chunkIds, and adding a sub-chunk there would mis-dispatch.
+  rows.push(
+    row(
+      '@flighthq/scene3d-formats',
+      'threeDsMaterialHandler',
+      `${THREE_DS_REQUIREMENT_KEY_NAMESPACE}.${getThreeDsChunkName(THREE_DS_MATERIAL_TEXTURE_MAP)}`,
+      familyOrderOf(threeDsAllChunkHandlers, threeDsMaterialHandler),
+    ),
+  );
   // ★ ROWS DERIVED BY RUNNING THE SHIPPED REGISTRARS, NEVER BY TRANSCRIBING THE OBJECT MODEL. Rive identifies
   // objects by number across 368 core types; a hand-written key table would be the single largest thing in this
   // file and the first to fall out of date. Each registrar is applied to a throwaway registry and the keys it

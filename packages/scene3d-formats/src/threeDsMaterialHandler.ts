@@ -19,7 +19,7 @@ import {
 import { parseColorChunk, readChunkEnd, readNullTerminatedString } from './threeDsParse.ts';
 
 export const threeDsMaterialHandler: Readonly<ThreeDsChunkHandler> = {
-  chunkIds: [THREE_DS_MATERIAL, THREE_DS_MATERIAL_TEXTURE_MAP],
+  chunkIds: [THREE_DS_MATERIAL],
   collect(state: ThreeDsParseState, view: Readonly<DataView>, offset: number, end: number): void {
     const material = parseThreeDsMaterial(view, offset, end);
     if (material.name.length > 0) state.materials.set(material.name, material);
