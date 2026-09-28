@@ -3,7 +3,18 @@ import type { Scene3DDocument } from '@flighthq/types/contract';
 import { clampChannel, externalObjTexture, packObjColor } from './objMaterialHelpers.ts';
 
 function emptyDocument(): Scene3DDocument {
-  return { materials: [], meshes: [], nodes: [], resources: [], scenes: [{ rootNodes: [] }] };
+  return {
+    animations: [],
+    cameras: [],
+    lights: [],
+    materials: [],
+    meshes: [],
+    metadata: null,
+    nodes: [],
+    resources: [],
+    scenes: [{ rootNodes: [] }],
+    skins: [],
+  };
 }
 
 describe('clampChannel', () => {
