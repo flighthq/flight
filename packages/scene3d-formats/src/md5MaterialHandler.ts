@@ -32,3 +32,6 @@ export const md5MaterialHandler: Readonly<Md5SectionHandler> = {
   },
   feature: MD5_MATERIAL_FEATURE,
 };
+
+/** The material family, beside its handler so naming it links this handler and not the skeleton's. */
+export const md5MaterialFamily: readonly Md5SectionHandler[] = [md5MaterialHandler];

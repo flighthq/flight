@@ -1,6 +1,8 @@
 import { MD5_MATERIAL_FEATURE, MD5_SKELETON_FEATURE } from '@flighthq/types/contract';
 
-import { md5AllSectionHandlers, md5MaterialFamily, md5SkeletonFamily } from './md5SectionRegistry.ts';
+import { md5MaterialFamily } from './md5MaterialHandler.ts';
+import { md5AllSectionHandlers } from './md5SectionRegistry.ts';
+import { md5SkeletonFamily } from './md5SkeletonHandler.ts';
 
 describe('md5AllSectionHandlers', () => {
   it('contains every family', () => {
@@ -23,17 +25,5 @@ describe('md5AllSectionHandlers', () => {
     expect([...md5AllSectionHandlers.map((handler) => handler.feature)].sort()).toEqual(
       [MD5_MATERIAL_FEATURE, MD5_SKELETON_FEATURE].sort(),
     );
-  });
-});
-
-describe('md5MaterialFamily', () => {
-  it('covers the Material feature', () => {
-    expect(md5MaterialFamily.map((handler) => handler.feature)).toEqual([MD5_MATERIAL_FEATURE]);
-  });
-});
-
-describe('md5SkeletonFamily', () => {
-  it('covers the Skeleton feature', () => {
-    expect(md5SkeletonFamily.map((handler) => handler.feature)).toEqual([MD5_SKELETON_FEATURE]);
   });
 });

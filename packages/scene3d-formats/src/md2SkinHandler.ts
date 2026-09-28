@@ -59,6 +59,18 @@ export const md2SkinHandler: Readonly<Md2SectionHandler> = {
   feature: 'Material',
 };
 
+/**
+ * The skin family, as the list a selective caller names.
+ *
+ * ★ IT LIVES BESIDE ITS HANDLER BECAUSE OF WHERE IT USED TO LIVE. Both MD2 family constants sat in
+ * `md2SectionRegistry.ts` next to `md2AllSectionHandlers`, so naming EITHER family imported that module and linked BOTH
+ * handlers — which is why a build asking for skins alone still carried the animation reader, and one asking for
+ * animation alone still carried this reader and `@flighthq/materials` — 9,473 measured bytes for a family it had
+ * declined. A family constant is one element long; keeping it here is what
+ * makes naming it cost one handler.
+ */
+export const md2SkinFamily: readonly Md2SectionHandler[] = [md2SkinHandler];
+
 // Reads one MD2 skin record's NUL-terminated texture path out of its fixed 64-byte field.
 function readMd2SkinName(bytes: Readonly<Uint8Array>, offset: number): string {
   const limit = offset + MD2_SKIN_SIZE;
