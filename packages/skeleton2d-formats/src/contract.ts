@@ -27,10 +27,10 @@ export {
 export * from './dragonBonesTimelineHandlers.ts';
 export * from './skeleton2dJsonAnalyzer.ts';
 export * from './skeletonDetect.ts';
-export * from './spineBinaryAnimationsHandler.ts';
-export * from './spineBinaryBoneTimelineHandler.ts';
-export * from './spineBinaryBonesHandler.ts';
-export * from './spineBinaryDrawOrderTimelineHandler.ts';
+export { skipSpineBinaryAnimationsSection } from './spineBinaryAnimationsHandler.ts';
+export { buildSpineBinarySegmentEasings, skipSpineBinaryBoneTimelines } from './spineBinaryBoneTimelineHandler.ts';
+export { skipSpineBinaryBonesSection } from './spineBinaryBonesHandler.ts';
+export { skipSpineBinaryDrawOrderTimeline } from './spineBinaryDrawOrderTimelineHandler.ts';
 export * from './spineBinaryFull.ts';
 export * from './spineBinaryHandlers.ts';
 export { parseSpineSkeletonBinaryWithRegistry } from './spineBinaryParse.ts';
@@ -40,11 +40,22 @@ export * from './spineBinaryRegistry.ts';
 export * from './spineBinaryRequirements.ts';
 export * from './spineBinarySectionCounts.ts';
 export * from './spineBinarySectionHandlers.ts';
-export * from './spineBinarySkinsHandler.ts';
-export * from './spineBinarySlotTimelineHandler.ts';
-export * from './spineBinarySlotsHandler.ts';
-export * from './spineBinaryStubHandlers.ts';
-export * from './spineBinaryStubTimelineHandlers.ts';
+export { skipSpineBinarySkinsSection } from './spineBinarySkinsHandler.ts';
+export { skipSpineBinarySlotTimelines } from './spineBinarySlotTimelineHandler.ts';
+export { skipSpineBinarySlotsSection } from './spineBinarySlotsHandler.ts';
+export {
+  skipSpineBinaryEventsSection,
+  skipSpineBinaryIkConstraintsSection,
+  skipSpineBinaryPathConstraintsSection,
+  skipSpineBinaryTransformConstraintsSection,
+} from './spineBinaryStubHandlers.ts';
+export {
+  skipSpineBinaryDeformTimelines,
+  skipSpineBinaryEventTimelines,
+  skipSpineBinaryIkTimelines,
+  skipSpineBinaryPathTimelines,
+  skipSpineBinaryTransformTimelines,
+} from './spineBinaryStubTimelineHandlers.ts';
 export * from './spineBinaryTimelineHandlers.ts';
 export * from './spineBinaryVersion.ts';
 export * from './spineBinaryVersioned.ts';
