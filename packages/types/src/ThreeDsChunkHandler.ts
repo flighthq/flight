@@ -11,23 +11,25 @@ import type { ThreeDsCamera, ThreeDsLight, ThreeDsMaterial, ThreeDsMesh } from '
  * handler does not walk — a tree walker locates the chunk and calls the handler for its claimed IDs.
  *
  * A handler claims chunk IDs (the uint16 values at the start of each 3DS chunk) and provides a
- * `collect` function that reads one chunk into the shared parse state. Unlike AWD2's block handlers,
- * 3DS handlers do not have a separate `build` phase — the document is assembled after all chunks
- * have been collected, using the same material-name-resolution and pivot-application pass the
- * monolithic parser uses.
+ * `collect` function that reads one chunk into the shared parse state, plus an optional `build`
+ * function that assembles the collected data into the document. The two-phase split follows the
+ * AWD2 handler pattern: `collect` runs once per chunk during the tree walk; `build` runs once
+ * after the walk completes, when every handler's data is in place and cross-family references
+ * (material names, keyframe pivots) can be resolved.
  */
 export interface ThreeDsChunkHandler {
   readonly chunkIds: readonly number[];
+  build?(state: ThreeDsParseState): void;
   collect(state: ThreeDsParseState, view: Readonly<DataView>, offset: number, end: number, name: string): void;
 }
 
 /**
  * Shared parse state for a 3DS import — the collectors every handler writes into.
  *
- * The tree walker locates feature chunks and calls the handler for each; handlers populate the
- * collectors here. After the walk, a document-assembly step resolves material references by name,
- * applies keyframe pivots, and builds the Scene3DDocument — the same logic the monolithic parser
- * uses, now reachable from the handler-driven path.
+ * The tree walker locates feature chunks and calls each handler's `collect`; handlers populate the
+ * collectors here. After the walk, the dispatcher calls each handler's `build` (when present) to
+ * assemble the collected data into the document — resolving material references by name, applying
+ * keyframe pivots, and emitting cameras and lights.
  */
 export interface ThreeDsParseState {
   readonly cameras: ThreeDsCamera[];
