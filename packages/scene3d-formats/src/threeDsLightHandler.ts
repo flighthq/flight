@@ -126,6 +126,8 @@ export const threeDsLightHandler: Readonly<ThreeDsChunkHandler> = {
   },
 };
 
+export const threeDsLightFamily: readonly ThreeDsChunkHandler[] = [threeDsLightHandler];
+
 // Appends one parsed 3DS light to the document's light placement table. A light carrying the spot
 // sub-chunk becomes a SpotLight aimed at its target point; every other light is a PointLight, which is
 // what the format's own default is. Per the document convention (see Scene3DDocumentLight) the descriptor

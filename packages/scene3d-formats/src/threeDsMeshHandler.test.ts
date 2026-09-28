@@ -6,7 +6,7 @@ import {
 } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseThreeDsTrimesh } from './threeDsMeshHandler.ts';
+import { parseThreeDsTrimesh, threeDsMeshFamily, threeDsMeshHandler } from './threeDsMeshHandler.ts';
 
 function writeChunk(id: number, payload: Uint8Array): Uint8Array {
   const total = THREE_DS_CHUNK_HEADER_BYTES + payload.byteLength;
@@ -76,5 +76,17 @@ describe('parseThreeDsTrimesh', () => {
     const chunk = writeChunk(THREE_DS_TRIMESH, new Uint8Array(0));
     const view = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
     expect(parseThreeDsTrimesh(view, 0, chunk.byteLength, 'Empty', null)).toBeNull();
+  });
+});
+
+describe('threeDsMeshFamily', () => {
+  it('claims THREE_DS_TRIMESH', () => {
+    expect(threeDsMeshFamily.flatMap((h) => [...h.chunkIds])).toContain(THREE_DS_TRIMESH);
+  });
+});
+
+describe('threeDsMeshHandler', () => {
+  it('is the sole member of its family', () => {
+    expect(threeDsMeshFamily).toEqual([threeDsMeshHandler]);
   });
 });

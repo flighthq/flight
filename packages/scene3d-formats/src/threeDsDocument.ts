@@ -1,7 +1,8 @@
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import type { ImportDiagnostic, Scene3D, Scene3DDocument, ThreeDsImportOptions } from '@flighthq/types/contract';
 
-import { buildThreeDsChunkDispatch, threeDsAllChunkHandlers } from './threeDsChunkRegistry.ts';
+import { buildThreeDsChunkDispatch } from './threeDsChunkDispatch.ts';
+import { threeDsAllChunkHandlers } from './threeDsChunkRegistry.ts';
 import { parseThreeDsDocumentWithDispatch } from './threeDsParse.ts';
 
 /**

@@ -96,6 +96,8 @@ export const threeDsCameraHandler: Readonly<ThreeDsChunkHandler> = {
   },
 };
 
+export const threeDsCameraFamily: readonly ThreeDsChunkHandler[] = [threeDsCameraHandler];
+
 // Appends one parsed 3DS camera to the document's camera placement table. The file states a position and
 // an aim TARGET POINT; the document wants an orientation, so the aim is derived as the normalized
 // target−position and baked into `transform.rotation` as the rotation carrying the canonical camera

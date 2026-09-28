@@ -66,6 +66,8 @@ export const threeDsMeshHandler: Readonly<ThreeDsChunkHandler> = {
   },
 };
 
+export const threeDsMeshFamily: readonly ThreeDsChunkHandler[] = [threeDsMeshHandler];
+
 // Parses a trimesh chunk (0x4100) and its sub-chunks (vertices, faces, UVs) into a ThreeDsMesh
 // descriptor.
 export function parseThreeDsTrimesh(

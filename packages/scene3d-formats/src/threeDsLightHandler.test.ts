@@ -1,7 +1,7 @@
 import { THREE_DS_CHUNK_HEADER_BYTES, THREE_DS_COLOR_FLOAT, THREE_DS_LIGHT } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseThreeDsLight } from './threeDsLightHandler.ts';
+import { parseThreeDsLight, threeDsLightFamily, threeDsLightHandler } from './threeDsLightHandler.ts';
 
 function writeChunk(id: number, payload: Uint8Array): Uint8Array {
   const total = THREE_DS_CHUNK_HEADER_BYTES + payload.byteLength;
@@ -52,5 +52,17 @@ describe('parseThreeDsLight', () => {
     const chunk = writeChunk(THREE_DS_LIGHT, new Uint8Array(4));
     const view = new DataView(chunk.buffer, chunk.byteOffset, chunk.byteLength);
     expect(parseThreeDsLight(view, 0, chunk.byteLength, 'Bad', null)).toBeNull();
+  });
+});
+
+describe('threeDsLightFamily', () => {
+  it('claims THREE_DS_LIGHT', () => {
+    expect(threeDsLightFamily.flatMap((h) => [...h.chunkIds])).toContain(THREE_DS_LIGHT);
+  });
+});
+
+describe('threeDsLightHandler', () => {
+  it('is the sole member of its family', () => {
+    expect(threeDsLightFamily).toEqual([threeDsLightHandler]);
   });
 });
