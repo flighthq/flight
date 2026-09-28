@@ -3,7 +3,14 @@ export { dragonBonesBoneTimelineHandler } from './dragonBonesBoneTimelineHandler
 export { dragonBonesBonesSectionHandler } from './dragonBonesBonesHandler.ts';
 export * from './dragonBonesHandlers.ts';
 export * from './dragonBonesParse.ts';
-export * from './dragonBonesParseHelpers.ts';
+export {
+  buildDragonBonesSegmentEasings,
+  dragonBonesFrames,
+  dragonBonesFrameTimes,
+  dragonBonesInterpolation,
+  parseDragonBonesBoneTransform,
+  skipCrumbDragonBonesGroup,
+} from './dragonBonesParseHelpers.ts';
 export * from './dragonBonesRegistry.ts';
 export * from './dragonBonesRequirements.ts';
 export * from './dragonBonesSectionCounts.ts';
