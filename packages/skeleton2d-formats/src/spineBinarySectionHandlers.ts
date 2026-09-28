@@ -1,23 +1,18 @@
-import type {
-  SpineBinaryRegistry,
-  SpineBinarySectionContext,
-  SpineBinarySectionHandler,
-} from '@flighthq/types/contract';
+import type { SpineBinaryRegistry, SpineBinarySectionHandler } from '@flighthq/types/contract';
 import { SpineBinarySectionKind } from '@flighthq/types/contract';
 
-import {
-  spineBinaryAnimationsSectionReader,
-  spineBinaryBonesSectionReader,
-  spineBinaryEventsSectionReader,
-  spineBinaryIkConstraintsSectionReader,
-  spineBinaryPathConstraintsSectionReader,
-  spineBinarySkinsSectionReader,
-  spineBinarySlotsSectionReader,
-  spineBinaryTransformConstraintsSectionReader,
-} from './spineBinaryParse.ts';
+import { spineBinaryAnimationsSectionHandler } from './spineBinaryAnimationsHandler.ts';
+import { spineBinaryBonesSectionHandler } from './spineBinaryBonesHandler.ts';
 import { registerSpineBinarySectionHandler } from './spineBinaryRegistry.ts';
+import { spineBinarySkinsSectionHandler } from './spineBinarySkinsHandler.ts';
+import { spineBinarySlotsSectionHandler } from './spineBinarySlotsHandler.ts';
+import {
+  spineBinaryEventsSectionHandler,
+  spineBinaryIkConstraintsSectionHandler,
+  spineBinaryPathConstraintsSectionHandler,
+  spineBinaryTransformConstraintsSectionHandler,
+} from './spineBinaryStubHandlers.ts';
 
-/** Registers all eight top-level Spine 4.1 section handlers. */
 export function registerSpineBinarySectionHandlers(registry: SpineBinaryRegistry): void {
   registerSpineBinarySectionHandler(registry, SpineBinarySectionKind.Animations, spineBinaryAnimationsSectionHandler);
   registerSpineBinarySectionHandler(registry, SpineBinarySectionKind.Bones, spineBinaryBonesSectionHandler);
@@ -41,37 +36,16 @@ export function registerSpineBinarySectionHandlers(registry: SpineBinaryRegistry
   );
 }
 
-export function spineBinaryAnimationsSectionHandler(context: SpineBinarySectionContext): void {
-  spineBinaryAnimationsSectionReader(context);
-}
-
-export function spineBinaryBonesSectionHandler(context: SpineBinarySectionContext): void {
-  spineBinaryBonesSectionReader(context);
-}
-
-export function spineBinaryEventsSectionHandler(context: SpineBinarySectionContext): void {
-  spineBinaryEventsSectionReader(context);
-}
-
-export function spineBinaryIkConstraintsSectionHandler(context: SpineBinarySectionContext): void {
-  spineBinaryIkConstraintsSectionReader(context);
-}
-
-export function spineBinaryPathConstraintsSectionHandler(context: SpineBinarySectionContext): void {
-  spineBinaryPathConstraintsSectionReader(context);
-}
-
-export function spineBinarySkinsSectionHandler(context: SpineBinarySectionContext): void {
-  spineBinarySkinsSectionReader(context);
-}
-
-export function spineBinarySlotsSectionHandler(context: SpineBinarySectionContext): void {
-  spineBinarySlotsSectionReader(context);
-}
-
-export function spineBinaryTransformConstraintsSectionHandler(context: SpineBinarySectionContext): void {
-  spineBinaryTransformConstraintsSectionReader(context);
-}
+export {
+  spineBinaryAnimationsSectionHandler,
+  spineBinaryBonesSectionHandler,
+  spineBinaryEventsSectionHandler,
+  spineBinaryIkConstraintsSectionHandler,
+  spineBinaryPathConstraintsSectionHandler,
+  spineBinarySkinsSectionHandler,
+  spineBinarySlotsSectionHandler,
+  spineBinaryTransformConstraintsSectionHandler,
+};
 
 export const spineBinaryAllSectionHandlers: readonly SpineBinarySectionHandler[] = [
   spineBinaryAnimationsSectionHandler,
