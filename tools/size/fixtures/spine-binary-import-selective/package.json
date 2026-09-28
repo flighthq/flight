@@ -1,0 +1,9 @@
+{
+  "name": "spine-binary-import-selective",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "spine-binary-import-selective"
+  }
+}
