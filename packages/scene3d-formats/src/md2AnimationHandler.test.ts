@@ -1,7 +1,13 @@
 import type { Md2Frame, Md2ParseContext, MeshMorph, Scene3DDocument } from '@flighthq/types/contract';
 import { Scene3DAnimationPathWeights } from '@flighthq/types/contract';
 
-import { md2AnimationHandler } from './md2AnimationHandler.ts';
+import { md2AnimationFamily, md2AnimationHandler } from './md2AnimationHandler.ts';
+
+describe('md2AnimationFamily', () => {
+  it('covers the Animation feature', () => {
+    expect(md2AnimationFamily.map((handler) => handler.feature)).toEqual(['Animation']);
+  });
+});
 
 describe('md2AnimationHandler', () => {
   it('satisfies the Animation feature, which is what the analyzer emits for a multi-frame model', () => {

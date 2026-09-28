@@ -1,7 +1,39 @@
 import type { Md5ParseContext, Scene3DDocument } from '@flighthq/types/contract';
 import { BlinnPhongMaterialKind, MD5_MATERIAL_FEATURE } from '@flighthq/types/contract';
 
-import { md5MaterialHandler } from './md5MaterialHandler.ts';
+import { md5MaterialFamily, md5MaterialHandler } from './md5MaterialHandler.ts';
+
+describe('md5MaterialFamily', () => {
+  it('covers the Material feature', () => {
+    expect(md5MaterialFamily.map((handler) => handler.feature)).toEqual([MD5_MATERIAL_FEATURE]);
+  });
+});
+
+function contextFor(shader: string): Md5ParseContext {
+  return {
+    diagnostics: [],
+    document: emptyDocument(),
+    drops: null,
+    joints: [],
+    mesh: { materials: [], shader },
+    skin: null,
+  };
+}
+
+function emptyDocument(): Scene3DDocument {
+  return {
+    animations: [],
+    cameras: [],
+    lights: [],
+    materials: [],
+    meshes: [],
+    metadata: null,
+    nodes: [],
+    resources: [],
+    scenes: [{ rootNodes: [] }],
+    skins: [],
+  };
+}
 
 describe('md5MaterialHandler', () => {
   it('claims the Material feature the analyzer emits for a shader-bearing mesh', () => {
@@ -49,29 +81,3 @@ describe('md5MaterialHandler', () => {
     expect([first.materials, second.materials]).toEqual([[0], [1]]);
   });
 });
-
-function contextFor(shader: string): Md5ParseContext {
-  return {
-    diagnostics: [],
-    document: emptyDocument(),
-    drops: null,
-    joints: [],
-    mesh: { materials: [], shader },
-    skin: null,
-  };
-}
-
-function emptyDocument(): Scene3DDocument {
-  return {
-    animations: [],
-    cameras: [],
-    lights: [],
-    materials: [],
-    meshes: [],
-    metadata: null,
-    nodes: [],
-    resources: [],
-    scenes: [{ rootNodes: [] }],
-    skins: [],
-  };
-}

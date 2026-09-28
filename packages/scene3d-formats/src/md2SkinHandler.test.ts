@@ -2,7 +2,13 @@ import type { Md2ParseContext, Scene3DDocument } from '@flighthq/types/contract'
 import { BlinnPhongMaterialKind } from '@flighthq/types/contract';
 
 import { MD2_SKIN_SIZE } from './md2Schema.ts';
-import { md2SkinHandler } from './md2SkinHandler.ts';
+import { md2SkinFamily, md2SkinHandler } from './md2SkinHandler.ts';
+
+describe('md2SkinFamily', () => {
+  it('covers the Material feature', () => {
+    expect(md2SkinFamily.map((handler) => handler.feature)).toEqual(['Material']);
+  });
+});
 
 describe('md2SkinHandler', () => {
   it('satisfies the Material feature, which is what the analyzer emits for a skinned model', () => {

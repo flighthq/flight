@@ -23,6 +23,9 @@ export const md2AnimationHandler: Readonly<Md2SectionHandler> = {
   feature: 'Animation',
 };
 
+/** The animation family, beside its handler so naming it links this handler and not the skin's. */
+export const md2AnimationFamily: readonly Md2SectionHandler[] = [md2AnimationHandler];
+
 // Segments MD2's frames into named vertex-morph clips, one per contiguous run of same-action frames.
 // MD2 stores each sub-animation as a run of frames whose names share an action prefix and end in a
 // frame number ("stand01".."stand40"); `md2FrameActionName` recovers that prefix, and contiguous

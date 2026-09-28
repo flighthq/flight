@@ -16,6 +16,7 @@ import type {
   BlinnPhongMaterial,
   ExternalImageResourceReference,
   ImportDiagnostic,
+  Md5DropTally,
   Mesh,
   Scene3DAnimationTarget,
   Scene3DDocument,
@@ -27,11 +28,7 @@ import { parseMd5Anim } from './md5AnimParse.ts';
 // parseMd5Mesh, createScene3DFromMd5Mesh and importMd5Mesh live in md5Document.ts, which owns the
 // default section-handler family; md5Parse.ts holds the parse itself.
 import { createScene3DFromMd5Mesh, importMd5Mesh, parseMd5Mesh } from './md5Document.ts';
-import {
-  buildMd5SkeletonDocument,
-  canonicalizeMd5TangentHandedness,
-  parseMd5MeshWithSectionHandlers,
-} from './md5Parse.ts';
+import { canonicalizeMd5TangentHandedness, parseMd5MeshWithSectionHandlers, tallyMd5Drop } from './md5Parse.ts';
 import { getTestTextureResource } from './scene3DFormatsTestHelper.ts';
 import { findScene3DSkeletonJoints } from './sceneSkeleton.ts';
 
@@ -336,48 +333,6 @@ const OVER_INFLUENCED_VERTEX = [
   '  weight 6 0 1.0 ( 0 5 0 )',
   '}',
 ].join('\n');
-
-describe('buildMd5SkeletonDocument', () => {
-  // Exported so `md5SkeletonHandler` can wrap it without moving a hundred lines of quaternion work — and its
-  // two private rotation helpers — out of this module. The handler is a thin adapter; this is the emitter.
-  it('emits a skeleton group plus one node per joint, returning the skin those nodes form', () => {
-    const document = emptyTestDocument();
-    const skin = buildMd5SkeletonDocument(
-      [
-        {
-          name: 'root',
-          orientationW: 1,
-          orientationX: 0,
-          orientationY: 0,
-          orientationZ: 0,
-          parentIndex: -1,
-          positionX: 0,
-          positionY: 0,
-          positionZ: 0,
-        },
-        {
-          name: 'spine',
-          orientationW: 1,
-          orientationX: 0,
-          orientationY: 0,
-          orientationZ: 0,
-          parentIndex: 0,
-          positionX: 0,
-          positionY: 1,
-          positionZ: 0,
-        },
-      ],
-      document,
-      null,
-    );
-    expect(document.nodes[0].name).toBe('skeleton');
-    expect(document.nodes).toHaveLength(3);
-    expect(skin.joints).toHaveLength(2);
-    // Each joint is wired under its parent, so the group holds only the root joint as a child.
-    expect(document.nodes[0].children).toEqual([1]);
-    expect(document.nodes[1].children).toEqual([2]);
-  });
-});
 
 describe('canonicalizeMd5TangentHandedness', () => {
   // The contradiction branch is unreachable through a normal MD5 import: the mirrored-UV split runs
@@ -1636,5 +1591,40 @@ describe('parseMd5MeshWithSectionHandlers', () => {
     const diagnostics: ImportDiagnostic[] = [];
     parseMd5MeshWithSectionHandlers('not an md5 file', diagnostics, []);
     expect(diagnostics.map((entry) => entry.kind)).toContain('md5mesh.no-data');
+  });
+});
+
+// ★ EXPORTED WHEN THE SKELETON BUILDER MOVED OUT. The drop tally is the parser's shared plumbing — 28 call sites across
+// the parse and one in `md5SkeletonHandler`, which reads it the way the material handler reads
+// `createExternalTextureRef`. Every other test in this file sees it only through a flushed diagnostic, which cannot
+// distinguish "aggregated correctly" from "reported once because it only happened once"; these assert the aggregation
+// itself.
+describe('tallyMd5Drop', () => {
+  it('keeps the FIRST offender\u2019s detail and only counts the rest', () => {
+    const tallies = new Map<string, Md5DropTally>();
+    tallyMd5Drop(tallies, ImportDiagnosticSeverity.Recover, 'md5mesh.vert-index-repeated', 'vert', { firstVert: 3 });
+    tallyMd5Drop(tallies, ImportDiagnosticSeverity.Recover, 'md5mesh.vert-index-repeated', 'vert', { firstVert: 9 });
+    expect([...tallies.values()]).toEqual([
+      {
+        count: 2,
+        detail: { firstVert: 3 },
+        kind: 'md5mesh.vert-index-repeated',
+        severity: ImportDiagnosticSeverity.Recover,
+      },
+    ]);
+  });
+
+  // The discriminator is half the key, so the same kind at two record types stays two crumbs rather than one summed one.
+  it('keys on kind AND discriminator', () => {
+    const tallies = new Map<string, Md5DropTally>();
+    tallyMd5Drop(tallies, ImportDiagnosticSeverity.Drop, 'md5mesh.index-out-of-range', 'vert', {});
+    tallyMd5Drop(tallies, ImportDiagnosticSeverity.Drop, 'md5mesh.index-out-of-range', 'tri', {});
+    expect(tallies.size).toBe(2);
+  });
+
+  // A parse with no collector engaged must not allocate a tally at all, which is why the null arm exists rather than a
+  // throwaway map the caller discards.
+  it('is a no-op when no collector is engaged', () => {
+    expect(() => tallyMd5Drop(null, ImportDiagnosticSeverity.Drop, 'md5mesh.no-data', '', {})).not.toThrow();
   });
 });

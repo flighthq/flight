@@ -1,0 +1,9 @@
+{
+  "name": "md5-import-material",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "md5-import-material"
+  }
+}

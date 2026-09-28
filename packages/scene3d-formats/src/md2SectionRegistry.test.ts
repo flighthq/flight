@@ -1,4 +1,6 @@
-import { md2AllSectionHandlers, md2AnimationFamily, md2SkinFamily } from './md2SectionRegistry.ts';
+import { md2AnimationFamily } from './md2AnimationHandler.ts';
+import { md2AllSectionHandlers } from './md2SectionRegistry.ts';
+import { md2SkinFamily } from './md2SkinHandler.ts';
 
 describe('md2AllSectionHandlers', () => {
   it('contains every family', () => {
@@ -20,17 +22,5 @@ describe('md2AllSectionHandlers', () => {
   it('claims each feature once, so two handlers cannot claim the same one', () => {
     const features = md2AllSectionHandlers.map((handler) => handler.feature);
     expect(features.length).toBe(new Set(features).size);
-  });
-});
-
-describe('md2AnimationFamily', () => {
-  it('covers the Animation feature', () => {
-    expect(md2AnimationFamily.map((handler) => handler.feature)).toEqual(['Animation']);
-  });
-});
-
-describe('md2SkinFamily', () => {
-  it('covers the Material feature', () => {
-    expect(md2SkinFamily.map((handler) => handler.feature)).toEqual(['Material']);
   });
 });

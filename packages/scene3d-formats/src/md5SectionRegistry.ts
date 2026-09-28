@@ -1,15 +1,16 @@
 import type { Md5SectionHandler } from '@flighthq/types/contract';
 
-import { md5MaterialHandler } from './md5MaterialHandler.ts';
-import { md5SkeletonHandler } from './md5SkeletonHandler.ts';
-
-export const md5MaterialFamily: readonly Md5SectionHandler[] = [md5MaterialHandler];
-
-export const md5SkeletonFamily: readonly Md5SectionHandler[] = [md5SkeletonHandler];
+import { md5MaterialFamily } from './md5MaterialHandler.ts';
+import { md5SkeletonFamily } from './md5SkeletonHandler.ts';
 
 /**
  * Every section handler Flight reads an MD5 mesh file with — the full-support preset, which reproduces the
  * importer's complete behavior.
+ *
+ * ★ THIS FILE IS THE PRESET AND NOTHING ELSE. Each family constant now lives beside the handler it names, because while
+ * both sat here a caller naming `md5SkeletonFamily` imported this module and linked the material handler too — 8,387
+ * measured bytes, including `@flighthq/materials`, for a family they had declined. Importing THIS module still costs
+ * both, which is what asking for everything means.
  *
  * The two run at DIFFERENT dispatch points (skeleton once per file, material once per `mesh { }` block), so
  * their relative order in this array does not decide which runs first — the parser's two dispatch points do.
