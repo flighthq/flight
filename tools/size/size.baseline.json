@@ -96,6 +96,8 @@
   "scene3d-wgpu-textured-mesh:webgpu": 29241,
   "scene3d-wgpu-untextured-mesh:webgpu": 28798,
   "spine-json-import-selective:canvas": 1195,
+  "spine-binary-import-selective:canvas": 3997,
+  "spine-binary-import:canvas": 5715,
   "spine-json-import:canvas": 4593,
   "spritesheet-codec-all:canvas": 5422,
   "spritesheet-codec-one:canvas": 1260,
