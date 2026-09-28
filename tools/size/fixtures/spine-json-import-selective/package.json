@@ -1,0 +1,9 @@
+{
+  "name": "spine-json-import-selective",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "spine-json-import-selective"
+  }
+}
