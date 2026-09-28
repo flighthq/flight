@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 
 import { GltfClearcoatExtensionHandler } from './gltfClearcoat.ts';
 import { GltfEmissiveStrengthExtensionHandler } from './gltfEmissiveStrength.ts';
-import { parseGltf } from './gltfParse.ts';
+import { parseGltf } from './gltfImport.ts';
 
 function makeGltf(material: unknown): GltfDocument {
   return { asset: { version: '2.0' }, materials: [material], scenes: [{ nodes: [] }] } as GltfDocument;

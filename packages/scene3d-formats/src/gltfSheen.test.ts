@@ -3,7 +3,7 @@ import type { ExtendedPbrMaterial, GltfDocument, SheenPbrExtension } from '@flig
 import { ExtendedPbrMaterialKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { parseGltf } from './gltfParse.ts';
+import { parseGltf } from './gltfImport.ts';
 import { GltfSheenExtensionHandler } from './gltfSheen.ts';
 
 function makeGltf(material: unknown): GltfDocument {

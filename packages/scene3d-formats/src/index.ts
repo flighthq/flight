@@ -28,6 +28,7 @@ export * from './gltfDraco.ts';
 export * from './gltfExtensionHandlerRegistry.ts';
 export * from './gltfFeatureRequirements.ts';
 export * from './gltfFeatures.ts';
+export * from './gltfImport.ts';
 export * from './gltfMaterialExtension.ts';
 export * from './gltfParse.ts';
 export * from './gltfRequirements.ts';

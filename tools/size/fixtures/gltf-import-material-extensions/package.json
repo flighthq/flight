@@ -1,0 +1,9 @@
+{
+  "name": "gltf-import-material-extensions",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "gltf-import-material-extensions"
+  }
+}

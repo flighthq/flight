@@ -1,0 +1,9 @@
+{
+  "name": "gltf-import-animations",
+  "private": true,
+  "type": "module",
+  "flightSize": {
+    "kind": "size-only-control",
+    "name": "gltf-import-animations"
+  }
+}

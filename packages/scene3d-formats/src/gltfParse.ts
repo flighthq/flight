@@ -19,7 +19,7 @@ import {
   getMeshGeometryVertexCount,
   indexMeshGeometryVertices,
 } from '@flighthq/mesh/contract';
-import { createScene3DFromDocument, createScene3DsFromDocument } from '@flighthq/scene3d/contract';
+import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type {
   GltfAccessorData,
@@ -64,76 +64,43 @@ import type {
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity, MeshKind, Node3DKind } from '@flighthq/types/contract';
 
-import { registerGltfAnimationHandlers } from './registerGltfAnimationHandlers.ts';
-import { registerGltfCameraHandlers } from './registerGltfCameraHandlers.ts';
-import { registerGltfSkinHandlers } from './registerGltfSkinHandlers.ts';
-
-// Parses a binary glTF (`.glb`) container into a Scene3D — the file's default scene (`doc.scene`).
-// Convenience over `createScene3DFromDocument(parseGlb(bytes), defaultScene3D)`; malformed containers return an
-// empty Scene3D.
-export function createScene3DFromGlb(
+// Builds a Scene3D from a binary glTF (`.glb`) container with exactly the optional core feature handlers the
+// caller registered — the file's default scene (`doc.scene`). Malformed containers return an empty Scene3D.
+//
+// ★ THE DEFAULT SCENE INDEX IS WHY THIS EXISTS RATHER THAN A COMPOSITION AT THE CALL SITE. `doc.scene` lives in
+// the glTF document and is gone by the time a Scene3DDocument exists, so a caller composing
+// `createScene3DFromDocument(parseGlbWithCoreFeatureHandlers(...))` can only ever get scene 0 — or re-parse the
+// source to recover the index. Both selective entry points therefore carry a scene-building sibling, which also
+// makes the selective surface symmetric with the zero-config one in `gltfImport.ts`.
+export function createScene3DFromGlbWithCoreFeatureHandlers(
   bytes: Readonly<Uint8Array>,
+  coreFeatureHandlers: readonly GltfCoreFeatureHandler[],
   diagnostics?: ImportDiagnostic[],
   options?: Readonly<GltfImportOptions>,
 ): Scene3D {
   const container = readGlbContainer(bytes, diagnostics);
   if (container === null) return createScene3DFromDocument(createEmptyGltfDocument());
   return createScene3DFromDocument(
-    buildGltfDocument(container.document, container.binary, getFullGltfCoreFeatureHandlers(), options, diagnostics),
+    buildGltfDocument(container.document, container.binary, coreFeatureHandlers, options, diagnostics),
     container.document.scene ?? 0,
   );
 }
 
-// Parses a glTF 2.0 document (JSON string or already-parsed object) into a Scene3D — the file's default scene
-// (`doc.scene`). Convenience over `createScene3DFromDocument(parseGltf(source), defaultScene3D)`; a malformed
-// JSON string returns an empty Scene3D.
-export function createScene3DFromGltf(
+// Builds a Scene3D from a glTF 2.0 document (JSON string or already-parsed object) with exactly the optional core
+// feature handlers the caller registered — the file's default scene (`doc.scene`). A malformed JSON string returns
+// an empty Scene3D.
+export function createScene3DFromGltfWithCoreFeatureHandlers(
   source: GltfDocument | string,
+  coreFeatureHandlers: readonly GltfCoreFeatureHandler[],
   diagnostics?: ImportDiagnostic[],
   options?: Readonly<GltfImportOptions>,
 ): Scene3D {
   const doc = parseGltfSource(source, diagnostics);
   if (doc === null) return createScene3DFromDocument(createEmptyGltfDocument());
   return createScene3DFromDocument(
-    buildGltfDocument(doc, null, getFullGltfCoreFeatureHandlers(), options, diagnostics),
+    buildGltfDocument(doc, null, coreFeatureHandlers, options, diagnostics),
     doc.scene ?? 0,
   );
-}
-
-// Parses a binary glTF (`.glb`) container into every scene it declares (`Scene3D[]`), each carrying its
-// geometry; the file's animation clips are attached to the default scene. Malformed containers return an
-// empty array.
-export function createScene3DsFromGlb(
-  bytes: Readonly<Uint8Array>,
-  diagnostics?: ImportDiagnostic[],
-  options?: Readonly<GltfImportOptions>,
-): Scene3D[] {
-  return createScene3DsFromDocument(parseGlb(bytes, diagnostics, options));
-}
-
-// Parses a glTF 2.0 document into every scene it declares (`Scene3D[]`), each carrying its geometry; the
-// file's animation clips are attached to the default scene. Reach for this over createScene3DFromGltf when the
-// file declares multiple scenes. A malformed JSON string returns an empty array.
-export function createScene3DsFromGltf(
-  source: GltfDocument | string,
-  diagnostics?: ImportDiagnostic[],
-  options?: Readonly<GltfImportOptions>,
-): Scene3D[] {
-  return createScene3DsFromDocument(parseGltf(source, diagnostics, options));
-}
-
-// Parses a binary glTF (`.glb`) container into a format-neutral Scene3DDocument. The 12-byte header (magic
-// `glTF`, version, length) is validated, then the chunk stream is walked to extract the embedded JSON
-// document and the optional BIN chunk; the BIN chunk backs any buffer that has no `uri`. `options` supplies
-// external buffer bytes and a base path for any external URIs the GLB still references. Malformed containers
-// return an empty document and push a warning rather than throwing. Assemble it into a live Scene3D with
-// `createScene3DFromDocument`.
-export function parseGlb(
-  bytes: Readonly<Uint8Array>,
-  diagnostics?: ImportDiagnostic[],
-  options?: Readonly<GltfImportOptions>,
-): Scene3DDocument {
-  return parseGlbWithCoreFeatureHandlers(bytes, getFullGltfCoreFeatureHandlers(), diagnostics, options);
 }
 
 // Parses a GLB with exactly the optional core feature handlers the caller registered. An empty list keeps
@@ -150,27 +117,6 @@ export function parseGlbWithCoreFeatureHandlers(
   return buildGltfDocument(container.document, container.binary, coreFeatureHandlers, options, diagnostics);
 }
 
-// Parses a glTF 2.0 document (JSON string or already-parsed object) into a format-neutral Scene3DDocument:
-// the node hierarchy with transforms, meshes (inline geometry + materials), skins, morph, and animation.
-// A malformed JSON string returns an empty document and pushes a warning rather than throwing. Assemble it
-// into a live Scene3D with `createScene3DFromDocument`.
-//
-// Imported today: POSITION + optional NORMAL / TANGENT / TEXCOORD_0 + indices, interleaved into the
-// canonical PBR vertex layout (or the skinned layout when JOINTS_0/WEIGHTS_0 are present); skins (joint
-// hierarchy + inverse-bind matrices); every `primitives[]` entry of a mesh (multi-primitive → sub-mesh
-// child nodes); strided (`byteStride`) and normalized-integer accessors; sparse accessors; materials
-// (metallic-roughness PBR → StandardPbrMaterial); textures with their sampler (wrap/filter), color space
-// (srgb for baseColor/emissive, linear for data maps), and KHR_texture_transform UV remap, resolving
-// embedded bytes to Embedded refs and external URIs to External refs (against `options.basePath`); external
-// (`.bin`) buffers via `options.externalBuffers`.
-export function parseGltf(
-  source: GltfDocument | string,
-  diagnostics?: ImportDiagnostic[],
-  options?: Readonly<GltfImportOptions>,
-): Scene3DDocument {
-  return parseGltfWithCoreFeatureHandlers(source, getFullGltfCoreFeatureHandlers(), diagnostics, options);
-}
-
 // Parses a glTF document with exactly the optional core feature handlers the caller registered. Meshes,
 // materials, textures, nodes, scenes, and morph data remain bedrock; animations, cameras, and skins are
 // appended only by their named handlers. An empty list is therefore a valid minimal parser configuration.
@@ -183,14 +129,6 @@ export function parseGltfWithCoreFeatureHandlers(
   const doc = parseGltfSource(source, diagnostics);
   if (doc === null) return createEmptyGltfDocument();
   return buildGltfDocument(doc, null, coreFeatureHandlers, options, diagnostics);
-}
-
-function getFullGltfCoreFeatureHandlers(): GltfCoreFeatureHandler[] {
-  const handlers: GltfCoreFeatureHandler[] = [];
-  registerGltfAnimationHandlers(handlers);
-  registerGltfCameraHandlers(handlers);
-  registerGltfSkinHandlers(handlers);
-  return handlers;
 }
 
 // Parses the JSON string or accepts the already-parsed object, returning null (with a warning) on invalid
