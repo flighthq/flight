@@ -4,7 +4,7 @@ import { parseXmlDocument } from '@flighthq/xml/contract';
 
 export function collectSvgCounts(source: string): Map<string, number> | null {
   const document = parseXmlDocument(source);
-  if (document === null || localName(document.name) !== 'svg') return null;
+  if (document === null || svgLocalName(document.name) !== 'svg') return null;
   const counts = new Map<string, number>();
   tallyElements(counts, document);
   return counts;
@@ -36,13 +36,13 @@ function elementKindName(name: string): string | null {
   }
 }
 
-function localName(name: string): string {
+function svgLocalName(name: string): string {
   const colon = name.indexOf(':');
   return colon === -1 ? name : name.slice(colon + 1);
 }
 
 function tallyElements(counts: Map<string, number>, element: Readonly<XmlElement>): void {
-  const kind = elementKindName(localName(element.name));
+  const kind = elementKindName(svgLocalName(element.name));
   if (kind !== null) counts.set(kind, (counts.get(kind) ?? 0) + 1);
   for (const child of element.children) {
     tallyElements(counts, child);

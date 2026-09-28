@@ -7,6 +7,7 @@ protected:
   - appendLottieLayers
   - appendLottieShapePathChannels
   - appendLottieShapePaths
+  - appendSvgChildren
   - applyLottieMaskFamily
   - applyLottieShapeDirection
   - applyLottieTransform
@@ -15,7 +16,12 @@ protected:
   - applyRiveDocumentHandlers
   - applyRiveDrawOrder
   - applyRiveSolo
+  - applySvgElementAppearance
+  - applySvgElementClip
+  - applySvgTransform
+  - assignSvgTransform
   - bindMutableLottieNumericProperty
+  - collectCssRules
   - createLottieBezierPath
   - createLottieGradientMatrix
   - createLottieTestDocument
@@ -26,11 +32,20 @@ protected:
   - createRiveLayoutImports
   - createRiveSkeleton2D
   - createRiveStateMachines
+  - createSvgElementNode
+  - createSvgGeometryPath
+  - createSvgGradientMatrix
+  - createSvgNode2DBounds
+  - createSvgViewBoxMatrix
+  - createSvgViewportMatrix
+  - defaultSvgStyle
   - findLottieTestNodeByKind
   - findLottieTestNodeByName
   - flattenLottieShapePath
   - getRiveCoreObjectHandler
   - hasComponentSpecificLottieEasing
+  - hasUnmeasurableSvgText
+  - hasZeroAreaSvgGradientBox
   - importRiveCoreObjectAsData
   - importRiveImageComponent
   - importRiveLayoutComponent
@@ -51,15 +66,33 @@ protected:
   - lottieTestSquarePath
   - mapLottieLineCap
   - mapLottieLineJoin
+  - multiplySvgMatrices
   - parseLottieGradient
+  - parseStyleDeclarations
+  - parseSvgColor
+  - parseSvgCoordinate
+  - parseSvgCssNumber
+  - parseSvgGradient
+  - parseSvgLength
+  - parseSvgNumberList
+  - parseSvgTransform
+  - parseUrlReference
   - rebuildRiveShapes
   - reportLottieDrop
   - reportLottieExpression
   - reportLottieSkip
-  - svgContainerElementReader
-  - svgGeometryElementReader
-  - svgImageElementReader
-  - svgTextElementReader
-  - svgUseElementReader
+  - reportRemainingUnsupportedSvgElements
+  - resolveSvgColor
+  - resolveSvgDefinitionStyle
+  - resolveSvgGradient
+  - resolveSvgStyle
+  - resolveSvgWinding
+  - svgAttribute
+  - svgFirstNumber
+  - svgLocalName
+  - svgNumberAttribute
+  - svgOptionalNumberAttribute
   - toLottieShapePath
   - unflattenLottieShapePath
+  - usesSvgObjectBoundingBoxUnits
+  - visitSvgElements

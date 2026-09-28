@@ -1,7 +1,7 @@
 import { getNodeChildAt } from '@flighthq/node/contract';
 import * as shapeContract from '@flighthq/shape/contract';
 
-import { createScene2DFromSvgDocument } from './svgDocument.ts';
+import { createScene2DFromSvgDocument } from './svgImport.ts';
 
 beforeEach(() => {
   shapeContract.clearShapeBoundsCommands();
