@@ -3017,6 +3017,181 @@ export const BUILT_IN_REQUIREMENT_DISPOSITIONS: readonly RequirementDisposition[
   {
     backend: 'canvas',
     facet: 'document.format',
+    kind: 'lottie.mask.darken',
+    reason:
+      'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a darken mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    backend: 'dom',
+    facet: 'document.format',
+    kind: 'lottie.mask.darken',
+    reason:
+      'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a darken mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    backend: 'gl',
+    facet: 'document.format',
+    kind: 'lottie.mask.darken',
+    reason:
+      'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a darken mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    backend: 'parser',
+    facet: 'document.format',
+    kind: 'lottie.mask.darken',
+    reason:
+      'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a darken mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    backend: 'wgpu',
+    facet: 'document.format',
+    kind: 'lottie.mask.darken',
+    reason:
+      'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a darken mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    backend: 'canvas',
+    facet: 'document.format',
+    kind: 'lottie.mask.difference',
+    reason:
+      'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a difference mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    backend: 'dom',
+    facet: 'document.format',
+    kind: 'lottie.mask.difference',
+    reason:
+      'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a difference mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    backend: 'gl',
+    facet: 'document.format',
+    kind: 'lottie.mask.difference',
+    reason:
+      'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a difference mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    backend: 'parser',
+    facet: 'document.format',
+    kind: 'lottie.mask.difference',
+    reason:
+      'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a difference mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    backend: 'wgpu',
+    facet: 'document.format',
+    kind: 'lottie.mask.difference',
+    reason:
+      'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a difference mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    backend: 'canvas',
+    facet: 'document.format',
+    kind: 'lottie.mask.intersect',
+    reason:
+      'a ClipRegion carries one path, so intersecting a second mask into it would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked',
+  },
+  {
+    backend: 'dom',
+    facet: 'document.format',
+    kind: 'lottie.mask.intersect',
+    reason:
+      'a ClipRegion carries one path, so intersecting a second mask into it would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked',
+  },
+  {
+    backend: 'gl',
+    facet: 'document.format',
+    kind: 'lottie.mask.intersect',
+    reason:
+      'a ClipRegion carries one path, so intersecting a second mask into it would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked',
+  },
+  {
+    backend: 'parser',
+    facet: 'document.format',
+    kind: 'lottie.mask.intersect',
+    reason:
+      'a ClipRegion carries one path, so intersecting a second mask into it would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked',
+  },
+  {
+    backend: 'wgpu',
+    facet: 'document.format',
+    kind: 'lottie.mask.intersect',
+    reason:
+      'a ClipRegion carries one path, so intersecting a second mask into it would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked',
+  },
+  {
+    backend: 'canvas',
+    facet: 'document.format',
+    kind: 'lottie.mask.lighten',
+    reason:
+      'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a lighten mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    backend: 'dom',
+    facet: 'document.format',
+    kind: 'lottie.mask.lighten',
+    reason:
+      'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a lighten mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    backend: 'gl',
+    facet: 'document.format',
+    kind: 'lottie.mask.lighten',
+    reason:
+      'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a lighten mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    backend: 'parser',
+    facet: 'document.format',
+    kind: 'lottie.mask.lighten',
+    reason:
+      'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a lighten mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    backend: 'wgpu',
+    facet: 'document.format',
+    kind: 'lottie.mask.lighten',
+    reason:
+      'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a lighten mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    backend: 'canvas',
+    facet: 'document.format',
+    kind: 'lottie.mask.subtract',
+    reason:
+      'a ClipRegion keeps what its path covers and has no inverse, so subtracting a mask would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked',
+  },
+  {
+    backend: 'dom',
+    facet: 'document.format',
+    kind: 'lottie.mask.subtract',
+    reason:
+      'a ClipRegion keeps what its path covers and has no inverse, so subtracting a mask would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked',
+  },
+  {
+    backend: 'gl',
+    facet: 'document.format',
+    kind: 'lottie.mask.subtract',
+    reason:
+      'a ClipRegion keeps what its path covers and has no inverse, so subtracting a mask would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked',
+  },
+  {
+    backend: 'parser',
+    facet: 'document.format',
+    kind: 'lottie.mask.subtract',
+    reason:
+      'a ClipRegion keeps what its path covers and has no inverse, so subtracting a mask would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked',
+  },
+  {
+    backend: 'wgpu',
+    facet: 'document.format',
+    kind: 'lottie.mask.subtract',
+    reason:
+      'a ClipRegion keeps what its path covers and has no inverse, so subtracting a mask would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked',
+  },
+  {
+    backend: 'canvas',
+    facet: 'document.format',
     kind: 'md2.Mesh',
     reason:
       'the core parse always reads it: the header, triangles, texcoords and frame 0 are what make the file a model, so there is nothing to opt out of',

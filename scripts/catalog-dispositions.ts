@@ -18,6 +18,9 @@ import { CATALOG_PARSER_BACKEND } from './catalog-rows.ts';
  *   - read by another feature's handler, so a handler of its own would duplicate it;
  *   - read unconditionally by the core parse, so there is nothing for a caller to opt out of;
  *   - part of a format whose parser has no separable family at all.
+ *
+ * All three say "there is nothing to register". A feature Flight recognizes and deliberately does NOT implement says
+ * something else, and belongs in `UNSUPPORTED_FORMAT_FEATURES` below.
  */
 export const ALWAYS_READ_FORMAT_FEATURES: readonly { feature: string; namespace: string; reason: string }[] = [
   {
@@ -108,10 +111,56 @@ export const ALWAYS_READ_FORMAT_FEATURES: readonly { feature: string; namespace:
  */
 const DISPOSITION_BACKENDS = ['canvas', 'dom', 'gl', 'wgpu', CATALOG_PARSER_BACKEND];
 
+/**
+ * The `document.format` features Flight RECOGNIZES BUT DELIBERATELY DOES NOT IMPLEMENT, each with the reason.
+ *
+ * ★ THIS IS A DIFFERENT STATEMENT FROM `ALWAYS_READ_FORMAT_FEATURES`, WHICH IS WHY IT IS A SECOND LIST. Every reason in
+ * that one amounts to "there is nothing for a caller to register, because something else already reads it". These
+ * features have no reader at all: the analyzer reports them because a document genuinely asks for them, and the import
+ * carries none of it. Both kinds resolve a requirement without a parser option — a disposition is how the catalog says
+ * "decided, do not report" — but collapsing them into one list would make "already covered" and "not built" the same
+ * sentence, and a reader chasing a missing feature could not tell which they were looking at.
+ *
+ * The gate in `catalog-dispositions.test.ts` holds the line in both directions: a feature here that a handler DOES claim
+ * fails, because a real row must never be shadowed by a decline, and the two lists must stay disjoint.
+ */
+export const UNSUPPORTED_FORMAT_FEATURES: readonly { feature: string; namespace: string; reason: string }[] = [
+  {
+    feature: 'mask.darken',
+    namespace: 'lottie',
+    reason:
+      'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a darken mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    feature: 'mask.difference',
+    namespace: 'lottie',
+    reason:
+      'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a difference mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    feature: 'mask.intersect',
+    namespace: 'lottie',
+    reason:
+      'a ClipRegion carries one path, so intersecting a second mask into it would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked',
+  },
+  {
+    feature: 'mask.lighten',
+    namespace: 'lottie',
+    reason:
+      'Flight lowers a mask onto one hard ClipRegion, which composes by intersection only; a lighten mask needs per-pixel compositing against the layer beneath it, so no handler reads it and a masked layer imports unmasked',
+  },
+  {
+    feature: 'mask.subtract',
+    namespace: 'lottie',
+    reason:
+      'a ClipRegion keeps what its path covers and has no inverse, so subtracting a mask would need path booleans at import time; no handler reads the mode and a masked layer imports unmasked',
+  },
+];
+
 /** Builds every built-in disposition, sorted so the generated source is byte-stable across runs. */
 export function buildRequirementDispositions(): readonly RequirementDisposition[] {
   const dispositions: RequirementDisposition[] = [];
-  for (const { feature, namespace, reason } of ALWAYS_READ_FORMAT_FEATURES) {
+  for (const { feature, namespace, reason } of [...ALWAYS_READ_FORMAT_FEATURES, ...UNSUPPORTED_FORMAT_FEATURES]) {
     for (const backend of DISPOSITION_BACKENDS) {
       dispositions.push({ backend, facet: RequirementFacet.DocumentFormat, kind: `${namespace}.${feature}`, reason });
     }
