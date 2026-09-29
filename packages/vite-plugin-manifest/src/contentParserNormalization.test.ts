@@ -1,14 +1,19 @@
-import { parseBitmapFontBinary } from '@flighthq/bitmapfont-formats';
+import { parseBitmapFontBinary } from '@flighthq/bitmapfont-formats/contract';
 import { decodeUTF8, encodeUTF8 } from '@flighthq/encoding/contract';
-import { parseStarlingPex } from '@flighthq/particles-formats';
+import { parseStarlingPex } from '@flighthq/particles-formats/contract';
 import { BUILT_IN_REQUIREMENT_CATALOG_ENTRIES } from '@flighthq/requirement-catalog/contract';
-import { parseTiledTmx } from '@flighthq/tilemap-formats';
+import { parseTiledTmx } from '@flighthq/tilemap-formats/contract';
 import type { ImportDiagnostic } from '@flighthq/types/contract';
 
 import { DEFAULT_CONTENT_ANALYZERS } from './contentAnalyzers.ts';
 import { generateManifestModuleSource } from './manifestModuleSource.ts';
 
 const NO_DECOMPRESSORS = { deflate: null, lzma: null };
+
+// ★ THIS FILE IMPORTS THE PARSERS ON `/contract`, WHICH IS NOT WHAT THE GENERATED MODULE DOES. Intra-SDK code —
+// including a package's own tests — resolves to the contract lane; the module the emitter WRITES is application
+// code and must name the public root. Those are different claims, and the second one is asserted against the
+// emitted source text, never against this file's imports.
 
 // The nine direct-parser rows, and the calling convention each parser actually has. `contentParser` must present
 // ONE convention — bytes first — regardless of which of these the build selected.
@@ -171,11 +176,16 @@ function generate(extension: string, bytes: Uint8Array): string {
 // module is served as a Vite virtual module with no extension, so its source is plain JavaScript — which is
 // exactly what this evaluates, syntax included. A wrapper carrying a type annotation would fail here the same
 // way it would fail in a build.
-function evaluateBinding(source: string, scope: Readonly<Record<string, unknown>>): (...args: never[]) => unknown {
+function evaluateBinding(
+  source: string,
+  scope: Readonly<Record<string, unknown>>,
+): (...args: readonly unknown[]) => unknown {
   const match = /^export const contentParser = (.+);$/m.exec(source);
   if (match === null) throw new Error(`no contentParser binding in:\n${source}`);
   const names = Object.keys(scope);
   // eslint-disable-next-line no-new-func -- the subject under test IS the emitted source text.
-  const make = new Function(...names, `return (${match[1]});`) as (...args: unknown[]) => (...a: never[]) => unknown;
+  const make = new Function(...names, `return (${match[1]});`) as (
+    ...args: unknown[]
+  ) => (...a: readonly unknown[]) => unknown;
   return make(...names.map((name) => scope[name]));
 }
