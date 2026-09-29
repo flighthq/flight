@@ -51,6 +51,24 @@ export interface RequirementCatalogEntry {
    */
   readonly parserExport?: string;
   /**
+   * Whether the direct parser this row names takes DECODED TEXT or the RAW BYTES as its first argument.
+   *
+   * ★ IT IS STATED, NOT SNIFFED, BECAUSE THE EMITTER CANNOT ASK THE FUNCTION. A generated `contentParser` has one
+   * contract — `contentParser(bytes, ...rest)` — so that an application reads a file and calls it without knowing
+   * which format the build selected. The parsers themselves disagree: `parseBitmapFontBinary` wants the bytes,
+   * while `parseTiledTmx` and the rest want a string. Nothing about a symbol name or its module says which, and
+   * guessing by extension would be exactly the content-vs-suffix mistake `.fnt` already taught. So the catalog
+   * carries the fact, and a row whose parser changes shape changes its row.
+   *
+   * A `bytes` row is emitted as the direct binding. A `string` row is emitted as a wrapper that decodes and
+   * forwards every remaining argument in order, so options, diagnostics and the parser's own return and sentinel
+   * behavior are untouched.
+   *
+   * Meaningful only alongside `parserExport`; a handler row spreads into an options field and never becomes a
+   * callable of its own.
+   */
+  readonly contentParserInputKind?: 'bytes' | 'string';
+  /**
    * The `register*` that binds the implementation, for a backend that HAS one. Absent for an
    * options-driven lane: a SWF tag family is named in `SwfParseOptions.tags` and an AWD2 handler in
    * `Awd2ParseOptions.blocks`, so there is no registrar to name and a row that invented one would be

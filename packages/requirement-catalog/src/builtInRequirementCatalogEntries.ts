@@ -135,6 +135,7 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
   },
   {
     backend: 'parser',
+    contentParserInputKind: 'bytes',
     facet: 'document.format',
     implementationImport: '@flighthq/bitmapfont-formats',
     implementationSymbol: 'parseBitmapFontBinary',
@@ -143,6 +144,7 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
   },
   {
     backend: 'parser',
+    contentParserInputKind: 'string',
     facet: 'document.format',
     implementationImport: '@flighthq/bitmapfont-formats',
     implementationSymbol: 'parseBitmapFontJson',
@@ -151,6 +153,7 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
   },
   {
     backend: 'parser',
+    contentParserInputKind: 'string',
     facet: 'document.format',
     implementationImport: '@flighthq/bitmapfont-formats',
     implementationSymbol: 'parseBitmapFontFnt',
@@ -159,6 +162,7 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
   },
   {
     backend: 'parser',
+    contentParserInputKind: 'string',
     facet: 'document.format',
     implementationImport: '@flighthq/bitmapfont-formats',
     implementationSymbol: 'parseBitmapFontXml',
@@ -713,6 +717,7 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
   },
   {
     backend: 'parser',
+    contentParserInputKind: 'string',
     facet: 'document.format',
     implementationImport: '@flighthq/particles-formats',
     implementationSymbol: 'parseStarlingPex',
@@ -1656,6 +1661,7 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
   },
   {
     backend: 'parser',
+    contentParserInputKind: 'string',
     facet: 'document.format',
     implementationImport: '@flighthq/tilemap-formats',
     implementationSymbol: 'parseTiledTmj',
@@ -1664,6 +1670,7 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
   },
   {
     backend: 'parser',
+    contentParserInputKind: 'string',
     facet: 'document.format',
     implementationImport: '@flighthq/tilemap-formats',
     implementationSymbol: 'parseTiledTmx',
@@ -1672,6 +1679,7 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
   },
   {
     backend: 'parser',
+    contentParserInputKind: 'string',
     facet: 'document.format',
     implementationImport: '@flighthq/tilemap-formats',
     implementationSymbol: 'parseTiledTilesetJson',
@@ -1680,6 +1688,7 @@ export const BUILT_IN_REQUIREMENT_CATALOG_ENTRIES: readonly RequirementCatalogEn
   },
   {
     backend: 'parser',
+    contentParserInputKind: 'string',
     facet: 'document.format',
     implementationImport: '@flighthq/tilemap-formats',
     implementationSymbol: 'parseTiledTileset',

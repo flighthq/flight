@@ -548,52 +548,75 @@ export const CATALOG_DIRECT_PARSER_EXPORT = 'contentParser';
 // imports, and `.` is the app boundary while `/contract` is the intra-SDK lane. This file may read CONSTANTS
 // from `/contract` — it is build tooling — but what it WRITES has to resolve on the lane an application uses.
 // `format-parser-import-lanes` in `catalog-rows.test.ts` asserts it for every row, not only these.
-const DIRECT_PARSER_ROWS: readonly (readonly [module: string, symbol: string, kind: string])[] = [
+const DIRECT_PARSER_ROWS: readonly (readonly [
+  module: string,
+  symbol: string,
+  kind: string,
+  inputKind: 'bytes' | 'string',
+])[] = [
   [
     '@flighthq/bitmapfont-formats',
     'parseBitmapFontBinary',
     `${BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE}.${BitmapFontFormatKindBmFontBinary}`,
+    'bytes',
   ],
   [
     '@flighthq/bitmapfont-formats',
     'parseBitmapFontJson',
     `${BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE}.${BitmapFontFormatKindBmFontJson}`,
+    'string',
   ],
   [
     '@flighthq/bitmapfont-formats',
     'parseBitmapFontFnt',
     `${BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE}.${BitmapFontFormatKindBmFontText}`,
+    'string',
   ],
   [
     '@flighthq/bitmapfont-formats',
     'parseBitmapFontXml',
     `${BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE}.${BitmapFontFormatKindBmFontXml}`,
+    'string',
   ],
   [
     '@flighthq/particles-formats',
     'parseStarlingPex',
     `${PARTICLES_REQUIREMENT_KEY_NAMESPACE}.${StarlingPexFormatKind}`,
+    'string',
   ],
-  ['@flighthq/tilemap-formats', 'parseTiledTmj', `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTmj}`],
-  ['@flighthq/tilemap-formats', 'parseTiledTmx', `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTmx}`],
+  [
+    '@flighthq/tilemap-formats',
+    'parseTiledTmj',
+    `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTmj}`,
+    'string',
+  ],
+  [
+    '@flighthq/tilemap-formats',
+    'parseTiledTmx',
+    `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTmx}`,
+    'string',
+  ],
   [
     '@flighthq/tilemap-formats',
     'parseTiledTilesetJson',
     `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTsj}`,
+    'string',
   ],
   [
     '@flighthq/tilemap-formats',
     'parseTiledTileset',
     `${TILEMAP_REQUIREMENT_KEY_NAMESPACE}.${TilemapFormatKindTiledTsx}`,
+    'string',
   ],
 ];
 
 /** Builds every built-in row, sorted so the generated source is byte-stable across runs. */
 export function buildRequirementCatalogRows(): readonly RequirementCatalogEntry[] {
   const rows: RequirementCatalogEntry[] = [];
-  for (const [module, symbol, kind] of DIRECT_PARSER_ROWS) {
+  for (const [module, symbol, kind, inputKind] of DIRECT_PARSER_ROWS) {
     rows.push({
       backend: CATALOG_PARSER_BACKEND,
+      contentParserInputKind: inputKind,
       facet: RequirementFacet.DocumentFormat,
       implementationImport: module,
       implementationSymbol: symbol,

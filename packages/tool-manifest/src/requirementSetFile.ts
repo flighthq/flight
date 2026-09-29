@@ -49,6 +49,19 @@ export function readRequirementCatalogFile(text: string): RequirementCatalogFile
       problems.push(`entries[${index}] parserExport must be a string when present`);
       continue;
     }
+    // ★ AND THE INPUT KIND IS CHECKED AGAINST ITS TWO LEGAL VALUES, NOT MERELY AGAINST `string`. This one decides
+    // whether the emitted `contentParser` is the parser itself or a decoding wrapper around it, so a typo like
+    // 'byte' or 'text' would not be a cosmetic defect: it would silently produce the other calling convention,
+    // and the parser would receive a Uint8Array where it expected text, or text where it expected bytes.
+    if (
+      raw.contentParserInputKind !== undefined &&
+      !CATALOG_INPUT_KINDS.includes(raw.contentParserInputKind as never)
+    ) {
+      problems.push(
+        `entries[${index}] contentParserInputKind must be ${CATALOG_INPUT_KINDS.join(' or ')} when present`,
+      );
+      continue;
+    }
     entries.push({
       backend: raw.backend as string,
       facet: raw.facet as RequirementFacet,
@@ -58,6 +71,9 @@ export function readRequirementCatalogFile(text: string): RequirementCatalogFile
       // Absent for a format with a handler family to subset, present for a bedrock format whose row names one
       // parse function. Validated above, so reaching here means it is either absent or a string.
       ...(raw.parserExport === undefined ? {} : { parserExport: raw.parserExport }),
+      ...(raw.contentParserInputKind === undefined
+        ? {}
+        : { contentParserInputKind: raw.contentParserInputKind as 'bytes' | 'string' }),
       // Absent for an options-driven lane, which has no `register*` to name. Copied only when present
       // so a row that never had one does not gain an empty string that reads like a lost value.
       ...(typeof raw.registrarImport === 'string' ? { registrarImport: raw.registrarImport } : {}),
@@ -163,6 +179,8 @@ export function writeRequirementSetFile(requirementSet: Readonly<RequirementSet>
 // The registrar pair is NOT required: a tag family is named in parse options and never registered, so
 // every built-in row omits it. Requiring it here rejected the catalog this repo itself ships — a
 // `tool-registry catalog --json` feeding `tool-manifest plan` failed on rows that were perfectly valid.
+const CATALOG_INPUT_KINDS = ['bytes', 'string'] as const;
+
 const CATALOG_ENTRY_FIELDS = ['backend', 'facet', 'kind', 'implementationImport', 'implementationSymbol'] as const;
 
 const CATALOG_DISPOSITION_FIELDS = ['backend', 'facet', 'kind', 'reason'] as const;
