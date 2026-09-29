@@ -294,7 +294,7 @@ describe('generateManifestModuleSource direct parser rows', () => {
     expect(result.source.match(/export const contentParser =/g)).toHaveLength(1);
     expect(result.source).toContain('export const contentParser = parseBitmapFontFnt;');
     expect(result.problems).toEqual([
-      'direct parser export contentParser already bound to parseBitmapFontFnt from @acme/parser: dropped bitmapfont.BmFontXml (parseBitmapFontXml from @acme/parser)',
+      'direct parser export contentParser already bound to parseBitmapFontFnt from @acme/parser (bytes): dropped bitmapfont.BmFontXml (parseBitmapFontXml from @acme/parser, bytes)',
     ]);
   });
 
@@ -328,7 +328,7 @@ describe('generateManifestModuleSource direct parser rows', () => {
 
     expect(result.source.match(/export const contentParser =/g)).toHaveLength(1);
     expect(result.problems).toEqual([
-      'direct parser export contentParser already bound to parseTiled from @flighthq/tilemap-formats: dropped particles.StarlingPex (parseTiled from @flighthq/particles-formats)',
+      'direct parser export contentParser already bound to parseTiled from @flighthq/tilemap-formats (bytes): dropped particles.StarlingPex (parseTiled from @flighthq/particles-formats, bytes)',
     ]);
     // One import line, from the accepted module only — the defect emitted both and declared the name twice.
     expect(result.source.match(/^import \{ parseTiled \} from/gm)).toHaveLength(1);

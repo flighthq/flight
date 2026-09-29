@@ -55,7 +55,7 @@ describe('bedrock content analyzers', () => {
     'generates one direct parser binding and an empty parserOptions for %s',
     (extension, sample, kind, parser) => {
       const source = generate(extension, encodeUTF8(sample));
-      expect(source).toContain(`export const contentParser = ${parser};`);
+      expect(source).toContain(expectedBinding(kind, parser));
       // ★ NOT A parserOptions FIELD. These formats declare no handler field to spread into — TilemapImportOptions
       // has only the registry's descriptor lists, BitmapFontParseOptions has nothing — so a field here would either
       // install the registry or spread into nothing and parse with the full default family.
@@ -81,11 +81,13 @@ describe('bedrock content analyzers', () => {
     ]) {
       expect(source.includes(forbidden), `${extension} names ${forbidden}`).toBe(false);
     }
-    // Exactly one parser import, so the selection is a selection rather than a family.
+    // ★ EXACTLY THE SELECTED PARSER, PLUS THE DECODER WHEN AND ONLY WHEN THE WRAPPER NEEDS IT. The selection is
+    // still a selection rather than a family: a string parser's module carries `decodeUTF8` because
+    // `contentParser` normalizes bytes-first input for it, and a bytes parser's module carries nothing extra.
     const imported = [...source.matchAll(/^import \{ ([^}]+) \} from/gm)].flatMap((match) =>
       match[1].split(',').map((name) => name.trim()),
     );
-    expect(imported).toEqual([parser]);
+    expect(imported.sort()).toEqual(inputKindOf(kind) === 'string' ? [parser, 'decodeUTF8'].sort() : [parser]);
   });
 
   // ★ THE GENERATED MODULE IS APPLICATION CODE, SO ITS IMPORTS MUST BE ON THE APP LANE. `.` is the app boundary
@@ -104,7 +106,7 @@ describe('bedrock content analyzers', () => {
 
   it.each(FNT_VARIANTS)('selects the %s parser for a .fnt carrying that form', (_label, bytes, kind, parser) => {
     expect(analyze('.fnt', bytes).requirements.map((requirement) => requirement.key)).toEqual([kind]);
-    expect(generate('.fnt', bytes)).toContain(`export const contentParser = ${parser};`);
+    expect(generate('.fnt', bytes)).toContain(expectedBinding(kind, parser));
   });
 
   // ★ THE EXCLUSIONS, ASSERTED RATHER THAN DESCRIBED. Each of these names two or more parsers across different
@@ -150,4 +152,18 @@ function generate(extension: string, bytes: Uint8Array): string {
     return { entry, kind: requirement.key };
   });
   return generateManifestModuleSource(rows, extension).source;
+}
+
+// The binding the emitter must produce for a row, read from the CATALOG rather than restated here: a bytes
+// parser is bound directly and a string parser is wrapped so `contentParser` always takes bytes first. Deriving
+// it means this asserts the emitter agrees with the row, which is the actual contract — restating the shape
+// would let a row and its emission drift apart while both tests stayed green.
+function expectedBinding(kind: string, parser: string): string {
+  return inputKindOf(kind) === 'string'
+    ? `export const contentParser = (source, ...rest) => ${parser}(decodeUTF8(source), ...rest);`
+    : `export const contentParser = ${parser};`;
+}
+
+function inputKindOf(kind: string): string | undefined {
+  return BUILT_IN_REQUIREMENT_CATALOG_ENTRIES.find((row) => row.kind === kind)?.contentParserInputKind;
 }
