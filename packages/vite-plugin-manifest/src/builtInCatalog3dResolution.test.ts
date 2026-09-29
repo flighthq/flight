@@ -60,6 +60,11 @@ describe('3D format content through the built-in catalog', () => {
       const { diagnostics } = await load3d('.3ds', new Uint8Array([0x00]));
       expect(diagnostics.some((d) => d.includes('unreadable'))).toBe(true);
     });
+
+    it('does not diagnose 3ds.MaterialTextureMap — it has a real catalog row', async () => {
+      const { diagnostics } = await load3d('.3ds', threeDsWithMaterial());
+      expect(diagnostics.filter((d) => d.includes('3ds.MaterialTextureMap'))).toEqual([]);
+    });
   });
 
   describe('.glb', () => {
@@ -140,6 +145,11 @@ describe('3D format content through the built-in catalog', () => {
       const { diagnostics } = await load3d('.dae', encodeUTF8('<root/>'));
       expect(diagnostics.some((d) => d.includes('unreadable'))).toBe(true);
     });
+
+    it('does not diagnose dae.Image — it has a real catalog row', async () => {
+      const { diagnostics } = await load3d('.dae', encodeUTF8(COLLADA_WITH_IMAGE));
+      expect(diagnostics.filter((d) => d.includes('dae.Image'))).toEqual([]);
+    });
   });
 
   describe('.md2', () => {
@@ -159,6 +169,11 @@ describe('3D format content through the built-in catalog', () => {
     it('reports unreadable diagnostic for truncated bytes', async () => {
       const { diagnostics } = await load3d('.md2', new Uint8Array(10));
       expect(diagnostics.some((d) => d.includes('unreadable'))).toBe(true);
+    });
+
+    it('does not diagnose md2.Mesh — the catalog deliberately declines it as bedrock', async () => {
+      const { diagnostics } = await load3d('.md2', md2MeshOnly());
+      expect(diagnostics.filter((d) => d.includes('md2.Mesh'))).toEqual([]);
     });
   });
 
@@ -202,6 +217,11 @@ describe('3D format content through the built-in catalog', () => {
       expect(source).not.toContain('materialRenderers');
       expect(source).not.toContain('BlinnPhongMaterial');
     });
+
+    it('does not diagnose md5.Mesh — the catalog deliberately declines it as bedrock', async () => {
+      const { diagnostics } = await load3d('.md5mesh', encodeUTF8(FULL_MD5_MESH));
+      expect(diagnostics.filter((d) => d.includes('md5.Mesh'))).toEqual([]);
+    });
   });
 
   describe('.obj', () => {
@@ -219,6 +239,11 @@ describe('3D format content through the built-in catalog', () => {
       expect(source).not.toContain('materialRenderers');
       expect(source).not.toContain('BlinnPhongMaterial');
       expect(source).not.toContain('StandardPbrMaterial');
+    });
+
+    it('does not diagnose obj.Face — the catalog deliberately declines it as bedrock', async () => {
+      const { diagnostics } = await load3d('.obj', encodeUTF8(MINIMAL_OBJ));
+      expect(diagnostics.filter((d) => d.includes('obj.Face'))).toEqual([]);
     });
   });
 
@@ -360,6 +385,15 @@ const GEOMETRY_ONLY_COLLADA = [
   '<?xml version="1.0"?>',
   '<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">',
   '<library_geometries><geometry id="g"><mesh></mesh></geometry></library_geometries>',
+  '</COLLADA>',
+].join('\n');
+
+const COLLADA_WITH_IMAGE = [
+  '<?xml version="1.0"?>',
+  '<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">',
+  '<library_images><image id="i"><init_from>tex.png</init_from></image></library_images>',
+  '<library_materials><material id="m"><instance_effect url="#e"/></material></library_materials>',
+  '<library_effects><effect id="e"><profile_COMMON></profile_COMMON></effect></library_effects>',
   '</COLLADA>',
 ].join('\n');
 

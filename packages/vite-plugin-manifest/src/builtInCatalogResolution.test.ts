@@ -19,6 +19,17 @@ describe('AWD2 content through the built-in catalog', () => {
     expect(source).toContain('materialRenderers');
     expect(source).toContain("'ShadedMaterial'");
   });
+
+  it('does not diagnose awd2.Unknown(254) or awd2.Unknown(255) — the catalog deliberately declines them', async () => {
+    const { diagnostics } = await loadAwd2(awd2WithUnknownBlocks(254, 255));
+    expect(diagnostics.filter((d) => d.includes('awd2.Unknown(254)'))).toEqual([]);
+    expect(diagnostics.filter((d) => d.includes('awd2.Unknown(255)'))).toEqual([]);
+  });
+
+  it('still diagnoses an unknown block type that is NOT declined', async () => {
+    const { diagnostics } = await loadAwd2(awd2WithUnknownBlocks(200));
+    expect(diagnostics.some((d) => d.includes('awd2.Unknown(200)'))).toBe(true);
+  });
 });
 
 // The built-in catalog's whole claim is that a build can point at real content and get the real
@@ -209,16 +220,28 @@ async function loadAwd2(content: Uint8Array): Promise<{ diagnostics: string[]; s
 const AWD2_BLOCK_MATERIAL = 81;
 
 function awd2WithMaterialBlock(): Uint8Array {
-  const blockBody = new Uint8Array(0);
+  return awd2WithBlocks(AWD2_BLOCK_MATERIAL);
+}
+
+function awd2WithUnknownBlocks(...blockTypes: readonly number[]): Uint8Array {
+  return awd2WithBlocks(...blockTypes);
+}
+
+function awd2WithBlocks(...blockTypes: readonly number[]): Uint8Array {
   const blockHeader = 11;
-  const file = new Uint8Array(12 + blockHeader + blockBody.length);
+  const bodySize = blockTypes.length * blockHeader;
+  const file = new Uint8Array(12 + bodySize);
   file.set([0x41, 0x57, 0x44, 2, 1, 0, 0, 0], 0);
   const view = new DataView(file.buffer);
-  view.setUint32(8, blockHeader + blockBody.length, true);
-  view.setUint32(12, 1, true);
-  file[16] = 0;
-  file[17] = AWD2_BLOCK_MATERIAL;
-  file[18] = 0;
-  view.setUint32(19, blockBody.length, true);
+  view.setUint32(8, bodySize, true);
+  let offset = 12;
+  for (const blockType of blockTypes) {
+    view.setUint32(offset, 1, true);
+    file[offset + 4] = 0;
+    file[offset + 5] = blockType;
+    file[offset + 6] = 0;
+    view.setUint32(offset + 7, 0, true);
+    offset += blockHeader;
+  }
   return file;
 }

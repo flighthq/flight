@@ -58,19 +58,17 @@ export const ALWAYS_READ_FORMAT_FEATURES: readonly { feature: string; namespace:
   {
     feature: 'Mesh',
     namespace: 'md2',
-    reason:
-      'the core parse always reads it: the header, triangles, texcoords and frame 0 are what make the file a model, so there is nothing to opt out of',
+    reason: 'MD2 is a single-mesh format; the mesh is the entire file content and cannot be omitted',
   },
   {
     feature: 'Mesh',
     namespace: 'md5',
-    reason:
-      'the core parse always reads it: without the mesh sections there is no model, so there is nothing to opt out of',
+    reason: 'MD5 mesh data is always present; the parser is bedrock',
   },
   {
     feature: 'Face',
     namespace: 'obj',
-    reason: 'the core parse always reads it: faces are the geometry, so there is nothing to opt out of',
+    reason: 'geometry faces are always present in OBJ; the parser is bedrock and has no separable face handler',
   },
   {
     feature: 'Line',
@@ -118,14 +116,12 @@ export const UNSUPPORTED_FORMAT_FEATURES: readonly { feature: string; namespace:
   {
     feature: 'Unknown(254)',
     namespace: 'awd2',
-    reason:
-      'AWD2 core block type 254 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
+    reason: 'unrecognized AWD2 block type 254; no parser implementation exists',
   },
   {
     feature: 'Unknown(255)',
     namespace: 'awd2',
-    reason:
-      'AWD2 core block type 255 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
+    reason: 'unrecognized AWD2 block type 255; no parser implementation exists',
   },
   {
     feature: 'mask.darken',
