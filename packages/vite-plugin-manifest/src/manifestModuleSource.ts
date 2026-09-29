@@ -96,7 +96,7 @@ export function generateManifestModuleSource(
   // name alone called those identical — deduplicating them to one binding while both modules still contributed
   // an import, so the module declared `parseFoo` twice from two places and did not compile. The pair is what
   // "the same parser" means.
-  const directParsers = new Map<string, { module: string; symbol: string }>();
+  const directParsers = new Map<string, DirectParserBinding>();
   for (const row of rows) {
     if (row.entry.backend === MANIFEST_PARSER_BACKEND) {
       const exportName = row.entry.parserExport;
@@ -112,15 +112,27 @@ export function generateManifestModuleSource(
       // the file is two formats at once; picking either would be a guess, so the row is dropped with the conflict
       // named. The import moved below the decision because importing first left the dropped parser's import
       // behind — an unused binding in a generated module, pulling a codec the build then never calls.
+      // ★ THE INPUT KIND IS PART OF THE IDENTITY, BECAUSE IT CHANGES WHAT IS EMITTED. The same symbol from the
+      // same module under two different input kinds would produce the direct binding for one row and the
+      // decoding wrapper for the other; accepting either silently would hand the parser bytes where it wanted
+      // text, or the reverse. Two rows disagreeing about a fact the emitter acts on are a conflict, not a
+      // duplicate.
+      const candidate = {
+        inputKind: row.entry.contentParserInputKind ?? DEFAULT_CONTENT_PARSER_INPUT_KIND,
+        module: row.entry.implementationImport,
+        symbol: row.entry.implementationSymbol,
+      };
       if (bound === undefined) {
-        directParsers.set(exportName, {
-          module: row.entry.implementationImport,
-          symbol: row.entry.implementationSymbol,
-        });
-        addImport(importsByModule, row.entry.implementationImport, row.entry.implementationSymbol);
-      } else if (bound.symbol !== row.entry.implementationSymbol || bound.module !== row.entry.implementationImport) {
+        directParsers.set(exportName, candidate);
+        addImport(importsByModule, candidate.module, candidate.symbol);
+        if (candidate.inputKind === 'string') addImport(importsByModule, DECODE_MODULE, DECODE_SYMBOL);
+      } else if (
+        bound.symbol !== candidate.symbol ||
+        bound.module !== candidate.module ||
+        bound.inputKind !== candidate.inputKind
+      ) {
         problems.push(
-          `direct parser export ${exportName} already bound to ${bound.symbol} from ${bound.module}: dropped ${row.kind} (${row.entry.implementationSymbol} from ${row.entry.implementationImport})`,
+          `direct parser export ${exportName} already bound to ${bound.symbol} from ${bound.module} (${bound.inputKind}): dropped ${row.kind} (${candidate.symbol} from ${candidate.module}, ${candidate.inputKind})`,
         );
       }
       continue;
@@ -189,10 +201,33 @@ export function generateManifestModuleSource(
   }
   // Sorted by export name so the same inputs always produce byte-identical source, like every other fragment.
   for (const exportName of [...directParsers.keys()].sort()) {
-    lines.push('', `export const ${exportName} = ${directParsers.get(exportName)!.symbol};`);
+    lines.push('', ...directParserBinding(exportName, directParsers.get(exportName)!));
   }
   lines.push('', ...parserFragment(parserRows, PARSER_HANDLER_FIELDS[extension] ?? 'handlers'));
   return { problems, source: `${lines.join('\n')}\n` };
+}
+
+/**
+ * One direct-parser binding, normalized so every `contentParser` takes BYTES first.
+ *
+ * ★ THE POINT IS THAT AN APPLICATION DOES NOT HAVE TO KNOW WHICH FORMAT THE BUILD CHOSE. It reads a file and
+ * calls `contentParser(bytes, ...)`; whether the selected parser wanted text or bytes is the build's problem,
+ * not the caller's. A bytes parser is bound directly — a wrapper there would add a call frame and change
+ * nothing — and a string parser gets a wrapper that decodes and forwards.
+ *
+ * ★ EVERY REMAINING ARGUMENT IS FORWARDED IN ORDER, WHICH IS WHAT KEEPS THE PARSER'S OWN API INTACT. These
+ * parsers take options and a diagnostics sink after their first argument, and a wrapper that dropped them would
+ * leave a caller unable to collect diagnostics while the module still looked correct. Returning the call
+ * unchanged keeps the sentinels too: `parseTiledTmx` returning null for a bad root still returns null here.
+ *
+ * ★ PLAIN JAVASCRIPT, DELIBERATELY. The plugin resolves these modules to a virtual id with no extension, so
+ * Vite transforms the source as JavaScript. A type annotation would be a build-time syntax error rather than a
+ * stricter module, which is why the wrapper carries none; inference is whatever the imported parser's own types
+ * give a JavaScript consumer.
+ */
+function directParserBinding(exportName: string, bound: Readonly<DirectParserBinding>): string[] {
+  if (bound.inputKind !== 'string') return [`export const ${exportName} = ${bound.symbol};`];
+  return [`export const ${exportName} = (source, ...rest) => ${bound.symbol}(${DECODE_SYMBOL}(source), ...rest);`];
 }
 
 function addImport(importsByModule: Map<string, Set<string>>, module: string, symbol: string): void {
@@ -268,4 +303,19 @@ function parserFragment(rows: readonly ManifestModuleEntry[], field: string): st
     return [`  ${f}: [`, ...handlers, '  ],'];
   });
   return [`export const parserOptions = {`, ...fields, '};'];
+}
+
+/** What a direct-parser row's first argument is when the row does not say. */
+const DEFAULT_CONTENT_PARSER_INPUT_KIND = 'bytes';
+
+// The decode seam a string parser's wrapper calls, named on the PUBLIC lane because this import is emitted into
+// application code. Imported only when an accepted string binding needs it, so a bytes-only module carries no
+// reference to the encoding package at all.
+const DECODE_MODULE = '@flighthq/encoding';
+const DECODE_SYMBOL = 'decodeUTF8';
+
+interface DirectParserBinding {
+  readonly inputKind: string;
+  readonly module: string;
+  readonly symbol: string;
 }

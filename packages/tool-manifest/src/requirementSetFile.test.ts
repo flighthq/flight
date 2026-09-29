@@ -96,6 +96,96 @@ describe('readRequirementCatalogFile', () => {
     expect(result.problems).toEqual(['entries[0] parserExport must be a string when present']);
   });
 
+  // ★ THE INPUT KIND DECIDES WHICH OF TWO BINDINGS IS EMITTED, so the CLI lane has to carry it for the same
+  // reason it carries `parserExport`: a catalog that lost it would still parse, still select the right parser,
+  // and hand that parser the wrong argument shape.
+  it('preserves contentParserInputKind through a round trip', () => {
+    const entry = {
+      backend: 'parser',
+      contentParserInputKind: 'string',
+      facet: 'document.format',
+      implementationImport: '@flighthq/tilemap-formats',
+      implementationSymbol: 'parseTiledTmx',
+      kind: 'tilemap.TiledTmx',
+      parserExport: 'contentParser',
+    };
+
+    const result = readRequirementCatalogFile(JSON.stringify({ entries: [entry] }));
+
+    expect(result.problems).toEqual([]);
+    expect(result.catalog!.entries[0].contentParserInputKind).toBe('string');
+    expect(JSON.parse(JSON.stringify(result.catalog!.entries[0]))).toEqual(entry);
+  });
+
+  it('preserves the bytes input kind as readily as the string one', () => {
+    const result = readRequirementCatalogFile(
+      JSON.stringify({
+        entries: [
+          {
+            backend: 'parser',
+            contentParserInputKind: 'bytes',
+            facet: 'document.format',
+            implementationImport: '@flighthq/bitmapfont-formats',
+            implementationSymbol: 'parseBitmapFontBinary',
+            kind: 'bitmapfont.BmFontBinary',
+            parserExport: 'contentParser',
+          },
+        ],
+      }),
+    );
+
+    expect(result.problems).toEqual([]);
+    expect(result.catalog!.entries[0].contentParserInputKind).toBe('bytes');
+  });
+
+  it('leaves contentParserInputKind absent on a row that never had one', () => {
+    const result = readRequirementCatalogFile(
+      JSON.stringify({
+        entries: [
+          {
+            backend: 'parser',
+            facet: 'document.format',
+            implementationImport: '@flighthq/swf',
+            implementationSymbol: 'swfDefineShapeHandler',
+            kind: 'swf.DefineShape',
+          },
+        ],
+      }),
+    );
+
+    expect(result.problems).toEqual([]);
+    expect('contentParserInputKind' in result.catalog!.entries[0]).toBe(false);
+  });
+
+  // ★ CHECKED AGAINST ITS TWO LEGAL VALUES, NOT MERELY AGAINST `string`. A typo like 'text' or 'byte' is a
+  // string, so a `typeof` check would accept it and the emitter would silently pick the other convention.
+  it.each([
+    ['a near-miss spelling', 'text'],
+    ['the singular', 'byte'],
+    ['a number', 3],
+    ['a null', null],
+    ['an array', ['string']],
+  ])('rejects %s contentParserInputKind by index rather than dropping it', (_label, value) => {
+    const result = readRequirementCatalogFile(
+      JSON.stringify({
+        entries: [
+          {
+            backend: 'parser',
+            contentParserInputKind: value,
+            facet: 'document.format',
+            implementationImport: '@flighthq/tilemap-formats',
+            implementationSymbol: 'parseTiledTmx',
+            kind: 'tilemap.TiledTmx',
+            parserExport: 'contentParser',
+          },
+        ],
+      }),
+    );
+
+    expect(result.catalog).toBeNull();
+    expect(result.problems).toEqual(['entries[0] contentParserInputKind must be bytes or string when present']);
+  });
+
   it('rejects text that is not a catalog', () => {
     expect(readRequirementCatalogFile('{').catalog).toBeNull();
     expect(readRequirementCatalogFile('[]').problems).toEqual(['catalog must be an object']);
