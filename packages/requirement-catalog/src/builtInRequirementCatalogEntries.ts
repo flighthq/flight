@@ -3028,71 +3028,61 @@ export const BUILT_IN_REQUIREMENT_DISPOSITIONS: readonly RequirementDisposition[
     backend: 'canvas',
     facet: 'document.format',
     kind: 'awd2.Unknown(254)',
-    reason:
-      'AWD2 core block type 254 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
+    reason: 'unrecognized AWD2 block type 254; no parser implementation exists',
   },
   {
     backend: 'dom',
     facet: 'document.format',
     kind: 'awd2.Unknown(254)',
-    reason:
-      'AWD2 core block type 254 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
+    reason: 'unrecognized AWD2 block type 254; no parser implementation exists',
   },
   {
     backend: 'gl',
     facet: 'document.format',
     kind: 'awd2.Unknown(254)',
-    reason:
-      'AWD2 core block type 254 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
+    reason: 'unrecognized AWD2 block type 254; no parser implementation exists',
   },
   {
     backend: 'parser',
     facet: 'document.format',
     kind: 'awd2.Unknown(254)',
-    reason:
-      'AWD2 core block type 254 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
+    reason: 'unrecognized AWD2 block type 254; no parser implementation exists',
   },
   {
     backend: 'wgpu',
     facet: 'document.format',
     kind: 'awd2.Unknown(254)',
-    reason:
-      'AWD2 core block type 254 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
+    reason: 'unrecognized AWD2 block type 254; no parser implementation exists',
   },
   {
     backend: 'canvas',
     facet: 'document.format',
     kind: 'awd2.Unknown(255)',
-    reason:
-      'AWD2 core block type 255 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
+    reason: 'unrecognized AWD2 block type 255; no parser implementation exists',
   },
   {
     backend: 'dom',
     facet: 'document.format',
     kind: 'awd2.Unknown(255)',
-    reason:
-      'AWD2 core block type 255 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
+    reason: 'unrecognized AWD2 block type 255; no parser implementation exists',
   },
   {
     backend: 'gl',
     facet: 'document.format',
     kind: 'awd2.Unknown(255)',
-    reason:
-      'AWD2 core block type 255 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
+    reason: 'unrecognized AWD2 block type 255; no parser implementation exists',
   },
   {
     backend: 'parser',
     facet: 'document.format',
     kind: 'awd2.Unknown(255)',
-    reason:
-      'AWD2 core block type 255 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
+    reason: 'unrecognized AWD2 block type 255; no parser implementation exists',
   },
   {
     backend: 'wgpu',
     facet: 'document.format',
     kind: 'awd2.Unknown(255)',
-    reason:
-      'AWD2 core block type 255 has no public specification and no known exporter writes it; the parser skips the block by its length prefix, so no handler is needed and none can be written',
+    reason: 'unrecognized AWD2 block type 255; no parser implementation exists',
   },
   {
     backend: 'canvas',
@@ -3378,36 +3368,31 @@ export const BUILT_IN_REQUIREMENT_DISPOSITIONS: readonly RequirementDisposition[
     backend: 'canvas',
     facet: 'document.format',
     kind: 'md2.Mesh',
-    reason:
-      'the core parse always reads it: the header, triangles, texcoords and frame 0 are what make the file a model, so there is nothing to opt out of',
+    reason: 'MD2 is a single-mesh format; the mesh is the entire file content and cannot be omitted',
   },
   {
     backend: 'dom',
     facet: 'document.format',
     kind: 'md2.Mesh',
-    reason:
-      'the core parse always reads it: the header, triangles, texcoords and frame 0 are what make the file a model, so there is nothing to opt out of',
+    reason: 'MD2 is a single-mesh format; the mesh is the entire file content and cannot be omitted',
   },
   {
     backend: 'gl',
     facet: 'document.format',
     kind: 'md2.Mesh',
-    reason:
-      'the core parse always reads it: the header, triangles, texcoords and frame 0 are what make the file a model, so there is nothing to opt out of',
+    reason: 'MD2 is a single-mesh format; the mesh is the entire file content and cannot be omitted',
   },
   {
     backend: 'parser',
     facet: 'document.format',
     kind: 'md2.Mesh',
-    reason:
-      'the core parse always reads it: the header, triangles, texcoords and frame 0 are what make the file a model, so there is nothing to opt out of',
+    reason: 'MD2 is a single-mesh format; the mesh is the entire file content and cannot be omitted',
   },
   {
     backend: 'wgpu',
     facet: 'document.format',
     kind: 'md2.Mesh',
-    reason:
-      'the core parse always reads it: the header, triangles, texcoords and frame 0 are what make the file a model, so there is nothing to opt out of',
+    reason: 'MD2 is a single-mesh format; the mesh is the entire file content and cannot be omitted',
   },
   {
     backend: 'canvas',
@@ -3473,66 +3458,61 @@ export const BUILT_IN_REQUIREMENT_DISPOSITIONS: readonly RequirementDisposition[
     backend: 'canvas',
     facet: 'document.format',
     kind: 'md5.Mesh',
-    reason:
-      'the core parse always reads it: without the mesh sections there is no model, so there is nothing to opt out of',
+    reason: 'MD5 mesh data is always present; the parser is bedrock',
   },
   {
     backend: 'dom',
     facet: 'document.format',
     kind: 'md5.Mesh',
-    reason:
-      'the core parse always reads it: without the mesh sections there is no model, so there is nothing to opt out of',
+    reason: 'MD5 mesh data is always present; the parser is bedrock',
   },
   {
     backend: 'gl',
     facet: 'document.format',
     kind: 'md5.Mesh',
-    reason:
-      'the core parse always reads it: without the mesh sections there is no model, so there is nothing to opt out of',
+    reason: 'MD5 mesh data is always present; the parser is bedrock',
   },
   {
     backend: 'parser',
     facet: 'document.format',
     kind: 'md5.Mesh',
-    reason:
-      'the core parse always reads it: without the mesh sections there is no model, so there is nothing to opt out of',
+    reason: 'MD5 mesh data is always present; the parser is bedrock',
   },
   {
     backend: 'wgpu',
     facet: 'document.format',
     kind: 'md5.Mesh',
-    reason:
-      'the core parse always reads it: without the mesh sections there is no model, so there is nothing to opt out of',
+    reason: 'MD5 mesh data is always present; the parser is bedrock',
   },
   {
     backend: 'canvas',
     facet: 'document.format',
     kind: 'obj.Face',
-    reason: 'the core parse always reads it: faces are the geometry, so there is nothing to opt out of',
+    reason: 'geometry faces are always present in OBJ; the parser is bedrock and has no separable face handler',
   },
   {
     backend: 'dom',
     facet: 'document.format',
     kind: 'obj.Face',
-    reason: 'the core parse always reads it: faces are the geometry, so there is nothing to opt out of',
+    reason: 'geometry faces are always present in OBJ; the parser is bedrock and has no separable face handler',
   },
   {
     backend: 'gl',
     facet: 'document.format',
     kind: 'obj.Face',
-    reason: 'the core parse always reads it: faces are the geometry, so there is nothing to opt out of',
+    reason: 'geometry faces are always present in OBJ; the parser is bedrock and has no separable face handler',
   },
   {
     backend: 'parser',
     facet: 'document.format',
     kind: 'obj.Face',
-    reason: 'the core parse always reads it: faces are the geometry, so there is nothing to opt out of',
+    reason: 'geometry faces are always present in OBJ; the parser is bedrock and has no separable face handler',
   },
   {
     backend: 'wgpu',
     facet: 'document.format',
     kind: 'obj.Face',
-    reason: 'the core parse always reads it: faces are the geometry, so there is nothing to opt out of',
+    reason: 'geometry faces are always present in OBJ; the parser is bedrock and has no separable face handler',
   },
   {
     backend: 'canvas',
