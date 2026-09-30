@@ -34,6 +34,8 @@ export const AWD2_BLOCK_TEXTURE = 82;
 export const AWD2_BLOCK_SKELETON = 101;
 export const AWD2_BLOCK_SKELETON_POSE = 102;
 export const AWD2_BLOCK_SKELETON_ANIMATION = 103;
+export const AWD2_BLOCK_SKELETON_CLIP_NODE = 113;
+export const AWD2_BLOCK_ANIMATION_SET = 122;
 
 // Material block (type 81) `matType` byte, read after the material name: a flat color material or
 // a textured material.

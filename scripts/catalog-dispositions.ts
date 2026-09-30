@@ -114,6 +114,16 @@ const DISPOSITION_BACKENDS = ['canvas', 'dom', 'gl', 'wgpu', CATALOG_PARSER_BACK
  */
 export const UNSUPPORTED_FORMAT_FEATURES: readonly { feature: string; namespace: string; reason: string }[] = [
   {
+    feature: 'AnimationSet',
+    namespace: 'awd2',
+    reason: 'animation state machine organizer; Flight drives skeleton clips directly, not through a state graph',
+  },
+  {
+    feature: 'SkeletonClipNode',
+    namespace: 'awd2',
+    reason: 'animation state machine clip wrapper; Flight reads the underlying SkeletonAnimation directly',
+  },
+  {
     feature: 'Unknown(254)',
     namespace: 'awd2',
     reason: 'unrecognized AWD2 block type 254; no parser implementation exists',
