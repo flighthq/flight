@@ -120,9 +120,9 @@ export function createRichText(obj?: Readonly<PartialNode<RichText>>): RichText 
 export function createRichTextData(data?: Readonly<Partial<RichTextData>>): RichTextData {
   const _data = createTextLabelData(data) as RichTextData;
   _data.background = data?.background ?? false;
-  _data.backgroundColor = data?.backgroundColor ?? 0xffffff;
+  _data.backgroundColor = data?.backgroundColor ?? 0xffffffff;
   _data.border = data?.border ?? false;
-  _data.borderColor = data?.borderColor ?? 0;
+  _data.borderColor = data?.borderColor ?? 0x000000ff;
   _data.height = data?.height ?? 100;
   _data.width = data?.width ?? 100;
   _data.condenseWhite = data?.condenseWhite ?? false;

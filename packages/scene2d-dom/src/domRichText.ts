@@ -1,4 +1,4 @@
-import { computeRgbHexString, computeRgbaCssString } from '@flighthq/color/contract';
+import { computeRgbaCssString } from '@flighthq/color/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
@@ -110,8 +110,8 @@ function drawDomRichTextField(state: DomRenderState, renderProxy: RenderProxy2D)
   const div = data.div;
   div.style.width = `${fieldW}px`;
   div.style.height = `${fieldH}px`;
-  div.style.backgroundColor = background ? computeRgbHexString(backgroundColor) : '';
-  div.style.border = border ? `1px solid ${computeRgbHexString(borderColor)}` : '';
+  div.style.backgroundColor = background ? computeRgbaCssString(backgroundColor) : '';
+  div.style.border = border ? `1px solid ${computeRgbaCssString(borderColor)}` : '';
 
   if (text.length === 0) {
     div.innerHTML = '';

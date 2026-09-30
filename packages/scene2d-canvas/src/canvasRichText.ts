@@ -1,5 +1,4 @@
-﻿import { computeRgbHexString } from '@flighthq/color/contract';
-import { computeRgbaCssString } from '@flighthq/color/contract';
+﻿import { computeRgbaCssString } from '@flighthq/color/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { computeTextFormatFontString, getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
 import {
@@ -77,12 +76,12 @@ function drawCanvasRichTextField(state: CanvasRenderState, renderProxy: RenderPr
   const fieldH = computeTextBoundsHeight(data, result);
 
   if (data.background) {
-    context.fillStyle = computeRgbHexString(data.backgroundColor);
+    context.fillStyle = computeRgbaCssString(data.backgroundColor);
     context.fillRect(0, 0, fieldW, fieldH);
   }
 
   if (data.border) {
-    context.strokeStyle = computeRgbHexString(data.borderColor);
+    context.strokeStyle = computeRgbaCssString(data.borderColor);
     context.lineWidth = 1;
     context.strokeRect(0, 0, fieldW, fieldH);
   }
