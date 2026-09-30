@@ -921,6 +921,7 @@ export * from './WgpuRenderState.ts';
 export * from './WgpuRenderStateOptions.ts';
 export * from './WgpuRenderTexture.ts';
 export * from './WgpuTextureResolver.ts';
+export * from './WgpuUniformEndianness.ts';
 export * from './WgpuParticleResources.ts';
 export * from './WgpuQuadBatchResources.ts';
 export * from './WgpuRichTextOverlay.ts';

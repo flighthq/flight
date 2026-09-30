@@ -1,5 +1,6 @@
 export * from './enableWgpuTextureResolverGuards.ts';
 export * from './explainWgpuTextureResolution.ts';
+export * from './explainWgpuUniformEndianness.ts';
 export * from './wgpuAdapterCapabilities.ts';
 export * from './wgpuCompressedTexture.ts';
 export * from './wgpuDeviceLoss.ts';

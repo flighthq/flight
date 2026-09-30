@@ -1,5 +1,6 @@
 export { enableWgpuTextureResolverGuards } from './enableWgpuTextureResolverGuards.ts';
 export * from './explainWgpuTextureResolution.ts';
+export { explainWgpuUniformEndianness } from './explainWgpuUniformEndianness.ts';
 export { registerWgpuCompressedTextureDecoder, registerWgpuCompressedTextureUpload } from './wgpuCompressedTexture.ts';
 export {
   disposeWgpuDeviceSignals,
