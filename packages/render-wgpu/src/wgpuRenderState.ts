@@ -189,6 +189,7 @@ function initializeWgpuDeviceRenderState(
   runtime.currentRenderTarget = null;
   runtime.uniformBuffer = uniformBuffer;
   runtime.uniformData = uniformData;
+  // Host byte order: validated on little-endian only (see explainWgpuUniformEndianness).
   runtime.uniformDataU32 = new Uint32Array(uniformData.buffer);
   runtime.uniformOffset = 0;
   runtime.uniformStride = uniformStride;

@@ -92,6 +92,7 @@ function getOrCreateEffectPassState(state: WgpuRenderState): WgpuEffectPassState
   });
 
   const uniformData = new Float32Array((SLOTS * STRIDE) / 4);
+  // Host byte order: validated on little-endian only (see explainWgpuUniformEndianness).
   const uniformDataI32 = new Int32Array(uniformData.buffer);
 
   const uniformBGLayout = device.createBindGroupLayout({
