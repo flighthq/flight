@@ -1,4 +1,4 @@
-import { computeRgbHexString } from '@flighthq/color/contract';
+import { computeRgbaCssString } from '@flighthq/color/contract';
 import {
   getTextInputCaretRectangle,
   getTextInputSelectionBeginIndex,
@@ -35,7 +35,7 @@ export function drawGlTextInputOverlay(
 
   getTextInputSelectionRectangles(selectionRectangles, source, result);
   if (selectionRectangles.length > 0) {
-    context.fillStyle = computeRgbHexString(input.selectionColor);
+    context.fillStyle = computeRgbaCssString(input.selectionColor);
     context.globalAlpha = input.selectionAlpha;
     for (const rect of selectionRectangles) {
       context.fillRect(rect.x - scrollXOffset, rect.y - scrollYOffset, rect.width, rect.height);
@@ -44,7 +44,7 @@ export function drawGlTextInputOverlay(
 
   if (input.focused && getTextInputSelectionBeginIndex(source) === getTextInputSelectionEndIndex(source)) {
     getTextInputCaretRectangle(caretRectangle, source, result);
-    context.fillStyle = CARET_COLOR;
+    context.fillStyle = computeRgbaCssString(input.caretColor);
     context.globalAlpha = 1;
     context.fillRect(
       caretRectangle.x - scrollXOffset,
@@ -63,7 +63,6 @@ export function enableGlTextInput(): void {
   registerGlTextInputOverlay(drawGlTextInputOverlay);
 }
 
-const CARET_COLOR = '#000000';
 const CARET_WIDTH = 1;
 const caretRectangle = { height: 0, lineIndex: 0, width: 0, x: 0, y: 0 };
 const selectionRectangles: TextSelectionRectangle[] = [];

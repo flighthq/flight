@@ -19,7 +19,6 @@ export interface TextInputHistoryEntry {
 
 export interface TextInputState {
   alwaysShowSelection: boolean;
-  // Caret fill as a 24-bit RGB integer (`0xRRGGBB`), not the packed RGBA the text-run colors carry.
   caretColor: number;
   caretIndex: number;
   caretWidth: number;
@@ -36,8 +35,6 @@ export interface TextInputState {
   passwordCharacter: string;
   restrict: string;
   selectionAlpha: number;
-  // Selection fill as a 24-bit RGB integer (`0xRRGGBB`), with opacity carried separately in
-  // selectionAlpha above rather than in a fourth channel.
   selectionColor: number;
   selectionIndex: number;
 }
@@ -46,7 +43,6 @@ export interface TextInputState {
 // selection-index fields are runtime state, not authoring inputs, so they are not configurable here.
 export interface TextInputOptions {
   alwaysShowSelection?: boolean;
-  // 24-bit RGB (`0xRRGGBB`), matching the TextInputState fields these seed.
   caretColor?: number;
   caretWidth?: number;
   displayAsPassword?: boolean;
@@ -54,6 +50,5 @@ export interface TextInputOptions {
   passwordCharacter?: string;
   restrict?: string;
   selectionAlpha?: number;
-  // 24-bit RGB (`0xRRGGBB`); opacity is selectionAlpha, not a fourth channel.
   selectionColor?: number;
 }

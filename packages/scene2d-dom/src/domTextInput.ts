@@ -1,4 +1,4 @@
-import { computeRgbHexString } from '@flighthq/color/contract';
+import { computeRgbaCssString } from '@flighthq/color/contract';
 import { getRichTextRuntime } from '@flighthq/text/contract';
 import {
   getTextInputCaretRectangle,
@@ -41,7 +41,7 @@ export function drawDomTextInputOverlay(_state: DomRenderState, renderProxy: Ren
   const firstVisibleLine = source.data.scrollV - 1;
   const scrollYOffset = firstVisibleLine > 0 ? getRichTextScrollYOffset(layout.lineHeights, firstVisibleLine) : 0;
   const scrollXOffset = source.data.scrollH;
-  const selColor = computeRgbHexString(input.selectionColor);
+  const selColor = computeRgbaCssString(input.selectionColor);
   const selAlpha = input.selectionAlpha;
   let html = '';
 
@@ -52,7 +52,7 @@ export function drawDomTextInputOverlay(_state: DomRenderState, renderProxy: Ren
 
   if (input.focused && getTextInputSelectionBeginIndex(source) === getTextInputSelectionEndIndex(source)) {
     getTextInputCaretRectangle(caretRectangle, source, layout);
-    html += `<div data-input-overlay style="position:absolute;left:${caretRectangle.x - scrollXOffset}px;top:${caretRectangle.y - scrollYOffset}px;width:${input.caretWidth}px;height:${caretRectangle.height}px;background:${computeRgbHexString(input.caretColor)};animation:flight-caret-blink 1s step-end infinite;pointer-events:none;"></div>`;
+    html += `<div data-input-overlay style="position:absolute;left:${caretRectangle.x - scrollXOffset}px;top:${caretRectangle.y - scrollYOffset}px;width:${input.caretWidth}px;height:${caretRectangle.height}px;background:${computeRgbaCssString(input.caretColor)};animation:flight-caret-blink 1s step-end infinite;pointer-events:none;"></div>`;
   }
 
   for (const el of data.div.querySelectorAll('[data-input-overlay]')) el.remove();

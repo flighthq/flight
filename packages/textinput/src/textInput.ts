@@ -52,7 +52,7 @@ function applyTextInputOptions(state: TextInputState, options: Readonly<TextInpu
 function createTextInputState(options?: Readonly<TextInputOptions>): TextInputState {
   return {
     alwaysShowSelection: options?.alwaysShowSelection ?? false,
-    caretColor: options?.caretColor ?? 0x000000,
+    caretColor: options?.caretColor ?? 0x000000ff,
     caretIndex: 0,
     caretWidth: options?.caretWidth ?? 1,
     desiredCaretX: -1,
@@ -64,7 +64,7 @@ function createTextInputState(options?: Readonly<TextInputOptions>): TextInputSt
     passwordCharacter: options?.passwordCharacter ?? '•',
     restrict: options?.restrict ?? '',
     selectionAlpha: options?.selectionAlpha ?? 0.35,
-    selectionColor: options?.selectionColor ?? 0x0078d7,
+    selectionColor: options?.selectionColor ?? 0x0078d7ff,
     selectionIndex: 0,
   };
 }
