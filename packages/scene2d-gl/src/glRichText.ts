@@ -1,4 +1,3 @@
-import { computeRgbHexString } from '@flighthq/color/contract';
 import { computeRgbaCssString } from '@flighthq/color/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
@@ -109,12 +108,12 @@ export function drawGlRichTextWithOverlay(
   offCtx.clearRect(0, 0, fieldW, fieldH);
 
   if (data.background) {
-    offCtx.fillStyle = computeRgbHexString(data.backgroundColor);
+    offCtx.fillStyle = computeRgbaCssString(data.backgroundColor);
     offCtx.fillRect(0, 0, fieldW, fieldH);
   }
 
   if (data.border) {
-    offCtx.strokeStyle = computeRgbHexString(data.borderColor);
+    offCtx.strokeStyle = computeRgbaCssString(data.borderColor);
     offCtx.lineWidth = 1;
     offCtx.strokeRect(0, 0, fieldW, fieldH);
   }

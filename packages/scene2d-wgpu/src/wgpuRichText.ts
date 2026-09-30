@@ -1,4 +1,4 @@
-import { computeRgbHexString, computeRgbaCssString } from '@flighthq/color/contract';
+import { computeRgbaCssString } from '@flighthq/color/contract';
 import { invalidateImageResource } from '@flighthq/image/contract';
 import { bindWgpuImageResourceTexture, drawWgpuQuad } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime, resolveWgpuApplyBlendMode } from '@flighthq/render-wgpu/contract';
@@ -112,12 +112,12 @@ export function drawWgpuRichTextWithOverlay(
   offCtx.clearRect(0, 0, fieldW, fieldH);
 
   if (data.background) {
-    offCtx.fillStyle = computeRgbHexString(data.backgroundColor);
+    offCtx.fillStyle = computeRgbaCssString(data.backgroundColor);
     offCtx.fillRect(0, 0, fieldW, fieldH);
   }
 
   if (data.border) {
-    offCtx.strokeStyle = computeRgbHexString(data.borderColor);
+    offCtx.strokeStyle = computeRgbaCssString(data.borderColor);
     offCtx.lineWidth = 1;
     offCtx.strokeRect(0, 0, fieldW, fieldH);
   }

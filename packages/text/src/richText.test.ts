@@ -166,9 +166,9 @@ describe('createRichText', () => {
 
   it('initializes default values', () => {
     expect(richText.data.background).toBe(false);
-    expect(richText.data.backgroundColor).toBe(0xffffff);
+    expect(richText.data.backgroundColor).toBe(0xffffffff);
     expect(richText.data.border).toBe(false);
-    expect(richText.data.borderColor).toBe(0);
+    expect(richText.data.borderColor).toBe(0x000000ff);
     expect(richText.data.condenseWhite).toBe(false);
     expect(richText.data.defaultTextFormat).not.toBeNull();
     expect(richText.data.maxChars).toBe(-1);
@@ -915,8 +915,8 @@ describe('setRichTextBorderColor', () => {
   it('sets borderColor and bumps content', () => {
     const richText = createRichText();
     const content = getNodeLocalContentRevision(richText);
-    setRichTextBorderColor(richText, 0x000000ff);
-    expect(richText.data.borderColor).toBe(0x000000ff);
+    setRichTextBorderColor(richText, 0xff0000ff);
+    expect(richText.data.borderColor).toBe(0xff0000ff);
     expect(getNodeLocalContentRevision(richText)).toBe(content + 1);
   });
 
