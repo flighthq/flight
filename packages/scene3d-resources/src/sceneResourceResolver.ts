@@ -60,6 +60,7 @@ export function initializeScene3DResourceResolver(
   const loader = createResourceLoader({ dedupe: false, maxConcurrent: options?.maxConcurrent, streaming: true });
   startResourceLoad(loader);
   out.fetch = options?.fetch ?? createWebImageResourceFetch(hostImage);
+  out.imageDecode = options?.imageDecode;
   out.registry = options?.registry ?? createScene3DMaterialTextureRegistry();
   out[Scene3DResourceResolverRuntimeKey] = {
     inFlight: new Map(),
