@@ -3,6 +3,7 @@ import type { HostDecompressDeflateCapability, HostDecompressLzmaCapability } fr
 import { parseAwd2Header } from './awd2Header.ts';
 import { rehydrateAwd2Body } from './awd2Parse.ts';
 import {
+  AWD2_BLOCK_ANIMATION_SET,
   AWD2_BLOCK_CAMERA,
   AWD2_BLOCK_CONTAINER,
   AWD2_BLOCK_HEADER_BYTES,
@@ -12,6 +13,7 @@ import {
   AWD2_BLOCK_MESH_INSTANCE,
   AWD2_BLOCK_SKELETON,
   AWD2_BLOCK_SKELETON_ANIMATION,
+  AWD2_BLOCK_SKELETON_CLIP_NODE,
   AWD2_BLOCK_SKELETON_POSE,
   AWD2_BLOCK_TEXTURE,
   AWD2_BLOCK_TRIANGLE_GEOMETRY,
@@ -82,4 +84,6 @@ const AWD2_BLOCK_NAMES = new Map<number, string>([
   [AWD2_BLOCK_SKELETON, 'Skeleton'],
   [AWD2_BLOCK_SKELETON_POSE, 'SkeletonPose'],
   [AWD2_BLOCK_SKELETON_ANIMATION, 'SkeletonAnimation'],
+  [AWD2_BLOCK_SKELETON_CLIP_NODE, 'SkeletonClipNode'],
+  [AWD2_BLOCK_ANIMATION_SET, 'AnimationSet'],
 ]);
