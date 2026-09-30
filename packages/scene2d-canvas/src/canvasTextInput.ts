@@ -1,4 +1,4 @@
-import { computeRgbHexString } from '@flighthq/color/contract';
+import { computeRgbaCssString } from '@flighthq/color/contract';
 import { getRichTextRuntime } from '@flighthq/text/contract';
 import {
   getTextInputCaretRectangle,
@@ -41,7 +41,7 @@ export function drawCanvasTextInputOverlay(state: CanvasRenderState, renderProxy
 
   getTextInputSelectionRectangles(selectionRectangles, source, layout);
   if (selectionRectangles.length > 0) {
-    context.fillStyle = computeRgbHexString(input.selectionColor);
+    context.fillStyle = computeRgbaCssString(input.selectionColor);
     context.globalAlpha = Math.min(1, renderProxy.alpha * input.selectionAlpha);
     for (const rect of selectionRectangles) {
       context.fillRect(rect.x - scrollXOffset, rect.y - scrollYOffset, rect.width, rect.height);
@@ -51,7 +51,7 @@ export function drawCanvasTextInputOverlay(state: CanvasRenderState, renderProxy
   if (input.focused && getTextInputSelectionBeginIndex(source) === getTextInputSelectionEndIndex(source)) {
     if (getCaretVisible(source, input.focused)) {
       getTextInputCaretRectangle(caretRectangle, source, layout);
-      context.fillStyle = CARET_COLOR;
+      context.fillStyle = computeRgbaCssString(input.caretColor);
       context.globalAlpha = renderProxy.alpha;
       context.fillRect(
         caretRectangle.x - scrollXOffset,
@@ -73,7 +73,6 @@ export function enableCanvasTextInput(): void {
 }
 
 const CARET_BLINK_MS = 530;
-const CARET_COLOR = '#000000';
 const _blinkStart = new WeakMap<object, number>();
 const _prevFocused = new WeakMap<object, boolean>();
 

@@ -19,14 +19,14 @@ describe('enableTextInput', () => {
     expect(state.focused).toBe(false);
     expect(state.caretIndex).toBe(0);
     expect(state.displayAsPassword).toBe(false);
-    expect(state.selectionColor).toBe(0x0078d7);
+    expect(state.selectionColor).toBe(0x0078d7ff);
   });
 
   it('applies authoring options', () => {
     const node = createRichText();
-    const state = enableTextInput(node, { displayAsPassword: true, selectionColor: 0xff0000 });
+    const state = enableTextInput(node, { displayAsPassword: true, selectionColor: 0xff0000ff });
     expect(state.displayAsPassword).toBe(true);
-    expect(state.selectionColor).toBe(0xff0000);
+    expect(state.selectionColor).toBe(0xff0000ff);
   });
 
   it('is idempotent and returns the existing state, applying new options', () => {

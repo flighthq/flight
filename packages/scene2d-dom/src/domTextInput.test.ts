@@ -39,7 +39,7 @@ describe('drawDomTextInputOverlay', () => {
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
     const div = drawGetEl(state, () => drawDomRichText(state, renderProxy));
-    expect(div!.innerHTML).toContain('background:#000000');
+    expect(div!.innerHTML).toContain('background:rgba(0,0,0,1)');
   });
 
   it('appends selection rectangles for the focused expanded selection', () => {
@@ -50,7 +50,7 @@ describe('drawDomTextInputOverlay', () => {
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
     const div = drawGetEl(state, () => drawDomRichText(state, renderProxy));
-    expect(div!.innerHTML).toContain('background:#0078d7');
+    expect(div!.innerHTML).toContain('background:rgba(0,120,215,1)');
   });
 });
 
