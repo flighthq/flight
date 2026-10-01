@@ -136,6 +136,26 @@ describe('decompressLzma', () => {
     bad[13] = 0x01;
     expect(decompressLzma(bad, 0, CompressionFraming.Raw)).toBeNull();
   });
+
+  it('decodes a stream whose rep1 match must not clobber rep2 (silent corruption regression)', () => {
+    const compressed = decodeBase64(
+      'XQAQAABYAAAAAAAAAAABAONpl4/4ZVy4Rhy9I1ecQB4qjQSwkD7GlIZGbwxgbka7aCCbU0OngOD6Z9oSV58DkqTY45dVqGmAHVVO7+Q1iTY=',
+    );
+    const expected = decodeBase64(
+      'AgMCBAMFBAEFAgIGAAIEAQYGBQQGBAMDAgICBQABAwAAAQMBAwQBBQEDAQEBAwAAAQMCAQEAAQAGAwAFAAADBAQEBQMDAQABAwUCBgIEBgAEBQABBAYDAg==',
+    );
+    expect(decompressLzma(compressed, expected.length, CompressionFraming.Raw)).toEqual(expected);
+  });
+
+  it('decodes a rep-shuffle stream where the buggy decoder returned null', () => {
+    const compressed = decodeBase64(
+      'XQAQAAA/AAAAAAAAAAAAglNJ8CRbC1Bvfw4Bn3KRgimvIEUMESap889L1RxPvXH3baBJ5QGxV6SlI8Mwg8/3Hg==',
+    );
+    const expected = decodeBase64(
+      'AQgBAAcAAwIBAAUIAQADAAkGCQYJAAMAAQABBgEGCQAFAAEIAQgJCAcGBwAFCAcCAwQHCAMCBwgHAgMCBwIJ',
+    );
+    expect(decompressLzma(compressed, expected.length, CompressionFraming.Raw)).toEqual(expected);
+  });
 });
 
 describe('sdkHostDecompressLzma', () => {
