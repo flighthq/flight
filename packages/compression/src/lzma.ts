@@ -252,13 +252,15 @@ function lzmaDecode(input: Uint8Array, uncompressedLength: number): Uint8Array {
         let tmp: number;
         if (rcDecodeBit(isRepG1, state) === 0) {
           tmp = rep1;
-        } else if (rcDecodeBit(isRepG2, state) === 0) {
-          tmp = rep2;
         } else {
-          tmp = rep3;
-          rep3 = rep2;
+          if (rcDecodeBit(isRepG2, state) === 0) {
+            tmp = rep2;
+          } else {
+            tmp = rep3;
+            rep3 = rep2;
+          }
+          rep2 = rep1;
         }
-        rep2 = rep1;
         rep1 = rep0;
         rep0 = tmp;
         len = MATCH_MIN_LEN + decodeRepLen(posState);

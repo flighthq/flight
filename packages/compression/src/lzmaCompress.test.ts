@@ -96,6 +96,33 @@ describe('compressLzma', () => {
     expect(compressed.length).toBeLessThan(input.length);
   });
 
+  it('round-trips token-shaped small-alphabet inputs across many seeds', () => {
+    const tokens = ['ab', 'cd', 'ef', 'gh', 'ij', 'kl', 'mn', 'op'];
+    for (let seed = 0; seed < 500; seed++) {
+      const parts: string[] = [];
+      let s = seed;
+      const len = 30 + (seed % 60);
+      for (let i = 0; i < len; i++) {
+        parts.push(tokens[s % tokens.length]);
+        s = (s * 31 + 7) & 0xffff;
+      }
+      const input = new TextEncoder().encode(parts.join(seed % 3 === 0 ? ' ' : ''));
+      const compressed = compressLzma(input);
+      const result = decompressLzma(compressed, input.length, CompressionFraming.Raw);
+      expect(result).toEqual(input);
+    }
+  });
+
+  it('round-trips alternating match distances that force rep shuffles', () => {
+    const a = 'ALPHA';
+    const b = 'BETA_';
+    const c = 'GAMMA';
+    const input = new TextEncoder().encode((a + b + c).repeat(4) + (b + a + c).repeat(4) + (c + b + a).repeat(4));
+    const compressed = compressLzma(input);
+    const decompressed = decompressLzma(compressed, input.length, CompressionFraming.Raw);
+    expect(decompressed).toEqual(input);
+  });
+
   it('decompresses with uncompressedLength=0 (size from header)', () => {
     const input = new TextEncoder().encode('header size only');
     const compressed = compressLzma(input);
