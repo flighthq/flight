@@ -27,9 +27,10 @@ The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` (`cargo
 | `&T` | `Readonly<T>` | `const T&` | `T` | established | Parameters |
 | `&mut T` | `T` | `T&` | `T` | established | Parameters; `out` first, alias-safe |
 | `Option<T>` | `T | null` | `std::optional<T> (pointer for Ref)` | `Null<T>` | established |  |
-| `Vec<T>` | `T[]` | `std::vector<T>` | `Array<T>` | established | Use when order matters or for iteration (D3) |
-| `&[T] / &mut [T]` | `readonly T[] / T[]` | `std::span<const T> / std::span<T>` | `Array<T>` | open | TS sometimes means Float32Array/Uint16Array; the element type alone cannot say which |
-| `[T; N]` | `T[] (length N)` | `std::array<T, N>` | `haxe.ds.Vector<T>` | proposed |  |
+| `Vec<T>` | `T[]` | `std::vector<T>` | `Array<T>` | established | Growable (user 2026-10-20): `Vec<f32>` → `number[]`. Also the type for iterated collections (D3) |
+| `&mut [N] / [N; LEN] (N numeric)` | `Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array` | `std::span<N> / std::array<N, LEN>` | `haxe.io.Float32Array etc.` | established | Fixed length (user 2026-10-20): the typed array is picked by element type. `usize`/`bool` slices have no typed array (open) |
+| `&[N] (N numeric, read-only)` | `Readonly<Float32Array> or ArrayLike<number>` | `std::span<const N>` | `haxe.io.Float32Array etc.` | open | Read-only input: the typed array (consistent with &mut) vs ArrayLike (accepts both) |
+| `&[T] / &mut [T] / [T; LEN] (T non-numeric)` | `readonly T[] / T[]` | `std::span<const T> / std::span<T> / std::array` | `Array<T>` | proposed | No typed array exists for structs or strings |
 | `HashMap<K, V>` | `Map<K, V>` | `std::unordered_map<K, V>` | `Map<K, V>` | established | Lookup only; never iterated (D3) |
 | `HashSet<T>` | `Set<T>` | `std::unordered_set<T>` | `Map<T, Bool>` | proposed | Membership only; never iterated (D3) |
 | `C-like enum` | `string-literal union / const` | `enum class` | `enum abstract` | open | TS literal values vary ('Sprite', 'aabb', 'linear'); needs a declared string table |
@@ -48,7 +49,17 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
 ## Open rows
 
 1. **Object identity.** Decided as A2, on trial (see below). Still open: whether `Ref<T>` is backed by `Rc<RefCell<T>>` or `Arc<RwLock<T>>`.
-2. **Typed arrays.** TS uses both `number[]` and `Float32Array`/`Uint16Array`, and a Rust `&[f32]` cannot say which. One option is marker aliases such as `Float32Array = [f32]`.
+2. **Arrays. Decided (user, 2026-10-20):** `Vec<N>` (growable) → `number[]`; fixed-length `&mut [N]`/`[N; LEN]` → a typed array chosen by element type. Using these two Rust types thoughtfully is what carries the distinction. Survey of the 190 exported TS functions using `number[]`:
+   - about 113 read-only input params;
+   - 26 small fixed-slot outputs;
+   - 26 caller-sized outputs;
+   - 44 returns;
+   - **10 outputs that grow** (which must stay `Vec`);
+   - plus 178 type fields.
+
+   Still open:
+   - Read-only `&[N]`: `Readonly<Float32Array>` (consistent) or `ArrayLike<number>` (accepts both).
+   - `usize`/`bool` slices, which have no typed array.
 3. **Enums.** The user is open to `enum { A, B, C, Custom(String) }` for performance, or to strings if they perform as well. TS string-literal values vary (`'Sprite'`, `'aabb'`, `'linear'`), so any Rust enum needs a declared string table for the TS mapping. Proposal:
    - **Closed** TS unions become C-like enums with a string table.
    - **Open** sets keyed for dispatch (`Kind`) stay `String`. The TS render path already caches the resolved renderer on the proxy (`rendererMapId`), so per-frame dispatch does not hash the kind.

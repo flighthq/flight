@@ -12,6 +12,8 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 - Any divergence, existing or proposed, is discussed with the user before it is applied. That includes divergences recommended in this document. An approved divergence is marked `allow(conform-params|conform-extra) <reason>` or `conform-skip`, so the lint keeps it visible.
 - Existing drift is inventoried in `agents/api-drift.md` for review. Fleet agents must not "fix" drift, in either direction, without a ruling.
 - The conform baseline only blocks *new* drift. An entry being in the baseline does not mean it is accepted.
+- **Approved D0 exceptions:**
+  - Numeric arrays (user, 2026-10-20). Rust types decide the TS array type: growable `Vec<N>` → `number[]`, fixed-length `&mut [N]`/`[N; LEN]` → the matching typed array. This changes TS signatures that use `number[]` for fixed-length data, about 50 params (fixed-slot and caller-sized outputs) plus types. The read-only `&[N]` mapping is still open (see `agents/ir-vocabulary.md`).
 
 ## D1 Numerics — APPROVED
 
