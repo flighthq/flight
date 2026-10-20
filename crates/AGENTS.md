@@ -143,24 +143,65 @@ pub fn equals_vector2(a: Option<&Vector2>, b: Option<&Vector2>) -> bool {
 
 ## Lint rules
 
-All enforced by `cargo-flight-lint`:
+All enforced by `cargo-flight-lint` (`cargo run -p cargo-flight-lint -- rules` prints this table). `warn` rules track directions still under discussion in [agents/design-decisions.md](agents/design-decisions.md); they are promoted to `error` when the ruling is approved.
 
-| Rule | Scope | Description |
-|------|-------|-------------|
-| `fn-order` | Source | Free functions ordered: constructors first, then alphabetical |
-| `impl-order` | Source | Impl methods ordered: `new` first, then alphabetical |
-| `file-structure` | Source | Sections in order: use/mod, struct, fn, impl |
-| `missing-test-file` | Source | Every module with free functions needs a `tests/{name}_test.rs` |
-| `test-coverage` | Tests | Every free function must be called in its test file |
-| `test-module-coverage` | Tests | Every free function must have a `mod` block in the test file |
-| `test-module-empty` | Tests | Test modules must contain at least one `#[test]` |
-| `test-module-order` | Tests | Test modules must be alphabetically ordered |
-| `test-method-call` | Tests | Tests must not call impl methods |
-| `test-default-call` | Tests | Tests must not use `::default()` |
+| Rule | Level | Scope | Description |
+|------|-------|-------|-------------|
+| `parse-error` | error | Source | File failed to parse |
+| `fn-order` | error | Source | Free functions ordered: constructors first, then alphabetical |
+| `impl-order` | error | Source | Impl methods ordered: `new` first, then alphabetical |
+| `file-structure` | error | Source | Sections in order: use/mod, struct, fn, impl |
+| `missing-test-file` | error | Source | Every module with pub free functions needs a `tests/{name}_test.rs` |
+| `test-coverage` | error | Tests | Every pub free function must be called in its test file |
+| `test-module-coverage` | error | Tests | Every pub free function must have a `mod` block in the test file |
+| `test-module-empty` | error | Tests | Test modules must contain at least one `#[test]` |
+| `test-module-order` | error | Tests | Test modules must be alphabetically ordered |
+| `test-method-call` | error | Tests | Tests must not call impl methods |
+| `test-default-call` | error | Tests | Tests must not use `::default()` |
+| `f64` | error | Source | f64 only in items declared with `allow(f64) <reason>` (D1) |
+| `hidden-state` | error | Source | No thread_local!, interior-mutable statics, or clock reads without `allow(hidden-state) <reason>` (D5) |
+| `sugar-delegates` | error | Source | Impl methods delegate to a free function and contain no loops (D6) |
+| `hashmap-iteration` | warn | Source | No iteration over HashMap/HashSet bindings; order is unspecified (D3) |
+| `contract-dyn-any` | warn | Source | No `dyn Any` in pub signatures, fields, or aliases (D2/D4) |
+| `contract-shared-mutability` | warn | Source | No Rc/Arc/Weak/RefCell/Cell/Mutex/RwLock in pub signatures, fields, or aliases (D4/D5) |
+| `enum-payload-named` | warn | Source | Data-carrying variants hold exactly one named struct (D2) |
+| `allow-reason` | error | Source | Every `flight-lint: allow(...)` marker states a reason |
+| `allow-unknown-rule` | error | Source | Allow markers name rules that exist |
+| `conform-missing` | error | Conform | Every exported TS function has a Rust pub free function |
+| `conform-extra` | error | Conform | Every Rust pub free function exists in TS, or is marked `allow(conform-extra)` |
+| `conform-params` | error | Conform | Parameter names and order match TS, or are marked `allow(conform-params)` |
+
+Test-coverage rules apply to plain `pub` free functions only; private and `pub(crate)` helpers are exempt.
+
+### Allow markers
+
+A rule is waived for one item with a comment in the comment/attribute block directly above it (or trailing on its first line). A reason is required:
+
+```rust
+// flight-lint: allow(f64) robust orientation predicate needs double precision
+pub fn orient2d(...) -> f64 { ... }
+```
+
+`// flight-lint: allow-file(rule) <reason>` waives a rule for a whole file. `// flight-lint: conform-skip(tsName, ...) <reason>` in a crate's source records TS exports intentionally absent from Rust. `cargo run -p cargo-flight-lint -- allows [--rule f64]` lists every marker and its reason; that list is the declared-precision inventory for D1.
+
+### Baselines (ratchet)
+
+Existing debt is recorded in `agents/baselines/check.txt` and `agents/baselines/conform.txt`. Gate new work against them:
+
+```
+cargo run -p cargo-flight-lint -- check --baseline agents/baselines/check.txt [--crate flight-x]
+cargo run -p cargo-flight-lint -- conform <ts-packages-dir> --baseline agents/baselines/conform.txt [--crate flight-x]
+```
+
+Only violations beyond the baseline fail. When work removes debt, regenerate with `--write-baseline <file>` so the ratchet tightens; never regenerate to absorb new violations without approval.
+
+### Frozen manifests
+
+`agents/manifests/<crate>.api` (public signatures, type shapes, derives) and `<crate>.tests` (every `#[test]`) are user-owned. `manifest --check [--crate C]` fails on any difference; `manifest --write` regenerates and is reserved for approved contract changes.
 
 ## TS conformance
 
-Run `cargo run -p cargo-flight-lint -- conform <ts-src-dir>` to verify that every exported TS function has a corresponding Rust free function (and vice versa). The tool handles camelCase-to-snake_case conversion.
+`cargo run -p cargo-flight-lint -- conform <ts-packages-dir> [--crate flight-x]` compares each crate `flight-<name>` with `<ts-packages-dir>/<name>/src` (the TS repo is `github.com/flighthq/flight`). It matches pub free functions to exported TS functions (`export function` and `export const f = (...) =>`) by name, ignoring case and underscores (so `createRay3D` ↔ `create_ray3d`), and checks parameter names and order. Missing functions are tagged `public` (re-exported by the package's `index.ts`) or `contract-only` (only via `contract.ts`). Rust-only pub functions need `allow(conform-extra) <reason>`; deliberate signature differences need `allow(conform-params) <reason>`.
 
 ## Reference
 

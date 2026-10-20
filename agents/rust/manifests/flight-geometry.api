@@ -1,0 +1,610 @@
+src/aabb.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct Aabb { pub min: Vector3, pub max: Vector3, }
+src/aabb.rs: impl Aabb :: fn center(&self) -> Vector3
+src/aabb.rs: impl Aabb :: fn closest_point(&self, point: &Vector3) -> Vector3
+src/aabb.rs: impl Aabb :: fn contains_point(&self, point: &Vector3) -> bool
+src/aabb.rs: impl Aabb :: fn expanded_by_point(&self, point: &Vector3) -> Self
+src/aabb.rs: impl Aabb :: fn expanded_by_sphere(&self, sphere: &BoundingSphere) -> Self
+src/aabb.rs: impl Aabb :: fn extents(&self) -> Vector3
+src/aabb.rs: impl Aabb :: fn intersected(&self, other: &Self) -> Self
+src/aabb.rs: impl Aabb :: fn is_intersecting_aabb(&self, other: &Self) -> bool
+src/aabb.rs: impl Aabb :: fn is_intersecting_sphere(&self, sphere: &BoundingSphere) -> bool
+src/aabb.rs: impl Aabb :: fn new(min_x: f32, min_y: f32, min_z: f32, max_x: f32, max_y: f32, max_z: f32,) -> Self
+src/aabb.rs: impl Aabb :: fn size(&self) -> Vector3
+src/aabb.rs: impl Aabb :: fn transformed_by_matrix4(&self, m: &Matrix4) -> Self
+src/aabb.rs: impl Aabb :: fn union(&self, other: &Self) -> Self
+src/aabb.rs: pub fn clone_aabb(source: &Aabb) -> Aabb
+src/aabb.rs: pub fn contains_aabb_point(aabb: &Aabb, point: &Vector3) -> bool
+src/aabb.rs: pub fn copy_aabb(out: &mut Aabb, source: &Aabb)
+src/aabb.rs: pub fn create_aabb(min_x: f32, min_y: f32, min_z: f32, max_x: f32, max_y: f32, max_z: f32,) -> Aabb
+src/aabb.rs: pub fn expand_aabb_by_point(out: &mut Aabb, aabb: &Aabb, point: &Vector3)
+src/aabb.rs: pub fn expand_aabb_by_sphere(out: &mut Aabb, aabb: &Aabb, sphere: &BoundingSphere,)
+src/aabb.rs: pub fn get_aabb_center(out: &mut Vector3, aabb: &Aabb)
+src/aabb.rs: pub fn get_aabb_extents(out: &mut Vector3, aabb: &Aabb)
+src/aabb.rs: pub fn get_aabb_size(out: &mut Vector3, aabb: &Aabb)
+src/aabb.rs: pub fn get_closest_point_on_aabb(out: &mut Vector3, aabb: &Aabb, point: &Vector3)
+src/aabb.rs: pub fn initialize_aabb(out: &mut Aabb, min_x: f32, min_y: f32, min_z: f32, max_x: f32, max_y: f32, max_z: f32,)
+src/aabb.rs: pub fn intersect_aabb(out: &mut Aabb, a: &Aabb, b: &Aabb)
+src/aabb.rs: pub fn is_aabb_intersecting_aabb(a: &Aabb, b: &Aabb) -> bool
+src/aabb.rs: pub fn is_aabb_intersecting_sphere(aabb: &Aabb, sphere: &BoundingSphere) -> bool
+src/aabb.rs: pub fn set_aabb(out: &mut Aabb, min_x: f32, min_y: f32, min_z: f32, max_x: f32, max_y: f32, max_z: f32,)
+src/aabb.rs: pub fn set_aabb_from_points(out: &mut Aabb, points: &[Vector3])
+src/aabb.rs: pub fn transform_aabb_by_matrix4(out: &mut Aabb, aabb: &Aabb, m: &Matrix4)
+src/aabb.rs: pub fn union_aabb(out: &mut Aabb, a: &Aabb, b: &Aabb)
+src/bounding_sphere.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct BoundingSphere { pub center: Vector3, pub radius: f32, }
+src/bounding_sphere.rs: impl BoundingSphere :: fn closest_point(&self, point: &Vector3) -> Vector3
+src/bounding_sphere.rs: impl BoundingSphere :: fn contains_point(&self, point: &Vector3) -> bool
+src/bounding_sphere.rs: impl BoundingSphere :: fn from_aabb(aabb: &Aabb) -> Self
+src/bounding_sphere.rs: impl BoundingSphere :: fn is_intersecting_bounding_sphere(&self, other: &Self) -> bool
+src/bounding_sphere.rs: impl BoundingSphere :: fn merged(&self, other: &Self) -> Self
+src/bounding_sphere.rs: impl BoundingSphere :: fn new(center_x: f32, center_y: f32, center_z: f32, radius: f32) -> Self
+src/bounding_sphere.rs: impl BoundingSphere :: fn transformed_by_matrix4(&self, m: &Matrix4) -> Self
+src/bounding_sphere.rs: impl Default for BoundingSphere
+src/bounding_sphere.rs: impl Default for BoundingSphere :: fn default() -> Self
+src/bounding_sphere.rs: pub fn clone_bounding_sphere(source: &BoundingSphere) -> BoundingSphere
+src/bounding_sphere.rs: pub fn contains_bounding_sphere_point(sphere: &BoundingSphere, point: &Vector3,) -> bool
+src/bounding_sphere.rs: pub fn copy_bounding_sphere(out: &mut BoundingSphere, source: &BoundingSphere)
+src/bounding_sphere.rs: pub fn create_bounding_sphere(center_x: f32, center_y: f32, center_z: f32, radius: f32,) -> BoundingSphere
+src/bounding_sphere.rs: pub fn get_closest_point_on_bounding_sphere(out: &mut Vector3, sphere: &BoundingSphere, point: &Vector3,)
+src/bounding_sphere.rs: pub fn initialize_bounding_sphere(out: &mut BoundingSphere, center_x: f32, center_y: f32, center_z: f32, radius: f32,)
+src/bounding_sphere.rs: pub fn is_bounding_sphere_intersecting_bounding_sphere(a: &BoundingSphere, b: &BoundingSphere,) -> bool
+src/bounding_sphere.rs: pub fn merge_bounding_sphere(out: &mut BoundingSphere, a: &BoundingSphere, b: &BoundingSphere,)
+src/bounding_sphere.rs: pub fn set_bounding_sphere(out: &mut BoundingSphere, center_x: f32, center_y: f32, center_z: f32, radius: f32,)
+src/bounding_sphere.rs: pub fn set_bounding_sphere_from_aabb(out: &mut BoundingSphere, aabb: &Aabb)
+src/bounding_sphere.rs: pub fn transform_bounding_sphere_by_matrix4(out: &mut BoundingSphere, sphere: &BoundingSphere, m: &Matrix4,)
+src/capsule.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct Capsule { pub start_x: f32, pub start_y: f32, pub start_z: f32, pub end_x: f32, pub end_y: f32, pub end_z: f32, pub radius: f32, }
+src/capsule.rs: pub fn create_capsule(start_x: f32, start_y: f32, start_z: f32, end_x: f32, end_y: f32, end_z: f32, radius: f32,) -> Capsule
+src/capsule.rs: pub fn get_closest_point_on_capsule(out: &mut Vector3, capsule: &Capsule, point: &Vector3)
+src/capsule.rs: pub fn initialize_capsule(out: &mut Capsule, start_x: f32, start_y: f32, start_z: f32, end_x: f32, end_y: f32, end_z: f32, radius: f32,)
+src/capsule.rs: pub fn intersect_ray3d_capsule(ray: &Ray3D, capsule: &Capsule) -> f32
+src/capsule.rs: pub fn is_capsule_intersecting_aabb(capsule: &Capsule, aabb: &Aabb) -> bool
+src/capsule.rs: pub fn is_capsule_intersecting_capsule(a: &Capsule, b: &Capsule) -> bool
+src/capsule.rs: pub fn is_capsule_intersecting_sphere(capsule: &Capsule, sphere: &BoundingSphere) -> bool
+src/capsule.rs: pub fn set_capsule(out: &mut Capsule, start_x: f32, start_y: f32, start_z: f32, end_x: f32, end_y: f32, end_z: f32, radius: f32,)
+src/frustum.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct Frustum { pub bottom: Plane, pub far: Plane, pub left: Plane, pub near: Plane, pub right: Plane, pub top: Plane, }
+src/frustum.rs: impl Frustum :: fn contains_point(&self, point: &Vector3) -> bool
+src/frustum.rs: impl Frustum :: fn intersects_aabb(&self, aabb: &Aabb) -> bool
+src/frustum.rs: impl Frustum :: fn intersects_obb(&self, obb: &Obb) -> bool
+src/frustum.rs: impl Frustum :: fn intersects_sphere(&self, sphere: &BoundingSphere) -> bool
+src/frustum.rs: impl Frustum :: fn new() -> Self
+src/frustum.rs: pub fn create_frustum() -> Frustum
+src/frustum.rs: pub fn get_frustum_corners(out: &mut [Vector3], inverse_view_projection: &Matrix4)
+src/frustum.rs: pub fn initialize_frustum(out: &mut Frustum, bottom: Plane, far: Plane, left: Plane, near: Plane, right: Plane, top: Plane,)
+src/frustum.rs: pub fn is_frustum_containing_point(frustum: &Frustum, point: &Vector3) -> bool
+src/frustum.rs: pub fn is_frustum_intersecting_aabb(frustum: &Frustum, aabb: &Aabb) -> bool
+src/frustum.rs: pub fn is_frustum_intersecting_obb(frustum: &Frustum, obb: &Obb) -> bool
+src/frustum.rs: pub fn is_frustum_intersecting_sphere(frustum: &Frustum, sphere: &BoundingSphere) -> bool
+src/frustum.rs: pub fn set_frustum_from_matrix4(out: &mut Frustum, view_projection: &Matrix4)
+src/lib.rs: pub use aabb::*;
+src/lib.rs: pub use bounding_sphere::*;
+src/lib.rs: pub use capsule::*;
+src/lib.rs: pub use frustum::*;
+src/lib.rs: pub use matrix3::*;
+src/lib.rs: pub use matrix4::*;
+src/lib.rs: pub use matrix::*;
+src/lib.rs: pub use obb::*;
+src/lib.rs: pub use plane::*;
+src/lib.rs: pub use quaternion::*;
+src/lib.rs: pub use ray3d::*;
+src/lib.rs: pub use rectangle::*;
+src/lib.rs: pub use transform2d::*;
+src/lib.rs: pub use transform3d::*;
+src/lib.rs: pub use vector2::*;
+src/lib.rs: pub use vector3::*;
+src/lib.rs: pub use vector4::*;
+src/matrix.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct Matrix { pub a: f32, pub b: f32, pub c: f32, pub d: f32, pub tx: f32, pub ty: f32, }
+src/matrix.rs: impl Default for Matrix
+src/matrix.rs: impl Default for Matrix :: fn default() -> Self
+src/matrix.rs: impl Matrix :: fn clone_matrix(&self) -> Self
+src/matrix.rs: impl Matrix :: fn copy(&mut self, source: &Self)
+src/matrix.rs: impl Matrix :: fn equals(&self, other: &Self, compare_translation: bool) -> bool
+src/matrix.rs: impl Matrix :: fn inverse(&self) -> Self
+src/matrix.rs: impl Matrix :: fn multiply(&self, other: &Self) -> Self
+src/matrix.rs: impl Matrix :: fn new(a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32) -> Self
+src/matrix.rs: impl Matrix :: fn rotated(&self, theta: f32) -> Self
+src/matrix.rs: impl Matrix :: fn scaled(&self, sx: f32, sy: f32) -> Self
+src/matrix.rs: impl Matrix :: fn translated(&self, dx: f32, dy: f32) -> Self
+src/matrix.rs: pub const MATRIX_IDENTITY: Matrix
+src/matrix.rs: pub fn clone_matrix(source: &Matrix) -> Matrix
+src/matrix.rs: pub fn copy_matrix(out: &mut Matrix, source: &Matrix)
+src/matrix.rs: pub fn copy_matrix_column_from_vector3(out: &mut Matrix, column: i32, source: &Vector3)
+src/matrix.rs: pub fn copy_matrix_column_to_vector3(out: &mut Vector3, column: i32, source: &Matrix)
+src/matrix.rs: pub fn copy_matrix_row_from_vector3(out: &mut Matrix, row: i32, source: &Vector3)
+src/matrix.rs: pub fn copy_matrix_row_to_vector3(out: &mut Vector3, row: i32, source: &Matrix)
+src/matrix.rs: pub fn create_gradient_transform_matrix(width: f32, height: f32, rotation: f32, tx: f32, ty: f32,) -> Matrix
+src/matrix.rs: pub fn create_matrix(a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32) -> Matrix
+src/matrix.rs: pub fn create_transform_matrix(scale_x: f32, scale_y: f32, rotation: f32, tx: f32, ty: f32,) -> Matrix
+src/matrix.rs: pub fn equals_matrix(a: Option<&Matrix>, b: Option<&Matrix>, compare_translation: bool,) -> bool
+src/matrix.rs: pub fn initialize_matrix(out: &mut Matrix, a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32)
+src/matrix.rs: pub fn inverse_matrix(out: &mut Matrix, source: &Matrix) -> bool
+src/matrix.rs: pub fn inverse_matrix_transform_point(out: &mut Vector2, matrix: &Matrix, point: &Vector2,)
+src/matrix.rs: pub fn inverse_matrix_transform_point_xy(out: &mut Vector2, source: &Matrix, x: f32, y: f32,)
+src/matrix.rs: pub fn inverse_matrix_transform_vector(out: &mut Vector2, matrix: &Matrix, vector: &Vector2,)
+src/matrix.rs: pub fn inverse_matrix_transform_vector_xy(out: &mut Vector2, source: &Matrix, x: f32, y: f32,)
+src/matrix.rs: pub fn matrix_transform_bounds(out: &mut Rectangle, source: &Matrix, ax: f32, ay: f32, bx: f32, by: f32,)
+src/matrix.rs: pub fn matrix_transform_bounds_vector2(out: &mut Rectangle, matrix: &Matrix, a: &Vector2, b: &Vector2,)
+src/matrix.rs: pub fn matrix_transform_point(out: &mut Vector2, matrix: &Matrix, point: &Vector2,)
+src/matrix.rs: pub fn matrix_transform_point_xy(out: &mut Vector2, source: &Matrix, x: f32, y: f32)
+src/matrix.rs: pub fn matrix_transform_rectangle(out: &mut Rectangle, matrix: &Matrix, source: &Rectangle,)
+src/matrix.rs: pub fn matrix_transform_vector(out: &mut Vector2, matrix: &Matrix, vector: &Vector2,)
+src/matrix.rs: pub fn matrix_transform_vector_xy(out: &mut Vector2, source: &Matrix, x: f32, y: f32)
+src/matrix.rs: pub fn multiply_matrix(out: &mut Matrix, a: &Matrix, b: &Matrix)
+src/matrix.rs: pub fn rotate_matrix(out: &mut Matrix, source: &Matrix, theta: f32)
+src/matrix.rs: pub fn scale_matrix(out: &mut Matrix, source: &Matrix, sx: f32, sy: f32)
+src/matrix.rs: pub fn set_gradient_transform_matrix(out: &mut Matrix, width: f32, height: f32, rotation: f32, tx: f32, ty: f32,)
+src/matrix.rs: pub fn set_matrix(out: &mut Matrix, a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32)
+src/matrix.rs: pub fn set_matrix_from_float32_array(out: &mut Matrix, offset: usize, source: &[f32])
+src/matrix.rs: pub fn set_matrix_from_matrix3(out: &mut Matrix, source: &Matrix3)
+src/matrix.rs: pub fn set_matrix_from_matrix4(out: &mut Matrix, source: &Matrix4)
+src/matrix.rs: pub fn set_matrix_identity(out: &mut Matrix)
+src/matrix.rs: pub fn set_transform_matrix(out: &mut Matrix, scale_x: f32, scale_y: f32, rotation: f32, tx: f32, ty: f32,)
+src/matrix.rs: pub fn translate_matrix(out: &mut Matrix, source: &Matrix, dx: f32, dy: f32)
+src/matrix.rs: pub fn translate_matrix_by_vector(out: &mut Matrix, matrix: &Matrix, vector: &Vector2,)
+src/matrix.rs: pub fn translate_matrix_by_vector_xy(out: &mut Matrix, source: &Matrix, x: f32, y: f32)
+src/matrix.rs: pub fn write_matrix_to_float32_array(out: &mut [f32], offset: usize, source: &Matrix)
+src/matrix3.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct Matrix3 { pub m: [f32; 9], }
+src/matrix3.rs: impl Default for Matrix3
+src/matrix3.rs: impl Default for Matrix3 :: fn default() -> Self
+src/matrix3.rs: impl Matrix3 :: fn determinant(&self) -> f32
+src/matrix3.rs: impl Matrix3 :: fn from_values(m00: f32, m01: f32, m02: f32, m10: f32, m11: f32, m12: f32, m20: f32, m21: f32, m22: f32,) -> Self
+src/matrix3.rs: impl Matrix3 :: fn inverse(&self) -> Self
+src/matrix3.rs: impl Matrix3 :: fn is_affine(&self) -> bool
+src/matrix3.rs: impl Matrix3 :: fn multiply(&self, other: &Self) -> Self
+src/matrix3.rs: impl Matrix3 :: fn new() -> Self
+src/matrix3.rs: impl Matrix3 :: fn rotated(&self, theta: f32) -> Self
+src/matrix3.rs: impl Matrix3 :: fn scaled(&self, sx: f32, sy: f32) -> Self
+src/matrix3.rs: impl Matrix3 :: fn translated(&self, tx: f32, ty: f32) -> Self
+src/matrix3.rs: impl Matrix3 :: fn transposed(&self) -> Self
+src/matrix3.rs: pub fn clone_matrix3(source: &Matrix3) -> Matrix3
+src/matrix3.rs: pub fn copy_matrix3(out: &mut Matrix3, source: &Matrix3)
+src/matrix3.rs: pub fn copy_matrix3_column_from_vector3(out: &mut Matrix3, column: usize, source: &Vector3)
+src/matrix3.rs: pub fn copy_matrix3_column_to_vector3(out: &mut Vector3, column: usize, source: &Matrix3)
+src/matrix3.rs: pub fn copy_matrix3_row_from_vector3(out: &mut Matrix3, row: usize, source: &Vector3)
+src/matrix3.rs: pub fn copy_matrix3_row_to_vector3(out: &mut Vector3, row: usize, source: &Matrix3)
+src/matrix3.rs: pub fn create_matrix3() -> Matrix3
+src/matrix3.rs: pub fn create_matrix3_from_values(m00: f32, m01: f32, m02: f32, m10: f32, m11: f32, m12: f32, m20: f32, m21: f32, m22: f32,) -> Matrix3
+src/matrix3.rs: pub fn equals_matrix3(a: Option<&Matrix3>, b: Option<&Matrix3>) -> bool
+src/matrix3.rs: pub fn get_matrix3_determinant(source: &Matrix3) -> f32
+src/matrix3.rs: pub fn get_matrix3_element(source: &Matrix3, row: usize, column: usize) -> f32
+src/matrix3.rs: pub fn initialize_matrix3(out: &mut Matrix3)
+src/matrix3.rs: pub fn inverse_matrix3(out: &mut Matrix3, source: &Matrix3) -> bool
+src/matrix3.rs: pub fn is_affine_matrix3(source: &Matrix3) -> bool
+src/matrix3.rs: pub fn multiply_matrix3(out: &mut Matrix3, a: &Matrix3, b: &Matrix3)
+src/matrix3.rs: pub fn rotate_matrix3(out: &mut Matrix3, source: &Matrix3, theta: f32)
+src/matrix3.rs: pub fn scale_matrix3(out: &mut Matrix3, source: &Matrix3, sx: f32, sy: f32)
+src/matrix3.rs: pub fn set_matrix3(out: &mut Matrix3, m00: f32, m01: f32, m02: f32, m10: f32, m11: f32, m12: f32, m20: f32, m21: f32, m22: f32,)
+src/matrix3.rs: pub fn set_matrix3_element(out: &mut Matrix3, row: usize, column: usize, value: f32)
+src/matrix3.rs: pub fn set_matrix3_from_float32_array(out: &mut Matrix3, offset: usize, source: &[f32])
+src/matrix3.rs: pub fn set_matrix3_from_matrix(out: &mut Matrix3, source: &Matrix)
+src/matrix3.rs: pub fn set_matrix3_from_matrix4(out: &mut Matrix3, source: &Matrix4)
+src/matrix3.rs: pub fn set_matrix3_identity(out: &mut Matrix3)
+src/matrix3.rs: pub fn set_matrix3_normal_from_matrix4(out: &mut Matrix3, source: &Matrix4)
+src/matrix3.rs: pub fn translate_matrix3(out: &mut Matrix3, source: &Matrix3, tx: f32, ty: f32)
+src/matrix3.rs: pub fn transpose_matrix3(out: &mut Matrix3, source: &Matrix3)
+src/matrix3.rs: pub fn write_matrix3_to_float32_array(out: &mut [f32], offset: usize, source: &Matrix3)
+src/matrix4.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct Matrix4 { pub m: [f32; 16], }
+src/matrix4.rs: impl Default for Matrix4
+src/matrix4.rs: impl Default for Matrix4 :: fn default() -> Self
+src/matrix4.rs: impl Matrix4 :: fn determinant(&self) -> f32
+src/matrix4.rs: impl Matrix4 :: fn element(&self, row: usize, column: usize) -> f32
+src/matrix4.rs: impl Matrix4 :: fn interpolate(&self, other: &Self, t: f32) -> Self
+src/matrix4.rs: impl Matrix4 :: fn inverse(&self) ->(Self, bool)
+src/matrix4.rs: impl Matrix4 :: fn is_affine(&self) -> bool
+src/matrix4.rs: impl Matrix4 :: fn multiply(&self, other: &Self) -> Self
+src/matrix4.rs: impl Matrix4 :: fn new() -> Self
+src/matrix4.rs: impl Matrix4 :: fn scaled(&self, sx: f32, sy: f32, sz: f32) -> Self
+src/matrix4.rs: impl Matrix4 :: fn translated(&self, tx: f32, ty: f32, tz: f32) -> Self
+src/matrix4.rs: impl Matrix4 :: fn transposed(&self) -> Self
+src/matrix4.rs: pub fn append_matrix4(out: &mut Matrix4, source: &Matrix4, other: &Matrix4)
+src/matrix4.rs: pub fn append_rotation_matrix4(out: &mut Matrix4, source: &Matrix4, radians: f32, axis: &Vector4, pivot_point: Option<&Vector4>,)
+src/matrix4.rs: pub fn append_scale_matrix4(out: &mut Matrix4, source: &Matrix4, x_scale: f32, y_scale: f32, z_scale: f32,)
+src/matrix4.rs: pub fn append_translation_matrix4(out: &mut Matrix4, source: &Matrix4, x: f32, y: f32, z: f32,)
+src/matrix4.rs: pub fn clone_matrix4(source: &Matrix4) -> Matrix4
+src/matrix4.rs: pub fn compose_matrix4(out: &mut Matrix4, position: &Vector3, rotation: &Quaternion, scale: &Vector3,)
+src/matrix4.rs: pub fn copy_matrix4(out: &mut Matrix4, source: &Matrix4)
+src/matrix4.rs: pub fn copy_matrix4_column_from_vector4(out: &mut Matrix4, column: usize, source: &Vector4)
+src/matrix4.rs: pub fn copy_matrix4_column_to_vector4(out: &mut Vector4, column: usize, source: &Matrix4)
+src/matrix4.rs: pub fn copy_matrix4_row_from_vector4(out: &mut Matrix4, row: usize, source: &Vector4)
+src/matrix4.rs: pub fn copy_matrix4_row_to_vector4(out: &mut Vector4, row: usize, source: &Matrix4)
+src/matrix4.rs: pub fn create_matrix4() -> Matrix4
+src/matrix4.rs: pub fn create_matrix4_from_2d(a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32) -> Matrix4
+src/matrix4.rs: pub fn create_matrix4_from_values(m00: f32, m01: f32, m02: f32, m03: f32, m10: f32, m11: f32, m12: f32, m13: f32, m20: f32, m21: f32, m22: f32, m23: f32, m30: f32, m31: f32, m32: f32, m33: f32,) -> Matrix4
+src/matrix4.rs: pub fn create_orthographic_matrix4(left: f32, right: f32, bottom: f32, top: f32, z_near: f32, z_far: f32,) -> Matrix4
+src/matrix4.rs: pub fn create_perspective_matrix4(tan_half_fov_y: f32, aspect: f32, z_near: f32, z_far: f32,) -> Matrix4
+src/matrix4.rs: pub fn decompose_matrix4(out_position: &mut Vector3, out_rotation: &mut Quaternion, out_scale: &mut Vector3, m: &Matrix4,)
+src/matrix4.rs: pub fn equals_matrix4(a: Option<&Matrix4>, b: Option<&Matrix4>) -> bool
+src/matrix4.rs: pub fn get_matrix4_determinant(source: &Matrix4) -> f32
+src/matrix4.rs: pub fn get_matrix4_element(source: &Matrix4, row: usize, column: usize) -> f32
+src/matrix4.rs: pub fn get_matrix4_position(out: &mut Vector3, source: &Matrix4)
+src/matrix4.rs: pub fn initialize_matrix4(out: &mut Matrix4)
+src/matrix4.rs: pub fn interpolate_matrix4(out: &mut Matrix4, a: &Matrix4, b: &Matrix4, t: f32)
+src/matrix4.rs: pub fn inverse_matrix4(out: &mut Matrix4, source: &Matrix4) -> bool
+src/matrix4.rs: pub fn is_affine_matrix4(source: &Matrix4) -> bool
+src/matrix4.rs: pub fn matrix4_transform_point(out: &mut Vector3, source: &Matrix4, point: &Vector3)
+src/matrix4.rs: pub fn matrix4_transform_vector(out: &mut Vector4, source: &Matrix4, vector: &Vector4)
+src/matrix4.rs: pub fn matrix4_transform_vectors(out: &mut [f32], source: &Matrix4, vectors: &[f32])
+src/matrix4.rs: pub fn multiply_matrix4(out: &mut Matrix4, a: &Matrix4, b: &Matrix4)
+src/matrix4.rs: pub fn prepend_matrix4(out: &mut Matrix4, source: &Matrix4, other: &Matrix4)
+src/matrix4.rs: pub fn prepend_rotation_matrix4(out: &mut Matrix4, source: &Matrix4, radians: f32, axis: &Vector4, pivot_point: Option<&Vector4>,)
+src/matrix4.rs: pub fn prepend_scale_matrix4(out: &mut Matrix4, source: &Matrix4, x_scale: f32, y_scale: f32, z_scale: f32,)
+src/matrix4.rs: pub fn prepend_translation_matrix4(out: &mut Matrix4, source: &Matrix4, x: f32, y: f32, z: f32,)
+src/matrix4.rs: pub fn rotate_matrix4(out: &mut Matrix4, source: &Matrix4, axis: &Vector3, radians: f32,)
+src/matrix4.rs: pub fn scale_matrix4(out: &mut Matrix4, source: &Matrix4, sx: f32, sy: f32, sz: f32,)
+src/matrix4.rs: pub fn set_matrix4(out: &mut Matrix4, m00: f32, m01: f32, m02: f32, m03: f32, m10: f32, m11: f32, m12: f32, m13: f32, m20: f32, m21: f32, m22: f32, m23: f32, m30: f32, m31: f32, m32: f32, m33: f32,)
+src/matrix4.rs: pub fn set_matrix4_element(out: &mut Matrix4, row: usize, column: usize, value: f32)
+src/matrix4.rs: pub fn set_matrix4_from_2d(out: &mut Matrix4, a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32,)
+src/matrix4.rs: pub fn set_matrix4_from_float32_array(out: &mut Matrix4, offset: usize, source: &[f32])
+src/matrix4.rs: pub fn set_matrix4_from_matrix(out: &mut Matrix4, source: &Matrix)
+src/matrix4.rs: pub fn set_matrix4_from_matrix3(out: &mut Matrix4, source: &Matrix3)
+src/matrix4.rs: pub fn set_matrix4_from_quaternion(out: &mut Matrix4, source: &Quaternion)
+src/matrix4.rs: pub fn set_matrix4_identity(out: &mut Matrix4)
+src/matrix4.rs: pub fn set_matrix4_look_at(out: &mut Matrix4, eye: &Vector3, target: &Vector3, up: &Vector3,)
+src/matrix4.rs: pub fn set_matrix4_position(out: &mut Matrix4, source: &Vector3)
+src/matrix4.rs: pub fn set_orthographic_matrix4(out: &mut Matrix4, left: f32, right: f32, bottom: f32, top: f32, z_near: f32, z_far: f32,)
+src/matrix4.rs: pub fn set_perspective_matrix4(out: &mut Matrix4, tan_half_fov_y: f32, aspect: f32, z_near: f32, z_far: f32,)
+src/matrix4.rs: pub fn translate_matrix4(out: &mut Matrix4, source: &Matrix4, tx: f32, ty: f32, tz: f32,)
+src/matrix4.rs: pub fn transpose_matrix4(out: &mut Matrix4, source: &Matrix4)
+src/matrix4.rs: pub fn write_matrix4_to_float32_array(out: &mut [f32], offset: usize, source: &Matrix4)
+src/obb.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct Obb { pub center_x: f32, pub center_y: f32, pub center_z: f32, pub half_extent_x: f32, pub half_extent_y: f32, pub half_extent_z: f32, pub orientation_x: f32, pub orientation_y: f32, pub orientation_z: f32, pub orientation_w: f32, }
+src/obb.rs: impl Default for Obb
+src/obb.rs: impl Default for Obb :: fn default() -> Self
+src/obb.rs: pub fn create_obb(center_x: f32, center_y: f32, center_z: f32, half_extent_x: f32, half_extent_y: f32, half_extent_z: f32, orientation_x: f32, orientation_y: f32, orientation_z: f32, orientation_w: f32,) -> Obb
+src/obb.rs: pub fn get_closest_point_on_obb(out: &mut Vector3, obb: &Obb, point: &Vector3)
+src/obb.rs: pub fn initialize_obb(out: &mut Obb, center_x: f32, center_y: f32, center_z: f32, half_extent_x: f32, half_extent_y: f32, half_extent_z: f32, orientation_x: f32, orientation_y: f32, orientation_z: f32, orientation_w: f32,)
+src/obb.rs: pub fn intersect_ray3d_obb(ray: &Ray3D, obb: &Obb) -> f32
+src/obb.rs: pub fn is_obb_intersecting_aabb(obb: &Obb, aabb: &Aabb) -> bool
+src/obb.rs: pub fn is_obb_intersecting_obb(a: &Obb, b: &Obb) -> bool
+src/obb.rs: pub fn is_obb_intersecting_sphere(obb: &Obb, sphere: &BoundingSphere) -> bool
+src/obb.rs: pub fn set_obb(out: &mut Obb, center_x: f32, center_y: f32, center_z: f32, half_extent_x: f32, half_extent_y: f32, half_extent_z: f32, orientation_x: f32, orientation_y: f32, orientation_z: f32, orientation_w: f32,)
+src/obb.rs: pub fn transform_obb_by_matrix4(out: &mut Obb, obb: &Obb, m: &Matrix4)
+src/plane.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct Plane { pub a: f32, pub b: f32, pub c: f32, pub d: f32, }
+src/plane.rs: impl Plane :: fn closest_point(&self, point: &Vector3) -> Vector3
+src/plane.rs: impl Plane :: fn coplanar_point(&self) -> Vector3
+src/plane.rs: impl Plane :: fn from_normal_and_point(normal: &Vector3, point: &Vector3) -> Self
+src/plane.rs: impl Plane :: fn from_points(a: &Vector3, b: &Vector3, c: &Vector3) -> Self
+src/plane.rs: impl Plane :: fn new(a: f32, b: f32, c: f32, d: f32) -> Self
+src/plane.rs: impl Plane :: fn normalized(&self) -> Self
+src/plane.rs: impl Plane :: fn signed_distance_to_point(&self, point: &Vector3) -> f32
+src/plane.rs: pub fn clone_plane(source: &Plane) -> Plane
+src/plane.rs: pub fn copy_plane(out: &mut Plane, source: &Plane)
+src/plane.rs: pub fn create_plane(a: f32, b: f32, c: f32, d: f32) -> Plane
+src/plane.rs: pub fn get_closest_point_on_plane(out: &mut Vector3, plane: &Plane, point: &Vector3)
+src/plane.rs: pub fn get_plane_coplanar_point(out: &mut Vector3, plane: &Plane)
+src/plane.rs: pub fn get_plane_signed_distance_to_point(plane: &Plane, point: &Vector3) -> f32
+src/plane.rs: pub fn initialize_plane(out: &mut Plane, a: f32, b: f32, c: f32, d: f32)
+src/plane.rs: pub fn normalize_plane(out: &mut Plane, source: &Plane)
+src/plane.rs: pub fn project_vector3_onto_plane(out: &mut Vector3, point: &Vector3, plane: &Plane)
+src/plane.rs: pub fn set_plane(out: &mut Plane, a: f32, b: f32, c: f32, d: f32)
+src/plane.rs: pub fn set_plane_from_normal_and_point(out: &mut Plane, normal: &Vector3, point: &Vector3)
+src/plane.rs: pub fn set_plane_from_points(out: &mut Plane, a: &Vector3, b: &Vector3, c: &Vector3)
+src/quaternion.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub enum EulerOrder { XYZ, XZY, YXZ, YZX, ZXY, ZYX, }
+src/quaternion.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct Quaternion { pub x: f32, pub y: f32, pub z: f32, pub w: f32, }
+src/quaternion.rs: impl Default for Quaternion
+src/quaternion.rs: impl Default for Quaternion :: fn default() -> Self
+src/quaternion.rs: impl Quaternion :: fn angle_between(&self, other: &Self) -> f32
+src/quaternion.rs: impl Quaternion :: fn conjugated(&self) -> Self
+src/quaternion.rs: impl Quaternion :: fn dot(&self, other: &Self) -> f32
+src/quaternion.rs: impl Quaternion :: fn from_axis_angle(axis: &Vector3, angle: f32) -> Self
+src/quaternion.rs: impl Quaternion :: fn from_euler(x: f32, y: f32, z: f32, order: EulerOrder) -> Self
+src/quaternion.rs: impl Quaternion :: fn inversed(&self) -> Self
+src/quaternion.rs: impl Quaternion :: fn multiply(&self, other: &Self) -> Self
+src/quaternion.rs: impl Quaternion :: fn new(x: f32, y: f32, z: f32, w: f32) -> Self
+src/quaternion.rs: impl Quaternion :: fn normalized(&self) -> Self
+src/quaternion.rs: impl Quaternion :: fn slerp(&self, other: &Self, t: f32) -> Self
+src/quaternion.rs: pub fn clone_quaternion(source: &Quaternion) -> Quaternion
+src/quaternion.rs: pub fn conjugate_quaternion(out: &mut Quaternion, source: &Quaternion)
+src/quaternion.rs: pub fn copy_quaternion(out: &mut Quaternion, source: &Quaternion)
+src/quaternion.rs: pub fn create_quaternion(x: f32, y: f32, z: f32, w: f32) -> Quaternion
+src/quaternion.rs: pub fn equals_quaternion(a: Option<&Quaternion>, b: Option<&Quaternion>) -> bool
+src/quaternion.rs: pub fn get_quaternion_angle_between(a: &Quaternion, b: &Quaternion) -> f32
+src/quaternion.rs: pub fn get_quaternion_axis_angle(out_axis: &mut Vector3, source: &Quaternion) -> f32
+src/quaternion.rs: pub fn get_quaternion_dot(a: &Quaternion, b: &Quaternion) -> f32
+src/quaternion.rs: pub fn get_quaternion_euler(out: &mut Vector3, source: &Quaternion, order: EulerOrder)
+src/quaternion.rs: pub fn initialize_quaternion(out: &mut Quaternion, x: f32, y: f32, z: f32, w: f32)
+src/quaternion.rs: pub fn inverse_quaternion(out: &mut Quaternion, source: &Quaternion)
+src/quaternion.rs: pub fn multiply_quaternion(out: &mut Quaternion, a: &Quaternion, b: &Quaternion,)
+src/quaternion.rs: pub fn normalize_quaternion(out: &mut Quaternion, source: &Quaternion) -> f32
+src/quaternion.rs: pub fn rotate_vector3_by_quaternion(out: &mut Vector3, vector: &Vector3, q: &Quaternion)
+src/quaternion.rs: pub fn set_quaternion(out: &mut Quaternion, x: f32, y: f32, z: f32, w: f32)
+src/quaternion.rs: pub fn set_quaternion_from_axis_angle(out: &mut Quaternion, axis: &Vector3, angle: f32)
+src/quaternion.rs: pub fn set_quaternion_from_euler(out: &mut Quaternion, x: f32, y: f32, z: f32, order: EulerOrder,)
+src/quaternion.rs: pub fn set_quaternion_from_matrix4(out: &mut Quaternion, source: &Matrix4)
+src/quaternion.rs: pub fn set_quaternion_from_unit_vectors(out: &mut Quaternion, from: &Vector3, to: &Vector3,)
+src/quaternion.rs: pub fn set_quaternion_identity(out: &mut Quaternion)
+src/quaternion.rs: pub fn set_quaternion_look_rotation(out: &mut Quaternion, forward: &Vector3, up: &Vector3,)
+src/quaternion.rs: pub fn slerp_quaternion(out: &mut Quaternion, a: &Quaternion, b: &Quaternion, t: f32,)
+src/ray3d.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct Ray3D { pub origin: Vector3, pub direction: Vector3, }
+src/ray3d.rs: impl Default for Ray3D
+src/ray3d.rs: impl Default for Ray3D :: fn default() -> Self
+src/ray3d.rs: impl Ray3D :: fn closest_point(&self, point: &Vector3) -> Vector3
+src/ray3d.rs: impl Ray3D :: fn intersect_aabb(&self, aabb: &Aabb) -> f32
+src/ray3d.rs: impl Ray3D :: fn intersect_plane(&self, plane: &Plane) -> f32
+src/ray3d.rs: impl Ray3D :: fn intersect_sphere(&self, sphere: &BoundingSphere) -> f32
+src/ray3d.rs: impl Ray3D :: fn intersect_triangle(&self, a: &Vector3, b: &Vector3, c: &Vector3) -> f32
+src/ray3d.rs: impl Ray3D :: fn new(origin_x: f32, origin_y: f32, origin_z: f32, direction_x: f32, direction_y: f32, direction_z: f32,) -> Self
+src/ray3d.rs: impl Ray3D :: fn point_at(&self, t: f32) -> Vector3
+src/ray3d.rs: pub fn create_ray3d(origin_x: f32, origin_y: f32, origin_z: f32, direction_x: f32, direction_y: f32, direction_z: f32,) -> Ray3D
+src/ray3d.rs: pub fn get_closest_point_between_ray3ds(out_a: &mut Vector3, out_b: &mut Vector3, a: &Ray3D, b: &Ray3D,)
+src/ray3d.rs: pub fn get_closest_point_on_ray3d(out: &mut Vector3, ray: &Ray3D, point: &Vector3)
+src/ray3d.rs: pub fn get_ray3d_point_at(out: &mut Vector3, ray: &Ray3D, t: f32)
+src/ray3d.rs: pub fn initialize_ray3d(out: &mut Ray3D, origin_x: f32, origin_y: f32, origin_z: f32, direction_x: f32, direction_y: f32, direction_z: f32,)
+src/ray3d.rs: pub fn intersect_ray3d_aabb(ray: &Ray3D, aabb: &Aabb) -> f32
+src/ray3d.rs: pub fn intersect_ray3d_plane(ray: &Ray3D, plane: &Plane) -> f32
+src/ray3d.rs: pub fn intersect_ray3d_sphere(ray: &Ray3D, sphere: &BoundingSphere) -> f32
+src/ray3d.rs: pub fn intersect_ray3d_triangle(ray: &Ray3D, a: &Vector3, b: &Vector3, c: &Vector3) -> f32
+src/ray3d.rs: pub fn set_ray3d(out: &mut Ray3D, origin: &Vector3, direction: &Vector3)
+src/ray3d.rs: pub fn transform_ray3d_by_matrix4(out: &mut Ray3D, ray: &Ray3D, m: &Matrix4)
+src/rectangle.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct Rectangle { pub x: f32, pub y: f32, pub width: f32, pub height: f32, }
+src/rectangle.rs: impl Rectangle :: fn bottom(&self) -> f32
+src/rectangle.rs: impl Rectangle :: fn bottom_right(&self) -> Vector2
+src/rectangle.rs: impl Rectangle :: fn contains_point(&self, point: &Vector2) -> bool
+src/rectangle.rs: impl Rectangle :: fn contains_point_xy(&self, x: f32, y: f32) -> bool
+src/rectangle.rs: impl Rectangle :: fn encloses(&self, other: &Self) -> bool
+src/rectangle.rs: impl Rectangle :: fn expanded_to_point(&self, point: &Vector2) -> Self
+src/rectangle.rs: impl Rectangle :: fn inflated(&self, dx: f32, dy: f32) -> Self
+src/rectangle.rs: impl Rectangle :: fn intersection(&self, other: &Self) -> Self
+src/rectangle.rs: impl Rectangle :: fn intersects(&self, other: &Self) -> bool
+src/rectangle.rs: impl Rectangle :: fn is_empty(&self) -> bool
+src/rectangle.rs: impl Rectangle :: fn is_flipped_x(&self) -> bool
+src/rectangle.rs: impl Rectangle :: fn is_flipped_y(&self) -> bool
+src/rectangle.rs: impl Rectangle :: fn left(&self) -> f32
+src/rectangle.rs: impl Rectangle :: fn max_x(&self) -> f32
+src/rectangle.rs: impl Rectangle :: fn max_y(&self) -> f32
+src/rectangle.rs: impl Rectangle :: fn merged(&self, other: &Self) -> Self
+src/rectangle.rs: impl Rectangle :: fn min_x(&self) -> f32
+src/rectangle.rs: impl Rectangle :: fn min_y(&self) -> f32
+src/rectangle.rs: impl Rectangle :: fn new(x: f32, y: f32, width: f32, height: f32) -> Self
+src/rectangle.rs: impl Rectangle :: fn normalized(&self) -> Self
+src/rectangle.rs: impl Rectangle :: fn normalized_bottom_right(&self) -> Vector2
+src/rectangle.rs: impl Rectangle :: fn normalized_top_left(&self) -> Vector2
+src/rectangle.rs: impl Rectangle :: fn offset(&self, dx: f32, dy: f32) -> Self
+src/rectangle.rs: impl Rectangle :: fn offset_by(&self, point: &Vector2) -> Self
+src/rectangle.rs: impl Rectangle :: fn right(&self) -> f32
+src/rectangle.rs: impl Rectangle :: fn set_bottom(&mut self, value: f32)
+src/rectangle.rs: impl Rectangle :: fn set_bottom_right(&mut self, point: &Vector2)
+src/rectangle.rs: impl Rectangle :: fn set_left(&mut self, value: f32)
+src/rectangle.rs: impl Rectangle :: fn set_right(&mut self, value: f32)
+src/rectangle.rs: impl Rectangle :: fn set_size(&mut self, size: &Vector2)
+src/rectangle.rs: impl Rectangle :: fn set_top(&mut self, value: f32)
+src/rectangle.rs: impl Rectangle :: fn set_top_left(&mut self, point: &Vector2)
+src/rectangle.rs: impl Rectangle :: fn size(&self) -> Vector2
+src/rectangle.rs: impl Rectangle :: fn top(&self) -> f32
+src/rectangle.rs: impl Rectangle :: fn top_left(&self) -> Vector2
+src/rectangle.rs: pub fn clone_rectangle(source: &Rectangle) -> Rectangle
+src/rectangle.rs: pub fn compute_rectangle_intersection(out: &mut Rectangle, a: &Rectangle, b: &Rectangle)
+src/rectangle.rs: pub fn contains_rectangle_point(rect: &Rectangle, point: &Vector2) -> bool
+src/rectangle.rs: pub fn contains_rectangle_point_xy(rect: &Rectangle, x: f32, y: f32) -> bool
+src/rectangle.rs: pub fn copy_rectangle(out: &mut Rectangle, source: &Rectangle)
+src/rectangle.rs: pub fn create_rectangle(x: f32, y: f32, width: f32, height: f32) -> Rectangle
+src/rectangle.rs: pub fn encloses_rectangle(rect: &Rectangle, other: &Rectangle) -> bool
+src/rectangle.rs: pub fn equals_rectangle(a: Option<&Rectangle>, b: Option<&Rectangle>) -> bool
+src/rectangle.rs: pub fn expand_rectangle_to_point(out: &mut Rectangle, source: &Rectangle, point: &Vector2)
+src/rectangle.rs: pub fn get_rectangle_bottom(rect: &Rectangle) -> f32
+src/rectangle.rs: pub fn get_rectangle_bottom_right(out: &mut Vector2, rect: &Rectangle)
+src/rectangle.rs: pub fn get_rectangle_left(rect: &Rectangle) -> f32
+src/rectangle.rs: pub fn get_rectangle_max_x(rect: &Rectangle) -> f32
+src/rectangle.rs: pub fn get_rectangle_max_y(rect: &Rectangle) -> f32
+src/rectangle.rs: pub fn get_rectangle_min_x(rect: &Rectangle) -> f32
+src/rectangle.rs: pub fn get_rectangle_min_y(rect: &Rectangle) -> f32
+src/rectangle.rs: pub fn get_rectangle_normalized_bottom_right(out: &mut Vector2, rect: &Rectangle)
+src/rectangle.rs: pub fn get_rectangle_normalized_top_left(out: &mut Vector2, rect: &Rectangle)
+src/rectangle.rs: pub fn get_rectangle_right(rect: &Rectangle) -> f32
+src/rectangle.rs: pub fn get_rectangle_size(out: &mut Vector2, rect: &Rectangle)
+src/rectangle.rs: pub fn get_rectangle_top(rect: &Rectangle) -> f32
+src/rectangle.rs: pub fn get_rectangle_top_left(out: &mut Vector2, rect: &Rectangle)
+src/rectangle.rs: pub fn inflate_rectangle(out: &mut Rectangle, source: &Rectangle, dx: f32, dy: f32)
+src/rectangle.rs: pub fn initialize_rectangle(out: &mut Rectangle, x: f32, y: f32, width: f32, height: f32)
+src/rectangle.rs: pub fn intersects_rectangle(a: &Rectangle, b: &Rectangle) -> bool
+src/rectangle.rs: pub fn is_empty_rectangle(rect: &Rectangle) -> bool
+src/rectangle.rs: pub fn is_flipped_x_rectangle(rect: &Rectangle) -> bool
+src/rectangle.rs: pub fn is_flipped_y_rectangle(rect: &Rectangle) -> bool
+src/rectangle.rs: pub fn merge_rectangle(out: &mut Rectangle, a: &Rectangle, b: &Rectangle)
+src/rectangle.rs: pub fn normalize_rectangle(out: &mut Rectangle, source: &Rectangle)
+src/rectangle.rs: pub fn offset_rectangle(out: &mut Rectangle, source: &Rectangle, dx: f32, dy: f32)
+src/rectangle.rs: pub fn offset_rectangle_by_point(out: &mut Rectangle, source: &Rectangle, point: &Vector2)
+src/rectangle.rs: pub fn set_empty_rectangle(out: &mut Rectangle)
+src/rectangle.rs: pub fn set_rectangle(out: &mut Rectangle, x: f32, y: f32, width: f32, height: f32)
+src/rectangle.rs: pub fn set_rectangle_bottom(rect: &mut Rectangle, value: f32)
+src/rectangle.rs: pub fn set_rectangle_bottom_right(rect: &mut Rectangle, point: &Vector2)
+src/rectangle.rs: pub fn set_rectangle_left(rect: &mut Rectangle, value: f32)
+src/rectangle.rs: pub fn set_rectangle_right(rect: &mut Rectangle, value: f32)
+src/rectangle.rs: pub fn set_rectangle_size(rect: &mut Rectangle, size: &Vector2)
+src/rectangle.rs: pub fn set_rectangle_top(rect: &mut Rectangle, value: f32)
+src/rectangle.rs: pub fn set_rectangle_top_left(rect: &mut Rectangle, point: &Vector2)
+src/transform2d.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct Transform2D { pub x: f32, pub y: f32, pub rotation: f32, pub scale_x: f32, pub scale_y: f32, pub skew_x: f32, pub skew_y: f32, pub pivot_x: f32, pub pivot_y: f32, }
+src/transform2d.rs: impl Default for Transform2D
+src/transform2d.rs: impl Default for Transform2D :: fn default() -> Self
+src/transform2d.rs: impl Transform2D :: fn new(x: f32, y: f32, rotation: f32, scale_x: f32, scale_y: f32, skew_x: f32, skew_y: f32, pivot_x: f32, pivot_y: f32,) -> Self
+src/transform2d.rs: pub fn create_transform2d(x: f32, y: f32, rotation: f32, scale_x: f32, scale_y: f32, skew_x: f32, skew_y: f32, pivot_x: f32, pivot_y: f32,) -> Transform2D
+src/transform2d.rs: pub fn decompose_matrix_to_transform2d(out: &mut Transform2D, source: &Matrix)
+src/transform2d.rs: pub fn initialize_transform2d(out: &mut Transform2D, x: f32, y: f32, rotation: f32, scale_x: f32, scale_y: f32, skew_x: f32, skew_y: f32, pivot_x: f32, pivot_y: f32,)
+src/transform3d.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct Transform3D { pub position: Vector3, pub rotation: Quaternion, pub scale: Vector3, }
+src/transform3d.rs: impl Default for Transform3D
+src/transform3d.rs: impl Default for Transform3D :: fn default() -> Self
+src/transform3d.rs: impl Transform3D :: fn new() -> Self
+src/transform3d.rs: pub fn compose_matrix4_from_transform3d(out: &mut Matrix4, source: &Transform3D)
+src/transform3d.rs: pub fn create_transform3d() -> Transform3D
+src/transform3d.rs: pub fn decompose_matrix4_to_transform3d(out: &mut Transform3D, m: &Matrix4)
+src/transform3d.rs: pub fn initialize_transform3d(out: &mut Transform3D)
+src/vector2.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct Vector2 { pub x: f32, pub y: f32, }
+src/vector2.rs: impl Vector2 :: fn add(&self, other: &Self) -> Self
+src/vector2.rs: impl Vector2 :: fn angle(&self) -> f32
+src/vector2.rs: impl Vector2 :: fn angle_between(&self, other: &Self) -> f32
+src/vector2.rs: impl Vector2 :: fn clamp(&self, min: &Self, max: &Self) -> Self
+src/vector2.rs: impl Vector2 :: fn cross(&self, other: &Self) -> f32
+src/vector2.rs: impl Vector2 :: fn distance(&self, other: &Self) -> f32
+src/vector2.rs: impl Vector2 :: fn distance_squared(&self, other: &Self) -> f32
+src/vector2.rs: impl Vector2 :: fn divide(&self, divisor: &Self) -> Self
+src/vector2.rs: impl Vector2 :: fn dot(&self, other: &Self) -> f32
+src/vector2.rs: impl Vector2 :: fn from_polar(length: f32, angle: f32) -> Self
+src/vector2.rs: impl Vector2 :: fn interpolate(&self, other: &Self, t: f32) -> Self
+src/vector2.rs: impl Vector2 :: fn length(&self) -> f32
+src/vector2.rs: impl Vector2 :: fn length_squared(&self) -> f32
+src/vector2.rs: impl Vector2 :: fn max(&self, other: &Self) -> Self
+src/vector2.rs: impl Vector2 :: fn min(&self, other: &Self) -> Self
+src/vector2.rs: impl Vector2 :: fn multiply(&self, other: &Self) -> Self
+src/vector2.rs: impl Vector2 :: fn near_equals(&self, other: &Self, tolerance: f32) -> bool
+src/vector2.rs: impl Vector2 :: fn negated(&self) -> Self
+src/vector2.rs: impl Vector2 :: fn new(x: f32, y: f32) -> Self
+src/vector2.rs: impl Vector2 :: fn normalized(&self) -> Self
+src/vector2.rs: impl Vector2 :: fn offset(&self, dx: f32, dy: f32) -> Self
+src/vector2.rs: impl Vector2 :: fn reflected(&self, normal: &Self) -> Self
+src/vector2.rs: impl Vector2 :: fn rotated(&self, angle: f32) -> Self
+src/vector2.rs: impl Vector2 :: fn scaled(&self, scalar: f32) -> Self
+src/vector2.rs: impl Vector2 :: fn scaled_to_length(&self, length: f32) -> Self
+src/vector2.rs: impl Vector2 :: fn subtracted(&self, other: &Self) -> Self
+src/vector2.rs: pub const VECTOR2_X_AXIS: Vector2
+src/vector2.rs: pub const VECTOR2_Y_AXIS: Vector2
+src/vector2.rs: pub fn add_vector2(out: &mut Vector2, a: &Vector2, b: &Vector2)
+src/vector2.rs: pub fn clamp_vector2(out: &mut Vector2, value: &Vector2, min: &Vector2, max: &Vector2)
+src/vector2.rs: pub fn clone_vector2(source: &Vector2) -> Vector2
+src/vector2.rs: pub fn copy_vector2(out: &mut Vector2, source: &Vector2)
+src/vector2.rs: pub fn create_vector2(x: f32, y: f32) -> Vector2
+src/vector2.rs: pub fn create_vector2_from_polar(length: f32, angle: f32) -> Vector2
+src/vector2.rs: pub fn cross_vector2(a: &Vector2, b: &Vector2) -> f32
+src/vector2.rs: pub fn divide_vector2(out: &mut Vector2, source: &Vector2, divisor: &Vector2)
+src/vector2.rs: pub fn equals_vector2(a: Option<&Vector2>, b: Option<&Vector2>) -> bool
+src/vector2.rs: pub fn get_vector2_angle(source: &Vector2) -> f32
+src/vector2.rs: pub fn get_vector2_angle_between(a: &Vector2, b: &Vector2) -> f32
+src/vector2.rs: pub fn get_vector2_distance(a: &Vector2, b: &Vector2) -> f32
+src/vector2.rs: pub fn get_vector2_distance_squared(a: &Vector2, b: &Vector2) -> f32
+src/vector2.rs: pub fn get_vector2_dot(a: &Vector2, b: &Vector2) -> f32
+src/vector2.rs: pub fn get_vector2_length(source: &Vector2) -> f32
+src/vector2.rs: pub fn get_vector2_length_squared(source: &Vector2) -> f32
+src/vector2.rs: pub fn initialize_vector2(out: &mut Vector2, x: f32, y: f32)
+src/vector2.rs: pub fn interpolate_vector2(out: &mut Vector2, a: &Vector2, b: &Vector2, t: f32)
+src/vector2.rs: pub fn max_vector2(out: &mut Vector2, a: &Vector2, b: &Vector2)
+src/vector2.rs: pub fn min_vector2(out: &mut Vector2, a: &Vector2, b: &Vector2)
+src/vector2.rs: pub fn multiply_vector2(out: &mut Vector2, a: &Vector2, b: &Vector2)
+src/vector2.rs: pub fn near_equals_vector2(a: &Vector2, b: &Vector2, tolerance: f32) -> bool
+src/vector2.rs: pub fn negate_vector2(out: &mut Vector2, source: &Vector2)
+src/vector2.rs: pub fn normalize_vector2(out: &mut Vector2, source: &Vector2) -> f32
+src/vector2.rs: pub fn offset_vector2(out: &mut Vector2, source: &Vector2, dx: f32, dy: f32)
+src/vector2.rs: pub fn reflect_vector2(out: &mut Vector2, incident: &Vector2, normal: &Vector2)
+src/vector2.rs: pub fn rotate_vector2(out: &mut Vector2, source: &Vector2, angle: f32)
+src/vector2.rs: pub fn scale_vector2(out: &mut Vector2, source: &Vector2, scalar: f32)
+src/vector2.rs: pub fn scale_vector2_to_length(out: &mut Vector2, source: &Vector2, length: f32)
+src/vector2.rs: pub fn set_vector2(out: &mut Vector2, x: f32, y: f32)
+src/vector2.rs: pub fn set_vector2_from_float32_array(out: &mut Vector2, offset: usize, source: &[f32])
+src/vector2.rs: pub fn set_vector2_from_polar(out: &mut Vector2, length: f32, angle: f32)
+src/vector2.rs: pub fn set_vector2_from_vector3(out: &mut Vector2, source: &Vector3)
+src/vector2.rs: pub fn subtract_vector2(out: &mut Vector2, source: &Vector2, other: &Vector2)
+src/vector2.rs: pub fn write_vector2_to_float32_array(out: &mut [f32], offset: usize, source: &Vector2)
+src/vector3.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct Vector3 { pub x: f32, pub y: f32, pub z: f32, }
+src/vector3.rs: impl Vector3 :: fn add(&self, other: &Self) -> Self
+src/vector3.rs: impl Vector3 :: fn angle_between(&self, other: &Self) -> f32
+src/vector3.rs: impl Vector3 :: fn clamp(&self, min: &Self, max: &Self) -> Self
+src/vector3.rs: impl Vector3 :: fn cross(&self, other: &Self) -> Self
+src/vector3.rs: impl Vector3 :: fn distance(&self, other: &Self) -> f32
+src/vector3.rs: impl Vector3 :: fn distance_squared(&self, other: &Self) -> f32
+src/vector3.rs: impl Vector3 :: fn divide(&self, divisor: &Self) -> Self
+src/vector3.rs: impl Vector3 :: fn dot(&self, other: &Self) -> f32
+src/vector3.rs: impl Vector3 :: fn from_spherical(radius: f32, theta: f32, phi: f32) -> Self
+src/vector3.rs: impl Vector3 :: fn interpolate(&self, other: &Self, t: f32) -> Self
+src/vector3.rs: impl Vector3 :: fn length(&self) -> f32
+src/vector3.rs: impl Vector3 :: fn length_squared(&self) -> f32
+src/vector3.rs: impl Vector3 :: fn max(&self, other: &Self) -> Self
+src/vector3.rs: impl Vector3 :: fn min(&self, other: &Self) -> Self
+src/vector3.rs: impl Vector3 :: fn multiply(&self, other: &Self) -> Self
+src/vector3.rs: impl Vector3 :: fn near_equals(&self, other: &Self, tolerance: f32) -> bool
+src/vector3.rs: impl Vector3 :: fn negated(&self) -> Self
+src/vector3.rs: impl Vector3 :: fn new(x: f32, y: f32, z: f32) -> Self
+src/vector3.rs: impl Vector3 :: fn normalized(&self) -> Self
+src/vector3.rs: impl Vector3 :: fn offset(&self, dx: f32, dy: f32, dz: f32) -> Self
+src/vector3.rs: impl Vector3 :: fn reflected(&self, normal: &Self) -> Self
+src/vector3.rs: impl Vector3 :: fn scaled(&self, scalar: f32) -> Self
+src/vector3.rs: impl Vector3 :: fn subtracted(&self, other: &Self) -> Self
+src/vector3.rs: pub const VECTOR3_X_AXIS: Vector3
+src/vector3.rs: pub const VECTOR3_Y_AXIS: Vector3
+src/vector3.rs: pub const VECTOR3_Z_AXIS: Vector3
+src/vector3.rs: pub fn add_vector3(out: &mut Vector3, a: &Vector3, b: &Vector3)
+src/vector3.rs: pub fn clamp_vector3(out: &mut Vector3, value: &Vector3, min: &Vector3, max: &Vector3)
+src/vector3.rs: pub fn clone_vector3(source: &Vector3) -> Vector3
+src/vector3.rs: pub fn copy_vector3(out: &mut Vector3, source: &Vector3)
+src/vector3.rs: pub fn create_vector3(x: f32, y: f32, z: f32) -> Vector3
+src/vector3.rs: pub fn create_vector3_from_spherical(radius: f32, theta: f32, phi: f32) -> Vector3
+src/vector3.rs: pub fn cross_vector3(out: &mut Vector3, source: &Vector3, other: &Vector3)
+src/vector3.rs: pub fn divide_vector3(out: &mut Vector3, source: &Vector3, divisor: &Vector3)
+src/vector3.rs: pub fn equals_vector3(a: Option<&Vector3>, b: Option<&Vector3>) -> bool
+src/vector3.rs: pub fn get_vector3_angle_between(a: &Vector3, b: &Vector3) -> f32
+src/vector3.rs: pub fn get_vector3_distance(a: &Vector3, b: &Vector3) -> f32
+src/vector3.rs: pub fn get_vector3_distance_squared(a: &Vector3, b: &Vector3) -> f32
+src/vector3.rs: pub fn get_vector3_dot(a: &Vector3, b: &Vector3) -> f32
+src/vector3.rs: pub fn get_vector3_length(source: &Vector3) -> f32
+src/vector3.rs: pub fn get_vector3_length_squared(source: &Vector3) -> f32
+src/vector3.rs: pub fn get_vector3_spherical(out: &mut Vector3, source: &Vector3)
+src/vector3.rs: pub fn initialize_vector3(out: &mut Vector3, x: f32, y: f32, z: f32)
+src/vector3.rs: pub fn interpolate_vector3(out: &mut Vector3, a: &Vector3, b: &Vector3, t: f32)
+src/vector3.rs: pub fn max_vector3(out: &mut Vector3, a: &Vector3, b: &Vector3)
+src/vector3.rs: pub fn min_vector3(out: &mut Vector3, a: &Vector3, b: &Vector3)
+src/vector3.rs: pub fn multiply_vector3(out: &mut Vector3, a: &Vector3, b: &Vector3)
+src/vector3.rs: pub fn near_equals_vector3(a: &Vector3, b: &Vector3, tolerance: f32) -> bool
+src/vector3.rs: pub fn negate_vector3(out: &mut Vector3, source: &Vector3)
+src/vector3.rs: pub fn normalize_vector3(out: &mut Vector3, source: &Vector3) -> f32
+src/vector3.rs: pub fn offset_vector3(out: &mut Vector3, source: &Vector3, dx: f32, dy: f32, dz: f32)
+src/vector3.rs: pub fn project_vector3(out: &mut Vector2, source: &Vector3)
+src/vector3.rs: pub fn reflect_vector3(out: &mut Vector3, incident: &Vector3, normal: &Vector3)
+src/vector3.rs: pub fn scale_vector3(out: &mut Vector3, source: &Vector3, scalar: f32)
+src/vector3.rs: pub fn set_vector3(out: &mut Vector3, x: f32, y: f32, z: f32)
+src/vector3.rs: pub fn set_vector3_from_float32_array(out: &mut Vector3, offset: usize, source: &[f32])
+src/vector3.rs: pub fn set_vector3_from_spherical(out: &mut Vector3, radius: f32, theta: f32, phi: f32)
+src/vector3.rs: pub fn set_vector3_from_vector4(out: &mut Vector3, source: &Vector4)
+src/vector3.rs: pub fn subtract_vector3(out: &mut Vector3, source: &Vector3, other: &Vector3)
+src/vector3.rs: pub fn transform_vector3_by_matrix3(out: &mut Vector3, source: &Vector3, matrix: &Matrix3)
+src/vector3.rs: pub fn write_vector3_to_float32_array(out: &mut [f32], offset: usize, source: &Vector3)
+src/vector4.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct Vector4 { pub x: f32, pub y: f32, pub z: f32, pub w: f32, }
+src/vector4.rs: impl Vector4 :: fn add(&self, other: &Self) -> Self
+src/vector4.rs: impl Vector4 :: fn angle_between(&self, other: &Self) -> f32
+src/vector4.rs: impl Vector4 :: fn clamp(&self, min: &Self, max: &Self) -> Self
+src/vector4.rs: impl Vector4 :: fn distance(&self, other: &Self) -> f32
+src/vector4.rs: impl Vector4 :: fn distance_squared(&self, other: &Self) -> f32
+src/vector4.rs: impl Vector4 :: fn divide(&self, divisor: &Self) -> Self
+src/vector4.rs: impl Vector4 :: fn dot(&self, other: &Self) -> f32
+src/vector4.rs: impl Vector4 :: fn interpolate(&self, other: &Self, t: f32) -> Self
+src/vector4.rs: impl Vector4 :: fn length(&self) -> f32
+src/vector4.rs: impl Vector4 :: fn length_squared(&self) -> f32
+src/vector4.rs: impl Vector4 :: fn max(&self, other: &Self) -> Self
+src/vector4.rs: impl Vector4 :: fn min(&self, other: &Self) -> Self
+src/vector4.rs: impl Vector4 :: fn multiply(&self, other: &Self) -> Self
+src/vector4.rs: impl Vector4 :: fn near_equals(&self, other: &Self, tolerance: f32) -> bool
+src/vector4.rs: impl Vector4 :: fn negated(&self) -> Self
+src/vector4.rs: impl Vector4 :: fn new(x: f32, y: f32, z: f32, w: f32) -> Self
+src/vector4.rs: impl Vector4 :: fn normalized(&self) -> Self
+src/vector4.rs: impl Vector4 :: fn offset(&self, dx: f32, dy: f32, dz: f32, dw: f32) -> Self
+src/vector4.rs: impl Vector4 :: fn projected(&self) -> Vector3
+src/vector4.rs: impl Vector4 :: fn reflected(&self, normal: &Self) -> Self
+src/vector4.rs: impl Vector4 :: fn scaled(&self, scalar: f32) -> Self
+src/vector4.rs: impl Vector4 :: fn subtracted(&self, other: &Self) -> Self
+src/vector4.rs: pub const VECTOR4_W_UNIT: Vector4
+src/vector4.rs: pub const VECTOR4_X_AXIS: Vector4
+src/vector4.rs: pub const VECTOR4_Y_AXIS: Vector4
+src/vector4.rs: pub const VECTOR4_Z_AXIS: Vector4
+src/vector4.rs: pub fn add_vector4(out: &mut Vector4, a: &Vector4, b: &Vector4)
+src/vector4.rs: pub fn clamp_vector4(out: &mut Vector4, value: &Vector4, min: &Vector4, max: &Vector4)
+src/vector4.rs: pub fn clone_vector4(source: &Vector4) -> Vector4
+src/vector4.rs: pub fn copy_vector4(out: &mut Vector4, source: &Vector4)
+src/vector4.rs: pub fn create_vector4(x: f32, y: f32, z: f32, w: f32) -> Vector4
+src/vector4.rs: pub fn divide_vector4(out: &mut Vector4, source: &Vector4, divisor: &Vector4)
+src/vector4.rs: pub fn equals_vector4(a: Option<&Vector4>, b: Option<&Vector4>) -> bool
+src/vector4.rs: pub fn get_vector4_angle_between(a: &Vector4, b: &Vector4) -> f32
+src/vector4.rs: pub fn get_vector4_distance(a: &Vector4, b: &Vector4) -> f32
+src/vector4.rs: pub fn get_vector4_distance_squared(a: &Vector4, b: &Vector4) -> f32
+src/vector4.rs: pub fn get_vector4_dot(a: &Vector4, b: &Vector4) -> f32
+src/vector4.rs: pub fn get_vector4_length(source: &Vector4) -> f32
+src/vector4.rs: pub fn get_vector4_length_squared(source: &Vector4) -> f32
+src/vector4.rs: pub fn initialize_vector4(out: &mut Vector4, x: f32, y: f32, z: f32, w: f32)
+src/vector4.rs: pub fn interpolate_vector4(out: &mut Vector4, a: &Vector4, b: &Vector4, t: f32)
+src/vector4.rs: pub fn max_vector4(out: &mut Vector4, a: &Vector4, b: &Vector4)
+src/vector4.rs: pub fn min_vector4(out: &mut Vector4, a: &Vector4, b: &Vector4)
+src/vector4.rs: pub fn multiply_vector4(out: &mut Vector4, a: &Vector4, b: &Vector4)
+src/vector4.rs: pub fn near_equals_vector4(a: &Vector4, b: &Vector4, tolerance: f32) -> bool
+src/vector4.rs: pub fn negate_vector4(out: &mut Vector4, source: &Vector4)
+src/vector4.rs: pub fn normalize_vector4(out: &mut Vector4, source: &Vector4) -> f32
+src/vector4.rs: pub fn offset_vector4(out: &mut Vector4, source: &Vector4, dx: f32, dy: f32, dz: f32, dw: f32)
+src/vector4.rs: pub fn project_vector4(out: &mut Vector3, source: &Vector4)
+src/vector4.rs: pub fn reflect_vector4(out: &mut Vector4, incident: &Vector4, normal: &Vector4)
+src/vector4.rs: pub fn scale_vector4(out: &mut Vector4, source: &Vector4, scalar: f32)
+src/vector4.rs: pub fn set_vector4(out: &mut Vector4, x: f32, y: f32, z: f32, w: f32)
+src/vector4.rs: pub fn set_vector4_from_float32_array(out: &mut Vector4, offset: usize, source: &[f32])
+src/vector4.rs: pub fn set_vector4_from_vector3(out: &mut Vector4, source: &Vector3, w: f32)
+src/vector4.rs: pub fn subtract_vector4(out: &mut Vector4, source: &Vector4, other: &Vector4)
+src/vector4.rs: pub fn write_vector4_to_float32_array(out: &mut [f32], offset: usize, source: &Vector4)

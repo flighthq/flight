@@ -25,7 +25,7 @@ TS has three patterns (see `refs/flight/packages/types/src`):
 Proposal:
 - Closed TS union → closed Rust enum. The payload of each variant is a single named struct (`Circle(CollisionCircle2D)`), never anonymous fields.
 - Open TS union → Rust enum of the built-ins plus `Custom(Custom<Name>)`. `Custom<Name>` carries `kind: String` (vendor-prefixed) and a payload. Dispatch for `Custom` goes through a registry keyed by kind, which is explicit state per D5.
-- **Open question: the Custom payload type.** Options are an opaque handle (`u64`, resolved by the registrant; FFI-clean), a `Box<dyn Any>` (Rust-idiomatic, not FFI-clean), or a generic parameter. The recommendation is an opaque handle.
+- **Custom payload (user guidance, 2026-10-20):** the IR must preserve identity and stay clear for the TS/C++ transpilers. C portability is *not* a constraint on the IR: a planned Rust FFI layer will translate generic C-portable types to the internal representations. So the payload should be a real typed value, not an opaque `u64` handle. The leading option is a trait-object payload (`Custom(Rc/Arc<dyn CustomShape2D>)`), which maps to a TS interface and a C++ abstract base, with the registry dispatching on `kind`. The alternative is a generic parameter. **Pending: choose between them** (trait object recommended, because generics would spread through every signature).
 - No `From` impls on enums in the contract. Those may live in the sugar layer (D6).
 - Closed enums that came from TS string literals keep a canonical string table (`*_to_string` / `parse_*` free functions) where TS exposes the strings.
 
@@ -56,7 +56,7 @@ Proposal: adopt `Signal<T>` and `SlotId`-based disconnect in the contract. The R
 
 Entity binding (`Box<dyn Any>`): use the same answer as the D2 Custom payload, i.e. an opaque handle or generic.
 
-## D5 Hidden state — DIRECTION
+## D5 Hidden state — DIRECTION (registries APPROVED)
 
 Agreed: hidden semantic state is a problem. An internal cache that does not affect results is acceptable. Thread safety must be considered.
 
@@ -64,10 +64,14 @@ Inventory: thread_local/static exists in log (sinks, levels, spans, clock), sign
 
 Proposed mechanics:
 - Semantic state (registries, timers, default managers, uid counters, log sinks/levels) moves into explicit state structs passed by the caller. Layout already does this (`LayoutState`). The clock is injected as a time parameter, never read inside the contract.
-- Where TS has a module-global registry (collision `registerCollisionSupport2D`, log), the Rust contract takes an explicit state. TS/C++ transpile targets may add a module-level default instance as sugar. **Needs a ruling**, because the signatures will then differ from TS by one parameter.
+- **APPROVED (2026-10-20):** registries are arguments, never hidden globals, even where TS uses a module-global registry (collision `registerCollisionSupport2D`, log serializers). They may hang off a larger state object (e.g. a `RenderState`). The TS source is expected to move the same way. Until it does, the resulting signature differences are marked `allow(conform-params) registry passed explicitly (D5)`.
 - Caches with no semantic effect may stay internal. They must be marked `// flight-lint: allow cache`.
 - Debug guard toggles: fold them into the state struct where one exists, otherwise allow them with a marker.
-- Thread safety: contract value types stay plain data, so they are `Send + Sync` automatically. Shared mutable state uses no `Rc<RefCell>` in pub types. If sharing is needed, use `Arc<Mutex>` (as flight-rs-native does) or, preferably, handles into a state arena. **Needs a ruling: must contract state structs be `Send`?**
+- Thread safety (user: open to discussion; do it correctly if it does not hurt performance). Proposal:
+  - Contract value types are plain data, so they are `Send + Sync` for free, at zero cost.
+  - State structs own their data (Vec/arena + handles) instead of sharing it, so they are `Send` with no locks. The caller decides on locking.
+  - Where shared ownership is genuinely needed (signal slots, custom payloads), use `Arc` rather than `Rc`. Uncontended `Arc` costs one atomic increment per clone and nothing per call; it never needs a `Mutex` inside the contract.
+  - Net effect: no `Rc`/`RefCell` in the contract, and no locks on hot paths.
 - All logging goes through flight-log. Crate-local log copies are removed.
 
 ## D6 Contract vs Rust sugar — APPROVED
@@ -76,26 +80,18 @@ Proposed mechanics:
 - **Rust sugar** (`impl` methods, operator traits, `From`, RAII guards) is optional and Rust-specific. It mirrors the *public* API only and delegates to the contract. Contract-only items (internal helpers, pools) get no sugar.
 - Tests never call sugar. This is enforced today by `test-method-call`.
 
-## D7 Lint direction — PROPOSED
+## D7 Lint direction — APPROVED, implemented 2026-10-20
 
-The user is open to adding rules to enforce the direction mechanically. Candidate rules:
-
-| Rule | Enforces |
-| --- | --- |
-| `f64-declared` | f64 appears only in items listed in the crate's Precision section (D1) |
-| `enum-payload-named` | data variants hold exactly one named struct; no struct-variants (D2) |
-| `no-dyn-any-in-contract` | no `dyn Any` in pub signatures or fields (D2/D4) |
-| `no-rc-refcell-in-contract` | no `Rc<RefCell>` in pub types (D4/D5) |
-| `no-hidden-state` | no `thread_local!`, `static` with interior mutability, or `SystemTime`/`Instant` without an allow marker (D5) |
-| `no-hashmap-iteration` | no `.iter()`, `.keys()`, `.values()` or `for … in` on HashMap-typed bindings (D3; heuristic) |
-| `sugar-delegates` | an impl method body calls the free function of the same name (D6) |
-| `no-trait-impl-in-contract` | only `Default` and derives outside a `sugar` module (D6) |
-
-The existing tooling must be fixed before it can gate:
-- `conform`'s camel→snake conversion breaks digit acronyms (`Ray3D` → `ray3_d`). All 22 "missing" geometry functions are false positives.
-- `conform` matches files by stem across all crates instead of only the target crate.
-- `conform` compares names only. It should also compare parameter order (flight-rs-native requires this).
-- The private-helper false positives in `test-coverage`/`fn-order`.
+`cargo-flight-lint` now enforces the direction. `cargo run -p cargo-flight-lint -- rules` lists the rules, and AGENTS.md documents them.
+- **error:** `f64` (D1; declare with `allow(f64) <reason>`), `hidden-state` (D5), `sugar-delegates` (D6), plus all the existing structure and test rules.
+- **warn**, until rulings land: `hashmap-iteration` (D3), `contract-dyn-any` and `contract-shared-mutability` (D2/D4/D5), `enum-payload-named` (D2).
+- **Ratchet:** `--baseline agents/baselines/{check,conform}.txt` fails only on new violations. Baseline at implementation: check 2380 (2270 errors, 110 warnings); conform 343 (75 missing, 148 extra, 155 params, of which 56 differ in count and 99 in names only).
+- **conform fixes:** names now match ignoring case and underscores (fixing `Ray3D`); matching is scoped to the crate's own TS package (`flight-x` ↔ `packages/x/src`); parameter names and order are checked; `export const f = (...) =>` functions are recognized; missing functions are tagged `public` (`index.ts`) or `contract-only` (`contract.ts`). TS already has the D6 split: `index.ts` is the curated public API and `contract.ts` is the full contract.
+- **Manifests:** `manifest --write|--check`. Only flight-geometry is frozen so far (`agents/manifests/flight-geometry.{api,tests}`). Other crates get frozen once their rulings are applied and the user approves them.
+- **Findings in flight-geometry** (now visible because the false positives are gone):
+  - 39 public TS pool and typed-array functions are not ported (`acquire_*`/`release_*`, `reserve_*_array`, `set_geometry_pool_release_guard`).
+  - 7 `initialize_*` functions are untested.
+  - 36 parameter divergences: names such as `rect` vs TS `target`/`source`, and shapes such as `initialize_ray3d(out, ox, oy, oz, dx, dy, dz)` vs TS `(out, origin, direction)`.
 
 ---
 
