@@ -13,7 +13,8 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 - Existing drift is inventoried in `agents/api-drift.md` for review. Fleet agents must not "fix" drift, in either direction, without a ruling.
 - The conform baseline only blocks *new* drift. An entry being in the baseline does not mean it is accepted.
 - **Approved D0 exceptions:**
-  - Numeric arrays (user, 2026-10-20). Rust types decide the TS array type: growable `Vec<N>` → `number[]`, fixed-length `&mut [N]`/`[N; LEN]` → the matching typed array. This changes TS signatures that use `number[]` for fixed-length data, about 50 params (fixed-slot and caller-sized outputs) plus types. The read-only `&[N]` mapping is still open (see `agents/ir-vocabulary.md`).
+  - Numeric arrays (user, 2026-10-20). Rust types decide the TS array type: growable `Vec<N>` → `number[]`, fixed-length `&mut [N]`/`[N; LEN]` → the matching typed array. This changes TS signatures that use `number[]` for fixed-length data, about 50 params (fixed-slot and caller-sized outputs) plus types. `Box<[N]>` (owned, fixed length) → typed array; read-only `&[N]` → `ArrayLike<number>`. Which form an API uses is negotiated per API (see "Array negotiation items" in `agents/api-drift.md`).
+  - Pixels (user, 2026-10-20): TS `Uint8ClampedArray` becomes `Uint8Array` (`Bitmap.data`, `DecodedImage.data`, `GlyphSource.pixels`, bitmap filter outputs). Clamping is explicit in code (`to_clamped_u8`) and verified by tests. The canvas boundary uses zero-copy views.
 
 ## D1 Numerics — APPROVED
 
