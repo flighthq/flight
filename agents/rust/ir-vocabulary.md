@@ -76,6 +76,16 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
    - Values that legitimately exceed 32 bits, such as collision's packed feature ids (`FEATURE_INDEX_LIMIT = 1 << 25`), use `i64`/`u64` with a declared range of at most 2^53 (`allow(contract-vocabulary) <range>`).
    - `isize` is not used.
 
+## Porting rule: clamped pixels (user, 2026-10-20)
+
+TS `Uint8ClampedArray` clamps and rounds half-to-even on every store, implicitly. Rust `u8` stores never convert: integer `as u8` wraps, float `as u8` saturates but **truncates**, and arithmetic overflow panics in debug and wraps in release.
+
+The rules:
+- Contract code uses the alias `Uint8ClampedArray = [u8]` (`&mut Uint8ClampedArray`, `&Uint8ClampedArray`, `Box<Uint8ClampedArray>`). The alias exists so TS keeps `Uint8ClampedArray`, e.g. for Canvas `ImageData`.
+- Every store converts explicitly through a shared helper, `to_clamped_u8(v: f32) -> u8`, implemented as `v.round_ties_even() as u8` (the float cast supplies the clamp). A bare `as u8` silently truncates, which is off by one compared with TS.
+- Rust sugar uses plain `[u8]`.
+- Home for vocabulary aliases (`Ref`, `Callback`, `EntitySlot`, `Kind`, `Uint8ClampedArray`) and helpers: to be decided. Proposed: a small `flight-ir` crate.
+
 ## Object identity: decision (A2, trial, user 2026-10-20)
 
 One uniform rule for every `create_*`:
