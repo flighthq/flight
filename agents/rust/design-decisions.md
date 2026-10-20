@@ -22,7 +22,14 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 
 Current state, to be reconciled: collision uses 820 f64 and 0 f32, path 654 f64, path-boolean 222 f64, and bitmap is mixed.
 
-## D2 Open enums and additions — PROPOSED
+## D2 Open enums and additions — DIRECTION APPROVED (2026-10-20)
+
+User ruling:
+- An object says what it is (`kind`) and may carry type-specific data. In OOP terms, `kind` is the class identity.
+- Handlers are loosely coupled to types through dispatch tables keyed by kind. **No large switch statements** over kinds; closed enums are not used for open sets.
+- The `data` field is always present, even when it is null.
+
+This matches pattern (A) below. A worked example, still open on mechanics, is in `agents/sketches/scene2d-sprite.md`.
 
 TS has three patterns (see `refs/flight/packages/types/src`):
 1. **Closed unions** for hot paths, such as particle forces, colliders and emitter shapes. TS comments say that registry dispatch would be too slow there.
