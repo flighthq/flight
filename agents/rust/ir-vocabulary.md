@@ -29,6 +29,7 @@ The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` (`cargo
 | `Option<T>` | `T | null` | `std::optional<T> (pointer for Ref)` | `Null<T>` | established |  |
 | `Vec<T>` | `T[]` | `std::vector<T>` | `Array<T>` | established | Growable (user 2026-10-20): `Vec<f32>` → `number[]`. Also the type for iterated collections (D3) |
 | `&mut [N] / [N; LEN] (N numeric)` | `Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array` | `std::span<N> / std::array<N, LEN>` | `haxe.io.Float32Array etc.` | established | Fixed length (user 2026-10-20): the typed array is picked by element type. `usize`/`bool` slices have no typed array (open) |
+| `Box<[N]> (N numeric)` | `the matching typed array` | `std::unique_ptr<N[]> + length` | `haxe.io.Float32Array etc.` | proposed | Owned, fixed length set at creation (vertex data, pixels, index buffers) |
 | `&[N] (N numeric, read-only)` | `Readonly<Float32Array> or ArrayLike<number>` | `std::span<const N>` | `haxe.io.Float32Array etc.` | open | Read-only input: the typed array (consistent with &mut) vs ArrayLike (accepts both) |
 | `&[T] / &mut [T] / [T; LEN] (T non-numeric)` | `readonly T[] / T[]` | `std::span<const T> / std::span<T> / std::array` | `Array<T>` | proposed | No typed array exists for structs or strings |
 | `HashMap<K, V>` | `Map<K, V>` | `std::unordered_map<K, V>` | `Map<K, V>` | established | Lookup only; never iterated (D3) |
@@ -56,6 +57,8 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
    - 44 returns;
    - **10 outputs that grow** (which must stay `Vec`);
    - plus 178 type fields.
+
+   **How each array's type is chosen (user, 2026-10-20):** picking `Vec` or a fixed-length type for a given API is a negotiation. It weighs both the TS API and what is appropriate in Rust. Once agreed, the Rust type determines the TS type mechanically, and consistency across both environments is the target. Where the agreed Rust type changes an existing TS array type, that change is a reviewed decision. Agents do not choose it unilaterally.
 
    Still open:
    - Read-only `&[N]`: `Readonly<Float32Array>` (consistent) or `ArrayLike<number>` (accepts both).
