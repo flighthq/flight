@@ -562,16 +562,22 @@ Totals: order 5, count 57, names 94, missing 75, extra 112.
 - `initialize_velocity_explanation`
 - `initialize_velocity_sample`
 
-## Array negotiation items (`conform-array`, 2026-10-20)
+## Array negotiation items (`conform-array`, updated 2026-10-20)
 
-The vocabulary approved these mappings: `Vec<N>` → `number[]`, fixed-length `&mut [N]`/`[N; LEN]`/`Box<[N]>` → a typed array, and read-only `&[N]` → `ArrayLike<number>`. Each entry below is an API where the current Rust type would change the existing TS array type. Each needs a decision: change the Rust type, accept the TS change (then mark it `allow(conform-array) <reason>`), or extend the vocabulary.
+Mappings (vocabulary): `Vec<N>`/`&Vec<N>` → `number[]`; `&mut [N]`/`[N; LEN]`/`Box<[N]>`/`&Box<[N]>` → typed array; bare `&[N]` → `ArrayLike<number>`, used only when general is intended. Pixels: TS `Uint8ClampedArray` → `Uint8Array` is approved, so those entries need only the Rust code change. Specific over permissive (user): widening a specific TS input to `ArrayLike` is also a negotiation item. Each entry needs a decision: change the Rust type, accept the TS change (`allow(conform-array) <reason>`), or extend the vocabulary.
 
 Summary:
-- 36 `Uint8ClampedArray` in TS, which `u8` cannot express (open vocabulary row).
-- 21 `number[]` → `Float32Array` (fixed-length outputs).
-- 16 `number[] | Float32Array` unions narrowing to `Float32Array` (mostly animation).
-- 7 `Uint8Array` returned as `Vec<u8>` (likely should become `Box<[u8]>`).
-- 1 `Float32Array` returned as `Vec<f32>`.
+- 25: Rust `Uint8Array` vs TS `Uint8ClampedArray`
+- 21: Rust `Float32Array` vs TS `number[]`
+- 21: Rust `ArrayLike<number>` vs TS `number[]`
+- 16: Rust `Float32Array` vs TS `Float32Array | number[]`
+- 13: Rust `ArrayLike<number>` vs TS `Uint8ClampedArray`
+- 11: Rust `number[]` vs TS `Uint8ClampedArray`
+- 11: Rust `ArrayLike<number>` vs TS `Float32Array`
+- 7: Rust `number[]` vs TS `Uint8Array`
+- 6: Rust `ArrayLike<number>` vs TS `Uint8Array`
+- 1: Rust `ArrayLike<number>` vs TS `Uint32Array`
+- 1: Rust `number[]` vs TS `Float32Array`
 
 ### flight-adjustments (21)
 
@@ -613,19 +619,35 @@ Summary:
 - `sample_animation_state_machine` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
 - `sample_animation_track` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
 
-### flight-bitmap (38)
+### flight-bitmap (62)
 
+- `apply_bitmap_palette_map` param `alpha_map`: Rust → `ArrayLike<number>`, TS `number[]`
+- `apply_bitmap_palette_map` param `blue_map`: Rust → `ArrayLike<number>`, TS `number[]`
+- `apply_bitmap_palette_map` param `green_map`: Rust → `ArrayLike<number>`, TS `number[]`
+- `apply_bitmap_palette_map` param `red_map`: Rust → `ArrayLike<number>`, TS `number[]`
 - `bevel_bitmap` param `out`: Rust → `number[]`, TS `Uint8ClampedArray`
 - `bevel_bitmap` param `scratch`: Rust → `number[]`, TS `Uint8ClampedArray`
+- `blur_bitmap_pixels_horizontal_weighted` param `kernel`: Rust → `ArrayLike<number>`, TS `Float32Array`
 - `blur_bitmap_pixels_horizontal_weighted` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `blur_bitmap_pixels_horizontal_weighted` param `source`: Rust → `ArrayLike<number>`, TS `Uint8ClampedArray`
 - `blur_bitmap_pixels_horizontal` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `blur_bitmap_pixels_horizontal` param `source`: Rust → `ArrayLike<number>`, TS `Uint8ClampedArray`
+- `blur_bitmap_pixels_vertical_weighted` param `kernel`: Rust → `ArrayLike<number>`, TS `Float32Array`
 - `blur_bitmap_pixels_vertical_weighted` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `blur_bitmap_pixels_vertical_weighted` param `source`: Rust → `ArrayLike<number>`, TS `Uint8ClampedArray`
 - `blur_bitmap_pixels_vertical` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `blur_bitmap_pixels_vertical` param `source`: Rust → `ArrayLike<number>`, TS `Uint8ClampedArray`
 - `box_blur_bitmap` param `out`: Rust → `number[]`, TS `Uint8ClampedArray`
 - `box_blur_bitmap` param `scratch`: Rust → `number[]`, TS `Uint8ClampedArray`
+- `build_bitmap_gradient_ramp` param `alphas`: Rust → `ArrayLike<number>`, TS `number[]`
+- `build_bitmap_gradient_ramp` param `colors`: Rust → `ArrayLike<number>`, TS `number[]`
 - `build_bitmap_gradient_ramp` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `build_bitmap_gradient_ramp` param `ratios`: Rust → `ArrayLike<number>`, TS `number[]`
+- `color_matrix_bitmap` param `matrix`: Rust → `ArrayLike<number>`, TS `number[]`
 - `color_matrix_bitmap` param `out`: Rust → `number[]`, TS `Uint8ClampedArray`
+- `composite_bitmap_pixels` param `pixels`: Rust → `ArrayLike<number>`, TS `Uint8ClampedArray`
 - `convert_bitmap_pixel_order` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `convert_bitmap_pixel_order` param `source`: Rust → `ArrayLike<number>`, TS `Uint8ClampedArray`
 - `convolve_bitmap` param `out`: Rust → `number[]`, TS `Uint8ClampedArray`
 - `dilate_bitmap` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
 - `displace_bitmap` param `out`: Rust → `number[]`, TS `Uint8ClampedArray`
@@ -634,13 +656,17 @@ Summary:
 - `encode_bitmap` return: Rust → `number[]`, TS `Uint8Array`
 - `erode_bitmap` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
 - `extract_bitmap_pixels` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `fill_bitmap_linear_gradient` param `ramp`: Rust → `ArrayLike<number>`, TS `Uint8ClampedArray`
+- `fill_bitmap_radial_gradient` param `ramp`: Rust → `ArrayLike<number>`, TS `Uint8ClampedArray`
 - `gaussian_blur_bitmap` param `out`: Rust → `number[]`, TS `Uint8ClampedArray`
 - `gaussian_blur_bitmap` param `scratch`: Rust → `number[]`, TS `Uint8ClampedArray`
 - `glow_bitmap` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
 - `glow_bitmap` param `scratch`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
 - `gradient_bevel_bitmap` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `gradient_bevel_bitmap` param `ramp`: Rust → `ArrayLike<number>`, TS `Uint8ClampedArray`
 - `gradient_bevel_bitmap` param `scratch`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
 - `gradient_glow_bitmap` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `gradient_glow_bitmap` param `ramp`: Rust → `ArrayLike<number>`, TS `Uint8ClampedArray`
 - `gradient_glow_bitmap` param `scratch`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
 - `initialize_bitmap_fingerprint` param `cells`: Rust → `number[]`, TS `Uint8Array`
 - `inner_glow_bitmap` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
@@ -650,30 +676,74 @@ Summary:
 - `median_bitmap` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
 - `pixelate_bitmap` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
 - `premultiply_bitmap_pixels` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `premultiply_bitmap_pixels` param `source`: Rust → `ArrayLike<number>`, TS `Uint8ClampedArray`
 - `sharpen_bitmap` param `out`: Rust → `number[]`, TS `Uint8ClampedArray`
 - `sharpen_bitmap` param `scratch`: Rust → `number[]`, TS `Uint8ClampedArray`
 - `unpremultiply_bitmap_pixels` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `unpremultiply_bitmap_pixels` param `source`: Rust → `ArrayLike<number>`, TS `Uint8ClampedArray`
+- `write_bitmap_pixels32` param `pixels`: Rust → `ArrayLike<number>`, TS `Uint32Array`
+- `write_bitmap_pixels` param `pixels`: Rust → `ArrayLike<number>`, TS `Uint8ClampedArray`
 
-### flight-compression (3)
+### flight-collision (3)
 
+- `get_collision_convex_validation_status3d` param `points`: Rust → `ArrayLike<number>`, TS `number[]`
+- `get_collision_polygon_validation_status2d` param `points`: Rust → `ArrayLike<number>`, TS `number[]`
+- `write_collision_convex_hull_faces3d` param `points`: Rust → `ArrayLike<number>`, TS `number[]`
+
+### flight-compression (7)
+
+- `compress_deflate_zlib` param `bytes`: Rust → `ArrayLike<number>`, TS `Uint8Array`
 - `compress_deflate_zlib` return: Rust → `number[]`, TS `Uint8Array`
+- `compress_deflate` param `bytes`: Rust → `ArrayLike<number>`, TS `Uint8Array`
 - `compress_deflate` return: Rust → `number[]`, TS `Uint8Array`
+- `compress_lzma` param `bytes`: Rust → `ArrayLike<number>`, TS `Uint8Array`
 - `compress_lzma` return: Rust → `number[]`, TS `Uint8Array`
+- `compute_adler32` param `input`: Rust → `ArrayLike<number>`, TS `Uint8Array`
 
 ### flight-easing (1)
 
 - `create_easing_samples` return: Rust → `number[]`, TS `Float32Array`
 
-### flight-encoding (1)
+### flight-encoding (2)
 
+- `decode_utf8` param `bytes`: Rust → `ArrayLike<number>`, TS `Uint8Array`
 - `encode_utf8` return: Rust → `number[]`, TS `Uint8Array`
 
-### flight-particles (3)
+### flight-geometry (7)
+
+- `matrix4_transform_vectors` param `vectors`: Rust → `ArrayLike<number>`, TS `Float32Array`
+- `set_matrix3_from_float32_array` param `source`: Rust → `ArrayLike<number>`, TS `Float32Array`
+- `set_matrix4_from_float32_array` param `source`: Rust → `ArrayLike<number>`, TS `Float32Array`
+- `set_matrix_from_float32_array` param `source`: Rust → `ArrayLike<number>`, TS `Float32Array`
+- `set_vector2_from_float32_array` param `source`: Rust → `ArrayLike<number>`, TS `Float32Array`
+- `set_vector3_from_float32_array` param `source`: Rust → `ArrayLike<number>`, TS `Float32Array`
+- `set_vector4_from_float32_array` param `source`: Rust → `ArrayLike<number>`, TS `Float32Array`
+
+### flight-math (7)
+
+- `mean` param `values`: Rust → `ArrayLike<number>`, TS `number[]`
+- `median` param `values`: Rust → `ArrayLike<number>`, TS `number[]`
+- `random_weighted` param `weights`: Rust → `ArrayLike<number>`, TS `number[]`
+- `standard_deviation` param `values`: Rust → `ArrayLike<number>`, TS `number[]`
+- `variance` param `values`: Rust → `ArrayLike<number>`, TS `number[]`
+- `weighted_average` param `values`: Rust → `ArrayLike<number>`, TS `number[]`
+- `weighted_average` param `weights`: Rust → `ArrayLike<number>`, TS `number[]`
+
+### flight-particles (5)
 
 - `lerp_hsv_direct` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
+- `lerp_hsv_in_place` param `birth`: Rust → `ArrayLike<number>`, TS `Float32Array`
 - `lerp_hsv_in_place` param `colors_out`: Rust → `Float32Array`, TS `Float32Array | number[]`
+- `lerp_hsv_in_place` param `death`: Rust → `ArrayLike<number>`, TS `Float32Array`
 - `write_particle_spawn_offset` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
 
-### flight-textbidi (1)
+### flight-path (3)
 
+- `append_path_polygon` param `points`: Rust → `ArrayLike<number>`, TS `number[]`
+- `append_path_polyline` param `points`: Rust → `ArrayLike<number>`, TS `number[]`
+- `dash_path` param `dash`: Rust → `ArrayLike<number>`, TS `number[]`
+
+### flight-textbidi (2)
+
+- `reorder_bidi_line` param `levels`: Rust → `ArrayLike<number>`, TS `Uint8Array`
 - `resolve_bidi_levels` return: Rust → `number[]`, TS `Uint8Array`

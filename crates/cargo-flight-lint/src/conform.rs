@@ -587,10 +587,18 @@ pub fn rust_array_kind(ty: &syn::Type) -> Option<String> {
             }
             if let syn::Type::Path(p) = &*r.elem
                 && let Some(seg) = p.path.segments.last()
-                && seg.ident == "Vec"
             {
-                numeric_elem(single_generic(seg)?)?;
-                return Some(NUMBER_ARRAY.to_string());
+                // Specific containers map to specific TS types: &Vec<N> → number[],
+                // &Box<[N]> → the typed array. Only a bare slice is the general ArrayLike.
+                if seg.ident == "Vec" {
+                    numeric_elem(single_generic(seg)?)?;
+                    return Some(NUMBER_ARRAY.to_string());
+                }
+                if seg.ident == "Box"
+                    && let syn::Type::Slice(sl) = single_generic(seg)?
+                {
+                    return numeric_elem(&sl.elem).map(|t| t.to_string());
+                }
             }
             return None;
         }
@@ -690,8 +698,9 @@ fn check_arrays(
         let (Some(rk), Some(tk)) = (rk, tk) else {
             continue;
         };
-        // Approved consequence of the mapping: read-only inputs widen to ArrayLike.
-        if rk == ARRAY_LIKE || rk == tk {
+        // Specific over permissive (user, 2026-10-20): widening a specific TS input to
+        // ArrayLike is a change to negotiate too, not an automatic consequence.
+        if rk == tk {
             continue;
         }
         out.push(Violation::new(
@@ -748,6 +757,8 @@ mod tests {
         assert_eq!(rust_array_kind(&ty("Vec<f32>")).as_deref(), Some("number[]"));
         assert_eq!(rust_array_kind(&ty("Box<[u16]>")).as_deref(), Some("Uint16Array"));
         assert_eq!(rust_array_kind(&ty("[f32; 9]")).as_deref(), Some("Float32Array"));
+        assert_eq!(rust_array_kind(&ty("&Vec<f32>")).as_deref(), Some("number[]"));
+        assert_eq!(rust_array_kind(&ty("&Box<[f32]>")).as_deref(), Some("Float32Array"));
         assert_eq!(rust_array_kind(&ty("&[Vector2]")), None);
         assert_eq!(ts_array_kind("Readonly<Float32Array>").as_deref(), Some("Float32Array"));
         assert_eq!(ts_array_kind("readonly number[] | null").as_deref(), Some("number[]"));
