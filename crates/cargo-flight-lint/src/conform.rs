@@ -558,6 +558,10 @@ const TYPED_ARRAYS: &[(&str, &str)] = &[
 const ARRAY_LIKE: &str = "ArrayLike<number>";
 const NUMBER_ARRAY: &str = "number[]";
 
+fn typed_alias(name: &str) -> Option<&'static str> {
+    return TYPED_ARRAYS.iter().find(|(_, t)| *t == name).map(|(_, t)| *t);
+}
+
 fn numeric_elem(ty: &syn::Type) -> Option<&'static str> {
     if let syn::Type::Path(p) = ty
         && let Some(id) = p.path.get_ident()
@@ -594,10 +598,9 @@ pub fn rust_array_kind(ty: &syn::Type) -> Option<String> {
                     numeric_elem(single_generic(seg)?)?;
                     return Some(NUMBER_ARRAY.to_string());
                 }
-                if seg.ident == "Box"
-                    && let syn::Type::Slice(sl) = single_generic(seg)?
-                {
-                    return numeric_elem(&sl.elem).map(|t| t.to_string());
+                // Typed-array aliases name the TS type exactly, for reads and writes.
+                if let Some(name) = typed_alias(&seg.ident.to_string()) {
+                    return Some(name.to_string());
                 }
             }
             return None;
@@ -614,6 +617,13 @@ pub fn rust_array_kind(ty: &syn::Type) -> Option<String> {
                 && let syn::Type::Slice(s) = inner
             {
                 return numeric_elem(&s.elem).map(|t| t.to_string());
+            }
+            if seg.ident == "Box"
+                && let syn::Type::Path(ip) = inner
+                && let Some(id) = ip.path.get_ident()
+                && let Some(name) = typed_alias(&id.to_string())
+            {
+                return Some(name.to_string());
             }
             if seg.ident == "Option" {
                 return rust_array_kind(inner);
@@ -758,7 +768,9 @@ mod tests {
         assert_eq!(rust_array_kind(&ty("Box<[u16]>")).as_deref(), Some("Uint16Array"));
         assert_eq!(rust_array_kind(&ty("[f32; 9]")).as_deref(), Some("Float32Array"));
         assert_eq!(rust_array_kind(&ty("&Vec<f32>")).as_deref(), Some("number[]"));
-        assert_eq!(rust_array_kind(&ty("&Box<[f32]>")).as_deref(), Some("Float32Array"));
+        assert_eq!(rust_array_kind(&ty("&Float32Array")).as_deref(), Some("Float32Array"));
+        assert_eq!(rust_array_kind(&ty("&mut Uint16Array")).as_deref(), Some("Uint16Array"));
+        assert_eq!(rust_array_kind(&ty("Box<Float32Array>")).as_deref(), Some("Float32Array"));
         assert_eq!(rust_array_kind(&ty("&[Vector2]")), None);
         assert_eq!(ts_array_kind("Readonly<Float32Array>").as_deref(), Some("Float32Array"));
         assert_eq!(ts_array_kind("readonly number[] | null").as_deref(), Some("number[]"));

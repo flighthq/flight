@@ -31,7 +31,7 @@ The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` (`cargo
 | `&mut [N] / [N; LEN] (N numeric)` | `Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array` | `std::span<N> / std::array<N, LEN>` | `haxe.io.Float32Array etc.` | established | Fixed length (user 2026-10-20): the typed array is picked by element type. `usize`/`bool` slices have no typed array (open) |
 | `Box<[N]> (N numeric)` | `the matching typed array` | `std::unique_ptr<N[]> + length` | `haxe.io.Float32Array etc.` | established | Owned, fixed length set at creation (vertex data, pixels, index buffers); user 2026-10-20 |
 | `&Vec<N> (read-only)` | `readonly number[]` | `const std::vector<N>&` | `Array<N>` | established | Input that must be a plain array (user 2026-10-20: specific over permissive). Workspace allows clippy::ptr_arg |
-| `&Box<[N]> (read-only)` | `Readonly<Float32Array> etc.` | `std::span<const N>` | `haxe.io.Float32Array etc.` | established | Input that must be a typed array. Workspace allows clippy::borrowed_box |
+| `Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array (aliases of [f32] etc.)` | `the same typed array` | `std::span<N>` | `haxe.io.Float32Array etc.` | established | For a TS API that declares a typed array: `&Float32Array` → `Readonly<Float32Array>` while Rust still accepts any f32 slice; `&mut Float32Array` / `Box<Float32Array>` also allowed. Specific in TS, idiomatic in Rust |
 | `&[N] (N numeric, read-only)` | `ArrayLike<number>` | `std::span<const N>` | `haxe.io.Float32Array etc.` | established | Input that is deliberately general: accepts either array kind (user 2026-10-20). Use it only when general is intended; prefer the specific forms |
 | `&[T] / &mut [T] / [T; LEN] (T non-numeric)` | `readonly T[] / T[]` | `std::span<const T> / std::span<T> / std::array` | `Array<T>` | proposed | No typed array exists for structs or strings |
 | `HashMap<K, V>` | `Map<K, V>` | `std::unordered_map<K, V>` | `Map<K, V>` | established | Lookup only; never iterated (D3) |
@@ -76,6 +76,13 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
    - `u32`/`i32` map to those idioms.
    - Values that legitimately exceed 32 bits, such as collision's packed feature ids (`FEATURE_INDEX_LIMIT = 1 << 25`), use `i64`/`u64` with a declared range of at most 2^53 (`allow(contract-vocabulary) <range>`).
    - `isize` is not used.
+
+## Choosing an array type (user, 2026-10-20)
+
+- Be specific rather than more permissive than intended. If TS declares a typed array, it must not become `ArrayLike` just because the Rust parameter is read-only.
+- **TS declares a typed array:** use the typed-array alias, e.g. `&Float32Array`. TS keeps exactly `Readonly<Float32Array>`, while Rust callers can still pass a `Vec`, an array or a slice.
+- **TS declares `number[]`:** `&Vec<N>` if it must be a plain array. Use `&[N]` → `ArrayLike<number>` only where callers realistically pass either kind. That widening is a negotiated `allow(conform-array)`.
+- **Outputs:** `&mut Vec<N>` (grows), `&mut [N]` / `&mut Float32Array` (fixed length).
 
 ## Porting rule: pixels (user, 2026-10-20)
 
