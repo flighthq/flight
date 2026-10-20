@@ -32,7 +32,13 @@ TS has three patterns (see `refs/flight/packages/types/src`):
 Proposal:
 - Closed TS union → closed Rust enum. The payload of each variant is a single named struct (`Circle(CollisionCircle2D)`), never anonymous fields.
 - Open TS union → Rust enum of the built-ins plus `Custom(Custom<Name>)`. `Custom<Name>` carries `kind: String` (vendor-prefixed) and a payload. Dispatch for `Custom` goes through a registry keyed by kind, which is explicit state per D5.
-- **Custom payload (user guidance, 2026-10-20):** the IR must preserve identity and stay clear for the TS/C++ transpilers. C portability is *not* a constraint on the IR: a planned Rust FFI layer will translate generic C-portable types to the internal representations. So the payload should be a real typed value, not an opaque `u64` handle. The leading option is a trait-object payload (`Custom(Rc/Arc<dyn CustomShape2D>)`), which maps to a TS interface and a C++ abstract base, with the registry dispatching on `kind`. The alternative is a generic parameter. **Pending: choose between them** (trait object recommended, because generics would spread through every signature).
+- **Custom payload. Under discussion; reframed in scene2d terms (2026-10-20).**
+  - TS pattern: the node has an open `kind: string`, plus a `data` slot that each kind narrows by extending the base interface (`Sprite extends Node2D { data: SpriteData }`). `RenderState.nodeRenderers: Map<Kind, NodeRenderer>` is filled by `registerNodeRenderer(state, kind, renderer)`, and the renderer receives the base node and casts it (`(proxy.source as Sprite).data.texture`). The registry key is what guarantees the cast is safe.
+  - The open question is how the IR spells that cast:
+    - **(A) Erased data slot + checked cast** (what flight-rs-native did): `data: Option<Box<dyn Any>>`, read with `downcast_ref::<SpriteData>()` wrapped in a free function, e.g. `get_sprite_data(node) -> Option<&SpriteData>`. Transpiles to TS `as Sprite` and C++ `static_cast`.
+    - **(B) Closed enum of kinds**: `NodeData::Sprite(SpriteData) | Shape(..) | …`. This closes the set. flight-rs-native's GL path drifted into this (`GlRendererSlot`), and third-party node kinds can no longer plug in there.
+  - Generics do not apply. A scene mixes kinds in one tree, so the data has to be erased (A) or enumerated (B).
+  - Principal leans (A) as the 1:1 translation (D0). It would keep `Kind` a string (the user prefers no `u64` `KindId`), make `NodeRenderer` a struct of fn pointers like the TS object of functions (no traits), and restrict `dyn Any` to designated data slots.
 - No `From` impls on enums in the contract. Those may live in the sugar layer (D6).
 - Closed enums that came from TS string literals keep a canonical string table (`*_to_string` / `parse_*` free functions) where TS exposes the strings.
 
