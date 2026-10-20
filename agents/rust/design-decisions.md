@@ -6,6 +6,13 @@ References: the TS source is `github.com/flighthq/flight` (`packages/<name>/src`
 
 Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-lint check` 3112 violations.
 
+## D0 Translate, don't rewrite — APPROVED (user, 2026-10-20)
+
+- The TS API is the contract being translated. Rust signatures match TS names, parameter names, parameter order and parameter shape (an options object stays one options struct).
+- Any divergence, existing or proposed, is discussed with the user before it is applied. That includes divergences recommended in this document. An approved divergence is marked `allow(conform-params|conform-extra) <reason>` or `conform-skip`, so the lint keeps it visible.
+- Existing drift is inventoried in `agents/api-drift.md` for review. Fleet agents must not "fix" drift, in either direction, without a ruling.
+- The conform baseline only blocks *new* drift. An entry being in the baseline does not mean it is accepted.
+
 ## D1 Numerics — APPROVED
 
 - f32 is the default for all value types.
@@ -90,7 +97,7 @@ Proposed mechanics:
 - **error:** `f64` (D1; declare with `allow(f64) <reason>`), `hidden-state` (D5), `sugar-delegates` (D6), plus all the existing structure and test rules.
 - **error (D3 approved 2026-10-20):** `hashmap-iteration`.
 - **warn**, until rulings land: `contract-dyn-any` and `contract-shared-mutability` (D2/D4/D5), `enum-payload-named` (D2).
-- **Ratchet:** `--baseline agents/baselines/{check,conform}.txt` fails only on new violations. Baseline at implementation: check 2380 (2270 errors, 110 warnings); conform 343 (75 missing, 148 extra, 155 params, of which 56 differ in count and 99 in names only).
+- **Ratchet:** `--baseline agents/baselines/{check,conform}.txt` fails only on new violations. Baseline at implementation: check 2380 (2270 errors, 110 warnings); conform 343 (75 missing, 112 extra, 156 params: 5 reordered, 57 count, 94 names only). See `agents/api-drift.md`.
 - **conform fixes:** names now match ignoring case and underscores (fixing `Ray3D`); matching is scoped to the crate's own TS package (`flight-x` ↔ `packages/x/src`); parameter names and order are checked; `export const f = (...) =>` functions are recognized; missing functions are tagged `public` (`index.ts`) or `contract-only` (`contract.ts`). TS already has the D6 split: `index.ts` is the curated public API and `contract.ts` is the full contract.
 - **Manifests:** `manifest --write|--check`. Only flight-geometry is frozen so far (`agents/manifests/flight-geometry.{api,tests}`). Other crates get frozen once their rulings are applied and the user approves them.
 - **Findings in flight-geometry** (now visible because the false positives are gone):
