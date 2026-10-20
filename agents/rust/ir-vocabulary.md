@@ -93,3 +93,14 @@ Principal's reading: these answers fit (A) and rule out (B), because B needs a s
 - **(A1)** Accept a weak parent link and document the difference.
 - **(A2)** Keep the parent link strong and require explicit `remove_child`/`dispose` to break the cycle.
 - **(A3)** Use a cycle-collecting reference type. This would be bespoke in Rust and C++.
+
+**(D) Node store outside the hierarchy.** Raised after outside review (2026-10-20). The user agrees with the concept; it is not yet decided.
+- A store exists outside any hierarchy, the way `RenderState` exists outside the render functions.
+- Nodes are created in the store. A tree is just parent/child links between nodes, and a scene root is one more node. The scene therefore still comes into being as nodes are stacked, which answers the objection to (B).
+- Rust/C++: the store owns the storage, and nodes are `Handle<T>` (generational ids).
+- TS: the node is the object itself, so the single transpiler rule is that `Handle<T>` becomes `T`.
+- `destroy_node(store, node)` has the same observable rule in every target: afterwards the node is invalid, and checks fail. Only *when memory is reclaimed* differs, and that is not observable: Rust/C++ hold it until the store is destroyed, while TS GC can collect earlier.
+- Advantages: no refcount cycles (including listener closures that capture their node, which a weak parent link cannot prevent), the store is `Send`, and there are no borrow panics.
+- Cost: a store parameter on structural calls, and explicit `destroy` instead of "GC collects it". This is an API change in every target.
+
+Next step: extract the actual TS lifetime semantics (add, remove, reparent, destroy, and every holder of node references) to see which model breaks the fewest existing behaviors.
