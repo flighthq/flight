@@ -73,7 +73,8 @@ mod compress_deflate {
             bytes[i] = ((i as u32).wrapping_mul(31) & 0xff) as u8;
         }
         let tail: Vec<u8> = bytes[..64].to_vec();
-        bytes[bytes.len() - 64..].copy_from_slice(&tail);
+        let end = bytes.len() - 64;
+        bytes[end..].copy_from_slice(&tail);
         let compressed = compress_deflate(&bytes);
         assert_eq!(
             decompress_deflate(&compressed, bytes.len(), CompressionFraming::Raw),

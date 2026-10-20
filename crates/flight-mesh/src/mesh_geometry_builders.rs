@@ -187,7 +187,7 @@ pub fn create_cylinder_mesh_geometry(
             let mut nx = cos;
             let mut ny = slope;
             let mut nz = sin;
-            let len = (nx * nx + ny * ny + nz * nz).sqrt().max(1.0);
+            let len = (nx * nx + ny * ny + nz * nz).sqrt().max(f32::EPSILON);
             nx /= len;
             ny /= len;
             nz /= len;
@@ -540,19 +540,19 @@ pub fn create_torus_knot_mesh_geometry(
         let mut tgx = t1[0] - t0[0];
         let mut tgy = t1[1] - t0[1];
         let mut tgz = t1[2] - t0[2];
-        let tg_len = (tgx * tgx + tgy * tgy + tgz * tgz).sqrt().max(1.0);
+        let tg_len = (tgx * tgx + tgy * tgy + tgz * tgz).sqrt().max(f32::EPSILON);
         tgx /= tg_len; tgy /= tg_len; tgz /= tg_len;
 
         let mut bx = tgx + c[0];
         let mut by = tgy + c[1];
         let mut bz = tgz + c[2];
-        let b_len = (bx * bx + by * by + bz * bz).sqrt().max(1.0);
+        let b_len = (bx * bx + by * by + bz * bz).sqrt().max(f32::EPSILON);
         bx /= b_len; by /= b_len; bz /= b_len;
 
         let mut nnx = tgy * bz - tgz * by;
         let mut nny = tgz * bx - tgx * bz;
         let mut nnz = tgx * by - tgy * bx;
-        let n_len = (nnx * nnx + nny * nny + nnz * nnz).sqrt().max(1.0);
+        let n_len = (nnx * nnx + nny * nny + nnz * nnz).sqrt().max(f32::EPSILON);
         nnx /= n_len; nny /= n_len; nnz /= n_len;
 
         let bnx = tgy * nnz - tgz * nny;
@@ -621,7 +621,7 @@ pub fn create_torus_mesh_geometry(
             let mut nx = px - cx;
             let mut ny = py - cy;
             let nz = pz;
-            let len = (nx * nx + ny * ny + nz * nz).sqrt().max(1.0);
+            let len = (nx * nx + ny * ny + nz * nz).sqrt().max(f32::EPSILON);
             nx /= len; ny /= len;
             normals.push(nx);
             normals.push(ny);

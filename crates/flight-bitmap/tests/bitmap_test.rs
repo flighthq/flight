@@ -48,12 +48,21 @@ mod convert_bitmap_alpha_type_fn {
     }
 
     #[test]
-    fn noop_when_target_matches_current() {
+    fn is_a_noop_when_target_matches_current() {
         let mut img = create_bitmap(1, 1, 0xff0000ff);
         img.alpha_type = AlphaType::Straight;
         let before: Vec<u8> = img.data.clone();
         convert_bitmap_alpha_type(&mut img, AlphaType::Straight);
         assert_eq!(img.data, before);
+    }
+
+    #[test]
+    fn handles_zero_alpha_pixels_on_unpremultiply() {
+        let mut img = create_bitmap(1, 1, 0x00000000);
+        img.alpha_type = AlphaType::Premultiplied;
+        convert_bitmap_alpha_type(&mut img, AlphaType::Straight);
+        assert_eq!(img.data[0], 0);
+        assert_eq!(img.data[3], 0);
     }
 }
 
@@ -61,7 +70,7 @@ mod create_bitmap_fn {
     use super::*;
 
     #[test]
-    fn creates_zeroed_when_no_color() {
+    fn creates_zeroed_image_data_when_no_color_provided() {
         let img = create_bitmap(2, 2, 0);
         assert_eq!(img.width, 2);
         assert_eq!(img.height, 2);
@@ -70,7 +79,7 @@ mod create_bitmap_fn {
     }
 
     #[test]
-    fn fills_with_given_color() {
+    fn fills_with_the_given_color() {
         let img = create_bitmap(2, 2, 0x112233ff);
         assert_eq!(img.data[0], 0x11);
         assert_eq!(img.data[1], 0x22);
@@ -83,7 +92,7 @@ mod invalidate_bitmap_fn {
     use super::*;
 
     #[test]
-    fn bumps_content_version() {
+    fn bumps_the_content_version_without_replacing_pixel_storage() {
         let mut bmp = create_bitmap(1, 1, 0);
         invalidate_bitmap(&mut bmp);
         assert_eq!(bmp.version, 1);

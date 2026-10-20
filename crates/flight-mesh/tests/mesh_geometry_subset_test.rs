@@ -12,7 +12,7 @@ fn canonical_layout() -> VertexAttributeLayout {
     };
 }
 
-mod add_mesh_geometry_subset_test {
+mod add_mesh_geometry_subset {
     use super::*;
 
     #[test]
@@ -31,7 +31,7 @@ mod add_mesh_geometry_subset_test {
     }
 }
 
-mod get_mesh_geometry_subset_triangle_count_test {
+mod get_mesh_geometry_subset_triangle_count {
     use super::*;
 
     #[test]
@@ -62,9 +62,21 @@ mod get_mesh_geometry_subset_triangle_count_test {
         assert_eq!(get_mesh_geometry_subset_triangle_count(&geometry, 5), 0);
         assert_eq!(get_mesh_geometry_subset_triangle_count(&geometry, -1), 0);
     }
+
+    #[test]
+    fn counts_strip_triangles_as_index_count_minus_2() {
+        let geometry = create_mesh_geometry(MeshGeometryOptions {
+            indices: Some(IndexBuffer::U16(vec![0, 1, 2, 3])),
+            layout: canonical_layout(),
+            vertices: vec![0.0f32; 4 * 12],
+            subsets: None,
+            topology: Some(PrimitiveTopology::TriangleStrip),
+        });
+        assert_eq!(get_mesh_geometry_subset_triangle_count(&geometry, 0), 2);
+    }
 }
 
-mod get_mesh_geometry_triangle_subset_index_test {
+mod get_mesh_geometry_triangle_subset_index {
     use super::*;
 
     #[test]
@@ -95,9 +107,24 @@ mod get_mesh_geometry_triangle_subset_index_test {
         assert_eq!(get_mesh_geometry_triangle_subset_index(&geometry, 99), -1);
         assert_eq!(get_mesh_geometry_triangle_subset_index(&geometry, -1), -1);
     }
+
+    #[test]
+    fn resolves_overlapping_strip_triangles_and_rejects_non_triangle_topology() {
+        let mut geometry = create_mesh_geometry(MeshGeometryOptions {
+            indices: Some(IndexBuffer::U16(vec![0, 1, 2, 3])),
+            layout: canonical_layout(),
+            vertices: vec![0.0f32; 4 * 12],
+            subsets: Some(vec![MeshSubset { index_count: 4, index_offset: 0 }]),
+            topology: Some(PrimitiveTopology::TriangleStrip),
+        });
+        assert_eq!(get_mesh_geometry_triangle_subset_index(&geometry, 0), 0);
+        assert_eq!(get_mesh_geometry_triangle_subset_index(&geometry, 1), 0);
+        geometry.topology = PrimitiveTopology::LineList;
+        assert_eq!(get_mesh_geometry_triangle_subset_index(&geometry, 0), -1);
+    }
 }
 
-mod set_mesh_geometry_subsets_test {
+mod set_mesh_geometry_subsets {
     use super::*;
 
     #[test]

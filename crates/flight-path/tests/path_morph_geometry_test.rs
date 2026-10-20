@@ -15,6 +15,19 @@ mod build_path_morph_test {
     }
 
     #[test]
+    fn returns_success_for_compatible_open_paths() {
+        let mut start = create_path(PathWinding::NonZero);
+        append_path_move_to(&mut start, 0.0, 0.0);
+        append_path_line_to(&mut start, 1.0, 0.0);
+        let mut end = create_path(PathWinding::NonZero);
+        append_path_move_to(&mut end, 0.0, 0.0);
+        append_path_line_to(&mut end, 2.0, 0.0);
+        let result = build_path_morph(&start, &end);
+        assert_eq!(result.issue, PathMorphCreationReason::Ok);
+        assert!(result.morph.is_some());
+    }
+
+    #[test]
     fn fails_for_winding_mismatch() {
         let mut start = create_path(PathWinding::NonZero);
         append_path_rectangle(&mut start, 0.0, 0.0, 100.0, 100.0);

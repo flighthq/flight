@@ -111,7 +111,7 @@ fn rc_enc_encode_bit_tree_reverse(
     let mut m: i32 = 1;
     for i in 0..num_bits {
         let bit = (value >> i) & 1;
-        rc_enc_encode_bit(rc, probs, offset + m as usize, bit);
+        rc_enc_encode_bit(rc, probs, offset.wrapping_add(m as usize), bit);
         m = (m << 1) | bit;
     }
 }
@@ -493,7 +493,7 @@ fn lzma_hash_at(input: &[u8], pos: usize) -> usize {
 }
 
 fn lzma_insert_hash(input: &[u8], pos: usize, head: &mut [i32], prev: &mut [i32]) {
-    if pos + MATCH_MIN_LEN as usize <= input.len() {
+    if pos + 3 <= input.len() {
         let key = lzma_hash_at(input, pos);
         prev[pos] = head[key];
         head[key] = pos as i32;
@@ -557,7 +557,7 @@ fn lzma_find_match(
         }
     }
 
-    if pos + MATCH_MIN_LEN as usize <= input.len() {
+    if pos + 3 <= input.len() {
         let key = lzma_hash_at(input, pos);
         let mut candidate = head[key];
         let mut attempts = 0;

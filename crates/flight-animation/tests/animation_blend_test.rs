@@ -60,6 +60,19 @@ mod blend_animation_samples {
     }
 
     #[test]
+    fn supports_output_aliasing_either_input() {
+        let mut a = [0.0_f32, 10.0];
+        let a_copy = a;
+        blend_animation_samples(&mut a, &a_copy, &[10.0, 20.0], 0.25, false);
+        assert_eq!(a, [2.5, 12.5]);
+
+        let mut b = [10.0_f32, 20.0];
+        let b_copy = b;
+        blend_animation_samples(&mut b, &[0.0, 10.0], &b_copy, 0.25, false);
+        assert_eq!(b, [2.5, 12.5]);
+    }
+
+    #[test]
     fn slerps_quaternions_over_the_shortest_arc() {
         let mut out = [0.0, 0.0, 0.0, 0.0];
         blend_animation_samples(

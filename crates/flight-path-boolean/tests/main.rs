@@ -1,5 +1,6 @@
 mod boolean_paths_test;
 mod explain_path_boolean_test;
+mod fuzz_invariants_test;
 mod martinez_kernel_test;
 mod offset_path_test;
 mod resolve_path_regions_test;

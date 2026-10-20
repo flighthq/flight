@@ -3,53 +3,71 @@ use flight_bitmap::*;
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
-    BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h }
+    return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
 }
 
 mod sharpen_bitmap_fn {
     use super::*;
 
     #[test]
-    fn uniform_image_stays_same() {
-        let src = create_bitmap(8, 8, 0x808080ff);
+    fn amount_0_returns_the_source_rgb_and_preserves_alpha() {
+        let mut src = create_bitmap(3, 1, 0);
+        src.data[4] = 10; src.data[5] = 20; src.data[6] = 30; src.data[7] = 120;
         let sr = region(src);
-        let len = 8 * 8 * 4;
-        let mut out = vec![0u8; len];
-        let mut scratch = vec![0u8; len];
+        let mut out = vec![0u8; 3 * 4];
+        let mut scratch = vec![0u8; 3 * 4];
         let opts = BitmapSharpenOptions {
-            amount: Some(1.0),
-            radius_x: Some(1),
-            radius_y: Some(1),
-            passes: Some(1),
+            amount: Some(0.0),
+            radius_x: None,
+            radius_y: None,
+            passes: None,
         };
         sharpen_bitmap(&mut out, &mut scratch, &sr, &opts);
-        // Center pixel should still be ~0x80
-        let ci = (4 * 8 + 4) * 4;
-        assert!((out[ci] as i32 - 0x80).abs() <= 1);
+        assert_eq!(out[4], 10);
+        assert_eq!(out[5], 20);
+        assert_eq!(out[6], 30);
+        assert_eq!(out[7], 120);
     }
 
     #[test]
-    fn enhances_edges() {
-        let mut src = create_bitmap(8, 8, 0x404040ff);
-        // Bright center block
-        for y in 3..5 {
-            for x in 3..5 {
-                set_bitmap_pixel(&mut src, x, y, 0xc0c0c0ff);
-            }
+    fn accentuates_a_bright_center_pixel_above_its_original_value() {
+        let mut src = create_bitmap(5, 1, 0);
+        src.data[2 * 4] = 100;
+        for i in 0..5 {
+            src.data[i * 4 + 3] = 255;
         }
         let sr = region(src);
-        let len = 8 * 8 * 4;
-        let mut out = vec![0u8; len];
-        let mut scratch = vec![0u8; len];
+        let mut out = vec![0u8; 5 * 4];
+        let mut scratch = vec![0u8; 5 * 4];
         let opts = BitmapSharpenOptions {
-            amount: Some(2.0),
-            radius_x: Some(1),
-            radius_y: Some(1),
-            passes: Some(1),
+            amount: Some(1.0),
+            radius_x: Some(4),
+            radius_y: Some(0),
+            passes: None,
         };
         sharpen_bitmap(&mut out, &mut scratch, &sr, &opts);
-        // Center bright pixel should be brighter than source due to sharpening
-        let ci = (3 * 8 + 3) * 4;
-        assert!(out[ci] >= 0xc0);
+        assert!(out[2 * 4] > 100);
+    }
+
+    #[test]
+    fn preserves_source_alpha_while_sharpening_rgb() {
+        let mut src = create_bitmap(3, 1, 0);
+        for i in 0..3 {
+            src.data[i * 4] = (i * 40) as u8;
+            src.data[i * 4 + 3] = 77;
+        }
+        let sr = region(src);
+        let mut out = vec![0u8; 3 * 4];
+        let mut scratch = vec![0u8; 3 * 4];
+        let opts = BitmapSharpenOptions {
+            amount: Some(2.0),
+            radius_x: None,
+            radius_y: None,
+            passes: None,
+        };
+        sharpen_bitmap(&mut out, &mut scratch, &sr, &opts);
+        assert_eq!(out[3], 77);
+        assert_eq!(out[7], 77);
+        assert_eq!(out[11], 77);
     }
 }

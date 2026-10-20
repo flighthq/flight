@@ -96,7 +96,7 @@ fn rc_dec_decode_bit_tree_reverse(
     let mut m: i32 = 1;
     let mut symbol: i32 = 0;
     for i in 0..num_bits {
-        let bit = rc_dec_decode_bit(rc, probs, offset + m as usize);
+        let bit = rc_dec_decode_bit(rc, probs, offset.wrapping_add(m as usize));
         m = (m << 1) | bit;
         symbol |= bit << i;
     }
@@ -241,7 +241,7 @@ fn lzma_decode(input: &[u8], uncompressed_length: usize) -> Result<Vec<u8>, Stri
         if rc_dec_decode_bit(&mut rc, &mut is_match, state * num_pos_states + pos_state) == 0 {
             let prev_byte: u8 = if out_pos > 0 { output[out_pos - 1] } else { 0 };
             let lit_state = ((out_pos & ((1 << lp) - 1)) << lc)
-                + ((prev_byte >> (8 - lc)) as usize);
+                + (if lc > 0 { (prev_byte >> (8 - lc)) as usize } else { 0 });
             let prob_offset = lit_state * 0x300;
 
             let mut symbol: i32 = 1;

@@ -277,7 +277,8 @@ mod decompress_deflate {
     fn rejects_a_missing_or_corrupt_zlib_adler_32_trailer() {
         let valid = decode_base64(FIXTURE_LITERAL);
         let mut corrupt = valid.clone();
-        corrupt[corrupt.len() - 1] ^= 1;
+        let last = corrupt.len() - 1;
+        corrupt[last] ^= 1;
         assert!(decompress_deflate(
             &valid[..valid.len() - 4],
             0,

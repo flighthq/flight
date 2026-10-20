@@ -47,6 +47,26 @@ mod report_spatial_indexing {
         let captured = take_notices();
         assert_eq!(captured.len(), 0);
     }
+
+    #[test]
+    fn serves_both_dimensions_from_one_guard() {
+        take_notices();
+        let mut index_2d = create_spatial_index_2d(10.0);
+        set_spatial_indexing_guard_2d(&mut index_2d, Some(test_guard));
+        let nan_bounds_2d = create_spatial_aabb_2d(f32::NAN, 0.0, 1.0, 1.0);
+        insert_spatial_object_2d(&mut index_2d, 1, &nan_bounds_2d);
+
+        let mut index_3d = create_spatial_index_3d(10.0);
+        set_spatial_indexing_guard_3d(&mut index_3d, Some(test_guard));
+        let nan_bounds_3d = create_spatial_aabb_3d(0.0, f32::NAN, 0.0, 1.0, 1.0, 1.0);
+        insert_spatial_object_3d(&mut index_3d, 2, &nan_bounds_3d);
+
+        let captured = take_notices();
+        assert_eq!(captured.len(), 2);
+        let ids: Vec<SpatialObjectId> = captured.iter().map(|n| n.id).collect();
+        assert_eq!(ids, vec![1, 2]);
+        assert!(captured.iter().all(|n| n.reason == Some(SpatialIndexingReason::NonFiniteBounds)));
+    }
 }
 
 mod set_spatial_indexing_guard_2d {

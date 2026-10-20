@@ -47,6 +47,21 @@ mod create_uniform_grid_spatial_backend_3d {
     }
 
     #[test]
+    fn copies_the_bounds_so_caller_may_reuse() {
+        let mut grid = create_spatial_index_3d(10.0);
+        let mut bounds = box3(1.0, 1.0, 1.0, 4.0);
+        insert_spatial_object_3d(&mut grid, 1, &bounds);
+        bounds.min_x = -500.0;
+        bounds.max_z = 500.0;
+
+        let mut out: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_point_3d(&mut grid, -400.0, 1.0, 1.0, &mut out);
+        assert!(out.is_empty());
+        query_spatial_point_3d(&mut grid, 2.0, 2.0, 2.0, &mut out);
+        assert_eq!(out, vec![1]);
+    }
+
+    #[test]
     fn declines_non_finite_and_inverted_bounds_along_z() {
         let mut grid = create_spatial_index_3d(10.0);
         let nan_z = create_spatial_aabb_3d(0.0, 0.0, f32::NAN, 1.0, 1.0, 1.0);
@@ -134,6 +149,20 @@ mod create_uniform_grid_spatial_backend_3d {
     }
 }
 
+mod initialize_uniform_grid_spatial_backend_3d {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_initializer() {
+        let mut out = create_spatial_index_3d(1.0);
+        initialize_uniform_grid_spatial_backend_3d(&mut out, 10.0);
+        insert_spatial_object_3d(&mut out, 1, &box3(0.0, 0.0, 0.0, 5.0));
+        let mut point: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_point_3d(&mut out, 2.5, 2.5, 2.5, &mut point);
+        assert_eq!(point, vec![1]);
+    }
+}
+
 mod query_spatial_pairs_3d_test {
     use super::*;
 
@@ -172,6 +201,19 @@ mod query_spatial_pairs_3d_test {
     }
 
     #[test]
+    fn clears_the_out_array_between_queries() {
+        let mut grid = create_spatial_index_3d(10.0);
+        insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 5.0));
+        insert_spatial_object_3d(&mut grid, 2, &box3(1.0, 1.0, 1.0, 5.0));
+        let mut out: Vec<SpatialPair> = Vec::new();
+        query_spatial_pairs_3d(&mut grid, &mut out);
+        query_spatial_pairs_3d(&mut grid, &mut out);
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].a, 1);
+        assert_eq!(out[0].b, 2);
+    }
+
+    #[test]
     fn pairs_overflow_only_against_real_overlaps() {
         let mut grid = create_spatial_index_3d(1.0);
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 40.0));
@@ -183,6 +225,20 @@ mod query_spatial_pairs_3d_test {
         assert_eq!(out.len(), 1);
         assert_eq!(out[0].a, 1);
         assert_eq!(out[0].b, 2);
+    }
+
+    #[test]
+    fn retains_pair_objects_across_steady_topology_query() {
+        let mut grid = create_spatial_index_3d(10.0);
+        insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 5.0));
+        insert_spatial_object_3d(&mut grid, 2, &box3(1.0, 1.0, 1.0, 5.0));
+        let mut out: Vec<SpatialPair> = Vec::new();
+        query_spatial_pairs_3d(&mut grid, &mut out);
+        let pair = out[0];
+
+        query_spatial_pairs_3d(&mut grid, &mut out);
+
+        assert_eq!(out[0], pair);
     }
 }
 
@@ -228,6 +284,25 @@ mod query_spatial_ray_3d_test {
         assert_eq!(out, vec![2]);
         query_spatial_ray_3d(&mut grid, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, &mut out);
         assert_eq!(out, vec![3]);
+    }
+
+    #[test]
+    fn drops_cell_co_occupant_ray_does_not_strike() {
+        let mut grid = create_spatial_index_3d(100.0);
+        insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 1.0));
+        insert_spatial_object_3d(&mut grid, 2, &box3(0.0, 90.0, 90.0, 1.0));
+        let mut out: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_ray_3d(&mut grid, -10.0, 0.5, 0.5, 1.0, 0.0, 0.0, &mut out);
+        assert_eq!(out, vec![1]);
+    }
+
+    #[test]
+    fn ignores_objects_behind_the_origin() {
+        let mut grid = create_spatial_index_3d(10.0);
+        insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 5.0));
+        let mut out: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_ray_3d(&mut grid, 100.0, 2.0, 2.0, 1.0, 0.0, 0.0, &mut out);
+        assert!(out.is_empty());
     }
 
     #[test]
@@ -282,6 +357,16 @@ mod query_spatial_region_3d_test {
     }
 
     #[test]
+    fn excludes_object_that_only_touches_a_face() {
+        let mut grid = create_spatial_index_3d(10.0);
+        insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 5.0));
+        let mut out: Vec<SpatialObjectId> = Vec::new();
+        let region = create_spatial_aabb_3d(5.0, 0.0, 0.0, 9.0, 5.0, 5.0);
+        query_spatial_region_3d(&mut grid, &region, &mut out);
+        assert!(out.is_empty());
+    }
+
+    #[test]
     fn answers_wide_region_by_scanning_objects() {
         let mut grid = create_spatial_index_3d(1.0);
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 0.5));
@@ -303,6 +388,8 @@ mod update_spatial_object_3d_test {
         assert!(update_spatial_object_3d(&mut grid, 1, &updated));
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_point_3d(&mut grid, -50.0, 2.0, 2.0, &mut out);
+        assert!(out.is_empty());
         query_spatial_point_3d(&mut grid, 3.0, 3.0, 3.0, &mut out);
         assert_eq!(out, vec![1]);
     }

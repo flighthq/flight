@@ -1,8 +1,12 @@
+use std::any::Any;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::thread;
+use std::time::Duration;
 
 use flight_log::*;
+use flight_signals::connect_signal;
 
 /// Helper: resets all global state before each test.
 fn reset_log_state() {
@@ -270,6 +274,26 @@ mod clear_memory_log_sink {
 
 mod create_buffered_log_sink_tests {
     use super::*;
+
+    #[test]
+    fn uses_the_default_size_and_interval_options() {
+        reset_log_state();
+        let forwarded: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let forwarded_clone = forwarded.clone();
+        let target: LogSink = Rc::new(move |e: &LogEntry| {
+            forwarded_clone.borrow_mut().push(e.clone());
+        });
+        let handle = create_buffered_log_sink(target, None);
+        (handle.sink)(&LogEntry {
+            level: LogLevel::Info,
+            channel: None,
+            data: LogData::Message("queued".to_string()),
+        });
+        assert_eq!(forwarded.borrow().len(), 0);
+        flush_log_sink(&handle);
+        assert_eq!(forwarded.borrow().len(), 1);
+        dispose_log_sink(&handle);
+    }
 
     #[test]
     fn does_not_forward_entries_until_flushed() {
@@ -615,6 +639,25 @@ mod create_rate_limited_log_sink_tests {
     }
 
     #[test]
+    fn resets_its_budget_after_the_interval_elapses() {
+        reset_log_state();
+        let forwarded: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let forwarded_clone = forwarded.clone();
+        let target: LogSink = Rc::new(move |e: &LogEntry| {
+            forwarded_clone.borrow_mut().push(e.clone());
+        });
+        let handle = create_rate_limited_log_sink(target, 1, 10.0, false);
+        add_log_sink(handle.sink.clone());
+        log(LogLevel::Info, "first".into(), None);
+        log(LogLevel::Info, "suppressed".into(), None);
+        thread::sleep(Duration::from_millis(20));
+        log(LogLevel::Info, "next-window".into(), None);
+        let f = forwarded.borrow();
+        let data: Vec<Option<&str>> = f.iter().map(|e| data_as_str(&e.data)).collect();
+        assert_eq!(data, vec![Some("first"), Some("next-window")]);
+    }
+
+    #[test]
     fn tracks_per_channel_when_per_channel_is_true() {
         reset_log_state();
         let forwarded: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
@@ -708,6 +751,36 @@ mod create_text_log_formatter_tests {
             data: LogData::Record(data),
         };
         assert_eq!(fmt(&entry), "[flight] {\"value\":3}");
+    }
+
+    #[test]
+    fn includes_timestamp_prefix_when_requested() {
+        reset_log_state();
+        let fmt = create_text_log_formatter(false, false, true);
+        let entry = LogEntry {
+            level: LogLevel::Info,
+            channel: None,
+            data: LogData::Message("x".to_string()),
+        };
+        let result = fmt(&entry);
+        assert!(result.starts_with("t="));
+        assert!(result.ends_with("[flight] x"));
+    }
+
+    #[test]
+    fn indents_entries_while_a_group_is_open() {
+        reset_log_state();
+        begin_log_group("outer", None);
+        let fmt = create_text_log_formatter(true, false, false);
+        let entry = LogEntry {
+            level: LogLevel::Info,
+            channel: None,
+            data: LogData::Message("inside".to_string()),
+        };
+        let result = fmt(&entry);
+        assert!(result.contains("  "));
+        assert!(result.ends_with("inside"));
+        clear_log_groups();
     }
 
     #[test]
@@ -1369,6 +1442,38 @@ mod register_log_serializer_tests {
         let result = fmt(&entry);
         assert!(result.contains("(3,4)"));
     }
+
+    #[test]
+    fn preserves_values_that_do_not_match_a_registered_serializer() {
+        reset_log_state();
+        register_log_serializer(
+            "acme.Known",
+            Rc::new(|_| {
+                let mut m = HashMap::new();
+                m.insert("serialized".to_string(), LogValue::Bool(true));
+                return m;
+            }),
+        );
+        let fmt = create_json_log_formatter();
+        let mut unknown_kind = HashMap::new();
+        unknown_kind.insert("__kind".to_string(), LogValue::Str("acme.Unknown".to_string()));
+        unknown_kind.insert("value".to_string(), LogValue::Int(4));
+        let mut no_kind = HashMap::new();
+        no_kind.insert("value".to_string(), LogValue::Int(1));
+        let mut data = HashMap::new();
+        data.insert("missingKind".to_string(), LogValue::Record(no_kind));
+        data.insert("unknownKind".to_string(), LogValue::Record(unknown_kind));
+        data.insert("primitive".to_string(), LogValue::Int(3));
+        let entry = LogEntry {
+            level: LogLevel::Info,
+            channel: None,
+            data: LogData::Record(data),
+        };
+        let result = fmt(&entry);
+        assert!(result.contains("\"primitive\":3"));
+        assert!(result.contains("acme.Unknown"));
+        assert!(!result.contains("\"serialized\""));
+    }
 }
 
 mod remove_log_sink {
@@ -1486,6 +1591,51 @@ mod set_log_redaction_paths_tests {
     }
 
     #[test]
+    fn does_not_mutate_the_original_data_object() {
+        reset_log_state();
+        set_log_redaction_paths(&["key".to_string()]);
+        let mut data = HashMap::new();
+        data.insert("key".to_string(), LogValue::Str("value".to_string()));
+        data.insert("other".to_string(), LogValue::Str("safe".to_string()));
+        let data_clone = data.clone();
+        let entry = LogEntry {
+            level: LogLevel::Info,
+            channel: None,
+            data: LogData::Record(data_clone),
+        };
+        let fmt = create_json_log_formatter();
+        fmt(&entry);
+        if let Some(LogValue::Str(v)) = data.get("key") {
+            assert_eq!(v, "value");
+        } else {
+            panic!("expected key='value' in original data");
+        }
+    }
+
+    #[test]
+    fn leaves_absent_and_non_record_path_segments_unchanged() {
+        reset_log_state();
+        set_log_redaction_paths(&[
+            "missing.secret".to_string(),
+            "primitive.secret".to_string(),
+            "items.secret".to_string(),
+        ]);
+        let fmt = create_json_log_formatter();
+        let mut data = HashMap::new();
+        data.insert("items".to_string(), LogValue::Array(vec![LogValue::Str("secret".to_string())]));
+        data.insert("primitive".to_string(), LogValue::Int(7));
+        let entry = LogEntry {
+            level: LogLevel::Info,
+            channel: None,
+            data: LogData::Record(data),
+        };
+        let result = fmt(&entry);
+        assert!(result.contains("\"secret\""));
+        assert!(result.contains("7"));
+        assert!(!result.contains("[REDACTED]"));
+    }
+
+    #[test]
     fn replaces_nested_fields_with_dot_notation_paths() {
         reset_log_state();
         set_log_redaction_paths(&["auth.secret".to_string()]);
@@ -1560,10 +1710,116 @@ mod enable_log_signals_tests {
     }
 
     #[test]
+    fn on_log_entry_fires_for_every_emitted_entry() {
+        reset_log_state();
+        let signals = enable_log_signals();
+        let received: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let received_clone = received.clone();
+        connect_signal(
+            &signals.on_log_entry,
+            Rc::new(move |args: Rc<dyn Any>| {
+                if let Some(entry) = args.downcast_ref::<LogEntry>() {
+                    received_clone.borrow_mut().push(entry.clone());
+                }
+            }),
+            None,
+        );
+        log(LogLevel::Info, "via-signal".into(), None);
+        assert_eq!(received.borrow().len(), 1);
+        assert_eq!(data_as_str(&received.borrow()[0].data), Some("via-signal"));
+    }
+
+    #[test]
+    fn on_log_error_fires_only_for_error_level_entries() {
+        reset_log_state();
+        let signals = enable_log_signals();
+        let errors: Rc<RefCell<Vec<LogEntry>>> = Rc::new(RefCell::new(Vec::new()));
+        let errors_clone = errors.clone();
+        connect_signal(
+            &signals.on_log_error,
+            Rc::new(move |args: Rc<dyn Any>| {
+                if let Some(entry) = args.downcast_ref::<LogEntry>() {
+                    errors_clone.borrow_mut().push(entry.clone());
+                }
+            }),
+            None,
+        );
+        log(LogLevel::Info, "not-error".into(), None);
+        log(LogLevel::Error, "is-error".into(), None);
+        assert_eq!(errors.borrow().len(), 1);
+        assert_eq!(errors.borrow()[0].level, LogLevel::Error);
+    }
+
+    #[test]
     fn returns_the_same_object_on_subsequent_calls() {
         reset_log_state();
         let a = enable_log_signals();
         let b = enable_log_signals();
         assert!(Rc::ptr_eq(&a, &b));
+    }
+}
+
+mod severity_wrapper_providers_and_gates {
+    use super::*;
+
+    fn tracking_provider(called: &Rc<RefCell<bool>>, value: &str) -> LogDataOrProvider {
+        let called = called.clone();
+        let value = value.to_string();
+        return LogDataOrProvider::Provider(Rc::new(move || {
+            *called.borrow_mut() = true;
+            return LogData::Message(value.clone());
+        }));
+    }
+
+    #[test]
+    fn does_not_evaluate_any_provider_when_its_level_is_suppressed() {
+        reset_log_state();
+        let (_entries, _sink) = recording_sink();
+        let ctx = create_log_context(Some("channel".to_string()), None);
+        set_log_level(LogLevel::None);
+
+        let flags: Vec<Rc<RefCell<bool>>> = (0..12).map(|_| Rc::new(RefCell::new(false))).collect();
+
+        log_assert(false, tracking_provider(&flags[0], "v0"), None);
+        log_debug(tracking_provider(&flags[1], "v1"), None);
+        log_debug_with(&ctx, tracking_provider(&flags[2], "v2"));
+        log_error(tracking_provider(&flags[3], "v3"), None);
+        log_error_with(&ctx, tracking_provider(&flags[4], "v4"));
+        log_info(tracking_provider(&flags[5], "v5"), None);
+        log_info_with(&ctx, tracking_provider(&flags[6], "v6"));
+        log_verbose(tracking_provider(&flags[7], "v7"), None);
+        log_verbose_with(&ctx, tracking_provider(&flags[8], "v8"));
+        log_warn(tracking_provider(&flags[9], "v9"), None);
+        log_warn_with(&ctx, tracking_provider(&flags[10], "v10"));
+        log_with(&ctx, LogLevel::Info, tracking_provider(&flags[11], "v11"));
+
+        for (i, flag) in flags.iter().enumerate() {
+            assert!(!*flag.borrow(), "provider {} was called when level was suppressed", i);
+        }
+    }
+
+    #[test]
+    fn evaluates_providers_after_their_level_gates_pass() {
+        reset_log_state();
+        let (entries, _sink) = recording_sink();
+        let ctx = create_log_context(Some("channel".to_string()), None);
+
+        let flags: Vec<Rc<RefCell<bool>>> = (0..10).map(|_| Rc::new(RefCell::new(false))).collect();
+
+        log_assert(false, tracking_provider(&flags[0], "v0"), None);
+        log_debug_with(&ctx, tracking_provider(&flags[1], "v1"));
+        log_error(tracking_provider(&flags[2], "v2"), None);
+        log_error_with(&ctx, tracking_provider(&flags[3], "v3"));
+        log_info(tracking_provider(&flags[4], "v4"), None);
+        log_info_with(&ctx, tracking_provider(&flags[5], "v5"));
+        log_verbose(tracking_provider(&flags[6], "v6"), None);
+        log_verbose_with(&ctx, tracking_provider(&flags[7], "v7"));
+        log_warn(tracking_provider(&flags[8], "v8"), None);
+        log_warn_with(&ctx, tracking_provider(&flags[9], "v9"));
+
+        for (i, flag) in flags.iter().enumerate() {
+            assert!(*flag.borrow(), "provider {} was not called when level was active", i);
+        }
+        assert_eq!(entries.borrow().len(), 10);
     }
 }

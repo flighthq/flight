@@ -11,38 +11,95 @@ mod flatten_path_test {
     }
 
     #[test]
-    fn flattens_line_segments_unchanged() {
+    fn flattens_straight_line_to_its_two_endpoints() {
+        let mut path = create_path(PathWinding::NonZero);
+        append_path_move_to(&mut path, 0.0, 0.0);
+        append_path_line_to(&mut path, 100.0, 0.0);
+        let contours = flatten_path(&path, 0.25);
+        assert_eq!(contours, vec![vec![0.0, 0.0, 100.0, 0.0]]);
+    }
+
+    #[test]
+    fn produces_one_contour_per_subpath() {
+        let mut path = create_path(PathWinding::NonZero);
+        append_path_move_to(&mut path, 0.0, 0.0);
+        append_path_line_to(&mut path, 10.0, 0.0);
+        append_path_move_to(&mut path, 0.0, 10.0);
+        append_path_line_to(&mut path, 10.0, 10.0);
+        let contours = flatten_path(&path, 0.25);
+        assert_eq!(contours, vec![vec![0.0, 0.0, 10.0, 0.0], vec![0.0, 10.0, 10.0, 10.0]]);
+    }
+
+    #[test]
+    fn collapses_quadratic_on_chord_to_just_the_endpoint() {
+        let mut path = create_path(PathWinding::NonZero);
+        append_path_move_to(&mut path, 0.0, 0.0);
+        append_path_quadratic_curve_to(&mut path, 50.0, 0.0, 100.0, 0.0);
+        let contours = flatten_path(&path, 0.25);
+        assert_eq!(contours, vec![vec![0.0, 0.0, 100.0, 0.0]]);
+    }
+
+    #[test]
+    fn reads_second_coordinate_pair_for_wide_verbs() {
+        let mut path = create_path(PathWinding::NonZero);
+        path.commands.push(PathCommand::WideMoveTo as u8);
+        path.data.push(0.0);
+        path.data.push(0.0);
+        path.data.push(5.0);
+        path.data.push(6.0);
+        path.commands.push(PathCommand::WideLineTo as u8);
+        path.data.push(0.0);
+        path.data.push(0.0);
+        path.data.push(7.0);
+        path.data.push(8.0);
+        let contours = flatten_path(&path, 0.25);
+        assert_eq!(contours, vec![vec![5.0, 6.0, 7.0, 8.0]]);
+    }
+
+    #[test]
+    fn subdivides_genuinely_curved_quadratic_keeping_endpoints() {
+        let mut path = create_path(PathWinding::NonZero);
+        append_path_move_to(&mut path, 0.0, 0.0);
+        append_path_quadratic_curve_to(&mut path, 50.0, 50.0, 100.0, 0.0);
+        let contour = &flatten_path(&path, 0.25)[0];
+        assert!(contour.len() > 4);
+        assert_eq!(contour[0], 0.0);
+        assert_eq!(contour[1], 0.0);
+        assert_eq!(contour[contour.len() - 2], 100.0);
+        assert_eq!(contour[contour.len() - 1], 0.0);
+    }
+
+    #[test]
+    fn emits_fewer_points_at_coarser_tolerance() {
+        let mut path = create_path(PathWinding::NonZero);
+        append_path_move_to(&mut path, 0.0, 0.0);
+        append_path_quadratic_curve_to(&mut path, 50.0, 50.0, 100.0, 0.0);
+        let fine = flatten_path(&path, 0.1)[0].len();
+        let coarse = flatten_path(&path, 50.0)[0].len();
+        assert!(coarse < fine);
+    }
+
+    #[test]
+    fn appends_start_point_when_close_verb_is_present() {
         let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         append_path_line_to(&mut path, 100.0, 100.0);
-        let contours = flatten_path(&path, 0.25);
-        assert_eq!(contours.len(), 1);
-        assert_eq!(contours[0], vec![0.0, 0.0, 100.0, 0.0, 100.0, 100.0]);
+        append_path_close(&mut path);
+        let contour = &flatten_path(&path, 0.25)[0];
+        assert_eq!(contour[contour.len() - 2], 0.0);
+        assert_eq!(contour[contour.len() - 1], 0.0);
     }
 
     #[test]
-    fn close_appends_start_point() {
+    fn does_not_duplicate_start_when_close_at_same_position() {
         let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
-        append_path_line_to(&mut path, 50.0, 100.0);
+        append_path_line_to(&mut path, 0.0, 0.0);
         append_path_close(&mut path);
-        let contours = flatten_path(&path, 0.25);
-        assert_eq!(contours.len(), 1);
-        let c = &contours[0];
-        assert_eq!(c[c.len() - 2], 0.0);
-        assert_eq!(c[c.len() - 1], 0.0);
-    }
-
-    #[test]
-    fn subdivides_quadratic_curves() {
-        let mut path = create_path(PathWinding::NonZero);
-        append_path_move_to(&mut path, 0.0, 0.0);
-        append_path_quadratic_curve_to(&mut path, 50.0, 100.0, 100.0, 0.0);
-        let contours = flatten_path(&path, 0.25);
-        assert_eq!(contours.len(), 1);
-        assert!(contours[0].len() > 4);
+        let contour = &flatten_path(&path, 0.25)[0];
+        assert_eq!(contour.len(), 6);
     }
 
     #[test]
@@ -53,16 +110,5 @@ mod flatten_path_test {
         let contours = flatten_path(&path, 0.25);
         assert_eq!(contours.len(), 1);
         assert!(contours[0].len() > 4);
-    }
-
-    #[test]
-    fn produces_multiple_contours_for_multiple_moves() {
-        let mut path = create_path(PathWinding::NonZero);
-        append_path_move_to(&mut path, 0.0, 0.0);
-        append_path_line_to(&mut path, 10.0, 10.0);
-        append_path_move_to(&mut path, 20.0, 20.0);
-        append_path_line_to(&mut path, 30.0, 30.0);
-        let contours = flatten_path(&path, 0.25);
-        assert_eq!(contours.len(), 2);
     }
 }

@@ -275,3 +275,17 @@ mod update_spatial_object_3d_test {
         assert_eq!(out, vec![1]);
     }
 }
+
+mod initialize_spatial_index_3d_test {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_initializer() {
+        let mut out = create_spatial_index_3d(1.0);
+        initialize_spatial_index_3d(&mut out, 10.0);
+        insert_spatial_object_3d(&mut out, 1, &box3(0.0, 0.0, 0.0, 5.0));
+        let mut point: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_point_3d(&mut out, 2.5, 2.5, 2.5, &mut point);
+        assert_eq!(point, vec![1]);
+    }
+}

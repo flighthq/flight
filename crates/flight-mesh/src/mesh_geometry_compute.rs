@@ -481,6 +481,20 @@ pub fn compute_mesh_geometry_tangents(
     // Write back tangents
     let mut target_verts = geometry.vertices.clone();
 
+    // Build a reverse map: split_output_vertex -> original_source_vertex
+    let mut split_reverse = vec![0u32; output_vertex_count as usize];
+    for i in 0..source_vertex_count {
+        split_reverse[i as usize] = i;
+    }
+    if let Some(ref remapped) = remapped_indices {
+        for element in 0..remapped.len() {
+            let output = remapped[element];
+            if output >= source_vertex_count {
+                split_reverse[output as usize] = corner_indices[element];
+            }
+        }
+    }
+
     if position_groups.is_none() {
         for output in 0..output_vertex_count {
             write_accumulated_tangent(
@@ -508,13 +522,7 @@ pub fn compute_mesh_geometry_tangents(
                 if output < source_vertex_count {
                     continue;
                 }
-                let source_idx = match &geometry.indices {
-                    IndexBuffer::U16(v) => v[element] as u32,
-                    IndexBuffer::U32(v) => v[element],
-                    IndexBuffer::None => element as u32,
-                };
-                // For split vertices, we need the original source index from the pre-split indices
-                // The remapped indices already point to the right place
+                let source_idx = split_reverse[output as usize];
                 let sign: f32 = if t_signs[element / 3] < 0 { -1.0 } else { 1.0 };
                 write_accumulated_tangent(
                     &mut target_verts, target_floats_per_vertex, output,

@@ -1,6 +1,6 @@
 use flight_mesh::*;
 
-mod clone_mesh_geometry_for_deformation_test {
+mod clone_mesh_geometry_for_deformation {
     use super::*;
 
     #[test]
@@ -33,5 +33,42 @@ mod clone_mesh_geometry_for_deformation_test {
         let clone = clone_mesh_geometry_for_deformation(&geometry);
         assert_eq!(get_mesh_geometry_vertex_count(&clone), get_mesh_geometry_vertex_count(&geometry));
         assert!(clone.bounds.is_some());
+    }
+
+    #[test]
+    fn restores_a_captured_skin_base_when_no_deeper_morph_base_exists() {
+        let skinned_layout = canonical_skinned_mesh_geometry_layout();
+        let stride = skinned_layout.stride as usize / 4;
+        let mut vertices = vec![0.0f32; stride];
+        vertices[0] = 9.0;
+        vertices[4] = 9.0;
+        let mut source = create_mesh_geometry(MeshGeometryOptions {
+            indices: None,
+            layout: skinned_layout,
+            vertices,
+            subsets: None,
+            topology: None,
+        });
+        let bind_pose = MeshSkinBindPose {
+            joints: vec![0.0; 4],
+            normals: vec![0.0, 1.0, 0.0],
+            positions: vec![1.0, 2.0, 3.0],
+            skinned_normals: vec![0.0; 3],
+            skinned_positions: vec![0.0; 3],
+            skinned_tangents: vec![],
+            tangents: vec![],
+            weights: vec![0.0; 4],
+        };
+        set_mesh_geometry_skin_bind_pose(&mut source, Some(bind_pose));
+
+        let clone = clone_mesh_geometry_for_deformation(&source);
+
+        assert_eq!(clone.vertices[0], 1.0);
+        assert_eq!(clone.vertices[1], 2.0);
+        assert_eq!(clone.vertices[2], 3.0);
+        assert_eq!(clone.vertices[3], 0.0);
+        assert_eq!(clone.vertices[4], 1.0);
+        assert_eq!(clone.vertices[5], 0.0);
+        assert!(get_mesh_geometry_skin_bind_pose(&clone).is_none());
     }
 }

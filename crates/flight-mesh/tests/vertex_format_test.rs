@@ -31,7 +31,7 @@ mod read_vertex_format_component {
     }
 }
 
-mod write_vertex_format_component_test {
+mod write_vertex_format_component {
     use super::*;
 
     #[test]

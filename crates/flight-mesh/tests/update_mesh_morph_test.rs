@@ -30,7 +30,7 @@ fn make_morphed_mesh() -> Mesh {
     };
 }
 
-mod update_mesh_morph_test {
+mod update_mesh_morph {
     use super::*;
 
     #[test]

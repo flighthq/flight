@@ -13,5 +13,8 @@ path = "tests/main.rs"
 [dependencies]
 flight-signals = { workspace = true }
 
+[dev-dependencies]
+flight-signals = { workspace = true }
+
 [lints]
 workspace = true

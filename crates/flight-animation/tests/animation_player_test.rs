@@ -412,6 +412,28 @@ mod enable_animation_player_signals_test {
         assert!(p.on_looped.is_some());
         assert!(p.on_event.is_some());
     }
+
+    #[test]
+    fn is_idempotent_keeps_the_existing_signal_instances() {
+        let mut p = player(5.0, None);
+        enable_animation_player_signals(&mut p);
+        let finished = p.on_finished.clone().unwrap();
+        let looped = p.on_looped.clone().unwrap();
+        let event = p.on_event.clone().unwrap();
+        enable_animation_player_signals(&mut p);
+        assert!(Rc::ptr_eq(
+            &p.on_finished.as_ref().unwrap().data,
+            &finished.data
+        ));
+        assert!(Rc::ptr_eq(
+            &p.on_looped.as_ref().unwrap().data,
+            &looped.data
+        ));
+        assert!(Rc::ptr_eq(
+            &p.on_event.as_ref().unwrap().data,
+            &event.data
+        ));
+    }
 }
 
 mod get_animation_player_normalized_time {

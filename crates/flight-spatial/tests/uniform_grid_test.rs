@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use flight_spatial::*;
 
 fn pair_keys(pairs: &[SpatialPair]) -> Vec<String> {
@@ -21,6 +23,345 @@ fn sorted_ids(ids: &[SpatialObjectId]) -> Vec<SpatialObjectId> {
 
 fn bounds_overlap(a: &SpatialAabb2D, b: &SpatialAabb2D) -> bool {
     return a.min_x < b.max_x && a.max_x > b.min_x && a.min_y < b.max_y && a.max_y > b.min_y;
+}
+
+fn bounds_contain_point(bounds: &SpatialAabb2D, x: f32, y: f32) -> bool {
+    return x >= bounds.min_x && x <= bounds.max_x && y >= bounds.min_y && y <= bounds.max_y;
+}
+
+fn bounds_intersect_ray(bounds: &SpatialAabb2D, ox: f32, oy: f32, dx: f32, dy: f32) -> bool {
+    let mut t_min = f32::NEG_INFINITY;
+    let mut t_max = f32::INFINITY;
+    if dx == 0.0 {
+        if ox < bounds.min_x || ox > bounds.max_x {
+            return false;
+        }
+    } else {
+        let tx0 = (bounds.min_x - ox) / dx;
+        let tx1 = (bounds.max_x - ox) / dx;
+        t_min = t_min.max(tx0.min(tx1));
+        t_max = t_max.min(tx0.max(tx1));
+    }
+    if dy == 0.0 {
+        if oy < bounds.min_y || oy > bounds.max_y {
+            return false;
+        }
+    } else {
+        let ty0 = (bounds.min_y - oy) / dy;
+        let ty1 = (bounds.max_y - oy) / dy;
+        t_min = t_min.max(ty0.min(ty1));
+        t_max = t_max.min(ty0.max(ty1));
+    }
+    return t_max >= t_min && t_max >= 0.0;
+}
+
+fn bounds_share_cell(a: &SpatialAabb2D, b: &SpatialAabb2D, cell_size: f32) -> bool {
+    return (a.min_x / cell_size).floor().max((b.min_x / cell_size).floor())
+        <= (a.max_x / cell_size).floor().min((b.max_x / cell_size).floor())
+        && (a.min_y / cell_size).floor().max((b.min_y / cell_size).floor())
+            <= (a.max_y / cell_size).floor().min((b.max_y / cell_size).floor());
+}
+
+fn is_overflow_bounds(bounds: &SpatialAabb2D, cell_size: f32) -> bool {
+    let width = (bounds.max_x / cell_size).floor() as i64 - (bounds.min_x / cell_size).floor() as i64 + 1;
+    let height = (bounds.max_y / cell_size).floor() as i64 - (bounds.min_y / cell_size).floor() as i64 + 1;
+    return width * height > MAX_INDEXED_CELLS_PER_OBJECT as i64;
+}
+
+fn create_test_random(seed: u32) -> impl FnMut() -> f32 {
+    let mut state = seed;
+    return move || {
+        state ^= state << 13;
+        state ^= state >> 17;
+        state ^= state << 5;
+        return state as f32 / 0x1_0000_0000_u64 as f32;
+    };
+}
+
+fn brute_force_pair_keys(
+    objects: &HashMap<SpatialObjectId, SpatialAabb2D>,
+    cell_size: f32,
+) -> Vec<String> {
+    let entries: Vec<_> = objects.iter().collect();
+    let mut pairs: Vec<String> = Vec::new();
+    for i in 0..entries.len() {
+        for j in (i + 1)..entries.len() {
+            let (&a_id, a) = entries[i];
+            let (&b_id, b) = entries[j];
+            let matches = if is_overflow_bounds(a, cell_size) || is_overflow_bounds(b, cell_size) {
+                bounds_overlap(a, b)
+            } else {
+                bounds_share_cell(a, b, cell_size)
+            };
+            if matches {
+                let lo = a_id.min(b_id);
+                let hi = a_id.max(b_id);
+                pairs.push(format!("{}-{}", lo, hi));
+            }
+        }
+    }
+    pairs.sort();
+    return pairs;
+}
+
+mod brute_force_property_coverage {
+    use super::*;
+
+    #[test]
+    fn matches_pair_region_point_and_ray_oracles_through_seeded_churn() {
+        let cell_size: f32 = 4.0;
+        for &seed in &[0x1357_9bdf_u32, 0x2468_ace0, 0x5eed_f00d, 0xc0ff_ee42] {
+            let mut random = create_test_random(seed);
+            let mut grid = create_spatial_index_2d(cell_size);
+            let mut objects: HashMap<SpatialObjectId, SpatialAabb2D> = HashMap::new();
+
+            let mut random_bounds = |random: &mut dyn FnMut() -> f32, overflow: bool| -> SpatialAabb2D {
+                let min_x = (random() * 160.0).floor() - 80.0 + random();
+                let min_y = (random() * 160.0).floor() - 80.0 + random();
+                let width = if overflow {
+                    cell_size * (34.0 + (random() * 12.0).floor())
+                } else {
+                    0.25 + random() * 12.0
+                };
+                let height = if overflow {
+                    cell_size * (34.0 + (random() * 12.0).floor())
+                } else {
+                    0.25 + random() * 12.0
+                };
+                return create_spatial_aabb_2d(min_x, min_y, min_x + width, min_y + height);
+            };
+
+            let ordinary = random_bounds(&mut random, false);
+            objects.insert(0, ordinary);
+            insert_spatial_object_2d(&mut grid, 0, &ordinary);
+
+            // Verify pairs
+            let mut pairs: Vec<SpatialPair> = Vec::new();
+            query_spatial_pairs_2d(&mut grid, &mut pairs);
+            assert_eq!(pair_keys(&pairs), brute_force_pair_keys(&objects, cell_size));
+
+            let overflow = random_bounds(&mut random, true);
+            objects.insert(0, overflow);
+            update_spatial_object_2d(&mut grid, 0, &overflow);
+            assert_eq!(
+                explain_spatial_indexing_2d(&grid, 0).mode,
+                SpatialIndexingMode::Overflow
+            );
+
+            let ordinary_again = random_bounds(&mut random, false);
+            objects.insert(0, ordinary_again);
+            update_spatial_object_2d(&mut grid, 0, &ordinary_again);
+            assert_eq!(
+                explain_spatial_indexing_2d(&grid, 0).mode,
+                SpatialIndexingMode::Cells
+            );
+
+            for _step in 0..100 {
+                let id = (random() * 18.0).floor() as SpatialObjectId;
+                let action_roll = random();
+                if action_roll < 0.72 {
+                    let overflow_roll = random() < 0.22;
+                    let bounds = random_bounds(&mut random, overflow_roll);
+                    if objects.contains_key(&id) {
+                        update_spatial_object_2d(&mut grid, id, &bounds);
+                    } else {
+                        let insert_roll = random();
+                        if insert_roll < 0.5 {
+                            insert_spatial_object_2d(&mut grid, id, &bounds);
+                        } else {
+                            update_spatial_object_2d(&mut grid, id, &bounds);
+                        }
+                    }
+                    objects.insert(id, bounds);
+                } else {
+                    remove_spatial_object_2d(&mut grid, id);
+                    objects.remove(&id);
+                }
+
+                let mut pairs: Vec<SpatialPair> = Vec::new();
+                query_spatial_pairs_2d(&mut grid, &mut pairs);
+                assert_eq!(pair_keys(&pairs), brute_force_pair_keys(&objects, cell_size));
+
+                // Region oracle
+                let region_min_x = random() * 240.0 - 120.0;
+                let region_min_y = random() * 240.0 - 120.0;
+                let region = create_spatial_aabb_2d(
+                    region_min_x,
+                    region_min_y,
+                    region_min_x + 1.0 + random() * 80.0,
+                    region_min_y + 1.0 + random() * 80.0,
+                );
+                let mut region_actual: Vec<SpatialObjectId> = Vec::new();
+                query_spatial_region_2d(&mut grid, &region, &mut region_actual);
+                let mut region_expected: Vec<SpatialObjectId> = objects
+                    .iter()
+                    .filter(|(_, bounds)| bounds_overlap(bounds, &region))
+                    .map(|(&id, _)| id)
+                    .collect();
+                region_expected.sort();
+                assert_eq!(sorted_ids(&region_actual), region_expected);
+
+                // Point oracle
+                let point_x = random() * 320.0 - 160.0;
+                let point_y = random() * 320.0 - 160.0;
+                let mut point_actual: Vec<SpatialObjectId> = Vec::new();
+                query_spatial_point_2d(&mut grid, point_x, point_y, &mut point_actual);
+                let mut point_expected: Vec<SpatialObjectId> = objects
+                    .iter()
+                    .filter(|(_, bounds)| bounds_contain_point(bounds, point_x, point_y))
+                    .map(|(&id, _)| id)
+                    .collect();
+                point_expected.sort();
+                assert_eq!(sorted_ids(&point_actual), point_expected);
+
+                // Ray oracle
+                let ray_x = random() * 400.0 - 200.0;
+                let ray_y = random() * 400.0 - 200.0;
+                let mut ray_dx = random() * 2.0 - 1.0;
+                let mut ray_dy = random() * 2.0 - 1.0;
+                if random() < 0.1 {
+                    ray_dx = 0.0;
+                }
+                if random() < 0.1 {
+                    ray_dy = 0.0;
+                }
+                let mut ray_actual: Vec<SpatialObjectId> = Vec::new();
+                query_spatial_ray_2d(&mut grid, ray_x, ray_y, ray_dx, ray_dy, &mut ray_actual);
+                let mut ray_expected: Vec<SpatialObjectId> = objects
+                    .iter()
+                    .filter(|(_, bounds)| bounds_intersect_ray(bounds, ray_x, ray_y, ray_dx, ray_dy))
+                    .map(|(&id, _)| id)
+                    .collect();
+                ray_expected.sort();
+                assert_eq!(sorted_ids(&ray_actual), ray_expected);
+            }
+        }
+    }
+}
+
+mod cell_range_across_every_transition {
+    use super::*;
+
+    const FAR: f32 = 5_000_000.0;
+
+    fn ray_ids(grid: &mut SpatialIndex2D) -> Vec<SpatialObjectId> {
+        let mut out: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_ray_2d(grid, -5.0, 0.5, 1.0, 0.0, &mut out);
+        out.sort();
+        return out;
+    }
+
+    fn grid_with_wide_range() -> SpatialIndex2D {
+        let mut grid = create_spatial_index_2d(1.0);
+        insert_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(0.0, 0.0, 1.0, 1.0));
+        insert_spatial_object_2d(&mut grid, 2, &create_spatial_aabb_2d(FAR, 0.0, FAR + 1.0, 1.0));
+        return grid;
+    }
+
+    #[test]
+    fn seeds_the_range_on_first_insert_and_widens_on_next() {
+        let mut grid = grid_with_wide_range();
+        assert_eq!(ray_ids(&mut grid), vec![1, 2]);
+    }
+
+    #[test]
+    fn removes_last_celled_object_while_overflowed_remains() {
+        let mut grid = grid_with_wide_range();
+        insert_spatial_object_2d(&mut grid, 3, &create_spatial_aabb_2d(-1e12, -1e12, 1e12, 1e12));
+        remove_spatial_object_2d(&mut grid, 1);
+        remove_spatial_object_2d(&mut grid, 2);
+        assert_eq!(ray_ids(&mut grid), vec![3]);
+    }
+
+    #[test]
+    fn removes_last_celled_object_while_declined_remains() {
+        let mut grid = grid_with_wide_range();
+        insert_spatial_object_2d(&mut grid, 3, &create_spatial_aabb_2d(f32::NAN, 0.0, 1.0, 1.0));
+        remove_spatial_object_2d(&mut grid, 1);
+        remove_spatial_object_2d(&mut grid, 2);
+        assert_eq!(ray_ids(&mut grid), Vec::<SpatialObjectId>::new());
+    }
+
+    #[test]
+    fn removes_last_celled_object_with_nothing_else() {
+        let mut grid = grid_with_wide_range();
+        remove_spatial_object_2d(&mut grid, 1);
+        remove_spatial_object_2d(&mut grid, 2);
+        assert_eq!(ray_ids(&mut grid), Vec::<SpatialObjectId>::new());
+    }
+
+    #[test]
+    fn removes_overflowed_while_celled_remain() {
+        let mut grid = grid_with_wide_range();
+        insert_spatial_object_2d(&mut grid, 3, &create_spatial_aabb_2d(-1e12, -1e12, 1e12, 1e12));
+        remove_spatial_object_2d(&mut grid, 3);
+        assert_eq!(ray_ids(&mut grid), vec![1, 2]);
+    }
+
+    #[test]
+    fn updates_last_celled_into_overflow_emptying_cells() {
+        let mut grid = create_spatial_index_2d(1.0);
+        insert_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(0.0, 0.0, 1.0, 1.0));
+        insert_spatial_object_2d(&mut grid, 2, &create_spatial_aabb_2d(FAR, 0.0, FAR + 1.0, 1.0));
+        update_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(-1e12, -1e12, 1e12, 1e12));
+        update_spatial_object_2d(&mut grid, 2, &create_spatial_aabb_2d(-1e12, -1e12, 1e12, 1e12));
+        assert_eq!(ray_ids(&mut grid), vec![1, 2]);
+    }
+
+    #[test]
+    fn updates_overflowed_back_into_cells_reseeding() {
+        let mut grid = create_spatial_index_2d(1.0);
+        insert_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(0.0, 0.0, 1.0, 1.0));
+        insert_spatial_object_2d(&mut grid, 2, &create_spatial_aabb_2d(FAR, 0.0, FAR + 1.0, 1.0));
+        update_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(-1e12, -1e12, 1e12, 1e12));
+        update_spatial_object_2d(&mut grid, 2, &create_spatial_aabb_2d(-1e12, -1e12, 1e12, 1e12));
+        update_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(0.0, 0.0, 1.0, 1.0));
+        assert_eq!(ray_ids(&mut grid), vec![1, 2]);
+    }
+
+    #[test]
+    fn clears_while_overflowed_present() {
+        let mut grid = grid_with_wide_range();
+        insert_spatial_object_2d(&mut grid, 3, &create_spatial_aabb_2d(-1e12, -1e12, 1e12, 1e12));
+        clear_spatial_index_2d(&mut grid);
+        assert_eq!(ray_ids(&mut grid), Vec::<SpatialObjectId>::new());
+    }
+
+    #[test]
+    fn reseeds_tight_range_after_empty_and_refill() {
+        let mut grid = grid_with_wide_range();
+        clear_spatial_index_2d(&mut grid);
+        insert_spatial_object_2d(&mut grid, 9, &create_spatial_aabb_2d(0.0, 0.0, 1.0, 1.0));
+        assert_eq!(ray_ids(&mut grid), vec![9]);
+    }
+
+    #[test]
+    fn keeps_region_and_point_correct_across_overflow_transition() {
+        let mut grid = grid_with_wide_range();
+        insert_spatial_object_2d(&mut grid, 3, &create_spatial_aabb_2d(-1e12, -1e12, 1e12, 1e12));
+        remove_spatial_object_2d(&mut grid, 1);
+        remove_spatial_object_2d(&mut grid, 2);
+        let mut region: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_region_2d(&mut grid, &create_spatial_aabb_2d(-1.0, -1.0, 2.0, 2.0), &mut region);
+        assert_eq!(region, vec![3]);
+        let mut point: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_point_2d(&mut grid, 0.5, 0.5, &mut point);
+        assert_eq!(point, vec![3]);
+    }
+}
+
+mod initialize_uniform_grid_spatial_backend_2d {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_initializer() {
+        let mut out = create_spatial_index_2d(1.0);
+        initialize_uniform_grid_spatial_backend_2d(&mut out, 10.0);
+        insert_spatial_object_2d(&mut out, 1, &create_spatial_aabb_2d(0.0, 0.0, 5.0, 5.0));
+        let mut point: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_point_2d(&mut out, 2.5, 2.5, &mut point);
+        assert_eq!(point, vec![1]);
+    }
 }
 
 mod create_uniform_grid_spatial_backend_2d {
@@ -213,6 +554,16 @@ mod oversized_region_query {
     }
 
     #[test]
+    fn still_excludes_objects_the_wide_region_misses() {
+        let mut grid = create_spatial_index_2d(1.0);
+        insert_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(0.0, 0.0, 1.0, 1.0));
+        insert_spatial_object_2d(&mut grid, 2, &create_spatial_aabb_2d(5e11, 0.0, 5e11 + 1.0, 1.0));
+        let mut out: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_region_2d(&mut grid, &create_spatial_aabb_2d(-1e12, -1e12, 10.0, 1e12), &mut out);
+        assert_eq!(out, vec![1]);
+    }
+
+    #[test]
     fn returns_the_same_objects_either_way() {
         let mut grid = create_spatial_index_2d(1.0);
         for i in 0..40u64 {
@@ -314,6 +665,16 @@ mod oversized_extent_bound {
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_point_2d(&mut grid, 1.0, 1.0, &mut out);
         assert_eq!(out, vec![1]);
+    }
+
+    #[test]
+    fn keeps_oversized_out_of_ray_traversal_cell_range() {
+        let mut grid = create_spatial_index_2d(1.0);
+        insert_spatial_object_2d(&mut grid, 1, &create_spatial_aabb_2d(0.0, 0.0, 1.0, 1.0));
+        insert_spatial_object_2d(&mut grid, 2, &create_spatial_aabb_2d(-1e12, -1e12, 1e12, 1e12));
+        let mut out: Vec<SpatialObjectId> = Vec::new();
+        query_spatial_ray_2d(&mut grid, -5.0, 0.5, 1.0, 0.0, &mut out);
+        assert_eq!(sorted_ids(&out), vec![1, 2]);
     }
 
     #[test]

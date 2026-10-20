@@ -1,0 +1,11 @@
+mod animation_advance_test;
+mod animation_blend_test;
+mod animation_blend_tree_test;
+mod animation_clip_test;
+mod animation_crossfade_test;
+mod animation_layer_stack_test;
+mod animation_player_test;
+mod animation_root_motion_test;
+mod animation_state_machine_advance_test;
+mod animation_state_machine_test;
+mod animation_track_test;

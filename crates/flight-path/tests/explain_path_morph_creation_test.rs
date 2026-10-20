@@ -4,40 +4,80 @@ mod explain_path_morph_creation_test {
     use super::*;
 
     #[test]
-    fn reports_supported_for_compatible_paths() {
-        let mut start = create_path(PathWinding::NonZero);
-        append_path_rectangle(&mut start, 0.0, 0.0, 100.0, 100.0);
-        let mut end = create_path(PathWinding::NonZero);
-        append_path_rectangle(&mut end, 50.0, 50.0, 200.0, 200.0);
-        let explanation = explain_path_morph_creation(&start, &end);
-        assert!(explanation.supported);
-        assert_eq!(explanation.reason, PathMorphCreationReason::Ok);
-        assert!(explanation.contour.is_none());
+    fn reports_compatible_pair() {
+        let start = create_path(PathWinding::NonZero);
+        let end = create_path(PathWinding::NonZero);
+        let result = explain_path_morph_creation(&start, &end);
+        assert!(result.supported);
+        assert_eq!(result.reason, PathMorphCreationReason::Ok);
+        assert!(result.contour.is_none());
     }
 
     #[test]
-    fn reports_unsupported_for_winding_mismatch() {
-        let mut start = create_path(PathWinding::NonZero);
-        append_path_rectangle(&mut start, 0.0, 0.0, 100.0, 100.0);
-        let mut end = create_path(PathWinding::EvenOdd);
-        append_path_rectangle(&mut end, 0.0, 0.0, 100.0, 100.0);
-        let explanation = explain_path_morph_creation(&start, &end);
-        assert!(!explanation.supported);
-        assert_eq!(explanation.reason, PathMorphCreationReason::WindingMismatch);
+    fn reports_winding_mismatch() {
+        let start = create_path(PathWinding::NonZero);
+        let end = create_path(PathWinding::EvenOdd);
+        let result = explain_path_morph_creation(&start, &end);
+        assert!(!result.supported);
+        assert_eq!(result.reason, PathMorphCreationReason::WindingMismatch);
     }
 
     #[test]
-    fn reports_contour_index_for_closedness_mismatch() {
+    fn reports_contour_count_mismatch() {
         let mut start = create_path(PathWinding::NonZero);
-        append_path_rectangle(&mut start, 0.0, 0.0, 100.0, 100.0);
+        append_path_move_to(&mut start, 0.0, 0.0);
+        let end = create_path(PathWinding::NonZero);
+        let result = explain_path_morph_creation(&start, &end);
+        assert!(!result.supported);
+        assert_eq!(result.reason, PathMorphCreationReason::ContourCountMismatch);
+    }
+
+    #[test]
+    fn reports_first_contour_with_different_closedness() {
+        let mut start = create_path(PathWinding::NonZero);
+        append_path_move_to(&mut start, 0.0, 0.0);
+        append_path_line_to(&mut start, 1.0, 0.0);
+        append_path_move_to(&mut start, 10.0, 10.0);
+        append_path_line_to(&mut start, 11.0, 10.0);
+        append_path_close(&mut start);
         let mut end = create_path(PathWinding::NonZero);
         append_path_move_to(&mut end, 0.0, 0.0);
-        append_path_line_to(&mut end, 100.0, 0.0);
-        append_path_line_to(&mut end, 100.0, 100.0);
-        append_path_line_to(&mut end, 0.0, 100.0);
-        let explanation = explain_path_morph_creation(&start, &end);
-        assert!(!explanation.supported);
-        assert_eq!(explanation.reason, PathMorphCreationReason::ContourClosednessMismatch);
-        assert!(explanation.contour.is_some());
+        append_path_line_to(&mut end, 1.0, 0.0);
+        append_path_move_to(&mut end, 10.0, 10.0);
+        append_path_line_to(&mut end, 11.0, 10.0);
+        let result = explain_path_morph_creation(&start, &end);
+        assert!(!result.supported);
+        assert_eq!(result.reason, PathMorphCreationReason::ContourClosednessMismatch);
+        assert_eq!(result.contour, Some(1));
+    }
+
+    #[test]
+    fn reports_contour_orientation_mismatch_for_reversed_subset() {
+        let mut start = create_path(PathWinding::NonZero);
+        append_path_move_to(&mut start, 0.0, 0.0);
+        append_path_line_to(&mut start, 20.0, 0.0);
+        append_path_line_to(&mut start, 20.0, 20.0);
+        append_path_line_to(&mut start, 0.0, 20.0);
+        append_path_close(&mut start);
+        append_path_move_to(&mut start, 5.0, 5.0);
+        append_path_line_to(&mut start, 15.0, 5.0);
+        append_path_line_to(&mut start, 15.0, 15.0);
+        append_path_line_to(&mut start, 5.0, 15.0);
+        append_path_close(&mut start);
+        let mut end = create_path(PathWinding::NonZero);
+        append_path_move_to(&mut end, 0.0, 0.0);
+        append_path_line_to(&mut end, 20.0, 0.0);
+        append_path_line_to(&mut end, 20.0, 20.0);
+        append_path_line_to(&mut end, 0.0, 20.0);
+        append_path_close(&mut end);
+        append_path_move_to(&mut end, 5.0, 5.0);
+        append_path_line_to(&mut end, 5.0, 15.0);
+        append_path_line_to(&mut end, 15.0, 15.0);
+        append_path_line_to(&mut end, 15.0, 5.0);
+        append_path_close(&mut end);
+        let result = explain_path_morph_creation(&start, &end);
+        assert!(!result.supported);
+        assert_eq!(result.reason, PathMorphCreationReason::ContourOrientationMismatch);
+        assert_eq!(result.contour, Some(1));
     }
 }

@@ -190,6 +190,25 @@ mod offset_path {
     }
 
     #[test]
+    fn closes_a_concave_slot_narrower_than_two_delta_into_a_valid_outline() {
+        let kernel = create_martinez_path_boolean_kernel();
+        let u_shape = [0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 5.5, 10.0, 5.5, 3.0, 4.5, 3.0, 4.5, 10.0, 0.0, 10.0];
+        let mut out = create_path(PathWinding::NonZero);
+        offset_path(&mut out, &kernel, &polygon_path(&u_shape, true), 1.0, None);
+        assert_eq!(ring_count(&out), 1);
+        let (min_x, min_y, max_x, max_y) = path_bounds(&out);
+        assert!((min_x - (-1.0)).abs() < 1e-6);
+        assert!((max_x - 11.0).abs() < 1e-6);
+        assert!((min_y - (-1.0)).abs() < 1e-6);
+        assert!((max_y - 11.0).abs() < 1e-6);
+        let mut simplified = create_path(PathWinding::NonZero);
+        let simplify_opts = PathBooleanOptions { fill_rule: Some(PathBooleanFillRule::NonZero), tolerance: None };
+        simplify_path(&mut simplified, &kernel, &out, Some(&simplify_opts));
+        assert_eq!(ring_count(&simplified), ring_count(&out));
+        assert!((path_area(&simplified) - path_area(&out)).abs() < 1e-4);
+    }
+
+    #[test]
     fn strokes_an_open_path_into_a_butt_capped_rectangle() {
         let kernel = create_martinez_path_boolean_kernel();
         let opts = PathOffsetOptions { join: None, end: Some(PathOffsetEnd::Butt), miter_limit: None, tolerance: None, arc_tolerance: None };
