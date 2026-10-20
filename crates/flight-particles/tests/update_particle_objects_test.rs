@@ -1,0 +1,579 @@
+use std::cell::RefCell;
+
+use flight_math::create_random_source;
+use flight_particles::*;
+
+thread_local! {
+    static SPAWN_COUNT: RefCell<u32> = RefCell::new(0);
+    static SPAWNS: RefCell<Vec<[f32; 3]>> = RefCell::new(Vec::new());
+    static DEATHS: RefCell<Vec<[f32; 3]>> = RefCell::new(Vec::new());
+}
+
+fn on_spawn_counter(_x: f32, _y: f32, _z: f32) {
+    SPAWN_COUNT.with(|c| *c.borrow_mut() += 1);
+}
+
+fn on_spawn_recorder(x: f32, y: f32, z: f32) {
+    SPAWNS.with(|c| c.borrow_mut().push([x, y, z]));
+}
+
+fn on_death_recorder(x: f32, y: f32, z: f32) {
+    DEATHS.with(|c| c.borrow_mut().push([x, y, z]));
+}
+
+mod is_particle_objects_complete_tests {
+    use super::*;
+
+    #[test]
+    fn is_always_false_for_infinite_or_looping_emitters() {
+        let objects = vec![ParticleObject::default()];
+        let state = create_particle_objects_state(1, None);
+        assert!(!is_particle_objects_complete(
+            &objects,
+            &state,
+            &create_particle_emitter_config(Some(&ParticleEmitterConfig {
+                duration: 0.0,
+                ..Default::default()
+            })),
+        ));
+        assert!(!is_particle_objects_complete(
+            &objects,
+            &state,
+            &create_particle_emitter_config(Some(&ParticleEmitterConfig {
+                duration: 1.0,
+                looping: true,
+                ..Default::default()
+            })),
+        ));
+    }
+
+    #[test]
+    fn is_true_once_finished_and_all_objects_are_dead() {
+        let mut objects: Vec<ParticleObject> =
+            (0..50).map(|_| ParticleObject::default()).collect();
+        let mut state = create_particle_objects_state(50, None);
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 10.0,
+            lifetime_min: 0.5,
+            lifetime_max: 0.5,
+            duration: 1.0,
+            looping: false,
+            ..Default::default()
+        }));
+        assert!(!is_particle_objects_complete(&objects, &state, &config));
+        for _ in 0..10 {
+            update_particle_objects(&mut objects, &mut state, &config, 0.1, None);
+        }
+        assert!(!is_particle_objects_complete(&objects, &state, &config));
+        for _ in 0..10 {
+            update_particle_objects(&mut objects, &mut state, &config, 0.1, None);
+        }
+        assert!(!objects.iter().any(|o| o.visible));
+        assert!(is_particle_objects_complete(&objects, &state, &config));
+    }
+}
+
+mod update_particle_objects_tests {
+    use super::*;
+
+    #[test]
+    fn a_finite_non_looping_object_emitter_stops_spawning_after_its_duration() {
+        let mut objects: Vec<ParticleObject> =
+            (0..50).map(|_| ParticleObject::default()).collect();
+        let mut state = create_particle_objects_state(50, None);
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 10.0,
+            lifetime_min: 100.0,
+            lifetime_max: 100.0,
+            duration: 1.0,
+            looping: false,
+            ..Default::default()
+        }));
+        for _ in 0..20 {
+            update_particle_objects(&mut objects, &mut state, &config, 0.1, None);
+        }
+        let live_after_duration = objects.iter().filter(|o| o.visible).count();
+        assert!(live_after_duration > 0);
+        for _ in 0..20 {
+            update_particle_objects(&mut objects, &mut state, &config, 0.1, None);
+        }
+        assert_eq!(
+            objects.iter().filter(|o| o.visible).count(),
+            live_after_duration
+        );
+    }
+
+    #[test]
+    fn applies_alpha_and_scale_curves_over_lifetime() {
+        let mut objects = vec![ParticleObject::default()];
+        let mut state = create_particle_objects_state(1, None);
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 1.0,
+            lifetime_min: 1.0,
+            lifetime_max: 1.0,
+            speed_min: 0.0,
+            speed_max: 0.0,
+            scale_min: 4.0,
+            scale_max: 4.0,
+            alpha_curve: Some(vec![1.0, 0.0, 1.0]),
+            scale_curve: Some(vec![1.0, 0.5, 0.0]),
+            ..Default::default()
+        }));
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        update_particle_objects(&mut objects, &mut state, &config, 0.5, None);
+        assert!((objects[0].alpha - 0.0).abs() < 0.02);
+        assert!((objects[0].scale_x - 2.0).abs() < 0.02);
+    }
+
+    #[test]
+    fn can_re_use_dead_slots_for_new_spawns() {
+        let mut objects = vec![ParticleObject::default()];
+        let mut state = create_particle_objects_state(1, None);
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 2.0,
+            lifetime_min: 0.1,
+            lifetime_max: 0.1,
+            speed_min: 0.0,
+            speed_max: 0.0,
+            ..Default::default()
+        }));
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        assert!(objects[0].visible);
+    }
+
+    #[test]
+    fn does_nothing_when_objects_array_is_empty() {
+        let mut state = create_particle_objects_state(0, None);
+        let config = create_particle_emitter_config(None);
+        update_particle_objects(&mut Vec::new(), &mut state, &config, 1.0, None);
+    }
+
+    #[test]
+    fn fades_alpha_from_alpha_start_to_alpha_end_over_lifetime() {
+        let mut objects = vec![ParticleObject::default()];
+        let mut state = create_particle_objects_state(1, None);
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 1.0,
+            lifetime_min: 1.0,
+            lifetime_max: 1.0,
+            alpha_start: 1.0,
+            alpha_end: 0.0,
+            speed_min: 0.0,
+            speed_max: 0.0,
+            ..Default::default()
+        }));
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        update_particle_objects(&mut objects, &mut state, &config, 0.5, None);
+        assert!((objects[0].alpha - 0.5).abs() < 0.1);
+    }
+
+    #[test]
+    fn fires_a_one_shot_burst_on_first_frame() {
+        let mut objects: Vec<ParticleObject> =
+            (0..30).map(|_| ParticleObject::default()).collect();
+        let mut state = create_particle_objects_state(30, None);
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 0.0,
+            burst_count: 10.0,
+            burst_interval: 0.0,
+            lifetime_min: 10.0,
+            lifetime_max: 10.0,
+            ..Default::default()
+        }));
+        update_particle_objects(&mut objects, &mut state, &config, 1.0 / 60.0, None);
+        assert_eq!(objects.iter().filter(|o| o.visible).count(), 10);
+        update_particle_objects(&mut objects, &mut state, &config, 1.0 / 60.0, None);
+        assert_eq!(objects.iter().filter(|o| o.visible).count(), 10);
+    }
+
+    #[test]
+    fn fires_on_spawn_callback_for_each_spawned_object() {
+        SPAWN_COUNT.with(|c| *c.borrow_mut() = 0);
+        let mut objects = vec![ParticleObject::default(), ParticleObject::default()];
+        let mut state = create_particle_objects_state(2, None);
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 2.0,
+            lifetime_min: 10.0,
+            lifetime_max: 10.0,
+            ..Default::default()
+        }));
+        update_particle_objects(
+            &mut objects,
+            &mut state,
+            &config,
+            1.0,
+            Some(&ParticleObjectsUpdateOptions {
+                emitter_x: f32::NAN,
+                emitter_y: f32::NAN,
+                callbacks: Some(ParticleObjectCallbacks {
+                    on_spawn: Some(on_spawn_counter),
+                    on_death: None,
+                }),
+            }),
+        );
+        SPAWN_COUNT.with(|c| assert_eq!(*c.borrow(), 2));
+    }
+
+    #[test]
+    fn ignores_a_negative_delta_time_frame() {
+        let mut objects = vec![ParticleObject::default(), ParticleObject::default()];
+        let mut state = create_particle_objects_state(2, None);
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 10.0,
+            lifetime_min: 10.0,
+            lifetime_max: 10.0,
+            ..Default::default()
+        }));
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        let live_before = objects.iter().filter(|o| o.visible).count();
+        update_particle_objects(&mut objects, &mut state, &config, -1.0, None);
+        assert_eq!(objects.iter().filter(|o| o.visible).count(), live_before);
+    }
+
+    #[test]
+    fn ignores_a_zero_delta_time_frame() {
+        let mut objects = vec![ParticleObject::default()];
+        let mut state = create_particle_objects_state(1, None);
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 0.0,
+            burst_count: 1.0,
+            burst_interval: 0.0,
+            lifetime_min: 10.0,
+            lifetime_max: 10.0,
+            speed_min: 0.0,
+            speed_max: 0.0,
+            spread: 0.0,
+            velocity_inheritance: 1.0,
+            ..Default::default()
+        }));
+        update_particle_objects(
+            &mut objects,
+            &mut state,
+            &config,
+            1.0 / 60.0,
+            Some(&ParticleObjectsUpdateOptions {
+                emitter_x: 0.0,
+                emitter_y: 0.0,
+                callbacks: None,
+            }),
+        );
+        let live_before = objects.iter().filter(|o| o.visible).count();
+        state.burst_timer = 0.0;
+        update_particle_objects(
+            &mut objects,
+            &mut state,
+            &config,
+            0.0,
+            Some(&ParticleObjectsUpdateOptions {
+                emitter_x: 100.0,
+                emitter_y: 0.0,
+                callbacks: None,
+            }),
+        );
+        assert_eq!(objects.iter().filter(|o| o.visible).count(), live_before);
+        assert!(state.velocities[0].is_finite());
+        assert!(state.velocities[1].is_finite());
+    }
+
+    #[test]
+    fn kills_objects_when_their_lifetime_expires() {
+        let mut objects = vec![ParticleObject::default()];
+        let mut state = create_particle_objects_state(1, None);
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 1.0,
+            lifetime_min: 0.5,
+            lifetime_max: 0.5,
+            speed_min: 0.0,
+            speed_max: 0.0,
+            ..Default::default()
+        }));
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        assert!(objects[0].visible);
+        update_particle_objects(&mut objects, &mut state, &config, 0.6, None);
+        assert!(!objects[0].visible);
+    }
+
+    #[test]
+    fn moves_objects_according_to_velocity_and_gravity() {
+        let mut objects = vec![ParticleObject::default()];
+        let mut state = create_particle_objects_state(1, None);
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 1.0,
+            lifetime_min: 10.0,
+            lifetime_max: 10.0,
+            speed_min: 0.0,
+            speed_max: 0.0,
+            gravity_x: 100.0,
+            gravity_y: 0.0,
+            ..Default::default()
+        }));
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        assert!(objects[0].x > 0.0);
+    }
+
+    #[test]
+    fn respects_max_particles_does_not_exceed_pool_size() {
+        let mut objects = vec![ParticleObject::default(), ParticleObject::default()];
+        let mut state = create_particle_objects_state(2, None);
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 100.0,
+            lifetime_min: 10.0,
+            lifetime_max: 10.0,
+            ..Default::default()
+        }));
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        let live_count = objects.iter().filter(|o| o.visible).count();
+        assert!(live_count <= objects.len());
+    }
+
+    #[test]
+    fn rotates_objects_at_their_per_particle_rotation_speed() {
+        let mut objects = vec![ParticleObject::default()];
+        let mut state = create_particle_objects_state(1, None);
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 1.0,
+            lifetime_min: 10.0,
+            lifetime_max: 10.0,
+            speed_min: 0.0,
+            speed_max: 0.0,
+            spread: 0.0,
+            direction_x: 0.0,
+            direction_y: -1.0,
+            rotation_speed_min: std::f32::consts::PI,
+            rotation_speed_max: std::f32::consts::PI,
+            ..Default::default()
+        }));
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        let rot_before = objects[0].rotation;
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        assert!(
+            (objects[0].rotation - rot_before - std::f32::consts::PI).abs() < 0.01
+        );
+    }
+
+    #[test]
+    fn sets_spawned_objects_to_visible_and_positions_them_at_origin() {
+        let mut objects = vec![ParticleObject::default()];
+        let mut state = create_particle_objects_state(1, None);
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 1.0,
+            lifetime_min: 10.0,
+            lifetime_max: 10.0,
+            speed_min: 0.0,
+            speed_max: 0.0,
+            ..Default::default()
+        }));
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        assert!(objects[0].visible);
+        assert_eq!(objects[0].x, 0.0);
+        assert_eq!(objects[0].y, 0.0);
+    }
+
+    #[test]
+    fn spawns_objects_from_the_pool() {
+        let mut objects: Vec<ParticleObject> =
+            (0..3).map(|_| ParticleObject::default()).collect();
+        let mut state = create_particle_objects_state(3, None);
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 2.0,
+            lifetime_min: 10.0,
+            lifetime_max: 10.0,
+            ..Default::default()
+        }));
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        let live_count = objects.iter().filter(|o| o.visible).count();
+        assert_eq!(live_count, 2);
+    }
+
+    #[test]
+    fn spawns_objects_on_the_line_emitter_boundary() {
+        let mut objects = vec![ParticleObject::default()];
+        let mut state = create_particle_objects_state(1, Some(create_random_source(42)));
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 1.0,
+            lifetime_min: 10.0,
+            lifetime_max: 10.0,
+            speed_min: 0.0,
+            speed_max: 0.0,
+            emitter_shape: EmitterShape::Line,
+            emitter_width: 80.0,
+            ..Default::default()
+        }));
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        assert_eq!(objects[0].y, 0.0);
+        assert!(objects[0].x.abs() <= 40.0 + 1e-4);
+    }
+
+    #[test]
+    fn spawns_objects_on_the_ring_emitter_boundary() {
+        let mut objects: Vec<ParticleObject> =
+            (0..20).map(|_| ParticleObject::default()).collect();
+        let mut state =
+            create_particle_objects_state(20, Some(create_random_source(12345)));
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 20.0,
+            max_particles: 20.0,
+            lifetime_min: 10.0,
+            lifetime_max: 10.0,
+            speed_min: 0.0,
+            speed_max: 0.0,
+            emitter_shape: EmitterShape::Ring,
+            emitter_radius: 50.0,
+            ..Default::default()
+        }));
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        for obj in objects.iter() {
+            let d = (obj.x * obj.x + obj.y * obj.y).sqrt();
+            assert!((d - 50.0).abs() < 0.01);
+        }
+    }
+
+    #[test]
+    fn spawns_objects_within_circle_emitter_shape() {
+        let mut objects: Vec<ParticleObject> =
+            (0..20).map(|_| ParticleObject::default()).collect();
+        let mut state = create_particle_objects_state(20, None);
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 20.0,
+            max_particles: 20.0,
+            lifetime_min: 10.0,
+            lifetime_max: 10.0,
+            speed_min: 0.0,
+            speed_max: 0.0,
+            emitter_shape: EmitterShape::Circle,
+            emitter_radius: 50.0,
+            ..Default::default()
+        }));
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        for obj in objects.iter().filter(|o| o.visible) {
+            assert!((obj.x * obj.x + obj.y * obj.y).sqrt() <= 50.0 + 1e-4);
+        }
+    }
+
+    #[test]
+    fn animates_scale_over_lifetime_when_scale_end_differs_from_1() {
+        let mut objects = vec![ParticleObject::default()];
+        let mut state = create_particle_objects_state(1, None);
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 1.0,
+            lifetime_min: 1.0,
+            lifetime_max: 1.0,
+            speed_min: 0.0,
+            speed_max: 0.0,
+            scale_min: 2.0,
+            scale_max: 2.0,
+            scale_end: 0.0,
+            ..Default::default()
+        }));
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        update_particle_objects(&mut objects, &mut state, &config, 0.5, None);
+        assert!((objects[0].scale_x - 1.0).abs() < 0.1);
+    }
+
+    #[test]
+    fn treats_a_degenerate_line_emitter_as_a_point() {
+        let mut objects = vec![ParticleObject::default()];
+        let mut state = create_particle_objects_state(1, Some(create_random_source(42)));
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            emitter_shape: EmitterShape::Line,
+            emitter_width: 0.0,
+            lifetime_min: 10.0,
+            lifetime_max: 10.0,
+            spawn_rate: 1.0,
+            speed_min: 0.0,
+            speed_max: 0.0,
+            ..Default::default()
+        }));
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        assert_eq!(objects[0].x, 0.0);
+        assert_eq!(objects[0].y, 0.0);
+    }
+
+    #[test]
+    fn treats_a_degenerate_ring_emitter_as_a_point() {
+        let mut objects = vec![ParticleObject::default()];
+        let mut state = create_particle_objects_state(1, Some(create_random_source(42)));
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            emitter_shape: EmitterShape::Ring,
+            emitter_radius: 0.0,
+            lifetime_min: 10.0,
+            lifetime_max: 10.0,
+            spawn_rate: 1.0,
+            speed_min: 0.0,
+            speed_max: 0.0,
+            ..Default::default()
+        }));
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        assert_eq!(objects[0].x, 0.0);
+        assert_eq!(objects[0].y, 0.0);
+    }
+
+    #[test]
+    fn uses_the_injected_rng_for_deterministic_spawning() {
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            spawn_rate: 5.0,
+            lifetime_min: 10.0,
+            lifetime_max: 10.0,
+            speed_min: 10.0,
+            speed_max: 200.0,
+            spread: std::f32::consts::PI,
+            ..Default::default()
+        }));
+        let run = || {
+            let mut objects: Vec<ParticleObject> =
+                (0..20).map(|_| ParticleObject::default()).collect();
+            let mut state =
+                create_particle_objects_state(20, Some(create_random_source(12345)));
+            update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+            objects.iter().map(|o| o.rotation).collect::<Vec<_>>()
+        };
+        assert_eq!(run(), run());
+    }
+
+    #[test]
+    fn uses_the_shared_3d_callback_payload_for_object_spawns_and_deaths() {
+        SPAWNS.with(|c| c.borrow_mut().clear());
+        DEATHS.with(|c| c.borrow_mut().clear());
+        let mut objects = vec![ParticleObject::default()];
+        let mut state = create_particle_objects_state(1, None);
+        // Use Point emitter (default) so spawn position is always (0, 0, 0).
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            duration: 1.0,
+            lifetime_max: 0.5,
+            lifetime_min: 0.5,
+            looping: false,
+            spawn_rate: 1.0,
+            speed_max: 0.0,
+            speed_min: 0.0,
+            ..Default::default()
+        }));
+        let callbacks = ParticleObjectsUpdateOptions {
+            emitter_x: f32::NAN,
+            emitter_y: f32::NAN,
+            callbacks: Some(ParticleObjectCallbacks {
+                on_death: Some(on_death_recorder),
+                on_spawn: Some(on_spawn_recorder),
+            }),
+        };
+        update_particle_objects(&mut objects, &mut state, &config, 1.0, Some(&callbacks));
+        SPAWNS.with(|c| {
+            let s = c.borrow();
+            assert_eq!(s.len(), 1);
+            assert_eq!(s[0], [0.0, 0.0, 0.0]);
+        });
+        update_particle_objects(
+            &mut objects,
+            &mut state,
+            &config,
+            0.6,
+            Some(&callbacks),
+        );
+        DEATHS.with(|c| {
+            let d = c.borrow();
+            assert_eq!(d.len(), 1);
+            assert_eq!(d[0], [0.0, 0.0, 0.0]);
+        });
+    }
+}

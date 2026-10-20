@@ -1,0 +1,182 @@
+use std::cell::RefCell;
+
+use flight_spatial::*;
+
+thread_local! {
+    static NOTICES: RefCell<Vec<SpatialIndexingNotice>> = RefCell::new(Vec::new());
+}
+
+fn test_guard(notice: &SpatialIndexingNotice) {
+    NOTICES.with(|n| n.borrow_mut().push(notice.clone()));
+}
+
+fn take_notices() -> Vec<SpatialIndexingNotice> {
+    NOTICES.with(|n| n.borrow_mut().drain(..).collect())
+}
+
+mod report_spatial_indexing {
+    use super::*;
+
+    #[test]
+    fn hands_the_notice_to_the_installed_guard_unchanged() {
+        let notice = SpatialIndexingNotice {
+            cell_size: 4.0,
+            id: 3,
+            mode: SpatialIndexingMode::Overflow,
+            operation: SpatialIndexingOperation::Insert,
+            reason: Some(SpatialIndexingReason::InvalidCellSize),
+            would_occupy_bucket_count: 9.0,
+        };
+        report_spatial_indexing(Some(test_guard), &notice);
+        let captured = take_notices();
+        assert_eq!(captured.len(), 1);
+        assert_eq!(captured[0], notice);
+    }
+
+    #[test]
+    fn is_a_no_op_with_no_guard_installed() {
+        let notice = SpatialIndexingNotice {
+            cell_size: 1.0,
+            id: 0,
+            mode: SpatialIndexingMode::Absent,
+            operation: SpatialIndexingOperation::Remove,
+            reason: Some(SpatialIndexingReason::MissingId),
+            would_occupy_bucket_count: 0.0,
+        };
+        report_spatial_indexing(None, &notice);
+        let captured = take_notices();
+        assert_eq!(captured.len(), 0);
+    }
+}
+
+mod set_spatial_indexing_guard_2d {
+    use super::*;
+
+    #[test]
+    fn reports_a_decline_with_its_reason_and_no_span() {
+        take_notices();
+        let mut index = create_spatial_index_2d(10.0);
+        set_spatial_indexing_guard_2d(&mut index, Some(test_guard));
+        let bounds = create_spatial_aabb_2d(f32::NAN, 0.0, 10.0, 10.0);
+        insert_spatial_object_2d(&mut index, 7, &bounds);
+        let captured = take_notices();
+        assert_eq!(captured.len(), 1);
+        assert_eq!(captured[0].cell_size, 10.0);
+        assert_eq!(captured[0].id, 7);
+        assert_eq!(captured[0].mode, SpatialIndexingMode::Declined);
+        assert_eq!(captured[0].operation, SpatialIndexingOperation::Insert);
+        assert_eq!(captured[0].reason, Some(SpatialIndexingReason::NonFiniteBounds));
+        assert_eq!(captured[0].would_occupy_bucket_count, 0.0);
+    }
+
+    #[test]
+    fn reports_an_overflow_with_the_span() {
+        take_notices();
+        let mut index = create_spatial_index_2d(1.0);
+        set_spatial_indexing_guard_2d(&mut index, Some(test_guard));
+        let bounds = create_spatial_aabb_2d(0.0, 0.0, 199.0, 199.0);
+        insert_spatial_object_2d(&mut index, 7, &bounds);
+        let captured = take_notices();
+        assert_eq!(captured.len(), 1);
+        assert_eq!(captured[0].cell_size, 1.0);
+        assert_eq!(captured[0].id, 7);
+        assert_eq!(captured[0].mode, SpatialIndexingMode::Overflow);
+        assert_eq!(captured[0].operation, SpatialIndexingOperation::Insert);
+        assert_eq!(captured[0].reason, None);
+        assert_eq!(captured[0].would_occupy_bucket_count, 40000.0);
+    }
+
+    #[test]
+    fn reports_invalid_cell_size_and_keeps_results_correct() {
+        take_notices();
+        for &cell_size in &[0.0_f32, -1.0] {
+            let mut index = create_spatial_index_2d(cell_size);
+            set_spatial_indexing_guard_2d(&mut index, Some(test_guard));
+            let bounds = create_spatial_aabb_2d(0.0, 0.0, 10.0, 10.0);
+            assert!(insert_spatial_object_2d(&mut index, 7, &bounds));
+            let mut point: Vec<SpatialObjectId> = Vec::new();
+            query_spatial_point_2d(&mut index, 5.0, 5.0, &mut point);
+            assert_eq!(point, vec![7]);
+        }
+        let captured = take_notices();
+        assert_eq!(captured.len(), 2);
+        for notice in &captured {
+            assert_eq!(notice.id, 7);
+            assert_eq!(notice.mode, SpatialIndexingMode::Overflow);
+            assert_eq!(notice.reason, Some(SpatialIndexingReason::InvalidCellSize));
+        }
+    }
+
+    #[test]
+    fn declines_and_reports_inverted_bounds() {
+        take_notices();
+        let mut index = create_spatial_index_2d(10.0);
+        set_spatial_indexing_guard_2d(&mut index, Some(test_guard));
+        let bounds = create_spatial_aabb_2d(10.0, 0.0, 0.0, 10.0);
+        assert!(!insert_spatial_object_2d(&mut index, 7, &bounds));
+        let explanation = explain_spatial_indexing_2d(&index, 7);
+        assert_eq!(explanation.bucket_count, 0.0);
+        assert_eq!(explanation.id, 7);
+        assert_eq!(explanation.mode, SpatialIndexingMode::Declined);
+        assert_eq!(explanation.reason, Some(SpatialDeclineReason::InvertedBounds));
+        let captured = take_notices();
+        assert_eq!(captured.len(), 1);
+        assert_eq!(captured[0].reason, Some(SpatialIndexingReason::InvertedBounds));
+    }
+
+    #[test]
+    fn reports_update_and_remove_for_missing_id() {
+        take_notices();
+        let mut index = create_spatial_index_2d(10.0);
+        set_spatial_indexing_guard_2d(&mut index, Some(test_guard));
+        let bounds = create_spatial_aabb_2d(0.0, 0.0, 5.0, 5.0);
+        assert!(update_spatial_object_2d(&mut index, 7, &bounds));
+        remove_spatial_object_2d(&mut index, 8);
+        let captured = take_notices();
+        assert_eq!(captured.len(), 2);
+        assert_eq!(captured[0].id, 7);
+        assert_eq!(captured[0].mode, SpatialIndexingMode::Cells);
+        assert_eq!(captured[0].operation, SpatialIndexingOperation::Update);
+        assert_eq!(captured[0].reason, Some(SpatialIndexingReason::MissingId));
+        assert_eq!(captured[1].id, 8);
+        assert_eq!(captured[1].mode, SpatialIndexingMode::Absent);
+        assert_eq!(captured[1].operation, SpatialIndexingOperation::Remove);
+        assert_eq!(captured[1].reason, Some(SpatialIndexingReason::MissingId));
+    }
+
+    #[test]
+    fn stays_silent_on_the_ordinary_path() {
+        take_notices();
+        let mut index = create_spatial_index_2d(10.0);
+        set_spatial_indexing_guard_2d(&mut index, Some(test_guard));
+        let bounds = create_spatial_aabb_2d(0.0, 0.0, 10.0, 10.0);
+        insert_spatial_object_2d(&mut index, 1, &bounds);
+        remove_spatial_object_2d(&mut index, 1);
+        let captured = take_notices();
+        assert_eq!(captured.len(), 0);
+    }
+
+    #[test]
+    fn none_uninstalls_the_guard() {
+        take_notices();
+        let mut index = create_spatial_index_2d(10.0);
+        set_spatial_indexing_guard_2d(&mut index, Some(test_guard));
+        set_spatial_indexing_guard_2d(&mut index, None);
+        let bounds = create_spatial_aabb_2d(f32::NAN, 0.0, 10.0, 10.0);
+        insert_spatial_object_2d(&mut index, 1, &bounds);
+        let captured = take_notices();
+        assert_eq!(captured.len(), 0);
+    }
+
+    #[test]
+    fn does_not_change_what_insert_returns() {
+        take_notices();
+        let mut index = create_spatial_index_2d(10.0);
+        set_spatial_indexing_guard_2d(&mut index, Some(test_guard));
+        let nan_bounds = create_spatial_aabb_2d(f32::NAN, 0.0, 10.0, 10.0);
+        assert!(!insert_spatial_object_2d(&mut index, 1, &nan_bounds));
+        let ok_bounds = create_spatial_aabb_2d(0.0, 0.0, 10.0, 10.0);
+        assert!(insert_spatial_object_2d(&mut index, 2, &ok_bounds));
+        take_notices();
+    }
+}

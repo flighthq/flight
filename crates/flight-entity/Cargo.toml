@@ -1,0 +1,14 @@
+[package]
+name = "flight-entity"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Entity lifecycle management: allocation, finalization, runtime keys, and component storage"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[lints]
+workspace = true

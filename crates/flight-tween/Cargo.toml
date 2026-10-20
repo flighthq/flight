@@ -1,0 +1,18 @@
+[package]
+name = "flight-tween"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Tween animation: property interpolation, color tweens, stagger, timing, and tween management"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-easing = { workspace = true }
+flight-signals = { workspace = true }
+
+[lints]
+workspace = true

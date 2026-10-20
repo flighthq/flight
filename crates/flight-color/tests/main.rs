@@ -1,0 +1,9 @@
+mod color_from_kelvin_test;
+mod hsl_color_test;
+mod hsv_color_test;
+mod lerp_color_test;
+mod luminance_test;
+mod oklab_test;
+mod pack_color_test;
+mod premultiply_color_alpha_test;
+mod srgb_transfer_test;

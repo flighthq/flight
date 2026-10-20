@@ -1,0 +1,18 @@
+[package]
+name = "flight-animation"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Animation system: clips, keyframes, sampling, blending, and animation state management"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-signals = { workspace = true }
+
+[lints]
+workspace = true

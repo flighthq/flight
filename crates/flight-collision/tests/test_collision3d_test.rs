@@ -1,0 +1,125 @@
+use flight_collision::*;
+
+fn sphere(x: f64, radius: f64) -> CollisionShape3D {
+    CollisionShape3D::Sphere(CollisionSphere3D {
+        x,
+        y: 0.0,
+        z: 0.0,
+        radius,
+    })
+}
+
+mod set_collision_test_guard3d_tests {
+    use super::*;
+
+    #[test]
+    fn is_callable_and_accepts_none() {
+        // In Rust, the guard is a no-op. Verify it is callable.
+        set_collision_test_guard3d(None);
+    }
+
+    #[test]
+    fn is_callable_with_a_function() {
+        // In Rust, the guard is a no-op and does not retain the callback.
+        fn guard(_a: &CollisionShape3D, _b: &CollisionShape3D) {}
+        set_collision_test_guard3d(Some(guard));
+        // Calling test_collision3d still works regardless of guard.
+        let mut out = create_collision_manifold3d();
+        test_collision3d(&sphere(0.0, 1.0), &sphere(1.5, 1.0), &mut out);
+        // Clean up.
+        set_collision_test_guard3d(None);
+    }
+}
+
+mod test_collision3d_tests {
+    use super::*;
+
+    #[test]
+    fn falls_through_to_the_generic_gjk_epa_floor_when_no_specialization_is_registered() {
+        // In Rust, sphere-sphere has a direct specialization, so we use a pair without
+        // one (e.g. Cylinder-Sphere) to test the GJK/EPA fallthrough.
+        let cylinder = CollisionShape3D::Cylinder(CollisionCylinder3D {
+            x0: 0.0, y0: 0.0, z0: 0.0, x1: 0.0, y1: 0.0, z1: 2.0, radius: 1.0,
+        });
+        let s = CollisionShape3D::Sphere(CollisionSphere3D {
+            x: 0.0, y: 1.5, z: 1.0, radius: 1.0,
+        });
+        let mut out = create_collision_manifold3d();
+        assert!(test_collision3d(&cylinder, &s, &mut out));
+        assert!(out.depth > 0.0);
+    }
+
+    #[test]
+    fn prefers_a_specialization_registered_for_the_ordered_pair() {
+        // In Rust, sphere-sphere is statically specialized with the closed-form test.
+        // The closed form produces exact results (12+ digits) vs GJK/EPA (~4 digits).
+        let mut out = create_collision_manifold3d();
+        assert!(test_collision3d(&sphere(0.0, 1.0), &sphere(1.5, 1.0), &mut out));
+        assert!(out.overlapping);
+        // Closed-form depth is exact: 2.0 - 1.5 = 0.5
+        assert!((out.depth - 0.5).abs() < 1e-12);
+        assert!((out.normal_x - (-1.0)).abs() < 1e-12);
+    }
+
+    #[test]
+    fn negates_the_normal_when_only_the_reversed_specialization_exists() {
+        // (Aabb, Sphere) has no direct match, but (Sphere, Aabb) does.
+        // test_collision3d should try the reversed pair and negate the normal.
+        let aabb = CollisionShape3D::Aabb(CollisionAabb3D {
+            min_x: -1.0, min_y: -1.0, min_z: -1.0,
+            max_x: 1.0, max_y: 1.0, max_z: 1.0,
+        });
+        let s = CollisionShape3D::Sphere(CollisionSphere3D {
+            x: 1.5, y: 0.0, z: 0.0, radius: 1.0,
+        });
+        // Direct: test_collision3d(sphere, aabb) -> normal pushes sphere out of aabb
+        let mut direct_out = create_collision_manifold3d();
+        assert!(test_collision3d(&s, &aabb, &mut direct_out));
+        // The sphere is to the right of the aabb, so the normal pushes it further right (+x).
+        assert!(direct_out.normal_x > 0.0);
+
+        // Reversed: test_collision3d(aabb, sphere) -> should negate the normal
+        let mut reversed_out = create_collision_manifold3d();
+        assert!(test_collision3d(&aabb, &s, &mut reversed_out));
+        // Now A is the aabb and the normal should push aabb out of sphere (to the left, -x).
+        assert!((reversed_out.normal_x - (-direct_out.normal_x)).abs() < 1e-10);
+        assert!((reversed_out.depth - direct_out.depth).abs() < 1e-10);
+    }
+
+    #[test]
+    fn clears_the_manifold_when_a_reversed_specialization_reports_no_overlap() {
+        // (Aabb, Sphere) reversed to (Sphere, Aabb) but the shapes are separated.
+        let aabb = CollisionShape3D::Aabb(CollisionAabb3D {
+            min_x: -1.0, min_y: -1.0, min_z: -1.0,
+            max_x: 1.0, max_y: 1.0, max_z: 1.0,
+        });
+        let s = CollisionShape3D::Sphere(CollisionSphere3D {
+            x: 50.0, y: 0.0, z: 0.0, radius: 1.0,
+        });
+        let mut out = create_collision_manifold3d();
+        out.overlapping = true;
+        out.normal_x = 5.0;
+        assert!(!test_collision3d(&aabb, &s, &mut out));
+        assert!(!out.overlapping);
+        assert_eq!(out.normal_x, 0.0);
+        assert_eq!(out.normal_y, 0.0);
+        assert_eq!(out.normal_z, 0.0);
+        assert_eq!(out.depth, 0.0);
+    }
+
+    #[test]
+    fn reports_disjoint_shapes_as_not_overlapping() {
+        let mut out = create_collision_manifold3d();
+        assert!(!test_collision3d(&sphere(0.0, 1.0), &sphere(50.0, 1.0), &mut out));
+    }
+
+    #[test]
+    fn orients_the_generic_normal_to_push_a_out_of_b_and_reverses_when_the_arguments_swap() {
+        let mut first = create_collision_manifold3d();
+        let mut second = create_collision_manifold3d();
+        test_collision3d(&sphere(0.0, 1.0), &sphere(1.5, 1.0), &mut first);
+        test_collision3d(&sphere(1.5, 1.0), &sphere(0.0, 1.0), &mut second);
+        assert!((first.normal_x - (-second.normal_x)).abs() < 5e-3);
+        assert!((first.depth - second.depth).abs() < 5e-5);
+    }
+}

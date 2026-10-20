@@ -1,0 +1,17 @@
+[package]
+name = "flight-spring"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Spring physics simulation: 1D, 2D, and 3D springs with configurable frequency and damping"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-geometry = { workspace = true }
+
+[lints]
+workspace = true

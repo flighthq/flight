@@ -1,0 +1,14 @@
+[package]
+name = "flight-easing"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Easing functions: back, bounce, circular, cubic, elastic, exponential, sine, and more"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[lints]
+workspace = true

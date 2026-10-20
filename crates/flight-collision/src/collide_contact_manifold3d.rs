@@ -1,0 +1,225 @@
+use crate::collision_face3d::*;
+use crate::contact_feature_id::*;
+use crate::contact_manifold3d::*;
+use crate::test_collision3d::*;
+use crate::types::*;
+
+const CLIP_TOLERANCE: f64 = 1e-9;
+const CLIP_EPSILON: f64 = 1e-12;
+const MAX_CLIPPED_VERTICES: usize = 32;
+
+pub fn collide_contact_manifold3d(
+    a: &CollisionShape3D,
+    b: &CollisionShape3D,
+    out: &mut CollisionContactManifold3D,
+) -> bool {
+    clear_collision_contact_manifold3d(out);
+
+    let mut manifold = crate::types::CollisionManifold3D::default();
+    if !test_collision3d(a, b, &mut manifold) {
+        return false;
+    }
+
+    let normal_x = manifold.normal_x;
+    let normal_y = manifold.normal_y;
+    let normal_z = manifold.normal_z;
+    let depth = manifold.depth;
+
+    // Get reference and incident faces
+    let mut face_a = Vec::new();
+    let mut face_b = Vec::new();
+    let count_a = write_shape_face3d(a, normal_x, normal_y, normal_z, &mut face_a);
+    let count_b = write_shape_face3d(b, -normal_x, -normal_y, -normal_z, &mut face_b);
+
+    // For curved shapes with single vertex: write single contact point
+    if count_a <= 1 || count_b <= 1 {
+        return write_single_contact_point(
+            normal_x, normal_y, normal_z, depth,
+            &face_a, count_a, &face_b, count_b, out,
+        );
+    }
+
+    // Clip incident face against reference face side planes (Sutherland-Hodgman)
+    // Determine which face is the reference (A) and which is incident (B)
+    let clipped = clip_incident_against_reference(
+        &face_a, count_a,
+        &face_b, count_b,
+        normal_x, normal_y, normal_z,
+    );
+
+    if clipped.is_empty() {
+        return write_single_contact_point(
+            normal_x, normal_y, normal_z, depth,
+            &face_a, count_a, &face_b, count_b, out,
+        );
+    }
+
+    // Filter clipped points by reference face plane
+    let ref_offset = face_a[0] * normal_x + face_a[1] * normal_y + face_a[2] * normal_z;
+    out.overlapping = true;
+    out.normal_x = normal_x;
+    out.normal_y = normal_y;
+    out.normal_z = normal_z;
+
+    let mut pt_count = 0_usize;
+    for i in 0..clipped.len() / 3 {
+        let px = clipped[i * 3];
+        let py = clipped[i * 3 + 1];
+        let pz = clipped[i * 3 + 2];
+        let sep = px * normal_x + py * normal_y + pz * normal_z - ref_offset;
+        if sep <= CLIP_TOLERANCE && pt_count < MAX_COLLISION_CONTACT_POINTS_3D {
+            out.points[pt_count].x = px;
+            out.points[pt_count].y = py;
+            out.points[pt_count].z = pz;
+            out.points[pt_count].depth = -sep + depth;
+            out.points[pt_count].feature_id = pack_contact_feature_id(
+                false,
+                i as i64,
+                pt_count as i64,
+                false,
+            );
+            pt_count += 1;
+        }
+    }
+
+    out.point_count = pt_count;
+    return pt_count > 0;
+}
+
+fn write_shape_face3d(
+    shape: &CollisionShape3D,
+    nx: f64, ny: f64, nz: f64,
+    out: &mut Vec<f64>,
+) -> usize {
+    match shape {
+        CollisionShape3D::Sphere(s) => {
+            out.clear();
+            out.push(s.x + nx * s.radius);
+            out.push(s.y + ny * s.radius);
+            out.push(s.z + nz * s.radius);
+            return 1;
+        }
+        CollisionShape3D::Aabb(a) => write_collision_aabb_face3d(a, nx, ny, nz, out),
+        CollisionShape3D::Box(b) => write_collision_box_face3d(b, nx, ny, nz, out),
+        CollisionShape3D::Capsule(c) => write_collision_capsule_face3d(c, nx, ny, nz, out),
+        CollisionShape3D::Cylinder(_) => {
+            // For cylinder we return a single contact along the normal
+            out.clear();
+            // Use support in normal direction from collision_support3d
+            let mut sup = [0.0_f64; 3];
+            crate::collision_support3d::get_collision_support3d(shape, nx, ny, nz, &mut sup);
+            out.push(sup[0]); out.push(sup[1]); out.push(sup[2]);
+            return 1;
+        }
+        CollisionShape3D::Cone(_) => {
+            out.clear();
+            let mut sup = [0.0_f64; 3];
+            crate::collision_support3d::get_collision_support3d(shape, nx, ny, nz, &mut sup);
+            out.push(sup[0]); out.push(sup[1]); out.push(sup[2]);
+            return 1;
+        }
+        CollisionShape3D::Convex(c) => write_collision_convex_face3d(c, nx, ny, nz, out),
+    }
+}
+
+fn write_single_contact_point(
+    nx: f64, ny: f64, nz: f64, depth: f64,
+    face_a: &[f64], count_a: usize,
+    face_b: &[f64], count_b: usize,
+    out: &mut CollisionContactManifold3D,
+) -> bool {
+    out.overlapping = true;
+    out.normal_x = nx;
+    out.normal_y = ny;
+    out.normal_z = nz;
+    out.point_count = 1;
+
+    // Use the midpoint between the closest vertices on each face
+    let (ax, ay, az) = if count_a >= 1 { (face_a[0], face_a[1], face_a[2]) } else { (0.0, 0.0, 0.0) };
+    let (bx, by, bz) = if count_b >= 1 { (face_b[0], face_b[1], face_b[2]) } else { (0.0, 0.0, 0.0) };
+    out.points[0].x = (ax + bx) * 0.5;
+    out.points[0].y = (ay + by) * 0.5;
+    out.points[0].z = (az + bz) * 0.5;
+    out.points[0].depth = depth;
+    out.points[0].feature_id = 0;
+    return true;
+}
+
+fn clip_incident_against_reference(
+    ref_face: &[f64],
+    ref_count: usize,
+    inc_face: &[f64],
+    inc_count: usize,
+    normal_x: f64,
+    normal_y: f64,
+    normal_z: f64,
+) -> Vec<f64> {
+    if ref_count < 2 || inc_count < 1 {
+        return inc_face.to_vec();
+    }
+
+    let mut input = inc_face.to_vec();
+
+    // Clip against each edge of the reference face
+    for i in 0..ref_count {
+        let j = (i + 1) % ref_count;
+        let e0 = [ref_face[i * 3], ref_face[i * 3 + 1], ref_face[i * 3 + 2]];
+        let e1 = [ref_face[j * 3], ref_face[j * 3 + 1], ref_face[j * 3 + 2]];
+
+        // Edge direction
+        let ex = e1[0] - e0[0];
+        let ey = e1[1] - e0[1];
+        let ez = e1[2] - e0[2];
+
+        // Clip plane normal = cross(edge_dir, face_normal), pointing inward
+        let cpx = ey * normal_z - ez * normal_y;
+        let cpy = ez * normal_x - ex * normal_z;
+        let cpz = ex * normal_y - ey * normal_x;
+        let cp_len = (cpx * cpx + cpy * cpy + cpz * cpz).sqrt();
+        if cp_len < CLIP_EPSILON { continue; }
+        let pnx = cpx / cp_len;
+        let pny = cpy / cp_len;
+        let pnz = cpz / cp_len;
+        let plane_d = pnx * e0[0] + pny * e0[1] + pnz * e0[2];
+
+        input = clip_polygon_against_plane(&input, pnx, pny, pnz, plane_d);
+        if input.is_empty() { break; }
+        if input.len() / 3 > MAX_CLIPPED_VERTICES {
+            input.truncate(MAX_CLIPPED_VERTICES * 3);
+            break;
+        }
+    }
+
+    return input;
+}
+
+fn clip_polygon_against_plane(
+    verts: &[f64],
+    pnx: f64, pny: f64, pnz: f64,
+    plane_d: f64,
+) -> Vec<f64> {
+    let count = verts.len() / 3;
+    if count == 0 { return Vec::new(); }
+
+    let mut output = Vec::new();
+    for i in 0..count {
+        let j = (i + 1) % count;
+        let di = verts[i * 3] * pnx + verts[i * 3 + 1] * pny + verts[i * 3 + 2] * pnz - plane_d;
+        let dj = verts[j * 3] * pnx + verts[j * 3 + 1] * pny + verts[j * 3 + 2] * pnz - plane_d;
+
+        if di >= -CLIP_TOLERANCE {
+            output.push(verts[i * 3]);
+            output.push(verts[i * 3 + 1]);
+            output.push(verts[i * 3 + 2]);
+        }
+
+        if (di > CLIP_TOLERANCE && dj < -CLIP_TOLERANCE) || (di < -CLIP_TOLERANCE && dj > CLIP_TOLERANCE) {
+            let t = di / (di - dj);
+            output.push(verts[i * 3] + (verts[j * 3] - verts[i * 3]) * t);
+            output.push(verts[i * 3 + 1] + (verts[j * 3 + 1] - verts[i * 3 + 1]) * t);
+            output.push(verts[i * 3 + 2] + (verts[j * 3 + 2] - verts[i * 3 + 2]) * t);
+        }
+    }
+
+    return output;
+}

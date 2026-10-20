@@ -1,0 +1,17 @@
+[package]
+name = "flight-velocity"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Velocity fields and transforms for motion systems"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-geometry = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,44 @@
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
+version = "0.6.0"
+edition = "2024"
+license = "MIT"
+authors = ["Joshua Granick and other Flight contributors"]
+
+[workspace.lints.clippy]
+needless_return = "allow"
+too_many_arguments = "allow"
+type_complexity = "allow"
+
+[workspace.dependencies]
+flight-adjustments = { path = "crates/flight-adjustments" }
+flight-binpack = { path = "crates/flight-binpack" }
+flight-collision = { path = "crates/flight-collision" }
+flight-color = { path = "crates/flight-color" }
+flight-easing = { path = "crates/flight-easing" }
+flight-encoding = { path = "crates/flight-encoding" }
+flight-geometry = { path = "crates/flight-geometry" }
+flight-math = { path = "crates/flight-math" }
+flight-mesh = { path = "crates/flight-mesh" }
+flight-path = { path = "crates/flight-path" }
+flight-path-boolean = { path = "crates/flight-path-boolean" }
+flight-spatial = { path = "crates/flight-spatial" }
+flight-spring = { path = "crates/flight-spring" }
+flight-velocity = { path = "crates/flight-velocity" }
+flight-bitmap = { path = "crates/flight-bitmap" }
+flight-layout = { path = "crates/flight-layout" }
+flight-particles = { path = "crates/flight-particles" }
+flight-signals = { path = "crates/flight-signals" }
+flight-textbidi = { path = "crates/flight-textbidi" }
+flight-textsegment = { path = "crates/flight-textsegment" }
+flight-animation = { path = "crates/flight-animation" }
+flight-compression = { path = "crates/flight-compression" }
+flight-entity = { path = "crates/flight-entity" }
+flight-flow = { path = "crates/flight-flow" }
+flight-log = { path = "crates/flight-log" }
+flight-statechart = { path = "crates/flight-statechart" }
+flight-tween = { path = "crates/flight-tween" }
+flight-xml = { path = "crates/flight-xml" }

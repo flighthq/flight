@@ -1,0 +1,14 @@
+[package]
+name = "flight-math"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Scalar math utilities: clamping, interpolation, rounding, hashing, number theory, random distributions"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[lints]
+workspace = true

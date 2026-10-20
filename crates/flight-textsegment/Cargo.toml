@@ -1,0 +1,17 @@
+[package]
+name = "flight-textsegment"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Unicode text segmentation: grapheme cluster, word, and sentence boundary detection"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+unicode-segmentation = "1.11"
+
+[lints]
+workspace = true

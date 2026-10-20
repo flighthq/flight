@@ -1,0 +1,17 @@
+[package]
+name = "flight-spatial"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Spatial indexing: BVH, 2D/3D spatial grids, insert/remove/query"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-geometry = { workspace = true }
+
+[lints]
+workspace = true

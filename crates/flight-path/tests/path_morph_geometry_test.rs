@@ -1,0 +1,38 @@
+use flight_path::*;
+
+mod build_path_morph_test {
+    use super::*;
+
+    #[test]
+    fn succeeds_for_compatible_closed_paths() {
+        let mut start = create_path(PathWinding::NonZero);
+        append_path_rectangle(&mut start, 0.0, 0.0, 100.0, 100.0);
+        let mut end = create_path(PathWinding::NonZero);
+        append_path_rectangle(&mut end, 50.0, 50.0, 200.0, 200.0);
+        let result = build_path_morph(&start, &end);
+        assert_eq!(result.issue, PathMorphCreationReason::Ok);
+        assert!(result.morph.is_some());
+    }
+
+    #[test]
+    fn fails_for_winding_mismatch() {
+        let mut start = create_path(PathWinding::NonZero);
+        append_path_rectangle(&mut start, 0.0, 0.0, 100.0, 100.0);
+        let mut end = create_path(PathWinding::EvenOdd);
+        append_path_rectangle(&mut end, 0.0, 0.0, 100.0, 100.0);
+        let result = build_path_morph(&start, &end);
+        assert_eq!(result.issue, PathMorphCreationReason::WindingMismatch);
+        assert!(result.morph.is_none());
+    }
+
+    #[test]
+    fn fails_for_contour_count_mismatch() {
+        let mut start = create_path(PathWinding::NonZero);
+        append_path_rectangle(&mut start, 0.0, 0.0, 100.0, 100.0);
+        let mut end = create_path(PathWinding::NonZero);
+        append_path_rectangle(&mut end, 0.0, 0.0, 100.0, 100.0);
+        append_path_rectangle(&mut end, 200.0, 200.0, 50.0, 50.0);
+        let result = build_path_morph(&start, &end);
+        assert_eq!(result.issue, PathMorphCreationReason::ContourCountMismatch);
+    }
+}

@@ -1,0 +1,129 @@
+use std::collections::HashMap;
+
+use crate::pack_rectangles::{
+    pack_rectangles, BinPackOptions, PackableRectangle, RectangleId, BIN_PACK_DEFAULT_MAX_EXTENT,
+};
+
+/// The reason a rectangle could not be placed.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum UnpackedRectangleReason {
+    /// The rectangle exceeds the usable region in both orientations.
+    Oversized,
+    /// The usable region collapsed to zero or negative extent (border eats the caps).
+    RegionCollapsed,
+    /// The rectangle fits in principle but the bin filled before it could be placed.
+    BinExhausted,
+}
+
+/// An explanation of why a single rectangle was not placed.
+#[derive(Debug, Clone, PartialEq)]
+pub struct UnpackedRectangleExplanation {
+    pub id: RectangleId,
+    pub reason: UnpackedRectangleReason,
+    pub usable_width: f32,
+    pub usable_height: f32,
+}
+
+pub fn create_unpacked_rectangle_explanation(
+    id: RectangleId,
+    reason: UnpackedRectangleReason,
+    usable_width: f32,
+    usable_height: f32,
+) -> UnpackedRectangleExplanation {
+    let mut out = UnpackedRectangleExplanation {
+        id: RectangleId::Number(0),
+        reason: UnpackedRectangleReason::BinExhausted,
+        usable_width: 0.0,
+        usable_height: 0.0,
+    };
+    initialize_unpacked_rectangle_explanation(&mut out, id, reason, usable_width, usable_height);
+    return out;
+}
+
+pub fn initialize_unpacked_rectangle_explanation(
+    out: &mut UnpackedRectangleExplanation,
+    id: RectangleId,
+    reason: UnpackedRectangleReason,
+    usable_width: f32,
+    usable_height: f32,
+) {
+    out.id = id;
+    out.reason = reason;
+    out.usable_width = usable_width;
+    out.usable_height = usable_height;
+}
+
+/// Says WHY each unplaced rectangle did not fit. `pack_rectangles` reports `unpacked` as bare ids,
+/// which is the right shape for the hot path but tells a caller nothing about the remedy -- and the
+/// three causes have three different ones: raise the cap, fix the border, or accept that the bin
+/// filled.
+///
+/// Separately importable so the packer's own bundle pays nothing for it. It re-runs the pack
+/// rather than instrumenting it, which costs a second pass but keeps the packing loop free of
+/// reporting concerns and guarantees the explanation describes the same options the caller actually
+/// used.
+///
+/// Returns an entry only for rectangles that failed; an all-placed input yields an empty vector.
+pub fn explain_unpacked_rectangles(
+    rectangles: &[PackableRectangle],
+    options: Option<&BinPackOptions>,
+) -> Vec<UnpackedRectangleExplanation> {
+    let border = options.map_or(0.0, |o| o.border);
+    let allow_rotation = options.map_or(false, |o| o.allow_rotation);
+    let usable_width = options.map_or(BIN_PACK_DEFAULT_MAX_EXTENT, |o| o.max_width) - 2.0 * border;
+    let usable_height =
+        options.map_or(BIN_PACK_DEFAULT_MAX_EXTENT, |o| o.max_height) - 2.0 * border;
+
+    let result = pack_rectangles(rectangles, options);
+    if result.unpacked.is_empty() {
+        return Vec::new();
+    }
+
+    let mut outstanding: HashMap<RectangleId, i32> = HashMap::new();
+    for id in &result.unpacked {
+        *outstanding.entry(id.clone()).or_insert(0) += 1;
+    }
+
+    let mut explanations: Vec<UnpackedRectangleExplanation> = Vec::new();
+    for rectangle in rectangles {
+        let remaining = outstanding.get(&rectangle.id).copied().unwrap_or(0);
+        if remaining == 0 {
+            continue;
+        }
+        outstanding.insert(rectangle.id.clone(), remaining - 1);
+        explanations.push(create_unpacked_rectangle_explanation(
+            rectangle.id.clone(),
+            get_unpacked_reason(rectangle, usable_width, usable_height, allow_rotation),
+            usable_width,
+            usable_height,
+        ));
+    }
+    return explanations;
+}
+
+/// Region collapse is checked before size, because when the usable region is non-positive EVERY
+/// rectangle fails for that one reason and reporting each as "oversized" would send the caller
+/// after the pieces instead of after the border.
+fn get_unpacked_reason(
+    rectangle: &PackableRectangle,
+    usable_width: f32,
+    usable_height: f32,
+    allow_rotation: bool,
+) -> UnpackedRectangleReason {
+    if usable_width <= 0.0 || usable_height <= 0.0 {
+        return UnpackedRectangleReason::RegionCollapsed;
+    }
+    if !fits_within(rectangle.width, rectangle.height, usable_width, usable_height) {
+        if !allow_rotation {
+            return UnpackedRectangleReason::Oversized;
+        }
+        if !fits_within(rectangle.height, rectangle.width, usable_width, usable_height) {
+            return UnpackedRectangleReason::Oversized;
+        }
+    }
+    return UnpackedRectangleReason::BinExhausted;
+}
+
+fn fits_within(width: f32, height: f32, usable_width: f32, usable_height: f32) -> bool {
+    return width <= usable_width && height <= usable_height;
+}

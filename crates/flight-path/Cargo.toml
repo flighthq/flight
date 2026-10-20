@@ -1,0 +1,17 @@
+[package]
+name = "flight-path"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "2D path geometry: creation, tessellation, stroke, morph, bounds, arc lengths, curvature"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-geometry = { workspace = true }
+
+[lints]
+workspace = true

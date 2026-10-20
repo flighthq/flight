@@ -1,0 +1,9 @@
+mod bvh_3d_test;
+mod explain_spatial_indexing_2d_test;
+mod explain_spatial_indexing_3d_test;
+mod format_spatial_indexing_notice_test;
+mod spatial_index_3d_test;
+mod spatial_index_test;
+mod spatial_indexing_guard_test;
+mod uniform_grid_3d_test;
+mod uniform_grid_test;

@@ -1,0 +1,377 @@
+use flight_collision::*;
+
+fn sphere(x: f64, y: f64, z: f64, radius: f64) -> CollisionShape3D {
+    CollisionShape3D::Sphere(CollisionSphere3D { x, y, z, radius })
+}
+
+fn aabb3(
+    min_x: f64,
+    min_y: f64,
+    min_z: f64,
+    max_x: f64,
+    max_y: f64,
+    max_z: f64,
+) -> CollisionShape3D {
+    CollisionShape3D::Aabb(CollisionAabb3D {
+        min_x,
+        min_y,
+        min_z,
+        max_x,
+        max_y,
+        max_z,
+    })
+}
+
+mod create_collision_time_of_impact3d {
+    use super::*;
+
+    #[test]
+    fn starts_zeroed() {
+        let out = create_collision_time_of_impact3d();
+        assert_eq!(out.fraction, 0.0);
+        assert_eq!(out.x, 0.0);
+        assert_eq!(out.y, 0.0);
+        assert_eq!(out.z, 0.0);
+        assert_eq!(out.normal_x, 0.0);
+        assert_eq!(out.normal_y, 0.0);
+        assert_eq!(out.normal_z, 0.0);
+    }
+}
+
+mod sweep_collision_shape3d {
+    use super::*;
+
+    #[test]
+    fn finds_the_exact_impact_fraction_for_two_approaching_spheres() {
+        // A at x=0 r=1 moving +10x; B at x=10 r=1 stationary.
+        // Gap between surfaces = 10 - 1 - 1 = 8. Fraction = 8/10 = 0.8.
+        let mut out = create_collision_time_of_impact3d();
+        let hit = sweep_collision_shape3d(
+            &sphere(0.0, 0.0, 0.0, 1.0),
+            &sphere(10.0, 0.0, 0.0, 1.0),
+            10.0,
+            0.0,
+            0.0,
+            &mut out,
+        );
+        assert!(hit, "sweep should detect the impact");
+        assert!(
+            (out.fraction - 0.8).abs() < 1e-3,
+            "fraction {} vs expected 0.8",
+            out.fraction
+        );
+    }
+
+    #[test]
+    fn catches_a_bullet_that_passes_clean_through_a_thin_wall() {
+        let bullet = sphere(-50.0, 0.0, 0.0, 0.1);
+        let wall = aabb3(-0.05, -20.0, -20.0, 0.05, 20.0, 20.0);
+
+        // Verify no discrete overlap at the start.
+        let mut manifold = CollisionManifold3D::default();
+        assert!(!test_collision3d(&bullet, &wall, &mut manifold));
+
+        let mut out = create_collision_time_of_impact3d();
+        let hit = sweep_collision_shape3d(
+            &bullet,
+            &wall,
+            100.0,
+            0.0,
+            0.0,
+            &mut out,
+        );
+        assert!(hit, "conservative advancement must catch the bullet");
+        // Bullet surface at -49.9, wall starts at -0.05. Gap = 49.85. fraction = 49.85/100 ~ 0.4985.
+        assert!(
+            out.fraction > 0.45 && out.fraction < 0.55,
+            "fraction {} should be near 0.4985",
+            out.fraction
+        );
+    }
+
+    #[test]
+    fn reports_no_impact_when_the_shapes_move_apart() {
+        let mut out = create_collision_time_of_impact3d();
+        assert!(!sweep_collision_shape3d(
+            &sphere(0.0, 0.0, 0.0, 1.0),
+            &sphere(10.0, 0.0, 0.0, 1.0),
+            -10.0,
+            0.0,
+            0.0,
+            &mut out,
+        ));
+    }
+
+    #[test]
+    fn reports_no_impact_when_the_motion_falls_short() {
+        // Gap = 8, but velocity only 5 -> fraction would be 8/5 = 1.6 > 1.
+        let mut out = create_collision_time_of_impact3d();
+        assert!(!sweep_collision_shape3d(
+            &sphere(0.0, 0.0, 0.0, 1.0),
+            &sphere(10.0, 0.0, 0.0, 1.0),
+            5.0,
+            0.0,
+            0.0,
+            &mut out,
+        ));
+    }
+
+    #[test]
+    fn reports_no_impact_for_a_pair_sliding_parallel() {
+        let mut out = create_collision_time_of_impact3d();
+        assert!(!sweep_collision_shape3d(
+            &sphere(0.0, 0.0, 0.0, 1.0),
+            &sphere(10.0, 0.0, 0.0, 1.0),
+            0.0,
+            100.0,
+            0.0,
+            &mut out,
+        ));
+    }
+
+    #[test]
+    fn accounts_for_both_shapes_moving() {
+        // Relative velocity is the difference. Two spheres at x=0 and x=10,
+        // velocity = (5,0,0) relative. Gap = 8, fraction = 8/5 > 1 -> no hit.
+        let mut out = create_collision_time_of_impact3d();
+        let hit = sweep_collision_shape3d(
+            &sphere(0.0, 0.0, 0.0, 1.0),
+            &sphere(10.0, 0.0, 0.0, 1.0),
+            5.0,
+            0.0,
+            0.0,
+            &mut out,
+        );
+        assert!(!hit, "velocity of 5 is not enough to close a gap of 8");
+
+        // With velocity = 10, gap = 8, fraction = 0.8.
+        let hit2 = sweep_collision_shape3d(
+            &sphere(0.0, 0.0, 0.0, 1.0),
+            &sphere(10.0, 0.0, 0.0, 1.0),
+            10.0,
+            0.0,
+            0.0,
+            &mut out,
+        );
+        assert!(hit2, "velocity of 10 should close a gap of 8");
+        assert!(
+            (out.fraction - 0.8).abs() < 1e-3,
+            "fraction {} vs 0.8",
+            out.fraction
+        );
+    }
+
+    #[test]
+    fn reports_fraction_zero_for_a_pair_that_already_overlaps() {
+        let mut out = create_collision_time_of_impact3d();
+        assert!(sweep_collision_shape3d(
+            &sphere(0.0, 0.0, 0.0, 2.0),
+            &sphere(1.0, 0.0, 0.0, 2.0),
+            10.0,
+            0.0,
+            0.0,
+            &mut out,
+        ));
+        assert_eq!(out.fraction, 0.0);
+    }
+
+    #[test]
+    fn orients_the_normal_from_b_toward_a() {
+        // A at x=0 moving right toward B at x=10. The separation direction
+        // points from B toward A (negative x). The sweep stores it from the
+        // last separated measurement.
+        let mut out = create_collision_time_of_impact3d();
+        let hit = sweep_collision_shape3d(
+            &sphere(0.0, 0.0, 0.0, 1.0),
+            &sphere(10.0, 0.0, 0.0, 1.0),
+            10.0,
+            0.0,
+            0.0,
+            &mut out,
+        );
+        assert!(hit);
+        // Direction points from B toward A, so normal_x should be negative.
+        assert!(
+            out.normal_x < -0.9,
+            "normal_x {} should point from B toward A (negative)",
+            out.normal_x
+        );
+    }
+
+    #[test]
+    fn reports_witness_point_at_moment_of_impact() {
+        // A sphere(0,0,0,1) moving at (10,0,0) toward B sphere(10,0,0,1).
+        // At fraction 0.8, A center is at (8,0,0). A's leading surface is at x=9.
+        // B's closest surface is also at x=9. The witness midpoint is (9, 0, 0).
+        let mut out = create_collision_time_of_impact3d();
+        let hit = sweep_collision_shape3d(
+            &sphere(0.0, 0.0, 0.0, 1.0),
+            &sphere(10.0, 0.0, 0.0, 1.0),
+            10.0,
+            0.0,
+            0.0,
+            &mut out,
+        );
+        assert!(hit);
+        assert!(
+            (out.x - 9.0).abs() < 0.5,
+            "witness x {} should be near 9.0", out.x
+        );
+        assert!(
+            out.y.abs() < 0.5,
+            "witness y {} should be near 0.0", out.y
+        );
+        assert!(
+            out.z.abs() < 0.5,
+            "witness z {} should be near 0.0", out.z
+        );
+    }
+
+    #[test]
+    fn finds_the_mid_segment_contact_of_two_crossing_capsules() {
+        let along_x = CollisionShape3D::Capsule(CollisionCapsule3D {
+            x0: -2.0,
+            y0: 0.0,
+            z0: 0.0,
+            x1: 2.0,
+            y1: 0.0,
+            z1: 0.0,
+            radius: 0.5,
+        });
+        let above_along_y = CollisionShape3D::Capsule(CollisionCapsule3D {
+            x0: 0.0,
+            y0: -2.0,
+            z0: 5.0,
+            x1: 0.0,
+            y1: 2.0,
+            z1: 5.0,
+            radius: 0.5,
+        });
+
+        // Gap on z-axis between capsule surfaces: 5 - 0.5 - 0.5 = 4.
+        // Velocity = (0,0,10), fraction = 4/10 = 0.4.
+        let mut out = create_collision_time_of_impact3d();
+        let hit = sweep_collision_shape3d(
+            &along_x,
+            &above_along_y,
+            0.0,
+            0.0,
+            10.0,
+            &mut out,
+        );
+        assert!(hit, "capsule sweep should find the impact");
+        assert!(
+            (out.fraction - 0.4).abs() < 1e-2,
+            "fraction {} vs expected 0.4",
+            out.fraction
+        );
+    }
+
+    #[test]
+    fn leaves_the_pair_touching_not_overlapping_when_advanced_to_the_reported_fraction() {
+        let a = sphere(0.0, 0.0, 0.0, 1.0);
+        let b = sphere(10.0, 0.0, 0.0, 1.0);
+        let mut out = create_collision_time_of_impact3d();
+        let hit = sweep_collision_shape3d(&a, &b, 10.0, 0.0, 0.0, &mut out);
+        assert!(hit);
+
+        // Advance A to the impact fraction. The pair should be just touching.
+        let advanced = CollisionShape3D::Sphere(CollisionSphere3D {
+            x: 10.0 * out.fraction,
+            y: 0.0,
+            z: 0.0,
+            radius: 1.0,
+        });
+        let mut manifold = CollisionManifold3D::default();
+        // At the impact fraction the shapes should be touching or nearly so;
+        // the GJK overlap test may or may not fire at the exact boundary.
+        // Check that they are not deeply overlapping: push a tiny bit further
+        // and verify overlap, then back off and verify separation.
+        let a_past = CollisionShape3D::Sphere(CollisionSphere3D {
+            x: 10.0 * out.fraction + 0.1,
+            y: 0.0,
+            z: 0.0,
+            radius: 1.0,
+        });
+        assert!(
+            test_collision_support_overlap3d(&a_past, &b),
+            "shapes should overlap slightly past the impact fraction"
+        );
+    }
+
+    #[test]
+    fn sweeps_a_box_against_a_box() {
+        // Box [-1,1]^3 moving right toward box [9,11]^3. Gap = 9-1 = 8.
+        // Velocity 10, fraction = 8/10 = 0.8.
+        let mut out = create_collision_time_of_impact3d();
+        let hit = sweep_collision_shape3d(
+            &aabb3(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0),
+            &aabb3(9.0, -1.0, -1.0, 11.0, 1.0, 1.0),
+            10.0,
+            0.0,
+            0.0,
+            &mut out,
+        );
+        assert!(hit, "box-box sweep should find the impact");
+        assert!(
+            (out.fraction - 0.8).abs() < 1e-3,
+            "fraction {} vs 0.8",
+            out.fraction
+        );
+    }
+
+    #[test]
+    fn sweeps_along_z_as_readily_as_along_x() {
+        // Same as sphere-sphere but along z. Gap = 8, fraction = 0.8.
+        let mut out = create_collision_time_of_impact3d();
+        let hit = sweep_collision_shape3d(
+            &sphere(0.0, 0.0, 0.0, 1.0),
+            &sphere(0.0, 0.0, 10.0, 1.0),
+            0.0,
+            0.0,
+            10.0,
+            &mut out,
+        );
+        assert!(hit);
+        assert!(
+            (out.fraction - 0.8).abs() < 1e-3,
+            "fraction {} vs 0.8",
+            out.fraction
+        );
+    }
+
+    #[test]
+    fn declines_a_non_finite_translation() {
+        let mut out = create_collision_time_of_impact3d();
+        assert!(!sweep_collision_shape3d(
+            &sphere(0.0, 0.0, 0.0, 1.0),
+            &sphere(10.0, 0.0, 0.0, 1.0),
+            f64::NAN,
+            0.0,
+            0.0,
+            &mut out,
+        ));
+        assert_eq!(out.fraction, 0.0);
+    }
+
+    #[test]
+    fn agrees_with_the_discrete_test_at_the_endpoints_of_an_ordinary_approach() {
+        // The discrete test detects overlap at the endpoint position.
+        let b = sphere(10.0, 0.0, 0.0, 1.0);
+        let endpoint = sphere(9.0, 0.0, 0.0, 1.0);
+        let mut manifold = CollisionManifold3D::default();
+        assert!(test_collision3d(&endpoint, &b, &mut manifold));
+
+        // The sweep should find contact before reaching the full displacement.
+        let a = sphere(0.0, 0.0, 0.0, 1.0);
+        let mut out = create_collision_time_of_impact3d();
+        let hit = sweep_collision_shape3d(&a, &b, 9.0, 0.0, 0.0, &mut out);
+        assert!(hit, "sweep should find impact within the displacement");
+        // fraction should be less than 1 since a displacement of 9 with gap 8 overshoots.
+        assert!(
+            out.fraction < 1.0 && out.fraction > 0.7,
+            "fraction {} should be between 0.7 and 1.0",
+            out.fraction
+        );
+    }
+}

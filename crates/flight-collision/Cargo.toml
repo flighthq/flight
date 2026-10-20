@@ -1,0 +1,17 @@
+[package]
+name = "flight-collision"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Collision detection: GJK/EPA, contact manifolds, raycasting, support functions, sweep tests"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-geometry = { workspace = true }
+
+[lints]
+workspace = true

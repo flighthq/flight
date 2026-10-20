@@ -1,0 +1,14 @@
+[package]
+name = "cargo-flight-lint"
+version.workspace = true
+edition.workspace = true
+description = "Convention linter and fixer for Flight crates"
+publish = false
+
+[dependencies]
+syn = { version = "2", features = ["full"] }
+proc-macro2 = { version = "1", features = ["span-locations"] }
+walkdir = "2"
+
+[lints]
+workspace = true
