@@ -37,9 +37,9 @@ The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` (`cargo
 | `EntitySlot` | `unknown (read via get_*_data cast)` | `std::any` | `Dynamic` | proposed | Alias for `Option<Box<dyn Any + Send + Sync>>`; the only erased type (D2) |
 | `fn(A) -> R` | `(a: A) => R` | `R (*)(A)` | `A->R` | proposed | Stateless function values (e.g. easing) |
 | `Callback<A, R>` | `(a: A) => R` | `std::function<R(A)>` | `A->R` | proposed | Alias for `Arc<dyn Fn(A) -> R + Send + Sync>`; function values that capture (renderer objects, slots, test spies) |
-| `Ref<T>` | `T` | `std::shared_ptr<T>` | `T` | open | Shared object identity. Competes with scene-owned storage; see ir-vocabulary.md |
-| `WeakRef<T>` | `T | null` | `std::weak_ptr<T>` | `Null<T>` | open | Back-references (parent); pairs with Ref<T> |
-| `Handle<T>` | `T (object) or number` | `handle / T*` | `T` | open | Scene-owned storage alternative to Ref<T> |
+| `Ref<T>` | `T` | `std::shared_ptr<T>` | `T` | established | Shared object identity (A2, trial 2026-10-20): create_* returns it, dispose_* breaks cycles, memory frees at the last drop. Backing (Rc<RefCell> vs Arc<RwLock>) open |
+| `WeakRef<T>` | `T | null` | `std::weak_ptr<T>` | `Null<T>` | proposed | Not for parent links: under A2 parents are strong, as in TS. Only for non-owning caches |
+| `Handle<T>` | `T (object) or number` | `handle / T*` | `T` | open | Deferred: node-store option (D), revisit only if threading or bulk release requires it |
 | `generic type parameter <T>` | `<T>` | `template<typename T>` | `<T>` | proposed |  |
 | `pub const / pub static LazyLock<T>` | `export const` | `inline constexpr / static` | `static final` | proposed | Immutable only (D5) |
 
@@ -47,7 +47,7 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
 
 ## Open rows
 
-1. **Object identity: `Ref<T>` vs scene-owned storage.** This is the main open question; see below.
+1. **Object identity.** Decided as A2, on trial (see below). Still open: whether `Ref<T>` is backed by `Rc<RefCell<T>>` or `Arc<RwLock<T>>`.
 2. **Typed arrays.** TS uses both `number[]` and `Float32Array`/`Uint16Array`, and a Rust `&[f32]` cannot say which. One option is marker aliases such as `Float32Array = [f32]`.
 3. **Enums.** The user is open to `enum { A, B, C, Custom(String) }` for performance, or to strings if they perform as well. TS string-literal values vary (`'Sprite'`, `'aabb'`, `'linear'`), so any Rust enum needs a declared string table for the TS mapping. Proposal:
    - **Closed** TS unions become C-like enums with a string table.
@@ -58,7 +58,22 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
    - Values that legitimately exceed 32 bits, such as collision's packed feature ids (`FEATURE_INDEX_LIMIT = 1 << 25`), use `i64`/`u64` with a declared range of at most 2^53 (`allow(contract-vocabulary) <range>`).
    - `isize` is not used.
 
-## Object identity: three options
+## Object identity: decision (A2, trial, user 2026-10-20)
+
+One uniform rule for every `create_*`:
+- **Value types** (geometry, colors, options) are owned values.
+- **Anything with shared identity** (nodes, textures, materials, managers) is a `Ref<T>`.
+  - `create_*` returns it.
+  - `dispose_*` does what TS does today: detach, dispose children, clear signals. That breaks every cycle, including listener closures that capture the object.
+  - Memory is freed when the last reference drops.
+  - A disposed object that something still holds stays valid but inert, as in TS today, where tests read getters after `disposeNode`.
+- **Parent links are strong**, as in TS, so `getNodeParent` behaves identically.
+- **The user's responsibility** is to call dispose on trees they are done with. If they forget, the parent/child cycle leaks, where TS GC would collect it. The user is never responsible for proving that nothing else holds the object.
+- **No API change** in any target. The node store (D) is deferred.
+
+Why this one: nodes and clocks are the only structural two-way graphs in TS. A store for nodes alone would add a second lifetime model, which goes against Flight's clarity tenet. Reference-count cost applies only when a reference is *stored*; ordinary calls borrow `&Ref<T>`.
+
+## Object identity: options considered
 
 TS today follows the Flash model: nodes and textures are shared object references, and the GC manages memory. The TS API already has one counter-example: `RenderState` owns its memory (renderer data, registries), and callers pass it explicitly. A scene could follow the same idea.
 

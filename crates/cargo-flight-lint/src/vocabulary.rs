@@ -49,9 +49,9 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "EntitySlot", ts: "unknown (read via get_*_data cast)", cpp: "std::any", haxe: "Dynamic", status: Status::Proposed, note: "Alias for `Option<Box<dyn Any + Send + Sync>>`; the only erased type (D2)" },
     Entry { rust: "fn(A) -> R", ts: "(a: A) => R", cpp: "R (*)(A)", haxe: "A->R", status: Status::Proposed, note: "Stateless function values (e.g. easing)" },
     Entry { rust: "Callback<A, R>", ts: "(a: A) => R", cpp: "std::function<R(A)>", haxe: "A->R", status: Status::Proposed, note: "Alias for `Arc<dyn Fn(A) -> R + Send + Sync>`; function values that capture (renderer objects, slots, test spies)" },
-    Entry { rust: "Ref<T>", ts: "T", cpp: "std::shared_ptr<T>", haxe: "T", status: Status::Open, note: "Shared object identity. Competes with scene-owned storage; see ir-vocabulary.md" },
-    Entry { rust: "WeakRef<T>", ts: "T | null", cpp: "std::weak_ptr<T>", haxe: "Null<T>", status: Status::Open, note: "Back-references (parent); pairs with Ref<T>" },
-    Entry { rust: "Handle<T>", ts: "T (object) or number", cpp: "handle / T*", haxe: "T", status: Status::Open, note: "Scene-owned storage alternative to Ref<T>" },
+    Entry { rust: "Ref<T>", ts: "T", cpp: "std::shared_ptr<T>", haxe: "T", status: Status::Established, note: "Shared object identity (A2, trial 2026-10-20): create_* returns it, dispose_* breaks cycles, memory frees at the last drop. Backing (Rc<RefCell> vs Arc<RwLock>) open" },
+    Entry { rust: "WeakRef<T>", ts: "T | null", cpp: "std::weak_ptr<T>", haxe: "Null<T>", status: Status::Proposed, note: "Not for parent links: under A2 parents are strong, as in TS. Only for non-owning caches" },
+    Entry { rust: "Handle<T>", ts: "T (object) or number", cpp: "handle / T*", haxe: "T", status: Status::Open, note: "Deferred: node-store option (D), revisit only if threading or bulk release requires it" },
     Entry { rust: "generic type parameter <T>", ts: "<T>", cpp: "template<typename T>", haxe: "<T>", status: Status::Proposed, note: "" },
     Entry { rust: "pub const / pub static LazyLock<T>", ts: "export const", cpp: "inline constexpr / static", haxe: "static final", status: Status::Proposed, note: "Immutable only (D5)" },
 ];
