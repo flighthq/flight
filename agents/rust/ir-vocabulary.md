@@ -103,4 +103,26 @@ Principal's reading: these answers fit (A) and rule out (B), because B needs a s
 - Advantages: no refcount cycles (including listener closures that capture their node, which a weak parent link cannot prevent), the store is `Send`, and there are no borrow panics.
 - Cost: a store parameter on structural calls, and explicit `destroy` instead of "GC collects it". This is an API change in every target.
 
-Next step: extract the actual TS lifetime semantics (add, remove, reparent, destroy, and every holder of node references) to see which model breaks the fewest existing behaviors.
+### TS lifetime semantics (research, 2026-10-20)
+
+File references are relative to `flight/packages`.
+
+- **Creation takes no state.** `createNode(kind, obj?, createData?, runtimeFactory?)` (`node/src/node.ts:21`), `createSprite(obj?)`, and `createScene2D` (which builds its own root).
+- **Parent and child links are strong in both directions** (`runtime.parent`, `runtime.children`).
+  - `addNodeChild` removes a node from its old parent first.
+  - It throws on adding a node to itself, on adding an ancestor (a cycle), on an out-of-range index, and when `canAddChild` refuses.
+- **Removed nodes stay fully usable**, and tests rely on that: `render/src/renderProxy.test.ts:380` re-adds a removed child and expects its warm proxy to be reused, and `node/src/hierarchy.test.ts:91` moves a child between parents.
+- **`disposeNode` is the only node teardown** (`node/src/node.ts:91`).
+  - It detaches the node, recursively disposes its children, and clears and nulls `NodeSignals`.
+  - It has no disposed flag. Tests read getters after dispose (`node/src/node.test.ts:142-188`).
+  - It does not touch render proxies, tweens, interaction, or focus.
+- **Strong outside holders with no invalidation:** `RenderState.renderProxySources` (a strong `Set`; the comment reads "WeakMap alone cannot support deterministic shutdown"), the InteractionManager targets and captures, `FocusManager.focused`, tween targets, animation targets, and `NodeOrderList`. Each is cleared only by an explicit dispose.
+- **No `WeakRef` or `FinalizationRegistry` anywhere.** WeakMaps are used only as caches.
+
+What this means:
+- **(A1)** A weak parent link *changes observable behavior*. `getNodeParent` would return null when only a child is held.
+- **(A2)** A strong parent link keeps TS behavior exactly. Memory is released by `disposeNode`, which TS already has, or never, if a tree is dropped without dispose. Listener cycles are broken by the same `disposeNode`, because it clears `NodeSignals`. It requires no API change. The costs are interior mutability (borrow panics on re-entrancy) and a choice between single-threaded `Rc` and `Arc` plus locks.
+- **(D)** The node store changes every `create_*` signature and `add`/`remove`.
+  - Post-dispose reads keep working only if dispose clears the node and keeps its slot, with a separate `destroy` to free it.
+  - It adds deterministic bulk release (destroy the store), stale-holder detection, and a `Send` store.
+  - TS already follows this "external state plus explicit dispose" pattern in `RenderState`.
