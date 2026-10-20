@@ -168,6 +168,7 @@ All enforced by `cargo-flight-lint` (`cargo run -p cargo-flight-lint -- rules` p
 | `allow-unknown-rule` | error | Source | Allow markers name rules that exist |
 | `conform-missing` | error | Conform | Every exported TS function has a Rust pub free function |
 | `conform-extra` | error | Conform | Every Rust pub free function exists in TS, or is marked `allow(conform-extra)` |
+| `conform-array` | error | Conform | Numeric array types match TS under the vocabulary mapping, or are marked `allow(conform-array)` after negotiation |
 | `conform-params` | error | Conform | Parameter names and order match TS, or are marked `allow(conform-params)` |
 
 Test-coverage rules apply to plain `pub` free functions only; private and `pub(crate)` helpers are exempt.
@@ -204,7 +205,7 @@ Contract types are restricted to the closed vocabulary in [agents/ir-vocabulary.
 
 ## TS conformance
 
-`cargo run -p cargo-flight-lint -- conform <ts-packages-dir> [--crate flight-x]` compares each crate `flight-<name>` with `<ts-packages-dir>/<name>/src` (the TS repo is `github.com/flighthq/flight`). It matches pub free functions to exported TS functions (`export function` and `export const f = (...) =>`) by name, ignoring case and underscores (so `createRay3D` ↔ `create_ray3d`), and checks parameter names and order. Missing functions are tagged `public` (re-exported by the package's `index.ts`) or `contract-only` (only via `contract.ts`). Rust-only pub functions need `allow(conform-extra) <reason>`; deliberate signature differences need `allow(conform-params) <reason>`.
+`cargo run -p cargo-flight-lint -- conform <ts-packages-dir> [--crate flight-x]` compares each crate `flight-<name>` with `<ts-packages-dir>/<name>/src` (the TS repo is `github.com/flighthq/flight`). It matches pub free functions to exported TS functions (`export function` and `export const f = (...) =>`) by name, ignoring case and underscores (so `createRay3D` ↔ `create_ray3d`), checks parameter names and order, and checks numeric array types against the vocabulary mapping (`conform-array`; a changed TS array type is negotiated, then marked `allow(conform-array) <reason>`). Missing functions are tagged `public` (re-exported by the package's `index.ts`) or `contract-only` (only via `contract.ts`). Rust-only pub functions need `allow(conform-extra) <reason>`; deliberate signature differences need `allow(conform-params) <reason>`.
 
 ## Reference
 

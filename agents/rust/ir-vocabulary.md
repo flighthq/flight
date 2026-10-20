@@ -29,7 +29,8 @@ The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` (`cargo
 | `Option<T>` | `T | null` | `std::optional<T> (pointer for Ref)` | `Null<T>` | established |  |
 | `Vec<T>` | `T[]` | `std::vector<T>` | `Array<T>` | established | Growable (user 2026-10-20): `Vec<f32>` → `number[]`. Also the type for iterated collections (D3) |
 | `&mut [N] / [N; LEN] (N numeric)` | `Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array` | `std::span<N> / std::array<N, LEN>` | `haxe.io.Float32Array etc.` | established | Fixed length (user 2026-10-20): the typed array is picked by element type. `usize`/`bool` slices have no typed array (open) |
-| `Box<[N]> (N numeric)` | `the matching typed array` | `std::unique_ptr<N[]> + length` | `haxe.io.Float32Array etc.` | proposed | Owned, fixed length set at creation (vertex data, pixels, index buffers) |
+| `Box<[N]> (N numeric)` | `the matching typed array` | `std::unique_ptr<N[]> + length` | `haxe.io.Float32Array etc.` | established | Owned, fixed length set at creation (vertex data, pixels, index buffers); user 2026-10-20 |
+| `u8 clamped pixels` | `Uint8ClampedArray` | `uint8_t` | `haxe.io.UInt8Array` | open | Rust `u8` cannot express clamping; needs a marker alias (36 conform-array items in bitmap) |
 | `&[N] (N numeric, read-only)` | `ArrayLike<number>` | `std::span<const N>` | `haxe.io.Float32Array etc.` | established | Read-only input accepts either array kind (user 2026-10-20); keeps APIs reusable. Outputs and owned storage stay concrete |
 | `&[T] / &mut [T] / [T; LEN] (T non-numeric)` | `readonly T[] / T[]` | `std::span<const T> / std::span<T> / std::array` | `Array<T>` | proposed | No typed array exists for structs or strings |
 | `HashMap<K, V>` | `Map<K, V>` | `std::unordered_map<K, V>` | `Map<K, V>` | established | Lookup only; never iterated (D3) |

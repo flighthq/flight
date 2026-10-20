@@ -561,3 +561,119 @@ Totals: order 5, count 57, names 94, missing 75, extra 112.
 - `initialize_velocity2d`
 - `initialize_velocity_explanation`
 - `initialize_velocity_sample`
+
+## Array negotiation items (`conform-array`, 2026-10-20)
+
+The vocabulary approved these mappings: `Vec<N>` → `number[]`, fixed-length `&mut [N]`/`[N; LEN]`/`Box<[N]>` → a typed array, and read-only `&[N]` → `ArrayLike<number>`. Each entry below is an API where the current Rust type would change the existing TS array type. Each needs a decision: change the Rust type, accept the TS change (then mark it `allow(conform-array) <reason>`), or extend the vocabulary.
+
+Summary:
+- 36 `Uint8ClampedArray` in TS, which `u8` cannot express (open vocabulary row).
+- 21 `number[]` → `Float32Array` (fixed-length outputs).
+- 16 `number[] | Float32Array` unions narrowing to `Float32Array` (mostly animation).
+- 7 `Uint8Array` returned as `Vec<u8>` (likely should become `Box<[u8]>`).
+- 1 `Float32Array` returned as `Vec<f32>`.
+
+### flight-adjustments (21)
+
+- `create_brightness_color_matrix` return: Rust → `Float32Array`, TS `number[]`
+- `create_channel_mixer_color_matrix` return: Rust → `Float32Array`, TS `number[]`
+- `create_color_balance_color_matrix` return: Rust → `Float32Array`, TS `number[]`
+- `create_color_matrix_adjustment` param `color_matrix`: Rust → `Float32Array`, TS `number[]`
+- `create_color_matrix_from_tint` return: Rust → `Float32Array`, TS `number[]`
+- `create_contrast_color_matrix` return: Rust → `Float32Array`, TS `number[]`
+- `create_desaturate_color_matrix` return: Rust → `Float32Array`, TS `number[]`
+- `create_grayscale_color_matrix` return: Rust → `Float32Array`, TS `number[]`
+- `create_hue_rotate_color_matrix` return: Rust → `Float32Array`, TS `number[]`
+- `create_identity_color_matrix` return: Rust → `Float32Array`, TS `number[]`
+- `create_invert_color_matrix` return: Rust → `Float32Array`, TS `number[]`
+- `create_levels_color_matrix` return: Rust → `Float32Array`, TS `number[]`
+- `create_opacity_color_matrix` return: Rust → `Float32Array`, TS `number[]`
+- `create_polaroid_color_matrix` return: Rust → `Float32Array`, TS `number[]`
+- `create_saturation_color_matrix` return: Rust → `Float32Array`, TS `number[]`
+- `create_sepia_color_matrix` return: Rust → `Float32Array`, TS `number[]`
+- `create_technicolor_color_matrix` return: Rust → `Float32Array`, TS `number[]`
+- `create_vintage_color_matrix` return: Rust → `Float32Array`, TS `number[]`
+- `create_white_balance_color_matrix` return: Rust → `Float32Array`, TS `number[]`
+- `fuse_color_matrices` return: Rust → `Float32Array`, TS `number[]`
+- `resolve_color_adjustments_color_matrix` return: Rust → `Float32Array`, TS `number[]`
+
+### flight-animation (13)
+
+- `add_animation_sample` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
+- `blend_animation_samples` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
+- `extract_animation_root_motion` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
+- `finish_animation_sample` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
+- `sample_animation_blend_tree_channel` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
+- `sample_animation_blend_tree` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
+- `sample_animation_clip` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
+- `sample_animation_crossfade` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
+- `sample_animation_layer_stack_channel` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
+- `sample_animation_layer_stack` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
+- `sample_animation_state_machine_channel` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
+- `sample_animation_state_machine` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
+- `sample_animation_track` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
+
+### flight-bitmap (38)
+
+- `bevel_bitmap` param `out`: Rust → `number[]`, TS `Uint8ClampedArray`
+- `bevel_bitmap` param `scratch`: Rust → `number[]`, TS `Uint8ClampedArray`
+- `blur_bitmap_pixels_horizontal_weighted` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `blur_bitmap_pixels_horizontal` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `blur_bitmap_pixels_vertical_weighted` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `blur_bitmap_pixels_vertical` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `box_blur_bitmap` param `out`: Rust → `number[]`, TS `Uint8ClampedArray`
+- `box_blur_bitmap` param `scratch`: Rust → `number[]`, TS `Uint8ClampedArray`
+- `build_bitmap_gradient_ramp` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `color_matrix_bitmap` param `out`: Rust → `number[]`, TS `Uint8ClampedArray`
+- `convert_bitmap_pixel_order` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `convolve_bitmap` param `out`: Rust → `number[]`, TS `Uint8ClampedArray`
+- `dilate_bitmap` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `displace_bitmap` param `out`: Rust → `number[]`, TS `Uint8ClampedArray`
+- `drop_shadow_bitmap` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `drop_shadow_bitmap` param `scratch`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `encode_bitmap` return: Rust → `number[]`, TS `Uint8Array`
+- `erode_bitmap` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `extract_bitmap_pixels` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `gaussian_blur_bitmap` param `out`: Rust → `number[]`, TS `Uint8ClampedArray`
+- `gaussian_blur_bitmap` param `scratch`: Rust → `number[]`, TS `Uint8ClampedArray`
+- `glow_bitmap` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `glow_bitmap` param `scratch`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `gradient_bevel_bitmap` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `gradient_bevel_bitmap` param `scratch`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `gradient_glow_bitmap` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `gradient_glow_bitmap` param `scratch`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `initialize_bitmap_fingerprint` param `cells`: Rust → `number[]`, TS `Uint8Array`
+- `inner_glow_bitmap` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `inner_glow_bitmap` param `scratch`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `inner_shadow_bitmap` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `inner_shadow_bitmap` param `scratch`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `median_bitmap` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `pixelate_bitmap` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `premultiply_bitmap_pixels` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+- `sharpen_bitmap` param `out`: Rust → `number[]`, TS `Uint8ClampedArray`
+- `sharpen_bitmap` param `scratch`: Rust → `number[]`, TS `Uint8ClampedArray`
+- `unpremultiply_bitmap_pixels` param `out`: Rust → `Uint8Array`, TS `Uint8ClampedArray`
+
+### flight-compression (3)
+
+- `compress_deflate_zlib` return: Rust → `number[]`, TS `Uint8Array`
+- `compress_deflate` return: Rust → `number[]`, TS `Uint8Array`
+- `compress_lzma` return: Rust → `number[]`, TS `Uint8Array`
+
+### flight-easing (1)
+
+- `create_easing_samples` return: Rust → `number[]`, TS `Float32Array`
+
+### flight-encoding (1)
+
+- `encode_utf8` return: Rust → `number[]`, TS `Uint8Array`
+
+### flight-particles (3)
+
+- `lerp_hsv_direct` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
+- `lerp_hsv_in_place` param `colors_out`: Rust → `Float32Array`, TS `Float32Array | number[]`
+- `write_particle_spawn_offset` param `out`: Rust → `Float32Array`, TS `Float32Array | number[]`
+
+### flight-textbidi (1)
+
+- `resolve_bidi_levels` return: Rust → `number[]`, TS `Uint8Array`

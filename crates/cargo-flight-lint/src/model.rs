@@ -43,6 +43,7 @@ pub const RULES: &[Rule] = &[
     Rule { name: "allow-unknown-rule", level: Level::Error, scope: "Source", description: "Allow markers name rules that exist" },
     Rule { name: "conform-missing", level: Level::Error, scope: "Conform", description: "Every exported TS function has a Rust pub free function" },
     Rule { name: "conform-extra", level: Level::Error, scope: "Conform", description: "Every Rust pub free function exists in TS, or is marked `allow(conform-extra)`" },
+    Rule { name: "conform-array", level: Level::Error, scope: "Conform", description: "Numeric array types match TS under the vocabulary mapping, or are marked `allow(conform-array)` after negotiation" },
     Rule { name: "conform-params", level: Level::Error, scope: "Conform", description: "Parameter names and order match TS, or are marked `allow(conform-params)`" },
 ];
 
