@@ -161,7 +161,7 @@ All enforced by `cargo-flight-lint` (`cargo run -p cargo-flight-lint -- rules` p
 | `f64` | error | Source | f64 only in items declared with `allow(f64) <reason>` (D1) |
 | `hidden-state` | error | Source | No thread_local!, interior-mutable statics, or clock reads without `allow(hidden-state) <reason>` (D5) |
 | `sugar-delegates` | error | Source | Impl methods delegate to a free function and contain no loops (D6) |
-| `hashmap-iteration` | warn | Source | No iteration over HashMap/HashSet bindings; order is unspecified (D3) |
+| `hashmap-iteration` | error | Source | Maps are for lookup: no iteration over HashMap/HashSet bindings (use a Vec) unless marked `allow(hashmap-iteration) <reason>` (D3) |
 | `contract-dyn-any` | warn | Source | No `dyn Any` in pub signatures, fields, or aliases (D2/D4) |
 | `contract-shared-mutability` | warn | Source | No Rc/Arc/Weak/RefCell/Cell/Mutex/RwLock in pub signatures, fields, or aliases (D4/D5) |
 | `enum-payload-named` | warn | Source | Data-carrying variants hold exactly one named struct (D2) |

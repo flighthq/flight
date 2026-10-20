@@ -31,7 +31,7 @@ Proposal:
 
 flight-rs-native used `KindId(u64)` (a hash of `TypeId`, or an atomic counter) plus trait objects with `downcast_ref`. That is a Rust-only approach, not FFI-portable.
 
-## D3 Maps — PROPOSED (largely agrees with user)
+## D3 Maps — APPROVED 2026-10-20
 
 A survey of the TS (no test asserts key order) shows that most maps are key/value lookups only: layout resolvers, animation and mesh indexes, log serializer and rate-limit maps, and xml attribute lookups. HashMap is fine for these.
 
@@ -39,7 +39,10 @@ There are exceptions where TS iteration order reaches callers:
 - **tween**: `Object.keys(propertyMap)` becomes the public `tween.properties[]` and sets the order of property writes. `manager.tweens: Map<target, Tween[]>` sets the order in which `onUpdate`/`onComplete` callbacks fire and in which `stopAllTweens` completes. The Rust `HashMap<usize, Vec<Tween>>` fires callbacks in **random order across runs**.
 - **log**: JSON/text formatter output follows key insertion order (context fields, then span fields, then data).
 
-Proposal: HashMap is allowed for lookup. Anything whose iteration produces output, callback order or a public array must iterate deterministically. Use a `Vec` (or `Vec<(K, V)>`) for order, plus a HashMap index if lookup is hot. This matches flight-rs-native, which has no IndexMap and keeps order with Vecs. Lint: forbid iterating a HashMap (D7).
+Ruling (user, 2026-10-20):
+- Maps are for lookup and are never iterated. When a collection is iterated, use a `Vec`. A crate that needs both keeps the objects in a `Vec`, plus a HashMap index into it.
+- A map may be iterated only where neither order nor performance matters, and that use must be marked `allow(hashmap-iteration) <reason>`.
+- This matches flight-rs-native, which uses no IndexMap and keeps order with Vecs. Enforced by `hashmap-iteration` (error).
 
 ## D4 Signals and type erasure — PROPOSED
 
@@ -72,6 +75,7 @@ Proposed mechanics:
   - State structs own their data (Vec/arena + handles) instead of sharing it, so they are `Send` with no locks. The caller decides on locking.
   - Where shared ownership is genuinely needed (signal slots, custom payloads), use `Arc` rather than `Rc`. Uncontended `Arc` costs one atomic increment per clone and nothing per call; it never needs a `Mutex` inside the contract.
   - Net effect: no `Rc`/`RefCell` in the contract, and no locks on hot paths.
+  - User: ok (2026-10-20).
 - All logging goes through flight-log. Crate-local log copies are removed.
 
 ## D6 Contract vs Rust sugar — APPROVED
@@ -84,7 +88,8 @@ Proposed mechanics:
 
 `cargo-flight-lint` now enforces the direction. `cargo run -p cargo-flight-lint -- rules` lists the rules, and AGENTS.md documents them.
 - **error:** `f64` (D1; declare with `allow(f64) <reason>`), `hidden-state` (D5), `sugar-delegates` (D6), plus all the existing structure and test rules.
-- **warn**, until rulings land: `hashmap-iteration` (D3), `contract-dyn-any` and `contract-shared-mutability` (D2/D4/D5), `enum-payload-named` (D2).
+- **error (D3 approved 2026-10-20):** `hashmap-iteration`.
+- **warn**, until rulings land: `contract-dyn-any` and `contract-shared-mutability` (D2/D4/D5), `enum-payload-named` (D2).
 - **Ratchet:** `--baseline agents/baselines/{check,conform}.txt` fails only on new violations. Baseline at implementation: check 2380 (2270 errors, 110 warnings); conform 343 (75 missing, 148 extra, 155 params, of which 56 differ in count and 99 in names only).
 - **conform fixes:** names now match ignoring case and underscores (fixing `Ray3D`); matching is scoped to the crate's own TS package (`flight-x` ↔ `packages/x/src`); parameter names and order are checked; `export const f = (...) =>` functions are recognized; missing functions are tagged `public` (`index.ts`) or `contract-only` (`contract.ts`). TS already has the D6 split: `index.ts` is the curated public API and `contract.ts` is the full contract.
 - **Manifests:** `manifest --write|--check`. Only flight-geometry is frozen so far (`agents/manifests/flight-geometry.{api,tests}`). Other crates get frozen once their rulings are applied and the user approves them.

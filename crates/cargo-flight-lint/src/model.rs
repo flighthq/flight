@@ -36,7 +36,7 @@ pub const RULES: &[Rule] = &[
     Rule { name: "f64", level: Level::Error, scope: "Source", description: "f64 only in items declared with `allow(f64) <reason>` (D1)" },
     Rule { name: "hidden-state", level: Level::Error, scope: "Source", description: "No thread_local!, interior-mutable statics, or clock reads without `allow(hidden-state) <reason>` (D5)" },
     Rule { name: "sugar-delegates", level: Level::Error, scope: "Source", description: "Impl methods delegate to a free function and contain no loops (D6)" },
-    Rule { name: "hashmap-iteration", level: Level::Warn, scope: "Source", description: "No iteration over HashMap/HashSet bindings; order is unspecified (D3)" },
+    Rule { name: "hashmap-iteration", level: Level::Error, scope: "Source", description: "Maps are for lookup: no iteration over HashMap/HashSet bindings (use a Vec) unless marked `allow(hashmap-iteration) <reason>` (D3)" },
     Rule { name: "contract-dyn-any", level: Level::Warn, scope: "Source", description: "No `dyn Any` in pub signatures, fields, or aliases (D2/D4)" },
     Rule { name: "contract-shared-mutability", level: Level::Warn, scope: "Source", description: "No Rc/Arc/Weak/RefCell/Cell/Mutex/RwLock in pub signatures, fields, or aliases (D4/D5)" },
     Rule { name: "enum-payload-named", level: Level::Warn, scope: "Source", description: "Data-carrying variants hold exactly one named struct (D2)" },
