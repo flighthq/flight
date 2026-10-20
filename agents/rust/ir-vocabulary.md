@@ -40,7 +40,7 @@ The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` (`cargo
 | `EntitySlot` | `unknown (read via get_*_data cast)` | `std::any` | `Dynamic` | proposed | Alias for `Option<Box<dyn Any + Send + Sync>>`; the only erased type (D2) |
 | `fn(A) -> R` | `(a: A) => R` | `R (*)(A)` | `A->R` | proposed | Stateless function values (e.g. easing) |
 | `Callback<A, R>` | `(a: A) => R` | `std::function<R(A)>` | `A->R` | proposed | Alias for `Arc<dyn Fn(A) -> R + Send + Sync>`; function values that capture (renderer objects, slots, test spies) |
-| `Ref<T>` | `T` | `std::shared_ptr<T>` | `T` | established | Shared object identity (A2, trial 2026-10-20): create_* returns it, dispose_* breaks cycles, memory frees at the last drop. Backing (Rc<RefCell> vs Arc<RwLock>) open |
+| `Ref<T>` | `T` | `std::shared_ptr<T>` | `T` | established | Shared object identity (A2, trial 2026-10-20): create_* returns it, dispose_* breaks cycles, memory frees at the last drop. Backed by Arc<RwLock<T>>: thread-safe by default (user 2026-10-20); swap the alias only if measurement shows a hot loop suffers |
 | `WeakRef<T>` | `T | null` | `std::weak_ptr<T>` | `Null<T>` | proposed | Not for parent links: under A2 parents are strong, as in TS. Only for non-owning caches |
 | `Handle<T>` | `T (object) or number` | `handle / T*` | `T` | open | Deferred: node-store option (D), revisit only if threading or bulk release requires it |
 | `generic type parameter <T>` | `<T>` | `template<typename T>` | `<T>` | proposed |  |
@@ -50,7 +50,10 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
 
 ## Open rows
 
-1. **Object identity.** Decided as A2, on trial (see below). Still open: whether `Ref<T>` is backed by `Rc<RefCell<T>>` or `Arc<RwLock<T>>`.
+1. **Object identity.** Decided as A2, on trial (see below).
+   - **Backing decided (user, 2026-10-20):** thread-safe by default, so `Ref<T> = Arc<RwLock<T>>`, unless a hot loop is seriously hurt by it.
+   - Adding and removing nodes is not hot. The real gain is that scenes become `Send`: a scene built on a loader thread can be handed to the main thread, or rendered on another thread, even if nothing mutates it concurrently. `Rc` would forbid that outright.
+   - The one hot path is the per-frame render walk reading node fields. Design rule: contract functions that read or write node data take `&T` / `&mut T`, so the caller locks once per node, not once per field. Only structural operations (`add_node_child`, `remove_node_child`, dispose) take `&Ref<T>`. Measure the walk; because `Ref` is an alias, it can be swapped if needed.
 2. **Arrays. Decided (user, 2026-10-20):** `Vec<N>` (growable) → `number[]`; fixed-length `&mut [N]`/`[N; LEN]` → a typed array chosen by element type. Using these two Rust types thoughtfully is what carries the distinction. Survey of the 190 exported TS functions using `number[]`:
    - about 113 read-only input params;
    - 26 small fixed-slot outputs;
