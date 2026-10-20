@@ -121,6 +121,21 @@ Proposed mechanics:
   - 7 `initialize_*` functions are untested.
   - 36 parameter divergences: names such as `rect` vs TS `target`/`source`, and shapes such as `initialize_ray3d(out, ox, oy, oz, dx, dy, dz)` vs TS `(out, origin, direction)`.
 
+## D8 Where types live — PROPOSED
+
+TS keeps all 1,073 type files in `@flighthq/types`, which has no dependencies. The Rust port so far defines types per crate. A prior agent preferred per-crate types, but no rationale is recorded.
+
+Cycle analysis (2026-10-20). Simulate "each crate owns its types" over the TS package graph:
+- **The function-level package dependencies alone have no cycles.**
+- **Adding type references creates real cycles in the render, scene and effects layers.** Verified examples:
+  - `RenderState` (render) references `NodeRenderer`, `Scene2DClipHooks`, `CanvasShapeCommand`, `EffectPaddingResolver`, `Path`, `PathMesh`, while scene2d-gl, effects and canvas all depend on render.
+  - `GlRenderState` (render-gl) references `GlEffectState` (effects-gl), `ShapeRasterizer` (scene2d-gl), `GlContext` (scene3d-gl), each of which depends on render-gl.
+  - `Path` references `ShapeCommand` (`PathWinding`), while shape depends on path.
+- About 71 of 562 cross-package type references point against the dependency direction. The ownership heuristic is approximate, but the examples above are confirmed by reading the source.
+- Leaf libraries (geometry, easing, color, math, …) have no back-references, so per-crate types work there. That is probably what the earlier advice was based on.
+
+Proposal: a `flight-types` crate mirroring `@flighthq/types`. It has no dependencies, holds the IR aliases (`Ref`, `Kind`, `AnySlot`, typed-array aliases), and holds type definitions at least for every layer where cycles occur. Whether leaf types such as geometry move there too, for exact parity with TS import paths, is a separate decision.
+
 ---
 
 # Fleet workflow — PROPOSED
