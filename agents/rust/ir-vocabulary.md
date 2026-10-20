@@ -49,8 +49,14 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
 
 1. **Object identity: `Ref<T>` vs scene-owned storage.** This is the main open question; see below.
 2. **Typed arrays.** TS uses both `number[]` and `Float32Array`/`Uint16Array`, and a Rust `&[f32]` cannot say which. One option is marker aliases such as `Float32Array = [f32]`.
-3. **C-like enums.** TS string-literal values vary (`'Sprite'`, `'aabb'`, `'linear'`). Each enum needs a declared string table, perhaps as an attribute per variant, for the mapping to be mechanical.
-4. **64-bit integers.** TS `number` is exact only to 2^53. The choice is `bigint`, a documented range rule, or keeping them out of the contract.
+3. **Enums.** The user is open to `enum { A, B, C, Custom(String) }` for performance, or to strings if they perform as well. TS string-literal values vary (`'Sprite'`, `'aabb'`, `'linear'`), so any Rust enum needs a declared string table for the TS mapping. Proposal:
+   - **Closed** TS unions become C-like enums with a string table.
+   - **Open** sets keyed for dispatch (`Kind`) stay `String`. The TS render path already caches the resolved renderer on the proxy (`rendererMapId`), so per-frame dispatch does not hash the kind.
+   - `Custom(String)` enums only where hot code branches on the built-in variants.
+4. **Integers.** TS `number` is a 64-bit double, so integers are exact only up to 2^53, not to 32 bits. 32-bit behavior only appears where code asks for it: the TS sources use `>>> 0` (u32 wrap, 207 sites) and `| 0` (i32, 117 sites), and `BigInt` appears only in tests. Proposal:
+   - `u32`/`i32` map to those idioms.
+   - Values that legitimately exceed 32 bits, such as collision's packed feature ids (`FEATURE_INDEX_LIMIT = 1 << 25`), use `i64`/`u64` with a declared range of at most 2^53 (`allow(contract-vocabulary) <range>`).
+   - `isize` is not used.
 
 ## Object identity: three options
 
@@ -78,7 +84,12 @@ TS today follows the Flash model: nodes and textures are shared object reference
 - TS keeps object references but still gains the `scene` parameter.
 - Mechanical, but **the semantics differ per target**. For example, use-after-destroy works in TS and fails in Rust. That is the kind of divergence mechanical transpilation is meant to prevent.
 
-Questions that would settle it:
-- How much does the Flash-style object graph matter to TS users?
-- Can a node belong to more than one scene, or be moved between scenes?
-- Does anything rely on GC-style "drop the last reference and it is gone" behavior?
+User answers (2026-10-20):
+- A node exists in at most one scene.
+- In the Flash model, the scene comes into being as you stack nodes together; there is no scene object up front.
+- Memory is reclaimed by GC once nothing references it.
+
+Principal's reading: these answers fit (A) and rule out (B), because B needs a scene to exist before any node can be created. They also leave one wrinkle for (A). GC collects cycles, but reference counting (Rust `Rc`/`Arc`, C++ `shared_ptr`) does not. If parent and child hold each other strongly, both leak. If the parent link is weak, holding only a child no longer keeps its parent alive: the detached parent is freed and `child.parent` becomes null. In Flash, a child keeps its parent alive. Options:
+- **(A1)** Accept a weak parent link and document the difference.
+- **(A2)** Keep the parent link strong and require explicit `remove_child`/`dispose` to break the cycle.
+- **(A3)** Use a cycle-collecting reference type. This would be bespoke in Rust and C++.
