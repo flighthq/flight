@@ -643,7 +643,7 @@ fn check_contract_types(
 
     // The vocabulary's own aliases are defined in terms of non-vocabulary types.
     if let Item::Type(t) = item
-        && ["EntitySlot", "Callback", "Ref", "WeakRef", "Kind", "Handle", "Uint8ClampedArray"].contains(&t.ident.to_string().as_str())
+        && ["EntitySlot", "Callback", "Ref", "WeakRef", "Kind", "Handle"].contains(&t.ident.to_string().as_str())
     {
         return;
     }

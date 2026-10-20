@@ -586,11 +586,6 @@ pub fn rust_array_kind(ty: &syn::Type) -> Option<String> {
                 return Some(if r.mutability.is_some() { typed.to_string() } else { ARRAY_LIKE.to_string() });
             }
             if let syn::Type::Path(p) = &*r.elem
-                && p.path.is_ident("Uint8ClampedArray")
-            {
-                return Some(if r.mutability.is_some() { String::from("Uint8ClampedArray") } else { ARRAY_LIKE.to_string() });
-            }
-            if let syn::Type::Path(p) = &*r.elem
                 && let Some(seg) = p.path.segments.last()
                 && seg.ident == "Vec"
             {
@@ -611,12 +606,6 @@ pub fn rust_array_kind(ty: &syn::Type) -> Option<String> {
                 && let syn::Type::Slice(s) = inner
             {
                 return numeric_elem(&s.elem).map(|t| t.to_string());
-            }
-            if seg.ident == "Box"
-                && let syn::Type::Path(ip) = inner
-                && ip.path.is_ident("Uint8ClampedArray")
-            {
-                return Some(String::from("Uint8ClampedArray"));
             }
             if seg.ident == "Option" {
                 return rust_array_kind(inner);
@@ -760,9 +749,6 @@ mod tests {
         assert_eq!(rust_array_kind(&ty("Box<[u16]>")).as_deref(), Some("Uint16Array"));
         assert_eq!(rust_array_kind(&ty("[f32; 9]")).as_deref(), Some("Float32Array"));
         assert_eq!(rust_array_kind(&ty("&[Vector2]")), None);
-        assert_eq!(rust_array_kind(&ty("&mut Uint8ClampedArray")).as_deref(), Some("Uint8ClampedArray"));
-        assert_eq!(rust_array_kind(&ty("Box<Uint8ClampedArray>")).as_deref(), Some("Uint8ClampedArray"));
-        assert_eq!(rust_array_kind(&ty("&Uint8ClampedArray")).as_deref(), Some("ArrayLike<number>"));
         assert_eq!(ts_array_kind("Readonly<Float32Array>").as_deref(), Some("Float32Array"));
         assert_eq!(ts_array_kind("readonly number[] | null").as_deref(), Some("number[]"));
         assert_eq!(ts_array_kind("number[] | Float32Array").as_deref(), Some("Float32Array | number[]"));

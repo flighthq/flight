@@ -42,7 +42,6 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "Vec<T>", ts: "T[]", cpp: "std::vector<T>", haxe: "Array<T>", status: Status::Established, note: "Growable (user 2026-10-20): `Vec<f32>` → `number[]`. Also the type for iterated collections (D3)" },
     Entry { rust: "&mut [N] / [N; LEN] (N numeric)", ts: "Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array", cpp: "std::span<N> / std::array<N, LEN>", haxe: "haxe.io.Float32Array etc.", status: Status::Established, note: "Fixed length (user 2026-10-20): the typed array is picked by element type. `usize`/`bool` slices have no typed array (open)" },
     Entry { rust: "Box<[N]> (N numeric)", ts: "the matching typed array", cpp: "std::unique_ptr<N[]> + length", haxe: "haxe.io.Float32Array etc.", status: Status::Established, note: "Owned, fixed length set at creation (vertex data, pixels, index buffers); user 2026-10-20" },
-    Entry { rust: "Uint8ClampedArray (alias of [u8])", ts: "Uint8ClampedArray", cpp: "std::span<uint8_t> / std::unique_ptr<uint8_t[]>", haxe: "haxe.io.UInt8Array", status: Status::Established, note: "Used as `&mut Uint8ClampedArray`, `&Uint8ClampedArray`, `Box<Uint8ClampedArray>` (user 2026-10-20). Stores convert explicitly with clamp + round-half-even (`to_clamped_u8`); sugar uses plain `[u8]`" },
     Entry { rust: "&[N] (N numeric, read-only)", ts: "ArrayLike<number>", cpp: "std::span<const N>", haxe: "haxe.io.Float32Array etc.", status: Status::Established, note: "Read-only input accepts either array kind (user 2026-10-20); keeps APIs reusable. Outputs and owned storage stay concrete" },
     Entry { rust: "&[T] / &mut [T] / [T; LEN] (T non-numeric)", ts: "readonly T[] / T[]", cpp: "std::span<const T> / std::span<T> / std::array", haxe: "Array<T>", status: Status::Proposed, note: "No typed array exists for structs or strings" },
     Entry { rust: "HashMap<K, V>", ts: "Map<K, V>", cpp: "std::unordered_map<K, V>", haxe: "Map<K, V>", status: Status::Established, note: "Lookup only; never iterated (D3)" },
@@ -63,7 +62,7 @@ const PRIMITIVES: &[&str] = &[
     "f32", "f64", "bool", "i8", "i16", "i32", "u8", "u16", "u32", "usize", "char", "str",
 ];
 const RESTRICTED_INTS: &[&str] = &["i64", "u64", "i128", "u128", "isize"];
-const LEAF_NAMES: &[&str] = &["String", "Kind", "EntitySlot", "Self", "Uint8ClampedArray"];
+const LEAF_NAMES: &[&str] = &["String", "Kind", "EntitySlot", "Self"];
 const CONTAINERS: &[&str] = &[
     "Option", "Vec", "HashMap", "HashSet", "Ref", "WeakRef", "Callback", "Handle", "LazyLock",
 ];

@@ -30,7 +30,6 @@ The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` (`cargo
 | `Vec<T>` | `T[]` | `std::vector<T>` | `Array<T>` | established | Growable (user 2026-10-20): `Vec<f32>` → `number[]`. Also the type for iterated collections (D3) |
 | `&mut [N] / [N; LEN] (N numeric)` | `Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array` | `std::span<N> / std::array<N, LEN>` | `haxe.io.Float32Array etc.` | established | Fixed length (user 2026-10-20): the typed array is picked by element type. `usize`/`bool` slices have no typed array (open) |
 | `Box<[N]> (N numeric)` | `the matching typed array` | `std::unique_ptr<N[]> + length` | `haxe.io.Float32Array etc.` | established | Owned, fixed length set at creation (vertex data, pixels, index buffers); user 2026-10-20 |
-| `Uint8ClampedArray (alias of [u8])` | `Uint8ClampedArray` | `std::span<uint8_t> / std::unique_ptr<uint8_t[]>` | `haxe.io.UInt8Array` | established | Used as `&mut Uint8ClampedArray`, `&Uint8ClampedArray`, `Box<Uint8ClampedArray>` (user 2026-10-20). Stores convert explicitly with clamp + round-half-even (`to_clamped_u8`); sugar uses plain `[u8]` |
 | `&[N] (N numeric, read-only)` | `ArrayLike<number>` | `std::span<const N>` | `haxe.io.Float32Array etc.` | established | Read-only input accepts either array kind (user 2026-10-20); keeps APIs reusable. Outputs and owned storage stay concrete |
 | `&[T] / &mut [T] / [T; LEN] (T non-numeric)` | `readonly T[] / T[]` | `std::span<const T> / std::span<T> / std::array` | `Array<T>` | proposed | No typed array exists for structs or strings |
 | `HashMap<K, V>` | `Map<K, V>` | `std::unordered_map<K, V>` | `Map<K, V>` | established | Lookup only; never iterated (D3) |
@@ -76,15 +75,13 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
    - Values that legitimately exceed 32 bits, such as collision's packed feature ids (`FEATURE_INDEX_LIMIT = 1 << 25`), use `i64`/`u64` with a declared range of at most 2^53 (`allow(contract-vocabulary) <range>`).
    - `isize` is not used.
 
-## Porting rule: clamped pixels (user, 2026-10-20)
+## Porting rule: pixels (user, 2026-10-20)
 
-TS `Uint8ClampedArray` clamps and rounds half-to-even on every store, implicitly. Rust `u8` stores never convert: integer `as u8` wraps, float `as u8` saturates but **truncates**, and arithmetic overflow panics in debug and wraps in release.
-
-The rules:
-- Contract code uses the alias `Uint8ClampedArray = [u8]` (`&mut Uint8ClampedArray`, `&Uint8ClampedArray`, `Box<Uint8ClampedArray>`). The alias exists so TS keeps `Uint8ClampedArray`, e.g. for Canvas `ImageData`.
-- Every store converts explicitly through a shared helper, `to_clamped_u8(v: f32) -> u8`, implemented as `v.round_ties_even() as u8` (the float cast supplies the clamp). A bare `as u8` silently truncates, which is off by one compared with TS.
-- Rust sugar uses plain `[u8]`.
-- Home for vocabulary aliases (`Ref`, `Callback`, `EntitySlot`, `Kind`, `Uint8ClampedArray`) and helpers: to be decided. Proposed: a small `flight-ir` crate.
+- **Decision:** there is no clamped array type in the IR. Pixel data is plain `u8` (`&mut [u8]`, `Box<[u8]>`), so TS gets `Uint8Array`.
+- **Stores clamp explicitly.** TS `Uint8ClampedArray` clamps and rounds half-to-even on every store, implicitly. Rust `u8` never converts: integer `as u8` wraps, float `as u8` saturates but **truncates**, and arithmetic overflow panics in debug and wraps in release. So every float-to-pixel store uses `to_clamped_u8(v)`, implemented as `v.round_ties_even() as u8` (the float cast supplies the clamp).
+- **Tests must catch clamping errors.** Pixel-writing functions get test cases for at least: 1.5 → 2, 2.5 → 2, 300 → 255, -5 → 0, NaN → 0.
+- **Canvas boundary:** TS platform code that needs `ImageData` builds a zero-copy view, `new Uint8ClampedArray(data.buffer, data.byteOffset, data.byteLength)`. The reverse direction uses a `Uint8Array` view. This affects effects-canvas, tool-capture, host-web and image only.
+- **Home for vocabulary aliases** (`Ref`, `Callback`, `EntitySlot`, `Kind`) and helpers like `to_clamped_u8`: to be decided.
 
 ## Object identity: decision (A2, trial, user 2026-10-20)
 
