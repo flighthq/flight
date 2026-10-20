@@ -1,37 +1,92 @@
 # cargo flight-lint check baseline
 # Regenerate with --write-baseline; entries are rule<TAB>file<TAB>message.
-contract-dyn-any	crates/flight-entity/src/binding.rs	`fn attach_entity_binding` exposes `dyn Any` in the contract
-contract-dyn-any	crates/flight-entity/src/binding.rs	`fn get_entity_binding` exposes `dyn Any` in the contract
-contract-dyn-any	crates/flight-entity/src/types.rs	`struct EntityRuntime` exposes `dyn Any` in the contract
-contract-dyn-any	crates/flight-signals/src/emitter.rs	`fn emit_signal` exposes `dyn Any` in the contract
-contract-dyn-any	crates/flight-signals/src/internal.rs	`fn null_signal_emit` exposes `dyn Any` in the contract
-contract-dyn-any	crates/flight-signals/src/safe.rs	`fn emit_signal_safe` exposes `dyn Any` in the contract
-contract-dyn-any	crates/flight-signals/src/types.rs	`type SlotFn` exposes `dyn Any` in the contract
-contract-shared-mutability	crates/flight-animation/src/animation_clip.rs	`fn create_animation_clip_rc` exposes Rc in the contract
-contract-shared-mutability	crates/flight-animation/src/animation_root_motion.rs	`fn create_animation_root_motion_extractor` exposes Rc in the contract
-contract-shared-mutability	crates/flight-animation/src/animation_root_motion.rs	`fn initialize_animation_root_motion_extractor` exposes Rc in the contract
-contract-shared-mutability	crates/flight-animation/src/types.rs	`struct AnimationPlayer` exposes Rc in the contract
-contract-shared-mutability	crates/flight-animation/src/types.rs	`struct AnimationRootMotionExtractor` exposes Rc in the contract
-contract-shared-mutability	crates/flight-animation/src/types.rs	`type AnimationBlendTreeRef` exposes Rc/RefCell in the contract
-contract-shared-mutability	crates/flight-animation/src/types.rs	`type AnimationPlayerRef` exposes Rc/RefCell in the contract
-contract-shared-mutability	crates/flight-animation/src/types.rs	`type AnimationStateMachineRef` exposes Rc/RefCell in the contract
-contract-shared-mutability	crates/flight-log/src/log.rs	`fn create_filter_log_sink` exposes Rc in the contract
-contract-shared-mutability	crates/flight-log/src/log.rs	`fn enable_log_signals` exposes Rc in the contract
-contract-shared-mutability	crates/flight-log/src/log.rs	`fn register_log_serializer` exposes Rc in the contract
-contract-shared-mutability	crates/flight-log/src/log.rs	`type LogDataProvider` exposes Rc in the contract
-contract-shared-mutability	crates/flight-log/src/log.rs	`type LogFormatter` exposes Rc in the contract
-contract-shared-mutability	crates/flight-log/src/log.rs	`type LogSink` exposes Rc in the contract
-contract-shared-mutability	crates/flight-signals/src/emitter.rs	`fn emit_signal` exposes Rc in the contract
-contract-shared-mutability	crates/flight-signals/src/internal.rs	`fn null_signal_emit` exposes Rc in the contract
-contract-shared-mutability	crates/flight-signals/src/safe.rs	`fn emit_signal_safe` exposes Rc in the contract
-contract-shared-mutability	crates/flight-signals/src/types.rs	`struct SignalScope` exposes Rc/RefCell in the contract
-contract-shared-mutability	crates/flight-signals/src/types.rs	`struct Signal` exposes Rc/RefCell in the contract
-contract-shared-mutability	crates/flight-signals/src/types.rs	`type SignalConnectionHandle` exposes Rc/RefCell in the contract
-contract-shared-mutability	crates/flight-signals/src/types.rs	`type SlotFn` exposes Rc in the contract
-contract-shared-mutability	crates/flight-statechart/src/types.rs	`type LogSinkFn` exposes Rc in the contract
-contract-shared-mutability	crates/flight-tween/src/types.rs	`struct TweenManager` exposes Rc/RefCell in the contract
-contract-shared-mutability	crates/flight-tween/src/types.rs	`struct TweenTarget` exposes Rc/RefCell in the contract
-contract-shared-mutability	crates/flight-tween/src/types.rs	`struct Tween` exposes Rc/RefCell in the contract
+contract-vocabulary	crates/flight-animation/src/animation_blend_tree.rs	`fn sample_animation_blend_tree`: `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-animation/src/animation_clip.rs	`fn create_animation_clip_rc`: `Rc` is not in the vocabulary
+contract-vocabulary	crates/flight-animation/src/animation_clip.rs	`fn sample_animation_clip`: `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-animation/src/animation_crossfade.rs	`fn sample_animation_crossfade`: `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-animation/src/animation_layer_stack.rs	`fn sample_animation_layer_stack`: `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-animation/src/animation_root_motion.rs	`fn create_animation_root_motion_extractor`: `Rc` is not in the vocabulary
+contract-vocabulary	crates/flight-animation/src/animation_root_motion.rs	`fn initialize_animation_root_motion_extractor`: `Rc` is not in the vocabulary
+contract-vocabulary	crates/flight-animation/src/animation_state_machine.rs	`fn sample_animation_state_machine`: `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-animation/src/types.rs	`struct AnimationPlayer`: `Rc` is not in the vocabulary
+contract-vocabulary	crates/flight-animation/src/types.rs	`struct AnimationRootMotionExtractor`: `Rc` is not in the vocabulary
+contract-vocabulary	crates/flight-animation/src/types.rs	`type AnimationBlendTreeRef`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
+contract-vocabulary	crates/flight-animation/src/types.rs	`type AnimationPlayerRef`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
+contract-vocabulary	crates/flight-animation/src/types.rs	`type AnimationStateMachineRef`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
+contract-vocabulary	crates/flight-collision/src/contact_feature_id.rs	`const FEATURE_INDEX_LIMIT`: `i64` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-collision/src/contact_feature_id.rs	`fn pack_contact_feature_id`: `i64` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-collision/src/types.rs	`struct CollisionContactPoint2D`: `i64` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-collision/src/types.rs	`struct CollisionContactPoint3D`: `i64` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-collision/src/types.rs	`struct CollisionHeightfield3D`: `i64` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-collision/src/types.rs	`struct CollisionTriangleMesh3D`: `i64` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-easing/src/create_easing_samples.rs	`fn create_easing_samples`: `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-easing/src/create_easing_samples.rs	`fn initialize_easing_samples`: `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-easing/src/ease_combinators.rs	`fn ease_clamp_output`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-easing/src/ease_combinators.rs	`fn ease_clamp`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-easing/src/ease_combinators.rs	`fn ease_invert`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-easing/src/ease_combinators.rs	`fn ease_mirror`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-easing/src/ease_combinators.rs	`fn ease_reverse`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-easing/src/ease_combinators.rs	`fn ease_scale_output`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-easing/src/ease_cubic_bezier.rs	`fn ease_cubic_bezier`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-easing/src/ease_damped_sine.rs	`fn ease_in_damped_sine`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-easing/src/ease_damped_sine.rs	`fn ease_in_out_damped_sine`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-easing/src/ease_damped_sine.rs	`fn ease_out_damped_sine`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-easing/src/ease_piecewise.rs	`fn ease_piecewise`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-easing/src/ease_power.rs	`fn ease_in_out_power`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-easing/src/ease_power.rs	`fn ease_in_power`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-easing/src/ease_power.rs	`fn ease_out_power`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-easing/src/ease_smoothstep.rs	`fn ease_smoothstep_range`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-easing/src/ease_steps.rs	`fn ease_steps`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-easing/src/get_easing_derivative.rs	`fn get_easing_derivative`: `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-entity/src/binding.rs	`fn attach_entity_binding`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-entity/src/binding.rs	`fn get_entity_binding`: `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-entity/src/types.rs	`struct EntityRuntime`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-log/src/log.rs	`enum LogValue`: `i64` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-log/src/log.rs	`fn create_filter_log_sink`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-log/src/log.rs	`fn enable_log_signals`: `Rc` is not in the vocabulary
+contract-vocabulary	crates/flight-log/src/log.rs	`fn register_log_serializer`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-log/src/log.rs	`struct LogSpan`: `u64` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-log/src/log.rs	`type LogDataProvider`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-log/src/log.rs	`type LogFormatter`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-log/src/log.rs	`type LogSink`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-math/src/random_distributions.rs	`fn random_gaussian_pair`: tuple types are not in the vocabulary (use a named struct or out-params)
+contract-vocabulary	crates/flight-particles/src/curve.rs	`fn build_particle_color_curve`: `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-particles/src/curve.rs	`fn build_particle_curve`: `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-path/src/path.rs	`fn get_path_last_point`: tuple types are not in the vocabulary (use a named struct or out-params)
+contract-vocabulary	crates/flight-signals/src/emitter.rs	`fn emit_signal`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-signals/src/internal.rs	`fn null_signal_emit`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-signals/src/internal.rs	`fn set_timeout`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-signals/src/safe.rs	`fn emit_signal_safe`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-signals/src/throttle.rs	`fn connect_signal_at_frame_rate`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-signals/src/throttle.rs	`fn connect_signal_debounced`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-signals/src/throttle.rs	`fn connect_signal_throttled`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-signals/src/types.rs	`struct SignalScope`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
+contract-vocabulary	crates/flight-signals/src/types.rs	`struct Signal`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
+contract-vocabulary	crates/flight-signals/src/types.rs	`type SignalConnectionHandle`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
+contract-vocabulary	crates/flight-signals/src/types.rs	`type SlotFn`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-spatial/src/bvh_3d.rs	`struct Bvh3D`: `u64` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-spatial/src/spatial_index.rs	`struct SpatialIndex2D`: tuple types are not in the vocabulary (use a named struct or out-params)
+contract-vocabulary	crates/flight-spatial/src/spatial_indexing_guard.rs	`type SpatialObjectId`: `u64` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-spatial/src/uniform_grid_3d.rs	`struct UniformGrid3D`: tuple types are not in the vocabulary (use a named struct or out-params)
+contract-vocabulary	crates/flight-statechart/src/types.rs	`enum LogData`: tuple types are not in the vocabulary (use a named struct or out-params)
+contract-vocabulary	crates/flight-statechart/src/types.rs	`type LogSinkFn`: `Rc` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use EntitySlot or Callback)
+contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_next_grapheme_boundary`: `isize` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_next_sentence_boundary`: `isize` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_next_word_boundary`: `isize` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_previous_grapheme_boundary`: `isize` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_previous_sentence_boundary`: `isize` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_previous_word_boundary`: `isize` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-textsegment/src/text_segment_boundary.rs	`fn get_word_range_at`: `isize` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-tween/src/types.rs	`struct TweenManager`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
+contract-vocabulary	crates/flight-tween/src/types.rs	`struct TweenTarget`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
+contract-vocabulary	crates/flight-tween/src/types.rs	`struct Tween`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
+contract-vocabulary	crates/flight-velocity/src/velocity_field.rs	`fn contribute_velocity`: `u64` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-velocity/src/velocity_field.rs	`fn ensure_velocity_sample`: `u64` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-velocity/src/velocity_field.rs	`fn explain_velocity`: `u64` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-velocity/src/velocity_field.rs	`fn get_velocity`: `u64` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-velocity/src/velocity_field.rs	`fn has_velocity`: `u64` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-velocity/src/velocity_field.rs	`fn suppress_velocity`: `u64` exceeds TS number precision (open vocabulary row)
+contract-vocabulary	crates/flight-velocity/src/velocity_field.rs	`struct VelocityField`: `u64` exceeds TS number precision (open vocabulary row)
 enum-payload-named	crates/flight-animation/src/types.rs	`StateRef::Index` carries a non-struct payload; wrap the data in a named struct
 enum-payload-named	crates/flight-animation/src/types.rs	`StateRef::Name` carries a non-struct payload; wrap the data in a named struct
 enum-payload-named	crates/flight-binpack/src/pack_rectangles.rs	`RectangleId::Number` carries a non-struct payload; wrap the data in a named struct

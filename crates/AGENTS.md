@@ -162,8 +162,7 @@ All enforced by `cargo-flight-lint` (`cargo run -p cargo-flight-lint -- rules` p
 | `hidden-state` | error | Source | No thread_local!, interior-mutable statics, or clock reads without `allow(hidden-state) <reason>` (D5) |
 | `sugar-delegates` | error | Source | Impl methods delegate to a free function and contain no loops (D6) |
 | `hashmap-iteration` | error | Source | Maps are for lookup: no iteration over HashMap/HashSet bindings (use a Vec) unless marked `allow(hashmap-iteration) <reason>` (D3) |
-| `contract-dyn-any` | warn | Source | No `dyn Any` in pub signatures, fields, or aliases (D2/D4) |
-| `contract-shared-mutability` | warn | Source | No Rc/Arc/Weak/RefCell/Cell/Mutex/RwLock in pub signatures, fields, or aliases (D4/D5) |
+| `contract-vocabulary` | warn | Source | Pub signatures, fields, aliases, and constants use only IR vocabulary types (agents/ir-vocabulary.md) |
 | `enum-payload-named` | warn | Source | Data-carrying variants hold exactly one named struct (D2) |
 | `allow-reason` | error | Source | Every `flight-lint: allow(...)` marker states a reason |
 | `allow-unknown-rule` | error | Source | Allow markers name rules that exist |
@@ -198,6 +197,10 @@ Only violations beyond the baseline fail. When work removes debt, regenerate wit
 ### Frozen manifests
 
 `agents/manifests/<crate>.api` (public signatures, type shapes, derives) and `<crate>.tests` (every `#[test]`) are user-owned. `manifest --check [--crate C]` fails on any difference; `manifest --write` regenerates and is reserved for approved contract changes.
+
+## IR vocabulary
+
+Contract types are restricted to the closed vocabulary in [agents/ir-vocabulary.md](agents/ir-vocabulary.md), so that TS/C++/Haxe output can be produced mechanically. The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` and enforced by `contract-vocabulary`.
 
 ## TS conformance
 

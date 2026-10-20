@@ -6,6 +6,7 @@ mod manifest;
 mod model;
 mod structure;
 mod tests_rules;
+mod vocabulary;
 
 use std::env;
 use std::fs;
@@ -25,6 +26,7 @@ Commands:
   manifest  (--write | --check) [--crate C]... [--dir D]     (default dir: agents/manifests)
   allows    [--crate C]... [--rule R]                         list allow markers and reasons
   rules                                                        list rules and levels
+  vocabulary                                                   print the IR vocabulary table
 
 `--crate` takes a crate directory name, e.g. `flight-geometry`. Repeatable.
 ";
@@ -109,6 +111,7 @@ fn main() {
         "manifest" => cmd_manifest(&opts),
         "allows" => cmd_allows(&opts),
         "rules" => cmd_rules(),
+        "vocabulary" => vocabulary::print_table(),
         "help" | "--help" | "-h" => print!("{}", USAGE),
         _ => {
             eprintln!("{}", USAGE);

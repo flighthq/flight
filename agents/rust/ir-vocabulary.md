@@ -1,0 +1,84 @@
+# IR Vocabulary
+
+Status: **DRAFT.** Rows marked *established* are already in use in user-approved code (flight-geometry) or have been ruled on. *Proposed* rows await a ruling. *Open* rows have no mechanical mapping yet.
+
+## Purpose
+
+Rust is the IR, and TS, C++ and Haxe are produced from it by **mechanical transpilation**: one fixed mapping per construct, no case-by-case translation. That only works if the contract (pub signatures, pub fields, pub aliases and constants) is restricted to a closed vocabulary. This table is that vocabulary.
+
+The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` (`cargo run -p cargo-flight-lint -- vocabulary`), and the `contract-vocabulary` lint rule checks the contract against the same source. To change the vocabulary, change that file and regenerate this table. The doc and the lint cannot drift apart.
+
+`contract-vocabulary` is currently **warn**. When this table is approved it becomes **error**. At introduction (2026-10-20) it reports 87 items, all baselined. flight-geometry reports 0, which confirms the table against the crate the user approved. The flagged items are mostly `dyn Trait` (43), `Rc`/`Box`/`RefCell` (25/22/9), 64-bit integers (24) and tuples (5).
+
+## Table
+
+| Rust | TS | C++ | Haxe | Status | Notes |
+|------|----|-----|------|--------|-------|
+| `f32` | `number` | `float` | `Single` | established | Default numeric type (D1) |
+| `f64` | `number` | `double` | `Float` | established | Only with `allow(f64) <reason>` (D1) |
+| `bool` | `boolean` | `bool` | `Bool` | established |  |
+| `i8 i16 i32 u8 u16 u32 usize` | `number` | `int8_t … uint32_t, size_t` | `Int / UInt` | established | `usize` for indices; `i32` where TS uses a -1 sentinel |
+| `i64 u64` | `number` | `int64_t / uint64_t` | `haxe.Int64` | open | TS `number` is exact only to 2^53; needs `bigint` or a range rule |
+| `()` | `void` | `void` | `Void` | established | Return type only |
+| `String` | `string` | `std::string` | `String` | proposed | Owned text |
+| `&str` | `string` | `std::string_view` | `String` | proposed | Borrowed text; `&'static str` for constants |
+| `Kind` | `Kind (= string)` | `std::string` | `String` | proposed | Alias for `String`; object identity tag (D2) |
+| `struct (named fields)` | `interface + create_* fn` | `struct` | `class` | established | Value type when held inline: assignment is a copy in every target |
+| `&T` | `Readonly<T>` | `const T&` | `T` | established | Parameters |
+| `&mut T` | `T` | `T&` | `T` | established | Parameters; `out` first, alias-safe |
+| `Option<T>` | `T | null` | `std::optional<T> (pointer for Ref)` | `Null<T>` | established |  |
+| `Vec<T>` | `T[]` | `std::vector<T>` | `Array<T>` | established | Use when order matters or for iteration (D3) |
+| `&[T] / &mut [T]` | `readonly T[] / T[]` | `std::span<const T> / std::span<T>` | `Array<T>` | open | TS sometimes means Float32Array/Uint16Array; the element type alone cannot say which |
+| `[T; N]` | `T[] (length N)` | `std::array<T, N>` | `haxe.ds.Vector<T>` | proposed |  |
+| `HashMap<K, V>` | `Map<K, V>` | `std::unordered_map<K, V>` | `Map<K, V>` | established | Lookup only; never iterated (D3) |
+| `HashSet<T>` | `Set<T>` | `std::unordered_set<T>` | `Map<T, Bool>` | proposed | Membership only; never iterated (D3) |
+| `C-like enum` | `string-literal union / const` | `enum class` | `enum abstract` | open | TS literal values vary ('Sprite', 'aabb', 'linear'); needs a declared string table |
+| `data enum (one named struct per variant)` | `discriminated union` | `std::variant<…>` | `enum` | proposed | Closed sets only; open sets use Kind + dispatch tables (D2) |
+| `EntitySlot` | `unknown (read via get_*_data cast)` | `std::any` | `Dynamic` | proposed | Alias for `Option<Box<dyn Any + Send + Sync>>`; the only erased type (D2) |
+| `fn(A) -> R` | `(a: A) => R` | `R (*)(A)` | `A->R` | proposed | Stateless function values (e.g. easing) |
+| `Callback<A, R>` | `(a: A) => R` | `std::function<R(A)>` | `A->R` | proposed | Alias for `Arc<dyn Fn(A) -> R + Send + Sync>`; function values that capture (renderer objects, slots, test spies) |
+| `Ref<T>` | `T` | `std::shared_ptr<T>` | `T` | open | Shared object identity. Competes with scene-owned storage; see ir-vocabulary.md |
+| `WeakRef<T>` | `T | null` | `std::weak_ptr<T>` | `Null<T>` | open | Back-references (parent); pairs with Ref<T> |
+| `Handle<T>` | `T (object) or number` | `handle / T*` | `T` | open | Scene-owned storage alternative to Ref<T> |
+| `generic type parameter <T>` | `<T>` | `template<typename T>` | `<T>` | proposed |  |
+| `pub const / pub static LazyLock<T>` | `export const` | `inline constexpr / static` | `static final` | proposed | Immutable only (D5) |
+
+Workspace-defined structs, enums and aliases are allowed by name. Each one is itself checked where it is defined.
+
+## Open rows
+
+1. **Object identity: `Ref<T>` vs scene-owned storage.** This is the main open question; see below.
+2. **Typed arrays.** TS uses both `number[]` and `Float32Array`/`Uint16Array`, and a Rust `&[f32]` cannot say which. One option is marker aliases such as `Float32Array = [f32]`.
+3. **C-like enums.** TS string-literal values vary (`'Sprite'`, `'aabb'`, `'linear'`). Each enum needs a declared string table, perhaps as an attribute per variant, for the mapping to be mechanical.
+4. **64-bit integers.** TS `number` is exact only to 2^53. The choice is `bigint`, a documented range rule, or keeping them out of the contract.
+
+## Object identity: three options
+
+TS today follows the Flash model: nodes and textures are shared object references, and the GC manages memory. The TS API already has one counter-example: `RenderState` owns its memory (renderer data, registries), and callers pass it explicitly. A scene could follow the same idea.
+
+**(A) Shared references: `Ref<T>`, with `WeakRef<T>` for parents.**
+- The TS API is unchanged. The Flash-style object graph stays.
+- Rust: mutating through a shared reference needs interior mutability (`Rc<RefCell>` or `Arc<RwLock>`). Re-entrant mutation, such as a signal handler editing a node during the render walk, panics where TS would work.
+- C++: `shared_ptr` costs, plus cycles must be broken with `weak_ptr`.
+- Threads: the choice is single-threaded `Rc`, or a lock on every node access.
+
+**(B) Scene-owned storage with handles in every target.** This follows the `RenderState` pattern.
+- API shape: `create_sprite(scene) -> NodeId`, `add_node_child(scene, parent, child)`, `destroy_node(scene, node)`, `get_sprite_data(scene, node)`.
+- Mechanical in every target, since a handle is just a number.
+- Memory is managed explicitly: destroy frees immediately, and destroying the scene frees everything. No cycles, no borrow panics.
+- A `Scene` is one ownable value, so it is `Send`, and the thread story is "move or lock the scene".
+- Renderer data could be keyed by `NodeId` instead of identity maps.
+- Costs:
+  - **An API change in Rust and in every target.** TS users lose the Flash-style object graph.
+  - Use-after-destroy becomes a stale-handle check (generational ids) instead of a dangling reference.
+  - Most calls gain a `scene` parameter.
+
+**(C) Hybrid: `Handle<T>` in the IR, mapped to an object in TS.**
+- Rust and C++ use scene-owned storage. The TS mapping turns `Handle<T>` into `T` and `get_node(scene, h)` into `h`.
+- TS keeps object references but still gains the `scene` parameter.
+- Mechanical, but **the semantics differ per target**. For example, use-after-destroy works in TS and fails in Rust. That is the kind of divergence mechanical transpilation is meant to prevent.
+
+Questions that would settle it:
+- How much does the Flash-style object graph matter to TS users?
+- Can a node belong to more than one scene, or be moved between scenes?
+- Does anything rely on GC-style "drop the last reference and it is gone" behavior?

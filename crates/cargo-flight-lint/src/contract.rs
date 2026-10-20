@@ -1,6 +1,6 @@
 //! Rules that enforce the contract direction in agents/design-decisions.md:
 //! `f64` (D1), `hidden-state` (D5), `sugar-delegates` (D6), `hashmap-iteration` (D3),
-//! `contract-dyn-any` and `contract-shared-mutability` (D2/D4/D5), `enum-payload-named` (D2).
+//! `contract-vocabulary` (agents/ir-vocabulary.md), `enum-payload-named` (D2).
 
 use std::collections::HashSet;
 use std::path::Path;
@@ -13,6 +13,7 @@ use syn::{Expr, Fields, ImplItem, Item, Type};
 use crate::allow::FileAllows;
 use crate::model::Violation;
 use crate::structure::is_pub;
+use crate::vocabulary;
 
 const ITER_METHODS: &[&str] = &[
     "iter",
@@ -37,10 +38,8 @@ const PEEL_METHODS: &[&str] = &[
     "write",
     "clone",
 ];
-const INTERIOR_MUT: &[&str] = &[
-    "Cell", "RefCell", "Mutex", "RwLock", "OnceLock", "OnceCell", "LazyLock", "LazyCell",
-];
-const SHARED_MUT: &[&str] = &["Rc", "Arc", "Weak", "RefCell", "Cell", "Mutex", "RwLock"];
+/// Immutable `LazyLock` constants are vocabulary; anything mutable inside them is still caught.
+const INTERIOR_MUT: &[&str] = &["Cell", "RefCell", "Mutex", "RwLock", "OnceLock", "OnceCell"];
 const NON_NAMED_PAYLOAD: &[&str] = &[
     "String", "Vec", "Option", "Box", "Rc", "Arc", "HashMap", "HashSet", "RefCell", "Cell",
 ];
@@ -53,14 +52,31 @@ const SUGAR_EXEMPT_TRAITS: &[&str] = &[
 #[derive(Default)]
 pub struct Index {
     pub free_fns: HashSet<String>,
+    /// Struct, enum, alias, and trait names defined anywhere in the workspace.
+    pub types: HashSet<String>,
     /// Field, parameter, and binding names declared with a HashMap/HashSet type, per crate.
     pub map_names: std::collections::HashMap<String, HashSet<String>>,
 }
 
 pub fn index_file(index: &mut Index, crate_name: &str, file: &syn::File) {
     for item in &file.items {
-        if let Item::Fn(f) = item {
-            index.free_fns.insert(f.sig.ident.to_string());
+        match item {
+            Item::Fn(f) => {
+                index.free_fns.insert(f.sig.ident.to_string());
+            }
+            Item::Struct(s) => {
+                index.types.insert(s.ident.to_string());
+            }
+            Item::Enum(e) => {
+                index.types.insert(e.ident.to_string());
+            }
+            Item::Type(t) => {
+                index.types.insert(t.ident.to_string());
+            }
+            Item::Trait(t) => {
+                index.types.insert(t.ident.to_string());
+            }
+            _ => {}
         }
     }
     let mut collector = MapNameCollector::default();
@@ -108,7 +124,7 @@ pub fn check_contract(
         check_clock(&mut out, path, allows, &label, &lines, Node::Item(item));
         check_iteration(&mut out, path, allows, &label, &lines, Node::Item(item), map_names);
         check_statics(&mut out, path, allows, item);
-        check_contract_types(&mut out, path, allows, &label, line, item);
+        check_contract_types(&mut out, path, allows, &label, line, item, &index.types);
         if let Item::Enum(e) = item
             && is_pub(&e.vis)
         {
@@ -565,7 +581,7 @@ fn receiver_name(expr: &Expr) -> Option<String> {
 }
 
 // ---------------------------------------------------------------------------
-// contract-dyn-any / contract-shared-mutability (D2/D4/D5)
+// contract-vocabulary (agents/ir-vocabulary.md)
 // ---------------------------------------------------------------------------
 
 fn check_contract_types(
@@ -575,9 +591,10 @@ fn check_contract_types(
     label: &str,
     line: usize,
     item: &Item,
+    known: &HashSet<String>,
 ) {
     let mut types: Vec<&Type> = Vec::new();
-    match item {
+    let generics: &syn::Generics = match item {
         Item::Fn(f) if is_pub(&f.vis) => {
             for input in &f.sig.inputs {
                 if let syn::FnArg::Typed(t) = input {
@@ -587,6 +604,7 @@ fn check_contract_types(
             if let syn::ReturnType::Type(_, t) = &f.sig.output {
                 types.push(t);
             }
+            &f.sig.generics
         }
         Item::Struct(s) if is_pub(&s.vis) => {
             for field in &s.fields {
@@ -594,6 +612,7 @@ fn check_contract_types(
                     types.push(&field.ty);
                 }
             }
+            &s.generics
         }
         Item::Enum(e) if is_pub(&e.vis) => {
             for v in &e.variants {
@@ -601,56 +620,73 @@ fn check_contract_types(
                     types.push(&field.ty);
                 }
             }
+            &e.generics
         }
-        Item::Type(t) if is_pub(&t.vis) => types.push(&t.ty),
-        Item::Const(c) if is_pub(&c.vis) => types.push(&c.ty),
-        Item::Static(s) if is_pub(&s.vis) => types.push(&s.ty),
+        Item::Type(t) if is_pub(&t.vis) => {
+            types.push(&t.ty);
+            &t.generics
+        }
+        Item::Const(c) if is_pub(&c.vis) => {
+            types.push(&c.ty);
+            &c.generics
+        }
+        Item::Static(s) if is_pub(&s.vis) => {
+            types.push(&s.ty);
+            return check_static_vocabulary(out, path, allows, label, line, &s.ty, known);
+        }
         _ => return,
+    };
+    let params: HashSet<String> = generics
+        .type_params()
+        .map(|p| p.ident.to_string())
+        .collect();
+
+    // The vocabulary's own aliases are defined in terms of non-vocabulary types.
+    if let Item::Type(t) = item
+        && ["EntitySlot", "Callback", "Ref", "WeakRef", "Kind", "Handle"].contains(&t.ident.to_string().as_str())
+    {
+        return;
     }
 
-    let mut any = AnyFinder::default();
-    let mut shared = IdentFinder::new(SHARED_MUT);
+    let mut problems: Vec<String> = Vec::new();
     for t in &types {
-        any.visit_type(t);
-        shared.visit_type(t);
+        problems.extend(vocabulary::check_type(t, known, &params));
     }
-
-    if any.found && !allows.is_allowed("contract-dyn-any", &[line]) {
-        out.push(Violation::new(
-            path,
-            line,
-            "contract-dyn-any",
-            format!("`{}` exposes `dyn Any` in the contract", label),
-        ));
-    }
-    if !shared.found.is_empty() && !allows.is_allowed("contract-shared-mutability", &[line]) {
-        let mut found: Vec<&str> = shared.found.iter().map(|s| s.as_str()).collect();
-        found.sort();
-        out.push(Violation::new(
-            path,
-            line,
-            "contract-shared-mutability",
-            format!("`{}` exposes {} in the contract", label, found.join("/")),
-        ));
-    }
+    report_vocabulary(out, path, allows, label, line, problems);
 }
 
-#[derive(Default)]
-struct AnyFinder {
-    found: bool,
+fn check_static_vocabulary(
+    out: &mut Vec<Violation>,
+    path: &Path,
+    allows: &FileAllows,
+    label: &str,
+    line: usize,
+    ty: &Type,
+    known: &HashSet<String>,
+) {
+    let problems = vocabulary::check_type(ty, known, &HashSet::new());
+    report_vocabulary(out, path, allows, label, line, problems);
 }
 
-impl<'ast> Visit<'ast> for AnyFinder {
-    fn visit_type_trait_object(&mut self, node: &'ast syn::TypeTraitObject) {
-        for bound in &node.bounds {
-            if let syn::TypeParamBound::Trait(t) = bound
-                && t.path.segments.last().map(|s| s.ident == "Any").unwrap_or(false)
-            {
-                self.found = true;
-            }
-        }
-        visit::visit_type_trait_object(self, node);
+fn report_vocabulary(
+    out: &mut Vec<Violation>,
+    path: &Path,
+    allows: &FileAllows,
+    label: &str,
+    line: usize,
+    mut problems: Vec<String>,
+) {
+    problems.sort();
+    problems.dedup();
+    if problems.is_empty() || allows.is_allowed("contract-vocabulary", &[line]) {
+        return;
     }
+    out.push(Violation::new(
+        path,
+        line,
+        "contract-vocabulary",
+        format!("`{}`: {}", label, problems.join("; ")),
+    ));
 }
 
 struct IdentFinder {
@@ -804,12 +840,11 @@ mod tests {
 
     #[test]
     fn flags_contract_types_and_enum_payloads() {
-        let src = "pub struct S { pub b: Box<dyn Any>, pub r: Rc<RefCell<u8>>, hidden: Rc<u8> }\npub enum E { A, B(Shape), C(f32), D { x: f32 }, F(Shape, Shape) }";
+        let src = "pub struct Shape { pub x: f32 }\npub struct S { pub b: Box<dyn Any>, pub r: Rc<RefCell<u8>>, hidden: Rc<u8> }\npub enum E { A, B(Shape), C(f32), D { x: f32 }, F(Shape, Shape) }";
         assert_eq!(
             rules_for(src),
             vec![
-                "contract-dyn-any",
-                "contract-shared-mutability",
+                "contract-vocabulary",
                 "enum-payload-named",
                 "enum-payload-named",
                 "enum-payload-named",
