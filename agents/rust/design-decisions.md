@@ -134,7 +134,15 @@ Cycle analysis (2026-10-20). Simulate "each crate owns its types" over the TS pa
 - About 71 of 562 cross-package type references point against the dependency direction. The ownership heuristic is approximate, but the examples above are confirmed by reading the source.
 - Leaf libraries (geometry, easing, color, math, …) have no back-references, so per-crate types work there. That is probably what the earlier advice was based on.
 
-Proposal: a `flight-types` crate mirroring `@flighthq/types`. It has no dependencies, holds the IR aliases (`Ref`, `Kind`, `AnySlot`, typed-array aliases), and holds type definitions at least for every layer where cycles occur. Whether leaf types such as geometry move there too, for exact parity with TS import paths, is a separate decision.
+Direction (user, 2026-10-20):
+- Keep a `flight-types` crate at the **bottom**. Anything that settles downward and is a pure type rather than an implementation can live there: enums, data and option structs, shared vocabulary.
+- Implementation crates own the types that carry Rust impl sugar, plus all free functions.
+- Renderer internals are contract-lane and not user-facing, so they may be restructured to break cycles:
+  - backend-specific fields of the generic `RenderState` move to `CanvasRenderState` / `GlRenderState` / `WgpuRenderState`;
+  - plug-in state uses the existing slot and registry pattern.
+- Research in progress: classify every cross-layer type reference under this layout.
+
+Earlier proposal (superseded by the direction above): a `flight-types` crate mirroring `@flighthq/types`. It has no dependencies, holds the IR aliases (`Ref`, `Kind`, `AnySlot`, typed-array aliases), and holds type definitions at least for every layer where cycles occur. Whether leaf types such as geometry move there too, for exact parity with TS import paths, is a separate decision.
 
 ---
 
