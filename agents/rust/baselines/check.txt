@@ -315,161 +315,6 @@ f64	crates/flight-path-boolean/src/simplify_path.rs	`const DEFAULT_FLATTEN_TOLER
 f64	crates/flight-path-boolean/src/union_all_paths.rs	`const DEFAULT_FLATTEN_TOLERANCE` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-path-boolean/src/union_all_paths.rs	`fn union_all_paths` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-path-boolean/src/write_path_boolean_contours.rs	`fn write_path_boolean_contours` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/clean_path.rs	`fn clean_path` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/clean_path.rs	`fn collapse_closed_seam` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/clean_path.rs	`fn is_middle_removable` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/clean_path.rs	`fn is_redundant_middle` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/clean_path.rs	`fn push_clean_vertex` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/clean_path.rs	`fn within_tolerance` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/contains_path_point.rs	`fn chord_dist_sq` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/contains_path_point.rs	`fn compute_path_winding_number` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/contains_path_point.rs	`fn contains_path_point` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/contains_path_point.rs	`fn count_segment_crossings` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/contains_path_point.rs	`fn flatten_cubic_winding_number` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/contains_path_point.rs	`fn flatten_quadratic_winding_number` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/dash_path.rs	`fn apply_dash_to_contour` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/dash_path.rs	`fn dash_path` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/dash_path.rs	`fn dash_total` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/decimate_path.rs	`fn decimate_path` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/decimate_path.rs	`fn douglas_peucker` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/explain_stroke_path_tessellation.rs	`fn explain_stroke_path_tessellation` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/fit_path_curves.rs	`fn chord_length_parameterize` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/fit_path_curves.rs	`fn compute_center_tangent` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/fit_path_curves.rs	`fn compute_left_tangent` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/fit_path_curves.rs	`fn compute_max_error` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/fit_path_curves.rs	`fn compute_right_tangent` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/fit_path_curves.rs	`fn find_corners` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/fit_path_curves.rs	`fn fit_cubic` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/fit_path_curves.rs	`fn fit_path_curves` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/fit_path_curves.rs	`fn generate_bezier` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/fit_path_curves.rs	`fn newton_raphson_root_find` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/fit_path_curves.rs	`fn reparameterize` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/flatten_path.rs	`fn distance_to_chord_sq` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/flatten_path.rs	`fn ensure_contour` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/flatten_path.rs	`fn flatten_cubic` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/flatten_path.rs	`fn flatten_path` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/flatten_path.rs	`fn flatten_quadratic` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_bounds.rs	`fn cubic_extremum_roots` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_bounds.rs	`fn eval_cubic` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_bounds.rs	`fn eval_quadratic` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_bounds.rs	`fn expand_cubic_bounds` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_bounds.rs	`fn expand_quadratic_bounds` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_bounds.rs	`fn get_path_bounds` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_bounds.rs	`fn quadratic_extremum_t` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_contour_lengths.rs	`fn contour_length` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_contour_lengths.rs	`fn get_path_contour_lengths` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_curvature_at_distance.rs	`fn curvature_at_vertex` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_curvature_at_distance.rs	`fn get_path_curvature_at_distance` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_curvature_at_distance.rs	`fn menger_curvature` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_curvature_at_distance.rs	`fn sample_path_curvature` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_length.rs	`fn contour_length` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_length.rs	`fn get_path_length` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_nearest_point.rs	`fn get_path_nearest_point` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_point_at_distance.rs	`fn get_path_point_at_distance` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_point_at_distance.rs	`fn get_path_position_at_distance` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_point_at_distance.rs	`fn get_path_tangent_at_distance` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_point_at_distance.rs	`fn sample_path_point` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_point_at_distance.rs	`fn sample_path_tangent` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_segment_at_parameter.rs	`fn get_cubic_bezier_curvature` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_segment_at_parameter.rs	`fn get_cubic_bezier_point` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_segment_at_parameter.rs	`fn get_cubic_bezier_tangent` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_segment_at_parameter.rs	`fn get_path_segment_curvature_at_parameter` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_segment_at_parameter.rs	`fn get_path_segment_point_at_parameter` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_segment_at_parameter.rs	`fn get_path_segment_tangent_at_parameter` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_segment_at_parameter.rs	`fn get_quadratic_bezier_curvature` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_segment_at_parameter.rs	`fn get_quadratic_bezier_point` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_segment_at_parameter.rs	`fn get_quadratic_bezier_tangent` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_segment_at_parameter.rs	`fn walk_path_segment_curvature` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_segment_at_parameter.rs	`fn walk_path_segment` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_signed_area.rs	`fn get_path_contour_orientation` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_signed_area.rs	`fn get_path_signed_area` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/get_path_signed_area.rs	`fn shoelace_area` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`const CIRCLE_KAPPA` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`enum PathSegment` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn append_arc_cubics` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn append_corner_arc` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn append_path_arc` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn append_path_circle` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn append_path_cubic_curve_to` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn append_path_ellipse` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn append_path_elliptical_arc_to` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn append_path_line_to` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn append_path_move_to` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn append_path_polygon` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn append_path_polyline` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn append_path_quadratic_curve_to` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn append_path_rectangle` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn append_path_rounded_rectangle_with_corner_radii` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn append_path_rounded_rectangle` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn append_path_tangent_arc_to` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn get_path_last_point` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn normalize_corner_radii` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`fn vector_angle` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`struct PathMesh` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`struct PathMorph` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`struct Path` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path.rs	`struct StrokeStyle` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path_mesh_pool.rs	`fn acquire_path_mesh` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path_morph.rs	`fn sample_path_morph` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path_morph_geometry.rs	`fn align_closed_cubic_contour` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path_morph_geometry.rs	`fn append_cubic_contour_pair` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path_morph_geometry.rs	`fn append_cubic_segment` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path_morph_geometry.rs	`fn append_line_as_cubic` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path_morph_geometry.rs	`fn append_quadratic_as_cubic` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path_morph_geometry.rs	`fn build_path_morph` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path_morph_geometry.rs	`fn create_cubic_contour` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path_morph_geometry.rs	`fn cubic_control_polygon_length` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path_morph_geometry.rs	`fn get_cubic_contour_signed_area` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path_morph_geometry.rs	`fn get_cubic_power_coefficients` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path_morph_geometry.rs	`fn point_distance` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path_morph_geometry.rs	`fn split_cubic_segment` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path_morph_geometry.rs	`fn subdivide_cubic_segments` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path_morph_geometry.rs	`struct CubicContour` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/path_morph_geometry.rs	`struct CubicSegment` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/reverse_path.rs	`enum SubpathPointKind` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/reverse_path.rs	`struct SubpathPoint` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path.rs	`fn append_contour` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path.rs	`fn append_piece_outline` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path.rs	`fn append_points_reverse` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path.rs	`fn append_points` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path.rs	`fn stroke_path` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`const GEOMETRY_EPSILON` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn append_endpoint_section` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn append_join_sections` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn append_section` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn apply_dash` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn approximately_equal` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn are_finite_points` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn build_stroke_path_geometry` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn build_stroke_piece` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn create_arc_interior_points` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn create_arc_points` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn create_stroke_subpaths` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn cross` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn do_polylines_intersect` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn get_polyline_point_count` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn has_polyline_self_intersection` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn intersect_lines` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn point_on_segment` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn push_dash` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn remove_consecutive_duplicates` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn reverse_points` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn same_point` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn segments_intersect` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`fn signed_join_sweep` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`struct SegmentFrame` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`struct StrokePathPieceGeometry` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/stroke_path_geometry.rs	`struct StrokeSubpath` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/tessellate_path.rs	`fn is_ear` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/tessellate_path.rs	`fn is_point_in_triangle` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/tessellate_path.rs	`fn tessellate_contour` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/tessellate_path.rs	`fn tessellate_path_into` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/tessellate_path.rs	`fn tessellate_path` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/tessellate_stroke_path.rs	`const TRIANGLE_EPSILON` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/tessellate_stroke_path.rs	`fn append_round_cap` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/tessellate_stroke_path.rs	`fn tessellate_stroke_path` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/transform_path.rs	`fn transform_path` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-path/src/transform_path.rs	`fn translate_path` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn advance_statechart_instance` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn advance_statechart_region` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn compare_statechart_condition` uses f64 without an `allow(f64) <reason>` declaration
@@ -581,37 +426,6 @@ file-structure	crates/flight-path-boolean/src/offset_path.rs	fn appears after a 
 file-structure	crates/flight-path-boolean/src/offset_path.rs	fn appears after a later section
 file-structure	crates/flight-path-boolean/src/offset_path.rs	fn appears after a later section
 file-structure	crates/flight-path-boolean/src/offset_path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	fn appears after a later section
-file-structure	crates/flight-path/src/path.rs	struct appears after a later section
-file-structure	crates/flight-path/src/path.rs	struct appears after a later section
-file-structure	crates/flight-path/src/path.rs	struct appears after a later section
-file-structure	crates/flight-path/src/reverse_path.rs	struct appears after a later section
-file-structure	crates/flight-path/src/reverse_path.rs	struct appears after a later section
-file-structure	crates/flight-path/src/stroke_path_geometry.rs	struct appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
@@ -689,50 +503,6 @@ fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`insert_status` shoul
 fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`merge_coincident_segments` should come before `segment_intersection`
 fn-order	crates/flight-path-boolean/src/martinez_kernel.rs	`segment_intersection` should come before `signed_area`
 fn-order	crates/flight-path-boolean/src/offset_path.rs	`build_offset_ring` should come before `offset_path`
-fn-order	crates/flight-path/src/contains_path_point.rs	`chord_dist_sq` should come before `contains_path_point`
-fn-order	crates/flight-path/src/dash_path.rs	`apply_dash_to_contour` should come before `dash_path`
-fn-order	crates/flight-path/src/fit_path_curves.rs	`chord_length_parameterize` should come before `compute_right_tangent`
-fn-order	crates/flight-path/src/fit_path_curves.rs	`compute_center_tangent` should come before `newton_raphson_root_find`
-fn-order	crates/flight-path/src/fit_path_curves.rs	`compute_left_tangent` should come before `find_corners`
-fn-order	crates/flight-path/src/fit_path_curves.rs	`compute_max_error` should come before `generate_bezier`
-fn-order	crates/flight-path/src/fit_path_curves.rs	`find_corners` should come before `fit_path_curves`
-fn-order	crates/flight-path/src/fit_path_curves.rs	`newton_raphson_root_find` should come before `reparameterize`
-fn-order	crates/flight-path/src/flatten_path.rs	`distance_to_chord_sq` should come before `ensure_contour`
-fn-order	crates/flight-path/src/flatten_path.rs	`ensure_contour` should come before `flatten_path`
-fn-order	crates/flight-path/src/get_path_bounds.rs	`cubic_extremum_roots` should come before `get_path_bounds`
-fn-order	crates/flight-path/src/get_path_contour_lengths.rs	`contour_length` should come before `get_path_contour_lengths`
-fn-order	crates/flight-path/src/get_path_curvature_at_distance.rs	`curvature_at_vertex` should come before `sample_path_curvature`
-fn-order	crates/flight-path/src/get_path_length.rs	`contour_length` should come before `get_path_length`
-fn-order	crates/flight-path/src/path.rs	`append_arc_cubics` should come before `append_corner_arc`
-fn-order	crates/flight-path/src/path.rs	`append_corner_arc` should come before `normalize_corner_radii`
-fn-order	crates/flight-path/src/path.rs	`append_path_arc` should come before `append_path_ellipse`
-fn-order	crates/flight-path/src/path.rs	`append_path_circle` should come before `append_path_close`
-fn-order	crates/flight-path/src/path.rs	`append_path_close` should come before `append_path_cubic_curve_to`
-fn-order	crates/flight-path/src/path.rs	`append_path_cubic_curve_to` should come before `append_path_quadratic_curve_to`
-fn-order	crates/flight-path/src/path.rs	`append_path_line_to` should come before `append_path_move_to`
-fn-order	crates/flight-path/src/path.rs	`create_path_mesh` should come before `initialize_path`
-fn-order	crates/flight-path/src/path.rs	`normalize_corner_radii` should come before `path_command_data_count`
-fn-order	crates/flight-path/src/path_morph_geometry.rs	`align_closed_cubic_contour` should come before `get_cubic_power_coefficients`
-fn-order	crates/flight-path/src/path_morph_geometry.rs	`create_cubic_contour` should come before `close_cubic_contour`
-fn-order	crates/flight-path/src/path_morph_geometry.rs	`get_cubic_contour_orientation` should come before `normalize_cubic_contour_orientations`
-fn-order	crates/flight-path/src/path_morph_geometry.rs	`get_cubic_contour_signed_area` should come before `reverse_closed_cubic_contour`
-fn-order	crates/flight-path/src/reverse_path.rs	`decode_subpaths` should come before `reverse_path`
-fn-order	crates/flight-path/src/stroke_path.rs	`append_contour` should come before `append_piece_outline`
-fn-order	crates/flight-path/src/stroke_path.rs	`append_piece_outline` should come before `stroke_path`
-fn-order	crates/flight-path/src/stroke_path_geometry.rs	`append_endpoint_section` should come before `build_stroke_piece`
-fn-order	crates/flight-path/src/stroke_path_geometry.rs	`append_section` should come before `signed_join_sweep`
-fn-order	crates/flight-path/src/stroke_path_geometry.rs	`apply_dash` should come before `intersect_lines`
-fn-order	crates/flight-path/src/stroke_path_geometry.rs	`approximately_equal` should come before `same_point`
-fn-order	crates/flight-path/src/stroke_path_geometry.rs	`are_finite_points` should come before `reverse_points`
-fn-order	crates/flight-path/src/stroke_path_geometry.rs	`create_arc_interior_points` should come before `append_section`
-fn-order	crates/flight-path/src/stroke_path_geometry.rs	`create_stroke_subpaths` should come before `build_stroke_path_geometry`
-fn-order	crates/flight-path/src/stroke_path_geometry.rs	`do_polylines_intersect` should come before `has_polyline_self_intersection`
-fn-order	crates/flight-path/src/stroke_path_geometry.rs	`find_centerline_intersection` should come before `push_dash`
-fn-order	crates/flight-path/src/stroke_path_geometry.rs	`point_on_segment` should come before `segments_intersect`
-fn-order	crates/flight-path/src/tessellate_path.rs	`is_ear` should come before `tessellate_contour`
-fn-order	crates/flight-path/src/tessellate_path.rs	`tessellate_contour` should come before `tessellate_path_into`
-fn-order	crates/flight-path/src/tessellate_stroke_path.rs	`append_round_cap` should come before `append_stroke_piece_mesh`
-fn-order	crates/flight-path/src/tessellate_stroke_path.rs	`append_stroke_piece_mesh` should come before `tessellate_stroke_path`
 fn-order	crates/flight-statechart/src/statechart.rs	`advance_statechart_region` should come before `set_statechart_region_duration`
 fn-order	crates/flight-statechart/src/statechart.rs	`create_statechart_instance` should come before `advance_statechart_instance`
 fn-order	crates/flight-statechart/src/statechart.rs	`initialize_statechart_instance` should come before `get_statechart_region_state`
@@ -782,8 +552,6 @@ test-coverage	crates/flight-mesh/src/mesh_geometry.rs	`get_index_value` is not t
 test-coverage	crates/flight-mesh/src/mesh_geometry_attributes.rs	`vertices_as_bytes_mut` is not tested
 test-coverage	crates/flight-mesh/src/mesh_geometry_attributes.rs	`vertices_as_bytes` is not tested
 test-coverage	crates/flight-mesh/src/vertex_format.rs	`is_float32_format` is not tested
-test-coverage	crates/flight-path/src/path.rs	`create_path_mesh` is not tested
-test-coverage	crates/flight-path/src/path.rs	`create_stroke_style` is not tested
 test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
@@ -1006,54 +774,6 @@ test-module-coverage	crates/flight-particles/tests/update_particle_objects_test.
 test-module-coverage	crates/flight-particles/tests/update_particle_objects_test.rs	`update_particle_objects` has no test module (expected `mod update_particle_objects { ... }`)
 test-module-coverage	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	`normalize_particle_emitter_config` has no test module (expected `mod normalize_particle_emitter_config { ... }`)
 test-module-coverage	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	`validate_particle_emitter_config` has no test module (expected `mod validate_particle_emitter_config { ... }`)
-test-module-coverage	crates/flight-path/tests/clean_path_test.rs	`clean_path` has no test module (expected `mod clean_path { ... }`)
-test-module-coverage	crates/flight-path/tests/contains_path_point_test.rs	`contains_path_point` has no test module (expected `mod contains_path_point { ... }`)
-test-module-coverage	crates/flight-path/tests/copy_path_test.rs	`clone_path` has no test module (expected `mod clone_path { ... }`)
-test-module-coverage	crates/flight-path/tests/copy_path_test.rs	`copy_path_into` has no test module (expected `mod copy_path_into { ... }`)
-test-module-coverage	crates/flight-path/tests/copy_path_test.rs	`copy_path` has no test module (expected `mod copy_path { ... }`)
-test-module-coverage	crates/flight-path/tests/dash_path_test.rs	`dash_path` has no test module (expected `mod dash_path { ... }`)
-test-module-coverage	crates/flight-path/tests/decimate_path_test.rs	`decimate_path` has no test module (expected `mod decimate_path { ... }`)
-test-module-coverage	crates/flight-path/tests/explain_path_morph_creation_test.rs	`explain_path_morph_creation` has no test module (expected `mod explain_path_morph_creation { ... }`)
-test-module-coverage	crates/flight-path/tests/explain_stroke_path_tessellation_test.rs	`explain_stroke_path_tessellation` has no test module (expected `mod explain_stroke_path_tessellation { ... }`)
-test-module-coverage	crates/flight-path/tests/fit_path_curves_test.rs	`fit_path_curves` has no test module (expected `mod fit_path_curves { ... }`)
-test-module-coverage	crates/flight-path/tests/flatten_path_test.rs	`flatten_path` has no test module (expected `mod flatten_path { ... }`)
-test-module-coverage	crates/flight-path/tests/for_each_path_segment_test.rs	`for_each_path_segment` has no test module (expected `mod for_each_path_segment { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_bounds_test.rs	`get_path_bounds` has no test module (expected `mod get_path_bounds { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_contour_lengths_test.rs	`get_path_contour_lengths` has no test module (expected `mod get_path_contour_lengths { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_curvature_at_distance_test.rs	`get_path_curvature_at_distance` has no test module (expected `mod get_path_curvature_at_distance { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_length_test.rs	`get_path_length` has no test module (expected `mod get_path_length { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_nearest_point_test.rs	`get_path_nearest_point` has no test module (expected `mod get_path_nearest_point { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_point_at_distance_test.rs	`get_path_point_at_distance` has no test module (expected `mod get_path_point_at_distance { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_point_at_distance_test.rs	`get_path_position_at_distance` has no test module (expected `mod get_path_position_at_distance { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_point_at_distance_test.rs	`get_path_tangent_at_distance` has no test module (expected `mod get_path_tangent_at_distance { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_segment_at_parameter_test.rs	`get_cubic_bezier_curvature` has no test module (expected `mod get_cubic_bezier_curvature { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_segment_at_parameter_test.rs	`get_cubic_bezier_point` has no test module (expected `mod get_cubic_bezier_point { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_segment_at_parameter_test.rs	`get_cubic_bezier_tangent` has no test module (expected `mod get_cubic_bezier_tangent { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_segment_at_parameter_test.rs	`get_path_segment_curvature_at_parameter` has no test module (expected `mod get_path_segment_curvature_at_parameter { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_segment_at_parameter_test.rs	`get_path_segment_point_at_parameter` has no test module (expected `mod get_path_segment_point_at_parameter { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_segment_at_parameter_test.rs	`get_path_segment_tangent_at_parameter` has no test module (expected `mod get_path_segment_tangent_at_parameter { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_segment_at_parameter_test.rs	`get_quadratic_bezier_curvature` has no test module (expected `mod get_quadratic_bezier_curvature { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_segment_at_parameter_test.rs	`get_quadratic_bezier_point` has no test module (expected `mod get_quadratic_bezier_point { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_segment_at_parameter_test.rs	`get_quadratic_bezier_tangent` has no test module (expected `mod get_quadratic_bezier_tangent { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_signed_area_test.rs	`get_path_contour_orientation` has no test module (expected `mod get_path_contour_orientation { ... }`)
-test-module-coverage	crates/flight-path/tests/get_path_signed_area_test.rs	`get_path_signed_area` has no test module (expected `mod get_path_signed_area { ... }`)
-test-module-coverage	crates/flight-path/tests/path_mesh_pool_test.rs	`acquire_path_mesh` has no test module (expected `mod acquire_path_mesh { ... }`)
-test-module-coverage	crates/flight-path/tests/path_mesh_pool_test.rs	`create_path_mesh_pool` has no test module (expected `mod create_path_mesh_pool { ... }`)
-test-module-coverage	crates/flight-path/tests/path_mesh_pool_test.rs	`release_path_mesh` has no test module (expected `mod release_path_mesh { ... }`)
-test-module-coverage	crates/flight-path/tests/path_morph_geometry_test.rs	`build_path_morph` has no test module (expected `mod build_path_morph { ... }`)
-test-module-coverage	crates/flight-path/tests/path_morph_test.rs	`create_path_morph` has no test module (expected `mod create_path_morph { ... }`)
-test-module-coverage	crates/flight-path/tests/path_morph_test.rs	`sample_path_morph` has no test module (expected `mod sample_path_morph { ... }`)
-test-module-coverage	crates/flight-path/tests/path_test.rs	`create_path_mesh` has no test module (expected `mod create_path_mesh { ... }`)
-test-module-coverage	crates/flight-path/tests/path_test.rs	`create_path` has no test module (expected `mod create_path { ... }`)
-test-module-coverage	crates/flight-path/tests/path_test.rs	`create_stroke_style` has no test module (expected `mod create_stroke_style { ... }`)
-test-module-coverage	crates/flight-path/tests/reverse_path_test.rs	`reverse_path` has no test module (expected `mod reverse_path { ... }`)
-test-module-coverage	crates/flight-path/tests/stroke_path_geometry_test.rs	`build_stroke_path_geometry` has no test module (expected `mod build_stroke_path_geometry { ... }`)
-test-module-coverage	crates/flight-path/tests/stroke_path_test.rs	`stroke_path` has no test module (expected `mod stroke_path { ... }`)
-test-module-coverage	crates/flight-path/tests/tessellate_path_test.rs	`tessellate_path_into` has no test module (expected `mod tessellate_path_into { ... }`)
-test-module-coverage	crates/flight-path/tests/tessellate_path_test.rs	`tessellate_path` has no test module (expected `mod tessellate_path { ... }`)
-test-module-coverage	crates/flight-path/tests/tessellate_stroke_path_test.rs	`tessellate_stroke_path` has no test module (expected `mod tessellate_stroke_path { ... }`)
-test-module-coverage	crates/flight-path/tests/transform_path_test.rs	`transform_path` has no test module (expected `mod transform_path { ... }`)
-test-module-coverage	crates/flight-path/tests/transform_path_test.rs	`translate_path` has no test module (expected `mod translate_path { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_signals_test.rs	`enable_statechart_signals` has no test module (expected `mod enable_statechart_signals { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_signals_test.rs	`get_statechart_signals` has no test module (expected `mod get_statechart_signals { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_signals_test.rs	`initialize_statechart_signals` has no test module (expected `mod initialize_statechart_signals { ... }`)
@@ -1097,6 +817,3 @@ test-module-empty	crates/flight-particles/tests/apply_particle_collisions_test.r
 test-module-order	crates/flight-entity/tests/guards_test.rs	`create_guarded_entity_runtime_tests` should come before `create_guarded_entity_tests`
 test-module-order	crates/flight-log/tests/log_test.rs	`enable_log_signals_tests` should come before `start_log_timer_tests`
 test-module-order	crates/flight-log/tests/log_test.rs	`log_assert_tests` should come before `log_tests`
-test-module-order	crates/flight-path/tests/copy_path_test.rs	`copy_path_into_test` should come before `copy_path_test`
-test-module-order	crates/flight-path/tests/path_test.rs	`append_path_close` should come before `append_path_elliptical_arc_to`
-test-module-order	crates/flight-path/tests/tessellate_path_test.rs	`tessellate_path_into_test` should come before `tessellate_path_test`
