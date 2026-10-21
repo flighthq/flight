@@ -30,6 +30,10 @@ pub type NodeWeak = Weak<RwLock<dyn Node>>;
 /// A shared adjustment in the node's pointwise stack (TS `readonly Adjustment[]`).
 pub type AdjustmentRef = Ref<dyn Adjustment>;
 
+/// An opaque key identifying a node's trait family (TS symbol-keyed `NodeTraits`). Each scene
+/// family (scene2d, scene3d) creates one static key per kind; identity is `Arc::ptr_eq`.
+pub struct NodeTraitsKey(pub Arc<dyn Any + Send + Sync>);
+
 /// Whether `target` may accept `child` (TS `NodeRuntime.canAddChild`). The family parameter is
 /// erased at this callback boundary, as the source call site does.
 pub type NodeCanAddChild = Arc<dyn Fn(&dyn Node, &dyn Node) -> bool + Send + Sync>;
@@ -73,6 +77,7 @@ pub struct NodeRuntime {
     pub parent_reference_id: u32,
     pub resolved_color_matrix: Option<[f32; 20]>,
     pub resolved_color_scale_bias: Option<ColorScaleBias>,
+    pub traits: Option<NodeTraitsKey>,
     pub world_bounds_using_local_bounds_id: i32,
     pub world_bounds_using_world_transform_id: i32,
     pub world_transform_id: u32,
@@ -360,6 +365,7 @@ pub(crate) fn create_node_runtime_internal(
         parent_reference_id: 0,
         resolved_color_matrix: None,
         resolved_color_scale_bias: None,
+        traits: None,
         world_bounds_using_local_bounds_id: -1,
         world_bounds_using_world_transform_id: -1,
         world_transform_id: 0,

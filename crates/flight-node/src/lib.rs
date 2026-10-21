@@ -132,6 +132,7 @@ pub use contract::NodeRef;
 pub use contract::NodeRuntime;
 pub use contract::NodeRuntimeMethods;
 pub use contract::NodeSignals;
+pub use contract::NodeTraitsKey;
 pub use contract::NodeWeak;
 pub use contract::PartialNode;
 pub use contract::Transform2DNode;
