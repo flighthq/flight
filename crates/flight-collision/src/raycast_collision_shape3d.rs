@@ -356,15 +356,133 @@ pub fn raycast_collision_shape3d(
             max_fraction,
             out,
         ),
-        CollisionShape3D::Cone(_) => {
-            // Cone raycasting uses GJK-based approach; deferred to support-based raycast
-            false
-        }
+        CollisionShape3D::Cone(c) => raycast_cone3d(
+            c,
+            origin_x,
+            origin_y,
+            origin_z,
+            direction_x,
+            direction_y,
+            direction_z,
+            max_fraction,
+            out,
+        ),
         CollisionShape3D::Convex(_) => {
             // Convex raycasting uses GJK-based approach; deferred to support-based raycast
             false
         }
     }
+}
+
+fn raycast_cone3d(
+    cone: &CollisionCone3D,
+    ox: f32,
+    oy: f32,
+    oz: f32,
+    dx: f32,
+    dy: f32,
+    dz: f32,
+    max_fraction: f32,
+    out: &mut CollisionRaycastHit3D,
+) -> bool {
+    let axis_x = cone.x0 - cone.x1;
+    let axis_y = cone.y0 - cone.y1;
+    let axis_z = cone.z0 - cone.z1;
+    let height = (axis_x * axis_x + axis_y * axis_y + axis_z * axis_z).sqrt();
+    if height <= 0.0 {
+        return false;
+    }
+    let unit_x = axis_x / height;
+    let unit_y = axis_y / height;
+    let unit_z = axis_z / height;
+
+    let w_x = ox - cone.x1;
+    let w_y = oy - cone.y1;
+    let w_z = oz - cone.z1;
+
+    let slope = cone.radius / height;
+    let factor = 1.0 + slope * slope;
+    let direction_axial = dx * unit_x + dy * unit_y + dz * unit_z;
+    let origin_axial = w_x * unit_x + w_y * unit_y + w_z * unit_z;
+
+    let a = dx * dx + dy * dy + dz * dz - factor * direction_axial * direction_axial;
+    let b = 2.0 * (w_x * dx + w_y * dy + w_z * dz - factor * origin_axial * direction_axial);
+    let c = w_x * w_x + w_y * w_y + w_z * w_z - factor * origin_axial * origin_axial;
+
+    let mut best = f32::INFINITY;
+    let mut lateral = false;
+    if a.abs() > EPSILON {
+        let discriminant = b * b - 4.0 * a * c;
+        if discriminant >= 0.0 {
+            let root = discriminant.sqrt();
+            for t in [(-b - root) / (2.0 * a), (-b + root) / (2.0 * a)] {
+                if t < 0.0 || t > max_fraction || t >= best {
+                    continue;
+                }
+                let axial = origin_axial + direction_axial * t;
+                if axial < 0.0 || axial > height {
+                    continue;
+                }
+                best = t;
+                lateral = true;
+            }
+        }
+    } else if b.abs() > EPSILON {
+        let t = -c / b;
+        let axial = origin_axial + direction_axial * t;
+        if t >= 0.0 && t <= max_fraction && axial >= 0.0 && axial <= height {
+            best = t;
+            lateral = true;
+        }
+    }
+
+    if direction_axial.abs() > 0.0 {
+        let t = (height - origin_axial) / direction_axial;
+        if t >= 0.0 && t <= max_fraction && t < best {
+            let hit_x = w_x + dx * t - unit_x * height;
+            let hit_y = w_y + dy * t - unit_y * height;
+            let hit_z = w_z + dz * t - unit_z * height;
+            if hit_x * hit_x + hit_y * hit_y + hit_z * hit_z <= cone.radius * cone.radius {
+                best = t;
+                lateral = false;
+            }
+        }
+    }
+
+    if best == f32::INFINITY {
+        return false;
+    }
+
+    out.fraction = best;
+    out.x = ox + dx * best;
+    out.y = oy + dy * best;
+    out.z = oz + dz * best;
+    if !lateral {
+        out.normal_x = unit_x;
+        out.normal_y = unit_y;
+        out.normal_z = unit_z;
+        return true;
+    }
+
+    let axial = origin_axial + direction_axial * best;
+    let radial_x = w_x + dx * best - unit_x * axial;
+    let radial_y = w_y + dy * best - unit_y * axial;
+    let radial_z = w_z + dz * best - unit_z * axial;
+    let radial_length = (radial_x * radial_x + radial_y * radial_y + radial_z * radial_z).sqrt();
+    if radial_length <= 0.0 {
+        out.normal_x = -unit_x;
+        out.normal_y = -unit_y;
+        out.normal_z = -unit_z;
+        return true;
+    }
+    let normal_x = radial_x / radial_length * height - unit_x * cone.radius;
+    let normal_y = radial_y / radial_length * height - unit_y * cone.radius;
+    let normal_z = radial_z / radial_length * height - unit_z * cone.radius;
+    let normal_length = (normal_x * normal_x + normal_y * normal_y + normal_z * normal_z).sqrt();
+    out.normal_x = normal_x / normal_length;
+    out.normal_y = normal_y / normal_length;
+    out.normal_z = normal_z / normal_length;
+    return true;
 }
 
 fn raycast_cylinder3d(

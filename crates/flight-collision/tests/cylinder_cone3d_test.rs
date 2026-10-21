@@ -44,6 +44,10 @@ fn cone_shape() -> CollisionShape3D {
     })
 }
 
+fn d1_single_evaluation_bound(expected: f32, ts_bound: f32) -> f32 {
+    ts_bound.max(4.0 * f32::EPSILON * expected.abs().max(1.0))
+}
+
 /// Walk the ray in small steps and report the first parameter at which the point is inside.
 /// Slow and obvious; shares no code with the analytic raycast.
 fn find_first_entry_by_scanning(
@@ -218,7 +222,8 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
             0.0,
             Some(f32::INFINITY)
         ));
-        assert!((hit.fraction - 4.0).abs() < 1e-10);
+        // D1 f32 bound (TS: 5e-11)
+        assert!((hit.fraction - 4.0).abs() <= d1_single_evaluation_bound(4.0, 5e-11));
         assert_eq!(hit.normal_x, -1.0);
         assert_eq!(hit.normal_y, 0.0);
         assert_eq!(hit.normal_z, 0.0);
@@ -239,7 +244,8 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
             0.0,
             Some(f32::INFINITY)
         ));
-        assert!((hit.fraction - 4.0).abs() < 1e-10);
+        // D1 f32 bound (TS: 5e-11)
+        assert!((hit.fraction - 4.0).abs() <= d1_single_evaluation_bound(4.0, 5e-11));
         assert_eq!(hit.normal_x, 0.0);
         assert_eq!(hit.normal_y, 1.0);
         assert_eq!(hit.normal_z, 0.0);
@@ -263,7 +269,6 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
     }
 
     #[test]
-    #[ignore = "Cone raycasting not yet implemented in Rust"]
     fn hits_a_cone_side_with_a_normal_that_leans_out_by_the_cone_slope() {
         let cone = cone_shape();
         let mut hit = create_collision_raycast_hit3d();
@@ -278,21 +283,33 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
             0.0,
             Some(f32::INFINITY)
         ));
-        assert!((hit.fraction - (5.0 - 0.75)).abs() < 1e-10);
+        let expected_fraction = 5.0 - 0.75;
+        // D1 f32 bound (TS: 5e-11)
+        assert!(
+            (hit.fraction - expected_fraction).abs()
+                <= d1_single_evaluation_bound(expected_fraction, 5e-11)
+        );
         assert!(hit.normal_y > 0.0);
         let len = (hit.normal_x * hit.normal_x
             + hit.normal_y * hit.normal_y
             + hit.normal_z * hit.normal_z)
             .sqrt();
-        assert!((len - 1.0).abs() < 1e-10);
+        // D1 f32 bound (TS: 5e-11)
+        assert!(
+            (len - 1.0).abs() <= d1_single_evaluation_bound(1.0, 5e-11),
+            "normal=({}, {}, {}), length={}, error={}",
+            hit.normal_x,
+            hit.normal_y,
+            hit.normal_z,
+            len,
+            (len - 1.0).abs(),
+        );
     }
 
     #[test]
     fn does_not_report_a_hit_on_the_mirror_nappe_behind_the_apex() {
         let cone = cone_shape();
         let mut hit = create_collision_raycast_hit3d();
-        // Cone raycast returns false in Rust (not yet implemented), which happens to
-        // match the expected result here since the ray should miss.
         assert!(!raycast_collision_shape3d(
             &mut hit,
             &cone,
@@ -307,7 +324,6 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
     }
 
     #[test]
-    #[ignore = "Cone raycasting not yet implemented in Rust"]
     fn hits_the_cone_base_cap_from_below() {
         let cone = cone_shape();
         let mut hit = create_collision_raycast_hit3d();
@@ -322,14 +338,15 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
             0.0,
             Some(f32::INFINITY)
         ));
-        assert!((hit.fraction - 4.0).abs() < 1e-10);
+        // D1 f32 bound (TS: 5e-11)
+        assert!((hit.fraction - 4.0).abs() <= d1_single_evaluation_bound(4.0, 5e-11));
         assert_eq!(hit.normal_x, 0.0);
         assert_eq!(hit.normal_y, -1.0);
         assert_eq!(hit.normal_z, 0.0);
     }
 
     #[test]
-    fn matches_a_brute_force_scan_for_cylinder() {
+    fn matches_a_brute_force_scan_of_the_containment_predicate_over_seeded_rays() {
         let mut random = Xorshift::new(99173);
         let mut hit = create_collision_raycast_hit3d();
         let limit = 12.0;
@@ -337,149 +354,79 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
         let mut hits = 0;
         let mut misses = 0;
 
-        let shape = cylinder_shape();
-        for i in 0..400 {
-            let ox = (random.next() - 0.5) * 10.0;
-            let oy = (random.next() - 0.5) * 12.0;
-            let oz = (random.next() - 0.5) * 10.0;
-            if get_collision_shape_contains_point3d(&shape, ox, oy, oz) {
-                continue;
-            }
-            let mut dx = random.next() - 0.5;
-            let mut dy = random.next() - 0.5;
-            let mut dz = random.next() - 0.5;
-            let length = (dx * dx + dy * dy + dz * dz).sqrt();
-            if length <= 0.0 {
-                continue;
-            }
-            dx /= length;
-            dy /= length;
-            dz /= length;
-
-            let scanned = find_first_entry_by_scanning(&shape, ox, oy, oz, dx, dy, dz, limit);
-            let analytic =
-                raycast_collision_shape3d(&mut hit, &shape, ox, oy, oz, dx, dy, dz, Some(limit));
-
-            if scanned < 0.0 {
-                if analytic {
-                    let inside = get_collision_shape_contains_point3d(
-                        &shape,
-                        ox + dx * (hit.fraction + tolerance * 4.0),
-                        oy + dy * (hit.fraction + tolerance * 4.0),
-                        oz + dz * (hit.fraction + tolerance * 4.0),
-                    );
-                    assert!(
-                        inside,
-                        "cylinder ray {}: analytic hit at {} the scan missed",
-                        i, hit.fraction
-                    );
+        for shape in [cylinder_shape(), cone_shape()] {
+            let kind = match &shape {
+                CollisionShape3D::Cylinder(_) => "cylinder",
+                CollisionShape3D::Cone(_) => "cone",
+                _ => unreachable!(),
+            };
+            for i in 0..400 {
+                let ox = (random.next() - 0.5) * 10.0;
+                let oy = (random.next() - 0.5) * 12.0;
+                let oz = (random.next() - 0.5) * 10.0;
+                if get_collision_shape_contains_point3d(&shape, ox, oy, oz) {
+                    continue;
                 }
-                misses += 1;
-                continue;
-            }
-
-            assert!(
-                analytic,
-                "cylinder ray {}: scan entered at {} but analytic missed",
-                i, scanned
-            );
-            assert!(
-                (hit.fraction - scanned).abs() <= tolerance,
-                "cylinder ray {}: analytic {} vs scan {}",
-                i,
-                hit.fraction,
-                scanned
-            );
-            hits += 1;
-        }
-
-        assert!(hits > 10, "cylinder hits: {}", hits);
-        assert!(misses > 10, "cylinder misses: {}", misses);
-    }
-
-    #[test]
-    #[ignore = "Cone raycasting not yet implemented in Rust"]
-    fn matches_a_brute_force_scan_for_cone() {
-        let mut random = Xorshift::new(99173);
-        let mut hit = create_collision_raycast_hit3d();
-        let limit = 12.0;
-        let tolerance = limit / 20000.0 + 1e-9;
-        let mut hits = 0;
-        let mut misses = 0;
-
-        // In the TS source both shapes share one loop over [cylinder, cone]. Replay the
-        // cylinder pass so the random sequence consumed here matches the TS cone pass.
-        // Early-continue iterations consume only 3 values (origin), others consume 6.
-        let cyl = cylinder_shape();
-        for _ in 0..400 {
-            let ox = (random.next() - 0.5) * 10.0;
-            let oy = (random.next() - 0.5) * 12.0;
-            let oz = (random.next() - 0.5) * 10.0;
-            if get_collision_shape_contains_point3d(&cyl, ox, oy, oz) {
-                continue;
-            }
-            random.next();
-            random.next();
-            random.next();
-        }
-
-        let shape = cone_shape();
-        for i in 0..400 {
-            let ox = (random.next() - 0.5) * 10.0;
-            let oy = (random.next() - 0.5) * 12.0;
-            let oz = (random.next() - 0.5) * 10.0;
-            if get_collision_shape_contains_point3d(&shape, ox, oy, oz) {
-                continue;
-            }
-            let mut dx = random.next() - 0.5;
-            let mut dy = random.next() - 0.5;
-            let mut dz = random.next() - 0.5;
-            let length = (dx * dx + dy * dy + dz * dz).sqrt();
-            if length <= 0.0 {
-                continue;
-            }
-            dx /= length;
-            dy /= length;
-            dz /= length;
-
-            let scanned = find_first_entry_by_scanning(&shape, ox, oy, oz, dx, dy, dz, limit);
-            let analytic =
-                raycast_collision_shape3d(&mut hit, &shape, ox, oy, oz, dx, dy, dz, Some(limit));
-
-            if scanned < 0.0 {
-                if analytic {
-                    let inside = get_collision_shape_contains_point3d(
-                        &shape,
-                        ox + dx * (hit.fraction + tolerance * 4.0),
-                        oy + dy * (hit.fraction + tolerance * 4.0),
-                        oz + dz * (hit.fraction + tolerance * 4.0),
-                    );
-                    assert!(
-                        inside,
-                        "cone ray {}: analytic hit at {} the scan missed",
-                        i, hit.fraction
-                    );
+                let mut dx = random.next() - 0.5;
+                let mut dy = random.next() - 0.5;
+                let mut dz = random.next() - 0.5;
+                let length = (dx * dx + dy * dy + dz * dz).sqrt();
+                if length <= 0.0 {
+                    continue;
                 }
-                misses += 1;
-                continue;
-            }
+                dx /= length;
+                dy /= length;
+                dz /= length;
 
-            assert!(
-                analytic,
-                "cone ray {}: scan entered at {} but analytic missed",
-                i, scanned
-            );
-            assert!(
-                (hit.fraction - scanned).abs() <= tolerance,
-                "cone ray {}: analytic {} vs scan {}",
-                i,
-                hit.fraction,
-                scanned
-            );
-            hits += 1;
+                let scanned = find_first_entry_by_scanning(&shape, ox, oy, oz, dx, dy, dz, limit);
+                let analytic = raycast_collision_shape3d(
+                    &mut hit,
+                    &shape,
+                    ox,
+                    oy,
+                    oz,
+                    dx,
+                    dy,
+                    dz,
+                    Some(limit),
+                );
+
+                if scanned < 0.0 {
+                    if analytic {
+                        let inside = get_collision_shape_contains_point3d(
+                            &shape,
+                            ox + dx * (hit.fraction + tolerance * 4.0),
+                            oy + dy * (hit.fraction + tolerance * 4.0),
+                            oz + dz * (hit.fraction + tolerance * 4.0),
+                        );
+                        assert!(
+                            inside,
+                            "{} ray {}: analytic hit at {} the scan missed",
+                            kind, i, hit.fraction
+                        );
+                    }
+                    misses += 1;
+                    continue;
+                }
+
+                assert!(
+                    analytic,
+                    "{} ray {}: scan entered at {} but analytic missed",
+                    kind, i, scanned
+                );
+                assert!(
+                    (hit.fraction - scanned).abs() <= tolerance,
+                    "{} ray {}: analytic {} vs scan {}",
+                    kind,
+                    i,
+                    hit.fraction,
+                    scanned
+                );
+                hits += 1;
+            }
         }
 
-        assert!(hits > 10, "cone hits: {}", hits);
-        assert!(misses > 10, "cone misses: {}", misses);
+        assert!(hits > 20, "hits: {}", hits);
+        assert!(misses > 20, "misses: {}", misses);
     }
 }
