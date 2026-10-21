@@ -5,6 +5,11 @@ use flight_math::*;
 use flight_particles::*;
 use flight_particles::contract::*;
 
+// D1 f32 bound (TS: toBeCloseTo(x, 5) → 5e-6)
+fn d1_bound_5(expected: f32) -> f32 {
+    return 5e-6f32.max(4.0 * f32::EPSILON * 1.0f32.max(expected.abs()));
+}
+
 fn sequence_rng(values: &[f32]) -> RandomSource {
     let data: Vec<f32> = values.to_vec();
     let index = Arc::new(AtomicUsize::new(0));
@@ -93,8 +98,8 @@ mod write_particle_spawn_offset {
         },
             rng.as_ref(),
         );
-        assert!((out[0] - expected_cx).abs() < 1e-5); // D1 f32 bound (TS: 0.000005)
-        assert!((out[1] - expected_cy).abs() < 1e-5); // D1 f32 bound (TS: 0.000005)
+        assert!((out[0] - expected_cx).abs() <= d1_bound_5(expected_cx)); // D1 f32 bound (TS: toBeCloseTo(x, 5))
+        assert!((out[1] - expected_cy).abs() <= d1_bound_5(expected_cy)); // D1 f32 bound (TS: toBeCloseTo(x, 5))
 
         // -- Rectangle pass (continues the same rng sequence) --
         let r2 = rng_check(); // x sample
@@ -161,8 +166,8 @@ mod write_particle_spawn_offset {
         },
             rng.as_ref(),
         );
-        assert!((out[0] - expected_rx).abs() < 1e-5); // D1 f32 bound (TS: 0.000005)
-        assert!((out[1] - expected_ry).abs() < 1e-5); // D1 f32 bound (TS: 0.000005)
+        assert!((out[0] - expected_rx).abs() <= d1_bound_5(expected_rx)); // D1 f32 bound (TS: toBeCloseTo(x, 5))
+        assert!((out[1] - expected_ry).abs() <= d1_bound_5(expected_ry)); // D1 f32 bound (TS: toBeCloseTo(x, 5))
     }
 
     #[test]
@@ -233,7 +238,7 @@ mod write_particle_spawn_offset {
         },
             rng.as_ref(),
         );
-        assert!((out[0] - expected_x).abs() < 1e-5); // D1 f32 bound (TS: 0.000005)
+        assert!((out[0] - expected_x).abs() <= d1_bound_5(expected_x)); // D1 f32 bound (TS: toBeCloseTo(x, 5))
         assert_eq!(out[1], 0.0);
     }
 
@@ -308,8 +313,8 @@ mod write_particle_spawn_offset {
         },
             rng.as_ref(),
         );
-        assert!((out[0] - expected_x).abs() < 1e-5); // D1 f32 bound (TS: 0.000005)
-        assert!((out[1] - expected_y).abs() < 1e-5); // D1 f32 bound (TS: 0.000005)
+        assert!((out[0] - expected_x).abs() <= d1_bound_5(expected_x)); // D1 f32 bound (TS: toBeCloseTo(x, 5))
+        assert!((out[1] - expected_y).abs() <= d1_bound_5(expected_y)); // D1 f32 bound (TS: toBeCloseTo(x, 5))
     }
 
     #[test]

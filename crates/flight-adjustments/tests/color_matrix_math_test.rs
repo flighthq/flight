@@ -5,11 +5,13 @@ const BLACK: u32 = 0x000000ff;
 const RED: u32 = 0xff0000ff;
 const GREEN: u32 = 0x00ff00ff;
 
+// D1 f32 bound (TS: 0)
 fn assert_close(actual: f32, expected: f32) {
+    let bound = 4.0 * f32::EPSILON * 1.0f32.max(expected.abs());
     let diff = (actual - expected).abs();
     assert!(
-        diff < 1e-4,
-        "expected {expected}, got {actual} (diff: {diff})"
+        diff <= bound,
+        "expected {expected}, got {actual} (diff: {diff}, bound: {bound})"
     );
 }
 
