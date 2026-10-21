@@ -1237,7 +1237,6 @@ hidden-state	crates/flight-textbidi/src/text_bidi_guards.rs	thread_local `GUARD`
 hidden-state	crates/flight-textbidi/src/types.rs	thread_local `LOG_ENTRIES` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-textbidi/src/types.rs	thread_local `LOG_ONCE_KEYS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-textbidi/src/types.rs	thread_local `LOG_SINK_ACTIVE` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-textsegment/src/text_segmenter_backend.rs	thread_local `INTL_SEGMENTER_OVERRIDE` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-tween/src/tween_manager.rs	thread_local `DEFAULT_MANAGER_CELL` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 impl-order	crates/flight-spatial/src/spatial_index_3d.rs	`clear` should come before `new_bvh`
 impl-order	crates/flight-spatial/src/spatial_index_3d.rs	`new_bvh` should come before `new_grid`
@@ -1314,8 +1313,6 @@ test-coverage	crates/flight-spatial/src/spatial_index_3d.rs	`initialize_uniform_
 test-coverage	crates/flight-spatial/src/spatial_index_3d.rs	`set_spatial_indexing_guard_3d` is not tested
 test-coverage	crates/flight-spatial/src/uniform_grid.rs	`create_uniform_grid_spatial_backend_2d` is not tested
 test-coverage	crates/flight-spatial/src/uniform_grid_3d.rs	`initialize_spatial_aabb_3d` is not tested
-test-coverage	crates/flight-textsegment/src/text_segmenter_backend.rs	`create_web_text_segmenter_backend` is not tested
-test-coverage	crates/flight-textsegment/src/text_segmenter_backend.rs	`has_intl_segmenter` is not tested
 test-default-call	crates/flight-animation/tests/animation_advance_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-animation/tests/animation_blend_tree_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-animation/tests/animation_blend_tree_test.rs	test calls `::default()` — use the `create_*` function
@@ -1958,9 +1955,6 @@ test-module-coverage	crates/flight-textbidi/tests/get_bidi_runs_test.rs	`get_bid
 test-module-coverage	crates/flight-textbidi/tests/reorder_bidi_line_test.rs	`reorder_bidi_line` has no test module (expected `mod reorder_bidi_line { ... }`)
 test-module-coverage	crates/flight-textbidi/tests/resolve_bidi_levels_test.rs	`resolve_bidi_levels` has no test module (expected `mod resolve_bidi_levels { ... }`)
 test-module-coverage	crates/flight-textbidi/tests/text_bidi_guards_test.rs	`set_text_bidi_guard` has no test module (expected `mod set_text_bidi_guard { ... }`)
-test-module-coverage	crates/flight-textsegment/tests/text_segmenter_backend_test.rs	`create_web_text_segmenter_backend` has no test module (expected `mod create_web_text_segmenter_backend { ... }`)
-test-module-coverage	crates/flight-textsegment/tests/text_segmenter_backend_test.rs	`has_intl_segmenter` has no test module (expected `mod has_intl_segmenter { ... }`)
-test-module-coverage	crates/flight-textsegment/tests/text_segmenter_backend_test.rs	`set_intl_segmenter_available` has no test module (expected `mod set_intl_segmenter_available { ... }`)
 test-module-coverage	crates/flight-tween/tests/tween_manager_test.rs	`default_manager` has no test module (expected `mod default_manager { ... }`)
 test-module-coverage	crates/flight-tween/tests/tween_manager_test.rs	`initialize_tween_manager` has no test module (expected `mod initialize_tween_manager { ... }`)
 test-module-coverage	crates/flight-tween/tests/tween_progress_test.rs	`get_tween_progress` has no test module (expected `mod get_tween_progress { ... }`)

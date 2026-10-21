@@ -48,6 +48,10 @@ The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` (`cargo
 | `generic type parameter <T>` | `<T>` | `template<typename T>` | `<T>` | established | Bounds: only T: Entity (and Rust-only Default/Clone/lifetimes) — lint-enforced |
 | `trait Entity / T: Entity` | `extends Entity / T extends Entity` | `base class / template<typename T>` | `interface / <T:Entity>` | established | D12/WP8b: the private runtime slot is reached through this trait; it is the only workspace trait bound in the vocabulary. Qualified paths (flight_entity::Entity) map the same way |
 | `private runtime field (runtime: EntityRuntimeSlot)` | `[EntityRuntimeKey] slot` | `private member` | `private field` | established | D12/WP8b: never pub; `impl_entity!(T)` implements Entity for T and exposes the slot through entity_runtime/entity_runtime_mut |
+| `async fn(A) -> T` | `async (a: A) => Promise<T>` | `T (*)(A) [coroutine]` | `A->futures.Future<T>` | established | Executor-neutral async (D15); no SDK spawning/runtime choice |
+| `Pin<Box<dyn Future<Output=T> + Send>>` | `Promise<T>` | `std::future<T>` | `futures.Future<T>` | established | Boxed future return type (D15); required Send bound; used in async callback returns |
+| `(A, B) / (A, B, C) / (A, B, C, D)` | `readonly [A, B] / readonly [A, B, C] / readonly [A, B, C, D]` | `std::pair / std::tuple` | `Array<Dynamic>` | established | Fixed 2–4 element tuples of vocabulary types; unit tuple `()` is void (math #3) |
+| `enum Scalar { Variant(primitive) }` | `number | string (scalar union)` | `std::variant<int, std::string>` | `Dynamic` | established | One primitive/scalar payload per variant; enum-payload-named exemption (binpack #5) |
 | `pub const / pub static LazyLock<T>` | `export const` | `inline constexpr / static` | `static final` | established | Immutable only (D5) |
 
 Workspace-defined structs, enums and aliases are allowed by name. Each one is itself checked where it is defined.
