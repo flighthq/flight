@@ -1,0 +1,18 @@
+[package]
+name = "flight-mediasession"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "OS media session: now-playing metadata, playback/position state commands and per-action signals over host capabilities"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-signals = { workspace = true }
+
+[lints]
+workspace = true

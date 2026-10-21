@@ -27,6 +27,7 @@ flight-importdiagnostics = { path = "crates/flight-importdiagnostics" }
 flight-ipc = { path = "crates/flight-ipc" }
 flight-keyboard = { path = "crates/flight-keyboard" }
 flight-math = { path = "crates/flight-math" }
+flight-mediasession = { path = "crates/flight-mediasession" }
 flight-meshgeometry = { path = "crates/flight-meshgeometry" }
 flight-path = { path = "crates/flight-path" }
 flight-path-boolean = { path = "crates/flight-path-boolean" }
