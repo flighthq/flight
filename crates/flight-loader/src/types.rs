@@ -1,7 +1,8 @@
 use crate::enums::{
     ResourceLoadReportStatus, ResourceLoaderErrorPolicy, ResourceLoaderRetryBackoff,
 };
-use flight_entity::{Ref, Unknown};
+use crate::resource_loader::ResourceLoaderInternal;
+use flight_entity::{EntityRuntimeSlot, Ref, Unknown};
 use flight_net::NetProgressPhase;
 use flight_signals::Signal;
 use flight_stream::{AbortSignal, SharedFuture};
@@ -103,3 +104,28 @@ pub struct ResourceLoaderOptions {
     pub streaming: Option<bool>,
     pub timeout_ms: Option<f64>,
 }
+
+#[derive(Clone, Default)]
+pub struct ResourceLoader {
+    pub on_cancel: Signal<()>,
+    pub on_complete: Signal<ResourceLoadReports>,
+    pub on_error: Signal<(Unknown, String)>,
+    pub on_pause: Signal<()>,
+    pub on_progress: Signal<f32>,
+    pub on_resume: Signal<()>,
+    pub(crate) state: Ref<ResourceLoaderInternal>,
+    runtime: EntityRuntimeSlot,
+}
+
+// flight-lint: allow(f64) D1 item retry signal carries the exact millisecond scheduling duration
+#[derive(Clone, Default)]
+pub struct ResourceLoaderItemSignals {
+    pub on_item_complete: Signal<(String, Unknown)>,
+    pub on_item_error: Signal<(String, Unknown, usize)>,
+    pub on_item_retry: Signal<(String, usize, f64)>,
+    pub on_item_start: Signal<String>,
+    runtime: EntityRuntimeSlot,
+}
+
+flight_entity::impl_entity!(ResourceLoader);
+flight_entity::impl_entity!(ResourceLoaderItemSignals);
