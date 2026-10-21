@@ -57,6 +57,8 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "unknown_from_panic / CaughtPanic", ts: "caught unknown value", cpp: "caught exception payload in shared std::any", haxe: "Dynamic", status: Status::Established, note: "D10 catch bridge in flight-entity. The exact Rust-only input is Box<dyn Any + Send>. FlightError remains the concrete Unknown value; every other payload is retained losslessly in a mutex-backed CaughtPanic so Send-only values remain safely downcastable under a borrowed guard" },
     Entry { rust: "ProviderRef", ts: "field omitted; containing capability record is the provider object", cpp: "std::shared_ptr<const std::any>", haxe: "Dynamic", status: Status::Established, note: "Alias for `Arc<dyn Any + Send + Sync>`, defined in flight-hostcapability. Every capability record carries `provider: ProviderRef`; facets from one provider clone the same token. Compare providers with `Arc::ptr_eq`, never callbacks. Rust provider identity `Arc::ptr_eq(&cap_a.provider, &cap_b.provider)` lowers to TS `capA === capB`. Plain identity, not Entity or a numeric id" },
     Entry { rust: "HostSpawnCapability", ts: "field omitted; `spawn(fut)` lowers to `void fut`", cpp: "host-owned executor callback", haxe: "host-owned Future executor", status: Status::Established, note: "Fire-and-forget async foundation in flight-hostcapability. The explicit Rust capability carries canonical ProviderRef identity and accepts Pin<Box<dyn Future<Output=()> + Send>>; the SDK never chooses an executor or blocks" },
+    Entry { rust: "HostTimerCapability", ts: "host object implementing `setTimeout`, `setInterval`, and `Date.now`", cpp: "host timer capability record", haxe: "host timer capability record", status: Status::Established, note: "Explicit flight-hostcapability context with canonical ProviderRef identity. Providers enqueue callbacks (never inline), normalize negative/NaN timeout delays to 0 ms, and clamp interval delays to at least 1 ms. No SDK runtime or native timer is selected" },
+    Entry { rust: "TimerHandle", ts: "owned closure calling `clearTimeout` or `clearInterval`", cpp: "owned cancellation callback", haxe: "owned cancellation callback", status: Status::Established, note: "Timer cancellation handle with an Arc callback and no public provider-specific numeric timer id" },
     Entry { rust: "ArrayBuffer", ts: "ArrayBuffer", cpp: "small shared byte buffer", haxe: "haxe.io.Bytes", status: Status::Established, note: "Named flight-buffer struct wrapping Ref<Box<[u8]>>: fixed-length shared storage; Clone and equality preserve allocation identity rather than copying or flattening through Vec" },
     Entry { rust: "ArrayBufferView", ts: "ArrayBufferView", cpp: "small shared byte view", haxe: "haxe.io.Bytes", status: Status::Established, note: "Named flight-buffer record carrying ArrayBuffer, byte_offset, byte_length and exact ArrayBufferViewKind; every view aliases the same shared storage" },
     Entry { rust: "Blob", ts: "Blob", cpp: "small shared blob", haxe: "Dynamic", status: Status::Established, note: "Immutable Arc<Blob> record in flight-buffer with mime_type, size and canonical Unknown provider payload; no Blob I/O API is implied" },
@@ -711,6 +713,29 @@ mod tests {
         assert!(entry.note.contains("Pin<Box<dyn Future<Output=()> + Send>>"));
         assert!(entry.note.contains("never chooses an executor or blocks"));
         assert!(problems("Arc<dyn Fn(Pin<Box<dyn Future<Output = ()> + Send>>) + Send + Sync>").is_empty());
+    }
+
+    #[test]
+    fn records_the_exact_host_timer_capability_mapping() {
+        let capability = ENTRIES
+            .iter()
+            .find(|entry| entry.rust == "HostTimerCapability")
+            .unwrap();
+        assert!(capability.ts.contains("`setTimeout`"));
+        assert!(capability.ts.contains("`setInterval`"));
+        assert!(capability.ts.contains("`Date.now`"));
+        assert!(capability.note.contains("enqueue callbacks (never inline)"));
+        assert!(capability.note.contains("negative/NaN timeout delays to 0 ms"));
+        assert!(capability.note.contains("interval delays to at least 1 ms"));
+        assert!(capability.note.contains("No SDK runtime or native timer"));
+
+        let handle = ENTRIES
+            .iter()
+            .find(|entry| entry.rust == "TimerHandle")
+            .unwrap();
+        assert!(handle.ts.contains("`clearTimeout`"));
+        assert!(handle.ts.contains("`clearInterval`"));
+        assert!(handle.note.contains("no public provider-specific numeric timer id"));
     }
 
     #[test]
