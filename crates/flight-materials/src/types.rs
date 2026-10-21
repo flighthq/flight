@@ -3,6 +3,804 @@ use std::sync::Arc;
 use flight_entity::{EntityRuntimeSlot, Kind, Ref};
 use flight_texture::Texture;
 
+#[cfg(test)]
+mod sugar_tests {
+    mod color_scale_bias {
+        use crate::color_scale_bias::*;
+        use crate::*;
+
+        #[test]
+        fn sugar_new_matches_free_function() {
+            let free = create_color_scale_bias(None);
+            let sugar = ColorScaleBias::new(None);
+            assert_eq!(free.red_scale, sugar.red_scale);
+            assert_eq!(free.green_scale, sugar.green_scale);
+            assert_eq!(free.blue_scale, sugar.blue_scale);
+            assert_eq!(free.alpha_scale, sugar.alpha_scale);
+            assert_eq!(free.red_bias, sugar.red_bias);
+            assert_eq!(free.green_bias, sugar.green_bias);
+            assert_eq!(free.blue_bias, sugar.blue_bias);
+            assert_eq!(free.alpha_bias, sugar.alpha_bias);
+        }
+
+        #[test]
+        fn sugar_clone_matches_free_function() {
+            let opts = ColorScaleBiasOptions {
+                red_scale: Some(0.5),
+                green_scale: Some(0.6),
+                blue_scale: Some(0.7),
+                alpha_scale: Some(0.8),
+                red_bias: Some(0.1),
+                green_bias: Some(0.2),
+                blue_bias: Some(0.3),
+                alpha_bias: Some(0.4),
+            };
+            let source = create_color_scale_bias(Some(&opts));
+            let free = clone_color_scale_bias(&source);
+            let sugar = source.clone_color_scale_bias();
+            assert_eq!(free.red_scale, sugar.red_scale);
+            assert_eq!(free.alpha_bias, sugar.alpha_bias);
+        }
+
+        #[test]
+        fn sugar_copy_from_matches_free_function() {
+            let source = create_color_scale_bias(Some(&ColorScaleBiasOptions {
+                red_scale: Some(2.0),
+                green_scale: None,
+                blue_scale: None,
+                alpha_scale: None,
+                red_bias: Some(0.5),
+                green_bias: None,
+                blue_bias: None,
+                alpha_bias: None,
+            }));
+            let mut free_out = create_color_scale_bias(None);
+            let mut sugar_out = create_color_scale_bias(None);
+            copy_color_scale_bias(&mut free_out, &source);
+            sugar_out.copy_from(&source);
+            assert_eq!(free_out.red_scale, sugar_out.red_scale);
+            assert_eq!(free_out.red_bias, sugar_out.red_bias);
+        }
+
+        #[test]
+        fn sugar_equals_matches_free_function() {
+            let a = create_color_scale_bias(None);
+            let b = create_color_scale_bias(None);
+            assert_eq!(equals_color_scale_bias(&a, &b), a.equals(&b));
+        }
+
+        #[test]
+        fn sugar_equals_biases_matches_free_function() {
+            let a = create_color_scale_bias(None);
+            let b = create_color_scale_bias(None);
+            assert_eq!(
+                equals_color_scale_bias_biases(&a, &b, true),
+                a.equals_biases(&b, true),
+            );
+            assert_eq!(
+                equals_color_scale_bias_biases(&a, &b, false),
+                a.equals_biases(&b, false),
+            );
+        }
+
+        #[test]
+        fn sugar_equals_scales_matches_free_function() {
+            let a = create_color_scale_bias(None);
+            let b = create_color_scale_bias(None);
+            assert_eq!(
+                equals_color_scale_bias_scales(&a, &b, true),
+                a.equals_scales(&b, true),
+            );
+        }
+
+        #[test]
+        fn sugar_bias_rgb_matches_free_function() {
+            let csb = create_color_scale_bias(None);
+            assert_eq!(get_color_scale_bias_bias_rgb(&csb), csb.bias_rgb());
+        }
+
+        #[test]
+        fn sugar_bias_rgba_matches_free_function() {
+            let csb = create_color_scale_bias(None);
+            assert_eq!(get_color_scale_bias_bias_rgba(&csb), csb.bias_rgba());
+        }
+
+        #[test]
+        fn sugar_is_identity_matches_free_function() {
+            let csb = create_color_scale_bias(None);
+            assert_eq!(
+                is_identity_color_scale_bias(&csb, true),
+                csb.is_identity(true),
+            );
+            assert_eq!(
+                is_identity_color_scale_bias(&csb, false),
+                csb.is_identity(false),
+            );
+        }
+
+        #[test]
+        fn sugar_concat_matches_free_function() {
+            let a = create_color_scale_bias(Some(&ColorScaleBiasOptions {
+                red_scale: Some(0.5),
+                green_scale: Some(1.0),
+                blue_scale: Some(1.0),
+                alpha_scale: Some(1.0),
+                red_bias: Some(0.1),
+                green_bias: Some(0.0),
+                blue_bias: Some(0.0),
+                alpha_bias: Some(0.0),
+            }));
+            let b = create_color_scale_bias(Some(&ColorScaleBiasOptions {
+                red_scale: Some(2.0),
+                green_scale: Some(1.0),
+                blue_scale: Some(1.0),
+                alpha_scale: Some(1.0),
+                red_bias: Some(0.05),
+                green_bias: Some(0.0),
+                blue_bias: Some(0.0),
+                alpha_bias: Some(0.0),
+            }));
+            let mut free_out = create_color_scale_bias(None);
+            let mut sugar_out = create_color_scale_bias(None);
+            concat_color_scale_bias(&mut free_out, &a, &b);
+            sugar_out.concat(&a, &b);
+            assert_eq!(free_out.red_scale, sugar_out.red_scale);
+            assert_eq!(free_out.red_bias, sugar_out.red_bias);
+        }
+
+        #[test]
+        fn sugar_invert_from_matches_free_function() {
+            let source = create_color_scale_bias(Some(&ColorScaleBiasOptions {
+                red_scale: Some(2.0),
+                green_scale: Some(0.5),
+                blue_scale: Some(1.0),
+                alpha_scale: Some(1.0),
+                red_bias: Some(0.1),
+                green_bias: Some(0.0),
+                blue_bias: Some(0.0),
+                alpha_bias: Some(0.0),
+            }));
+            let mut free_out = create_color_scale_bias(None);
+            let mut sugar_out = create_color_scale_bias(None);
+            invert_color_scale_bias(&mut free_out, &source);
+            sugar_out.invert_from(&source);
+            assert_eq!(free_out.red_scale, sugar_out.red_scale);
+            assert_eq!(free_out.red_bias, sugar_out.red_bias);
+        }
+
+        #[test]
+        fn sugar_set_values_matches_free_function() {
+            let mut free_out = create_color_scale_bias(None);
+            let mut sugar_out = create_color_scale_bias(None);
+            set_color_scale_bias(&mut free_out, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8);
+            sugar_out.set_values(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8);
+            assert_eq!(free_out.red_scale, sugar_out.red_scale);
+            assert_eq!(free_out.alpha_bias, sugar_out.alpha_bias);
+        }
+
+        #[test]
+        fn sugar_set_bias_rgb_matches_free_function() {
+            let mut free_out = create_color_scale_bias(None);
+            let mut sugar_out = create_color_scale_bias(None);
+            set_color_scale_bias_bias_rgb(&mut free_out, 0xff8040);
+            sugar_out.set_bias_rgb(0xff8040);
+            assert_eq!(free_out.red_bias, sugar_out.red_bias);
+            assert_eq!(free_out.green_bias, sugar_out.green_bias);
+            assert_eq!(free_out.blue_bias, sugar_out.blue_bias);
+        }
+
+        #[test]
+        fn sugar_set_bias_rgba_matches_free_function() {
+            let mut free_out = create_color_scale_bias(None);
+            let mut sugar_out = create_color_scale_bias(None);
+            set_color_scale_bias_bias_rgba(&mut free_out, 0xff8040cc);
+            sugar_out.set_bias_rgba(0xff8040cc);
+            assert_eq!(free_out.red_bias, sugar_out.red_bias);
+            assert_eq!(free_out.alpha_bias, sugar_out.alpha_bias);
+        }
+
+        #[test]
+        fn sugar_set_identity_matches_free_function() {
+            let opts = ColorScaleBiasOptions {
+                red_scale: Some(2.0),
+                green_scale: Some(3.0),
+                blue_scale: Some(4.0),
+                alpha_scale: Some(5.0),
+                red_bias: Some(0.1),
+                green_bias: Some(0.2),
+                blue_bias: Some(0.3),
+                alpha_bias: Some(0.4),
+            };
+            let mut free_out = create_color_scale_bias(Some(&opts));
+            let mut sugar_out = create_color_scale_bias(Some(&opts));
+            set_color_scale_bias_identity(&mut free_out);
+            sugar_out.set_identity();
+            assert_eq!(free_out.red_scale, sugar_out.red_scale);
+            assert_eq!(free_out.alpha_bias, sugar_out.alpha_bias);
+        }
+
+        #[test]
+        fn sugar_initialize_matches_free_function() {
+            let opts = ColorScaleBiasOptions {
+                red_scale: Some(0.5),
+                green_scale: None,
+                blue_scale: None,
+                alpha_scale: None,
+                red_bias: None,
+                green_bias: None,
+                blue_bias: None,
+                alpha_bias: Some(0.9),
+            };
+            let mut free_out = create_color_scale_bias(None);
+            let mut sugar_out = create_color_scale_bias(None);
+            initialize_color_scale_bias(&mut free_out, Some(&opts));
+            sugar_out.initialize(Some(&opts));
+            assert_eq!(free_out.red_scale, sugar_out.red_scale);
+            assert_eq!(free_out.alpha_bias, sugar_out.alpha_bias);
+        }
+
+        #[test]
+        fn sugar_copy_to_arrays_matches_free_function() {
+            let csb = create_color_scale_bias(Some(&ColorScaleBiasOptions {
+                red_scale: Some(0.5),
+                green_scale: Some(0.6),
+                blue_scale: Some(0.7),
+                alpha_scale: Some(0.8),
+                red_bias: Some(0.1),
+                green_bias: Some(0.2),
+                blue_bias: Some(0.3),
+                alpha_bias: Some(0.4),
+            }));
+            let mut free_scales: Vec<f32> = Vec::new();
+            let mut free_biases: Vec<f32> = Vec::new();
+            let mut sugar_scales: Vec<f32> = Vec::new();
+            let mut sugar_biases: Vec<f32> = Vec::new();
+            copy_color_scale_bias_to_arrays(&mut free_scales, &mut free_biases, &csb);
+            csb.copy_to_arrays(&mut sugar_scales, &mut sugar_biases);
+            assert_eq!(free_scales, sugar_scales);
+            assert_eq!(free_biases, sugar_biases);
+        }
+    }
+
+    mod material {
+        use crate::material::*;
+        use crate::*;
+
+        #[test]
+        fn sugar_new_matches_free_function() {
+            let free = create_material("TestKind".to_string());
+            let sugar = Material::new("TestKind".to_string());
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.name, sugar.name);
+        }
+
+        #[test]
+        fn sugar_clone_material_matches_free_function() {
+            let mut source = create_material("CloneTest".to_string());
+            source.name = Some("original".to_string());
+            let free = clone_material(&source);
+            let sugar = source.clone_material();
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.name, sugar.name);
+        }
+
+        #[test]
+        fn sugar_copy_from_matches_free_function() {
+            let mut source = create_material("CopyKind".to_string());
+            source.name = Some("src".to_string());
+            let mut free_out = create_material("".to_string());
+            let mut sugar_out = create_material("".to_string());
+            copy_material(&mut free_out, &source);
+            sugar_out.copy_from(&source);
+            assert_eq!(free_out.kind, sugar_out.kind);
+            assert_eq!(free_out.name, sugar_out.name);
+        }
+
+        #[test]
+        fn sugar_equals_matches_free_function() {
+            let a = create_material("A".to_string());
+            let b = create_material("A".to_string());
+            let c = create_material("C".to_string());
+            assert_eq!(equals_material(&a, &b), a.equals(&b));
+            assert_eq!(equals_material(&a, &c), a.equals(&c));
+        }
+
+        #[test]
+        fn sugar_of_kind_matches_free_function() {
+            let mat = create_material("TargetKind".to_string());
+            let free_some = get_material_of_kind(Some(&mat), "TargetKind");
+            let sugar_some = Material::of_kind(Some(&mat), "TargetKind");
+            assert!(free_some.is_some());
+            assert!(sugar_some.is_some());
+            assert_eq!(free_some.unwrap().kind, sugar_some.unwrap().kind);
+            let free_none = get_material_of_kind(Some(&mat), "Other");
+            let sugar_none = Material::of_kind(Some(&mat), "Other");
+            assert!(free_none.is_none());
+            assert!(sugar_none.is_none());
+        }
+
+        #[test]
+        fn sugar_initialize_matches_free_function() {
+            let mut free_out = create_material("".to_string());
+            let mut sugar_out = create_material("".to_string());
+            initialize_material(&mut free_out, "InitKind".to_string());
+            sugar_out.initialize("InitKind".to_string());
+            assert_eq!(free_out.kind, sugar_out.kind);
+        }
+    }
+
+    mod material3d {
+        use crate::material3d::*;
+        use crate::*;
+        use flight_entity::allocate_entity;
+
+        #[test]
+        fn sugar_new_matches_free_function() {
+            let free = create_material3d("Test3D".to_string(), None);
+            let sugar = Material3D::new("Test3D".to_string(), None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.name, sugar.name);
+            assert_eq!(free.alpha_mode, sugar.alpha_mode);
+            assert_eq!(free.alpha_cutoff, sugar.alpha_cutoff);
+            assert_eq!(free.blend_mode, sugar.blend_mode);
+            assert_eq!(free.double_sided, sugar.double_sided);
+        }
+
+        #[test]
+        fn sugar_alpha_mode_matches_free_function() {
+            let mat = create_material3d("Test".to_string(), None);
+            assert_eq!(get_material3d_alpha_mode(&mat), mat.alpha_mode());
+        }
+
+        #[test]
+        fn sugar_is_blended_matches_free_function() {
+            let mat = create_material3d("Test".to_string(), None);
+            assert_eq!(is_material3d_blended(&mat), mat.is_blended());
+        }
+
+        #[test]
+        fn sugar_is_masked_matches_free_function() {
+            let mat = create_material3d("Test".to_string(), None);
+            assert_eq!(is_material3d_masked(&mat), mat.is_masked());
+        }
+
+        #[test]
+        fn sugar_is_opaque_matches_free_function() {
+            let mat = create_material3d("Test".to_string(), None);
+            assert_eq!(is_material3d_opaque(&mat), mat.is_opaque());
+        }
+
+        #[test]
+        fn sugar_initialize_matches_free_function() {
+            let mut free_mat: Material3D = allocate_entity();
+            let mut sugar_mat: Material3D = allocate_entity();
+            initialize_material3d(&mut free_mat, "Init3D".to_string(), None);
+            sugar_mat.initialize("Init3D".to_string(), None);
+            assert_eq!(free_mat.kind, sugar_mat.kind);
+            assert_eq!(free_mat.alpha_mode, sugar_mat.alpha_mode);
+        }
+
+        #[test]
+        fn material3d_is_separate_from_material2d() {
+            fn accepts_material3d(_m: &Material3D) {}
+            let mat = create_material3d("Test".to_string(), None);
+            accepts_material3d(&mat);
+        }
+    }
+
+    mod standard_material {
+        use crate::standard_material::*;
+        use crate::*;
+        use flight_entity::allocate_entity;
+
+        #[test]
+        fn sugar_new_matches_free_function() {
+            let opts = StandardMaterialOptions {
+                name: Some("Sugar".to_string()),
+            };
+            let free = create_standard_material(Some(&opts));
+            let sugar = StandardMaterial::new(Some(&opts));
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.name, sugar.name);
+        }
+
+        #[test]
+        fn sugar_initialize_matches_free_function() {
+            let opts = StandardMaterialOptions {
+                name: Some("Init".to_string()),
+            };
+            let mut free_out: StandardMaterial = allocate_entity();
+            let mut sugar_out: StandardMaterial = allocate_entity();
+            initialize_standard_material(&mut free_out, Some(&opts));
+            sugar_out.initialize(Some(&opts));
+            assert_eq!(free_out.kind, sugar_out.kind);
+            assert_eq!(free_out.name, sugar_out.name);
+        }
+    }
+
+    mod classic_materials {
+        use crate::classic_materials::*;
+        use crate::*;
+
+        #[test]
+        fn blinn_phong_sugar_new_matches_free_function() {
+            let free = create_blinn_phong_material(None);
+            let sugar = BlinnPhongMaterial::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.diffuse, sugar.diffuse);
+            assert_eq!(free.shininess, sugar.shininess);
+        }
+
+        #[test]
+        fn lambert_sugar_new_matches_free_function() {
+            let free = create_lambert_material(None);
+            let sugar = LambertMaterial::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.diffuse, sugar.diffuse);
+            assert_eq!(free.emissive, sugar.emissive);
+        }
+
+        #[test]
+        fn phong_sugar_new_matches_free_function() {
+            let free = create_phong_material(None);
+            let sugar = PhongMaterial::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.diffuse, sugar.diffuse);
+            assert_eq!(free.shininess, sugar.shininess);
+        }
+    }
+
+    mod unlit_materials {
+        use crate::unlit_materials::*;
+        use crate::*;
+
+        #[test]
+        fn depth_sugar_new_matches_free_function() {
+            let free = create_depth_material(None);
+            let sugar = DepthMaterial::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.far, sugar.far);
+            assert_eq!(free.near, sugar.near);
+        }
+
+        #[test]
+        fn emissive_sugar_new_matches_free_function() {
+            let free = create_emissive_material(None);
+            let sugar = EmissiveMaterial::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.emissive, sugar.emissive);
+        }
+
+        #[test]
+        fn matcap_sugar_new_matches_free_function() {
+            let free = create_matcap_material(None);
+            let sugar = MatcapMaterial::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.tint, sugar.tint);
+        }
+
+        #[test]
+        fn normal_sugar_new_matches_free_function() {
+            let free = create_normal_material(None);
+            let sugar = NormalMaterial::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.normal_scale, sugar.normal_scale);
+        }
+
+        #[test]
+        fn toon_sugar_new_matches_free_function() {
+            let free = create_toon_material(None);
+            let sugar = ToonMaterial::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.steps, sugar.steps);
+        }
+
+        #[test]
+        fn unlit_sugar_new_matches_free_function() {
+            let free = create_unlit_material(None);
+            let sugar = UnlitMaterial::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.base_color, sugar.base_color);
+        }
+
+        #[test]
+        fn vertex_color_sugar_new_matches_free_function() {
+            let free = create_vertex_color_material(None);
+            let sugar = VertexColorMaterial::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.tint, sugar.tint);
+        }
+
+        #[test]
+        fn wireframe_sugar_new_matches_free_function() {
+            let free = create_wireframe_material(None);
+            let sugar = WireframeMaterial::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.thickness, sugar.thickness);
+        }
+    }
+
+    mod pbr_materials {
+        use crate::pbr_materials::*;
+        use crate::*;
+
+        #[test]
+        fn standard_pbr_sugar_new_matches_free_function() {
+            let free = create_standard_pbr_material(None);
+            let sugar = StandardPbrMaterial::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.base_color, sugar.base_color);
+            assert_eq!(free.metallic, sugar.metallic);
+            assert_eq!(free.roughness, sugar.roughness);
+        }
+
+        #[test]
+        fn specular_glossiness_sugar_new_matches_free_function() {
+            let free = create_specular_glossiness_pbr_material(None);
+            let sugar = SpecularGlossinessPbrMaterial::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.diffuse, sugar.diffuse);
+            assert_eq!(free.glossiness, sugar.glossiness);
+        }
+
+        #[test]
+        fn standard_pbr_properties_sugar_new_matches_free_function() {
+            let free = create_standard_pbr_material_properties(None);
+            let sugar = StandardPbrMaterialProperties::new(None);
+            assert_eq!(free.base_color, sugar.base_color);
+            assert_eq!(free.metallic, sugar.metallic);
+            assert_eq!(free.roughness, sugar.roughness);
+        }
+
+        #[test]
+        fn specular_glossiness_sugar_convert_matches_free_function() {
+            let source = create_specular_glossiness_pbr_material(None);
+            let mut free_out = create_standard_pbr_material_properties(None);
+            let mut sugar_out = create_standard_pbr_material_properties(None);
+            convert_specular_glossiness_to_standard_pbr(&mut free_out, &source, None);
+            source.convert_to_standard_pbr(&mut sugar_out, None);
+            assert_eq!(free_out.roughness, sugar_out.roughness);
+            assert_eq!(free_out.metallic, sugar_out.metallic);
+            assert_eq!(free_out.base_color, sugar_out.base_color);
+        }
+    }
+
+    mod extended_pbr {
+        use crate::extended_pbr_material::*;
+        use crate::*;
+
+        #[test]
+        fn sugar_new_matches_free_function() {
+            let free = create_extended_pbr_material(None);
+            let sugar = ExtendedPbrMaterial::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.standard.base_color, sugar.standard.base_color);
+            assert_eq!(free.standard.roughness, sugar.standard.roughness);
+        }
+    }
+
+    mod custom_shader {
+        use crate::custom_shader_material::*;
+        use crate::*;
+
+        #[test]
+        fn sugar_new_matches_free_function() {
+            let free = create_custom_shader_material(None);
+            let sugar = CustomShaderMaterial::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.alpha_cutoff, sugar.alpha_cutoff);
+            assert_eq!(free.alpha_mode, sugar.alpha_mode);
+        }
+    }
+
+    mod pbr_extensions {
+        use crate::anisotropy_pbr_extension::*;
+        use crate::clearcoat_pbr_extension::*;
+        use crate::iridescence_pbr_extension::*;
+        use crate::sheen_pbr_extension::*;
+        use crate::specular_pbr_extension::*;
+        use crate::transmission_volume_pbr_extension::*;
+        use crate::wrapped_diffuse_pbr_extension::*;
+        use crate::*;
+
+        #[test]
+        fn anisotropy_sugar_new_matches_free_function() {
+            let free = create_anisotropy_pbr_extension(None);
+            let sugar = AnisotropyPbrExtension::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.anisotropy_strength, sugar.anisotropy_strength);
+        }
+
+        #[test]
+        fn anisotropy_sugar_is_valid_matches_free_function() {
+            let ext = create_anisotropy_pbr_extension(None);
+            assert_eq!(is_valid_anisotropy_pbr_extension(&ext), ext.is_valid());
+        }
+
+        #[test]
+        fn clearcoat_sugar_new_matches_free_function() {
+            let free = create_clearcoat_pbr_extension(None);
+            let sugar = ClearcoatPbrExtension::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.clearcoat, sugar.clearcoat);
+        }
+
+        #[test]
+        fn clearcoat_sugar_is_valid_matches_free_function() {
+            let ext = create_clearcoat_pbr_extension(None);
+            assert_eq!(is_valid_clearcoat_pbr_extension(&ext), ext.is_valid());
+        }
+
+        #[test]
+        fn iridescence_sugar_new_matches_free_function() {
+            let free = create_iridescence_pbr_extension(None);
+            let sugar = IridescencePbrExtension::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.iridescence, sugar.iridescence);
+        }
+
+        #[test]
+        fn iridescence_sugar_is_valid_matches_free_function() {
+            let ext = create_iridescence_pbr_extension(None);
+            assert_eq!(is_valid_iridescence_pbr_extension(&ext), ext.is_valid());
+        }
+
+        #[test]
+        fn sheen_sugar_new_matches_free_function() {
+            let free = create_sheen_pbr_extension(None);
+            let sugar = SheenPbrExtension::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.sheen_color, sugar.sheen_color);
+        }
+
+        #[test]
+        fn sheen_sugar_is_valid_matches_free_function() {
+            let ext = create_sheen_pbr_extension(None);
+            assert_eq!(is_valid_sheen_pbr_extension(&ext), ext.is_valid());
+        }
+
+        #[test]
+        fn specular_sugar_new_matches_free_function() {
+            let free = create_specular_pbr_extension(None);
+            let sugar = SpecularPbrExtension::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.specular, sugar.specular);
+        }
+
+        #[test]
+        fn specular_sugar_is_valid_matches_free_function() {
+            let ext = create_specular_pbr_extension(None);
+            assert_eq!(is_valid_specular_pbr_extension(&ext), ext.is_valid());
+        }
+
+        #[test]
+        fn transmission_volume_sugar_new_matches_free_function() {
+            let free = create_transmission_volume_pbr_extension(None);
+            let sugar = TransmissionVolumePbrExtension::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.transmission, sugar.transmission);
+        }
+
+        #[test]
+        fn transmission_volume_sugar_is_valid_matches_free_function() {
+            let ext = create_transmission_volume_pbr_extension(None);
+            assert_eq!(
+                is_valid_transmission_volume_pbr_extension(&ext),
+                ext.is_valid(),
+            );
+        }
+
+        #[test]
+        fn wrapped_diffuse_sugar_new_matches_free_function() {
+            let free = create_wrapped_diffuse_pbr_extension(None);
+            let sugar = WrappedDiffusePbrExtension::new(None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(
+                free.wrapped_diffuse_strength,
+                sugar.wrapped_diffuse_strength
+            );
+        }
+
+        #[test]
+        fn wrapped_diffuse_sugar_is_valid_matches_free_function() {
+            let ext = create_wrapped_diffuse_pbr_extension(None);
+            assert_eq!(is_valid_wrapped_diffuse_pbr_extension(&ext), ext.is_valid(),);
+        }
+
+        #[test]
+        fn sugar_kind_returns_wrapped_extension_kind() {
+            let aniso = PbrExtension::Anisotropy(create_anisotropy_pbr_extension(None));
+            assert_eq!(aniso.kind(), ANISOTROPY_PBR_EXTENSION_KIND);
+            let clearcoat = PbrExtension::Clearcoat(create_clearcoat_pbr_extension(None));
+            assert_eq!(clearcoat.kind(), CLEARCOAT_PBR_EXTENSION_KIND);
+        }
+    }
+
+    mod conversions {
+        use crate::classic_materials::create_phong_material;
+        use crate::explain_material_conversion::*;
+        use crate::pbr_materials::*;
+        use crate::phong_to_pbr::*;
+        use crate::*;
+
+        #[test]
+        fn sugar_convert_phong_to_standard_pbr_matches_free_function() {
+            let phong = create_phong_material(None);
+            let free = convert_phong_to_standard_pbr_material(&phong, None, None);
+            let sugar = phong.convert_to_standard_pbr(None, None);
+            assert_eq!(free.kind, sugar.kind);
+            assert_eq!(free.base_color, sugar.base_color);
+            assert_eq!(free.roughness, sugar.roughness);
+            assert_eq!(free.metallic, sugar.metallic);
+        }
+
+        #[test]
+        fn sugar_explain_phong_matches_free_function() {
+            let phong = create_phong_material(None);
+            let free = explain_phong_conversion(&phong);
+            let sugar = phong.explain_conversion();
+            assert_eq!(free.dropped_maps, sugar.dropped_maps);
+            assert_eq!(free.reason, sugar.reason);
+        }
+
+        #[test]
+        fn sugar_explain_specular_glossiness_matches_free_function() {
+            let mat = create_specular_glossiness_pbr_material(None);
+            let free = explain_specular_glossiness_conversion(&mat);
+            let sugar = mat.explain_conversion();
+            assert_eq!(free.dropped_maps, sugar.dropped_maps);
+            assert_eq!(free.reason, sugar.reason);
+        }
+
+        #[test]
+        fn sugar_new_material_conversion_context_matches_free_function() {
+            use std::sync::{Arc, Mutex};
+
+            let free_called = Arc::new(Mutex::new(false));
+            let sugar_called = Arc::new(Mutex::new(false));
+            let fc = free_called.clone();
+            let sc = sugar_called.clone();
+            let free_guard: MaterialConversionGuard = Arc::new(move |_, _| {
+                *fc.lock().unwrap() = true;
+            });
+            let sugar_guard: MaterialConversionGuard = Arc::new(move |_, _| {
+                *sc.lock().unwrap() = true;
+            });
+            let free_ctx = create_material_conversion_context(free_guard);
+            let sugar_ctx = MaterialConversionContext::new(sugar_guard);
+            let explanation = MaterialConversionExplanation {
+                dropped_maps: vec!["map".to_string()],
+                reason: None,
+            };
+            report_material_conversion_drop(Some(&free_ctx), &explanation, "test");
+            report_material_conversion_drop(Some(&sugar_ctx), &explanation, "test");
+            assert!(*free_called.lock().unwrap());
+            assert!(*sugar_called.lock().unwrap());
+        }
+    }
+
+    mod material_validation {
+        use crate::material_validation::*;
+        use crate::pbr_materials::create_standard_pbr_material_properties;
+        use crate::*;
+
+        #[test]
+        fn sugar_clamp_matches_free_function() {
+            let mut free_props = create_standard_pbr_material_properties(None);
+            free_props.metallic = 1.5;
+            free_props.roughness = -0.5;
+            let mut sugar_props = create_standard_pbr_material_properties(None);
+            sugar_props.metallic = 1.5;
+            sugar_props.roughness = -0.5;
+            clamp_standard_pbr_material_properties(&mut free_props);
+            sugar_props.clamp();
+            assert_eq!(free_props.metallic, sugar_props.metallic);
+            assert_eq!(free_props.roughness, sugar_props.roughness);
+        }
+    }
+}
+
+
 // ── Texture reference alias ──────────────────────────────────────────────────
 
 pub type TextureSlot = Option<Ref<Texture>>;
@@ -1086,16 +1884,20 @@ impl ColorScaleBias {
         return crate::color_scale_bias::create_color_scale_bias(opts);
     }
 
+    pub fn bias_rgb(&self) -> u32 {
+        return crate::color_scale_bias::get_color_scale_bias_bias_rgb(self);
+    }
+
+    pub fn bias_rgba(&self) -> u32 {
+        return crate::color_scale_bias::get_color_scale_bias_bias_rgba(self);
+    }
+
     pub fn clone_color_scale_bias(&self) -> Self {
         return crate::color_scale_bias::clone_color_scale_bias(self);
     }
 
     pub fn concat(&mut self, a: &ColorScaleBias, b: &ColorScaleBias) {
         crate::color_scale_bias::concat_color_scale_bias(self, a, b);
-    }
-
-    pub fn initialize(&mut self, opts: Option<&ColorScaleBiasOptions>) {
-        crate::color_scale_bias::initialize_color_scale_bias(self, opts);
     }
 
     pub fn copy_from(&mut self, source: &ColorScaleBias) {
@@ -1122,12 +1924,8 @@ impl ColorScaleBias {
         return crate::color_scale_bias::equals_color_scale_bias_scales(self, other, compare_alpha);
     }
 
-    pub fn bias_rgb(&self) -> u32 {
-        return crate::color_scale_bias::get_color_scale_bias_bias_rgb(self);
-    }
-
-    pub fn bias_rgba(&self) -> u32 {
-        return crate::color_scale_bias::get_color_scale_bias_bias_rgba(self);
+    pub fn initialize(&mut self, opts: Option<&ColorScaleBiasOptions>) {
+        crate::color_scale_bias::initialize_color_scale_bias(self, opts);
     }
 
     pub fn invert_from(&mut self, source: &ColorScaleBias) {
@@ -1136,6 +1934,18 @@ impl ColorScaleBias {
 
     pub fn is_identity(&self, compare_alpha_scale: bool) -> bool {
         return crate::color_scale_bias::is_identity_color_scale_bias(self, compare_alpha_scale);
+    }
+
+    pub fn set_bias_rgb(&mut self, value: u32) {
+        crate::color_scale_bias::set_color_scale_bias_bias_rgb(self, value);
+    }
+
+    pub fn set_bias_rgba(&mut self, value: u32) {
+        crate::color_scale_bias::set_color_scale_bias_bias_rgba(self, value);
+    }
+
+    pub fn set_identity(&mut self) {
+        crate::color_scale_bias::set_color_scale_bias_identity(self);
     }
 
     pub fn set_values(
@@ -1160,18 +1970,6 @@ impl ColorScaleBias {
             blue_bias,
             alpha_bias,
         );
-    }
-
-    pub fn set_bias_rgb(&mut self, value: u32) {
-        crate::color_scale_bias::set_color_scale_bias_bias_rgb(self, value);
-    }
-
-    pub fn set_bias_rgba(&mut self, value: u32) {
-        crate::color_scale_bias::set_color_scale_bias_bias_rgba(self, value);
-    }
-
-    pub fn set_identity(&mut self) {
-        crate::color_scale_bias::set_color_scale_bias_identity(self);
     }
 }
 

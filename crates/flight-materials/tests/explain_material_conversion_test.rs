@@ -50,26 +50,3 @@ mod explain_specular_glossiness_conversion {
         );
     }
 }
-
-// flight-lint: allow(test-method-call) D18 sugar comparison: tests intentionally call methods to verify delegation
-mod sugar {
-    use super::*;
-
-    #[test]
-    fn sugar_explain_phong_matches_free_function() {
-        let phong = create_phong_material(None);
-        let free = explain_phong_conversion(&phong);
-        let sugar = phong.explain_conversion();
-        assert_eq!(free.dropped_maps, sugar.dropped_maps);
-        assert_eq!(free.reason, sugar.reason);
-    }
-
-    #[test]
-    fn sugar_explain_specular_glossiness_matches_free_function() {
-        let mat = create_specular_glossiness_pbr_material(None);
-        let free = explain_specular_glossiness_conversion(&mat);
-        let sugar = mat.explain_conversion();
-        assert_eq!(free.dropped_maps, sugar.dropped_maps);
-        assert_eq!(free.reason, sugar.reason);
-    }
-}

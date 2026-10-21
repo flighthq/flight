@@ -166,22 +166,3 @@ mod is_valid_material_weight {
         assert!(!is_valid_material_weight(f32::INFINITY));
     }
 }
-
-// flight-lint: allow(test-method-call) D18 sugar comparison: tests intentionally call methods to verify delegation
-mod sugar {
-    use super::*;
-
-    #[test]
-    fn sugar_clamp_matches_free_function() {
-        let mut free_props = create_standard_pbr_material_properties(None);
-        free_props.metallic = 1.5;
-        free_props.roughness = -0.5;
-        let mut sugar_props = create_standard_pbr_material_properties(None);
-        sugar_props.metallic = 1.5;
-        sugar_props.roughness = -0.5;
-        clamp_standard_pbr_material_properties(&mut free_props);
-        sugar_props.clamp();
-        assert_eq!(free_props.metallic, sugar_props.metallic);
-        assert_eq!(free_props.roughness, sugar_props.roughness);
-    }
-}

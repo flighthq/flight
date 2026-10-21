@@ -43,35 +43,3 @@ mod create_phong_material {
         assert_eq!(m.normal_scale, 1.0);
     }
 }
-
-// flight-lint: allow(test-method-call) D18 sugar comparison: tests intentionally call methods to verify delegation
-mod sugar_constructors {
-    use super::*;
-
-    #[test]
-    fn blinn_phong_sugar_new_matches_free_function() {
-        let free = create_blinn_phong_material(None);
-        let sugar = BlinnPhongMaterial::new(None);
-        assert_eq!(free.kind, sugar.kind);
-        assert_eq!(free.diffuse, sugar.diffuse);
-        assert_eq!(free.shininess, sugar.shininess);
-    }
-
-    #[test]
-    fn lambert_sugar_new_matches_free_function() {
-        let free = create_lambert_material(None);
-        let sugar = LambertMaterial::new(None);
-        assert_eq!(free.kind, sugar.kind);
-        assert_eq!(free.diffuse, sugar.diffuse);
-        assert_eq!(free.emissive, sugar.emissive);
-    }
-
-    #[test]
-    fn phong_sugar_new_matches_free_function() {
-        let free = create_phong_material(None);
-        let sugar = PhongMaterial::new(None);
-        assert_eq!(free.kind, sugar.kind);
-        assert_eq!(free.diffuse, sugar.diffuse);
-        assert_eq!(free.shininess, sugar.shininess);
-    }
-}

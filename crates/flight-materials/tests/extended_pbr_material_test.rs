@@ -14,17 +14,3 @@ mod create_extended_pbr_material {
         assert!(m.extensions.is_empty());
     }
 }
-
-// flight-lint: allow(test-method-call) D18 sugar comparison: tests intentionally call methods to verify delegation
-mod sugar {
-    use super::*;
-
-    #[test]
-    fn sugar_new_matches_free_function() {
-        let free = create_extended_pbr_material(None);
-        let sugar = ExtendedPbrMaterial::new(None);
-        assert_eq!(free.kind, sugar.kind);
-        assert_eq!(free.standard.base_color, sugar.standard.base_color);
-        assert_eq!(free.standard.roughness, sugar.standard.roughness);
-    }
-}

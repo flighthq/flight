@@ -17,17 +17,3 @@ mod create_custom_shader_material {
         assert!(m.uniforms.is_none());
     }
 }
-
-// flight-lint: allow(test-method-call) D18 sugar comparison: tests intentionally call methods to verify delegation
-mod sugar {
-    use super::*;
-
-    #[test]
-    fn sugar_new_matches_free_function() {
-        let free = create_custom_shader_material(None);
-        let sugar = CustomShaderMaterial::new(None);
-        assert_eq!(free.kind, sugar.kind);
-        assert_eq!(free.alpha_cutoff, sugar.alpha_cutoff);
-        assert_eq!(free.alpha_mode, sugar.alpha_mode);
-    }
-}

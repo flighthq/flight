@@ -84,19 +84,3 @@ mod get_phong_to_pbr_light_exposure {
         assert!((2.0f32.powf(exposure) - std::f32::consts::PI).abs() < 1e-4);
     }
 }
-
-// flight-lint: allow(test-method-call) D18 sugar comparison: tests intentionally call methods to verify delegation
-mod sugar {
-    use super::*;
-
-    #[test]
-    fn sugar_convert_to_standard_pbr_matches_free_function() {
-        let phong = create_phong_material(None);
-        let free = convert_phong_to_standard_pbr_material(&phong, None, None);
-        let sugar = phong.convert_to_standard_pbr(None, None);
-        assert_eq!(free.kind, sugar.kind);
-        assert_eq!(free.base_color, sugar.base_color);
-        assert_eq!(free.roughness, sugar.roughness);
-        assert_eq!(free.metallic, sugar.metallic);
-    }
-}
