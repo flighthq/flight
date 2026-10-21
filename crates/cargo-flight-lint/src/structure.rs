@@ -307,6 +307,22 @@ pub fn fix_file(source: &str) -> Option<String> {
     return Some(result);
 }
 
+/// The first line (1-indexed) of the comment block attached to an item starting at `start_line`:
+/// contiguous plain `//` comment lines directly above it, with no blank line in between. Inner docs
+/// (`//!`) belong to the enclosing module and are never attached.
+fn attached_start(lines: &[&str], start_line: usize) -> usize {
+    let mut start = start_line;
+    while start > 1 {
+        let prev = lines[start - 2].trim_start();
+        if prev.starts_with("//") && !prev.starts_with("//!") {
+            start -= 1;
+        } else {
+            break;
+        }
+    }
+    return start;
+}
+
 fn sort_group(
     items: &[&NamedRange],
     lines: &[&str],
@@ -323,13 +339,27 @@ fn sort_group(
         return None;
     }
 
-    let group_start = items.first().unwrap().start_line;
+    // Each block starts at its attached comment block: plain `//` lines directly above the item
+    // (an allow marker, a reason) move with it, exactly like its doc comments and attributes.
+    let starts: Vec<usize> = items.iter().map(|item| attached_start(lines, item.start_line)).collect();
+
+    // Anything else between two items (a section divider separated by a blank line) has no owner to
+    // move with; leave the group unsorted rather than dropping it. `check` still reports the order.
+    for i in 1..items.len() {
+        let gap = &lines[items[i - 1].end_line..starts[i] - 1];
+        if gap.iter().any(|line| !line.trim().is_empty()) {
+            return None;
+        }
+    }
+
+    let group_start = starts[0];
     let group_end = items.last().unwrap().end_line;
 
     let mut blocks: Vec<(&str, String)> = items
         .iter()
-        .map(|item| {
-            let text = lines[item.start_line - 1..item.end_line].join("\n");
+        .zip(&starts)
+        .map(|(item, start)| {
+            let text = lines[start - 1..item.end_line].join("\n");
             (item.name.as_str(), text)
         })
         .collect();
@@ -374,5 +404,91 @@ mod tests {
     fn unrelated_macros_keep_the_existing_behavior() {
         let src = "some_other_macro!();\npub struct V;\npub fn create_v() -> V { return V; }";
         assert!(rules(src).is_empty(), "{:?}", rules(src));
+    }
+
+    /// The plain comment block, docs and attributes directly above `pub fn <name>` in `src`
+    /// (the lines between the previous blank or code line and the fn line).
+    fn header_of(src: &str, name: &str) -> Vec<String> {
+        let lines: Vec<&str> = src.lines().collect();
+        let at = lines
+            .iter()
+            .position(|l| l.trim_start().starts_with(&format!("pub fn {}(", name)) || l.trim_start().starts_with(&format!("fn {}(", name)))
+            .unwrap_or_else(|| panic!("fn {} missing", name));
+        let mut start = at;
+        while start > 0 {
+            let prev = lines[start - 1].trim_start();
+            if prev.starts_with("//") || prev.starts_with("#[") {
+                start -= 1;
+            } else {
+                break;
+            }
+        }
+        return lines[start..at].iter().map(|l| l.trim().to_string()).collect();
+    }
+
+    const MOVED_MARKERS: &str = "pub fn create_v() -> u32 {
+    return 0;
+}
+
+// flight-lint: allow(f64) c needs double precision
+/// Docs for c.
+#[inline]
+pub fn c(x: f64) -> f64 {
+    return x;
+}
+
+// flight-lint: allow(conform-extra) a is Rust-only
+pub fn a() {}
+
+/// Docs for b.
+// flight-lint: allow(conform-params) b keeps out-first
+#[must_use]
+pub fn b() -> u32 {
+    return 1;
+}
+";
+
+    #[test]
+    fn fix_keeps_each_plain_allow_marker_with_the_same_function() {
+        let fixed = fix_file(MOVED_MARKERS).unwrap();
+        assert_eq!(header_of(&fixed, "a"), vec!["// flight-lint: allow(conform-extra) a is Rust-only"]);
+        assert_eq!(
+            header_of(&fixed, "b"),
+            vec!["/// Docs for b.", "// flight-lint: allow(conform-params) b keeps out-first", "#[must_use]"]
+        );
+        assert_eq!(
+            header_of(&fixed, "c"),
+            vec!["// flight-lint: allow(f64) c needs double precision", "/// Docs for c.", "#[inline]"]
+        );
+        let a = fixed.find("pub fn a(").unwrap();
+        let b = fixed.find("pub fn b(").unwrap();
+        let c = fixed.find("pub fn c(").unwrap();
+        assert!(fixed.find("pub fn create_v(").unwrap() < a && a < b && b < c);
+        assert_eq!(fixed.matches("flight-lint:").count(), 3);
+        assert!(rules(&fixed).iter().all(|r| r != "fn-order"));
+    }
+
+    #[test]
+    fn fix_is_idempotent() {
+        let once = fix_file(MOVED_MARKERS).unwrap();
+        let twice = fix_file(&once).unwrap();
+        assert_eq!(once, twice);
+    }
+
+    #[test]
+    fn fix_never_drops_an_unattached_comment_between_functions() {
+        let src = "pub fn b() {}\n\n// --- section divider ---\n\npub fn a() {}\n";
+        let fixed = fix_file(src).unwrap();
+        assert!(fixed.contains("// --- section divider ---"));
+        assert_eq!(fixed.matches("pub fn").count(), 2);
+    }
+
+    #[test]
+    fn fix_keeps_plain_markers_with_moved_impl_methods() {
+        let src = "pub struct V;\n\nimpl V {\n    // flight-lint: allow(f64) z keeps double\n    pub fn z(&self) -> f64 {\n        return 0.0;\n    }\n\n    pub fn new() -> Self {\n        return V;\n    }\n}\n";
+        let fixed = fix_file(src).unwrap();
+        assert!(fixed.find("pub fn new(").unwrap() < fixed.find("pub fn z(").unwrap());
+        assert_eq!(header_of(&fixed, "z"), vec!["// flight-lint: allow(f64) z keeps double"]);
+        assert!(header_of(&fixed, "new").is_empty());
     }
 }
