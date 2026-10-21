@@ -8,6 +8,7 @@ src/contract.rs: pub use crate::types::*;
 src/enable_text_markup_guards.rs: pub fn disable_text_markup_guards(state: &mut TextMarkupGuardState)
 src/enable_text_markup_guards.rs: pub fn enable_text_markup_guards(state: &mut TextMarkupGuardState, log_state: &LogStateRef, clock: TextMarkupClock,)
 src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::MARKUP_HEX_COLOR_RESOLVER;
 src/lib.rs: pub use contract::MarkupClassResolver;
 src/lib.rs: pub use contract::MarkupColorResolver;
 src/lib.rs: pub use contract::MarkupResolverSeams;
@@ -44,6 +45,7 @@ src/markup_tag_registry.rs: pub fn get_markup_tag_handler(registry: &MarkupTagRe
 src/markup_tag_registry.rs: pub fn register_markup_tag(registry: &mut MarkupTagRegistry, name: &str, handler: MarkupTagHandler,)
 src/markup_tag_registry.rs: pub fn register_standard_markup_tags(registry: &mut MarkupTagRegistry)
 src/markup_tag_registry.rs: pub fn resolve_markup_hex_color(value: &str) -> Option<u32>
+src/markup_tag_registry.rs: pub static MARKUP_HEX_COLOR_RESOLVER: LazyLock<MarkupColorResolver>
 src/text_markup.rs: pub fn explain_text_markup(html: &str, registry: Option<&MarkupTagRegistry>,) -> TextMarkupExplanation
 src/text_markup.rs: pub fn format_text_markup(content: &RichTextContent) -> String
 src/text_markup.rs: pub fn parse_text_markup(html: &str, registry: Option<&MarkupTagRegistry>, guard: &TextMarkupGuardState,) -> RichTextContent
