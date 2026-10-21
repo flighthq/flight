@@ -26,6 +26,7 @@ mod register_built_in_physics2d_joint_solvers;
 mod solver;
 mod step;
 mod step_validation;
+mod sugar;
 mod types;
 mod world;
 mod world_queries;
