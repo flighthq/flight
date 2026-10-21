@@ -1,8 +1,10 @@
+use std::sync::Arc;
+
 /// Returns an easing function for the CSS cubic-bezier curve whose control
 /// points are P1=(x1,y1) and P2=(x2,y2); the endpoints are fixed at (0,0) and
 /// (1,1). The returned function maps an input progress `t` (interpreted as the
 /// curve's x) to the curve's y.
-pub fn ease_cubic_bezier(x1: f32, y1: f32, x2: f32, y2: f32) -> Box<dyn Fn(f32) -> f32> {
+pub fn ease_cubic_bezier(x1: f32, y1: f32, x2: f32, y2: f32) -> Arc<dyn Fn(f32) -> f32 + Send + Sync> {
     let cx = 3.0 * x1;
     let bx = 3.0 * (x2 - x1) - cx;
     let ax = 1.0 - cx - bx;
@@ -10,7 +12,7 @@ pub fn ease_cubic_bezier(x1: f32, y1: f32, x2: f32, y2: f32) -> Box<dyn Fn(f32) 
     let by = 3.0 * (y2 - y1) - cy;
     let ay = 1.0 - cy - by;
 
-    return Box::new(move |t: f32| -> f32 {
+    return Arc::new(move |t: f32| -> f32 {
         if t <= 0.0 {
             return 0.0;
         }

@@ -53,6 +53,10 @@ version = "0.6.0"
 [[package]]
 name = "flight-easing"
 version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-log",
+]
 
 [[package]]
 name = "flight-encoding"

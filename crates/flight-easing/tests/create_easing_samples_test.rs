@@ -18,13 +18,7 @@ mod create_easing_samples {
     }
 
     #[test]
-    #[should_panic]
-    fn panics_for_negative_count() {
-        create_easing_samples(&ease_linear, -1);
-    }
-
-    #[test]
-    fn allocates_a_vec_of_the_correct_length() {
+    fn allocates_a_float32_array_of_the_correct_length() {
         let result = create_easing_samples(&ease_linear, 5);
         assert_eq!(result.len(), 5);
     }
@@ -40,7 +34,7 @@ mod create_easing_samples {
     fn samples_ease_linear_uniformly() {
         let count = 6;
         let result = create_easing_samples(&ease_linear, count);
-        for i in 0..count as usize {
+        for i in 0..count {
             assert_approx(result[i], i as f32 / (count as f32 - 1.0));
         }
     }

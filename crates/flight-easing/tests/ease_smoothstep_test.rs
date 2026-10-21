@@ -23,6 +23,11 @@ mod ease_smootherstep {
     }
 
     #[test]
+    fn approaches_endpoints_more_gently_than_smoothstep() {
+        assert!(ease_smootherstep(0.25) < ease_smoothstep(0.25));
+    }
+
+    #[test]
     fn is_monotonically_increasing() {
         let mut prev = ease_smootherstep(0.0);
         for i in 1..=20 {

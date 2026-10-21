@@ -1,8 +1,10 @@
 /// Returns the numerical derivative (instantaneous velocity) of `ease` at the
 /// given `t` using a centered finite-difference approximation. The endpoint
 /// boundary is handled by clamping: at `t <= epsilon` a forward difference is
-/// used; at `t >= 1 - epsilon` a backward difference is used.
-pub fn get_easing_derivative(ease: &dyn Fn(f32) -> f32, t: f32, epsilon: f32) -> f32 {
+/// used; at `t >= 1 - epsilon` a backward difference is used. A missing
+/// `epsilon` defaults to `DEFAULT_EASING_DERIVATIVE_EPSILON`.
+pub fn get_easing_derivative(ease: &dyn Fn(f32) -> f32, t: f32, epsilon: Option<f32>) -> f32 {
+    let epsilon = epsilon.unwrap_or(DEFAULT_EASING_DERIVATIVE_EPSILON);
     if t <= epsilon {
         return (ease(epsilon * 2.0) - ease(0.0)) / (epsilon * 2.0);
     }

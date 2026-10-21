@@ -1,12 +1,13 @@
+use std::sync::Arc;
 use std::f32::consts::PI;
 
 /// The parameterized form of `ease_in_elastic`: a decaying sine that winds up
 /// before departing, with the overshoot and wavelength stated rather than fixed.
-pub fn ease_in_damped_sine(amplitude: f32, period: f32) -> Box<dyn Fn(f32) -> f32> {
+pub fn ease_in_damped_sine(amplitude: f32, period: f32) -> Arc<dyn Fn(f32) -> f32 + Send + Sync> {
     let wavelength = to_damped_sine_wavelength(period);
     let overshoot = to_damped_sine_overshoot(amplitude);
     let phase = to_damped_sine_phase(overshoot, wavelength);
-    return Box::new(move |t: f32| -> f32 {
+    return Arc::new(move |t: f32| -> f32 {
         if t == 0.0 || t == 1.0 {
             return t;
         }
@@ -18,11 +19,11 @@ pub fn ease_in_damped_sine(amplitude: f32, period: f32) -> Box<dyn Fn(f32) -> f3
 /// The parameterized form of `ease_in_out_elastic`: a decaying sine that winds
 /// up, crosses, and settles, with the overshoot and wavelength stated rather
 /// than fixed.
-pub fn ease_in_out_damped_sine(amplitude: f32, period: f32) -> Box<dyn Fn(f32) -> f32> {
+pub fn ease_in_out_damped_sine(amplitude: f32, period: f32) -> Arc<dyn Fn(f32) -> f32 + Send + Sync> {
     let wavelength = to_damped_sine_wavelength(period);
     let overshoot = to_damped_sine_overshoot(amplitude);
     let phase = to_damped_sine_phase(overshoot, wavelength);
-    return Box::new(move |t: f32| -> f32 {
+    return Arc::new(move |t: f32| -> f32 {
         if t == 0.0 || t == 1.0 {
             return t;
         }
@@ -36,11 +37,11 @@ pub fn ease_in_out_damped_sine(amplitude: f32, period: f32) -> Box<dyn Fn(f32) -
 
 /// The parameterized form of `ease_out_elastic`: a decaying sine that overshoots
 /// the target and settles back onto it.
-pub fn ease_out_damped_sine(amplitude: f32, period: f32) -> Box<dyn Fn(f32) -> f32> {
+pub fn ease_out_damped_sine(amplitude: f32, period: f32) -> Arc<dyn Fn(f32) -> f32 + Send + Sync> {
     let wavelength = to_damped_sine_wavelength(period);
     let overshoot = to_damped_sine_overshoot(amplitude);
     let phase = to_damped_sine_phase(overshoot, wavelength);
-    return Box::new(move |t: f32| -> f32 {
+    return Arc::new(move |t: f32| -> f32 {
         if t == 0.0 || t == 1.0 {
             return t;
         }
