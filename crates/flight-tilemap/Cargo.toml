@@ -1,0 +1,23 @@
+[package]
+name = "flight-tilemap"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Tile-based 2D map: grid of cell indices over a shared texture atlas"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-materials = { workspace = true }
+flight-node = { path = "../flight-node" }
+flight-scene2d = { path = "../flight-scene2d" }
+flight-signals = { workspace = true }
+flight-textureatlas = { workspace = true }
+
+[lints]
+workspace = true

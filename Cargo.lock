@@ -1080,6 +1080,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-tilemap"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-geometry",
+ "flight-materials",
+ "flight-node",
+ "flight-scene2d",
+ "flight-signals",
+ "flight-textureatlas",
+]
+
+[[package]]
 name = "flight-timeline"
 version = "0.6.0"
 dependencies = [
