@@ -1117,6 +1117,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-textinput"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-geometry",
+ "flight-input",
+ "flight-node",
+ "flight-scene2d",
+ "flight-signals",
+ "flight-text",
+ "flight-textformat",
+ "flight-textlayout",
+ "flight-textsegment",
+]
+
+[[package]]
 name = "flight-textlayout"
 version = "0.6.0"
 dependencies = [
