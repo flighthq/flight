@@ -279,6 +279,7 @@ mod index_mesh_geometry_vertices {
             }
             _ => panic!("expected U16 indices"),
         }
+        assert_eq!(indexed.subsets, geometry.subsets);
     }
 
     #[test]
@@ -330,6 +331,7 @@ mod weld_mesh_geometry_vertices {
             topology: Some(PrimitiveTopology::LineStrip),
         });
         let welded = weld_mesh_geometry_vertices(&geometry);
+        assert_eq!(welded.vertices.len(), 3 * 12);
         assert_eq!(get_mesh_geometry_vertex_count(&welded), 3);
         match &welded.indices {
             IndexBuffer::U16(IndexBufferU16 { data: v }) => {
@@ -339,6 +341,8 @@ mod weld_mesh_geometry_vertices {
             _ => panic!("expected U16 indices"),
         }
         assert_eq!(welded.topology, PrimitiveTopology::LineStrip);
+        assert!(matches!(geometry.indices, IndexBuffer::None));
+        assert_eq!(geometry.vertices.len(), 4 * 12);
     }
 
     #[test]
@@ -404,6 +408,7 @@ mod weld_mesh_geometry_vertices {
             }
             _ => panic!("expected U16 indices"),
         }
+        assert_eq!(welded.subsets, geometry.subsets);
     }
 
     #[test]

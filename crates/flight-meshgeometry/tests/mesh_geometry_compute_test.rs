@@ -161,7 +161,7 @@ mod compute_mesh_geometry_bounding_sphere {
         compute_mesh_geometry_bounding_sphere(&mut sphere, &geometry);
         let radius = sphere.radius;
         let center = &sphere.center;
-        assert!(radius < 0.0);
+        assert_eq!(radius, -1.0);
         assert_eq!(center.x, 0.0);
         assert_eq!(center.y, 0.0);
         assert_eq!(center.z, 0.0);
@@ -450,12 +450,10 @@ mod compute_mesh_geometry_position_groups {
     #[test]
     fn does_not_group_adjacent_float32_values() {
         let mut geometry = make_uv_seam_fold();
-        // Change the bit pattern of vertex 3's x position by reinterpreting as u32
-        let bits = geometry.vertices[3 * 12].to_bits() ^ 1;
-        geometry.vertices[3 * 12] = f32::from_bits(bits);
+        // The source writes the raw u32 bit pattern 1 (the smallest subnormal) over vertex 3's x.
+        geometry.vertices[3 * 12] = f32::from_bits(1);
         let groups = compute_mesh_geometry_position_groups(&geometry);
-        // Vertex 3 should no longer group with vertex 0
-        assert_eq!(groups[3], 3);
+        assert_eq!(&*groups, &[0, 1, 2, 3, 1, 5]);
     }
 }
 
@@ -793,17 +791,17 @@ mod ensure_mesh_geometry_bounds {
         assert!(geometry.bounds.is_none());
 
         let bounds = ensure_mesh_geometry_bounds(&mut geometry);
-        assert!((bounds.unwrap().max.x - 1.0).abs() < 1e-6);
+        assert_eq!(bounds.unwrap().max.x, 1.0);
 
         // A vertex edit WITHOUT a version bump must not be picked up
         geometry.vertices[12] = 4.0;
         let cached = ensure_mesh_geometry_bounds(&mut geometry);
-        assert!((cached.unwrap().max.x - 1.0).abs() < 1e-6);
+        assert_eq!(cached.unwrap().max.x, 1.0);
 
         // Invalidate => re-sweep
         invalidate_mesh_geometry(&mut geometry);
         let refreshed = ensure_mesh_geometry_bounds(&mut geometry);
-        assert!((refreshed.unwrap().max.x - 4.0).abs() < 1e-6);
+        assert_eq!(refreshed.unwrap().max.x, 4.0);
     }
 
     #[test]
@@ -836,11 +834,11 @@ mod refresh_mesh_geometry_bounds {
         assert!(geometry.bounds.is_none());
         refresh_mesh_geometry_bounds(&mut geometry);
         let bounds = geometry.bounds.as_ref().unwrap() as *const _;
-        assert!((geometry.bounds.as_ref().unwrap().max.x - 1.0).abs() < 1e-6);
+        assert_eq!(geometry.bounds.as_ref().unwrap().max.x, 1.0);
 
         geometry.vertices[12] = 4.0;
         refresh_mesh_geometry_bounds(&mut geometry);
-        assert!((geometry.bounds.as_ref().unwrap().max.x - 4.0).abs() < 1e-6);
+        assert_eq!(geometry.bounds.as_ref().unwrap().max.x, 4.0);
         assert!(std::ptr::eq(bounds, geometry.bounds.as_ref().unwrap()));
     }
 }

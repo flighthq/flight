@@ -302,6 +302,10 @@ mod convert_mesh_geometry_layout {
         });
         let converted = convert_mesh_geometry_layout(&source, &position_only_layout());
         assert_eq!(converted.vertices.len(), 9);
+        // TS `toBeCloseTo(x)` (default 2 digits): abs diff < 0.5e-2.
+        for (at, expected) in [(0, 1.0_f32), (3, 2.0), (6, 3.0)] {
+            assert!((converted.vertices[at] - expected).abs() < 0.005);
+        }
     }
 
     #[test]

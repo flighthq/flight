@@ -156,7 +156,7 @@ mod get_mesh_geometry_vertex_color0 {
             }],
             stride: 12,
         }));
-        let geo = create_mesh_geometry(MeshGeometryOptions {
+        let mut geo = create_mesh_geometry(MeshGeometryOptions {
             indices: None,
             layout,
             vertices: (vec![0.1, 0.2, 0.3]).into(),
@@ -166,6 +166,12 @@ mod get_mesh_geometry_vertex_color0 {
         let mut out = flight_geometry::create_vector4(0.0, 0.0, 0.0, 0.0);
         assert!(get_mesh_geometry_vertex_color0(&mut out, &geo, 0));
         assert_eq!(out.w, 1.0);
+        assert!(set_mesh_geometry_vertex_color0(&mut geo, 0, 0.4, 0.5, 0.6, 0.1));
+        // TS `expect.closeTo(x)` (default 2 digits): abs diff < 0.5e-2, and exactly three values.
+        assert_eq!(geo.vertices.len(), 3);
+        for (actual, expected) in geo.vertices.iter().zip([0.4_f32, 0.5, 0.6]) {
+            assert!((actual - expected).abs() < 0.005, "{actual} vs {expected}");
+        }
     }
 
     #[test]
