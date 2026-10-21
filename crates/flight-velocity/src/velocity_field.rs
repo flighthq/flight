@@ -6,7 +6,8 @@ use flight_geometry::Matrix;
 
 /// An opaque caller-assigned source handle. TS keys the velocity field by object identity
 /// (`WeakMap<object, VelocitySample>`); the Rust contract uses an explicit numeric handle, which the
-/// transpiler maps back to the object key.
+/// transpiler maps back to the object key. This caller-numeric handle is a recorded D0 exception:
+/// arbitrary caller objects do not get Entity identity.
 // flight-lint: allow(contract-vocabulary) D1 range declaration for opaque source ids: callers must keep values <= 2^53 because TS maps them to object identity keys
 pub type SourceId = u64;
 
@@ -60,70 +61,15 @@ pub struct VelocityField {
     runtime: EntityRuntimeSlot,
 }
 
-pub fn create_velocity2d(x: f32, y: f32) -> Velocity2D {
-    let mut out = Velocity2D::default();
-    initialize_velocity2d(&mut out, x, y);
-    return out;
-}
-
-pub fn create_velocity_explanation(
-    current_frame_id: i32,
-    explicit: bool,
-    last_frame_id: i32,
-    reason: VelocityReason,
-    x: f32,
-    y: f32,
-) -> VelocityExplanation {
-    let mut out = VelocityExplanation::default();
-    initialize_velocity_explanation(&mut out, current_frame_id, explicit, last_frame_id, reason, x, y);
-    return out;
-}
-
 pub fn create_velocity_field() -> VelocityField {
     let mut out: VelocityField = allocate_entity();
     initialize_velocity_field(&mut out);
     return out;
 }
 
-pub fn create_velocity_sample() -> VelocitySample {
-    let mut out = VelocitySample::default();
-    initialize_velocity_sample(&mut out);
-    return out;
-}
-
-pub fn initialize_velocity2d(out: &mut Velocity2D, x: f32, y: f32) {
-    out.x = x;
-    out.y = y;
-}
-
-pub fn initialize_velocity_explanation(
-    out: &mut VelocityExplanation,
-    current_frame_id: i32,
-    explicit: bool,
-    last_frame_id: i32,
-    reason: VelocityReason,
-    x: f32,
-    y: f32,
-) {
-    out.current_frame_id = current_frame_id;
-    out.explicit = explicit;
-    out.last_frame_id = last_frame_id;
-    out.reason = reason;
-    out.x = x;
-    out.y = y;
-}
-
 pub fn initialize_velocity_field(out: &mut VelocityField) {
     out.frame_id = 0;
     out.samples = HashMap::new();
-}
-
-pub fn initialize_velocity_sample(out: &mut VelocitySample) {
-    out.previous_world_transform = None;
-    out.velocity.x = 0.0;
-    out.velocity.y = 0.0;
-    out.last_frame_id = -1;
-    out.explicit_frame_id = -1;
 }
 
 /// Adds velocity contributions: `out = a + b`.
@@ -159,7 +105,7 @@ pub fn clamp_velocity(out: &mut Velocity2D, velocity: &Velocity2D, max_length: f
 }
 
 pub fn clone_velocity2d(source: &Velocity2D) -> Velocity2D {
-    return create_velocity2d(source.x, source.y);
+    return Velocity2D { x: source.x, y: source.y };
 }
 
 pub fn contribute_velocity(field: &mut VelocityField, source: SourceId, x: f32, y: f32) {
@@ -200,7 +146,7 @@ pub fn damp_velocity(
 /// Get-or-create a source's per-frame sample. Shared with the transform-delta
 /// contributor.
 pub fn ensure_velocity_sample(field: &mut VelocityField, source: SourceId) -> &mut VelocitySample {
-    return field.samples.entry(source).or_insert_with(|| create_velocity_sample());
+    return field.samples.entry(source).or_insert_with(|| VelocitySample { previous_world_transform: None, velocity: Velocity2D { x: 0.0, y: 0.0 }, last_frame_id: -1, explicit_frame_id: -1 });
 }
 
 pub fn explain_velocity(field: &VelocityField, source: SourceId) -> VelocityExplanation {
@@ -208,25 +154,11 @@ pub fn explain_velocity(field: &VelocityField, source: SourceId) -> VelocityExpl
     let sample = field.samples.get(&source);
     return match sample {
         None => {
-            create_velocity_explanation(
-                current_frame_id,
-                false,
-                -1,
-                VelocityReason::NoSample,
-                0.0,
-                0.0,
-            )
+            VelocityExplanation { current_frame_id: current_frame_id, explicit: false, last_frame_id: -1, reason: VelocityReason::NoSample, x: 0.0, y: 0.0 }
         }
         Some(sample) => {
             if sample.last_frame_id != current_frame_id {
-                return create_velocity_explanation(
-                    current_frame_id,
-                    false,
-                    sample.last_frame_id,
-                    VelocityReason::Stale,
-                    0.0,
-                    0.0,
-                );
+                return VelocityExplanation { current_frame_id: current_frame_id, explicit: false, last_frame_id: sample.last_frame_id, reason: VelocityReason::Stale, x: 0.0, y: 0.0 };
             }
             let explicit = sample.explicit_frame_id == current_frame_id;
             let x = sample.velocity.x;
@@ -237,23 +169,9 @@ pub fn explain_velocity(field: &VelocityField, source: SourceId) -> VelocityExpl
                 } else {
                     VelocityReason::DerivedZero
                 };
-                return create_velocity_explanation(
-                    current_frame_id,
-                    explicit,
-                    sample.last_frame_id,
-                    reason,
-                    0.0,
-                    0.0,
-                );
+                return VelocityExplanation { current_frame_id: current_frame_id, explicit: explicit, last_frame_id: sample.last_frame_id, reason: reason, x: 0.0, y: 0.0 };
             }
-            create_velocity_explanation(
-                current_frame_id,
-                explicit,
-                sample.last_frame_id,
-                VelocityReason::Ok,
-                x,
-                y,
-            )
+            VelocityExplanation { current_frame_id: current_frame_id, explicit: explicit, last_frame_id: sample.last_frame_id, reason: VelocityReason::Ok, x: x, y: y }
         }
     };
 }
@@ -385,10 +303,6 @@ impl Default for VelocityReason {
 }
 
 impl Velocity2D {
-    pub fn new(x: f32, y: f32) -> Self {
-        return create_velocity2d(x, y);
-    }
-
     pub fn add(&self, other: &Self) -> Self {
         let mut out = Self::default();
         add_velocity(&mut out, self, other);

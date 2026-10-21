@@ -148,32 +148,6 @@ mod copy_velocity {
     }
 }
 
-mod create_velocity2d {
-    use super::*;
-
-    #[test]
-    fn returns_a_velocity2d_with_specified_values() {
-        let v = create_velocity2d(3.0, -7.0);
-        assert_eq!(v.x, 3.0);
-        assert_eq!(v.y, -7.0);
-    }
-}
-
-mod create_velocity_explanation {
-    use super::*;
-
-    #[test]
-    fn returns_a_velocity_explanation_with_specified_values() {
-        let e = create_velocity_explanation(5, true, 4, VelocityReason::Ok, 1.0, 2.0);
-        assert_eq!(e.current_frame_id, 5);
-        assert_eq!(e.explicit, true);
-        assert_eq!(e.last_frame_id, 4);
-        assert_eq!(e.reason, VelocityReason::Ok);
-        assert_eq!(e.x, 1.0);
-        assert_eq!(e.y, 2.0);
-    }
-}
-
 mod create_velocity_field {
     use super::*;
 
@@ -185,20 +159,6 @@ mod create_velocity_field {
         get_velocity(&field, 999, &mut out);
         assert_eq!(out.x, 0.0);
         assert_eq!(out.y, 0.0);
-    }
-}
-
-mod create_velocity_sample {
-    use super::*;
-
-    #[test]
-    fn returns_a_velocity_sample_with_default_values() {
-        let sample = create_velocity_sample();
-        assert_eq!(sample.previous_world_transform, None);
-        assert_eq!(sample.velocity.x, 0.0);
-        assert_eq!(sample.velocity.y, 0.0);
-        assert_eq!(sample.last_frame_id, -1);
-        assert_eq!(sample.explicit_frame_id, -1);
     }
 }
 
@@ -394,34 +354,6 @@ mod has_velocity {
     }
 }
 
-mod initialize_velocity2d {
-    use super::*;
-
-    #[test]
-    fn is_the_construction_initializer_of_create_velocity2d() {
-        let mut v = create_velocity2d(0.0, 0.0);
-        initialize_velocity2d(&mut v, 3.0, 7.0);
-        assert_eq!(v.x, 3.0);
-        assert_eq!(v.y, 7.0);
-    }
-}
-
-mod initialize_velocity_explanation {
-    use super::*;
-
-    #[test]
-    fn is_the_construction_initializer_of_create_velocity_explanation() {
-        let mut e = create_velocity_explanation(0, false, 0, VelocityReason::NoSample, 0.0, 0.0);
-        initialize_velocity_explanation(&mut e, 5, true, 4, VelocityReason::Ok, 1.0, 2.0);
-        assert_eq!(e.current_frame_id, 5);
-        assert_eq!(e.explicit, true);
-        assert_eq!(e.last_frame_id, 4);
-        assert_eq!(e.reason, VelocityReason::Ok);
-        assert_eq!(e.x, 1.0);
-        assert_eq!(e.y, 2.0);
-    }
-}
-
 mod initialize_velocity_field {
     use super::*;
 
@@ -430,21 +362,6 @@ mod initialize_velocity_field {
         let mut field = create_velocity_field();
         initialize_velocity_field(&mut field);
         assert_eq!(field.frame_id, 0);
-    }
-}
-
-mod initialize_velocity_sample {
-    use super::*;
-
-    #[test]
-    fn is_the_construction_initializer_of_create_velocity_sample() {
-        let mut sample = create_velocity_sample();
-        initialize_velocity_sample(&mut sample);
-        assert_eq!(sample.previous_world_transform, None);
-        assert_eq!(sample.velocity.x, 0.0);
-        assert_eq!(sample.velocity.y, 0.0);
-        assert_eq!(sample.last_frame_id, -1);
-        assert_eq!(sample.explicit_frame_id, -1);
     }
 }
 
