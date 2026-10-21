@@ -2,6 +2,8 @@
 //! accepted YAML subset and reads subset text back into the logical model, explaining the first
 //! refusal.
 
+// flight-lint: allow-file(contract-vocabulary) i64 refusal counters project JS safe integers (|n| <= 2^53)
+
 // flight-lint: allow-file(f64) D1: document numbers are JS Numbers; exact formatting and the safe-integer checks need double precision
 
 use std::collections::HashSet;
@@ -37,49 +39,6 @@ struct ReadResult {
     refusal: Option<FlightDocumentRefusalExplanation>,
 }
 
-/// Explains why `text` does not read as a document, or `None` when it does (TS
-/// `explainFlightDocumentText`).
-pub fn explain_flight_document_text(text: &str) -> Option<FlightDocumentRefusalExplanation> {
-    return read_flight_document_text(text).refusal;
-}
-
-/// Formats `document` as subset text (TS `formatFlightDocumentText`). Throws `RangeError` for an
-/// invalid container and `TypeError` for a value outside the subset, and re-parses its own output
-/// so it can never emit text the reader refuses.
-pub fn format_flight_document_text(document: &FlightDocument) -> FlightDocumentText {
-    if document.version != 1.0 {
-        throw_range_error("FlightDocument.version must be 1");
-    }
-    if document.scenes.is_empty() {
-        throw_range_error("FlightDocument.scenes must not be empty");
-    }
-    if document.default_scene < 0 || document.default_scene as u64 >= document.scenes.len() as u64 {
-        throw_range_error("FlightDocument.defaultScene must index FlightDocument.scenes");
-    }
-
-    let mut lines = vec![
-        "flight: 1".to_string(),
-        format!("defaultScene: {}", document.default_scene),
-    ];
-    if !document.resources.is_empty() {
-        append_resources(&mut lines, &document.resources);
-    }
-    lines.push("scenes:".to_string());
-    for scene in &document.scenes {
-        append_scene(&mut lines, scene);
-    }
-
-    let text = lines.join("\n") + "\n";
-    if let SceneDocumentYamlSubsetResult::Refusal(refusal) = parse_scene_document_yaml_subset(&text)
-    {
-        throw_range_error(&format!(
-            "FlightDocument cannot be represented by the YAML subset: {}",
-            crate::scene_document_strings::get_flight_document_refusal_reason_string(refusal.kind)
-        ));
-    }
-    return text;
-}
-
 /// Writes every refusal field into `out` (TS `initializeFlightDocumentRefusalExplanation`), the
 /// construction initializer of a refusal explanation.
 // flight-lint: allow(conform-params) D9b out-first; refusal positions are UTF-16 code units and counters are i64 projections of JS safe integers
@@ -110,12 +69,6 @@ pub fn initialize_flight_document_refusal_explanation(
     out.resource_key = resource_key;
     out.token_key = token_key;
     out.version = version;
-}
-
-/// Reads `text` into the logical model, or `None` on any refusal (TS `parseFlightDocumentText`);
-/// `explain_flight_document_text` names it.
-pub fn parse_flight_document_text(text: &str) -> Option<FlightDocument> {
-    return read_flight_document_text(text).document;
 }
 
 fn append_camera(lines: &mut Vec<String>, camera: &Scene3DDocumentCamera) {
@@ -379,6 +332,14 @@ fn append_object_entries(lines: &mut Vec<String>, value: &FlightDocumentFields, 
     }
 }
 
+fn append_path(path: &str, key: &str) -> String {
+    return if path.is_empty() {
+        key.to_string()
+    } else {
+        format!("{path}.{key}")
+    };
+}
+
 fn append_projection(lines: &mut Vec<String>, projection: &Projection, indent: usize) {
     let prefix = " ".repeat(indent);
     let kind = match projection {
@@ -523,14 +484,6 @@ fn append_vector3_components(lines: &mut Vec<String>, value: [f32; 3], indent: u
     lines.push(format!("{prefix}z: {}", format_canonical_number(value[2])));
 }
 
-fn append_path(path: &str, key: &str) -> String {
-    return if path.is_empty() {
-        key.to_string()
-    } else {
-        format!("{path}.{key}")
-    };
-}
-
 // The source orders nested mapping keys with `String.prototype.localeCompare` (host collation).
 // There is no canonical collation in the portable core, so this compares UTF-16 code units; that
 // agrees with localeCompare for same-case ASCII identifiers and is reported as drift otherwise.
@@ -589,10 +542,53 @@ fn copy_flight_document_value(
     };
 }
 
+/// Explains why `text` does not read as a document, or `None` when it does (TS
+/// `explainFlightDocumentText`).
+pub fn explain_flight_document_text(text: &str) -> Option<FlightDocumentRefusalExplanation> {
+    return read_flight_document_text(text).refusal;
+}
+
 // Formats a canonical f32 engine field (camera, projection, transform) from its shortest round-trip
 // f32 decimal (Principal 68e645eb C3), laid out by the JavaScript Number formatter.
 fn format_canonical_number(value: f32) -> String {
     return format_number(canonical_number(value));
+}
+
+/// Formats `document` as subset text (TS `formatFlightDocumentText`). Throws `RangeError` for an
+/// invalid container and `TypeError` for a value outside the subset, and re-parses its own output
+/// so it can never emit text the reader refuses.
+pub fn format_flight_document_text(document: &FlightDocument) -> FlightDocumentText {
+    if document.version != 1.0 {
+        throw_range_error("FlightDocument.version must be 1");
+    }
+    if document.scenes.is_empty() {
+        throw_range_error("FlightDocument.scenes must not be empty");
+    }
+    if document.default_scene < 0 || document.default_scene as u64 >= document.scenes.len() as u64 {
+        throw_range_error("FlightDocument.defaultScene must index FlightDocument.scenes");
+    }
+
+    let mut lines = vec![
+        "flight: 1".to_string(),
+        format!("defaultScene: {}", document.default_scene),
+    ];
+    if !document.resources.is_empty() {
+        append_resources(&mut lines, &document.resources);
+    }
+    lines.push("scenes:".to_string());
+    for scene in &document.scenes {
+        append_scene(&mut lines, scene);
+    }
+
+    let text = lines.join("\n") + "\n";
+    if let SceneDocumentYamlSubsetResult::Refusal(refusal) = parse_scene_document_yaml_subset(&text)
+    {
+        throw_range_error(&format!(
+            "FlightDocument cannot be represented by the YAML subset: {}",
+            crate::scene_document_strings::get_flight_document_refusal_reason_string(refusal.kind)
+        ));
+    }
+    return text;
 }
 
 fn format_key(value: &str) -> String {
@@ -670,6 +666,12 @@ fn number_of(value: Option<&SceneDocumentYamlSubsetValue>) -> Option<f64> {
         Some(SceneDocumentYamlSubsetValue::Number(value)) => Some(*value),
         _ => None,
     };
+}
+
+/// Reads `text` into the logical model, or `None` on any refusal (TS `parseFlightDocumentText`);
+/// `explain_flight_document_text` names it.
+pub fn parse_flight_document_text(text: &str) -> Option<FlightDocument> {
+    return read_flight_document_text(text).document;
 }
 
 // JSON.stringify of a string: the quote, backslash and C0 controls are escaped, with the short

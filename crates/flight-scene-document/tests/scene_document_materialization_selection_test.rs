@@ -26,20 +26,24 @@ mod select_flight_document_scene {
     fn selects_the_default_or_requested_scene_when_its_dimension_matches() {
         let document = create_document();
 
-        let FlightDocumentSceneSelection::Scene(scene, index) =
-            select_flight_document_scene(&document, FlightDocumentSceneDimension::Scene3D, None)
-        else {
-            panic!("expected the default Scene3D");
-        };
-        assert!(std::ptr::eq(scene, &document.scenes[1]));
-        assert_eq!(index, 1);
-        let FlightDocumentSceneSelection::Scene(scene, index) =
-            select_flight_document_scene(&document, FlightDocumentSceneDimension::Scene2D, Some(0))
-        else {
-            panic!("expected the requested Scene2D");
-        };
-        assert!(std::ptr::eq(scene, &document.scenes[0]));
-        assert_eq!(index, 0);
+        let selection =
+            select_flight_document_scene(&document, FlightDocumentSceneDimension::Scene3D, None);
+        assert!(selection.refusal.is_none());
+        assert!(
+            selection
+                .scene
+                .is_some_and(|scene| std::ptr::eq(scene, &document.scenes[1]))
+        );
+        assert_eq!(selection.scene_index, Some(1));
+        let selection =
+            select_flight_document_scene(&document, FlightDocumentSceneDimension::Scene2D, Some(0));
+        assert!(selection.refusal.is_none());
+        assert!(
+            selection
+                .scene
+                .is_some_and(|scene| std::ptr::eq(scene, &document.scenes[0]))
+        );
+        assert_eq!(selection.scene_index, Some(0));
     }
 
     #[test]
@@ -47,22 +51,20 @@ mod select_flight_document_scene {
         let mut empty_document = create_document();
         empty_document.scenes.clear();
 
-        let FlightDocumentSceneSelection::Refusal(empty) = select_flight_document_scene(
+        let selection = select_flight_document_scene(
             &empty_document,
             FlightDocumentSceneDimension::Scene2D,
             None,
-        ) else {
-            panic!("expected a refusal");
-        };
+        );
+        assert!(selection.scene.is_none());
+        let empty = selection.refusal.expect("a refusal");
         assert_eq!(empty.path, "scenes");
         assert_eq!(empty.reason, FlightDocumentRefusalReason::ScenesEmpty);
-        let FlightDocumentSceneSelection::Refusal(mismatch) = select_flight_document_scene(
-            &create_document(),
-            FlightDocumentSceneDimension::Scene2D,
-            None,
-        ) else {
-            panic!("expected a refusal");
-        };
+        let document = create_document();
+        let selection =
+            select_flight_document_scene(&document, FlightDocumentSceneDimension::Scene2D, None);
+        assert!(selection.scene.is_none());
+        let mismatch = selection.refusal.expect("a refusal");
         assert_eq!(mismatch.path, "scenes[1].kind");
         assert_eq!(
             mismatch.reason,

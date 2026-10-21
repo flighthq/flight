@@ -146,3 +146,9 @@ pub fn schemas_with_node_kind(kind: &str) -> FlightDocumentSchemaRegistry {
 pub fn yaml_string(value: &str) -> SceneDocumentYamlSubsetValue {
     return SceneDocumentYamlSubsetValue::String(value.to_string());
 }
+
+// The type's construction defaults, for struct-update syntax in tests.
+pub fn defaults<T: Default>() -> T {
+    let make: fn() -> T = T::default;
+    return make();
+}

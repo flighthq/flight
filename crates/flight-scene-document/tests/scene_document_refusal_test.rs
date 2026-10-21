@@ -65,7 +65,7 @@ mod check_flight_document_interactive_states {
             disabled: None,
             hover: Some(FlightDocumentInteractiveState {
                 alpha: Some(0.8),
-                ..Default::default()
+                ..defaults()
             }),
             pressed: None,
         });

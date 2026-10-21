@@ -1,12 +1,83 @@
 //! Logical document validation and the refusal constructors (TS `sceneDocumentRefusal.ts`): field
 //! schemas, interactive states and registered node kinds, each refusal qualified by its scene.
 
+// flight-lint: allow-file(contract-vocabulary) i64 scene indices project JS safe integers (|n| <= 2^53)
+
 use std::collections::HashSet;
 
 use flight_entity::{allocate_entity, entries, get_record_value};
 
 use crate::scene_document_yaml_subset::SceneDocumentYamlSubsetValue;
 use crate::types::*;
+
+/// Allocates a refusal at a document path (TS `createDocumentRefusal`).
+pub fn create_document_refusal(
+    reason: FlightDocumentRefusalReason,
+    path: &str,
+) -> FlightDocumentRefusalExplanation {
+    let mut out: FlightDocumentRefusalExplanation = allocate_entity_refusal();
+    initialize_document_refusal(&mut out, reason, path);
+    return out;
+}
+
+fn create_kind_refusal(
+    reason: FlightDocumentRefusalReason,
+    scene_index: i64,
+    inner_path: &str,
+    kind: &str,
+) -> FlightDocumentRefusalExplanation {
+    let mut refusal = create_scene_refusal(reason, scene_index, inner_path);
+    refusal.kind = Some(kind.to_string());
+    return refusal;
+}
+
+/// Allocates a refusal qualified by its scene: `scenes[i]` or `scenes[i].<inner_path>` (TS
+/// `createSceneRefusal`).
+pub fn create_scene_refusal(
+    reason: FlightDocumentRefusalReason,
+    scene_index: i64,
+    inner_path: &str,
+) -> FlightDocumentRefusalExplanation {
+    let path = if inner_path.is_empty() {
+        format!("scenes[{scene_index}]")
+    } else {
+        format!("scenes[{scene_index}].{inner_path}")
+    };
+    return create_document_refusal(reason, &path);
+}
+
+/// Writes an otherwise-empty refusal into `out` (TS `initializeDocumentRefusal`).
+pub fn initialize_document_refusal(
+    out: &mut FlightDocumentRefusalExplanation,
+    reason: FlightDocumentRefusalReason,
+    path: &str,
+) {
+    out.actual = None;
+    out.column = None;
+    out.kind = None;
+    out.limit = None;
+    out.line = None;
+    out.mode = None;
+    out.offset = None;
+    out.path = path.to_string();
+    out.reason = reason;
+    out.resource_key = None;
+    out.token_key = None;
+    out.version = None;
+}
+
+// The allocation hook for a refusal whose fields `initialize_*` writes next.
+fn allocate_entity_refusal() -> FlightDocumentRefusalExplanation {
+    return allocate_entity();
+}
+
+fn append_field_path(path: &str, field: &str) -> String {
+    return if path.is_empty() {
+        field.to_string()
+    } else {
+        format!("{path}.{field}")
+    };
+}
 
 /// Validates `fields` against `field_schemas` (TS `checkFlightDocumentFields`): a missing required
 /// field without a default, a failing validator, or an unknown field refuses `FieldInvalid`.
@@ -160,129 +231,6 @@ pub fn check_flight_document_node_fields(
     return None;
 }
 
-/// Refuses the first node whose kind has no registered schema (TS `checkUnregisteredNodeKinds`).
-pub fn check_unregistered_node_kinds(
-    node: &FlightDocumentNode,
-    schemas: &FlightDocumentSchemaRegistry,
-    scene_index: i64,
-    node_path: &str,
-) -> Option<FlightDocumentRefusalExplanation> {
-    if !schemas.node_schemas.entries.contains_key(&node.kind) {
-        let mut refusal = create_scene_refusal(
-            FlightDocumentRefusalReason::NodeKindUnregistered,
-            scene_index,
-            node_path,
-        );
-        refusal.kind = Some(node.kind.clone());
-        return Some(refusal);
-    }
-    for (index, child) in node.children.iter().enumerate() {
-        let child_path = format!("{node_path}.children[{index}]");
-        let child_refusal = check_unregistered_node_kinds(child, schemas, scene_index, &child_path);
-        if child_refusal.is_some() {
-            return child_refusal;
-        }
-    }
-    return None;
-}
-
-/// The unregistered-kind check over a raw parsed syntax value (TS
-/// `checkUnregisteredNodeKindsFromRaw`): anything that is not a mapping with a string `kind` is
-/// ignored, and only array `children` are descended.
-pub fn check_unregistered_node_kinds_from_raw(
-    value: &SceneDocumentYamlSubsetValue,
-    schemas: &FlightDocumentSchemaRegistry,
-    scene_index: i64,
-    node_path: &str,
-) -> Option<FlightDocumentRefusalExplanation> {
-    let SceneDocumentYamlSubsetValue::Mapping(mapping) = value else {
-        return None;
-    };
-    let Some(SceneDocumentYamlSubsetValue::String(kind)) = get_record_value(mapping, "kind") else {
-        return None;
-    };
-    if !schemas.node_schemas.entries.contains_key(kind) {
-        let mut refusal = create_scene_refusal(
-            FlightDocumentRefusalReason::NodeKindUnregistered,
-            scene_index,
-            node_path,
-        );
-        refusal.kind = Some(kind.clone());
-        return Some(refusal);
-    }
-    if let Some(SceneDocumentYamlSubsetValue::Sequence(children)) =
-        get_record_value(mapping, "children")
-    {
-        for (index, child) in children.iter().enumerate() {
-            let child_path = format!("{node_path}.children[{index}]");
-            let child_refusal =
-                check_unregistered_node_kinds_from_raw(child, schemas, scene_index, &child_path);
-            if child_refusal.is_some() {
-                return child_refusal;
-            }
-        }
-    }
-    return None;
-}
-
-/// Allocates a refusal at a document path (TS `createDocumentRefusal`).
-pub fn create_document_refusal(
-    reason: FlightDocumentRefusalReason,
-    path: &str,
-) -> FlightDocumentRefusalExplanation {
-    let mut out: FlightDocumentRefusalExplanation = allocate_entity_refusal();
-    initialize_document_refusal(&mut out, reason, path);
-    return out;
-}
-
-/// Allocates a refusal qualified by its scene: `scenes[i]` or `scenes[i].<inner_path>` (TS
-/// `createSceneRefusal`).
-pub fn create_scene_refusal(
-    reason: FlightDocumentRefusalReason,
-    scene_index: i64,
-    inner_path: &str,
-) -> FlightDocumentRefusalExplanation {
-    let path = if inner_path.is_empty() {
-        format!("scenes[{scene_index}]")
-    } else {
-        format!("scenes[{scene_index}].{inner_path}")
-    };
-    return create_document_refusal(reason, &path);
-}
-
-/// Writes an otherwise-empty refusal into `out` (TS `initializeDocumentRefusal`).
-pub fn initialize_document_refusal(
-    out: &mut FlightDocumentRefusalExplanation,
-    reason: FlightDocumentRefusalReason,
-    path: &str,
-) {
-    out.actual = None;
-    out.column = None;
-    out.kind = None;
-    out.limit = None;
-    out.line = None;
-    out.mode = None;
-    out.offset = None;
-    out.path = path.to_string();
-    out.reason = reason;
-    out.resource_key = None;
-    out.token_key = None;
-    out.version = None;
-}
-
-// The allocation hook for a refusal whose fields `initialize_*` writes next.
-fn allocate_entity_refusal() -> FlightDocumentRefusalExplanation {
-    return allocate_entity();
-}
-
-fn append_field_path(path: &str, field: &str) -> String {
-    return if path.is_empty() {
-        field.to_string()
-    } else {
-        format!("{path}.{field}")
-    };
-}
-
 fn check_interactive_state(
     document_node: &FlightDocumentNode,
     state: &FlightDocumentInteractiveState,
@@ -375,15 +323,69 @@ fn check_interactive_state(
     return None;
 }
 
-fn create_kind_refusal(
-    reason: FlightDocumentRefusalReason,
+/// Refuses the first node whose kind has no registered schema (TS `checkUnregisteredNodeKinds`).
+pub fn check_unregistered_node_kinds(
+    node: &FlightDocumentNode,
+    schemas: &FlightDocumentSchemaRegistry,
     scene_index: i64,
-    inner_path: &str,
-    kind: &str,
-) -> FlightDocumentRefusalExplanation {
-    let mut refusal = create_scene_refusal(reason, scene_index, inner_path);
-    refusal.kind = Some(kind.to_string());
-    return refusal;
+    node_path: &str,
+) -> Option<FlightDocumentRefusalExplanation> {
+    if !schemas.node_schemas.entries.contains_key(&node.kind) {
+        let mut refusal = create_scene_refusal(
+            FlightDocumentRefusalReason::NodeKindUnregistered,
+            scene_index,
+            node_path,
+        );
+        refusal.kind = Some(node.kind.clone());
+        return Some(refusal);
+    }
+    for (index, child) in node.children.iter().enumerate() {
+        let child_path = format!("{node_path}.children[{index}]");
+        let child_refusal = check_unregistered_node_kinds(child, schemas, scene_index, &child_path);
+        if child_refusal.is_some() {
+            return child_refusal;
+        }
+    }
+    return None;
+}
+
+/// The unregistered-kind check over a raw parsed syntax value (TS
+/// `checkUnregisteredNodeKindsFromRaw`): anything that is not a mapping with a string `kind` is
+/// ignored, and only array `children` are descended.
+pub fn check_unregistered_node_kinds_from_raw(
+    value: &SceneDocumentYamlSubsetValue,
+    schemas: &FlightDocumentSchemaRegistry,
+    scene_index: i64,
+    node_path: &str,
+) -> Option<FlightDocumentRefusalExplanation> {
+    let SceneDocumentYamlSubsetValue::Mapping(mapping) = value else {
+        return None;
+    };
+    let Some(SceneDocumentYamlSubsetValue::String(kind)) = get_record_value(mapping, "kind") else {
+        return None;
+    };
+    if !schemas.node_schemas.entries.contains_key(kind) {
+        let mut refusal = create_scene_refusal(
+            FlightDocumentRefusalReason::NodeKindUnregistered,
+            scene_index,
+            node_path,
+        );
+        refusal.kind = Some(kind.clone());
+        return Some(refusal);
+    }
+    if let Some(SceneDocumentYamlSubsetValue::Sequence(children)) =
+        get_record_value(mapping, "children")
+    {
+        for (index, child) in children.iter().enumerate() {
+            let child_path = format!("{node_path}.children[{index}]");
+            let child_refusal =
+                check_unregistered_node_kinds_from_raw(child, schemas, scene_index, &child_path);
+            if child_refusal.is_some() {
+                return child_refusal;
+            }
+        }
+    }
+    return None;
 }
 
 // The authored properties of one phase, in the source's property order.

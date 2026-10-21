@@ -342,7 +342,7 @@ mod format_flight_document_text {
             descriptor: Arc::new(RwLock::new(create_ambient_light(Some(
                 &AmbientLightOptions {
                     intensity: Some(0.4),
-                    ..Default::default()
+                    ..defaults()
                 },
             )))),
             name: None,
@@ -421,7 +421,7 @@ mod format_flight_document_text {
         scene_node.interactive_states = Some(FlightDocumentInteractiveStates {
             disabled: Some(FlightDocumentInteractiveState {
                 alpha: Some(0.4),
-                ..Default::default()
+                ..defaults()
             }),
             hover: Some(FlightDocumentInteractiveState {
                 alpha: Some(0.8),
@@ -432,12 +432,12 @@ mod format_flight_document_text {
                     ]),
                     kind: "acme.Outline".to_string(),
                 }],
-                ..Default::default()
+                ..defaults()
             }),
             pressed: Some(FlightDocumentInteractiveState {
                 scale_x: Some(0.95),
                 scale_y: Some(0.95),
-                ..Default::default()
+                ..defaults()
             }),
         });
         scene_node.transition = Some(FlightDocumentInteractiveStateTransitionDescriptor {

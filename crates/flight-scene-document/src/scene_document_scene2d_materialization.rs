@@ -2,7 +2,8 @@
 //! as a document scene entry, materializes a selected 2D entry into a live Scene2D with inert
 //! interactive-state and layout bindings, and explains every refusal.
 
-// flight-lint: allow-file(contract-vocabulary) D16 native NodeRef / Node2DRef handles; D15 object-identity maps keyed by entity uid and borrowed document node address
+// flight-lint: allow-file(f64) D1: raw document background colors and fields are JS Numbers
+// flight-lint: allow-file(contract-vocabulary) D16 native NodeRef / Node2DRef handles; i64 scene indices project JS safe integers; D15 object-identity maps keyed by entity uid and borrowed document node address
 
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -26,9 +27,7 @@ use crate::scene_document_layout_bindings::{
     check_flight_document_layout_targets, create_flight_document_layout_bindings,
     write_flight_document_layout_bindings,
 };
-use crate::scene_document_materialization_selection::{
-    FlightDocumentSceneSelection, select_flight_document_scene,
-};
+use crate::scene_document_materialization_selection::select_flight_document_scene;
 use crate::scene_document_refusal::{
     check_flight_document_interactive_states, check_flight_document_node_fields,
     check_unregistered_node_kinds, create_scene_refusal,
@@ -78,10 +77,10 @@ pub fn create_flight_document_scene2d_materialization(
     resolvers: Option<&FlightDocumentResourceResolverRegistry>,
     scene_index: Option<i64>,
 ) -> Option<FlightDocumentScene2DMaterialization> {
-    let FlightDocumentSceneSelection::Scene(
-        FlightDocumentScene::Scene2D(document_scene),
-        scene_index,
-    ) = select_flight_document_scene(document, FlightDocumentSceneDimension::Scene2D, scene_index)
+    let selection =
+        select_flight_document_scene(document, FlightDocumentSceneDimension::Scene2D, scene_index);
+    let (Some(FlightDocumentScene::Scene2D(document_scene)), Some(scene_index)) =
+        (selection.scene, selection.scene_index)
     else {
         return None;
     };
@@ -285,10 +284,12 @@ pub fn explain_flight_document_refusal(
     schemas: &FlightDocumentSchemaRegistry,
     scene_index: Option<i64>,
 ) -> Option<FlightDocumentRefusalExplanation> {
-    let (scene, scene_index) = match select_flight_document_scene(document, dimension, scene_index)
-    {
-        FlightDocumentSceneSelection::Refusal(refusal) => return Some(refusal),
-        FlightDocumentSceneSelection::Scene(scene, scene_index) => (scene, scene_index),
+    let selection = select_flight_document_scene(document, dimension, scene_index);
+    if selection.refusal.is_some() {
+        return selection.refusal;
+    }
+    let (Some(scene), Some(scene_index)) = (selection.scene, selection.scene_index) else {
+        return None;
     };
     let (root, layouts) = match scene {
         FlightDocumentScene::Scene2D(scene) => (&scene.scene, &scene.layouts),

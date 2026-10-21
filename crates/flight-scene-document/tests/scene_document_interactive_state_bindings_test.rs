@@ -13,7 +13,7 @@ fn create_binding(node: &flight_node::NodeRef) -> FlightDocumentInteractiveState
             disabled: None,
             hover: Some(FlightDocumentInteractiveState {
                 alpha: Some(0.8),
-                ..Default::default()
+                ..defaults()
             }),
             pressed: None,
         },
@@ -106,7 +106,7 @@ mod is_interactive_state_binding_target_supported {
                     fields: fields(vec![]),
                     kind: "acme.Outline".to_string(),
                 }],
-                ..Default::default()
+                ..defaults()
             }),
             pressed: None,
         });

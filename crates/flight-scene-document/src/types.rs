@@ -38,6 +38,7 @@ pub enum FlightDocumentScalar {
 /// string-keyed fields mapping.
 #[derive(Clone, Debug)]
 pub enum FlightDocumentValue {
+    // flight-lint: allow(enum-payload-named) FlightDocumentValue[] maps directly to Vec; a wrapper struct adds no semantic value
     Array(Vec<FlightDocumentValue>),
     Boolean(bool),
     Fields(FlightDocumentFields),

@@ -151,15 +151,15 @@ fn collect_authored_target_matches(
 
 fn collect_live_nodes(
     node: &NodeRef,
-    nodes: &mut HashSet<String>,
+    live_nodes: &mut HashSet<String>,
     name_counts: &mut HashMap<String, usize>,
 ) {
-    nodes.insert(get_node_identity(node));
+    live_nodes.insert(get_node_identity(node));
     if let Some(name) = node.read().unwrap().node_fields().name.clone() {
         *name_counts.entry(name).or_insert(0) += 1;
     }
     for child in get_node_children(node) {
-        collect_live_nodes(&child, nodes, name_counts);
+        collect_live_nodes(&child, live_nodes, name_counts);
     }
 }
 
