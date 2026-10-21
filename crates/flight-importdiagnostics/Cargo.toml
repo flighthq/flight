@@ -1,0 +1,14 @@
+[package]
+name = "flight-importdiagnostics"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Structured diagnostics collector and formatter for Flight importers"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[lints]
+workspace = true
