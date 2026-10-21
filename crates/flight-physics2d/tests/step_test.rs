@@ -532,7 +532,11 @@ mod bullet_continuous_collision_detection {
         world.contact_hooks.pre_solve = None;
         world.contact_hooks.post_solve = None;
         step(&mut world, 0.1);
-        assert_eq!(world.events.ended.len(), 0);
+        // D1 divergence, Principal-approved (8b33bdfb): TS f64 advance 0.045000000000000005
+        // overshoots to x = 4.500000000000001 (inside by about 1e-15, so the contact persists and TS
+        // expects 0 ended); f32 lands at exactly 4.5 (touching, and circleAabbOverlap rejects
+        // dist >= radius), so the contact ends here.
+        assert_eq!(world.events.ended.len(), 1);
     }
 
     #[test]
