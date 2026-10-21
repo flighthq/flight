@@ -55,7 +55,7 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
 - Renderer restructuring (backend state, slots) happens when render, scene2d and their backends are ported.
 
 ## Open decisions (they do not block Phases 1–2)
-- Name of the host-capability vocabulary crate, and whether to rename the `Backend*Explanation` types, since "backend" means render backends elsewhere.
+- Host-capability vocabulary crate: proposed `hostcapability`. The `Backend*Explanation` → `HostCapability*Explanation` rename is deferred.
 - Integer and enum rows in the vocabulary.
 - Errors (panic vs `Result`) and borrowed callbacks (`&dyn Fn`) vocabulary rows.
 - The array negotiation list and the drift inventory.
