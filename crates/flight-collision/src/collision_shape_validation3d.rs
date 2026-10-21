@@ -1,6 +1,6 @@
 use crate::types::*;
 
-pub fn get_collision_convex_validation_status3d(points: &[f64]) -> Option<CollisionTestStatus> {
+pub fn get_collision_convex_validation_status3d(points: &Vec<f64>) -> Option<CollisionTestStatus> {
     let count = points.len() / 3;
     if count < 4 {
         return Some(CollisionTestStatus::DegenerateShape);

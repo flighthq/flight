@@ -301,17 +301,7 @@ mod raycast_collision_heightfield3d {
             create_collision_heightfield3d(2, 2, vec![0.0, 0.0, 0.0, 0.0], 1.0, 1.0);
         let mut hit = create_collision_raycast_hit3d();
 
-        assert!(raycast_collision_heightfield3d(
-            &heightfield,
-            0.5,
-            2.0,
-            0.5,
-            0.0,
-            -4.0,
-            0.0,
-            1.0,
-            &mut hit
-        ));
+        assert!(raycast_collision_heightfield3d(&mut hit, &heightfield, 0.5, 2.0, 0.5, 0.0, -4.0, 0.0, None));
         assert!((hit.fraction - 0.5).abs() < 1e-6);
         assert_eq!(hit.normal_y, 1.0);
     }
@@ -331,17 +321,7 @@ mod raycast_collision_triangle_mesh3d {
         );
         let mut hit = create_collision_raycast_hit3d();
 
-        assert!(raycast_collision_triangle_mesh3d(
-            &mesh,
-            0.0,
-            2.0,
-            0.0,
-            0.0,
-            -1.0,
-            0.0,
-            f64::MAX,
-            &mut hit
-        ));
+        assert!(raycast_collision_triangle_mesh3d(&mut hit, &mesh, 0.0, 2.0, 0.0, 0.0, -1.0, 0.0, None));
         assert!((hit.fraction - 2.0).abs() < 1e-6);
         assert_eq!(hit.normal_y, 1.0);
     }
@@ -437,4 +417,3 @@ mod write_collision_triangle_mesh_bounds3d {
         assert!((bounds.max_y - 5.0).abs() < 1e-6);
     }
 }
-

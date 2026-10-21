@@ -714,9 +714,9 @@ mod sugar_tests {
         let receiver = CollisionShape2D::Circle(circle2());
         let mut actual = CollisionRaycastHit2D::default();
         let mut expected = CollisionRaycastHit2D::default();
-        let method_result = receiver.raycast(-2.0, 0.0, 1.0, 0.0, 5.0, &mut actual);
+        let method_result = receiver.raycast(&mut actual, -2.0, 0.0, 1.0, 0.0, Some(5.0));
         let free_result =
-            raycast_collision_shape2d(&receiver, -2.0, 0.0, 1.0, 0.0, 5.0, &mut expected);
+            raycast_collision_shape2d(&mut expected, &receiver, -2.0, 0.0, 1.0, 0.0, Some(5.0));
         assert_eq!((method_result, actual), (free_result, expected));
     }
 
@@ -889,9 +889,9 @@ mod sugar_tests {
         let receiver = CollisionShape3D::Sphere(sphere3());
         let mut actual = CollisionRaycastHit3D::default();
         let mut expected = CollisionRaycastHit3D::default();
-        let method_result = receiver.raycast(-2.0, 0.0, 0.0, 1.0, 0.0, 0.0, 5.0, &mut actual);
+        let method_result = receiver.raycast(&mut actual, -2.0, 0.0, 0.0, 1.0, 0.0, 0.0, Some(5.0));
         let free_result =
-            raycast_collision_shape3d(&receiver, -2.0, 0.0, 0.0, 1.0, 0.0, 0.0, 5.0, &mut expected);
+            raycast_collision_shape3d(&mut expected, &receiver, -2.0, 0.0, 0.0, 1.0, 0.0, 0.0, Some(5.0));
         assert_eq!((method_result, actual), (free_result, expected));
     }
 
@@ -1033,18 +1033,8 @@ mod sugar_tests {
         let receiver = heightfield3();
         let mut actual = CollisionRaycastHit3D::default();
         let mut expected = CollisionRaycastHit3D::default();
-        let method_result = receiver.raycast(0.25, 1.0, 0.25, 0.0, -1.0, 0.0, 2.0, &mut actual);
-        let free_result = raycast_collision_heightfield3d(
-            &receiver,
-            0.25,
-            1.0,
-            0.25,
-            0.0,
-            -1.0,
-            0.0,
-            2.0,
-            &mut expected,
-        );
+        let method_result = receiver.raycast(&mut actual, 0.25, 1.0, 0.25, 0.0, -1.0, 0.0, Some(2.0));
+        let free_result = raycast_collision_heightfield3d(&mut expected, &receiver, 0.25, 1.0, 0.25, 0.0, -1.0, 0.0, Some(2.0));
         assert_eq!((method_result, actual), (free_result, expected));
     }
 
@@ -1091,18 +1081,8 @@ mod sugar_tests {
         let receiver = mesh3();
         let mut actual = CollisionRaycastHit3D::default();
         let mut expected = CollisionRaycastHit3D::default();
-        let method_result = receiver.raycast(0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 2.0, &mut actual);
-        let free_result = raycast_collision_triangle_mesh3d(
-            &receiver,
-            0.0,
-            1.0,
-            0.0,
-            0.0,
-            -1.0,
-            0.0,
-            2.0,
-            &mut expected,
-        );
+        let method_result = receiver.raycast(&mut actual, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, Some(2.0));
+        let free_result = raycast_collision_triangle_mesh3d(&mut expected, &receiver, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, Some(2.0));
         assert_eq!((method_result, actual), (free_result, expected));
     }
 
@@ -1411,26 +1391,16 @@ impl CollisionHeightfield3D {
     // flight-lint: allow(f64) D18 delegate preserves the existing heightfield ray domain and performs no arithmetic
     pub fn raycast(
         &self,
+        out: &mut CollisionRaycastHit3D,
         origin_x: f64,
         origin_y: f64,
         origin_z: f64,
         direction_x: f64,
         direction_y: f64,
         direction_z: f64,
-        max_fraction: f64,
-        out: &mut CollisionRaycastHit3D,
+        max_fraction: Option<f64>,
     ) -> bool {
-        return raycast_collision_heightfield3d(
-            self,
-            origin_x,
-            origin_y,
-            origin_z,
-            direction_x,
-            direction_y,
-            direction_z,
-            max_fraction,
-            out,
-        );
+        return raycast_collision_heightfield3d(out, self, origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction);
     }
 
     pub fn validation_status(&self) -> Option<CollisionTestStatus> {
@@ -1581,22 +1551,14 @@ impl CollisionShape2D {
     // flight-lint: allow(f64) D18 delegate preserves the existing 2D ray domain and performs no arithmetic
     pub fn raycast(
         &self,
+        out: &mut CollisionRaycastHit2D,
         origin_x: f64,
         origin_y: f64,
         direction_x: f64,
         direction_y: f64,
-        max_fraction: f64,
-        out: &mut CollisionRaycastHit2D,
+        max_fraction: Option<f64>,
     ) -> bool {
-        return raycast_collision_shape2d(
-            self,
-            origin_x,
-            origin_y,
-            direction_x,
-            direction_y,
-            max_fraction,
-            out,
-        );
+        return raycast_collision_shape2d(out, self, origin_x, origin_y, direction_x, direction_y, max_fraction);
     }
 
     // flight-lint: allow(f64) D18 delegate preserves the existing 2D sweep domain and performs no arithmetic
@@ -1731,26 +1693,16 @@ impl CollisionShape3D {
     // flight-lint: allow(f64) D18 delegate preserves the existing 3D ray domain and performs no arithmetic
     pub fn raycast(
         &self,
+        out: &mut CollisionRaycastHit3D,
         origin_x: f64,
         origin_y: f64,
         origin_z: f64,
         direction_x: f64,
         direction_y: f64,
         direction_z: f64,
-        max_fraction: f64,
-        out: &mut CollisionRaycastHit3D,
+        max_fraction: Option<f64>,
     ) -> bool {
-        return raycast_collision_shape3d(
-            self,
-            origin_x,
-            origin_y,
-            origin_z,
-            direction_x,
-            direction_y,
-            direction_z,
-            max_fraction,
-            out,
-        );
+        return raycast_collision_shape3d(out, self, origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction);
     }
 
     // flight-lint: allow(f64) D18 delegate preserves the existing 3D sweep domain and performs no arithmetic
@@ -1898,26 +1850,16 @@ impl CollisionTriangleMesh3D {
     // flight-lint: allow(f64) D18 delegate preserves the existing triangle-mesh ray domain and performs no arithmetic
     pub fn raycast(
         &self,
+        out: &mut CollisionRaycastHit3D,
         origin_x: f64,
         origin_y: f64,
         origin_z: f64,
         direction_x: f64,
         direction_y: f64,
         direction_z: f64,
-        max_fraction: f64,
-        out: &mut CollisionRaycastHit3D,
+        max_fraction: Option<f64>,
     ) -> bool {
-        return raycast_collision_triangle_mesh3d(
-            self,
-            origin_x,
-            origin_y,
-            origin_z,
-            direction_x,
-            direction_y,
-            direction_z,
-            max_fraction,
-            out,
-        );
+        return raycast_collision_triangle_mesh3d(out, self, origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction);
     }
 
     pub fn validation_status(&self) -> Option<CollisionTestStatus> {

@@ -292,21 +292,23 @@ fn ray_triangle_intersection(
     return Some((t, nx, ny, nz));
 }
 
+// flight-lint: allow(conform-params) D9 requires caller-owned outputs first; max_fraction remains optional after source inputs
 pub fn raycast_collision_heightfield3d(
-    hf: &CollisionHeightfield3D,
+    out: &mut CollisionRaycastHit3D,
+    heightfield: &CollisionHeightfield3D,
     origin_x: f64, origin_y: f64, origin_z: f64,
     direction_x: f64, direction_y: f64, direction_z: f64,
-    max_fraction: f64,
-    out: &mut CollisionRaycastHit3D,
+    max_fraction: Option<f64>,
 ) -> bool {
-    if hf.columns < 2 || hf.rows < 2 { return false; }
+    let max_fraction = max_fraction.unwrap_or(f64::INFINITY);
+    if heightfield.columns < 2 || heightfield.rows < 2 { return false; }
 
     let mut best_t = max_fraction + 1.0;
     let mut hit = false;
 
-    for row in 0..(hf.rows - 1) {
-        for col in 0..(hf.columns - 1) {
-            let triangles = heightfield_cell_triangles(hf, col, row);
+    for row in 0..(heightfield.rows - 1) {
+        for col in 0..(heightfield.columns - 1) {
+            let triangles = heightfield_cell_triangles(heightfield, col, row);
             for tri in &triangles {
                 let v0x = tri[0]; let v0y = tri[1]; let v0z = tri[2];
                 let v1x = tri[3]; let v1y = tri[4]; let v1z = tri[5];
@@ -334,13 +336,15 @@ pub fn raycast_collision_heightfield3d(
     return hit;
 }
 
+// flight-lint: allow(conform-params) D9 requires caller-owned outputs first; max_fraction remains optional after source inputs
 pub fn raycast_collision_triangle_mesh3d(
+    out: &mut CollisionRaycastHit3D,
     mesh: &CollisionTriangleMesh3D,
     origin_x: f64, origin_y: f64, origin_z: f64,
     direction_x: f64, direction_y: f64, direction_z: f64,
-    max_fraction: f64,
-    out: &mut CollisionRaycastHit3D,
+    max_fraction: Option<f64>,
 ) -> bool {
+    let max_fraction = max_fraction.unwrap_or(f64::INFINITY);
     let tri_count = mesh.indices.len() / 3;
     let mut best_t = max_fraction + 1.0;
     let mut hit = false;

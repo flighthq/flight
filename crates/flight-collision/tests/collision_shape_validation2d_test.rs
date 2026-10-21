@@ -7,15 +7,15 @@ mod get_collision_polygon_validation_status2d {
     #[test]
     fn distinguishes_valid_degenerate_and_non_convex_polygons() {
         // Valid convex square
-        assert!(get_collision_polygon_validation_status2d(&[0.0, 0.0, 2.0, 0.0, 2.0, 2.0, 0.0, 2.0]).is_none());
+        assert!(get_collision_polygon_validation_status2d(&vec![0.0, 0.0, 2.0, 0.0, 2.0, 2.0, 0.0, 2.0]).is_none());
         // Too few vertices (only 2 points)
         assert_eq!(
-            get_collision_polygon_validation_status2d(&[0.0, 0.0, 1.0, 1.0]),
+            get_collision_polygon_validation_status2d(&vec![0.0, 0.0, 1.0, 1.0]),
             Some(CollisionTestStatus::DegenerateShape)
         );
         // Non-convex polygon (concave notch)
         assert_eq!(
-            get_collision_polygon_validation_status2d(&[0.0, 0.0, 2.0, 0.0, 1.0, 1.0, 2.0, 2.0, 0.0, 2.0]),
+            get_collision_polygon_validation_status2d(&vec![0.0, 0.0, 2.0, 0.0, 1.0, 1.0, 2.0, 2.0, 0.0, 2.0]),
             Some(CollisionTestStatus::NonConvexPolygon)
         );
     }

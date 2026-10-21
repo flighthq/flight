@@ -197,7 +197,9 @@ fn raycast_capsule3d(
     return hit;
 }
 
+// flight-lint: allow(conform-params) D9 requires caller-owned outputs first; max_fraction remains optional after source inputs
 pub fn raycast_collision_shape3d(
+    out: &mut CollisionRaycastHit3D,
     shape: &CollisionShape3D,
     origin_x: f64,
     origin_y: f64,
@@ -205,9 +207,9 @@ pub fn raycast_collision_shape3d(
     direction_x: f64,
     direction_y: f64,
     direction_z: f64,
-    max_fraction: f64,
-    out: &mut CollisionRaycastHit3D,
+    max_fraction: Option<f64>,
 ) -> bool {
+    let max_fraction = max_fraction.unwrap_or(f64::INFINITY);
     match shape {
         CollisionShape3D::Sphere(s) => {
             raycast_sphere3d(s, origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction, out)

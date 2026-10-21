@@ -1,6 +1,6 @@
 use crate::types::*;
 
-pub fn get_collision_polygon_validation_status2d(points: &[f64]) -> Option<CollisionTestStatus> {
+pub fn get_collision_polygon_validation_status2d(points: &Vec<f64>) -> Option<CollisionTestStatus> {
     let count = points.len() / 2;
     if count < 3 {
         return Some(CollisionTestStatus::DegenerateShape);

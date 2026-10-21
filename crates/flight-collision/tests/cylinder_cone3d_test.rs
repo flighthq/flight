@@ -200,9 +200,7 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
     fn hits_a_cylinder_side_and_reports_a_radial_normal() {
         let cyl = cylinder_shape();
         let mut hit = create_collision_raycast_hit3d();
-        assert!(raycast_collision_shape3d(
-            &cyl, -5.0, 0.0, 0.0, 1.0, 0.0, 0.0, f64::INFINITY, &mut hit,
-        ));
+        assert!(raycast_collision_shape3d(&mut hit, &cyl, -5.0, 0.0, 0.0, 1.0, 0.0, 0.0, Some(f64::INFINITY)));
         assert!((hit.fraction - 4.0).abs() < 1e-10);
         assert_eq!(hit.normal_x, -1.0);
         assert_eq!(hit.normal_y, 0.0);
@@ -213,9 +211,7 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
     fn hits_a_cylinder_cap_and_reports_the_axial_normal() {
         let cyl = cylinder_shape();
         let mut hit = create_collision_raycast_hit3d();
-        assert!(raycast_collision_shape3d(
-            &cyl, 0.5, 6.0, 0.0, 0.0, -1.0, 0.0, f64::INFINITY, &mut hit,
-        ));
+        assert!(raycast_collision_shape3d(&mut hit, &cyl, 0.5, 6.0, 0.0, 0.0, -1.0, 0.0, Some(f64::INFINITY)));
         assert!((hit.fraction - 4.0).abs() < 1e-10);
         assert_eq!(hit.normal_x, 0.0);
         assert_eq!(hit.normal_y, 1.0);
@@ -226,9 +222,7 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
     fn misses_a_cylinder_past_the_cap_where_an_infinite_cylinder_would_report_a_hit() {
         let cyl = cylinder_shape();
         let mut hit = create_collision_raycast_hit3d();
-        assert!(!raycast_collision_shape3d(
-            &cyl, -5.0, 3.0, 0.0, 1.0, 0.0, 0.0, f64::INFINITY, &mut hit,
-        ));
+        assert!(!raycast_collision_shape3d(&mut hit, &cyl, -5.0, 3.0, 0.0, 1.0, 0.0, 0.0, Some(f64::INFINITY)));
     }
 
     #[test]
@@ -236,9 +230,7 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
     fn hits_a_cone_side_with_a_normal_that_leans_out_by_the_cone_slope() {
         let cone = cone_shape();
         let mut hit = create_collision_raycast_hit3d();
-        assert!(raycast_collision_shape3d(
-            &cone, -5.0, 1.5, 0.0, 1.0, 0.0, 0.0, f64::INFINITY, &mut hit,
-        ));
+        assert!(raycast_collision_shape3d(&mut hit, &cone, -5.0, 1.5, 0.0, 1.0, 0.0, 0.0, Some(f64::INFINITY)));
         assert!((hit.fraction - (5.0 - 0.75)).abs() < 1e-10);
         assert!(hit.normal_y > 0.0);
         let len = (hit.normal_x * hit.normal_x + hit.normal_y * hit.normal_y + hit.normal_z * hit.normal_z).sqrt();
@@ -251,9 +243,7 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
         let mut hit = create_collision_raycast_hit3d();
         // Cone raycast returns false in Rust (not yet implemented), which happens to
         // match the expected result here since the ray should miss.
-        assert!(!raycast_collision_shape3d(
-            &cone, -5.0, 5.0, 0.0, 1.0, 0.0, 0.0, f64::INFINITY, &mut hit,
-        ));
+        assert!(!raycast_collision_shape3d(&mut hit, &cone, -5.0, 5.0, 0.0, 1.0, 0.0, 0.0, Some(f64::INFINITY)));
     }
 
     #[test]
@@ -261,9 +251,7 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
     fn hits_the_cone_base_cap_from_below() {
         let cone = cone_shape();
         let mut hit = create_collision_raycast_hit3d();
-        assert!(raycast_collision_shape3d(
-            &cone, 0.5, -4.0, 0.0, 0.0, 1.0, 0.0, f64::INFINITY, &mut hit,
-        ));
+        assert!(raycast_collision_shape3d(&mut hit, &cone, 0.5, -4.0, 0.0, 0.0, 1.0, 0.0, Some(f64::INFINITY)));
         assert!((hit.fraction - 4.0).abs() < 1e-10);
         assert_eq!(hit.normal_x, 0.0);
         assert_eq!(hit.normal_y, -1.0);
@@ -299,9 +287,7 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
             dz /= length;
 
             let scanned = find_first_entry_by_scanning(&shape, ox, oy, oz, dx, dy, dz, limit);
-            let analytic = raycast_collision_shape3d(
-                &shape, ox, oy, oz, dx, dy, dz, limit, &mut hit,
-            );
+            let analytic = raycast_collision_shape3d(&mut hit, &shape, ox, oy, oz, dx, dy, dz, Some(limit));
 
             if scanned < 0.0 {
                 if analytic {
@@ -384,9 +370,7 @@ mod raycast_collision_shape3d_for_cylinder_and_cone {
             dz /= length;
 
             let scanned = find_first_entry_by_scanning(&shape, ox, oy, oz, dx, dy, dz, limit);
-            let analytic = raycast_collision_shape3d(
-                &shape, ox, oy, oz, dx, dy, dz, limit, &mut hit,
-            );
+            let analytic = raycast_collision_shape3d(&mut hit, &shape, ox, oy, oz, dx, dy, dz, Some(limit));
 
             if scanned < 0.0 {
                 if analytic {

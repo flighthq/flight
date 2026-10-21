@@ -183,9 +183,10 @@ fn push_horizon_edge(horizon: &mut Vec<[usize; 2]>, u: usize, v: usize) {
 /// Returns the number of triangles written, or 0 on failure.
 /// `points` is a flat array of [x,y,z,...] coordinates.
 /// `out` will be cleared and filled with triangle index triples.
+// flight-lint: allow(conform-params) D9 requires caller-owned outputs first
 pub fn write_collision_convex_hull_faces3d(
-    points: &[f64],
     out: &mut Vec<usize>,
+    points: &Vec<f64>,
 ) -> usize {
     out.clear();
     let count = points.len() / 3;

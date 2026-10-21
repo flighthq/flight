@@ -61,7 +61,7 @@ mod write_collision_convex_hull_faces3d {
     #[test]
     fn triangulates_a_cube_into_a_closed_surface_of_the_right_volume() {
         let mut faces = Vec::new();
-        let count = write_collision_convex_hull_faces3d(&CUBE, &mut faces);
+        let count = write_collision_convex_hull_faces3d(&mut faces, &CUBE.to_vec());
         // Six square faces, two triangles each.
         assert_eq!(count, 12);
         assert!((signed_volume(&CUBE, &faces, count) - 8.0).abs() < 1e-9);
@@ -71,7 +71,7 @@ mod write_collision_convex_hull_faces3d {
     #[test]
     fn triangulates_a_tetrahedron() {
         let mut faces = Vec::new();
-        let count = write_collision_convex_hull_faces3d(&TETRAHEDRON, &mut faces);
+        let count = write_collision_convex_hull_faces3d(&mut faces, &TETRAHEDRON.to_vec());
         assert_eq!(count, 4);
         assert!((signed_volume(&TETRAHEDRON, &faces, count) - 1.0 / 6.0).abs() < 1e-12);
         assert!(is_closed_surface(&faces, count));
@@ -80,7 +80,7 @@ mod write_collision_convex_hull_faces3d {
     #[test]
     fn winds_every_triangle_outward_not_merely_consistently() {
         let mut faces = Vec::new();
-        let count = write_collision_convex_hull_faces3d(&CUBE, &mut faces);
+        let count = write_collision_convex_hull_faces3d(&mut faces, &CUBE.to_vec());
         assert!(signed_volume(&CUBE, &faces, count) > 0.0);
     }
 
@@ -89,7 +89,7 @@ mod write_collision_convex_hull_faces3d {
         let mut with_interior: Vec<f64> = CUBE.to_vec();
         with_interior.extend_from_slice(&[0.0, 0.0, 0.0, 0.5, 0.25, -0.25]);
         let mut faces = Vec::new();
-        let count = write_collision_convex_hull_faces3d(&with_interior, &mut faces);
+        let count = write_collision_convex_hull_faces3d(&mut faces, &with_interior);
         assert_eq!(count, 12);
         assert!((signed_volume(&with_interior, &faces, count) - 8.0).abs() < 1e-9);
     }
@@ -105,11 +105,11 @@ mod write_collision_convex_hull_faces3d {
         }
 
         let mut forward_faces = Vec::new();
-        let forward_count = write_collision_convex_hull_faces3d(&CUBE, &mut forward_faces);
+        let forward_count = write_collision_convex_hull_faces3d(&mut forward_faces, &CUBE.to_vec());
         let forward_volume = signed_volume(&CUBE, &forward_faces, forward_count);
 
         let mut reversed_faces = Vec::new();
-        let reversed_count = write_collision_convex_hull_faces3d(&reversed, &mut reversed_faces);
+        let reversed_count = write_collision_convex_hull_faces3d(&mut reversed_faces, &reversed);
 
         assert_eq!(reversed_count, forward_count);
         assert!(
@@ -132,7 +132,7 @@ mod write_collision_convex_hull_faces3d {
         }
 
         let mut faces = Vec::new();
-        let count = write_collision_convex_hull_faces3d(&points, &mut faces);
+        let count = write_collision_convex_hull_faces3d(&mut faces, &points);
 
         assert!(count > 0);
         assert!(is_closed_surface(&faces, count));
@@ -146,10 +146,7 @@ mod write_collision_convex_hull_faces3d {
     fn returns_nothing_for_fewer_than_four_points() {
         let mut faces = Vec::new();
         assert_eq!(
-            write_collision_convex_hull_faces3d(
-                &[0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0],
-                &mut faces
-            ),
+            write_collision_convex_hull_faces3d(&mut faces, &vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0]),
             0
         );
         assert!(faces.is_empty());
@@ -160,18 +157,12 @@ mod write_collision_convex_hull_faces3d {
         let mut faces = Vec::new();
         // Coplanar: four corners of a square.
         assert_eq!(
-            write_collision_convex_hull_faces3d(
-                &[0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0],
-                &mut faces
-            ),
+            write_collision_convex_hull_faces3d(&mut faces, &vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0]),
             0
         );
         // Collinear.
         assert_eq!(
-            write_collision_convex_hull_faces3d(
-                &[0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0],
-                &mut faces
-            ),
+            write_collision_convex_hull_faces3d(&mut faces, &vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 0.0]),
             0
         );
     }
@@ -181,7 +172,7 @@ mod write_collision_convex_hull_faces3d {
         let mut with_duplicates: Vec<f64> = TETRAHEDRON.to_vec();
         with_duplicates.extend_from_slice(&[0.0, 0.0, 0.0, 1.0, 0.0, 0.0]);
         let mut faces = Vec::new();
-        let count = write_collision_convex_hull_faces3d(&with_duplicates, &mut faces);
+        let count = write_collision_convex_hull_faces3d(&mut faces, &with_duplicates);
         assert_eq!(count, 4);
         assert!(is_closed_surface(&faces, count));
     }

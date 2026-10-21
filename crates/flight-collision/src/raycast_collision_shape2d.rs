@@ -191,15 +191,17 @@ fn raycast_circle2d(
 }
 
 // flight-lint: allow(f64) measured 1e9 center: f32 aliases the ray origin two units away and changes hit to miss
+// flight-lint: allow(conform-params) D9 requires caller-owned outputs first; max_fraction remains optional after source inputs
 pub fn raycast_collision_shape2d(
+    out: &mut CollisionRaycastHit2D,
     shape: &CollisionShape2D,
     origin_x: f64,
     origin_y: f64,
     direction_x: f64,
     direction_y: f64,
-    max_fraction: f64,
-    out: &mut CollisionRaycastHit2D,
+    max_fraction: Option<f64>,
 ) -> bool {
+    let max_fraction = max_fraction.unwrap_or(f64::INFINITY);
     match shape {
         CollisionShape2D::Circle(c) => {
             raycast_circle2d(c, origin_x, origin_y, direction_x, direction_y, max_fraction, out)
