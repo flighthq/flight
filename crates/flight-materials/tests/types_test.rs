@@ -1,8 +1,8 @@
-use flight_entity::{allocate_entity, set_entity_uid, get_entity_uid, Entity, Ref};
-use flight_materials::*;
+use flight_entity::{allocate_entity, get_entity_uid, set_entity_uid, Entity, Ref};
 use flight_materials::material3d::create_material3d;
 use flight_materials::pbr_materials::report_material_conversion_drop;
 use flight_materials::standard_material::create_standard_material;
+use flight_materials::*;
 use std::sync::{Arc, Mutex, RwLock};
 
 mod create_material_conversion_context {
@@ -41,174 +41,6 @@ mod create_material_conversion_context {
     }
 }
 
-mod material2d_fields {
-    use super::*;
-
-    #[test]
-    fn is_allocatable_as_entity() {
-        let mat: Material2DFields = allocate_entity();
-        assert_eq!(mat.kind, "");
-        assert_eq!(mat.name, None);
-    }
-
-    #[test]
-    fn derefs_to_material_fields() {
-        let mut mat: Material2DFields = allocate_entity();
-        mat.kind = "StandardMaterial".to_string();
-        mat.name = Some("test".to_string());
-        assert_eq!(mat.kind, "StandardMaterial");
-        assert_eq!(mat.name, Some("test".to_string()));
-    }
-
-    #[test]
-    fn entity_uid_round_trips() {
-        let mut mat: Material2DFields = allocate_entity();
-        set_entity_uid(&mut mat, "m2d_1".to_string());
-        assert_eq!(get_entity_uid(&mut mat), "m2d_1");
-    }
-
-    #[test]
-    fn implements_material2d_trait() {
-        let mat: Material2DFields = allocate_entity();
-        fn accepts_material2d(_m: &dyn Material2D) {}
-        accepts_material2d(&mat);
-    }
-}
-
-mod standard_material {
-    use super::*;
-
-    #[test]
-    fn is_allocatable_as_entity() {
-        let mat: StandardMaterial = allocate_entity();
-        assert_eq!(mat.kind, STANDARD_MATERIAL_KIND);
-    }
-
-    #[test]
-    fn derefs_through_material2d_fields_to_material() {
-        let mut mat: StandardMaterial = allocate_entity();
-        mat.name = Some("MyStandard".to_string());
-        assert_eq!(mat.kind, STANDARD_MATERIAL_KIND);
-        assert_eq!(mat.name, Some("MyStandard".to_string()));
-    }
-
-    #[test]
-    fn entity_uid_round_trips() {
-        let mut mat: StandardMaterial = allocate_entity();
-        set_entity_uid(&mut mat, "sm_1".to_string());
-        assert_eq!(get_entity_uid(&mut mat), "sm_1");
-    }
-
-    #[test]
-    fn implements_material2d_trait() {
-        let mat: StandardMaterial = allocate_entity();
-        fn accepts_material2d(_m: &dyn Material2D) {}
-        accepts_material2d(&mat);
-    }
-
-    #[test]
-    fn constructor_preserves_kind_and_name() {
-        let opts = StandardMaterialOptions { name: Some("Named".to_string()) };
-        let mat = create_standard_material(Some(&opts));
-        assert_eq!(mat.kind, STANDARD_MATERIAL_KIND);
-        assert_eq!(mat.name, Some("Named".to_string()));
-    }
-
-    #[test]
-    fn standard_material_fills_material2d_slot() {
-        let mat = create_standard_material(None);
-        let r: Ref<StandardMaterial> = Arc::new(RwLock::new(mat));
-        let family_ref: Ref<dyn Material2D> = r.clone();
-        let concrete_kind = r.read().unwrap().kind.clone();
-        let family_kind = family_ref.read().unwrap().material2d_fields().kind.clone();
-        assert_eq!(concrete_kind, STANDARD_MATERIAL_KIND);
-        assert_eq!(family_kind, STANDARD_MATERIAL_KIND);
-    }
-
-    #[test]
-    fn family_ref_preserves_identity() {
-        let mat = create_standard_material(None);
-        let r: Ref<StandardMaterial> = Arc::new(RwLock::new(mat));
-        let family_ref: Ref<dyn Material2D> = r.clone();
-        set_entity_uid(&mut *r.write().unwrap(), "sm_identity".to_string());
-        let uid = get_entity_uid(&mut *r.write().unwrap());
-        assert_eq!(uid, "sm_identity");
-        r.write().unwrap().name = Some("mutated".to_string());
-        assert_eq!(family_ref.read().unwrap().material2d_fields().name, Some("mutated".to_string()));
-    }
-}
-
-mod material_alpha_mode {
-    use super::*;
-
-    #[test]
-    fn material3d_initializes_alpha_mode_to_opaque() {
-        let mat = create_material3d("TestMaterial".to_string(), None);
-        assert_eq!(mat.alpha_mode, MaterialAlphaMode::Opaque);
-    }
-}
-
-mod material_data_fields {
-    use super::*;
-
-    #[test]
-    fn is_allocatable_as_entity() {
-        let _fields: MaterialDataFields = allocate_entity();
-    }
-
-    #[test]
-    fn entity_uid_round_trips() {
-        let mut fields: MaterialDataFields = allocate_entity();
-        set_entity_uid(&mut fields, "md_1".to_string());
-        assert_eq!(get_entity_uid(&mut fields), "md_1");
-    }
-}
-
-mod tint_material_data {
-    use super::*;
-
-    #[test]
-    fn is_allocatable_as_entity() {
-        let data: TintMaterialData = allocate_entity();
-        assert_eq!(data.tint, 0);
-    }
-
-    #[test]
-    fn retains_tint_value() {
-        let mut data: TintMaterialData = allocate_entity();
-        data.tint = 0xff0000ff;
-        assert_eq!(data.tint, 0xff0000ff);
-    }
-
-    #[test]
-    fn entity_uid_round_trips() {
-        let mut data: TintMaterialData = allocate_entity();
-        set_entity_uid(&mut data, "tmd_1".to_string());
-        assert_eq!(get_entity_uid(&mut data), "tmd_1");
-    }
-
-    #[test]
-    fn family_ref_upcasts_to_dyn_material_data() {
-        let mut data: TintMaterialData = allocate_entity();
-        data.tint = 0xaabbccdd;
-        set_entity_uid(&mut data, "tmd_upcast".to_string());
-        let concrete: Ref<TintMaterialData> = Arc::new(RwLock::new(data));
-        let family_ref: Ref<dyn MaterialData> = concrete.clone();
-        assert_eq!(get_entity_uid(&mut *concrete.write().unwrap()), "tmd_upcast");
-        concrete.write().unwrap().tint = 0x11223344;
-        assert_eq!(concrete.read().unwrap().tint, 0x11223344);
-        fn accepts_family_ref(_r: &Ref<dyn MaterialData>) {}
-        accepts_family_ref(&family_ref);
-    }
-
-    #[test]
-    fn implements_material_data_trait() {
-        let data: TintMaterialData = allocate_entity();
-        fn accepts_material_data(_d: &dyn MaterialData) {}
-        accepts_material_data(&data);
-    }
-}
-
 mod custom_material_data {
     use super::*;
 
@@ -221,7 +53,7 @@ mod custom_material_data {
     impl Default for CustomMaterialData {
         fn default() -> Self {
             return Self {
-                fields: MaterialDataFields::default(),
+                fields: allocate_entity(),
                 custom_value: 0.0,
             };
         }
@@ -285,12 +117,182 @@ mod custom_material_data {
     fn heterogeneous_family_vec() {
         let mut tint: TintMaterialData = allocate_entity();
         tint.tint = 0xff;
-        let mut custom = CustomMaterialData::default();
+        let mut custom: CustomMaterialData = allocate_entity();
         custom.custom_value = 99.0;
-        let slots: Vec<Ref<dyn MaterialData>> = vec![
-            Arc::new(RwLock::new(tint)),
-            Arc::new(RwLock::new(custom)),
-        ];
+        let slots: Vec<Ref<dyn MaterialData>> =
+            vec![Arc::new(RwLock::new(tint)), Arc::new(RwLock::new(custom))];
         assert_eq!(slots.len(), 2);
+    }
+}
+
+mod material2d_fields {
+    use super::*;
+
+    #[test]
+    fn is_allocatable_as_entity() {
+        let mat: Material2DFields = allocate_entity();
+        assert_eq!(mat.kind, "");
+        assert_eq!(mat.name, None);
+    }
+
+    #[test]
+    fn derefs_to_material_fields() {
+        let mut mat: Material2DFields = allocate_entity();
+        mat.kind = "StandardMaterial".to_string();
+        mat.name = Some("test".to_string());
+        assert_eq!(mat.kind, "StandardMaterial");
+        assert_eq!(mat.name, Some("test".to_string()));
+    }
+
+    #[test]
+    fn entity_uid_round_trips() {
+        let mut mat: Material2DFields = allocate_entity();
+        set_entity_uid(&mut mat, "m2d_1".to_string());
+        assert_eq!(get_entity_uid(&mut mat), "m2d_1");
+    }
+
+    #[test]
+    fn implements_material2d_trait() {
+        let mat: Material2DFields = allocate_entity();
+        fn accepts_material2d(_m: &dyn Material2D) {}
+        accepts_material2d(&mat);
+    }
+}
+
+mod material_alpha_mode {
+    use super::*;
+
+    #[test]
+    fn material3d_initializes_alpha_mode_to_opaque() {
+        let mat = create_material3d("TestMaterial".to_string(), None);
+        assert_eq!(mat.alpha_mode, MaterialAlphaMode::Opaque);
+    }
+}
+
+mod material_data_fields {
+    use super::*;
+
+    #[test]
+    fn is_allocatable_as_entity() {
+        let _fields: MaterialDataFields = allocate_entity();
+    }
+
+    #[test]
+    fn entity_uid_round_trips() {
+        let mut fields: MaterialDataFields = allocate_entity();
+        set_entity_uid(&mut fields, "md_1".to_string());
+        assert_eq!(get_entity_uid(&mut fields), "md_1");
+    }
+}
+
+mod standard_material {
+    use super::*;
+
+    #[test]
+    fn is_allocatable_as_entity() {
+        let mat: StandardMaterial = allocate_entity();
+        assert_eq!(mat.kind, STANDARD_MATERIAL_KIND);
+    }
+
+    #[test]
+    fn derefs_through_material2d_fields_to_material() {
+        let mut mat: StandardMaterial = allocate_entity();
+        mat.name = Some("MyStandard".to_string());
+        assert_eq!(mat.kind, STANDARD_MATERIAL_KIND);
+        assert_eq!(mat.name, Some("MyStandard".to_string()));
+    }
+
+    #[test]
+    fn entity_uid_round_trips() {
+        let mut mat: StandardMaterial = allocate_entity();
+        set_entity_uid(&mut mat, "sm_1".to_string());
+        assert_eq!(get_entity_uid(&mut mat), "sm_1");
+    }
+
+    #[test]
+    fn implements_material2d_trait() {
+        let mat: StandardMaterial = allocate_entity();
+        fn accepts_material2d(_m: &dyn Material2D) {}
+        accepts_material2d(&mat);
+    }
+
+    #[test]
+    fn constructor_preserves_kind_and_name() {
+        let opts = StandardMaterialOptions {
+            name: Some("Named".to_string()),
+        };
+        let mat = create_standard_material(Some(&opts));
+        assert_eq!(mat.kind, STANDARD_MATERIAL_KIND);
+        assert_eq!(mat.name, Some("Named".to_string()));
+    }
+
+    #[test]
+    fn standard_material_fills_material2d_slot() {
+        let mat = create_standard_material(None);
+        let concrete: Ref<StandardMaterial> = Arc::new(RwLock::new(mat));
+        let _family_ref: Ref<dyn Material2D> = concrete.clone();
+        assert_eq!(concrete.read().unwrap().kind, STANDARD_MATERIAL_KIND);
+    }
+
+    #[test]
+    fn family_ref_preserves_identity() {
+        let mat = create_standard_material(None);
+        let concrete: Ref<StandardMaterial> = Arc::new(RwLock::new(mat));
+        let _family_ref: Ref<dyn Material2D> = concrete.clone();
+        set_entity_uid(&mut *concrete.write().unwrap(), "sm_identity".to_string());
+        assert_eq!(
+            get_entity_uid(&mut *concrete.write().unwrap()),
+            "sm_identity"
+        );
+        concrete.write().unwrap().name = Some("mutated".to_string());
+        assert_eq!(concrete.read().unwrap().name, Some("mutated".to_string()));
+    }
+}
+
+mod tint_material_data {
+    use super::*;
+
+    #[test]
+    fn is_allocatable_as_entity() {
+        let data: TintMaterialData = allocate_entity();
+        assert_eq!(data.tint, 0);
+    }
+
+    #[test]
+    fn retains_tint_value() {
+        let mut data: TintMaterialData = allocate_entity();
+        data.tint = 0xff0000ff;
+        assert_eq!(data.tint, 0xff0000ff);
+    }
+
+    #[test]
+    fn entity_uid_round_trips() {
+        let mut data: TintMaterialData = allocate_entity();
+        set_entity_uid(&mut data, "tmd_1".to_string());
+        assert_eq!(get_entity_uid(&mut data), "tmd_1");
+    }
+
+    #[test]
+    fn family_ref_upcasts_to_dyn_material_data() {
+        let mut data: TintMaterialData = allocate_entity();
+        data.tint = 0xaabbccdd;
+        set_entity_uid(&mut data, "tmd_upcast".to_string());
+        let concrete: Ref<TintMaterialData> = Arc::new(RwLock::new(data));
+        let family_ref: Ref<dyn MaterialData> = concrete.clone();
+        assert_eq!(
+            get_entity_uid(&mut *concrete.write().unwrap()),
+            "tmd_upcast"
+        );
+        concrete.write().unwrap().tint = 0x11223344;
+        assert_eq!(concrete.read().unwrap().tint, 0x11223344);
+        fn accepts_family_ref(_r: &Ref<dyn MaterialData>) {}
+        accepts_family_ref(&family_ref);
+    }
+
+    #[test]
+    fn implements_material_data_trait() {
+        let data: TintMaterialData = allocate_entity();
+        fn accepts_material_data(_d: &dyn MaterialData) {}
+        accepts_material_data(&data);
     }
 }
