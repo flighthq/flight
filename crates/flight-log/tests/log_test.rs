@@ -928,9 +928,7 @@ mod create_text_log_formatter_tests {
             data: LogData::Message("inside".to_string()),
             timestamp_ms: 0.0,
         };
-        let result = fmt(&entry);
-        assert!(result.contains("  "));
-        assert!(result.ends_with("inside"));
+        assert_eq!(fmt(&entry), "[flight]    inside");
         clear_log_groups(&state);
     }
 
@@ -1883,9 +1881,7 @@ mod remove_log_sink {
         let removed = remove_log_sink(&state, &sink);
         assert!(removed);
         log(&state, 0.0, LogLevel::Info, "x".into(), None);
-        // Should not have received anything because we also need at least one sink for the gate
-        // to pass; but verify the removal worked by re-adding a fresh sink and checking original
-        // sink was removed.
+        assert_eq!(entries.lock().unwrap().len(), 0);
     }
 
     #[test]
@@ -2185,7 +2181,7 @@ mod severity_wrapper_providers_and_gates {
     fn does_not_evaluate_any_provider_when_its_level_is_suppressed() {
         let state = test_state();
         reset_log_state(&state);
-        let (_entries, _sink) = recording_sink(&state);
+        let (entries, _sink) = recording_sink(&state);
         let ctx = create_log_context(Some("channel".to_string()), None);
         set_log_level(&state, LogLevel::None);
 
@@ -2207,6 +2203,7 @@ mod severity_wrapper_providers_and_gates {
         for (i, flag) in flags.iter().enumerate() {
             assert!(!*flag.lock().unwrap(), "provider {} was called when level was suppressed", i);
         }
+        assert_eq!(entries.lock().unwrap().len(), 0);
     }
 
     #[test]
