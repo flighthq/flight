@@ -18,8 +18,9 @@ fn curvature_at_vertex(contour: &[f64], count: usize, vertex: usize) -> f64 {
 /// Returns the signed curvature of the path at `distance` arc-length units from the start.
 /// Positive curvature is a left turn in screen space (y-down). Returns 0 for empty paths,
 /// straight segments, or degenerate geometry.
-pub fn get_path_curvature_at_distance(path: &Path, distance: f64, tolerance: f64) -> f64 {
-    let contours = flatten_path(path, tolerance);
+pub fn get_path_curvature_at_distance(path: &Path, distance: f64, tolerance: Option<f64>) -> f64 {
+    let tolerance = tolerance.unwrap_or(0.25);
+    let contours = flatten_path(path, Some(tolerance));
     return sample_path_curvature(&contours, distance);
 }
 

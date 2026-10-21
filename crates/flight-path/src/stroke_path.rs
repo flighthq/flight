@@ -69,7 +69,8 @@ fn append_points_reverse(path: &mut Path, points: &[f64]) {
 
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Converts a centerline Path into its fill outline.
-pub fn stroke_path(path: &Path, style: &StrokeStyle, tolerance: f64) -> Path {
+pub fn stroke_path(path: &Path, style: &StrokeStyle, tolerance: Option<f64>) -> Path {
+    let tolerance = tolerance.unwrap_or(0.25);
     let mut result = create_path(Some(PathWinding::NonZero));
     let geometry = build_stroke_path_geometry(path, style, tolerance);
     for i in 0..geometry.pieces.len() {

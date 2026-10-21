@@ -1,4 +1,4 @@
-use flight_entity::{EntityRuntimeSlot, allocate_entity};
+use flight_entity::{EntityRuntimeSlot, Float32Array, Uint32Array, allocate_entity};
 use flight_geometry::Matrix;
 
 // flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
@@ -41,6 +41,14 @@ pub struct Path {
 }
 
 // flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
+/// A triangulated fill in typed arrays for zero-copy GPU upload (TS `PathMeshTyped`): x,y vertex pairs
+/// as `Float32Array` and triangle indices as `Uint32Array`. Plain data.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct PathMeshTyped {
+    pub vertices: Box<Float32Array>,
+    pub indices: Box<Uint32Array>,
+}
+
 /// A triangulated mesh: flat (x,y) vertex pairs and triangle index triples.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct PathMesh {
@@ -230,9 +238,10 @@ pub fn append_path_arc(
     radius: f64,
     start_angle: f64,
     end_angle: f64,
-    anticlockwise: bool,
-    connect_to_current: bool,
-) {
+    anticlockwise: Option<bool>,
+    connect_to_current: Option<bool>) {
+    let anticlockwise = anticlockwise.unwrap_or(false);
+    let connect_to_current = connect_to_current.unwrap_or(false);
     if radius <= 0.0 {
         return;
     }

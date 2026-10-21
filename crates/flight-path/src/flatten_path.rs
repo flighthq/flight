@@ -63,7 +63,8 @@ fn flatten_cubic(
 /// [x0, y0, x1, y1, ...] polyline. Quadratic and cubic segments are adaptively subdivided
 /// until their deviation from a chord is within `tolerance` (path units).
 /// A CLOSE verb appends the contour's start point, making the closure explicit.
-pub fn flatten_path(path: &Path, tolerance: f64) -> Vec<Vec<f64>> {
+pub fn flatten_path(path: &Path, tolerance: Option<f64>) -> Vec<Vec<f64>> {
+    let tolerance = tolerance.unwrap_or(0.25);
     let commands = &path.commands;
     let data = &path.data;
     let tolerance_sq = tolerance * tolerance;

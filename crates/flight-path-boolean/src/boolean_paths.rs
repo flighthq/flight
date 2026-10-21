@@ -41,8 +41,8 @@ pub fn boolean_paths(
     let tolerance = options
         .and_then(|o| o.tolerance)
         .unwrap_or(DEFAULT_FLATTEN_TOLERANCE);
-    let subject_contours = flatten_path(subject, tolerance);
-    let clip_contours = flatten_path(clip, tolerance);
+    let subject_contours = flatten_path(subject, Some(tolerance));
+    let clip_contours = flatten_path(clip, Some(tolerance));
     let result = compute_path_boolean(kernel, &subject_contours, &clip_contours, operation, fill_rule);
     write_path_boolean_contours(out, &result);
 }

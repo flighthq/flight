@@ -11,7 +11,7 @@ mod clean_path {
         append_path_line_to(&mut source, 10.0, 0.0);
         append_path_line_to(&mut source, 10.0, 10.0);
         let mut out = create_path(Some(PathWinding::NonZero));
-        clean_path(&source, 0.001, &mut out, 0.25);
+        clean_path(&source, 0.001, &mut out, Some(0.25));
         assert_eq!(out.commands.len(), 3);
         assert_eq!(out.data, vec![0.0, 0.0, 10.0, 0.0, 10.0, 10.0]);
     }
@@ -25,7 +25,7 @@ mod clean_path {
         append_path_line_to(&mut source, 75.0, 0.05);
         append_path_line_to(&mut source, 100.0, 0.0);
         let mut out = create_path(Some(PathWinding::NonZero));
-        clean_path(&source, 1.0, &mut out, 0.25);
+        clean_path(&source, 1.0, &mut out, Some(0.25));
         assert_eq!(out.commands.len(), 2);
         assert_eq!(out.data, vec![0.0, 0.0, 100.0, 0.0]);
     }
@@ -37,7 +37,7 @@ mod clean_path {
         append_path_line_to(&mut source, 10.0, 1.5);
         append_path_line_to(&mut source, 20.0, 0.0);
         let mut out = create_path(Some(PathWinding::NonZero));
-        clean_path(&source, 1.0, &mut out, 0.25);
+        clean_path(&source, 1.0, &mut out, Some(0.25));
         assert_eq!(out.commands.len(), 3);
         assert_eq!(out.data, vec![0.0, 0.0, 10.0, 1.5, 20.0, 0.0]);
     }
@@ -49,7 +49,7 @@ mod clean_path {
         append_path_line_to(&mut source, 10.0, 0.5);
         append_path_line_to(&mut source, 20.0, 0.0);
         let mut out = create_path(Some(PathWinding::NonZero));
-        clean_path(&source, 1.0, &mut out, 0.25);
+        clean_path(&source, 1.0, &mut out, Some(0.25));
         assert_eq!(out.commands.len(), 2);
         assert_eq!(out.data, vec![0.0, 0.0, 20.0, 0.0]);
     }
@@ -63,7 +63,7 @@ mod clean_path {
         append_path_line_to(&mut source, 0.0, 10.0);
         append_path_close(&mut source);
         let mut out = create_path(Some(PathWinding::NonZero));
-        clean_path(&source, 0.001, &mut out, 0.25);
+        clean_path(&source, 0.001, &mut out, Some(0.25));
         assert!(out.commands.contains(&(PathCommand::Close as u8)));
         assert_eq!(out.data, vec![0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0]);
     }
@@ -80,7 +80,7 @@ mod clean_path {
         append_path_line_to(&mut source, 0.0, 10.0);
         append_path_close(&mut source);
         let mut out = create_path(Some(PathWinding::NonZero));
-        clean_path(&source, 0.001, &mut out, 0.25);
+        clean_path(&source, 0.001, &mut out, Some(0.25));
         assert_eq!(out.data, vec![0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 6.0, 10.0, 5.0, 20.0, 4.0, 10.0, 0.0, 10.0]);
     }
 
@@ -92,7 +92,7 @@ mod clean_path {
         append_path_line_to(&mut source, 50.0, 100.0);
         append_path_close(&mut source);
         let mut out = create_path(Some(PathWinding::NonZero));
-        clean_path(&source, 0.5, &mut out, 0.25);
+        clean_path(&source, 0.5, &mut out, Some(0.25));
         assert!(out.commands.contains(&(PathCommand::Close as u8)));
     }
 
@@ -107,8 +107,8 @@ mod clean_path {
         append_path_line_to(&mut path, 0.0, 10.0);
         append_path_close(&mut path);
         let mut expected = create_path(Some(PathWinding::NonZero));
-        clean_path(&path, 0.001, &mut expected, 0.25);
-        clean_path(&path.clone(), 0.001, &mut path, 0.25);
+        clean_path(&path, 0.001, &mut expected, Some(0.25));
+        clean_path(&path.clone(), 0.001, &mut path, Some(0.25));
         assert_eq!(path.commands, expected.commands);
         assert_eq!(path.data, expected.data);
     }
@@ -125,7 +125,7 @@ mod clean_path {
         append_path_line_to(&mut source, 0.0, 10.0);
         append_path_close(&mut source);
         let mut out = create_path(Some(PathWinding::NonZero));
-        clean_path(&source, 0.001, &mut out, 0.25);
+        clean_path(&source, 0.001, &mut out, Some(0.25));
         assert!(out.commands.contains(&(PathCommand::Close as u8)));
         assert!(out.data.len() <= 8);
     }

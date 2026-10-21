@@ -116,10 +116,11 @@ fn tessellate_contour(source: &[f64], vertices: &mut Vec<f64>, indices: &mut Vec
 
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Triangulates a path's fill into a PathMesh by flattening its curves, then ear-clipping each contour.
-pub fn tessellate_path(path: &Path, tolerance: f64) -> PathMesh {
+pub fn tessellate_path(path: &Path, tolerance: Option<f64>) -> PathMesh {
+    let tolerance = tolerance.unwrap_or(0.25);
     let mut vertices: Vec<f64> = Vec::new();
     let mut indices: Vec<u32> = Vec::new();
-    let contours = flatten_path(path, tolerance);
+    let contours = flatten_path(path, Some(tolerance));
     for i in 0..contours.len() {
         tessellate_contour(&contours[i], &mut vertices, &mut indices);
     }
@@ -128,10 +129,11 @@ pub fn tessellate_path(path: &Path, tolerance: f64) -> PathMesh {
 
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Tessellates into an existing `PathMesh`, clearing and reusing its backing arrays.
-pub fn tessellate_path_into(path: &Path, out: &mut PathMesh, tolerance: f64) {
+pub fn tessellate_path_into(path: &Path, out: &mut PathMesh, tolerance: Option<f64>) {
+    let tolerance = tolerance.unwrap_or(0.25);
     out.vertices.clear();
     out.indices.clear();
-    let contours = flatten_path(path, tolerance);
+    let contours = flatten_path(path, Some(tolerance));
     for i in 0..contours.len() {
         tessellate_contour(&contours[i], &mut out.vertices, &mut out.indices);
     }

@@ -7,8 +7,8 @@ use crate::stroke_path_geometry::build_stroke_path_geometry;
 pub fn explain_stroke_path_tessellation(
     path: &Path,
     style: &StrokeStyle,
-    tolerance: f64,
-) -> StrokePathTessellationExplanation {
+    tolerance: Option<f64>) -> StrokePathTessellationExplanation {
+    let tolerance = tolerance.unwrap_or(0.25);
     let geometry = build_stroke_path_geometry(path, style, tolerance);
     return StrokePathTessellationExplanation {
         supported: geometry.issue == StrokePathTessellationReason::Ok,

@@ -77,8 +77,8 @@ fn append_triangle(mesh: &mut PathMesh, a: u32, b: u32, c: u32) {
 pub fn tessellate_stroke_path(
     path: &Path,
     style: &StrokeStyle,
-    tolerance: f64,
-) -> Option<PathMesh> {
+    tolerance: Option<f64>) -> Option<PathMesh> {
+    let tolerance = tolerance.unwrap_or(0.25);
     let geometry = build_stroke_path_geometry(path, style, tolerance);
     if geometry.issue != StrokePathTessellationReason::Ok {
         return None;

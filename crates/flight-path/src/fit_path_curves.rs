@@ -153,8 +153,9 @@ fn fit_cubic(
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Re-curves a polyline (or any flattened path) into smooth cubic bezier segments using
 /// Schneider's algorithm. Alias-safe.
-pub fn fit_path_curves(source: &Path, tolerance: f64, out: &mut Path, flatten_tolerance: f64) {
-    let contours = flatten_path(source, flatten_tolerance);
+pub fn fit_path_curves(source: &Path, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>) {
+    let flatten_tolerance = flatten_tolerance.unwrap_or(0.25);
+    let contours = flatten_path(source, Some(flatten_tolerance));
     out.commands.clear();
     out.data.clear();
     out.winding = source.winding;

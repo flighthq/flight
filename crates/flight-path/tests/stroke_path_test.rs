@@ -7,7 +7,7 @@ mod stroke_path {
     fn returns_empty_for_empty_path() {
         let path = create_path(Some(PathWinding::NonZero));
         let style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
-        let outline = stroke_path(&path, &style, 0.25);
+        let outline = stroke_path(&path, &style, Some(0.25));
         assert!(outline.commands.is_empty());
     }
 
@@ -19,7 +19,7 @@ mod stroke_path {
         let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 10.0;
         style.cap = StrokeCap::Butt;
-        let result = stroke_path(&path, &style, 0.25);
+        let result = stroke_path(&path, &style, Some(0.25));
         assert!(result.commands.contains(&(PathCommand::Close as u8)));
         assert!(result.commands.contains(&(PathCommand::MoveTo as u8)));
         let y_values: Vec<f64> = result.data.iter().enumerate()
@@ -40,7 +40,7 @@ mod stroke_path {
         let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 10.0;
         style.cap = StrokeCap::Square;
-        let result = stroke_path(&path, &style, 0.25);
+        let result = stroke_path(&path, &style, Some(0.25));
         let x_values: Vec<f64> = result.data.iter().enumerate()
             .filter(|(i, _)| i % 2 == 0)
             .map(|(_, &v)| v)
@@ -59,11 +59,11 @@ mod stroke_path {
         let mut butt_style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         butt_style.width = 10.0;
         butt_style.cap = StrokeCap::Butt;
-        let butt = stroke_path(&path, &butt_style, 0.25);
+        let butt = stroke_path(&path, &butt_style, Some(0.25));
         let mut round_style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         round_style.width = 10.0;
         round_style.cap = StrokeCap::Round;
-        let round = stroke_path(&path, &round_style, 0.25);
+        let round = stroke_path(&path, &round_style, Some(0.25));
         assert!(round.commands.len() > butt.commands.len());
     }
 
@@ -78,7 +78,7 @@ mod stroke_path {
         style.join = StrokeJoin::Miter;
         style.cap = StrokeCap::Butt;
         style.miter_limit = 6.0;
-        let result = stroke_path(&path, &style, 0.25);
+        let result = stroke_path(&path, &style, Some(0.25));
         let mut apex_hits = 0;
         let mut max_y = f64::NEG_INFINITY;
         let mut i = 0;
@@ -104,7 +104,7 @@ mod stroke_path {
         append_path_close(&mut path);
         let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 4.0;
-        let result = stroke_path(&path, &style, 0.25);
+        let result = stroke_path(&path, &style, Some(0.25));
         assert!(result.commands.contains(&(PathCommand::Close as u8)));
     }
 
@@ -116,8 +116,8 @@ mod stroke_path {
         let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 10.0;
         style.cap = StrokeCap::Round;
-        let fine = stroke_path(&path, &style, 0.1).commands.len();
-        let coarse = stroke_path(&path, &style, 10.0).commands.len();
+        let fine = stroke_path(&path, &style, Some(0.1)).commands.len();
+        let coarse = stroke_path(&path, &style, Some(10.0)).commands.len();
         assert!(coarse <= fine);
     }
 
@@ -129,7 +129,7 @@ mod stroke_path {
         let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 2.0;
         style.dash = vec![10.0, 10.0];
-        let result = stroke_path(&path, &style, 0.25);
+        let result = stroke_path(&path, &style, Some(0.25));
         let move_count = result.commands.iter()
             .filter(|&&c| c == PathCommand::MoveTo as u8)
             .count();
@@ -145,12 +145,12 @@ mod stroke_path {
         style0.width = 2.0;
         style0.dash = vec![20.0, 5.0];
         style0.dash_offset = 0.0;
-        let result0 = stroke_path(&path, &style0, 0.25);
+        let result0 = stroke_path(&path, &style0, Some(0.25));
         let mut style15 = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style15.width = 2.0;
         style15.dash = vec![20.0, 5.0];
         style15.dash_offset = 15.0;
-        let result15 = stroke_path(&path, &style15, 0.25);
+        let result15 = stroke_path(&path, &style15, Some(0.25));
         let moves0 = result0.commands.iter()
             .filter(|&&c| c == PathCommand::MoveTo as u8)
             .count();
@@ -170,7 +170,7 @@ mod stroke_path {
         let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 1.0;
         style.dash = vec![15.0, 5.0];
-        let result = stroke_path(&path, &style, 0.25);
+        let result = stroke_path(&path, &style, Some(0.25));
         let move_count = result.commands.iter()
             .filter(|&&c| c == PathCommand::MoveTo as u8)
             .count();
@@ -185,7 +185,7 @@ mod stroke_path {
         let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 1.0;
         style.dash = vec![10.0, 10.0];
-        let result = stroke_path(&path, &style, 0.25);
+        let result = stroke_path(&path, &style, Some(0.25));
         let move_count = result.commands.iter()
             .filter(|&&c| c == PathCommand::MoveTo as u8)
             .count();
@@ -200,7 +200,7 @@ mod stroke_path {
         let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 2.0;
         style.dash = vec![0.0, 10.0, 10.0, 10.0];
-        let _result = stroke_path(&path, &style, 0.25);
+        let _result = stroke_path(&path, &style, Some(0.25));
     }
 
     #[test]
@@ -211,7 +211,7 @@ mod stroke_path {
         let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 4.0;
         style.dash = vec![];
-        let result = stroke_path(&path, &style, 0.25);
+        let result = stroke_path(&path, &style, Some(0.25));
         let move_count = result.commands.iter()
             .filter(|&&c| c == PathCommand::MoveTo as u8)
             .count();
@@ -228,7 +228,7 @@ mod stroke_path {
         let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 2.0;
         style.dash = vec![30.0, 10.0];
-        let result = stroke_path(&path, &style, 0.25);
+        let result = stroke_path(&path, &style, Some(0.25));
         let move_count = result.commands.iter()
             .filter(|&&c| c == PathCommand::MoveTo as u8)
             .count();
@@ -242,10 +242,10 @@ mod stroke_path {
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut style_thin = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style_thin.width = 2.0;
-        let thin = stroke_path(&path, &style_thin, 0.25);
+        let thin = stroke_path(&path, &style_thin, Some(0.25));
         let mut style_thick = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style_thick.width = 20.0;
-        let thick = stroke_path(&path, &style_thick, 0.25);
+        let thick = stroke_path(&path, &style_thick, Some(0.25));
         assert!(thick.data.len() >= thin.data.len());
     }
 }

@@ -28,5 +28,6 @@ pub use super::reverse_path::*;
 pub use super::stroke_path::*;
 pub use super::stroke_path_geometry::*;
 pub use super::tessellate_path::*;
+pub use super::tessellate_path_typed::*;
 pub use super::tessellate_stroke_path::*;
 pub use super::transform_path::*;

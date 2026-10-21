@@ -24,5 +24,6 @@ mod reverse_path_test;
 mod stroke_path_geometry_test;
 mod stroke_path_test;
 mod tessellate_path_test;
+mod tessellate_path_typed_test;
 mod tessellate_stroke_path_test;
 mod transform_path_test;

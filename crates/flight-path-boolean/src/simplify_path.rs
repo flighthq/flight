@@ -21,6 +21,6 @@ pub fn simplify_path(
     let tolerance = options
         .and_then(|o| o.tolerance)
         .unwrap_or(DEFAULT_FLATTEN_TOLERANCE);
-    let contours = flatten_path(path, tolerance);
+    let contours = flatten_path(path, Some(tolerance));
     resolve_path_regions(out, kernel, &contours, fill_rule);
 }

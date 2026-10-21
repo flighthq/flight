@@ -9,7 +9,7 @@ mod explain_stroke_path_tessellation {
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
-        let explanation = explain_stroke_path_tessellation(&path, &style, 0.25);
+        let explanation = explain_stroke_path_tessellation(&path, &style, Some(0.25));
         assert!(explanation.supported);
         assert_eq!(explanation.reason, StrokePathTessellationReason::Ok);
     }
@@ -21,7 +21,7 @@ mod explain_stroke_path_tessellation {
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 0.0;
-        let explanation = explain_stroke_path_tessellation(&path, &style, 0.25);
+        let explanation = explain_stroke_path_tessellation(&path, &style, Some(0.25));
         assert!(!explanation.supported);
         assert_eq!(explanation.reason, StrokePathTessellationReason::InvalidStyle);
     }
@@ -36,7 +36,7 @@ mod explain_stroke_path_tessellation {
         append_path_close(&mut path);
         let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = 8.0;
-        let explanation = explain_stroke_path_tessellation(&path, &style, 0.25);
+        let explanation = explain_stroke_path_tessellation(&path, &style, Some(0.25));
         assert!(!explanation.supported);
         assert_eq!(explanation.reason, StrokePathTessellationReason::SelfIntersectingCenterline);
         assert_eq!(explanation.subpath, Some(0));
@@ -49,7 +49,7 @@ mod explain_stroke_path_tessellation {
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut style = StrokeStyle { width: 1.0, cap: StrokeCap::Butt, join: StrokeJoin::Miter, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
         style.width = -5.0;
-        let explanation = explain_stroke_path_tessellation(&path, &style, 0.25);
+        let explanation = explain_stroke_path_tessellation(&path, &style, Some(0.25));
         assert!(!explanation.supported);
         assert_eq!(explanation.reason, StrokePathTessellationReason::InvalidStyle);
     }

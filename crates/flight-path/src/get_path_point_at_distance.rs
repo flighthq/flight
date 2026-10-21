@@ -10,9 +10,9 @@ pub fn get_path_point_at_distance(
     path: &Path,
     distance: f64,
     out: &mut Vector2,
-    tolerance: f64,
-) -> bool {
-    let contours = flatten_path(path, tolerance);
+    tolerance: Option<f64>) -> bool {
+    let tolerance = tolerance.unwrap_or(0.25);
+    let contours = flatten_path(path, Some(tolerance));
     return sample_path_point(&contours, distance, out);
 }
 
@@ -23,9 +23,9 @@ pub fn get_path_position_at_distance(
     distance: f64,
     point_out: &mut Vector2,
     tangent_out: &mut Vector2,
-    tolerance: f64,
-) -> bool {
-    let contours = flatten_path(path, tolerance);
+    tolerance: Option<f64>) -> bool {
+    let tolerance = tolerance.unwrap_or(0.25);
+    let contours = flatten_path(path, Some(tolerance));
     let has_point = sample_path_point(&contours, distance, point_out);
     sample_path_tangent(&contours, distance, tangent_out);
     return has_point;
@@ -37,9 +37,9 @@ pub fn get_path_tangent_at_distance(
     path: &Path,
     distance: f64,
     out: &mut Vector2,
-    tolerance: f64,
-) -> bool {
-    let contours = flatten_path(path, tolerance);
+    tolerance: Option<f64>) -> bool {
+    let tolerance = tolerance.unwrap_or(0.25);
+    let contours = flatten_path(path, Some(tolerance));
     return sample_path_tangent(&contours, distance, out);
 }
 

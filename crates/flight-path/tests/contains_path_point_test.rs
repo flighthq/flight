@@ -11,7 +11,7 @@ mod contains_path_point {
         append_path_line_to(&mut path, 100.0, 100.0);
         append_path_line_to(&mut path, 0.0, 100.0);
         append_path_line_to(&mut path, 0.0, 0.0);
-        assert!(contains_path_point(&path, 50.0, 50.0, 0.25));
+        assert!(contains_path_point(&path, 50.0, 50.0, Some(0.25)));
     }
 
     #[test]
@@ -22,7 +22,7 @@ mod contains_path_point {
         append_path_line_to(&mut path, 100.0, 100.0);
         append_path_line_to(&mut path, 0.0, 100.0);
         append_path_line_to(&mut path, 0.0, 0.0);
-        assert!(!contains_path_point(&path, 200.0, 200.0, 0.25));
+        assert!(!contains_path_point(&path, 200.0, 200.0, Some(0.25)));
     }
 
     #[test]
@@ -33,7 +33,7 @@ mod contains_path_point {
         append_path_line_to(&mut path, 100.0, 100.0);
         append_path_line_to(&mut path, 0.0, 100.0);
         append_path_line_to(&mut path, 0.0, 0.0);
-        assert!(contains_path_point(&path, 50.0, 50.0, 0.25));
+        assert!(contains_path_point(&path, 50.0, 50.0, Some(0.25)));
     }
 
     #[test]
@@ -49,8 +49,8 @@ mod contains_path_point {
         append_path_line_to(&mut path, 100.0, 60.0);
         append_path_line_to(&mut path, 40.0, 60.0);
         append_path_line_to(&mut path, 40.0, 0.0);
-        assert!(!contains_path_point(&path, 50.0, 30.0, 0.25));
-        assert!(contains_path_point(&path, 20.0, 30.0, 0.25));
+        assert!(!contains_path_point(&path, 50.0, 30.0, Some(0.25)));
+        assert!(contains_path_point(&path, 20.0, 30.0, Some(0.25)));
     }
 
     #[test]
@@ -66,7 +66,7 @@ mod contains_path_point {
         append_path_line_to(&mut path, 100.0, 60.0);
         append_path_line_to(&mut path, 40.0, 60.0);
         append_path_line_to(&mut path, 40.0, 0.0);
-        assert!(contains_path_point(&path, 50.0, 30.0, 0.25));
+        assert!(contains_path_point(&path, 50.0, 30.0, Some(0.25)));
     }
 
     #[test]
@@ -79,9 +79,9 @@ mod contains_path_point {
         append_path_line_to(&mut path, 100.0, 100.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         append_path_line_to(&mut path, 50.0, 50.0);
-        assert!(contains_path_point(&path, 20.0, 50.0, 0.25));
-        assert!(contains_path_point(&path, 80.0, 50.0, 0.25));
-        assert!(!contains_path_point(&path, 50.0, 120.0, 0.25));
+        assert!(contains_path_point(&path, 20.0, 50.0, Some(0.25)));
+        assert!(contains_path_point(&path, 80.0, 50.0, Some(0.25)));
+        assert!(!contains_path_point(&path, 50.0, 120.0, Some(0.25)));
     }
 
     #[test]
@@ -91,8 +91,8 @@ mod contains_path_point {
         append_path_quadratic_curve_to(&mut path, 100.0, 100.0, 0.0, 100.0);
         append_path_line_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
-        assert!(contains_path_point(&path, 30.0, 30.0, 0.25));
-        assert!(!contains_path_point(&path, 90.0, 90.0, 0.25));
+        assert!(contains_path_point(&path, 30.0, 30.0, Some(0.25)));
+        assert!(!contains_path_point(&path, 90.0, 90.0, Some(0.25)));
     }
 
     #[test]
@@ -103,8 +103,8 @@ mod contains_path_point {
         append_path_cubic_curve_to(&mut path, 100.0, 33.0, 100.0, 66.0, 100.0, 100.0);
         append_path_line_to(&mut path, 0.0, 100.0);
         append_path_line_to(&mut path, 0.0, 0.0);
-        assert!(contains_path_point(&path, 50.0, 50.0, 0.25));
-        assert!(!contains_path_point(&path, 150.0, 50.0, 0.25));
+        assert!(contains_path_point(&path, 50.0, 50.0, Some(0.25)));
+        assert!(!contains_path_point(&path, 150.0, 50.0, Some(0.25)));
     }
 
     #[test]
@@ -114,8 +114,8 @@ mod contains_path_point {
         append_path_line_to(&mut path, 100.0, 0.0);
         append_path_line_to(&mut path, 50.0, 0.0);
         append_path_line_to(&mut path, 0.0, 0.0);
-        assert!(!contains_path_point(&path, 50.0, 0.0, 0.25));
-        assert!(!contains_path_point(&path, 50.0, 1.0, 0.25));
+        assert!(!contains_path_point(&path, 50.0, 0.0, Some(0.25)));
+        assert!(!contains_path_point(&path, 50.0, 1.0, Some(0.25)));
     }
 
     #[test]
@@ -126,14 +126,14 @@ mod contains_path_point {
         append_path_line_to(&mut path, 100.0, 100.0);
         append_path_line_to(&mut path, 0.0, 100.0);
         append_path_line_to(&mut path, 0.0, 0.0);
-        let _top_edge = contains_path_point(&path, 50.0, 0.0, 0.25);
-        let _left_edge = contains_path_point(&path, 0.0, 50.0, 0.25);
+        let _top_edge = contains_path_point(&path, 50.0, 0.0, Some(0.25));
+        let _left_edge = contains_path_point(&path, 0.0, 50.0, Some(0.25));
     }
 
     #[test]
     fn returns_false_for_empty_path() {
         let path = create_path(Some(PathWinding::NonZero));
-        assert!(!contains_path_point(&path, 0.0, 0.0, 0.25));
+        assert!(!contains_path_point(&path, 0.0, 0.0, Some(0.25)));
     }
 
     #[test]
@@ -148,7 +148,7 @@ mod contains_path_point {
         append_path_line_to(&mut path, 100.0, 100.0);
         append_path_line_to(&mut path, 0.0, 100.0);
         append_path_line_to(&mut path, 0.0, 0.0);
-        assert!(contains_path_point(&path, 50.0, 50.0, 0.25));
+        assert!(contains_path_point(&path, 50.0, 50.0, Some(0.25)));
     }
 
     #[test]
@@ -163,7 +163,7 @@ mod contains_path_point {
         append_path_line_to(&mut path, 100.0, 100.0);
         append_path_line_to(&mut path, 0.0, 100.0);
         append_path_line_to(&mut path, 0.0, 0.0);
-        assert!(contains_path_point(&path, 50.0, 50.0, 0.25));
+        assert!(contains_path_point(&path, 50.0, 50.0, Some(0.25)));
     }
 
     #[test]
@@ -174,7 +174,7 @@ mod contains_path_point {
         append_path_line_to(&mut path, 100.0, 100.0);
         append_path_line_to(&mut path, 0.0, 100.0);
         append_path_line_to(&mut path, 0.0, 0.0);
-        let _at_vertex = contains_path_point(&path, 0.0, 0.0, 0.25);
-        let _at_another = contains_path_point(&path, 100.0, 100.0, 0.25);
+        let _at_vertex = contains_path_point(&path, 0.0, 0.0, Some(0.25));
+        let _at_another = contains_path_point(&path, 100.0, 100.0, Some(0.25));
     }
 }

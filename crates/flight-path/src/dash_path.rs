@@ -106,15 +106,15 @@ pub fn dash_path(
     dash: &[f64],
     dash_offset: f64,
     out: &mut Path,
-    tolerance: f64,
-) {
+    tolerance: Option<f64>) {
+    let tolerance = tolerance.unwrap_or(0.25);
     let total_dash_length = dash_total(dash);
     if total_dash_length <= 0.0 {
         copy_commands(source, out);
         return;
     }
 
-    let contours = flatten_path(source, tolerance);
+    let contours = flatten_path(source, Some(tolerance));
     out.commands.clear();
     out.data.clear();
     out.winding = source.winding;

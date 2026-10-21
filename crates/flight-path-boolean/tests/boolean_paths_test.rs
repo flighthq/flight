@@ -9,7 +9,7 @@ fn rectangle_path(x: f64, y: f64, w: f64, h: f64) -> Path {
 
 fn path_filled_area(path: &Path) -> f64 {
     let mut total: f64 = 0.0;
-    for ring in flatten_path(path, 0.25) {
+    for ring in flatten_path(path, Some(0.25)) {
         let mut area: f64 = 0.0;
         let n = ring.len() >> 1;
         let mut j = n - 1;
@@ -24,7 +24,7 @@ fn path_filled_area(path: &Path) -> f64 {
 
 fn path_fill_contains(path: &Path, x: f64, y: f64) -> bool {
     let mut winding: i32 = 0;
-    for ring in flatten_path(path, 0.25) {
+    for ring in flatten_path(path, Some(0.25)) {
         let n = ring.len() >> 1;
         let mut j = n - 1;
         for i in 0..n {

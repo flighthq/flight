@@ -10,7 +10,7 @@ mod fit_path_curves {
         append_path_line_to(&mut source, 50.0, 0.0);
         append_path_line_to(&mut source, 100.0, 0.0);
         let mut out = create_path(Some(PathWinding::NonZero));
-        fit_path_curves(&source, 1.0, &mut out, 0.25);
+        fit_path_curves(&source, 1.0, &mut out, Some(0.25));
         assert_eq!(out.commands[0], PathCommand::MoveTo as u8);
         assert!(!out.commands.contains(&(PathCommand::Close as u8)));
         let last_x = out.data[out.data.len() - 2];
@@ -35,7 +35,7 @@ mod fit_path_curves {
             }
         }
         let mut out = create_path(Some(PathWinding::NonZero));
-        fit_path_curves(&source, 1.0, &mut out, 0.25);
+        fit_path_curves(&source, 1.0, &mut out, Some(0.25));
         let cubic_count = out.commands.iter()
             .filter(|&&c| c == PathCommand::CubicCurveTo as u8)
             .count();
@@ -49,7 +49,7 @@ mod fit_path_curves {
         append_path_move_to(&mut source, 0.0, 0.0);
         append_path_line_to(&mut source, 100.0, 100.0);
         let mut out = create_path(Some(PathWinding::NonZero));
-        fit_path_curves(&source, 1.0, &mut out, 0.25);
+        fit_path_curves(&source, 1.0, &mut out, Some(0.25));
         assert_eq!(out.commands[0], PathCommand::MoveTo as u8);
         assert!(out.data.contains(&100.0));
     }
@@ -58,7 +58,7 @@ mod fit_path_curves {
     fn handles_empty_path() {
         let source = create_path(Some(PathWinding::NonZero));
         let mut out = create_path(Some(PathWinding::NonZero));
-        fit_path_curves(&source, 1.0, &mut out, 0.25);
+        fit_path_curves(&source, 1.0, &mut out, Some(0.25));
         assert!(out.commands.is_empty());
     }
 
@@ -69,7 +69,7 @@ mod fit_path_curves {
         append_path_line_to(&mut source, 100.0, 0.0);
         append_path_line_to(&mut source, 100.0, 100.0);
         let mut out = create_path(Some(PathWinding::NonZero));
-        fit_path_curves(&source, 1.0, &mut out, 0.25);
+        fit_path_curves(&source, 1.0, &mut out, Some(0.25));
         assert_eq!(out.winding, PathWinding::EvenOdd);
     }
 
@@ -82,8 +82,8 @@ mod fit_path_curves {
         append_path_line_to(&mut path, 75.0, 20.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut expected = create_path(Some(PathWinding::NonZero));
-        fit_path_curves(&path, 1.0, &mut expected, 0.25);
-        fit_path_curves(&path.clone(), 1.0, &mut path, 0.25);
+        fit_path_curves(&path, 1.0, &mut expected, Some(0.25));
+        fit_path_curves(&path.clone(), 1.0, &mut path, Some(0.25));
         assert_eq!(path.commands, expected.commands);
         assert_eq!(path.data, expected.data);
         assert_eq!(path.winding, expected.winding);
@@ -98,7 +98,7 @@ mod fit_path_curves {
         append_path_line_to(&mut source, 80.0, 30.0);
         append_path_line_to(&mut source, 100.0, 0.0);
         let mut out = create_path(Some(PathWinding::NonZero));
-        fit_path_curves(&source, 1.0, &mut out, 0.25);
+        fit_path_curves(&source, 1.0, &mut out, Some(0.25));
         let has_cubic = out.commands.iter().any(|&c| c == PathCommand::CubicCurveTo as u8);
         assert!(has_cubic);
     }

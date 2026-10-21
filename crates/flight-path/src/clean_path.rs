@@ -5,8 +5,9 @@ use crate::flatten_path::flatten_path;
 /// Cleans `source` by flattening curves and removing redundant vertices from each contour.
 /// Removes consecutive coincident points, near-collinear vertices, and zero-area spikes.
 /// Alias-safe: captures all input before writing to `out`.
-pub fn clean_path(source: &Path, tolerance: f64, out: &mut Path, flatten_tolerance: f64) {
-    let contours = flatten_path(source, flatten_tolerance);
+pub fn clean_path(source: &Path, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>) {
+    let flatten_tolerance = flatten_tolerance.unwrap_or(0.25);
+    let contours = flatten_path(source, Some(flatten_tolerance));
     let winding = source.winding;
     let tolerance_sq = tolerance * tolerance;
     out.commands.clear();

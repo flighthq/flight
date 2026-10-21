@@ -9,7 +9,7 @@ mod dash_path {
         append_path_move_to(&mut source, 0.0, 0.0);
         append_path_line_to(&mut source, 100.0, 0.0);
         let mut out = create_path(Some(PathWinding::NonZero));
-        dash_path(&source, &[10.0, 5.0], 0.0, &mut out, 0.25);
+        dash_path(&source, &[10.0, 5.0], 0.0, &mut out, Some(0.25));
         let move_count = out.commands.iter().filter(|&&c| c == PathCommand::MoveTo as u8).count();
         assert!(move_count >= 6);
         assert!(!out.commands.contains(&(PathCommand::Close as u8)));
@@ -21,7 +21,7 @@ mod dash_path {
         append_path_move_to(&mut source, 0.0, 0.0);
         append_path_line_to(&mut source, 50.0, 50.0);
         let mut out = create_path(Some(PathWinding::NonZero));
-        dash_path(&source, &[], 0.0, &mut out, 0.25);
+        dash_path(&source, &[], 0.0, &mut out, Some(0.25));
         assert_eq!(out.commands, source.commands);
         assert_eq!(out.data, source.data);
     }
@@ -34,7 +34,7 @@ mod dash_path {
         append_path_line_to(&mut source, 100.0, 100.0);
         append_path_close(&mut source);
         let mut out = create_path(Some(PathWinding::NonZero));
-        dash_path(&source, &[20.0, 10.0], 0.0, &mut out, 0.25);
+        dash_path(&source, &[20.0, 10.0], 0.0, &mut out, Some(0.25));
         let move_count = out.commands.iter().filter(|&&c| c == PathCommand::MoveTo as u8).count();
         assert!(move_count >= 2);
     }
@@ -45,9 +45,9 @@ mod dash_path {
         append_path_move_to(&mut source, 0.0, 0.0);
         append_path_line_to(&mut source, 100.0, 0.0);
         let mut no_offset = create_path(Some(PathWinding::NonZero));
-        dash_path(&source, &[10.0, 10.0], 0.0, &mut no_offset, 0.25);
+        dash_path(&source, &[10.0, 10.0], 0.0, &mut no_offset, Some(0.25));
         let mut with_offset = create_path(Some(PathWinding::NonZero));
-        dash_path(&source, &[10.0, 10.0], 5.0, &mut with_offset, 0.25);
+        dash_path(&source, &[10.0, 10.0], 5.0, &mut with_offset, Some(0.25));
         assert_ne!(with_offset.data, no_offset.data);
     }
 
@@ -57,7 +57,7 @@ mod dash_path {
         append_path_move_to(&mut source, 0.0, 0.0);
         append_path_line_to(&mut source, 50.0, 0.0);
         let mut out = create_path(Some(PathWinding::NonZero));
-        dash_path(&source, &[10.0, 0.0], 0.0, &mut out, 0.25);
+        dash_path(&source, &[10.0, 0.0], 0.0, &mut out, Some(0.25));
         assert!(!out.commands.is_empty());
     }
 
@@ -68,8 +68,8 @@ mod dash_path {
         append_path_line_to(&mut path, 100.0, 0.0);
         append_path_line_to(&mut path, 100.0, 100.0);
         let mut expected = create_path(Some(PathWinding::NonZero));
-        dash_path(&path, &[15.0, 10.0], 0.0, &mut expected, 0.25);
-        dash_path(&path.clone(), &[15.0, 10.0], 0.0, &mut path, 0.25);
+        dash_path(&path, &[15.0, 10.0], 0.0, &mut expected, Some(0.25));
+        dash_path(&path.clone(), &[15.0, 10.0], 0.0, &mut path, Some(0.25));
         assert_eq!(path.commands, expected.commands);
         assert_eq!(path.data, expected.data);
     }
@@ -83,7 +83,7 @@ mod dash_path {
         let original_commands = source.commands.clone();
         let original_data = source.data.clone();
         let mut out = create_path(Some(PathWinding::NonZero));
-        dash_path(&source, &[15.0, 10.0], 0.0, &mut out, 0.25);
+        dash_path(&source, &[15.0, 10.0], 0.0, &mut out, Some(0.25));
         assert_eq!(source.commands, original_commands);
         assert_eq!(source.data, original_data);
     }
@@ -94,7 +94,7 @@ mod dash_path {
         append_path_move_to(&mut source, 0.0, 0.0);
         append_path_line_to(&mut source, 100.0, 0.0);
         let mut out = create_path(Some(PathWinding::NonZero));
-        dash_path(&source, &[10.0, 5.0], 0.0, &mut out, 0.25);
+        dash_path(&source, &[10.0, 5.0], 0.0, &mut out, Some(0.25));
         assert_eq!(out.winding, PathWinding::EvenOdd);
     }
 
@@ -105,7 +105,7 @@ mod dash_path {
         append_path_line_to(&mut source, 100.0, 0.0);
         append_path_line_to(&mut source, 100.0, 100.0);
         let mut out = create_path(Some(PathWinding::NonZero));
-        dash_path(&source, &[15.0, 10.0], 0.0, &mut out, 0.25);
+        dash_path(&source, &[15.0, 10.0], 0.0, &mut out, Some(0.25));
         let move_count = out.commands.iter().filter(|&&c| c == PathCommand::MoveTo as u8).count();
         assert!(move_count >= 2);
     }

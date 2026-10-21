@@ -48,7 +48,7 @@ pub fn explain_offset_path(
     let tolerance = options
         .and_then(|o| o.tolerance)
         .unwrap_or(DEFAULT_FLATTEN_TOLERANCE);
-    if flatten_path(path, tolerance).is_empty() {
+    if flatten_path(path, Some(tolerance)).is_empty() {
         return Some(PathBooleanExplanation {
             operation: PathBooleanExplanationOperation::Offset,
             reason: PathBooleanExplanationReason::EmptyInput,
@@ -76,7 +76,7 @@ pub fn explain_simplify_path(
     let tolerance = options
         .and_then(|o| o.tolerance)
         .unwrap_or(DEFAULT_FLATTEN_TOLERANCE);
-    if flatten_path(path, tolerance).is_empty() {
+    if flatten_path(path, Some(tolerance)).is_empty() {
         return Some(PathBooleanExplanation {
             operation: PathBooleanExplanationOperation::Simplify,
             reason: PathBooleanExplanationReason::EmptyInput,

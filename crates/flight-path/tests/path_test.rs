@@ -6,7 +6,7 @@ mod append_path_arc {
     #[test]
     fn produces_move_to_and_cubic_curves_for_non_zero_arc() {
         let mut path = create_path(Some(PathWinding::NonZero));
-        append_path_arc(&mut path, 0.0, 0.0, 50.0, 0.0, std::f64::consts::FRAC_PI_2, false, false);
+        append_path_arc(&mut path, 0.0, 0.0, 50.0, 0.0, std::f64::consts::FRAC_PI_2, Some(false), Some(false));
         assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
         assert!(path.commands.contains(&(PathCommand::CubicCurveTo as u8)));
     }
@@ -14,7 +14,7 @@ mod append_path_arc {
     #[test]
     fn starts_at_correct_point_on_circle() {
         let mut path = create_path(Some(PathWinding::NonZero));
-        append_path_arc(&mut path, 10.0, 20.0, 30.0, 0.0, std::f64::consts::FRAC_PI_2, false, false);
+        append_path_arc(&mut path, 10.0, 20.0, 30.0, 0.0, std::f64::consts::FRAC_PI_2, Some(false), Some(false));
         assert!((path.data[0] - 40.0).abs() < 0.01);
         assert!((path.data[1] - 20.0).abs() < 0.01);
     }
@@ -22,14 +22,14 @@ mod append_path_arc {
     #[test]
     fn appends_nothing_for_zero_radius() {
         let mut path = create_path(Some(PathWinding::NonZero));
-        append_path_arc(&mut path, 0.0, 0.0, 0.0, 0.0, std::f64::consts::PI, false, false);
+        append_path_arc(&mut path, 0.0, 0.0, 0.0, 0.0, std::f64::consts::PI, Some(false), Some(false));
         assert_eq!(path.commands.len(), 0);
     }
 
     #[test]
     fn ends_at_correct_point_for_a_quarter_circle() {
         let mut path = create_path(Some(PathWinding::NonZero));
-        append_path_arc(&mut path, 0.0, 0.0, 100.0, 0.0, std::f64::consts::FRAC_PI_2, false, false);
+        append_path_arc(&mut path, 0.0, 0.0, 100.0, 0.0, std::f64::consts::FRAC_PI_2, Some(false), Some(false));
         let data = &path.data;
         assert!((data[data.len() - 2] - 0.0).abs() < 0.1);
         assert!((data[data.len() - 1] - 100.0).abs() < 0.1);
@@ -38,9 +38,9 @@ mod append_path_arc {
     #[test]
     fn supports_anticlockwise_arcs() {
         let mut path_cw = create_path(Some(PathWinding::NonZero));
-        append_path_arc(&mut path_cw, 0.0, 0.0, 50.0, 0.0, std::f64::consts::PI, false, false);
+        append_path_arc(&mut path_cw, 0.0, 0.0, 50.0, 0.0, std::f64::consts::PI, Some(false), Some(false));
         let mut path_ccw = create_path(Some(PathWinding::NonZero));
-        append_path_arc(&mut path_ccw, 0.0, 0.0, 50.0, 0.0, std::f64::consts::PI, true, false);
+        append_path_arc(&mut path_ccw, 0.0, 0.0, 50.0, 0.0, std::f64::consts::PI, Some(true), Some(false));
         assert!(path_cw.commands.contains(&(PathCommand::CubicCurveTo as u8)));
         assert!(path_ccw.commands.contains(&(PathCommand::CubicCurveTo as u8)));
         let cw_max_y: f64 = path_cw.data.iter().enumerate()
@@ -59,7 +59,7 @@ mod append_path_arc {
     fn connect_to_current_appends_line_to_instead_of_move_to() {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
-        append_path_arc(&mut path, 100.0, 0.0, 50.0, std::f64::consts::PI, 0.0, false, true);
+        append_path_arc(&mut path, 100.0, 0.0, 50.0, std::f64::consts::PI, 0.0, Some(false), Some(true));
         assert_eq!(path.commands[0], PathCommand::MoveTo as u8);
         assert_eq!(path.commands[1], PathCommand::LineTo as u8);
     }
@@ -527,7 +527,7 @@ mod get_path_last_point {
     #[test]
     fn returns_the_endpoint_after_arc() {
         let mut path = create_path(Some(PathWinding::NonZero));
-        append_path_arc(&mut path, 0.0, 0.0, 100.0, 0.0, std::f64::consts::FRAC_PI_2, false, false);
+        append_path_arc(&mut path, 0.0, 0.0, 100.0, 0.0, std::f64::consts::FRAC_PI_2, Some(false), Some(false));
         let pt = get_path_last_point(&path).unwrap();
         assert!((pt.0 - 0.0).abs() < 0.1);
         assert!((pt.1 - 100.0).abs() < 0.1);

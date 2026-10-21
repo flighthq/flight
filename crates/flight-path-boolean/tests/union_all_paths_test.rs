@@ -13,7 +13,7 @@ fn square_path(x: f64, y: f64, s: f64) -> Path {
 
 fn path_area(path: &Path) -> f64 {
     let mut total: f64 = 0.0;
-    for ring in flatten_path(path, 0.25) {
+    for ring in flatten_path(path, Some(0.25)) {
         let mut area: f64 = 0.0;
         let n = ring.len() >> 1;
         let mut j = n - 1;
@@ -27,7 +27,7 @@ fn path_area(path: &Path) -> f64 {
 }
 
 fn ring_count(path: &Path) -> usize {
-    return flatten_path(path, 0.25).len();
+    return flatten_path(path, Some(0.25)).len();
 }
 
 mod union_all_paths {

@@ -24,6 +24,7 @@ mod reverse_path;
 mod stroke_path;
 mod stroke_path_geometry;
 mod tessellate_path;
+mod tessellate_path_typed;
 mod tessellate_stroke_path;
 mod transform_path;
 
@@ -112,3 +113,8 @@ pub use contract::StrokePathPieceGeometry;
 pub use contract::StrokePathTessellationExplanation;
 pub use contract::StrokePathTessellationReason;
 pub use contract::StrokeStyle;
+pub use contract::acquire_path_mesh_typed;
+pub use contract::release_path_mesh_typed;
+pub use contract::tessellate_path_typed;
+pub use contract::tessellate_path_typed_into;
+pub use contract::PathMeshTyped;

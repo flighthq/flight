@@ -5,8 +5,9 @@ use crate::flatten_path::flatten_path;
 /// Decimates `source` by flattening curves and applying Douglas-Peucker point reduction.
 /// Removes points that deviate less than `tolerance` from the decimated line.
 /// Alias-safe: `out` may be the same object as `source`.
-pub fn decimate_path(source: &Path, tolerance: f64, out: &mut Path, flatten_tolerance: f64) {
-    let contours = flatten_path(source, flatten_tolerance);
+pub fn decimate_path(source: &Path, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>) {
+    let flatten_tolerance = flatten_tolerance.unwrap_or(0.25);
+    let contours = flatten_path(source, Some(flatten_tolerance));
     out.commands.clear();
     out.data.clear();
     out.winding = source.winding;

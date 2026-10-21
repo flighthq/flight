@@ -6,7 +6,7 @@ mod get_path_contour_orientation {
     #[test]
     fn returns_degenerate_for_empty_path() {
         let path = create_path(Some(PathWinding::NonZero));
-        let orientation = get_path_contour_orientation(&path, 0.25);
+        let orientation = get_path_contour_orientation(&path, Some(0.25));
         assert_eq!(orientation, ContourOrientation::Degenerate);
     }
 
@@ -15,7 +15,7 @@ mod get_path_contour_orientation {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
-        let orientation = get_path_contour_orientation(&path, 0.25);
+        let orientation = get_path_contour_orientation(&path, Some(0.25));
         assert_eq!(orientation, ContourOrientation::Degenerate);
     }
 
@@ -23,7 +23,7 @@ mod get_path_contour_orientation {
     fn detects_orientation_for_rectangle() {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut path, 0.0, 0.0, 100.0, 100.0);
-        let orientation = get_path_contour_orientation(&path, 0.25);
+        let orientation = get_path_contour_orientation(&path, Some(0.25));
         assert!(orientation == ContourOrientation::Ccw || orientation == ContourOrientation::Cw);
     }
 }
@@ -34,7 +34,7 @@ mod get_path_signed_area {
     #[test]
     fn returns_zero_for_empty_path() {
         let path = create_path(Some(PathWinding::NonZero));
-        let area = get_path_signed_area(&path, 0.25);
+        let area = get_path_signed_area(&path, Some(0.25));
         assert_eq!(area, 0.0);
     }
 
@@ -42,7 +42,7 @@ mod get_path_signed_area {
     fn returns_correct_area_magnitude_for_rectangle() {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut path, 0.0, 0.0, 100.0, 100.0);
-        let area = get_path_signed_area(&path, 0.25);
+        let area = get_path_signed_area(&path, Some(0.25));
         assert!((area.abs() - 10000.0).abs() < 1.0);
     }
 
@@ -51,7 +51,7 @@ mod get_path_signed_area {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
-        let area = get_path_signed_area(&path, 0.25);
+        let area = get_path_signed_area(&path, Some(0.25));
         assert!((area).abs() < 0.001);
     }
 }

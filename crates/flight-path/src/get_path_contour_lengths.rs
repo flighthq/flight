@@ -16,8 +16,9 @@ fn contour_length(contour: &[f64]) -> f64 {
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Returns an array of arc lengths, one per contour in the path.
-pub fn get_path_contour_lengths(path: &Path, tolerance: f64) -> Vec<f64> {
-    let contours = flatten_path(path, tolerance);
+pub fn get_path_contour_lengths(path: &Path, tolerance: Option<f64>) -> Vec<f64> {
+    let tolerance = tolerance.unwrap_or(0.25);
+    let contours = flatten_path(path, Some(tolerance));
     let mut lengths: Vec<f64> = Vec::new();
     for ci in 0..contours.len() {
         lengths.push(contour_length(&contours[ci]));

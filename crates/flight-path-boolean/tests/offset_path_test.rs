@@ -20,7 +20,7 @@ fn path_bounds(path: &Path) -> (f64, f64, f64, f64) {
     let mut min_y = f64::INFINITY;
     let mut max_x = f64::NEG_INFINITY;
     let mut max_y = f64::NEG_INFINITY;
-    for ring in flatten_path(path, 0.25) {
+    for ring in flatten_path(path, Some(0.25)) {
         let mut i = 0;
         while i < ring.len() {
             if ring[i] < min_x { min_x = ring[i]; }
@@ -35,7 +35,7 @@ fn path_bounds(path: &Path) -> (f64, f64, f64, f64) {
 
 fn path_area(path: &Path) -> f64 {
     let mut total: f64 = 0.0;
-    for ring in flatten_path(path, 0.25) {
+    for ring in flatten_path(path, Some(0.25)) {
         let mut area: f64 = 0.0;
         let n = ring.len() >> 1;
         let mut j = n - 1;
@@ -50,14 +50,14 @@ fn path_area(path: &Path) -> f64 {
 
 fn path_vertex_count(path: &Path) -> usize {
     let mut count: usize = 0;
-    for ring in flatten_path(path, 0.25) {
+    for ring in flatten_path(path, Some(0.25)) {
         count += ring.len() / 2;
     }
     return count;
 }
 
 fn ring_count(path: &Path) -> usize {
-    return flatten_path(path, 0.25).len();
+    return flatten_path(path, Some(0.25)).len();
 }
 
 const UNIT_SQUARE: [f64; 8] = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];

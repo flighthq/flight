@@ -127,7 +127,8 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 /// Tests whether point (px, py) lies inside the path using the path's winding rule.
 /// Curves are adaptively flattened before the winding number test.
-pub fn contains_path_point(path: &Path, px: f64, py: f64, tolerance: f64) -> bool {
+pub fn contains_path_point(path: &Path, px: f64, py: f64, tolerance: Option<f64>) -> bool {
+    let tolerance = tolerance.unwrap_or(0.25);
     let winding = compute_path_winding_number(path, px, py, tolerance);
     if path.winding == PathWinding::EvenOdd {
         return (winding & 1) != 0;

@@ -6,7 +6,7 @@ mod get_path_curvature_at_distance {
     #[test]
     fn returns_zero_for_empty_path() {
         let path = create_path(Some(PathWinding::NonZero));
-        let curvature = get_path_curvature_at_distance(&path, 0.0, 0.25);
+        let curvature = get_path_curvature_at_distance(&path, 0.0, Some(0.25));
         assert_eq!(curvature, 0.0);
     }
 
@@ -15,7 +15,7 @@ mod get_path_curvature_at_distance {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
-        let curvature = get_path_curvature_at_distance(&path, 50.0, 0.25);
+        let curvature = get_path_curvature_at_distance(&path, 50.0, Some(0.25));
         assert_eq!(curvature, 0.0);
     }
 
@@ -24,7 +24,7 @@ mod get_path_curvature_at_distance {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_quadratic_curve_to(&mut path, 50.0, 100.0, 100.0, 0.0);
-        let k = get_path_curvature_at_distance(&path, 50.0, 0.01);
+        let k = get_path_curvature_at_distance(&path, 50.0, Some(0.01));
         assert!(k != 0.0);
     }
 
@@ -34,7 +34,7 @@ mod get_path_curvature_at_distance {
         let mut path = create_path(Some(PathWinding::NonZero));
         append_path_circle(&mut path, 0.0, 0.0, r);
         let circumference = 2.0 * std::f64::consts::PI * r;
-        let k = get_path_curvature_at_distance(&path, circumference / 4.0, 0.01);
+        let k = get_path_curvature_at_distance(&path, circumference / 4.0, Some(0.01));
         assert!((k.abs() - 1.0 / r).abs() < 0.1);
     }
 
@@ -44,9 +44,9 @@ mod get_path_curvature_at_distance {
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_quadratic_curve_to(&mut path, 50.0, 100.0, 100.0, 0.0);
         let tolerance = 0.01;
-        let length = get_path_length(&path, tolerance);
-        let k_end = get_path_curvature_at_distance(&path, length, tolerance);
-        let k_beyond = get_path_curvature_at_distance(&path, length + 100.0, tolerance);
+        let length = get_path_length(&path, Some(tolerance));
+        let k_end = get_path_curvature_at_distance(&path, length, Some(tolerance));
+        let k_beyond = get_path_curvature_at_distance(&path, length + 100.0, Some(tolerance));
         assert!(k_end != 0.0);
         assert!((k_end - k_beyond).abs() < 0.001);
     }
