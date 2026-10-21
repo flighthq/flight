@@ -76,6 +76,32 @@ fn name_child(child: &NodeRef, name: &str) {
     child.write().unwrap().node_fields_mut().name = Some(String::from(name));
 }
 
+fn edit_transform(node: &NodeRef, apply: impl FnOnce(&mut HasTransform2D)) {
+    {
+        let mut guard = node.write().unwrap();
+        apply(
+            guard
+                .as_transform2d_node_mut()
+                .expect("test node has a transform")
+                .transform2d_mut(),
+        );
+    }
+    invalidate_node_local_transform(node);
+}
+
+fn assert_world_close(actual: &flight_geometry::Matrix, expected: &flight_geometry::Matrix) {
+    let close = |left: f32, right: f32| (left - right).abs() <= 1e-3;
+    assert!(
+        close(actual.a, expected.a)
+            && close(actual.b, expected.b)
+            && close(actual.c, expected.c)
+            && close(actual.d, expected.d)
+            && close(actual.tx, expected.tx)
+            && close(actual.ty, expected.ty),
+        "world matrix differs: {actual:?} vs {expected:?}"
+    );
+}
+
 fn revisions() -> NodeRevisionState {
     return NodeRevisionState {
         world_transform_revision: 0,
@@ -119,6 +145,17 @@ mod add_node_child {
             .node_runtime_mut()
             .can_add_child = Arc::new(|_target: &dyn Node, _child: &dyn Node| false);
         add_node_child(&f.container, &f.child_a);
+    }
+
+    #[test]
+    fn a_child_never_has_more_than_one_parent() {
+        let f = fixture();
+        let other = create_test_node("Node");
+        add_node_child(&f.container, &f.child_a);
+        add_node_child(&other, &f.child_a);
+        assert!(node_eq(&get_node_parent(&f.child_a).unwrap(), &other));
+        assert_eq!(get_node_child_count(&f.container), 0);
+        assert_eq!(get_node_child_count(&other), 1);
     }
 
     #[test]
@@ -248,6 +285,23 @@ mod add_node_child_at {
             get_node_parent_reference_revision(&*f.child_a.read().unwrap()),
             parent_before
         );
+    }
+
+    #[test]
+    fn emits_parent_changed_children_changed_and_child_added() {
+        let f = fixture();
+        let child_signals = enable_node_signals(&f.child_a);
+        let parent_signals = enable_node_signals(&f.container);
+        let parent_changed =
+            record_unit_signal(&child_signals, |signals| signals.on_parent_changed.clone());
+        let children_changed = record_unit_signal(&parent_signals, |signals| {
+            signals.on_children_changed.clone()
+        });
+        let added = record_node_signal(&parent_signals, |signals| signals.on_child_added.clone());
+        add_node_child_at(&f.container, &f.child_a, 0);
+        assert_eq!(*parent_changed.lock().unwrap(), 1);
+        assert_eq!(*children_changed.lock().unwrap(), 1);
+        assert!(node_eq(&added.lock().unwrap()[0], &f.child_a));
     }
 
     #[test]
@@ -567,6 +621,22 @@ mod remove_node_child_at {
         assert_eq!(get_node_child_count(&f.container), 1);
         assert!(remove_node_child_at(&f.container, 5).is_none());
     }
+
+    #[test]
+    fn emits_parent_changed_and_children_changed() {
+        let f = fixture();
+        add_node_children(&f.container, &[f.child_a.clone(), f.child_b.clone()]);
+        let child_signals = enable_node_signals(&f.child_a);
+        let parent_signals = enable_node_signals(&f.container);
+        let parent_changed =
+            record_unit_signal(&child_signals, |signals| signals.on_parent_changed.clone());
+        let children_changed = record_unit_signal(&parent_signals, |signals| {
+            signals.on_children_changed.clone()
+        });
+        remove_node_child_at(&f.container, 0);
+        assert_eq!(*parent_changed.lock().unwrap(), 1);
+        assert_eq!(*children_changed.lock().unwrap(), 1);
+    }
 }
 
 mod remove_node_children {
@@ -596,6 +666,22 @@ mod remove_node_children {
         add_node_child(&f.container, &f.child_a);
         remove_node_children(&f.container, Some(5), None);
         assert_eq!(get_node_child_count(&f.container), 1);
+    }
+
+    #[test]
+    fn emits_parent_changed_and_children_changed() {
+        let f = fixture();
+        add_node_child(&f.container, &f.child_a);
+        let child_signals = enable_node_signals(&f.child_a);
+        let parent_signals = enable_node_signals(&f.container);
+        let parent_changed =
+            record_unit_signal(&child_signals, |signals| signals.on_parent_changed.clone());
+        let children_changed = record_unit_signal(&parent_signals, |signals| {
+            signals.on_children_changed.clone()
+        });
+        remove_node_children(&f.container, None, None);
+        assert_eq!(*parent_changed.lock().unwrap(), 1);
+        assert_eq!(*children_changed.lock().unwrap(), 1);
     }
 
     #[test]
@@ -637,6 +723,98 @@ mod reparent_node {
         let transform = guard.as_transform2d_node().unwrap().transform2d();
         assert_eq!(transform.x, 20.0);
         assert_eq!(transform.y, 10.0);
+    }
+
+    #[test]
+    fn preserves_world_position_after_reparenting_a_rotated_parent() {
+        let parent_a = create_test_node_2d("TransformTest");
+        edit_transform(&parent_a, |transform| {
+            transform.x = 100.0;
+            transform.y = 50.0;
+            transform.rotation = 30.0;
+        });
+        let child = create_test_node_2d("TransformTest");
+        edit_transform(&child, |transform| {
+            transform.x = 20.0;
+            transform.y = 10.0;
+        });
+        add_node_child(&parent_a, &child);
+        let before = get_node_world_matrix(&child, &mut revisions());
+        let parent_b = create_test_node_2d("TransformTest");
+        edit_transform(&parent_b, |transform| {
+            transform.x = 200.0;
+            transform.y = 100.0;
+        });
+        assert!(reparent_node(&child, &parent_b, &mut revisions(), None));
+        let after = get_node_world_matrix(&child, &mut revisions());
+        assert_world_close(&after, &before);
+    }
+
+    #[test]
+    fn preserves_world_position_across_scaled_pivot_reflected_and_identity_parents() {
+        let parent_a = create_test_node_2d("TransformTest");
+        edit_transform(&parent_a, |transform| {
+            transform.scale_x = 2.0;
+            transform.scale_y = 2.0;
+        });
+        let child = create_test_node_2d("TransformTest");
+        edit_transform(&child, |transform| {
+            transform.x = 10.0;
+            transform.y = 10.0;
+            transform.pivot_x = 5.0;
+            transform.pivot_y = 5.0;
+        });
+        add_node_child(&parent_a, &child);
+        let before = get_node_world_matrix(&child, &mut revisions());
+        let identity_parent = create_test_node_2d("TransformTest");
+        assert!(reparent_node(
+            &child,
+            &identity_parent,
+            &mut revisions(),
+            None
+        ));
+        let after = get_node_world_matrix(&child, &mut revisions());
+        assert_world_close(&after, &before);
+    }
+
+    #[test]
+    fn preserves_world_position_when_reparenting_a_root_and_with_reflected_scale() {
+        let child = create_test_node_2d("TransformTest");
+        edit_transform(&child, |transform| {
+            transform.x = 80.0;
+            transform.y = 40.0;
+            transform.rotation = 60.0;
+            transform.scale_x = 1.5;
+        });
+        let before = get_node_world_matrix(&child, &mut revisions());
+        let parent_b = create_test_node_2d("TransformTest");
+        edit_transform(&parent_b, |transform| {
+            transform.x = 50.0;
+            transform.y = 25.0;
+            transform.rotation = 10.0;
+        });
+        assert!(reparent_node(&child, &parent_b, &mut revisions(), None));
+        let after = get_node_world_matrix(&child, &mut revisions());
+        assert_world_close(&after, &before);
+        let reflected_parent = create_test_node_2d("TransformTest");
+        edit_transform(&reflected_parent, |transform| transform.scale_x = -1.0);
+        let reflected_child = create_test_node_2d("TransformTest");
+        edit_transform(&reflected_child, |transform| {
+            transform.x = 30.0;
+            transform.y = 20.0;
+        });
+        add_node_child(&reflected_parent, &reflected_child);
+        let reflected_before = get_node_world_matrix(&reflected_child, &mut revisions());
+        let target = create_test_node_2d("TransformTest");
+        edit_transform(&target, |transform| transform.x = 100.0);
+        assert!(reparent_node(
+            &reflected_child,
+            &target,
+            &mut revisions(),
+            None
+        ));
+        let reflected_after = get_node_world_matrix(&reflected_child, &mut revisions());
+        assert_world_close(&reflected_after, &reflected_before);
     }
 
     #[test]
@@ -711,6 +889,31 @@ mod set_node_child_index {
             get_node_children_revision(&*f.container.read().unwrap()),
             children_before + 1
         );
+    }
+
+    #[test]
+    fn ignores_a_stale_parent_reference_whose_child_list_entry_is_absent() {
+        let f = fixture();
+        add_node_child(&f.container, &f.child_b);
+        f.child_a.write().unwrap().node_runtime_mut().parent = Some(Arc::downgrade(&f.container));
+        set_node_child_index(&f.container, &f.child_a, 0);
+        assert_eq!(get_node_child_count(&f.container), 1);
+        assert!(node_eq(
+            &get_node_child_at(&f.container, 0).unwrap(),
+            &f.child_b
+        ));
+    }
+
+    #[test]
+    fn emits_children_order_changed() {
+        let f = fixture();
+        add_node_children(&f.container, &[f.child_a.clone(), f.child_b.clone()]);
+        let signals = enable_node_signals(&f.container);
+        let calls = record_unit_signal(&signals, |signals| {
+            signals.on_children_order_changed.clone()
+        });
+        set_node_child_index(&f.container, &f.child_a, 1);
+        assert_eq!(*calls.lock().unwrap(), 1);
     }
 
     #[test]
@@ -796,6 +999,18 @@ mod swap_node_children {
     }
 
     #[test]
+    fn emits_children_order_changed() {
+        let f = fixture();
+        add_node_children(&f.container, &[f.child_a.clone(), f.child_b.clone()]);
+        let signals = enable_node_signals(&f.container);
+        let calls = record_unit_signal(&signals, |signals| {
+            signals.on_children_order_changed.clone()
+        });
+        swap_node_children(&f.container, &f.child_a, &f.child_b);
+        assert_eq!(*calls.lock().unwrap(), 1);
+    }
+
+    #[test]
     fn does_nothing_when_either_child_is_not_in_the_container() {
         let f = fixture();
         add_node_child(&f.container, &f.child_a);
@@ -825,6 +1040,28 @@ mod swap_node_children_at {
             &get_node_child_at(&f.container, 0).unwrap(),
             &f.child_b
         ));
+    }
+
+    #[test]
+    fn does_not_advance_the_revision_for_equal_indices_and_emits_when_swapped() {
+        let f = fixture();
+        add_node_children(&f.container, &[f.child_a.clone(), f.child_b.clone()]);
+        let before = get_node_children_revision(&*f.container.read().unwrap());
+        swap_node_children_at(&f.container, 0, 0);
+        assert_eq!(
+            get_node_children_revision(&*f.container.read().unwrap()),
+            before
+        );
+        let signals = enable_node_signals(&f.container);
+        let calls = record_unit_signal(&signals, |signals| {
+            signals.on_children_order_changed.clone()
+        });
+        swap_node_children_at(&f.container, 0, 1);
+        assert_eq!(*calls.lock().unwrap(), 1);
+        assert_eq!(
+            get_node_children_revision(&*f.container.read().unwrap()),
+            before + 1
+        );
     }
 
     #[test]

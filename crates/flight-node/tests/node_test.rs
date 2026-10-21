@@ -71,6 +71,11 @@ mod create_node_runtime {
         assert_eq!(runtime.world_transform_id, 0);
         assert_eq!(runtime.world_transform_using_local_transform_id, -1);
         assert_eq!(runtime.world_transform_using_parent_transform_id, -1);
+        let parent = create_test_node("Test");
+        let child = create_test_node("Test");
+        let parent_guard = parent.read().unwrap();
+        let child_guard = child.read().unwrap();
+        assert!((runtime.can_add_child)(&*parent_guard, &*child_guard));
     }
 
     #[test]

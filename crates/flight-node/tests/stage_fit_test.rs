@@ -147,6 +147,14 @@ mod compute_scene2d_fit_fill_scale {
             2.0
         );
     }
+
+    #[test]
+    fn uses_the_larger_ratio_when_the_width_ratio_wins() {
+        assert_eq!(
+            compute_scene2d_fit_fill_scale(400.0, 300.0, 800.0, 400.0),
+            2.0
+        );
+    }
 }
 
 mod compute_scene2d_fit_scale {
@@ -156,6 +164,10 @@ mod compute_scene2d_fit_scale {
     fn returns_the_smaller_axis_ratio() {
         assert_eq!(compute_scene2d_fit_scale(400.0, 300.0, 800.0, 600.0), 2.0);
         assert_eq!(compute_scene2d_fit_scale(400.0, 300.0, 400.0, 600.0), 1.0);
+        assert_eq!(
+            compute_scene2d_fit_scale(400.0, 300.0, 800.0, 400.0),
+            400.0 / 300.0
+        );
     }
 }
 
@@ -195,6 +207,140 @@ mod compute_scene2d_fit_transform {
             (matrix.a, matrix.d, matrix.tx, matrix.ty),
             (1.0, 1.0, 0.0, 0.0)
         );
+    }
+
+    #[test]
+    fn sets_identity_when_the_root_computes_zero_size() {
+        let root = bounds_node(0.0, 0.0, 0.0, 0.0);
+        let mut matrix: Matrix = create_matrix(2.0, 3.0, 4.0, 5.0, 6.0, 7.0);
+        compute_scene2d_fit_transform(
+            &mut matrix,
+            &fit(
+                ViewportAlign::TopLeft,
+                Some(root),
+                ViewportScaleMode::NoScale,
+            ),
+            800.0,
+            600.0,
+        );
+        assert_eq!((matrix.a, matrix.d), (1.0, 1.0));
+    }
+
+    #[test]
+    fn sets_identity_when_only_the_content_width_or_height_is_zero() {
+        let wide_only = bounds_node(0.0, 0.0, 0.0, 50.0);
+        let mut width_matrix: Matrix = create_matrix(2.0, 3.0, 4.0, 5.0, 6.0, 7.0);
+        compute_scene2d_fit_transform(
+            &mut width_matrix,
+            &fit(
+                ViewportAlign::TopLeft,
+                Some(wide_only),
+                ViewportScaleMode::ExactFit,
+            ),
+            800.0,
+            600.0,
+        );
+        assert_eq!(
+            (
+                width_matrix.a,
+                width_matrix.b,
+                width_matrix.c,
+                width_matrix.d,
+                width_matrix.tx,
+                width_matrix.ty
+            ),
+            (1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+        );
+        let tall_only = bounds_node(0.0, 0.0, 100.0, 0.0);
+        let mut height_matrix: Matrix = create_matrix(2.0, 3.0, 4.0, 5.0, 6.0, 7.0);
+        compute_scene2d_fit_transform(
+            &mut height_matrix,
+            &fit(
+                ViewportAlign::TopLeft,
+                Some(tall_only),
+                ViewportScaleMode::ExactFit,
+            ),
+            800.0,
+            600.0,
+        );
+        assert_eq!(
+            (
+                height_matrix.a,
+                height_matrix.b,
+                height_matrix.c,
+                height_matrix.d,
+                height_matrix.tx,
+                height_matrix.ty
+            ),
+            (1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+        );
+    }
+
+    #[test]
+    fn exactfit_scales_to_fill_the_viewport_exactly() {
+        let root = bounds_node(0.0, 0.0, 400.0, 300.0);
+        let mut matrix: Matrix = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        compute_scene2d_fit_transform(
+            &mut matrix,
+            &fit(
+                ViewportAlign::TopLeft,
+                Some(root),
+                ViewportScaleMode::ExactFit,
+            ),
+            800.0,
+            600.0,
+        );
+        assert_eq!(
+            (matrix.a, matrix.d, matrix.tx, matrix.ty),
+            (2.0, 2.0, 0.0, 0.0)
+        );
+    }
+
+    #[test]
+    fn sets_b_and_c_to_zero() {
+        let root = bounds_node(0.0, 0.0, 400.0, 300.0);
+        let mut matrix: Matrix = create_matrix(2.0, 3.0, 4.0, 5.0, 6.0, 7.0);
+        compute_scene2d_fit_transform(
+            &mut matrix,
+            &fit(
+                ViewportAlign::TopLeft,
+                Some(root),
+                ViewportScaleMode::ShowAll,
+            ),
+            800.0,
+            600.0,
+        );
+        assert_eq!((matrix.b, matrix.c), (0.0, 0.0));
+    }
+
+    #[test]
+    fn uses_scaled_size_before_subtracting_an_origin_on_a_centered_axis() {
+        let horizontal = bounds_node(10.0, -20.0, 100.0, 50.0);
+        let mut top_matrix: Matrix = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        compute_scene2d_fit_transform(
+            &mut top_matrix,
+            &fit(
+                ViewportAlign::Top,
+                Some(horizontal),
+                ViewportScaleMode::ExactFit,
+            ),
+            200.0,
+            100.0,
+        );
+        assert_eq!((top_matrix.tx, top_matrix.ty), (-20.0, 40.0));
+        let vertical = bounds_node(10.0, -20.0, 100.0, 50.0);
+        let mut left_matrix: Matrix = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        compute_scene2d_fit_transform(
+            &mut left_matrix,
+            &fit(
+                ViewportAlign::Left,
+                Some(vertical),
+                ViewportScaleMode::ExactFit,
+            ),
+            200.0,
+            100.0,
+        );
+        assert_eq!((left_matrix.tx, left_matrix.ty), (-20.0, 40.0));
     }
 
     #[test]

@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use flight_adjustments::{Adjustment, create_color_matrix_adjustment, create_tint_adjustment};
+use flight_adjustments::{create_color_matrix_adjustment, create_tint_adjustment};
 use flight_entity::Ref;
 use flight_node::contract::*;
 
@@ -27,14 +27,42 @@ mod add_node_color_adjustment {
     use super::*;
 
     #[test]
-    fn appends_to_the_stack_and_resolves_it() {
+    fn lazily_creates_the_stack_and_resolves_its_material_feature_data() {
         let node = create_test_node_2d("Test");
-        add_node_color_adjustment(&node, tint(0xff0000ff));
-        add_node_color_adjustment(&node, matrix());
-        let runtime = node.read().unwrap();
-        let values = runtime.node_runtime();
-        assert_eq!(values.color_adjustments.as_ref().map(|a| a.len()), Some(2));
-        assert!(values.resolved_color_scale_bias.is_some());
+        let adjustment = tint(0x7f3fffff);
+        add_node_color_adjustment(&node, adjustment.clone());
+        let guard = node.read().unwrap();
+        let stack = guard
+            .node_runtime()
+            .color_adjustments
+            .as_ref()
+            .expect("stack");
+        assert_eq!(stack.len(), 1);
+        assert!(Arc::ptr_eq(&stack[0], &adjustment));
+        let bias = guard
+            .node_runtime()
+            .resolved_color_scale_bias
+            .as_ref()
+            .expect("resolved bias");
+        assert!((bias.red_scale - (0x7f as f32) / 255.0).abs() <= 1e-6);
+    }
+
+    #[test]
+    fn appends_to_an_existing_stack_without_replacing_earlier_adjustments() {
+        let node = create_test_node_2d("Test");
+        let first = tint(0xff0000ff);
+        let second = tint(0x00ff00ff);
+        add_node_color_adjustment(&node, first.clone());
+        add_node_color_adjustment(&node, second.clone());
+        let guard = node.read().unwrap();
+        let stack = guard
+            .node_runtime()
+            .color_adjustments
+            .as_ref()
+            .expect("stack");
+        assert_eq!(stack.len(), 2);
+        assert!(Arc::ptr_eq(&stack[0], &first));
+        assert!(Arc::ptr_eq(&stack[1], &second));
     }
 }
 
@@ -50,6 +78,27 @@ mod get_node_color_adjustments {
 
 mod set_node_color_adjustments {
     use super::*;
+
+    #[test]
+    fn caches_a_complete_channel_mixing_matrix_without_marking_it_unsupported() {
+        let node = create_test_node_2d("Test");
+        let matrix = [
+            1.0, 0.5, 0.0, 0.0, 0.1, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+        ];
+        let adjustment: AdjustmentRef =
+            Arc::new(RwLock::new(create_color_matrix_adjustment(matrix)));
+        set_node_color_adjustments(&node, Some(vec![adjustment]));
+        let guard = node.read().unwrap();
+        let resolved = guard
+            .node_runtime()
+            .resolved_color_matrix
+            .expect("resolved matrix");
+        for (index, expected) in matrix.iter().enumerate() {
+            assert!((resolved[index] - expected).abs() <= 1e-6, "index {index}");
+        }
+        assert!(!guard.node_runtime().color_adjustments_unsupported);
+    }
 
     #[test]
     fn replaces_the_stack_and_none_clears_it() {
@@ -75,9 +124,9 @@ mod set_node_color_adjustments_tint {
     use super::*;
 
     #[test]
-    fn replaces_the_stack_with_one_tint_adjustment() {
+    fn authors_a_packed_tint_through_the_shared_adjustment_model() {
         let node = create_test_node_2d("Test");
-        set_node_color_adjustments_tint(&node, 0x336699ff);
+        set_node_color_adjustments_tint(&node, 0x00ff00ff);
         let guard = node.read().unwrap();
         let stack = guard
             .node_runtime()
@@ -89,5 +138,12 @@ mod set_node_color_adjustments_tint {
             stack[0].read().unwrap().adjustment_fields().kind,
             "TintAdjustment"
         );
+        let bias = guard
+            .node_runtime()
+            .resolved_color_scale_bias
+            .as_ref()
+            .expect("resolved bias");
+        assert!((bias.green_scale - 1.0).abs() <= 1e-6);
+        assert!(bias.red_scale.abs() <= 1e-6);
     }
 }

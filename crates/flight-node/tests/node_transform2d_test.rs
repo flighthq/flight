@@ -29,6 +29,22 @@ mod convert_node_vector2_global_to_local {
     use super::*;
 
     #[test]
+    fn reuses_the_output_object() {
+        let node = create_test_node_2d("Test");
+        edit(&node, |transform| {
+            transform.x = 10.0;
+            transform.y = 20.0;
+            transform.scale_x = 2.0;
+            transform.scale_y = 2.0;
+        });
+        let mut out = flight_geometry::create_vector2(999.0, 999.0);
+        let world = flight_geometry::create_vector2(10.0, 20.0);
+        convert_node_vector2_global_to_local(&mut out, &node, &world, &mut revisions());
+        close(out.x, 0.0);
+        close(out.y, 0.0);
+    }
+
+    #[test]
     fn writes_into_the_provided_output_and_inverts_the_node_transform() {
         let parent = create_test_node_2d("Test");
         let node = create_test_node_2d("Test");
@@ -138,6 +154,47 @@ mod ensure_node_local_matrix {
     }
 
     #[test]
+    fn recomputes_when_the_local_transform_revision_changes() {
+        let node = create_test_node_2d("Test");
+        ensure_node_local_matrix(&node);
+        let cached = node
+            .read()
+            .unwrap()
+            .as_transform2d_node()
+            .unwrap()
+            .transform2d_runtime()
+            .local_matrix
+            .clone()
+            .unwrap();
+        {
+            let mut guard = node.write().unwrap();
+            let runtime = guard.node_runtime_mut();
+            runtime.local_transform_id += 1;
+            let transform_runtime = guard
+                .as_transform2d_node_mut()
+                .unwrap()
+                .transform2d_runtime_mut();
+            let stale = transform_runtime.local_matrix.as_mut().unwrap();
+            stale.a = -1.0;
+            stale.b = -1.0;
+            stale.c = -1.0;
+            stale.d = -1.0;
+            stale.tx = -1.0;
+            stale.ty = -1.0;
+        }
+        ensure_node_local_matrix(&node);
+        assert_eq!(
+            node.read()
+                .unwrap()
+                .as_transform2d_node()
+                .unwrap()
+                .transform2d_runtime()
+                .local_matrix,
+            Some(cached)
+        );
+    }
+
+    #[test]
     fn normalizes_rotations_above_and_below_180_degrees() {
         let node = create_test_node_2d("Test");
         edit(&node, |transform| transform.rotation = 270.0);
@@ -188,6 +245,49 @@ mod ensure_node_world_matrix {
     }
 
     #[test]
+    fn recomputes_when_the_local_transform_revision_changes() {
+        let node = create_test_node_2d("Test");
+        let mut state = revisions();
+        ensure_node_world_matrix(&node, &mut state);
+        let cached = node
+            .read()
+            .unwrap()
+            .as_transform2d_node()
+            .unwrap()
+            .transform2d_runtime()
+            .world_matrix
+            .clone()
+            .unwrap();
+        {
+            let mut guard = node.write().unwrap();
+            guard.node_runtime_mut().local_transform_id += 1;
+            let stale = guard
+                .as_transform2d_node_mut()
+                .unwrap()
+                .transform2d_runtime_mut()
+                .world_matrix
+                .as_mut()
+                .unwrap();
+            stale.a = -1.0;
+            stale.b = -1.0;
+            stale.c = -1.0;
+            stale.d = -1.0;
+            stale.tx = -1.0;
+            stale.ty = -1.0;
+        }
+        ensure_node_world_matrix(&node, &mut state);
+        assert_eq!(
+            node.read()
+                .unwrap()
+                .as_transform2d_node()
+                .unwrap()
+                .transform2d_runtime()
+                .world_matrix,
+            Some(cached)
+        );
+    }
+
+    #[test]
     fn recomputes_when_the_parent_transform_revision_changes() {
         let parent = create_test_node_2d("Test");
         let node = create_test_node_2d("Test");
@@ -227,9 +327,42 @@ mod get_node_local_matrix {
     #[test]
     fn ensures_and_returns_the_local_transform() {
         let node = create_test_node_2d("Test");
+        assert!(
+            node.read()
+                .unwrap()
+                .as_transform2d_node()
+                .unwrap()
+                .transform2d_runtime()
+                .local_matrix
+                .is_none()
+        );
         let matrix = get_node_local_matrix(&node);
         assert_eq!(matrix.a, 1.0);
         assert_eq!(matrix.d, 1.0);
+        assert!(
+            node.read()
+                .unwrap()
+                .as_transform2d_node()
+                .unwrap()
+                .transform2d_runtime()
+                .local_matrix
+                .is_some()
+        );
+    }
+
+    #[test]
+    fn returns_the_cached_local_transform() {
+        let node = create_test_node_2d("Test");
+        let matrix = get_node_local_matrix(&node);
+        let cached = node
+            .read()
+            .unwrap()
+            .as_transform2d_node()
+            .unwrap()
+            .transform2d_runtime()
+            .local_matrix
+            .clone();
+        assert_eq!(Some(matrix), cached);
     }
 
     #[test]
@@ -289,10 +422,28 @@ mod get_node_world_matrix {
     use super::*;
 
     #[test]
-    fn returns_the_cached_world_transform() {
+    fn ensures_and_returns_the_world_transform() {
         let node = create_test_node_2d("Test");
+        assert!(
+            node.read()
+                .unwrap()
+                .as_transform2d_node()
+                .unwrap()
+                .transform2d_runtime()
+                .world_matrix
+                .is_none()
+        );
         let matrix = get_node_world_matrix(&node, &mut revisions());
         assert_eq!(matrix.a, 1.0);
+        let cached = node
+            .read()
+            .unwrap()
+            .as_transform2d_node()
+            .unwrap()
+            .transform2d_runtime()
+            .world_matrix
+            .clone();
+        assert_eq!(Some(matrix), cached);
     }
 }
 
@@ -408,6 +559,59 @@ mod skew {
         close(y_matrix.b, degrees(30.0).sin());
         close(y_matrix.c, 0.0);
         close(y_matrix.d, 1.0);
+    }
+
+    #[test]
+    fn produces_the_same_matrix_with_zero_skew_as_without_skew() {
+        let with_skew = create_test_node_2d("Test");
+        edit(&with_skew, |transform| {
+            transform.rotation = 30.0;
+            transform.scale_x = 2.0;
+            transform.scale_y = 3.0;
+            transform.skew_x = 0.0;
+            transform.skew_y = 0.0;
+        });
+        let without_skew = create_test_node_2d("Test");
+        edit(&without_skew, |transform| {
+            transform.rotation = 30.0;
+            transform.scale_x = 2.0;
+            transform.scale_y = 3.0;
+        });
+        let skewed = get_node_local_matrix(&with_skew);
+        let plain = get_node_local_matrix(&without_skew);
+        close(skewed.a, plain.a);
+        close(skewed.b, plain.b);
+        close(skewed.c, plain.c);
+        close(skewed.d, plain.d);
+        close(skewed.tx, plain.tx);
+        close(skewed.ty, plain.ty);
+    }
+
+    #[test]
+    fn propagates_skew_through_the_world_transform() {
+        let parent = create_test_node_2d("Test");
+        edit(&parent, |transform| {
+            transform.skew_x = 10.0;
+            transform.skew_y = 20.0;
+            transform.scale_x = 2.0;
+            transform.scale_y = 1.0;
+        });
+        let child = create_test_node_2d("Test");
+        edit(&child, |transform| {
+            transform.x = 50.0;
+        });
+        add_node_child(&parent, &child);
+        let parent_local = get_node_local_matrix(&parent);
+        let child_local = get_node_local_matrix(&child);
+        let mut expected = flight_geometry::create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        flight_geometry::multiply_matrix(&mut expected, &parent_local, &child_local);
+        let world = get_node_world_matrix(&child, &mut revisions());
+        close(world.a, expected.a);
+        close(world.b, expected.b);
+        close(world.c, expected.c);
+        close(world.d, expected.d);
+        close(world.tx, expected.tx);
+        close(world.ty, expected.ty);
     }
 
     #[test]

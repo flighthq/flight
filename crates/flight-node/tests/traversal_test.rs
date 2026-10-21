@@ -43,6 +43,30 @@ mod find_node {
         assert!(node_eq(&found.unwrap(), &f.leaf));
         assert!(find_node(&f.root, &mut |_node: &NodeRef| false).is_none());
     }
+
+    #[test]
+    fn returns_none_for_a_leaf_with_no_children() {
+        let f = fixture();
+        assert!(find_node(&f.leaf, &mut |_node: &NodeRef| true).is_none());
+    }
+
+    #[test]
+    fn finds_the_first_match_in_depth_first_order() {
+        let f = fixture();
+        f.left.write().unwrap().node_fields_mut().name = Some(String::from("Left"));
+        f.right.write().unwrap().node_fields_mut().name = Some(String::from("Left"));
+        let found = find_node(&f.root, &mut |node: &NodeRef| {
+            return node.read().unwrap().node_fields().name.as_deref() == Some("Left");
+        });
+        assert!(node_eq(&found.unwrap(), &f.left));
+    }
+
+    #[test]
+    fn does_not_include_the_source_node_itself() {
+        let f = fixture();
+        let source = f.root.clone();
+        assert!(find_node(&f.root, &mut move |node: &NodeRef| node_eq(node, &source)).is_none());
+    }
 }
 
 mod find_node_by_name {
@@ -57,6 +81,18 @@ mod find_node_by_name {
             &f.leaf
         ));
         assert!(find_node_by_name(&f.root, "absent").is_none());
+    }
+
+    #[test]
+    fn finds_a_direct_child_by_name_and_never_the_source() {
+        let f = fixture();
+        f.left.write().unwrap().node_fields_mut().name = Some(String::from("direct"));
+        f.root.write().unwrap().node_fields_mut().name = Some(String::from("source"));
+        assert!(node_eq(
+            &find_node_by_name(&f.root, "direct").unwrap(),
+            &f.left
+        ));
+        assert!(find_node_by_name(&f.root, "source").is_none());
     }
 }
 
@@ -111,6 +147,24 @@ mod for_each_node_descendant {
             ]
         );
     }
+
+    #[test]
+    fn does_not_call_the_callback_for_a_leaf_or_with_the_source() {
+        let f = fixture();
+        let mut visited = 0;
+        for_each_node_descendant(&f.leaf, &mut |_node: &NodeRef| {
+            visited += 1;
+        });
+        assert_eq!(visited, 0);
+        let source = f.root.clone();
+        let mut saw_source = false;
+        for_each_node_descendant(&f.root, &mut |node: &NodeRef| {
+            if node_eq(node, &source) {
+                saw_source = true;
+            }
+        });
+        assert!(!saw_source);
+    }
 }
 
 mod get_node_children {
@@ -150,6 +204,20 @@ mod get_node_next_sibling {
         assert!(get_node_next_sibling(&f.right).is_none());
         assert!(get_node_next_sibling(&f.root).is_none());
     }
+
+    #[test]
+    fn returns_none_for_a_stale_parent_whose_child_list_is_absent() {
+        let f = fixture();
+        f.root.write().unwrap().node_runtime_mut().children = None;
+        assert!(get_node_next_sibling(&f.left).is_none());
+    }
+
+    #[test]
+    fn returns_none_for_a_stale_parent_whose_child_list_omits_the_source() {
+        let f = fixture();
+        f.root.write().unwrap().node_runtime_mut().children = Some(vec![f.right.clone()]);
+        assert!(get_node_next_sibling(&f.left).is_none());
+    }
 }
 
 mod get_node_previous_sibling {
@@ -164,6 +232,13 @@ mod get_node_previous_sibling {
         ));
         assert!(get_node_previous_sibling(&f.left).is_none());
         assert!(get_node_previous_sibling(&f.root).is_none());
+    }
+
+    #[test]
+    fn returns_none_for_a_stale_parent_whose_child_list_is_absent() {
+        let f = fixture();
+        f.root.write().unwrap().node_runtime_mut().children = None;
+        assert!(get_node_previous_sibling(&f.right).is_none());
     }
 }
 
@@ -194,5 +269,37 @@ mod walk_node_descendants {
         });
         assert!(!completed);
         assert_eq!(visited, 1);
+    }
+
+    #[test]
+    fn returns_true_when_no_children_are_present() {
+        let f = fixture();
+        assert!(walk_node_descendants(&f.leaf, &mut |_node: &NodeRef| true));
+    }
+
+    #[test]
+    fn does_not_visit_a_subtree_when_the_visitor_rejects_its_parent() {
+        let f = fixture();
+        let mut seen_kinds: Vec<String> = Vec::new();
+        let stop_at = f.left.clone();
+        walk_node_descendants(&f.root, &mut |node: &NodeRef| {
+            seen_kinds.push(node.read().unwrap().node_fields().kind.clone());
+            return !node_eq(node, &stop_at);
+        });
+        assert!(!seen_kinds.iter().any(|kind| kind == "Leaf"));
+        assert!(!seen_kinds.iter().any(|kind| kind == "Right"));
+    }
+
+    #[test]
+    fn propagates_an_early_stop_from_a_nested_descendant() {
+        let f = fixture();
+        let mut seen_kinds: Vec<String> = Vec::new();
+        let stop_at = f.leaf.clone();
+        let completed = walk_node_descendants(&f.root, &mut |node: &NodeRef| {
+            seen_kinds.push(node.read().unwrap().node_fields().kind.clone());
+            return !node_eq(node, &stop_at);
+        });
+        assert!(!completed);
+        assert_eq!(seen_kinds, vec![String::from("Left"), String::from("Leaf")]);
     }
 }

@@ -33,11 +33,21 @@ mod init_bounds_rectangle_runtime_trait {
     #[test]
     fn initializes_default_values() {
         let mut runtime = empty_runtime();
+        runtime.compute_local_bounds_rectangle =
+            Arc::new(|out: &mut flight_geometry::Rectangle, _source: &dyn Node| {
+                out.width = 99.0;
+            });
         init_bounds_rectangle_runtime_trait(&mut runtime, None);
         assert_eq!(runtime.bounds_rectangle, None);
         assert_eq!(runtime.local_bounds_rectangle, None);
         assert_eq!(runtime.world_bounds_rectangle, None);
         assert!(runtime.is_local_bounds_rectangle_valid.is_none());
+        // The source installs defaultComputeLocalBoundsRectangle: a no-op that leaves `out` alone.
+        let mut out = flight_geometry::create_rectangle(1.0, 2.0, 3.0, 4.0);
+        let node = crate::support::create_test_node("Test");
+        let guard = node.read().unwrap();
+        (runtime.compute_local_bounds_rectangle)(&mut out, &*guard);
+        assert_eq!((out.x, out.y, out.width, out.height), (1.0, 2.0, 3.0, 4.0));
     }
 
     #[test]
