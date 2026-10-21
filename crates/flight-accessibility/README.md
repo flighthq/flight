@@ -14,10 +14,16 @@ or OS operation is implemented here; every command is forwarded to the caller's 
 - `AccessibilityNode` is plain data. Its optional fields keep absence distinct (`None`), and
   `bounds` is the existing `flight_geometry::Rectangle` entity shared by `Ref` identity, never a
   copied value.
-- `AccessibilityOperationOutcome` mirrors the source's two arms: an `Ok` arm with no block reason and
-  a `Blocked` arm carrying the reason. The source narrows each operation's block-reason subset
-  through a generic type parameter; the Rust IR vocabulary approves no generic bound for that, so
-  every seam uses the full reason domain and the per-operation subsets are documented and asserted.
+- `AccessibilityOperationOutcome<R = AccessibilityOperationBlockReason>` mirrors the source's two
+  arms (an `Ok` arm and a `Blocked` arm carrying the reason) and carries the source's generic
+  parameter. Each operation is instantiated with its exact source reason subset:
+  `AccessibilityOperationOutcome<AccessibilityTreeBlockReason>` for announce, clear and set node
+  (`destroyed | no-dom`), `AccessibilityOperationOutcome<AccessibilityRemoveNodeBlockReason>` for
+  remove (`destroyed | no-dom | node-not-found`), and
+  `AccessibilityOperationOutcome<AccessibilityOperationBlockReason>` for focus (all four reasons).
+  The narrower reason types are closed unions with their own exact string tables, so a tree
+  operation cannot represent `focus-not-moved`; the type restriction is checked by compile-fail
+  doctests.
 - `AccessibilityDescriptor` is plain descriptor data independent of the provider command seam.
 - `HostAccessibilityCapability` is a plain capability record carrying the canonical `ProviderRef`
   identity token; all six callbacks are required, exactly as in the source.

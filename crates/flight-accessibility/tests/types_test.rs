@@ -3,11 +3,11 @@ use std::sync::{Arc, RwLock};
 use flight_accessibility::contract::*;
 use flight_geometry::create_rectangle;
 
-fn ok() -> AccessibilityOperationOutcome {
+fn ok<R>() -> AccessibilityOperationOutcome<R> {
     return AccessibilityOperationOutcome::Ok(AccessibilityOperationOutcomeOk {});
 }
 
-fn blocked(reason: AccessibilityOperationBlockReason) -> AccessibilityOperationOutcome {
+fn blocked<R>(reason: R) -> AccessibilityOperationOutcome<R> {
     return AccessibilityOperationOutcome::Blocked(AccessibilityOperationOutcomeBlocked { reason });
 }
 
@@ -100,7 +100,8 @@ mod accessibility_operation_outcome {
 
     #[test]
     fn distinguishes_the_ok_and_blocked_arms() {
-        assert_eq!(ok(), ok());
+        let success: AccessibilityOperationOutcome<AccessibilityOperationBlockReason> = ok();
+        assert_eq!(success, ok());
         assert_ne!(ok(), blocked(AccessibilityOperationBlockReason::NoDom));
     }
 
@@ -191,6 +192,48 @@ mod get_accessibility_operation_block_reason_string {
     }
 }
 
+mod get_accessibility_remove_node_block_reason_string {
+    use super::*;
+
+    #[test]
+    fn returns_the_source_literals() {
+        assert_eq!(
+            get_accessibility_remove_node_block_reason_string(
+                AccessibilityRemoveNodeBlockReason::Destroyed
+            ),
+            "destroyed"
+        );
+        assert_eq!(
+            get_accessibility_remove_node_block_reason_string(
+                AccessibilityRemoveNodeBlockReason::NoDom
+            ),
+            "no-dom"
+        );
+        assert_eq!(
+            get_accessibility_remove_node_block_reason_string(
+                AccessibilityRemoveNodeBlockReason::NodeNotFound
+            ),
+            "node-not-found"
+        );
+    }
+}
+
+mod get_accessibility_tree_block_reason_string {
+    use super::*;
+
+    #[test]
+    fn returns_the_source_literals() {
+        assert_eq!(
+            get_accessibility_tree_block_reason_string(AccessibilityTreeBlockReason::Destroyed),
+            "destroyed"
+        );
+        assert_eq!(
+            get_accessibility_tree_block_reason_string(AccessibilityTreeBlockReason::NoDom),
+            "no-dom"
+        );
+    }
+}
+
 mod host_accessibility_capabilities {
     use super::*;
 
@@ -250,6 +293,61 @@ mod parse_accessibility_operation_block_reason {
     #[test]
     fn rejects_an_unknown_string() {
         assert_eq!(parse_accessibility_operation_block_reason("ok"), None);
+    }
+}
+
+mod parse_accessibility_remove_node_block_reason {
+    use super::*;
+
+    #[test]
+    fn round_trips_every_reason() {
+        for reason in [
+            AccessibilityRemoveNodeBlockReason::Destroyed,
+            AccessibilityRemoveNodeBlockReason::NoDom,
+            AccessibilityRemoveNodeBlockReason::NodeNotFound,
+        ] {
+            assert_eq!(
+                parse_accessibility_remove_node_block_reason(
+                    get_accessibility_remove_node_block_reason_string(reason)
+                ),
+                Some(reason)
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_the_focus_reason() {
+        assert_eq!(
+            parse_accessibility_remove_node_block_reason("focus-not-moved"),
+            None
+        );
+    }
+}
+
+mod parse_accessibility_tree_block_reason {
+    use super::*;
+
+    #[test]
+    fn round_trips_every_reason() {
+        for reason in [
+            AccessibilityTreeBlockReason::Destroyed,
+            AccessibilityTreeBlockReason::NoDom,
+        ] {
+            assert_eq!(
+                parse_accessibility_tree_block_reason(get_accessibility_tree_block_reason_string(
+                    reason
+                )),
+                Some(reason)
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_the_focus_reason() {
+        assert_eq!(
+            parse_accessibility_tree_block_reason("focus-not-moved"),
+            None
+        );
     }
 }
 

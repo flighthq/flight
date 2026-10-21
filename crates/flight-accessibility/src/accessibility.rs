@@ -11,7 +11,7 @@ pub fn announce_accessibility(
     host_accessibility: &HostAccessibilityCapability,
     message: &str,
     liveness: Option<AccessibilityLiveness>,
-) -> AccessibilityOperationOutcome {
+) -> AccessibilityOperationOutcome<AccessibilityTreeBlockReason> {
     let announce = host_accessibility.announce.clone();
     let resolved = liveness.unwrap_or(AccessibilityLiveness::Polite);
     return announce(message, resolved);
@@ -21,7 +21,7 @@ pub fn announce_accessibility(
 /// `clearAccessibilityTree`).
 pub fn clear_accessibility_tree(
     host_accessibility: &HostAccessibilityCapability,
-) -> AccessibilityOperationOutcome {
+) -> AccessibilityOperationOutcome<AccessibilityTreeBlockReason> {
     let clear = host_accessibility.clear.clone();
     return clear();
 }
@@ -39,7 +39,7 @@ pub fn destroy_accessibility(host_accessibility: &HostAccessibilityCapability) {
 pub fn remove_accessibility_node(
     host_accessibility: &HostAccessibilityCapability,
     id: &str,
-) -> AccessibilityOperationOutcome {
+) -> AccessibilityOperationOutcome<AccessibilityRemoveNodeBlockReason> {
     let remove_node = host_accessibility.remove_node.clone();
     return remove_node(id);
 }
@@ -49,7 +49,7 @@ pub fn remove_accessibility_node(
 pub fn set_accessibility_focus(
     host_accessibility: &HostAccessibilityCapability,
     id: &str,
-) -> AccessibilityOperationOutcome {
+) -> AccessibilityOperationOutcome<AccessibilityOperationBlockReason> {
     let set_focus = host_accessibility.set_focus.clone();
     return set_focus(id);
 }
@@ -60,7 +60,7 @@ pub fn set_accessibility_focus(
 pub fn set_accessibility_node(
     host_accessibility: &HostAccessibilityCapability,
     node: &AccessibilityNode,
-) -> AccessibilityOperationOutcome {
+) -> AccessibilityOperationOutcome<AccessibilityTreeBlockReason> {
     let set_node = host_accessibility.set_node.clone();
     return set_node(node);
 }

@@ -5,11 +5,11 @@ use flight_entity::Ref;
 use flight_geometry::{Rectangle, create_rectangle};
 
 struct FakeResults {
-    announce: AccessibilityOperationOutcome,
-    clear: AccessibilityOperationOutcome,
-    remove_node: AccessibilityOperationOutcome,
-    set_focus: AccessibilityOperationOutcome,
-    set_node: AccessibilityOperationOutcome,
+    announce: AccessibilityOperationOutcome<AccessibilityTreeBlockReason>,
+    clear: AccessibilityOperationOutcome<AccessibilityTreeBlockReason>,
+    remove_node: AccessibilityOperationOutcome<AccessibilityRemoveNodeBlockReason>,
+    set_focus: AccessibilityOperationOutcome<AccessibilityOperationBlockReason>,
+    set_node: AccessibilityOperationOutcome<AccessibilityTreeBlockReason>,
 }
 
 struct Fake {
@@ -24,11 +24,11 @@ struct Fake {
     node_bounds: Arc<Mutex<Vec<Option<Ref<Rectangle>>>>>,
 }
 
-fn ok() -> AccessibilityOperationOutcome {
+fn ok<R>() -> AccessibilityOperationOutcome<R> {
     return AccessibilityOperationOutcome::Ok(AccessibilityOperationOutcomeOk {});
 }
 
-fn blocked(reason: AccessibilityOperationBlockReason) -> AccessibilityOperationOutcome {
+fn blocked<R>(reason: R) -> AccessibilityOperationOutcome<R> {
     return AccessibilityOperationOutcome::Blocked(AccessibilityOperationOutcomeBlocked { reason });
 }
 
@@ -152,13 +152,13 @@ mod announce_accessibility {
     #[test]
     fn forwards_a_no_dom_outcome_unchanged() {
         let results = FakeResults {
-            announce: blocked(AccessibilityOperationBlockReason::NoDom),
+            announce: blocked(AccessibilityTreeBlockReason::NoDom),
             ..all_ok()
         };
         let fake = fake(results);
         assert_eq!(
             announce_accessibility(&fake.capability, "saved", None),
-            blocked(AccessibilityOperationBlockReason::NoDom)
+            blocked(AccessibilityTreeBlockReason::NoDom)
         );
     }
 
@@ -178,14 +178,14 @@ mod clear_accessibility_tree {
     #[test]
     fn returns_the_provider_outcome_and_clears_only_the_selected_provider() {
         let results = FakeResults {
-            clear: blocked(AccessibilityOperationBlockReason::NoDom),
+            clear: blocked(AccessibilityTreeBlockReason::NoDom),
             ..all_ok()
         };
         let first = fake(results);
         let second = fake(all_ok());
         assert_eq!(
             clear_accessibility_tree(&first.capability),
-            blocked(AccessibilityOperationBlockReason::NoDom)
+            blocked(AccessibilityTreeBlockReason::NoDom)
         );
         assert_eq!(*first.cleared.lock().unwrap(), 1);
         assert_eq!(*second.cleared.lock().unwrap(), 0);
@@ -194,13 +194,13 @@ mod clear_accessibility_tree {
     #[test]
     fn forwards_a_destroyed_outcome() {
         let results = FakeResults {
-            clear: blocked(AccessibilityOperationBlockReason::Destroyed),
+            clear: blocked(AccessibilityTreeBlockReason::Destroyed),
             ..all_ok()
         };
         let fake = fake(results);
         assert_eq!(
             clear_accessibility_tree(&fake.capability),
-            blocked(AccessibilityOperationBlockReason::Destroyed)
+            blocked(AccessibilityTreeBlockReason::Destroyed)
         );
     }
 }
@@ -224,13 +224,13 @@ mod remove_accessibility_node {
     #[test]
     fn forwards_the_node_id_and_returns_a_node_not_found_outcome() {
         let results = FakeResults {
-            remove_node: blocked(AccessibilityOperationBlockReason::NodeNotFound),
+            remove_node: blocked(AccessibilityRemoveNodeBlockReason::NodeNotFound),
             ..all_ok()
         };
         let fake = fake(results);
         assert_eq!(
             remove_accessibility_node(&fake.capability, "missing"),
-            blocked(AccessibilityOperationBlockReason::NodeNotFound)
+            blocked(AccessibilityRemoveNodeBlockReason::NodeNotFound)
         );
         assert_eq!(*fake.removed.lock().unwrap(), vec!["missing".to_string()]);
     }
@@ -238,13 +238,13 @@ mod remove_accessibility_node {
     #[test]
     fn forwards_a_destroyed_outcome_without_reaching_the_tree() {
         let results = FakeResults {
-            remove_node: blocked(AccessibilityOperationBlockReason::Destroyed),
+            remove_node: blocked(AccessibilityRemoveNodeBlockReason::Destroyed),
             ..all_ok()
         };
         let fake = fake(results);
         assert_eq!(
             remove_accessibility_node(&fake.capability, "subject"),
-            blocked(AccessibilityOperationBlockReason::Destroyed)
+            blocked(AccessibilityRemoveNodeBlockReason::Destroyed)
         );
         assert_eq!(*fake.removed.lock().unwrap(), vec!["subject".to_string()]);
     }
@@ -321,13 +321,13 @@ mod set_accessibility_node {
     #[test]
     fn forwards_a_destroyed_outcome() {
         let results = FakeResults {
-            set_node: blocked(AccessibilityOperationBlockReason::Destroyed),
+            set_node: blocked(AccessibilityTreeBlockReason::Destroyed),
             ..all_ok()
         };
         let fake = fake(results);
         assert_eq!(
             set_accessibility_node(&fake.capability, &node("subject")),
-            blocked(AccessibilityOperationBlockReason::Destroyed)
+            blocked(AccessibilityTreeBlockReason::Destroyed)
         );
     }
 }

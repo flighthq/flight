@@ -20,11 +20,11 @@ mod sugar_tests {
         nodes: Arc<Mutex<Vec<usize>>>,
     }
 
-    fn ok() -> AccessibilityOperationOutcome {
+    fn ok<R>() -> AccessibilityOperationOutcome<R> {
         return AccessibilityOperationOutcome::Ok(AccessibilityOperationOutcomeOk {});
     }
 
-    fn fake(result: AccessibilityOperationOutcome) -> Fake {
+    fn fake() -> Fake {
         let announced = Arc::new(Mutex::new(Vec::new()));
         let cleared = Arc::new(Mutex::new(0));
         let destroyed = Arc::new(Mutex::new(0));
@@ -44,29 +44,29 @@ mod sugar_tests {
                     .lock()
                     .unwrap()
                     .push((message.to_string(), liveness));
-                return result;
+                return ok();
             }),
             clear: Arc::new(move || {
                 *cleared_for.lock().unwrap() += 1;
-                return result;
+                return ok();
             }),
             destroy: Arc::new(move || {
                 *destroyed_for.lock().unwrap() += 1;
             }),
             remove_node: Arc::new(move |id: &str| {
                 removed_for.lock().unwrap().push(id.to_string());
-                return result;
+                return ok();
             }),
             set_focus: Arc::new(move |id: &str| {
                 focused_for.lock().unwrap().push(id.to_string());
-                return result;
+                return ok();
             }),
             set_node: Arc::new(move |node: &AccessibilityNode| {
                 nodes_for
                     .lock()
                     .unwrap()
                     .push(node as *const AccessibilityNode as usize);
-                return result;
+                return ok();
             }),
         };
         return Fake {
@@ -95,8 +95,8 @@ mod sugar_tests {
 
     #[test]
     fn announce_method_matches_announce_accessibility() {
-        let method_fake = fake(ok());
-        let free_fake = fake(ok());
+        let method_fake = fake();
+        let free_fake = fake();
         let method_result = method_fake
             .capability
             .announce("saved", Some(AccessibilityLiveness::Assertive));
@@ -114,8 +114,8 @@ mod sugar_tests {
 
     #[test]
     fn clear_method_matches_clear_accessibility_tree() {
-        let method_fake = fake(ok());
-        let free_fake = fake(ok());
+        let method_fake = fake();
+        let free_fake = fake();
         assert_eq!(
             method_fake.capability.clear(),
             clear_accessibility_tree(&free_fake.capability)
@@ -128,8 +128,8 @@ mod sugar_tests {
 
     #[test]
     fn destroy_method_matches_destroy_accessibility() {
-        let method_fake = fake(ok());
-        let free_fake = fake(ok());
+        let method_fake = fake();
+        let free_fake = fake();
         method_fake.capability.destroy();
         destroy_accessibility(&free_fake.capability);
         assert_eq!(
@@ -140,8 +140,8 @@ mod sugar_tests {
 
     #[test]
     fn remove_node_method_matches_remove_accessibility_node() {
-        let method_fake = fake(ok());
-        let free_fake = fake(ok());
+        let method_fake = fake();
+        let free_fake = fake();
         assert_eq!(
             method_fake.capability.remove_node("missing"),
             remove_accessibility_node(&free_fake.capability, "missing")
@@ -154,8 +154,8 @@ mod sugar_tests {
 
     #[test]
     fn set_focus_method_matches_set_accessibility_focus() {
-        let method_fake = fake(ok());
-        let free_fake = fake(ok());
+        let method_fake = fake();
+        let free_fake = fake();
         assert_eq!(
             method_fake.capability.set_focus("subject"),
             set_accessibility_focus(&free_fake.capability, "subject")
@@ -168,8 +168,8 @@ mod sugar_tests {
 
     #[test]
     fn set_node_method_matches_set_accessibility_node() {
-        let method_fake = fake(ok());
-        let free_fake = fake(ok());
+        let method_fake = fake();
+        let free_fake = fake();
         let method_node = node("method");
         let free_node = node("free");
         assert_eq!(
@@ -196,11 +196,11 @@ impl HostAccessibilityCapability {
         &self,
         message: &str,
         liveness: Option<AccessibilityLiveness>,
-    ) -> AccessibilityOperationOutcome {
+    ) -> AccessibilityOperationOutcome<AccessibilityTreeBlockReason> {
         return announce_accessibility(self, message, liveness);
     }
 
-    pub fn clear(&self) -> AccessibilityOperationOutcome {
+    pub fn clear(&self) -> AccessibilityOperationOutcome<AccessibilityTreeBlockReason> {
         return clear_accessibility_tree(self);
     }
 
@@ -208,15 +208,24 @@ impl HostAccessibilityCapability {
         return destroy_accessibility(self);
     }
 
-    pub fn remove_node(&self, id: &str) -> AccessibilityOperationOutcome {
+    pub fn remove_node(
+        &self,
+        id: &str,
+    ) -> AccessibilityOperationOutcome<AccessibilityRemoveNodeBlockReason> {
         return remove_accessibility_node(self, id);
     }
 
-    pub fn set_focus(&self, id: &str) -> AccessibilityOperationOutcome {
+    pub fn set_focus(
+        &self,
+        id: &str,
+    ) -> AccessibilityOperationOutcome<AccessibilityOperationBlockReason> {
         return set_accessibility_focus(self, id);
     }
 
-    pub fn set_node(&self, node: &AccessibilityNode) -> AccessibilityOperationOutcome {
+    pub fn set_node(
+        &self,
+        node: &AccessibilityNode,
+    ) -> AccessibilityOperationOutcome<AccessibilityTreeBlockReason> {
         return set_accessibility_node(self, node);
     }
 }

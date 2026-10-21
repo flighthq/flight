@@ -1,5 +1,4 @@
 //! The full contract lane, mirroring TS `contract.ts`: every public free function and type.
 
 pub use crate::accessibility::*;
-pub use crate::accessibility_sugar::*;
 pub use crate::types::*;
