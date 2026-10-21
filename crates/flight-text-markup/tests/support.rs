@@ -51,7 +51,11 @@ pub fn empty_format() -> TextFormat {
 }
 
 pub fn attributes(entries: &[(&str, &str)]) -> Record<String> {
-    return create_markup_attributes(entries);
+    let mut out: Record<String> = Record::default();
+    for (name, value) in entries {
+        flight_entity::set_record_value(&mut out, String::from(*name), String::from(*value));
+    }
+    return out;
 }
 
 pub fn standard_registry() -> MarkupTagRegistry {
@@ -68,7 +72,7 @@ pub fn format_of(result: MarkupTagResult) -> TextFormat {
 }
 
 pub fn class_styles(entries: &[(&str, TextFormat)]) -> Ref<Record<TextFormat>> {
-    let out = create_markup_class_styles();
+    let out: Ref<Record<TextFormat>> = Arc::new(std::sync::RwLock::new(Record::default()));
     for (name, format) in entries {
         set_record_value(
             &mut out.write().unwrap(),

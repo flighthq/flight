@@ -117,6 +117,33 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 - Optional Cargo features for heavy subsystems (`gl`, `wgpu`, `skia`, …) save compile time.
 - **Built at the end,** after the porting waves, to avoid merge conflicts. Not before.
 
+## D23 Construction, copy, and clone — APPROVED (user, 2026-10-21)
+
+This changes the TS API as well as Rust. It is applied via a reviewed classification table, not ad hoc.
+
+- **(A) Value types** (vectors, matrices, rectangles, colors, quaternions) take all their components positionally: `create_vector2(x, y)`, `create_matrix3(m00, …, m22)`.
+  - **No overloads:** one signature per function, for transpilation and performance.
+  - Common shapes get either a named constant to copy from (`MATRIX_IDENTITY`, D14) or a distinctly named creator, only where TS exports one.
+- **(B) Entities take no field arguments by default:** create, then assign fields (D16).
+  - **Exception, opt-in per type and approved by the user:** a field that is the object's *defining content*, obvious from the function name without a label, may be a positional argument (e.g. `create_bitmap(bitmap_data)`; but `create_sprite()`). At most one or two such arguments; `Option` if TS allows null.
+  - The `createX(obj?: Partial…)` blobs go away in TS too.
+- **(C) Configuration objects** (context attributes, loader / codec / sink settings, descriptors whose construction derives state, e.g. adjustments) take `options: Option<&XOptions>`, where **every field is `Option`** and "not given" means the documented default.
+- **Copy and clone:**
+  - `copy_x(out, source)` copies all public fields into an existing object (out first, D9). It is the primitive and doubles as field assignment from another object.
+  - `clone_x(source) -> X` = allocate + copy.
+  - Both are always provided for value types. For entities, only for user-approved candidates (plain descriptors without hidden runtime state). **Never** for scene nodes or anything with hierarchy, runtime caches, or signals.
+  - `copy_*` never copies the private runtime.
+- **Lint:** tests may use `..Default::default()` inside options literals.
+
+**initialize_* (approved): the `super()` call of the hierarchy.**
+- `initialize_x` remains the **public per-layer construction seam**: the D12 single allocation at the most-derived `create_*`, and custom kinds chaining their base layer (D2 open families).
+- Its arguments mirror its `create_*` minus allocation: none for (B), options for (C).
+- It is **construction-only, not a reset**. Resetting is a separate verb, where a real need exists.
+- **Kept for value types too** (user): `initialize_x` and `set_x` both exist and one delegates to the other, as `new()` delegates to `create_*`. Uniformity beats removing the redundancy.
+- **Construction is mechanical:** every entity type has `create_x` / `initialize_x` in the contract lane, uniform and boring.
+- **`dispose_x` is a stock verb where it applies,** like `clone` / `copy` / `set`: only for types that hold something to detach (listeners, subscriptions, signals, hierarchy, render state), as TS does today. There are no no-op disposes. `destroy_x` likewise only frees native resources.
+- Rust users may use the sugar instead (`X::new(…)` → `create_x`, D18); free functions remain the contract and the transpile source.
+
 ## D22 Tween targets — APPROVED (user, 2026-10-21)
 
 **Tweens are strictly typed, checked at compile time, and statically dispatched.** A tween works on any object (SDK or user types) with no pre-registration.

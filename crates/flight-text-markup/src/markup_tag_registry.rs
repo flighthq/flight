@@ -9,24 +9,6 @@ use flight_textformat::{TextFormat, TextFormatAlign, TextFormatListMarker};
 
 use crate::types::*;
 
-/// Builds a decoded markup attribute map from name/value pairs (Rust mapping of the TS object
-/// literal a handler receives; `Record` has no public constructor in flight-entity).
-// flight-lint: allow(conform-extra) D9 Rust constructor for the TS attribute object literal
-pub fn create_markup_attributes(entries: &[(&str, &str)]) -> Record<String> {
-    let mut out: Record<String> = Record::default();
-    for (name, value) in entries {
-        flight_entity::set_record_value(&mut out, String::from(*name), String::from(*value));
-    }
-    return out;
-}
-
-// flight-lint: allow(conform-extra) Rust-only shared resolver identity for the hex seam
-/// The hex-only color seam installed by `register_standard_markup_tags` (TS `resolveMarkupHexColor`
-/// as a resolver value). Sharing one Arc keeps the seam's identity stable for `Arc::ptr_eq`.
-pub fn create_markup_hex_resolver() -> MarkupColorResolver {
-    return Arc::new(resolve_markup_hex_color);
-}
-
 /// Creates an empty markup tag registry (TS `createMarkupTagRegistry`). The registered set of tag
 /// names is the supported dialect; the resolver seams start unset.
 pub fn create_markup_tag_registry() -> MarkupTagRegistry {
@@ -389,7 +371,7 @@ pub fn register_markup_tag(
 /// Registers the standard `htmlText` dialect and installs the hex-only color seam
 /// (TS `registerStandardMarkupTags`). Class styling stays unset until opted in.
 pub fn register_standard_markup_tags(registry: &mut MarkupTagRegistry) {
-    registry.seams.write().unwrap().color_resolver = Some(create_markup_hex_resolver());
+    registry.seams.write().unwrap().color_resolver = Some(Arc::new(resolve_markup_hex_color));
     let seams = registry.seams.clone();
     register_markup_tag(registry, "a", Arc::new(markup_anchor_tag_handler));
     register_markup_tag(registry, "b", Arc::new(markup_bold_tag_handler));

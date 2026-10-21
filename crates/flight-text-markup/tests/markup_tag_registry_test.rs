@@ -5,34 +5,6 @@ use flight_textformat::TextFormat;
 
 use crate::support::*;
 
-mod create_markup_attributes {
-    use super::*;
-
-    #[test]
-    fn builds_a_decoded_attribute_map_from_name_value_pairs() {
-        let map = create_markup_attributes(&[("color", "#f00"), ("size", "12")]);
-        assert_eq!(
-            flight_entity::get_record_value(&map, "color").map(String::as_str),
-            Some("#f00")
-        );
-        assert_eq!(
-            flight_entity::get_record_value(&map, "size").map(String::as_str),
-            Some("12")
-        );
-    }
-}
-
-mod create_markup_hex_resolver {
-    use super::*;
-
-    #[test]
-    fn resolves_hex_and_rejects_named_values() {
-        let resolver = create_markup_hex_resolver();
-        assert_eq!(resolver("#ff0000"), Some(0xff0000ff));
-        assert_eq!(resolver("red"), None);
-    }
-}
-
 mod create_markup_tag_registry {
     use super::*;
 
@@ -193,6 +165,25 @@ mod register_standard_markup_tags {
                 name
             );
         }
+    }
+
+    #[test]
+    fn installs_the_hex_color_resolver_as_the_registry_seam() {
+        // Source markupTagRegistry.test.ts:113-115 checks the installed `colorResolver` is the
+        // hex-only resolver. Rust's resolver is an Arc trait object; a second Arc::new of the same
+        // free function is a distinct allocation, so this asserts the seam is installed and behaves
+        // as the source resolver. Pointer identity needs the shared-instance ruling.
+        let mut registry = create_markup_tag_registry();
+        register_standard_markup_tags(&mut registry);
+        let resolver = registry
+            .seams
+            .read()
+            .unwrap()
+            .color_resolver
+            .clone()
+            .expect("the standard dialect installs a color resolver");
+        assert_eq!(resolver("#ff0000"), Some(0xff0000ff));
+        assert_eq!(resolver("red"), None);
     }
 
     #[test]

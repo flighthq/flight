@@ -10,16 +10,6 @@ fn bold() -> TextFormat {
     };
 }
 
-mod create_markup_class_styles {
-    use super::*;
-
-    #[test]
-    fn creates_an_empty_live_class_map() {
-        let styles = create_markup_class_styles();
-        assert!(flight_entity::entries(&styles.read().unwrap()).is_empty());
-    }
-}
-
 mod register_markup_class_styles {
     use super::*;
 
