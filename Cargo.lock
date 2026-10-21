@@ -431,6 +431,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-interaction"
+version = "0.6.0"
+dependencies = [
+ "flight-bitmap",
+ "flight-clip",
+ "flight-entity",
+ "flight-geometry",
+ "flight-image",
+ "flight-input",
+ "flight-log",
+ "flight-node",
+ "flight-path",
+ "flight-quadbatch",
+ "flight-registry",
+ "flight-scene-document",
+ "flight-scene2d",
+ "flight-shape",
+ "flight-signals",
+ "flight-spatial",
+ "flight-text",
+ "flight-textlayout",
+ "flight-texture",
+ "flight-textureatlas",
+ "flight-tilemap",
+]
+
+[[package]]
 name = "flight-intl"
 version = "0.6.0"
 dependencies = [

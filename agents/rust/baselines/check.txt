@@ -37,7 +37,6 @@ file-structure	crates/flight-statechart/src/types.rs	fn appears after a later se
 fn-order	crates/flight-statechart/src/statechart.rs	`advance_statechart_region` should come before `set_statechart_region_duration`
 fn-order	crates/flight-statechart/src/statechart.rs	`create_statechart_instance` should come before `advance_statechart_instance`
 fn-order	crates/flight-statechart/src/statechart.rs	`initialize_statechart_instance` should come before `get_statechart_region_state`
-fn-order	crates/flight-statechart/src/statechart_signals.rs	`initialize_statechart_signals` should come before `get_statechart_signals`
 hashmap-iteration	crates/flight-log/src/log.rs	`fn apply_serializers` iterates HashMap/HashSet `data`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-log/src/log.rs	`fn create_child_log_context` iterates HashMap/HashSet `fields`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hashmap-iteration	crates/flight-log/src/log.rs	`fn merge_context_fields` iterates HashMap/HashSet `fields`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
