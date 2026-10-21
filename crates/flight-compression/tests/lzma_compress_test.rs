@@ -1,6 +1,8 @@
 use flight_compression::*;
+use flight_entity::FlightError;
+use flight_entity::FlightErrorKind;
 
-mod compress_lzma_tests {
+mod compress_lzma {
     use super::*;
 
     #[test]
@@ -163,7 +165,7 @@ mod compress_lzma_tests {
     }
 }
 
-mod create_sdk_host_compress_lzma_tests {
+mod create_sdk_host_compress_lzma {
     use super::*;
 
     #[test]
@@ -176,10 +178,15 @@ mod create_sdk_host_compress_lzma_tests {
     }
 
     #[test]
-    #[should_panic(expected = "lzma: only Raw framing is supported")]
     fn rejects_non_raw_framing() {
         let input = vec![1u8, 2, 3];
         let slot = create_sdk_host_compress_lzma();
-        (slot.compress)(&input, CompressionFraming::Rfc1950);
+        let payload = std::panic::catch_unwind(|| (slot.compress)(&input, CompressionFraming::Rfc1950))
+            .expect_err("non-Raw framing must throw");
+        let error = payload
+            .downcast::<FlightError>()
+            .expect("panic payload must be a FlightError");
+        assert_eq!(error.kind, FlightErrorKind::Error);
+        assert_eq!(error.message, "lzma: only Raw framing is supported");
     }
 }

@@ -52,6 +52,9 @@ dependencies = [
 [[package]]
 name = "flight-compression"
 version = "0.6.0"
+dependencies = [
+ "flight-entity",
+]
 
 [[package]]
 name = "flight-easing"

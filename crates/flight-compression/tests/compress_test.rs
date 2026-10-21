@@ -246,7 +246,7 @@ mod compress_deflate_zlib {
     }
 }
 
-mod sdk_host_compress_deflate {
+mod create_sdk_host_compress_deflate {
     use super::*;
 
     #[test]

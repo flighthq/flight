@@ -210,6 +210,29 @@ const FIXTURE_REPETITIVE: &str = "eJztxjEBACAIALBMYgIxCdC/g0HcrlXPybtil4iIiIiIiI
 const FIXTURE_LOREM: &str = "eJztzdENQyEMQ9FVPEDVSd4SlESVJUIQSfYvQ/STb+v6PL7VwBVlEB++EUw003yh+wztqVkbTbgYnfMLHTxjqJwAygpzQaqtE3N2CqVmohKjfc79G89FLnKRi/wX+QG1gr9k";
 const FIXTURE_STORED_L0: &str = "eAEBKwDU/3RoZSBxdWljayBicm93biBmb3gganVtcHMgb3ZlciB0aGUgbGF6eSBkb2dhPA/6";
 
+mod create_sdk_host_decompress_deflate {
+    use super::*;
+
+    #[test]
+    fn inflates_through_the_slot_exactly_as_the_bare_function_does() {
+        let slot = create_sdk_host_decompress_deflate();
+        assert_eq!(
+            (slot.decompress)(
+                &decode_base64(FIXTURE_LITERAL),
+                0,
+                CompressionFraming::Rfc1950
+            ),
+            Some(b"flighthq scene-formats".to_vec())
+        );
+    }
+
+    #[test]
+    fn is_a_ready_made_deflate_slot_carrying_the_portable_inflater() {
+        let slot = create_sdk_host_decompress_deflate();
+        assert!(slot.decompress == (decompress_deflate as Decompressor));
+    }
+}
+
 mod decompress_deflate {
     use super::*;
 
@@ -527,28 +550,5 @@ mod decompress_deflate {
         assert!(
             decompress_deflate(&compressed, 64 * 1024 - 1, CompressionFraming::Rfc1950).is_none()
         );
-    }
-}
-
-mod sdk_host_decompress_deflate {
-    use super::*;
-
-    #[test]
-    fn inflates_through_the_slot_exactly_as_the_bare_function_does() {
-        let slot = create_sdk_host_decompress_deflate();
-        assert_eq!(
-            (slot.decompress)(
-                &decode_base64(FIXTURE_LITERAL),
-                0,
-                CompressionFraming::Rfc1950
-            ),
-            Some(b"flighthq scene-formats".to_vec())
-        );
-    }
-
-    #[test]
-    fn is_a_ready_made_deflate_slot_carrying_the_portable_inflater() {
-        let slot = create_sdk_host_decompress_deflate();
-        assert!(slot.decompress == (decompress_deflate as Decompressor));
     }
 }

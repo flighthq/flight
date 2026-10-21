@@ -28,68 +28,11 @@ fn create_deflate_bit_writer() -> DeflateBitWriter {
     };
 }
 
-fn dw_write_bit(writer: &mut DeflateBitWriter, bit: u32) {
-    writer.bit_buffer |= bit << writer.bit_count;
-    writer.bit_count += 1;
-    if writer.bit_count == 8 {
-        dw_push(writer, writer.bit_buffer as u8);
-        writer.bit_buffer = 0;
-        writer.bit_count = 0;
-    }
-}
-
-fn dw_write_bits(writer: &mut DeflateBitWriter, value: u32, count: u32) {
-    for i in 0..count {
-        dw_write_bit(writer, (value >> i) & 1);
-    }
-}
-
-fn dw_write_code(writer: &mut DeflateBitWriter, code: u32, count: u32) {
-    for i in (0..count).rev() {
-        dw_write_bit(writer, (code >> i) & 1);
-    }
-}
-
-fn dw_align_to_byte(writer: &mut DeflateBitWriter) {
-    if writer.bit_count != 0 {
-        dw_push(writer, writer.bit_buffer as u8);
-        writer.bit_buffer = 0;
-        writer.bit_count = 0;
-    }
-}
-
-fn dw_write_byte(writer: &mut DeflateBitWriter, value: u8) {
-    dw_push(writer, value);
-}
-
-fn dw_finish(writer: &mut DeflateBitWriter) -> Vec<u8> {
-    dw_align_to_byte(writer);
-    return writer.bytes[..writer.length].to_vec();
-}
-
-fn dw_push(writer: &mut DeflateBitWriter, value: u8) {
-    if writer.length == writer.bytes.len() {
-        let mut grown = vec![0u8; writer.bytes.len() * 2];
-        grown[..writer.bytes.len()].copy_from_slice(&writer.bytes);
-        writer.bytes = grown;
-    }
-    writer.bytes[writer.length] = value;
-    writer.length += 1;
-}
-
 /// The deflate compress slot Flight itself can fill, ready to drop into a Host's `compress` group.
 /// Dispatches on framing to the matching encoder.
 pub fn create_sdk_host_compress_deflate() -> HostCompressDeflateCapability {
     return HostCompressDeflateCapability {
         compress: sdk_host_compress_deflate_compress,
-    };
-}
-
-fn sdk_host_compress_deflate_compress(bytes: &[u8], framing: CompressionFraming) -> Vec<u8> {
-    return if framing == CompressionFraming::Rfc1950 {
-        compress_deflate_zlib(bytes)
-    } else {
-        compress_deflate(bytes)
     };
 }
 
@@ -119,6 +62,55 @@ pub fn compress_deflate_zlib(bytes: &[u8]) -> Vec<u8> {
     out[trailer + 2] = ((checksum >> 8) & 0xff) as u8;
     out[trailer + 3] = (checksum & 0xff) as u8;
     return out;
+}
+
+fn dw_align_to_byte(writer: &mut DeflateBitWriter) {
+    if writer.bit_count != 0 {
+        dw_push(writer, writer.bit_buffer as u8);
+        writer.bit_buffer = 0;
+        writer.bit_count = 0;
+    }
+}
+
+fn dw_finish(writer: &mut DeflateBitWriter) -> Vec<u8> {
+    dw_align_to_byte(writer);
+    return writer.bytes[..writer.length].to_vec();
+}
+
+fn dw_push(writer: &mut DeflateBitWriter, value: u8) {
+    if writer.length == writer.bytes.len() {
+        let mut grown = vec![0u8; writer.bytes.len() * 2];
+        grown[..writer.bytes.len()].copy_from_slice(&writer.bytes);
+        writer.bytes = grown;
+    }
+    writer.bytes[writer.length] = value;
+    writer.length += 1;
+}
+
+fn dw_write_bit(writer: &mut DeflateBitWriter, bit: u32) {
+    writer.bit_buffer |= bit << writer.bit_count;
+    writer.bit_count += 1;
+    if writer.bit_count == 8 {
+        dw_push(writer, writer.bit_buffer as u8);
+        writer.bit_buffer = 0;
+        writer.bit_count = 0;
+    }
+}
+
+fn dw_write_bits(writer: &mut DeflateBitWriter, value: u32, count: u32) {
+    for i in 0..count {
+        dw_write_bit(writer, (value >> i) & 1);
+    }
+}
+
+fn dw_write_byte(writer: &mut DeflateBitWriter, value: u8) {
+    dw_push(writer, value);
+}
+
+fn dw_write_code(writer: &mut DeflateBitWriter, code: u32, count: u32) {
+    for i in (0..count).rev() {
+        dw_write_bit(writer, (code >> i) & 1);
+    }
 }
 
 fn encode_fixed_huffman_block(input: &[u8]) -> Vec<u8> {
@@ -185,8 +177,6 @@ fn encode_fixed_huffman_block(input: &[u8]) -> Vec<u8> {
     return dw_finish(&mut writer);
 }
 
-// Type-00 blocks: a byte-aligned length and its one's complement, then the bytes verbatim. Each block
-// carries at most 65535 bytes, so a long input needs several.
 fn encode_stored_blocks(input: &[u8]) -> Vec<u8> {
     let mut writer = create_deflate_bit_writer();
     let mut offset: usize = 0;
@@ -211,11 +201,6 @@ fn encode_stored_blocks(input: &[u8]) -> Vec<u8> {
     return dw_finish(&mut writer);
 }
 
-fn stored_length(input_length: usize) -> usize {
-    let blocks = 1usize.max((input_length + STORED_BLOCK_MAX - 1) / STORED_BLOCK_MAX);
-    return blocks * STORED_BLOCK_OVERHEAD + input_length;
-}
-
 fn hash_at(input: &[u8], position: usize) -> usize {
     return (((input[position] as u32) << 10)
         ^ ((input[position + 1] as u32) << 5)
@@ -232,18 +217,30 @@ fn match_run_length(input: &[u8], candidate: usize, position: usize) -> usize {
     return length;
 }
 
-// The fixed literal/length alphabet changes code width three times across its range; the boundaries
-// are the format's, and getting one wrong yields a stream that decodes correctly only below it.
-fn write_literal_symbol(writer: &mut DeflateBitWriter, symbol: i32) {
-    if symbol <= 143 {
-        dw_write_code(writer, (0x30 + symbol) as u32, 8);
-    } else if symbol <= 255 {
-        dw_write_code(writer, (0x190 + symbol - 144) as u32, 9);
-    } else if symbol <= 279 {
-        dw_write_code(writer, (symbol - 256) as u32, 7);
+fn sdk_host_compress_deflate_compress(bytes: &[u8], framing: CompressionFraming) -> Vec<u8> {
+    return if framing == CompressionFraming::Rfc1950 {
+        compress_deflate_zlib(bytes)
     } else {
-        dw_write_code(writer, (0xc0 + symbol - 280) as u32, 8);
+        compress_deflate(bytes)
+    };
+}
+
+fn stored_length(input_length: usize) -> usize {
+    let blocks = 1usize.max((input_length + STORED_BLOCK_MAX - 1) / STORED_BLOCK_MAX);
+    return blocks * STORED_BLOCK_OVERHEAD + input_length;
+}
+
+fn write_distance_symbol(writer: &mut DeflateBitWriter, distance: i32) {
+    let mut index = DISTANCE_BASE.len() as i32 - 1;
+    while index > 0 && DISTANCE_BASE[index as usize] > distance {
+        index -= 1;
     }
+    dw_write_code(writer, index as u32, 5);
+    dw_write_bits(
+        writer,
+        (distance - DISTANCE_BASE[index as usize]) as u32,
+        DISTANCE_EXTRA[index as usize] as u32,
+    );
 }
 
 fn write_length_symbol(writer: &mut DeflateBitWriter, length: i32) {
@@ -259,17 +256,16 @@ fn write_length_symbol(writer: &mut DeflateBitWriter, length: i32) {
     );
 }
 
-fn write_distance_symbol(writer: &mut DeflateBitWriter, distance: i32) {
-    let mut index = DISTANCE_BASE.len() as i32 - 1;
-    while index > 0 && DISTANCE_BASE[index as usize] > distance {
-        index -= 1;
+fn write_literal_symbol(writer: &mut DeflateBitWriter, symbol: i32) {
+    if symbol <= 143 {
+        dw_write_code(writer, (0x30 + symbol) as u32, 8);
+    } else if symbol <= 255 {
+        dw_write_code(writer, (0x190 + symbol - 144) as u32, 9);
+    } else if symbol <= 279 {
+        dw_write_code(writer, (symbol - 256) as u32, 7);
+    } else {
+        dw_write_code(writer, (0xc0 + symbol - 280) as u32, 8);
     }
-    dw_write_code(writer, index as u32, 5);
-    dw_write_bits(
-        writer,
-        (distance - DISTANCE_BASE[index as usize]) as u32,
-        DISTANCE_EXTRA[index as usize] as u32,
-    );
 }
 
 const END_OF_BLOCK: i32 = 256;

@@ -749,9 +749,6 @@ file-structure	crates/flight-collision/src/types.rs	struct appears after a later
 file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
 file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
 file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
-file-structure	crates/flight-compression/src/lzma.rs	struct appears after a later section
-file-structure	crates/flight-compression/src/lzma_compress.rs	struct appears after a later section
-file-structure	crates/flight-compression/src/lzma_compress.rs	struct appears after a later section
 file-structure	crates/flight-layout/src/types.rs	struct appears after a later section
 file-structure	crates/flight-layout/src/types.rs	struct appears after a later section
 file-structure	crates/flight-layout/src/types.rs	struct appears after a later section
@@ -1167,32 +1164,6 @@ fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`get_collision_triangle_
 fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`heightfield_cell_triangles` should come before `sweep_collision_heightfield3d`
 fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`ray_triangle_intersection` should come before `rotate_by_quat`
 fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`rotate_by_quat` should come before `transform_point_hf`
-fn-order	crates/flight-compression/src/compress.rs	`compress_deflate` should come before `sdk_host_compress_deflate_compress`
-fn-order	crates/flight-compression/src/compress.rs	`create_sdk_host_compress_deflate` should come before `dw_push`
-fn-order	crates/flight-compression/src/compress.rs	`dw_align_to_byte` should come before `dw_write_code`
-fn-order	crates/flight-compression/src/compress.rs	`dw_finish` should come before `dw_write_byte`
-fn-order	crates/flight-compression/src/compress.rs	`hash_at` should come before `stored_length`
-fn-order	crates/flight-compression/src/compress.rs	`write_distance_symbol` should come before `write_length_symbol`
-fn-order	crates/flight-compression/src/compress.rs	`write_length_symbol` should come before `write_literal_symbol`
-fn-order	crates/flight-compression/src/deflate.rs	`build_huffman_tree` should come before `inflate_dynamic_block`
-fn-order	crates/flight-compression/src/deflate.rs	`create_fixed_trees` should come before `read_zlib_adler32`
-fn-order	crates/flight-compression/src/deflate.rs	`create_sdk_host_decompress_deflate` should come before `inflate_state_write_byte`
-fn-order	crates/flight-compression/src/deflate.rs	`inflate_dynamic_block` should come before `inflate_huffman_block`
-fn-order	crates/flight-compression/src/deflate.rs	`inflate_huffman_block` should come before `inflate_stored_block`
-fn-order	crates/flight-compression/src/deflate.rs	`inflate_stored_block` should come before `raw_inflate`
-fn-order	crates/flight-compression/src/lzma.rs	`ensure_capacity` should come before `lzma_decode`
-fn-order	crates/flight-compression/src/lzma.rs	`lzma_decode_match_len` should come before `rc_dec_decode_bit_tree_reverse`
-fn-order	crates/flight-compression/src/lzma.rs	`lzma_decode` should come before `lzma_decode_match_len`
-fn-order	crates/flight-compression/src/lzma.rs	`rc_dec_decode_bit_tree` should come before `rc_dec_decode_direct_bits`
-fn-order	crates/flight-compression/src/lzma.rs	`rc_dec_decode_bit` should come before `rc_dec_normalize`
-fn-order	crates/flight-compression/src/lzma_compress.rs	`compress_lzma` should come before `sdk_host_compress_lzma_compress`
-fn-order	crates/flight-compression/src/lzma_compress.rs	`encode_distance` should come before `get_dist_slot`
-fn-order	crates/flight-compression/src/lzma_compress.rs	`encode_literal` should come before `lzma_encode`
-fn-order	crates/flight-compression/src/lzma_compress.rs	`init_probs` should come before `lzma_find_match`
-fn-order	crates/flight-compression/src/lzma_compress.rs	`lzma_encode` should come before `rc_enc_encode_bit_tree_reverse`
-fn-order	crates/flight-compression/src/lzma_compress.rs	`lzma_find_match` should come before `lzma_insert_hash`
-fn-order	crates/flight-compression/src/lzma_compress.rs	`rc_enc_encode_bit_tree` should come before `rc_enc_encode_direct_bits`
-fn-order	crates/flight-compression/src/lzma_compress.rs	`rc_enc_encode_bit` should come before `rc_enc_shift_low`
 fn-order	crates/flight-encoding/src/utf8.rs	`assert_utf8_window` should come before `encode_utf8`
 fn-order	crates/flight-flow/src/flow.rs	`create_flow_stack` should come before `clear_flow_stack`
 fn-order	crates/flight-flow/src/flow.rs	`initialize_flow_stack` should come before `get_flow_stack_visible_states`
@@ -2147,11 +2118,6 @@ test-module-coverage	crates/flight-collision/tests/triangle_mesh3d_test.rs	`swee
 test-module-coverage	crates/flight-collision/tests/triangle_mesh3d_test.rs	`sweep_collision_triangle_mesh3d` has no test module (expected `mod sweep_collision_triangle_mesh3d { ... }`)
 test-module-coverage	crates/flight-collision/tests/triangle_mesh3d_test.rs	`write_collision_heightfield_bounds3d` has no test module (expected `mod write_collision_heightfield_bounds3d { ... }`)
 test-module-coverage	crates/flight-collision/tests/triangle_mesh3d_test.rs	`write_collision_triangle_mesh_bounds3d` has no test module (expected `mod write_collision_triangle_mesh_bounds3d { ... }`)
-test-module-coverage	crates/flight-compression/tests/compress_test.rs	`create_sdk_host_compress_deflate` has no test module (expected `mod create_sdk_host_compress_deflate { ... }`)
-test-module-coverage	crates/flight-compression/tests/deflate_test.rs	`create_sdk_host_decompress_deflate` has no test module (expected `mod create_sdk_host_decompress_deflate { ... }`)
-test-module-coverage	crates/flight-compression/tests/lzma_compress_test.rs	`compress_lzma` has no test module (expected `mod compress_lzma { ... }`)
-test-module-coverage	crates/flight-compression/tests/lzma_compress_test.rs	`create_sdk_host_compress_lzma` has no test module (expected `mod create_sdk_host_compress_lzma { ... }`)
-test-module-coverage	crates/flight-compression/tests/lzma_test.rs	`create_sdk_host_decompress_lzma` has no test module (expected `mod create_sdk_host_decompress_lzma { ... }`)
 test-module-coverage	crates/flight-entity/tests/clone_test.rs	`clone_entity` has no test module (expected `mod clone_entity { ... }`)
 test-module-coverage	crates/flight-entity/tests/clone_test.rs	`strip_entity_runtime` has no test module (expected `mod strip_entity_runtime { ... }`)
 test-module-coverage	crates/flight-entity/tests/enable_entity_runtime_guards_test.rs	`disable_entity_runtime_guards` has no test module (expected `mod disable_entity_runtime_guards { ... }`)
@@ -2388,7 +2354,6 @@ test-module-order	crates/flight-bitmap/tests/bitmap_histogram_test.rs	`equalize_
 test-module-order	crates/flight-bitmap/tests/bitmap_pixel_test.rs	`get_bitmap_pixel_channel_fn` should come before `get_bitmap_pixel_fn`
 test-module-order	crates/flight-bitmap/tests/bitmap_rotate_test.rs	`rotate_bitmap_180_fn` should come before `rotate_bitmap_fn`
 test-module-order	crates/flight-collision/tests/collision_support2d_test.rs	`get_collision_support2d_fn` should come before `has_collision_support2d`
-test-module-order	crates/flight-compression/tests/lzma_test.rs	`create_sdk_host_decompress_lzma_tests` should come before `decompress_lzma`
 test-module-order	crates/flight-entity/tests/guards_test.rs	`create_guarded_entity_runtime_tests` should come before `create_guarded_entity_tests`
 test-module-order	crates/flight-log/tests/log_test.rs	`enable_log_signals_tests` should come before `start_log_timer_tests`
 test-module-order	crates/flight-log/tests/log_test.rs	`log_assert_tests` should come before `log_tests`

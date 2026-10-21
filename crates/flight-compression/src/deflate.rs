@@ -1,5 +1,5 @@
 use crate::deflate_format::{compute_adler32, DISTANCE_BASE, DISTANCE_EXTRA, LENGTH_BASE, LENGTH_EXTRA};
-use crate::types::{CompressionFraming, Decompressor, HostDecompressDeflateCapability};
+use crate::types::{CompressionFraming, HostDecompressDeflateCapability};
 
 // Dependency-free, synchronous RFC 1951 (DEFLATE) and RFC 1950 (zlib) decoding. Kept in its own module
 // so this stays tree-shakable: a bundle that never references `sdk_host_decompress_deflate` pays
@@ -27,40 +27,11 @@ struct InflateState {
     position: usize,
 }
 
-fn inflate_state_read_bit(state: &mut InflateState) -> Result<i32, String> {
-    if state.bit_count == 0 {
-        if state.position >= state.input.len() {
-            return Err("deflate: read past end of stream".to_string());
-        }
-        state.bit_buffer = state.input[state.position] as u32;
-        state.position += 1;
-        state.bit_count = 8;
-    }
-    let bit = (state.bit_buffer & 1) as i32;
-    state.bit_buffer >>= 1;
-    state.bit_count -= 1;
-    return Ok(bit);
-}
-
-fn inflate_state_read_bits(state: &mut InflateState, count: i32, base: i32) -> Result<i32, String> {
-    let mut value = 0i32;
-    for i in 0..count {
-        value |= inflate_state_read_bit(state)? << i;
-    }
-    return Ok(value + base);
-}
-
-fn inflate_state_write_byte(state: &mut InflateState, byte: u8) -> Result<(), String> {
-    if state.output_length >= state.output_limit {
-        return Err("deflate: output exceeds the inflate limit".to_string());
-    }
-    if state.output_length >= state.output.len() {
-        let new_len = (state.output.len() * 2).min(state.output_limit);
-        state.output.resize(new_len, 0);
-    }
-    state.output[state.output_length] = byte;
-    state.output_length += 1;
-    return Ok(());
+fn create_fixed_trees() -> (HuffmanTree, HuffmanTree) {
+    let literal_tree = build_fixed_literal_tree();
+    let dist_lengths = vec![5i32; 30];
+    let distance_tree = build_huffman_tree(&dist_lengths, 30);
+    return (literal_tree, distance_tree);
 }
 
 /// The deflate slot Flight itself can fill, ready to drop into a Host's `decompress` group.
@@ -68,6 +39,63 @@ pub fn create_sdk_host_decompress_deflate() -> HostDecompressDeflateCapability {
     return HostDecompressDeflateCapability {
         decompress: decompress_deflate,
     };
+}
+
+fn build_fixed_literal_tree() -> HuffmanTree {
+    let mut lengths = vec![0i32; 288];
+    for i in 0..144 {
+        lengths[i] = 8;
+    }
+    for i in 144..256 {
+        lengths[i] = 9;
+    }
+    for i in 256..280 {
+        lengths[i] = 7;
+    }
+    for i in 280..288 {
+        lengths[i] = 8;
+    }
+    return build_huffman_tree(&lengths, 288);
+}
+
+fn build_huffman_tree(lengths: &[i32], count: usize) -> HuffmanTree {
+    let mut counts = vec![0i32; 16];
+    for i in 0..count {
+        counts[lengths[i] as usize] += 1;
+    }
+    counts[0] = 0;
+
+    let mut offsets = vec![0i32; 16];
+    for len in 1..16 {
+        offsets[len] = offsets[len - 1] + counts[len - 1];
+    }
+
+    let mut symbols = vec![0i32; count];
+    for i in 0..count {
+        if lengths[i] != 0 {
+            symbols[offsets[lengths[i] as usize] as usize] = i as i32;
+            offsets[lengths[i] as usize] += 1;
+        }
+    }
+    return HuffmanTree { counts, symbols };
+}
+
+fn decode_symbol(state: &mut InflateState, tree: &HuffmanTree) -> Result<i32, String> {
+    let mut code: i32 = 0;
+    let mut first: i32 = 0;
+    let mut index: i32 = 0;
+    for len in 1..16 {
+        code |= inflate_state_read_bit(state)?;
+        let count = tree.counts[len];
+        if code - first < count {
+            return Ok(tree.symbols[(index + (code - first)) as usize]);
+        }
+        index += count;
+        first += count;
+        first <<= 1;
+        code <<= 1;
+    }
+    return Err("deflate: invalid Huffman code".to_string());
 }
 
 /// Decompress a DEFLATE or zlib stream. Returns None on any error, invalid input, or checksum mismatch.
@@ -115,125 +143,6 @@ pub fn decompress_deflate(
     }
 }
 
-// Inflates the raw DEFLATE block stream at `start`, returning exactly the decompressed bytes.
-fn raw_inflate(input: &[u8], start: usize, uncompressed_length: usize) -> Result<Vec<u8>, String> {
-    let declared_limit = if uncompressed_length > 0 {
-        uncompressed_length
-    } else {
-        MAX_INFLATE_BYTES
-    };
-    let limit = declared_limit.min(MAX_INFLATE_BYTES);
-    let mut state = InflateState {
-        input: input.to_vec(),
-        bit_buffer: 0,
-        bit_count: 0,
-        output: vec![0u8; INITIAL_INFLATE_BYTES.min(limit)],
-        output_length: 0,
-        output_limit: limit,
-        position: start,
-    };
-
-    let (fixed_literal_tree, fixed_distance_tree) = create_fixed_trees();
-
-    let mut final_flag;
-    loop {
-        final_flag = inflate_state_read_bit(&mut state)?;
-        let block_type = inflate_state_read_bits(&mut state, 2, 0)?;
-        if block_type == 0 {
-            inflate_stored_block(&mut state)?;
-        } else if block_type == 1 {
-            inflate_huffman_block(&mut state, &fixed_literal_tree, &fixed_distance_tree)?;
-        } else if block_type == 2 {
-            inflate_dynamic_block(&mut state)?;
-        } else {
-            return Err("deflate: invalid block type".to_string());
-        }
-        if final_flag != 0 {
-            break;
-        }
-    }
-
-    return if state.output_length == state.output.len() {
-        Ok(state.output)
-    } else {
-        Ok(state.output[..state.output_length].to_vec())
-    };
-}
-
-// A stored (uncompressed) block: align to the next byte, read the 16-bit LEN and its one's-complement
-// NLEN, then copy LEN literal bytes.
-fn inflate_stored_block(state: &mut InflateState) -> Result<(), String> {
-    state.bit_buffer = 0;
-    state.bit_count = 0;
-    if state.position + 4 > state.input.len() {
-        return Err("deflate: truncated stored block header".to_string());
-    }
-    let len =
-        state.input[state.position] as u32 | ((state.input[state.position + 1] as u32) << 8);
-    let nlen =
-        state.input[state.position + 2] as u32 | ((state.input[state.position + 3] as u32) << 8);
-    state.position += 4;
-    if (len ^ 0xffff) != nlen {
-        return Err("deflate: stored block length mismatch".to_string());
-    }
-    if state.position + len as usize > state.input.len() {
-        return Err("deflate: truncated stored block data".to_string());
-    }
-    for _ in 0..len {
-        inflate_state_write_byte(state, state.input[state.position])?;
-        state.position += 1;
-    }
-    return Ok(());
-}
-
-// Decodes one Huffman-coded block against the given literal/length and distance trees, emitting
-// literals and resolving <length, distance> back-references against the bytes already written.
-fn inflate_huffman_block(
-    state: &mut InflateState,
-    literal_tree: &HuffmanTree,
-    distance_tree: &HuffmanTree,
-) -> Result<(), String> {
-    loop {
-        let symbol = decode_symbol(state, literal_tree)?;
-        if symbol == 256 {
-            return Ok(());
-        } // end of block
-        if symbol < 256 {
-            inflate_state_write_byte(state, symbol as u8)?;
-            continue;
-        }
-        let length_index = symbol - 257;
-        if length_index >= LENGTH_BASE.len() as i32 {
-            return Err("deflate: invalid length symbol".to_string());
-        }
-        let length = inflate_state_read_bits(
-            state,
-            LENGTH_EXTRA[length_index as usize],
-            LENGTH_BASE[length_index as usize],
-        )?;
-        let distance_symbol = decode_symbol(state, distance_tree)?;
-        if distance_symbol >= DISTANCE_BASE.len() as i32 {
-            return Err("deflate: invalid distance symbol".to_string());
-        }
-        let distance = inflate_state_read_bits(
-            state,
-            DISTANCE_EXTRA[distance_symbol as usize],
-            DISTANCE_BASE[distance_symbol as usize],
-        )?;
-        let mut source = state.output_length as i32 - distance;
-        if source < 0 {
-            return Err("deflate: back-reference before start of output".to_string());
-        }
-        for _ in 0..length {
-            let byte = state.output[source as usize];
-            inflate_state_write_byte(state, byte)?;
-            source += 1;
-        }
-    }
-}
-
-// Builds the dynamic literal/length and distance Huffman trees from the block header (their code
-// lengths are themselves Huffman-coded by a code-length code), then decodes the block.
 fn inflate_dynamic_block(state: &mut InflateState) -> Result<(), String> {
     let literal_count = inflate_state_read_bits(state, 5, 257)?;
     let distance_count = inflate_state_read_bits(state, 5, 1)?;
@@ -308,47 +217,152 @@ fn inflate_dynamic_block(state: &mut InflateState) -> Result<(), String> {
     return Ok(());
 }
 
-// Builds a canonical Huffman decode tree from per-symbol code lengths (0 = unused). Symbols are
-// bucketed by length so decode_symbol can walk the code space one bit at a time.
-fn build_huffman_tree(lengths: &[i32], count: usize) -> HuffmanTree {
-    let mut counts = vec![0i32; 16];
-    for i in 0..count {
-        counts[lengths[i] as usize] += 1;
-    }
-    counts[0] = 0;
-
-    let mut offsets = vec![0i32; 16];
-    for len in 1..16 {
-        offsets[len] = offsets[len - 1] + counts[len - 1];
-    }
-
-    let mut symbols = vec![0i32; count];
-    for i in 0..count {
-        if lengths[i] != 0 {
-            symbols[offsets[lengths[i] as usize] as usize] = i as i32;
-            offsets[lengths[i] as usize] += 1;
+fn inflate_huffman_block(
+    state: &mut InflateState,
+    literal_tree: &HuffmanTree,
+    distance_tree: &HuffmanTree,
+) -> Result<(), String> {
+    loop {
+        let symbol = decode_symbol(state, literal_tree)?;
+        if symbol == 256 {
+            return Ok(());
+        } // end of block
+        if symbol < 256 {
+            inflate_state_write_byte(state, symbol as u8)?;
+            continue;
+        }
+        let length_index = symbol - 257;
+        if length_index >= LENGTH_BASE.len() as i32 {
+            return Err("deflate: invalid length symbol".to_string());
+        }
+        let length = inflate_state_read_bits(
+            state,
+            LENGTH_EXTRA[length_index as usize],
+            LENGTH_BASE[length_index as usize],
+        )?;
+        let distance_symbol = decode_symbol(state, distance_tree)?;
+        if distance_symbol >= DISTANCE_BASE.len() as i32 {
+            return Err("deflate: invalid distance symbol".to_string());
+        }
+        let distance = inflate_state_read_bits(
+            state,
+            DISTANCE_EXTRA[distance_symbol as usize],
+            DISTANCE_BASE[distance_symbol as usize],
+        )?;
+        let mut source = state.output_length as i32 - distance;
+        if source < 0 {
+            return Err("deflate: back-reference before start of output".to_string());
+        }
+        for _ in 0..length {
+            let byte = state.output[source as usize];
+            inflate_state_write_byte(state, byte)?;
+            source += 1;
         }
     }
-    return HuffmanTree { counts, symbols };
 }
 
-// Reads bits until they identify one canonical Huffman symbol.
-fn decode_symbol(state: &mut InflateState, tree: &HuffmanTree) -> Result<i32, String> {
-    let mut code: i32 = 0;
-    let mut first: i32 = 0;
-    let mut index: i32 = 0;
-    for len in 1..16 {
-        code |= inflate_state_read_bit(state)?;
-        let count = tree.counts[len];
-        if code - first < count {
-            return Ok(tree.symbols[(index + (code - first)) as usize]);
+fn inflate_state_read_bit(state: &mut InflateState) -> Result<i32, String> {
+    if state.bit_count == 0 {
+        if state.position >= state.input.len() {
+            return Err("deflate: read past end of stream".to_string());
         }
-        index += count;
-        first += count;
-        first <<= 1;
-        code <<= 1;
+        state.bit_buffer = state.input[state.position] as u32;
+        state.position += 1;
+        state.bit_count = 8;
     }
-    return Err("deflate: invalid Huffman code".to_string());
+    let bit = (state.bit_buffer & 1) as i32;
+    state.bit_buffer >>= 1;
+    state.bit_count -= 1;
+    return Ok(bit);
+}
+
+fn inflate_state_read_bits(state: &mut InflateState, count: i32, base: i32) -> Result<i32, String> {
+    let mut value = 0i32;
+    for i in 0..count {
+        value |= inflate_state_read_bit(state)? << i;
+    }
+    return Ok(value + base);
+}
+
+fn inflate_state_write_byte(state: &mut InflateState, byte: u8) -> Result<(), String> {
+    if state.output_length >= state.output_limit {
+        return Err("deflate: output exceeds the inflate limit".to_string());
+    }
+    if state.output_length >= state.output.len() {
+        let new_len = (state.output.len() * 2).min(state.output_limit);
+        state.output.resize(new_len, 0);
+    }
+    state.output[state.output_length] = byte;
+    state.output_length += 1;
+    return Ok(());
+}
+
+fn inflate_stored_block(state: &mut InflateState) -> Result<(), String> {
+    state.bit_buffer = 0;
+    state.bit_count = 0;
+    if state.position + 4 > state.input.len() {
+        return Err("deflate: truncated stored block header".to_string());
+    }
+    let len =
+        state.input[state.position] as u32 | ((state.input[state.position + 1] as u32) << 8);
+    let nlen =
+        state.input[state.position + 2] as u32 | ((state.input[state.position + 3] as u32) << 8);
+    state.position += 4;
+    if (len ^ 0xffff) != nlen {
+        return Err("deflate: stored block length mismatch".to_string());
+    }
+    if state.position + len as usize > state.input.len() {
+        return Err("deflate: truncated stored block data".to_string());
+    }
+    for _ in 0..len {
+        inflate_state_write_byte(state, state.input[state.position])?;
+        state.position += 1;
+    }
+    return Ok(());
+}
+
+fn raw_inflate(input: &[u8], start: usize, uncompressed_length: usize) -> Result<Vec<u8>, String> {
+    let declared_limit = if uncompressed_length > 0 {
+        uncompressed_length
+    } else {
+        MAX_INFLATE_BYTES
+    };
+    let limit = declared_limit.min(MAX_INFLATE_BYTES);
+    let mut state = InflateState {
+        input: input.to_vec(),
+        bit_buffer: 0,
+        bit_count: 0,
+        output: vec![0u8; INITIAL_INFLATE_BYTES.min(limit)],
+        output_length: 0,
+        output_limit: limit,
+        position: start,
+    };
+
+    let (fixed_literal_tree, fixed_distance_tree) = create_fixed_trees();
+
+    let mut final_flag;
+    loop {
+        final_flag = inflate_state_read_bit(&mut state)?;
+        let block_type = inflate_state_read_bits(&mut state, 2, 0)?;
+        if block_type == 0 {
+            inflate_stored_block(&mut state)?;
+        } else if block_type == 1 {
+            inflate_huffman_block(&mut state, &fixed_literal_tree, &fixed_distance_tree)?;
+        } else if block_type == 2 {
+            inflate_dynamic_block(&mut state)?;
+        } else {
+            return Err("deflate: invalid block type".to_string());
+        }
+        if final_flag != 0 {
+            break;
+        }
+    }
+
+    return if state.output_length == state.output.len() {
+        Ok(state.output)
+    } else {
+        Ok(state.output[..state.output_length].to_vec())
+    };
 }
 
 fn read_zlib_adler32(input: &[u8], offset: usize) -> u32 {
@@ -356,30 +370,6 @@ fn read_zlib_adler32(input: &[u8], offset: usize) -> u32 {
         | ((input[offset + 1] as u32) << 16)
         | ((input[offset + 2] as u32) << 8)
         | (input[offset + 3] as u32);
-}
-
-fn create_fixed_trees() -> (HuffmanTree, HuffmanTree) {
-    let literal_tree = build_fixed_literal_tree();
-    let dist_lengths = vec![5i32; 30];
-    let distance_tree = build_huffman_tree(&dist_lengths, 30);
-    return (literal_tree, distance_tree);
-}
-
-fn build_fixed_literal_tree() -> HuffmanTree {
-    let mut lengths = vec![0i32; 288];
-    for i in 0..144 {
-        lengths[i] = 8;
-    }
-    for i in 144..256 {
-        lengths[i] = 9;
-    }
-    for i in 256..280 {
-        lengths[i] = 7;
-    }
-    for i in 280..288 {
-        lengths[i] = 8;
-    }
-    return build_huffman_tree(&lengths, 288);
 }
 
 const MAX_INFLATE_BYTES: usize = 256 * 1024 * 1024;

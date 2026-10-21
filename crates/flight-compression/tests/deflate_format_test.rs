@@ -1,4 +1,4 @@
-use flight_compression::*;
+use flight_compression::contract::*;
 
 mod compute_adler32 {
     use super::*;

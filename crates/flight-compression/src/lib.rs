@@ -1,17 +1,28 @@
-mod types;
-pub use types::*;
-
-mod deflate_format;
-pub use deflate_format::*;
-
 mod compress;
-pub use compress::*;
-
 mod deflate;
-pub use deflate::*;
-
+mod deflate_format;
 mod lzma;
-pub use lzma::*;
-
 mod lzma_compress;
-pub use lzma_compress::*;
+mod types;
+
+pub mod contract;
+
+// Public lane: the exports of the pinned TS `index.ts` (compress, deflate, lzma, lzmaCompress),
+// plus the Rust types and constructors the public signatures require. Contract-only seams
+// (deflate_format's tables and compute_adler32) stay in `contract`.
+pub use contract::compress_deflate;
+pub use contract::compress_deflate_zlib;
+pub use contract::compress_lzma;
+pub use contract::create_sdk_host_compress_deflate;
+pub use contract::create_sdk_host_compress_lzma;
+pub use contract::create_sdk_host_decompress_deflate;
+pub use contract::create_sdk_host_decompress_lzma;
+pub use contract::decompress_deflate;
+pub use contract::decompress_lzma;
+
+pub use contract::CompressionFraming;
+pub use contract::Decompressor;
+pub use contract::HostCompressDeflateCapability;
+pub use contract::HostCompressLzmaCapability;
+pub use contract::HostDecompressDeflateCapability;
+pub use contract::HostDecompressLzmaCapability;

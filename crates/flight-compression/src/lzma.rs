@@ -1,4 +1,12 @@
-use crate::types::{CompressionFraming, Decompressor, HostDecompressLzmaCapability};
+use crate::types::{CompressionFraming, HostDecompressLzmaCapability};
+
+// Range coder decoder state, separate from probability tables to avoid borrow conflicts.
+struct RcDec {
+    input: Vec<u8>,
+    range: u32,
+    code: u32,
+    pos: usize,
+}
 
 /// The LZMA decompress slot Flight itself can fill, ready to drop into a Host's `decompress` group.
 pub fn create_sdk_host_decompress_lzma() -> HostDecompressLzmaCapability {
@@ -25,99 +33,34 @@ pub fn decompress_lzma(
     }
 }
 
-// Range coder decoder state, separate from probability tables to avoid borrow conflicts.
-struct RcDec {
-    input: Vec<u8>,
-    range: u32,
-    code: u32,
-    pos: usize,
-}
-
-fn rc_dec_normalize(rc: &mut RcDec) {
-    if rc.range < TOP_VALUE {
-        rc.range = rc.range.wrapping_shl(8);
-        let byte = if rc.pos < rc.input.len() {
-            rc.input[rc.pos] as u32
+fn ensure_capacity(
+    output: &mut Vec<u8>,
+    needed: usize,
+    output_limit: usize,
+) -> Result<(), String> {
+    if needed > output_limit {
+        return Err("lzma: output exceeds the decode limit".to_string());
+    }
+    if needed <= output.len() {
+        return Ok(());
+    }
+    let mut new_cap = output.len();
+    while new_cap < needed {
+        new_cap = if new_cap < 1 << 30 {
+            new_cap * 2
         } else {
-            0
+            new_cap + (1 << 30)
         };
-        rc.code = rc.code.wrapping_shl(8) | byte;
-        rc.pos += 1;
     }
+    if new_cap > output_limit {
+        new_cap = output_limit;
+    }
+    output.resize(new_cap, 0);
+    return Ok(());
 }
 
-fn rc_dec_decode_bit(rc: &mut RcDec, probs: &mut [u16], index: usize) -> i32 {
-    rc_dec_normalize(rc);
-    let bound = (rc.range >> PROB_BITS).wrapping_mul(probs[index] as u32);
-    if rc.code < bound {
-        rc.range = bound;
-        probs[index] += ((1u16 << PROB_BITS) - probs[index]) >> MOVE_BITS;
-        return 0;
-    }
-    rc.range = rc.range.wrapping_sub(bound);
-    rc.code = rc.code.wrapping_sub(bound);
-    probs[index] -= probs[index] >> MOVE_BITS;
-    return 1;
-}
-
-fn rc_dec_decode_direct_bits(rc: &mut RcDec, count: i32) -> i32 {
-    let mut result: i32 = 0;
-    for _ in 0..count {
-        rc_dec_normalize(rc);
-        rc.range = rc.range.wrapping_shr(1);
-        result <<= 1;
-        if rc.code >= rc.range {
-            rc.code = rc.code.wrapping_sub(rc.range);
-            result |= 1;
-        }
-    }
-    return result;
-}
-
-fn rc_dec_decode_bit_tree(
-    rc: &mut RcDec,
-    probs: &mut [u16],
-    offset: usize,
-    num_bits: i32,
-) -> i32 {
-    let mut m: i32 = 1;
-    for _ in 0..num_bits {
-        m = (m << 1) | rc_dec_decode_bit(rc, probs, offset + m as usize);
-    }
-    return m - (1 << num_bits);
-}
-
-fn rc_dec_decode_bit_tree_reverse(
-    rc: &mut RcDec,
-    probs: &mut [u16],
-    offset: usize,
-    num_bits: i32,
-) -> i32 {
-    let mut m: i32 = 1;
-    let mut symbol: i32 = 0;
-    for i in 0..num_bits {
-        let bit = rc_dec_decode_bit(rc, probs, offset.wrapping_add(m as usize));
-        m = (m << 1) | bit;
-        symbol |= bit << i;
-    }
-    return symbol;
-}
-
-fn lzma_decode_match_len(
-    rc: &mut RcDec,
-    choice: &mut [u16],
-    low: &mut [u16],
-    mid: &mut [u16],
-    high: &mut [u16],
-    pos_state: usize,
-) -> i32 {
-    if rc_dec_decode_bit(rc, choice, 0) == 0 {
-        return rc_dec_decode_bit_tree(rc, low, pos_state << 3, 3);
-    }
-    if rc_dec_decode_bit(rc, choice, 1) == 0 {
-        return 8 + rc_dec_decode_bit_tree(rc, mid, pos_state << 3, 3);
-    }
-    return 16 + rc_dec_decode_bit_tree(rc, high, 0, 8);
+fn init_probs(count: usize) -> Vec<u16> {
+    return vec![PROB_INIT; count];
 }
 
 fn lzma_decode(input: &[u8], uncompressed_length: usize) -> Result<Vec<u8>, String> {
@@ -432,34 +375,91 @@ fn lzma_decode(input: &[u8], uncompressed_length: usize) -> Result<Vec<u8>, Stri
     };
 }
 
-fn ensure_capacity(
-    output: &mut Vec<u8>,
-    needed: usize,
-    output_limit: usize,
-) -> Result<(), String> {
-    if needed > output_limit {
-        return Err("lzma: output exceeds the decode limit".to_string());
+fn lzma_decode_match_len(
+    rc: &mut RcDec,
+    choice: &mut [u16],
+    low: &mut [u16],
+    mid: &mut [u16],
+    high: &mut [u16],
+    pos_state: usize,
+) -> i32 {
+    if rc_dec_decode_bit(rc, choice, 0) == 0 {
+        return rc_dec_decode_bit_tree(rc, low, pos_state << 3, 3);
     }
-    if needed <= output.len() {
-        return Ok(());
+    if rc_dec_decode_bit(rc, choice, 1) == 0 {
+        return 8 + rc_dec_decode_bit_tree(rc, mid, pos_state << 3, 3);
     }
-    let mut new_cap = output.len();
-    while new_cap < needed {
-        new_cap = if new_cap < 1 << 30 {
-            new_cap * 2
-        } else {
-            new_cap + (1 << 30)
-        };
-    }
-    if new_cap > output_limit {
-        new_cap = output_limit;
-    }
-    output.resize(new_cap, 0);
-    return Ok(());
+    return 16 + rc_dec_decode_bit_tree(rc, high, 0, 8);
 }
 
-fn init_probs(count: usize) -> Vec<u16> {
-    return vec![PROB_INIT; count];
+fn rc_dec_decode_bit(rc: &mut RcDec, probs: &mut [u16], index: usize) -> i32 {
+    rc_dec_normalize(rc);
+    let bound = (rc.range >> PROB_BITS).wrapping_mul(probs[index] as u32);
+    if rc.code < bound {
+        rc.range = bound;
+        probs[index] += ((1u16 << PROB_BITS) - probs[index]) >> MOVE_BITS;
+        return 0;
+    }
+    rc.range = rc.range.wrapping_sub(bound);
+    rc.code = rc.code.wrapping_sub(bound);
+    probs[index] -= probs[index] >> MOVE_BITS;
+    return 1;
+}
+
+fn rc_dec_decode_bit_tree(
+    rc: &mut RcDec,
+    probs: &mut [u16],
+    offset: usize,
+    num_bits: i32,
+) -> i32 {
+    let mut m: i32 = 1;
+    for _ in 0..num_bits {
+        m = (m << 1) | rc_dec_decode_bit(rc, probs, offset + m as usize);
+    }
+    return m - (1 << num_bits);
+}
+
+fn rc_dec_decode_bit_tree_reverse(
+    rc: &mut RcDec,
+    probs: &mut [u16],
+    offset: usize,
+    num_bits: i32,
+) -> i32 {
+    let mut m: i32 = 1;
+    let mut symbol: i32 = 0;
+    for i in 0..num_bits {
+        let bit = rc_dec_decode_bit(rc, probs, offset.wrapping_add(m as usize));
+        m = (m << 1) | bit;
+        symbol |= bit << i;
+    }
+    return symbol;
+}
+
+fn rc_dec_decode_direct_bits(rc: &mut RcDec, count: i32) -> i32 {
+    let mut result: i32 = 0;
+    for _ in 0..count {
+        rc_dec_normalize(rc);
+        rc.range = rc.range.wrapping_shr(1);
+        result <<= 1;
+        if rc.code >= rc.range {
+            rc.code = rc.code.wrapping_sub(rc.range);
+            result |= 1;
+        }
+    }
+    return result;
+}
+
+fn rc_dec_normalize(rc: &mut RcDec) {
+    if rc.range < TOP_VALUE {
+        rc.range = rc.range.wrapping_shl(8);
+        let byte = if rc.pos < rc.input.len() {
+            rc.input[rc.pos] as u32
+        } else {
+            0
+        };
+        rc.code = rc.code.wrapping_shl(8) | byte;
+        rc.pos += 1;
+    }
 }
 
 const STATE_AFTER_LITERAL: [usize; 12] = [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 4, 5];

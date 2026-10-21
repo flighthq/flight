@@ -38,6 +38,29 @@ const FIXTURE_REP_SHUFFLE_EXPECTED: &str = "AgMCBAMFBAEFAgIGAAIEAQYGBQQGBAMDAgIC
 const FIXTURE_REP_BUGFIX: &str = "XQAQAAA/AAAAAAAAAAAAglNJ8CRbC1Bvfw4Bn3KRgimvIEUMESap889L1RxPvXH3baBJ5QGxV6SlI8Mwg8/3Hg==";
 const FIXTURE_REP_BUGFIX_EXPECTED: &str = "AQgBAAcAAwIBAAUIAQADAAkGCQYJAAMAAQABBgEGCQAFAAEIAQgJCAcGBwAFCAcCAwQHCAMCBwgHAgMCBwIJ";
 
+mod create_sdk_host_decompress_lzma {
+    use super::*;
+
+    #[test]
+    fn is_a_ready_made_lzma_slot_carrying_the_portable_decoder() {
+        let slot = create_sdk_host_decompress_lzma();
+        assert!(slot.decompress == (decompress_lzma as Decompressor));
+    }
+
+    #[test]
+    fn decompresses_through_the_slot_exactly_as_the_bare_function_does() {
+        let slot = create_sdk_host_decompress_lzma();
+        assert_eq!(
+            (slot.decompress)(
+                &decode_base64(FIXTURE_LITERAL),
+                0,
+                CompressionFraming::Raw
+            ),
+            Some(b"flighthq scene-formats".to_vec())
+        );
+    }
+}
+
 mod decompress_lzma {
     use super::*;
 
@@ -220,29 +243,6 @@ mod decompress_lzma {
         assert_eq!(
             decompress_lzma(&compressed, expected.len(), CompressionFraming::Raw),
             Some(expected)
-        );
-    }
-}
-
-mod create_sdk_host_decompress_lzma_tests {
-    use super::*;
-
-    #[test]
-    fn is_a_ready_made_lzma_slot_carrying_the_portable_decoder() {
-        let slot = create_sdk_host_decompress_lzma();
-        assert!(slot.decompress == (decompress_lzma as Decompressor));
-    }
-
-    #[test]
-    fn decompresses_through_the_slot_exactly_as_the_bare_function_does() {
-        let slot = create_sdk_host_decompress_lzma();
-        assert_eq!(
-            (slot.decompress)(
-                &decode_base64(FIXTURE_LITERAL),
-                0,
-                CompressionFraming::Raw
-            ),
-            Some(b"flighthq scene-formats".to_vec())
         );
     }
 }
