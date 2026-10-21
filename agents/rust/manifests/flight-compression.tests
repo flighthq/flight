@@ -96,5 +96,7 @@ tests/types_test.rs: decompressor::captures_state_and_preserves_input_slice_and_
 tests/types_test.rs: decompressor::independent_capturing_instances_can_call_each_other_without_shared_state
 tests/types_test.rs: decompressor::retains_nullable_failure_and_bare_sdk_function_compatibility
 tests/types_test.rs: get_compression_framing_string::returns_the_exact_ts_strings
+tests/types_test.rs: get_compression_string::returns_all_exact_lowercase_algorithm_keys
+tests/types_test.rs: parse_compression::accepts_only_the_complete_exact_algorithm_string_table
 tests/types_test.rs: parse_compression_framing::parses_the_exact_ts_strings
 tests/types_test.rs: parse_compression_framing::rejects_other_text_and_wrong_casing
