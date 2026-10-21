@@ -96,7 +96,7 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
   - Caches owned by another state (render backends) are maps **keyed by entity uid**, with explicit dispose. TS already pairs its WeakMaps with a strong Set for deterministic shutdown.
   - This is another payoff of the common Entity base (user).
   - Needed before render (L11).
-- **Still open:** public text positions. Principal recommends UTF-16 code-unit offsets, matching TS.
+- **Text positions — APPROVED (user, 2026-10-21):** strings are stored as Rust `String` (UTF-8). **Every public text position, length, and range in the text APIs is a UTF-16 code-unit offset (`usize`)**, identical to TS. User-visible units (cursor movement, selection, deletion of emoji and other multi-unit characters) go by grapheme cluster boundaries (textsegment), never by raw offsets. Conversions happen inside the implementation, as textbidi already does.
 
 ## D13 Export lanes — APPROVED (user, 2026-10-21)
 
