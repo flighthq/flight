@@ -557,6 +557,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-tray"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-geometry",
+ "flight-hostcapability",
+ "flight-log",
+ "flight-menu",
+ "flight-signals",
+ "flight-stream",
+]
+
+[[package]]
 name = "flight-tween"
 version = "0.6.0"
 dependencies = [

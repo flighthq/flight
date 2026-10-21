@@ -1,0 +1,23 @@
+[package]
+name = "flight-tray"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "System tray icons over explicit host capabilities: lifecycle, image/title/tooltip/menu, balloons and events"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-hostcapability = { workspace = true }
+flight-log = { workspace = true }
+flight-menu = { path = "../flight-menu" }
+flight-signals = { workspace = true }
+flight-stream = { path = "../flight-stream" }
+
+[lints]
+workspace = true
