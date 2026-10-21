@@ -285,7 +285,7 @@ src/manifold2d.rs: pub fn initialize_collision_manifold2d(out: &mut CollisionMan
 src/manifold3d.rs: pub fn clear_collision_manifold3d(out: &mut CollisionManifold3D)
 src/manifold3d.rs: pub fn create_collision_manifold3d() -> CollisionManifold3D
 src/manifold3d.rs: pub fn initialize_collision_manifold3d(out: &mut CollisionManifold3D)
-src/point_containment2d.rs: pub fn get_collision_shape_contains_point2d(shape: &CollisionShape2D, x: f32, y: f32,) -> bool
+src/point_containment2d.rs: pub fn get_collision_shape_contains_point2d(shape: &CollisionShape2D, x: f32, y: f32) -> bool
 src/point_containment3d.rs: pub fn get_collision_shape_contains_point3d(shape: &CollisionShape3D, x: f32, y: f32, z: f32,) -> bool
 src/raycast_collision_shape2d.rs: pub fn create_collision_raycast_hit2d() -> CollisionRaycastHit2D
 src/raycast_collision_shape2d.rs: pub fn initialize_collision_raycast_hit2d(out: &mut CollisionRaycastHit2D)
@@ -432,7 +432,7 @@ src/sugar.rs: impl CollisionTriangleMesh3D :: fn validation_status(&self) -> Opt
 src/sugar.rs: impl CollisionTriangleMesh3D :: fn write_bounds(&self, out: &mut CollisionAabb3D)
 src/sweep_collision_shape2d.rs: pub fn create_collision_time_of_impact2d() -> CollisionTimeOfImpact2D
 src/sweep_collision_shape2d.rs: pub fn initialize_collision_time_of_impact2d(out: &mut CollisionTimeOfImpact2D)
-src/sweep_collision_shape2d.rs: pub fn sweep_collision_shape2d(out: &mut CollisionTimeOfImpact2D, registry: &CollisionRegistry2D, shape_a: &CollisionShape2D, translation_ax: f32, translation_ay: f32, shape_b: &CollisionShape2D, translation_bx: f32, translation_by: f32, max_fraction: Option<f32>,) -> bool
+src/sweep_collision_shape2d.rs: pub fn sweep_collision_shape2d(out: &mut CollisionTimeOfImpact2D, _registry: &CollisionRegistry2D, shape_a: &CollisionShape2D, translation_ax: f32, translation_ay: f32, shape_b: &CollisionShape2D, translation_bx: f32, translation_by: f32, max_fraction: Option<f32>,) -> bool
 src/sweep_collision_shape3d.rs: pub fn create_collision_time_of_impact3d() -> CollisionTimeOfImpact3D
 src/sweep_collision_shape3d.rs: pub fn initialize_collision_time_of_impact3d(out: &mut CollisionTimeOfImpact3D)
 src/sweep_collision_shape3d.rs: pub fn sweep_collision_shape3d(out: &mut CollisionTimeOfImpact3D, registry: &CollisionRegistry3D, shape_a: &CollisionShape3D, translation_ax: f32, translation_ay: f32, translation_az: f32, shape_b: &CollisionShape3D, translation_bx: f32, translation_by: f32, translation_bz: f32, max_fraction: Option<f32>,) -> bool
