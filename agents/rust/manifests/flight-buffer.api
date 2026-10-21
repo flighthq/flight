@@ -1,0 +1,35 @@
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::ArrayBuffer;
+src/lib.rs: pub use contract::ArrayBufferView;
+src/lib.rs: pub use contract::ArrayBufferViewKind;
+src/lib.rs: pub use contract::Blob;
+src/lib.rs: pub use contract::create_array_buffer;
+src/lib.rs: pub use contract::create_array_buffer_from_bytes;
+src/lib.rs: pub use contract::create_array_buffer_view;
+src/lib.rs: pub use contract::create_blob;
+src/lib.rs: pub use contract::equals_array_buffer;
+src/lib.rs: pub use contract::get_array_buffer_byte_length;
+src/lib.rs: pub use contract::get_array_buffer_storage;
+src/lib.rs: pub use contract::get_array_buffer_view_kind_string;
+src/lib.rs: pub use contract::parse_array_buffer_view_kind;
+src/types.rs: #[derive(Clone)] pub struct ArrayBuffer { storage: Ref<Box<[u8]>>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ArrayBufferViewKind { Uint8Array, Uint8ClampedArray, Int8Array, Uint16Array, Int16Array, Uint32Array, Int32Array, Float32Array, Float64Array, DataView, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct ArrayBufferView { pub buffer: ArrayBuffer, pub byte_offset: usize, pub byte_length: usize, pub kind: ArrayBufferViewKind, }
+src/types.rs: impl Eq for ArrayBuffer
+src/types.rs: impl PartialEq for ArrayBuffer
+src/types.rs: impl PartialEq for ArrayBuffer :: fn eq(&self, other: &Self) -> bool
+src/types.rs: impl fmt::Debug for ArrayBuffer
+src/types.rs: impl fmt::Debug for ArrayBuffer :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for Blob
+src/types.rs: impl fmt::Debug for Blob :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub fn create_array_buffer(byte_length: usize) -> ArrayBuffer
+src/types.rs: pub fn create_array_buffer_from_bytes(bytes: Box<[u8]>) -> ArrayBuffer
+src/types.rs: pub fn create_array_buffer_view(buffer: &ArrayBuffer, byte_offset: usize, byte_length: usize, kind: ArrayBufferViewKind,) -> Option<ArrayBufferView>
+src/types.rs: pub fn create_blob(mime_type: String, size: usize, payload: Unknown) -> Arc<Blob>
+src/types.rs: pub fn equals_array_buffer(a: &ArrayBuffer, b: &ArrayBuffer) -> bool
+src/types.rs: pub fn get_array_buffer_byte_length(buffer: &ArrayBuffer) -> usize
+src/types.rs: pub fn get_array_buffer_storage(buffer: &ArrayBuffer) -> Ref<Box<[u8]>>
+src/types.rs: pub fn get_array_buffer_view_kind_string(value: ArrayBufferViewKind) -> &'static str
+src/types.rs: pub fn parse_array_buffer_view_kind(value: &str) -> Option<ArrayBufferViewKind>
+src/types.rs: pub struct Blob { pub mime_type: String, pub size: usize, pub payload: Unknown, }
