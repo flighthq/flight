@@ -4,6 +4,7 @@ use crate::types::*;
 
 /// Single horizontal box blur pass using a sliding-window accumulator.
 // flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+// flight-lint: allow(f64) integer channel sums over a region exceed f32 exact range (2^24) on large bitmaps; averaged in double before rounding, as TS number does
 pub fn blur_bitmap_pixels_horizontal(
     out: &mut [u8],
     source: &Uint8Array,
@@ -93,6 +94,7 @@ pub fn blur_bitmap_pixels_horizontal_weighted(
 
 /// Single vertical box blur pass using a sliding-window accumulator.
 // flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+// flight-lint: allow(f64) integer channel sums over a region exceed f32 exact range (2^24) on large bitmaps; averaged in double before rounding, as TS number does
 pub fn blur_bitmap_pixels_vertical(
     out: &mut [u8],
     source: &Uint8Array,

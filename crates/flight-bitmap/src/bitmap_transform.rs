@@ -85,6 +85,17 @@ pub fn apply_bitmap_threshold(
     changed
 }
 
+fn compare(a: u32, op: &ThresholdOperation, b: u32) -> bool {
+    match op {
+        ThresholdOperation::LessThan => a < b,
+        ThresholdOperation::LessThanOrEqual => a <= b,
+        ThresholdOperation::GreaterThan => a > b,
+        ThresholdOperation::GreaterThanOrEqual => a >= b,
+        ThresholdOperation::Equal => a == b,
+        ThresholdOperation::NotEqual => a != b,
+    }
+}
+
 /// Blends each channel of `source` into `dest` using per-channel multipliers.
 pub fn merge_bitmap(
     dest: &mut BitmapRegion,
@@ -136,15 +147,4 @@ pub fn scroll_bitmap(out: &mut Bitmap, dx: i32, dy: i32) {
         }
     }
     invalidate_bitmap(out);
-}
-
-fn compare(a: u32, op: &ThresholdOperation, b: u32) -> bool {
-    match op {
-        ThresholdOperation::LessThan => a < b,
-        ThresholdOperation::LessThanOrEqual => a <= b,
-        ThresholdOperation::GreaterThan => a > b,
-        ThresholdOperation::GreaterThanOrEqual => a >= b,
-        ThresholdOperation::Equal => a == b,
-        ThresholdOperation::NotEqual => a != b,
-    }
 }

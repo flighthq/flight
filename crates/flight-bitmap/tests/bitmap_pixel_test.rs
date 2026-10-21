@@ -1,6 +1,6 @@
 use flight_bitmap::contract::*;
 
-mod get_bitmap_pixel_fn {
+mod get_bitmap_pixel {
     use super::*;
 
     #[test]
@@ -39,7 +39,7 @@ mod get_bitmap_pixel_fn {
     }
 }
 
-mod get_bitmap_pixel_channel_fn {
+mod get_bitmap_pixel_channel {
     use super::*;
 
     #[test]
@@ -52,7 +52,7 @@ mod get_bitmap_pixel_channel_fn {
     }
 }
 
-mod get_bitmap_pixel_luminance_fn {
+mod get_bitmap_pixel_luminance {
     use super::*;
 
     #[test]
@@ -77,7 +77,7 @@ mod get_bitmap_pixel_luminance_fn {
     }
 }
 
-mod get_bitmap_pixel_rgb_fn {
+mod get_bitmap_pixel_rgb {
     use super::*;
 
     #[test]
@@ -95,7 +95,7 @@ mod get_bitmap_pixel_rgb_fn {
     }
 }
 
-mod set_bitmap_pixel_fn {
+mod set_bitmap_pixel {
     use super::*;
 
     #[test]
@@ -121,7 +121,7 @@ mod set_bitmap_pixel_fn {
     }
 }
 
-mod set_bitmap_pixel_rgb_fn {
+mod set_bitmap_pixel_rgb {
     use super::*;
 
     #[test]

@@ -1,6 +1,28 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
+fn copy_mirrored(dest: &mut BitmapRegion, source: &BitmapRegion, w: i32, h: i32, mirror_x: bool, mirror_y: bool) {
+    let sd = source.bitmap.data.clone();
+    let s_stride = source.bitmap.width as usize;
+    let d_stride = dest.bitmap.width as usize;
+    for py in 0..h {
+        let sy = source.y + (if mirror_y { h - 1 - py } else { py });
+        let dy = dest.y + py;
+        if sy < 0 || sy >= source.bitmap.height as i32 || dy < 0 || dy >= dest.bitmap.height as i32 { continue; }
+        for px in 0..w {
+            let sx = source.x + (if mirror_x { w - 1 - px } else { px });
+            let dx = dest.x + px;
+            if sx < 0 || sx >= s_stride as i32 || dx < 0 || dx >= d_stride as i32 { continue; }
+            let si = (sy as usize * s_stride + sx as usize) * 4;
+            let di = (dy as usize * d_stride + dx as usize) * 4;
+            dest.bitmap.data[di] = sd[si];
+            dest.bitmap.data[di + 1] = sd[si + 1];
+            dest.bitmap.data[di + 2] = sd[si + 2];
+            dest.bitmap.data[di + 3] = sd[si + 3];
+        }
+    }
+}
+
 /// Mirrors source left-to-right into dest.
 pub fn flip_bitmap_horizontal(dest: &mut BitmapRegion, source: &BitmapRegion) {
     let w = dest.width.min(source.width);
@@ -45,28 +67,6 @@ pub fn flip_bitmap_vertical(dest: &mut BitmapRegion, source: &BitmapRegion) {
     }
     copy_mirrored(dest, source, w, h, false, true);
     invalidate_bitmap(&mut dest.bitmap);
-}
-
-fn copy_mirrored(dest: &mut BitmapRegion, source: &BitmapRegion, w: i32, h: i32, mirror_x: bool, mirror_y: bool) {
-    let sd = source.bitmap.data.clone();
-    let s_stride = source.bitmap.width as usize;
-    let d_stride = dest.bitmap.width as usize;
-    for py in 0..h {
-        let sy = source.y + (if mirror_y { h - 1 - py } else { py });
-        let dy = dest.y + py;
-        if sy < 0 || sy >= source.bitmap.height as i32 || dy < 0 || dy >= dest.bitmap.height as i32 { continue; }
-        for px in 0..w {
-            let sx = source.x + (if mirror_x { w - 1 - px } else { px });
-            let dx = dest.x + px;
-            if sx < 0 || sx >= s_stride as i32 || dx < 0 || dx >= d_stride as i32 { continue; }
-            let si = (sy as usize * s_stride + sx as usize) * 4;
-            let di = (dy as usize * d_stride + dx as usize) * 4;
-            dest.bitmap.data[di] = sd[si];
-            dest.bitmap.data[di + 1] = sd[si + 1];
-            dest.bitmap.data[di + 2] = sd[si + 2];
-            dest.bitmap.data[di + 3] = sd[si + 3];
-        }
-    }
 }
 
 fn is_same_region(a: &BitmapRegion, b: &BitmapRegion) -> bool {

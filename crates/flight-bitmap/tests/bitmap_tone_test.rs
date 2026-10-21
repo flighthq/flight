@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
 }
 
-mod apply_bitmap_curve_fn {
+mod apply_bitmap_curve {
     use super::*;
 
     fn identity_lut() -> Vec<u8> {
@@ -71,7 +71,7 @@ mod apply_bitmap_curve_fn {
     }
 }
 
-mod apply_bitmap_levels_fn {
+mod apply_bitmap_levels {
     use super::*;
 
     #[test]

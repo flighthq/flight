@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
 }
 
-mod transform_bitmap_fn {
+mod transform_bitmap {
     use super::*;
 
     #[test]

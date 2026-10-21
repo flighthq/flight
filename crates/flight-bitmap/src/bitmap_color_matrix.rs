@@ -5,14 +5,6 @@ const LUMA_R: f32 = 0.213;
 const LUMA_G: f32 = 0.715;
 const LUMA_B: f32 = 0.072;
 
-fn clamp_byte(value: f32) -> u8 {
-    value.round().max(0.0).min(255.0) as u8
-}
-
-fn set_color_matrix(out: &mut [f32; 20], values: [f32; 20]) {
-    *out = values;
-}
-
 pub fn build_bitmap_brightness_color_matrix(out: &mut [f32; 20], amount: f32) {
     set_color_matrix(out, [amount, 0.0, 0.0, 0.0, 0.0, 0.0, amount, 0.0, 0.0, 0.0, 0.0, 0.0, amount, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0]);
 }
@@ -63,6 +55,10 @@ pub fn build_bitmap_sepia_color_matrix(out: &mut [f32; 20]) {
     set_color_matrix(out, [0.393, 0.769, 0.189, 0.0, 0.0, 0.349, 0.686, 0.168, 0.0, 0.0, 0.272, 0.534, 0.131, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0]);
 }
 
+fn clamp_byte(value: f32) -> u8 {
+    value.round().max(0.0).min(255.0) as u8
+}
+
 /// Applies a 4x5 color matrix to source and writes into out.
 pub fn color_matrix_bitmap(
     out: &mut Uint8Array,
@@ -111,4 +107,8 @@ pub fn concat_bitmap_color_matrix(out: &mut [f32; 20], first: &[f32; 20], second
 /// Writes the identity color matrix into out.
 pub fn set_bitmap_color_matrix_identity(out: &mut [f32; 20]) {
     set_color_matrix(out, [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0]);
+}
+
+fn set_color_matrix(out: &mut [f32; 20], values: [f32; 20]) {
+    *out = values;
 }

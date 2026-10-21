@@ -10,7 +10,7 @@ fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegi
     return BitmapRegion { bitmap: bmp, x, y, width, height };
 }
 
-mod fill_bitmap_noise_fn {
+mod fill_bitmap_noise {
     use super::*;
 
     #[test]
@@ -68,7 +68,7 @@ mod fill_bitmap_noise_fn {
     }
 }
 
-mod fill_bitmap_perlin_noise_fn {
+mod fill_bitmap_perlin_noise {
     use super::*;
 
     #[test]
@@ -134,7 +134,7 @@ mod fill_bitmap_perlin_noise_fn {
     }
 }
 
-mod fill_bitmap_turbulence_fn {
+mod fill_bitmap_turbulence {
     use super::*;
 
     #[test]

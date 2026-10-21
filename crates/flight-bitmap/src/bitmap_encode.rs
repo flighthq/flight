@@ -1,17 +1,23 @@
 use crate::types::*;
 
-/// Encodes a bitmap to bytes using the host capability.
+struct BitmapEncodeResolution {
+    format: ImageFormat,
+    success: bool,
+}
+
+/// Encodes a bitmap to bytes using the host capability. `format` defaults to png and `quality`
+/// to 0.9, as in TS.
 pub fn encode_bitmap(
     host_bitmap_encode: &HostBitmapEncodeCapability,
     source: &Bitmap,
-    format: ImageFormat,
-    quality: f32,
+    format: Option<ImageFormat>,
+    quality: Option<f32>,
 ) -> Option<Vec<u8>> {
-    let resolution = resolve_bitmap_encode(host_bitmap_encode, format);
+    let resolution = resolve_bitmap_encode(host_bitmap_encode, format.unwrap_or(ImageFormat::Png));
     if !resolution.success {
         return None;
     }
-    (host_bitmap_encode.encode_bitmap)(source, resolution.format, quality)
+    return (host_bitmap_encode.encode_bitmap)(source, resolution.format, quality.unwrap_or(0.9));
 }
 
 /// Explains why encoding would fail for a given format.
@@ -28,11 +34,6 @@ pub fn explain_bitmap_encode_failure(
             reason: "format-unsupported".to_string(),
         })
     }
-}
-
-struct BitmapEncodeResolution {
-    format: ImageFormat,
-    success: bool,
 }
 
 fn resolve_bitmap_encode(host: &HostBitmapEncodeCapability, format: ImageFormat) -> BitmapEncodeResolution {

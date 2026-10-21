@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
 }
 
-mod drop_shadow_bitmap_fn {
+mod drop_shadow_bitmap {
     use super::*;
 
     #[test]
@@ -92,7 +92,7 @@ mod drop_shadow_bitmap_fn {
     }
 }
 
-mod glow_bitmap_fn {
+mod glow_bitmap {
     use super::*;
 
     #[test]
@@ -172,7 +172,7 @@ mod glow_bitmap_fn {
     }
 }
 
-mod inner_glow_bitmap_fn {
+mod inner_glow_bitmap {
     use super::*;
 
     #[test]
@@ -214,7 +214,7 @@ mod inner_glow_bitmap_fn {
     }
 }
 
-mod inner_shadow_bitmap_fn {
+mod inner_shadow_bitmap {
     use super::*;
 
     #[test]

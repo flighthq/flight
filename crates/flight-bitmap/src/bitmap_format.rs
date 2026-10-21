@@ -1,6 +1,15 @@
 use flight_entity::Uint8Array;
 use crate::types::*;
 
+fn channel_offsets(order: PixelOrder) -> (usize, usize, usize, usize) {
+    match order {
+        PixelOrder::Rgba => (0, 1, 2, 3),
+        PixelOrder::Bgra => (2, 1, 0, 3),
+        PixelOrder::Argb => (1, 2, 3, 0),
+        PixelOrder::Abgr => (3, 2, 1, 0),
+    }
+}
+
 /// Converts a packed pixel buffer from one channel order to another.
 // flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn convert_bitmap_pixel_order(
@@ -65,14 +74,5 @@ pub fn unpremultiply_bitmap_pixels(out: &mut [u8], source: &Uint8Array, length: 
             out[i + 3] = a;
         }
         i += 4;
-    }
-}
-
-fn channel_offsets(order: PixelOrder) -> (usize, usize, usize, usize) {
-    match order {
-        PixelOrder::Rgba => (0, 1, 2, 3),
-        PixelOrder::Bgra => (2, 1, 0, 3),
-        PixelOrder::Argb => (1, 2, 3, 0),
-        PixelOrder::Abgr => (3, 2, 1, 0),
     }
 }

@@ -17,7 +17,7 @@ fn apply_to(rgba: u32, matrix: &[f32]) -> Vec<u8> {
     return out;
 }
 
-mod build_bitmap_brightness_color_matrix_fn {
+mod build_bitmap_brightness_color_matrix {
     use super::*;
 
     #[test]
@@ -32,7 +32,7 @@ mod build_bitmap_brightness_color_matrix_fn {
     }
 }
 
-mod build_bitmap_contrast_color_matrix_fn {
+mod build_bitmap_contrast_color_matrix {
     use super::*;
 
     #[test]
@@ -45,7 +45,7 @@ mod build_bitmap_contrast_color_matrix_fn {
     }
 }
 
-mod build_bitmap_grayscale_color_matrix_fn {
+mod build_bitmap_grayscale_color_matrix {
     use super::*;
 
     #[test]
@@ -59,7 +59,7 @@ mod build_bitmap_grayscale_color_matrix_fn {
     }
 }
 
-mod build_bitmap_hue_rotation_color_matrix_fn {
+mod build_bitmap_hue_rotation_color_matrix {
     use super::*;
 
     #[test]
@@ -93,7 +93,7 @@ mod build_bitmap_hue_rotation_color_matrix_fn {
     }
 }
 
-mod build_bitmap_invert_color_matrix_fn {
+mod build_bitmap_invert_color_matrix {
     use super::*;
 
     #[test]
@@ -108,7 +108,7 @@ mod build_bitmap_invert_color_matrix_fn {
     }
 }
 
-mod build_bitmap_saturation_color_matrix_fn {
+mod build_bitmap_saturation_color_matrix {
     use super::*;
 
     #[test]
@@ -131,7 +131,7 @@ mod build_bitmap_saturation_color_matrix_fn {
     }
 }
 
-mod build_bitmap_sepia_color_matrix_fn {
+mod build_bitmap_sepia_color_matrix {
     use super::*;
 
     #[test]
@@ -145,7 +145,7 @@ mod build_bitmap_sepia_color_matrix_fn {
     }
 }
 
-mod color_matrix_bitmap_fn {
+mod color_matrix_bitmap {
     use super::*;
 
     #[test]
@@ -203,7 +203,7 @@ mod color_matrix_bitmap_fn {
     }
 }
 
-mod concat_bitmap_color_matrix_fn {
+mod concat_bitmap_color_matrix {
     use super::*;
 
     #[test]
@@ -233,7 +233,7 @@ mod concat_bitmap_color_matrix_fn {
     }
 }
 
-mod set_bitmap_color_matrix_identity_fn {
+mod set_bitmap_color_matrix_identity {
     use super::*;
 
     #[test]

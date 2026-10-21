@@ -1,6 +1,6 @@
 use flight_bitmap::contract::*;
 
-mod create_bitmap_region_fn {
+mod create_bitmap_region {
     use super::*;
 
     #[test]
@@ -25,12 +25,12 @@ mod create_bitmap_region_fn {
     }
 }
 
-mod set_bitmap_region_fn {
+mod set_bitmap_region {
     use super::*;
 
     #[test]
     fn mutates_the_existing_region() {
-        let mut r = BitmapRegion::default();
+        let mut r = BitmapRegion { bitmap: create_bitmap(0, 0, None), x: 0, y: 0, width: 0, height: 0 };
         let bmp = create_bitmap(8, 8, None);
         set_bitmap_region(&mut r, bmp, 2, 3, 4, 5);
         assert_eq!(r.x, 2);

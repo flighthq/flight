@@ -1,6 +1,6 @@
 use flight_bitmap::contract::*;
 
-mod convert_bitmap_pixel_order_fn {
+mod convert_bitmap_pixel_order {
     use super::*;
 
     #[test]
@@ -62,7 +62,7 @@ mod convert_bitmap_pixel_order_fn {
     }
 }
 
-mod premultiply_bitmap_pixels_fn {
+mod premultiply_bitmap_pixels {
     use super::*;
 
     #[test]
@@ -108,7 +108,7 @@ mod premultiply_bitmap_pixels_fn {
     }
 }
 
-mod unpremultiply_bitmap_pixels_fn {
+mod unpremultiply_bitmap_pixels {
     use super::*;
 
     #[test]

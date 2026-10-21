@@ -1,6 +1,10 @@
 use flight_entity::Uint8Array;
 use crate::types::*;
 
+fn clamp_byte(value: f32) -> u8 {
+    value.round().max(0.0).min(255.0) as u8
+}
+
 /// Applies a convolution kernel to source, writing into out.
 // flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
 pub fn convolve_bitmap(
@@ -78,10 +82,6 @@ pub fn convolve_bitmap(
             }
         }
     }
-}
-
-fn clamp_byte(value: f32) -> u8 {
-    value.round().max(0.0).min(255.0) as u8
 }
 
 fn get_convolution_divisor(matrix: &[f32], length: usize) -> f32 {

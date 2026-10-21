@@ -8,7 +8,7 @@ fn edge_strip() -> Bitmap {
     return s;
 }
 
-mod bevel_bitmap_fn {
+mod bevel_bitmap {
     use super::*;
 
     #[test]

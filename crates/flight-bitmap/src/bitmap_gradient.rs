@@ -2,6 +2,47 @@ use flight_entity::Uint8Array;
 use crate::bitmap_blur::{blur_bitmap_pixels_horizontal, blur_bitmap_pixels_vertical};
 use crate::types::*;
 
+fn blur_alpha_field(
+    field: &mut [u8],
+    scratch: &mut [u8],
+    w: usize,
+    h: usize,
+    radius_x: Option<f32>,
+    radius_y: Option<f32>,
+    passes: Option<i32>,
+) {
+    let rx = (radius_x.unwrap_or(2.0).round() as i32).max(0);
+    let ry = (radius_y.unwrap_or(2.0).round() as i32).max(0);
+    let p = (passes.unwrap_or(1).max(1)) as usize;
+    let len = w * h * 4;
+    // We need to ping-pong between field and scratch.
+    // Track whether the current result is in field or scratch.
+    let mut result_in_field = true;
+    for _pass in 0..p {
+        if rx > 0 {
+            if result_in_field {
+                blur_bitmap_pixels_horizontal(scratch, field, w as i32, h as i32, rx);
+                result_in_field = false;
+            } else {
+                blur_bitmap_pixels_horizontal(field, scratch, w as i32, h as i32, rx);
+                result_in_field = true;
+            }
+        }
+        if ry > 0 {
+            if result_in_field {
+                blur_bitmap_pixels_vertical(scratch, field, w as i32, h as i32, ry);
+                result_in_field = false;
+            } else {
+                blur_bitmap_pixels_vertical(field, scratch, w as i32, h as i32, ry);
+                result_in_field = true;
+            }
+        }
+    }
+    if !result_in_field {
+        field[..len].copy_from_slice(&scratch[..len]);
+    }
+}
+
 /// Fills `out` (256 RGBA entries, 1024 bytes) with a gradient lookup table built
 /// from parallel `colors` (packed 0xRRGGBB), `alphas` (0..1), and `ratios`
 /// (0..255, ascending) arrays.
@@ -137,47 +178,6 @@ pub fn gradient_glow_bitmap(
             out[di + 2] = ramp[ri + 2];
             out[di + 3] = (ramp[ri + 3] as f32 * intensity).round().min(255.0) as u8;
         }
-    }
-}
-
-fn blur_alpha_field(
-    field: &mut [u8],
-    scratch: &mut [u8],
-    w: usize,
-    h: usize,
-    radius_x: Option<f32>,
-    radius_y: Option<f32>,
-    passes: Option<i32>,
-) {
-    let rx = (radius_x.unwrap_or(2.0).round() as i32).max(0);
-    let ry = (radius_y.unwrap_or(2.0).round() as i32).max(0);
-    let p = (passes.unwrap_or(1).max(1)) as usize;
-    let len = w * h * 4;
-    // We need to ping-pong between field and scratch.
-    // Track whether the current result is in field or scratch.
-    let mut result_in_field = true;
-    for _pass in 0..p {
-        if rx > 0 {
-            if result_in_field {
-                blur_bitmap_pixels_horizontal(scratch, field, w as i32, h as i32, rx);
-                result_in_field = false;
-            } else {
-                blur_bitmap_pixels_horizontal(field, scratch, w as i32, h as i32, rx);
-                result_in_field = true;
-            }
-        }
-        if ry > 0 {
-            if result_in_field {
-                blur_bitmap_pixels_vertical(scratch, field, w as i32, h as i32, ry);
-                result_in_field = false;
-            } else {
-                blur_bitmap_pixels_vertical(field, scratch, w as i32, h as i32, ry);
-                result_in_field = true;
-            }
-        }
-    }
-    if !result_in_field {
-        field[..len].copy_from_slice(&scratch[..len]);
     }
 }
 

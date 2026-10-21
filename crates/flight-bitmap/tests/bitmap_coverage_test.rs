@@ -1,6 +1,6 @@
 use flight_bitmap::contract::*;
 
-mod get_bitmap_coverage_fn {
+mod get_bitmap_coverage {
     use super::*;
 
     #[test]

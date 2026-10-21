@@ -10,7 +10,7 @@ fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegi
     return BitmapRegion { bitmap: bmp, x, y, width, height };
 }
 
-mod apply_bitmap_color_scale_bias_fn {
+mod apply_bitmap_color_scale_bias {
     use super::*;
 
     #[test]
@@ -85,7 +85,7 @@ mod apply_bitmap_color_scale_bias_fn {
     }
 }
 
-mod apply_bitmap_threshold_fn {
+mod apply_bitmap_threshold {
     use super::*;
 
     #[test]
@@ -144,7 +144,7 @@ mod apply_bitmap_threshold_fn {
     }
 }
 
-mod merge_bitmap_fn {
+mod merge_bitmap {
     use super::*;
 
     #[test]
@@ -181,7 +181,7 @@ mod merge_bitmap_fn {
     }
 }
 
-mod scroll_bitmap_fn {
+mod scroll_bitmap {
     use super::*;
 
     #[test]

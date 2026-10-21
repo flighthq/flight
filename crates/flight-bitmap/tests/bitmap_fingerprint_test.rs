@@ -1,6 +1,7 @@
 use flight_bitmap::contract::*;
+use flight_entity::allocate_entity;
 
-mod bitmap_fingerprint_computation_id_fn {
+mod bitmap_fingerprint_computation_id {
     use super::*;
 
     #[test]
@@ -9,7 +10,7 @@ mod bitmap_fingerprint_computation_id_fn {
     }
 }
 
-mod compare_bitmap_fingerprints_fn {
+mod compare_bitmap_fingerprints {
     use super::*;
 
     #[test]
@@ -46,7 +47,7 @@ mod compare_bitmap_fingerprints_fn {
     }
 }
 
-mod create_bitmap_fingerprint_fn {
+mod create_bitmap_fingerprint {
     use super::*;
 
     #[test]
@@ -81,7 +82,7 @@ mod create_bitmap_fingerprint_fn {
     }
 }
 
-mod format_bitmap_fingerprint_fn {
+mod format_bitmap_fingerprint {
     use super::*;
 
     #[test]
@@ -103,19 +104,19 @@ mod format_bitmap_fingerprint_fn {
     }
 }
 
-mod initialize_bitmap_fingerprint_fn {
+mod initialize_bitmap_fingerprint {
     use super::*;
 
     #[test]
     fn sets_grid_size_and_cells() {
-        let mut fp = BitmapFingerprint::default();
+        let mut fp: BitmapFingerprint = allocate_entity();
         initialize_bitmap_fingerprint(&mut fp, 3, vec![1, 2, 3]);
         assert_eq!(fp.grid_size, 3);
         assert_eq!(fp.cells, vec![1, 2, 3]);
     }
 }
 
-mod parse_bitmap_fingerprint_fn {
+mod parse_bitmap_fingerprint {
     use super::*;
 
     #[test]

@@ -10,7 +10,7 @@ fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegi
     return BitmapRegion { bitmap: bmp, x, y, width, height };
 }
 
-mod get_bitmap_color_bounds_rectangle_fn {
+mod get_bitmap_color_bounds_rectangle {
     use super::*;
 
     #[test]

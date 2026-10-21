@@ -14,7 +14,7 @@ fn invert_table() -> Vec<u8> {
     return (0..256).map(|i| (255 - i) as u8).collect();
 }
 
-mod apply_bitmap_palette_map_fn {
+mod apply_bitmap_palette_map {
     use super::*;
 
     #[test]

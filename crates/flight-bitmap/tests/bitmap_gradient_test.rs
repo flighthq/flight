@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
 }
 
-mod build_bitmap_gradient_ramp_fn {
+mod build_bitmap_gradient_ramp {
     use super::*;
 
     #[test]
@@ -29,7 +29,7 @@ mod build_bitmap_gradient_ramp_fn {
     }
 }
 
-mod gradient_bevel_bitmap_fn {
+mod gradient_bevel_bitmap {
     use super::*;
 
     #[test]
@@ -58,7 +58,7 @@ mod gradient_bevel_bitmap_fn {
     }
 }
 
-mod gradient_glow_bitmap_fn {
+mod gradient_glow_bitmap {
     use super::*;
 
     #[test]

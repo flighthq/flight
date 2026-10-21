@@ -10,7 +10,7 @@ fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegi
     return BitmapRegion { bitmap: bmp, x, y, width, height };
 }
 
-mod composite_bitmap_pixels_fn {
+mod composite_bitmap_pixels {
     use super::*;
 
     #[test]
@@ -131,7 +131,7 @@ mod composite_bitmap_pixels_fn {
     }
 }
 
-mod composite_bitmap_region_fn {
+mod composite_bitmap_region {
     use super::*;
 
     #[test]
@@ -165,7 +165,7 @@ mod composite_bitmap_region_fn {
     }
 }
 
-mod extract_bitmap_pixels_fn {
+mod extract_bitmap_pixels {
     use super::*;
 
     #[test]
@@ -204,7 +204,7 @@ mod extract_bitmap_pixels_fn {
     }
 }
 
-mod extract_bitmap_pixels32_fn {
+mod extract_bitmap_pixels32 {
     use super::*;
 
     #[test]
@@ -251,7 +251,7 @@ mod extract_bitmap_pixels32_fn {
     }
 }
 
-mod write_bitmap_pixels_fn {
+mod write_bitmap_pixels {
     use super::*;
 
     #[test]
@@ -285,7 +285,7 @@ mod write_bitmap_pixels_fn {
     }
 }
 
-mod write_bitmap_pixels32_fn {
+mod write_bitmap_pixels32 {
     use super::*;
 
     #[test]

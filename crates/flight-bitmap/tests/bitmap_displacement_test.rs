@@ -18,7 +18,7 @@ fn rgb_strip() -> Bitmap {
     return s;
 }
 
-mod displace_bitmap_fn {
+mod displace_bitmap {
     use super::*;
 
     #[test]

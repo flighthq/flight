@@ -32,6 +32,7 @@ pub fn compare_bitmap(source: &Bitmap, other: &Bitmap) -> Option<Bitmap> {
 }
 
 /// Compares two bitmaps with per-channel tolerance and returns summary metrics.
+// flight-lint: allow(f64) pixel-count ratio; counts exceed f32 exact range (2^24) on large bitmaps
 pub fn get_bitmap_mismatch(
     source: &Bitmap,
     other: &Bitmap,

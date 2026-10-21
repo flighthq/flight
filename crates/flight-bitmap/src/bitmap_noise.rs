@@ -8,6 +8,7 @@ pub const BITMAP_NOISE_CHANNEL_R: u32 = 0x1;
 
 /// Fills the `dest` region with uniform random noise in [low, high],
 /// derived deterministically from `seed`.
+// flight-lint: allow(f64) value/Perlin lattice hashing and octave sums in double to reproduce TS noise bytes; f32 sufficiency not yet confirmed (D1)
 pub fn fill_bitmap_noise(
     dest: &mut BitmapRegion,
     seed: u32,
@@ -47,6 +48,7 @@ pub fn fill_bitmap_noise(
 }
 
 /// Fills `dest` with fractal value noise summed over `octaves`.
+// flight-lint: allow(f64) value/Perlin lattice hashing and octave sums in double to reproduce TS noise bytes; f32 sufficiency not yet confirmed (D1)
 pub fn fill_bitmap_perlin_noise(
     dest: &mut BitmapRegion,
     base_x: f64,
@@ -102,6 +104,7 @@ pub fn fill_bitmap_perlin_noise(
 }
 
 /// Fills `dest` with fractal turbulence (absolute-value fBm) value noise.
+// flight-lint: allow(f64) value/Perlin lattice hashing and octave sums in double to reproduce TS noise bytes; f32 sufficiency not yet confirmed (D1)
 pub fn fill_bitmap_turbulence(
     dest: &mut BitmapRegion,
     base_x: f64,
@@ -156,6 +159,7 @@ pub fn fill_bitmap_turbulence(
     invalidate_bitmap(&mut dest.bitmap);
 }
 
+// flight-lint: allow(f64) value/Perlin lattice hashing and octave sums in double to reproduce TS noise bytes; f32 sufficiency not yet confirmed (D1)
 fn fractal_value_noise(x: f64, y: f64, octaves: usize, seed: i32) -> f64 {
     let mut sum = 0.0;
     let mut amplitude = 1.0;
@@ -170,6 +174,7 @@ fn fractal_value_noise(x: f64, y: f64, octaves: usize, seed: i32) -> f64 {
     if amplitude_sum > 0.0 { sum / amplitude_sum } else { 0.0 }
 }
 
+// flight-lint: allow(f64) value/Perlin lattice hashing and octave sums in double to reproduce TS noise bytes; f32 sufficiency not yet confirmed (D1)
 fn hash_lattice(ix: i32, iy: i32, seed: i32) -> f64 {
     let mut h = ix.wrapping_mul(374761393)
         .wrapping_add(iy.wrapping_mul(668265263))
@@ -186,15 +191,18 @@ fn next_random_state(state: u32) -> u32 {
     if result == 0 { 1 } else { result }
 }
 
+// flight-lint: allow(f64) value/Perlin lattice hashing and octave sums in double to reproduce TS noise bytes; f32 sufficiency not yet confirmed (D1)
 fn smooth_step(t: f64) -> f64 {
     t * t * (3.0 - 2.0 * t)
 }
 
+// flight-lint: allow(f64) value/Perlin lattice hashing and octave sums in double to reproduce TS noise bytes; f32 sufficiency not yet confirmed (D1)
 fn stitched_coord(t: f64, period: f64) -> f64 {
     if period <= 0.0 { return t; }
     ((t % period) + period) % period
 }
 
+// flight-lint: allow(f64) value/Perlin lattice hashing and octave sums in double to reproduce TS noise bytes; f32 sufficiency not yet confirmed (D1)
 fn turbulence_noise(x: f64, y: f64, octaves: usize, seed: i32) -> f64 {
     let mut sum = 0.0;
     let mut amplitude = 1.0;
@@ -209,6 +217,7 @@ fn turbulence_noise(x: f64, y: f64, octaves: usize, seed: i32) -> f64 {
     if amplitude_sum > 0.0 { sum / amplitude_sum } else { 0.0 }
 }
 
+// flight-lint: allow(f64) value/Perlin lattice hashing and octave sums in double to reproduce TS noise bytes; f32 sufficiency not yet confirmed (D1)
 fn value_noise(x: f64, y: f64, seed: i32) -> f64 {
     let ix = x.floor() as i32;
     let iy = y.floor() as i32;

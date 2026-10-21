@@ -2,7 +2,24 @@ use crate::bitmap::invalidate_bitmap;
 use crate::bitmap_affine::transform_bitmap;
 use crate::types::*;
 
+fn copy_pixel(dest: &mut [u8], di: usize, source: &[u8], si: usize) {
+    dest[di] = source[si];
+    dest[di + 1] = source[si + 1];
+    dest[di + 2] = source[si + 2];
+    dest[di + 3] = source[si + 3];
+}
+
+fn in_bounds(x: i32, y: i32, width: i32, height: i32) -> bool {
+    x >= 0 && x < width && y >= 0 && y < height
+}
+
+fn is_same_region(a: &BitmapRegion, b: &BitmapRegion) -> bool {
+    std::ptr::eq(&a.bitmap as *const _, &b.bitmap as *const _)
+        && a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height
+}
+
 /// Rotates the `source` region by `angle` radians into the `dest` region.
+// flight-lint: allow(f64) resampling coordinates and weights kept in double (TS number) so Math.round/floor boundaries match TS bytes; f32 sufficiency not yet confirmed (D1)
 pub fn rotate_bitmap(
     dest: &mut BitmapRegion,
     source: &BitmapRegion,
@@ -108,22 +125,6 @@ pub fn rotate_bitmap_counter_clockwise(dest: &mut BitmapRegion, source: &BitmapR
         }
     }
     invalidate_bitmap(&mut dest.bitmap);
-}
-
-fn copy_pixel(dest: &mut [u8], di: usize, source: &[u8], si: usize) {
-    dest[di] = source[si];
-    dest[di + 1] = source[si + 1];
-    dest[di + 2] = source[si + 2];
-    dest[di + 3] = source[si + 3];
-}
-
-fn in_bounds(x: i32, y: i32, width: i32, height: i32) -> bool {
-    x >= 0 && x < width && y >= 0 && y < height
-}
-
-fn is_same_region(a: &BitmapRegion, b: &BitmapRegion) -> bool {
-    std::ptr::eq(&a.bitmap as *const _, &b.bitmap as *const _)
-        && a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height
 }
 
 fn swap_pixels(data: &mut [u8], a: usize, b: usize) {

@@ -1,4 +1,5 @@
 use flight_bitmap::contract::*;
+use flight_entity::allocate_entity;
 
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
@@ -10,7 +11,26 @@ fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegi
     return BitmapRegion { bitmap: bmp, x, y, width, height };
 }
 
-mod merge_bitmap_channels_fn {
+mod initialize_bitmap {
+    use super::*;
+
+    #[test]
+    fn writes_every_bitmap_field_and_the_bitmap_kind() {
+        let mut out: Bitmap = allocate_entity();
+        let data: Box<[u8]> = vec![1, 2, 3, 4].into_boxed_slice();
+        initialize_bitmap(&mut out, AlphaType::Premultiplied, data, "rgba8unorm", "display-p3", 1, 1);
+        assert_eq!(out.alpha_type, AlphaType::Premultiplied);
+        assert_eq!(&out.data[..], &[1, 2, 3, 4]);
+        assert_eq!(out.format, "rgba8unorm");
+        assert_eq!(out.gamut, "display-p3");
+        assert_eq!(out.height, 1);
+        assert_eq!(out.width, 1);
+        assert_eq!(out.kind, BITMAP_TEXTURE_SOURCE_KIND);
+        assert_eq!(out.version, 0);
+    }
+}
+
+mod merge_bitmap_channels {
     use super::*;
 
     #[test]
@@ -45,7 +65,7 @@ mod merge_bitmap_channels_fn {
     }
 }
 
-mod split_bitmap_channels_fn {
+mod split_bitmap_channels {
     use super::*;
 
     #[test]
@@ -82,5 +102,16 @@ mod split_bitmap_channels_fn {
         merge_bitmap_channels(&mut or_, &region(r), &region(g), &region(b), &region(a));
         assert_eq!(get_bitmap_pixel(&or_.bitmap, 0, 0), 0xaabbccdd);
         assert_eq!(get_bitmap_pixel(&or_.bitmap, 1, 0), 0x11223344);
+    }
+
+    #[test]
+    fn returns_distinct_bitmap_objects() {
+        let source = create_bitmap(1, 1, Some(0x10203040));
+        let mut channels = split_bitmap_channels(&source);
+        channels[0].data[0] = 99;
+        assert_ne!(channels[1].data[0], 99);
+        assert_ne!(channels[2].data[0], 99);
+        assert_ne!(channels[3].data[0], 99);
+        assert_eq!(source.data[0], 0x10);
     }
 }

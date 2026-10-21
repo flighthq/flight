@@ -1,17 +1,5 @@
 use crate::types::*;
 
-/// Applies morphological dilation to `source`, writing into `out`.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
-pub fn dilate_bitmap(out: &mut [u8], source: &BitmapRegion, radius: i32) {
-    apply_morphological(out, source, radius, true);
-}
-
-/// Applies morphological erosion to `source`, writing into `out`.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
-pub fn erode_bitmap(out: &mut [u8], source: &BitmapRegion, radius: i32) {
-    apply_morphological(out, source, radius, false);
-}
-
 fn apply_morphological(out: &mut [u8], source: &BitmapRegion, radius: i32, dilate: bool) {
     let r = radius.max(0);
     let w = source.width as usize;
@@ -52,4 +40,16 @@ fn apply_morphological(out: &mut [u8], source: &BitmapRegion, radius: i32, dilat
             out[di + 3] = v_a;
         }
     }
+}
+
+/// Applies morphological dilation to `source`, writing into `out`.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+pub fn dilate_bitmap(out: &mut [u8], source: &BitmapRegion, radius: i32) {
+    apply_morphological(out, source, radius, true);
+}
+
+/// Applies morphological erosion to `source`, writing into `out`.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+pub fn erode_bitmap(out: &mut [u8], source: &BitmapRegion, radius: i32) {
+    apply_morphological(out, source, radius, false);
 }

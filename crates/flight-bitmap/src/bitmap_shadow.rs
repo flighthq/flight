@@ -1,57 +1,6 @@
 use crate::bitmap_blur::{blur_bitmap_pixels_horizontal, blur_bitmap_pixels_vertical};
 use crate::types::*;
 
-/// Produces the blurred shadow mask for a drop shadow effect.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
-pub fn drop_shadow_bitmap(
-    out: &mut [u8],
-    scratch: &mut [u8],
-    source: &BitmapRegion,
-    options: &BitmapDropShadowOptions,
-) {
-    tint_bitmap_alpha_mask(out, source, options.color.unwrap_or(0x000000ff), options.intensity.unwrap_or(1.0));
-    apply_blur_passes(out, scratch, source.width as usize, source.height as usize,
-        options.radius_x, options.radius_y, options.passes);
-}
-
-/// Produces the blurred glow mask.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
-pub fn glow_bitmap(
-    out: &mut [u8],
-    scratch: &mut [u8],
-    source: &BitmapRegion,
-    options: &BitmapGlowOptions,
-) {
-    tint_bitmap_alpha_mask(out, source, options.color.unwrap_or(0xff0000ff), options.intensity.unwrap_or(1.0));
-    apply_blur_passes(out, scratch, source.width as usize, source.height as usize,
-        options.radius_x, options.radius_y, options.passes);
-}
-
-/// Produces the inner glow mask.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
-pub fn inner_glow_bitmap(
-    out: &mut [u8],
-    scratch: &mut [u8],
-    source: &BitmapRegion,
-    options: &BitmapInnerGlowOptions,
-) {
-    apply_inner_effect(out, scratch, source, options.color.unwrap_or(0xff0000ff),
-        options.intensity.unwrap_or(1.0), options.radius_x, options.radius_y, options.passes, 0, 0);
-}
-
-/// Produces the inner shadow mask.
-// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
-pub fn inner_shadow_bitmap(
-    out: &mut [u8],
-    scratch: &mut [u8],
-    source: &BitmapRegion,
-    options: &BitmapInnerShadowOptions,
-) {
-    apply_inner_effect(out, scratch, source, options.color.unwrap_or(0x000000ff),
-        options.intensity.unwrap_or(1.0), options.radius_x, options.radius_y, options.passes,
-        options.offset_x.unwrap_or(0), options.offset_y.unwrap_or(0));
-}
-
 fn apply_blur_passes(
     out: &mut [u8],
     scratch: &mut [u8],
@@ -138,6 +87,57 @@ fn apply_inner_effect(
             out[di + 3] = ((blurred as f32 * source_alpha as f32 * scale) / 255.0).round().min(255.0) as u8;
         }
     }
+}
+
+/// Produces the blurred shadow mask for a drop shadow effect.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+pub fn drop_shadow_bitmap(
+    out: &mut [u8],
+    scratch: &mut [u8],
+    source: &BitmapRegion,
+    options: &BitmapDropShadowOptions,
+) {
+    tint_bitmap_alpha_mask(out, source, options.color.unwrap_or(0x000000ff), options.intensity.unwrap_or(1.0));
+    apply_blur_passes(out, scratch, source.width as usize, source.height as usize,
+        options.radius_x, options.radius_y, options.passes);
+}
+
+/// Produces the blurred glow mask.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+pub fn glow_bitmap(
+    out: &mut [u8],
+    scratch: &mut [u8],
+    source: &BitmapRegion,
+    options: &BitmapGlowOptions,
+) {
+    tint_bitmap_alpha_mask(out, source, options.color.unwrap_or(0xff0000ff), options.intensity.unwrap_or(1.0));
+    apply_blur_passes(out, scratch, source.width as usize, source.height as usize,
+        options.radius_x, options.radius_y, options.passes);
+}
+
+/// Produces the inner glow mask.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+pub fn inner_glow_bitmap(
+    out: &mut [u8],
+    scratch: &mut [u8],
+    source: &BitmapRegion,
+    options: &BitmapInnerGlowOptions,
+) {
+    apply_inner_effect(out, scratch, source, options.color.unwrap_or(0xff0000ff),
+        options.intensity.unwrap_or(1.0), options.radius_x, options.radius_y, options.passes, 0, 0);
+}
+
+/// Produces the inner shadow mask.
+// flight-lint: allow(conform-array) pixel ruling (agents/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
+pub fn inner_shadow_bitmap(
+    out: &mut [u8],
+    scratch: &mut [u8],
+    source: &BitmapRegion,
+    options: &BitmapInnerShadowOptions,
+) {
+    apply_inner_effect(out, scratch, source, options.color.unwrap_or(0x000000ff),
+        options.intensity.unwrap_or(1.0), options.radius_x, options.radius_y, options.passes,
+        options.offset_x.unwrap_or(0), options.offset_y.unwrap_or(0));
 }
 
 fn read_source_alpha(source: &BitmapRegion, px: i32, py: i32) -> u8 {

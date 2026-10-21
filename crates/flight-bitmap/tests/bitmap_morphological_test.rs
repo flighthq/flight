@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
 }
 
-mod dilate_bitmap_fn {
+mod dilate_bitmap {
     use super::*;
 
     #[test]
@@ -46,7 +46,7 @@ mod dilate_bitmap_fn {
     }
 }
 
-mod erode_bitmap_fn {
+mod erode_bitmap {
     use super::*;
 
     #[test]

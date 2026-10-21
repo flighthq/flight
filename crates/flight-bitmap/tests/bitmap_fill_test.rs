@@ -4,7 +4,7 @@ fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegi
     return BitmapRegion { bitmap: bmp, x, y, width, height };
 }
 
-mod fill_bitmap_rectangle_fn {
+mod fill_bitmap_rectangle {
     use super::*;
 
     #[test]
@@ -44,7 +44,7 @@ mod fill_bitmap_rectangle_fn {
     }
 }
 
-mod flood_fill_bitmap_fn {
+mod flood_fill_bitmap {
     use super::*;
 
     #[test]

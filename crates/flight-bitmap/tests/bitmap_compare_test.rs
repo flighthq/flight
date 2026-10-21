@@ -1,6 +1,6 @@
 use flight_bitmap::contract::*;
 
-mod compare_bitmap_fn {
+mod compare_bitmap {
     use super::*;
 
     #[test]
@@ -63,7 +63,7 @@ mod compare_bitmap_fn {
     }
 }
 
-mod get_bitmap_mismatch_fn {
+mod get_bitmap_mismatch {
     use super::*;
 
     #[test]

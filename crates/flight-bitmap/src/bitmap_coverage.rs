@@ -1,6 +1,7 @@
 use crate::types::*;
 
 /// Returns the fraction of pixels (0..1) that differ from background_color.
+// flight-lint: allow(f64) pixel-count ratio; counts exceed f32 exact range (2^24) on large bitmaps
 pub fn get_bitmap_coverage(
     source: &Bitmap,
     background_color: u32,

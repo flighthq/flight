@@ -88,7 +88,22 @@ pub fn extend_bitmap(
     return out;
 }
 
+fn resolve_edge_crop(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {
+    if v >= 0 && v < size { return Some(v); }
+    match mode {
+        BitmapEdgeMode::Clamp => Some(v.max(0).min(size - 1)),
+        BitmapEdgeMode::Wrap => Some(((v % size) + size) % size),
+        BitmapEdgeMode::Mirror => {
+            let period = 2 * size;
+            let wrapped = ((v % period) + period) % period;
+            if wrapped < size { Some(wrapped) } else { Some(period - 1 - wrapped) }
+        }
+        BitmapEdgeMode::Transparent => None,
+    }
+}
+
 /// Trims transparent border from source.
+// flight-lint: allow(f64) mirrors TS RectangleLike (number) pixel bounds; D8 candidate for flight-geometry Rectangle
 pub fn trim_bitmap(source: &Bitmap) -> Bitmap {
     let sw = source.width as i32;
     let sh = source.height as i32;
@@ -120,18 +135,4 @@ pub fn trim_bitmap(source: &Bitmap) -> Bitmap {
         width: (max_x - min_x + 1) as f64,
         height: (max_y - min_y + 1) as f64,
     })
-}
-
-fn resolve_edge_crop(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {
-    if v >= 0 && v < size { return Some(v); }
-    match mode {
-        BitmapEdgeMode::Clamp => Some(v.max(0).min(size - 1)),
-        BitmapEdgeMode::Wrap => Some(((v % size) + size) % size),
-        BitmapEdgeMode::Mirror => {
-            let period = 2 * size;
-            let wrapped = ((v % period) + period) % period;
-            if wrapped < size { Some(wrapped) } else { Some(period - 1 - wrapped) }
-        }
-        BitmapEdgeMode::Transparent => None,
-    }
 }

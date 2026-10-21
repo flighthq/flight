@@ -44,45 +44,6 @@ enum-payload-named	crates/flight-path/src/path.rs	`PathSegment::LineTo` uses str
 enum-payload-named	crates/flight-path/src/path.rs	`PathSegment::MoveTo` uses struct-variant fields; wrap the data in a named struct
 enum-payload-named	crates/flight-path/src/path.rs	`PathSegment::QuadraticCurveTo` uses struct-variant fields; wrap the data in a named struct
 enum-payload-named	crates/flight-statechart/src/types.rs	`LogData::Record` carries a non-struct payload; wrap the data in a named struct
-f64	crates/flight-bitmap/src/bitmap_affine.rs	`fn catmull_rom_weight` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_affine.rs	`fn sample_bicubic` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_affine.rs	`fn sample_bilinear` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_affine.rs	`fn sample_bitmap` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_affine.rs	`fn transform_bitmap` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_blur.rs	`fn blur_bitmap_pixels_horizontal` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_blur.rs	`fn blur_bitmap_pixels_vertical` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_compare.rs	`fn get_bitmap_mismatch` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_coverage.rs	`fn get_bitmap_coverage` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_crop.rs	`fn trim_bitmap` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_displacement.rs	`fn displace_bitmap` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_fingerprint.rs	`fn compare_bitmap_fingerprints` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_fingerprint.rs	`fn create_bitmap_fingerprint` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_histogram.rs	`fn build_equalize_map` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_noise.rs	`fn fill_bitmap_noise` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_noise.rs	`fn fill_bitmap_perlin_noise` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_noise.rs	`fn fill_bitmap_turbulence` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_noise.rs	`fn fractal_value_noise` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_noise.rs	`fn hash_lattice` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_noise.rs	`fn smooth_step` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_noise.rs	`fn stitched_coord` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_noise.rs	`fn turbulence_noise` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_noise.rs	`fn value_noise` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_pixelate.rs	`fn pixelate_bitmap` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_query.rs	`fn get_bitmap_color_bounds_rectangle` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_resize.rs	`fn catmull_rom_weight` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_resize.rs	`fn resize_bitmap` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_rotate.rs	`fn rotate_bitmap` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_warp.rs	`fn catmull_rom_weight` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_warp.rs	`fn compute_homography` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_warp.rs	`fn invert_matrix_3x3` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_warp.rs	`fn solve_linear_8` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_warp.rs	`fn warp_bitmap_quad` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_warp.rs	`fn warp_bitmap` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_warp.rs	`fn warp_sample_bicubic` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_warp.rs	`fn warp_sample_bilinear` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/bitmap_warp.rs	`fn warp_sample_bitmap` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/types.rs	`struct BitmapMismatch` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-bitmap/src/types.rs	`struct RectangleLike` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/capsule_contact2d.rs	`const CONTACT_SPAN_EPSILON` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/capsule_contact2d.rs	`const EPSILON` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/capsule_contact2d.rs	`const PARALLEL_EPSILON` uses f64 without an `allow(f64) <reason>` declaration
@@ -575,36 +536,6 @@ file-structure	crates/flight-animation/src/types.rs	struct appears after a later
 file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
 file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
 file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/bitmap_encode.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	fn appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	fn appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
-file-structure	crates/flight-bitmap/src/types.rs	struct appears after a later section
 file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
 file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
 file-structure	crates/flight-collision/src/types.rs	struct appears after a later section
@@ -816,35 +747,6 @@ fn-order	crates/flight-animation/src/animation_state_machine.rs	`create_animatio
 fn-order	crates/flight-animation/src/animation_state_machine.rs	`initialize_animation_state_machine` should come before `get_animation_state_machine_current_state`
 fn-order	crates/flight-animation/src/animation_track.rs	`copy_keyframe_value` should come before `validate_animation_track`
 fn-order	crates/flight-animation/src/animation_track.rs	`create_animation_track` should come before `clone_animation_track`
-fn-order	crates/flight-bitmap/src/bitmap_affine.rs	`catmull_rom_weight` should come before `sample_bicubic`
-fn-order	crates/flight-bitmap/src/bitmap_affine.rs	`sample_bicubic` should come before `sample_bilinear`
-fn-order	crates/flight-bitmap/src/bitmap_affine.rs	`sample_bilinear` should come before `sample_bitmap`
-fn-order	crates/flight-bitmap/src/bitmap_affine.rs	`sample_bitmap` should come before `transform_bitmap`
-fn-order	crates/flight-bitmap/src/bitmap_color_matrix.rs	`build_bitmap_brightness_color_matrix` should come before `set_color_matrix`
-fn-order	crates/flight-bitmap/src/bitmap_composite.rs	`blend_channel` should come before `porter_duff_factors`
-fn-order	crates/flight-bitmap/src/bitmap_composite.rs	`composite_pixel_into` should come before `soft_light_channel`
-fn-order	crates/flight-bitmap/src/bitmap_composite.rs	`porter_duff_factors` should come before `write_bitmap_pixels32`
-fn-order	crates/flight-bitmap/src/bitmap_convolution.rs	`clamp_byte` should come before `convolve_bitmap`
-fn-order	crates/flight-bitmap/src/bitmap_crop.rs	`resolve_edge_crop` should come before `trim_bitmap`
-fn-order	crates/flight-bitmap/src/bitmap_fingerprint.rs	`create_bitmap_fingerprint` should come before `compare_bitmap_fingerprints`
-fn-order	crates/flight-bitmap/src/bitmap_fingerprint.rs	`initialize_bitmap_fingerprint` should come before `format_bitmap_fingerprint`
-fn-order	crates/flight-bitmap/src/bitmap_flip.rs	`copy_mirrored` should come before `flip_bitmap_vertical`
-fn-order	crates/flight-bitmap/src/bitmap_format.rs	`channel_offsets` should come before `unpremultiply_bitmap_pixels`
-fn-order	crates/flight-bitmap/src/bitmap_from.rs	`create_bitmap_from_image_source` should come before `capture_bitmap_from_image_resource`
-fn-order	crates/flight-bitmap/src/bitmap_gradient.rs	`blur_alpha_field` should come before `gradient_glow_bitmap`
-fn-order	crates/flight-bitmap/src/bitmap_histogram.rs	`build_equalize_map` should come before `get_bitmap_histogram`
-fn-order	crates/flight-bitmap/src/bitmap_morphological.rs	`apply_morphological` should come before `erode_bitmap`
-fn-order	crates/flight-bitmap/src/bitmap_resize.rs	`catmull_rom_weight` should come before `idx`
-fn-order	crates/flight-bitmap/src/bitmap_resize.rs	`idx` should come before `resize_bitmap`
-fn-order	crates/flight-bitmap/src/bitmap_rotate.rs	`copy_pixel` should come before `rotate_bitmap_counter_clockwise`
-fn-order	crates/flight-bitmap/src/bitmap_shadow.rs	`apply_blur_passes` should come before `inner_shadow_bitmap`
-fn-order	crates/flight-bitmap/src/bitmap_sharpen.rs	`clamp_u8_f32` should come before `sharpen_bitmap`
-fn-order	crates/flight-bitmap/src/bitmap_transform.rs	`compare` should come before `scroll_bitmap`
-fn-order	crates/flight-bitmap/src/bitmap_warp.rs	`catmull_rom_weight` should come before `warp_resolve_edge`
-fn-order	crates/flight-bitmap/src/bitmap_warp.rs	`invert_matrix_3x3` should come before `solve_linear_8`
-fn-order	crates/flight-bitmap/src/bitmap_warp.rs	`warp_resolve_edge` should come before `warp_sample_bicubic`
-fn-order	crates/flight-bitmap/src/bitmap_warp.rs	`warp_sample_bicubic` should come before `warp_sample_bilinear`
-fn-order	crates/flight-bitmap/src/bitmap_warp.rs	`warp_sample_bilinear` should come before `warp_sample_bitmap`
 fn-order	crates/flight-collision/src/capsule_contact2d.rs	`clamp01` should come before `closest_points_between_segments2d`
 fn-order	crates/flight-collision/src/capsule_contact2d.rs	`closest_point_on_segment2d` should come before `collide_capsule_polygon`
 fn-order	crates/flight-collision/src/capsule_contact2d.rs	`collide_capsule_aabb` should come before `collide_capsule_capsule`
@@ -1099,7 +1001,6 @@ hidden-state	crates/flight-tween/src/tween_manager.rs	thread_local `DEFAULT_MANA
 impl-order	crates/flight-spatial/src/spatial_index_3d.rs	`clear` should come before `new_bvh`
 impl-order	crates/flight-spatial/src/spatial_index_3d.rs	`new_bvh` should come before `new_grid`
 missing-test-file	crates/flight-animation/src/types.rs	no test file (expected crates/flight-animation/tests/types_test.rs)
-missing-test-file	crates/flight-bitmap/src/types.rs	no test file (expected crates/flight-bitmap/tests/types_test.rs)
 missing-test-file	crates/flight-particles/src/types.rs	no test file (expected crates/flight-particles/tests/types_test.rs)
 missing-test-file	crates/flight-statechart/src/types.rs	no test file (expected crates/flight-statechart/tests/types_test.rs)
 missing-test-file	crates/flight-tween/src/internal.rs	no test file (expected crates/flight-tween/tests/internal_test.rs)
@@ -1129,7 +1030,6 @@ test-coverage	crates/flight-animation/src/animation_state_machine.rs	`create_ani
 test-coverage	crates/flight-animation/src/animation_state_machine.rs	`initialize_animation_state_machine_state` is not tested
 test-coverage	crates/flight-animation/src/animation_state_machine.rs	`initialize_animation_state_machine` is not tested
 test-coverage	crates/flight-animation/src/animation_track.rs	`initialize_animation_track` is not tested
-test-coverage	crates/flight-bitmap/src/bitmap_channel.rs	`initialize_bitmap` is not tested
 test-coverage	crates/flight-collision/src/collision_support2d.rs	`get_collision_pair_test2d` is not tested
 test-coverage	crates/flight-collision/src/collision_support2d.rs	`register_collision_pair_test2d` is not tested
 test-coverage	crates/flight-collision/src/collision_support2d.rs	`register_collision_support2d` is not tested
@@ -1255,8 +1155,6 @@ test-default-call	crates/flight-animation/tests/animation_track_test.rs	test cal
 test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-bitmap/tests/bitmap_fingerprint_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-bitmap/tests/bitmap_region_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-collision/tests/contact_manifold2d_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-collision/tests/contact_manifold3d_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-collision/tests/explain_collision_test2d_test.rs	test calls `::default()` — use the `create_*` function
@@ -1469,112 +1367,6 @@ test-module-coverage	crates/flight-animation/tests/animation_player_test.rs	`pla
 test-module-coverage	crates/flight-animation/tests/animation_player_test.rs	`seek_animation_player` has no test module (expected `mod seek_animation_player { ... }`)
 test-module-coverage	crates/flight-animation/tests/animation_player_test.rs	`stop_animation_player` has no test module (expected `mod stop_animation_player { ... }`)
 test-module-coverage	crates/flight-animation/tests/animation_state_machine_test.rs	`create_animation_state_machine_ref` has no test module (expected `mod create_animation_state_machine_ref { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_affine_test.rs	`transform_bitmap` has no test module (expected `mod transform_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_alpha_test.rs	`copy_bitmap_alpha` has no test module (expected `mod copy_bitmap_alpha { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_alpha_test.rs	`multiply_bitmap_alpha` has no test module (expected `mod multiply_bitmap_alpha { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_alpha_test.rs	`set_bitmap_alpha` has no test module (expected `mod set_bitmap_alpha { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_bevel_test.rs	`bevel_bitmap` has no test module (expected `mod bevel_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_blur_test.rs	`blur_bitmap_pixels_horizontal_weighted` has no test module (expected `mod blur_bitmap_pixels_horizontal_weighted { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_blur_test.rs	`blur_bitmap_pixels_horizontal` has no test module (expected `mod blur_bitmap_pixels_horizontal { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_blur_test.rs	`blur_bitmap_pixels_vertical_weighted` has no test module (expected `mod blur_bitmap_pixels_vertical_weighted { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_blur_test.rs	`blur_bitmap_pixels_vertical` has no test module (expected `mod blur_bitmap_pixels_vertical { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_blur_test.rs	`box_blur_bitmap` has no test module (expected `mod box_blur_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_blur_test.rs	`compute_gaussian_kernel` has no test module (expected `mod compute_gaussian_kernel { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_blur_test.rs	`gaussian_blur_bitmap` has no test module (expected `mod gaussian_blur_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_channel_test.rs	`initialize_bitmap` has no test module (expected `mod initialize_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_channel_test.rs	`merge_bitmap_channels` has no test module (expected `mod merge_bitmap_channels { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_channel_test.rs	`split_bitmap_channels` has no test module (expected `mod split_bitmap_channels { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_color_matrix_test.rs	`build_bitmap_brightness_color_matrix` has no test module (expected `mod build_bitmap_brightness_color_matrix { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_color_matrix_test.rs	`build_bitmap_contrast_color_matrix` has no test module (expected `mod build_bitmap_contrast_color_matrix { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_color_matrix_test.rs	`build_bitmap_grayscale_color_matrix` has no test module (expected `mod build_bitmap_grayscale_color_matrix { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_color_matrix_test.rs	`build_bitmap_hue_rotation_color_matrix` has no test module (expected `mod build_bitmap_hue_rotation_color_matrix { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_color_matrix_test.rs	`build_bitmap_invert_color_matrix` has no test module (expected `mod build_bitmap_invert_color_matrix { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_color_matrix_test.rs	`build_bitmap_saturation_color_matrix` has no test module (expected `mod build_bitmap_saturation_color_matrix { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_color_matrix_test.rs	`build_bitmap_sepia_color_matrix` has no test module (expected `mod build_bitmap_sepia_color_matrix { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_color_matrix_test.rs	`color_matrix_bitmap` has no test module (expected `mod color_matrix_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_color_matrix_test.rs	`concat_bitmap_color_matrix` has no test module (expected `mod concat_bitmap_color_matrix { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_color_matrix_test.rs	`set_bitmap_color_matrix_identity` has no test module (expected `mod set_bitmap_color_matrix_identity { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_compare_test.rs	`compare_bitmap` has no test module (expected `mod compare_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_compare_test.rs	`get_bitmap_mismatch` has no test module (expected `mod get_bitmap_mismatch { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_composite_test.rs	`composite_bitmap_pixels` has no test module (expected `mod composite_bitmap_pixels { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_composite_test.rs	`composite_bitmap_region` has no test module (expected `mod composite_bitmap_region { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_composite_test.rs	`extract_bitmap_pixels32` has no test module (expected `mod extract_bitmap_pixels32 { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_composite_test.rs	`extract_bitmap_pixels` has no test module (expected `mod extract_bitmap_pixels { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_composite_test.rs	`write_bitmap_pixels32` has no test module (expected `mod write_bitmap_pixels32 { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_composite_test.rs	`write_bitmap_pixels` has no test module (expected `mod write_bitmap_pixels { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_convolution_test.rs	`convolve_bitmap` has no test module (expected `mod convolve_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_copy_test.rs	`copy_bitmap_channel` has no test module (expected `mod copy_bitmap_channel { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_copy_test.rs	`copy_bitmap_pixels` has no test module (expected `mod copy_bitmap_pixels { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_coverage_test.rs	`get_bitmap_coverage` has no test module (expected `mod get_bitmap_coverage { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_crop_test.rs	`crop_bitmap` has no test module (expected `mod crop_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_crop_test.rs	`extend_bitmap` has no test module (expected `mod extend_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_crop_test.rs	`trim_bitmap` has no test module (expected `mod trim_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_displacement_test.rs	`displace_bitmap` has no test module (expected `mod displace_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_dissolve_test.rs	`dissolve_bitmap_pixels` has no test module (expected `mod dissolve_bitmap_pixels { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_encode_test.rs	`encode_bitmap` has no test module (expected `mod encode_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_encode_test.rs	`explain_bitmap_encode_failure` has no test module (expected `mod explain_bitmap_encode_failure { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_fill_test.rs	`fill_bitmap_rectangle` has no test module (expected `mod fill_bitmap_rectangle { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_fill_test.rs	`flood_fill_bitmap` has no test module (expected `mod flood_fill_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_fingerprint_test.rs	`compare_bitmap_fingerprints` has no test module (expected `mod compare_bitmap_fingerprints { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_fingerprint_test.rs	`create_bitmap_fingerprint` has no test module (expected `mod create_bitmap_fingerprint { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_fingerprint_test.rs	`format_bitmap_fingerprint` has no test module (expected `mod format_bitmap_fingerprint { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_fingerprint_test.rs	`initialize_bitmap_fingerprint` has no test module (expected `mod initialize_bitmap_fingerprint { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_fingerprint_test.rs	`parse_bitmap_fingerprint` has no test module (expected `mod parse_bitmap_fingerprint { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_flip_test.rs	`flip_bitmap_horizontal` has no test module (expected `mod flip_bitmap_horizontal { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_flip_test.rs	`flip_bitmap_vertical` has no test module (expected `mod flip_bitmap_vertical { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_format_test.rs	`convert_bitmap_pixel_order` has no test module (expected `mod convert_bitmap_pixel_order { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_format_test.rs	`premultiply_bitmap_pixels` has no test module (expected `mod premultiply_bitmap_pixels { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_format_test.rs	`unpremultiply_bitmap_pixels` has no test module (expected `mod unpremultiply_bitmap_pixels { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_from_test.rs	`capture_bitmap_from_image_resource` has no test module (expected `mod capture_bitmap_from_image_resource { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_from_test.rs	`create_bitmap_from_image_source` has no test module (expected `mod create_bitmap_from_image_source { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_gradient_fill_test.rs	`fill_bitmap_linear_gradient` has no test module (expected `mod fill_bitmap_linear_gradient { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_gradient_fill_test.rs	`fill_bitmap_radial_gradient` has no test module (expected `mod fill_bitmap_radial_gradient { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_gradient_test.rs	`build_bitmap_gradient_ramp` has no test module (expected `mod build_bitmap_gradient_ramp { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_gradient_test.rs	`gradient_bevel_bitmap` has no test module (expected `mod gradient_bevel_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_gradient_test.rs	`gradient_glow_bitmap` has no test module (expected `mod gradient_glow_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_histogram_test.rs	`equalize_bitmap_histogram` has no test module (expected `mod equalize_bitmap_histogram { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_histogram_test.rs	`get_bitmap_histogram` has no test module (expected `mod get_bitmap_histogram { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_median_test.rs	`median_bitmap` has no test module (expected `mod median_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_morphological_test.rs	`dilate_bitmap` has no test module (expected `mod dilate_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_morphological_test.rs	`erode_bitmap` has no test module (expected `mod erode_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_noise_test.rs	`fill_bitmap_noise` has no test module (expected `mod fill_bitmap_noise { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_noise_test.rs	`fill_bitmap_perlin_noise` has no test module (expected `mod fill_bitmap_perlin_noise { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_noise_test.rs	`fill_bitmap_turbulence` has no test module (expected `mod fill_bitmap_turbulence { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_palette_map_test.rs	`apply_bitmap_palette_map` has no test module (expected `mod apply_bitmap_palette_map { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_pixel_test.rs	`get_bitmap_pixel_channel` has no test module (expected `mod get_bitmap_pixel_channel { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_pixel_test.rs	`get_bitmap_pixel_luminance` has no test module (expected `mod get_bitmap_pixel_luminance { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_pixel_test.rs	`get_bitmap_pixel_rgb` has no test module (expected `mod get_bitmap_pixel_rgb { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_pixel_test.rs	`get_bitmap_pixel` has no test module (expected `mod get_bitmap_pixel { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_pixel_test.rs	`set_bitmap_pixel_rgb` has no test module (expected `mod set_bitmap_pixel_rgb { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_pixel_test.rs	`set_bitmap_pixel` has no test module (expected `mod set_bitmap_pixel { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_pixelate_test.rs	`pixelate_bitmap` has no test module (expected `mod pixelate_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_query_test.rs	`get_bitmap_color_bounds_rectangle` has no test module (expected `mod get_bitmap_color_bounds_rectangle { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_readback_resolver_test.rs	`resolve_bitmap_readback` has no test module (expected `mod resolve_bitmap_readback { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_region_test.rs	`create_bitmap_region` has no test module (expected `mod create_bitmap_region { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_region_test.rs	`set_bitmap_region` has no test module (expected `mod set_bitmap_region { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_resize_test.rs	`resize_bitmap` has no test module (expected `mod resize_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_rotate_test.rs	`rotate_bitmap_180` has no test module (expected `mod rotate_bitmap_180 { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_rotate_test.rs	`rotate_bitmap_clockwise` has no test module (expected `mod rotate_bitmap_clockwise { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_rotate_test.rs	`rotate_bitmap_counter_clockwise` has no test module (expected `mod rotate_bitmap_counter_clockwise { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_rotate_test.rs	`rotate_bitmap` has no test module (expected `mod rotate_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_shadow_test.rs	`drop_shadow_bitmap` has no test module (expected `mod drop_shadow_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_shadow_test.rs	`glow_bitmap` has no test module (expected `mod glow_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_shadow_test.rs	`inner_glow_bitmap` has no test module (expected `mod inner_glow_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_shadow_test.rs	`inner_shadow_bitmap` has no test module (expected `mod inner_shadow_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_sharpen_test.rs	`sharpen_bitmap` has no test module (expected `mod sharpen_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_test.rs	`clone_bitmap` has no test module (expected `mod clone_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_test.rs	`convert_bitmap_alpha_type` has no test module (expected `mod convert_bitmap_alpha_type { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_test.rs	`create_bitmap` has no test module (expected `mod create_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_test.rs	`invalidate_bitmap` has no test module (expected `mod invalidate_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_tone_test.rs	`apply_bitmap_curve` has no test module (expected `mod apply_bitmap_curve { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_tone_test.rs	`apply_bitmap_levels` has no test module (expected `mod apply_bitmap_levels { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_transform_test.rs	`apply_bitmap_color_scale_bias` has no test module (expected `mod apply_bitmap_color_scale_bias { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_transform_test.rs	`apply_bitmap_threshold` has no test module (expected `mod apply_bitmap_threshold { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_transform_test.rs	`merge_bitmap` has no test module (expected `mod merge_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_transform_test.rs	`scroll_bitmap` has no test module (expected `mod scroll_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_warp_test.rs	`warp_bitmap_quad` has no test module (expected `mod warp_bitmap_quad { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/bitmap_warp_test.rs	`warp_bitmap` has no test module (expected `mod warp_bitmap { ... }`)
-test-module-coverage	crates/flight-bitmap/tests/explain_bitmap_readback_test.rs	`explain_bitmap_readback` has no test module (expected `mod explain_bitmap_readback { ... }`)
 test-module-coverage	crates/flight-collision/tests/collision_support2d_test.rs	`get_collision_pair_test2d` has no test module (expected `mod get_collision_pair_test2d { ... }`)
 test-module-coverage	crates/flight-collision/tests/collision_support2d_test.rs	`get_collision_support2d` has no test module (expected `mod get_collision_support2d { ... }`)
 test-module-coverage	crates/flight-collision/tests/collision_support2d_test.rs	`register_built_in_collision_supports2d` has no test module (expected `mod register_built_in_collision_supports2d { ... }`)
@@ -1831,13 +1623,6 @@ test-module-coverage	crates/flight-tween/tests/tween_test.rs	`stop_tween` has no
 test-module-coverage	crates/flight-tween/tests/tween_test.rs	`stop_tweens` has no test module (expected `mod stop_tweens { ... }`)
 test-module-coverage	crates/flight-tween/tests/update_tweens_test.rs	`update_tweens` has no test module (expected `mod update_tweens { ... }`)
 test-module-empty	crates/flight-particles/tests/apply_particle_collisions_test.rs	module `apply_particle_collisions` has no #[test] functions
-test-module-order	crates/flight-bitmap/tests/bitmap_blur_test.rs	`compute_gaussian_kernel_fn` should come before `gaussian_blur_bitmap_fn`
-test-module-order	crates/flight-bitmap/tests/bitmap_composite_test.rs	`extract_bitmap_pixels32_fn` should come before `extract_bitmap_pixels_fn`
-test-module-order	crates/flight-bitmap/tests/bitmap_composite_test.rs	`write_bitmap_pixels32_fn` should come before `write_bitmap_pixels_fn`
-test-module-order	crates/flight-bitmap/tests/bitmap_from_test.rs	`capture_bitmap_from_image_resource_fn` should come before `create_bitmap_from_image_source_fn`
-test-module-order	crates/flight-bitmap/tests/bitmap_histogram_test.rs	`equalize_bitmap_histogram_fn` should come before `get_bitmap_histogram_fn`
-test-module-order	crates/flight-bitmap/tests/bitmap_pixel_test.rs	`get_bitmap_pixel_channel_fn` should come before `get_bitmap_pixel_fn`
-test-module-order	crates/flight-bitmap/tests/bitmap_rotate_test.rs	`rotate_bitmap_180_fn` should come before `rotate_bitmap_fn`
 test-module-order	crates/flight-collision/tests/collision_support2d_test.rs	`get_collision_support2d_fn` should come before `has_collision_support2d`
 test-module-order	crates/flight-entity/tests/guards_test.rs	`create_guarded_entity_runtime_tests` should come before `create_guarded_entity_tests`
 test-module-order	crates/flight-log/tests/log_test.rs	`enable_log_signals_tests` should come before `start_log_timer_tests`

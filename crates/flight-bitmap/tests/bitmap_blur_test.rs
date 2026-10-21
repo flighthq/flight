@@ -10,7 +10,7 @@ fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegi
     return BitmapRegion { bitmap: bmp, x, y, width, height };
 }
 
-mod blur_bitmap_pixels_horizontal_fn {
+mod blur_bitmap_pixels_horizontal {
     use super::*;
 
     #[test]
@@ -60,7 +60,7 @@ mod blur_bitmap_pixels_horizontal_fn {
     }
 }
 
-mod blur_bitmap_pixels_horizontal_weighted_fn {
+mod blur_bitmap_pixels_horizontal_weighted {
     use super::*;
 
     #[test]
@@ -85,7 +85,7 @@ mod blur_bitmap_pixels_horizontal_weighted_fn {
     }
 }
 
-mod blur_bitmap_pixels_vertical_fn {
+mod blur_bitmap_pixels_vertical {
     use super::*;
 
     #[test]
@@ -98,7 +98,7 @@ mod blur_bitmap_pixels_vertical_fn {
     }
 }
 
-mod blur_bitmap_pixels_vertical_weighted_fn {
+mod blur_bitmap_pixels_vertical_weighted {
     use super::*;
 
     #[test]
@@ -112,7 +112,7 @@ mod blur_bitmap_pixels_vertical_weighted_fn {
     }
 }
 
-mod box_blur_bitmap_fn {
+mod box_blur_bitmap {
     use super::*;
 
     #[test]
@@ -175,51 +175,7 @@ mod box_blur_bitmap_fn {
     }
 }
 
-mod gaussian_blur_bitmap_fn {
-    use super::*;
-
-    #[test]
-    fn spreads_alpha_into_neighboring_pixels() {
-        let mut source = create_bitmap(5, 1, None);
-        source.data[2 * 4 + 3] = 255;
-        let mut out = vec![0u8; 5 * 4];
-        let mut scratch = vec![0u8; 5 * 4];
-        gaussian_blur_bitmap(&mut out, &mut scratch, &region(source), 1.0, 1.0, 1);
-        assert!(out[3] > 0);
-        assert!(out[4 * 4 + 3] > 0);
-    }
-
-    #[test]
-    fn center_pixel_retains_more_weight_than_edges() {
-        let mut source = create_bitmap(5, 1, None);
-        source.data[2 * 4 + 3] = 255;
-        let mut out = vec![0u8; 5 * 4];
-        let mut scratch = vec![0u8; 5 * 4];
-        gaussian_blur_bitmap(&mut out, &mut scratch, &region(source), 0.8, 0.8, 1);
-        assert!(out[2 * 4 + 3] > out[3]);
-    }
-
-    #[test]
-    fn sigma_zero_writes_source_unchanged() {
-        let source = create_bitmap(1, 1, Some(0x336699ff));
-        let mut out = vec![0u8; 4];
-        let mut scratch = vec![0u8; 4];
-        gaussian_blur_bitmap(&mut out, &mut scratch, &region(source), 0.0, 0.0, 1);
-        assert_eq!(out[0], 0x33);
-        assert_eq!(out[3], 0xff);
-    }
-
-    #[test]
-    fn result_always_lands_in_out_regardless_of_pass_parity() {
-        let source = create_bitmap(3, 3, Some(0xffffff88));
-        let mut out = vec![0u8; 3 * 3 * 4];
-        let mut scratch = vec![0u8; 3 * 3 * 4];
-        gaussian_blur_bitmap(&mut out, &mut scratch, &region(source), 1.0, 1.0, 1);
-        assert!(out[3] > 0);
-    }
-}
-
-mod compute_gaussian_kernel_fn {
+mod compute_gaussian_kernel {
     use super::*;
 
     #[test]
@@ -262,5 +218,49 @@ mod compute_gaussian_kernel_fn {
         assert_eq!(kernel[0], 0.0);
         assert_eq!(kernel[4], 0.0);
         assert!(kernel.iter().all(|v| !v.is_nan()));
+    }
+}
+
+mod gaussian_blur_bitmap {
+    use super::*;
+
+    #[test]
+    fn spreads_alpha_into_neighboring_pixels() {
+        let mut source = create_bitmap(5, 1, None);
+        source.data[2 * 4 + 3] = 255;
+        let mut out = vec![0u8; 5 * 4];
+        let mut scratch = vec![0u8; 5 * 4];
+        gaussian_blur_bitmap(&mut out, &mut scratch, &region(source), 1.0, 1.0, 1);
+        assert!(out[3] > 0);
+        assert!(out[4 * 4 + 3] > 0);
+    }
+
+    #[test]
+    fn center_pixel_retains_more_weight_than_edges() {
+        let mut source = create_bitmap(5, 1, None);
+        source.data[2 * 4 + 3] = 255;
+        let mut out = vec![0u8; 5 * 4];
+        let mut scratch = vec![0u8; 5 * 4];
+        gaussian_blur_bitmap(&mut out, &mut scratch, &region(source), 0.8, 0.8, 1);
+        assert!(out[2 * 4 + 3] > out[3]);
+    }
+
+    #[test]
+    fn sigma_zero_writes_source_unchanged() {
+        let source = create_bitmap(1, 1, Some(0x336699ff));
+        let mut out = vec![0u8; 4];
+        let mut scratch = vec![0u8; 4];
+        gaussian_blur_bitmap(&mut out, &mut scratch, &region(source), 0.0, 0.0, 1);
+        assert_eq!(out[0], 0x33);
+        assert_eq!(out[3], 0xff);
+    }
+
+    #[test]
+    fn result_always_lands_in_out_regardless_of_pass_parity() {
+        let source = create_bitmap(3, 3, Some(0xffffff88));
+        let mut out = vec![0u8; 3 * 3 * 4];
+        let mut scratch = vec![0u8; 3 * 3 * 4];
+        gaussian_blur_bitmap(&mut out, &mut scratch, &region(source), 1.0, 1.0, 1);
+        assert!(out[3] > 0);
     }
 }

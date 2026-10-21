@@ -10,7 +10,7 @@ fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegi
     return BitmapRegion { bitmap: bmp, x, y, width, height };
 }
 
-mod copy_bitmap_alpha_fn {
+mod copy_bitmap_alpha {
     use super::*;
 
     #[test]
@@ -48,7 +48,7 @@ mod copy_bitmap_alpha_fn {
     }
 }
 
-mod multiply_bitmap_alpha_fn {
+mod multiply_bitmap_alpha {
     use super::*;
 
     #[test]
@@ -96,7 +96,7 @@ mod multiply_bitmap_alpha_fn {
     }
 }
 
-mod set_bitmap_alpha_fn {
+mod set_bitmap_alpha {
     use super::*;
 
     #[test]

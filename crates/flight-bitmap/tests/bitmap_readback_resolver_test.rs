@@ -1,6 +1,6 @@
 use flight_bitmap::contract::*;
 
-mod resolve_bitmap_readback_fn {
+mod resolve_bitmap_readback {
     use super::*;
 
     #[test]

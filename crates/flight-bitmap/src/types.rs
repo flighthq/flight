@@ -10,12 +10,6 @@ pub enum AlphaType {
     Premultiplied,
 }
 
-impl Default for AlphaType {
-    fn default() -> Self {
-        AlphaType::Straight
-    }
-}
-
 /// Edge mode for out-of-bounds pixel sampling.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum BitmapEdgeMode {
@@ -25,24 +19,12 @@ pub enum BitmapEdgeMode {
     Mirror,
 }
 
-impl Default for BitmapEdgeMode {
-    fn default() -> Self {
-        BitmapEdgeMode::Transparent
-    }
-}
-
 /// Resize / sampling interpolation mode.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum BitmapResizeMode {
     Nearest,
     Bilinear,
     Bicubic,
-}
-
-impl Default for BitmapResizeMode {
-    fn default() -> Self {
-        BitmapResizeMode::Bilinear
-    }
 }
 
 /// Composite blending / Porter-Duff mode.
@@ -77,12 +59,6 @@ pub enum BitmapCompositeMode {
     Clear = 25,
 }
 
-impl Default for BitmapCompositeMode {
-    fn default() -> Self {
-        BitmapCompositeMode::Normal
-    }
-}
-
 /// RGBA image channel index.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(u8)]
@@ -102,24 +78,12 @@ pub enum PixelOrder {
     Abgr,
 }
 
-impl Default for PixelOrder {
-    fn default() -> Self {
-        PixelOrder::Rgba
-    }
-}
-
 /// Gradient spread mode.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum GradientSpread {
     Pad,
     Repeat,
     Reflect,
-}
-
-impl Default for GradientSpread {
-    fn default() -> Self {
-        GradientSpread::Pad
-    }
 }
 
 /// Image encoding format.
@@ -149,24 +113,12 @@ pub enum DisplacementMode {
     Color,
 }
 
-impl Default for DisplacementMode {
-    fn default() -> Self {
-        DisplacementMode::Wrap
-    }
-}
-
 /// Bevel type for clipping.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum BevelType {
     Inner,
     Outer,
     Both,
-}
-
-impl Default for BevelType {
-    fn default() -> Self {
-        BevelType::Inner
-    }
 }
 
 /// Readback mode for bitmap capture.
@@ -183,12 +135,6 @@ pub enum BitmapReadbackBlockReason {
     EmptySize,
     TaintedSource,
     NoCanvas,
-}
-
-impl Default for BitmapReadbackBlockReason {
-    fn default() -> Self {
-        BitmapReadbackBlockReason::Ok
-    }
 }
 
 /// Constant identifying a Bitmap as a texture source kind.
@@ -212,22 +158,6 @@ pub struct Bitmap {
     pub width: u32,
 }
 
-impl Default for Bitmap {
-    fn default() -> Self {
-        return Bitmap {
-            runtime: EntityRuntimeSlot::default(),
-            alpha_type: AlphaType::Straight,
-            gamut: "srgb".into(),
-            data: Box::default(),
-            format: "rgba8unorm".into(),
-            height: 0,
-            kind: BITMAP_TEXTURE_SOURCE_KIND,
-            version: 0,
-            width: 0,
-        };
-    }
-}
-
 /// A rectangular sub-region of a Bitmap, referencing the bitmap by index or
 /// carrying a clone depending on context. In the Rust-as-IR pattern we keep
 /// the bitmap inline so that free functions can mutate through the region.
@@ -240,20 +170,9 @@ pub struct BitmapRegion {
     pub height: i32,
 }
 
-impl Default for BitmapRegion {
-    fn default() -> Self {
-        BitmapRegion {
-            bitmap: Bitmap::default(),
-            x: 0,
-            y: 0,
-            width: 0,
-            height: 0,
-        }
-    }
-}
-
 /// Axis-aligned rectangle with floating-point coordinates.
 #[derive(Clone, Debug, Default)]
+// flight-lint: allow(f64) mirrors TS RectangleLike (number) pixel bounds; D8 candidate for flight-geometry Rectangle
 pub struct RectangleLike {
     pub x: f64,
     pub y: f64,
@@ -263,6 +182,7 @@ pub struct RectangleLike {
 
 /// Bitmap mismatch summary.
 #[derive(Clone, Debug, Default)]
+// flight-lint: allow(f64) BitmapMismatch.fraction mirrors TS number; pixel-count ratio exceeding f32 exact range
 pub struct BitmapMismatch {
     pub mismatched_pixels: u32,
     pub total_pixels: u32,
@@ -279,33 +199,12 @@ pub struct BitmapHistogram {
     pub alpha: Vec<u32>,
 }
 
-impl Default for BitmapHistogram {
-    fn default() -> Self {
-        BitmapHistogram {
-            red: vec![0; 256],
-            green: vec![0; 256],
-            blue: vec![0; 256],
-            alpha: vec![0; 256],
-        }
-    }
-}
-
 /// Coarse fingerprint for regression gating.
 #[derive(Clone, Debug)]
 pub struct BitmapFingerprint {
     runtime: EntityRuntimeSlot,
     pub grid_size: u32,
     pub cells: Vec<u8>,
-}
-
-impl Default for BitmapFingerprint {
-    fn default() -> Self {
-        return BitmapFingerprint {
-            runtime: EntityRuntimeSlot::default(),
-            grid_size: 0,
-            cells: Vec::new(),
-        };
-    }
 }
 
 // ---------------------------------------------------------------------------
@@ -318,16 +217,6 @@ pub struct BitmapBoxBlurOptions {
     pub radius_x: Option<i32>,
     pub radius_y: Option<i32>,
     pub passes: Option<i32>,
-}
-
-impl Default for BitmapBoxBlurOptions {
-    fn default() -> Self {
-        BitmapBoxBlurOptions {
-            radius_x: None,
-            radius_y: None,
-            passes: None,
-        }
-    }
 }
 
 /// Options for shadow blur passes (shared by shadow/glow/bevel).
@@ -350,22 +239,6 @@ pub struct BitmapBevelOptions {
     pub radius_x: Option<f32>,
     pub radius_y: Option<f32>,
     pub passes: Option<i32>,
-}
-
-impl Default for BitmapBevelOptions {
-    fn default() -> Self {
-        BitmapBevelOptions {
-            angle: None,
-            distance: None,
-            type_: None,
-            intensity: None,
-            highlight_color: None,
-            shadow_color: None,
-            radius_x: None,
-            radius_y: None,
-            passes: None,
-        }
-    }
 }
 
 /// Options for convolution.
@@ -456,20 +329,6 @@ pub struct BitmapGradientBevelOptions {
     pub passes: Option<i32>,
 }
 
-impl Default for BitmapGradientBevelOptions {
-    fn default() -> Self {
-        BitmapGradientBevelOptions {
-            angle: None,
-            distance: None,
-            type_: None,
-            intensity: None,
-            radius_x: None,
-            radius_y: None,
-            passes: None,
-        }
-    }
-}
-
 /// Options for gradient glow.
 #[derive(Clone, Debug, Default)]
 pub struct BitmapGradientGlowOptions {
@@ -485,16 +344,6 @@ pub struct BitmapResizeOptions {
     pub mode: Option<BitmapResizeMode>,
     pub edge_mode: Option<BitmapEdgeMode>,
     pub premultiplied: Option<bool>,
-}
-
-impl Default for BitmapResizeOptions {
-    fn default() -> Self {
-        BitmapResizeOptions {
-            mode: None,
-            edge_mode: None,
-            premultiplied: None,
-        }
-    }
 }
 
 /// Explanation for encode failure.
@@ -515,21 +364,6 @@ pub struct ColorScaleBiasLike {
     pub green_bias: f32,
     pub blue_bias: f32,
     pub alpha_bias: f32,
-}
-
-impl Default for ColorScaleBiasLike {
-    fn default() -> Self {
-        ColorScaleBiasLike {
-            red_scale: 1.0,
-            green_scale: 1.0,
-            blue_scale: 1.0,
-            alpha_scale: 1.0,
-            red_bias: 0.0,
-            green_bias: 0.0,
-            blue_bias: 0.0,
-            alpha_bias: 0.0,
-        }
-    }
 }
 
 /// Readback explanation.
@@ -579,10 +413,6 @@ pub struct ImageResource {
 // Helper: clamp a value to u8 range (0..=255)
 // ---------------------------------------------------------------------------
 
-/// Clamp and round an f32 to u8 (0..=255).
-pub(crate) fn clamp_u8(v: f32) -> u8 {
-    v.round().max(0.0).min(255.0) as u8
-}
 
 /// Resolve an edge coordinate. Returns None for transparent out-of-bounds.
 pub(crate) fn resolve_edge(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {
@@ -605,6 +435,174 @@ pub(crate) fn resolve_edge(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i3
             }
         }
         BitmapEdgeMode::Transparent => None,
+    }
+}
+
+impl Default for AlphaType {
+    fn default() -> Self {
+        AlphaType::Straight
+    }
+}
+
+impl Default for BitmapEdgeMode {
+    fn default() -> Self {
+        BitmapEdgeMode::Transparent
+    }
+}
+
+impl Default for BitmapResizeMode {
+    fn default() -> Self {
+        BitmapResizeMode::Bilinear
+    }
+}
+
+impl Default for BitmapCompositeMode {
+    fn default() -> Self {
+        BitmapCompositeMode::Normal
+    }
+}
+
+impl Default for PixelOrder {
+    fn default() -> Self {
+        PixelOrder::Rgba
+    }
+}
+
+impl Default for GradientSpread {
+    fn default() -> Self {
+        GradientSpread::Pad
+    }
+}
+
+impl Default for DisplacementMode {
+    fn default() -> Self {
+        DisplacementMode::Wrap
+    }
+}
+
+impl Default for BevelType {
+    fn default() -> Self {
+        BevelType::Inner
+    }
+}
+
+impl Default for BitmapReadbackBlockReason {
+    fn default() -> Self {
+        BitmapReadbackBlockReason::Ok
+    }
+}
+
+impl Default for Bitmap {
+    fn default() -> Self {
+        return Bitmap {
+            runtime: EntityRuntimeSlot::default(),
+            alpha_type: AlphaType::Straight,
+            gamut: "srgb".into(),
+            data: Box::default(),
+            format: "rgba8unorm".into(),
+            height: 0,
+            kind: BITMAP_TEXTURE_SOURCE_KIND,
+            version: 0,
+            width: 0,
+        };
+    }
+}
+
+impl Default for BitmapRegion {
+    fn default() -> Self {
+        BitmapRegion {
+            bitmap: Bitmap::default(),
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0,
+        }
+    }
+}
+
+impl Default for BitmapHistogram {
+    fn default() -> Self {
+        BitmapHistogram {
+            red: vec![0; 256],
+            green: vec![0; 256],
+            blue: vec![0; 256],
+            alpha: vec![0; 256],
+        }
+    }
+}
+
+impl Default for BitmapFingerprint {
+    fn default() -> Self {
+        return BitmapFingerprint {
+            runtime: EntityRuntimeSlot::default(),
+            grid_size: 0,
+            cells: Vec::new(),
+        };
+    }
+}
+
+impl Default for BitmapBoxBlurOptions {
+    fn default() -> Self {
+        BitmapBoxBlurOptions {
+            radius_x: None,
+            radius_y: None,
+            passes: None,
+        }
+    }
+}
+
+impl Default for BitmapBevelOptions {
+    fn default() -> Self {
+        BitmapBevelOptions {
+            angle: None,
+            distance: None,
+            type_: None,
+            intensity: None,
+            highlight_color: None,
+            shadow_color: None,
+            radius_x: None,
+            radius_y: None,
+            passes: None,
+        }
+    }
+}
+
+impl Default for BitmapGradientBevelOptions {
+    fn default() -> Self {
+        BitmapGradientBevelOptions {
+            angle: None,
+            distance: None,
+            type_: None,
+            intensity: None,
+            radius_x: None,
+            radius_y: None,
+            passes: None,
+        }
+    }
+}
+
+impl Default for BitmapResizeOptions {
+    fn default() -> Self {
+        BitmapResizeOptions {
+            mode: None,
+            edge_mode: None,
+            premultiplied: None,
+        }
+    }
+}
+
+impl Default for ColorScaleBiasLike {
+    fn default() -> Self {
+        ColorScaleBiasLike {
+            red_scale: 1.0,
+            green_scale: 1.0,
+            blue_scale: 1.0,
+            alpha_scale: 1.0,
+            red_bias: 0.0,
+            green_bias: 0.0,
+            blue_bias: 0.0,
+            alpha_bias: 0.0,
+        }
     }
 }
 

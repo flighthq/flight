@@ -26,7 +26,7 @@ pub use super::bitmap_from::*;
 pub use super::bitmap_gradient::*;
 pub use super::bitmap_gradient_fill::*;
 pub use super::bitmap_histogram::*;
-pub use super::bitmap_image_channel::*;
+pub use super::bitmap_image_channel::ImageChannel;
 pub use super::bitmap_median::*;
 pub use super::bitmap_morphological::*;
 pub use super::bitmap_noise::*;

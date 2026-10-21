@@ -1,6 +1,6 @@
 use flight_bitmap::contract::*;
 
-mod crop_bitmap_fn {
+mod crop_bitmap {
     use super::*;
 
     #[test]
@@ -38,9 +38,17 @@ mod crop_bitmap_fn {
         assert_eq!(get_bitmap_pixel(&out, 0, 0), 0xffffffff);
         assert_eq!(get_bitmap_pixel(&out, 2, 2), 0x00000000);
     }
+
+    #[test]
+    fn returns_a_distinct_bitmap_object() {
+        let source = create_bitmap(2, 2, Some(0xff0000ff));
+        let mut cropped = crop_bitmap(&source, &RectangleLike { x: 0.0, y: 0.0, width: 2.0, height: 2.0 });
+        cropped.data[0] = 0;
+        assert_eq!(source.data[0], 0xff);
+    }
 }
 
-mod extend_bitmap_fn {
+mod extend_bitmap {
     use super::*;
 
     #[test]
@@ -91,7 +99,7 @@ mod extend_bitmap_fn {
     }
 }
 
-mod trim_bitmap_fn {
+mod trim_bitmap {
     use super::*;
 
     #[test]

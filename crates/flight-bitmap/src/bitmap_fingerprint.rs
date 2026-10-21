@@ -6,18 +6,8 @@ pub const BITMAP_FINGERPRINT_COMPUTATION_ID: &str = "grid-average-rgb-v1";
 
 const HEX: &[u8; 16] = b"0123456789abcdef";
 
-/// Mean absolute per-channel difference between two fingerprints.
-pub fn compare_bitmap_fingerprints(a: &BitmapFingerprint, b: &BitmapFingerprint) -> f64 {
-    assert_eq!(a.grid_size, b.grid_size, "compareBitmapFingerprints: gridSize mismatch ({} vs {})", a.grid_size, b.grid_size);
-    if a.cells.is_empty() { return 0.0; }
-    let mut sum = 0i64;
-    for i in 0..a.cells.len() {
-        sum += (a.cells[i] as i64 - b.cells[i] as i64).abs();
-    }
-    sum as f64 / a.cells.len() as f64
-}
-
 /// Reduces a bitmap to a gridSize x gridSize grid of averaged RGB cells.
+// flight-lint: allow(f64) integer channel sums over a region exceed f32 exact range (2^24) on large bitmaps; averaged in double before rounding, as TS number does
 pub fn create_bitmap_fingerprint(source: &Bitmap, grid_size: u32) -> BitmapFingerprint {
     assert!(grid_size >= 1, "createBitmapFingerprint: gridSize must be >= 1 (got {})", grid_size);
     let gs = grid_size as usize;
@@ -63,6 +53,24 @@ pub fn create_bitmap_fingerprint(source: &Bitmap, grid_size: u32) -> BitmapFinge
     return make_bitmap_fingerprint(grid_size, cells);
 }
 
+/// Initializes a BitmapFingerprint.
+pub fn initialize_bitmap_fingerprint(out: &mut BitmapFingerprint, grid_size: u32, cells: Vec<u8>) {
+    out.grid_size = grid_size;
+    out.cells = cells;
+}
+
+/// Mean absolute per-channel difference between two fingerprints.
+// flight-lint: allow(f64) pixel-count ratio; counts exceed f32 exact range (2^24) on large bitmaps
+pub fn compare_bitmap_fingerprints(a: &BitmapFingerprint, b: &BitmapFingerprint) -> f64 {
+    assert_eq!(a.grid_size, b.grid_size, "compareBitmapFingerprints: gridSize mismatch ({} vs {})", a.grid_size, b.grid_size);
+    if a.cells.is_empty() { return 0.0; }
+    let mut sum = 0i64;
+    for i in 0..a.cells.len() {
+        sum += (a.cells[i] as i64 - b.cells[i] as i64).abs();
+    }
+    sum as f64 / a.cells.len() as f64
+}
+
 /// Serializes a fingerprint to text: "<gridSize>:<hex>".
 pub fn format_bitmap_fingerprint(fingerprint: &BitmapFingerprint) -> String {
     let mut hex = String::with_capacity(fingerprint.cells.len() * 2);
@@ -73,10 +81,10 @@ pub fn format_bitmap_fingerprint(fingerprint: &BitmapFingerprint) -> String {
     format!("{}:{}", fingerprint.grid_size, hex)
 }
 
-/// Initializes a BitmapFingerprint.
-pub fn initialize_bitmap_fingerprint(out: &mut BitmapFingerprint, grid_size: u32, cells: Vec<u8>) {
-    out.grid_size = grid_size;
-    out.cells = cells;
+fn make_bitmap_fingerprint(grid_size: u32, cells: Vec<u8>) -> BitmapFingerprint {
+    let mut out: BitmapFingerprint = allocate_entity();
+    initialize_bitmap_fingerprint(&mut out, grid_size, cells);
+    return out;
 }
 
 /// Parses the text form. Returns None for malformed input.
@@ -96,10 +104,4 @@ pub fn parse_bitmap_fingerprint(text: &str) -> Option<BitmapFingerprint> {
         cells[i] = ((hi << 4) | lo) as u8;
     }
     return Some(make_bitmap_fingerprint(grid_size, cells));
-}
-
-fn make_bitmap_fingerprint(grid_size: u32, cells: Vec<u8>) -> BitmapFingerprint {
-    let mut out: BitmapFingerprint = allocate_entity();
-    initialize_bitmap_fingerprint(&mut out, grid_size, cells);
-    return out;
 }

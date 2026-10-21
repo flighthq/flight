@@ -17,7 +17,7 @@ fn linear_ramp() -> Vec<u8> {
     return ramp;
 }
 
-mod fill_bitmap_linear_gradient_fn {
+mod fill_bitmap_linear_gradient {
     use super::*;
 
     #[test]
@@ -70,7 +70,7 @@ mod fill_bitmap_linear_gradient_fn {
     }
 }
 
-mod fill_bitmap_radial_gradient_fn {
+mod fill_bitmap_radial_gradient {
     use super::*;
 
     #[test]

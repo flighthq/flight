@@ -6,7 +6,7 @@ fn region(bmp: Bitmap) -> BitmapRegion {
     return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
 }
 
-mod rotate_bitmap_fn {
+mod rotate_bitmap {
     use super::*;
 
     #[test]
@@ -79,7 +79,7 @@ mod rotate_bitmap_fn {
     }
 }
 
-mod rotate_bitmap_180_fn {
+mod rotate_bitmap_180 {
     use super::*;
 
     #[test]
@@ -108,7 +108,7 @@ mod rotate_bitmap_180_fn {
     }
 }
 
-mod rotate_bitmap_clockwise_fn {
+mod rotate_bitmap_clockwise {
     use super::*;
 
     #[test]
@@ -125,7 +125,7 @@ mod rotate_bitmap_clockwise_fn {
     }
 }
 
-mod rotate_bitmap_counter_clockwise_fn {
+mod rotate_bitmap_counter_clockwise {
     use super::*;
 
     #[test]

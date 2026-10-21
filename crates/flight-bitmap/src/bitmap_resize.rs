@@ -1,7 +1,27 @@
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
 
+// flight-lint: allow(f64) resampling coordinates and weights kept in double (TS number) so Math.round/floor boundaries match TS bytes; f32 sufficiency not yet confirmed (D1)
+fn catmull_rom_weight(t: f64) -> f64 {
+    let a = t.abs();
+    if a >= 2.0 { return 0.0; }
+    if a >= 1.0 { return -0.5 * a * a * a + 2.5 * a * a - 4.0 * a + 2.0; }
+    1.5 * a * a * a - 2.5 * a * a + 1.0
+}
+
+fn idx(_sd: &[u8], rx: Option<i32>, ry: Option<i32>, source: &BitmapRegion, s_stride: usize) -> Option<usize> {
+    match (rx, ry) {
+        (Some(rx), Some(ry)) => {
+            let sy = source.y as usize + ry as usize;
+            let sx = source.x as usize + rx as usize;
+            Some((sy * s_stride + sx) * 4)
+        }
+        _ => None,
+    }
+}
+
 /// Resamples the `source` region into the `dest` region.
+// flight-lint: allow(f64) resampling coordinates and weights kept in double (TS number) so Math.round/floor boundaries match TS bytes; f32 sufficiency not yet confirmed (D1)
 pub fn resize_bitmap(
     dest: &mut BitmapRegion,
     source: &BitmapRegion,
@@ -152,24 +172,6 @@ pub fn resize_bitmap(
             invalidate_bitmap(&mut dest.bitmap);
         }
     }
-}
-
-fn idx(_sd: &[u8], rx: Option<i32>, ry: Option<i32>, source: &BitmapRegion, s_stride: usize) -> Option<usize> {
-    match (rx, ry) {
-        (Some(rx), Some(ry)) => {
-            let sy = source.y as usize + ry as usize;
-            let sx = source.x as usize + rx as usize;
-            Some((sy * s_stride + sx) * 4)
-        }
-        _ => None,
-    }
-}
-
-fn catmull_rom_weight(t: f64) -> f64 {
-    let a = t.abs();
-    if a >= 2.0 { return 0.0; }
-    if a >= 1.0 { return -0.5 * a * a * a + 2.5 * a * a - 4.0 * a + 2.0; }
-    1.5 * a * a * a - 2.5 * a * a + 1.0
 }
 
 fn resolve_resize_edge(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {

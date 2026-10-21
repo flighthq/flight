@@ -10,7 +10,7 @@ fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegi
     return BitmapRegion { bitmap: bmp, x, y, width, height };
 }
 
-mod warp_bitmap_fn {
+mod warp_bitmap {
     use super::*;
 
     #[test]
@@ -77,7 +77,7 @@ mod warp_bitmap_fn {
     }
 }
 
-mod warp_bitmap_quad_fn {
+mod warp_bitmap_quad {
     use super::*;
 
     #[test]

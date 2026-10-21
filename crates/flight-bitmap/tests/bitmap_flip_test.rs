@@ -15,7 +15,7 @@ fn ramp(width: u32, height: u32) -> Bitmap {
     return bmp;
 }
 
-mod flip_bitmap_horizontal_fn {
+mod flip_bitmap_horizontal {
     use super::*;
 
     #[test]
@@ -43,7 +43,7 @@ mod flip_bitmap_horizontal_fn {
     }
 }
 
-mod flip_bitmap_vertical_fn {
+mod flip_bitmap_vertical {
     use super::*;
 
     #[test]

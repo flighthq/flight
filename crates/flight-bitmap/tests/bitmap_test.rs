@@ -1,6 +1,6 @@
 use flight_bitmap::contract::*;
 
-mod clone_bitmap_fn {
+mod clone_bitmap {
     use super::*;
 
     #[test]
@@ -21,7 +21,7 @@ mod clone_bitmap_fn {
     }
 }
 
-mod convert_bitmap_alpha_type_fn {
+mod convert_bitmap_alpha_type {
     use super::*;
 
     #[test]
@@ -66,7 +66,7 @@ mod convert_bitmap_alpha_type_fn {
     }
 }
 
-mod create_bitmap_fn {
+mod create_bitmap {
     use super::*;
 
     #[test]
@@ -88,7 +88,7 @@ mod create_bitmap_fn {
     }
 }
 
-mod invalidate_bitmap_fn {
+mod invalidate_bitmap {
     use super::*;
 
     #[test]
