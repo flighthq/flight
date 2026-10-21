@@ -45,6 +45,7 @@ mod set_tiled_layer_data_guard {
 
     #[test]
     fn can_set_none() {
-        set_tiled_layer_data_guard(None);
+        let state = create_tiled_guard_state();
+        set_tiled_layer_data_guard(&state, None);
     }
 }

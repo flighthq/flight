@@ -16,8 +16,8 @@ pub use crate::tiled_color::{format_tiled_color, parse_tiled_color};
 pub use crate::tiled_gid::{decode_tiled_gid, get_tiled_tileset_ref_for_gid};
 pub use crate::tiled_json_parse::{parse_tiled_tileset_json, parse_tiled_tmj};
 pub use crate::tiled_layer_data::{
-    decode_tiled_base64_layer, decode_tiled_csv_layer, explain_tiled_layer_data,
-    set_tiled_layer_data_guard,
+    TiledGuardState, create_tiled_guard_state, decode_tiled_base64_layer, decode_tiled_csv_layer,
+    explain_tiled_layer_data, set_tiled_layer_data_guard,
 };
 pub use crate::tiled_project::build_tilemap_layers_from_tiled;
 pub use crate::tiled_tmj_format::{format_tiled_tileset_json, format_tiled_tmj};

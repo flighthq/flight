@@ -202,10 +202,10 @@ pub struct TiledObject {
     pub y: f64,
 }
 
-// flight-lint: allow(conform-extra) D5: guard field is caller-owned state replacing module-level _guard variable
+// flight-lint: allow(conform-extra) D5: guard field is caller-owned shared state replacing module-level _guard variable
 pub struct TiledParseOptions {
     pub inflate: Option<TiledInflate>,
-    pub guard: Option<crate::tiled_layer_data::TiledLayerDataGuard>,
+    pub guard: Option<crate::tiled_layer_data::TiledGuardState>,
 }
 
 #[derive(Clone, Debug, PartialEq)]

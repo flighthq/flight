@@ -1,12 +1,19 @@
 //! Base64 and CSV tile layer data decoding, guard seam, and explanation
 //! (TS `tiledLayerData.ts`).
 
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use crate::types::{TiledCompression, TiledInflate, TiledLayerDataExplanation, TiledLayerDataFailure};
 
 pub type TiledLayerDataGuard =
     Arc<dyn Fn(TiledLayerDataFailure, TiledCompression) + Send + Sync>;
+
+// flight-lint: allow(conform-extra) D5: shared caller-owned guard state replacing TS module-level _guard variable
+pub type TiledGuardState = Arc<RwLock<Option<TiledLayerDataGuard>>>;
+
+pub fn create_tiled_guard_state() -> TiledGuardState {
+    return Arc::new(RwLock::new(None));
+}
 
 const BASE64_TABLE: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -57,25 +64,31 @@ fn decode_base64(s: &str) -> Vec<u8> {
     return out;
 }
 
-// flight-lint: allow(conform-params) D5: caller-owned guard replaces module-level _guard variable
+// flight-lint: allow(conform-params) D5: caller-owned guard state replaces module-level _guard variable
 pub fn decode_tiled_base64_layer(
     text: &str,
     compression: Option<TiledCompression>,
     inflate: Option<&TiledInflate>,
-    guard: Option<&TiledLayerDataGuard>,
+    guard_state: Option<&TiledGuardState>,
 ) -> Option<Box<[u32]>> {
     let mut bytes = decode_base64(text);
     if let Some(compression) = compression {
         let Some(inflate) = inflate else {
-            if let Some(guard) = guard {
-                guard(TiledLayerDataFailure::CompressedWithoutInflate, compression);
+            if let Some(state) = guard_state {
+                let guard = state.read().unwrap();
+                if let Some(ref g) = *guard {
+                    g(TiledLayerDataFailure::CompressedWithoutInflate, compression);
+                }
             }
             return None;
         };
         let inflated = inflate(&bytes, compression);
         let Some(inflated) = inflated else {
-            if let Some(guard) = guard {
-                guard(TiledLayerDataFailure::InflateFailed, compression);
+            if let Some(state) = guard_state {
+                let guard = state.read().unwrap();
+                if let Some(ref g) = *guard {
+                    g(TiledLayerDataFailure::InflateFailed, compression);
+                }
             }
             return None;
         };
@@ -144,5 +157,7 @@ pub fn explain_tiled_layer_data(
     };
 }
 
-// flight-lint: allow(conform-extra) D5: no-op stub; guard state is now caller-owned via TiledParseOptions.guard
-pub fn set_tiled_layer_data_guard(_guard: Option<TiledLayerDataGuard>) {}
+// flight-lint: allow(conform-params) D5: caller-owned guard state replaces TS module-level _guard
+pub fn set_tiled_layer_data_guard(state: &TiledGuardState, guard: Option<TiledLayerDataGuard>) {
+    *state.write().unwrap() = guard;
+}

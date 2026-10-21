@@ -6,19 +6,22 @@ use std::sync::Arc;
 
 use flight_log::{LogData, LogDataOrProvider, LogLevel, LogStateRef, LogValue, log_once};
 
-use crate::tiled_layer_data::TiledLayerDataGuard;
+use crate::tiled_layer_data::{TiledGuardState, set_tiled_layer_data_guard};
 use crate::types::{TiledCompression, TiledLayerDataFailure};
 
-// flight-lint: allow(conform-extra) D5: no-op stub; guard lifecycle is caller-owned via TiledParseOptions.guard
-pub fn disable_tilemap_formats_guards() {}
+// flight-lint: allow(conform-params) D5: caller-owned guard state replaces TS module-level uninstall
+pub fn disable_tilemap_formats_guards(guard_state: &TiledGuardState) {
+    set_tiled_layer_data_guard(guard_state, None);
+}
 
 // flight-lint: allow(conform-params) D5: caller-owned LogState and clock replace module state
 // flight-lint: allow(f64) the injected clock returns a millisecond operation timestamp
-pub fn enable_tilemap_formats_guards(log_state: &LogStateRef, now_ms: f64) -> TiledLayerDataGuard {
+pub fn enable_tilemap_formats_guards(guard_state: &TiledGuardState, log_state: &LogStateRef, now_ms: f64) {
     let state = log_state.clone();
-    return Arc::new(move |reason, compression| {
+    let guard = Arc::new(move |reason, compression| {
         warn_tiled_layer_data_failure(&state, now_ms, reason, compression);
     });
+    set_tiled_layer_data_guard(guard_state, Some(guard));
 }
 
 // flight-lint: allow(f64) millisecond timestamps are passed through to the log contract
