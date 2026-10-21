@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
 use flight_animation::*;
 
@@ -7,7 +7,7 @@ mod create_animation_root_motion_extractor {
 
     #[test]
     fn creates_reusable_scratch_for_one_explicit_channel() {
-        let clip = create_animation_clip_rc(
+        let clip = Arc::new(RwLock::new(create_animation_clip(
             vec![create_animation_channel(
                 create_animation_track(CreateAnimationTrackOpts {
                     times: vec![0.0, 1.0],
@@ -18,22 +18,22 @@ mod create_animation_root_motion_extractor {
             )],
             None,
             &[],
-        );
+        )));
         let extractor = create_animation_root_motion_extractor(&clip, 0);
-        assert!(Rc::ptr_eq(&extractor.clip, &clip));
+        assert!(Arc::ptr_eq(&extractor.clip, &clip));
         assert_eq!(extractor.channel_index, 0);
         assert_eq!(extractor.cycle_delta[0], 4.0);
     }
 
     #[test]
     fn rejects_missing_channel_indices_and_malformed_quaternion_channels() {
-        let empty_clip = create_animation_clip_rc(vec![], None, &[]);
+        let empty_clip = Arc::new(RwLock::new(create_animation_clip(vec![], None, &[])));
         let result = std::panic::catch_unwind(|| {
             create_animation_root_motion_extractor(&empty_clip, 0);
         });
         assert!(result.is_err());
 
-        let malformed_clip = create_animation_clip_rc(
+        let malformed_clip = Arc::new(RwLock::new(create_animation_clip(
             vec![create_animation_channel(
                 create_animation_track(CreateAnimationTrackOpts {
                     components: Some(3),
@@ -46,7 +46,7 @@ mod create_animation_root_motion_extractor {
             )],
             None,
             &[],
-        );
+        )));
         let result = std::panic::catch_unwind(|| {
             create_animation_root_motion_extractor(&malformed_clip, 0);
         });
@@ -59,7 +59,7 @@ mod extract_animation_root_motion {
 
     #[test]
     fn extracts_forward_reverse_and_multi_loop_vector_displacement() {
-        let clip = create_animation_clip_rc(
+        let clip = Arc::new(RwLock::new(create_animation_clip(
             vec![create_animation_channel(
                 create_animation_track(CreateAnimationTrackOpts {
                     components: Some(3),
@@ -71,7 +71,7 @@ mod extract_animation_root_motion {
             )],
             None,
             &[],
-        );
+        )));
         let mut extractor = create_animation_root_motion_extractor(&clip, 0);
         let mut out = [0.0, 0.0, 0.0];
 
@@ -103,7 +103,7 @@ mod extract_animation_root_motion {
     #[test]
     fn composes_quaternion_rotation_across_loop_boundaries() {
         let sqrt1_2 = std::f32::consts::FRAC_1_SQRT_2;
-        let clip = create_animation_clip_rc(
+        let clip = Arc::new(RwLock::new(create_animation_clip(
             vec![create_animation_channel(
                 create_animation_track(CreateAnimationTrackOpts {
                     components: Some(4),
@@ -116,7 +116,7 @@ mod extract_animation_root_motion {
             )],
             None,
             &[],
-        );
+        )));
         let mut extractor = create_animation_root_motion_extractor(&clip, 0);
         let mut out = [0.0, 0.0, 0.0, 0.0];
 
@@ -131,7 +131,7 @@ mod extract_animation_root_motion {
 
     #[test]
     fn writes_identity_for_a_zero_duration_clip_and_preserves_undersized_output() {
-        let clip = create_animation_clip_rc(
+        let clip = Arc::new(RwLock::new(create_animation_clip(
             vec![create_animation_channel(
                 create_animation_track(CreateAnimationTrackOpts {
                     components: Some(2),
@@ -143,7 +143,7 @@ mod extract_animation_root_motion {
             )],
             None,
             &[],
-        );
+        )));
         let mut extractor = create_animation_root_motion_extractor(&clip, 0);
         let mut out = [9.0, 9.0];
         assert!(extract_animation_root_motion(
@@ -166,7 +166,7 @@ mod extract_animation_root_motion {
     #[test]
     fn rejects_non_finite_ranges_before_mutating_output() {
         let sqrt1_2 = std::f32::consts::FRAC_1_SQRT_2;
-        let clip = create_animation_clip_rc(
+        let clip = Arc::new(RwLock::new(create_animation_clip(
             vec![create_animation_channel(
                 create_animation_track(CreateAnimationTrackOpts {
                     components: Some(4),
@@ -179,7 +179,7 @@ mod extract_animation_root_motion {
             )],
             None,
             &[],
-        );
+        )));
         let mut extractor = create_animation_root_motion_extractor(&clip, 0);
         let mut out = [1.0, 2.0, 3.0, 4.0];
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -195,10 +195,11 @@ mod extract_animation_root_motion {
 
 mod initialize_animation_root_motion_extractor {
     use super::*;
+    use flight_entity::Ref;
 
     #[test]
     fn is_the_construction_initializer_of_create_animation_root_motion_extractor() {
         let _ = initialize_animation_root_motion_extractor
-            as fn(&mut AnimationRootMotionExtractor, &Rc<AnimationClip>, usize);
+            as fn(&mut AnimationRootMotionExtractor, &Ref<AnimationClip>, usize);
     }
 }

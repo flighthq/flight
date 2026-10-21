@@ -1,7 +1,5 @@
 use std::any::Any;
-use std::cell::RefCell;
-use std::rc::Rc;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 
 use flight_animation::*;
 use flight_signals::connect_signal;
@@ -363,7 +361,7 @@ mod clone_animation_player {
         );
         enable_animation_player_signals(&mut p);
         let cloned = clone_animation_player(&p);
-        assert!(Rc::ptr_eq(&cloned.clip, &p.clip));
+        assert!(Arc::ptr_eq(&cloned.clip, &p.clip));
         assert_eq!(cloned.loop_enabled, false);
         assert_eq!(cloned.loop_mode, AnimationLoopMode::PingPong);
         assert_eq!(cloned.repeat_count, 3);

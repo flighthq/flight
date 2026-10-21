@@ -1,5 +1,4 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
 use flight_animation::*;
 
@@ -16,7 +15,7 @@ fn make_player(duration: f32) -> AnimationPlayerRef {
         None,
         &[],
     );
-    return Rc::new(RefCell::new(create_animation_player(clip, None)));
+    return Arc::new(RwLock::new(create_animation_player(clip, None)));
 }
 
 mod advance_animation_players {
@@ -27,7 +26,7 @@ mod advance_animation_players {
         let player = make_player(2.0);
         let mut advanced: Vec<AnimationPlayerRef> = vec![player.clone()];
         advance_animation_players(&[player.clone()], 0.5, &mut advanced);
-        assert_eq!(player.borrow().time, 0.0);
+        assert_eq!(player.read().unwrap().time, 0.0);
         assert_eq!(advanced.len(), 1);
     }
 }

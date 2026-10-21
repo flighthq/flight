@@ -1,6 +1,5 @@
-use std::cell::RefCell;
 use std::panic::AssertUnwindSafe;
-use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
 use flight_animation::*;
 
@@ -15,7 +14,7 @@ fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
     } else {
         vec![value]
     };
-    let clip = create_animation_clip_rc(
+    let clip = create_animation_clip(
         vec![create_animation_channel(
             create_animation_track(CreateAnimationTrackOpts {
                 times,
@@ -27,7 +26,7 @@ fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
         None,
         &[],
     );
-    return Rc::new(RefCell::new(create_animation_player(Rc::unwrap_or_clone(clip), None)));
+    return Arc::new(RwLock::new(create_animation_player(clip, None)));
 }
 
 fn state(name: &str, players: &[AnimationPlayerRef]) -> AnimationStateMachineState {
@@ -63,8 +62,8 @@ mod advance_animation_state_machine {
             None,
         ));
         advance_animation_state_machine(&mut machine, 0.5);
-        assert_eq!(shared.borrow().time, 0.5);
-        assert_eq!(destination.borrow().time, 0.5);
+        assert_eq!(shared.read().unwrap().time, 0.5);
+        assert_eq!(destination.read().unwrap().time, 0.5);
         assert_eq!(machine.advance_scratch.len(), 2);
         assert_eq!(machine.transition_weight, 0.5);
         advance_animation_state_machine(&mut machine, 0.5);
@@ -133,7 +132,7 @@ mod create_animation_state_machine {
 
         let target: TargetRef = 1;
         let scalar = state("scalar", &[player(target, 0.0, 0.0)]);
-        let vector_clip = create_animation_clip_rc(
+        let vector_clip = create_animation_clip(
             vec![create_animation_channel(
                 create_animation_track(CreateAnimationTrackOpts {
                     components: Some(2),
@@ -146,7 +145,7 @@ mod create_animation_state_machine {
             None,
             &[],
         );
-        let vector_player = Rc::new(RefCell::new(create_animation_player(Rc::unwrap_or_clone(vector_clip), None)));
+        let vector_player = Arc::new(RwLock::new(create_animation_player(vector_clip, None)));
         let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
             create_animation_state_machine(
                 &[scalar, state("vector", &[vector_player])],
@@ -164,7 +163,7 @@ mod create_animation_state_machine_state {
     fn creates_a_named_state_over_a_caller_owned_blend_tree() {
         let tree = create_animation_blend_tree_ref(&[]);
         let result = create_animation_state_machine_state("empty", tree.clone());
-        assert!(Rc::ptr_eq(&result.blend_tree, &tree));
+        assert!(Arc::ptr_eq(&result.blend_tree, &tree));
         assert_eq!(result.name, "empty");
     }
 }

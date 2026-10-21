@@ -1,5 +1,4 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
 use flight_animation::*;
 
@@ -16,7 +15,7 @@ fn make_player_with_target(target: TargetRef, duration: f32) -> AnimationPlayerR
         None,
         &[],
     );
-    return Rc::new(RefCell::new(create_animation_player(clip, None)));
+    return Arc::new(RwLock::new(create_animation_player(clip, None)));
 }
 
 mod advance_animation_state_machine_with_scratch {
@@ -36,7 +35,7 @@ mod advance_animation_state_machine_with_scratch {
         );
         let mut advanced: Vec<AnimationPlayerRef> = Vec::new();
         advance_animation_state_machine_with_scratch(&mut machine, 0.5, &mut advanced);
-        assert_eq!(player.borrow().time, 0.5);
+        assert_eq!(player.read().unwrap().time, 0.5);
         assert_eq!(advanced.len(), 1);
     }
 }

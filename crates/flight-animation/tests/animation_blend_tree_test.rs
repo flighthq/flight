@@ -1,6 +1,5 @@
-use std::cell::RefCell;
 use std::panic::AssertUnwindSafe;
-use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
 use flight_animation::*;
 
@@ -15,7 +14,7 @@ fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
     } else {
         vec![value]
     };
-    let clip = create_animation_clip_rc(
+    let clip = create_animation_clip(
         vec![create_animation_channel(
             create_animation_track(CreateAnimationTrackOpts {
                 times,
@@ -27,11 +26,11 @@ fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
         None,
         &[],
     );
-    return Rc::new(RefCell::new(create_animation_player(Rc::unwrap_or_clone(clip), None)));
+    return Arc::new(RwLock::new(create_animation_player(clip, None)));
 }
 
 fn quaternion_player(target: TargetRef, values: &[f32]) -> AnimationPlayerRef {
-    let clip = create_animation_clip_rc(
+    let clip = create_animation_clip(
         vec![create_animation_channel(
             create_animation_track(CreateAnimationTrackOpts {
                 components: Some(4),
@@ -45,7 +44,7 @@ fn quaternion_player(target: TargetRef, values: &[f32]) -> AnimationPlayerRef {
         None,
         &[],
     );
-    return Rc::new(RefCell::new(create_animation_player(Rc::unwrap_or_clone(clip), None)));
+    return Arc::new(RwLock::new(create_animation_player(clip, None)));
 }
 
 mod advance_animation_blend_tree {
@@ -61,7 +60,7 @@ mod advance_animation_blend_tree {
         ]);
         assert_eq!(tree.players.len(), 1);
         advance_animation_blend_tree(&tree, 0.5);
-        assert_eq!(shared.borrow().time, 0.5);
+        assert_eq!(shared.read().unwrap().time, 0.5);
     }
 }
 
@@ -91,7 +90,7 @@ mod create_animation_blend_tree {
             values: vec![1.0],
             ..Default::default()
         });
-        let dup_clip = create_animation_clip_rc(
+        let dup_clip = create_animation_clip(
             vec![
                 create_animation_channel(track.clone(), target),
                 create_animation_channel(track.clone(), target),
@@ -99,7 +98,7 @@ mod create_animation_blend_tree {
             None,
             &[],
         );
-        let duplicate = Rc::new(RefCell::new(create_animation_player(Rc::unwrap_or_clone(dup_clip), None)));
+        let duplicate = Arc::new(RwLock::new(create_animation_player(dup_clip, None)));
         let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
             create_animation_blend_tree(&[create_animation_blend_tree_input(
                 duplicate,
@@ -110,7 +109,7 @@ mod create_animation_blend_tree {
         assert!(result.is_err());
 
         let scalar = player(target, 1.0, 0.0);
-        let vector_clip = create_animation_clip_rc(
+        let vector_clip = create_animation_clip(
             vec![create_animation_channel(
                 create_animation_track(CreateAnimationTrackOpts {
                     components: Some(2),
@@ -123,7 +122,7 @@ mod create_animation_blend_tree {
             None,
             &[],
         );
-        let vector = Rc::new(RefCell::new(create_animation_player(Rc::unwrap_or_clone(vector_clip), None)));
+        let vector = Arc::new(RwLock::new(create_animation_player(vector_clip, None)));
         let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
             create_animation_blend_tree(&[
                 create_animation_blend_tree_input(scalar, 1.0, false),

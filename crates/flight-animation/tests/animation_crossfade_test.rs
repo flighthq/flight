@@ -1,5 +1,4 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
 use flight_animation::*;
 
@@ -21,7 +20,7 @@ fn player(
         None,
         &[],
     );
-    return Rc::new(RefCell::new(create_animation_player(clip, None)));
+    return Arc::new(RwLock::new(create_animation_player(clip, None)));
 }
 
 fn scalar_player(target: TargetRef, values: &[f32]) -> AnimationPlayerRef {
@@ -38,8 +37,8 @@ mod advance_animation_crossfade {
         let to = scalar_player(target, &[20.0, 30.0]);
         let mut state = create_animation_crossfade(from.clone(), to.clone(), 2.0, None);
         advance_animation_crossfade(&mut state, 0.5);
-        assert_eq!(from.borrow().time, 0.5);
-        assert_eq!(to.borrow().time, 0.5);
+        assert_eq!(from.read().unwrap().time, 0.5);
+        assert_eq!(to.read().unwrap().time, 0.5);
         assert_eq!(state.elapsed, 0.5);
         assert_eq!(state.weight, 0.25);
     }
@@ -146,8 +145,8 @@ mod create_animation_crossfade {
             None,
             &[],
         );
-        let from = Rc::new(RefCell::new(create_animation_player(from_clip, None)));
-        let to = Rc::new(RefCell::new(create_animation_player(to_clip, None)));
+        let from = Arc::new(RwLock::new(create_animation_player(from_clip, None)));
+        let to = Arc::new(RwLock::new(create_animation_player(to_clip, None)));
         let state = create_animation_crossfade(from, to, 1.0, None);
 
         assert_eq!(state.channels.len(), 3);
@@ -209,8 +208,8 @@ mod create_animation_crossfade {
             None,
             &[],
         );
-        let dup_player = Rc::new(RefCell::new(create_animation_player(dup_clip, None)));
-        let unique_player = Rc::new(RefCell::new(create_animation_player(unique_clip, None)));
+        let dup_player = Arc::new(RwLock::new(create_animation_player(dup_clip, None)));
+        let unique_player = Arc::new(RwLock::new(create_animation_player(unique_clip, None)));
         create_animation_crossfade(dup_player, unique_player, 1.0, None);
     }
 }
@@ -340,8 +339,8 @@ mod sample_animation_crossfade {
             None,
             &[],
         );
-        let from = Rc::new(RefCell::new(create_animation_player(from_clip, None)));
-        let to = Rc::new(RefCell::new(create_animation_player(to_clip, None)));
+        let from = Arc::new(RwLock::new(create_animation_player(from_clip, None)));
+        let to = Arc::new(RwLock::new(create_animation_player(to_clip, None)));
         let mut state = create_animation_crossfade(from, to, 2.0, None);
         advance_animation_crossfade(&mut state, 1.0);
         let mut seen: Vec<(usize, TargetRef, f32)> = Vec::new();

@@ -1,6 +1,5 @@
-use std::cell::RefCell;
 use std::panic::AssertUnwindSafe;
-use std::rc::Rc;
+use std::sync::{Arc, RwLock};
 
 use flight_animation::*;
 
@@ -15,7 +14,7 @@ fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
     } else {
         vec![value]
     };
-    let clip = create_animation_clip_rc(
+    let clip = create_animation_clip(
         vec![create_animation_channel(
             create_animation_track(CreateAnimationTrackOpts {
                 times,
@@ -27,7 +26,7 @@ fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
         None,
         &[],
     );
-    return Rc::new(RefCell::new(create_animation_player(Rc::unwrap_or_clone(clip), None)));
+    return Arc::new(RwLock::new(create_animation_player(clip, None)));
 }
 
 fn tree(players: &[AnimationPlayerRef]) -> AnimationBlendTreeRef {
@@ -61,7 +60,7 @@ mod advance_animation_layer_stack {
 
         advance_animation_layer_stack(&mut stack, 0.5);
 
-        assert_eq!(shared.borrow().time, 0.5);
+        assert_eq!(shared.read().unwrap().time, 0.5);
         assert_eq!(stack.advance_scratch.len(), 1);
         assert_eq!(stack.blend_trees.len(), 1);
         assert_eq!(stack.state_machines.len(), 1);
@@ -82,7 +81,7 @@ mod create_animation_blend_tree_layer {
                 weight: Some(0.5),
             }),
         );
-        assert!(Rc::ptr_eq(layer.blend_tree.as_ref().unwrap(), &source));
+        assert!(Arc::ptr_eq(layer.blend_tree.as_ref().unwrap(), &source));
         assert!(layer.state_machine.is_none());
         assert_eq!(layer.channel_indices, Some(vec![0, 1]));
         assert!(layer.additive);
@@ -137,7 +136,7 @@ mod create_animation_layer_stack {
     fn rejects_incompatible_tracks_for_the_same_target() {
         let target: TargetRef = 1;
         let scalar = tree(&[player(target, 1.0, 0.0)]);
-        let vector_clip = create_animation_clip_rc(
+        let vector_clip = create_animation_clip(
             vec![create_animation_channel(
                 create_animation_track(CreateAnimationTrackOpts {
                     components: Some(2),
@@ -150,7 +149,7 @@ mod create_animation_layer_stack {
             None,
             &[],
         );
-        let vector_player = Rc::new(RefCell::new(create_animation_player(Rc::unwrap_or_clone(vector_clip), None)));
+        let vector_player = Arc::new(RwLock::new(create_animation_player(vector_clip, None)));
         let vector = tree(&[vector_player]);
         let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
             create_animation_layer_stack(&[
@@ -176,7 +175,7 @@ mod create_animation_state_machine_layer {
         );
         let layer = create_animation_state_machine_layer(source.clone(), None);
         assert!(layer.blend_tree.is_none());
-        assert!(Rc::ptr_eq(layer.state_machine.as_ref().unwrap(), &source));
+        assert!(Arc::ptr_eq(layer.state_machine.as_ref().unwrap(), &source));
     }
 }
 
@@ -243,7 +242,7 @@ mod sample_animation_layer_stack {
             None,
         );
         {
-            let mut m = machine.borrow_mut();
+            let mut m = machine.write().unwrap();
             transition_animation_state_machine(
                 &mut m,
                 StateRef::Name("to".to_string()),
