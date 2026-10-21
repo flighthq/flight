@@ -59,4 +59,5 @@ flight-resource = { path = "crates/flight-resource" }
 flight-requirement = { path = "crates/flight-requirement" }
 flight-requirement-catalog = { path = "crates/flight-requirement-catalog" }
 flight-requirement-codegen = { path = "crates/flight-requirement-codegen" }
+flight-power = { path = "crates/flight-power" }
 flight-unhomed = { path = "crates/flight-unhomed" }

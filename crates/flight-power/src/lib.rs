@@ -1,4 +1,5 @@
 mod power;
+mod sugar;
 mod types;
 
 pub mod contract;

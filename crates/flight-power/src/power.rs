@@ -74,7 +74,7 @@ pub fn attach_power(
                     } else {
                         &on_discharging
                     };
-                    if let Some(ref signal) = transition {
+                    if let Some(signal) = transition {
                         emit_signal(signal, &());
                     }
                 }
@@ -155,16 +155,6 @@ pub fn attach_power(
     power.subscriptions = Some(teardowns);
 }
 
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for PowerBatteryHealthState
-pub fn get_power_battery_health_state_string(value: PowerBatteryHealthState) -> &'static str {
-    return match value {
-        PowerBatteryHealthState::Good => "Good",
-        PowerBatteryHealthState::Fair => "Fair",
-        PowerBatteryHealthState::Poor => "Poor",
-        PowerBatteryHealthState::Unknown => "Unknown",
-    };
-}
-
 // SOURCE NOTE: TS uses module-level _destroyedKeepAwake: WeakSet to track providers already destroyed
 // across calls, enabling cross-call retry behavior. D5 prohibits hidden globals; the per-call alias
 // dedup and attempt-all semantics are preserved. Cross-call retry tracking is a representation
@@ -173,7 +163,7 @@ pub fn destroy_power_keep_awake(host_power_keep_awake: &[&HostPowerKeepAwakeCapa
     let mut seen = HashSet::new();
     let mut pending: Vec<&HostPowerKeepAwakeCapability> = Vec::new();
     for provider in host_power_keep_awake {
-        let ptr = Arc::as_ptr(&provider.acquire) as usize;
+        let ptr = Arc::as_ptr(&provider.acquire) as *const () as usize;
         if seen.insert(ptr) {
             pending.push(provider);
         }
@@ -283,19 +273,21 @@ pub fn get_power_battery_health(
     return (host_power_battery_health.get_battery_health)(out);
 }
 
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for PowerBatteryHealthState
+pub fn get_power_battery_health_state_string(value: PowerBatteryHealthState) -> &'static str {
+    return match value {
+        PowerBatteryHealthState::Good => "Good",
+        PowerBatteryHealthState::Fair => "Fair",
+        PowerBatteryHealthState::Poor => "Poor",
+        PowerBatteryHealthState::Unknown => "Unknown",
+    };
+}
+
 // flight-lint: allow(hidden-state) D5: TS module-level _idlePollingIntervalMs; no TLS, thread-safe mutable shared configuration matching TS source scope
 static IDLE_POLLING_INTERVAL_MS: Mutex<f32> = Mutex::new(5000.0);
 
-
 pub fn get_power_idle_polling_interval_ms() -> f32 {
     return *IDLE_POLLING_INTERVAL_MS.lock().unwrap();
-}
-
-pub fn get_power_status(
-    host_power_status: &HostPowerStatusCapability,
-    out: &mut PowerStatus,
-) -> PowerStatus {
-    return (host_power_status.get_status)(out);
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for PowerIdleState
@@ -332,6 +324,13 @@ pub fn get_power_keep_awake_release_reason_string(value: PowerKeepAwakeReleaseRe
         PowerKeepAwakeReleaseReason::Inactive => "inactive",
         PowerKeepAwakeReleaseReason::Failed => "failed",
     };
+}
+
+pub fn get_power_status(
+    host_power_status: &HostPowerStatusCapability,
+    out: &mut PowerStatus,
+) -> PowerStatus {
+    return (host_power_status.get_status)(out);
 }
 
 pub fn get_power_system_idle_state(
