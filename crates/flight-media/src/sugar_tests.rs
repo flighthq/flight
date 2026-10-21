@@ -170,7 +170,13 @@ fn spawn_host() -> HostSpawnCapability {
 fn video_channel_methods_delegate_to_every_channel_free_function() {
     let host = video_host();
     let spawn = spawn_host();
-    let channel = play_video_resource(&host, &spawn, &video_resource(), None).unwrap();
+    let runtime_state = VideoChannelRuntimeState::new();
+    assert!(!Arc::ptr_eq(
+        &runtime_state,
+        &VideoChannelRuntimeState::new()
+    ));
+    let channel =
+        play_video_resource(&host, &spawn, &runtime_state, &video_resource(), None).unwrap();
     assert_eq!(
         channel.current_time(&host),
         get_video_channel_current_time(&host, &channel)

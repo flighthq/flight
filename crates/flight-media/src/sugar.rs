@@ -8,6 +8,7 @@ use crate::enable_audio_mixer_guards::*;
 use crate::media_channel_signals::*;
 use crate::types::*;
 use crate::video_channel::*;
+use crate::video_channel_runtime::*;
 
 #[cfg(test)]
 #[path = "sugar_tests.rs"]
@@ -294,6 +295,12 @@ impl AudioMixer {
         options: Option<&AudioMixerOptions>,
     ) -> Ref<AudioMixer> {
         return create_audio_mixer(host_audio_mixer, device, options);
+    }
+}
+
+impl VideoChannelRuntimeState {
+    pub fn new() -> VideoChannelRuntimeStateRef {
+        return create_video_channel_runtime_state();
     }
 }
 

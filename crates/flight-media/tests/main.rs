@@ -6,6 +6,7 @@ mod enable_audio_mixer_guards_test;
 mod media_channel_signals_test;
 mod test_support;
 mod types_test;
+mod video_channel_runtime_test;
 mod video_channel_test;
 
 use test_support::*;

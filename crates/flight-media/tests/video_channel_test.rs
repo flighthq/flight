@@ -16,8 +16,38 @@ fn channel() -> (
     let (state, host) = video_host();
     let spawn = immediate_spawn();
     let resource = video_resource();
-    let channel = play_video_resource(&host, &spawn, &resource, None).unwrap();
+    let runtime_state = create_video_channel_runtime_state();
+    let channel = play_video_resource(&host, &spawn, &runtime_state, &resource, None).unwrap();
     return (state, host, spawn, resource, channel);
+}
+
+fn listener_count(
+    state: &Arc<std::sync::Mutex<VideoMockState>>,
+    element: &Arc<flight_bitmap::HostImageSource>,
+) -> usize {
+    let element = Arc::downgrade(element);
+    return state
+        .lock()
+        .unwrap()
+        .listeners
+        .iter()
+        .filter(|(source, _)| source.ptr_eq(&element))
+        .count();
+}
+
+fn listener_for(
+    state: &Arc<std::sync::Mutex<VideoMockState>>,
+    element: &Arc<flight_bitmap::HostImageSource>,
+) -> flight_video::VideoEndedListener {
+    let element = Arc::downgrade(element);
+    return state
+        .lock()
+        .unwrap()
+        .listeners
+        .iter()
+        .find(|(source, _)| source.ptr_eq(&element))
+        .map(|(_, listener)| listener.clone())
+        .unwrap();
 }
 
 mod destroy_video_channel {
@@ -88,6 +118,33 @@ mod destroy_video_channel {
                 .unwrap()
                 .events
                 .contains(&"remove-ended".to_string())
+        );
+    }
+
+    #[test]
+    fn removes_the_current_original_element_runtime_after_resource_loss_only() {
+        let (state, host) = video_host();
+        let spawn = immediate_spawn();
+        let runtime_state = create_video_channel_runtime_state();
+        let original = video_element();
+        let other = video_element();
+        let resource = video_resource_with_element(original.clone());
+        let other_resource = video_resource_with_element(other.clone());
+        let channel = play_video_resource(&host, &spawn, &runtime_state, &resource, None).unwrap();
+        let _other_channel =
+            play_video_resource(&host, &spawn, &runtime_state, &other_resource, None).unwrap();
+        destroy_video_resource(&host, &mut resource.write().unwrap());
+        destroy_video_channel(&host, &channel);
+        assert_eq!(listener_count(&state, &original), 0);
+        assert_eq!(listener_count(&state, &other), 1);
+        assert!(
+            state
+                .lock()
+                .unwrap()
+                .listener_events
+                .last()
+                .unwrap()
+                .ends_with(":true")
         );
     }
 }
@@ -193,7 +250,9 @@ mod play_video_resource {
             loops: Some(1),
             playback_rate: Some(1.5),
         };
-        let channel = play_video_resource(&host, &spawn, &source, Some(&options)).unwrap();
+        let runtime_state = create_video_channel_runtime_state();
+        let channel =
+            play_video_resource(&host, &spawn, &runtime_state, &source, Some(&options)).unwrap();
         assert!(Arc::ptr_eq(
             channel.read().unwrap().source.as_ref().unwrap(),
             &source
@@ -213,9 +272,11 @@ mod play_video_resource {
         let empty = Arc::new(std::sync::RwLock::new(create_video_resource(
             None, None, None,
         )));
-        assert!(play_video_resource(&host, &spawn, &empty, None).is_none());
+        let runtime_state = create_video_channel_runtime_state();
+        assert!(play_video_resource(&host, &spawn, &runtime_state, &empty, None).is_none());
         state.lock().unwrap().play_rejects = true;
-        let channel = play_video_resource(&host, &spawn, &video_resource(), None).unwrap();
+        let channel =
+            play_video_resource(&host, &spawn, &runtime_state, &video_resource(), None).unwrap();
         assert_eq!(channel.read().unwrap().state, VideoChannelState::Stopped);
     }
 
@@ -230,10 +291,51 @@ mod play_video_resource {
             loops: Some(1),
             playback_rate: None,
         };
-        let channel = play_video_resource(&host, &spawn, &resource, Some(&options)).unwrap();
+        let runtime_state = create_video_channel_runtime_state();
+        let channel =
+            play_video_resource(&host, &spawn, &runtime_state, &resource, Some(&options)).unwrap();
         destroy_video_resource(&host, &mut resource.write().unwrap());
         trigger_video_end(&state);
         assert_eq!(channel.read().unwrap().state, VideoChannelState::Complete);
+    }
+
+    #[test]
+    fn replaces_the_exact_same_source_listener_before_installing_the_new_runtime() {
+        let (state, host) = video_host();
+        let spawn = immediate_spawn();
+        let runtime_state = create_video_channel_runtime_state();
+        let shared = video_element();
+        let other = video_element();
+        let first_resource = video_resource_with_element(shared.clone());
+        let second_resource = video_resource_with_element(shared.clone());
+        let other_resource = video_resource_with_element(other.clone());
+        let _first =
+            play_video_resource(&host, &spawn, &runtime_state, &first_resource, None).unwrap();
+        let first_listener = listener_for(&state, &shared);
+        let _other =
+            play_video_resource(&host, &spawn, &runtime_state, &other_resource, None).unwrap();
+        state.lock().unwrap().events.clear();
+        let second =
+            play_video_resource(&host, &spawn, &runtime_state, &second_resource, None).unwrap();
+        let second_listener = listener_for(&state, &shared);
+        assert!(!Arc::ptr_eq(&first_listener, &second_listener));
+        assert_eq!(listener_count(&state, &shared), 1);
+        assert_eq!(listener_count(&state, &other), 1);
+        assert_eq!(
+            state.lock().unwrap().events,
+            vec![
+                "remove-ended",
+                "time:0",
+                "volume:1",
+                "rate:1",
+                "loop:false",
+                "add-ended",
+                "time:0",
+                "play",
+            ]
+        );
+        trigger_video_end_for(&state, &shared);
+        assert_eq!(second.read().unwrap().state, VideoChannelState::Complete);
     }
 }
 
@@ -328,5 +430,48 @@ mod stop_video_channel {
         assert!(events.contains(&"remove-ended".to_string()));
         assert!(events.contains(&"pause".to_string()));
         assert!(events.contains(&"time:0".to_string()));
+    }
+
+    #[test]
+    fn removes_the_source_registry_current_listener_even_from_an_older_channel() {
+        let (state, host) = video_host();
+        let spawn = immediate_spawn();
+        let runtime_state = create_video_channel_runtime_state();
+        let shared = video_element();
+        let first_resource = video_resource_with_element(shared.clone());
+        let second_resource = video_resource_with_element(shared.clone());
+        let first =
+            play_video_resource(&host, &spawn, &runtime_state, &first_resource, None).unwrap();
+        let second =
+            play_video_resource(&host, &spawn, &runtime_state, &second_resource, None).unwrap();
+        state.lock().unwrap().events.clear();
+        stop_video_channel(&host, &first);
+        assert_eq!(listener_count(&state, &shared), 0);
+        assert_eq!(second.read().unwrap().state, VideoChannelState::Playing);
+        assert_eq!(
+            state.lock().unwrap().events,
+            vec!["remove-ended", "pause", "time:0"]
+        );
+    }
+
+    #[test]
+    fn retained_registry_entries_do_not_keep_sources_or_channels_alive() {
+        let (state, host) = video_host();
+        let spawn = immediate_spawn();
+        let runtime_state = create_video_channel_runtime_state();
+        let element = video_element();
+        let weak_element = Arc::downgrade(&element);
+        let resource = video_resource_with_element(element.clone());
+        let channel = play_video_resource(&host, &spawn, &runtime_state, &resource, None).unwrap();
+        let weak_channel = Arc::downgrade(&channel);
+        stop_video_channel(&host, &channel);
+        destroy_video_resource(&host, &mut resource.write().unwrap());
+        drop(channel);
+        drop(resource);
+        drop(element);
+        assert!(weak_channel.upgrade().is_none());
+        assert!(weak_element.upgrade().is_none());
+        assert!(Arc::strong_count(&runtime_state) >= 1);
+        assert!(state.lock().unwrap().listeners.is_empty());
     }
 }

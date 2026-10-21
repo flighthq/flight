@@ -9,6 +9,7 @@ use flight_video::{HostVideoCapability, VideoChannelState, VideoPlayOptions, Vid
 
 use crate::media_channel_signals::get_video_channel_signals;
 use crate::types::*;
+use crate::video_channel_runtime::*;
 
 #[derive(Clone, Copy)]
 enum VideoChannelSignalKind {
@@ -25,15 +26,31 @@ fn complete_video_channel(channel: &Ref<VideoChannel>) {
         if channel.state != VideoChannelState::Playing {
             return;
         }
-        let source_is_live = current_video_element(&channel).is_some();
+        let element = current_video_element(&channel);
         let Some(runtime) = channel.video_runtime.as_mut() else {
             return;
         };
         let host = (runtime.host_video.clone(), runtime.host_spawn.clone());
-        if source_is_live && runtime.loops_remaining != 0 {
-            if runtime.loops_remaining > 0 {
-                runtime.loops_remaining -= 1;
+        let looped = if let Some(element) = element {
+            let mut runtime_state = runtime.runtime_state.write().unwrap();
+            prune_video_source_runtimes(&mut runtime_state);
+            if let Some(index) = find_video_source_runtime(&runtime_state, &element) {
+                let source_runtime = &mut runtime_state.source_runtimes[index];
+                if source_runtime.loops_remaining != 0 {
+                    if source_runtime.loops_remaining > 0 {
+                        source_runtime.loops_remaining -= 1;
+                    }
+                    true
+                } else {
+                    false
+                }
+            } else {
+                false
             }
+        } else {
+            false
+        };
+        if looped {
             channel.current_time = 0.0;
             (true, host)
         } else {
@@ -62,24 +79,33 @@ fn current_video_element(channel: &VideoChannel) -> Option<Arc<HostImageSource>>
 /// Detaches the completion listener and pauses the element without destroying the independently
 /// owned `VideoResource` or its media-stream tracks.
 pub fn destroy_video_channel(host_video: &HostVideoCapability, channel: &Ref<VideoChannel>) {
-    let (element, listener) = {
-        let mut channel = channel.write().unwrap();
+    let (element, runtime_state) = {
+        let channel = channel.read().unwrap();
         let element = current_video_element(&channel).or_else(|| channel.retained_element.clone());
-        let listener = channel.video_runtime.take().map(|runtime| runtime.on_ended);
-        channel.retained_element = None;
-        channel.source = None;
-        channel.state = VideoChannelState::Stopped;
-        channel.current_time = 0.0;
-        (element, listener)
+        let runtime_state = channel
+            .video_runtime
+            .as_ref()
+            .map(|runtime| runtime.runtime_state.clone());
+        (element, runtime_state)
     };
     if let Some(element) = element {
-        if let (Some(remove), Some(listener)) = (&host_video.remove_ended_listener, listener) {
-            remove(&element, &listener);
+        if let Some(runtime_state) = runtime_state {
+            let listener = get_video_source_listener(&runtime_state, &element);
+            if let (Some(remove), Some(listener)) = (&host_video.remove_ended_listener, listener) {
+                remove(&element, &listener);
+            }
+            delete_video_source_runtime(&runtime_state, &element);
         }
         if let Some(pause) = &host_video.pause {
             pause(&element);
         }
     }
+    let mut channel = channel.write().unwrap();
+    channel.retained_element = None;
+    channel.source = None;
+    channel.state = VideoChannelState::Stopped;
+    channel.current_time = 0.0;
+    channel.video_runtime = None;
 }
 
 fn emit_video_channel_signal(channel: &Ref<VideoChannel>, kind: VideoChannelSignalKind) {
@@ -174,14 +200,20 @@ pub fn pause_video_channel(host_video: &HostVideoCapability, channel: &Ref<Video
 /// Starts a channel over the exact resource identity. The injected host executor drives the
 /// provider Promise; a rejection stops a channel that is still playing and never panics.
 // flight-lint: allow(f64) video duration is reported by the canonical host as JS-number seconds
-// flight-lint: allow(conform-params) D15: host-owned spawning drives the source's fire-and-forget play Promise without an SDK executor
+// flight-lint: allow(conform-params) D5/D15: caller-owned source-identity runtime state and host spawning replace module WeakMaps and the fire-and-forget Promise
 pub fn play_video_resource(
     host_video: &HostVideoCapability,
     host_spawn: &HostSpawnCapability,
+    runtime_state: &VideoChannelRuntimeStateRef,
     source: &Ref<VideoResource>,
     options: Option<&VideoPlayOptions>,
 ) -> Option<Ref<VideoChannel>> {
     let element = source.read().unwrap().element.clone()?;
+    if let Some(listener) = get_video_source_listener(runtime_state, &element) {
+        if let Some(remove_ended_listener) = &host_video.remove_ended_listener {
+            remove_ended_listener(&element, &listener);
+        }
+    }
     let length = host_video
         .get_duration
         .as_ref()
@@ -205,21 +237,24 @@ pub fn play_video_resource(
         signals: None,
         video_runtime: None,
     }));
-    let weak = Arc::downgrade(&channel);
+    let end_channel = channel.clone();
     let on_ended: flight_video::VideoEndedListener = Arc::new(move || {
-        if let Some(channel) = weak.upgrade() {
-            complete_video_channel(&channel);
-        }
+        complete_video_channel(&end_channel);
     });
     {
         let mut channel = channel.write().unwrap();
         channel.video_runtime = Some(VideoChannelRuntime {
             host_video: host_video.clone(),
             host_spawn: host_spawn.clone(),
-            loops_remaining: channel.loops,
-            on_ended: on_ended.clone(),
+            runtime_state: runtime_state.clone(),
         });
     }
+    set_video_source_runtime(
+        runtime_state,
+        &element,
+        channel.read().unwrap().loops,
+        on_ended.clone(),
+    );
     let (current_time, gain, playback_rate) = {
         let channel = channel.read().unwrap();
         (channel.current_time, channel.gain, channel.playback_rate)
@@ -361,20 +396,21 @@ fn start_video_channel(
 }
 
 pub fn stop_video_channel(host_video: &HostVideoCapability, channel: &Ref<VideoChannel>) {
-    let (element, listener) = {
-        let mut channel = channel.write().unwrap();
+    let (element, runtime_state) = {
+        let channel = channel.read().unwrap();
         let element = current_video_element(&channel);
-        let listener = channel
+        let runtime_state = channel
             .video_runtime
             .as_ref()
-            .map(|runtime| runtime.on_ended.clone());
-        channel.current_time = 0.0;
-        channel.state = VideoChannelState::Stopped;
-        (element, listener)
+            .map(|runtime| runtime.runtime_state.clone());
+        (element, runtime_state)
     };
     if let Some(element) = element {
-        if let (Some(remove), Some(listener)) = (&host_video.remove_ended_listener, listener) {
-            remove(&element, &listener);
+        if let Some(runtime_state) = runtime_state {
+            let listener = get_video_source_listener(&runtime_state, &element);
+            if let (Some(remove), Some(listener)) = (&host_video.remove_ended_listener, listener) {
+                remove(&element, &listener);
+            }
         }
         if let Some(pause) = &host_video.pause {
             pause(&element);
@@ -382,6 +418,11 @@ pub fn stop_video_channel(host_video: &HostVideoCapability, channel: &Ref<VideoC
         if let Some(set_current_time) = &host_video.set_current_time {
             set_current_time(&element, 0.0);
         }
+    }
+    {
+        let mut channel = channel.write().unwrap();
+        channel.current_time = 0.0;
+        channel.state = VideoChannelState::Stopped;
     }
     emit_video_channel_signal(channel, VideoChannelSignalKind::Stop);
 }

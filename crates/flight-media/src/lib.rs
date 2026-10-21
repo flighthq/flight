@@ -5,6 +5,7 @@ mod media_channel_signals;
 mod sugar;
 mod types;
 mod video_channel;
+mod video_channel_runtime;
 
 pub mod contract;
 
@@ -33,11 +34,14 @@ pub use contract::MediaChannelSignals;
 pub use contract::MediaReadyState;
 pub use contract::VideoChannel;
 pub use contract::VideoChannelMethods;
+pub use contract::VideoChannelRuntimeState;
+pub use contract::VideoChannelRuntimeStateRef;
 
 pub use contract::add_audio_bus_to_mixer;
 pub use contract::clear_audio_channel_loop_region;
 pub use contract::create_audio_bus;
 pub use contract::create_audio_mixer;
+pub use contract::create_video_channel_runtime_state;
 pub use contract::destroy_audio_channel;
 pub use contract::destroy_audio_mixer;
 pub use contract::destroy_video_channel;

@@ -187,9 +187,25 @@ pub struct VideoChannel {
 pub(crate) struct VideoChannelRuntime {
     pub host_video: HostVideoCapability,
     pub host_spawn: HostSpawnCapability,
-    pub loops_remaining: i32,
-    pub on_ended: flight_video::VideoEndedListener,
+    pub runtime_state: VideoChannelRuntimeStateRef,
 }
+
+/// Caller-owned replacement for the source's `WeakMap<HostImageSource, VideoChannelRuntime>`.
+/// Entries weakly key the exact opaque source identity, so a stopped-but-undestroyed channel does
+/// not make its source, channel, or listener permanently live through this registry.
+#[derive(Default)]
+pub struct VideoChannelRuntimeState {
+    pub(crate) source_runtimes: Vec<VideoSourceRuntime>,
+}
+
+pub(crate) struct VideoSourceRuntime {
+    pub element: Weak<HostImageSource>,
+    pub loops_remaining: i32,
+    pub on_ended: Weak<dyn Fn() + Send + Sync>,
+}
+
+/// Shared caller-owned video-channel runtime state.
+pub type VideoChannelRuntimeStateRef = Ref<VideoChannelRuntimeState>;
 
 /// Audio-bus construction options.
 #[derive(Clone, Debug, Default, PartialEq)]

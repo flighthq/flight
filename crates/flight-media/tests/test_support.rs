@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex, RwLock, Weak};
 use std::task::{Context, Poll, Waker};
 
 use flight_audio::{AudioBuffer, AudioResource, create_audio_resource};
@@ -278,6 +278,8 @@ pub(crate) struct VideoMockState {
     pub current_time: f64,
     pub events: Vec<String>,
     pub listener: Option<flight_video::VideoEndedListener>,
+    pub listener_events: Vec<String>,
+    pub listeners: Vec<(Weak<HostImageSource>, flight_video::VideoEndedListener)>,
     pub play_rejects: bool,
 }
 
@@ -289,8 +291,12 @@ pub(crate) fn video_element() -> Arc<HostImageSource> {
 }
 
 pub(crate) fn video_resource() -> Ref<VideoResource> {
+    return video_resource_with_element(video_element());
+}
+
+pub(crate) fn video_resource_with_element(element: Arc<HostImageSource>) -> Ref<VideoResource> {
     return Arc::new(RwLock::new(create_video_resource(
-        Some(video_element()),
+        Some(element),
         None,
         Some(false),
     )));
@@ -310,9 +316,15 @@ pub(crate) fn video_host() -> (Arc<Mutex<VideoMockState>>, HostVideoCapability) 
     let volume_state = state.clone();
     let host = HostVideoCapability {
         provider: Arc::new("video-provider".to_string()),
-        add_ended_listener: Some(Arc::new(move |_element, listener| {
+        add_ended_listener: Some(Arc::new(move |element, listener| {
             let mut state = add_state.lock().unwrap();
             state.events.push("add-ended".to_string());
+            state
+                .listener_events
+                .push(format!("add:{:p}", Arc::as_ptr(element)));
+            state
+                .listeners
+                .push((Arc::downgrade(element), listener.clone()));
             state.listener = Some(listener);
         })),
         attach_stream: None,
@@ -349,10 +361,22 @@ pub(crate) fn video_host() -> (Arc<Mutex<VideoMockState>>, HostVideoCapability) 
             })
         })),
         release_element: None,
-        remove_ended_listener: Some(Arc::new(move |_element, _listener| {
+        remove_ended_listener: Some(Arc::new(move |element, listener| {
             let mut state = remove_state.lock().unwrap();
             state.events.push("remove-ended".to_string());
-            state.listener = None;
+            let element_weak = Arc::downgrade(element);
+            let index = state.listeners.iter().position(|(source, candidate)| {
+                source.ptr_eq(&element_weak) && Arc::ptr_eq(candidate, listener)
+            });
+            state.listener_events.push(format!(
+                "remove:{:p}:{}",
+                Arc::as_ptr(element),
+                index.is_some()
+            ));
+            if let Some(index) = index {
+                state.listeners.remove(index);
+            }
+            state.listener = state.listeners.last().map(|(_, listener)| listener.clone());
         })),
         revoke_object_url: None,
         set_current_time: Some(Arc::new(move |_element, value| {
@@ -407,6 +431,23 @@ pub(crate) fn immediate_spawn() -> HostSpawnCapability {
 
 pub(crate) fn trigger_video_end(state: &Arc<Mutex<VideoMockState>>) {
     let listener = state.lock().unwrap().listener.clone();
+    if let Some(listener) = listener {
+        listener();
+    }
+}
+
+pub(crate) fn trigger_video_end_for(
+    state: &Arc<Mutex<VideoMockState>>,
+    element: &Arc<HostImageSource>,
+) {
+    let element = Arc::downgrade(element);
+    let listener = state
+        .lock()
+        .unwrap()
+        .listeners
+        .iter()
+        .find(|(source, _)| source.ptr_eq(&element))
+        .map(|(_, listener)| listener.clone());
     if let Some(listener) = listener {
         listener();
     }

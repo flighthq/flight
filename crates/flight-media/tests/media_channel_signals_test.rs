@@ -92,8 +92,11 @@ mod enable_video_channel_signals {
     fn remains_independent_per_video_channel() {
         let (_, host) = video_host();
         let spawn = immediate_spawn();
-        let a = play_video_resource(&host, &spawn, &video_resource(), None).unwrap();
-        let b = play_video_resource(&host, &spawn, &video_resource(), None).unwrap();
+        let runtime_state = create_video_channel_runtime_state();
+        let a =
+            play_video_resource(&host, &spawn, &runtime_state, &video_resource(), None).unwrap();
+        let b =
+            play_video_resource(&host, &spawn, &runtime_state, &video_resource(), None).unwrap();
         let a_signals = enable_video_channel_signals(&a);
         let b_signals = enable_video_channel_signals(&b);
         assert!(!Arc::ptr_eq(&a_signals, &b_signals));
@@ -125,8 +128,14 @@ mod get_video_channel_signals {
     #[test]
     fn returns_none_until_opt_in() {
         let (_, host) = video_host();
-        let channel =
-            play_video_resource(&host, &immediate_spawn(), &video_resource(), None).unwrap();
+        let channel = play_video_resource(
+            &host,
+            &immediate_spawn(),
+            &create_video_channel_runtime_state(),
+            &video_resource(),
+            None,
+        )
+        .unwrap();
         assert!(get_video_channel_signals(&channel).is_none());
         let signals = enable_video_channel_signals(&channel);
         assert!(Arc::ptr_eq(
