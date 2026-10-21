@@ -1,91 +1,29 @@
 use crate::{ColorKeyframe, CurveKeyframe};
 
-// ---------------------------------------------------------------------------
-// Keyframe-segment helper (internal)
-// ---------------------------------------------------------------------------
-
 struct KeyframeSegment {
     i: usize,
     f: f32,
 }
 
-fn locate_keyframe_curve(sorted: &[CurveKeyframe], t: f32) -> KeyframeSegment {
-    let n = sorted.len();
-    if t <= sorted[0].time {
-        return KeyframeSegment { i: 0, f: 0.0 };
+pub fn build_particle_color_curve(f: &dyn Fn(f32) -> [f32; 3], samples: i32) -> Vec<f32> {
+    let n = 2i32.max(samples) as usize;
+    let mut lut = vec![0.0f32; n * 3];
+    for i in 0..n {
+        let [r, g, b] = f(i as f32 / (n - 1) as f32);
+        lut[i * 3] = r;
+        lut[i * 3 + 1] = g;
+        lut[i * 3 + 2] = b;
     }
-    if t >= sorted[n - 1].time {
-        return KeyframeSegment { i: n - 1, f: 0.0 };
-    }
-    for i in 0..n - 1 {
-        let t0 = sorted[i].time;
-        let t1 = sorted[i + 1].time;
-        if t <= t1 {
-            let span = t1 - t0;
-            return KeyframeSegment {
-                i,
-                f: if span <= 0.0 { 0.0 } else { (t - t0) / span },
-            };
-        }
-    }
-    return KeyframeSegment { i: n - 1, f: 0.0 };
+    return lut;
 }
 
-fn locate_keyframe_color(sorted: &[ColorKeyframe], t: f32) -> KeyframeSegment {
-    let n = sorted.len();
-    if t <= sorted[0].time {
-        return KeyframeSegment { i: 0, f: 0.0 };
+pub fn build_particle_curve(f: &dyn Fn(f32) -> f32, samples: i32) -> Vec<f32> {
+    let n = 2i32.max(samples) as usize;
+    let mut lut = vec![0.0f32; n];
+    for i in 0..n {
+        lut[i] = f(i as f32 / (n - 1) as f32);
     }
-    if t >= sorted[n - 1].time {
-        return KeyframeSegment { i: n - 1, f: 0.0 };
-    }
-    for i in 0..n - 1 {
-        let t0 = sorted[i].time;
-        let t1 = sorted[i + 1].time;
-        if t <= t1 {
-            let span = t1 - t0;
-            return KeyframeSegment {
-                i,
-                f: if span <= 0.0 { 0.0 } else { (t - t0) / span },
-            };
-        }
-    }
-    return KeyframeSegment { i: n - 1, f: 0.0 };
-}
-
-fn interp_keyframe(sorted: &[CurveKeyframe], t: f32) -> f32 {
-    let seg = locate_keyframe_curve(sorted, t);
-    if seg.f == 0.0 {
-        return sorted[seg.i].value;
-    }
-    let a = sorted[seg.i].value;
-    let b = sorted[seg.i + 1].value;
-    return a + (b - a) * seg.f;
-}
-
-// ---------------------------------------------------------------------------
-// HSV conversion helpers (internal)
-// ---------------------------------------------------------------------------
-
-fn rgb_to_hsv(r: f32, g: f32, b: f32) -> (f32, f32, f32) {
-    let max = r.max(g).max(b);
-    let min = r.min(g).min(b);
-    let delta = max - min;
-    let mut h = 0.0f32;
-    if delta > 0.0 {
-        if max == r {
-            h = ((g - b) / delta) % 6.0;
-        } else if max == g {
-            h = (b - r) / delta + 2.0;
-        } else {
-            h = (r - g) / delta + 4.0;
-        }
-        h /= 6.0;
-        if h < 0.0 {
-            h += 1.0;
-        }
-    }
-    return (h, if max == 0.0 { 0.0 } else { delta / max }, max);
+    return lut;
 }
 
 fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (f32, f32, f32) {
@@ -104,34 +42,16 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> (f32, f32, f32) {
     return (r + m, g + m, b + m);
 }
 
-// ---------------------------------------------------------------------------
-// Public API -- create/initialize first, then alphabetical
-// ---------------------------------------------------------------------------
-
-/// Bake an RGB function f:[0,1] -> [r,g,b] into an interleaved curve LUT (length N*3).
-pub fn build_particle_color_curve(f: &dyn Fn(f32) -> [f32; 3], samples: i32) -> Vec<f32> {
-    let n = 2i32.max(samples) as usize;
-    let mut lut = vec![0.0f32; n * 3];
-    for i in 0..n {
-        let [r, g, b] = f(i as f32 / (n - 1) as f32);
-        lut[i * 3] = r;
-        lut[i * 3 + 1] = g;
-        lut[i * 3 + 2] = b;
+fn interp_keyframe(sorted: &[CurveKeyframe], t: f32) -> f32 {
+    let seg = locate_keyframe_curve(sorted, t);
+    if seg.f == 0.0 {
+        return sorted[seg.i].value;
     }
-    return lut;
+    let a = sorted[seg.i].value;
+    let b = sorted[seg.i + 1].value;
+    return a + (b - a) * seg.f;
 }
 
-/// Bake a scalar function f:[0,1] -> value into a `samples`-entry curve LUT.
-pub fn build_particle_curve(f: &dyn Fn(f32) -> f32, samples: i32) -> Vec<f32> {
-    let n = 2i32.max(samples) as usize;
-    let mut lut = vec![0.0f32; n];
-    for i in 0..n {
-        lut[i] = f(i as f32 / (n - 1) as f32);
-    }
-    return lut;
-}
-
-/// Linearly interpolate two sRGB colors through HSV space, writing into `out[offset..+3]`.
 pub fn lerp_hsv_direct(
     out: &mut [f32],
     offset: usize,
@@ -157,7 +77,6 @@ pub fn lerp_hsv_direct(
     out[offset + 2] = b;
 }
 
-/// Interpolate through HSV space using per-particle birth/death color arrays.
 pub fn lerp_hsv_in_place(
     colors_out: &mut [f32],
     offset: usize,
@@ -178,7 +97,50 @@ pub fn lerp_hsv_in_place(
     );
 }
 
-/// Bake a piecewise-linear RGB timeline into a uniform interleaved LUT (length N*3).
+fn locate_keyframe_color(sorted: &[ColorKeyframe], t: f32) -> KeyframeSegment {
+    let n = sorted.len();
+    if t <= sorted[0].time {
+        return KeyframeSegment { i: 0, f: 0.0 };
+    }
+    if t >= sorted[n - 1].time {
+        return KeyframeSegment { i: n - 1, f: 0.0 };
+    }
+    for i in 0..n - 1 {
+        let t0 = sorted[i].time;
+        let t1 = sorted[i + 1].time;
+        if t <= t1 {
+            let span = t1 - t0;
+            return KeyframeSegment {
+                i,
+                f: if span <= 0.0 { 0.0 } else { (t - t0) / span },
+            };
+        }
+    }
+    return KeyframeSegment { i: n - 1, f: 0.0 };
+}
+
+fn locate_keyframe_curve(sorted: &[CurveKeyframe], t: f32) -> KeyframeSegment {
+    let n = sorted.len();
+    if t <= sorted[0].time {
+        return KeyframeSegment { i: 0, f: 0.0 };
+    }
+    if t >= sorted[n - 1].time {
+        return KeyframeSegment { i: n - 1, f: 0.0 };
+    }
+    for i in 0..n - 1 {
+        let t0 = sorted[i].time;
+        let t1 = sorted[i + 1].time;
+        if t <= t1 {
+            let span = t1 - t0;
+            return KeyframeSegment {
+                i,
+                f: if span <= 0.0 { 0.0 } else { (t - t0) / span },
+            };
+        }
+    }
+    return KeyframeSegment { i: n - 1, f: 0.0 };
+}
+
 pub fn particle_color_curve_from_keyframes(keys: &[ColorKeyframe], samples: i32) -> Vec<f32> {
     if keys.is_empty() {
         return vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
@@ -203,7 +165,6 @@ pub fn particle_color_curve_from_keyframes(keys: &[ColorKeyframe], samples: i32)
     );
 }
 
-/// Convert a baked interleaved RGB curve LUT (length N*3) back into color keyframes.
 pub fn particle_color_curve_to_keyframes(lut: &[f32]) -> Vec<ColorKeyframe> {
     let n = lut.len() / 3;
     if n == 0 {
@@ -229,7 +190,6 @@ pub fn particle_color_curve_to_keyframes(lut: &[f32]) -> Vec<ColorKeyframe> {
     return keys;
 }
 
-/// Bake a piecewise-linear scalar timeline into a uniform LUT.
 pub fn particle_curve_from_keyframes(keys: &[CurveKeyframe], samples: i32) -> Vec<f32> {
     if keys.is_empty() {
         return vec![0.0, 0.0];
@@ -239,7 +199,6 @@ pub fn particle_curve_from_keyframes(keys: &[CurveKeyframe], samples: i32) -> Ve
     return build_particle_curve(&|t: f32| -> f32 { interp_keyframe(&sorted, t) }, samples);
 }
 
-/// Convert a baked scalar curve LUT back into keyframes.
 pub fn particle_curve_to_keyframes(lut: &[f32]) -> Vec<CurveKeyframe> {
     let n = lut.len();
     if n == 0 {
@@ -261,8 +220,27 @@ pub fn particle_curve_to_keyframes(lut: &[f32]) -> Vec<CurveKeyframe> {
     return keys;
 }
 
-/// Sample an interleaved RGB curve (length N*3) at t in [0,1], writing
-/// the three channels into `out` starting at `offset`.
+fn rgb_to_hsv(r: f32, g: f32, b: f32) -> (f32, f32, f32) {
+    let max = r.max(g).max(b);
+    let min = r.min(g).min(b);
+    let delta = max - min;
+    let mut h = 0.0f32;
+    if delta > 0.0 {
+        if max == r {
+            h = ((g - b) / delta) % 6.0;
+        } else if max == g {
+            h = (b - r) / delta + 2.0;
+        } else {
+            h = (r - g) / delta + 4.0;
+        }
+        h /= 6.0;
+        if h < 0.0 {
+            h += 1.0;
+        }
+    }
+    return (h, if max == 0.0 { 0.0 } else { delta / max }, max);
+}
+
 pub fn sample_particle_color_curve(out: &mut [f32], offset: usize, lut: &[f32], t: f32) {
     let n = lut.len() / 3;
     if n == 0 {
@@ -295,7 +273,6 @@ pub fn sample_particle_color_curve(out: &mut [f32], offset: usize, lut: &[f32], 
     out[offset + 2] = lut[a + 2] + (lut[b + 2] - lut[a + 2]) * f;
 }
 
-/// Sample a uniformly-spaced scalar curve at t in [0,1] with linear interpolation.
 pub fn sample_particle_curve(lut: &[f32], t: f32) -> f32 {
     let n = lut.len();
     if n == 0 {
