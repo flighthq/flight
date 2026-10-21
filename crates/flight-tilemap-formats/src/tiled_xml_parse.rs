@@ -151,7 +151,7 @@ fn build_tiled_layer_data_from_xml(
     let data = data_ref.read().unwrap();
 
     let encoding = get_xml_element_attribute(&data, "encoding");
-    let decoded: Option<Vec<u32>>;
+    let decoded: Option<Box<[u32]>>;
     if encoding == Some("csv") {
         decoded = Some(decode_tiled_csv_layer(&data.text));
     } else if encoding == Some("base64") {
@@ -168,7 +168,7 @@ fn build_tiled_layer_data_from_xml(
                 ]),
             );
         }
-        decoded = decode_tiled_base64_layer(&data.text, compression, options.and_then(|o| o.inflate.as_ref()));
+        decoded = decode_tiled_base64_layer(&data.text, compression, options.and_then(|o| o.inflate.as_ref()), options.and_then(|o| o.guard.as_ref()));
     } else {
         if encoding.is_some() && use_diag {
             report_import_diagnostic(
@@ -183,12 +183,11 @@ fn build_tiled_layer_data_from_xml(
             );
         }
         let tiles = get_xml_element_children_by_name(&data, "tile");
-        decoded = Some(
-            tiles
-                .iter()
-                .map(|tile| attr_number(&tile.read().unwrap(), "gid", 0.0) as u32)
-                .collect(),
-        );
+        let v: Vec<u32> = tiles
+            .iter()
+            .map(|tile| attr_number(&tile.read().unwrap(), "gid", 0.0) as u32)
+            .collect();
+        decoded = Some(v.into_boxed_slice());
     }
     if let Some(decoded) = decoded {
         let copy_len = decoded.len().min(grid_size);

@@ -5,7 +5,7 @@ mod get_tiled_compression_str {
 
     #[test]
     fn returns_gzip() {
-        assert_eq!(TiledCompression::Gzip.as_str(), "gzip");
+        assert_eq!(get_tiled_compression_str(&TiledCompression::Gzip), "gzip");
     }
 }
 
@@ -33,7 +33,7 @@ mod get_tiled_layer_base {
             height: 0,
             width: 0,
         });
-        assert_eq!(layer.base().name, "test");
+        assert_eq!(get_tiled_layer_base(&layer).name, "test");
     }
 }
 
@@ -43,7 +43,7 @@ mod get_tiled_layer_data_failure_str {
     #[test]
     fn returns_inflate_failed() {
         assert_eq!(
-            TiledLayerDataFailure::InflateFailed.as_str(),
+            get_tiled_layer_data_failure_str(&TiledLayerDataFailure::InflateFailed),
             "inflate-failed"
         );
     }
@@ -73,7 +73,7 @@ mod get_tiled_layer_type {
             height: 0,
             width: 0,
         });
-        assert_eq!(layer.layer_type(), "tilelayer");
+        assert_eq!(get_tiled_layer_type(&layer), "tilelayer");
     }
 }
 
@@ -82,7 +82,7 @@ mod get_tiled_object_alignment_str {
 
     #[test]
     fn returns_center() {
-        assert_eq!(TiledObjectAlignment::Center.as_str(), "center");
+        assert_eq!(get_tiled_object_alignment_str(&TiledObjectAlignment::Center), "center");
     }
 }
 
@@ -91,7 +91,7 @@ mod get_tiled_orientation_str {
 
     #[test]
     fn returns_orthogonal() {
-        assert_eq!(TiledOrientation::Orthogonal.as_str(), "orthogonal");
+        assert_eq!(get_tiled_orientation_str(&TiledOrientation::Orthogonal), "orthogonal");
     }
 }
 
@@ -100,7 +100,7 @@ mod get_tiled_property_type_str {
 
     #[test]
     fn returns_string() {
-        assert_eq!(TiledPropertyType::String.as_str(), "string");
+        assert_eq!(get_tiled_property_type_str(&TiledPropertyType::String), "string");
     }
 }
 
@@ -109,7 +109,7 @@ mod get_tiled_render_order_str {
 
     #[test]
     fn returns_right_down() {
-        assert_eq!(TiledRenderOrder::RightDown.as_str(), "right-down");
+        assert_eq!(get_tiled_render_order_str(&TiledRenderOrder::RightDown), "right-down");
     }
 }
 
@@ -118,7 +118,7 @@ mod get_tiled_stagger_axis_str {
 
     #[test]
     fn returns_x() {
-        assert_eq!(TiledStaggerAxis::X.as_str(), "x");
+        assert_eq!(get_tiled_stagger_axis_str(&TiledStaggerAxis::X), "x");
     }
 }
 
@@ -127,6 +127,6 @@ mod get_tiled_stagger_index_str {
 
     #[test]
     fn returns_even() {
-        assert_eq!(TiledStaggerIndex::Even.as_str(), "even");
+        assert_eq!(get_tiled_stagger_index_str(&TiledStaggerIndex::Even), "even");
     }
 }

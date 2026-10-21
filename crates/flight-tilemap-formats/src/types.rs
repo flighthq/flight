@@ -202,8 +202,10 @@ pub struct TiledObject {
     pub y: f64,
 }
 
+// flight-lint: allow(conform-extra) D5: guard field is caller-owned state replacing module-level _guard variable
 pub struct TiledParseOptions {
     pub inflate: Option<TiledInflate>,
+    pub guard: Option<crate::tiled_layer_data::TiledLayerDataGuard>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -308,7 +310,8 @@ pub(crate) fn detail_map(
     return Some(map);
 }
 
-pub(crate) fn get_tiled_compression_str(value: &TiledCompression) -> &'static str {
+// flight-lint: allow(conform-extra) D9: enum discriminant serialization table; transpiler emits these from the Rust enum
+pub fn get_tiled_compression_str(value: &TiledCompression) -> &'static str {
     return match value {
         TiledCompression::Gzip => "gzip",
         TiledCompression::Zlib => "zlib",
@@ -316,7 +319,8 @@ pub(crate) fn get_tiled_compression_str(value: &TiledCompression) -> &'static st
     };
 }
 
-pub(crate) fn get_tiled_layer_base(layer: &TiledLayer) -> &TiledLayerBase {
+// flight-lint: allow(conform-extra) D9: enum discriminant accessor; transpiler emits from the Rust enum
+pub fn get_tiled_layer_base(layer: &TiledLayer) -> &TiledLayerBase {
     return match layer {
         TiledLayer::TileLayer(d) => &d.base,
         TiledLayer::ObjectGroup(d) => &d.base,
@@ -325,14 +329,16 @@ pub(crate) fn get_tiled_layer_base(layer: &TiledLayer) -> &TiledLayerBase {
     };
 }
 
-pub(crate) fn get_tiled_layer_data_failure_str(value: &TiledLayerDataFailure) -> &'static str {
+// flight-lint: allow(conform-extra) D9: enum discriminant serialization table; transpiler emits these from the Rust enum
+pub fn get_tiled_layer_data_failure_str(value: &TiledLayerDataFailure) -> &'static str {
     return match value {
         TiledLayerDataFailure::CompressedWithoutInflate => "compressed-without-inflate",
         TiledLayerDataFailure::InflateFailed => "inflate-failed",
     };
 }
 
-pub(crate) fn get_tiled_layer_type(layer: &TiledLayer) -> &'static str {
+// flight-lint: allow(conform-extra) D9: enum discriminant serialization table; transpiler emits these from the Rust enum
+pub fn get_tiled_layer_type(layer: &TiledLayer) -> &'static str {
     return match layer {
         TiledLayer::TileLayer(_) => "tilelayer",
         TiledLayer::ObjectGroup(_) => "objectgroup",
@@ -341,7 +347,8 @@ pub(crate) fn get_tiled_layer_type(layer: &TiledLayer) -> &'static str {
     };
 }
 
-pub(crate) fn get_tiled_object_alignment_str(value: &TiledObjectAlignment) -> &'static str {
+// flight-lint: allow(conform-extra) D9: enum discriminant serialization table; transpiler emits these from the Rust enum
+pub fn get_tiled_object_alignment_str(value: &TiledObjectAlignment) -> &'static str {
     return match value {
         TiledObjectAlignment::Unspecified => "unspecified",
         TiledObjectAlignment::TopLeft => "topleft",
@@ -356,7 +363,8 @@ pub(crate) fn get_tiled_object_alignment_str(value: &TiledObjectAlignment) -> &'
     };
 }
 
-pub(crate) fn get_tiled_orientation_str(value: &TiledOrientation) -> &'static str {
+// flight-lint: allow(conform-extra) D9: enum discriminant serialization table; transpiler emits these from the Rust enum
+pub fn get_tiled_orientation_str(value: &TiledOrientation) -> &'static str {
     return match value {
         TiledOrientation::Orthogonal => "orthogonal",
         TiledOrientation::Isometric => "isometric",
@@ -365,7 +373,8 @@ pub(crate) fn get_tiled_orientation_str(value: &TiledOrientation) -> &'static st
     };
 }
 
-pub(crate) fn get_tiled_property_type_str(value: &TiledPropertyType) -> &'static str {
+// flight-lint: allow(conform-extra) D9: enum discriminant serialization table; transpiler emits these from the Rust enum
+pub fn get_tiled_property_type_str(value: &TiledPropertyType) -> &'static str {
     return match value {
         TiledPropertyType::String => "string",
         TiledPropertyType::Int => "int",
@@ -377,7 +386,8 @@ pub(crate) fn get_tiled_property_type_str(value: &TiledPropertyType) -> &'static
     };
 }
 
-pub(crate) fn get_tiled_render_order_str(value: &TiledRenderOrder) -> &'static str {
+// flight-lint: allow(conform-extra) D9: enum discriminant serialization table; transpiler emits these from the Rust enum
+pub fn get_tiled_render_order_str(value: &TiledRenderOrder) -> &'static str {
     return match value {
         TiledRenderOrder::RightDown => "right-down",
         TiledRenderOrder::RightUp => "right-up",
@@ -386,14 +396,16 @@ pub(crate) fn get_tiled_render_order_str(value: &TiledRenderOrder) -> &'static s
     };
 }
 
-pub(crate) fn get_tiled_stagger_axis_str(value: &TiledStaggerAxis) -> &'static str {
+// flight-lint: allow(conform-extra) D9: enum discriminant serialization table; transpiler emits these from the Rust enum
+pub fn get_tiled_stagger_axis_str(value: &TiledStaggerAxis) -> &'static str {
     return match value {
         TiledStaggerAxis::X => "x",
         TiledStaggerAxis::Y => "y",
     };
 }
 
-pub(crate) fn get_tiled_stagger_index_str(value: &TiledStaggerIndex) -> &'static str {
+// flight-lint: allow(conform-extra) D9: enum discriminant serialization table; transpiler emits these from the Rust enum
+pub fn get_tiled_stagger_index_str(value: &TiledStaggerIndex) -> &'static str {
     return match value {
         TiledStaggerIndex::Even => "even",
         TiledStaggerIndex::Odd => "odd",

@@ -2,15 +2,11 @@
 //! (TS `tiledLayerData.ts`).
 
 use std::sync::Arc;
-use std::sync::Mutex;
 
 use crate::types::{TiledCompression, TiledInflate, TiledLayerDataExplanation, TiledLayerDataFailure};
 
 pub type TiledLayerDataGuard =
     Arc<dyn Fn(TiledLayerDataFailure, TiledCompression) + Send + Sync>;
-
-// flight-lint: allow(hidden-state) module-level guard mirrors the TS source's _guard variable; caller sets it via set_tiled_layer_data_guard
-static GUARD: Mutex<Option<TiledLayerDataGuard>> = Mutex::new(None);
 
 const BASE64_TABLE: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
@@ -61,21 +57,26 @@ fn decode_base64(s: &str) -> Vec<u8> {
     return out;
 }
 
-// flight-lint: allow(conform-array) Vec<u32> is the Rust canonical carrier for TS Uint32Array
+// flight-lint: allow(conform-params) D5: caller-owned guard replaces module-level _guard variable
 pub fn decode_tiled_base64_layer(
     text: &str,
     compression: Option<TiledCompression>,
     inflate: Option<&TiledInflate>,
-) -> Option<Vec<u32>> {
+    guard: Option<&TiledLayerDataGuard>,
+) -> Option<Box<[u32]>> {
     let mut bytes = decode_base64(text);
     if let Some(compression) = compression {
         let Some(inflate) = inflate else {
-            fire_guard(TiledLayerDataFailure::CompressedWithoutInflate, compression);
+            if let Some(guard) = guard {
+                guard(TiledLayerDataFailure::CompressedWithoutInflate, compression);
+            }
             return None;
         };
         let inflated = inflate(&bytes, compression);
         let Some(inflated) = inflated else {
-            fire_guard(TiledLayerDataFailure::InflateFailed, compression);
+            if let Some(guard) = guard {
+                guard(TiledLayerDataFailure::InflateFailed, compression);
+            }
             return None;
         };
         bytes = inflated;
@@ -90,12 +91,11 @@ pub fn decode_tiled_base64_layer(
             | ((bytes[b + 3] as u32) << 24);
         gids.push(gid);
     }
-    return Some(gids);
+    return Some(gids.into_boxed_slice());
 }
 
-// flight-lint: allow(conform-array) Vec<u32> is the Rust canonical carrier for TS Uint32Array
 // flight-lint: allow(f64) CSV layer values parsed as f64 to handle both integer and float representations per the Tiled spec
-pub fn decode_tiled_csv_layer(text: &str) -> Vec<u32> {
+pub fn decode_tiled_csv_layer(text: &str) -> Box<[u32]> {
     let mut out = Vec::new();
     for part in text.split(',') {
         let trimmed = part.trim();
@@ -109,7 +109,7 @@ pub fn decode_tiled_csv_layer(text: &str) -> Vec<u32> {
             out.push(0);
         }
     }
-    return out;
+    return out.into_boxed_slice();
 }
 
 pub fn explain_tiled_layer_data(
@@ -144,14 +144,5 @@ pub fn explain_tiled_layer_data(
     };
 }
 
-fn fire_guard(reason: TiledLayerDataFailure, compression: TiledCompression) {
-    let g = GUARD.lock().unwrap();
-    if let Some(guard) = g.as_ref() {
-        guard(reason, compression);
-    }
-}
-
-pub fn set_tiled_layer_data_guard(guard: Option<TiledLayerDataGuard>) {
-    let mut g = GUARD.lock().unwrap();
-    *g = guard;
-}
+// flight-lint: allow(conform-extra) D5: no-op stub; guard state is now caller-owned via TiledParseOptions.guard
+pub fn set_tiled_layer_data_guard(_guard: Option<TiledLayerDataGuard>) {}

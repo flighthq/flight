@@ -58,6 +58,26 @@ mod apply_tilemap_import_options {
     }
 }
 
+mod create_default_tilemap_registry {
+    use super::*;
+
+    #[test]
+    fn is_not_empty() {
+        let reg = create_default_tilemap_registry();
+        assert!(!get_tilemap_format_kinds(&reg).is_empty());
+    }
+}
+
+mod create_default_tileset_registry {
+    use super::*;
+
+    #[test]
+    fn is_not_empty() {
+        let reg = create_default_tileset_registry();
+        assert!(!get_tileset_format_kinds(&reg).is_empty());
+    }
+}
+
 mod detect_tilemap_format {
     use super::*;
 

@@ -130,20 +130,19 @@ fn build_tiled_layer_data_from_json(
     let grid_size = (width * height) as usize;
     let mut grid = vec![0u32; grid_size];
     let data = obj.get("data");
-    let mut decoded: Option<Vec<u32>> = None;
+    let mut decoded: Option<Box<[u32]>> = None;
 
     if let Some(data) = data {
         if let Some(arr) = data.as_array() {
-            decoded = Some(
-                arr.iter()
-                    .map(|v| {
-                        if let Some(n) = v.as_f64() {
-                            return n as u32;
-                        }
-                        return 0;
-                    })
-                    .collect(),
-            );
+            let v: Vec<u32> = arr.iter()
+                .map(|v| {
+                    if let Some(n) = v.as_f64() {
+                        return n as u32;
+                    }
+                    return 0;
+                })
+                .collect();
+            decoded = Some(v.into_boxed_slice());
         } else if let Some(text) = data.as_str() {
             let encoding = str_field(obj, "encoding");
             if encoding.as_deref() == Some("csv") {
@@ -187,6 +186,7 @@ fn build_tiled_layer_data_from_json(
                     text,
                     compression,
                     options.and_then(|o| o.inflate.as_ref()),
+                    options.and_then(|o| o.guard.as_ref()),
                 );
             }
         } else {

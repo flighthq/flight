@@ -11,6 +11,47 @@ use crate::tiled_json_parse::{parse_tiled_tileset_json, parse_tiled_tmj};
 use crate::tiled_xml_parse::{parse_tiled_tileset, parse_tiled_tmx};
 use crate::types::*;
 
+// flight-lint: allow(conform-extra) D9: convenience constructor builds a registry pre-seeded with all built-in map formats
+pub fn create_default_tilemap_registry() -> KindMap<TilemapFormatEntry> {
+    let mut registry = KindMap {
+        entries: std::collections::HashMap::new(),
+        key_order: Vec::new(),
+    };
+    apply_tilemap_import_options(
+        &mut registry,
+        &mut KindMap {
+            entries: std::collections::HashMap::new(),
+            key_order: Vec::new(),
+        },
+        TilemapImportOptions {
+            map_formats: Some(tilemap_all_map_formats()),
+            tileset_formats: None,
+        },
+    );
+    return registry;
+}
+
+// flight-lint: allow(conform-extra) D9: convenience constructor builds a registry pre-seeded with all built-in tileset formats
+pub fn create_default_tileset_registry() -> KindMap<TilesetFormatEntry> {
+    let mut tilemap_reg = KindMap {
+        entries: std::collections::HashMap::new(),
+        key_order: Vec::new(),
+    };
+    let mut registry = KindMap {
+        entries: std::collections::HashMap::new(),
+        key_order: Vec::new(),
+    };
+    apply_tilemap_import_options(
+        &mut tilemap_reg,
+        &mut registry,
+        TilemapImportOptions {
+            map_formats: None,
+            tileset_formats: Some(tilemap_all_tileset_formats()),
+        },
+    );
+    return registry;
+}
+
 // flight-lint: allow(conform-params) D5: caller-owned registries replace module-level lazy singletons
 pub fn apply_tilemap_import_options(
     tilemap_registry: &mut KindMap<TilemapFormatEntry>,

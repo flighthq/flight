@@ -6,20 +6,19 @@ use std::sync::Arc;
 
 use flight_log::{LogData, LogDataOrProvider, LogLevel, LogStateRef, LogValue, log_once};
 
-use crate::tiled_layer_data::set_tiled_layer_data_guard;
+use crate::tiled_layer_data::TiledLayerDataGuard;
 use crate::types::{TiledCompression, TiledLayerDataFailure};
 
-pub fn disable_tilemap_formats_guards() {
-    set_tiled_layer_data_guard(None);
-}
+// flight-lint: allow(conform-extra) D5: no-op stub; guard lifecycle is caller-owned via TiledParseOptions.guard
+pub fn disable_tilemap_formats_guards() {}
 
 // flight-lint: allow(conform-params) D5: caller-owned LogState and clock replace module state
 // flight-lint: allow(f64) the injected clock returns a millisecond operation timestamp
-pub fn enable_tilemap_formats_guards(log_state: &LogStateRef, now_ms: f64) {
+pub fn enable_tilemap_formats_guards(log_state: &LogStateRef, now_ms: f64) -> TiledLayerDataGuard {
     let state = log_state.clone();
-    set_tiled_layer_data_guard(Some(Arc::new(move |reason, compression| {
+    return Arc::new(move |reason, compression| {
         warn_tiled_layer_data_failure(&state, now_ms, reason, compression);
-    })));
+    });
 }
 
 // flight-lint: allow(f64) millisecond timestamps are passed through to the log contract
