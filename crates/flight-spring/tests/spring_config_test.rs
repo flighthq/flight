@@ -1,4 +1,5 @@
 use flight_spring::*;
+use flight_spring::contract::*;
 
 fn assert_approx(actual: f32, expected: f32) {
     let diff = (actual - expected).abs();

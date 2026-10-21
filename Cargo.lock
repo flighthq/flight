@@ -165,6 +165,7 @@ dependencies = [
 name = "flight-spring"
 version = "0.6.0"
 dependencies = [
+ "flight-entity",
  "flight-geometry",
 ]
 

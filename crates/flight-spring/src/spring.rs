@@ -1,25 +1,29 @@
+use flight_entity::allocate_entity;
+use flight_entity::EntityRuntimeSlot;
+
 use crate::SpringConfig;
 
 /// A scalar spring state with current value and velocity.
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Spring {
     pub value: f32,
     pub velocity: f32,
+    runtime: EntityRuntimeSlot,
 }
 
 /// Allocate a scalar spring at `value` with `velocity`. This is the only allocating function for
 /// scalar springs; `update_spring`, `reset_spring`, and the settle query all write into or read an
 /// existing spring.
-pub fn create_spring(value: f32, velocity: f32) -> Spring {
-    let mut out = Spring::default();
+pub fn create_spring(value: Option<f32>, velocity: Option<f32>) -> Spring {
+    let mut out: Spring = allocate_entity();
     initialize_spring(&mut out, value, velocity);
     return out;
 }
 
 /// Writes `value` and `velocity` into a pre-allocated `Spring`.
-pub fn initialize_spring(out: &mut Spring, value: f32, velocity: f32) {
-    out.value = value;
-    out.velocity = velocity;
+pub fn initialize_spring(out: &mut Spring, value: Option<f32>, velocity: Option<f32>) {
+    out.value = value.unwrap_or(0.0);
+    out.velocity = velocity.unwrap_or(0.0);
 }
 
 /// Add `velocity` to the spring's current velocity without changing its position. This is the
@@ -48,9 +52,9 @@ pub fn is_spring_settled(
 /// Snap `spring` to `value` with `velocity`, discarding its current motion. Use this to teleport a
 /// spring to a new state — e.g. initializing it at a target, or cutting a running spring dead.
 /// Unlike `update_spring`, this applies no dynamics; the spring simply becomes what is passed.
-pub fn reset_spring(spring: &mut Spring, value: f32, velocity: f32) {
+pub fn reset_spring(spring: &mut Spring, value: f32, velocity: Option<f32>) {
     spring.value = value;
-    spring.velocity = velocity;
+    spring.velocity = velocity.unwrap_or(0.0);
 }
 
 /// Advance `spring` one step of `delta_time` seconds toward `target` under `config`, writing the new
@@ -174,7 +178,7 @@ pub fn update_spring_angle(
 }
 
 impl Spring {
-    pub fn new(value: f32, velocity: f32) -> Self {
+    pub fn new(value: Option<f32>, velocity: Option<f32>) -> Self {
         return create_spring(value, velocity);
     }
 
@@ -186,7 +190,7 @@ impl Spring {
         return is_spring_settled(self, target, position_epsilon, velocity_epsilon);
     }
 
-    pub fn reset(&mut self, value: f32, velocity: f32) {
+    pub fn reset(&mut self, value: f32, velocity: Option<f32>) {
         reset_spring(self, value, velocity);
     }
 
@@ -213,3 +217,5 @@ pub const SPRING_SETTLE_EPSILON: f32 = 1e-3;
 /// over/under-damped closed forms divide by a vanishing root separation, so the critical form is both
 /// numerically safer and physically indistinguishable this close to 1.
 const CRITICAL_BAND: f32 = 1e-4;
+
+flight_entity::impl_entity!(Spring);

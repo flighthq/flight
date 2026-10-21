@@ -1,23 +1,27 @@
+use flight_entity::allocate_entity;
+use flight_entity::EntityRuntimeSlot;
+
 use crate::{
-    Spring, SpringConfig, add_spring_impulse, create_spring, is_spring_settled, reset_spring,
+    Spring, SpringConfig, add_spring_impulse, initialize_spring, is_spring_settled, reset_spring,
     update_spring,
 };
 
 /// A 2D spring as a pair of scalar springs.
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Spring2D {
     pub x: Spring,
     pub y: Spring,
+    runtime: EntityRuntimeSlot,
 }
 
 /// Allocate a 2D spring as a pair of scalar springs, each at its value and velocity.
 pub fn create_spring2d(
-    value_x: f32,
-    value_y: f32,
-    velocity_x: f32,
-    velocity_y: f32,
+    value_x: Option<f32>,
+    value_y: Option<f32>,
+    velocity_x: Option<f32>,
+    velocity_y: Option<f32>,
 ) -> Spring2D {
-    let mut out = Spring2D::default();
+    let mut out: Spring2D = allocate_entity();
     initialize_spring2d(&mut out, value_x, value_y, velocity_x, velocity_y);
     return out;
 }
@@ -25,13 +29,13 @@ pub fn create_spring2d(
 /// Writes per-axis value and velocity into a pre-allocated `Spring2D`.
 pub fn initialize_spring2d(
     out: &mut Spring2D,
-    value_x: f32,
-    value_y: f32,
-    velocity_x: f32,
-    velocity_y: f32,
+    value_x: Option<f32>,
+    value_y: Option<f32>,
+    velocity_x: Option<f32>,
+    velocity_y: Option<f32>,
 ) {
-    out.x = create_spring(value_x, velocity_x);
-    out.y = create_spring(value_y, velocity_y);
+    initialize_spring(&mut out.x, value_x, velocity_x);
+    initialize_spring(&mut out.y, value_y, velocity_y);
 }
 
 /// Add independent velocity impulses to both axes without changing either value.
@@ -60,8 +64,8 @@ pub fn reset_spring2d(
     spring2d: &mut Spring2D,
     value_x: f32,
     value_y: f32,
-    velocity_x: f32,
-    velocity_y: f32,
+    velocity_x: Option<f32>,
+    velocity_y: Option<f32>,
 ) {
     reset_spring(&mut spring2d.x, value_x, velocity_x);
     reset_spring(&mut spring2d.y, value_y, velocity_y);
@@ -82,7 +86,7 @@ pub fn update_spring2d(
 }
 
 impl Spring2D {
-    pub fn new(value_x: f32, value_y: f32, velocity_x: f32, velocity_y: f32) -> Self {
+    pub fn new(value_x: Option<f32>, value_y: Option<f32>, velocity_x: Option<f32>, velocity_y: Option<f32>) -> Self {
         return create_spring2d(value_x, value_y, velocity_x, velocity_y);
     }
 
@@ -100,7 +104,7 @@ impl Spring2D {
         return is_spring2d_settled(self, target_x, target_y, position_epsilon, velocity_epsilon);
     }
 
-    pub fn reset(&mut self, value_x: f32, value_y: f32, velocity_x: f32, velocity_y: f32) {
+    pub fn reset(&mut self, value_x: f32, value_y: f32, velocity_x: Option<f32>, velocity_y: Option<f32>) {
         reset_spring2d(self, value_x, value_y, velocity_x, velocity_y);
     }
 
@@ -114,3 +118,5 @@ impl Spring2D {
         update_spring2d(self, target_x, target_y, config, delta_time);
     }
 }
+
+flight_entity::impl_entity!(Spring2D);

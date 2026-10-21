@@ -1,26 +1,30 @@
+use flight_entity::allocate_entity;
+use flight_entity::EntityRuntimeSlot;
+
 use crate::{
-    Spring, SpringConfig, add_spring_impulse, create_spring, is_spring_settled, reset_spring,
+    Spring, SpringConfig, add_spring_impulse, initialize_spring, is_spring_settled, reset_spring,
     update_spring,
 };
 
 /// A 3D spring as three scalar springs.
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct Spring3D {
     pub x: Spring,
     pub y: Spring,
     pub z: Spring,
+    runtime: EntityRuntimeSlot,
 }
 
 /// Allocate a 3D spring as three scalar springs, each at its value and velocity.
 pub fn create_spring3d(
-    value_x: f32,
-    value_y: f32,
-    value_z: f32,
-    velocity_x: f32,
-    velocity_y: f32,
-    velocity_z: f32,
+    value_x: Option<f32>,
+    value_y: Option<f32>,
+    value_z: Option<f32>,
+    velocity_x: Option<f32>,
+    velocity_y: Option<f32>,
+    velocity_z: Option<f32>,
 ) -> Spring3D {
-    let mut out = Spring3D::default();
+    let mut out: Spring3D = allocate_entity();
     initialize_spring3d(
         &mut out, value_x, value_y, value_z, velocity_x, velocity_y, velocity_z,
     );
@@ -30,16 +34,16 @@ pub fn create_spring3d(
 /// Writes per-axis value and velocity into a pre-allocated `Spring3D`.
 pub fn initialize_spring3d(
     out: &mut Spring3D,
-    value_x: f32,
-    value_y: f32,
-    value_z: f32,
-    velocity_x: f32,
-    velocity_y: f32,
-    velocity_z: f32,
+    value_x: Option<f32>,
+    value_y: Option<f32>,
+    value_z: Option<f32>,
+    velocity_x: Option<f32>,
+    velocity_y: Option<f32>,
+    velocity_z: Option<f32>,
 ) {
-    out.x = create_spring(value_x, velocity_x);
-    out.y = create_spring(value_y, velocity_y);
-    out.z = create_spring(value_z, velocity_z);
+    initialize_spring(&mut out.x, value_x, velocity_x);
+    initialize_spring(&mut out.y, value_y, velocity_y);
+    initialize_spring(&mut out.z, value_z, velocity_z);
 }
 
 /// Add independent velocity impulses to all three axes without changing their values.
@@ -76,9 +80,9 @@ pub fn reset_spring3d(
     value_x: f32,
     value_y: f32,
     value_z: f32,
-    velocity_x: f32,
-    velocity_y: f32,
-    velocity_z: f32,
+    velocity_x: Option<f32>,
+    velocity_y: Option<f32>,
+    velocity_z: Option<f32>,
 ) {
     reset_spring(&mut spring3d.x, value_x, velocity_x);
     reset_spring(&mut spring3d.y, value_y, velocity_y);
@@ -102,12 +106,12 @@ pub fn update_spring3d(
 
 impl Spring3D {
     pub fn new(
-        value_x: f32,
-        value_y: f32,
-        value_z: f32,
-        velocity_x: f32,
-        velocity_y: f32,
-        velocity_z: f32,
+        value_x: Option<f32>,
+        value_y: Option<f32>,
+        value_z: Option<f32>,
+        velocity_x: Option<f32>,
+        velocity_y: Option<f32>,
+        velocity_z: Option<f32>,
     ) -> Self {
         return create_spring3d(
             value_x, value_y, value_z, velocity_x, velocity_y, velocity_z,
@@ -141,9 +145,9 @@ impl Spring3D {
         value_x: f32,
         value_y: f32,
         value_z: f32,
-        velocity_x: f32,
-        velocity_y: f32,
-        velocity_z: f32,
+        velocity_x: Option<f32>,
+        velocity_y: Option<f32>,
+        velocity_z: Option<f32>,
     ) {
         reset_spring3d(self, value_x, value_y, value_z, velocity_x, velocity_y, velocity_z);
     }
@@ -159,3 +163,5 @@ impl Spring3D {
         update_spring3d(self, target_x, target_y, target_z, config, delta_time);
     }
 }
+
+flight_entity::impl_entity!(Spring3D);
