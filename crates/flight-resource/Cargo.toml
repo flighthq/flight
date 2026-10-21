@@ -1,0 +1,9 @@
+[package]
+name = "flight-resource"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Resource reference lifecycle shared by audio and image: ResourceResolutionState"
+
+[lints]
+workspace = true
