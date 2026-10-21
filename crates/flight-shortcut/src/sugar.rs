@@ -3,6 +3,7 @@ use flight_platform::PlatformName;
 
 use crate::shortcut::*;
 use crate::shortcut_explicit_dependency::*;
+use crate::shortcut_key_name::*;
 use crate::types::*;
 
 #[cfg(test)]
@@ -170,6 +171,150 @@ mod sugar_tests {
     }
 
     #[test]
+    fn shortcut_digit_key_name_to_key_name_matches_free_function() {
+        assert_eq!(
+            ShortcutDigitKeyName::Digit7.to_key_name(),
+            shortcut_digit_key_name_to_key_name(ShortcutDigitKeyName::Digit7)
+        );
+    }
+
+    #[test]
+    fn shortcut_editing_key_name_to_key_name_matches_free_function() {
+        assert_eq!(
+            ShortcutEditingKeyName::Return.to_key_name(),
+            shortcut_editing_key_name_to_key_name(ShortcutEditingKeyName::Return)
+        );
+    }
+
+    #[test]
+    fn shortcut_function_key_name_to_key_name_matches_free_function() {
+        assert_eq!(
+            ShortcutFunctionKeyName::F24.to_key_name(),
+            shortcut_function_key_name_to_key_name(ShortcutFunctionKeyName::F24)
+        );
+    }
+
+    #[test]
+    fn shortcut_key_name_to_digit_key_name_matches_free_function() {
+        assert_eq!(
+            ShortcutKeyName::Digit7.to_digit_key_name(),
+            shortcut_key_name_to_digit_key_name(ShortcutKeyName::Digit7)
+        );
+    }
+
+    #[test]
+    fn shortcut_key_name_to_editing_key_name_matches_free_function() {
+        assert_eq!(
+            ShortcutKeyName::Return.to_editing_key_name(),
+            shortcut_key_name_to_editing_key_name(ShortcutKeyName::Return)
+        );
+    }
+
+    #[test]
+    fn shortcut_key_name_to_function_key_name_matches_free_function() {
+        assert_eq!(
+            ShortcutKeyName::F24.to_function_key_name(),
+            shortcut_key_name_to_function_key_name(ShortcutKeyName::F24)
+        );
+    }
+
+    #[test]
+    fn shortcut_key_name_to_letter_key_name_matches_free_function() {
+        assert_eq!(
+            ShortcutKeyName::Q.to_letter_key_name(),
+            shortcut_key_name_to_letter_key_name(ShortcutKeyName::Q)
+        );
+    }
+
+    #[test]
+    fn shortcut_key_name_to_lock_key_name_matches_free_function() {
+        assert_eq!(
+            ShortcutKeyName::CapsLock.to_lock_key_name(),
+            shortcut_key_name_to_lock_key_name(ShortcutKeyName::CapsLock)
+        );
+    }
+
+    #[test]
+    fn shortcut_key_name_to_media_key_name_matches_free_function() {
+        assert_eq!(
+            ShortcutKeyName::VolumeMute.to_media_key_name(),
+            shortcut_key_name_to_media_key_name(ShortcutKeyName::VolumeMute)
+        );
+    }
+
+    #[test]
+    fn shortcut_key_name_to_navigation_key_name_matches_free_function() {
+        assert_eq!(
+            ShortcutKeyName::ArrowUp.to_navigation_key_name(),
+            shortcut_key_name_to_navigation_key_name(ShortcutKeyName::ArrowUp)
+        );
+    }
+
+    #[test]
+    fn shortcut_key_name_to_numpad_key_name_matches_free_function() {
+        assert_eq!(
+            ShortcutKeyName::NumpadEnter.to_numpad_key_name(),
+            shortcut_key_name_to_numpad_key_name(ShortcutKeyName::NumpadEnter)
+        );
+    }
+
+    #[test]
+    fn shortcut_key_name_to_punctuation_key_name_matches_free_function() {
+        assert_eq!(
+            ShortcutKeyName::Semicolon.to_punctuation_key_name(),
+            shortcut_key_name_to_punctuation_key_name(ShortcutKeyName::Semicolon)
+        );
+    }
+
+    #[test]
+    fn shortcut_letter_key_name_to_key_name_matches_free_function() {
+        assert_eq!(
+            ShortcutLetterKeyName::Q.to_key_name(),
+            shortcut_letter_key_name_to_key_name(ShortcutLetterKeyName::Q)
+        );
+    }
+
+    #[test]
+    fn shortcut_lock_key_name_to_key_name_matches_free_function() {
+        assert_eq!(
+            ShortcutLockKeyName::CapsLock.to_key_name(),
+            shortcut_lock_key_name_to_key_name(ShortcutLockKeyName::CapsLock)
+        );
+    }
+
+    #[test]
+    fn shortcut_media_key_name_to_key_name_matches_free_function() {
+        assert_eq!(
+            ShortcutMediaKeyName::VolumeMute.to_key_name(),
+            shortcut_media_key_name_to_key_name(ShortcutMediaKeyName::VolumeMute)
+        );
+    }
+
+    #[test]
+    fn shortcut_navigation_key_name_to_key_name_matches_free_function() {
+        assert_eq!(
+            ShortcutNavigationKeyName::ArrowUp.to_key_name(),
+            shortcut_navigation_key_name_to_key_name(ShortcutNavigationKeyName::ArrowUp)
+        );
+    }
+
+    #[test]
+    fn shortcut_numpad_key_name_to_key_name_matches_free_function() {
+        assert_eq!(
+            ShortcutNumpadKeyName::NumpadEnter.to_key_name(),
+            shortcut_numpad_key_name_to_key_name(ShortcutNumpadKeyName::NumpadEnter)
+        );
+    }
+
+    #[test]
+    fn shortcut_punctuation_key_name_to_key_name_matches_free_function() {
+        assert_eq!(
+            ShortcutPunctuationKeyName::Semicolon.to_key_name(),
+            shortcut_punctuation_key_name_to_key_name(ShortcutPunctuationKeyName::Semicolon)
+        );
+    }
+
+    #[test]
     fn shortcut_modifier_label_matches_free_function() {
         assert_eq!(
             ShortcutModifier::CommandOrControl.label(PlatformName::MacOs),
@@ -238,9 +383,99 @@ impl ParsedAccelerator {
     }
 }
 
+impl ShortcutDigitKeyName {
+    pub fn to_key_name(self) -> ShortcutKeyName {
+        return shortcut_digit_key_name_to_key_name(self);
+    }
+}
+
+impl ShortcutEditingKeyName {
+    pub fn to_key_name(self) -> ShortcutKeyName {
+        return shortcut_editing_key_name_to_key_name(self);
+    }
+}
+
+impl ShortcutFunctionKeyName {
+    pub fn to_key_name(self) -> ShortcutKeyName {
+        return shortcut_function_key_name_to_key_name(self);
+    }
+}
+
 impl ShortcutKeyName {
     pub fn label(self) -> String {
         return get_accelerator_key_label(self);
+    }
+
+    pub fn to_digit_key_name(self) -> Option<ShortcutDigitKeyName> {
+        return shortcut_key_name_to_digit_key_name(self);
+    }
+
+    pub fn to_editing_key_name(self) -> Option<ShortcutEditingKeyName> {
+        return shortcut_key_name_to_editing_key_name(self);
+    }
+
+    pub fn to_function_key_name(self) -> Option<ShortcutFunctionKeyName> {
+        return shortcut_key_name_to_function_key_name(self);
+    }
+
+    pub fn to_letter_key_name(self) -> Option<ShortcutLetterKeyName> {
+        return shortcut_key_name_to_letter_key_name(self);
+    }
+
+    pub fn to_lock_key_name(self) -> Option<ShortcutLockKeyName> {
+        return shortcut_key_name_to_lock_key_name(self);
+    }
+
+    pub fn to_media_key_name(self) -> Option<ShortcutMediaKeyName> {
+        return shortcut_key_name_to_media_key_name(self);
+    }
+
+    pub fn to_navigation_key_name(self) -> Option<ShortcutNavigationKeyName> {
+        return shortcut_key_name_to_navigation_key_name(self);
+    }
+
+    pub fn to_numpad_key_name(self) -> Option<ShortcutNumpadKeyName> {
+        return shortcut_key_name_to_numpad_key_name(self);
+    }
+
+    pub fn to_punctuation_key_name(self) -> Option<ShortcutPunctuationKeyName> {
+        return shortcut_key_name_to_punctuation_key_name(self);
+    }
+}
+
+impl ShortcutLetterKeyName {
+    pub fn to_key_name(self) -> ShortcutKeyName {
+        return shortcut_letter_key_name_to_key_name(self);
+    }
+}
+
+impl ShortcutLockKeyName {
+    pub fn to_key_name(self) -> ShortcutKeyName {
+        return shortcut_lock_key_name_to_key_name(self);
+    }
+}
+
+impl ShortcutMediaKeyName {
+    pub fn to_key_name(self) -> ShortcutKeyName {
+        return shortcut_media_key_name_to_key_name(self);
+    }
+}
+
+impl ShortcutNavigationKeyName {
+    pub fn to_key_name(self) -> ShortcutKeyName {
+        return shortcut_navigation_key_name_to_key_name(self);
+    }
+}
+
+impl ShortcutNumpadKeyName {
+    pub fn to_key_name(self) -> ShortcutKeyName {
+        return shortcut_numpad_key_name_to_key_name(self);
+    }
+}
+
+impl ShortcutPunctuationKeyName {
+    pub fn to_key_name(self) -> ShortcutKeyName {
+        return shortcut_punctuation_key_name_to_key_name(self);
     }
 }
 

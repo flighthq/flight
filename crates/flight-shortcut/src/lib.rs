@@ -7,8 +7,9 @@ mod types;
 pub mod contract;
 
 // Public lane: the twenty functions named by pinned TS `index.ts`, the explicit D5 state factory,
-// and the locally owned types their signatures require. `initialize_global_shortcut` and D9e
-// string-table helpers remain in `contract`.
+// the Rust assignment bridges for the nine exact key subsets, and the locally owned types their
+// signatures require. `initialize_global_shortcut` and D9e string-table helpers remain in
+// `contract`.
 pub use contract::attach_global_shortcut;
 pub use contract::create_global_shortcut;
 pub use contract::create_shortcut_state;
@@ -30,6 +31,24 @@ pub use contract::parse_accelerator_detailed;
 pub use contract::query_global_shortcut_conflict;
 pub use contract::query_global_shortcut_registration;
 pub use contract::resolve_command_or_control_modifier;
+pub use contract::shortcut_digit_key_name_to_key_name;
+pub use contract::shortcut_editing_key_name_to_key_name;
+pub use contract::shortcut_function_key_name_to_key_name;
+pub use contract::shortcut_key_name_to_digit_key_name;
+pub use contract::shortcut_key_name_to_editing_key_name;
+pub use contract::shortcut_key_name_to_function_key_name;
+pub use contract::shortcut_key_name_to_letter_key_name;
+pub use contract::shortcut_key_name_to_lock_key_name;
+pub use contract::shortcut_key_name_to_media_key_name;
+pub use contract::shortcut_key_name_to_navigation_key_name;
+pub use contract::shortcut_key_name_to_numpad_key_name;
+pub use contract::shortcut_key_name_to_punctuation_key_name;
+pub use contract::shortcut_letter_key_name_to_key_name;
+pub use contract::shortcut_lock_key_name_to_key_name;
+pub use contract::shortcut_media_key_name_to_key_name;
+pub use contract::shortcut_navigation_key_name_to_key_name;
+pub use contract::shortcut_numpad_key_name_to_key_name;
+pub use contract::shortcut_punctuation_key_name_to_key_name;
 
 pub use contract::Accelerator;
 pub use contract::AcceleratorParseError;
