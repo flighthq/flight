@@ -1,5 +1,5 @@
 use flight_path::*;
-use flight_path_boolean::*;
+use flight_path_boolean::contract::*;
 
 fn make_random(seed: u32) -> impl FnMut() -> f64 {
     let mut state: u32 = if seed != 0 { seed } else { 1 };

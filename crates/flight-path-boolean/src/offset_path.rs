@@ -53,6 +53,46 @@ impl Default for PathOffsetOptions {
     }
 }
 
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathOffsetEnd string union; TS exports no get_/parse_ free functions
+pub fn get_path_offset_end_string(value: PathOffsetEnd) -> &'static str {
+    return match value {
+        PathOffsetEnd::Butt => "butt",
+        PathOffsetEnd::Round => "round",
+        PathOffsetEnd::Square => "square",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathOffsetEnd string union; TS exports no get_/parse_ free functions
+pub fn parse_path_offset_end(value: &str) -> Option<PathOffsetEnd> {
+    return match value {
+        "butt" => Some(PathOffsetEnd::Butt),
+        "round" => Some(PathOffsetEnd::Round),
+        "square" => Some(PathOffsetEnd::Square),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathOffsetJoin string union; TS exports no get_/parse_ free functions
+pub fn get_path_offset_join_string(value: PathOffsetJoin) -> &'static str {
+    return match value {
+        PathOffsetJoin::Bevel => "bevel",
+        PathOffsetJoin::Miter => "miter",
+        PathOffsetJoin::Round => "round",
+        PathOffsetJoin::Square => "square",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathOffsetJoin string union; TS exports no get_/parse_ free functions
+pub fn parse_path_offset_join(value: &str) -> Option<PathOffsetJoin> {
+    return match value {
+        "bevel" => Some(PathOffsetJoin::Bevel),
+        "miter" => Some(PathOffsetJoin::Miter),
+        "round" => Some(PathOffsetJoin::Round),
+        "square" => Some(PathOffsetJoin::Square),
+        _ => None,
+    };
+}
+
 /// Offsets a path outward (positive `delta`, inflate) or inward (negative `delta`,
 /// deflate) by a signed distance. The input is flattened to polygon contours;
 /// closed contours are offset into grown/shrunk rings and open contours are offset

@@ -1,5 +1,5 @@
 use flight_path::*;
-use flight_path_boolean::*;
+use flight_path_boolean::contract::*;
 
 mod write_path_boolean_contours {
     use super::*;

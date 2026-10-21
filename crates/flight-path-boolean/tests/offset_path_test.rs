@@ -1,5 +1,5 @@
 use flight_path::*;
-use flight_path_boolean::*;
+use flight_path_boolean::contract::*;
 
 fn polygon_path(vertices: &[f64], closed: bool) -> Path {
     let mut path = create_path(Some(PathWinding::NonZero));
@@ -275,5 +275,63 @@ mod offset_path {
         assert_eq!(ring_count(&large), ring_count(&mid));
         assert!((path_area(&small) / 1e-6 - path_area(&mid)).abs() < 0.1);
         assert!((path_area(&large) / 1e12 - path_area(&mid)).abs() < 0.1);
+    }
+}
+
+mod get_path_offset_join_string {
+    use super::*;
+
+    #[test]
+    fn returns_the_exact_ts_strings() {
+        assert_eq!(get_path_offset_join_string(PathOffsetJoin::Bevel), "bevel");
+        assert_eq!(get_path_offset_join_string(PathOffsetJoin::Miter), "miter");
+        assert_eq!(get_path_offset_join_string(PathOffsetJoin::Round), "round");
+        assert_eq!(get_path_offset_join_string(PathOffsetJoin::Square), "square");
+    }
+}
+
+mod parse_path_offset_join {
+    use super::*;
+
+    #[test]
+    fn parses_the_exact_ts_strings() {
+        assert_eq!(parse_path_offset_join("bevel"), Some(PathOffsetJoin::Bevel));
+        assert_eq!(parse_path_offset_join("miter"), Some(PathOffsetJoin::Miter));
+        assert_eq!(parse_path_offset_join("round"), Some(PathOffsetJoin::Round));
+        assert_eq!(parse_path_offset_join("square"), Some(PathOffsetJoin::Square));
+    }
+
+    #[test]
+    fn rejects_other_text_and_wrong_casing() {
+        assert_eq!(parse_path_offset_join("BEVEL"), None);
+        assert_eq!(parse_path_offset_join(""), None);
+    }
+}
+
+mod get_path_offset_end_string {
+    use super::*;
+
+    #[test]
+    fn returns_the_exact_ts_strings() {
+        assert_eq!(get_path_offset_end_string(PathOffsetEnd::Butt), "butt");
+        assert_eq!(get_path_offset_end_string(PathOffsetEnd::Round), "round");
+        assert_eq!(get_path_offset_end_string(PathOffsetEnd::Square), "square");
+    }
+}
+
+mod parse_path_offset_end {
+    use super::*;
+
+    #[test]
+    fn parses_the_exact_ts_strings() {
+        assert_eq!(parse_path_offset_end("butt"), Some(PathOffsetEnd::Butt));
+        assert_eq!(parse_path_offset_end("round"), Some(PathOffsetEnd::Round));
+        assert_eq!(parse_path_offset_end("square"), Some(PathOffsetEnd::Square));
+    }
+
+    #[test]
+    fn rejects_other_text_and_wrong_casing() {
+        assert_eq!(parse_path_offset_end("BUTT"), None);
+        assert_eq!(parse_path_offset_end(""), None);
     }
 }

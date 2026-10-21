@@ -1,4 +1,4 @@
-use flight_path_boolean::*;
+use flight_path_boolean::contract::*;
 
 fn square(x: f64, y: f64, s: f64) -> Vec<f64> {
     return vec![x, y, x + s, y, x + s, y + s, x, y + s];
@@ -424,5 +424,65 @@ mod initialize_martinez_path_boolean_kernel {
             PathBooleanFillRule::NonZero,
         );
         assert!((net_area(&result) - 25.0).abs() < 0.1);
+    }
+}
+
+mod get_path_boolean_operation_string {
+    use super::*;
+
+    #[test]
+    fn returns_the_exact_ts_strings() {
+        assert_eq!(get_path_boolean_operation_string(PathBooleanOperation::Difference), "difference");
+        assert_eq!(get_path_boolean_operation_string(PathBooleanOperation::Intersection), "intersection");
+        assert_eq!(get_path_boolean_operation_string(PathBooleanOperation::Union), "union");
+        assert_eq!(get_path_boolean_operation_string(PathBooleanOperation::Xor), "xor");
+    }
+}
+
+mod parse_path_boolean_operation {
+    use super::*;
+
+    #[test]
+    fn parses_the_exact_ts_strings() {
+        assert_eq!(parse_path_boolean_operation("difference"), Some(PathBooleanOperation::Difference));
+        assert_eq!(parse_path_boolean_operation("intersection"), Some(PathBooleanOperation::Intersection));
+        assert_eq!(parse_path_boolean_operation("union"), Some(PathBooleanOperation::Union));
+        assert_eq!(parse_path_boolean_operation("xor"), Some(PathBooleanOperation::Xor));
+    }
+
+    #[test]
+    fn rejects_other_text_and_wrong_casing() {
+        assert_eq!(parse_path_boolean_operation("DIFFERENCE"), None);
+        assert_eq!(parse_path_boolean_operation(""), None);
+    }
+}
+
+mod get_path_boolean_fill_rule_string {
+    use super::*;
+
+    #[test]
+    fn returns_the_exact_ts_strings() {
+        assert_eq!(get_path_boolean_fill_rule_string(PathBooleanFillRule::EvenOdd), "evenOdd");
+        assert_eq!(get_path_boolean_fill_rule_string(PathBooleanFillRule::NonZero), "nonZero");
+        assert_eq!(get_path_boolean_fill_rule_string(PathBooleanFillRule::Negative), "negative");
+        assert_eq!(get_path_boolean_fill_rule_string(PathBooleanFillRule::Positive), "positive");
+    }
+}
+
+mod parse_path_boolean_fill_rule {
+    use super::*;
+
+    #[test]
+    fn parses_the_exact_ts_strings() {
+        assert_eq!(parse_path_boolean_fill_rule("evenOdd"), Some(PathBooleanFillRule::EvenOdd));
+        assert_eq!(parse_path_boolean_fill_rule("nonZero"), Some(PathBooleanFillRule::NonZero));
+        assert_eq!(parse_path_boolean_fill_rule("negative"), Some(PathBooleanFillRule::Negative));
+        assert_eq!(parse_path_boolean_fill_rule("positive"), Some(PathBooleanFillRule::Positive));
+    }
+
+    #[test]
+    fn rejects_other_text_and_wrong_casing() {
+        assert_eq!(parse_path_boolean_fill_rule("EVENODD"), None);
+        assert_eq!(parse_path_boolean_fill_rule(""), None);
     }
 }

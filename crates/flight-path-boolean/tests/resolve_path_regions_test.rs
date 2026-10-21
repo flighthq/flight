@@ -1,5 +1,5 @@
 use flight_path::*;
-use flight_path_boolean::*;
+use flight_path_boolean::contract::*;
 
 fn path_area(path: &Path) -> f64 {
     let mut total: f64 = 0.0;

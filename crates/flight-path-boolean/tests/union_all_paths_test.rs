@@ -1,5 +1,5 @@
 use flight_path::*;
-use flight_path_boolean::*;
+use flight_path_boolean::contract::*;
 
 fn square_path(x: f64, y: f64, s: f64) -> Path {
     let mut path = create_path(Some(PathWinding::NonZero));

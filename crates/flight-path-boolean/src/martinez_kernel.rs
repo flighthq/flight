@@ -53,6 +53,48 @@ impl Default for PathBooleanKernel {
     }
 }
 
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathBooleanFillRule string union; TS exports no get_/parse_ free functions
+pub fn get_path_boolean_fill_rule_string(value: PathBooleanFillRule) -> &'static str {
+    return match value {
+        PathBooleanFillRule::EvenOdd => "evenOdd",
+        PathBooleanFillRule::NonZero => "nonZero",
+        PathBooleanFillRule::Negative => "negative",
+        PathBooleanFillRule::Positive => "positive",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathBooleanFillRule string union; TS exports no get_/parse_ free functions
+pub fn parse_path_boolean_fill_rule(value: &str) -> Option<PathBooleanFillRule> {
+    return match value {
+        "evenOdd" => Some(PathBooleanFillRule::EvenOdd),
+        "nonZero" => Some(PathBooleanFillRule::NonZero),
+        "negative" => Some(PathBooleanFillRule::Negative),
+        "positive" => Some(PathBooleanFillRule::Positive),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathBooleanOperation string union; TS exports no get_/parse_ free functions
+pub fn get_path_boolean_operation_string(value: PathBooleanOperation) -> &'static str {
+    return match value {
+        PathBooleanOperation::Difference => "difference",
+        PathBooleanOperation::Intersection => "intersection",
+        PathBooleanOperation::Union => "union",
+        PathBooleanOperation::Xor => "xor",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathBooleanOperation string union; TS exports no get_/parse_ free functions
+pub fn parse_path_boolean_operation(value: &str) -> Option<PathBooleanOperation> {
+    return match value {
+        "difference" => Some(PathBooleanOperation::Difference),
+        "intersection" => Some(PathBooleanOperation::Intersection),
+        "union" => Some(PathBooleanOperation::Union),
+        "xor" => Some(PathBooleanOperation::Xor),
+        _ => None,
+    };
+}
+
 pub fn create_martinez_path_boolean_kernel() -> PathBooleanKernel {
     let mut out: PathBooleanKernel = allocate_entity();
     initialize_martinez_path_boolean_kernel(&mut out);
