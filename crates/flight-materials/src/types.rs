@@ -269,7 +269,7 @@ mod sugar_tests {
         #[test]
         fn sugar_new_matches_free_function() {
             let free = create_material("TestKind".to_string());
-            let sugar = Material::new("TestKind".to_string());
+            let sugar = MaterialFields::new("TestKind".to_string());
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.name, sugar.name);
         }
@@ -309,12 +309,15 @@ mod sugar_tests {
         fn sugar_of_kind_matches_free_function() {
             let mat = create_material("TargetKind".to_string());
             let free_some = get_material_of_kind(Some(&mat), "TargetKind");
-            let sugar_some = Material::of_kind(Some(&mat), "TargetKind");
+            let sugar_some = MaterialFields::of_kind(Some(&mat), "TargetKind");
             assert!(free_some.is_some());
             assert!(sugar_some.is_some());
-            assert_eq!(free_some.unwrap().kind, sugar_some.unwrap().kind);
+            assert_eq!(
+                free_some.unwrap().material_fields().kind,
+                sugar_some.unwrap().material_fields().kind
+            );
             let free_none = get_material_of_kind(Some(&mat), "Other");
-            let sugar_none = Material::of_kind(Some(&mat), "Other");
+            let sugar_none = MaterialFields::of_kind(Some(&mat), "Other");
             assert!(free_none.is_none());
             assert!(sugar_none.is_none());
         }
@@ -853,23 +856,52 @@ pub struct MaterialConversionContext {
     pub(crate) guard: MaterialConversionGuard,
 }
 
-// ── Material base ────────────────────────────────────────────────────────────
+// ── Material base (open family) ─────────────────────────────────────────────
 
+/// The base fields every material has (TS `Material`): the open kind, an optional name and the one
+/// entity runtime. The 2D and 3D families compose it, and it is itself the plain base kind.
 #[derive(Clone, Debug)]
-pub struct Material {
+pub struct MaterialFields {
     runtime: EntityRuntimeSlot,
     pub kind: Kind,
     pub name: Option<String>,
+}
+
+/// Any material, 2D or 3D (TS `Material`, an open base contract). `Material2D` and `Material3D` extend
+/// it, so a generic reader takes `&dyn Material`.
+pub trait Material: flight_entity::Entity + std::any::Any + Send + Sync {
+    fn as_any(&self) -> &dyn std::any::Any;
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
+    fn material_fields(&self) -> &MaterialFields;
+    fn material_fields_mut(&mut self) -> &mut MaterialFields;
+
+    /// The ordered modifier stack this material carries, or `None` (TS: a material whose
+    /// `modifiers` field is set). A kind carrying a stack overrides it (Principal d5c56ec9).
+    fn modifier_stream(&self) -> Option<&dyn MaterialModifierStream> {
+        return None;
+    }
+}
+
+/// A read view over a material's ordered modifier stack (Principal d5c56ec9). Materials own the
+/// view so a stack owned by shading is readable without a materials -> shading dependency.
+pub trait MaterialModifierStream {
+    /// The number of modifiers in the stack.
+    fn len(&self) -> usize;
+
+    /// Whether the stack holds no modifiers.
+    fn is_empty(&self) -> bool {
+        return self.len() == 0;
+    }
 }
 
 // ── Material2D (open family) ────────────────────────────────────────────────
 
 #[derive(Clone, Debug)]
 pub struct Material2DFields {
-    material: Material,
+    material: MaterialFields,
 }
 
-pub trait Material2D: flight_entity::Entity + Send + Sync {
+pub trait Material2D: Material {
     fn material2d_fields(&self) -> &Material2DFields;
     fn material2d_fields_mut(&mut self) -> &mut Material2DFields;
 }
@@ -901,7 +933,7 @@ pub struct TintMaterialData {
 /// `fields` and dereferences to it, so `material.alpha_mode` and `material.kind` read flat (D16).
 #[derive(Clone, Debug)]
 pub struct Material3DFields {
-    material: Material,
+    material: MaterialFields,
     pub alpha_cutoff: f32,
     pub alpha_mode: MaterialAlphaMode,
     pub blend_mode: BlendMode,
@@ -911,11 +943,9 @@ pub struct Material3DFields {
 /// Any 3D material (TS `Material3D`, an open base contract): built-in kinds, shading's
 /// `ShadedMaterial` and caller kinds. Held as `Material3DRef` so a mesh keeps the caller's original
 /// allocation. Implement it for a kind struct with `impl_material3d!`.
-pub trait Material3D: flight_entity::Entity + std::any::Any + Send + Sync {
+pub trait Material3D: Material {
     fn material3d_fields(&self) -> &Material3DFields;
     fn material3d_fields_mut(&mut self) -> &mut Material3DFields;
-    fn as_any(&self) -> &dyn std::any::Any;
-    fn as_any_mut(&mut self) -> &mut dyn std::any::Any;
 }
 
 /// A shared 3D material of any kind (TS `Material3D` object identity).
@@ -924,10 +954,32 @@ pub type Material3DRef = Ref<dyn Material3D>;
 
 /// Implements the Material3D family plumbing for a kind struct with a `fields: Material3DFields`
 /// field: `Entity` (the one runtime inside the shared `Material`), `Material3D`, and
-/// `Deref`/`DerefMut` to `Material3DFields`.
+/// `Deref`/`DerefMut` to `Material3DFields`. `impl_material3d!(T, custom_material)` leaves the
+/// `Material` impl to the kind, e.g. to override `modifier_stream`.
 #[macro_export]
 macro_rules! impl_material3d {
     ($t:ty) => {
+        $crate::impl_material3d!($t, custom_material);
+
+        impl $crate::Material for $t {
+            fn as_any(&self) -> &dyn std::any::Any {
+                return self;
+            }
+
+            fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+                return self;
+            }
+
+            fn material_fields(&self) -> &$crate::MaterialFields {
+                return $crate::Material::material_fields(&self.fields);
+            }
+
+            fn material_fields_mut(&mut self) -> &mut $crate::MaterialFields {
+                return $crate::Material::material_fields_mut(&mut self.fields);
+            }
+        }
+    };
+    ($t:ty, custom_material) => {
         impl flight_entity::Entity for $t {
             fn entity_runtime(&self) -> &flight_entity::EntityRuntimeSlot {
                 return flight_entity::Entity::entity_runtime(&self.fields);
@@ -945,14 +997,6 @@ macro_rules! impl_material3d {
 
             fn material3d_fields_mut(&mut self) -> &mut $crate::Material3DFields {
                 return &mut self.fields;
-            }
-
-            fn as_any(&self) -> &dyn std::any::Any {
-                return self;
-            }
-
-            fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
-                return self;
             }
         }
 
@@ -1660,7 +1704,7 @@ pub fn create_material_conversion_context(
 /// The base fields with `kind` and the source trailer defaults (opaque, single-sided, Normal blend,
 /// 0.5 cutoff), for a kind struct's `Default`.
 pub(crate) fn default_material3d_fields(kind: &str) -> Material3DFields {
-    let mut material = Material::default();
+    let mut material = MaterialFields::default();
     material.kind = kind.to_string();
     return Material3DFields {
         material,
@@ -1691,16 +1735,16 @@ impl MaterialConversionContext {
 
 // flight-lint: allow(sugar-delegates) D16 open-family composition: Material2DFields delegates to inner Material
 impl std::ops::Deref for Material2DFields {
-    type Target = Material;
+    type Target = MaterialFields;
 
-    fn deref(&self) -> &Material {
+    fn deref(&self) -> &MaterialFields {
         return &self.material;
     }
 }
 
 // flight-lint: allow(sugar-delegates) D16 open-family composition: Material2DFields delegates to inner Material
 impl std::ops::DerefMut for Material2DFields {
-    fn deref_mut(&mut self) -> &mut Material {
+    fn deref_mut(&mut self) -> &mut MaterialFields {
         return &mut self.material;
     }
 }
@@ -1713,6 +1757,25 @@ impl flight_entity::Entity for Material2DFields {
 
     fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
         return flight_entity::Entity::entity_runtime_mut(&mut self.material);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family: Material2DFields reaches the Material base through its inner fields
+impl Material for Material2DFields {
+    fn as_any(&self) -> &dyn std::any::Any {
+        return self;
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        return self;
+    }
+
+    fn material_fields(&self) -> &MaterialFields {
+        return &self.material;
+    }
+
+    fn material_fields_mut(&mut self) -> &mut MaterialFields {
+        return &mut self.material;
     }
 }
 
@@ -1751,6 +1814,25 @@ impl flight_entity::Entity for StandardMaterial {
 
     fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
         return flight_entity::Entity::entity_runtime_mut(&mut self.fields);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family: StandardMaterial reaches the Material base through its 2D fields
+impl Material for StandardMaterial {
+    fn as_any(&self) -> &dyn std::any::Any {
+        return self;
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        return self;
+    }
+
+    fn material_fields(&self) -> &MaterialFields {
+        return self.fields.material_fields();
+    }
+
+    fn material_fields_mut(&mut self) -> &mut MaterialFields {
+        return self.fields.material_fields_mut();
     }
 }
 
@@ -1805,8 +1887,8 @@ impl MaterialData for TintMaterialData {
 
 // ── D18 sugar delegates ─────────────────────────────────────────────────────
 
-// flight-lint: allow(sugar-delegates) D18 receiver sugar: Material methods delegate to free functions
-impl Material {
+// flight-lint: allow(sugar-delegates) D18 receiver sugar: MaterialFields methods delegate to free functions
+impl MaterialFields {
     pub fn new(kind: Kind) -> Self {
         return crate::material::create_material(kind);
     }
@@ -1815,11 +1897,11 @@ impl Material {
         return crate::material::clone_material(self);
     }
 
-    pub fn copy_from(&mut self, source: &Material) {
+    pub fn copy_from(&mut self, source: &dyn Material) {
         crate::material::copy_material(self, source);
     }
 
-    pub fn equals(&self, other: &Material) -> bool {
+    pub fn equals(&self, other: &dyn Material) -> bool {
         return crate::material::equals_material(self, other);
     }
 
@@ -1827,7 +1909,7 @@ impl Material {
         crate::material::initialize_material(self, kind);
     }
 
-    pub fn of_kind<'a>(material: Option<&'a Material>, kind: &str) -> Option<&'a Material> {
+    pub fn of_kind<'a>(material: Option<&'a dyn Material>, kind: &str) -> Option<&'a dyn Material> {
         return crate::material::get_material_of_kind(material, kind);
     }
 }
@@ -2186,7 +2268,7 @@ impl StandardPbrMaterialProperties {
 
 // ── Default impls & entity registrations ─────────────────────────────────────
 
-impl Default for Material {
+impl Default for MaterialFields {
     fn default() -> Self {
         return Self {
             runtime: EntityRuntimeSlot::default(),
@@ -2196,12 +2278,31 @@ impl Default for Material {
     }
 }
 
-flight_entity::impl_entity!(Material);
+flight_entity::impl_entity!(MaterialFields);
+
+// flight-lint: allow(sugar-delegates) D16 open-family: MaterialFields self-implements Material (the plain base kind)
+impl Material for MaterialFields {
+    fn as_any(&self) -> &dyn std::any::Any {
+        return self;
+    }
+
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        return self;
+    }
+
+    fn material_fields(&self) -> &MaterialFields {
+        return self;
+    }
+
+    fn material_fields_mut(&mut self) -> &mut MaterialFields {
+        return self;
+    }
+}
 
 impl Default for Material2DFields {
     fn default() -> Self {
         return Self {
-            material: Material::default(),
+            material: MaterialFields::default(),
         };
     }
 }
@@ -2225,16 +2326,16 @@ impl Default for Material3DFields {
 
 // flight-lint: allow(sugar-delegates) D16 open-family composition: Material3DFields extends the Material base
 impl std::ops::Deref for Material3DFields {
-    type Target = Material;
+    type Target = MaterialFields;
 
-    fn deref(&self) -> &Material {
+    fn deref(&self) -> &MaterialFields {
         return &self.material;
     }
 }
 
 // flight-lint: allow(sugar-delegates) D16 open-family composition: Material3DFields extends the Material base
 impl std::ops::DerefMut for Material3DFields {
-    fn deref_mut(&mut self) -> &mut Material {
+    fn deref_mut(&mut self) -> &mut MaterialFields {
         return &mut self.material;
     }
 }
@@ -2250,8 +2351,8 @@ impl flight_entity::Entity for Material3DFields {
     }
 }
 
-// flight-lint: allow(sugar-delegates) D16 open-family: Material3DFields self-implements Material3D (the plain base kind)
-impl Material3D for Material3DFields {
+// flight-lint: allow(sugar-delegates) D16 open-family: Material3DFields reaches the Material base through its inner fields
+impl Material for Material3DFields {
     fn as_any(&self) -> &dyn std::any::Any {
         return self;
     }
@@ -2260,6 +2361,17 @@ impl Material3D for Material3DFields {
         return self;
     }
 
+    fn material_fields(&self) -> &MaterialFields {
+        return &self.material;
+    }
+
+    fn material_fields_mut(&mut self) -> &mut MaterialFields {
+        return &mut self.material;
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family: Material3DFields self-implements Material3D (the plain base kind)
+impl Material3D for Material3DFields {
     fn material3d_fields(&self) -> &Material3DFields {
         return self;
     }

@@ -72,6 +72,24 @@ mod custom_material2d {
         }
     }
 
+    impl Material for CustomMaterial2D {
+        fn as_any(&self) -> &dyn std::any::Any {
+            return self;
+        }
+
+        fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+            return self;
+        }
+
+        fn material_fields(&self) -> &MaterialFields {
+            return &self.fields;
+        }
+
+        fn material_fields_mut(&mut self) -> &mut MaterialFields {
+            return &mut self.fields;
+        }
+    }
+
     impl Material2D for CustomMaterial2D {
         fn material2d_fields(&self) -> &Material2DFields {
             return &self.fields;
