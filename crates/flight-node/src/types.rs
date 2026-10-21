@@ -34,6 +34,10 @@ pub type AdjustmentRef = Ref<dyn Adjustment>;
 /// family (scene2d, scene3d) creates one static key per kind; identity is `Arc::ptr_eq`.
 pub struct NodeTraitsKey(pub Arc<dyn Any + Send + Sync>);
 
+/// A shared renderer data handle (TS `RendererData`). Concrete kinds (e.g. `SpriteIdentityRendererData`)
+/// implement the trait and are erased behind this handle.
+pub type RendererDataRef = Ref<dyn RendererData>;
+
 /// Whether `target` may accept `child` (TS `NodeRuntime.canAddChild`). The family parameter is
 /// erased at this callback boundary, as the source call site does.
 pub type NodeCanAddChild = Arc<dyn Fn(&dyn Node, &dyn Node) -> bool + Send + Sync>;
@@ -43,6 +47,50 @@ pub type NodeLocalBoundsComputer = Arc<dyn Fn(&mut Rectangle, &dyn Node) + Send 
 
 /// Kind-owned extra validity check for local-bounds inputs (TS `isLocalBoundsRectangleValid`).
 pub type NodeLocalBoundsValidity = Arc<dyn Fn(&dyn Node) -> bool + Send + Sync>;
+
+/// The base fields every renderer data carries (TS `RendererData extends Entity`).
+pub struct RendererDataFields {
+    pub runtime: EntityRuntimeSlot,
+}
+
+/// Any renderer data (TS `RendererData`). Concrete kinds compose `RendererDataFields` and implement
+/// this trait for downcasting via `as_any`/`as_any_mut`.
+pub trait RendererData: flight_entity::Entity + Any + Send + Sync {
+    fn renderer_data_fields(&self) -> &RendererDataFields;
+    fn renderer_data_fields_mut(&mut self) -> &mut RendererDataFields;
+    fn as_any(&self) -> &dyn Any;
+    fn as_any_mut(&mut self) -> &mut dyn Any;
+}
+
+/// Implements `Entity` (via the `renderer_data.runtime` slot) and `RendererData` for a type that
+/// composes `RendererDataFields` in a field named `renderer_data`.
+#[macro_export]
+macro_rules! impl_renderer_data {
+    ($T:ty) => {
+        impl flight_entity::Entity for $T {
+            fn entity_runtime(&self) -> &flight_entity::EntityRuntimeSlot {
+                return &self.renderer_data.runtime;
+            }
+            fn entity_runtime_mut(&mut self) -> &mut flight_entity::EntityRuntimeSlot {
+                return &mut self.renderer_data.runtime;
+            }
+        }
+        impl $crate::RendererData for $T {
+            fn renderer_data_fields(&self) -> &$crate::RendererDataFields {
+                return &self.renderer_data;
+            }
+            fn renderer_data_fields_mut(&mut self) -> &mut $crate::RendererDataFields {
+                return &mut self.renderer_data;
+            }
+            fn as_any(&self) -> &dyn std::any::Any {
+                return self;
+            }
+            fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+                return self;
+            }
+        }
+    };
+}
 
 /// The fields every node has (TS `NodeTraits`): open kind name, optional name, enabled gate.
 /// The entity runtime slot and the private runtime tier live here too.
@@ -517,6 +565,14 @@ impl Default for HasTransform3DRuntime {
     }
 }
 
+impl Default for RendererDataFields {
+    fn default() -> Self {
+        return RendererDataFields {
+            runtime: EntityRuntimeSlot { data: None },
+        };
+    }
+}
+
 impl Default for HasBoundsRectangleRuntime {
     fn default() -> Self {
         return init_bounds_rectangle_runtime_value(None);
@@ -525,6 +581,7 @@ impl Default for HasBoundsRectangleRuntime {
 
 flight_entity::impl_entity!(NodeFields);
 flight_entity::impl_entity!(NodeSignals);
+flight_entity::impl_entity!(RendererDataFields);
 
 impl Default for NodeOrderList {
     fn default() -> Self {
