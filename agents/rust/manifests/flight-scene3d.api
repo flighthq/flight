@@ -146,7 +146,7 @@ src/lib.rs: pub use scene_document::*;
 src/lib.rs: pub use scene_document_lights::*;
 src/lib.rs: pub use scene_kind_usage::{ Scene3DKindUsage, create_scene3d_kind_usage, get_scene3d_kind_usage };
 src/lib.rs: pub use scene_material::*;
-src/lib.rs: pub use scene_node::{ create_node3d, enable_node3d_signals, get_node3d_signals, is_node3d };
+src/lib.rs: pub use scene_node::{ as_node3d_ref, create_node3d, enable_node3d_signals, get_node3d_signals, is_node3d, publish_node3d, };
 src/lib.rs: pub use scene_node_appearance::{ Scene3DAppearanceState, get_node3d_world_alpha, set_node3d_alpha };
 src/lib.rs: pub use scene_node_bounds::*;
 src/lib.rs: pub use scene_node_culling::*;
@@ -186,7 +186,7 @@ src/scene.rs: impl Entity for Scene3D :: fn entity_runtime(&self) -> &EntityRunt
 src/scene.rs: impl Entity for Scene3D :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/scene.rs: pub fn create_scene3d(obj: Option<&PartialNode>) -> Scene3D
 src/scene.rs: pub fn initialize_scene3d(out: &mut Scene3D, obj: Option<&PartialNode>)
-src/scene.rs: pub struct Scene3D { runtime: EntityRuntimeSlot, pub animations: HashMap<String, Ref<AnimationClip>>, pub metadata: Option<Ref<Scene3DMetadata>>, pub resources: Vec<ImageResourceReference>, pub root: Ref<Node3DFields>, }
+src/scene.rs: pub struct Scene3D { runtime: EntityRuntimeSlot, pub animations: HashMap<String, Ref<AnimationClip>>, pub metadata: Option<Ref<Scene3DMetadata>>, pub resources: Vec<ImageResourceReference>, pub root: Node3DRef, }
 src/scene.rs: pub type Scene3DRuntime = flight_entity::EntityRuntime;
 src/scene_animation.rs: #[derive(Clone)] pub struct Scene3DAnimationTarget { pub node: Node3DRef, pub path: Scene3DAnimationPath, }
 src/scene_animation.rs: pub fn apply_animation_clip_to_scene3d(clip: &AnimationClip, time: f32)
@@ -203,12 +203,14 @@ src/scene_kind_usage.rs: pub fn get_scene3d_kind_usage(out: &mut Scene3DKindUsag
 src/scene_kind_usage.rs: pub fn initialize_scene3d_kind_usage(out: &mut Scene3DKindUsage)
 src/scene_material.rs: pub fn find_scene3d_material_by_name(root: &NodeRef, name: &str) -> Option<Ref<dyn Material3D>>
 src/scene_material.rs: pub fn get_scene3d_materials(out: &mut Vec<Ref<dyn Material3D>>, root: &NodeRef)
+src/scene_node.rs: pub fn as_node3d_ref(node: &NodeRef) -> Option<Node3DRef>
 src/scene_node.rs: pub fn create_node3d<T: Node3D + Default>(kind: Option<Kind>, obj: Option<&PartialNode3D>) -> T
 src/scene_node.rs: pub fn create_node3d_runtime() -> Node3DRuntime
 src/scene_node.rs: pub fn enable_node3d_signals(source: &NodeRef) -> Ref<NodeSignals>
 src/scene_node.rs: pub fn get_node3d_runtime(source: &dyn Node3D) -> &Node3DRuntime
 src/scene_node.rs: pub fn get_node3d_signals(source: &dyn Node3D) -> Option<Ref<NodeSignals>>
 src/scene_node.rs: pub fn is_node3d(node: &dyn Node) -> bool
+src/scene_node.rs: pub fn publish_node3d<T: Node3D>(value: T) -> Ref<T>
 src/scene_node_appearance.rs: #[derive(Clone, Copy, Default, Debug)] pub struct Scene3DAppearanceState { pub world_appearance_revision: u32, }
 src/scene_node_appearance.rs: pub fn ensure_node3d_world_alpha(source: &NodeRef, state: &mut Scene3DAppearanceState)
 src/scene_node_appearance.rs: pub fn get_node3d_world_alpha(source: &NodeRef, state: &mut Scene3DAppearanceState) -> f32
@@ -309,9 +311,10 @@ src/types.rs: impl Node3DFields :: fn node3d_runtime(&self) -> &Node3DRuntime
 src/types.rs: impl Node3DFields :: fn node3d_runtime_mut(&mut self) -> &mut Node3DRuntime
 src/types.rs: pub static NODE3D_TRAITS_KEY: LazyLock<Arc<NodeTraitsKey>>
 src/types.rs: pub struct Node3DFields { node: NodeFields, state: Node3DRuntime, pub alpha: f32, pub position: Vector3, pub rotation: Quaternion, pub scale: Vector3, pub visible: bool, }
-src/types.rs: pub struct Node3DNarrow { pub as_node3d: fn(&dyn Node) -> Option<&dyn Node3D>, pub as_node3d_mut: fn(&mut dyn Node) -> Option<&mut dyn Node3D>, }
-src/types.rs: pub struct Skeleton3D { runtime: EntityRuntimeSlot, pub inverse_bind_matrices: Ref<Box<Float32Array>>, pub joint_matrices: Ref<Box<Float32Array>>, pub normal_matrices: Ref<Box<Float32Array>>, pub joints: Vec<Node3DRef>, pub names: Option<Vec<String>>, }
-src/types.rs: pub trait Node3D: Node + Transform3DNode + AppearanceNode { fn node3d_fields(&self) -> &Node3DFields; fn node3d_fields_mut(&mut self) -> &mut Node3DFields; fn as_mesh(&self) -> Option<&crate::Mesh>; fn as_mesh_mut(&mut self) -> Option<&mut crate::Mesh>; fn as_instanced_mesh(&self) -> Option<&crate::InstancedMesh>; fn billboard_mode(&self) -> Option<crate::BillboardMode>; }
+src/types.rs: pub struct Node3DNarrow { pub as_node3d: fn(&dyn Node) -> Option<&dyn Node3D>, pub as_node3d_mut: fn(&mut dyn Node) -> Option<&mut dyn Node3D>, pub self_handle: Option<Node3DWeak>, }
+src/types.rs: pub struct Skeleton3D { runtime: EntityRuntimeSlot, pub inverse_bind_matrices: Ref<Box<Float32Array>>, pub joint_matrices: Ref<Box<Float32Array>>, pub normal_matrices: Ref<Box<Float32Array>>, pub joints: Ref<Vec<Node3DRef>>, pub names: Option<Vec<String>>, }
+src/types.rs: pub trait Node3D: Node + Transform3DNode + AppearanceNode { fn into_node3d_ref(self) -> Ref<Self> where Self: Sized,; fn node3d_fields(&self) -> &Node3DFields; fn node3d_fields_mut(&mut self) -> &mut Node3DFields; fn as_mesh(&self) -> Option<&crate::Mesh>; fn as_mesh_mut(&mut self) -> Option<&mut crate::Mesh>; fn as_instanced_mesh(&self) -> Option<&crate::InstancedMesh>; fn billboard_mode(&self) -> Option<crate::BillboardMode>; }
 src/types.rs: pub type Node3DRef = Ref<dyn Node3D>;
 src/types.rs: pub type Node3DVisitor = Arc<dyn Fn(&Node3DRef, usize) -> Option<bool> + Send + Sync>;
+src/types.rs: pub type Node3DWeak = Weak<RwLock<dyn Node3D>>;
 src/update_mesh_morph.rs: pub fn update_mesh_morph(mesh: &Mesh)

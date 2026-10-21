@@ -69,6 +69,9 @@ src/capsule.rs: pub fn is_capsule_intersecting_aabb(capsule: &Capsule, aabb: &Aa
 src/capsule.rs: pub fn is_capsule_intersecting_capsule(a: &Capsule, b: &Capsule) -> bool
 src/capsule.rs: pub fn is_capsule_intersecting_sphere(capsule: &Capsule, sphere: &BoundingSphere) -> bool
 src/capsule.rs: pub fn set_capsule(out: &mut Capsule, start_x: f32, start_y: f32, start_z: f32, end_x: f32, end_y: f32, end_z: f32, radius: f32,)
+src/enable_geometry_pool_guards.rs: pub fn are_geometry_pool_guards_enabled() -> bool
+src/enable_geometry_pool_guards.rs: pub fn disable_geometry_pool_guards()
+src/enable_geometry_pool_guards.rs: pub fn enable_geometry_pool_guards(log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
 src/frustum.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct Frustum { runtime: EntityRuntimeSlot, pub bottom: Plane, pub far: Plane, pub left: Plane, pub near: Plane, pub right: Plane, pub top: Plane, }
 src/frustum.rs: impl Entity for Frustum
 src/frustum.rs: impl Entity for Frustum :: fn entity_runtime(&self) -> &EntityRuntimeSlot
@@ -86,23 +89,37 @@ src/frustum.rs: pub fn is_frustum_intersecting_aabb(frustum: &Frustum, aabb: &Aa
 src/frustum.rs: pub fn is_frustum_intersecting_obb(frustum: &Frustum, obb: &Obb) -> bool
 src/frustum.rs: pub fn is_frustum_intersecting_sphere(frustum: &Frustum, sphere: &BoundingSphere) -> bool
 src/frustum.rs: pub fn set_frustum_from_matrix4(out: &mut Frustum, view_projection: &Matrix4)
+src/geometry_pool_guards.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GeometryPoolReleaseFunction { ReleaseMatrix, ReleaseMatrix3, ReleaseMatrix4, ReleaseQuaternion, ReleaseRectangle, ReleaseVector2, ReleaseVector3, ReleaseVector4, }
+src/geometry_pool_guards.rs: pub fn set_geometry_pool_release_guard(guard: Option<GeometryPoolReleaseGuard>)
+src/geometry_pool_guards.rs: pub type GeometryPoolReleaseGuard = Arc<dyn Fn(GeometryPoolReleaseFunction) + Send + Sync>;
 src/lib.rs: pub use aabb::*;
 src/lib.rs: pub use bounding_sphere::*;
 src/lib.rs: pub use capsule::*;
+src/lib.rs: pub use enable_geometry_pool_guards::*;
 src/lib.rs: pub use frustum::*;
+src/lib.rs: pub use geometry_pool_guards::*;
 src/lib.rs: pub use matrix3::*;
+src/lib.rs: pub use matrix3_pool::*;
 src/lib.rs: pub use matrix4::*;
+src/lib.rs: pub use matrix4_pool::*;
 src/lib.rs: pub use matrix::*;
+src/lib.rs: pub use matrix_pool::*;
 src/lib.rs: pub use obb::*;
 src/lib.rs: pub use plane::*;
 src/lib.rs: pub use quaternion::*;
+src/lib.rs: pub use quaternion_pool::*;
 src/lib.rs: pub use ray3d::*;
 src/lib.rs: pub use rectangle::*;
+src/lib.rs: pub use rectangle_pool::*;
 src/lib.rs: pub use transform2d::*;
 src/lib.rs: pub use transform3d::*;
+src/lib.rs: pub use typedarray::*;
 src/lib.rs: pub use vector2::*;
+src/lib.rs: pub use vector2_pool::*;
 src/lib.rs: pub use vector3::*;
+src/lib.rs: pub use vector3_pool::*;
 src/lib.rs: pub use vector4::*;
+src/lib.rs: pub use vector4_pool::*;
 src/matrix.rs: #[derive(Debug, Clone, PartialEq)] pub struct Matrix { runtime: EntityRuntimeSlot, pub a: f32, pub b: f32, pub c: f32, pub d: f32, pub tx: f32, pub ty: f32, }
 src/matrix.rs: impl Default for Matrix
 src/matrix.rs: impl Default for Matrix :: fn default() -> Self
@@ -199,6 +216,10 @@ src/matrix3.rs: pub fn set_matrix3_normal_from_matrix4(out: &mut Matrix3, source
 src/matrix3.rs: pub fn translate_matrix3(out: &mut Matrix3, source: &Matrix3, tx: f32, ty: f32)
 src/matrix3.rs: pub fn transpose_matrix3(out: &mut Matrix3, source: &Matrix3)
 src/matrix3.rs: pub fn write_matrix3_to_float32_array(out: &mut [f32], offset: usize, source: &Matrix3)
+src/matrix3_pool.rs: pub fn acquire_identity_matrix3() -> Matrix3
+src/matrix3_pool.rs: pub fn acquire_matrix3() -> Matrix3
+src/matrix3_pool.rs: pub fn clear_matrix3_pool()
+src/matrix3_pool.rs: pub fn release_matrix3(mut m: Matrix3)
 src/matrix4.rs: #[derive(Debug, Clone, PartialEq)] pub struct Matrix4 { runtime: EntityRuntimeSlot, pub m: [f32; 16], }
 src/matrix4.rs: impl Default for Matrix4
 src/matrix4.rs: impl Default for Matrix4 :: fn default() -> Self
@@ -265,6 +286,14 @@ src/matrix4.rs: pub fn set_perspective_matrix4(out: &mut Matrix4, tan_half_fov_y
 src/matrix4.rs: pub fn translate_matrix4(out: &mut Matrix4, source: &Matrix4, tx: f32, ty: f32, tz: f32,)
 src/matrix4.rs: pub fn transpose_matrix4(out: &mut Matrix4, source: &Matrix4)
 src/matrix4.rs: pub fn write_matrix4_to_float32_array(out: &mut [f32], offset: usize, source: &Matrix4)
+src/matrix4_pool.rs: pub fn acquire_identity_matrix4() -> Matrix4
+src/matrix4_pool.rs: pub fn acquire_matrix4() -> Matrix4
+src/matrix4_pool.rs: pub fn clear_matrix4_pool()
+src/matrix4_pool.rs: pub fn release_matrix4(mut m: Matrix4)
+src/matrix_pool.rs: pub fn acquire_identity_matrix() -> Matrix
+src/matrix_pool.rs: pub fn acquire_matrix() -> Matrix
+src/matrix_pool.rs: pub fn clear_matrix_pool()
+src/matrix_pool.rs: pub fn release_matrix(mut m: Matrix)
 src/obb.rs: #[derive(Debug, Clone, PartialEq)] pub struct Obb { runtime: EntityRuntimeSlot, pub center_x: f32, pub center_y: f32, pub center_z: f32, pub half_extent_x: f32, pub half_extent_y: f32, pub half_extent_z: f32, pub orientation_x: f32, pub orientation_y: f32, pub orientation_z: f32, pub orientation_w: f32, }
 src/obb.rs: impl Default for Obb
 src/obb.rs: impl Default for Obb :: fn default() -> Self
@@ -342,6 +371,10 @@ src/quaternion.rs: pub fn set_quaternion_from_unit_vectors(out: &mut Quaternion,
 src/quaternion.rs: pub fn set_quaternion_identity(out: &mut Quaternion)
 src/quaternion.rs: pub fn set_quaternion_look_rotation(out: &mut Quaternion, forward: &Vector3, up: &Vector3,)
 src/quaternion.rs: pub fn slerp_quaternion(out: &mut Quaternion, a: &Quaternion, b: &Quaternion, t: f32,)
+src/quaternion_pool.rs: pub fn acquire_identity_quaternion() -> Quaternion
+src/quaternion_pool.rs: pub fn acquire_quaternion() -> Quaternion
+src/quaternion_pool.rs: pub fn clear_quaternion_pool()
+src/quaternion_pool.rs: pub fn release_quaternion(mut q: Quaternion)
 src/ray3d.rs: #[derive(Debug, Clone, PartialEq)] pub struct Ray3D { runtime: EntityRuntimeSlot, pub origin: Vector3, pub direction: Vector3, }
 src/ray3d.rs: impl Default for Ray3D
 src/ray3d.rs: impl Default for Ray3D :: fn default() -> Self
@@ -446,6 +479,10 @@ src/rectangle.rs: pub fn set_rectangle_right(target: &mut Rectangle, value: f32)
 src/rectangle.rs: pub fn set_rectangle_size(out: &mut Rectangle, size: &Vector2)
 src/rectangle.rs: pub fn set_rectangle_top(target: &mut Rectangle, value: f32)
 src/rectangle.rs: pub fn set_rectangle_top_left(out: &mut Rectangle, point: &Vector2)
+src/rectangle_pool.rs: pub fn acquire_empty_rectangle() -> Rectangle
+src/rectangle_pool.rs: pub fn acquire_rectangle() -> Rectangle
+src/rectangle_pool.rs: pub fn clear_rectangle_pool()
+src/rectangle_pool.rs: pub fn release_rectangle(mut r: Rectangle)
 src/transform2d.rs: #[derive(Debug, Clone, PartialEq)] pub struct Transform2D { runtime: EntityRuntimeSlot, pub x: f32, pub y: f32, pub rotation: f32, pub scale_x: f32, pub scale_y: f32, pub skew_x: f32, pub skew_y: f32, pub pivot_x: f32, pub pivot_y: f32, }
 src/transform2d.rs: impl Default for Transform2D
 src/transform2d.rs: impl Default for Transform2D :: fn default() -> Self
@@ -467,6 +504,9 @@ src/transform3d.rs: pub fn compose_matrix4_from_transform3d(out: &mut Matrix4, s
 src/transform3d.rs: pub fn create_transform3d() -> Transform3D
 src/transform3d.rs: pub fn decompose_matrix4_to_transform3d(out: &mut Transform3D, m: &Matrix4)
 src/transform3d.rs: pub fn initialize_transform3d(out: &mut Transform3D, position: &Vector3, rotation: &Quaternion, scale: &Vector3,)
+src/typedarray.rs: pub fn reserve_float32_array(array: Box<Float32Array>, capacity: usize) -> Box<Float32Array>
+src/typedarray.rs: pub fn reserve_int16_array(array: Box<Int16Array>, capacity: usize) -> Box<Int16Array>
+src/typedarray.rs: pub fn reserve_uint16_array(array: Box<Uint16Array>, capacity: usize) -> Box<Uint16Array>
 src/vector2.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct Vector2 { runtime: EntityRuntimeSlot, pub x: f32, pub y: f32, }
 src/vector2.rs: impl Entity for Vector2
 src/vector2.rs: impl Entity for Vector2 :: fn entity_runtime(&self) -> &EntityRuntimeSlot
@@ -534,6 +574,10 @@ src/vector2.rs: pub fn subtract_vector2(out: &mut Vector2, source: &Vector2, oth
 src/vector2.rs: pub fn write_vector2_to_float32_array(out: &mut [f32], offset: usize, source: &Vector2)
 src/vector2.rs: pub static VECTOR2_X_AXIS: LazyLock<Vector2>
 src/vector2.rs: pub static VECTOR2_Y_AXIS: LazyLock<Vector2>
+src/vector2_pool.rs: pub fn acquire_empty_vector2() -> Vector2
+src/vector2_pool.rs: pub fn acquire_vector2() -> Vector2
+src/vector2_pool.rs: pub fn clear_vector2_pool()
+src/vector2_pool.rs: pub fn release_vector2(mut v: Vector2)
 src/vector3.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct Vector3 { runtime: EntityRuntimeSlot, pub x: f32, pub y: f32, pub z: f32, }
 src/vector3.rs: impl Entity for Vector3
 src/vector3.rs: impl Entity for Vector3 :: fn entity_runtime(&self) -> &EntityRuntimeSlot
@@ -599,6 +643,10 @@ src/vector3.rs: pub fn write_vector3_to_float32_array(out: &mut [f32], offset: u
 src/vector3.rs: pub static VECTOR3_X_AXIS: LazyLock<Vector3>
 src/vector3.rs: pub static VECTOR3_Y_AXIS: LazyLock<Vector3>
 src/vector3.rs: pub static VECTOR3_Z_AXIS: LazyLock<Vector3>
+src/vector3_pool.rs: pub fn acquire_empty_vector3() -> Vector3
+src/vector3_pool.rs: pub fn acquire_vector3() -> Vector3
+src/vector3_pool.rs: pub fn clear_vector3_pool()
+src/vector3_pool.rs: pub fn release_vector3(mut v: Vector3)
 src/vector4.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct Vector4 { runtime: EntityRuntimeSlot, pub x: f32, pub y: f32, pub z: f32, pub w: f32, }
 src/vector4.rs: impl Entity for Vector4
 src/vector4.rs: impl Entity for Vector4 :: fn entity_runtime(&self) -> &EntityRuntimeSlot
@@ -659,3 +707,7 @@ src/vector4.rs: pub static VECTOR4_W_UNIT: LazyLock<Vector4>
 src/vector4.rs: pub static VECTOR4_X_AXIS: LazyLock<Vector4>
 src/vector4.rs: pub static VECTOR4_Y_AXIS: LazyLock<Vector4>
 src/vector4.rs: pub static VECTOR4_Z_AXIS: LazyLock<Vector4>
+src/vector4_pool.rs: pub fn acquire_empty_vector4() -> Vector4
+src/vector4_pool.rs: pub fn acquire_vector4() -> Vector4
+src/vector4_pool.rs: pub fn clear_vector4_pool()
+src/vector4_pool.rs: pub fn release_vector4(mut v: Vector4)
