@@ -15,6 +15,11 @@ pub type Kind = String;
 /// TS `unknown`, C++ `std::any`, Haxe `Dynamic`.
 pub type AnySlot = Option<Box<dyn Any + Send + Sync>>;
 
+/// A cloneable erased value with shared object identity. TS `unknown`, C++ shared `std::any`,
+/// Haxe `Dynamic`. `None` is an explicit null; wrap this alias in `Option` when absence must remain
+/// distinct from null.
+pub type Unknown = Option<Arc<dyn Any + Send + Sync>>;
+
 // Typed-array aliases for TS APIs that declare a typed array. `&Float32Array` maps to
 // `Readonly<Float32Array>` in TS while Rust callers may pass any matching slice, `Vec` or array.
 // C++ `std::span<N>`, Haxe `haxe.io.Float32Array` etc.

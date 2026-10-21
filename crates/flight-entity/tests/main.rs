@@ -5,5 +5,6 @@ mod entity_test;
 mod entity_uid_test;
 mod explain_entity_runtime_write_test;
 mod guards_test;
+mod record_test;
 mod runtime_test;
 mod throw_test;

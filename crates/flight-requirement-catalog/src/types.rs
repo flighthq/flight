@@ -28,7 +28,6 @@ pub struct RequirementCatalogEntry {
 
 /// Immutable shared identity for one catalog row. A caller's plain record is wrapped once when it
 /// enters a catalog; queries and plans clone this reference rather than the record.
-// flight-lint: allow(contract-vocabulary) Principal-approved Arc<T> row: immutable shared Readonly<T> object identity / shared_ptr<const T>; the vocabulary/lint row is pending
 pub type RequirementCatalogEntryRef = Arc<RequirementCatalogEntry>;
 
 /// One format-to-render implication.

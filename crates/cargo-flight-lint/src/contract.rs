@@ -679,7 +679,7 @@ fn check_contract_types(
 
     // The vocabulary's own aliases are defined in terms of non-vocabulary types.
     if let Item::Type(t) = item
-        && ["AnySlot", "Callback", "Ref", "WeakRef", "Kind", "Handle"].contains(&t.ident.to_string().as_str())
+        && ["AnySlot", "Unknown", "Callback", "Ref", "WeakRef", "Kind", "Handle"].contains(&t.ident.to_string().as_str())
     {
         return;
     }
@@ -937,6 +937,29 @@ mod tests {
                 src
             );
         }
+    }
+
+    #[test]
+    fn accepts_named_payload_data_enums_with_or_without_existing_kind_fields() {
+        for src in [
+            "pub struct Loaded { pub value: f32 }\npub struct Failed { pub message: String }\npub enum Result { Loaded(Loaded), Failed(Failed) }",
+            "pub enum LoadedKind { Loaded }\npub enum FailedKind { Failed }\npub struct Loaded { pub kind: LoadedKind, pub value: f32 }\npub struct Failed { pub kind: FailedKind, pub message: String }\npub enum Result { Loaded(Loaded), Failed(Failed) }",
+        ] {
+            assert!(
+                !rules_for(src).contains(&String::from("enum-payload-named")),
+                "{} triggered enum-payload-named",
+                src
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_inline_payload_fields_even_when_named_kind() {
+        let src = "pub enum Result { Loaded { kind: String, value: f32 } }";
+        assert!(
+            rules_for(src).contains(&String::from("enum-payload-named")),
+            "inline payload fields unexpectedly accepted"
+        );
     }
 
     #[test]
