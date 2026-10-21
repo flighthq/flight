@@ -1,0 +1,20 @@
+[package]
+name = "flight-timeline"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Timeline playback: sources, playheads, labels, frame scripts and lifecycle signals over canonical scene2d nodes"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-audio = { workspace = true }
+flight-entity = { workspace = true }
+flight-scene2d = { path = "../flight-scene2d" }
+flight-signals = { workspace = true }
+
+[lints]
+workspace = true

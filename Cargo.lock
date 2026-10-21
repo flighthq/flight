@@ -1043,6 +1043,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-timeline"
+version = "0.6.0"
+dependencies = [
+ "flight-audio",
+ "flight-entity",
+ "flight-scene2d",
+ "flight-signals",
+]
+
+[[package]]
 name = "flight-tray"
 version = "0.6.0"
 dependencies = [
