@@ -66,6 +66,22 @@ pub fn enable_share_signals() -> Ref<ShareSignals> {
     return Arc::new(RwLock::new(out));
 }
 
+fn files_content(files: &[Ref<ShareFile>]) -> Option<Ref<ShareFilesContent>> {
+    if files.is_empty()
+        || !files
+            .iter()
+            .all(|file| is_share_file_valid(&file.read().unwrap()))
+    {
+        return None;
+    }
+    return Some(Arc::new(RwLock::new(ShareFilesContent {
+        files: files.to_vec(),
+        text: None,
+        title: None,
+        url: None,
+    })));
+}
+
 pub fn has_share_content_fields(content: &ShareContent) -> bool {
     let (text, title, url) = match content {
         ShareContent::Title(fields) => (
@@ -171,20 +187,4 @@ pub async fn share_url(
         url: url.to_string(),
     })));
     return share_content(host_share_content, &content).await;
-}
-
-fn files_content(files: &[Ref<ShareFile>]) -> Option<Ref<ShareFilesContent>> {
-    if files.is_empty()
-        || !files
-            .iter()
-            .all(|file| is_share_file_valid(&file.read().unwrap()))
-    {
-        return None;
-    }
-    return Some(Arc::new(RwLock::new(ShareFilesContent {
-        files: files.to_vec(),
-        text: None,
-        title: None,
-        url: None,
-    })));
 }

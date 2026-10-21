@@ -10,3 +10,9 @@ pub use share::{
     share_content, share_content_with_result, share_files, share_text, share_url,
 };
 pub use types::*;
+
+#[cfg(test)]
+use crate::contract as share_api;
+#[cfg(test)]
+#[path = "../tests/common.rs"]
+mod test_support;
