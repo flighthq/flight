@@ -8,7 +8,8 @@ pub enum TextSegmentGranularity {
     Line = 3,
 }
 
-/// A single text segment with position and content information.
+/// A single text segment whose half-open `start..end` range uses UTF-16 code-unit offsets.
+/// The text itself remains UTF-8 in Rust.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct TextSegment {
     pub start: usize,
@@ -17,7 +18,7 @@ pub struct TextSegment {
     pub is_word_like: Option<bool>,
 }
 
-/// A range within text defined by start and end positions.
+/// A half-open range within text, measured in UTF-16 code units.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct TextSegmentRange {
     pub start: usize,
@@ -27,8 +28,8 @@ pub struct TextSegmentRange {
 /// Backend capability for text segmentation.
 ///
 /// In TypeScript this is an interface with a `segment` method. In the Rust IR it is
-/// a struct holding a function pointer. Identity comparison (used to detect the
-/// bundled web backend) works through fn-pointer equality.
+/// a struct holding a function pointer. Returned segment offsets use UTF-16 code units.
+/// Identity comparison (used to detect the bundled web backend) works through fn-pointer equality.
 #[derive(Clone, Copy)]
 pub struct HostTextSegmenterCapability {
     pub segment: fn(&str, TextSegmentGranularity, Option<&str>) -> Vec<TextSegment>,
