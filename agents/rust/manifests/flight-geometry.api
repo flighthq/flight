@@ -25,7 +25,7 @@ src/aabb.rs: pub fn get_aabb_center(out: &mut Vector3, aabb: &Aabb)
 src/aabb.rs: pub fn get_aabb_extents(out: &mut Vector3, aabb: &Aabb)
 src/aabb.rs: pub fn get_aabb_size(out: &mut Vector3, aabb: &Aabb)
 src/aabb.rs: pub fn get_closest_point_on_aabb(out: &mut Vector3, aabb: &Aabb, point: &Vector3)
-src/aabb.rs: pub fn initialize_aabb(out: &mut Aabb, min_x: f32, min_y: f32, min_z: f32, max_x: f32, max_y: f32, max_z: f32,)
+src/aabb.rs: pub fn initialize_aabb(out: &mut Aabb, min: &Vector3, max: &Vector3)
 src/aabb.rs: pub fn intersect_aabb(out: &mut Aabb, a: &Aabb, b: &Aabb)
 src/aabb.rs: pub fn is_aabb_intersecting_aabb(a: &Aabb, b: &Aabb) -> bool
 src/aabb.rs: pub fn is_aabb_intersecting_sphere(aabb: &Aabb, sphere: &BoundingSphere) -> bool
@@ -51,7 +51,7 @@ src/bounding_sphere.rs: pub fn contains_bounding_sphere_point(sphere: &BoundingS
 src/bounding_sphere.rs: pub fn copy_bounding_sphere(out: &mut BoundingSphere, source: &BoundingSphere)
 src/bounding_sphere.rs: pub fn create_bounding_sphere(center_x: f32, center_y: f32, center_z: f32, radius: f32,) -> BoundingSphere
 src/bounding_sphere.rs: pub fn get_closest_point_on_bounding_sphere(out: &mut Vector3, sphere: &BoundingSphere, point: &Vector3,)
-src/bounding_sphere.rs: pub fn initialize_bounding_sphere(out: &mut BoundingSphere, center_x: f32, center_y: f32, center_z: f32, radius: f32,)
+src/bounding_sphere.rs: pub fn initialize_bounding_sphere(out: &mut BoundingSphere, center: &Vector3, radius: f32)
 src/bounding_sphere.rs: pub fn is_bounding_sphere_intersecting_bounding_sphere(a: &BoundingSphere, b: &BoundingSphere,) -> bool
 src/bounding_sphere.rs: pub fn merge_bounding_sphere(out: &mut BoundingSphere, a: &BoundingSphere, b: &BoundingSphere,)
 src/bounding_sphere.rs: pub fn set_bounding_sphere(out: &mut BoundingSphere, center_x: f32, center_y: f32, center_z: f32, radius: f32,)
@@ -247,8 +247,8 @@ src/matrix4.rs: pub fn multiply_matrix4(out: &mut Matrix4, a: &Matrix4, b: &Matr
 src/matrix4.rs: pub fn prepend_matrix4(out: &mut Matrix4, source: &Matrix4, other: &Matrix4)
 src/matrix4.rs: pub fn prepend_rotation_matrix4(out: &mut Matrix4, source: &Matrix4, radians: f32, axis: &Vector4, pivot_point: Option<&Vector4>,)
 src/matrix4.rs: pub fn prepend_scale_matrix4(out: &mut Matrix4, source: &Matrix4, x_scale: f32, y_scale: f32, z_scale: f32,)
-src/matrix4.rs: pub fn prepend_translation_matrix4(out: &mut Matrix4, source: &Matrix4, x: f32, y: f32, z: f32,)
-src/matrix4.rs: pub fn rotate_matrix4(out: &mut Matrix4, source: &Matrix4, axis: &Vector3, radians: f32,)
+src/matrix4.rs: pub fn prepend_translation_matrix4(out: &mut Matrix4, source: &Matrix4, x: f32, y: f32, z: f32)
+src/matrix4.rs: pub fn rotate_matrix4(out: &mut Matrix4, source: &Matrix4, axis: &Vector3, radians: f32)
 src/matrix4.rs: pub fn scale_matrix4(out: &mut Matrix4, source: &Matrix4, sx: f32, sy: f32, sz: f32,)
 src/matrix4.rs: pub fn set_matrix4(out: &mut Matrix4, m00: f32, m01: f32, m02: f32, m03: f32, m10: f32, m11: f32, m12: f32, m13: f32, m20: f32, m21: f32, m22: f32, m23: f32, m30: f32, m31: f32, m32: f32, m33: f32,)
 src/matrix4.rs: pub fn set_matrix4_element(out: &mut Matrix4, row: usize, column: usize, value: f32)
@@ -359,7 +359,7 @@ src/ray3d.rs: pub fn create_ray3d(origin_x: f32, origin_y: f32, origin_z: f32, d
 src/ray3d.rs: pub fn get_closest_point_between_ray3ds(out_a: &mut Vector3, out_b: &mut Vector3, a: &Ray3D, b: &Ray3D,)
 src/ray3d.rs: pub fn get_closest_point_on_ray3d(out: &mut Vector3, ray: &Ray3D, point: &Vector3)
 src/ray3d.rs: pub fn get_ray3d_point_at(out: &mut Vector3, ray: &Ray3D, t: f32)
-src/ray3d.rs: pub fn initialize_ray3d(out: &mut Ray3D, origin_x: f32, origin_y: f32, origin_z: f32, direction_x: f32, direction_y: f32, direction_z: f32,)
+src/ray3d.rs: pub fn initialize_ray3d(out: &mut Ray3D, origin: &Vector3, direction: &Vector3)
 src/ray3d.rs: pub fn intersect_ray3d_aabb(ray: &Ray3D, aabb: &Aabb) -> f32
 src/ray3d.rs: pub fn intersect_ray3d_plane(ray: &Ray3D, plane: &Plane) -> f32
 src/ray3d.rs: pub fn intersect_ray3d_sphere(ray: &Ray3D, sphere: &BoundingSphere) -> f32
@@ -407,45 +407,45 @@ src/rectangle.rs: impl Rectangle :: fn top(&self) -> f32
 src/rectangle.rs: impl Rectangle :: fn top_left(&self) -> Vector2
 src/rectangle.rs: pub fn clone_rectangle(source: &Rectangle) -> Rectangle
 src/rectangle.rs: pub fn compute_rectangle_intersection(out: &mut Rectangle, a: &Rectangle, b: &Rectangle)
-src/rectangle.rs: pub fn contains_rectangle_point(rect: &Rectangle, point: &Vector2) -> bool
-src/rectangle.rs: pub fn contains_rectangle_point_xy(rect: &Rectangle, x: f32, y: f32) -> bool
+src/rectangle.rs: pub fn contains_rectangle_point(source: &Rectangle, vector: &Vector2) -> bool
+src/rectangle.rs: pub fn contains_rectangle_point_xy(source: &Rectangle, x: f32, y: f32) -> bool
 src/rectangle.rs: pub fn copy_rectangle(out: &mut Rectangle, source: &Rectangle)
 src/rectangle.rs: pub fn create_rectangle(x: f32, y: f32, width: f32, height: f32) -> Rectangle
-src/rectangle.rs: pub fn encloses_rectangle(rect: &Rectangle, other: &Rectangle) -> bool
+src/rectangle.rs: pub fn encloses_rectangle(source: &Rectangle, other: &Rectangle) -> bool
 src/rectangle.rs: pub fn equals_rectangle(a: Option<&Rectangle>, b: Option<&Rectangle>) -> bool
-src/rectangle.rs: pub fn expand_rectangle_to_point(out: &mut Rectangle, source: &Rectangle, point: &Vector2)
-src/rectangle.rs: pub fn get_rectangle_bottom(rect: &Rectangle) -> f32
-src/rectangle.rs: pub fn get_rectangle_bottom_right(out: &mut Vector2, rect: &Rectangle)
-src/rectangle.rs: pub fn get_rectangle_left(rect: &Rectangle) -> f32
-src/rectangle.rs: pub fn get_rectangle_max_x(rect: &Rectangle) -> f32
-src/rectangle.rs: pub fn get_rectangle_max_y(rect: &Rectangle) -> f32
-src/rectangle.rs: pub fn get_rectangle_min_x(rect: &Rectangle) -> f32
-src/rectangle.rs: pub fn get_rectangle_min_y(rect: &Rectangle) -> f32
-src/rectangle.rs: pub fn get_rectangle_normalized_bottom_right(out: &mut Vector2, rect: &Rectangle)
-src/rectangle.rs: pub fn get_rectangle_normalized_top_left(out: &mut Vector2, rect: &Rectangle)
-src/rectangle.rs: pub fn get_rectangle_right(rect: &Rectangle) -> f32
-src/rectangle.rs: pub fn get_rectangle_size(out: &mut Vector2, rect: &Rectangle)
-src/rectangle.rs: pub fn get_rectangle_top(rect: &Rectangle) -> f32
-src/rectangle.rs: pub fn get_rectangle_top_left(out: &mut Vector2, rect: &Rectangle)
+src/rectangle.rs: pub fn expand_rectangle_to_point(out: &mut Rectangle, source_rect: &Rectangle, source_vec2: &Vector2,)
+src/rectangle.rs: pub fn get_rectangle_bottom(source: &Rectangle) -> f32
+src/rectangle.rs: pub fn get_rectangle_bottom_right(out: &mut Vector2, source: &Rectangle)
+src/rectangle.rs: pub fn get_rectangle_left(source: &Rectangle) -> f32
+src/rectangle.rs: pub fn get_rectangle_max_x(source: &Rectangle) -> f32
+src/rectangle.rs: pub fn get_rectangle_max_y(source: &Rectangle) -> f32
+src/rectangle.rs: pub fn get_rectangle_min_x(source: &Rectangle) -> f32
+src/rectangle.rs: pub fn get_rectangle_min_y(source: &Rectangle) -> f32
+src/rectangle.rs: pub fn get_rectangle_normalized_bottom_right(out: &mut Vector2, source: &Rectangle)
+src/rectangle.rs: pub fn get_rectangle_normalized_top_left(out: &mut Vector2, source: &Rectangle)
+src/rectangle.rs: pub fn get_rectangle_right(source: &Rectangle) -> f32
+src/rectangle.rs: pub fn get_rectangle_size(out: &mut Vector2, source: &Rectangle)
+src/rectangle.rs: pub fn get_rectangle_top(source: &Rectangle) -> f32
+src/rectangle.rs: pub fn get_rectangle_top_left(out: &mut Vector2, source: &Rectangle)
 src/rectangle.rs: pub fn inflate_rectangle(out: &mut Rectangle, source: &Rectangle, dx: f32, dy: f32)
 src/rectangle.rs: pub fn initialize_rectangle(out: &mut Rectangle, x: f32, y: f32, width: f32, height: f32)
 src/rectangle.rs: pub fn intersects_rectangle(a: &Rectangle, b: &Rectangle) -> bool
-src/rectangle.rs: pub fn is_empty_rectangle(rect: &Rectangle) -> bool
-src/rectangle.rs: pub fn is_flipped_x_rectangle(rect: &Rectangle) -> bool
-src/rectangle.rs: pub fn is_flipped_y_rectangle(rect: &Rectangle) -> bool
-src/rectangle.rs: pub fn merge_rectangle(out: &mut Rectangle, a: &Rectangle, b: &Rectangle)
+src/rectangle.rs: pub fn is_empty_rectangle(source: &Rectangle) -> bool
+src/rectangle.rs: pub fn is_flipped_x_rectangle(source: &Rectangle) -> bool
+src/rectangle.rs: pub fn is_flipped_y_rectangle(source: &Rectangle) -> bool
+src/rectangle.rs: pub fn merge_rectangle(out: &mut Rectangle, source: &Rectangle, other: &Rectangle)
 src/rectangle.rs: pub fn normalize_rectangle(out: &mut Rectangle, source: &Rectangle)
 src/rectangle.rs: pub fn offset_rectangle(out: &mut Rectangle, source: &Rectangle, dx: f32, dy: f32)
 src/rectangle.rs: pub fn offset_rectangle_by_point(out: &mut Rectangle, source: &Rectangle, point: &Vector2)
 src/rectangle.rs: pub fn set_empty_rectangle(out: &mut Rectangle)
 src/rectangle.rs: pub fn set_rectangle(out: &mut Rectangle, x: f32, y: f32, width: f32, height: f32)
-src/rectangle.rs: pub fn set_rectangle_bottom(rect: &mut Rectangle, value: f32)
-src/rectangle.rs: pub fn set_rectangle_bottom_right(rect: &mut Rectangle, point: &Vector2)
-src/rectangle.rs: pub fn set_rectangle_left(rect: &mut Rectangle, value: f32)
-src/rectangle.rs: pub fn set_rectangle_right(rect: &mut Rectangle, value: f32)
-src/rectangle.rs: pub fn set_rectangle_size(rect: &mut Rectangle, size: &Vector2)
-src/rectangle.rs: pub fn set_rectangle_top(rect: &mut Rectangle, value: f32)
-src/rectangle.rs: pub fn set_rectangle_top_left(rect: &mut Rectangle, point: &Vector2)
+src/rectangle.rs: pub fn set_rectangle_bottom(target: &mut Rectangle, value: f32)
+src/rectangle.rs: pub fn set_rectangle_bottom_right(target: &mut Rectangle, point: &Vector2)
+src/rectangle.rs: pub fn set_rectangle_left(target: &mut Rectangle, value: f32)
+src/rectangle.rs: pub fn set_rectangle_right(target: &mut Rectangle, value: f32)
+src/rectangle.rs: pub fn set_rectangle_size(out: &mut Rectangle, size: &Vector2)
+src/rectangle.rs: pub fn set_rectangle_top(target: &mut Rectangle, value: f32)
+src/rectangle.rs: pub fn set_rectangle_top_left(out: &mut Rectangle, point: &Vector2)
 src/transform2d.rs: #[derive(Debug, Clone, PartialEq)] pub struct Transform2D { runtime: EntityRuntimeSlot, pub x: f32, pub y: f32, pub rotation: f32, pub scale_x: f32, pub scale_y: f32, pub skew_x: f32, pub skew_y: f32, pub pivot_x: f32, pub pivot_y: f32, }
 src/transform2d.rs: impl Default for Transform2D
 src/transform2d.rs: impl Default for Transform2D :: fn default() -> Self
@@ -466,7 +466,7 @@ src/transform3d.rs: impl Transform3D :: fn new() -> Self
 src/transform3d.rs: pub fn compose_matrix4_from_transform3d(out: &mut Matrix4, source: &Transform3D)
 src/transform3d.rs: pub fn create_transform3d() -> Transform3D
 src/transform3d.rs: pub fn decompose_matrix4_to_transform3d(out: &mut Transform3D, m: &Matrix4)
-src/transform3d.rs: pub fn initialize_transform3d(out: &mut Transform3D)
+src/transform3d.rs: pub fn initialize_transform3d(out: &mut Transform3D, position: &Vector3, rotation: &Quaternion, scale: &Vector3,)
 src/vector2.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct Vector2 { runtime: EntityRuntimeSlot, pub x: f32, pub y: f32, }
 src/vector2.rs: impl Entity for Vector2
 src/vector2.rs: impl Entity for Vector2 :: fn entity_runtime(&self) -> &EntityRuntimeSlot

@@ -625,6 +625,7 @@ tests/ray3d_test.rs: get_closest_point_on_ray3d::writes_origin_for_ray_with_no_d
 tests/ray3d_test.rs: get_ray3d_point_at::advances_along_direction_by_t
 tests/ray3d_test.rs: get_ray3d_point_at::is_safe_when_out_aliases_ray_origin
 tests/ray3d_test.rs: get_ray3d_point_at::returns_origin_when_t_is_zero
+tests/ray3d_test.rs: initialize_ray3d::copies_the_origin_and_direction_vectors
 tests/ray3d_test.rs: intersect_ray3d_aabb::enters_each_of_the_six_sides_at_the_correct_distance
 tests/ray3d_test.rs: intersect_ray3d_aabb::handles_axis_aligned_rays
 tests/ray3d_test.rs: intersect_ray3d_aabb::returns_entry_t_from_outside
@@ -777,6 +778,7 @@ tests/transform2d_test.rs: decompose_matrix_to_transform2d::round_trips_every_no
 tests/transform3d_test.rs: compose_matrix4_from_transform3d::composes_translation_rotation_and_scale_into_a_matrix
 tests/transform3d_test.rs: create_transform3d::defaults_to_identity_zero_translation_identity_rotation_unit_scale
 tests/transform3d_test.rs: decompose_matrix4_to_transform3d::round_trips_a_shear_free_compose
+tests/transform3d_test.rs: initialize_transform3d::copies_position_rotation_and_scale
 tests/vector2_test.rs: add_vector2::adds_two_coordinates
 tests/vector2_test.rs: add_vector2::works_correctly_if_first_vector_is_out
 tests/vector2_test.rs: add_vector2::works_correctly_if_second_vector_is_out
