@@ -5,6 +5,35 @@ use flight_path::{PathWinding, create_path, flatten_path, get_path_bounds};
 
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use super::*;
+
+    #[test]
+    fn glyphoutlinesource_allocate_glyph_rasterizer_backend_matches_the_free_function() {
+        let source = Arc::new(GlyphOutlineSource {
+            get_glyph_outline: Arc::new(|_out, _glyph_index| false),
+            get_glyph_outline_advance: Arc::new(|_glyph_index| 0.0),
+            get_glyph_outline_index_for_code_point: Arc::new(|_code_point| -1),
+            get_glyph_outline_metrics: Arc::new(GlyphOutlineMetrics::default),
+        });
+        let method = source.allocate_glyph_rasterizer_backend();
+        let free = allocate_glyph_rasterizer_backend_from_glyph_outline_source(source.clone());
+        let method_provider = method
+            .provider
+            .clone()
+            .downcast::<GlyphOutlineSource>()
+            .unwrap();
+        let free_provider = free
+            .provider
+            .clone()
+            .downcast::<GlyphOutlineSource>()
+            .unwrap();
+        assert!(Arc::ptr_eq(&source, &method_provider));
+        assert!(Arc::ptr_eq(&source, &free_provider));
+    }
+}
+
 /// Replaces an existing capability with callbacks bound to one exact, shared outline source.
 pub fn initialize_glyph_rasterizer_backend_from_glyph_outline_source(
     out: &mut HostGlyphRasterizerCapability,
@@ -199,3 +228,9 @@ fn resolve_glyph_outline_scale(units_per_em: f32, font_size: f32) -> Option<f32>
 const RASTER_GUARD: i32 = 1;
 const RASTER_SAMPLE_AXIS: u32 = 4;
 const RASTER_SAMPLE_COUNT: u32 = RASTER_SAMPLE_AXIS * RASTER_SAMPLE_AXIS;
+
+impl GlyphOutlineSource {
+    pub fn allocate_glyph_rasterizer_backend(self: &Arc<Self>) -> HostGlyphRasterizerCapability {
+        return allocate_glyph_rasterizer_backend_from_glyph_outline_source(self.clone());
+    }
+}

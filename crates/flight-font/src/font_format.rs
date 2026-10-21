@@ -2,6 +2,20 @@ use flight_buffer::get_array_buffer_storage;
 
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use super::*;
+
+    #[test]
+    fn fontformatdata_detect_font_format_matches_detect_font_format() {
+        let bytes = b"wOF2";
+        let method =
+            FontFormatData::Uint8Array(FontFormatUint8Array { bytes }).detect_font_format();
+        let free = detect_font_format(FontFormatData::Uint8Array(FontFormatUint8Array { bytes }));
+        assert_eq!(method, free);
+    }
+}
+
 /// Detects TrueType, OpenType, WOFF, WOFF2, or a font collection from its four-byte signature.
 pub fn detect_font_format(bytes: FontFormatData<'_>) -> Option<&'static str> {
     return match bytes {
@@ -41,4 +55,10 @@ pub fn infer_font_format_from_url(url: &str) -> Option<&'static str> {
         "woff2" => Some("woff2"),
         _ => None,
     };
+}
+
+impl FontFormatData<'_> {
+    pub fn detect_font_format(self) -> Option<&'static str> {
+        return detect_font_format(self);
+    }
 }

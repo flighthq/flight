@@ -5,6 +5,65 @@ use flight_entity::Uint8Array;
 use flight_hostcapability::ProviderRef;
 use flight_path::Path;
 
+#[cfg(test)]
+mod sugar_tests {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    use super::*;
+
+    fn options() -> GlyphRasterizeOptions {
+        return GlyphRasterizeOptions {
+            font_family: "embedded".to_string(),
+            font_size: 16.0,
+            font_style: None,
+            font_weight: None,
+        };
+    }
+
+    #[test]
+    fn hostglyphrasterizercapability_measure_metrics_matches_the_callback() {
+        let backend = HostGlyphRasterizerCapability {
+            measure_metrics: Some(Arc::new(|options| {
+                return Some(GlyphMetrics {
+                    ascent: options.font_size,
+                    descent: 2.0,
+                    line_gap: 1.0,
+                });
+            })),
+            provider: Arc::new(()),
+            rasterize: Arc::new(|_code_point, _options| None),
+        };
+        let options = options();
+        assert_eq!(
+            backend.measure_metrics(&options),
+            (backend.measure_metrics.as_ref().unwrap())(&options)
+        );
+    }
+
+    #[test]
+    fn hostglyphrasterizercapability_rasterize_preserves_options_identity() {
+        let seen = Arc::new(AtomicUsize::new(0));
+        let record = seen.clone();
+        let backend = HostGlyphRasterizerCapability {
+            measure_metrics: None,
+            provider: Arc::new(()),
+            rasterize: Arc::new(move |_code_point, options| {
+                record.store(
+                    options as *const GlyphRasterizeOptions as usize,
+                    Ordering::SeqCst,
+                );
+                return None;
+            }),
+        };
+        let options = options();
+        assert!(backend.rasterize(0x41, &options).is_none());
+        assert_eq!(
+            seen.load(Ordering::SeqCst),
+            &options as *const GlyphRasterizeOptions as usize
+        );
+    }
+}
+
 /// The two byte containers accepted by `detect_font_format`.
 pub enum FontFormatData<'a> {
     ArrayBuffer(FontFormatArrayBuffer<'a>),
