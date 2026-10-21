@@ -1,4 +1,5 @@
-use flight_adjustments::*;
+use flight_adjustments::contract::*;
+use flight_entity::allocate_entity;
 
 mod create_tint_adjustment {
     use super::*;
@@ -36,7 +37,7 @@ mod initialize_tint_adjustment {
 
     #[test]
     fn is_the_construction_initializer_of_create_tint_adjustment() {
-        let mut out = TintAdjustment::default();
+        let mut out: TintAdjustment = allocate_entity();
         initialize_tint_adjustment(&mut out, 0xff0000ff);
         assert_eq!(out.color_matrix[0], 1.0);
         assert_eq!(out.color_matrix[6], 0.0);

@@ -17,29 +17,6 @@
 /// Required length of a valid color-matrix array.
 pub const COLOR_MATRIX_LENGTH: usize = 20;
 
-/// Evaluates `matrix` against a packed `0xRRGGBBAA` color. Useful for previews and tests; pure
-/// math, no surface operations. Input bytes are normalized before applying the matrix; the result is
-/// clamped to 0-1 and repacked as `0xRRGGBBAA`.
-pub fn apply_color_matrix_to_color(matrix: &[f32; 20], packed_rgba: u32) -> u32 {
-    let r = ((packed_rgba >> 24) & 0xff) as f32 / 255.0;
-    let g = ((packed_rgba >> 16) & 0xff) as f32 / 255.0;
-    let b = ((packed_rgba >> 8) & 0xff) as f32 / 255.0;
-    let a = (packed_rgba & 0xff) as f32 / 255.0;
-    let r_out = clamp_normalized_byte(matrix[0] * r + matrix[1] * g + matrix[2] * b + matrix[3] * a + matrix[4]);
-    let g_out = clamp_normalized_byte(matrix[5] * r + matrix[6] * g + matrix[7] * b + matrix[8] * a + matrix[9]);
-    let b_out = clamp_normalized_byte(matrix[10] * r + matrix[11] * g + matrix[12] * b + matrix[13] * a + matrix[14]);
-    let a_out = clamp_normalized_byte(matrix[15] * r + matrix[16] * g + matrix[17] * b + matrix[18] * a + matrix[19]);
-    return (r_out << 24) | (g_out << 16) | (b_out << 8) | a_out;
-}
-
-/// Composes `source` into `target` in place: `target = target x source` (applies source first,
-/// then target). Matches OpenFL color-matrix `concat` semantics. Alias-safe: `source` may be
-/// `target`.
-pub fn concat_color_matrix(target: &mut [f32; 20], source: &[f32; 20]) {
-    let target_copy = *target;
-    multiply_color_matrix(target, &target_copy, source);
-}
-
 /// Returns a color matrix that adds `amount` to the brightness offset of each channel. Positive
 /// `amount` brightens; negative darkens. `amount` is normalized-linear. Allocates a new array.
 pub fn create_brightness_color_matrix(amount: f32) -> [f32; 20] {
@@ -277,6 +254,34 @@ pub fn create_white_balance_color_matrix(temperature: f32, tint: f32) -> [f32; 2
     ];
 }
 
+/// Evaluates `matrix` against a packed `0xRRGGBBAA` color. Useful for previews and tests; pure
+/// math, no surface operations. Input bytes are normalized before applying the matrix; the result is
+/// clamped to 0-1 and repacked as `0xRRGGBBAA`.
+pub fn apply_color_matrix_to_color(matrix: &[f32; 20], packed_rgba: u32) -> u32 {
+    let r = ((packed_rgba >> 24) & 0xff) as f32 / 255.0;
+    let g = ((packed_rgba >> 16) & 0xff) as f32 / 255.0;
+    let b = ((packed_rgba >> 8) & 0xff) as f32 / 255.0;
+    let a = (packed_rgba & 0xff) as f32 / 255.0;
+    let r_out = clamp_normalized_byte(matrix[0] * r + matrix[1] * g + matrix[2] * b + matrix[3] * a + matrix[4]);
+    let g_out = clamp_normalized_byte(matrix[5] * r + matrix[6] * g + matrix[7] * b + matrix[8] * a + matrix[9]);
+    let b_out = clamp_normalized_byte(matrix[10] * r + matrix[11] * g + matrix[12] * b + matrix[13] * a + matrix[14]);
+    let a_out = clamp_normalized_byte(matrix[15] * r + matrix[16] * g + matrix[17] * b + matrix[18] * a + matrix[19]);
+    return (r_out << 24) | (g_out << 16) | (b_out << 8) | a_out;
+}
+
+fn clamp_normalized_byte(v: f32) -> u32 {
+    let clamped = if v * 255.0 < 0.0 { 0.0 } else if v * 255.0 > 255.0 { 255.0 } else { v * 255.0 };
+    return (clamped + 0.5) as u32;
+}
+
+/// Composes `source` into `target` in place: `target = target x source` (applies source first,
+/// then target). Matches OpenFL color-matrix `concat` semantics. Alias-safe: `source` may be
+/// `target`.
+pub fn concat_color_matrix(target: &mut [f32; 20], source: &[f32; 20]) {
+    let target_copy = *target;
+    multiply_color_matrix(target, &target_copy, source);
+}
+
 /// Fuses a run of color matrices into ONE matrix that applies them left-to-right (index 0 first, then
 /// 1, ...). This is the matrix-tier fuse: a stack of consecutive matrix-tier adjustments collapses to a
 /// single 4x5 matrix. Order matters (matrix composition is not commutative); an empty list yields the
@@ -296,6 +301,7 @@ pub fn fuse_color_matrices(matrices: &[&[f32; 20]]) -> [f32; 20] {
 /// Composes matrix `b` applied first and then `a`. The result is equivalent to applying `b` to a
 /// color and then `a` to the result. The result is written to `out`. Alias-safe: `out` may be `a`
 /// or `b`.
+// flight-lint: allow(conform-params) D9b out-first: TS (a, b, out) becomes (out, a, b)
 pub fn multiply_color_matrix(out: &mut [f32; 20], a: &[f32; 20], b: &[f32; 20]) {
     let a0 = a[0]; let a1 = a[1]; let a2 = a[2]; let a3 = a[3]; let a4 = a[4];
     let a5 = a[5]; let a6 = a[6]; let a7 = a[7]; let a8 = a[8]; let a9 = a[9];
@@ -329,9 +335,4 @@ pub fn multiply_color_matrix(out: &mut [f32; 20], a: &[f32; 20], b: &[f32; 20]) 
     out[17] = a15 * b2 + a16 * b7 + a17 * b12 + a18 * b17;
     out[18] = a15 * b3 + a16 * b8 + a17 * b13 + a18 * b18;
     out[19] = a15 * b4 + a16 * b9 + a17 * b14 + a18 * b19 + a19;
-}
-
-fn clamp_normalized_byte(v: f32) -> u32 {
-    let clamped = if v * 255.0 < 0.0 { 0.0 } else if v * 255.0 > 255.0 { 255.0 } else { v * 255.0 };
-    return (clamped + 0.5) as u32;
 }

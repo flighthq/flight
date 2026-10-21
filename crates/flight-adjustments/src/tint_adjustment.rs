@@ -1,20 +1,15 @@
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
+
 /// Builds a diagonal-affine tint from a packed `0xRRGGBBAA` color: each channel scale is that byte
 /// divided by 255, with zero bias and no channel mixing. Matrix-tier.
 #[derive(Debug, Clone)]
 pub struct TintAdjustment {
+    runtime: EntityRuntimeSlot,
     pub color_matrix: [f32; 20],
 }
 
-impl Default for TintAdjustment {
-    fn default() -> Self {
-        return Self {
-            color_matrix: [0.0; 20],
-        };
-    }
-}
-
 pub fn create_tint_adjustment(rgba: u32) -> TintAdjustment {
-    let mut out = TintAdjustment::default();
+    let mut out: TintAdjustment = allocate_entity();
     initialize_tint_adjustment(&mut out, rgba);
     return out;
 }
@@ -32,3 +27,14 @@ pub fn initialize_tint_adjustment(out: &mut TintAdjustment, rgba: u32) {
     ];
     out.color_matrix = color_matrix;
 }
+
+impl Default for TintAdjustment {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            color_matrix: [0.0; 20],
+        };
+    }
+}
+
+flight_entity::impl_entity!(TintAdjustment);

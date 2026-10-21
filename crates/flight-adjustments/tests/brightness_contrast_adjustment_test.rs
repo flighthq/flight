@@ -1,4 +1,5 @@
-use flight_adjustments::*;
+use flight_adjustments::contract::*;
+use flight_entity::allocate_entity;
 
 mod create_brightness_contrast_adjustment {
     use super::*;
@@ -30,7 +31,7 @@ mod initialize_brightness_contrast_adjustment {
 
     #[test]
     fn is_the_construction_initializer_of_create_brightness_contrast_adjustment() {
-        let mut out = BrightnessContrastAdjustment::default();
+        let mut out: BrightnessContrastAdjustment = allocate_entity();
         initialize_brightness_contrast_adjustment(&mut out, 0.0, 1.0);
         assert_eq!(apply_color_matrix_to_color(&out.color_matrix, 0x3366aaff), 0x3366aaff);
     }

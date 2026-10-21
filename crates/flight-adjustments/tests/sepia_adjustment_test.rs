@@ -1,4 +1,5 @@
-use flight_adjustments::*;
+use flight_adjustments::contract::*;
+use flight_entity::allocate_entity;
 
 mod create_sepia_adjustment {
     use super::*;
@@ -24,7 +25,7 @@ mod initialize_sepia_adjustment {
 
     #[test]
     fn is_the_construction_initializer_of_create_sepia_adjustment() {
-        let mut out = SepiaAdjustment::default();
+        let mut out: SepiaAdjustment = allocate_entity();
         initialize_sepia_adjustment(&mut out, 1.0);
         let red = apply_color_matrix_to_color(&out.color_matrix, 0xff0000ff);
         assert_eq!((red >> 24) & 0xff, (0.393_f32 * 255.0).round() as u32);

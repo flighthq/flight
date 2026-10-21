@@ -11,7 +11,7 @@ name = "tests"
 path = "tests/main.rs"
 
 [dependencies]
-flight-color = { workspace = true }
+flight-entity = { workspace = true }
 
 [lints]
 workspace = true

@@ -1,4 +1,5 @@
-use flight_adjustments::*;
+use flight_adjustments::contract::*;
+use flight_entity::allocate_entity;
 
 mod create_grayscale_adjustment {
     use super::*;
@@ -29,7 +30,7 @@ mod initialize_grayscale_adjustment {
 
     #[test]
     fn is_the_construction_initializer_of_create_grayscale_adjustment() {
-        let mut out = GrayscaleAdjustment::default();
+        let mut out: GrayscaleAdjustment = allocate_entity();
         initialize_grayscale_adjustment(&mut out, 1.0);
         let result = apply_color_matrix_to_color(&out.color_matrix, 0xff0000ff);
         let r = (result >> 24) & 0xff;

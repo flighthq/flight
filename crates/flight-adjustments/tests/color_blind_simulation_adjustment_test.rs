@@ -1,4 +1,5 @@
-use flight_adjustments::*;
+use flight_adjustments::contract::*;
+use flight_entity::allocate_entity;
 
 mod create_color_blind_simulation_adjustment {
     use super::*;
@@ -35,7 +36,7 @@ mod initialize_color_blind_simulation_adjustment {
 
     #[test]
     fn is_the_construction_initializer_of_create_color_blind_simulation_adjustment() {
-        let mut out = ColorBlindSimulationAdjustment::default();
+        let mut out: ColorBlindSimulationAdjustment = allocate_entity();
         initialize_color_blind_simulation_adjustment(&mut out, ColorBlindType::Deuteranopia);
         assert_eq!(apply_color_matrix_to_color(&out.color_matrix, 0xff0000ff), 0x9fb300ff);
     }

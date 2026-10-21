@@ -1,4 +1,4 @@
-use flight_adjustments::*;
+use flight_adjustments::contract::*;
 
 const WHITE: u32 = 0xffffffff;
 const BLACK: u32 = 0x000000ff;

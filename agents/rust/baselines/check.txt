@@ -589,48 +589,6 @@ f64	crates/flight-statechart/src/types.rs	`struct StatechartCondition` uses f64 
 f64	crates/flight-statechart/src/types.rs	`struct StatechartInput` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/types.rs	`struct StatechartInstance` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/types.rs	`struct StatechartTransition` uses f64 without an `allow(f64) <reason>` declaration
-file-structure	crates/flight-adjustments/src/brightness_contrast_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/brightness_contrast_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/channel_mixer_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/channel_mixer_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_blind_simulation_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_blind_simulation_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_blind_simulation_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_grade_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_grade_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_lut.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_lut.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_lut.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_lut_cache.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_lut_cache.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_lut_cache.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_lut_cache.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_lut_cache.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_matrix_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_matrix_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_matrix_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_matrix_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_scale_bias_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_scale_bias_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_scale_bias_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_scale_bias_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/color_scale_bias_adjustment.rs	struct appears after a later section
-file-structure	crates/flight-adjustments/src/exposure_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/exposure_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/grayscale_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/grayscale_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/hue_saturation_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/hue_saturation_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/invert_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/invert_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/lift_gamma_gain_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/lift_gamma_gain_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/lookup_table_grade_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/lookup_table_grade_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/sepia_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/sepia_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/tint_adjustment.rs	fn appears after a later section
-file-structure	crates/flight-adjustments/src/tint_adjustment.rs	fn appears after a later section
 file-structure	crates/flight-animation/src/types.rs	fn appears after a later section
 file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
 file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
@@ -963,19 +921,6 @@ file-structure	crates/flight-tween/src/types.rs	struct appears after a later sec
 file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
 file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
 file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
-fn-order	crates/flight-adjustments/src/adjustment.rs	`initialize_adjustment` should come before `get_adjustment_kind`
-fn-order	crates/flight-adjustments/src/color_lut.rs	`clamp01` should come before `sample_color_lut`
-fn-order	crates/flight-adjustments/src/color_lut_adjustment.rs	`apply_color_grade_transform` should come before `apply_color_matrix_transform`
-fn-order	crates/flight-adjustments/src/color_lut_adjustment.rs	`apply_color_matrix_transform` should come before `apply_color_transform`
-fn-order	crates/flight-adjustments/src/color_lut_adjustment.rs	`apply_color_transform` should come before `get_adjustment_color_transform`
-fn-order	crates/flight-adjustments/src/color_lut_adjustment.rs	`clamp01` should come before `is_color_lut_adjustment`
-fn-order	crates/flight-adjustments/src/color_lut_adjustment.rs	`initialize_color_lut_adjustment` should come before `apply_lookup_table_grade_transform`
-fn-order	crates/flight-adjustments/src/color_lut_cache.rs	`adjustment_signature` should come before `color_lut_run_signature`
-fn-order	crates/flight-adjustments/src/color_lut_cache.rs	`create_color_lut_cache` should come before `bake_color_lut_for_run`
-fn-order	crates/flight-adjustments/src/color_matrix_adjustment.rs	`initialize_color_matrix_adjustment` should come before `get_adjustment_color_matrix`
-fn-order	crates/flight-adjustments/src/color_matrix_math.rs	`clamp_normalized_byte` should come before `multiply_color_matrix`
-fn-order	crates/flight-adjustments/src/color_matrix_math.rs	`create_brightness_color_matrix` should come before `concat_color_matrix`
-fn-order	crates/flight-adjustments/src/color_scale_bias_adjustment.rs	`create_color_scale_bias_adjustment` should come before `initialize_color_scale_bias`
 fn-order	crates/flight-animation/src/animation_blend.rs	`create_animation_sample_accumulator` should come before `blend_animation_samples`
 fn-order	crates/flight-animation/src/animation_blend.rs	`initialize_animation_sample_accumulator` should come before `finish_animation_sample`
 fn-order	crates/flight-animation/src/animation_blend_tree.rs	`assert_compatible_animation_blend_tree_channels` should come before `set_animation_blend_tree_input_weight`
@@ -1332,20 +1277,6 @@ missing-test-file	crates/flight-statechart/src/types.rs	no test file (expected c
 missing-test-file	crates/flight-textbidi/src/types.rs	no test file (expected crates/flight-textbidi/tests/types_test.rs)
 missing-test-file	crates/flight-tween/src/internal.rs	no test file (expected crates/flight-tween/tests/internal_test.rs)
 missing-test-file	crates/flight-tween/src/types.rs	no test file (expected crates/flight-tween/tests/types_test.rs)
-sugar-delegates	crates/flight-adjustments/src/adjustment.rs	`impl From for Adjustment::from` does not call a free function; impl sugar must delegate to the free-function contract
-sugar-delegates	crates/flight-adjustments/src/adjustment.rs	`impl From for Adjustment::from` does not call a free function; impl sugar must delegate to the free-function contract
-sugar-delegates	crates/flight-adjustments/src/adjustment.rs	`impl From for Adjustment::from` does not call a free function; impl sugar must delegate to the free-function contract
-sugar-delegates	crates/flight-adjustments/src/adjustment.rs	`impl From for Adjustment::from` does not call a free function; impl sugar must delegate to the free-function contract
-sugar-delegates	crates/flight-adjustments/src/adjustment.rs	`impl From for Adjustment::from` does not call a free function; impl sugar must delegate to the free-function contract
-sugar-delegates	crates/flight-adjustments/src/adjustment.rs	`impl From for Adjustment::from` does not call a free function; impl sugar must delegate to the free-function contract
-sugar-delegates	crates/flight-adjustments/src/adjustment.rs	`impl From for Adjustment::from` does not call a free function; impl sugar must delegate to the free-function contract
-sugar-delegates	crates/flight-adjustments/src/adjustment.rs	`impl From for Adjustment::from` does not call a free function; impl sugar must delegate to the free-function contract
-sugar-delegates	crates/flight-adjustments/src/adjustment.rs	`impl From for Adjustment::from` does not call a free function; impl sugar must delegate to the free-function contract
-sugar-delegates	crates/flight-adjustments/src/adjustment.rs	`impl From for Adjustment::from` does not call a free function; impl sugar must delegate to the free-function contract
-sugar-delegates	crates/flight-adjustments/src/adjustment.rs	`impl From for Adjustment::from` does not call a free function; impl sugar must delegate to the free-function contract
-sugar-delegates	crates/flight-adjustments/src/adjustment.rs	`impl From for Adjustment::from` does not call a free function; impl sugar must delegate to the free-function contract
-sugar-delegates	crates/flight-adjustments/src/adjustment.rs	`impl From for Adjustment::from` does not call a free function; impl sugar must delegate to the free-function contract
-sugar-delegates	crates/flight-adjustments/src/adjustment.rs	`impl From for Adjustment::from` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-animation/src/types.rs	`impl From for StateRef::from` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-animation/src/types.rs	`impl From for StateRef::from` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-collision/src/types.rs	`impl CollisionShape2D::kind` does not call a free function; impl sugar must delegate to the free-function contract
@@ -1414,21 +1345,6 @@ test-coverage	crates/flight-spatial/src/uniform_grid.rs	`create_uniform_grid_spa
 test-coverage	crates/flight-spatial/src/uniform_grid_3d.rs	`initialize_spatial_aabb_3d` is not tested
 test-coverage	crates/flight-textsegment/src/text_segmenter_backend.rs	`create_web_text_segmenter_backend` is not tested
 test-coverage	crates/flight-textsegment/src/text_segmenter_backend.rs	`has_intl_segmenter` is not tested
-test-default-call	crates/flight-adjustments/tests/brightness_contrast_adjustment_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-adjustments/tests/channel_mixer_adjustment_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-adjustments/tests/color_blind_simulation_adjustment_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-adjustments/tests/color_grade_adjustment_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-adjustments/tests/color_lut_cache_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-adjustments/tests/color_matrix_adjustment_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-adjustments/tests/color_scale_bias_adjustment_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-adjustments/tests/exposure_adjustment_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-adjustments/tests/grayscale_adjustment_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-adjustments/tests/hue_saturation_adjustment_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-adjustments/tests/invert_adjustment_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-adjustments/tests/lift_gamma_gain_adjustment_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-adjustments/tests/lookup_table_grade_adjustment_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-adjustments/tests/sepia_adjustment_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-adjustments/tests/tint_adjustment_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-animation/tests/animation_advance_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-animation/tests/animation_blend_tree_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-animation/tests/animation_blend_tree_test.rs	test calls `::default()` — use the `create_*` function
@@ -1720,8 +1636,6 @@ test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::
 test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-module-coverage	crates/flight-adjustments/tests/color_scale_bias_adjustment_test.rs	`create_color_scale_bias` has no test module (expected `mod create_color_scale_bias { ... }`)
-test-module-coverage	crates/flight-adjustments/tests/color_scale_bias_adjustment_test.rs	`initialize_color_scale_bias` has no test module (expected `mod initialize_color_scale_bias { ... }`)
 test-module-coverage	crates/flight-animation/tests/animation_blend_tree_test.rs	`create_animation_blend_tree_ref` has no test module (expected `mod create_animation_blend_tree_ref { ... }`)
 test-module-coverage	crates/flight-animation/tests/animation_clip_test.rs	`create_animation_clip_rc` has no test module (expected `mod create_animation_clip_rc { ... }`)
 test-module-coverage	crates/flight-animation/tests/animation_player_test.rs	`create_animation_player` has no test module (expected `mod create_animation_player { ... }`)

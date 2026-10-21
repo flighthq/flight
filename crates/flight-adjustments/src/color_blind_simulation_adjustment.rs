@@ -1,3 +1,5 @@
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
+
 /// Color-blindness type.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ColorBlindType {
@@ -14,21 +16,13 @@ pub enum ColorBlindType {
 /// Color-vision-deficiency simulation as a matrix-tier adjustment.
 #[derive(Debug, Clone)]
 pub struct ColorBlindSimulationAdjustment {
+    runtime: EntityRuntimeSlot,
     pub color_blind_type: ColorBlindType,
     pub color_matrix: [f32; 20],
 }
 
-impl Default for ColorBlindSimulationAdjustment {
-    fn default() -> Self {
-        return Self {
-            color_blind_type: ColorBlindType::Deuteranopia,
-            color_matrix: [0.0; 20],
-        };
-    }
-}
-
 pub fn create_color_blind_simulation_adjustment(color_blind_type: ColorBlindType) -> ColorBlindSimulationAdjustment {
-    let mut out = ColorBlindSimulationAdjustment::default();
+    let mut out: ColorBlindSimulationAdjustment = allocate_entity();
     initialize_color_blind_simulation_adjustment(&mut out, color_blind_type);
     return out;
 }
@@ -58,3 +52,15 @@ fn get_color_blind_matrix(t: ColorBlindType) -> [f32; 9] {
         ColorBlindType::Achromatomaly => [0.618, 0.32, 0.062, 0.163, 0.775, 0.062, 0.163, 0.32, 0.516],
     };
 }
+
+impl Default for ColorBlindSimulationAdjustment {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            color_blind_type: ColorBlindType::Deuteranopia,
+            color_matrix: [0.0; 20],
+        };
+    }
+}
+
+flight_entity::impl_entity!(ColorBlindSimulationAdjustment);

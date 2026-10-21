@@ -1,5 +1,5 @@
-use crate::Adjustment;
-use crate::apply_color_transform;
+use crate::contract::Adjustment;
+use crate::contract::apply_color_transform;
 
 /// Default per-axis LUT resolution. 32^3 balances quality against upload/memory; raise it to cut banding.
 pub const COLOR_LUT_DEFAULT_SIZE: u32 = 32;
@@ -10,15 +10,6 @@ pub const COLOR_LUT_DEFAULT_SIZE: u32 = 32;
 pub struct ColorLut {
     pub size: u32,
     pub samples: Vec<f32>,
-}
-
-impl Default for ColorLut {
-    fn default() -> Self {
-        return Self {
-            size: 0,
-            samples: Vec::new(),
-        };
-    }
 }
 
 /// Bakes a stack of adjustments into one `ColorLut` of `size` cells per axis. The adjustments apply
@@ -54,6 +45,10 @@ pub fn bake_color_lut(adjustments: &[Adjustment], size: u32) -> ColorLut {
         }
     }
     return ColorLut { size: n, samples };
+}
+
+fn clamp01(v: f32) -> f32 {
+    return if v < 0.0 { 0.0 } else if v > 1.0 { 1.0 } else { v };
 }
 
 /// Trilinearly samples `lut` at normalized `(r, g, b)` (clamped to the cube) and writes the RGB result
@@ -94,6 +89,11 @@ pub fn sample_color_lut(lut: &ColorLut, out: &mut [f32; 3], r: f32, g: f32, b: f
     }
 }
 
-fn clamp01(v: f32) -> f32 {
-    return if v < 0.0 { 0.0 } else if v > 1.0 { 1.0 } else { v };
+impl Default for ColorLut {
+    fn default() -> Self {
+        return Self {
+            size: 0,
+            samples: Vec::new(),
+        };
+    }
 }

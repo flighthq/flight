@@ -1,23 +1,18 @@
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
+
 /// A per-channel scale + bias adjustment carrying both the legible ColorScaleBias payload and its
 /// equivalent 4x5 diagonal color matrix.
 #[derive(Debug, Clone)]
 pub struct ColorScaleBiasAdjustment {
+    runtime: EntityRuntimeSlot,
     pub color_scale_bias: ColorScaleBias,
     pub color_matrix: [f32; 20],
-}
-
-impl Default for ColorScaleBiasAdjustment {
-    fn default() -> Self {
-        return Self {
-            color_scale_bias: ColorScaleBias::default(),
-            color_matrix: [0.0; 20],
-        };
-    }
 }
 
 /// Per-channel scale and bias for color adjustment resolution.
 #[derive(Debug, Clone)]
 pub struct ColorScaleBias {
+    runtime: EntityRuntimeSlot,
     pub red_scale: f32,
     pub green_scale: f32,
     pub blue_scale: f32,
@@ -28,24 +23,15 @@ pub struct ColorScaleBias {
     pub alpha_bias: f32,
 }
 
-impl Default for ColorScaleBias {
-    fn default() -> Self {
-        return Self {
-            red_scale: 1.0,
-            green_scale: 1.0,
-            blue_scale: 1.0,
-            alpha_scale: 1.0,
-            red_bias: 0.0,
-            green_bias: 0.0,
-            blue_bias: 0.0,
-            alpha_bias: 0.0,
-        };
-    }
+pub fn create_color_scale_bias() -> ColorScaleBias {
+    let mut out: ColorScaleBias = allocate_entity();
+    initialize_color_scale_bias(&mut out, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
+    return out;
 }
 
-pub fn create_color_scale_bias() -> ColorScaleBias {
-    let mut out = ColorScaleBias::default();
-    initialize_color_scale_bias(&mut out, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
+pub fn create_color_scale_bias_adjustment(color_scale_bias: &ColorScaleBias) -> ColorScaleBiasAdjustment {
+    let mut out: ColorScaleBiasAdjustment = allocate_entity();
+    initialize_color_scale_bias_adjustment(&mut out, color_scale_bias);
     return out;
 }
 
@@ -70,12 +56,6 @@ pub fn initialize_color_scale_bias(
     out.alpha_bias = alpha_bias;
 }
 
-pub fn create_color_scale_bias_adjustment(color_scale_bias: &ColorScaleBias) -> ColorScaleBiasAdjustment {
-    let mut out = ColorScaleBiasAdjustment::default();
-    initialize_color_scale_bias_adjustment(&mut out, color_scale_bias);
-    return out;
-}
-
 pub fn initialize_color_scale_bias_adjustment(out: &mut ColorScaleBiasAdjustment, color_scale_bias: &ColorScaleBias) {
     let color_matrix = [
         color_scale_bias.red_scale, 0.0, 0.0, 0.0, color_scale_bias.red_bias,
@@ -86,3 +66,32 @@ pub fn initialize_color_scale_bias_adjustment(out: &mut ColorScaleBiasAdjustment
     out.color_scale_bias = color_scale_bias.clone();
     out.color_matrix = color_matrix;
 }
+
+impl Default for ColorScaleBiasAdjustment {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            color_scale_bias: ColorScaleBias::default(),
+            color_matrix: [0.0; 20],
+        };
+    }
+}
+
+impl Default for ColorScaleBias {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            red_scale: 1.0,
+            green_scale: 1.0,
+            blue_scale: 1.0,
+            alpha_scale: 1.0,
+            red_bias: 0.0,
+            green_bias: 0.0,
+            blue_bias: 0.0,
+            alpha_bias: 0.0,
+        };
+    }
+}
+
+flight_entity::impl_entity!(ColorScaleBias);
+flight_entity::impl_entity!(ColorScaleBiasAdjustment);

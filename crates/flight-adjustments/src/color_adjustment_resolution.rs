@@ -1,7 +1,7 @@
-use crate::Adjustment;
-use crate::ColorScaleBias;
-use crate::fuse_color_matrices;
-use crate::get_adjustment_color_matrix;
+use crate::contract::Adjustment;
+use crate::contract::ColorScaleBias;
+use crate::contract::fuse_color_matrices;
+use crate::contract::get_adjustment_color_matrix;
 
 /// Resolution status: empty stack -- no tint.
 pub const COLOR_ADJUSTMENT_NONE: u32 = 0;

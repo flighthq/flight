@@ -16,7 +16,7 @@ dependencies = [
 name = "flight-adjustments"
 version = "0.6.0"
 dependencies = [
- "flight-color",
+ "flight-entity",
 ]
 
 [[package]]

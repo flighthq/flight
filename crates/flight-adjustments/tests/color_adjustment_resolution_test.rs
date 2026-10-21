@@ -1,4 +1,4 @@
-use flight_adjustments::*;
+use flight_adjustments::contract::*;
 
 mod is_affine_color_matrix {
     use super::*;
@@ -20,7 +20,7 @@ mod resolve_color_adjustments_color_matrix {
     #[test]
     fn returns_the_complete_fused_matrix_for_matrix_tier_adjustments() {
         let saturation = create_saturation_color_matrix(0.0);
-        let adjustment: Adjustment = create_color_matrix_adjustment(saturation).into();
+        let adjustment: Adjustment = Adjustment::ColorMatrix(create_color_matrix_adjustment(saturation));
         let result = resolve_color_adjustments_color_matrix(Some(&[adjustment]));
         assert!(result.is_some());
         let fused = result.unwrap();
@@ -36,7 +36,7 @@ mod resolve_color_adjustments_color_matrix {
 
     #[test]
     fn returns_none_for_non_matrix_adjustments() {
-        let lut: Adjustment = create_hue_saturation_adjustment(0.0, 1.0, 0.0).into();
+        let lut: Adjustment = Adjustment::HueSaturation(create_hue_saturation_adjustment(0.0, 1.0, 0.0));
         assert!(resolve_color_adjustments_color_matrix(Some(&[lut])).is_none());
     }
 }
@@ -54,7 +54,7 @@ mod resolve_color_adjustments_color_scale_bias {
     #[test]
     fn resolves_a_single_generic_affine_matrix_exactly() {
         let matrix = [0.5, 0.0, 0.0, 0.0, 0.4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0];
-        let adjustment: Adjustment = create_color_matrix_adjustment(matrix).into();
+        let adjustment: Adjustment = Adjustment::ColorMatrix(create_color_matrix_adjustment(matrix));
         let mut out = create_color_scale_bias();
         assert_eq!(
             resolve_color_adjustments_color_scale_bias(Some(&[adjustment]), &mut out),
@@ -69,8 +69,8 @@ mod resolve_color_adjustments_color_scale_bias {
     #[test]
     fn fuses_two_affine_adjustments_multipliers_compose() {
         let matrix = [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0];
-        let a: Adjustment = create_color_matrix_adjustment(matrix).into();
-        let b: Adjustment = create_color_matrix_adjustment(matrix).into();
+        let a: Adjustment = Adjustment::ColorMatrix(create_color_matrix_adjustment(matrix));
+        let b: Adjustment = Adjustment::ColorMatrix(create_color_matrix_adjustment(matrix));
         let mut out = create_color_scale_bias();
         assert_eq!(
             resolve_color_adjustments_color_scale_bias(Some(&[a, b]), &mut out),
@@ -81,7 +81,7 @@ mod resolve_color_adjustments_color_scale_bias {
 
     #[test]
     fn reports_channel_mixing_for_an_off_diagonal_stack() {
-        let saturation: Adjustment = create_color_matrix_adjustment(create_saturation_color_matrix(0.0)).into();
+        let saturation: Adjustment = Adjustment::ColorMatrix(create_color_matrix_adjustment(create_saturation_color_matrix(0.0)));
         let mut out = create_color_scale_bias();
         assert_eq!(
             resolve_color_adjustments_color_scale_bias(Some(&[saturation]), &mut out),
@@ -92,7 +92,7 @@ mod resolve_color_adjustments_color_scale_bias {
 
     #[test]
     fn reports_channel_mixing_when_a_non_matrix_lut_op_is_present() {
-        let lut: Adjustment = create_hue_saturation_adjustment(0.0, 1.0, 0.0).into();
+        let lut: Adjustment = Adjustment::HueSaturation(create_hue_saturation_adjustment(0.0, 1.0, 0.0));
         let mut out = create_color_scale_bias();
         assert_eq!(
             resolve_color_adjustments_color_scale_bias(Some(&[lut]), &mut out),

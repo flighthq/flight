@@ -1,44 +1,12 @@
-use crate::Adjustment;
-use crate::ColorLut;
-use crate::get_adjustment_color_matrix;
-use crate::sample_color_lut;
+use crate::contract::Adjustment;
+use crate::contract::get_adjustment_color_matrix;
+use crate::contract::sample_color_lut;
 
-/// Returns whether the adjustment can provide an rgb->rgb transform (either a LUT-tier transform
-/// or a matrix-tier matrix-as-transform). Returns false for non-pointwise operations.
-/// Replaces the TS `getAdjustmentColorTransform` which returned `ColorTransformFunction | null`.
-pub fn get_adjustment_color_transform(adjustment: &Adjustment) -> bool {
-    return match adjustment {
-        Adjustment::ColorGrade(_) => true,
-        Adjustment::HueSaturation(_) => true,
-        Adjustment::LiftGammaGain(_) => true,
-        Adjustment::LookupTableGrade(_) => true,
-        _ => get_adjustment_color_matrix(adjustment).is_some(),
-    };
-}
-
-/// Applies the rgb->rgb color transform for an adjustment. This is the enum dispatch that replaces
-/// TS closures stored as `transform` on LUT-tier adjustments. For matrix-tier adjustments, the
-/// 4x5 matrix is evaluated at opaque alpha (matching the TS `colorMatrixTransform` wrapper).
-/// Alias-safe: reads from `r`, `g`, `b` before writing to `out`.
-pub fn apply_color_transform(adjustment: &Adjustment, out: &mut [f32; 3], r: f32, g: f32, b: f32) {
-    match adjustment {
-        Adjustment::ColorGrade(a) => apply_color_grade_transform(a, out, r, g, b),
-        Adjustment::HueSaturation(a) => apply_hue_saturation_transform(a, out, r, g, b),
-        Adjustment::LiftGammaGain(a) => apply_lift_gamma_gain_transform(a, out, r, g, b),
-        Adjustment::LookupTableGrade(a) => apply_lookup_table_grade_transform(a, out, r, g, b),
-        _ => {
-            if let Some(m) = get_adjustment_color_matrix(adjustment) {
-                apply_color_matrix_transform(m, out, r, g, b);
-            }
-        }
-    }
-}
-
-/// Wraps a 4x5 color matrix as an rgb->rgb transform on normalized color. Alpha is assumed opaque (1).
-fn apply_color_matrix_transform(m: &[f32; 20], out: &mut [f32; 3], r: f32, g: f32, b: f32) {
-    out[0] = m[0] * r + m[1] * g + m[2] * b + m[3] + m[4];
-    out[1] = m[5] * r + m[6] * g + m[7] * b + m[8] + m[9];
-    out[2] = m[10] * r + m[11] * g + m[12] * b + m[13] + m[14];
+/// Sets up a LUT-tier adjustment. In Rust there is no transform closure to set (it is enum
+/// dispatch), so this mirrors the TS API surface.
+pub fn initialize_color_lut_adjustment(_adjustment: &Adjustment) {
+    // In Rust the transform is enum dispatch, not a stored closure.
+    // This function exists to match the TS API surface.
 }
 
 fn apply_color_grade_transform(a: &crate::ColorGradeAdjustment, out: &mut [f32; 3], r: f32, g: f32, b: f32) {
@@ -67,6 +35,31 @@ fn apply_color_grade_transform(a: &crate::ColorGradeAdjustment, out: &mut [f32; 
     out[0] = clamp01(cr);
     out[1] = clamp01(cg);
     out[2] = clamp01(cb);
+}
+
+/// Wraps a 4x5 color matrix as an rgb->rgb transform on normalized color. Alpha is assumed opaque (1).
+fn apply_color_matrix_transform(m: &[f32; 20], out: &mut [f32; 3], r: f32, g: f32, b: f32) {
+    out[0] = m[0] * r + m[1] * g + m[2] * b + m[3] + m[4];
+    out[1] = m[5] * r + m[6] * g + m[7] * b + m[8] + m[9];
+    out[2] = m[10] * r + m[11] * g + m[12] * b + m[13] + m[14];
+}
+
+/// Applies the rgb->rgb color transform for an adjustment. This is the enum dispatch that replaces
+/// TS closures stored as `transform` on LUT-tier adjustments. For matrix-tier adjustments, the
+/// 4x5 matrix is evaluated at opaque alpha (matching the TS `colorMatrixTransform` wrapper).
+/// Alias-safe: reads from `r`, `g`, `b` before writing to `out`.
+pub fn apply_color_transform(adjustment: &Adjustment, out: &mut [f32; 3], r: f32, g: f32, b: f32) {
+    match adjustment {
+        Adjustment::ColorGrade(a) => apply_color_grade_transform(a, out, r, g, b),
+        Adjustment::HueSaturation(a) => apply_hue_saturation_transform(a, out, r, g, b),
+        Adjustment::LiftGammaGain(a) => apply_lift_gamma_gain_transform(a, out, r, g, b),
+        Adjustment::LookupTableGrade(a) => apply_lookup_table_grade_transform(a, out, r, g, b),
+        _ => {
+            if let Some(m) = get_adjustment_color_matrix(adjustment) {
+                apply_color_matrix_transform(m, out, r, g, b);
+            }
+        }
+    }
 }
 
 fn apply_hue_saturation_transform(a: &crate::HueSaturationAdjustment, out: &mut [f32; 3], r: f32, g: f32, b: f32) {
@@ -134,31 +127,25 @@ fn apply_lookup_table_grade_transform(a: &crate::LookupTableGradeAdjustment, out
     out[2] = b + (out[2] - b) * a.strength;
 }
 
-/// Sets up a LUT-tier adjustment. In Rust there is no transform closure to set (it is enum
-/// dispatch), so this mirrors the TS API surface.
-pub fn initialize_color_lut_adjustment(_adjustment: &Adjustment) {
-    // In Rust the transform is enum dispatch, not a stored closure.
-    // This function exists to match the TS API surface.
-}
-
-/// Type guard: true when the adjustment carries a nonlinear rgb->rgb transform (LUT-tier). Matrix-tier
-/// adjustments are NOT LUT-tier.
-pub fn is_color_lut_adjustment(adjustment: &Adjustment) -> bool {
-    return matches!(
-        adjustment,
-        Adjustment::ColorGrade(_)
-            | Adjustment::HueSaturation(_)
-            | Adjustment::LiftGammaGain(_)
-            | Adjustment::LookupTableGrade(_)
-    );
-}
-
 fn clamp01(v: f32) -> f32 {
     return if v < 0.0 { 0.0 } else if v > 1.0 { 1.0 } else { v };
 }
 
 fn fract(v: f32) -> f32 {
     return v - v.floor();
+}
+
+/// Returns whether the adjustment can provide an rgb->rgb transform (either a LUT-tier transform
+/// or a matrix-tier matrix-as-transform). Returns false for non-pointwise operations.
+/// Replaces the TS `getAdjustmentColorTransform` which returned `ColorTransformFunction | null`.
+pub fn get_adjustment_color_transform(operation: &Adjustment) -> bool {
+    return match operation {
+        Adjustment::ColorGrade(_) => true,
+        Adjustment::HueSaturation(_) => true,
+        Adjustment::LiftGammaGain(_) => true,
+        Adjustment::LookupTableGrade(_) => true,
+        _ => get_adjustment_color_matrix(operation).is_some(),
+    };
 }
 
 fn hue2rgb(p: f32, q: f32, t_raw: f32) -> f32 {
@@ -169,6 +156,18 @@ fn hue2rgb(p: f32, q: f32, t_raw: f32) -> f32 {
     if t < 1.0 / 2.0 { return q; }
     if t < 2.0 / 3.0 { return p + (q - p) * (2.0 / 3.0 - t) * 6.0; }
     return p;
+}
+
+/// Type guard: true when the adjustment carries a nonlinear rgb->rgb transform (LUT-tier). Matrix-tier
+/// adjustments are NOT LUT-tier.
+pub fn is_color_lut_adjustment(operation: &Adjustment) -> bool {
+    return matches!(
+        operation,
+        Adjustment::ColorGrade(_)
+            | Adjustment::HueSaturation(_)
+            | Adjustment::LiftGammaGain(_)
+            | Adjustment::LookupTableGrade(_)
+    );
 }
 
 fn unpack_rgb(c: u32) -> [f32; 3] {

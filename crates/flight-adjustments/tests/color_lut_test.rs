@@ -1,4 +1,4 @@
-use flight_adjustments::*;
+use flight_adjustments::contract::*;
 
 mod bake_color_lut {
     use super::*;
@@ -17,8 +17,8 @@ mod bake_color_lut {
 
     #[test]
     fn composes_transforms_left_to_right_and_clamps_to_zero_one() {
-        let invert: Adjustment = create_color_matrix_adjustment(create_invert_color_matrix()).into();
-        let brighten: Adjustment = create_color_matrix_adjustment(create_brightness_color_matrix(0.5)).into();
+        let invert: Adjustment = Adjustment::ColorMatrix(create_color_matrix_adjustment(create_invert_color_matrix()));
+        let brighten: Adjustment = Adjustment::ColorMatrix(create_color_matrix_adjustment(create_brightness_color_matrix(0.5)));
         let lut = bake_color_lut(&[invert, brighten], 16);
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
         sample_color_lut(&lut, &mut out, 0.2, 0.2, 0.2);
@@ -43,7 +43,7 @@ mod sample_color_lut {
             1.0, 0.0, 0.0, 0.0, 0.0,
             0.0, 0.0, 0.0, 1.0, 0.0,
         ];
-        let ramp: Adjustment = create_color_matrix_adjustment(ramp_matrix).into();
+        let ramp: Adjustment = Adjustment::ColorMatrix(create_color_matrix_adjustment(ramp_matrix));
         let lut = bake_color_lut(&[ramp], 2);
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
         sample_color_lut(&lut, &mut out, 0.5, 0.0, 0.0);
