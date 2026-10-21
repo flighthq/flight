@@ -37,6 +37,7 @@ flight-bitmap = { path = "crates/flight-bitmap" }
 flight-layout = { path = "crates/flight-layout" }
 flight-particles = { path = "crates/flight-particles" }
 flight-signals = { path = "crates/flight-signals" }
+flight-sensors = { path = "crates/flight-sensors" }
 flight-textbidi = { path = "crates/flight-textbidi" }
 flight-textsegment = { path = "crates/flight-textsegment" }
 flight-textformat = { path = "crates/flight-textformat" }

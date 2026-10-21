@@ -1,0 +1,19 @@
+[package]
+name = "flight-sensors"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Device sensor event seam with reusable readings, conversion helpers and explicit host subscriptions"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-math = { workspace = true }
+flight-signals = { workspace = true }
+
+[lints]
+workspace = true

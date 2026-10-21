@@ -273,6 +273,15 @@ name = "flight-resource"
 version = "0.6.0"
 
 [[package]]
+name = "flight-sensors"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-math",
+ "flight-signals",
+]
+
+[[package]]
 name = "flight-shell"
 version = "0.6.0"
 dependencies = [
