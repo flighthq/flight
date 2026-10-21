@@ -3,10 +3,11 @@ use std::sync::Arc;
 use flight_audio::*;
 use flight_entity::{FlightError, FlightErrorKind};
 
-fn expect_not_supported(run: impl FnOnce() + std::panic::UnwindSafe) {
+fn expect_not_supported(run: impl FnOnce() + std::panic::UnwindSafe, message: &str) {
     let error = std::panic::catch_unwind(run).unwrap_err();
     let error = error.downcast_ref::<FlightError>().unwrap();
     assert_eq!(error.kind, FlightErrorKind::NotSupportedError);
+    assert_eq!(error.message, message);
 }
 
 mod copy_to_audio_buffer_channel {
@@ -41,23 +42,53 @@ mod create_audio_buffer {
 
     #[test]
     fn validates_the_portable_web_audio_constructor_ranges() {
-        expect_not_supported(|| {
-            create_audio_buffer(0, 1, 48_000.0);
-        });
-        expect_not_supported(|| {
-            create_audio_buffer(1, 0, 48_000.0);
-        });
-        expect_not_supported(|| {
-            create_audio_buffer(1, 33, 48_000.0);
-        });
-        expect_not_supported(|| {
-            create_audio_buffer(1, 1, 2_999.0);
-        });
-        expect_not_supported(|| {
-            create_audio_buffer(1, 1, 768_001.0);
-        });
-        expect_not_supported(|| {
-            create_audio_buffer(1, 1, f32::NAN);
-        });
+        let channel_message = "AudioBuffer: numberOfChannels must be between 1 and 32";
+        expect_not_supported(
+            || {
+                create_audio_buffer(1, 0, 48_000.0);
+            },
+            channel_message,
+        );
+        expect_not_supported(
+            || {
+                create_audio_buffer(1, 33, 48_000.0);
+            },
+            channel_message,
+        );
+        expect_not_supported(
+            || {
+                create_audio_buffer(0, 1, 48_000.0);
+            },
+            "AudioBuffer: length must be at least 1",
+        );
+        let sample_rate_message = "AudioBuffer: sampleRate must be between 3000 and 768000";
+        expect_not_supported(
+            || {
+                create_audio_buffer(1, 1, 2_999.0);
+            },
+            sample_rate_message,
+        );
+        expect_not_supported(
+            || {
+                create_audio_buffer(1, 1, 768_001.0);
+            },
+            sample_rate_message,
+        );
+        expect_not_supported(
+            || {
+                create_audio_buffer(1, 1, f32::NAN);
+            },
+            sample_rate_message,
+        );
+    }
+
+    #[test]
+    fn checks_channels_before_length_before_sample_rate() {
+        expect_not_supported(
+            || {
+                create_audio_buffer(0, 0, f32::NAN);
+            },
+            "AudioBuffer: numberOfChannels must be between 1 and 32",
+        );
     }
 }

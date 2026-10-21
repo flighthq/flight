@@ -13,17 +13,14 @@ pub fn create_audio_buffer(
     number_of_channels: usize,
     sample_rate: f32,
 ) -> Ref<AudioBuffer> {
-    if length == 0
-        || number_of_channels == 0
-        || number_of_channels > 32
-        || !sample_rate.is_finite()
-        || !(3_000.0..=768_000.0).contains(&sample_rate)
-        || length.checked_mul(number_of_channels).is_none()
-    {
-        std::panic::panic_any(FlightError {
-            kind: FlightErrorKind::NotSupportedError,
-            message: "AudioBuffer options are outside the supported range".to_string(),
-        });
+    if !(1..=32).contains(&number_of_channels) {
+        throw_not_supported("AudioBuffer: numberOfChannels must be between 1 and 32");
+    }
+    if length == 0 || length.checked_mul(number_of_channels).is_none() {
+        throw_not_supported("AudioBuffer: length must be at least 1");
+    }
+    if !sample_rate.is_finite() || !(3_000.0..=768_000.0).contains(&sample_rate) {
+        throw_not_supported("AudioBuffer: sampleRate must be between 3000 and 768000");
     }
     let channels: Vec<Ref<Box<Float32Array>>> = (0..number_of_channels)
         .map(|_| {
@@ -51,6 +48,13 @@ pub fn copy_to_audio_buffer_channel(
     let mut destination = channel.write().unwrap();
     let count = destination.len().min(source.len());
     destination[..count].copy_from_slice(&source[..count]);
+}
+
+fn throw_not_supported(message: &str) -> ! {
+    std::panic::panic_any(FlightError {
+        kind: FlightErrorKind::NotSupportedError,
+        message: message.to_string(),
+    });
 }
 
 impl AudioBuffer {
