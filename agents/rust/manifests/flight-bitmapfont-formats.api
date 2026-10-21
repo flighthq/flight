@@ -1,0 +1,106 @@
+src/bitmap_font_binary.rs: pub fn parse_bitmap_font_binary(guard_state: &BitmapFontGuardStateRef, bytes: &Uint8Array, options: Option<&BitmapFontParseOptions>, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Ref<BitmapFont>>
+src/bitmap_font_detect.rs: pub fn apply_bitmap_font_import_options(registry: &mut BitmapFontFormatRegistry, options: &BitmapFontImportOptions,)
+src/bitmap_font_detect.rs: pub fn bitmap_font_all_formats(registry: &BitmapFontFormatRegistry,) -> &[BitmapFontFormatDescriptor]
+src/bitmap_font_detect.rs: pub fn bm_font_binary_format(registry: &BitmapFontFormatRegistry) -> &BitmapFontFormatDescriptor
+src/bitmap_font_detect.rs: pub fn bm_font_json_format(registry: &BitmapFontFormatRegistry) -> &BitmapFontFormatDescriptor
+src/bitmap_font_detect.rs: pub fn bm_font_text_format(registry: &BitmapFontFormatRegistry) -> &BitmapFontFormatDescriptor
+src/bitmap_font_detect.rs: pub fn bm_font_xml_format(registry: &BitmapFontFormatRegistry) -> &BitmapFontFormatDescriptor
+src/bitmap_font_detect.rs: pub fn create_bitmap_font_format_registry(guard_state: &BitmapFontGuardStateRef,) -> BitmapFontFormatRegistry
+src/bitmap_font_detect.rs: pub fn detect_bitmap_font_format(registry: &BitmapFontFormatRegistry, bytes: &Uint8Array,) -> Option<BitmapFontFormatKind>
+src/bitmap_font_detect.rs: pub fn get_bitmap_font_format(registry: &BitmapFontFormatRegistry, kind: &BitmapFontFormatKind,) -> Option<Arc<BitmapFontFormatEntry>>
+src/bitmap_font_detect.rs: pub fn get_bitmap_font_format_kinds(out: &mut Vec<BitmapFontFormatKind>, registry: &BitmapFontFormatRegistry,)
+src/bitmap_font_detect.rs: pub fn parse_bitmap_font(registry: &BitmapFontFormatRegistry, bytes: &Uint8Array, format_kind: Option<&BitmapFontFormatKind>, options: Option<&BitmapFontParseOptions>, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Ref<BitmapFont>>
+src/bitmap_font_detect.rs: pub fn register_bitmap_font_format(registry: &mut BitmapFontFormatRegistry, kind: &BitmapFontFormatKind, entry: Arc<BitmapFontFormatEntry>,)
+src/bitmap_font_detect.rs: pub fn unregister_bitmap_font_format(registry: &mut BitmapFontFormatRegistry, kind: &BitmapFontFormatKind,)
+src/bitmap_font_fnt.rs: pub fn format_bitmap_font_fnt(font: &Ref<BitmapFont>) -> String
+src/bitmap_font_fnt.rs: pub fn parse_bitmap_font_fnt(guard_state: &BitmapFontGuardStateRef, text: &str, options: Option<&BitmapFontParseOptions>, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Ref<BitmapFont>>
+src/bitmap_font_format_kind.rs: pub fn read_bitmap_font_format_kind(bytes: &Uint8Array) -> Option<BitmapFontFormatKind>
+src/bitmap_font_json.rs: pub fn parse_bitmap_font_json(guard_state: &BitmapFontGuardStateRef, text: &str, options: Option<&BitmapFontParseOptions>, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Ref<BitmapFont>>
+src/bitmap_font_record.rs: pub fn build_bitmap_font_from_record(guard_state: &BitmapFontGuardStateRef, record: &BitmapFontRecord, options: Option<&BitmapFontParseOptions>,) -> Option<Ref<BitmapFont>>
+src/bitmap_font_record.rs: pub fn report_dropped_bitmap_font_records(mut diagnostics: Option<&mut Vec<ImportDiagnostic>>, origin: &str, pages: usize, chars: usize, kernings: usize,)
+src/bitmap_font_xml.rs: pub fn parse_bitmap_font_xml(guard_state: &BitmapFontGuardStateRef, text: &str, options: Option<&BitmapFontParseOptions>, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Ref<BitmapFont>>
+src/bitmapfont_format_requirements.rs: pub const BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE: &str
+src/contract.rs: pub use crate::bitmap_font_binary::*;
+src/contract.rs: pub use crate::bitmap_font_detect::*;
+src/contract.rs: pub use crate::bitmap_font_fnt::*;
+src/contract.rs: pub use crate::bitmap_font_format_kind::*;
+src/contract.rs: pub use crate::bitmap_font_json::*;
+src/contract.rs: pub use crate::bitmap_font_record::*;
+src/contract.rs: pub use crate::bitmap_font_xml::*;
+src/contract.rs: pub use crate::bitmapfont_format_requirements::*;
+src/contract.rs: pub use crate::explain_bitmap_font_parse::*;
+src/contract.rs: pub use crate::types::*;
+src/explain_bitmap_font_parse.rs: pub fn explain_bitmap_font_parse(text: &str, options: Option<&BitmapFontParseOptions>,) -> BitmapFontParseExplanation
+src/json.rs: impl Default for RawChars
+src/json.rs: impl Default for RawChars :: fn default() -> Self
+src/json.rs: impl Deserialize<'de> for RawBitmapFontJson
+src/json.rs: impl Deserialize<'de> for RawBitmapFontJson :: fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de>,
+src/json.rs: impl Deserialize<'de> for RawChars
+src/json.rs: impl Deserialize<'de> for RawChars :: fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de>,
+src/json.rs: impl Visitor<'de> for CharsVisitor
+src/json.rs: impl Visitor<'de> for CharsVisitor :: fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/json.rs: impl Visitor<'de> for CharsVisitor :: fn visit_bool<E>(self, value: bool) -> Result<Self::Value, E>
+src/json.rs: impl Visitor<'de> for CharsVisitor :: fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
+src/json.rs: impl Visitor<'de> for CharsVisitor :: fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
+src/json.rs: impl Visitor<'de> for CharsVisitor :: fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error> where A: MapAccess<'de>,
+src/json.rs: impl Visitor<'de> for CharsVisitor :: fn visit_none<E>(self) -> Result<Self::Value, E>
+src/json.rs: impl Visitor<'de> for CharsVisitor :: fn visit_seq<A>(self, sequence: A) -> Result<Self::Value, A::Error> where A: SeqAccess<'de>,
+src/json.rs: impl Visitor<'de> for CharsVisitor :: fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+src/json.rs: impl Visitor<'de> for CharsVisitor :: fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+src/json.rs: impl Visitor<'de> for CharsVisitor :: fn visit_unit<E>(self) -> Result<Self::Value, E>
+src/json.rs: impl Visitor<'de> for RootVisitor
+src/json.rs: impl Visitor<'de> for RootVisitor :: fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/json.rs: impl Visitor<'de> for RootVisitor :: fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error> where A: MapAccess<'de>,
+src/lib.rs: pub mod contract
+src/lib.rs: pub use bitmap_font_binary::parse_bitmap_font_binary;
+src/lib.rs: pub use bitmap_font_detect::*;
+src/lib.rs: pub use bitmap_font_fnt::{ format_bitmap_font_fnt, parse_bitmap_font_fnt };
+src/lib.rs: pub use bitmap_font_format_kind::read_bitmap_font_format_kind;
+src/lib.rs: pub use bitmap_font_json::parse_bitmap_font_json;
+src/lib.rs: pub use bitmap_font_xml::parse_bitmap_font_xml;
+src/lib.rs: pub use bitmapfont_format_requirements::BITMAP_FONT_REQUIREMENT_KEY_NAMESPACE;
+src/lib.rs: pub use explain_bitmap_font_parse::explain_bitmap_font_parse;
+src/lib.rs: pub use types::*;
+src/sugar.rs: impl BitmapFontFormatRegistry :: fn apply_bitmap_font_import_options(&mut self, options: &BitmapFontImportOptions)
+src/sugar.rs: impl BitmapFontFormatRegistry :: fn bitmap_font_all_formats(&self) -> &[BitmapFontFormatDescriptor]
+src/sugar.rs: impl BitmapFontFormatRegistry :: fn bm_font_binary_format(&self) -> &BitmapFontFormatDescriptor
+src/sugar.rs: impl BitmapFontFormatRegistry :: fn bm_font_json_format(&self) -> &BitmapFontFormatDescriptor
+src/sugar.rs: impl BitmapFontFormatRegistry :: fn bm_font_text_format(&self) -> &BitmapFontFormatDescriptor
+src/sugar.rs: impl BitmapFontFormatRegistry :: fn bm_font_xml_format(&self) -> &BitmapFontFormatDescriptor
+src/sugar.rs: impl BitmapFontFormatRegistry :: fn detect_bitmap_font_format(&self, bytes: &Uint8Array) -> Option<BitmapFontFormatKind>
+src/sugar.rs: impl BitmapFontFormatRegistry :: fn get_bitmap_font_format(&self, kind: &BitmapFontFormatKind,) -> Option<Arc<BitmapFontFormatEntry>>
+src/sugar.rs: impl BitmapFontFormatRegistry :: fn get_bitmap_font_format_kinds(&self, out: &mut Vec<BitmapFontFormatKind>)
+src/sugar.rs: impl BitmapFontFormatRegistry :: fn new(guard_state: &BitmapFontGuardStateRef) -> Self
+src/sugar.rs: impl BitmapFontFormatRegistry :: fn parse_bitmap_font(&self, bytes: &Uint8Array, format_kind: Option<&BitmapFontFormatKind>, options: Option<&BitmapFontParseOptions>, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Ref<BitmapFont>>
+src/sugar.rs: impl BitmapFontFormatRegistry :: fn register_bitmap_font_format(&mut self, kind: &BitmapFontFormatKind, entry: Arc<BitmapFontFormatEntry>,)
+src/sugar.rs: impl BitmapFontFormatRegistry :: fn unregister_bitmap_font_format(&mut self, kind: &BitmapFontFormatKind)
+src/types.rs: #[derive(Clone)] pub struct BitmapFontFormatDescriptor { pub entry: Arc<BitmapFontFormatEntry>, pub kind: BitmapFontFormatKind, }
+src/types.rs: #[derive(Clone)] pub struct BitmapFontFormatEntry { pub detect: BitmapFontFormatDetector, pub parse: BitmapFontFormatParser, }
+src/types.rs: #[derive(Clone)] pub struct BitmapFontFormatRegistry { pub(crate) all_formats: Vec<BitmapFontFormatDescriptor>, pub(crate) formats: KindMap<RegisteredBitmapFontFormat>, pub(crate) next_format_order: usize, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum BitmapFontParseExplanationFormat { Fnt, Json, Unknown, Xml, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum BitmapFontParseExplanationReason { InvalidData, MissingChars, MissingCommon, Ok, UnresolvedPage, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct BitmapFontImportOptions { pub formats: Option<Vec<BitmapFontFormatDescriptor>>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct BitmapFontCharRecord { pub height: u32, pub id: u32, pub page: i32, pub width: u32, pub x: u32, pub xadvance: f32, pub xoffset: i32, pub y: u32, pub yoffset: i32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct BitmapFontKerningRecord { pub amount: f32, pub first: u32, pub second: u32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct BitmapFontRecord { pub base: f32, pub chars: Vec<BitmapFontCharRecord>, pub encoding: BitmapFontEncoding, pub kernings: Vec<BitmapFontKerningRecord>, pub line_height: f32, pub pages: Vec<BitmapFontPageRecord>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct BitmapFontPageRecord { pub file: String, pub id: i32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct BitmapFontParseExplanation { pub char_count: usize, pub detected_format: BitmapFontParseExplanationFormat, pub kerning_count: usize, pub page_count: usize, pub reason: BitmapFontParseExplanationReason, pub success: bool, pub unresolved_pages: Vec<i32>, }
+src/types.rs: #[derive(Clone, Default)] pub struct BitmapFontParseOptions { pub resolve_page: Option<BitmapFontPageResolver>, }
+src/types.rs: impl fmt::Debug for BitmapFontFormatDescriptor
+src/types.rs: impl fmt::Debug for BitmapFontFormatDescriptor :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for BitmapFontFormatEntry
+src/types.rs: impl fmt::Debug for BitmapFontFormatEntry :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for BitmapFontFormatRegistry
+src/types.rs: impl fmt::Debug for BitmapFontFormatRegistry :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for BitmapFontParseOptions
+src/types.rs: impl fmt::Debug for BitmapFontParseOptions :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub const BITMAP_FONT_FORMAT_KIND_BM_FONT_BINARY: &str
+src/types.rs: pub const BITMAP_FONT_FORMAT_KIND_BM_FONT_JSON: &str
+src/types.rs: pub const BITMAP_FONT_FORMAT_KIND_BM_FONT_TEXT: &str
+src/types.rs: pub const BITMAP_FONT_FORMAT_KIND_BM_FONT_XML: &str
+src/types.rs: pub fn get_bitmap_font_parse_explanation_format_string(value: BitmapFontParseExplanationFormat,) -> &'static str
+src/types.rs: pub fn get_bitmap_font_parse_explanation_reason_string(value: BitmapFontParseExplanationReason,) -> &'static str
+src/types.rs: pub type BitmapFontFormatDetector = Arc<dyn Fn(&Uint8Array) -> bool + Send + Sync>;
+src/types.rs: pub type BitmapFontFormatKind = Kind;
+src/types.rs: pub type BitmapFontFormatParser = Arc<dyn Fn(&Uint8Array, Option<&BitmapFontParseOptions>, Option<&mut Vec<ImportDiagnostic>>,) -> Option<Ref<BitmapFont>> + Send + Sync,>;
+src/types.rs: pub type BitmapFontPageResolver = Arc<dyn Fn(i32, &str) -> Option<Ref<TextureAtlas>> + Send + Sync>;
