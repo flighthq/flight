@@ -13,7 +13,9 @@ fn player(
         values: values.to_vec(),
         components,
         quaternion,
-        ..Default::default()
+        interpolation: None,
+        easing: None,
+        segment_easings: None,
     });
     let clip = create_animation_clip(
         vec![create_animation_channel(track, target)],
@@ -107,7 +109,11 @@ mod create_animation_crossfade {
                     create_animation_track(CreateAnimationTrackOpts {
                         times: vec![0.0],
                         values: vec![1.0],
-                        ..Default::default()
+                        components: None,
+                        interpolation: None,
+                        quaternion: None,
+                        easing: None,
+                        segment_easings: None,
                     }),
                     shared,
                 ),
@@ -115,7 +121,11 @@ mod create_animation_crossfade {
                     create_animation_track(CreateAnimationTrackOpts {
                         times: vec![0.0],
                         values: vec![2.0],
-                        ..Default::default()
+                        components: None,
+                        interpolation: None,
+                        quaternion: None,
+                        easing: None,
+                        segment_easings: None,
                     }),
                     from_only,
                 ),
@@ -129,7 +139,11 @@ mod create_animation_crossfade {
                     create_animation_track(CreateAnimationTrackOpts {
                         times: vec![0.0],
                         values: vec![3.0],
-                        ..Default::default()
+                        components: None,
+                        interpolation: None,
+                        quaternion: None,
+                        easing: None,
+                        segment_easings: None,
                     }),
                     to_only,
                 ),
@@ -137,7 +151,11 @@ mod create_animation_crossfade {
                     create_animation_track(CreateAnimationTrackOpts {
                         times: vec![0.0],
                         values: vec![4.0],
-                        ..Default::default()
+                        components: None,
+                        interpolation: None,
+                        quaternion: None,
+                        easing: None,
+                        segment_easings: None,
                     }),
                     shared,
                 ),
@@ -193,7 +211,11 @@ mod create_animation_crossfade {
         let track = create_animation_track(CreateAnimationTrackOpts {
             times: vec![0.0],
             values: vec![1.0],
-            ..Default::default()
+            components: None,
+            interpolation: None,
+            quaternion: None,
+            easing: None,
+            segment_easings: None,
         });
         let dup_clip = create_animation_clip(
             vec![
@@ -301,7 +323,11 @@ mod sample_animation_crossfade {
                     create_animation_track(CreateAnimationTrackOpts {
                         times: vec![0.0],
                         values: vec![2.0],
-                        ..Default::default()
+                        components: None,
+                        interpolation: None,
+                        quaternion: None,
+                        easing: None,
+                        segment_easings: None,
                     }),
                     shared,
                 ),
@@ -309,7 +335,11 @@ mod sample_animation_crossfade {
                     create_animation_track(CreateAnimationTrackOpts {
                         times: vec![0.0],
                         values: vec![7.0],
-                        ..Default::default()
+                        components: None,
+                        interpolation: None,
+                        quaternion: None,
+                        easing: None,
+                        segment_easings: None,
                     }),
                     from_only,
                 ),
@@ -323,7 +353,11 @@ mod sample_animation_crossfade {
                     create_animation_track(CreateAnimationTrackOpts {
                         times: vec![0.0],
                         values: vec![9.0],
-                        ..Default::default()
+                        components: None,
+                        interpolation: None,
+                        quaternion: None,
+                        easing: None,
+                        segment_easings: None,
                     }),
                     to_only,
                 ),
@@ -331,7 +365,11 @@ mod sample_animation_crossfade {
                     create_animation_track(CreateAnimationTrackOpts {
                         times: vec![0.0],
                         values: vec![6.0],
-                        ..Default::default()
+                        components: None,
+                        interpolation: None,
+                        quaternion: None,
+                        easing: None,
+                        segment_easings: None,
                     }),
                     shared,
                 ),

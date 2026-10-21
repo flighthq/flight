@@ -19,7 +19,11 @@ fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
             create_animation_track(CreateAnimationTrackOpts {
                 times,
                 values,
-                ..Default::default()
+                components: None,
+                interpolation: None,
+                quaternion: None,
+                easing: None,
+                segment_easings: None,
             }),
             target,
         )],
@@ -138,7 +142,10 @@ mod create_animation_state_machine {
                     components: Some(2),
                     times: vec![0.0],
                     values: vec![0.0, 1.0],
-                    ..Default::default()
+                    interpolation: None,
+                    quaternion: None,
+                    easing: None,
+                    segment_easings: None,
                 }),
                 target,
             )],

@@ -19,7 +19,11 @@ fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
             create_animation_track(CreateAnimationTrackOpts {
                 times,
                 values,
-                ..Default::default()
+                components: None,
+                interpolation: None,
+                quaternion: None,
+                easing: None,
+                segment_easings: None,
             }),
             target,
         )],
@@ -37,7 +41,9 @@ fn quaternion_player(target: TargetRef, values: &[f32]) -> AnimationPlayerRef {
                 quaternion: Some(true),
                 times: vec![0.0],
                 values: values.to_vec(),
-                ..Default::default()
+                interpolation: None,
+                easing: None,
+                segment_easings: None,
             }),
             target,
         )],
@@ -88,7 +94,11 @@ mod create_animation_blend_tree {
         let track = create_animation_track(CreateAnimationTrackOpts {
             times: vec![0.0],
             values: vec![1.0],
-            ..Default::default()
+            components: None,
+            interpolation: None,
+            quaternion: None,
+            easing: None,
+            segment_easings: None,
         });
         let dup_clip = create_animation_clip(
             vec![
@@ -115,7 +125,10 @@ mod create_animation_blend_tree {
                     components: Some(2),
                     times: vec![0.0],
                     values: vec![1.0, 2.0],
-                    ..Default::default()
+                    interpolation: None,
+                    quaternion: None,
+                    easing: None,
+                    segment_easings: None,
                 }),
                 target,
             )],

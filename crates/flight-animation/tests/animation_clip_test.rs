@@ -5,7 +5,11 @@ fn track(times: Vec<f32>) -> AnimationTrack {
     return create_animation_track(CreateAnimationTrackOpts {
         times,
         values,
-        ..Default::default()
+        components: None,
+        interpolation: None,
+        quaternion: None,
+        easing: None,
+        segment_easings: None,
     });
 }
 
@@ -160,12 +164,20 @@ mod sample_animation_clip {
         let a = create_animation_track(CreateAnimationTrackOpts {
             times: vec![0.0, 1.0],
             values: vec![0.0, 10.0],
-            ..Default::default()
+            components: None,
+            interpolation: None,
+            quaternion: None,
+            easing: None,
+            segment_easings: None,
         });
         let b = create_animation_track(CreateAnimationTrackOpts {
             times: vec![0.0, 1.0],
             values: vec![100.0, 200.0],
-            ..Default::default()
+            components: None,
+            interpolation: None,
+            quaternion: None,
+            easing: None,
+            segment_easings: None,
         });
         let target_a: usize = 1;
         let target_b: usize = 2;

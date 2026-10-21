@@ -36,7 +36,10 @@ mod advance_animation_player {
             Some(AnimationPlayerOptions {
                 loop_enabled: Some(false),
                 speed: Some(2.0),
-                ..Default::default()
+                loop_mode: None,
+                playing: None,
+                repeat_count: None,
+                time: None,
             }),
         );
         advance_animation_player(&mut p, 1.0);
@@ -50,7 +53,10 @@ mod advance_animation_player {
             Some(AnimationPlayerOptions {
                 loop_enabled: Some(true),
                 time: Some(9.0),
-                ..Default::default()
+                loop_mode: None,
+                playing: None,
+                repeat_count: None,
+                speed: None,
             }),
         );
         advance_animation_player(&mut p, 3.0);
@@ -65,7 +71,10 @@ mod advance_animation_player {
             Some(AnimationPlayerOptions {
                 loop_enabled: Some(false),
                 time: Some(9.0),
-                ..Default::default()
+                loop_mode: None,
+                playing: None,
+                repeat_count: None,
+                speed: None,
             }),
         );
         advance_animation_player(&mut p, 5.0);
@@ -79,7 +88,11 @@ mod advance_animation_player {
             0.0,
             Some(AnimationPlayerOptions {
                 time: Some(0.0),
-                ..Default::default()
+                loop_enabled: None,
+                loop_mode: None,
+                playing: None,
+                repeat_count: None,
+                speed: None,
             }),
         );
         advance_animation_player(&mut p, 1.0);
@@ -93,7 +106,10 @@ mod advance_animation_player {
             Some(AnimationPlayerOptions {
                 playing: Some(false),
                 time: Some(3.0),
-                ..Default::default()
+                loop_enabled: None,
+                loop_mode: None,
+                repeat_count: None,
+                speed: None,
             }),
         );
         advance_animation_player(&mut p, 5.0);
@@ -107,7 +123,10 @@ mod advance_animation_player {
             Some(AnimationPlayerOptions {
                 speed: Some(-1.0),
                 time: Some(5.0),
-                ..Default::default()
+                loop_enabled: None,
+                loop_mode: None,
+                playing: None,
+                repeat_count: None,
             }),
         );
         advance_animation_player(&mut p, 1.0);
@@ -122,7 +141,9 @@ mod advance_animation_player {
                 speed: Some(-1.0),
                 loop_enabled: Some(false),
                 time: Some(0.5),
-                ..Default::default()
+                loop_mode: None,
+                playing: None,
+                repeat_count: None,
             }),
         );
         advance_animation_player(&mut p, 2.0);
@@ -138,7 +159,9 @@ mod advance_animation_player {
                 speed: Some(-1.0),
                 loop_enabled: Some(true),
                 time: Some(0.5),
-                ..Default::default()
+                loop_mode: None,
+                playing: None,
+                repeat_count: None,
             }),
         );
         advance_animation_player(&mut p, 2.0);
@@ -154,7 +177,9 @@ mod advance_animation_player {
                 loop_mode: Some(AnimationLoopMode::PingPong),
                 speed: Some(1.0),
                 time: Some(9.0),
-                ..Default::default()
+                loop_enabled: None,
+                playing: None,
+                repeat_count: None,
             }),
         );
         advance_animation_player(&mut p, 2.0);
@@ -171,7 +196,9 @@ mod advance_animation_player {
                 loop_mode: Some(AnimationLoopMode::PingPong),
                 speed: Some(-1.0),
                 time: Some(1.0),
-                ..Default::default()
+                loop_enabled: None,
+                playing: None,
+                repeat_count: None,
             }),
         );
         advance_animation_player(&mut p, 2.0);
@@ -188,7 +215,9 @@ mod advance_animation_player {
                 loop_enabled: Some(true),
                 repeat_count: Some(0),
                 time: Some(9.0),
-                ..Default::default()
+                loop_mode: None,
+                playing: None,
+                speed: None,
             }),
         );
         advance_animation_player(&mut p, 2.0);
@@ -204,7 +233,9 @@ mod advance_animation_player {
                 loop_enabled: Some(true),
                 repeat_count: Some(1),
                 time: Some(9.0),
-                ..Default::default()
+                loop_mode: None,
+                playing: None,
+                speed: None,
             }),
         );
         advance_animation_player(&mut p, 2.0);
@@ -221,7 +252,10 @@ mod advance_animation_player {
             Some(AnimationPlayerOptions {
                 loop_enabled: Some(true),
                 time: Some(9.0),
-                ..Default::default()
+                loop_mode: None,
+                playing: None,
+                repeat_count: None,
+                speed: None,
             }),
         );
         enable_animation_player_signals(&mut p);
@@ -242,7 +276,10 @@ mod advance_animation_player {
             Some(AnimationPlayerOptions {
                 loop_enabled: Some(false),
                 time: Some(9.0),
-                ..Default::default()
+                loop_mode: None,
+                playing: None,
+                repeat_count: None,
+                speed: None,
             }),
         );
         enable_animation_player_signals(&mut p);
@@ -263,7 +300,11 @@ mod advance_animation_player {
             &[1.0, 3.0, 7.0],
             Some(AnimationPlayerOptions {
                 loop_enabled: Some(false),
-                ..Default::default()
+                loop_mode: None,
+                playing: None,
+                repeat_count: None,
+                speed: None,
+                time: None,
             }),
         );
         enable_animation_player_signals(&mut p);
@@ -284,7 +325,11 @@ mod advance_animation_player {
             &[0.0, 2.0, 10.0],
             Some(AnimationPlayerOptions {
                 time: Some(9.0),
-                ..Default::default()
+                loop_enabled: None,
+                loop_mode: None,
+                playing: None,
+                repeat_count: None,
+                speed: None,
             }),
         );
         enable_animation_player_signals(&mut p);
@@ -306,7 +351,10 @@ mod advance_animation_player {
             Some(AnimationPlayerOptions {
                 speed: Some(-1.0),
                 time: Some(1.0),
-                ..Default::default()
+                loop_enabled: None,
+                loop_mode: None,
+                playing: None,
+                repeat_count: None,
             }),
         );
         enable_animation_player_signals(&mut p);
@@ -328,7 +376,10 @@ mod advance_animation_player {
             Some(AnimationPlayerOptions {
                 loop_mode: Some(AnimationLoopMode::PingPong),
                 time: Some(9.0),
-                ..Default::default()
+                loop_enabled: None,
+                playing: None,
+                repeat_count: None,
+                speed: None,
             }),
         );
         enable_animation_player_signals(&mut p);
@@ -356,7 +407,7 @@ mod clone_animation_player {
                 repeat_count: Some(3),
                 speed: Some(2.0),
                 time: Some(4.0),
-                ..Default::default()
+                playing: None,
             }),
         );
         enable_animation_player_signals(&mut p);
@@ -440,7 +491,11 @@ mod get_animation_player_normalized_time {
             10.0,
             Some(AnimationPlayerOptions {
                 time: Some(2.5),
-                ..Default::default()
+                loop_enabled: None,
+                loop_mode: None,
+                playing: None,
+                repeat_count: None,
+                speed: None,
             }),
         );
         assert!((get_animation_player_normalized_time(&p) - 0.25).abs() < 1e-5);
@@ -475,7 +530,10 @@ mod play_animation_player_test {
             Some(AnimationPlayerOptions {
                 playing: Some(false),
                 time: Some(3.0),
-                ..Default::default()
+                loop_enabled: None,
+                loop_mode: None,
+                repeat_count: None,
+                speed: None,
             }),
         );
         play_animation_player(&mut p);
@@ -508,7 +566,11 @@ mod stop_animation_player_test {
             10.0,
             Some(AnimationPlayerOptions {
                 time: Some(5.0),
-                ..Default::default()
+                loop_enabled: None,
+                loop_mode: None,
+                playing: None,
+                repeat_count: None,
+                speed: None,
             }),
         );
         stop_animation_player(&mut p);

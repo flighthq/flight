@@ -9,7 +9,10 @@ mod clone_animation_track {
             components: Some(2),
             times: vec![0.0, 1.0],
             values: vec![0.0, 0.0, 2.0, 4.0],
-            ..Default::default()
+            easing: None,
+            interpolation: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let mut cloned = clone_animation_track(&track);
         assert_ne!(cloned.times.as_ptr(), track.times.as_ptr());
@@ -32,7 +35,7 @@ mod clone_animation_track {
             quaternion: Some(false),
             times: vec![0.0],
             values: vec![0.0, 0.0, 0.0],
-            ..Default::default()
+            segment_easings: None,
         });
         let cloned = clone_animation_track(&track);
         assert_eq!(cloned.components, 3);
@@ -50,7 +53,11 @@ mod create_animation_track {
         let track = create_animation_track(CreateAnimationTrackOpts {
             times: vec![0.0, 1.0],
             values: vec![0.0, 1.0],
-            ..Default::default()
+            components: None,
+            easing: None,
+            interpolation: None,
+            quaternion: None,
+            segment_easings: None,
         });
         assert_eq!(track.interpolation, ANIMATION_INTERPOLATION_LINEAR);
         assert_eq!(track.components, 1);
@@ -78,7 +85,11 @@ mod sample_animation_track {
         let track = create_animation_track(CreateAnimationTrackOpts {
             times: vec![0.0, 1.0],
             values: vec![0.0, 10.0],
-            ..Default::default()
+            components: None,
+            easing: None,
+            interpolation: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let mut out = [0.0];
         sample_animation_track(&mut out, &track, 0.5);
@@ -90,7 +101,11 @@ mod sample_animation_track {
         let track = create_animation_track(CreateAnimationTrackOpts {
             times: vec![0.0, 1.0, 2.0, 3.0, 4.0, 5.0],
             values: vec![0.0, 10.0, 20.0, 30.0, 40.0, 50.0],
-            ..Default::default()
+            components: None,
+            easing: None,
+            interpolation: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let mut out = [0.0];
         for t in [0.25, 0.99, 1.0, 1.5, 2.5, 3.75, 4.999] {
@@ -110,7 +125,11 @@ mod sample_animation_track {
         let track = create_animation_track(CreateAnimationTrackOpts {
             times: vec![1.0, 2.0],
             values: vec![3.0, 9.0],
-            ..Default::default()
+            components: None,
+            easing: None,
+            interpolation: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let mut out = [0.0];
         sample_animation_track(&mut out, &track, -5.0);
@@ -125,7 +144,10 @@ mod sample_animation_track {
             interpolation: Some(ANIMATION_INTERPOLATION_STEP),
             times: vec![0.0, 1.0],
             values: vec![0.0, 10.0],
-            ..Default::default()
+            components: None,
+            easing: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let mut out = [0.0];
         sample_animation_track(&mut out, &track, 0.9);
@@ -138,7 +160,10 @@ mod sample_animation_track {
             components: Some(3),
             times: vec![0.0, 1.0],
             values: vec![0.0, 0.0, 0.0, 2.0, 4.0, 6.0],
-            ..Default::default()
+            easing: None,
+            interpolation: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let mut out = [0.0, 0.0, 0.0];
         sample_animation_track(&mut out, &track, 0.5);
@@ -154,7 +179,9 @@ mod sample_animation_track {
             quaternion: Some(true),
             times: vec![0.0, 1.0],
             values: vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, s, c],
-            ..Default::default()
+            easing: None,
+            interpolation: None,
+            segment_easings: None,
         });
         let mut out = [0.0, 0.0, 0.0, 0.0];
         sample_animation_track(&mut out, &track, 0.5);
@@ -170,7 +197,10 @@ mod sample_animation_track {
             interpolation: Some(ANIMATION_INTERPOLATION_CUBIC),
             times: vec![0.0, 1.0],
             values: vec![0.0, 0.0, 0.0, 0.0, 10.0, 0.0],
-            ..Default::default()
+            components: None,
+            easing: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let mut out = [0.0];
         sample_animation_track(&mut out, &track, 0.5);
@@ -186,7 +216,10 @@ mod sample_animation_track {
             easing: Some(zero_easing),
             times: vec![0.0, 1.0],
             values: vec![0.0, 10.0],
-            ..Default::default()
+            components: None,
+            interpolation: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let mut out = [0.0];
         sample_animation_track(&mut out, &track, 0.75);
@@ -206,7 +239,9 @@ mod sample_animation_track {
             segment_easings: Some(vec![Some(zero_easing), None]),
             times: vec![0.0, 1.0, 2.0],
             values: vec![0.0, 10.0, 20.0],
-            ..Default::default()
+            components: None,
+            interpolation: None,
+            quaternion: None,
         });
         let mut out = [0.0];
         sample_animation_track(&mut out, &track, 0.75);
@@ -220,7 +255,11 @@ mod sample_animation_track {
         let track = create_animation_track(CreateAnimationTrackOpts {
             times: vec![2.0, 5.0],
             values: vec![7.0, 42.0],
-            ..Default::default()
+            components: None,
+            easing: None,
+            interpolation: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let mut out = [0.0];
         sample_animation_track(&mut out, &track, 2.0);
@@ -232,7 +271,11 @@ mod sample_animation_track {
         let track = create_animation_track(CreateAnimationTrackOpts {
             times: vec![2.0, 5.0],
             values: vec![7.0, 42.0],
-            ..Default::default()
+            components: None,
+            easing: None,
+            interpolation: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let mut out = [0.0];
         sample_animation_track(&mut out, &track, 5.0);
@@ -245,7 +288,10 @@ mod sample_animation_track {
             components: Some(3),
             times: vec![],
             values: vec![],
-            ..Default::default()
+            easing: None,
+            interpolation: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let mut out = [9.0, 9.0, 9.0];
         sample_animation_track(&mut out, &track, 0.0);
@@ -257,7 +303,11 @@ mod sample_animation_track {
         let track = create_animation_track(CreateAnimationTrackOpts {
             times: vec![5.0],
             values: vec![99.0],
-            ..Default::default()
+            components: None,
+            easing: None,
+            interpolation: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let mut out = [0.0];
         sample_animation_track(&mut out, &track, 0.0);
@@ -277,7 +327,11 @@ mod trim_animation_track {
         let track = create_animation_track(CreateAnimationTrackOpts {
             times: vec![0.0, 1.0, 2.0, 3.0, 4.0],
             values: vec![0.0, 10.0, 20.0, 30.0, 40.0],
-            ..Default::default()
+            components: None,
+            easing: None,
+            interpolation: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let sub = trim_animation_track(&track, 1.0, 3.0);
         assert_eq!(sub.times, vec![0.0, 1.0, 2.0]);
@@ -290,7 +344,10 @@ mod trim_animation_track {
             components: Some(2),
             times: vec![0.0, 1.0, 2.0],
             values: vec![0.0, 0.0, 2.0, 4.0, 8.0, 16.0],
-            ..Default::default()
+            easing: None,
+            interpolation: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let sub = trim_animation_track(&track, 1.0, 2.0);
         assert_eq!(sub.times, vec![0.0, 1.0]);
@@ -313,7 +370,10 @@ mod trim_animation_track {
             segment_easings: Some(vec![Some(e0), Some(e1), Some(e2)]),
             times: vec![0.0, 1.0, 2.0, 3.0],
             values: vec![0.0, 10.0, 20.0, 30.0],
-            ..Default::default()
+            components: None,
+            easing: None,
+            interpolation: None,
+            quaternion: None,
         });
         let sub = trim_animation_track(&track, 1.0, 3.0);
         let se = sub.segment_easings.unwrap();
@@ -326,7 +386,10 @@ mod trim_animation_track {
             interpolation: Some(ANIMATION_INTERPOLATION_CUBIC),
             times: vec![0.0, 1.0, 2.0],
             values: vec![0.0, 0.0, 0.0, 1.0, 10.0, 1.0, 2.0, 20.0, 2.0],
-            ..Default::default()
+            components: None,
+            easing: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let sub = trim_animation_track(&track, 1.0, 2.0);
         assert_eq!(sub.times, vec![0.0, 1.0]);
@@ -338,7 +401,11 @@ mod trim_animation_track {
         let track = create_animation_track(CreateAnimationTrackOpts {
             times: vec![0.0, 1.0, 2.0],
             values: vec![0.0, 10.0, 20.0],
-            ..Default::default()
+            components: None,
+            easing: None,
+            interpolation: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let sub = trim_animation_track(&track, 5.0, 6.0);
         assert_eq!(sub.times.len(), 0);
@@ -355,7 +422,10 @@ mod validate_animation_track {
             components: Some(3),
             times: vec![0.0, 1.0, 2.0],
             values: vec![0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2.0, 2.0, 2.0],
-            ..Default::default()
+            easing: None,
+            interpolation: None,
+            quaternion: None,
+            segment_easings: None,
         });
         assert!(validate_animation_track(&track).is_none());
     }
@@ -365,7 +435,11 @@ mod validate_animation_track {
         let track = create_animation_track(CreateAnimationTrackOpts {
             times: vec![0.0, 2.0, 1.0],
             values: vec![0.0, 1.0, 2.0],
-            ..Default::default()
+            components: None,
+            easing: None,
+            interpolation: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let diagnostics = validate_animation_track(&track).unwrap();
         assert_eq!(diagnostics[0].code, "nonAscendingTimes");
@@ -378,7 +452,10 @@ mod validate_animation_track {
             components: Some(2),
             times: vec![0.0, 1.0],
             values: vec![0.0, 0.0, 2.0],
-            ..Default::default()
+            easing: None,
+            interpolation: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let diagnostics = validate_animation_track(&track).unwrap();
         assert!(diagnostics.iter().any(|d| d.code == "valuesLengthMismatch"));
@@ -390,7 +467,10 @@ mod validate_animation_track {
             segment_easings: Some(vec![]),
             times: vec![0.0, 1.0],
             values: vec![0.0, 1.0],
-            ..Default::default()
+            components: None,
+            easing: None,
+            interpolation: None,
+            quaternion: None,
         });
         let diagnostics = validate_animation_track(&track).unwrap();
         assert!(diagnostics
@@ -404,14 +484,20 @@ mod validate_animation_track {
             interpolation: Some(ANIMATION_INTERPOLATION_CUBIC),
             times: vec![0.0, 1.0],
             values: vec![0.0, 0.0, 0.0, 0.0, 10.0, 0.0],
-            ..Default::default()
+            components: None,
+            easing: None,
+            quaternion: None,
+            segment_easings: None,
         });
         assert!(validate_animation_track(&ok).is_none());
         let bad = create_animation_track(CreateAnimationTrackOpts {
             interpolation: Some(ANIMATION_INTERPOLATION_CUBIC),
             times: vec![0.0, 1.0],
             values: vec![0.0, 0.0, 0.0, 0.0],
-            ..Default::default()
+            components: None,
+            easing: None,
+            quaternion: None,
+            segment_easings: None,
         });
         assert!(validate_animation_track(&bad).is_some());
     }
@@ -421,7 +507,11 @@ mod validate_animation_track {
         let track = create_animation_track(CreateAnimationTrackOpts {
             times: vec![0.0, 0.0],
             values: vec![0.0, 1.0],
-            ..Default::default()
+            components: None,
+            easing: None,
+            interpolation: None,
+            quaternion: None,
+            segment_easings: None,
         });
         let diagnostics = validate_animation_track(&track).unwrap();
         assert_eq!(diagnostics[0].code, "nonAscendingTimes");

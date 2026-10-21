@@ -19,7 +19,11 @@ fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
             create_animation_track(CreateAnimationTrackOpts {
                 times,
                 values,
-                ..Default::default()
+                components: None,
+                interpolation: None,
+                quaternion: None,
+                easing: None,
+                segment_easings: None,
             }),
             target,
         )],
@@ -93,7 +97,8 @@ mod create_animation_blend_tree_layer {
                 source2,
                 Some(&AnimationLayerOptions {
                     channel_indices: Some(vec![0, 0]),
-                    ..Default::default()
+                    additive: None,
+                    weight: None,
                 }),
             );
         }));
@@ -105,7 +110,8 @@ mod create_animation_blend_tree_layer {
                 source3,
                 Some(&AnimationLayerOptions {
                     channel_indices: Some(vec![2]),
-                    ..Default::default()
+                    additive: None,
+                    weight: None,
                 }),
             );
         }));
@@ -125,7 +131,8 @@ mod create_animation_layer_stack {
             source,
             Some(&AnimationLayerOptions {
                 channel_indices: Some(vec![1]),
-                ..Default::default()
+                additive: None,
+                weight: None,
             }),
         )]);
         assert_eq!(stack.channels.len(), 1);
@@ -142,7 +149,10 @@ mod create_animation_layer_stack {
                     components: Some(2),
                     times: vec![0.0],
                     values: vec![1.0, 2.0],
-                    ..Default::default()
+                    interpolation: None,
+                    quaternion: None,
+                    easing: None,
+                    segment_easings: None,
                 }),
                 target,
             )],
@@ -206,7 +216,7 @@ mod sample_animation_layer_stack {
                 Some(&AnimationLayerOptions {
                     channel_indices: Some(vec![1]),
                     weight: Some(0.5),
-                    ..Default::default()
+                    additive: None,
                 }),
             ),
             create_animation_blend_tree_layer(
@@ -214,7 +224,7 @@ mod sample_animation_layer_stack {
                 Some(&AnimationLayerOptions {
                     additive: Some(true),
                     weight: Some(0.25),
-                    ..Default::default()
+                    channel_indices: None,
                 }),
             ),
         ]);
@@ -274,7 +284,7 @@ mod sample_animation_layer_stack_channel {
             Some(&AnimationLayerOptions {
                 additive: Some(true),
                 weight: Some(0.25),
-                ..Default::default()
+                channel_indices: None,
             }),
         )]);
         let mut out = [99.0];

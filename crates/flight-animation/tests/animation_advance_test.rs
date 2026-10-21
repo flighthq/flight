@@ -8,7 +8,11 @@ fn make_player(duration: f32) -> AnimationPlayerRef {
             create_animation_track(CreateAnimationTrackOpts {
                 times: vec![0.0, duration],
                 values: vec![0.0, 1.0],
-                ..Default::default()
+                components: None,
+                interpolation: None,
+                quaternion: None,
+                easing: None,
+                segment_easings: None,
             }),
             0,
         )],
