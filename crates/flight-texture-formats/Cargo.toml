@@ -1,0 +1,17 @@
+[package]
+name = "flight-texture-formats"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Dependency-free GPU texture container parsing and level layout"
+autotests = false
+
+[dependencies]
+flight-entity.workspace = true
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[lints]
+workspace = true

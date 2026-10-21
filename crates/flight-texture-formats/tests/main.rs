@@ -1,0 +1,10 @@
+mod byte_reader_test;
+mod detect_texture_container_test;
+mod explain_texture_container_parse_test;
+mod parse_atf_test;
+mod parse_basis_test;
+mod parse_dds_test;
+mod parse_ktx2_test;
+mod select_texture_container_test;
+mod texture_level_layout_test;
+mod types_test;
