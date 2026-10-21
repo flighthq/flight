@@ -505,6 +505,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-node"
+version = "0.6.0"
+dependencies = [
+ "flight-adjustments",
+ "flight-entity",
+ "flight-geometry",
+ "flight-log",
+ "flight-materials",
+ "flight-math",
+ "flight-signals",
+]
+
+[[package]]
 name = "flight-notification"
 version = "0.6.0"
 dependencies = [

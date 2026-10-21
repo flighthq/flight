@@ -1,0 +1,143 @@
+//! Node allocation, runtime, signals and disposal (TS `node.ts`).
+
+// flight-lint: allow-file(contract-vocabulary) D16 open node trait objects and the caller-owned revision state are contract dispatch, not vocabulary types
+
+use flight_entity::{Kind, Ref, allocate_entity};
+use flight_signals::{clear_signal, create_signal};
+
+use crate::revision::invalidate_node;
+use crate::types::*;
+
+/// Options a constructor may set on the common node fields (TS `PartialNode` for the base node).
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct PartialNode {
+    pub enabled: Option<bool>,
+    pub name: Option<String>,
+}
+
+/// Caller-supplied runtime methods (TS `Partial<MethodsOf<NodeRuntime>>`).
+#[derive(Clone, Default)]
+pub struct NodeRuntimeMethods {
+    pub can_add_child: Option<NodeCanAddChild>,
+}
+
+/// Allocates a node of any kind and initializes the common fields (TS `createNode`). Kind data is
+/// owned by the kind's own typed struct (D16) and is initialized by the kind constructor.
+// flight-lint: allow(conform-params) D16: kind data and kind runtime tiers are kind-owned typed structs, so the base constructor has no data/runtime factory; `kind` matches after the approved *Traits -> *Fields naming
+pub fn create_node<T: Node + Default>(kind: Kind, options: Option<&PartialNode>) -> T {
+    let mut out: T = allocate_entity();
+    initialize_node(&mut out, kind, options);
+    return out;
+}
+
+/// Allocates the private base runtime tier with the source defaults (TS `createNodeRuntime`).
+
+pub fn create_node_runtime(methods: Option<&NodeRuntimeMethods>) -> NodeRuntime {
+    return create_node_runtime_internal(methods);
+}
+
+/// Allocates the five-signal registry (TS `createNodeSignals`); shared identity is preserved.
+
+pub fn create_node_signals() -> Ref<NodeSignals> {
+    let out: NodeSignals = allocate_entity();
+    return Ref::new(std::sync::RwLock::new(out));
+}
+
+/// The source's default child gate: any child may be added (TS `defaultNodeRuntimeCanAddChild`).
+
+// flight-lint: allow(conform-params) D16: kind data and kind runtime tiers are kind-owned typed structs, so the base initializer has no data/runtime factory
+pub fn initialize_node<T: Node>(out: &mut T, kind: Kind, options: Option<&PartialNode>) {
+    let fields = out.node_fields_mut();
+    *fields.state_mut() = create_node_runtime_internal(None);
+    fields.enabled = options.and_then(|options| options.enabled).unwrap_or(true);
+    fields.kind = kind;
+    fields.name = options.and_then(|options| options.name.clone());
+}
+
+/// Initializes an allocated signal registry with five fresh signals (TS `initializeNodeSignals`).
+
+pub fn initialize_node_signals(out: &mut NodeSignals) {
+    out.on_child_added = create_signal();
+    out.on_child_removed = create_signal();
+    out.on_children_changed = create_signal();
+    out.on_children_order_changed = create_signal();
+    out.on_parent_changed = create_signal();
+}
+
+/// Sets the enabled gate and invalidates the node (TS `setNodeEnabled`).
+
+pub fn default_node_runtime_can_add_child(_target: &dyn Node, _child: &dyn Node) -> bool {
+    return true;
+}
+
+/// Detaches `target`, recursively disposes its descendants and drops its signal registries
+/// (TS `disposeNode`). After disposal the node must not be added to a graph again.
+
+pub fn dispose_node(target: &NodeRef) {
+    let parent = target.read().unwrap().node_runtime().parent.clone();
+    if let Some(parent) = parent.and_then(|parent| parent.upgrade()) {
+        crate::hierarchy::remove_node_child(&parent, target);
+    }
+
+    let children = target
+        .read()
+        .unwrap()
+        .node_runtime()
+        .children
+        .clone()
+        .unwrap_or_default();
+    for child in children {
+        dispose_node(&child);
+    }
+    target.write().unwrap().node_runtime_mut().children = None;
+
+    let node_signals = target.read().unwrap().node_runtime().node_signals.clone();
+    if let Some(node_signals) = node_signals {
+        let signals = node_signals.read().unwrap();
+        clear_signal(&signals.on_child_added);
+        clear_signal(&signals.on_child_removed);
+        clear_signal(&signals.on_children_changed);
+        clear_signal(&signals.on_children_order_changed);
+        clear_signal(&signals.on_parent_changed);
+        drop(signals);
+        target.write().unwrap().node_runtime_mut().node_signals = None;
+    }
+
+    // Interaction owns the typed values behind these slots; node only drops its references.
+    let mut guard = target.write().unwrap();
+    let runtime = guard.node_runtime_mut();
+    runtime.interaction_signals = None;
+    runtime.interaction_state = None;
+}
+
+/// Creates the node's signal registry on first use and returns the shared instance
+/// (TS `enableNodeSignals`).
+
+pub fn enable_node_signals(source: &NodeRef) -> Ref<NodeSignals> {
+    let existing = source.read().unwrap().node_runtime().node_signals.clone();
+    if let Some(existing) = existing {
+        return existing;
+    }
+    let signals = create_node_signals();
+    source.write().unwrap().node_runtime_mut().node_signals = Some(signals.clone());
+    return signals;
+}
+
+/// The node's private base runtime tier (TS `getNodeRuntime`).
+
+pub fn get_node_runtime(source: &dyn Node) -> &NodeRuntime {
+    return source.node_runtime();
+}
+
+/// The node's signal registry, or `null` until enabled (TS `getNodeSignals`).
+
+pub fn get_node_signals(source: &dyn Node) -> Option<Ref<NodeSignals>> {
+    return source.node_runtime().node_signals.clone();
+}
+
+/// The construction initializer of `create_node` (TS `initializeNode`).
+
+pub fn set_node_enabled(target: &NodeRef, value: bool) {
+    target.write().unwrap().node_fields_mut().enabled = value;
+    invalidate_node(target);
+}

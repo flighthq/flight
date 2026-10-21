@@ -1,0 +1,23 @@
+[package]
+name = "flight-node"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Scene node graph: D16 node fields/feature groups, private runtime tiers, hierarchy, traversal, transforms and revision in"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-adjustments = { workspace = true }
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-log = { workspace = true }
+flight-materials = { workspace = true }
+flight-math = { workspace = true }
+flight-signals = { workspace = true }
+
+[lints]
+workspace = true
