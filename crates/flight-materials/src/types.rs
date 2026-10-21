@@ -50,6 +50,7 @@ pub struct MaterialConversionContext {
     pub(crate) guard: MaterialConversionGuard,
 }
 
+// flight-lint: allow(conform-extra) D5: Rust free-function constructor for caller-owned context; TS uses module-scoped state via set/enable
 pub fn create_material_conversion_context(guard: MaterialConversionGuard) -> MaterialConversionContext {
     return MaterialConversionContext { guard };
 }
