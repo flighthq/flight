@@ -15,6 +15,7 @@ pub mod contract;
 // flight-lint: conform-skip(createWgpuSurface, createWgpuSurfaceFromNativeHandle, destroyWgpuSurface) final ownership (Principal f5929ea4 batch13, D8) moves wgpuSurface functions and the WgpuSurface/HostWgpu/Acquisition types to flight-render-wgpu; this crate carries no renderer implementation
 
 pub use contract::allocate_surface;
+pub use contract::attach_window_render_state;
 pub use contract::create_canvas_surface;
 pub use contract::create_canvas_surface_from_native_handle;
 pub use contract::destroy_canvas_surface;
