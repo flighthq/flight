@@ -1,8 +1,8 @@
 use std::any::Any;
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
-use flight_entity::{NonEntityCreateResult, Ref, allocate_entity};
+use flight_entity::{NonEntityCreateResult, Ref, allocate_entity, throw_error};
 use flight_signals::{create_signal, emit_signal};
 
 use crate::types::*;
@@ -15,11 +15,11 @@ mod sugar_tests {
 
     fn app_host(
         accepted: bool,
-        seen: Arc<Mutex<Vec<Vec<MenuItemTemplate>>>>,
+        seen: Arc<Mutex<Vec<Vec<Ref<MenuItemTemplate>>>>>,
     ) -> Ref<HostAppMenuCapability> {
-        return Arc::new(std::sync::RwLock::new(HostAppMenuCapability {
+        return Arc::new(RwLock::new(HostAppMenuCapability {
             destroy: None,
-            set_app_menu: Arc::new(move |items: &[MenuItemTemplate]| {
+            set_app_menu: Arc::new(move |items: &[Ref<MenuItemTemplate>]| {
                 seen.lock().unwrap().push(items.to_vec());
                 return accepted;
             }),
@@ -28,11 +28,13 @@ mod sugar_tests {
 
     fn popup_host(result: Option<String>) -> HostMenuPopupCapability {
         return HostMenuPopupCapability {
-            popup: Arc::new(move |_items: Vec<MenuItemTemplate>, _x: f32, _y: f32| {
-                let value = result.clone();
-                let future: MenuPopupFuture = Box::pin(async move { Ok(value) });
-                return future;
-            }),
+            popup: Arc::new(
+                move |_items: Vec<Ref<MenuItemTemplate>>, _x: f32, _y: f32| {
+                    let value = result.clone();
+                    let future: MenuPopupFuture = Box::pin(async move { Ok(value) });
+                    return future;
+                },
+            ),
         };
     }
 
@@ -42,21 +44,21 @@ mod sugar_tests {
         let free_seen = Arc::new(Mutex::new(Vec::new()));
         let method_host = app_host(true, method_seen.clone());
         let free_host = app_host(true, free_seen.clone());
-        let items = [MenuItemTemplate {
-            id: Some("quit".to_string()),
-            ..MenuItemTemplate::default()
-        }];
+        let items = [create_menu_item_template(None)];
         let via_method = HostAppMenuCapabilityMethods::set_app_menu(&method_host, &items);
         let via_free = set_app_menu(&free_host, &items);
         assert_eq!(via_method, via_free);
-        assert_eq!(*method_seen.lock().unwrap(), *free_seen.lock().unwrap());
+        let recorded_method = method_seen.lock().unwrap();
+        let recorded_free = free_seen.lock().unwrap();
+        assert_eq!(recorded_method.len(), recorded_free.len());
+        assert!(Arc::ptr_eq(&recorded_method[0][0], &recorded_free[0][0]));
     }
 
     #[test]
     fn show_context_menu_method_matches_show_context_menu() {
         let method_host = popup_host(Some("chosen".to_string()));
         let free_host = popup_host(Some("chosen".to_string()));
-        let items: [MenuItemTemplate; 0] = [];
+        let items: [Ref<MenuItemTemplate>; 0] = [];
         assert_eq!(
             block_on(method_host.show_context_menu(&items, 1.0, 2.0, None)),
             block_on(show_context_menu(&free_host, &items, 1.0, 2.0, None))
@@ -103,10 +105,11 @@ mod sugar_tests {
 
 /// Builds a menu item template, filling the source defaults (`type` `normal`, `enabled` TRUE) and
 /// normalizing submenu children recursively (TS `createMenuItemTemplate`). This is a deliberate
-/// non-entity descriptor helper: plain data with no runtime slot and no entity factory.
+/// non-entity descriptor helper: shared plain data with no runtime slot and no entity factory. It
+/// returns fresh descriptor objects, exactly as the source spread constructs new items.
 pub fn create_menu_item_template(
-    template: Option<&MenuItemTemplate>,
-) -> NonEntityCreateResult<MenuItemTemplate> {
+    template: Option<&Ref<MenuItemTemplate>>,
+) -> NonEntityCreateResult<Ref<MenuItemTemplate>> {
     let mut item = MenuItemTemplate {
         id: None,
         label: None,
@@ -121,55 +124,61 @@ pub fn create_menu_item_template(
         submenu: None,
     };
     if let Some(template) = template {
-        item.id = template.id.clone();
-        item.label = template.label.clone();
-        if template.type_.is_some() {
-            item.type_ = template.type_;
+        let borrowed = template.read().unwrap();
+        item.id = borrowed.id.clone();
+        item.label = borrowed.label.clone();
+        if borrowed.type_.is_some() {
+            item.type_ = borrowed.type_;
         }
-        item.role = template.role.clone();
-        item.accelerator = template.accelerator.clone();
-        if template.enabled.is_some() {
-            item.enabled = template.enabled;
+        item.role = borrowed.role.clone();
+        item.accelerator = borrowed.accelerator.clone();
+        if borrowed.enabled.is_some() {
+            item.enabled = borrowed.enabled;
         }
-        item.checked = template.checked;
-        item.visible = template.visible;
-        item.sublabel = template.sublabel.clone();
-        item.tool_tip = template.tool_tip.clone();
-        item.submenu = template.submenu.clone();
+        item.checked = borrowed.checked;
+        item.visible = borrowed.visible;
+        item.sublabel = borrowed.sublabel.clone();
+        item.tool_tip = borrowed.tool_tip.clone();
+        item.submenu = borrowed.submenu.clone();
     }
-    if let Some(submenu) = item.submenu.as_ref() {
-        let mut children: Vec<MenuItemTemplate> = Vec::new();
-        for child in submenu {
-            children.push(create_menu_item_template(Some(child)));
+    let supplied_children = item.submenu.clone();
+    if let Some(supplied_children) = supplied_children {
+        let mut children: Vec<Ref<MenuItemTemplate>> = Vec::new();
+        for child in supplied_children {
+            children.push(create_menu_item_template(Some(&child)));
         }
         item.submenu = Some(children);
     }
-    return item;
+    return Arc::new(RwLock::new(item));
 }
 
-/// Identity constructor for the plain menu descriptor tree (TS `cloneMenuTemplate`).
-pub fn clone_menu_template(template: &MenuItemTemplate) -> MenuItemTemplate {
+/// Deep-clones a menu descriptor graph (TS `cloneMenuTemplate`). The clone has the same shape and
+/// values in distinct descriptor objects, including recursively distinct children.
+pub fn clone_menu_template(template: &Ref<MenuItemTemplate>) -> Ref<MenuItemTemplate> {
+    let borrowed = template.read().unwrap();
     let mut clone = MenuItemTemplate {
-        id: template.id.clone(),
-        label: template.label.clone(),
-        type_: template.type_,
-        role: template.role.clone(),
-        accelerator: template.accelerator.clone(),
-        enabled: template.enabled,
-        checked: template.checked,
-        visible: template.visible,
-        sublabel: template.sublabel.clone(),
-        tool_tip: template.tool_tip.clone(),
+        id: borrowed.id.clone(),
+        label: borrowed.label.clone(),
+        type_: borrowed.type_,
+        role: borrowed.role.clone(),
+        accelerator: borrowed.accelerator.clone(),
+        enabled: borrowed.enabled,
+        checked: borrowed.checked,
+        visible: borrowed.visible,
+        sublabel: borrowed.sublabel.clone(),
+        tool_tip: borrowed.tool_tip.clone(),
         submenu: None,
     };
-    if let Some(submenu) = template.submenu.as_ref() {
-        let mut children: Vec<MenuItemTemplate> = Vec::new();
-        for child in submenu {
-            children.push(clone_menu_template(child));
+    let supplied_children = borrowed.submenu.clone();
+    drop(borrowed);
+    if let Some(supplied_children) = supplied_children {
+        let mut children: Vec<Ref<MenuItemTemplate>> = Vec::new();
+        for child in supplied_children {
+            children.push(clone_menu_template(&child));
         }
         clone.submenu = Some(children);
     }
-    return clone;
+    return Arc::new(RwLock::new(clone));
 }
 
 /// Destroys every distinct application provider exactly once (TS `destroyAppMenu`). Alias-safe:
@@ -183,15 +192,17 @@ pub fn destroy_app_menu(
     released: &mut AppMenuDestroyedProviders,
     host_app_menu: &[Ref<HostAppMenuCapability>],
 ) {
+    released.released.retain(|weak| weak.strong_count() > 0);
     let mut pending: Vec<Ref<HostAppMenuCapability>> = Vec::new();
     for provider in host_app_menu {
-        let already = released
-            .released
+        let already = released.released.iter().any(|weak| {
+            return match weak.upgrade() {
+                Some(existing) => Arc::ptr_eq(&existing, provider),
+                None => false,
+            };
+        }) || pending
             .iter()
-            .any(|existing| Arc::ptr_eq(existing, provider))
-            || pending
-                .iter()
-                .any(|existing| Arc::ptr_eq(existing, provider));
+            .any(|existing| Arc::ptr_eq(existing, provider));
         if !already {
             pending.push(provider.clone());
         }
@@ -208,7 +219,7 @@ pub fn destroy_app_menu(
                 continue;
             }
         }
-        released.released.push(provider);
+        released.released.push(Arc::downgrade(&provider));
     }
     if let Some(payload) = failure {
         resume_unwind(payload);
@@ -242,7 +253,7 @@ pub fn get_menu_signals(state: &MenuSignalsState) -> Option<Ref<MenuSignals>> {
 /// provider's did-not-take-effect sentinel, forwarded unchanged.
 pub fn set_app_menu(
     host_app_menu: &Ref<HostAppMenuCapability>,
-    items: &[MenuItemTemplate],
+    items: &[Ref<MenuItemTemplate>],
 ) -> bool {
     let set = host_app_menu.read().unwrap().set_app_menu.clone();
     return set(items);
@@ -255,7 +266,7 @@ pub fn set_app_menu(
 // flight-lint: allow(conform-params) D5: the enabled dispatcher group is caller-owned state in Rust; TS reads a module-level group
 pub async fn show_context_menu(
     host_menu_popup: &HostMenuPopupCapability,
-    items: &[MenuItemTemplate],
+    items: &[Ref<MenuItemTemplate>],
     x: f32,
     y: f32,
     signals: Option<Ref<MenuSignals>>,
@@ -275,9 +286,16 @@ pub async fn show_context_menu(
     return result;
 }
 
-fn validate_menu_item(item: &MenuItemTemplate) -> Option<String> {
-    if item.type_ == Some(MenuItemType::Separator) {
-        if let Some(label) = item.label.as_ref()
+fn validate_menu_item(
+    item: &Ref<MenuItemTemplate>,
+    path: &mut Vec<Ref<MenuItemTemplate>>,
+) -> Option<String> {
+    if path.iter().any(|seen| Arc::ptr_eq(seen, item)) {
+        throw_error("validateMenuItemTemplate: cyclic submenu reference detected");
+    }
+    let borrowed = item.read().unwrap();
+    if borrowed.type_ == Some(MenuItemType::Separator) {
+        if let Some(label) = borrowed.label.as_ref()
             && !label.is_empty()
         {
             return Some(format!(
@@ -285,23 +303,23 @@ fn validate_menu_item(item: &MenuItemTemplate) -> Option<String> {
                 label
             ));
         }
-        if let Some(accelerator) = item.accelerator.as_ref() {
+        if let Some(accelerator) = borrowed.accelerator.as_ref() {
             return Some(format!(
                 "separator item has an accelerator: \"{}\"",
                 accelerator
             ));
         }
-        if item.submenu.is_some() {
+        if borrowed.submenu.is_some() {
             return Some(String::from("separator item has a submenu"));
         }
         return None;
     }
-    let type_string = item
+    let type_string = borrowed
         .type_
         .map(get_menu_item_type_string)
         .unwrap_or("normal");
-    if let Some(submenu) = item.submenu.as_ref()
-        && item.type_ != Some(MenuItemType::Submenu)
+    if let Some(submenu) = borrowed.submenu.as_ref()
+        && borrowed.type_ != Some(MenuItemType::Submenu)
         && !submenu.is_empty()
     {
         return Some(format!(
@@ -309,43 +327,49 @@ fn validate_menu_item(item: &MenuItemTemplate) -> Option<String> {
             type_string
         ));
     }
-    if item.checked.is_some()
-        && item.type_ != Some(MenuItemType::Checkbox)
-        && item.type_ != Some(MenuItemType::Radio)
+    if borrowed.checked.is_some()
+        && borrowed.type_ != Some(MenuItemType::Checkbox)
+        && borrowed.type_ != Some(MenuItemType::Radio)
     {
         return Some(format!(
             "item type \"{}\" has \"checked\" (only \"checkbox\" and \"radio\" items are checkable)",
             type_string
         ));
     }
-    if let Some(submenu) = item.submenu.as_ref() {
-        if let Some(group_error) = validate_menu_radio_groups(submenu) {
+    let supplied_children = borrowed.submenu.clone();
+    drop(borrowed);
+    if let Some(supplied_children) = supplied_children {
+        if let Some(group_error) = validate_menu_radio_groups(&supplied_children) {
             return Some(group_error);
         }
-        for child in submenu {
-            if let Some(error) = validate_menu_item(child) {
+        path.push(item.clone());
+        for child in supplied_children {
+            if let Some(error) = validate_menu_item(&child, path) {
                 return Some(error);
             }
         }
+        path.pop();
     }
     return None;
 }
 
-/// Validates a menu item tree for consistency (TS `validateMenuItemTemplate`). `None` is the
+/// Validates a menu item graph for consistency (TS `validateMenuItemTemplate`). `None` is the
 /// success sentinel; `Some(message)` describes the first violation. Cyclic submenu references are
-/// not representable in the Rust value tree, so the source's programmer-error throw is absent.
-pub fn validate_menu_item_template(template: &MenuItemTemplate) -> Option<String> {
-    return validate_menu_item(template);
+/// programmer error and throw the source's exact error.
+pub fn validate_menu_item_template(template: &Ref<MenuItemTemplate>) -> Option<String> {
+    let mut path: Vec<Ref<MenuItemTemplate>> = Vec::new();
+    return validate_menu_item(template, &mut path);
 }
 
-fn validate_menu_radio_groups(items: &[MenuItemTemplate]) -> Option<String> {
+fn validate_menu_radio_groups(items: &[Ref<MenuItemTemplate>]) -> Option<String> {
     let mut checked_in_run: usize = 0;
     for item in items {
-        if item.type_ != Some(MenuItemType::Radio) {
+        let borrowed = item.read().unwrap();
+        if borrowed.type_ != Some(MenuItemType::Radio) {
             checked_in_run = 0;
             continue;
         }
-        if item.checked == Some(true) {
+        if borrowed.checked == Some(true) {
             checked_in_run += 1;
         }
         if checked_in_run > 1 {
@@ -365,7 +389,7 @@ fn validate_menu_radio_groups(items: &[MenuItemTemplate]) -> Option<String> {
 impl HostMenuPopupCapability {
     pub async fn show_context_menu(
         &self,
-        items: &[MenuItemTemplate],
+        items: &[Ref<MenuItemTemplate>],
         x: f32,
         y: f32,
         signals: Option<Ref<MenuSignals>>,
@@ -387,11 +411,11 @@ impl MenuSignalsState {
 /// Sugar for the shared application-menu provider handle. Provider identity is the `Ref` identity,
 /// so the methods live on that handle rather than on the value type.
 pub trait HostAppMenuCapabilityMethods {
-    fn set_app_menu(&self, items: &[MenuItemTemplate]) -> bool;
+    fn set_app_menu(&self, items: &[Ref<MenuItemTemplate>]) -> bool;
 }
 
 impl HostAppMenuCapabilityMethods for Ref<HostAppMenuCapability> {
-    fn set_app_menu(&self, items: &[MenuItemTemplate]) -> bool {
+    fn set_app_menu(&self, items: &[Ref<MenuItemTemplate>]) -> bool {
         return set_app_menu(self, items);
     }
 }

@@ -18,18 +18,30 @@ Two source module-level records become explicit caller-owned state (D5):
 - `MenuSignalsState` holds the opt-in context-menu dispatcher group. `enable_menu_signals` allocates
   it once and `get_menu_signals` reads it; `show_context_menu` takes the enabled group explicitly so
   no hidden singleton or TLS exists.
-- `AppMenuDestroyedProviders` records finally-released application providers. `destroy_app_menu`
-  destroys each distinct provider once (alias safety is shared `Ref` identity), attempts every
-  provider even after one throws, re-throws the first error, and retains failed providers so a
-  later call retries only them.
+- `AppMenuDestroyedProviders` records finally-released application providers as **non-owning weak
+  handles** (the source WeakSet). A released provider is not kept alive; expired entries are pruned
+  and never suppress a distinct new provider; alias safety is shared `Ref` identity, every provider
+  is attempted even after one throws, the first error is re-thrown, and failed providers are
+  retained so a later call retries only them.
 
 ## Descriptors
 
-`MenuItemTemplate` is plain data with the source's optional fields (`type_` is TS `type`).
-`create_menu_item_template` fills the source defaults (`normal`, enabled true) recursively but is a
-deliberate non-entity descriptor helper (no runtime slot, no entity factory, no sugar). Fourteen
-source calls are sync; only the popup returns a promise, forwarded as `Result<Option<String>,
-FlightError>` so a provider rejection is preserved and suppresses the close signal.
+`MenuItemTemplate` is plain data shared by identity, exactly as the source passes the actual
+mutable descriptor objects to providers. All fields are optional (`type_` is TS `type`) and children
+are `Ref` handles, so a shared recursive graph — including cyclic misuse — is representable; no
+entity runtime is involved.
+
+- `create_menu_item_template` fills the source defaults (`normal`, enabled true) recursively into
+  fresh descriptor nodes; it is a deliberate non-entity descriptor helper (no runtime, no sugar).
+- `clone_menu_template` is the explicit deep copy: distinct descriptor objects all the way down.
+- `validate_menu_item_template` walks the shared graph with an identity path and throws the exact
+  source error on a cyclic submenu reference.
+- `set_app_menu` and `show_context_menu` forward the descriptor handles; the popup clones only the
+  outer handle vector at the async boundary, never the descriptor objects.
+
+Fourteen source calls are sync; only the popup returns a promise, forwarded as
+`Result<Option<String>, FlightError>` so a provider rejection is preserved and suppresses the close
+signal.
 
 ## Precision
 

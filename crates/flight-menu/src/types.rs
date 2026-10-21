@@ -1,6 +1,6 @@
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock, Weak};
 
 use flight_entity::{EntityRuntimeSlot, FlightError, Ref};
 use flight_signals::Signal;
@@ -70,10 +70,14 @@ pub enum WellKnownMenuItemRoleValue {
 /// the `WellKnownMenuItemRoleValue` string table.
 pub type MenuItemRole = String;
 
-/// The plain menu descriptor tree (TS `MenuItemTemplate`). Omitting an item entirely is distinct
-/// from `enabled: false`, which shows an item greyed and unselectable. `type_` is the TS field
-/// `type`.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+/// The plain menu descriptor (TS `MenuItemTemplate`). Omitting an item entirely is distinct from
+/// `enabled: false`, which shows an item greyed and unselectable. `type_` is the TS field `type`.
+///
+/// Descriptors are mutable plain records shared by identity, exactly as the source passes the
+/// actual objects to providers and callers may mutate them. Children are shared handles, so a
+/// recursive graph (and its cyclic misuse) is representable; deep copying is explicit through
+/// `clone_menu_template`. No entity runtime is involved.
+#[derive(Default)]
 pub struct MenuItemTemplate {
     pub id: Option<String>,
     pub label: Option<String>,
@@ -85,7 +89,7 @@ pub struct MenuItemTemplate {
     pub visible: Option<bool>,
     pub sublabel: Option<String>,
     pub tool_tip: Option<String>,
-    pub submenu: Option<Vec<MenuItemTemplate>>,
+    pub submenu: Option<Vec<Ref<MenuItemTemplate>>>,
 }
 
 /// The highlight event entity (TS `MenuHighlight`, an Entity). The signal stays inert until
@@ -120,12 +124,18 @@ pub struct MenuSignalsState {
 }
 
 /// Caller-owned record of application menu providers already finally-released (replaces the
-/// source's module-level WeakSet; D5). Failed providers are deliberately absent so a later call
+/// source's module-level WeakSet; D5). Entries are non-owning weak handles so a released provider
+/// is not kept alive by this record; failed providers are deliberately absent so a later call
 /// retries exactly the failures.
-#[derive(Clone, Default)]
+// flight-lint: allow(contract-vocabulary) D5: released-provider bookkeeping is a non-owning Weak set mirroring the source WeakSet; Rust-only caller-owned state, never transpiled
+#[derive(Default)]
 pub struct AppMenuDestroyedProviders {
-    pub released: Vec<Ref<HostAppMenuCapability>>,
+    pub released: Vec<AppMenuProviderWeak>,
 }
+
+/// A non-owning handle to an application menu provider, used by the caller-owned released record.
+// flight-lint: allow(contract-vocabulary) D5: non-owning released-provider handle mirroring the source WeakSet; the WeakRef vocabulary row is a builder5 foundation item and this state never transpiles
+pub type AppMenuProviderWeak = Weak<RwLock<HostAppMenuCapability>>;
 
 /// One subscription release callback (TS `() => void`).
 pub type MenuUnsubscribe = Arc<dyn Fn() + Send + Sync>;
@@ -148,7 +158,7 @@ pub type MenuPopupFuture = Pin<Box<dyn Future<Output = MenuPopupResult> + Send>>
 #[derive(Clone)]
 pub struct HostAppMenuCapability {
     pub destroy: Option<Arc<dyn Fn() + Send + Sync>>,
-    pub set_app_menu: Arc<dyn Fn(&[MenuItemTemplate]) -> bool + Send + Sync>,
+    pub set_app_menu: Arc<dyn Fn(&[Ref<MenuItemTemplate>]) -> bool + Send + Sync>,
 }
 
 /// The highlight provider (TS `HostMenuHighlightCapability`). `subscribe` returns the release
@@ -161,7 +171,7 @@ pub struct HostMenuHighlightCapability {
 /// The context-menu popup provider (TS `HostMenuPopupCapability`).
 #[derive(Clone)]
 pub struct HostMenuPopupCapability {
-    pub popup: Arc<dyn Fn(Vec<MenuItemTemplate>, f32, f32) -> MenuPopupFuture + Send + Sync>,
+    pub popup: Arc<dyn Fn(Vec<Ref<MenuItemTemplate>>, f32, f32) -> MenuPopupFuture + Send + Sync>,
 }
 
 /// The application menu-bar selection provider (TS `HostMenuSelectCapability`).

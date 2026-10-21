@@ -1,29 +1,11 @@
 use std::panic::AssertUnwindSafe;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex, RwLock, Weak};
 
 use flight_entity::{FlightError, FlightErrorKind, Ref};
 use flight_menu::contract::*;
 use flight_signals::connect_signal;
 
 use crate::block_on;
-
-fn released_state() -> AppMenuDestroyedProviders {
-    return AppMenuDestroyedProviders {
-        released: Vec::new(),
-    };
-}
-
-fn signals_state() -> MenuSignalsState {
-    return MenuSignalsState { signals: None };
-}
-
-fn item(id: &str, label: &str) -> MenuItemTemplate {
-    return MenuItemTemplate {
-        id: Some(id.to_string()),
-        label: Some(label.to_string()),
-        ..empty_template()
-    };
-}
 
 fn empty_template() -> MenuItemTemplate {
     return MenuItemTemplate {
@@ -41,40 +23,61 @@ fn empty_template() -> MenuItemTemplate {
     };
 }
 
+fn item(id: &str, label: &str) -> MenuItemTemplate {
+    return MenuItemTemplate {
+        id: Some(id.to_string()),
+        label: Some(label.to_string()),
+        ..empty_template()
+    };
+}
+
+fn node(template: MenuItemTemplate) -> Ref<MenuItemTemplate> {
+    return Arc::new(RwLock::new(template));
+}
+
+fn released_state() -> AppMenuDestroyedProviders {
+    return AppMenuDestroyedProviders {
+        released: Vec::new(),
+    };
+}
+
+fn signals_state() -> MenuSignalsState {
+    return MenuSignalsState { signals: None };
+}
+
 mod clone_menu_template {
     use super::*;
 
     #[test]
     fn produces_an_equal_but_distinct_tree() {
-        let original = create_menu_item_template(Some(&MenuItemTemplate {
+        let original = create_menu_item_template(Some(&node(MenuItemTemplate {
             id: Some("file".to_string()),
             type_: Some(MenuItemType::Submenu),
-            submenu: Some(vec![MenuItemTemplate {
+            submenu: Some(vec![node(MenuItemTemplate {
                 id: Some("open".to_string()),
                 label: Some("Open".to_string()),
                 type_: Some(MenuItemType::Submenu),
-                submenu: Some(vec![item("nested", "Nested")]),
+                submenu: Some(vec![node(item("nested", "Nested"))]),
                 ..empty_template()
-            }]),
+            })]),
             ..empty_template()
-        }));
+        })));
         let clone = clone_menu_template(&original);
-        assert_eq!(clone, original);
-        assert_ne!(
-            clone.submenu.as_ref().unwrap().as_ptr(),
-            original.submenu.as_ref().unwrap().as_ptr()
+        assert!(!Arc::ptr_eq(&clone, &original));
+        assert_eq!(clone.read().unwrap().id, original.read().unwrap().id);
+        let original_submenu = original.read().unwrap().submenu.clone().unwrap();
+        let clone_submenu = clone.read().unwrap().submenu.clone().unwrap();
+        assert!(!Arc::ptr_eq(&original_submenu[0], &clone_submenu[0]));
+        assert_eq!(
+            clone_submenu[0].read().unwrap().id,
+            original_submenu[0].read().unwrap().id
         );
-        assert_ne!(
-            clone.submenu.as_ref().unwrap()[0]
-                .submenu
-                .as_ref()
-                .unwrap()
-                .as_ptr(),
-            original.submenu.as_ref().unwrap()[0]
-                .submenu
-                .as_ref()
-                .unwrap()
-                .as_ptr()
+        let original_nested = original_submenu[0].read().unwrap().submenu.clone().unwrap();
+        let clone_nested = clone_submenu[0].read().unwrap().submenu.clone().unwrap();
+        assert!(!Arc::ptr_eq(&original_nested[0], &clone_nested[0]));
+        assert_eq!(
+            clone_nested[0].read().unwrap().id,
+            original_nested[0].read().unwrap().id
         );
     }
 }
@@ -84,42 +87,48 @@ mod create_menu_item_template {
 
     #[test]
     fn fills_type_and_enabled_defaults() {
-        let created = create_menu_item_template(Some(&item("copy", "Copy")));
-        assert_eq!(created.type_, Some(MenuItemType::Normal));
-        assert_eq!(created.enabled, Some(true));
+        let created = create_menu_item_template(Some(&node(item("copy", "Copy"))));
+        let borrowed = created.read().unwrap();
+        assert_eq!(borrowed.type_, Some(MenuItemType::Normal));
+        assert_eq!(borrowed.enabled, Some(true));
     }
 
     #[test]
     fn fills_defaults_without_a_supplied_template() {
         let created = create_menu_item_template(None);
-        assert_eq!(created.type_, Some(MenuItemType::Normal));
-        assert_eq!(created.enabled, Some(true));
+        let borrowed = created.read().unwrap();
+        assert_eq!(borrowed.type_, Some(MenuItemType::Normal));
+        assert_eq!(borrowed.enabled, Some(true));
     }
 
     #[test]
-    fn normalizes_submenu_children_recursively() {
-        let created = create_menu_item_template(Some(&MenuItemTemplate {
-            type_: Some(MenuItemType::Submenu),
-            submenu: Some(vec![MenuItemTemplate {
-                id: Some("child".to_string()),
-                ..empty_template()
-            }]),
+    fn normalizes_submenu_children_recursively_into_fresh_nodes() {
+        let supplied_child = node(MenuItemTemplate {
+            id: Some("child".to_string()),
             ..empty_template()
-        }));
-        let child = &created.submenu.as_ref().unwrap()[0];
+        });
+        let created = create_menu_item_template(Some(&node(MenuItemTemplate {
+            type_: Some(MenuItemType::Submenu),
+            submenu: Some(vec![supplied_child.clone()]),
+            ..empty_template()
+        })));
+        let children = created.read().unwrap().submenu.clone().unwrap();
+        assert!(!Arc::ptr_eq(&children[0], &supplied_child));
+        let child = children[0].read().unwrap();
         assert_eq!(child.type_, Some(MenuItemType::Normal));
         assert_eq!(child.enabled, Some(true));
     }
 
     #[test]
     fn preserves_supplied_type_and_enabled() {
-        let created = create_menu_item_template(Some(&MenuItemTemplate {
+        let created = create_menu_item_template(Some(&node(MenuItemTemplate {
             type_: Some(MenuItemType::Checkbox),
             enabled: Some(false),
             ..empty_template()
-        }));
-        assert_eq!(created.type_, Some(MenuItemType::Checkbox));
-        assert_eq!(created.enabled, Some(false));
+        })));
+        let borrowed = created.read().unwrap();
+        assert_eq!(borrowed.type_, Some(MenuItemType::Checkbox));
+        assert_eq!(borrowed.enabled, Some(false));
     }
 }
 
@@ -132,7 +141,7 @@ mod destroy_app_menu {
     ) -> Ref<HostAppMenuCapability> {
         return Arc::new(RwLock::new(HostAppMenuCapability {
             destroy,
-            set_app_menu: Arc::new(move |_items: &[MenuItemTemplate]| accepted),
+            set_app_menu: Arc::new(move |_items: &[Ref<MenuItemTemplate>]| accepted),
         }));
     }
 
@@ -155,6 +164,31 @@ mod destroy_app_menu {
         destroy_app_menu(&mut state, &[host.clone()]);
         destroy_app_menu(&mut state, &[host]);
         assert_eq!(*destroyed.lock().unwrap(), 1);
+    }
+
+    #[test]
+    fn released_state_does_not_keep_the_provider_alive() {
+        let host = provider(Some(Arc::new(|| {})), true);
+        let probe: Weak<RwLock<HostAppMenuCapability>> = Arc::downgrade(&host);
+        let mut state = released_state();
+        destroy_app_menu(&mut state, &[host.clone()]);
+        assert_eq!(state.released.len(), 1);
+        drop(host);
+        assert!(probe.upgrade().is_none());
+    }
+
+    #[test]
+    fn an_expired_release_entry_does_not_suppress_a_distinct_new_provider() {
+        let first = provider(Some(Arc::new(|| {})), true);
+        let mut state = released_state();
+        destroy_app_menu(&mut state, &[first.clone()]);
+        drop(first);
+        let second_destroyed = Arc::new(Mutex::new(0));
+        let captured = second_destroyed.clone();
+        let second = provider(Some(Arc::new(move || *captured.lock().unwrap() += 1)), true);
+        destroy_app_menu(&mut state, &[second]);
+        assert_eq!(*second_destroyed.lock().unwrap(), 1);
+        assert_eq!(state.released.len(), 1);
     }
 
     #[test]
@@ -250,11 +284,11 @@ mod set_app_menu {
 
     fn app_host(
         accepted: bool,
-        seen: Arc<Mutex<Vec<Vec<MenuItemTemplate>>>>,
+        seen: Arc<Mutex<Vec<Vec<Ref<MenuItemTemplate>>>>>,
     ) -> Ref<HostAppMenuCapability> {
         return Arc::new(RwLock::new(HostAppMenuCapability {
             destroy: None,
-            set_app_menu: Arc::new(move |items: &[MenuItemTemplate]| {
+            set_app_menu: Arc::new(move |items: &[Ref<MenuItemTemplate>]| {
                 seen.lock().unwrap().push(items.to_vec());
                 return accepted;
             }),
@@ -265,16 +299,18 @@ mod set_app_menu {
     fn reports_the_provider_result_and_delivers_the_items() {
         let seen = Arc::new(Mutex::new(Vec::new()));
         let host = app_host(true, seen.clone());
-        let items = vec![item("quit", "Quit")];
+        let items = vec![node(item("quit", "Quit"))];
         assert!(set_app_menu(&host, &items));
-        assert_eq!(*seen.lock().unwrap(), vec![items]);
+        let recorded = seen.lock().unwrap();
+        assert_eq!(recorded.len(), 1);
+        assert!(Arc::ptr_eq(&recorded[0][0], &items[0]));
     }
 
     #[test]
     fn reports_a_refused_install_as_false() {
         let seen = Arc::new(Mutex::new(Vec::new()));
         let host = app_host(false, seen);
-        assert!(!set_app_menu(&host, &[item("quit", "Quit")]));
+        assert!(!set_app_menu(&host, &[node(item("quit", "Quit"))]));
     }
 }
 
@@ -286,7 +322,7 @@ mod show_context_menu {
         calls: Arc<Mutex<Vec<String>>>,
     ) -> HostMenuPopupCapability {
         return HostMenuPopupCapability {
-            popup: Arc::new(move |_items: Vec<MenuItemTemplate>, x: f32, y: f32| {
+            popup: Arc::new(move |_items: Vec<Ref<MenuItemTemplate>>, x: f32, y: f32| {
                 calls.lock().unwrap().push(format!("popup@{},{}", x, y));
                 let value = result.clone();
                 let future: MenuPopupFuture = Box::pin(async move { Ok(value) });
@@ -311,6 +347,26 @@ mod show_context_menu {
         );
         assert_eq!(*first_calls.lock().unwrap(), vec!["popup@1,2".to_string()]);
         assert_eq!(*second_calls.lock().unwrap(), vec!["popup@3,4".to_string()]);
+    }
+
+    #[test]
+    fn forwards_descriptor_handles_without_deep_cloning() {
+        let recorded = Arc::new(Mutex::new(Vec::new()));
+        let captured = recorded.clone();
+        let host = HostMenuPopupCapability {
+            popup: Arc::new(move |items: Vec<Ref<MenuItemTemplate>>, _x: f32, _y: f32| {
+                captured.lock().unwrap().extend(items);
+                let future: MenuPopupFuture = Box::pin(async move { Ok(None) });
+                return future;
+            }),
+        };
+        let items = vec![node(item("copy", "Copy"))];
+        assert_eq!(
+            block_on(show_context_menu(&host, &items, 0.0, 0.0, None)),
+            Ok(None)
+        );
+        let recorded_items = recorded.lock().unwrap();
+        assert!(Arc::ptr_eq(&recorded_items[0], &items[0]));
     }
 
     #[test]
@@ -371,7 +427,7 @@ mod show_context_menu {
             );
         }
         let host = HostMenuPopupCapability {
-            popup: Arc::new(|_items: Vec<MenuItemTemplate>, _x: f32, _y: f32| {
+            popup: Arc::new(|_items: Vec<Ref<MenuItemTemplate>>, _x: f32, _y: f32| {
                 let future: MenuPopupFuture = Box::pin(async {
                     Err(FlightError {
                         kind: FlightErrorKind::Error,
@@ -401,19 +457,27 @@ mod show_context_menu {
 mod validate_menu_item_template {
     use super::*;
 
+    fn checked_item(id: &str, type_: MenuItemType) -> Ref<MenuItemTemplate> {
+        return node(MenuItemTemplate {
+            type_: Some(type_),
+            checked: Some(true),
+            ..item(id, "Item")
+        });
+    }
+
     #[test]
     fn returns_none_for_a_well_formed_item() {
-        let created = create_menu_item_template(Some(&item("ok", "Ok")));
+        let created = create_menu_item_template(Some(&node(item("ok", "Ok"))));
         assert_eq!(validate_menu_item_template(&created), None);
     }
 
     #[test]
     fn rejects_checked_on_an_item_that_is_not_checkable() {
-        let template = MenuItemTemplate {
+        let template = node(MenuItemTemplate {
             type_: Some(MenuItemType::Normal),
             checked: Some(true),
             ..item("copy", "Copy")
-        };
+        });
         assert!(
             validate_menu_item_template(&template)
                 .unwrap()
@@ -423,46 +487,42 @@ mod validate_menu_item_template {
 
     #[test]
     fn rejects_checked_false_on_a_normal_item_too() {
-        let template = MenuItemTemplate {
+        let template = node(MenuItemTemplate {
             checked: Some(false),
             ..item("copy", "Copy")
-        };
+        });
         assert!(validate_menu_item_template(&template).is_some());
     }
 
     #[test]
     fn rejects_checked_on_a_submenu_item() {
-        let template = MenuItemTemplate {
+        let template = node(MenuItemTemplate {
             type_: Some(MenuItemType::Submenu),
             checked: Some(true),
-            submenu: Some(vec![item("a", "A")]),
+            submenu: Some(vec![node(item("a", "A"))]),
             ..item("more", "More")
-        };
+        });
         assert!(validate_menu_item_template(&template).is_some());
     }
 
     #[test]
     fn accepts_checked_on_checkbox_and_radio_items() {
-        let checkbox = MenuItemTemplate {
-            type_: Some(MenuItemType::Checkbox),
-            checked: Some(true),
-            ..item("wrap", "Wrap")
-        };
+        let checkbox = checked_item("wrap", MenuItemType::Checkbox);
         assert_eq!(validate_menu_item_template(&checkbox), None);
-        let radio = MenuItemTemplate {
+        let radio = node(MenuItemTemplate {
             type_: Some(MenuItemType::Radio),
             checked: Some(false),
             ..item("left", "Left")
-        };
+        });
         assert_eq!(validate_menu_item_template(&radio), None);
     }
 
     #[test]
     fn rejects_a_separator_that_carries_a_label_with_the_exact_message() {
-        let template = MenuItemTemplate {
+        let template = node(MenuItemTemplate {
             type_: Some(MenuItemType::Separator),
             ..item("x", "X")
-        };
+        });
         assert_eq!(
             validate_menu_item_template(&template),
             Some(
@@ -473,20 +533,20 @@ mod validate_menu_item_template {
 
     #[test]
     fn rejects_a_separator_that_carries_an_accelerator_or_submenu() {
-        let accelerated = MenuItemTemplate {
+        let accelerated = node(MenuItemTemplate {
             type_: Some(MenuItemType::Separator),
             accelerator: Some("CmdOrCtrl+X".to_string()),
             ..empty_template()
-        };
+        });
         assert_eq!(
             validate_menu_item_template(&accelerated),
             Some("separator item has an accelerator: \"CmdOrCtrl+X\"".to_string())
         );
-        let parented = MenuItemTemplate {
+        let parented = node(MenuItemTemplate {
             type_: Some(MenuItemType::Separator),
             submenu: Some(vec![]),
             ..empty_template()
-        };
+        });
         assert_eq!(
             validate_menu_item_template(&parented),
             Some("separator item has a submenu".to_string())
@@ -495,11 +555,11 @@ mod validate_menu_item_template {
 
     #[test]
     fn rejects_a_submenu_on_a_non_submenu_type() {
-        let template = MenuItemTemplate {
+        let template = node(MenuItemTemplate {
             type_: Some(MenuItemType::Normal),
-            submenu: Some(vec![item("child", "Child")]),
+            submenu: Some(vec![node(item("child", "Child"))]),
             ..empty_template()
-        };
+        });
         assert_eq!(
             validate_menu_item_template(&template),
             Some(
@@ -511,90 +571,88 @@ mod validate_menu_item_template {
 
     #[test]
     fn allows_checked_radios_in_separate_contiguous_groups() {
-        let template = create_menu_item_template(Some(&MenuItemTemplate {
+        let template = node(MenuItemTemplate {
             type_: Some(MenuItemType::Submenu),
             submenu: Some(vec![
-                MenuItemTemplate {
-                    type_: Some(MenuItemType::Radio),
-                    checked: Some(true),
-                    ..item("left", "Left")
-                },
-                MenuItemTemplate {
+                checked_item("left", MenuItemType::Radio),
+                node(MenuItemTemplate {
                     type_: Some(MenuItemType::Normal),
                     ..item("copy", "Copy")
-                },
-                MenuItemTemplate {
-                    type_: Some(MenuItemType::Radio),
-                    checked: Some(true),
-                    ..item("right", "Right")
-                },
+                }),
+                checked_item("right", MenuItemType::Radio),
             ]),
             ..empty_template()
-        }));
+        });
         assert_eq!(validate_menu_item_template(&template), None);
     }
 
     #[test]
     fn rejects_two_checked_radios_in_one_group() {
-        let template = create_menu_item_template(Some(&MenuItemTemplate {
+        let template = node(MenuItemTemplate {
             type_: Some(MenuItemType::Submenu),
             submenu: Some(vec![
-                MenuItemTemplate {
-                    type_: Some(MenuItemType::Radio),
-                    checked: Some(true),
-                    ..item("left", "Left")
-                },
-                MenuItemTemplate {
-                    type_: Some(MenuItemType::Radio),
-                    checked: Some(true),
-                    ..item("right", "Right")
-                },
+                checked_item("left", MenuItemType::Radio),
+                checked_item("right", MenuItemType::Radio),
             ]),
             ..empty_template()
-        }));
+        });
         let message = validate_menu_item_template(&template).unwrap();
         assert!(message.contains("radio group"));
     }
 
     #[test]
     fn accepts_a_checked_radio_in_each_of_two_groups_split_by_a_separator() {
-        let template = create_menu_item_template(Some(&MenuItemTemplate {
+        let template = node(MenuItemTemplate {
             type_: Some(MenuItemType::Submenu),
             submenu: Some(vec![
-                MenuItemTemplate {
-                    type_: Some(MenuItemType::Radio),
-                    checked: Some(true),
-                    ..item("left", "Left")
-                },
-                MenuItemTemplate {
+                checked_item("left", MenuItemType::Radio),
+                node(MenuItemTemplate {
                     type_: Some(MenuItemType::Separator),
                     ..empty_template()
-                },
-                MenuItemTemplate {
-                    type_: Some(MenuItemType::Radio),
-                    checked: Some(true),
-                    ..item("small", "Small")
-                },
+                }),
+                checked_item("small", MenuItemType::Radio),
             ]),
             ..empty_template()
-        }));
+        });
         assert_eq!(validate_menu_item_template(&template), None);
     }
 
     #[test]
     fn reports_the_offending_child_of_a_submenu() {
-        let template = create_menu_item_template(Some(&MenuItemTemplate {
+        let template = node(MenuItemTemplate {
             type_: Some(MenuItemType::Submenu),
-            submenu: Some(vec![MenuItemTemplate {
+            submenu: Some(vec![node(MenuItemTemplate {
                 checked: Some(true),
                 ..item("zoom", "Zoom")
-            }]),
+            })]),
             ..empty_template()
-        }));
+        });
         assert!(
             validate_menu_item_template(&template)
                 .unwrap()
                 .contains("checked")
+        );
+    }
+
+    #[test]
+    fn throws_the_exact_error_on_a_cyclic_submenu_reference() {
+        let template = create_menu_item_template(Some(&node(MenuItemTemplate {
+            id: Some("cycle".to_string()),
+            type_: Some(MenuItemType::Submenu),
+            ..empty_template()
+        })));
+        template.write().unwrap().submenu = Some(vec![template.clone()]);
+        let payload = std::panic::catch_unwind(AssertUnwindSafe(|| {
+            validate_menu_item_template(&template);
+        }));
+        let error = payload
+            .expect_err("a cyclic submenu reference must throw")
+            .downcast::<FlightError>()
+            .expect("panic payload must be a FlightError");
+        assert_eq!(error.kind, FlightErrorKind::Error);
+        assert_eq!(
+            error.message,
+            "validateMenuItemTemplate: cyclic submenu reference detected"
         );
     }
 }
