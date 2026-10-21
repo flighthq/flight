@@ -79,6 +79,19 @@ mod get_camera_3d_world_to_screen {
     }
 
     #[test]
+    fn is_safe_when_out_aliases_world_point() {
+        let mut camera = make_camera();
+        look_at(&mut camera, (0.0, 0.0, 5.0), (0.0, 0.0, 0.0));
+        let mut point = create_vector3(0.0, 0.0, 2.0);
+        let source = point.clone();
+        assert!(get_camera_3d_world_to_screen(
+            &mut point, &camera, &source, 1.0
+        ));
+        assert!(point.x.abs() <= 1.0);
+        assert!(point.y.abs() <= 1.0);
+    }
+
+    #[test]
     fn returns_false_for_a_point_behind_the_camera() {
         let mut camera = make_camera();
         look_at(&mut camera, (0.0, 0.0, 5.0), (0.0, 0.0, 0.0));

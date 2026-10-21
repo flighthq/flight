@@ -44,6 +44,23 @@ mod get_camera_3d_ray_through_bounding_sphere {
     }
 
     #[test]
+    fn is_alias_safe_when_out_shares_fields_with_the_sphere_center() {
+        let camera = make_camera();
+        let sphere = create_bounding_sphere(0.0, 0.0, 5.0, 1.0);
+        let mut ray = create_ray3d(
+            sphere.center.x,
+            sphere.center.y,
+            sphere.center.z,
+            1.0,
+            0.0,
+            0.0,
+        );
+        assert!(get_camera_3d_ray_through_bounding_sphere(
+            &mut ray, &camera, &sphere, 1.0
+        ));
+    }
+
+    #[test]
     fn returns_false_when_the_sphere_center_is_behind_the_camera() {
         let camera = make_camera();
         let sphere = create_bounding_sphere(0.0, 0.0, 15.0, 1.0);
@@ -80,6 +97,19 @@ mod intersect_camera_3d_ray_with_plane {
         let plane = create_plane(0.0, 1.0, 0.0, 10.0);
         let mut hit = zero3();
         assert!(!intersect_camera_3d_ray_with_plane(&mut hit, &ray, &plane));
+    }
+
+    #[test]
+    fn is_alias_safe_when_out_is_the_same_object_as_the_ray_origin() {
+        let mut ray = create_ray3d(0.0, 5.0, 0.0, 0.0, -1.0, 0.0);
+        let plane = create_plane(0.0, 1.0, 0.0, 0.0);
+        let source = ray.clone();
+        assert!(intersect_camera_3d_ray_with_plane(
+            &mut ray.origin,
+            &source,
+            &plane
+        ));
+        assert_close(ray.origin.y, 0.0);
     }
 
     #[test]

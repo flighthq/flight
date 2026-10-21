@@ -39,6 +39,28 @@ pub(crate) fn look_at(camera: &mut Camera3D, eye: (f32, f32, f32), target: (f32,
     set_camera_3d_view_matrix4_from_look_at(camera, &eye, &target, &up);
 }
 
+/// Builds an independent camera with the same observable value state as `source` (the geometry
+/// alias-test form: `out` is the original, `source` is this equal-valued snapshot).
+pub(crate) fn copy_of_camera(source: &Camera3D) -> Camera3D {
+    let out = create_camera_3d(&Camera3DOptions {
+        far: source.far,
+        near: source.near,
+        near_clip_plane: source.near_clip_plane.clone(),
+        projection: source.projection.clone(),
+    });
+    out.view.write().unwrap().m = source.view.read().unwrap().m;
+    let (jitter_x, jitter_y) = {
+        let jitter = source.jitter.read().unwrap();
+        (jitter.x, jitter.y)
+    };
+    {
+        let mut jitter = out.jitter.write().unwrap();
+        jitter.x = jitter_x;
+        jitter.y = jitter_y;
+    }
+    return out;
+}
+
 pub(crate) fn zero3() -> Vector3 {
     return create_vector3(0.0, 0.0, 0.0);
 }

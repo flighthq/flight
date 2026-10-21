@@ -76,6 +76,26 @@ mod get_camera_3d_inverse_view_projection_matrix4 {
         ));
         assert_mat4_close(&out, &expected);
     }
+
+    #[test]
+    fn is_safe_when_out_aliases_the_camera_inverse_view_projection() {
+        let mut camera = camera_with(Projection::Perspective(fixed_projection()), 0.1, 100.0);
+        look_at(&mut camera, (2.0, 1.0, 5.0), (0.0, 0.0, 0.0));
+        let source = copy_of_camera(&camera);
+        let mut view_projection = create_matrix4();
+        get_camera_3d_view_projection_matrix4(&mut view_projection, &source, 1.3);
+        let mut expected = create_matrix4();
+        inverse_matrix4(&mut expected, &view_projection);
+        let handle = camera.inverse_view_projection.clone();
+        {
+            let mut out = handle.write().unwrap();
+            assert!(get_camera_3d_inverse_view_projection_matrix4(
+                &mut out, &source, 1.3
+            ));
+            assert_mat4_close(&out, &expected);
+        }
+        assert!(Arc::ptr_eq(&handle, &camera.inverse_view_projection));
+    }
 }
 
 mod get_camera_3d_view_projection_matrix4 {
@@ -100,6 +120,33 @@ mod get_camera_3d_view_projection_matrix4 {
         let mut expected = create_matrix4();
         multiply_matrix4(&mut expected, &projection_matrix, &view);
         assert_mat4_close(&out, &expected);
+    }
+
+    #[test]
+    fn is_safe_when_out_aliases_the_camera_view() {
+        let mut camera = camera_with(Projection::Perspective(fixed_projection()), 0.1, 100.0);
+        look_at(&mut camera, (1.0, 2.0, 4.0), (0.0, 0.0, 0.0));
+        let source = copy_of_camera(&camera);
+        let mut projection_matrix = create_matrix4();
+        set_projection_matrix4(
+            &mut projection_matrix,
+            &source.projection,
+            1.7,
+            source.near,
+            source.far,
+        );
+        let mut expected = create_matrix4();
+        {
+            let view = source.view.read().unwrap();
+            multiply_matrix4(&mut expected, &projection_matrix, &view);
+        }
+        let handle = camera.view.clone();
+        {
+            let mut out = handle.write().unwrap();
+            get_camera_3d_view_projection_matrix4(&mut out, &source, 1.7);
+            assert_mat4_close(&out, &expected);
+        }
+        assert!(Arc::ptr_eq(&handle, &camera.view));
     }
 
     #[test]

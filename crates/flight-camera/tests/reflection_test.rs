@@ -102,6 +102,16 @@ mod reflect_camera_3d_by_plane {
     }
 
     #[test]
+    fn is_alias_safe_when_out_equals_camera() {
+        let source = elevated_camera();
+        let mut out = copy_of_camera(&source);
+        reflect_camera_3d_by_plane(&mut out, &source, &create_plane(0.0, 1.0, 0.0, 0.0));
+        let mut position = zero3();
+        get_camera_3d_position(&mut position, &out);
+        assert_close(position.y, -5.0);
+    }
+
+    #[test]
     fn preserves_view_direction_symmetry_for_an_identity_reflection() {
         let camera = perspective_camera();
         let mut out = empty_camera();

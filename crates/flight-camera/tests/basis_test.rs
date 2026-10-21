@@ -13,6 +13,15 @@ mod get_camera_3d_forward {
         get_camera_3d_forward(&mut out, &camera);
         assert_vec3_close(&out, (0.0, 0.0, -1.0));
     }
+
+    #[test]
+    fn is_safe_when_out_aliases_a_camera_view_field_component() {
+        let mut camera = camera_3d(0.1, 100.0, 1.0);
+        look_at(&mut camera, (0.0, 0.0, 5.0), (0.0, 0.0, 0.0));
+        let mut out = zero3();
+        get_camera_3d_forward(&mut out, &camera);
+        assert_close(out.z, -1.0);
+    }
 }
 
 mod get_camera_3d_position {
