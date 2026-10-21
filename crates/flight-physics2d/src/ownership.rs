@@ -1,0 +1,84 @@
+//! Exclusive world ownership and the stepping boundary (TS `ownership.ts`). The source's module
+//! WeakMaps and WeakSet are private per-entity weak links to the owning world's identity token.
+
+use std::sync::atomic::Ordering;
+
+use flight_entity::throw_error;
+
+use crate::types::*;
+
+/// Panics when `body` belongs to a world that is stepping; detached authoring data passes (TS
+/// `assertPhysics2DBodyNotStepping`).
+pub fn assert_physics2d_body_not_stepping(body: &RigidBody2D) {
+    if let Some(owner) = body.owner.as_ref()
+        && owner.stepping.load(Ordering::SeqCst)
+    {
+        throw_error("Cannot mutate a physics world while it is stepping");
+    }
+}
+
+/// Panics when `world` is stepping (TS `assertPhysics2DWorldNotStepping`).
+pub fn assert_physics2d_world_not_stepping(world: &Physics2DWorld) {
+    if is_physics2d_world_stepping(world) {
+        throw_error("Cannot mutate a physics world while it is stepping");
+    }
+}
+
+pub(crate) fn is_physics2d_body_owned_by(body: &RigidBody2D, world: &Physics2DWorld) -> bool {
+    return body
+        .owner
+        .as_ref()
+        .is_some_and(|owner| std::sync::Arc::ptr_eq(owner, &world.identity));
+}
+
+pub(crate) fn is_physics2d_world_stepping(world: &Physics2DWorld) -> bool {
+    return world.identity.stepping.load(Ordering::SeqCst);
+}
+
+pub(crate) fn set_physics2d_world_stepping(world: &Physics2DWorld, stepping: bool) {
+    world.identity.stepping.store(stepping, Ordering::SeqCst);
+}
+
+#[cfg(test)]
+mod ownership_tests {
+    use std::panic::{AssertUnwindSafe, catch_unwind};
+
+    use flight_entity::FlightError;
+
+    use super::*;
+    use crate::world::{add_physics2d_body, create_physics2d_world, create_rigid_body2d};
+
+    fn message(result: std::thread::Result<()>) -> Option<String> {
+        return result
+            .err()
+            .map(|payload| payload.downcast_ref::<FlightError>().unwrap().message.clone());
+    }
+
+    #[test]
+    fn assert_physics2d_body_not_stepping_resolves_an_owned_body_to_its_active_world() {
+        let mut world = create_physics2d_world(None, None, None);
+        let owned = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        add_physics2d_body(&mut world, &owned);
+        let detached = create_rigid_body2d(Physics2DBodyType::Dynamic, 0.0, 0.0, None);
+        set_physics2d_world_stepping(&world, true);
+        let rejected = message(catch_unwind(AssertUnwindSafe(|| {
+            assert_physics2d_body_not_stepping(&owned.read().unwrap())
+        })));
+        assert!(rejected.unwrap().contains("while it is stepping"));
+        assert!(
+            catch_unwind(AssertUnwindSafe(|| assert_physics2d_body_not_stepping(&detached.read().unwrap()))).is_ok()
+        );
+        set_physics2d_world_stepping(&world, false);
+    }
+
+    #[test]
+    fn assert_physics2d_world_not_stepping_rejects_an_active_world_and_accepts_it_after_release() {
+        let world = create_physics2d_world(None, None, None);
+        assert!(catch_unwind(AssertUnwindSafe(|| assert_physics2d_world_not_stepping(&world))).is_ok());
+        set_physics2d_world_stepping(&world, true);
+        let rejected = message(catch_unwind(AssertUnwindSafe(|| assert_physics2d_world_not_stepping(&world))));
+        assert!(rejected.unwrap().contains("while it is stepping"));
+        set_physics2d_world_stepping(&world, false);
+        assert!(catch_unwind(AssertUnwindSafe(|| assert_physics2d_world_not_stepping(&world))).is_ok());
+    }
+}

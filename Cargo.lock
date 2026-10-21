@@ -685,6 +685,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-physics2d"
+version = "0.6.0"
+dependencies = [
+ "flight-collision",
+ "flight-entity",
+ "flight-log",
+ "flight-math",
+ "flight-node",
+ "flight-scene2d",
+ "flight-spatial",
+]
+
+[[package]]
 name = "flight-platform"
 version = "0.6.0"
 dependencies = [
