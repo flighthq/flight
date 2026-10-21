@@ -12,6 +12,7 @@ mod animation_track;
 mod types;
 
 pub mod contract;
+mod sugar;
 
 // Public lane: the names exported by the pinned TS `index.ts`, plus the Rust types and their
 // constructors that the public signatures require. Contract-only seams (initialize_*, the _ref
