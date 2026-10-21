@@ -6,7 +6,7 @@ mod create_custom_shader_material {
 
     #[test]
     fn creates_with_defaults() {
-        let m = create_custom_shader_material();
+        let m = create_custom_shader_material(None);
         assert_eq!(m.kind, CUSTOM_SHADER_MATERIAL_KIND);
         assert_eq!(m.alpha_cutoff, 0.5);
         assert_eq!(m.alpha_mode, MaterialAlphaMode::Opaque);

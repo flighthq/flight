@@ -6,8 +6,8 @@ mod convert_specular_glossiness_to_standard_pbr {
 
     #[test]
     fn converts_default_specular_glossiness_to_standard() {
-        let source = create_specular_glossiness_pbr_material();
-        let mut out = create_standard_pbr_material_properties();
+        let source = create_specular_glossiness_pbr_material(None);
+        let mut out = create_standard_pbr_material_properties(None);
         convert_specular_glossiness_to_standard_pbr(&mut out, &source);
         assert!(out.roughness >= 0.0 && out.roughness <= 1.0);
         assert!(out.metallic >= 0.0 && out.metallic <= 1.0);
@@ -15,21 +15,21 @@ mod convert_specular_glossiness_to_standard_pbr {
 
     #[test]
     fn maps_glossiness_to_roughness() {
-        let mut source = create_specular_glossiness_pbr_material();
+        let mut source = create_specular_glossiness_pbr_material(None);
         source.glossiness = 0.75;
-        let mut out = create_standard_pbr_material_properties();
+        let mut out = create_standard_pbr_material_properties(None);
         convert_specular_glossiness_to_standard_pbr(&mut out, &source);
         assert!((out.roughness - 0.25).abs() < 1e-6);
     }
 
     #[test]
     fn preserves_emissive_and_occlusion() {
-        let mut source = create_specular_glossiness_pbr_material();
+        let mut source = create_specular_glossiness_pbr_material(None);
         source.emissive = 0xff0000ff;
         source.emissive_strength = 2.0;
         source.normal_scale = 0.5;
         source.occlusion_strength = 0.8;
-        let mut out = create_standard_pbr_material_properties();
+        let mut out = create_standard_pbr_material_properties(None);
         convert_specular_glossiness_to_standard_pbr(&mut out, &source);
         assert_eq!(out.emissive, 0xff0000ff);
         assert_eq!(out.emissive_strength, 2.0);
@@ -43,7 +43,7 @@ mod create_specular_glossiness_pbr_material {
 
     #[test]
     fn creates_with_correct_defaults() {
-        let m = create_specular_glossiness_pbr_material();
+        let m = create_specular_glossiness_pbr_material(None);
         assert_eq!(m.kind, SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND);
         assert_eq!(m.diffuse, 0xffffffff);
         assert_eq!(m.specular, 0xffffffff);
@@ -57,7 +57,7 @@ mod create_standard_pbr_material {
 
     #[test]
     fn creates_white_fully_rough_dielectric() {
-        let m = create_standard_pbr_material();
+        let m = create_standard_pbr_material(None);
         assert_eq!(m.kind, STANDARD_PBR_MATERIAL_KIND);
         assert_eq!(m.base_color, 0xffffffff);
         assert_eq!(m.metallic, 0.0);
@@ -80,7 +80,7 @@ mod create_standard_pbr_material_properties {
 
     #[test]
     fn creates_property_block_with_defaults() {
-        let p = create_standard_pbr_material_properties();
+        let p = create_standard_pbr_material_properties(None);
         assert_eq!(p.base_color, 0xffffffff);
         assert_eq!(p.metallic, 0.0);
         assert_eq!(p.roughness, 1.0);

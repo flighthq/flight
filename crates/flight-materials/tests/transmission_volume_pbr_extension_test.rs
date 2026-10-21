@@ -6,7 +6,7 @@ mod create_transmission_volume_pbr_extension {
 
     #[test]
     fn creates_with_defaults() {
-        let ext = create_transmission_volume_pbr_extension();
+        let ext = create_transmission_volume_pbr_extension(None);
         assert_eq!(ext.kind, TRANSMISSION_VOLUME_PBR_EXTENSION_KIND);
         assert_eq!(ext.attenuation_color, 0xffffffff);
         assert_eq!(ext.attenuation_distance, f32::INFINITY);
@@ -21,9 +21,9 @@ mod initialize_transmission_volume_pbr_extension {
 
     #[test]
     fn sets_kind_and_defaults() {
-        let mut ext = create_transmission_volume_pbr_extension();
+        let mut ext = create_transmission_volume_pbr_extension(None);
         ext.transmission = 1.0;
-        initialize_transmission_volume_pbr_extension(&mut ext);
+        initialize_transmission_volume_pbr_extension(&mut ext, None);
         assert_eq!(ext.kind, TRANSMISSION_VOLUME_PBR_EXTENSION_KIND);
         assert_eq!(ext.transmission, 0.0);
     }
@@ -35,13 +35,13 @@ mod is_valid_transmission_volume_pbr_extension {
     #[test]
     fn validates_default_as_valid() {
         assert!(is_valid_transmission_volume_pbr_extension(
-            &create_transmission_volume_pbr_extension()
+            &create_transmission_volume_pbr_extension(None)
         ));
     }
 
     #[test]
     fn invalid_when_attenuation_distance_is_negative() {
-        let mut ext = create_transmission_volume_pbr_extension();
+        let mut ext = create_transmission_volume_pbr_extension(None);
         ext.attenuation_distance = -1.0;
         assert!(!is_valid_transmission_volume_pbr_extension(&ext));
     }

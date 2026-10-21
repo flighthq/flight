@@ -1,4 +1,3 @@
-use flight_materials::*;
 use flight_materials::material::*;
 
 mod clone_material {

@@ -2,13 +2,13 @@ use flight_materials::pbr_extension::*;
 use flight_materials::*;
 use flight_materials::anisotropy_pbr_extension::create_anisotropy_pbr_extension;
 
-mod get_pbr_extension_kind {
+mod pbr_extension_kind {
     use super::*;
 
     #[test]
     fn returns_the_kind_of_the_wrapped_extension() {
-        let ext = PbrExtension::Anisotropy(create_anisotropy_pbr_extension());
-        assert_eq!(get_pbr_extension_kind(&ext), ANISOTROPY_PBR_EXTENSION_KIND);
+        let ext = PbrExtension::Anisotropy(create_anisotropy_pbr_extension(None));
+        assert_eq!(ext.kind(), ANISOTROPY_PBR_EXTENSION_KIND);
     }
 }
 

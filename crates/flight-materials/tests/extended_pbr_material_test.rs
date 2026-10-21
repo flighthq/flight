@@ -6,7 +6,7 @@ mod create_extended_pbr_material {
 
     #[test]
     fn creates_with_standard_pbr_base() {
-        let m = create_extended_pbr_material(None, None);
+        let m = create_extended_pbr_material(None);
         assert_eq!(m.kind, EXTENDED_PBR_MATERIAL_KIND);
         assert_eq!(m.standard.base_color, 0xffffffff);
         assert_eq!(m.standard.metallic, 0.0);

@@ -6,7 +6,7 @@ mod create_blinn_phong_material {
 
     #[test]
     fn creates_white_blinn_phong_with_shininess_32() {
-        let m = create_blinn_phong_material();
+        let m = create_blinn_phong_material(None);
         assert_eq!(m.kind, BLINN_PHONG_MATERIAL_KIND);
         assert_eq!(m.diffuse, 0xffffffff);
         assert_eq!(m.specular, 0xffffffff);
@@ -21,7 +21,7 @@ mod create_lambert_material {
 
     #[test]
     fn creates_white_diffuse_with_no_emission() {
-        let m = create_lambert_material();
+        let m = create_lambert_material(None);
         assert_eq!(m.kind, LAMBERT_MATERIAL_KIND);
         assert_eq!(m.diffuse, 0xffffffff);
         assert_eq!(m.emissive, 0x000000ff);
@@ -35,7 +35,7 @@ mod create_phong_material {
 
     #[test]
     fn creates_white_phong_with_shininess_32() {
-        let m = create_phong_material();
+        let m = create_phong_material(None);
         assert_eq!(m.kind, PHONG_MATERIAL_KIND);
         assert_eq!(m.diffuse, 0xffffffff);
         assert_eq!(m.specular, 0xffffffff);

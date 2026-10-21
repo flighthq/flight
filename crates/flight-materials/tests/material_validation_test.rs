@@ -6,7 +6,7 @@ mod clamp_standard_pbr_material_properties {
 
     #[test]
     fn clamps_metallic_to_0_1() {
-        let mut props = create_standard_pbr_material_properties();
+        let mut props = create_standard_pbr_material_properties(None);
         props.metallic = 1.5;
         clamp_standard_pbr_material_properties(&mut props);
         assert_eq!(props.metallic, 1.0);
@@ -17,7 +17,7 @@ mod clamp_standard_pbr_material_properties {
 
     #[test]
     fn clamps_roughness_to_0_1() {
-        let mut props = create_standard_pbr_material_properties();
+        let mut props = create_standard_pbr_material_properties(None);
         props.roughness = 2.0;
         clamp_standard_pbr_material_properties(&mut props);
         assert_eq!(props.roughness, 1.0);
@@ -28,7 +28,7 @@ mod clamp_standard_pbr_material_properties {
 
     #[test]
     fn clamps_occlusion_strength_to_0_1() {
-        let mut props = create_standard_pbr_material_properties();
+        let mut props = create_standard_pbr_material_properties(None);
         props.occlusion_strength = 3.0;
         clamp_standard_pbr_material_properties(&mut props);
         assert_eq!(props.occlusion_strength, 1.0);
@@ -36,7 +36,7 @@ mod clamp_standard_pbr_material_properties {
 
     #[test]
     fn clamps_emissive_strength_floor_only() {
-        let mut props = create_standard_pbr_material_properties();
+        let mut props = create_standard_pbr_material_properties(None);
         props.emissive_strength = -1.0;
         clamp_standard_pbr_material_properties(&mut props);
         assert_eq!(props.emissive_strength, 0.0);
@@ -47,7 +47,7 @@ mod clamp_standard_pbr_material_properties {
 
     #[test]
     fn clamps_normal_scale_floor_only() {
-        let mut props = create_standard_pbr_material_properties();
+        let mut props = create_standard_pbr_material_properties(None);
         props.normal_scale = -2.0;
         clamp_standard_pbr_material_properties(&mut props);
         assert_eq!(props.normal_scale, 0.0);
@@ -58,7 +58,7 @@ mod clamp_standard_pbr_material_properties {
 
     #[test]
     fn leaves_valid_block_unchanged() {
-        let mut props = create_standard_pbr_material_properties();
+        let mut props = create_standard_pbr_material_properties(None);
         props.metallic = 0.5;
         props.roughness = 0.3;
         clamp_standard_pbr_material_properties(&mut props);
