@@ -92,6 +92,7 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "kind struct + Deref<Target = *Fields>", ts: "interface X extends Node2D", cpp: "class X : public Node2D", haxe: "class X extends Node2D", status: Status::Established, note: "D16: concrete kind (Sprite, Mesh, …) composes *Fields via Deref/DerefMut; data as separate pub field" },
     Entry { rust: "T: Node2D / T: Transform2DNode / T: BoundsNode", ts: "T extends Node2D / …", cpp: "template<typename T>", haxe: "<T:Node2D>", status: Status::Established, note: "D16: node family and feature traits as generic bounds; only declared trait names accepted" },
     Entry { rust: "Ref<dyn Adjustment> / &dyn Adjustment / T: Adjustment", ts: "Adjustment / T extends Adjustment", cpp: "std::shared_ptr<Adjustment> / template<typename T>", haxe: "Adjustment / <T:Adjustment>", status: Status::Established, note: "Adjustment family (principal batch 4, generalizes D16): kind structs Deref to AdjustmentFields; mixed stacks `Vec<Ref<dyn Adjustment>>`; only the declared family name accepted" },
+    Entry { rust: "Ref<dyn MaterialData> / &dyn MaterialData / T: MaterialData", ts: "MaterialData / T extends MaterialData", cpp: "std::shared_ptr<MaterialData> / template<typename T>", haxe: "MaterialData / <T:MaterialData>", status: Status::Established, note: "D16 open MaterialData entity family: Ref preserves the original caller-owned custom-kind allocation through heterogeneous optional collections; only the declared family name is accepted" },
     Entry { rust: "pub const / pub static LazyLock<T>", ts: "export const", cpp: "inline constexpr / static", haxe: "static final", status: Status::Established, note: "Immutable only (D5)" },
 ];
 
@@ -118,20 +119,22 @@ const CONTAINERS: &[&str] = &[
 /// `Default` and `Clone` are the Rust-only construction bounds already used by approved
 /// contracts (`allocate_entity<T: Default>`, `pick<T: Clone>`) and have no TS mapping of their
 /// own. The node family and feature traits (D16), the adjustment family trait (principal batch
-/// 4, generalizing D16), and the exact JSON generic bounds `Serialize` / `DeserializeOwned`
+/// 4, generalizing D16), the MaterialData entity family, and the exact JSON generic bounds
+/// `Serialize` / `DeserializeOwned`
 /// (Principal 12ecb245) are also approved. Paths match by their final segment so imported and
 /// canonical `serde::Serialize` / `serde::de::DeserializeOwned` spellings behave identically.
 const APPROVED_TYPE_PARAM_BOUNDS: &[&str] = &[
     "Entity", "Default", "Clone", "Serialize", "DeserializeOwned",
     "Node", "Node2D", "Node3D",
     "Transform2DNode", "BoundsNode",
-    "Adjustment",
+    "Adjustment", "MaterialData",
 ];
 
-/// D16 node family traits, plus the adjustment family (principal batch 4), accepted as trait
+/// D16 node family traits, plus the adjustment and MaterialData families, accepted as trait
 /// objects in `Ref<dyn ...>`, `&dyn ...`, parameters, and mixed collections. Only these declared
 /// names; arbitrary trait objects are rejected.
-const APPROVED_NODE_TRAIT_OBJECTS: &[&str] = &["Node", "Node2D", "Node3D", "Adjustment"];
+const APPROVED_NODE_TRAIT_OBJECTS: &[&str] =
+    &["Node", "Node2D", "Node3D", "Adjustment", "MaterialData"];
 
 /// Checks the trait bounds on a contract item's generic parameters and where-clause. Lifetime
 /// bounds are ignored (they carry no transpiled mapping). Returned problems are deduplicated.
@@ -1132,6 +1135,45 @@ mod tests {
     }
 
     #[test]
+    fn accepts_material_data_family_trait_objects() {
+        for ty in [
+            "Ref<dyn MaterialData>",
+            "&dyn MaterialData",
+            "Option<Ref<dyn MaterialData>>",
+            "Option<Vec<Option<Ref<dyn MaterialData>>>>",
+        ] {
+            assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
+        }
+    }
+
+    #[test]
+    fn records_material_data_identity_lowering() {
+        let entry = ENTRIES
+            .iter()
+            .find(|entry| {
+                entry.rust == "Ref<dyn MaterialData> / &dyn MaterialData / T: MaterialData"
+            })
+            .unwrap();
+        assert_eq!(entry.ts, "MaterialData / T extends MaterialData");
+        assert_eq!(entry.cpp, "std::shared_ptr<MaterialData> / template<typename T>");
+        assert_eq!(entry.haxe, "MaterialData / <T:MaterialData>");
+        assert!(entry.note.contains("original caller-owned custom-kind allocation"));
+    }
+
+    #[test]
+    fn rejects_near_miss_material_data_trait_objects() {
+        for ty in [
+            "Ref<dyn MaterialDatas>",
+            "Ref<dyn MaterialDataFields>",
+            "Ref<dyn MaterialData + Display>",
+            "Ref<dyn MaterialData + Node2D>",
+            "Ref<dyn MaterialData<f32>>",
+        ] {
+            assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
+        }
+    }
+
+    #[test]
     fn rejects_near_miss_adjustment_trait_objects() {
         for ty in [
             "Ref<dyn Adjustments>",
@@ -1166,6 +1208,8 @@ mod tests {
             "pub fn f<T: Node2D + Entity>(x: &T) {}",
             "pub fn f<T: Adjustment>(x: &T) {}",
             "pub fn f<T: Adjustment + Entity>(x: &T) {}",
+            "pub fn f<T: MaterialData>(x: &T) {}",
+            "pub fn f<T: MaterialData + Entity>(x: &T) {}",
         ] {
             let item: syn::ItemFn = syn::parse_str(source).unwrap();
             assert!(bound_problems(&item.sig.generics).is_empty(), "{}", source);
