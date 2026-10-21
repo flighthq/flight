@@ -1,0 +1,22 @@
+[package]
+name = "flight-textshaper"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Text-shaping seam: measure and shape text into advances and glyph runs over an explicit host shaper"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-font = { workspace = true }
+flight-hostcapability = { workspace = true }
+flight-log = { workspace = true }
+flight-signals = { workspace = true }
+flight-textformat = { workspace = true }
+
+[lints]
+workspace = true

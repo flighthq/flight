@@ -793,6 +793,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-textshaper"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-font",
+ "flight-hostcapability",
+ "flight-log",
+ "flight-signals",
+ "flight-textformat",
+]
+
+[[package]]
 name = "flight-texture"
 version = "0.6.0"
 dependencies = [

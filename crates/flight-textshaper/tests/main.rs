@@ -1,0 +1,9 @@
+mod enable_text_shaper_guards_test;
+mod text_shaper_cache_test;
+mod text_shaper_cluster_test;
+mod text_shaper_fixture;
+mod text_shaper_itemize_test;
+mod text_shaper_pool_test;
+mod text_shaper_run_test;
+mod text_shaper_signals_test;
+mod text_shaper_test;
