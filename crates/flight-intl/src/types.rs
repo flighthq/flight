@@ -1,11 +1,12 @@
-//! The intl contract types: the locale input union, ordered Intl option records and the closed
+//! The intl contract types: the locale input union and the closed
 //! plural-category and relative-time-unit domains (TS `types/src/LocaleInput.ts` and the external
 //! `Intl.*` option domains).
 
 use std::sync::Arc;
 
-use flight_entity::Record;
 use flight_hostcapability::ProviderRef;
+
+use crate::options::*;
 
 /// A BCP-47 locale specifier accepted by every formatter (TS `LocaleInput`): either a single locale
 /// tag or a priority-ordered fallback list. Passing nothing to `Intl` selects the runtime default;
@@ -16,21 +17,6 @@ pub enum LocaleInput {
     // flight-lint: allow(enum-payload-named) D2: TS `LocaleInput` is `string | readonly string[]`; the array arm has no named payload type in the source to wrap
     List(Vec<String>),
 }
-
-/// One scalar value in an ordered Intl options record (TS `object` passed to `Intl.*`).
-/// `Integer` covers every numeric option the pinned package uses (fraction digits, limits);
-/// `String` and `Bool` cover the enum-like and flag options. Key order is the record's insertion
-/// order, matching the source options object literal.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum IntlOptionValue {
-    Bool(bool),
-    Integer(i32),
-    String(String),
-}
-
-/// An ordered Intl options record (TS `Readonly<Intl.*Options>`). Values the pinned package and its
-/// callers set are scalars; unknown keys are preserved rather than dropped.
-pub type IntlOptions = Record<IntlOptionValue>;
 
 /// A date input (TS `Date | number`): either a `Date`'s epoch-millisecond time or an epoch-millisecond
 /// number. Both reduce to the millisecond value; `NaN` is the source's invalid-date sentinel.
@@ -124,17 +110,20 @@ pub struct IntlRelativeTimeFormatHandle {
 pub struct HostIntlCapability {
     pub provider: ProviderRef,
     pub create_collator:
-        Arc<dyn Fn(&LocaleInput, &IntlOptions) -> IntlCollatorHandle + Send + Sync>,
+        Arc<dyn Fn(&LocaleInput, &CollatorOptions) -> IntlCollatorHandle + Send + Sync>,
     pub create_date_time_format:
-        Arc<dyn Fn(&LocaleInput, &IntlOptions) -> IntlDateTimeFormatHandle + Send + Sync>,
+        Arc<dyn Fn(&LocaleInput, &DateTimeFormatOptions) -> IntlDateTimeFormatHandle + Send + Sync>,
     pub create_list_format:
-        Arc<dyn Fn(&LocaleInput, &IntlOptions) -> IntlListFormatHandle + Send + Sync>,
+        Arc<dyn Fn(&LocaleInput, &ListFormatOptions) -> IntlListFormatHandle + Send + Sync>,
     pub create_number_format:
-        Arc<dyn Fn(&LocaleInput, &IntlOptions) -> IntlNumberFormatHandle + Send + Sync>,
+        Arc<dyn Fn(&LocaleInput, &NumberFormatOptions) -> IntlNumberFormatHandle + Send + Sync>,
     pub create_plural_rules:
-        Arc<dyn Fn(&LocaleInput, &IntlOptions) -> IntlPluralRulesHandle + Send + Sync>,
-    pub create_relative_time_format:
-        Arc<dyn Fn(&LocaleInput, &IntlOptions) -> IntlRelativeTimeFormatHandle + Send + Sync>,
+        Arc<dyn Fn(&LocaleInput, &PluralRulesOptions) -> IntlPluralRulesHandle + Send + Sync>,
+    pub create_relative_time_format: Arc<
+        dyn Fn(&LocaleInput, &RelativeTimeFormatOptions) -> IntlRelativeTimeFormatHandle
+            + Send
+            + Sync,
+    >,
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust canonical string table for the TS `Intl.LDMLPluralRule` literal union; the TS package exports no get_/parse_ free functions

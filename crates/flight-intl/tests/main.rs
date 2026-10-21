@@ -4,6 +4,7 @@ mod datetime_test;
 mod list_test;
 mod number_test;
 mod plural_test;
+mod provider_conformance;
 mod relative_time_test;
 mod test_support;
 mod types_test;

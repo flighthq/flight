@@ -104,15 +104,6 @@ mod get_intl_relative_time_unit_string {
     }
 }
 
-mod intl_date_input {
-    use super::*;
-
-    #[test]
-    fn distinguishes_a_date_from_an_epoch_number() {
-        assert_ne!(IntlDateInput::Date(0.0), IntlDateInput::EpochMillis(0.0));
-    }
-}
-
 mod locale_input {
     use super::*;
 

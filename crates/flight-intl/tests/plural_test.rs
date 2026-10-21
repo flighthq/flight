@@ -2,6 +2,36 @@ use flight_intl::contract::*;
 
 use crate::test_support::*;
 
+mod create_intl_plural_rules {
+    use super::*;
+
+    #[test]
+    fn builds_through_the_host_capability() {
+        let mock = mock_intl();
+        let handle =
+            create_intl_plural_rules(&mock.host, &single_locale("en-US"), &empty_plural_options());
+        assert_eq!(
+            select_intl_plural_category(&handle, 1.0),
+            IntlPluralCategory::One
+        );
+    }
+}
+
+mod select_intl_plural_category {
+    use super::*;
+
+    #[test]
+    fn delegates_one_selection_to_the_handle() {
+        let mock = mock_intl();
+        let handle =
+            (mock.host.create_plural_rules)(&single_locale("en-US"), &empty_plural_options());
+        assert_eq!(
+            select_intl_plural_category(&handle, 2.0),
+            (handle.select)(2.0)
+        );
+    }
+}
+
 mod select_ordinal_category {
     use super::*;
 
@@ -20,10 +50,7 @@ mod select_ordinal_category {
         );
         let calls = factory_calls_for(&mock, "plural");
         assert_eq!(calls.len(), 1);
-        assert_eq!(
-            get_cache_key("plural", &locale, Some(&calls[0].options)),
-            "plural|en-US|{\"type\":\"ordinal\"}"
-        );
+        assert_eq!(calls[0].options_key, "plural|en-US|{\"type\":\"ordinal\"}");
         assert_eq!(*mock.plural_inputs.lock().unwrap(), vec![1.0, 2.0]);
     }
 }
@@ -40,9 +67,6 @@ mod select_plural_category {
         select_ordinal_category(&mut cache, &mock.host, 1.0, &locale, None);
         let calls = factory_calls_for(&mock, "plural");
         assert_eq!(calls.len(), 2);
-        assert_eq!(
-            get_cache_key("plural", &locale, Some(&calls[0].options)),
-            "plural|en-US|{\"type\":\"cardinal\"}"
-        );
+        assert_eq!(calls[0].options_key, "plural|en-US|{\"type\":\"cardinal\"}");
     }
 }
