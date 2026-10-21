@@ -15,7 +15,7 @@ src/app.rs: impl HostAppDockCapability :: fn set_app_dock_menu(&self, items: &[R
 src/app.rs: impl HostAppFocusCapability :: fn focus_app(&self)
 src/app.rs: impl HostAppHideCapability :: fn hide_app(&self)
 src/app.rs: impl HostAppLocaleCapability :: fn get_app_locale(&self) -> String
-src/app.rs: impl HostAppLocaleCapability :: fn get_app_preferred_system_languages(&self) -> Vec<String>
+src/app.rs: impl HostAppLocaleCapability :: fn get_app_preferred_system_languages(&self, out: &mut Vec<String>)
 src/app.rs: impl HostAppLocaleCapability :: fn get_app_system_locale(&self) -> String
 src/app.rs: impl HostAppLoginItemCapability :: fn get_app_login_item(&self) -> AppLoginItem
 src/app.rs: impl HostAppLoginItemCapability :: fn set_app_login_item(&self, settings: &AppLoginItemLike)
@@ -62,7 +62,7 @@ src/app.rs: pub fn get_app_login_item(host_app_login_item: &HostAppLoginItemCapa
 src/app.rs: pub fn get_app_name(host_app_name: &HostAppNameCapability) -> String
 src/app.rs: pub fn get_app_path(host_app_path: &HostAppPathCapability) -> String
 src/app.rs: pub fn get_app_path_kind_string(value: AppPathKind) -> &'static str
-src/app.rs: pub fn get_app_preferred_system_languages(host_app_locale: &HostAppLocaleCapability,) -> Vec<String>
+src/app.rs: pub fn get_app_preferred_system_languages(out: &mut Vec<String>, host_app_locale: &HostAppLocaleCapability,)
 src/app.rs: pub fn get_app_system_locale(host_app_locale: &HostAppLocaleCapability) -> String
 src/app.rs: pub fn get_app_version(host_app_version: &HostAppVersionCapability) -> String
 src/app.rs: pub fn get_mobile_os_profile_string(value: MobileOsProfile) -> &'static str
@@ -94,7 +94,7 @@ src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn enable_app_loop_life
 src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn for_each_app_loop_window(&self, visitor: &mut dyn FnMut(&Ref<AppWindow>))
 src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn get_app_loop_frame_rate(&self) -> f64
 src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn get_app_loop_main_window(&self) -> Option<Ref<AppWindow>>
-src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn get_app_loop_windows(&self) -> Vec<Ref<AppWindow>>
+src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn get_app_loop_windows(&self, out: &mut Vec<Ref<AppWindow>>)
 src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn is_app_loop_running(&self) -> bool
 src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn pause_app_loop(&self)
 src/app_loop.rs: impl AppLoopMethods for Ref<AppLoop> :: fn register_app_loop_window(&self, win: &Ref<AppWindow>)
@@ -114,7 +114,7 @@ src/app_loop.rs: pub fn enable_app_loop_lifecycle_signals(app: &Ref<AppLoop>)
 src/app_loop.rs: pub fn for_each_app_loop_window(app: &Ref<AppLoop>, visitor: &mut dyn FnMut(&Ref<AppWindow>))
 src/app_loop.rs: pub fn get_app_loop_frame_rate(app: &Ref<AppLoop>) -> f64
 src/app_loop.rs: pub fn get_app_loop_main_window(app: &Ref<AppLoop>) -> Option<Ref<AppWindow>>
-src/app_loop.rs: pub fn get_app_loop_windows(app: &Ref<AppLoop>) -> Vec<Ref<AppWindow>>
+src/app_loop.rs: pub fn get_app_loop_windows(out: &mut Vec<Ref<AppWindow>>, app: &Ref<AppLoop>)
 src/app_loop.rs: pub fn initialize_app_loop(out: &mut AppLoop)
 src/app_loop.rs: pub fn is_app_loop_running(app: &Ref<AppLoop>) -> bool
 src/app_loop.rs: pub fn pause_app_loop(app: &Ref<AppLoop>)
@@ -125,7 +125,7 @@ src/app_loop.rs: pub fn start_app_loop(host_app_loop: &HostAppLoopCapability, ho
 src/app_loop.rs: pub fn step_app_loop(app: &Ref<AppLoop>, delta_time: f64, options: Option<&AppStepOptions>)
 src/app_loop.rs: pub fn stop_app_loop(app: &Ref<AppLoop>)
 src/app_loop.rs: pub fn unregister_app_loop_window(app: &Ref<AppLoop>, win: &Ref<AppWindow>)
-src/app_loop.rs: pub trait AppLoopMethods { fn attach_app_loop_lifecycle(&self, win: &Ref<AppWindow>); fn detach_app_loop_exit(&self); fn dispose_app_loop(&self); fn enable_app_loop_lifecycle_signals(&self); fn for_each_app_loop_window(&self, visitor: &mut dyn FnMut(&Ref<AppWindow>)); fn get_app_loop_frame_rate(&self) -> f64; fn get_app_loop_main_window(&self) -> Option<Ref<AppWindow>>; fn get_app_loop_windows(&self) -> Vec<Ref<AppWindow>>; fn is_app_loop_running(&self) -> bool; fn pause_app_loop(&self); fn register_app_loop_window(&self, win: &Ref<AppWindow>); fn resume_app_loop(&self); fn set_app_loop_main_window(&self, win: &Ref<AppWindow>); fn step_app_loop(&self, delta_time: f64, options: Option<&AppStepOptions>); fn stop_app_loop(&self); fn unregister_app_loop_window(&self, win: &Ref<AppWindow>); }
+src/app_loop.rs: pub trait AppLoopMethods { fn attach_app_loop_lifecycle(&self, win: &Ref<AppWindow>); fn detach_app_loop_exit(&self); fn dispose_app_loop(&self); fn enable_app_loop_lifecycle_signals(&self); fn for_each_app_loop_window(&self, visitor: &mut dyn FnMut(&Ref<AppWindow>)); fn get_app_loop_frame_rate(&self) -> f64; fn get_app_loop_main_window(&self) -> Option<Ref<AppWindow>>; fn get_app_loop_windows(&self, out: &mut Vec<Ref<AppWindow>>); fn is_app_loop_running(&self) -> bool; fn pause_app_loop(&self); fn register_app_loop_window(&self, win: &Ref<AppWindow>); fn resume_app_loop(&self); fn set_app_loop_main_window(&self, win: &Ref<AppWindow>); fn step_app_loop(&self, delta_time: f64, options: Option<&AppStepOptions>); fn stop_app_loop(&self); fn unregister_app_loop_window(&self, win: &Ref<AppWindow>); }
 src/app_window.rs: impl AppWindow :: fn attach_render_state_observer(win: &Ref<AppWindow>, cleanup: AppUnsubscribe)
 src/app_window.rs: impl AppWindow :: fn detach_render_state_observer(win: &Ref<AppWindow>)
 src/app_window.rs: impl AppWindowMethods for Ref<AppWindow>

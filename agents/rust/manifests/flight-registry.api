@@ -2,7 +2,9 @@ src/contract.rs: pub use super::registry_table::*;
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::KindMap;
 src/lib.rs: pub use contract::OrdinalTable;
+src/lib.rs: pub use contract::clone_ordinal_table;
 src/lib.rs: pub use contract::concat_kind_map;
+src/lib.rs: pub use contract::copy_ordinal_table;
 src/lib.rs: pub use contract::create_ordinal_table;
 src/lib.rs: pub use contract::get_kind_map_keys;
 src/lib.rs: pub use contract::get_ordinal_table_entry;
@@ -11,7 +13,9 @@ src/lib.rs: pub use contract::without_kind_map_entry;
 src/registry_table.rs: #[derive(Clone, Debug, PartialEq)] pub struct KindMap<T> { pub entries: HashMap<Kind, T>, pub key_order: Vec<Kind>, }
 src/registry_table.rs: #[derive(Clone, Debug, PartialEq)] pub struct OrdinalTable<T> { pub entries: Vec<Option<T>>, pub vocabulary: Vec<Kind>, }
 src/registry_table.rs: impl OrdinalTable<T> :: fn new(vocabulary: &[Kind]) -> NonEntityCreateResult<Self>
+src/registry_table.rs: pub fn clone_ordinal_table<T: Clone>(source: &OrdinalTable<T>) -> OrdinalTable<T>
 src/registry_table.rs: pub fn concat_kind_map<T: Clone>(base: &KindMap<T>, overlay: &KindMap<T>) -> KindMap<T>
+src/registry_table.rs: pub fn copy_ordinal_table<T: Clone>(out: &mut OrdinalTable<T>, source: &OrdinalTable<T>)
 src/registry_table.rs: pub fn create_ordinal_table<T>(vocabulary: &[Kind]) -> NonEntityCreateResult<OrdinalTable<T>>
 src/registry_table.rs: pub fn get_kind_map_keys<T>(out: &mut Vec<Kind>, map: &KindMap<T>)
 src/registry_table.rs: pub fn get_ordinal_table_entry<T>(table: &OrdinalTable<T>, ordinal: usize) -> Option<&T>

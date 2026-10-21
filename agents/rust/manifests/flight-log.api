@@ -15,10 +15,20 @@ src/log.rs: #[derive(Clone, Debug)] pub struct LogTimer { pub label: String, pub
 src/log.rs: #[derive(Clone, Debug)] pub struct RateLimitedLogSinkOptions { pub per_channel: bool, pub max_per_interval: usize, pub interval_ms: f64, }
 src/log.rs: #[derive(Clone, Debug, Default)] pub struct BufferedLogSinkOptions { pub size: Option<usize>, pub interval_ms: Option<f64>, }
 src/log.rs: #[derive(Clone, Debug, Default)] pub struct TextLogFormatterOptions { pub indent_groups: Option<bool>, pub level_prefix: Option<bool>, pub timestamp: Option<bool>, }
+src/log.rs: impl Default for BufferedLogSink
+src/log.rs: impl Default for BufferedLogSink :: fn default() -> Self
+src/log.rs: impl Default for LogContext
+src/log.rs: impl Default for LogContext :: fn default() -> Self
 src/log.rs: impl Default for LogLevel
 src/log.rs: impl Default for LogLevel :: fn default() -> Self
+src/log.rs: impl Default for LogSpan
+src/log.rs: impl Default for LogSpan :: fn default() -> Self
 src/log.rs: impl Default for LogState
 src/log.rs: impl Default for LogState :: fn default() -> Self
+src/log.rs: impl Default for MemoryLogSink
+src/log.rs: impl Default for MemoryLogSink :: fn default() -> Self
+src/log.rs: impl Default for RateLimitedLogSink
+src/log.rs: impl Default for RateLimitedLogSink :: fn default() -> Self
 src/log.rs: impl Entity for BufferedLogSink
 src/log.rs: impl Entity for BufferedLogSink :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/log.rs: impl Entity for BufferedLogSink :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
@@ -83,8 +93,13 @@ src/log.rs: pub fn get_log_channel_level(state: &LogStateRef, channel: &str) -> 
 src/log.rs: pub fn get_log_console_level(state: &LogStateRef) -> LogLevel
 src/log.rs: pub fn get_log_level(state: &LogStateRef) -> LogLevel
 src/log.rs: pub fn get_log_level_name(level: LogLevel) -> &'static str
-src/log.rs: pub fn get_memory_log_sink_entries(handle: &MemoryLogSink) -> Vec<LogEntry>
+src/log.rs: pub fn get_memory_log_sink_entries(out: &mut Vec<LogEntry>, handle: &MemoryLogSink)
+src/log.rs: pub fn initialize_buffered_log_sink(out: &mut BufferedLogSink, target: LogSink, options: Option<&BufferedLogSinkOptions>,)
+src/log.rs: pub fn initialize_log_context(out: &mut LogContext, channel: Option<String>, fields: Option<HashMap<String, LogValue>>,)
+src/log.rs: pub fn initialize_log_span(out: &mut LogSpan, state: &LogStateRef, name: &str, fields: Option<HashMap<String, LogValue>>, channel: Option<String>,)
 src/log.rs: pub fn initialize_log_state(out: &mut LogState)
+src/log.rs: pub fn initialize_memory_log_sink(out: &mut MemoryLogSink, capacity: usize)
+src/log.rs: pub fn initialize_rate_limited_log_sink(out: &mut RateLimitedLogSink, target: LogSink, options: &RateLimitedLogSinkOptions,)
 src/log.rs: pub fn log(state: &LogStateRef, now_ms: f64, level: LogLevel, data: LogDataOrProvider, channel: Option<String>)
 src/log.rs: pub fn log_assert(state: &LogStateRef, now_ms: f64, condition: bool, data: LogDataOrProvider, channel: Option<String>)
 src/log.rs: pub fn log_debug(state: &LogStateRef, now_ms: f64, data: LogDataOrProvider, channel: Option<String>)

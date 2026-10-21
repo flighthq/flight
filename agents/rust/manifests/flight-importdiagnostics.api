@@ -1,7 +1,7 @@
 src/contract.rs: pub use super::import_diagnostic_collector::*;
 src/contract.rs: pub use super::import_diagnostic_text::*;
 src/contract.rs: pub use super::types::*;
-src/import_diagnostic_collector.rs: pub fn collect_import_diagnostics(run: &dyn Fn(&mut Vec<ImportDiagnostic>),) -> Vec<ImportDiagnostic>
+src/import_diagnostic_collector.rs: pub fn collect_import_diagnostics(out: &mut Vec<ImportDiagnostic>, run: &dyn Fn(&mut Vec<ImportDiagnostic>),)
 src/import_diagnostic_collector.rs: pub fn report_import_diagnostic(sink: Option<&mut Vec<ImportDiagnostic>>, severity: ImportDiagnosticSeverity, kind: &str, origin: &str, detail: Option<HashMap<String, ImportDiagnosticDetailValue>>,)
 src/import_diagnostic_text.rs: pub fn format_import_diagnostic(diagnostic: &ImportDiagnostic) -> String
 src/lib.rs: pub mod contract

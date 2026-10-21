@@ -145,7 +145,7 @@ src/tray.rs: impl HostTrayImageCapability :: fn set_icon(&self, tray: &Ref<TrayI
 src/tray.rs: impl HostTrayImageCapability :: fn start_icon_animation(&self, state: &TrayAnimationState, tray: &Ref<TrayIcon>, frames: &[TrayIconSource], interval_ms: f64,) -> TrayFuture<TrayAnimationStartResult>
 src/tray.rs: impl HostTrayInteractionEventsCapability :: fn on_interaction(&self, tray: &Ref<TrayIcon>, listener: SignalSlot<TrayInteractionEvent>,) -> TrayEventAttachResult
 src/tray.rs: impl HostTrayLifecycleCapability :: fn create_icon(&self, options: &TrayIconOptions) -> TrayFuture<TrayCreateResult>
-src/tray.rs: impl HostTrayLifecycleCapability :: fn icons(&self) -> Vec<Ref<TrayIcon>>
+src/tray.rs: impl HostTrayLifecycleCapability :: fn icons(&self, out: &mut Vec<Ref<TrayIcon>>)
 src/tray.rs: impl HostTrayMenuCapability :: fn set_icon_context_menu(&self, tray: &Ref<TrayIcon>, items: &[Ref<MenuItemTemplate>],) -> TrayFuture<TrayMenuUpdateResult>
 src/tray.rs: impl HostTrayMenuSelectionEventsCapability :: fn on_menu_selection(&self, tray: &Ref<TrayIcon>, listener: SignalSlot<TrayMenuSelectionEvent>,) -> TrayEventAttachResult
 src/tray.rs: impl HostTrayPopupMenuCapability :: fn popup_context_menu(&self, tray: &Ref<TrayIcon>, position: Option<&Vector2>,) -> TrayFuture<TrayPopupMenuResult>
@@ -173,7 +173,7 @@ src/tray.rs: pub fn get_tray_create_failure_outcome_string(value: TrayCreateFail
 src/tray.rs: pub fn get_tray_icon_bounds(host_tray_bounds: &HostTrayBoundsCapability, tray: &Ref<TrayIcon>,) -> TrayFuture<TrayBoundsResult>
 src/tray.rs: pub fn get_tray_icon_title(host_tray_title: &HostTrayTitleCapability, tray: &Ref<TrayIcon>,) -> TrayFuture<TrayTitleReadResult>
 src/tray.rs: pub fn get_tray_icon_tooltip(host_tray_tooltip: &HostTrayTooltipCapability, tray: &Ref<TrayIcon>,) -> TrayFuture<TrayTooltipReadResult>
-src/tray.rs: pub fn get_tray_icons(host_tray_lifecycle: &HostTrayLifecycleCapability) -> Vec<Ref<TrayIcon>>
+src/tray.rs: pub fn get_tray_icons(out: &mut Vec<Ref<TrayIcon>>, host_tray_lifecycle: &HostTrayLifecycleCapability,)
 src/tray.rs: pub fn get_tray_interaction_type_string(value: TrayInteractionType) -> &'static str
 src/tray.rs: pub fn initialize_tray_create_failed_result(out: &mut TrayCreateResult, error: Option<Unknown>)
 src/tray.rs: pub fn initialize_tray_create_provider_failure_result(out: &mut TrayCreateResult, error: Option<Unknown>, outcome: TrayCreateFailureOutcome,)

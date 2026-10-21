@@ -10,6 +10,7 @@ src/contract.rs: pub use super::scene_document_strings::*;
 src/contract.rs: pub use super::scene_document_yaml_subset::*;
 src/contract.rs: pub use super::types::*;
 src/flight_document_resource_dependencies.rs: pub fn get_flight_document_resource_dependencies<'a>(document: &'a FlightDocument, schemas: &FlightDocumentSchemaRegistry,) -> Option<&'a [FlightDocumentResourceDescriptor]>
+src/flight_document_text.rs: pub fn create_flight_document_refusal_explanation(actual: Option<i64>, column: Option<usize>, kind: Option<String>, limit: Option<i64>, line: Option<usize>, mode: Option<String>, offset: Option<usize>, path: &str, reason: FlightDocumentRefusalReason, resource_key: Option<String>, token_key: Option<String>, version: Option<f64>,) -> FlightDocumentRefusalExplanation
 src/flight_document_text.rs: pub fn explain_flight_document_text(text: &str) -> Option<FlightDocumentRefusalExplanation>
 src/flight_document_text.rs: pub fn format_flight_document_text(document: &FlightDocument) -> FlightDocumentText
 src/flight_document_text.rs: pub fn initialize_flight_document_refusal_explanation(out: &mut FlightDocumentRefusalExplanation, actual: Option<i64>, column: Option<usize>, kind: Option<String>, limit: Option<i64>, line: Option<usize>, mode: Option<String>, offset: Option<usize>, path: &str, reason: FlightDocumentRefusalReason, resource_key: Option<String>, token_key: Option<String>, version: Option<f64>,)

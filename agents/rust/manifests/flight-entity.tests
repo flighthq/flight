@@ -58,7 +58,9 @@ tests/record_test.rs: delete_record_value::reindexes_every_shifted_entry_after_d
 tests/record_test.rs: delete_record_value::reinserting_an_ordinary_key_moves_it_to_the_end
 tests/record_test.rs: delete_record_value::removes_present_keys_and_reports_absent_keys
 tests/record_test.rs: entries::borrows_arbitrary_nonclone_values
+tests/record_test.rs: entries::clears_a_reused_out_and_keeps_its_capacity
 tests/record_test.rs: entries::returns_values_in_the_same_javascript_order_as_keys
+tests/record_test.rs: get_record_keys::clears_a_reused_out_and_keeps_its_capacity
 tests/record_test.rs: get_record_keys::empty_records_have_no_keys
 tests/record_test.rs: get_record_keys::matches_javascript_integer_index_boundaries_and_canonical_spelling
 tests/record_test.rs: get_record_value::distinguishes_explicit_unknown_null_from_missing

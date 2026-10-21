@@ -1,0 +1,32 @@
+src/contract.rs: pub use super::explain_unpacked_rectangles::*;
+src/contract.rs: pub use super::pack_rectangles::*;
+src/explain_unpacked_rectangles.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub enum UnpackedRectangleReason { Oversized, RegionCollapsed, BinExhausted, }
+src/explain_unpacked_rectangles.rs: #[derive(Debug, Clone, PartialEq)] pub struct UnpackedRectangleExplanation { pub id: RectangleId, pub reason: UnpackedRectangleReason, pub usable_width: f32, pub usable_height: f32, }
+src/explain_unpacked_rectangles.rs: pub fn explain_unpacked_rectangles(out: &mut Vec<UnpackedRectangleExplanation>, rectangles: &[PackableRectangle], options: Option<&BinPackOptions>,)
+src/explain_unpacked_rectangles.rs: pub fn get_unpacked_rectangle_reason_string(value: UnpackedRectangleReason) -> &'static str
+src/explain_unpacked_rectangles.rs: pub fn parse_unpacked_rectangle_reason(value: &str) -> Option<UnpackedRectangleReason>
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::BinPackHeuristic;
+src/lib.rs: pub use contract::BinPackOptions;
+src/lib.rs: pub use contract::PackResult;
+src/lib.rs: pub use contract::PackableRectangle;
+src/lib.rs: pub use contract::PackedRectangle;
+src/lib.rs: pub use contract::RectangleId;
+src/lib.rs: pub use contract::UnpackedRectangleExplanation;
+src/lib.rs: pub use contract::UnpackedRectangleReason;
+src/lib.rs: pub use contract::explain_unpacked_rectangles;
+src/lib.rs: pub use contract::get_pack_result_occupancy;
+src/lib.rs: pub use contract::pack_rectangles;
+src/pack_rectangles.rs: #[derive(Debug, Clone)] pub struct BinPackOptions { pub padding: Option<f32>, pub border: Option<f32>, pub allow_rotation: Option<bool>, pub heuristic: Option<BinPackHeuristic>, pub growable: Option<bool>, pub power_of_two: Option<bool>, pub square: Option<bool>, pub max_width: Option<f32>, pub max_height: Option<f32>, }
+src/pack_rectangles.rs: #[derive(Debug, Clone)] pub struct PackableRectangle { pub id: RectangleId, pub width: f32, pub height: f32, }
+src/pack_rectangles.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub enum BinPackHeuristic { #[default] BestShortSideFit, BestAreaFit, }
+src/pack_rectangles.rs: #[derive(Debug, Clone, PartialEq)] pub struct PackResult { pub placements: Vec<PackedRectangle>, pub width: f32, pub height: f32, pub unpacked: Vec<RectangleId>, }
+src/pack_rectangles.rs: #[derive(Debug, Clone, PartialEq)] pub struct PackedRectangle { pub id: RectangleId, pub x: f32, pub y: f32, pub width: f32, pub height: f32, pub rotated: bool, }
+src/pack_rectangles.rs: #[derive(Debug, Clone, PartialEq, Eq, Hash)] pub enum RectangleId { Number(i32), Text(String), }
+src/pack_rectangles.rs: impl std::fmt::Display for RectangleId
+src/pack_rectangles.rs: impl std::fmt::Display for RectangleId :: fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+src/pack_rectangles.rs: pub const BIN_PACK_DEFAULT_MAX_EXTENT: f32
+src/pack_rectangles.rs: pub fn get_bin_pack_heuristic_string(value: BinPackHeuristic) -> &'static str
+src/pack_rectangles.rs: pub fn get_pack_result_occupancy(result: &PackResult) -> f32
+src/pack_rectangles.rs: pub fn pack_rectangles(rects: &[PackableRectangle], options: Option<&BinPackOptions>,) -> PackResult
+src/pack_rectangles.rs: pub fn parse_bin_pack_heuristic(value: &str) -> Option<BinPackHeuristic>

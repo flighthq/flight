@@ -61,7 +61,7 @@ src/hierarchy.rs: pub fn add_node_child_at(target: &NodeRef, child: &NodeRef, in
 src/hierarchy.rs: pub fn add_node_children(target: &NodeRef, children: &[NodeRef])
 src/hierarchy.rs: pub fn contains_node_child(source: &NodeRef, child: &NodeRef) -> bool
 src/hierarchy.rs: pub fn for_each_node_child(source: &NodeRef, callback: &mut dyn FnMut(&NodeRef, usize) -> bool)
-src/hierarchy.rs: pub fn get_node_ancestors(source: &NodeRef) -> Vec<NodeRef>
+src/hierarchy.rs: pub fn get_node_ancestors(out: &mut Vec<NodeRef>, source: &NodeRef)
 src/hierarchy.rs: pub fn get_node_child_at(source: &NodeRef, index: i32) -> Option<NodeRef>
 src/hierarchy.rs: pub fn get_node_child_by_name(source: &NodeRef, name: &str) -> Option<NodeRef>
 src/hierarchy.rs: pub fn get_node_child_count(source: &NodeRef) -> usize
@@ -333,7 +333,7 @@ src/traversal.rs: pub fn find_node(source: &NodeRef, predicate: &mut dyn FnMut(&
 src/traversal.rs: pub fn find_node_by_name(source: &NodeRef, name: &str) -> Option<NodeRef>
 src/traversal.rs: pub fn for_each_node_ancestor(source: &NodeRef, callback: &mut dyn FnMut(&NodeRef) -> bool)
 src/traversal.rs: pub fn for_each_node_descendant(source: &NodeRef, callback: &mut dyn FnMut(&NodeRef))
-src/traversal.rs: pub fn get_node_children(source: &NodeRef) -> Vec<NodeRef>
+src/traversal.rs: pub fn get_node_children(out: &mut Vec<NodeRef>, source: &NodeRef)
 src/traversal.rs: pub fn get_node_depth(source: &NodeRef) -> usize
 src/traversal.rs: pub fn get_node_next_sibling(source: &NodeRef) -> Option<NodeRef>
 src/traversal.rs: pub fn get_node_previous_sibling(source: &NodeRef) -> Option<NodeRef>

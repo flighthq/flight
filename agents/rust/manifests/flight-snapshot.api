@@ -45,7 +45,7 @@ src/restore_snapshot.rs: pub fn restore_snapshot(snapshot: &Snapshot, target: &S
 src/snapshot_value.rs: pub fn create_snapshot_array(items: Vec<SnapshotValue>) -> SnapshotValue
 src/snapshot_value.rs: pub fn create_snapshot_non_plain(kind: SnapshotNonPlainKind, value: Unknown) -> SnapshotValue
 src/snapshot_value.rs: pub fn create_snapshot_object(entries: Vec<(String, SnapshotValue)>) -> SnapshotValue
-src/snapshot_value.rs: pub fn get_snapshot_keys(value: &SnapshotValue) -> Vec<String>
+src/snapshot_value.rs: pub fn get_snapshot_keys(out: &mut Vec<String>, value: &SnapshotValue)
 src/snapshot_value.rs: pub fn get_snapshot_length(value: &SnapshotValue) -> usize
 src/snapshot_value.rs: pub fn get_snapshot_value(value: &SnapshotValue, key: &str) -> SnapshotValue
 src/snapshot_value.rs: pub fn is_snapshot_array(value: &SnapshotValue) -> bool

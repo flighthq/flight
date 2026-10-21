@@ -1,0 +1,20 @@
+src/contract.rs: pub use super::types::*;
+src/contract.rs: pub use super::xml_parse::*;
+src/contract.rs: pub use super::xml_query::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::XmlContent;
+src/lib.rs: pub use contract::XmlElement;
+src/lib.rs: pub use contract::get_xml_element_attribute;
+src/lib.rs: pub use contract::get_xml_element_attribute_number;
+src/lib.rs: pub use contract::get_xml_element_child_by_name;
+src/lib.rs: pub use contract::get_xml_element_children_by_name;
+src/lib.rs: pub use contract::parse_xml_attributes;
+src/lib.rs: pub use contract::parse_xml_document;
+src/types.rs: #[derive(Clone, Debug)] pub enum XmlContent { Text(String), Element(Ref<XmlElement>), }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct XmlElement { pub attributes: HashMap<String, String>, pub children: Vec<Ref<XmlElement>>, pub content: Vec<XmlContent>, pub name: String, pub text: String, }
+src/xml_parse.rs: pub fn parse_xml_attributes(attrs: &str) -> HashMap<String, String>
+src/xml_parse.rs: pub fn parse_xml_document(xml: &str) -> Option<XmlElement>
+src/xml_query.rs: pub fn get_xml_element_attribute<'a>(element: &'a XmlElement, name: &str) -> Option<&'a str>
+src/xml_query.rs: pub fn get_xml_element_attribute_number(element: &XmlElement, name: &str) -> Option<f64>
+src/xml_query.rs: pub fn get_xml_element_child_by_name(element: &XmlElement, name: &str) -> Option<Ref<XmlElement>>
+src/xml_query.rs: pub fn get_xml_element_children_by_name(out: &mut Vec<Ref<XmlElement>>, element: &XmlElement, name: &str,)

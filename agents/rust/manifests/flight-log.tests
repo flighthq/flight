@@ -67,8 +67,14 @@ tests/log_test.rs: get_log_channel_level::returns_the_set_level_for_a_known_chan
 tests/log_test.rs: get_log_console_level::returns_the_current_threshold
 tests/log_test.rs: get_log_level::returns_the_current_global_emit_level
 tests/log_test.rs: get_log_level_name::returns_the_canonical_lowercase_name_for_each_level
+tests/log_test.rs: get_memory_log_sink_entries::clears_a_reused_out_and_keeps_its_capacity
 tests/log_test.rs: get_memory_log_sink_entries::returns_empty_before_any_entries
+tests/log_test.rs: initialize_buffered_log_sink::rebinds_a_sink_to_a_fresh_buffer_over_its_new_target
+tests/log_test.rs: initialize_log_context::replaces_the_channel_and_base_fields
+tests/log_test.rs: initialize_log_span::takes_the_next_span_id_from_the_caller_owned_state
 tests/log_test.rs: initialize_log_state::resets_every_state_field_and_keeps_the_runtime_slot
+tests/log_test.rs: initialize_memory_log_sink::rebinds_a_sink_to_an_empty_ring_of_the_new_capacity
+tests/log_test.rs: initialize_rate_limited_log_sink::rebinds_a_sink_to_a_fresh_budget_over_its_new_target
 tests/log_test.rs: log_assert_tests::does_not_emit_when_condition_is_true
 tests/log_test.rs: log_assert_tests::emits_an_error_entry_when_condition_is_false
 tests/log_test.rs: log_debug_tests::accepts_a_lazy_provider

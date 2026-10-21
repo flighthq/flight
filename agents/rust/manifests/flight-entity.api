@@ -47,8 +47,8 @@ src/record.rs: #[derive(Clone, Debug)] pub struct Record<V> { storage: Vec<(Stri
 src/record.rs: impl Default for Record<V>
 src/record.rs: impl Default for Record<V> :: fn default() -> Self
 src/record.rs: pub fn delete_record_value<V>(record: &mut Record<V>, key: &str) -> bool
-src/record.rs: pub fn entries<V>(record: &Record<V>) -> Vec<(&str, &V)>
-src/record.rs: pub fn get_record_keys<V>(record: &Record<V>) -> Vec<String>
+src/record.rs: pub fn entries<'a, V>(out: &mut Vec<(&'a str, &'a V)>, record: &'a Record<V>)
+src/record.rs: pub fn get_record_keys<V>(out: &mut Vec<String>, record: &Record<V>)
 src/record.rs: pub fn get_record_value<'a, V>(record: &'a Record<V>, key: &str) -> Option<&'a V>
 src/record.rs: pub fn has_record_key<V>(record: &Record<V>, key: &str) -> bool
 src/record.rs: pub fn set_record_value<V>(record: &mut Record<V>, key: String, value: V)

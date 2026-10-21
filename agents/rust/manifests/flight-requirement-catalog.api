@@ -7,14 +7,14 @@ src/contract.rs: pub use super::requirement_catalog::*;
 src/contract.rs: pub use super::types::*;
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::*;
-src/requirement_catalog.rs: impl RequirementCatalog :: fn entries(&self) -> Vec<RequirementCatalogEntryRef>
-src/requirement_catalog.rs: impl RequirementCatalog :: fn find_entries(&self, backend: &str, facet: flight_requirement::RequirementFacet, kind: &str,) -> Vec<RequirementCatalogEntryRef>
+src/requirement_catalog.rs: impl RequirementCatalog :: fn entries(&self, out: &mut Vec<RequirementCatalogEntryRef>)
+src/requirement_catalog.rs: impl RequirementCatalog :: fn find_entries(&self, out: &mut Vec<RequirementCatalogEntryRef>, backend: &str, facet: flight_requirement::RequirementFacet, kind: &str,)
 src/requirement_catalog.rs: impl RequirementCatalog :: fn new(entries: &[RequirementCatalogEntry], translations: &[RequirementTranslation], dispositions: &[RequirementDisposition],) -> Self
 src/requirement_catalog.rs: impl RequirementCatalog :: fn register_entry(&mut self, entry: &RequirementCatalogEntry)
 src/requirement_catalog.rs: impl RequirementCatalog :: fn unregister_entry(&mut self, entry: &RequirementCatalogEntry) -> bool
 src/requirement_catalog.rs: pub fn create_requirement_catalog(entries: &[RequirementCatalogEntry], translations: &[RequirementTranslation], dispositions: &[RequirementDisposition],) -> RequirementCatalog
-src/requirement_catalog.rs: pub fn find_requirement_catalog_entries(catalog: &RequirementCatalog, backend: &str, facet: flight_requirement::RequirementFacet, kind: &str,) -> Vec<RequirementCatalogEntryRef>
-src/requirement_catalog.rs: pub fn get_requirement_catalog_entries(catalog: &RequirementCatalog,) -> Vec<RequirementCatalogEntryRef>
+src/requirement_catalog.rs: pub fn find_requirement_catalog_entries(out: &mut Vec<RequirementCatalogEntryRef>, catalog: &RequirementCatalog, backend: &str, facet: flight_requirement::RequirementFacet, kind: &str,)
+src/requirement_catalog.rs: pub fn get_requirement_catalog_entries(out: &mut Vec<RequirementCatalogEntryRef>, catalog: &RequirementCatalog,)
 src/requirement_catalog.rs: pub fn register_requirement_catalog_entry(catalog: &mut RequirementCatalog, entry: &RequirementCatalogEntry,)
 src/requirement_catalog.rs: pub fn unregister_requirement_catalog_entry(catalog: &mut RequirementCatalog, entry: &RequirementCatalogEntry,) -> bool
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ContentParserInputKind { Bytes, String, }

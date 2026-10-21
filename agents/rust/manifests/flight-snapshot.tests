@@ -68,6 +68,7 @@ tests/restore_snapshot_test.rs: restore_snapshot::writes_a_snapshot_back_into_a_
 tests/snapshot_value_test.rs: create_snapshot_array::creates_a_mutable_array_of_the_items
 tests/snapshot_value_test.rs: create_snapshot_non_plain::keeps_the_kind_and_the_original_value
 tests/snapshot_value_test.rs: create_snapshot_object::assigns_entries_in_js_key_order
+tests/snapshot_value_test.rs: get_snapshot_keys::clears_a_reused_out_for_a_value_without_keys
 tests/snapshot_value_test.rs: get_snapshot_keys::lists_indices_own_keys_or_nothing
 tests/snapshot_value_test.rs: get_snapshot_length::reports_an_array_length_and_zero_otherwise
 tests/snapshot_value_test.rs: get_snapshot_value::reads_elements_and_properties_or_undefined

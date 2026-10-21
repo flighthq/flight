@@ -6,14 +6,14 @@ src/contract.rs: pub use crate::types::*;
 src/lasso_selection.rs: impl LassoSelection :: fn add_point(&mut self, x: f64, y: f64)
 src/lasso_selection.rs: impl LassoSelection :: fn begin(&mut self, start_x: f64, start_y: f64)
 src/lasso_selection.rs: impl LassoSelection :: fn end(&mut self) -> &Path
-src/lasso_selection.rs: impl LassoSelection :: fn find_nodes(&self, candidates: &[NodeRef]) -> Vec<NodeRef>
+src/lasso_selection.rs: impl LassoSelection :: fn find_nodes(&self, out: &mut Vec<NodeRef>, candidates: &[NodeRef])
 src/lasso_selection.rs: impl LassoSelection :: fn new() -> Self
 src/lasso_selection.rs: impl LassoSelection :: fn path(&self) -> &Path
 src/lasso_selection.rs: pub fn add_lasso_selection_point(selection: &mut LassoSelection, x: f64, y: f64)
 src/lasso_selection.rs: pub fn begin_lasso_selection(selection: &mut LassoSelection, start_x: f64, start_y: f64)
 src/lasso_selection.rs: pub fn create_lasso_selection() -> LassoSelection
 src/lasso_selection.rs: pub fn end_lasso_selection(selection: &mut LassoSelection) -> &Path
-src/lasso_selection.rs: pub fn find_nodes_in_lasso_selection(selection: &LassoSelection, candidates: &[NodeRef],) -> Vec<NodeRef>
+src/lasso_selection.rs: pub fn find_nodes_in_lasso_selection(out: &mut Vec<NodeRef>, selection: &LassoSelection, candidates: &[NodeRef],)
 src/lasso_selection.rs: pub fn get_lasso_selection_path(selection: &LassoSelection) -> &Path
 src/lasso_selection.rs: pub fn initialize_lasso_selection(out: &mut LassoSelection)
 src/lib.rs: pub mod contract
@@ -54,7 +54,7 @@ src/lib.rs: pub use contract::toggle_node_selection;
 src/lib.rs: pub use contract::update_marquee_selection;
 src/marquee_selection.rs: impl MarqueeSelection :: fn begin(&mut self, start_x: f32, start_y: f32)
 src/marquee_selection.rs: impl MarqueeSelection :: fn end(&mut self) -> &Rectangle
-src/marquee_selection.rs: impl MarqueeSelection :: fn find_nodes(&self, candidates: &[NodeRef], mode: Option<MarqueeSelectionMode>,) -> Vec<NodeRef>
+src/marquee_selection.rs: impl MarqueeSelection :: fn find_nodes(&self, out: &mut Vec<NodeRef>, candidates: &[NodeRef], mode: Option<MarqueeSelectionMode>,)
 src/marquee_selection.rs: impl MarqueeSelection :: fn new() -> Self
 src/marquee_selection.rs: impl MarqueeSelection :: fn rectangle(&self) -> &Rectangle
 src/marquee_selection.rs: impl MarqueeSelection :: fn update(&mut self, current_x: f32, current_y: f32)
@@ -62,7 +62,7 @@ src/marquee_selection.rs: impl MarqueeSelectionMode :: fn as_str(self) -> &'stat
 src/marquee_selection.rs: pub fn begin_marquee_selection(selection: &mut MarqueeSelection, start_x: f32, start_y: f32)
 src/marquee_selection.rs: pub fn create_marquee_selection() -> MarqueeSelection
 src/marquee_selection.rs: pub fn end_marquee_selection(selection: &mut MarqueeSelection) -> &Rectangle
-src/marquee_selection.rs: pub fn find_nodes_in_marquee_selection(selection: &MarqueeSelection, candidates: &[NodeRef], mode: Option<MarqueeSelectionMode>,) -> Vec<NodeRef>
+src/marquee_selection.rs: pub fn find_nodes_in_marquee_selection(out: &mut Vec<NodeRef>, selection: &MarqueeSelection, candidates: &[NodeRef], mode: Option<MarqueeSelectionMode>,)
 src/marquee_selection.rs: pub fn get_marquee_rectangle(selection: &MarqueeSelection) -> &Rectangle
 src/marquee_selection.rs: pub fn get_marquee_selection_mode_string(value: MarqueeSelectionMode) -> &'static str
 src/marquee_selection.rs: pub fn initialize_marquee_selection(out: &mut MarqueeSelection)
@@ -81,7 +81,7 @@ src/selection_state.rs: impl SelectionState :: fn new() -> Self
 src/selection_state.rs: impl SelectionState :: fn remove_node(&self, node: &NodeRef)
 src/selection_state.rs: impl SelectionState :: fn select_all_nodes(&self, candidates: &[NodeRef])
 src/selection_state.rs: impl SelectionState :: fn select_node(&self, node: &NodeRef)
-src/selection_state.rs: impl SelectionState :: fn selected_nodes(&self) -> Vec<NodeRef>
+src/selection_state.rs: impl SelectionState :: fn selected_nodes(&self, out: &mut Vec<NodeRef>)
 src/selection_state.rs: impl SelectionState :: fn selection_count(&self) -> usize
 src/selection_state.rs: impl SelectionState :: fn signals(&self) -> SelectionSignals
 src/selection_state.rs: impl SelectionState :: fn toggle_node(&self, node: &NodeRef)
@@ -89,7 +89,7 @@ src/selection_state.rs: pub fn add_node_to_selection(state: &SelectionState, nod
 src/selection_state.rs: pub fn clear_selection(state: &SelectionState)
 src/selection_state.rs: pub fn create_selection_state() -> SelectionState
 src/selection_state.rs: pub fn get_active_node(state: &SelectionState) -> Option<NodeRef>
-src/selection_state.rs: pub fn get_selected_nodes(state: &SelectionState) -> Vec<NodeRef>
+src/selection_state.rs: pub fn get_selected_nodes(out: &mut Vec<NodeRef>, state: &SelectionState)
 src/selection_state.rs: pub fn get_selection_count(state: &SelectionState) -> usize
 src/selection_state.rs: pub fn get_selection_signals(state: &SelectionState) -> SelectionSignals
 src/selection_state.rs: pub fn has_selection(state: &SelectionState) -> bool

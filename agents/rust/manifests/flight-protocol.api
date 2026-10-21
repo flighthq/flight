@@ -37,7 +37,7 @@ src/protocol.rs: impl HostProtocolLaunchCapability :: fn launch_url(&self) -> Op
 src/protocol.rs: impl HostProtocolOpenCapability :: fn attach_handler(&self, handler: &mut ProtocolHandler)
 src/protocol.rs: impl HostProtocolRegistrationCapability :: fn register_scheme(&self, scheme: &str) -> bool
 src/protocol.rs: impl HostProtocolRegistrationCapability :: fn register_schemes(&self, schemes: &[String]) -> bool
-src/protocol.rs: impl HostProtocolRegistrationCapability :: fn registered_schemes(&self) -> Vec<String>
+src/protocol.rs: impl HostProtocolRegistrationCapability :: fn registered_schemes(&self, out: &mut Vec<String>)
 src/protocol.rs: impl HostProtocolRegistrationQueryCapability :: fn is_scheme_registered(&self, scheme: &str) -> bool
 src/protocol.rs: impl HostProtocolUnregistrationCapability :: fn unregister_scheme(&self, scheme: &str) -> bool
 src/protocol.rs: impl HostProtocolUnregistrationCapability :: fn unregister_schemes(&self, schemes: &[String]) -> bool
@@ -50,7 +50,7 @@ src/protocol.rs: pub fn create_protocol_url(parts: &ProtocolUrlParts) -> String
 src/protocol.rs: pub fn detach_protocol_handler(handler: &mut ProtocolHandler)
 src/protocol.rs: pub fn dispose_protocol_handler(handler: &mut ProtocolHandler)
 src/protocol.rs: pub fn get_protocol_launch_url(host_protocol_launch: &HostProtocolLaunchCapability,) -> Option<String>
-src/protocol.rs: pub fn get_registered_protocol_schemes(host_protocol_registration: &HostProtocolRegistrationCapability,) -> Vec<String>
+src/protocol.rs: pub fn get_registered_protocol_schemes(out: &mut Vec<String>, host_protocol_registration: &HostProtocolRegistrationCapability,)
 src/protocol.rs: pub fn initialize_protocol_handler(out: &mut ProtocolHandler)
 src/protocol.rs: pub fn is_protocol_scheme_default(host_protocol_default: &HostProtocolDefaultCapability, scheme: &str,) -> bool
 src/protocol.rs: pub fn is_protocol_scheme_registered(host_protocol_registration_query: &HostProtocolRegistrationQueryCapability, scheme: &str,) -> bool

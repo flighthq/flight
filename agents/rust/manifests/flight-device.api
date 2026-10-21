@@ -10,6 +10,14 @@ src/device.rs: impl HostDeviceCapability :: fn info(&self, out: &mut DeviceInfo)
 src/device.rs: impl HostDeviceCapability :: fn refresh_device_info(&self)
 src/device.rs: impl HostDeviceCapability :: fn safe_area_insets(&self, out: &mut SafeAreaInsets)
 src/device.rs: impl SafeAreaInsets :: fn new() -> Self
+src/device.rs: pub fn clone_device_capabilities(source: &DeviceCapabilities) -> DeviceCapabilities
+src/device.rs: pub fn clone_device_display_metrics(source: &DeviceDisplayMetrics) -> DeviceDisplayMetrics
+src/device.rs: pub fn clone_device_info(source: &DeviceInfo) -> DeviceInfo
+src/device.rs: pub fn clone_safe_area_insets(source: &SafeAreaInsets) -> SafeAreaInsets
+src/device.rs: pub fn copy_device_capabilities(out: &mut DeviceCapabilities, source: &DeviceCapabilities)
+src/device.rs: pub fn copy_device_display_metrics(out: &mut DeviceDisplayMetrics, source: &DeviceDisplayMetrics)
+src/device.rs: pub fn copy_device_info(out: &mut DeviceInfo, source: &DeviceInfo)
+src/device.rs: pub fn copy_safe_area_insets(out: &mut SafeAreaInsets, source: &SafeAreaInsets)
 src/device.rs: pub fn create_device_capabilities() -> NonEntityCreateResult<DeviceCapabilities>
 src/device.rs: pub fn create_device_display_metrics() -> NonEntityCreateResult<DeviceDisplayMetrics>
 src/device.rs: pub fn create_device_info() -> NonEntityCreateResult<DeviceInfo>
@@ -27,6 +35,14 @@ src/lib.rs: pub use contract::DeviceInfo;
 src/lib.rs: pub use contract::HostDeviceCapabilities;
 src/lib.rs: pub use contract::HostDeviceCapability;
 src/lib.rs: pub use contract::SafeAreaInsets;
+src/lib.rs: pub use contract::clone_device_capabilities;
+src/lib.rs: pub use contract::clone_device_display_metrics;
+src/lib.rs: pub use contract::clone_device_info;
+src/lib.rs: pub use contract::clone_safe_area_insets;
+src/lib.rs: pub use contract::copy_device_capabilities;
+src/lib.rs: pub use contract::copy_device_display_metrics;
+src/lib.rs: pub use contract::copy_device_info;
+src/lib.rs: pub use contract::copy_safe_area_insets;
 src/lib.rs: pub use contract::create_device_capabilities;
 src/lib.rs: pub use contract::create_device_display_metrics;
 src/lib.rs: pub use contract::create_device_info;

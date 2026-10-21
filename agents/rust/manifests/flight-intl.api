@@ -9,7 +9,7 @@ src/collator.rs: impl IntlCollatorHandle :: fn compare(&self, a: &str, b: &str) 
 src/collator.rs: pub fn compare_intl_collator(collator: &IntlCollatorHandle, a: &str, b: &str) -> f64
 src/collator.rs: pub fn compare_strings(cache: &mut FormatterCache, host: &HostIntlCapability, a: &str, b: &str, locale: &LocaleInput, options: Option<&CollatorOptions>,) -> f64
 src/collator.rs: pub fn create_intl_collator(host: &HostIntlCapability, locale: &LocaleInput, options: &CollatorOptions,) -> IntlCollatorHandle
-src/collator.rs: pub fn sort_strings(cache: &mut FormatterCache, host: &HostIntlCapability, items: &[String], locale: &LocaleInput, options: Option<&CollatorOptions>,) -> Vec<String>
+src/collator.rs: pub fn sort_strings(out: &mut Vec<String>, cache: &mut FormatterCache, host: &HostIntlCapability, items: &[String], locale: &LocaleInput, options: Option<&CollatorOptions>,)
 src/contract.rs: pub use crate::cache::*;
 src/contract.rs: pub use crate::collator::*;
 src/contract.rs: pub use crate::datetime::*;

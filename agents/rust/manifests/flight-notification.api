@@ -122,6 +122,11 @@ src/lib.rs: pub use contract::get_notification_subscription_attach_reason_string
 src/lib.rs: pub use contract::get_notification_subscription_detach_reason_string;
 src/lib.rs: pub use contract::get_notification_subscription_dispose_reason_string;
 src/lib.rs: pub use contract::get_pending_notifications;
+src/lib.rs: pub use contract::initialize_notification_action_subscription;
+src/lib.rs: pub use contract::initialize_notification_click_subscription;
+src/lib.rs: pub use contract::initialize_notification_dismiss_subscription;
+src/lib.rs: pub use contract::initialize_notification_received_subscription;
+src/lib.rs: pub use contract::initialize_notification_reply_subscription;
 src/lib.rs: pub use contract::initialize_notification_resource;
 src/lib.rs: pub use contract::initialize_scheduled_notification_resource;
 src/lib.rs: pub use contract::parse_notification_cancel_reason;
@@ -191,6 +196,11 @@ src/notification.rs: pub fn get_notification_schedule_repeat_string(value: Notif
 src/notification.rs: pub fn get_notification_subscription_attach_reason_string(value: NotificationSubscriptionAttachReason) -> &'static str
 src/notification.rs: pub fn get_notification_subscription_detach_reason_string(value: NotificationSubscriptionDetachReason) -> &'static str
 src/notification.rs: pub fn get_notification_subscription_dispose_reason_string(value: NotificationSubscriptionDisposeReason) -> &'static str
+src/notification.rs: pub fn initialize_notification_action_subscription(out: &mut NotificationActionSubscription)
+src/notification.rs: pub fn initialize_notification_click_subscription(out: &mut NotificationClickSubscription)
+src/notification.rs: pub fn initialize_notification_dismiss_subscription(out: &mut NotificationDismissSubscription)
+src/notification.rs: pub fn initialize_notification_received_subscription(out: &mut NotificationReceivedSubscription)
+src/notification.rs: pub fn initialize_notification_reply_subscription(out: &mut NotificationReplySubscription)
 src/notification.rs: pub fn initialize_notification_resource(out: &mut EntityConstruction<Notification>, id: &str, title: &str, tag: &str,)
 src/notification.rs: pub fn initialize_scheduled_notification_resource(out: &mut EntityConstruction<ScheduledNotification>, id: &str, request: &NotificationRequest, schedule: &NotificationSchedule,)
 src/notification.rs: pub fn parse_notification_cancel_reason(value: &str) -> Option<NotificationCancelReason>
