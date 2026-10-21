@@ -1,5 +1,6 @@
 use crate::enums::*;
 use flight_entity::{Record, Ref, Unknown};
+use std::sync::Arc;
 
 /// The source union contains unknown; retain the actual decoded object without serialization.
 pub type NetResponseBody = Unknown;
@@ -28,3 +29,7 @@ pub struct NetProgress {
     pub loaded: usize,
     pub total: usize,
 }
+
+/// D5 injected live clock; diagnostics sample this at operation time.
+// flight-lint: allow(f64) D1: existing log timestamps are millisecond instants, not transport payload arithmetic
+pub type NetClock = Arc<dyn Fn() -> f64 + Send + Sync>;

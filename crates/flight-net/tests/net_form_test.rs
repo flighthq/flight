@@ -1,4 +1,5 @@
 use crate::common::fields;
+use flight_entity::set_record_value;
 use flight_net::*;
 
 mod format_net_form_body {
