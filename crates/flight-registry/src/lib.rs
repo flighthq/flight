@@ -6,7 +6,9 @@ pub mod contract;
 // those signatures. `KindMap` represents the TS built-in Map and is not a registry-owned TS type.
 pub use contract::KindMap;
 pub use contract::OrdinalTable;
+pub use contract::clone_ordinal_table;
 pub use contract::concat_kind_map;
+pub use contract::copy_ordinal_table;
 pub use contract::create_ordinal_table;
 pub use contract::get_kind_map_keys;
 pub use contract::get_ordinal_table_entry;

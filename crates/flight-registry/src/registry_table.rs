@@ -40,6 +40,14 @@ pub fn create_ordinal_table<T>(vocabulary: &[Kind]) -> NonEntityCreateResult<Ord
     };
 }
 
+/// Clones a dense table (D23 value type: copy and clone).
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): value types carry copy and clone
+pub fn clone_ordinal_table<T: Clone>(source: &OrdinalTable<T>) -> OrdinalTable<T> {
+    let mut out = create_ordinal_table(&[]);
+    copy_ordinal_table(&mut out, source);
+    return out;
+}
+
 fn compare_utf16(a: &str, b: &str) -> Ordering {
     return a.encode_utf16().cmp(b.encode_utf16());
 }
@@ -59,6 +67,13 @@ pub fn concat_kind_map<T: Clone>(base: &KindMap<T>, overlay: &KindMap<T>) -> Kin
         entries.insert(key.clone(), value.clone());
     }
     return KindMap { entries, key_order };
+}
+
+/// Copies the vocabulary and every slot of `source` into `out`, reusing `out`'s storage.
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): value types carry copy and clone
+pub fn copy_ordinal_table<T: Clone>(out: &mut OrdinalTable<T>, source: &OrdinalTable<T>) {
+    out.entries.clone_from(&source.entries);
+    out.vocabulary.clone_from(&source.vocabulary);
 }
 
 /// Writes all keys to `out`, sorted with JavaScript's default UTF-16 code-unit ordering.

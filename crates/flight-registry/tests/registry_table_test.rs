@@ -10,6 +10,22 @@ fn empty_kind_map<T>() -> KindMap<T> {
     };
 }
 
+mod clone_ordinal_table {
+    use super::*;
+
+    #[test]
+    fn returns_an_equal_independent_table() {
+        let vocabulary = vec!["Tag0".to_string(), "Tag1".to_string()];
+        let mut source: OrdinalTable<String> = create_ordinal_table(&vocabulary);
+        source.entries[1] = Some("one".to_string());
+
+        let mut cloned = clone_ordinal_table(&source);
+        assert_eq!(cloned, source);
+        cloned.entries[0] = Some("zero".to_string());
+        assert!(source.entries[0].is_none());
+    }
+}
+
 mod concat_kind_map {
     use super::*;
 
@@ -55,6 +71,22 @@ mod concat_kind_map {
 
         let composed = concat_kind_map(&base, &overlay);
         assert_eq!(composed.key_order, ["a", "b", "c"]);
+    }
+}
+
+mod copy_ordinal_table {
+    use super::*;
+
+    #[test]
+    fn replaces_the_vocabulary_and_slots_in_the_existing_out() {
+        let mut source: OrdinalTable<String> = create_ordinal_table(&["Tag0".to_string()]);
+        source.entries[0] = Some("zero".to_string());
+        let mut out: OrdinalTable<String> =
+            create_ordinal_table(&["A".to_string(), "B".to_string(), "C".to_string()]);
+
+        copy_ordinal_table(&mut out, &source);
+
+        assert_eq!(out, source);
     }
 }
 
