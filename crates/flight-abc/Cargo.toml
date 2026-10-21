@@ -1,0 +1,17 @@
+[package]
+name = "flight-abc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Reader and instruction decoder for ActionScript byte code containers"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+
+[lints]
+workspace = true
