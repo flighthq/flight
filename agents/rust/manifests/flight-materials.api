@@ -82,12 +82,12 @@ src/lib.rs: pub mod types
 src/lib.rs: pub mod unlit_materials
 src/lib.rs: pub mod wrapped_diffuse_pbr_extension
 src/lib.rs: pub use types::*;
-src/material.rs: pub fn clone_material(source: &Material) -> Material
-src/material.rs: pub fn copy_material(out: &mut Material, source: &Material)
-src/material.rs: pub fn create_material(kind: Kind) -> Material
-src/material.rs: pub fn equals_material(a: &Material, b: &Material) -> bool
-src/material.rs: pub fn get_material_of_kind<'a>(material: Option<&'a Material>, kind: &str) -> Option<&'a Material>
-src/material.rs: pub fn initialize_material(material: &mut Material, kind: Kind)
+src/material.rs: pub fn clone_material(source: &dyn Material) -> MaterialFields
+src/material.rs: pub fn copy_material(out: &mut dyn Material, source: &dyn Material)
+src/material.rs: pub fn create_material(kind: Kind) -> MaterialFields
+src/material.rs: pub fn equals_material(a: &dyn Material, b: &dyn Material) -> bool
+src/material.rs: pub fn get_material_of_kind<'a>(material: Option<&'a dyn Material>, kind: &str) -> Option<&'a dyn Material>
+src/material.rs: pub fn initialize_material(material: &mut MaterialFields, kind: Kind)
 src/material3d.rs: pub fn create_material3d(kind: Kind, opts: Option<&Material3DOptions>) -> Material3DFields
 src/material3d.rs: pub fn get_material3d_alpha_mode(source: &dyn Material3D) -> MaterialAlphaMode
 src/material3d.rs: pub fn initialize_material3d(material: &mut Material3DFields, kind: Kind, opts: Option<&Material3DOptions>,)
@@ -148,9 +148,9 @@ src/types.rs: #[derive(Clone, Debug)] pub struct ExtendedPbrMaterial { fields: M
 src/types.rs: #[derive(Clone, Debug)] pub struct IridescencePbrExtension { runtime: EntityRuntimeSlot, pub kind: Kind, pub iridescence: f32, pub iridescence_ior: f32, pub iridescence_map: TextureSlot, pub iridescence_map_uv_set: PbrUvSet, pub iridescence_thickness_map: TextureSlot, pub iridescence_thickness_map_uv_set: PbrUvSet, pub iridescence_thickness_max: f32, pub iridescence_thickness_min: f32, }
 src/types.rs: #[derive(Clone, Debug)] pub struct LambertMaterial { fields: Material3DFields, pub diffuse: u32, pub diffuse_map: TextureSlot, pub emissive: u32, pub emissive_map: TextureSlot, }
 src/types.rs: #[derive(Clone, Debug)] pub struct MatcapMaterial { fields: Material3DFields, pub matcap: TextureSlot, pub tint: u32, }
-src/types.rs: #[derive(Clone, Debug)] pub struct Material { runtime: EntityRuntimeSlot, pub kind: Kind, pub name: Option<String>, }
-src/types.rs: #[derive(Clone, Debug)] pub struct Material2DFields { material: Material, }
-src/types.rs: #[derive(Clone, Debug)] pub struct Material3DFields { material: Material, pub alpha_cutoff: f32, pub alpha_mode: MaterialAlphaMode, pub blend_mode: BlendMode, pub double_sided: bool, }
+src/types.rs: #[derive(Clone, Debug)] pub struct Material2DFields { material: MaterialFields, }
+src/types.rs: #[derive(Clone, Debug)] pub struct Material3DFields { material: MaterialFields, pub alpha_cutoff: f32, pub alpha_mode: MaterialAlphaMode, pub blend_mode: BlendMode, pub double_sided: bool, }
+src/types.rs: #[derive(Clone, Debug)] pub struct MaterialFields { runtime: EntityRuntimeSlot, pub kind: Kind, pub name: Option<String>, }
 src/types.rs: #[derive(Clone, Debug)] pub struct NormalMaterial { fields: Material3DFields, pub normal_map: TextureSlot, pub normal_scale: f32, }
 src/types.rs: #[derive(Clone, Debug)] pub struct PhongMaterial { fields: Material3DFields, pub diffuse: u32, pub diffuse_map: TextureSlot, pub normal_map: TextureSlot, pub normal_scale: f32, pub shininess: f32, pub specular: u32, pub specular_map: TextureSlot, }
 src/types.rs: #[derive(Clone, Debug)] pub struct SheenPbrExtension { runtime: EntityRuntimeSlot, pub kind: Kind, pub sheen_color: u32, pub sheen_color_map: TextureSlot, pub sheen_color_map_uv_set: PbrUvSet, pub sheen_roughness: f32, pub sheen_roughness_map: TextureSlot, pub sheen_roughness_map_uv_set: PbrUvSet, }
@@ -238,12 +238,12 @@ src/types.rs: impl Default for LambertMaterial
 src/types.rs: impl Default for LambertMaterial :: fn default() -> Self
 src/types.rs: impl Default for MatcapMaterial
 src/types.rs: impl Default for MatcapMaterial :: fn default() -> Self
-src/types.rs: impl Default for Material
-src/types.rs: impl Default for Material :: fn default() -> Self
 src/types.rs: impl Default for Material2DFields
 src/types.rs: impl Default for Material2DFields :: fn default() -> Self
 src/types.rs: impl Default for Material3DFields
 src/types.rs: impl Default for Material3DFields :: fn default() -> Self
+src/types.rs: impl Default for MaterialFields
+src/types.rs: impl Default for MaterialFields :: fn default() -> Self
 src/types.rs: impl Default for NormalMaterial
 src/types.rs: impl Default for NormalMaterial :: fn default() -> Self
 src/types.rs: impl Default for PhongMaterial
@@ -288,12 +288,12 @@ src/types.rs: impl Entity for ColorScaleBias :: fn entity_runtime_mut(&mut self)
 src/types.rs: impl Entity for IridescencePbrExtension
 src/types.rs: impl Entity for IridescencePbrExtension :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for IridescencePbrExtension :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
-src/types.rs: impl Entity for Material
-src/types.rs: impl Entity for Material :: fn entity_runtime(&self) -> &EntityRuntimeSlot
-src/types.rs: impl Entity for Material :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/types.rs: impl Entity for MaterialDataFields
 src/types.rs: impl Entity for MaterialDataFields :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for MaterialDataFields :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for MaterialFields
+src/types.rs: impl Entity for MaterialFields :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for MaterialFields :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/types.rs: impl Entity for SheenPbrExtension
 src/types.rs: impl Entity for SheenPbrExtension :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for SheenPbrExtension :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
@@ -311,12 +311,26 @@ src/types.rs: impl IridescencePbrExtension :: fn is_valid(&self) -> bool
 src/types.rs: impl IridescencePbrExtension :: fn new(opts: Option<&IridescencePbrExtensionOptions>) -> Self
 src/types.rs: impl LambertMaterial :: fn new(opts: Option<&LambertMaterialOptions>) -> Self
 src/types.rs: impl MatcapMaterial :: fn new(opts: Option<&MatcapMaterialOptions>) -> Self
-src/types.rs: impl Material :: fn clone_material(&self) -> Self
-src/types.rs: impl Material :: fn copy_from(&mut self, source: &Material)
-src/types.rs: impl Material :: fn equals(&self, other: &Material) -> bool
-src/types.rs: impl Material :: fn initialize(&mut self, kind: Kind)
-src/types.rs: impl Material :: fn new(kind: Kind) -> Self
-src/types.rs: impl Material :: fn of_kind<'a>(material: Option<&'a Material>, kind: &str) -> Option<&'a Material>
+src/types.rs: impl Material for Material2DFields
+src/types.rs: impl Material for Material2DFields :: fn as_any(&self) -> &dyn std::any::Any
+src/types.rs: impl Material for Material2DFields :: fn as_any_mut(&mut self) -> &mut dyn std::any::Any
+src/types.rs: impl Material for Material2DFields :: fn material_fields(&self) -> &MaterialFields
+src/types.rs: impl Material for Material2DFields :: fn material_fields_mut(&mut self) -> &mut MaterialFields
+src/types.rs: impl Material for Material3DFields
+src/types.rs: impl Material for Material3DFields :: fn as_any(&self) -> &dyn std::any::Any
+src/types.rs: impl Material for Material3DFields :: fn as_any_mut(&mut self) -> &mut dyn std::any::Any
+src/types.rs: impl Material for Material3DFields :: fn material_fields(&self) -> &MaterialFields
+src/types.rs: impl Material for Material3DFields :: fn material_fields_mut(&mut self) -> &mut MaterialFields
+src/types.rs: impl Material for MaterialFields
+src/types.rs: impl Material for MaterialFields :: fn as_any(&self) -> &dyn std::any::Any
+src/types.rs: impl Material for MaterialFields :: fn as_any_mut(&mut self) -> &mut dyn std::any::Any
+src/types.rs: impl Material for MaterialFields :: fn material_fields(&self) -> &MaterialFields
+src/types.rs: impl Material for MaterialFields :: fn material_fields_mut(&mut self) -> &mut MaterialFields
+src/types.rs: impl Material for StandardMaterial
+src/types.rs: impl Material for StandardMaterial :: fn as_any(&self) -> &dyn std::any::Any
+src/types.rs: impl Material for StandardMaterial :: fn as_any_mut(&mut self) -> &mut dyn std::any::Any
+src/types.rs: impl Material for StandardMaterial :: fn material_fields(&self) -> &MaterialFields
+src/types.rs: impl Material for StandardMaterial :: fn material_fields_mut(&mut self) -> &mut MaterialFields
 src/types.rs: impl Material2D for Material2DFields
 src/types.rs: impl Material2D for Material2DFields :: fn material2d_fields(&self) -> &Material2DFields
 src/types.rs: impl Material2D for Material2DFields :: fn material2d_fields_mut(&mut self) -> &mut Material2DFields
@@ -324,8 +338,6 @@ src/types.rs: impl Material2D for StandardMaterial
 src/types.rs: impl Material2D for StandardMaterial :: fn material2d_fields(&self) -> &Material2DFields
 src/types.rs: impl Material2D for StandardMaterial :: fn material2d_fields_mut(&mut self) -> &mut Material2DFields
 src/types.rs: impl Material3D for Material3DFields
-src/types.rs: impl Material3D for Material3DFields :: fn as_any(&self) -> &dyn std::any::Any
-src/types.rs: impl Material3D for Material3DFields :: fn as_any_mut(&mut self) -> &mut dyn std::any::Any
 src/types.rs: impl Material3D for Material3DFields :: fn material3d_fields(&self) -> &Material3DFields
 src/types.rs: impl Material3D for Material3DFields :: fn material3d_fields_mut(&mut self) -> &mut Material3DFields
 src/types.rs: impl Material3DFields :: fn alpha_mode(&self) -> MaterialAlphaMode
@@ -341,6 +353,12 @@ src/types.rs: impl MaterialData for MaterialDataFields :: fn material_data_field
 src/types.rs: impl MaterialData for TintMaterialData
 src/types.rs: impl MaterialData for TintMaterialData :: fn material_data_fields(&self) -> &MaterialDataFields
 src/types.rs: impl MaterialData for TintMaterialData :: fn material_data_fields_mut(&mut self) -> &mut MaterialDataFields
+src/types.rs: impl MaterialFields :: fn clone_material(&self) -> Self
+src/types.rs: impl MaterialFields :: fn copy_from(&mut self, source: &dyn Material)
+src/types.rs: impl MaterialFields :: fn equals(&self, other: &dyn Material) -> bool
+src/types.rs: impl MaterialFields :: fn initialize(&mut self, kind: Kind)
+src/types.rs: impl MaterialFields :: fn new(kind: Kind) -> Self
+src/types.rs: impl MaterialFields :: fn of_kind<'a>(material: Option<&'a dyn Material>, kind: &str) -> Option<&'a dyn Material>
 src/types.rs: impl NormalMaterial :: fn new(opts: Option<&NormalMaterialOptions>) -> Self
 src/types.rs: impl PbrExtension :: fn kind(&self) -> &str
 src/types.rs: impl PhongMaterial :: fn convert_to_standard_pbr(&self, opts: Option<&StandardPbrMaterialOptions>, ctx: Option<&MaterialConversionContext>,) -> StandardPbrMaterial
@@ -379,17 +397,17 @@ src/types.rs: impl flight_entity::Entity for TintMaterialData
 src/types.rs: impl flight_entity::Entity for TintMaterialData :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl flight_entity::Entity for TintMaterialData :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/types.rs: impl std::ops::Deref for Material2DFields
-src/types.rs: impl std::ops::Deref for Material2DFields :: fn deref(&self) -> &Material
+src/types.rs: impl std::ops::Deref for Material2DFields :: fn deref(&self) -> &MaterialFields
 src/types.rs: impl std::ops::Deref for Material3DFields
-src/types.rs: impl std::ops::Deref for Material3DFields :: fn deref(&self) -> &Material
+src/types.rs: impl std::ops::Deref for Material3DFields :: fn deref(&self) -> &MaterialFields
 src/types.rs: impl std::ops::Deref for StandardMaterial
 src/types.rs: impl std::ops::Deref for StandardMaterial :: fn deref(&self) -> &Material2DFields
 src/types.rs: impl std::ops::Deref for TintMaterialData
 src/types.rs: impl std::ops::Deref for TintMaterialData :: fn deref(&self) -> &MaterialDataFields
 src/types.rs: impl std::ops::DerefMut for Material2DFields
-src/types.rs: impl std::ops::DerefMut for Material2DFields :: fn deref_mut(&mut self) -> &mut Material
+src/types.rs: impl std::ops::DerefMut for Material2DFields :: fn deref_mut(&mut self) -> &mut MaterialFields
 src/types.rs: impl std::ops::DerefMut for Material3DFields
-src/types.rs: impl std::ops::DerefMut for Material3DFields :: fn deref_mut(&mut self) -> &mut Material
+src/types.rs: impl std::ops::DerefMut for Material3DFields :: fn deref_mut(&mut self) -> &mut MaterialFields
 src/types.rs: impl std::ops::DerefMut for StandardMaterial
 src/types.rs: impl std::ops::DerefMut for StandardMaterial :: fn deref_mut(&mut self) -> &mut Material2DFields
 src/types.rs: impl std::ops::DerefMut for TintMaterialData
@@ -426,9 +444,11 @@ src/types.rs: pub const WRAPPED_DIFFUSE_PBR_EXTENSION_KIND: &str
 src/types.rs: pub fn create_material_conversion_context(guard: MaterialConversionGuard,) -> MaterialConversionContext
 src/types.rs: pub struct GlassExtendedPbrMaterialOptions { pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub standard: Option<StandardPbrMaterialPropertiesOptions>, pub transmission_volume: Option<TransmissionVolumePbrExtensionOptions>, }
 src/types.rs: pub struct MaterialConversionContext { pub(crate) guard: MaterialConversionGuard, }
-src/types.rs: pub trait Material2D: flight_entity::Entity + Send + Sync { fn material2d_fields(&self) -> &Material2DFields; fn material2d_fields_mut(&mut self) -> &mut Material2DFields; }
-src/types.rs: pub trait Material3D: flight_entity::Entity + std::any::Any + Send + Sync { fn material3d_fields(&self) -> &Material3DFields; fn material3d_fields_mut(&mut self) -> &mut Material3DFields; fn as_any(&self) -> &dyn std::any::Any; fn as_any_mut(&mut self) -> &mut dyn std::any::Any; }
+src/types.rs: pub trait Material2D: Material { fn material2d_fields(&self) -> &Material2DFields; fn material2d_fields_mut(&mut self) -> &mut Material2DFields; }
+src/types.rs: pub trait Material3D: Material { fn material3d_fields(&self) -> &Material3DFields; fn material3d_fields_mut(&mut self) -> &mut Material3DFields; }
+src/types.rs: pub trait Material: flight_entity::Entity + std::any::Any + Send + Sync { fn as_any(&self) -> &dyn std::any::Any; fn as_any_mut(&mut self) -> &mut dyn std::any::Any; fn material_fields(&self) -> &MaterialFields; fn material_fields_mut(&mut self) -> &mut MaterialFields; fn modifier_stream(&self) -> Option<&dyn MaterialModifierStream>; }
 src/types.rs: pub trait MaterialData: flight_entity::Entity + Send + Sync { fn material_data_fields(&self) -> &MaterialDataFields; fn material_data_fields_mut(&mut self) -> &mut MaterialDataFields; }
+src/types.rs: pub trait MaterialModifierStream { fn len(&self) -> usize; fn is_empty(&self) -> bool; }
 src/types.rs: pub type BlendMode = String;
 src/types.rs: pub type Material3DRef = Ref<dyn Material3D>;
 src/types.rs: pub type MaterialConversionGuard = Arc<dyn Fn(&MaterialConversionExplanation, &str) + Send + Sync>;
