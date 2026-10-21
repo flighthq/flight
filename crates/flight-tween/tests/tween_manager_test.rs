@@ -87,13 +87,50 @@ mod default_ease {
 mod default_manager {
     use super::*;
 
-    // D5: translated from TS `defaultManager` singleton test to explicit caller-owned context.
-    // TS verifies defaultManager.tweens is a Map; Rust verifies a caller-owned default manager
-    // behaves identically.
     #[test]
     fn caller_owned_default_is_a_tween_manager() {
         let dm = create_tween_manager(None);
         let _ = dm.data.read().unwrap().tweens.len();
+    }
+
+    #[test]
+    fn same_context_reuse_yields_same_identity() {
+        let dm = create_tween_manager(None);
+        let clone = dm.clone();
+        assert!(std::sync::Arc::ptr_eq(&dm.data, &clone.data));
+    }
+
+    #[test]
+    fn independent_contexts_are_independent() {
+        let a = create_tween_manager(None);
+        let b = create_tween_manager(None);
+        let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
+        create_tween(
+            &a,
+            &target,
+            1000.0,
+            &HashMap::from([("x".to_string(), 100.0)]),
+            None,
+        );
+        assert!(has_tweens_of(&a, &target));
+        assert!(!has_tweens_of(&b, &target));
+    }
+
+    #[test]
+    fn operations_use_the_explicit_context() {
+        let dm = create_tween_manager(None);
+        let target = create_tween_target(HashMap::from([("x".to_string(), 0.0)]));
+        create_tween(
+            &dm,
+            &target,
+            1000.0,
+            &HashMap::from([("x".to_string(), 100.0)]),
+            None,
+        );
+        assert_eq!(get_active_tween_count(&dm), 1);
+        update_tweens(&dm, 1000.0);
+        let x = *target.props.read().unwrap().get("x").unwrap();
+        assert!(x > 0.0);
     }
 }
 
