@@ -168,7 +168,7 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
   - **Skia if it works out:** `scene2d-skia`, `effects-skia`, `host-skia` (`skia-safe` mirrors C++ Skia).
   - **cairo:** deferred. `cairo-rs` links the system library, and cairo is in maintenance mode.
   - `scene2d-canvas` stays TS-only.
-- **Text:** `host-harfbuzz` implements HostTextShaperCapability (shaping, glyph index, metrics, extents) and the font glyph outline source.
+- **Text:** `host-harfbuzz` implements HostTextShaperCapability (shaping, glyph index, metrics, extents) and the font glyph outline source. HarfBuzz ≥ 4 draws outlines natively (`hb_font_draw_glyph`) and needs no FreeType. Rasterization is done by tiny-skia / Skia / the glyph atlas. An optional `host-freetype` comes later, only if hinting or bitmap / color-bitmap fonts are wanted.
 - **Scheduling:** after the core waves. Commission tiny-skia first.
 
 ## D13 Export lanes — APPROVED (user, 2026-10-21)
