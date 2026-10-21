@@ -1,0 +1,192 @@
+src/contract.rs: pub use super::shortcut::*;
+src/contract.rs: pub use super::shortcut_explicit_dependency::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::Accelerator;
+src/lib.rs: pub use contract::AcceleratorParseError;
+src/lib.rs: pub use contract::AcceleratorParseErrorReason;
+src/lib.rs: pub use contract::CreateGlobalShortcutOutcome;
+src/lib.rs: pub use contract::CreateGlobalShortcutOutcomeCreated;
+src/lib.rs: pub use contract::CreateGlobalShortcutOutcomeUnparseable;
+src/lib.rs: pub use contract::CreateGlobalShortcutReason;
+src/lib.rs: pub use contract::GlobalShortcut;
+src/lib.rs: pub use contract::GlobalShortcutAttachOutcome;
+src/lib.rs: pub use contract::GlobalShortcutAttachReason;
+src/lib.rs: pub use contract::GlobalShortcutDetachOutcome;
+src/lib.rs: pub use contract::GlobalShortcutDetachReason;
+src/lib.rs: pub use contract::GlobalShortcutQueryOutcome;
+src/lib.rs: pub use contract::GlobalShortcutQueryOutcomeNotRegistered;
+src/lib.rs: pub use contract::GlobalShortcutQueryOutcomeQueryProviderFailed;
+src/lib.rs: pub use contract::GlobalShortcutQueryOutcomeRegistered;
+src/lib.rs: pub use contract::GlobalShortcutQueryOutcomeUnparseable;
+src/lib.rs: pub use contract::GlobalShortcutQueryReason;
+src/lib.rs: pub use contract::HostShortcutCapabilities;
+src/lib.rs: pub use contract::HostShortcutQueryCapability;
+src/lib.rs: pub use contract::HostShortcutTriggerCapability;
+src/lib.rs: pub use contract::ParsedAccelerator;
+src/lib.rs: pub use contract::ShortcutDigitKeyName;
+src/lib.rs: pub use contract::ShortcutEditingKeyName;
+src/lib.rs: pub use contract::ShortcutFunctionKeyName;
+src/lib.rs: pub use contract::ShortcutKeyName;
+src/lib.rs: pub use contract::ShortcutLetterKeyName;
+src/lib.rs: pub use contract::ShortcutLockKeyName;
+src/lib.rs: pub use contract::ShortcutMediaKeyName;
+src/lib.rs: pub use contract::ShortcutModifier;
+src/lib.rs: pub use contract::ShortcutNavigationKeyName;
+src/lib.rs: pub use contract::ShortcutNumpadKeyName;
+src/lib.rs: pub use contract::ShortcutPunctuationKeyName;
+src/lib.rs: pub use contract::ShortcutState;
+src/lib.rs: pub use contract::ShortcutTriggerDestroyFuture;
+src/lib.rs: pub use contract::ShortcutTriggerDestroyResult;
+src/lib.rs: pub use contract::ShortcutTriggerListener;
+src/lib.rs: pub use contract::ShortcutTriggerQueryFuture;
+src/lib.rs: pub use contract::ShortcutTriggerQueryResult;
+src/lib.rs: pub use contract::ShortcutTriggerSubscribeFuture;
+src/lib.rs: pub use contract::ShortcutTriggerSubscribeOutcome;
+src/lib.rs: pub use contract::ShortcutTriggerSubscribeOutcomeRefused;
+src/lib.rs: pub use contract::ShortcutTriggerSubscribeOutcomeSubscribed;
+src/lib.rs: pub use contract::ShortcutTriggerSubscribeReason;
+src/lib.rs: pub use contract::ShortcutTriggerSubscribeResult;
+src/lib.rs: pub use contract::ShortcutTriggerSubscription;
+src/lib.rs: pub use contract::ShortcutTriggerUnsubscribeFuture;
+src/lib.rs: pub use contract::ShortcutTriggerUnsubscribeOutcome;
+src/lib.rs: pub use contract::ShortcutTriggerUnsubscribeReason;
+src/lib.rs: pub use contract::ShortcutTriggerUnsubscribeResult;
+src/lib.rs: pub use contract::attach_global_shortcut;
+src/lib.rs: pub use contract::create_global_shortcut;
+src/lib.rs: pub use contract::create_shortcut_state;
+src/lib.rs: pub use contract::destroy_shortcut_trigger;
+src/lib.rs: pub use contract::detach_global_shortcut;
+src/lib.rs: pub use contract::dispose_global_shortcut;
+src/lib.rs: pub use contract::equals_accelerator;
+src/lib.rs: pub use contract::find_accelerator_conflict;
+src/lib.rs: pub use contract::format_accelerator_for_display;
+src/lib.rs: pub use contract::get_accelerator_key;
+src/lib.rs: pub use contract::get_accelerator_key_label;
+src/lib.rs: pub use contract::get_accelerator_modifier_label;
+src/lib.rs: pub use contract::get_accelerator_modifiers;
+src/lib.rs: pub use contract::is_accelerator_valid;
+src/lib.rs: pub use contract::make_parsed_accelerator;
+src/lib.rs: pub use contract::normalize_accelerator;
+src/lib.rs: pub use contract::parse_accelerator;
+src/lib.rs: pub use contract::parse_accelerator_detailed;
+src/lib.rs: pub use contract::query_global_shortcut_conflict;
+src/lib.rs: pub use contract::query_global_shortcut_registration;
+src/lib.rs: pub use contract::resolve_command_or_control_modifier;
+src/lib.rs: pub use contract::{ ProviderRef, Record, Unknown };
+src/shortcut.rs: pub fn equals_accelerator(a: &str, b: &str) -> bool
+src/shortcut.rs: pub fn find_accelerator_conflict(accelerator: &str, candidates: &[String]) -> Option<String>
+src/shortcut.rs: pub fn format_accelerator_for_display(accelerator: &str, platform: PlatformName) -> String
+src/shortcut.rs: pub fn get_accelerator_key(accelerator: &str) -> Option<ShortcutKeyName>
+src/shortcut.rs: pub fn get_accelerator_key_label(key: ShortcutKeyName) -> String
+src/shortcut.rs: pub fn get_accelerator_modifier_label(modifier: ShortcutModifier, platform: PlatformName,) -> String
+src/shortcut.rs: pub fn get_accelerator_modifiers(out: &mut Vec<ShortcutModifier>, accelerator: &str) -> bool
+src/shortcut.rs: pub fn get_accelerator_parse_error_reason_string(value: AcceleratorParseErrorReason,) -> &'static str
+src/shortcut.rs: pub fn get_shortcut_key_name_string(value: ShortcutKeyName) -> &'static str
+src/shortcut.rs: pub fn get_shortcut_modifier_string(value: ShortcutModifier) -> &'static str
+src/shortcut.rs: pub fn is_accelerator_valid(input: &str) -> bool
+src/shortcut.rs: pub fn make_parsed_accelerator() -> ParsedAccelerator
+src/shortcut.rs: pub fn normalize_accelerator(input: &str) -> Option<Accelerator>
+src/shortcut.rs: pub fn parse_accelerator(out: &mut ParsedAccelerator, input: &str) -> bool
+src/shortcut.rs: pub fn parse_accelerator_detailed(out: &mut ParsedAccelerator, input: &str,) -> Option<AcceleratorParseError>
+src/shortcut.rs: pub fn parse_accelerator_parse_error_reason(value: &str) -> Option<AcceleratorParseErrorReason>
+src/shortcut.rs: pub fn parse_shortcut_key_name(value: &str) -> Option<ShortcutKeyName>
+src/shortcut.rs: pub fn parse_shortcut_modifier(value: &str) -> Option<ShortcutModifier>
+src/shortcut.rs: pub fn resolve_command_or_control_modifier(platform: PlatformName) -> ShortcutModifier
+src/shortcut_explicit_dependency.rs: impl Drop for PendingRegistrationGuard
+src/shortcut_explicit_dependency.rs: impl Drop for PendingRegistrationGuard :: fn drop(&mut self)
+src/shortcut_explicit_dependency.rs: pub async fn attach_global_shortcut(state: &ShortcutState, host_shortcut_trigger: &HostShortcutTriggerCapability, shortcut: &Ref<GlobalShortcut>,) -> GlobalShortcutAttachOutcome
+src/shortcut_explicit_dependency.rs: pub async fn destroy_shortcut_trigger(host_shortcut_trigger: &HostShortcutTriggerCapability,) -> ShortcutTriggerDestroyResult
+src/shortcut_explicit_dependency.rs: pub async fn detach_global_shortcut(host_shortcut_trigger: &HostShortcutTriggerCapability, shortcut: &Ref<GlobalShortcut>,) -> GlobalShortcutDetachOutcome
+src/shortcut_explicit_dependency.rs: pub async fn dispose_global_shortcut(host_shortcut_trigger: &HostShortcutTriggerCapability, shortcut: &Ref<GlobalShortcut>,) -> GlobalShortcutDetachOutcome
+src/shortcut_explicit_dependency.rs: pub async fn query_global_shortcut_conflict(host_shortcut_query: &HostShortcutQueryCapability, accelerator: &str,) -> GlobalShortcutQueryOutcome
+src/shortcut_explicit_dependency.rs: pub async fn query_global_shortcut_registration(host_shortcut_query: &HostShortcutQueryCapability, accelerator: &str,) -> GlobalShortcutQueryOutcome
+src/shortcut_explicit_dependency.rs: pub fn create_global_shortcut(accelerator: &str) -> CreateGlobalShortcutOutcome
+src/shortcut_explicit_dependency.rs: pub fn create_shortcut_state() -> ShortcutState
+src/shortcut_explicit_dependency.rs: pub fn get_create_global_shortcut_reason_string(value: CreateGlobalShortcutReason) -> &'static str
+src/shortcut_explicit_dependency.rs: pub fn get_global_shortcut_attach_reason_string(value: GlobalShortcutAttachReason) -> &'static str
+src/shortcut_explicit_dependency.rs: pub fn get_global_shortcut_detach_reason_string(value: GlobalShortcutDetachReason) -> &'static str
+src/shortcut_explicit_dependency.rs: pub fn get_global_shortcut_query_reason_string(value: GlobalShortcutQueryReason) -> &'static str
+src/shortcut_explicit_dependency.rs: pub fn get_shortcut_trigger_subscribe_reason_string(value: ShortcutTriggerSubscribeReason,) -> &'static str
+src/shortcut_explicit_dependency.rs: pub fn get_shortcut_trigger_unsubscribe_reason_string(value: ShortcutTriggerUnsubscribeReason,) -> &'static str
+src/shortcut_explicit_dependency.rs: pub fn initialize_global_shortcut(out: &mut GlobalShortcut, accelerator: Accelerator)
+src/shortcut_explicit_dependency.rs: pub fn parse_create_global_shortcut_reason(value: &str) -> Option<CreateGlobalShortcutReason>
+src/shortcut_explicit_dependency.rs: pub fn parse_global_shortcut_attach_reason(value: &str) -> Option<GlobalShortcutAttachReason>
+src/shortcut_explicit_dependency.rs: pub fn parse_global_shortcut_detach_reason(value: &str) -> Option<GlobalShortcutDetachReason>
+src/shortcut_explicit_dependency.rs: pub fn parse_global_shortcut_query_reason(value: &str) -> Option<GlobalShortcutQueryReason>
+src/shortcut_explicit_dependency.rs: pub fn parse_shortcut_trigger_subscribe_reason(value: &str,) -> Option<ShortcutTriggerSubscribeReason>
+src/shortcut_explicit_dependency.rs: pub fn parse_shortcut_trigger_unsubscribe_reason(value: &str,) -> Option<ShortcutTriggerUnsubscribeReason>
+src/sugar.rs: impl HostShortcutQueryCapability :: async fn query_conflict(&self, accelerator: &str) -> GlobalShortcutQueryOutcome
+src/sugar.rs: impl HostShortcutQueryCapability :: async fn query_registration(&self, accelerator: &str) -> GlobalShortcutQueryOutcome
+src/sugar.rs: impl HostShortcutTriggerCapability :: async fn destroy(&self) -> ShortcutTriggerDestroyResult
+src/sugar.rs: impl HostShortcutTriggerCapability :: async fn detach(&self, shortcut: &Ref<GlobalShortcut>) -> GlobalShortcutDetachOutcome
+src/sugar.rs: impl HostShortcutTriggerCapability :: async fn dispose(&self, shortcut: &Ref<GlobalShortcut>) -> GlobalShortcutDetachOutcome
+src/sugar.rs: impl ParsedAccelerator :: fn new() -> Self
+src/sugar.rs: impl ParsedAccelerator :: fn parse(&mut self, input: &str) -> bool
+src/sugar.rs: impl ParsedAccelerator :: fn parse_detailed(&mut self, input: &str) -> Option<AcceleratorParseError>
+src/sugar.rs: impl ShortcutKeyName :: fn label(self) -> String
+src/sugar.rs: impl ShortcutModifier :: fn label(self, platform: PlatformName) -> String
+src/sugar.rs: impl ShortcutState :: async fn attach(&self, host_shortcut_trigger: &HostShortcutTriggerCapability, shortcut: &Ref<GlobalShortcut>,) -> GlobalShortcutAttachOutcome
+src/sugar.rs: impl ShortcutState :: fn new() -> Self
+src/types.rs: #[derive(Clone)] pub enum CreateGlobalShortcutOutcome { Created(CreateGlobalShortcutOutcomeCreated), Unparseable(CreateGlobalShortcutOutcomeUnparseable), }
+src/types.rs: #[derive(Clone)] pub enum ShortcutTriggerSubscribeOutcome { Refused(ShortcutTriggerSubscribeOutcomeRefused), Subscribed(ShortcutTriggerSubscribeOutcomeSubscribed), }
+src/types.rs: #[derive(Clone)] pub struct CreateGlobalShortcutOutcomeCreated { pub shortcut: Ref<GlobalShortcut>, }
+src/types.rs: #[derive(Clone)] pub struct HostShortcutQueryCapability { pub provider: ProviderRef, pub is_registered: Arc<dyn Fn(&str) -> ShortcutTriggerQueryFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostShortcutTriggerCapability { pub provider: ProviderRef, pub destroy: Arc<dyn Fn() -> ShortcutTriggerDestroyFuture + Send + Sync>, pub subscribe: Arc<dyn Fn(&str, ShortcutTriggerListener) -> ShortcutTriggerSubscribeFuture + Send + Sync>, pub unsubscribe: Arc<dyn Fn(&Ref<ShortcutTriggerSubscription>) -> ShortcutTriggerUnsubscribeFuture + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct ShortcutTriggerSubscribeOutcomeSubscribed { pub subscription: Ref<ShortcutTriggerSubscription>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AcceleratorParseErrorReason { DuplicateModifier, Empty, MissingKey, UnknownKey, UnknownModifier, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CreateGlobalShortcutReason { Created, Unparseable, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GlobalShortcutAttachReason { AlreadyAttached, AlreadyRegistered, Attached, NativeRefused, RegistrationInProgress, TriggerProviderFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GlobalShortcutDetachReason { Detached, NotAttached, TriggerProviderFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GlobalShortcutQueryReason { NotRegistered, QueryProviderFailed, Registered, Unparseable, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShortcutKeyName { Digit0, Digit1, Digit2, Digit3, Digit4, Digit5, Digit6, Digit7, Digit8, Digit9, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21, F22, F23, F24, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, End, Home, PageDown, PageUp, Backspace, Delete, Escape, Insert, Return, Space, Tab, Numpad0, Numpad1, Numpad2, Numpad3, Numpad4, Numpad5, Numpad6, Numpad7, Numpad8, Numpad9, NumpadAdd, NumpadDecimal, NumpadDivide, NumpadEnter, NumpadMultiply, NumpadSubtract, Backquote, Backslash, BracketLeft, BracketRight, Comma, Equal, Minus, Period, Plus, Quote, Semicolon, Slash, MediaNextTrack, MediaPlayPause, MediaPreviousTrack, MediaStop, VolumeDown, VolumeMute, VolumeUp, CapsLock, NumLock, PrintScreen, ScrollLock, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShortcutModifier { Alt, CommandOrControl, Control, Meta, Shift, Super, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShortcutTriggerSubscribeReason { Refused, Subscribed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShortcutTriggerUnsubscribeReason { UnknownSubscription, Unsubscribed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct GlobalShortcutAttachOutcome { pub reason: GlobalShortcutAttachReason, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct GlobalShortcutDetachOutcome { pub reason: GlobalShortcutDetachReason, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct GlobalShortcutQueryOutcomeNotRegistered { }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct GlobalShortcutQueryOutcomeQueryProviderFailed { }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct GlobalShortcutQueryOutcomeRegistered { }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct ShortcutTriggerSubscribeOutcomeRefused { }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct ShortcutTriggerUnsubscribeOutcome { pub reason: ShortcutTriggerUnsubscribeReason, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct ShortcutTriggerSubscription { runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct ParsedAccelerator { pub key: String, pub modifiers: Vec<ShortcutModifier>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub enum GlobalShortcutQueryOutcome { NotRegistered(GlobalShortcutQueryOutcomeNotRegistered), QueryProviderFailed(GlobalShortcutQueryOutcomeQueryProviderFailed), Registered(GlobalShortcutQueryOutcomeRegistered), Unparseable(GlobalShortcutQueryOutcomeUnparseable), }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct AcceleratorParseError { pub token: String, pub reason: AcceleratorParseErrorReason, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct CreateGlobalShortcutOutcomeUnparseable { pub parse_error: AcceleratorParseError, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct GlobalShortcutQueryOutcomeUnparseable { pub parse_error: AcceleratorParseError, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostShortcutCapabilities { pub query: Option<HostShortcutQueryCapability>, pub trigger: Option<HostShortcutTriggerCapability>, }
+src/types.rs: #[derive(Clone, Default)] pub struct ShortcutState { pub(crate) data: Arc<Mutex<ShortcutStateData>>, }
+src/types.rs: #[derive(Default)] pub struct GlobalShortcut { runtime: EntityRuntimeSlot, pub accelerator: Accelerator, pub on_trigger: Signal<()>, pub(crate) attachment: Option<GlobalShortcutAttachment>, pub(crate) pending_registration_id: Option<u64>, }
+src/types.rs: impl Entity for GlobalShortcut
+src/types.rs: impl Entity for GlobalShortcut :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for GlobalShortcut :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for ShortcutTriggerSubscription
+src/types.rs: impl Entity for ShortcutTriggerSubscription :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ShortcutTriggerSubscription :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl fmt::Debug for GlobalShortcut
+src/types.rs: impl fmt::Debug for GlobalShortcut :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for ShortcutState
+src/types.rs: impl fmt::Debug for ShortcutState :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub type Accelerator = String;
+src/types.rs: pub type ShortcutDigitKeyName = ShortcutKeyName;
+src/types.rs: pub type ShortcutEditingKeyName = ShortcutKeyName;
+src/types.rs: pub type ShortcutFunctionKeyName = ShortcutKeyName;
+src/types.rs: pub type ShortcutLetterKeyName = ShortcutKeyName;
+src/types.rs: pub type ShortcutLockKeyName = ShortcutKeyName;
+src/types.rs: pub type ShortcutMediaKeyName = ShortcutKeyName;
+src/types.rs: pub type ShortcutNavigationKeyName = ShortcutKeyName;
+src/types.rs: pub type ShortcutNumpadKeyName = ShortcutKeyName;
+src/types.rs: pub type ShortcutPunctuationKeyName = ShortcutKeyName;
+src/types.rs: pub type ShortcutTriggerDestroyFuture = Pin<Box<dyn Future<Output = ShortcutTriggerDestroyResult> + Send>>;
+src/types.rs: pub type ShortcutTriggerDestroyResult = Result<(), Unknown>;
+src/types.rs: pub type ShortcutTriggerListener = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type ShortcutTriggerQueryFuture = Pin<Box<dyn Future<Output = ShortcutTriggerQueryResult> + Send>>;
+src/types.rs: pub type ShortcutTriggerQueryResult = Result<bool, Unknown>;
+src/types.rs: pub type ShortcutTriggerSubscribeFuture = Pin<Box<dyn Future<Output = ShortcutTriggerSubscribeResult> + Send>>;
+src/types.rs: pub type ShortcutTriggerSubscribeResult = Result<ShortcutTriggerSubscribeOutcome, Unknown>;
+src/types.rs: pub type ShortcutTriggerUnsubscribeFuture = Pin<Box<dyn Future<Output = ShortcutTriggerUnsubscribeResult> + Send>>;
+src/types.rs: pub type ShortcutTriggerUnsubscribeResult = Result<ShortcutTriggerUnsubscribeOutcome, Unknown>;
+src/types.rs: pub use flight_entity::{ Record, Unknown };
+src/types.rs: pub use flight_hostcapability::ProviderRef;
