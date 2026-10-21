@@ -1,0 +1,124 @@
+src/bvh_3d.rs: #[derive(Default)] pub struct Bvh3D { pub margin: f32, pub root: usize, pub min_x: Vec<f32>, pub min_y: Vec<f32>, pub min_z: Vec<f32>, pub max_x: Vec<f32>, pub max_y: Vec<f32>, pub max_z: Vec<f32>, pub parent: Vec<usize>, pub child1: Vec<usize>, pub child2: Vec<usize>, pub height: Vec<i32>, pub object: Vec<SpatialObjectId>, pub free_list: Vec<usize>, pub count: usize, pub leaf_by_object: HashMap<SpatialObjectId, usize>, pub object_order: Vec<SpatialObjectId>, pub bounds: HashMap<SpatialObjectId, SpatialAabb3D>, pub declined: HashMap<SpatialObjectId, SpatialDeclineReason>, pub stack: Vec<usize>, }
+src/bvh_3d.rs: pub const DEFAULT_BVH_MARGIN_3D: f32
+src/bvh_3d.rs: pub fn create_bvh_spatial_backend_3d(margin: Option<f32>) -> SpatialIndexBackend3D
+src/bvh_3d.rs: pub fn initialize_bvh_spatial_backend_3d(out: &mut SpatialIndexBackend3D, margin: Option<f32>)
+src/contract.rs: pub use crate::bvh_3d::*;
+src/contract.rs: pub use crate::explain_spatial_indexing_2d::*;
+src/contract.rs: pub use crate::explain_spatial_indexing_3d::*;
+src/contract.rs: pub use crate::format_spatial_indexing_notice::*;
+src/contract.rs: pub use crate::spatial_index::*;
+src/contract.rs: pub use crate::spatial_index_3d::*;
+src/contract.rs: pub use crate::spatial_indexing_guard::*;
+src/contract.rs: pub use crate::uniform_grid::*;
+src/contract.rs: pub use crate::uniform_grid_3d::*;
+src/explain_spatial_indexing_2d.rs: pub fn explain_spatial_indexing_2d(index: &SpatialIndex2D, id: SpatialObjectId,) -> SpatialIndexingExplanation
+src/explain_spatial_indexing_3d.rs: pub fn explain_spatial_indexing_3d(index: &SpatialIndex3D, id: SpatialObjectId,) -> SpatialIndexingExplanation
+src/format_spatial_indexing_notice.rs: pub fn format_spatial_indexing_notice(notice: &SpatialIndexingNotice) -> String
+src/lib.rs: pub mod contract
+src/lib.rs: pub use bvh_3d::create_bvh_spatial_backend_3d;
+src/lib.rs: pub use explain_spatial_indexing_2d::explain_spatial_indexing_2d;
+src/lib.rs: pub use explain_spatial_indexing_3d::explain_spatial_indexing_3d;
+src/lib.rs: pub use format_spatial_indexing_notice::format_spatial_indexing_notice;
+src/lib.rs: pub use spatial_index::{ SpatialAabb2D, SpatialIndex2D, SpatialIndexBackend2D, SpatialPair, clear_spatial_index_2d, create_spatial_index_2d, insert_spatial_object_2d, query_spatial_pairs_2d, query_spatial_point_2d, query_spatial_ray_2d, query_spatial_region_2d, remove_spatial_object_2d, update_spatial_object_2d, };
+src/lib.rs: pub use spatial_index_3d::{ SpatialFrustum3D, SpatialIndex3D, SpatialIndexBackend3D, clear_spatial_index_3d, create_spatial_index_3d, insert_spatial_object_3d, query_spatial_frustum_3d, query_spatial_pairs_3d, query_spatial_point_3d, query_spatial_ray_3d, query_spatial_region_3d, query_spatial_sphere_3d, remove_spatial_object_3d, update_spatial_object_3d, };
+src/lib.rs: pub use spatial_indexing_guard::{ SpatialDeclineReason, SpatialIndexingExplanation, SpatialIndexingGuard, SpatialIndexingMode, SpatialIndexingNotice, SpatialIndexingOperation, SpatialIndexingReason, SpatialObjectId, report_spatial_indexing, set_spatial_indexing_guard, };
+src/lib.rs: pub use uniform_grid::{ MAX_INDEXED_CELLS_PER_OBJECT, create_uniform_grid_spatial_backend_2d };
+src/lib.rs: pub use uniform_grid_3d::{ SpatialAabb3D, create_uniform_grid_spatial_backend_3d };
+src/spatial_index.rs: #[derive(Clone)] pub struct SpatialIndexBackend2D { runtime: EntityRuntimeSlot, pub clear_spatial_index: Arc<dyn Fn() + Send + Sync>, pub explain_spatial_indexing: Arc<dyn Fn(SpatialObjectId) -> SpatialIndexingExplanation + Send + Sync>, pub insert_spatial_object: Arc<dyn Fn(SpatialObjectId, &SpatialAabb2D) -> bool + Send + Sync>, pub query_spatial_pairs: Arc<dyn Fn(&mut Vec<SpatialPair>) + Send + Sync>, pub query_spatial_point: Arc<dyn Fn(&mut Vec<SpatialObjectId>, f32, f32) + Send + Sync>, pub query_spatial_ray: Arc<dyn Fn(&mut Vec<SpatialObjectId>, f32, f32, f32, f32) + Send + Sync>, pub query_spatial_region: Arc<dyn Fn(&mut Vec<SpatialObjectId>, &SpatialAabb2D) + Send + Sync>, pub remove_spatial_object: Arc<dyn Fn(SpatialObjectId) + Send + Sync>, pub update_spatial_object: Arc<dyn Fn(SpatialObjectId, &SpatialAabb2D) -> bool + Send + Sync>, }
+src/spatial_index.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct SpatialAabb2D { pub min_x: f32, pub min_y: f32, pub max_x: f32, pub max_y: f32, }
+src/spatial_index.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct SpatialPair { pub a: SpatialObjectId, pub b: SpatialObjectId, }
+src/spatial_index.rs: #[derive(Default)] pub struct SpatialIndex2D { runtime: EntityRuntimeSlot, index_runtime: Option<SpatialIndexRuntime2D>, }
+src/spatial_index.rs: impl Default for SpatialIndexBackend2D
+src/spatial_index.rs: impl Default for SpatialIndexBackend2D :: fn default() -> Self
+src/spatial_index.rs: impl Entity for SpatialIndex2D
+src/spatial_index.rs: impl Entity for SpatialIndex2D :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/spatial_index.rs: impl Entity for SpatialIndex2D :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/spatial_index.rs: impl Entity for SpatialIndexBackend2D
+src/spatial_index.rs: impl Entity for SpatialIndexBackend2D :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/spatial_index.rs: impl Entity for SpatialIndexBackend2D :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/spatial_index.rs: pub const DEFAULT_SPATIAL_CELL_SIZE: f32
+src/spatial_index.rs: pub fn clear_spatial_index_2d(index: &mut SpatialIndex2D)
+src/spatial_index.rs: pub fn create_spatial_index_2d(backend: Option<SpatialIndexBackend2D>) -> SpatialIndex2D
+src/spatial_index.rs: pub fn initialize_spatial_index_2d(out: &mut SpatialIndex2D, backend: Option<SpatialIndexBackend2D>,)
+src/spatial_index.rs: pub fn insert_spatial_object_2d(index: &mut SpatialIndex2D, id: SpatialObjectId, bounds: &SpatialAabb2D,) -> bool
+src/spatial_index.rs: pub fn query_spatial_pairs_2d(index: &mut SpatialIndex2D) -> &[SpatialPair]
+src/spatial_index.rs: pub fn query_spatial_point_2d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialIndex2D, x: f32, y: f32,)
+src/spatial_index.rs: pub fn query_spatial_ray_2d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialIndex2D, x: f32, y: f32, dx: f32, dy: f32,)
+src/spatial_index.rs: pub fn query_spatial_region_2d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialIndex2D, region: &SpatialAabb2D,)
+src/spatial_index.rs: pub fn remove_spatial_object_2d(index: &mut SpatialIndex2D, id: SpatialObjectId)
+src/spatial_index.rs: pub fn update_spatial_object_2d(index: &mut SpatialIndex2D, id: SpatialObjectId, bounds: &SpatialAabb2D,) -> bool
+src/spatial_index_3d.rs: #[derive(Clone)] pub struct SpatialIndexBackend3D { runtime: EntityRuntimeSlot, pub clear_spatial_index: Arc<dyn Fn() + Send + Sync>, pub explain_spatial_indexing: Arc<dyn Fn(SpatialObjectId) -> SpatialIndexingExplanation + Send + Sync>, pub insert_spatial_object: Arc<dyn Fn(SpatialObjectId, &SpatialAabb3D) -> bool + Send + Sync>, pub query_spatial_pairs: Arc<dyn Fn(&mut Vec<SpatialPair>) + Send + Sync>, pub query_spatial_point: Arc<dyn Fn(&mut Vec<SpatialObjectId>, f32, f32, f32) + Send + Sync>, pub query_spatial_ray: Arc<dyn Fn(&mut Vec<SpatialObjectId>, f32, f32, f32, f32, f32, f32) + Send + Sync>, pub query_spatial_region: Arc<dyn Fn(&mut Vec<SpatialObjectId>, &SpatialAabb3D) + Send + Sync>, pub remove_spatial_object: Arc<dyn Fn(SpatialObjectId) + Send + Sync>, pub update_spatial_object: Arc<dyn Fn(SpatialObjectId, &SpatialAabb3D) -> bool + Send + Sync>, }
+src/spatial_index_3d.rs: #[derive(Debug, Clone, Default)] pub struct SpatialFrustum3D { pub corners: [f32; 24], }
+src/spatial_index_3d.rs: #[derive(Default)] pub struct SpatialIndex3D { runtime: EntityRuntimeSlot, index_runtime: Option<SpatialIndexRuntime3D>, }
+src/spatial_index_3d.rs: impl Default for SpatialIndexBackend3D
+src/spatial_index_3d.rs: impl Default for SpatialIndexBackend3D :: fn default() -> Self
+src/spatial_index_3d.rs: impl Entity for SpatialIndex3D
+src/spatial_index_3d.rs: impl Entity for SpatialIndex3D :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/spatial_index_3d.rs: impl Entity for SpatialIndex3D :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/spatial_index_3d.rs: impl Entity for SpatialIndexBackend3D
+src/spatial_index_3d.rs: impl Entity for SpatialIndexBackend3D :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/spatial_index_3d.rs: impl Entity for SpatialIndexBackend3D :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/spatial_index_3d.rs: pub fn clear_spatial_index_3d(index: &mut SpatialIndex3D)
+src/spatial_index_3d.rs: pub fn create_spatial_index_3d(backend: Option<SpatialIndexBackend3D>) -> SpatialIndex3D
+src/spatial_index_3d.rs: pub fn initialize_spatial_index_3d(out: &mut SpatialIndex3D, backend: Option<SpatialIndexBackend3D>,)
+src/spatial_index_3d.rs: pub fn insert_spatial_object_3d(index: &mut SpatialIndex3D, id: SpatialObjectId, bounds: &SpatialAabb3D,) -> bool
+src/spatial_index_3d.rs: pub fn query_spatial_frustum_3d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialIndex3D, frustum: &SpatialFrustum3D, slices: Option<u32>,)
+src/spatial_index_3d.rs: pub fn query_spatial_pairs_3d(index: &mut SpatialIndex3D) -> &[SpatialPair]
+src/spatial_index_3d.rs: pub fn query_spatial_point_3d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialIndex3D, x: f32, y: f32, z: f32,)
+src/spatial_index_3d.rs: pub fn query_spatial_ray_3d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialIndex3D, x: f32, y: f32, z: f32, dx: f32, dy: f32, dz: f32,)
+src/spatial_index_3d.rs: pub fn query_spatial_region_3d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialIndex3D, region: &SpatialAabb3D,)
+src/spatial_index_3d.rs: pub fn query_spatial_sphere_3d(out: &mut Vec<SpatialObjectId>, index: &mut SpatialIndex3D, x: f32, y: f32, z: f32, radius: f32,)
+src/spatial_index_3d.rs: pub fn remove_spatial_object_3d(index: &mut SpatialIndex3D, id: SpatialObjectId)
+src/spatial_index_3d.rs: pub fn update_spatial_object_3d(index: &mut SpatialIndex3D, id: SpatialObjectId, bounds: &SpatialAabb3D,) -> bool
+src/spatial_indexing_guard.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub enum SpatialDeclineReason { InvertedBounds, NonFiniteBounds, }
+src/spatial_indexing_guard.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub enum SpatialIndexingMode { Absent, Cells, Declined, Overflow, }
+src/spatial_indexing_guard.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub enum SpatialIndexingOperation { Insert, Update, Remove, }
+src/spatial_indexing_guard.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub enum SpatialIndexingReason { InvalidCellSize, InvertedBounds, MissingId, NonFiniteBounds, }
+src/spatial_indexing_guard.rs: #[derive(Debug, Clone, PartialEq)] pub struct SpatialIndexingExplanation { pub bucket_count: f64, pub id: SpatialObjectId, pub mode: SpatialIndexingMode, pub reason: Option<SpatialDeclineReason>, }
+src/spatial_indexing_guard.rs: #[derive(Debug, Clone, PartialEq)] pub struct SpatialIndexingNotice { pub cell_size: f32, pub id: SpatialObjectId, pub mode: SpatialIndexingMode, pub operation: SpatialIndexingOperation, pub reason: Option<SpatialIndexingReason>, pub would_occupy_bucket_count: f64, }
+src/spatial_indexing_guard.rs: pub const SPATIAL_DECLINE_REASON_STRINGS: [(SpatialDeclineReason, &str); 2]
+src/spatial_indexing_guard.rs: pub const SPATIAL_INDEXING_MODE_STRINGS: [(SpatialIndexingMode, &str); 4]
+src/spatial_indexing_guard.rs: pub const SPATIAL_INDEXING_OPERATION_STRINGS: [(SpatialIndexingOperation, &str); 3]
+src/spatial_indexing_guard.rs: pub const SPATIAL_INDEXING_REASON_STRINGS: [(SpatialIndexingReason, &str); 4]
+src/spatial_indexing_guard.rs: pub fn report_spatial_indexing(notice: &SpatialIndexingNotice)
+src/spatial_indexing_guard.rs: pub fn set_spatial_indexing_guard(guard: Option<SpatialIndexingGuard>)
+src/spatial_indexing_guard.rs: pub type SpatialIndexingGuard = Arc<dyn Fn(&SpatialIndexingNotice) + Send + Sync>;
+src/spatial_indexing_guard.rs: pub type SpatialObjectId = i32;
+src/sugar.rs: impl SpatialIndex2D :: fn clear(&mut self)
+src/sugar.rs: impl SpatialIndex2D :: fn explain(&self, id: SpatialObjectId) -> SpatialIndexingExplanation
+src/sugar.rs: impl SpatialIndex2D :: fn insert(&mut self, id: SpatialObjectId, bounds: &SpatialAabb2D) -> bool
+src/sugar.rs: impl SpatialIndex2D :: fn new(backend: Option<SpatialIndexBackend2D>) -> Self
+src/sugar.rs: impl SpatialIndex2D :: fn query_pairs(&mut self) -> &[SpatialPair]
+src/sugar.rs: impl SpatialIndex2D :: fn query_point(&mut self, out: &mut Vec<SpatialObjectId>, x: f32, y: f32)
+src/sugar.rs: impl SpatialIndex2D :: fn query_ray(&mut self, out: &mut Vec<SpatialObjectId>, x: f32, y: f32, dx: f32, dy: f32)
+src/sugar.rs: impl SpatialIndex2D :: fn query_region(&mut self, out: &mut Vec<SpatialObjectId>, region: &SpatialAabb2D)
+src/sugar.rs: impl SpatialIndex2D :: fn remove(&mut self, id: SpatialObjectId)
+src/sugar.rs: impl SpatialIndex2D :: fn update(&mut self, id: SpatialObjectId, bounds: &SpatialAabb2D) -> bool
+src/sugar.rs: impl SpatialIndex3D :: fn clear(&mut self)
+src/sugar.rs: impl SpatialIndex3D :: fn explain(&self, id: SpatialObjectId) -> SpatialIndexingExplanation
+src/sugar.rs: impl SpatialIndex3D :: fn insert(&mut self, id: SpatialObjectId, bounds: &SpatialAabb3D) -> bool
+src/sugar.rs: impl SpatialIndex3D :: fn new(backend: Option<SpatialIndexBackend3D>) -> Self
+src/sugar.rs: impl SpatialIndex3D :: fn query_frustum(&mut self, out: &mut Vec<SpatialObjectId>, frustum: &SpatialFrustum3D, slices: Option<u32>,)
+src/sugar.rs: impl SpatialIndex3D :: fn query_pairs(&mut self) -> &[SpatialPair]
+src/sugar.rs: impl SpatialIndex3D :: fn query_point(&mut self, out: &mut Vec<SpatialObjectId>, x: f32, y: f32, z: f32)
+src/sugar.rs: impl SpatialIndex3D :: fn query_ray(&mut self, out: &mut Vec<SpatialObjectId>, x: f32, y: f32, z: f32, dx: f32, dy: f32, dz: f32,)
+src/sugar.rs: impl SpatialIndex3D :: fn query_region(&mut self, out: &mut Vec<SpatialObjectId>, region: &SpatialAabb3D)
+src/sugar.rs: impl SpatialIndex3D :: fn query_sphere(&mut self, out: &mut Vec<SpatialObjectId>, x: f32, y: f32, z: f32, radius: f32,)
+src/sugar.rs: impl SpatialIndex3D :: fn remove(&mut self, id: SpatialObjectId)
+src/sugar.rs: impl SpatialIndex3D :: fn update(&mut self, id: SpatialObjectId, bounds: &SpatialAabb3D) -> bool
+src/sugar.rs: impl SpatialIndexBackend2D :: fn new(cell_size: f32) -> Self
+src/sugar.rs: impl SpatialIndexBackend3D :: fn from_bvh(margin: Option<f32>) -> Self
+src/sugar.rs: impl SpatialIndexBackend3D :: fn from_uniform_grid(cell_size: f32) -> Self
+src/sugar.rs: impl SpatialIndexingNotice :: fn format(&self) -> String
+src/sugar.rs: impl SpatialIndexingNotice :: fn report(&self)
+src/uniform_grid.rs: #[derive(Debug, Clone)] pub struct GridCell2D { pub cx: i32, pub cy: i32, pub ids: HashSet<SpatialObjectId>, pub id_order: Vec<SpatialObjectId>, }
+src/uniform_grid.rs: #[derive(Default)] pub struct UniformGrid2D { pub cell_size: f32, pub cells: HashMap<(i32, i32), GridCell2D>, pub cell_order: Vec<(i32, i32)>, pub bounds: HashMap<SpatialObjectId, SpatialAabb2D>, pub object_order: Vec<SpatialObjectId>, pub overflow: HashSet<SpatialObjectId>, pub overflow_order: Vec<SpatialObjectId>, pub declined: HashMap<SpatialObjectId, SpatialDeclineReason>, pub min_cell_x: i32, pub min_cell_y: i32, pub max_cell_x: i32, pub max_cell_y: i32, pub seen: HashSet<SpatialObjectId>, pub seen_order: Vec<SpatialObjectId>, pub pair_ids: Vec<SpatialObjectId>, }
+src/uniform_grid.rs: pub const MAX_INDEXED_CELLS_PER_OBJECT: u32
+src/uniform_grid.rs: pub fn create_uniform_grid_spatial_backend_2d(cell_size: f32) -> SpatialIndexBackend2D
+src/uniform_grid.rs: pub fn initialize_uniform_grid_spatial_backend_2d(out: &mut SpatialIndexBackend2D, grid: UniformGrid2D,)
+src/uniform_grid_3d.rs: #[derive(Debug, Clone)] pub struct GridCell3D { pub cx: i32, pub cy: i32, pub cz: i32, pub ids: HashSet<SpatialObjectId>, pub id_order: Vec<SpatialObjectId>, }
+src/uniform_grid_3d.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct SpatialAabb3D { pub min_x: f32, pub min_y: f32, pub min_z: f32, pub max_x: f32, pub max_y: f32, pub max_z: f32, }
+src/uniform_grid_3d.rs: #[derive(Default)] pub struct UniformGrid3D { pub cell_size: f32, pub cells: HashMap<(i32, i32, i32), GridCell3D>, pub cell_order: Vec<(i32, i32, i32)>, pub bounds: HashMap<SpatialObjectId, SpatialAabb3D>, pub object_order: Vec<SpatialObjectId>, pub overflow: HashSet<SpatialObjectId>, pub overflow_order: Vec<SpatialObjectId>, pub declined: HashMap<SpatialObjectId, SpatialDeclineReason>, pub min_cell_x: i32, pub min_cell_y: i32, pub min_cell_z: i32, pub max_cell_x: i32, pub max_cell_y: i32, pub max_cell_z: i32, pub seen: HashSet<SpatialObjectId>, pub seen_order: Vec<SpatialObjectId>, pub pair_ids: Vec<SpatialObjectId>, }
+src/uniform_grid_3d.rs: pub const DEFAULT_SPATIAL_CELL_SIZE_3D: f32
+src/uniform_grid_3d.rs: pub fn create_uniform_grid_spatial_backend_3d(cell_size: f32) -> SpatialIndexBackend3D
+src/uniform_grid_3d.rs: pub fn initialize_uniform_grid_spatial_backend_3d(out: &mut SpatialIndexBackend3D, cell_size: f32)
