@@ -2,6 +2,16 @@ use flight_binpack::*;
 use flight_binpack::contract::*;
 use std::collections::HashMap;
 
+// D24 out collector: each call fills a fresh caller-owned Vec.
+fn explain(
+    rectangles: &[PackableRectangle],
+    options: Option<&BinPackOptions>,
+) -> Vec<UnpackedRectangleExplanation> {
+    let mut out = Vec::new();
+    explain_unpacked_rectangles(&mut out, rectangles, options);
+    return out;
+}
+
 fn count_by_id(ids: &[RectangleId]) -> HashMap<String, i32> {
     let mut counts: HashMap<String, i32> = HashMap::new();
     for id in ids {
@@ -29,8 +39,29 @@ mod explain_unpacked_rectangles {
     use super::*;
 
     #[test]
+    fn clears_a_reused_out_and_keeps_its_capacity() {
+        let rectangle = PackableRectangle {
+            id: RectangleId::Text("a".to_string()),
+            width: 8.0,
+            height: 8.0,
+        };
+        let mut out = Vec::with_capacity(8);
+        out.push(UnpackedRectangleExplanation {
+            id: RectangleId::Text("stale".to_string()),
+            reason: UnpackedRectangleReason::Oversized,
+            usable_width: 0.0,
+            usable_height: 0.0,
+        });
+
+        explain_unpacked_rectangles(&mut out, &[rectangle], None);
+
+        assert!(out.is_empty());
+        assert!(out.capacity() >= 8);
+    }
+
+    #[test]
     fn returns_nothing_when_everything_was_placed() {
-        let result = explain_unpacked_rectangles(
+        let result = explain(
             &[PackableRectangle { id: RectangleId::Text("a".to_string()), width: 8.0, height: 8.0 }],
             None,
         );
@@ -58,7 +89,7 @@ mod explain_unpacked_rectangles {
         options.max_width = Some(100.0);
         options.max_height = Some(100.0);
         options.growable = Some(false);
-        let explanations = explain_unpacked_rectangles(&rects, Some(&options));
+        let explanations = explain(&rects, Some(&options));
         let mut by_id: HashMap<String, UnpackedRectangleReason> = HashMap::new();
         for e in &explanations {
             by_id.insert(e.id.to_string(), e.reason);
@@ -94,7 +125,7 @@ mod explain_unpacked_rectangles {
         options.max_height = Some(10.0);
         options.border = Some(6.0);
         options.growable = Some(false);
-        let explanations = explain_unpacked_rectangles(&rects, Some(&options));
+        let explanations = explain(&rects, Some(&options));
         let reasons: Vec<UnpackedRectangleReason> = explanations.iter().map(|e| e.reason).collect();
         assert_eq!(
             reasons,
@@ -123,7 +154,7 @@ mod explain_unpacked_rectangles {
         options.max_width = Some(300.0);
         options.max_height = Some(100.0);
         options.growable = Some(false);
-        let without_rotation = explain_unpacked_rectangles(&rects, Some(&options));
+        let without_rotation = explain(&rects, Some(&options));
         assert_eq!(
             without_rotation[0].reason,
             UnpackedRectangleReason::Oversized
@@ -144,7 +175,7 @@ mod explain_unpacked_rectangles {
         options_rotated.max_height = Some(100.0);
         options_rotated.growable = Some(false);
         options_rotated.allow_rotation = Some(true);
-        let with_rotation = explain_unpacked_rectangles(&rects, Some(&options_rotated));
+        let with_rotation = explain(&rects, Some(&options_rotated));
         assert!(with_rotation.is_empty());
     }
 
@@ -166,7 +197,7 @@ mod explain_unpacked_rectangles {
         options.max_height = Some(100.0);
         options.border = Some(5.0);
         options.growable = Some(false);
-        let explanations = explain_unpacked_rectangles(&rects, Some(&options));
+        let explanations = explain(&rects, Some(&options));
         assert_eq!(explanations[0].id, RectangleId::Text("a".to_string()));
         assert_eq!(explanations[0].usable_width, 90.0);
         assert_eq!(explanations[0].usable_height, 90.0);
@@ -197,7 +228,7 @@ mod explain_unpacked_rectangles {
         assert_eq!(result.placements.len(), 1);
         assert_eq!(result.unpacked, vec![RectangleId::Text("a".to_string())]);
 
-        let explanations = explain_unpacked_rectangles(&rects, Some(&options));
+        let explanations = explain(&rects, Some(&options));
         assert_eq!(explanations.len(), 1);
     }
 
@@ -231,7 +262,7 @@ mod explain_unpacked_rectangles {
             ]
         );
 
-        let explanations = explain_unpacked_rectangles(&rects, Some(&options));
+        let explanations = explain(&rects, Some(&options));
         assert_eq!(explanations.len(), 2);
     }
 
@@ -267,7 +298,7 @@ mod explain_unpacked_rectangles {
             let label = format!("seed {}", seed);
 
             let unpacked = pack_rectangles(&rects, Some(&options)).unpacked;
-            let explained = explain_unpacked_rectangles(&rects, Some(&options));
+            let explained = explain(&rects, Some(&options));
 
             assert_eq!(explained.len(), unpacked.len(), "{}", label);
             let explained_ids: Vec<RectangleId> = explained.iter().map(|e| e.id.clone()).collect();

@@ -35,10 +35,13 @@ pub struct UnpackedRectangleExplanation {
 /// used.
 ///
 /// Returns an entry only for rectangles that failed; an all-placed input yields an empty vector.
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the explanations fill a caller-owned out, cleared first
 pub fn explain_unpacked_rectangles(
+    out: &mut Vec<UnpackedRectangleExplanation>,
     rectangles: &[PackableRectangle],
     options: Option<&BinPackOptions>,
-) -> Vec<UnpackedRectangleExplanation> {
+) {
+    out.clear();
     let border = options.and_then(|o| o.border).unwrap_or(0.0);
     let allow_rotation = options.and_then(|o| o.allow_rotation).unwrap_or(false);
     let usable_width = options
@@ -52,7 +55,7 @@ pub fn explain_unpacked_rectangles(
 
     let result = pack_rectangles(rectangles, options);
     if result.unpacked.is_empty() {
-        return Vec::new();
+        return;
     }
 
     let mut outstanding: HashMap<RectangleId, i32> = HashMap::new();
@@ -60,16 +63,14 @@ pub fn explain_unpacked_rectangles(
         *outstanding.entry(id.clone()).or_insert(0) += 1;
     }
 
-    let mut explanations: Vec<UnpackedRectangleExplanation> = Vec::new();
     for rectangle in rectangles {
         let remaining = outstanding.get(&rectangle.id).copied().unwrap_or(0);
         if remaining == 0 {
             continue;
         }
         outstanding.insert(rectangle.id.clone(), remaining - 1);
-        explanations.push(UnpackedRectangleExplanation { id: rectangle.id.clone(), reason: get_unpacked_reason(rectangle, usable_width, usable_height, allow_rotation), usable_width: usable_width, usable_height: usable_height });
+        out.push(UnpackedRectangleExplanation { id: rectangle.id.clone(), reason: get_unpacked_reason(rectangle, usable_width, usable_height, allow_rotation), usable_width: usable_width, usable_height: usable_height });
     }
-    return explanations;
 }
 
 fn fits_within(width: f32, height: f32, usable_width: f32, usable_height: f32) -> bool {
