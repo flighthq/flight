@@ -1,225 +1,311 @@
-use std::any::Any;
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
-use crate::internal::{clear_timeout, now_ms, set_timeout};
+use flight_entity::Ref;
+
 use crate::slot::{connect_signal, disconnect_signal};
-use crate::types::{Signal, SignalThrottleOptions, SlotFn};
+use crate::types::{
+    FrameTick, Signal, SignalSlot, SignalThrottleOptions, SignalTimer, SignalTimerState, TimerId,
+};
 
-/// Connects a frame-tick signal to a slot at a reduced frame rate. The slot
-/// receives the total accumulated `delta_time` (in ms) since the last fire,
-/// not the individual source deltas. Returns a cleanup function that
-/// disconnects the internal handler.
-///
-/// This is specialized to `(delta_time: f64) => void` frame-tick signals and
-/// accumulates time rather than forwarding source args. For a payload-preserving
-/// throttle over any signal shape, use `connect_signal_throttled`.
+// flight-lint: allow(conform-extra) D5: explicit timer state replaces hidden TS platform timers
+pub fn create_signal_timer_state() -> SignalTimerState {
+    let mut out = SignalTimerState::default();
+    initialize_signal_timer_state(&mut out);
+    return out;
+}
+
+// flight-lint: allow(conform-extra) D5: explicit timer state replaces hidden TS platform timers
+pub fn initialize_signal_timer_state(out: &mut SignalTimerState) {
+    *out = SignalTimerState::default();
+}
+
+/// Advances explicit timer state to `now_ms`, running every due callback in fire-time order (D5:
+/// the caller injects time; the contract never reads a clock). Callbacks run without the state
+/// lock held, so they may schedule or clear timers re-entrantly.
+// flight-lint: allow(f64) D1: signal timers use millisecond durations
+// flight-lint: allow(conform-extra) D5: explicit timer state replaces the TS platform clock
+pub fn advance_signal_timers(state: &Ref<SignalTimerState>, now_ms: f64) {
+    loop {
+        let callback = {
+            let mut timer_state = state.write().unwrap();
+            let mut earliest: Option<usize> = None;
+            for index in 0..timer_state.timers.len() {
+                if timer_state.timers[index].fire_at_ms > now_ms {
+                    continue;
+                }
+                match earliest {
+                    Some(current) => {
+                        let candidate = (
+                            timer_state.timers[index].fire_at_ms,
+                            timer_state.timers[index].id.0,
+                        );
+                        let existing = (
+                            timer_state.timers[current].fire_at_ms,
+                            timer_state.timers[current].id.0,
+                        );
+                        if candidate < existing {
+                            earliest = Some(index);
+                        }
+                    }
+                    None => earliest = Some(index),
+                }
+            }
+            match earliest {
+                Some(index) => {
+                    timer_state.now_ms = timer_state.timers[index].fire_at_ms;
+                    Some(timer_state.timers.remove(index).callback)
+                }
+                None => {
+                    timer_state.now_ms = now_ms;
+                    None
+                }
+            }
+        };
+        match callback {
+            Some(callback) => callback(),
+            None => break,
+        }
+    }
+}
+
+// flight-lint: allow(conform-extra) D5: explicit timer state replaces hidden TS platform timers
+pub fn clear_signal_timeout(state: &Ref<SignalTimerState>, id: TimerId) {
+    state.write().unwrap().timers.retain(|timer| timer.id != id);
+}
+
+/// Connects a frame-tick signal to a slot at a reduced frame rate (TS
+/// `connectSignalAtFrameRate`). The slot receives the accumulated delta time since the last
+/// fire, not the individual source deltas.
+// flight-lint: allow(f64) D1: frame rate and accumulated milliseconds use f64 precision
 pub fn connect_signal_at_frame_rate(
-    source: &Signal,
+    source: &Signal<FrameTick>,
     fps: f64,
-    slot: SlotFn,
-) -> Box<dyn Fn()> {
+    slot: Arc<dyn Fn(f64) + Send + Sync>,
+) -> Arc<dyn Fn() + Send + Sync> {
     let period = 1000.0 / fps;
-    let elapsed: Rc<RefCell<f64>> = Rc::new(RefCell::new(0.0));
+    let elapsed = Arc::new(Mutex::new(0.0_f64));
 
-    let handler: SlotFn = {
+    let handler: SignalSlot<FrameTick> = {
         let elapsed = elapsed.clone();
-        let slot = slot.clone();
-        Rc::new(move |args: Rc<dyn Any>| {
-            let delta = *args.downcast_ref::<f64>().unwrap();
-            let mut e = elapsed.borrow_mut();
-            *e += delta;
-            if *e >= period {
-                let total = *e;
-                *e %= period;
-                slot(Rc::new(total));
+        Arc::new(move |tick: &FrameTick| {
+            let fire = {
+                let mut elapsed = elapsed.lock().unwrap();
+                *elapsed += tick.delta_time;
+                if *elapsed >= period {
+                    let total = *elapsed;
+                    *elapsed %= period;
+                    Some(total)
+                } else {
+                    None
+                }
+            };
+            if let Some(total) = fire {
+                slot(total);
             }
         })
     };
 
-    connect_signal(source, handler.clone(), None);
-
-    let source_cleanup = source.clone();
-    let handler_cleanup = handler;
-    return Box::new(move || {
-        disconnect_signal(&source_cleanup, &handler_cleanup);
-    });
+    let slot_id = connect_signal(source, handler, None);
+    let cleanup_source = source.clone();
+    return Arc::new(move || disconnect_signal(&cleanup_source, slot_id));
 }
 
-/// Connects a slot to a signal with debounce semantics: the slot fires only
-/// after the signal has been quiet for `delay_ms` milliseconds. Each emission
-/// resets the timer. Returns a cleanup function.
-///
-/// `leading: true` fires immediately on the first invocation and suppresses
-/// subsequent calls until the delay window expires. `trailing: true` (default)
-/// fires at the end of the quiet period with the most recent args.
-pub fn connect_signal_debounced(
-    source: &Signal,
+/// Connects a slot with debounce semantics (TS `connectSignalDebounced`). Timer state and the
+/// current time are explicit (D5); the caller advances both with `advance_signal_timers`.
+// flight-lint: allow(f64) D1: debounce delays are millisecond durations
+// flight-lint: allow(contract-vocabulary) D5: the trailing payload is retained across timer callbacks, so it must be Send
+// flight-lint: allow(conform-params) D5: explicit timer state is passed instead of reading hidden platform timers
+pub fn connect_signal_debounced<T: Clone + Send + 'static>(
+    source: &Signal<T>,
     delay_ms: f64,
-    slot: SlotFn,
+    slot: SignalSlot<T>,
     options: Option<&SignalThrottleOptions>,
-) -> Box<dyn Fn()> {
+    state: &Ref<SignalTimerState>,
+) -> Arc<dyn Fn() + Send + Sync> {
     let leading = options.and_then(|o| o.leading).unwrap_or(false);
     let trailing = options.and_then(|o| o.trailing).unwrap_or(true);
 
-    let timer_id: Rc<RefCell<Option<usize>>> = Rc::new(RefCell::new(None));
-    let last_args: Rc<RefCell<Option<Rc<dyn Any>>>> = Rc::new(RefCell::new(None));
-    let leading_fired: Rc<RefCell<bool>> = Rc::new(RefCell::new(false));
+    let timer_id: Arc<Mutex<Option<TimerId>>> = Arc::new(Mutex::new(None));
+    let last_args: Arc<Mutex<Option<T>>> = Arc::new(Mutex::new(None));
+    let leading_fired = Arc::new(Mutex::new(false));
 
-    let handler: SlotFn = {
+    let handler: SignalSlot<T> = {
         let slot = slot.clone();
+        let state = state.clone();
         let timer_id = timer_id.clone();
         let last_args = last_args.clone();
         let leading_fired = leading_fired.clone();
-        Rc::new(move |args: Rc<dyn Any>| {
-            *last_args.borrow_mut() = Some(args.clone());
+        Arc::new(move |args: &T| {
+            *last_args.lock().unwrap() = Some(args.clone());
 
-            if leading && timer_id.borrow().is_none() && !*leading_fired.borrow() {
-                *leading_fired.borrow_mut() = true;
+            if leading && timer_id.lock().unwrap().is_none() && !*leading_fired.lock().unwrap() {
+                *leading_fired.lock().unwrap() = true;
                 slot(args);
             }
 
-            // Clear existing timer
-            if let Some(id) = *timer_id.borrow() {
-                clear_timeout(id);
+            if let Some(pending) = *timer_id.lock().unwrap() {
+                clear_signal_timeout(&state, pending);
             }
 
-            // Set new timer
-            let slot_timer = slot.clone();
-            let timer_id_timer = timer_id.clone();
-            let last_args_timer = last_args.clone();
-            let leading_fired_timer = leading_fired.clone();
-
-            let id = set_timeout(
-                Box::new(move || {
-                    *timer_id_timer.borrow_mut() = None;
-                    *leading_fired_timer.borrow_mut() = false;
+            let timer_slot = slot.clone();
+            let timer_last_args = last_args.clone();
+            let timer_leading_fired = leading_fired.clone();
+            let timer_timer_id = timer_id.clone();
+            let id = set_signal_timeout(
+                &state,
+                delay_ms,
+                Arc::new(move || {
+                    *timer_timer_id.lock().unwrap() = None;
+                    *timer_leading_fired.lock().unwrap() = false;
                     if trailing {
-                        let la = last_args_timer.borrow().clone();
-                        if let Some(a) = la {
-                            slot_timer(a);
-                            *last_args_timer.borrow_mut() = None;
+                        let args = timer_last_args.lock().unwrap().take();
+                        if let Some(args) = args {
+                            timer_slot(&args);
                         }
                     }
                 }),
-                delay_ms,
             );
-            *timer_id.borrow_mut() = Some(id);
+            *timer_id.lock().unwrap() = Some(id);
         })
     };
 
-    connect_signal(source, handler.clone(), None);
-
-    let source_cleanup = source.clone();
-    let handler_cleanup = handler;
-    let timer_cleanup = timer_id;
-    return Box::new(move || {
-        disconnect_signal(&source_cleanup, &handler_cleanup);
-        if let Some(id) = *timer_cleanup.borrow() {
-            clear_timeout(id);
+    let slot_id = connect_signal(source, handler, None);
+    let cleanup_source = source.clone();
+    let cleanup_state = state.clone();
+    let cleanup_timer = timer_id;
+    return Arc::new(move || {
+        disconnect_signal(&cleanup_source, slot_id);
+        let pending = *cleanup_timer.lock().unwrap();
+        if let Some(pending) = pending {
+            clear_signal_timeout(&cleanup_state, pending);
         }
     });
 }
 
-/// Connects a slot to a signal with throttle semantics: the slot fires at most
-/// once per `interval_ms` milliseconds. Unlike `connect_signal_at_frame_rate`,
-/// this preserves the original signal args (payload-preserving throttle).
-/// Returns a cleanup function.
-///
-/// `leading: true` (default) fires immediately on the first invocation; the
-/// trailing call fires after the interval if additional invocations occurred
-/// during the cooldown.
-pub fn connect_signal_throttled(
-    source: &Signal,
+/// Connects a slot with throttle semantics (TS `connectSignalThrottled`), preserving the original
+/// payload for the trailing call. Timer state and the current time are explicit (D5).
+// flight-lint: allow(f64) D1: throttle intervals are millisecond durations
+// flight-lint: allow(contract-vocabulary) D5: the trailing payload is retained across timer callbacks, so it must be Send
+// flight-lint: allow(conform-params) D5: explicit timer state is passed instead of reading hidden platform timers
+pub fn connect_signal_throttled<T: Clone + Send + 'static>(
+    source: &Signal<T>,
     interval_ms: f64,
-    slot: SlotFn,
+    slot: SignalSlot<T>,
     options: Option<&SignalThrottleOptions>,
-) -> Box<dyn Fn()> {
+    state: &Ref<SignalTimerState>,
+) -> Arc<dyn Fn() + Send + Sync> {
     let leading = options.and_then(|o| o.leading).unwrap_or(true);
     let trailing = options.and_then(|o| o.trailing).unwrap_or(true);
 
-    let last_fired_at: Rc<RefCell<f64>> = Rc::new(RefCell::new(f64::NEG_INFINITY));
-    let trailing_timer: Rc<RefCell<Option<usize>>> = Rc::new(RefCell::new(None));
-    let last_args: Rc<RefCell<Option<Rc<dyn Any>>>> = Rc::new(RefCell::new(None));
+    let last_fired_at: Arc<Mutex<f64>> = Arc::new(Mutex::new(f64::NEG_INFINITY));
+    let trailing_timer: Arc<Mutex<Option<TimerId>>> = Arc::new(Mutex::new(None));
+    let last_args: Arc<Mutex<Option<T>>> = Arc::new(Mutex::new(None));
 
-    let handler: SlotFn = {
+    let handler: SignalSlot<T> = {
         let slot = slot.clone();
+        let state = state.clone();
         let last_fired_at = last_fired_at.clone();
         let trailing_timer = trailing_timer.clone();
         let last_args = last_args.clone();
-        Rc::new(move |args: Rc<dyn Any>| {
-            let now = now_ms();
-            let remaining = interval_ms - (now - *last_fired_at.borrow());
+        Arc::new(move |args: &T| {
+            let now = state.read().unwrap().now_ms;
+            let remaining = interval_ms - (now - *last_fired_at.lock().unwrap());
 
             if remaining <= 0.0 || remaining > interval_ms {
-                // Clear trailing timer
-                if let Some(id) = *trailing_timer.borrow() {
-                    clear_timeout(id);
-                    *trailing_timer.borrow_mut() = None;
+                if let Some(pending) = *trailing_timer.lock().unwrap() {
+                    clear_signal_timeout(&state, pending);
+                    *trailing_timer.lock().unwrap() = None;
                 }
-
-                *last_fired_at.borrow_mut() = now;
+                *last_fired_at.lock().unwrap() = now;
 
                 if leading {
                     slot(args);
                 } else if trailing {
-                    *last_args.borrow_mut() = Some(args);
-                    let slot_trail = slot.clone();
-                    let last_fired_trail = last_fired_at.clone();
-                    let trailing_timer_trail = trailing_timer.clone();
-                    let last_args_trail = last_args.clone();
-                    let id = set_timeout(
-                        Box::new(move || {
-                            *last_fired_trail.borrow_mut() = now_ms();
-                            *trailing_timer_trail.borrow_mut() = None;
-                            let la = last_args_trail.borrow().clone();
-                            if let Some(a) = la {
-                                slot_trail(a);
-                            }
-                            *last_args_trail.borrow_mut() = None;
-                        }),
+                    *last_args.lock().unwrap() = Some(args.clone());
+                    let timer_slot = slot.clone();
+                    let timer_state = state.clone();
+                    let timer_last_fired_at = last_fired_at.clone();
+                    let timer_trailing_timer = trailing_timer.clone();
+                    let timer_last_args = last_args.clone();
+                    let id = set_signal_timeout(
+                        &state,
                         interval_ms,
+                        Arc::new(move || {
+                            *timer_last_fired_at.lock().unwrap() =
+                                timer_state.read().unwrap().now_ms;
+                            *timer_trailing_timer.lock().unwrap() = None;
+                            let args = timer_last_args.lock().unwrap().take();
+                            if let Some(args) = args {
+                                timer_slot(&args);
+                            }
+                        }),
                     );
-                    *trailing_timer.borrow_mut() = Some(id);
+                    *trailing_timer.lock().unwrap() = Some(id);
                 }
             } else if trailing {
-                // Clear existing trailing timer
-                if let Some(id) = *trailing_timer.borrow() {
-                    clear_timeout(id);
+                if let Some(pending) = *trailing_timer.lock().unwrap() {
+                    clear_signal_timeout(&state, pending);
                 }
+                *last_args.lock().unwrap() = Some(args.clone());
 
-                *last_args.borrow_mut() = Some(args);
-
-                let slot_trail = slot.clone();
-                let last_fired_trail = last_fired_at.clone();
-                let trailing_timer_trail = trailing_timer.clone();
-                let last_args_trail = last_args.clone();
-                let id = set_timeout(
-                    Box::new(move || {
-                        *last_fired_trail.borrow_mut() = now_ms();
-                        *trailing_timer_trail.borrow_mut() = None;
-                        let la = last_args_trail.borrow().clone();
-                        if let Some(a) = la {
-                            slot_trail(a);
-                        }
-                        *last_args_trail.borrow_mut() = None;
-                    }),
+                let timer_slot = slot.clone();
+                let timer_state = state.clone();
+                let timer_last_fired_at = last_fired_at.clone();
+                let timer_trailing_timer = trailing_timer.clone();
+                let timer_last_args = last_args.clone();
+                let id = set_signal_timeout(
+                    &state,
                     remaining,
+                    Arc::new(move || {
+                        *timer_last_fired_at.lock().unwrap() = timer_state.read().unwrap().now_ms;
+                        *timer_trailing_timer.lock().unwrap() = None;
+                        let args = timer_last_args.lock().unwrap().take();
+                        if let Some(args) = args {
+                            timer_slot(&args);
+                        }
+                    }),
                 );
-                *trailing_timer.borrow_mut() = Some(id);
+                *trailing_timer.lock().unwrap() = Some(id);
             }
         })
     };
 
-    connect_signal(source, handler.clone(), None);
-
-    let source_cleanup = source.clone();
-    let handler_cleanup = handler;
-    let trailing_cleanup = trailing_timer;
-    return Box::new(move || {
-        disconnect_signal(&source_cleanup, &handler_cleanup);
-        if let Some(id) = *trailing_cleanup.borrow() {
-            clear_timeout(id);
+    let slot_id = connect_signal(source, handler, None);
+    let cleanup_source = source.clone();
+    let cleanup_state = state.clone();
+    let cleanup_timer = trailing_timer;
+    return Arc::new(move || {
+        disconnect_signal(&cleanup_source, slot_id);
+        let pending = *cleanup_timer.lock().unwrap();
+        if let Some(pending) = pending {
+            clear_signal_timeout(&cleanup_state, pending);
         }
     });
+}
+
+// flight-lint: allow(f64) D1: timer delays are millisecond durations
+// flight-lint: allow(conform-extra) D5: explicit timer state replaces hidden TS platform timers
+pub fn set_signal_timeout(
+    state: &Ref<SignalTimerState>,
+    delay_ms: f64,
+    callback: Arc<dyn Fn() + Send + Sync>,
+) -> TimerId {
+    let mut timer_state = state.write().unwrap();
+    let id = TimerId(timer_state.next_id);
+    timer_state.next_id += 1;
+    let fire_at_ms = timer_state.now_ms + delay_ms;
+    let index = timer_state
+        .timers
+        .iter()
+        .position(|timer| (timer.fire_at_ms, timer.id.0) > (fire_at_ms, id.0))
+        .unwrap_or(timer_state.timers.len());
+    timer_state.timers.insert(
+        index,
+        SignalTimer {
+            id,
+            fire_at_ms,
+            callback,
+        },
+    );
+    return id;
 }

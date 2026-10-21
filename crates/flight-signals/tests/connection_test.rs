@@ -1,322 +1,339 @@
-use std::any::Any;
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use flight_signals::*;
 
-mod connect_signal_tracked_tests {
+mod connect_signal_tracked {
     use super::*;
 
     #[test]
-    fn disconnects_a_once_connection_after_one_ordinary_emission() {
-        let signal = create_signal();
-        let count = Rc::new(RefCell::new(0));
-        let count_c = count.clone();
+    fn returns_a_connected_handle_whose_slot_receives_typed_payload() {
+        struct ValueEvent {
+            value: i32,
+        }
+
+        let signal: Signal<ValueEvent> = create_signal();
+        let received = Arc::new(Mutex::new(Vec::new()));
+        let out = received.clone();
         let connection = connect_signal_tracked(
             &signal,
-            Rc::new(move |_: Rc<dyn Any>| {
-                *count_c.borrow_mut() += 1;
-            }),
-            Some(&SignalTrackedConnectOptions {
-                once: true,
-                ..Default::default()
-            }),
+            Arc::new(move |event: &ValueEvent| out.lock().unwrap().push(event.value)),
             None,
         );
 
-        emit_signal(&signal, Rc::new(()));
-        emit_signal(&signal, Rc::new(()));
+        assert!(is_signal_connection_connected(&connection));
+        assert!(!is_signal_connection_paused(&connection));
 
-        assert_eq!(*count.borrow(), 1);
-        assert!(!connection.borrow().connected);
-        assert!(!is_slot_connected(&signal, &connection.borrow().slot));
-    }
-
-    #[test]
-    fn disconnects_a_once_connection_after_one_safe_emission() {
-        let signal = create_signal();
-        let count = Rc::new(RefCell::new(0));
-        let count_c = count.clone();
-        let connection = connect_signal_tracked(
-            &signal,
-            Rc::new(move |_: Rc<dyn Any>| {
-                *count_c.borrow_mut() += 1;
-            }),
-            Some(&SignalTrackedConnectOptions {
-                once: true,
-                ..Default::default()
-            }),
-            None,
-        );
-
-        emit_signal_safe(&signal, Rc::new(()));
-        emit_signal_safe(&signal, Rc::new(()));
-
-        assert_eq!(*count.borrow(), 1);
-        assert!(!connection.borrow().connected);
-        assert!(!is_slot_connected(&signal, &connection.borrow().slot));
+        emit_signal(&signal, &ValueEvent { value: 42 });
+        assert_eq!(*received.lock().unwrap(), vec![42]);
     }
 
     #[test]
     fn preserves_priority_ordering_among_tracked_and_ordinary_slots() {
-        let signal = create_signal();
-        let calls = Rc::new(RefCell::new(Vec::<String>::new()));
-        let calls_c = calls.clone();
+        let signal: Signal<()> = create_signal();
+        let calls = Arc::new(Mutex::new(Vec::new()));
+
+        let low_calls = calls.clone();
+        let low_options = SignalConnectOptions {
+            priority: Some(-1),
+            once: None,
+        };
         connect_signal(
             &signal,
-            Rc::new(move |_: Rc<dyn Any>| calls_c.borrow_mut().push("low".to_string())),
-            Some(&SignalConnectOptions {
-                priority: -1,
-                once: false,
-            }),
+            Arc::new(move |_: &()| low_calls.lock().unwrap().push("low")),
+            Some(&low_options),
         );
-        let calls_c2 = calls.clone();
+        let high_calls = calls.clone();
+        let high_options = SignalTrackedConnectOptions {
+            priority: Some(10),
+            once: None,
+            scope: None,
+        };
         connect_signal_tracked(
             &signal,
-            Rc::new(move |_: Rc<dyn Any>| calls_c2.borrow_mut().push("high".to_string())),
-            Some(&SignalTrackedConnectOptions {
-                priority: Some(10),
-                once: false,
-            }),
-            None,
+            Arc::new(move |_: &()| high_calls.lock().unwrap().push("high")),
+            Some(&high_options),
         );
-        let calls_c3 = calls.clone();
+        let normal_calls = calls.clone();
         connect_signal_tracked(
             &signal,
-            Rc::new(move |_: Rc<dyn Any>| calls_c3.borrow_mut().push("normal".to_string())),
-            None,
+            Arc::new(move |_: &()| normal_calls.lock().unwrap().push("normal")),
             None,
         );
 
-        emit_signal(&signal, Rc::new(()));
-        assert_eq!(*calls.borrow(), vec!["high", "normal", "low"]);
+        emit_signal(&signal, &());
+        assert_eq!(*calls.lock().unwrap(), vec!["high", "normal", "low"]);
     }
 
     #[test]
-    fn returns_a_connected_handle_whose_slot_receives_typed_arguments() {
-        let signal = create_signal();
-        let received = Rc::new(RefCell::new(Vec::<i32>::new()));
-        let received_c = received.clone();
+    fn disconnects_a_once_connection_after_one_ordinary_emission() {
+        let signal: Signal<()> = create_signal();
+        let count = Arc::new(Mutex::new(0));
+        let counter = count.clone();
+        let options = SignalTrackedConnectOptions {
+            priority: None,
+            once: Some(true),
+            scope: None,
+        };
         let connection = connect_signal_tracked(
             &signal,
-            Rc::new(move |args: Rc<dyn Any>| {
-                let v = *args.downcast_ref::<i32>().unwrap();
-                received_c.borrow_mut().push(v);
-            }),
-            None,
-            None,
+            Arc::new(move |_: &()| *counter.lock().unwrap() += 1),
+            Some(&options),
         );
 
-        assert!(Rc::ptr_eq(&connection.borrow().signal.data, &signal.data));
-        assert!(connection.borrow().connected);
-        assert!(!connection.borrow().paused);
-        assert!(is_slot_connected(&signal, &connection.borrow().slot));
+        emit_signal(&signal, &());
+        emit_signal(&signal, &());
 
-        emit_signal(&signal, Rc::new(42_i32));
-        assert_eq!(*received.borrow(), vec![42]);
+        assert_eq!(*count.lock().unwrap(), 1);
+        assert!(!is_signal_connection_connected(&connection));
+    }
+
+    #[test]
+    fn disconnects_a_once_connection_after_one_safe_emission() {
+        let signal: Signal<()> = create_signal();
+        let count = Arc::new(Mutex::new(0));
+        let counter = count.clone();
+        let options = SignalTrackedConnectOptions {
+            priority: None,
+            once: Some(true),
+            scope: None,
+        };
+        let connection = connect_signal_tracked(
+            &signal,
+            Arc::new(move |_: &()| *counter.lock().unwrap() += 1),
+            Some(&options),
+        );
+
+        emit_signal_safe(&signal, &());
+        emit_signal_safe(&signal, &());
+
+        assert_eq!(*count.lock().unwrap(), 1);
+        assert!(!is_signal_connection_connected(&connection));
     }
 
     #[test]
     fn skips_a_connection_disconnected_before_its_turn_in_ordinary_dispatch() {
-        let signal = create_signal();
-        let calls = Rc::new(RefCell::new(Vec::<String>::new()));
-        let calls_c = calls.clone();
+        let signal: Signal<()> = create_signal();
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let later_calls = calls.clone();
         let later = connect_signal_tracked(
             &signal,
-            Rc::new(move |_: Rc<dyn Any>| calls_c.borrow_mut().push("later".to_string())),
-            None,
+            Arc::new(move |_: &()| later_calls.lock().unwrap().push("later")),
             None,
         );
-        let later_clone = later.clone();
-        let calls_c2 = calls.clone();
+        let first_calls = calls.clone();
+        let first_options = SignalTrackedConnectOptions {
+            priority: Some(10),
+            once: None,
+            scope: None,
+        };
+        let later_for_disconnect = later.clone();
         connect_signal_tracked(
             &signal,
-            Rc::new(move |_: Rc<dyn Any>| {
-                calls_c2.borrow_mut().push("first".to_string());
-                disconnect_signal_connection(&later_clone);
+            Arc::new(move |_: &()| {
+                first_calls.lock().unwrap().push("first");
+                disconnect_signal_connection(&later_for_disconnect);
             }),
-            Some(&SignalTrackedConnectOptions {
-                priority: Some(10),
-                once: false,
-            }),
-            None,
+            Some(&first_options),
         );
 
-        emit_signal(&signal, Rc::new(()));
-
-        assert_eq!(*calls.borrow(), vec!["first"]);
-        assert!(!later.borrow().connected);
+        emit_signal(&signal, &());
+        assert_eq!(*calls.lock().unwrap(), vec!["first"]);
+        assert!(!is_signal_connection_connected(&later));
     }
 
     #[test]
     fn still_invokes_a_snapshotted_connection_disconnected_during_safe_dispatch() {
-        let signal = create_signal();
-        let calls = Rc::new(RefCell::new(Vec::<String>::new()));
-        let calls_c = calls.clone();
+        let signal: Signal<()> = create_signal();
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let later_calls = calls.clone();
         let later = connect_signal_tracked(
             &signal,
-            Rc::new(move |_: Rc<dyn Any>| calls_c.borrow_mut().push("later".to_string())),
-            None,
+            Arc::new(move |_: &()| later_calls.lock().unwrap().push("later")),
             None,
         );
-        let later_clone = later.clone();
-        let calls_c2 = calls.clone();
+        let first_calls = calls.clone();
+        let first_options = SignalTrackedConnectOptions {
+            priority: Some(10),
+            once: None,
+            scope: None,
+        };
+        let later_for_disconnect = later.clone();
         connect_signal_tracked(
             &signal,
-            Rc::new(move |_: Rc<dyn Any>| {
-                calls_c2.borrow_mut().push("first".to_string());
-                disconnect_signal_connection(&later_clone);
+            Arc::new(move |_: &()| {
+                first_calls.lock().unwrap().push("first");
+                disconnect_signal_connection(&later_for_disconnect);
             }),
-            Some(&SignalTrackedConnectOptions {
-                priority: Some(10),
-                once: false,
-            }),
-            None,
+            Some(&first_options),
         );
 
-        emit_signal_safe(&signal, Rc::new(()));
-
-        assert_eq!(*calls.borrow(), vec!["first", "later"]);
-        assert!(!later.borrow().connected);
+        emit_signal_safe(&signal, &());
+        assert_eq!(*calls.lock().unwrap(), vec!["first", "later"]);
+        assert!(!is_signal_connection_connected(&later));
     }
 }
 
-mod disconnect_signal_connection_tests {
+mod disconnect_signal_connection {
     use super::*;
 
     #[test]
     fn disconnects_idempotently_and_records_the_inactive_state() {
-        let signal = create_signal();
-        let count = Rc::new(RefCell::new(0));
-        let count_c = count.clone();
+        let signal: Signal<()> = create_signal();
+        let count = Arc::new(Mutex::new(0));
+        let counter = count.clone();
         let connection = connect_signal_tracked(
             &signal,
-            Rc::new(move |_: Rc<dyn Any>| {
-                *count_c.borrow_mut() += 1;
-            }),
-            None,
+            Arc::new(move |_: &()| *counter.lock().unwrap() += 1),
             None,
         );
 
         disconnect_signal_connection(&connection);
         disconnect_signal_connection(&connection);
-        emit_signal(&signal, Rc::new(()));
+        emit_signal(&signal, &());
 
-        assert_eq!(*count.borrow(), 0);
-        assert!(!connection.borrow().connected);
-        assert!(!is_slot_connected(&signal, &connection.borrow().slot));
+        assert_eq!(*count.lock().unwrap(), 0);
+        assert!(!is_signal_connection_connected(&connection));
     }
 }
 
-mod pause_signal_connection_tests {
+mod is_signal_connection_connected {
     use super::*;
 
     #[test]
-    fn does_not_consume_a_paused_once_connection_in_either_emission_mode() {
-        let signal = create_signal();
-        let count = Rc::new(RefCell::new(0));
-        let count_c = count.clone();
-        let connection = connect_signal_tracked(
-            &signal,
-            Rc::new(move |_: Rc<dyn Any>| {
-                *count_c.borrow_mut() += 1;
-            }),
-            Some(&SignalTrackedConnectOptions {
-                once: true,
-                ..Default::default()
-            }),
-            None,
-        );
-
-        pause_signal_connection(&connection);
-        emit_signal(&signal, Rc::new(()));
-        emit_signal_safe(&signal, Rc::new(()));
-        resume_signal_connection(&connection);
-        emit_signal(&signal, Rc::new(()));
-        emit_signal_safe(&signal, Rc::new(()));
-
-        assert_eq!(*count.borrow(), 1);
-        assert!(!connection.borrow().connected);
+    fn returns_true_while_the_registration_is_live() {
+        let signal: Signal<()> = create_signal();
+        let connection = connect_signal_tracked(&signal, Arc::new(|_: &()| {}), None);
+        assert!(is_signal_connection_connected(&connection));
     }
 
     #[test]
+    fn returns_false_after_disconnect() {
+        let signal: Signal<()> = create_signal();
+        let connection = connect_signal_tracked(&signal, Arc::new(|_: &()| {}), None);
+        disconnect_signal_connection(&connection);
+        assert!(!is_signal_connection_connected(&connection));
+    }
+}
+
+mod is_signal_connection_paused {
+    use super::*;
+
+    #[test]
+    fn returns_false_for_an_active_connection() {
+        let signal: Signal<()> = create_signal();
+        let connection = connect_signal_tracked(&signal, Arc::new(|_: &()| {}), None);
+        assert!(!is_signal_connection_paused(&connection));
+    }
+
+    #[test]
+    fn returns_true_after_pausing() {
+        let signal: Signal<()> = create_signal();
+        let connection = connect_signal_tracked(&signal, Arc::new(|_: &()| {}), None);
+        pause_signal_connection(&connection);
+        assert!(is_signal_connection_paused(&connection));
+    }
+}
+
+mod pause_signal_connection {
+    use super::*;
+
+    #[test]
     fn skips_a_paused_connection_during_ordinary_emission_without_removing_it() {
-        let signal = create_signal();
-        let count = Rc::new(RefCell::new(0));
-        let count_c = count.clone();
+        let signal: Signal<()> = create_signal();
+        let count = Arc::new(Mutex::new(0));
+        let counter = count.clone();
         let connection = connect_signal_tracked(
             &signal,
-            Rc::new(move |_: Rc<dyn Any>| {
-                *count_c.borrow_mut() += 1;
-            }),
-            None,
+            Arc::new(move |_: &()| *counter.lock().unwrap() += 1),
             None,
         );
 
         pause_signal_connection(&connection);
-        emit_signal(&signal, Rc::new(()));
+        emit_signal(&signal, &());
 
-        assert_eq!(*count.borrow(), 0);
-        assert!(connection.borrow().connected);
-        assert!(connection.borrow().paused);
-        assert!(is_slot_connected(&signal, &connection.borrow().slot));
+        assert_eq!(*count.lock().unwrap(), 0);
+        assert!(is_signal_connection_connected(&connection));
+        assert!(is_signal_connection_paused(&connection));
     }
 
     #[test]
     fn skips_a_paused_connection_during_safe_emission_without_removing_it() {
-        let signal = create_signal();
-        let count = Rc::new(RefCell::new(0));
-        let count_c = count.clone();
+        let signal: Signal<()> = create_signal();
+        let count = Arc::new(Mutex::new(0));
+        let counter = count.clone();
         let connection = connect_signal_tracked(
             &signal,
-            Rc::new(move |_: Rc<dyn Any>| {
-                *count_c.borrow_mut() += 1;
-            }),
-            None,
+            Arc::new(move |_: &()| *counter.lock().unwrap() += 1),
             None,
         );
 
         pause_signal_connection(&connection);
-        emit_signal_safe(&signal, Rc::new(()));
+        emit_signal_safe(&signal, &());
 
-        assert_eq!(*count.borrow(), 0);
-        assert!(connection.borrow().connected);
-        assert!(connection.borrow().paused);
-        assert!(is_slot_connected(&signal, &connection.borrow().slot));
+        assert_eq!(*count.lock().unwrap(), 0);
+        assert!(is_signal_connection_connected(&connection));
+    }
+
+    #[test]
+    fn does_not_consume_a_paused_once_connection_in_either_emission_mode() {
+        let signal: Signal<()> = create_signal();
+        let count = Arc::new(Mutex::new(0));
+        let counter = count.clone();
+        let options = SignalTrackedConnectOptions {
+            priority: None,
+            once: Some(true),
+            scope: None,
+        };
+        let connection = connect_signal_tracked(
+            &signal,
+            Arc::new(move |_: &()| *counter.lock().unwrap() += 1),
+            Some(&options),
+        );
+
+        pause_signal_connection(&connection);
+        emit_signal(&signal, &());
+        emit_signal_safe(&signal, &());
+        resume_signal_connection(&connection);
+        emit_signal(&signal, &());
+        emit_signal_safe(&signal, &());
+
+        assert_eq!(*count.lock().unwrap(), 1);
+        assert!(!is_signal_connection_connected(&connection));
     }
 }
 
-mod resume_signal_connection_tests {
+mod resume_signal_connection {
     use super::*;
 
     #[test]
     fn restores_a_paused_connection_at_its_original_priority_position() {
-        let signal = create_signal();
-        let calls = Rc::new(RefCell::new(Vec::<String>::new()));
-        let calls_c = calls.clone();
+        let signal: Signal<()> = create_signal();
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let high_calls = calls.clone();
+        let options = SignalTrackedConnectOptions {
+            priority: Some(10),
+            once: None,
+            scope: None,
+        };
         let connection = connect_signal_tracked(
             &signal,
-            Rc::new(move |_: Rc<dyn Any>| calls_c.borrow_mut().push("high".to_string())),
-            Some(&SignalTrackedConnectOptions {
-                priority: Some(10),
-                once: false,
-            }),
-            None,
+            Arc::new(move |_: &()| high_calls.lock().unwrap().push("high")),
+            Some(&options),
         );
-        let calls_c2 = calls.clone();
+        let low_calls = calls.clone();
         connect_signal(
             &signal,
-            Rc::new(move |_: Rc<dyn Any>| calls_c2.borrow_mut().push("low".to_string())),
+            Arc::new(move |_: &()| low_calls.lock().unwrap().push("low")),
             None,
         );
 
         pause_signal_connection(&connection);
-        emit_signal(&signal, Rc::new(()));
+        emit_signal(&signal, &());
         resume_signal_connection(&connection);
-        emit_signal(&signal, Rc::new(()));
+        emit_signal(&signal, &());
 
-        assert_eq!(*calls.borrow(), vec!["low", "high", "low"]);
-        assert!(connection.borrow().connected);
-        assert!(!connection.borrow().paused);
+        assert_eq!(*calls.lock().unwrap(), vec!["low", "high", "low"]);
+        assert!(is_signal_connection_connected(&connection));
+        assert!(!is_signal_connection_paused(&connection));
     }
 }

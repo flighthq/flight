@@ -1,241 +1,219 @@
-use std::any::Any;
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
 use flight_signals::*;
 
-mod emit_signal_safe_tests {
+mod emit_signal_safe {
     use super::*;
 
-    #[test]
-    fn does_not_call_a_slot_added_during_the_current_safe_dispatch() {
-        let signal = create_signal();
-        let calls = Rc::new(RefCell::new(Vec::<String>::new()));
-        let added = Rc::new(RefCell::new(false));
+    struct ValueEvent {
+        value: i32,
+    }
 
-        let signal_c = signal.clone();
-        let calls_c = calls.clone();
-        let added_c = added.clone();
+    #[test]
+    fn passes_typed_payload_in_priority_order() {
+        let signal: Signal<ValueEvent> = create_signal();
+        let received = Arc::new(Mutex::new(Vec::new()));
+        for (label, priority) in [("low", -1), ("high", 10), ("normal", 0)] {
+            let received = received.clone();
+            let options = SignalConnectOptions {
+                priority: Some(priority),
+                once: None,
+            };
+            connect_signal(
+                &signal,
+                Arc::new(move |event: &ValueEvent| {
+                    received.lock().unwrap().push(format!("{}:{}", label, event.value));
+                }),
+                Some(&options),
+            );
+        }
+        emit_signal_safe(&signal, &ValueEvent { value: 42 });
+        assert_eq!(
+            *received.lock().unwrap(),
+            vec!["high:42".to_string(), "normal:42".to_string(), "low:42".to_string()]
+        );
+    }
+
+    #[test]
+    fn does_not_call_a_slot_added_during_the_current_dispatch() {
+        let signal: Signal<()> = create_signal();
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let added = Arc::new(Mutex::new(false));
+        let slot_signal = signal.clone();
+        let a_calls = calls.clone();
+        let a_added = added.clone();
         connect_signal(
             &signal,
-            Rc::new(move |_: Rc<dyn Any>| {
-                calls_c.borrow_mut().push("a".to_string());
-                if !*added_c.borrow() {
-                    *added_c.borrow_mut() = true;
-                    let calls_inner = calls_c.clone();
+            Arc::new(move |_: &()| {
+                a_calls.lock().unwrap().push("a");
+                let mut added = a_added.lock().unwrap();
+                if !*added {
+                    *added = true;
+                    drop(added);
+                    let added_calls = a_calls.clone();
                     connect_signal(
-                        &signal_c,
-                        Rc::new(move |_: Rc<dyn Any>| {
-                            calls_inner.borrow_mut().push("added".to_string());
-                        }),
+                        &slot_signal,
+                        Arc::new(move |_: &()| added_calls.lock().unwrap().push("added")),
                         None,
                     );
                 }
             }),
             None,
         );
-        let calls_c2 = calls.clone();
-        connect_signal(
-            &signal,
-            Rc::new(move |_: Rc<dyn Any>| calls_c2.borrow_mut().push("b".to_string())),
-            None,
-        );
+        let b_calls = calls.clone();
+        connect_signal(&signal, Arc::new(move |_: &()| b_calls.lock().unwrap().push("b")), None);
 
-        emit_signal_safe(&signal, Rc::new(()));
-        assert_eq!(*calls.borrow(), vec!["a", "b"]);
+        emit_signal_safe(&signal, &());
+        assert_eq!(*calls.lock().unwrap(), vec!["a", "b"]);
 
-        calls.borrow_mut().clear();
-        emit_signal_safe(&signal, Rc::new(()));
-        assert_eq!(*calls.borrow(), vec!["a", "b", "added"]);
+        calls.lock().unwrap().clear();
+        emit_signal_safe(&signal, &());
+        assert_eq!(*calls.lock().unwrap(), vec!["a", "b", "added"]);
     }
 
     #[test]
-    fn does_nothing_when_no_slots_are_connected() {
-        let signal = create_signal();
-        emit_signal_safe(&signal, Rc::new(())); // should not panic
-    }
-
-    #[test]
-    fn gives_a_nested_safe_emission_its_own_snapshot_and_arguments() {
-        let signal = create_signal();
-        let calls = Rc::new(RefCell::new(Vec::<String>::new()));
-        let nested = Rc::new(RefCell::new(false));
-
-        let signal_c = signal.clone();
-        let calls_c = calls.clone();
-        let nested_c = nested.clone();
+    fn still_calls_a_copied_slot_removed_during_the_current_dispatch() {
+        let signal: Signal<()> = create_signal();
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let id_holder = Arc::new(Mutex::new(None));
+        let holder = id_holder.clone();
+        let first_calls = calls.clone();
+        let first_signal = signal.clone();
         connect_signal(
             &signal,
-            Rc::new(move |args: Rc<dyn Any>| {
-                let value = args.downcast_ref::<String>().unwrap().clone();
-                calls_c.borrow_mut().push(format!("a:{}", value));
-                if !*nested_c.borrow() {
-                    *nested_c.borrow_mut() = true;
-                    emit_signal_safe(&signal_c, Rc::new("nested".to_string()));
+            Arc::new(move |_: &()| {
+                first_calls.lock().unwrap().push("first");
+                let id = *holder.lock().unwrap();
+                if let Some(id) = id {
+                    disconnect_signal(&first_signal, id);
                 }
             }),
             None,
         );
-        let calls_c2 = calls.clone();
+        let removed_calls = calls.clone();
+        let removed_id = connect_signal(
+            &signal,
+            Arc::new(move |_: &()| removed_calls.lock().unwrap().push("removed")),
+            None,
+        );
+        *id_holder.lock().unwrap() = Some(removed_id);
+
+        emit_signal_safe(&signal, &());
+        assert_eq!(*calls.lock().unwrap(), vec!["first", "removed"]);
+
+        calls.lock().unwrap().clear();
+        emit_signal_safe(&signal, &());
+        assert_eq!(*calls.lock().unwrap(), vec!["first"]);
+    }
+
+    #[test]
+    fn gives_a_nested_safe_emission_its_own_snapshot_and_arguments() {
+        #[derive(Clone)]
+        struct TextEvent {
+            value: &'static str,
+        }
+
+        let signal: Signal<TextEvent> = create_signal();
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let nested = Arc::new(Mutex::new(false));
+        let nested_signal = signal.clone();
+        let a_calls = calls.clone();
+        let a_nested = nested.clone();
         connect_signal(
             &signal,
-            Rc::new(move |args: Rc<dyn Any>| {
-                let value = args.downcast_ref::<String>().unwrap().clone();
-                calls_c2.borrow_mut().push(format!("b:{}", value));
+            Arc::new(move |event: &TextEvent| {
+                a_calls.lock().unwrap().push(format!("a:{}", event.value));
+                let mut nested = a_nested.lock().unwrap();
+                if !*nested {
+                    *nested = true;
+                    drop(nested);
+                    emit_signal_safe(&nested_signal, &TextEvent { value: "nested" });
+                }
             }),
             None,
         );
+        let b_calls = calls.clone();
+        connect_signal(
+            &signal,
+            Arc::new(move |event: &TextEvent| b_calls.lock().unwrap().push(format!("b:{}", event.value))),
+            None,
+        );
 
-        emit_signal_safe(&signal, Rc::new("outer".to_string()));
-
+        emit_signal_safe(&signal, &TextEvent { value: "outer" });
         assert_eq!(
-            *calls.borrow(),
+            *calls.lock().unwrap(),
             vec!["a:outer", "a:nested", "b:nested", "b:outer"]
         );
     }
 
     #[test]
-    fn passes_typed_arguments_in_priority_order() {
-        let signal = create_signal();
-        let received = Rc::new(RefCell::new(Vec::<String>::new()));
-        let received_c = received.clone();
-        connect_signal(
-            &signal,
-            Rc::new(move |args: Rc<dyn Any>| {
-                let v = *args.downcast_ref::<i32>().unwrap();
-                received_c.borrow_mut().push(format!("low:{}", v));
-            }),
-            Some(&SignalConnectOptions {
-                priority: -1,
-                once: false,
-            }),
-        );
-        let received_c2 = received.clone();
-        connect_signal(
-            &signal,
-            Rc::new(move |args: Rc<dyn Any>| {
-                let v = *args.downcast_ref::<i32>().unwrap();
-                received_c2.borrow_mut().push(format!("high:{}", v));
-            }),
-            Some(&SignalConnectOptions {
-                priority: 10,
-                once: false,
-            }),
-        );
-        let received_c3 = received.clone();
-        connect_signal(
-            &signal,
-            Rc::new(move |args: Rc<dyn Any>| {
-                let v = *args.downcast_ref::<i32>().unwrap();
-                received_c3.borrow_mut().push(format!("normal:{}", v));
-            }),
-            None,
-        );
-
-        emit_signal_safe(&signal, Rc::new(42_i32));
-
-        assert_eq!(*received.borrow(), vec!["high:42", "normal:42", "low:42"]);
-    }
-
-    #[test]
-    fn removes_a_once_slot_before_invoking_it_so_nested_safe_emission_cannot_repeat_it() {
-        let signal = create_signal();
-        let calls = Rc::new(RefCell::new(Vec::<String>::new()));
-        let nested = Rc::new(RefCell::new(false));
-
-        let signal_c = signal.clone();
-        let calls_c = calls.clone();
-        let nested_c = nested.clone();
-        connect_signal(
-            &signal,
-            Rc::new(move |_: Rc<dyn Any>| {
-                calls_c.borrow_mut().push("once".to_string());
-                if !*nested_c.borrow() {
-                    *nested_c.borrow_mut() = true;
-                    emit_signal_safe(&signal_c, Rc::new(()));
-                }
-            }),
-            Some(&SignalConnectOptions {
-                once: true,
-                ..Default::default()
-            }),
-        );
-        let calls_c2 = calls.clone();
-        connect_signal(
-            &signal,
-            Rc::new(move |_: Rc<dyn Any>| calls_c2.borrow_mut().push("tail".to_string())),
-            None,
-        );
-
-        emit_signal_safe(&signal, Rc::new(()));
-        emit_signal_safe(&signal, Rc::new(()));
-
-        assert_eq!(
-            *calls.borrow(),
-            vec!["once", "tail", "tail", "tail"]
-        );
-    }
-
-    #[test]
-    fn still_calls_a_copied_slot_removed_during_the_current_safe_dispatch() {
-        let signal = create_signal();
-        let calls = Rc::new(RefCell::new(Vec::<String>::new()));
-        let removed: SlotFn = {
-            let calls = calls.clone();
-            Rc::new(move |_: Rc<dyn Any>| calls.borrow_mut().push("removed".to_string()))
+    fn removes_a_once_slot_before_invoking_it_so_a_nested_emission_cannot_repeat_it() {
+        let signal: Signal<()> = create_signal();
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let once_calls = calls.clone();
+        let nested = Arc::new(Mutex::new(false));
+        let nested_signal = signal.clone();
+        let options = SignalConnectOptions {
+            priority: None,
+            once: Some(true),
         };
-        let removed_ref = removed.clone();
-        let signal_c = signal.clone();
-        let calls_c = calls.clone();
         connect_signal(
             &signal,
-            Rc::new(move |_: Rc<dyn Any>| {
-                calls_c.borrow_mut().push("first".to_string());
-                disconnect_signal(&signal_c, &removed_ref);
+            Arc::new(move |_: &()| {
+                once_calls.lock().unwrap().push("once");
+                let mut nested = nested.lock().unwrap();
+                if !*nested {
+                    *nested = true;
+                    drop(nested);
+                    emit_signal_safe(&nested_signal, &());
+                }
             }),
-            None,
+            Some(&options),
         );
-        connect_signal(&signal, removed, None);
+        let tail_calls = calls.clone();
+        connect_signal(&signal, Arc::new(move |_: &()| tail_calls.lock().unwrap().push("tail")), None);
 
-        emit_signal_safe(&signal, Rc::new(()));
-        assert_eq!(*calls.borrow(), vec!["first", "removed"]);
-
-        calls.borrow_mut().clear();
-        emit_signal_safe(&signal, Rc::new(()));
-        assert_eq!(*calls.borrow(), vec!["first"]);
+        emit_signal_safe(&signal, &());
+        emit_signal_safe(&signal, &());
+        assert_eq!(*calls.lock().unwrap(), vec!["once", "tail", "tail", "tail"]);
     }
 
     #[test]
-    fn stops_after_cancellation_and_resets_cancellation_before_the_next_safe_emission() {
-        let signal = create_signal();
-        let calls = Rc::new(RefCell::new(Vec::<String>::new()));
-        let cancel = Rc::new(RefCell::new(true));
-
-        let signal_c = signal.clone();
-        let calls_c = calls.clone();
-        let cancel_c = cancel.clone();
+    fn stops_after_cancellation_and_resets_cancellation_before_the_next_emission() {
+        let signal: Signal<()> = create_signal();
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let cancel = Arc::new(Mutex::new(true));
+        let first_calls = calls.clone();
+        let first_cancel = cancel.clone();
+        let cancel_signal_handle = signal.clone();
         connect_signal(
             &signal,
-            Rc::new(move |_: Rc<dyn Any>| {
-                calls_c.borrow_mut().push("first".to_string());
-                if *cancel_c.borrow() {
-                    cancel_signal(&signal_c);
+            Arc::new(move |_: &()| {
+                first_calls.lock().unwrap().push("first");
+                let cancel = *first_cancel.lock().unwrap();
+                if cancel {
+                    cancel_signal(&cancel_signal_handle);
                 }
             }),
             None,
         );
-        let calls_c2 = calls.clone();
-        connect_signal(
-            &signal,
-            Rc::new(move |_: Rc<dyn Any>| calls_c2.borrow_mut().push("second".to_string())),
-            None,
+        let second_calls = calls.clone();
+        connect_signal(&signal, Arc::new(move |_: &()| second_calls.lock().unwrap().push("second")), None);
+
+        emit_signal_safe(&signal, &());
+        assert_eq!(*calls.lock().unwrap(), vec!["first"]);
+
+        *cancel.lock().unwrap() = false;
+        emit_signal_safe(&signal, &());
+        assert_eq!(
+            *calls.lock().unwrap(),
+            vec!["first", "first", "second"]
         );
+    }
 
-        emit_signal_safe(&signal, Rc::new(()));
-        assert_eq!(*calls.borrow(), vec!["first"]);
-
-        *cancel.borrow_mut() = false;
-        emit_signal_safe(&signal, Rc::new(()));
-        assert_eq!(*calls.borrow(), vec!["first", "first", "second"]);
+    #[test]
+    fn does_nothing_when_no_slots_are_connected() {
+        let signal: Signal<()> = create_signal();
+        emit_signal_safe(&signal, &());
     }
 }

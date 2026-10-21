@@ -1,77 +1,80 @@
-use std::any::Any;
-use std::cell::RefCell;
-use std::rc::Rc;
+use flight_entity::Ref;
 
 use crate::slot::compact_signal_data;
-use crate::types::{Signal, SignalData, SlotFn};
+use crate::types::{Signal, SignalData, SlotId};
 
-/// Emits to the priority-ordered listener set captured at emission start.
+/// Emits to the priority-ordered set captured at emission start (TS `emitSignalSafe`).
 ///
-/// Connections added while this snapshot is running wait for a later emission.
-/// A connection removed after the snapshot was captured still receives this
-/// emission. Nested safe emissions capture their own listener set. This
-/// deterministic mutation behavior costs one copy of each dispatch lane.
-pub fn emit_signal_safe(signal: &Signal, args: Rc<dyn Any>) {
-    let data_rc = match signal.data.borrow().as_ref() {
-        Some(rc) => rc.clone(),
-        None => return,
+/// Connections added while the snapshot runs wait for a later emission; a connection removed
+/// after the snapshot was captured still receives this emission. Nested safe emissions take
+/// their own snapshot. Once registrations are consumed before they are invoked, so a nested
+/// safe emission cannot repeat one.
+pub fn emit_signal_safe<T>(signal: &Signal<T>, args: &T) {
+    let data = signal.data.clone();
+    let (slots, ids, repeat, paused) = {
+        let mut state = data.write().unwrap();
+        let Some(signal_data) = state.as_mut() else {
+            return;
+        };
+        let slots = signal_data.slots.clone();
+        let ids = signal_data.ids.clone();
+        let repeat = signal_data.repeat.clone();
+        let paused = signal_data.paused.clone();
+        signal_data.cancelled = false;
+        signal_data.depth += 1;
+        (slots, ids, repeat, paused)
     };
 
-    // Snapshot slots, priorities, repeat and update dispatch state
-    let (slots, priorities, repeat) = {
-        let mut data = data_rc.borrow_mut();
-        let slots = data.slots.clone();
-        let priorities = data.priorities.clone();
-        let repeat = data.repeat.clone();
-        data.cancelled = false;
-        data.depth += 1;
-        (slots, priorities, repeat)
-    };
-
-    for i in 0..slots.len() {
-        let slot = match &slots[i] {
-            Some(s) => s.clone(),
+    for index in 0..slots.len() {
+        let slot = match &slots[index] {
+            Some(slot) => slot.clone(),
             None => continue,
         };
-
-        // Consume once registrations before invoking them so a once callback
-        // cannot repeat itself by nesting another safe emission.
-        if !repeat[i] {
-            tombstone_once_slot(&data_rc, &slot, priorities[i]);
+        if paused[index] {
+            continue;
         }
-
-        slot(args.clone());
-
-        // Check cancelled
-        let cancelled = data_rc.borrow().cancelled;
+        if !repeat[index] {
+            tombstone_once_slot(&data, ids[index]);
+        }
+        slot(args);
+        let cancelled = data
+            .read()
+            .unwrap()
+            .as_ref()
+            .map(|signal_data| signal_data.cancelled)
+            .unwrap_or(false);
         if cancelled {
             break;
         }
     }
 
-    // Decrement depth
     let should_compact = {
-        let mut data = data_rc.borrow_mut();
-        data.depth -= 1;
-        data.depth == 0
+        let mut state = data.write().unwrap();
+        match state.as_mut() {
+            Some(signal_data) => {
+                signal_data.depth -= 1;
+                signal_data.depth == 0
+            }
+            None => false,
+        }
     };
-
     if should_compact {
-        compact_signal_data(signal, &data_rc);
+        compact_signal_data(&data);
     }
 }
 
-fn tombstone_once_slot(data_rc: &Rc<RefCell<SignalData>>, slot: &SlotFn, priority: i32) {
-    let mut data = data_rc.borrow_mut();
-    for i in 0..data.slots.len() {
-        let is_match = match &data.slots[i] {
-            Some(s) => Rc::ptr_eq(s, slot) && !data.repeat[i] && data.priorities[i] == priority,
-            None => false,
-        };
-        if !is_match {
-            continue;
-        }
-        data.slots[i] = None;
+fn tombstone_once_slot<T>(data: &Ref<Option<SignalData<T>>>, id: SlotId) {
+    let mut state = data.write().unwrap();
+    let Some(signal_data) = state.as_mut() else {
         return;
+    };
+    for index in 0..signal_data.slots.len() {
+        if signal_data.slots[index].is_some()
+            && signal_data.ids[index] == id
+            && !signal_data.repeat[index]
+        {
+            signal_data.slots[index] = None;
+            return;
+        }
     }
 }

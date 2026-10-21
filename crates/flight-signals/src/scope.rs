@@ -7,24 +7,23 @@ pub fn create_signal_scope() -> SignalScope {
     return out;
 }
 
+pub fn initialize_signal_scope(out: &mut SignalScope) {
+    *out.connections.write().unwrap() = Vec::new();
+}
+
+/// Tears down every tracked connection in the scope and empties it (TS `disconnectSignalScope`).
+/// The list is emptied before the loop so a re-entrant call sees nothing to do; each disconnect
+/// is idempotent, so a member already torn down through its own handle, a once member that
+/// already fired, and a duplicate listing all cost one no-op.
 pub fn disconnect_signal_scope(scope: &SignalScope) {
-    let members = {
-        let mut connections = scope.connections.borrow_mut();
+    let pending = {
+        let mut connections = scope.connections.write().unwrap();
         if connections.is_empty() {
             return;
         }
-        let pending = connections.clone();
-        connections.clear();
-        pending
+        std::mem::take(&mut *connections)
     };
-    for i in 0..members.len() {
-        // Idempotent per handle: a member already torn down through its own handle,
-        // a once member that already fired, and a duplicate listing all cost one early
-        // return rather than a second removal.
-        disconnect_signal_connection(&members[i]);
+    for connection in &pending {
+        disconnect_signal_connection(connection);
     }
-}
-
-pub fn initialize_signal_scope(out: &mut SignalScope) {
-    *out.connections.borrow_mut() = Vec::new();
 }

@@ -1,152 +1,169 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::atomic::Ordering;
 
-use crate::types::{Signal, SignalConnectOptions, SignalData, SlotFn};
+use flight_entity::Ref;
 
-pub fn clear_signal(signal: &Signal) {
-    *signal.data.borrow_mut() = None;
+use crate::types::{Signal, SignalConnectOptions, SignalData, SignalSlot, SlotId};
+
+pub fn clear_signal<T>(signal: &Signal<T>) {
+    *signal.data.write().unwrap() = None;
 }
 
-pub fn connect_signal(signal: &Signal, slot: SlotFn, options: Option<&SignalConnectOptions>) {
-    let priority = options.map_or(0, |o| o.priority);
-    let repeat = !options.map_or(false, |o| o.once);
+/// Removes tombstoned entries once the outermost emission exits, and detaches the signal when
+/// the array becomes empty (the teardown a disconnect during dispatch defers).
+pub(crate) fn compact_signal_data<T>(data: &Ref<Option<SignalData<T>>>) {
+    let mut state = data.write().unwrap();
+    let Some(signal_data) = state.as_mut() else {
+        return;
+    };
+    let original_len = signal_data.slots.len();
+    let mut write = 0;
+    for read in 0..original_len {
+        if signal_data.slots[read].is_none() {
+            continue;
+        }
+        if write != read {
+            signal_data.slots[write] = signal_data.slots[read].take();
+            signal_data.ids[write] = signal_data.ids[read];
+            signal_data.priorities[write] = signal_data.priorities[read];
+            signal_data.repeat[write] = signal_data.repeat[read];
+            signal_data.paused[write] = signal_data.paused[read];
+        }
+        write += 1;
+    }
+    if write == original_len {
+        return;
+    }
+    signal_data.slots.truncate(write);
+    signal_data.ids.truncate(write);
+    signal_data.priorities.truncate(write);
+    signal_data.repeat.truncate(write);
+    signal_data.paused.truncate(write);
+    if write == 0 {
+        *state = None;
+    }
+}
+
+/// Connects a slot and returns its registration id. Higher priority runs first; equal priorities
+/// keep insertion order (D4).
+pub fn connect_signal<T>(
+    signal: &Signal<T>,
+    slot: SignalSlot<T>,
+    options: Option<&SignalConnectOptions>,
+) -> SlotId {
+    let priority = options.and_then(|o| o.priority).unwrap_or(0);
+    let repeat = !options.and_then(|o| o.once).unwrap_or(false);
+    let id = SlotId(signal.next_slot_id.fetch_add(1, Ordering::Relaxed));
 
     init_signal_data(signal);
-
-    let data_rc = signal.data.borrow().as_ref().unwrap().clone();
-    let mut data = data_rc.borrow_mut();
-
-    for i in 0..data.priorities.len() {
-        if priority > data.priorities[i] {
-            data.slots.insert(i, Some(slot));
-            data.priorities.insert(i, priority);
-            data.repeat.insert(i, repeat);
-            return;
-        }
-    }
-
-    data.slots.push(Some(slot));
-    data.priorities.push(priority);
-    data.repeat.push(repeat);
+    let mut state = signal.data.write().unwrap();
+    let signal_data = state.as_mut().unwrap();
+    let index = signal_data
+        .priorities
+        .iter()
+        .position(|existing| priority > *existing)
+        .unwrap_or(signal_data.slots.len());
+    signal_data.slots.insert(index, Some(slot));
+    signal_data.ids.insert(index, id);
+    signal_data.priorities.insert(index, priority);
+    signal_data.repeat.insert(index, repeat);
+    signal_data.paused.insert(index, false);
+    return id;
 }
 
-pub fn disconnect_signal(signal: &Signal, slot: &SlotFn) {
-    let data_rc = match signal.data.borrow().as_ref() {
-        Some(rc) => rc.clone(),
-        None => return,
-    };
+pub(crate) fn count_live_slots<T>(data: &SignalData<T>) -> usize {
+    return data.slots.iter().filter(|slot| slot.is_some()).count();
+}
 
-    let is_empty = {
-        let mut data = data_rc.borrow_mut();
-        let dispatching = data.depth > 0;
-
-        let mut i = data.slots.len();
-        while i > 0 {
-            i -= 1;
-            let is_match = match &data.slots[i] {
-                Some(s) => Rc::ptr_eq(s, slot),
-                None => false,
-            };
-            if !is_match {
+/// Disconnects a registration by id. During a dispatch the entry is tombstoned instead of
+/// removed, so an emission already walking the arrays keeps its indices; compaction removes it
+/// when the outermost dispatch exits (D4 re-entrancy).
+// flight-lint: allow(conform-params) D4: disconnect takes the SlotId returned by connect_signal
+pub fn disconnect_signal<T>(signal: &Signal<T>, id: SlotId) {
+    let data = signal.data.clone();
+    let should_detach = {
+        let mut state = data.write().unwrap();
+        let Some(signal_data) = state.as_mut() else {
+            return;
+        };
+        let dispatching = signal_data.depth > 0;
+        let mut index = signal_data.slots.len();
+        while index > 0 {
+            index -= 1;
+            if signal_data.ids[index] != id {
                 continue;
             }
             if dispatching {
-                data.slots[i] = None;
+                signal_data.slots[index] = None;
             } else {
-                data.slots.remove(i);
-                data.priorities.remove(i);
-                data.repeat.remove(i);
+                signal_data.slots.remove(index);
+                signal_data.ids.remove(index);
+                signal_data.priorities.remove(index);
+                signal_data.repeat.remove(index);
+                signal_data.paused.remove(index);
             }
         }
-
-        !dispatching && data.slots.is_empty()
+        !dispatching && signal_data.slots.is_empty()
     };
-
-    if is_empty {
-        *signal.data.borrow_mut() = None;
-    }
-}
-
-pub fn has_signal_slots(signal: &Signal) -> bool {
-    let data_rc = match signal.data.borrow().as_ref() {
-        Some(rc) => rc.clone(),
-        None => return false,
-    };
-    let data = data_rc.borrow();
-    if data.depth == 0 {
-        return !data.slots.is_empty();
-    }
-    return count_live_slots(&data) > 0;
-}
-
-pub fn is_slot_connected(signal: &Signal, slot: &SlotFn) -> bool {
-    let data_rc = match signal.data.borrow().as_ref() {
-        Some(rc) => rc.clone(),
-        None => return false,
-    };
-    let data = data_rc.borrow();
-    return data
-        .slots
-        .iter()
-        .any(|s| s.as_ref().map_or(false, |s| Rc::ptr_eq(s, slot)));
-}
-
-// -------------------------------------------------------------------------
-// Crate-internal helpers
-// -------------------------------------------------------------------------
-
-pub(crate) fn compact_signal_data(signal: &Signal, data_rc: &Rc<RefCell<SignalData>>) {
-    let is_empty = {
-        let mut data = data_rc.borrow_mut();
-        let original_len = data.slots.len();
-        let mut write = 0;
-        for read in 0..original_len {
-            if data.slots[read].is_none() {
-                continue;
-            }
-            if write != read {
-                let slot = data.slots[read].take();
-                data.slots[write] = slot;
-                data.priorities[write] = data.priorities[read];
-                data.repeat[write] = data.repeat[read];
-            }
-            write += 1;
-        }
-        if write == original_len {
-            return;
-        }
-        data.slots.truncate(write);
-        data.priorities.truncate(write);
-        data.repeat.truncate(write);
-        write == 0
-    };
-
-    if is_empty {
-        let should_clear = signal
-            .data
-            .borrow()
-            .as_ref()
-            .map_or(false, |rc| Rc::ptr_eq(rc, data_rc));
-        if should_clear {
-            *signal.data.borrow_mut() = None;
+    if should_detach {
+        let mut state = data.write().unwrap();
+        if state.as_ref().map(|signal_data| signal_data.slots.is_empty()).unwrap_or(false) {
+            *state = None;
         }
     }
 }
 
-fn init_signal_data(signal: &Signal) {
-    let mut data_opt = signal.data.borrow_mut();
-    if data_opt.is_some() {
+pub fn has_signal_slots<T>(signal: &Signal<T>) -> bool {
+    let state = signal.data.read().unwrap();
+    let Some(signal_data) = state.as_ref() else {
+        return false;
+    };
+    if signal_data.depth == 0 {
+        return !signal_data.slots.is_empty();
+    }
+    return count_live_slots(signal_data) > 0;
+}
+
+pub(crate) fn init_signal_data<T>(signal: &Signal<T>) {
+    let mut state = signal.data.write().unwrap();
+    if state.is_some() {
         return;
     }
-    *data_opt = Some(Rc::new(RefCell::new(SignalData {
+    *state = Some(SignalData {
         slots: Vec::new(),
+        ids: Vec::new(),
         priorities: Vec::new(),
         repeat: Vec::new(),
+        paused: Vec::new(),
         cancelled: false,
         depth: 0,
-    })));
+    });
 }
 
-fn count_live_slots(data: &SignalData) -> usize {
-    return data.slots.iter().filter(|s| s.is_some()).count();
+// flight-lint: allow(conform-params) D4: connectivity is queried by SlotId, not by function identity
+pub fn is_slot_connected<T>(signal: &Signal<T>, id: SlotId) -> bool {
+    let state = signal.data.read().unwrap();
+    let Some(signal_data) = state.as_ref() else {
+        return false;
+    };
+    return signal_data
+        .slots
+        .iter()
+        .zip(signal_data.ids.iter())
+        .any(|(slot, slot_id)| slot.is_some() && *slot_id == id);
+}
+
+/// Pauses or resumes one registration in place (priority order is preserved). Returns false when
+/// the registration no longer exists, so resuming a torn-down connection cannot resurrect it.
+pub(crate) fn set_slot_paused<T>(signal: &Signal<T>, id: SlotId, paused: bool) -> bool {
+    let mut state = signal.data.write().unwrap();
+    let Some(signal_data) = state.as_mut() else {
+        return false;
+    };
+    for index in 0..signal_data.slots.len() {
+        if signal_data.slots[index].is_some() && signal_data.ids[index] == id {
+            signal_data.paused[index] = paused;
+            return true;
+        }
+    }
+    return false;
 }

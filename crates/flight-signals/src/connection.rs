@@ -1,81 +1,71 @@
-use std::any::Any;
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
-use crate::slot::{connect_signal, disconnect_signal};
+use crate::slot::{connect_signal, disconnect_signal, is_slot_connected, set_slot_paused};
 use crate::types::{
-    Signal, SignalConnectOptions, SignalConnection, SignalConnectionHandle, SignalScope,
-    SignalTrackedConnectOptions, SlotFn,
+    Signal, SignalConnectOptions, SignalConnection, SignalSlot, SignalTrackedConnectOptions,
 };
 
-pub fn connect_signal_tracked(
-    signal: &Signal,
-    slot: SlotFn,
+/// Connects a tracked registration and returns a handle for it (TS `connectSignalTracked`).
+/// The optional scope is part of the options, matching TS.
+pub fn connect_signal_tracked<T: 'static>(
+    signal: &Signal<T>,
+    slot: SignalSlot<T>,
     options: Option<&SignalTrackedConnectOptions>,
-    scope: Option<&SignalScope>,
-) -> SignalConnectionHandle {
-    let once = options.map_or(false, |o| o.once);
-
-    let connection: SignalConnectionHandle = Rc::new(RefCell::new(SignalConnection {
-        connected: true,
-        paused: false,
-        signal: signal.clone(),
-        slot: slot.clone(),
-    }));
-
-    let conn_for_wrapper = connection.clone();
-    let original_slot = slot;
-    let tracked_slot: SlotFn = Rc::new(move |args: Rc<dyn Any>| {
-        let paused = conn_for_wrapper.borrow().paused;
-        if paused {
-            return;
-        }
-        if once {
-            disconnect_signal_connection(&conn_for_wrapper);
-        }
-        original_slot(args);
-    });
-
-    connection.borrow_mut().slot = tracked_slot.clone();
-
+) -> SignalConnection {
     let priority = options.and_then(|o| o.priority);
-    let connect_opts = priority.map(|p| SignalConnectOptions {
-        priority: p,
-        once: false,
-    });
-    connect_signal(signal, tracked_slot, connect_opts.as_ref());
+    let once = options.and_then(|o| o.once).unwrap_or(false);
+    let connect_options = SignalConnectOptions {
+        priority,
+        once: Some(once),
+    };
+    let id = connect_signal(signal, slot, Some(&connect_options));
 
-    if let Some(scope) = scope {
-        scope.connections.borrow_mut().push(connection.clone());
+    let disconnect_signal_handle = signal.clone();
+    let pause_signal_handle = signal.clone();
+    let connected_signal_handle = signal.clone();
+    let connection = SignalConnection {
+        disconnect: Arc::new(move || disconnect_signal(&disconnect_signal_handle, id)),
+        set_paused: Arc::new(move |paused| {
+            set_slot_paused(&pause_signal_handle, id, paused);
+        }),
+        is_connected: Arc::new(move || is_slot_connected(&connected_signal_handle, id)),
+        paused: Arc::new(AtomicBool::new(false)),
+    };
+
+    if let Some(scope) = options.and_then(|o| o.scope.as_ref()) {
+        scope.connections.write().unwrap().push(connection.clone());
     }
-
     return connection;
 }
 
-pub fn disconnect_signal_connection(connection: &SignalConnectionHandle) {
-    let (was_connected, signal, slot) = {
-        let mut conn = connection.borrow_mut();
-        if !conn.connected {
-            return;
-        }
-        conn.connected = false;
-        (true, conn.signal.clone(), conn.slot.clone())
-    };
-    if was_connected {
-        disconnect_signal(&signal, &slot);
-    }
+pub fn disconnect_signal_connection(connection: &SignalConnection) {
+    (connection.disconnect)();
 }
 
-pub fn pause_signal_connection(connection: &SignalConnectionHandle) {
-    let mut conn = connection.borrow_mut();
-    if conn.connected {
-        conn.paused = true;
-    }
+// flight-lint: allow(conform-extra) D4: Rust exposes handle state through free functions; TS reads handle fields
+pub fn is_signal_connection_connected(connection: &SignalConnection) -> bool {
+    return (connection.is_connected)();
 }
 
-pub fn resume_signal_connection(connection: &SignalConnectionHandle) {
-    let mut conn = connection.borrow_mut();
-    if conn.connected {
-        conn.paused = false;
+/// True while the connection is paused. A torn-down connection keeps its last paused flag, as in
+/// TS, so resuming it cannot appear to bring it back.
+// flight-lint: allow(conform-extra) D4: Rust exposes handle state through free functions; TS reads handle fields
+pub fn is_signal_connection_paused(connection: &SignalConnection) -> bool {
+    return connection.paused.load(Ordering::Relaxed);
+}
+
+pub fn pause_signal_connection(connection: &SignalConnection) {
+    if !(connection.is_connected)() {
+        return;
+    }
+    (connection.set_paused)(true);
+    connection.paused.store(true, Ordering::Relaxed);
+}
+
+pub fn resume_signal_connection(connection: &SignalConnection) {
+    (connection.set_paused)(false);
+    if (connection.is_connected)() {
+        connection.paused.store(false, Ordering::Relaxed);
     }
 }
