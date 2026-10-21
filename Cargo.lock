@@ -177,6 +177,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-dialog"
+version = "0.6.0"
+dependencies = [
+ "flight-app",
+ "flight-entity",
+ "flight-hostcapability",
+ "flight-stream",
+]
+
+[[package]]
 name = "flight-easing"
 version = "0.6.0"
 dependencies = [
