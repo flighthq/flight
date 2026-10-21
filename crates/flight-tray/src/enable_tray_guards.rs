@@ -14,6 +14,17 @@ mod sugar_tests {
 
     use super::*;
 
+    fn animation_state() -> TrayAnimationState {
+        let spawn = flight_hostcapability::HostSpawnCapability {
+            provider: Arc::new(()),
+            spawn: Arc::new(
+                |_future: std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>| {},
+            ),
+        };
+        let timers = Arc::new(RwLock::new(flight_signals::create_signal_timer_state()));
+        return crate::tray::create_tray_animation_state(spawn, timers);
+    }
+
     fn clock() -> Arc<dyn Fn() -> f64 + Send + Sync> {
         return Arc::new(|| 0.0);
     }
@@ -21,10 +32,7 @@ mod sugar_tests {
     #[test]
     fn tray_animation_state_disable_guards_matches_disable_tray_guards() {
         let logs: LogStateRef = Arc::new(RwLock::new(create_log_state()));
-        let (mut a, mut b) = (
-            TrayAnimationState { guard: None },
-            TrayAnimationState { guard: None },
-        );
+        let (mut a, mut b) = (animation_state(), animation_state());
         enable_tray_guards(&mut a, &logs, clock());
         enable_tray_guards(&mut b, &logs, clock());
         a.disable_guards();
@@ -36,10 +44,7 @@ mod sugar_tests {
     #[test]
     fn tray_animation_state_enable_guards_matches_enable_tray_guards() {
         let logs: LogStateRef = Arc::new(RwLock::new(create_log_state()));
-        let (mut a, mut b) = (
-            TrayAnimationState { guard: None },
-            TrayAnimationState { guard: None },
-        );
+        let (mut a, mut b) = (animation_state(), animation_state());
         a.enable_guards(&logs, clock());
         enable_tray_guards(&mut b, &logs, clock());
         assert_eq!(a.guard.is_some(), b.guard.is_some());

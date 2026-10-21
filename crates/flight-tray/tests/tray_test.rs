@@ -1,11 +1,17 @@
-use std::future::ready;
+use std::future::{Future, ready};
+use std::pin::Pin;
 use std::sync::{Arc, Mutex, RwLock};
 
-use flight_entity::{FlightError, FlightErrorKind, Ref, allocate_entity};
+use flight_entity::{
+    CaughtPanic, FlightError, FlightErrorKind, Ref, allocate_entity, get_caught_panic_payload,
+};
 use flight_geometry::{create_rectangle, create_vector2};
-use flight_hostcapability::ProviderRef;
+use flight_hostcapability::{HostSpawnCapability, ProviderRef};
 use flight_menu::MenuItemTemplate;
-use flight_signals::{Signal, SignalSlot, create_signal, emit_signal};
+use flight_signals::{
+    Signal, SignalSlot, SignalTimerState, advance_signal_timers, create_signal,
+    create_signal_timer_state, emit_signal,
+};
 use flight_tray::contract::*;
 
 use crate::block_on;
@@ -288,8 +294,58 @@ fn release(token: &TrayEventRelease) -> TrayReleaseResult {
     return block_on((token.release)());
 }
 
+type Spawned = Arc<Mutex<Vec<Pin<Box<dyn Future<Output = ()> + Send>>>>>;
+
+/// A caller-owned animation clock plus a test spawner: spawned writes queue until `drain` drives
+/// them to completion in spawn order, as a host executor would.
+struct Animation {
+    spawned: Spawned,
+    state: TrayAnimationState,
+    timers: Ref<SignalTimerState>,
+}
+
+fn animation() -> Animation {
+    let spawned: Spawned = Arc::new(Mutex::new(Vec::new()));
+    let queue = spawned.clone();
+    let spawn = HostSpawnCapability {
+        provider: Arc::new(()),
+        spawn: Arc::new(move |future: Pin<Box<dyn Future<Output = ()> + Send>>| {
+            queue.lock().unwrap().push(future);
+        }),
+    };
+    let timers = Arc::new(RwLock::new(create_signal_timer_state()));
+    return Animation {
+        spawned,
+        state: create_tray_animation_state(spawn, timers.clone()),
+        timers,
+    };
+}
+
 fn anim() -> TrayAnimationState {
-    return create_tray_animation_state();
+    return animation().state;
+}
+
+fn drain(spawned: &Spawned) -> usize {
+    let mut count = 0;
+    loop {
+        let next = {
+            let mut queue = spawned.lock().unwrap();
+            if queue.is_empty() {
+                None
+            } else {
+                Some(queue.remove(0))
+            }
+        };
+        let Some(future) = next else {
+            return count;
+        };
+        block_on(future);
+        count += 1;
+    }
+}
+
+fn frames(names: &[&str]) -> Vec<String> {
+    return names.iter().map(|name| name.to_string()).collect();
 }
 
 mod create_tray_animation_state {
@@ -297,7 +353,9 @@ mod create_tray_animation_state {
 
     #[test]
     fn starts_with_no_guard_installed() {
-        assert!(create_tray_animation_state().guard.is_none());
+        let animation = animation();
+        assert!(animation.state.guard.is_none());
+        assert!(Arc::ptr_eq(&animation.state.timers, &animation.timers));
     }
 }
 
@@ -407,6 +465,28 @@ mod create_tray_icon {
         assert_eq!(
             error.downcast_ref::<FlightError>().unwrap().message,
             "thrown"
+        );
+    }
+
+    #[test]
+    fn retains_an_arbitrary_synchronous_throw_losslessly() {
+        let (mut host, _state) = test_host();
+        host.lifecycle.create = Arc::new(|_tray: &Ref<TrayIcon>, _options: &TrayIconOptions| {
+            std::panic::panic_any("native".to_string());
+        });
+        let result = block_on(create_tray_icon(&host.lifecycle, &no_options()));
+        let TrayCreateOutcome::TrayCreateFailed(TrayFailure {
+            error: Some(Some(error)),
+        }) = result.outcome
+        else {
+            panic!("expected tray-create-failed");
+        };
+        let caught = error.downcast_ref::<CaughtPanic>().expect("a caught panic");
+        assert_eq!(
+            get_caught_panic_payload(caught)
+                .downcast_ref::<String>()
+                .unwrap(),
+            "native"
         );
     }
 
@@ -896,20 +976,58 @@ mod on_tray_interaction {
         else {
             panic!("expected subscription-failed");
         };
-        assert_eq!(*error.downcast_ref::<&'static str>().unwrap(), "detached");
+        let caught = error.downcast_ref::<CaughtPanic>().expect("a caught panic");
+        assert_eq!(
+            *get_caught_panic_payload(caught)
+                .downcast_ref::<&'static str>()
+                .unwrap(),
+            "detached"
+        );
     }
 
     #[test]
-    fn re_raises_a_payload_without_an_exact_unknown_reading() {
+    fn retains_an_arbitrary_thrown_payload_losslessly() {
         let (mut host, _state) = test_host();
         let tray = acquire(&host);
         host.interaction_events.get_signal =
             Arc::new(|_tray: &Ref<TrayIcon>| std::panic::panic_any(7_u8));
         let (listener, _calls) = counter::<TrayInteractionEvent>();
-        let raised = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            on_tray_interaction(&host.interaction_events, &tray, listener)
-        }));
-        assert_eq!(*raised.unwrap_err().downcast::<u8>().unwrap(), 7);
+        let TrayEventAttachResult::SubscriptionFailed(TrayFailure {
+            error: Some(Some(error)),
+        }) = on_tray_interaction(&host.interaction_events, &tray, listener)
+        else {
+            panic!("expected subscription-failed");
+        };
+        let caught = error.downcast_ref::<CaughtPanic>().expect("a caught panic");
+        assert_eq!(
+            *get_caught_panic_payload(caught)
+                .downcast_ref::<u8>()
+                .unwrap(),
+            7
+        );
+    }
+
+    #[test]
+    fn keeps_a_thrown_flight_error_as_itself() {
+        let (mut host, _state) = test_host();
+        let tray = acquire(&host);
+        host.interaction_events.get_signal = Arc::new(|_tray: &Ref<TrayIcon>| {
+            std::panic::panic_any(FlightError {
+                kind: FlightErrorKind::TypeError,
+                message: "gone".to_string(),
+            })
+        });
+        let (listener, _calls) = counter::<TrayInteractionEvent>();
+        let TrayEventAttachResult::SubscriptionFailed(TrayFailure {
+            error: Some(Some(error)),
+        }) = on_tray_interaction(&host.interaction_events, &tray, listener)
+        else {
+            panic!("expected subscription-failed");
+        };
+        assert_eq!(
+            error.downcast_ref::<FlightError>().unwrap().kind,
+            FlightErrorKind::TypeError
+        );
     }
 }
 
@@ -1102,6 +1220,27 @@ mod set_tray_icon {
     }
 
     #[test]
+    fn maps_a_synchronous_provider_throw_to_image_update_failed() {
+        let (mut host, _state) = test_host();
+        let tray = acquire(&host);
+        host.image.set =
+            Arc::new(|_tray: &Ref<TrayIcon>, _icon: &str| std::panic::panic_any(3_i32));
+        let TrayImageUpdateResult::ImageUpdateFailed(TrayFailure {
+            error: Some(Some(error)),
+        }) = block_on(set_tray_icon(&host.image, &tray, "icon"))
+        else {
+            panic!("expected image-update-failed");
+        };
+        let caught = error.downcast_ref::<CaughtPanic>().expect("a caught panic");
+        assert_eq!(
+            *get_caught_panic_payload(caught)
+                .downcast_ref::<i32>()
+                .unwrap(),
+            3
+        );
+    }
+
+    #[test]
     fn maps_a_rejection_to_image_update_failed() {
         let (mut host, _state) = test_host();
         let tray = acquire(&host);
@@ -1236,30 +1375,173 @@ mod set_tray_pressed_icon {
 mod start_tray_icon_animation {
     use super::*;
 
-    // The source test advances fake timers by one interval and expects ['a', 'b']. The interval tick
-    // is held pending a Principal ruling, so only the first-frame write is asserted here.
     #[test]
-    fn writes_the_first_frame_through_the_direct_image_provider() {
+    fn writes_through_the_direct_image_provider() {
         let (host, state) = test_host();
         let tray = acquire(&host);
-        let frames = ["a".to_string(), "b".to_string()];
+        let animation = animation();
         let result = block_on(start_tray_icon_animation(
-            &anim(),
+            &animation.state,
             &host.image,
             &tray,
-            &frames,
+            &frames(&["a", "b"]),
             10.0,
         ));
         let TrayAnimationStartResult::Started(token) = result else {
             panic!("not started");
         };
-        assert_eq!(state.lock().unwrap().images, vec!["a".to_string()]);
-        assert!(matches!(release(&token), TrayReleaseResult::Released));
-        assert!(matches!(
-            release(&token),
-            TrayReleaseResult::AlreadyReleased
+        advance_signal_timers(&animation.timers, 10.0);
+        drain(&animation.spawned);
+        assert_eq!(state.lock().unwrap().images, frames(&["a", "b"]));
+        release(&token);
+    }
+
+    #[test]
+    fn cycles_frames_one_spawned_serialized_write_per_tick() {
+        let (host, state) = test_host();
+        let tray = acquire(&host);
+        let animation = animation();
+        block_on(start_tray_icon_animation(
+            &animation.state,
+            &host.image,
+            &tray,
+            &frames(&["a", "b", "c"]),
+            10.0,
         ));
-        assert!(!is_tray_icon_animating(&tray));
+        advance_signal_timers(&animation.timers, 9.0);
+        assert_eq!(animation.spawned.lock().unwrap().len(), 0);
+        advance_signal_timers(&animation.timers, 30.0);
+        assert_eq!(animation.spawned.lock().unwrap().len(), 3);
+        assert!(is_tray_icon_animating(&tray));
+        assert_eq!(drain(&animation.spawned), 3);
+        assert_eq!(state.lock().unwrap().images, frames(&["a", "b", "c", "a"]));
+    }
+
+    #[test]
+    fn serializes_tick_writes_behind_a_pending_write() {
+        let (host, state) = test_host();
+        let tray = acquire(&host);
+        let animation = animation();
+        block_on(start_tray_icon_animation(
+            &animation.state,
+            &host.image,
+            &tray,
+            &frames(&["a", "b", "c"]),
+            10.0,
+        ));
+        advance_signal_timers(&animation.timers, 20.0);
+        // Drive the later write first: the chain still runs the earlier frame before it.
+        let mut queued: Vec<_> = animation.spawned.lock().unwrap().drain(..).collect();
+        let later = queued.pop().unwrap();
+        let earlier = queued.pop().unwrap();
+        block_on(later);
+        assert_eq!(state.lock().unwrap().images, frames(&["a", "b", "c"]));
+        block_on(earlier);
+        assert_eq!(state.lock().unwrap().images, frames(&["a", "b", "c"]));
+    }
+
+    #[test]
+    fn skips_a_queued_write_of_a_stale_generation() {
+        let (host, state) = test_host();
+        let tray = acquire(&host);
+        let animation = animation();
+        block_on(start_tray_icon_animation(
+            &animation.state,
+            &host.image,
+            &tray,
+            &frames(&["a", "b"]),
+            10.0,
+        ));
+        advance_signal_timers(&animation.timers, 10.0);
+        assert!(matches!(
+            stop_tray_icon_animation(&tray),
+            TrayAnimationStopResult::Stopped
+        ));
+        assert_eq!(drain(&animation.spawned), 1);
+        assert_eq!(state.lock().unwrap().images, frames(&["a"]));
+    }
+
+    #[test]
+    fn stop_release_and_destroy_clear_the_pending_tick() {
+        let (host, state) = test_host();
+        let animation = animation();
+        let stopped = acquire(&host);
+        block_on(start_tray_icon_animation(
+            &animation.state,
+            &host.image,
+            &stopped,
+            &frames(&["a", "b"]),
+            10.0,
+        ));
+        stop_tray_icon_animation(&stopped);
+        let released = acquire(&host);
+        let TrayAnimationStartResult::Started(token) = block_on(start_tray_icon_animation(
+            &animation.state,
+            &host.image,
+            &released,
+            &frames(&["c", "d"]),
+            10.0,
+        )) else {
+            panic!("not started");
+        };
+        release(&token);
+        let destroyed = acquire(&host);
+        block_on(start_tray_icon_animation(
+            &animation.state,
+            &host.image,
+            &destroyed,
+            &frames(&["e", "f"]),
+            10.0,
+        ));
+        block_on(destroy_tray_icon(&destroyed));
+        assert!(animation.timers.read().unwrap().timers.is_empty());
+        advance_signal_timers(&animation.timers, 100.0);
+        assert_eq!(drain(&animation.spawned), 0);
+        assert_eq!(state.lock().unwrap().images, frames(&["a", "c", "e"]));
+    }
+
+    #[test]
+    fn restarting_replaces_the_previous_interval() {
+        let (host, state) = test_host();
+        let tray = acquire(&host);
+        let animation = animation();
+        block_on(start_tray_icon_animation(
+            &animation.state,
+            &host.image,
+            &tray,
+            &frames(&["a", "b"]),
+            10.0,
+        ));
+        block_on(start_tray_icon_animation(
+            &animation.state,
+            &host.image,
+            &tray,
+            &frames(&["x", "y"]),
+            10.0,
+        ));
+        assert_eq!(animation.timers.read().unwrap().timers.len(), 1);
+        advance_signal_timers(&animation.timers, 10.0);
+        drain(&animation.spawned);
+        assert_eq!(state.lock().unwrap().images, frames(&["a", "x", "y"]));
+    }
+
+    #[test]
+    fn repeats_a_non_positive_or_nan_interval_every_millisecond() {
+        for interval in [0.0, -5.0, f64::NAN] {
+            let (host, state) = test_host();
+            let tray = acquire(&host);
+            let animation = animation();
+            block_on(start_tray_icon_animation(
+                &animation.state,
+                &host.image,
+                &tray,
+                &frames(&["a", "b"]),
+                interval,
+            ));
+            advance_signal_timers(&animation.timers, 3.0);
+            assert_eq!(drain(&animation.spawned), 3);
+            assert_eq!(state.lock().unwrap().images, frames(&["a", "b", "a", "b"]));
+        }
     }
 
     #[test]

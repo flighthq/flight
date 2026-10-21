@@ -5,9 +5,9 @@ use std::sync::Arc;
 
 use flight_entity::{EntityRuntimeSlot, FlightError, Ref, Unknown};
 use flight_geometry::{Rectangle, Vector2};
-use flight_hostcapability::ProviderRef;
+use flight_hostcapability::{HostSpawnCapability, ProviderRef};
 use flight_menu::MenuItemTemplate;
-use flight_signals::Signal;
+use flight_signals::{Signal, SignalTimerState, TimerId};
 use flight_stream::{AbortSignal, SharedFuture};
 
 use crate::results::*;
@@ -67,12 +67,11 @@ pub(crate) enum TrayState {
 }
 
 /// The source's `TrayRuntime`: the origin lifecycle provider, the live event releases, the stored
-/// destroy Promise and the animation write chain (D20 `SharedFuture`s). `animation_timer` records
-/// whether the source's interval would be set; the interval tick itself is held (see
-/// `start_tray_icon_animation`).
+/// destroy Promise and the animation write chain (D20 `SharedFuture`s). `animation_timer` is the
+/// source's interval handle: the caller-owned timer state and the pending tick's id.
 pub(crate) struct TrayRuntime {
     pub(crate) animation_generation: u64,
-    pub(crate) animation_timer: bool,
+    pub(crate) animation_timer: Option<(Ref<SignalTimerState>, TimerId)>,
     pub(crate) animation_write_tail: SharedFuture<()>,
     pub(crate) destroy_future: Option<SharedFuture<TrayDestroyResult>>,
     pub(crate) lifecycle: HostTrayLifecycleCapability,
@@ -197,11 +196,16 @@ pub struct TrayEventRelease {
 // flight-lint: allow(f64) D1: the interval is a millisecond duration on the flight-signals timer clock
 pub type TrayAnimationGuard = Arc<dyn Fn(&Ref<TrayIcon>, i32, f64) + Send + Sync>;
 
-/// Caller-owned animation state (D5). It replaces the source's module-level `_animationGuard` slot:
-/// the guard is installed per state, never process-wide.
+/// Caller-owned animation state (D5). It replaces the source's module-level `_animationGuard` slot
+/// and its host `setInterval`: the guard is installed per state, never process-wide; frame ticks are
+/// timeouts on the caller's `timers`, which advance only through `advance_signal_timers`; and each
+/// tick's fire-and-forget frame write (the source's `void queueAnimationWrite(...)`) is handed to the
+/// host's `spawn`, so the SDK never picks or blocks an executor.
 #[derive(Clone)]
 pub struct TrayAnimationState {
     pub guard: Option<TrayAnimationGuard>,
+    pub spawn: HostSpawnCapability,
+    pub timers: Ref<SignalTimerState>,
 }
 
 // Provider contracts. Each shape is independently claimable by Host construction; an unsupported

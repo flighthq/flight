@@ -1,13 +1,17 @@
 use std::any::Any;
 use std::future::ready;
-use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, Mutex, RwLock, Weak};
 
-use flight_entity::{FlightError, NonEntityCreateResult, Ref, Unknown, allocate_entity};
+use flight_entity::{NonEntityCreateResult, Ref, Unknown, allocate_entity, unknown_from_panic};
 use flight_geometry::Vector2;
+use flight_hostcapability::HostSpawnCapability;
 use flight_menu::MenuItemTemplate;
-use flight_signals::{Signal, SignalSlot, connect_signal, disconnect_signal};
+use flight_signals::{
+    Signal, SignalSlot, SignalTimerState, clear_signal_timeout, connect_signal, disconnect_signal,
+    set_signal_timeout,
+};
 use flight_stream::{SharedFuture, create_shared_future};
 
 use crate::results::*;
@@ -64,6 +68,15 @@ mod sugar_tests {
             title: None,
             tooltip: None,
         };
+    }
+
+    fn animation_state() -> TrayAnimationState {
+        let spawn = HostSpawnCapability {
+            provider: provider(),
+            spawn: Arc::new(|_future: std::pin::Pin<Box<dyn Future<Output = ()> + Send>>| {}),
+        };
+        let timers = Arc::new(RwLock::new(flight_signals::create_signal_timer_state()));
+        return create_tray_animation_state(spawn, timers);
     }
 
     fn tray() -> Ref<TrayIcon> {
@@ -248,7 +261,7 @@ mod sugar_tests {
 
     #[test]
     fn host_tray_image_capability_start_icon_animation_matches_start_tray_icon_animation() {
-        let (c, t, state) = (image(), tray(), create_tray_animation_state());
+        let (c, t, state) = (image(), tray(), animation_state());
         let frames = ["a".to_string()];
         let a = block_on(c.start_icon_animation(&state, &t, &frames, 10.0));
         let b = block_on(start_tray_icon_animation(&state, &c, &t, &frames, 10.0));
@@ -449,17 +462,19 @@ mod sugar_tests {
 
     #[test]
     fn tray_animation_state_new_matches_create_tray_animation_state() {
-        assert_eq!(
-            TrayAnimationState::new().guard.is_none(),
-            create_tray_animation_state().guard.is_none()
-        );
+        let template = animation_state();
+        let a = TrayAnimationState::new(template.spawn.clone(), template.timers.clone());
+        let b = create_tray_animation_state(template.spawn.clone(), template.timers.clone());
+        assert_eq!(a.guard.is_none(), b.guard.is_none());
+        assert!(Arc::ptr_eq(&a.timers, &b.timers));
+        assert!(Arc::ptr_eq(&a.spawn.provider, &b.spawn.provider));
     }
 
     #[test]
     fn tray_animation_state_set_animation_guard_matches_set_tray_animation_guard() {
         let guard: TrayAnimationGuard =
             Arc::new(|_tray: &Ref<TrayIcon>, _frames: i32, _interval_ms: f64| {});
-        let (mut a, mut b) = (create_tray_animation_state(), create_tray_animation_state());
+        let (mut a, mut b) = (animation_state(), animation_state());
         a.set_animation_guard(Some(guard.clone()));
         set_tray_animation_guard(&mut b, Some(guard.clone()));
         assert!(Arc::ptr_eq(
@@ -514,14 +529,36 @@ pub trait TrayIconMethods {
     fn stop_animation(&self) -> TrayAnimationStopResult;
 }
 
+/// One running animation's interval tick (the source's `setInterval` closure state).
+// flight-lint: allow(f64) D1: the delay is a millisecond duration on the flight-signals timer clock
+struct TrayAnimationTick {
+    delay_ms: f64,
+    frames: Vec<TrayIconSource>,
+    generation: u64,
+    host_tray_image: HostTrayImageCapability,
+    index: Mutex<usize>,
+    spawn: HostSpawnCapability,
+    timers: Ref<SignalTimerState>,
+    tray: Weak<RwLock<TrayIcon>>,
+}
+
 fn create_resolved_write_tail() -> SharedFuture<()> {
     return create_shared_future(Box::pin(async {}));
 }
 
-/// Caller-owned animation state with no guard installed (D5; replaces the source's module slot).
-// flight-lint: allow(conform-extra) D5: caller-owned animation state replaces the TS module-level guard slot
-pub fn create_tray_animation_state() -> NonEntityCreateResult<TrayAnimationState> {
-    return TrayAnimationState { guard: None };
+/// Caller-owned animation state with no guard installed (D5): the host's spawn capability drives
+/// queued frame writes and `timers` schedules frame ticks (replacing the source's module slot and
+/// host `setInterval`).
+// flight-lint: allow(conform-extra) D5: caller-owned animation state replaces the TS module-level guard slot and host timer
+pub fn create_tray_animation_state(
+    spawn: HostSpawnCapability,
+    timers: Ref<SignalTimerState>,
+) -> NonEntityCreateResult<TrayAnimationState> {
+    return TrayAnimationState {
+        guard: None,
+        spawn,
+        timers,
+    };
 }
 
 /// Creates a tray through the lifecycle provider. The provider is called before this returns, as the
@@ -538,7 +575,7 @@ pub fn create_tray_icon(
     })) {
         Ok(pending) => pending,
         Err(payload) => {
-            let error = get_tray_thrown_error(payload);
+            let error = unknown_from_panic(payload);
             return Box::pin(async move {
                 let mut out: TrayCreateResult = allocate_entity();
                 initialize_tray_create_failed_result(&mut out, Some(error));
@@ -560,7 +597,7 @@ pub fn create_tray_icon(
             TrayCreateCapabilityResult::Created => {
                 tray.write().unwrap().tray_runtime = Some(TrayRuntime {
                     animation_generation: 0,
-                    animation_timer: false,
+                    animation_timer: None,
                     animation_write_tail: create_resolved_write_tail(),
                     destroy_future: None,
                     lifecycle,
@@ -640,7 +677,7 @@ fn attach_tray_event<E: 'static>(
         Ok(None) => return TrayEventAttachResult::TrayDestroyed,
         Err(payload) => {
             return TrayEventAttachResult::SubscriptionFailed(TrayFailure {
-                error: Some(get_tray_thrown_error(payload)),
+                error: Some(unknown_from_panic(payload)),
             });
         }
     };
@@ -661,7 +698,7 @@ fn attach_tray_event<E: 'static>(
                 catch_unwind(AssertUnwindSafe(|| disconnect_signal(&signal, slot)))
             {
                 return Box::pin(ready(TrayReleaseResult::ReleaseFailed(TrayFailure {
-                    error: Some(get_tray_thrown_error(payload)),
+                    error: Some(unknown_from_panic(payload)),
                 })));
             }
             released.store(true, Ordering::SeqCst);
@@ -715,7 +752,7 @@ pub fn destroy_tray_icon(tray: &Ref<TrayIcon>) -> TrayFuture<TrayDestroyResult> 
             Ok(pending) => pending
                 .await
                 .map_err(|error| Some(Arc::new(error) as Arc<dyn Any + Send + Sync>)),
-            Err(payload) => Err(get_tray_thrown_error(payload)),
+            Err(payload) => Err(unknown_from_panic(payload)),
         };
         let result = match destroyed {
             Ok(TrayDestroyCapabilityResult::Destroyed) => TrayDestroyResult::Destroyed,
@@ -761,6 +798,16 @@ pub fn get_desktop_os_profile_string(value: DesktopOsProfile) -> &'static str {
         DesktopOsProfile::MacOs => "macos",
         DesktopOsProfile::Windows => "windows",
     };
+}
+
+// The host timer clamp behind the source's `setInterval(callback, intervalMs)` (Node: a delay that is
+// not within [1, 2^31 - 1] ms, including NaN, becomes 1 ms).
+// flight-lint: allow(f64) D1: the interval is a millisecond duration on the flight-signals timer clock
+fn get_tray_animation_delay(interval_ms: f64) -> f64 {
+    if (1.0..=2_147_483_647.0).contains(&interval_ms) {
+        return interval_ms;
+    }
+    return 1.0;
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS TrayBalloonEventType string union; the TS package exports no get_/parse_ free functions
@@ -845,29 +892,6 @@ pub fn get_tray_interaction_type_string(value: TrayInteractionType) -> &'static 
     };
 }
 
-// A synchronous provider throw is a Rust panic (D10). Payloads with an exact `unknown` reading are
-// caught: a FlightError, an erased `Unknown` (its `None` is the source's `null`), or a panic message
-// (`String` / `&'static str`, kept as that type). Any other payload is re-raised unchanged: its
-// conversion to `Unknown` awaits a boundary ruling and is never made lossily.
-fn get_tray_thrown_error(payload: Box<dyn Any + Send>) -> Unknown {
-    let payload = match payload.downcast::<FlightError>() {
-        Ok(error) => return Some(Arc::new(*error)),
-        Err(payload) => payload,
-    };
-    let payload = match payload.downcast::<Unknown>() {
-        Ok(error) => return *error,
-        Err(payload) => payload,
-    };
-    let payload = match payload.downcast::<String>() {
-        Ok(message) => return Some(Arc::new(*message)),
-        Err(payload) => payload,
-    };
-    match payload.downcast::<&'static str>() {
-        Ok(message) => return Some(Arc::new(*message)),
-        Err(payload) => resume_unwind(payload),
-    }
-}
-
 fn invoke_update<R: Send + 'static>(
     tray: &Ref<TrayIcon>,
     destroyed: R,
@@ -879,7 +903,7 @@ fn invoke_update<R: Send + 'static>(
     }
     let pending = match catch_unwind(AssertUnwindSafe(operation)) {
         Ok(pending) => pending,
-        Err(payload) => return Box::pin(ready(failure(Some(get_tray_thrown_error(payload))))),
+        Err(payload) => return Box::pin(ready(failure(Some(unknown_from_panic(payload))))),
     };
     return Box::pin(async move {
         return match pending.await {
@@ -922,7 +946,7 @@ pub fn is_tray_icon_animating(tray: &Ref<TrayIcon>) -> bool {
         .unwrap()
         .tray_runtime
         .as_ref()
-        .is_none_or(|runtime| runtime.animation_timer);
+        .is_none_or(|runtime| runtime.animation_timer.is_some());
 }
 
 /// Attaches a balloon-event listener on an active tray.
@@ -1085,6 +1109,50 @@ pub fn remove_tray_balloon(
     );
 }
 
+fn run_tray_animation_tick(tick: &Arc<TrayAnimationTick>) {
+    let Some(tray) = tick.tray.upgrade() else {
+        return;
+    };
+    let index = {
+        let mut index = tick.index.lock().unwrap();
+        *index = (*index + 1) % tick.frames.len();
+        *index
+    };
+    let write = queue_animation_write(
+        &tick.host_tray_image,
+        &tray,
+        tick.generation,
+        tick.frames[index].clone(),
+    );
+    (tick.spawn.spawn)(Box::pin(async move {
+        write.await;
+    }));
+    schedule_tray_animation_tick(tick);
+}
+
+fn schedule_tray_animation_tick(tick: &Arc<TrayAnimationTick>) {
+    let next = tick.clone();
+    let id = set_signal_timeout(
+        &tick.timers,
+        tick.delay_ms,
+        Arc::new(move || run_tray_animation_tick(&next)),
+    );
+    let current = tick.tray.upgrade().is_some_and(|tray| {
+        let mut guard = tray.write().unwrap();
+        let Some(runtime) = guard.tray_runtime.as_mut() else {
+            return false;
+        };
+        if runtime.state != TrayState::Active || runtime.animation_generation != tick.generation {
+            return false;
+        }
+        runtime.animation_timer = Some((tick.timers.clone(), id));
+        return true;
+    });
+    if !current {
+        clear_signal_timeout(&tick.timers, id);
+    }
+}
+
 /// Installs or clears (`None`) the opt-in animation inspection hook on `state`.
 // flight-lint: allow(conform-params) D5: caller-owned animation state replaces the TS module-level guard slot
 pub fn set_tray_animation_guard(state: &mut TrayAnimationState, guard: Option<TrayAnimationGuard>) {
@@ -1194,12 +1262,14 @@ pub fn set_tray_pressed_icon(
 /// Starts an icon animation: reports `Empty` for no frames, runs the state's guard, stops any
 /// current animation (a new generation), and writes the first frame through the serialized write
 /// chain. A first-frame failure is returned; a tray destroyed or re-animated meanwhile reports
-/// `TrayDestroyed`. On success the animation is marked running and the release stops it only while
-/// it is still the current generation.
+/// `TrayDestroyed`. On success the source's `setInterval` becomes a repeating timeout on the state's
+/// caller-owned `timers`: each tick advances to the next frame, appends its write to the serialized
+/// chain (skipped unless the tray is still active on this generation) and hands the unawaited write
+/// to the host `spawn`. The release stops the animation only while it is still the current
+/// generation.
 ///
-/// HELD: the source then advances frames with `setInterval`. How a caller-owned timer drives the
-/// queued asynchronous frame writes without an SDK spawn is a pending Principal ruling, so no
-/// interval tick is scheduled here and later frames are not written.
+/// The interval follows the host timer clamp the source relies on (Node `setInterval`): an interval
+/// below 1 ms, above 2^31 - 1 ms, or NaN repeats every 1 ms.
 // flight-lint: allow(f64) D1: the interval is a millisecond duration
 // flight-lint: allow(conform-params) D5: caller-owned animation state replaces the TS module-level guard slot and host timer
 pub fn start_tray_icon_animation(
@@ -1228,6 +1298,16 @@ pub fn start_tray_icon_animation(
     };
     let first = queue_animation_write(host_tray_image, tray, generation, frames[0].clone());
     let owner = tray.clone();
+    let tick = Arc::new(TrayAnimationTick {
+        delay_ms: get_tray_animation_delay(interval_ms),
+        frames: frames.to_vec(),
+        generation,
+        host_tray_image: host_tray_image.clone(),
+        index: Mutex::new(0),
+        spawn: state.spawn.clone(),
+        timers: state.timers.clone(),
+        tray: Arc::downgrade(tray),
+    });
     return Box::pin(async move {
         match first.await {
             TrayImageUpdateResult::Updated => {}
@@ -1247,8 +1327,8 @@ pub fn start_tray_icon_animation(
             if runtime.state != TrayState::Active || runtime.animation_generation != generation {
                 return TrayAnimationStartResult::TrayDestroyed;
             }
-            runtime.animation_timer = true;
         }
+        schedule_tray_animation_tick(&tick);
         let released = Arc::new(AtomicBool::new(false));
         let animated = Arc::downgrade(&owner);
         let release = TrayEventRelease {
@@ -1272,7 +1352,9 @@ pub fn start_tray_icon_animation(
 
 fn stop_tray_animation_runtime(runtime: &mut TrayRuntime) {
     runtime.animation_generation += 1;
-    runtime.animation_timer = false;
+    if let Some((timers, id)) = runtime.animation_timer.take() {
+        clear_signal_timeout(&timers, id);
+    }
 }
 
 /// Stops the current animation, or reports `AlreadyStopped`.
@@ -1281,7 +1363,7 @@ pub fn stop_tray_icon_animation(tray: &Ref<TrayIcon>) -> TrayAnimationStopResult
     let Some(runtime) = guard.tray_runtime.as_mut() else {
         return TrayAnimationStopResult::AlreadyStopped;
     };
-    if !runtime.animation_timer {
+    if runtime.animation_timer.is_none() {
         return TrayAnimationStopResult::AlreadyStopped;
     }
     stop_tray_animation_runtime(runtime);
@@ -1454,8 +1536,8 @@ impl HostTrayTooltipCapability {
 }
 
 impl TrayAnimationState {
-    pub fn new() -> Self {
-        return create_tray_animation_state();
+    pub fn new(spawn: HostSpawnCapability, timers: Ref<SignalTimerState>) -> Self {
+        return create_tray_animation_state(spawn, timers);
     }
 
     pub fn set_animation_guard(&mut self, guard: Option<TrayAnimationGuard>) {

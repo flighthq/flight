@@ -67,6 +67,19 @@ fn tray() -> (Ref<TrayIcon>, HostTrayImageCapability) {
     return (tray, image);
 }
 
+fn animation_state() -> TrayAnimationState {
+    let spawn = flight_hostcapability::HostSpawnCapability {
+        provider: Arc::new(()),
+        spawn: Arc::new(
+            |_future: std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>| {},
+        ),
+    };
+    return create_tray_animation_state(
+        spawn,
+        Arc::new(RwLock::new(flight_signals::create_signal_timer_state())),
+    );
+}
+
 fn log_state() -> LogStateRef {
     return Arc::new(RwLock::new(create_log_state()));
 }
@@ -99,7 +112,7 @@ mod disable_tray_guards {
         let sink = create_memory_log_sink(8);
         add_log_sink(&logs, sink.sink.clone());
         let clock_calls = Arc::new(AtomicUsize::new(0));
-        let mut state = create_tray_animation_state();
+        let mut state = animation_state();
         enable_tray_guards(&mut state, &logs, counting_clock(&clock_calls));
         disable_tray_guards(&mut state);
         let (icon, image) = tray();
@@ -128,7 +141,7 @@ mod enable_tray_guards {
         let sink = create_memory_log_sink(8);
         add_log_sink(&logs, sink.sink.clone());
         let clock_calls = Arc::new(AtomicUsize::new(0));
-        let mut state = create_tray_animation_state();
+        let mut state = animation_state();
         enable_tray_guards(&mut state, &logs, counting_clock(&clock_calls));
         let (icon, image) = tray();
         let started = block_on(start_tray_icon_animation(
@@ -156,7 +169,7 @@ mod enable_tray_guards {
         let sink = create_memory_log_sink(8);
         add_log_sink(&logs, sink.sink.clone());
         let clock_calls = Arc::new(AtomicUsize::new(0));
-        let mut state = create_tray_animation_state();
+        let mut state = animation_state();
         enable_tray_guards(&mut state, &logs, counting_clock(&clock_calls));
         let (icon, image) = tray();
         block_on(start_tray_icon_animation(
