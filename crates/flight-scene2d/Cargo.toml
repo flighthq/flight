@@ -1,0 +1,28 @@
+[package]
+name = "flight-scene2d"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Display object tree for composited 2D rendering: the Node2D family, sprites, nine-slice sprites, html views and the Scene2D presentation context"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-animation = { workspace = true }
+flight-clip = { workspace = true }
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-layout = { workspace = true }
+flight-materials = { workspace = true }
+flight-node = { path = "../flight-node" }
+flight-signals = { workspace = true }
+flight-texture = { workspace = true }
+
+[dev-dependencies]
+flight-adjustments = { workspace = true }
+
+[lints]
+workspace = true
