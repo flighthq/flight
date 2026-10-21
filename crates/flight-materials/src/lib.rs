@@ -5,6 +5,7 @@ pub mod anisotropy_pbr_extension;
 pub mod classic_materials;
 pub mod clearcoat_pbr_extension;
 pub mod color_scale_bias;
+pub mod contract;
 pub mod custom_shader_material;
 pub mod enable_material_conversion_guards;
 pub mod explain_material_conversion;
