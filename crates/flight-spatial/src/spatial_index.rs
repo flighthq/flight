@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::{
-    SpatialDeclineReason, SpatialIndexingExplanation, SpatialIndexingGuard, SpatialIndexingMode,
+    SpatialDeclineReason, SpatialIndexingExplanation, SpatialIndexingMode,
     SpatialIndexingNotice, SpatialIndexingOperation, SpatialIndexingReason, SpatialObjectId,
     report_spatial_indexing,
 };
@@ -55,7 +55,7 @@ pub struct SpatialIndex2D {
     pub seen: HashSet<SpatialObjectId>,
     pub seen_order: Vec<SpatialObjectId>,
     pub pair_ids: Vec<SpatialObjectId>,
-    pub guard: Option<SpatialIndexingGuard>,
+
 }
 
 // ---------------------------------------------------------------------------
@@ -95,7 +95,7 @@ pub fn initialize_spatial_index_2d(out: &mut SpatialIndex2D, cell_size: f32) {
     out.min_cell_y = 0;
     out.max_cell_x = 0;
     out.max_cell_y = 0;
-    out.guard = None;
+
 }
 
 /// Maps a world coordinate to its cell index along one axis.
@@ -691,8 +691,7 @@ fn report_grid_indexing(
     would_occupy_bucket_count: f64,
 ) {
     report_spatial_indexing(
-        index.guard,
-        &SpatialIndexingNotice {
+                &SpatialIndexingNotice {
             cell_size: index.cell_size,
             id,
             mode,
@@ -701,14 +700,6 @@ fn report_grid_indexing(
             would_occupy_bucket_count,
         },
     );
-}
-
-/// Sets the indexing guard on this 2D index.
-pub fn set_spatial_indexing_guard_2d(
-    index: &mut SpatialIndex2D,
-    guard: Option<SpatialIndexingGuard>,
-) {
-    index.guard = guard;
 }
 
 /// How many cells an AABB spans, computed as f64 to handle astronomical values.

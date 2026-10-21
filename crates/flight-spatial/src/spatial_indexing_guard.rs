@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex, PoisonError};
+
 /// Identifier for a spatial object.
 pub type SpatialObjectId = i32;
 
@@ -56,16 +58,19 @@ pub struct SpatialIndexingNotice {
     pub would_occupy_bucket_count: f64,
 }
 
-/// Function type for the spatial indexing guard callback.
-pub type SpatialIndexingGuard = fn(&SpatialIndexingNotice);
+/// Shared diagnostics callback for noteworthy operations in either dimension.
+pub type SpatialIndexingGuard = Arc<dyn Fn(&SpatialIndexingNotice) + Send + Sync>;
 
-/// Hands a notice to the given guard, or does nothing when the guard is None.
-/// This is the shared reporting seam used by both dimensions' backends.
-pub fn report_spatial_indexing(
-    guard: Option<SpatialIndexingGuard>,
-    notice: &SpatialIndexingNotice,
-) {
-    if let Some(g) = guard {
-        g(notice);
-    }
+/// Hands a notice to the installed guard, or does nothing when none is installed.
+pub fn report_spatial_indexing(notice: &SpatialIndexingNotice) {
+    let guard = SPATIAL_INDEXING_GUARD.lock().unwrap_or_else(PoisonError::into_inner).clone();
+    if let Some(guard) = guard { guard(notice); }
 }
+
+/// Installs the diagnostic guard shared by all spatial backends. None uninstalls it.
+pub fn set_spatial_indexing_guard(guard: Option<SpatialIndexingGuard>) {
+    *SPATIAL_INDEXING_GUARD.lock().unwrap_or_else(PoisonError::into_inner) = guard;
+}
+
+// flight-lint: allow(hidden-state) D5 opt-in diagnostics-only slot shared by both dimensions, mirrors TS, defaults to None and cannot change indexing results
+static SPATIAL_INDEXING_GUARD: Mutex<Option<SpatialIndexingGuard>> = Mutex::new(None);

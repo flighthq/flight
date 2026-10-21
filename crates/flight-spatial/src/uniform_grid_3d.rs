@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::{
-    SpatialDeclineReason, SpatialIndexingExplanation, SpatialIndexingGuard, SpatialIndexingMode,
+    SpatialDeclineReason, SpatialIndexingExplanation, SpatialIndexingMode,
     SpatialIndexingNotice, SpatialIndexingOperation, SpatialIndexingReason, SpatialObjectId,
     SpatialPair, report_spatial_indexing, spatial_index::MAX_INDEXED_CELLS_PER_OBJECT,
 };
@@ -122,7 +122,7 @@ pub(crate) fn insert_into_grid_3d(
     id: SpatialObjectId,
     bounds: &SpatialAabb3D,
     operation: SpatialIndexingOperation,
-    guard: Option<SpatialIndexingGuard>,
+
 ) -> bool {
     if !bounds.min_x.is_finite()
         || !bounds.min_y.is_finite()
@@ -132,12 +132,12 @@ pub(crate) fn insert_into_grid_3d(
         || !bounds.max_z.is_finite()
     {
         grid.declined.insert(id, SpatialDeclineReason::NonFiniteBounds);
-        report_grid_3d_indexing(grid, guard, id, SpatialIndexingMode::Declined, operation, Some(SpatialIndexingReason::NonFiniteBounds), 0.0);
+        report_grid_3d_indexing(grid, id, SpatialIndexingMode::Declined, operation, Some(SpatialIndexingReason::NonFiniteBounds), 0.0);
         return false;
     }
     if bounds.max_x < bounds.min_x || bounds.max_y < bounds.min_y || bounds.max_z < bounds.min_z {
         grid.declined.insert(id, SpatialDeclineReason::InvertedBounds);
-        report_grid_3d_indexing(grid, guard, id, SpatialIndexingMode::Declined, operation, Some(SpatialIndexingReason::InvertedBounds), 0.0);
+        report_grid_3d_indexing(grid, id, SpatialIndexingMode::Declined, operation, Some(SpatialIndexingReason::InvertedBounds), 0.0);
         return false;
     }
 
@@ -146,14 +146,14 @@ pub(crate) fn insert_into_grid_3d(
     if !(cs > 0.0 && cs.is_finite()) {
         if grid.bounds.insert(id, copy).is_none() { grid.object_order.push(id); }
         if grid.overflow.insert(id) { grid.overflow_order.push(id); }
-        report_grid_3d_indexing(grid, guard, id, SpatialIndexingMode::Overflow, operation, Some(SpatialIndexingReason::InvalidCellSize), 0.0);
+        report_grid_3d_indexing(grid, id, SpatialIndexingMode::Overflow, operation, Some(SpatialIndexingReason::InvalidCellSize), 0.0);
         return true;
     }
     let spanned = spanned_cell_count_3d(cs, &copy);
     if !(spanned <= MAX_INDEXED_CELLS_PER_OBJECT as f64) {
         if grid.bounds.insert(id, copy).is_none() { grid.object_order.push(id); }
         if grid.overflow.insert(id) { grid.overflow_order.push(id); }
-        report_grid_3d_indexing(grid, guard, id, SpatialIndexingMode::Overflow, operation, None, spanned);
+        report_grid_3d_indexing(grid, id, SpatialIndexingMode::Overflow, operation, None, spanned);
         return true;
     }
 
@@ -485,26 +485,26 @@ pub(crate) fn remove_from_grid_3d(grid: &mut UniformGrid3D, id: SpatialObjectId)
 pub(crate) fn remove_spatial_object_grid_3d(
     grid: &mut UniformGrid3D,
     id: SpatialObjectId,
-    guard: Option<SpatialIndexingGuard>,
+
 ) {
     let was_missing = !grid.bounds.contains_key(&id) && !grid.declined.contains_key(&id);
     remove_from_grid_3d(grid, id);
     if was_missing {
-        report_grid_3d_indexing(grid, guard, id, SpatialIndexingMode::Absent, SpatialIndexingOperation::Remove, Some(SpatialIndexingReason::MissingId), 0.0);
+        report_grid_3d_indexing(grid, id, SpatialIndexingMode::Absent, SpatialIndexingOperation::Remove, Some(SpatialIndexingReason::MissingId), 0.0);
     }
 }
 
 #[allow(clippy::too_many_arguments)]
 fn report_grid_3d_indexing(
     grid: &UniformGrid3D,
-    guard: Option<SpatialIndexingGuard>,
+
     id: SpatialObjectId,
     mode: SpatialIndexingMode,
     operation: SpatialIndexingOperation,
     reason: Option<SpatialIndexingReason>,
     would_occupy_bucket_count: f64,
 ) {
-    report_spatial_indexing(guard, &SpatialIndexingNotice {
+    report_spatial_indexing(&SpatialIndexingNotice {
         cell_size: grid.cell_size,
         id, mode, operation, reason, would_occupy_bucket_count,
     });
@@ -524,7 +524,7 @@ pub(crate) fn update_grid_3d_object(
     grid: &mut UniformGrid3D,
     id: SpatialObjectId,
     bounds: &SpatialAabb3D,
-    guard: Option<SpatialIndexingGuard>,
+
 ) -> bool {
     let was_missing = !grid.bounds.contains_key(&id) && !grid.declined.contains_key(&id);
 
@@ -562,10 +562,10 @@ pub(crate) fn update_grid_3d_object(
     }
 
     remove_from_grid_3d(grid, id);
-    let inserted = insert_into_grid_3d(grid, id, bounds, SpatialIndexingOperation::Update, guard);
+    let inserted = insert_into_grid_3d(grid, id, bounds, SpatialIndexingOperation::Update);
     if was_missing {
         let explanation = explain_grid_3d_indexing(grid, id);
-        report_grid_3d_indexing(grid, guard, id, explanation.mode, SpatialIndexingOperation::Update, Some(SpatialIndexingReason::MissingId), 0.0);
+        report_grid_3d_indexing(grid, id, explanation.mode, SpatialIndexingOperation::Update, Some(SpatialIndexingReason::MissingId), 0.0);
     }
     return inserted;
 }

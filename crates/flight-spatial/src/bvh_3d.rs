@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::{
-    SpatialDeclineReason, SpatialIndexingExplanation, SpatialIndexingGuard, SpatialIndexingMode,
+    SpatialDeclineReason, SpatialIndexingExplanation, SpatialIndexingMode,
     SpatialIndexingNotice, SpatialIndexingOperation, SpatialIndexingReason, SpatialObjectId,
     SpatialPair, report_spatial_indexing,
     uniform_grid_3d::{SpatialAabb3D, is_spatial_aabb_3d_overlapping},
@@ -163,20 +163,20 @@ pub(crate) fn insert_bvh_3d(
     id: SpatialObjectId,
     bounds: &SpatialAabb3D,
     operation: SpatialIndexingOperation,
-    guard: Option<SpatialIndexingGuard>,
+
 ) -> bool {
     if !bounds.min_x.is_finite() || !bounds.min_y.is_finite() || !bounds.min_z.is_finite()
         || !bounds.max_x.is_finite() || !bounds.max_y.is_finite() || !bounds.max_z.is_finite()
     {
         remove_bvh_3d(tree, id);
         tree.declined.insert(id, SpatialDeclineReason::NonFiniteBounds);
-        report_bvh_3d_indexing(tree, guard, id, SpatialIndexingMode::Declined, operation, Some(SpatialIndexingReason::NonFiniteBounds));
+        report_bvh_3d_indexing(tree, id, SpatialIndexingMode::Declined, operation, Some(SpatialIndexingReason::NonFiniteBounds));
         return false;
     }
     if bounds.max_x < bounds.min_x || bounds.max_y < bounds.min_y || bounds.max_z < bounds.min_z {
         remove_bvh_3d(tree, id);
         tree.declined.insert(id, SpatialDeclineReason::InvertedBounds);
-        report_bvh_3d_indexing(tree, guard, id, SpatialIndexingMode::Declined, operation, Some(SpatialIndexingReason::InvertedBounds));
+        report_bvh_3d_indexing(tree, id, SpatialIndexingMode::Declined, operation, Some(SpatialIndexingReason::InvertedBounds));
         return false;
     }
     tree.declined.remove(&id);
@@ -490,24 +490,24 @@ fn remove_bvh_3d_leaf(tree: &mut Bvh3D, leaf: usize) {
 pub(crate) fn remove_spatial_object_bvh_3d(
     tree: &mut Bvh3D,
     id: SpatialObjectId,
-    guard: Option<SpatialIndexingGuard>,
+
 ) {
     let was_missing = !tree.leaf_by_object.contains_key(&id) && !tree.declined.contains_key(&id);
     remove_bvh_3d(tree, id);
     if was_missing {
-        report_bvh_3d_indexing(tree, guard, id, SpatialIndexingMode::Absent, SpatialIndexingOperation::Remove, Some(SpatialIndexingReason::MissingId));
+        report_bvh_3d_indexing(tree, id, SpatialIndexingMode::Absent, SpatialIndexingOperation::Remove, Some(SpatialIndexingReason::MissingId));
     }
 }
 
 fn report_bvh_3d_indexing(
     tree: &Bvh3D,
-    guard: Option<SpatialIndexingGuard>,
+
     id: SpatialObjectId,
     mode: SpatialIndexingMode,
     operation: SpatialIndexingOperation,
     reason: Option<SpatialIndexingReason>,
 ) {
-    report_spatial_indexing(guard, &SpatialIndexingNotice {
+    report_spatial_indexing(&SpatialIndexingNotice {
         cell_size: tree.margin,
         id, mode, operation, reason,
         would_occupy_bucket_count: 0.0,
@@ -560,13 +560,13 @@ pub(crate) fn update_bvh_3d(
     tree: &mut Bvh3D,
     id: SpatialObjectId,
     bounds: &SpatialAabb3D,
-    guard: Option<SpatialIndexingGuard>,
+
 ) -> bool {
     let was_missing = !tree.leaf_by_object.contains_key(&id) && !tree.declined.contains_key(&id);
-    let inserted = insert_bvh_3d(tree, id, bounds, SpatialIndexingOperation::Update, guard);
+    let inserted = insert_bvh_3d(tree, id, bounds, SpatialIndexingOperation::Update);
     if was_missing {
         let explanation = explain_bvh_3d(tree, id);
-        report_bvh_3d_indexing(tree, guard, id, explanation.mode, SpatialIndexingOperation::Update, Some(SpatialIndexingReason::MissingId));
+        report_bvh_3d_indexing(tree, id, explanation.mode, SpatialIndexingOperation::Update, Some(SpatialIndexingReason::MissingId));
     }
     return inserted;
 }

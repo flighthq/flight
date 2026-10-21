@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use crate::{
-    SpatialIndexingExplanation, SpatialIndexingGuard, SpatialObjectId, SpatialPair,
+    SpatialIndexingExplanation, SpatialObjectId, SpatialPair,
     bvh_3d::{
         Bvh3D, DEFAULT_BVH_MARGIN_3D, clear_bvh_3d, create_bvh_3d, explain_bvh_3d,
         insert_bvh_3d, query_bvh_3d_pairs, query_bvh_3d_point, query_bvh_3d_ray,
@@ -36,7 +36,7 @@ pub enum SpatialBackend3D {
 /// A 3D spatial index that dispatches to either a uniform grid or a BVH backend.
 pub struct SpatialIndex3D {
     pub backend: SpatialBackend3D,
-    pub guard: Option<SpatialIndexingGuard>,
+
 }
 
 // ---------------------------------------------------------------------------
@@ -62,7 +62,7 @@ pub fn create_spatial_frustum_3d(corners: Vec<f32>) -> SpatialFrustum3D {
 pub fn create_spatial_index_3d(cell_size: f32) -> SpatialIndex3D {
     let mut out = SpatialIndex3D {
         backend: SpatialBackend3D::UniformGrid(UniformGrid3D::default()),
-        guard: None,
+
     };
     initialize_spatial_index_3d(&mut out, cell_size);
     return out;
@@ -72,7 +72,7 @@ pub fn create_spatial_index_3d(cell_size: f32) -> SpatialIndex3D {
 pub fn create_spatial_index_3d_with_bvh(margin: f32) -> SpatialIndex3D {
     return SpatialIndex3D {
         backend: SpatialBackend3D::Bvh(create_bvh_3d(margin)),
-        guard: None,
+
     };
 }
 
@@ -83,14 +83,14 @@ pub fn create_uniform_grid_spatial_backend_3d(cell_size: f32) -> SpatialIndex3D 
 
 pub fn initialize_bvh_spatial_backend_3d(out: &mut SpatialIndex3D, margin: f32) {
     out.backend = SpatialBackend3D::Bvh(create_bvh_3d(margin));
-    out.guard = None;
+
 }
 
 pub fn initialize_spatial_index_3d(out: &mut SpatialIndex3D, cell_size: f32) {
     let mut grid = UniformGrid3D::default();
     grid.cell_size = cell_size;
     out.backend = SpatialBackend3D::UniformGrid(grid);
-    out.guard = None;
+
 }
 
 pub fn initialize_uniform_grid_spatial_backend_3d(out: &mut SpatialIndex3D, cell_size: f32) {
@@ -130,13 +130,13 @@ pub fn insert_spatial_object_3d(
     id: SpatialObjectId,
     bounds: &SpatialAabb3D,
 ) -> bool {
-    let guard = index.guard;
+
     match &mut index.backend {
         SpatialBackend3D::UniformGrid(grid) => {
-            insert_into_grid_3d(grid, id, bounds, SpatialIndexingOperation::Insert, guard)
+            insert_into_grid_3d(grid, id, bounds, SpatialIndexingOperation::Insert)
         }
         SpatialBackend3D::Bvh(bvh) => {
-            insert_bvh_3d(bvh, id, bounds, SpatialIndexingOperation::Insert, guard)
+            insert_bvh_3d(bvh, id, bounds, SpatialIndexingOperation::Insert)
         }
     }
 }
@@ -252,18 +252,11 @@ pub fn query_spatial_sphere_3d(out: &mut Vec<SpatialObjectId>, index: &mut Spati
 }
 
 pub fn remove_spatial_object_3d(index: &mut SpatialIndex3D, id: SpatialObjectId) {
-    let guard = index.guard;
-    match &mut index.backend {
-        SpatialBackend3D::UniformGrid(grid) => remove_spatial_object_grid_3d(grid, id, guard),
-        SpatialBackend3D::Bvh(bvh) => remove_spatial_object_bvh_3d(bvh, id, guard),
-    }
-}
 
-pub fn set_spatial_indexing_guard_3d(
-    index: &mut SpatialIndex3D,
-    guard: Option<SpatialIndexingGuard>,
-) {
-    index.guard = guard;
+    match &mut index.backend {
+        SpatialBackend3D::UniformGrid(grid) => remove_spatial_object_grid_3d(grid, id),
+        SpatialBackend3D::Bvh(bvh) => remove_spatial_object_bvh_3d(bvh, id),
+    }
 }
 
 pub fn update_spatial_object_3d(
@@ -271,10 +264,10 @@ pub fn update_spatial_object_3d(
     id: SpatialObjectId,
     bounds: &SpatialAabb3D,
 ) -> bool {
-    let guard = index.guard;
+
     match &mut index.backend {
-        SpatialBackend3D::UniformGrid(grid) => update_grid_3d_object(grid, id, bounds, guard),
-        SpatialBackend3D::Bvh(bvh) => update_bvh_3d(bvh, id, bounds, guard),
+        SpatialBackend3D::UniformGrid(grid) => update_grid_3d_object(grid, id, bounds),
+        SpatialBackend3D::Bvh(bvh) => update_bvh_3d(bvh, id, bounds),
     }
 }
 

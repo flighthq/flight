@@ -307,9 +307,10 @@ mod create_bvh_spatial_backend_3d {
 
     #[test]
     fn reports_same_indexing_notices_as_grid() {
+        let _guard_scope = crate::lock_spatial_guard_tests();
         take_notices();
         let mut bvh = create_spatial_index_3d_with_bvh(DEFAULT_BVH_MARGIN_3D);
-        set_spatial_indexing_guard_3d(&mut bvh, Some(test_guard));
+        set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
         insert_spatial_object_3d(&mut bvh, 1, &box3(0.0, 0.0, 0.0, 1.0));
         update_spatial_object_3d(&mut bvh, 1, &box3(0.1, 0.0, 0.0, 1.0));
         update_spatial_object_3d(&mut bvh, 1, &box3(50.0, 0.0, 0.0, 1.0));
@@ -323,7 +324,7 @@ mod create_bvh_spatial_backend_3d {
         let bvh_notices = take_notices();
 
         let mut grid = create_spatial_index_3d(16.0);
-        set_spatial_indexing_guard_3d(&mut grid, Some(test_guard));
+        set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 1.0));
         update_spatial_object_3d(&mut grid, 1, &box3(0.1, 0.0, 0.0, 1.0));
         update_spatial_object_3d(&mut grid, 1, &box3(50.0, 0.0, 0.0, 1.0));
@@ -366,9 +367,10 @@ mod create_bvh_spatial_backend_3d {
 
     #[test]
     fn says_nothing_while_healthy_objects_move() {
+        let _guard_scope = crate::lock_spatial_guard_tests();
         take_notices();
         let mut bvh = create_spatial_index_3d_with_bvh(DEFAULT_BVH_MARGIN_3D);
-        set_spatial_indexing_guard_3d(&mut bvh, Some(test_guard));
+        set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
         for id in 0..20i32 {
             insert_spatial_object_3d(&mut bvh, id, &box3(id as f32 * 4.0, 0.0, 0.0, 1.0));
         }

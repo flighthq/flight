@@ -104,9 +104,10 @@ mod create_uniform_grid_spatial_backend_3d {
 
     #[test]
     fn reports_span_for_overflow() {
+        let _guard_scope = crate::lock_spatial_guard_tests();
         take_notices();
         let mut grid = create_spatial_index_3d(1.0);
-        set_spatial_indexing_guard_3d(&mut grid, Some(test_guard));
+        set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
         insert_spatial_object_3d(&mut grid, 7, &box3(0.0, 0.0, 0.0, 19.0));
         let captured = take_notices();
         assert_eq!(captured.len(), 1);
@@ -119,9 +120,10 @@ mod create_uniform_grid_spatial_backend_3d {
 
     #[test]
     fn keeps_results_correct_with_invalid_cell_size() {
+        let _guard_scope = crate::lock_spatial_guard_tests();
         take_notices();
         let mut grid = create_spatial_index_3d(0.0);
-        set_spatial_indexing_guard_3d(&mut grid, Some(test_guard));
+        set_spatial_indexing_guard(Some(std::sync::Arc::new(test_guard)));
         assert!(insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 10.0)));
         let explanation = explain_spatial_indexing_3d(&grid, 1);
         assert_eq!(explanation.bucket_count, 0.0);
