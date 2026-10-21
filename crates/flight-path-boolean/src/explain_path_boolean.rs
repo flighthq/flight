@@ -5,6 +5,7 @@ use crate::martinez_kernel::PathBooleanKernel;
 use crate::offset_path::{offset_path, PathOffsetOptions};
 use crate::simplify_path::simplify_path;
 
+// flight-lint: allow(f64) operates on f64 path/contour coordinates (flight-path Path.data and flatten_path contours, TS number); f32 sufficiency not measured
 const DEFAULT_FLATTEN_TOLERANCE: f64 = 0.25;
 
 /// The kind of boolean operation that was attempted.
@@ -30,6 +31,7 @@ pub struct PathBooleanExplanation {
     pub reason: PathBooleanExplanationReason,
 }
 
+// flight-lint: allow(f64) operates on f64 path/contour coordinates (flight-path Path.data and flatten_path contours, TS number); f32 sufficiency not measured
 /// Checks whether `offset_path` would produce a meaningful result for the given
 /// path and delta. Returns `Some(explanation)` when the result is degenerate or
 /// empty, `None` when the offset succeeds normally.

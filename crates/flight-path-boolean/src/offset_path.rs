@@ -5,13 +5,21 @@ use flight_path::{flatten_path, Path};
 use crate::martinez_kernel::{PathBooleanFillRule, PathBooleanKernel};
 use crate::resolve_path_regions::resolve_path_regions;
 
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 const DEFAULT_ARC_TOLERANCE: f64 = 0.25;
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 const DEFAULT_MITER_LIMIT: f64 = 2.0;
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 const DEFAULT_FLATTEN_TOLERANCE: f64 = 0.25;
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 const HALF_PI: f64 = std::f64::consts::FRAC_PI_2;
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 const POINT_EPS: f64 = 1e-9;
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 const POINT_EPS_RELATIVE: f64 = 1e-9;
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 const PARALLEL_EPS: f64 = 1e-12;
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 const TWO_PI: f64 = std::f64::consts::PI * 2.0;
 
 /// Join style for the convex side of offset path corners.
@@ -31,6 +39,7 @@ pub enum PathOffsetEnd {
     Square,
 }
 
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 /// Options controlling the offset path operation.
 #[derive(Debug, Clone)]
 pub struct PathOffsetOptions {
@@ -41,6 +50,7 @@ pub struct PathOffsetOptions {
     pub arc_tolerance: Option<f64>,
 }
 
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 fn build_offset_ring(
     vertices: &[f64],
     signed_delta: f64,
@@ -116,6 +126,7 @@ fn build_offset_ring(
     return ring;
 }
 
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 fn emit_offset_end_cap(
     ring: &mut Vec<f64>,
     vx: f64,
@@ -159,6 +170,7 @@ fn emit_offset_end_cap(
     ring.push(this_start_y);
 }
 
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 fn emit_offset_join(
     ring: &mut Vec<f64>,
     vx: f64,
@@ -235,6 +247,7 @@ fn emit_offset_join(
     ring.push(this_start_y);
 }
 
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 fn get_clean_contour_vertices(
     contour: &[f64],
     closed: bool,
@@ -267,6 +280,7 @@ fn get_clean_contour_vertices(
     return out;
 }
 
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 fn get_contour_point_eps(contours: &[Vec<f64>]) -> f64 {
     let mut min_x = f64::INFINITY;
     let mut min_y = f64::INFINITY;
@@ -288,6 +302,7 @@ fn get_contour_point_eps(contours: &[Vec<f64>]) -> f64 {
     return if extent > 0.0 { extent * POINT_EPS_RELATIVE } else { POINT_EPS };
 }
 
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 fn get_open_contour_loop(vertices: &[f64]) -> Vec<f64> {
     let count = vertices.len() / 2;
     let mut result = vertices.to_vec();
@@ -319,6 +334,7 @@ pub fn get_path_offset_join_string(value: PathOffsetJoin) -> &'static str {
     };
 }
 
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 fn get_ring_orientation_sign(vertices: &[f64]) -> i32 {
     let sign = get_ring_signed_area(vertices);
     if sign > 0.0 {
@@ -330,6 +346,7 @@ fn get_ring_orientation_sign(vertices: &[f64]) -> i32 {
     return 1;
 }
 
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 fn get_ring_signed_area(vertices: &[f64]) -> f64 {
     let mut area: f64 = 0.0;
     let count = vertices.len() / 2;
@@ -340,6 +357,7 @@ fn get_ring_signed_area(vertices: &[f64]) -> f64 {
     return area * 0.5;
 }
 
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 fn get_short_sweep(start_angle: f64, end_angle: f64) -> f64 {
     let mut sweep = end_angle - start_angle;
     while sweep <= -std::f64::consts::PI {
@@ -351,6 +369,7 @@ fn get_short_sweep(start_angle: f64, end_angle: f64) -> f64 {
     return sweep;
 }
 
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 fn is_closed_contour(contour: &[f64], point_eps_sq: f64) -> bool {
     let n = contour.len();
     if n < 6 {
@@ -361,6 +380,7 @@ fn is_closed_contour(contour: &[f64], point_eps_sq: f64) -> bool {
     return dx * dx + dy * dy <= point_eps_sq;
 }
 
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 // flight-lint: allow(conform-params) D9b: TS takes an optional trailing `out` and returns it; Rust takes `out` first and returns nothing (the caller allocates it, e.g. with `create_path`)
 /// Offsets a path outward (positive `delta`, inflate) or inward (negative `delta`,
 /// deflate) by a signed distance. The input is flattened to polygon contours;
@@ -482,6 +502,7 @@ pub fn parse_path_offset_join(value: &str) -> Option<PathOffsetJoin> {
     };
 }
 
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 fn push_offset_arc(
     ring: &mut Vec<f64>,
     cx: f64,
@@ -504,6 +525,7 @@ fn push_offset_arc(
     }
 }
 
+// flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 fn reverse_vertex_loop(vertices: &[f64]) -> Vec<f64> {
     let count = vertices.len() / 2;
     let mut out = vec![0.0; vertices.len()];

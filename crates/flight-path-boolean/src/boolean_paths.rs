@@ -5,8 +5,10 @@ use crate::martinez_kernel::{
 };
 use crate::write_path_boolean_contours::write_path_boolean_contours;
 
+// flight-lint: allow(f64) operates on f64 path/contour coordinates (flight-path Path.data and flatten_path contours, TS number); f32 sufficiency not measured
 const DEFAULT_FLATTEN_TOLERANCE: f64 = 0.25;
 
+// flight-lint: allow(f64) operates on f64 path/contour coordinates (flight-path Path.data and flatten_path contours, TS number); f32 sufficiency not measured
 /// Options controlling the boolean path operations.
 #[derive(Debug, Clone)]
 pub struct PathBooleanOptions {

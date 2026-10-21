@@ -3,6 +3,7 @@ use std::sync::LazyLock;
 
 use flight_entity::{EntityRuntimeSlot, allocate_entity, throw_error};
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// A flat array of interleaved `[x, y, x, y, ...]` coordinates representing one
 /// polygon contour for boolean operations.
 pub type PathBooleanContour = Vec<f64>;
@@ -50,19 +51,23 @@ pub struct PathBooleanKernel {
 pub static MARTINEZ_PATH_BOOLEAN_KERNEL: LazyLock<PathBooleanKernel> =
     LazyLock::new(create_martinez_path_boolean_kernel);
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// Relative factor for the vertex-merge grid: two vertices collapse to one when
 /// they fall in the same cell of a grid this fraction of the input's coordinate
 /// extent.
 const VERTEX_SNAP_RELATIVE: f64 = 1e-9;
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// Fallback absolute snap for degenerate all-coincident input where the extent is
 /// zero.
 const VERTEX_SNAP_FALLBACK: f64 = 1e-9;
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// Relative tolerance for the intersection orientation tests, scaled by squared
 /// edge lengths in each comparison.
 const INTERSECTION_EPS: f64 = 1e-12;
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// One endpoint of a segment during the sweep. The two endpoints of an edge
 /// cross-link via `other_event` (an arena index). `winding_delta` is only
 /// meaningful on the left endpoint and records the source ring's traversal
@@ -77,6 +82,7 @@ struct SweepEvent {
     winding_delta: i32,
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// A final, fully-subdivided edge from the sweep.
 struct ArrangementSegment {
     ax: f64,
@@ -87,6 +93,7 @@ struct ArrangementSegment {
     winding_delta: i32,
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// A geometrically-unique segment after coincident sub-segments are merged.
 struct UniqueSegment {
     ax: f64,
@@ -102,6 +109,7 @@ struct EventHeap {
     data: Vec<usize>,
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// Directed graph of kept boundary edges for ring tracing.
 struct DirectedGraph {
     keys: HashMap<(i64, i64), usize>,
@@ -113,6 +121,7 @@ struct DirectedGraph {
     used: Vec<bool>,
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 fn create_event(events: &mut Vec<SweepEvent>, x: f64, y: f64, is_subject: bool) -> usize {
     let id = events.len();
     events.push(SweepEvent {
@@ -138,6 +147,7 @@ pub fn initialize_martinez_path_boolean_kernel(out: &mut PathBooleanKernel) {
     out.compute_path_boolean = compute_martinez_boolean;
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 fn add_edge(
     ax: f64,
     ay: f64,
@@ -162,10 +172,12 @@ fn add_edge(
     event_heap_push(heap, &events, b);
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 fn approx_equal(a: f64, b: f64, vertex_snap: f64) -> bool {
     return (a - b).abs() <= vertex_snap;
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 // Pipeline stage 1 (the sweep): builds the arrangement.
 fn build_arrangement(
     subject: &[Vec<f64>],
@@ -212,6 +224,7 @@ fn build_arrangement(
     return segments;
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 // Pipeline stage 2b: classifies unique segments for the operation.
 fn classify_segments(
     unique: &[UniqueSegment],
@@ -335,6 +348,7 @@ fn compute_empty_path_boolean(
     return Vec::new();
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 fn compute_martinez_boolean(
     subject: &[Vec<f64>],
     clip: &[Vec<f64>],
@@ -354,6 +368,7 @@ fn compute_martinez_boolean(
     return trace_rings(&kept, vertex_snap);
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 fn compute_vertex_snap(subject: &[Vec<f64>], clip: &[Vec<f64>]) -> f64 {
     let mut min_x = f64::INFINITY;
     let mut min_y = f64::INFINITY;
@@ -377,6 +392,7 @@ fn compute_vertex_snap(subject: &[Vec<f64>], clip: &[Vec<f64>]) -> f64 {
     return if extent > 0.0 { extent * VERTEX_SNAP_RELATIVE } else { VERTEX_SNAP_FALLBACK };
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 fn directed_graph_add_edge(
     graph: &mut DirectedGraph,
     from_x: f64,
@@ -409,6 +425,7 @@ fn directed_graph_new() -> DirectedGraph {
     };
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// At vertex `at`, arriving from `came_from`, pick the unused outgoing edge that
 /// turns most clockwise from the reversed incoming direction.
 fn directed_graph_next_edge(graph: &DirectedGraph, at: usize, came_from: usize) -> i32 {
@@ -437,6 +454,7 @@ fn directed_graph_next_edge(graph: &DirectedGraph, at: usize, came_from: usize) 
     return best;
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 fn directed_graph_trace_rings(graph: &mut DirectedGraph) -> Vec<Vec<f64>> {
     let mut rings: Vec<Vec<f64>> = Vec::new();
     for start in 0..graph.edge_from.len() {
@@ -453,6 +471,7 @@ fn directed_graph_trace_rings(graph: &mut DirectedGraph) -> Vec<Vec<f64>> {
     return rings;
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 fn directed_graph_vertex(
     graph: &mut DirectedGraph,
     x: f64,
@@ -471,6 +490,7 @@ fn directed_graph_vertex(
     return index;
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 fn directed_graph_walk(graph: &mut DirectedGraph, start_edge: usize) -> Option<Vec<f64>> {
     let mut ring: Vec<f64> = Vec::new();
     let mut edge = start_edge;
@@ -492,6 +512,7 @@ fn directed_graph_walk(graph: &mut DirectedGraph, start_edge: usize) -> Option<V
     return Some(ring);
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 fn divide_if_interior(
     events: &mut Vec<SweepEvent>,
     heap: &mut EventHeap,
@@ -510,6 +531,7 @@ fn divide_if_interior(
     }
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// Splits `le` at interior point (x, y).
 fn divide_segment(
     events: &mut Vec<SweepEvent>,
@@ -583,6 +605,7 @@ fn event_heap_push(heap: &mut EventHeap, events: &[SweepEvent], event: usize) {
     }
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// Appends every edge of every contour as a left/right event pair.
 fn fill_queue(
     contours: &[Vec<f64>],
@@ -669,6 +692,7 @@ fn insert_status(status: &mut Vec<usize>, events: &[SweepEvent], event: usize) -
     return lo;
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// True when segment `le` passes strictly below point (x, y).
 fn is_below(events: &[SweepEvent], le: usize, x: f64, y: f64) -> bool {
     let other = get_other_event(events, le);
@@ -688,6 +712,7 @@ fn is_inside(winding: i32, fill_rule: PathBooleanFillRule) -> bool {
     };
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 // Pipeline stage 2a: merges coincident sub-segments.
 fn merge_coincident_segments(
     segments: &[ArrangementSegment],
@@ -757,6 +782,7 @@ pub fn parse_path_boolean_operation(value: &str) -> Option<PathBooleanOperation>
     };
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 fn point_on_endpoint_coords(
     le_x: f64,
     le_y: f64,
@@ -770,6 +796,7 @@ fn point_on_endpoint_coords(
         || (approx_equal(other_x, x, vertex_snap) && approx_equal(other_y, y, vertex_snap));
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 fn point_order(ax: f64, ay: f64, bx: f64, by: f64) -> i32 {
     if ax < bx { return -1; }
     if ax > bx { return 1; }
@@ -778,6 +805,7 @@ fn point_order(ax: f64, ay: f64, bx: f64, by: f64) -> i32 {
     return 0;
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 fn point_strictly_inside(
     lx: f64,
     ly: f64,
@@ -801,6 +829,7 @@ fn point_strictly_inside(
     return dot > 0.0 && dot < len_sq;
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// Reshapes the arrangement so two status-neighbor segments only ever meet at
 /// shared endpoints.
 fn possible_intersection(
@@ -852,6 +881,7 @@ fn possible_intersection(
     divide_if_interior(events, heap, vertex_snap, le2, le1_other_x, le1_other_y);
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 fn record_segment(
     events: &[SweepEvent],
     left_event: usize,
@@ -877,6 +907,7 @@ fn record_segment(
     });
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// Returns None, a single intersection point, or the two endpoints of a collinear
 /// overlap.
 fn segment_intersection(
@@ -927,6 +958,7 @@ fn segment_intersection(
     ]);
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// > 0 when (p0, p1, p2) turn counterclockwise.
 fn signed_area(
     p0x: f64, p0y: f64,
@@ -936,10 +968,12 @@ fn signed_area(
     return (p0x - p2x) * (p1y - p2y) - (p1x - p2x) * (p0y - p2y);
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 fn snap(v: f64, vertex_snap: f64) -> i64 {
     return (v / vertex_snap).round() as i64;
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 // Pipeline stage 2c: traces kept segments into closed rings.
 fn trace_rings(edges: &[[f64; 4]], vertex_snap: f64) -> Vec<Vec<f64>> {
     let mut graph = directed_graph_new();
@@ -949,6 +983,7 @@ fn trace_rings(edges: &[[f64; 4]], vertex_snap: f64) -> Vec<Vec<f64>> {
     return directed_graph_trace_rings(&mut graph);
 }
 
+// flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// Winding number of one operand at (px, py).
 fn winding_at(unique: &[UniqueSegment], px: f64, py: f64, subject: bool) -> i32 {
     let mut winding: i32 = 0;
