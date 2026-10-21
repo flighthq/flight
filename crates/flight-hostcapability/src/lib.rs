@@ -5,6 +5,7 @@
 
 mod backend_explanation;
 mod backend_operation_explanation;
+mod host_spawn_capability;
 mod provider_ref;
 
 pub mod contract;
@@ -16,6 +17,7 @@ pub use contract::BackendExplanationLayer;
 pub use contract::BackendExplanationViability;
 pub use contract::BackendOperationExplanation;
 pub use contract::BackendOperationExplanationLayer;
+pub use contract::HostSpawnCapability;
 pub use contract::ProviderRef;
 pub use contract::get_backend_explanation_layer_string;
 pub use contract::get_backend_explanation_viability_string;

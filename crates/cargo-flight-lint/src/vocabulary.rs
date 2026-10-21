@@ -55,6 +55,7 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "AnySlot", ts: "unknown (read via get_*_data cast)", cpp: "std::any", haxe: "Dynamic", status: Status::Established, note: "Alias for `Option<Box<dyn Any + Send + Sync>>`, defined in flight-entity; owned and non-clone" },
     Entry { rust: "Unknown", ts: "unknown", cpp: "nullable std::shared_ptr<const std::any>", haxe: "Dynamic", status: Status::Established, note: "Alias for `Option<Arc<dyn Any + Send + Sync>>`, defined in flight-entity. None is explicit null and Some preserves identity; Option<Unknown> distinguishes absent/undefined from null" },
     Entry { rust: "ProviderRef", ts: "field omitted; containing capability record is the provider object", cpp: "std::shared_ptr<const std::any>", haxe: "Dynamic", status: Status::Established, note: "Alias for `Arc<dyn Any + Send + Sync>`, defined in flight-hostcapability. Every capability record carries `provider: ProviderRef`; facets from one provider clone the same token. Compare providers with `Arc::ptr_eq`, never callbacks. Rust provider identity `Arc::ptr_eq(&cap_a.provider, &cap_b.provider)` lowers to TS `capA === capB`. Plain identity, not Entity or a numeric id" },
+    Entry { rust: "HostSpawnCapability", ts: "field omitted; `spawn(fut)` lowers to `void fut`", cpp: "host-owned executor callback", haxe: "host-owned Future executor", status: Status::Established, note: "Fire-and-forget async foundation in flight-hostcapability. The explicit Rust capability carries canonical ProviderRef identity and accepts Pin<Box<dyn Future<Output=()> + Send>>; the SDK never chooses an executor or blocks" },
     Entry { rust: "ArrayBuffer", ts: "ArrayBuffer", cpp: "small shared byte buffer", haxe: "haxe.io.Bytes", status: Status::Established, note: "Named flight-buffer struct wrapping Ref<Box<[u8]>>: fixed-length shared storage; Clone and equality preserve allocation identity rather than copying or flattening through Vec" },
     Entry { rust: "ArrayBufferView", ts: "ArrayBufferView", cpp: "small shared byte view", haxe: "haxe.io.Bytes", status: Status::Established, note: "Named flight-buffer record carrying ArrayBuffer, byte_offset, byte_length and exact ArrayBufferViewKind; every view aliases the same shared storage" },
     Entry { rust: "Blob", ts: "Blob", cpp: "small shared blob", haxe: "Dynamic", status: Status::Established, note: "Immutable Arc<Blob> record in flight-buffer with mime_type, size and canonical Unknown provider payload; no Blob I/O API is implied" },
@@ -694,6 +695,21 @@ mod tests {
         assert!(entry.note.contains("`Arc::ptr_eq`, never callbacks"));
         assert!(entry.note.contains("`capA === capB`"));
         assert!(entry.note.contains("not Entity or a numeric id"));
+    }
+
+    #[test]
+    fn records_the_exact_host_spawn_capability_mapping() {
+        let entry = ENTRIES
+            .iter()
+            .find(|entry| entry.rust == "HostSpawnCapability")
+            .unwrap();
+        assert_eq!(entry.ts, "field omitted; `spawn(fut)` lowers to `void fut`");
+        assert_eq!(entry.cpp, "host-owned executor callback");
+        assert_eq!(entry.haxe, "host-owned Future executor");
+        assert!(entry.note.contains("canonical ProviderRef identity"));
+        assert!(entry.note.contains("Pin<Box<dyn Future<Output=()> + Send>>"));
+        assert!(entry.note.contains("never chooses an executor or blocks"));
+        assert!(problems("Arc<dyn Fn(Pin<Box<dyn Future<Output = ()> + Send>>) + Send + Sync>").is_empty());
     }
 
     #[test]
