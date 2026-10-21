@@ -1,5 +1,5 @@
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 
 use flight_entity::Ref;
 
@@ -110,7 +110,11 @@ pub fn disconnect_signal<T>(signal: &Signal<T>, id: SlotId) {
     };
     if should_detach {
         let mut state = data.write().unwrap();
-        if state.as_ref().map(|signal_data| signal_data.slots.is_empty()).unwrap_or(false) {
+        if state
+            .as_ref()
+            .map(|signal_data| signal_data.slots.is_empty())
+            .unwrap_or(false)
+        {
             *state = None;
             drop(state);
             *signal.emit.write().unwrap() = Arc::new(|_| {});

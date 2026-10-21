@@ -42,7 +42,8 @@ pub struct SignalData<T> {
 /// A signal with a typed payload (D4). TS models `Signal<T extends (...args) => void>`; the IR
 /// carries the payload instead, and slots receive `&T`.
 ///
-/// Cloning shares the same signal data, matching TS object identity. `next_slot_id` is shared
+/// Cloning shares signal data and the current callback value, matching a TS spread copy.
+/// Each clone owns a fresh callback cell and Entity runtime. `next_slot_id` is shared
 /// too, so ids stay unique for the lifetime of the signal even across `clear_signal`.
 pub struct Signal<T> {
     /// Source-required emission callback. A spread clone may replace it while sharing data.
@@ -171,7 +172,9 @@ impl<T> Clone for Signal<T> {
 impl<T: 'static> Default for Signal<T> {
     fn default() -> Self {
         let out = Signal {
-            emit: Arc::new(RwLock::new(Arc::new(|_: &T| {}) as Arc<dyn Fn(&T) + Send + Sync>)),
+            emit: Arc::new(RwLock::new(
+                Arc::new(|_: &T| {}) as Arc<dyn Fn(&T) + Send + Sync>
+            )),
             data: Ref::new(RwLock::new(None)),
             next_slot_id: Arc::new(AtomicU64::new(1)),
             runtime: EntityRuntimeSlot::default(),
