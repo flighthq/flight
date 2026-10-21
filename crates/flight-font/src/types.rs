@@ -1,7 +1,10 @@
+use std::any::Any;
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 
-use flight_buffer::ArrayBuffer;
-use flight_entity::Uint8Array;
+use flight_buffer::{ArrayBuffer, ArrayBufferView};
+use flight_entity::{EntityRuntimeSlot, Uint8Array, Unknown};
 use flight_hostcapability::ProviderRef;
 use flight_path::Path;
 
@@ -78,6 +81,50 @@ pub struct FontFormatArrayBuffer<'a> {
 /// Named payload for a `Uint8Array` view. The slice is the view window, not its whole backing store.
 pub struct FontFormatUint8Array<'a> {
     pub bytes: &'a Uint8Array,
+}
+
+/// One host-created platform font face. The handle is opaque SDK data; its provider token records
+/// which host owns it, and clones of the surrounding `Arc` preserve exact face identity.
+// flight-lint: allow(contract-vocabulary) Principal 1015f931: FontFace.handle is the approved opaque Arc<dyn Any + Send + Sync> host handle
+pub struct FontFace {
+    pub provider: ProviderRef,
+    pub handle: Arc<dyn Any + Send + Sync>,
+    pub family: String,
+}
+
+/// Named string arm of the source accepted by the host font-face constructor.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FontFaceSourceUrl {
+    pub value: String,
+}
+
+/// Named bounded-byte-view arm of the source accepted by the host font-face constructor.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FontFaceSourceData {
+    pub value: ArrayBufferView,
+}
+
+/// The source's `string | ArrayBuffer` union. Rust retains a bounded `ArrayBufferView` so a sliced
+/// byte input keeps both its exact window and its shared backing-allocation identity.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum FontFaceSource {
+    Url(FontFaceSourceUrl),
+    Data(FontFaceSourceData),
+}
+
+/// A named or loaded font carrier (TS `FontResource extends Entity`).
+#[derive(Default)]
+pub struct FontResource {
+    pub family: String,
+    pub face: Option<Arc<FontFace>>,
+    runtime: EntityRuntimeSlot,
+}
+
+/// One source in the comma-separated list accepted by `load_font_resource_from_urls`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct FontUrl {
+    pub format: Option<String>,
+    pub url: String,
 }
 
 /// One variable-font axis declared by a font parser.
@@ -179,6 +226,34 @@ pub struct HostGlyphCapabilities {
     pub rasterizer: Option<HostGlyphRasterizerCapability>,
 }
 
+/// A rejected host face operation carries the provider's exact unknown rejection value.
+// flight-lint: allow(contract-vocabulary) D15/D10: a rejected FontFace Promise preserves the host Unknown payload
+pub type FontFaceLoadFuture = Pin<Box<dyn Future<Output = Result<(), Unknown>> + Send>>;
+
+/// A rejected registered-face lookup carries the provider's exact unknown rejection value.
+// flight-lint: allow(contract-vocabulary) D15/D10: a rejected FontFace[] Promise preserves the host Unknown payload
+pub type FontFacesLoadFuture =
+    Pin<Box<dyn Future<Output = Result<Vec<Arc<FontFace>>, Unknown>> + Send>>;
+
+/// Swappable platform font-loading capability. Face construction and loading are explicit host
+/// callbacks; the SDK never constructs a native or browser `FontFace` itself.
+#[derive(Clone)]
+pub struct HostFontLoadingCapability {
+    pub add_font_face: Arc<dyn Fn(&Arc<FontFace>) + Send + Sync>,
+    pub check_font_face: Arc<dyn Fn(&str) -> bool + Send + Sync>,
+    pub create_font_face: Arc<dyn Fn(&str, &FontFaceSource) -> Arc<FontFace> + Send + Sync>,
+    pub load_font_face: Arc<dyn Fn(&Arc<FontFace>) -> FontFaceLoadFuture + Send + Sync>,
+    pub load_font_faces: Arc<dyn Fn(&str) -> FontFacesLoadFuture + Send + Sync>,
+    pub provider: ProviderRef,
+    pub when_ready: Arc<dyn Fn() -> FontFaceLoadFuture + Send + Sync>,
+}
+
+/// Font capability group aggregated by the top-level host.
+#[derive(Clone, Default)]
+pub struct HostFontCapabilities {
+    pub loader: Option<HostFontLoadingCapability>,
+}
+
 fn call_host_glyph_measure_metrics(
     backend: &HostGlyphRasterizerCapability,
     options: &GlyphRasterizeOptions,
@@ -213,6 +288,8 @@ pub fn parse_glyph_rasterizer_operation(value: &str) -> Option<GlyphRasterizerOp
         _ => None,
     };
 }
+
+flight_entity::impl_entity!(FontResource);
 
 impl HostGlyphRasterizerCapability {
     pub fn measure_metrics(&self, options: &GlyphRasterizeOptions) -> Option<GlyphMetrics> {
