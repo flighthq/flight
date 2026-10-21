@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use flight_entity::EntityRuntimeSlot;
+use flight_entity::{EntityRuntimeSlot, Ref};
+use flight_log::LogStateRef;
 
 /// A lifecycle callback stored on a flow state (D9 stored capturing form).
 pub type FlowCallback = Arc<dyn Fn() + Send + Sync>;
@@ -17,7 +18,8 @@ pub enum FlowGuardKind {
 }
 
 /// A single application state in a flow stack. Plain data: callers construct it with a literal
-/// (TS `FlowState` does not extend Entity).
+/// (TS `FlowState` does not extend Entity). The stack stores it behind `Ref`, matching TS object
+/// identity and enabling real re-entrant transitions.
 #[derive(Clone)]
 pub struct FlowState {
     pub name: Option<String>,
@@ -31,22 +33,33 @@ pub struct FlowState {
 }
 
 /// The flow-state stack (TS `FlowStack` extends Entity). `states` is ordered bottom-to-top, so the
-/// last element is the active top.
+/// last element is the active top; each state is a shared `Ref`, so duplicate detection is
+/// `Arc::ptr_eq` exactly as TS compares object references.
 #[derive(Clone)]
 pub struct FlowStack {
-    pub states: Vec<FlowState>,
+    pub states: Vec<Ref<FlowState>>,
     runtime: EntityRuntimeSlot,
 }
 
+/// Approved enable-time guard context: explicit caller-owned log state plus a live clock invoked at
+/// operation time (never a frozen timestamp or hidden clock).
+#[derive(Clone)]
+// flight-lint: allow(f64) D1: the injected clock returns millisecond operation time
+pub struct FlowGuardContext {
+    pub log_state: LogStateRef,
+    pub clock: Arc<dyn Fn() -> f64 + Send + Sync>,
+}
+
 /// Explicit diagnostics state for the opt-in flow guards (D5). Plain Rust-only dispatch state: the
-/// caller creates it with a literal and shares it with any re-entrant transition callbacks.
+/// caller creates it with a literal and shares it with re-entrant transition callbacks.
 pub struct FlowGuardState {
     pub enabled: bool,
     pub transition_depth: u32,
+    pub context: Option<FlowGuardContext>,
 }
 
 /// Shared caller-owned flow-guard state.
-pub type FlowGuardStateRef = flight_entity::Ref<FlowGuardState>;
+pub type FlowGuardStateRef = Ref<FlowGuardState>;
 
 flight_entity::impl_entity!(FlowStack);
 
@@ -58,13 +71,3 @@ impl Default for FlowStack {
         };
     }
 }
-
-impl Default for FlowGuardState {
-    fn default() -> Self {
-        return FlowGuardState {
-            enabled: false,
-            transition_depth: 0,
-        };
-    }
-}
-
