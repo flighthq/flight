@@ -191,16 +191,16 @@ fn match_reg_exp(reg_exp: &mut RegExp, input_utf16: &[u16]) -> Option<Match> {
         }
         return None;
     }
-    let engine_start = normalize_unicode_start(&input_utf16, requested_start, unicode);
+    let engine_start = normalize_unicode_start(input_utf16, requested_start, unicode);
     let matched = if unicode {
         reg_exp
             .engine
-            .find_from_utf16(&input_utf16, engine_start)
+            .find_from_utf16(input_utf16, engine_start)
             .next()
     } else {
         reg_exp
             .engine
-            .find_from_ucs2(&input_utf16, engine_start)
+            .find_from_ucs2(input_utf16, engine_start)
             .next()
     };
     let Some(matched) = matched.filter(|matched| !sticky || matched.start() == engine_start) else {
