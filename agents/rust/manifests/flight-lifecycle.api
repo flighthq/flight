@@ -1,0 +1,83 @@
+src/contract.rs: pub use super::lifecycle::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::AppLaunchKind;
+src/lib.rs: pub use contract::AppLifecycle;
+src/lib.rs: pub use contract::AppLifecycleState;
+src/lib.rs: pub use contract::AppLifecycleStateBag;
+src/lib.rs: pub use contract::AppMemoryPressure;
+src/lib.rs: pub use contract::HostLifecycleCapability;
+src/lib.rs: pub use contract::LifecycleListener;
+src/lib.rs: pub use contract::LifecycleMemoryWarningListener;
+src/lib.rs: pub use contract::LifecycleOperation;
+src/lib.rs: pub use contract::LifecycleUnsubscribe;
+src/lib.rs: pub use contract::attach_app_lifecycle;
+src/lib.rs: pub use contract::create_app_lifecycle;
+src/lib.rs: pub use contract::detach_app_lifecycle;
+src/lib.rs: pub use contract::dispose_app_lifecycle;
+src/lib.rs: pub use contract::explain_lifecycle_operation;
+src/lib.rs: pub use contract::get_app_launch_kind;
+src/lib.rs: pub use contract::get_app_launch_kind_string;
+src/lib.rs: pub use contract::get_app_lifecycle_state;
+src/lib.rs: pub use contract::get_app_lifecycle_state_string;
+src/lib.rs: pub use contract::get_app_memory_pressure_string;
+src/lib.rs: pub use contract::get_lifecycle_operation_string;
+src/lib.rs: pub use contract::has_lifecycle_operation;
+src/lib.rs: pub use contract::is_app_active;
+src/lib.rs: pub use contract::is_app_background;
+src/lib.rs: pub use contract::is_app_inactive;
+src/lib.rs: pub use contract::parse_app_launch_kind;
+src/lib.rs: pub use contract::parse_app_lifecycle_state;
+src/lib.rs: pub use contract::parse_app_memory_pressure;
+src/lib.rs: pub use contract::parse_lifecycle_operation;
+src/lib.rs: pub use contract::request_app_back;
+src/lifecycle.rs: impl AppLifecycle :: fn detach(&mut self)
+src/lifecycle.rs: impl AppLifecycle :: fn dispose(&mut self)
+src/lifecycle.rs: impl AppLifecycle :: fn new() -> Self
+src/lifecycle.rs: impl AppLifecycle :: fn request_back(&self) -> bool
+src/lifecycle.rs: impl HostLifecycleCapability :: fn app_launch_kind(&self) -> AppLaunchKind
+src/lifecycle.rs: impl HostLifecycleCapability :: fn app_state(&self) -> AppLifecycleState
+src/lifecycle.rs: impl HostLifecycleCapability :: fn attach_app(&self, app: &mut AppLifecycle)
+src/lifecycle.rs: impl HostLifecycleCapability :: fn explain_operation(&self, operation: LifecycleOperation) -> BackendOperationExplanation
+src/lifecycle.rs: impl HostLifecycleCapability :: fn has_operation(&self, operation: LifecycleOperation) -> bool
+src/lifecycle.rs: impl HostLifecycleCapability :: fn is_app_active(&self) -> bool
+src/lifecycle.rs: impl HostLifecycleCapability :: fn is_app_background(&self) -> bool
+src/lifecycle.rs: impl HostLifecycleCapability :: fn is_app_inactive(&self) -> bool
+src/lifecycle.rs: pub fn attach_app_lifecycle(host_lifecycle: &HostLifecycleCapability, app: &mut AppLifecycle)
+src/lifecycle.rs: pub fn create_app_lifecycle() -> AppLifecycle
+src/lifecycle.rs: pub fn detach_app_lifecycle(app: &mut AppLifecycle)
+src/lifecycle.rs: pub fn dispose_app_lifecycle(app: &mut AppLifecycle)
+src/lifecycle.rs: pub fn explain_lifecycle_operation(host_lifecycle: &HostLifecycleCapability, operation: LifecycleOperation,) -> BackendOperationExplanation
+src/lifecycle.rs: pub fn get_app_launch_kind(host_lifecycle: &HostLifecycleCapability) -> AppLaunchKind
+src/lifecycle.rs: pub fn get_app_launch_kind_string(value: AppLaunchKind) -> &'static str
+src/lifecycle.rs: pub fn get_app_lifecycle_state(host_lifecycle: &HostLifecycleCapability) -> AppLifecycleState
+src/lifecycle.rs: pub fn get_app_lifecycle_state_string(value: AppLifecycleState) -> &'static str
+src/lifecycle.rs: pub fn get_app_memory_pressure_string(value: AppMemoryPressure) -> &'static str
+src/lifecycle.rs: pub fn get_lifecycle_operation_string(value: LifecycleOperation) -> &'static str
+src/lifecycle.rs: pub fn has_lifecycle_operation(host_lifecycle: &HostLifecycleCapability, operation: LifecycleOperation,) -> bool
+src/lifecycle.rs: pub fn initialize_app_lifecycle(out: &mut AppLifecycle)
+src/lifecycle.rs: pub fn is_app_active(host_lifecycle: &HostLifecycleCapability) -> bool
+src/lifecycle.rs: pub fn is_app_background(host_lifecycle: &HostLifecycleCapability) -> bool
+src/lifecycle.rs: pub fn is_app_inactive(host_lifecycle: &HostLifecycleCapability) -> bool
+src/lifecycle.rs: pub fn parse_app_launch_kind(value: &str) -> Option<AppLaunchKind>
+src/lifecycle.rs: pub fn parse_app_lifecycle_state(value: &str) -> Option<AppLifecycleState>
+src/lifecycle.rs: pub fn parse_app_memory_pressure(value: &str) -> Option<AppMemoryPressure>
+src/lifecycle.rs: pub fn parse_lifecycle_operation(value: &str) -> Option<LifecycleOperation>
+src/lifecycle.rs: pub fn request_app_back(app: &AppLifecycle) -> bool
+src/types.rs: #[derive(Clone)] pub struct HostLifecycleCapability { pub get_state: Arc<dyn Fn() -> AppLifecycleState + Send + Sync>, pub subscribe: Arc<dyn Fn(LifecycleListener) -> LifecycleUnsubscribe + Send + Sync>, pub get_launch_kind: Option<Arc<dyn Fn() -> AppLaunchKind + Send + Sync>>, pub subscribe_memory_warning: Option<Arc<dyn Fn(LifecycleMemoryWarningListener) -> LifecycleUnsubscribe + Send + Sync>>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AppLaunchKind { Cold, Warm, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AppLifecycleState { Active, Inactive, Background, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AppMemoryPressure { Normal, Moderate, Critical, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum LifecycleOperation { GetState, Subscribe, GetLaunchKind, SubscribeMemoryWarning, }
+src/types.rs: #[derive(Default)] pub struct AppLifecycle { runtime: EntityRuntimeSlot, pub on_state_change: Signal<AppLifecycleState>, pub on_resume: Signal<()>, pub on_pause: Signal<()>, pub on_back_button: Signal<()>, pub on_memory_warning: Signal<AppMemoryPressure>, pub on_save_state: Signal<AppLifecycleStateBag>, pub on_restore_state: Signal<AppLifecycleStateBag>, pub(crate) subscription: Option<LifecycleUnsubscribe>, pub(crate) saved_state: Arc<Mutex<Option<AppLifecycleStateBag>>>, }
+src/types.rs: impl Clone for AppLifecycle
+src/types.rs: impl Clone for AppLifecycle :: fn clone(&self) -> Self
+src/types.rs: impl Entity for AppLifecycle
+src/types.rs: impl Entity for AppLifecycle :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AppLifecycle :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl fmt::Debug for AppLifecycle
+src/types.rs: impl fmt::Debug for AppLifecycle :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub type AppLifecycleStateBag = Ref<Record<Unknown>>;
+src/types.rs: pub type LifecycleListener = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type LifecycleMemoryWarningListener = Arc<dyn Fn(AppMemoryPressure) + Send + Sync>;
+src/types.rs: pub type LifecycleUnsubscribe = Arc<dyn Fn() + Send + Sync>;

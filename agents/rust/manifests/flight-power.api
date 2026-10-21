@@ -14,6 +14,7 @@ src/lib.rs: pub use contract::Power;
 src/lib.rs: pub use contract::PowerBatteryHealth;
 src/lib.rs: pub use contract::PowerBatteryHealthState;
 src/lib.rs: pub use contract::PowerChangeListener;
+src/lib.rs: pub use contract::PowerContext;
 src/lib.rs: pub use contract::PowerIdleState;
 src/lib.rs: pub use contract::PowerKeepAwakeAcquireFuture;
 src/lib.rs: pub use contract::PowerKeepAwakeAcquireReason;
@@ -26,9 +27,11 @@ src/lib.rs: pub use contract::PowerStatus;
 src/lib.rs: pub use contract::PowerThermalListener;
 src/lib.rs: pub use contract::PowerThermalState;
 src/lib.rs: pub use contract::PowerUnsubscribe;
+src/lib.rs: pub use contract::ProviderRef;
 src/lib.rs: pub use contract::acquire_power_keep_awake;
 src/lib.rs: pub use contract::attach_power;
 src/lib.rs: pub use contract::create_power;
+src/lib.rs: pub use contract::create_power_context;
 src/lib.rs: pub use contract::destroy_power_keep_awake;
 src/lib.rs: pub use contract::detach_power;
 src/lib.rs: pub use contract::dispose_power;
@@ -59,13 +62,14 @@ src/lib.rs: pub use contract::set_power_idle_polling_interval_ms;
 src/power.rs: pub fn acquire_power_keep_awake(host_power_keep_awake: &HostPowerKeepAwakeCapability, mode: Option<PowerKeepAwakeMode>,) -> PowerKeepAwakeAcquireFuture
 src/power.rs: pub fn attach_power(host_power_status: Option<&HostPowerStatusCapability>, host_power_change: Option<&HostPowerChangeCapability>, host_power_session_lock: Option<&HostPowerSessionLockCapability>, host_power_suspension: Option<&HostPowerSuspensionCapability>, host_power_thermal: Option<&HostPowerThermalCapability>, host_power_idle: Option<&HostPowerIdleCapability>, power: &mut Power, idle_threshold_seconds: Option<f32>,)
 src/power.rs: pub fn create_power() -> Power
-src/power.rs: pub fn destroy_power_keep_awake(host_power_keep_awake: &[&HostPowerKeepAwakeCapability])
+src/power.rs: pub fn create_power_context() -> PowerContext
+src/power.rs: pub fn destroy_power_keep_awake(host_power_keep_awake: &[&HostPowerKeepAwakeCapability], context: &mut PowerContext,)
 src/power.rs: pub fn detach_power(power: &mut Power)
 src/power.rs: pub fn dispose_power(power: &mut Power)
 src/power.rs: pub fn enable_power_signals(power: &mut Power)
 src/power.rs: pub fn get_power_battery_health(host_power_battery_health: &HostPowerBatteryHealthCapability, out: &mut PowerBatteryHealth,) -> PowerBatteryHealth
 src/power.rs: pub fn get_power_battery_health_state_string(value: PowerBatteryHealthState) -> &'static str
-src/power.rs: pub fn get_power_idle_polling_interval_ms() -> f32
+src/power.rs: pub fn get_power_idle_polling_interval_ms(context: &PowerContext) -> f32
 src/power.rs: pub fn get_power_idle_state_string(value: PowerIdleState) -> &'static str
 src/power.rs: pub fn get_power_keep_awake_acquire_reason_string(value: PowerKeepAwakeAcquireReason) -> &'static str
 src/power.rs: pub fn get_power_keep_awake_mode_string(value: PowerKeepAwakeMode) -> &'static str
@@ -86,7 +90,7 @@ src/power.rs: pub fn parse_power_keep_awake_mode(value: &str) -> Option<PowerKee
 src/power.rs: pub fn parse_power_keep_awake_release_reason(value: &str) -> Option<PowerKeepAwakeReleaseReason>
 src/power.rs: pub fn parse_power_thermal_state(value: &str) -> Option<PowerThermalState>
 src/power.rs: pub fn release_power_keep_awake(host_power_keep_awake: &HostPowerKeepAwakeCapability,) -> PowerKeepAwakeReleaseFuture
-src/power.rs: pub fn set_power_idle_polling_interval_ms(interval_ms: f32)
+src/power.rs: pub fn set_power_idle_polling_interval_ms(context: &mut PowerContext, interval_ms: f32)
 src/sugar.rs: impl HostPowerBatteryHealthCapability :: fn get_battery_health(&self, out: &mut PowerBatteryHealth) -> PowerBatteryHealth
 src/sugar.rs: impl HostPowerIdleCapability :: fn get_idle_state(&self, threshold_seconds: f32) -> PowerIdleState
 src/sugar.rs: impl HostPowerIdleCapability :: fn get_idle_time(&self) -> f32
@@ -103,6 +107,7 @@ src/sugar.rs: impl Power :: fn new() -> Self
 src/sugar.rs: impl PowerBatteryHealth :: fn new() -> Self
 src/sugar.rs: impl PowerBatteryHealthState :: fn parse(value: &str) -> Option<Self>
 src/sugar.rs: impl PowerBatteryHealthState :: fn to_str(self) -> &'static str
+src/sugar.rs: impl PowerContext :: fn new() -> Self
 src/sugar.rs: impl PowerIdleState :: fn parse(value: &str) -> Option<Self>
 src/sugar.rs: impl PowerIdleState :: fn to_str(self) -> &'static str
 src/sugar.rs: impl PowerKeepAwakeAcquireReason :: fn parse(value: &str) -> Option<Self>
@@ -117,7 +122,7 @@ src/sugar.rs: impl PowerThermalState :: fn to_str(self) -> &'static str
 src/types.rs: #[derive(Clone)] pub struct HostPowerBatteryHealthCapability { pub get_battery_health: Arc<dyn Fn(&mut PowerBatteryHealth) -> PowerBatteryHealth + Send + Sync>, }
 src/types.rs: #[derive(Clone)] pub struct HostPowerChangeCapability { pub subscribe: Arc<dyn Fn(PowerChangeListener) -> PowerUnsubscribe + Send + Sync>, }
 src/types.rs: #[derive(Clone)] pub struct HostPowerIdleCapability { pub get_idle_state: Arc<dyn Fn(f32) -> PowerIdleState + Send + Sync>, pub get_idle_time_seconds: Arc<dyn Fn() -> f32 + Send + Sync>, }
-src/types.rs: #[derive(Clone)] pub struct HostPowerKeepAwakeCapability { pub acquire: Arc<dyn Fn(PowerKeepAwakeMode) -> PowerKeepAwakeAcquireFuture + Send + Sync>, pub destroy: Option<Arc<dyn Fn() + Send + Sync>>, pub is_active: Arc<dyn Fn() -> bool + Send + Sync>, pub release: Arc<dyn Fn() -> PowerKeepAwakeReleaseFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostPowerKeepAwakeCapability { pub acquire: Arc<dyn Fn(PowerKeepAwakeMode) -> PowerKeepAwakeAcquireFuture + Send + Sync>, pub destroy: Option<Arc<dyn Fn() + Send + Sync>>, pub is_active: Arc<dyn Fn() -> bool + Send + Sync>, pub provider: ProviderRef, pub release: Arc<dyn Fn() -> PowerKeepAwakeReleaseFuture + Send + Sync>, }
 src/types.rs: #[derive(Clone)] pub struct HostPowerSessionLockCapability { pub subscribe_lock: Arc<dyn Fn(PowerChangeListener) -> PowerUnsubscribe + Send + Sync>, pub subscribe_unlock: Arc<dyn Fn(PowerChangeListener) -> PowerUnsubscribe + Send + Sync>, }
 src/types.rs: #[derive(Clone)] pub struct HostPowerStatusCapability { pub get_status: Arc<dyn Fn(&mut PowerStatus) -> PowerStatus + Send + Sync>, }
 src/types.rs: #[derive(Clone)] pub struct HostPowerSuspensionCapability { pub subscribe_resume: Arc<dyn Fn(PowerChangeListener) -> PowerUnsubscribe + Send + Sync>, pub subscribe_suspend: Arc<dyn Fn(PowerChangeListener) -> PowerUnsubscribe + Send + Sync>, }
@@ -151,8 +156,10 @@ src/types.rs: impl Entity for Power :: fn entity_runtime_mut(&mut self) -> &mut 
 src/types.rs: impl fmt::Debug for Power
 src/types.rs: impl fmt::Debug for Power :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
 src/types.rs: pub struct Power { runtime: EntityRuntimeSlot, pub on_change: Option<Signal<PowerStatus>>, pub on_charging: Option<Signal<()>>, pub on_discharging: Option<Signal<()>>, pub on_idle_state_change: Option<Signal<()>>, pub on_lock_screen: Option<Signal<()>>, pub on_resume: Option<Signal<()>>, pub on_suspend: Option<Signal<()>>, pub on_thermal_state_change: Option<Signal<PowerThermalState>>, pub on_unlock_screen: Option<Signal<()>>, pub(crate) subscriptions: Option<Vec<PowerUnsubscribe>>, }
+src/types.rs: pub struct PowerContext { pub(crate) destroyed: Vec<Weak<dyn Any + Send + Sync>>, pub(crate) idle_polling_interval_ms: f32, }
 src/types.rs: pub type PowerChangeListener = Arc<dyn Fn() + Send + Sync>;
 src/types.rs: pub type PowerKeepAwakeAcquireFuture = Pin<Box<dyn Future<Output = PowerKeepAwakeAcquireResult> + Send>>;
 src/types.rs: pub type PowerKeepAwakeReleaseFuture = Pin<Box<dyn Future<Output = PowerKeepAwakeReleaseResult> + Send>>;
 src/types.rs: pub type PowerThermalListener = Arc<dyn Fn(PowerThermalState) + Send + Sync>;
 src/types.rs: pub type PowerUnsubscribe = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub use flight_hostcapability::ProviderRef;
