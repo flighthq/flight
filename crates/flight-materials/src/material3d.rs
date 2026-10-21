@@ -18,6 +18,7 @@ pub fn create_material3d(kind: Kind, opts: Option<&Material3DOptions>) -> Materi
     return material;
 }
 
+// flight-lint: allow(conform-extra) D12: Rust exposes initializer separately for reuse; TS only has createMaterial3D
 pub fn initialize_material3d(
     material: &mut Material3D,
     kind: Kind,

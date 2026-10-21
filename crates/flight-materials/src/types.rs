@@ -534,6 +534,7 @@ pub struct ColorScaleBiasOptions {
 
 #[derive(Clone, Debug, Default)]
 pub struct BlinnPhongMaterialOptions {
+    pub name: Option<String>,
     pub alpha_cutoff: Option<f32>,
     pub alpha_mode: Option<MaterialAlphaMode>,
     pub blend_mode: Option<BlendMode>,
@@ -550,6 +551,7 @@ pub struct BlinnPhongMaterialOptions {
 
 #[derive(Clone, Debug, Default)]
 pub struct LambertMaterialOptions {
+    pub name: Option<String>,
     pub alpha_cutoff: Option<f32>,
     pub alpha_mode: Option<MaterialAlphaMode>,
     pub blend_mode: Option<BlendMode>,
@@ -562,6 +564,7 @@ pub struct LambertMaterialOptions {
 
 #[derive(Clone, Debug, Default)]
 pub struct PhongMaterialOptions {
+    pub name: Option<String>,
     pub alpha_cutoff: Option<f32>,
     pub alpha_mode: Option<MaterialAlphaMode>,
     pub blend_mode: Option<BlendMode>,
@@ -577,6 +580,7 @@ pub struct PhongMaterialOptions {
 
 #[derive(Clone, Debug, Default)]
 pub struct DepthMaterialOptions {
+    pub name: Option<String>,
     pub alpha_cutoff: Option<f32>,
     pub alpha_mode: Option<MaterialAlphaMode>,
     pub blend_mode: Option<BlendMode>,
@@ -587,6 +591,7 @@ pub struct DepthMaterialOptions {
 
 #[derive(Clone, Debug, Default)]
 pub struct EmissiveMaterialOptions {
+    pub name: Option<String>,
     pub alpha_cutoff: Option<f32>,
     pub alpha_mode: Option<MaterialAlphaMode>,
     pub blend_mode: Option<BlendMode>,
@@ -598,6 +603,7 @@ pub struct EmissiveMaterialOptions {
 
 #[derive(Clone, Debug, Default)]
 pub struct MatcapMaterialOptions {
+    pub name: Option<String>,
     pub alpha_cutoff: Option<f32>,
     pub alpha_mode: Option<MaterialAlphaMode>,
     pub blend_mode: Option<BlendMode>,
@@ -608,6 +614,7 @@ pub struct MatcapMaterialOptions {
 
 #[derive(Clone, Debug, Default)]
 pub struct NormalMaterialOptions {
+    pub name: Option<String>,
     pub alpha_cutoff: Option<f32>,
     pub alpha_mode: Option<MaterialAlphaMode>,
     pub blend_mode: Option<BlendMode>,
@@ -618,6 +625,7 @@ pub struct NormalMaterialOptions {
 
 #[derive(Clone, Debug, Default)]
 pub struct ToonMaterialOptions {
+    pub name: Option<String>,
     pub alpha_cutoff: Option<f32>,
     pub alpha_mode: Option<MaterialAlphaMode>,
     pub blend_mode: Option<BlendMode>,
@@ -630,6 +638,7 @@ pub struct ToonMaterialOptions {
 
 #[derive(Clone, Debug, Default)]
 pub struct UnlitMaterialOptions {
+    pub name: Option<String>,
     pub alpha_cutoff: Option<f32>,
     pub alpha_mode: Option<MaterialAlphaMode>,
     pub blend_mode: Option<BlendMode>,
@@ -640,6 +649,7 @@ pub struct UnlitMaterialOptions {
 
 #[derive(Clone, Debug, Default)]
 pub struct VertexColorMaterialOptions {
+    pub name: Option<String>,
     pub alpha_cutoff: Option<f32>,
     pub alpha_mode: Option<MaterialAlphaMode>,
     pub blend_mode: Option<BlendMode>,
@@ -649,6 +659,7 @@ pub struct VertexColorMaterialOptions {
 
 #[derive(Clone, Debug, Default)]
 pub struct WireframeMaterialOptions {
+    pub name: Option<String>,
     pub alpha_cutoff: Option<f32>,
     pub alpha_mode: Option<MaterialAlphaMode>,
     pub blend_mode: Option<BlendMode>,
@@ -676,6 +687,7 @@ pub struct StandardPbrMaterialPropertiesOptions {
 
 #[derive(Clone, Debug, Default)]
 pub struct StandardPbrMaterialOptions {
+    pub name: Option<String>,
     pub alpha_cutoff: Option<f32>,
     pub alpha_mode: Option<MaterialAlphaMode>,
     pub blend_mode: Option<BlendMode>,
@@ -697,6 +709,7 @@ pub struct StandardPbrMaterialOptions {
 
 #[derive(Clone, Debug, Default)]
 pub struct SpecularGlossinessPbrMaterialOptions {
+    pub name: Option<String>,
     pub alpha_cutoff: Option<f32>,
     pub alpha_mode: Option<MaterialAlphaMode>,
     pub blend_mode: Option<BlendMode>,
@@ -717,6 +730,7 @@ pub struct SpecularGlossinessPbrMaterialOptions {
 
 #[derive(Clone, Debug, Default)]
 pub struct ExtendedPbrMaterialOptions {
+    pub name: Option<String>,
     pub alpha_cutoff: Option<f32>,
     pub alpha_mode: Option<MaterialAlphaMode>,
     pub blend_mode: Option<BlendMode>,
@@ -727,6 +741,7 @@ pub struct ExtendedPbrMaterialOptions {
 
 #[derive(Clone, Debug, Default)]
 pub struct CustomShaderMaterialOptions {
+    pub name: Option<String>,
     pub alpha_cutoff: Option<f32>,
     pub alpha_mode: Option<MaterialAlphaMode>,
     pub blend_mode: Option<BlendMode>,

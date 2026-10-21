@@ -7,6 +7,7 @@ pub fn disable_material_conversion_guards() {
 }
 
 // flight-lint: allow(f64) D1: the injected clock returns millisecond operation timestamps
+// flight-lint: allow(conform-params) D5: Rust requires explicit log state and clock; TS uses module-scoped logOnce
 pub fn enable_material_conversion_guards(log_state: LogStateRef, now_ms: f64) {
     let guard = Box::new(move |explanation: &MaterialConversionExplanation, conversion: &str| {
         warn_material_conversion_drop(&log_state, now_ms, explanation, conversion);

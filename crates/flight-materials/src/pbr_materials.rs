@@ -5,83 +5,77 @@ use flight_entity::allocate_entity;
 
 use crate::{
     MaterialAlphaMode, MaterialConversionExplanation, MaterialConversionGuard,
-    SpecularGlossinessPbrMaterial, StandardPbrMaterial, StandardPbrMaterialProperties,
+    SpecularGlossinessPbrMaterial, SpecularGlossinessPbrMaterialOptions,
+    StandardPbrMaterial, StandardPbrMaterialOptions,
+    StandardPbrMaterialProperties, StandardPbrMaterialPropertiesOptions,
     BLEND_MODE_NORMAL, SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND,
     STANDARD_PBR_MATERIAL_KIND,
     explain_material_conversion::explain_specular_glossiness_conversion,
 };
 
-pub fn create_specular_glossiness_pbr_material() -> SpecularGlossinessPbrMaterial {
+pub fn create_specular_glossiness_pbr_material(opts: Option<&SpecularGlossinessPbrMaterialOptions>) -> SpecularGlossinessPbrMaterial {
     let mut m: SpecularGlossinessPbrMaterial = allocate_entity();
     m.kind = SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND.to_string();
-    m.name = None;
-    m.alpha_cutoff = 0.5;
-    m.alpha_mode = MaterialAlphaMode::Opaque;
-    m.blend_mode = BLEND_MODE_NORMAL.to_string();
-    m.double_sided = false;
-    m.diffuse = 0xffffffff;
-    m.diffuse_map = None;
-    m.emissive = 0x000000ff;
-    m.emissive_map = None;
-    m.emissive_strength = 1.0;
-    m.glossiness = 1.0;
-    m.normal_map = None;
-    m.normal_scale = 1.0;
-    m.occlusion_map = None;
-    m.occlusion_strength = 1.0;
-    m.specular = 0xffffffff;
-    m.specular_glossiness_map = None;
+    m.name = opts.and_then(|o| o.name.clone());
+    m.alpha_cutoff = opts.and_then(|o| o.alpha_cutoff).unwrap_or(0.5);
+    m.alpha_mode = opts.and_then(|o| o.alpha_mode).unwrap_or(MaterialAlphaMode::Opaque);
+    m.blend_mode = opts.and_then(|o| o.blend_mode.clone()).unwrap_or_else(|| BLEND_MODE_NORMAL.to_string());
+    m.double_sided = opts.and_then(|o| o.double_sided).unwrap_or(false);
+    m.diffuse = opts.and_then(|o| o.diffuse).unwrap_or(0xffffffff);
+    m.diffuse_map = opts.and_then(|o| o.diffuse_map.clone());
+    m.emissive = opts.and_then(|o| o.emissive).unwrap_or(0x000000ff);
+    m.emissive_map = opts.and_then(|o| o.emissive_map.clone());
+    m.emissive_strength = opts.and_then(|o| o.emissive_strength).unwrap_or(1.0);
+    m.glossiness = opts.and_then(|o| o.glossiness).unwrap_or(1.0);
+    m.normal_map = opts.and_then(|o| o.normal_map.clone());
+    m.normal_scale = opts.and_then(|o| o.normal_scale).unwrap_or(1.0);
+    m.occlusion_map = opts.and_then(|o| o.occlusion_map.clone());
+    m.occlusion_strength = opts.and_then(|o| o.occlusion_strength).unwrap_or(1.0);
+    m.specular = opts.and_then(|o| o.specular).unwrap_or(0xffffffff);
+    m.specular_glossiness_map = opts.and_then(|o| o.specular_glossiness_map.clone());
     return m;
 }
 
-pub fn create_standard_pbr_material() -> StandardPbrMaterial {
+pub fn create_standard_pbr_material(opts: Option<&StandardPbrMaterialOptions>) -> StandardPbrMaterial {
     let mut m: StandardPbrMaterial = allocate_entity();
     m.kind = STANDARD_PBR_MATERIAL_KIND.to_string();
-    m.name = None;
-    m.alpha_cutoff = 0.5;
-    m.alpha_mode = MaterialAlphaMode::Opaque;
-    m.blend_mode = BLEND_MODE_NORMAL.to_string();
-    m.double_sided = false;
-    assign_standard_pbr_material_properties_default(&mut m);
+    m.name = opts.and_then(|o| o.name.clone());
+    m.alpha_cutoff = opts.and_then(|o| o.alpha_cutoff).unwrap_or(0.5);
+    m.alpha_mode = opts.and_then(|o| o.alpha_mode).unwrap_or(MaterialAlphaMode::Opaque);
+    m.blend_mode = opts.and_then(|o| o.blend_mode.clone()).unwrap_or_else(|| BLEND_MODE_NORMAL.to_string());
+    m.double_sided = opts.and_then(|o| o.double_sided).unwrap_or(false);
+    m.alpha_map = opts.and_then(|o| o.alpha_map.clone());
+    m.base_color = opts.and_then(|o| o.base_color).unwrap_or(0xffffffff);
+    m.base_color_map = opts.and_then(|o| o.base_color_map.clone());
+    m.emissive = opts.and_then(|o| o.emissive).unwrap_or(0x000000ff);
+    m.emissive_map = opts.and_then(|o| o.emissive_map.clone());
+    m.emissive_strength = opts.and_then(|o| o.emissive_strength).unwrap_or(1.0);
+    m.metallic = opts.and_then(|o| o.metallic).unwrap_or(0.0);
+    m.metallic_roughness_map = opts.and_then(|o| o.metallic_roughness_map.clone());
+    m.normal_map = opts.and_then(|o| o.normal_map.clone());
+    m.normal_scale = opts.and_then(|o| o.normal_scale).unwrap_or(1.0);
+    m.occlusion_map = opts.and_then(|o| o.occlusion_map.clone());
+    m.occlusion_strength = opts.and_then(|o| o.occlusion_strength).unwrap_or(1.0);
+    m.roughness = opts.and_then(|o| o.roughness).unwrap_or(1.0);
     return m;
 }
 
-pub fn create_standard_pbr_material_properties() -> StandardPbrMaterialProperties {
+pub fn create_standard_pbr_material_properties(opts: Option<&StandardPbrMaterialPropertiesOptions>) -> StandardPbrMaterialProperties {
     let mut properties = StandardPbrMaterialProperties::default();
-    assign_standard_pbr_material_properties_defaults(&mut properties);
+    properties.alpha_map = opts.and_then(|o| o.alpha_map.clone());
+    properties.base_color = opts.and_then(|o| o.base_color).unwrap_or(0xffffffff);
+    properties.base_color_map = opts.and_then(|o| o.base_color_map.clone());
+    properties.emissive = opts.and_then(|o| o.emissive).unwrap_or(0x000000ff);
+    properties.emissive_map = opts.and_then(|o| o.emissive_map.clone());
+    properties.emissive_strength = opts.and_then(|o| o.emissive_strength).unwrap_or(1.0);
+    properties.metallic = opts.and_then(|o| o.metallic).unwrap_or(0.0);
+    properties.metallic_roughness_map = opts.and_then(|o| o.metallic_roughness_map.clone());
+    properties.normal_map = opts.and_then(|o| o.normal_map.clone());
+    properties.normal_scale = opts.and_then(|o| o.normal_scale).unwrap_or(1.0);
+    properties.occlusion_map = opts.and_then(|o| o.occlusion_map.clone());
+    properties.occlusion_strength = opts.and_then(|o| o.occlusion_strength).unwrap_or(1.0);
+    properties.roughness = opts.and_then(|o| o.roughness).unwrap_or(1.0);
     return properties;
-}
-
-fn assign_standard_pbr_material_properties_default(target: &mut StandardPbrMaterial) {
-    target.alpha_map = None;
-    target.base_color = 0xffffffff;
-    target.base_color_map = None;
-    target.emissive = 0x000000ff;
-    target.emissive_map = None;
-    target.emissive_strength = 1.0;
-    target.metallic = 0.0;
-    target.metallic_roughness_map = None;
-    target.normal_map = None;
-    target.normal_scale = 1.0;
-    target.occlusion_map = None;
-    target.occlusion_strength = 1.0;
-    target.roughness = 1.0;
-}
-
-fn assign_standard_pbr_material_properties_defaults(target: &mut StandardPbrMaterialProperties) {
-    target.alpha_map = None;
-    target.base_color = 0xffffffff;
-    target.base_color_map = None;
-    target.emissive = 0x000000ff;
-    target.emissive_map = None;
-    target.emissive_strength = 1.0;
-    target.metallic = 0.0;
-    target.metallic_roughness_map = None;
-    target.normal_map = None;
-    target.normal_scale = 1.0;
-    target.occlusion_map = None;
-    target.occlusion_strength = 1.0;
-    target.roughness = 1.0;
 }
 
 pub fn convert_specular_glossiness_to_standard_pbr(

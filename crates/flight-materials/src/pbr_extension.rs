@@ -1,6 +1,6 @@
 use crate::PbrExtension;
 
-pub fn get_pbr_extension_kind(extension: &PbrExtension) -> &str {
+pub(crate) fn get_pbr_extension_kind(extension: &PbrExtension) -> &str {
     return match extension {
         PbrExtension::Anisotropy(e) => &e.kind,
         PbrExtension::Clearcoat(e) => &e.kind,

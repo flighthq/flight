@@ -1,26 +1,26 @@
 use flight_entity::allocate_entity;
 
 use crate::{
-    IridescencePbrExtension, IRIDESCENCE_PBR_EXTENSION_KIND,
+    IridescencePbrExtension, IridescencePbrExtensionOptions, IRIDESCENCE_PBR_EXTENSION_KIND,
     material_validation::{is_valid_material_ior, is_valid_material_iridescence_thickness, is_valid_material_weight},
     pbr_extension::is_valid_pbr_uv_set,
 };
 
-pub fn create_iridescence_pbr_extension() -> IridescencePbrExtension {
+pub fn create_iridescence_pbr_extension(opts: Option<&IridescencePbrExtensionOptions>) -> IridescencePbrExtension {
     let mut out: IridescencePbrExtension = allocate_entity();
-    initialize_iridescence_pbr_extension(&mut out);
+    initialize_iridescence_pbr_extension(&mut out, opts);
     return out;
 }
 
-pub fn initialize_iridescence_pbr_extension(out: &mut IridescencePbrExtension) {
-    out.iridescence = 0.0;
-    out.iridescence_ior = 1.3;
-    out.iridescence_map = None;
-    out.iridescence_map_uv_set = 0;
-    out.iridescence_thickness_map = None;
-    out.iridescence_thickness_map_uv_set = 0;
-    out.iridescence_thickness_max = 400.0;
-    out.iridescence_thickness_min = 100.0;
+pub fn initialize_iridescence_pbr_extension(out: &mut IridescencePbrExtension, opts: Option<&IridescencePbrExtensionOptions>) {
+    out.iridescence = opts.and_then(|o| o.iridescence).unwrap_or(0.0);
+    out.iridescence_ior = opts.and_then(|o| o.iridescence_ior).unwrap_or(1.3);
+    out.iridescence_map = opts.and_then(|o| o.iridescence_map.clone());
+    out.iridescence_map_uv_set = opts.and_then(|o| o.iridescence_map_uv_set).unwrap_or(0);
+    out.iridescence_thickness_map = opts.and_then(|o| o.iridescence_thickness_map.clone());
+    out.iridescence_thickness_map_uv_set = opts.and_then(|o| o.iridescence_thickness_map_uv_set).unwrap_or(0);
+    out.iridescence_thickness_max = opts.and_then(|o| o.iridescence_thickness_max).unwrap_or(400.0);
+    out.iridescence_thickness_min = opts.and_then(|o| o.iridescence_thickness_min).unwrap_or(100.0);
     out.kind = IRIDESCENCE_PBR_EXTENSION_KIND.to_string();
 }
 

@@ -1,19 +1,19 @@
 use flight_color::get_color_luminance;
 
 use crate::{
-    PhongMaterial, StandardPbrMaterial,
+    PhongMaterial, StandardPbrMaterial, StandardPbrMaterialOptions,
     explain_material_conversion::explain_phong_conversion,
     pbr_materials::{create_standard_pbr_material, report_material_conversion_drop},
 };
 
-pub fn convert_phong_to_standard_pbr_material(phong: &PhongMaterial) -> StandardPbrMaterial {
+pub fn convert_phong_to_standard_pbr_material(phong: &PhongMaterial, opts: Option<&StandardPbrMaterialOptions>) -> StandardPbrMaterial {
     if phong.specular_map.is_some() {
         report_material_conversion_drop(
             &explain_phong_conversion(phong),
             "convert_phong_to_standard_pbr_material",
         );
     }
-    let mut m = create_standard_pbr_material();
+    let mut m = create_standard_pbr_material(opts);
     m.base_color = phong.diffuse;
     m.base_color_map = phong.diffuse_map.clone();
     m.metallic = get_pbr_metallic_from_phong_specular(phong.specular, phong.diffuse);
