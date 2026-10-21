@@ -13,6 +13,7 @@ pub enum FlightErrorKind {
     NotReadableError,
     NotSupportedError,
     RangeError,
+    SyntaxError,
     TypeError,
 }
 
@@ -45,6 +46,7 @@ pub fn get_flight_error_kind_string(value: FlightErrorKind) -> &'static str {
         FlightErrorKind::NotReadableError => "NotReadableError",
         FlightErrorKind::NotSupportedError => "NotSupportedError",
         FlightErrorKind::RangeError => "RangeError",
+        FlightErrorKind::SyntaxError => "SyntaxError",
         FlightErrorKind::TypeError => "TypeError",
     };
 }
@@ -56,6 +58,7 @@ pub fn parse_flight_error_kind(value: &str) -> Option<FlightErrorKind> {
         "NotReadableError" => Some(FlightErrorKind::NotReadableError),
         "NotSupportedError" => Some(FlightErrorKind::NotSupportedError),
         "RangeError" => Some(FlightErrorKind::RangeError),
+        "SyntaxError" => Some(FlightErrorKind::SyntaxError),
         "TypeError" => Some(FlightErrorKind::TypeError),
         _ => None,
     };
@@ -73,6 +76,14 @@ pub fn throw_error(message: &str) -> ! {
 pub fn throw_range_error(message: &str) -> ! {
     std::panic::panic_any(FlightError {
         kind: FlightErrorKind::RangeError,
+        message: message.to_string(),
+    });
+}
+
+// flight-lint: allow(conform-extra) D10 IR translation primitive for TS `throw new SyntaxError(...)`; no TS package function exists
+pub fn throw_syntax_error(message: &str) -> ! {
+    std::panic::panic_any(FlightError {
+        kind: FlightErrorKind::SyntaxError,
         message: message.to_string(),
     });
 }

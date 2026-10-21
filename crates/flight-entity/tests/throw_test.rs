@@ -61,6 +61,10 @@ mod get_flight_error_kind_string {
             "RangeError"
         );
         assert_eq!(
+            get_flight_error_kind_string(FlightErrorKind::SyntaxError),
+            "SyntaxError"
+        );
+        assert_eq!(
             get_flight_error_kind_string(FlightErrorKind::TypeError),
             "TypeError"
         );
@@ -87,6 +91,10 @@ mod parse_flight_error_kind {
         assert_eq!(
             parse_flight_error_kind("RangeError"),
             Some(FlightErrorKind::RangeError)
+        );
+        assert_eq!(
+            parse_flight_error_kind("SyntaxError"),
+            Some(FlightErrorKind::SyntaxError)
         );
         assert_eq!(
             parse_flight_error_kind("TypeError"),
@@ -121,6 +129,17 @@ mod throw_range_error {
         let error = panic_payload(|| throw_range_error("index out of range"));
         assert_eq!(error.kind, FlightErrorKind::RangeError);
         assert_eq!(error.message, "index out of range");
+    }
+}
+
+mod throw_syntax_error {
+    use super::*;
+
+    #[test]
+    fn panics_with_the_syntax_error_kind_and_message() {
+        let error = panic_payload(|| throw_syntax_error("invalid regular expression"));
+        assert_eq!(error.kind, FlightErrorKind::SyntaxError);
+        assert_eq!(error.message, "invalid regular expression");
     }
 }
 
