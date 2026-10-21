@@ -528,12 +528,11 @@ Totals: order 5, count 57, names 94, missing 75, extra 112.
 - `set_intl_segmenter_available`
 - `web_text_segmenter_backend`
 
-## flight-tween (4)
+## flight-tween (3)
 
-**extra** (4)
+**extra** (3)
 
 - `create_tween_default`
-- `create_tween_target`
 - `default_manager`
 - `target_key`
 
