@@ -155,6 +155,8 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
 - **Family pattern for platform families** (Surface, TextureSource): `*Fields` + per-kind structs + family trait. Callbacks take `&Ref<dyn Family>`, so the original derived object is preserved.
 - **Declared types are the contract:** TS tests that inject values violating their own declared types (unchecked casts of JSON.parse output, wrong-typed callback returns, throwing getters, `instanceof` on declared types) are listed as non-representable in the package report. They are not ported as ignored tests. Schema-valid cases port fully. A dynamic value model is used only where the TS *declared* domain is arbitrary data (snapshot).
 - **Byte chunk streams:** `ByteChunkStream` (flight-stream) → `AsyncIterable<Readonly<Uint8Array>>`, with Unknown errors. `abort_writable_stream(reason: Option<Unknown>)` plus an optional abort hook. `await writer.write(chunk)` lowers to write-all.
+- **Entity-capable callback records** (TS factory returns `X & Entity`): X itself carries the private runtime (D12), plus a `create_x(callbacks…)` constructor for caller-authored instances (`allow(conform-extra)`). No wrapper types.
+- **Log object values:** `LogValue::Object(Arc<dyn Any + Send + Sync>)` keeps the original reference; text sinks render it via `unknown_to_js_string`.
 - **Non-empty variadic tuple** (`[T, ...T[]]`): `Vec<T>`, validated non-empty at the boundary.
 
 ## Choosing an array type (user, 2026-10-20)
