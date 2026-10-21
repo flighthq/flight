@@ -1,16 +1,17 @@
 //! D10 error primitives: a TypeScript `throw` translates to a typed panic whose payload names
 //! the error class, so the transpiler can emit `throw new Error(...)`, `RangeError`, `TypeError`,
-//! or the approved `NotReadableError` DOMException and an FFI boundary can catch it and return a
-//! status.
+//! `NotReadableError` / `NotSupportedError` DOMExceptions, and an FFI boundary can catch it and
+//! return a status.
 
 use std::any::Any;
 use std::sync::{Arc, Mutex, MutexGuard};
 
-/// The error class a typed panic translates to, including the Blob reader's DOMException name.
+/// The error class a typed panic translates to, including approved DOMException names.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FlightErrorKind {
     Error,
     NotReadableError,
+    NotSupportedError,
     RangeError,
     TypeError,
 }
@@ -42,6 +43,7 @@ pub fn get_flight_error_kind_string(value: FlightErrorKind) -> &'static str {
     return match value {
         FlightErrorKind::Error => "Error",
         FlightErrorKind::NotReadableError => "NotReadableError",
+        FlightErrorKind::NotSupportedError => "NotSupportedError",
         FlightErrorKind::RangeError => "RangeError",
         FlightErrorKind::TypeError => "TypeError",
     };
@@ -52,6 +54,7 @@ pub fn parse_flight_error_kind(value: &str) -> Option<FlightErrorKind> {
     return match value {
         "Error" => Some(FlightErrorKind::Error),
         "NotReadableError" => Some(FlightErrorKind::NotReadableError),
+        "NotSupportedError" => Some(FlightErrorKind::NotSupportedError),
         "RangeError" => Some(FlightErrorKind::RangeError),
         "TypeError" => Some(FlightErrorKind::TypeError),
         _ => None,

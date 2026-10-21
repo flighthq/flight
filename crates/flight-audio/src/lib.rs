@@ -1,6 +1,9 @@
+mod audio_buffer;
 mod audio_decode_slot;
 mod audio_format;
+mod audio_resource;
 mod audio_resource_source;
+mod decode_audio_resource_bytes;
 mod types;
 
 pub mod contract;
@@ -29,3 +32,17 @@ pub use contract::infer_audio_mime_type;
 pub use contract::parse_audio_channel_state;
 pub use contract::parse_audio_resource_failure_kind;
 pub use contract::parse_audio_resource_reference_kind;
+pub use contract::AudioBuffer;
+pub use contract::AudioResource;
+pub use contract::clone_audio_resource;
+pub use contract::copy_to_audio_buffer_channel;
+pub use contract::create_audio_buffer;
+pub use contract::create_audio_resource;
+pub use contract::dispose_audio_resource;
+pub use contract::get_audio_resource_byte_size;
+pub use contract::get_audio_resource_channel_count;
+pub use contract::get_audio_resource_channel_data;
+pub use contract::get_audio_resource_duration;
+pub use contract::get_audio_resource_sample_rate;
+pub use contract::has_audio_resource_buffer;
+pub use contract::is_audio_resource_empty;

@@ -43,6 +43,7 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "Vec<T> (nonempty at consuming API boundary)", ts: "readonly [T, ...T[]]", cpp: "std::vector<T>", haxe: "Array<T>", status: Status::Established, note: "Validate nonemptiness at the consuming API boundary; no distinct Rust wrapper type" },
     Entry { rust: "&mut [N] / [N; LEN] (N numeric)", ts: "Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array", cpp: "std::span<N> / std::array<N, LEN>", haxe: "haxe.io.Float32Array etc.", status: Status::Established, note: "Fixed length (user 2026-10-20): the typed array is picked by element type. `usize`/`bool` slices have no typed array (open)" },
     Entry { rust: "Box<[N]> (N numeric)", ts: "the matching typed array", cpp: "std::unique_ptr<N[]> + length", haxe: "haxe.io.Float32Array etc.", status: Status::Established, note: "Owned, fixed length set at creation (vertex data, pixels, index buffers); user 2026-10-20" },
+    Entry { rust: "Box<[T]> (T non-numeric)", ts: "readonly T[] with fixed creation-time length", cpp: "std::vector<T> with fixed creation-time length", haxe: "Array<T>", status: Status::Established, note: "Principal batch 10 AudioBuffer channel table: Box<[Ref<Box<[f32]>>]> owns a fixed set of shared mutable Float32Array channel handles; this row does not turn ordinary TS arrays into typed arrays" },
     Entry { rust: "&Vec<N> (read-only)", ts: "readonly number[]", cpp: "const std::vector<N>&", haxe: "Array<N>", status: Status::Established, note: "Input that must be a plain array (user 2026-10-20: specific over permissive). Workspace allows clippy::ptr_arg" },
     Entry { rust: "Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array (aliases of [f32] etc., defined in flight-entity)", ts: "the same typed array", cpp: "std::span<N>", haxe: "haxe.io.Float32Array etc.", status: Status::Established, note: "For a TS API that declares a typed array: `&Float32Array` → `Readonly<Float32Array>` while Rust still accepts any f32 slice; `&mut Float32Array` / `Box<Float32Array>` also allowed. Specific in TS, idiomatic in Rust" },
     Entry { rust: "&[N] (N numeric, read-only)", ts: "ArrayLike<number>", cpp: "std::span<const N>", haxe: "haxe.io.Float32Array etc.", status: Status::Established, note: "Input that is deliberately general: accepts either array kind (user 2026-10-20). Use it only when general is intended; prefer the specific forms" },
@@ -265,6 +266,14 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
                 && let Some(GenericArgument::Type(inner)) = arguments.args.first()
                 && is_owned_numeric_array(inner)
             {
+                return;
+            }
+            if name == "Box"
+                && let PathArguments::AngleBracketed(arguments) = &last.arguments
+                && arguments.args.len() == 1
+                && let Some(GenericArgument::Type(Type::Slice(slice))) = arguments.args.first()
+            {
+                walk(&slice.elem, known, generics, out);
                 return;
             }
             if name == "Arc"
@@ -864,14 +873,15 @@ mod tests {
     }
 
     #[test]
-    fn accepts_only_owned_numeric_array_boxes() {
-        for ty in ["Box<[f32]>", "Box<Float32Array>", "Box<Uint16Array>"] {
+    fn accepts_owned_fixed_length_array_boxes() {
+        for ty in ["Box<[f32]>", "Box<Float32Array>", "Box<Uint16Array>", "Box<[Vector2]>", "Box<[Ref<Box<[f32]>>]>"] {
             assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
         }
-        for ty in ["Box<[Vector2]>", "Box<Vector2>", "Box<dyn Fn(f32) -> f32>", "Box<dyn Any>"] {
+        for ty in ["Box<[NotVocabulary]>", "Box<Vector2>", "Box<dyn Fn(f32) -> f32>", "Box<dyn Any>"] {
             assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
         }
         assert_eq!(problems("Box<dyn Any>").len(), 2);
+        assert!(ENTRIES.iter().any(|entry| entry.rust == "Box<[T]> (T non-numeric)"));
     }
 
     #[test]

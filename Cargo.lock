@@ -62,6 +62,10 @@ dependencies = [
  "flight-buffer",
  "flight-entity",
  "flight-hostcapability",
+ "flight-net",
+ "flight-resource",
+ "flight-stream",
+ "futures",
 ]
 
 [[package]]

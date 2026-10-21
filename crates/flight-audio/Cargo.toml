@@ -14,6 +14,10 @@ path = "tests/main.rs"
 flight-buffer = { workspace = true }
 flight-entity = { workspace = true }
 flight-hostcapability = { workspace = true }
+flight-net = { workspace = true }
+flight-resource = { workspace = true }
+flight-stream = { workspace = true }
+futures = "0.3"
 
 [lints]
 workspace = true

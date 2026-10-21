@@ -12,6 +12,7 @@ mod sugar_tests {
     fn capabilities() -> HostAudioDecodeCapabilities {
         return HostAudioDecodeCapabilities {
             ogg: Some(HostAudioDecodeFormatCapability {
+                decode: Arc::new(|_, _| Box::pin(async { None })),
                 provider: Arc::new(()) as ProviderRef,
             }),
             ..HostAudioDecodeCapabilities::default()

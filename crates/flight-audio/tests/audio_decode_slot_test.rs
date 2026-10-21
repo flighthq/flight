@@ -33,6 +33,7 @@ fn named_slots() -> (
     .into_iter()
     .collect();
     let slot = |name| HostAudioDecodeFormatCapability {
+        decode: Arc::new(|_, _| Box::pin(async { None })),
         provider: providers[name].clone(),
     };
     return (
@@ -117,7 +118,10 @@ mod has_audio_decode_slot {
     fn reports_whether_a_type_resolves_to_a_filled_slot() {
         let provider = Arc::new(()) as ProviderRef;
         let capabilities = HostAudioDecodeCapabilities {
-            ogg: Some(HostAudioDecodeFormatCapability { provider }),
+            ogg: Some(HostAudioDecodeFormatCapability {
+                decode: Arc::new(|_, _| Box::pin(async { None })),
+                provider,
+            }),
             ..empty_slots()
         };
         assert!(has_audio_decode_slot(&capabilities, "audio/ogg"));

@@ -1,8 +1,13 @@
+use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
 
 use flight_buffer::{ArrayBuffer, get_array_buffer_storage};
-use flight_entity::Uint8Array;
+use flight_entity::{EntityRuntimeSlot, Ref, Uint8Array};
 use flight_hostcapability::ProviderRef;
+use flight_resource::ResourceResolutionState;
+use flight_stream::AbortSignal;
 
 #[cfg(test)]
 mod sugar_tests {
@@ -60,6 +65,56 @@ pub struct AudioResourceUrl {
     pub type_: Option<String>,
 }
 
+/// Web Audio `AudioBuffer` as a plain shared record. Every channel owns one fixed Float32Array
+/// allocation behind a shared mutable handle, so channel-data reads preserve JavaScript identity.
+#[derive(Clone)]
+pub struct AudioBuffer {
+    pub sample_rate: f32,
+    pub length: usize,
+    pub channels: Box<[Ref<Box<[f32]>>]>,
+}
+
+/// Decoded PCM resource. Clones allocate a new entity identity while sharing the same AudioBuffer
+/// handle, exactly like the source resource wrapper.
+#[derive(Default)]
+pub struct AudioResource {
+    pub buffer: Option<Ref<AudioBuffer>>,
+    runtime: EntityRuntimeSlot,
+}
+
+/// One serialization-safe failure retained by an audio reference.
+#[derive(Clone, Default)]
+pub struct AudioResourceFailure {
+    pub kind: AudioResourceFailureKind,
+    pub message: String,
+    pub name: Option<String>,
+    runtime: EntityRuntimeSlot,
+}
+
+/// Parser-retained bytes and the stable resource identity they will fill after decoding. The
+/// encoded bytes remain the exact shared typed-array allocation supplied by the caller.
+pub struct EmbeddedAudioResourceReference {
+    pub bytes: Ref<Box<Uint8Array>>,
+    pub failure: Option<Ref<AudioResourceFailure>>,
+    pub mime_type: Option<String>,
+    pub name: Option<String>,
+    pub resource: Ref<AudioResource>,
+    pub state: ResourceResolutionState,
+    runtime: EntityRuntimeSlot,
+}
+
+/// URI-backed audio reference resolved through the caller-owned fetch seam.
+pub struct ExternalAudioResourceReference {
+    pub uri: String,
+    pub base_path: Option<String>,
+    pub failure: Option<Ref<AudioResourceFailure>>,
+    pub mime_type: Option<String>,
+    pub name: Option<String>,
+    pub resource: Ref<AudioResource>,
+    pub state: ResourceResolutionState,
+    runtime: EntityRuntimeSlot,
+}
+
 /// Stable category retained for a failed resource reference.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum AudioResourceFailureKind {
@@ -74,6 +129,35 @@ pub enum AudioResourceReferenceKind {
     #[default]
     Embedded,
     External,
+}
+
+/// Named payload retaining one embedded reference entity handle in the untagged source union.
+#[derive(Clone)]
+pub struct EmbeddedAudioResourceReferenceValue {
+    pub reference: Ref<EmbeddedAudioResourceReference>,
+}
+
+/// Named payload retaining one external reference entity handle in the untagged source union.
+#[derive(Clone)]
+pub struct ExternalAudioResourceReferenceValue {
+    pub reference: Ref<ExternalAudioResourceReference>,
+}
+
+/// The source's two-member reference union. No synthetic serialized discriminant is introduced;
+/// the existing `kind` contract is provided by the variant and exact entity type.
+#[derive(Clone)]
+pub enum AudioResourceReference {
+    Embedded(EmbeddedAudioResourceReferenceValue),
+    External(ExternalAudioResourceReferenceValue),
+}
+
+/// Detached diagnostic view of reference resolution.
+#[derive(Clone)]
+pub struct AudioResourceReferenceResolutionExplanation {
+    pub failure: Option<Ref<AudioResourceFailure>>,
+    pub kind: AudioResourceReferenceKind,
+    pub retryable: bool,
+    pub state: ResourceResolutionState,
 }
 
 /// The two exact byte containers accepted by `detectAudioMimeType` in the pinned source.
@@ -106,7 +190,27 @@ pub struct HostAudioCodecCapability {
 #[derive(Clone)]
 pub struct HostAudioDecodeFormatCapability {
     pub provider: ProviderRef,
+    pub decode: Arc<dyn Fn(Ref<Box<Uint8Array>>, AbortSignal) -> AudioBufferFuture + Send + Sync>,
 }
+
+/// Executor-neutral result of one host container decode. `None` is the source's expected miss.
+pub type AudioBufferFuture = Pin<Box<dyn Future<Output = Option<Ref<AudioBuffer>>> + Send>>;
+
+/// Executor-neutral result of a caller decoder or external fetch. `None` is an expected miss.
+pub type AudioResourceFuture = Pin<Box<dyn Future<Output = Option<Ref<AudioResource>>> + Send>>;
+
+/// Caller-owned decoder for non-platform formats. The encoded byte handle and AbortSignal are
+/// passed by shared identity; the full parameterized MIME string is retained.
+pub type AudioDecoder =
+    Arc<dyn Fn(Ref<Box<Uint8Array>>, String, AbortSignal) -> AudioResourceFuture + Send + Sync>;
+
+/// Lookup-only caller registry keyed by MIME essence; it is never iterated.
+pub type AudioDecoderRegistry = HashMap<String, AudioDecoder>;
+
+/// Caller-owned fetch seam for an external reference.
+pub type AudioResourceFetch = Arc<
+    dyn Fn(Ref<ExternalAudioResourceReference>, AbortSignal) -> AudioResourceFuture + Send + Sync,
+>;
 
 /// The seven closed standard container slots from the pinned host contract. A missing member is
 /// capability absence, distinct from a filled decoder reporting an expected miss.
@@ -174,6 +278,40 @@ pub fn parse_audio_resource_reference_kind(value: &str) -> Option<AudioResourceR
         "External" => Some(AudioResourceReferenceKind::External),
         _ => None,
     };
+}
+
+flight_entity::impl_entity!(AudioResource);
+flight_entity::impl_entity!(AudioResourceFailure);
+flight_entity::impl_entity!(EmbeddedAudioResourceReference);
+flight_entity::impl_entity!(ExternalAudioResourceReference);
+
+impl Default for EmbeddedAudioResourceReference {
+    fn default() -> Self {
+        return Self {
+            bytes: Arc::new(std::sync::RwLock::new(Vec::new().into_boxed_slice())),
+            failure: None,
+            mime_type: None,
+            name: None,
+            resource: Arc::new(std::sync::RwLock::new(AudioResource::default())),
+            state: ResourceResolutionState::Unresolved,
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
+
+impl Default for ExternalAudioResourceReference {
+    fn default() -> Self {
+        return Self {
+            uri: String::new(),
+            base_path: None,
+            failure: None,
+            mime_type: None,
+            name: None,
+            resource: Arc::new(std::sync::RwLock::new(AudioResource::default())),
+            state: ResourceResolutionState::Unresolved,
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
 }
 
 impl<'a> AudioMimeTypeData<'a> {

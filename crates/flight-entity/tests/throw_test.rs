@@ -53,6 +53,10 @@ mod get_flight_error_kind_string {
             "NotReadableError"
         );
         assert_eq!(
+            get_flight_error_kind_string(FlightErrorKind::NotSupportedError),
+            "NotSupportedError"
+        );
+        assert_eq!(
             get_flight_error_kind_string(FlightErrorKind::RangeError),
             "RangeError"
         );
@@ -75,6 +79,10 @@ mod parse_flight_error_kind {
         assert_eq!(
             parse_flight_error_kind("NotReadableError"),
             Some(FlightErrorKind::NotReadableError)
+        );
+        assert_eq!(
+            parse_flight_error_kind("NotSupportedError"),
+            Some(FlightErrorKind::NotSupportedError)
         );
         assert_eq!(
             parse_flight_error_kind("RangeError"),
