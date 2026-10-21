@@ -12,7 +12,7 @@ pub enum BinPackHeuristic {
 /// Maps to the TS `RectangleId = number | string` union.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum RectangleId {
-    Number(usize),
+    Number(i32),
     Text(String),
 }
 

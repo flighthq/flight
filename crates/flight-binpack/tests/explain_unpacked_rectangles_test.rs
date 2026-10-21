@@ -1,6 +1,5 @@
 use flight_binpack::*;
-use flight_binpack::contract::get_unpacked_rectangle_reason_string;
-use flight_binpack::contract::parse_unpacked_rectangle_reason;
+use flight_binpack::contract::*;
 use std::collections::HashMap;
 
 fn count_by_id(ids: &[RectangleId]) -> HashMap<String, i32> {

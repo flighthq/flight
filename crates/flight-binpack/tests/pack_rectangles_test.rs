@@ -1,7 +1,5 @@
 use flight_binpack::*;
-use flight_binpack::contract::BIN_PACK_DEFAULT_MAX_EXTENT;
-use flight_binpack::contract::get_bin_pack_heuristic_string;
-use flight_binpack::contract::parse_bin_pack_heuristic;
+use flight_binpack::contract::*;
 use std::collections::HashMap;
 
 fn is_power_of_two(value: f32) -> bool {
@@ -573,6 +571,33 @@ mod pack_rectangles {
     }
 
     #[test]
+    fn round_trips_negative_numeric_ids_through_placements_and_unpacked() {
+        let rects = vec![
+            create_packable_rectangle(RectangleId::Number(-7), 10.0, 10.0),
+            create_packable_rectangle(RectangleId::Number(-2), 10.0, 10.0),
+        ];
+        let result = pack_rectangles(&rects, None);
+        let mut ids: Vec<i32> = Vec::new();
+        for placement in &result.placements {
+            if let RectangleId::Number(id) = &placement.id {
+                ids.push(*id);
+            }
+        }
+        ids.sort();
+        assert_eq!(ids, vec![-7, -2]);
+
+        let mut options = create_bin_pack_options();
+        options.growable = false;
+        options.max_width = 5.0;
+        options.max_height = 5.0;
+        let fixed = pack_rectangles(
+            &[create_packable_rectangle(RectangleId::Number(-9), 20.0, 20.0)],
+            Some(&options),
+        );
+        assert_eq!(fixed.unpacked, vec![RectangleId::Number(-9)]);
+    }
+
+    #[test]
     fn treats_duplicate_ids_as_distinct_rectangles_placing_both_without_overlap() {
         let rects = vec![
             create_packable_rectangle(RectangleId::Text("same".to_string()), 10.0, 10.0),
@@ -639,11 +664,11 @@ mod pack_rectangles {
     fn holds_its_invariants_across_40_seeded_inputs_and_both_heuristics() {
         for seed in 1..=40_i32 {
             let mut rng = make_random(seed as u32);
-            let count = 1 + (next_random(&mut rng) * 25.0).floor() as usize;
+            let count = 1 + (next_random(&mut rng) * 25.0).floor() as i32;
             let mut rects: Vec<PackableRectangle> = Vec::new();
             for i in 0..count {
                 let id = if seed % 5 == 0 { i % 3 } else { i };
-                let mut size = make_random((seed as usize * 1000 + id) as u32);
+                let mut size = make_random((seed * 1000 + id) as u32);
                 rects.push(create_packable_rectangle(
                     RectangleId::Number(id),
                     1.0 + (next_random(&mut size) * 60.0).floor(),
@@ -683,7 +708,7 @@ mod pack_rectangles {
             let input_ids: Vec<RectangleId> = rects.iter().map(|r| r.id.clone()).collect();
             assert_eq!(count_ids(&result_ids), count_ids(&input_ids), "{}", label);
 
-            let mut sizes: HashMap<usize, (f32, f32)> = HashMap::new();
+            let mut sizes: HashMap<i32, (f32, f32)> = HashMap::new();
             for rect in &rects {
                 if let RectangleId::Number(n) = &rect.id {
                     sizes.insert(*n, (rect.width, rect.height));
