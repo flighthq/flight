@@ -1,6 +1,8 @@
 use flight_entity::allocate_entity;
 use flight_textbidi::*;
 
+use crate::lock_text_bidi_guard_test;
+
 mod compact_bidi_class_kernel {
     use super::*;
 
@@ -34,6 +36,7 @@ mod create_compact_bidi_class_kernel {
 
     #[test]
     fn resolves_uncovered_codepoints_to_the_ltr_default() {
+        let _lock = lock_text_bidi_guard_test();
         let kernel = create_compact_bidi_class_kernel();
         assert_eq!((kernel.get_bidi_class)(0x4E2D), BidiClass::L); // CJK ideograph
     }

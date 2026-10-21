@@ -2,16 +2,14 @@ use std::sync::{Arc, Mutex};
 
 use flight_textbidi::*;
 
-use crate::GUARD_TEST_LOCK;
+use crate::lock_text_bidi_guard_test;
 
 mod report_text_bidi_compact_table_miss {
     use super::*;
 
     #[test]
     fn is_silent_when_no_guard_is_installed() {
-        let _lock = GUARD_TEST_LOCK
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let _lock = lock_text_bidi_guard_test();
         set_text_bidi_guard(None);
         report_text_bidi_compact_table_miss(0x4E2D);
     }
@@ -22,9 +20,7 @@ mod set_text_bidi_guard {
 
     #[test]
     fn replaces_the_active_callback() {
-        let _lock = GUARD_TEST_LOCK
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let _lock = lock_text_bidi_guard_test();
         let first = Arc::new(Mutex::new(Vec::new()));
         let second = Arc::new(Mutex::new(Vec::new()));
 

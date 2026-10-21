@@ -8,7 +8,7 @@ use flight_log::{
 };
 use flight_textbidi::*;
 
-use crate::GUARD_TEST_LOCK;
+use crate::lock_text_bidi_guard_test;
 
 fn log_state() -> LogStateRef {
     return Arc::new(RwLock::new(create_log_state()));
@@ -19,9 +19,7 @@ mod disable_text_bidi_guards {
 
     #[test]
     fn restores_silent_compact_fallback() {
-        let _lock = GUARD_TEST_LOCK
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let _lock = lock_text_bidi_guard_test();
         let state = log_state();
         let memory = create_memory_log_sink(8);
         add_log_sink(&state, memory.sink.clone());
@@ -37,9 +35,7 @@ mod enable_text_bidi_guards {
 
     #[test]
     fn warns_once_with_the_exact_source_payload_and_live_operation_time() {
-        let _lock = GUARD_TEST_LOCK
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let _lock = lock_text_bidi_guard_test();
         let state = log_state();
         let memory = create_memory_log_sink(8);
         add_log_sink(&state, memory.sink.clone());
@@ -91,10 +87,27 @@ mod enable_text_bidi_guards {
     }
 
     #[test]
+    fn observes_process_global_compact_misses_from_another_thread() {
+        let _lock = lock_text_bidi_guard_test();
+        let state = log_state();
+        let memory = create_memory_log_sink(8);
+        add_log_sink(&state, memory.sink.clone());
+        enable_text_bidi_guards(&state, Arc::new(|| 1.0));
+
+        std::thread::spawn(|| {
+            let kernel = create_compact_bidi_class_kernel();
+            assert_eq!((kernel.get_bidi_class)(0x4E2D), BidiClass::L);
+        })
+        .join()
+        .unwrap();
+
+        disable_text_bidi_guards();
+        assert_eq!(get_memory_log_sink_entries(&memory).len(), 1);
+    }
+
+    #[test]
     fn stays_silent_for_compact_table_coverage() {
-        let _lock = GUARD_TEST_LOCK
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let _lock = lock_text_bidi_guard_test();
         let state = log_state();
         let memory = create_memory_log_sink(8);
         add_log_sink(&state, memory.sink.clone());
@@ -110,9 +123,7 @@ mod enable_text_bidi_guards {
 
     #[test]
     fn stays_silent_for_an_explicit_non_compact_kernel() {
-        let _lock = GUARD_TEST_LOCK
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let _lock = lock_text_bidi_guard_test();
         let state = log_state();
         let memory = create_memory_log_sink(8);
         add_log_sink(&state, memory.sink.clone());
