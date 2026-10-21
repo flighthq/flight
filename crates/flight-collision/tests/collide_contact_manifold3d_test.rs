@@ -126,8 +126,6 @@ mod collide_contact_manifold3d {
             true
         );
         assert_eq!(out.point_count, 1);
-        // The single-point fallback places the contact at the midpoint of support vertices
-        // (sphere support in +y and floor face vertex), not on the contact surface.
         assert!(out.overlapping);
         assert!(out.points[0].depth > 0.0, "depth should be positive");
     }
@@ -154,8 +152,6 @@ mod collide_contact_manifold3d {
                 true
             );
             assert_eq!(out.point_count, 1);
-            // The single-point fallback averages support vertices; the contact x coordinate
-            // is still near the wall surface since both supports project there.
             assert!(
                 (out.points[0].x - 5.0).abs() < 0.1,
                 "point[0].x: {} should be near 5.0",
@@ -317,8 +313,6 @@ mod collide_contact_manifold3d {
             ),
             true
         );
-        // NOTE: The TS version produces 4 corner points. The Rust clipping currently falls
-        // back to fewer points for box-AABB pairs. The normal is still correct.
         assert!(
             out.point_count >= 1,
             "expected at least 1 contact point, got {}",
@@ -385,5 +379,51 @@ mod collide_contact_manifold3d {
             &registry, &crate_box, &floor, &mut out,
         ));
         assert_eq!(calls.load(Ordering::Relaxed), 2);
+    }
+
+    #[test]
+    fn keeps_a_translated_sphere_box_contact_in_world_space() {
+        let angle = -0.025_f32;
+        let sphere = CollisionShape3D::Sphere(CollisionSphere3D {
+            x: 14.0,
+            y: -3.0,
+            z: 2.0,
+            radius: 0.25,
+        });
+        let blade = CollisionShape3D::Box(CollisionBox3D {
+            x: 10.0,
+            y: -3.0,
+            z: 2.0,
+            half_x: 5.0,
+            half_y: 0.1,
+            half_z: 0.1,
+            rotation_x: 0.0,
+            rotation_y: 0.0,
+            rotation_z: angle.sin(),
+            rotation_w: angle.cos(),
+        });
+        let mut out = create_collision_contact_manifold3d();
+
+        assert!(collide_contact_manifold3d(
+            &crate::collision_registry3d_with_built_ins(),
+            &sphere,
+            &blade,
+            &mut out,
+        ));
+        assert_eq!(out.point_count, 1);
+        let point = &out.points[0];
+        assert!(point.x > 13.5, "world-space contact x: {}", point.x);
+        assert!((point.y + 3.0).abs() < 0.5, "contact y: {}", point.y);
+        assert!((point.z - 2.0).abs() < 0.5, "contact z: {}", point.z);
+        let dx = point.x - 14.0;
+        let dy = point.y + 3.0;
+        let dz = point.z - 2.0;
+        let cross_x = dy * out.normal_z - dz * out.normal_y;
+        let cross_y = dz * out.normal_x - dx * out.normal_z;
+        let cross_z = dx * out.normal_y - dy * out.normal_x;
+        assert!(
+            (cross_x * cross_x + cross_y * cross_y + cross_z * cross_z).sqrt() < 1e-3,
+            "contact must retain the sphere support's tangential coordinates"
+        );
     }
 }
