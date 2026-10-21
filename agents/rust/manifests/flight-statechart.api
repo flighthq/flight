@@ -2,16 +2,20 @@ src/contract.rs: pub use crate::enable_statechart_guards::*;
 src/contract.rs: pub use crate::statechart::*;
 src/contract.rs: pub use crate::statechart_signals::*;
 src/contract.rs: pub use crate::types::*;
-src/enable_statechart_guards.rs: pub fn are_statechart_guards_enabled(instance: &StatechartInstance) -> bool
-src/enable_statechart_guards.rs: pub fn disable_statechart_guards(instance: &mut StatechartInstance)
-src/enable_statechart_guards.rs: pub fn enable_statechart_guards(instance: &mut StatechartInstance, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/enable_statechart_guards.rs: pub fn are_statechart_guards_enabled(instance: &Ref<StatechartInstance>) -> bool
+src/enable_statechart_guards.rs: pub fn disable_statechart_guards(instance: &Ref<StatechartInstance>)
+src/enable_statechart_guards.rs: pub fn enable_statechart_guards(instance: &Ref<StatechartInstance>, guard_state: &StatechartGuardStateRef, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
 src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::ChartWeakRef;
 src/lib.rs: pub use contract::STATECHART_ATOMIC_STATE_KIND;
 src/lib.rs: pub use contract::STATECHART_NESTED_STATE_KIND;
 src/lib.rs: pub use contract::Statechart;
+src/lib.rs: pub use contract::StatechartChartIdEntry;
 src/lib.rs: pub use contract::StatechartComparison;
 src/lib.rs: pub use contract::StatechartCondition;
 src/lib.rs: pub use contract::StatechartDurationGuard;
+src/lib.rs: pub use contract::StatechartGuardState;
+src/lib.rs: pub use contract::StatechartGuardStateRef;
 src/lib.rs: pub use contract::StatechartInput;
 src/lib.rs: pub use contract::StatechartInputKind;
 src/lib.rs: pub use contract::StatechartInstance;
@@ -44,33 +48,35 @@ src/lib.rs: pub use contract::set_statechart_boolean_input;
 src/lib.rs: pub use contract::set_statechart_number_input;
 src/lib.rs: pub use contract::set_statechart_region_duration;
 src/statechart.rs: impl Statechart :: fn get_input_index(&self, name: &str) -> i32
-src/statechart.rs: impl StatechartInstance :: fn advance(&mut self, delta_time: f64) -> i32
-src/statechart.rs: impl StatechartInstance :: fn disable_guards(&mut self)
-src/statechart.rs: impl StatechartInstance :: fn enable_guards(&mut self, log_state: &LogStateRef, clock: std::sync::Arc<dyn Fn() -> f64 + Send + Sync>,)
-src/statechart.rs: impl StatechartInstance :: fn enable_signals(&mut self) -> StatechartSignals
-src/statechart.rs: impl StatechartInstance :: fn explain_transition(&self, region_index: i32) -> StatechartTransitionExplanation
-src/statechart.rs: impl StatechartInstance :: fn fire_trigger(&mut self, input_index: i32)
-src/statechart.rs: impl StatechartInstance :: fn get_signals(&self) -> Option<StatechartSignals>
-src/statechart.rs: impl StatechartInstance :: fn guards_enabled(&self) -> bool
-src/statechart.rs: impl StatechartInstance :: fn new(chart: &Statechart) -> StatechartInstance
-src/statechart.rs: impl StatechartInstance :: fn region_blend(&self, region_index: i32) -> f32
-src/statechart.rs: impl StatechartInstance :: fn region_state(&self, region_index: i32) -> i32
-src/statechart.rs: impl StatechartInstance :: fn set_boolean_input(&mut self, input_index: i32, value: bool)
-src/statechart.rs: impl StatechartInstance :: fn set_number_input(&mut self, input_index: i32, value: f64)
-src/statechart.rs: impl StatechartInstance :: fn set_region_duration(&mut self, region_index: i32, duration: f64)
-src/statechart.rs: pub fn advance_statechart_instance(instance: &mut StatechartInstance, delta_time: f64) -> i32
-src/statechart.rs: pub fn create_statechart_instance(chart: &Statechart) -> StatechartInstance
-src/statechart.rs: pub fn explain_statechart_transition(instance: &StatechartInstance, region_index: i32,) -> StatechartTransitionExplanation
-src/statechart.rs: pub fn fire_statechart_trigger(instance: &mut StatechartInstance, input_index: i32)
+src/statechart.rs: impl StatechartInstance :: fn new(chart: &Ref<Statechart>) -> Ref<StatechartInstance>
+src/statechart.rs: impl StatechartInstanceMethods for Ref<StatechartInstance>
+src/statechart.rs: impl StatechartInstanceMethods for Ref<StatechartInstance> :: fn advance(&self, delta_time: f64) -> i32
+src/statechart.rs: impl StatechartInstanceMethods for Ref<StatechartInstance> :: fn disable_guards(&self)
+src/statechart.rs: impl StatechartInstanceMethods for Ref<StatechartInstance> :: fn enable_guards(&self, guard_state: &StatechartGuardStateRef, log_state: &flight_log::LogStateRef, clock: std::sync::Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/statechart.rs: impl StatechartInstanceMethods for Ref<StatechartInstance> :: fn enable_signals(&self) -> StatechartSignals
+src/statechart.rs: impl StatechartInstanceMethods for Ref<StatechartInstance> :: fn explain_transition(&self, region_index: i32) -> StatechartTransitionExplanation
+src/statechart.rs: impl StatechartInstanceMethods for Ref<StatechartInstance> :: fn fire_trigger(&self, input_index: i32)
+src/statechart.rs: impl StatechartInstanceMethods for Ref<StatechartInstance> :: fn get_signals(&self) -> Option<StatechartSignals>
+src/statechart.rs: impl StatechartInstanceMethods for Ref<StatechartInstance> :: fn guards_enabled(&self) -> bool
+src/statechart.rs: impl StatechartInstanceMethods for Ref<StatechartInstance> :: fn region_blend(&self, region_index: i32) -> f32
+src/statechart.rs: impl StatechartInstanceMethods for Ref<StatechartInstance> :: fn region_state(&self, region_index: i32) -> i32
+src/statechart.rs: impl StatechartInstanceMethods for Ref<StatechartInstance> :: fn set_boolean_input(&self, input_index: i32, value: bool)
+src/statechart.rs: impl StatechartInstanceMethods for Ref<StatechartInstance> :: fn set_number_input(&self, input_index: i32, value: f64)
+src/statechart.rs: impl StatechartInstanceMethods for Ref<StatechartInstance> :: fn set_region_duration(&self, region_index: i32, duration: f64)
+src/statechart.rs: pub fn advance_statechart_instance(instance: &Ref<StatechartInstance>, delta_time: f64) -> i32
+src/statechart.rs: pub fn create_statechart_instance(chart: &Ref<Statechart>) -> Ref<StatechartInstance>
+src/statechart.rs: pub fn explain_statechart_transition(instance: &Ref<StatechartInstance>, region_index: i32,) -> StatechartTransitionExplanation
+src/statechart.rs: pub fn fire_statechart_trigger(instance: &Ref<StatechartInstance>, input_index: i32)
 src/statechart.rs: pub fn get_statechart_input_index(chart: &Statechart, name: &str) -> i32
-src/statechart.rs: pub fn get_statechart_region_blend(instance: &StatechartInstance, region_index: i32) -> f32
-src/statechart.rs: pub fn get_statechart_region_state(instance: &StatechartInstance, region_index: i32) -> i32
-src/statechart.rs: pub fn initialize_statechart_instance(out: &mut StatechartInstance, chart: &Statechart)
-src/statechart.rs: pub fn set_statechart_boolean_input(instance: &mut StatechartInstance, input_index: i32, value: bool)
-src/statechart.rs: pub fn set_statechart_number_input(instance: &mut StatechartInstance, input_index: i32, value: f64)
-src/statechart.rs: pub fn set_statechart_region_duration(instance: &mut StatechartInstance, region_index: i32, duration: f64)
-src/statechart_signals.rs: pub fn enable_statechart_signals(instance: &mut StatechartInstance) -> StatechartSignals
-src/statechart_signals.rs: pub fn get_statechart_signals(instance: &StatechartInstance) -> Option<StatechartSignals>
+src/statechart.rs: pub fn get_statechart_region_blend(instance: &Ref<StatechartInstance>, region_index: i32) -> f32
+src/statechart.rs: pub fn get_statechart_region_state(instance: &Ref<StatechartInstance>, region_index: i32) -> i32
+src/statechart.rs: pub fn initialize_statechart_instance(out: &mut StatechartInstance, chart: &Ref<Statechart>)
+src/statechart.rs: pub fn set_statechart_boolean_input(instance: &Ref<StatechartInstance>, input_index: i32, value: bool)
+src/statechart.rs: pub fn set_statechart_number_input(instance: &Ref<StatechartInstance>, input_index: i32, value: f64)
+src/statechart.rs: pub fn set_statechart_region_duration(instance: &Ref<StatechartInstance>, region_index: i32, duration: f64)
+src/statechart.rs: pub trait StatechartInstanceMethods { fn advance(&self, delta_time: f64) -> i32; fn disable_guards(&self); fn enable_guards(&self, guard_state: &StatechartGuardStateRef, log_state: &flight_log::LogStateRef, clock: std::sync::Arc<dyn Fn() -> f64 + Send + Sync>,); fn enable_signals(&self) -> StatechartSignals; fn explain_transition(&self, region_index: i32) -> StatechartTransitionExplanation; fn fire_trigger(&self, input_index: i32); fn get_signals(&self) -> Option<StatechartSignals>; fn guards_enabled(&self) -> bool; fn region_blend(&self, region_index: i32) -> f32; fn region_state(&self, region_index: i32) -> i32; fn set_boolean_input(&self, input_index: i32, value: bool); fn set_number_input(&self, input_index: i32, value: f64); fn set_region_duration(&self, region_index: i32, duration: f64); }
+src/statechart_signals.rs: pub fn enable_statechart_signals(instance: &Ref<StatechartInstance>) -> StatechartSignals
+src/statechart_signals.rs: pub fn get_statechart_signals(instance: &Ref<StatechartInstance>) -> Option<StatechartSignals>
 src/statechart_signals.rs: pub fn initialize_statechart_signals(out: &mut StatechartSignals)
 src/types.rs: #[derive(Clone)] pub struct StatechartSignals { pub on_state_change: Signal<StatechartStateChangeEvent>, runtime: EntityRuntimeSlot, }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct StatechartStateChangeEvent { pub region_index: i32, pub previous_state_index: i32, pub state_index: i32, }
@@ -120,6 +126,10 @@ src/types.rs: pub fn get_statechart_transition_status_string(value: StatechartTr
 src/types.rs: pub fn parse_statechart_comparison(value: &str) -> Option<StatechartComparison>
 src/types.rs: pub fn parse_statechart_input_kind(value: &str) -> Option<StatechartInputKind>
 src/types.rs: pub fn parse_statechart_transition_status(value: &str) -> Option<StatechartTransitionStatus>
-src/types.rs: pub struct StatechartInstance { pub chart: Statechart, pub duration_guard: Option<StatechartDurationGuard>, pub input_values: Box<[f64]>, pub region_blend: Box<[f32]>, pub region_duration: Box<[f64]>, pub region_elapsed: Box<[f64]>, pub region_states: Box<[i32]>, pub region_transitions: Box<[i32]>, pub signals: Option<StatechartSignals>, pub(crate) builtin_guard: Option<StatechartDurationGuard>, runtime: EntityRuntimeSlot, }
-src/types.rs: pub type StatechartDurationGuard = Arc<dyn Fn(&StatechartInstance, &StatechartTransitionExplanation) + Send + Sync>;
+src/types.rs: pub struct StatechartChartIdEntry { pub chart: ChartWeakRef, pub id: i32, }
+src/types.rs: pub struct StatechartGuardState { pub chart_ids: Vec<StatechartChartIdEntry>, pub next_chart_id: i32, }
+src/types.rs: pub struct StatechartInstance { pub chart: flight_entity::Ref<Statechart>, pub duration_guard: Option<StatechartDurationGuard>, pub input_values: Box<[f64]>, pub region_blend: Box<[f32]>, pub region_duration: Box<[f64]>, pub region_elapsed: Box<[f64]>, pub region_states: Box<[i32]>, pub region_transitions: Box<[i32]>, pub signals: Option<StatechartSignals>, pub(crate) builtin_guard: Option<StatechartDurationGuard>, runtime: EntityRuntimeSlot, }
+src/types.rs: pub type ChartWeakRef = Weak<RwLock<Statechart>>;
+src/types.rs: pub type StatechartDurationGuard = Arc<dyn Fn(&flight_entity::Ref<StatechartInstance>, &StatechartTransitionExplanation) + Send + Sync>;
+src/types.rs: pub type StatechartGuardStateRef = flight_entity::Ref<StatechartGuardState>;
 src/types.rs: pub use flight_signals::Signal;
