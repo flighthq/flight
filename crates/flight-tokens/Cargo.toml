@@ -1,0 +1,24 @@
+[package]
+name = "flight-tokens"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Explicit mode resolution and substitution for flight document scene tokens"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-registry = { workspace = true }
+flight-scene-document = { path = "../flight-scene-document" }
+flight-scene3d = { workspace = true }
+
+[dev-dependencies]
+flight-node = { path = "../flight-node" }
+flight-scene2d = { path = "../flight-scene2d" }
+
+[lints]
+workspace = true

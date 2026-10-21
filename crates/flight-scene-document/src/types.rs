@@ -566,6 +566,18 @@ flight_entity::impl_entity!(FlightDocumentScene3DMaterialization);
 flight_entity::impl_entity!(FlightDocumentTokenResolverRegistry);
 flight_entity::impl_entity!(NodeInteractiveStateBinding);
 
+impl Default for FlightDocumentTokenResolverRegistry {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            resolvers: KindMap {
+                entries: std::collections::HashMap::new(),
+                key_order: Vec::new(),
+            },
+        };
+    }
+}
+
 impl Default for FlightDocumentRefusalExplanation {
     fn default() -> Self {
         return Self {
