@@ -1,0 +1,45 @@
+src/contract.rs: pub use super::tilemap::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::*;
+src/tilemap.rs: pub fn clear_tilemap(tilemap: &mut Tilemap)
+src/tilemap.rs: pub fn clone_tilemap(source: &Tilemap) -> Ref<Tilemap>
+src/tilemap.rs: pub fn compute_tilemap_local_bounds_rectangle(out: &mut Rectangle, source: &dyn Node)
+src/tilemap.rs: pub fn create_tilemap(obj: Option<&PartialTilemap>) -> Ref<Tilemap>
+src/tilemap.rs: pub fn create_tilemap_data(data: Option<&TilemapDataOptions>) -> TilemapData
+src/tilemap.rs: pub fn create_tilemap_runtime() -> TilemapRuntime
+src/tilemap.rs: pub fn create_tilemap_signals() -> TilemapSignals
+src/tilemap.rs: pub fn enable_tilemap_signals(target: &mut Tilemap) -> &TilemapSignals
+src/tilemap.rs: pub fn fill_tilemap_tiles(tilemap: &mut Tilemap, id: i16)
+src/tilemap.rs: pub fn get_tilemap_column_at_x(source: &Tilemap, x: f32) -> i32
+src/tilemap.rs: pub fn get_tilemap_column_row_at_point(out: &mut Vector2, source: &Tilemap, x: f32, y: f32,) -> bool
+src/tilemap.rs: pub fn get_tilemap_row_at_y(source: &Tilemap, y: f32) -> i32
+src/tilemap.rs: pub fn get_tilemap_runtime(source: &Tilemap) -> &TilemapRuntime
+src/tilemap.rs: pub fn get_tilemap_signals(source: &Tilemap) -> Option<&TilemapSignals>
+src/tilemap.rs: pub fn get_tilemap_tile(tilemap: &Tilemap, column: i32, row: i32) -> i16
+src/tilemap.rs: pub fn get_tilemap_tile_at_point(source: &Tilemap, point: &Vector2) -> i16
+src/tilemap.rs: pub fn get_tilemap_tile_at_point_xy(source: &Tilemap, x: f32, y: f32) -> i16
+src/tilemap.rs: pub fn get_tilemap_tile_rect(out: &mut Rectangle, source: &Tilemap, column: i32, row: i32,) -> bool
+src/tilemap.rs: pub fn initialize_tilemap_data(out: &mut TilemapData, data: Option<&TilemapDataOptions>)
+src/tilemap.rs: pub fn initialize_tilemap_signals(out: &mut TilemapSignals)
+src/tilemap.rs: pub fn resize_tilemap(tilemap: &mut Tilemap, columns: i32, rows: i32)
+src/tilemap.rs: pub fn set_tilemap_tile(tilemap: &mut Tilemap, column: i32, row: i32, id: i16)
+src/tilemap.rs: pub fn set_tilemap_tile_tint(tilemap: &mut Tilemap, column: i32, row: i32, rgba: u32)
+src/tilemap.rs: pub fn set_tilemap_tiles(tilemap: &mut Tilemap, ids: &[i16], offset_column: i32, offset_row: i32, width: i32, height: i32,)
+src/types.rs: #[derive(Clone)] pub struct TilemapData { runtime: EntityRuntimeSlot, pub atlas: Option<Ref<TextureAtlas>>, pub columns: i32, pub material_data: Option<Vec<Option<Ref<dyn MaterialData>>>>, pub rows: i32, pub tile_height: f32, pub tile_width: f32, pub tiles: Vec<i16>, }
+src/types.rs: #[derive(Clone, Default)] pub struct PartialTilemap { pub data: Option<TilemapDataOptions>, pub node: flight_scene2d::contract::PartialNode2D, }
+src/types.rs: #[derive(Clone, Default)] pub struct TilemapDataOptions { pub atlas: Option<Ref<TextureAtlas>>, pub columns: Option<i32>, pub material_data: Option<Vec<Option<Ref<dyn MaterialData>>>>, pub rows: Option<i32>, pub tile_height: Option<f32>, pub tile_width: Option<f32>, pub tiles: Option<Vec<i16>>, }
+src/types.rs: #[derive(Default)] pub struct Tilemap { node: Node2DFields, pub data: TilemapData, pub(crate) signals: Option<TilemapSignals>, }
+src/types.rs: impl Default for TilemapData
+src/types.rs: impl Default for TilemapData :: fn default() -> Self
+src/types.rs: impl Default for TilemapSignals
+src/types.rs: impl Default for TilemapSignals :: fn default() -> Self
+src/types.rs: impl Entity for TilemapData
+src/types.rs: impl Entity for TilemapData :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for TilemapData :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for TilemapSignals
+src/types.rs: impl Entity for TilemapSignals :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for TilemapSignals :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub const TILEMAP_KIND: &str
+src/types.rs: pub struct TilemapSignals { runtime: EntityRuntimeSlot, pub on_cleared: Signal<()>, pub on_tile_changed: Signal<(i32, i32, i16)>, pub on_tiles_changed: Signal<(i32, i32, i32, i32)>, }
+src/types.rs: pub type TilemapRuntime = Node2DRuntime;
