@@ -1,1 +1,28 @@
-
+// Integration tests for flight-physics2d.
+mod broadphase_test;
+mod collider_transform_test;
+mod debug_geometry_test;
+mod enable_physics2d_guards_test;
+mod explain_physics2d_collision_test;
+mod explain_physics2d_joints_test;
+mod explain_physics2d_step_test;
+mod islands_test;
+mod joint_collision_suppression_test;
+mod joint_factories_test;
+mod joint_reactions_test;
+mod joint_registry_test;
+mod joint_rows_test;
+mod joints_test;
+mod mass_properties_test;
+mod material_test;
+mod node_sync_test;
+mod ownership_test;
+mod physics2d_strings_test;
+mod register_built_in_physics2d_joint_solvers_test;
+mod solver_test;
+mod step_test;
+mod step_validation_test;
+mod stress_test;
+mod types_test;
+mod world_test;
+mod world_queries_test;
