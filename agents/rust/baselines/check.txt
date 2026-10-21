@@ -243,37 +243,12 @@ f64	crates/flight-statechart/src/statechart.rs	`fn compare_statechart_condition`
 f64	crates/flight-statechart/src/statechart.rs	`fn initialize_statechart_instance` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn set_statechart_number_input` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn set_statechart_region_duration` uses f64 without an `allow(f64) <reason>` declaration
-file-structure	crates/flight-particles/src/types.rs	fn appears after a later section
-file-structure	crates/flight-particles/src/types.rs	struct appears after a later section
-file-structure	crates/flight-particles/src/types.rs	struct appears after a later section
-file-structure	crates/flight-particles/src/types.rs	struct appears after a later section
-file-structure	crates/flight-particles/src/types.rs	struct appears after a later section
-file-structure	crates/flight-particles/src/types.rs	struct appears after a later section
-file-structure	crates/flight-particles/src/types.rs	struct appears after a later section
-file-structure	crates/flight-particles/src/types.rs	struct appears after a later section
-file-structure	crates/flight-particles/src/types.rs	struct appears after a later section
-file-structure	crates/flight-particles/src/types.rs	struct appears after a later section
-file-structure	crates/flight-particles/src/types.rs	struct appears after a later section
-file-structure	crates/flight-particles/src/types.rs	struct appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
-fn-order	crates/flight-particles/src/apply_particle_collisions.rs	`reflect3` should come before `resolve_sphere`
-fn-order	crates/flight-particles/src/apply_particle_collisions.rs	`resolve_circle` should come before `resolve_plane`
-fn-order	crates/flight-particles/src/apply_particle_forces.rs	`accumulate_forces` should come before `apply_particle_object_forces`
-fn-order	crates/flight-particles/src/apply_particle_forces.rs	`hash2` should come before `value_noise`
-fn-order	crates/flight-particles/src/curve.rs	`build_particle_color_curve` should come before `hsv_to_rgb`
-fn-order	crates/flight-particles/src/curve.rs	`hsv_to_rgb` should come before `rgb_to_hsv`
-fn-order	crates/flight-particles/src/curve.rs	`interp_keyframe` should come before `locate_keyframe_color`
-fn-order	crates/flight-particles/src/curve.rs	`locate_keyframe_color` should come before `locate_keyframe_curve`
-fn-order	crates/flight-particles/src/particle_emitter_signals.rs	`initialize_particle_emitter_signals` should come before `get_particle_emitter_signals`
-fn-order	crates/flight-particles/src/particle_emitter_state.rs	`initialize_particle_emitter_state` should come before `ensure_particle_emitter_state_capacity`
-fn-order	crates/flight-particles/src/particle_objects_state.rs	`initialize_particle_objects_state` should come before `ensure_particle_objects_state_capacity`
-fn-order	crates/flight-particles/src/validate_particle_emitter_config.rs	`check_finite` should come before `is_finite_curve`
-fn-order	crates/flight-particles/src/validate_particle_emitter_config.rs	`is_finite_curve` should come before `validate_particle_emitter_config`
 fn-order	crates/flight-statechart/src/statechart.rs	`advance_statechart_region` should come before `set_statechart_region_duration`
 fn-order	crates/flight-statechart/src/statechart.rs	`create_statechart_instance` should come before `advance_statechart_instance`
 fn-order	crates/flight-statechart/src/statechart.rs	`initialize_statechart_instance` should come before `get_statechart_region_state`
@@ -285,7 +260,6 @@ hashmap-iteration	crates/flight-log/src/log.rs	`fn merge_span_fields` iterates H
 hashmap-iteration	crates/flight-log/src/log.rs	`fn merge_span_fields` iterates HashMap/HashSet `span_fields`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hidden-state	crates/flight-entity/src/guards.rs	thread_local `GUARDS_ENABLED` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-entity/src/guards.rs	thread_local `WRITE_GUARD` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-missing-test-file	crates/flight-particles/src/types.rs	no test file (expected crates/flight-particles/tests/types_test.rs)
 missing-test-file	crates/flight-statechart/src/types.rs	no test file (expected crates/flight-statechart/tests/types_test.rs)
 sugar-delegates	crates/flight-log/src/log.rs	`impl From for LogDataOrProvider::from` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-log/src/log.rs	`impl From for LogDataOrProvider::from` does not call a free function; impl sugar must delegate to the free-function contract
@@ -299,80 +273,6 @@ test-coverage	crates/flight-geometry/src/obb.rs	`initialize_obb` is not tested
 test-coverage	crates/flight-geometry/src/ray3d.rs	`initialize_ray3d` is not tested
 test-coverage	crates/flight-geometry/src/transform2d.rs	`initialize_transform2d` is not tested
 test-coverage	crates/flight-geometry/src/transform3d.rs	`initialize_transform3d` is not tested
-test-default-call	crates/flight-particles/tests/apply_particle_collisions_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/apply_particle_forces_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/apply_particle_forces_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/particle_emitter_config_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/particle_emitter_signals_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/particle_emitter_state_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/particle_objects_state_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/particle_spawn_offset_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/particle_spawn_offset_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/particle_spawn_offset_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/particle_spawn_offset_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/particle_spawn_offset_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/particle_spawn_offset_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/step_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/step_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/update_particle_objects_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-statechart/tests/statechart_signals_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-statechart/tests/statechart_test.rs	test calls `::default()` — use the `create_*` function
 test-module-coverage	crates/flight-entity/tests/clone_test.rs	`clone_entity` has no test module (expected `mod clone_entity { ... }`)
@@ -432,10 +332,6 @@ test-module-coverage	crates/flight-log/tests/log_test.rs	`set_log_level` has no 
 test-module-coverage	crates/flight-log/tests/log_test.rs	`set_log_redaction_paths` has no test module (expected `mod set_log_redaction_paths { ... }`)
 test-module-coverage	crates/flight-log/tests/log_test.rs	`set_log_sink` has no test module (expected `mod set_log_sink { ... }`)
 test-module-coverage	crates/flight-log/tests/log_test.rs	`start_log_timer` has no test module (expected `mod start_log_timer { ... }`)
-test-module-coverage	crates/flight-particles/tests/update_particle_objects_test.rs	`is_particle_objects_complete` has no test module (expected `mod is_particle_objects_complete { ... }`)
-test-module-coverage	crates/flight-particles/tests/update_particle_objects_test.rs	`update_particle_objects` has no test module (expected `mod update_particle_objects { ... }`)
-test-module-coverage	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	`normalize_particle_emitter_config` has no test module (expected `mod normalize_particle_emitter_config { ... }`)
-test-module-coverage	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	`validate_particle_emitter_config` has no test module (expected `mod validate_particle_emitter_config { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_signals_test.rs	`enable_statechart_signals` has no test module (expected `mod enable_statechart_signals { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_signals_test.rs	`get_statechart_signals` has no test module (expected `mod get_statechart_signals { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_signals_test.rs	`initialize_statechart_signals` has no test module (expected `mod initialize_statechart_signals { ... }`)
@@ -449,7 +345,6 @@ test-module-coverage	crates/flight-statechart/tests/statechart_test.rs	`initiali
 test-module-coverage	crates/flight-statechart/tests/statechart_test.rs	`set_statechart_boolean_input` has no test module (expected `mod set_statechart_boolean_input { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_test.rs	`set_statechart_number_input` has no test module (expected `mod set_statechart_number_input { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_test.rs	`set_statechart_region_duration` has no test module (expected `mod set_statechart_region_duration { ... }`)
-test-module-empty	crates/flight-particles/tests/apply_particle_collisions_test.rs	module `apply_particle_collisions` has no #[test] functions
 test-module-order	crates/flight-entity/tests/guards_test.rs	`create_guarded_entity_runtime_tests` should come before `create_guarded_entity_tests`
 test-module-order	crates/flight-log/tests/log_test.rs	`enable_log_signals_tests` should come before `start_log_timer_tests`
 test-module-order	crates/flight-log/tests/log_test.rs	`log_assert_tests` should come before `log_tests`
