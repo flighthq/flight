@@ -50,3 +50,17 @@ mod serialize_spine_particle_document {
         );
     }
 }
+
+mod spine_serialize_round_trip {
+    use super::*;
+
+    #[test]
+    fn round_trips_blend_mode_through_serialize() {
+        let source =
+            "{\"continuous\":true,\"blendMode\":\"additive\",\"emission\":{\"low\":1,\"high\":1}}";
+        let config = parse_spine_particle(source);
+        let document = parse_spine_particle_document(source).document;
+        let reparsed = parse_spine_particle(&serialize_spine_particle(&config, Some(&document)));
+        assert_eq!(reparsed.blend_mode.as_deref(), Some("add"));
+    }
+}

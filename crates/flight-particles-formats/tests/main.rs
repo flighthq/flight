@@ -7,6 +7,7 @@ mod particle_designer_parse_test;
 mod particle_designer_serialize_test;
 mod pixi_parse_test;
 mod register_built_in_particle_formats_test;
+mod source_parity_test;
 mod spine_parse_test;
 mod spine_serialize_test;
 mod starling_pex_parse_test;
