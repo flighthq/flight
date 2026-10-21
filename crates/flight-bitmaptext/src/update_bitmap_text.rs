@@ -422,7 +422,7 @@ fn layout_bitmap_text_pages(bitmap_text: &mut BitmapText, guard_state: &BitmapTe
         let mut pen_x = start_x;
         for (word_index, word) in line.words.iter().enumerate() {
             if word_index > 0 {
-                pen_x += line.gaps[word_index - 1] + gap_extra;
+                pen_x += line.gaps.get(word_index - 1).copied().unwrap_or(0.0) + gap_extra;
             }
             for glyph in &word.glyphs {
                 let (bearing_x, bearing_y, height, page, width, x, y) = {
