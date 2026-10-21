@@ -1,0 +1,18 @@
+[package]
+name = "flight-regexp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "ECMAScript regular expressions with shared lastIndex state and UTF-16 match indices"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+regress = { version = "0.12.0", features = ["utf16"] }
+
+[lints]
+workspace = true
