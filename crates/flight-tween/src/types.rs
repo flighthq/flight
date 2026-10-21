@@ -101,12 +101,12 @@ pub fn create_tween_target(props: HashMap<String, f32>) -> TweenTarget {
     };
 }
 
-pub fn target_key(target: &TweenTarget) -> usize {
-    return Arc::as_ptr(&target.props) as usize;
-}
-
 fn default_ease(t: f32) -> f32 {
     return t;
+}
+
+pub fn target_key(target: &TweenTarget) -> usize {
+    return Arc::as_ptr(&target.props) as usize;
 }
 
 impl Clone for Tween {

@@ -8,6 +8,30 @@ use crate::types::{
     TweenTarget, target_key,
 };
 
+pub fn initialize_tween(tween: &Tween) {
+    let mut tween_data = tween.data.write().unwrap();
+    let smart_rotation = tween_data.smart_rotation;
+
+    let target_props: HashMap<String, f32> = tween_data.target.props.read().unwrap().clone();
+
+    let property_map = tween_data.property_map.clone();
+
+    for detail in tween_data.properties.iter_mut() {
+        let start = *target_props.get(&detail.key).unwrap_or(&0.0);
+        let end = *property_map.get(&detail.key).unwrap_or(&0.0);
+        detail.start = start;
+        detail.change = end - start;
+        if smart_rotation {
+            let mut change = ((detail.change % 360.0) + 360.0) % 360.0;
+            if change > 180.0 {
+                change -= 360.0;
+            }
+            detail.change = change;
+        }
+    }
+    tween_data.initialized = true;
+}
+
 pub fn add_tween_to_manager(
     manager: &TweenManager,
     tween: &Tween,
@@ -71,30 +95,6 @@ pub fn has_tween_property(tween: &Tween, key: &str) -> bool {
         return reg_keys.iter().any(|k| k == key);
     }
     return tween_data.property_map.contains_key(key);
-}
-
-pub fn initialize_tween(tween: &Tween) {
-    let mut tween_data = tween.data.write().unwrap();
-    let smart_rotation = tween_data.smart_rotation;
-
-    let target_props: HashMap<String, f32> = tween_data.target.props.read().unwrap().clone();
-
-    let property_map = tween_data.property_map.clone();
-
-    for detail in tween_data.properties.iter_mut() {
-        let start = *target_props.get(&detail.key).unwrap_or(&0.0);
-        let end = *property_map.get(&detail.key).unwrap_or(&0.0);
-        detail.start = start;
-        detail.change = end - start;
-        if smart_rotation {
-            let mut change = ((detail.change % 360.0) + 360.0) % 360.0;
-            if change > 180.0 {
-                change -= 360.0;
-            }
-            detail.change = change;
-        }
-    }
-    tween_data.initialized = true;
 }
 
 // flight-lint: allow(hashmap-iteration) construction-time iteration of input property_map to build ordered properties Vec
