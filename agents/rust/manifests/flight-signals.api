@@ -1,0 +1,103 @@
+src/connection.rs: pub fn connect_signal_tracked<T: 'static>(signal: &Signal<T>, slot: SignalSlot<T>, options: Option<&SignalTrackedConnectOptions>,) -> SignalConnection
+src/connection.rs: pub fn disconnect_signal_connection(connection: &SignalConnection)
+src/connection.rs: pub fn is_signal_connection_connected(connection: &SignalConnection) -> bool
+src/connection.rs: pub fn is_signal_connection_paused(connection: &SignalConnection) -> bool
+src/connection.rs: pub fn pause_signal_connection(connection: &SignalConnection)
+src/connection.rs: pub fn resume_signal_connection(connection: &SignalConnection)
+src/contract.rs: pub use super::connection::*;
+src/contract.rs: pub use super::emitter::*;
+src/contract.rs: pub use super::internal::*;
+src/contract.rs: pub use super::safe::*;
+src/contract.rs: pub use super::scope::*;
+src/contract.rs: pub use super::signal::*;
+src/contract.rs: pub use super::slot::*;
+src/contract.rs: pub use super::throttle::*;
+src/contract.rs: pub use super::types::*;
+src/emitter.rs: pub fn cancel_signal<T>(signal: &Signal<T>)
+src/emitter.rs: pub fn emit_signal<T>(signal: &Signal<T>, args: &T)
+src/internal.rs: pub fn null_signal_emit()
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::FrameTick;
+src/lib.rs: pub use contract::Signal;
+src/lib.rs: pub use contract::SignalConnectOptions;
+src/lib.rs: pub use contract::SignalConnection;
+src/lib.rs: pub use contract::SignalData;
+src/lib.rs: pub use contract::SignalScope;
+src/lib.rs: pub use contract::SignalSlot;
+src/lib.rs: pub use contract::SignalThrottleOptions;
+src/lib.rs: pub use contract::SignalTimerState;
+src/lib.rs: pub use contract::SignalTrackedConnectOptions;
+src/lib.rs: pub use contract::SlotId;
+src/lib.rs: pub use contract::TimerId;
+src/lib.rs: pub use contract::advance_signal_timers;
+src/lib.rs: pub use contract::cancel_signal;
+src/lib.rs: pub use contract::clear_signal;
+src/lib.rs: pub use contract::clear_signal_timeout;
+src/lib.rs: pub use contract::connect_signal;
+src/lib.rs: pub use contract::connect_signal_at_frame_rate;
+src/lib.rs: pub use contract::connect_signal_debounced;
+src/lib.rs: pub use contract::connect_signal_throttled;
+src/lib.rs: pub use contract::connect_signal_tracked;
+src/lib.rs: pub use contract::create_signal;
+src/lib.rs: pub use contract::create_signal_scope;
+src/lib.rs: pub use contract::create_signal_timer_state;
+src/lib.rs: pub use contract::disconnect_signal;
+src/lib.rs: pub use contract::disconnect_signal_connection;
+src/lib.rs: pub use contract::disconnect_signal_scope;
+src/lib.rs: pub use contract::emit_signal;
+src/lib.rs: pub use contract::emit_signal_safe;
+src/lib.rs: pub use contract::has_signal_slots;
+src/lib.rs: pub use contract::is_signal_connection_connected;
+src/lib.rs: pub use contract::is_signal_connection_paused;
+src/lib.rs: pub use contract::is_slot_connected;
+src/lib.rs: pub use contract::pause_signal_connection;
+src/lib.rs: pub use contract::resume_signal_connection;
+src/lib.rs: pub use contract::set_signal_timeout;
+src/safe.rs: pub fn emit_signal_safe<T>(signal: &Signal<T>, args: &T)
+src/scope.rs: pub fn create_signal_scope() -> SignalScope
+src/scope.rs: pub fn disconnect_signal_scope(scope: &SignalScope)
+src/scope.rs: pub fn initialize_signal_scope(out: &mut SignalScope)
+src/signal.rs: pub fn create_signal<T: 'static>() -> Signal<T>
+src/signal.rs: pub fn initialize_signal<T: 'static>(out: &mut Signal<T>)
+src/slot.rs: pub fn clear_signal<T>(signal: &Signal<T>)
+src/slot.rs: pub fn connect_signal<T: 'static>(signal: &Signal<T>, slot: SignalSlot<T>, options: Option<&SignalConnectOptions>,) -> SlotId
+src/slot.rs: pub fn disconnect_signal<T>(signal: &Signal<T>, id: SlotId)
+src/slot.rs: pub fn has_signal_slots<T>(signal: &Signal<T>) -> bool
+src/slot.rs: pub fn is_slot_connected<T>(signal: &Signal<T>, id: SlotId) -> bool
+src/throttle.rs: pub fn advance_signal_timers(state: &Ref<SignalTimerState>, now_ms: f64)
+src/throttle.rs: pub fn clear_signal_timeout(state: &Ref<SignalTimerState>, id: TimerId)
+src/throttle.rs: pub fn connect_signal_at_frame_rate(source: &Signal<FrameTick>, fps: f64, slot: Arc<dyn Fn(f64) + Send + Sync>,) -> Arc<dyn Fn() + Send + Sync>
+src/throttle.rs: pub fn connect_signal_debounced<T: Clone + Send + 'static>(source: &Signal<T>, delay_ms: f64, slot: SignalSlot<T>, options: Option<&SignalThrottleOptions>, state: &Ref<SignalTimerState>,) -> Arc<dyn Fn() + Send + Sync>
+src/throttle.rs: pub fn connect_signal_throttled<T: Clone + Send + 'static>(source: &Signal<T>, interval_ms: f64, slot: SignalSlot<T>, options: Option<&SignalThrottleOptions>, state: &Ref<SignalTimerState>,) -> Arc<dyn Fn() + Send + Sync>
+src/throttle.rs: pub fn create_signal_timer_state() -> SignalTimerState
+src/throttle.rs: pub fn initialize_signal_timer_state(out: &mut SignalTimerState)
+src/throttle.rs: pub fn set_signal_timeout(state: &Ref<SignalTimerState>, delay_ms: f64, callback: Arc<dyn Fn() + Send + Sync>,) -> TimerId
+src/types.rs: #[derive(Clone)] pub struct SignalConnection { pub(crate) disconnect: Arc<dyn Fn() + Send + Sync>, pub(crate) set_paused: Arc<dyn Fn(bool) + Send + Sync>, pub(crate) is_connected: Arc<dyn Fn() -> bool + Send + Sync>, pub(crate) paused: Arc<AtomicBool>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct FrameTick { pub delta_time: f64, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] pub struct SlotId(pub u64);
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] pub struct TimerId(pub u64);
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct SignalConnectOptions { pub priority: Option<i32>, pub once: Option<bool>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct SignalThrottleOptions { pub leading: Option<bool>, pub trailing: Option<bool>, }
+src/types.rs: #[derive(Clone, Default)] pub struct SignalScope { pub connections: Ref<Vec<SignalConnection>>, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Default)] pub struct SignalTrackedConnectOptions { pub priority: Option<i32>, pub once: Option<bool>, pub scope: Option<SignalScope>, }
+src/types.rs: impl Clone for Signal<T>
+src/types.rs: impl Clone for Signal<T> :: fn clone(&self) -> Self
+src/types.rs: impl Default for Signal<T>
+src/types.rs: impl Default for Signal<T> :: fn default() -> Self
+src/types.rs: impl Default for SignalTimerState
+src/types.rs: impl Default for SignalTimerState :: fn default() -> Self
+src/types.rs: impl Entity for SignalScope
+src/types.rs: impl Entity for SignalScope :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for SignalScope :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl flight_entity::Entity for Signal<T>
+src/types.rs: impl flight_entity::Entity for Signal<T> :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl flight_entity::Entity for Signal<T> :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl std::fmt::Debug for Signal<T>
+src/types.rs: impl std::fmt::Debug for Signal<T> :: fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+src/types.rs: impl std::fmt::Debug for SignalScope
+src/types.rs: impl std::fmt::Debug for SignalScope :: fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+src/types.rs: pub struct Signal<T> { pub emit: Ref<Arc<dyn Fn(&T) + Send + Sync>>, pub data: Ref<Option<SignalData<T>>>, pub(crate) next_slot_id: Arc<AtomicU64>, runtime: EntityRuntimeSlot, }
+src/types.rs: pub struct SignalData<T> { pub slots: Vec<Option<SignalSlot<T>>>, pub ids: Vec<SlotId>, pub priorities: Vec<i32>, pub repeat: Vec<bool>, pub paused: Vec<bool>, pub cancelled: bool, pub depth: u32, }
+src/types.rs: pub struct SignalTimer { pub id: TimerId, pub fire_at_ms: f64, pub callback: Arc<dyn Fn() + Send + Sync>, }
+src/types.rs: pub struct SignalTimerState { pub now_ms: f64, pub timers: Vec<SignalTimer>, pub(crate) next_id: u64, }
+src/types.rs: pub type SignalSlot<T> = Arc<dyn Fn(&T) + Send + Sync>;
