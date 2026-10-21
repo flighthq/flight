@@ -1,0 +1,70 @@
+src/contract.rs: pub use crate::flow::*;
+src/contract.rs: pub use crate::flow_guards::*;
+src/contract.rs: pub use crate::types::*;
+src/flow.rs: impl FlowStack :: fn new() -> Ref<FlowStack>
+src/flow.rs: impl FlowStackMethods for Ref<FlowStack>
+src/flow.rs: impl FlowStackMethods for Ref<FlowStack> :: fn active_state(&self) -> Option<Ref<FlowState>>
+src/flow.rs: impl FlowStackMethods for Ref<FlowStack> :: fn clear_stack(&self)
+src/flow.rs: impl FlowStackMethods for Ref<FlowStack> :: fn pop_state(&self) -> Option<Ref<FlowState>>
+src/flow.rs: impl FlowStackMethods for Ref<FlowStack> :: fn push_state(&self, state: Ref<FlowState>, guards: &FlowGuardStateRef)
+src/flow.rs: impl FlowStackMethods for Ref<FlowStack> :: fn replace_state(&self, state: Ref<FlowState>, guards: &FlowGuardStateRef)
+src/flow.rs: impl FlowStackMethods for Ref<FlowStack> :: fn stack_depth(&self) -> usize
+src/flow.rs: impl FlowStackMethods for Ref<FlowStack> :: fn update_stack(&self, delta_time: f32)
+src/flow.rs: impl FlowStackMethods for Ref<FlowStack> :: fn visible_states(&self, out: &mut Vec<Ref<FlowState>>)
+src/flow.rs: pub fn clear_flow_stack(stack: &Ref<FlowStack>)
+src/flow.rs: pub fn create_flow_stack() -> Ref<FlowStack>
+src/flow.rs: pub fn get_active_flow_state(stack: &Ref<FlowStack>) -> Option<Ref<FlowState>>
+src/flow.rs: pub fn get_flow_stack_depth(stack: &Ref<FlowStack>) -> usize
+src/flow.rs: pub fn get_flow_stack_visible_states(out: &mut Vec<Ref<FlowState>>, stack: &Ref<FlowStack>)
+src/flow.rs: pub fn initialize_flow_stack(out: &mut FlowStack)
+src/flow.rs: pub fn pop_flow_state(stack: &Ref<FlowStack>) -> Option<Ref<FlowState>>
+src/flow.rs: pub fn push_flow_state(stack: &Ref<FlowStack>, state: Ref<FlowState>, guards: &FlowGuardStateRef)
+src/flow.rs: pub fn replace_flow_state(stack: &Ref<FlowStack>, state: Ref<FlowState>, guards: &FlowGuardStateRef)
+src/flow.rs: pub fn update_flow_stack(stack: &Ref<FlowStack>, delta_time: f32)
+src/flow.rs: pub trait FlowStackMethods { fn active_state(&self) -> Option<Ref<FlowState>>; fn clear_stack(&self); fn pop_state(&self) -> Option<Ref<FlowState>>; fn push_state(&self, state: Ref<FlowState>, guards: &FlowGuardStateRef); fn replace_state(&self, state: Ref<FlowState>, guards: &FlowGuardStateRef); fn stack_depth(&self) -> usize; fn update_stack(&self, delta_time: f32); fn visible_states(&self, out: &mut Vec<Ref<FlowState>>); }
+src/flow_guards.rs: impl FlowGuardStateMethods for FlowGuardStateRef
+src/flow_guards.rs: impl FlowGuardStateMethods for FlowGuardStateRef :: fn disable_guards(&self)
+src/flow_guards.rs: impl FlowGuardStateMethods for FlowGuardStateRef :: fn enable_guards(&self, log_state: &flight_log::LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>)
+src/flow_guards.rs: pub fn disable_flow_guards(state: &FlowGuardStateRef)
+src/flow_guards.rs: pub fn enable_flow_guards(state: &FlowGuardStateRef, log_state: &flight_log::LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/flow_guards.rs: pub fn get_flow_guard_kind_string(value: FlowGuardKind) -> &'static str
+src/flow_guards.rs: pub fn parse_flow_guard_kind(value: &str) -> Option<FlowGuardKind>
+src/flow_guards.rs: pub fn report_flow_guard(state: &FlowGuardStateRef, kind: FlowGuardKind)
+src/flow_guards.rs: pub trait FlowGuardStateMethods { fn disable_guards(&self); fn enable_guards(&self, log_state: &flight_log::LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>); }
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::FlowCallback;
+src/lib.rs: pub use contract::FlowGuardContext;
+src/lib.rs: pub use contract::FlowGuardKind;
+src/lib.rs: pub use contract::FlowGuardState;
+src/lib.rs: pub use contract::FlowGuardStateMethods;
+src/lib.rs: pub use contract::FlowGuardStateRef;
+src/lib.rs: pub use contract::FlowStack;
+src/lib.rs: pub use contract::FlowStackMethods;
+src/lib.rs: pub use contract::FlowState;
+src/lib.rs: pub use contract::FlowUpdateCallback;
+src/lib.rs: pub use contract::clear_flow_stack;
+src/lib.rs: pub use contract::create_flow_stack;
+src/lib.rs: pub use contract::disable_flow_guards;
+src/lib.rs: pub use contract::enable_flow_guards;
+src/lib.rs: pub use contract::get_active_flow_state;
+src/lib.rs: pub use contract::get_flow_guard_kind_string;
+src/lib.rs: pub use contract::get_flow_stack_depth;
+src/lib.rs: pub use contract::get_flow_stack_visible_states;
+src/lib.rs: pub use contract::parse_flow_guard_kind;
+src/lib.rs: pub use contract::pop_flow_state;
+src/lib.rs: pub use contract::push_flow_state;
+src/lib.rs: pub use contract::replace_flow_state;
+src/lib.rs: pub use contract::update_flow_stack;
+src/types.rs: #[derive(Clone)] pub struct FlowGuardContext { pub log_state: LogStateRef, pub clock: Arc<dyn Fn() -> f64 + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct FlowStack { pub states: Vec<Ref<FlowState>>, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone)] pub struct FlowState { pub name: Option<String>, pub on_enter: Option<FlowCallback>, pub on_exit: Option<FlowCallback>, pub on_pause: Option<FlowCallback>, pub on_resume: Option<FlowCallback>, pub on_update: Option<FlowUpdateCallback>, pub render_below: Option<bool>, pub update_below: Option<bool>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] pub enum FlowGuardKind { DuplicateStatePush, TransitionDuringTransition, }
+src/types.rs: impl Default for FlowStack
+src/types.rs: impl Default for FlowStack :: fn default() -> Self
+src/types.rs: impl Entity for FlowStack
+src/types.rs: impl Entity for FlowStack :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for FlowStack :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub struct FlowGuardState { pub enabled: bool, pub transition_depth: u32, pub context: Option<FlowGuardContext>, }
+src/types.rs: pub type FlowCallback = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type FlowGuardStateRef = Ref<FlowGuardState>;
+src/types.rs: pub type FlowUpdateCallback = Arc<dyn Fn(f32) + Send + Sync>;

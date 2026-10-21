@@ -1,0 +1,65 @@
+src/bidi_class_kernel.rs: pub fn create_compact_bidi_class_kernel() -> BidiClassKernel
+src/bidi_class_kernel.rs: pub fn explain_bidi_class_kernel(bidi_class_kernel: &BidiClassKernel,) -> BidiClassKernelExplanation
+src/bidi_class_kernel.rs: pub fn initialize_compact_bidi_class_kernel(out: &mut BidiClassKernel)
+src/bidi_class_kernel.rs: pub static COMPACT_BIDI_CLASS_KERNEL: LazyLock<BidiClassKernel>
+src/contract.rs: pub use super::bidi_class_kernel::*;
+src/contract.rs: pub use super::enable_text_bidi_guards::*;
+src/contract.rs: pub use super::get_bidi_runs::*;
+src/contract.rs: pub use super::reorder_bidi_line::*;
+src/contract.rs: pub use super::resolve_bidi_levels::*;
+src/contract.rs: pub use super::text_bidi_guards::*;
+src/contract.rs: pub use super::types::*;
+src/enable_text_bidi_guards.rs: pub fn disable_text_bidi_guards()
+src/enable_text_bidi_guards.rs: pub fn enable_text_bidi_guards(log_state: &Ref<LogState>, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/get_bidi_runs.rs: pub fn get_bidi_runs(bidi_class_kernel: &BidiClassKernel, text: &str, base_direction: BidiDirection,) -> Vec<BidiRun>
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::BidiClass;
+src/lib.rs: pub use contract::BidiClassKernel;
+src/lib.rs: pub use contract::BidiClassKernelCoverage;
+src/lib.rs: pub use contract::BidiClassKernelExplanation;
+src/lib.rs: pub use contract::BidiClassKernelKind;
+src/lib.rs: pub use contract::BidiCodePointRange;
+src/lib.rs: pub use contract::BidiDirection;
+src/lib.rs: pub use contract::BidiRun;
+src/lib.rs: pub use contract::BidiRunDirection;
+src/lib.rs: pub use contract::COMPACT_BIDI_CLASS_KERNEL;
+src/lib.rs: pub use contract::TextBidiGuard;
+src/lib.rs: pub use contract::create_compact_bidi_class_kernel;
+src/lib.rs: pub use contract::disable_text_bidi_guards;
+src/lib.rs: pub use contract::enable_text_bidi_guards;
+src/lib.rs: pub use contract::explain_bidi_class_kernel;
+src/lib.rs: pub use contract::get_bidi_runs;
+src/lib.rs: pub use contract::initialize_compact_bidi_class_kernel;
+src/lib.rs: pub use contract::reorder_bidi_line;
+src/lib.rs: pub use contract::report_text_bidi_compact_table_miss;
+src/lib.rs: pub use contract::resolve_bidi_levels;
+src/lib.rs: pub use contract::set_text_bidi_guard;
+src/reorder_bidi_line.rs: pub fn reorder_bidi_line(out: &mut Vec<usize>, levels: &Uint8Array, start: usize, end: usize)
+src/resolve_bidi_levels.rs: pub fn resolve_bidi_levels(bidi_class_kernel: &BidiClassKernel, text: &str, base_direction: BidiDirection,) -> Box<Uint8Array>
+src/text_bidi_guards.rs: pub fn report_text_bidi_compact_table_miss(codepoint: u32)
+src/text_bidi_guards.rs: pub fn set_text_bidi_guard(guard: Option<TextBidiGuard>)
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] #[repr(u8)] pub enum BidiClass { L = 0, R = 1, AL = 2, EN = 3, ES = 4, ET = 5, AN = 6, CS = 7, NSM = 8, BN = 9, B = 10, S = 11, WS = 12, ON = 13, LRE = 14, RLE = 15, LRO = 16, RLO = 17, PDF = 18, LRI = 19, RLI = 20, FSI = 21, PDI = 22, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum BidiClassKernelCoverage { CommonScriptRanges, ProviderDefined, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum BidiClassKernelKind { Compact, Custom, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum BidiDirection { Ltr, Rtl, Auto, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum BidiRunDirection { Ltr, Rtl, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct BidiClassKernel { runtime: EntityRuntimeSlot, pub get_bidi_class: fn(u32) -> BidiClass, pub(crate) is_compact: bool, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct BidiClassKernelExplanation { pub kernel: BidiClassKernelKind, pub coverage: BidiClassKernelCoverage, pub covered_code_point_ranges: Vec<BidiCodePointRange>, pub fallback_class: Option<BidiClass>, pub table_valid: Option<bool>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct BidiCodePointRange { pub start: u32, pub end: u32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct BidiRun { pub start: usize, pub end: usize, pub level: u8, pub direction: BidiRunDirection, }
+src/types.rs: impl Default for BidiClassKernel
+src/types.rs: impl Default for BidiClassKernel :: fn default() -> Self
+src/types.rs: impl Entity for BidiClassKernel
+src/types.rs: impl Entity for BidiClassKernel :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for BidiClassKernel :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub fn get_bidi_class_kernel_coverage_string(value: BidiClassKernelCoverage) -> &'static str
+src/types.rs: pub fn get_bidi_class_kernel_kind_string(value: BidiClassKernelKind) -> &'static str
+src/types.rs: pub fn get_bidi_class_string(value: BidiClass) -> &'static str
+src/types.rs: pub fn get_bidi_direction_string(value: BidiDirection) -> &'static str
+src/types.rs: pub fn get_bidi_run_direction_string(value: BidiRunDirection) -> &'static str
+src/types.rs: pub fn parse_bidi_class(value: &str) -> Option<BidiClass>
+src/types.rs: pub fn parse_bidi_class_kernel_coverage(value: &str) -> Option<BidiClassKernelCoverage>
+src/types.rs: pub fn parse_bidi_class_kernel_kind(value: &str) -> Option<BidiClassKernelKind>
+src/types.rs: pub fn parse_bidi_direction(value: &str) -> Option<BidiDirection>
+src/types.rs: pub fn parse_bidi_run_direction(value: &str) -> Option<BidiRunDirection>
+src/types.rs: pub type TextBidiGuard = Arc<dyn Fn(u32) + Send + Sync>;

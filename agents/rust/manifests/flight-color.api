@@ -1,0 +1,92 @@
+src/color_from_kelvin.rs: pub fn color_from_kelvin(kelvin: f32) -> u32
+src/contract.rs: pub use super::color_from_kelvin::*;
+src/contract.rs: pub use super::hsl_color::*;
+src/contract.rs: pub use super::hsv_color::*;
+src/contract.rs: pub use super::lerp_color::*;
+src/contract.rs: pub use super::luminance::*;
+src/contract.rs: pub use super::oklab::*;
+src/contract.rs: pub use super::pack_color::*;
+src/contract.rs: pub use super::premultiply_color_alpha::*;
+src/contract.rs: pub use super::srgb_transfer::*;
+src/hsl_color.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct HslColor { pub h: f32, pub s: f32, pub l: f32, runtime: EntityRuntimeSlot, }
+src/hsl_color.rs: impl Entity for HslColor
+src/hsl_color.rs: impl Entity for HslColor :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/hsl_color.rs: impl Entity for HslColor :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/hsl_color.rs: impl HslColor :: fn rgb_to_hsl(&mut self, color: u32)
+src/hsl_color.rs: pub fn allocate_hsl_color() -> HslColor
+src/hsl_color.rs: pub fn hsl_to_rgb(out: &mut [f32; 4], h: f32, s: f32, l: f32)
+src/hsl_color.rs: pub fn rgb_to_hsl(out: &mut HslColor, color: u32)
+src/hsv_color.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct HsvColor { pub h: f32, pub s: f32, pub v: f32, runtime: EntityRuntimeSlot, }
+src/hsv_color.rs: impl Entity for HsvColor
+src/hsv_color.rs: impl Entity for HsvColor :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/hsv_color.rs: impl Entity for HsvColor :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/hsv_color.rs: impl HsvColor :: fn rgb_to_hsv(&mut self, color: u32)
+src/hsv_color.rs: pub fn allocate_hsv_color() -> HsvColor
+src/hsv_color.rs: pub fn hsv_to_rgb(out: &mut [f32; 4], h: f32, s: f32, v: f32)
+src/hsv_color.rs: pub fn rgb_to_hsv(out: &mut HsvColor, color: u32)
+src/lerp_color.rs: impl LinearColor :: fn lerp(&mut self, start: &LinearColor, end: &LinearColor, t: f32)
+src/lerp_color.rs: pub fn lerp_color(start: u32, end: u32, t: f32) -> u32
+src/lerp_color.rs: pub fn lerp_linear_color(out: &mut LinearColor, start: &LinearColor, end: &LinearColor, t: f32)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::HslColor;
+src/lib.rs: pub use contract::HsvColor;
+src/lib.rs: pub use contract::LinearColor;
+src/lib.rs: pub use contract::allocate_hsl_color;
+src/lib.rs: pub use contract::allocate_hsv_color;
+src/lib.rs: pub use contract::allocate_linear_color;
+src/lib.rs: pub use contract::clamp_linear_rgb;
+src/lib.rs: pub use contract::color_from_kelvin;
+src/lib.rs: pub use contract::compute_rgb_hex_string;
+src/lib.rs: pub use contract::compute_rgba_css_string;
+src/lib.rs: pub use contract::get_color_alpha;
+src/lib.rs: pub use contract::get_color_contrast_ratio;
+src/lib.rs: pub use contract::get_color_luminance;
+src/lib.rs: pub use contract::get_color_rgb;
+src/lib.rs: pub use contract::get_rec2020_luminance_weights;
+src/lib.rs: pub use contract::get_rec709_luminance_weights;
+src/lib.rs: pub use contract::hsl_to_rgb;
+src/lib.rs: pub use contract::hsv_to_rgb;
+src/lib.rs: pub use contract::lerp_color;
+src/lib.rs: pub use contract::lerp_linear_color;
+src/lib.rs: pub use contract::linear_channel_to_srgb;
+src/lib.rs: pub use contract::linear_rgb_to_oklab;
+src/lib.rs: pub use contract::oklab_to_linear_rgb;
+src/lib.rs: pub use contract::pack_color;
+src/lib.rs: pub use contract::pack_linear_to_color;
+src/lib.rs: pub use contract::pack_opaque_color;
+src/lib.rs: pub use contract::premultiply_color_alpha;
+src/lib.rs: pub use contract::rgb_to_hsl;
+src/lib.rs: pub use contract::rgb_to_hsv;
+src/lib.rs: pub use contract::set_color_alpha;
+src/lib.rs: pub use contract::srgb_channel_to_linear;
+src/lib.rs: pub use contract::unpack_color_rgba;
+src/lib.rs: pub use contract::unpack_color_to_linear;
+src/lib.rs: pub use contract::unpremultiply_color_alpha;
+src/luminance.rs: pub fn get_color_contrast_ratio(a: u32, b: u32) -> f32
+src/luminance.rs: pub fn get_color_luminance(color: u32) -> f32
+src/luminance.rs: pub fn get_rec2020_luminance_weights(out: &mut [f32; 3])
+src/luminance.rs: pub fn get_rec709_luminance_weights(out: &mut [f32; 3])
+src/oklab.rs: pub fn clamp_linear_rgb(out: &mut [f32; 3], r: f32, g: f32, b: f32)
+src/oklab.rs: pub fn linear_rgb_to_oklab(out: &mut [f32; 3], r: f32, g: f32, b: f32)
+src/oklab.rs: pub fn oklab_to_linear_rgb(out: &mut [f32; 3], l: f32, a: f32, b: f32)
+src/pack_color.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct LinearColor { pub r: f32, pub g: f32, pub b: f32, pub a: f32, runtime: EntityRuntimeSlot, }
+src/pack_color.rs: impl Entity for LinearColor
+src/pack_color.rs: impl Entity for LinearColor :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/pack_color.rs: impl Entity for LinearColor :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/pack_color.rs: impl LinearColor :: fn pack_to_color(&self) -> u32
+src/pack_color.rs: impl LinearColor :: fn unpack_color(&mut self, color: u32)
+src/pack_color.rs: pub fn allocate_linear_color() -> LinearColor
+src/pack_color.rs: pub fn compute_rgb_hex_string(color: u32) -> String
+src/pack_color.rs: pub fn compute_rgba_css_string(color: u32) -> String
+src/pack_color.rs: pub fn get_color_alpha(color: u32) -> f32
+src/pack_color.rs: pub fn get_color_rgb(color: u32) -> u32
+src/pack_color.rs: pub fn pack_color(r: f32, g: f32, b: f32, a: f32) -> u32
+src/pack_color.rs: pub fn pack_linear_to_color(color: &LinearColor) -> u32
+src/pack_color.rs: pub fn pack_opaque_color(rgb: u32) -> u32
+src/pack_color.rs: pub fn set_color_alpha(color: u32, alpha: f32) -> u32
+src/pack_color.rs: pub fn unpack_color_rgba(out: &mut [f32; 4], color: u32)
+src/pack_color.rs: pub fn unpack_color_to_linear(out: &mut LinearColor, color: u32)
+src/premultiply_color_alpha.rs: pub fn premultiply_color_alpha(color: u32) -> u32
+src/premultiply_color_alpha.rs: pub fn unpremultiply_color_alpha(color: u32) -> u32
+src/srgb_transfer.rs: pub fn linear_channel_to_srgb(value: f32) -> f32
+src/srgb_transfer.rs: pub fn srgb_channel_to_linear(value: f32) -> f32
