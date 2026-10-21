@@ -76,7 +76,11 @@ pub fn as_node3d_ref(node: &NodeRef) -> Option<Node3DRef> {
             .as_ref()?
             .clone()
     };
-    return weak.upgrade();
+    let handle = weak.upgrade()?;
+    if !std::ptr::addr_eq(Arc::as_ptr(&handle), Arc::as_ptr(node)) {
+        return None;
+    }
+    return Some(handle);
 }
 
 pub fn enable_node3d_signals(source: &NodeRef) -> Ref<NodeSignals> {

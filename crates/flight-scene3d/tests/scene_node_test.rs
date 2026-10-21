@@ -24,6 +24,31 @@ mod as_node3d_ref {
     use super::*;
 
     #[test]
+    fn rejects_another_published_nodes_copied_narrowing_row_instead_of_returning_its_foreign_handle()
+     {
+        let original = create_custom_node("Original", 1);
+        let borrowed_traits = {
+            let guard = original.read().unwrap();
+            let traits = guard.node_runtime().traits.as_ref().unwrap();
+            NodeTraits {
+                key: traits.key.clone(),
+                narrow: traits.narrow.clone(),
+            }
+        };
+        let other = create_custom_node("Other", 2);
+        other.write().unwrap().node_runtime_mut().traits = Some(borrowed_traits);
+        let other_erased: NodeRef = other.clone();
+        assert!(as_node3d_ref(&other_erased).is_none());
+        let original_erased: NodeRef = original.clone();
+        let original_family: Node3DRef = original.clone();
+        assert!(Arc::ptr_eq(
+            &as_node3d_ref(&original_erased).unwrap(),
+            &original_family
+        ));
+        assert_eq!(other.read().unwrap().data.value, 2);
+    }
+
+    #[test]
     fn custom_family_constructor_recovers_the_original_payload_uid_and_root_handle() {
         let custom = create_custom_node("Vendor.Original", 47);
         let original_uid = flight_entity::get_entity_uid(&mut *custom.write().unwrap());
