@@ -117,6 +117,19 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 - Optional Cargo features for heavy subsystems (`gl`, `wgpu`, `skia`, …) save compile time.
 - **Built at the end,** after the porting waves, to avoid merge conflicts. Not before.
 
+## D22 Tween targets — APPROVED (user, 2026-10-21)
+
+**Tweens are strictly typed, checked at compile time, and statically dispatched.** A tween works on any object (SDK or user types) with no pre-registration.
+
+- **`Tween<T>` targets a `Ref<T>`** for any `T`. TS `createTween<T extends object>(target, duration, propertyMap: NumericProps<T>, options)` keeps its shape and order.
+- **Property map → a typed list of accessors:** `&[TweenProp<T>]`, where `TweenProp<T> { get: fn(&mut T) -> &mut f32, to: f32 }`.
+  - `tween_prop!(x, 100.0)` expands to `TweenProp { get: |t| &mut t.x, to: 100.0 }`, with `T` inferred from the target. A misspelled or inaccessible field, or a non-numeric one, is a **compile error**.
+  - `tween_with(|t: &mut T| &mut t.a.b, 10.0)` is the escape hatch for nested or computed paths.
+  - Accessors are **plain `fn` pointers** (non-capturing): no string lookup, no hashing, no boxed dynamic dispatch, no reflection at runtime.
+- **TS lowering:** the list transpiles to the plain property map `{ x: 100 }`. The TS API is unchanged.
+- **Out of scope:** naming a property by a runtime string (e.g. loaded from data). Rust has no reflection; add a user-registered accessor table later only if a real use appears.
+- The restricted map-target exception (option b) is withdrawn. Color tweens follow the same pattern.
+
 ## D16 Scene nodes — APPROVED (user, 2026-10-21)
 
 **API philosophy (user):** a node behaves like a raw struct. You read and write bare fields, then optionally call `invalidate*` explicitly. There are no getters or setters that auto-invalidate. TS's split between `sprite.*` and `sprite.data.*` exists only to keep object shapes stable; conceptually it is one object.
