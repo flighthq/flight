@@ -2,6 +2,7 @@ src/contract.rs: pub use super::types::*;
 src/contract.rs: pub use super::video_format::*;
 src/contract.rs: pub use super::video_resource::*;
 src/contract.rs: pub use super::video_resource_from::*;
+src/contract.rs: pub use super::video_texture::*;
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::HostVideoCapabilities;
 src/lib.rs: pub use contract::HostVideoCapability;
@@ -16,9 +17,14 @@ src/lib.rs: pub use contract::VideoResource;
 src/lib.rs: pub use contract::VideoResourceLoadOptions;
 src/lib.rs: pub use contract::VideoResourceLoadReadiness;
 src/lib.rs: pub use contract::VideoResourceUrl;
+src/lib.rs: pub use contract::advance_video_texture;
 src/lib.rs: pub use contract::can_play_video_type;
+src/lib.rs: pub use contract::clone_video_texture;
+src/lib.rs: pub use contract::copy_video_texture;
 src/lib.rs: pub use contract::create_video_resource;
+src/lib.rs: pub use contract::create_video_texture;
 src/lib.rs: pub use contract::destroy_video_resource;
+src/lib.rs: pub use contract::destroy_video_texture;
 src/lib.rs: pub use contract::detect_video_mime_type;
 src/lib.rs: pub use contract::dispose_video_resource;
 src/lib.rs: pub use contract::get_video_channel_state_string;
@@ -26,16 +32,23 @@ src/lib.rs: pub use contract::get_video_resource_duration;
 src/lib.rs: pub use contract::get_video_resource_height;
 src/lib.rs: pub use contract::get_video_resource_load_readiness_string;
 src/lib.rs: pub use contract::get_video_resource_width;
+src/lib.rs: pub use contract::get_video_texture_height;
+src/lib.rs: pub use contract::get_video_texture_inverse_uv_matrix;
+src/lib.rs: pub use contract::get_video_texture_uv_matrix;
+src/lib.rs: pub use contract::get_video_texture_width;
 src/lib.rs: pub use contract::has_video_resource_element;
 src/lib.rs: pub use contract::infer_video_mime_type;
 src/lib.rs: pub use contract::is_video_resource_empty;
 src/lib.rs: pub use contract::is_video_resource_ready;
+src/lib.rs: pub use contract::is_video_texture_frame_ready;
 src/lib.rs: pub use contract::load_video_resource_from_blob;
 src/lib.rs: pub use contract::load_video_resource_from_url;
 src/lib.rs: pub use contract::load_video_resource_from_urls;
 src/lib.rs: pub use contract::parse_video_channel_state;
 src/lib.rs: pub use contract::parse_video_resource_load_readiness;
+src/lib.rs: pub use contract::reset_video_texture_frame;
 src/lib.rs: pub use contract::select_video_resource_url;
+src/lib.rs: pub use contract::set_video_texture_source;
 src/types.rs: #[derive(Clone)] pub struct HostVideoCapability { pub provider: ProviderRef, pub add_ended_listener: Option<Arc<dyn Fn(&Arc<HostImageSource>, VideoEndedListener) + Send + Sync>>, pub attach_stream: Option<Arc<dyn Fn(&Unknown) -> Option<Arc<HostImageSource>> + Send + Sync>>, pub can_play_type: Arc<dyn Fn(&str) -> bool + Send + Sync>, pub create_object_url: Option<Arc<dyn Fn(&Arc<Blob>) -> String + Send + Sync>>, pub create_video_element: Option<Arc<dyn Fn() -> Option<Arc<HostImageSource>> + Send + Sync>>, pub get_current_time: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> f64 + Send + Sync>>, pub get_duration: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> f64 + Send + Sync>>, pub get_height: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> f32 + Send + Sync>>, pub get_loop: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> bool + Send + Sync>>, pub get_muted: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> bool + Send + Sync>>, pub get_playback_rate: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> f32 + Send + Sync>>, pub get_volume: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> f32 + Send + Sync>>, pub get_width: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> f32 + Send + Sync>>, pub is_ready: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> bool + Send + Sync>>, pub load_url: Option<Arc<dyn Fn(&str, Option<&VideoResourceLoadOptions>, Option<&AbortSignal>,) -> VideoProviderFuture<Arc<HostImageSource>> + Send + Sync,>,>, pub pause: Option<Arc<dyn Fn(&Arc<HostImageSource>) + Send + Sync>>, pub play: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> VideoProviderFuture<()> + Send + Sync>>, pub release_element: Option<Arc<dyn Fn(&Arc<HostImageSource>) + Send + Sync>>, pub remove_ended_listener: Option<Arc<dyn Fn(&Arc<HostImageSource>, &VideoEndedListener) + Send + Sync>>, pub revoke_object_url: Option<Arc<dyn Fn(&str) + Send + Sync>>, pub set_current_time: Option<Arc<dyn Fn(&Arc<HostImageSource>, f64) + Send + Sync>>, pub set_loop: Option<Arc<dyn Fn(&Arc<HostImageSource>, bool) + Send + Sync>>, pub set_muted: Option<Arc<dyn Fn(&Arc<HostImageSource>, bool) + Send + Sync>>, pub set_playback_rate: Option<Arc<dyn Fn(&Arc<HostImageSource>, f32) + Send + Sync>>, pub set_volume: Option<Arc<dyn Fn(&Arc<HostImageSource>, f32) + Send + Sync>>, }
 src/types.rs: #[derive(Clone)] pub struct VideoResource { runtime: EntityRuntimeSlot, pub element: Option<Arc<HostImageSource>>, pub object_url: Option<String>, pub owns_element: bool, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum VideoChannelState { Complete, Paused, Playing, Stopped, }
@@ -91,3 +104,22 @@ src/video_resource_from.rs: impl HostVideoCapability :: fn load_video_resource_f
 src/video_resource_from.rs: pub fn load_video_resource_from_blob(host_video: &HostVideoCapability, blob: &Arc<Blob>, options: Option<&VideoResourceLoadOptions>, signal: Option<&AbortSignal>,) -> VideoProviderFuture<VideoResource>
 src/video_resource_from.rs: pub fn load_video_resource_from_url(host_video: &HostVideoCapability, url: &str, options: Option<&VideoResourceLoadOptions>, signal: Option<&AbortSignal>,) -> VideoProviderFuture<VideoResource>
 src/video_resource_from.rs: pub fn load_video_resource_from_urls(host_video: &HostVideoCapability, sources: &[VideoResourceUrl], options: Option<&VideoResourceLoadOptions>, signal: Option<&AbortSignal>,) -> VideoProviderFuture<VideoResource>
+src/video_texture.rs: impl HostVideoCapability :: fn advance_video_texture(&self, texture: &mut dyn TextureVariant) -> u32
+src/video_texture.rs: impl HostVideoCapability :: fn create_video_texture(&self, source: &VideoResource, opts: Option<&CreateTextureCommonOptions>,) -> Texture2D
+src/video_texture.rs: impl HostVideoCapability :: fn get_video_texture_height(&self, texture: &dyn TextureVariant) -> f32
+src/video_texture.rs: impl HostVideoCapability :: fn get_video_texture_width(&self, texture: &dyn TextureVariant) -> f32
+src/video_texture.rs: impl HostVideoCapability :: fn is_video_texture_frame_ready(&self, texture: &dyn TextureVariant) -> bool
+src/video_texture.rs: impl HostVideoCapability :: fn set_video_texture_source(&self, texture: &mut dyn TextureVariant, source: &VideoResource,)
+src/video_texture.rs: pub fn advance_video_texture(host_video: &HostVideoCapability, texture: &mut dyn TextureVariant,) -> u32
+src/video_texture.rs: pub fn clone_video_texture(source: &dyn TextureVariant) -> Texture
+src/video_texture.rs: pub fn copy_video_texture(out: &mut dyn TextureVariant, source: &dyn TextureVariant)
+src/video_texture.rs: pub fn create_video_texture(host_video: &HostVideoCapability, source: &VideoResource, opts: Option<&CreateTextureCommonOptions>,) -> Texture2D
+src/video_texture.rs: pub fn destroy_video_texture(texture: &mut Texture2D)
+src/video_texture.rs: pub fn get_video_texture_height(host_video: &HostVideoCapability, texture: &dyn TextureVariant,) -> f32
+src/video_texture.rs: pub fn get_video_texture_inverse_uv_matrix(out: &mut Matrix3, texture: &dyn TextureUvTransform)
+src/video_texture.rs: pub fn get_video_texture_uv_matrix(out: &mut Matrix3, texture: &dyn TextureUvTransform)
+src/video_texture.rs: pub fn get_video_texture_width(host_video: &HostVideoCapability, texture: &dyn TextureVariant,) -> f32
+src/video_texture.rs: pub fn initialize_video_image_resource(out: &mut ImageResource, source: Arc<HostImageSource>, version: u32,)
+src/video_texture.rs: pub fn is_video_texture_frame_ready(host_video: &HostVideoCapability, texture: &dyn TextureVariant,) -> bool
+src/video_texture.rs: pub fn reset_video_texture_frame(texture: &mut dyn TextureVariant)
+src/video_texture.rs: pub fn set_video_texture_source(host_video: &HostVideoCapability, texture: &mut dyn TextureVariant, source: &VideoResource,)
