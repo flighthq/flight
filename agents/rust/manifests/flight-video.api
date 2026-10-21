@@ -1,0 +1,87 @@
+src/contract.rs: pub use super::types::*;
+src/contract.rs: pub use super::video_format::*;
+src/contract.rs: pub use super::video_resource::*;
+src/contract.rs: pub use super::video_resource_from::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::HostVideoCapabilities;
+src/lib.rs: pub use contract::HostVideoCapability;
+src/lib.rs: pub use contract::VideoChannelState;
+src/lib.rs: pub use contract::VideoEndedListener;
+src/lib.rs: pub use contract::VideoPlayOptions;
+src/lib.rs: pub use contract::VideoProviderFuture;
+src/lib.rs: pub use contract::VideoResource;
+src/lib.rs: pub use contract::VideoResourceLoadOptions;
+src/lib.rs: pub use contract::VideoResourceLoadReadiness;
+src/lib.rs: pub use contract::VideoResourceUrl;
+src/lib.rs: pub use contract::can_play_video_type;
+src/lib.rs: pub use contract::create_video_resource;
+src/lib.rs: pub use contract::destroy_video_resource;
+src/lib.rs: pub use contract::detect_video_mime_type;
+src/lib.rs: pub use contract::dispose_video_resource;
+src/lib.rs: pub use contract::get_video_channel_state_string;
+src/lib.rs: pub use contract::get_video_resource_duration;
+src/lib.rs: pub use contract::get_video_resource_height;
+src/lib.rs: pub use contract::get_video_resource_load_readiness_string;
+src/lib.rs: pub use contract::get_video_resource_width;
+src/lib.rs: pub use contract::has_video_resource_element;
+src/lib.rs: pub use contract::infer_video_mime_type;
+src/lib.rs: pub use contract::is_video_resource_empty;
+src/lib.rs: pub use contract::is_video_resource_ready;
+src/lib.rs: pub use contract::load_video_resource_from_blob;
+src/lib.rs: pub use contract::load_video_resource_from_url;
+src/lib.rs: pub use contract::load_video_resource_from_urls;
+src/lib.rs: pub use contract::parse_video_channel_state;
+src/lib.rs: pub use contract::parse_video_resource_load_readiness;
+src/lib.rs: pub use contract::select_video_resource_url;
+src/types.rs: #[derive(Clone)] pub struct HostVideoCapability { pub provider: ProviderRef, pub add_ended_listener: Option<Arc<dyn Fn(&Arc<HostImageSource>, VideoEndedListener) + Send + Sync>>, pub attach_stream: Option<Arc<dyn Fn(&Unknown) -> Option<Arc<HostImageSource>> + Send + Sync>>, pub can_play_type: Arc<dyn Fn(&str) -> bool + Send + Sync>, pub create_object_url: Option<Arc<dyn Fn(&Arc<Blob>) -> String + Send + Sync>>, pub create_video_element: Option<Arc<dyn Fn() -> Option<Arc<HostImageSource>> + Send + Sync>>, pub get_current_time: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> f64 + Send + Sync>>, pub get_duration: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> f64 + Send + Sync>>, pub get_height: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> f32 + Send + Sync>>, pub get_loop: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> bool + Send + Sync>>, pub get_muted: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> bool + Send + Sync>>, pub get_playback_rate: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> f32 + Send + Sync>>, pub get_volume: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> f32 + Send + Sync>>, pub get_width: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> f32 + Send + Sync>>, pub is_ready: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> bool + Send + Sync>>, pub load_url: Option<Arc<dyn Fn(&str, Option<&VideoResourceLoadOptions>, Option<&AbortSignal>,) -> VideoProviderFuture<Arc<HostImageSource>> + Send + Sync,>,>, pub pause: Option<Arc<dyn Fn(&Arc<HostImageSource>) + Send + Sync>>, pub play: Option<Arc<dyn Fn(&Arc<HostImageSource>) -> VideoProviderFuture<()> + Send + Sync>>, pub release_element: Option<Arc<dyn Fn(&Arc<HostImageSource>) + Send + Sync>>, pub remove_ended_listener: Option<Arc<dyn Fn(&Arc<HostImageSource>, &VideoEndedListener) + Send + Sync>>, pub revoke_object_url: Option<Arc<dyn Fn(&str) + Send + Sync>>, pub set_current_time: Option<Arc<dyn Fn(&Arc<HostImageSource>, f64) + Send + Sync>>, pub set_loop: Option<Arc<dyn Fn(&Arc<HostImageSource>, bool) + Send + Sync>>, pub set_muted: Option<Arc<dyn Fn(&Arc<HostImageSource>, bool) + Send + Sync>>, pub set_playback_rate: Option<Arc<dyn Fn(&Arc<HostImageSource>, f32) + Send + Sync>>, pub set_volume: Option<Arc<dyn Fn(&Arc<HostImageSource>, f32) + Send + Sync>>, }
+src/types.rs: #[derive(Clone)] pub struct VideoResource { runtime: EntityRuntimeSlot, pub element: Option<Arc<HostImageSource>>, pub object_url: Option<String>, pub owns_element: bool, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum VideoChannelState { Complete, Paused, Playing, Stopped, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum VideoResourceLoadReadiness { Metadata, Canplay, Canplaythrough, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct VideoPlayOptions { pub current_time: Option<f32>, pub gain: Option<f32>, pub loops: Option<i32>, pub playback_rate: Option<f32>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct VideoResourceLoadOptions { pub cross_origin: Option<String>, pub muted: Option<bool>, pub plays_inline: Option<bool>, pub preload: Option<String>, pub readiness: Option<VideoResourceLoadReadiness>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct VideoResourceUrl { pub url: String, pub type_: Option<String>, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostVideoCapabilities { pub playback: Option<HostVideoCapability>, }
+src/types.rs: impl Default for VideoResource
+src/types.rs: impl Default for VideoResource :: fn default() -> Self
+src/types.rs: impl Entity for VideoResource
+src/types.rs: impl Entity for VideoResource :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for VideoResource :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl fmt::Debug for VideoResource
+src/types.rs: impl fmt::Debug for VideoResource :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub type VideoEndedListener = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type VideoProviderFuture<T> = Pin<Box<dyn Future<Output = Result<T, FlightError>> + Send>>;
+src/video_format.rs: impl HostVideoCapability :: fn can_play_video_type(&self, mime_type: &str) -> bool
+src/video_format.rs: impl HostVideoCapability :: fn select_video_resource_url<'a>(&self, sources: &'a [VideoResourceUrl],) -> Option<&'a VideoResourceUrl>
+src/video_format.rs: pub fn can_play_video_type(backend: &HostVideoCapability, mime_type: &str) -> bool
+src/video_format.rs: pub fn detect_video_mime_type(data: &Uint8Array) -> Option<&'static str>
+src/video_format.rs: pub fn infer_video_mime_type(url: &str) -> Option<&'static str>
+src/video_format.rs: pub fn select_video_resource_url<'a>(backend: &HostVideoCapability, sources: &'a [VideoResourceUrl],) -> Option<&'a VideoResourceUrl>
+src/video_resource.rs: impl HostVideoCapability :: fn destroy_video_resource(&self, resource: &mut VideoResource)
+src/video_resource.rs: impl HostVideoCapability :: fn dispose_video_resource(&self, resource: &mut VideoResource)
+src/video_resource.rs: impl HostVideoCapability :: fn get_video_resource_duration(&self, resource: &VideoResource) -> f64
+src/video_resource.rs: impl HostVideoCapability :: fn get_video_resource_height(&self, resource: &VideoResource) -> f32
+src/video_resource.rs: impl HostVideoCapability :: fn get_video_resource_width(&self, resource: &VideoResource) -> f32
+src/video_resource.rs: impl HostVideoCapability :: fn is_video_resource_empty(&self, resource: &VideoResource) -> bool
+src/video_resource.rs: impl HostVideoCapability :: fn is_video_resource_ready(&self, resource: &VideoResource) -> bool
+src/video_resource.rs: impl VideoResource :: fn has_video_resource_element(&self) -> bool
+src/video_resource.rs: impl VideoResource :: fn initialize_video_resource(&mut self, element: Option<Arc<HostImageSource>>, object_url: Option<&str>, owns_element: Option<bool>,)
+src/video_resource.rs: pub fn create_video_resource(element: Option<Arc<HostImageSource>>, object_url: Option<&str>, owns_element: Option<bool>,) -> VideoResource
+src/video_resource.rs: pub fn destroy_video_resource(host_video: &HostVideoCapability, resource: &mut VideoResource)
+src/video_resource.rs: pub fn dispose_video_resource(host_video: &HostVideoCapability, resource: &mut VideoResource)
+src/video_resource.rs: pub fn get_video_channel_state_string(value: VideoChannelState) -> &'static str
+src/video_resource.rs: pub fn get_video_resource_duration(host_video: &HostVideoCapability, resource: &VideoResource,) -> f64
+src/video_resource.rs: pub fn get_video_resource_height(host_video: &HostVideoCapability, resource: &VideoResource,) -> f32
+src/video_resource.rs: pub fn get_video_resource_load_readiness_string(value: VideoResourceLoadReadiness) -> &'static str
+src/video_resource.rs: pub fn get_video_resource_width(host_video: &HostVideoCapability, resource: &VideoResource) -> f32
+src/video_resource.rs: pub fn has_video_resource_element(resource: &VideoResource) -> bool
+src/video_resource.rs: pub fn initialize_video_resource(out: &mut VideoResource, element: Option<Arc<HostImageSource>>, object_url: Option<&str>, owns_element: Option<bool>,)
+src/video_resource.rs: pub fn is_video_resource_empty(host_video: &HostVideoCapability, resource: &VideoResource) -> bool
+src/video_resource.rs: pub fn is_video_resource_ready(host_video: &HostVideoCapability, resource: &VideoResource) -> bool
+src/video_resource.rs: pub fn parse_video_channel_state(value: &str) -> Option<VideoChannelState>
+src/video_resource.rs: pub fn parse_video_resource_load_readiness(value: &str) -> Option<VideoResourceLoadReadiness>
+src/video_resource_from.rs: impl HostVideoCapability :: fn load_video_resource_from_blob(&self, blob: &Arc<Blob>, options: Option<&VideoResourceLoadOptions>, signal: Option<&AbortSignal>,) -> VideoProviderFuture<VideoResource>
+src/video_resource_from.rs: impl HostVideoCapability :: fn load_video_resource_from_url(&self, url: &str, options: Option<&VideoResourceLoadOptions>, signal: Option<&AbortSignal>,) -> VideoProviderFuture<VideoResource>
+src/video_resource_from.rs: impl HostVideoCapability :: fn load_video_resource_from_urls(&self, sources: &[VideoResourceUrl], options: Option<&VideoResourceLoadOptions>, signal: Option<&AbortSignal>,) -> VideoProviderFuture<VideoResource>
+src/video_resource_from.rs: pub fn load_video_resource_from_blob(host_video: &HostVideoCapability, blob: &Arc<Blob>, options: Option<&VideoResourceLoadOptions>, signal: Option<&AbortSignal>,) -> VideoProviderFuture<VideoResource>
+src/video_resource_from.rs: pub fn load_video_resource_from_url(host_video: &HostVideoCapability, url: &str, options: Option<&VideoResourceLoadOptions>, signal: Option<&AbortSignal>,) -> VideoProviderFuture<VideoResource>
+src/video_resource_from.rs: pub fn load_video_resource_from_urls(host_video: &HostVideoCapability, sources: &[VideoResourceUrl], options: Option<&VideoResourceLoadOptions>, signal: Option<&AbortSignal>,) -> VideoProviderFuture<VideoResource>
