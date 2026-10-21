@@ -6,6 +6,7 @@ pub use crate::native_text::*;
 pub use crate::rich_text::*;
 pub use crate::rich_text_content::*;
 pub use crate::rich_text_metrics::*;
+pub use crate::sugar::*;
 pub use crate::text_format_font::*;
 pub use crate::text_label::*;
 pub use crate::text_label_layout::*;
