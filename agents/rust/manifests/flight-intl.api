@@ -1,35 +1,76 @@
+src/cache.rs: impl FormatterCache :: fn get_or_build<T: 'static + Send + Sync>(&mut self, key: &str, build: impl FnOnce() -> T,) -> Arc<T>
+src/cache.rs: impl FormatterCache :: fn new() -> FormatterCache
 src/cache.rs: pub fn create_formatter_cache() -> FormatterCache
-src/cache.rs: pub fn get_cache_key(kind: &str, locale: &LocaleInput, options: Option<&IntlOptions>) -> String
+src/cache.rs: pub fn get_cache_key(kind: &str, locale: &LocaleInput, options: Option<&IntlOptionsKey>) -> String
 src/cache.rs: pub fn get_cached<T: 'static + Send + Sync>(cache: &mut FormatterCache, key: &str, build: impl FnOnce() -> T,) -> Arc<T>
 src/cache.rs: pub struct FormatterCache { entries: Vec<(String, Arc<dyn Any + Send + Sync>)>, }
-src/collator.rs: pub fn compare_strings(cache: &mut FormatterCache, host: &HostIntlCapability, a: &str, b: &str, locale: &LocaleInput, options: Option<&IntlOptions>,) -> f64
-src/collator.rs: pub fn sort_strings(cache: &mut FormatterCache, host: &HostIntlCapability, items: &[String], locale: &LocaleInput, options: Option<&IntlOptions>,) -> Vec<String>
+src/collator.rs: impl HostIntlCapability :: fn open_collator(&self, locale: &LocaleInput, options: &CollatorOptions,) -> IntlCollatorHandle
+src/collator.rs: impl IntlCollatorHandle :: fn compare(&self, a: &str, b: &str) -> f64
+src/collator.rs: pub fn compare_intl_collator(collator: &IntlCollatorHandle, a: &str, b: &str) -> f64
+src/collator.rs: pub fn compare_strings(cache: &mut FormatterCache, host: &HostIntlCapability, a: &str, b: &str, locale: &LocaleInput, options: Option<&CollatorOptions>,) -> f64
+src/collator.rs: pub fn create_intl_collator(host: &HostIntlCapability, locale: &LocaleInput, options: &CollatorOptions,) -> IntlCollatorHandle
+src/collator.rs: pub fn sort_strings(cache: &mut FormatterCache, host: &HostIntlCapability, items: &[String], locale: &LocaleInput, options: Option<&CollatorOptions>,) -> Vec<String>
 src/contract.rs: pub use crate::cache::*;
 src/contract.rs: pub use crate::collator::*;
 src/contract.rs: pub use crate::datetime::*;
 src/contract.rs: pub use crate::list::*;
 src/contract.rs: pub use crate::number::*;
+src/contract.rs: pub use crate::options::*;
 src/contract.rs: pub use crate::plural::*;
 src/contract.rs: pub use crate::relative_time::*;
 src/contract.rs: pub use crate::types::*;
-src/datetime.rs: pub fn format_date(cache: &mut FormatterCache, host: &HostIntlCapability, date: IntlDateInput, locale: &LocaleInput, options: Option<&IntlOptions>,) -> String
-src/datetime.rs: pub fn format_date_time(cache: &mut FormatterCache, host: &HostIntlCapability, date: IntlDateInput, locale: &LocaleInput, options: Option<&IntlOptions>,) -> String
-src/datetime.rs: pub fn format_time(cache: &mut FormatterCache, host: &HostIntlCapability, date: IntlDateInput, locale: &LocaleInput, options: Option<&IntlOptions>,) -> String
+src/datetime.rs: impl HostIntlCapability :: fn open_date_time_format(&self, locale: &LocaleInput, options: &DateTimeFormatOptions,) -> IntlDateTimeFormatHandle
+src/datetime.rs: impl IntlDateTimeFormatHandle :: fn format(&self, date: f64) -> String
+src/datetime.rs: pub fn create_intl_date_time_format(host: &HostIntlCapability, locale: &LocaleInput, options: &DateTimeFormatOptions,) -> IntlDateTimeFormatHandle
+src/datetime.rs: pub fn format_date(cache: &mut FormatterCache, host: &HostIntlCapability, date: f64, locale: &LocaleInput, options: Option<&DateTimeFormatOptions>,) -> String
+src/datetime.rs: pub fn format_date_time(cache: &mut FormatterCache, host: &HostIntlCapability, date: f64, locale: &LocaleInput, options: Option<&DateTimeFormatOptions>,) -> String
+src/datetime.rs: pub fn format_intl_date_time(formatter: &IntlDateTimeFormatHandle, date: f64) -> String
+src/datetime.rs: pub fn format_time(cache: &mut FormatterCache, host: &HostIntlCapability, date: f64, locale: &LocaleInput, options: Option<&DateTimeFormatOptions>,) -> String
 src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::CollatorCaseFirst;
+src/lib.rs: pub use contract::CollatorOptions;
+src/lib.rs: pub use contract::CollatorSensitivity;
+src/lib.rs: pub use contract::CollatorUsage;
+src/lib.rs: pub use contract::CompactDisplay;
+src/lib.rs: pub use contract::CurrencyDisplay;
+src/lib.rs: pub use contract::CurrencySign;
+src/lib.rs: pub use contract::DateFormatMatcher;
+src/lib.rs: pub use contract::DateTimeFormatOptions;
+src/lib.rs: pub use contract::DateTimeStyle;
+src/lib.rs: pub use contract::DateTimeTextStyle;
+src/lib.rs: pub use contract::DayPeriodStyle;
 src/lib.rs: pub use contract::FormatterCache;
 src/lib.rs: pub use contract::HostIntlCapability;
+src/lib.rs: pub use contract::HourCycle;
 src/lib.rs: pub use contract::IntlCollatorHandle;
 src/lib.rs: pub use contract::IntlDateInput;
 src/lib.rs: pub use contract::IntlDateTimeFormatHandle;
 src/lib.rs: pub use contract::IntlListFormatHandle;
 src/lib.rs: pub use contract::IntlNumberFormatHandle;
-src/lib.rs: pub use contract::IntlOptionValue;
-src/lib.rs: pub use contract::IntlOptions;
+src/lib.rs: pub use contract::IntlOptionsKey;
 src/lib.rs: pub use contract::IntlPluralCategory;
 src/lib.rs: pub use contract::IntlPluralRulesHandle;
 src/lib.rs: pub use contract::IntlRelativeTimeFormatHandle;
 src/lib.rs: pub use contract::IntlRelativeTimeUnit;
+src/lib.rs: pub use contract::ListFormatOptions;
+src/lib.rs: pub use contract::ListStyle;
+src/lib.rs: pub use contract::ListType;
 src/lib.rs: pub use contract::LocaleInput;
+src/lib.rs: pub use contract::LocaleMatcher;
+src/lib.rs: pub use contract::MonthStyle;
+src/lib.rs: pub use contract::NumberFormatOptions;
+src/lib.rs: pub use contract::NumberNotation;
+src/lib.rs: pub use contract::NumberStyle;
+src/lib.rs: pub use contract::PluralRulesOptions;
+src/lib.rs: pub use contract::PluralType;
+src/lib.rs: pub use contract::RelativeTimeFormatOptions;
+src/lib.rs: pub use contract::RelativeTimeNumeric;
+src/lib.rs: pub use contract::RelativeTimeStyle;
+src/lib.rs: pub use contract::SignDisplay;
+src/lib.rs: pub use contract::TimeFieldStyle;
+src/lib.rs: pub use contract::TimeZoneNameStyle;
+src/lib.rs: pub use contract::UnitDisplay;
+src/lib.rs: pub use contract::UseGrouping;
 src/lib.rs: pub use contract::compare_strings;
 src/lib.rs: pub use contract::format_compact_number;
 src/lib.rs: pub use contract::format_currency;
@@ -44,16 +85,64 @@ src/lib.rs: pub use contract::format_unit;
 src/lib.rs: pub use contract::select_ordinal_category;
 src/lib.rs: pub use contract::select_plural_category;
 src/lib.rs: pub use contract::sort_strings;
-src/list.rs: pub fn format_list(cache: &mut FormatterCache, host: &HostIntlCapability, items: &[String], locale: &LocaleInput, options: Option<&IntlOptions>,) -> String
-src/number.rs: pub fn format_compact_number(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, locale: &LocaleInput, options: Option<&IntlOptions>,) -> String
-src/number.rs: pub fn format_currency(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, currency: &str, locale: &LocaleInput, options: Option<&IntlOptions>,) -> String
-src/number.rs: pub fn format_number(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, locale: &LocaleInput, options: Option<&IntlOptions>,) -> String
-src/number.rs: pub fn format_percent(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, locale: &LocaleInput, options: Option<&IntlOptions>,) -> String
-src/number.rs: pub fn format_unit(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, unit: &str, locale: &LocaleInput, options: Option<&IntlOptions>,) -> String
-src/plural.rs: pub fn select_ordinal_category(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, locale: &LocaleInput, options: Option<&IntlOptions>,) -> IntlPluralCategory
-src/plural.rs: pub fn select_plural_category(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, locale: &LocaleInput, options: Option<&IntlOptions>,) -> IntlPluralCategory
-src/relative_time.rs: pub fn format_relative_time(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, unit: IntlRelativeTimeUnit, locale: &LocaleInput, options: Option<&IntlOptions>,) -> String
-src/types.rs: #[derive(Clone)] pub struct HostIntlCapability { pub provider: ProviderRef, pub create_collator: Arc<dyn Fn(&LocaleInput, &IntlOptions) -> IntlCollatorHandle + Send + Sync>, pub create_date_time_format: Arc<dyn Fn(&LocaleInput, &IntlOptions) -> IntlDateTimeFormatHandle + Send + Sync>, pub create_list_format: Arc<dyn Fn(&LocaleInput, &IntlOptions) -> IntlListFormatHandle + Send + Sync>, pub create_number_format: Arc<dyn Fn(&LocaleInput, &IntlOptions) -> IntlNumberFormatHandle + Send + Sync>, pub create_plural_rules: Arc<dyn Fn(&LocaleInput, &IntlOptions) -> IntlPluralRulesHandle + Send + Sync>, pub create_relative_time_format: Arc<dyn Fn(&LocaleInput, &IntlOptions) -> IntlRelativeTimeFormatHandle + Send + Sync>, }
+src/list.rs: impl HostIntlCapability :: fn open_list_format(&self, locale: &LocaleInput, options: &ListFormatOptions,) -> IntlListFormatHandle
+src/list.rs: impl IntlListFormatHandle :: fn format(&self, items: &[String]) -> String
+src/list.rs: pub fn create_intl_list_format(host: &HostIntlCapability, locale: &LocaleInput, options: &ListFormatOptions,) -> IntlListFormatHandle
+src/list.rs: pub fn format_intl_list(formatter: &IntlListFormatHandle, items: &[String]) -> String
+src/list.rs: pub fn format_list(cache: &mut FormatterCache, host: &HostIntlCapability, items: &[String], locale: &LocaleInput, options: Option<&ListFormatOptions>,) -> String
+src/number.rs: impl HostIntlCapability :: fn open_number_format(&self, locale: &LocaleInput, options: &NumberFormatOptions,) -> IntlNumberFormatHandle
+src/number.rs: impl IntlNumberFormatHandle :: fn format(&self, value: f64) -> String
+src/number.rs: pub fn create_intl_number_format(host: &HostIntlCapability, locale: &LocaleInput, options: &NumberFormatOptions,) -> IntlNumberFormatHandle
+src/number.rs: pub fn format_compact_number(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, locale: &LocaleInput, options: Option<&NumberFormatOptions>,) -> String
+src/number.rs: pub fn format_currency(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, currency: &str, locale: &LocaleInput, options: Option<&NumberFormatOptions>,) -> String
+src/number.rs: pub fn format_intl_number(formatter: &IntlNumberFormatHandle, value: f64) -> String
+src/number.rs: pub fn format_number(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, locale: &LocaleInput, options: Option<&NumberFormatOptions>,) -> String
+src/number.rs: pub fn format_percent(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, locale: &LocaleInput, options: Option<&NumberFormatOptions>,) -> String
+src/number.rs: pub fn format_unit(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, unit: &str, locale: &LocaleInput, options: Option<&NumberFormatOptions>,) -> String
+src/options.rs: #[derive(Clone, Copy)] pub enum IntlOptionsKey<'a> { Collator(&'a CollatorOptions), DateTimeFormat(&'a DateTimeFormatOptions), List(&'a ListFormatOptions), Number(&'a NumberFormatOptions), Plural(&'a PluralRulesOptions), RelativeTime(&'a RelativeTimeFormatOptions), }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CollatorCaseFirst { Upper, Lower, False, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CollatorSensitivity { Base, Accent, Case, Variant, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CollatorUsage { Sort, Search, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CompactDisplay { Short, Long, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CurrencyDisplay { Code, Symbol, NarrowSymbol, Name, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CurrencySign { Standard, Accounting, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum DateFormatMatcher { Basic, BestFit, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum DateTimeStyle { Full, Long, Medium, Short, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum DateTimeTextStyle { Long, Short, Narrow, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum DayPeriodStyle { Narrow, Short, Long, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum HourCycle { H11, H12, H23, H24, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ListStyle { Long, Short, Narrow, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ListType { Conjunction, Disjunction, Unit, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum LocaleMatcher { Lookup, BestFit, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MonthStyle { Numeric, TwoDigit, Long, Short, Narrow, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NumberNotation { Standard, Scientific, Engineering, Compact, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum NumberStyle { Decimal, Percent, Currency, Unit, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum PluralType { Cardinal, Ordinal, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum RelativeTimeNumeric { Always, Auto, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum RelativeTimeStyle { Long, Short, Narrow, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SignDisplay { Auto, Never, Always, ExceptZero, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum TimeFieldStyle { Numeric, TwoDigit, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum TimeZoneNameStyle { Short, Long, ShortOffset, LongOffset, ShortGeneric, LongGeneric, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum UnitDisplay { Short, Long, Narrow, }
+src/options.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum UseGrouping { Bool(bool), Always, Auto, Min2, }
+src/options.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct CollatorOptions { pub locale_matcher: Option<LocaleMatcher>, pub usage: Option<CollatorUsage>, pub sensitivity: Option<CollatorSensitivity>, pub ignore_punctuation: Option<bool>, pub collation: Option<String>, pub numeric: Option<bool>, pub case_first: Option<CollatorCaseFirst>, }
+src/options.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct DateTimeFormatOptions { pub locale_matcher: Option<LocaleMatcher>, pub weekday: Option<DateTimeTextStyle>, pub era: Option<DateTimeTextStyle>, pub year: Option<TimeFieldStyle>, pub month: Option<MonthStyle>, pub day: Option<TimeFieldStyle>, pub hour: Option<TimeFieldStyle>, pub minute: Option<TimeFieldStyle>, pub second: Option<TimeFieldStyle>, pub time_zone_name: Option<TimeZoneNameStyle>, pub format_matcher: Option<DateFormatMatcher>, pub hour12: Option<bool>, pub time_zone: Option<String>, pub calendar: Option<String>, pub day_period: Option<DayPeriodStyle>, pub numbering_system: Option<String>, pub date_style: Option<DateTimeStyle>, pub time_style: Option<DateTimeStyle>, pub hour_cycle: Option<HourCycle>, pub fractional_second_digits: Option<f64>, }
+src/options.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct ListFormatOptions { pub locale_matcher: Option<LocaleMatcher>, pub type_: Option<ListType>, pub style: Option<ListStyle>, }
+src/options.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct NumberFormatOptions { pub locale_matcher: Option<LocaleMatcher>, pub style: Option<NumberStyle>, pub currency: Option<String>, pub currency_display: Option<CurrencyDisplay>, pub currency_sign: Option<CurrencySign>, pub unit: Option<String>, pub unit_display: Option<UnitDisplay>, pub notation: Option<NumberNotation>, pub compact_display: Option<CompactDisplay>, pub use_grouping: Option<UseGrouping>, pub sign_display: Option<SignDisplay>, pub minimum_integer_digits: Option<f64>, pub minimum_fraction_digits: Option<f64>, pub maximum_fraction_digits: Option<f64>, pub minimum_significant_digits: Option<f64>, pub maximum_significant_digits: Option<f64>, }
+src/options.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct PluralRulesOptions { pub locale_matcher: Option<LocaleMatcher>, pub type_: Option<PluralType>, pub minimum_integer_digits: Option<f64>, pub minimum_fraction_digits: Option<f64>, pub maximum_fraction_digits: Option<f64>, pub minimum_significant_digits: Option<f64>, pub maximum_significant_digits: Option<f64>, }
+src/options.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct RelativeTimeFormatOptions { pub locale_matcher: Option<LocaleMatcher>, pub numeric: Option<RelativeTimeNumeric>, pub style: Option<RelativeTimeStyle>, }
+src/plural.rs: impl HostIntlCapability :: fn open_plural_rules(&self, locale: &LocaleInput, options: &PluralRulesOptions,) -> IntlPluralRulesHandle
+src/plural.rs: impl IntlPluralRulesHandle :: fn select(&self, value: f64) -> IntlPluralCategory
+src/plural.rs: pub fn create_intl_plural_rules(host: &HostIntlCapability, locale: &LocaleInput, options: &PluralRulesOptions,) -> IntlPluralRulesHandle
+src/plural.rs: pub fn select_intl_plural_category(rules: &IntlPluralRulesHandle, value: f64,) -> IntlPluralCategory
+src/plural.rs: pub fn select_ordinal_category(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, locale: &LocaleInput, options: Option<&PluralRulesOptions>,) -> IntlPluralCategory
+src/plural.rs: pub fn select_plural_category(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, locale: &LocaleInput, options: Option<&PluralRulesOptions>,) -> IntlPluralCategory
+src/relative_time.rs: impl HostIntlCapability :: fn open_relative_time_format(&self, locale: &LocaleInput, options: &RelativeTimeFormatOptions,) -> IntlRelativeTimeFormatHandle
+src/relative_time.rs: impl IntlRelativeTimeFormatHandle :: fn format(&self, value: f64, unit: IntlRelativeTimeUnit) -> String
+src/relative_time.rs: pub fn create_intl_relative_time_format(host: &HostIntlCapability, locale: &LocaleInput, options: &RelativeTimeFormatOptions,) -> IntlRelativeTimeFormatHandle
+src/relative_time.rs: pub fn format_intl_relative_time(formatter: &IntlRelativeTimeFormatHandle, value: f64, unit: IntlRelativeTimeUnit,) -> String
+src/relative_time.rs: pub fn format_relative_time(cache: &mut FormatterCache, host: &HostIntlCapability, value: f64, unit: IntlRelativeTimeUnit, locale: &LocaleInput, options: Option<&RelativeTimeFormatOptions>,) -> String
+src/types.rs: #[derive(Clone)] pub struct HostIntlCapability { pub provider: ProviderRef, pub create_collator: Arc<dyn Fn(&LocaleInput, &CollatorOptions) -> IntlCollatorHandle + Send + Sync>, pub create_date_time_format: Arc<dyn Fn(&LocaleInput, &DateTimeFormatOptions) -> IntlDateTimeFormatHandle + Send + Sync>, pub create_list_format: Arc<dyn Fn(&LocaleInput, &ListFormatOptions) -> IntlListFormatHandle + Send + Sync>, pub create_number_format: Arc<dyn Fn(&LocaleInput, &NumberFormatOptions) -> IntlNumberFormatHandle + Send + Sync>, pub create_plural_rules: Arc<dyn Fn(&LocaleInput, &PluralRulesOptions) -> IntlPluralRulesHandle + Send + Sync>, pub create_relative_time_format: Arc<dyn Fn(&LocaleInput, &RelativeTimeFormatOptions) -> IntlRelativeTimeFormatHandle + Send + Sync,>, }
 src/types.rs: #[derive(Clone)] pub struct IntlCollatorHandle { pub compare: Arc<dyn Fn(&str, &str) -> f64 + Send + Sync>, }
 src/types.rs: #[derive(Clone)] pub struct IntlDateTimeFormatHandle { pub format: Arc<dyn Fn(f64) -> String + Send + Sync>, }
 src/types.rs: #[derive(Clone)] pub struct IntlListFormatHandle { pub format: Arc<dyn Fn(&[String]) -> String + Send + Sync>, }
@@ -63,10 +152,8 @@ src/types.rs: #[derive(Clone)] pub struct IntlRelativeTimeFormatHandle { pub for
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub enum IntlDateInput { Date(f64), EpochMillis(f64), }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum IntlPluralCategory { Zero, One, Two, Few, Many, Other, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum IntlRelativeTimeUnit { Year, Years, Quarter, Quarters, Month, Months, Week, Weeks, Day, Days, Hour, Hours, Minute, Minutes, Second, Seconds, }
-src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub enum IntlOptionValue { Bool(bool), Integer(i32), String(String), }
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub enum LocaleInput { Single(String), List(Vec<String>), }
 src/types.rs: pub fn get_intl_plural_category_string(value: IntlPluralCategory) -> &'static str
 src/types.rs: pub fn get_intl_relative_time_unit_string(value: IntlRelativeTimeUnit) -> &'static str
 src/types.rs: pub fn parse_intl_plural_category(value: &str) -> Option<IntlPluralCategory>
 src/types.rs: pub fn parse_intl_relative_time_unit(value: &str) -> Option<IntlRelativeTimeUnit>
-src/types.rs: pub type IntlOptions = Record<IntlOptionValue>;
