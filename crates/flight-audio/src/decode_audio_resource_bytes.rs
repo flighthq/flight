@@ -24,9 +24,7 @@ pub async fn decode_audio_resource_bytes(
         throw_if_aborted(signal);
         return resource;
     }
-    let Some(slot) = resolve_audio_decode_slot(audio_decode, bytes, mime_type) else {
-        return None;
-    };
+    let slot = resolve_audio_decode_slot(audio_decode, bytes, mime_type)?;
     let buffer = (slot.decode)(bytes.clone(), signal.clone()).await;
     throw_if_aborted(signal);
     return buffer.map(|buffer| create_audio_resource(Some(buffer)));

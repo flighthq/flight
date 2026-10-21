@@ -3,6 +3,8 @@ use crate::audio_format::{
 };
 use crate::types::{AudioResourceUrl, HostAudioCodecCapability};
 
+// The contract file-structure rule requires modules before functions and impls.
+#[allow(clippy::items_after_test_module)]
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;

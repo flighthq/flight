@@ -29,6 +29,8 @@ use crate::types::{
     HostAudioCodecCapability, HostAudioDecodeCapabilities,
 };
 
+// The contract file-structure rule requires modules before traits and impls.
+#[allow(clippy::items_after_test_module)]
 #[cfg(test)]
 mod sugar_tests {
     use std::collections::HashMap;

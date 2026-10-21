@@ -69,7 +69,7 @@ fn decode_base64(input: &str) -> Box<Uint8Array> {
         sextets.push(value);
     }
     let encoded_length = sextets.len() + padding;
-    if encoded_length % 4 == 1 || padding > 0 && encoded_length % 4 != 0 {
+    if encoded_length % 4 == 1 || padding > 0 && !encoded_length.is_multiple_of(4) {
         invalid_base64();
     }
     let mut out = Vec::with_capacity(sextets.len() * 3 / 4);

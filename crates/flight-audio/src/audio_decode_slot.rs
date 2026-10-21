@@ -1,6 +1,8 @@
 use crate::audio_format::get_audio_mime_type_essence;
 use crate::types::{HostAudioDecodeCapabilities, HostAudioDecodeFormatCapability};
 
+// The contract file-structure rule requires modules before functions and impls.
+#[allow(clippy::items_after_test_module)]
 #[cfg(test)]
 mod sugar_tests {
     use std::sync::Arc;
