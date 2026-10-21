@@ -1,5 +1,13 @@
 use flight_xml::*;
 
+// The source's whole-object `toEqual` over an attribute map.
+fn attrs_of(pairs: &[(&str, &str)]) -> std::collections::HashMap<String, String> {
+    return pairs
+        .iter()
+        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .collect();
+}
+
 mod parse_xml_attributes {
     use super::*;
 
@@ -51,8 +59,10 @@ mod parse_xml_attributes {
     #[test]
     fn preserves_out_of_range_numeric_references_without_panicking() {
         let attrs = parse_xml_attributes(r#"decimal="&#1114112;" hex="&#x110000;""#);
-        assert_eq!(attrs["decimal"], "&#1114112;");
-        assert_eq!(attrs["hex"], "&#x110000;");
+        assert_eq!(
+            attrs,
+            attrs_of(&[("decimal", "&#1114112;"), ("hex", "&#x110000;")])
+        );
     }
 
     #[test]
@@ -77,17 +87,19 @@ mod parse_xml_document {
     fn parses_multiple_attributes_on_a_single_element() {
         let root =
             parse_xml_document(r#"<sub x="10" y="20" width="32" height="64"/>"#).unwrap();
-        assert_eq!(root.attributes["x"], "10");
-        assert_eq!(root.attributes["y"], "20");
-        assert_eq!(root.attributes["width"], "32");
-        assert_eq!(root.attributes["height"], "64");
+        assert_eq!(
+            root.attributes,
+            attrs_of(&[("x", "10"), ("y", "20"), ("width", "32"), ("height", "64")])
+        );
     }
 
     #[test]
     fn accepts_both_single_and_double_quoted_attribute_values() {
         let root = parse_xml_document(r#"<node a='single' b="double"/>"#).unwrap();
-        assert_eq!(root.attributes["a"], "single");
-        assert_eq!(root.attributes["b"], "double");
+        assert_eq!(
+            root.attributes,
+            attrs_of(&[("a", "single"), ("b", "double")])
+        );
     }
 
     #[test]
