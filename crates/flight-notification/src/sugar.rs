@@ -3,6 +3,49 @@ use crate::contract::*;
 #[cfg(test)]
 mod sugar_tests {
     use super::*;
+    use std::sync::Arc;
+
+    fn block_on<F: std::future::Future>(future: F) -> F::Output {
+        let mut future = Box::pin(future);
+        let mut context = std::task::Context::from_waker(std::task::Waker::noop());
+        loop {
+            match future.as_mut().poll(&mut context) {
+                std::task::Poll::Ready(value) => return value,
+                std::task::Poll::Pending => std::thread::yield_now(),
+            }
+        }
+    }
+
+    fn make_provider() -> ProviderRef {
+        return Arc::new(());
+    }
+
+    fn make_request(title: &str) -> NotificationRequest {
+        return NotificationRequest {
+            title: title.to_string(),
+            id: None,
+            body: None,
+            icon: None,
+            badge: None,
+            tag: None,
+            silent: None,
+            actions: None,
+            dir: None,
+            image: None,
+            lang: None,
+            renotify: None,
+            require_interaction: None,
+            timestamp: None,
+            vibrate: None,
+            data: None,
+        };
+    }
+
+    fn make_schedule(at: f32) -> NotificationSchedule {
+        return NotificationSchedule { at, repeat: None };
+    }
+
+    // ── String table delegate tests ──
 
     #[test]
     fn notification_cancel_reason_parse_delegates() {
@@ -212,6 +255,342 @@ mod sugar_tests {
         let method = NotificationSubscriptionDisposeReason::Ok.to_str();
         let free = get_notification_subscription_dispose_reason_string(NotificationSubscriptionDisposeReason::Ok);
         assert_eq!(method, free);
+    }
+
+    // ── Behavioral entity/capability tests ──
+
+    #[test]
+    fn create_notification_resource_populates_all_identity_fields() {
+        let notification = create_notification_resource("n1", "Title", "group");
+        assert_eq!(notification.id, "n1");
+        assert_eq!(notification.title, "Title");
+        assert_eq!(notification.tag, "group");
+    }
+
+    #[test]
+    fn create_scheduled_notification_resource_carries_request_and_schedule() {
+        let request = make_request("Later");
+        let schedule = make_schedule(5.0);
+        let scheduled = create_scheduled_notification_resource("s1", &request, &schedule);
+        assert_eq!(scheduled.id, "s1");
+        assert_eq!(scheduled.request.title, "Later");
+        assert_eq!(scheduled.schedule.at, 5.0);
+    }
+
+    #[test]
+    fn bind_notification_close_then_close_returns_ok() {
+        let notification = create_notification_resource("n1", "Title", "");
+        bind_notification_close(&notification, Arc::new(|| Box::pin(async {
+            return NotificationCloseOutcome { reason: NotificationCloseReason::Ok };
+        })));
+        let outcome = block_on(close_notification(&notification));
+        assert_eq!(outcome.reason, NotificationCloseReason::Ok);
+    }
+
+    #[test]
+    fn close_notification_without_bind_returns_operation_failed() {
+        let notification = create_notification_resource("n1", "Title", "");
+        let outcome = block_on(close_notification(&notification));
+        assert_eq!(outcome.reason, NotificationCloseReason::OperationFailed);
+    }
+
+    #[test]
+    fn close_notification_is_idempotent_after_success() {
+        let notification = create_notification_resource("n1", "Title", "");
+        bind_notification_close(&notification, Arc::new(|| Box::pin(async {
+            return NotificationCloseOutcome { reason: NotificationCloseReason::Ok };
+        })));
+        let first = block_on(close_notification(&notification));
+        assert_eq!(first.reason, NotificationCloseReason::Ok);
+        let second = block_on(close_notification(&notification));
+        assert_eq!(second.reason, NotificationCloseReason::AlreadyClosed);
+    }
+
+    #[test]
+    fn bind_scheduled_notification_cancel_then_cancel_returns_ok() {
+        let request = make_request("Later");
+        let schedule = make_schedule(1.0);
+        let scheduled = create_scheduled_notification_resource("s1", &request, &schedule);
+        bind_scheduled_notification_cancel(&scheduled, Arc::new(|| Box::pin(async {
+            return NotificationCancelOutcome { reason: NotificationCancelReason::Ok };
+        })));
+        let outcome = block_on(cancel_scheduled_notification(&scheduled));
+        assert_eq!(outcome.reason, NotificationCancelReason::Ok);
+    }
+
+    #[test]
+    fn cancel_scheduled_notification_without_bind_returns_operation_failed() {
+        let request = make_request("Later");
+        let schedule = make_schedule(1.0);
+        let scheduled = create_scheduled_notification_resource("s1", &request, &schedule);
+        let outcome = block_on(cancel_scheduled_notification(&scheduled));
+        assert_eq!(outcome.reason, NotificationCancelReason::OperationFailed);
+    }
+
+    #[test]
+    fn cancel_scheduled_notification_is_idempotent_after_success() {
+        let request = make_request("Later");
+        let schedule = make_schedule(1.0);
+        let scheduled = create_scheduled_notification_resource("s1", &request, &schedule);
+        bind_scheduled_notification_cancel(&scheduled, Arc::new(|| Box::pin(async {
+            return NotificationCancelOutcome { reason: NotificationCancelReason::Ok };
+        })));
+        let first = block_on(cancel_scheduled_notification(&scheduled));
+        assert_eq!(first.reason, NotificationCancelReason::Ok);
+        let second = block_on(cancel_scheduled_notification(&scheduled));
+        assert_eq!(second.reason, NotificationCancelReason::AlreadyCancelled);
+    }
+
+    #[test]
+    fn close_all_notifications_delegates_to_host_capability() {
+        let provider = make_provider();
+        let cap = HostNotificationCloseCapability {
+            close_all_notifications: Arc::new(|| Box::pin(async {
+                return NotificationLifecycleOutcome {
+                    reason: NotificationLifecycleReason::Ok,
+                    failures: None,
+                };
+            })),
+            provider,
+        };
+        let outcome = block_on(close_all_notifications(&cap));
+        assert_eq!(outcome.reason, NotificationLifecycleReason::Ok);
+    }
+
+    #[test]
+    fn destroy_notification_capabilities_delegates_to_host_capability() {
+        let provider = make_provider();
+        let cap = HostNotificationLifecycleCapability {
+            destroy: Arc::new(|| Box::pin(async {
+                return NotificationLifecycleOutcome {
+                    reason: NotificationLifecycleReason::Ok,
+                    failures: None,
+                };
+            })),
+            provider,
+        };
+        let outcome = block_on(destroy_notification_capabilities(&cap));
+        assert_eq!(outcome.reason, NotificationLifecycleReason::Ok);
+    }
+
+    #[test]
+    fn show_notification_returns_provider_outcome() {
+        let notification = create_notification_resource("shown", "Title", "");
+        let notification_clone = notification.clone();
+        let provider = make_provider();
+        let cap = HostNotificationDeliveryCapability {
+            notify: Arc::new(move |_request: &NotificationRequest| -> NotificationDeliveryFuture {
+                let n = notification_clone.clone();
+                return Box::pin(async move {
+                    return NotificationDeliveryOutcome {
+                        reason: NotificationDeliveryReason::Accepted,
+                        notification: Some(n),
+                        fields: None,
+                    };
+                });
+            }),
+            provider,
+        };
+        let request = make_request("Title");
+        let outcome = block_on(show_notification(&cap, &request));
+        assert_eq!(outcome.reason, NotificationDeliveryReason::Accepted);
+        assert!(outcome.notification.is_some());
+    }
+
+    #[test]
+    fn schedule_notification_returns_provider_outcome() {
+        let request = make_request("Later");
+        let schedule = make_schedule(1.0);
+        let scheduled = create_scheduled_notification_resource("s1", &request, &schedule);
+        let scheduled_clone = scheduled.clone();
+        let provider = make_provider();
+        let cap = HostNotificationSchedulingCapability {
+            cancel_all_scheduled_notifications: Arc::new(|| Box::pin(async {
+                return NotificationLifecycleOutcome { reason: NotificationLifecycleReason::Ok, failures: None };
+            })),
+            get_pending_notifications: Arc::new(|| Box::pin(async {
+                return NotificationPendingListOutcome { reason: NotificationLifecycleReason::Ok, notifications: Some(vec![]) };
+            })),
+            schedule_notification: Arc::new(move |_request: &NotificationRequest, _schedule: &NotificationSchedule| -> NotificationScheduleFuture {
+                let s = scheduled_clone.clone();
+                return Box::pin(async move {
+                    return NotificationScheduleOutcome {
+                        reason: NotificationScheduleReason::Scheduled,
+                        precision: Some(NotificationSchedulePrecision::Exact),
+                        scheduled: Some(s),
+                        fields: None,
+                    };
+                });
+            }),
+            provider,
+        };
+        let outcome = block_on(schedule_notification(&cap, &request, &schedule));
+        assert_eq!(outcome.reason, NotificationScheduleReason::Scheduled);
+    }
+
+    #[test]
+    fn get_notification_permission_returns_provider_outcome() {
+        let provider = make_provider();
+        let cap = HostNotificationPermissionCapability {
+            get_permission: Arc::new(|| Box::pin(async {
+                return NotificationPermissionQueryOutcome {
+                    reason: NotificationLifecycleReason::Ok,
+                    permission: Some(NotificationPermission::Granted),
+                };
+            })),
+            request_permission: Arc::new(|| Box::pin(async {
+                return NotificationPermissionRequestOutcome {
+                    reason: NotificationPermissionRequestReason::Granted,
+                };
+            })),
+            provider,
+        };
+        let outcome = block_on(get_notification_permission(&cap));
+        assert_eq!(outcome.reason, NotificationLifecycleReason::Ok);
+        assert_eq!(outcome.permission, Some(NotificationPermission::Granted));
+    }
+
+    #[test]
+    fn request_notification_permission_returns_provider_outcome() {
+        let provider = make_provider();
+        let cap = HostNotificationPermissionCapability {
+            get_permission: Arc::new(|| Box::pin(async {
+                return NotificationPermissionQueryOutcome {
+                    reason: NotificationLifecycleReason::Ok,
+                    permission: Some(NotificationPermission::Default),
+                };
+            })),
+            request_permission: Arc::new(|| Box::pin(async {
+                return NotificationPermissionRequestOutcome {
+                    reason: NotificationPermissionRequestReason::Granted,
+                };
+            })),
+            provider,
+        };
+        let outcome = block_on(request_notification_permission(&cap));
+        assert_eq!(outcome.reason, NotificationPermissionRequestReason::Granted);
+    }
+
+    #[test]
+    fn get_active_notifications_returns_provider_outcome() {
+        let provider = make_provider();
+        let cap = HostNotificationActiveListCapability {
+            get_active_notifications: Arc::new(|| Box::pin(async {
+                return NotificationActiveListOutcome {
+                    reason: NotificationLifecycleReason::Ok,
+                    notifications: Some(vec![]),
+                };
+            })),
+            provider,
+        };
+        let outcome = block_on(get_active_notifications(&cap));
+        assert_eq!(outcome.reason, NotificationLifecycleReason::Ok);
+        assert_eq!(outcome.notifications.as_ref().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn get_pending_notifications_returns_provider_outcome() {
+        let provider = make_provider();
+        let cap = HostNotificationSchedulingCapability {
+            cancel_all_scheduled_notifications: Arc::new(|| Box::pin(async {
+                return NotificationLifecycleOutcome { reason: NotificationLifecycleReason::Ok, failures: None };
+            })),
+            get_pending_notifications: Arc::new(|| Box::pin(async {
+                return NotificationPendingListOutcome {
+                    reason: NotificationLifecycleReason::Ok,
+                    notifications: Some(vec![]),
+                };
+            })),
+            schedule_notification: Arc::new(|_request: &NotificationRequest, _schedule: &NotificationSchedule| -> NotificationScheduleFuture {
+                return Box::pin(async {
+                    return NotificationScheduleOutcome { reason: NotificationScheduleReason::OperationFailed, precision: None, scheduled: None, fields: None };
+                });
+            }),
+            provider,
+        };
+        let outcome = block_on(get_pending_notifications(&cap));
+        assert_eq!(outcome.reason, NotificationLifecycleReason::Ok);
+    }
+
+    #[test]
+    fn create_and_attach_click_subscription_returns_ok() {
+        let provider = make_provider();
+        let cap = HostNotificationClickCapability {
+            attach: Arc::new(move |_listener: NotificationClickListener| -> NotificationEventBackendAttachFuture {
+                return Box::pin(async {
+                    return NotificationEventBackendAttachResult {
+                        reason: NotificationSubscriptionAttachReason::Ok,
+                        attachment: Some(NotificationEventAttachment {
+                            release: Arc::new(|| Box::pin(async {
+                                return NotificationEventReleaseOutcome { reason: NotificationEventReleaseReason::Ok };
+                            })),
+                        }),
+                        release_failed: None,
+                    };
+                });
+            }),
+            provider,
+        };
+        let subscription = create_notification_click_subscription();
+        let outcome = block_on(attach_notification_click_subscription(&cap, &subscription));
+        assert_eq!(outcome.reason, NotificationSubscriptionAttachReason::Ok);
+    }
+
+    #[test]
+    fn detach_before_attach_returns_not_attached() {
+        let subscription = create_notification_click_subscription();
+        let outcome = block_on(detach_notification_click_subscription(&subscription));
+        assert_eq!(outcome.reason, NotificationSubscriptionDetachReason::NotAttached);
+    }
+
+    #[test]
+    fn dispose_subscription_is_terminal_and_idempotent() {
+        let subscription = create_notification_click_subscription();
+        let first = block_on(dispose_notification_click_subscription(&subscription));
+        assert_eq!(first.reason, NotificationSubscriptionDisposeReason::Ok);
+        let second = block_on(dispose_notification_click_subscription(&subscription));
+        assert_eq!(second.reason, NotificationSubscriptionDisposeReason::AlreadyDisposed);
+    }
+
+    #[test]
+    fn attach_after_dispose_returns_operation_failed() {
+        let provider = make_provider();
+        let cap = HostNotificationClickCapability {
+            attach: Arc::new(move |_listener: NotificationClickListener| -> NotificationEventBackendAttachFuture {
+                return Box::pin(async {
+                    return NotificationEventBackendAttachResult {
+                        reason: NotificationSubscriptionAttachReason::Ok,
+                        attachment: None,
+                        release_failed: None,
+                    };
+                });
+            }),
+            provider,
+        };
+        let subscription = create_notification_click_subscription();
+        let _dispose = block_on(dispose_notification_click_subscription(&subscription));
+        let outcome = block_on(attach_notification_click_subscription(&cap, &subscription));
+        assert_eq!(outcome.reason, NotificationSubscriptionAttachReason::OperationFailed);
+    }
+
+    #[test]
+    fn initialize_notification_resource_sets_fields_on_preallocated_entity() {
+        let mut out: Notification = flight_entity::allocate_entity();
+        initialize_notification_resource(&mut out, "n1", "Title", "tag");
+        assert_eq!(out.id, "n1");
+        assert_eq!(out.title, "Title");
+        assert_eq!(out.tag, "tag");
+    }
+
+    #[test]
+    fn initialize_scheduled_notification_resource_sets_fields_on_preallocated_entity() {
+        let request = make_request("Later");
+        let schedule = make_schedule(2.0);
+        let mut out: ScheduledNotification = flight_entity::allocate_entity();
+        initialize_scheduled_notification_resource(&mut out, "s1", &request, &schedule);
+        assert_eq!(out.id, "s1");
+        assert_eq!(out.request.title, "Later");
+        assert_eq!(out.schedule.at, 2.0);
     }
 }
 
