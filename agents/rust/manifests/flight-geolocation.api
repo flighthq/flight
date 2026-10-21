@@ -1,0 +1,59 @@
+src/contract.rs: pub use crate::geolocation::*;
+src/contract.rs: pub use crate::geolocation_access::*;
+src/contract.rs: pub use crate::types::*;
+src/geolocation.rs: impl HostGeolocationCapability :: async fn get_current_position(&self, options: Option<&GeolocationRequestOptions>,) -> Option<GeolocationPosition>
+src/geolocation.rs: impl HostGeolocationCapability :: async fn get_current_position_result(&self, options: Option<&GeolocationRequestOptions>,) -> GeolocationPositionResult
+src/geolocation.rs: impl HostGeolocationCapability :: async fn prompt_for_access(&self) -> GeolocationAccessOutcome
+src/geolocation.rs: impl HostGeolocationCapability :: fn clear_watch(&self, id: i32)
+src/geolocation.rs: impl HostGeolocationCapability :: fn is_available(&self) -> bool
+src/geolocation.rs: impl HostGeolocationCapability :: fn watch_position(&self, handler: Arc<dyn Fn(&GeolocationPosition) + Send + Sync>, options: Option<&GeolocationRequestOptions>, on_error: Option<Arc<dyn Fn(GeolocationErrorReason) + Send + Sync>>,) -> i32
+src/geolocation.rs: pub async fn get_current_geolocation_position(host_geolocation: &HostGeolocationCapability, options: Option<&GeolocationRequestOptions>,) -> Option<GeolocationPosition>
+src/geolocation.rs: pub async fn get_current_geolocation_position_result(host_geolocation: &HostGeolocationCapability, options: Option<&GeolocationRequestOptions>,) -> GeolocationPositionResult
+src/geolocation.rs: pub fn clear_geolocation_watch(host_geolocation: &HostGeolocationCapability, id: i32)
+src/geolocation.rs: pub fn create_geolocation_position() -> GeolocationPosition
+src/geolocation.rs: pub fn initialize_geolocation_position(out: &mut GeolocationPosition)
+src/geolocation.rs: pub fn is_geolocation_available(host_geolocation: &HostGeolocationCapability) -> bool
+src/geolocation.rs: pub fn watch_geolocation_position(host_geolocation: &HostGeolocationCapability, handler: Arc<dyn Fn(&GeolocationPosition) + Send + Sync>, options: Option<&GeolocationRequestOptions>, on_error: Option<Arc<dyn Fn(GeolocationErrorReason) + Send + Sync>>,) -> i32
+src/geolocation_access.rs: pub async fn prompt_for_geolocation_access(host_geolocation: Option<&HostGeolocationCapability>,) -> GeolocationAccessOutcome
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::GeolocationAccessOutcome;
+src/lib.rs: pub use contract::GeolocationAccessReason;
+src/lib.rs: pub use contract::GeolocationErrorReason;
+src/lib.rs: pub use contract::GeolocationPosition;
+src/lib.rs: pub use contract::GeolocationPositionFuture;
+src/lib.rs: pub use contract::GeolocationPositionResult;
+src/lib.rs: pub use contract::GeolocationPositionResultFuture;
+src/lib.rs: pub use contract::GeolocationPromptFuture;
+src/lib.rs: pub use contract::GeolocationRequestOptions;
+src/lib.rs: pub use contract::HostGeolocationCapabilities;
+src/lib.rs: pub use contract::HostGeolocationCapability;
+src/lib.rs: pub use contract::clear_geolocation_watch;
+src/lib.rs: pub use contract::create_geolocation_position;
+src/lib.rs: pub use contract::get_current_geolocation_position;
+src/lib.rs: pub use contract::get_current_geolocation_position_result;
+src/lib.rs: pub use contract::get_geolocation_access_reason_string;
+src/lib.rs: pub use contract::get_geolocation_error_reason_string;
+src/lib.rs: pub use contract::initialize_geolocation_position;
+src/lib.rs: pub use contract::is_geolocation_available;
+src/lib.rs: pub use contract::parse_geolocation_access_reason;
+src/lib.rs: pub use contract::parse_geolocation_error_reason;
+src/lib.rs: pub use contract::prompt_for_geolocation_access;
+src/lib.rs: pub use contract::watch_geolocation_position;
+src/types.rs: #[derive(Clone)] pub struct HostGeolocationCapability { pub clear_watch: Arc<dyn Fn(i32) + Send + Sync>, pub get_current_position: Arc<dyn Fn(GeolocationRequestOptions) -> GeolocationPositionFuture + Send + Sync>, pub get_current_position_result: Arc<dyn Fn(GeolocationRequestOptions) -> GeolocationPositionResultFuture + Send + Sync>, pub is_available: Arc<dyn Fn() -> bool + Send + Sync>, pub watch_position: Arc<dyn Fn(Arc<dyn Fn(&GeolocationPosition) + Send + Sync>, GeolocationRequestOptions, Option<Arc<dyn Fn(GeolocationErrorReason) + Send + Sync>>,) -> i32 + Send + Sync,>, pub prompt_for_access: Option<Arc<dyn Fn() -> GeolocationPromptFuture + Send + Sync>>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GeolocationAccessReason { CleanupFailed, Denied, Dismissed, Granted, OperationFailed, RuntimeUnavailable, Timeout, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GeolocationErrorReason { Denied, Timeout, Unavailable, }
+src/types.rs: #[derive(Clone, Debug)] pub struct GeolocationPositionResult { pub position: Option<GeolocationPosition>, pub reason: Option<GeolocationErrorReason>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct GeolocationPosition { runtime: EntityRuntimeSlot, pub latitude: f32, pub longitude: f32, pub accuracy: f32, pub altitude: f32, pub altitude_accuracy: f32, pub floor_level: f32, pub heading: f32, pub speed: f32, pub timestamp: f64, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct GeolocationRequestOptions { pub enable_high_accuracy: Option<bool>, pub timeout_ms: Option<f64>, pub maximum_age_ms: Option<f64>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct GeolocationAccessOutcome { pub reason: GeolocationAccessReason, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostGeolocationCapabilities { pub position: Option<HostGeolocationCapability>, }
+src/types.rs: impl Entity for GeolocationPosition
+src/types.rs: impl Entity for GeolocationPosition :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for GeolocationPosition :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub fn get_geolocation_access_reason_string(value: GeolocationAccessReason) -> &'static str
+src/types.rs: pub fn get_geolocation_error_reason_string(value: GeolocationErrorReason) -> &'static str
+src/types.rs: pub fn parse_geolocation_access_reason(value: &str) -> Option<GeolocationAccessReason>
+src/types.rs: pub fn parse_geolocation_error_reason(value: &str) -> Option<GeolocationErrorReason>
+src/types.rs: pub type GeolocationPositionFuture = Pin<Box<dyn Future<Output = Option<GeolocationPosition>> + Send>>;
+src/types.rs: pub type GeolocationPositionResultFuture = Pin<Box<dyn Future<Output = GeolocationPositionResult> + Send>>;
+src/types.rs: pub type GeolocationPromptFuture = Pin<Box<dyn Future<Output = Result<GeolocationAccessOutcome, FlightError>> + Send>>;

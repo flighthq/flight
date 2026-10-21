@@ -1,0 +1,30 @@
+src/contract.rs: pub use super::requirement_collector::*;
+src/contract.rs: pub use super::requirement_set::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::Requirement;
+src/lib.rs: pub use contract::RequirementFacet;
+src/lib.rs: pub use contract::RequirementSet;
+src/lib.rs: pub use contract::collect_scene2d_requirements;
+src/lib.rs: pub use contract::create_requirement_set;
+src/lib.rs: pub use contract::diff_requirement_sets;
+src/lib.rs: pub use contract::merge_requirement_sets;
+src/lib.rs: pub use contract::report_requirement;
+src/requirement_collector.rs: pub fn collect_scene2d_requirements(run: &dyn Fn(&mut Vec<Requirement>)) -> RequirementSet
+src/requirement_collector.rs: pub fn report_requirement(sink: Option<&mut Vec<Requirement>>, facet: RequirementFacet, key: &str)
+src/requirement_set.rs: impl RequirementSet :: fn diff(&self, baseline: &RequirementSet) -> Self
+src/requirement_set.rs: impl RequirementSet :: fn new(covers: &[RequirementFacet], requirements: &[Requirement]) -> Self
+src/requirement_set.rs: pub fn create_requirement_set(covers: &[RequirementFacet], requirements: &[Requirement],) -> RequirementSet
+src/requirement_set.rs: pub fn diff_requirement_sets(requirements: &RequirementSet, baseline: &RequirementSet,) -> RequirementSet
+src/requirement_set.rs: pub fn initialize_requirement_set(out: &mut RequirementSet, covers: &[RequirementFacet], requirements: &[Requirement],)
+src/requirement_set.rs: pub fn merge_requirement_sets(requirement_sets: &[&RequirementSet]) -> RequirementSet
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)] #[repr(u8)] pub enum RequirementFacet { CompressionKind = 0, DocumentFormat = 1, Physics2DJointKind = 2, SceneBlendMode = 3, SceneMaterialKind = 4, SceneModifierKind = 5, SceneNodeKind = 6, SceneResourceMimeType = 7, SceneShapeCommand = 8, SceneTextureSourceKind = 9, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct RequirementSet { pub covers: Vec<RequirementFacet>, pub requirements: Vec<Requirement>, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq, Hash)] pub struct Requirement { pub facet: RequirementFacet, pub key: String, }
+src/types.rs: impl Default for RequirementSet
+src/types.rs: impl Default for RequirementSet :: fn default() -> Self
+src/types.rs: impl Entity for RequirementSet
+src/types.rs: impl Entity for RequirementSet :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RequirementSet :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub fn get_requirement_facet_string(value: RequirementFacet) -> &'static str
+src/types.rs: pub fn parse_requirement_facet(value: &str) -> Option<RequirementFacet>
