@@ -59,7 +59,7 @@ mod advance_animation_crossfade {
             scalar_player(target, &[1.0, 2.0]),
             1.0,
             Some(&AnimationCrossfadeOptions {
-                curve: Some(square),
+                curve: Some(Arc::new(square)),
             }),
         );
         advance_animation_crossfade(&mut state, 0.5);
@@ -249,15 +249,17 @@ mod create_animation_crossfade {
     #[should_panic(expected = "duplicate targetRef")]
     fn rejects_duplicate_nan_targets_in_source_clip() {
         let nan_target: TargetRef = Some(Arc::new(f64::NAN));
-        let track = Arc::new(RwLock::new(create_animation_track(CreateAnimationTrackOpts {
-            times: vec![0.0],
-            values: vec![1.0],
-            components: None,
-            interpolation: None,
-            quaternion: None,
-            easing: None,
-            segment_easings: None,
-        })));
+        let track = Arc::new(RwLock::new(create_animation_track(
+            CreateAnimationTrackOpts {
+                times: vec![0.0],
+                values: vec![1.0],
+                components: None,
+                interpolation: None,
+                quaternion: None,
+                easing: None,
+                segment_easings: None,
+            },
+        )));
         let dup_clip = create_animation_clip(
             vec![
                 create_animation_channel(&track, nan_target.clone()),
@@ -362,7 +364,7 @@ mod is_animation_crossfade_complete {
             scalar_player(target, &[1.0, 2.0]),
             1.0,
             Some(&AnimationCrossfadeOptions {
-                curve: Some(overshoot),
+                curve: Some(Arc::new(overshoot)),
             }),
         );
         advance_animation_crossfade(&mut state, 0.7);

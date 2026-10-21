@@ -268,7 +268,7 @@ mod sample_animation_clip {
                 quaternion: None,
                 times: vec![0.0, 1.0],
                 values: vec![0.0, 10.0],
-                easing: Some(reentrant_easing),
+                easing: Some(Arc::new(reentrant_easing)),
                 segment_easings: None,
             },
         )));

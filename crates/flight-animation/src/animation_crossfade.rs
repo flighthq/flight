@@ -106,15 +106,15 @@ pub fn initialize_animation_crossfade(
 ) {
     let resolved_duration = f32::max(0.0, duration);
     let curve = opts
-        .and_then(|o| o.curve)
-        .unwrap_or(linear_animation_crossfade_curve);
+        .and_then(|o| o.curve.clone())
+        .unwrap_or_else(|| std::sync::Arc::new(linear_animation_crossfade_curve));
     let channels = create_animation_crossfade_channels(&from, &to);
     let mut sample_width: usize = 0;
     for entry in &channels {
         sample_width = sample_width.max(entry.channel.track.read().unwrap().components);
     }
     out.channels = channels;
-    out.curve = curve;
+    out.curve = curve.clone();
     out.duration = resolved_duration;
     out.elapsed = 0.0;
     out.from = from;

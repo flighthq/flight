@@ -113,7 +113,7 @@ pub fn initialize_animation_state_machine(
     out.from_sample = vec![0.0; sample_width];
     out.states = copied_states;
     out.to_sample = vec![0.0; sample_width];
-    out.transition_curve = linear_animation_state_machine_curve;
+    out.transition_curve = std::sync::Arc::new(linear_animation_state_machine_curve);
     out.transition_duration = 0.0;
     out.transition_elapsed = 0.0;
     out.transition_from_state_index = None;
@@ -316,8 +316,9 @@ pub fn transition_animation_state_machine(
         return false;
     }
     let to_idx = to_state_index as usize;
-    let curve_fn = curve.unwrap_or(linear_animation_state_machine_curve);
-    machine.transition_curve = curve_fn;
+    let curve_fn =
+        curve.unwrap_or_else(|| std::sync::Arc::new(linear_animation_state_machine_curve));
+    machine.transition_curve = curve_fn.clone();
     machine.transition_duration = f32::max(0.0, duration);
     machine.transition_elapsed = 0.0;
     machine.transition_from_state_index = Some(machine.current_state_index);

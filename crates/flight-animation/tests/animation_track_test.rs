@@ -1,5 +1,7 @@
-use flight_animation::*;
+use std::sync::Arc;
+
 use flight_animation::contract::*;
+use flight_animation::*;
 
 mod clone_animation_track {
     use super::*;
@@ -29,9 +31,10 @@ mod clone_animation_track {
         fn my_easing(a: f32) -> f32 {
             return a;
         }
+        let easing: EasingFn = Arc::new(my_easing);
         let track = create_animation_track(CreateAnimationTrackOpts {
             components: Some(3),
-            easing: Some(my_easing),
+            easing: Some(easing.clone()),
             interpolation: Some(AnimationInterpolation::Step),
             quaternion: Some(false),
             times: vec![0.0],
@@ -41,7 +44,7 @@ mod clone_animation_track {
         let cloned = clone_animation_track(&track);
         assert_eq!(cloned.components, 3);
         assert_eq!(cloned.interpolation, AnimationInterpolation::Step);
-        assert!(cloned.easing.is_some());
+        assert!(Arc::ptr_eq(cloned.easing.as_ref().unwrap(), &easing));
         assert!(cloned.segment_easings.is_none());
     }
 }
@@ -82,15 +85,18 @@ mod initialize_animation_track {
             easing: None,
             segment_easings: None,
         });
-        initialize_animation_track(&mut track, CreateAnimationTrackOpts {
-            times: vec![0.0, 1.0, 2.0],
-            values: vec![0.0, 5.0, 10.0],
-            components: None,
-            interpolation: None,
-            quaternion: None,
-            easing: None,
-            segment_easings: None,
-        });
+        initialize_animation_track(
+            &mut track,
+            CreateAnimationTrackOpts {
+                times: vec![0.0, 1.0, 2.0],
+                values: vec![0.0, 5.0, 10.0],
+                components: None,
+                interpolation: None,
+                quaternion: None,
+                easing: None,
+                segment_easings: None,
+            },
+        );
         assert_eq!(track.times.len(), 3);
         assert_eq!(track.values.len(), 3);
     }
@@ -232,7 +238,7 @@ mod sample_animation_track {
             return 0.0;
         }
         let track = create_animation_track(CreateAnimationTrackOpts {
-            easing: Some(zero_easing),
+            easing: Some(Arc::new(zero_easing)),
             times: vec![0.0, 1.0],
             values: vec![0.0, 10.0],
             components: None,
@@ -254,8 +260,8 @@ mod sample_animation_track {
             return 0.0;
         }
         let track = create_animation_track(CreateAnimationTrackOpts {
-            easing: Some(quarter_easing),
-            segment_easings: Some(vec![Some(zero_easing), None]),
+            easing: Some(Arc::new(quarter_easing)),
+            segment_easings: Some(vec![Some(Arc::new(zero_easing)), None]),
             times: vec![0.0, 1.0, 2.0],
             values: vec![0.0, 10.0, 20.0],
             components: None,
@@ -438,18 +444,25 @@ mod trim_animation_track {
         fn e2(_: f32) -> f32 {
             return 0.5;
         }
+        let easing: EasingFn = Arc::new(e1);
+        let e0: EasingFn = Arc::new(e0);
+        let e1: EasingFn = Arc::new(e1);
+        let e2: EasingFn = Arc::new(e2);
         let track = create_animation_track(CreateAnimationTrackOpts {
-            segment_easings: Some(vec![Some(e0), Some(e1), Some(e2)]),
+            segment_easings: Some(vec![Some(e0), Some(e1.clone()), Some(e2.clone())]),
             times: vec![0.0, 1.0, 2.0, 3.0],
             values: vec![0.0, 10.0, 20.0, 30.0],
             components: None,
-            easing: None,
+            easing: Some(easing.clone()),
             interpolation: None,
             quaternion: None,
         });
         let sub = trim_animation_track(&track, 1.0, 3.0);
         let se = sub.segment_easings.unwrap();
         assert_eq!(se.len(), 2);
+        assert!(Arc::ptr_eq(se[0].as_ref().unwrap(), &e1));
+        assert!(Arc::ptr_eq(se[1].as_ref().unwrap(), &e2));
+        assert!(Arc::ptr_eq(sub.easing.as_ref().unwrap(), &easing));
     }
 
     #[test]
@@ -545,9 +558,11 @@ mod validate_animation_track {
             quaternion: None,
         });
         let diagnostics = validate_animation_track(&track).unwrap();
-        assert!(diagnostics
-            .iter()
-            .any(|d| d.code == "segmentEasingsLengthMismatch"));
+        assert!(
+            diagnostics
+                .iter()
+                .any(|d| d.code == "segmentEasingsLengthMismatch")
+        );
     }
 
     #[test]

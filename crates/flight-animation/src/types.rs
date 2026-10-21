@@ -7,7 +7,7 @@ pub type TargetRef = Unknown;
 
 pub type Payload = usize;
 
-pub type EasingFn = fn(f32) -> f32;
+pub type EasingFn = Arc<dyn Fn(f32) -> f32 + Send + Sync>;
 
 pub type AnimationPlayerRef = Ref<AnimationPlayer>;
 
@@ -96,7 +96,7 @@ pub struct AnimationClipEvent {
     runtime: EntityRuntimeSlot,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct AnimationCrossfade {
     pub channels: Vec<AnimationCrossfadeChannel>,
     pub curve: EasingFn,
@@ -117,7 +117,7 @@ pub struct AnimationCrossfadeChannel {
     pub to_index: Option<usize>,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub struct AnimationCrossfadeOptions {
     pub curve: Option<EasingFn>,
 }
@@ -211,7 +211,7 @@ pub struct AnimationSampleAccumulator {
     runtime: EntityRuntimeSlot,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct AnimationStateMachine {
     pub advance_scratch: Vec<AnimationPlayerRef>,
     pub channels: Vec<AnimationStateMachineChannel>,
@@ -241,7 +241,7 @@ pub struct AnimationStateMachineState {
     runtime: EntityRuntimeSlot,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct AnimationTrack {
     pub interpolation: AnimationInterpolation,
     pub times: Vec<f32>,
@@ -260,7 +260,7 @@ pub struct AnimationTrackValidationDiagnostic {
     pub message: String,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub struct CreateAnimationTrackOpts {
     pub times: Vec<f32>,
     pub values: Vec<f32>,
@@ -345,7 +345,7 @@ impl Default for AnimationCrossfade {
     fn default() -> Self {
         return AnimationCrossfade {
             channels: Vec::new(),
-            curve: linear_easing_identity,
+            curve: Arc::new(linear_easing_identity),
             duration: 0.0,
             elapsed: 0.0,
             from: Arc::new(RwLock::new(AnimationPlayer::default())),
@@ -442,7 +442,7 @@ impl Default for AnimationStateMachine {
             from_sample: Vec::new(),
             states: Vec::new(),
             to_sample: Vec::new(),
-            transition_curve: linear_easing_identity,
+            transition_curve: Arc::new(linear_easing_identity),
             transition_duration: 0.0,
             transition_elapsed: 0.0,
             transition_from_state_index: None,
@@ -475,6 +475,97 @@ impl Default for AnimationTrack {
             segment_easings: None,
             runtime: EntityRuntimeSlot::default(),
         };
+    }
+}
+
+impl std::fmt::Debug for AnimationCrossfade {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return f
+            .debug_struct("AnimationCrossfade")
+            .field("channels", &self.channels)
+            .field("curve", &"<easing>")
+            .field("duration", &self.duration)
+            .field("elapsed", &self.elapsed)
+            .field("from", &self.from)
+            .field("from_sample", &self.from_sample)
+            .field("to", &self.to)
+            .field("to_sample", &self.to_sample)
+            .field("weight", &self.weight)
+            .finish();
+    }
+}
+
+impl std::fmt::Debug for AnimationCrossfadeOptions {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return f
+            .debug_struct("AnimationCrossfadeOptions")
+            .field("curve", &self.curve.is_some())
+            .finish();
+    }
+}
+
+impl std::fmt::Debug for AnimationStateMachine {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return f
+            .debug_struct("AnimationStateMachine")
+            .field("advance_scratch", &self.advance_scratch)
+            .field("channels", &self.channels)
+            .field("current_state_index", &self.current_state_index)
+            .field("from_sample", &self.from_sample)
+            .field("states", &self.states)
+            .field("to_sample", &self.to_sample)
+            .field("transition_curve", &"<easing>")
+            .field("transition_duration", &self.transition_duration)
+            .field("transition_elapsed", &self.transition_elapsed)
+            .field(
+                "transition_from_state_index",
+                &self.transition_from_state_index,
+            )
+            .field("transition_to_state_index", &self.transition_to_state_index)
+            .field("transition_weight", &self.transition_weight)
+            .finish();
+    }
+}
+
+impl std::fmt::Debug for AnimationTrack {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return f
+            .debug_struct("AnimationTrack")
+            .field("interpolation", &self.interpolation)
+            .field("times", &self.times)
+            .field("values", &self.values)
+            .field("components", &self.components)
+            .field("quaternion", &self.quaternion)
+            .field("easing", &self.easing.is_some())
+            .field(
+                "segment_easings",
+                &self
+                    .segment_easings
+                    .as_ref()
+                    .map(|entries| entries.iter().map(Option::is_some).collect::<Vec<_>>()),
+            )
+            .finish();
+    }
+}
+
+impl std::fmt::Debug for CreateAnimationTrackOpts {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return f
+            .debug_struct("CreateAnimationTrackOpts")
+            .field("times", &self.times)
+            .field("values", &self.values)
+            .field("components", &self.components)
+            .field("interpolation", &self.interpolation)
+            .field("quaternion", &self.quaternion)
+            .field("easing", &self.easing.is_some())
+            .field(
+                "segment_easings",
+                &self
+                    .segment_easings
+                    .as_ref()
+                    .map(|entries| entries.iter().map(Option::is_some).collect::<Vec<_>>()),
+            )
+            .finish();
     }
 }
 

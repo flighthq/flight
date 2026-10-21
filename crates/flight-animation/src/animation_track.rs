@@ -1,7 +1,7 @@
 use crate::types::*;
 use flight_entity::Ref;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct AnimationTrackSamplePoint {
     alpha: f32,
     dt: f32,
@@ -34,7 +34,7 @@ pub fn initialize_animation_track(out: &mut AnimationTrack, opts: CreateAnimatio
 pub fn clone_animation_track(track: &AnimationTrack) -> AnimationTrack {
     let mut out = AnimationTrack::default();
     out.components = track.components;
-    out.easing = track.easing;
+    out.easing = track.easing.clone();
     out.interpolation = track.interpolation;
     out.quaternion = track.quaternion;
     out.segment_easings = track.segment_easings.clone();
@@ -83,8 +83,8 @@ fn find_animation_track_sample_position(
     let easing = track
         .segment_easings
         .as_ref()
-        .and_then(|segment_easings| segment_easings.get(index).copied().flatten())
-        .or(track.easing);
+        .and_then(|segment_easings| segment_easings.get(index).cloned().flatten())
+        .or_else(|| track.easing.clone());
     return AnimationTrackSamplePosition::Segment(AnimationTrackSamplePoint {
         alpha,
         dt,
@@ -124,12 +124,12 @@ fn normalize_flat_quaternion(out: &mut [f32]) {
 }
 
 fn same_animation_track_sample_point(
-    a: AnimationTrackSamplePoint,
-    b: AnimationTrackSamplePoint,
+    a: &AnimationTrackSamplePoint,
+    b: &AnimationTrackSamplePoint,
 ) -> bool {
-    let same_easing = match (a.easing, b.easing) {
+    let same_easing = match (&a.easing, &b.easing) {
         (None, None) => true,
-        (Some(a), Some(b)) => std::ptr::fn_addr_eq(a, b),
+        (Some(a), Some(b)) => std::sync::Arc::ptr_eq(a, b),
         _ => false,
     };
     return a.alpha.to_bits() == b.alpha.to_bits()
@@ -200,11 +200,11 @@ pub fn sample_animation_track_ref(
     loop {
         let track = track_ref.read().unwrap();
         let position = find_animation_track_sample_position(&track, t);
-        let AnimationTrackSamplePosition::Segment(point) = position else {
+        let AnimationTrackSamplePosition::Segment(ref point) = position else {
             sample_animation_track_at_position(out, &track, position);
             return;
         };
-        let Some(easing) = point.easing else {
+        let Some(ref easing) = point.easing else {
             sample_animation_track_at_position(out, &track, position);
             return;
         };
@@ -219,7 +219,7 @@ pub fn sample_animation_track_ref(
             drop(track);
             continue;
         };
-        if !same_animation_track_sample_point(point, current_point) {
+        if !same_animation_track_sample_point(point, &current_point) {
             drop(track);
             continue;
         }
@@ -238,7 +238,7 @@ pub fn sample_animation_track_ref(
 pub(crate) fn sample_animation_track_value(out: &mut [f32], track: &AnimationTrack, t: f32) {
     let mut position = find_animation_track_sample_position(track, t);
     if let AnimationTrackSamplePosition::Segment(ref mut point) = position {
-        if let Some(easing) = point.easing {
+        if let Some(ref easing) = point.easing {
             point.alpha = easing(point.alpha);
         }
     }
@@ -344,7 +344,7 @@ pub fn trim_animation_track(
 
     let mut out = AnimationTrack::default();
     out.components = components;
-    out.easing = track.easing;
+    out.easing = track.easing.clone();
     out.interpolation = track.interpolation;
     out.quaternion = track.quaternion;
     out.segment_easings = segment_easings;

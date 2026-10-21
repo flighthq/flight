@@ -468,7 +468,7 @@ mod transition_animation_state_machine {
             &mut machine,
             StateRef::Name("b".to_string()),
             2.0,
-            Some(square),
+            Some(Arc::new(square)),
         ));
         advance_animation_state_machine(&mut machine, 1.0);
         assert_eq!(machine.transition_weight, 0.25);
