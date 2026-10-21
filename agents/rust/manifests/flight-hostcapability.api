@@ -11,15 +11,18 @@ src/backend_operation_explanation.rs: pub fn get_backend_operation_explanation_l
 src/backend_operation_explanation.rs: pub fn parse_backend_operation_explanation_layer(value: &str) -> Option<BackendOperationExplanationLayer>
 src/contract.rs: pub use super::backend_explanation::*;
 src/contract.rs: pub use super::backend_operation_explanation::*;
+src/contract.rs: pub use super::provider_ref::*;
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::BackendExplanation;
 src/lib.rs: pub use contract::BackendExplanationLayer;
 src/lib.rs: pub use contract::BackendExplanationViability;
 src/lib.rs: pub use contract::BackendOperationExplanation;
 src/lib.rs: pub use contract::BackendOperationExplanationLayer;
+src/lib.rs: pub use contract::ProviderRef;
 src/lib.rs: pub use contract::get_backend_explanation_layer_string;
 src/lib.rs: pub use contract::get_backend_explanation_viability_string;
 src/lib.rs: pub use contract::get_backend_operation_explanation_layer_string;
 src/lib.rs: pub use contract::parse_backend_explanation_layer;
 src/lib.rs: pub use contract::parse_backend_explanation_viability;
 src/lib.rs: pub use contract::parse_backend_operation_explanation_layer;
+src/provider_ref.rs: pub type ProviderRef = Arc<dyn Any + Send + Sync>;
