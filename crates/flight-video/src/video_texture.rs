@@ -26,6 +26,19 @@ mod sugar_tests {
 
     use crate::contract::*;
 
+    // D23 (B): a video resource is created empty, then given its element and ownership (Principal 21f7557f).
+    fn video_resource_of(
+        element: Option<Arc<HostImageSource>>,
+        object_url: Option<&str>,
+        owns_element: Option<bool>,
+    ) -> VideoResource {
+        let mut resource = create_video_resource();
+        resource.element = element;
+        resource.object_url = object_url.map(|url| url.to_string());
+        resource.owns_element = owns_element.unwrap_or(false);
+        return resource;
+    }
+
     fn test_host() -> HostVideoCapability {
         return HostVideoCapability {
             provider: Arc::new(()),
@@ -62,7 +75,7 @@ mod sugar_tests {
             provider: Arc::new(()),
             handle: Arc::new(()),
         });
-        return create_video_resource(Some(element), None, None);
+        return video_resource_of(Some(element), None, None);
     }
 
     #[test]

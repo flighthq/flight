@@ -5,6 +5,27 @@ mod sugar_tests {
     use super::*;
     use std::sync::Arc;
 
+    fn scheduled_of(
+        id: &str,
+        request: &NotificationRequest,
+        schedule: &NotificationSchedule,
+    ) -> ScheduledNotification {
+        let mut scheduled = create_scheduled_notification_resource();
+        scheduled.id = id.to_string();
+        scheduled.request = request.clone();
+        scheduled.schedule = schedule.clone();
+        return scheduled;
+    }
+
+    // D23 (B): notification resources are created empty, then given their identity (Principal 21f7557f).
+    fn notification_of(id: &str, title: &str, tag: &str) -> Notification {
+        let mut notification = create_notification_resource();
+        notification.id = id.to_string();
+        notification.title = title.to_string();
+        notification.tag = tag.to_string();
+        return notification;
+    }
+
     fn block_on<F: std::future::Future>(future: F) -> F::Output {
         let mut future = Box::pin(future);
         let mut context = std::task::Context::from_waker(std::task::Waker::noop());
@@ -261,7 +282,7 @@ mod sugar_tests {
 
     #[test]
     fn create_notification_resource_populates_all_identity_fields() {
-        let notification = create_notification_resource("n1", "Title", "group");
+        let notification = notification_of("n1", "Title", "group");
         assert_eq!(notification.id, "n1");
         assert_eq!(notification.title, "Title");
         assert_eq!(notification.tag, "group");
@@ -271,7 +292,7 @@ mod sugar_tests {
     fn create_scheduled_notification_resource_carries_request_and_schedule() {
         let request = make_request("Later");
         let schedule = make_schedule(5.0);
-        let scheduled = create_scheduled_notification_resource("s1", &request, &schedule);
+        let scheduled = scheduled_of("s1", &request, &schedule);
         assert_eq!(scheduled.id, "s1");
         assert_eq!(scheduled.request.title, "Later");
         assert_eq!(scheduled.schedule.at, 5.0);
@@ -279,7 +300,7 @@ mod sugar_tests {
 
     #[test]
     fn bind_notification_close_then_close_returns_ok() {
-        let notification = create_notification_resource("n1", "Title", "");
+        let notification = notification_of("n1", "Title", "");
         bind_notification_close(&notification, Arc::new(|| Box::pin(async {
             return NotificationCloseOutcome { reason: NotificationCloseReason::Ok };
         })));
@@ -289,14 +310,14 @@ mod sugar_tests {
 
     #[test]
     fn close_notification_without_bind_returns_operation_failed() {
-        let notification = create_notification_resource("n1", "Title", "");
+        let notification = notification_of("n1", "Title", "");
         let outcome = block_on(close_notification(&notification));
         assert_eq!(outcome.reason, NotificationCloseReason::OperationFailed);
     }
 
     #[test]
     fn close_notification_is_idempotent_after_success() {
-        let notification = create_notification_resource("n1", "Title", "");
+        let notification = notification_of("n1", "Title", "");
         bind_notification_close(&notification, Arc::new(|| Box::pin(async {
             return NotificationCloseOutcome { reason: NotificationCloseReason::Ok };
         })));
@@ -310,7 +331,7 @@ mod sugar_tests {
     fn bind_scheduled_notification_cancel_then_cancel_returns_ok() {
         let request = make_request("Later");
         let schedule = make_schedule(1.0);
-        let scheduled = create_scheduled_notification_resource("s1", &request, &schedule);
+        let scheduled = scheduled_of("s1", &request, &schedule);
         bind_scheduled_notification_cancel(&scheduled, Arc::new(|| Box::pin(async {
             return NotificationCancelOutcome { reason: NotificationCancelReason::Ok };
         })));
@@ -322,7 +343,7 @@ mod sugar_tests {
     fn cancel_scheduled_notification_without_bind_returns_operation_failed() {
         let request = make_request("Later");
         let schedule = make_schedule(1.0);
-        let scheduled = create_scheduled_notification_resource("s1", &request, &schedule);
+        let scheduled = scheduled_of("s1", &request, &schedule);
         let outcome = block_on(cancel_scheduled_notification(&scheduled));
         assert_eq!(outcome.reason, NotificationCancelReason::OperationFailed);
     }
@@ -331,7 +352,7 @@ mod sugar_tests {
     fn cancel_scheduled_notification_is_idempotent_after_success() {
         let request = make_request("Later");
         let schedule = make_schedule(1.0);
-        let scheduled = create_scheduled_notification_resource("s1", &request, &schedule);
+        let scheduled = scheduled_of("s1", &request, &schedule);
         bind_scheduled_notification_cancel(&scheduled, Arc::new(|| Box::pin(async {
             return NotificationCancelOutcome { reason: NotificationCancelReason::Ok };
         })));
@@ -375,7 +396,7 @@ mod sugar_tests {
 
     #[test]
     fn show_notification_returns_provider_outcome() {
-        let notification = create_notification_resource("shown", "Title", "");
+        let notification = notification_of("shown", "Title", "");
         let notification_clone = notification.clone();
         let provider = make_provider();
         let cap = HostNotificationDeliveryCapability {
@@ -401,7 +422,7 @@ mod sugar_tests {
     fn schedule_notification_returns_provider_outcome() {
         let request = make_request("Later");
         let schedule = make_schedule(1.0);
-        let scheduled = create_scheduled_notification_resource("s1", &request, &schedule);
+        let scheduled = scheduled_of("s1", &request, &schedule);
         let scheduled_clone = scheduled.clone();
         let provider = make_provider();
         let cap = HostNotificationSchedulingCapability {
@@ -574,23 +595,32 @@ mod sugar_tests {
     }
 
     #[test]
-    fn initialize_notification_resource_sets_fields_on_preallocated_entity() {
+    fn initialize_notification_resource_resets_fields_on_preallocated_entity() {
         let mut out: Notification = flight_entity::allocate_entity();
-        initialize_notification_resource(&mut out, "n1", "Title", "tag");
-        assert_eq!(out.id, "n1");
-        assert_eq!(out.title, "Title");
-        assert_eq!(out.tag, "tag");
+        out.id = "n1".to_string();
+        out.title = "Title".to_string();
+        out.tag = "tag".to_string();
+        initialize_notification_resource(&mut out);
+        assert_eq!(
+            (out.id.as_str(), out.title.as_str(), out.tag.as_str()),
+            ("", "", "")
+        );
     }
 
     #[test]
-    fn initialize_scheduled_notification_resource_sets_fields_on_preallocated_entity() {
+    fn initialize_scheduled_notification_resource_resets_fields_on_preallocated_entity() {
         let request = make_request("Later");
         let schedule = make_schedule(2.0);
         let mut out: ScheduledNotification = flight_entity::allocate_entity();
-        initialize_scheduled_notification_resource(&mut out, "s1", &request, &schedule);
-        assert_eq!(out.id, "s1");
-        assert_eq!(out.request.title, "Later");
-        assert_eq!(out.schedule.at, 2.0);
+        out.id = "s1".to_string();
+        out.request = request.clone();
+        out.schedule = schedule.clone();
+        initialize_scheduled_notification_resource(&mut out);
+        assert_eq!(out.id, "");
+        assert_eq!(out.request.title, "");
+        assert!(out.request.body.is_none() && out.request.actions.is_none());
+        assert_eq!(out.schedule.at, 0.0);
+        assert!(out.schedule.repeat.is_none());
     }
 }
 

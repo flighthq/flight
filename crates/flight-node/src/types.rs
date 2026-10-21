@@ -434,16 +434,6 @@ pub struct NodeOrderList {
     pub sort_keys: Vec<f64>,
 }
 
-/// Options for `create_viewport` (TS `ViewportLike`, a partial Viewport).
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct ViewportOptions {
-    pub device_pixel_ratio: Option<f32>,
-    pub height: Option<f32>,
-    pub width: Option<f32>,
-    pub x: Option<f32>,
-    pub y: Option<f32>,
-}
-
 /// The bedrock drawable rectangle a scene renders into (TS `Viewport`). Passive plain data: it does
 /// not own its drawable.
 #[derive(Clone, Debug, PartialEq)]

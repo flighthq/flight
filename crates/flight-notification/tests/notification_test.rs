@@ -4,6 +4,27 @@ use flight_entity::Entity;
 use flight_notification::*;
 use crate::block_on;
 
+fn scheduled_of(
+    id: &str,
+    request: &NotificationRequest,
+    schedule: &NotificationSchedule,
+) -> ScheduledNotification {
+    let mut scheduled = create_scheduled_notification_resource();
+    scheduled.id = id.to_string();
+    scheduled.request = request.clone();
+    scheduled.schedule = schedule.clone();
+    return scheduled;
+}
+
+// D23 (B): notification resources are created empty, then given their identity (Principal 21f7557f).
+fn notification_of(id: &str, title: &str, tag: &str) -> Notification {
+    let mut notification = create_notification_resource();
+    notification.id = id.to_string();
+    notification.title = title.to_string();
+    notification.tag = tag.to_string();
+    return notification;
+}
+
 fn assert_is_entity<T: Entity>(_entity: &T) {}
 
 fn make_request(title: &str) -> NotificationRequest {
@@ -222,7 +243,7 @@ mod bind_notification_close {
 
     #[test]
     fn pins_the_provider_close_operation_to_its_notification_entity() {
-        let notification = create_notification_resource("bound", "Bound", "");
+        let notification = notification_of("bound", "Bound", "");
         bind_notification_close(&notification, Arc::new(|| Box::pin(async {
             return NotificationCloseOutcome { reason: NotificationCloseReason::Ok };
         })));
@@ -238,7 +259,7 @@ mod bind_scheduled_notification_cancel {
     fn pins_the_provider_cancel_operation_to_its_scheduled_notification_entity() {
         let request = make_request("Bound");
         let schedule = make_schedule(1.0);
-        let scheduled = create_scheduled_notification_resource("bound", &request, &schedule);
+        let scheduled = scheduled_of("bound", &request, &schedule);
         bind_scheduled_notification_cancel(&scheduled, Arc::new(|| Box::pin(async {
             return NotificationCancelOutcome { reason: NotificationCancelReason::Ok };
         })));
@@ -254,7 +275,7 @@ mod cancel_scheduled_notification {
     fn uses_only_the_origin_pinned_cancellation_and_is_idempotent() {
         let request = make_request("Later");
         let schedule = make_schedule(1.0);
-        let scheduled = create_scheduled_notification_resource("same", &request, &schedule);
+        let scheduled = scheduled_of("same", &request, &schedule);
         let cancels = Arc::new(std::sync::atomic::AtomicU32::new(0));
         let cancels_clone = cancels.clone();
         bind_scheduled_notification_cancel(&scheduled, Arc::new(move || {
@@ -294,14 +315,14 @@ mod close_notification {
 
     #[test]
     fn never_accepts_a_replacement_host_and_never_reroutes_a_foreign_id() {
-        let notification = create_notification_resource("shared", "A", "");
+        let notification = notification_of("shared", "A", "");
         let outcome = block_on(close_notification(&notification));
         assert_eq!(outcome.reason, NotificationCloseReason::OperationFailed);
     }
 
     #[test]
     fn uses_only_the_origin_pinned_close_and_is_idempotent() {
-        let notification = create_notification_resource("same", "A", "");
+        let notification = notification_of("same", "A", "");
         let closes = Arc::new(std::sync::atomic::AtomicU32::new(0));
         let closes_clone = closes.clone();
         bind_notification_close(&notification, Arc::new(move || {
@@ -370,8 +391,22 @@ mod create_notification_resource {
     use super::*;
 
     #[test]
+    fn allocates_an_open_entity_with_an_empty_identity() {
+        let notification = create_notification_resource();
+        assert_is_entity(&notification);
+        assert_eq!(
+            (
+                notification.id.as_str(),
+                notification.title.as_str(),
+                notification.tag.as_str()
+            ),
+            ("", "", "")
+        );
+    }
+
+    #[test]
     fn creates_stable_public_identity_without_a_native_key() {
-        let notification = create_notification_resource("n1", "Title", "group");
+        let notification = notification_of("n1", "Title", "group");
         assert_is_entity(&notification);
         assert_eq!(notification.id, "n1");
         assert_eq!(notification.tag, "group");
@@ -383,10 +418,20 @@ mod create_scheduled_notification_resource {
     use super::*;
 
     #[test]
+    fn allocates_a_pending_entity_with_an_empty_request_and_a_zero_schedule() {
+        let scheduled = create_scheduled_notification_resource();
+        assert_is_entity(&scheduled);
+        assert_eq!(scheduled.id, "");
+        assert_eq!(scheduled.request.title, "");
+        assert_eq!(scheduled.schedule.at, 0.0);
+        assert!(scheduled.schedule.repeat.is_none());
+    }
+
+    #[test]
     fn creates_a_stable_scheduled_entity_with_request_and_schedule_facts() {
         let request = make_request("Later");
         let schedule = make_schedule(1.0);
-        let scheduled = create_scheduled_notification_resource("s1", &request, &schedule);
+        let scheduled = scheduled_of("s1", &request, &schedule);
         assert_is_entity(&scheduled);
         assert_eq!(scheduled.id, "s1");
         assert_eq!(scheduled.request.title, "Later");
@@ -550,7 +595,7 @@ mod get_active_notifications {
 
     #[test]
     fn returns_provider_reconciled_stable_entity_identity() {
-        let notification = create_notification_resource("same", "Title", "");
+        let notification = notification_of("same", "Title", "");
         let notification_clone = notification.clone();
         let provider = make_provider();
         let cap = HostNotificationActiveListCapability {
@@ -865,10 +910,14 @@ mod initialize_notification_resource {
     #[test]
     fn is_the_construction_initializer_of_create_notification_resource() {
         let mut out: Notification = allocate_entity();
-        initialize_notification_resource(&mut out, "n1", "Title", "tag");
-        assert_eq!(out.id, "n1");
-        assert_eq!(out.title, "Title");
-        assert_eq!(out.tag, "tag");
+        out.id = "n1".to_string();
+        out.title = "Title".to_string();
+        out.tag = "tag".to_string();
+        initialize_notification_resource(&mut out);
+        assert_eq!(
+            (out.id.as_str(), out.title.as_str(), out.tag.as_str()),
+            ("", "", "")
+        );
     }
 }
 
@@ -881,10 +930,15 @@ mod initialize_scheduled_notification_resource {
         let request = make_request("Later");
         let schedule = make_schedule(1.0);
         let mut out: ScheduledNotification = allocate_entity();
-        initialize_scheduled_notification_resource(&mut out, "s1", &request, &schedule);
-        assert_eq!(out.id, "s1");
-        assert_eq!(out.request.title, "Later");
-        assert_eq!(out.schedule.at, 1.0);
+        out.id = "s1".to_string();
+        out.request = request.clone();
+        out.schedule = schedule.clone();
+        initialize_scheduled_notification_resource(&mut out);
+        assert_eq!(out.id, "");
+        assert_eq!(out.request.title, "");
+        assert!(out.request.body.is_none() && out.request.actions.is_none());
+        assert_eq!(out.schedule.at, 0.0);
+        assert!(out.schedule.repeat.is_none());
     }
 }
 
@@ -1040,7 +1094,7 @@ mod schedule_notification {
     fn returns_the_provider_created_stable_entity() {
         let request = make_request("Later");
         let schedule = make_schedule(1.0);
-        let scheduled = create_scheduled_notification_resource("later", &request, &schedule);
+        let scheduled = scheduled_of("later", &request, &schedule);
         let scheduled_clone = scheduled.clone();
         let provider = make_provider();
         let cap = HostNotificationSchedulingCapability {
@@ -1081,7 +1135,7 @@ mod show_notification {
 
     #[test]
     fn returns_only_the_provider_acquisition_outcome() {
-        let notification = create_notification_resource("shown", "Title", "");
+        let notification = notification_of("shown", "Title", "");
         let notification_clone = notification.clone();
         let provider = make_provider();
         let cap = HostNotificationDeliveryCapability {

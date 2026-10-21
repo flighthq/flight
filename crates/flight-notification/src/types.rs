@@ -335,7 +335,7 @@ pub struct NotificationReplySubscription {
     pub(crate) generation: AtomicU32,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct NotificationRequest {
     pub title: String,
     pub id: Option<String>,
@@ -358,7 +358,7 @@ pub struct NotificationRequest {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct NotificationRequestField(pub &'static str);
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct NotificationSchedule {
     pub at: f32,
     pub repeat: Option<NotificationScheduleRepeat>,
@@ -606,28 +606,8 @@ impl Default for ScheduledNotification {
         return ScheduledNotification {
             runtime: EntityRuntimeSlot::default(),
             id: String::new(),
-            request: NotificationRequest {
-                title: String::new(),
-                id: None,
-                body: None,
-                icon: None,
-                badge: None,
-                tag: None,
-                silent: None,
-                actions: None,
-                dir: None,
-                image: None,
-                lang: None,
-                renotify: None,
-                require_interaction: None,
-                timestamp: None,
-                vibrate: None,
-                data: None,
-            },
-            schedule: NotificationSchedule {
-                at: 0.0,
-                repeat: None,
-            },
+            request: NotificationRequest::default(),
+            schedule: NotificationSchedule::default(),
             cancel_callback: Mutex::new(None),
             cancelled: AtomicBool::new(false),
         };

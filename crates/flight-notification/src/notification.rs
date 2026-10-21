@@ -37,19 +37,21 @@ pub fn create_notification_reply_subscription() -> NotificationReplySubscription
     return out;
 }
 
-pub fn create_notification_resource(id: &str, title: &str, tag: &str) -> Notification {
+/// Allocates an open notification resource with an empty id, title and tag; a provider assigns them
+/// after create (D23 B).
+// flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 21f7557f, foreman-a8ca6cf2): assign id, title and tag after create
+pub fn create_notification_resource() -> Notification {
     let mut out: Notification = allocate_entity();
-    initialize_notification_resource(&mut out, id, title, tag);
+    initialize_notification_resource(&mut out);
     return out;
 }
 
-pub fn create_scheduled_notification_resource(
-    id: &str,
-    request: &NotificationRequest,
-    schedule: &NotificationSchedule,
-) -> ScheduledNotification {
+/// Allocates a pending scheduled-notification resource with an empty id, an empty request and a
+/// schedule at 0 with no repeat; a provider assigns them after create (D23 B).
+// flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 21f7557f, foreman-a8ca6cf2): assign id, request and schedule after create
+pub fn create_scheduled_notification_resource() -> ScheduledNotification {
     let mut out: ScheduledNotification = allocate_entity();
-    initialize_scheduled_notification_resource(&mut out, id, request, schedule);
+    initialize_scheduled_notification_resource(&mut out);
     return out;
 }
 
@@ -78,26 +80,23 @@ pub fn initialize_notification_reply_subscription(out: &mut NotificationReplySub
     out.on_notification_reply = create_signal();
 }
 
-pub fn initialize_notification_resource(
-    out: &mut EntityConstruction<Notification>,
-    id: &str,
-    title: &str,
-    tag: &str,
-) {
-    out.id = id.to_string();
-    out.title = title.to_string();
-    out.tag = tag.to_string();
+/// The construction initializer of `create_notification_resource`: an empty id, title and tag.
+// flight-lint: allow(conform-params) D23 (B) zero-field initializer (Principal 21f7557f, foreman-a8ca6cf2)
+pub fn initialize_notification_resource(out: &mut EntityConstruction<Notification>) {
+    out.id = String::new();
+    out.title = String::new();
+    out.tag = String::new();
 }
 
+/// The construction initializer of `create_scheduled_notification_resource`: an empty id and request
+/// and a schedule at 0 with no repeat.
+// flight-lint: allow(conform-params) D23 (B) zero-field initializer (Principal 21f7557f, foreman-a8ca6cf2)
 pub fn initialize_scheduled_notification_resource(
     out: &mut EntityConstruction<ScheduledNotification>,
-    id: &str,
-    request: &NotificationRequest,
-    schedule: &NotificationSchedule,
 ) {
-    out.id = id.to_string();
-    out.request = request.clone();
-    out.schedule = schedule.clone();
+    out.id = String::new();
+    out.request = NotificationRequest::default();
+    out.schedule = NotificationSchedule::default();
 }
 
 pub async fn attach_notification_action_subscription(

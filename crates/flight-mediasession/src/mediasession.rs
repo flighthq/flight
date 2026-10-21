@@ -14,6 +14,13 @@ mod sugar_tests {
 
     use super::*;
 
+    // D23 (B): an action signal is created unattached, then given its action (Principal 21f7557f).
+    fn action_signal_of(action: MediaSessionAction) -> MediaSessionActionSignal {
+        let mut signal = create_media_session_action_signal();
+        signal.action = action;
+        return signal;
+    }
+
     /// A command capability whose outcomes are fixed non-ok reasons, counting destroys and position
     /// calls.
     fn commands(
@@ -68,8 +75,8 @@ mod sugar_tests {
     #[test]
     fn host_media_session_action_capability_attach_action_matches_attach_media_session_action() {
         let (ra, rb) = (Arc::new(Mutex::new(0)), Arc::new(Mutex::new(0)));
-        let mut a = create_media_session_action_signal(MediaSessionAction::NextTrack);
-        let mut b = create_media_session_action_signal(MediaSessionAction::NextTrack);
+        let mut a = action_signal_of(MediaSessionAction::NextTrack);
+        let mut b = action_signal_of(MediaSessionAction::NextTrack);
         let attached_a = actions(ra.clone()).attach_action(&mut a);
         let attached_b = attach_media_session_action(&actions(rb.clone()), &mut b);
         assert_eq!(attached_a, attached_b);
@@ -179,17 +186,17 @@ mod sugar_tests {
 
     #[test]
     fn media_session_action_signal_new_matches_create_media_session_action_signal() {
-        let a = MediaSessionActionSignal::new(MediaSessionAction::SeekBackward);
-        let b = create_media_session_action_signal(MediaSessionAction::SeekBackward);
+        let a = MediaSessionActionSignal::new();
+        let b = create_media_session_action_signal();
         assert_eq!(format!("{:?}", a), format!("{:?}", b));
-        assert_eq!(a.action, MediaSessionAction::SeekBackward);
+        assert_eq!(a.action, MediaSessionAction::Play);
     }
 
     #[test]
     fn media_session_action_signal_detach_matches_detach_media_session_action() {
         let (ra, rb) = (Arc::new(Mutex::new(0)), Arc::new(Mutex::new(0)));
-        let mut a = create_media_session_action_signal(MediaSessionAction::Play);
-        let mut b = create_media_session_action_signal(MediaSessionAction::Play);
+        let mut a = action_signal_of(MediaSessionAction::Play);
+        let mut b = action_signal_of(MediaSessionAction::Play);
         attach_media_session_action(&actions(ra.clone()), &mut a);
         attach_media_session_action(&actions(rb.clone()), &mut b);
         a.detach();
@@ -201,8 +208,8 @@ mod sugar_tests {
 
     #[test]
     fn media_session_action_signal_dispose_matches_dispose_media_session_action_signal() {
-        let mut a = create_media_session_action_signal(MediaSessionAction::Stop);
-        let mut b = create_media_session_action_signal(MediaSessionAction::Stop);
+        let mut a = action_signal_of(MediaSessionAction::Stop);
+        let mut b = action_signal_of(MediaSessionAction::Stop);
         connect_signal(
             &a.on_action,
             Arc::new(|_: &MediaSessionActionDetails| {}),
@@ -223,17 +230,20 @@ mod sugar_tests {
     }
 }
 
-pub fn create_media_session_action_signal(action: MediaSessionAction) -> MediaSessionActionSignal {
+/// Allocates an unattached action signal for `Play` with a fresh `on_action`; assign the action
+/// after create (D23 B).
+// flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 21f7557f, foreman-a8ca6cf2): assign the action after create
+pub fn create_media_session_action_signal() -> MediaSessionActionSignal {
     let mut out: MediaSessionActionSignal = allocate_entity();
-    initialize_media_session_action_signal(&mut out, action);
+    initialize_media_session_action_signal(&mut out);
     return out;
 }
 
-pub fn initialize_media_session_action_signal(
-    out: &mut MediaSessionActionSignal,
-    action: MediaSessionAction,
-) {
-    out.action = action;
+/// The construction initializer of `create_media_session_action_signal`: the `Play` action, a fresh
+/// `on_action` signal and no attach subscription.
+// flight-lint: allow(conform-params) D23 (B) zero-field initializer (Principal 21f7557f, foreman-a8ca6cf2)
+pub fn initialize_media_session_action_signal(out: &mut MediaSessionActionSignal) {
+    out.action = MediaSessionAction::Play;
     out.on_action = create_signal();
     out.subscription = None;
 }
@@ -681,8 +691,8 @@ impl HostMediaSessionCapability {
 }
 
 impl MediaSessionActionSignal {
-    pub fn new(action: MediaSessionAction) -> Self {
-        return create_media_session_action_signal(action);
+    pub fn new() -> Self {
+        return create_media_session_action_signal();
     }
 
     pub fn detach(&mut self) {

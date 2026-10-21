@@ -238,9 +238,7 @@ fn video_resource() -> Ref<flight_video::VideoResource> {
         provider,
         handle: Arc::new(1_i32),
     });
-    return Arc::new(RwLock::new(create_video_resource(
-        Some(element),
-        None,
-        Some(false),
-    )));
+    let mut resource = create_video_resource();
+    resource.element = Some(element);
+    return Arc::new(RwLock::new(resource));
 }

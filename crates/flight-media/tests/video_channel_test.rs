@@ -269,9 +269,7 @@ mod play_video_resource {
     fn returns_none_without_element_and_stops_on_play_rejection() {
         let (state, host) = video_host();
         let spawn = immediate_spawn();
-        let empty = Arc::new(std::sync::RwLock::new(create_video_resource(
-            None, None, None,
-        )));
+        let empty = Arc::new(std::sync::RwLock::new(create_video_resource()));
         let runtime_state = create_video_channel_runtime_state();
         assert!(play_video_resource(&host, &spawn, &runtime_state, &empty, None).is_none());
         state.lock().unwrap().play_rejects = true;

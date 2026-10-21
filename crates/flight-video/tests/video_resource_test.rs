@@ -1,8 +1,22 @@
 use std::sync::Arc;
 
+use flight_bitmap::HostImageSource;
 use flight_video::contract::*;
 
 use crate::video_fixture::*;
+
+// D23 (B): a video resource is created empty, then given its element and ownership (Principal 21f7557f).
+fn video_resource_of(
+    element: Option<Arc<HostImageSource>>,
+    object_url: Option<&str>,
+    owns_element: Option<bool>,
+) -> VideoResource {
+    let mut resource = create_video_resource();
+    resource.element = element;
+    resource.object_url = object_url.map(|url| url.to_string());
+    resource.owns_element = owns_element.unwrap_or(false);
+    return resource;
+}
 
 fn released_is(host: &FakeVideoHost, expected: &[&Arc<flight_bitmap::HostImageSource>]) -> bool {
     let log = host.log.lock().unwrap();
@@ -24,7 +38,7 @@ mod create_video_resource {
 
     #[test]
     fn returns_a_resource_with_null_element_when_called_with_no_arguments() {
-        let resource = create_video_resource(None, None, None);
+        let resource = create_video_resource();
         assert!(resource.element.is_none());
         assert!(!resource.owns_element);
     }
@@ -32,7 +46,7 @@ mod create_video_resource {
     #[test]
     fn stores_the_provided_host_video_source_as_borrowed_by_default() {
         let source = video_source();
-        let resource = create_video_resource(Some(source.clone()), None, None);
+        let resource = video_resource_of(Some(source.clone()), None, None);
         assert!(Arc::ptr_eq(resource.element.as_ref().unwrap(), &source));
         assert!(!resource.owns_element);
     }
@@ -40,7 +54,7 @@ mod create_video_resource {
     #[test]
     fn marks_the_source_as_owned_when_explicitly_requested() {
         let source = video_source();
-        let resource = create_video_resource(Some(source.clone()), None, Some(true));
+        let resource = video_resource_of(Some(source.clone()), None, Some(true));
         assert!(Arc::ptr_eq(resource.element.as_ref().unwrap(), &source));
         assert!(resource.owns_element);
     }
@@ -53,7 +67,7 @@ mod destroy_video_resource {
     fn asks_the_host_to_release_an_owned_source_detaching_a_live_stream_with_it() {
         let host = fake_video_host(state());
         let source = video_source();
-        let mut resource = create_video_resource(Some(source.clone()), None, Some(true));
+        let mut resource = video_resource_of(Some(source.clone()), None, Some(true));
         destroy_video_resource(&host.capability, &mut resource);
         assert!(released_is(&host, &[&source]));
         assert!(resource.element.is_none());
@@ -63,7 +77,7 @@ mod destroy_video_resource {
     #[test]
     fn does_not_release_a_borrowed_source() {
         let host = fake_video_host(state());
-        let mut resource = create_video_resource(Some(video_source()), None, None);
+        let mut resource = video_resource_of(Some(video_source()), None, None);
         destroy_video_resource(&host.capability, &mut resource);
         assert!(released_is(&host, &[]));
         assert!(resource.element.is_none());
@@ -73,8 +87,7 @@ mod destroy_video_resource {
     #[test]
     fn revokes_an_owned_object_url_after_the_host_has_released_the_element() {
         let host = fake_video_host(state());
-        let mut resource =
-            create_video_resource(Some(video_source()), Some("blob:owned"), Some(true));
+        let mut resource = video_resource_of(Some(video_source()), Some("blob:owned"), Some(true));
         destroy_video_resource(&host.capability, &mut resource);
         assert_eq!(host.log.lock().unwrap().order, vec!["release", "revoke"]);
     }
@@ -82,7 +95,7 @@ mod destroy_video_resource {
     #[test]
     fn revokes_an_object_url_even_when_the_source_is_borrowed() {
         let host = fake_video_host(state());
-        let mut resource = create_video_resource(Some(video_source()), Some("blob:owned"), None);
+        let mut resource = video_resource_of(Some(video_source()), Some("blob:owned"), None);
         destroy_video_resource(&host.capability, &mut resource);
         assert_eq!(
             host.log.lock().unwrap().revoked,
@@ -94,8 +107,7 @@ mod destroy_video_resource {
     #[test]
     fn is_idempotent_a_second_destruction_is_a_no_op() {
         let host = fake_video_host(state());
-        let mut resource =
-            create_video_resource(Some(video_source()), Some("blob:owned"), Some(true));
+        let mut resource = video_resource_of(Some(video_source()), Some("blob:owned"), Some(true));
         destroy_video_resource(&host.capability, &mut resource);
         destroy_video_resource(&host.capability, &mut resource);
         let log = host.log.lock().unwrap();
@@ -105,8 +117,7 @@ mod destroy_video_resource {
 
     #[test]
     fn still_clears_the_resource_when_the_host_carries_no_release_capability() {
-        let mut resource =
-            create_video_resource(Some(video_source()), Some("blob:owned"), Some(true));
+        let mut resource = video_resource_of(Some(video_source()), Some("blob:owned"), Some(true));
         destroy_video_resource(&empty_video_host(false), &mut resource);
         assert!(resource.element.is_none());
         assert!(resource.object_url.is_none());
@@ -120,7 +131,7 @@ mod dispose_video_resource {
     fn releases_the_source_regardless_of_ownership_and_drops_it() {
         let host = fake_video_host(state());
         let source = video_source();
-        let mut resource = create_video_resource(Some(source.clone()), None, None);
+        let mut resource = video_resource_of(Some(source.clone()), None, None);
         dispose_video_resource(&host.capability, &mut resource);
         assert!(released_is(&host, &[&source]));
         assert!(resource.element.is_none());
@@ -130,7 +141,7 @@ mod dispose_video_resource {
     #[test]
     fn is_a_no_op_on_an_already_element_less_resource() {
         let host = fake_video_host(state());
-        let mut resource = create_video_resource(None, None, None);
+        let mut resource = create_video_resource();
         dispose_video_resource(&host.capability, &mut resource);
         assert!(released_is(&host, &[]));
         assert!(resource.element.is_none());
@@ -139,7 +150,7 @@ mod dispose_video_resource {
     #[test]
     fn revokes_an_owned_object_url_and_clears_it() {
         let host = fake_video_host(state());
-        let mut resource = create_video_resource(Some(video_source()), Some("blob:owned"), None);
+        let mut resource = video_resource_of(Some(video_source()), Some("blob:owned"), None);
         dispose_video_resource(&host.capability, &mut resource);
         assert_eq!(
             host.log.lock().unwrap().revoked,
@@ -151,7 +162,7 @@ mod dispose_video_resource {
     #[test]
     fn does_not_revoke_again_when_disposed_twice() {
         let host = fake_video_host(state());
-        let mut resource = create_video_resource(Some(video_source()), Some("blob:owned"), None);
+        let mut resource = video_resource_of(Some(video_source()), Some("blob:owned"), None);
         dispose_video_resource(&host.capability, &mut resource);
         dispose_video_resource(&host.capability, &mut resource);
         assert_eq!(
@@ -163,7 +174,7 @@ mod dispose_video_resource {
     #[test]
     fn revokes_nothing_when_the_resource_owns_no_object_url() {
         let host = fake_video_host(state());
-        let mut resource = create_video_resource(Some(video_source()), None, None);
+        let mut resource = video_resource_of(Some(video_source()), None, None);
         dispose_video_resource(&host.capability, &mut resource);
         assert!(host.log.lock().unwrap().revoked.is_empty());
     }
@@ -171,7 +182,7 @@ mod dispose_video_resource {
     #[test]
     fn revokes_the_object_url_only_after_the_host_has_released_the_element() {
         let host = fake_video_host(state());
-        let mut resource = create_video_resource(Some(video_source()), Some("blob:owned"), None);
+        let mut resource = video_resource_of(Some(video_source()), Some("blob:owned"), None);
         dispose_video_resource(&host.capability, &mut resource);
         assert_eq!(host.log.lock().unwrap().order, vec!["release", "revoke"]);
     }
@@ -202,7 +213,7 @@ mod get_video_resource_duration {
     fn returns_0_when_there_is_no_element() {
         let host = fake_video_host(state());
         assert_eq!(
-            get_video_resource_duration(&host.capability, &create_video_resource(None, None, None)),
+            get_video_resource_duration(&host.capability, &create_video_resource()),
             0.0
         );
     }
@@ -213,7 +224,7 @@ mod get_video_resource_duration {
             duration: Some(12.5),
             ..state()
         });
-        let resource = create_video_resource(Some(video_source()), None, None);
+        let resource = video_resource_of(Some(video_source()), None, None);
         assert_eq!(
             get_video_resource_duration(&host.capability, &resource),
             12.5
@@ -222,7 +233,7 @@ mod get_video_resource_duration {
 
     #[test]
     fn returns_0_when_the_host_cannot_report_a_duration() {
-        let resource = create_video_resource(Some(video_source()), None, None);
+        let resource = video_resource_of(Some(video_source()), None, None);
         assert_eq!(
             get_video_resource_duration(&empty_video_host(false), &resource),
             0.0
@@ -231,7 +242,7 @@ mod get_video_resource_duration {
 
     #[test]
     fn passes_host_nan_and_infinity_through() {
-        let resource = create_video_resource(Some(video_source()), None, None);
+        let resource = video_resource_of(Some(video_source()), None, None);
         let pending = fake_video_host(FakeVideoState {
             duration: Some(f64::NAN),
             ..state()
@@ -255,7 +266,7 @@ mod get_video_resource_height {
     fn returns_0_when_there_is_no_element() {
         let host = fake_video_host(state());
         assert_eq!(
-            get_video_resource_height(&host.capability, &create_video_resource(None, None, None)),
+            get_video_resource_height(&host.capability, &create_video_resource()),
             0.0
         );
     }
@@ -266,7 +277,7 @@ mod get_video_resource_height {
             height: Some(480.0),
             ..state()
         });
-        let resource = create_video_resource(Some(video_source()), None, None);
+        let resource = video_resource_of(Some(video_source()), None, None);
         assert_eq!(
             get_video_resource_height(&host.capability, &resource),
             480.0
@@ -275,7 +286,7 @@ mod get_video_resource_height {
 
     #[test]
     fn returns_0_when_the_host_cannot_report_dimensions() {
-        let resource = create_video_resource(Some(video_source()), None, None);
+        let resource = video_resource_of(Some(video_source()), None, None);
         assert_eq!(
             get_video_resource_height(&empty_video_host(false), &resource),
             0.0
@@ -307,7 +318,7 @@ mod get_video_resource_width {
     fn returns_0_when_there_is_no_element() {
         let host = fake_video_host(state());
         assert_eq!(
-            get_video_resource_width(&host.capability, &create_video_resource(None, None, None)),
+            get_video_resource_width(&host.capability, &create_video_resource()),
             0.0
         );
     }
@@ -318,13 +329,13 @@ mod get_video_resource_width {
             width: Some(640.0),
             ..state()
         });
-        let resource = create_video_resource(Some(video_source()), None, None);
+        let resource = video_resource_of(Some(video_source()), None, None);
         assert_eq!(get_video_resource_width(&host.capability, &resource), 640.0);
     }
 
     #[test]
     fn returns_0_when_the_host_cannot_report_dimensions() {
-        let resource = create_video_resource(Some(video_source()), None, None);
+        let resource = video_resource_of(Some(video_source()), None, None);
         assert_eq!(
             get_video_resource_width(&empty_video_host(false), &resource),
             0.0
@@ -337,10 +348,8 @@ mod has_video_resource_element {
 
     #[test]
     fn is_false_without_an_element_and_true_with_one() {
-        assert!(!has_video_resource_element(&create_video_resource(
-            None, None, None
-        )));
-        assert!(has_video_resource_element(&create_video_resource(
+        assert!(!has_video_resource_element(&create_video_resource()));
+        assert!(has_video_resource_element(&video_resource_of(
             Some(video_source()),
             None,
             None
@@ -354,13 +363,9 @@ mod initialize_video_resource {
     #[test]
     fn is_the_construction_initializer_of_create_video_resource() {
         let source = video_source();
-        let mut out = create_video_resource(None, None, None);
-        initialize_video_resource(&mut out, Some(source.clone()), Some("blob:x"), Some(true));
-        let made = create_video_resource(Some(source.clone()), Some("blob:x"), Some(true));
+        let mut out = video_resource_of(Some(source.clone()), Some("blob:x"), Some(true));
         assert!(Arc::ptr_eq(out.element.as_ref().unwrap(), &source));
-        assert_eq!(out.object_url, made.object_url);
-        assert_eq!(out.owns_element, made.owns_element);
-        initialize_video_resource(&mut out, None, None, None);
+        initialize_video_resource(&mut out);
         assert!(out.element.is_none() && out.object_url.is_none() && !out.owns_element);
     }
 }
@@ -377,7 +382,7 @@ mod is_video_resource_empty {
         });
         assert!(is_video_resource_empty(
             &host.capability,
-            &create_video_resource(None, None, None)
+            &create_video_resource()
         ));
     }
 
@@ -390,7 +395,7 @@ mod is_video_resource_empty {
         });
         assert!(is_video_resource_empty(
             &host.capability,
-            &create_video_resource(Some(video_source()), None, None)
+            &video_resource_of(Some(video_source()), None, None)
         ));
     }
 
@@ -403,7 +408,7 @@ mod is_video_resource_empty {
         });
         assert!(!is_video_resource_empty(
             &host.capability,
-            &create_video_resource(Some(video_source()), None, None)
+            &video_resource_of(Some(video_source()), None, None)
         ));
     }
 
@@ -419,14 +424,14 @@ mod is_video_resource_empty {
             width: Some(0.0),
             ..state()
         });
-        let resource = create_video_resource(Some(video_source()), None, None);
+        let resource = video_resource_of(Some(video_source()), None, None);
         assert!(is_video_resource_empty(&wide.capability, &resource));
         assert!(is_video_resource_empty(&tall.capability, &resource));
     }
 
     #[test]
     fn is_true_when_the_host_cannot_report_dimensions_at_all() {
-        let resource = create_video_resource(Some(video_source()), None, None);
+        let resource = video_resource_of(Some(video_source()), None, None);
         assert!(is_video_resource_empty(&empty_video_host(false), &resource));
     }
 }
@@ -442,7 +447,7 @@ mod is_video_resource_ready {
         });
         assert!(!is_video_resource_ready(
             &host.capability,
-            &create_video_resource(None, None, None)
+            &create_video_resource()
         ));
     }
 
@@ -454,7 +459,7 @@ mod is_video_resource_ready {
         });
         assert!(!is_video_resource_ready(
             &host.capability,
-            &create_video_resource(Some(video_source()), None, None)
+            &video_resource_of(Some(video_source()), None, None)
         ));
     }
 
@@ -466,13 +471,13 @@ mod is_video_resource_ready {
         });
         assert!(is_video_resource_ready(
             &host.capability,
-            &create_video_resource(Some(video_source()), None, None)
+            &video_resource_of(Some(video_source()), None, None)
         ));
     }
 
     #[test]
     fn is_false_when_the_host_cannot_answer_readiness() {
-        let resource = create_video_resource(Some(video_source()), None, None);
+        let resource = video_resource_of(Some(video_source()), None, None);
         assert!(!is_video_resource_ready(
             &empty_video_host(false),
             &resource

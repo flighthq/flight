@@ -13,6 +13,13 @@ mod sugar_tests {
     use crate::test_support::block_on;
     use std::sync::{Mutex, RwLock};
 
+    // D23 (B): a downloaded update is created empty, then given its metadata (Principal 21f7557f).
+    fn downloaded_update_of(info: UpdateInfo) -> DownloadedUpdate {
+        let mut update = create_downloaded_update();
+        update.info = info;
+        return update;
+    }
+
     fn info() -> UpdateInfo {
         return UpdateInfo {
             download_size_bytes: None,
@@ -108,7 +115,7 @@ mod sugar_tests {
         let method_host = provider(
             Arc::new(Mutex::new(AppUpdateCheckOutcome::Downloaded(
                 AppUpdateCheckOutcomeDownloaded {
-                    update: create_downloaded_update(info()),
+                    update: downloaded_update_of(info()),
                 },
             ))),
             Arc::new(Mutex::new(Vec::new())),
@@ -117,7 +124,7 @@ mod sugar_tests {
         let free_host = provider(
             Arc::new(Mutex::new(AppUpdateCheckOutcome::Downloaded(
                 AppUpdateCheckOutcomeDownloaded {
-                    update: create_downloaded_update(info()),
+                    update: downloaded_update_of(info()),
                 },
             ))),
             Arc::new(Mutex::new(Vec::new())),

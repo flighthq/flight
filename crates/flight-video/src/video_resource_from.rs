@@ -155,7 +155,10 @@ pub fn load_video_resource_from_url(
     let pending = load_url(url, options, signal);
     return Box::pin(async move {
         let element = pending.await?;
-        return Ok(create_video_resource(Some(element), None, Some(true)));
+        let mut resource = create_video_resource();
+        resource.element = Some(element);
+        resource.owns_element = true;
+        return Ok(resource);
     });
 }
 
@@ -167,7 +170,7 @@ pub fn load_video_resource_from_urls(
     signal: Option<&AbortSignal>,
 ) -> VideoProviderFuture<VideoResource> {
     let Some(selected) = select_video_resource_url(host_video, sources) else {
-        return Box::pin(ready(Ok(create_video_resource(None, None, None))));
+        return Box::pin(ready(Ok(create_video_resource())));
     };
     return load_video_resource_from_url(host_video, &selected.url, options, signal);
 }

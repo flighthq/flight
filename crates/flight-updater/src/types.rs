@@ -105,16 +105,19 @@ pub struct HostUpdaterCapabilities {
     pub command: Option<Ref<HostUpdaterCommandCapability>>,
 }
 
+/// Allocates a downloaded-update handle with empty metadata; a provider assigns `info` after create
+/// (D23 B).
 // flight-lint: allow(conform-extra) D12 entity construction: DownloadedUpdate's private runtime slot requires a typed factory; TS providers construct the structural object in their adapters
-pub fn create_downloaded_update(info: UpdateInfo) -> DownloadedUpdate {
+pub fn create_downloaded_update() -> DownloadedUpdate {
     let mut out: DownloadedUpdate = allocate_entity();
-    initialize_downloaded_update(&mut out, info);
+    initialize_downloaded_update(&mut out);
     return out;
 }
 
+/// Resets the handle's metadata to unknown (every `UpdateInfo` field `None`).
 // flight-lint: allow(conform-extra) D12 entity construction: DownloadedUpdate's private runtime slot requires a typed initializer; TS providers construct the structural object in their adapters
-pub fn initialize_downloaded_update(out: &mut DownloadedUpdate, info: UpdateInfo) {
-    out.info = info;
+pub fn initialize_downloaded_update(out: &mut DownloadedUpdate) {
+    out.info = UpdateInfo::default();
 }
 
 // flight-lint: allow(conform-extra) Rust accessor for the TS discriminated-union reason field; TS reads `outcome.reason` directly

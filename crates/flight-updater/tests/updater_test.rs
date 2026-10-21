@@ -6,6 +6,13 @@ use flight_updater::contract::*;
 
 use crate::block_on;
 
+// D23 (B): a downloaded update is created empty, then given its metadata (Principal 21f7557f).
+fn downloaded_update_of(info: UpdateInfo) -> DownloadedUpdate {
+    let mut update = create_downloaded_update();
+    update.info = info;
+    return update;
+}
+
 fn info() -> UpdateInfo {
     return UpdateInfo {
         download_size_bytes: None,
@@ -119,7 +126,7 @@ mod check_for_app_update {
         let first = provider(check.clone(), Arc::new(|| {}), ok_install());
         let second = provider(check, Arc::new(|| {}), ok_install());
 
-        *prepared.lock().unwrap() = Some(create_downloaded_update(info()));
+        *prepared.lock().unwrap() = Some(downloaded_update_of(info()));
         let AppUpdateCheckOutcome::Downloaded(downloaded) = block_on(check_for_app_update(&first))
         else {
             panic!("expected a downloaded update");
@@ -163,7 +170,7 @@ mod install_downloaded_update {
 
     #[test]
     fn pins_a_downloaded_handle_to_its_originating_provider_across_host_replacement() {
-        let prepared = Arc::new(Mutex::new(Some(create_downloaded_update(info()))));
+        let prepared = Arc::new(Mutex::new(Some(downloaded_update_of(info()))));
         let prepared_by_check = prepared.clone();
         let origin_installs = Arc::new(Mutex::new(0));
         let origin_seen = origin_installs.clone();
@@ -209,7 +216,7 @@ mod install_downloaded_update {
 
     #[test]
     fn rejects_a_handle_that_did_not_originate_from_a_completed_check() {
-        let mut update = create_downloaded_update(info());
+        let mut update = downloaded_update_of(info());
         let host = provider(not_available_check(), Arc::new(|| {}), ok_install());
         let payload = std::panic::catch_unwind(AssertUnwindSafe(|| {
             return block_on(install_downloaded_update(&host, &mut update));
@@ -307,7 +314,7 @@ mod install_downloaded_update {
     fn proven_provider(
         install: Arc<dyn Fn(&DownloadedUpdate) -> AppUpdateInstallFuture + Send + Sync>,
     ) -> Ref<HostUpdaterCommandCapability> {
-        let prepared = Arc::new(Mutex::new(Some(create_downloaded_update(info()))));
+        let prepared = Arc::new(Mutex::new(Some(downloaded_update_of(info()))));
         let prepared_by_check = prepared.clone();
         return provider(
             Arc::new(move || {

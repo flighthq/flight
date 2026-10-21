@@ -14,6 +14,19 @@ use flight_video::contract::*;
 
 use crate::video_fixture::*;
 
+// D23 (B): a video resource is created empty, then given its element and ownership (Principal 21f7557f).
+fn video_resource_of(
+    element: Option<Arc<HostImageSource>>,
+    object_url: Option<&str>,
+    owns_element: Option<bool>,
+) -> VideoResource {
+    let mut resource = create_video_resource();
+    resource.element = element;
+    resource.object_url = object_url.map(|url| url.to_string());
+    resource.owns_element = owns_element.unwrap_or(false);
+    return resource;
+}
+
 /// The source test's fake `HTMLVideoElement`: decoded readiness and frame size.
 struct FakeElement {
     ready_state: u32,
@@ -46,7 +59,7 @@ fn make_video_resource(ready_state: u32, video_width: f32, video_height: f32) ->
             video_width,
         }),
     });
-    return create_video_resource(Some(element), None, None);
+    return video_resource_of(Some(element), None, None);
 }
 
 fn default_resource() -> VideoResource {
@@ -132,7 +145,7 @@ mod advance_video_texture {
     #[test]
     fn leaves_a_texture_without_a_video_image_unchanged() {
         let host = test_video_host();
-        let mut empty = create_video_texture(&host, &create_video_resource(None, None, None), None);
+        let mut empty = create_video_texture(&host, &create_video_resource(), None);
         assert_eq!(advance_video_texture(&host, &mut empty), 0xffffffff);
         let mut plain = create_texture_2d(None);
         plain.texture_fields_mut().version = 5;
@@ -272,11 +285,7 @@ mod create_video_texture {
         let host = test_video_host();
         let mut options = common();
         options.version = Some(7);
-        let texture = create_video_texture(
-            &host,
-            &create_video_resource(None, None, None),
-            Some(&options),
-        );
+        let texture = create_video_texture(&host, &create_video_resource(), Some(&options));
         assert!(source_of(&texture).is_none());
         assert_eq!(texture.texture_fields().version, 0xffffffff);
     }
@@ -350,7 +359,7 @@ mod get_video_texture_height {
         assert_eq!(
             get_video_texture_height(
                 &host,
-                &create_video_texture(&host, &create_video_resource(None, None, None), None)
+                &create_video_texture(&host, &create_video_resource(), None)
             ),
             -1.0
         );
@@ -423,7 +432,7 @@ mod get_video_texture_width {
         assert_eq!(
             get_video_texture_width(
                 &host,
-                &create_video_texture(&host, &create_video_resource(None, None, None), None)
+                &create_video_texture(&host, &create_video_resource(), None)
             ),
             -1.0
         );
@@ -479,7 +488,7 @@ mod is_video_texture_frame_ready {
         ));
         assert!(!is_video_texture_frame_ready(
             &host,
-            &create_video_texture(&host, &create_video_resource(None, None, None), None)
+            &create_video_texture(&host, &create_video_resource(), None)
         ));
     }
 

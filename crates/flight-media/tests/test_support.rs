@@ -295,11 +295,9 @@ pub(crate) fn video_resource() -> Ref<VideoResource> {
 }
 
 pub(crate) fn video_resource_with_element(element: Arc<HostImageSource>) -> Ref<VideoResource> {
-    return Arc::new(RwLock::new(create_video_resource(
-        Some(element),
-        None,
-        Some(false),
-    )));
+    let mut resource = create_video_resource();
+    resource.element = Some(element);
+    return Arc::new(RwLock::new(resource));
 }
 
 pub(crate) fn video_host() -> (Arc<Mutex<VideoMockState>>, HostVideoCapability) {

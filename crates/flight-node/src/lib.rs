@@ -199,5 +199,4 @@ pub use contract::NodeGuardClock;
 pub use contract::NodeOrderList;
 pub use contract::Scene2DFitContext;
 pub use contract::Viewport;
-pub use contract::ViewportOptions;
 pub use contract::ViewportScaleMode;

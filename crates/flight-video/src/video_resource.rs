@@ -1,6 +1,3 @@
-use std::sync::Arc;
-
-use flight_bitmap::HostImageSource;
 use flight_entity::allocate_entity;
 
 use crate::types::*;
@@ -12,6 +9,19 @@ mod sugar_tests {
     use flight_bitmap::HostImageSource;
 
     use crate::contract::*;
+
+    // D23 (B): a video resource is created empty, then given its element and ownership (Principal 21f7557f).
+    fn video_resource_of(
+        element: Option<Arc<HostImageSource>>,
+        object_url: Option<&str>,
+        owns_element: Option<bool>,
+    ) -> VideoResource {
+        let mut resource = create_video_resource();
+        resource.element = element;
+        resource.object_url = object_url.map(|url| url.to_string());
+        resource.owns_element = owns_element.unwrap_or(false);
+        return resource;
+    }
 
     fn test_source() -> Arc<HostImageSource> {
         return Arc::new(HostImageSource {
@@ -68,7 +78,7 @@ mod sugar_tests {
     }
 
     fn owned_resource() -> VideoResource {
-        return create_video_resource(Some(test_source()), Some("blob:a"), Some(true));
+        return video_resource_of(Some(test_source()), Some("blob:a"), Some(true));
     }
 
     #[test]
@@ -159,42 +169,33 @@ mod sugar_tests {
     #[test]
     fn videoresource_initialize_video_resource_matches_initialize_video_resource() {
         let source = test_source();
-        let mut a = create_video_resource(None, None, None);
-        let mut b = create_video_resource(None, None, None);
-        a.initialize_video_resource(Some(source.clone()), Some("blob:b"), Some(true));
-        initialize_video_resource(&mut b, Some(source.clone()), Some("blob:b"), Some(true));
+        let mut a = video_resource_of(Some(source.clone()), Some("blob:b"), Some(true));
+        let mut b = video_resource_of(Some(source.clone()), Some("blob:b"), Some(true));
+        a.initialize_video_resource();
+        initialize_video_resource(&mut b);
         assert_eq!(format!("{:?}", a), format!("{:?}", b));
-        assert!(Arc::ptr_eq(
-            a.element.as_ref().unwrap(),
-            b.element.as_ref().unwrap()
-        ));
+        assert!(a.element.is_none() && b.element.is_none());
     }
 }
 
-/// Wraps a host video source the caller already holds. No provider is needed: storing a source reads
-/// nothing from a host. `object_url` transfers ownership of a blob object URL to the resource (teardown
-/// revokes it); `owns_element` true means this resource created the element and teardown releases its
-/// decoder. All default to absent / borrowed.
-pub fn create_video_resource(
-    element: Option<Arc<HostImageSource>>,
-    object_url: Option<&str>,
-    owns_element: Option<bool>,
-) -> VideoResource {
+/// Allocates an empty video resource: no element, no object URL, not owning (D23 B). To wrap a host
+/// video source the caller already holds, assign `element` after create. No provider is needed:
+/// storing a source reads nothing from a host. An assigned `object_url` transfers ownership of a blob
+/// object URL to the resource (teardown revokes it); `owns_element` true means this resource created
+/// the element and teardown releases its decoder.
+// flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 21f7557f, foreman-a8ca6cf2): assign element, object_url and owns_element after create
+pub fn create_video_resource() -> VideoResource {
     let mut out: VideoResource = allocate_entity();
-    initialize_video_resource(&mut out, element, object_url, owns_element);
+    initialize_video_resource(&mut out);
     return out;
 }
 
-/// The construction initializer of `create_video_resource`.
-pub fn initialize_video_resource(
-    out: &mut VideoResource,
-    element: Option<Arc<HostImageSource>>,
-    object_url: Option<&str>,
-    owns_element: Option<bool>,
-) {
-    out.element = element;
-    out.object_url = object_url.map(|url| url.to_string());
-    out.owns_element = owns_element.unwrap_or(false);
+/// The construction initializer of `create_video_resource`: no element, no object URL, not owning.
+// flight-lint: allow(conform-params) D23 (B) zero-field initializer (Principal 21f7557f, foreman-a8ca6cf2)
+pub fn initialize_video_resource(out: &mut VideoResource) {
+    out.element = None;
+    out.object_url = None;
+    out.owns_element = false;
 }
 
 /// Releases the resource's non-GC state. An owned element is released through the host (which also
@@ -364,13 +365,8 @@ impl HostVideoCapability {
 }
 
 impl VideoResource {
-    pub fn initialize_video_resource(
-        &mut self,
-        element: Option<Arc<HostImageSource>>,
-        object_url: Option<&str>,
-        owns_element: Option<bool>,
-    ) {
-        initialize_video_resource(self, element, object_url, owns_element);
+    pub fn initialize_video_resource(&mut self) {
+        initialize_video_resource(self);
     }
 
     pub fn has_video_resource_element(&self) -> bool {

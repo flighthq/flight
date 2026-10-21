@@ -8,6 +8,13 @@ use flight_entity::{FlightError, throw_error};
 use flight_mediasession::contract::*;
 use flight_signals::{connect_signal, has_signal_slots};
 
+// D23 (B): an action signal is created unattached, then given its action (Principal 21f7557f).
+fn action_signal_of(action: MediaSessionAction) -> MediaSessionActionSignal {
+    let mut signal = create_media_session_action_signal();
+    signal.action = action;
+    return signal;
+}
+
 fn ok<R>(reason: R) -> MediaSessionOperationOutcome<R> {
     return MediaSessionOperationOutcome { reason };
 }
@@ -107,7 +114,7 @@ mod attach_media_session_action {
                 return Some(release);
             },
         );
-        let mut signal = create_media_session_action_signal(MediaSessionAction::SeekTo);
+        let mut signal = action_signal_of(MediaSessionAction::SeekTo);
         let observed: Arc<Mutex<Vec<MediaSessionActionDetails>>> = Arc::new(Mutex::new(Vec::new()));
         let sink = observed.clone();
         connect_signal(
@@ -142,7 +149,7 @@ mod attach_media_session_action {
                 return Some(release);
             },
         );
-        let mut signal = create_media_session_action_signal(MediaSessionAction::Play);
+        let mut signal = action_signal_of(MediaSessionAction::Play);
         let seen: Arc<Mutex<usize>> = Arc::new(Mutex::new(0));
         let sink = seen.clone();
         connect_signal(
@@ -168,7 +175,7 @@ mod attach_media_session_action {
         let mut backend = action_backend();
         backend.subscribe =
             Arc::new(|_action: MediaSessionAction, _listener: MediaSessionActionListener| None);
-        let mut signal = create_media_session_action_signal(MediaSessionAction::Play);
+        let mut signal = action_signal_of(MediaSessionAction::Play);
         assert!(!attach_media_session_action(&backend, &mut signal));
         detach_media_session_action(&mut signal);
     }
@@ -176,7 +183,7 @@ mod attach_media_session_action {
     #[test]
     fn reattaching_releases_the_prior_origin_before_subscribing_the_replacement() {
         let order: Arc<Mutex<Vec<&'static str>>> = Arc::new(Mutex::new(Vec::new()));
-        let mut signal = create_media_session_action_signal(MediaSessionAction::Play);
+        let mut signal = action_signal_of(MediaSessionAction::Play);
         let first_order = order.clone();
         attach_media_session_action(
             &action_backend_releasing(Arc::new(move || {
@@ -234,9 +241,16 @@ mod create_media_session_action_signal {
     use super::*;
 
     #[test]
-    fn creates_one_entity_carrying_exactly_the_requested_action_and_one_signal() {
-        let signal = create_media_session_action_signal(MediaSessionAction::SeekTo);
+    fn creates_one_unattached_entity_for_play_with_one_signal() {
+        let signal = create_media_session_action_signal();
         let _: &dyn flight_entity::Entity = &signal;
+        assert_eq!(signal.action, MediaSessionAction::Play);
+        assert!(!has_signal_slots(&signal.on_action));
+    }
+
+    #[test]
+    fn takes_the_requested_action_by_assignment_after_create() {
+        let signal = action_signal_of(MediaSessionAction::SeekTo);
         assert_eq!(signal.action, MediaSessionAction::SeekTo);
         assert!(!has_signal_slots(&signal.on_action));
     }
@@ -367,7 +381,7 @@ mod detach_media_session_action {
     fn origin_pins_the_exact_unsubscribe_across_later_host_changes() {
         let (first, second) = (calls(), calls());
         let (c1, c2) = (first.clone(), second.clone());
-        let mut signal = create_media_session_action_signal(MediaSessionAction::Play);
+        let mut signal = action_signal_of(MediaSessionAction::Play);
         attach_media_session_action(
             &action_backend_releasing(Arc::new(move || *c1.lock().unwrap() += 1)),
             &mut signal,
@@ -381,7 +395,7 @@ mod detach_media_session_action {
     #[test]
     fn keeps_a_throwing_unsubscribe_retryable() {
         let attempts = calls();
-        let mut signal = create_media_session_action_signal(MediaSessionAction::Pause);
+        let mut signal = action_signal_of(MediaSessionAction::Pause);
         attach_media_session_action(
             &action_backend_releasing(flaky_release("temporary clear failure", attempts.clone())),
             &mut signal,
@@ -407,7 +421,7 @@ mod dispose_media_session_action_signal {
     #[test]
     fn dispose_clears_the_signal_even_when_detach_fails_while_retaining_detach_retry() {
         let attempts = calls();
-        let mut signal = create_media_session_action_signal(MediaSessionAction::Stop);
+        let mut signal = action_signal_of(MediaSessionAction::Stop);
         connect_signal(
             &signal.on_action,
             Arc::new(|_: &MediaSessionActionDetails| {}),
@@ -779,14 +793,13 @@ mod initialize_media_session_action_signal {
     #[test]
     fn is_the_construction_initializer_of_create_media_session_action_signal() {
         let mut out: MediaSessionActionSignal = flight_entity::allocate_entity();
-        initialize_media_session_action_signal(&mut out, MediaSessionAction::SkipAd);
-        assert_eq!(out.action, MediaSessionAction::SkipAd);
+        out.action = MediaSessionAction::SkipAd;
+        initialize_media_session_action_signal(&mut out);
+        assert_eq!(out.action, MediaSessionAction::Play);
+        assert!(!has_signal_slots(&out.on_action));
         assert_eq!(
             format!("{:?}", out),
-            format!(
-                "{:?}",
-                create_media_session_action_signal(MediaSessionAction::SkipAd)
-            )
+            format!("{:?}", create_media_session_action_signal())
         );
     }
 }
