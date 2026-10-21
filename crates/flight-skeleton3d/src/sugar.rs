@@ -65,14 +65,14 @@ mod sugar_tests {
      {
         let joint = node();
         let mut a = Skeleton3D::new(
-            vec![joint.clone()],
+            Arc::new(RwLock::new(vec![joint.clone()])),
             None,
             Some(vec!["root".to_string()]),
             &mut revisions(),
             &guards(),
         );
         let mut b = create_skeleton3d(
-            vec![joint.clone()],
+            Arc::new(RwLock::new(vec![joint.clone()])),
             None,
             Some(vec!["root".to_string()]),
             &mut revisions(),
@@ -110,11 +110,17 @@ mod sugar_tests {
         let ca = a.clone_joint_hierarchy(Arc::new(|_, _| node()));
         let cb = clone_skeleton3d_joint_hierarchy(&b, Arc::new(|_, _| node()));
         same_palettes(&ca, &cb);
-        assert_eq!(ca.joints.len(), cb.joints.len());
+        assert_eq!(
+            ca.joints.read().unwrap().len(),
+            cb.joints.read().unwrap().len()
+        );
         a.dispose();
         dispose_skeleton3d(&mut b);
-        assert!(a.joints.is_empty());
-        assert_eq!(a.joints.len(), b.joints.len());
+        assert!(a.joints.read().unwrap().is_empty());
+        assert_eq!(
+            a.joints.read().unwrap().len(),
+            b.joints.read().unwrap().len()
+        );
         assert_eq!(a.names, b.names);
     }
     #[test]
@@ -124,7 +130,13 @@ mod sugar_tests {
         let mut pa = a.capture_skin_bind_pose();
         let mut pb = capture_mesh_skin_bind_pose(&b);
         assert_eq!(pa.positions, pb.positions);
-        let mut skeleton = create_skeleton3d(vec![node()], None, None, &mut revisions(), &guards());
+        let mut skeleton = create_skeleton3d(
+            Arc::new(RwLock::new(vec![node()])),
+            None,
+            None,
+            &mut revisions(),
+            &guards(),
+        );
         compute_skeleton3d_joint_matrices(&mut skeleton, &mut revisions());
         a.skin(&skeleton, &mut pa);
         skin_mesh_geometry(&mut b, &skeleton, &mut pb);
@@ -142,7 +154,13 @@ mod sugar_tests {
         let geometry = geometry();
         let mut pose = capture_mesh_skin_bind_pose(&geometry);
         let mut free = capture_mesh_skin_bind_pose(&geometry);
-        let mut skeleton = create_skeleton3d(vec![node()], None, None, &mut revisions(), &guards());
+        let mut skeleton = create_skeleton3d(
+            Arc::new(RwLock::new(vec![node()])),
+            None,
+            None,
+            &mut revisions(),
+            &guards(),
+        );
         compute_skeleton3d_joint_matrices(&mut skeleton, &mut revisions());
         let mut a = create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         let mut b = create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -211,7 +229,7 @@ mod sugar_tests {
         let joint = node();
         let skin = Arc::new(RwLock::new(Skin {
             skeleton: Arc::new(RwLock::new(create_skeleton3d(
-                vec![joint.clone()],
+                Arc::new(RwLock::new(vec![joint.clone()])),
                 None,
                 None,
                 &mut revisions(),
@@ -265,7 +283,7 @@ mod sugar_tests {
 
 pub trait Skeleton3DMethods {
     fn new(
-        joints: Vec<Node3DRef>,
+        joints: Ref<Vec<Node3DRef>>,
         inverse_bind_matrices: Option<Ref<Box<Float32Array>>>,
         names: Option<Vec<String>>,
         revisions: &mut NodeRevisionState,
@@ -339,7 +357,7 @@ pub trait Skeleton3DGuardMethods {
 }
 impl Skeleton3DMethods for Skeleton3D {
     fn new(
-        joints: Vec<Node3DRef>,
+        joints: Ref<Vec<Node3DRef>>,
         inverse_bind_matrices: Option<Ref<Box<Float32Array>>>,
         names: Option<Vec<String>>,
         revisions: &mut NodeRevisionState,

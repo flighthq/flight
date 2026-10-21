@@ -15,13 +15,13 @@ use std::sync::{Arc, RwLock};
 
 // flight-lint: allow(conform-params) D5 caller-owned canonical transform revisions and bind-pose guard replace TS module state
 pub fn create_skeleton3d(
-    joints: Vec<Node3DRef>,
+    joints: Ref<Vec<Node3DRef>>,
     inverse_bind_matrices: Option<Ref<Box<Float32Array>>>,
     names: Option<Vec<String>>,
     revisions: &mut NodeRevisionState,
     guard_state: &Skeleton3DGuardStateRef,
 ) -> Skeleton3D {
-    let count = joints.len();
+    let count = joints.read().unwrap().len();
     let capture = inverse_bind_matrices.is_none();
     let mut out: Skeleton3D = allocate_entity();
     initialize_skeleton3d(
@@ -42,7 +42,7 @@ pub fn initialize_skeleton3d(
     out: &mut Skeleton3D,
     inverse_bind_matrices: Ref<Box<Float32Array>>,
     joint_matrices: Ref<Box<Float32Array>>,
-    joints: Vec<Node3DRef>,
+    joints: Ref<Vec<Node3DRef>>,
     names: Option<Vec<String>>,
     normal_matrices: Ref<Box<Float32Array>>,
 ) {
@@ -60,7 +60,7 @@ pub fn clone_skeleton3d(skeleton: &Skeleton3D) -> Skeleton3D {
             skeleton.inverse_bind_matrices.read().unwrap().clone(),
         )),
         Arc::new(RwLock::new(skeleton.joint_matrices.read().unwrap().clone())),
-        skeleton.joints.clone(),
+        Arc::new(RwLock::new(skeleton.joints.read().unwrap().clone())),
         skeleton.names.clone(),
         Arc::new(RwLock::new(
             skeleton.normal_matrices.read().unwrap().clone(),
@@ -72,24 +72,45 @@ pub fn clone_skeleton3d_joint_hierarchy(
     skeleton: &Skeleton3D,
     clone_joint: Skeleton3DJointCloner,
 ) -> Skeleton3D {
-    let joints: Vec<Node3DRef> = skeleton
-        .joints
-        .iter()
-        .enumerate()
-        .map(|(index, joint)| clone_joint(joint, index))
-        .collect();
-    for (index, joint) in skeleton.joints.iter().enumerate() {
-        let node: NodeRef = joint.clone();
-        if let Some(parent) = get_node_parent(&node) {
-            if let Some(parent_index) = skeleton.joints.iter().rposition(|candidate| {
-                let candidate: NodeRef = candidate.clone();
-                Arc::ptr_eq(&candidate, &parent)
+    let source_joints = skeleton.joints.clone();
+    let mut joints = Vec::new();
+    let mut clones_by_source: Vec<(Node3DRef, Node3DRef)> = Vec::new();
+    let mut index = 0;
+    loop {
+        let source = { source_joints.read().unwrap().get(index).cloned() };
+        let Some(source) = source else {
+            break;
+        };
+        let clone = clone_joint(&source, index);
+        joints.push(clone.clone());
+        if let Some(entry) = clones_by_source
+            .iter_mut()
+            .find(|entry| Arc::ptr_eq(&entry.0, &source))
+        {
+            entry.1 = clone;
+        } else {
+            clones_by_source.push((source, clone));
+        }
+        index += 1;
+    }
+    let mut index = 0;
+    loop {
+        let source = { source_joints.read().unwrap().get(index).cloned() };
+        let Some(source) = source else {
+            break;
+        };
+        let source: NodeRef = source;
+        if let Some(parent) = get_node_parent(&source) {
+            if let Some(entry) = clones_by_source.iter().find(|entry| {
+                let node: NodeRef = entry.0.clone();
+                return Arc::ptr_eq(&node, &parent);
             }) {
-                let parent: NodeRef = joints[parent_index].clone();
+                let parent: NodeRef = entry.1.clone();
                 let child: NodeRef = joints[index].clone();
                 add_node_child(&parent, &child);
             }
         }
+        index += 1;
     }
     let mut out: Skeleton3D = allocate_entity();
     initialize_skeleton3d(
@@ -98,7 +119,7 @@ pub fn clone_skeleton3d_joint_hierarchy(
             skeleton.inverse_bind_matrices.read().unwrap().clone(),
         )),
         Arc::new(RwLock::new(skeleton.joint_matrices.read().unwrap().clone())),
-        joints,
+        Arc::new(RwLock::new(joints)),
         skeleton.names.clone(),
         Arc::new(RwLock::new(
             skeleton.normal_matrices.read().unwrap().clone(),
@@ -114,7 +135,13 @@ pub fn compute_skeleton3d_joint_matrices(
     let mut inverse = create_matrix4();
     let mut result = create_matrix4();
     let mut normal = create_matrix3();
-    for (j, joint) in skeleton.joints.iter().enumerate() {
+    let joints = skeleton.joints.clone();
+    let mut j = 0;
+    loop {
+        let joint = { joints.read().unwrap().get(j).cloned() };
+        let Some(joint) = joint else {
+            break;
+        };
         {
             let inverse_bind = skeleton.inverse_bind_matrices.read().unwrap();
             for i in 0..16 {
@@ -140,17 +167,20 @@ pub fn compute_skeleton3d_joint_matrices(
             }
             write_array(&mut normal_palette, j * 12 + column * 4 + 3, 0.0);
         }
+        j += 1;
     }
 }
 pub fn dispose_skeleton3d(skeleton: &mut Skeleton3D) {
-    skeleton.joints.clear();
+    skeleton.joints.write().unwrap().clear();
     skeleton.names = None;
 }
 pub fn equals_skeleton3d(a: &Skeleton3D, b: &Skeleton3D) -> bool {
     if std::ptr::eq(a, b) {
         return true;
     }
-    if a.joints.len() != b.joints.len() {
+    let a_joint_count = a.joints.read().unwrap().len();
+    let b_joint_count = b.joints.read().unwrap().len();
+    if a_joint_count != b_joint_count {
         return false;
     }
     let a_inverse = a.inverse_bind_matrices.read().unwrap();
@@ -183,7 +213,15 @@ pub fn get_skeleton3d_joint_world_matrix(
     if joint_index < 0 {
         return false;
     }
-    let Some(joint) = skeleton.joints.get(joint_index as usize) else {
+    let joint = {
+        skeleton
+            .joints
+            .read()
+            .unwrap()
+            .get(joint_index as usize)
+            .cloned()
+    };
+    let Some(joint) = joint else {
         return false;
     };
     let node: NodeRef = joint.clone();
@@ -218,8 +256,14 @@ pub fn set_skeleton3d_bind_pose(
     guard_state: &Skeleton3DGuardStateRef,
 ) {
     let mut result = create_matrix4();
-    for j in 0..skeleton.joints.len() {
-        let node: NodeRef = skeleton.joints[j].clone();
+    let joints = skeleton.joints.clone();
+    let mut j = 0;
+    loop {
+        let joint = { joints.read().unwrap().get(j).cloned() };
+        let Some(joint) = joint else {
+            break;
+        };
+        let node: NodeRef = joint;
         if inverse_matrix4(&mut result, &get_node_world_matrix4(&node, revisions)) {
             set_array_from(&skeleton.inverse_bind_matrices, &result.m, j * 16);
         } else {
@@ -230,6 +274,7 @@ pub fn set_skeleton3d_bind_pose(
                 guard(skeleton, j);
             }
         }
+        j += 1;
     }
 }
 // flight-lint: allow(conform-params) D5 caller-owned guard state replaces the TS module callback slot
@@ -240,7 +285,7 @@ pub fn set_skeleton3d_bind_pose_guard(
     guard_state.write().unwrap().bind_pose_guard = guard;
 }
 pub fn validate_skeleton3d(skeleton: &Skeleton3D) -> Option<Skeleton3DValidationDiagnostic> {
-    let joint_count = skeleton.joints.len();
+    let joint_count = skeleton.joints.read().unwrap().len();
     let actual = skeleton.inverse_bind_matrices.read().unwrap().len();
     let expected = joint_count * 16;
     if actual == expected {

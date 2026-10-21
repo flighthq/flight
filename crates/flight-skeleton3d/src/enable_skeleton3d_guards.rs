@@ -22,9 +22,9 @@ pub fn enable_skeleton3d_guards(
     set_skeleton3d_bind_pose_guard(
         guard_state,
         Some(Arc::new(move |skeleton, index| {
-            let name = skeleton
-                .joints
-                .get(index)
+            let joint = { skeleton.joints.read().unwrap().get(index).cloned() };
+            let name = joint
+                .as_ref()
                 .and_then(|joint| joint.read().unwrap().node3d_fields().name.clone())
                 .unwrap_or_else(|| "<unnamed>".to_string());
             let mut data = HashMap::new();

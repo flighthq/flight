@@ -48,8 +48,8 @@ mod create_scene3d_from_document {
         assert!(Arc::ptr_eq(&first, &skin(&roots[1])));
         let skin = first.read().unwrap();
         let skeleton = skin.skeleton.read().unwrap();
-        assert_eq!(skeleton.joints.len(), 1);
-        let joint: NodeRef = skeleton.joints[0].clone();
+        assert_eq!(skeleton.joints.read().unwrap().len(), 1);
+        let joint: NodeRef = skeleton.joints.read().unwrap()[0].clone();
         assert!(Arc::ptr_eq(&joint, &roots[2]));
         assert!(skeleton.names.is_none());
         assert_eq!(skeleton.inverse_bind_matrices.read().unwrap().len(), 16);
@@ -278,9 +278,9 @@ mod create_scene3d_from_document {
         let skin = skin.read().unwrap();
         assert!(skin.skeleton_root.is_none());
         let mut skeleton = skin.skeleton.write().unwrap();
-        assert_eq!(skeleton.joints.len(), 1);
+        assert_eq!(skeleton.joints.read().unwrap().len(), 1);
         assert_eq!(skeleton.names, Some(vec!["joint".to_string()]));
-        let erased: NodeRef = skeleton.joints[0].clone();
+        let erased: NodeRef = skeleton.joints.read().unwrap()[0].clone();
         assert!(Arc::ptr_eq(&erased, &joint));
         assert_eq!(skeleton.inverse_bind_matrices.read().unwrap().len(), 16);
         assert_eq!(skeleton.inverse_bind_matrices.read().unwrap()[0], 1.0);

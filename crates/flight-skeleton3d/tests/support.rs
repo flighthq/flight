@@ -35,7 +35,7 @@ pub fn palette_skeleton(palette: Vec<f32>) -> Skeleton3D {
     ));
     out.joint_matrices = std::sync::Arc::new(std::sync::RwLock::new(palette.into_boxed_slice()));
     out.normal_matrices = std::sync::Arc::new(std::sync::RwLock::new(Box::new([])));
-    out.joints = Vec::new();
+    out.joints = std::sync::Arc::new(std::sync::RwLock::new(Vec::new()));
     out.names = None;
     return out;
 }
@@ -68,7 +68,13 @@ pub fn joint(x: f32, y: f32, z: f32) -> flight_entity::Ref<flight_scene3d::Node3
     return node;
 }
 pub fn skeleton(joints: Vec<flight_scene3d::Node3DRef>, names: Option<Vec<String>>) -> Skeleton3D {
-    return flight_skeleton3d::create_skeleton3d(joints, None, names, &mut revisions(), &guards());
+    return flight_skeleton3d::create_skeleton3d(
+        std::sync::Arc::new(std::sync::RwLock::new(joints)),
+        None,
+        names,
+        &mut revisions(),
+        &guards(),
+    );
 }
 pub fn skinned_mesh() -> flight_entity::Ref<flight_scene3d::Mesh> {
     return flight_scene3d::create_mesh(

@@ -81,7 +81,7 @@ fn apply_document_skins(document: &Scene3DDocument, nodes: &[Node3DRef]) {
             Arc::new(RwLock::new(vec![0.0; joints.len() * 16].into_boxed_slice()));
         skeleton.normal_matrices =
             Arc::new(RwLock::new(vec![0.0; joints.len() * 12].into_boxed_slice()));
-        skeleton.joints = joints;
+        skeleton.joints = Arc::new(RwLock::new(joints));
         skeleton.names = if names.iter().any(|n| !n.is_empty()) {
             Some(names)
         } else {

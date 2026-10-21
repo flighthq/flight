@@ -23,8 +23,11 @@ mod clone_skeleton3d {
             source.normal_matrices.read().unwrap().as_ptr(),
             clone.normal_matrices.read().unwrap().as_ptr()
         );
-        assert_ne!(source.joints.as_ptr(), clone.joints.as_ptr());
-        assert!(Arc::ptr_eq(&source.joints[0], &clone.joints[0]));
+        assert!(!Arc::ptr_eq(&source.joints, &clone.joints));
+        assert!(Arc::ptr_eq(
+            &source.joints.read().unwrap()[0],
+            &clone.joints.read().unwrap()[0]
+        ));
         assert_eq!(
             *source.inverse_bind_matrices.read().unwrap(),
             *clone.inverse_bind_matrices.read().unwrap()
@@ -44,6 +47,20 @@ mod clone_skeleton3d {
 }
 mod clone_skeleton3d_joint_hierarchy {
     use super::*;
+    #[test]
+    fn releases_joint_array_before_user_clone_policy() {
+        let rig = skeleton(vec![joint(0.0, 0.0, 0.0), joint(1.0, 0.0, 0.0)], None);
+        let original_array = rig.joints.clone();
+        let cloned = clone_skeleton3d_joint_hierarchy(
+            &rig,
+            Arc::new(move |_, _| {
+                assert!(original_array.try_write().is_ok());
+                return joint(0.0, 0.0, 0.0);
+            }),
+        );
+        assert_eq!(cloned.joints.read().unwrap().len(), 2);
+        assert!(!Arc::ptr_eq(&cloned.joints, &rig.joints));
+    }
     #[test]
     fn rebuilds_only_joint_parent_links_and_isolates_pose_updates_without_caching_the_source() {
         let external: NodeRef = joint(0.0, 0.0, 0.0);
@@ -71,10 +88,16 @@ mod clone_skeleton3d_joint_hierarchy {
             }),
         );
         assert_eq!(*seen.lock().unwrap(), vec![0, 1]);
-        assert!(!Arc::ptr_eq(&source.joints[0], &clone.joints[0]));
-        assert!(!Arc::ptr_eq(&source.joints[1], &clone.joints[1]));
-        let r: NodeRef = clone.joints[0].clone();
-        let c: NodeRef = clone.joints[1].clone();
+        assert!(!Arc::ptr_eq(
+            &source.joints.read().unwrap()[0],
+            &clone.joints.read().unwrap()[0]
+        ));
+        assert!(!Arc::ptr_eq(
+            &source.joints.read().unwrap()[1],
+            &clone.joints.read().unwrap()[1]
+        ));
+        let r: NodeRef = clone.joints.read().unwrap()[0].clone();
+        let c: NodeRef = clone.joints.read().unwrap()[1].clone();
         assert!(get_node_parent(&r).is_none());
         assert!(Arc::ptr_eq(&get_node_parent(&c).unwrap(), &r));
         assert!(Arc::ptr_eq(
@@ -86,7 +109,7 @@ mod clone_skeleton3d_joint_hierarchy {
             clone.inverse_bind_matrices.read().unwrap().as_ptr()
         );
         assert_eq!(clone.names, source.names);
-        clone.joints[0]
+        clone.joints.read().unwrap()[0]
             .write()
             .unwrap()
             .node3d_fields_mut()
@@ -198,6 +221,36 @@ mod compute_skeleton3d_joint_matrices {
 mod create_skeleton3d {
     use super::*;
     #[test]
+    fn retains_input_joint_array_mutations_and_dispose_clears_all_aliases() {
+        let first: flight_scene3d::Node3DRef = joint(0.0, 0.0, 0.0);
+        let joints = Arc::new(std::sync::RwLock::new(vec![first.clone()]));
+        let mut rig = create_skeleton3d(
+            joints.clone(),
+            None,
+            Some(vec!["first".to_string()]),
+            &mut revisions(),
+            &guards(),
+        );
+        assert!(Arc::ptr_eq(&rig.joints, &joints));
+        let second: flight_scene3d::Node3DRef = joint(1.0, 0.0, 0.0);
+        joints.write().unwrap().push(second.clone());
+        assert_eq!(rig.joints.read().unwrap().len(), 2);
+        assert!(Arc::ptr_eq(&rig.joints.read().unwrap()[1], &second));
+        let cloned = clone_skeleton3d(&rig);
+        assert!(!Arc::ptr_eq(&cloned.joints, &joints));
+        assert!(Arc::ptr_eq(&cloned.joints.read().unwrap()[0], &first));
+        rig.joints.write().unwrap().pop();
+        assert_eq!(joints.read().unwrap().len(), 1);
+        assert_eq!(cloned.joints.read().unwrap().len(), 2);
+        let palette = rig.joint_matrices.clone();
+        dispose_skeleton3d(&mut rig);
+        assert!(joints.read().unwrap().is_empty());
+        assert!(Arc::ptr_eq(&rig.joints, &joints));
+        assert!(Arc::ptr_eq(&rig.joint_matrices, &palette));
+        assert_eq!(cloned.joints.read().unwrap().len(), 2);
+        assert!(rig.names.is_none());
+    }
+    #[test]
     fn sizes_zeroed_palettes_captures_optional_bind_pose_and_retains_supplied_buffers() {
         let mut rig = skeleton(vec![joint(0.0, 0.0, 0.0), joint(0.0, 0.0, 0.0)], None);
         assert_eq!(rig.joint_matrices.read().unwrap().len(), 32);
@@ -209,7 +262,7 @@ mod create_skeleton3d {
         let original = supplied.clone();
         let pointer = supplied.read().unwrap().as_ptr();
         let rig = create_skeleton3d(
-            vec![joint(99.0, 0.0, 0.0)],
+            Arc::new(std::sync::RwLock::new(vec![joint(99.0, 0.0, 0.0)])),
             Some(supplied),
             None,
             &mut revisions(),
@@ -231,7 +284,7 @@ mod dispose_skeleton3d {
         let mut rig = skeleton(vec![node], Some(vec!["a".to_string()]));
         let palette = rig.joint_matrices.read().unwrap().as_ptr();
         dispose_skeleton3d(&mut rig);
-        assert!(rig.joints.is_empty());
+        assert!(rig.joints.read().unwrap().is_empty());
         assert!(rig.names.is_none());
         assert_eq!(rig.joint_matrices.read().unwrap().as_ptr(), palette);
         assert_eq!(rig.joint_matrices.read().unwrap().len(), 16);
@@ -341,6 +394,26 @@ mod get_skeleton3d_joint_world_matrix_by_name {
 mod initialize_skeleton3d {
     use super::*;
     #[test]
+    fn retains_exact_joint_array_handle_without_replacing_entity_runtime() {
+        let mut rig = skeleton(Vec::new(), None);
+        flight_entity::set_entity_uid(&mut rig, "same-runtime".to_string());
+        let joints = Arc::new(std::sync::RwLock::new(Vec::new()));
+        let empty = Arc::new(std::sync::RwLock::new(Vec::<f32>::new().into_boxed_slice()));
+        initialize_skeleton3d(
+            &mut rig,
+            empty.clone(),
+            empty.clone(),
+            joints.clone(),
+            None,
+            empty,
+        );
+        assert!(Arc::ptr_eq(&rig.joints, &joints));
+        assert_eq!(flight_entity::get_entity_uid(&mut rig), "same-runtime");
+        let node: flight_scene3d::Node3DRef = joint(0.0, 0.0, 0.0);
+        joints.write().unwrap().push(node.clone());
+        assert!(Arc::ptr_eq(&rig.joints.read().unwrap()[0], &node));
+    }
+    #[test]
     fn retains_original_shared_buffer_refs_and_clone_allocates_distinct_empty_arrays() {
         let shared: flight_entity::Ref<Box<flight_entity::Float32Array>> =
             Arc::new(std::sync::RwLock::new(Box::new([])));
@@ -349,7 +422,7 @@ mod initialize_skeleton3d {
             &mut rig,
             shared.clone(),
             shared.clone(),
-            Vec::new(),
+            Arc::new(std::sync::RwLock::new(Vec::new())),
             None,
             shared.clone(),
         );
@@ -374,13 +447,13 @@ mod initialize_skeleton3d {
             &mut rig,
             Arc::new(std::sync::RwLock::new(vec![1.0; 16].into_boxed_slice())),
             Arc::new(std::sync::RwLock::new(vec![2.0; 16].into_boxed_slice())),
-            vec![node.clone()],
+            Arc::new(std::sync::RwLock::new(vec![node.clone()])),
             Some(vec!["name".to_string()]),
             Arc::new(std::sync::RwLock::new(vec![3.0; 12].into_boxed_slice())),
         );
         assert_eq!(flight_entity::get_entity_uid(&mut rig), "kept");
         assert!(Arc::ptr_eq(
-            &rig.joints[0],
+            &rig.joints.read().unwrap()[0],
             &(node as flight_scene3d::Node3DRef)
         ));
         assert_eq!(rig.joint_matrices.read().unwrap()[0], 2.0);
@@ -389,6 +462,28 @@ mod initialize_skeleton3d {
 }
 mod set_skeleton3d_bind_pose {
     use super::*;
+    #[test]
+    fn guard_can_clear_shared_joint_array_without_a_lock_or_stale_length() {
+        let first = joint(0.0, 0.0, 0.0);
+        first.write().unwrap().scale.x = 0.0;
+        let second = joint(0.0, 0.0, 0.0);
+        second.write().unwrap().scale.x = 0.0;
+        let mut rig = skeleton(vec![first, second], None);
+        let shared = rig.joints.clone();
+        let state = guards();
+        let seen = Arc::new(Mutex::new(Vec::new()));
+        let sink = seen.clone();
+        set_skeleton3d_bind_pose_guard(
+            &state,
+            Some(Arc::new(move |skeleton, index| {
+                sink.lock().unwrap().push(index);
+                skeleton.joints.try_write().unwrap().clear();
+            })),
+        );
+        set_skeleton3d_bind_pose(&mut rig, &mut revisions(), &state);
+        assert_eq!(*seen.lock().unwrap(), [0]);
+        assert!(shared.read().unwrap().is_empty());
+    }
     #[test]
     fn recovers_each_singular_joint_with_identity_while_preserving_healthy_bind_entries() {
         let collapsed = joint(0.0, 0.0, 0.0);

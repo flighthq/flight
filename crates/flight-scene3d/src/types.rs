@@ -68,7 +68,7 @@ pub struct Skeleton3D {
     pub inverse_bind_matrices: Ref<Box<Float32Array>>,
     pub joint_matrices: Ref<Box<Float32Array>>,
     pub normal_matrices: Ref<Box<Float32Array>>,
-    pub joints: Vec<Node3DRef>,
+    pub joints: Ref<Vec<Node3DRef>>,
     pub names: Option<Vec<String>>,
 }
 
@@ -222,7 +222,7 @@ impl Default for Skeleton3D {
             inverse_bind_matrices: Arc::new(RwLock::new(Box::new([]))),
             joint_matrices: Arc::new(RwLock::new(Box::new([]))),
             normal_matrices: Arc::new(RwLock::new(Box::new([]))),
-            joints: Vec::new(),
+            joints: Arc::new(RwLock::new(Vec::new())),
             names: None,
         };
     }

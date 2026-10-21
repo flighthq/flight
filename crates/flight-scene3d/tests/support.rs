@@ -57,7 +57,7 @@ pub fn test_skin() -> Ref<Skin> {
     skeleton.inverse_bind_matrices = Arc::new(RwLock::new(Box::new([])));
     skeleton.joint_matrices = Arc::new(RwLock::new(Box::new([])));
     skeleton.normal_matrices = Arc::new(RwLock::new(Box::new([])));
-    skeleton.joints = Vec::new();
+    skeleton.joints = Arc::new(RwLock::new(Vec::new()));
     skeleton.names = None;
     return Arc::new(RwLock::new(Skin {
         skeleton: Arc::new(RwLock::new(skeleton)),
