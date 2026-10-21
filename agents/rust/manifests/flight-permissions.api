@@ -1,0 +1,78 @@
+src/contract.rs: pub use super::permission::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::HostMidiPermissionCapability;
+src/lib.rs: pub use contract::HostPermissionsCapabilities;
+src/lib.rs: pub use contract::HostPermissionsCapability;
+src/lib.rs: pub use contract::HostPreferencesPersistenceQueryCapability;
+src/lib.rs: pub use contract::HostPreferencesPersistenceRequestCapability;
+src/lib.rs: pub use contract::PermissionName;
+src/lib.rs: pub use contract::PermissionQueryFailureReason;
+src/lib.rs: pub use contract::PermissionQueryFuture;
+src/lib.rs: pub use contract::PermissionQueryOutcome;
+src/lib.rs: pub use contract::PermissionQueryProviderResult;
+src/lib.rs: pub use contract::PermissionQueryReason;
+src/lib.rs: pub use contract::PermissionRequestFailureReason;
+src/lib.rs: pub use contract::PermissionRequestFuture;
+src/lib.rs: pub use contract::PermissionRequestOutcome;
+src/lib.rs: pub use contract::PermissionRequestProviderResult;
+src/lib.rs: pub use contract::PermissionRequestReason;
+src/lib.rs: pub use contract::PermissionState;
+src/lib.rs: pub use contract::StoragePersistenceFuture;
+src/lib.rs: pub use contract::StoragePersistenceOutcome;
+src/lib.rs: pub use contract::StoragePersistenceOutcomeReason;
+src/lib.rs: pub use contract::StoragePersistenceProviderResult;
+src/lib.rs: pub use contract::get_permission_state;
+src/lib.rs: pub use contract::get_permission_states;
+src/lib.rs: pub use contract::request_permission;
+src/permission.rs: pub async fn get_permission_state(host_permissions: &HostPermissionsCapability, host_midi_permission: Option<&HostMidiPermissionCapability>, host_preferences_persistence_query: Option<&HostPreferencesPersistenceQueryCapability>, name: &str,) -> PermissionQueryOutcome
+src/permission.rs: pub async fn get_permission_states(host_permissions: &HostPermissionsCapability, host_midi_permission: Option<&HostMidiPermissionCapability>, host_preferences_persistence_query: Option<&HostPreferencesPersistenceQueryCapability>, names: &[PermissionName],) -> Vec<PermissionQueryOutcome>
+src/permission.rs: pub async fn request_permission(host_permissions: &HostPermissionsCapability, host_preferences_persistence_request: Option<&HostPreferencesPersistenceRequestCapability>, host_geolocation: Option<&HostGeolocationCapability>, name: &str,) -> PermissionRequestOutcome
+src/sugar.rs: impl HostPermissionsCapability :: async fn get_permission_state(&self, host_midi_permission: Option<&HostMidiPermissionCapability>, host_preferences_persistence_query: Option<&HostPreferencesPersistenceQueryCapability>, name: &str,) -> PermissionQueryOutcome
+src/sugar.rs: impl HostPermissionsCapability :: async fn get_permission_states(&self, host_midi_permission: Option<&HostMidiPermissionCapability>, host_preferences_persistence_query: Option<&HostPreferencesPersistenceQueryCapability>, names: &[PermissionName],) -> Vec<PermissionQueryOutcome>
+src/sugar.rs: impl HostPermissionsCapability :: async fn request_permission(&self, host_preferences_persistence_request: Option<&HostPreferencesPersistenceRequestCapability>, host_geolocation: Option<&HostGeolocationCapability>, name: &str,) -> PermissionRequestOutcome
+src/sugar.rs: impl PermissionQueryFailureReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl PermissionQueryFailureReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl PermissionQueryReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl PermissionQueryReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl PermissionRequestFailureReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl PermissionRequestFailureReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl PermissionRequestReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl PermissionRequestReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl PermissionState :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl PermissionState :: fn to_str(self) -> &'static str
+src/sugar.rs: impl StoragePersistenceOutcomeReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl StoragePersistenceOutcomeReason :: fn to_str(self) -> &'static str
+src/types.rs: #[derive(Clone)] pub struct HostMidiPermissionCapability { pub get_permission: Arc<dyn Fn() -> PermissionQueryFuture + Send + Sync>, pub provider: ProviderRef, }
+src/types.rs: #[derive(Clone)] pub struct HostPermissionsCapability { pub notification: HostNotificationPermissionCapability, pub provider: ProviderRef, pub query_permission: Arc<dyn Fn(PermissionName) -> PermissionQueryFuture + Send + Sync>, pub request_media_access: Arc<dyn Fn(PermissionName) -> PermissionRequestFuture + Send + Sync>, pub request_wake_lock: Arc<dyn Fn() -> PermissionRequestFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostPreferencesPersistenceQueryCapability { pub get_persistence: Arc<dyn Fn() -> StoragePersistenceFuture + Send + Sync>, pub provider: ProviderRef, }
+src/types.rs: #[derive(Clone)] pub struct HostPreferencesPersistenceRequestCapability { pub provider: ProviderRef, pub request_persistence: Arc<dyn Fn() -> StoragePersistenceFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum PermissionQueryFailureReason { OperationFailed, RuntimeUnavailable, Unsupported, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum PermissionQueryReason { BestEffort, Ok, OperationFailed, RuntimeUnavailable, Unsupported, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum PermissionRequestFailureReason { NoRequestRoute, OperationFailed, RuntimeUnavailable, Timeout, Unsupported, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum PermissionRequestReason { BestEffort, CleanupFailed, Denied, Dismissed, Granted, NoRequestRoute, OperationFailed, RuntimeUnavailable, Timeout, Unsupported, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum PermissionState { Denied, Granted, Prompt, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum StoragePersistenceOutcomeReason { BestEffort, OperationFailed, Persistent, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct PermissionQueryOutcome { pub reason: PermissionQueryReason, pub state: Option<PermissionState>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct PermissionRequestOutcome { pub reason: PermissionRequestReason, pub state: Option<PermissionState>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct StoragePersistenceOutcome { pub outcome: StoragePersistenceOutcomeReason, pub permission_state: Option<PermissionState>, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostPermissionsCapabilities { pub query: Option<HostPermissionsCapability>, }
+src/types.rs: pub fn get_permission_query_failure_reason_string(value: PermissionQueryFailureReason,) -> &'static str
+src/types.rs: pub fn get_permission_query_reason_string(value: PermissionQueryReason) -> &'static str
+src/types.rs: pub fn get_permission_request_failure_reason_string(value: PermissionRequestFailureReason,) -> &'static str
+src/types.rs: pub fn get_permission_request_reason_string(value: PermissionRequestReason) -> &'static str
+src/types.rs: pub fn get_permission_state_string(value: PermissionState) -> &'static str
+src/types.rs: pub fn get_storage_persistence_outcome_reason_string(value: StoragePersistenceOutcomeReason,) -> &'static str
+src/types.rs: pub fn parse_permission_query_failure_reason(value: &str) -> Option<PermissionQueryFailureReason>
+src/types.rs: pub fn parse_permission_query_reason(value: &str) -> Option<PermissionQueryReason>
+src/types.rs: pub fn parse_permission_request_failure_reason(value: &str,) -> Option<PermissionRequestFailureReason>
+src/types.rs: pub fn parse_permission_request_reason(value: &str) -> Option<PermissionRequestReason>
+src/types.rs: pub fn parse_permission_state(value: &str) -> Option<PermissionState>
+src/types.rs: pub fn parse_storage_persistence_outcome_reason(value: &str,) -> Option<StoragePersistenceOutcomeReason>
+src/types.rs: pub type PermissionName = String;
+src/types.rs: pub type PermissionQueryFuture = Pin<Box<dyn Future<Output = PermissionQueryProviderResult> + Send>>;
+src/types.rs: pub type PermissionQueryProviderResult = Result<PermissionQueryOutcome, FlightError>;
+src/types.rs: pub type PermissionRequestFuture = Pin<Box<dyn Future<Output = PermissionRequestProviderResult> + Send>>;
+src/types.rs: pub type PermissionRequestProviderResult = Result<PermissionRequestOutcome, FlightError>;
+src/types.rs: pub type StoragePersistenceFuture = Pin<Box<dyn Future<Output = StoragePersistenceProviderResult> + Send>>;
+src/types.rs: pub type StoragePersistenceProviderResult = Result<StoragePersistenceOutcome, FlightError>;
