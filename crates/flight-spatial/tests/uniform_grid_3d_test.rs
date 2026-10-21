@@ -29,6 +29,15 @@ mod create_uniform_grid_spatial_backend_3d {
     use super::*;
 
     #[test]
+    fn returns_an_entity() {
+        let mut backend=create_uniform_grid_spatial_backend_3d(10.0);
+        assert!(!flight_entity::has_entity_runtime(&backend));
+        flight_entity::set_entity_uid(&mut backend,"grid3d".to_owned());
+        assert!(flight_entity::has_entity_runtime(&backend));
+        assert_eq!(flight_entity::get_entity_uid(&mut backend),"grid3d");
+    }
+
+    #[test]
     fn clears_every_object_while_staying_reusable() {
         let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(10.0)));
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 5.0));

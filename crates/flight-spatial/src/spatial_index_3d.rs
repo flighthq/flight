@@ -16,6 +16,7 @@ pub struct SpatialFrustum3D {
 /// An open dispatch record, including third-party spatial backend implementations.
 #[derive(Clone)]
 pub struct SpatialIndexBackend3D {
+    runtime: EntityRuntimeSlot,
     pub clear_spatial_index: Arc<dyn Fn() + Send + Sync>,
     pub explain_spatial_indexing:
         Arc<dyn Fn(SpatialObjectId) -> SpatialIndexingExplanation + Send + Sync>,
@@ -297,4 +298,27 @@ pub fn update_spatial_object_3d(
         .update_spatial_object)(id, bounds);
 }
 
+impl Default for SpatialIndexBackend3D {
+    fn default() -> Self {
+        return Self {
+            runtime: EntityRuntimeSlot::default(),
+            clear_spatial_index: Arc::new(|| unreachable!("uninitialized spatial backend")),
+            explain_spatial_indexing: Arc::new(|_| unreachable!("uninitialized spatial backend")),
+            insert_spatial_object: Arc::new(|_, _| unreachable!("uninitialized spatial backend")),
+            query_spatial_pairs: Arc::new(|_| unreachable!("uninitialized spatial backend")),
+            query_spatial_point: Arc::new(|_, _, _, _| {
+                unreachable!("uninitialized spatial backend")
+            }),
+            query_spatial_ray: Arc::new(|_, _, _, _, _, _, _| {
+                unreachable!("uninitialized spatial backend")
+            }),
+            query_spatial_region: Arc::new(|_, _| unreachable!("uninitialized spatial backend")),
+            remove_spatial_object: Arc::new(|_| unreachable!("uninitialized spatial backend")),
+            update_spatial_object: Arc::new(|_, _| unreachable!("uninitialized spatial backend")),
+        };
+    }
+}
+
 flight_entity::impl_entity!(SpatialIndex3D);
+
+flight_entity::impl_entity!(SpatialIndexBackend3D);

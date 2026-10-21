@@ -52,6 +52,15 @@ mod create_bvh_spatial_backend_3d {
     use super::*;
 
     #[test]
+    fn returns_an_entity() {
+        let mut backend=create_bvh_spatial_backend_3d(None);
+        assert!(!flight_entity::has_entity_runtime(&backend));
+        flight_entity::set_entity_uid(&mut backend,"bvh3d".to_owned());
+        assert!(flight_entity::has_entity_runtime(&backend));
+        assert_eq!(flight_entity::get_entity_uid(&mut backend),"bvh3d");
+    }
+
+    #[test]
     fn preserves_signed_object_ids_at_both_integer_limits() {
         for mut index in [create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(10.0))), create_spatial_index_3d(Some(create_bvh_spatial_backend_3d(Some(1.0))))] {
             let bounds = box3(0.0, 0.0, 0.0, 4.0);

@@ -348,6 +348,15 @@ mod create_uniform_grid_spatial_backend_2d {
     use super::*;
 
     #[test]
+    fn returns_an_entity() {
+        let mut backend=create_uniform_grid_spatial_backend_2d(10.0);
+        assert!(!flight_entity::has_entity_runtime(&backend));
+        flight_entity::set_entity_uid(&mut backend,"grid2d".to_owned());
+        assert!(flight_entity::has_entity_runtime(&backend));
+        assert_eq!(flight_entity::get_entity_uid(&mut backend),"grid2d");
+    }
+
+    #[test]
     fn emits_pair_spanning_several_shared_cells_exactly_once() {
         let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(10.0)));
         insert_spatial_object_2d(&mut grid, 1, &SpatialAabb2D { min_x: 0.0, min_y: 0.0, max_x: 25.0, max_y: 25.0 });

@@ -1,3 +1,4 @@
+use flight_entity::allocate_entity;
 use std::sync::{Arc, Mutex, PoisonError};
 
 use std::collections::HashMap;
@@ -65,11 +66,13 @@ pub(crate) fn create_bvh_3d(margin: f32) -> Bvh3D {
 }
 
 pub fn create_bvh_spatial_backend_3d(margin: Option<f32>) -> SpatialIndexBackend3D {
-    return bvh_backend_3d_callbacks(create_bvh_3d(margin.unwrap_or(DEFAULT_BVH_MARGIN_3D)));
+    let mut out = allocate_entity();
+    initialize_bvh_spatial_backend_3d(&mut out, margin);
+    return out;
 }
 
 pub fn initialize_bvh_spatial_backend_3d(out: &mut SpatialIndexBackend3D, margin: Option<f32>) {
-    *out = bvh_backend_3d_callbacks(create_bvh_3d(margin.unwrap_or(DEFAULT_BVH_MARGIN_3D)));
+    bvh_backend_3d_callbacks(out, create_bvh_3d(margin.unwrap_or(DEFAULT_BVH_MARGIN_3D)));
 }
 
 fn allocate_bvh_3d_node(tree: &mut Bvh3D) -> usize {
@@ -119,97 +122,95 @@ fn bounds_area(tree: &Bvh3D, index: usize) -> f32 {
     return 2.0 * (dx * dy + dy * dz + dz * dx);
 }
 
-fn bvh_backend_3d_callbacks(data: Bvh3D) -> SpatialIndexBackend3D {
+fn bvh_backend_3d_callbacks(out: &mut SpatialIndexBackend3D, data: Bvh3D) {
     let shared = Arc::new(Mutex::new(data));
-    return SpatialIndexBackend3D {
-        clear_spatial_index: {
-            let state = shared.clone();
-            Arc::new(move || {
-                return clear_bvh_3d(&mut state.lock().unwrap_or_else(PoisonError::into_inner));
-            })
-        },
-        explain_spatial_indexing: {
-            let state = shared.clone();
-            Arc::new(move |id| {
-                return explain_bvh_3d(&state.lock().unwrap_or_else(PoisonError::into_inner), id);
-            })
-        },
-        insert_spatial_object: {
-            let state = shared.clone();
-            Arc::new(move |id, bounds| {
-                return insert_bvh_3d(
-                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
-                    id,
-                    bounds,
-                    SpatialIndexingOperation::Insert,
-                );
-            })
-        },
-        query_spatial_pairs: {
-            let state = shared.clone();
-            Arc::new(move |out| {
-                return query_bvh_3d_pairs(
-                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
-                    out,
-                );
-            })
-        },
-        query_spatial_point: {
-            let state = shared.clone();
-            Arc::new(move |out, x, y, z| {
-                return query_bvh_3d_point(
-                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
-                    x,
-                    y,
-                    z,
-                    out,
-                );
-            })
-        },
-        query_spatial_ray: {
-            let state = shared.clone();
-            Arc::new(move |out, x, y, z, dx, dy, dz| {
-                return query_bvh_3d_ray(
-                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
-                    x,
-                    y,
-                    z,
-                    dx,
-                    dy,
-                    dz,
-                    out,
-                );
-            })
-        },
-        query_spatial_region: {
-            let state = shared.clone();
-            Arc::new(move |out, region| {
-                return query_bvh_3d_region(
-                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
-                    region,
-                    out,
-                );
-            })
-        },
-        remove_spatial_object: {
-            let state = shared.clone();
-            Arc::new(move |id| {
-                return remove_spatial_object_bvh_3d(
-                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
-                    id,
-                );
-            })
-        },
-        update_spatial_object: {
-            let state = shared.clone();
-            Arc::new(move |id, bounds| {
-                return update_bvh_3d(
-                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
-                    id,
-                    bounds,
-                );
-            })
-        },
+    out.clear_spatial_index = {
+        let state = shared.clone();
+        Arc::new(move || {
+            return clear_bvh_3d(&mut state.lock().unwrap_or_else(PoisonError::into_inner));
+        })
+    };
+    out.explain_spatial_indexing = {
+        let state = shared.clone();
+        Arc::new(move |id| {
+            return explain_bvh_3d(&state.lock().unwrap_or_else(PoisonError::into_inner), id);
+        })
+    };
+    out.insert_spatial_object = {
+        let state = shared.clone();
+        Arc::new(move |id, bounds| {
+            return insert_bvh_3d(
+                &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                id,
+                bounds,
+                SpatialIndexingOperation::Insert,
+            );
+        })
+    };
+    out.query_spatial_pairs = {
+        let state = shared.clone();
+        Arc::new(move |out| {
+            return query_bvh_3d_pairs(
+                &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                out,
+            );
+        })
+    };
+    out.query_spatial_point = {
+        let state = shared.clone();
+        Arc::new(move |out, x, y, z| {
+            return query_bvh_3d_point(
+                &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                x,
+                y,
+                z,
+                out,
+            );
+        })
+    };
+    out.query_spatial_ray = {
+        let state = shared.clone();
+        Arc::new(move |out, x, y, z, dx, dy, dz| {
+            return query_bvh_3d_ray(
+                &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                x,
+                y,
+                z,
+                dx,
+                dy,
+                dz,
+                out,
+            );
+        })
+    };
+    out.query_spatial_region = {
+        let state = shared.clone();
+        Arc::new(move |out, region| {
+            return query_bvh_3d_region(
+                &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                region,
+                out,
+            );
+        })
+    };
+    out.remove_spatial_object = {
+        let state = shared.clone();
+        Arc::new(move |id| {
+            return remove_spatial_object_bvh_3d(
+                &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                id,
+            );
+        })
+    };
+    out.update_spatial_object = {
+        let state = shared.clone();
+        Arc::new(move |id, bounds| {
+            return update_bvh_3d(
+                &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                id,
+                bounds,
+            );
+        })
     };
 }
 

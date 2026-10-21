@@ -5,7 +5,8 @@ Uniform-grid and BVH broadphase indexing with reusable output buffers.
 `create_spatial_index_2d(None)` and `create_spatial_index_3d(None)` select the
 standard uniform grid. Pass `Some(backend)` to select a grid with another cell
 size, a BVH, or a custom callback record. Each index keeps its backend in private
-runtime state. Backend callbacks share the state they capture.
+runtime state. Backend records are also entities, matching the TypeScript
+`Backend & Entity` factory results. Their callbacks share the state they capture.
 
 Pair queries return borrowed slices of reusable index storage. Pair addresses
 remain stable across queries with steady topology. Other queries clear and fill

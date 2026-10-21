@@ -1,3 +1,4 @@
+use flight_entity::allocate_entity;
 use std::sync::{Arc, Mutex, PoisonError};
 
 use std::collections::{HashMap, HashSet};
@@ -66,17 +67,19 @@ pub const DEFAULT_SPATIAL_CELL_SIZE_3D: f32 = 128.0;
 // ---------------------------------------------------------------------------
 
 pub fn create_uniform_grid_spatial_backend_3d(cell_size: f32) -> SpatialIndexBackend3D {
-    return uniform_grid_backend_3d_callbacks(UniformGrid3D {
-        cell_size,
-        ..UniformGrid3D::default()
-    });
+    let mut out = allocate_entity();
+    initialize_uniform_grid_spatial_backend_3d(&mut out, cell_size);
+    return out;
 }
 
 pub fn initialize_uniform_grid_spatial_backend_3d(out: &mut SpatialIndexBackend3D, cell_size: f32) {
-    *out = uniform_grid_backend_3d_callbacks(UniformGrid3D {
-        cell_size,
-        ..UniformGrid3D::default()
-    });
+    uniform_grid_backend_3d_callbacks(
+        out,
+        UniformGrid3D {
+            cell_size,
+            ..UniformGrid3D::default()
+        },
+    );
 }
 
 pub(crate) fn cell_index_3d(coord: f32, cell_size: f32) -> i32 {
@@ -767,100 +770,98 @@ pub(crate) fn spanned_cell_count_3d(cell_size: f32, aabb: &SpatialAabb3D) -> f64
     return (cx1 - cx0 + 1.0) * (cy1 - cy0 + 1.0) * (cz1 - cz0 + 1.0);
 }
 
-fn uniform_grid_backend_3d_callbacks(data: UniformGrid3D) -> SpatialIndexBackend3D {
+fn uniform_grid_backend_3d_callbacks(out: &mut SpatialIndexBackend3D, data: UniformGrid3D) {
     let shared = Arc::new(Mutex::new(data));
-    return SpatialIndexBackend3D {
-        clear_spatial_index: {
-            let state = shared.clone();
-            Arc::new(move || {
-                return clear_grid_3d(&mut state.lock().unwrap_or_else(PoisonError::into_inner));
-            })
-        },
-        explain_spatial_indexing: {
-            let state = shared.clone();
-            Arc::new(move |id| {
-                return explain_grid_3d_indexing(
-                    &state.lock().unwrap_or_else(PoisonError::into_inner),
-                    id,
-                );
-            })
-        },
-        insert_spatial_object: {
-            let state = shared.clone();
-            Arc::new(move |id, bounds| {
-                return insert_into_grid_3d(
-                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
-                    id,
-                    bounds,
-                    SpatialIndexingOperation::Insert,
-                );
-            })
-        },
-        query_spatial_pairs: {
-            let state = shared.clone();
-            Arc::new(move |out| {
-                return query_grid_3d_pairs(
-                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
-                    out,
-                );
-            })
-        },
-        query_spatial_point: {
-            let state = shared.clone();
-            Arc::new(move |out, x, y, z| {
-                return query_grid_3d_point(
-                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
-                    x,
-                    y,
-                    z,
-                    out,
-                );
-            })
-        },
-        query_spatial_ray: {
-            let state = shared.clone();
-            Arc::new(move |out, x, y, z, dx, dy, dz| {
-                return query_grid_3d_ray(
-                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
-                    x,
-                    y,
-                    z,
-                    dx,
-                    dy,
-                    dz,
-                    out,
-                );
-            })
-        },
-        query_spatial_region: {
-            let state = shared.clone();
-            Arc::new(move |out, region| {
-                return query_grid_3d_region(
-                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
-                    region,
-                    out,
-                );
-            })
-        },
-        remove_spatial_object: {
-            let state = shared.clone();
-            Arc::new(move |id| {
-                return remove_spatial_object_grid_3d(
-                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
-                    id,
-                );
-            })
-        },
-        update_spatial_object: {
-            let state = shared.clone();
-            Arc::new(move |id, bounds| {
-                return update_grid_3d_object(
-                    &mut state.lock().unwrap_or_else(PoisonError::into_inner),
-                    id,
-                    bounds,
-                );
-            })
-        },
+    out.clear_spatial_index = {
+        let state = shared.clone();
+        Arc::new(move || {
+            return clear_grid_3d(&mut state.lock().unwrap_or_else(PoisonError::into_inner));
+        })
+    };
+    out.explain_spatial_indexing = {
+        let state = shared.clone();
+        Arc::new(move |id| {
+            return explain_grid_3d_indexing(
+                &state.lock().unwrap_or_else(PoisonError::into_inner),
+                id,
+            );
+        })
+    };
+    out.insert_spatial_object = {
+        let state = shared.clone();
+        Arc::new(move |id, bounds| {
+            return insert_into_grid_3d(
+                &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                id,
+                bounds,
+                SpatialIndexingOperation::Insert,
+            );
+        })
+    };
+    out.query_spatial_pairs = {
+        let state = shared.clone();
+        Arc::new(move |out| {
+            return query_grid_3d_pairs(
+                &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                out,
+            );
+        })
+    };
+    out.query_spatial_point = {
+        let state = shared.clone();
+        Arc::new(move |out, x, y, z| {
+            return query_grid_3d_point(
+                &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                x,
+                y,
+                z,
+                out,
+            );
+        })
+    };
+    out.query_spatial_ray = {
+        let state = shared.clone();
+        Arc::new(move |out, x, y, z, dx, dy, dz| {
+            return query_grid_3d_ray(
+                &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                x,
+                y,
+                z,
+                dx,
+                dy,
+                dz,
+                out,
+            );
+        })
+    };
+    out.query_spatial_region = {
+        let state = shared.clone();
+        Arc::new(move |out, region| {
+            return query_grid_3d_region(
+                &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                region,
+                out,
+            );
+        })
+    };
+    out.remove_spatial_object = {
+        let state = shared.clone();
+        Arc::new(move |id| {
+            return remove_spatial_object_grid_3d(
+                &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                id,
+            );
+        })
+    };
+    out.update_spatial_object = {
+        let state = shared.clone();
+        Arc::new(move |id, bounds| {
+            return update_grid_3d_object(
+                &mut state.lock().unwrap_or_else(PoisonError::into_inner),
+                id,
+                bounds,
+            );
+        })
     };
 }
 
