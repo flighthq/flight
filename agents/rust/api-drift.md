@@ -755,3 +755,4 @@ Summary:
 ## TS defects and API trims found during Phase 4 (for the user's after-the-fact review)
 - **app → surface `attachWindowRenderState`:** the `state: RenderState` parameter was never read or retained. It is removed in both Rust and TS, to avoid a surface → render cycle.
 - **assets `acquireAsset`:** synchronous re-entry (or a sync-throwing `adapter.load`) leaves a half-initialized entry, and the function returns `null` despite its declared `Promise<T>`. Rust treats that branch as misuse (`throw_error`). Proposed TS fix: create the shared promise before calling `adapter.load`.
+- **node `boundsRectangle` singular-axis epsilon:** TS `1e-12` became `1e-6` in Rust (f32 counterpart; f32 cos(π/2) ≈ -4.4e-8). This follows the D14 easing precedent; principal-approved, pending user review.
