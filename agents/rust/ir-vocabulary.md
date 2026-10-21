@@ -18,11 +18,11 @@ The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` (`cargo
 | `f64` | `number` | `double` | `Float` | established | Only with `allow(f64) <reason>` (D1) |
 | `bool` | `boolean` | `bool` | `Bool` | established |  |
 | `i8 i16 i32 u8 u16 u32 usize` | `number` | `int8_t … uint32_t, size_t` | `Int / UInt` | established | `usize` for indices; `i32` where TS uses a -1 sentinel |
-| `i64 u64` | `number` | `int64_t / uint64_t` | `haxe.Int64` | open | TS `number` is exact only to 2^53; needs `bigint` or a range rule |
+| `i64 u64` | `number` | `int64_t / uint64_t` | `haxe.Int64` | established | Only with a declared range ≤ 2^53 (allow marker); 32-bit is the default (user 2026-10-21) |
 | `()` | `void` | `void` | `Void` | established | Return type only |
-| `String` | `string` | `std::string` | `String` | proposed | Owned text |
-| `&str` | `string` | `std::string_view` | `String` | proposed | Borrowed text; `&'static str` for constants |
-| `Kind` | `Kind (= string)` | `std::string` | `String` | proposed | Alias for `String`, defined in flight-entity; object identity tag (D2) |
+| `String` | `string` | `std::string` | `String` | established | Owned text |
+| `&str` | `string` | `std::string_view` | `String` | established | Borrowed text; `&'static str` for constants |
+| `Kind` | `Kind (= string)` | `std::string` | `String` | established | Alias for `String`, defined in flight-entity; object identity tag (D2) |
 | `struct (named fields)` | `interface + create_* fn` | `struct` | `class` | established | Value type when held inline: assignment is a copy in every target |
 | `&T` | `Readonly<T>` | `const T&` | `T` | established | Parameters |
 | `&mut T` | `T` | `T&` | `T` | established | Parameters; `out` first, alias-safe |
@@ -33,22 +33,22 @@ The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` (`cargo
 | `&Vec<N> (read-only)` | `readonly number[]` | `const std::vector<N>&` | `Array<N>` | established | Input that must be a plain array (user 2026-10-20: specific over permissive). Workspace allows clippy::ptr_arg |
 | `Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array (aliases of [f32] etc., defined in flight-entity)` | `the same typed array` | `std::span<N>` | `haxe.io.Float32Array etc.` | established | For a TS API that declares a typed array: `&Float32Array` → `Readonly<Float32Array>` while Rust still accepts any f32 slice; `&mut Float32Array` / `Box<Float32Array>` also allowed. Specific in TS, idiomatic in Rust |
 | `&[N] (N numeric, read-only)` | `ArrayLike<number>` | `std::span<const N>` | `haxe.io.Float32Array etc.` | established | Input that is deliberately general: accepts either array kind (user 2026-10-20). Use it only when general is intended; prefer the specific forms |
-| `&[T] / &mut [T] / [T; LEN] (T non-numeric)` | `readonly T[] / T[]` | `std::span<const T> / std::span<T> / std::array` | `Array<T>` | proposed | No typed array exists for structs or strings |
+| `&[T] / &mut [T] / [T; LEN] (T non-numeric)` | `readonly T[] / T[]` | `std::span<const T> / std::span<T> / std::array` | `Array<T>` | established | No typed array exists for structs or strings |
 | `HashMap<K, V>` | `Map<K, V>` | `std::unordered_map<K, V>` | `Map<K, V>` | established | Lookup only; never iterated (D3) |
-| `HashSet<T>` | `Set<T>` | `std::unordered_set<T>` | `Map<T, Bool>` | proposed | Membership only; never iterated (D3) |
-| `C-like enum` | `string-literal union / const` | `enum class` | `enum abstract` | open | TS literal values vary ('Sprite', 'aabb', 'linear'); needs a declared string table |
-| `data enum (one named struct per variant)` | `discriminated union` | `std::variant<…>` | `enum` | proposed | Closed sets only; open sets use Kind + dispatch tables (D2) |
-| `AnySlot` | `unknown (read via get_*_data cast)` | `std::any` | `Dynamic` | proposed | Alias for `Option<Box<dyn Any + Send + Sync>>`, defined in flight-entity; the only erased type (D2) |
+| `HashSet<T>` | `Set<T>` | `std::unordered_set<T>` | `Map<T, Bool>` | established | Membership only; never iterated (D3) |
+| `C-like enum` | `string-literal union / const` | `enum class` | `enum abstract` | established | String table via get_<enum>_string / parse_<enum> free functions; strings exactly as TS (D9e) |
+| `data enum (one named struct per variant)` | `discriminated union` | `std::variant<…>` | `enum` | established | Closed sets only; open sets use Kind + dispatch tables (D2) |
+| `AnySlot` | `unknown (read via get_*_data cast)` | `std::any` | `Dynamic` | established | Alias for `Option<Box<dyn Any + Send + Sync>>`, defined in flight-entity; the only erased type (D2) |
 | `Arc<dyn Fn(A) -> R + Send + Sync>` | `(a: A) => R` | `std::function<R(A)>` | `A->R` | established | Stored or returned capturing callback (D9); `FnMut` and `FnOnce` are also allowed; both thread-safety bounds are required |
 | `&dyn Fn(A) -> R / &mut dyn FnMut(A) -> R` | `(a: A) => R` | `const std::function<R(A)>& / std::function<R(A)>&` | `A->R` | established | Borrowed callback parameter (D9); shared borrow for `Fn`, mutable borrow for `FnMut` |
 | `fn(A) -> R` | `(a: A) => R` | `R (*)(A)` | `A->R` | established | Stateless function value (D9) |
 | `Ref<T>` | `T` | `std::shared_ptr<T>` | `T` | established | Shared object identity (A2, trial 2026-10-20): create_* returns it, dispose_* breaks cycles, memory frees at the last drop. Defined in flight-entity as Arc<RwLock<T>>: thread-safe by default (user 2026-10-20); swap the alias only if measurement shows a hot loop suffers |
 | `WeakRef<T>` | `T | null` | `std::weak_ptr<T>` | `Null<T>` | proposed | Not for parent links: under A2 parents are strong, as in TS. Only for non-owning caches |
 | `Handle<T>` | `T (object) or number` | `handle / T*` | `T` | open | Deferred: node-store option (D), revisit only if threading or bulk release requires it |
-| `generic type parameter <T>` | `<T>` | `template<typename T>` | `<T>` | proposed |  |
+| `generic type parameter <T>` | `<T>` | `template<typename T>` | `<T>` | established | Bounds: only T: Entity (and Rust-only Default/Clone/lifetimes) — lint-enforced |
 | `trait Entity / T: Entity` | `extends Entity / T extends Entity` | `base class / template<typename T>` | `interface / <T:Entity>` | established | D12/WP8b: the private runtime slot is reached through this trait; it is the only workspace trait bound in the vocabulary. Qualified paths (flight_entity::Entity) map the same way |
 | `private runtime field (runtime: EntityRuntimeSlot)` | `[EntityRuntimeKey] slot` | `private member` | `private field` | established | D12/WP8b: never pub; `impl_entity!(T)` implements Entity for T and exposes the slot through entity_runtime/entity_runtime_mut |
-| `pub const / pub static LazyLock<T>` | `export const` | `inline constexpr / static` | `static final` | proposed | Immutable only (D5) |
+| `pub const / pub static LazyLock<T>` | `export const` | `inline constexpr / static` | `static final` | established | Immutable only (D5) |
 
 Workspace-defined structs, enums and aliases are allowed by name. Each one is itself checked where it is defined.
 
