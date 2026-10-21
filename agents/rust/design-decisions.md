@@ -175,7 +175,8 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
   - **Prefer pure-Rust implementations;** bind C only where the library *is* the feature (SDL, OpenAL, curl).
   - `host-sdl` uses Cargo features: windows, event loop, input, and gamepad by default; `audio` (the SDL audio device capability) is opt-in; `sound` (sdl_sound decode) is opt-in. Mojoal is a variant of `host-openal` over SDL audio. C++ exposes the same split as CMake options.
   - zlib and lzma are not needed: Flight's `compression` package implements deflate and LZMA.
-  - Not now: file watching (efsw), file dialogs (tinyfiledialogs), cairo / pixman. HashLink and Neko are only relevant if Haxe output is targeted.
+  - **File dialogs:** `host-rfd` (Rust-only, like `host-winit`; native on Windows and macOS; XDG portal or GTK on Linux; its async API maps to the D15 async dialog capabilities). The C++ port uses tinyfiledialogs or native APIs. Low priority; schedule after the core waves.
+  - Not now: file watching (efsw), cairo / pixman. HashLink and Neko are only relevant if Haxe output is targeted.
 - **Scheduling:** after the core waves. Commission tiny-skia first.
 
 ## D13 Export lanes — APPROVED (user, 2026-10-21)
