@@ -98,6 +98,33 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
   - Needed before render (L11).
 - **Text positions — APPROVED (user, 2026-10-21):** strings are stored as Rust `String` (UTF-8). **Every public text position, length, and range in the text APIs is a UTF-16 code-unit offset (`usize`)**, identical to TS. User-visible units (cursor movement, selection, deletion of emoji and other multi-unit characters) go by grapheme cluster boundaries (textsegment), never by raw offsets. Conversions happen inside the implementation, as textbidi already does.
 
+## D16 Scene nodes — APPROVED (user, 2026-10-21)
+
+**API philosophy (user):** a node behaves like a raw struct. You read and write bare fields, then optionally call `invalidate*` explicitly. There are no getters or setters that auto-invalidate. TS's split between `sprite.*` and `sprite.data.*` exists only to keep object shapes stable; conceptually it is one object.
+
+- **One struct per kind, composed with the family's base fields.** `pub struct Sprite { node: Node2DFields, pub data: SpriteData }`, with `Deref`/`DerefMut<Target = Node2DFields>`. So Rust reads `sprite.x` and `sprite.data.texture`, exactly like TS (and C++ `class Sprite : public Node2D`).
+- **A trait for "any node of the family":** `trait Node2D` (TS `Node2D`, C++ base-class pointer).
+  - Mixed children: `Vec<Ref<dyn Node2D>>`.
+  - Parameters: `&dyn Node2D` or `T: Node2D`.
+  - Upcasting `Ref<Sprite>` → `Ref<dyn Node2D>` is free and keeps the same identity.
+  - Base fields work on `dyn Node2D` through `Deref`. Kind fields need the concrete type (as in TS, where you cast first).
+  - Renderers, looked up by kind (D2), view the concrete struct inside the borrow.
+- **Rename `*Traits` → `*Fields`** (`NodeFields`, `Node2DFields`, `Node3DFields`; generic `Node<Fields>`), in Rust **and TS**. This is an approved D0 rename, about 45 TS files. "Traits" means behavior in Rust and type traits in C++. The `Has*` field groups (`HasTransform2D`, `HasAppearance`, …) keep their names and become structs composed into `*Fields`.
+- **Feature traits:** `Node` (any node, 2D or 3D: hierarchy), `Transform2DNode`, `BoundsNode`, etc. are Rust traits used as bounds, mirroring the TS feature types.
+- **Access pattern:** borrow once, then use raw fields, then invalidate explicitly:
+  ```rust
+  let mut s = sprite.write();
+  s.x = 10.0; s.y = 20.0;
+  s.data.texture = Some(texture);
+  invalidate_node_local_content(&mut s);
+  ```
+  The `.write()` / `.read()` borrow is the only Rust-specific step; it is required by safe shared mutation (`Ref<T>` = `Arc<RwLock<T>>`).
+- **Construction:** `create_sprite(Some(&PartialSprite { … }))` mirrors TS `createSprite(PartialNode<Sprite>)`. Sugar may add a `Sprite::new(..)` that delegates to it. **No property getters or setters in sugar.**
+- **Runtime:** private. `Node2DFields` holds the private `Node2DRuntime` tier (containing the `NodeRuntime` tier and the entity binding/uid). Kind runtime extras (e.g. `SpriteRuntime`'s texture-cache fields) are private fields of the kind struct, reached by `get_sprite_runtime`-style internal functions.
+- **Custom kinds:** a user either reuses a kind and changes `kind`, or declares their own struct (`node: Node2DFields` plus data) and implements `Node2D` / `Entity`, through helper macros such as `impl_node2d!`.
+- **Supersedes, for nodes, the "erased data slot" mechanics of D2** (`AnySlot` + `get_*_data`). D2's principles stand: open kinds, dispatch tables, no switch. `agents/sketches/scene2d-sprite.md` is superseded.
+- **Vocabulary rows to add:** `Ref<dyn Node2D>` (and the other family / feature traits) → TS base type → C++ base-class `shared_ptr`. Kind struct with `Deref` to `*Fields` → TS `interface X extends Node2D`.
+
 ## D13 Export lanes — APPROVED (user, 2026-10-21)
 
 - **Contract lane = the free functions** (TS `contract.ts`, the full surface other packages use). In Rust: `flight_x::contract::*`, mirroring `@flighthq/x/contract`.

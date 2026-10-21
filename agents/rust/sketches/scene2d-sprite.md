@@ -1,6 +1,6 @@
 # Sketch: Sprite + GL sprite renderer (D2, review only)
 
-Status: **REVIEW SKETCH. Not applied anywhere, and not approved.** This file shows how pattern (A) from D2 would translate one real TS type end to end. Signatures only; bodies are elided unless they show the pattern.
+Status: **SUPERSEDED by D16 (per-kind structs, `Node2DFields`, `trait Node2D`, raw fields after a borrow).** Kept for history. Was: REVIEW SKETCH. Not applied anywhere, and not approved.** This file shows how pattern (A) from D2 would translate one real TS type end to end. Signatures only; bodies are elided unless they show the pattern.
 
 TS sources: `types/src/{Node,Node2D,Sprite,NodeRenderer,Scene2DRenderer}.ts`, `scene2d/src/sprite.ts`, `scene2d-gl/src/glSprite.ts`, `render/src/renderer.ts`, `render/src/renderProxy.ts`.
 
