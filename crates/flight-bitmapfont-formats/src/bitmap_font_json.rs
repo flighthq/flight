@@ -9,6 +9,21 @@ use crate::bitmap_font_record::{
 use crate::json::{RawBitmapFontJson, RawChars};
 use crate::types::*;
 
+pub(crate) fn is_bitmap_font_json_object(text: &str) -> bool {
+    let Ok(root) = serde_json::from_str::<Value>(text) else {
+        return false;
+    };
+    let Some(root) = root.as_object() else {
+        return false;
+    };
+    return root
+        .get("chars")
+        .is_some_and(|chars| chars.is_array() || chars.as_object().is_some())
+        && root
+            .get("common")
+            .is_some_and(|common| common.as_object().is_some());
+}
+
 // flight-lint: allow(conform-params) D5: caller-owned guard state replaces the bitmap-font module guard slot
 pub fn parse_bitmap_font_json(
     guard_state: &BitmapFontGuardStateRef,
@@ -93,15 +108,6 @@ fn read_json_char(raw: &Value) -> Option<BitmapFontCharRecord> {
     });
 }
 
-fn read_json_kerning(raw: &Value) -> Option<BitmapFontKerningRecord> {
-    let raw = raw.as_object()?;
-    return Some(BitmapFontKerningRecord {
-        amount: read_json_number(raw.get("amount"))?,
-        first: read_json_number(raw.get("first"))? as u32,
-        second: read_json_number(raw.get("second"))? as u32,
-    });
-}
-
 fn read_json_encoding(distance_field: Option<&Value>) -> BitmapFontEncoding {
     return match distance_field
         .and_then(Value::as_object)
@@ -114,25 +120,19 @@ fn read_json_encoding(distance_field: Option<&Value>) -> BitmapFontEncoding {
     };
 }
 
+fn read_json_kerning(raw: &Value) -> Option<BitmapFontKerningRecord> {
+    let raw = raw.as_object()?;
+    return Some(BitmapFontKerningRecord {
+        amount: read_json_number(raw.get("amount"))?,
+        first: read_json_number(raw.get("first"))? as u32,
+        second: read_json_number(raw.get("second"))? as u32,
+    });
+}
+
 fn read_json_number(value: Option<&Value>) -> Option<f32> {
     let value = value?.as_f64()?;
     if !value.is_finite() {
         return None;
     }
     return Some(value as f32);
-}
-
-pub(crate) fn is_bitmap_font_json_object(text: &str) -> bool {
-    let Ok(root) = serde_json::from_str::<Value>(text) else {
-        return false;
-    };
-    let Some(root) = root.as_object() else {
-        return false;
-    };
-    return root
-        .get("chars")
-        .is_some_and(|chars| chars.is_array() || chars.as_object().is_some())
-        && root
-            .get("common")
-            .is_some_and(|common| common.as_object().is_some());
 }

@@ -97,6 +97,26 @@ pub fn build_bitmap_font_from_record(
     return Some(font);
 }
 
+fn report_bitmap_font_drop(
+    diagnostics: Option<&mut Vec<ImportDiagnostic>>,
+    origin: &str,
+    kind: &str,
+    records: usize,
+) {
+    let mut detail = HashMap::new();
+    detail.insert(
+        "records".to_string(),
+        ImportDiagnosticDetailValue::Number(records as f32),
+    );
+    report_import_diagnostic(
+        diagnostics,
+        ImportDiagnosticSeverity::Drop,
+        kind,
+        origin,
+        Some(detail),
+    );
+}
+
 pub fn report_dropped_bitmap_font_records(
     mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,
     origin: &str,
@@ -128,24 +148,4 @@ pub fn report_dropped_bitmap_font_records(
             kernings,
         );
     }
-}
-
-fn report_bitmap_font_drop(
-    diagnostics: Option<&mut Vec<ImportDiagnostic>>,
-    origin: &str,
-    kind: &str,
-    records: usize,
-) {
-    let mut detail = HashMap::new();
-    detail.insert(
-        "records".to_string(),
-        ImportDiagnosticDetailValue::Number(records as f32),
-    );
-    report_import_diagnostic(
-        diagnostics,
-        ImportDiagnosticSeverity::Drop,
-        kind,
-        origin,
-        Some(detail),
-    );
 }

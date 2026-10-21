@@ -6,6 +6,21 @@ use crate::types::*;
 
 const DETECT_WINDOW_BYTES: usize = 4096;
 
+fn has_bitmap_font_text_block(head: &str) -> bool {
+    for raw_line in head.split(['\r', '\n']) {
+        let line = raw_line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        let tag_end = line.find(char::is_whitespace).unwrap_or(line.len());
+        return matches!(
+            &line[..tag_end],
+            "info" | "common" | "page" | "char" | "chars"
+        );
+    }
+    return false;
+}
+
 pub fn read_bitmap_font_format_kind(bytes: &Uint8Array) -> Option<BitmapFontFormatKind> {
     if bytes.len() >= 4 && bytes[0..4] == [66, 77, 70, 3] {
         return Some(BITMAP_FONT_FORMAT_KIND_BM_FONT_BINARY.to_string());
@@ -26,21 +41,6 @@ pub fn read_bitmap_font_format_kind(bytes: &Uint8Array) -> Option<BitmapFontForm
     }
     return has_bitmap_font_text_block(trimmed)
         .then(|| BITMAP_FONT_FORMAT_KIND_BM_FONT_TEXT.to_string());
-}
-
-fn has_bitmap_font_text_block(head: &str) -> bool {
-    for raw_line in head.split(['\r', '\n']) {
-        let line = raw_line.trim();
-        if line.is_empty() {
-            continue;
-        }
-        let tag_end = line.find(char::is_whitespace).unwrap_or(line.len());
-        return matches!(
-            &line[..tag_end],
-            "info" | "common" | "page" | "char" | "chars"
-        );
-    }
-    return false;
 }
 
 fn read_xml_root_element_name(trimmed: &str) -> Option<String> {

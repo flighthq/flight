@@ -112,6 +112,13 @@ fn read_binary_kerning(bytes: &Uint8Array, offset: usize) -> Option<BitmapFontKe
     });
 }
 
+fn read_i16(bytes: &Uint8Array, offset: usize) -> Option<i16> {
+    return Some(i16::from_le_bytes([
+        *bytes.get(offset)?,
+        *bytes.get(offset + 1)?,
+    ]));
+}
+
 fn read_page_block(
     bytes: &Uint8Array,
     offset: usize,
@@ -132,13 +139,6 @@ fn read_page_block(
             start = index + 1;
         }
     }
-}
-
-fn read_i16(bytes: &Uint8Array, offset: usize) -> Option<i16> {
-    return Some(i16::from_le_bytes([
-        *bytes.get(offset)?,
-        *bytes.get(offset + 1)?,
-    ]));
 }
 
 fn read_u16(bytes: &Uint8Array, offset: usize) -> Option<u16> {

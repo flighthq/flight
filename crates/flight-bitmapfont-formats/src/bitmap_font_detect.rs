@@ -112,6 +112,33 @@ pub fn apply_bitmap_font_import_options(
     }
 }
 
+fn bind_bitmap_font_format(
+    registry: &mut BitmapFontFormatRegistry,
+    kind: &BitmapFontFormatKind,
+    entry: Arc<BitmapFontFormatEntry>,
+) {
+    let order = registry.formats.entries.get(kind).map_or_else(
+        || {
+            let order = registry.next_format_order;
+            registry.next_format_order += 1;
+            order
+        },
+        |registered| registered.order,
+    );
+    registry.formats = with_kind_map_entry(
+        &registry.formats,
+        kind.clone(),
+        RegisteredBitmapFontFormat { entry, order },
+    );
+}
+
+// flight-lint: allow(conform-extra) D5: immutable source const is retained inside caller-owned registry state
+pub fn bitmap_font_all_formats(
+    registry: &BitmapFontFormatRegistry,
+) -> &[BitmapFontFormatDescriptor] {
+    return &registry.all_formats;
+}
+
 // flight-lint: allow(conform-extra) D5: immutable source const is retained inside caller-owned registry state
 pub fn bm_font_binary_format(registry: &BitmapFontFormatRegistry) -> &BitmapFontFormatDescriptor {
     return built_in_descriptor(registry, BITMAP_FONT_FORMAT_KIND_BM_FONT_BINARY);
@@ -132,11 +159,16 @@ pub fn bm_font_xml_format(registry: &BitmapFontFormatRegistry) -> &BitmapFontFor
     return built_in_descriptor(registry, BITMAP_FONT_FORMAT_KIND_BM_FONT_XML);
 }
 
-// flight-lint: allow(conform-extra) D5: immutable source const is retained inside caller-owned registry state
-pub fn bitmap_font_all_formats(
-    registry: &BitmapFontFormatRegistry,
-) -> &[BitmapFontFormatDescriptor] {
-    return &registry.all_formats;
+fn built_in_descriptor<'a>(
+    registry: &'a BitmapFontFormatRegistry,
+    kind: &str,
+) -> &'a BitmapFontFormatDescriptor {
+    for descriptor in &registry.all_formats {
+        if descriptor.kind == kind {
+            return descriptor;
+        }
+    }
+    unreachable!("the registry constructor retains every built-in descriptor");
 }
 
 // flight-lint: allow(conform-params) D5: caller-owned registry replaces the source hidden singleton
@@ -219,36 +251,4 @@ pub fn unregister_bitmap_font_format(
     kind: &BitmapFontFormatKind,
 ) {
     registry.formats = without_kind_map_entry(&registry.formats, kind.clone());
-}
-
-fn bind_bitmap_font_format(
-    registry: &mut BitmapFontFormatRegistry,
-    kind: &BitmapFontFormatKind,
-    entry: Arc<BitmapFontFormatEntry>,
-) {
-    let order = registry.formats.entries.get(kind).map_or_else(
-        || {
-            let order = registry.next_format_order;
-            registry.next_format_order += 1;
-            order
-        },
-        |registered| registered.order,
-    );
-    registry.formats = with_kind_map_entry(
-        &registry.formats,
-        kind.clone(),
-        RegisteredBitmapFontFormat { entry, order },
-    );
-}
-
-fn built_in_descriptor<'a>(
-    registry: &'a BitmapFontFormatRegistry,
-    kind: &str,
-) -> &'a BitmapFontFormatDescriptor {
-    for descriptor in &registry.all_formats {
-        if descriptor.kind == kind {
-            return descriptor;
-        }
-    }
-    unreachable!("the registry constructor retains every built-in descriptor");
 }

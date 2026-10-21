@@ -13,30 +13,6 @@ struct ProbeResult {
     referenced_pages: Vec<i32>,
 }
 
-pub fn explain_bitmap_font_parse(
-    text: &str,
-    options: Option<&BitmapFontParseOptions>,
-) -> BitmapFontParseExplanation {
-    if let Some(probe) = probe_json(text) {
-        return build_explanation(BitmapFontParseExplanationFormat::Json, &probe, options);
-    }
-    if let Some(probe) = probe_xml(text) {
-        return build_explanation(BitmapFontParseExplanationFormat::Xml, &probe, options);
-    }
-    if let Some(probe) = probe_fnt(text) {
-        return build_explanation(BitmapFontParseExplanationFormat::Fnt, &probe, options);
-    }
-    return BitmapFontParseExplanation {
-        char_count: 0,
-        detected_format: BitmapFontParseExplanationFormat::Unknown,
-        kerning_count: 0,
-        page_count: 0,
-        reason: BitmapFontParseExplanationReason::InvalidData,
-        success: false,
-        unresolved_pages: Vec::new(),
-    };
-}
-
 fn build_explanation(
     detected_format: BitmapFontParseExplanationFormat,
     probe: &ProbeResult,
@@ -74,60 +50,34 @@ fn build_explanation(
     };
 }
 
-fn probe_json(text: &str) -> Option<ProbeResult> {
-    let root = serde_json::from_str::<RawBitmapFontJson>(text).ok()?;
-    let has_common = root.common.as_ref().is_some_and(|common| {
-        let Some(common) = common.as_object() else {
-            return false;
-        };
-        return finite_json_number(common.get("lineHeight"))
-            && finite_json_number(common.get("base"));
-    });
-    let mut char_count = 0;
-    let mut referenced_pages = Vec::new();
-    if let Some(RawChars::Values(chars)) = root.chars {
-        for raw in chars {
-            let Some(raw) = raw.as_object() else {
-                continue;
-            };
-            if finite_json_number(raw.get("id")) {
-                char_count += 1;
-                let page = raw
-                    .get("page")
-                    .and_then(Value::as_f64)
-                    .filter(|value| value.is_finite())
-                    .unwrap_or(0.0) as i32;
-                push_unique(&mut referenced_pages, page);
-            }
-        }
+pub fn explain_bitmap_font_parse(
+    text: &str,
+    options: Option<&BitmapFontParseOptions>,
+) -> BitmapFontParseExplanation {
+    if let Some(probe) = probe_json(text) {
+        return build_explanation(BitmapFontParseExplanationFormat::Json, &probe, options);
     }
-    let page_ids = root
-        .pages
-        .as_ref()
-        .and_then(Value::as_array)
-        .map(|pages| (0..pages.len() as i32).collect())
-        .unwrap_or_default();
-    let mut kerning_count = 0;
-    if let Some(kernings) = root.kernings.as_ref().and_then(Value::as_array) {
-        for raw in kernings {
-            let Some(raw) = raw.as_object() else {
-                continue;
-            };
-            if raw.get("first").is_some_and(Value::is_number)
-                && raw.get("second").is_some_and(Value::is_number)
-                && raw.get("amount").is_some_and(Value::is_number)
-            {
-                kerning_count += 1;
-            }
-        }
+    if let Some(probe) = probe_xml(text) {
+        return build_explanation(BitmapFontParseExplanationFormat::Xml, &probe, options);
     }
-    return Some(ProbeResult {
-        char_count,
-        has_common,
-        kerning_count,
-        page_ids,
-        referenced_pages,
-    });
+    if let Some(probe) = probe_fnt(text) {
+        return build_explanation(BitmapFontParseExplanationFormat::Fnt, &probe, options);
+    }
+    return BitmapFontParseExplanation {
+        char_count: 0,
+        detected_format: BitmapFontParseExplanationFormat::Unknown,
+        kerning_count: 0,
+        page_count: 0,
+        reason: BitmapFontParseExplanationReason::InvalidData,
+        success: false,
+        unresolved_pages: Vec::new(),
+    };
+}
+
+fn finite_json_number(value: Option<&Value>) -> bool {
+    return value
+        .and_then(Value::as_f64)
+        .is_some_and(|number| number.is_finite());
 }
 
 fn probe_fnt(text: &str) -> Option<ProbeResult> {
@@ -188,6 +138,62 @@ fn probe_fnt(text: &str) -> Option<ProbeResult> {
     });
 }
 
+fn probe_json(text: &str) -> Option<ProbeResult> {
+    let root = serde_json::from_str::<RawBitmapFontJson>(text).ok()?;
+    let has_common = root.common.as_ref().is_some_and(|common| {
+        let Some(common) = common.as_object() else {
+            return false;
+        };
+        return finite_json_number(common.get("lineHeight"))
+            && finite_json_number(common.get("base"));
+    });
+    let mut char_count = 0;
+    let mut referenced_pages = Vec::new();
+    if let Some(RawChars::Values(chars)) = root.chars {
+        for raw in chars {
+            let Some(raw) = raw.as_object() else {
+                continue;
+            };
+            if finite_json_number(raw.get("id")) {
+                char_count += 1;
+                let page = raw
+                    .get("page")
+                    .and_then(Value::as_f64)
+                    .filter(|value| value.is_finite())
+                    .unwrap_or(0.0) as i32;
+                push_unique(&mut referenced_pages, page);
+            }
+        }
+    }
+    let page_ids = root
+        .pages
+        .as_ref()
+        .and_then(Value::as_array)
+        .map(|pages| (0..pages.len() as i32).collect())
+        .unwrap_or_default();
+    let mut kerning_count = 0;
+    if let Some(kernings) = root.kernings.as_ref().and_then(Value::as_array) {
+        for raw in kernings {
+            let Some(raw) = raw.as_object() else {
+                continue;
+            };
+            if raw.get("first").is_some_and(Value::is_number)
+                && raw.get("second").is_some_and(Value::is_number)
+                && raw.get("amount").is_some_and(Value::is_number)
+            {
+                kerning_count += 1;
+            }
+        }
+    }
+    return Some(ProbeResult {
+        char_count,
+        has_common,
+        kerning_count,
+        page_ids,
+        referenced_pages,
+    });
+}
+
 fn probe_xml(text: &str) -> Option<ProbeResult> {
     let trimmed = text.trim_start();
     if !trimmed.starts_with('<') || (!trimmed.contains("<font") && !trimmed.contains("<Font")) {
@@ -228,12 +234,6 @@ fn probe_xml(text: &str) -> Option<ProbeResult> {
         page_ids,
         referenced_pages,
     });
-}
-
-fn finite_json_number(value: Option<&Value>) -> bool {
-    return value
-        .and_then(Value::as_f64)
-        .is_some_and(|number| number.is_finite());
 }
 
 fn push_unique(values: &mut Vec<i32>, value: i32) {

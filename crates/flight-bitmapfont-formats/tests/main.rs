@@ -6,3 +6,5 @@ mod bitmap_font_json_test;
 mod bitmap_font_record_test;
 mod bitmap_font_xml_test;
 mod explain_bitmap_font_parse_test;
+mod support;
+mod types_test;

@@ -126,6 +126,38 @@ pub struct BitmapFontFormatRegistry {
     pub(crate) next_format_order: usize,
 }
 
+pub(crate) fn empty_bitmap_font_format_map() -> KindMap<RegisteredBitmapFontFormat> {
+    return KindMap {
+        entries: HashMap::new(),
+        key_order: Vec::new(),
+    };
+}
+
+// flight-lint: allow(conform-extra) D9: exact string table for the schema string union
+pub fn get_bitmap_font_parse_explanation_format_string(
+    value: BitmapFontParseExplanationFormat,
+) -> &'static str {
+    return match value {
+        BitmapFontParseExplanationFormat::Fnt => "fnt",
+        BitmapFontParseExplanationFormat::Json => "json",
+        BitmapFontParseExplanationFormat::Unknown => "unknown",
+        BitmapFontParseExplanationFormat::Xml => "xml",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9: exact string table for the schema string union
+pub fn get_bitmap_font_parse_explanation_reason_string(
+    value: BitmapFontParseExplanationReason,
+) -> &'static str {
+    return match value {
+        BitmapFontParseExplanationReason::InvalidData => "invalid-data",
+        BitmapFontParseExplanationReason::MissingChars => "missing-chars",
+        BitmapFontParseExplanationReason::MissingCommon => "missing-common",
+        BitmapFontParseExplanationReason::Ok => "ok",
+        BitmapFontParseExplanationReason::UnresolvedPage => "unresolved-page",
+    };
+}
+
 impl fmt::Debug for BitmapFontParseOptions {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         return formatter
@@ -159,36 +191,4 @@ impl fmt::Debug for BitmapFontFormatRegistry {
             .field("kinds", &self.formats.key_order)
             .finish();
     }
-}
-
-// flight-lint: allow(conform-extra) D9: exact string table for the schema string union
-pub fn get_bitmap_font_parse_explanation_format_string(
-    value: BitmapFontParseExplanationFormat,
-) -> &'static str {
-    return match value {
-        BitmapFontParseExplanationFormat::Fnt => "fnt",
-        BitmapFontParseExplanationFormat::Json => "json",
-        BitmapFontParseExplanationFormat::Unknown => "unknown",
-        BitmapFontParseExplanationFormat::Xml => "xml",
-    };
-}
-
-// flight-lint: allow(conform-extra) D9: exact string table for the schema string union
-pub fn get_bitmap_font_parse_explanation_reason_string(
-    value: BitmapFontParseExplanationReason,
-) -> &'static str {
-    return match value {
-        BitmapFontParseExplanationReason::InvalidData => "invalid-data",
-        BitmapFontParseExplanationReason::MissingChars => "missing-chars",
-        BitmapFontParseExplanationReason::MissingCommon => "missing-common",
-        BitmapFontParseExplanationReason::Ok => "ok",
-        BitmapFontParseExplanationReason::UnresolvedPage => "unresolved-page",
-    };
-}
-
-pub(crate) fn empty_bitmap_font_format_map() -> KindMap<RegisteredBitmapFontFormat> {
-    return KindMap {
-        entries: HashMap::new(),
-        key_order: Vec::new(),
-    };
 }
