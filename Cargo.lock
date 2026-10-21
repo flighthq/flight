@@ -274,6 +274,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-platform"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-hostcapability",
+]
+
+[[package]]
 name = "flight-power"
 version = "0.6.0"
 dependencies = [
