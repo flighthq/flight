@@ -24,14 +24,14 @@ pub fn linear_rgb_to_oklab(out: &mut [f32; 3], r: f32, g: f32, b: f32) {
 /// Converts Oklab [L, a, b] back to unclamped linear sRGB, writing [r, g, b] into `out`.
 /// Negative and greater-than-one channels are preserved so this remains a true inverse; callers that
 /// require the displayable sRGB gamut can compose the result with `clamp_linear_rgb`. Alias-safe.
-pub fn oklab_to_linear_rgb(out: &mut [f32; 3], l_val: f32, a: f32, b: f32) {
-    let lc = l_val + 0.3963377774 * a + 0.2158037573 * b;
-    let mc = l_val - 0.1055613458 * a - 0.0638541728 * b;
-    let sc = l_val - 0.0894841775 * a - 1.291485548 * b;
-    let l = lc * lc * lc;
+pub fn oklab_to_linear_rgb(out: &mut [f32; 3], l: f32, a: f32, b: f32) {
+    let lc = l + 0.3963377774 * a + 0.2158037573 * b;
+    let mc = l - 0.1055613458 * a - 0.0638541728 * b;
+    let sc = l - 0.0894841775 * a - 1.291485548 * b;
+    let l_cube = lc * lc * lc;
     let m = mc * mc * mc;
     let s = sc * sc * sc;
-    out[0] = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
-    out[1] = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
-    out[2] = -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s;
+    out[0] = 4.0767416621 * l_cube - 3.3077115913 * m + 0.2309699292 * s;
+    out[1] = -1.2684380046 * l_cube + 2.6097574011 * m - 0.3413193965 * s;
+    out[2] = -0.0041960863 * l_cube - 0.7034186147 * m + 1.707614701 * s;
 }
