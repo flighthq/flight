@@ -40,9 +40,10 @@ fn resolve(nodes: Vec<LayoutNode>, intrinsic_sizes: &[f32], width: f32, height: 
     return out;
 }
 
+// TS `toBeCloseTo(expected)` (default 2 digits): abs diff < 0.5e-2.
 fn assert_approx(actual: f32, expected: f32, label: &str) {
     assert!(
-        (actual - expected).abs() < 0.01,
+        (actual - expected).abs() < 0.005,
         "{}: expected {}, got {}",
         label,
         expected,
@@ -87,6 +88,8 @@ mod register_flex_layout_resolver {
         );
         assert_eq!(out[4], 0.0);
         assert_eq!(out[5], 0.0);
+        // TS requires exactly 73.33333587646484 (the f64 growth rounded once into the Float32Array);
+        // f32 arithmetic lands one ulp below. Held pending a Principal D1 precision ruling.
         assert_approx(out[6], 73.3333, "width1");
         assert_eq!(out[7], 10.0);
         assert_approx(out[8], 73.3333, "x2");

@@ -53,13 +53,7 @@ mod register_anchor_layout_resolver {
                 211.0,
                 127.0,
             );
-            assert!(
-                (out[4] - x).abs() < 0.001 && (out[5] - y).abs() < 0.001,
-                "align {}: expected ({}, {}), got ({}, {})",
-                label, x, y, out[4], out[5],
-            );
-            assert!((out[6] - 37.0).abs() < 0.001);
-            assert!((out[7] - 19.0).abs() < 0.001);
+            assert_eq!(out[4..], [x, y, 37.0, 19.0], "align {}", label);
         }
     }
 
