@@ -110,8 +110,13 @@ mod create_bitmap_font_guard_state {
     fn creates_isolated_caller_owned_guard_slots() {
         let left = create_bitmap_font_guard_state();
         let right = create_bitmap_font_guard_state();
-        set_bitmap_font_guard(&left, Some(Arc::new(|_, _, _| {})));
+        let guard: BitmapFontGuard = Arc::new(|_, _, _| {});
+        set_bitmap_font_guard(&left, Some(guard.clone()));
         assert!(left.read().unwrap().guard.is_some());
+        assert!(Arc::ptr_eq(
+            left.read().unwrap().guard.as_ref().unwrap(),
+            &guard
+        ));
         assert!(right.read().unwrap().guard.is_none());
     }
 }
@@ -235,6 +240,7 @@ mod get_bitmap_font_page {
             &get_bitmap_font_page(&font, Some(1)).unwrap(),
             &second
         ));
+        assert!(get_bitmap_font_page(&font, Some(-1)).is_none());
         assert!(get_bitmap_font_page(&font, Some(2)).is_none());
     }
 }

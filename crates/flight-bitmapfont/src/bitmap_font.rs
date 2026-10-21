@@ -97,9 +97,13 @@ pub fn get_bitmap_font_metrics(font: &Ref<BitmapFont>) -> Arc<GlyphMetrics> {
 
 pub fn get_bitmap_font_page(
     font: &Ref<BitmapFont>,
-    page: Option<usize>,
+    page: Option<i32>,
 ) -> Option<Ref<TextureAtlas>> {
-    return font.read().unwrap().pages.get(page.unwrap_or(0)).cloned();
+    let page = page.unwrap_or(0);
+    if page < 0 {
+        return None;
+    }
+    return font.read().unwrap().pages.get(page as usize).cloned();
 }
 
 pub fn get_bitmap_font_pages(font: &Ref<BitmapFont>) -> Vec<Ref<TextureAtlas>> {

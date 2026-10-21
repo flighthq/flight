@@ -63,6 +63,27 @@ mod create_glyph_source_from_bitmap_font {
         ));
         assert!((glyph_source.get_glyph_atlas_image)(Some(2)).is_none());
     }
+
+    #[test]
+    fn retains_the_font_and_installs_stable_callback_identities() {
+        let font = create_bitmap_font(&guard_state(), &font_data());
+        let weak_font = Arc::downgrade(&font);
+        let source = create_glyph_source_from_bitmap_font(&font);
+        let first_entry_callback = source.read().unwrap().get_glyph_entry.clone();
+        let first_metrics_callback = source.read().unwrap().get_glyph_metrics.clone();
+        assert!(Arc::ptr_eq(
+            &first_entry_callback,
+            &source.read().unwrap().get_glyph_entry
+        ));
+        assert!(Arc::ptr_eq(
+            &first_metrics_callback,
+            &source.read().unwrap().get_glyph_metrics
+        ));
+        drop(font);
+        assert!(weak_font.upgrade().is_some());
+        assert!((first_entry_callback)(65).is_some());
+        assert_eq!((first_metrics_callback)().ascent, 8.0);
+    }
 }
 
 mod initialize_glyph_source_from_bitmap_font {

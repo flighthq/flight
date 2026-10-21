@@ -53,7 +53,7 @@ pub trait BitmapFontMethods {
     fn get_glyph(&self, codepoint: u32) -> Option<Ref<GlyphEntry>>;
     fn get_kerning(&self, left: u32, right: u32) -> f32;
     fn get_metrics(&self) -> std::sync::Arc<GlyphMetrics>;
-    fn get_page(&self, page: Option<usize>) -> Option<Ref<TextureAtlas>>;
+    fn get_page(&self, page: Option<i32>) -> Option<Ref<TextureAtlas>>;
     fn get_pages(&self) -> Vec<Ref<TextureAtlas>>;
     fn has_glyph(&self, codepoint: u32) -> bool;
     fn summarize(&self) -> BitmapFontSummary;
@@ -80,7 +80,7 @@ impl BitmapFontMethods for Ref<BitmapFont> {
         return get_bitmap_font_metrics(self);
     }
 
-    fn get_page(&self, page: Option<usize>) -> Option<Ref<TextureAtlas>> {
+    fn get_page(&self, page: Option<i32>) -> Option<Ref<TextureAtlas>> {
         return get_bitmap_font_page(self, page);
     }
 
