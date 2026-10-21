@@ -3,4 +3,5 @@
 
 pub use super::shortcut::*;
 pub use super::shortcut_explicit_dependency::*;
+pub use super::shortcut_key_name::*;
 pub use super::types::*;

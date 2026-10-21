@@ -160,17 +160,218 @@ pub enum ShortcutKeyName {
     ScrollLock,
 }
 
-// Rust has no subtyping relation between closed enums. These source aliases keep their public
-// names while the single canonical enum carries the bounded key vocabulary.
-pub type ShortcutDigitKeyName = ShortcutKeyName;
-pub type ShortcutEditingKeyName = ShortcutKeyName;
-pub type ShortcutFunctionKeyName = ShortcutKeyName;
-pub type ShortcutLetterKeyName = ShortcutKeyName;
-pub type ShortcutLockKeyName = ShortcutKeyName;
-pub type ShortcutMediaKeyName = ShortcutKeyName;
-pub type ShortcutNavigationKeyName = ShortcutKeyName;
-pub type ShortcutNumpadKeyName = ShortcutKeyName;
-pub type ShortcutPunctuationKeyName = ShortcutKeyName;
+/// Decimal digit subset of `ShortcutKeyName`.
+///
+/// ```compile_fail
+/// use flight_shortcut::ShortcutDigitKeyName;
+///
+/// let _ = ShortcutDigitKeyName::A;
+/// ```
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ShortcutDigitKeyName {
+    Digit0,
+    Digit1,
+    Digit2,
+    Digit3,
+    Digit4,
+    Digit5,
+    Digit6,
+    Digit7,
+    Digit8,
+    Digit9,
+}
+
+/// Editing and text-control subset of `ShortcutKeyName`.
+///
+/// ```compile_fail
+/// use flight_shortcut::ShortcutEditingKeyName;
+///
+/// let _ = ShortcutEditingKeyName::Digit0;
+/// ```
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ShortcutEditingKeyName {
+    Backspace,
+    Delete,
+    Escape,
+    Insert,
+    Return,
+    Space,
+    Tab,
+}
+
+/// Function-key subset of `ShortcutKeyName`.
+///
+/// ```compile_fail
+/// use flight_shortcut::ShortcutFunctionKeyName;
+///
+/// let _ = ShortcutFunctionKeyName::A;
+/// ```
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ShortcutFunctionKeyName {
+    F1,
+    F2,
+    F3,
+    F4,
+    F5,
+    F6,
+    F7,
+    F8,
+    F9,
+    F10,
+    F11,
+    F12,
+    F13,
+    F14,
+    F15,
+    F16,
+    F17,
+    F18,
+    F19,
+    F20,
+    F21,
+    F22,
+    F23,
+    F24,
+}
+
+/// Letter subset of `ShortcutKeyName`.
+///
+/// ```compile_fail
+/// use flight_shortcut::ShortcutLetterKeyName;
+///
+/// let _ = ShortcutLetterKeyName::F1;
+/// ```
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ShortcutLetterKeyName {
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+    G,
+    H,
+    I,
+    J,
+    K,
+    L,
+    M,
+    N,
+    O,
+    P,
+    Q,
+    R,
+    S,
+    T,
+    U,
+    V,
+    W,
+    X,
+    Y,
+    Z,
+}
+
+/// Lock and print-screen subset of `ShortcutKeyName`.
+///
+/// ```compile_fail
+/// use flight_shortcut::ShortcutLockKeyName;
+///
+/// let _ = ShortcutLockKeyName::A;
+/// ```
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ShortcutLockKeyName {
+    CapsLock,
+    NumLock,
+    PrintScreen,
+    ScrollLock,
+}
+
+/// Media-control subset of `ShortcutKeyName`.
+///
+/// ```compile_fail
+/// use flight_shortcut::ShortcutMediaKeyName;
+///
+/// let _ = ShortcutMediaKeyName::A;
+/// ```
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ShortcutMediaKeyName {
+    MediaNextTrack,
+    MediaPlayPause,
+    MediaPreviousTrack,
+    MediaStop,
+    VolumeDown,
+    VolumeMute,
+    VolumeUp,
+}
+
+/// Navigation subset of `ShortcutKeyName`.
+///
+/// ```compile_fail
+/// use flight_shortcut::ShortcutNavigationKeyName;
+///
+/// let _ = ShortcutNavigationKeyName::A;
+/// ```
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ShortcutNavigationKeyName {
+    ArrowDown,
+    ArrowLeft,
+    ArrowRight,
+    ArrowUp,
+    End,
+    Home,
+    PageDown,
+    PageUp,
+}
+
+/// Numeric-keypad subset of `ShortcutKeyName`.
+///
+/// ```compile_fail
+/// use flight_shortcut::ShortcutNumpadKeyName;
+///
+/// let _ = ShortcutNumpadKeyName::Digit0;
+/// ```
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ShortcutNumpadKeyName {
+    Numpad0,
+    Numpad1,
+    Numpad2,
+    Numpad3,
+    Numpad4,
+    Numpad5,
+    Numpad6,
+    Numpad7,
+    Numpad8,
+    Numpad9,
+    NumpadAdd,
+    NumpadDecimal,
+    NumpadDivide,
+    NumpadEnter,
+    NumpadMultiply,
+    NumpadSubtract,
+}
+
+/// Punctuation subset of `ShortcutKeyName`.
+///
+/// ```compile_fail
+/// use flight_shortcut::ShortcutPunctuationKeyName;
+///
+/// let _ = ShortcutPunctuationKeyName::A;
+/// ```
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ShortcutPunctuationKeyName {
+    Backquote,
+    Backslash,
+    BracketLeft,
+    BracketRight,
+    Comma,
+    Equal,
+    Minus,
+    Period,
+    Plus,
+    Quote,
+    Semicolon,
+    Slash,
+}
 
 /// Caller-owned parse output (TS `ParsedAccelerator`). An empty `key` is the exact fresh-value
 /// sentinel; every successful parse writes a string from the `ShortcutKeyName` table.
