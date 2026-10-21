@@ -64,6 +64,12 @@ pub const ENTRIES: &[Entry] = &[
 const PRIMITIVES: &[&str] = &[
     "f32", "f64", "bool", "i8", "i16", "i32", "u8", "u16", "u32", "usize", "char", "str",
 ];
+const NUMERIC_TYPED_ARRAY_ELEMENTS: &[&str] =
+    &["f32", "f64", "i8", "i16", "i32", "u8", "u16", "u32"];
+const TYPED_ARRAY_ALIASES: &[&str] = &[
+    "Float32Array", "Float64Array", "Uint8Array", "Uint16Array", "Uint32Array", "Int8Array", "Int16Array",
+    "Int32Array",
+];
 const RESTRICTED_INTS: &[&str] = &["i64", "u64", "i128", "u128", "isize"];
 const LEAF_NAMES: &[&str] = &[
     "String", "Kind", "AnySlot", "Self", "Float32Array", "Float64Array", "Uint8Array", "Uint16Array",
@@ -148,6 +154,14 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
                 return;
             };
             let name = last.ident.to_string();
+            if name == "Box"
+                && let PathArguments::AngleBracketed(arguments) = &last.arguments
+                && arguments.args.len() == 1
+                && let Some(GenericArgument::Type(inner)) = arguments.args.first()
+                && is_owned_numeric_array(inner)
+            {
+                return;
+            }
             if name == "Arc"
                 && let PathArguments::AngleBracketed(arguments) = &last.arguments
                 && arguments.args.len() == 1
@@ -184,6 +198,25 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
         }
         _ => out.push(String::from("unsupported type form")),
     }
+}
+
+fn is_owned_numeric_array(ty: &Type) -> bool {
+    let element_name = match ty {
+        Type::Slice(slice) => match slice.elem.as_ref() {
+            Type::Path(path) => path.path.segments.last().map(|segment| segment.ident.to_string()),
+            _ => None,
+        },
+        Type::Path(path) => path.path.segments.last().map(|segment| segment.ident.to_string()),
+        _ => None,
+    };
+    let Some(element_name) = element_name else {
+        return false;
+    };
+    return match ty {
+        Type::Slice(_) => NUMERIC_TYPED_ARRAY_ELEMENTS.contains(&element_name.as_str()),
+        Type::Path(_) => TYPED_ARRAY_ALIASES.contains(&element_name.as_str()),
+        _ => false,
+    };
 }
 
 fn walk_callback(
@@ -304,6 +337,17 @@ mod tests {
         ] {
             assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
         }
+    }
+
+    #[test]
+    fn accepts_only_owned_numeric_array_boxes() {
+        for ty in ["Box<[f32]>", "Box<Float32Array>", "Box<Uint16Array>"] {
+            assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
+        }
+        for ty in ["Box<[Vector2]>", "Box<Vector2>", "Box<dyn Fn(f32) -> f32>", "Box<dyn Any>"] {
+            assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
+        }
+        assert_eq!(problems("Box<dyn Any>").len(), 2);
     }
 
     #[test]
