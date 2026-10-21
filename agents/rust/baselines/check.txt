@@ -1,13 +1,5 @@
 # cargo flight-lint check baseline
 # Regenerate with --write-baseline; entries are rule<TAB>file<TAB>message.
-contract-vocabulary	crates/flight-animation/src/animation_clip.rs	`fn create_animation_clip_rc`: `Rc` is not in the vocabulary
-contract-vocabulary	crates/flight-animation/src/animation_root_motion.rs	`fn create_animation_root_motion_extractor`: `Rc` is not in the vocabulary
-contract-vocabulary	crates/flight-animation/src/animation_root_motion.rs	`fn initialize_animation_root_motion_extractor`: `Rc` is not in the vocabulary
-contract-vocabulary	crates/flight-animation/src/types.rs	`struct AnimationPlayer`: `Rc` is not in the vocabulary
-contract-vocabulary	crates/flight-animation/src/types.rs	`struct AnimationRootMotionExtractor`: `Rc` is not in the vocabulary
-contract-vocabulary	crates/flight-animation/src/types.rs	`type AnimationBlendTreeRef`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
-contract-vocabulary	crates/flight-animation/src/types.rs	`type AnimationPlayerRef`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
-contract-vocabulary	crates/flight-animation/src/types.rs	`type AnimationStateMachineRef`: `Rc` is not in the vocabulary; `RefCell` is not in the vocabulary
 contract-vocabulary	crates/flight-entity/src/binding.rs	`fn attach_entity_binding`: `Box` is not in the vocabulary; `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-entity/src/binding.rs	`fn get_entity_binding`: `dyn Trait` is not in the vocabulary (use AnySlot or Callback)
 contract-vocabulary	crates/flight-log/src/log.rs	`enum LogValue`: `i64` exceeds TS number precision (open vocabulary row)
@@ -484,31 +476,6 @@ f64	crates/flight-statechart/src/statechart.rs	`fn compare_statechart_condition`
 f64	crates/flight-statechart/src/statechart.rs	`fn initialize_statechart_instance` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn set_statechart_number_input` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn set_statechart_region_duration` uses f64 without an `allow(f64) <reason>` declaration
-file-structure	crates/flight-animation/src/types.rs	fn appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
-file-structure	crates/flight-animation/src/types.rs	struct appears after a later section
 file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
 file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
 file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
@@ -659,32 +626,6 @@ file-structure	crates/flight-tween/src/types.rs	struct appears after a later sec
 file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
 file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
 file-structure	crates/flight-tween/src/types.rs	struct appears after a later section
-fn-order	crates/flight-animation/src/animation_blend.rs	`create_animation_sample_accumulator` should come before `blend_animation_samples`
-fn-order	crates/flight-animation/src/animation_blend.rs	`initialize_animation_sample_accumulator` should come before `finish_animation_sample`
-fn-order	crates/flight-animation/src/animation_blend_tree.rs	`assert_compatible_animation_blend_tree_channels` should come before `set_animation_blend_tree_input_weight`
-fn-order	crates/flight-animation/src/animation_blend_tree.rs	`create_animation_blend_tree_ref` should come before `write_animation_blend_tree_identity`
-fn-order	crates/flight-animation/src/animation_blend_tree.rs	`create_animation_blend_tree` should come before `advance_animation_blend_tree`
-fn-order	crates/flight-animation/src/animation_clip.rs	`compute_animation_clip_events_duration` should come before `compute_channels_duration`
-fn-order	crates/flight-animation/src/animation_clip.rs	`create_animation_channel` should come before `clone_animation_clip`
-fn-order	crates/flight-animation/src/animation_clip.rs	`create_animation_clip_rc` should come before `sample_animation_clip`
-fn-order	crates/flight-animation/src/animation_clip.rs	`initialize_animation_channel` should come before `get_animation_clip_duration`
-fn-order	crates/flight-animation/src/animation_crossfade.rs	`create_animation_crossfade_channels` should come before `sample_animation_crossfade`
-fn-order	crates/flight-animation/src/animation_crossfade.rs	`create_animation_crossfade` should come before `advance_animation_crossfade`
-fn-order	crates/flight-animation/src/animation_layer_stack.rs	`assert_compatible_animation_layer_channels` should come before `set_animation_layer_weight`
-fn-order	crates/flight-animation/src/animation_layer_stack.rs	`create_animation_blend_tree_layer` should come before `advance_animation_layer_stack`
-fn-order	crates/flight-animation/src/animation_layer_stack.rs	`create_animation_layer` should come before `copy_animation_layer_sample`
-fn-order	crates/flight-animation/src/animation_player.rs	`consume_animation_player_loop` should come before `stop_animation_player`
-fn-order	crates/flight-animation/src/animation_player.rs	`create_animation_player` should come before `clone_animation_player`
-fn-order	crates/flight-animation/src/animation_player.rs	`emit_animation_player_events` should come before `emit_animation_player_finished`
-fn-order	crates/flight-animation/src/animation_player.rs	`initialize_animation_player` should come before `get_animation_player_normalized_time`
-fn-order	crates/flight-animation/src/animation_root_motion.rs	`compute_animation_root_motion_at_from` should come before `multiply_animation_root_motion_quaternion`
-fn-order	crates/flight-animation/src/animation_root_motion.rs	`initialize_animation_root_motion_extractor` should come before `extract_animation_root_motion`
-fn-order	crates/flight-animation/src/animation_state_machine.rs	`create_animation_state_machine_channels` should come before `assert_compatible_animation_state_machine_channels`
-fn-order	crates/flight-animation/src/animation_state_machine.rs	`create_animation_state_machine_ref` should come before `transition_animation_state_machine`
-fn-order	crates/flight-animation/src/animation_state_machine.rs	`create_animation_state_machine` should come before `advance_animation_state_machine`
-fn-order	crates/flight-animation/src/animation_state_machine.rs	`initialize_animation_state_machine` should come before `get_animation_state_machine_current_state`
-fn-order	crates/flight-animation/src/animation_track.rs	`copy_keyframe_value` should come before `validate_animation_track`
-fn-order	crates/flight-animation/src/animation_track.rs	`create_animation_track` should come before `clone_animation_track`
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_index_count` should come before `get_index_value`
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_index_value` should come before `promote_indices`
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_vertex_count_from_layout` should come before `set_mesh_geometry_skin_bind_pose`
@@ -815,34 +756,15 @@ hashmap-iteration	crates/flight-tween/src/update_tweens.rs	`fn update_tweens` it
 hidden-state	crates/flight-entity/src/guards.rs	thread_local `GUARDS_ENABLED` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-entity/src/guards.rs	thread_local `WRITE_GUARD` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-tween/src/tween_manager.rs	thread_local `DEFAULT_MANAGER_CELL` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-missing-test-file	crates/flight-animation/src/types.rs	no test file (expected crates/flight-animation/tests/types_test.rs)
 missing-test-file	crates/flight-particles/src/types.rs	no test file (expected crates/flight-particles/tests/types_test.rs)
 missing-test-file	crates/flight-statechart/src/types.rs	no test file (expected crates/flight-statechart/tests/types_test.rs)
 missing-test-file	crates/flight-tween/src/internal.rs	no test file (expected crates/flight-tween/tests/internal_test.rs)
 missing-test-file	crates/flight-tween/src/types.rs	no test file (expected crates/flight-tween/tests/types_test.rs)
-sugar-delegates	crates/flight-animation/src/types.rs	`impl From for StateRef::from` does not call a free function; impl sugar must delegate to the free-function contract
-sugar-delegates	crates/flight-animation/src/types.rs	`impl From for StateRef::from` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-log/src/log.rs	`impl From for LogDataOrProvider::from` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-log/src/log.rs	`impl From for LogDataOrProvider::from` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-log/src/log.rs	`impl From for LogDataOrProvider::from` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-textsegment/src/types.rs	`impl PartialEq for HostTextSegmenterCapability::eq` does not call a free function; impl sugar must delegate to the free-function contract
 sugar-delegates	crates/flight-tween/src/types.rs	`impl PartialEq for Tween::eq` does not call a free function; impl sugar must delegate to the free-function contract
-test-coverage	crates/flight-animation/src/animation_blend.rs	`initialize_animation_sample_accumulator` is not tested
-test-coverage	crates/flight-animation/src/animation_blend_tree.rs	`create_animation_blend_tree_ref` is not tested
-test-coverage	crates/flight-animation/src/animation_blend_tree.rs	`initialize_animation_blend_tree_input` is not tested
-test-coverage	crates/flight-animation/src/animation_blend_tree.rs	`initialize_animation_blend_tree` is not tested
-test-coverage	crates/flight-animation/src/animation_clip.rs	`create_animation_clip_rc` is not tested
-test-coverage	crates/flight-animation/src/animation_clip.rs	`initialize_animation_channel` is not tested
-test-coverage	crates/flight-animation/src/animation_clip.rs	`initialize_animation_clip_event` is not tested
-test-coverage	crates/flight-animation/src/animation_clip.rs	`initialize_animation_clip` is not tested
-test-coverage	crates/flight-animation/src/animation_crossfade.rs	`initialize_animation_crossfade` is not tested
-test-coverage	crates/flight-animation/src/animation_layer_stack.rs	`initialize_animation_layer_stack` is not tested
-test-coverage	crates/flight-animation/src/animation_player.rs	`initialize_animation_player` is not tested
-test-coverage	crates/flight-animation/src/animation_root_motion.rs	`initialize_animation_root_motion_extractor` is not tested
-test-coverage	crates/flight-animation/src/animation_state_machine.rs	`create_animation_state_machine_ref` is not tested
-test-coverage	crates/flight-animation/src/animation_state_machine.rs	`initialize_animation_state_machine_state` is not tested
-test-coverage	crates/flight-animation/src/animation_state_machine.rs	`initialize_animation_state_machine` is not tested
-test-coverage	crates/flight-animation/src/animation_track.rs	`initialize_animation_track` is not tested
 test-coverage	crates/flight-collision/src/collision_support2d.rs	`register_collision_pair_test2d` is not tested
 test-coverage	crates/flight-collision/src/collision_support2d.rs	`register_collision_support2d` is not tested
 test-coverage	crates/flight-entity/src/binding.rs	`get_entity_binding_as` is not tested
@@ -862,91 +784,6 @@ test-coverage	crates/flight-mesh/src/mesh_geometry_attributes.rs	`vertices_as_by
 test-coverage	crates/flight-mesh/src/vertex_format.rs	`is_float32_format` is not tested
 test-coverage	crates/flight-path/src/path.rs	`create_path_mesh` is not tested
 test-coverage	crates/flight-path/src/path.rs	`create_stroke_style` is not tested
-test-default-call	crates/flight-animation/tests/animation_advance_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_blend_tree_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_blend_tree_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_blend_tree_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_blend_tree_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_clip_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_clip_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_clip_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_crossfade_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_crossfade_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_crossfade_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_crossfade_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_crossfade_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_crossfade_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_crossfade_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_crossfade_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_crossfade_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_crossfade_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_layer_stack_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_layer_stack_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_layer_stack_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_layer_stack_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_layer_stack_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_layer_stack_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_layer_stack_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_layer_stack_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_player_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_root_motion_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_root_motion_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_root_motion_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_root_motion_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_root_motion_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_root_motion_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_state_machine_advance_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_state_machine_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_state_machine_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-animation/tests/animation_track_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
@@ -1099,15 +936,6 @@ test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::
 test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-tween/tests/update_tweens_test.rs	test calls `::default()` — use the `create_*` function
-test-module-coverage	crates/flight-animation/tests/animation_blend_tree_test.rs	`create_animation_blend_tree_ref` has no test module (expected `mod create_animation_blend_tree_ref { ... }`)
-test-module-coverage	crates/flight-animation/tests/animation_clip_test.rs	`create_animation_clip_rc` has no test module (expected `mod create_animation_clip_rc { ... }`)
-test-module-coverage	crates/flight-animation/tests/animation_player_test.rs	`create_animation_player` has no test module (expected `mod create_animation_player { ... }`)
-test-module-coverage	crates/flight-animation/tests/animation_player_test.rs	`enable_animation_player_signals` has no test module (expected `mod enable_animation_player_signals { ... }`)
-test-module-coverage	crates/flight-animation/tests/animation_player_test.rs	`initialize_animation_player` has no test module (expected `mod initialize_animation_player { ... }`)
-test-module-coverage	crates/flight-animation/tests/animation_player_test.rs	`play_animation_player` has no test module (expected `mod play_animation_player { ... }`)
-test-module-coverage	crates/flight-animation/tests/animation_player_test.rs	`seek_animation_player` has no test module (expected `mod seek_animation_player { ... }`)
-test-module-coverage	crates/flight-animation/tests/animation_player_test.rs	`stop_animation_player` has no test module (expected `mod stop_animation_player { ... }`)
-test-module-coverage	crates/flight-animation/tests/animation_state_machine_test.rs	`create_animation_state_machine_ref` has no test module (expected `mod create_animation_state_machine_ref { ... }`)
 test-module-coverage	crates/flight-collision/tests/collision_support2d_test.rs	`register_collision_pair_test2d` has no test module (expected `mod register_collision_pair_test2d { ... }`)
 test-module-coverage	crates/flight-collision/tests/collision_support2d_test.rs	`register_collision_support2d` has no test module (expected `mod register_collision_support2d { ... }`)
 test-module-coverage	crates/flight-entity/tests/clone_test.rs	`clone_entity` has no test module (expected `mod clone_entity { ... }`)

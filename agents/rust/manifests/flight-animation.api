@@ -1,0 +1,335 @@
+src/animation_advance.rs: pub fn advance_animation_players(players: &[AnimationPlayerRef], dt: f32, advanced: &mut Vec<AnimationPlayerRef>,)
+src/animation_blend.rs: pub fn accumulate_animation_sample(accumulator: &mut AnimationSampleAccumulator, sample: &[f32], weight: f32,)
+src/animation_blend.rs: pub fn add_animation_sample(out: &mut [f32], base: &[f32], delta: &[f32], weight: f32, quaternion: bool,)
+src/animation_blend.rs: pub fn blend_animation_samples(out: &mut [f32], a: &[f32], b: &[f32], alpha: f32, quaternion: bool,)
+src/animation_blend.rs: pub fn create_animation_sample_accumulator(components: usize, quaternion: bool,) -> AnimationSampleAccumulator
+src/animation_blend.rs: pub fn finish_animation_sample(out: &mut [f32], accumulator: &AnimationSampleAccumulator,) -> bool
+src/animation_blend.rs: pub fn initialize_animation_sample_accumulator(out: &mut AnimationSampleAccumulator, width: usize, quaternion: bool,)
+src/animation_blend.rs: pub fn reset_animation_sample_accumulator(accumulator: &mut AnimationSampleAccumulator)
+src/animation_blend_tree.rs: pub fn advance_animation_blend_tree(tree: &AnimationBlendTree, dt: f32)
+src/animation_blend_tree.rs: pub fn create_animation_blend_tree(inputs: &[AnimationBlendTreeInput]) -> AnimationBlendTree
+src/animation_blend_tree.rs: pub fn create_animation_blend_tree_input(player: AnimationPlayerRef, weight: f32, additive: bool,) -> AnimationBlendTreeInput
+src/animation_blend_tree.rs: pub fn create_animation_blend_tree_ref(inputs: &[AnimationBlendTreeInput]) -> AnimationBlendTreeRef
+src/animation_blend_tree.rs: pub fn initialize_animation_blend_tree(out: &mut AnimationBlendTree, inputs: &[AnimationBlendTreeInput],)
+src/animation_blend_tree.rs: pub fn initialize_animation_blend_tree_input(out: &mut AnimationBlendTreeInput, player: AnimationPlayerRef, weight: f32, additive: bool,)
+src/animation_blend_tree.rs: pub fn sample_animation_blend_tree(out: &mut [f32], tree: &mut AnimationBlendTree, visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),)
+src/animation_blend_tree.rs: pub fn sample_animation_blend_tree_channel(out: &mut [f32], tree: &mut AnimationBlendTree, channel_index: usize,) -> bool
+src/animation_blend_tree.rs: pub fn set_animation_blend_tree_input_weight(tree: &mut AnimationBlendTree, input_index: usize, weight: f32,) -> bool
+src/animation_clip.rs: pub fn clone_animation_clip(clip: &AnimationClip) -> AnimationClip
+src/animation_clip.rs: pub fn create_animation_channel(track: AnimationTrack, target_ref: TargetRef) -> AnimationChannel
+src/animation_clip.rs: pub fn create_animation_clip(channels: Vec<AnimationChannel>, duration: Option<f32>, events: &[AnimationClipEvent],) -> AnimationClip
+src/animation_clip.rs: pub fn create_animation_clip_event(time: f32, name: &str, payload: Payload) -> AnimationClipEvent
+src/animation_clip.rs: pub fn get_animation_clip_duration(clip: &AnimationClip) -> f32
+src/animation_clip.rs: pub fn initialize_animation_channel(out: &mut AnimationChannel, track: AnimationTrack, target_ref: TargetRef,)
+src/animation_clip.rs: pub fn initialize_animation_clip(out: &mut AnimationClip, channels: Vec<AnimationChannel>, duration: Option<f32>, events: &[AnimationClipEvent],)
+src/animation_clip.rs: pub fn initialize_animation_clip_event(out: &mut AnimationClipEvent, time: f32, name: &str, payload: Payload,)
+src/animation_clip.rs: pub fn sample_animation_clip(out: &mut [f32], clip: &AnimationClip, time: f32, visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),)
+src/animation_crossfade.rs: pub fn advance_animation_crossfade(state: &mut AnimationCrossfade, dt: f32)
+src/animation_crossfade.rs: pub fn create_animation_crossfade(from: AnimationPlayerRef, to: AnimationPlayerRef, duration: f32, opts: Option<&AnimationCrossfadeOptions>,) -> AnimationCrossfade
+src/animation_crossfade.rs: pub fn initialize_animation_crossfade(out: &mut AnimationCrossfade, from: AnimationPlayerRef, to: AnimationPlayerRef, duration: f32, opts: Option<&AnimationCrossfadeOptions>,)
+src/animation_crossfade.rs: pub fn is_animation_crossfade_complete(state: &AnimationCrossfade) -> bool
+src/animation_crossfade.rs: pub fn sample_animation_crossfade(out: &mut [f32], state: &mut AnimationCrossfade, visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),)
+src/animation_layer_stack.rs: pub fn advance_animation_layer_stack(stack: &mut AnimationLayerStack, dt: f32)
+src/animation_layer_stack.rs: pub fn create_animation_blend_tree_layer(blend_tree: AnimationBlendTreeRef, options: Option<&AnimationLayerOptions>,) -> AnimationLayer
+src/animation_layer_stack.rs: pub fn create_animation_layer_stack(layers: &[AnimationLayer]) -> AnimationLayerStack
+src/animation_layer_stack.rs: pub fn create_animation_state_machine_layer(state_machine: AnimationStateMachineRef, options: Option<&AnimationLayerOptions>,) -> AnimationLayer
+src/animation_layer_stack.rs: pub fn initialize_animation_layer_stack(out: &mut AnimationLayerStack, layers: &[AnimationLayer],)
+src/animation_layer_stack.rs: pub fn sample_animation_layer_stack(out: &mut [f32], stack: &mut AnimationLayerStack, visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),)
+src/animation_layer_stack.rs: pub fn sample_animation_layer_stack_channel(out: &mut [f32], stack: &mut AnimationLayerStack, channel_index: usize,) -> bool
+src/animation_layer_stack.rs: pub fn set_animation_layer_weight(stack: &mut AnimationLayerStack, layer_index: usize, weight: f32,) -> bool
+src/animation_player.rs: pub fn advance_animation_player(player: &mut AnimationPlayer, dt: f32)
+src/animation_player.rs: pub fn clone_animation_player(player: &AnimationPlayer) -> AnimationPlayer
+src/animation_player.rs: pub fn create_animation_player(clip: AnimationClip, opts: Option<&AnimationPlayerOptions>,) -> AnimationPlayer
+src/animation_player.rs: pub fn enable_animation_player_signals(player: &mut AnimationPlayer)
+src/animation_player.rs: pub fn get_animation_player_normalized_time(player: &AnimationPlayer) -> f32
+src/animation_player.rs: pub fn initialize_animation_player(out: &mut AnimationPlayer, clip: AnimationClip, opts: Option<&AnimationPlayerOptions>,)
+src/animation_player.rs: pub fn play_animation_player(player: &mut AnimationPlayer)
+src/animation_player.rs: pub fn seek_animation_player(player: &mut AnimationPlayer, time: f32)
+src/animation_player.rs: pub fn stop_animation_player(player: &mut AnimationPlayer)
+src/animation_root_motion.rs: pub fn create_animation_root_motion_extractor(clip: &Ref<AnimationClip>, channel_index: usize,) -> AnimationRootMotionExtractor
+src/animation_root_motion.rs: pub fn extract_animation_root_motion(out: &mut [f32], extractor: &mut AnimationRootMotionExtractor, start_time: f32, end_time: f32,) -> bool
+src/animation_root_motion.rs: pub fn initialize_animation_root_motion_extractor(extractor: &mut AnimationRootMotionExtractor, clip: &Ref<AnimationClip>, channel_index: usize,)
+src/animation_state_machine.rs: pub fn advance_animation_state_machine(machine: &mut AnimationStateMachine, dt: f32)
+src/animation_state_machine.rs: pub fn create_animation_state_machine(states: &[AnimationStateMachineState], initial_state: Option<StateRef>,) -> AnimationStateMachine
+src/animation_state_machine.rs: pub fn create_animation_state_machine_ref(states: &[AnimationStateMachineState], initial_state: Option<StateRef>,) -> AnimationStateMachineRef
+src/animation_state_machine.rs: pub fn create_animation_state_machine_state(name: &str, blend_tree: AnimationBlendTreeRef,) -> AnimationStateMachineState
+src/animation_state_machine.rs: pub fn get_animation_state_machine_current_state(machine: &AnimationStateMachine,) -> &AnimationStateMachineState
+src/animation_state_machine.rs: pub fn initialize_animation_state_machine(out: &mut AnimationStateMachine, states: &[AnimationStateMachineState], initial_state: Option<StateRef>,)
+src/animation_state_machine.rs: pub fn initialize_animation_state_machine_state(out: &mut AnimationStateMachineState, name: &str, blend_tree: AnimationBlendTreeRef,)
+src/animation_state_machine.rs: pub fn is_animation_state_machine_transitioning(machine: &AnimationStateMachine) -> bool
+src/animation_state_machine.rs: pub fn sample_animation_state_machine(out: &mut [f32], machine: &mut AnimationStateMachine, visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),)
+src/animation_state_machine.rs: pub fn sample_animation_state_machine_channel(out: &mut [f32], machine: &mut AnimationStateMachine, channel_index: usize,) -> bool
+src/animation_state_machine.rs: pub fn transition_animation_state_machine(machine: &mut AnimationStateMachine, to_state: StateRef, duration: f32, curve: Option<EasingFn>,) -> bool
+src/animation_state_machine_advance.rs: pub fn advance_animation_state_machine_with_scratch(machine: &mut AnimationStateMachine, dt: f32, advanced: &mut Vec<AnimationPlayerRef>,)
+src/animation_track.rs: pub fn clone_animation_track(track: &AnimationTrack) -> AnimationTrack
+src/animation_track.rs: pub fn create_animation_track(opts: CreateAnimationTrackOpts) -> AnimationTrack
+src/animation_track.rs: pub fn initialize_animation_track(out: &mut AnimationTrack, opts: CreateAnimationTrackOpts)
+src/animation_track.rs: pub fn sample_animation_track(out: &mut [f32], track: &AnimationTrack, t: f32)
+src/animation_track.rs: pub fn trim_animation_track(track: &AnimationTrack, start_time: f32, end_time: f32,) -> AnimationTrack
+src/animation_track.rs: pub fn validate_animation_track(track: &AnimationTrack,) -> Option<Vec<AnimationTrackValidationDiagnostic>>
+src/contract.rs: pub use super::animation_advance::*;
+src/contract.rs: pub use super::animation_blend::*;
+src/contract.rs: pub use super::animation_blend_tree::*;
+src/contract.rs: pub use super::animation_clip::*;
+src/contract.rs: pub use super::animation_crossfade::*;
+src/contract.rs: pub use super::animation_layer_stack::*;
+src/contract.rs: pub use super::animation_player::*;
+src/contract.rs: pub use super::animation_root_motion::*;
+src/contract.rs: pub use super::animation_state_machine::*;
+src/contract.rs: pub use super::animation_state_machine_advance::*;
+src/contract.rs: pub use super::animation_track::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::ANIMATION_INTERPOLATION_CUBIC;
+src/lib.rs: pub use contract::ANIMATION_INTERPOLATION_LINEAR;
+src/lib.rs: pub use contract::ANIMATION_INTERPOLATION_STEP;
+src/lib.rs: pub use contract::ANIMATION_LOOP_MODE_PING_PONG;
+src/lib.rs: pub use contract::ANIMATION_LOOP_MODE_REPEAT;
+src/lib.rs: pub use contract::AnimationBlendTree;
+src/lib.rs: pub use contract::AnimationBlendTreeChannel;
+src/lib.rs: pub use contract::AnimationBlendTreeChannelSource;
+src/lib.rs: pub use contract::AnimationBlendTreeInput;
+src/lib.rs: pub use contract::AnimationBlendTreeRef;
+src/lib.rs: pub use contract::AnimationChannel;
+src/lib.rs: pub use contract::AnimationClip;
+src/lib.rs: pub use contract::AnimationClipEvent;
+src/lib.rs: pub use contract::AnimationCrossfade;
+src/lib.rs: pub use contract::AnimationCrossfadeChannel;
+src/lib.rs: pub use contract::AnimationCrossfadeOptions;
+src/lib.rs: pub use contract::AnimationInterpolation;
+src/lib.rs: pub use contract::AnimationLayer;
+src/lib.rs: pub use contract::AnimationLayerOptions;
+src/lib.rs: pub use contract::AnimationLayerStack;
+src/lib.rs: pub use contract::AnimationLayerStackChannel;
+src/lib.rs: pub use contract::AnimationLayerStackChannelSource;
+src/lib.rs: pub use contract::AnimationLoopMode;
+src/lib.rs: pub use contract::AnimationPlayer;
+src/lib.rs: pub use contract::AnimationPlayerOptions;
+src/lib.rs: pub use contract::AnimationPlayerRef;
+src/lib.rs: pub use contract::AnimationRootMotionExtractor;
+src/lib.rs: pub use contract::AnimationSampleAccumulator;
+src/lib.rs: pub use contract::AnimationStateMachine;
+src/lib.rs: pub use contract::AnimationStateMachineChannel;
+src/lib.rs: pub use contract::AnimationStateMachineRef;
+src/lib.rs: pub use contract::AnimationStateMachineState;
+src/lib.rs: pub use contract::AnimationTrack;
+src/lib.rs: pub use contract::AnimationTrackValidationDiagnostic;
+src/lib.rs: pub use contract::CreateAnimationTrackOpts;
+src/lib.rs: pub use contract::EasingFn;
+src/lib.rs: pub use contract::Payload;
+src/lib.rs: pub use contract::StateRef;
+src/lib.rs: pub use contract::TargetRef;
+src/lib.rs: pub use contract::accumulate_animation_sample;
+src/lib.rs: pub use contract::add_animation_sample;
+src/lib.rs: pub use contract::advance_animation_blend_tree;
+src/lib.rs: pub use contract::advance_animation_crossfade;
+src/lib.rs: pub use contract::advance_animation_layer_stack;
+src/lib.rs: pub use contract::advance_animation_player;
+src/lib.rs: pub use contract::advance_animation_state_machine;
+src/lib.rs: pub use contract::blend_animation_samples;
+src/lib.rs: pub use contract::clone_animation_clip;
+src/lib.rs: pub use contract::clone_animation_player;
+src/lib.rs: pub use contract::clone_animation_track;
+src/lib.rs: pub use contract::create_animation_blend_tree;
+src/lib.rs: pub use contract::create_animation_blend_tree_input;
+src/lib.rs: pub use contract::create_animation_blend_tree_layer;
+src/lib.rs: pub use contract::create_animation_channel;
+src/lib.rs: pub use contract::create_animation_clip;
+src/lib.rs: pub use contract::create_animation_clip_event;
+src/lib.rs: pub use contract::create_animation_crossfade;
+src/lib.rs: pub use contract::create_animation_layer_stack;
+src/lib.rs: pub use contract::create_animation_player;
+src/lib.rs: pub use contract::create_animation_root_motion_extractor;
+src/lib.rs: pub use contract::create_animation_sample_accumulator;
+src/lib.rs: pub use contract::create_animation_state_machine;
+src/lib.rs: pub use contract::create_animation_state_machine_layer;
+src/lib.rs: pub use contract::create_animation_state_machine_state;
+src/lib.rs: pub use contract::create_animation_track;
+src/lib.rs: pub use contract::enable_animation_player_signals;
+src/lib.rs: pub use contract::extract_animation_root_motion;
+src/lib.rs: pub use contract::finish_animation_sample;
+src/lib.rs: pub use contract::get_animation_clip_duration;
+src/lib.rs: pub use contract::get_animation_player_normalized_time;
+src/lib.rs: pub use contract::get_animation_state_machine_current_state;
+src/lib.rs: pub use contract::is_animation_crossfade_complete;
+src/lib.rs: pub use contract::is_animation_state_machine_transitioning;
+src/lib.rs: pub use contract::play_animation_player;
+src/lib.rs: pub use contract::reset_animation_sample_accumulator;
+src/lib.rs: pub use contract::sample_animation_blend_tree;
+src/lib.rs: pub use contract::sample_animation_blend_tree_channel;
+src/lib.rs: pub use contract::sample_animation_clip;
+src/lib.rs: pub use contract::sample_animation_crossfade;
+src/lib.rs: pub use contract::sample_animation_layer_stack;
+src/lib.rs: pub use contract::sample_animation_layer_stack_channel;
+src/lib.rs: pub use contract::sample_animation_state_machine;
+src/lib.rs: pub use contract::sample_animation_state_machine_channel;
+src/lib.rs: pub use contract::sample_animation_track;
+src/lib.rs: pub use contract::seek_animation_player;
+src/lib.rs: pub use contract::set_animation_blend_tree_input_weight;
+src/lib.rs: pub use contract::set_animation_layer_weight;
+src/lib.rs: pub use contract::stop_animation_player;
+src/lib.rs: pub use contract::transition_animation_state_machine;
+src/lib.rs: pub use contract::trim_animation_track;
+src/lib.rs: pub use contract::validate_animation_track;
+src/sugar.rs: impl AnimationBlendTree :: fn advance(&self, dt: f32)
+src/sugar.rs: impl AnimationBlendTree :: fn new(inputs: &[AnimationBlendTreeInput]) -> Self
+src/sugar.rs: impl AnimationBlendTree :: fn sample(&mut self, out: &mut [f32], visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),)
+src/sugar.rs: impl AnimationBlendTree :: fn sample_channel(&mut self, out: &mut [f32], channel_index: usize) -> bool
+src/sugar.rs: impl AnimationBlendTree :: fn set_input_weight(&mut self, input_index: usize, weight: f32)
+src/sugar.rs: impl AnimationClip :: fn clone_clip(&self) -> Self
+src/sugar.rs: impl AnimationClip :: fn duration(&self) -> f32
+src/sugar.rs: impl AnimationClip :: fn new(channels: Vec<AnimationChannel>, duration: Option<f32>, events: &[AnimationClipEvent],) -> Self
+src/sugar.rs: impl AnimationClip :: fn sample(&self, out: &mut [f32], time: f32, visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),)
+src/sugar.rs: impl AnimationCrossfade :: fn advance(&mut self, dt: f32)
+src/sugar.rs: impl AnimationCrossfade :: fn is_complete(&self) -> bool
+src/sugar.rs: impl AnimationCrossfade :: fn new(from: AnimationPlayerRef, to: AnimationPlayerRef, duration: f32, opts: Option<&AnimationCrossfadeOptions>,) -> Self
+src/sugar.rs: impl AnimationCrossfade :: fn sample(&mut self, out: &mut [f32], visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),)
+src/sugar.rs: impl AnimationLayerStack :: fn advance(&mut self, dt: f32)
+src/sugar.rs: impl AnimationLayerStack :: fn new(layers: &[AnimationLayer]) -> Self
+src/sugar.rs: impl AnimationLayerStack :: fn sample(&mut self, out: &mut [f32], visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),)
+src/sugar.rs: impl AnimationLayerStack :: fn sample_channel(&mut self, out: &mut [f32], channel_index: usize) -> bool
+src/sugar.rs: impl AnimationLayerStack :: fn set_layer_weight(&mut self, layer_index: usize, weight: f32)
+src/sugar.rs: impl AnimationPlayer :: fn advance(&mut self, dt: f32)
+src/sugar.rs: impl AnimationPlayer :: fn clone_player(&self) -> Self
+src/sugar.rs: impl AnimationPlayer :: fn enable_signals(&mut self)
+src/sugar.rs: impl AnimationPlayer :: fn new(clip: AnimationClip, opts: Option<&AnimationPlayerOptions>) -> Self
+src/sugar.rs: impl AnimationPlayer :: fn normalized_time(&self) -> f32
+src/sugar.rs: impl AnimationPlayer :: fn play(&mut self)
+src/sugar.rs: impl AnimationPlayer :: fn seek(&mut self, time: f32)
+src/sugar.rs: impl AnimationPlayer :: fn stop(&mut self)
+src/sugar.rs: impl AnimationRootMotionExtractor :: fn extract(&mut self, out: &mut [f32], start_time: f32, end_time: f32) -> bool
+src/sugar.rs: impl AnimationRootMotionExtractor :: fn new(clip: &Ref<AnimationClip>, channel_index: usize) -> Self
+src/sugar.rs: impl AnimationSampleAccumulator :: fn accumulate(&mut self, sample: &[f32], weight: f32)
+src/sugar.rs: impl AnimationSampleAccumulator :: fn finish(&self, out: &mut [f32])
+src/sugar.rs: impl AnimationSampleAccumulator :: fn new(components: usize, quaternion: bool) -> Self
+src/sugar.rs: impl AnimationSampleAccumulator :: fn reset(&mut self)
+src/sugar.rs: impl AnimationStateMachine :: fn advance(&mut self, dt: f32)
+src/sugar.rs: impl AnimationStateMachine :: fn current_state(&self) -> &AnimationStateMachineState
+src/sugar.rs: impl AnimationStateMachine :: fn is_transitioning(&self) -> bool
+src/sugar.rs: impl AnimationStateMachine :: fn new(states: &[AnimationStateMachineState], initial_state: Option<StateRef>) -> Self
+src/sugar.rs: impl AnimationStateMachine :: fn sample(&mut self, out: &mut [f32], visit: &mut dyn FnMut(&[f32], &AnimationChannel, usize),)
+src/sugar.rs: impl AnimationStateMachine :: fn sample_channel(&mut self, out: &mut [f32], channel_index: usize) -> bool
+src/sugar.rs: impl AnimationStateMachine :: fn transition(&mut self, to_state: StateRef, duration: f32, curve: Option<EasingFn>,) -> bool
+src/sugar.rs: impl AnimationTrack :: fn clone_track(&self) -> Self
+src/sugar.rs: impl AnimationTrack :: fn new(opts: CreateAnimationTrackOpts) -> Self
+src/sugar.rs: impl AnimationTrack :: fn sample(&self, out: &mut [f32], t: f32)
+src/sugar.rs: impl AnimationTrack :: fn trim(&self, start_time: f32, end_time: f32) -> Self
+src/sugar.rs: impl AnimationTrack :: fn validate(&self) -> Option<Vec<AnimationTrackValidationDiagnostic>>
+src/types.rs: #[derive(Clone)] pub struct AnimationPlayer { pub clip: Ref<AnimationClip>, pub loop_enabled: bool, pub loop_mode: AnimationLoopMode, pub on_event: Option<Signal<AnimationClipEvent>>, pub on_finished: Option<Signal<()>>, pub on_looped: Option<Signal<()>>, pub playing: bool, pub repeat_count: i32, pub speed: f32, pub time: f32, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] #[repr(u8)] pub enum AnimationInterpolation { Cubic, Linear, Step, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] #[repr(u8)] pub enum AnimationLoopMode { PingPong, Repeat, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct AnimationBlendTreeChannelSource { pub channel_index: usize, pub input_index: usize, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct AnimationLayerStackChannelSource { pub channel_index: usize, pub layer_index: usize, }
+src/types.rs: #[derive(Clone, Debug)] pub enum StateRef { Name(String), Index(usize), }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationBlendTree { pub channels: Vec<AnimationBlendTreeChannel>, pub inputs: Vec<AnimationBlendTreeInput>, pub players: Vec<AnimationPlayerRef>, pub sample_scratch: Vec<f32>, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationBlendTreeChannel { pub accumulator: AnimationSampleAccumulator, pub channel: AnimationChannel, pub sources: Vec<AnimationBlendTreeChannelSource>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationBlendTreeInput { pub additive: bool, pub player: AnimationPlayerRef, pub weight: f32, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationChannel { pub track: AnimationTrack, pub target_ref: TargetRef, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationClip { pub channels: Vec<AnimationChannel>, pub duration: f32, pub events: Vec<AnimationClipEvent>, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationClipEvent { pub name: String, pub payload: Payload, pub time: f32, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationCrossfade { pub channels: Vec<AnimationCrossfadeChannel>, pub curve: EasingFn, pub duration: f32, pub elapsed: f32, pub from: AnimationPlayerRef, pub from_sample: Vec<f32>, pub to: AnimationPlayerRef, pub to_sample: Vec<f32>, pub weight: f32, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationCrossfadeChannel { pub channel: AnimationChannel, pub from_index: Option<usize>, pub to_index: Option<usize>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationLayer { pub additive: bool, pub blend_tree: Option<AnimationBlendTreeRef>, pub channel_indices: Option<Vec<usize>>, pub state_machine: Option<AnimationStateMachineRef>, pub weight: f32, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationLayerStack { pub advance_scratch: Vec<AnimationPlayerRef>, pub blend_trees: Vec<AnimationBlendTreeRef>, pub channels: Vec<AnimationLayerStackChannel>, pub layers: Vec<AnimationLayer>, pub sample_scratch: Vec<f32>, pub state_machines: Vec<AnimationStateMachineRef>, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationLayerStackChannel { pub channel: AnimationChannel, pub sources: Vec<AnimationLayerStackChannelSource>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationRootMotionExtractor { pub channel: AnimationChannel, pub channel_index: usize, pub clip: Ref<AnimationClip>, pub cycle_delta: Vec<f32>, pub from_motion: Vec<f32>, pub from_sample: Vec<f32>, pub power_scratch: Vec<f32>, pub start_sample: Vec<f32>, pub to_motion: Vec<f32>, pub to_sample: Vec<f32>, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationSampleAccumulator { pub components: usize, pub quaternion: bool, pub values: Vec<f32>, pub weight: f32, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationStateMachine { pub advance_scratch: Vec<AnimationPlayerRef>, pub channels: Vec<AnimationStateMachineChannel>, pub current_state_index: usize, pub from_sample: Vec<f32>, pub states: Vec<AnimationStateMachineState>, pub to_sample: Vec<f32>, pub transition_curve: EasingFn, pub transition_duration: f32, pub transition_elapsed: f32, pub transition_from_state_index: Option<usize>, pub transition_to_state_index: Option<usize>, pub transition_weight: f32, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationStateMachineChannel { pub channel: AnimationChannel, pub state_channel_indices: Vec<Option<usize>>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationStateMachineState { pub blend_tree: AnimationBlendTreeRef, pub name: String, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationTrack { pub interpolation: AnimationInterpolation, pub times: Vec<f32>, pub values: Vec<f32>, pub components: usize, pub quaternion: bool, pub easing: Option<EasingFn>, pub segment_easings: Option<Vec<Option<EasingFn>>>, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug)] pub struct AnimationTrackValidationDiagnostic { pub code: String, pub index: Option<usize>, pub message: String, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct AnimationCrossfadeOptions { pub curve: Option<EasingFn>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct AnimationLayerOptions { pub additive: Option<bool>, pub channel_indices: Option<Vec<usize>>, pub weight: Option<f32>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct AnimationPlayerOptions { pub loop_enabled: Option<bool>, pub loop_mode: Option<AnimationLoopMode>, pub playing: Option<bool>, pub repeat_count: Option<i32>, pub speed: Option<f32>, pub time: Option<f32>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct CreateAnimationTrackOpts { pub times: Vec<f32>, pub values: Vec<f32>, pub components: Option<usize>, pub interpolation: Option<AnimationInterpolation>, pub quaternion: Option<bool>, pub easing: Option<EasingFn>, pub segment_easings: Option<Vec<Option<EasingFn>>>, }
+src/types.rs: impl Default for AnimationBlendTree
+src/types.rs: impl Default for AnimationBlendTree :: fn default() -> Self
+src/types.rs: impl Default for AnimationBlendTreeInput
+src/types.rs: impl Default for AnimationBlendTreeInput :: fn default() -> Self
+src/types.rs: impl Default for AnimationChannel
+src/types.rs: impl Default for AnimationChannel :: fn default() -> Self
+src/types.rs: impl Default for AnimationClip
+src/types.rs: impl Default for AnimationClip :: fn default() -> Self
+src/types.rs: impl Default for AnimationClipEvent
+src/types.rs: impl Default for AnimationClipEvent :: fn default() -> Self
+src/types.rs: impl Default for AnimationCrossfade
+src/types.rs: impl Default for AnimationCrossfade :: fn default() -> Self
+src/types.rs: impl Default for AnimationLayer
+src/types.rs: impl Default for AnimationLayer :: fn default() -> Self
+src/types.rs: impl Default for AnimationLayerStack
+src/types.rs: impl Default for AnimationLayerStack :: fn default() -> Self
+src/types.rs: impl Default for AnimationPlayer
+src/types.rs: impl Default for AnimationPlayer :: fn default() -> Self
+src/types.rs: impl Default for AnimationRootMotionExtractor
+src/types.rs: impl Default for AnimationRootMotionExtractor :: fn default() -> Self
+src/types.rs: impl Default for AnimationSampleAccumulator
+src/types.rs: impl Default for AnimationSampleAccumulator :: fn default() -> Self
+src/types.rs: impl Default for AnimationStateMachine
+src/types.rs: impl Default for AnimationStateMachine :: fn default() -> Self
+src/types.rs: impl Default for AnimationStateMachineState
+src/types.rs: impl Default for AnimationStateMachineState :: fn default() -> Self
+src/types.rs: impl Default for AnimationTrack
+src/types.rs: impl Default for AnimationTrack :: fn default() -> Self
+src/types.rs: impl Entity for AnimationBlendTree
+src/types.rs: impl Entity for AnimationBlendTree :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationBlendTree :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationBlendTreeInput
+src/types.rs: impl Entity for AnimationBlendTreeInput :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationBlendTreeInput :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationChannel
+src/types.rs: impl Entity for AnimationChannel :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationChannel :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationClip
+src/types.rs: impl Entity for AnimationClip :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationClip :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationClipEvent
+src/types.rs: impl Entity for AnimationClipEvent :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationClipEvent :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationCrossfade
+src/types.rs: impl Entity for AnimationCrossfade :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationCrossfade :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationLayer
+src/types.rs: impl Entity for AnimationLayer :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationLayer :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationLayerStack
+src/types.rs: impl Entity for AnimationLayerStack :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationLayerStack :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationPlayer
+src/types.rs: impl Entity for AnimationPlayer :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationPlayer :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationRootMotionExtractor
+src/types.rs: impl Entity for AnimationRootMotionExtractor :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationRootMotionExtractor :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationSampleAccumulator
+src/types.rs: impl Entity for AnimationSampleAccumulator :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationSampleAccumulator :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationStateMachine
+src/types.rs: impl Entity for AnimationStateMachine :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationStateMachine :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationStateMachineState
+src/types.rs: impl Entity for AnimationStateMachineState :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationStateMachineState :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationTrack
+src/types.rs: impl Entity for AnimationTrack :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AnimationTrack :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl From<&str> for StateRef
+src/types.rs: impl From<&str> for StateRef :: fn from(s: &str) -> Self
+src/types.rs: impl From<usize> for StateRef
+src/types.rs: impl From<usize> for StateRef :: fn from(i: usize) -> Self
+src/types.rs: impl std::fmt::Debug for AnimationPlayer
+src/types.rs: impl std::fmt::Debug for AnimationPlayer :: fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+src/types.rs: pub const ANIMATION_INTERPOLATION_CUBIC: AnimationInterpolation
+src/types.rs: pub const ANIMATION_INTERPOLATION_LINEAR: AnimationInterpolation
+src/types.rs: pub const ANIMATION_INTERPOLATION_STEP: AnimationInterpolation
+src/types.rs: pub const ANIMATION_LOOP_MODE_PING_PONG: AnimationLoopMode
+src/types.rs: pub const ANIMATION_LOOP_MODE_REPEAT: AnimationLoopMode
+src/types.rs: pub fn create_state_ref_from_index(index: usize) -> StateRef
+src/types.rs: pub fn create_state_ref_from_name(name: &str) -> StateRef
+src/types.rs: pub fn linear_easing_identity(t: f32) -> f32
+src/types.rs: pub type AnimationBlendTreeRef = Ref<AnimationBlendTree>;
+src/types.rs: pub type AnimationPlayerRef = Ref<AnimationPlayer>;
+src/types.rs: pub type AnimationStateMachineRef = Ref<AnimationStateMachine>;
+src/types.rs: pub type EasingFn = fn(f32) -> f32;
+src/types.rs: pub type Payload = usize;
+src/types.rs: pub type TargetRef = usize;
