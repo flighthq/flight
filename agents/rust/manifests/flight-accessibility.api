@@ -1,17 +1,16 @@
-src/accessibility.rs: pub fn announce_accessibility(host_accessibility: &HostAccessibilityCapability, message: &str, liveness: Option<AccessibilityLiveness>,) -> AccessibilityOperationOutcome
-src/accessibility.rs: pub fn clear_accessibility_tree(host_accessibility: &HostAccessibilityCapability,) -> AccessibilityOperationOutcome
+src/accessibility.rs: pub fn announce_accessibility(host_accessibility: &HostAccessibilityCapability, message: &str, liveness: Option<AccessibilityLiveness>,) -> AccessibilityOperationOutcome<AccessibilityTreeBlockReason>
+src/accessibility.rs: pub fn clear_accessibility_tree(host_accessibility: &HostAccessibilityCapability,) -> AccessibilityOperationOutcome<AccessibilityTreeBlockReason>
 src/accessibility.rs: pub fn destroy_accessibility(host_accessibility: &HostAccessibilityCapability)
-src/accessibility.rs: pub fn remove_accessibility_node(host_accessibility: &HostAccessibilityCapability, id: &str,) -> AccessibilityOperationOutcome
-src/accessibility.rs: pub fn set_accessibility_focus(host_accessibility: &HostAccessibilityCapability, id: &str,) -> AccessibilityOperationOutcome
-src/accessibility.rs: pub fn set_accessibility_node(host_accessibility: &HostAccessibilityCapability, node: &AccessibilityNode,) -> AccessibilityOperationOutcome
-src/accessibility_sugar.rs: impl HostAccessibilityCapability :: fn announce(&self, message: &str, liveness: Option<AccessibilityLiveness>,) -> AccessibilityOperationOutcome
-src/accessibility_sugar.rs: impl HostAccessibilityCapability :: fn clear(&self) -> AccessibilityOperationOutcome
+src/accessibility.rs: pub fn remove_accessibility_node(host_accessibility: &HostAccessibilityCapability, id: &str,) -> AccessibilityOperationOutcome<AccessibilityRemoveNodeBlockReason>
+src/accessibility.rs: pub fn set_accessibility_focus(host_accessibility: &HostAccessibilityCapability, id: &str,) -> AccessibilityOperationOutcome<AccessibilityOperationBlockReason>
+src/accessibility.rs: pub fn set_accessibility_node(host_accessibility: &HostAccessibilityCapability, node: &AccessibilityNode,) -> AccessibilityOperationOutcome<AccessibilityTreeBlockReason>
+src/accessibility_sugar.rs: impl HostAccessibilityCapability :: fn announce(&self, message: &str, liveness: Option<AccessibilityLiveness>,) -> AccessibilityOperationOutcome<AccessibilityTreeBlockReason>
+src/accessibility_sugar.rs: impl HostAccessibilityCapability :: fn clear(&self) -> AccessibilityOperationOutcome<AccessibilityTreeBlockReason>
 src/accessibility_sugar.rs: impl HostAccessibilityCapability :: fn destroy(&self)
-src/accessibility_sugar.rs: impl HostAccessibilityCapability :: fn remove_node(&self, id: &str) -> AccessibilityOperationOutcome
-src/accessibility_sugar.rs: impl HostAccessibilityCapability :: fn set_focus(&self, id: &str) -> AccessibilityOperationOutcome
-src/accessibility_sugar.rs: impl HostAccessibilityCapability :: fn set_node(&self, node: &AccessibilityNode) -> AccessibilityOperationOutcome
+src/accessibility_sugar.rs: impl HostAccessibilityCapability :: fn remove_node(&self, id: &str,) -> AccessibilityOperationOutcome<AccessibilityRemoveNodeBlockReason>
+src/accessibility_sugar.rs: impl HostAccessibilityCapability :: fn set_focus(&self, id: &str,) -> AccessibilityOperationOutcome<AccessibilityOperationBlockReason>
+src/accessibility_sugar.rs: impl HostAccessibilityCapability :: fn set_node(&self, node: &AccessibilityNode,) -> AccessibilityOperationOutcome<AccessibilityTreeBlockReason>
 src/contract.rs: pub use crate::accessibility::*;
-src/contract.rs: pub use crate::accessibility_sugar::*;
 src/contract.rs: pub use crate::types::*;
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::AccessibilityDescriptor;
@@ -21,8 +20,10 @@ src/lib.rs: pub use contract::AccessibilityOperationBlockReason;
 src/lib.rs: pub use contract::AccessibilityOperationOutcome;
 src/lib.rs: pub use contract::AccessibilityOperationOutcomeBlocked;
 src/lib.rs: pub use contract::AccessibilityOperationOutcomeOk;
+src/lib.rs: pub use contract::AccessibilityRemoveNodeBlockReason;
 src/lib.rs: pub use contract::AccessibilityRole;
 src/lib.rs: pub use contract::AccessibilityState;
+src/lib.rs: pub use contract::AccessibilityTreeBlockReason;
 src/lib.rs: pub use contract::HostAccessibilityCapabilities;
 src/lib.rs: pub use contract::HostAccessibilityCapability;
 src/lib.rs: pub use contract::announce_accessibility;
@@ -31,11 +32,13 @@ src/lib.rs: pub use contract::destroy_accessibility;
 src/lib.rs: pub use contract::remove_accessibility_node;
 src/lib.rs: pub use contract::set_accessibility_focus;
 src/lib.rs: pub use contract::set_accessibility_node;
-src/types.rs: #[derive(Clone)] pub struct HostAccessibilityCapability { pub provider: ProviderRef, pub announce: Arc<dyn Fn(&str, AccessibilityLiveness) -> AccessibilityOperationOutcome + Send + Sync>, pub clear: Arc<dyn Fn() -> AccessibilityOperationOutcome + Send + Sync>, pub destroy: Arc<dyn Fn() + Send + Sync>, pub remove_node: Arc<dyn Fn(&str) -> AccessibilityOperationOutcome + Send + Sync>, pub set_focus: Arc<dyn Fn(&str) -> AccessibilityOperationOutcome + Send + Sync>, pub set_node: Arc<dyn Fn(&AccessibilityNode) -> AccessibilityOperationOutcome + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAccessibilityCapability { pub provider: ProviderRef, pub announce: Arc<dyn Fn(&str, AccessibilityLiveness,) -> AccessibilityOperationOutcome<AccessibilityTreeBlockReason> + Send + Sync,>, pub clear: Arc<dyn Fn() -> AccessibilityOperationOutcome<AccessibilityTreeBlockReason> + Send + Sync>, pub destroy: Arc<dyn Fn() + Send + Sync>, pub remove_node: Arc<dyn Fn(&str) -> AccessibilityOperationOutcome<AccessibilityRemoveNodeBlockReason> + Send + Sync,>, pub set_focus: Arc<dyn Fn(&str) -> AccessibilityOperationOutcome<AccessibilityOperationBlockReason> + Send + Sync,>, pub set_node: Arc<dyn Fn(&AccessibilityNode) -> AccessibilityOperationOutcome<AccessibilityTreeBlockReason> + Send + Sync,>, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AccessibilityLiveness { Polite, Assertive, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AccessibilityOperationBlockReason { Destroyed, FocusNotMoved, NoDom, NodeNotFound, }
-src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AccessibilityOperationOutcome { Ok(AccessibilityOperationOutcomeOk), Blocked(AccessibilityOperationOutcomeBlocked), }
-src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct AccessibilityOperationOutcomeBlocked { pub reason: AccessibilityOperationBlockReason, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AccessibilityOperationOutcome<R = AccessibilityOperationBlockReason> { Ok(AccessibilityOperationOutcomeOk), Blocked(AccessibilityOperationOutcomeBlocked<R>), }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AccessibilityRemoveNodeBlockReason { Destroyed, NoDom, NodeNotFound, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AccessibilityTreeBlockReason { Destroyed, NoDom, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct AccessibilityOperationOutcomeBlocked<R> { pub reason: R, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct AccessibilityOperationOutcomeOk { }
 src/types.rs: #[derive(Clone, Debug)] pub struct AccessibilityNode { pub id: String, pub role: AccessibilityRole, pub label: Option<String>, pub description: Option<String>, pub value: Option<String>, pub parent_id: Option<String>, pub bounds: Option<Ref<Rectangle>>, pub states: Option<AccessibilityState>, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct AccessibilityState { pub disabled: Option<bool>, pub checked: Option<bool>, pub expanded: Option<bool>, pub selected: Option<bool>, pub pressed: Option<bool>, pub busy: Option<bool>, pub hidden: Option<bool>, pub readonly: Option<bool>, pub required: Option<bool>, pub level: Option<f32>, pub value_min: Option<f32>, pub value_max: Option<f32>, pub value_now: Option<f32>, }
@@ -43,6 +46,10 @@ src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct Accessi
 src/types.rs: #[derive(Clone, Default)] pub struct HostAccessibilityCapabilities { pub tree: Option<HostAccessibilityCapability>, }
 src/types.rs: pub fn get_accessibility_liveness_string(value: AccessibilityLiveness) -> &'static str
 src/types.rs: pub fn get_accessibility_operation_block_reason_string(value: AccessibilityOperationBlockReason,) -> &'static str
+src/types.rs: pub fn get_accessibility_remove_node_block_reason_string(value: AccessibilityRemoveNodeBlockReason,) -> &'static str
+src/types.rs: pub fn get_accessibility_tree_block_reason_string(value: AccessibilityTreeBlockReason,) -> &'static str
 src/types.rs: pub fn parse_accessibility_liveness(value: &str) -> Option<AccessibilityLiveness>
 src/types.rs: pub fn parse_accessibility_operation_block_reason(value: &str,) -> Option<AccessibilityOperationBlockReason>
+src/types.rs: pub fn parse_accessibility_remove_node_block_reason(value: &str,) -> Option<AccessibilityRemoveNodeBlockReason>
+src/types.rs: pub fn parse_accessibility_tree_block_reason(value: &str) -> Option<AccessibilityTreeBlockReason>
 src/types.rs: pub type AccessibilityRole = String;
