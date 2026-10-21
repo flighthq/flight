@@ -1,0 +1,228 @@
+src/contract.rs: pub use crate::detect::*;
+src/contract.rs: pub use crate::format_registry::*;
+src/contract.rs: pub use crate::libgdx_parse::*;
+src/contract.rs: pub use crate::libgdx_serialize::*;
+src/contract.rs: pub use crate::parse_particle_config::*;
+src/contract.rs: pub use crate::particle_designer_parse::*;
+src/contract.rs: pub use crate::particle_designer_serialize::*;
+src/contract.rs: pub use crate::pixi_parse::*;
+src/contract.rs: pub use crate::register_built_in_particle_formats::*;
+src/contract.rs: pub use crate::spine_parse::*;
+src/contract.rs: pub use crate::spine_serialize::*;
+src/contract.rs: pub use crate::starling_pex_parse::*;
+src/contract.rs: pub use crate::starling_pex_serialize::*;
+src/contract.rs: pub use crate::types::*;
+src/contract.rs: pub use crate::unity_parse::*;
+src/contract.rs: pub use crate::unity_serialize::*;
+src/detect.rs: pub fn detect_particle_format(registry: &ParticleFormatRegistry, text: &str,) -> Option<ParticleFormatKind>
+src/format_registry.rs: #[derive(Default)] pub struct ParticleFormatRegistry { entries: Vec<(ParticleFormatKind, ParticleFormatCodec)>, }
+src/format_registry.rs: pub fn create_particle_format_registry() -> ParticleFormatRegistry
+src/format_registry.rs: pub fn detect_registered_particle_format(registry: &ParticleFormatRegistry, text: &str,) -> Option<ParticleFormatKind>
+src/format_registry.rs: pub fn get_particle_format_codec<'a>(registry: &'a ParticleFormatRegistry, kind: &str,) -> Option<&'a ParticleFormatCodec>
+src/format_registry.rs: pub fn get_registered_particle_formats(registry: &ParticleFormatRegistry,) -> Vec<ParticleFormatKind>
+src/format_registry.rs: pub fn parse_registered_particle_format(registry: &ParticleFormatRegistry, text: &str, kind: &str, options: Option<&ParseParticleConfigOptions>,) -> ParticleConfigParseResult
+src/format_registry.rs: pub fn register_particle_format(registry: &mut ParticleFormatRegistry, kind: &str, codec: ParticleFormatCodec,)
+src/format_registry.rs: pub fn unregister_particle_format(registry: &mut ParticleFormatRegistry, kind: &str) -> bool
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::LibgdxActiveRangeValue;
+src/lib.rs: pub use contract::LibgdxParseOptions;
+src/lib.rs: pub use contract::LibgdxParseResult;
+src/lib.rs: pub use contract::LibgdxParticleDocument;
+src/lib.rs: pub use contract::LibgdxRangeValue;
+src/lib.rs: pub use contract::LibgdxSerializeOptions;
+src/lib.rs: pub use contract::LibgdxSpawnShape;
+src/lib.rs: pub use contract::LibgdxSpawnShapeValue;
+src/lib.rs: pub use contract::LibgdxSpawnSide;
+src/lib.rs: pub use contract::LibgdxTint;
+src/lib.rs: pub use contract::ParseParticleConfigOptions;
+src/lib.rs: pub use contract::ParticleConfigParseResult;
+src/lib.rs: pub use contract::ParticleDesignerDocument;
+src/lib.rs: pub use contract::ParticleDesignerEmitterType;
+src/lib.rs: pub use contract::ParticleDesignerParseOptions;
+src/lib.rs: pub use contract::ParticleDesignerParseResult;
+src/lib.rs: pub use contract::ParticleDesignerSerializeOptions;
+src/lib.rs: pub use contract::ParticleFormatCodec;
+src/lib.rs: pub use contract::ParticleFormatDescriptor;
+src/lib.rs: pub use contract::ParticleFormatKind;
+src/lib.rs: pub use contract::ParticleFormatParseDocumentResult;
+src/lib.rs: pub use contract::ParticleFormatRegistry;
+src/lib.rs: pub use contract::ParticleFormatWarning;
+src/lib.rs: pub use contract::ParticleImportOptions;
+src/lib.rs: pub use contract::ParticleSerializeResult;
+src/lib.rs: pub use contract::PixiParseResult;
+src/lib.rs: pub use contract::SpineAlphaKeyframe;
+src/lib.rs: pub use contract::SpineBlendMode;
+src/lib.rs: pub use contract::SpineParseResult;
+src/lib.rs: pub use contract::SpineParticleDocument;
+src/lib.rs: pub use contract::SpineRangeValue;
+src/lib.rs: pub use contract::SpineSpawnShape;
+src/lib.rs: pub use contract::SpineTintKeyframe;
+src/lib.rs: pub use contract::StarlingPexColor;
+src/lib.rs: pub use contract::StarlingPexDocument;
+src/lib.rs: pub use contract::StarlingPexEmitterType;
+src/lib.rs: pub use contract::StarlingPexParseOptions;
+src/lib.rs: pub use contract::StarlingPexParseResult;
+src/lib.rs: pub use contract::StarlingPexSerializeOptions;
+src/lib.rs: pub use contract::UnityAnimationCurve;
+src/lib.rs: pub use contract::UnityBurst;
+src/lib.rs: pub use contract::UnityColor;
+src/lib.rs: pub use contract::UnityColorOverLifetime;
+src/lib.rs: pub use contract::UnityCurveKey;
+src/lib.rs: pub use contract::UnityEmission;
+src/lib.rs: pub use contract::UnityGradient;
+src/lib.rs: pub use contract::UnityGradientAlphaKey;
+src/lib.rs: pub use contract::UnityGradientColorKey;
+src/lib.rs: pub use contract::UnityMinMaxMode;
+src/lib.rs: pub use contract::UnityMinMaxValue;
+src/lib.rs: pub use contract::UnityParseOptions;
+src/lib.rs: pub use contract::UnityParseResult;
+src/lib.rs: pub use contract::UnityParticleDocument;
+src/lib.rs: pub use contract::UnityParticleShapeType;
+src/lib.rs: pub use contract::UnityRotationOverLifetime;
+src/lib.rs: pub use contract::UnitySerializeOptions;
+src/lib.rs: pub use contract::UnityShape;
+src/lib.rs: pub use contract::UnitySizeOverLifetime;
+src/lib.rs: pub use contract::UnityVector3;
+src/lib.rs: pub use contract::apply_particle_import_options;
+src/lib.rs: pub use contract::create_particle_all_formats;
+src/lib.rs: pub use contract::create_particle_format_registry;
+src/lib.rs: pub use contract::detect_particle_format;
+src/lib.rs: pub use contract::detect_registered_particle_format;
+src/lib.rs: pub use contract::get_libgdx_particle_format;
+src/lib.rs: pub use contract::get_particle_designer_particle_format;
+src/lib.rs: pub use contract::get_particle_format_codec;
+src/lib.rs: pub use contract::get_pixi_particle_format;
+src/lib.rs: pub use contract::get_registered_particle_formats;
+src/lib.rs: pub use contract::get_spine_particle_format;
+src/lib.rs: pub use contract::get_starling_pex_particle_format;
+src/lib.rs: pub use contract::get_unity_particle_format;
+src/lib.rs: pub use contract::parse_libgdx_particle;
+src/lib.rs: pub use contract::parse_libgdx_particle_document;
+src/lib.rs: pub use contract::parse_particle_config;
+src/lib.rs: pub use contract::parse_particle_config_document;
+src/lib.rs: pub use contract::parse_particle_designer_plist;
+src/lib.rs: pub use contract::parse_particle_designer_plist_document;
+src/lib.rs: pub use contract::parse_pixi_particle;
+src/lib.rs: pub use contract::parse_pixi_particle_document;
+src/lib.rs: pub use contract::parse_registered_particle_format;
+src/lib.rs: pub use contract::parse_spine_particle;
+src/lib.rs: pub use contract::parse_spine_particle_document;
+src/lib.rs: pub use contract::parse_starling_pex;
+src/lib.rs: pub use contract::parse_starling_pex_document;
+src/lib.rs: pub use contract::parse_unity_particle;
+src/lib.rs: pub use contract::parse_unity_particle_document;
+src/lib.rs: pub use contract::register_built_in_particle_formats;
+src/lib.rs: pub use contract::register_particle_format;
+src/lib.rs: pub use contract::serialize_libgdx_particle;
+src/lib.rs: pub use contract::serialize_libgdx_particle_document;
+src/lib.rs: pub use contract::serialize_particle_designer_plist;
+src/lib.rs: pub use contract::serialize_particle_designer_plist_document;
+src/lib.rs: pub use contract::serialize_spine_particle;
+src/lib.rs: pub use contract::serialize_spine_particle_document;
+src/lib.rs: pub use contract::serialize_starling_pex;
+src/lib.rs: pub use contract::serialize_starling_pex_document;
+src/lib.rs: pub use contract::serialize_unity_particle;
+src/lib.rs: pub use contract::serialize_unity_particle_document;
+src/lib.rs: pub use contract::unregister_particle_format;
+src/libgdx_parse.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum LibgdxSpawnShape { #[default] Point, Line, Square, Ellipse, }
+src/libgdx_parse.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum LibgdxSpawnSide { #[default] Both, Top, Bottom, }
+src/libgdx_parse.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct LibgdxActiveRangeValue { pub active: bool, pub low_min: f32, pub low_max: f32, pub high_min: f32, pub high_max: f32, pub relative: bool, pub scaling: Vec<f32>, pub timeline: Vec<f32>, }
+src/libgdx_parse.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct LibgdxParseOptions { pub texture_size: Option<f32>, }
+src/libgdx_parse.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct LibgdxParticleDocument { pub additive: bool, pub angle: LibgdxActiveRangeValue, pub delay: LibgdxActiveRangeValue, pub duration: LibgdxRangeValue, pub emission: LibgdxRangeValue, pub gravity: LibgdxActiveRangeValue, pub image_count: f32, pub image_path: String, pub life: LibgdxRangeValue, pub life_offset: LibgdxActiveRangeValue, pub max_particle_count: f32, pub min_particle_count: f32, pub name: String, pub premultiplied_alpha: bool, pub rotation: LibgdxActiveRangeValue, pub scale: LibgdxRangeValue, pub spawn_height: LibgdxRangeValue, pub spawn_shape: LibgdxSpawnShapeValue, pub spawn_width: LibgdxRangeValue, pub tint: LibgdxTint, pub transparency: LibgdxRangeValue, pub velocity: LibgdxActiveRangeValue, pub wind: LibgdxActiveRangeValue, pub x_offset: LibgdxActiveRangeValue, pub y_offset: LibgdxActiveRangeValue, }
+src/libgdx_parse.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct LibgdxRangeValue { pub low_min: f32, pub low_max: f32, pub high_min: f32, pub high_max: f32, pub relative: bool, pub scaling: Vec<f32>, pub timeline: Vec<f32>, }
+src/libgdx_parse.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct LibgdxSpawnShapeValue { pub edges: bool, pub shape: LibgdxSpawnShape, pub side: LibgdxSpawnSide, }
+src/libgdx_parse.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct LibgdxTint { pub colors: Vec<String>, pub timeline: Vec<f32>, }
+src/libgdx_parse.rs: pub fn parse_libgdx_particle(text: &str, options: Option<&LibgdxParseOptions>,) -> ParticleEmitterConfig
+src/libgdx_parse.rs: pub fn parse_libgdx_particle_document(text: &str, options: Option<&LibgdxParseOptions>,) -> LibgdxParseResult
+src/libgdx_parse.rs: pub struct LibgdxParseResult { pub config: ParticleEmitterConfig, pub diagnostics: Vec<ImportDiagnostic>, pub document: LibgdxParticleDocument, }
+src/libgdx_serialize.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct LibgdxSerializeOptions { pub texture_size: Option<f32>, }
+src/libgdx_serialize.rs: pub fn serialize_libgdx_particle(config: &ParticleEmitterConfig, existing: Option<&LibgdxParticleDocument>, options: Option<&LibgdxSerializeOptions>,) -> String
+src/libgdx_serialize.rs: pub fn serialize_libgdx_particle_document(config: &ParticleEmitterConfig, existing: Option<&LibgdxParticleDocument>, options: Option<&LibgdxSerializeOptions>,) -> ParticleSerializeResult
+src/parse_particle_config.rs: pub fn parse_particle_config(registry: &ParticleFormatRegistry, text: &str, options: Option<&ParseParticleConfigOptions>,) -> ParticleEmitterConfig
+src/parse_particle_config.rs: pub fn parse_particle_config_document(registry: &ParticleFormatRegistry, text: &str, options: Option<&ParseParticleConfigOptions>,) -> ParticleConfigParseResult
+src/particle_designer_parse.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum ParticleDesignerEmitterType { #[default] Gravity, Radial, }
+src/particle_designer_parse.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct ParticleDesignerDocument { pub angle: f32, pub angle_variance: f32, pub blend_func_destination: f32, pub blend_func_source: f32, pub duration: f32, pub emitter_type: ParticleDesignerEmitterType, pub finish_color_alpha: f32, pub finish_color_blue: f32, pub finish_color_green: f32, pub finish_color_red: f32, pub finish_color_variance_alpha: f32, pub finish_color_variance_blue: f32, pub finish_color_variance_green: f32, pub finish_color_variance_red: f32, pub finish_particle_size: f32, pub finish_particle_size_variance: f32, pub gravityx: f32, pub gravityy: f32, pub max_particles: f32, pub max_radius: f32, pub max_radius_variance: f32, pub min_radius: f32, pub min_radius_variance: f32, pub particle_lifespan: f32, pub particle_lifespan_variance: f32, pub rotate_per_second: f32, pub rotate_per_second_variance: f32, pub rotation_end: f32, pub rotation_end_variance: f32, pub rotation_start: f32, pub rotation_start_variance: f32, pub source_position_variancex: f32, pub source_position_variancey: f32, pub speed: f32, pub speed_variance: f32, pub start_color_alpha: f32, pub start_color_blue: f32, pub start_color_green: f32, pub start_color_red: f32, pub start_color_variance_alpha: f32, pub start_color_variance_blue: f32, pub start_color_variance_green: f32, pub start_color_variance_red: f32, pub start_particle_size: f32, pub start_particle_size_variance: f32, pub texture_file_name: String, }
+src/particle_designer_parse.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct ParticleDesignerParseOptions { pub texture_size: Option<f32>, }
+src/particle_designer_parse.rs: pub fn parse_particle_designer_plist(plist_xml: &str, options: Option<&ParticleDesignerParseOptions>,) -> ParticleEmitterConfig
+src/particle_designer_parse.rs: pub fn parse_particle_designer_plist_document(plist_xml: &str, options: Option<&ParticleDesignerParseOptions>,) -> ParticleDesignerParseResult
+src/particle_designer_parse.rs: pub struct ParticleDesignerParseResult { pub config: ParticleEmitterConfig, pub diagnostics: Vec<ImportDiagnostic>, pub document: ParticleDesignerDocument, }
+src/particle_designer_serialize.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct ParticleDesignerSerializeOptions { pub texture_size: Option<f32>, }
+src/particle_designer_serialize.rs: pub fn serialize_particle_designer_plist(config: &ParticleEmitterConfig, existing: Option<&ParticleDesignerDocument>, options: Option<&ParticleDesignerSerializeOptions>,) -> String
+src/particle_designer_serialize.rs: pub fn serialize_particle_designer_plist_document(config: &ParticleEmitterConfig, existing: Option<&ParticleDesignerDocument>, options: Option<&ParticleDesignerSerializeOptions>,) -> ParticleSerializeResult
+src/pixi_parse.rs: pub fn parse_pixi_particle(json: &str) -> ParticleEmitterConfig
+src/pixi_parse.rs: pub fn parse_pixi_particle_document(json: &str) -> PixiParseResult
+src/pixi_parse.rs: pub struct PixiParseResult { pub config: ParticleEmitterConfig, pub diagnostics: Vec<ImportDiagnostic>, }
+src/register_built_in_particle_formats.rs: pub fn apply_particle_import_options(registry: &mut ParticleFormatRegistry, options: &ParticleImportOptions,)
+src/register_built_in_particle_formats.rs: pub fn create_particle_all_formats() -> Vec<ParticleFormatDescriptor>
+src/register_built_in_particle_formats.rs: pub fn get_libgdx_particle_format() -> ParticleFormatDescriptor
+src/register_built_in_particle_formats.rs: pub fn get_particle_designer_particle_format() -> ParticleFormatDescriptor
+src/register_built_in_particle_formats.rs: pub fn get_pixi_particle_format() -> ParticleFormatDescriptor
+src/register_built_in_particle_formats.rs: pub fn get_spine_particle_format() -> ParticleFormatDescriptor
+src/register_built_in_particle_formats.rs: pub fn get_starling_pex_particle_format() -> ParticleFormatDescriptor
+src/register_built_in_particle_formats.rs: pub fn get_unity_particle_format() -> ParticleFormatDescriptor
+src/register_built_in_particle_formats.rs: pub fn register_built_in_particle_formats(registry: &mut ParticleFormatRegistry)
+src/spine_parse.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct SpineAlphaKeyframe { pub alpha: f32, pub time: f32, }
+src/spine_parse.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct SpineRangeValue { pub high: f32, pub low: f32, }
+src/spine_parse.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum SpineBlendMode { #[default] Normal, Additive, Multiply, Screen, }
+src/spine_parse.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum SpineSpawnShape { #[default] Point, Ellipse, Line, }
+src/spine_parse.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct SpineParticleDocument { pub alpha: Vec<SpineAlphaKeyframe>, pub angle: SpineRangeValue, pub blend_mode: SpineBlendMode, pub continuous: bool, pub duration: f32, pub emission: SpineRangeValue, pub gravity: SpineRangeValue, pub images: Vec<String>, pub life: SpineRangeValue, pub life_offset: SpineRangeValue, pub max_particles: f32, pub name: String, pub premultiplied: bool, pub rotation: SpineRangeValue, pub scale: SpineRangeValue, pub scale_end: SpineRangeValue, pub spawn_height: SpineRangeValue, pub spawn_shape: SpineSpawnShape, pub spawn_width: SpineRangeValue, pub tint: Vec<SpineTintKeyframe>, pub velocity: SpineRangeValue, pub wind: SpineRangeValue, pub x: SpineRangeValue, pub y: SpineRangeValue, }
+src/spine_parse.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct SpineTintKeyframe { pub color: String, pub time: f32, }
+src/spine_parse.rs: pub fn parse_spine_particle(json: &str) -> ParticleEmitterConfig
+src/spine_parse.rs: pub fn parse_spine_particle_document(json: &str) -> SpineParseResult
+src/spine_parse.rs: pub struct SpineParseResult { pub config: ParticleEmitterConfig, pub diagnostics: Vec<ImportDiagnostic>, pub document: SpineParticleDocument, }
+src/spine_serialize.rs: pub fn serialize_spine_particle(config: &ParticleEmitterConfig, existing: Option<&SpineParticleDocument>,) -> String
+src/spine_serialize.rs: pub fn serialize_spine_particle_document(config: &ParticleEmitterConfig, existing: Option<&SpineParticleDocument>,) -> ParticleSerializeResult
+src/starling_pex_parse.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct StarlingPexColor { pub red: f32, pub green: f32, pub blue: f32, pub alpha: f32, }
+src/starling_pex_parse.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum StarlingPexEmitterType { #[default] Gravity, Radial, }
+src/starling_pex_parse.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct StarlingPexDocument { pub angle: f32, pub angle_variance: f32, pub blend_func_destination: f32, pub blend_func_source: f32, pub duration: f32, pub emitter_type: StarlingPexEmitterType, pub finish_color: StarlingPexColor, pub finish_color_variance: StarlingPexColor, pub finish_particle_size: f32, pub finish_particle_size_variance: f32, pub gravityx: f32, pub gravityy: f32, pub max_particles: f32, pub max_radius: f32, pub max_radius_variance: f32, pub min_radius: f32, pub min_radius_variance: f32, pub particle_lifespan: f32, pub particle_lifespan_variance: f32, pub radial_accel_variance: f32, pub radial_acceleration: f32, pub rotate_per_second: f32, pub rotate_per_second_variance: f32, pub rotation_end: f32, pub rotation_end_variance: f32, pub rotation_start: f32, pub rotation_start_variance: f32, pub source_position_variancex: f32, pub source_position_variancey: f32, pub speed: f32, pub speed_variance: f32, pub start_color: StarlingPexColor, pub start_color_variance: StarlingPexColor, pub start_particle_size: f32, pub start_particle_size_variance: f32, pub tangential_accel_variance: f32, pub tangential_acceleration: f32, pub texture_file_name: String, }
+src/starling_pex_parse.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct StarlingPexParseOptions { pub texture_size: Option<f32>, }
+src/starling_pex_parse.rs: pub fn parse_starling_pex(xml: &str, options: Option<&StarlingPexParseOptions>,) -> ParticleEmitterConfig
+src/starling_pex_parse.rs: pub fn parse_starling_pex_document(xml: &str, options: Option<&StarlingPexParseOptions>,) -> StarlingPexParseResult
+src/starling_pex_parse.rs: pub struct StarlingPexParseResult { pub config: ParticleEmitterConfig, pub diagnostics: Vec<ImportDiagnostic>, pub document: StarlingPexDocument, }
+src/starling_pex_serialize.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct StarlingPexSerializeOptions { pub texture_size: Option<f32>, }
+src/starling_pex_serialize.rs: pub fn serialize_starling_pex(config: &ParticleEmitterConfig, existing: Option<&StarlingPexDocument>, options: Option<&StarlingPexSerializeOptions>,) -> String
+src/starling_pex_serialize.rs: pub fn serialize_starling_pex_document(config: &ParticleEmitterConfig, existing: Option<&StarlingPexDocument>, options: Option<&StarlingPexSerializeOptions>,) -> ParticleSerializeResult
+src/types.rs: #[derive(Clone)] pub struct ParticleFormatCodec { pub detect: Arc<dyn Fn(&str) -> bool + Send + Sync>, pub parse_to_config: Arc<dyn Fn(&str, Option<&ParseParticleConfigOptions>) -> ParticleEmitterConfig + Send + Sync,>, pub parse_to_document: Arc<dyn Fn(&str, Option<&ParseParticleConfigOptions>) -> ParticleFormatParseDocumentResult + Send + Sync,>, pub serialize: Option<Arc<dyn Fn(&ParticleEmitterConfig) -> ParticleSerializeResult + Send + Sync>>, }
+src/types.rs: #[derive(Clone)] pub struct ParticleFormatDescriptor { pub codec: Arc<ParticleFormatCodec>, pub kind: ParticleFormatKind, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct ParseParticleConfigOptions { pub pixels_per_unit: Option<f32>, pub texture_size: Option<f32>, }
+src/types.rs: #[derive(Default)] pub struct ParticleImportOptions { pub formats: Option<Vec<ParticleFormatDescriptor>>, }
+src/types.rs: pub const LIBGDX_PARTICLE_FORMAT_KIND: &str
+src/types.rs: pub const PARTICLES_REQUIREMENT_KEY_NAMESPACE: &str
+src/types.rs: pub const PARTICLE_DESIGNER_FORMAT_KIND: &str
+src/types.rs: pub const PIXI_PARTICLE_FORMAT_KIND: &str
+src/types.rs: pub const SPINE_PARTICLE_FORMAT_KIND: &str
+src/types.rs: pub const STARLING_PEX_FORMAT_KIND: &str
+src/types.rs: pub const UNITY_PARTICLE_FORMAT_KIND: &str
+src/types.rs: pub struct ParticleConfigParseResult { pub config: ParticleEmitterConfig, pub diagnostics: Vec<ImportDiagnostic>, pub format: Option<ParticleFormatKind>, }
+src/types.rs: pub struct ParticleFormatParseDocumentResult { pub config: ParticleEmitterConfig, pub diagnostics: Vec<ImportDiagnostic>, }
+src/types.rs: pub struct ParticleFormatWarning { pub code: String, pub format: ParticleFormatKind, pub message: String, }
+src/types.rs: pub struct ParticleSerializeResult { pub text: String, pub warnings: Vec<String>, }
+src/types.rs: pub type ParticleFormatKind = String;
+src/unity_parse.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct UnityBurst { pub count: f32, pub cycle_count: f32, pub repeat_interval: f32, pub time: f32, }
+src/unity_parse.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct UnityCurveKey { pub time: f32, pub value: f32, }
+src/unity_parse.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct UnityGradientAlphaKey { pub alpha: f32, pub time: f32, }
+src/unity_parse.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct UnityGradientColorKey { pub b: f32, pub g: f32, pub r: f32, pub time: f32, }
+src/unity_parse.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum UnityMinMaxMode { #[default] Constant, TwoConstants, Curve, TwoCurves, }
+src/unity_parse.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum UnityParticleShapeType { Sphere, Hemisphere, #[default] Cone, Box, Circle, Edge, Rectangle, Donut, }
+src/unity_parse.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct UnityColor { pub a: f32, pub b: f32, pub g: f32, pub r: f32, }
+src/unity_parse.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct UnityVector3 { pub x: f32, pub y: f32, pub z: f32, }
+src/unity_parse.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct UnityAnimationCurve { pub keys: Vec<UnityCurveKey>, }
+src/unity_parse.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct UnityGradient { pub alpha_keys: Vec<UnityGradientAlphaKey>, pub color_keys: Vec<UnityGradientColorKey>, }
+src/unity_parse.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct UnityMinMaxValue { pub constant: Option<f32>, pub constant_max: Option<f32>, pub constant_min: Option<f32>, pub mode: UnityMinMaxMode, }
+src/unity_parse.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct UnityParseOptions { pub pixels_per_unit: Option<f32>, }
+src/unity_parse.rs: #[derive(Clone, Debug, PartialEq)] pub struct UnityColorOverLifetime { pub color_end: UnityColor, pub color_start: UnityColor, pub enabled: bool, pub gradient: Option<UnityGradient>, }
+src/unity_parse.rs: #[derive(Clone, Debug, PartialEq)] pub struct UnityEmission { pub bursts: Vec<UnityBurst>, pub rate_over_time: UnityMinMaxValue, }
+src/unity_parse.rs: #[derive(Clone, Debug, PartialEq)] pub struct UnityParticleDocument { pub color_over_lifetime: UnityColorOverLifetime, pub duration: f32, pub emission: UnityEmission, pub gravity_modifier: f32, pub looping: bool, pub max_particles: f32, pub name: String, pub physics_gravity: f32, pub prewarm: bool, pub rotation_over_lifetime: UnityRotationOverLifetime, pub shape: UnityShape, pub size_over_lifetime: UnitySizeOverLifetime, pub start_color: UnityColor, pub start_lifetime: UnityMinMaxValue, pub start_rotation: UnityMinMaxValue, pub start_size: UnityMinMaxValue, pub start_speed: UnityMinMaxValue, }
+src/unity_parse.rs: #[derive(Clone, Debug, PartialEq)] pub struct UnityRotationOverLifetime { pub angular_velocity: UnityMinMaxValue, pub enabled: bool, }
+src/unity_parse.rs: #[derive(Clone, Debug, PartialEq)] pub struct UnityShape { pub angle: f32, pub enabled: bool, pub radius: f32, pub scale: UnityVector3, pub shape_type: UnityParticleShapeType, }
+src/unity_parse.rs: #[derive(Clone, Debug, PartialEq)] pub struct UnitySizeOverLifetime { pub curve: Option<UnityAnimationCurve>, pub enabled: bool, pub size_end: f32, pub size_start: f32, }
+src/unity_parse.rs: impl Default for UnityColor
+src/unity_parse.rs: impl Default for UnityColor :: fn default() -> Self
+src/unity_parse.rs: impl Default for UnityVector3
+src/unity_parse.rs: impl Default for UnityVector3 :: fn default() -> Self
+src/unity_parse.rs: pub fn parse_unity_particle(json: &str, options: Option<&UnityParseOptions>,) -> ParticleEmitterConfig
+src/unity_parse.rs: pub fn parse_unity_particle_document(json: &str, options: Option<&UnityParseOptions>,) -> UnityParseResult
+src/unity_parse.rs: pub struct UnityParseResult { pub config: ParticleEmitterConfig, pub diagnostics: Vec<ImportDiagnostic>, pub document: UnityParticleDocument, }
+src/unity_serialize.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct UnitySerializeOptions { pub pixels_per_unit: Option<f32>, }
+src/unity_serialize.rs: pub fn serialize_unity_particle(config: &ParticleEmitterConfig, existing: Option<&UnityParticleDocument>, options: Option<&UnitySerializeOptions>,) -> String
+src/unity_serialize.rs: pub fn serialize_unity_particle_document(config: &ParticleEmitterConfig, existing: Option<&UnityParticleDocument>, options: Option<&UnitySerializeOptions>,) -> ParticleSerializeResult
