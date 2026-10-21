@@ -5,6 +5,7 @@ src/contract.rs: pub use crate::image_source_dimensions::*;
 src/contract.rs: pub use crate::image_test_helper::*;
 src/contract.rs: pub use crate::image_texture::*;
 src/contract.rs: pub use crate::types::*;
+src/image_resource.rs: pub fn as_image_resource_ref(source: &TextureSourceRef) -> Option<Ref<ImageResource>>
 src/image_resource.rs: pub fn clone_image_resource(resource: &Ref<ImageResource>) -> Ref<ImageResource>
 src/image_resource.rs: pub fn create_compressed_image_resource(compressed: Arc<CompressedImageData>,) -> Ref<CompressedImageResource>
 src/image_resource.rs: pub fn create_image_resource(image: Arc<HostImageSource>, state: &ImageResolverState,) -> Ref<ImageResource>
@@ -73,6 +74,7 @@ src/lib.rs: pub use contract::ImageResourceReference;
 src/lib.rs: pub use contract::ImageResourceReferenceKind;
 src/lib.rs: pub use contract::ImageResourceReferenceResolutionExplanation;
 src/lib.rs: pub use contract::ImageUrlOriginContext;
+src/lib.rs: pub use contract::as_image_resource_ref;
 src/lib.rs: pub use contract::capture_bitmap_from_image_resource;
 src/lib.rs: pub use contract::clone_image_resource;
 src/lib.rs: pub use contract::create_compressed_image_resource;
@@ -138,11 +140,13 @@ src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ImageOperati
 src/types.rs: #[derive(Clone, Debug)] pub struct CompressedImageData { pub container: TextureContainer, pub payload: Ref<Box<Uint8Array>>, }
 src/types.rs: #[derive(Clone, Debug)] pub struct CompressedImageResource { pub(crate) fields: TextureSourceFields, pub compressed: Arc<CompressedImageData>, }
 src/types.rs: #[derive(Clone, Debug)] pub struct ImageBitmapComposition { pub kind: String, pub payload: Ref<Box<Uint8Array>>, }
-src/types.rs: #[derive(Clone, Debug)] pub struct ImageResource { pub(crate) fields: TextureSourceFields, pub source: Arc<HostImageSource>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct ImageUrlOriginContext { pub href: String, pub origin: String, }
 src/types.rs: #[derive(Clone, Default)] pub struct HostImageCapabilities { pub loader: Option<HostImageCapability>, }
 src/types.rs: #[derive(Clone, Default)] pub struct ImageResolverState { pub(crate) bitmap_composition_resolver: Option<ImageBitmapCompositionResolver>, pub(crate) dimension_resolver: Option<HostImageDimensionResolver>, }
 src/types.rs: #[derive(Clone, Default)] pub struct ImageResourceFailure { pub kind: ImageResourceFailureKind, pub message: String, pub name: Option<String>, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Debug)] pub struct ImageResource { pub(crate) fields: TextureSourceFields, pub(crate) self_handle: Weak<RwLock<ImageResource>>, pub source: Arc<HostImageSource>, }
+src/types.rs: impl Clone for ImageResource
+src/types.rs: impl Clone for ImageResource :: fn clone(&self) -> Self
 src/types.rs: impl Default for CompressedImageData
 src/types.rs: impl Default for CompressedImageData :: fn default() -> Self
 src/types.rs: impl Default for CompressedImageResource
