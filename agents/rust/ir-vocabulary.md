@@ -52,6 +52,9 @@ The table is generated from `crates/cargo-flight-lint/src/vocabulary.rs` (`cargo
 | `Pin<Box<dyn Future<Output=T> + Send>>` | `Promise<T>` | `std::future<T>` | `futures.Future<T>` | established | Boxed future return type (D15); required Send bound; used in async callback returns |
 | `(A, B) / (A, B, C) / (A, B, C, D)` | `readonly [A, B] / readonly [A, B, C] / readonly [A, B, C, D]` | `std::pair / std::tuple` | `Array<Dynamic>` | established | Fixed 2–4 element tuples of vocabulary types; unit tuple `()` is void (math #3) |
 | `enum Scalar { Variant(primitive) }` | `number | string (scalar union)` | `std::variant<int, std::string>` | `Dynamic` | established | One primitive/scalar payload per variant; enum-payload-named exemption (binpack #5) |
+| `Ref<dyn Node> / Ref<dyn Node2D> / Ref<dyn Node3D>` | `Node / Node2D / Node3D` | `std::shared_ptr<Node> / …` | `Node / Node2D / Node3D` | established | D16: node family trait objects; mixed children `Vec<Ref<dyn Node2D>>`; only declared family names accepted |
+| `kind struct + Deref<Target = *Fields>` | `interface X extends Node2D` | `class X : public Node2D` | `class X extends Node2D` | established | D16: concrete kind (Sprite, Mesh, …) composes *Fields via Deref/DerefMut; data as separate pub field |
+| `T: Node2D / T: Transform2DNode / T: BoundsNode` | `T extends Node2D / …` | `template<typename T>` | `<T:Node2D>` | established | D16: node family and feature traits as generic bounds; only declared trait names accepted |
 | `pub const / pub static LazyLock<T>` | `export const` | `inline constexpr / static` | `static final` | established | Immutable only (D5) |
 
 Workspace-defined structs, enums and aliases are allowed by name. Each one is itself checked where it is defined.

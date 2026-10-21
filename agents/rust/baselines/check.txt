@@ -819,8 +819,6 @@ fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`get_collision_triangle_
 fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`heightfield_cell_triangles` should come before `sweep_collision_heightfield3d`
 fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`ray_triangle_intersection` should come before `rotate_by_quat`
 fn-order	crates/flight-collision/src/triangle_mesh3d.rs	`rotate_by_quat` should come before `transform_point_hf`
-fn-order	crates/flight-flow/src/flow.rs	`create_flow_stack` should come before `clear_flow_stack`
-fn-order	crates/flight-flow/src/flow.rs	`initialize_flow_stack` should come before `get_flow_stack_visible_states`
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_index_count` should come before `get_index_value`
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_index_value` should come before `promote_indices`
 fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_vertex_count_from_layout` should come before `set_mesh_geometry_skin_bind_pose`
@@ -991,8 +989,6 @@ hashmap-iteration	crates/flight-tween/src/tween.rs	`fn stop_tweens` iterates Has
 hashmap-iteration	crates/flight-tween/src/update_tweens.rs	`fn update_tweens` iterates HashMap/HashSet `tweens`; order is unspecified (use a Vec for observable order, or `allow(hashmap-iteration) <reason>`)
 hidden-state	crates/flight-entity/src/guards.rs	thread_local `GUARDS_ENABLED` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-entity/src/guards.rs	thread_local `WRITE_GUARD` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-flow/src/flow.rs	thread_local `TRANSITION_DEPTH` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
-hidden-state	crates/flight-flow/src/flow_guards.rs	thread_local `ENABLED` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-statechart/src/enable_statechart_guards.rs	thread_local `NEXT_STATECHART_GUARD_CHART_ID` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-statechart/src/enable_statechart_guards.rs	thread_local `STATECHART_GUARD_CHART_IDS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
 hidden-state	crates/flight-statechart/src/types.rs	thread_local `LOG_ONCE_KEYS` is hidden global state; pass it explicitly or mark a non-semantic cache with `allow(hidden-state) <reason>`
@@ -1040,7 +1036,6 @@ test-coverage	crates/flight-collision/src/raycast_collision_shape3d.rs	`initiali
 test-coverage	crates/flight-collision/src/sweep_collision_shape2d.rs	`initialize_collision_time_of_impact2d` is not tested
 test-coverage	crates/flight-collision/src/sweep_collision_shape3d.rs	`initialize_collision_time_of_impact3d` is not tested
 test-coverage	crates/flight-entity/src/binding.rs	`get_entity_binding_as` is not tested
-test-coverage	crates/flight-flow/src/flow_guards.rs	`report_flow_guard` is not tested
 test-coverage	crates/flight-geometry/src/capsule.rs	`initialize_capsule` is not tested
 test-coverage	crates/flight-geometry/src/matrix3.rs	`initialize_matrix3` is not tested
 test-coverage	crates/flight-geometry/src/matrix4.rs	`initialize_matrix4` is not tested
@@ -1179,33 +1174,6 @@ test-default-call	crates/flight-collision/tests/triangle_mesh3d_test.rs	test cal
 test-default-call	crates/flight-collision/tests/triangle_mesh3d_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-collision/tests/triangle_mesh3d_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-collision/tests/triangle_mesh3d_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-flow/tests/flow_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
