@@ -53,22 +53,27 @@ pub fn create_scheduled_notification_resource(
     return out;
 }
 
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): the construction initializer of the source create
 pub fn initialize_notification_action_subscription(out: &mut NotificationActionSubscription) {
     out.on_notification_action = create_signal();
 }
 
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): the construction initializer of the source create
 pub fn initialize_notification_click_subscription(out: &mut NotificationClickSubscription) {
     out.on_notification_click = create_signal();
 }
 
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): the construction initializer of the source create
 pub fn initialize_notification_dismiss_subscription(out: &mut NotificationDismissSubscription) {
     out.on_notification_dismiss = create_signal();
 }
 
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): the construction initializer of the source create
 pub fn initialize_notification_received_subscription(out: &mut NotificationReceivedSubscription) {
     out.on_notification_received = create_signal();
 }
 
+// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): the construction initializer of the source create
 pub fn initialize_notification_reply_subscription(out: &mut NotificationReplySubscription) {
     out.on_notification_reply = create_signal();
 }
