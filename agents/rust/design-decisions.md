@@ -65,6 +65,7 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
   - `allocate_entity<T: Default>() -> T` is the single named allocation hook (TS: `allocateEntity`, which sets up the runtime slot and object shape).
   - `initialize_*` chains base to derived and supports reuse.
   - `finish_entity` is dropped: it is a type-only cast with no runtime effect. On the TS side, `allocateEntity` returns a mutable-under-construction type, so no cast is needed.
+- **Which types are entities (principal, 2026-10-21; mechanical per D0):** a Rust struct is an Entity **iff its TS type extends `Entity`**, directly or transitively; about 239 TS type files do. Everything else is plain data: no runtime slot, no `create_*`, and it is constructed with a struct literal, as TS uses an object literal. Example: `EasingSegment` (a plain TS interface) is plain data, so the Rust-only `create_easing_segment` is removed.
 - **Names match TS (principal, 2026-10-21):**
   - Rust `EntityRuntime` is the TS `EntityRuntime` record (binding, uid).
   - The field type is `EntityRuntimeSlot`, the TS `[EntityRuntimeKey]: EntityRuntime | undefined`. Its implementation is a thin pointer with clone-resets and compare-ignores semantics.
