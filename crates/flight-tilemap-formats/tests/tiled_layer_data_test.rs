@@ -1,5 +1,16 @@
 use flight_tilemap_formats::*;
 
+mod create_tiled_guard_state {
+    use super::*;
+
+    #[test]
+    fn returns_empty_guard_state() {
+        let state = create_tiled_guard_state();
+        let result = decode_tiled_base64_layer("AQAAAAIAAAA=", Some(TiledCompression::Zlib), None, Some(&state));
+        assert!(result.is_none());
+    }
+}
+
 mod decode_tiled_base64_layer {
     use super::*;
 
