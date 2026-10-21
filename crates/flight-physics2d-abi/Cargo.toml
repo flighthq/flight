@@ -1,0 +1,20 @@
+[package]
+name = "flight-physics2d-abi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "The target-neutral Physics2D execution boundary: a little-endian command stream, packed readback buffers and an executable reference backend over flight-physics2d"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-collision = { workspace = true }
+flight-entity = { workspace = true }
+flight-physics2d = { path = "../flight-physics2d" }
+flight-spatial = { workspace = true }
+
+[lints]
+workspace = true

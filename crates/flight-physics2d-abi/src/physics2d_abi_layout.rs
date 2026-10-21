@@ -1,0 +1,239 @@
+//! The Physics2D ABI wire layout (TS `physics2DAbiLayout.ts`). Each TS `as const` group is a set
+//! of flat, group-prefixed constants (the `BITMAP_NOISE_CHANNEL_*` convention): wire words are `u32`,
+//! byte lengths, offsets and strides are `usize`.
+
+/// Wire version for the command stream and backend surface (TS `Physics2DAbiVersion`). Increment
+/// when an existing numeric discriminant, field position, or meaning changes.
+pub const PHYSICS2D_ABI_VERSION: u32 = 1;
+
+/// The bytes `P2DA`, read little-endian (TS `Physics2DAbiCommandMagic`).
+pub const PHYSICS2D_ABI_COMMAND_MAGIC: u32 = 0x41443250;
+pub const PHYSICS2D_ABI_COMMAND_HEADER_BYTE_LENGTH: usize = 16;
+pub const PHYSICS2D_ABI_COMMAND_RECORD_HEADER_BYTE_LENGTH: usize = 16;
+
+// TS `Physics2DAbiCommandHeaderOffset`.
+pub const PHYSICS2D_ABI_COMMAND_HEADER_OFFSET_MAGIC: usize = 0;
+pub const PHYSICS2D_ABI_COMMAND_HEADER_OFFSET_VERSION: usize = 4;
+pub const PHYSICS2D_ABI_COMMAND_HEADER_OFFSET_BYTE_LENGTH: usize = 8;
+pub const PHYSICS2D_ABI_COMMAND_HEADER_OFFSET_COMMAND_COUNT: usize = 12;
+
+// TS `Physics2DAbiCommandRecordOffset`.
+pub const PHYSICS2D_ABI_COMMAND_RECORD_OFFSET_KIND: usize = 0;
+pub const PHYSICS2D_ABI_COMMAND_RECORD_OFFSET_BYTE_LENGTH: usize = 4;
+pub const PHYSICS2D_ABI_COMMAND_RECORD_OFFSET_OBJECT_ID: usize = 8;
+pub const PHYSICS2D_ABI_COMMAND_RECORD_OFFSET_RELATED_ID: usize = 12;
+
+// TS `Physics2DAbiCapability`: one bit per optional backend feature.
+pub const PHYSICS2D_ABI_CAPABILITY_CONTACT_HOOKS: u32 = 1 << 0;
+pub const PHYSICS2D_ABI_CAPABILITY_PERSISTENT_WORLDS: u32 = 1 << 1;
+pub const PHYSICS2D_ABI_CAPABILITY_QUERIES: u32 = 1 << 2;
+pub const PHYSICS2D_ABI_CAPABILITY_SELECTIVE_READBACK: u32 = 1 << 3;
+
+// TS `Physics2DAbiCommandKind`.
+pub const PHYSICS2D_ABI_COMMAND_KIND_SET_GRAVITY: u32 = 1;
+pub const PHYSICS2D_ABI_COMMAND_KIND_SET_SOLVER_CONFIG: u32 = 2;
+pub const PHYSICS2D_ABI_COMMAND_KIND_SET_BODY: u32 = 3;
+pub const PHYSICS2D_ABI_COMMAND_KIND_DESTROY_BODY: u32 = 4;
+pub const PHYSICS2D_ABI_COMMAND_KIND_SET_COLLIDER: u32 = 5;
+pub const PHYSICS2D_ABI_COMMAND_KIND_DESTROY_COLLIDER: u32 = 6;
+pub const PHYSICS2D_ABI_COMMAND_KIND_SET_JOINT: u32 = 7;
+pub const PHYSICS2D_ABI_COMMAND_KIND_DESTROY_JOINT: u32 = 8;
+pub const PHYSICS2D_ABI_COMMAND_KIND_APPLY_FORCE: u32 = 9;
+pub const PHYSICS2D_ABI_COMMAND_KIND_APPLY_FORCE_AT_POINT: u32 = 10;
+pub const PHYSICS2D_ABI_COMMAND_KIND_APPLY_LINEAR_IMPULSE: u32 = 11;
+pub const PHYSICS2D_ABI_COMMAND_KIND_APPLY_LINEAR_IMPULSE_AT_POINT: u32 = 12;
+pub const PHYSICS2D_ABI_COMMAND_KIND_APPLY_TORQUE: u32 = 13;
+pub const PHYSICS2D_ABI_COMMAND_KIND_WAKE_BODY: u32 = 14;
+
+// TS `Physics2DAbiShapeKind`: every kind `CollisionBuiltInShape2D` admits, including the two
+// area-less ones Physics2D accepts as legal authored state.
+pub const PHYSICS2D_ABI_SHAPE_KIND_CIRCLE: u32 = 1;
+pub const PHYSICS2D_ABI_SHAPE_KIND_AABB: u32 = 2;
+pub const PHYSICS2D_ABI_SHAPE_KIND_OBB: u32 = 3;
+pub const PHYSICS2D_ABI_SHAPE_KIND_CAPSULE: u32 = 4;
+pub const PHYSICS2D_ABI_SHAPE_KIND_POLYGON: u32 = 5;
+pub const PHYSICS2D_ABI_SHAPE_KIND_SEGMENT: u32 = 6;
+pub const PHYSICS2D_ABI_SHAPE_KIND_POINT: u32 = 7;
+
+// TS `Physics2DAbiJointKind`.
+pub const PHYSICS2D_ABI_JOINT_KIND_DISTANCE: u32 = 1;
+pub const PHYSICS2D_ABI_JOINT_KIND_REVOLUTE: u32 = 2;
+pub const PHYSICS2D_ABI_JOINT_KIND_PRISMATIC: u32 = 3;
+pub const PHYSICS2D_ABI_JOINT_KIND_WELD: u32 = 4;
+pub const PHYSICS2D_ABI_JOINT_KIND_WHEEL: u32 = 5;
+pub const PHYSICS2D_ABI_JOINT_KIND_ROPE: u32 = 6;
+pub const PHYSICS2D_ABI_JOINT_KIND_MOUSE: u32 = 7;
+pub const PHYSICS2D_ABI_JOINT_KIND_PULLEY: u32 = 8;
+pub const PHYSICS2D_ABI_JOINT_KIND_GEAR: u32 = 9;
+
+pub const PHYSICS2D_ABI_BODY_VALUE_STRIDE: usize = 17;
+pub const PHYSICS2D_ABI_CONTACT_ID_STRIDE: usize = 4;
+pub const PHYSICS2D_ABI_CONTACT_VALUE_STRIDE: usize = 4;
+pub const PHYSICS2D_ABI_CONTACT_POINT_VALUE_STRIDE: usize = 7;
+pub const PHYSICS2D_ABI_JOINT_VALUE_STRIDE: usize = 3;
+pub const PHYSICS2D_ABI_QUERY_VALUE_STRIDE: usize = 5;
+
+/// A planar manifold is a segment, so two points is the exact bound (TS
+/// `Physics2DAbiMaxContactPoints`).
+pub const PHYSICS2D_ABI_MAX_CONTACT_POINTS: usize = 2;
+
+// TS `Physics2DAbiBodyValue`: authored body scalars in wire order. Derived solver quantities
+// (inverse mass and inertia, lever arms, warm-start impulses) are deliberately absent.
+pub const PHYSICS2D_ABI_BODY_VALUE_X: usize = 0;
+pub const PHYSICS2D_ABI_BODY_VALUE_Y: usize = 1;
+pub const PHYSICS2D_ABI_BODY_VALUE_ANGLE: usize = 2;
+pub const PHYSICS2D_ABI_BODY_VALUE_VELOCITY_X: usize = 3;
+pub const PHYSICS2D_ABI_BODY_VALUE_VELOCITY_Y: usize = 4;
+pub const PHYSICS2D_ABI_BODY_VALUE_ANGULAR_VELOCITY: usize = 5;
+pub const PHYSICS2D_ABI_BODY_VALUE_FORCE_X: usize = 6;
+pub const PHYSICS2D_ABI_BODY_VALUE_FORCE_Y: usize = 7;
+pub const PHYSICS2D_ABI_BODY_VALUE_TORQUE: usize = 8;
+pub const PHYSICS2D_ABI_BODY_VALUE_MASS: usize = 9;
+pub const PHYSICS2D_ABI_BODY_VALUE_INERTIA: usize = 10;
+pub const PHYSICS2D_ABI_BODY_VALUE_CENTER_X: usize = 11;
+pub const PHYSICS2D_ABI_BODY_VALUE_CENTER_Y: usize = 12;
+pub const PHYSICS2D_ABI_BODY_VALUE_LINEAR_DAMPING: usize = 13;
+pub const PHYSICS2D_ABI_BODY_VALUE_ANGULAR_DAMPING: usize = 14;
+pub const PHYSICS2D_ABI_BODY_VALUE_GRAVITY_SCALE: usize = 15;
+pub const PHYSICS2D_ABI_BODY_VALUE_SLEEP_TIMER: usize = 16;
+
+// TS `Physics2DAbiContactId`.
+pub const PHYSICS2D_ABI_CONTACT_ID_BODY_A: usize = 0;
+pub const PHYSICS2D_ABI_CONTACT_ID_BODY_B: usize = 1;
+pub const PHYSICS2D_ABI_CONTACT_ID_COLLIDER_A: usize = 2;
+pub const PHYSICS2D_ABI_CONTACT_ID_COLLIDER_B: usize = 3;
+
+// TS `Physics2DAbiContactValue`.
+pub const PHYSICS2D_ABI_CONTACT_VALUE_NORMAL_X: usize = 0;
+pub const PHYSICS2D_ABI_CONTACT_VALUE_NORMAL_Y: usize = 1;
+pub const PHYSICS2D_ABI_CONTACT_VALUE_FRICTION: usize = 2;
+pub const PHYSICS2D_ABI_CONTACT_VALUE_RESTITUTION: usize = 3;
+
+// TS `Physics2DAbiContactPointValue`.
+pub const PHYSICS2D_ABI_CONTACT_POINT_VALUE_X: usize = 0;
+pub const PHYSICS2D_ABI_CONTACT_POINT_VALUE_Y: usize = 1;
+pub const PHYSICS2D_ABI_CONTACT_POINT_VALUE_DEPTH: usize = 2;
+pub const PHYSICS2D_ABI_CONTACT_POINT_VALUE_RELATIVE_AX: usize = 3;
+pub const PHYSICS2D_ABI_CONTACT_POINT_VALUE_RELATIVE_AY: usize = 4;
+pub const PHYSICS2D_ABI_CONTACT_POINT_VALUE_RELATIVE_BX: usize = 5;
+pub const PHYSICS2D_ABI_CONTACT_POINT_VALUE_RELATIVE_BY: usize = 6;
+
+// TS `Physics2DAbiJointValue`: a 2D reaction is a force plus one torque scalar.
+pub const PHYSICS2D_ABI_JOINT_VALUE_FORCE_X: usize = 0;
+pub const PHYSICS2D_ABI_JOINT_VALUE_FORCE_Y: usize = 1;
+pub const PHYSICS2D_ABI_JOINT_VALUE_TORQUE: usize = 2;
+
+// TS `Physics2DAbiQueryValue`.
+pub const PHYSICS2D_ABI_QUERY_VALUE_FRACTION: usize = 0;
+pub const PHYSICS2D_ABI_QUERY_VALUE_X: usize = 1;
+pub const PHYSICS2D_ABI_QUERY_VALUE_Y: usize = 2;
+pub const PHYSICS2D_ABI_QUERY_VALUE_NORMAL_X: usize = 3;
+pub const PHYSICS2D_ABI_QUERY_VALUE_NORMAL_Y: usize = 4;
+
+// TS `Physics2DAbiCommandByteLength`: record lengths include the 16-byte record header.
+pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_SET_GRAVITY: usize = 32;
+pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_SET_SOLVER_CONFIG: usize = 96;
+pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_SET_BODY: usize = 160;
+pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_DESTROY_BODY: usize = 16;
+pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_SET_COLLIDER_MINIMUM: usize = 72;
+pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_DESTROY_COLLIDER: usize = 16;
+pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_SET_JOINT: usize = 152;
+pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_DESTROY_JOINT: usize = 16;
+pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_BODY_ACTION: usize = 48;
+pub const PHYSICS2D_ABI_COMMAND_BYTE_LENGTH_WAKE_BODY: usize = 16;
+
+// TS `Physics2DAbiSetBodyPayloadOffset`.
+pub const PHYSICS2D_ABI_SET_BODY_PAYLOAD_OFFSET_FLAGS: usize = 0;
+pub const PHYSICS2D_ABI_SET_BODY_PAYLOAD_OFFSET_RESERVED: usize = 4;
+pub const PHYSICS2D_ABI_SET_BODY_PAYLOAD_OFFSET_VALUES: usize = 8;
+
+// TS `Physics2DAbiSetColliderPayloadOffset`.
+pub const PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_FLAGS: usize = 0;
+pub const PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_CATEGORY_BITS: usize = 4;
+pub const PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_MASK_BITS: usize = 8;
+pub const PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_GROUP_INDEX: usize = 12;
+pub const PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_DENSITY: usize = 16;
+pub const PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_FRICTION: usize = 24;
+pub const PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_RESTITUTION: usize = 32;
+pub const PHYSICS2D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_SHAPE: usize = 40;
+
+// TS `Physics2DAbiSetJointPayloadOffset`.
+pub const PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_KIND: usize = 0;
+pub const PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_BODY_A: usize = 4;
+pub const PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_BODY_B: usize = 8;
+pub const PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_FLAGS: usize = 12;
+pub const PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_COMMON_VALUES: usize = 16;
+pub const PHYSICS2D_ABI_SET_JOINT_PAYLOAD_OFFSET_KIND_VALUES: usize = 64;
+
+// TS `Physics2DAbiSetSolverConfigPayloadOffset`. Physics2D has no substeps: the word 3D spends on
+// them is held zero (Reserved0) so the two configs stay positionally comparable.
+pub const PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_FLAGS: usize = 0;
+pub const PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_RESERVED0: usize = 4;
+pub const PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_MAX_CCD_SUBSTEPS: usize = 8;
+pub const PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_MAX_CCD_ROTATION_SUBSTEPS: usize = 12;
+pub const PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_VELOCITY_ITERATIONS: usize = 16;
+pub const PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_POSITION_ITERATIONS: usize = 20;
+pub const PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_RESERVED1: usize = 24;
+pub const PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_RESERVED2: usize = 28;
+pub const PHYSICS2D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_VALUES: usize = 32;
+
+// TS `Physics2DAbiSolverConfigValue`.
+pub const PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_SLEEP_LINEAR_THRESHOLD: usize = 0;
+pub const PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_SLEEP_ANGULAR_THRESHOLD: usize = 1;
+pub const PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_TIME_TO_SLEEP: usize = 2;
+pub const PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_PENETRATION_SLOP: usize = 3;
+pub const PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_POSITION_CORRECTION: usize = 4;
+pub const PHYSICS2D_ABI_SOLVER_CONFIG_VALUE_RESTITUTION_THRESHOLD: usize = 5;
+
+// TS `Physics2DAbiJointCommonValue`: anchors plus the two break thresholds, in wire order.
+pub const PHYSICS2D_ABI_JOINT_COMMON_VALUE_LOCAL_ANCHOR_AX: usize = 0;
+pub const PHYSICS2D_ABI_JOINT_COMMON_VALUE_LOCAL_ANCHOR_AY: usize = 1;
+pub const PHYSICS2D_ABI_JOINT_COMMON_VALUE_LOCAL_ANCHOR_BX: usize = 2;
+pub const PHYSICS2D_ABI_JOINT_COMMON_VALUE_LOCAL_ANCHOR_BY: usize = 3;
+pub const PHYSICS2D_ABI_JOINT_COMMON_VALUE_BREAK_FORCE: usize = 4;
+pub const PHYSICS2D_ABI_JOINT_COMMON_VALUE_BREAK_TORQUE: usize = 5;
+
+/// Nine kind slots: the prismatic joint needs nine and no built-in needs more (TS
+/// `Physics2DAbiJointKindValueCount`).
+pub const PHYSICS2D_ABI_JOINT_KIND_VALUE_COUNT: usize = 9;
+
+pub const PHYSICS2D_ABI_SHAPE_HEADER_BYTE_LENGTH: usize = 16;
+
+// TS `Physics2DAbiShapeHeaderOffset`.
+pub const PHYSICS2D_ABI_SHAPE_HEADER_OFFSET_KIND: usize = 0;
+pub const PHYSICS2D_ABI_SHAPE_HEADER_OFFSET_SCALAR_COUNT: usize = 4;
+pub const PHYSICS2D_ABI_SHAPE_HEADER_OFFSET_INTEGER_COUNT: usize = 8;
+pub const PHYSICS2D_ABI_SHAPE_HEADER_OFFSET_VERSION: usize = 12;
+pub const PHYSICS2D_ABI_SHAPE_HEADER_OFFSET_SCALARS: usize = 16;
+
+// TS `Physics2DAbiBodyFlag`.
+pub const PHYSICS2D_ABI_BODY_FLAG_TYPE_MASK: u32 = 0b11;
+pub const PHYSICS2D_ABI_BODY_FLAG_FIXED_ROTATION: u32 = 1 << 2;
+pub const PHYSICS2D_ABI_BODY_FLAG_BULLET: u32 = 1 << 3;
+pub const PHYSICS2D_ABI_BODY_FLAG_SLEEPING: u32 = 1 << 4;
+pub const PHYSICS2D_ABI_BODY_FLAG_SLEEP_ENABLED: u32 = 1 << 5;
+
+// TS `Physics2DAbiContactFlag`.
+pub const PHYSICS2D_ABI_CONTACT_FLAG_ENABLED: u32 = 1 << 0;
+pub const PHYSICS2D_ABI_CONTACT_FLAG_SENSOR: u32 = 1 << 1;
+pub const PHYSICS2D_ABI_CONTACT_FLAG_TOUCHING: u32 = 1 << 2;
+
+// TS `Physics2DAbiJointFlag`. Bits 0-1 are common to every kind; bits 2-4 are read against the
+// record's own kind, so a gear's two coordinate bits and a revolute's enable bits share positions.
+pub const PHYSICS2D_ABI_JOINT_FLAG_COLLIDE_CONNECTED: u32 = 1 << 0;
+pub const PHYSICS2D_ABI_JOINT_FLAG_BROKEN: u32 = 1 << 1;
+pub const PHYSICS2D_ABI_JOINT_FLAG_ENABLE_MOTOR: u32 = 1 << 2;
+pub const PHYSICS2D_ABI_JOINT_FLAG_ENABLE_LIMIT: u32 = 1 << 3;
+pub const PHYSICS2D_ABI_JOINT_FLAG_ENABLE_LIMIT_SPRING: u32 = 1 << 4;
+pub const PHYSICS2D_ABI_JOINT_FLAG_LINEAR_COORDINATE_A: u32 = 1 << 2;
+pub const PHYSICS2D_ABI_JOINT_FLAG_LINEAR_COORDINATE_B: u32 = 1 << 3;
+
+// TS `Physics2DAbiSolverConfigFlag`.
+pub const PHYSICS2D_ABI_SOLVER_CONFIG_FLAG_ALLOW_SLEEPING: u32 = 1 << 0;
+pub const PHYSICS2D_ABI_SOLVER_CONFIG_FLAG_CONTINUOUS_COLLISION: u32 = 1 << 1;
+pub const PHYSICS2D_ABI_SOLVER_CONFIG_FLAG_WARM_STARTING: u32 = 1 << 2;
+
+// TS `Physics2DAbiBodyType`.
+pub const PHYSICS2D_ABI_BODY_TYPE_DYNAMIC: u32 = 0;
+pub const PHYSICS2D_ABI_BODY_TYPE_KINEMATIC: u32 = 1;
+pub const PHYSICS2D_ABI_BODY_TYPE_STATIC: u32 = 2;
