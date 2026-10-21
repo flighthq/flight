@@ -2,7 +2,7 @@ use std::fmt;
 use std::future::Future;
 use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, RwLock, Weak};
 
 use flight_bitmap::{Bitmap, HostImageSource};
 use flight_entity::{Entity, EntityRuntimeSlot, Ref, Uint8Array};
@@ -36,9 +36,10 @@ pub struct CompressedImageResource {
 }
 
 /// Host-drawable image source. The host handle is borrowed and retained by exact shared identity.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct ImageResource {
     pub(crate) fields: TextureSourceFields,
+    pub(crate) self_handle: Weak<RwLock<ImageResource>>,
     pub source: Arc<HostImageSource>,
 }
 
@@ -340,6 +341,16 @@ impl Default for CompressedImageResource {
         return Self {
             fields,
             compressed: Arc::new(CompressedImageData::default()),
+        };
+    }
+}
+
+impl Clone for ImageResource {
+    fn clone(&self) -> Self {
+        return Self {
+            fields: self.fields.clone(),
+            self_handle: Weak::new(),
+            source: self.source.clone(),
         };
     }
 }

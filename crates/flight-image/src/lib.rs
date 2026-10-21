@@ -44,6 +44,7 @@ pub use contract::ImageResourceReference;
 pub use contract::ImageResourceReferenceKind;
 pub use contract::ImageResourceReferenceResolutionExplanation;
 pub use contract::ImageUrlOriginContext;
+pub use contract::as_image_resource_ref;
 pub use contract::capture_bitmap_from_image_resource;
 pub use contract::clone_image_resource;
 pub use contract::create_compressed_image_resource;

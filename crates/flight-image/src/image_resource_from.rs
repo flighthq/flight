@@ -32,13 +32,11 @@ pub fn capture_bitmap_from_image_resource(
     host_bitmap_readback: &HostBitmapReadbackCapability,
     resource: &Ref<ImageResource>,
 ) -> Option<Bitmap> {
-    let resource = resource.read().unwrap();
-    return create_bitmap_from_image_source(
-        host_bitmap_readback,
-        &resource.source,
-        resource.width,
-        resource.height,
-    );
+    let (source, width, height) = {
+        let resource = resource.read().unwrap();
+        (resource.source.clone(), resource.width, resource.height)
+    };
+    return create_bitmap_from_image_source(host_bitmap_readback, &source, width, height);
 }
 
 fn encode_base64(bytes: &Uint8Array) -> String {

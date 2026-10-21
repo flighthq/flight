@@ -1,8 +1,9 @@
-use std::sync::{Arc, RwLock};
+use std::any::Any;
+use std::sync::{Arc, RwLock, Weak};
 
 use flight_bitmap::HostImageSource;
 use flight_entity::{Ref, allocate_entity};
-use flight_texture::{AlphaType, TextureGamut, TextureSourceFields};
+use flight_texture::{AlphaType, TextureGamut, TextureSourceFields, TextureSourceRef};
 
 use crate::image_source_dimensions::get_host_image_source_dimensions;
 use crate::types::{
@@ -25,6 +26,7 @@ pub fn create_image_resource(
 ) -> Ref<ImageResource> {
     let mut resource = ImageResource {
         fields: TextureSourceFields::default(),
+        self_handle: Weak::new(),
         source: image,
     };
     resource.fields.alpha_type = AlphaType::Straight;
@@ -34,7 +36,9 @@ pub fn create_image_resource(
     resource.fields.version = 0;
     resource.fields.width = 0;
     update_image_resource_size(&mut resource, state);
-    return Arc::new(RwLock::new(resource));
+    let resource = Arc::new(RwLock::new(resource));
+    resource.write().unwrap().self_handle = Arc::downgrade(&resource);
+    return resource;
 }
 
 pub fn initialize_compressed_image_resource(
@@ -50,10 +54,21 @@ pub fn initialize_compressed_image_resource(
     out.fields.width = out.compressed.container.width as u32;
 }
 
+// flight-lint: allow(conform-extra) D16 typed recovery retains the same ImageResource allocation after TextureSource family erasure
+pub fn as_image_resource_ref(source: &TextureSourceRef) -> Option<Ref<ImageResource>> {
+    let source = source.read().unwrap();
+    let source: &dyn Any = &*source;
+    return source
+        .downcast_ref::<ImageResource>()?
+        .self_handle
+        .upgrade();
+}
+
 pub fn clone_image_resource(resource: &Ref<ImageResource>) -> Ref<ImageResource> {
     let resource = resource.read().unwrap();
     let mut out = ImageResource {
         fields: TextureSourceFields::default(),
+        self_handle: Weak::new(),
         source: resource.source.clone(),
     };
     out.fields.alpha_type = resource.alpha_type;
@@ -62,7 +77,10 @@ pub fn clone_image_resource(resource: &Ref<ImageResource>) -> Ref<ImageResource>
     out.fields.kind = resource.kind.clone();
     out.fields.version = resource.version;
     out.fields.width = resource.width;
-    return Arc::new(RwLock::new(out));
+    drop(resource);
+    let out = Arc::new(RwLock::new(out));
+    out.write().unwrap().self_handle = Arc::downgrade(&out);
+    return out;
 }
 
 // flight-lint: allow(conform-params) D5 explicit resolver state replaces the source module-global dimension hook

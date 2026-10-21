@@ -56,6 +56,76 @@ mod capture_bitmap_from_image_resource {
     use super::*;
 
     #[test]
+    fn propagates_a_host_readback_throw_unchanged() {
+        let resource = image_resource();
+        resource.write().unwrap().width = 1;
+        resource.write().unwrap().height = 1;
+        let host = HostBitmapReadbackCapability {
+            provider: Arc::new(()),
+            read_bitmap: Arc::new(|_, _, _, _| panic!("readback failed")),
+        };
+
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            capture_bitmap_from_image_resource(&host, &resource)
+        }));
+
+        let payload = result.unwrap_err();
+        assert_eq!(payload.downcast_ref::<&str>(), Some(&"readback failed"));
+    }
+
+    #[test]
+    fn releases_the_resource_lock_before_host_readback() {
+        let source = Arc::new(HostImageSource {
+            provider: Arc::new(()),
+            handle: Arc::new(()),
+        });
+        let mut state = create_image_resolver_state();
+        let measured_source = source.clone();
+        register_host_image_dimension_resolver(
+            &mut state,
+            Arc::new(move |actual, out| {
+                assert!(Arc::ptr_eq(actual, &measured_source));
+                out.height = 2;
+                out.width = 3;
+                return true;
+            }),
+        );
+        let resource = create_image_resource(source, &state);
+        let captured_resource = resource.clone();
+        let host = HostBitmapReadbackCapability {
+            provider: Arc::new(()),
+            read_bitmap: Arc::new(move |_, width, height, _| {
+                assert_eq!((width, height), (3, 2));
+                assert_eq!(
+                    (
+                        captured_resource.read().unwrap().width,
+                        captured_resource.read().unwrap().height,
+                    ),
+                    (3, 2),
+                );
+                let mut resource = captured_resource.write().unwrap();
+                resource.width = 9;
+                resource.height = 7;
+                return BitmapReadbackOutcome {
+                    bitmap: Some(create_bitmap(3, 2, None)),
+                    reason: BitmapReadbackBackendReason::Ok,
+                };
+            }),
+        };
+
+        let bitmap = capture_bitmap_from_image_resource(&host, &resource).unwrap();
+
+        assert_eq!((bitmap.width, bitmap.height), (3, 2));
+        assert_eq!(
+            (
+                resource.read().unwrap().width,
+                resource.read().unwrap().height
+            ),
+            (9, 7),
+        );
+    }
+
+    #[test]
     fn passes_the_exact_source_and_dimensions_to_readback() {
         let source = Arc::new(HostImageSource {
             provider: Arc::new("source-provider"),

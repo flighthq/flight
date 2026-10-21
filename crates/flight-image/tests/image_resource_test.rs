@@ -56,6 +56,40 @@ fn source() -> Arc<HostImageSource> {
     });
 }
 
+mod as_image_resource_ref {
+    use super::*;
+
+    #[test]
+    fn recovers_the_same_typed_allocation_after_texture_source_erasure() {
+        let resource = create_image_resource(source(), &create_image_resolver_state());
+        let erased: TextureSourceRef = resource.clone();
+
+        let recovered = as_image_resource_ref(&erased).unwrap();
+
+        assert!(Arc::ptr_eq(&recovered, &resource));
+    }
+
+    #[test]
+    fn returns_none_for_a_non_image_texture_source() {
+        let source: TextureSourceRef = create_compressed_image_resource(compressed());
+
+        assert!(as_image_resource_ref(&source).is_none());
+    }
+
+    #[test]
+    fn does_not_retain_the_resource_through_its_self_handle() {
+        let resource = create_image_resource(source(), &create_image_resolver_state());
+        let weak = Arc::downgrade(&resource);
+        let erased: TextureSourceRef = resource.clone();
+        drop(resource);
+
+        assert!(as_image_resource_ref(&erased).is_some());
+        drop(erased);
+
+        assert!(weak.upgrade().is_none());
+    }
+}
+
 mod clone_image_resource {
     use super::*;
 
@@ -67,6 +101,8 @@ mod clone_image_resource {
         resource.write().unwrap().version = 3;
         let copy = clone_image_resource(&resource);
         assert!(!Arc::ptr_eq(&copy, &resource));
+        let erased: TextureSourceRef = copy.clone();
+        assert!(Arc::ptr_eq(&as_image_resource_ref(&erased).unwrap(), &copy,));
         assert!(Arc::ptr_eq(&copy.read().unwrap().source, &source));
         assert_eq!(copy.read().unwrap().version, 3);
         assert!(copy.read().unwrap().entity_runtime().data.is_none());
