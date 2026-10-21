@@ -93,6 +93,12 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
 | Function overloads | a few (conform marks them) | as encountered | minor: distinct names per overload, flagged |
 | Native Rust host (window, input, audio, dialogs) | n/a (host-* are TS-only) | a usable Rust app | not planned yet |
 
+## Additions (principal, 2026-10-21; faithful mappings, no TS change)
+
+- **Fixed tuples:** `(A, B)` (2–4 elements of vocabulary types) → TS `readonly [A, B]`, C++ `std::pair` / `std::tuple`, Haxe anonymous struct. Example: `randomGaussianPair`.
+- **Scalar unions:** a TS union of scalars (`number | string`) → a Rust enum with one primitive payload per variant (`Number(i32)`, `Text(String)`) → TS `number | string`. Example: binpack `RectangleId`.
+- **Constant capability or dispatch records** (TS `export const sdkHostX = {…}`) → `pub static NAME: LazyLock<T>`; never a `create_*` factory (D12).
+
 ## Choosing an array type (user, 2026-10-20)
 
 - Be specific rather than more permissive than intended. If TS declares a typed array, it must not become `ArrayLike` just because the Rust parameter is read-only.
