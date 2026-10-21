@@ -28,6 +28,17 @@ mod are_geometry_pool_guards_enabled {
     }
 }
 
+mod disable_geometry_pool_guards {
+    use super::*;
+
+    #[test]
+    fn restores_the_production_default_release_path() {
+        set_geometry_pool_release_guard(Some(Arc::new(|_| {})));
+        disable_geometry_pool_guards();
+        assert!(!are_geometry_pool_guards_enabled());
+    }
+}
+
 mod enable_geometry_pool_guards {
     use super::*;
 
@@ -62,17 +73,6 @@ mod enable_geometry_pool_guards {
         assert_eq!(Arc::strong_count(&previous), 1);
 
         set_geometry_pool_release_guard(None);
-        assert!(!are_geometry_pool_guards_enabled());
-    }
-}
-
-mod disable_geometry_pool_guards {
-    use super::*;
-
-    #[test]
-    fn restores_the_production_default_release_path() {
-        set_geometry_pool_release_guard(Some(Arc::new(|_| {})));
-        disable_geometry_pool_guards();
         assert!(!are_geometry_pool_guards_enabled());
     }
 }

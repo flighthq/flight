@@ -7,81 +7,6 @@ use crate::geometry_pool_guards::{
     set_geometry_pool_release_guard,
 };
 
-pub fn are_geometry_pool_guards_enabled() -> bool {
-    return get_geometry_pool_release_guard().is_some();
-}
-
-pub fn disable_geometry_pool_guards() {
-    set_geometry_pool_release_guard(None);
-}
-
-/// Installs opt-in diagnostics for unbalanced geometry-pool brackets.
-///
-/// Safe Rust ownership makes the TypeScript source's double-release path
-/// unreachable through the typed release functions. The installed callback
-/// nevertheless preserves the source diagnostic contract for lowerings that
-/// can establish that condition.
-// flight-lint: allow(f64) D1: the injected flight-log clock returns millisecond timestamps
-// flight-lint: allow(conform-params) D5: caller-owned log state and clock replace hidden process state
-pub fn enable_geometry_pool_guards(
-    log_state: &LogStateRef,
-    clock: Arc<dyn Fn() -> f64 + Send + Sync>,
-) {
-    let log_state = log_state.clone();
-    let guard: GeometryPoolReleaseGuard = Arc::new(move |release_function| {
-        warn_on_double_release(&log_state, clock(), release_function);
-    });
-    set_geometry_pool_release_guard(Some(guard));
-}
-
-// flight-lint: allow(f64) D1: operation time is a millisecond timestamp
-fn warn_on_double_release(
-    log_state: &LogStateRef,
-    now_ms: f64,
-    release_function: GeometryPoolReleaseFunction,
-) {
-    let (release_function, acquire_functions) = match release_function {
-        GeometryPoolReleaseFunction::ReleaseMatrix => {
-            ("releaseMatrix", "acquireMatrix or acquireIdentityMatrix")
-        }
-        GeometryPoolReleaseFunction::ReleaseMatrix3 => {
-            ("releaseMatrix3", "acquireMatrix3 or acquireIdentityMatrix3")
-        }
-        GeometryPoolReleaseFunction::ReleaseMatrix4 => {
-            ("releaseMatrix4", "acquireMatrix4 or acquireIdentityMatrix4")
-        }
-        GeometryPoolReleaseFunction::ReleaseQuaternion => (
-            "releaseQuaternion",
-            "acquireQuaternion or acquireIdentityQuaternion",
-        ),
-        GeometryPoolReleaseFunction::ReleaseRectangle => (
-            "releaseRectangle",
-            "acquireRectangle or acquireEmptyRectangle",
-        ),
-        GeometryPoolReleaseFunction::ReleaseVector2 => {
-            ("releaseVector2", "acquireVector2 or acquireEmptyVector2")
-        }
-        GeometryPoolReleaseFunction::ReleaseVector3 => {
-            ("releaseVector3", "acquireVector3 or acquireEmptyVector3")
-        }
-        GeometryPoolReleaseFunction::ReleaseVector4 => {
-            ("releaseVector4", "acquireVector4 or acquireEmptyVector4")
-        }
-    };
-    let key = format!("geometry:double-release:{release_function}");
-    let message = format!(
-        "{release_function}: this value is already in its pool, so it is being released twice. Two later matching acquire calls will hand back the same object and unrelated owners will alias each other. Every {acquire_functions} call pairs with exactly one {release_function} call, and the value must not be used after release."
-    );
-    log_once(
-        log_state,
-        now_ms,
-        &key,
-        LogLevel::Warn,
-        message.into(),
-        Some("geometry".to_string()),
-    );
-}
-
 #[cfg(test)]
 mod tests {
     use std::sync::RwLock;
@@ -176,4 +101,79 @@ mod tests {
             }
         }
     }
+}
+
+pub fn are_geometry_pool_guards_enabled() -> bool {
+    return get_geometry_pool_release_guard().is_some();
+}
+
+pub fn disable_geometry_pool_guards() {
+    set_geometry_pool_release_guard(None);
+}
+
+/// Installs opt-in diagnostics for unbalanced geometry-pool brackets.
+///
+/// Safe Rust ownership makes the TypeScript source's double-release path
+/// unreachable through the typed release functions. The installed callback
+/// nevertheless preserves the source diagnostic contract for lowerings that
+/// can establish that condition.
+// flight-lint: allow(f64) D1: the injected flight-log clock returns millisecond timestamps
+// flight-lint: allow(conform-params) D5: caller-owned log state and clock replace hidden process state
+pub fn enable_geometry_pool_guards(
+    log_state: &LogStateRef,
+    clock: Arc<dyn Fn() -> f64 + Send + Sync>,
+) {
+    let log_state = log_state.clone();
+    let guard: GeometryPoolReleaseGuard = Arc::new(move |release_function| {
+        warn_on_double_release(&log_state, clock(), release_function);
+    });
+    set_geometry_pool_release_guard(Some(guard));
+}
+
+// flight-lint: allow(f64) D1: operation time is a millisecond timestamp
+fn warn_on_double_release(
+    log_state: &LogStateRef,
+    now_ms: f64,
+    release_function: GeometryPoolReleaseFunction,
+) {
+    let (release_function, acquire_functions) = match release_function {
+        GeometryPoolReleaseFunction::ReleaseMatrix => {
+            ("releaseMatrix", "acquireMatrix or acquireIdentityMatrix")
+        }
+        GeometryPoolReleaseFunction::ReleaseMatrix3 => {
+            ("releaseMatrix3", "acquireMatrix3 or acquireIdentityMatrix3")
+        }
+        GeometryPoolReleaseFunction::ReleaseMatrix4 => {
+            ("releaseMatrix4", "acquireMatrix4 or acquireIdentityMatrix4")
+        }
+        GeometryPoolReleaseFunction::ReleaseQuaternion => (
+            "releaseQuaternion",
+            "acquireQuaternion or acquireIdentityQuaternion",
+        ),
+        GeometryPoolReleaseFunction::ReleaseRectangle => (
+            "releaseRectangle",
+            "acquireRectangle or acquireEmptyRectangle",
+        ),
+        GeometryPoolReleaseFunction::ReleaseVector2 => {
+            ("releaseVector2", "acquireVector2 or acquireEmptyVector2")
+        }
+        GeometryPoolReleaseFunction::ReleaseVector3 => {
+            ("releaseVector3", "acquireVector3 or acquireEmptyVector3")
+        }
+        GeometryPoolReleaseFunction::ReleaseVector4 => {
+            ("releaseVector4", "acquireVector4 or acquireEmptyVector4")
+        }
+    };
+    let key = format!("geometry:double-release:{release_function}");
+    let message = format!(
+        "{release_function}: this value is already in its pool, so it is being released twice. Two later matching acquire calls will hand back the same object and unrelated owners will alias each other. Every {acquire_functions} call pairs with exactly one {release_function} call, and the value must not be used after release."
+    );
+    log_once(
+        log_state,
+        now_ms,
+        &key,
+        LogLevel::Warn,
+        message.into(),
+        Some("geometry".to_string()),
+    );
 }
