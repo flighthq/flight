@@ -1,0 +1,256 @@
+src/contract.rs: pub use super::enable_tray_guards::*;
+src/contract.rs: pub use super::results::*;
+src/contract.rs: pub use super::tray::*;
+src/contract.rs: pub use super::types::*;
+src/enable_tray_guards.rs: impl TrayAnimationState :: fn disable_guards(&mut self)
+src/enable_tray_guards.rs: impl TrayAnimationState :: fn enable_guards(&mut self, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/enable_tray_guards.rs: pub fn disable_tray_guards(state: &mut TrayAnimationState)
+src/enable_tray_guards.rs: pub fn enable_tray_guards(state: &mut TrayAnimationState, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::DesktopOsProfile;
+src/lib.rs: pub use contract::HostTrayBalloonCapability;
+src/lib.rs: pub use contract::HostTrayBalloonEventsCapability;
+src/lib.rs: pub use contract::HostTrayBoundsCapability;
+src/lib.rs: pub use contract::HostTrayCapabilities;
+src/lib.rs: pub use contract::HostTrayDoubleClickPolicyCapability;
+src/lib.rs: pub use contract::HostTrayDropEventsCapability;
+src/lib.rs: pub use contract::HostTrayImageCapability;
+src/lib.rs: pub use contract::HostTrayInteractionEventsCapability;
+src/lib.rs: pub use contract::HostTrayLifecycleCapability;
+src/lib.rs: pub use contract::HostTrayMenuCapability;
+src/lib.rs: pub use contract::HostTrayMenuSelectionEventsCapability;
+src/lib.rs: pub use contract::HostTrayPopupMenuCapability;
+src/lib.rs: pub use contract::HostTrayPressedImageCapability;
+src/lib.rs: pub use contract::HostTrayTemplateImageCapability;
+src/lib.rs: pub use contract::HostTrayTitleCapability;
+src/lib.rs: pub use contract::HostTrayTooltipCapability;
+src/lib.rs: pub use contract::TrayAnimationGuard;
+src/lib.rs: pub use contract::TrayAnimationStartResult;
+src/lib.rs: pub use contract::TrayAnimationState;
+src/lib.rs: pub use contract::TrayAnimationStopResult;
+src/lib.rs: pub use contract::TrayBalloonDisplayResult;
+src/lib.rs: pub use contract::TrayBalloonEvent;
+src/lib.rs: pub use contract::TrayBalloonEventType;
+src/lib.rs: pub use contract::TrayBalloonIconType;
+src/lib.rs: pub use contract::TrayBalloonOptions;
+src/lib.rs: pub use contract::TrayBalloonRemoveResult;
+src/lib.rs: pub use contract::TrayBoundsReading;
+src/lib.rs: pub use contract::TrayBoundsResult;
+src/lib.rs: pub use contract::TrayCreateCapabilityResult;
+src/lib.rs: pub use contract::TrayCreateFailureOutcome;
+src/lib.rs: pub use contract::TrayCreateOutcome;
+src/lib.rs: pub use contract::TrayCreateResult;
+src/lib.rs: pub use contract::TrayCreated;
+src/lib.rs: pub use contract::TrayDestroyCapabilityResult;
+src/lib.rs: pub use contract::TrayDestroyFailure;
+src/lib.rs: pub use contract::TrayDestroyFailures;
+src/lib.rs: pub use contract::TrayDestroyResult;
+src/lib.rs: pub use contract::TrayDoubleClickPolicyUpdateResult;
+src/lib.rs: pub use contract::TrayDropEvent;
+src/lib.rs: pub use contract::TrayDropFiles;
+src/lib.rs: pub use contract::TrayDropText;
+src/lib.rs: pub use contract::TrayEventAttachResult;
+src/lib.rs: pub use contract::TrayEventRelease;
+src/lib.rs: pub use contract::TrayFailure;
+src/lib.rs: pub use contract::TrayFuture;
+src/lib.rs: pub use contract::TrayIcon;
+src/lib.rs: pub use contract::TrayIconMethods;
+src/lib.rs: pub use contract::TrayIconOptions;
+src/lib.rs: pub use contract::TrayIconSource;
+src/lib.rs: pub use contract::TrayImageUpdateResult;
+src/lib.rs: pub use contract::TrayInteractionEvent;
+src/lib.rs: pub use contract::TrayInteractionType;
+src/lib.rs: pub use contract::TrayMenuSelectionEvent;
+src/lib.rs: pub use contract::TrayMenuUpdateResult;
+src/lib.rs: pub use contract::TrayPopupMenuResult;
+src/lib.rs: pub use contract::TrayPressedImageUpdateResult;
+src/lib.rs: pub use contract::TrayProviderFuture;
+src/lib.rs: pub use contract::TrayReleaseResult;
+src/lib.rs: pub use contract::TrayTemplateImageUpdateResult;
+src/lib.rs: pub use contract::TrayTitleReadResult;
+src/lib.rs: pub use contract::TrayTitleReading;
+src/lib.rs: pub use contract::TrayTitleUpdateResult;
+src/lib.rs: pub use contract::TrayTooltipReadResult;
+src/lib.rs: pub use contract::TrayTooltipReading;
+src/lib.rs: pub use contract::TrayTooltipUpdateResult;
+src/lib.rs: pub use contract::create_tray_animation_state;
+src/lib.rs: pub use contract::create_tray_icon;
+src/lib.rs: pub use contract::destroy_tray_icon;
+src/lib.rs: pub use contract::disable_tray_guards;
+src/lib.rs: pub use contract::display_tray_balloon;
+src/lib.rs: pub use contract::enable_tray_guards;
+src/lib.rs: pub use contract::get_desktop_os_profile_string;
+src/lib.rs: pub use contract::get_tray_balloon_event_type_string;
+src/lib.rs: pub use contract::get_tray_balloon_icon_type_string;
+src/lib.rs: pub use contract::get_tray_create_failure_outcome_string;
+src/lib.rs: pub use contract::get_tray_icon_bounds;
+src/lib.rs: pub use contract::get_tray_icon_title;
+src/lib.rs: pub use contract::get_tray_icon_tooltip;
+src/lib.rs: pub use contract::get_tray_icons;
+src/lib.rs: pub use contract::get_tray_interaction_type_string;
+src/lib.rs: pub use contract::is_tray_destroyed;
+src/lib.rs: pub use contract::is_tray_icon_animating;
+src/lib.rs: pub use contract::on_tray_balloon_event;
+src/lib.rs: pub use contract::on_tray_drop;
+src/lib.rs: pub use contract::on_tray_interaction;
+src/lib.rs: pub use contract::on_tray_menu_selection;
+src/lib.rs: pub use contract::parse_desktop_os_profile;
+src/lib.rs: pub use contract::parse_tray_balloon_event_type;
+src/lib.rs: pub use contract::parse_tray_balloon_icon_type;
+src/lib.rs: pub use contract::parse_tray_create_failure_outcome;
+src/lib.rs: pub use contract::parse_tray_interaction_type;
+src/lib.rs: pub use contract::popup_tray_context_menu;
+src/lib.rs: pub use contract::remove_tray_balloon;
+src/lib.rs: pub use contract::set_tray_icon;
+src/lib.rs: pub use contract::set_tray_icon_context_menu;
+src/lib.rs: pub use contract::set_tray_icon_template;
+src/lib.rs: pub use contract::set_tray_icon_title;
+src/lib.rs: pub use contract::set_tray_icon_tooltip;
+src/lib.rs: pub use contract::set_tray_ignore_double_click_events;
+src/lib.rs: pub use contract::set_tray_pressed_icon;
+src/lib.rs: pub use contract::start_tray_icon_animation;
+src/lib.rs: pub use contract::stop_tray_icon_animation;
+src/results.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum DesktopOsProfile { Linux, MacOs, Windows, }
+src/results.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum TrayBalloonEventType { Click, Close, Show, }
+src/results.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum TrayBalloonIconType { None, Info, Warning, Error, }
+src/results.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum TrayCreateFailureOutcome { Cancelled, RuntimeApiUnavailable, InvalidIcon, TrayCreateFailed, }
+src/results.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum TrayInteractionType { Click, DoubleClick, RightClick, }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayAnimationStartResult { Started(TrayEventRelease), Empty, TrayDestroyed, InvalidIcon(TrayFailure), ImageUpdateFailed(TrayFailure), }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayAnimationStopResult { Stopped, AlreadyStopped, }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayBalloonDisplayResult { Displayed, TrayDestroyed, BalloonDisplayFailed(TrayFailure), }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayBalloonRemoveResult { Removed, TrayDestroyed, BalloonNotActive, BalloonRemoveFailed(TrayFailure), }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayBoundsResult { Available(TrayBoundsReading), TrayDestroyed, BoundsReadFailed(TrayFailure), }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayCreateCapabilityResult { Created, Cancelled, RuntimeApiUnavailable(TrayFailure), InvalidIcon(TrayFailure), TrayCreateFailed(TrayFailure), }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayDestroyCapabilityResult { Destroyed, TrayDestroyFailed(TrayDestroyFailures), }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayDestroyResult { Destroyed, TrayDestroyFailed(TrayDestroyFailures), AlreadyDestroyed, }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayDoubleClickPolicyUpdateResult { Updated, TrayDestroyed, DoubleClickPolicyUpdateFailed(TrayFailure), }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayEventAttachResult { Attached(TrayEventRelease), TrayDestroyed, SubscriptionFailed(TrayFailure), }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayImageUpdateResult { Updated, TrayDestroyed, InvalidIcon(TrayFailure), ImageUpdateFailed(TrayFailure), }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayMenuUpdateResult { Updated, TrayDestroyed, MenuBuildFailed(TrayFailure), MenuInstallFailed(TrayFailure), }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayPopupMenuResult { Shown, TrayDestroyed, MenuNotSet, PopupFailed(TrayFailure), }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayPressedImageUpdateResult { Updated, TrayDestroyed, InvalidIcon(TrayFailure), PressedImageUpdateFailed(TrayFailure), }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayReleaseResult { Released, AlreadyReleased, ReleaseFailed(TrayFailure), }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayTemplateImageUpdateResult { Updated, TrayDestroyed, TemplateImageUpdateFailed(TrayFailure), }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayTitleReadResult { Available(TrayTitleReading), TrayDestroyed, TitleReadFailed(TrayFailure), }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayTitleUpdateResult { Updated, TrayDestroyed, TitleUpdateFailed(TrayFailure), }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayTooltipReadResult { Available(TrayTooltipReading), TrayDestroyed, TooltipReadFailed(TrayFailure), }
+src/results.rs: #[derive(Clone, Debug)] pub enum TrayTooltipUpdateResult { Updated, TrayDestroyed, TooltipUpdateFailed(TrayFailure), }
+src/tray.rs: impl HostTrayBalloonCapability :: fn display_balloon(&self, tray: &Ref<TrayIcon>, options: &TrayBalloonOptions,) -> TrayFuture<TrayBalloonDisplayResult>
+src/tray.rs: impl HostTrayBalloonCapability :: fn remove_balloon(&self, tray: &Ref<TrayIcon>) -> TrayFuture<TrayBalloonRemoveResult>
+src/tray.rs: impl HostTrayBalloonEventsCapability :: fn on_balloon_event(&self, tray: &Ref<TrayIcon>, listener: SignalSlot<TrayBalloonEvent>,) -> TrayEventAttachResult
+src/tray.rs: impl HostTrayBoundsCapability :: fn icon_bounds(&self, tray: &Ref<TrayIcon>) -> TrayFuture<TrayBoundsResult>
+src/tray.rs: impl HostTrayDoubleClickPolicyCapability :: fn set_ignore_double_click_events(&self, tray: &Ref<TrayIcon>, ignore: bool,) -> TrayFuture<TrayDoubleClickPolicyUpdateResult>
+src/tray.rs: impl HostTrayDropEventsCapability :: fn on_drop(&self, tray: &Ref<TrayIcon>, listener: SignalSlot<TrayDropEvent>,) -> TrayEventAttachResult
+src/tray.rs: impl HostTrayImageCapability :: fn set_icon(&self, tray: &Ref<TrayIcon>, icon: &str) -> TrayFuture<TrayImageUpdateResult>
+src/tray.rs: impl HostTrayImageCapability :: fn start_icon_animation(&self, state: &TrayAnimationState, tray: &Ref<TrayIcon>, frames: &[TrayIconSource], interval_ms: f64,) -> TrayFuture<TrayAnimationStartResult>
+src/tray.rs: impl HostTrayInteractionEventsCapability :: fn on_interaction(&self, tray: &Ref<TrayIcon>, listener: SignalSlot<TrayInteractionEvent>,) -> TrayEventAttachResult
+src/tray.rs: impl HostTrayLifecycleCapability :: fn create_icon(&self, options: &TrayIconOptions) -> TrayFuture<TrayCreateResult>
+src/tray.rs: impl HostTrayLifecycleCapability :: fn icons(&self) -> Vec<Ref<TrayIcon>>
+src/tray.rs: impl HostTrayMenuCapability :: fn set_icon_context_menu(&self, tray: &Ref<TrayIcon>, items: &[Ref<MenuItemTemplate>],) -> TrayFuture<TrayMenuUpdateResult>
+src/tray.rs: impl HostTrayMenuSelectionEventsCapability :: fn on_menu_selection(&self, tray: &Ref<TrayIcon>, listener: SignalSlot<TrayMenuSelectionEvent>,) -> TrayEventAttachResult
+src/tray.rs: impl HostTrayPopupMenuCapability :: fn popup_context_menu(&self, tray: &Ref<TrayIcon>, position: Option<&Vector2>,) -> TrayFuture<TrayPopupMenuResult>
+src/tray.rs: impl HostTrayPressedImageCapability :: fn set_pressed_icon(&self, tray: &Ref<TrayIcon>, icon: &str,) -> TrayFuture<TrayPressedImageUpdateResult>
+src/tray.rs: impl HostTrayTemplateImageCapability :: fn set_icon_template(&self, tray: &Ref<TrayIcon>, is_template: bool,) -> TrayFuture<TrayTemplateImageUpdateResult>
+src/tray.rs: impl HostTrayTitleCapability :: fn icon_title(&self, tray: &Ref<TrayIcon>) -> TrayFuture<TrayTitleReadResult>
+src/tray.rs: impl HostTrayTitleCapability :: fn set_icon_title(&self, tray: &Ref<TrayIcon>, title: &str,) -> TrayFuture<TrayTitleUpdateResult>
+src/tray.rs: impl HostTrayTooltipCapability :: fn icon_tooltip(&self, tray: &Ref<TrayIcon>) -> TrayFuture<TrayTooltipReadResult>
+src/tray.rs: impl HostTrayTooltipCapability :: fn set_icon_tooltip(&self, tray: &Ref<TrayIcon>, tooltip: &str,) -> TrayFuture<TrayTooltipUpdateResult>
+src/tray.rs: impl TrayAnimationState :: fn new(spawn: HostSpawnCapability, timers: Ref<SignalTimerState>) -> Self
+src/tray.rs: impl TrayAnimationState :: fn set_animation_guard(&mut self, guard: Option<TrayAnimationGuard>)
+src/tray.rs: impl TrayIconMethods for Ref<TrayIcon>
+src/tray.rs: impl TrayIconMethods for Ref<TrayIcon> :: fn destroy(&self) -> TrayFuture<TrayDestroyResult>
+src/tray.rs: impl TrayIconMethods for Ref<TrayIcon> :: fn is_animating(&self) -> bool
+src/tray.rs: impl TrayIconMethods for Ref<TrayIcon> :: fn is_destroyed(&self) -> bool
+src/tray.rs: impl TrayIconMethods for Ref<TrayIcon> :: fn stop_animation(&self) -> TrayAnimationStopResult
+src/tray.rs: pub fn create_tray_animation_state(spawn: HostSpawnCapability, timers: Ref<SignalTimerState>,) -> NonEntityCreateResult<TrayAnimationState>
+src/tray.rs: pub fn create_tray_icon(host_tray_lifecycle: &HostTrayLifecycleCapability, options: &TrayIconOptions,) -> TrayFuture<TrayCreateResult>
+src/tray.rs: pub fn destroy_tray_icon(tray: &Ref<TrayIcon>) -> TrayFuture<TrayDestroyResult>
+src/tray.rs: pub fn display_tray_balloon(host_tray_balloon: &HostTrayBalloonCapability, tray: &Ref<TrayIcon>, options: &TrayBalloonOptions,) -> TrayFuture<TrayBalloonDisplayResult>
+src/tray.rs: pub fn get_desktop_os_profile_string(value: DesktopOsProfile) -> &'static str
+src/tray.rs: pub fn get_tray_balloon_event_type_string(value: TrayBalloonEventType) -> &'static str
+src/tray.rs: pub fn get_tray_balloon_icon_type_string(value: TrayBalloonIconType) -> &'static str
+src/tray.rs: pub fn get_tray_create_failure_outcome_string(value: TrayCreateFailureOutcome) -> &'static str
+src/tray.rs: pub fn get_tray_icon_bounds(host_tray_bounds: &HostTrayBoundsCapability, tray: &Ref<TrayIcon>,) -> TrayFuture<TrayBoundsResult>
+src/tray.rs: pub fn get_tray_icon_title(host_tray_title: &HostTrayTitleCapability, tray: &Ref<TrayIcon>,) -> TrayFuture<TrayTitleReadResult>
+src/tray.rs: pub fn get_tray_icon_tooltip(host_tray_tooltip: &HostTrayTooltipCapability, tray: &Ref<TrayIcon>,) -> TrayFuture<TrayTooltipReadResult>
+src/tray.rs: pub fn get_tray_icons(host_tray_lifecycle: &HostTrayLifecycleCapability) -> Vec<Ref<TrayIcon>>
+src/tray.rs: pub fn get_tray_interaction_type_string(value: TrayInteractionType) -> &'static str
+src/tray.rs: pub fn initialize_tray_create_failed_result(out: &mut TrayCreateResult, error: Option<Unknown>)
+src/tray.rs: pub fn initialize_tray_create_provider_failure_result(out: &mut TrayCreateResult, error: Option<Unknown>, outcome: TrayCreateFailureOutcome,)
+src/tray.rs: pub fn initialize_tray_create_success_result(out: &mut TrayCreateResult, tray: Ref<TrayIcon>)
+src/tray.rs: pub fn is_tray_destroyed(tray: &Ref<TrayIcon>) -> bool
+src/tray.rs: pub fn is_tray_icon_animating(tray: &Ref<TrayIcon>) -> bool
+src/tray.rs: pub fn on_tray_balloon_event(host_tray_balloon_events: &HostTrayBalloonEventsCapability, tray: &Ref<TrayIcon>, listener: SignalSlot<TrayBalloonEvent>,) -> TrayEventAttachResult
+src/tray.rs: pub fn on_tray_drop(host_tray_drop_events: &HostTrayDropEventsCapability, tray: &Ref<TrayIcon>, listener: SignalSlot<TrayDropEvent>,) -> TrayEventAttachResult
+src/tray.rs: pub fn on_tray_interaction(host_tray_interaction_events: &HostTrayInteractionEventsCapability, tray: &Ref<TrayIcon>, listener: SignalSlot<TrayInteractionEvent>,) -> TrayEventAttachResult
+src/tray.rs: pub fn on_tray_menu_selection(host_tray_menu_selection_events: &HostTrayMenuSelectionEventsCapability, tray: &Ref<TrayIcon>, listener: SignalSlot<TrayMenuSelectionEvent>,) -> TrayEventAttachResult
+src/tray.rs: pub fn parse_desktop_os_profile(value: &str) -> Option<DesktopOsProfile>
+src/tray.rs: pub fn parse_tray_balloon_event_type(value: &str) -> Option<TrayBalloonEventType>
+src/tray.rs: pub fn parse_tray_balloon_icon_type(value: &str) -> Option<TrayBalloonIconType>
+src/tray.rs: pub fn parse_tray_create_failure_outcome(value: &str) -> Option<TrayCreateFailureOutcome>
+src/tray.rs: pub fn parse_tray_interaction_type(value: &str) -> Option<TrayInteractionType>
+src/tray.rs: pub fn popup_tray_context_menu(host_tray_popup_menu: &HostTrayPopupMenuCapability, tray: &Ref<TrayIcon>, position: Option<&Vector2>,) -> TrayFuture<TrayPopupMenuResult>
+src/tray.rs: pub fn remove_tray_balloon(host_tray_balloon: &HostTrayBalloonCapability, tray: &Ref<TrayIcon>,) -> TrayFuture<TrayBalloonRemoveResult>
+src/tray.rs: pub fn set_tray_animation_guard(state: &mut TrayAnimationState, guard: Option<TrayAnimationGuard>)
+src/tray.rs: pub fn set_tray_icon(host_tray_image: &HostTrayImageCapability, tray: &Ref<TrayIcon>, icon: &str,) -> TrayFuture<TrayImageUpdateResult>
+src/tray.rs: pub fn set_tray_icon_context_menu(host_tray_menu: &HostTrayMenuCapability, tray: &Ref<TrayIcon>, items: &[Ref<MenuItemTemplate>],) -> TrayFuture<TrayMenuUpdateResult>
+src/tray.rs: pub fn set_tray_icon_template(host_tray_template_image: &HostTrayTemplateImageCapability, tray: &Ref<TrayIcon>, is_template: bool,) -> TrayFuture<TrayTemplateImageUpdateResult>
+src/tray.rs: pub fn set_tray_icon_title(host_tray_title: &HostTrayTitleCapability, tray: &Ref<TrayIcon>, title: &str,) -> TrayFuture<TrayTitleUpdateResult>
+src/tray.rs: pub fn set_tray_icon_tooltip(host_tray_tooltip: &HostTrayTooltipCapability, tray: &Ref<TrayIcon>, tooltip: &str,) -> TrayFuture<TrayTooltipUpdateResult>
+src/tray.rs: pub fn set_tray_ignore_double_click_events(host_tray_double_click_policy: &HostTrayDoubleClickPolicyCapability, tray: &Ref<TrayIcon>, ignore: bool,) -> TrayFuture<TrayDoubleClickPolicyUpdateResult>
+src/tray.rs: pub fn set_tray_pressed_icon(host_tray_pressed_image: &HostTrayPressedImageCapability, tray: &Ref<TrayIcon>, icon: &str,) -> TrayFuture<TrayPressedImageUpdateResult>
+src/tray.rs: pub fn start_tray_icon_animation(state: &TrayAnimationState, host_tray_image: &HostTrayImageCapability, tray: &Ref<TrayIcon>, frames: &[TrayIconSource], interval_ms: f64,) -> TrayFuture<TrayAnimationStartResult>
+src/tray.rs: pub fn stop_tray_icon_animation(tray: &Ref<TrayIcon>) -> TrayAnimationStopResult
+src/tray.rs: pub trait TrayIconMethods { fn destroy(&self) -> TrayFuture<TrayDestroyResult>; fn is_animating(&self) -> bool; fn is_destroyed(&self) -> bool; fn stop_animation(&self) -> TrayAnimationStopResult; }
+src/types.rs: #[derive(Clone)] pub struct HostTrayBalloonCapability { pub provider: ProviderRef, pub display: Arc<dyn Fn(&Ref<TrayIcon>, &TrayBalloonOptions) -> TrayProviderFuture<TrayBalloonDisplayResult> + Send + Sync,>, pub remove: Arc<dyn Fn(&Ref<TrayIcon>) -> TrayProviderFuture<TrayBalloonRemoveResult> + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostTrayBalloonEventsCapability { pub provider: ProviderRef, pub get_signal: Arc<dyn Fn(&Ref<TrayIcon>) -> Option<Signal<TrayBalloonEvent>> + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostTrayBoundsCapability { pub provider: ProviderRef, pub get: Arc<dyn Fn(&Ref<TrayIcon>) -> TrayProviderFuture<TrayBoundsResult> + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostTrayDoubleClickPolicyCapability { pub provider: ProviderRef, pub set_ignore: Arc<dyn Fn(&Ref<TrayIcon>, bool) -> TrayProviderFuture<TrayDoubleClickPolicyUpdateResult> + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostTrayDropEventsCapability { pub provider: ProviderRef, pub get_signal: Arc<dyn Fn(&Ref<TrayIcon>) -> Option<Signal<TrayDropEvent>> + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostTrayImageCapability { pub provider: ProviderRef, pub set: Arc<dyn Fn(&Ref<TrayIcon>, &str) -> TrayProviderFuture<TrayImageUpdateResult> + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostTrayInteractionEventsCapability { pub provider: ProviderRef, pub get_signal: Arc<dyn Fn(&Ref<TrayIcon>) -> Option<Signal<TrayInteractionEvent>> + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostTrayLifecycleCapability { pub provider: ProviderRef, pub create: Arc<dyn Fn(&Ref<TrayIcon>, &TrayIconOptions) -> TrayProviderFuture<TrayCreateCapabilityResult> + Send + Sync,>, pub destroy: Arc<dyn Fn(&Ref<TrayIcon>) -> TrayProviderFuture<TrayDestroyCapabilityResult> + Send + Sync,>, pub is_destroyed: Arc<dyn Fn(&Ref<TrayIcon>) -> bool + Send + Sync>, pub list: Arc<dyn Fn() -> Vec<Ref<TrayIcon>> + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostTrayMenuCapability { pub provider: ProviderRef, pub set: Arc<dyn Fn(&Ref<TrayIcon>, &[Ref<MenuItemTemplate>]) -> TrayProviderFuture<TrayMenuUpdateResult> + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostTrayMenuSelectionEventsCapability { pub provider: ProviderRef, pub get_signal: Arc<dyn Fn(&Ref<TrayIcon>) -> Option<Signal<TrayMenuSelectionEvent>> + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostTrayPopupMenuCapability { pub provider: ProviderRef, pub popup: Arc<dyn Fn(&Ref<TrayIcon>, Option<&Vector2>) -> TrayProviderFuture<TrayPopupMenuResult> + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostTrayPressedImageCapability { pub provider: ProviderRef, pub set: Arc<dyn Fn(&Ref<TrayIcon>, &str) -> TrayProviderFuture<TrayPressedImageUpdateResult> + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostTrayTemplateImageCapability { pub provider: ProviderRef, pub set: Arc<dyn Fn(&Ref<TrayIcon>, bool) -> TrayProviderFuture<TrayTemplateImageUpdateResult> + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostTrayTitleCapability { pub provider: ProviderRef, pub get: Arc<dyn Fn(&Ref<TrayIcon>) -> TrayProviderFuture<TrayTitleReadResult> + Send + Sync>, pub set: Arc<dyn Fn(&Ref<TrayIcon>, &str) -> TrayProviderFuture<TrayTitleUpdateResult> + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostTrayTooltipCapability { pub provider: ProviderRef, pub get: Arc<dyn Fn(&Ref<TrayIcon>) -> TrayProviderFuture<TrayTooltipReadResult> + Send + Sync>, pub set: Arc<dyn Fn(&Ref<TrayIcon>, &str) -> TrayProviderFuture<TrayTooltipUpdateResult> + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct TrayAnimationState { pub guard: Option<TrayAnimationGuard>, pub spawn: HostSpawnCapability, pub timers: Ref<SignalTimerState>, }
+src/types.rs: #[derive(Clone)] pub struct TrayEventRelease { pub release: Arc<dyn Fn() -> TrayFuture<TrayReleaseResult> + Send + Sync>, }
+src/types.rs: #[derive(Clone, Debug)] pub enum TrayCreateOutcome { Created(TrayCreated), Cancelled, RuntimeApiUnavailable(TrayFailure), InvalidIcon(TrayFailure), TrayCreateFailed(TrayFailure), }
+src/types.rs: #[derive(Clone, Debug)] pub enum TrayDropEvent { Files(TrayDropFiles), Text(TrayDropText), }
+src/types.rs: #[derive(Clone, Debug)] pub struct TrayBalloonEvent { pub type_: TrayBalloonEventType, }
+src/types.rs: #[derive(Clone, Debug)] pub struct TrayBoundsReading { pub bounds: Rectangle, }
+src/types.rs: #[derive(Clone, Debug)] pub struct TrayCreateResult { runtime: EntityRuntimeSlot, pub outcome: TrayCreateOutcome, }
+src/types.rs: #[derive(Clone, Debug)] pub struct TrayCreated { pub tray: Ref<TrayIcon>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct TrayDestroyFailure { pub error: Option<Unknown>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct TrayDestroyFailures { pub failures: Vec<TrayDestroyFailure>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct TrayDropFiles { pub files: Vec<String>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct TrayDropText { pub text: String, }
+src/types.rs: #[derive(Clone, Debug)] pub struct TrayFailure { pub error: Option<Unknown>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct TrayInteractionEvent { pub alt_key: bool, pub bounds: Option<Rectangle>, pub ctrl_key: bool, pub meta_key: bool, pub position: Option<Vector2>, pub shift_key: bool, pub type_: TrayInteractionType, }
+src/types.rs: #[derive(Clone, Debug)] pub struct TrayMenuSelectionEvent { pub id: String, }
+src/types.rs: #[derive(Clone, Debug)] pub struct TrayTitleReading { pub title: String, }
+src/types.rs: #[derive(Clone, Debug)] pub struct TrayTooltipReading { pub tooltip: String, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct TrayBalloonOptions { pub icon: Option<TrayIconSource>, pub icon_type: Option<TrayBalloonIconType>, pub large_icon: Option<bool>, pub no_sound: Option<bool>, pub respect_quiet_time: Option<bool>, pub text: String, pub title: String, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostTrayCapabilities { pub balloon: Option<HostTrayBalloonCapability>, pub balloon_events: Option<HostTrayBalloonEventsCapability>, pub bounds: Option<HostTrayBoundsCapability>, pub double_click_policy: Option<HostTrayDoubleClickPolicyCapability>, pub drop_events: Option<HostTrayDropEventsCapability>, pub image: Option<HostTrayImageCapability>, pub interaction_events: Option<HostTrayInteractionEventsCapability>, pub lifecycle: Option<HostTrayLifecycleCapability>, pub menu: Option<HostTrayMenuCapability>, pub menu_selection_events: Option<HostTrayMenuSelectionEventsCapability>, pub popup_menu: Option<HostTrayPopupMenuCapability>, pub pressed_image: Option<HostTrayPressedImageCapability>, pub template_image: Option<HostTrayTemplateImageCapability>, pub title: Option<HostTrayTitleCapability>, pub tooltip: Option<HostTrayTooltipCapability>, }
+src/types.rs: #[derive(Clone, Default)] pub struct TrayIconOptions { pub icon: Option<TrayIconSource>, pub icon_template: Option<bool>, pub signal: Option<AbortSignal>, pub title: Option<String>, pub tooltip: Option<String>, }
+src/types.rs: #[derive(Default)] pub struct TrayIcon { runtime: EntityRuntimeSlot, pub(crate) tray_runtime: Option<TrayRuntime>, }
+src/types.rs: impl Default for TrayCreateResult
+src/types.rs: impl Default for TrayCreateResult :: fn default() -> Self
+src/types.rs: impl Entity for TrayCreateResult
+src/types.rs: impl Entity for TrayCreateResult :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for TrayCreateResult :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for TrayIcon
+src/types.rs: impl Entity for TrayIcon :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for TrayIcon :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl fmt::Debug for TrayEventRelease
+src/types.rs: impl fmt::Debug for TrayEventRelease :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for TrayIcon
+src/types.rs: impl fmt::Debug for TrayIcon :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub type TrayAnimationGuard = Arc<dyn Fn(&Ref<TrayIcon>, i32, f64) + Send + Sync>;
+src/types.rs: pub type TrayFuture<T> = Pin<Box<dyn Future<Output = T> + Send>>;
+src/types.rs: pub type TrayIconSource = String;
+src/types.rs: pub type TrayProviderFuture<T> = TrayFuture<Result<T, FlightError>>;

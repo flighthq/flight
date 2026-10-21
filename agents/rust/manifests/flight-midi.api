@@ -1,0 +1,390 @@
+src/contract.rs: pub use flight_permissions::{ HostMidiPermissionCapability, PermissionQueryOutcome, PermissionQueryProviderResult, PermissionQueryReason, PermissionState, };
+src/contract.rs: pub use super::midi_access::*;
+src/contract.rs: pub use super::midi_operations::*;
+src/contract.rs: pub use super::midi_permission::*;
+src/contract.rs: pub use super::midi_port::*;
+src/contract.rs: pub use super::midi_resource::*;
+src/contract.rs: pub use super::midi_subscription::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::HostMidiAccessCapability;
+src/lib.rs: pub use contract::HostMidiCapabilities;
+src/lib.rs: pub use contract::HostMidiPermissionCapability;
+src/lib.rs: pub use contract::MidiAccess;
+src/lib.rs: pub use contract::MidiAccessDisposeOutcome;
+src/lib.rs: pub use contract::MidiAccessDisposeReason;
+src/lib.rs: pub use contract::MidiAccessLifecycleFailure;
+src/lib.rs: pub use contract::MidiAccessPortsOutcome;
+src/lib.rs: pub use contract::MidiAccessPortsReason;
+src/lib.rs: pub use contract::MidiAccessRequestOutcome;
+src/lib.rs: pub use contract::MidiAccessRequestReason;
+src/lib.rs: pub use contract::MidiAccessStateSubscription;
+src/lib.rs: pub use contract::MidiEventAttachment;
+src/lib.rs: pub use contract::MidiEventBackendAttachFuture;
+src/lib.rs: pub use contract::MidiEventBackendAttachOutcome;
+src/lib.rs: pub use contract::MidiEventBackendAttachProviderResult;
+src/lib.rs: pub use contract::MidiEventBackendAttachReason;
+src/lib.rs: pub use contract::MidiEventReleaseFuture;
+src/lib.rs: pub use contract::MidiEventReleaseOutcome;
+src/lib.rs: pub use contract::MidiEventReleaseProviderResult;
+src/lib.rs: pub use contract::MidiEventReleaseReason;
+src/lib.rs: pub use contract::MidiInputMessage;
+src/lib.rs: pub use contract::MidiInputMessageListener;
+src/lib.rs: pub use contract::MidiInputMessageSubscription;
+src/lib.rs: pub use contract::MidiInputPort;
+src/lib.rs: pub use contract::MidiMessageSendOutcome;
+src/lib.rs: pub use contract::MidiMessageSendReason;
+src/lib.rs: pub use contract::MidiOutputPort;
+src/lib.rs: pub use contract::MidiPort;
+src/lib.rs: pub use contract::MidiPortCloseOutcome;
+src/lib.rs: pub use contract::MidiPortCloseReason;
+src/lib.rs: pub use contract::MidiPortConnection;
+src/lib.rs: pub use contract::MidiPortConnectionOutcome;
+src/lib.rs: pub use contract::MidiPortConnectionOutcomeReason;
+src/lib.rs: pub use contract::MidiPortDisposeOutcome;
+src/lib.rs: pub use contract::MidiPortDisposeReason;
+src/lib.rs: pub use contract::MidiPortLifecycleFailure;
+src/lib.rs: pub use contract::MidiPortLifecycleFailureOperation;
+src/lib.rs: pub use contract::MidiPortOpenOutcome;
+src/lib.rs: pub use contract::MidiPortOpenReason;
+src/lib.rs: pub use contract::MidiPortState;
+src/lib.rs: pub use contract::MidiPortStateListener;
+src/lib.rs: pub use contract::MidiPortStateOutcome;
+src/lib.rs: pub use contract::MidiPortStateOutcomeReason;
+src/lib.rs: pub use contract::MidiPortStateSubscription;
+src/lib.rs: pub use contract::MidiPortType;
+src/lib.rs: pub use contract::MidiSubscriptionAttachOutcome;
+src/lib.rs: pub use contract::MidiSubscriptionAttachReason;
+src/lib.rs: pub use contract::MidiSubscriptionDetachOutcome;
+src/lib.rs: pub use contract::MidiSubscriptionDetachReason;
+src/lib.rs: pub use contract::MidiSubscriptionDisposeOutcome;
+src/lib.rs: pub use contract::MidiSubscriptionDisposeReason;
+src/lib.rs: pub use contract::PermissionQueryOutcome;
+src/lib.rs: pub use contract::PermissionQueryReason;
+src/lib.rs: pub use contract::PermissionState;
+src/lib.rs: pub use contract::attach_midi_access_state_subscription;
+src/lib.rs: pub use contract::attach_midi_input_message_subscription;
+src/lib.rs: pub use contract::attach_midi_port_state_subscription;
+src/lib.rs: pub use contract::close_midi_port;
+src/lib.rs: pub use contract::create_midi_access_state_subscription;
+src/lib.rs: pub use contract::create_midi_input_message_subscription;
+src/lib.rs: pub use contract::create_midi_port_state_subscription;
+src/lib.rs: pub use contract::detach_midi_access_state_subscription;
+src/lib.rs: pub use contract::detach_midi_input_message_subscription;
+src/lib.rs: pub use contract::detach_midi_port_state_subscription;
+src/lib.rs: pub use contract::dispose_midi_access;
+src/lib.rs: pub use contract::dispose_midi_access_state_subscription;
+src/lib.rs: pub use contract::dispose_midi_input_message_subscription;
+src/lib.rs: pub use contract::dispose_midi_port;
+src/lib.rs: pub use contract::dispose_midi_port_state_subscription;
+src/lib.rs: pub use contract::get_midi_access_input_ports;
+src/lib.rs: pub use contract::get_midi_access_output_ports;
+src/lib.rs: pub use contract::get_midi_permission;
+src/lib.rs: pub use contract::get_midi_port_connection;
+src/lib.rs: pub use contract::get_midi_port_state;
+src/lib.rs: pub use contract::open_midi_port;
+src/lib.rs: pub use contract::request_midi_access;
+src/lib.rs: pub use contract::send_midi_message;
+src/lib.rs: pub use sugar::*;
+src/midi_access.rs: pub async fn dispose_midi_access(access: &Ref<MidiAccess>) -> MidiAccessDisposeOutcome
+src/midi_access.rs: pub async fn request_midi_access(host_midi_access: &HostMidiAccessCapability,) -> MidiAccessRequestOutcome
+src/midi_access.rs: pub fn create_midi_access_resource(operations: MidiAccessResourceOperations) -> Ref<MidiAccess>
+src/midi_access.rs: pub fn get_midi_access_input_ports(access: &Ref<MidiAccess>,) -> MidiAccessPortsOutcome<MidiInputPort>
+src/midi_access.rs: pub fn get_midi_access_output_ports(access: &Ref<MidiAccess>,) -> MidiAccessPortsOutcome<MidiOutputPort>
+src/midi_access.rs: pub fn initialize_midi_access_resource(_out: &mut MidiAccess)
+src/midi_operations.rs: pub async fn attach_midi_access_resource_state_change(operations: &MidiAccessResourceOperations, listener: MidiAccessStateListener,) -> MidiEventBackendAttachProviderResult
+src/midi_operations.rs: pub async fn attach_midi_input_port_resource_message(operations: &MidiInputPortResourceOperations, listener: MidiInputMessageListener,) -> MidiEventBackendAttachProviderResult
+src/midi_operations.rs: pub async fn attach_midi_input_port_resource_state_change(operations: &MidiInputPortResourceOperations, listener: MidiPortStateListener,) -> MidiEventBackendAttachProviderResult
+src/midi_operations.rs: pub async fn attach_midi_output_port_resource_state_change(operations: &MidiOutputPortResourceOperations, listener: MidiPortStateListener,) -> MidiEventBackendAttachProviderResult
+src/midi_operations.rs: pub async fn attach_midi_port_resource_state_change(operations: &MidiPortResourceOperations, listener: MidiPortStateListener,) -> MidiEventBackendAttachProviderResult
+src/midi_operations.rs: pub async fn close_midi_input_port_resource(operations: &MidiInputPortResourceOperations,) -> MidiPortCommandResult
+src/midi_operations.rs: pub async fn close_midi_output_port_resource(operations: &MidiOutputPortResourceOperations,) -> MidiPortCommandResult
+src/midi_operations.rs: pub async fn close_midi_port_resource(operations: &MidiPortResourceOperations,) -> MidiPortCommandResult
+src/midi_operations.rs: pub async fn open_midi_input_port_resource(operations: &MidiInputPortResourceOperations,) -> MidiPortCommandResult
+src/midi_operations.rs: pub async fn open_midi_output_port_resource(operations: &MidiOutputPortResourceOperations,) -> MidiPortCommandResult
+src/midi_operations.rs: pub async fn open_midi_port_resource(operations: &MidiPortResourceOperations,) -> MidiPortCommandResult
+src/midi_operations.rs: pub fn get_midi_access_resource_input_ports(operations: &MidiAccessResourceOperations,) -> MidiInputPortsProviderResult
+src/midi_operations.rs: pub fn get_midi_access_resource_output_ports(operations: &MidiAccessResourceOperations,) -> MidiOutputPortsProviderResult
+src/midi_operations.rs: pub fn get_midi_input_port_resource_connection(operations: &MidiInputPortResourceOperations,) -> MidiPortConnectionProviderResult
+src/midi_operations.rs: pub fn get_midi_output_port_resource_connection(operations: &MidiOutputPortResourceOperations,) -> MidiPortConnectionProviderResult
+src/midi_operations.rs: pub fn get_midi_port_resource_connection(operations: &MidiPortResourceOperations,) -> MidiPortConnectionProviderResult
+src/midi_operations.rs: pub fn read_midi_input_port_resource_state(operations: &MidiInputPortResourceOperations,) -> MidiPortStateProviderResult
+src/midi_operations.rs: pub fn read_midi_output_port_resource_state(operations: &MidiOutputPortResourceOperations,) -> MidiPortStateProviderResult
+src/midi_operations.rs: pub fn read_midi_port_resource_state(operations: &MidiPortResourceOperations,) -> MidiPortStateProviderResult
+src/midi_operations.rs: pub fn send_midi_output_port_resource(operations: &MidiOutputPortResourceOperations, data: &Uint8Array, timestamp: Option<f64>,) -> MidiSendProviderResult
+src/midi_permission.rs: pub async fn get_midi_permission(host_midi_permission: &HostMidiPermissionCapability,) -> PermissionQueryOutcome
+src/midi_port.rs: pub async fn close_midi_port(port: &MidiPort) -> MidiPortCloseOutcome
+src/midi_port.rs: pub async fn dispose_midi_port(port: &MidiPort) -> MidiPortDisposeOutcome
+src/midi_port.rs: pub async fn open_midi_port(port: &MidiPort) -> MidiPortOpenOutcome
+src/midi_port.rs: pub fn create_midi_input_port_resource(metadata: &MidiPortMetadata, operations: MidiInputPortResourceOperations,) -> Ref<MidiInputPort>
+src/midi_port.rs: pub fn create_midi_output_port_resource(metadata: &MidiPortMetadata, operations: MidiOutputPortResourceOperations,) -> Ref<MidiOutputPort>
+src/midi_port.rs: pub fn get_midi_port_connection(port: &MidiPort) -> MidiPortConnectionOutcome
+src/midi_port.rs: pub fn get_midi_port_state(port: &MidiPort) -> MidiPortStateOutcome
+src/midi_port.rs: pub fn initialize_midi_input_port_resource(out: &mut MidiInputPort, metadata: &MidiPortMetadata)
+src/midi_port.rs: pub fn initialize_midi_output_port_resource(out: &mut MidiOutputPort, metadata: &MidiPortMetadata)
+src/midi_port.rs: pub fn send_midi_message(port: &Ref<MidiOutputPort>, data: &flight_entity::Uint8Array, timestamp: Option<f64>,) -> MidiMessageSendOutcome
+src/midi_resource.rs: pub async fn release_midi_event_attachment(attachment: &Ref<MidiEventAttachment>,) -> MidiEventReleaseProviderResult
+src/midi_resource.rs: pub fn create_midi_event_attachment(provider: ProviderRef, release: Arc<dyn Fn() -> MidiEventReleaseFuture + Send + Sync>,) -> Ref<MidiEventAttachment>
+src/midi_resource.rs: pub fn get_midi_access_resource_state(access: &Ref<MidiAccess>,) -> Option<Ref<MidiAccessResourceState>>
+src/midi_resource.rs: pub fn get_midi_port_resource_state(port: &MidiPort) -> Option<Ref<MidiPortResourceState>>
+src/midi_resource.rs: pub fn initialize_midi_event_attachment(out: &mut MidiEventAttachment, provider: ProviderRef, release: Arc<dyn Fn() -> MidiEventReleaseFuture + Send + Sync>,)
+src/midi_resource.rs: pub fn retain_midi_access_resource_state(access: &mut MidiAccess, operations: MidiAccessResourceOperations,)
+src/midi_resource.rs: pub fn retain_midi_input_port_resource_state(port: &mut MidiInputPort, operations: MidiInputPortResourceOperations,)
+src/midi_resource.rs: pub fn retain_midi_output_port_resource_state(port: &mut MidiOutputPort, operations: MidiOutputPortResourceOperations,)
+src/midi_subscription.rs: pub async fn attach_midi_access_state_subscription(access: &Ref<MidiAccess>, subscription: &Ref<MidiAccessStateSubscription>,) -> MidiSubscriptionAttachOutcome
+src/midi_subscription.rs: pub async fn attach_midi_input_message_subscription(input: &Ref<MidiInputPort>, subscription: &Ref<MidiInputMessageSubscription>,) -> MidiSubscriptionAttachOutcome
+src/midi_subscription.rs: pub async fn attach_midi_port_state_subscription(port: &MidiPort, subscription: &Ref<MidiPortStateSubscription>,) -> MidiSubscriptionAttachOutcome
+src/midi_subscription.rs: pub async fn detach_midi_access_state_subscription(subscription: &Ref<MidiAccessStateSubscription>,) -> MidiSubscriptionDetachOutcome
+src/midi_subscription.rs: pub async fn detach_midi_input_message_subscription(subscription: &Ref<MidiInputMessageSubscription>,) -> MidiSubscriptionDetachOutcome
+src/midi_subscription.rs: pub async fn detach_midi_port_state_subscription(subscription: &Ref<MidiPortStateSubscription>,) -> MidiSubscriptionDetachOutcome
+src/midi_subscription.rs: pub async fn dispose_midi_access_state_subscription(subscription: &Ref<MidiAccessStateSubscription>,) -> MidiSubscriptionDisposeOutcome
+src/midi_subscription.rs: pub async fn dispose_midi_input_message_subscription(subscription: &Ref<MidiInputMessageSubscription>,) -> MidiSubscriptionDisposeOutcome
+src/midi_subscription.rs: pub async fn dispose_midi_port_state_subscription(subscription: &Ref<MidiPortStateSubscription>,) -> MidiSubscriptionDisposeOutcome
+src/midi_subscription.rs: pub fn create_midi_access_state_subscription() -> Ref<MidiAccessStateSubscription>
+src/midi_subscription.rs: pub fn create_midi_input_message_subscription() -> Ref<MidiInputMessageSubscription>
+src/midi_subscription.rs: pub fn create_midi_port_state_subscription() -> Ref<MidiPortStateSubscription>
+src/midi_subscription.rs: pub fn initialize_midi_access_state_subscription(out: &mut MidiAccessStateSubscription)
+src/midi_subscription.rs: pub fn initialize_midi_input_message_subscription(out: &mut MidiInputMessageSubscription)
+src/midi_subscription.rs: pub fn initialize_midi_port_state_subscription(out: &mut MidiPortStateSubscription)
+src/sugar.rs: impl HostMidiAccessCapability :: async fn request_access(&self) -> MidiAccessRequestOutcome
+src/sugar.rs: impl HostMidiPermissionCapabilityMethods for HostMidiPermissionCapability
+src/sugar.rs: impl HostMidiPermissionCapabilityMethods for HostMidiPermissionCapability :: async fn get_permission(&self) -> PermissionQueryOutcome
+src/sugar.rs: impl MidiAccessDisposeReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl MidiAccessDisposeReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl MidiAccessMethods for Ref<MidiAccess>
+src/sugar.rs: impl MidiAccessMethods for Ref<MidiAccess> :: async fn attach_state_subscription(&self, subscription: &Ref<MidiAccessStateSubscription>,) -> MidiSubscriptionAttachOutcome
+src/sugar.rs: impl MidiAccessMethods for Ref<MidiAccess> :: async fn dispose(&self) -> MidiAccessDisposeOutcome
+src/sugar.rs: impl MidiAccessMethods for Ref<MidiAccess> :: fn input_ports(&self) -> MidiAccessPortsOutcome<MidiInputPort>
+src/sugar.rs: impl MidiAccessMethods for Ref<MidiAccess> :: fn output_ports(&self) -> MidiAccessPortsOutcome<MidiOutputPort>
+src/sugar.rs: impl MidiAccessPortsReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl MidiAccessPortsReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl MidiAccessRequestReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl MidiAccessRequestReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl MidiAccessResourceOperations :: async fn attach_state_change(&self, listener: MidiAccessStateListener,) -> MidiEventBackendAttachProviderResult
+src/sugar.rs: impl MidiAccessResourceOperations :: fn get_input_ports(&self) -> MidiInputPortsProviderResult
+src/sugar.rs: impl MidiAccessResourceOperations :: fn get_output_ports(&self) -> MidiOutputPortsProviderResult
+src/sugar.rs: impl MidiAccessStateSubscription :: fn new() -> Ref<Self>
+src/sugar.rs: impl MidiAccessStateSubscriptionMethods for Ref<MidiAccessStateSubscription>
+src/sugar.rs: impl MidiAccessStateSubscriptionMethods for Ref<MidiAccessStateSubscription> :: async fn detach(&self) -> MidiSubscriptionDetachOutcome
+src/sugar.rs: impl MidiAccessStateSubscriptionMethods for Ref<MidiAccessStateSubscription> :: async fn dispose(&self) -> MidiSubscriptionDisposeOutcome
+src/sugar.rs: impl MidiEventAttachmentMethods for Ref<MidiEventAttachment>
+src/sugar.rs: impl MidiEventAttachmentMethods for Ref<MidiEventAttachment> :: async fn release(&self) -> MidiEventReleaseProviderResult
+src/sugar.rs: impl MidiEventBackendAttachReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl MidiEventBackendAttachReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl MidiEventReleaseReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl MidiEventReleaseReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl MidiInputMessageSubscription :: fn new() -> Ref<Self>
+src/sugar.rs: impl MidiInputMessageSubscriptionMethods for Ref<MidiInputMessageSubscription>
+src/sugar.rs: impl MidiInputMessageSubscriptionMethods for Ref<MidiInputMessageSubscription> :: async fn detach(&self) -> MidiSubscriptionDetachOutcome
+src/sugar.rs: impl MidiInputMessageSubscriptionMethods for Ref<MidiInputMessageSubscription> :: async fn dispose(&self) -> MidiSubscriptionDisposeOutcome
+src/sugar.rs: impl MidiInputPortMethods for Ref<MidiInputPort>
+src/sugar.rs: impl MidiInputPortMethods for Ref<MidiInputPort> :: async fn attach_message_subscription(&self, subscription: &Ref<MidiInputMessageSubscription>,) -> MidiSubscriptionAttachOutcome
+src/sugar.rs: impl MidiInputPortResourceOperations :: async fn attach_message(&self, listener: MidiInputMessageListener,) -> MidiEventBackendAttachProviderResult
+src/sugar.rs: impl MidiInputPortResourceOperations :: async fn attach_state_change(&self, listener: MidiPortStateListener,) -> MidiEventBackendAttachProviderResult
+src/sugar.rs: impl MidiInputPortResourceOperations :: async fn close(&self) -> MidiPortCommandResult
+src/sugar.rs: impl MidiInputPortResourceOperations :: async fn open(&self) -> MidiPortCommandResult
+src/sugar.rs: impl MidiInputPortResourceOperations :: fn get_connection(&self) -> MidiPortConnectionProviderResult
+src/sugar.rs: impl MidiInputPortResourceOperations :: fn get_state(&self) -> MidiPortStateProviderResult
+src/sugar.rs: impl MidiMessageSendReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl MidiMessageSendReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl MidiOutputPortMethods for Ref<MidiOutputPort>
+src/sugar.rs: impl MidiOutputPortMethods for Ref<MidiOutputPort> :: fn send_message(&self, data: &Uint8Array, timestamp: Option<f64>) -> MidiMessageSendOutcome
+src/sugar.rs: impl MidiOutputPortResourceOperations :: async fn attach_state_change(&self, listener: MidiPortStateListener,) -> MidiEventBackendAttachProviderResult
+src/sugar.rs: impl MidiOutputPortResourceOperations :: async fn close(&self) -> MidiPortCommandResult
+src/sugar.rs: impl MidiOutputPortResourceOperations :: async fn open(&self) -> MidiPortCommandResult
+src/sugar.rs: impl MidiOutputPortResourceOperations :: fn get_connection(&self) -> MidiPortConnectionProviderResult
+src/sugar.rs: impl MidiOutputPortResourceOperations :: fn get_state(&self) -> MidiPortStateProviderResult
+src/sugar.rs: impl MidiOutputPortResourceOperations :: fn send(&self, data: &Uint8Array, timestamp: Option<f64>) -> MidiSendProviderResult
+src/sugar.rs: impl MidiPort :: async fn attach_state_subscription(&self, subscription: &Ref<MidiPortStateSubscription>,) -> MidiSubscriptionAttachOutcome
+src/sugar.rs: impl MidiPort :: async fn close(&self) -> MidiPortCloseOutcome
+src/sugar.rs: impl MidiPort :: async fn dispose(&self) -> MidiPortDisposeOutcome
+src/sugar.rs: impl MidiPort :: async fn open(&self) -> MidiPortOpenOutcome
+src/sugar.rs: impl MidiPort :: fn connection(&self) -> MidiPortConnectionOutcome
+src/sugar.rs: impl MidiPort :: fn state(&self) -> MidiPortStateOutcome
+src/sugar.rs: impl MidiPortCloseReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl MidiPortCloseReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl MidiPortConnection :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl MidiPortConnection :: fn to_str(self) -> &'static str
+src/sugar.rs: impl MidiPortConnectionOutcomeReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl MidiPortConnectionOutcomeReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl MidiPortDisposeReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl MidiPortDisposeReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl MidiPortLifecycleFailureOperation :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl MidiPortLifecycleFailureOperation :: fn to_str(self) -> &'static str
+src/sugar.rs: impl MidiPortOpenReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl MidiPortOpenReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl MidiPortResourceOperations :: async fn attach_state_change(&self, listener: MidiPortStateListener,) -> MidiEventBackendAttachProviderResult
+src/sugar.rs: impl MidiPortResourceOperations :: async fn close(&self) -> MidiPortCommandResult
+src/sugar.rs: impl MidiPortResourceOperations :: async fn open(&self) -> MidiPortCommandResult
+src/sugar.rs: impl MidiPortResourceOperations :: fn get_connection(&self) -> MidiPortConnectionProviderResult
+src/sugar.rs: impl MidiPortResourceOperations :: fn get_state(&self) -> MidiPortStateProviderResult
+src/sugar.rs: impl MidiPortState :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl MidiPortState :: fn to_str(self) -> &'static str
+src/sugar.rs: impl MidiPortStateOutcomeReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl MidiPortStateOutcomeReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl MidiPortStateSubscription :: fn new() -> Ref<Self>
+src/sugar.rs: impl MidiPortStateSubscriptionMethods for Ref<MidiPortStateSubscription>
+src/sugar.rs: impl MidiPortStateSubscriptionMethods for Ref<MidiPortStateSubscription> :: async fn detach(&self) -> MidiSubscriptionDetachOutcome
+src/sugar.rs: impl MidiPortStateSubscriptionMethods for Ref<MidiPortStateSubscription> :: async fn dispose(&self) -> MidiSubscriptionDisposeOutcome
+src/sugar.rs: impl MidiPortType :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl MidiPortType :: fn to_str(self) -> &'static str
+src/sugar.rs: impl MidiSubscriptionAttachReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl MidiSubscriptionAttachReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl MidiSubscriptionDetachReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl MidiSubscriptionDetachReason :: fn to_str(self) -> &'static str
+src/sugar.rs: impl MidiSubscriptionDisposeReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl MidiSubscriptionDisposeReason :: fn to_str(self) -> &'static str
+src/sugar.rs: pub trait HostMidiPermissionCapabilityMethods { async fn get_permission(&self) -> PermissionQueryOutcome; }
+src/sugar.rs: pub trait MidiAccessMethods { async fn attach_state_subscription(&self, subscription: &Ref<MidiAccessStateSubscription>,) -> MidiSubscriptionAttachOutcome; async fn dispose(&self) -> MidiAccessDisposeOutcome; fn input_ports(&self) -> MidiAccessPortsOutcome<MidiInputPort>; fn output_ports(&self) -> MidiAccessPortsOutcome<MidiOutputPort>; }
+src/sugar.rs: pub trait MidiAccessStateSubscriptionMethods { async fn detach(&self) -> MidiSubscriptionDetachOutcome; async fn dispose(&self) -> MidiSubscriptionDisposeOutcome; }
+src/sugar.rs: pub trait MidiEventAttachmentMethods { async fn release(&self) -> MidiEventReleaseProviderResult; }
+src/sugar.rs: pub trait MidiInputMessageSubscriptionMethods { async fn detach(&self) -> MidiSubscriptionDetachOutcome; async fn dispose(&self) -> MidiSubscriptionDisposeOutcome; }
+src/sugar.rs: pub trait MidiInputPortMethods { async fn attach_message_subscription(&self, subscription: &Ref<MidiInputMessageSubscription>,) -> MidiSubscriptionAttachOutcome; }
+src/sugar.rs: pub trait MidiOutputPortMethods { fn send_message(&self, data: &Uint8Array, timestamp: Option<f64>) -> MidiMessageSendOutcome; }
+src/sugar.rs: pub trait MidiPortStateSubscriptionMethods { async fn detach(&self) -> MidiSubscriptionDetachOutcome; async fn dispose(&self) -> MidiSubscriptionDisposeOutcome; }
+src/types.rs: #[derive(Clone)] pub enum MidiPort { Input(Ref<MidiInputPort>), Output(Ref<MidiOutputPort>), }
+src/types.rs: #[derive(Clone)] pub struct HostMidiAccessCapability { pub provider: ProviderRef, pub request_access: Arc<dyn Fn() -> MidiAccessRequestFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct MidiAccessResourceOperations { pub attach_state_change: Arc<dyn Fn(MidiAccessStateListener) -> MidiEventBackendAttachFuture + Send + Sync>, pub get_input_ports: Arc<dyn Fn() -> MidiInputPortsProviderResult + Send + Sync>, pub get_output_ports: Arc<dyn Fn() -> MidiOutputPortsProviderResult + Send + Sync>, pub provider: ProviderRef, }
+src/types.rs: #[derive(Clone)] pub struct MidiInputPortResourceOperations { pub attach_message: Arc<dyn Fn(MidiInputMessageListener) -> MidiEventBackendAttachFuture + Send + Sync>, pub attach_state_change: Arc<dyn Fn(MidiPortStateListener) -> MidiEventBackendAttachFuture + Send + Sync>, pub close: Arc<dyn Fn() -> MidiPortCommandFuture + Send + Sync>, pub get_connection: Arc<dyn Fn() -> MidiPortConnectionProviderResult + Send + Sync>, pub get_state: Arc<dyn Fn() -> MidiPortStateProviderResult + Send + Sync>, pub open: Arc<dyn Fn() -> MidiPortCommandFuture + Send + Sync>, pub provider: ProviderRef, }
+src/types.rs: #[derive(Clone)] pub struct MidiOutputPortResourceOperations { pub attach_state_change: Arc<dyn Fn(MidiPortStateListener) -> MidiEventBackendAttachFuture + Send + Sync>, pub close: Arc<dyn Fn() -> MidiPortCommandFuture + Send + Sync>, pub get_connection: Arc<dyn Fn() -> MidiPortConnectionProviderResult + Send + Sync>, pub get_state: Arc<dyn Fn() -> MidiPortStateProviderResult + Send + Sync>, pub open: Arc<dyn Fn() -> MidiPortCommandFuture + Send + Sync>, pub provider: ProviderRef, pub send: Arc<dyn Fn(Vec<u8>, Option<f64>) -> MidiSendProviderResult + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct MidiPortResourceOperations { pub attach_state_change: Arc<dyn Fn(MidiPortStateListener) -> MidiEventBackendAttachFuture + Send + Sync>, pub close: Arc<dyn Fn() -> MidiPortCommandFuture + Send + Sync>, pub get_connection: Arc<dyn Fn() -> MidiPortConnectionProviderResult + Send + Sync>, pub get_state: Arc<dyn Fn() -> MidiPortStateProviderResult + Send + Sync>, pub open: Arc<dyn Fn() -> MidiPortCommandFuture + Send + Sync>, pub provider: ProviderRef, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MidiAccessDisposeReason { AlreadyDisposed, Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MidiAccessPortsReason { Disposed, Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MidiAccessRequestReason { Accepted, OperationFailed, PermissionDenied, SecurityRestricted, Unsupported, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MidiEventBackendAttachReason { Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MidiEventReleaseReason { Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MidiMessageSendReason { Disconnected, Disposed, InvalidMessage, NotOpen, OperationFailed, Sent, SystemExclusiveNotEnabled, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MidiPortCloseReason { AlreadyClosed, Closed, Disposed, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MidiPortConnection { Closed, Open, Pending, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MidiPortConnectionOutcomeReason { Disposed, Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MidiPortDisposeReason { AlreadyDisposed, Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MidiPortLifecycleFailureOperation { Close, MessageSubscriptionRelease, StateSubscriptionRelease, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MidiPortOpenReason { AlreadyOpen, Disconnected, Disposed, Opened, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MidiPortState { Connected, Disconnected, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MidiPortStateOutcomeReason { Disposed, Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MidiPortType { Input, Output, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MidiSubscriptionAttachReason { Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MidiSubscriptionDetachReason { NotAttached, Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MidiSubscriptionDisposeReason { AlreadyDisposed, Ok, OperationFailed, }
+src/types.rs: #[derive(Clone, Debug)] pub struct MidiAccessPortsOutcome<Port> { pub ports: Option<Vec<Ref<Port>>>, pub reason: MidiAccessPortsReason, }
+src/types.rs: #[derive(Clone, Debug)] pub struct MidiAccessRequestOutcome { pub access: Option<Ref<MidiAccess>>, pub reason: MidiAccessRequestReason, }
+src/types.rs: #[derive(Clone, Debug)] pub struct MidiEventBackendAttachOutcome { pub attachment: Option<Ref<MidiEventAttachment>>, pub reason: MidiEventBackendAttachReason, pub release_failed: Option<bool>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct MidiInputMessage { pub data: Box<Uint8Array>, pub timestamp: f64, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct MidiAccessDisposeOutcome { pub failures: Option<Vec<MidiAccessLifecycleFailure>>, pub reason: MidiAccessDisposeReason, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct MidiAccessLifecycleFailure { pub id: Option<String>, pub operation: MidiPortLifecycleFailureOperation, pub type_: Option<MidiPortType>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct MidiEventReleaseOutcome { pub reason: MidiEventReleaseReason, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct MidiMessageSendOutcome { pub reason: MidiMessageSendReason, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct MidiPortCloseOutcome { pub reason: MidiPortCloseReason, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct MidiPortConnectionOutcome { pub connection: Option<MidiPortConnection>, pub reason: MidiPortConnectionOutcomeReason, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct MidiPortDisposeOutcome { pub failures: Option<Vec<MidiPortLifecycleFailure>>, pub reason: MidiPortDisposeReason, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct MidiPortLifecycleFailure { pub operation: MidiPortLifecycleFailureOperation, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct MidiPortMetadata { pub id: String, pub manufacturer: Option<String>, pub name: Option<String>, pub version: Option<String>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct MidiPortOpenOutcome { pub reason: MidiPortOpenReason, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct MidiPortStateOutcome { pub reason: MidiPortStateOutcomeReason, pub state: Option<MidiPortState>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct MidiSubscriptionAttachOutcome { pub attach_failed: Option<bool>, pub reason: MidiSubscriptionAttachReason, pub release_failed: Option<bool>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct MidiSubscriptionDetachOutcome { pub reason: MidiSubscriptionDetachReason, pub release_failed: Option<bool>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct MidiSubscriptionDisposeOutcome { pub attach_failed: Option<bool>, pub reason: MidiSubscriptionDisposeReason, pub release_failed: Option<bool>, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostMidiCapabilities { pub access: Option<HostMidiAccessCapability>, pub permission: Option<HostMidiPermissionCapability>, }
+src/types.rs: #[derive(Default)] pub struct MidiAccess { runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Default)] pub struct MidiAccessStateSubscription { runtime: EntityRuntimeSlot, pub on_midi_access_state_change: Signal<MidiPort>, }
+src/types.rs: #[derive(Default)] pub struct MidiEventAttachment { runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Default)] pub struct MidiInputMessageSubscription { runtime: EntityRuntimeSlot, pub on_midi_input_message: Signal<MidiInputMessage>, }
+src/types.rs: #[derive(Default)] pub struct MidiInputPort { runtime: EntityRuntimeSlot, pub id: String, pub manufacturer: Option<String>, pub name: Option<String>, pub type_: MidiPortType, pub version: Option<String>, }
+src/types.rs: #[derive(Default)] pub struct MidiOutputPort { runtime: EntityRuntimeSlot, pub id: String, pub manufacturer: Option<String>, pub name: Option<String>, pub type_: MidiPortType, pub version: Option<String>, }
+src/types.rs: #[derive(Default)] pub struct MidiPortStateSubscription { runtime: EntityRuntimeSlot, pub on_midi_port_state_change: Signal<MidiPort>, }
+src/types.rs: impl Default for MidiPortType
+src/types.rs: impl Default for MidiPortType :: fn default() -> Self
+src/types.rs: impl Entity for MidiAccess
+src/types.rs: impl Entity for MidiAccess :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for MidiAccess :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for MidiAccessStateSubscription
+src/types.rs: impl Entity for MidiAccessStateSubscription :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for MidiAccessStateSubscription :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for MidiEventAttachment
+src/types.rs: impl Entity for MidiEventAttachment :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for MidiEventAttachment :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for MidiInputMessageSubscription
+src/types.rs: impl Entity for MidiInputMessageSubscription :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for MidiInputMessageSubscription :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for MidiInputPort
+src/types.rs: impl Entity for MidiInputPort :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for MidiInputPort :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for MidiOutputPort
+src/types.rs: impl Entity for MidiOutputPort :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for MidiOutputPort :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for MidiPortStateSubscription
+src/types.rs: impl Entity for MidiPortStateSubscription :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for MidiPortStateSubscription :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Eq for MidiAccessPortsOutcome<Port>
+src/types.rs: impl Eq for MidiAccessRequestOutcome
+src/types.rs: impl Eq for MidiPort
+src/types.rs: impl PartialEq for MidiAccessPortsOutcome<Port>
+src/types.rs: impl PartialEq for MidiAccessPortsOutcome<Port> :: fn eq(&self, other: &Self) -> bool
+src/types.rs: impl PartialEq for MidiAccessRequestOutcome
+src/types.rs: impl PartialEq for MidiAccessRequestOutcome :: fn eq(&self, other: &Self) -> bool
+src/types.rs: impl PartialEq for MidiEventBackendAttachOutcome
+src/types.rs: impl PartialEq for MidiEventBackendAttachOutcome :: fn eq(&self, other: &Self) -> bool
+src/types.rs: impl PartialEq for MidiPort
+src/types.rs: impl PartialEq for MidiPort :: fn eq(&self, other: &Self) -> bool
+src/types.rs: impl fmt::Debug for MidiAccess
+src/types.rs: impl fmt::Debug for MidiAccess :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for MidiEventAttachment
+src/types.rs: impl fmt::Debug for MidiEventAttachment :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for MidiPort
+src/types.rs: impl fmt::Debug for MidiPort :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub enum MidiPortResourceState { Input(MidiInputPortResourceState), Output(MidiOutputPortResourceState), }
+src/types.rs: pub fn get_midi_access_dispose_reason_string(value: MidiAccessDisposeReason) -> &'static str
+src/types.rs: pub fn get_midi_access_ports_reason_string(value: MidiAccessPortsReason) -> &'static str
+src/types.rs: pub fn get_midi_access_request_reason_string(value: MidiAccessRequestReason) -> &'static str
+src/types.rs: pub fn get_midi_event_backend_attach_reason_string(value: MidiEventBackendAttachReason,) -> &'static str
+src/types.rs: pub fn get_midi_event_release_reason_string(value: MidiEventReleaseReason) -> &'static str
+src/types.rs: pub fn get_midi_message_send_reason_string(value: MidiMessageSendReason) -> &'static str
+src/types.rs: pub fn get_midi_port_close_reason_string(value: MidiPortCloseReason) -> &'static str
+src/types.rs: pub fn get_midi_port_connection_outcome_reason_string(value: MidiPortConnectionOutcomeReason,) -> &'static str
+src/types.rs: pub fn get_midi_port_connection_string(value: MidiPortConnection) -> &'static str
+src/types.rs: pub fn get_midi_port_dispose_reason_string(value: MidiPortDisposeReason) -> &'static str
+src/types.rs: pub fn get_midi_port_lifecycle_failure_operation_string(value: MidiPortLifecycleFailureOperation,) -> &'static str
+src/types.rs: pub fn get_midi_port_open_reason_string(value: MidiPortOpenReason) -> &'static str
+src/types.rs: pub fn get_midi_port_state_outcome_reason_string(value: MidiPortStateOutcomeReason,) -> &'static str
+src/types.rs: pub fn get_midi_port_state_string(value: MidiPortState) -> &'static str
+src/types.rs: pub fn get_midi_port_type_string(value: MidiPortType) -> &'static str
+src/types.rs: pub fn get_midi_subscription_attach_reason_string(value: MidiSubscriptionAttachReason,) -> &'static str
+src/types.rs: pub fn get_midi_subscription_detach_reason_string(value: MidiSubscriptionDetachReason,) -> &'static str
+src/types.rs: pub fn get_midi_subscription_dispose_reason_string(value: MidiSubscriptionDisposeReason,) -> &'static str
+src/types.rs: pub fn parse_midi_access_dispose_reason(value: &str) -> Option<MidiAccessDisposeReason>
+src/types.rs: pub fn parse_midi_access_ports_reason(value: &str) -> Option<MidiAccessPortsReason>
+src/types.rs: pub fn parse_midi_access_request_reason(value: &str) -> Option<MidiAccessRequestReason>
+src/types.rs: pub fn parse_midi_event_backend_attach_reason(value: &str) -> Option<MidiEventBackendAttachReason>
+src/types.rs: pub fn parse_midi_event_release_reason(value: &str) -> Option<MidiEventReleaseReason>
+src/types.rs: pub fn parse_midi_message_send_reason(value: &str) -> Option<MidiMessageSendReason>
+src/types.rs: pub fn parse_midi_port_close_reason(value: &str) -> Option<MidiPortCloseReason>
+src/types.rs: pub fn parse_midi_port_connection(value: &str) -> Option<MidiPortConnection>
+src/types.rs: pub fn parse_midi_port_connection_outcome_reason(value: &str,) -> Option<MidiPortConnectionOutcomeReason>
+src/types.rs: pub fn parse_midi_port_dispose_reason(value: &str) -> Option<MidiPortDisposeReason>
+src/types.rs: pub fn parse_midi_port_lifecycle_failure_operation(value: &str,) -> Option<MidiPortLifecycleFailureOperation>
+src/types.rs: pub fn parse_midi_port_open_reason(value: &str) -> Option<MidiPortOpenReason>
+src/types.rs: pub fn parse_midi_port_state(value: &str) -> Option<MidiPortState>
+src/types.rs: pub fn parse_midi_port_state_outcome_reason(value: &str) -> Option<MidiPortStateOutcomeReason>
+src/types.rs: pub fn parse_midi_port_type(value: &str) -> Option<MidiPortType>
+src/types.rs: pub fn parse_midi_subscription_attach_reason(value: &str) -> Option<MidiSubscriptionAttachReason>
+src/types.rs: pub fn parse_midi_subscription_detach_reason(value: &str) -> Option<MidiSubscriptionDetachReason>
+src/types.rs: pub fn parse_midi_subscription_dispose_reason(value: &str,) -> Option<MidiSubscriptionDisposeReason>
+src/types.rs: pub struct MidiAccessResourceState { pub dispose_completed: bool, pub dispose_pending: Option<SharedFuture<MidiAccessDisposeOutcome>>, pub disposed: bool, pub known_ports: Vec<MidiPort>, pub operations: MidiAccessResourceOperations, pub subscriptions: Vec<Ref<MidiAccessStateSubscription>>, pub(crate) dispose_generation: u64, }
+src/types.rs: pub struct MidiInputPortResourceState { pub dispose_completed: bool, pub dispose_pending: Option<SharedFuture<MidiPortDisposeOutcome>>, pub disposed: bool, pub flight_opened: bool, pub message_subscriptions: Vec<Ref<MidiInputMessageSubscription>>, pub operations: MidiInputPortResourceOperations, pub state_subscriptions: Vec<Ref<MidiPortStateSubscription>>, pub(crate) dispose_generation: u64, }
+src/types.rs: pub struct MidiOutputPortResourceState { pub dispose_completed: bool, pub dispose_pending: Option<SharedFuture<MidiPortDisposeOutcome>>, pub disposed: bool, pub flight_opened: bool, pub operations: MidiOutputPortResourceOperations, pub state_subscriptions: Vec<Ref<MidiPortStateSubscription>>, pub(crate) dispose_generation: u64, }
+src/types.rs: pub type MidiAccessRequestFuture = Pin<Box<dyn Future<Output = MidiAccessRequestProviderResult> + Send>>;
+src/types.rs: pub type MidiAccessRequestProviderResult = Result<MidiAccessRequestOutcome, FlightError>;
+src/types.rs: pub type MidiAccessStateListener = Arc<dyn Fn(&MidiPort) + Send + Sync>;
+src/types.rs: pub type MidiEventBackendAttachFuture = Pin<Box<dyn Future<Output = MidiEventBackendAttachProviderResult> + Send>>;
+src/types.rs: pub type MidiEventBackendAttachProviderResult = Result<MidiEventBackendAttachOutcome, FlightError>;
+src/types.rs: pub type MidiEventReleaseFuture = Pin<Box<dyn Future<Output = MidiEventReleaseProviderResult> + Send>>;
+src/types.rs: pub type MidiEventReleaseProviderResult = Result<MidiEventReleaseOutcome, FlightError>;
+src/types.rs: pub type MidiInputMessageListener = Arc<dyn Fn(&Uint8Array, f64) + Send + Sync>;
+src/types.rs: pub type MidiInputPortsProviderResult = Result<Vec<Ref<MidiInputPort>>, FlightError>;
+src/types.rs: pub type MidiOutputPortsProviderResult = Result<Vec<Ref<MidiOutputPort>>, FlightError>;
+src/types.rs: pub type MidiPortCommandFuture = Pin<Box<dyn Future<Output = MidiPortCommandResult> + Send>>;
+src/types.rs: pub type MidiPortCommandResult = Result<(), FlightError>;
+src/types.rs: pub type MidiPortConnectionProviderResult = Result<MidiPortConnection, FlightError>;
+src/types.rs: pub type MidiPortStateListener = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type MidiPortStateProviderResult = Result<MidiPortState, FlightError>;
+src/types.rs: pub type MidiSendProviderResult = Result<(), FlightError>;
