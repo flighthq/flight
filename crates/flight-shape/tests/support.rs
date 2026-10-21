@@ -6,6 +6,7 @@ use flight_geometry::create_matrix;
 use flight_path::{
     Path, PathWinding, StrokeCap, StrokeJoin, StrokeStyle, create_path, create_path_morph,
 };
+use flight_scene2d::contract::PartialNode2D;
 use flight_shape::contract::*;
 use flight_texture::contract::{Texture, create_texture};
 
@@ -232,4 +233,34 @@ pub fn token_texture(token: &ShapeCommandToken) -> Option<&Ref<Texture>> {
         ShapeCommandToken::Texture(texture) => Some(texture),
         _ => None,
     };
+}
+
+pub fn partial_node() -> PartialNode2D {
+    return Default::default();
+}
+
+pub fn registered_shape(commands: Option<Vec<ShapeCommandToken>>) -> Ref<Shape> {
+    let state = create_shape_bounds_state();
+    register_default_shape_bounds_commands(&state);
+    let partial = PartialShape {
+        data: Some(PartialShapeData {
+            bounds_state: Some(state),
+            commands,
+        }),
+        node: partial_node(),
+    };
+    return create_shape(Some(&partial));
+}
+
+pub fn empty_rect() -> flight_geometry::Rectangle {
+    return flight_geometry::create_rectangle(0.0, 0.0, 0.0, 0.0);
+}
+
+pub fn rect_values(rect: &flight_geometry::Rectangle) -> (f64, f64, f64, f64) {
+    return (
+        rect.x as f64,
+        rect.y as f64,
+        rect.width as f64,
+        rect.height as f64,
+    );
 }
