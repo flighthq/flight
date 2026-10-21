@@ -12,8 +12,9 @@ same public operation; they cover both a small-coordinate control and a failure 
 | `CollisionCircle2D`, `CollisionRaycastHit2D`, `raycast_collision_shape2d` | A unit circle raycast gives fraction `1` in the local control under either precision. At a center of `1e9`, `f64` still hits at `999999999`; `f32` aliases the origin two units away with the center and changes the public result from hit to miss. | Retain `f64` for the measured circle/raycast input and hit record. |
 | `enable_collision_guards` clock | `f64` distinguishes timestamps `2^24` ms and `2^24 + 1` ms; an `f32` round trip aliases them. | Retain the injected live clock and logged operation timestamp as `f64`. |
 | Private GJK3D/EPA scratch | The source uses `Float64Array` simplex, polytope, face-normal, face-distance, and horizon scratch. An otherwise exact `f32` translation produced three deterministic gross-depth failures; three exact-input regressions and all 1,400 seeded comparisons pass with source precision. | Promote each canonical `f32` support result losslessly into private `f64` predicate scratch, then cast the final normal and depth back to the public `f32` manifold. |
+| Private GJK distance simplex scratch | The source-valid crossing-capsule case requires an interior witness at zero to six digits. The exact `f32` reduction reported `pointAX = 0.00003552442`; the private `f64` reduction preserves the source witness while every shape, support callback, offset, and result field stays `f32`. | Promote canonical `f32` supports losslessly into private `f64` simplex coordinates, barycentric weights, and witness accumulation, then narrow only the final public distance record. |
 
-The resulting `f64` inventory is limited to those four decisions:
+The resulting `f64` inventory is limited to those five decisions:
 
 - `CollisionPolygon2D` storage, polygon validation, and the 2D SAT kernel and entry points retain
   the measured `1e15` domain. AABB and OBB vertices are widened only when entering that kernel.
@@ -27,10 +28,14 @@ The resulting `f64` inventory is limited to those four decisions:
   and predicate arithmetic, matching the source `Float64Array` working storage. Shape storage,
   support callbacks, registry APIs, and the final manifold normal/depth remain `f32`; the source
   iteration budgets and `1e-9`/`1e-12` thresholds are unchanged.
+- GJK distance uses `f64` only in its private simplex coordinates, simplex-reduction predicates,
+  barycentric weights, and witness accumulation. Canonical support results are promoted from `f32`,
+  and the final public distance, direction, and witnesses are narrowed back to `f32`; the source
+  32-iteration budget and `1e-12` convergence/touching thresholds are unchanged.
 
 All other collision numeric families are `f32`: contact and manifold generation, containment,
-segments, 2D support and non-SAT operations, every 3D shape and operation outside the bounded
-GJK3D/EPA scratch, distance, sweep, hull, heightfield, and triangle-mesh code. Direct
+segments, 2D support and non-SAT operations, every 3D shape and operation outside the two bounded
+GJK scratch families, sweep, hull, heightfield, and triangle-mesh code. Direct
 `cargo-flight-lint check --crate flight-collision` passes with no baseline; no broad `f64` allow
 covers any of them.
 

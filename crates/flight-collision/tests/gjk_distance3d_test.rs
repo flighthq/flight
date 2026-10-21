@@ -1,6 +1,9 @@
 use flight_collision::contract::*;
 use flight_collision::*;
 
+const CLOSE_TO_SIX_DIGITS: f32 = 5e-7;
+const CLOSE_TO_NINE_DIGITS: f32 = 5e-10;
+
 fn sphere(x: f32, y: f32, z: f32, radius: f32) -> CollisionShape3D {
     CollisionShape3D::Sphere(CollisionSphere3D { x, y, z, radius })
 }
@@ -23,23 +26,39 @@ fn aabb(
     })
 }
 
+fn write_distance_default(
+    registry: &CollisionRegistry3D,
+    a: &CollisionShape3D,
+    b: &CollisionShape3D,
+    out: &mut CollisionDistance3D,
+) -> bool {
+    write_collision_distance3d(out, registry, a, b, None, None, None)
+}
+
+fn assert_close(actual: f32, expected: f32, tolerance: f32) {
+    assert!(
+        (actual - expected).abs() <= tolerance,
+        "expected {actual} to be within {tolerance} of {expected}"
+    );
+}
+
 mod create_collision_distance3d {
     use super::*;
 
     #[test]
     fn starts_zeroed_and_not_overlapping() {
-        let d = create_collision_distance3d();
-        assert_eq!(d.distance, 0.0);
-        assert_eq!(d.direction_x, 0.0);
-        assert_eq!(d.direction_y, 0.0);
-        assert_eq!(d.direction_z, 0.0);
-        assert_eq!(d.point_a_x, 0.0);
-        assert_eq!(d.point_a_y, 0.0);
-        assert_eq!(d.point_a_z, 0.0);
-        assert_eq!(d.point_b_x, 0.0);
-        assert_eq!(d.point_b_y, 0.0);
-        assert_eq!(d.point_b_z, 0.0);
-        assert!(!d.overlapping);
+        let out = create_collision_distance3d();
+        assert_eq!(out.distance, 0.0);
+        assert_eq!(out.direction_x, 0.0);
+        assert_eq!(out.direction_y, 0.0);
+        assert_eq!(out.direction_z, 0.0);
+        assert_eq!(out.point_a_x, 0.0);
+        assert_eq!(out.point_a_y, 0.0);
+        assert_eq!(out.point_a_z, 0.0);
+        assert_eq!(out.point_b_x, 0.0);
+        assert_eq!(out.point_b_y, 0.0);
+        assert_eq!(out.point_b_z, 0.0);
+        assert!(!out.overlapping);
     }
 }
 
@@ -48,138 +67,166 @@ mod initialize_collision_distance3d {
 
     #[test]
     fn is_the_construction_initializer_of_create_collision_distance3d() {
-        let mut d = create_collision_distance3d();
-        d.distance = 99.0;
-        d.direction_x = 1.0;
-        d.direction_y = 2.0;
-        d.direction_z = 3.0;
-        d.point_a_x = 4.0;
-        d.point_a_y = 5.0;
-        d.point_a_z = 6.0;
-        d.point_b_x = 7.0;
-        d.point_b_y = 8.0;
-        d.point_b_z = 9.0;
-        d.overlapping = true;
-        initialize_collision_distance3d(&mut d);
-        assert_eq!(d.distance, 0.0);
-        assert_eq!(d.direction_x, 0.0);
-        assert!(!d.overlapping);
+        let mut out = create_collision_distance3d();
+        out.distance = 99.0;
+        out.direction_x = 1.0;
+        out.direction_y = 2.0;
+        out.direction_z = 3.0;
+        out.point_a_x = 4.0;
+        out.point_a_y = 5.0;
+        out.point_a_z = 6.0;
+        out.point_b_x = 7.0;
+        out.point_b_y = 8.0;
+        out.point_b_z = 9.0;
+        out.overlapping = true;
+
+        initialize_collision_distance3d(&mut out);
+
+        assert_eq!(out, create_collision_distance3d());
     }
 }
 
 mod write_collision_distance3d {
     use super::*;
 
-    fn write_distance_default(
-        registry: &CollisionRegistry3D,
-        a: &CollisionShape3D,
-        b: &CollisionShape3D,
-        out: &mut CollisionDistance3D,
-    ) -> bool {
-        return write_collision_distance3d(out, registry, a, b, None, None, None);
+    #[test]
+    fn matches_the_closed_form_for_two_separated_spheres() {
+        let mut out = create_collision_distance3d();
+        assert!(write_distance_default(
+            &crate::collision_registry3d_with_supports(),
+            &sphere(0.0, 0.0, 0.0, 1.0),
+            &sphere(10.0, 0.0, 0.0, 2.0),
+            &mut out,
+        ));
+        assert_close(out.distance, 7.0, CLOSE_TO_NINE_DIGITS);
+        assert!(!out.overlapping);
     }
 
-    // write_collision_distance3d returns true for separated shapes (with distance > 0,
-    // direction, and witness points) and false for overlapping shapes (with overlapping=true).
-
     #[test]
-    fn returns_true_for_separated_spheres() {
+    fn points_the_direction_from_b_toward_a() {
         let mut out = create_collision_distance3d();
-        let result = write_distance_default(
+        write_distance_default(
             &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
             &sphere(10.0, 0.0, 0.0, 2.0),
             &mut out,
         );
-        // The function returns true (no error) for all valid inputs
-        assert!(result);
+        assert_close(out.direction_x, -1.0, CLOSE_TO_NINE_DIGITS);
+        assert_close(out.direction_y, 0.0, CLOSE_TO_NINE_DIGITS);
+        assert_close(out.direction_z, 0.0, CLOSE_TO_NINE_DIGITS);
     }
 
     #[test]
-    fn returns_false_for_overlapping_spheres() {
-        // write_collision_distance3d returns false when it detects overlap
-        // (the GJK loop terminates early when the simplex encloses the origin).
-        let mut out = create_collision_distance3d();
-        let result = write_distance_default(
-            &crate::collision_registry3d_with_supports(),
-            &sphere(0.0, 0.0, 0.0, 2.0),
-            &sphere(1.0, 0.0, 0.0, 2.0),
-            &mut out,
-        );
-        assert!(!result);
-        assert!(out.overlapping);
-        assert_eq!(out.distance, 0.0);
-    }
-
-    #[test]
-    fn detects_overlapping_spheres() {
+    fn returns_a_unit_direction() {
         let mut out = create_collision_distance3d();
         write_distance_default(
             &crate::collision_registry3d_with_supports(),
+            &sphere(0.0, 0.0, 0.0, 1.0),
+            &sphere(6.0, 8.0, 0.0, 1.0),
+            &mut out,
+        );
+        assert_close(
+            (out.direction_x * out.direction_x
+                + out.direction_y * out.direction_y
+                + out.direction_z * out.direction_z)
+                .sqrt(),
+            1.0,
+            CLOSE_TO_NINE_DIGITS,
+        );
+        assert_close(out.distance, 8.0, CLOSE_TO_NINE_DIGITS);
+    }
+
+    #[test]
+    fn measures_along_z_as_readily_as_along_x() {
+        let mut out = create_collision_distance3d();
+        write_distance_default(
+            &crate::collision_registry3d_with_supports(),
+            &sphere(0.0, 0.0, 0.0, 1.0),
+            &sphere(0.0, 0.0, 10.0, 1.0),
+            &mut out,
+        );
+        assert_close(out.distance, 8.0, CLOSE_TO_NINE_DIGITS);
+        assert_close(out.direction_z, -1.0, CLOSE_TO_NINE_DIGITS);
+    }
+
+    #[test]
+    fn reports_overlap_rather_than_a_distance_for_an_intersecting_pair() {
+        let mut out = create_collision_distance3d();
+        assert!(!write_distance_default(
+            &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 2.0),
             &sphere(1.0, 0.0, 0.0, 2.0),
             &mut out,
-        );
+        ));
         assert!(out.overlapping);
         assert_eq!(out.distance, 0.0);
     }
 
     #[test]
-    fn reports_near_zero_distance_for_touching_spheres() {
+    fn reports_overlap_for_a_pair_that_merely_touches() {
         let mut out = create_collision_distance3d();
-        let result = write_distance_default(
+        assert!(!write_distance_default(
             &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
             &sphere(2.0, 0.0, 0.0, 1.0),
             &mut out,
-        );
-        // Touching (distance=0) is the boundary: GJK may report a zero-distance
-        // separation or detect overlap depending on convergence order. Accept either.
-        if result {
-            assert!(out.distance < 1e-6);
-        } else {
-            assert!(out.overlapping);
-        }
+        ));
+        assert!(out.overlapping);
     }
 
     #[test]
-    fn does_not_panic_on_axis_aligned_boxes() {
+    fn measures_face_to_face_between_two_boxes() {
         let mut out = create_collision_distance3d();
-        let result = write_distance_default(
+        assert!(write_distance_default(
             &crate::collision_registry3d_with_supports(),
             &aabb(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0),
             &aabb(5.0, -1.0, -1.0, 7.0, 1.0, 1.0),
             &mut out,
-        );
-        assert!(result);
+        ));
+        assert_close(out.distance, 4.0, CLOSE_TO_NINE_DIGITS);
+        assert_close(out.direction_x, -1.0, CLOSE_TO_NINE_DIGITS);
     }
 
     #[test]
-    fn does_not_panic_on_corner_to_corner_boxes() {
+    fn measures_corner_to_corner_between_two_boxes() {
         let mut out = create_collision_distance3d();
-        let result = write_distance_default(
+        assert!(write_distance_default(
             &crate::collision_registry3d_with_supports(),
             &aabb(0.0, 0.0, 0.0, 1.0, 1.0, 1.0),
             &aabb(4.0, 4.0, 4.0, 5.0, 5.0, 5.0),
             &mut out,
-        );
-        assert!(result);
+        ));
+        assert_close(out.distance, 27.0_f32.sqrt(), CLOSE_TO_NINE_DIGITS);
     }
 
     #[test]
-    fn does_not_panic_on_sphere_vs_box() {
+    fn measures_edge_to_edge_between_two_boxes() {
         let mut out = create_collision_distance3d();
-        let result = write_distance_default(
+        assert!(write_distance_default(
+            &crate::collision_registry3d_with_supports(),
+            &aabb(0.0, 0.0, 0.0, 1.0, 1.0, 1.0),
+            &aabb(4.0, 4.0, 0.0, 5.0, 5.0, 1.0),
+            &mut out,
+        ));
+        assert_close(out.distance, 18.0_f32.sqrt(), CLOSE_TO_NINE_DIGITS);
+        assert_close(out.direction_z, 0.0, CLOSE_TO_SIX_DIGITS);
+    }
+
+    #[test]
+    fn matches_the_closed_form_for_a_sphere_against_a_box_face() {
+        let mut out = create_collision_distance3d();
+        assert!(write_distance_default(
             &crate::collision_registry3d_with_supports(),
             &sphere(7.0, 0.0, 0.0, 1.0),
             &aabb(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0),
             &mut out,
-        );
-        assert!(result);
+        ));
+        assert_close(out.distance, 5.0, CLOSE_TO_SIX_DIGITS);
+        assert_close(out.direction_x, 1.0, CLOSE_TO_SIX_DIGITS);
     }
 
     #[test]
-    fn does_not_panic_on_capsule_vs_sphere() {
+    fn measures_a_capsule_from_its_surface_not_its_axis() {
         let capsule = CollisionShape3D::Capsule(CollisionCapsule3D {
             x0: -2.0,
             y0: 0.0,
@@ -190,17 +237,18 @@ mod write_collision_distance3d {
             radius: 0.5,
         });
         let mut out = create_collision_distance3d();
-        let result = write_distance_default(
+        assert!(write_distance_default(
             &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 10.0, 0.0, 1.0),
             &capsule,
             &mut out,
-        );
-        assert!(result);
+        ));
+        assert_close(out.distance, 8.5, CLOSE_TO_SIX_DIGITS);
+        assert_close(out.direction_y, 1.0, CLOSE_TO_SIX_DIGITS);
     }
 
     #[test]
-    fn does_not_panic_on_convex_hull() {
+    fn measures_to_a_convex_hull() {
         let cube = CollisionShape3D::Convex(CollisionConvex3D {
             points: vec![
                 -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, -1.0,
@@ -208,58 +256,131 @@ mod write_collision_distance3d {
             ],
         });
         let mut out = create_collision_distance3d();
-        let result = write_distance_default(
+        assert!(write_distance_default(
             &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 6.0, 0.0, 1.0),
             &cube,
             &mut out,
-        );
-        assert!(result);
+        ));
+        assert_close(out.distance, 4.0, CLOSE_TO_SIX_DIGITS);
+        assert_close(out.direction_y, 1.0, CLOSE_TO_SIX_DIGITS);
     }
 
     #[test]
-    fn is_symmetric_in_returning_true_when_arguments_swap() {
+    fn is_symmetric_in_magnitude_and_opposite_in_direction_when_the_arguments_swap() {
         let mut out = create_collision_distance3d();
-        let a_result = write_distance_default(
+        write_distance_default(
             &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
             &sphere(0.0, 9.0, 0.0, 2.0),
             &mut out,
         );
-        let b_result = write_distance_default(
+        let forward = out.distance;
+        let forward_y = out.direction_y;
+        write_distance_default(
             &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 9.0, 0.0, 2.0),
             &sphere(0.0, 0.0, 0.0, 1.0),
             &mut out,
         );
-        assert_eq!(a_result, b_result);
+        assert_close(out.distance, forward, CLOSE_TO_NINE_DIGITS);
+        assert_close(out.direction_y, -forward_y, CLOSE_TO_NINE_DIGITS);
     }
 
     #[test]
-    fn zeroes_the_output_on_overlap() {
+    fn agrees_with_the_overlap_test_about_which_side_of_touching_a_pair_is_on() {
+        for gap in [-0.1_f32, -0.001, 0.001, 0.1, 1.0] {
+            let mut out = create_collision_distance3d();
+            let separated = write_distance_default(
+                &crate::collision_registry3d_with_supports(),
+                &sphere(0.0, 0.0, 0.0, 1.0),
+                &sphere(2.0 + gap, 0.0, 0.0, 1.0),
+                &mut out,
+            );
+            assert_eq!(separated, gap > 0.0, "gap={gap} out={out:?}");
+            if separated {
+                assert_close(out.distance, gap, CLOSE_TO_SIX_DIGITS);
+            }
+        }
+    }
+
+    #[test]
+    fn declines_a_kind_with_no_registered_support_rather_than_reporting_a_distance() {
+        let mut registry = crate::collision_registry3d_with_supports();
+        clear_collision_supports3d(&mut registry);
         let mut out = create_collision_distance3d();
-        // First call to populate with potential non-zero values.
+        assert!(!write_distance_default(
+            &registry,
+            &sphere(0.0, 0.0, 0.0, 1.0),
+            &sphere(10.0, 0.0, 0.0, 1.0),
+            &mut out,
+        ));
+        assert_eq!(out.distance, 0.0);
+        assert!(!out.overlapping);
+    }
+
+    #[test]
+    fn stays_accurate_over_a_wide_range_of_scales() {
+        for scale in [0.001_f32, 1.0, 1000.0] {
+            let mut out = create_collision_distance3d();
+            assert!(write_distance_default(
+                &crate::collision_registry3d_with_supports(),
+                &sphere(0.0, 0.0, 0.0, scale),
+                &sphere(10.0 * scale, 0.0, 0.0, scale),
+                &mut out,
+            ));
+            assert_close(out.distance / scale, 8.0, CLOSE_TO_SIX_DIGITS);
+        }
+    }
+
+    #[test]
+    fn puts_the_witness_points_on_each_sphere_surface_along_the_line_of_centres() {
+        let mut out = create_collision_distance3d();
         write_distance_default(
             &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
             &sphere(10.0, 0.0, 0.0, 1.0),
             &mut out,
         );
-        // Second call: overlapping.
-        write_distance_default(
-            &crate::collision_registry3d_with_supports(),
-            &sphere(0.0, 0.0, 0.0, 2.0),
-            &sphere(1.0, 0.0, 0.0, 2.0),
-            &mut out,
-        );
-        // Initialize is called at the start, so witness points are zeroed
-        assert_eq!(out.point_a_x, 0.0);
-        assert_eq!(out.point_b_x, 0.0);
-        assert_eq!(out.distance, 0.0);
+        assert_close(out.point_a_x, 1.0, CLOSE_TO_SIX_DIGITS);
+        assert_close(out.point_a_y, 0.0, CLOSE_TO_SIX_DIGITS);
+        assert_close(out.point_b_x, 9.0, CLOSE_TO_SIX_DIGITS);
     }
 
     #[test]
-    fn does_not_panic_on_capsule_pair() {
+    fn separates_the_witness_points_by_the_reported_distance_along_the_reported_direction() {
+        for b in [
+            sphere(10.0, 0.0, 0.0, 1.0),
+            sphere(6.0, 8.0, 0.0, 2.0),
+            aabb(4.0, 4.0, 4.0, 5.0, 5.0, 5.0),
+        ] {
+            let mut out = create_collision_distance3d();
+            assert!(write_distance_default(
+                &crate::collision_registry3d_with_supports(),
+                &sphere(0.0, 0.0, 0.0, 1.0),
+                &b,
+                &mut out,
+            ));
+            assert_close(
+                out.point_a_x - out.point_b_x,
+                out.direction_x * out.distance,
+                CLOSE_TO_SIX_DIGITS,
+            );
+            assert_close(
+                out.point_a_y - out.point_b_y,
+                out.direction_y * out.distance,
+                CLOSE_TO_SIX_DIGITS,
+            );
+            assert_close(
+                out.point_a_z - out.point_b_z,
+                out.direction_z * out.distance,
+                CLOSE_TO_SIX_DIGITS,
+            );
+        }
+    }
+
+    #[test]
+    fn finds_a_closest_point_interior_to_an_edge_which_no_support_call_can_name() {
         let along_x = CollisionShape3D::Capsule(CollisionCapsule3D {
             x0: -2.0,
             y0: 0.0,
@@ -279,56 +400,67 @@ mod write_collision_distance3d {
             radius: 0.5,
         });
         let mut out = create_collision_distance3d();
-        let result = write_distance_default(
+        assert!(write_distance_default(
             &crate::collision_registry3d_with_supports(),
             &along_x,
             &above_along_y,
             &mut out,
-        );
-        assert!(result);
+        ));
+        assert_close(out.distance, 4.0, CLOSE_TO_SIX_DIGITS);
+        assert_close(out.point_a_x, 0.0, CLOSE_TO_SIX_DIGITS);
+        assert_close(out.point_a_y, 0.0, CLOSE_TO_SIX_DIGITS);
+        assert_close(out.point_a_z, 0.5, CLOSE_TO_SIX_DIGITS);
+        assert_close(out.point_b_z, 4.5, CLOSE_TO_SIX_DIGITS);
     }
 
     #[test]
-    fn does_not_panic_on_large_aabb_pair() {
+    fn settles_on_a_corner_of_the_shared_region_when_the_closest_features_are_parallel() {
         let mut out = create_collision_distance3d();
-        let result = write_distance_default(
+        write_distance_default(
             &crate::collision_registry3d_with_supports(),
             &aabb(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0),
             &aabb(5.0, -20.0, -20.0, 6.0, 20.0, 20.0),
             &mut out,
         );
-        assert!(result);
+        assert_close(out.distance, 4.0, CLOSE_TO_SIX_DIGITS);
+        assert_close(out.point_a_x, 1.0, CLOSE_TO_SIX_DIGITS);
+        assert_close(out.point_a_y.abs(), 1.0, CLOSE_TO_SIX_DIGITS);
+        assert_close(out.point_a_z.abs(), 1.0, CLOSE_TO_SIX_DIGITS);
     }
 
     #[test]
-    fn does_not_panic_with_offset_sphere() {
+    fn reports_the_witness_on_a_in_the_offset_frame() {
         let mut out = create_collision_distance3d();
-        let result = write_collision_distance3d(
+        assert!(write_collision_distance3d(
             &mut out,
             &crate::collision_registry3d_with_supports(),
             &sphere(0.0, 0.0, 0.0, 1.0),
             &sphere(10.0, 0.0, 0.0, 1.0),
             Some(3.0),
-            None,
-            None,
-        );
-        assert!(result);
-        assert_eq!(out.distance, 5.0);
-        assert_eq!(out.point_a_x, 4.0);
-        assert_eq!(out.point_b_x, 9.0);
+            Some(0.0),
+            Some(0.0),
+        ));
+        assert_close(out.distance, 5.0, CLOSE_TO_SIX_DIGITS);
+        assert_close(out.point_a_x, 4.0, CLOSE_TO_SIX_DIGITS);
+        assert_close(out.point_b_x, 9.0, CLOSE_TO_SIX_DIGITS);
     }
 
     #[test]
-    fn handles_multiple_scales_without_panic() {
+    fn zeroes_the_witness_points_for_an_overlapping_pair_alongside_the_distance() {
         let mut out = create_collision_distance3d();
-        for &scale in &[0.001, 1.0, 1000.0] {
-            let result = write_distance_default(
-                &crate::collision_registry3d_with_supports(),
-                &sphere(0.0, 0.0, 0.0, scale),
-                &sphere(10.0 * scale, 0.0, 0.0, scale),
-                &mut out,
-            );
-            assert!(result, "failed at scale {}", scale);
-        }
+        write_distance_default(
+            &crate::collision_registry3d_with_supports(),
+            &sphere(0.0, 0.0, 0.0, 1.0),
+            &sphere(10.0, 0.0, 0.0, 1.0),
+            &mut out,
+        );
+        assert!(!write_distance_default(
+            &crate::collision_registry3d_with_supports(),
+            &sphere(0.0, 0.0, 0.0, 2.0),
+            &sphere(1.0, 0.0, 0.0, 2.0),
+            &mut out,
+        ));
+        assert_eq!(out.point_a_x, 0.0);
+        assert_eq!(out.point_b_x, 0.0);
     }
 }

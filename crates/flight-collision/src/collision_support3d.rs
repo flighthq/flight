@@ -227,23 +227,24 @@ pub fn support_collision_capsule3d(
     dir_z: f32,
     out: &mut [f32; 3],
 ) {
-    let len = (dir_x * dir_x + dir_y * dir_y + dir_z * dir_z).sqrt();
-    let (nx, ny, nz) = if len > 0.0 {
-        (dir_x / len, dir_y / len, dir_z / len)
+    let projection0 = shape.x0 * dir_x + shape.y0 * dir_y + shape.z0 * dir_z;
+    let projection1 = shape.x1 * dir_x + shape.y1 * dir_y + shape.z1 * dir_z;
+    let (base_x, base_y, base_z) = if projection1 > projection0 {
+        (shape.x1, shape.y1, shape.z1)
     } else {
-        (1.0, 0.0, 0.0)
+        (shape.x0, shape.y0, shape.z0)
     };
-    let proj0 = shape.x0 * dir_x + shape.y0 * dir_y + shape.z0 * dir_z;
-    let proj1 = shape.x1 * dir_x + shape.y1 * dir_y + shape.z1 * dir_z;
-    if proj0 >= proj1 {
-        out[0] = shape.x0 + nx * shape.radius;
-        out[1] = shape.y0 + ny * shape.radius;
-        out[2] = shape.z0 + nz * shape.radius;
-    } else {
-        out[0] = shape.x1 + nx * shape.radius;
-        out[1] = shape.y1 + ny * shape.radius;
-        out[2] = shape.z1 + nz * shape.radius;
+    let length = (dir_x * dir_x + dir_y * dir_y + dir_z * dir_z).sqrt();
+    if length == 0.0 {
+        out[0] = base_x;
+        out[1] = base_y;
+        out[2] = base_z;
+        return;
     }
+    let scale = shape.radius / length;
+    out[0] = base_x + dir_x * scale;
+    out[1] = base_y + dir_y * scale;
+    out[2] = base_z + dir_z * scale;
 }
 
 pub fn support_collision_cone3d(
