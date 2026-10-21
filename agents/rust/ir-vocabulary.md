@@ -122,6 +122,7 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
 - **`Unknown` = `Option<Arc<dyn Any + Send + Sync>>`:** TS `unknown` values that are shared or cloneable (`None` = null). An optional `unknown` parameter is `Option<Unknown>` (outer None = omitted). `AnySlot` remains the owned per-object erased slot.
 - **`Record<V>`** (flight-entity): TS `Record<string, V>` / dictionary objects. Ordered, with JS property-enumeration order (integer-index keys ascending first, then insertion order); in-place updates; iteration allowed. HashMap remains the mapping for TS `Map`.
 - **Data enum over an untagged TS union:** a union of the payload interfaces; tagged only if the payloads carry a literal `kind`.
+- **`ProviderRef` = `Arc<dyn Any + Send + Sync>`** (hostcapability): every capability record carries the provider's shared identity. Facets from one provider share it, and dedup uses `Arc::ptr_eq`, never callback equality. TS: the record *is* the provider object, so this becomes object identity.
 - **Non-empty variadic tuple** (`[T, ...T[]]`): `Vec<T>`, validated non-empty at the boundary.
 
 ## Choosing an array type (user, 2026-10-20)
