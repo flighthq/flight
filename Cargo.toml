@@ -30,6 +30,7 @@ flight-math = { path = "crates/flight-math" }
 flight-mediasession = { path = "crates/flight-mediasession" }
 flight-net = { path = "crates/flight-net" }
 flight-meshgeometry = { path = "crates/flight-meshgeometry" }
+flight-midi = { path = "crates/flight-midi" }
 flight-path = { path = "crates/flight-path" }
 flight-path-boolean = { path = "crates/flight-path-boolean" }
 flight-path-formats = { path = "crates/flight-path-formats" }
@@ -65,6 +66,7 @@ flight-registry = { path = "crates/flight-registry" }
 flight-screen = { path = "crates/flight-screen" }
 flight-statechart = { path = "crates/flight-statechart" }
 flight-statusbar = { path = "crates/flight-statusbar" }
+flight-stream = { path = "crates/flight-stream" }
 flight-tween = { path = "crates/flight-tween" }
 flight-xml = { path = "crates/flight-xml" }
 flight-resource = { path = "crates/flight-resource" }

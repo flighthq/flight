@@ -281,6 +281,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-midi"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-hostcapability",
+ "flight-permissions",
+ "flight-signals",
+ "flight-stream",
+]
+
+[[package]]
 name = "flight-motionpath"
 version = "0.6.0"
 dependencies = [

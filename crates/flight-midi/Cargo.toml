@@ -1,0 +1,21 @@
+[package]
+name = "flight-midi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Origin-pinned MIDI access, port resources, permission queries and subscriptions over caller-supplied providers"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-hostcapability = { workspace = true }
+flight-permissions = { workspace = true }
+flight-signals = { workspace = true }
+flight-stream = { workspace = true }
+
+[lints]
+workspace = true
