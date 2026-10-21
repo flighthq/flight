@@ -1,3 +1,4 @@
+use flight_entity::allocate_entity;
 use flight_math::{RandomSource, create_random_source};
 
 use crate::ParticleEmitterState;
@@ -8,7 +9,7 @@ pub const PARTICLE_VELOCITY_STRIDE: usize = 3;
 pub fn create_particle_emitter_state(
     random: Option<RandomSource>,
 ) -> ParticleEmitterState {
-    let mut out = ParticleEmitterState::default();
+    let mut out: ParticleEmitterState = allocate_entity();
     initialize_particle_emitter_state(&mut out, random);
     return out;
 }

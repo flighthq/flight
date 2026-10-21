@@ -1,3 +1,4 @@
+use flight_entity::allocate_entity;
 use flight_math::{RandomSource, create_random_source};
 
 use crate::ParticleObjectsState;
@@ -6,7 +7,7 @@ pub fn create_particle_objects_state(
     capacity: usize,
     random: Option<RandomSource>,
 ) -> ParticleObjectsState {
-    let mut out = ParticleObjectsState::default();
+    let mut out: ParticleObjectsState = allocate_entity();
     initialize_particle_objects_state(&mut out, capacity, random);
     return out;
 }

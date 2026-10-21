@@ -1,17 +1,16 @@
+use flight_entity::EntityRuntimeSlot;
 use flight_math::{RandomSource, create_random_source};
 
 // ---------------------------------------------------------------------------
 // Curve types
 // ---------------------------------------------------------------------------
 
-/// A keyframe on a scalar curve: `{ time, value }`.
 #[derive(Clone, Debug, Default)]
 pub struct CurveKeyframe {
     pub time: f32,
     pub value: f32,
 }
 
-/// A keyframe on an RGB color curve: `{ time, r, g, b }`.
 #[derive(Clone, Debug, Default)]
 pub struct ColorKeyframe {
     pub time: f32,
@@ -83,12 +82,6 @@ pub enum EmitterShape {
     Ring = 4,
 }
 
-impl Default for EmitterShape {
-    fn default() -> Self {
-        return EmitterShape::Point;
-    }
-}
-
 // ---------------------------------------------------------------------------
 // Force types
 // ---------------------------------------------------------------------------
@@ -142,12 +135,8 @@ pub enum ParticleForce {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Signal {}
 
-pub fn create_signal() -> Signal {
-    return Signal {};
-}
-
 // ---------------------------------------------------------------------------
-// ParticleEmitterSignals
+// ParticleEmitterSignals (Entity)
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -155,10 +144,11 @@ pub struct ParticleEmitterSignals {
     pub on_emitter_complete: Signal,
     pub on_particle_death: Signal,
     pub on_particle_spawn: Signal,
+    runtime: EntityRuntimeSlot,
 }
 
 // ---------------------------------------------------------------------------
-// ParticleEmitterConfig
+// ParticleEmitterConfig (plain record)
 // ---------------------------------------------------------------------------
 
 #[derive(Clone, Debug)]
@@ -215,6 +205,129 @@ pub struct ParticleEmitterConfig {
     pub spread: f32,
     pub velocity_inheritance: f32,
     pub world_space: bool,
+}
+
+// ---------------------------------------------------------------------------
+// ParticleEmitterState (Entity)
+// ---------------------------------------------------------------------------
+
+pub struct ParticleEmitterState {
+    pub burst_timer: f32,
+    pub color_birth: Vec<f32>,
+    pub color_death: Vec<f32>,
+    pub emitter_age: f32,
+    pub lifetimes: Vec<f32>,
+    pub prev_x: f32,
+    pub prev_y: f32,
+    pub prev_z: f32,
+    pub random: RandomSource,
+    pub rotation_speeds: Vec<f32>,
+    pub scales: Vec<f32>,
+    pub spawn_accumulator: f32,
+    pub velocities: Vec<f32>,
+    pub signals: Option<ParticleEmitterSignals>,
+    runtime: EntityRuntimeSlot,
+}
+
+// ---------------------------------------------------------------------------
+// ParticleObjectsState (Entity)
+// ---------------------------------------------------------------------------
+
+pub struct ParticleObjectsState {
+    pub burst_timer: f32,
+    pub emitter_age: f32,
+    pub lifetimes: Vec<f32>,
+    pub prev_x: f32,
+    pub prev_y: f32,
+    pub random: RandomSource,
+    pub rotation_speeds: Vec<f32>,
+    pub scales: Vec<f32>,
+    pub spawn_accumulator: f32,
+    pub velocities: Vec<f32>,
+    runtime: EntityRuntimeSlot,
+}
+
+// ---------------------------------------------------------------------------
+// ParticleEmitter2D / ParticleEmitterData (typed-array emitter path)
+// ---------------------------------------------------------------------------
+
+#[derive(Clone, Debug, Default)]
+pub struct ParticleEmitterData {
+    pub alphas: Vec<f32>,
+    pub colors: Vec<f32>,
+    pub ids: Vec<u16>,
+    pub particle_count: usize,
+    pub positions_z: Vec<f32>,
+    pub transforms: Vec<f32>,
+    pub world_space: bool,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct ParticleEmitter2D {
+    pub data: ParticleEmitterData,
+    pub x: f32,
+    pub y: f32,
+}
+
+// ---------------------------------------------------------------------------
+// ParticleObject
+// ---------------------------------------------------------------------------
+
+#[derive(Clone, Debug)]
+pub struct ParticleObject {
+    pub alpha: f32,
+    pub blend_mode: Option<String>,
+    pub color_scale_bias: Option<Vec<f32>>,
+    pub rotation: f32,
+    pub scale_x: f32,
+    pub scale_y: f32,
+    pub visible: bool,
+    pub x: f32,
+    pub y: f32,
+}
+
+// ---------------------------------------------------------------------------
+// ParticleConfigIssue (validation output)
+// ---------------------------------------------------------------------------
+
+#[derive(Clone, Debug)]
+pub struct ParticleConfigIssue {
+    pub field: String,
+    pub message: String,
+    pub severity: String,
+}
+
+// ---------------------------------------------------------------------------
+// ParticleObjectsUpdateOptions / ParticleObjectCallbacks
+// ---------------------------------------------------------------------------
+
+pub struct ParticleObjectCallbacks {
+    pub on_spawn: Option<fn(f32, f32, f32)>,
+    pub on_death: Option<fn(f32, f32, f32)>,
+}
+
+pub struct ParticleObjectsUpdateOptions {
+    pub emitter_x: f32,
+    pub emitter_y: f32,
+    pub callbacks: Option<ParticleObjectCallbacks>,
+}
+
+// ---------------------------------------------------------------------------
+// Free functions
+// ---------------------------------------------------------------------------
+
+pub fn create_signal() -> Signal {
+    return Signal {};
+}
+
+// ---------------------------------------------------------------------------
+// Impl blocks
+// ---------------------------------------------------------------------------
+
+impl Default for EmitterShape {
+    fn default() -> Self {
+        return EmitterShape::Point;
+    }
 }
 
 impl Default for ParticleEmitterConfig {
@@ -276,28 +389,6 @@ impl Default for ParticleEmitterConfig {
     }
 }
 
-// ---------------------------------------------------------------------------
-// ParticleEmitterState
-// ---------------------------------------------------------------------------
-
-pub struct ParticleEmitterState {
-    pub burst_timer: f32,
-    pub color_birth: Vec<f32>,
-    pub color_death: Vec<f32>,
-    pub emitter_age: f32,
-    pub lifetimes: Vec<f32>,
-    pub prev_x: f32,
-    pub prev_y: f32,
-    pub prev_z: f32,
-    pub random: RandomSource,
-    pub rotation_speeds: Vec<f32>,
-    pub scales: Vec<f32>,
-    pub spawn_accumulator: f32,
-    pub velocities: Vec<f32>,
-    /// Hidden signal slot (mirrors the TS Symbol-keyed slot).
-    pub signals: Option<ParticleEmitterSignals>,
-}
-
 impl std::fmt::Debug for ParticleEmitterState {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         return formatter
@@ -337,25 +428,9 @@ impl Default for ParticleEmitterState {
             spawn_accumulator: 0.0,
             velocities: Vec::new(),
             signals: None,
+            runtime: EntityRuntimeSlot::default(),
         };
     }
-}
-
-// ---------------------------------------------------------------------------
-// ParticleObjectsState
-// ---------------------------------------------------------------------------
-
-pub struct ParticleObjectsState {
-    pub burst_timer: f32,
-    pub emitter_age: f32,
-    pub lifetimes: Vec<f32>,
-    pub prev_x: f32,
-    pub prev_y: f32,
-    pub random: RandomSource,
-    pub rotation_speeds: Vec<f32>,
-    pub scales: Vec<f32>,
-    pub spawn_accumulator: f32,
-    pub velocities: Vec<f32>,
 }
 
 impl std::fmt::Debug for ParticleObjectsState {
@@ -389,47 +464,9 @@ impl Default for ParticleObjectsState {
             scales: Vec::new(),
             spawn_accumulator: 0.0,
             velocities: Vec::new(),
+            runtime: EntityRuntimeSlot::default(),
         };
     }
-}
-
-// ---------------------------------------------------------------------------
-// ParticleEmitter2D / ParticleEmitterData (typed-array emitter path)
-// ---------------------------------------------------------------------------
-
-#[derive(Clone, Debug, Default)]
-pub struct ParticleEmitterData {
-    pub alphas: Vec<f32>,
-    pub colors: Vec<f32>,
-    pub ids: Vec<u16>,
-    pub particle_count: usize,
-    pub positions_z: Vec<f32>,
-    pub transforms: Vec<f32>,
-    pub world_space: bool,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct ParticleEmitter2D {
-    pub data: ParticleEmitterData,
-    pub x: f32,
-    pub y: f32,
-}
-
-// ---------------------------------------------------------------------------
-// ParticleObject
-// ---------------------------------------------------------------------------
-
-#[derive(Clone, Debug)]
-pub struct ParticleObject {
-    pub alpha: f32,
-    pub blend_mode: Option<String>,
-    pub color_scale_bias: Option<Vec<f32>>,
-    pub rotation: f32,
-    pub scale_x: f32,
-    pub scale_y: f32,
-    pub visible: bool,
-    pub x: f32,
-    pub y: f32,
 }
 
 impl Default for ParticleObject {
@@ -448,32 +485,6 @@ impl Default for ParticleObject {
     }
 }
 
-// ---------------------------------------------------------------------------
-// ParticleConfigIssue (validation output)
-// ---------------------------------------------------------------------------
-
-#[derive(Clone, Debug)]
-pub struct ParticleConfigIssue {
-    pub field: String,
-    pub message: String,
-    pub severity: String,
-}
-
-// ---------------------------------------------------------------------------
-// ParticleObjectsUpdateOptions / ParticleObjectCallbacks
-// ---------------------------------------------------------------------------
-
-pub struct ParticleObjectCallbacks {
-    pub on_spawn: Option<fn(f32, f32, f32)>,
-    pub on_death: Option<fn(f32, f32, f32)>,
-}
-
-pub struct ParticleObjectsUpdateOptions {
-    pub emitter_x: f32,
-    pub emitter_y: f32,
-    pub callbacks: Option<ParticleObjectCallbacks>,
-}
-
 impl Default for ParticleObjectsUpdateOptions {
     fn default() -> Self {
         return Self {
@@ -483,3 +494,11 @@ impl Default for ParticleObjectsUpdateOptions {
         };
     }
 }
+
+// ---------------------------------------------------------------------------
+// Entity impls
+// ---------------------------------------------------------------------------
+
+flight_entity::impl_entity!(ParticleEmitterSignals);
+flight_entity::impl_entity!(ParticleEmitterState);
+flight_entity::impl_entity!(ParticleObjectsState);

@@ -1,7 +1,9 @@
+use flight_entity::allocate_entity;
+
 use crate::{ParticleEmitterSignals, ParticleEmitterState, Signal};
 
 pub fn create_particle_emitter_signals() -> ParticleEmitterSignals {
-    let mut out = ParticleEmitterSignals::default();
+    let mut out: ParticleEmitterSignals = allocate_entity();
     initialize_particle_emitter_signals(&mut out);
     return out;
 }
