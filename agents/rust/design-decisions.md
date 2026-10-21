@@ -45,6 +45,30 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 - **wasm:** only about 4 packages target it. Unwinding on wasm is revisited later.
 - **Home for the throw helpers:** a low crate, flight-entity or a tiny dedicated crate; decided with the first work package that needs them.
 
+## D11 Scope of the Rust SDK — APPROVED (user, 2026-10-21)
+
+- **Not ported to Rust (TS-only platform layer):** host-web, host-electron, host-tauri, host-capacitor, the DOM and Canvas 2D renderers (scene2d-dom, scene2d-canvas, effects-canvas, textshaper-canvas), and dev tooling (tool-*).
+- **Vital in Rust:** the GL and wgpu (Vulkan) render paths.
+- **Cairo (2D software render path):** TODO. Not urgent while wgpu software adapters cover headless use; schedule after the other crates are ported.
+- Feature packages (clipboard, dialog, …) are ported. They own their host-capability contracts (D8); a native Rust host is separate later work.
+- **Transpilation is deferred until a full Rust SDK exists.** The vocabulary and the lint protect transpilability in the meantime.
+
+## D12 Entity — DIRECTION (user, 2026-10-21); mechanics PROPOSED
+
+- **Bring Entity back to reduce churn.** In TS it acts as a "FlightObject": every domain object is an Entity (even Vector2), while dispatch infrastructure (renderers, registry tables, pipelines, host capabilities) is plain data (flighthq/flight `agents/conventions/entity-boundary.md`).
+- **Keep:** the `create*` verb reserved for domain objects, and the `create_*` / `initialize_*` pair (already the Rust convention).
+- **Drop:** `allocateEntity` / `finishEntity`. That ceremony served an abandoned class-based transpile; a Rust struct literal is the allocation.
+- **Proposed representation, two tiers:**
+  - (a) Object entities (nodes, resources, render states, managers, effects, configs, signals, …) carry `pub runtime: AnySlot`, the TS `[EntityRuntimeKey]`.
+  - (b) Value entities (geometry, color structs and similar small Copy math types) carry no runtime field. That keeps `Copy` and a compact size in hot loops, and matches the approved flight-geometry. The transpiler restores the TS runtime slot on value entities mechanically.
+  - **Awaiting user confirmation of this split.**
+
+## D13 Export lanes — APPROVED (user, 2026-10-21)
+
+- **Contract lane = the free functions** (TS `contract.ts`, the full surface other packages use). In Rust: `flight_x::contract::*`, mirroring `@flighthq/x/contract`.
+- **Public lane = the curated surface** (TS `index.ts`). In Rust: the crate root re-exports, plus Rust sugar (impl methods) for public types.
+- Contract-only items get no sugar (D6).
+
 ## D1 Numerics — APPROVED
 
 - f32 is the default for all value types.
@@ -96,7 +120,7 @@ Ruling (user, 2026-10-20):
 - A map may be iterated only where neither order nor performance matters, and that use must be marked `allow(hashmap-iteration) <reason>`.
 - This matches flight-rs-native, which uses no IndexMap and keeps order with Vecs. Enforced by `hashmap-iteration` (error).
 
-## D4 Signals and type erasure — PROPOSED
+## D4 Signals and type erasure — APPROVED (user, 2026-10-21)
 
 flight-rs-native uses:
 - `Signal<T>`, generic over the payload, with the payload a named event struct or `()`;

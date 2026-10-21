@@ -72,7 +72,7 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
    - **Closed** TS unions become C-like enums with a string table.
    - **Open** sets keyed for dispatch (`Kind`) stay `String`. The TS render path already caches the resolved renderer on the proxy (`rendererMapId`), so per-frame dispatch does not hash the kind.
    - `Custom(String)` enums only where hot code branches on the built-in variants.
-4. **Integers.** TS `number` is a 64-bit double, so integers are exact only up to 2^53, not to 32 bits. 32-bit behavior only appears where code asks for it: the TS sources use `>>> 0` (u32 wrap, 207 sites) and `| 0` (i32, 117 sites), and `BigInt` appears only in tests. Proposal:
+4. **Integers. Decided (user indifferent, principal choice, 2026-10-21): 32-bit by default** (`i32` / `u32`, matching the TS `| 0` / `>>> 0` idioms and Int32Array / Uint32Array); `usize` for indices and lengths; `i64` / `u64` only with a declared range of at most 2^53. This parallels the f32-default / f64-by-exception rule (D1). Earlier notes: TS `number` is a 64-bit double, so integers are exact only up to 2^53, not to 32 bits. 32-bit behavior only appears where code asks for it: the TS sources use `>>> 0` (u32 wrap, 207 sites) and `| 0` (i32, 117 sites), and `BigInt` appears only in tests. Proposal:
    - `u32`/`i32` map to those idioms.
    - Values that legitimately exceed 32 bits, such as collision's packed feature ids (`FEATURE_INDEX_LIMIT = 1 << 25`), use `i64`/`u64` with a declared range of at most 2^53 (`allow(contract-vocabulary) <range>`).
    - `isize` is not used.
