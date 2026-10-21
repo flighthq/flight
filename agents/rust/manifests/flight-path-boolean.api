@@ -1,4 +1,4 @@
-src/boolean_paths.rs: #[derive(Debug, Clone)] pub struct PathBooleanOptions { pub fill_rule: Option<PathBooleanFillRule>, pub tolerance: Option<f64>, }
+src/boolean_paths.rs: #[derive(Debug, Clone)] pub struct PathBooleanOptions { pub fill_rule: Option<PathWinding>, pub tolerance: Option<f64>, }
 src/boolean_paths.rs: impl Default for PathBooleanOptions
 src/boolean_paths.rs: impl Default for PathBooleanOptions :: fn default() -> Self
 src/boolean_paths.rs: impl PathBooleanKernel :: fn boolean_paths(&self, out: &mut Path, subject: &Path, clip: &Path, operation: PathBooleanOperation, options: Option<&PathBooleanOptions>)
