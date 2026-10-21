@@ -1,5 +1,6 @@
 src/contract.rs: pub use super::shortcut::*;
 src/contract.rs: pub use super::shortcut_explicit_dependency::*;
+src/contract.rs: pub use super::shortcut_key_name::*;
 src/contract.rs: pub use super::types::*;
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::Accelerator;
@@ -73,6 +74,24 @@ src/lib.rs: pub use contract::parse_accelerator_detailed;
 src/lib.rs: pub use contract::query_global_shortcut_conflict;
 src/lib.rs: pub use contract::query_global_shortcut_registration;
 src/lib.rs: pub use contract::resolve_command_or_control_modifier;
+src/lib.rs: pub use contract::shortcut_digit_key_name_to_key_name;
+src/lib.rs: pub use contract::shortcut_editing_key_name_to_key_name;
+src/lib.rs: pub use contract::shortcut_function_key_name_to_key_name;
+src/lib.rs: pub use contract::shortcut_key_name_to_digit_key_name;
+src/lib.rs: pub use contract::shortcut_key_name_to_editing_key_name;
+src/lib.rs: pub use contract::shortcut_key_name_to_function_key_name;
+src/lib.rs: pub use contract::shortcut_key_name_to_letter_key_name;
+src/lib.rs: pub use contract::shortcut_key_name_to_lock_key_name;
+src/lib.rs: pub use contract::shortcut_key_name_to_media_key_name;
+src/lib.rs: pub use contract::shortcut_key_name_to_navigation_key_name;
+src/lib.rs: pub use contract::shortcut_key_name_to_numpad_key_name;
+src/lib.rs: pub use contract::shortcut_key_name_to_punctuation_key_name;
+src/lib.rs: pub use contract::shortcut_letter_key_name_to_key_name;
+src/lib.rs: pub use contract::shortcut_lock_key_name_to_key_name;
+src/lib.rs: pub use contract::shortcut_media_key_name_to_key_name;
+src/lib.rs: pub use contract::shortcut_navigation_key_name_to_key_name;
+src/lib.rs: pub use contract::shortcut_numpad_key_name_to_key_name;
+src/lib.rs: pub use contract::shortcut_punctuation_key_name_to_key_name;
 src/lib.rs: pub use contract::{ ProviderRef, Record, Unknown };
 src/shortcut.rs: pub fn equals_accelerator(a: &str, b: &str) -> bool
 src/shortcut.rs: pub fn find_accelerator_conflict(accelerator: &str, candidates: &[String]) -> Option<String>
@@ -116,6 +135,42 @@ src/shortcut_explicit_dependency.rs: pub fn parse_global_shortcut_detach_reason(
 src/shortcut_explicit_dependency.rs: pub fn parse_global_shortcut_query_reason(value: &str) -> Option<GlobalShortcutQueryReason>
 src/shortcut_explicit_dependency.rs: pub fn parse_shortcut_trigger_subscribe_reason(value: &str,) -> Option<ShortcutTriggerSubscribeReason>
 src/shortcut_explicit_dependency.rs: pub fn parse_shortcut_trigger_unsubscribe_reason(value: &str,) -> Option<ShortcutTriggerUnsubscribeReason>
+src/shortcut_key_name.rs: pub fn get_shortcut_digit_key_name_string(value: ShortcutDigitKeyName) -> &'static str
+src/shortcut_key_name.rs: pub fn get_shortcut_editing_key_name_string(value: ShortcutEditingKeyName) -> &'static str
+src/shortcut_key_name.rs: pub fn get_shortcut_function_key_name_string(value: ShortcutFunctionKeyName) -> &'static str
+src/shortcut_key_name.rs: pub fn get_shortcut_letter_key_name_string(value: ShortcutLetterKeyName) -> &'static str
+src/shortcut_key_name.rs: pub fn get_shortcut_lock_key_name_string(value: ShortcutLockKeyName) -> &'static str
+src/shortcut_key_name.rs: pub fn get_shortcut_media_key_name_string(value: ShortcutMediaKeyName) -> &'static str
+src/shortcut_key_name.rs: pub fn get_shortcut_navigation_key_name_string(value: ShortcutNavigationKeyName) -> &'static str
+src/shortcut_key_name.rs: pub fn get_shortcut_numpad_key_name_string(value: ShortcutNumpadKeyName) -> &'static str
+src/shortcut_key_name.rs: pub fn get_shortcut_punctuation_key_name_string(value: ShortcutPunctuationKeyName) -> &'static str
+src/shortcut_key_name.rs: pub fn parse_shortcut_digit_key_name(value: &str) -> Option<ShortcutDigitKeyName>
+src/shortcut_key_name.rs: pub fn parse_shortcut_editing_key_name(value: &str) -> Option<ShortcutEditingKeyName>
+src/shortcut_key_name.rs: pub fn parse_shortcut_function_key_name(value: &str) -> Option<ShortcutFunctionKeyName>
+src/shortcut_key_name.rs: pub fn parse_shortcut_letter_key_name(value: &str) -> Option<ShortcutLetterKeyName>
+src/shortcut_key_name.rs: pub fn parse_shortcut_lock_key_name(value: &str) -> Option<ShortcutLockKeyName>
+src/shortcut_key_name.rs: pub fn parse_shortcut_media_key_name(value: &str) -> Option<ShortcutMediaKeyName>
+src/shortcut_key_name.rs: pub fn parse_shortcut_navigation_key_name(value: &str) -> Option<ShortcutNavigationKeyName>
+src/shortcut_key_name.rs: pub fn parse_shortcut_numpad_key_name(value: &str) -> Option<ShortcutNumpadKeyName>
+src/shortcut_key_name.rs: pub fn parse_shortcut_punctuation_key_name(value: &str) -> Option<ShortcutPunctuationKeyName>
+src/shortcut_key_name.rs: pub fn shortcut_digit_key_name_to_key_name(value: ShortcutDigitKeyName) -> ShortcutKeyName
+src/shortcut_key_name.rs: pub fn shortcut_editing_key_name_to_key_name(value: ShortcutEditingKeyName) -> ShortcutKeyName
+src/shortcut_key_name.rs: pub fn shortcut_function_key_name_to_key_name(value: ShortcutFunctionKeyName) -> ShortcutKeyName
+src/shortcut_key_name.rs: pub fn shortcut_key_name_to_digit_key_name(value: ShortcutKeyName) -> Option<ShortcutDigitKeyName>
+src/shortcut_key_name.rs: pub fn shortcut_key_name_to_editing_key_name(value: ShortcutKeyName,) -> Option<ShortcutEditingKeyName>
+src/shortcut_key_name.rs: pub fn shortcut_key_name_to_function_key_name(value: ShortcutKeyName,) -> Option<ShortcutFunctionKeyName>
+src/shortcut_key_name.rs: pub fn shortcut_key_name_to_letter_key_name(value: ShortcutKeyName,) -> Option<ShortcutLetterKeyName>
+src/shortcut_key_name.rs: pub fn shortcut_key_name_to_lock_key_name(value: ShortcutKeyName) -> Option<ShortcutLockKeyName>
+src/shortcut_key_name.rs: pub fn shortcut_key_name_to_media_key_name(value: ShortcutKeyName) -> Option<ShortcutMediaKeyName>
+src/shortcut_key_name.rs: pub fn shortcut_key_name_to_navigation_key_name(value: ShortcutKeyName,) -> Option<ShortcutNavigationKeyName>
+src/shortcut_key_name.rs: pub fn shortcut_key_name_to_numpad_key_name(value: ShortcutKeyName,) -> Option<ShortcutNumpadKeyName>
+src/shortcut_key_name.rs: pub fn shortcut_key_name_to_punctuation_key_name(value: ShortcutKeyName,) -> Option<ShortcutPunctuationKeyName>
+src/shortcut_key_name.rs: pub fn shortcut_letter_key_name_to_key_name(value: ShortcutLetterKeyName) -> ShortcutKeyName
+src/shortcut_key_name.rs: pub fn shortcut_lock_key_name_to_key_name(value: ShortcutLockKeyName) -> ShortcutKeyName
+src/shortcut_key_name.rs: pub fn shortcut_media_key_name_to_key_name(value: ShortcutMediaKeyName) -> ShortcutKeyName
+src/shortcut_key_name.rs: pub fn shortcut_navigation_key_name_to_key_name(value: ShortcutNavigationKeyName,) -> ShortcutKeyName
+src/shortcut_key_name.rs: pub fn shortcut_numpad_key_name_to_key_name(value: ShortcutNumpadKeyName) -> ShortcutKeyName
+src/shortcut_key_name.rs: pub fn shortcut_punctuation_key_name_to_key_name(value: ShortcutPunctuationKeyName,) -> ShortcutKeyName
 src/sugar.rs: impl HostShortcutQueryCapability :: async fn query_conflict(&self, accelerator: &str) -> GlobalShortcutQueryOutcome
 src/sugar.rs: impl HostShortcutQueryCapability :: async fn query_registration(&self, accelerator: &str) -> GlobalShortcutQueryOutcome
 src/sugar.rs: impl HostShortcutTriggerCapability :: async fn destroy(&self) -> ShortcutTriggerDestroyResult
@@ -124,8 +179,26 @@ src/sugar.rs: impl HostShortcutTriggerCapability :: async fn dispose(&self, shor
 src/sugar.rs: impl ParsedAccelerator :: fn new() -> Self
 src/sugar.rs: impl ParsedAccelerator :: fn parse(&mut self, input: &str) -> bool
 src/sugar.rs: impl ParsedAccelerator :: fn parse_detailed(&mut self, input: &str) -> Option<AcceleratorParseError>
+src/sugar.rs: impl ShortcutDigitKeyName :: fn to_key_name(self) -> ShortcutKeyName
+src/sugar.rs: impl ShortcutEditingKeyName :: fn to_key_name(self) -> ShortcutKeyName
+src/sugar.rs: impl ShortcutFunctionKeyName :: fn to_key_name(self) -> ShortcutKeyName
 src/sugar.rs: impl ShortcutKeyName :: fn label(self) -> String
+src/sugar.rs: impl ShortcutKeyName :: fn to_digit_key_name(self) -> Option<ShortcutDigitKeyName>
+src/sugar.rs: impl ShortcutKeyName :: fn to_editing_key_name(self) -> Option<ShortcutEditingKeyName>
+src/sugar.rs: impl ShortcutKeyName :: fn to_function_key_name(self) -> Option<ShortcutFunctionKeyName>
+src/sugar.rs: impl ShortcutKeyName :: fn to_letter_key_name(self) -> Option<ShortcutLetterKeyName>
+src/sugar.rs: impl ShortcutKeyName :: fn to_lock_key_name(self) -> Option<ShortcutLockKeyName>
+src/sugar.rs: impl ShortcutKeyName :: fn to_media_key_name(self) -> Option<ShortcutMediaKeyName>
+src/sugar.rs: impl ShortcutKeyName :: fn to_navigation_key_name(self) -> Option<ShortcutNavigationKeyName>
+src/sugar.rs: impl ShortcutKeyName :: fn to_numpad_key_name(self) -> Option<ShortcutNumpadKeyName>
+src/sugar.rs: impl ShortcutKeyName :: fn to_punctuation_key_name(self) -> Option<ShortcutPunctuationKeyName>
+src/sugar.rs: impl ShortcutLetterKeyName :: fn to_key_name(self) -> ShortcutKeyName
+src/sugar.rs: impl ShortcutLockKeyName :: fn to_key_name(self) -> ShortcutKeyName
+src/sugar.rs: impl ShortcutMediaKeyName :: fn to_key_name(self) -> ShortcutKeyName
 src/sugar.rs: impl ShortcutModifier :: fn label(self, platform: PlatformName) -> String
+src/sugar.rs: impl ShortcutNavigationKeyName :: fn to_key_name(self) -> ShortcutKeyName
+src/sugar.rs: impl ShortcutNumpadKeyName :: fn to_key_name(self) -> ShortcutKeyName
+src/sugar.rs: impl ShortcutPunctuationKeyName :: fn to_key_name(self) -> ShortcutKeyName
 src/sugar.rs: impl ShortcutState :: async fn attach(&self, host_shortcut_trigger: &HostShortcutTriggerCapability, shortcut: &Ref<GlobalShortcut>,) -> GlobalShortcutAttachOutcome
 src/sugar.rs: impl ShortcutState :: fn new() -> Self
 src/types.rs: #[derive(Clone)] pub enum CreateGlobalShortcutOutcome { Created(CreateGlobalShortcutOutcomeCreated), Unparseable(CreateGlobalShortcutOutcomeUnparseable), }
@@ -139,8 +212,17 @@ src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CreateGlobal
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GlobalShortcutAttachReason { AlreadyAttached, AlreadyRegistered, Attached, NativeRefused, RegistrationInProgress, TriggerProviderFailed, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GlobalShortcutDetachReason { Detached, NotAttached, TriggerProviderFailed, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GlobalShortcutQueryReason { NotRegistered, QueryProviderFailed, Registered, Unparseable, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShortcutDigitKeyName { Digit0, Digit1, Digit2, Digit3, Digit4, Digit5, Digit6, Digit7, Digit8, Digit9, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShortcutEditingKeyName { Backspace, Delete, Escape, Insert, Return, Space, Tab, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShortcutFunctionKeyName { F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21, F22, F23, F24, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShortcutKeyName { Digit0, Digit1, Digit2, Digit3, Digit4, Digit5, Digit6, Digit7, Digit8, Digit9, A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20, F21, F22, F23, F24, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, End, Home, PageDown, PageUp, Backspace, Delete, Escape, Insert, Return, Space, Tab, Numpad0, Numpad1, Numpad2, Numpad3, Numpad4, Numpad5, Numpad6, Numpad7, Numpad8, Numpad9, NumpadAdd, NumpadDecimal, NumpadDivide, NumpadEnter, NumpadMultiply, NumpadSubtract, Backquote, Backslash, BracketLeft, BracketRight, Comma, Equal, Minus, Period, Plus, Quote, Semicolon, Slash, MediaNextTrack, MediaPlayPause, MediaPreviousTrack, MediaStop, VolumeDown, VolumeMute, VolumeUp, CapsLock, NumLock, PrintScreen, ScrollLock, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShortcutLetterKeyName { A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShortcutLockKeyName { CapsLock, NumLock, PrintScreen, ScrollLock, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShortcutMediaKeyName { MediaNextTrack, MediaPlayPause, MediaPreviousTrack, MediaStop, VolumeDown, VolumeMute, VolumeUp, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShortcutModifier { Alt, CommandOrControl, Control, Meta, Shift, Super, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShortcutNavigationKeyName { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, End, Home, PageDown, PageUp, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShortcutNumpadKeyName { Numpad0, Numpad1, Numpad2, Numpad3, Numpad4, Numpad5, Numpad6, Numpad7, Numpad8, Numpad9, NumpadAdd, NumpadDecimal, NumpadDivide, NumpadEnter, NumpadMultiply, NumpadSubtract, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShortcutPunctuationKeyName { Backquote, Backslash, BracketLeft, BracketRight, Comma, Equal, Minus, Period, Plus, Quote, Semicolon, Slash, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShortcutTriggerSubscribeReason { Refused, Subscribed, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ShortcutTriggerUnsubscribeReason { UnknownSubscription, Unsubscribed, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct GlobalShortcutAttachOutcome { pub reason: GlobalShortcutAttachReason, }
@@ -170,15 +252,6 @@ src/types.rs: impl fmt::Debug for GlobalShortcut :: fn fmt(&self, formatter: &mu
 src/types.rs: impl fmt::Debug for ShortcutState
 src/types.rs: impl fmt::Debug for ShortcutState :: fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result
 src/types.rs: pub type Accelerator = String;
-src/types.rs: pub type ShortcutDigitKeyName = ShortcutKeyName;
-src/types.rs: pub type ShortcutEditingKeyName = ShortcutKeyName;
-src/types.rs: pub type ShortcutFunctionKeyName = ShortcutKeyName;
-src/types.rs: pub type ShortcutLetterKeyName = ShortcutKeyName;
-src/types.rs: pub type ShortcutLockKeyName = ShortcutKeyName;
-src/types.rs: pub type ShortcutMediaKeyName = ShortcutKeyName;
-src/types.rs: pub type ShortcutNavigationKeyName = ShortcutKeyName;
-src/types.rs: pub type ShortcutNumpadKeyName = ShortcutKeyName;
-src/types.rs: pub type ShortcutPunctuationKeyName = ShortcutKeyName;
 src/types.rs: pub type ShortcutTriggerDestroyFuture = Pin<Box<dyn Future<Output = ShortcutTriggerDestroyResult> + Send>>;
 src/types.rs: pub type ShortcutTriggerDestroyResult = Result<(), Unknown>;
 src/types.rs: pub type ShortcutTriggerListener = Arc<dyn Fn() + Send + Sync>;
