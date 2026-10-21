@@ -1,5 +1,6 @@
 use flight_entity::Uint8Array;
 use crate::bitmap_blur::box_blur_bitmap;
+use crate::bitmap_pixel::to_clamped_u8;
 use crate::types::*;
 
 /// Sharpens `source` into `out` using an unsharp mask.
@@ -33,14 +34,10 @@ pub fn sharpen_bitmap(
             let r = data[si] as f32;
             let g = data[si + 1] as f32;
             let b = data[si + 2] as f32;
-            out[di] = clamp_u8_f32(r + amount * (r - out[di] as f32));
-            out[di + 1] = clamp_u8_f32(g + amount * (g - out[di + 1] as f32));
-            out[di + 2] = clamp_u8_f32(b + amount * (b - out[di + 2] as f32));
+            out[di] = to_clamped_u8(r + amount * (r - out[di] as f32));
+            out[di + 1] = to_clamped_u8(g + amount * (g - out[di + 1] as f32));
+            out[di + 2] = to_clamped_u8(b + amount * (b - out[di + 2] as f32));
             out[di + 3] = data[si + 3];
         }
     }
-}
-
-fn clamp_u8_f32(v: f32) -> u8 {
-    v.round().max(0.0).min(255.0) as u8
 }

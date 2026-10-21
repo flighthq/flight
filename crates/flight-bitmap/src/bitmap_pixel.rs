@@ -51,3 +51,10 @@ pub fn set_bitmap_pixel_rgb(out: &mut Bitmap, x: u32, y: u32, color: u32) {
     out.data[i + 2] = (color & 0xff) as u8;
     invalidate_bitmap(out);
 }
+
+// flight-lint: allow(conform-extra) pixel ruling (agents/ir-vocabulary.md): the explicit form of a TS Uint8ClampedArray store; TS has no function because the array clamps implicitly
+/// Converts a float to a pixel byte exactly as a TS `Uint8ClampedArray` store does: round half to
+/// even, then clamp to 0..=255. NaN becomes 0 (the saturating float cast supplies the clamp).
+pub fn to_clamped_u8(value: f32) -> u8 {
+    return value.round_ties_even() as u8;
+}

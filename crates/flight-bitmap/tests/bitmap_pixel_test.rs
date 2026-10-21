@@ -132,3 +132,31 @@ mod set_bitmap_pixel_rgb_fn {
         assert_eq!(get_bitmap_pixel_rgb(&bmp, 0, 0), 0x112233);
     }
 }
+
+mod to_clamped_u8 {
+    use super::*;
+
+    #[test]
+    fn rounds_half_to_even_like_a_ts_uint8_clamped_array_store() {
+        assert_eq!(to_clamped_u8(1.5), 2);
+        assert_eq!(to_clamped_u8(2.5), 2);
+        assert_eq!(to_clamped_u8(3.5), 4);
+        assert_eq!(to_clamped_u8(2.4), 2);
+        assert_eq!(to_clamped_u8(2.6), 3);
+    }
+
+    #[test]
+    fn clamps_out_of_range_values_to_the_byte_range() {
+        assert_eq!(to_clamped_u8(300.0), 255);
+        assert_eq!(to_clamped_u8(255.5), 255);
+        assert_eq!(to_clamped_u8(-5.0), 0);
+        assert_eq!(to_clamped_u8(-0.5), 0);
+        assert_eq!(to_clamped_u8(f32::INFINITY), 255);
+        assert_eq!(to_clamped_u8(f32::NEG_INFINITY), 0);
+    }
+
+    #[test]
+    fn maps_nan_to_zero() {
+        assert_eq!(to_clamped_u8(f32::NAN), 0);
+    }
+}
