@@ -136,6 +136,7 @@ mod load_text {
         for body in [
             NetResponseBody::Text("ok".to_string()),
             NetResponseBody::Unknown(Some(Arc::new("ok".to_string()))),
+            NetResponseBody::Unknown(Some(Arc::new("ok"))),
         ] {
             assert_eq!(
                 block_on(load_text(&host(Some(body)), "u", None, &net_state())),

@@ -3,6 +3,7 @@ use crate::enums::{
 };
 use crate::resource_loader::ResourceLoaderInternal;
 use flight_entity::{EntityRuntimeSlot, Ref, Unknown};
+use flight_hostcapability::{HostSpawnCapability, HostTimerCapability};
 use flight_net::NetProgressPhase;
 use flight_signals::Signal;
 use flight_stream::{AbortSignal, SharedFuture};
@@ -103,6 +104,13 @@ pub struct ResourceLoaderOptions {
     pub retry_max_delay_ms: Option<f64>,
     pub streaming: Option<bool>,
     pub timeout_ms: Option<f64>,
+}
+
+/// D5 host services retained by the loader. The SDK owns no executor or wall clock.
+#[derive(Clone)]
+pub struct ResourceLoaderContext {
+    pub spawn: HostSpawnCapability,
+    pub timers: HostTimerCapability,
 }
 
 #[derive(Clone, Default)]

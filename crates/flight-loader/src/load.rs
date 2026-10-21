@@ -66,7 +66,10 @@ pub async fn load_text(
         }
         return match response.body.as_ref()? {
             NetResponseBody::Text(text) => Some(text.clone()),
-            NetResponseBody::Unknown(Some(value)) => value.downcast_ref::<String>().cloned(),
+            NetResponseBody::Unknown(Some(value)) => value
+                .downcast_ref::<String>()
+                .cloned()
+                .or_else(|| value.downcast_ref::<&str>().map(|value| value.to_string())),
             _ => None,
         };
     })
