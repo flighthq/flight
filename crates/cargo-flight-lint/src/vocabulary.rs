@@ -72,8 +72,9 @@ pub const ENTRIES: &[Entry] = &[
     Entry { rust: "Ref<T>", ts: "T", cpp: "std::shared_ptr<T>", haxe: "T", status: Status::Established, note: "Shared object identity (A2, trial 2026-10-20): create_* returns it, dispose_* breaks cycles, memory frees at the last drop. Defined in flight-entity as Arc<RwLock<T>>: thread-safe by default (user 2026-10-20); swap the alias only if measurement shows a hot loop suffers" },
     Entry { rust: "WeakRef<T>", ts: "T | null", cpp: "std::weak_ptr<T>", haxe: "Null<T>", status: Status::Proposed, note: "Not for parent links: under A2 parents are strong, as in TS. Only for non-owning caches" },
     Entry { rust: "Handle<T>", ts: "T (object) or number", cpp: "handle / T*", haxe: "T", status: Status::Open, note: "Deferred: node-store option (D), revisit only if threading or bulk release requires it" },
-    Entry { rust: "generic type parameter <T>", ts: "<T>", cpp: "template<typename T>", haxe: "<T>", status: Status::Established, note: "Bounds: only T: Entity (and Rust-only Default/Clone/lifetimes) — lint-enforced" },
+    Entry { rust: "generic type parameter <T>", ts: "<T>", cpp: "template<typename T>", haxe: "<T>", status: Status::Established, note: "Bounds are lint-enforced: declared IR family traits, JSON Serialize/DeserializeOwned, and Rust-only Default/Clone/lifetimes" },
     Entry { rust: "trait Entity / T: Entity", ts: "extends Entity / T extends Entity", cpp: "base class / template<typename T>", haxe: "interface / <T:Entity>", status: Status::Established, note: "D12/WP8b: the private runtime slot is reached through this trait; it is the only workspace trait bound in the vocabulary. Qualified paths (flight_entity::Entity) map the same way" },
+    Entry { rust: "T: Serialize / T: DeserializeOwned", ts: "generic <T>; bounds erased; JSON.stringify / JSON.parse", cpp: "template<typename T>; internal JSON engine", haxe: "<T>; internal JSON engine", status: Status::Established, note: "Principal 12ecb245: only serde::Serialize and serde::de::DeserializeOwned are accepted JSON generic bounds. serde_json stays internal; no public serde_json::Value or arbitrary serde/reflection trait surface" },
     Entry { rust: "private runtime field (runtime: EntityRuntimeSlot)", ts: "[EntityRuntimeKey] slot", cpp: "private member", haxe: "private field", status: Status::Established, note: "D12/WP8b: never pub; `impl_entity!(T)` implements Entity for T and exposes the slot through entity_runtime/entity_runtime_mut" },
     Entry { rust: "async fn(A) -> T", ts: "async (a: A) => Promise<T>", cpp: "T (*)(A) [coroutine]", haxe: "A->futures.Future<T>", status: Status::Established, note: "Executor-neutral async (D15); no SDK spawning/runtime choice" },
     Entry { rust: "Pin<Box<dyn Future<Output=T> + Send>>", ts: "Promise<T>", cpp: "std::future<T>", haxe: "futures.Future<T>", status: Status::Established, note: "Boxed future return type (D15); required Send bound; used in async callback returns" },
@@ -112,10 +113,12 @@ const CONTAINERS: &[&str] = &[
 /// (D12/WP8b); a qualified path such as `flight_entity::Entity` matches by its last segment.
 /// `Default` and `Clone` are the Rust-only construction bounds already used by approved
 /// contracts (`allocate_entity<T: Default>`, `pick<T: Clone>`) and have no TS mapping of their
-/// own. The node family and feature traits (D16) and the adjustment family trait (principal
-/// batch 4, generalizing D16) are also approved bounds.
+/// own. The node family and feature traits (D16), the adjustment family trait (principal batch
+/// 4, generalizing D16), and the exact JSON generic bounds `Serialize` / `DeserializeOwned`
+/// (Principal 12ecb245) are also approved. Paths match by their final segment so imported and
+/// canonical `serde::Serialize` / `serde::de::DeserializeOwned` spellings behave identically.
 const APPROVED_TYPE_PARAM_BOUNDS: &[&str] = &[
-    "Entity", "Default", "Clone",
+    "Entity", "Default", "Clone", "Serialize", "DeserializeOwned",
     "Node", "Node2D", "Node3D",
     "Transform2DNode", "BoundsNode",
     "Adjustment",
@@ -166,7 +169,7 @@ fn check_bounds(
         let name = last.ident.to_string();
         if !APPROVED_TYPE_PARAM_BOUNDS.contains(&name.as_str()) {
             out.push(format!(
-                "generic bound `{}` is not in the vocabulary (approved: `T: Entity`)",
+                "generic bound `{}` is not in the vocabulary",
                 name
             ));
         }
@@ -939,6 +942,48 @@ mod tests {
         ] {
             let item: syn::ItemFn = syn::parse_str(source).unwrap();
             assert!(bound_problems(&item.sig.generics).is_empty(), "{}", source);
+        }
+    }
+
+    #[test]
+    fn accepts_only_the_exact_json_generic_bounds_and_spellings() {
+        for source in [
+            "pub fn f<T: Serialize>(x: &T) {}",
+            "pub fn f<T: serde::Serialize>(x: &T) {}",
+            "pub fn f<T: ::serde::Serialize>(x: &T) {}",
+            "pub fn f<T: DeserializeOwned>(x: &T) {}",
+            "pub fn f<T: serde::de::DeserializeOwned>(x: &T) {}",
+            "pub fn f<T: Serialize + DeserializeOwned>(x: &T) {}",
+            "pub fn f<T>(x: &T) where T: serde::Serialize + serde::de::DeserializeOwned {}",
+        ] {
+            let item: syn::ItemFn = syn::parse_str(source).unwrap();
+            assert!(bound_problems(&item.sig.generics).is_empty(), "{}", source);
+        }
+        let row = ENTRIES
+            .iter()
+            .find(|entry| entry.rust == "T: Serialize / T: DeserializeOwned")
+            .unwrap();
+        assert!(row.ts.contains("JSON.stringify"));
+        assert!(row.ts.contains("JSON.parse"));
+        assert!(row.note.contains("no public serde_json::Value"));
+    }
+
+    #[test]
+    fn rejects_other_serde_reflection_and_public_json_value_shapes() {
+        for source in [
+            "pub fn f<T: serde::Deserialize<'static>>(x: &T) {}",
+            "pub fn f<T: serde::Serializer>(x: &T) {}",
+            "pub fn f<T: serde::Deserializer<'static>>(x: &T) {}",
+            "pub fn f<T: serde::de::DeserializeSeed<'static>>(x: &T) {}",
+            "pub fn f<T: serde::de::Visitor<'static>>(x: &T) {}",
+            "pub fn f<T: Reflect>(x: &T) {}",
+            "pub fn f<T: Any>(x: &T) {}",
+        ] {
+            let item: syn::ItemFn = syn::parse_str(source).unwrap();
+            assert!(!bound_problems(&item.sig.generics).is_empty(), "{} unexpectedly accepted", source);
+        }
+        for ty in ["serde_json::Value", "serde_json::Map<String, serde_json::Value>", "serde::Serializer"] {
+            assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
         }
     }
 

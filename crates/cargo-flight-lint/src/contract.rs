@@ -1186,4 +1186,24 @@ mod tests {
             vec!["contract-vocabulary"]
         );
     }
+
+    #[test]
+    fn accepts_exact_json_generic_bounds_but_rejects_other_serde_surface() {
+        for source in [
+            "pub fn f<T: Serialize>(x: &T) {}",
+            "pub fn f<T: serde::Serialize>(x: &T) {}",
+            "pub fn f<T: serde::de::DeserializeOwned>(x: &T) {}",
+            "pub fn f<T>(x: &T) where T: Serialize + DeserializeOwned {}",
+        ] {
+            assert!(rules_for(source).is_empty(), "{}", source);
+        }
+        for source in [
+            "pub fn f<T: serde::Deserialize<'static>>(x: &T) {}",
+            "pub fn f<T: serde::Serializer>(x: &T) {}",
+            "pub fn f<T: Reflect>(x: &T) {}",
+            "pub fn f(value: &serde_json::Value) {}",
+        ] {
+            assert_eq!(rules_for(source), vec!["contract-vocabulary"], "{}", source);
+        }
+    }
 }
