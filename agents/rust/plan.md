@@ -95,4 +95,5 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
 - **f64 intent aliases** (`PathCoordinate`, time, exact-integer) replacing the per-item `allow(f64)` markers.
 - **Strip port-time allow markers** (`fix --strip-allows`); add `no-print`.
 - **Panics and optional-out handling** designed alongside the transpiler.
+- **Physics precision (user, 2026-10-21):** physics may want f32 (speed) or f64 (precision, large worlds) depending on the game. Candidate: a per-crate scalar alias (`PhysicsReal`) selected at build time, as Rapier ships f32 and f64 builds. Until then physics follows D1 (f32, with logged f64 exceptions).
 - **Growable byte-buffer outs** (Flash `ByteArray`-like: length plus capacity) for decode / decompress / encode, only if a hot path needs reuse. Until then these return their result (D24 content constructors).
