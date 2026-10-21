@@ -38,6 +38,7 @@ flight-particles = { path = "crates/flight-particles" }
 flight-signals = { path = "crates/flight-signals" }
 flight-textbidi = { path = "crates/flight-textbidi" }
 flight-textsegment = { path = "crates/flight-textsegment" }
+flight-textformat = { path = "crates/flight-textformat" }
 flight-texture-formats = { path = "crates/flight-texture-formats" }
 flight-animation = { path = "crates/flight-animation" }
 flight-compression = { path = "crates/flight-compression" }

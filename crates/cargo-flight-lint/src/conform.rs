@@ -34,8 +34,8 @@ struct RsFunction {
     line: usize,
 }
 
-/// Resolves the TS source dir for a crate. `ts_root` may be the packages dir
-/// (`<root>/<name>/src`) or, for a single crate, the package's `src` dir itself.
+/// Resolves the TS source directory, or the exact file for an approved type-owner relocation.
+/// `ts_root` may be the packages directory or, for a single crate, the package's `src` directory.
 pub fn ts_src_for(ts_root: &Path, crate_name: &str, single: bool) -> Option<PathBuf> {
     let pkg = match crate_name {
         "flight-meshgeometry" => "mesh",
@@ -44,6 +44,12 @@ pub fn ts_src_for(ts_root: &Path, crate_name: &str, single: bool) -> Option<Path
     let candidate = ts_root.join(pkg).join("src");
     if candidate.is_dir() {
         return Some(candidate);
+    }
+    if crate_name == "flight-textformat" {
+        let relocated = ts_root.join("textlayout/src/textFormatRange.ts");
+        if relocated.is_file() {
+            return Some(relocated);
+        }
     }
     if single && dir_has_ts(ts_root) {
         return Some(ts_root.to_owned());
@@ -257,8 +263,13 @@ fn collect_ts(ts_src: &Path) -> Vec<TsFunction> {
         .collect();
     files.sort();
 
-    let base = ts_src.parent().and_then(|p| p.parent()).unwrap_or(ts_src);
-    let index = fs::read_to_string(ts_src.join("index.ts")).unwrap_or_default();
+    let src_dir = if ts_src.is_file() {
+        ts_src.parent().unwrap_or(ts_src)
+    } else {
+        ts_src
+    };
+    let base = src_dir.parent().and_then(|p| p.parent()).unwrap_or(src_dir);
+    let index = fs::read_to_string(src_dir.join("index.ts")).unwrap_or_default();
     let (public_names, public_files) = parse_index(&index);
     let mut out = Vec::new();
     for f in files {
@@ -731,6 +742,24 @@ fn check_arrays(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn textformat_relocation_checks_only_its_source_file_and_keeps_export_lanes() {
+        let root = std::env::temp_dir().join(format!("flight-textformat-mapping-{}", std::process::id()));
+        let src = root.join("textlayout/src");
+        std::fs::create_dir_all(&src).unwrap();
+        let range = src.join("textFormatRange.ts");
+        std::fs::write(&range, "export function createTextFormatRange(format: TextFormat, start: number, end: number): TextFormatRange {}\nexport function initializeTextFormatRange(out: TextFormatRange, format: TextFormat, start: number, end: number): void {}\n").unwrap();
+        std::fs::write(src.join("index.ts"), "export { createTextFormatRange } from './textFormatRange.ts';\nexport * from './unrelated.ts';\n").unwrap();
+        std::fs::write(src.join("unrelated.ts"), "export function unrelatedTextLayout(): void {}\n").unwrap();
+        let selected = ts_src_for(&root, "flight-textformat", false).unwrap();
+        assert_eq!(selected, range);
+        let functions = collect_ts(&selected);
+        assert_eq!(functions.len(), 2);
+        assert!(functions.iter().any(|f| f.name == "createTextFormatRange" && f.public));
+        assert!(functions.iter().any(|f| f.name == "initializeTextFormatRange" && !f.public));
+        std::fs::remove_dir_all(&root).unwrap();
+    }
 
     #[test]
     fn renamed_meshgeometry_resolves_original_mesh_package() {

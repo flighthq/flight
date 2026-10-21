@@ -1,0 +1,17 @@
+[package]
+name = "flight-textformat"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Text format records, font variation settings, and UTF-16 format ranges"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity.workspace = true
+
+[lints]
+workspace = true
