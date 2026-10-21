@@ -1,0 +1,20 @@
+[package]
+name = "flight-filesystem"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Path utilities and file operations over an explicit host file-system capability"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-dialog = { path = "../flight-dialog" }
+flight-entity = { workspace = true }
+flight-hostcapability = { workspace = true }
+flight-stream = { path = "../flight-stream" }
+
+[lints]
+workspace = true

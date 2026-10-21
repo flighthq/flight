@@ -219,6 +219,16 @@ name = "flight-entity"
 version = "0.6.0"
 
 [[package]]
+name = "flight-filesystem"
+version = "0.6.0"
+dependencies = [
+ "flight-dialog",
+ "flight-entity",
+ "flight-hostcapability",
+ "flight-stream",
+]
+
+[[package]]
 name = "flight-flow"
 version = "0.6.0"
 dependencies = [
