@@ -23,7 +23,7 @@ src/glyph_atlas_dirty.rs: pub fn get_glyph_atlas_dirty_region(atlas: &Ref<GlyphA
 src/glyph_atlas_entry.rs: pub fn get_glyph_atlas_entry(atlas: &Ref<GlyphAtlas>, codepoint: u32) -> Option<Ref<GlyphEntry>>
 src/glyph_atlas_entry.rs: pub fn set_glyph_atlas_entry_guard(atlas: &Ref<GlyphAtlas>, guard: Option<GlyphAtlasEntryGuard>)
 src/glyph_atlas_metrics.rs: pub fn get_glyph_atlas_kerning(atlas: &Ref<GlyphAtlas>, left: u32, right: u32) -> f32
-src/glyph_atlas_metrics.rs: pub fn get_glyph_atlas_metrics(atlas: &Ref<GlyphAtlas>) -> GlyphMetrics
+src/glyph_atlas_metrics.rs: pub fn get_glyph_atlas_metrics(atlas: &Ref<GlyphAtlas>) -> Arc<GlyphMetrics>
 src/glyph_atlas_strings.rs: pub fn get_glyph_atlas_entry_block_reason_string(reason: GlyphAtlasEntryBlockReason,) -> &'static str
 src/glyph_atlas_strings.rs: pub fn get_glyph_atlas_entry_guard_reason_string(reason: GlyphAtlasEntryGuardReason,) -> &'static str
 src/glyph_atlas_strings.rs: pub fn get_glyph_atlas_guard_log_key_string(key: GlyphAtlasGuardLogKey) -> &'static str
@@ -81,9 +81,9 @@ src/sugar.rs: impl GlyphAtlasMethods for Ref<GlyphAtlas> :: fn get_dirty_region(
 src/sugar.rs: impl GlyphAtlasMethods for Ref<GlyphAtlas> :: fn get_entry(&self, codepoint: u32) -> Option<Ref<GlyphEntry>>
 src/sugar.rs: impl GlyphAtlasMethods for Ref<GlyphAtlas> :: fn get_kerning(&self, left: u32, right: u32) -> f32
 src/sugar.rs: impl GlyphAtlasMethods for Ref<GlyphAtlas> :: fn get_layout_version(&self) -> u32
-src/sugar.rs: impl GlyphAtlasMethods for Ref<GlyphAtlas> :: fn get_metrics(&self) -> GlyphMetrics
+src/sugar.rs: impl GlyphAtlasMethods for Ref<GlyphAtlas> :: fn get_metrics(&self) -> Arc<GlyphMetrics>
 src/sugar.rs: impl GlyphSource :: fn new(atlas: &Ref<GlyphAtlas>) -> Ref<Self>
-src/sugar.rs: pub trait GlyphAtlasMethods { fn clear_dirty(&self); fn disable_guards(&self); fn dispose(&self); fn enable_guards(&self, log_state: &LogStateRef, clock: GlyphAtlasClock); fn explain_entry(&self, codepoint: u32) -> GlyphAtlasEntryExplanation; fn get_bitmap(&self) -> Ref<Bitmap>; fn get_dirty_region(&self) -> Option<Rectangle>; fn get_entry(&self, codepoint: u32) -> Option<Ref<GlyphEntry>>; fn get_kerning(&self, left: u32, right: u32) -> f32; fn get_layout_version(&self) -> u32; fn get_metrics(&self) -> GlyphMetrics; }
+src/sugar.rs: pub trait GlyphAtlasMethods { fn clear_dirty(&self); fn disable_guards(&self); fn dispose(&self); fn enable_guards(&self, log_state: &LogStateRef, clock: GlyphAtlasClock); fn explain_entry(&self, codepoint: u32) -> GlyphAtlasEntryExplanation; fn get_bitmap(&self) -> Ref<Bitmap>; fn get_dirty_region(&self) -> Option<Rectangle>; fn get_entry(&self, codepoint: u32) -> Option<Ref<GlyphEntry>>; fn get_kerning(&self, left: u32, right: u32) -> f32; fn get_layout_version(&self) -> u32; fn get_metrics(&self) -> Arc<GlyphMetrics>; }
 src/types.rs: #[derive(Clone)] pub struct GlyphAtlasOptions { pub font_family: String, pub font_size: f32, pub font_style: Option<String>, pub font_weight: Option<String>, pub height: u32, pub max_area: Option<usize>, pub max_bytes: Option<usize>, pub max_glyphs: Option<usize>, pub padding: Option<u32>, pub rasterizer_backend: HostGlyphRasterizerCapability, pub width: u32, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GlyphAtlasEntryBlockReason { GlyphLargerThanAtlas, Ok, RasterizerReturnedNull, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GlyphAtlasEntryGuardReason { GlyphLargerThanAtlas, RasterizerReturnedNull, Repack, RepackDropped, }
@@ -108,9 +108,9 @@ src/types.rs: impl GlyphSource :: fn glyph_atlas_image(&self, page: Option<u32>)
 src/types.rs: impl GlyphSource :: fn glyph_entry(&self, codepoint: u32) -> Option<Ref<GlyphEntry>>
 src/types.rs: impl GlyphSource :: fn glyph_kerning(&self, left: u32, right: u32) -> f32
 src/types.rs: impl GlyphSource :: fn glyph_layout_version(&self) -> u32
-src/types.rs: impl GlyphSource :: fn glyph_metrics(&self) -> GlyphMetrics
+src/types.rs: impl GlyphSource :: fn glyph_metrics(&self) -> Arc<GlyphMetrics>
 src/types.rs: pub struct GlyphAtlas { runtime: EntityRuntimeSlot, pub(crate) atlas_runtime: Ref<GlyphAtlasRuntime>, }
-src/types.rs: pub struct GlyphAtlasRuntime { pub bitmap: Ref<Bitmap>, pub bitmaps: HashMap<u32, GlyphRasterizedBitmap>, pub dirty: bool, pub dirty_max_x: u32, pub dirty_max_y: u32, pub dirty_min_x: u32, pub dirty_min_y: u32, pub entries: HashMap<u32, Ref<GlyphEntry>>, pub entry_order: Vec<u32>, pub layout_version: u32, pub lru: Vec<u32>, pub max_area: usize, pub max_bytes: usize, pub max_glyphs: usize, pub metrics: GlyphMetrics, pub occupied_area: usize, pub pack_bottom: u32, pub padding: u32, pub rasterizer_backend: HostGlyphRasterizerCapability, pub rasterize_options: Arc<GlyphRasterizeOptions>, pub retained_bytes: usize, pub shelves: Vec<GlyphAtlasShelf>, pub(crate) entry_guard: Option<GlyphAtlasEntryGuard>, pub(crate) guard_repack_count: u32, }
+src/types.rs: pub struct GlyphAtlasRuntime { pub bitmap: Ref<Bitmap>, pub bitmaps: HashMap<u32, GlyphRasterizedBitmap>, pub dirty: bool, pub dirty_max_x: u32, pub dirty_max_y: u32, pub dirty_min_x: u32, pub dirty_min_y: u32, pub entries: HashMap<u32, Ref<GlyphEntry>>, pub entry_order: Vec<u32>, pub layout_version: u32, pub lru: Vec<u32>, pub max_area: usize, pub max_bytes: usize, pub max_glyphs: usize, pub metrics: Arc<GlyphMetrics>, pub occupied_area: usize, pub pack_bottom: u32, pub padding: u32, pub rasterizer_backend: HostGlyphRasterizerCapability, pub rasterize_options: Arc<GlyphRasterizeOptions>, pub retained_bytes: usize, pub shelves: Vec<GlyphAtlasShelf>, pub(crate) entry_guard: Option<GlyphAtlasEntryGuard>, pub(crate) guard_repack_count: u32, }
 src/types.rs: pub struct GlyphSource { runtime: EntityRuntimeSlot, pub get_glyph_atlas_image: GlyphSourceGetGlyphAtlasImage, pub get_glyph_entry: GlyphSourceGetGlyphEntry, pub get_glyph_kerning: GlyphSourceGetGlyphKerning, pub get_glyph_layout_version: GlyphSourceGetGlyphLayoutVersion, pub get_glyph_metrics: GlyphSourceGetGlyphMetrics, }
 src/types.rs: pub type GlyphAtlasClock = Arc<dyn Fn() -> f64 + Send + Sync>;
 src/types.rs: pub type GlyphAtlasEntryGuard = Arc<dyn Fn(&GlyphAtlasEntryGuardNotice) + Send + Sync>;
@@ -118,5 +118,5 @@ src/types.rs: pub type GlyphSourceGetGlyphAtlasImage = Arc<dyn Fn(Option<u32>) -
 src/types.rs: pub type GlyphSourceGetGlyphEntry = Arc<dyn Fn(u32) -> Option<Ref<GlyphEntry>> + Send + Sync>;
 src/types.rs: pub type GlyphSourceGetGlyphKerning = Arc<dyn Fn(u32, u32) -> f32 + Send + Sync>;
 src/types.rs: pub type GlyphSourceGetGlyphLayoutVersion = Arc<dyn Fn() -> u32 + Send + Sync>;
-src/types.rs: pub type GlyphSourceGetGlyphMetrics = Arc<dyn Fn() -> GlyphMetrics + Send + Sync>;
+src/types.rs: pub type GlyphSourceGetGlyphMetrics = Arc<dyn Fn() -> Arc<GlyphMetrics> + Send + Sync>;
 src/types.rs: pub use flight_font::{ GlyphMetrics, GlyphRasterizeOptions, GlyphRasterizedBitmap, GlyphRasterizerOperation, HostGlyphRasterizerCapability, };
