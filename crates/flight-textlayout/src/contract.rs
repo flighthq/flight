@@ -1,6 +1,7 @@
 //! Full TextLayout contract lane. The root mirrors the pinned curated `index.ts`; this module also
 //! exposes construction initializers, D9 string tables, and canonical dependency-owned types.
 
+pub use crate::rich_text_content::*;
 pub use crate::rich_text_query::*;
 pub use crate::text_bounds::*;
 pub use crate::text_format::*;

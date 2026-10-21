@@ -52,6 +52,14 @@ fn params() -> TextLayoutParams {
 }
 
 #[test]
+fn rich_text_content_new_matches_free_function() {
+    let method = RichTextContent::new();
+    let function = create_rich_text_content();
+    assert_eq!(method.text, function.text);
+    assert_eq!(method.format_ranges.len(), function.format_ranges.len());
+}
+
+#[test]
 fn text_auto_size_as_str_matches_free_function() {
     assert_eq!(
         TextAutoSize::Center.as_str(),

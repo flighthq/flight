@@ -2,6 +2,7 @@ use flight_entity::Ref;
 use flight_geometry::Rectangle;
 use flight_textformat::TextFormat;
 
+use crate::rich_text_content::*;
 use crate::text_bounds::*;
 use crate::text_layout::*;
 use crate::text_layout_group::*;
@@ -12,6 +13,12 @@ use crate::types::*;
 #[cfg(test)]
 #[path = "sugar_tests.rs"]
 mod sugar_tests;
+
+impl RichTextContent {
+    pub fn new() -> Self {
+        return create_rich_text_content();
+    }
+}
 
 impl TextAutoSize {
     pub fn as_str(&self) -> &'static str {

@@ -1,4 +1,5 @@
 mod common;
+mod rich_text_content_test;
 mod rich_text_query_test;
 mod text_bounds_test;
 mod text_format_range_test;

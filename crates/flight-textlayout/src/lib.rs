@@ -1,10 +1,12 @@
 //! Renderer-agnostic text layout, bounds, metrics, and rich-text hit queries.
 //!
-//! `richTextContent`, `richTextMetrics`, and `textLayoutRuntime` move to their final `text` owner
-//! under the Principal D8 ruling; this lower crate must not name the future text display objects.
+//! Runtime-dependent rich-text content operations, `richTextMetrics`, and `textLayoutRuntime` move
+//! to their final `text` owner under the Principal D8 ruling. Pure content construction stays in
+//! this lower crate, which must not name the future text display objects.
 
-// flight-lint: conform-skip(clearRichTextContent, computeRichTextContent, createRichTextContent, getRichTextContent, initializeRichTextContent, computeRichTextBottomScrollV, computeRichTextLineCount, computeRichTextMaxScrollH, computeRichTextMaxScrollV, computeRichTextTextHeight, computeRichTextTextWidth, getRichTextScrollYOffset, clearTextLayoutResult, getTextLayoutResult) Principal 46126ffc D8 moves the three text-owned source modules to flight-text in both Rust and TypeScript
+// flight-lint: conform-skip(clearRichTextContent, computeRichTextContent, getRichTextContent, computeRichTextBottomScrollV, computeRichTextLineCount, computeRichTextMaxScrollH, computeRichTextMaxScrollV, computeRichTextTextHeight, computeRichTextTextWidth, getRichTextScrollYOffset, clearTextLayoutResult, getTextLayoutResult) Principal 46126ffc plus 8b33bdfb D8 moves only runtime-dependent functions to flight-text
 
+mod rich_text_content;
 mod rich_text_query;
 mod sugar;
 mod text_bounds;
@@ -42,6 +44,7 @@ pub use contract::compute_text_bounds_offset_x;
 pub use contract::compute_text_bounds_rectangle;
 pub use contract::compute_text_bounds_width;
 pub use contract::compute_text_layout;
+pub use contract::create_rich_text_content;
 pub use contract::create_text_format_range;
 pub use contract::create_text_layout_group;
 pub use contract::create_text_layout_measure_state;
