@@ -57,21 +57,6 @@ pub struct TrayIcon {
     pub(crate) tray_runtime: Option<TrayRuntime>,
 }
 
-flight_entity::impl_entity!(TrayIcon);
-
-// flight-lint: allow(sugar-delegates) trait boilerplate: the runtime record holds closures and futures, so Debug reports only the lifecycle state
-impl fmt::Debug for TrayIcon {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        return f
-            .debug_struct("TrayIcon")
-            .field(
-                "state",
-                &self.tray_runtime.as_ref().map(|runtime| runtime.state),
-            )
-            .finish();
-    }
-}
-
 /// The lifecycle state of a published tray (TS `TrayRuntime['state']`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum TrayState {
@@ -103,32 +88,69 @@ pub struct TrayCreateResult {
     pub outcome: TrayCreateOutcome,
 }
 
-flight_entity::impl_entity!(TrayCreateResult);
-
-// flight-lint: allow(sugar-delegates) trait boilerplate: allocate_entity needs a Default; every initialize_tray_create_* sets the outcome
-impl Default for TrayCreateResult {
-    fn default() -> Self {
-        return TrayCreateResult {
-            runtime: EntityRuntimeSlot::default(),
-            outcome: TrayCreateOutcome::Cancelled,
-        };
-    }
-}
-
 /// The arms of `TrayCreateResult`: the created tray, or the provider's non-created outcome.
 #[derive(Clone, Debug)]
 pub enum TrayCreateOutcome {
-    Created { tray: Ref<TrayIcon> },
+    Created(TrayCreated),
     Cancelled,
-    RuntimeApiUnavailable { error: Option<Unknown> },
-    InvalidIcon { error: Option<Unknown> },
-    TrayCreateFailed { error: Option<Unknown> },
+    RuntimeApiUnavailable(TrayFailure),
+    InvalidIcon(TrayFailure),
+    TrayCreateFailed(TrayFailure),
 }
 
 /// One failed destroy step (TS `TrayDestroyFailure`; `step` is always `'native-resource'`).
 #[derive(Clone, Debug)]
 pub struct TrayDestroyFailure {
     pub error: Option<Unknown>,
+}
+
+/// The optional `unknown` error a failure outcome carries (TS `{ error?: unknown }`): outer `None` is
+/// an absent error, `Some(None)` the source's `null`.
+#[derive(Clone, Debug)]
+pub struct TrayFailure {
+    pub error: Option<Unknown>,
+}
+
+/// The created arm of `TrayCreateOutcome`.
+#[derive(Clone, Debug)]
+pub struct TrayCreated {
+    pub tray: Ref<TrayIcon>,
+}
+
+/// The failed arm of a destroy result: one entry per failed step.
+#[derive(Clone, Debug)]
+pub struct TrayDestroyFailures {
+    pub failures: Vec<TrayDestroyFailure>,
+}
+
+/// The available arm of `TrayTitleReadResult`.
+#[derive(Clone, Debug)]
+pub struct TrayTitleReading {
+    pub title: String,
+}
+
+/// The available arm of `TrayTooltipReadResult`.
+#[derive(Clone, Debug)]
+pub struct TrayTooltipReading {
+    pub tooltip: String,
+}
+
+/// The available arm of `TrayBoundsResult`.
+#[derive(Clone, Debug)]
+pub struct TrayBoundsReading {
+    pub bounds: Rectangle,
+}
+
+/// The `files` arm of `TrayDropEvent`.
+#[derive(Clone, Debug)]
+pub struct TrayDropFiles {
+    pub files: Vec<String>,
+}
+
+/// The `text` arm of `TrayDropEvent`.
+#[derive(Clone, Debug)]
+pub struct TrayDropText {
+    pub text: String,
 }
 
 /// A pointer interaction with the tray icon (TS `TrayInteractionEvent`).
@@ -158,8 +180,8 @@ pub struct TrayBalloonEvent {
 /// Data dropped on the tray icon (TS `TrayDropEvent`).
 #[derive(Clone, Debug)]
 pub enum TrayDropEvent {
-    Files { files: Vec<String> },
-    Text { text: String },
+    Files(TrayDropFiles),
+    Text(TrayDropText),
 }
 
 /// A release token (TS `TrayEventRelease`). Clones share one registration, as the source shares
@@ -168,13 +190,6 @@ pub enum TrayDropEvent {
 #[derive(Clone)]
 pub struct TrayEventRelease {
     pub release: Arc<dyn Fn() -> TrayFuture<TrayReleaseResult> + Send + Sync>,
-}
-
-// flight-lint: allow(sugar-delegates) trait boilerplate: the release is a closure, so Debug names the type only
-impl fmt::Debug for TrayEventRelease {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        return f.debug_struct("TrayEventRelease").finish_non_exhaustive();
-    }
 }
 
 /// The opt-in animation inspection hook (TS `setTrayAnimationGuard` argument): tray, frame count and
@@ -361,3 +376,37 @@ pub struct HostTrayCapabilities {
     pub title: Option<HostTrayTitleCapability>,
     pub tooltip: Option<HostTrayTooltipCapability>,
 }
+
+// flight-lint: allow(sugar-delegates) trait boilerplate: the runtime record holds closures and futures, so Debug reports only the lifecycle state
+impl fmt::Debug for TrayIcon {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        return f
+            .debug_struct("TrayIcon")
+            .field(
+                "state",
+                &self.tray_runtime.as_ref().map(|runtime| runtime.state),
+            )
+            .finish();
+    }
+}
+
+// flight-lint: allow(sugar-delegates) trait boilerplate: allocate_entity needs a Default; every initialize_tray_create_* sets the outcome
+impl Default for TrayCreateResult {
+    fn default() -> Self {
+        return TrayCreateResult {
+            runtime: EntityRuntimeSlot::default(),
+            outcome: TrayCreateOutcome::Cancelled,
+        };
+    }
+}
+
+// flight-lint: allow(sugar-delegates) trait boilerplate: the release is a closure, so Debug names the type only
+impl fmt::Debug for TrayEventRelease {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        return f.debug_struct("TrayEventRelease").finish_non_exhaustive();
+    }
+}
+
+flight_entity::impl_entity!(TrayIcon);
+
+flight_entity::impl_entity!(TrayCreateResult);

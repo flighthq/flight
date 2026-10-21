@@ -1,193 +1,170 @@
-use flight_entity::Unknown;
-use flight_geometry::Rectangle;
+use crate::types::*;
 
-use crate::types::{TrayDestroyFailure, TrayEventRelease};
-
-/// TS `TrayDestroyCapabilityResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayDestroyCapabilityResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayDestroyCapabilityResult {
     Destroyed,
-    TrayDestroyFailed { failures: Vec<TrayDestroyFailure> },
+    TrayDestroyFailed(TrayDestroyFailures),
 }
 
-/// TS `TrayDestroyResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayDestroyResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayDestroyResult {
     Destroyed,
-    TrayDestroyFailed { failures: Vec<TrayDestroyFailure> },
+    TrayDestroyFailed(TrayDestroyFailures),
     AlreadyDestroyed,
 }
 
-/// TS `TrayImageUpdateResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayImageUpdateResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayImageUpdateResult {
     Updated,
     TrayDestroyed,
-    InvalidIcon { error: Option<Unknown> },
-    ImageUpdateFailed { error: Option<Unknown> },
+    InvalidIcon(TrayFailure),
+    ImageUpdateFailed(TrayFailure),
 }
 
-/// TS `TrayTitleUpdateResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayTitleUpdateResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayTitleUpdateResult {
     Updated,
     TrayDestroyed,
-    TitleUpdateFailed { error: Option<Unknown> },
+    TitleUpdateFailed(TrayFailure),
 }
 
-/// TS `TrayTooltipUpdateResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayTooltipUpdateResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayTooltipUpdateResult {
     Updated,
     TrayDestroyed,
-    TooltipUpdateFailed { error: Option<Unknown> },
+    TooltipUpdateFailed(TrayFailure),
 }
 
-/// TS `TrayTemplateImageUpdateResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayTemplateImageUpdateResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayTemplateImageUpdateResult {
     Updated,
     TrayDestroyed,
-    TemplateImageUpdateFailed { error: Option<Unknown> },
+    TemplateImageUpdateFailed(TrayFailure),
 }
 
-/// TS `TrayPressedImageUpdateResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayPressedImageUpdateResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayPressedImageUpdateResult {
     Updated,
     TrayDestroyed,
-    InvalidIcon { error: Option<Unknown> },
-    PressedImageUpdateFailed { error: Option<Unknown> },
+    InvalidIcon(TrayFailure),
+    PressedImageUpdateFailed(TrayFailure),
 }
 
-/// TS `TrayDoubleClickPolicyUpdateResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayDoubleClickPolicyUpdateResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayDoubleClickPolicyUpdateResult {
     Updated,
     TrayDestroyed,
-    DoubleClickPolicyUpdateFailed { error: Option<Unknown> },
+    DoubleClickPolicyUpdateFailed(TrayFailure),
 }
 
-/// TS `TrayMenuUpdateResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayMenuUpdateResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayMenuUpdateResult {
     Updated,
     TrayDestroyed,
-    MenuBuildFailed { error: Option<Unknown> },
-    MenuInstallFailed { error: Option<Unknown> },
+    MenuBuildFailed(TrayFailure),
+    MenuInstallFailed(TrayFailure),
 }
 
-/// TS `TrayTitleReadResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayTitleReadResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayTitleReadResult {
-    Available { title: String },
+    Available(TrayTitleReading),
     TrayDestroyed,
-    TitleReadFailed { error: Option<Unknown> },
+    TitleReadFailed(TrayFailure),
 }
 
-/// TS `TrayTooltipReadResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayTooltipReadResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayTooltipReadResult {
-    Available { tooltip: String },
+    Available(TrayTooltipReading),
     TrayDestroyed,
-    TooltipReadFailed { error: Option<Unknown> },
+    TooltipReadFailed(TrayFailure),
 }
 
-/// TS `TrayBoundsResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayBoundsResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayBoundsResult {
-    Available { bounds: Rectangle },
+    Available(TrayBoundsReading),
     TrayDestroyed,
-    BoundsReadFailed { error: Option<Unknown> },
+    BoundsReadFailed(TrayFailure),
 }
 
-/// TS `TrayPopupMenuResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayPopupMenuResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayPopupMenuResult {
     Shown,
     TrayDestroyed,
     MenuNotSet,
-    PopupFailed { error: Option<Unknown> },
+    PopupFailed(TrayFailure),
 }
 
-/// TS `TrayBalloonDisplayResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayBalloonDisplayResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayBalloonDisplayResult {
     Displayed,
     TrayDestroyed,
-    BalloonDisplayFailed { error: Option<Unknown> },
+    BalloonDisplayFailed(TrayFailure),
 }
 
-/// TS `TrayBalloonRemoveResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayBalloonRemoveResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayBalloonRemoveResult {
     Removed,
     TrayDestroyed,
     BalloonNotActive,
-    BalloonRemoveFailed { error: Option<Unknown> },
+    BalloonRemoveFailed(TrayFailure),
 }
 
-/// TS `TrayReleaseResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayReleaseResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayReleaseResult {
     Released,
     AlreadyReleased,
-    ReleaseFailed { error: Option<Unknown> },
+    ReleaseFailed(TrayFailure),
 }
 
-/// TS `TrayEventAttachResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayEventAttachResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayEventAttachResult {
-    Attached { release: TrayEventRelease },
+    Attached(TrayEventRelease),
     TrayDestroyed,
-    SubscriptionFailed { error: Option<Unknown> },
+    SubscriptionFailed(TrayFailure),
 }
 
-/// TS `TrayAnimationStartResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayAnimationStartResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayAnimationStartResult {
-    Started { release: TrayEventRelease },
+    Started(TrayEventRelease),
     Empty,
     TrayDestroyed,
-    InvalidIcon { error: Option<Unknown> },
-    ImageUpdateFailed { error: Option<Unknown> },
+    InvalidIcon(TrayFailure),
+    ImageUpdateFailed(TrayFailure),
 }
 
-/// TS `TrayAnimationStopResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayAnimationStopResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayAnimationStopResult {
     Stopped,
     AlreadyStopped,
 }
 
-/// TS `TrayCreateCapabilityResult`: the exact outcome union. `error` is the optional `unknown` the source carries (outer
-/// None = absent; `Some(None)` = null).
+/// TS `TrayCreateCapabilityResult`: the exact outcome union; failure arms carry a `TrayFailure`.
 #[derive(Clone, Debug)]
 pub enum TrayCreateCapabilityResult {
     Created,
     Cancelled,
-    RuntimeApiUnavailable { error: Option<Unknown> },
-    InvalidIcon { error: Option<Unknown> },
-    TrayCreateFailed { error: Option<Unknown> },
+    RuntimeApiUnavailable(TrayFailure),
+    InvalidIcon(TrayFailure),
+    TrayCreateFailed(TrayFailure),
 }
 
 /// Host construction target (TS `DesktopOsProfile`).

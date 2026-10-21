@@ -13,6 +13,511 @@ use flight_stream::{SharedFuture, create_shared_future};
 use crate::results::*;
 use crate::types::*;
 
+#[cfg(test)]
+mod sugar_tests {
+    use std::future::Future;
+    use std::task::{Context, Poll, Waker};
+
+    use flight_geometry::create_vector2;
+    use flight_hostcapability::ProviderRef;
+    use flight_signals::create_signal;
+
+    use super::*;
+
+    fn block_on<F: Future>(future: F) -> F::Output {
+        let mut future = Box::pin(future);
+        let mut context = Context::from_waker(Waker::noop());
+        loop {
+            if let Poll::Ready(value) = future.as_mut().poll(&mut context) {
+                return value;
+            }
+        }
+    }
+
+    fn ok<T: Send + 'static>(value: T) -> TrayProviderFuture<T> {
+        return Box::pin(ready(Ok(value)));
+    }
+
+    fn provider() -> ProviderRef {
+        return Arc::new(());
+    }
+
+    fn lifecycle(live: Arc<Mutex<Vec<Ref<TrayIcon>>>>) -> HostTrayLifecycleCapability {
+        let (create, list) = (live.clone(), live);
+        return HostTrayLifecycleCapability {
+            provider: provider(),
+            create: Arc::new(move |tray: &Ref<TrayIcon>, _options: &TrayIconOptions| {
+                create.lock().unwrap().push(tray.clone());
+                return ok(TrayCreateCapabilityResult::Created);
+            }),
+            destroy: Arc::new(|_tray: &Ref<TrayIcon>| ok(TrayDestroyCapabilityResult::Destroyed)),
+            is_destroyed: Arc::new(|_tray: &Ref<TrayIcon>| false),
+            list: Arc::new(move || list.lock().unwrap().clone()),
+        };
+    }
+
+    fn options() -> TrayIconOptions {
+        return TrayIconOptions {
+            icon: None,
+            icon_template: None,
+            signal: None,
+            title: None,
+            tooltip: None,
+        };
+    }
+
+    fn tray() -> Ref<TrayIcon> {
+        let host = lifecycle(Arc::new(Mutex::new(Vec::new())));
+        let TrayCreateOutcome::Created(created) =
+            block_on(create_tray_icon(&host, &options())).outcome
+        else {
+            panic!("not created");
+        };
+        return created.tray;
+    }
+
+    fn image() -> HostTrayImageCapability {
+        return HostTrayImageCapability {
+            provider: provider(),
+            set: Arc::new(|_tray: &Ref<TrayIcon>, _icon: &str| ok(TrayImageUpdateResult::Updated)),
+        };
+    }
+
+    fn balloon_options() -> TrayBalloonOptions {
+        return TrayBalloonOptions {
+            icon: None,
+            icon_type: None,
+            large_icon: None,
+            no_sound: None,
+            respect_quiet_time: None,
+            text: "t".to_string(),
+            title: "f".to_string(),
+        };
+    }
+
+    fn balloon() -> HostTrayBalloonCapability {
+        return HostTrayBalloonCapability {
+            provider: provider(),
+            display: Arc::new(|_tray: &Ref<TrayIcon>, _options: &TrayBalloonOptions| {
+                return ok(TrayBalloonDisplayResult::Displayed);
+            }),
+            remove: Arc::new(|_tray: &Ref<TrayIcon>| ok(TrayBalloonRemoveResult::BalloonNotActive)),
+        };
+    }
+
+    fn title() -> HostTrayTitleCapability {
+        return HostTrayTitleCapability {
+            provider: provider(),
+            get: Arc::new(|_tray: &Ref<TrayIcon>| {
+                return ok(TrayTitleReadResult::Available(TrayTitleReading {
+                    title: "T".to_string(),
+                }));
+            }),
+            set: Arc::new(|_tray: &Ref<TrayIcon>, _title: &str| ok(TrayTitleUpdateResult::Updated)),
+        };
+    }
+
+    fn tooltip() -> HostTrayTooltipCapability {
+        return HostTrayTooltipCapability {
+            provider: provider(),
+            get: Arc::new(|_tray: &Ref<TrayIcon>| {
+                return ok(TrayTooltipReadResult::Available(TrayTooltipReading {
+                    tooltip: "P".to_string(),
+                }));
+            }),
+            set: Arc::new(|_tray: &Ref<TrayIcon>, _tooltip: &str| {
+                ok(TrayTooltipUpdateResult::Updated)
+            }),
+        };
+    }
+
+    fn attached(result: TrayEventAttachResult) -> bool {
+        return matches!(result, TrayEventAttachResult::Attached(_));
+    }
+
+    #[test]
+    fn host_tray_balloon_capability_display_balloon_matches_display_tray_balloon() {
+        let (c, t) = (balloon(), tray());
+        let a = block_on(c.display_balloon(&t, &balloon_options()));
+        let b = block_on(display_tray_balloon(&c, &t, &balloon_options()));
+        assert!(matches!(
+            (a, b),
+            (
+                TrayBalloonDisplayResult::Displayed,
+                TrayBalloonDisplayResult::Displayed
+            )
+        ));
+    }
+
+    #[test]
+    fn host_tray_balloon_capability_remove_balloon_matches_remove_tray_balloon() {
+        let (c, t) = (balloon(), tray());
+        let a = block_on(c.remove_balloon(&t));
+        let b = block_on(remove_tray_balloon(&c, &t));
+        assert!(matches!(
+            (a, b),
+            (
+                TrayBalloonRemoveResult::BalloonNotActive,
+                TrayBalloonRemoveResult::BalloonNotActive
+            )
+        ));
+    }
+
+    #[test]
+    fn host_tray_balloon_events_capability_on_balloon_event_matches_on_tray_balloon_event() {
+        let signal: Signal<TrayBalloonEvent> = create_signal();
+        let c = HostTrayBalloonEventsCapability {
+            provider: provider(),
+            get_signal: Arc::new(move |_tray: &Ref<TrayIcon>| Some(signal.clone())),
+        };
+        let t = tray();
+        let listener: SignalSlot<TrayBalloonEvent> = Arc::new(|_event: &TrayBalloonEvent| {});
+        assert!(attached(c.on_balloon_event(&t, listener.clone())));
+        assert!(attached(on_tray_balloon_event(&c, &t, listener)));
+    }
+
+    #[test]
+    fn host_tray_bounds_capability_icon_bounds_matches_get_tray_icon_bounds() {
+        let c = HostTrayBoundsCapability {
+            provider: provider(),
+            get: Arc::new(|_tray: &Ref<TrayIcon>| {
+                return ok(TrayBoundsResult::Available(TrayBoundsReading {
+                    bounds: flight_geometry::create_rectangle(1.0, 2.0, 3.0, 4.0),
+                }));
+            }),
+        };
+        let t = tray();
+        let (TrayBoundsResult::Available(a), TrayBoundsResult::Available(b)) = (
+            block_on(c.icon_bounds(&t)),
+            block_on(get_tray_icon_bounds(&c, &t)),
+        ) else {
+            panic!("expected bounds");
+        };
+        assert_eq!(a.bounds, b.bounds);
+    }
+
+    #[test]
+    fn host_tray_double_click_policy_capability_set_ignore_double_click_events_matches_set_tray_ignore_double_click_events()
+     {
+        let c = HostTrayDoubleClickPolicyCapability {
+            provider: provider(),
+            set_ignore: Arc::new(|_tray: &Ref<TrayIcon>, _ignore: bool| {
+                return ok(TrayDoubleClickPolicyUpdateResult::Updated);
+            }),
+        };
+        let t = tray();
+        assert!(matches!(
+            (
+                block_on(c.set_ignore_double_click_events(&t, true)),
+                block_on(set_tray_ignore_double_click_events(&c, &t, true))
+            ),
+            (
+                TrayDoubleClickPolicyUpdateResult::Updated,
+                TrayDoubleClickPolicyUpdateResult::Updated
+            )
+        ));
+    }
+
+    #[test]
+    fn host_tray_drop_events_capability_on_drop_matches_on_tray_drop() {
+        let signal: Signal<TrayDropEvent> = create_signal();
+        let c = HostTrayDropEventsCapability {
+            provider: provider(),
+            get_signal: Arc::new(move |_tray: &Ref<TrayIcon>| Some(signal.clone())),
+        };
+        let t = tray();
+        let listener: SignalSlot<TrayDropEvent> = Arc::new(|_event: &TrayDropEvent| {});
+        assert!(attached(c.on_drop(&t, listener.clone())));
+        assert!(attached(on_tray_drop(&c, &t, listener)));
+    }
+
+    #[test]
+    fn host_tray_image_capability_set_icon_matches_set_tray_icon() {
+        let (c, t) = (image(), tray());
+        assert!(matches!(
+            (
+                block_on(c.set_icon(&t, "a")),
+                block_on(set_tray_icon(&c, &t, "a"))
+            ),
+            (
+                TrayImageUpdateResult::Updated,
+                TrayImageUpdateResult::Updated
+            )
+        ));
+    }
+
+    #[test]
+    fn host_tray_image_capability_start_icon_animation_matches_start_tray_icon_animation() {
+        let (c, t, state) = (image(), tray(), create_tray_animation_state());
+        let frames = ["a".to_string()];
+        let a = block_on(c.start_icon_animation(&state, &t, &frames, 10.0));
+        let b = block_on(start_tray_icon_animation(&state, &c, &t, &frames, 10.0));
+        assert!(matches!(
+            (a, b),
+            (
+                TrayAnimationStartResult::Started(_),
+                TrayAnimationStartResult::Started(_)
+            )
+        ));
+    }
+
+    #[test]
+    fn host_tray_interaction_events_capability_on_interaction_matches_on_tray_interaction() {
+        let signal: Signal<TrayInteractionEvent> = create_signal();
+        let c = HostTrayInteractionEventsCapability {
+            provider: provider(),
+            get_signal: Arc::new(move |_tray: &Ref<TrayIcon>| Some(signal.clone())),
+        };
+        let t = tray();
+        let listener: SignalSlot<TrayInteractionEvent> =
+            Arc::new(|_event: &TrayInteractionEvent| {});
+        assert!(attached(c.on_interaction(&t, listener.clone())));
+        assert!(attached(on_tray_interaction(&c, &t, listener)));
+    }
+
+    #[test]
+    fn host_tray_lifecycle_capability_create_icon_matches_create_tray_icon() {
+        let live = Arc::new(Mutex::new(Vec::new()));
+        let c = lifecycle(live.clone());
+        let a = block_on(c.create_icon(&options()));
+        let b = block_on(create_tray_icon(&c, &options()));
+        assert!(matches!(
+            (a.outcome, b.outcome),
+            (TrayCreateOutcome::Created(_), TrayCreateOutcome::Created(_))
+        ));
+        assert_eq!(live.lock().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn host_tray_lifecycle_capability_icons_matches_get_tray_icons() {
+        let c = lifecycle(Arc::new(Mutex::new(Vec::new())));
+        block_on(c.create_icon(&options()));
+        let (a, b) = (c.icons(), get_tray_icons(&c));
+        assert_eq!(a.len(), 1);
+        assert!(Arc::ptr_eq(&a[0], &b[0]));
+    }
+
+    #[test]
+    fn host_tray_menu_capability_set_icon_context_menu_matches_set_tray_icon_context_menu() {
+        let c = HostTrayMenuCapability {
+            provider: provider(),
+            set: Arc::new(|_tray: &Ref<TrayIcon>, _items: &[Ref<MenuItemTemplate>]| {
+                return ok(TrayMenuUpdateResult::Updated);
+            }),
+        };
+        let t = tray();
+        assert!(matches!(
+            (
+                block_on(c.set_icon_context_menu(&t, &[])),
+                block_on(set_tray_icon_context_menu(&c, &t, &[]))
+            ),
+            (TrayMenuUpdateResult::Updated, TrayMenuUpdateResult::Updated)
+        ));
+    }
+
+    #[test]
+    fn host_tray_menu_selection_events_capability_on_menu_selection_matches_on_tray_menu_selection()
+    {
+        let signal: Signal<TrayMenuSelectionEvent> = create_signal();
+        let c = HostTrayMenuSelectionEventsCapability {
+            provider: provider(),
+            get_signal: Arc::new(move |_tray: &Ref<TrayIcon>| Some(signal.clone())),
+        };
+        let t = tray();
+        let listener: SignalSlot<TrayMenuSelectionEvent> =
+            Arc::new(|_event: &TrayMenuSelectionEvent| {});
+        assert!(attached(c.on_menu_selection(&t, listener.clone())));
+        assert!(attached(on_tray_menu_selection(&c, &t, listener)));
+    }
+
+    #[test]
+    fn host_tray_popup_menu_capability_popup_context_menu_matches_popup_tray_context_menu() {
+        let c = HostTrayPopupMenuCapability {
+            provider: provider(),
+            popup: Arc::new(|_tray: &Ref<TrayIcon>, position: Option<&Vector2>| {
+                return ok(match position {
+                    Some(_) => TrayPopupMenuResult::Shown,
+                    None => TrayPopupMenuResult::MenuNotSet,
+                });
+            }),
+        };
+        let (t, at) = (tray(), create_vector2(1.0, 2.0));
+        assert!(matches!(
+            (
+                block_on(c.popup_context_menu(&t, Some(&at))),
+                block_on(popup_tray_context_menu(&c, &t, Some(&at)))
+            ),
+            (TrayPopupMenuResult::Shown, TrayPopupMenuResult::Shown)
+        ));
+    }
+
+    #[test]
+    fn host_tray_pressed_image_capability_set_pressed_icon_matches_set_tray_pressed_icon() {
+        let c = HostTrayPressedImageCapability {
+            provider: provider(),
+            set: Arc::new(|_tray: &Ref<TrayIcon>, _icon: &str| {
+                ok(TrayPressedImageUpdateResult::Updated)
+            }),
+        };
+        let t = tray();
+        assert!(matches!(
+            (
+                block_on(c.set_pressed_icon(&t, "p")),
+                block_on(set_tray_pressed_icon(&c, &t, "p"))
+            ),
+            (
+                TrayPressedImageUpdateResult::Updated,
+                TrayPressedImageUpdateResult::Updated
+            )
+        ));
+    }
+
+    #[test]
+    fn host_tray_template_image_capability_set_icon_template_matches_set_tray_icon_template() {
+        let c = HostTrayTemplateImageCapability {
+            provider: provider(),
+            set: Arc::new(|_tray: &Ref<TrayIcon>, _is_template: bool| {
+                return ok(TrayTemplateImageUpdateResult::Updated);
+            }),
+        };
+        let t = tray();
+        assert!(matches!(
+            (
+                block_on(c.set_icon_template(&t, true)),
+                block_on(set_tray_icon_template(&c, &t, true))
+            ),
+            (
+                TrayTemplateImageUpdateResult::Updated,
+                TrayTemplateImageUpdateResult::Updated
+            )
+        ));
+    }
+
+    #[test]
+    fn host_tray_title_capability_icon_title_matches_get_tray_icon_title() {
+        let (c, t) = (title(), tray());
+        let (TrayTitleReadResult::Available(a), TrayTitleReadResult::Available(b)) = (
+            block_on(c.icon_title(&t)),
+            block_on(get_tray_icon_title(&c, &t)),
+        ) else {
+            panic!("expected title");
+        };
+        assert_eq!(a.title, b.title);
+    }
+
+    #[test]
+    fn host_tray_title_capability_set_icon_title_matches_set_tray_icon_title() {
+        let (c, t) = (title(), tray());
+        assert!(matches!(
+            (
+                block_on(c.set_icon_title(&t, "x")),
+                block_on(set_tray_icon_title(&c, &t, "x"))
+            ),
+            (
+                TrayTitleUpdateResult::Updated,
+                TrayTitleUpdateResult::Updated
+            )
+        ));
+    }
+
+    #[test]
+    fn host_tray_tooltip_capability_icon_tooltip_matches_get_tray_icon_tooltip() {
+        let (c, t) = (tooltip(), tray());
+        let (TrayTooltipReadResult::Available(a), TrayTooltipReadResult::Available(b)) = (
+            block_on(c.icon_tooltip(&t)),
+            block_on(get_tray_icon_tooltip(&c, &t)),
+        ) else {
+            panic!("expected tooltip");
+        };
+        assert_eq!(a.tooltip, b.tooltip);
+    }
+
+    #[test]
+    fn host_tray_tooltip_capability_set_icon_tooltip_matches_set_tray_icon_tooltip() {
+        let (c, t) = (tooltip(), tray());
+        assert!(matches!(
+            (
+                block_on(c.set_icon_tooltip(&t, "x")),
+                block_on(set_tray_icon_tooltip(&c, &t, "x"))
+            ),
+            (
+                TrayTooltipUpdateResult::Updated,
+                TrayTooltipUpdateResult::Updated
+            )
+        ));
+    }
+
+    #[test]
+    fn tray_animation_state_new_matches_create_tray_animation_state() {
+        assert_eq!(
+            TrayAnimationState::new().guard.is_none(),
+            create_tray_animation_state().guard.is_none()
+        );
+    }
+
+    #[test]
+    fn tray_animation_state_set_animation_guard_matches_set_tray_animation_guard() {
+        let guard: TrayAnimationGuard =
+            Arc::new(|_tray: &Ref<TrayIcon>, _frames: i32, _interval_ms: f64| {});
+        let (mut a, mut b) = (create_tray_animation_state(), create_tray_animation_state());
+        a.set_animation_guard(Some(guard.clone()));
+        set_tray_animation_guard(&mut b, Some(guard.clone()));
+        assert!(Arc::ptr_eq(
+            a.guard.as_ref().unwrap(),
+            b.guard.as_ref().unwrap()
+        ));
+    }
+
+    #[test]
+    fn tray_icon_methods_destroy_matches_destroy_tray_icon() {
+        let (a, b) = (tray(), tray());
+        assert!(matches!(
+            (block_on(a.destroy()), block_on(destroy_tray_icon(&b))),
+            (TrayDestroyResult::Destroyed, TrayDestroyResult::Destroyed)
+        ));
+    }
+
+    #[test]
+    fn tray_icon_methods_is_animating_matches_is_tray_icon_animating() {
+        let t = tray();
+        assert_eq!(t.is_animating(), is_tray_icon_animating(&t));
+        assert!(!t.is_animating());
+    }
+
+    #[test]
+    fn tray_icon_methods_is_destroyed_matches_is_tray_destroyed() {
+        let t = tray();
+        block_on(destroy_tray_icon(&t));
+        assert_eq!(t.is_destroyed(), is_tray_destroyed(&t));
+        assert!(t.is_destroyed());
+    }
+
+    #[test]
+    fn tray_icon_methods_stop_animation_matches_stop_tray_icon_animation() {
+        let t = tray();
+        assert!(matches!(
+            (t.stop_animation(), stop_tray_icon_animation(&t)),
+            (
+                TrayAnimationStopResult::AlreadyStopped,
+                TrayAnimationStopResult::AlreadyStopped
+            )
+        ));
+    }
+}
+
+/// Method sugar on the shared `Ref<TrayIcon>` handle (D18; the FlowStackMethods precedent). Each
+/// method delegates to the free function of the same operation.
+pub trait TrayIconMethods {
+    fn destroy(&self) -> TrayFuture<TrayDestroyResult>;
+    fn is_animating(&self) -> bool;
+    fn is_destroyed(&self) -> bool;
+    fn stop_animation(&self) -> TrayAnimationStopResult;
+}
+
+fn create_resolved_write_tail() -> SharedFuture<()> {
+    return create_shared_future(Box::pin(async {}));
+}
+
 /// Caller-owned animation state with no guard installed (D5; replaces the source's module slot).
 // flight-lint: allow(conform-extra) D5: caller-owned animation state replaces the TS module-level guard slot
 pub fn create_tray_animation_state() -> NonEntityCreateResult<TrayAnimationState> {
@@ -68,13 +573,13 @@ pub fn create_tray_icon(
                 return out;
             }
             TrayCreateCapabilityResult::Cancelled => (TrayCreateFailureOutcome::Cancelled, None),
-            TrayCreateCapabilityResult::RuntimeApiUnavailable { error } => {
+            TrayCreateCapabilityResult::RuntimeApiUnavailable(TrayFailure { error }) => {
                 (TrayCreateFailureOutcome::RuntimeApiUnavailable, error)
             }
-            TrayCreateCapabilityResult::InvalidIcon { error } => {
+            TrayCreateCapabilityResult::InvalidIcon(TrayFailure { error }) => {
                 (TrayCreateFailureOutcome::InvalidIcon, error)
             }
-            TrayCreateCapabilityResult::TrayCreateFailed { error } => {
+            TrayCreateCapabilityResult::TrayCreateFailed(TrayFailure { error }) => {
                 (TrayCreateFailureOutcome::TrayCreateFailed, error)
             }
         };
@@ -87,7 +592,7 @@ pub fn create_tray_icon(
 /// Fills a create result with `TrayCreateFailed` (a thrown or rejected provider call).
 // flight-lint: allow(conform-params) D9b: the TS `outcome` parameter admits only 'tray-create-failed', which the Rust arm encodes
 pub fn initialize_tray_create_failed_result(out: &mut TrayCreateResult, error: Option<Unknown>) {
-    out.outcome = TrayCreateOutcome::TrayCreateFailed { error };
+    out.outcome = TrayCreateOutcome::TrayCreateFailed(TrayFailure { error });
 }
 
 /// Fills a create result with the provider's non-created outcome. `Cancelled` carries no error in
@@ -100,17 +605,21 @@ pub fn initialize_tray_create_provider_failure_result(
     out.outcome = match outcome {
         TrayCreateFailureOutcome::Cancelled => TrayCreateOutcome::Cancelled,
         TrayCreateFailureOutcome::RuntimeApiUnavailable => {
-            TrayCreateOutcome::RuntimeApiUnavailable { error }
+            TrayCreateOutcome::RuntimeApiUnavailable(TrayFailure { error })
         }
-        TrayCreateFailureOutcome::InvalidIcon => TrayCreateOutcome::InvalidIcon { error },
-        TrayCreateFailureOutcome::TrayCreateFailed => TrayCreateOutcome::TrayCreateFailed { error },
+        TrayCreateFailureOutcome::InvalidIcon => {
+            TrayCreateOutcome::InvalidIcon(TrayFailure { error })
+        }
+        TrayCreateFailureOutcome::TrayCreateFailed => {
+            TrayCreateOutcome::TrayCreateFailed(TrayFailure { error })
+        }
     };
 }
 
 /// Fills a create result with the published tray.
 // flight-lint: allow(conform-params) D9b: the TS `outcome` parameter admits only 'created', which the Rust arm encodes
 pub fn initialize_tray_create_success_result(out: &mut TrayCreateResult, tray: Ref<TrayIcon>) {
-    out.outcome = TrayCreateOutcome::Created { tray };
+    out.outcome = TrayCreateOutcome::Created(TrayCreated { tray });
 }
 
 fn attach_tray_event<E: 'static>(
@@ -130,9 +639,9 @@ fn attach_tray_event<E: 'static>(
         Ok(Some(attached)) => attached,
         Ok(None) => return TrayEventAttachResult::TrayDestroyed,
         Err(payload) => {
-            return TrayEventAttachResult::SubscriptionFailed {
+            return TrayEventAttachResult::SubscriptionFailed(TrayFailure {
                 error: Some(get_tray_thrown_error(payload)),
-            };
+            });
         }
     };
     let released = Arc::new(AtomicBool::new(false));
@@ -151,9 +660,9 @@ fn attach_tray_event<E: 'static>(
             if let Err(payload) =
                 catch_unwind(AssertUnwindSafe(|| disconnect_signal(&signal, slot)))
             {
-                return Box::pin(ready(TrayReleaseResult::ReleaseFailed {
+                return Box::pin(ready(TrayReleaseResult::ReleaseFailed(TrayFailure {
                     error: Some(get_tray_thrown_error(payload)),
-                }));
+                })));
             }
             released.store(true, Ordering::SeqCst);
             if let Some(tray) = owner.upgrade() {
@@ -167,11 +676,7 @@ fn attach_tray_event<E: 'static>(
     if let Some(runtime) = tray.write().unwrap().tray_runtime.as_mut() {
         runtime.releases.push((id, release.clone()));
     }
-    return TrayEventAttachResult::Attached { release };
-}
-
-fn create_resolved_write_tail() -> SharedFuture<()> {
-    return create_shared_future(Box::pin(async {}));
+    return TrayEventAttachResult::Attached(release);
 }
 
 /// Destroys the tray. The first call marks it destroying, stops its animation and snapshots its
@@ -214,12 +719,12 @@ pub fn destroy_tray_icon(tray: &Ref<TrayIcon>) -> TrayFuture<TrayDestroyResult> 
         };
         let result = match destroyed {
             Ok(TrayDestroyCapabilityResult::Destroyed) => TrayDestroyResult::Destroyed,
-            Ok(TrayDestroyCapabilityResult::TrayDestroyFailed { failures }) => {
-                TrayDestroyResult::TrayDestroyFailed { failures }
-            }
-            Err(error) => TrayDestroyResult::TrayDestroyFailed {
+            Ok(TrayDestroyCapabilityResult::TrayDestroyFailed(TrayDestroyFailures {
+                failures,
+            })) => TrayDestroyResult::TrayDestroyFailed(TrayDestroyFailures { failures }),
+            Err(error) => TrayDestroyResult::TrayDestroyFailed(TrayDestroyFailures {
                 failures: vec![TrayDestroyFailure { error: Some(error) }],
-            },
+            }),
         };
         if let Some(runtime) = owner.write().unwrap().tray_runtime.as_mut() {
             runtime.state = match result {
@@ -245,9 +750,46 @@ pub fn display_tray_balloon(
     return invoke_update(
         tray,
         TrayBalloonDisplayResult::TrayDestroyed,
-        |error| TrayBalloonDisplayResult::BalloonDisplayFailed { error },
+        |error| TrayBalloonDisplayResult::BalloonDisplayFailed(TrayFailure { error }),
         || (host_tray_balloon.display)(tray, options),
     );
+}
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS DesktopOsProfile string union; the TS package exports no get_/parse_ free functions
+pub fn get_desktop_os_profile_string(value: DesktopOsProfile) -> &'static str {
+    return match value {
+        DesktopOsProfile::Linux => "linux",
+        DesktopOsProfile::MacOs => "macos",
+        DesktopOsProfile::Windows => "windows",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS TrayBalloonEventType string union; the TS package exports no get_/parse_ free functions
+pub fn get_tray_balloon_event_type_string(value: TrayBalloonEventType) -> &'static str {
+    return match value {
+        TrayBalloonEventType::Click => "click",
+        TrayBalloonEventType::Close => "close",
+        TrayBalloonEventType::Show => "show",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS TrayBalloonIconType string union; the TS package exports no get_/parse_ free functions
+pub fn get_tray_balloon_icon_type_string(value: TrayBalloonIconType) -> &'static str {
+    return match value {
+        TrayBalloonIconType::None => "none",
+        TrayBalloonIconType::Info => "info",
+        TrayBalloonIconType::Warning => "warning",
+        TrayBalloonIconType::Error => "error",
+    };
+}
+
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS TrayCreateFailureOutcome string union; the TS package exports no get_/parse_ free functions
+pub fn get_tray_create_failure_outcome_string(value: TrayCreateFailureOutcome) -> &'static str {
+    return match value {
+        TrayCreateFailureOutcome::Cancelled => "cancelled",
+        TrayCreateFailureOutcome::RuntimeApiUnavailable => "runtime-api-unavailable",
+        TrayCreateFailureOutcome::InvalidIcon => "invalid-icon",
+        TrayCreateFailureOutcome::TrayCreateFailed => "tray-create-failed",
+    };
 }
 
 /// Reads the tray icon bounds.
@@ -258,7 +800,7 @@ pub fn get_tray_icon_bounds(
     return invoke_update(
         tray,
         TrayBoundsResult::TrayDestroyed,
-        |error| TrayBoundsResult::BoundsReadFailed { error },
+        |error| TrayBoundsResult::BoundsReadFailed(TrayFailure { error }),
         || (host_tray_bounds.get)(tray),
     );
 }
@@ -271,7 +813,7 @@ pub fn get_tray_icon_title(
     return invoke_update(
         tray,
         TrayTitleReadResult::TrayDestroyed,
-        |error| TrayTitleReadResult::TitleReadFailed { error },
+        |error| TrayTitleReadResult::TitleReadFailed(TrayFailure { error }),
         || (host_tray_title.get)(tray),
     );
 }
@@ -284,7 +826,7 @@ pub fn get_tray_icon_tooltip(
     return invoke_update(
         tray,
         TrayTooltipReadResult::TrayDestroyed,
-        |error| TrayTooltipReadResult::TooltipReadFailed { error },
+        |error| TrayTooltipReadResult::TooltipReadFailed(TrayFailure { error }),
         || (host_tray_tooltip.get)(tray),
     );
 }
@@ -292,6 +834,15 @@ pub fn get_tray_icon_tooltip(
 /// The provider's live trays, in its order.
 pub fn get_tray_icons(host_tray_lifecycle: &HostTrayLifecycleCapability) -> Vec<Ref<TrayIcon>> {
     return (host_tray_lifecycle.list)();
+}
+
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS TrayInteractionType string union; the TS package exports no get_/parse_ free functions
+pub fn get_tray_interaction_type_string(value: TrayInteractionType) -> &'static str {
+    return match value {
+        TrayInteractionType::Click => "click",
+        TrayInteractionType::DoubleClick => "doubleClick",
+        TrayInteractionType::RightClick => "rightClick",
+    };
 }
 
 // A synchronous provider throw is a Rust panic (D10). Payloads with an exact `unknown` reading are
@@ -411,6 +962,58 @@ pub fn on_tray_menu_selection(
     return attach_tray_event(&*host_tray_menu_selection_events.get_signal, tray, listener);
 }
 
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS DesktopOsProfile string union; the TS package exports no get_/parse_ free functions
+pub fn parse_desktop_os_profile(value: &str) -> Option<DesktopOsProfile> {
+    return match value {
+        "linux" => Some(DesktopOsProfile::Linux),
+        "macos" => Some(DesktopOsProfile::MacOs),
+        "windows" => Some(DesktopOsProfile::Windows),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS TrayBalloonEventType string union; the TS package exports no get_/parse_ free functions
+pub fn parse_tray_balloon_event_type(value: &str) -> Option<TrayBalloonEventType> {
+    return match value {
+        "click" => Some(TrayBalloonEventType::Click),
+        "close" => Some(TrayBalloonEventType::Close),
+        "show" => Some(TrayBalloonEventType::Show),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS TrayBalloonIconType string union; the TS package exports no get_/parse_ free functions
+pub fn parse_tray_balloon_icon_type(value: &str) -> Option<TrayBalloonIconType> {
+    return match value {
+        "none" => Some(TrayBalloonIconType::None),
+        "info" => Some(TrayBalloonIconType::Info),
+        "warning" => Some(TrayBalloonIconType::Warning),
+        "error" => Some(TrayBalloonIconType::Error),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS TrayCreateFailureOutcome string union; the TS package exports no get_/parse_ free functions
+pub fn parse_tray_create_failure_outcome(value: &str) -> Option<TrayCreateFailureOutcome> {
+    return match value {
+        "cancelled" => Some(TrayCreateFailureOutcome::Cancelled),
+        "runtime-api-unavailable" => Some(TrayCreateFailureOutcome::RuntimeApiUnavailable),
+        "invalid-icon" => Some(TrayCreateFailureOutcome::InvalidIcon),
+        "tray-create-failed" => Some(TrayCreateFailureOutcome::TrayCreateFailed),
+        _ => None,
+    };
+}
+
+// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS TrayInteractionType string union; the TS package exports no get_/parse_ free functions
+pub fn parse_tray_interaction_type(value: &str) -> Option<TrayInteractionType> {
+    return match value {
+        "click" => Some(TrayInteractionType::Click),
+        "doubleClick" => Some(TrayInteractionType::DoubleClick),
+        "rightClick" => Some(TrayInteractionType::RightClick),
+        _ => None,
+    };
+}
+
 /// Shows the installed context menu, at `position` when given.
 pub fn popup_tray_context_menu(
     host_tray_popup_menu: &HostTrayPopupMenuCapability,
@@ -420,7 +1023,7 @@ pub fn popup_tray_context_menu(
     return invoke_update(
         tray,
         TrayPopupMenuResult::TrayDestroyed,
-        |error| TrayPopupMenuResult::PopupFailed { error },
+        |error| TrayPopupMenuResult::PopupFailed(TrayFailure { error }),
         || (host_tray_popup_menu.popup)(tray, position),
     );
 }
@@ -477,7 +1080,7 @@ pub fn remove_tray_balloon(
     return invoke_update(
         tray,
         TrayBalloonRemoveResult::TrayDestroyed,
-        |error| TrayBalloonRemoveResult::BalloonRemoveFailed { error },
+        |error| TrayBalloonRemoveResult::BalloonRemoveFailed(TrayFailure { error }),
         || (host_tray_balloon.remove)(tray),
     );
 }
@@ -497,7 +1100,7 @@ pub fn set_tray_icon(
     return invoke_update(
         tray,
         TrayImageUpdateResult::TrayDestroyed,
-        |error| TrayImageUpdateResult::ImageUpdateFailed { error },
+        |error| TrayImageUpdateResult::ImageUpdateFailed(TrayFailure { error }),
         || (host_tray_image.set)(tray, icon),
     );
 }
@@ -511,7 +1114,7 @@ pub fn set_tray_icon_context_menu(
     return invoke_update(
         tray,
         TrayMenuUpdateResult::TrayDestroyed,
-        |error| TrayMenuUpdateResult::MenuInstallFailed { error },
+        |error| TrayMenuUpdateResult::MenuInstallFailed(TrayFailure { error }),
         || (host_tray_menu.set)(tray, items),
     );
 }
@@ -525,7 +1128,7 @@ pub fn set_tray_icon_template(
     return invoke_update(
         tray,
         TrayTemplateImageUpdateResult::TrayDestroyed,
-        |error| TrayTemplateImageUpdateResult::TemplateImageUpdateFailed { error },
+        |error| TrayTemplateImageUpdateResult::TemplateImageUpdateFailed(TrayFailure { error }),
         || (host_tray_template_image.set)(tray, is_template),
     );
 }
@@ -539,7 +1142,7 @@ pub fn set_tray_icon_title(
     return invoke_update(
         tray,
         TrayTitleUpdateResult::TrayDestroyed,
-        |error| TrayTitleUpdateResult::TitleUpdateFailed { error },
+        |error| TrayTitleUpdateResult::TitleUpdateFailed(TrayFailure { error }),
         || (host_tray_title.set)(tray, title),
     );
 }
@@ -553,7 +1156,7 @@ pub fn set_tray_icon_tooltip(
     return invoke_update(
         tray,
         TrayTooltipUpdateResult::TrayDestroyed,
-        |error| TrayTooltipUpdateResult::TooltipUpdateFailed { error },
+        |error| TrayTooltipUpdateResult::TooltipUpdateFailed(TrayFailure { error }),
         || (host_tray_tooltip.set)(tray, tooltip),
     );
 }
@@ -567,7 +1170,9 @@ pub fn set_tray_ignore_double_click_events(
     return invoke_update(
         tray,
         TrayDoubleClickPolicyUpdateResult::TrayDestroyed,
-        |error| TrayDoubleClickPolicyUpdateResult::DoubleClickPolicyUpdateFailed { error },
+        |error| {
+            TrayDoubleClickPolicyUpdateResult::DoubleClickPolicyUpdateFailed(TrayFailure { error })
+        },
         || (host_tray_double_click_policy.set_ignore)(tray, ignore),
     );
 }
@@ -581,7 +1186,7 @@ pub fn set_tray_pressed_icon(
     return invoke_update(
         tray,
         TrayPressedImageUpdateResult::TrayDestroyed,
-        |error| TrayPressedImageUpdateResult::PressedImageUpdateFailed { error },
+        |error| TrayPressedImageUpdateResult::PressedImageUpdateFailed(TrayFailure { error }),
         || (host_tray_pressed_image.set)(tray, icon),
     );
 }
@@ -627,11 +1232,11 @@ pub fn start_tray_icon_animation(
         match first.await {
             TrayImageUpdateResult::Updated => {}
             TrayImageUpdateResult::TrayDestroyed => return TrayAnimationStartResult::TrayDestroyed,
-            TrayImageUpdateResult::InvalidIcon { error } => {
-                return TrayAnimationStartResult::InvalidIcon { error };
+            TrayImageUpdateResult::InvalidIcon(TrayFailure { error }) => {
+                return TrayAnimationStartResult::InvalidIcon(TrayFailure { error });
             }
-            TrayImageUpdateResult::ImageUpdateFailed { error } => {
-                return TrayAnimationStartResult::ImageUpdateFailed { error };
+            TrayImageUpdateResult::ImageUpdateFailed(TrayFailure { error }) => {
+                return TrayAnimationStartResult::ImageUpdateFailed(TrayFailure { error });
             }
         }
         {
@@ -661,7 +1266,7 @@ pub fn start_tray_icon_animation(
                 return Box::pin(ready(TrayReleaseResult::Released));
             }),
         };
-        return TrayAnimationStartResult::Started { release };
+        return TrayAnimationStartResult::Started(release);
     });
 }
 
@@ -683,106 +1288,195 @@ pub fn stop_tray_icon_animation(tray: &Ref<TrayIcon>) -> TrayAnimationStopResult
     return TrayAnimationStopResult::Stopped;
 }
 
+impl HostTrayBalloonCapability {
+    pub fn display_balloon(
+        &self,
+        tray: &Ref<TrayIcon>,
+        options: &TrayBalloonOptions,
+    ) -> TrayFuture<TrayBalloonDisplayResult> {
+        return display_tray_balloon(self, tray, options);
+    }
+
+    pub fn remove_balloon(&self, tray: &Ref<TrayIcon>) -> TrayFuture<TrayBalloonRemoveResult> {
+        return remove_tray_balloon(self, tray);
+    }
+}
+
+impl HostTrayBalloonEventsCapability {
+    pub fn on_balloon_event(
+        &self,
+        tray: &Ref<TrayIcon>,
+        listener: SignalSlot<TrayBalloonEvent>,
+    ) -> TrayEventAttachResult {
+        return on_tray_balloon_event(self, tray, listener);
+    }
+}
+
+impl HostTrayBoundsCapability {
+    pub fn icon_bounds(&self, tray: &Ref<TrayIcon>) -> TrayFuture<TrayBoundsResult> {
+        return get_tray_icon_bounds(self, tray);
+    }
+}
+
+impl HostTrayDoubleClickPolicyCapability {
+    pub fn set_ignore_double_click_events(
+        &self,
+        tray: &Ref<TrayIcon>,
+        ignore: bool,
+    ) -> TrayFuture<TrayDoubleClickPolicyUpdateResult> {
+        return set_tray_ignore_double_click_events(self, tray, ignore);
+    }
+}
+
+impl HostTrayDropEventsCapability {
+    pub fn on_drop(
+        &self,
+        tray: &Ref<TrayIcon>,
+        listener: SignalSlot<TrayDropEvent>,
+    ) -> TrayEventAttachResult {
+        return on_tray_drop(self, tray, listener);
+    }
+}
+
+impl HostTrayImageCapability {
+    pub fn set_icon(&self, tray: &Ref<TrayIcon>, icon: &str) -> TrayFuture<TrayImageUpdateResult> {
+        return set_tray_icon(self, tray, icon);
+    }
+
+    // flight-lint: allow(f64) D1: the interval is a millisecond duration
+    pub fn start_icon_animation(
+        &self,
+        state: &TrayAnimationState,
+        tray: &Ref<TrayIcon>,
+        frames: &[TrayIconSource],
+        interval_ms: f64,
+    ) -> TrayFuture<TrayAnimationStartResult> {
+        return start_tray_icon_animation(state, self, tray, frames, interval_ms);
+    }
+}
+
+impl HostTrayInteractionEventsCapability {
+    pub fn on_interaction(
+        &self,
+        tray: &Ref<TrayIcon>,
+        listener: SignalSlot<TrayInteractionEvent>,
+    ) -> TrayEventAttachResult {
+        return on_tray_interaction(self, tray, listener);
+    }
+}
+
+impl HostTrayLifecycleCapability {
+    pub fn create_icon(&self, options: &TrayIconOptions) -> TrayFuture<TrayCreateResult> {
+        return create_tray_icon(self, options);
+    }
+
+    pub fn icons(&self) -> Vec<Ref<TrayIcon>> {
+        return get_tray_icons(self);
+    }
+}
+
+impl HostTrayMenuCapability {
+    pub fn set_icon_context_menu(
+        &self,
+        tray: &Ref<TrayIcon>,
+        items: &[Ref<MenuItemTemplate>],
+    ) -> TrayFuture<TrayMenuUpdateResult> {
+        return set_tray_icon_context_menu(self, tray, items);
+    }
+}
+
+impl HostTrayMenuSelectionEventsCapability {
+    pub fn on_menu_selection(
+        &self,
+        tray: &Ref<TrayIcon>,
+        listener: SignalSlot<TrayMenuSelectionEvent>,
+    ) -> TrayEventAttachResult {
+        return on_tray_menu_selection(self, tray, listener);
+    }
+}
+
+impl HostTrayPopupMenuCapability {
+    pub fn popup_context_menu(
+        &self,
+        tray: &Ref<TrayIcon>,
+        position: Option<&Vector2>,
+    ) -> TrayFuture<TrayPopupMenuResult> {
+        return popup_tray_context_menu(self, tray, position);
+    }
+}
+
+impl HostTrayPressedImageCapability {
+    pub fn set_pressed_icon(
+        &self,
+        tray: &Ref<TrayIcon>,
+        icon: &str,
+    ) -> TrayFuture<TrayPressedImageUpdateResult> {
+        return set_tray_pressed_icon(self, tray, icon);
+    }
+}
+
+impl HostTrayTemplateImageCapability {
+    pub fn set_icon_template(
+        &self,
+        tray: &Ref<TrayIcon>,
+        is_template: bool,
+    ) -> TrayFuture<TrayTemplateImageUpdateResult> {
+        return set_tray_icon_template(self, tray, is_template);
+    }
+}
+
+impl HostTrayTitleCapability {
+    pub fn icon_title(&self, tray: &Ref<TrayIcon>) -> TrayFuture<TrayTitleReadResult> {
+        return get_tray_icon_title(self, tray);
+    }
+
+    pub fn set_icon_title(
+        &self,
+        tray: &Ref<TrayIcon>,
+        title: &str,
+    ) -> TrayFuture<TrayTitleUpdateResult> {
+        return set_tray_icon_title(self, tray, title);
+    }
+}
+
+impl HostTrayTooltipCapability {
+    pub fn icon_tooltip(&self, tray: &Ref<TrayIcon>) -> TrayFuture<TrayTooltipReadResult> {
+        return get_tray_icon_tooltip(self, tray);
+    }
+
+    pub fn set_icon_tooltip(
+        &self,
+        tray: &Ref<TrayIcon>,
+        tooltip: &str,
+    ) -> TrayFuture<TrayTooltipUpdateResult> {
+        return set_tray_icon_tooltip(self, tray, tooltip);
+    }
+}
+
 impl TrayAnimationState {
     pub fn new() -> Self {
         return create_tray_animation_state();
     }
-}
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS DesktopOsProfile string union; the TS package exports no get_/parse_ free functions
-pub fn get_desktop_os_profile_string(value: DesktopOsProfile) -> &'static str {
-    return match value {
-        DesktopOsProfile::Linux => "linux",
-        DesktopOsProfile::MacOs => "macos",
-        DesktopOsProfile::Windows => "windows",
-    };
+
+    pub fn set_animation_guard(&mut self, guard: Option<TrayAnimationGuard>) {
+        set_tray_animation_guard(self, guard);
+    }
 }
 
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS DesktopOsProfile string union; the TS package exports no get_/parse_ free functions
-pub fn parse_desktop_os_profile(value: &str) -> Option<DesktopOsProfile> {
-    return match value {
-        "linux" => Some(DesktopOsProfile::Linux),
-        "macos" => Some(DesktopOsProfile::MacOs),
-        "windows" => Some(DesktopOsProfile::Windows),
-        _ => None,
-    };
-}
+impl TrayIconMethods for Ref<TrayIcon> {
+    fn destroy(&self) -> TrayFuture<TrayDestroyResult> {
+        return destroy_tray_icon(self);
+    }
 
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS TrayBalloonIconType string union; the TS package exports no get_/parse_ free functions
-pub fn get_tray_balloon_icon_type_string(value: TrayBalloonIconType) -> &'static str {
-    return match value {
-        TrayBalloonIconType::None => "none",
-        TrayBalloonIconType::Info => "info",
-        TrayBalloonIconType::Warning => "warning",
-        TrayBalloonIconType::Error => "error",
-    };
-}
+    fn is_animating(&self) -> bool {
+        return is_tray_icon_animating(self);
+    }
 
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS TrayBalloonIconType string union; the TS package exports no get_/parse_ free functions
-pub fn parse_tray_balloon_icon_type(value: &str) -> Option<TrayBalloonIconType> {
-    return match value {
-        "none" => Some(TrayBalloonIconType::None),
-        "info" => Some(TrayBalloonIconType::Info),
-        "warning" => Some(TrayBalloonIconType::Warning),
-        "error" => Some(TrayBalloonIconType::Error),
-        _ => None,
-    };
-}
+    fn is_destroyed(&self) -> bool {
+        return is_tray_destroyed(self);
+    }
 
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS TrayInteractionType string union; the TS package exports no get_/parse_ free functions
-pub fn get_tray_interaction_type_string(value: TrayInteractionType) -> &'static str {
-    return match value {
-        TrayInteractionType::Click => "click",
-        TrayInteractionType::DoubleClick => "doubleClick",
-        TrayInteractionType::RightClick => "rightClick",
-    };
-}
-
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS TrayInteractionType string union; the TS package exports no get_/parse_ free functions
-pub fn parse_tray_interaction_type(value: &str) -> Option<TrayInteractionType> {
-    return match value {
-        "click" => Some(TrayInteractionType::Click),
-        "doubleClick" => Some(TrayInteractionType::DoubleClick),
-        "rightClick" => Some(TrayInteractionType::RightClick),
-        _ => None,
-    };
-}
-
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS TrayBalloonEventType string union; the TS package exports no get_/parse_ free functions
-pub fn get_tray_balloon_event_type_string(value: TrayBalloonEventType) -> &'static str {
-    return match value {
-        TrayBalloonEventType::Click => "click",
-        TrayBalloonEventType::Close => "close",
-        TrayBalloonEventType::Show => "show",
-    };
-}
-
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS TrayBalloonEventType string union; the TS package exports no get_/parse_ free functions
-pub fn parse_tray_balloon_event_type(value: &str) -> Option<TrayBalloonEventType> {
-    return match value {
-        "click" => Some(TrayBalloonEventType::Click),
-        "close" => Some(TrayBalloonEventType::Close),
-        "show" => Some(TrayBalloonEventType::Show),
-        _ => None,
-    };
-}
-
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS TrayCreateFailureOutcome string union; the TS package exports no get_/parse_ free functions
-pub fn get_tray_create_failure_outcome_string(value: TrayCreateFailureOutcome) -> &'static str {
-    return match value {
-        TrayCreateFailureOutcome::Cancelled => "cancelled",
-        TrayCreateFailureOutcome::RuntimeApiUnavailable => "runtime-api-unavailable",
-        TrayCreateFailureOutcome::InvalidIcon => "invalid-icon",
-        TrayCreateFailureOutcome::TrayCreateFailed => "tray-create-failed",
-    };
-}
-
-// flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS TrayCreateFailureOutcome string union; the TS package exports no get_/parse_ free functions
-pub fn parse_tray_create_failure_outcome(value: &str) -> Option<TrayCreateFailureOutcome> {
-    return match value {
-        "cancelled" => Some(TrayCreateFailureOutcome::Cancelled),
-        "runtime-api-unavailable" => Some(TrayCreateFailureOutcome::RuntimeApiUnavailable),
-        "invalid-icon" => Some(TrayCreateFailureOutcome::InvalidIcon),
-        "tray-create-failed" => Some(TrayCreateFailureOutcome::TrayCreateFailed),
-        _ => None,
-    };
+    fn stop_animation(&self) -> TrayAnimationStopResult {
+        return stop_tray_icon_animation(self);
+    }
 }
