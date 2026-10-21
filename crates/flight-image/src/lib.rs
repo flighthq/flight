@@ -2,6 +2,7 @@ mod image_resource;
 mod image_resource_from;
 mod image_resource_reference;
 mod image_source_dimensions;
+mod image_texture;
 mod types;
 
 pub mod contract;
@@ -37,6 +38,7 @@ pub use contract::create_image_resolver_state;
 pub use contract::create_image_resource;
 pub use contract::create_image_resource_failure;
 pub use contract::create_image_resource_from_bitmap;
+pub use contract::create_texture_from_image_resource;
 pub use contract::explain_image_resource_reference_resolution;
 pub use contract::invalidate_image_resource;
 pub use contract::is_image_resource_empty;
