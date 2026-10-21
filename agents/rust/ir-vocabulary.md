@@ -110,6 +110,15 @@ Workspace-defined structs, enums and aliases are allowed by name. Each one is it
 - **Scalar unions:** a TS union of scalars (`number | string`) → a Rust enum with one primitive payload per variant (`Number(i32)`, `Text(String)`) → TS `number | string`. Example: binpack `RectangleId`.
 - **Constant capability or dispatch records** (TS `export const sdkHostX = {…}`) → `pub static NAME: LazyLock<T>`; never a `create_*` factory (D12).
 
+## Additions, batch 6 (principal, 2026-10-21; faithful mappings)
+
+- **`Arc<T>`:** an immutable shared record, TS `Readonly<T>` object reference, C++ `shared_ptr<const T>`. Use `Ref<T>` only when shared mutation is needed.
+- **`AbortSignal` / `AbortController`** (flight-stream): mirror the Web API.
+- **`Unknown` = `Option<Arc<dyn Any + Send + Sync>>`:** TS `unknown` values that are shared or cloneable (`None` = null). An optional `unknown` parameter is `Option<Unknown>` (outer None = omitted). `AnySlot` remains the owned per-object erased slot.
+- **`Record<V>`** (flight-entity): TS `Record<string, V>` / dictionary objects. Ordered, with JS property-enumeration order (integer-index keys ascending first, then insertion order); in-place updates; iteration allowed. HashMap remains the mapping for TS `Map`.
+- **Data enum over an untagged TS union:** a union of the payload interfaces; tagged only if the payloads carry a literal `kind`.
+- **Non-empty variadic tuple** (`[T, ...T[]]`): `Vec<T>`, validated non-empty at the boundary.
+
 ## Choosing an array type (user, 2026-10-20)
 
 - Be specific rather than more permissive than intended. If TS declares a typed array, it must not become `ArrayLike` just because the Rust parameter is read-only.
