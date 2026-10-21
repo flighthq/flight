@@ -7,6 +7,7 @@ mod create_tint_adjustment {
     #[test]
     fn carries_a_20_length_diagonal_matrix() {
         let tint = create_tint_adjustment(0xff0000ff);
+        assert_eq!(tint.kind, "TintAdjustment");
         assert_eq!(tint.color_matrix.unwrap().len(), 20);
         // Diagonal multipliers at 0/6/12/18, offsets (4/9/14/19) zero, no off-diagonal terms.
         assert_eq!(tint.color_matrix.unwrap()[0], 1.0);

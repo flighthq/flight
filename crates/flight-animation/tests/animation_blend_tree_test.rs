@@ -74,6 +74,7 @@ mod advance_animation_blend_tree {
             create_animation_blend_tree_input(shared.clone(), 0.75, false),
         ]);
         assert_eq!(tree.players.len(), 1);
+        assert!(Arc::ptr_eq(&tree.players[0], &shared));
         advance_animation_blend_tree(&tree, 0.5);
         assert_eq!(shared.read().unwrap().time, 0.5);
     }
@@ -125,7 +126,9 @@ mod create_animation_blend_tree {
                 duplicate, 1.0, false,
             )]);
         }));
-        assert!(result.is_err());
+        let err = result.unwrap_err();
+        let msg = err.downcast_ref::<String>().map(|s| s.as_str()).unwrap();
+        assert!(msg.contains("duplicate targetRef"));
 
         let scalar = player(target.clone(), 1.0, 0.0);
         let vector_clip = create_animation_clip(
@@ -153,7 +156,9 @@ mod create_animation_blend_tree {
                 create_animation_blend_tree_input(vector, 1.0, false),
             ]);
         }));
-        assert!(result.is_err());
+        let err = result.unwrap_err();
+        let msg = err.downcast_ref::<String>().map(|s| s.as_str()).unwrap();
+        assert!(msg.contains("different component widths"));
     }
 
     #[test]
@@ -324,32 +329,42 @@ mod sample_animation_blend_tree {
     #[test]
     fn normalizes_an_n_way_weighted_pose_by_target_identity() {
         let target = test_target();
+        let target_clone = target.clone();
         let mut tree = create_animation_blend_tree(&[
             create_animation_blend_tree_input(player(target.clone(), 0.0, 0.0), 1.0, false),
             create_animation_blend_tree_input(player(target.clone(), 10.0, 0.0), 2.0, false),
             create_animation_blend_tree_input(player(target, 20.0, 0.0), 1.0, false),
         ]);
         let mut seen_values: Vec<f32> = Vec::new();
-        sample_animation_blend_tree(&mut [0.0], &mut tree, &mut |sampled, _channel, _| {
+        let mut seen_targets: Vec<TargetRef> = Vec::new();
+        sample_animation_blend_tree(&mut [0.0], &mut tree, &mut |sampled, channel, _| {
             seen_values.push(sampled[0]);
+            seen_targets.push(channel.target_ref.clone());
         });
         assert_eq!(seen_values.len(), 1);
         assert_eq!(seen_values[0], 10.0);
+        assert!(Arc::ptr_eq(seen_targets[0].as_ref().unwrap(), target_clone.as_ref().unwrap()));
     }
 
     #[test]
     fn keeps_one_sided_targets_in_stable_first_appearance_order() {
         let a = test_target();
+        let a_clone = a.clone();
         let b: TargetRef = Some(Arc::new(1_usize));
+        let b_clone = b.clone();
         let mut tree = create_animation_blend_tree(&[
             create_animation_blend_tree_input(player(a, 3.0, 0.0), 1.0, false),
             create_animation_blend_tree_input(player(b, 7.0, 0.0), 1.0, false),
         ]);
         let mut seen: Vec<f32> = Vec::new();
-        sample_animation_blend_tree(&mut [0.0], &mut tree, &mut |sampled, _channel, _| {
+        let mut seen_targets: Vec<TargetRef> = Vec::new();
+        sample_animation_blend_tree(&mut [0.0], &mut tree, &mut |sampled, channel, _| {
             seen.push(sampled[0]);
+            seen_targets.push(channel.target_ref.clone());
         });
         assert_eq!(seen, vec![3.0, 7.0]);
+        assert!(Arc::ptr_eq(seen_targets[0].as_ref().unwrap(), a_clone.as_ref().unwrap()));
+        assert!(Arc::ptr_eq(seen_targets[1].as_ref().unwrap(), b_clone.as_ref().unwrap()));
     }
 
     #[test]

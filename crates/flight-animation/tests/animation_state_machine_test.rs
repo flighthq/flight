@@ -73,7 +73,10 @@ mod advance_animation_state_machine {
         assert_eq!(shared.read().unwrap().time, 0.5);
         assert_eq!(destination.read().unwrap().time, 0.5);
         assert_eq!(machine.advance_scratch.len(), 2);
+        let scratch_ptr = machine.advance_scratch.as_ptr();
         assert_eq!(machine.transition_weight, 0.5);
+        advance_animation_state_machine(&mut machine, 0.5);
+        assert_eq!(machine.advance_scratch.as_ptr(), scratch_ptr);
         advance_animation_state_machine(&mut machine, 0.5);
         assert_eq!(
             get_animation_state_machine_current_state(&machine).name,
@@ -123,7 +126,9 @@ mod create_animation_state_machine {
         let result = std::panic::catch_unwind(|| {
             create_animation_state_machine(&[], None);
         });
-        assert!(result.is_err());
+        let err = result.unwrap_err();
+        let msg = err.downcast_ref::<&str>().copied().unwrap();
+        assert!(msg.contains("at least one state"));
 
         let target = test_target();
         let a = state("same", &[player(target.clone(), 0.0, 0.0)]);
@@ -131,13 +136,17 @@ mod create_animation_state_machine {
         let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
             create_animation_state_machine(&[a, b], None);
         }));
-        assert!(result.is_err());
+        let err = result.unwrap_err();
+        let msg = err.downcast_ref::<String>().map(|s| s.as_str()).unwrap();
+        assert!(msg.contains("duplicate state"));
 
         let c = state("only", &[player(target.clone(), 0.0, 0.0)]);
         let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
             create_animation_state_machine(&[c], Some(StateRef::Name("missing".to_string())));
         }));
-        assert!(result.is_err());
+        let err = result.unwrap_err();
+        let msg = err.downcast_ref::<&str>().copied().unwrap();
+        assert!(msg.contains("initial state does not exist"));
 
         let scalar = state("scalar", &[player(target.clone(), 0.0, 0.0)]);
         let vector_clip = create_animation_clip(
@@ -162,7 +171,9 @@ mod create_animation_state_machine {
         let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
             create_animation_state_machine(&[scalar, state("vector", &[vector_player])], None);
         }));
-        assert!(result.is_err());
+        let err = result.unwrap_err();
+        let msg = err.downcast_ref::<&str>().copied().unwrap();
+        assert!(msg.contains("incompatible tracks"));
     }
 
     #[test]

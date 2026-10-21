@@ -21,7 +21,7 @@ mod build_particle_curve {
         assert_eq!(lut.len(), 5);
         assert_eq!(lut[0], 0.0);
         assert_eq!(lut[4], 1.0);
-        assert!((sample_particle_curve(&lut, 0.5) - 0.25).abs() < 0.1);
+        assert!((sample_particle_curve(&lut, 0.5) - 0.25).abs() < 0.05); // D1 f32 bound (TS: 0.05)
     }
 }
 
@@ -34,7 +34,7 @@ mod lerp_hsv_direct {
         lerp_hsv_direct(&mut out, 0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.5);
         assert!(out[0] > 0.7); // R
         assert!(out[1] > 0.7); // G
-        assert!((out[2] - 0.0).abs() < 0.01); // B
+        assert!((out[2] - 0.0).abs() < 0.005); // B // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -42,16 +42,16 @@ mod lerp_hsv_direct {
         let mut out = [0.0f32; 3];
         lerp_hsv_direct(&mut out, 0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.5);
         assert!(out[0] > 0.5); // R is prominent
-        assert!((out[1] - 0.0).abs() < 0.01); // no green
+        assert!((out[1] - 0.0).abs() < 0.005); // no green // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
     fn writes_at_the_given_offset() {
         let mut out = [9.0f32, 9.0, 9.0, 0.0, 0.0, 0.0];
         lerp_hsv_direct(&mut out, 3, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0);
-        assert!((out[3] - 1.0).abs() < 0.01);
-        assert!((out[4] - 0.0).abs() < 0.01);
-        assert!((out[5] - 0.0).abs() < 0.01);
+        assert!((out[3] - 1.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((out[4] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((out[5] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 }
 
@@ -66,7 +66,7 @@ mod lerp_hsv_in_place {
         lerp_hsv_in_place(&mut colors_out, 0, &birth, &death, 0.5);
         assert!(colors_out[0] > 0.5);
         assert!(colors_out[1] > 0.5);
-        assert!((colors_out[2] - 0.0).abs() < 0.01);
+        assert!((colors_out[2] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -75,14 +75,14 @@ mod lerp_hsv_in_place {
         let death = [0.6f32, 0.4, 0.2];
         let mut out0 = [0.0f32; 3];
         lerp_hsv_in_place(&mut out0, 0, &birth, &death, 0.0);
-        assert!((out0[0] - 0.2).abs() < 0.001);
-        assert!((out0[1] - 0.4).abs() < 0.001);
-        assert!((out0[2] - 0.6).abs() < 0.001);
+        assert!((out0[0] - 0.2).abs() < 0.0005); // D1 f32 bound (TS: 0.0005)
+        assert!((out0[1] - 0.4).abs() < 0.0005); // D1 f32 bound (TS: 0.0005)
+        assert!((out0[2] - 0.6).abs() < 0.0005); // D1 f32 bound (TS: 0.0005)
         let mut out1 = [0.0f32; 3];
         lerp_hsv_in_place(&mut out1, 0, &birth, &death, 1.0);
-        assert!((out1[0] - 0.6).abs() < 0.001);
-        assert!((out1[1] - 0.4).abs() < 0.001);
-        assert!((out1[2] - 0.2).abs() < 0.001);
+        assert!((out1[0] - 0.6).abs() < 0.0005); // D1 f32 bound (TS: 0.0005)
+        assert!((out1[1] - 0.4).abs() < 0.0005); // D1 f32 bound (TS: 0.0005)
+        assert!((out1[2] - 0.2).abs() < 0.0005); // D1 f32 bound (TS: 0.0005)
     }
 
     #[test]
@@ -92,9 +92,9 @@ mod lerp_hsv_in_place {
         let mut out = [9.0f32, 9.0, 9.0, 0.0, 0.0, 0.0];
         lerp_hsv_in_place(&mut out, 3, &birth, &death, 0.0);
         assert_eq!(out[0], 9.0);
-        assert!((out[3] - 1.0).abs() < 0.01);
-        assert!((out[4] - 0.0).abs() < 0.01);
-        assert!((out[5] - 0.0).abs() < 0.01);
+        assert!((out[3] - 1.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((out[4] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((out[5] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 }
 
@@ -188,9 +188,9 @@ mod particle_curve_from_keyframes {
             ],
             33,
         );
-        assert!((sample_particle_curve(&lut, 0.0) - 0.0).abs() < 0.01);
+        assert!((sample_particle_curve(&lut, 0.0) - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         assert!(sample_particle_curve(&lut, 0.5) > 0.9);
-        assert!((sample_particle_curve(&lut, 1.0) - 0.0).abs() < 0.01);
+        assert!((sample_particle_curve(&lut, 1.0) - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -202,8 +202,8 @@ mod particle_curve_from_keyframes {
             ],
             33,
         );
-        assert!((sample_particle_curve(&lut, 0.0) - 0.0).abs() < 0.1);
-        assert!((sample_particle_curve(&lut, 1.0) - 10.0).abs() < 0.1);
+        assert!((sample_particle_curve(&lut, 0.0) - 0.0).abs() < 0.05); // D1 f32 bound (TS: 0.05)
+        assert!((sample_particle_curve(&lut, 1.0) - 10.0).abs() < 0.05); // D1 f32 bound (TS: 0.05)
     }
 
     #[test]
@@ -215,9 +215,9 @@ mod particle_curve_from_keyframes {
             ],
             33,
         );
-        assert!((sample_particle_curve(&lut, 0.0) - 2.0).abs() < 0.1);
-        assert!((sample_particle_curve(&lut, 1.0) - 6.0).abs() < 0.1);
-        assert!((sample_particle_curve(&lut, 0.5) - 4.0).abs() < 0.1);
+        assert!((sample_particle_curve(&lut, 0.0) - 2.0).abs() < 0.05); // D1 f32 bound (TS: 0.05)
+        assert!((sample_particle_curve(&lut, 1.0) - 6.0).abs() < 0.05); // D1 f32 bound (TS: 0.05)
+        assert!((sample_particle_curve(&lut, 0.5) - 4.0).abs() < 0.05); // D1 f32 bound (TS: 0.05)
     }
 
     #[test]
@@ -226,8 +226,8 @@ mod particle_curve_from_keyframes {
             &[CurveKeyframe { time: 0.5, value: 3.0 }],
             33,
         );
-        assert!((sample_particle_curve(&lut, 0.0) - 3.0).abs() < 0.01);
-        assert!((sample_particle_curve(&lut, 1.0) - 3.0).abs() < 0.01);
+        assert!((sample_particle_curve(&lut, 0.0) - 3.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((sample_particle_curve(&lut, 1.0) - 3.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -272,7 +272,7 @@ mod particle_curve_to_keyframes {
         let diff = (sample_particle_curve(&reconstructed, 0.5)
             - sample_particle_curve(&lut, 0.5))
         .abs();
-        assert!(diff < 1e-5);
+        assert!(diff < 5e-6); // D1 f32 bound (TS: 5e-6)
     }
 
     #[test]
@@ -293,9 +293,9 @@ mod sample_particle_color_curve {
         let lut = [1.0f32, 0.0, 0.0, 0.0, 0.0, 1.0]; // red -> blue
         let mut out = [0.0f32; 3];
         sample_particle_color_curve(&mut out, 0, &lut, 0.5);
-        assert!((out[0] - 0.5).abs() < 0.01);
-        assert!((out[1] - 0.0).abs() < 0.01);
-        assert!((out[2] - 0.5).abs() < 0.01);
+        assert!((out[0] - 0.5).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((out[1] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((out[2] - 0.5).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -303,9 +303,9 @@ mod sample_particle_color_curve {
         let lut = [0.2f32, 0.4, 0.6];
         let mut out = [9.0f32; 5];
         sample_particle_color_curve(&mut out, 2, &lut, 0.0);
-        assert!((out[2] - 0.2).abs() < 0.01);
-        assert!((out[3] - 0.4).abs() < 0.01);
-        assert!((out[4] - 0.6).abs() < 0.01);
+        assert!((out[2] - 0.2).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((out[3] - 0.4).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((out[4] - 0.6).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 }
 
@@ -322,8 +322,8 @@ mod sample_particle_curve {
     #[test]
     fn linearly_interpolates_between_samples() {
         let lut = [0.0f32, 1.0];
-        assert!((sample_particle_curve(&lut, 0.25) - 0.25).abs() < 0.01);
-        assert!((sample_particle_curve(&lut, 0.5) - 0.5).abs() < 0.01);
+        assert!((sample_particle_curve(&lut, 0.25) - 0.25).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((sample_particle_curve(&lut, 0.5) - 0.5).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]

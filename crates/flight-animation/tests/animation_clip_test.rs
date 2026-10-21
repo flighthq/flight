@@ -327,12 +327,16 @@ mod sample_animation_clip {
         );
         let mut out = [0.0];
         let mut seen: Vec<(usize, f32)> = Vec::new();
-        sample_animation_clip(&mut out, &clip, 0.5, &mut |sampled, _channel, index| {
+        let mut seen_targets: Vec<TargetRef> = Vec::new();
+        sample_animation_clip(&mut out, &clip, 0.5, &mut |sampled, channel, index| {
             seen.push((index, sampled[0]));
+            seen_targets.push(channel.target_ref.clone());
         });
         assert_eq!(seen.len(), 2);
         assert_eq!(seen[0], (0, 5.0));
         assert_eq!(seen[1], (1, 150.0));
+        assert!(Arc::ptr_eq(seen_targets[0].as_ref().unwrap(), target_a.as_ref().unwrap()));
+        assert!(Arc::ptr_eq(seen_targets[1].as_ref().unwrap(), target_b.as_ref().unwrap()));
     }
 
     #[test]

@@ -7,6 +7,7 @@ mod create_sepia_adjustment {
     #[test]
     fn defaults_to_a_full_sepia_tone() {
         let adjustment = create_sepia_adjustment(None);
+        assert_eq!(adjustment.kind, "SepiaAdjustment");
         // White stays warm-white; red maps to the sepia red row (0.393*255 ~ 100). Alpha preserved.
         let red = apply_color_matrix_to_color(&adjustment.color_matrix.unwrap(), 0xff0000ff);
         assert_eq!((red >> 24) & 0xff, (0.393_f32 * 255.0).round() as u32);

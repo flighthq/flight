@@ -7,6 +7,7 @@ mod create_exposure_adjustment {
     #[test]
     fn defaults_to_the_identity_exposure_0() {
         let adjustment = create_exposure_adjustment(None);
+        assert_eq!(adjustment.kind, "ExposureAdjustment");
         assert_eq!(apply_color_matrix_to_color(&adjustment.color_matrix.unwrap(), 0x204060ff), 0x204060ff);
     }
 

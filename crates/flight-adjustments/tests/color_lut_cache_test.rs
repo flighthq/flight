@@ -16,10 +16,12 @@ mod bake_color_lut_for_run {
         let mut cache = create_color_lut_cache();
         let run1: Vec<Ref<dyn Adjustment>> = vec![to_adjustment_ref(create_hue_saturation_adjustment(Some(&HueSaturationAdjustmentOptions { hue: Some(30.0), saturation: Some(0.5), lightness: Some(0.0) })))];
         let first = bake_color_lut_for_run(&mut cache, &run1, Some(8));
+        assert!(cache.lut.is_some());
+        assert_eq!(cache.lut.as_ref().unwrap().samples, first.samples);
         let run2: Vec<Ref<dyn Adjustment>> = vec![to_adjustment_ref(create_hue_saturation_adjustment(Some(&HueSaturationAdjustmentOptions { hue: Some(30.0), saturation: Some(0.5), lightness: Some(0.0) })))];
         let second = bake_color_lut_for_run(&mut cache, &run2, Some(8));
         assert_eq!(second.samples, first.samples);
-        assert!(cache.lut.is_some());
+        assert_eq!(cache.lut.as_ref().unwrap().samples, second.samples);
         assert!(cache.signature.is_some());
     }
 

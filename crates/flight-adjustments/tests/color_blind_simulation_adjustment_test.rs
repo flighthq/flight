@@ -7,6 +7,7 @@ mod create_color_blind_simulation_adjustment {
     #[test]
     fn defaults_to_deuteranopia_and_bakes_its_linear_matrix_preserving_alpha() {
         let adjustment = create_color_blind_simulation_adjustment(None);
+        assert_eq!(adjustment.kind, "ColorBlindSimulationAdjustment");
         assert_eq!(adjustment.color_matrix.unwrap().len(), 20);
         // Pure red under deuteranopia: R'=0.625*255~159, G'=0.7*255~179, B'=0; alpha preserved.
         assert_eq!(apply_color_matrix_to_color(&adjustment.color_matrix.unwrap(), 0xff0000ff), 0x9fb300ff);

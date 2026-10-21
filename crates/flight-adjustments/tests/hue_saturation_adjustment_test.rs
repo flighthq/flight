@@ -7,11 +7,12 @@ mod create_hue_saturation_adjustment {
     #[test]
     fn defaults_to_the_identity_and_carries_a_fusable_transform() {
         let adj = create_hue_saturation_adjustment(None);
+        assert_eq!(adj.kind, "HueSaturationAdjustment");
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
         (get_adjustment_color_transform(&adj).unwrap())(&mut out, 0.2, 0.4, 0.6);
-        assert!((out[0] - 0.2).abs() < 1e-4);
-        assert!((out[1] - 0.4).abs() < 1e-4);
-        assert!((out[2] - 0.6).abs() < 1e-4);
+        assert!((out[0] - 0.2).abs() < 0.00005); // D1 f32 bound (TS: 0.00005)
+        assert!((out[1] - 0.4).abs() < 0.00005); // D1 f32 bound (TS: 0.00005)
+        assert!((out[2] - 0.6).abs() < 0.00005); // D1 f32 bound (TS: 0.00005)
     }
 
     #[test]
@@ -20,9 +21,9 @@ mod create_hue_saturation_adjustment {
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
         (get_adjustment_color_transform(&adj).unwrap())(&mut out, 1.0, 0.0, 0.0);
         // HSL saturation 0 collapses to lightness grey (mid of max/min = 0.5).
-        assert!((out[0] - 0.5).abs() < 1e-4);
-        assert!((out[0] - out[1]).abs() < 1e-4);
-        assert!((out[1] - out[2]).abs() < 1e-4);
+        assert!((out[0] - 0.5).abs() < 0.00005); // D1 f32 bound (TS: 0.00005)
+        assert!((out[0] - out[1]).abs() < 0.00005); // D1 f32 bound (TS: 0.00005)
+        assert!((out[1] - out[2]).abs() < 0.00005); // D1 f32 bound (TS: 0.00005)
     }
 
     #[test]
@@ -30,9 +31,9 @@ mod create_hue_saturation_adjustment {
         let adj = create_hue_saturation_adjustment(Some(&HueSaturationAdjustmentOptions { hue: Some(120.0), saturation: Some(1.0), lightness: Some(0.0) }));
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
         (get_adjustment_color_transform(&adj).unwrap())(&mut out, 1.0, 0.0, 0.0);
-        assert!((out[1] - 1.0).abs() < 1e-4);
-        assert!((out[0] - 0.0).abs() < 1e-4);
-        assert!((out[2] - 0.0).abs() < 1e-4);
+        assert!((out[1] - 1.0).abs() < 0.00005); // D1 f32 bound (TS: 0.00005)
+        assert!((out[0] - 0.0).abs() < 0.00005); // D1 f32 bound (TS: 0.00005)
+        assert!((out[2] - 0.0).abs() < 0.00005); // D1 f32 bound (TS: 0.00005)
     }
 }
 

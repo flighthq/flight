@@ -1,6 +1,18 @@
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+
 use flight_math::*;
 use flight_particles::*;
 use flight_particles::contract::*;
+
+fn sequence_rng(values: &[f32]) -> RandomSource {
+    let data: Vec<f32> = values.to_vec();
+    let index = Arc::new(AtomicUsize::new(0));
+    return Arc::new(move || {
+        let i = index.fetch_add(1, Ordering::Relaxed);
+        return data[i % data.len()];
+    });
+}
 
 mod write_particle_spawn_offset {
     use super::*;
@@ -81,8 +93,8 @@ mod write_particle_spawn_offset {
         },
             rng.as_ref(),
         );
-        assert!((out[0] - expected_cx).abs() < 1e-5);
-        assert!((out[1] - expected_cy).abs() < 1e-5);
+        assert!((out[0] - expected_cx).abs() < 1e-5); // D1 f32 bound (TS: 0.000005)
+        assert!((out[1] - expected_cy).abs() < 1e-5); // D1 f32 bound (TS: 0.000005)
 
         // -- Rectangle pass (continues the same rng sequence) --
         let r2 = rng_check(); // x sample
@@ -149,8 +161,8 @@ mod write_particle_spawn_offset {
         },
             rng.as_ref(),
         );
-        assert!((out[0] - expected_rx).abs() < 1e-5);
-        assert!((out[1] - expected_ry).abs() < 1e-5);
+        assert!((out[0] - expected_rx).abs() < 1e-5); // D1 f32 bound (TS: 0.000005)
+        assert!((out[1] - expected_ry).abs() < 1e-5); // D1 f32 bound (TS: 0.000005)
     }
 
     #[test]
@@ -221,7 +233,7 @@ mod write_particle_spawn_offset {
         },
             rng.as_ref(),
         );
-        assert!((out[0] - expected_x).abs() < 1e-5);
+        assert!((out[0] - expected_x).abs() < 1e-5); // D1 f32 bound (TS: 0.000005)
         assert_eq!(out[1], 0.0);
     }
 
@@ -296,8 +308,8 @@ mod write_particle_spawn_offset {
         },
             rng.as_ref(),
         );
-        assert!((out[0] - expected_x).abs() < 1e-5);
-        assert!((out[1] - expected_y).abs() < 1e-5);
+        assert!((out[0] - expected_x).abs() < 1e-5); // D1 f32 bound (TS: 0.000005)
+        assert!((out[1] - expected_y).abs() < 1e-5); // D1 f32 bound (TS: 0.000005)
     }
 
     #[test]
@@ -434,5 +446,139 @@ mod write_particle_spawn_offset {
         );
         assert_eq!(out, [0.0, 0.0]);
         assert_eq!(rng(), expected); // no random calls
+    }
+
+    #[test]
+    fn line_boundary_left_with_controlled_rng() {
+        let rng = sequence_rng(&[0.0]);
+        let mut out = [f32::NAN, f32::NAN];
+        write_particle_spawn_offset(
+            &mut out,
+            0,
+            &ParticleEmitterConfig {
+                emitter_shape: EmitterShape::Line,
+                emitter_width: 40.0,
+            alpha_curve: None,
+            alpha_end: 0.0,
+            alpha_start: 1.0,
+            blend_mode: None,
+            burst_count: 0.0,
+            burst_interval: 0.0,
+            color_curve: None,
+            color_end_b: 1.0,
+            color_end_g: 1.0,
+            color_end_r: 1.0,
+            color_end_variance_b: 0.0,
+            color_end_variance_g: 0.0,
+            color_end_variance_r: 0.0,
+            color_start_b: 1.0,
+            color_start_g: 1.0,
+            color_start_r: 1.0,
+            color_start_variance_b: 0.0,
+            color_start_variance_g: 0.0,
+            color_start_variance_r: 0.0,
+            direction_x: 0.0,
+            direction_y: -1.0,
+            direction_z: 0.0,
+            duration: 0.0,
+            emitter_cone_angle: 0.0,
+            emitter_depth: 0.0,
+            emitter_height: 0.0,
+            emitter_radius: 0.0,
+            frame_count: 1.0,
+            frame_rate: 12.0,
+            gravity_x: 0.0,
+            gravity_y: 0.0,
+            gravity_z: 0.0,
+            lifetime_max: 1.0,
+            lifetime_min: 0.5,
+            looping: true,
+            max_particles: 1000.0,
+            region_id_max: 1.0,
+            region_id_min: 0.0,
+            rotation_speed_max: 0.0,
+            rotation_speed_min: 0.0,
+            scale_curve: None,
+            scale_end: 1.0,
+            scale_max: 1.0,
+            scale_min: 1.0,
+            spawn_rate: 10.0,
+            speed_max: 100.0,
+            speed_min: 50.0,
+            spread: std::f32::consts::PI,
+            velocity_inheritance: 0.0,
+            world_space: false,
+        },
+            rng.as_ref(),
+        );
+        assert_eq!(out[0], -20.0);
+        assert_eq!(out[1], 0.0);
+    }
+
+    #[test]
+    fn circle_boundary_with_controlled_rng() {
+        let rng = sequence_rng(&[1.0, 0.0]);
+        let mut out = [f32::NAN, f32::NAN];
+        write_particle_spawn_offset(
+            &mut out,
+            0,
+            &ParticleEmitterConfig {
+                emitter_shape: EmitterShape::Circle,
+                emitter_radius: 10.0,
+            alpha_curve: None,
+            alpha_end: 0.0,
+            alpha_start: 1.0,
+            blend_mode: None,
+            burst_count: 0.0,
+            burst_interval: 0.0,
+            color_curve: None,
+            color_end_b: 1.0,
+            color_end_g: 1.0,
+            color_end_r: 1.0,
+            color_end_variance_b: 0.0,
+            color_end_variance_g: 0.0,
+            color_end_variance_r: 0.0,
+            color_start_b: 1.0,
+            color_start_g: 1.0,
+            color_start_r: 1.0,
+            color_start_variance_b: 0.0,
+            color_start_variance_g: 0.0,
+            color_start_variance_r: 0.0,
+            direction_x: 0.0,
+            direction_y: -1.0,
+            direction_z: 0.0,
+            duration: 0.0,
+            emitter_cone_angle: 0.0,
+            emitter_depth: 0.0,
+            emitter_height: 0.0,
+            emitter_width: 0.0,
+            frame_count: 1.0,
+            frame_rate: 12.0,
+            gravity_x: 0.0,
+            gravity_y: 0.0,
+            gravity_z: 0.0,
+            lifetime_max: 1.0,
+            lifetime_min: 0.5,
+            looping: true,
+            max_particles: 1000.0,
+            region_id_max: 1.0,
+            region_id_min: 0.0,
+            rotation_speed_max: 0.0,
+            rotation_speed_min: 0.0,
+            scale_curve: None,
+            scale_end: 1.0,
+            scale_max: 1.0,
+            scale_min: 1.0,
+            spawn_rate: 10.0,
+            speed_max: 100.0,
+            speed_min: 50.0,
+            spread: std::f32::consts::PI,
+            velocity_inheritance: 0.0,
+            world_space: false,
+        },
+            rng.as_ref(),
+        );
+        assert_eq!(out[0], 10.0);
+        assert_eq!(out[1], 0.0);
     }
 }

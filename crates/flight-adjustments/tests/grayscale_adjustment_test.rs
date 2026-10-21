@@ -7,6 +7,7 @@ mod create_grayscale_adjustment {
     #[test]
     fn defaults_to_full_bt709_luma_desaturation() {
         let adjustment = create_grayscale_adjustment(None);
+        assert_eq!(adjustment.kind, "GrayscaleAdjustment");
         // Pure red -> luma 0.2126*255 ~ 54, equal across channels; alpha preserved.
         let out = apply_color_matrix_to_color(&adjustment.color_matrix.unwrap(), 0xff0000ff);
         let r = (out >> 24) & 0xff;

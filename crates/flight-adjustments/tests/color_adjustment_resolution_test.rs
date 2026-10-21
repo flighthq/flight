@@ -33,9 +33,7 @@ mod resolve_color_adjustments_color_matrix {
         let result = resolve_color_adjustments_color_matrix(Some(&[to_adjustment_ref(adjustment)]));
         assert!(result.is_some());
         let fused = result.unwrap();
-        for i in 0..20 {
-            assert!((fused[i] - saturation[i]).abs() < 1e-6);
-        }
+        assert_eq!(fused, saturation);
     }
 
     #[test]
@@ -71,7 +69,7 @@ mod resolve_color_adjustments_color_scale_bias {
         );
         assert_eq!(out.red_scale, 0.5);
         assert_eq!(out.green_scale, 0.0);
-        assert!((out.red_bias - 0.4).abs() < 1e-6);
+        assert_eq!(out.red_bias, 0.4);
         assert_eq!(out.alpha_scale, 1.0);
     }
 
@@ -85,7 +83,7 @@ mod resolve_color_adjustments_color_scale_bias {
             resolve_color_adjustments_color_scale_bias(Some(&[to_adjustment_ref(a), to_adjustment_ref(b)]), &mut out),
             COLOR_ADJUSTMENT_AFFINE
         );
-        assert!((out.red_scale - 0.25).abs() < 1e-6);
+        assert_eq!(out.red_scale, 0.25);
     }
 
     #[test]
@@ -96,7 +94,7 @@ mod resolve_color_adjustments_color_scale_bias {
             resolve_color_adjustments_color_scale_bias(Some(&[to_adjustment_ref(saturation)]), &mut out),
             COLOR_ADJUSTMENT_CHANNEL_MIXING
         );
-        assert!((out.red_scale - 0.299).abs() < 1e-3);
+        assert!((out.red_scale - 0.299).abs() < 1e-3); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]

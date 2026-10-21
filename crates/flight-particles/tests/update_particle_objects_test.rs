@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::sync::Arc;
 
 use flight_math::create_random_source;
 use flight_particles::*;
@@ -394,8 +395,8 @@ mod update_particle_objects {
         }));
         update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
         update_particle_objects(&mut objects, &mut state, &config, 0.5, None);
-        assert!((objects[0].alpha - 0.0).abs() < 0.02);
-        assert!((objects[0].scale_x - 2.0).abs() < 0.02);
+        assert!((objects[0].alpha - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((objects[0].scale_x - 2.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -548,7 +549,7 @@ mod update_particle_objects {
         }));
         update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
         update_particle_objects(&mut objects, &mut state, &config, 0.5, None);
-        assert!((objects[0].alpha - 0.5).abs() < 0.1);
+        assert!((objects[0].alpha - 0.5).abs() < 0.05); // D1 f32 bound (TS: 0.05)
     }
 
     #[test]
@@ -1205,7 +1206,7 @@ mod update_particle_objects {
         let rot_before = objects[0].rotation;
         update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
         assert!(
-            (objects[0].rotation - rot_before - std::f32::consts::PI).abs() < 0.01
+            (objects[0].rotation - rot_before - std::f32::consts::PI).abs() < 0.0005 // D1 f32 bound (TS: 0.0005) // D1 f32 bound (TS: 0.0005)
         );
     }
 
@@ -1370,7 +1371,7 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }];
-        let mut state = create_particle_objects_state(1, Some(create_random_source(42)));
+        let mut state = create_particle_objects_state(1, Some(Arc::new(|| 0.0_f32)));
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             spawn_rate: 1.0,
             lifetime_min: 10.0,
@@ -1426,8 +1427,8 @@ mod update_particle_objects {
             world_space: false,
         }));
         update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
+        assert_eq!(objects[0].x, -40.0);
         assert_eq!(objects[0].y, 0.0);
-        assert!(objects[0].x.abs() <= 40.0 + 1e-4);
     }
 
     #[test]
@@ -1503,7 +1504,7 @@ mod update_particle_objects {
         update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
         for obj in objects.iter() {
             let d = (obj.x * obj.x + obj.y * obj.y).sqrt();
-            assert!((d - 50.0).abs() < 0.01);
+            assert!((d - 50.0).abs() < 0.00005); // D1 f32 bound (TS: 0.00005)
         }
     }
 
@@ -1652,7 +1653,7 @@ mod update_particle_objects {
         }));
         update_particle_objects(&mut objects, &mut state, &config, 1.0, None);
         update_particle_objects(&mut objects, &mut state, &config, 0.5, None);
-        assert!((objects[0].scale_x - 1.0).abs() < 0.1);
+        assert!((objects[0].scale_x - 1.0).abs() < 0.05); // D1 f32 bound (TS: 0.05)
     }
 
     #[test]
@@ -1893,8 +1894,7 @@ mod update_particle_objects {
             x: 0.0,
             y: 0.0,
         }];
-        let mut state = create_particle_objects_state(1, None);
-        // Use Point emitter (default) so spawn position is always (0, 0, 0).
+        let mut state = create_particle_objects_state(1, Some(Arc::new(|| 0.0_f32)));
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
             duration: 1.0,
             lifetime_max: 0.5,
@@ -1929,8 +1929,8 @@ mod update_particle_objects {
             emitter_depth: 0.0,
             emitter_height: 0.0,
             emitter_radius: 0.0,
-            emitter_shape: EmitterShape::Point,
-            emitter_width: 0.0,
+            emitter_shape: EmitterShape::Line,
+            emitter_width: 20.0,
             frame_count: 1.0,
             frame_rate: 12.0,
             gravity_x: 0.0,
@@ -1961,7 +1961,7 @@ mod update_particle_objects {
         SPAWNS.with(|c| {
             let s = c.borrow();
             assert_eq!(s.len(), 1);
-            assert_eq!(s[0], [0.0, 0.0, 0.0]);
+            assert_eq!(s[0], [-10.0, 0.0, 0.0]);
         });
         update_particle_objects(
             &mut objects,
@@ -1973,7 +1973,7 @@ mod update_particle_objects {
         DEATHS.with(|c| {
             let d = c.borrow();
             assert_eq!(d.len(), 1);
-            assert_eq!(d[0], [0.0, 0.0, 0.0]);
+            assert_eq!(d[0], [-10.0, 0.0, 0.0]);
         });
     }
 }

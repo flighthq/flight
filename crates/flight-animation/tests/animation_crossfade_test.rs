@@ -492,14 +492,20 @@ mod sample_animation_crossfade {
             1.0,
             None,
         );
+        let from_ptr = state.from_sample.as_ptr();
+        let to_ptr = state.to_sample.as_ptr();
         let mut values: Vec<f32> = Vec::new();
         sample_animation_crossfade(&mut [0.0], &mut state, &mut |sampled, _, _| {
             values.push(sampled[0]);
         });
+        assert_eq!(state.from_sample.as_ptr(), from_ptr);
+        assert_eq!(state.to_sample.as_ptr(), to_ptr);
         advance_animation_crossfade(&mut state, 2.0);
         sample_animation_crossfade(&mut [0.0], &mut state, &mut |sampled, _, _| {
             values.push(sampled[0]);
         });
+        assert_eq!(state.from_sample.as_ptr(), from_ptr);
+        assert_eq!(state.to_sample.as_ptr(), to_ptr);
         assert_eq!(values, vec![0.0, 20.0]);
     }
 

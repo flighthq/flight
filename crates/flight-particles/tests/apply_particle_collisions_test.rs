@@ -51,8 +51,8 @@ mod apply_particle_collisions {
                 }],
             );
             let d = (emitter.data.transforms[0].powi(2) + emitter.data.transforms[1].powi(2)).sqrt();
-            assert!((d - 10.0).abs() < 0.01);
-            assert!((state.velocities[0] - 10.0).abs() < 0.01);
+            assert!((d - 10.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+            assert!((state.velocities[0] - 10.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         }
 
         #[test]
@@ -71,7 +71,7 @@ mod apply_particle_collisions {
                 }],
             );
             let d = (emitter.data.transforms[0].powi(2) + emitter.data.transforms[1].powi(2)).sqrt();
-            assert!((d - 10.0).abs() < 0.01);
+            assert!((d - 10.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         }
     }
 
@@ -100,8 +100,8 @@ mod apply_particle_collisions {
                     friction: 0.0,
                 }],
             );
-            assert!((emitter.data.transforms[1] - 500.0).abs() < 0.01);
-            assert!((state.velocities[1] - 0.0).abs() < 0.01);
+            assert!((emitter.data.transforms[1] - 500.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+            assert!((state.velocities[1] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         }
 
         #[test]
@@ -119,7 +119,7 @@ mod apply_particle_collisions {
                     friction: 0.0,
                 }],
             );
-            assert!((state.velocities[1] - (-50.0)).abs() < 0.01);
+            assert!((state.velocities[1] - (-50.0)).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         }
 
         #[test]
@@ -137,7 +137,7 @@ mod apply_particle_collisions {
                     friction: 0.25,
                 }],
             );
-            assert!((state.velocities[0] - 60.0).abs() < 0.01);
+            assert!((state.velocities[0] - 60.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         }
 
         #[test]
@@ -180,8 +180,8 @@ mod apply_particle_collisions {
                     friction: 0.0,
                 }],
             );
-            assert!((emitter.data.positions_z[0] - 100.0).abs() < 0.01);
-            assert!((state.velocities[2] - 0.0).abs() < 0.01);
+            assert!((emitter.data.positions_z[0] - 100.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+            assert!((state.velocities[2] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         }
     }
 
@@ -210,7 +210,7 @@ mod apply_particle_collisions {
                 + emitter.data.transforms[1].powi(2)
                 + emitter.data.positions_z[0].powi(2))
             .sqrt();
-            assert!((d - 10.0).abs() < 0.01);
+            assert!((d - 10.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         }
 
         #[test]
@@ -235,7 +235,7 @@ mod apply_particle_collisions {
                 + emitter.data.transforms[1].powi(2)
                 + emitter.data.positions_z[0].powi(2))
             .sqrt();
-            assert!((d - 10.0).abs() < 0.01);
+            assert!((d - 10.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         }
 
         #[test]
@@ -256,7 +256,7 @@ mod apply_particle_collisions {
                     friction: 0.0,
                 }],
             );
-            assert!((emitter.data.positions_z[0] - 10.0).abs() < 0.01);
+            assert!((emitter.data.positions_z[0] - 10.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         }
     }
 
@@ -279,8 +279,8 @@ mod apply_particle_collisions {
                     friction: 0.0,
                 }],
             );
-            assert!((emitter.data.transforms[0] - 50.0).abs() < 0.01);
-            assert!((state.velocities[0] - (-30.0)).abs() < 0.01);
+            assert!((emitter.data.transforms[0] - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+            assert!((state.velocities[0] - (-30.0)).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         }
 
         #[test]
@@ -299,7 +299,7 @@ mod apply_particle_collisions {
                     friction: 0.0,
                 }],
             );
-            assert!((emitter.data.transforms[0] - 50.0).abs() < 0.01);
+            assert!((emitter.data.transforms[0] - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         }
     }
 }
@@ -354,8 +354,8 @@ mod apply_particle_object_collisions {
                 friction: 0.0,
             }],
         );
-        assert!((objects[0].y - 500.0).abs() < 0.01);
-        assert!((state.velocities[1] - 0.0).abs() < 0.01);
+        assert!((objects[0].y - 500.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[1] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -373,7 +373,7 @@ mod apply_particle_object_collisions {
                 friction: 0.0,
             }],
         );
-        assert!((state.velocities[1] - (-50.0)).abs() < 0.01);
+        assert!((state.velocities[1] - (-50.0)).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]

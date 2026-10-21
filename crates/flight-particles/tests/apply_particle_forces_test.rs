@@ -46,8 +46,8 @@ mod apply_particle_forces {
             }],
             1.0,
         );
-        assert!((state.velocities[0] - 50.0).abs() < 0.01);
-        assert!((state.velocities[1] - 0.0).abs() < 0.01);
+        assert!((state.velocities[0] - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[1] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -66,9 +66,9 @@ mod apply_particle_forces {
             }],
             1.0,
         );
-        assert!((state.velocities[0] - 0.0).abs() < 0.01);
-        assert!((state.velocities[1] - 0.0).abs() < 0.01);
-        assert!((state.velocities[2] - 50.0).abs() < 0.01);
+        assert!((state.velocities[0] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[1] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[2] - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -91,7 +91,7 @@ mod apply_particle_forces {
             ],
             1.0,
         );
-        assert!((state.velocities[0] - 15.0).abs() < 0.01);
+        assert!((state.velocities[0] - 15.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -104,7 +104,7 @@ mod apply_particle_forces {
             &[ParticleForce::DragForce { strength: 0.5 }],
             1.0,
         );
-        assert!((state.velocities[2] - 50.0).abs() < 0.01);
+        assert!((state.velocities[2] - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -118,7 +118,7 @@ mod apply_particle_forces {
             &[ParticleForce::DragForce { strength: 0.5 }],
             1.0,
         );
-        assert!((state.velocities[0] - 50.0).abs() < 0.01);
+        assert!((state.velocities[0] - 50.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -252,8 +252,8 @@ mod apply_particle_forces {
             }],
             1.0,
         );
-        assert!((state.velocities[0] - 0.0).abs() < 0.01);
-        assert!((state.velocities[1] - 20.0).abs() < 0.01);
+        assert!((state.velocities[0] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[1] - 20.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -278,9 +278,9 @@ mod apply_particle_forces {
             }],
             1.0,
         );
-        assert!((state.velocities[0] - 0.0).abs() < 0.01);
-        assert!((state.velocities[1] - 0.0).abs() < 0.01);
-        assert!((state.velocities[2] - 20.0).abs() < 0.01);
+        assert!((state.velocities[0] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[1] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[2] - 20.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -296,8 +296,8 @@ mod apply_particle_forces {
             }],
             2.0,
         );
-        assert!((state.velocities[0] - 10.0).abs() < 0.01);
-        assert!((state.velocities[1] - (-6.0)).abs() < 0.01);
+        assert!((state.velocities[0] - 10.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[1] - (-6.0)).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -313,9 +313,9 @@ mod apply_particle_forces {
             }],
             1.0,
         );
-        assert!((state.velocities[0] - 0.0).abs() < 0.01);
-        assert!((state.velocities[1] - 0.0).abs() < 0.01);
-        assert!((state.velocities[2] - 10.0).abs() < 0.01);
+        assert!((state.velocities[0] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[1] - 0.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((state.velocities[2] - 10.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 }
 
@@ -418,7 +418,7 @@ mod apply_particle_object_forces {
             }],
             1.0,
         );
-        assert!((state.velocities[live_index * 2] - 7.0).abs() < 0.01);
+        assert!((state.velocities[live_index * 2] - 7.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         assert_eq!(state.velocities[dead_index * 2], 0.0);
     }
 }

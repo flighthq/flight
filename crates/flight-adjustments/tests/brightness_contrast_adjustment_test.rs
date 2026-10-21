@@ -7,6 +7,7 @@ mod create_brightness_contrast_adjustment {
     #[test]
     fn defaults_to_the_identity_brightness_0_contrast_1() {
         let adjustment = create_brightness_contrast_adjustment(None);
+        assert_eq!(adjustment.kind, "BrightnessContrastAdjustment");
         assert_eq!(apply_color_matrix_to_color(&adjustment.color_matrix.unwrap(), 0x3366aaff), 0x3366aaff);
     }
 

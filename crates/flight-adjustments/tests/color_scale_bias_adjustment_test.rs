@@ -21,6 +21,7 @@ mod create_color_scale_bias_adjustment {
         };
         initialize_color_scale_bias(&mut value, Some(&opts));
         let adjustment = create_color_scale_bias_adjustment(&value);
+        assert_eq!(adjustment.kind, "ColorScaleBiasAdjustment");
         assert_eq!(adjustment.color_scale_bias.red_scale, 0.5);
         assert_eq!(adjustment.color_matrix.unwrap()[0], 0.5);
         assert_eq!(adjustment.color_matrix.unwrap()[9], 0.25);

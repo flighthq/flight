@@ -145,7 +145,9 @@ mod reset_animation_sample_accumulator {
     fn clears_state_while_retaining_the_owned_buffer() {
         let mut accumulator = create_animation_sample_accumulator(2, false);
         accumulate_animation_sample(&mut accumulator, &[2.0, 4.0], 1.0);
+        let ptr_before = accumulator.values.as_ptr();
         reset_animation_sample_accumulator(&mut accumulator);
+        assert_eq!(accumulator.values.as_ptr(), ptr_before);
         assert_eq!(accumulator.values, vec![0.0, 0.0]);
         assert_eq!(accumulator.weight, 0.0);
     }

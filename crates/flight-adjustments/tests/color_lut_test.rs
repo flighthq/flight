@@ -10,9 +10,9 @@ mod bake_color_lut {
         assert_eq!(lut.samples.len(), 8 * 8 * 8 * 3);
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
         sample_color_lut(&lut, &mut out, 0.25, 0.5, 0.75);
-        assert!((out[0] - 0.25).abs() < 1e-4);
-        assert!((out[1] - 0.5).abs() < 1e-4);
-        assert!((out[2] - 0.75).abs() < 1e-4);
+        assert!((out[0] - 0.25).abs() < 0.000005); // D1 f32 bound (TS: 0.000005)
+        assert!((out[1] - 0.5).abs() < 0.000005); // D1 f32 bound (TS: 0.000005)
+        assert!((out[2] - 0.75).abs() < 0.000005); // D1 f32 bound (TS: 0.000005)
     }
 
     #[test]
@@ -22,7 +22,7 @@ mod bake_color_lut {
         let lut = bake_color_lut(&[get_adjustment_color_transform(&invert).unwrap(), get_adjustment_color_transform(&brighten).unwrap()], Some(16));
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
         sample_color_lut(&lut, &mut out, 0.2, 0.2, 0.2);
-        assert!((out[0] - 1.0).abs() < 1e-4);
+        assert!((out[0] - 1.0).abs() < 0.000005); // D1 f32 bound (TS: 0.000005)
     }
 
     #[test]
@@ -47,7 +47,7 @@ mod sample_color_lut {
         let lut = bake_color_lut(&[get_adjustment_color_transform(&ramp).unwrap()], Some(2));
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
         sample_color_lut(&lut, &mut out, 0.5, 0.0, 0.0);
-        assert!((out[0] - 0.5).abs() < 1e-4);
+        assert!((out[0] - 0.5).abs() < 0.000005); // D1 f32 bound (TS: 0.000005)
     }
 
     #[test]
@@ -55,8 +55,8 @@ mod sample_color_lut {
         let lut = bake_color_lut(&[], Some(4));
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
         sample_color_lut(&lut, &mut out, 2.0, -1.0, 0.5);
-        assert!((out[0] - 1.0).abs() < 1e-4);
-        assert!((out[1] - 0.0).abs() < 1e-4);
-        assert!((out[2] - 0.5).abs() < 1e-4);
+        assert!((out[0] - 1.0).abs() < 0.000005); // D1 f32 bound (TS: 0.000005)
+        assert!((out[1] - 0.0).abs() < 0.000005); // D1 f32 bound (TS: 0.000005)
+        assert!((out[2] - 0.5).abs() < 0.000005); // D1 f32 bound (TS: 0.000005)
     }
 }

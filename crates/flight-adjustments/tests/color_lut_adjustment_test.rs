@@ -8,9 +8,9 @@ mod apply_color_transform {
         let adj = create_invert_adjustment(Some(&InvertAdjustmentOptions { intensity: Some(1.0) }));
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
         (get_adjustment_color_transform(&adj).unwrap())(&mut out, 1.0, 0.0, 0.0);
-        assert!((out[0] - 0.0).abs() < 1e-4);
-        assert!((out[1] - 1.0).abs() < 1e-4);
-        assert!((out[2] - 1.0).abs() < 1e-4);
+        assert!((out[0] - 0.0).abs() < 0.000005); // D1 f32 bound (TS: 0.000005)
+        assert!((out[1] - 1.0).abs() < 0.000005); // D1 f32 bound (TS: 0.000005)
+        assert!((out[2] - 1.0).abs() < 0.000005); // D1 f32 bound (TS: 0.000005)
     }
 }
 
@@ -18,9 +18,10 @@ mod get_adjustment_color_transform {
     use super::*;
 
     #[test]
-    fn returns_true_for_a_lut_tier_adjustment() {
+    fn returns_the_operations_own_transform_for_a_lut_tier_adjustment() {
         let adj = create_hue_saturation_adjustment(Some(&HueSaturationAdjustmentOptions { hue: Some(45.0), saturation: Some(1.0), lightness: Some(0.0) }));
-        assert!(get_adjustment_color_transform(&adj).is_some());
+        let returned = get_adjustment_color_transform(&adj).unwrap();
+        assert!(std::sync::Arc::ptr_eq(&returned, adj.transform.as_ref().unwrap()));
     }
 
     #[test]

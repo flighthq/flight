@@ -73,8 +73,14 @@ mod advance_animation_layer_stack {
 
         assert_eq!(shared.read().unwrap().time, 0.5);
         assert_eq!(stack.advance_scratch.len(), 1);
+        let scratch_ptr = stack.advance_scratch.as_ptr();
         assert_eq!(stack.blend_trees.len(), 1);
+        assert!(Arc::ptr_eq(&stack.blend_trees[0], &shared_tree));
         assert_eq!(stack.state_machines.len(), 1);
+        assert!(Arc::ptr_eq(&stack.state_machines[0], &machine_ref));
+
+        advance_animation_layer_stack(&mut stack, 0.5);
+        assert_eq!(stack.advance_scratch.as_ptr(), scratch_ptr);
     }
 }
 
@@ -111,7 +117,9 @@ mod create_animation_blend_tree_layer {
                 }),
             );
         }));
-        assert!(result.is_err());
+        let err = result.unwrap_err();
+        let msg = err.downcast_ref::<String>().map(|s| s.as_str()).unwrap();
+        assert!(msg.contains("duplicated"));
 
         let source3 = source.clone();
         let result = std::panic::catch_unwind(AssertUnwindSafe(|| {
@@ -124,7 +132,9 @@ mod create_animation_blend_tree_layer {
                 }),
             );
         }));
-        assert!(result.is_err());
+        let err = result.unwrap_err();
+        let msg = err.downcast_ref::<String>().map(|s| s.as_str()).unwrap();
+        assert!(msg.contains("does not exist"));
     }
 }
 
@@ -135,6 +145,7 @@ mod create_animation_layer_stack {
     fn precomputes_target_correspondence_from_only_selected_source_channels() {
         let a = test_target();
         let b: TargetRef = Some(Arc::new(1_usize));
+        let b_clone = b.clone();
         let source = tree(&[player(a, 1.0, 0.0), player(b, 2.0, 0.0)]);
         let stack = create_animation_layer_stack(&[create_animation_blend_tree_layer(
             source,
@@ -145,6 +156,7 @@ mod create_animation_layer_stack {
             }),
         )]);
         assert_eq!(stack.channels.len(), 1);
+        assert!(Arc::ptr_eq(stack.channels[0].channel.target_ref.as_ref().unwrap(), b_clone.as_ref().unwrap()));
     }
 
     #[test]
@@ -177,7 +189,9 @@ mod create_animation_layer_stack {
                 create_animation_blend_tree_layer(vector, None),
             ]);
         }));
-        assert!(result.is_err());
+        let err = result.unwrap_err();
+        let msg = err.downcast_ref::<&str>().copied().unwrap();
+        assert!(msg.contains("incompatible tracks"));
     }
 
     #[test]

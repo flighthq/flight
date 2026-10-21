@@ -136,7 +136,7 @@ mod sample_animation_track {
         for t in [0.25, 0.99, 1.0, 1.5, 2.5, 3.75, 4.999] {
             sample_animation_track(&mut out, &track, t);
             assert!(
-                (out[0] - t * 10.0).abs() < 1e-3,
+                (out[0] - t * 10.0).abs() < 5e-7, // D1 f32 bound (TS: 5e-7)
                 "at t={}, expected {} got {}",
                 t,
                 t * 10.0,
@@ -210,8 +210,8 @@ mod sample_animation_track {
         });
         let mut out = [0.0, 0.0, 0.0, 0.0];
         sample_animation_track(&mut out, &track, 0.5);
-        assert!((out[2] - (std::f32::consts::PI / 8.0).sin()).abs() < 1e-4);
-        assert!((out[3] - (std::f32::consts::PI / 8.0).cos()).abs() < 1e-4);
+        assert!((out[2] - (std::f32::consts::PI / 8.0).sin()).abs() < 5e-6); // D1 f32 bound (TS: 5e-6)
+        assert!((out[3] - (std::f32::consts::PI / 8.0).cos()).abs() < 5e-6); // D1 f32 bound (TS: 5e-6)
         let len = (out[0] * out[0] + out[1] * out[1] + out[2] * out[2] + out[3] * out[3]).sqrt();
         assert!((len - 1.0).abs() < 1e-4);
     }

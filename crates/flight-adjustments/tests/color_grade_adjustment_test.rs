@@ -9,11 +9,12 @@ mod create_color_grade_adjustment {
         // The lift/gamma/gain packed neutral 0x808080 is 128/255 ~ 0.502, so the default gamma
         // exponent is ~0.996 rather than 1 -- faithful to the ported shader.
         let adj = create_color_grade_adjustment(None);
+        assert_eq!(adj.kind, "ColorGradeAdjustment");
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
         (get_adjustment_color_transform(&adj).unwrap())(&mut out, 0.3, 0.5, 0.7);
-        assert!((out[0] - 0.3).abs() < 0.01);
-        assert!((out[1] - 0.5).abs() < 0.01);
-        assert!((out[2] - 0.7).abs() < 0.01);
+        assert!((out[0] - 0.3).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((out[1] - 0.5).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((out[2] - 0.7).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 
     #[test]
@@ -22,10 +23,10 @@ mod create_color_grade_adjustment {
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
         (get_adjustment_color_transform(&adj).unwrap())(&mut out, 0.5, 0.5, 0.5);
         // Mid-grey is the pivot -- unchanged (within the near-neutral default gamma).
-        assert!((out[0] - 0.5).abs() < 0.01);
+        assert!((out[0] - 0.5).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         (get_adjustment_color_transform(&adj).unwrap())(&mut out, 0.75, 0.75, 0.75);
         // (0.75 - 0.5)*2 + 0.5 = 1, and pow(1, gamma) = 1 exactly.
-        assert!((out[0] - 1.0).abs() < 1e-4);
+        assert!((out[0] - 1.0).abs() < 0.00005); // D1 f32 bound (TS: 0.00005)
     }
 
     #[test]
@@ -34,9 +35,9 @@ mod create_color_grade_adjustment {
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
         (get_adjustment_color_transform(&adj).unwrap())(&mut out, 1.0, 0.0, 0.0);
         // Rec.709 luma of pure red is 0.2126 on every channel (within the near-neutral default gamma).
-        assert!((out[0] - 0.2126).abs() < 0.01);
-        assert!((out[1] - 0.2126).abs() < 0.01);
-        assert!((out[2] - 0.2126).abs() < 0.01);
+        assert!((out[0] - 0.2126).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((out[1] - 0.2126).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((out[2] - 0.2126).abs() < 0.005); // D1 f32 bound (TS: 0.005)
     }
 }
 

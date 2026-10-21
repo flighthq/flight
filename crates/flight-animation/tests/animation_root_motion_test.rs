@@ -42,7 +42,9 @@ mod create_animation_root_motion_extractor {
         let result = std::panic::catch_unwind(|| {
             create_animation_root_motion_extractor(&empty_clip, 0);
         });
-        assert!(result.is_err());
+        let err = result.unwrap_err();
+        let msg = err.downcast_ref::<String>().map(|s| s.as_str()).unwrap();
+        assert!(msg.contains("does not exist"));
 
         let malformed_clip = Arc::new(RwLock::new(create_animation_clip(
             vec![create_animation_channel(
@@ -65,7 +67,9 @@ mod create_animation_root_motion_extractor {
         let result = std::panic::catch_unwind(|| {
             create_animation_root_motion_extractor(&malformed_clip, 0);
         });
-        assert!(result.is_err());
+        let err = result.unwrap_err();
+        let msg = err.downcast_ref::<&str>().copied().unwrap();
+        assert!(msg.contains("four components"));
     }
 }
 
@@ -93,6 +97,9 @@ mod extract_animation_root_motion {
             &[],
         )));
         let mut extractor = create_animation_root_motion_extractor(&clip, 0);
+        let from_ptr = extractor.from_motion.as_ptr();
+        let to_ptr = extractor.to_motion.as_ptr();
+        let scratch_ptr = extractor.power_scratch.as_ptr();
         let mut out = [0.0, 0.0, 0.0];
 
         assert!(extract_animation_root_motion(
@@ -102,6 +109,9 @@ mod extract_animation_root_motion {
             1.25
         ));
         assert_eq!(out, [5.0, 1.0, -2.0]);
+        assert_eq!(extractor.from_motion.as_ptr(), from_ptr);
+        assert_eq!(extractor.to_motion.as_ptr(), to_ptr);
+        assert_eq!(extractor.power_scratch.as_ptr(), scratch_ptr);
 
         assert!(extract_animation_root_motion(
             &mut out,
@@ -145,7 +155,7 @@ mod extract_animation_root_motion {
         let mut out = [0.0, 0.0, 0.0, 0.0];
 
         extract_animation_root_motion(&mut out, &mut extractor, 0.0, 2.0);
-        assert!(out[2].abs() - 1.0 < 1e-5);
+        assert!((out[2].abs() - 1.0).abs() < 1e-5);
         assert!(out[3].abs() < 1e-5);
 
         extract_animation_root_motion(&mut out, &mut extractor, 1.5, 0.5);
@@ -218,11 +228,16 @@ mod extract_animation_root_motion {
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             extract_animation_root_motion(&mut out, &mut extractor, 0.0, f32::INFINITY);
         }));
-        assert!(result.is_err());
+        let err = result.unwrap_err();
+        let msg = err.downcast_ref::<&str>().copied().unwrap();
+        assert!(msg.contains("finite"));
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             extract_animation_root_motion(&mut out, &mut extractor, f32::NEG_INFINITY, 0.0);
         }));
-        assert!(result.is_err());
+        let err = result.unwrap_err();
+        let msg = err.downcast_ref::<&str>().copied().unwrap();
+        assert!(msg.contains("finite"));
+        assert_eq!(out, [1.0, 2.0, 3.0, 4.0]);
     }
 }
 

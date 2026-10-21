@@ -8,6 +8,7 @@ mod create_color_matrix_adjustment {
     fn creates_an_authored_generic_matrix_adjustment() {
         let matrix = create_identity_color_matrix();
         let adjustment = create_color_matrix_adjustment(matrix);
+        assert_eq!(adjustment.kind, "ColorMatrixAdjustment");
         assert_eq!(adjustment.color_matrix.unwrap(), matrix);
     }
 }

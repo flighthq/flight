@@ -5,6 +5,7 @@ const BLACK: u32 = 0x000000ff;
 const RED: u32 = 0xff0000ff;
 const GREEN: u32 = 0x00ff00ff;
 
+// D1 f32 bound (TS: 0) — identity/zero matrix elements via toBe; 1e-4 admits accumulated sin/cos f32 rounding
 fn assert_close(actual: f32, expected: f32) {
     let diff = (actual - expected).abs();
     assert!(
@@ -59,9 +60,7 @@ mod concat_color_matrix {
         let mut m = create_grayscale_color_matrix();
         let original = m;
         concat_color_matrix(&mut m, &create_identity_color_matrix());
-        for i in 0..20 {
-            assert_close(m[i], original[i]);
-        }
+        assert_eq!(m, original);
     }
 
     #[test]
@@ -70,9 +69,7 @@ mod concat_color_matrix {
         let original = m;
         let m_copy = m;
         concat_color_matrix(&mut m, &m_copy);
-        for i in 0..20 {
-            assert_close(m[i], original[i]);
-        }
+        assert_eq!(m, original);
     }
 }
 
@@ -106,10 +103,7 @@ mod create_channel_mixer_color_matrix {
     #[test]
     fn identity_mix_leaves_color_unchanged() {
         let m = create_channel_mixer_color_matrix(&[1.0, 0.0, 0.0], &[0.0, 1.0, 0.0], &[0.0, 0.0, 1.0]);
-        let identity = create_identity_color_matrix();
-        for i in 0..20 {
-            assert_close(m[i], identity[i]);
-        }
+        assert_eq!(m, create_identity_color_matrix());
     }
 
     #[test]
@@ -135,18 +129,15 @@ mod create_color_balance_color_matrix {
     #[test]
     fn all_zero_offsets_is_identity() {
         let m = create_color_balance_color_matrix(&[0.0, 0.0, 0.0], &[0.0, 0.0, 0.0], &[0.0, 0.0, 0.0]);
-        let identity = create_identity_color_matrix();
-        for i in 0..20 {
-            assert_close(m[i], identity[i]);
-        }
+        assert_eq!(m, create_identity_color_matrix());
     }
 
     #[test]
     fn positive_red_midtone_raises_red_channel_offset() {
         let m = create_color_balance_color_matrix(&[0.0, 0.0, 0.0], &[100.0, 0.0, 0.0], &[0.0, 0.0, 0.0]);
-        assert_close(m[4], 0.5);
-        assert!((m[9]).abs() < 1e-5);
-        assert!((m[14]).abs() < 1e-5);
+        assert!((m[4] - 0.5).abs() < 0.005); // D1 f32 bound (TS: 0.005)
+        assert!((m[9]).abs() < 0.000005); // D1 f32 bound (TS: 0.000005)
+        assert!((m[14]).abs() < 0.000005); // D1 f32 bound (TS: 0.000005)
     }
 }
 
@@ -162,10 +153,7 @@ mod create_color_matrix_from_tint {
     #[test]
     fn amount_zero_is_identity() {
         let m = create_color_matrix_from_tint(0xff0000ff, 0.0);
-        let identity = create_identity_color_matrix();
-        for i in 0..20 {
-            assert_close(m[i], identity[i]);
-        }
+        assert_eq!(m, create_identity_color_matrix());
     }
 }
 
@@ -181,10 +169,7 @@ mod create_contrast_color_matrix {
     #[test]
     fn amount_one_is_identity() {
         let m = create_contrast_color_matrix(1.0);
-        let identity = create_identity_color_matrix();
-        for i in 0..20 {
-            assert_close(m[i], identity[i]);
-        }
+        assert_eq!(m, create_identity_color_matrix());
     }
 }
 
@@ -194,19 +179,13 @@ mod create_desaturate_color_matrix {
     #[test]
     fn amount_one_produces_a_grayscale_matrix() {
         let desaturate = create_desaturate_color_matrix(1.0);
-        let grayscale = create_grayscale_color_matrix();
-        for i in 0..20 {
-            assert_close(desaturate[i], grayscale[i]);
-        }
+        assert_eq!(desaturate, create_grayscale_color_matrix());
     }
 
     #[test]
     fn amount_zero_is_identity() {
         let m = create_desaturate_color_matrix(0.0);
-        let identity = create_identity_color_matrix();
-        for i in 0..20 {
-            assert_close(m[i], identity[i]);
-        }
+        assert_eq!(m, create_identity_color_matrix());
     }
 }
 
@@ -299,10 +278,7 @@ mod create_levels_color_matrix {
     #[test]
     fn full_range_with_gamma_one_is_identity() {
         let m = create_levels_color_matrix(0.0, 1.0, 0.0, 1.0, 1.0);
-        let identity = create_identity_color_matrix();
-        for i in 0..20 {
-            assert_close(m[i], identity[i]);
-        }
+        assert_eq!(m, create_identity_color_matrix());
     }
 
     #[test]
@@ -326,7 +302,7 @@ mod create_opacity_color_matrix {
         let m = create_opacity_color_matrix(0.5);
         let result = apply_color_matrix_to_color(&m, WHITE);
         let a = result & 0xff;
-        assert!((a as i32 - 128).abs() <= 1);
+        assert!((a as f32 - 128.0).abs() < 0.5); // D1 f32 bound (TS: 0.5)
     }
 }
 
@@ -352,19 +328,13 @@ mod create_saturation_color_matrix {
     #[test]
     fn saturation_one_is_identity() {
         let m = create_saturation_color_matrix(1.0);
-        let identity = create_identity_color_matrix();
-        for i in 0..20 {
-            assert_close(m[i], identity[i]);
-        }
+        assert_eq!(m, create_identity_color_matrix());
     }
 
     #[test]
     fn saturation_zero_matches_grayscale_matrix() {
         let sat0 = create_saturation_color_matrix(0.0);
-        let gray = create_grayscale_color_matrix();
-        for i in 0..20 {
-            assert_close(sat0[i], gray[i]);
-        }
+        assert_eq!(sat0, create_grayscale_color_matrix());
     }
 }
 
@@ -462,9 +432,7 @@ mod fuse_color_matrices {
         let mut expected = [0.0_f32; 20];
         multiply_color_matrix(&mut expected, &c, &temp);
         let fused = fuse_color_matrices(&[&a, &b, &c]);
-        for i in 0..20 {
-            assert_close(fused[i], expected[i]);
-        }
+        assert_eq!(fused, expected);
     }
 
     #[test]
@@ -506,10 +474,8 @@ mod multiply_color_matrix {
             2.0, 0.0, 0.0, 0.0, -0.25, 0.0, 2.0, 0.0, 0.0, -0.25, 0.0, 0.0, 2.0, 0.0, -0.25, 0.0, 0.0,
             0.0, 1.0, 0.0,
         ];
-        for i in 0..20 {
-            assert_close(a[i], expected[i]);
-            assert_close(b[i], expected[i]);
-        }
+        assert_eq!(a, expected);
+        assert_eq!(b, expected);
     }
 
     #[test]
@@ -517,9 +483,7 @@ mod multiply_color_matrix {
         let identity = create_identity_color_matrix();
         let mut result = [0.0_f32; 20];
         multiply_color_matrix(&mut result, &identity, &identity);
-        for i in 0..20 {
-            assert_close(result[i], identity[i]);
-        }
+        assert_eq!(result, identity);
     }
 
     #[test]
@@ -527,9 +491,7 @@ mod multiply_color_matrix {
         let identity = create_identity_color_matrix();
         let mut out = [0.0_f32; 20];
         multiply_color_matrix(&mut out, &identity, &identity);
-        for i in 0..20 {
-            assert_close(out[i], identity[i]);
-        }
+        assert_eq!(out, identity);
     }
 
     #[test]
@@ -541,9 +503,7 @@ mod multiply_color_matrix {
         let mut a_mut = a;
         let a_copy = a;
         multiply_color_matrix(&mut a_mut, &a_copy, &b);
-        for i in 0..20 {
-            assert_close(a_mut[i], expected[i]);
-        }
+        assert_eq!(a_mut, expected);
     }
 
     #[test]
@@ -555,8 +515,6 @@ mod multiply_color_matrix {
         let mut b_mut = b;
         let b_copy = b;
         multiply_color_matrix(&mut b_mut, &a, &b_copy);
-        for i in 0..20 {
-            assert_close(b_mut[i], expected[i]);
-        }
+        assert_eq!(b_mut, expected);
     }
 }
