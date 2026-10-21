@@ -111,12 +111,13 @@ pub fn add_vector2(out: &mut Vector2, a: &Vector2, b: &Vector2) {
 
 ## Create / Initialize separation
 
-- `create_*` — allocates and initializes, returns by value
-- `initialize_*` — writes to pre-allocated `&mut T`
+- `create_*` allocates and initializes, and returns by value. Only domain objects (Entities) use `create_*` (D12).
+- `initialize_*` writes to pre-allocated `&mut T`. It chains base to derived and supports reuse.
+- Every entity struct has `pub runtime: EntityRuntime` (from flight-entity). Dispatch infrastructure (renderers, registries, host capabilities) has no runtime.
 
 ```rust
 pub fn create_vector2(x: f32, y: f32) -> Vector2 {
-    let mut out = Vector2::default();
+    let mut out: Vector2 = allocate_entity();
     initialize_vector2(&mut out, x, y);
     return out;
 }

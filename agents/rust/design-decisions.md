@@ -53,15 +53,19 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 - Feature packages (clipboard, dialog, …) are ported. They own their host-capability contracts (D8); a native Rust host is separate later work.
 - **Transpilation is deferred until a full Rust SDK exists.** The vocabulary and the lint protect transpilability in the meantime.
 
-## D12 Entity — DIRECTION (user, 2026-10-21); mechanics PROPOSED
+## D12 Entity — APPROVED, trial (user, 2026-10-21)
 
-- **Bring Entity back to reduce churn.** In TS it acts as a "FlightObject": every domain object is an Entity (even Vector2), while dispatch infrastructure (renderers, registry tables, pipelines, host capabilities) is plain data (flighthq/flight `agents/conventions/entity-boundary.md`).
-- **Keep:** the `create*` verb reserved for domain objects, and the `create_*` / `initialize_*` pair (already the Rust convention).
-- **Drop:** `allocateEntity` / `finishEntity`. That ceremony served an abandoned class-based transpile; a Rust struct literal is the allocation.
-- **Proposed representation, two tiers:**
-  - (a) Object entities (nodes, resources, render states, managers, effects, configs, signals, …) carry `pub runtime: AnySlot`, the TS `[EntityRuntimeKey]`.
-  - (b) Value entities (geometry, color structs and similar small Copy math types) carry no runtime field. That keeps `Copy` and a compact size in hot loops, and matches the approved flight-geometry. The transpiler restores the TS runtime slot on value entities mechanically.
-  - **Awaiting user confirmation of this split.**
+- Rust is the IR for TS. In TS, anything whose identity matters (reference comparison, OOP wrapper binding through the hidden runtime) must be an Entity. So **every domain object is an Entity, including value types such as `Vector2`**. Dispatch infrastructure (renderers, registry tables, pipelines, host capabilities) is plain data with no runtime (flighthq/flight `agents/conventions/entity-boundary.md`).
+- **Rust representation:** every entity struct has the field `pub runtime: EntityRuntime`.
+  - `EntityRuntime` (in flight-entity) wraps one thin pointer, 8 bytes, null when unused.
+  - `Clone` gives a fresh, empty runtime; this matches TS `cloneEntity`.
+  - `PartialEq` and `Debug` ignore it; `Default` is empty.
+  - Entity structs keep `#[derive(Clone, Debug, Default, PartialEq)]` and lose `Copy`.
+- **Construction:** `create_*` = `let mut out: T = allocate_entity(); initialize_*(&mut out, …); return out;`.
+  - `allocate_entity<T: Default>() -> T` is the single named allocation hook (TS: `allocateEntity`, which sets up the runtime slot and object shape).
+  - `initialize_*` chains base to derived and supports reuse.
+  - `finish_entity` is dropped: it is a type-only cast with no runtime effect. On the TS side, `allocateEntity` returns a mutable-under-construction type, so no cast is needed.
+- **flight-entity is the runtime layer**, holding `EntityRuntime`, `allocate_entity`, binding/uid, the IR aliases, and the D10 throw helpers. The user prefers *not* to hand-write a TS version; the structure is meant to work in both languages, so try to keep it transpilable. A hand-written per-target runtime is the fallback, decided at transpile time.
 
 ## D13 Export lanes — APPROVED (user, 2026-10-21)
 
