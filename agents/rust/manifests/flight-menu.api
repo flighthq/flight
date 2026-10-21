@@ -1,0 +1,115 @@
+src/contract.rs: pub use crate::menu::*;
+src/contract.rs: pub use crate::menu_templates::*;
+src/contract.rs: pub use crate::menu_watch::*;
+src/contract.rs: pub use crate::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::AppMenuDestroyedProviders;
+src/lib.rs: pub use contract::HostAppMenuCapability;
+src/lib.rs: pub use contract::HostAppMenuCapabilityMethods;
+src/lib.rs: pub use contract::HostMenuCapabilities;
+src/lib.rs: pub use contract::HostMenuHighlightCapability;
+src/lib.rs: pub use contract::HostMenuPopupCapability;
+src/lib.rs: pub use contract::HostMenuSelectCapability;
+src/lib.rs: pub use contract::MenuHighlight;
+src/lib.rs: pub use contract::MenuItemRole;
+src/lib.rs: pub use contract::MenuItemTemplate;
+src/lib.rs: pub use contract::MenuItemType;
+src/lib.rs: pub use contract::MenuPopupFuture;
+src/lib.rs: pub use contract::MenuPopupResult;
+src/lib.rs: pub use contract::MenuSelect;
+src/lib.rs: pub use contract::MenuSignals;
+src/lib.rs: pub use contract::MenuSignalsState;
+src/lib.rs: pub use contract::MenuSubscribe;
+src/lib.rs: pub use contract::MenuUnsubscribe;
+src/lib.rs: pub use contract::WellKnownMenuItemRoleValue;
+src/lib.rs: pub use contract::attach_menu_highlight;
+src/lib.rs: pub use contract::attach_menu_select;
+src/lib.rs: pub use contract::clone_menu_template;
+src/lib.rs: pub use contract::create_default_app_menu_template;
+src/lib.rs: pub use contract::create_default_edit_menu_template;
+src/lib.rs: pub use contract::create_default_file_menu_template;
+src/lib.rs: pub use contract::create_default_help_menu_template;
+src/lib.rs: pub use contract::create_default_view_menu_template;
+src/lib.rs: pub use contract::create_default_window_menu_template;
+src/lib.rs: pub use contract::create_menu_highlight;
+src/lib.rs: pub use contract::create_menu_item_template;
+src/lib.rs: pub use contract::create_menu_select;
+src/lib.rs: pub use contract::destroy_app_menu;
+src/lib.rs: pub use contract::detach_menu_highlight;
+src/lib.rs: pub use contract::detach_menu_select;
+src/lib.rs: pub use contract::dispose_menu_highlight;
+src/lib.rs: pub use contract::dispose_menu_select;
+src/lib.rs: pub use contract::enable_menu_signals;
+src/lib.rs: pub use contract::get_menu_signals;
+src/lib.rs: pub use contract::set_app_menu;
+src/lib.rs: pub use contract::show_context_menu;
+src/lib.rs: pub use contract::validate_menu_item_template;
+src/menu.rs: impl HostAppMenuCapabilityMethods for Ref<HostAppMenuCapability>
+src/menu.rs: impl HostAppMenuCapabilityMethods for Ref<HostAppMenuCapability> :: fn set_app_menu(&self, items: &[MenuItemTemplate]) -> bool
+src/menu.rs: impl HostMenuPopupCapability :: async fn show_context_menu(&self, items: &[MenuItemTemplate], x: f32, y: f32, signals: Option<Ref<MenuSignals>>,) -> MenuPopupResult
+src/menu.rs: impl MenuSignalsState :: fn enable_signals(&mut self) -> Ref<MenuSignals>
+src/menu.rs: impl MenuSignalsState :: fn signals(&self) -> Option<Ref<MenuSignals>>
+src/menu.rs: pub async fn show_context_menu(host_menu_popup: &HostMenuPopupCapability, items: &[MenuItemTemplate], x: f32, y: f32, signals: Option<Ref<MenuSignals>>,) -> MenuPopupResult
+src/menu.rs: pub fn clone_menu_template(template: &MenuItemTemplate) -> MenuItemTemplate
+src/menu.rs: pub fn create_menu_item_template(template: Option<&MenuItemTemplate>,) -> NonEntityCreateResult<MenuItemTemplate>
+src/menu.rs: pub fn destroy_app_menu(released: &mut AppMenuDestroyedProviders, host_app_menu: &[Ref<HostAppMenuCapability>],)
+src/menu.rs: pub fn enable_menu_signals(state: &mut MenuSignalsState) -> Ref<MenuSignals>
+src/menu.rs: pub fn get_menu_signals(state: &MenuSignalsState) -> Option<Ref<MenuSignals>>
+src/menu.rs: pub fn set_app_menu(host_app_menu: &Ref<HostAppMenuCapability>, items: &[MenuItemTemplate],) -> bool
+src/menu.rs: pub fn validate_menu_item_template(template: &MenuItemTemplate) -> Option<String>
+src/menu.rs: pub trait HostAppMenuCapabilityMethods { fn set_app_menu(&self, items: &[MenuItemTemplate]) -> bool; }
+src/menu_templates.rs: pub fn create_default_app_menu_template(app_name: &str) -> NonEntityCreateResult<MenuItemTemplate>
+src/menu_templates.rs: pub fn create_default_edit_menu_template() -> NonEntityCreateResult<MenuItemTemplate>
+src/menu_templates.rs: pub fn create_default_file_menu_template() -> NonEntityCreateResult<MenuItemTemplate>
+src/menu_templates.rs: pub fn create_default_help_menu_template() -> NonEntityCreateResult<MenuItemTemplate>
+src/menu_templates.rs: pub fn create_default_view_menu_template() -> NonEntityCreateResult<MenuItemTemplate>
+src/menu_templates.rs: pub fn create_default_window_menu_template() -> NonEntityCreateResult<MenuItemTemplate>
+src/menu_watch.rs: impl HostMenuHighlightCapability :: fn attach_highlight(&self, highlight: &mut MenuHighlight)
+src/menu_watch.rs: impl HostMenuSelectCapability :: fn attach_select(&self, select: &mut MenuSelect)
+src/menu_watch.rs: impl MenuHighlight :: fn detach(&mut self)
+src/menu_watch.rs: impl MenuHighlight :: fn dispose(&mut self)
+src/menu_watch.rs: impl MenuHighlight :: fn new() -> Self
+src/menu_watch.rs: impl MenuSelect :: fn detach(&mut self)
+src/menu_watch.rs: impl MenuSelect :: fn dispose(&mut self)
+src/menu_watch.rs: impl MenuSelect :: fn new() -> Self
+src/menu_watch.rs: pub fn attach_menu_highlight(host_menu_highlight: &HostMenuHighlightCapability, highlight: &mut MenuHighlight,)
+src/menu_watch.rs: pub fn attach_menu_select(host_menu_select: &HostMenuSelectCapability, select: &mut MenuSelect)
+src/menu_watch.rs: pub fn create_menu_highlight() -> MenuHighlight
+src/menu_watch.rs: pub fn create_menu_select() -> MenuSelect
+src/menu_watch.rs: pub fn detach_menu_highlight(highlight: &mut MenuHighlight)
+src/menu_watch.rs: pub fn detach_menu_select(select: &mut MenuSelect)
+src/menu_watch.rs: pub fn dispose_menu_highlight(highlight: &mut MenuHighlight)
+src/menu_watch.rs: pub fn dispose_menu_select(select: &mut MenuSelect)
+src/menu_watch.rs: pub fn initialize_menu_highlight(out: &mut MenuHighlight)
+src/menu_watch.rs: pub fn initialize_menu_select(out: &mut MenuSelect)
+src/types.rs: #[derive(Clone)] pub struct HostAppMenuCapability { pub destroy: Option<Arc<dyn Fn() + Send + Sync>>, pub set_app_menu: Arc<dyn Fn(&[MenuItemTemplate]) -> bool + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostMenuHighlightCapability { pub subscribe: MenuSubscribe, }
+src/types.rs: #[derive(Clone)] pub struct HostMenuPopupCapability { pub popup: Arc<dyn Fn(Vec<MenuItemTemplate>, f32, f32) -> MenuPopupFuture + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostMenuSelectCapability { pub subscribe: MenuSubscribe, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MenuItemType { Normal, Separator, Submenu, Checkbox, Radio, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum WellKnownMenuItemRoleValue { Copy, Cut, Delete, Paste, PasteAndMatchStyle, Redo, SelectAll, ToggleSpellChecker, Undo, About, Close, Front, Hide, HideOthers, MergeAllWindows, Minimize, MoveTabToNewWindow, Quit, SelectNextTab, SelectPreviousTab, ToggleTabBar, Unhide, Zoom, ForceReload, Reload, ResetZoom, ToggleDevTools, ToggleFullscreen, ZoomIn, ZoomOut, Help, Services, StartSpeaking, StopSpeaking, ClearRecentDocuments, RecentDocuments, AppMenu, EditMenu, FileMenu, HelpMenu, ShareMenu, ViewMenu, WindowMenu, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct MenuItemTemplate { pub id: Option<String>, pub label: Option<String>, pub type_: Option<MenuItemType>, pub role: Option<MenuItemRole>, pub accelerator: Option<String>, pub enabled: Option<bool>, pub checked: Option<bool>, pub visible: Option<bool>, pub sublabel: Option<String>, pub tool_tip: Option<String>, pub submenu: Option<Vec<MenuItemTemplate>>, }
+src/types.rs: #[derive(Clone, Default)] pub struct AppMenuDestroyedProviders { pub released: Vec<Ref<HostAppMenuCapability>>, }
+src/types.rs: #[derive(Clone, Default)] pub struct HostMenuCapabilities { pub app: Option<Ref<HostAppMenuCapability>>, pub highlight: Option<HostMenuHighlightCapability>, pub popup: Option<HostMenuPopupCapability>, pub select: Option<HostMenuSelectCapability>, }
+src/types.rs: #[derive(Default)] pub struct MenuHighlight { runtime: EntityRuntimeSlot, pub on_menu_item_highlight: Signal<String>, }
+src/types.rs: #[derive(Default)] pub struct MenuSelect { runtime: EntityRuntimeSlot, pub on_menu_item_select: Signal<String>, }
+src/types.rs: #[derive(Default)] pub struct MenuSignals { runtime: EntityRuntimeSlot, pub on_context_menu_close: Signal<()>, pub on_context_menu_open: Signal<()>, }
+src/types.rs: #[derive(Default)] pub struct MenuSignalsState { pub signals: Option<Ref<MenuSignals>>, }
+src/types.rs: impl Entity for MenuHighlight
+src/types.rs: impl Entity for MenuHighlight :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for MenuHighlight :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for MenuSelect
+src/types.rs: impl Entity for MenuSelect :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for MenuSelect :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for MenuSignals
+src/types.rs: impl Entity for MenuSignals :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for MenuSignals :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub fn get_menu_item_type_string(value: MenuItemType) -> &'static str
+src/types.rs: pub fn get_well_known_menu_item_role_value_string(value: WellKnownMenuItemRoleValue,) -> &'static str
+src/types.rs: pub fn parse_menu_item_type(value: &str) -> Option<MenuItemType>
+src/types.rs: pub fn parse_well_known_menu_item_role_value(value: &str) -> Option<WellKnownMenuItemRoleValue>
+src/types.rs: pub type MenuItemRole = String;
+src/types.rs: pub type MenuPopupFuture = Pin<Box<dyn Future<Output = MenuPopupResult> + Send>>;
+src/types.rs: pub type MenuPopupResult = Result<Option<String>, FlightError>;
+src/types.rs: pub type MenuSubscribe = Arc<dyn Fn(Arc<dyn Fn(&str) + Send + Sync>) -> MenuUnsubscribe + Send + Sync>;
+src/types.rs: pub type MenuUnsubscribe = Arc<dyn Fn() + Send + Sync>;
