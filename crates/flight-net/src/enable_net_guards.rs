@@ -68,7 +68,6 @@ mod message_tests {
         );
         let mut entries = Vec::new();
         get_memory_log_sink_entries(&mut entries, &sink);
-        let entries = entries;
         assert_eq!(entries.len(), 2);
         assert_eq!(entries[0].timestamp_ms, 10.0);
         assert_eq!(entries[1].timestamp_ms, 50.0);
@@ -112,7 +111,6 @@ mod message_tests {
         );
         let mut entries = Vec::new();
         get_memory_log_sink_entries(&mut entries, &sink);
-        let entries = entries;
         let LogData::Record(fields) = &entries[0].data else {
             panic!("expected metadata");
         };

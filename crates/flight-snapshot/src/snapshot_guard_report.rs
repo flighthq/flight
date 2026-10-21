@@ -40,7 +40,6 @@ mod tests {
         report_snapshot_source_findings(&log_state, &clock, &findings(&["Set"], false));
         let mut entries = Vec::new();
         get_memory_log_sink_entries(&mut entries, &sink);
-        let entries = entries;
         assert_eq!(entries.len(), 1);
         let LogData::Message(message) = &entries[0].data else {
             panic!("expected a message");
@@ -63,7 +62,6 @@ mod tests {
         report_snapshot_source_findings(&log_state, &clock, &findings(&["Map"], true));
         let mut entries = Vec::new();
         get_memory_log_sink_entries(&mut entries, &sink);
-        let entries = entries;
         assert_eq!(entries.len(), 2);
         let LogData::Message(message) = &entries[1].data else {
             panic!("expected a message");
