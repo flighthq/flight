@@ -36,7 +36,7 @@ src/image_source_dimensions.rs: pub fn unregister_host_image_dimension_resolver(
 src/image_test_helper.rs: pub fn register_test_image_dimension_resolver(state: &mut ImageResolverState)
 src/image_test_helper.rs: pub fn test_image_dimension_resolver(source: &Arc<HostImageSource>, out: &mut HostImageDimensions,) -> bool
 src/image_test_helper.rs: pub fn unregister_test_image_dimension_resolver(state: &mut ImageResolverState)
-src/image_texture.rs: pub fn create_texture_from_image_resource(reference: &ImageResourceReference, opts: Option<&CreateTexture2DOptions>,) -> Ref<Texture2D>
+src/image_texture.rs: pub fn create_texture_from_image_resource(reference: &ImageResourceReference, opts: Option<&CreateTexture2DOptions>,) -> Ref<Texture>
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::COMPRESSED_IMAGE_TEXTURE_SOURCE_KIND;
 src/lib.rs: pub use contract::CompressedImageData;
@@ -120,7 +120,7 @@ src/sugar.rs: impl ImageResourceMethods for Ref<ImageResource> :: fn clone_resou
 src/sugar.rs: impl ImageResourceMethods for Ref<ImageResource> :: fn invalidate(&self, state: &ImageResolverState)
 src/sugar.rs: impl ImageResourceMethods for Ref<ImageResource> :: fn is_empty(&self) -> bool
 src/sugar.rs: impl ImageResourceReference :: async fn resolve(&self, image_decode: &HostImageDecodeCapabilities, fetch: &ImageResourceFetch, signal: &AbortSignal, fallback_decode: Option<&ImageDecodeFallback>, state: &ImageResolverState,) -> Option<TextureSourceRef>
-src/sugar.rs: impl ImageResourceReference :: fn create_texture(&self, opts: Option<&CreateTexture2DOptions>) -> Ref<Texture2D>
+src/sugar.rs: impl ImageResourceReference :: fn create_texture(&self, opts: Option<&CreateTexture2DOptions>) -> Ref<Texture>
 src/sugar.rs: impl ImageResourceReference :: fn explain_resolution(&self) -> ImageResourceReferenceResolutionExplanation
 src/sugar.rs: impl ImageResourceReference :: fn reset_failed(&self) -> bool
 src/sugar.rs: impl ImageUrlOriginContext :: fn is_same_origin(&self, url: &str) -> bool
@@ -200,8 +200,8 @@ src/types.rs: pub fn parse_image_cross_origin(value: &str) -> Option<ImageCrossO
 src/types.rs: pub fn parse_image_operation(value: &str) -> Option<ImageOperation>
 src/types.rs: pub fn parse_image_resource_failure_kind(value: &str) -> Option<ImageResourceFailureKind>
 src/types.rs: pub fn parse_image_resource_reference_kind(value: &str) -> Option<ImageResourceReferenceKind>
-src/types.rs: pub struct EmbeddedImageResourceReference { pub alpha_type: AlphaType, pub bitmap_composition: Option<ImageBitmapComposition>, pub bytes: Ref<Box<Uint8Array>>, pub failure: Option<Ref<ImageResourceFailure>>, pub mime_type: Option<String>, pub state: ResourceResolutionState, pub textures: Vec<Ref<Texture2D>>, runtime: EntityRuntimeSlot, }
-src/types.rs: pub struct ExternalImageResourceReference { pub base_path: Option<String>, pub failure: Option<Ref<ImageResourceFailure>>, pub mime_type: Option<String>, pub state: ResourceResolutionState, pub textures: Vec<Ref<Texture2D>>, pub uri: String, runtime: EntityRuntimeSlot, }
+src/types.rs: pub struct EmbeddedImageResourceReference { pub alpha_type: AlphaType, pub bitmap_composition: Option<ImageBitmapComposition>, pub bytes: Ref<Box<Uint8Array>>, pub failure: Option<Ref<ImageResourceFailure>>, pub mime_type: Option<String>, pub state: ResourceResolutionState, pub textures: Vec<Ref<Texture>>, runtime: EntityRuntimeSlot, }
+src/types.rs: pub struct ExternalImageResourceReference { pub base_path: Option<String>, pub failure: Option<Ref<ImageResourceFailure>>, pub mime_type: Option<String>, pub state: ResourceResolutionState, pub textures: Vec<Ref<Texture>>, pub uri: String, runtime: EntityRuntimeSlot, }
 src/types.rs: pub type HostImageDimensionResolver = Arc<dyn Fn(&Arc<HostImageSource>, &mut HostImageDimensions) -> bool + Send + Sync>;
 src/types.rs: pub type HostImageResourceFuture = Pin<Box<dyn Future<Output = Ref<ImageResource>> + Send>>;
 src/types.rs: pub type ImageBitmapComposer = Arc<dyn Fn(Option<&DecodedImage>, &Uint8Array) -> Option<Ref<Bitmap>> + Send + Sync>;
