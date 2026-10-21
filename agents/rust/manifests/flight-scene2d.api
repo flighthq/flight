@@ -14,6 +14,7 @@ src/display_object.rs: pub fn get_display_object_runtime(source: &DisplayObject)
 src/display_object.rs: pub fn get_node2d_runtime(source: &dyn Node2D) -> &Node2DRuntime
 src/display_object.rs: pub fn is_node2d(node: &dyn Node) -> bool
 src/display_object.rs: pub fn set_node2d_clip(source: &Node2DRef, value: Option<Ref<ClipRegion>>)
+src/display_object.rs: pub static NODE2D_TRAITS_KEY: LazyLock<Arc<NodeTraitsKey>>
 src/display_object_animation.rs: pub fn apply_animation_clip_to_node2d(clip: &AnimationClip, time: f32)
 src/display_object_animation.rs: pub fn get_node2d_animation_path_string(value: Node2DAnimationPath) -> &'static str
 src/display_object_animation.rs: pub fn parse_node2d_animation_path(value: &str) -> Option<Node2DAnimationPath>
@@ -182,7 +183,7 @@ src/types.rs: pub const SCALE9_SPRITE_KIND: &str
 src/types.rs: pub const SPRITE_KIND: &str
 src/types.rs: pub struct Node2DFields { node: NodeFields, state: Node2DRuntime, pub alpha: f32, pub blend_mode: Option<BlendMode>, pub clip: Option<Ref<flight_clip::ClipRegion>>, pub material: Option<Ref<dyn Material2D>>, pub material_data: Option<Ref<dyn MaterialData>>, pub pivot_x: f32, pub pivot_y: f32, pub rotation: f32, pub scale_x: f32, pub scale_y: f32, pub skew_x: f32, pub skew_y: f32, pub visible: bool, pub x: f32, pub y: f32, }
 src/types.rs: pub struct Node2DRuntime { pub appearance: HasAppearanceRuntime, pub bounds: HasBoundsRectangleRuntime, pub scene2d: Option<Weak<RwLock<Scene2D>>>, pub transform2d: HasTransform2DRuntime, }
-src/types.rs: pub struct Node2DTraitsKey { pub(crate) narrow: fn(&dyn Node) -> Option<&dyn Node2D>, }
+src/types.rs: pub struct Node2DTraitsKey { pub(crate) narrow: fn(&dyn Node) -> Option<&dyn Node2D>, pub(crate) narrow_mut: fn(&mut dyn Node) -> Option<&mut dyn Node2D>, }
 src/types.rs: pub struct Scale9Sprite { node: Node2DFields, pub data: Scale9SpriteData, pub(crate) sprite_runtime: Ref<Scale9SpriteRuntime>, }
 src/types.rs: pub struct Scene2D { runtime: EntityRuntimeSlot, pub(crate) state: Option<Scene2DRuntime>, pub align: ViewportAlign, pub color: Option<u32>, pub root: Node2DRef, pub scale_mode: ViewportScaleMode, pub scene2d_height: f64, pub scene2d_width: f64, }
 src/types.rs: pub struct Scene2DSignals { runtime: EntityRuntimeSlot, pub on_fullscreen_changed: Signal<()>, pub on_orientation_changed: Signal<()>, pub on_resize: Signal<()>, }
