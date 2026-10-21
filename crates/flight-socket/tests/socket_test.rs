@@ -1,6 +1,9 @@
 use std::sync::{Arc, Mutex, RwLock};
 
-use flight_buffer::{ArrayBuffer, create_array_buffer_from_bytes, equals_array_buffer};
+use flight_buffer::{
+    ArrayBuffer, create_array_buffer_from_bytes, equals_array_buffer, get_array_buffer_byte_length,
+    get_array_buffer_storage,
+};
 use flight_entity::{Ref, allocate_entity};
 use flight_signals::connect_signal;
 use flight_socket::contract::*;
@@ -376,6 +379,16 @@ mod create_socket {
         assert!(!received[0].binary);
         assert_binary_frame(&received[1].data, &frame_buffer);
         assert!(received[1].binary);
+        match &received[1].data {
+            SocketMessageData::Binary(received_buffer) => {
+                get_array_buffer_storage(received_buffer).write().unwrap()[0] = 7;
+            }
+            SocketMessageData::Text(_) => panic!("expected a binary frame"),
+        }
+        assert_eq!(
+            get_array_buffer_storage(&frame_buffer).read().unwrap()[0],
+            7
+        );
         let pointers = pointers.lock().unwrap();
         assert_eq!(pointers[0], &text_message as *const SocketMessage as usize);
         assert_eq!(
@@ -865,6 +878,17 @@ mod send_socket_message {
         let sent = fake.sent.lock().unwrap();
         assert_eq!(sent.len(), 1);
         assert_binary_frame(&sent[0], &frame_buffer);
+        assert_eq!(get_array_buffer_byte_length(&frame_buffer), 3);
+        match &sent[0] {
+            SocketMessageData::Binary(received) => {
+                get_array_buffer_storage(received).write().unwrap()[1] = 42;
+            }
+            SocketMessageData::Text(_) => panic!("expected a binary frame"),
+        }
+        assert_eq!(
+            get_array_buffer_storage(&frame_buffer).read().unwrap()[1],
+            42
+        );
         assert_eq!(
             fake.sent_ptrs.lock().unwrap()[0],
             &frame as *const SocketMessageData as usize
