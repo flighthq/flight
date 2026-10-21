@@ -1,0 +1,197 @@
+src/contract.rs: pub use super::display_object::*;
+src/contract.rs: pub use super::display_object_animation::*;
+src/contract.rs: pub use super::html_view::*;
+src/contract.rs: pub use super::scale9_sprite::*;
+src/contract.rs: pub use super::scene2d::*;
+src/contract.rs: pub use super::scene_kind_usage::*;
+src/contract.rs: pub use super::sprite::*;
+src/contract.rs: pub use super::types::*;
+src/display_object.rs: pub fn create_display_object(obj: Option<&PartialNode2D>) -> Ref<DisplayObject>
+src/display_object.rs: pub fn create_display_object_runtime() -> DisplayObjectRuntime
+src/display_object.rs: pub fn create_node2d<T: Node2D + Default>(kind: Kind, obj: Option<&PartialNode2D>, create_node2d_runtime_factory: Option<Node2DRuntimeFactory>,) -> T
+src/display_object.rs: pub fn create_node2d_runtime(methods: Option<&Node2DRuntimeMethods>) -> Node2DRuntime
+src/display_object.rs: pub fn get_display_object_runtime(source: &DisplayObject) -> &DisplayObjectRuntime
+src/display_object.rs: pub fn get_node2d_runtime(source: &dyn Node2D) -> &Node2DRuntime
+src/display_object.rs: pub fn is_node2d(node: &dyn Node) -> bool
+src/display_object.rs: pub fn set_node2d_clip(source: &Node2DRef, value: Option<Ref<ClipRegion>>)
+src/display_object_animation.rs: pub fn apply_animation_clip_to_node2d(clip: &AnimationClip, time: f32)
+src/display_object_animation.rs: pub fn get_node2d_animation_path_string(value: Node2DAnimationPath) -> &'static str
+src/display_object_animation.rs: pub fn parse_node2d_animation_path(value: &str) -> Option<Node2DAnimationPath>
+src/html_view.rs: pub fn compute_html_view_local_bounds_rectangle(out: &mut Rectangle, source: &dyn Node)
+src/html_view.rs: pub fn create_html_view(obj: Option<&PartialHtmlView>) -> Ref<HtmlView>
+src/html_view.rs: pub fn create_html_view_data(data: Option<&HtmlViewDataOptions>) -> HtmlViewData
+src/html_view.rs: pub fn create_html_view_runtime() -> HtmlViewRuntime
+src/html_view.rs: pub fn get_html_view_runtime(source: &HtmlView) -> &HtmlViewRuntime
+src/html_view.rs: pub fn initialize_html_view_data(out: &mut HtmlViewData, data: Option<&HtmlViewDataOptions>)
+src/html_view.rs: pub fn set_html_view_size(source: &Ref<HtmlView>, width: f64, height: f64)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::*;
+src/lib.rs: pub use sugar::{ HtmlViewRefMethods, Node2DRefMethods, Scene2DRefMethods };
+src/scale9_sprite.rs: pub fn create_scale9_sprite(scale9_grid: &Rectangle, obj: Option<&PartialScale9Sprite>,) -> Ref<Scale9Sprite>
+src/scale9_sprite.rs: pub fn create_scale9_sprite_data(scale9_grid: &Rectangle, data: Option<&Scale9SpriteDataOptions>,) -> Scale9SpriteData
+src/scale9_sprite.rs: pub fn create_scale9_sprite_runtime() -> Node2DRuntime
+src/scale9_sprite.rs: pub fn get_scale9_sprite_runtime(source: &Scale9Sprite) -> Ref<Scale9SpriteRuntime>
+src/scale9_sprite.rs: pub fn initialize_scale9_sprite_data(out: &mut Scale9SpriteData, scale9_grid: &Rectangle, data: Option<&Scale9SpriteDataOptions>,)
+src/scene2d.rs: pub fn create_scene2d(obj: Option<&Scene2DOptions>) -> Ref<Scene2D>
+src/scene2d.rs: pub fn create_scene2d_runtime() -> Scene2DRuntime
+src/scene2d.rs: pub fn create_scene2d_signals() -> Ref<Scene2DSignals>
+src/scene2d.rs: pub fn enable_scene2d_signals(source: &mut Scene2D) -> Ref<Scene2DSignals>
+src/scene2d.rs: pub fn get_scene2d_align_string(value: Scene2DAlign) -> &'static str
+src/scene2d.rs: pub fn get_scene2d_display_state_string(value: Scene2DDisplayState) -> &'static str
+src/scene2d.rs: pub fn get_scene2d_quality_string(value: Scene2DQuality) -> &'static str
+src/scene2d.rs: pub fn get_scene2d_root(source: &Node2DRef) -> Option<Ref<Scene2D>>
+src/scene2d.rs: pub fn get_scene2d_runtime(source: &mut Scene2D) -> &Scene2DRuntime
+src/scene2d.rs: pub fn get_scene2d_scale_mode_string(value: Scene2DScaleMode) -> &'static str
+src/scene2d.rs: pub fn get_scene2d_signals(source: &Scene2D) -> Option<Ref<Scene2DSignals>>
+src/scene2d.rs: pub fn initialize_scene2d(out: &mut Scene2D, root: Node2DRef, obj: Option<&Scene2DOptions>)
+src/scene2d.rs: pub fn initialize_scene2d_signals(out: &mut Scene2DSignals)
+src/scene2d.rs: pub fn parse_scene2d_align(value: &str) -> Option<Scene2DAlign>
+src/scene2d.rs: pub fn parse_scene2d_display_state(value: &str) -> Option<Scene2DDisplayState>
+src/scene2d.rs: pub fn parse_scene2d_quality(value: &str) -> Option<Scene2DQuality>
+src/scene2d.rs: pub fn parse_scene2d_scale_mode(value: &str) -> Option<Scene2DScaleMode>
+src/scene2d.rs: pub fn set_scene2d_size(source: &Ref<Scene2D>, width: f64, height: f64)
+src/scene_kind_usage.rs: pub fn create_scene2d_kind_usage() -> Scene2DKindUsage
+src/scene_kind_usage.rs: pub fn get_scene2d_kind_usage(out: &mut Scene2DKindUsage, scene: &Scene2D)
+src/scene_kind_usage.rs: pub fn initialize_scene2d_kind_usage(out: &mut Scene2DKindUsage)
+src/sprite.rs: pub fn clone_sprite(source: &Sprite) -> Ref<Sprite>
+src/sprite.rs: pub fn compute_sprite_local_bounds_rectangle(out: &mut Rectangle, source: &dyn Node)
+src/sprite.rs: pub fn create_sprite(obj: Option<&PartialSprite>) -> Ref<Sprite>
+src/sprite.rs: pub fn create_sprite_data(data: Option<&SpriteDataOptions>) -> SpriteData
+src/sprite.rs: pub fn create_sprite_renderer_data(source: &dyn Node) -> SpriteIdentityRendererData
+src/sprite.rs: pub fn create_sprite_runtime() -> Node2DRuntime
+src/sprite.rs: pub fn get_sprite_runtime(source: &Sprite) -> Ref<SpriteRuntime>
+src/sprite.rs: pub fn initialize_sprite_data(out: &mut SpriteData, data: Option<&SpriteDataOptions>)
+src/sprite.rs: pub fn initialize_sprite_renderer_data(out: &mut SpriteIdentityRendererData, source: &dyn Node)
+src/sprite.rs: pub fn is_sprite_renderer_dirty(source: &dyn Node, renderer_data: Option<&mut dyn RendererData>,) -> bool
+src/sugar.rs: impl DisplayObject :: fn get_display_object_runtime(&self) -> &DisplayObjectRuntime
+src/sugar.rs: impl HtmlView :: fn get_html_view_runtime(&self) -> &HtmlViewRuntime
+src/sugar.rs: impl HtmlViewData :: fn initialize_html_view_data(&mut self, data: Option<&HtmlViewDataOptions>)
+src/sugar.rs: impl HtmlViewRefMethods for Ref<HtmlView>
+src/sugar.rs: impl HtmlViewRefMethods for Ref<HtmlView> :: fn set_html_view_size(&self, width: f64, height: f64)
+src/sugar.rs: impl Node2DAnimationPath :: fn get_node2d_animation_path_string(self) -> &'static str
+src/sugar.rs: impl Node2DRefMethods for Node2DRef
+src/sugar.rs: impl Node2DRefMethods for Node2DRef :: fn get_scene2d_root(&self) -> Option<Ref<Scene2D>>
+src/sugar.rs: impl Node2DRefMethods for Node2DRef :: fn set_node2d_clip(&self, value: Option<Ref<ClipRegion>>)
+src/sugar.rs: impl Scale9Sprite :: fn get_scale9_sprite_runtime(&self) -> Ref<Scale9SpriteRuntime>
+src/sugar.rs: impl Scale9SpriteData :: fn initialize_scale9_sprite_data(&mut self, scale9_grid: &flight_geometry::Rectangle, data: Option<&Scale9SpriteDataOptions>,)
+src/sugar.rs: impl Scene2D :: fn enable_scene2d_signals(&mut self) -> Ref<Scene2DSignals>
+src/sugar.rs: impl Scene2D :: fn get_scene2d_runtime(&mut self) -> &Scene2DRuntime
+src/sugar.rs: impl Scene2D :: fn get_scene2d_signals(&self) -> Option<Ref<Scene2DSignals>>
+src/sugar.rs: impl Scene2D :: fn initialize_scene2d(&mut self, root: Node2DRef, obj: Option<&Scene2DOptions>)
+src/sugar.rs: impl Scene2DAlign :: fn get_scene2d_align_string(self) -> &'static str
+src/sugar.rs: impl Scene2DDisplayState :: fn get_scene2d_display_state_string(self) -> &'static str
+src/sugar.rs: impl Scene2DKindUsage :: fn initialize_scene2d_kind_usage(&mut self)
+src/sugar.rs: impl Scene2DQuality :: fn get_scene2d_quality_string(self) -> &'static str
+src/sugar.rs: impl Scene2DRefMethods for Ref<Scene2D>
+src/sugar.rs: impl Scene2DRefMethods for Ref<Scene2D> :: fn set_scene2d_size(&self, width: f64, height: f64)
+src/sugar.rs: impl Scene2DScaleMode :: fn get_scene2d_scale_mode_string(self) -> &'static str
+src/sugar.rs: impl Scene2DSignals :: fn initialize_scene2d_signals(&mut self)
+src/sugar.rs: impl Sprite :: fn clone_sprite(&self) -> Ref<Sprite>
+src/sugar.rs: impl Sprite :: fn get_sprite_runtime(&self) -> Ref<SpriteRuntime>
+src/sugar.rs: impl SpriteData :: fn initialize_sprite_data(&mut self, data: Option<&SpriteDataOptions>)
+src/sugar.rs: impl dyn Node2D :: fn get_node2d_runtime(&self) -> &Node2DRuntime
+src/sugar.rs: pub trait HtmlViewRefMethods { fn set_html_view_size(&self, width: f64, height: f64); }
+src/sugar.rs: pub trait Node2DRefMethods { fn get_scene2d_root(&self) -> Option<Ref<Scene2D>>; fn set_node2d_clip(&self, value: Option<Ref<ClipRegion>>); }
+src/sugar.rs: pub trait Scene2DRefMethods { fn set_scene2d_size(&self, width: f64, height: f64); }
+src/types.rs: #[derive(Clone)] pub struct Node2DAnimationTarget { pub node: Node2DRef, pub path: Node2DAnimationPath, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Node2DAnimationPath { Alpha, Pivot, PivotX, PivotY, Position, Rotation, Scale, ScaleX, ScaleY, Skew, SkewX, SkewY, Visible, X, Y, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Scene2DAlign { Bottom, BottomLeft, BottomRight, Left, Right, Top, TopLeft, TopRight, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Scene2DDisplayState { Fullscreen, FullscreenInteractive, Normal, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Scene2DQuality { Best, High, Low, Medium, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Scene2DScaleMode { ExactFit, NoBorder, NoScale, ShowAll, }
+src/types.rs: #[derive(Clone, Debug)] pub struct SpriteRuntime { pub local_bounds_texture: Option<Ref<Texture>>, pub local_bounds_texture_version: i64, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct Scale9SpriteData { runtime: EntityRuntimeSlot, pub scale9_grid: Rectangle, pub texture: Option<Ref<Texture>>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct Scale9SpriteDataOptions { pub texture: Option<Ref<Texture>>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct SpriteData { runtime: EntityRuntimeSlot, pub texture: Option<Ref<Texture>>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct SpriteDataOptions { pub texture: Option<Ref<Texture>>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct Scene2DKindUsage { runtime: EntityRuntimeSlot, pub blend_modes: Vec<BlendMode>, pub material_kinds: Vec<Kind>, pub node_kinds: Vec<Kind>, pub shape_command_keys: Vec<String>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct Scene2DOptions { pub align: Option<ViewportAlign>, pub color: Option<u32>, pub scale_mode: Option<ViewportScaleMode>, pub scene2d_height: Option<f64>, pub scene2d_width: Option<f64>, }
+src/types.rs: #[derive(Clone, Default)] pub struct HtmlViewData { runtime: EntityRuntimeSlot, pub element: Unknown, pub height: f64, pub width: f64, }
+src/types.rs: #[derive(Clone, Default)] pub struct HtmlViewDataOptions { pub element: Unknown, pub height: Option<f64>, pub width: Option<f64>, }
+src/types.rs: #[derive(Clone, Default)] pub struct Node2DRuntimeMethods { pub compute_local_bounds_rectangle: Option<NodeLocalBoundsComputer>, pub is_local_bounds_rectangle_valid: Option<NodeLocalBoundsValidity>, }
+src/types.rs: #[derive(Clone, Default)] pub struct PartialHtmlView { pub data: Option<HtmlViewDataOptions>, pub node: PartialNode2D, }
+src/types.rs: #[derive(Clone, Default)] pub struct PartialNode2D { pub alpha: Option<f32>, pub blend_mode: Option<BlendMode>, pub clip: Option<Ref<flight_clip::ClipRegion>>, pub enabled: Option<bool>, pub material: Option<Ref<dyn Material2D>>, pub material_data: Option<Ref<dyn MaterialData>>, pub name: Option<String>, pub pivot_x: Option<f32>, pub pivot_y: Option<f32>, pub rotation: Option<f32>, pub scale_x: Option<f32>, pub scale_y: Option<f32>, pub skew_x: Option<f32>, pub skew_y: Option<f32>, pub visible: Option<bool>, pub x: Option<f32>, pub y: Option<f32>, }
+src/types.rs: #[derive(Clone, Default)] pub struct PartialScale9Sprite { pub data: Option<Scale9SpriteDataOptions>, pub node: PartialNode2D, }
+src/types.rs: #[derive(Clone, Default)] pub struct PartialSprite { pub data: Option<SpriteDataOptions>, pub node: PartialNode2D, }
+src/types.rs: #[derive(Clone, Default)] pub struct Scene2DRuntime { pub scene2d_signals: Option<Ref<Scene2DSignals>>, }
+src/types.rs: #[derive(Default)] pub struct DisplayObject { node: Node2DFields, }
+src/types.rs: #[derive(Default)] pub struct HtmlView { node: Node2DFields, pub data: HtmlViewData, }
+src/types.rs: #[derive(Default)] pub struct SpriteIdentityRendererData { renderer_data: RendererDataFields, pub texture_identity: Option<Ref<Texture>>, pub texture_version: i64, }
+src/types.rs: impl Default for Node2DFields
+src/types.rs: impl Default for Node2DFields :: fn default() -> Self
+src/types.rs: impl Default for Node2DRuntime
+src/types.rs: impl Default for Node2DRuntime :: fn default() -> Self
+src/types.rs: impl Default for Scale9Sprite
+src/types.rs: impl Default for Scale9Sprite :: fn default() -> Self
+src/types.rs: impl Default for Scene2D
+src/types.rs: impl Default for Scene2D :: fn default() -> Self
+src/types.rs: impl Default for Scene2DSignals
+src/types.rs: impl Default for Scene2DSignals :: fn default() -> Self
+src/types.rs: impl Default for Sprite
+src/types.rs: impl Default for Sprite :: fn default() -> Self
+src/types.rs: impl Default for SpriteRuntime
+src/types.rs: impl Default for SpriteRuntime :: fn default() -> Self
+src/types.rs: impl Deref for Node2DFields
+src/types.rs: impl Deref for Node2DFields :: fn deref(&self) -> &NodeFields
+src/types.rs: impl DerefMut for Node2DFields
+src/types.rs: impl DerefMut for Node2DFields :: fn deref_mut(&mut self) -> &mut NodeFields
+src/types.rs: impl Entity for HtmlViewData
+src/types.rs: impl Entity for HtmlViewData :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for HtmlViewData :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Scale9SpriteData
+src/types.rs: impl Entity for Scale9SpriteData :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Scale9SpriteData :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Scene2D
+src/types.rs: impl Entity for Scene2D :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Scene2D :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Scene2DKindUsage
+src/types.rs: impl Entity for Scene2DKindUsage :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Scene2DKindUsage :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Scene2DSignals
+src/types.rs: impl Entity for Scene2DSignals :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Scene2DSignals :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Scene2DSlotReference
+src/types.rs: impl Entity for Scene2DSlotReference :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Scene2DSlotReference :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for SpriteData
+src/types.rs: impl Entity for SpriteData :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for SpriteData :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Node2DFields :: fn node2d_runtime(&self) -> &Node2DRuntime
+src/types.rs: impl Node2DFields :: fn node2d_runtime_mut(&mut self) -> &mut Node2DRuntime
+src/types.rs: impl fmt::Debug for DisplayObject
+src/types.rs: impl fmt::Debug for DisplayObject :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for HtmlView
+src/types.rs: impl fmt::Debug for HtmlView :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for HtmlViewData
+src/types.rs: impl fmt::Debug for HtmlViewData :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for Node2DFields
+src/types.rs: impl fmt::Debug for Node2DFields :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for Node2DRuntime
+src/types.rs: impl fmt::Debug for Node2DRuntime :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for Scale9Sprite
+src/types.rs: impl fmt::Debug for Scale9Sprite :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for Scene2D
+src/types.rs: impl fmt::Debug for Scene2D :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for Sprite
+src/types.rs: impl fmt::Debug for Sprite :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: impl fmt::Debug for SpriteIdentityRendererData
+src/types.rs: impl fmt::Debug for SpriteIdentityRendererData :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
+src/types.rs: pub const DISPLAY_OBJECT_KIND: &str
+src/types.rs: pub const HTML_VIEW_KIND: &str
+src/types.rs: pub const SCALE9_SPRITE_KIND: &str
+src/types.rs: pub const SPRITE_KIND: &str
+src/types.rs: pub struct Node2DFields { node: NodeFields, state: Node2DRuntime, pub alpha: f32, pub blend_mode: Option<BlendMode>, pub clip: Option<Ref<flight_clip::ClipRegion>>, pub material: Option<Ref<dyn Material2D>>, pub material_data: Option<Ref<dyn MaterialData>>, pub pivot_x: f32, pub pivot_y: f32, pub rotation: f32, pub scale_x: f32, pub scale_y: f32, pub skew_x: f32, pub skew_y: f32, pub visible: bool, pub x: f32, pub y: f32, }
+src/types.rs: pub struct Node2DRuntime { pub appearance: HasAppearanceRuntime, pub bounds: HasBoundsRectangleRuntime, pub scene2d: Option<Weak<RwLock<Scene2D>>>, pub transform2d: HasTransform2DRuntime, }
+src/types.rs: pub struct Node2DTraitsKey { pub(crate) narrow: fn(&dyn Node) -> Option<&dyn Node2D>, }
+src/types.rs: pub struct Scale9Sprite { node: Node2DFields, pub data: Scale9SpriteData, pub(crate) sprite_runtime: Ref<Scale9SpriteRuntime>, }
+src/types.rs: pub struct Scene2D { runtime: EntityRuntimeSlot, pub(crate) state: Option<Scene2DRuntime>, pub align: ViewportAlign, pub color: Option<u32>, pub root: Node2DRef, pub scale_mode: ViewportScaleMode, pub scene2d_height: f64, pub scene2d_width: f64, }
+src/types.rs: pub struct Scene2DSignals { runtime: EntityRuntimeSlot, pub on_fullscreen_changed: Signal<()>, pub on_orientation_changed: Signal<()>, pub on_resize: Signal<()>, }
+src/types.rs: pub struct Scene2DSlotReference { runtime: EntityRuntimeSlot, pub content: Option<Node2DRef>, pub linkage: Option<String>, pub name: String, pub required: bool, pub target: Node2DRef, }
+src/types.rs: pub struct Sprite { node: Node2DFields, pub data: SpriteData, pub(crate) sprite_runtime: Ref<SpriteRuntime>, }
+src/types.rs: pub trait Node2D: Node + BoundsNode { fn node2d_fields(&self) -> &Node2DFields; fn node2d_fields_mut(&mut self) -> &mut Node2DFields; fn shape_command_stream(&self) -> Option<&dyn Node2DShapeCommandStream>; }
+src/types.rs: pub trait Node2DShapeCommandStream { fn len(&self) -> usize; fn is_empty(&self) -> bool; fn key_at(&self, index: usize) -> Option<&str>; fn arg_count_at(&self, index: usize) -> f64; fn arg_at(&self, index: usize) -> Option<&dyn Any>; }
+src/types.rs: pub type DisplayObjectRuntime = Node2DRuntime;
+src/types.rs: pub type HtmlViewRuntime = Node2DRuntime;
+src/types.rs: pub type Node2DRef = Ref<dyn Node2D>;
+src/types.rs: pub type Node2DRuntimeFactory = fn() -> Node2DRuntime;
+src/types.rs: pub type Scale9SpriteRuntime = SpriteRuntime;
