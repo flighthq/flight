@@ -41,6 +41,31 @@ mod font_contract_types {
     }
 
     #[test]
+    fn keeps_rasterize_options_exact_and_optional() {
+        let options = GlyphRasterizeOptions {
+            font_family: "Family".to_string(),
+            font_size: 18.5,
+            font_style: Some("italic".to_string()),
+            font_weight: Some(GlyphRasterizeFontWeight::String(
+                GlyphRasterizeFontWeightString {
+                    value: "bold".to_string(),
+                },
+            )),
+        };
+        assert_eq!(options.font_family, "Family");
+        assert_eq!(options.font_size, 18.5);
+        assert_eq!(options.font_style.as_deref(), Some("italic"));
+        assert_eq!(
+            options.font_weight,
+            Some(GlyphRasterizeFontWeight::String(
+                GlyphRasterizeFontWeightString {
+                    value: "bold".to_string(),
+                }
+            ))
+        );
+    }
+
+    #[test]
     fn keeps_measure_metrics_optional_and_provider_identity_explicit() {
         let provider = Arc::new(()) as flight_hostcapability::ProviderRef;
         let capability = HostGlyphRasterizerCapability {

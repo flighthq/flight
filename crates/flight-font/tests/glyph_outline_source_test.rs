@@ -160,6 +160,23 @@ mod allocate_glyph_rasterizer_backend_from_glyph_outline_source {
     }
 
     #[test]
+    fn returns_null_when_the_source_rejects_the_mapped_outline() {
+        let source = Arc::new(GlyphOutlineSource {
+            get_glyph_outline: Arc::new(|_out, _glyph_index| false),
+            get_glyph_outline_advance: Arc::new(|_glyph_index| 10.0),
+            get_glyph_outline_index_for_code_point: Arc::new(|_code_point| 0),
+            get_glyph_outline_metrics: Arc::new(|| GlyphOutlineMetrics {
+                ascent: 1.0,
+                descent: 1.0,
+                line_gap: 0.0,
+                units_per_em: 1.0,
+            }),
+        });
+        let backend = allocate_glyph_rasterizer_backend_from_glyph_outline_source(source);
+        assert!((backend.rasterize)(0x41, &create_test_glyph_rasterize_options(1.0)).is_none());
+    }
+
+    #[test]
     fn returns_scaled_outline_metrics_to_the_consumer() {
         let backend = allocate_glyph_rasterizer_backend_from_glyph_outline_source(
             create_test_glyph_outline_source(),
@@ -172,6 +189,25 @@ mod allocate_glyph_rasterizer_backend_from_glyph_outline_source {
                 line_gap: 2.0,
             })
         );
+    }
+
+    #[test]
+    fn sentinels_metrics_and_rasters_for_an_invalid_design_unit_scale() {
+        let source = Arc::new(GlyphOutlineSource {
+            get_glyph_outline: Arc::new(|_out, _glyph_index| true),
+            get_glyph_outline_advance: Arc::new(|_glyph_index| 10.0),
+            get_glyph_outline_index_for_code_point: Arc::new(|_code_point| 0),
+            get_glyph_outline_metrics: Arc::new(|| GlyphOutlineMetrics {
+                ascent: 1.0,
+                descent: 1.0,
+                line_gap: 0.0,
+                units_per_em: 0.0,
+            }),
+        });
+        let backend = allocate_glyph_rasterizer_backend_from_glyph_outline_source(source);
+        let options = create_test_glyph_rasterize_options(20.0);
+        assert!(backend.measure_metrics.as_ref().unwrap()(&options).is_none());
+        assert!((backend.rasterize)(0x41, &options).is_none());
     }
 }
 
