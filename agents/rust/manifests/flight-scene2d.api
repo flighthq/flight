@@ -130,6 +130,8 @@ src/types.rs: impl Default for Scene2D
 src/types.rs: impl Default for Scene2D :: fn default() -> Self
 src/types.rs: impl Default for Scene2DSignals
 src/types.rs: impl Default for Scene2DSignals :: fn default() -> Self
+src/types.rs: impl Default for Scene2DSlotReference
+src/types.rs: impl Default for Scene2DSlotReference :: fn default() -> Self
 src/types.rs: impl Default for Sprite
 src/types.rs: impl Default for Sprite :: fn default() -> Self
 src/types.rs: impl Default for SpriteRuntime

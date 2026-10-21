@@ -1,0 +1,453 @@
+src/contract.rs: pub use super::lottie_bezier_path::*;
+src/contract.rs: pub use super::lottie_counts::*;
+src/contract.rs: pub use super::lottie_document::*;
+src/contract.rs: pub use super::lottie_ellipse_shape_item::*;
+src/contract.rs: pub use super::lottie_fill_shape_item::*;
+src/contract.rs: pub use super::lottie_gradient_paint::*;
+src/contract.rs: pub use super::lottie_gradient_shape_items::*;
+src/contract.rs: pub use super::lottie_handlers::*;
+src/contract.rs: pub use super::lottie_image_layer::*;
+src/contract.rs: pub use super::lottie_import::*;
+src/contract.rs: pub use super::lottie_layer_handlers::*;
+src/contract.rs: pub use super::lottie_mask::*;
+src/contract.rs: pub use super::lottie_mask_handlers::*;
+src/contract.rs: pub use super::lottie_null_layer::*;
+src/contract.rs: pub use super::lottie_path_shape_item::*;
+src/contract.rs: pub use super::lottie_polystar_shape_item::*;
+src/contract.rs: pub use super::lottie_precomposition_layer::*;
+src/contract.rs: pub use super::lottie_rectangle_shape_item::*;
+src/contract.rs: pub use super::lottie_registry::*;
+src/contract.rs: pub use super::lottie_requirements::*;
+src/contract.rs: pub use super::lottie_shape_geometry::*;
+src/contract.rs: pub use super::lottie_shape_item_handlers::*;
+src/contract.rs: pub use super::lottie_shape_layer::*;
+src/contract.rs: pub use super::lottie_shape_paint::*;
+src/contract.rs: pub use super::lottie_shape_path_channels::*;
+src/contract.rs: pub use super::lottie_solid_layer::*;
+src/contract.rs: pub use super::lottie_stroke_shape_item::*;
+src/contract.rs: pub use super::lottie_test_fixtures::*;
+src/contract.rs: pub use super::lottie_text_layer::*;
+src/contract.rs: pub use super::lottie_trim_path_shape_item::*;
+src/contract.rs: pub use super::rive_animation::*;
+src/contract.rs: pub use super::rive_asset_binding::*;
+src/contract.rs: pub use super::rive_assets::*;
+src/contract.rs: pub use super::rive_clipping::*;
+src/contract.rs: pub use super::rive_core_properties::*;
+src/contract.rs: pub use super::rive_core_type_census::*;
+src/contract.rs: pub use super::rive_core_types::*;
+src/contract.rs: pub use super::rive_document::*;
+src/contract.rs: pub use super::rive_draw_order::*;
+src/contract.rs: pub use super::rive_handlers::*;
+src/contract.rs: pub use super::rive_import::*;
+src/contract.rs: pub use super::rive_import_registry::*;
+src/contract.rs: pub use super::rive_layout::*;
+src/contract.rs: pub use super::rive_object_graph::*;
+src/contract.rs: pub use super::rive_registrars::*;
+src/contract.rs: pub use super::rive_requirements::*;
+src/contract.rs: pub use super::rive_scene2d::*;
+src/contract.rs: pub use super::rive_scene2d_document::*;
+src/contract.rs: pub use super::rive_shape_node::*;
+src/contract.rs: pub use super::rive_shape_paint::*;
+src/contract.rs: pub use super::rive_shape_path::*;
+src/contract.rs: pub use super::rive_skeleton::*;
+src/contract.rs: pub use super::rive_skin::*;
+src/contract.rs: pub use super::rive_solo::*;
+src/contract.rs: pub use super::rive_state_machine::*;
+src/contract.rs: pub use super::rive_text::*;
+src/contract.rs: pub use super::svg_bounds::*;
+src/contract.rs: pub use super::svg_clip::*;
+src/contract.rs: pub use super::svg_clip_handlers::*;
+src/contract.rs: pub use super::svg_color::*;
+src/contract.rs: pub use super::svg_container_element::*;
+src/contract.rs: pub use super::svg_counts::*;
+src/contract.rs: pub use super::svg_document::*;
+src/contract.rs: pub use super::svg_element_handlers::*;
+src/contract.rs: pub use super::svg_geometry_element::*;
+src/contract.rs: pub use super::svg_geometry_path::*;
+src/contract.rs: pub use super::svg_gradient::*;
+src/contract.rs: pub use super::svg_handlers::*;
+src/contract.rs: pub use super::svg_image_element::*;
+src/contract.rs: pub use super::svg_import::*;
+src/contract.rs: pub use super::svg_registry::*;
+src/contract.rs: pub use super::svg_requirements::*;
+src/contract.rs: pub use super::svg_style::*;
+src/contract.rs: pub use super::svg_text_element::*;
+src/contract.rs: pub use super::svg_transform::*;
+src/contract.rs: pub use super::svg_use_element::*;
+src/contract.rs: pub use super::svg_xml::*;
+src/contract.rs: pub use super::test_helper::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::*;
+src/lottie_bezier_path.rs: pub fn create_lottie_bezier_path(value: &LottieShapePath) -> Path
+src/lottie_bezier_path.rs: pub fn flatten_lottie_shape_path(out: &mut Vec<f32>, path: &LottieShapePath)
+src/lottie_bezier_path.rs: pub fn to_lottie_shape_path(value: &Unknown) -> Option<&LottieShapePath>
+src/lottie_bezier_path.rs: pub fn unflatten_lottie_shape_path(template: &LottieShapePath, values: &[f32]) -> LottieShapePath
+src/lottie_counts.rs: pub fn collect_lottie_counts(out: &mut HashMap<String, usize>, json: &str) -> bool
+src/lottie_counts.rs: pub fn get_lottie_feature_names(out: &mut Vec<String>)
+src/lottie_document.rs: pub fn append_lottie_layers(root: &Node2DRef, layers: &[LottieLayer], context: &mut LottieImportContext<'_>,)
+src/lottie_document.rs: pub fn apply_animation_clip_to_lottie_document(clip: &AnimationClip, time: f32)
+src/lottie_document.rs: pub fn apply_lottie_mask_family(target: &Node2DRef, masks: &[LottieMask], context: &mut LottieImportContext<'_>,)
+src/lottie_document.rs: pub fn apply_lottie_transform(target: &Node2DRef, transform: Option<&Value>, context: &mut LottieImportContext<'_>, include_opacity: Option<bool>, auto_orient: Option<bool>,)
+src/lottie_document.rs: pub fn bind_mutable_lottie_numeric_property(property: &Value, current: &Arc<RwLock<Vec<f32>>>, convert: &LottieNumericConverter, on_change: &LottieRerender, context: &mut LottieImportContext<'_>,)
+src/lottie_document.rs: pub fn create_lottie_track(keyframes: &[Value], components: usize, context: &LottieImportContext<'_>, value_of: &LottieTrackValueOf, easing_component: usize, spatial_tangents: bool, tangent_of: &LottieTangentOf,) -> Ref<AnimationTrack>
+src/lottie_document.rs: pub fn create_scene2d_from_lottie_document_with_registry(source: &Value, registry: &LottieRegistry, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>, options: Option<&LottieDocumentImportOptions>,) -> LottieDocumentImportResult
+src/lottie_document.rs: pub fn has_component_specific_lottie_easing(keyframes: &[Value], components: usize) -> bool
+src/lottie_document.rs: pub fn initial_lottie_value(property: Option<&Value>) -> Option<Value>
+src/lottie_document.rs: pub fn initialize_lottie_document_import_result(out: &mut LottieDocumentImportResult, root: Ref<DisplayObject>, advanced_blends: Vec<LottieAdvancedBlend>, clip: AnimationClip, duration: f32, frame_rate: f32,)
+src/lottie_document.rs: pub fn is_animated_lottie_property(property: &Value) -> bool
+src/lottie_document.rs: pub fn lottie_clamp(value: f32, minimum: f32, maximum: f32) -> f32
+src/lottie_document.rs: pub fn lottie_degrees_to_radians(value: f32) -> f32
+src/lottie_document.rs: pub fn lottie_numeric_value(out: &mut Vec<f32>, value: &Unknown, components: usize)
+src/lottie_document.rs: pub fn lottie_rgba(color: &[f32]) -> u32
+src/lottie_document.rs: pub fn report_lottie_drop(context: &mut LottieImportContext<'_>, kind: &str, origin: &str, detail: Option<HashMap<String, ImportDiagnosticDetailValue>>,)
+src/lottie_document.rs: pub fn report_lottie_expression(value: Option<&Value>, context: &mut LottieImportContext<'_>)
+src/lottie_document.rs: pub fn report_lottie_skip(context: &mut LottieImportContext<'_>, kind: &str, origin: &str, detail: Option<HashMap<String, ImportDiagnosticDetailValue>>,)
+src/lottie_ellipse_shape_item.rs: pub fn lottie_ellipse_shape_item_handler(context: &mut LottieShapeItemContext<'_, '_>)
+src/lottie_fill_shape_item.rs: pub fn lottie_fill_shape_item_handler(context: &mut LottieShapeItemContext<'_, '_>)
+src/lottie_gradient_paint.rs: pub fn create_lottie_gradient_matrix(start: &[f32], end: &[f32]) -> Matrix
+src/lottie_gradient_paint.rs: pub fn interpolate_lottie_gradient_opacity(stops: &[LottieGradientOpacityStop], offset: f32,) -> f32
+src/lottie_gradient_paint.rs: pub fn parse_lottie_gradient(values: &[f32], count: usize, opacity: f32) -> LottieGradientPaint
+src/lottie_gradient_shape_items.rs: pub fn lottie_gradient_fill_shape_item_handler(context: &mut LottieShapeItemContext<'_, '_>)
+src/lottie_gradient_shape_items.rs: pub fn lottie_gradient_stroke_shape_item_handler(context: &mut LottieShapeItemContext<'_, '_>)
+src/lottie_handlers.rs: pub fn register_all_lottie_handlers(registry: &mut LottieRegistry)
+src/lottie_image_layer.rs: pub fn lottie_image_layer_handler(context: &mut LottieLayerContext<'_, '_>)
+src/lottie_import.rs: pub fn create_scene2d_from_lottie_document(source: &Value, diagnostics: Option<&mut Vec<ImportDiagnostic>>, options: Option<&LottieDocumentImportOptions>,) -> LottieDocumentImportResult
+src/lottie_layer_handlers.rs: pub fn register_lottie_layer_handlers(registry: &mut LottieRegistry)
+src/lottie_layer_handlers.rs: pub static LOTTIE_ALL_LAYER_HANDLERS: LazyLock<Vec<LottieLayerHandler>>
+src/lottie_mask.rs: pub fn lottie_additive_mask_handler(context: &mut LottieMaskContext<'_, '_>)
+src/lottie_mask_handlers.rs: pub fn register_lottie_mask_handlers(registry: &mut LottieRegistry)
+src/lottie_mask_handlers.rs: pub static LOTTIE_ALL_MASK_HANDLERS: LazyLock<Vec<LottieMaskHandler>>
+src/lottie_null_layer.rs: pub fn lottie_null_layer_handler(_context: &mut LottieLayerContext<'_, '_>)
+src/lottie_path_shape_item.rs: pub fn lottie_path_shape_item_handler(context: &mut LottieShapeItemContext<'_, '_>)
+src/lottie_polystar_shape_item.rs: pub fn lottie_polystar_shape_item_handler(context: &mut LottieShapeItemContext<'_, '_>)
+src/lottie_precomposition_layer.rs: pub fn lottie_precomposition_layer_handler(context: &mut LottieLayerContext<'_, '_>)
+src/lottie_rectangle_shape_item.rs: pub fn lottie_rectangle_shape_item_handler(context: &mut LottieShapeItemContext<'_, '_>)
+src/lottie_registry.rs: pub fn create_lottie_registry() -> LottieRegistry
+src/lottie_registry.rs: pub fn get_lottie_layer_handler(registry: &LottieRegistry, kind: LottieLayerKind,) -> Option<LottieLayerHandler>
+src/lottie_registry.rs: pub fn get_lottie_mask_handler(registry: &LottieRegistry, kind: &str) -> Option<LottieMaskHandler>
+src/lottie_registry.rs: pub fn get_lottie_shape_item_handler(registry: &LottieRegistry, kind: &str,) -> Option<LottieShapeItemHandler>
+src/lottie_registry.rs: pub fn register_lottie_layer_handler(registry: &mut LottieRegistry, kind: LottieLayerKind, handle: LottieLayerHandler,)
+src/lottie_registry.rs: pub fn register_lottie_mask_handler(registry: &mut LottieRegistry, kind: &str, handle: LottieMaskHandler,)
+src/lottie_registry.rs: pub fn register_lottie_shape_item_handler(registry: &mut LottieRegistry, kind: &str, handle: LottieShapeItemHandler,)
+src/lottie_registry.rs: pub fn unregister_lottie_layer_handler(registry: &mut LottieRegistry, kind: LottieLayerKind,) -> bool
+src/lottie_registry.rs: pub fn unregister_lottie_mask_handler(registry: &mut LottieRegistry, kind: &str) -> bool
+src/lottie_registry.rs: pub fn unregister_lottie_shape_item_handler(registry: &mut LottieRegistry, kind: &str) -> bool
+src/lottie_requirements.rs: pub const LOTTIE_REQUIREMENT_KEY_NAMESPACE: &str
+src/lottie_requirements.rs: pub fn is_readable_lottie(json: &str) -> bool
+src/lottie_requirements.rs: pub fn parse_lottie_requirements(json: &str) -> RequirementSet
+src/lottie_shape_geometry.rs: pub fn apply_lottie_shape_direction(path: Ref<Path>, direction: Option<i32>) -> Ref<Path>
+src/lottie_shape_item_handlers.rs: pub fn register_lottie_shape_item_handlers(registry: &mut LottieRegistry)
+src/lottie_shape_item_handlers.rs: pub static LOTTIE_ALL_SHAPE_ITEM_HANDLERS: LazyLock<Vec<LottieShapeItemHandler>>
+src/lottie_shape_layer.rs: pub fn lottie_shape_layer_handler(context: &mut LottieLayerContext<'_, '_>)
+src/lottie_shape_paint.rs: pub fn append_lottie_dashed_shape_paths(paths: &[Ref<Path>], shape: &Ref<Shape>, winding: Option<PathWinding>, dash: &[f64], dash_offset: f64,)
+src/lottie_shape_paint.rs: pub fn append_lottie_shape_paths(paths: &[Ref<Path>], shape: &Ref<Shape>, winding: Option<PathWinding>,)
+src/lottie_shape_path_channels.rs: pub fn append_lottie_shape_path_channels(keyframes: &[Value], current: &Arc<RwLock<Vec<f32>>>, apply: &LottieRerender, context: &mut LottieImportContext<'_>,)
+src/lottie_solid_layer.rs: pub fn lottie_solid_layer_handler(context: &mut LottieLayerContext<'_, '_>)
+src/lottie_stroke_shape_item.rs: pub fn lottie_stroke_shape_item_handler(context: &mut LottieShapeItemContext<'_, '_>)
+src/lottie_stroke_shape_item.rs: pub fn map_lottie_line_cap(value: Option<i32>) -> CapsStyle
+src/lottie_stroke_shape_item.rs: pub fn map_lottie_line_join(value: Option<i32>) -> JointStyle
+src/lottie_test_fixtures.rs: pub fn animated_lottie_test_scalar(start: f32, end: f32) -> Value
+src/lottie_test_fixtures.rs: pub fn animated_lottie_test_vector(start: Vec<f32>, end: Vec<f32>, ox: Option<Vec<f32>>, oy: Option<Vec<f32>>, ix: Option<Vec<f32>>, iy: Option<Vec<f32>>,) -> Value
+src/lottie_test_fixtures.rs: pub fn create_lottie_test_document(layers: Vec<LottieLayer>) -> LottieDocument
+src/lottie_test_fixtures.rs: pub fn find_lottie_test_node_by_kind(root: &Node2DRef, kind: &str) -> Option<Node2DRef>
+src/lottie_test_fixtures.rs: pub fn find_lottie_test_node_by_name(root: &Node2DRef, name: &str) -> Option<Node2DRef>
+src/lottie_test_fixtures.rs: pub fn lottie_test_shape_layer(ind: i32, name: &str) -> LottieLayer
+src/lottie_test_fixtures.rs: pub fn lottie_test_square_path(x: f32, y: f32, size: f32) -> LottieShapePath
+src/lottie_text_layer.rs: pub fn lottie_text_layer_handler(context: &mut LottieLayerContext<'_, '_>)
+src/lottie_trim_path_shape_item.rs: pub fn lottie_trim_path_shape_item_handler(context: &mut LottieShapeItemContext<'_, '_>)
+src/rive_animation.rs: pub fn apply_animation_clip_to_rive_document(clip: &flight_animation::AnimationClip, time: f32)
+src/rive_animation.rs: pub fn create_rive_animation_clips(objects: &[RiveCoreObject], range: RiveObjectRange, nodes: &[Option<Node2DRef>], artboard: &RiveArtboardGraph, rebuilds: &HashMap<usize, RiveRebuild>, skeleton: Option<&RiveSkeleton2DImport>, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Vec<RiveAnimationClip>
+src/rive_animation.rs: pub fn register_rive_animation_handlers(registry: &mut RiveImportRegistry)
+src/rive_asset_binding.rs: pub fn create_rive_image_sprite(name: &str, asset_index: i32) -> Node2DRef
+src/rive_asset_binding.rs: pub fn get_rive_image_asset_index(node: &Node2DRef) -> i32
+src/rive_asset_binding.rs: pub fn get_rive_image_texture(node: &Node2DRef) -> Option<Ref<Texture>>
+src/rive_asset_binding.rs: pub fn get_rive_nested_artboard_index(node: &Node2DRef) -> i32
+src/rive_asset_binding.rs: pub fn mark_rive_nested_artboard(node: &Node2DRef, artboard_index: i32)
+src/rive_assets.rs: pub fn create_rive_file_assets(objects: &[RiveCoreObject], mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Vec<RiveFileAsset>
+src/rive_assets.rs: pub fn import_rive_image_component(context: &mut RiveArtboardImportContext<'_>, index: usize,) -> Option<Node2DRef>
+src/rive_assets.rs: pub fn import_rive_nested_artboard_component(context: &mut RiveArtboardImportContext<'_>, index: usize,) -> Option<Node2DRef>
+src/rive_assets.rs: pub fn register_rive_asset_handlers(registry: &mut RiveImportRegistry)
+src/rive_clipping.rs: pub fn apply_rive_clipping(path_boolean_kernel: &PathBooleanKernel, nodes: &[Option<Node2DRef>], artboard: &RiveArtboardGraph, shape_paths: &HashMap<usize, Vec<RivePathRecord>>, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,)
+src/rive_clipping.rs: pub fn register_rive_clipping_handlers(path_boolean_kernel: &PathBooleanKernel, registry: &mut RiveImportRegistry,)
+src/rive_core_properties.rs: pub fn get_rive_core_property_field_type(key: u32) -> Option<RiveFieldType>
+src/rive_core_properties.rs: pub fn is_rive_core_bytes_property(key: u32) -> bool
+src/rive_core_type_census.rs: pub fn collect_rive_core_type_counts(out: &mut HashMap<u64, usize>, source: &Uint8Array, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> bool
+src/rive_core_type_census.rs: pub fn is_readable_rive(source: &Uint8Array) -> bool
+src/rive_core_types.rs: pub fn get_rive_core_type_name(type_key: i32) -> Option<&'static str>
+src/rive_core_types.rs: pub fn get_rive_core_type_parent(type_key: i32) -> Option<i32>
+src/rive_core_types.rs: pub fn is_rive_core_type_derived_from(type_key: i32, ancestor_type_key: i32) -> bool
+src/rive_document.rs: pub fn parse_rive_document(source: &Uint8Array, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<RiveDocument>
+src/rive_draw_order.rs: pub fn apply_rive_draw_order(nodes: &[Option<Node2DRef>], artboard: &RiveArtboardGraph, root: &Node2DRef, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,)
+src/rive_draw_order.rs: pub fn register_rive_draw_order_handlers(registry: &mut RiveImportRegistry)
+src/rive_handlers.rs: pub fn register_all_rive_handlers(path_boolean_kernel: &PathBooleanKernel, registry: &mut RiveImportRegistry,)
+src/rive_import.rs: pub fn create_scene2d_from_rive_document(path_boolean_kernel: &PathBooleanKernel, source: &Uint8Array, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> RiveDocumentImportResult
+src/rive_import_registry.rs: pub fn apply_rive_artboard_handlers(context: &mut RiveArtboardImportContext<'_>)
+src/rive_import_registry.rs: pub fn apply_rive_document_handlers(context: &mut RiveDocumentImportContext<'_>)
+src/rive_import_registry.rs: pub fn create_rive_artboard_import_context<'a>(registry: &'a RiveImportRegistry, artboard: &'a RiveArtboardGraph, objects: &'a [RiveCoreObject], root: Node2DRef, font_names: &'a [String], diagnostics: Option<&'a mut Vec<ImportDiagnostic>>,) -> RiveArtboardImportContext<'a>
+src/rive_import_registry.rs: pub fn create_rive_document_import_context<'a>(registry: &'a RiveImportRegistry, objects: &'a [RiveCoreObject], diagnostics: Option<&'a mut Vec<ImportDiagnostic>>,) -> RiveDocumentImportContext<'a>
+src/rive_import_registry.rs: pub fn create_rive_import_registry() -> RiveImportRegistry
+src/rive_import_registry.rs: pub fn get_rive_core_object_handler(registry: &RiveImportRegistry, type_key: i32,) -> Option<Arc<RiveCoreObjectHandler>>
+src/rive_import_registry.rs: pub fn import_rive_core_object_as_data() -> Option<Node2DRef>
+src/rive_import_registry.rs: pub fn initialize_rive_artboard_import_context<'a>(out: &mut RiveArtboardImportContext<'a>, registry: &'a RiveImportRegistry, artboard: &'a RiveArtboardGraph, objects: &'a [RiveCoreObject], root: Node2DRef, font_names: &'a [String], diagnostics: Option<&'a mut Vec<ImportDiagnostic>>,)
+src/rive_import_registry.rs: pub fn initialize_rive_document_import_context<'a>(out: &mut RiveDocumentImportContext<'a>, registry: &'a RiveImportRegistry, objects: &'a [RiveCoreObject], diagnostics: Option<&'a mut Vec<ImportDiagnostic>>,)
+src/rive_import_registry.rs: pub fn register_rive_core_object_handler(registry: &mut RiveImportRegistry, type_key: i32, importer: Arc<RiveCoreObjectHandler>,)
+src/rive_layout.rs: pub fn create_rive_layout_imports(artboard: &RiveArtboardGraph, nodes: &[Option<Node2DRef>], mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Vec<RiveLayoutImport>
+src/rive_layout.rs: pub fn import_rive_layout_component(context: &mut RiveArtboardImportContext<'_>, index: usize,) -> Option<Node2DRef>
+src/rive_layout.rs: pub fn register_rive_layout_handlers(registry: &mut RiveImportRegistry)
+src/rive_object_graph.rs: pub fn create_rive_object_graph(document: &RiveDocument, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> RiveObjectGraph
+src/rive_object_graph.rs: pub fn initialize_rive_object_graph(out: &mut RiveObjectGraph, document: &RiveDocument, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,)
+src/rive_registrars.rs: pub fn apply_rive_import_options(options: &RiveImportOptions, path_boolean_kernel: &PathBooleanKernel, registry: &mut RiveImportRegistry,)
+src/rive_registrars.rs: pub fn create_rive_import_registry_from_options(options: &RiveImportOptions, path_boolean_kernel: &PathBooleanKernel,) -> RiveImportRegistry
+src/rive_registrars.rs: pub static RIVE_ALL_PATH_BOOLEAN_REGISTRARS: [RivePathBooleanRegistrar; 1]
+src/rive_registrars.rs: pub static RIVE_ALL_REGISTRARS: [RiveRegistrar; 11]
+src/rive_registrars.rs: pub static RIVE_FULL_IMPORT_OPTIONS: LazyLock<RiveImportOptions>
+src/rive_requirements.rs: pub const RIVE_REQUIREMENT_KEY_NAMESPACE: &str
+src/rive_requirements.rs: pub fn parse_rive_requirements(source: &Uint8Array, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> RequirementSet
+src/rive_scene2d.rs: pub fn create_rive_document_import_result(registry: &RiveImportRegistry, source: &Uint8Array, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> RiveDocumentImportResult
+src/rive_scene2d.rs: pub fn initialize_rive_document_import_result(out: &mut RiveDocumentImportResult, artboards: Vec<RiveArtboardImport>, assets: Vec<RiveFileAsset>,)
+src/rive_scene2d_document.rs: pub fn create_scene2d_document_from_rive_document(path_boolean_kernel: &PathBooleanKernel, source: &Uint8Array, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<RiveScene2DDocumentResult>
+src/rive_scene2d_document.rs: pub fn initialize_rive_scene2d_document_result(out: &mut RiveScene2DDocumentResult, root: Node2DRef, imported: RiveDocumentImportResult, image_resources: Vec<ImageResourceReference>, slots: Vec<Scene2DSlotReference>,)
+src/rive_shape_node.rs: pub fn import_rive_n_sliced_node_component(context: &mut RiveArtboardImportContext<'_>, index: usize,) -> Option<Node2DRef>
+src/rive_shape_node.rs: pub fn import_rive_shape_component(context: &mut RiveArtboardImportContext<'_>, index: usize,) -> Option<Node2DRef>
+src/rive_shape_node.rs: pub fn rebuild_rive_shapes(context: &mut RiveArtboardImportContext<'_>)
+src/rive_shape_node.rs: pub fn register_rive_shape_handlers(registry: &mut RiveImportRegistry)
+src/rive_shape_paint.rs: pub fn append_rive_shape_geometry(shape: &Ref<Shape>, paths: &[RivePathRecord])
+src/rive_shape_paint.rs: pub fn append_rive_shape_paint(shape: &Ref<Shape>, artboard: &RiveArtboardGraph, shape_index: usize, paths: &[RivePathRecord], mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,)
+src/rive_shape_paint.rs: pub fn register_rive_paint_handlers(registry: &mut RiveImportRegistry)
+src/rive_shape_path.rs: pub fn create_rive_path(path: &RiveCoreObject, artboard: &RiveArtboardGraph, index: usize, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Path>
+src/rive_shape_path.rs: pub fn create_rive_path_record(artboard: &RiveArtboardGraph, index: usize, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<RivePathRecord>
+src/rive_shape_path.rs: pub fn import_rive_path_component(context: &mut RiveArtboardImportContext<'_>, index: usize,) -> Option<Node2DRef>
+src/rive_shape_path.rs: pub fn register_rive_path_handlers(registry: &mut RiveImportRegistry)
+src/rive_skeleton.rs: pub fn create_rive_skeleton_2d(artboard: &RiveArtboardGraph) -> Option<RiveSkeleton2DImport>
+src/rive_skeleton.rs: pub fn initialize_rive_skeleton_2d_import(out: &mut RiveSkeleton2DImport, bone_indices: Vec<i32>, skeleton: Skeleton2D,)
+src/rive_skeleton.rs: pub fn register_rive_skeleton_handlers(registry: &mut RiveImportRegistry)
+src/rive_skin.rs: pub fn create_rive_skin_2d(artboard: &RiveArtboardGraph, skinnable_index: usize, bone_indices: &[i32], points: &[RiveWeightedPoint], mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Skin2D>
+src/rive_solo.rs: pub fn apply_rive_solo(nodes: &[Option<Node2DRef>], artboard: &RiveArtboardGraph, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,)
+src/rive_solo.rs: pub fn import_rive_solo_component(context: &mut RiveArtboardImportContext<'_>, index: usize,) -> Option<Node2DRef>
+src/rive_solo.rs: pub fn register_rive_solo_handlers(registry: &mut RiveImportRegistry)
+src/rive_state_machine.rs: pub fn create_rive_state_machines(objects: &[RiveCoreObject], range: &RiveObjectRange, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Vec<RiveStateMachineDescriptor>
+src/rive_state_machine.rs: pub fn register_rive_state_machine_handlers(registry: &mut RiveImportRegistry)
+src/rive_text.rs: pub fn create_rive_rich_text(artboard: &RiveArtboardGraph, index: usize, font_names: &[String], mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Ref<RichText>
+src/rive_text.rs: pub fn import_rive_text_component(context: &mut RiveArtboardImportContext<'_>, index: usize,) -> Option<Node2DRef>
+src/rive_text.rs: pub fn register_rive_text_handlers(registry: &mut RiveImportRegistry)
+src/svg_bounds.rs: pub fn create_svg_node2d_bounds(target: &Node2DRef, context: &SvgImportContext<'_>,) -> Option<Rectangle>
+src/svg_bounds.rs: pub fn has_unmeasurable_svg_text(target: &Node2DRef) -> bool
+src/svg_clip.rs: pub fn svg_path_clip_handler(context: &mut SvgClipContext<'_, '_>)
+src/svg_clip.rs: pub fn uses_svg_object_bounding_box_units(element: &Ref<flight_xml::XmlElement>) -> bool
+src/svg_clip_handlers.rs: pub fn register_svg_clip_handlers(registry: &mut SvgRegistry)
+src/svg_clip_handlers.rs: pub static SVG_ALL_CLIP_HANDLERS: LazyLock<Vec<SvgClipHandler>>
+src/svg_color.rs: pub fn parse_svg_color(value: &str) -> Option<SvgColor>
+src/svg_color.rs: pub fn resolve_svg_color(value: &str, current_color: &str) -> Option<SvgColor>
+src/svg_container_element.rs: pub fn svg_container_element_handler(context: &mut SvgElementContext<'_, '_>) -> Option<Node2DRef>
+src/svg_counts.rs: pub fn collect_svg_counts(out: &mut HashMap<String, usize>, source: &str) -> bool
+src/svg_document.rs: pub fn append_svg_children(parent: &Ref<DisplayObject>, element: &Ref<XmlElement>, parent_style: &SvgStyle, context: &mut SvgImportContext<'_>,)
+src/svg_document.rs: pub fn apply_svg_element_appearance(target: &Node2DRef, element: &Ref<XmlElement>, parent_style: &SvgStyle, context: &mut SvgImportContext<'_>, geometry_transform: Option<&Matrix>, has_visual_descendants: bool,) -> SvgStyle
+src/svg_document.rs: pub fn apply_svg_element_clip_family(target: &Node2DRef, element: &Ref<XmlElement>, context: &mut SvgImportContext<'_>,)
+src/svg_document.rs: pub fn create_scene2d_from_svg_document_with_registry(source: &str, registry: &SvgRegistry, diagnostics: Option<&mut Vec<ImportDiagnostic>>, options: Option<&SvgDocumentImportOptions>,) -> Ref<DisplayObject>
+src/svg_document.rs: pub fn create_svg_element_node(element: &Ref<XmlElement>, parent_style: &SvgStyle, context: &mut SvgImportContext<'_>,) -> Option<Node2DRef>
+src/svg_document.rs: pub fn report_remaining_unsupported_svg_elements(element: &Ref<XmlElement>, context: &mut SvgImportContext<'_>, inside_definitions: bool,)
+src/svg_element_handlers.rs: pub fn register_svg_element_handlers(registry: &mut SvgRegistry)
+src/svg_element_handlers.rs: pub static SVG_ALL_ELEMENT_HANDLERS: LazyLock<Vec<SvgElementHandler>>
+src/svg_geometry_element.rs: pub fn svg_geometry_element_handler(context: &mut SvgElementContext<'_, '_>) -> Option<Node2DRef>
+src/svg_geometry_path.rs: pub fn create_svg_geometry_path(element: &XmlElement, winding: PathWinding) -> Option<Path>
+src/svg_gradient.rs: pub fn create_svg_gradient_matrix(gradient: &SvgGradient, path: &Path) -> Matrix
+src/svg_gradient.rs: pub fn has_zero_area_svg_gradient_box(gradient: &SvgGradient, path: &Path) -> bool
+src/svg_gradient.rs: pub fn parse_svg_gradient(element: &flight_entity::Ref<XmlElement>, context: &mut SvgImportContext<'_>,) -> Option<SvgGradient>
+src/svg_gradient.rs: pub fn resolve_svg_gradient<'a>(value: &str, context: &'a SvgImportContext<'_>,) -> Option<&'a SvgGradient>
+src/svg_handlers.rs: pub fn register_all_svg_handlers(registry: &mut SvgRegistry)
+src/svg_image_element.rs: pub fn svg_image_element_handler(context: &mut SvgElementContext<'_, '_>) -> Option<Node2DRef>
+src/svg_import.rs: pub fn create_scene2d_from_svg_document(source: &str, diagnostics: Option<&mut Vec<ImportDiagnostic>>, options: Option<&SvgDocumentImportOptions>,) -> Ref<DisplayObject>
+src/svg_registry.rs: pub fn create_svg_registry() -> SvgRegistry
+src/svg_registry.rs: pub fn get_svg_clip_handler(registry: &SvgRegistry, kind: &str) -> Option<SvgClipHandler>
+src/svg_registry.rs: pub fn get_svg_element_handler(registry: &SvgRegistry, kind: &str) -> Option<SvgElementHandler>
+src/svg_registry.rs: pub fn register_svg_clip_handler(registry: &mut SvgRegistry, kind: &str, handle: SvgClipHandler)
+src/svg_registry.rs: pub fn register_svg_element_handler(registry: &mut SvgRegistry, kind: &str, handle: SvgElementHandler,)
+src/svg_registry.rs: pub fn unregister_svg_clip_handler(registry: &mut SvgRegistry, kind: &str) -> bool
+src/svg_registry.rs: pub fn unregister_svg_element_handler(registry: &mut SvgRegistry, kind: &str) -> bool
+src/svg_requirements.rs: pub const SVG_REQUIREMENT_KEY_NAMESPACE: &str
+src/svg_requirements.rs: pub fn is_readable_svg(source: &str) -> bool
+src/svg_requirements.rs: pub fn parse_svg_requirements(source: &str) -> RequirementSet
+src/svg_style.rs: pub fn collect_css_rules(out: &mut Vec<SvgCssRule>, root: &XmlElement)
+src/svg_style.rs: pub fn parse_style_declarations(value: &str) -> HashMap<String, String>
+src/svg_style.rs: pub fn resolve_svg_definition_style(element: &flight_entity::Ref<XmlElement>, context: &mut SvgImportContext<'_>,) -> SvgStyle
+src/svg_style.rs: pub fn resolve_svg_style(element: &XmlElement, parent_style: &SvgStyle, context: &SvgImportContext<'_>,) -> SvgStyle
+src/svg_style.rs: pub fn resolve_svg_winding(value: Option<&str>, fallback: PathWinding) -> PathWinding
+src/svg_style.rs: pub static DEFAULT_SVG_STYLE: LazyLock<SvgStyle>
+src/svg_text_element.rs: pub fn svg_text_element_handler(context: &mut SvgElementContext<'_, '_>) -> Option<Node2DRef>
+src/svg_transform.rs: pub fn apply_svg_transform(target: &mut dyn Node2D, matrix: Option<&Matrix>)
+src/svg_transform.rs: pub fn assign_svg_transform(target: &mut dyn Node2D, transform: &Transform2D)
+src/svg_transform.rs: pub fn create_svg_view_box_matrix(view_box: &[f32], viewport: &SvgViewport, preserve_aspect_ratio_value: &str,) -> Matrix
+src/svg_transform.rs: pub fn create_svg_viewport_matrix(element: &XmlElement, viewport: Option<&SvgViewportOptions>,) -> Option<Matrix>
+src/svg_transform.rs: pub fn multiply_svg_matrices(out: &mut Matrix, a: &Matrix, b: &Matrix)
+src/svg_transform.rs: pub fn parse_svg_transform(value: Option<&str>) -> Option<Matrix>
+src/svg_use_element.rs: pub fn svg_use_element_handler(context: &mut SvgElementContext<'_, '_>) -> Option<Node2DRef>
+src/svg_xml.rs: pub fn parse_svg_coordinate(value: Option<&str>, fallback: f32) -> f32
+src/svg_xml.rs: pub fn parse_svg_css_number(value: Option<&str>, fallback: f32) -> f32
+src/svg_xml.rs: pub fn parse_svg_length(value: Option<&str>, fallback: f32) -> f32
+src/svg_xml.rs: pub fn parse_svg_number_list(value: &str) -> Vec<f32>
+src/svg_xml.rs: pub fn parse_url_reference(value: Option<&str>) -> Option<String>
+src/svg_xml.rs: pub fn svg_attribute<'a>(element: &'a XmlElement, name: &str) -> Option<&'a str>
+src/svg_xml.rs: pub fn svg_first_number(value: Option<&str>, fallback: f32) -> f32
+src/svg_xml.rs: pub fn svg_local_name(name: &str) -> &str
+src/svg_xml.rs: pub fn svg_number_attribute(element: &XmlElement, name: &str, fallback: f32) -> f32
+src/svg_xml.rs: pub fn svg_optional_number_attribute(element: &XmlElement, name: &str) -> Option<f32>
+src/svg_xml.rs: pub fn visit_svg_elements(element: &XmlElement, visitor: &mut dyn FnMut(&XmlElement))
+src/test_helper.rs: pub fn create_ready_image_resource_for_test(width: Option<u32>, height: Option<u32>,) -> Ref<ImageResource>
+src/types.rs: #[derive(Clone)] pub struct LottieAdvancedBlend { pub mode: String, pub node: Node2DRef, }
+src/types.rs: #[derive(Clone)] pub struct LottieLayerHandlerEntry { pub handle: LottieLayerHandler, pub kind: LottieLayerKind, }
+src/types.rs: #[derive(Clone)] pub struct LottieMaskHandlerEntry { pub handle: LottieMaskHandler, pub kind: LottieMaskKind, }
+src/types.rs: #[derive(Clone)] pub struct LottieMutableAnimationTarget { pub apply: Arc<dyn Fn(&[f32], f32) + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct LottieShapeItemHandlerEntry { pub handle: LottieShapeItemHandler, pub kind: LottieShapeItemKind, }
+src/types.rs: #[derive(Clone)] pub struct RiveAdvancedBlend { pub mode: String, pub node: Node2DRef, }
+src/types.rs: #[derive(Clone)] pub struct RiveCoreObjectHandlerEntry { pub handle: Arc<RiveCoreObjectHandler>, pub type_key: i32, }
+src/types.rs: #[derive(Clone)] pub struct RiveLayoutImport { pub targets: Vec<Node2DRef>, pub tree: LayoutTree, }
+src/types.rs: #[derive(Clone)] pub struct SvgClipHandlerEntry { pub handle: SvgClipHandler, pub kind: SvgClipKind, }
+src/types.rs: #[derive(Clone)] pub struct SvgDocumentImportOptions { pub clip_handlers: Option<Vec<SvgClipHandlerEntry>>, pub element_handlers: Option<Vec<SvgElementHandlerEntry>>, pub resolve_image_resource: Option<SvgImageResourceResolver>, }
+src/types.rs: #[derive(Clone)] pub struct SvgElementHandlerEntry { pub handle: SvgElementHandler, pub kind: SvgElementKind, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct SvgViewportOptions { pub height: Option<f32>, pub width: Option<f32>, pub x: Option<f32>, pub y: Option<f32>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct LottieGradientOpacityStop { pub alpha: f32, pub offset: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct RiveWeightedPoint { pub kind: RiveWeightedPointKind, pub vertex: usize, pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct SvgViewport { pub height: f32, pub width: f32, pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] #[repr(u8)] pub enum RiveAnimationLoop { OneShot = 0, Loop = 1, PingPong = 2, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] #[repr(u8)] pub enum RiveWeightedPointKind { Point = 0, In = 1, Out = 2, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SvgGradientKind { Linear, Radial, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SvgGradientUnits { ObjectBoundingBox, UserSpaceOnUse, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct RiveObjectRange { pub end: usize, pub start: usize, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct RivePropertyFieldType { pub key: u64, pub r#type: RiveFieldType, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] #[repr(u8)] pub enum RiveFieldType { Uint = 0, String = 1, Double = 2, Color = 3, }
+src/types.rs: #[derive(Clone, Debug)] pub struct RiveAnimationClip { pub clip: AnimationClip, pub r#loop: RiveAnimationLoop, pub name: String, pub speed: f32, pub work_area_end: Option<f32>, pub work_area_start: Option<f32>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct LottieGradientPaint { pub alphas: Vec<f32>, pub colors: Vec<u32>, pub ratios: Vec<u32>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct LottieRecord(Map<String, Value>);
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct LottieShapePath { pub c: bool, pub i: Vec<Vec<f32>>, pub o: Vec<Vec<f32>>, pub v: Vec<Vec<f32>>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct RiveArtboardGraph { pub objects: Vec<RiveCoreObject>, pub parent_indices: Vec<i32>, pub stream_end: usize, pub stream_start: usize, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct RiveObjectGraph { pub artboards: Vec<RiveArtboardGraph>, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum RiveStateMachineInputValue { Bool(bool), Number(f32), }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub enum RiveValue { Uint(u64), String(String), Double(f32), Color(u32), Bytes(Box<[u8]>), }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct RiveCoreObject { pub properties: Vec<RiveProperty>, pub type_key: u64, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct RiveDocument { pub header: RiveDocumentHeader, pub objects: Vec<RiveCoreObject>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct RiveDocumentHeader { pub file_id: u64, pub major_version: u64, pub minor_version: u64, pub table_of_contents: Vec<RivePropertyFieldType>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct RiveFileAsset { pub bytes: Option<Box<[u8]>>, pub cdn_base_url: String, pub height: f32, pub kind: String, pub name: String, pub width: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct RivePathRecord { pub commands: Vec<u8>, pub data: Vec<f32>, pub path_index: usize, pub winding: PathWinding, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct RiveProperty { pub key: u64, pub r#type: RiveFieldType, pub value: RiveValue, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct RiveStateMachineDescriptor { pub inputs: Vec<RiveStateMachineInput>, pub layers: Vec<RiveStateMachineLayer>, pub name: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct RiveStateMachineInput { pub kind: String, pub name: String, pub value: Option<RiveStateMachineInputValue>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct RiveStateMachineLayer { pub name: String, pub states: Vec<RiveStateMachineState>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct RiveStateMachineState { pub animation_id: f32, pub kind: String, pub transitions: Vec<RiveStateMachineTransition>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct RiveStateMachineTransition { pub duration: f32, pub exit_time: f32, pub flags: f32, pub to_state_id: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct SvgColor { pub alpha: f32, pub rgb: u32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct SvgCssRule { pub declarations: HashMap<String, String>, pub order: usize, pub selector: String, pub specificity: usize, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct SvgGradient { pub cx: f32, pub cy: f32, pub fx: f32, pub fy: f32, pub kind: SvgGradientKind, pub radius: f32, pub spread_method: SpreadMethod, pub stops: Vec<SvgGradientStop>, pub transform: Option<Matrix>, pub units: SvgGradientUnits, pub x1: f32, pub x2: f32, pub y1: f32, pub y2: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct SvgGradientStop { pub color: SvgColor, pub offset: f32, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct SvgStyle { pub clip_rule: PathWinding, pub color: String, pub display: String, pub fill: String, pub fill_opacity: f32, pub fill_rule: PathWinding, pub filter: String, pub font_family: String, pub font_size: f32, pub font_style: String, pub font_weight: String, pub opacity: f32, pub stroke: String, pub stroke_dasharray: String, pub stroke_dashoffset: f32, pub stroke_linecap: String, pub stroke_linejoin: String, pub stroke_miterlimit: f32, pub stroke_opacity: f32, pub stroke_width: f32, pub text_anchor: String, pub visibility: String, }
+src/types.rs: #[derive(Clone, Default)] pub struct LottieDocumentImportOptions { pub layer_handlers: Option<Vec<LottieLayerHandlerEntry>>, pub mask_handlers: Option<Vec<LottieMaskHandlerEntry>>, pub resolve_image_resource: Option<LottieImageResourceResolver>, pub shape_item_handlers: Option<Vec<LottieShapeItemHandlerEntry>>, }
+src/types.rs: #[derive(Clone, Default)] pub struct LottieRegistry { pub layer_handlers: Vec<LottieLayerHandlerEntry>, pub mask_handlers: Vec<LottieMaskHandlerEntry>, pub shape_item_handlers: Vec<LottieShapeItemHandlerEntry>, }
+src/types.rs: #[derive(Clone, Default)] pub struct RiveImportOptions { pub path_boolean_registrars: Option<Vec<RivePathBooleanRegistrar>>, pub registrars: Option<Vec<RiveRegistrar>>, }
+src/types.rs: #[derive(Clone, Default)] pub struct RiveImportRegistry { pub handlers: Vec<RiveCoreObjectHandlerEntry>, }
+src/types.rs: #[derive(Clone, Default)] pub struct SvgRegistry { pub clip_handlers: Vec<SvgClipHandlerEntry>, pub element_handlers: Vec<SvgElementHandlerEntry>, }
+src/types.rs: #[derive(Default)] pub struct RiveCoreObjectHandler { pub apply_artboard: Option<RiveApplyArtboardHandler>, pub apply_document: Option<RiveApplyDocumentHandler>, pub import_component: Option<RiveImportComponentHandler>, }
+src/types.rs: #[derive(Default)] pub struct RiveSkeleton2DImport { pub bone_indices: Vec<i32>, pub skeleton: Skeleton2D, runtime: EntityRuntimeSlot, }
+src/types.rs: impl Default for LottieDocumentImportResult
+src/types.rs: impl Default for LottieDocumentImportResult :: fn default() -> Self
+src/types.rs: impl Default for RiveDocumentImportResult
+src/types.rs: impl Default for RiveDocumentImportResult :: fn default() -> Self
+src/types.rs: impl Default for RiveScene2DDocumentResult
+src/types.rs: impl Default for RiveScene2DDocumentResult :: fn default() -> Self
+src/types.rs: impl Default for SvgDocumentImportOptions
+src/types.rs: impl Default for SvgDocumentImportOptions :: fn default() -> Self
+src/types.rs: impl Entity for LottieDocumentImportResult
+src/types.rs: impl Entity for LottieDocumentImportResult :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for LottieDocumentImportResult :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for RiveArtboardImportContext<'_>
+src/types.rs: impl Entity for RiveArtboardImportContext<'_> :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RiveArtboardImportContext<'_> :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for RiveDocumentImportContext<'_>
+src/types.rs: impl Entity for RiveDocumentImportContext<'_> :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RiveDocumentImportContext<'_> :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for RiveDocumentImportResult
+src/types.rs: impl Entity for RiveDocumentImportResult :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RiveDocumentImportResult :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for RiveObjectGraph
+src/types.rs: impl Entity for RiveObjectGraph :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RiveObjectGraph :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for RiveScene2DDocumentResult
+src/types.rs: impl Entity for RiveScene2DDocumentResult :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RiveScene2DDocumentResult :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for RiveSkeleton2DImport
+src/types.rs: impl Entity for RiveSkeleton2DImport :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RiveSkeleton2DImport :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl From<Map<String, Value>> for LottieRecord
+src/types.rs: impl From<Map<String, Value>> for LottieRecord :: fn from(value: Map<String, Value>) -> Self
+src/types.rs: impl std::ops::Deref for LottieRecord
+src/types.rs: impl std::ops::Deref for LottieRecord :: fn deref(&self) -> &Self::Target
+src/types.rs: pub const LOTTIE_LAYER_KIND_IMAGE: i32
+src/types.rs: pub const LOTTIE_LAYER_KIND_NULL: i32
+src/types.rs: pub const LOTTIE_LAYER_KIND_PRECOMPOSITION: i32
+src/types.rs: pub const LOTTIE_LAYER_KIND_SHAPE: i32
+src/types.rs: pub const LOTTIE_LAYER_KIND_SOLID: i32
+src/types.rs: pub const LOTTIE_LAYER_KIND_TEXT: i32
+src/types.rs: pub const LOTTIE_MASK_KIND_ADDITIVE: &str
+src/types.rs: pub const LOTTIE_MASK_KIND_DARKEN: &str
+src/types.rs: pub const LOTTIE_MASK_KIND_DIFFERENCE: &str
+src/types.rs: pub const LOTTIE_MASK_KIND_INTERSECT: &str
+src/types.rs: pub const LOTTIE_MASK_KIND_LIGHTEN: &str
+src/types.rs: pub const LOTTIE_MASK_KIND_NONE: &str
+src/types.rs: pub const LOTTIE_MASK_KIND_SUBTRACT: &str
+src/types.rs: pub const LOTTIE_SHAPE_ITEM_KIND_ELLIPSE: &str
+src/types.rs: pub const LOTTIE_SHAPE_ITEM_KIND_FILL: &str
+src/types.rs: pub const LOTTIE_SHAPE_ITEM_KIND_GRADIENT_FILL: &str
+src/types.rs: pub const LOTTIE_SHAPE_ITEM_KIND_GRADIENT_STROKE: &str
+src/types.rs: pub const LOTTIE_SHAPE_ITEM_KIND_PATH: &str
+src/types.rs: pub const LOTTIE_SHAPE_ITEM_KIND_POLYSTAR: &str
+src/types.rs: pub const LOTTIE_SHAPE_ITEM_KIND_RECTANGLE: &str
+src/types.rs: pub const LOTTIE_SHAPE_ITEM_KIND_STROKE: &str
+src/types.rs: pub const LOTTIE_SHAPE_ITEM_KIND_TRIM_PATH: &str
+src/types.rs: pub const SVG_CLIP_KIND_PATH: &str
+src/types.rs: pub const SVG_ELEMENT_KIND_CONTAINER: &str
+src/types.rs: pub const SVG_ELEMENT_KIND_GEOMETRY: &str
+src/types.rs: pub const SVG_ELEMENT_KIND_IMAGE: &str
+src/types.rs: pub const SVG_ELEMENT_KIND_TEXT: &str
+src/types.rs: pub const SVG_ELEMENT_KIND_USE: &str
+src/types.rs: pub struct LottieDocumentImportResult { pub advanced_blends: Vec<LottieAdvancedBlend>, pub clip: AnimationClip, pub duration: f32, pub frame_rate: f32, pub root: Ref<DisplayObject>, runtime: EntityRuntimeSlot, }
+src/types.rs: pub struct LottieImportContext<'a> { pub advanced_blends: Vec<LottieAdvancedBlend>, pub assets: HashMap<String, LottieAsset>, pub channels: Vec<AnimationChannel>, pub diagnostics: Option<&'a mut Vec<ImportDiagnostic>>, pub document: &'a LottieDocument, pub frame_offset: f32, pub frame_scale: f32, pub registry: &'a LottieRegistry, pub resolve_image_resource: Option<LottieImageResourceResolver>, pub resolving_precompositions: HashSet<String>, }
+src/types.rs: pub struct LottieLayerContext<'a, 'b> { pub container: Node2DRef, pub import: &'a mut LottieImportContext<'b>, pub layer: &'a LottieLayer, }
+src/types.rs: pub struct LottieMaskContext<'a, 'b> { pub import: &'a mut LottieImportContext<'b>, pub masks: &'a [LottieMask], pub target: Node2DRef, }
+src/types.rs: pub struct LottieShapeItemContext<'a, 'b> { pub claims: Arc<RwLock<HashSet<String>>>, pub import: &'a mut LottieImportContext<'b>, pub item: &'a LottieShapeItem, pub modifiers: Arc<RwLock<Vec<LottieShapeModifier>>>, pub painters: Arc<RwLock<Vec<LottieShapePainter>>>, pub paths: Arc<RwLock<Vec<Ref<flight_path::Path>>>>, pub rerender: LottieRerender, pub shape: Ref<Shape>, }
+src/types.rs: pub struct RiveArtboardImport { pub advanced_blends: Vec<RiveAdvancedBlend>, pub animations: Vec<RiveAnimationClip>, pub height: f32, pub layouts: Vec<RiveLayoutImport>, pub name: String, pub root: Node2DRef, pub skeleton: Option<RiveSkeleton2DImport>, pub state_machines: Vec<RiveStateMachineDescriptor>, pub width: f32, }
+src/types.rs: pub struct RiveArtboardImportContext<'a> { pub advanced_blends: Vec<RiveAdvancedBlend>, pub(crate) animation_artboard: Arc<RwLock<RiveArtboardGraph>>, pub animations: Vec<RiveAnimationClip>, pub artboard: &'a RiveArtboardGraph, pub diagnostics: Option<&'a mut Vec<ImportDiagnostic>>, pub font_names: &'a [String], pub layouts: Vec<RiveLayoutImport>, pub nodes: Vec<Option<Node2DRef>>, pub objects: &'a [RiveCoreObject], pub rebuilds: HashMap<usize, RiveRebuild>, pub registry: &'a RiveImportRegistry, pub root: Node2DRef, pub shape_paths: HashMap<usize, Vec<RivePathRecord>>, pub skeleton: Option<RiveSkeleton2DImport>, pub state_machines: Vec<RiveStateMachineDescriptor>, pub(crate) runtime: EntityRuntimeSlot, }
+src/types.rs: pub struct RiveDocumentImportContext<'a> { pub assets: Vec<RiveFileAsset>, pub diagnostics: Option<&'a mut Vec<ImportDiagnostic>>, pub objects: &'a [RiveCoreObject], pub registry: &'a RiveImportRegistry, pub(crate) runtime: EntityRuntimeSlot, }
+src/types.rs: pub struct RiveDocumentImportResult { pub artboards: Vec<RiveArtboardImport>, pub assets: Vec<RiveFileAsset>, runtime: EntityRuntimeSlot, }
+src/types.rs: pub struct RiveScene2DDocumentResult { pub image_resources: Vec<ImageResourceReference>, pub imported: RiveDocumentImportResult, pub root: Node2DRef, pub slots: Vec<Scene2DSlotReference>, runtime: EntityRuntimeSlot, }
+src/types.rs: pub struct SvgClipContext<'a, 'b> { pub element: Ref<XmlElement>, pub import: &'a mut SvgImportContext<'b>, pub target: Node2DRef, }
+src/types.rs: pub struct SvgElementContext<'a, 'b> { pub element: Ref<XmlElement>, pub import: &'a mut SvgImportContext<'b>, pub parent_style: &'a SvgStyle, }
+src/types.rs: pub struct SvgImportContext<'a> { pub css_rules: Vec<SvgCssRule>, pub diagnostics: Option<&'a mut Vec<ImportDiagnostic>>, pub elements_by_id: HashMap<String, Ref<XmlElement>>, pub gradients_by_id: HashMap<String, SvgGradient>, pub object_bounding_boxes: Vec<(Node2DRef, Rectangle)>, pub options: Option<&'a SvgDocumentImportOptions>, pub parent_by_element: Vec<(Ref<XmlElement>, Option<Ref<XmlElement>>)>, pub registry: &'a SvgRegistry, pub reported_unsupported_elements: Vec<Ref<XmlElement>>, pub resolved_definition_styles: Vec<(Ref<XmlElement>, SvgStyle)>, pub resolving_clip_uses: Vec<String>, pub resolving_clips: Vec<String>, pub resolving_gradients: Vec<String>, pub resolving_uses: Vec<String>, }
+src/types.rs: pub type LottieAsset = LottieRecord;
+src/types.rs: pub type LottieDocument = LottieRecord;
+src/types.rs: pub type LottieImageAsset = LottieRecord;
+src/types.rs: pub type LottieImageResourceResolver = Arc<dyn Fn(&LottieImageAsset) -> Option<Ref<ImageResource>> + Send + Sync>;
+src/types.rs: pub type LottieLayer = LottieRecord;
+src/types.rs: pub type LottieLayerHandler = Arc<dyn for<'a, 'b> Fn(&mut LottieLayerContext<'a, 'b>) + Send + Sync>;
+src/types.rs: pub type LottieLayerKind = i32;
+src/types.rs: pub type LottieMask = LottieRecord;
+src/types.rs: pub type LottieMaskHandler = Arc<dyn for<'a, 'b> Fn(&mut LottieMaskContext<'a, 'b>) + Send + Sync>;
+src/types.rs: pub type LottieMaskKind = String;
+src/types.rs: pub type LottieNumericConverter = Arc<dyn Fn(f32, usize) -> f32 + Send + Sync>;
+src/types.rs: pub type LottieRerender = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type LottieShapeItem = LottieRecord;
+src/types.rs: pub type LottieShapeItemHandler = Arc<dyn for<'a, 'b> Fn(&mut LottieShapeItemContext<'a, 'b>) + Send + Sync>;
+src/types.rs: pub type LottieShapeItemKind = String;
+src/types.rs: pub type LottieShapeModifier = Arc<dyn Fn(&mut Vec<Ref<flight_path::Path>>) + Send + Sync>;
+src/types.rs: pub type LottieShapePainter = Arc<dyn Fn(&Ref<Shape>, &[Ref<flight_path::Path>]) + Send + Sync>;
+src/types.rs: pub type LottieTangentOf = Arc<dyn Fn(f32, usize) -> f32 + Send + Sync>;
+src/types.rs: pub type LottieTrackValueOf = Arc<dyn for<'a> Fn(Option<&'a Value>, usize) -> Vec<f32> + Send + Sync>;
+src/types.rs: pub type RiveApplyArtboardHandler = Arc<dyn for<'a> Fn(&mut RiveArtboardImportContext<'a>) + Send + Sync>;
+src/types.rs: pub type RiveApplyDocumentHandler = Arc<dyn for<'a> Fn(&mut RiveDocumentImportContext<'a>) + Send + Sync>;
+src/types.rs: pub type RiveImportComponentHandler = Arc<dyn for<'a> Fn(&mut RiveArtboardImportContext<'a>, usize) -> Option<Node2DRef> + Send + Sync,>;
+src/types.rs: pub type RivePathBooleanRegistrar = fn(&PathBooleanKernel, &mut RiveImportRegistry);
+src/types.rs: pub type RiveRebuild = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type RiveRegistrar = fn(&mut RiveImportRegistry);
+src/types.rs: pub type SvgClipHandler = Arc<dyn for<'a, 'b> Fn(&mut SvgClipContext<'a, 'b>) + Send + Sync>;
+src/types.rs: pub type SvgClipKind = String;
+src/types.rs: pub type SvgElementHandler = Arc<dyn for<'a, 'b> Fn(&mut SvgElementContext<'a, 'b>) -> Option<Node2DRef> + Send + Sync>;
+src/types.rs: pub type SvgElementKind = String;
+src/types.rs: pub type SvgImageResourceResolver = Arc<dyn Fn(&str) -> Option<Ref<ImageResource>> + Send + Sync>;
