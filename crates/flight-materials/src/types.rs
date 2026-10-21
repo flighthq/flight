@@ -63,25 +63,28 @@ pub struct Material {
 
 // ── Material2D ──────────────────────────────────────────────────────────────
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct Material2D {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub name: Option<String>,
+    material: Material,
 }
 
-// ── MaterialData ────────────────────────────────────────────────────────────
+// ── MaterialData (open family) ──────────────────────────────────────────────
 
 #[derive(Clone, Debug, Default)]
-pub struct MaterialData {
+pub struct MaterialDataFields {
     runtime: EntityRuntimeSlot,
+}
+
+pub trait MaterialData: flight_entity::Entity + Send + Sync {
+    fn material_data_fields(&self) -> &MaterialDataFields;
+    fn material_data_fields_mut(&mut self) -> &mut MaterialDataFields;
 }
 
 // ── TintMaterialData ────────────────────────────────────────────────────────
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct TintMaterialData {
-    runtime: EntityRuntimeSlot,
+    fields: MaterialDataFields,
     pub tint: u32,
 }
 
@@ -875,9 +878,84 @@ pub fn create_material_conversion_context(guard: MaterialConversionGuard) -> Mat
 
 // ── Impl blocks ─────────────────────────────────────────────────────────────
 
+// flight-lint: allow(sugar-delegates) D16 open-family: base type self-implements its own family trait
+impl MaterialData for MaterialDataFields {
+    fn material_data_fields(&self) -> &MaterialDataFields {
+        return self;
+    }
+    fn material_data_fields_mut(&mut self) -> &mut MaterialDataFields {
+        return self;
+    }
+}
+
 impl MaterialConversionContext {
     pub fn new(guard: MaterialConversionGuard) -> Self {
         return create_material_conversion_context(guard);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family composition: Material2D delegates to inner Material
+impl std::ops::Deref for Material2D {
+    type Target = Material;
+
+    fn deref(&self) -> &Material {
+        return &self.material;
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family composition: Material2D delegates to inner Material
+impl std::ops::DerefMut for Material2D {
+    fn deref_mut(&mut self) -> &mut Material {
+        return &mut self.material;
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family composition: Entity runtime delegates through Material base
+impl flight_entity::Entity for Material2D {
+    fn entity_runtime(&self) -> &EntityRuntimeSlot {
+        return flight_entity::Entity::entity_runtime(&self.material);
+    }
+
+    fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
+        return flight_entity::Entity::entity_runtime_mut(&mut self.material);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family composition: TintMaterialData delegates to inner MaterialDataFields
+impl std::ops::Deref for TintMaterialData {
+    type Target = MaterialDataFields;
+
+    fn deref(&self) -> &MaterialDataFields {
+        return &self.fields;
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family composition: TintMaterialData delegates to inner MaterialDataFields
+impl std::ops::DerefMut for TintMaterialData {
+    fn deref_mut(&mut self) -> &mut MaterialDataFields {
+        return &mut self.fields;
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family composition: Entity runtime delegates through MaterialDataFields base
+impl flight_entity::Entity for TintMaterialData {
+    fn entity_runtime(&self) -> &EntityRuntimeSlot {
+        return flight_entity::Entity::entity_runtime(&self.fields);
+    }
+
+    fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
+        return flight_entity::Entity::entity_runtime_mut(&mut self.fields);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family composition: MaterialData trait accessor for TintMaterialData
+impl MaterialData for TintMaterialData {
+    fn material_data_fields(&self) -> &MaterialDataFields {
+        return &self.fields;
+    }
+
+    fn material_data_fields_mut(&mut self) -> &mut MaterialDataFields {
+        return &mut self.fields;
     }
 }
 
@@ -894,6 +972,25 @@ impl Default for Material {
 }
 
 flight_entity::impl_entity!(Material);
+
+impl Default for Material2D {
+    fn default() -> Self {
+        return Self {
+            material: Material::default(),
+        };
+    }
+}
+
+flight_entity::impl_entity!(MaterialDataFields);
+
+impl Default for TintMaterialData {
+    fn default() -> Self {
+        return Self {
+            fields: MaterialDataFields::default(),
+            tint: 0,
+        };
+    }
+}
 
 impl Default for Material3D {
     fn default() -> Self {
