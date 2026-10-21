@@ -58,11 +58,7 @@ fn requirement(facet: RequirementFacet, key: &str) -> Requirement {
 
 fn requirement_set(requirements: &[Requirement]) -> RequirementSet {
     let mut out = create_requirement_set(&[], &[]);
-    out.covers = vec![
-        RequirementFacet::DocumentFormat,
-        RequirementFacet::SceneMaterialKind,
-        RequirementFacet::SceneNodeKind,
-    ];
+    out.covers = vec![RequirementFacet::SceneNodeKind];
     out.requirements = requirements.to_vec();
     return out;
 }
@@ -188,7 +184,11 @@ mod create_requirement_codegen_plan {
             "glShapeRenderer",
         );
         let shape = requirement(RequirementFacet::SceneNodeKind, "Shape");
-        let requirements = requirement_set(&[shape.clone(), shape]);
+        let mut requirements = requirement_set(&[shape.clone(), shape]);
+        requirements.covers = vec![
+            RequirementFacet::SceneNodeKind,
+            RequirementFacet::SceneShapeCommand,
+        ];
         let plan = create_requirement_codegen_plan(
             &catalog(&[shape_renderer.clone()], &[], &[]),
             &requirements,
@@ -330,7 +330,7 @@ mod create_requirement_codegen_plan {
 
         let plan = create_requirement_codegen_plan(
             &catalog(&[], &[], &[]),
-            &requirement_set(&[]),
+            &create_requirement_set(&[], &[]),
             "webgl",
         );
         assert_entity(&plan);
@@ -430,7 +430,7 @@ mod create_requirement_codegen_plan {
     fn returns_an_empty_plan_for_empty_catalog_contents_and_requirements() {
         let plan = create_requirement_codegen_plan(
             &catalog(&[], &[], &[]),
-            &requirement_set(&[]),
+            &create_requirement_set(&[], &[]),
             "webgl",
         );
         assert_eq!(plan.backend, "webgl");
@@ -482,7 +482,6 @@ mod create_requirement_codegen_plan {
             "glShapeRenderer",
         );
         let mut shape_commands = shape_renderer.clone();
-        shape_commands.implementation_symbol = "registerGlShapeCommands".to_string();
         shape_commands.registrar_import = Some("@flighthq/scene2d-gl".to_string());
         shape_commands.registrar_symbol = Some("registerGlShapeCommands".to_string());
         let mut webgpu_renderer = shape_renderer.clone();
