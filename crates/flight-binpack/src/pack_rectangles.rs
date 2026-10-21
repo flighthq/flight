@@ -270,7 +270,7 @@ fn finalize_result(
         height = width;
     }
 
-    return create_pack_result(packed.placements, width, height, packed.unpacked);
+    return PackResult { placements: packed.placements, width: width, height: height, unpacked: packed.unpacked };
 }
 
 /// Best-Short-Side-Fit search: over every free rectangle (and, when rotation is allowed, both
@@ -436,22 +436,15 @@ fn pack_into_bin(
         }
         let placement = placement.unwrap();
 
-        placements.push(create_packed_rectangle(
-            rect.id.clone(),
-            placement.x + border,
-            placement.y + border,
-            if placement.rotated {
+        placements.push(PackedRectangle { id: rect.id.clone(), x: placement.x + border, y: placement.y + border, width: if placement.rotated {
                 rect.height
             } else {
                 rect.width
-            },
-            if placement.rotated {
+            }, height: if placement.rotated {
                 rect.width
             } else {
                 rect.height
-            },
-            placement.rotated,
-        ));
+            }, rotated: placement.rotated });
 
         split_free_rectangles(&mut free, &placement);
         prune_free_rectangles(&mut free);
@@ -493,12 +486,7 @@ pub fn pack_rectangles(
     let max_height = options.map_or(BIN_PACK_DEFAULT_MAX_EXTENT, |o| o.max_height);
 
     if rects.is_empty() {
-        return create_pack_result(
-            Vec::new(),
-            finalize_extent(0.0, power_of_two),
-            finalize_extent(0.0, power_of_two),
-            Vec::new(),
-        );
+        return PackResult { placements: Vec::new(), width: finalize_extent(0.0, power_of_two), height: finalize_extent(0.0, power_of_two), unpacked: Vec::new() };
     }
 
     let mut degenerate: Vec<RectangleId> = Vec::new();
@@ -515,12 +503,7 @@ pub fn pack_rectangles(
         }
     }
     if placeable.is_empty() {
-        return create_pack_result(
-            Vec::new(),
-            finalize_extent(0.0, power_of_two),
-            finalize_extent(0.0, power_of_two),
-            degenerate,
-        );
+        return PackResult { placements: Vec::new(), width: finalize_extent(0.0, power_of_two), height: finalize_extent(0.0, power_of_two), unpacked: degenerate };
     }
 
     let sorted = sort_rectangles_for_packing(&placeable);

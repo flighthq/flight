@@ -91,12 +91,7 @@ pub fn explain_unpacked_rectangles(
             continue;
         }
         outstanding.insert(rectangle.id.clone(), remaining - 1);
-        explanations.push(create_unpacked_rectangle_explanation(
-            rectangle.id.clone(),
-            get_unpacked_reason(rectangle, usable_width, usable_height, allow_rotation),
-            usable_width,
-            usable_height,
-        ));
+        explanations.push(UnpackedRectangleExplanation { id: rectangle.id.clone(), reason: get_unpacked_reason(rectangle, usable_width, usable_height, allow_rotation), usable_width: usable_width, usable_height: usable_height });
     }
     return explanations;
 }

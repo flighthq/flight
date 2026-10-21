@@ -49,11 +49,7 @@ mod explain_unpacked_rectangles {
     #[test]
     fn returns_nothing_when_everything_was_placed() {
         let result = explain_unpacked_rectangles(
-            &[create_packable_rectangle(
-                RectangleId::Text("a".to_string()),
-                8.0,
-                8.0,
-            )],
+            &[PackableRectangle { id: RectangleId::Text("a".to_string()), width: 8.0, height: 8.0 }],
             None,
         );
         assert!(result.is_empty());
@@ -62,11 +58,21 @@ mod explain_unpacked_rectangles {
     #[test]
     fn separates_oversized_from_bin_exhausted_which_have_different_remedies() {
         let rects = vec![
-            create_packable_rectangle(RectangleId::Text("huge".to_string()), 500.0, 10.0),
-            create_packable_rectangle(RectangleId::Text("filler".to_string()), 90.0, 90.0),
-            create_packable_rectangle(RectangleId::Text("filler2".to_string()), 90.0, 90.0),
+            PackableRectangle { id: RectangleId::Text("huge".to_string()), width: 500.0, height: 10.0 },
+            PackableRectangle { id: RectangleId::Text("filler".to_string()), width: 90.0, height: 90.0 },
+            PackableRectangle { id: RectangleId::Text("filler2".to_string()), width: 90.0, height: 90.0 },
         ];
-        let mut options = create_bin_pack_options();
+        let mut options = BinPackOptions {
+            padding: 0.0,
+            border: 0.0,
+            allow_rotation: false,
+            heuristic: BinPackHeuristic::BestShortSideFit,
+            growable: true,
+            power_of_two: false,
+            square: false,
+            max_width: BIN_PACK_DEFAULT_MAX_EXTENT,
+            max_height: BIN_PACK_DEFAULT_MAX_EXTENT,
+        };
         options.max_width = 100.0;
         options.max_height = 100.0;
         options.growable = false;
@@ -88,10 +94,20 @@ mod explain_unpacked_rectangles {
     #[test]
     fn blames_the_collapsed_region_rather_than_the_pieces_when_border_eats_the_caps() {
         let rects = vec![
-            create_packable_rectangle(RectangleId::Text("a".to_string()), 2.0, 2.0),
-            create_packable_rectangle(RectangleId::Text("b".to_string()), 2.0, 2.0),
+            PackableRectangle { id: RectangleId::Text("a".to_string()), width: 2.0, height: 2.0 },
+            PackableRectangle { id: RectangleId::Text("b".to_string()), width: 2.0, height: 2.0 },
         ];
-        let mut options = create_bin_pack_options();
+        let mut options = BinPackOptions {
+            padding: 0.0,
+            border: 0.0,
+            allow_rotation: false,
+            heuristic: BinPackHeuristic::BestShortSideFit,
+            growable: true,
+            power_of_two: false,
+            square: false,
+            max_width: BIN_PACK_DEFAULT_MAX_EXTENT,
+            max_height: BIN_PACK_DEFAULT_MAX_EXTENT,
+        };
         options.max_width = 10.0;
         options.max_height = 10.0;
         options.border = 6.0;
@@ -110,12 +126,18 @@ mod explain_unpacked_rectangles {
 
     #[test]
     fn counts_rotation_as_a_real_second_chance_before_calling_a_piece_oversized() {
-        let rects = vec![create_packable_rectangle(
-            RectangleId::Text("tall".to_string()),
-            10.0,
-            200.0,
-        )];
-        let mut options = create_bin_pack_options();
+        let rects = vec![PackableRectangle { id: RectangleId::Text("tall".to_string()), width: 10.0, height: 200.0 }];
+        let mut options = BinPackOptions {
+            padding: 0.0,
+            border: 0.0,
+            allow_rotation: false,
+            heuristic: BinPackHeuristic::BestShortSideFit,
+            growable: true,
+            power_of_two: false,
+            square: false,
+            max_width: BIN_PACK_DEFAULT_MAX_EXTENT,
+            max_height: BIN_PACK_DEFAULT_MAX_EXTENT,
+        };
         options.max_width = 300.0;
         options.max_height = 100.0;
         options.growable = false;
@@ -125,7 +147,17 @@ mod explain_unpacked_rectangles {
             UnpackedRectangleReason::Oversized
         );
 
-        let mut options_rotated = create_bin_pack_options();
+        let mut options_rotated = BinPackOptions {
+            padding: 0.0,
+            border: 0.0,
+            allow_rotation: false,
+            heuristic: BinPackHeuristic::BestShortSideFit,
+            growable: true,
+            power_of_two: false,
+            square: false,
+            max_width: BIN_PACK_DEFAULT_MAX_EXTENT,
+            max_height: BIN_PACK_DEFAULT_MAX_EXTENT,
+        };
         options_rotated.max_width = 300.0;
         options_rotated.max_height = 100.0;
         options_rotated.growable = false;
@@ -136,12 +168,18 @@ mod explain_unpacked_rectangles {
 
     #[test]
     fn reports_the_usable_extent_it_measured_against_net_of_border() {
-        let rects = vec![create_packable_rectangle(
-            RectangleId::Text("a".to_string()),
-            999.0,
-            4.0,
-        )];
-        let mut options = create_bin_pack_options();
+        let rects = vec![PackableRectangle { id: RectangleId::Text("a".to_string()), width: 999.0, height: 4.0 }];
+        let mut options = BinPackOptions {
+            padding: 0.0,
+            border: 0.0,
+            allow_rotation: false,
+            heuristic: BinPackHeuristic::BestShortSideFit,
+            growable: true,
+            power_of_two: false,
+            square: false,
+            max_width: BIN_PACK_DEFAULT_MAX_EXTENT,
+            max_height: BIN_PACK_DEFAULT_MAX_EXTENT,
+        };
         options.max_width = 100.0;
         options.max_height = 100.0;
         options.border = 5.0;
@@ -155,10 +193,20 @@ mod explain_unpacked_rectangles {
     #[test]
     fn returns_exactly_one_entry_per_unpacked_piece_when_two_rectangles_share_an_id() {
         let rects = vec![
-            create_packable_rectangle(RectangleId::Text("a".to_string()), 60.0, 60.0),
-            create_packable_rectangle(RectangleId::Text("a".to_string()), 60.0, 60.0),
+            PackableRectangle { id: RectangleId::Text("a".to_string()), width: 60.0, height: 60.0 },
+            PackableRectangle { id: RectangleId::Text("a".to_string()), width: 60.0, height: 60.0 },
         ];
-        let mut options = create_bin_pack_options();
+        let mut options = BinPackOptions {
+            padding: 0.0,
+            border: 0.0,
+            allow_rotation: false,
+            heuristic: BinPackHeuristic::BestShortSideFit,
+            growable: true,
+            power_of_two: false,
+            square: false,
+            max_width: BIN_PACK_DEFAULT_MAX_EXTENT,
+            max_height: BIN_PACK_DEFAULT_MAX_EXTENT,
+        };
         options.growable = false;
         options.max_height = 64.0;
         options.max_width = 64.0;
@@ -174,10 +222,20 @@ mod explain_unpacked_rectangles {
     #[test]
     fn returns_one_entry_per_failure_when_both_duplicates_fail() {
         let rects = vec![
-            create_packable_rectangle(RectangleId::Text("a".to_string()), 500.0, 500.0),
-            create_packable_rectangle(RectangleId::Text("a".to_string()), 500.0, 500.0),
+            PackableRectangle { id: RectangleId::Text("a".to_string()), width: 500.0, height: 500.0 },
+            PackableRectangle { id: RectangleId::Text("a".to_string()), width: 500.0, height: 500.0 },
         ];
-        let mut options = create_bin_pack_options();
+        let mut options = BinPackOptions {
+            padding: 0.0,
+            border: 0.0,
+            allow_rotation: false,
+            heuristic: BinPackHeuristic::BestShortSideFit,
+            growable: true,
+            power_of_two: false,
+            square: false,
+            max_width: BIN_PACK_DEFAULT_MAX_EXTENT,
+            max_height: BIN_PACK_DEFAULT_MAX_EXTENT,
+        };
         options.growable = false;
         options.max_height = 64.0;
         options.max_width = 64.0;
@@ -208,13 +266,19 @@ mod explain_unpacked_rectangles {
                 } else {
                     format!("id-{}", index)
                 };
-                rects.push(create_packable_rectangle(
-                    RectangleId::Text(id_str),
-                    1.0 + (next_random(&mut rng) * 80.0).floor(),
-                    1.0 + (next_random(&mut rng) * 80.0).floor(),
-                ));
+                rects.push(PackableRectangle { id: RectangleId::Text(id_str), width: 1.0 + (next_random(&mut rng) * 80.0).floor(), height: 1.0 + (next_random(&mut rng) * 80.0).floor() });
             }
-            let mut options = create_bin_pack_options();
+            let mut options = BinPackOptions {
+            padding: 0.0,
+            border: 0.0,
+            allow_rotation: false,
+            heuristic: BinPackHeuristic::BestShortSideFit,
+            growable: true,
+            power_of_two: false,
+            square: false,
+            max_width: BIN_PACK_DEFAULT_MAX_EXTENT,
+            max_height: BIN_PACK_DEFAULT_MAX_EXTENT,
+        };
             options.growable = false;
             options.max_height = 96.0;
             options.max_width = 96.0;
