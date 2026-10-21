@@ -1,0 +1,261 @@
+src/audio_channel.rs: pub fn clear_audio_channel_loop_region(channel: &Ref<AudioChannel>)
+src/audio_channel.rs: pub fn destroy_audio_channel(channel: &Ref<AudioChannel>)
+src/audio_channel.rs: pub fn fade_audio_channel_gain(host_audio_device: &HostAudioDeviceCapability, channel: &Ref<AudioChannel>, target_gain: f32, duration_ms: f32,)
+src/audio_channel.rs: pub fn get_audio_channel_current_time(channel: &Ref<AudioChannel>) -> f32
+src/audio_channel.rs: pub fn get_audio_channel_duration(channel: &Ref<AudioChannel>) -> f32
+src/audio_channel.rs: pub fn get_audio_channel_source_handle(channel: &Ref<AudioChannel>) -> AudioSourceHandle
+src/audio_channel.rs: pub fn has_audio_channel_fade(host_audio_device: &HostAudioDeviceCapability) -> bool
+src/audio_channel.rs: pub fn is_audio_channel_muted(channel: &Ref<AudioChannel>) -> bool
+src/audio_channel.rs: pub fn is_audio_channel_playing(channel: &Ref<AudioChannel>) -> bool
+src/audio_channel.rs: pub fn pause_audio_channel(channel: &Ref<AudioChannel>)
+src/audio_channel.rs: pub fn play_audio_resource(backend: &HostAudioDeviceCapability, device: AudioDeviceHandle, source: &Ref<AudioResource>, options: Option<&AudioPlayOptions>,) -> Option<Ref<AudioChannel>>
+src/audio_channel.rs: pub fn resume_audio_channel(channel: &Ref<AudioChannel>)
+src/audio_channel.rs: pub fn set_audio_channel_current_time(channel: &Ref<AudioChannel>, value: f32) -> f32
+src/audio_channel.rs: pub fn set_audio_channel_gain(channel: &Ref<AudioChannel>, value: f32) -> f32
+src/audio_channel.rs: pub fn set_audio_channel_loop_region(channel: &Ref<AudioChannel>, start_ms: f32, end_ms: f32,) -> bool
+src/audio_channel.rs: pub fn set_audio_channel_muted(channel: &Ref<AudioChannel>, value: bool) -> bool
+src/audio_channel.rs: pub fn set_audio_channel_pan(channel: &Ref<AudioChannel>, value: f32) -> f32
+src/audio_channel.rs: pub fn set_audio_channel_playback_rate(channel: &Ref<AudioChannel>, value: f32) -> f32
+src/audio_channel.rs: pub fn set_audio_channel_source_route(channel: &Ref<AudioChannel>, route: Option<AudioSourceRoute>,)
+src/audio_channel.rs: pub fn stop_audio_channel(channel: &Ref<AudioChannel>)
+src/audio_mixer.rs: pub fn add_audio_bus_to_mixer(host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>, bus: &Ref<AudioBus>,)
+src/audio_mixer.rs: pub fn create_audio_bus(options: Option<&AudioBusOptions>) -> Ref<AudioBus>
+src/audio_mixer.rs: pub fn create_audio_mixer(host_audio_mixer: &HostAudioMixerCapability, device: AudioDeviceHandle, options: Option<&AudioMixerOptions>,) -> Ref<AudioMixer>
+src/audio_mixer.rs: pub fn destroy_audio_mixer(host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>)
+src/audio_mixer.rs: pub fn fade_audio_bus_gain(host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>, bus: &Ref<AudioBus>, target_gain: f32, duration_ms: f32,)
+src/audio_mixer.rs: pub fn get_audio_mixer_active_channels(mixer: &Ref<AudioMixer>) -> Vec<Ref<AudioChannel>>
+src/audio_mixer.rs: pub fn initialize_audio_bus(out: &mut AudioBus, options: Option<&AudioBusOptions>)
+src/audio_mixer.rs: pub fn pause_all_audio_mixer_channels(mixer: &Ref<AudioMixer>)
+src/audio_mixer.rs: pub fn resume_all_audio_mixer_channels(mixer: &Ref<AudioMixer>)
+src/audio_mixer.rs: pub fn route_audio_channel_to_mixer_bus(host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>, channel: &Ref<AudioChannel>, bus: &Ref<AudioBus>,)
+src/audio_mixer.rs: pub fn set_audio_bus_gain(host_audio_mixer: &HostAudioMixerCapability, guard_state: &AudioMixerGuardStateRef, bus: &Ref<AudioBus>, value: f32,) -> f32
+src/audio_mixer.rs: pub fn set_audio_bus_mixer_guard(guard_state: &AudioMixerGuardStateRef, guard: Option<AudioBusMixerGuard>,)
+src/audio_mixer.rs: pub fn set_audio_bus_muted(host_audio_mixer: &HostAudioMixerCapability, guard_state: &AudioMixerGuardStateRef, bus: &Ref<AudioBus>, muted: bool,) -> bool
+src/audio_mixer.rs: pub fn set_audio_bus_pan(host_audio_mixer: &HostAudioMixerCapability, guard_state: &AudioMixerGuardStateRef, bus: &Ref<AudioBus>, value: f32,) -> f32
+src/audio_mixer.rs: pub fn set_audio_mixer_master_gain(host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>, value: f32,) -> f32
+src/audio_mixer.rs: pub fn set_audio_mixer_master_muted(host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>, muted: bool,) -> bool
+src/audio_mixer.rs: pub fn stop_all_audio_mixer_channels(mixer: &Ref<AudioMixer>)
+src/audio_mixer.rs: pub fn unroute_audio_channel_from_mixer_bus(host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>, channel: &Ref<AudioChannel>,)
+src/contract.rs: pub use crate::audio_channel::*;
+src/contract.rs: pub use crate::audio_mixer::*;
+src/contract.rs: pub use crate::enable_audio_mixer_guards::*;
+src/contract.rs: pub use crate::media_channel_signals::*;
+src/contract.rs: pub use crate::sugar::*;
+src/contract.rs: pub use crate::types::*;
+src/contract.rs: pub use crate::video_channel::*;
+src/contract.rs: pub use crate::video_channel_runtime::*;
+src/enable_audio_mixer_guards.rs: pub fn create_audio_mixer_guard_state() -> AudioMixerGuardStateRef
+src/enable_audio_mixer_guards.rs: pub fn disable_audio_mixer_guards(guard_state: &AudioMixerGuardStateRef)
+src/enable_audio_mixer_guards.rs: pub fn enable_audio_mixer_guards(guard_state: &AudioMixerGuardStateRef, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::AudioBufferHandle;
+src/lib.rs: pub use contract::AudioBus;
+src/lib.rs: pub use contract::AudioBusMethods;
+src/lib.rs: pub use contract::AudioBusMixerGuard;
+src/lib.rs: pub use contract::AudioBusMixerOperation;
+src/lib.rs: pub use contract::AudioBusNodeHandle;
+src/lib.rs: pub use contract::AudioBusOptions;
+src/lib.rs: pub use contract::AudioChannel;
+src/lib.rs: pub use contract::AudioChannelMethods;
+src/lib.rs: pub use contract::AudioDeviceHandle;
+src/lib.rs: pub use contract::AudioDeviceOperation;
+src/lib.rs: pub use contract::AudioMixer;
+src/lib.rs: pub use contract::AudioMixerGraphHandle;
+src/lib.rs: pub use contract::AudioMixerGuardState;
+src/lib.rs: pub use contract::AudioMixerGuardStateMethods;
+src/lib.rs: pub use contract::AudioMixerGuardStateRef;
+src/lib.rs: pub use contract::AudioMixerMethods;
+src/lib.rs: pub use contract::AudioMixerOptions;
+src/lib.rs: pub use contract::AudioSourceHandle;
+src/lib.rs: pub use contract::HostAudioDeviceCapability;
+src/lib.rs: pub use contract::HostAudioMixerCapability;
+src/lib.rs: pub use contract::MediaChannelSignals;
+src/lib.rs: pub use contract::MediaReadyState;
+src/lib.rs: pub use contract::VideoChannel;
+src/lib.rs: pub use contract::VideoChannelMethods;
+src/lib.rs: pub use contract::VideoChannelRuntimeState;
+src/lib.rs: pub use contract::VideoChannelRuntimeStateRef;
+src/lib.rs: pub use contract::add_audio_bus_to_mixer;
+src/lib.rs: pub use contract::clear_audio_channel_loop_region;
+src/lib.rs: pub use contract::create_audio_bus;
+src/lib.rs: pub use contract::create_audio_mixer;
+src/lib.rs: pub use contract::create_video_channel_runtime_state;
+src/lib.rs: pub use contract::destroy_audio_channel;
+src/lib.rs: pub use contract::destroy_audio_mixer;
+src/lib.rs: pub use contract::destroy_video_channel;
+src/lib.rs: pub use contract::disable_audio_mixer_guards;
+src/lib.rs: pub use contract::enable_audio_channel_signals;
+src/lib.rs: pub use contract::enable_audio_mixer_guards;
+src/lib.rs: pub use contract::enable_video_channel_signals;
+src/lib.rs: pub use contract::fade_audio_bus_gain;
+src/lib.rs: pub use contract::fade_audio_channel_gain;
+src/lib.rs: pub use contract::get_audio_channel_current_time;
+src/lib.rs: pub use contract::get_audio_channel_duration;
+src/lib.rs: pub use contract::get_audio_channel_signals;
+src/lib.rs: pub use contract::get_audio_channel_source_handle;
+src/lib.rs: pub use contract::get_audio_mixer_active_channels;
+src/lib.rs: pub use contract::get_video_channel_current_time;
+src/lib.rs: pub use contract::get_video_channel_duration;
+src/lib.rs: pub use contract::get_video_channel_height;
+src/lib.rs: pub use contract::get_video_channel_signals;
+src/lib.rs: pub use contract::get_video_channel_width;
+src/lib.rs: pub use contract::has_audio_channel_fade;
+src/lib.rs: pub use contract::is_audio_channel_muted;
+src/lib.rs: pub use contract::is_audio_channel_playing;
+src/lib.rs: pub use contract::is_video_channel_muted;
+src/lib.rs: pub use contract::is_video_channel_playing;
+src/lib.rs: pub use contract::pause_all_audio_mixer_channels;
+src/lib.rs: pub use contract::pause_audio_channel;
+src/lib.rs: pub use contract::pause_video_channel;
+src/lib.rs: pub use contract::play_audio_resource;
+src/lib.rs: pub use contract::play_video_resource;
+src/lib.rs: pub use contract::resume_all_audio_mixer_channels;
+src/lib.rs: pub use contract::resume_audio_channel;
+src/lib.rs: pub use contract::resume_video_channel;
+src/lib.rs: pub use contract::route_audio_channel_to_mixer_bus;
+src/lib.rs: pub use contract::set_audio_bus_gain;
+src/lib.rs: pub use contract::set_audio_bus_muted;
+src/lib.rs: pub use contract::set_audio_bus_pan;
+src/lib.rs: pub use contract::set_audio_channel_current_time;
+src/lib.rs: pub use contract::set_audio_channel_gain;
+src/lib.rs: pub use contract::set_audio_channel_loop_region;
+src/lib.rs: pub use contract::set_audio_channel_muted;
+src/lib.rs: pub use contract::set_audio_channel_pan;
+src/lib.rs: pub use contract::set_audio_channel_playback_rate;
+src/lib.rs: pub use contract::set_audio_mixer_master_gain;
+src/lib.rs: pub use contract::set_audio_mixer_master_muted;
+src/lib.rs: pub use contract::set_video_channel_current_time;
+src/lib.rs: pub use contract::set_video_channel_gain;
+src/lib.rs: pub use contract::set_video_channel_muted;
+src/lib.rs: pub use contract::set_video_channel_playback_rate;
+src/lib.rs: pub use contract::stop_all_audio_mixer_channels;
+src/lib.rs: pub use contract::stop_audio_channel;
+src/lib.rs: pub use contract::stop_video_channel;
+src/lib.rs: pub use contract::unroute_audio_channel_from_mixer_bus;
+src/media_channel_signals.rs: pub fn enable_audio_channel_signals(channel: &Ref<AudioChannel>) -> Ref<MediaChannelSignals>
+src/media_channel_signals.rs: pub fn enable_video_channel_signals(channel: &Ref<VideoChannel>) -> Ref<MediaChannelSignals>
+src/media_channel_signals.rs: pub fn get_audio_channel_signals(channel: &Ref<AudioChannel>) -> Option<Ref<MediaChannelSignals>>
+src/media_channel_signals.rs: pub fn get_video_channel_signals(channel: &Ref<VideoChannel>) -> Option<Ref<MediaChannelSignals>>
+src/sugar.rs: impl AudioBus :: fn new(options: Option<&AudioBusOptions>) -> Ref<AudioBus>
+src/sugar.rs: impl AudioBusMethods for Ref<AudioBus>
+src/sugar.rs: impl AudioBusMethods for Ref<AudioBus> :: fn add_to_mixer(&self, host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>)
+src/sugar.rs: impl AudioBusMethods for Ref<AudioBus> :: fn fade_gain(&self, host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>, target_gain: f32, duration_ms: f32,)
+src/sugar.rs: impl AudioBusMethods for Ref<AudioBus> :: fn set_gain(&self, host_audio_mixer: &HostAudioMixerCapability, guard_state: &AudioMixerGuardStateRef, value: f32,) -> f32
+src/sugar.rs: impl AudioBusMethods for Ref<AudioBus> :: fn set_muted(&self, host_audio_mixer: &HostAudioMixerCapability, guard_state: &AudioMixerGuardStateRef, muted: bool,) -> bool
+src/sugar.rs: impl AudioBusMethods for Ref<AudioBus> :: fn set_pan(&self, host_audio_mixer: &HostAudioMixerCapability, guard_state: &AudioMixerGuardStateRef, value: f32,) -> f32
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel>
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn clear_loop_region(&self)
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn current_time(&self) -> f32
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn destroy(&self)
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn duration(&self) -> f32
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn enable_signals(&self) -> Ref<MediaChannelSignals>
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn fade_gain(&self, host_audio_device: &HostAudioDeviceCapability, target_gain: f32, duration_ms: f32,)
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn is_muted(&self) -> bool
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn is_playing(&self) -> bool
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn pause(&self)
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn resume(&self)
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn set_current_time(&self, value: f32) -> f32
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn set_gain(&self, value: f32) -> f32
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn set_loop_region(&self, start_ms: f32, end_ms: f32) -> bool
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn set_muted(&self, value: bool) -> bool
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn set_pan(&self, value: f32) -> f32
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn set_playback_rate(&self, value: f32) -> f32
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn signals(&self) -> Option<Ref<MediaChannelSignals>>
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn source_handle(&self) -> AudioSourceHandle
+src/sugar.rs: impl AudioChannelMethods for Ref<AudioChannel> :: fn stop(&self)
+src/sugar.rs: impl AudioMixer :: fn new(host_audio_mixer: &HostAudioMixerCapability, device: AudioDeviceHandle, options: Option<&AudioMixerOptions>,) -> Ref<AudioMixer>
+src/sugar.rs: impl AudioMixerGuardStateMethods for AudioMixerGuardStateRef
+src/sugar.rs: impl AudioMixerGuardStateMethods for AudioMixerGuardStateRef :: fn disable(&self)
+src/sugar.rs: impl AudioMixerGuardStateMethods for AudioMixerGuardStateRef :: fn enable(&self, log_state: &flight_log::LogStateRef, clock: std::sync::Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/sugar.rs: impl AudioMixerGuardStateMethods for AudioMixerGuardStateRef :: fn set_guard(&self, guard: Option<AudioBusMixerGuard>)
+src/sugar.rs: impl AudioMixerMethods for Ref<AudioMixer>
+src/sugar.rs: impl AudioMixerMethods for Ref<AudioMixer> :: fn active_channels(&self) -> Vec<Ref<AudioChannel>>
+src/sugar.rs: impl AudioMixerMethods for Ref<AudioMixer> :: fn add_bus(&self, host_audio_mixer: &HostAudioMixerCapability, bus: &Ref<AudioBus>)
+src/sugar.rs: impl AudioMixerMethods for Ref<AudioMixer> :: fn destroy(&self, host_audio_mixer: &HostAudioMixerCapability)
+src/sugar.rs: impl AudioMixerMethods for Ref<AudioMixer> :: fn fade_bus_gain(&self, host_audio_mixer: &HostAudioMixerCapability, bus: &Ref<AudioBus>, target_gain: f32, duration_ms: f32,)
+src/sugar.rs: impl AudioMixerMethods for Ref<AudioMixer> :: fn pause_all_channels(&self)
+src/sugar.rs: impl AudioMixerMethods for Ref<AudioMixer> :: fn resume_all_channels(&self)
+src/sugar.rs: impl AudioMixerMethods for Ref<AudioMixer> :: fn route_channel_to_bus(&self, host_audio_mixer: &HostAudioMixerCapability, channel: &Ref<AudioChannel>, bus: &Ref<AudioBus>,)
+src/sugar.rs: impl AudioMixerMethods for Ref<AudioMixer> :: fn set_master_gain(&self, host_audio_mixer: &HostAudioMixerCapability, value: f32) -> f32
+src/sugar.rs: impl AudioMixerMethods for Ref<AudioMixer> :: fn set_master_muted(&self, host_audio_mixer: &HostAudioMixerCapability, muted: bool) -> bool
+src/sugar.rs: impl AudioMixerMethods for Ref<AudioMixer> :: fn stop_all_channels(&self)
+src/sugar.rs: impl AudioMixerMethods for Ref<AudioMixer> :: fn unroute_channel_from_bus(&self, host_audio_mixer: &HostAudioMixerCapability, channel: &Ref<AudioChannel>,)
+src/sugar.rs: impl VideoChannelMethods for Ref<VideoChannel>
+src/sugar.rs: impl VideoChannelMethods for Ref<VideoChannel> :: fn current_time(&self, host_video: &HostVideoCapability) -> f32
+src/sugar.rs: impl VideoChannelMethods for Ref<VideoChannel> :: fn destroy(&self, host_video: &HostVideoCapability)
+src/sugar.rs: impl VideoChannelMethods for Ref<VideoChannel> :: fn duration(&self) -> f32
+src/sugar.rs: impl VideoChannelMethods for Ref<VideoChannel> :: fn enable_signals(&self) -> Ref<MediaChannelSignals>
+src/sugar.rs: impl VideoChannelMethods for Ref<VideoChannel> :: fn height(&self, host_video: &HostVideoCapability) -> f32
+src/sugar.rs: impl VideoChannelMethods for Ref<VideoChannel> :: fn is_muted(&self) -> bool
+src/sugar.rs: impl VideoChannelMethods for Ref<VideoChannel> :: fn is_playing(&self) -> bool
+src/sugar.rs: impl VideoChannelMethods for Ref<VideoChannel> :: fn pause(&self, host_video: &HostVideoCapability)
+src/sugar.rs: impl VideoChannelMethods for Ref<VideoChannel> :: fn resume(&self, host_video: &HostVideoCapability, host_spawn: &HostSpawnCapability)
+src/sugar.rs: impl VideoChannelMethods for Ref<VideoChannel> :: fn set_current_time(&self, host_video: &HostVideoCapability, value: f32) -> f32
+src/sugar.rs: impl VideoChannelMethods for Ref<VideoChannel> :: fn set_gain(&self, host_video: &HostVideoCapability, value: f32) -> f32
+src/sugar.rs: impl VideoChannelMethods for Ref<VideoChannel> :: fn set_muted(&self, host_video: &HostVideoCapability, value: bool) -> bool
+src/sugar.rs: impl VideoChannelMethods for Ref<VideoChannel> :: fn set_playback_rate(&self, host_video: &HostVideoCapability, value: f32) -> f32
+src/sugar.rs: impl VideoChannelMethods for Ref<VideoChannel> :: fn signals(&self) -> Option<Ref<MediaChannelSignals>>
+src/sugar.rs: impl VideoChannelMethods for Ref<VideoChannel> :: fn stop(&self, host_video: &HostVideoCapability)
+src/sugar.rs: impl VideoChannelMethods for Ref<VideoChannel> :: fn width(&self, host_video: &HostVideoCapability) -> f32
+src/sugar.rs: impl VideoChannelRuntimeState :: fn new() -> VideoChannelRuntimeStateRef
+src/sugar.rs: pub trait AudioBusMethods { fn add_to_mixer(&self, host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>); fn fade_gain(&self, host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>, target_gain: f32, duration_ms: f32,); fn set_gain(&self, host_audio_mixer: &HostAudioMixerCapability, guard_state: &AudioMixerGuardStateRef, value: f32,) -> f32; fn set_muted(&self, host_audio_mixer: &HostAudioMixerCapability, guard_state: &AudioMixerGuardStateRef, muted: bool,) -> bool; fn set_pan(&self, host_audio_mixer: &HostAudioMixerCapability, guard_state: &AudioMixerGuardStateRef, value: f32,) -> f32; }
+src/sugar.rs: pub trait AudioChannelMethods { fn clear_loop_region(&self); fn current_time(&self) -> f32; fn destroy(&self); fn duration(&self) -> f32; fn enable_signals(&self) -> Ref<MediaChannelSignals>; fn fade_gain(&self, host_audio_device: &HostAudioDeviceCapability, target_gain: f32, duration_ms: f32,); fn is_muted(&self) -> bool; fn is_playing(&self) -> bool; fn pause(&self); fn resume(&self); fn set_current_time(&self, value: f32) -> f32; fn set_gain(&self, value: f32) -> f32; fn set_loop_region(&self, start_ms: f32, end_ms: f32) -> bool; fn set_muted(&self, value: bool) -> bool; fn set_pan(&self, value: f32) -> f32; fn set_playback_rate(&self, value: f32) -> f32; fn signals(&self) -> Option<Ref<MediaChannelSignals>>; fn source_handle(&self) -> AudioSourceHandle; fn stop(&self); }
+src/sugar.rs: pub trait AudioMixerGuardStateMethods { fn disable(&self); fn enable(&self, log_state: &flight_log::LogStateRef, clock: std::sync::Arc<dyn Fn() -> f64 + Send + Sync>,); fn set_guard(&self, guard: Option<AudioBusMixerGuard>); }
+src/sugar.rs: pub trait AudioMixerMethods { fn active_channels(&self) -> Vec<Ref<AudioChannel>>; fn add_bus(&self, host_audio_mixer: &HostAudioMixerCapability, bus: &Ref<AudioBus>); fn destroy(&self, host_audio_mixer: &HostAudioMixerCapability); fn fade_bus_gain(&self, host_audio_mixer: &HostAudioMixerCapability, bus: &Ref<AudioBus>, target_gain: f32, duration_ms: f32,); fn pause_all_channels(&self); fn resume_all_channels(&self); fn route_channel_to_bus(&self, host_audio_mixer: &HostAudioMixerCapability, channel: &Ref<AudioChannel>, bus: &Ref<AudioBus>,); fn set_master_gain(&self, host_audio_mixer: &HostAudioMixerCapability, value: f32) -> f32; fn set_master_muted(&self, host_audio_mixer: &HostAudioMixerCapability, muted: bool) -> bool; fn stop_all_channels(&self); fn unroute_channel_from_bus(&self, host_audio_mixer: &HostAudioMixerCapability, channel: &Ref<AudioChannel>,); }
+src/sugar.rs: pub trait VideoChannelMethods { fn current_time(&self, host_video: &HostVideoCapability) -> f32; fn destroy(&self, host_video: &HostVideoCapability); fn duration(&self) -> f32; fn enable_signals(&self) -> Ref<MediaChannelSignals>; fn height(&self, host_video: &HostVideoCapability) -> f32; fn is_muted(&self) -> bool; fn is_playing(&self) -> bool; fn pause(&self, host_video: &HostVideoCapability); fn resume(&self, host_video: &HostVideoCapability, host_spawn: &HostSpawnCapability); fn set_current_time(&self, host_video: &HostVideoCapability, value: f32) -> f32; fn set_gain(&self, host_video: &HostVideoCapability, value: f32) -> f32; fn set_muted(&self, host_video: &HostVideoCapability, value: bool) -> bool; fn set_playback_rate(&self, host_video: &HostVideoCapability, value: f32) -> f32; fn signals(&self) -> Option<Ref<MediaChannelSignals>>; fn stop(&self, host_video: &HostVideoCapability); fn width(&self, host_video: &HostVideoCapability) -> f32; }
+src/types.rs: #[derive(Clone)] pub struct HostAudioDeviceCapability { pub provider: ProviderRef, pub create_buffer: Arc<dyn Fn(AudioDeviceHandle, usize, usize, f32, &[Ref<Box<[f32]>>]) -> AudioBufferHandle + Send + Sync,>, pub create_device: Arc<dyn Fn(f32) -> AudioDeviceHandle + Send + Sync>, pub create_source: Arc<dyn Fn(AudioDeviceHandle, AudioBufferHandle) -> AudioSourceHandle + Send + Sync>, pub destroy_buffer: Arc<dyn Fn(AudioBufferHandle) + Send + Sync>, pub destroy_device: Arc<dyn Fn(AudioDeviceHandle) + Send + Sync>, pub destroy_source: Arc<dyn Fn(AudioSourceHandle) + Send + Sync>, pub fade_source_gain: Option<Arc<dyn Fn(AudioSourceHandle, f32, f32) + Send + Sync>>, pub get_device_time: Arc<dyn Fn(AudioDeviceHandle) -> f64 + Send + Sync>, pub on_source_ended: Arc<dyn Fn(AudioSourceHandle, Option<AudioSourceEndedListener>) + Send + Sync>, pub resume_device: Arc<dyn Fn(AudioDeviceHandle) + Send + Sync>, pub set_source_gain: Arc<dyn Fn(AudioSourceHandle, f32) + Send + Sync>, pub set_source_pan: Arc<dyn Fn(AudioSourceHandle, f32) + Send + Sync>, pub set_source_playback_rate: Arc<dyn Fn(AudioSourceHandle, f32) + Send + Sync>, pub start_source: Arc<dyn Fn(AudioSourceHandle, f64, f64) + Send + Sync>, pub stop_source: Arc<dyn Fn(AudioSourceHandle) + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostAudioMixerCapability { pub provider: ProviderRef, pub create_mixer_graph: Arc<dyn Fn(AudioDeviceHandle, f32) -> AudioMixerGraphHandle + Send + Sync>, pub destroy_mixer_graph: Arc<dyn Fn(AudioMixerGraphHandle) + Send + Sync>, pub create_bus_node: Arc<dyn Fn(AudioMixerGraphHandle, f32, f32) -> AudioBusNodeHandle + Send + Sync>, pub destroy_bus_node: Arc<dyn Fn(AudioMixerGraphHandle, AudioBusNodeHandle) + Send + Sync>, pub set_bus_node_gain: Arc<dyn Fn(AudioMixerGraphHandle, AudioBusNodeHandle, f32) + Send + Sync>, pub set_bus_node_pan: Arc<dyn Fn(AudioMixerGraphHandle, AudioBusNodeHandle, f32) + Send + Sync>, pub fade_bus_node_gain: Arc<dyn Fn(AudioMixerGraphHandle, AudioBusNodeHandle, f32, f32) + Send + Sync>, pub set_master_gain: Arc<dyn Fn(AudioMixerGraphHandle, f32) + Send + Sync>, pub route_source_to_bus: Arc<dyn Fn(AudioMixerGraphHandle, AudioSourceHandle, AudioBusNodeHandle) + Send + Sync>, pub unroute_source: Arc<dyn Fn(AudioMixerGraphHandle, AudioSourceHandle) + Send + Sync>, pub route_source_to_default: Arc<dyn Fn(AudioMixerGraphHandle, AudioSourceHandle) + Send + Sync>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub struct AudioBufferHandle(pub i32);
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub struct AudioBusNodeHandle(pub i32);
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub struct AudioDeviceHandle(pub i32);
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub struct AudioMixerGraphHandle(pub i32);
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub struct AudioSourceHandle(pub i32);
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AudioBusMixerOperation { Gain, Mute, Pan, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AudioDeviceOperation { CreateBuffer, CreateDevice, CreateSource, DestroyBuffer, DestroyDevice, DestroySource, FadeSourceGain, GetDeviceTime, OnSourceEnded, ResumeDevice, SetSourceGain, SetSourcePan, SetSourcePlaybackRate, StartSource, StopSource, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MediaReadyState { Buffering, Error, Idle, Ready, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct AudioBusOptions { pub gain: Option<f32>, pub muted: Option<bool>, pub name: Option<String>, pub pan: Option<f32>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct AudioMixerOptions { pub master_gain: Option<f32>, pub master_muted: Option<bool>, }
+src/types.rs: #[derive(Default)] pub struct AudioMixerGuardState { pub guard: Option<AudioBusMixerGuard>, }
+src/types.rs: #[derive(Default)] pub struct VideoChannelRuntimeState { pub(crate) source_runtimes: Vec<VideoSourceRuntime>, }
+src/types.rs: impl Default for AudioBus
+src/types.rs: impl Default for AudioBus :: fn default() -> Self
+src/types.rs: impl Default for AudioMixer
+src/types.rs: impl Default for AudioMixer :: fn default() -> Self
+src/types.rs: impl Entity for AudioBus
+src/types.rs: impl Entity for AudioBus :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AudioBus :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for AudioMixer
+src/types.rs: impl Entity for AudioMixer :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for AudioMixer :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub fn get_audio_bus_mixer_operation_string(value: AudioBusMixerOperation) -> &'static str
+src/types.rs: pub fn get_audio_device_operation_string(value: AudioDeviceOperation) -> &'static str
+src/types.rs: pub fn get_media_ready_state_string(value: MediaReadyState) -> &'static str
+src/types.rs: pub fn parse_audio_bus_mixer_operation(value: &str) -> Option<AudioBusMixerOperation>
+src/types.rs: pub fn parse_audio_device_operation(value: &str) -> Option<AudioDeviceOperation>
+src/types.rs: pub fn parse_media_ready_state(value: &str) -> Option<MediaReadyState>
+src/types.rs: pub struct AudioBus { runtime: EntityRuntimeSlot, pub gain: f32, pub muted: bool, pub name: String, pub pan: f32, pub(crate) memberships: Vec<AudioBusMembership>, }
+src/types.rs: pub struct AudioChannel { pub current_time: f32, pub gain: f32, pub length: f32, pub loop_end: f32, pub loops: i32, pub loop_start: f32, pub muted: bool, pub on_complete: Signal<()>, pub pan: f32, pub playback_rate: f32, pub source: Ref<AudioResource>, pub state: AudioChannelState, pub(crate) channel_runtime: Option<AudioChannelRuntime>, pub(crate) signals: Option<Ref<MediaChannelSignals>>, }
+src/types.rs: pub struct AudioMixer { runtime: EntityRuntimeSlot, pub master_gain: f32, pub master_muted: bool, pub(crate) mixer_runtime: Option<AudioMixerRuntime>, }
+src/types.rs: pub struct MediaChannelSignals { pub on_buffering: Signal<()>, pub on_complete: Signal<()>, pub on_error: Signal<String>, pub on_loop: Signal<()>, pub on_pause: Signal<()>, pub on_play: Signal<()>, pub on_ready: Signal<()>, pub on_seeked: Signal<()>, pub on_stop: Signal<()>, }
+src/types.rs: pub struct VideoChannel { pub current_time: f32, pub gain: f32, pub length: f32, pub loops: i32, pub muted: bool, pub on_complete: Signal<()>, pub playback_rate: f32, pub source: Option<Ref<VideoResource>>, pub state: VideoChannelState, pub(crate) retained_element: Option<Arc<HostImageSource>>, pub(crate) signals: Option<Ref<MediaChannelSignals>>, pub(crate) video_runtime: Option<VideoChannelRuntime>, }
+src/types.rs: pub type AudioBusMixerGuard = Arc<dyn Fn(AudioBusMixerOperation, &Ref<AudioBus>) + Send + Sync>;
+src/types.rs: pub type AudioMixerGuardStateRef = Ref<AudioMixerGuardState>;
+src/types.rs: pub type AudioSourceEndedListener = Arc<dyn Fn() + Send + Sync>;
+src/types.rs: pub type AudioSourceRoute = Arc<dyn Fn(AudioSourceHandle) + Send + Sync>;
+src/types.rs: pub type VideoChannelRuntimeStateRef = Ref<VideoChannelRuntimeState>;
+src/video_channel.rs: pub fn destroy_video_channel(host_video: &HostVideoCapability, channel: &Ref<VideoChannel>)
+src/video_channel.rs: pub fn get_video_channel_current_time(host_video: &HostVideoCapability, channel: &Ref<VideoChannel>,) -> f32
+src/video_channel.rs: pub fn get_video_channel_duration(channel: &Ref<VideoChannel>) -> f32
+src/video_channel.rs: pub fn get_video_channel_height(host_video: &HostVideoCapability, channel: &Ref<VideoChannel>,) -> f32
+src/video_channel.rs: pub fn get_video_channel_width(host_video: &HostVideoCapability, channel: &Ref<VideoChannel>,) -> f32
+src/video_channel.rs: pub fn is_video_channel_muted(channel: &Ref<VideoChannel>) -> bool
+src/video_channel.rs: pub fn is_video_channel_playing(channel: &Ref<VideoChannel>) -> bool
+src/video_channel.rs: pub fn pause_video_channel(host_video: &HostVideoCapability, channel: &Ref<VideoChannel>)
+src/video_channel.rs: pub fn play_video_resource(host_video: &HostVideoCapability, host_spawn: &HostSpawnCapability, runtime_state: &VideoChannelRuntimeStateRef, source: &Ref<VideoResource>, options: Option<&VideoPlayOptions>,) -> Option<Ref<VideoChannel>>
+src/video_channel.rs: pub fn resume_video_channel(host_video: &HostVideoCapability, host_spawn: &HostSpawnCapability, channel: &Ref<VideoChannel>,)
+src/video_channel.rs: pub fn set_video_channel_current_time(host_video: &HostVideoCapability, channel: &Ref<VideoChannel>, value: f32,) -> f32
+src/video_channel.rs: pub fn set_video_channel_gain(host_video: &HostVideoCapability, channel: &Ref<VideoChannel>, value: f32,) -> f32
+src/video_channel.rs: pub fn set_video_channel_muted(host_video: &HostVideoCapability, channel: &Ref<VideoChannel>, value: bool,) -> bool
+src/video_channel.rs: pub fn set_video_channel_playback_rate(host_video: &HostVideoCapability, channel: &Ref<VideoChannel>, value: f32,) -> f32
+src/video_channel.rs: pub fn stop_video_channel(host_video: &HostVideoCapability, channel: &Ref<VideoChannel>)
+src/video_channel_runtime.rs: pub fn create_video_channel_runtime_state() -> VideoChannelRuntimeStateRef
