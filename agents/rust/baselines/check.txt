@@ -9,8 +9,6 @@ enum-payload-named	crates/flight-layout/src/types.rs	`GridLayoutTrack::Fraction`
 enum-payload-named	crates/flight-log/src/log.rs	`LogData::Record` carries a non-struct payload; wrap the data in a named struct
 enum-payload-named	crates/flight-log/src/log.rs	`LogValue::Array` carries a non-struct payload; wrap the data in a named struct
 enum-payload-named	crates/flight-log/src/log.rs	`LogValue::Record` carries a non-struct payload; wrap the data in a named struct
-enum-payload-named	crates/flight-mesh/src/mesh_geometry.rs	`IndexBuffer::U16` carries a non-struct payload; wrap the data in a named struct
-enum-payload-named	crates/flight-mesh/src/mesh_geometry.rs	`IndexBuffer::U32` carries a non-struct payload; wrap the data in a named struct
 enum-payload-named	crates/flight-particles/src/types.rs	`ParticleCollider::CircleCollider` uses struct-variant fields; wrap the data in a named struct
 enum-payload-named	crates/flight-particles/src/types.rs	`ParticleCollider::PlaneCollider` uses struct-variant fields; wrap the data in a named struct
 enum-payload-named	crates/flight-particles/src/types.rs	`ParticleCollider::RectangleCollider` uses struct-variant fields; wrap the data in a named struct
@@ -239,46 +237,12 @@ f64	crates/flight-collision/src/types.rs	`struct CollisionSphere3D` uses f64 wit
 f64	crates/flight-collision/src/types.rs	`struct CollisionTimeOfImpact2D` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/types.rs	`struct CollisionTimeOfImpact3D` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-collision/src/types.rs	`struct CollisionTriangleMesh3D` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-mesh/src/mesh_geometry_compute.rs	`fn accumulate_normal` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-mesh/src/mesh_geometry_compute.rs	`fn accumulate_tangent` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-mesh/src/mesh_geometry_compute.rs	`fn compute_mesh_geometry_normals` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-mesh/src/mesh_geometry_compute.rs	`fn compute_mesh_geometry_tangents` uses f64 without an `allow(f64) <reason>` declaration
-f64	crates/flight-mesh/src/mesh_geometry_compute.rs	`fn write_accumulated_tangent` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn advance_statechart_instance` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn advance_statechart_region` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn compare_statechart_condition` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn initialize_statechart_instance` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn set_statechart_number_input` uses f64 without an `allow(f64) <reason>` declaration
 f64	crates/flight-statechart/src/statechart.rs	`fn set_statechart_region_duration` uses f64 without an `allow(f64) <reason>` declaration
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	struct appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	struct appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	struct appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	struct appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry.rs	struct appears after a later section
-file-structure	crates/flight-mesh/src/mesh_geometry_layout.rs	struct appears after a later section
-file-structure	crates/flight-mesh/src/vertex_format.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/vertex_format.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/vertex_format.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/vertex_format.rs	fn appears after a later section
-file-structure	crates/flight-mesh/src/vertex_format.rs	fn appears after a later section
 file-structure	crates/flight-particles/src/types.rs	fn appears after a later section
 file-structure	crates/flight-particles/src/types.rs	struct appears after a later section
 file-structure	crates/flight-particles/src/types.rs	struct appears after a later section
@@ -297,35 +261,6 @@ file-structure	crates/flight-statechart/src/types.rs	fn appears after a later se
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
 file-structure	crates/flight-statechart/src/types.rs	fn appears after a later section
-fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_index_count` should come before `get_index_value`
-fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_index_value` should come before `promote_indices`
-fn-order	crates/flight-mesh/src/mesh_geometry.rs	`get_vertex_count_from_layout` should come before `set_mesh_geometry_skin_bind_pose`
-fn-order	crates/flight-mesh/src/mesh_geometry_attributes.rs	`get_attribute_byte_offset` should come before `set_four_component_attribute`
-fn-order	crates/flight-mesh/src/mesh_geometry_attributes.rs	`get_float2_attribute` should come before `set_mesh_geometry_vertex_weights0`
-fn-order	crates/flight-mesh/src/mesh_geometry_builders.rs	`build_canonical_mesh_geometry` should come before `get_midpoint`
-fn-order	crates/flight-mesh/src/mesh_geometry_builders.rs	`create_box_mesh_geometry` should come before `canonical_vertex_layout`
-fn-order	crates/flight-mesh/src/mesh_geometry_builders.rs	`dodecahedron_faces` should come before `dodecahedron_verts`
-fn-order	crates/flight-mesh/src/mesh_geometry_builders.rs	`dodecahedron_verts` should come before `icosahedron_faces`
-fn-order	crates/flight-mesh/src/mesh_geometry_builders.rs	`face_spherical_u` should come before `spherical_v`
-fn-order	crates/flight-mesh/src/mesh_geometry_builders.rs	`icosahedron_faces` should come before `icosahedron_verts`
-fn-order	crates/flight-mesh/src/mesh_geometry_builders.rs	`icosahedron_verts` should come before `octahedron_faces`
-fn-order	crates/flight-mesh/src/mesh_geometry_builders.rs	`octahedron_faces` should come before `octahedron_verts`
-fn-order	crates/flight-mesh/src/mesh_geometry_builders.rs	`octahedron_verts` should come before `tetrahedron_faces`
-fn-order	crates/flight-mesh/src/mesh_geometry_builders.rs	`tetrahedron_faces` should come before `tetrahedron_verts`
-fn-order	crates/flight-mesh/src/mesh_geometry_compute.rs	`accumulate_normal` should come before `compute_mesh_geometry_position_groups`
-fn-order	crates/flight-mesh/src/mesh_geometry_compute.rs	`accumulate_tangent` should come before `mark_tangent_orientation`
-fn-order	crates/flight-mesh/src/mesh_geometry_compute.rs	`compute_mesh_geometry_tangents` should come before `hash_mesh_geometry_position`
-fn-order	crates/flight-mesh/src/mesh_geometry_compute.rs	`mark_tangent_orientation` should come before `write_accumulated_tangent`
-fn-order	crates/flight-mesh/src/mesh_geometry_deformation_clone.rs	`restore_float3` should come before `restore_skin_bind_pose`
-fn-order	crates/flight-mesh/src/mesh_geometry_index.rs	`equal_vertex_record` should come before `vertices_as_bytes_readonly`
-fn-order	crates/flight-mesh/src/mesh_geometry_index.rs	`get_index` should come before `weld_mesh_geometry_vertices`
-fn-order	crates/flight-mesh/src/mesh_geometry_layout.rs	`bytes_to_f32_vec` should come before `convert_mesh_geometry_layout`
-fn-order	crates/flight-mesh/src/mesh_geometry_operations.rs	`find_position_float_offset` should come before `validate_mesh_geometry`
-fn-order	crates/flight-mesh/src/mesh_geometry_operations.rs	`forms_whole_primitives` should come before `has_valid_draw_ranges`
-fn-order	crates/flight-mesh/src/mesh_geometry_transforms.rs	`compute_matrix3x3_inverse_transpose` should come before `translate_mesh_geometry`
-fn-order	crates/flight-mesh/src/morph_mesh_geometry.rs	`accumulate_deltas` should come before `capture_mesh_morph_bind_pose`
-fn-order	crates/flight-mesh/src/update_mesh_morph.rs	`has_morph_weights_changed` should come before `update_mesh_morph`
-fn-order	crates/flight-mesh/src/vertex_format.rs	`is_float32_format` should come before `write_vertex_format_component`
 fn-order	crates/flight-particles/src/apply_particle_collisions.rs	`reflect3` should come before `resolve_sphere`
 fn-order	crates/flight-particles/src/apply_particle_collisions.rs	`resolve_circle` should come before `resolve_plane`
 fn-order	crates/flight-particles/src/apply_particle_forces.rs	`accumulate_forces` should come before `apply_particle_object_forces`
@@ -364,17 +299,6 @@ test-coverage	crates/flight-geometry/src/obb.rs	`initialize_obb` is not tested
 test-coverage	crates/flight-geometry/src/ray3d.rs	`initialize_ray3d` is not tested
 test-coverage	crates/flight-geometry/src/transform2d.rs	`initialize_transform2d` is not tested
 test-coverage	crates/flight-geometry/src/transform3d.rs	`initialize_transform3d` is not tested
-test-coverage	crates/flight-mesh/src/mesh_geometry.rs	`destroy_mesh_geometry_gl_data` is not tested
-test-coverage	crates/flight-mesh/src/mesh_geometry.rs	`destroy_mesh_geometry_wgpu_data` is not tested
-test-coverage	crates/flight-mesh/src/mesh_geometry.rs	`get_index_count` is not tested
-test-coverage	crates/flight-mesh/src/mesh_geometry.rs	`get_index_value` is not tested
-test-coverage	crates/flight-mesh/src/mesh_geometry_attributes.rs	`vertices_as_bytes_mut` is not tested
-test-coverage	crates/flight-mesh/src/mesh_geometry_attributes.rs	`vertices_as_bytes` is not tested
-test-coverage	crates/flight-mesh/src/vertex_format.rs	`is_float32_format` is not tested
-test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
-test-default-call	crates/flight-mesh/tests/mesh_geometry_compute_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-particles/tests/apply_particle_collisions_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-particles/tests/apply_particle_forces_test.rs	test calls `::default()` — use the `create_*` function
 test-default-call	crates/flight-particles/tests/apply_particle_forces_test.rs	test calls `::default()` — use the `create_*` function
@@ -508,13 +432,6 @@ test-module-coverage	crates/flight-log/tests/log_test.rs	`set_log_level` has no 
 test-module-coverage	crates/flight-log/tests/log_test.rs	`set_log_redaction_paths` has no test module (expected `mod set_log_redaction_paths { ... }`)
 test-module-coverage	crates/flight-log/tests/log_test.rs	`set_log_sink` has no test module (expected `mod set_log_sink { ... }`)
 test-module-coverage	crates/flight-log/tests/log_test.rs	`start_log_timer` has no test module (expected `mod start_log_timer { ... }`)
-test-module-coverage	crates/flight-mesh/tests/mesh_geometry_attributes_test.rs	`vertices_as_bytes_mut` has no test module (expected `mod vertices_as_bytes_mut { ... }`)
-test-module-coverage	crates/flight-mesh/tests/mesh_geometry_attributes_test.rs	`vertices_as_bytes` has no test module (expected `mod vertices_as_bytes { ... }`)
-test-module-coverage	crates/flight-mesh/tests/mesh_geometry_test.rs	`destroy_mesh_geometry_gl_data` has no test module (expected `mod destroy_mesh_geometry_gl_data { ... }`)
-test-module-coverage	crates/flight-mesh/tests/mesh_geometry_test.rs	`destroy_mesh_geometry_wgpu_data` has no test module (expected `mod destroy_mesh_geometry_wgpu_data { ... }`)
-test-module-coverage	crates/flight-mesh/tests/mesh_geometry_test.rs	`get_index_count` has no test module (expected `mod get_index_count { ... }`)
-test-module-coverage	crates/flight-mesh/tests/mesh_geometry_test.rs	`get_index_value` has no test module (expected `mod get_index_value { ... }`)
-test-module-coverage	crates/flight-mesh/tests/vertex_format_test.rs	`is_float32_format` has no test module (expected `mod is_float32_format { ... }`)
 test-module-coverage	crates/flight-particles/tests/update_particle_objects_test.rs	`is_particle_objects_complete` has no test module (expected `mod is_particle_objects_complete { ... }`)
 test-module-coverage	crates/flight-particles/tests/update_particle_objects_test.rs	`update_particle_objects` has no test module (expected `mod update_particle_objects { ... }`)
 test-module-coverage	crates/flight-particles/tests/validate_particle_emitter_config_test.rs	`normalize_particle_emitter_config` has no test module (expected `mod normalize_particle_emitter_config { ... }`)

@@ -1,0 +1,230 @@
+src/contract.rs: pub use crate::mesh_geometry::*;
+src/contract.rs: pub use crate::mesh_geometry_attributes::*;
+src/contract.rs: pub use crate::mesh_geometry_builders::*;
+src/contract.rs: pub use crate::mesh_geometry_compute::*;
+src/contract.rs: pub use crate::mesh_geometry_deformation_clone::*;
+src/contract.rs: pub use crate::mesh_geometry_index::*;
+src/contract.rs: pub use crate::mesh_geometry_layout::*;
+src/contract.rs: pub use crate::mesh_geometry_operations::*;
+src/contract.rs: pub use crate::mesh_geometry_subset::*;
+src/contract.rs: pub use crate::mesh_geometry_transforms::*;
+src/contract.rs: pub use crate::mesh_geometry_uvs::*;
+src/contract.rs: pub use crate::morph_mesh_geometry::*;
+src/contract.rs: pub use crate::update_mesh_morph::*;
+src/contract.rs: pub use crate::vertex_format::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use mesh_geometry::{ IndexBuffer, IndexBufferU16, IndexBufferU32, Mesh, MeshAttributeIndices, MeshGeometry, MeshGeometryFromAttributesOptions, MeshGeometryOptions, MeshMorph, MeshMorphBindPose, MeshMorphTarget, MeshSkinBindPose, MeshSubset, MeshTriangleVertexIndices, PrimitiveTopology, clone_mesh_geometry, clone_mesh_geometry_metadata, create_mesh_geometry, destroy_mesh_geometry_gl_data, destroy_mesh_geometry_wgpu_data, get_mesh_geometry_index_count, get_mesh_geometry_morph_bind_pose, get_mesh_geometry_skin_bind_pose, get_mesh_geometry_vertex_count, has_mesh_geometry_skin, invalidate_mesh_geometry, set_mesh_geometry_morph_bind_pose, set_mesh_geometry_skin_bind_pose, };
+src/lib.rs: pub use mesh_geometry_attributes::*;
+src/lib.rs: pub use mesh_geometry_builders::*;
+src/lib.rs: pub use mesh_geometry_compute::{ compute_mesh_geometry_bounding_sphere, compute_mesh_geometry_bounds, compute_mesh_geometry_flat_normals, compute_mesh_geometry_normals, compute_mesh_geometry_position_groups, compute_mesh_geometry_tangents, refresh_mesh_geometry_bounds, };
+src/lib.rs: pub use mesh_geometry_deformation_clone::*;
+src/lib.rs: pub use mesh_geometry_index::*;
+src/lib.rs: pub use mesh_geometry_layout::*;
+src/lib.rs: pub use mesh_geometry_operations::*;
+src/lib.rs: pub use mesh_geometry_subset::*;
+src/lib.rs: pub use mesh_geometry_transforms::*;
+src/lib.rs: pub use mesh_geometry_uvs::*;
+src/lib.rs: pub use morph_mesh_geometry::*;
+src/lib.rs: pub use update_mesh_morph::*;
+src/lib.rs: pub use vertex_format::{ VertexAttribute, VertexAttributeLayout, VertexFormat, VertexSemantic };
+src/mesh_geometry.rs: #[derive(Debug, Clone)] pub enum IndexBuffer { U16(IndexBufferU16), U32(IndexBufferU32), None, }
+src/mesh_geometry.rs: #[derive(Debug, Clone)] pub struct IndexBufferU16 { pub data: flight_entity::Ref<Box<[u16]>>, }
+src/mesh_geometry.rs: #[derive(Debug, Clone)] pub struct IndexBufferU32 { pub data: flight_entity::Ref<Box<[u32]>>, }
+src/mesh_geometry.rs: #[derive(Debug, Clone)] pub struct MeshGeometry { pub vertices: Box<[f32]>, pub indices: IndexBuffer, pub layout: flight_entity::Ref<VertexAttributeLayout>, pub subsets: Vec<MeshSubset>, pub topology: PrimitiveTopology, pub bounds: Option<Aabb>, pub version: u32, runtime: EntityRuntimeSlot, pub(crate) geometry_runtime: MeshGeometryRuntime, }
+src/mesh_geometry.rs: #[derive(Debug, Clone)] pub struct MeshGeometryRuntime { pub bounds_version: i32, pub morph_bind_pose: Option<flight_entity::Ref<MeshMorphBindPose>>, pub morph_blended_weights: Option<Box<[f32]>>, pub skin_bind_pose: Option<flight_entity::Ref<MeshSkinBindPose>>, pub webgl_data: Option<()>, pub webgpu_data: Option<()>, }
+src/mesh_geometry.rs: #[derive(Debug, Clone)] pub struct MeshMorph { pub targets: Vec<MeshMorphTarget>, pub weights: Box<[f32]>, }
+src/mesh_geometry.rs: #[derive(Debug, Clone)] pub struct MeshMorphBindPose { pub blended_normals: Option<Box<[f32]>>, pub blended_positions: Box<[f32]>, pub blended_tangents: Option<Box<[f32]>>, pub normals: Option<Box<[f32]>>, pub positions: Box<[f32]>, pub tangents: Option<Box<[f32]>>, }
+src/mesh_geometry.rs: #[derive(Debug, Clone)] pub struct MeshMorphTarget { pub position_deltas: Box<[f32]>, pub normal_deltas: Option<Box<[f32]>>, pub tangent_deltas: Option<Box<[f32]>>, }
+src/mesh_geometry.rs: #[derive(Debug, Clone)] pub struct MeshSkinBindPose { pub joints: Box<[f32]>, pub normals: Box<[f32]>, pub positions: Box<[f32]>, pub skinned_normals: Box<[f32]>, pub skinned_positions: Box<[f32]>, pub skinned_tangents: Box<[f32]>, pub tangents: Box<[f32]>, pub weights: Box<[f32]>, }
+src/mesh_geometry.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct MeshSubset { pub index_count: u32, pub index_offset: u32, }
+src/mesh_geometry.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct MeshTriangleVertexIndices { pub i0: u32, pub i1: u32, pub i2: u32, }
+src/mesh_geometry.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)] pub enum PrimitiveTopology { LineList, LineStrip, PointList, TriangleList, TriangleStrip, }
+src/mesh_geometry.rs: #[derive(Debug, Clone, Default)] pub struct Mesh { runtime: EntityRuntimeSlot, pub geometry: MeshGeometry, pub morph: Option<MeshMorph>, }
+src/mesh_geometry.rs: #[derive(Debug, Clone, PartialEq)] pub enum MeshAttributeIndices { Values(Vec<u32>), Uint16(Box<[u16]>), Uint32(Box<[u32]>), }
+src/mesh_geometry.rs: impl Default for MeshGeometry
+src/mesh_geometry.rs: impl Default for MeshGeometry :: fn default() -> Self
+src/mesh_geometry.rs: impl Default for MeshGeometryRuntime
+src/mesh_geometry.rs: impl Default for MeshGeometryRuntime :: fn default() -> Self
+src/mesh_geometry.rs: impl Entity for Mesh
+src/mesh_geometry.rs: impl Entity for Mesh :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/mesh_geometry.rs: impl Entity for Mesh :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/mesh_geometry.rs: impl Entity for MeshGeometry
+src/mesh_geometry.rs: impl Entity for MeshGeometry :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/mesh_geometry.rs: impl Entity for MeshGeometry :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/mesh_geometry.rs: impl PartialEq for IndexBuffer
+src/mesh_geometry.rs: impl PartialEq for IndexBuffer :: fn eq(&self, other: &Self) -> bool
+src/mesh_geometry.rs: pub fn clone_mesh_geometry(source: &MeshGeometry) -> MeshGeometry
+src/mesh_geometry.rs: pub fn clone_mesh_geometry_metadata(source: &MeshGeometry) -> MeshGeometry
+src/mesh_geometry.rs: pub fn create_mesh_geometry(options: MeshGeometryOptions) -> MeshGeometry
+src/mesh_geometry.rs: pub fn destroy_mesh_geometry_gl_data(geometry: &mut MeshGeometry)
+src/mesh_geometry.rs: pub fn destroy_mesh_geometry_wgpu_data(geometry: &mut MeshGeometry)
+src/mesh_geometry.rs: pub fn get_mesh_geometry_index_count(geometry: &MeshGeometry) -> u32
+src/mesh_geometry.rs: pub fn get_mesh_geometry_morph_bind_pose(geometry: &MeshGeometry,) -> Option<&flight_entity::Ref<MeshMorphBindPose>>
+src/mesh_geometry.rs: pub fn get_mesh_geometry_skin_bind_pose(geometry: &MeshGeometry,) -> Option<&flight_entity::Ref<MeshSkinBindPose>>
+src/mesh_geometry.rs: pub fn get_mesh_geometry_vertex_count(geometry: &MeshGeometry) -> u32
+src/mesh_geometry.rs: pub fn get_primitive_topology_string(value: PrimitiveTopology) -> &'static str
+src/mesh_geometry.rs: pub fn has_mesh_geometry_skin(geometry: &MeshGeometry) -> bool
+src/mesh_geometry.rs: pub fn initialize_mesh_geometry(out: &mut MeshGeometry, fields: MeshGeometryFields)
+src/mesh_geometry.rs: pub fn invalidate_mesh_geometry(geometry: &mut MeshGeometry)
+src/mesh_geometry.rs: pub fn parse_primitive_topology(s: &str) -> Option<PrimitiveTopology>
+src/mesh_geometry.rs: pub fn set_mesh_geometry_morph_bind_pose(geometry: &mut MeshGeometry, bind_pose: Option<flight_entity::Ref<MeshMorphBindPose>>,)
+src/mesh_geometry.rs: pub fn set_mesh_geometry_skin_bind_pose(geometry: &mut MeshGeometry, bind_pose: Option<flight_entity::Ref<MeshSkinBindPose>>,)
+src/mesh_geometry.rs: pub struct MeshGeometryFields { pub bounds: Option<Aabb>, pub indices: IndexBuffer, pub layout: flight_entity::Ref<VertexAttributeLayout>, pub subsets: Vec<MeshSubset>, pub topology: PrimitiveTopology, pub version: u32, pub vertices: Box<[f32]>, }
+src/mesh_geometry.rs: pub struct MeshGeometryFromAttributesOptions { pub positions: Vec<f32>, pub normals: Option<Vec<f32>>, pub uvs: Option<Vec<f32>>, pub indices: Option<MeshAttributeIndices>, }
+src/mesh_geometry.rs: pub struct MeshGeometryOptions { pub vertices: Box<[f32]>, pub layout: flight_entity::Ref<VertexAttributeLayout>, pub indices: Option<IndexBuffer>, pub subsets: Option<Vec<MeshSubset>>, pub topology: Option<PrimitiveTopology>, }
+src/mesh_geometry_attributes.rs: pub fn get_mesh_geometry_vertex_color0(out: &mut Vector4, geometry: &MeshGeometry, vertex_index: u32,) -> bool
+src/mesh_geometry_attributes.rs: pub fn get_mesh_geometry_vertex_joints0(out: &mut Vector4, geometry: &MeshGeometry, vertex_index: u32,) -> bool
+src/mesh_geometry_attributes.rs: pub fn get_mesh_geometry_vertex_normal(out: &mut Vector3, geometry: &MeshGeometry, vertex_index: u32,) -> bool
+src/mesh_geometry_attributes.rs: pub fn get_mesh_geometry_vertex_position(out: &mut Vector3, geometry: &MeshGeometry, vertex_index: u32,) -> bool
+src/mesh_geometry_attributes.rs: pub fn get_mesh_geometry_vertex_tangent(out: &mut Vector4, geometry: &MeshGeometry, vertex_index: u32,) -> bool
+src/mesh_geometry_attributes.rs: pub fn get_mesh_geometry_vertex_uv0(out: &mut Vector2, geometry: &MeshGeometry, vertex_index: u32,) -> bool
+src/mesh_geometry_attributes.rs: pub fn get_mesh_geometry_vertex_uv1(out: &mut Vector2, geometry: &MeshGeometry, vertex_index: u32,) -> bool
+src/mesh_geometry_attributes.rs: pub fn get_mesh_geometry_vertex_weights0(out: &mut Vector4, geometry: &MeshGeometry, vertex_index: u32,) -> bool
+src/mesh_geometry_attributes.rs: pub fn get_vertex_attribute(layout: &VertexAttributeLayout, semantic: VertexSemantic,) -> Option<&VertexAttribute>
+src/mesh_geometry_attributes.rs: pub fn get_vertex_attribute_float_offset(layout: &VertexAttributeLayout, semantic: VertexSemantic,) -> i32
+src/mesh_geometry_attributes.rs: pub fn set_mesh_geometry_vertex_color0(geometry: &mut MeshGeometry, vertex_index: u32, r: f32, g: f32, b: f32, a: f32,) -> bool
+src/mesh_geometry_attributes.rs: pub fn set_mesh_geometry_vertex_joints0(geometry: &mut MeshGeometry, vertex_index: u32, x: f32, y: f32, z: f32, w: f32,) -> bool
+src/mesh_geometry_attributes.rs: pub fn set_mesh_geometry_vertex_normal(geometry: &mut MeshGeometry, vertex_index: u32, x: f32, y: f32, z: f32,) -> bool
+src/mesh_geometry_attributes.rs: pub fn set_mesh_geometry_vertex_position(geometry: &mut MeshGeometry, vertex_index: u32, x: f32, y: f32, z: f32,) -> bool
+src/mesh_geometry_attributes.rs: pub fn set_mesh_geometry_vertex_tangent(geometry: &mut MeshGeometry, vertex_index: u32, x: f32, y: f32, z: f32, w: f32,) -> bool
+src/mesh_geometry_attributes.rs: pub fn set_mesh_geometry_vertex_uv0(geometry: &mut MeshGeometry, vertex_index: u32, u: f32, v: f32,) -> bool
+src/mesh_geometry_attributes.rs: pub fn set_mesh_geometry_vertex_uv1(geometry: &mut MeshGeometry, vertex_index: u32, u: f32, v: f32,) -> bool
+src/mesh_geometry_attributes.rs: pub fn set_mesh_geometry_vertex_weights0(geometry: &mut MeshGeometry, vertex_index: u32, x: f32, y: f32, z: f32, w: f32,) -> bool
+src/mesh_geometry_attributes.rs: pub use flight_geometry::{ Vector2, Vector3, Vector4 };
+src/mesh_geometry_builders.rs: pub fn create_box_mesh_geometry(width: Option<f32>, height: Option<f32>, depth: Option<f32>,) -> MeshGeometry
+src/mesh_geometry_builders.rs: pub fn create_capsule_mesh_geometry(radius: Option<f32>, height: Option<f32>, radial_segments: Option<i32>, cap_segments: Option<i32>,) -> MeshGeometry
+src/mesh_geometry_builders.rs: pub fn create_circle_mesh_geometry(radius: Option<f32>, segments: Option<i32>) -> MeshGeometry
+src/mesh_geometry_builders.rs: pub fn create_cone_mesh_geometry(radius: Option<f32>, height: Option<f32>, radial_segments: Option<i32>, capped: Option<bool>,) -> MeshGeometry
+src/mesh_geometry_builders.rs: pub fn create_cylinder_mesh_geometry(top_radius: Option<f32>, bottom_radius: Option<f32>, height: Option<f32>, radial_segments: Option<i32>, capped: Option<bool>,) -> MeshGeometry
+src/mesh_geometry_builders.rs: pub fn create_dodecahedron_mesh_geometry(radius: Option<f32>, detail: Option<i32>) -> MeshGeometry
+src/mesh_geometry_builders.rs: pub fn create_icosahedron_mesh_geometry(radius: Option<f32>, detail: Option<i32>) -> MeshGeometry
+src/mesh_geometry_builders.rs: pub fn create_icosphere_mesh_geometry(radius: Option<f32>, subdivisions: Option<i32>,) -> MeshGeometry
+src/mesh_geometry_builders.rs: pub fn create_octahedron_mesh_geometry(radius: Option<f32>, detail: Option<i32>) -> MeshGeometry
+src/mesh_geometry_builders.rs: pub fn create_plane_mesh_geometry(width: Option<f32>, depth: Option<f32>, width_segments: Option<i32>, depth_segments: Option<i32>,) -> MeshGeometry
+src/mesh_geometry_builders.rs: pub fn create_polyhedron_mesh_geometry(vertex_positions: &[[f32; 3]], face_indices: &[[u32; 3]], radius: Option<f32>, detail: Option<i32>,) -> MeshGeometry
+src/mesh_geometry_builders.rs: pub fn create_quad_mesh_geometry(width: Option<f32>, height: Option<f32>) -> MeshGeometry
+src/mesh_geometry_builders.rs: pub fn create_ring_mesh_geometry(inner_radius: Option<f32>, outer_radius: Option<f32>, segments: Option<i32>,) -> MeshGeometry
+src/mesh_geometry_builders.rs: pub fn create_sphere_mesh_geometry(radius: Option<f32>, width_segments: Option<i32>, height_segments: Option<i32>,) -> MeshGeometry
+src/mesh_geometry_builders.rs: pub fn create_tetrahedron_mesh_geometry(radius: Option<f32>, detail: Option<i32>) -> MeshGeometry
+src/mesh_geometry_builders.rs: pub fn create_torus_knot_mesh_geometry(radius: Option<f32>, tube: Option<f32>, tubular_segments: Option<i32>, radial_segments: Option<i32>, p: Option<f32>, q: Option<f32>,) -> MeshGeometry
+src/mesh_geometry_builders.rs: pub fn create_torus_mesh_geometry(radius: Option<f32>, tube: Option<f32>, radial_segments: Option<i32>, tubular_segments: Option<i32>,) -> MeshGeometry
+src/mesh_geometry_compute.rs: pub fn compute_mesh_geometry_bounding_sphere(out: &mut BoundingSphere, geometry: &MeshGeometry)
+src/mesh_geometry_compute.rs: pub fn compute_mesh_geometry_bounds(out: &mut Aabb, geometry: &MeshGeometry)
+src/mesh_geometry_compute.rs: pub fn compute_mesh_geometry_flat_normals(out: &mut MeshGeometry, geometry: &MeshGeometry)
+src/mesh_geometry_compute.rs: pub fn compute_mesh_geometry_normals(out: &mut MeshGeometry, geometry: &MeshGeometry, position_groups: Option<&[u32]>,)
+src/mesh_geometry_compute.rs: pub fn compute_mesh_geometry_position_groups(geometry: &MeshGeometry) -> Box<[u32]>
+src/mesh_geometry_compute.rs: pub fn compute_mesh_geometry_tangents(out: &mut MeshGeometry, geometry: &MeshGeometry, position_groups: Option<&[u32]>,)
+src/mesh_geometry_compute.rs: pub fn ensure_mesh_geometry_bounds(geometry: &mut MeshGeometry) -> Option<&Aabb>
+src/mesh_geometry_compute.rs: pub fn refresh_mesh_geometry_bounds(geometry: &mut MeshGeometry)
+src/mesh_geometry_deformation_clone.rs: pub fn clone_mesh_geometry_for_deformation(source: &MeshGeometry) -> MeshGeometry
+src/mesh_geometry_index.rs: pub fn compact_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry
+src/mesh_geometry_index.rs: pub fn compute_mesh_geometry_wireframe_indices(geometry: &MeshGeometry) -> IndexBuffer
+src/mesh_geometry_index.rs: pub fn expand_mesh_geometry_indices(geometry: &MeshGeometry) -> MeshGeometry
+src/mesh_geometry_index.rs: pub fn index_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry
+src/mesh_geometry_index.rs: pub fn weld_mesh_geometry_vertices(geometry: &MeshGeometry) -> MeshGeometry
+src/mesh_geometry_layout.rs: pub fn convert_mesh_geometry_layout(source: &MeshGeometry, target_layout: &flight_entity::Ref<VertexAttributeLayout>,) -> MeshGeometry
+src/mesh_geometry_layout.rs: pub static CANONICAL_MESH_GEOMETRY_LAYOUT: std::sync::LazyLock<flight_entity::Ref<VertexAttributeLayout>,>
+src/mesh_geometry_layout.rs: pub static CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT: std::sync::LazyLock<flight_entity::Ref<VertexAttributeLayout>,>
+src/mesh_geometry_operations.rs: pub fn create_mesh_geometry_from_attributes(options: MeshGeometryFromAttributesOptions,) -> MeshGeometry
+src/mesh_geometry_operations.rs: pub fn get_mesh_geometry_triangle_count(geometry: &MeshGeometry) -> u32
+src/mesh_geometry_operations.rs: pub fn get_mesh_geometry_triangle_vertex_indices(out: &mut MeshTriangleVertexIndices, geometry: &MeshGeometry, triangle_index: u32,) -> bool
+src/mesh_geometry_operations.rs: pub fn merge_mesh_geometries(geometries: &[&MeshGeometry]) -> Option<MeshGeometry>
+src/mesh_geometry_operations.rs: pub fn validate_mesh_geometry(geometry: &MeshGeometry) -> bool
+src/mesh_geometry_subset.rs: pub fn add_mesh_geometry_subset(geometry: &mut MeshGeometry, subset: &MeshSubset)
+src/mesh_geometry_subset.rs: pub fn get_mesh_geometry_subset_triangle_count(geometry: &MeshGeometry, subset_index: i32) -> u32
+src/mesh_geometry_subset.rs: pub fn get_mesh_geometry_triangle_subset_index(geometry: &MeshGeometry, triangle_index: i32,) -> i32
+src/mesh_geometry_subset.rs: pub fn set_mesh_geometry_subsets(geometry: &mut MeshGeometry, subsets: &[MeshSubset])
+src/mesh_geometry_transforms.rs: pub fn center_mesh_geometry(geometry: &mut MeshGeometry)
+src/mesh_geometry_transforms.rs: pub fn scale_mesh_geometry(geometry: &mut MeshGeometry, sx: f32, sy: f32, sz: f32)
+src/mesh_geometry_transforms.rs: pub fn transform_mesh_geometry(geometry: &mut MeshGeometry, matrix: &Matrix4) -> bool
+src/mesh_geometry_transforms.rs: pub fn transform_mesh_geometry_into(out: &mut MeshGeometry, source: &MeshGeometry, matrix: &Matrix4,) -> bool
+src/mesh_geometry_transforms.rs: pub fn translate_mesh_geometry(geometry: &mut MeshGeometry, x: f32, y: f32, z: f32)
+src/mesh_geometry_uvs.rs: pub fn offset_mesh_geometry_uvs(geometry: &mut MeshGeometry, du: f32, dv: f32)
+src/mesh_geometry_uvs.rs: pub fn scale_mesh_geometry_uvs(geometry: &mut MeshGeometry, su: f32, sv: f32)
+src/morph_mesh_geometry.rs: pub fn blend_mesh_geometry_morph(geometry: &mut MeshGeometry, morph: &MeshMorph, bind_pose: &mut MeshMorphBindPose,)
+src/morph_mesh_geometry.rs: pub fn capture_mesh_morph_bind_pose(geometry: &MeshGeometry) -> MeshMorphBindPose
+src/sugar.rs: impl Mesh :: fn update_morph(&mut self)
+src/sugar.rs: impl MeshGeometry :: fn add_subset(&mut self, subset: &MeshSubset)
+src/sugar.rs: impl MeshGeometry :: fn blend_morph(&mut self, morph: &MeshMorph, bind_pose: &mut MeshMorphBindPose)
+src/sugar.rs: impl MeshGeometry :: fn capture_mesh_morph_bind_pose(&self) -> MeshMorphBindPose
+src/sugar.rs: impl MeshGeometry :: fn center(&mut self)
+src/sugar.rs: impl MeshGeometry :: fn clone_for_deformation(&self) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn clone_geometry(&self) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn clone_metadata(&self) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn compact_vertices(&self) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn compute_flat_normals(&mut self, geometry: &MeshGeometry)
+src/sugar.rs: impl MeshGeometry :: fn compute_normals(&mut self, geometry: &MeshGeometry, position_groups: Option<&[u32]>)
+src/sugar.rs: impl MeshGeometry :: fn compute_position_groups(&self) -> Box<[u32]>
+src/sugar.rs: impl MeshGeometry :: fn compute_tangents(&mut self, geometry: &MeshGeometry, position_groups: Option<&[u32]>)
+src/sugar.rs: impl MeshGeometry :: fn compute_wireframe_indices(&self) -> IndexBuffer
+src/sugar.rs: impl MeshGeometry :: fn convert_layout(&self, target_layout: &flight_entity::Ref<VertexAttributeLayout>,) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn destroy_gl_data(&mut self)
+src/sugar.rs: impl MeshGeometry :: fn destroy_wgpu_data(&mut self)
+src/sugar.rs: impl MeshGeometry :: fn expand_indices(&self) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn from_attributes(options: MeshGeometryFromAttributesOptions) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn from_box(width: Option<f32>, height: Option<f32>, depth: Option<f32>) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn from_capsule(radius: Option<f32>, height: Option<f32>, radial_segments: Option<i32>, cap_segments: Option<i32>,) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn from_circle(radius: Option<f32>, segments: Option<i32>) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn from_cone(radius: Option<f32>, height: Option<f32>, radial_segments: Option<i32>, capped: Option<bool>,) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn from_cylinder(top_radius: Option<f32>, bottom_radius: Option<f32>, height: Option<f32>, radial_segments: Option<i32>, capped: Option<bool>,) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn from_dodecahedron(radius: Option<f32>, detail: Option<i32>) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn from_icosahedron(radius: Option<f32>, detail: Option<i32>) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn from_icosphere(radius: Option<f32>, subdivisions: Option<i32>) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn from_octahedron(radius: Option<f32>, detail: Option<i32>) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn from_plane(width: Option<f32>, depth: Option<f32>, width_segments: Option<i32>, depth_segments: Option<i32>,) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn from_polyhedron(vertex_positions: &[[f32; 3]], face_indices: &[[u32; 3]], radius: Option<f32>, detail: Option<i32>,) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn from_quad(width: Option<f32>, height: Option<f32>) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn from_ring(inner_radius: Option<f32>, outer_radius: Option<f32>, segments: Option<i32>,) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn from_sphere(radius: Option<f32>, width_segments: Option<i32>, height_segments: Option<i32>,) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn from_tetrahedron(radius: Option<f32>, detail: Option<i32>) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn from_torus(radius: Option<f32>, tube: Option<f32>, radial_segments: Option<i32>, tubular_segments: Option<i32>,) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn from_torus_knot(radius: Option<f32>, tube: Option<f32>, tubular_segments: Option<i32>, radial_segments: Option<i32>, p: Option<f32>, q: Option<f32>,) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn has_skin(&self) -> bool
+src/sugar.rs: impl MeshGeometry :: fn index_count(&self) -> u32
+src/sugar.rs: impl MeshGeometry :: fn index_vertices(&self) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn invalidate(&mut self)
+src/sugar.rs: impl MeshGeometry :: fn morph_bind_pose(&self) -> Option<&flight_entity::Ref<MeshMorphBindPose>>
+src/sugar.rs: impl MeshGeometry :: fn new(options: MeshGeometryOptions) -> MeshGeometry
+src/sugar.rs: impl MeshGeometry :: fn offset_uvs(&mut self, du: f32, dv: f32)
+src/sugar.rs: impl MeshGeometry :: fn refresh_bounds(&mut self)
+src/sugar.rs: impl MeshGeometry :: fn scale(&mut self, sx: f32, sy: f32, sz: f32)
+src/sugar.rs: impl MeshGeometry :: fn scale_uvs(&mut self, su: f32, sv: f32)
+src/sugar.rs: impl MeshGeometry :: fn set_morph_bind_pose(&mut self, bind_pose: Option<flight_entity::Ref<MeshMorphBindPose>>,)
+src/sugar.rs: impl MeshGeometry :: fn set_skin_bind_pose(&mut self, bind_pose: Option<flight_entity::Ref<MeshSkinBindPose>>)
+src/sugar.rs: impl MeshGeometry :: fn set_subsets(&mut self, subsets: &[MeshSubset])
+src/sugar.rs: impl MeshGeometry :: fn set_vertex_color0(&mut self, vertex_index: u32, r: f32, g: f32, b: f32, a: f32) -> bool
+src/sugar.rs: impl MeshGeometry :: fn set_vertex_joints0(&mut self, vertex_index: u32, x: f32, y: f32, z: f32, w: f32,) -> bool
+src/sugar.rs: impl MeshGeometry :: fn set_vertex_normal(&mut self, vertex_index: u32, x: f32, y: f32, z: f32) -> bool
+src/sugar.rs: impl MeshGeometry :: fn set_vertex_position(&mut self, vertex_index: u32, x: f32, y: f32, z: f32) -> bool
+src/sugar.rs: impl MeshGeometry :: fn set_vertex_tangent(&mut self, vertex_index: u32, x: f32, y: f32, z: f32, w: f32,) -> bool
+src/sugar.rs: impl MeshGeometry :: fn set_vertex_uv0(&mut self, vertex_index: u32, u: f32, v: f32) -> bool
+src/sugar.rs: impl MeshGeometry :: fn set_vertex_uv1(&mut self, vertex_index: u32, u: f32, v: f32) -> bool
+src/sugar.rs: impl MeshGeometry :: fn set_vertex_weights0(&mut self, vertex_index: u32, x: f32, y: f32, z: f32, w: f32,) -> bool
+src/sugar.rs: impl MeshGeometry :: fn skin_bind_pose(&self) -> Option<&flight_entity::Ref<MeshSkinBindPose>>
+src/sugar.rs: impl MeshGeometry :: fn subset_triangle_count(&self, subset_index: i32) -> u32
+src/sugar.rs: impl MeshGeometry :: fn transform(&mut self, matrix: &Matrix4) -> bool
+src/sugar.rs: impl MeshGeometry :: fn transform_into(&mut self, source: &MeshGeometry, matrix: &Matrix4) -> bool
+src/sugar.rs: impl MeshGeometry :: fn translate(&mut self, x: f32, y: f32, z: f32)
+src/sugar.rs: impl MeshGeometry :: fn triangle_count(&self) -> u32
+src/sugar.rs: impl MeshGeometry :: fn triangle_subset_index(&self, triangle_index: i32) -> i32
+src/sugar.rs: impl MeshGeometry :: fn validate(&self) -> bool
+src/sugar.rs: impl MeshGeometry :: fn vertex_count(&self) -> u32
+src/sugar.rs: impl MeshGeometry :: fn weld_vertices(&self) -> MeshGeometry
+src/sugar.rs: impl MeshTriangleVertexIndices :: fn triangle_vertex_indices(&mut self, geometry: &MeshGeometry, triangle_index: u32,) -> bool
+src/sugar.rs: impl VertexAttributeLayout :: fn vertex_attribute(&self, semantic: VertexSemantic) -> Option<&VertexAttribute>
+src/sugar.rs: impl VertexAttributeLayout :: fn vertex_attribute_float_offset(&self, semantic: VertexSemantic) -> i32
+src/update_mesh_morph.rs: pub fn update_mesh_morph(mesh: &mut Mesh)
+src/vertex_format.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct VertexAttribute { pub byte_offset: u32, pub format: VertexFormat, pub semantic: VertexSemantic, }
+src/vertex_format.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)] pub enum VertexFormat { Float32x2, Float32x3, Float32x4, Uint8x4, Uint16x4, Unorm8x4, }
+src/vertex_format.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)] pub enum VertexSemantic { Color0, Joints0, Normal, Position, Tangent, Uv0, Uv1, Weights0, }
+src/vertex_format.rs: #[derive(Debug, Clone, PartialEq)] pub struct VertexAttributeLayout { pub attributes: Vec<VertexAttribute>, pub stride: u32, }
+src/vertex_format.rs: impl Default for VertexAttributeLayout
+src/vertex_format.rs: impl Default for VertexAttributeLayout :: fn default() -> Self
+src/vertex_format.rs: pub fn get_vertex_format_byte_length(format: VertexFormat) -> u32
+src/vertex_format.rs: pub fn get_vertex_format_component_count(format: VertexFormat) -> u32
+src/vertex_format.rs: pub fn get_vertex_format_string(value: VertexFormat) -> &'static str
+src/vertex_format.rs: pub fn get_vertex_semantic_string(value: VertexSemantic) -> &'static str
+src/vertex_format.rs: pub fn parse_vertex_format(s: &str) -> Option<VertexFormat>
+src/vertex_format.rs: pub fn parse_vertex_semantic(s: &str) -> Option<VertexSemantic>
+src/vertex_format.rs: pub fn read_vertex_format_component(view: &[u8], byte_offset: usize, format: VertexFormat, component: usize,) -> f32
+src/vertex_format.rs: pub fn write_vertex_format_component(view: &mut [u8], byte_offset: usize, format: VertexFormat, component: usize, value: f32,)
