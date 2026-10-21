@@ -49,6 +49,7 @@ flight-textformat = { path = "crates/flight-textformat" }
 flight-texture-formats = { path = "crates/flight-texture-formats" }
 flight-animation = { path = "crates/flight-animation" }
 flight-compression = { path = "crates/flight-compression" }
+flight-device = { path = "crates/flight-device" }
 flight-entity = { path = "crates/flight-entity" }
 flight-clock = { path = "crates/flight-clock" }
 flight-connectivity = { path = "crates/flight-connectivity" }
