@@ -101,6 +101,26 @@ pub struct HostAudioCodecCapability {
     pub provider: ProviderRef,
 }
 
+/// One standard container-decode facet. Its canonical provider identity is already settled; the
+/// pending PCM representation ruling supplies the decode callback's exact output type.
+#[derive(Clone)]
+pub struct HostAudioDecodeFormatCapability {
+    pub provider: ProviderRef,
+}
+
+/// The seven closed standard container slots from the pinned host contract. A missing member is
+/// capability absence, distinct from a filled decoder reporting an expected miss.
+#[derive(Clone, Default)]
+pub struct HostAudioDecodeCapabilities {
+    pub aac: Option<HostAudioDecodeFormatCapability>,
+    pub flac: Option<HostAudioDecodeFormatCapability>,
+    pub mp3: Option<HostAudioDecodeFormatCapability>,
+    pub mp4: Option<HostAudioDecodeFormatCapability>,
+    pub ogg: Option<HostAudioDecodeFormatCapability>,
+    pub wav: Option<HostAudioDecodeFormatCapability>,
+    pub webm: Option<HostAudioDecodeFormatCapability>,
+}
+
 // flight-lint: allow(conform-extra) D9e exact Rust string table for the TS AudioChannelState union; the TS package exports the union only
 pub fn get_audio_channel_state_string(value: AudioChannelState) -> &'static str {
     return match value {

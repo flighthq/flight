@@ -1,3 +1,4 @@
+mod audio_decode_slot;
 mod audio_format;
 mod types;
 
@@ -12,13 +13,17 @@ pub use contract::AudioResourceFailureKind;
 pub use contract::AudioResourceReferenceKind;
 pub use contract::AudioResourceUrl;
 pub use contract::HostAudioCodecCapability;
+pub use contract::HostAudioDecodeCapabilities;
+pub use contract::HostAudioDecodeFormatCapability;
 pub use contract::can_play_audio_type;
 pub use contract::detect_audio_mime_type;
 pub use contract::get_audio_channel_state_string;
+pub use contract::get_audio_decode_slot;
 pub use contract::get_audio_mime_type_essence;
 pub use contract::get_audio_mime_type_parameter;
 pub use contract::get_audio_resource_failure_kind_string;
 pub use contract::get_audio_resource_reference_kind_string;
+pub use contract::has_audio_decode_slot;
 pub use contract::infer_audio_mime_type;
 pub use contract::parse_audio_channel_state;
 pub use contract::parse_audio_resource_failure_kind;
