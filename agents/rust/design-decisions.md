@@ -137,6 +137,25 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 - **Shaders are shared verbatim:** WGSL works unchanged with the wgpu crate. GLSL ES 3.0 needs only a version-header swap on desktop GL. Shaders remain string constants.
 - **Tests:** wgpu tests may render for real on a headless software adapter (lavapipe in CI). GL tests use a headless context (EGL + Mesa llvmpipe), or keep mock-style tests where the TS test is a pure call-sequence check.
 
+## D18 Sugar layer and review flow — APPROVED (user, 2026-10-21)
+
+**Sugar** is Rust-only convenience over the contract. It is never transpiled and never contains logic.
+- **What it is:**
+  - methods that delegate to the free functions (`v.add(&o)` → `add_vector2`; `m.invert()` → `inverse_matrix`);
+  - convenience constructors (`Sprite::new(…)` → `create_sprite`, `Vector2::new(x, y)` → `create_vector2`);
+  - the D16 `Deref` access to `*Fields`;
+  - operator traits (`Add`, `Mul`, …) only where a TS function has exactly that meaning, and they also delegate.
+- **What it is not:** property getters or setters (D16 raw-struct API), auto-invalidation, logic, or new behavior.
+- **Coverage:** every **public-lane** type (TS `index.ts`) gets sugar mirroring its public functions that take that type as the primary (out or first) argument. Contract-only items get none (D6, D13).
+- **Naming:** method names drop the type name from the free function (`add_vector2` → `add`, `get_rectangle_width` → `width`). Constructors use `new` / `from_*`. Collisions are resolved by keeping the fuller name.
+- **Tests:** small inline `#[cfg(test)] mod sugar_tests` in each sugar module. Each method gets one test that calls it and compares the result with the free function on the same inputs. These are separate from the TS-mirrored `tests/` directory.
+- **Lint:** the existing `sugar-delegates` rule (impl methods must call a free function, no loops) enforces delegation.
+
+**Review flow:** do not block on user approval of API manifests. Builders follow the rulings and the checklist, and the user reviews afterwards.
+- Manifests are written by integration when a crate passes the gates (`manifest --write`).
+- Principal summarizes exceptions per wave for after-the-fact user review.
+- Frozen-manifest protection applies once the user has reviewed a crate. Until then, manifest changes need no approval.
+
 ## D13 Export lanes — APPROVED (user, 2026-10-21)
 
 - **Contract lane = the free functions** (TS `contract.ts`, the full surface other packages use). In Rust: `flight_x::contract::*`, mirroring `@flighthq/x/contract`.
