@@ -84,7 +84,6 @@ pub fn copy_color_scale_bias(out: &mut ColorScaleBias, source: &ColorScaleBias) 
     out.alpha_bias = source.alpha_bias;
 }
 
-// flight-lint: allow(conform-array) D13: Rust &mut [f32] (typed-array) vs TS number[] — reported negotiation item
 pub fn copy_color_scale_bias_to_arrays(
     out_color_scales: &mut [f32],
     out_color_biases: &mut [f32],
