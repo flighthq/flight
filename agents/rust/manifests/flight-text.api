@@ -1,0 +1,377 @@
+src/contract.rs: pub use crate::enable_text_label_guards::*;
+src/contract.rs: pub use crate::explain_text_label_content::*;
+src/contract.rs: pub use crate::native_text::*;
+src/contract.rs: pub use crate::rich_text::*;
+src/contract.rs: pub use crate::rich_text_content::*;
+src/contract.rs: pub use crate::rich_text_metrics::*;
+src/contract.rs: pub use crate::sugar::*;
+src/contract.rs: pub use crate::text_format_font::*;
+src/contract.rs: pub use crate::text_label::*;
+src/contract.rs: pub use crate::text_label_layout::*;
+src/contract.rs: pub use crate::text_layout_context::*;
+src/contract.rs: pub use crate::text_layout_runtime::*;
+src/contract.rs: pub use crate::types::*;
+src/enable_text_label_guards.rs: pub fn disable_text_label_guards(context: &Ref<TextLayoutContext>)
+src/enable_text_label_guards.rs: pub fn enable_text_label_guards(context: &Ref<TextLayoutContext>, log_state: Ref<LogState>, clock: TextGuardClock,)
+src/explain_text_label_content.rs: pub fn explain_text_label_content(source: &dyn Node) -> TextLabelContentExplanation
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::NATIVE_TEXT_KIND;
+src/lib.rs: pub use contract::NativeText;
+src/lib.rs: pub use contract::NativeTextData;
+src/lib.rs: pub use contract::NativeTextDataOptions;
+src/lib.rs: pub use contract::NativeTextMethods;
+src/lib.rs: pub use contract::NativeTextStyle;
+src/lib.rs: pub use contract::PartialNativeText;
+src/lib.rs: pub use contract::PartialTextLabel;
+src/lib.rs: pub use contract::RICH_TEXT_KIND;
+src/lib.rs: pub use contract::RichText;
+src/lib.rs: pub use contract::RichTextData;
+src/lib.rs: pub use contract::RichTextDataOptions;
+src/lib.rs: pub use contract::RichTextMethods;
+src/lib.rs: pub use contract::TEXT_LABEL_KIND;
+src/lib.rs: pub use contract::TextFieldChangeEvent;
+src/lib.rs: pub use contract::TextFieldLinkEvent;
+src/lib.rs: pub use contract::TextFieldScrollEvent;
+src/lib.rs: pub use contract::TextFieldSignals;
+src/lib.rs: pub use contract::TextFormatFontMethods;
+src/lib.rs: pub use contract::TextInputHistoryEntry;
+src/lib.rs: pub use contract::TextInputOptions;
+src/lib.rs: pub use contract::TextInputState;
+src/lib.rs: pub use contract::TextLabel;
+src/lib.rs: pub use contract::TextLabelContentExplanation;
+src/lib.rs: pub use contract::TextLabelData;
+src/lib.rs: pub use contract::TextLabelDataOptions;
+src/lib.rs: pub use contract::TextLabelMethods;
+src/lib.rs: pub use contract::TextNodeMethods;
+src/lib.rs: pub use contract::append_rich_text_string;
+src/lib.rs: pub use contract::append_text_label_string;
+src/lib.rs: pub use contract::build_rich_text_layout_params;
+src/lib.rs: pub use contract::clear_rich_text_format_ranges;
+src/lib.rs: pub use contract::compute_native_text_local_bounds_rectangle;
+src/lib.rs: pub use contract::compute_rich_text_local_bounds_rectangle;
+src/lib.rs: pub use contract::compute_text_format_font_string;
+src/lib.rs: pub use contract::compute_text_label_local_bounds_rectangle;
+src/lib.rs: pub use contract::create_native_text;
+src/lib.rs: pub use contract::create_rich_text;
+src/lib.rs: pub use contract::create_text_label;
+src/lib.rs: pub use contract::disable_text_label_guards;
+src/lib.rs: pub use contract::dispatch_rich_text_link_at_point;
+src/lib.rs: pub use contract::dispatch_rich_text_wheel;
+src/lib.rs: pub use contract::enable_text_field_signals;
+src/lib.rs: pub use contract::enable_text_label_guards;
+src/lib.rs: pub use contract::explain_text_label_content;
+src/lib.rs: pub use contract::get_native_text_measured_height;
+src/lib.rs: pub use contract::get_native_text_measured_width;
+src/lib.rs: pub use contract::get_native_text_string;
+src/lib.rs: pub use contract::get_native_text_style;
+src/lib.rs: pub use contract::get_rich_text_bottom_scroll_v;
+src/lib.rs: pub use contract::get_rich_text_char_index_at_point;
+src/lib.rs: pub use contract::get_rich_text_default_text_format;
+src/lib.rs: pub use contract::get_rich_text_format_range_at;
+src/lib.rs: pub use contract::get_rich_text_format_range_by_index;
+src/lib.rs: pub use contract::get_rich_text_format_range_count;
+src/lib.rs: pub use contract::get_rich_text_format_ranges_in;
+src/lib.rs: pub use contract::get_rich_text_length;
+src/lib.rs: pub use contract::get_rich_text_line_count;
+src/lib.rs: pub use contract::get_rich_text_line_metrics;
+src/lib.rs: pub use contract::get_rich_text_max_scroll_h;
+src/lib.rs: pub use contract::get_rich_text_max_scroll_v;
+src/lib.rs: pub use contract::get_rich_text_password_character;
+src/lib.rs: pub use contract::get_rich_text_string;
+src/lib.rs: pub use contract::get_rich_text_text_height;
+src/lib.rs: pub use contract::get_rich_text_text_width;
+src/lib.rs: pub use contract::get_text_field_signals;
+src/lib.rs: pub use contract::get_text_label_format;
+src/lib.rs: pub use contract::get_text_label_string;
+src/lib.rs: pub use contract::get_text_layout;
+src/lib.rs: pub use contract::get_text_layout_metrics;
+src/lib.rs: pub use contract::insert_rich_text_string;
+src/lib.rs: pub use contract::patch_native_text_style;
+src/lib.rs: pub use contract::remove_rich_text_format_ranges_in;
+src/lib.rs: pub use contract::replace_rich_text_string;
+src/lib.rs: pub use contract::set_native_text_auto_size;
+src/lib.rs: pub use contract::set_native_text_height;
+src/lib.rs: pub use contract::set_native_text_string;
+src/lib.rs: pub use contract::set_native_text_style;
+src/lib.rs: pub use contract::set_native_text_vertical_align;
+src/lib.rs: pub use contract::set_native_text_width;
+src/lib.rs: pub use contract::set_rich_text_background;
+src/lib.rs: pub use contract::set_rich_text_background_color;
+src/lib.rs: pub use contract::set_rich_text_border;
+src/lib.rs: pub use contract::set_rich_text_border_color;
+src/lib.rs: pub use contract::set_rich_text_condense_white;
+src/lib.rs: pub use contract::set_rich_text_content;
+src/lib.rs: pub use contract::set_rich_text_default_text_format;
+src/lib.rs: pub use contract::set_rich_text_format_range;
+src/lib.rs: pub use contract::set_rich_text_height;
+src/lib.rs: pub use contract::set_rich_text_max_chars;
+src/lib.rs: pub use contract::set_rich_text_mouse_wheel_enabled;
+src/lib.rs: pub use contract::set_rich_text_multiline;
+src/lib.rs: pub use contract::set_rich_text_scroll_h;
+src/lib.rs: pub use contract::set_rich_text_scroll_v;
+src/lib.rs: pub use contract::set_rich_text_selectable;
+src/lib.rs: pub use contract::set_rich_text_string;
+src/lib.rs: pub use contract::set_rich_text_text_color;
+src/lib.rs: pub use contract::set_rich_text_vertical_align;
+src/lib.rs: pub use contract::set_rich_text_width;
+src/lib.rs: pub use contract::set_rich_text_word_wrap;
+src/lib.rs: pub use contract::set_text_label_auto_size;
+src/lib.rs: pub use contract::set_text_label_format;
+src/lib.rs: pub use contract::set_text_label_height;
+src/lib.rs: pub use contract::set_text_label_string;
+src/lib.rs: pub use contract::set_text_label_vertical_align;
+src/lib.rs: pub use contract::set_text_label_width;
+src/native_text.rs: pub fn compute_native_text_local_bounds_rectangle(out: &mut Rectangle, source: &dyn Node)
+src/native_text.rs: pub fn create_native_text(obj: Option<&PartialNativeText>) -> Ref<NativeText>
+src/native_text.rs: pub fn create_native_text_data(data: Option<&NativeTextDataOptions>) -> NativeTextData
+src/native_text.rs: pub fn create_native_text_runtime() -> NativeTextRuntime
+src/native_text.rs: pub fn get_native_text_measured_height(source: &NativeText) -> f32
+src/native_text.rs: pub fn get_native_text_measured_width(source: &NativeText) -> f32
+src/native_text.rs: pub fn get_native_text_runtime(source: &NativeText) -> Ref<NativeTextRuntime>
+src/native_text.rs: pub fn get_native_text_string(source: &NativeText) -> String
+src/native_text.rs: pub fn get_native_text_style(source: &NativeText) -> Ref<NativeTextStyle>
+src/native_text.rs: pub fn initialize_native_text_data(out: &mut NativeTextData, data: Option<&NativeTextDataOptions>)
+src/native_text.rs: pub fn patch_native_text_style(source: &Ref<NativeText>, patch: &NativeTextStyle)
+src/native_text.rs: pub fn set_native_text_auto_size(source: &Ref<NativeText>, value: TextAutoSize)
+src/native_text.rs: pub fn set_native_text_height(source: &Ref<NativeText>, value: f32)
+src/native_text.rs: pub fn set_native_text_string(source: &Ref<NativeText>, value: &str)
+src/native_text.rs: pub fn set_native_text_style(source: &Ref<NativeText>, value: Ref<NativeTextStyle>)
+src/native_text.rs: pub fn set_native_text_vertical_align(source: &Ref<NativeText>, value: TextVerticalAlign)
+src/native_text.rs: pub fn set_native_text_width(source: &Ref<NativeText>, value: f32)
+src/rich_text.rs: pub fn append_rich_text_string(source: &Ref<RichText>, value: &str)
+src/rich_text.rs: pub fn build_rich_text_layout_params(source: &RichText, measure: TextMeasureFunction,) -> TextLayoutParams
+src/rich_text.rs: pub fn clear_rich_text_format_ranges(source: &Ref<RichText>)
+src/rich_text.rs: pub fn compute_rich_text_local_bounds_rectangle(out: &mut Rectangle, source: &dyn Node)
+src/rich_text.rs: pub fn create_rich_text(obj: Option<&PartialRichText>) -> Ref<RichText>
+src/rich_text.rs: pub fn create_rich_text_data(data: Option<&RichTextDataOptions>) -> RichTextData
+src/rich_text.rs: pub fn create_rich_text_runtime() -> RichTextRuntime
+src/rich_text.rs: pub fn create_text_field_signals() -> TextFieldSignals
+src/rich_text.rs: pub fn dispatch_rich_text_link_at_point(source: &Ref<RichText>, x: f32, y: f32) -> Option<String>
+src/rich_text.rs: pub fn dispatch_rich_text_wheel(source: &Ref<RichText>, delta_lines: f32, layout: Option<&TextLayoutResult>,)
+src/rich_text.rs: pub fn enable_text_field_signals(source: &Ref<RichText>) -> Ref<TextFieldSignals>
+src/rich_text.rs: pub fn get_rich_text_bottom_scroll_v(source: &Ref<RichText>) -> f32
+src/rich_text.rs: pub fn get_rich_text_char_index_at_point(source: &Ref<RichText>, x: f32, y: f32) -> i32
+src/rich_text.rs: pub fn get_rich_text_default_text_format(source: &RichText) -> Ref<TextFormat>
+src/rich_text.rs: pub fn get_rich_text_format_range_at(out: &mut TextFormat, source: &RichText, index: usize)
+src/rich_text.rs: pub fn get_rich_text_format_range_by_index(out: &mut TextFormatRange, source: &RichText, i: usize,) -> bool
+src/rich_text.rs: pub fn get_rich_text_format_range_count(source: &RichText) -> usize
+src/rich_text.rs: pub fn get_rich_text_format_ranges_in(out: &mut Vec<TextFormatRange>, source: &RichText, begin_index: usize, end_index: usize,)
+src/rich_text.rs: pub fn get_rich_text_length(source: &RichText) -> usize
+src/rich_text.rs: pub fn get_rich_text_line_count(source: &Ref<RichText>) -> usize
+src/rich_text.rs: pub fn get_rich_text_line_metrics(source: &Ref<RichText>, line_index: usize,) -> Option<TextLineMetrics>
+src/rich_text.rs: pub fn get_rich_text_max_scroll_h(source: &Ref<RichText>) -> f32
+src/rich_text.rs: pub fn get_rich_text_max_scroll_v(source: &Ref<RichText>) -> f32
+src/rich_text.rs: pub fn get_rich_text_password_character(source: &RichText) -> Option<String>
+src/rich_text.rs: pub fn get_rich_text_runtime(source: &RichText) -> Ref<RichTextRuntime>
+src/rich_text.rs: pub fn get_rich_text_string(source: &RichText) -> String
+src/rich_text.rs: pub fn get_rich_text_text_height(source: &Ref<RichText>) -> f32
+src/rich_text.rs: pub fn get_rich_text_text_width(source: &Ref<RichText>) -> f32
+src/rich_text.rs: pub fn get_text_field_signals(source: &Ref<RichText>) -> Option<Ref<TextFieldSignals>>
+src/rich_text.rs: pub fn initialize_text_field_signals(out: &mut TextFieldSignals)
+src/rich_text.rs: pub fn insert_rich_text_string(source: &Ref<RichText>, index: i32, value: &str)
+src/rich_text.rs: pub fn remove_rich_text_format_ranges_in(source: &Ref<RichText>, begin: usize, end: usize)
+src/rich_text.rs: pub fn replace_rich_text_string(source: &Ref<RichText>, begin_index: i32, end_index: i32, value: &str,)
+src/rich_text.rs: pub fn set_rich_text_background(source: &Ref<RichText>, value: bool)
+src/rich_text.rs: pub fn set_rich_text_background_color(source: &Ref<RichText>, value: u32)
+src/rich_text.rs: pub fn set_rich_text_border(source: &Ref<RichText>, value: bool)
+src/rich_text.rs: pub fn set_rich_text_border_color(source: &Ref<RichText>, value: u32)
+src/rich_text.rs: pub fn set_rich_text_condense_white(source: &Ref<RichText>, value: bool)
+src/rich_text.rs: pub fn set_rich_text_content(source: &Ref<RichText>, content: &RichTextContent)
+src/rich_text.rs: pub fn set_rich_text_default_text_format(source: &Ref<RichText>, value: Ref<TextFormat>)
+src/rich_text.rs: pub fn set_rich_text_format_range(source: &Ref<RichText>, format: Ref<TextFormat>, start: Option<usize>, end: Option<usize>,)
+src/rich_text.rs: pub fn set_rich_text_height(source: &Ref<RichText>, value: f32)
+src/rich_text.rs: pub fn set_rich_text_max_chars(source: &Ref<RichText>, value: i32)
+src/rich_text.rs: pub fn set_rich_text_mouse_wheel_enabled(source: &Ref<RichText>, value: bool)
+src/rich_text.rs: pub fn set_rich_text_multiline(source: &Ref<RichText>, value: bool)
+src/rich_text.rs: pub fn set_rich_text_scroll_h(source: &Ref<RichText>, value: f32, layout: Option<&TextLayoutResult>,)
+src/rich_text.rs: pub fn set_rich_text_scroll_v(source: &Ref<RichText>, value: f32, layout: Option<&TextLayoutResult>,)
+src/rich_text.rs: pub fn set_rich_text_selectable(source: &Ref<RichText>, value: bool)
+src/rich_text.rs: pub fn set_rich_text_string(source: &Ref<RichText>, value: &str)
+src/rich_text.rs: pub fn set_rich_text_text_color(source: &Ref<RichText>, value: u32)
+src/rich_text.rs: pub fn set_rich_text_vertical_align(source: &Ref<RichText>, value: TextVerticalAlign)
+src/rich_text.rs: pub fn set_rich_text_width(source: &Ref<RichText>, value: f32)
+src/rich_text.rs: pub fn set_rich_text_word_wrap(source: &Ref<RichText>, value: bool)
+src/rich_text_content.rs: pub fn clear_rich_text_content(runtime: &mut RichTextRuntime)
+src/rich_text_content.rs: pub fn compute_rich_text_content(out: &mut RichTextContent, data: &RichTextData, password_character: Option<&str>,)
+src/rich_text_content.rs: pub fn get_rich_text_content(runtime: &mut RichTextRuntime) -> Ref<RichTextContent>
+src/rich_text_metrics.rs: pub fn compute_rich_text_bottom_scroll_v(data: &RichTextData, layout: &TextLayoutResult) -> f32
+src/rich_text_metrics.rs: pub fn compute_rich_text_line_count(layout: &TextLayoutResult) -> usize
+src/rich_text_metrics.rs: pub fn compute_rich_text_max_scroll_h(data: &RichTextData, layout: &TextLayoutResult) -> f32
+src/rich_text_metrics.rs: pub fn compute_rich_text_max_scroll_v(data: &RichTextData, layout: &TextLayoutResult) -> f32
+src/rich_text_metrics.rs: pub fn compute_rich_text_text_height(layout: &TextLayoutResult) -> f32
+src/rich_text_metrics.rs: pub fn compute_rich_text_text_width(layout: &TextLayoutResult) -> f32
+src/rich_text_metrics.rs: pub fn get_rich_text_scroll_y_offset(line_heights: &[f32], first_visible_line: usize) -> f32
+src/sugar.rs: impl NativeText :: fn new(obj: Option<&PartialNativeText>) -> Ref<Self>
+src/sugar.rs: impl NativeTextMethods for Ref<NativeText>
+src/sugar.rs: impl NativeTextMethods for Ref<NativeText> :: fn compute_local_bounds_rectangle(&self, out: &mut Rectangle)
+src/sugar.rs: impl NativeTextMethods for Ref<NativeText> :: fn measured_height(&self) -> f32
+src/sugar.rs: impl NativeTextMethods for Ref<NativeText> :: fn measured_width(&self) -> f32
+src/sugar.rs: impl NativeTextMethods for Ref<NativeText> :: fn patch_style(&self, patch: &NativeTextStyle)
+src/sugar.rs: impl NativeTextMethods for Ref<NativeText> :: fn set_auto_size(&self, value: TextAutoSize)
+src/sugar.rs: impl NativeTextMethods for Ref<NativeText> :: fn set_height(&self, value: f32)
+src/sugar.rs: impl NativeTextMethods for Ref<NativeText> :: fn set_string(&self, value: &str)
+src/sugar.rs: impl NativeTextMethods for Ref<NativeText> :: fn set_style(&self, value: Ref<NativeTextStyle>)
+src/sugar.rs: impl NativeTextMethods for Ref<NativeText> :: fn set_vertical_align(&self, value: TextVerticalAlign)
+src/sugar.rs: impl NativeTextMethods for Ref<NativeText> :: fn set_width(&self, value: f32)
+src/sugar.rs: impl NativeTextMethods for Ref<NativeText> :: fn string(&self) -> String
+src/sugar.rs: impl NativeTextMethods for Ref<NativeText> :: fn style(&self) -> Ref<NativeTextStyle>
+src/sugar.rs: impl RichText :: fn new(obj: Option<&PartialRichText>) -> Ref<Self>
+src/sugar.rs: impl RichTextMethods for Ref<RichText>
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn append_string(&self, value: &str)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn bottom_scroll_v(&self) -> f32
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn build_layout_params(&self, measure: TextMeasureFunction) -> TextLayoutParams
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn char_index_at_point(&self, x: f32, y: f32) -> i32
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn clear_format_ranges(&self)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn compute_local_bounds_rectangle(&self, out: &mut Rectangle)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn default_text_format(&self) -> Ref<TextFormat>
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn dispatch_link_at_point(&self, x: f32, y: f32) -> Option<String>
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn dispatch_wheel(&self, delta_lines: f32, layout: Option<&TextLayoutResult>)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn enable_signals(&self) -> Ref<TextFieldSignals>
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn format_range_at(&self, out: &mut TextFormat, index: usize)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn format_range_by_index(&self, out: &mut TextFormatRange, index: usize) -> bool
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn format_range_count(&self) -> usize
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn format_ranges_in(&self, out: &mut Vec<TextFormatRange>, begin: usize, end: usize)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn insert_string(&self, index: i32, value: &str)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn length(&self) -> usize
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn line_count(&self) -> usize
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn line_metrics(&self, line_index: usize) -> Option<TextLineMetrics>
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn max_scroll_h(&self) -> f32
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn max_scroll_v(&self) -> f32
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn password_character(&self) -> Option<String>
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn remove_format_ranges_in(&self, begin: usize, end: usize)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn replace_string(&self, begin: i32, end: i32, value: &str)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_background(&self, value: bool)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_background_color(&self, value: u32)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_border(&self, value: bool)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_border_color(&self, value: u32)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_condense_white(&self, value: bool)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_content(&self, content: &RichTextContent)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_default_text_format(&self, value: Ref<TextFormat>)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_format_range(&self, format: Ref<TextFormat>, start: Option<usize>, end: Option<usize>)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_height(&self, value: f32)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_max_chars(&self, value: i32)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_mouse_wheel_enabled(&self, value: bool)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_multiline(&self, value: bool)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_scroll_h(&self, value: f32, layout: Option<&TextLayoutResult>)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_scroll_v(&self, value: f32, layout: Option<&TextLayoutResult>)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_selectable(&self, value: bool)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_string(&self, value: &str)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_text_color(&self, value: u32)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_vertical_align(&self, value: TextVerticalAlign)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_width(&self, value: f32)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn set_word_wrap(&self, value: bool)
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn signals(&self) -> Option<Ref<TextFieldSignals>>
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn string(&self) -> String
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn text_height(&self) -> f32
+src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn text_width(&self) -> f32
+src/sugar.rs: impl TextFormatFontMethods for TextFormat
+src/sugar.rs: impl TextFormatFontMethods for TextFormat :: fn font_string(&self) -> String
+src/sugar.rs: impl TextLabel :: fn new(obj: Option<&PartialTextLabel>) -> Ref<Self>
+src/sugar.rs: impl TextLabelMethods for Ref<TextLabel>
+src/sugar.rs: impl TextLabelMethods for Ref<TextLabel> :: fn append_string(&self, value: &str)
+src/sugar.rs: impl TextLabelMethods for Ref<TextLabel> :: fn compute_local_bounds_rectangle(&self, out: &mut Rectangle)
+src/sugar.rs: impl TextLabelMethods for Ref<TextLabel> :: fn format(&self) -> Ref<TextFormat>
+src/sugar.rs: impl TextLabelMethods for Ref<TextLabel> :: fn set_auto_size(&self, value: TextAutoSize)
+src/sugar.rs: impl TextLabelMethods for Ref<TextLabel> :: fn set_format(&self, value: Ref<TextFormat>)
+src/sugar.rs: impl TextLabelMethods for Ref<TextLabel> :: fn set_height(&self, value: f32)
+src/sugar.rs: impl TextLabelMethods for Ref<TextLabel> :: fn set_string(&self, value: &str)
+src/sugar.rs: impl TextLabelMethods for Ref<TextLabel> :: fn set_vertical_align(&self, value: TextVerticalAlign)
+src/sugar.rs: impl TextLabelMethods for Ref<TextLabel> :: fn set_width(&self, value: f32)
+src/sugar.rs: impl TextLabelMethods for Ref<TextLabel> :: fn string(&self) -> String
+src/sugar.rs: impl TextNodeMethods for NodeRef
+src/sugar.rs: impl TextNodeMethods for NodeRef :: fn explain_text_content(&self) -> TextLabelContentExplanation
+src/sugar.rs: impl TextNodeMethods for NodeRef :: fn layout(&self) -> Option<Ref<TextLayoutResult>>
+src/sugar.rs: impl TextNodeMethods for NodeRef :: fn layout_metrics(&self, out: &mut TextMetrics)
+src/sugar.rs: pub trait NativeTextMethods { fn compute_local_bounds_rectangle(&self, out: &mut Rectangle); fn measured_height(&self) -> f32; fn measured_width(&self) -> f32; fn patch_style(&self, patch: &NativeTextStyle); fn set_auto_size(&self, value: TextAutoSize); fn set_height(&self, value: f32); fn set_string(&self, value: &str); fn set_style(&self, value: Ref<NativeTextStyle>); fn set_vertical_align(&self, value: TextVerticalAlign); fn set_width(&self, value: f32); fn string(&self) -> String; fn style(&self) -> Ref<NativeTextStyle>; }
+src/sugar.rs: pub trait RichTextMethods { fn append_string(&self, value: &str); fn bottom_scroll_v(&self) -> f32; fn build_layout_params(&self, measure: TextMeasureFunction) -> TextLayoutParams; fn char_index_at_point(&self, x: f32, y: f32) -> i32; fn clear_format_ranges(&self); fn compute_local_bounds_rectangle(&self, out: &mut Rectangle); fn default_text_format(&self) -> Ref<TextFormat>; fn dispatch_link_at_point(&self, x: f32, y: f32) -> Option<String>; fn dispatch_wheel(&self, delta_lines: f32, layout: Option<&TextLayoutResult>); fn enable_signals(&self) -> Ref<TextFieldSignals>; fn format_range_at(&self, out: &mut TextFormat, index: usize); fn format_range_by_index(&self, out: &mut TextFormatRange, index: usize) -> bool; fn format_range_count(&self) -> usize; fn format_ranges_in(&self, out: &mut Vec<TextFormatRange>, begin: usize, end: usize); fn insert_string(&self, index: i32, value: &str); fn length(&self) -> usize; fn line_count(&self) -> usize; fn line_metrics(&self, line_index: usize) -> Option<TextLineMetrics>; fn max_scroll_h(&self) -> f32; fn max_scroll_v(&self) -> f32; fn password_character(&self) -> Option<String>; fn remove_format_ranges_in(&self, begin: usize, end: usize); fn replace_string(&self, begin: i32, end: i32, value: &str); fn set_background(&self, value: bool); fn set_background_color(&self, value: u32); fn set_border(&self, value: bool); fn set_border_color(&self, value: u32); fn set_condense_white(&self, value: bool); fn set_content(&self, content: &RichTextContent); fn set_default_text_format(&self, value: Ref<TextFormat>); fn set_format_range(&self, format: Ref<TextFormat>, start: Option<usize>, end: Option<usize>); fn set_height(&self, value: f32); fn set_max_chars(&self, value: i32); fn set_mouse_wheel_enabled(&self, value: bool); fn set_multiline(&self, value: bool); fn set_scroll_h(&self, value: f32, layout: Option<&TextLayoutResult>); fn set_scroll_v(&self, value: f32, layout: Option<&TextLayoutResult>); fn set_selectable(&self, value: bool); fn set_string(&self, value: &str); fn set_text_color(&self, value: u32); fn set_vertical_align(&self, value: TextVerticalAlign); fn set_width(&self, value: f32); fn set_word_wrap(&self, value: bool); fn signals(&self) -> Option<Ref<TextFieldSignals>>; fn string(&self) -> String; fn text_height(&self) -> f32; fn text_width(&self) -> f32; }
+src/sugar.rs: pub trait TextFormatFontMethods { fn font_string(&self) -> String; }
+src/sugar.rs: pub trait TextLabelMethods { fn append_string(&self, value: &str); fn compute_local_bounds_rectangle(&self, out: &mut Rectangle); fn format(&self) -> Ref<TextFormat>; fn set_auto_size(&self, value: TextAutoSize); fn set_format(&self, value: Ref<TextFormat>); fn set_height(&self, value: f32); fn set_string(&self, value: &str); fn set_vertical_align(&self, value: TextVerticalAlign); fn set_width(&self, value: f32); fn string(&self) -> String; }
+src/sugar.rs: pub trait TextNodeMethods { fn explain_text_content(&self) -> TextLabelContentExplanation; fn layout(&self) -> Option<Ref<TextLayoutResult>>; fn layout_metrics(&self, out: &mut TextMetrics); }
+src/text_format_font.rs: pub fn compute_text_format_font_string(format: &TextFormat) -> String
+src/text_label.rs: pub fn append_text_label_string(source: &Ref<TextLabel>, value: &str)
+src/text_label.rs: pub fn compute_text_label_local_bounds_rectangle(out: &mut Rectangle, source: &dyn Node)
+src/text_label.rs: pub fn create_text_label(obj: Option<&PartialTextLabel>) -> Ref<TextLabel>
+src/text_label.rs: pub fn create_text_label_data(data: Option<&TextLabelDataOptions>) -> TextLabelData
+src/text_label.rs: pub fn create_text_label_runtime() -> TextLabelRuntime
+src/text_label.rs: pub fn get_text_label_format(source: &TextLabel) -> Ref<TextFormat>
+src/text_label.rs: pub fn get_text_label_runtime(source: &TextLabel) -> Ref<TextLabelRuntime>
+src/text_label.rs: pub fn get_text_label_string(source: &TextLabel) -> String
+src/text_label.rs: pub fn initialize_text_label_data(out: &mut TextLabelData, data: Option<&TextLabelDataOptions>)
+src/text_label.rs: pub fn set_text_label_auto_size(source: &Ref<TextLabel>, value: TextAutoSize)
+src/text_label.rs: pub fn set_text_label_format(source: &Ref<TextLabel>, value: Ref<TextFormat>)
+src/text_label.rs: pub fn set_text_label_height(source: &Ref<TextLabel>, value: f32)
+src/text_label.rs: pub fn set_text_label_string(source: &Ref<TextLabel>, value: &str)
+src/text_label.rs: pub fn set_text_label_vertical_align(source: &Ref<TextLabel>, value: TextVerticalAlign)
+src/text_label.rs: pub fn set_text_label_width(source: &Ref<TextLabel>, value: f32)
+src/text_label_layout.rs: pub fn ensure_text_layout(source: &NodeRef)
+src/text_label_layout.rs: pub fn get_text_layout(source: &NodeRef) -> Option<Ref<TextLayoutResult>>
+src/text_label_layout.rs: pub fn get_text_layout_metrics(out: &mut TextMetrics, source: &NodeRef)
+src/text_label_layout.rs: pub fn set_text_label_guard(context: &Ref<TextLayoutContext>, guard: Option<TextLabelGuard>)
+src/text_layout_context.rs: pub fn create_text_layout_context(host_text_shaper: Option<HostTextShaperCapability>,) -> Ref<TextLayoutContext>
+src/text_layout_runtime.rs: pub fn clear_text_layout_result(runtime: &mut TextLabelRuntime)
+src/text_layout_runtime.rs: pub fn get_text_layout_result(runtime: &mut TextLabelRuntime) -> Ref<TextLayoutResult>
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct TextFieldScrollEvent { pub previous_scroll_h: f32, pub previous_scroll_v: f32, pub scroll_h: f32, pub scroll_v: f32, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct NativeTextStyle { pub align: Option<TextFormatAlign>, pub bold: Option<bool>, pub color: Option<u32>, pub font: Option<String>, pub italic: Option<bool>, pub leading: Option<f32>, pub size: Option<f32>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct TextFieldLinkEvent { pub url: String, pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct TextInputOptions { pub always_show_selection: Option<bool>, pub caret_color: Option<u32>, pub caret_width: Option<f32>, pub display_as_password: Option<bool>, pub history_limit: Option<usize>, pub password_character: Option<String>, pub restrict: Option<String>, pub selection_alpha: Option<f32>, pub selection_color: Option<u32>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct TextInputState { pub always_show_selection: bool, pub caret_color: u32, pub caret_index: usize, pub caret_width: f32, pub desired_caret_x: f32, pub display_as_password: bool, pub focused: bool, pub history: Vec<TextInputHistoryEntry>, pub history_index: i32, pub history_limit: usize, pub password_character: String, pub restrict: String, pub selection_alpha: f32, pub selection_color: u32, pub selection_index: usize, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct TextFieldChangeEvent { pub previous_text: String, pub text: String, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct TextInputHistoryEntry { pub caret_index_after: usize, pub caret_index_before: usize, pub merge_kind: Option<String>, pub selection_index_after: usize, pub selection_index_before: usize, pub text_after: String, pub text_before: String, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct TextLabelContentExplanation { pub agreement: bool, pub live_string: String, pub rasterized_string: Option<String>, pub revision: u32, }
+src/types.rs: #[derive(Clone, Default)] pub struct NativeTextDataOptions { pub auto_size: Option<TextAutoSize>, pub height: Option<f32>, pub style: Option<Ref<NativeTextStyle>>, pub text: Option<String>, pub vertical_align: Option<TextVerticalAlign>, pub width: Option<f32>, }
+src/types.rs: #[derive(Clone, Default)] pub struct PartialNativeText { pub data: Option<NativeTextDataOptions>, pub node: PartialNode2D, }
+src/types.rs: #[derive(Clone, Default)] pub struct PartialRichText { pub data: Option<RichTextDataOptions>, pub layout_context: Option<Ref<TextLayoutContext>>, pub node: PartialNode2D, }
+src/types.rs: #[derive(Clone, Default)] pub struct PartialTextLabel { pub data: Option<TextLabelDataOptions>, pub layout_context: Option<Ref<TextLayoutContext>>, pub node: PartialNode2D, }
+src/types.rs: #[derive(Clone, Default)] pub struct RichTextDataOptions { pub auto_size: Option<TextAutoSize>, pub background: Option<bool>, pub background_color: Option<u32>, pub border: Option<bool>, pub border_color: Option<u32>, pub condense_white: Option<bool>, pub default_text_format: Option<Ref<TextFormat>>, pub height: Option<f32>, pub max_chars: Option<i32>, pub mouse_wheel_enabled: Option<bool>, pub multiline: Option<bool>, pub scroll_h: Option<f32>, pub scroll_v: Option<f32>, pub selectable: Option<bool>, pub text: Option<String>, pub text_color: Option<u32>, pub text_format: Option<Ref<TextFormat>>, pub text_format_ranges: Option<Vec<TextFormatRange>>, pub vertical_align: Option<TextVerticalAlign>, pub width: Option<f32>, pub word_wrap: Option<bool>, }
+src/types.rs: #[derive(Clone, Default)] pub struct TextLabelDataOptions { pub auto_size: Option<TextAutoSize>, pub height: Option<f32>, pub text: Option<String>, pub text_format: Option<Ref<TextFormat>>, pub vertical_align: Option<TextVerticalAlign>, pub width: Option<f32>, }
+src/types.rs: impl Default for NativeText
+src/types.rs: impl Default for NativeText :: fn default() -> Self
+src/types.rs: impl Default for NativeTextData
+src/types.rs: impl Default for NativeTextData :: fn default() -> Self
+src/types.rs: impl Default for NativeTextRuntime
+src/types.rs: impl Default for NativeTextRuntime :: fn default() -> Self
+src/types.rs: impl Default for RichText
+src/types.rs: impl Default for RichText :: fn default() -> Self
+src/types.rs: impl Default for RichTextData
+src/types.rs: impl Default for RichTextData :: fn default() -> Self
+src/types.rs: impl Default for RichTextRuntime
+src/types.rs: impl Default for RichTextRuntime :: fn default() -> Self
+src/types.rs: impl Default for TextFieldSignals
+src/types.rs: impl Default for TextFieldSignals :: fn default() -> Self
+src/types.rs: impl Default for TextLabel
+src/types.rs: impl Default for TextLabel :: fn default() -> Self
+src/types.rs: impl Default for TextLabelData
+src/types.rs: impl Default for TextLabelData :: fn default() -> Self
+src/types.rs: impl Default for TextLabelRuntime
+src/types.rs: impl Default for TextLabelRuntime :: fn default() -> Self
+src/types.rs: impl Default for TextLayoutContext
+src/types.rs: impl Default for TextLayoutContext :: fn default() -> Self
+src/types.rs: impl Entity for NativeTextData
+src/types.rs: impl Entity for NativeTextData :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for NativeTextData :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for RichTextData
+src/types.rs: impl Entity for RichTextData :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RichTextData :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for TextFieldSignals
+src/types.rs: impl Entity for TextFieldSignals :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for TextFieldSignals :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for TextLabelData
+src/types.rs: impl Entity for TextLabelData :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for TextLabelData :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub const NATIVE_TEXT_KIND: &str
+src/types.rs: pub const RICH_TEXT_KIND: &str
+src/types.rs: pub const TEXT_LABEL_KIND: &str
+src/types.rs: pub struct NativeText { pub(crate) node: Node2DFields, pub data: NativeTextData, pub(crate) native_text_runtime: Ref<NativeTextRuntime>, }
+src/types.rs: pub struct NativeTextData { runtime: EntityRuntimeSlot, pub auto_size: TextAutoSize, pub height: f32, pub style: Ref<NativeTextStyle>, pub text: String, pub vertical_align: TextVerticalAlign, pub width: f32, }
+src/types.rs: pub struct NativeTextRuntime { pub element: Unknown, pub measured_height: f32, pub measured_width: f32, }
+src/types.rs: pub struct RichText { pub(crate) node: Node2DFields, pub data: RichTextData, pub(crate) rich_text_runtime: Ref<RichTextRuntime>, }
+src/types.rs: pub struct RichTextData { runtime: EntityRuntimeSlot, pub auto_size: TextAutoSize, pub background: bool, pub background_color: u32, pub border: bool, pub border_color: u32, pub condense_white: bool, pub default_text_format: Ref<TextFormat>, pub height: f32, pub max_chars: i32, pub mouse_wheel_enabled: bool, pub multiline: bool, pub scroll_h: f32, pub scroll_v: f32, pub selectable: bool, pub text: String, pub text_color: u32, pub text_format: Ref<TextFormat>, pub text_format_ranges: Vec<TextFormatRange>, pub vertical_align: TextVerticalAlign, pub width: f32, pub word_wrap: bool, }
+src/types.rs: pub struct RichTextRuntime { pub input: Option<Ref<TextInputState>>, pub rich_text_content: Option<Ref<RichTextContent>>, pub selection_begin_index: usize, pub selection_end_index: usize, pub text_field_signals: Option<Ref<TextFieldSignals>>, pub text_label: Ref<TextLabelRuntime>, }
+src/types.rs: pub struct TextFieldSignals { runtime: EntityRuntimeSlot, pub on_text_field_change: Signal<TextFieldChangeEvent>, pub on_text_field_link: Signal<TextFieldLinkEvent>, pub on_text_field_scroll: Signal<TextFieldScrollEvent>, }
+src/types.rs: pub struct TextLabel { pub(crate) node: Node2DFields, pub data: TextLabelData, pub(crate) text_label_runtime: Ref<TextLabelRuntime>, }
+src/types.rs: pub struct TextLabelData { runtime: EntityRuntimeSlot, pub auto_size: TextAutoSize, pub height: f32, pub text: String, pub text_format: Ref<TextFormat>, pub vertical_align: TextVerticalAlign, pub width: f32, }
+src/types.rs: pub struct TextLabelRuntime { pub build_text_layout_params: TextLayoutParamsBuilder, pub layout_context: Ref<TextLayoutContext>, pub text_layout: Option<Ref<TextLayoutResult>>, pub text_layout_using_content_id: i32, pub text_layout_using_text: Option<String>, }
+src/types.rs: pub struct TextLayoutContext { pub guard: Option<TextLabelGuard>, pub host_text_shaper: Option<HostTextShaperCapability>, pub measure_state: TextLayoutMeasureState, }
+src/types.rs: pub type TextGuardClock = Arc<dyn Fn() -> f64 + Send + Sync>;
+src/types.rs: pub type TextLabelGuard = Arc<dyn Fn(&str, &str) + Send + Sync>;
+src/types.rs: pub type TextLayoutParamsBuilder = Arc<dyn Fn(&dyn Node, TextMeasureFunction) -> Option<TextLayoutParams> + Send + Sync>;
