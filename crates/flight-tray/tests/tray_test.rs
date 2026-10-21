@@ -743,7 +743,8 @@ mod get_tray_icons {
         let (host, _state) = test_host();
         let first = acquire(&host);
         let second = acquire(&host);
-        let icons = get_tray_icons(&host.lifecycle);
+        let mut icons = vec![first.clone()];
+        get_tray_icons(&mut icons, &host.lifecycle);
         assert_eq!(icons.len(), 2);
         assert!(Arc::ptr_eq(&icons[0], &first));
         assert!(Arc::ptr_eq(&icons[1], &second));

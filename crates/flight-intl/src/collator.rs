@@ -78,16 +78,19 @@ fn get_collator(
 /// Returns a new array of `items` sorted by locale-aware collation; the input is not mutated (TS
 /// `sortStrings`).
 // flight-lint: allow(conform-params) D5: caller-owned FormatterCache and the explicit host capability replace the source module map and ambient Intl
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the result fills a caller-owned out, cleared first
 pub fn sort_strings(
+    out: &mut Vec<String>,
     cache: &mut FormatterCache,
     host: &HostIntlCapability,
     items: &[String],
     locale: &LocaleInput,
     options: Option<&CollatorOptions>,
-) -> Vec<String> {
+) {
     let collator = get_collator(cache, host, locale, options);
-    let mut sorted = items.to_vec();
-    sorted.sort_by(|a, b| {
+    out.clear();
+    out.extend_from_slice(items);
+    out.sort_by(|a, b| {
         let result = compare_intl_collator(&collator, a, b);
         if result < 0.0 {
             return Ordering::Less;
@@ -97,7 +100,6 @@ pub fn sort_strings(
         }
         return Ordering::Equal;
     });
-    return sorted;
 }
 
 impl IntlCollatorHandle {

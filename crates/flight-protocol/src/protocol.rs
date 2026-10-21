@@ -132,11 +132,11 @@ mod sugar_tests {
     #[test]
     fn host_protocol_registration_capability_registered_schemes_matches_free_function() {
         let capability = registration_capability();
-        assert_eq!(
-            capability.registered_schemes(),
-            get_registered_protocol_schemes(&capability)
-        );
-        assert_eq!(capability.registered_schemes(), vec!["flight".to_string()]);
+        let (mut method, mut free) = (Vec::new(), Vec::new());
+        capability.registered_schemes(&mut method);
+        get_registered_protocol_schemes(&mut free, &capability);
+        assert_eq!(method, free);
+        assert_eq!(method, vec!["flight".to_string()]);
     }
 
     #[test]
@@ -332,10 +332,13 @@ pub fn get_protocol_launch_url(
     return (host_protocol_launch.get_launch_url)();
 }
 
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the result fills a caller-owned out, cleared first
 pub fn get_registered_protocol_schemes(
+    out: &mut Vec<String>,
     host_protocol_registration: &HostProtocolRegistrationCapability,
-) -> Vec<String> {
-    return (host_protocol_registration.get_registered_schemes)();
+) {
+    out.clear();
+    out.extend((host_protocol_registration.get_registered_schemes)());
 }
 
 pub fn is_protocol_scheme_default(
@@ -563,8 +566,8 @@ impl HostProtocolRegistrationCapability {
         return register_protocol_schemes(self, schemes);
     }
 
-    pub fn registered_schemes(&self) -> Vec<String> {
-        return get_registered_protocol_schemes(self);
+    pub fn registered_schemes(&self, out: &mut Vec<String>) {
+        get_registered_protocol_schemes(out, self);
     }
 }
 

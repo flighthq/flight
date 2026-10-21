@@ -305,7 +305,9 @@ mod sugar_tests {
     fn host_tray_lifecycle_capability_icons_matches_get_tray_icons() {
         let c = lifecycle(Arc::new(Mutex::new(Vec::new())));
         block_on(c.create_icon(&options()));
-        let (a, b) = (c.icons(), get_tray_icons(&c));
+        let (mut a, mut b) = (Vec::new(), Vec::new());
+        c.icons(&mut a);
+        get_tray_icons(&mut b, &c);
         assert_eq!(a.len(), 1);
         assert!(Arc::ptr_eq(&a[0], &b[0]));
     }
@@ -879,8 +881,13 @@ pub fn get_tray_icon_tooltip(
 }
 
 /// The provider's live trays, in its order.
-pub fn get_tray_icons(host_tray_lifecycle: &HostTrayLifecycleCapability) -> Vec<Ref<TrayIcon>> {
-    return (host_tray_lifecycle.list)();
+// flight-lint: allow(conform-params) D24 (Principal 21f7557f): the result fills a caller-owned out, cleared first
+pub fn get_tray_icons(
+    out: &mut Vec<Ref<TrayIcon>>,
+    host_tray_lifecycle: &HostTrayLifecycleCapability,
+) {
+    out.clear();
+    out.extend((host_tray_lifecycle.list)());
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS TrayInteractionType string union; the TS package exports no get_/parse_ free functions
@@ -1452,8 +1459,8 @@ impl HostTrayLifecycleCapability {
         return create_tray_icon(self, options);
     }
 
-    pub fn icons(&self) -> Vec<Ref<TrayIcon>> {
-        return get_tray_icons(self);
+    pub fn icons(&self, out: &mut Vec<Ref<TrayIcon>>) {
+        get_tray_icons(out, self);
     }
 }
 

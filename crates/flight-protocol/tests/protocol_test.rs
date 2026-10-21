@@ -311,10 +311,9 @@ mod get_registered_protocol_schemes {
             }),
             register: Arc::new(|_scheme: &str| true),
         };
-        assert_eq!(
-            get_registered_protocol_schemes(&capability),
-            vec!["flight-b".to_string(), "flight-a".to_string()]
-        );
+        let mut out = vec!["stale".to_string()];
+        get_registered_protocol_schemes(&mut out, &capability);
+        assert_eq!(out, vec!["flight-b".to_string(), "flight-a".to_string()]);
     }
 }
 

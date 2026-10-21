@@ -89,7 +89,10 @@ mod sort_strings {
         let mut cache = create_formatter_cache();
         let locale = single_locale("en-US");
         let items = vec!["b".to_string(), "a".to_string(), "c".to_string()];
-        let sorted = sort_strings(&mut cache, &mock.host, &items, &locale, None);
+        let mut sorted = Vec::with_capacity(8);
+        sorted.push("stale".to_string());
+        sort_strings(&mut sorted, &mut cache, &mock.host, &items, &locale, None);
+        assert!(sorted.capacity() >= 8);
         assert_eq!(
             sorted,
             vec!["a".to_string(), "b".to_string(), "c".to_string()]
