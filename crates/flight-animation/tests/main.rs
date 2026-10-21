@@ -9,3 +9,4 @@ mod animation_root_motion_test;
 mod animation_state_machine_advance_test;
 mod animation_state_machine_test;
 mod animation_track_test;
+mod types_test;

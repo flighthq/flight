@@ -276,6 +276,16 @@ pub fn linear_easing_identity(t: f32) -> f32 {
     return t;
 }
 
+// flight-lint: allow(conform-extra) Rust sugar-layer free function backing impl From<&str> for StateRef
+pub fn create_state_ref_from_name(name: &str) -> StateRef {
+    return StateRef::Name(name.to_string());
+}
+
+// flight-lint: allow(conform-extra) Rust sugar-layer free function backing impl From<usize> for StateRef
+pub fn create_state_ref_from_index(index: usize) -> StateRef {
+    return StateRef::Index(index);
+}
+
 impl Default for AnimationBlendTree {
     fn default() -> Self {
         return AnimationBlendTree {
@@ -484,13 +494,13 @@ impl std::fmt::Debug for AnimationPlayer {
 
 impl From<&str> for StateRef {
     fn from(s: &str) -> Self {
-        return StateRef::Name(s.to_string());
+        return create_state_ref_from_name(s);
     }
 }
 
 impl From<usize> for StateRef {
     fn from(i: usize) -> Self {
-        return StateRef::Index(i);
+        return create_state_ref_from_index(i);
     }
 }
 
