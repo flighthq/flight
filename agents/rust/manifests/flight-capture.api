@@ -1,0 +1,46 @@
+src/capture_baseline.rs: impl serde::Serialize for SortedCaptureBaseline<'_>
+src/capture_baseline.rs: impl serde::Serialize for SortedCaptureBaseline<'_> :: fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error>
+src/capture_baseline.rs: pub fn create_capture_baseline() -> CaptureBaseline
+src/capture_baseline.rs: pub fn format_capture_baseline(baseline: &CaptureBaseline) -> String
+src/capture_baseline.rs: pub fn get_capture_baseline_field(baseline: &CaptureBaseline, column: &str, field: CaptureBaselineField,) -> Option<String>
+src/capture_baseline.rs: pub fn get_capture_baseline_provenance(baseline: &CaptureBaseline, column: &str, field: CaptureBaselineProvenanceField,) -> Option<CaptureBaselineProvenance>
+src/capture_baseline.rs: pub fn parse_capture_baseline(text: &str) -> Option<CaptureBaseline>
+src/capture_baseline.rs: pub fn set_capture_baseline_field(baseline: &mut CaptureBaseline, column: &str, field: CaptureBaselineField, value: &str,)
+src/capture_baseline.rs: pub fn set_capture_baseline_provenance(baseline: &mut CaptureBaseline, column: &str, field: CaptureBaselineProvenanceField, provenance: &CaptureBaselineProvenance,)
+src/capture_comparison.rs: pub fn compare_capture_fingerprints(a: &str, b: &str) -> f64
+src/capture_comparison.rs: pub fn evaluate_capture_parity(a: &str, b: &str, tolerance: Option<f64>) -> CaptureCheckResult
+src/capture_comparison.rs: pub fn evaluate_capture_regression(fingerprint: &str, baseline_fingerprint: &str, tolerance: Option<f64>,) -> CaptureCheckResult
+src/contract.rs: pub use crate::capture_baseline::*;
+src/contract.rs: pub use crate::capture_comparison::*;
+src/contract.rs: pub use crate::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::CAPTURE_PARITY_TOLERANCE;
+src/lib.rs: pub use contract::CAPTURE_REGRESSION_TOLERANCE;
+src/lib.rs: pub use contract::CaptureBaseline;
+src/lib.rs: pub use contract::CaptureBaselineField;
+src/lib.rs: pub use contract::CaptureBaselineProvenance;
+src/lib.rs: pub use contract::CaptureBaselineProvenanceField;
+src/lib.rs: pub use contract::CaptureCheckResult;
+src/lib.rs: pub use contract::CaptureColumnBaseline;
+src/lib.rs: pub use contract::compare_capture_fingerprints;
+src/lib.rs: pub use contract::create_capture_baseline;
+src/lib.rs: pub use contract::evaluate_capture_parity;
+src/lib.rs: pub use contract::evaluate_capture_regression;
+src/lib.rs: pub use contract::format_capture_baseline;
+src/lib.rs: pub use contract::get_capture_baseline_field;
+src/lib.rs: pub use contract::get_capture_baseline_provenance;
+src/lib.rs: pub use contract::parse_capture_baseline;
+src/lib.rs: pub use contract::set_capture_baseline_field;
+src/lib.rs: pub use contract::set_capture_baseline_provenance;
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct CaptureCheckResult { pub pass: bool, pub difference: f64, pub tolerance: f64, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CaptureBaselineField { Fingerprint, Sha256, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CaptureBaselineProvenanceField { Fingerprint, Sha256, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)] pub struct CaptureBaselineProvenance { pub computation_id: Option<String>, pub frames: u32, pub source_hash: Option<String>, pub target_kind: Option<String>, pub verify_published: bool, pub warmup_frames: u32, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, serde::Serialize, serde::Deserialize)] pub struct CaptureColumnBaseline { pub fingerprint: Option<String>, pub source_hash: Option<String>, pub sha256: Option<String>, pub fingerprint_provenance: Option<CaptureBaselineProvenance>, pub sha256_provenance: Option<CaptureBaselineProvenance>, }
+src/types.rs: pub const CAPTURE_PARITY_TOLERANCE: f64
+src/types.rs: pub const CAPTURE_REGRESSION_TOLERANCE: f64
+src/types.rs: pub fn get_capture_baseline_field_string(value: CaptureBaselineField) -> &'static str
+src/types.rs: pub fn get_capture_baseline_provenance_field_string(value: CaptureBaselineProvenanceField,) -> &'static str
+src/types.rs: pub fn parse_capture_baseline_field(value: &str) -> Option<CaptureBaselineField>
+src/types.rs: pub fn parse_capture_baseline_provenance_field(value: &str,) -> Option<CaptureBaselineProvenanceField>
+src/types.rs: pub type CaptureBaseline = Record<CaptureColumnBaseline>;

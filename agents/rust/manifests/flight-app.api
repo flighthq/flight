@@ -126,6 +126,8 @@ src/app_loop.rs: pub fn step_app_loop(app: &Ref<AppLoop>, delta_time: f64, optio
 src/app_loop.rs: pub fn stop_app_loop(app: &Ref<AppLoop>)
 src/app_loop.rs: pub fn unregister_app_loop_window(app: &Ref<AppLoop>, win: &Ref<AppWindow>)
 src/app_loop.rs: pub trait AppLoopMethods { fn attach_app_loop_lifecycle(&self, win: &Ref<AppWindow>); fn detach_app_loop_exit(&self); fn dispose_app_loop(&self); fn enable_app_loop_lifecycle_signals(&self); fn for_each_app_loop_window(&self, visitor: &mut dyn FnMut(&Ref<AppWindow>)); fn get_app_loop_frame_rate(&self) -> f64; fn get_app_loop_main_window(&self) -> Option<Ref<AppWindow>>; fn get_app_loop_windows(&self) -> Vec<Ref<AppWindow>>; fn is_app_loop_running(&self) -> bool; fn pause_app_loop(&self); fn register_app_loop_window(&self, win: &Ref<AppWindow>); fn resume_app_loop(&self); fn set_app_loop_main_window(&self, win: &Ref<AppWindow>); fn step_app_loop(&self, delta_time: f64, options: Option<&AppStepOptions>); fn stop_app_loop(&self); fn unregister_app_loop_window(&self, win: &Ref<AppWindow>); }
+src/app_window.rs: impl AppWindow :: fn attach_render_state_observer(win: &Ref<AppWindow>, cleanup: AppUnsubscribe)
+src/app_window.rs: impl AppWindow :: fn detach_render_state_observer(win: &Ref<AppWindow>)
 src/app_window.rs: impl AppWindowMethods for Ref<AppWindow>
 src/app_window.rs: impl AppWindowMethods for Ref<AppWindow> :: fn compute_window_device_transform(&self, out: &mut Matrix)
 src/app_window.rs: impl AppWindowMethods for Ref<AppWindow> :: fn detach_window_close(&self)
