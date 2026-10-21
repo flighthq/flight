@@ -12,10 +12,6 @@ src/collision_face3d.rs: pub fn query_collision_capsule_face3d(shape: &Collision
 src/collision_face3d.rs: pub fn query_collision_convex_face3d(shape: &CollisionShape3D, dir_x: f32, dir_y: f32, dir_z: f32, out: &mut Vec<f32>,) -> usize
 src/collision_face3d.rs: pub fn register_built_in_collision_face_queries3d(registry: &mut CollisionRegistry3D)
 src/collision_face3d.rs: pub fn register_collision_face_query3d(registry: &mut CollisionRegistry3D, kind: &str, query: CollisionFaceQuery3D,)
-src/collision_face3d.rs: pub fn write_collision_aabb_face3d(aabb: &CollisionAabb3D, normal_x: f32, normal_y: f32, normal_z: f32, out: &mut Vec<f32>,) -> usize
-src/collision_face3d.rs: pub fn write_collision_box_face3d(b: &CollisionBox3D, normal_x: f32, normal_y: f32, normal_z: f32, out: &mut Vec<f32>,) -> usize
-src/collision_face3d.rs: pub fn write_collision_capsule_face3d(capsule: &CollisionCapsule3D, normal_x: f32, normal_y: f32, normal_z: f32, out: &mut Vec<f32>,) -> usize
-src/collision_face3d.rs: pub fn write_collision_convex_face3d(convex: &CollisionConvex3D, normal_x: f32, normal_y: f32, normal_z: f32, out: &mut Vec<f32>,) -> usize
 src/collision_shape_validation2d.rs: pub fn get_collision_polygon_validation_status2d(points: &Vec<f64>) -> Option<CollisionTestStatus>
 src/collision_shape_validation2d.rs: pub fn get_collision_shape_validation_status2d(shape: &CollisionShape2D,) -> Option<CollisionTestStatus>
 src/collision_shape_validation3d.rs: pub fn get_collision_convex_validation_status3d(points: &Vec<f32>) -> Option<CollisionTestStatus>
@@ -27,7 +23,6 @@ src/collision_support2d.rs: pub fn register_built_in_collision_supports2d(regist
 src/collision_support2d.rs: pub fn register_collision_pair_test2d(registry: &mut CollisionRegistry2D, kind_a: &str, kind_b: &str, test: CollisionPairTest2D,)
 src/collision_support2d.rs: pub fn register_collision_support2d(registry: &mut CollisionRegistry2D, kind: &str, support: CollisionSupport2D,)
 src/collision_support2d.rs: pub fn support_collision_aabb2d(shape: &CollisionAabb2D, dir_x: f32, dir_y: f32, out: &mut [f32; 2],)
-src/collision_support2d.rs: pub fn support_collision_capsule2d(shape: &CollisionCapsule2D, dir_x: f32, dir_y: f32, out: &mut [f32; 2],)
 src/collision_support2d.rs: pub fn support_collision_circle2d(shape: &CollisionCircle2D, dir_x: f32, dir_y: f32, out: &mut [f32; 2],)
 src/collision_support2d.rs: pub fn support_collision_obb2d(shape: &CollisionObb2D, dir_x: f32, dir_y: f32, out: &mut [f32; 2],)
 src/collision_support2d.rs: pub fn support_collision_polygon2d(shape: &CollisionPolygon2D, dir_x: f32, dir_y: f32, out: &mut [f32; 2],)
@@ -99,15 +94,15 @@ src/convex_vertices2d.rs: pub fn write_obb_vertices(obb: &CollisionObb2D, out: &
 src/enable_collision_guards.rs: pub fn are_collision_guards_enabled(registry2d: &CollisionRegistry2D, registry3d: &CollisionRegistry3D,) -> bool
 src/enable_collision_guards.rs: pub fn disable_collision_guards(registry2d: &mut CollisionRegistry2D, registry3d: &mut CollisionRegistry3D,)
 src/enable_collision_guards.rs: pub fn enable_collision_guards(registry2d: &mut CollisionRegistry2D, registry3d: &mut CollisionRegistry3D, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
-src/explain_collision_test2d.rs: pub fn explain_collision_test2d(registry: &CollisionRegistry2D, a: &CollisionShape2D, b: &CollisionShape2D, out: &mut CollisionTestExplanation2D,) -> bool
-src/explain_collision_test3d.rs: pub fn explain_collision_test3d(registry: &CollisionRegistry3D, a: &CollisionShape3D, b: &CollisionShape3D, out: &mut CollisionTestExplanation3D,) -> bool
+src/explain_collision_test2d.rs: pub fn explain_collision_test2d(registry: &CollisionRegistry2D, a: &CollisionShape2D, b: &CollisionShape2D,) -> CollisionTestExplanation2D
+src/explain_collision_test3d.rs: pub fn explain_collision_test3d(registry: &CollisionRegistry3D, a: &CollisionShape3D, b: &CollisionShape3D,) -> CollisionTestExplanation3D
 src/gjk2d.rs: pub fn test_collision_support2d(registry: &CollisionRegistry2D, a: &CollisionShape2D, b: &CollisionShape2D, out: &mut CollisionManifold2D,) -> bool
 src/gjk2d.rs: pub fn test_collision_support_overlap2d(registry: &CollisionRegistry2D, a: &CollisionShape2D, b: &CollisionShape2D,) -> bool
 src/gjk3d.rs: pub fn test_collision_support3d(registry: &CollisionRegistry3D, a: &CollisionShape3D, b: &CollisionShape3D, out: &mut CollisionManifold3D,) -> bool
 src/gjk3d.rs: pub fn test_collision_support_overlap3d(registry: &CollisionRegistry3D, a: &CollisionShape3D, b: &CollisionShape3D,) -> bool
 src/gjk_distance3d.rs: pub fn create_collision_distance3d() -> CollisionDistance3D
 src/gjk_distance3d.rs: pub fn initialize_collision_distance3d(out: &mut CollisionDistance3D)
-src/gjk_distance3d.rs: pub fn write_collision_distance3d(registry: &CollisionRegistry3D, a: &CollisionShape3D, b: &CollisionShape3D, out: &mut CollisionDistance3D,) -> bool
+src/gjk_distance3d.rs: pub fn write_collision_distance3d(out: &mut CollisionDistance3D, registry: &CollisionRegistry3D, a: &CollisionShape3D, b: &CollisionShape3D, offset_x: Option<f32>, offset_y: Option<f32>, offset_z: Option<f32>,) -> bool
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::CollisionAabb2D;
 src/lib.rs: pub use contract::CollisionAabb3D;
@@ -146,7 +141,6 @@ src/lib.rs: pub use contract::CollisionSupport2D;
 src/lib.rs: pub use contract::CollisionSupport3D;
 src/lib.rs: pub use contract::CollisionTestExplanation2D;
 src/lib.rs: pub use contract::CollisionTestExplanation3D;
-src/lib.rs: pub use contract::CollisionTestExplanationKind;
 src/lib.rs: pub use contract::CollisionTestGuard2D;
 src/lib.rs: pub use contract::CollisionTestGuard3D;
 src/lib.rs: pub use contract::CollisionTestStatus;
@@ -236,7 +230,6 @@ src/lib.rs: pub use contract::set_collision_test_guard3d;
 src/lib.rs: pub use contract::support_collision_aabb2d;
 src/lib.rs: pub use contract::support_collision_aabb3d;
 src/lib.rs: pub use contract::support_collision_box3d;
-src/lib.rs: pub use contract::support_collision_capsule2d;
 src/lib.rs: pub use contract::support_collision_capsule3d;
 src/lib.rs: pub use contract::support_collision_circle2d;
 src/lib.rs: pub use contract::support_collision_cone3d;
@@ -400,31 +393,31 @@ src/sugar.rs: impl CollisionSegment2D :: fn test_polygon(&self, other: &Collisio
 src/sugar.rs: impl CollisionSegment2D :: fn test_segment(&self, other: &CollisionSegment2D) -> bool
 src/sugar.rs: impl CollisionShape2D :: fn collide_contact(&self, other: &CollisionShape2D, out: &mut CollisionContactManifold2D,) -> bool
 src/sugar.rs: impl CollisionShape2D :: fn contains_point(&self, x: f32, y: f32) -> bool
-src/sugar.rs: impl CollisionShape2D :: fn explain_test(&self, registry: &CollisionRegistry2D, other: &CollisionShape2D, out: &mut CollisionTestExplanation2D,) -> bool
+src/sugar.rs: impl CollisionShape2D :: fn explain_test(&self, registry: &CollisionRegistry2D, other: &CollisionShape2D,) -> CollisionTestExplanation2D
 src/sugar.rs: impl CollisionShape2D :: fn raycast(&self, out: &mut CollisionRaycastHit2D, origin_x: f64, origin_y: f64, direction_x: f64, direction_y: f64, max_fraction: Option<f64>,) -> bool
-src/sugar.rs: impl CollisionShape2D :: fn sweep(&self, registry: &CollisionRegistry2D, other: &CollisionShape2D, velocity_x: f32, velocity_y: f32, out: &mut CollisionTimeOfImpact2D,) -> bool
+src/sugar.rs: impl CollisionShape2D :: fn sweep(&self, out: &mut CollisionTimeOfImpact2D, registry: &CollisionRegistry2D, translation_ax: f32, translation_ay: f32, other: &CollisionShape2D, translation_bx: f32, translation_by: f32, max_fraction: Option<f32>,) -> bool
 src/sugar.rs: impl CollisionShape2D :: fn test(&self, registry: &CollisionRegistry2D, other: &CollisionShape2D, out: &mut CollisionManifold2D,) -> bool
 src/sugar.rs: impl CollisionShape2D :: fn test_support(&self, registry: &CollisionRegistry2D, other: &CollisionShape2D, out: &mut CollisionManifold2D,) -> bool
 src/sugar.rs: impl CollisionShape2D :: fn test_support_overlap(&self, registry: &CollisionRegistry2D, other: &CollisionShape2D,) -> bool
 src/sugar.rs: impl CollisionShape2D :: fn validation_status(&self) -> Option<CollisionTestStatus>
 src/sugar.rs: impl CollisionShape3D :: fn collide_contact(&self, registry: &CollisionRegistry3D, other: &CollisionShape3D, out: &mut CollisionContactManifold3D,) -> bool
-src/sugar.rs: impl CollisionShape3D :: fn collide_heightfield(&self, registry: &CollisionRegistry3D, heightfield: &CollisionHeightfield3D, out: &mut CollisionManifold3D,) -> bool
-src/sugar.rs: impl CollisionShape3D :: fn collide_triangle_mesh(&self, registry: &CollisionRegistry3D, mesh: &CollisionTriangleMesh3D, out: &mut CollisionManifold3D,) -> bool
+src/sugar.rs: impl CollisionShape3D :: fn collide_heightfield(&self, out: &mut CollisionContactManifold3D, registry: &CollisionRegistry3D, heightfield: &CollisionHeightfield3D,) -> bool
+src/sugar.rs: impl CollisionShape3D :: fn collide_triangle_mesh(&self, out: &mut CollisionContactManifold3D, registry: &CollisionRegistry3D, mesh: &CollisionTriangleMesh3D,) -> bool
 src/sugar.rs: impl CollisionShape3D :: fn contains_point(&self, x: f32, y: f32, z: f32) -> bool
-src/sugar.rs: impl CollisionShape3D :: fn explain_test(&self, registry: &CollisionRegistry3D, other: &CollisionShape3D, out: &mut CollisionTestExplanation3D,) -> bool
+src/sugar.rs: impl CollisionShape3D :: fn explain_test(&self, registry: &CollisionRegistry3D, other: &CollisionShape3D,) -> CollisionTestExplanation3D
 src/sugar.rs: impl CollisionShape3D :: fn query_aabb_face(&self, direction_x: f32, direction_y: f32, direction_z: f32, out: &mut Vec<f32>,) -> usize
 src/sugar.rs: impl CollisionShape3D :: fn query_box_face(&self, direction_x: f32, direction_y: f32, direction_z: f32, out: &mut Vec<f32>,) -> usize
 src/sugar.rs: impl CollisionShape3D :: fn query_capsule_face(&self, direction_x: f32, direction_y: f32, direction_z: f32, out: &mut Vec<f32>,) -> usize
 src/sugar.rs: impl CollisionShape3D :: fn query_convex_face(&self, direction_x: f32, direction_y: f32, direction_z: f32, out: &mut Vec<f32>,) -> usize
 src/sugar.rs: impl CollisionShape3D :: fn raycast(&self, out: &mut CollisionRaycastHit3D, origin_x: f32, origin_y: f32, origin_z: f32, direction_x: f32, direction_y: f32, direction_z: f32, max_fraction: Option<f32>,) -> bool
-src/sugar.rs: impl CollisionShape3D :: fn sweep(&self, registry: &CollisionRegistry3D, other: &CollisionShape3D, velocity_x: f32, velocity_y: f32, velocity_z: f32, out: &mut CollisionTimeOfImpact3D,) -> bool
-src/sugar.rs: impl CollisionShape3D :: fn sweep_heightfield(&self, registry: &CollisionRegistry3D, heightfield: &CollisionHeightfield3D, velocity_x: f32, velocity_y: f32, velocity_z: f32, out: &mut CollisionTimeOfImpact3D,) -> bool
-src/sugar.rs: impl CollisionShape3D :: fn sweep_triangle_mesh(&self, registry: &CollisionRegistry3D, mesh: &CollisionTriangleMesh3D, velocity_x: f32, velocity_y: f32, velocity_z: f32, out: &mut CollisionTimeOfImpact3D,) -> bool
+src/sugar.rs: impl CollisionShape3D :: fn sweep(&self, out: &mut CollisionTimeOfImpact3D, registry: &CollisionRegistry3D, translation_ax: f32, translation_ay: f32, translation_az: f32, other: &CollisionShape3D, translation_bx: f32, translation_by: f32, translation_bz: f32, max_fraction: Option<f32>,) -> bool
+src/sugar.rs: impl CollisionShape3D :: fn sweep_heightfield(&self, out: &mut CollisionTimeOfImpact3D, registry: &CollisionRegistry3D, delta_x: f32, delta_y: f32, delta_z: f32, heightfield: &CollisionHeightfield3D, max_fraction: Option<f32>,) -> bool
+src/sugar.rs: impl CollisionShape3D :: fn sweep_triangle_mesh(&self, out: &mut CollisionTimeOfImpact3D, registry: &CollisionRegistry3D, delta_x: f32, delta_y: f32, delta_z: f32, mesh: &CollisionTriangleMesh3D, max_fraction: Option<f32>,) -> bool
 src/sugar.rs: impl CollisionShape3D :: fn test(&self, registry: &CollisionRegistry3D, other: &CollisionShape3D, out: &mut CollisionManifold3D,) -> bool
 src/sugar.rs: impl CollisionShape3D :: fn test_support(&self, registry: &CollisionRegistry3D, other: &CollisionShape3D, out: &mut CollisionManifold3D,) -> bool
 src/sugar.rs: impl CollisionShape3D :: fn test_support_overlap(&self, registry: &CollisionRegistry3D, other: &CollisionShape3D,) -> bool
 src/sugar.rs: impl CollisionShape3D :: fn validation_status(&self) -> Option<CollisionTestStatus>
-src/sugar.rs: impl CollisionShape3D :: fn write_distance(&self, registry: &CollisionRegistry3D, other: &CollisionShape3D, out: &mut CollisionDistance3D,) -> bool
+src/sugar.rs: impl CollisionShape3D :: fn write_distance(&self, out: &mut CollisionDistance3D, registry: &CollisionRegistry3D, other: &CollisionShape3D, offset_x: Option<f32>, offset_y: Option<f32>, offset_z: Option<f32>,) -> bool
 src/sugar.rs: impl CollisionSphere3D :: fn support(&self, direction_x: f32, direction_y: f32, direction_z: f32, out: &mut [f32; 3],)
 src/sugar.rs: impl CollisionSphere3D :: fn test_aabb(&self, other: &CollisionAabb3D, out: &mut CollisionManifold3D) -> bool
 src/sugar.rs: impl CollisionSphere3D :: fn test_box(&self, other: &CollisionBox3D, out: &mut CollisionManifold3D) -> bool
@@ -439,16 +432,16 @@ src/sugar.rs: impl CollisionTriangleMesh3D :: fn validation_status(&self) -> Opt
 src/sugar.rs: impl CollisionTriangleMesh3D :: fn write_bounds(&self, out: &mut CollisionAabb3D)
 src/sweep_collision_shape2d.rs: pub fn create_collision_time_of_impact2d() -> CollisionTimeOfImpact2D
 src/sweep_collision_shape2d.rs: pub fn initialize_collision_time_of_impact2d(out: &mut CollisionTimeOfImpact2D)
-src/sweep_collision_shape2d.rs: pub fn sweep_collision_shape2d(registry: &CollisionRegistry2D, a: &CollisionShape2D, b: &CollisionShape2D, velocity_x: f32, velocity_y: f32, out: &mut CollisionTimeOfImpact2D,) -> bool
+src/sweep_collision_shape2d.rs: pub fn sweep_collision_shape2d(out: &mut CollisionTimeOfImpact2D, registry: &CollisionRegistry2D, shape_a: &CollisionShape2D, translation_ax: f32, translation_ay: f32, shape_b: &CollisionShape2D, translation_bx: f32, translation_by: f32, max_fraction: Option<f32>,) -> bool
 src/sweep_collision_shape3d.rs: pub fn create_collision_time_of_impact3d() -> CollisionTimeOfImpact3D
 src/sweep_collision_shape3d.rs: pub fn initialize_collision_time_of_impact3d(out: &mut CollisionTimeOfImpact3D)
-src/sweep_collision_shape3d.rs: pub fn sweep_collision_shape3d(registry: &CollisionRegistry3D, a: &CollisionShape3D, b: &CollisionShape3D, velocity_x: f32, velocity_y: f32, velocity_z: f32, out: &mut CollisionTimeOfImpact3D,) -> bool
+src/sweep_collision_shape3d.rs: pub fn sweep_collision_shape3d(out: &mut CollisionTimeOfImpact3D, registry: &CollisionRegistry3D, shape_a: &CollisionShape3D, translation_ax: f32, translation_ay: f32, translation_az: f32, shape_b: &CollisionShape3D, translation_bx: f32, translation_by: f32, translation_bz: f32, max_fraction: Option<f32>,) -> bool
 src/test_collision2d.rs: pub fn set_collision_test_guard2d(registry: &mut CollisionRegistry2D, guard: Option<CollisionTestGuard2D>,)
 src/test_collision2d.rs: pub fn test_collision2d(registry: &CollisionRegistry2D, a: &CollisionShape2D, b: &CollisionShape2D, out: &mut CollisionManifold2D,) -> bool
 src/test_collision3d.rs: pub fn set_collision_test_guard3d(registry: &mut CollisionRegistry3D, guard: Option<CollisionTestGuard3D>,)
 src/test_collision3d.rs: pub fn test_collision3d(registry: &CollisionRegistry3D, a: &CollisionShape3D, b: &CollisionShape3D, out: &mut CollisionManifold3D,) -> bool
-src/triangle_mesh3d.rs: pub fn collide_collision_heightfield3d(registry: &CollisionRegistry3D, hf: &CollisionHeightfield3D, shape: &CollisionShape3D, out: &mut CollisionManifold3D,) -> bool
-src/triangle_mesh3d.rs: pub fn collide_collision_triangle_mesh3d(registry: &CollisionRegistry3D, mesh: &CollisionTriangleMesh3D, shape: &CollisionShape3D, out: &mut CollisionManifold3D,) -> bool
+src/triangle_mesh3d.rs: pub fn collide_collision_heightfield3d(out: &mut CollisionContactManifold3D, registry: &CollisionRegistry3D, convex: &CollisionShape3D, heightfield: &CollisionHeightfield3D,) -> bool
+src/triangle_mesh3d.rs: pub fn collide_collision_triangle_mesh3d(out: &mut CollisionContactManifold3D, registry: &CollisionRegistry3D, convex: &CollisionShape3D, mesh: &CollisionTriangleMesh3D,) -> bool
 src/triangle_mesh3d.rs: pub fn create_collision_heightfield3d(columns: usize, rows: usize, heights: Vec<f32>, cell_size_x: f32, cell_size_z: f32,) -> CollisionHeightfield3D
 src/triangle_mesh3d.rs: pub fn create_collision_triangle_mesh3d(points: Vec<f32>, indices: Vec<usize>,) -> CollisionTriangleMesh3D
 src/triangle_mesh3d.rs: pub fn get_collision_heightfield_validation_status3d(heightfield: &CollisionHeightfield3D,) -> Option<CollisionTestStatus>
@@ -459,14 +452,14 @@ src/triangle_mesh3d.rs: pub fn invalidate_collision_heightfield3d(heightfield: &
 src/triangle_mesh3d.rs: pub fn invalidate_collision_triangle_mesh3d(mesh: &mut CollisionTriangleMesh3D)
 src/triangle_mesh3d.rs: pub fn raycast_collision_heightfield3d(out: &mut CollisionRaycastHit3D, heightfield: &CollisionHeightfield3D, origin_x: f32, origin_y: f32, origin_z: f32, direction_x: f32, direction_y: f32, direction_z: f32, max_fraction: Option<f32>,) -> bool
 src/triangle_mesh3d.rs: pub fn raycast_collision_triangle_mesh3d(out: &mut CollisionRaycastHit3D, mesh: &CollisionTriangleMesh3D, origin_x: f32, origin_y: f32, origin_z: f32, direction_x: f32, direction_y: f32, direction_z: f32, max_fraction: Option<f32>,) -> bool
-src/triangle_mesh3d.rs: pub fn sweep_collision_heightfield3d(registry: &CollisionRegistry3D, hf: &CollisionHeightfield3D, shape: &CollisionShape3D, velocity_x: f32, velocity_y: f32, velocity_z: f32, out: &mut CollisionTimeOfImpact3D,) -> bool
-src/triangle_mesh3d.rs: pub fn sweep_collision_triangle_mesh3d(registry: &CollisionRegistry3D, mesh: &CollisionTriangleMesh3D, shape: &CollisionShape3D, velocity_x: f32, velocity_y: f32, velocity_z: f32, out: &mut CollisionTimeOfImpact3D,) -> bool
+src/triangle_mesh3d.rs: pub fn sweep_collision_heightfield3d(out: &mut CollisionTimeOfImpact3D, registry: &CollisionRegistry3D, convex: &CollisionShape3D, delta_x: f32, delta_y: f32, delta_z: f32, heightfield: &CollisionHeightfield3D, max_fraction: Option<f32>,) -> bool
+src/triangle_mesh3d.rs: pub fn sweep_collision_triangle_mesh3d(out: &mut CollisionTimeOfImpact3D, registry: &CollisionRegistry3D, convex: &CollisionShape3D, delta_x: f32, delta_y: f32, delta_z: f32, mesh: &CollisionTriangleMesh3D, max_fraction: Option<f32>,) -> bool
 src/triangle_mesh3d.rs: pub fn write_collision_heightfield_bounds3d(heightfield: &CollisionHeightfield3D, out: &mut CollisionAabb3D,)
 src/triangle_mesh3d.rs: pub fn write_collision_triangle_mesh_bounds3d(mesh: &CollisionTriangleMesh3D, out: &mut CollisionAabb3D,)
 src/types.rs: #[derive(Clone, Default)] pub struct CollisionRegistry2D { pub pair_tests: HashMap<String, CollisionPairTest2D>, pub supports: HashMap<String, CollisionSupport2D>, pub test_guard: Option<CollisionTestGuard2D>, }
 src/types.rs: #[derive(Clone, Default)] pub struct CollisionRegistry3D { pub pair_tests: HashMap<String, CollisionPairTest3D>, pub supports: HashMap<String, CollisionSupport3D>, pub face_queries: HashMap<String, CollisionFaceQuery3D>, pub test_guard: Option<CollisionTestGuard3D>, }
-src/types.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct CollisionTestExplanation2D { pub kind: CollisionTestExplanationKind, pub overlapping: bool, pub shape_index: usize, pub status: Option<CollisionTestStatus>, }
-src/types.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct CollisionTestExplanation3D { pub kind: CollisionTestExplanationKind, pub overlapping: bool, pub shape_index: usize, pub status: Option<CollisionTestStatus>, }
+src/types.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct CollisionTestExplanation2D { pub kind: Option<CollisionShapeKind2D>, pub overlapping: bool, pub shape_index: Option<usize>, pub status: CollisionTestStatus, }
+src/types.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub struct CollisionTestExplanation3D { pub kind: Option<CollisionShapeKind3D>, pub overlapping: bool, pub shape_index: Option<usize>, pub status: CollisionTestStatus, }
 src/types.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct CollisionAabb2D { pub min_x: f32, pub min_y: f32, pub max_x: f32, pub max_y: f32, }
 src/types.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct CollisionAabb3D { pub min_x: f32, pub min_y: f32, pub min_z: f32, pub max_x: f32, pub max_y: f32, pub max_z: f32, }
 src/types.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct CollisionBox3D { pub x: f32, pub y: f32, pub z: f32, pub half_x: f32, pub half_y: f32, pub half_z: f32, pub rotation_x: f32, pub rotation_y: f32, pub rotation_z: f32, pub rotation_w: f32, }
@@ -483,8 +476,7 @@ src/types.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct Colli
 src/types.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct CollisionSphere3D { pub x: f32, pub y: f32, pub z: f32, pub radius: f32, }
 src/types.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum CollisionShapeKind2D { Circle, Capsule, Aabb, Obb, Polygon, Segment, Point, }
 src/types.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum CollisionShapeKind3D { Sphere, Aabb, Box, Capsule, Cylinder, Cone, Convex, TriangleMesh, Heightfield, }
-src/types.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum CollisionTestExplanationKind { NoTest, ShapePairTest, SupportTest, }
-src/types.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum CollisionTestStatus { DegenerateShape, NonConvexPolygon, UnsupportedShapeKind, }
+src/types.rs: #[derive(Debug, Clone, Copy, PartialEq, Eq)] pub enum CollisionTestStatus { DegenerateShape, NonConvexPolygon, Overlapping, Separated, UnsupportedShapeKind, }
 src/types.rs: #[derive(Debug, Clone, PartialEq)] pub enum CollisionShape2D { Circle(CollisionCircle2D), Capsule(CollisionCapsule2D), Aabb(CollisionAabb2D), Obb(CollisionObb2D), Polygon(CollisionPolygon2D), Segment(CollisionSegment2D), Point(CollisionPoint2D), }
 src/types.rs: #[derive(Debug, Clone, PartialEq)] pub enum CollisionShape3D { Sphere(CollisionSphere3D), Aabb(CollisionAabb3D), Box(CollisionBox3D), Capsule(CollisionCapsule3D), Cylinder(CollisionCylinder3D), Cone(CollisionCone3D), Convex(CollisionConvex3D), }
 src/types.rs: #[derive(Debug, Clone, PartialEq)] pub struct CollisionContactManifold2D { pub overlapping: bool, pub normal_x: f32, pub normal_y: f32, pub depth: f32, pub point_count: usize, pub points: [CollisionContactPoint2D; MAX_COLLISION_CONTACT_POINTS_2D], runtime: EntityRuntimeSlot, }
